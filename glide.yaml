@@ -1,0 +1,9 @@
+package: github.com/appscode/restik
+import:
+- package: github.com/appscode/log
+- package: github.com/ghodss/yaml
+- package: k8s.io/kubernetes
+  version: ~1.5.0
+testImport:
+- package: github.com/stretchr/testify
+  version: v1.1.4
