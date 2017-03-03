@@ -1,45 +1,37 @@
 package main
 
 import (
-	"fmt"
-	"time"
+	"flag"
+	"log"
+	"os"
 
+	"github.com/appscode/go/version"
+	logs "github.com/appscode/log/golog"
 	_ "github.com/appscode/restik/api/install"
-	"github.com/appscode/restik/pkg"
-	"github.com/golang/glog"
+	"github.com/appscode/restik/pkg/cmd"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
-	"k8s.io/kubernetes/pkg/util/flag"
-	"k8s.io/kubernetes/pkg/util/logs"
-	"k8s.io/kubernetes/pkg/util/runtime"
-)
-
-var (
-	masterURL      string
-	kubeconfigPath string
 )
 
 func main() {
-	pflag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
-	pflag.StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-
-	flag.InitFlags()
 	logs.InitLogs()
 	defer logs.FlushLogs()
 
-	pflag.VisitAll(func(flag *pflag.Flag) {
-		glog.Infof("FLAG: --%s=%q", flag.Name, flag.Value)
-	})
-
-	config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
-	if err != nil {
-		fmt.Printf("Could not get kubernetes config: %s", err)
-		time.Sleep(30 * time.Minute)
-		panic(err)
+	var rootCmd = &cobra.Command{
+		Use: "restik",
+		PersistentPreRun: func(c *cobra.Command, args []string) {
+			c.Flags().VisitAll(func(flag *pflag.Flag) {
+				log.Printf("FLAG: --%s=%q", flag.Name, flag.Value)
+			})
+		},
 	}
-	defer runtime.HandleCrash()
+	rootCmd.PersistentFlags().AddGoFlagSet(flag.CommandLine)
 
-	w := pkg.New(config)
-	fmt.Println("Starting tillerc...")
-	w.RunAndHold()
+	rootCmd.AddCommand(version.NewCmdVersion())
+	rootCmd.AddCommand(cmd.NewCmdRun())
+
+	if err := rootCmd.Execute(); err != nil {
+		os.Exit(1)
+	}
+	os.Exit(0)
 }
