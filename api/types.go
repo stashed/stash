@@ -7,6 +7,17 @@ import (
 	"k8s.io/kubernetes/pkg/api/unversioned"
 )
 
+type Status_Code int32
+
+const (
+	// Status_UNKNOWN indicates that a backup is in an uncertain state.
+	Status_UNKNOWN Status_Code = 0
+	// Status_DEPLOYED indicates that the last backup is successfull.
+	Status_Success Status_Code = 1
+	// Status_DELETED indicates that the last backup is failed.
+	Status_Failed Status_Code = 2
+)
+
 type Backup struct {
 	unversioned.TypeMeta `json:",inline,omitempty"`
 	api.ObjectMeta       `json:"metadata,omitempty"`
@@ -15,43 +26,22 @@ type Backup struct {
 }
 
 type BackupSpec struct {
-	// Tries to obtain a single certificate using all domains passed into Domains.
-	// The first domain in domains is used for the CommonName field of the certificate, all other
-	// domains are added using the Subject Alternate Names extension.
-	Domains []string `json:"domains,omitempty"`
-
-	// DNS Provider.
-	Provider string `json:"provider,omitempty"`
-	Email    string `json:"email,omitempty"`
-
-	// This is the ingress Reference that will be used if provider is http
-	HTTPProviderIngressReference api.ObjectReference `json:"httpProviderIngressReference,omitempty"`
-
-	// ProviderCredentialSecretName is used to create the acme client, that will do
-	// needed processing in DNS.
-	ProviderCredentialSecretName string `json:"providerCredentialSecretName,omitempty"`
-
-	// Secret contains ACMEUser information. If empty tries to find an Secret via domains
-	// if not found create an ACMEUser and stores as a secret.
-	ACMEUserSecretName string `json:"acmeUserSecretName"`
-
-	// ACME server that will be used to obtain this certificate.
-	ACMEServerURL string `json:"acmeStagingURL"`
+	// Source of the backup
+	Source string `json:"source"`
+	// Destination of the backup
+	Destination string `json:"destination"`
+	// How frequently backup command will be run
+	Schedule int64 `json:"schedule"`
+	//  Some policy based garbage collection of old snapshots
+	GarbageCollection string `json:"garbageCollection,omitempty"`
 }
 
 type BackupStatus struct {
-	BackupObtained     bool                   `json:"certificateObtained"`
-	Message            string                 `json:"message"`
-	Created            time.Time              `json:"created,omitempty"`
-	ACMEUserSecretName string                 `json:"acmeUserSecretName,omitempty"`
-	Details            ACMECertificateDetails `json:"details,omitempty"`
-}
-
-type ACMECertificateDetails struct {
-	Domain        string `json:"domain"`
-	CertURL       string `json:"certUrl"`
-	CertStableURL string `json:"certStableUrl"`
-	AccountRef    string `json:"accountRef,omitempty"`
+	LastBackupStatus      Status_Code `json:"lastBackupStatus"`
+	Created               time.Time   `json:"created,omitempty"`
+	LastBackup            time.Time   `json:"lastBackup,omitempty"`
+	LastSuccessfullBackup time.Time   `json:"lastSuccessfullBackup"`
+	Message               string      `json:"message"`
 }
 
 type BackupList struct {
