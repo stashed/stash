@@ -44,7 +44,7 @@ func (w *Controller) RunAndHold() {
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				glog.Infoln("Got one added tpr", obj.(*tapi.Backup))
-				w.doStuff(obj.(*tapi.Backup))
+				//w.updateObjectAndBackup(obj.(*tapi.Backup))
 			},
 			DeleteFunc: func(obj interface{}) {
 				glog.Infoln("Got one deleted tpr", obj.(*tapi.Backup))
@@ -71,4 +71,9 @@ func (w *Controller) RunAndHold() {
 
 func (pl *Controller) doStuff(release *tapi.Backup) {
 
+}
+
+func (pl *Controller) updateObjectAndBackup() error {
+
+	return nil
 }
