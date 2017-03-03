@@ -18,8 +18,8 @@ var (
 // Adds the list of known types to api.Scheme.
 func v1addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(V1beta1SchemeGroupVersion,
-		&Certificate{},
-		&CertificateList{},
+		&Backup{},
+		&BackupList{},
 
 		&v1.ListOptions{},
 		&v1.DeleteOptions{},

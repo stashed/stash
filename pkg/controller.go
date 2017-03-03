@@ -32,30 +32,30 @@ func New(c *rest.Config) *Controller {
 func (w *Controller) RunAndHold() {
 	lw := &cache.ListWatch{
 		ListFunc: func(opts api.ListOptions) (runtime.Object, error) {
-			return w.Client.Certificate(api.NamespaceAll).List(api.ListOptions{})
+			return w.Client.Backup(api.NamespaceAll).List(api.ListOptions{})
 		},
 		WatchFunc: func(options api.ListOptions) (watch.Interface, error) {
-			return w.Client.Certificate(api.NamespaceAll).Watch(api.ListOptions{})
+			return w.Client.Backup(api.NamespaceAll).Watch(api.ListOptions{})
 		},
 	}
 	_, controller := cache.NewInformer(lw,
-		&tapi.Certificate{},
+		&tapi.Backup{},
 		w.SyncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				glog.Infoln("Got one added tpr", obj.(*tapi.Certificate))
-				w.doStuff(obj.(*tapi.Certificate))
+				glog.Infoln("Got one added tpr", obj.(*tapi.Backup))
+				w.doStuff(obj.(*tapi.Backup))
 			},
 			DeleteFunc: func(obj interface{}) {
-				glog.Infoln("Got one deleted tpr", obj.(*tapi.Certificate))
-				w.doStuff(obj.(*tapi.Certificate))
+				glog.Infoln("Got one deleted tpr", obj.(*tapi.Backup))
+				w.doStuff(obj.(*tapi.Backup))
 			},
 			UpdateFunc: func(old, new interface{}) {
-				oldObj, ok := old.(*tapi.Certificate)
+				oldObj, ok := old.(*tapi.Backup)
 				if !ok {
 					return
 				}
-				newObj, ok := new.(*tapi.Certificate)
+				newObj, ok := new.(*tapi.Backup)
 				if !ok {
 					return
 				}
@@ -69,6 +69,6 @@ func (w *Controller) RunAndHold() {
 	controller.Run(wait.NeverStop)
 }
 
-func (pl *Controller) doStuff(release *tapi.Certificate) {
+func (pl *Controller) doStuff(release *tapi.Backup) {
 
 }

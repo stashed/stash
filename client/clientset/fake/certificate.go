@@ -9,7 +9,7 @@ import (
 	"k8s.io/kubernetes/pkg/watch"
 )
 
-type FakeCertificate struct {
+type FakeBackup struct {
 	Fake *testing.Fake
 	ns   string
 }
@@ -17,20 +17,20 @@ type FakeCertificate struct {
 var certResource = schema.GroupVersionResource{Group: "appscode.com", Version: "v1beta1", Resource: "certificates"}
 
 // Get returns the Certificate by name.
-func (mock *FakeCertificate) Get(name string) (*aci.Certificate, error) {
+func (mock *FakeBackup) Get(name string) (*aci.Backup, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewGetAction(certResource, mock.ns, name), &aci.Certificate{})
+		Invokes(testing.NewGetAction(certResource, mock.ns, name), &aci.Backup{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*aci.Certificate), err
+	return obj.(*aci.Backup), err
 }
 
 // List returns the a of Certificates.
-func (mock *FakeCertificate) List(opts api.ListOptions) (*aci.CertificateList, error) {
+func (mock *FakeBackup) List(opts api.ListOptions) (*aci.BackupList, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewListAction(certResource, mock.ns, opts), &aci.Certificate{})
+		Invokes(testing.NewListAction(certResource, mock.ns, opts), &aci.Backup{})
 
 	if obj == nil {
 		return nil, err
@@ -40,8 +40,8 @@ func (mock *FakeCertificate) List(opts api.ListOptions) (*aci.CertificateList, e
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &aci.CertificateList{}
-	for _, item := range obj.(*aci.CertificateList).Items {
+	list := &aci.BackupList{}
+	for _, item := range obj.(*aci.BackupList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)
 		}
@@ -50,46 +50,46 @@ func (mock *FakeCertificate) List(opts api.ListOptions) (*aci.CertificateList, e
 }
 
 // Create creates a new Certificate.
-func (mock *FakeCertificate) Create(svc *aci.Certificate) (*aci.Certificate, error) {
+func (mock *FakeBackup) Create(svc *aci.Backup) (*aci.Backup, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewCreateAction(certResource, mock.ns, svc), &aci.Certificate{})
+		Invokes(testing.NewCreateAction(certResource, mock.ns, svc), &aci.Backup{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*aci.Certificate), err
+	return obj.(*aci.Backup), err
 }
 
 // Update updates a Certificate.
-func (mock *FakeCertificate) Update(svc *aci.Certificate) (*aci.Certificate, error) {
+func (mock *FakeBackup) Update(svc *aci.Backup) (*aci.Backup, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewUpdateAction(certResource, mock.ns, svc), &aci.Certificate{})
+		Invokes(testing.NewUpdateAction(certResource, mock.ns, svc), &aci.Backup{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*aci.Certificate), err
+	return obj.(*aci.Backup), err
 }
 
 // Delete deletes a Certificate by name.
-func (mock *FakeCertificate) Delete(name string, _ *api.DeleteOptions) error {
+func (mock *FakeBackup) Delete(name string, _ *api.DeleteOptions) error {
 	_, err := mock.Fake.
-		Invokes(testing.NewDeleteAction(certResource, mock.ns, name), &aci.Certificate{})
+		Invokes(testing.NewDeleteAction(certResource, mock.ns, name), &aci.Backup{})
 
 	return err
 }
 
-func (mock *FakeCertificate) UpdateStatus(srv *aci.Certificate) (*aci.Certificate, error) {
+func (mock *FakeBackup) UpdateStatus(srv *aci.Backup) (*aci.Backup, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(certResource, "status", mock.ns, srv), &aci.Certificate{})
+		Invokes(testing.NewUpdateSubresourceAction(certResource, "status", mock.ns, srv), &aci.Backup{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*aci.Certificate), err
+	return obj.(*aci.Backup), err
 }
 
-func (mock *FakeCertificate) Watch(opts api.ListOptions) (watch.Interface, error) {
+func (mock *FakeBackup) Watch(opts api.ListOptions) (watch.Interface, error) {
 	return mock.Fake.
 		InvokesWatch(testing.NewWatchAction(certResource, mock.ns, opts))
 }

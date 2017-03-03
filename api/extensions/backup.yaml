@@ -1,0 +1,7 @@
+apiVersion: extensions/v1beta1
+kind: ThirdPartyResource
+metadata:
+  name: backup.appscode.com
+description: "A  backup support for kubernetes objects by appscode.com"
+versions:
+  - name: v1beta1

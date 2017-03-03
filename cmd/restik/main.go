@@ -40,6 +40,6 @@ func main() {
 	defer runtime.HandleCrash()
 
 	w := pkg.New(config)
-	fmt.Println("Starting tillerc...")
+	fmt.Println("Starting backup controller...")
 	w.RunAndHold()
 }

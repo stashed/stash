@@ -7,14 +7,14 @@ import (
 	"k8s.io/kubernetes/pkg/api/unversioned"
 )
 
-type Certificate struct {
+type Backup struct {
 	unversioned.TypeMeta `json:",inline,omitempty"`
 	api.ObjectMeta       `json:"metadata,omitempty"`
-	Spec                 CertificateSpec   `json:"spec,omitempty"`
-	Status               CertificateStatus `json:"status,omitempty"`
+	Spec                 BackupSpec   `json:"spec,omitempty"`
+	Status               BackupStatus `json:"status,omitempty"`
 }
 
-type CertificateSpec struct {
+type BackupSpec struct {
 	// Tries to obtain a single certificate using all domains passed into Domains.
 	// The first domain in domains is used for the CommonName field of the certificate, all other
 	// domains are added using the Subject Alternate Names extension.
@@ -39,12 +39,12 @@ type CertificateSpec struct {
 	ACMEServerURL string `json:"acmeStagingURL"`
 }
 
-type CertificateStatus struct {
-	CertificateObtained bool                   `json:"certificateObtained"`
-	Message             string                 `json:"message"`
-	Created             time.Time              `json:"created,omitempty"`
-	ACMEUserSecretName  string                 `json:"acmeUserSecretName,omitempty"`
-	Details             ACMECertificateDetails `json:"details,omitempty"`
+type BackupStatus struct {
+	BackupObtained     bool                   `json:"certificateObtained"`
+	Message            string                 `json:"message"`
+	Created            time.Time              `json:"created,omitempty"`
+	ACMEUserSecretName string                 `json:"acmeUserSecretName,omitempty"`
+	Details            ACMECertificateDetails `json:"details,omitempty"`
 }
 
 type ACMECertificateDetails struct {
@@ -54,8 +54,8 @@ type ACMECertificateDetails struct {
 	AccountRef    string `json:"accountRef,omitempty"`
 }
 
-type CertificateList struct {
+type BackupList struct {
 	unversioned.TypeMeta `json:",inline"`
 	unversioned.ListMeta `json:"metadata,omitempty"`
-	Items                []Certificate `json:"items,omitempty"`
+	Items                []Backup `json:"items,omitempty"`
 }
