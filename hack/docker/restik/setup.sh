@@ -8,7 +8,7 @@ GOPATH=$(go env GOPATH)
 SRC=$GOPATH/src
 BIN=$GOPATH/bin
 ROOT=$GOPATH
-REPO_ROOT=$GOPATH/src/github.com/appscode/restik
+REPO_ROOT=$REPO_ROOT
 
 source "$REPO_ROOT/hack/libbuild/common/lib.sh"
 source "$REPO_ROOT/hack/libbuild/common/public_image.sh"
@@ -23,13 +23,13 @@ if [ -f "$DIST/.tag" ]; then
 fi
 
 clean() {
-    pushd $GOPATH/src/github.com/appscode/restik/hack/docker/restik
+    pushd $REPO_ROOT/hack/docker/restik
     rm restik Dockerfile
     popd
 }
 
 build_binary() {
-    pushd $GOPATH/src/github.com/appscode/restik
+    pushd $REPO_ROOT
     ./hack/builddeps.sh
     ./hack/make.py build restik
     detect_tag $DIST/.tag
@@ -37,7 +37,7 @@ build_binary() {
 }
 
 build_docker() {
-    pushd $GOPATH/src/github.com/appscode/restik/hack/docker/restik
+    pushd $REPO_ROOT/hack/docker/restik
     cp $DIST/restik/restik-linux-amd64 restik
     chmod 755 restik
 
