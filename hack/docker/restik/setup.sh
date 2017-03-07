@@ -7,8 +7,7 @@ set -o pipefail
 GOPATH=$(go env GOPATH)
 SRC=$GOPATH/src
 BIN=$GOPATH/bin
-ROOT=$GOPATH
-REPO_ROOT=$REPO_ROOT
+REPO_ROOT=$GOPATH/src/github.com/appscode/restik
 
 source "$REPO_ROOT/hack/libbuild/common/lib.sh"
 source "$REPO_ROOT/hack/libbuild/common/public_image.sh"
