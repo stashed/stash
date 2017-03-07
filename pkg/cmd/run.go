@@ -30,7 +30,7 @@ func NewCmdRun() *cobra.Command {
 			defer runtime.HandleCrash()
 
 			w := controller.New(config)
-			fmt.Println("Starting tillerc...")
+			fmt.Println("Starting restik backup...")
 			w.RunAndHold()
 		},
 	}

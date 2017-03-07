@@ -3,6 +3,7 @@ package controller
 import (
 	"errors"
 	"fmt"
+	"log"
 	"reflect"
 	"time"
 
@@ -129,9 +130,11 @@ func (pl *Controller) updateObjectAndBackup(b *rapi.Backup) error {
 		deleteOpts := &api.DeleteOptions{}
 		err = kubeClient.Core().Pods(b.Namespace).Delete(pod.Name, deleteOpts)
 		if err != nil {
-			fmt.Sprint("Failed to restart pod %s cause %v", pod.Name, err)
+			errMessage := fmt.Sprint("Failed to restart pod %s cause %v", pod.Name, err)
+			log.Println(errMessage)
 		}
 	}
+
 	return nil
 }
 
@@ -141,6 +144,28 @@ func getRestikContainer(b *rapi.Backup) api.Container {
 		Image:           Image,
 		ImagePullPolicy: api.PullAlways,
 	}
+	env := api.EnvVar{
+		Name:  "BACKUP_CRON",
+		Value: b.Spec.Schedule,
+	}
+	container.Env = append(container.Env, env)
+	env = api.EnvVar{
+		Name:  "RESTIC_REPOSITORY",
+		Value: RestickMountPath,
+	}
+	container.Env = append(container.Env, env)
+	env = api.EnvVar{
+		Name:  "SOURCE_PATH",
+		Value: b.Spec.Source.Path,
+	}
+	container.Env = append(container.Env, env)
+
+	env = api.EnvVar{
+		Name:  "RESTIC_PASSWORD",
+		Value: "123",
+	}
+	container.Env = append(container.Env, env)
+
 	backupVolumeMount := api.VolumeMount{
 		Name:      VolumeName,
 		MountPath: RestickMountPath,

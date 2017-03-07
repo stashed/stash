@@ -1,0 +1,15 @@
+apiVersion: appscode.com/v1beta1
+kind: Backup
+metadata:
+  name: saumanbackup
+  namespace: default
+spec:
+  backupSource:
+    volumeName: "test-volume"
+    path: /mypath
+  destination:
+    awsElasticBlockStore:
+      fsType: ext4
+      volumeID: vol-0870e25721a66a163
+    name: restik-volume
+  schedule: "* * * * * *"

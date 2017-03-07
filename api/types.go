@@ -31,7 +31,7 @@ type BackupSpec struct {
 	// Destination of the backup
 	Destination api.Volume `json:"destination"`
 	// How frequently backup command will be run
-	Schedule int64 `json:"schedule"`
+	Schedule string `json:"schedule"`
 	//  Some policy based garbage collection of old snapshots
 	GarbageCollection string `json:"garbageCollection,omitempty"`
 }

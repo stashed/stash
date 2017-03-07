@@ -5,11 +5,11 @@ import (
 )
 
 const (
-	BackupConfig     = "config"
+	BackupConfig     = "backup.appscode.com/config"
 	ContainerName    = "restikbackup"
 	RestickMountPath = "/restik"
 	VolumeName       = "restik-volume"
-	Image            = "sauman/restik:backup_controller"
+	Image            = "sauman/restik:0.0.7"
 )
 
 type backupServer struct {
