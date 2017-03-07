@@ -7,7 +7,6 @@ set -o pipefail
 GOPATH=$(go env GOPATH)
 SRC=$GOPATH/src
 BIN=$GOPATH/bin
-ROOT=$GOPATH
 REPO_ROOT=$GOPATH/src/github.com/appscode/restik
 
 source "$REPO_ROOT/hack/libbuild/common/lib.sh"
@@ -16,20 +15,20 @@ source "$REPO_ROOT/hack/libbuild/common/public_image.sh"
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
 IMG=restik
 
-DIST=$GOPATH/src/github.com/appscode/restik/dist
+DIST=$REPO_ROOT/dist
 mkdir -p $DIST
 if [ -f "$DIST/.tag" ]; then
 	export $(cat $DIST/.tag | xargs)
 fi
 
 clean() {
-    pushd $GOPATH/src/github.com/appscode/restik/hack/docker
+    pushd $REPO_ROOT/hack/docker/restik
     rm restik Dockerfile
     popd
 }
 
 build_binary() {
-    pushd $GOPATH/src/github.com/appscode/restik
+    pushd $REPO_ROOT
     ./hack/builddeps.sh
     ./hack/make.py build restik
     detect_tag $DIST/.tag
@@ -37,7 +36,7 @@ build_binary() {
 }
 
 build_docker() {
-    pushd $GOPATH/src/github.com/appscode/restik/hack/docker
+    pushd $REPO_ROOT/hack/docker/restik
     cp $DIST/restik/restik-linux-amd64 restik
     chmod 755 restik
 
