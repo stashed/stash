@@ -1,0 +1,6 @@
+TAG=docker
+TAG_STRATEGY=git_branch
+git_tag=
+git_branch=docker
+commit_hash=1d3b939c9e18852cffadc80b89727c5566e8b1b1
+commit_timestamp=1488839690

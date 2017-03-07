@@ -16,14 +16,14 @@ source "$REPO_ROOT/hack/libbuild/common/public_image.sh"
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
 IMG=restik
 
-DIST=$GOPATH/src/github.com/appscode/restik/dist
+DIST=$REPO_ROOT/dist
 mkdir -p $DIST
 if [ -f "$DIST/.tag" ]; then
 	export $(cat $DIST/.tag | xargs)
 fi
 
 clean() {
-    pushd $GOPATH/src/github.com/appscode/restik/hack/docker
+    pushd $GOPATH/src/github.com/appscode/restik/hack/docker/restik
     rm restik Dockerfile
     popd
 }
@@ -37,7 +37,7 @@ build_binary() {
 }
 
 build_docker() {
-    pushd $GOPATH/src/github.com/appscode/restik/hack/docker
+    pushd $GOPATH/src/github.com/appscode/restik/hack/docker/restik
     cp $DIST/restik/restik-linux-amd64 restik
     chmod 755 restik
 
