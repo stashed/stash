@@ -14,6 +14,7 @@ source "$REPO_ROOT/hack/libbuild/common/public_image.sh"
 
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
 IMG=restik
+RESTIC_VER=0.4.0
 
 DIST=$REPO_ROOT/dist
 mkdir -p $DIST
@@ -22,8 +23,8 @@ if [ -f "$DIST/.tag" ]; then
 fi
 
 clean() {
-    pushd $REPO_ROOT/hack/docker/restik
-    rm restik Dockerfile
+    pushd $REPO_ROOT/hack/docker
+    rm -rf restic restik Dockerfile
     popd
 }
 
@@ -36,13 +37,22 @@ build_binary() {
 }
 
 build_docker() {
-    pushd $REPO_ROOT/hack/docker/restik
+    pushd $REPO_ROOT/hack/docker
+
+    # Download restic
     cp $DIST/restik/restik-linux-amd64 restik
     chmod 755 restik
+
+    # Download restic
+    wget https://github.com/restic/restic/releases/download/v${RESTIC_VER}/restic_${RESTIC_VER}_linux_amd64.bz2
+    bzip2 -d restic_${RESTIC_VER}_linux_amd64.bz2
+    mv restic_${RESTIC_VER}_linux_amd64 restic
+    chmod +x restic
 
     cat >Dockerfile <<EOL
 FROM alpine
 
+COPY restic /restic
 COPY restik /restik
 
 USER nobody:nobody
@@ -67,7 +77,7 @@ docker_push() {
     fi
 
     if [[ "$(docker images -q appscode/$IMG:$TAG 2> /dev/null)" != "" ]]; then
-        docker_up $IMG:$TAG
+        docker push appscode/$IMG:$TAG
     fi
 }
 
