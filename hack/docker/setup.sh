@@ -7,7 +7,6 @@ set -o pipefail
 GOPATH=$(go env GOPATH)
 SRC=$GOPATH/src
 BIN=$GOPATH/bin
-ROOT=$GOPATH
 REPO_ROOT=$GOPATH/src/github.com/appscode/restik
 
 source "$REPO_ROOT/hack/libbuild/common/lib.sh"
@@ -15,21 +14,22 @@ source "$REPO_ROOT/hack/libbuild/common/public_image.sh"
 
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
 IMG=restik
+RESTIC_VER=0.4.0
 
-DIST=$GOPATH/src/github.com/appscode/restik/dist
+DIST=$REPO_ROOT/dist
 mkdir -p $DIST
 if [ -f "$DIST/.tag" ]; then
 	export $(cat $DIST/.tag | xargs)
 fi
 
 clean() {
-    pushd $GOPATH/src/github.com/appscode/restik/hack/docker
-    rm restik Dockerfile
+    pushd $REPO_ROOT/hack/docker
+    rm -rf restic restik Dockerfile
     popd
 }
 
 build_binary() {
-    pushd $GOPATH/src/github.com/appscode/restik
+    pushd $REPO_ROOT
     ./hack/builddeps.sh
     ./hack/make.py build restik
     detect_tag $DIST/.tag
@@ -37,13 +37,22 @@ build_binary() {
 }
 
 build_docker() {
-    pushd $GOPATH/src/github.com/appscode/restik/hack/docker
+    pushd $REPO_ROOT/hack/docker
+
+    # Download restic
     cp $DIST/restik/restik-linux-amd64 restik
     chmod 755 restik
+
+    # Download restic
+    wget https://github.com/restic/restic/releases/download/v${RESTIC_VER}/restic_${RESTIC_VER}_linux_amd64.bz2
+    bzip2 -d restic_${RESTIC_VER}_linux_amd64.bz2
+    mv restic_${RESTIC_VER}_linux_amd64 restic
+    chmod +x restic
 
     cat >Dockerfile <<EOL
 FROM alpine
 
+COPY restic /restic
 COPY restik /restik
 
 USER nobody:nobody
@@ -64,11 +73,14 @@ build() {
 docker_push() {
     if [ "$APPSCODE_ENV" = "prod" ]; then
         echo "Nothing to do in prod env. Are you trying to 'release' binaries to prod?"
-        exit 0
+        exit 1
     fi
-
+    if [ "$TAG_STRATEGY" = "git_tag" ]; then
+        echo "Are you trying to 'release' binaries to prod?"
+        exit 1
+    fi
     if [[ "$(docker images -q appscode/$IMG:$TAG 2> /dev/null)" != "" ]]; then
-        docker_up $IMG:$TAG
+        docker push appscode/$IMG:$TAG
     fi
 }
 
