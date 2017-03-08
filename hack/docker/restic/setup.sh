@@ -22,6 +22,7 @@ build() {
 	wget https://github.com/restic/restic/releases/download/v${RESTIC_VER}/restic_${RESTIC_VER}_linux_amd64.bz2
 	bzip2 -d restic_${RESTIC_VER}_linux_amd64.bz2
 	mv restic_${RESTIC_VER}_linux_amd64 restic
+	chmod +x restic
 
 	# Download restik
 	wget -O restik https://cdn.appscode.com/binaries/restik/$TAG/restik-linux-amd64
