@@ -2,5 +2,5 @@ TAG=backup_controller
 TAG_STRATEGY=git_branch
 git_tag=
 git_branch=backup_controller
-commit_hash=7ae8777bfcf97546ef90437d26bd499251c995d3
-commit_timestamp=1488548827
+commit_hash=95426fff057f925d61a401555f263a2167a5dbfe
+commit_timestamp=1488950665

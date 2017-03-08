@@ -9,7 +9,11 @@ const (
 	ContainerName    = "restikbackup"
 	RestickMountPath = "/restik"
 	VolumeName       = "restik-volume"
-	Image            = "sauman/restik:0.0.7"
+	Image            = "appscode/restik:backup_controller"
+	RESTICREPOSITORY = "RESTIC_REPOSITORY"
+	BACKUPCRON       = "BACKUP_CRON"
+	SOURCEPATH       = "SOURCE_PATH"
+	RESTICPASSWORD   = "RESTIC_PASSWORD"
 )
 
 type backupServer struct {

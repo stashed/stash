@@ -1,37 +1,23 @@
-package cmd
+package backup
 
 import (
-	"fmt"
-	"time"
-
 	_ "github.com/appscode/restik/api/install"
 	"github.com/appscode/restik/pkg/controller"
 	"github.com/spf13/cobra"
-	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
-	"k8s.io/kubernetes/pkg/util/runtime"
 )
 
-func NewCmdRun() *cobra.Command {
+func NewCmdBackup() *cobra.Command {
 	var (
 		masterURL      string
 		kubeconfigPath string
 	)
 
 	cmd := &cobra.Command{
-		Use:   "run",
-		Short: "Run restic operator",
+		Use:   "backup",
+		Short: "",
 		Run: func(cmd *cobra.Command, args []string) {
-			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
-			if err != nil {
-				fmt.Printf("Could not get kubernetes config: %s", err)
-				time.Sleep(30 * time.Minute)
-				panic(err)
-			}
-			defer runtime.HandleCrash()
 
-			w := controller.New(config)
-			fmt.Println("Starting restik controller...")
-			w.RunAndHold()
+			controller.RunBackup()
 		},
 	}
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")

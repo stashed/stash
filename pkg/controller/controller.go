@@ -4,16 +4,21 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os/exec"
 	"reflect"
 	"time"
+
+	"os"
+	"path/filepath"
 
 	rapi "github.com/appscode/restik/api"
 	tcs "github.com/appscode/restik/client/clientset"
 	"github.com/golang/glog"
+	"gopkg.in/robfig/cron.v2"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/client/cache"
+	"k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	rest "k8s.io/kubernetes/pkg/client/restclient"
-	//"k8s.io/kubernetes/pkg/fields"
 	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 	"k8s.io/kubernetes/pkg/labels"
 	"k8s.io/kubernetes/pkg/runtime"
@@ -78,6 +83,35 @@ func (w *Controller) RunAndHold() {
 	controller.Run(wait.NeverStop)
 }
 
+func RunBackup() {
+	repo := os.Getenv(RESTICREPOSITORY)
+	fmt.Println(">>>>>>>>>>>>>>>>>>>>.", repo)
+	_, err := os.Stat(filepath.Join(repo, "config"))
+	if os.IsNotExist(err) {
+		s, err := exec.Command("/restic", "init").Output()
+		if err != nil {
+			log.Println("RESTIC repository not created cause", err)
+			fmt.Println(string(s))
+			return
+		}
+	}
+	interval := os.Getenv(BACKUPCRON)
+	source := os.Getenv(SOURCEPATH)
+	c := cron.New()
+	c.Start()
+	c.AddFunc(interval, func() {
+		fmt.Println(source)
+		fmt.Println("BACKUP...")
+		err := exec.Command("/restic", "backup", source).Run()
+		if err != nil {
+			log.Println(err)
+		}
+	})
+	for {
+
+	}
+}
+
 func (pl *Controller) doStuff(release *rapi.Backup) {
 
 }
@@ -98,8 +132,7 @@ func (pl *Controller) updateObjectAndBackup(b *rapi.Backup) error {
 		LabelSelector: ls,
 	}
 	//fmt.Println(fieldSelector)
-	fmt.Println(b.Namespace)
-	//TODO make work on different objects
+	restikContainer := getRestikContainer(b)
 	rcs, err := kubeClient.Core().ReplicationControllers(b.Namespace).List(opts)
 	if err != nil {
 		return err
@@ -108,7 +141,6 @@ func (pl *Controller) updateObjectAndBackup(b *rapi.Backup) error {
 		return errors.New("No RC found")
 	}
 	rc := rcs.Items[0]
-	restikContainer := getRestikContainer(b)
 	rc.Spec.Template.Spec.Containers = append(rc.Spec.Template.Spec.Containers, restikContainer)
 	rc.Spec.Template.Spec.Volumes = append(rc.Spec.Template.Spec.Volumes, b.Spec.Destination)
 	newRC, err := kubeClient.Core().ReplicationControllers(b.Namespace).Update(&rc)
@@ -122,20 +154,8 @@ func (pl *Controller) updateObjectAndBackup(b *rapi.Backup) error {
 	opts = api.ListOptions{
 		LabelSelector: selectors,
 	}
-	pods, err := kubeClient.Core().Pods(b.Namespace).List(opts)
-	if err != nil {
-		return err
-	}
-	for _, pod := range pods.Items {
-		deleteOpts := &api.DeleteOptions{}
-		err = kubeClient.Core().Pods(b.Namespace).Delete(pod.Name, deleteOpts)
-		if err != nil {
-			errMessage := fmt.Sprint("Failed to restart pod %s cause %v", pod.Name, err)
-			log.Println(errMessage)
-		}
-	}
-
-	return nil
+	err = restartPods(kubeClient, b.Namespace, opts)
+	return err
 }
 
 func getRestikContainer(b *rapi.Backup) api.Container {
@@ -144,28 +164,29 @@ func getRestikContainer(b *rapi.Backup) api.Container {
 		Image:           Image,
 		ImagePullPolicy: api.PullAlways,
 	}
-	env := api.EnvVar{
-		Name:  "BACKUP_CRON",
-		Value: b.Spec.Schedule,
+	env := []api.EnvVar{
+		{
+			Name:  BACKUPCRON,
+			Value: b.Spec.Schedule,
+		},
+		{
+			Name:  RESTICREPOSITORY,
+			Value: RestickMountPath,
+		},
+		{
+			Name:  SOURCEPATH,
+			Value: b.Spec.Source.Path,
+		},
+		{
+			Name:  RESTICPASSWORD,
+			Value: "123", //TODO
+		},
 	}
-	container.Env = append(container.Env, env)
-	env = api.EnvVar{
-		Name:  "RESTIC_REPOSITORY",
-		Value: RestickMountPath,
+	for _, e := range env {
+		container.Env = append(container.Env, e)
 	}
-	container.Env = append(container.Env, env)
-	env = api.EnvVar{
-		Name:  "SOURCE_PATH",
-		Value: b.Spec.Source.Path,
-	}
-	container.Env = append(container.Env, env)
-
-	env = api.EnvVar{
-		Name:  "RESTIC_PASSWORD",
-		Value: "123",
-	}
-	container.Env = append(container.Env, env)
-
+	container.Command = append(container.Command, "/restik-linux-amd64")
+	container.Args = append(container.Args, "backup")
 	backupVolumeMount := api.VolumeMount{
 		Name:      VolumeName,
 		MountPath: RestickMountPath,
@@ -184,4 +205,20 @@ func getSelectors(newRC *api.ReplicationController) labels.Selector {
 	set := labels.Set(lb)
 	selectores := labels.SelectorFromSet(set)
 	return selectores
+}
+
+func restartPods(kubeClient *internalclientset.Clientset, namespace string, opts api.ListOptions) error {
+	pods, err := kubeClient.Core().Pods(namespace).List(opts)
+	if err != nil {
+		return err
+	}
+	for _, pod := range pods.Items {
+		deleteOpts := &api.DeleteOptions{}
+		err = kubeClient.Core().Pods(namespace).Delete(pod.Name, deleteOpts)
+		if err != nil {
+			errMessage := fmt.Sprint("Failed to restart pod %s cause %v", pod.Name, err)
+			log.Println(errMessage)
+		}
+	}
+	return nil
 }
