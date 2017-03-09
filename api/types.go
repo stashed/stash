@@ -29,7 +29,7 @@ type BackupSpec struct {
 	// Source of the backup volumename:path
 	Source backupSource `json:"backupSource"`
 	// Destination of the backup
-	Destination api.Volume `json:"destination"`
+	Destination backupDestination `json:"destination"`
 	// How frequently backup command will be run
 	Schedule string `json:"schedule"`
 	//  Some policy based garbage collection of old snapshots
@@ -53,4 +53,9 @@ type BackupList struct {
 type backupSource struct {
 	VolumeName string `json:"volumeName"`
 	Path       string `json:"path"`
+}
+
+type backupDestination struct {
+	Volume api.Volume `json:"volume"`
+	Path   string     `json:"path"`
 }

@@ -7,9 +7,8 @@ import (
 const (
 	BackupConfig     = "backup.appscode.com/config"
 	ContainerName    = "restikbackup"
-	RestickMountPath = "/restik"
 	VolumeName       = "restik-volume"
-	Image            = "appscode/restik:backup_controller"
+	Image            = "sauman/restik:test"
 	RESTICREPOSITORY = "RESTIC_REPOSITORY"
 	BACKUPCRON       = "BACKUP_CRON"
 	SOURCEPATH       = "SOURCE_PATH"

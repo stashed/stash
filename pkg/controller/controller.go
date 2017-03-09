@@ -1,21 +1,21 @@
 package controller
 
 import (
-	"errors"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"reflect"
 	"time"
 
-	"os"
-	"path/filepath"
-
 	rapi "github.com/appscode/restik/api"
 	tcs "github.com/appscode/restik/client/clientset"
+	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
 	"gopkg.in/robfig/cron.v2"
 	"k8s.io/kubernetes/pkg/api"
+	"k8s.io/kubernetes/pkg/apis/extensions"
 	"k8s.io/kubernetes/pkg/client/cache"
 	"k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	rest "k8s.io/kubernetes/pkg/client/restclient"
@@ -55,14 +55,17 @@ func (w *Controller) RunAndHold() {
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				glog.Infoln("Got one added bacup obejct", obj.(*rapi.Backup))
-				err := w.updateObjectAndBackup(obj.(*rapi.Backup))
+				err := w.updateObjectAndStartBackup(obj.(*rapi.Backup))
 				if err != nil {
-					fmt.Println(err)
+					log.Println(err)
 				}
 			},
 			DeleteFunc: func(obj interface{}) {
 				glog.Infoln("Got one deleted backu object", obj.(*rapi.Backup))
-				w.doStuff(obj.(*rapi.Backup))
+				err := w.updateObjectAndStopBackup(obj.(*rapi.Backup))
+				if err != nil {
+					log.Println(err)
+				}
 			},
 			UpdateFunc: func(old, new interface{}) {
 				oldObj, ok := old.(*rapi.Backup)
@@ -85,13 +88,11 @@ func (w *Controller) RunAndHold() {
 
 func RunBackup() {
 	repo := os.Getenv(RESTICREPOSITORY)
-	fmt.Println(">>>>>>>>>>>>>>>>>>>>.", repo)
 	_, err := os.Stat(filepath.Join(repo, "config"))
 	if os.IsNotExist(err) {
-		s, err := exec.Command("/restic", "init").Output()
+		err := exec.Command("restic", "init").Run()
 		if err != nil {
 			log.Println("RESTIC repository not created cause", err)
-			fmt.Println(string(s))
 			return
 		}
 	}
@@ -100,62 +101,16 @@ func RunBackup() {
 	c := cron.New()
 	c.Start()
 	c.AddFunc(interval, func() {
-		fmt.Println(source)
-		fmt.Println("BACKUP...")
 		err := exec.Command("/restic", "backup", source).Run()
 		if err != nil {
 			log.Println(err)
 		}
 	})
-	for {
-
-	}
+	wait.Until(func() {}, time.Second, wait.NeverStop)
 }
 
 func (pl *Controller) doStuff(release *rapi.Backup) {
 
-}
-
-func (pl *Controller) updateObjectAndBackup(b *rapi.Backup) error {
-	factory := cmdutil.NewFactory(nil)
-	kubeClient, err := factory.ClientSet()
-	if err != nil {
-		return err
-	}
-	set := labels.Set{
-		BackupConfig: b.Name,
-	}
-	///*fieldSelector*/ fields.SelectorFromSet(set)
-	ls := labels.SelectorFromSet(set)
-	opts := api.ListOptions{
-		//FieldSelector: fieldSelector,
-		LabelSelector: ls,
-	}
-	//fmt.Println(fieldSelector)
-	restikContainer := getRestikContainer(b)
-	rcs, err := kubeClient.Core().ReplicationControllers(b.Namespace).List(opts)
-	if err != nil {
-		return err
-	}
-	if len(rcs.Items) == 0 {
-		return errors.New("No RC found")
-	}
-	rc := rcs.Items[0]
-	rc.Spec.Template.Spec.Containers = append(rc.Spec.Template.Spec.Containers, restikContainer)
-	rc.Spec.Template.Spec.Volumes = append(rc.Spec.Template.Spec.Volumes, b.Spec.Destination)
-	newRC, err := kubeClient.Core().ReplicationControllers(b.Namespace).Update(&rc)
-	if err != nil {
-		return err
-	}
-	selectors := getSelectors(newRC)
-	if err != nil {
-		return err
-	}
-	opts = api.ListOptions{
-		LabelSelector: selectors,
-	}
-	err = restartPods(kubeClient, b.Namespace, opts)
-	return err
 }
 
 func getRestikContainer(b *rapi.Backup) api.Container {
@@ -171,7 +126,7 @@ func getRestikContainer(b *rapi.Backup) api.Container {
 		},
 		{
 			Name:  RESTICREPOSITORY,
-			Value: RestickMountPath,
+			Value: b.Spec.Destination.Path,
 		},
 		{
 			Name:  SOURCEPATH,
@@ -185,11 +140,11 @@ func getRestikContainer(b *rapi.Backup) api.Container {
 	for _, e := range env {
 		container.Env = append(container.Env, e)
 	}
-	container.Command = append(container.Command, "/restik-linux-amd64")
-	container.Args = append(container.Args, "backup")
+	container.Args = append(container.Args, "watch")
+	container.Args = append(container.Args, "--v=10")
 	backupVolumeMount := api.VolumeMount{
 		Name:      VolumeName,
-		MountPath: RestickMountPath,
+		MountPath: b.Spec.Destination.Path,
 	}
 	sourceVolumeMount := api.VolumeMount{
 		Name:      b.Spec.Source.VolumeName,
@@ -198,13 +153,6 @@ func getRestikContainer(b *rapi.Backup) api.Container {
 	container.VolumeMounts = append(container.VolumeMounts, backupVolumeMount)
 	container.VolumeMounts = append(container.VolumeMounts, sourceVolumeMount)
 	return container
-}
-
-func getSelectors(newRC *api.ReplicationController) labels.Selector {
-	lb := newRC.Spec.Template.Labels
-	set := labels.Set(lb)
-	selectores := labels.SelectorFromSet(set)
-	return selectores
 }
 
 func restartPods(kubeClient *internalclientset.Clientset, namespace string, opts api.ListOptions) error {
@@ -221,4 +169,165 @@ func restartPods(kubeClient *internalclientset.Clientset, namespace string, opts
 		}
 	}
 	return nil
+}
+
+func getKubeObject(kubeClient *internalclientset.Clientset, destination api.Volume, namespace string, ls labels.Selector, restikContainer api.Container) map[string]interface{} {
+	uslist := &runtime.UnstructuredList{}
+	err := kubeClient.Core().RESTClient().Get().Resource("replicationcontrollers").Namespace(namespace).LabelsSelectorParam(ls).Do().Into(uslist)
+	if err == nil && len(uslist.Items) != 0 {
+		return uslist.Items[0].Object
+	}
+
+	err = kubeClient.Extensions().RESTClient().Get().Resource("replicasets").Namespace(namespace).LabelsSelectorParam(ls).Do().Into(uslist)
+	if err == nil && len(uslist.Items) != 0 {
+		return uslist.Items[0].Object
+	}
+
+	err = kubeClient.Extensions().RESTClient().Get().Resource("deployments").Namespace(namespace).LabelsSelectorParam(ls).Do().Into(uslist)
+	if err == nil && len(uslist.Items) != 0 {
+		return uslist.Items[0].Object
+	}
+
+	err = kubeClient.Extensions().RESTClient().Get().Resource("daemonsets").Namespace(namespace).LabelsSelectorParam(ls).Do().Into(uslist)
+	if err == nil && len(uslist.Items) != 0 {
+		return uslist.Items[0].Object
+	}
+
+	err = kubeClient.Apps().RESTClient().Get().Resource("statefulsets").Namespace(namespace).LabelsSelectorParam(ls).Do().Into(uslist)
+	if err == nil && len(uslist.Items) != 0 {
+		return uslist.Items[0].Object
+	}
+	return nil
+}
+
+func findSelectors(lb map[string]string) labels.Selector {
+	set := labels.Set(lb)
+	selectores := labels.SelectorFromSet(set)
+	return selectores
+}
+
+func (pl *Controller) updateObjectAndStartBackup(b *rapi.Backup) error {
+	factory := cmdutil.NewFactory(nil)
+	kubeClient, err := factory.ClientSet()
+	if err != nil {
+		return err
+	}
+	set := labels.Set{
+		BackupConfig: b.Name,
+	}
+	ls := labels.SelectorFromSet(set)
+	restikContainer := getRestikContainer(b)
+	object := getKubeObject(kubeClient, b.Spec.Destination.Volume, b.Namespace, ls, restikContainer)
+	ob, err := yaml.Marshal(object)
+	if err != nil {
+		return err
+	}
+	_type, ok := object["kind"].(string)
+	if !ok {
+		return nil
+	}
+	opts := api.ListOptions{}
+	switch _type {
+	case "ReplicationController":
+		rc := &api.ReplicationController{}
+		if err := yaml.Unmarshal(ob, rc); err != nil {
+			return err
+		}
+		rc.Spec.Template.Spec.Containers = append(rc.Spec.Template.Spec.Containers, restikContainer)
+		rc.Spec.Template.Spec.Volumes = append(rc.Spec.Template.Spec.Volumes, b.Spec.Destination.Volume)
+		newRC, err := kubeClient.Core().ReplicationControllers(b.Namespace).Update(rc)
+		if err != nil {
+			return err
+		}
+		opts.LabelSelector = findSelectors(newRC.Spec.Template.Labels)
+
+	case "ReplicaSet":
+		replicaset := &extensions.ReplicaSet{}
+		if err := yaml.Unmarshal(ob, replicaset); err != nil {
+			return err
+		}
+		replicaset.Spec.Template.Spec.Containers = append(replicaset.Spec.Template.Spec.Containers, restikContainer)
+		replicaset.Spec.Template.Spec.Volumes = append(replicaset.Spec.Template.Spec.Volumes, b.Spec.Destination.Volume)
+		newRC, err := kubeClient.Extensions().ReplicaSets(b.Namespace).Update(replicaset)
+		if err != nil {
+			return err
+		}
+		opts.LabelSelector = findSelectors(newRC.Spec.Template.Labels)
+	}
+	//TODO add other objects
+	err = restartPods(kubeClient, b.Namespace, opts)
+	return err
+}
+
+func (pl *Controller) updateObjectAndStopBackup(b *rapi.Backup) error {
+	factory := cmdutil.NewFactory(nil)
+	kubeClient, err := factory.ClientSet()
+	if err != nil {
+		return err
+	}
+	set := labels.Set{
+		BackupConfig: b.Name,
+	}
+	ls := labels.SelectorFromSet(set)
+	restikContainer := getRestikContainer(b)
+	object := getKubeObject(kubeClient, b.Spec.Destination.Volume, b.Namespace, ls, restikContainer)
+	ob, err := yaml.Marshal(object)
+	if err != nil {
+		return err
+	}
+	_type, ok := object["kind"].(string)
+	if !ok {
+		return nil
+	}
+	opts := api.ListOptions{}
+	switch _type {
+	case "ReplicationController":
+		rc := &api.ReplicationController{}
+		if err := yaml.Unmarshal(ob, rc); err != nil {
+			return err
+		}
+		rc.Spec.Template.Spec.Containers = removeContainer(rc.Spec.Template.Spec.Containers, ContainerName)
+		rc.Spec.Template.Spec.Volumes = removeVolume(rc.Spec.Template.Spec.Volumes, b.Spec.Destination.Volume.Name)
+		newRC, err := kubeClient.Core().ReplicationControllers(b.Namespace).Update(rc)
+		if err != nil {
+			return err
+		}
+		opts.LabelSelector = findSelectors(newRC.Spec.Template.Labels)
+
+	case "ReplicaSet":
+		replicaset := &extensions.ReplicaSet{}
+		if err := yaml.Unmarshal(ob, replicaset); err != nil {
+			return err
+		}
+		replicaset.Spec.Template.Spec.Containers = removeContainer(replicaset.Spec.Template.Spec.Containers, ContainerName)
+		replicaset.Spec.Template.Spec.Volumes = removeVolume(replicaset.Spec.Template.Spec.Volumes, b.Spec.Destination.Volume.Name)
+		newRC, err := kubeClient.Extensions().ReplicaSets(b.Namespace).Update(replicaset)
+		if err != nil {
+			return err
+		}
+		opts.LabelSelector = findSelectors(newRC.Spec.Template.Labels)
+	}
+	//TODO add other objects
+	err = restartPods(kubeClient, b.Namespace, opts)
+	return err
+}
+
+func removeContainer(c []api.Container, name string) []api.Container {
+	for i, v := range c {
+		if v.Name == name {
+			c = append(c[:i], c[i+1:]...)
+			break
+		}
+	}
+	return c
+}
+
+func removeVolume(volumes []api.Volume, name string) []api.Volume {
+	for i, v := range volumes {
+		if v.Name == name {
+			volumes = append(volumes[:i], volumes[i+1:]...)
+			break
+		}
+	}
+	return volumes
 }

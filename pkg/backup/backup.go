@@ -13,10 +13,9 @@ func NewCmdBackup() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "backup",
+		Use:   "watch",
 		Short: "",
 		Run: func(cmd *cobra.Command, args []string) {
-
 			controller.RunBackup()
 		},
 	}
