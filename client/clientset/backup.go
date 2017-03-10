@@ -26,7 +26,7 @@ type BackupImpl struct {
 	ns string
 }
 
-func newBackup(c *AppsCodeExtensionsClient, namespace string) *BackupImpl {
+func newBackup(c *ExtensionsClient, namespace string) *BackupImpl {
 	return &BackupImpl{c.restClient, namespace}
 }
 

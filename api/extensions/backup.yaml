@@ -2,6 +2,6 @@ apiVersion: extensions/v1beta1
 kind: ThirdPartyResource
 metadata:
   name: backup.appscode.com
-description: "A  backup support for kubernetes objects by appscode.com"
+description: "Backup and restore support for Kubernetes persistent volumes by AppsCode"
 versions:
   - name: v1beta1

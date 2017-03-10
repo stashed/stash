@@ -7,15 +7,15 @@ import (
 	"k8s.io/kubernetes/pkg/api/unversioned"
 )
 
-type Status_Code int32
+type StatusCode int32
 
 const (
-	// Status_UNKNOWN indicates that a backup is in an uncertain state.
-	Status_UNKNOWN Status_Code = 0
-	// Status_DEPLOYED indicates that the last backup is successfull.
-	Status_Success Status_Code = 1
-	// Status_DELETED indicates that the last backup is failed.
-	Status_Failed Status_Code = 2
+	// StatusUnknown indicates that a backup is in an uncertain state.
+	StatusUnknown StatusCode = 0
+	// StatusSuccess indicates that the last backup is successfull.
+	StatusSuccess StatusCode = 1
+	// StatusFailed indicates that the last backup is failed.
+	StatusFailed StatusCode = 2
 )
 
 type Backup struct {
@@ -27,9 +27,9 @@ type Backup struct {
 
 type BackupSpec struct {
 	// Source of the backup volumename:path
-	Source backupSource `json:"backupSource"`
+	Source BackupSource `json:"backupSource"`
 	// Destination of the backup
-	Destination backupDestination `json:"destination"`
+	Destination BackupDestination `json:"destination"`
 	// How frequently backup command will be run
 	Schedule string `json:"schedule"`
 	//  Some policy based garbage collection of old snapshots
@@ -37,11 +37,12 @@ type BackupSpec struct {
 }
 
 type BackupStatus struct {
-	LastBackupStatus      Status_Code `json:"lastBackupStatus"`
-	Created               time.Time   `json:"created,omitempty"`
-	LastBackup            time.Time   `json:"lastBackup,omitempty"`
-	LastSuccessfullBackup time.Time   `json:"lastSuccessfullBackup"`
-	Message               string      `json:"message"`
+	LastBackupStatus      StatusCode `json:"lastBackupStatus"`
+	Created               time.Time  `json:"created,omitempty"`
+	LastBackup            time.Time  `json:"lastBackup,omitempty"`
+	LastSuccessfullBackup time.Time  `json:"lastSuccessfullBackup"`
+	Message               string     `json:"message"`
+	BackupCount           int64      `json:"backupCount"`
 }
 
 type BackupList struct {
@@ -50,12 +51,12 @@ type BackupList struct {
 	Items                []Backup `json:"items,omitempty"`
 }
 
-type backupSource struct {
+type BackupSource struct {
 	VolumeName string `json:"volumeName"`
 	Path       string `json:"path"`
 }
 
-type backupDestination struct {
+type BackupDestination struct {
 	Volume api.Volume `json:"volume"`
 	Path   string     `json:"path"`
 }

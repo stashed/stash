@@ -1,6 +1,0 @@
-TAG=backup_controller
-TAG_STRATEGY=git_branch
-git_tag=
-git_branch=backup_controller
-commit_hash=4d6fa71735e7e46a3863191fefadbedaedc76102
-commit_timestamp=1488984245

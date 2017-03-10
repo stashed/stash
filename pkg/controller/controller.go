@@ -30,12 +30,15 @@ type Controller struct {
 	Client tcs.ExtensionInterface
 	// sync time to sync the list.
 	SyncPeriod time.Duration
+	// image of sidecar container
+	Image string
 }
 
-func New(c *rest.Config) *Controller {
+func New(c *rest.Config, image string) *Controller {
 	return &Controller{
 		Client:     tcs.NewExtensionsForConfigOrDie(c),
 		SyncPeriod: time.Minute * 2,
+		Image:      image,
 	}
 }
 
@@ -87,17 +90,17 @@ func (w *Controller) RunAndHold() {
 }
 
 func RunBackup() {
-	repo := os.Getenv(RESTICREPOSITORY)
+	repo := os.Getenv(RESTIC_REPOSITORY)
 	_, err := os.Stat(filepath.Join(repo, "config"))
 	if os.IsNotExist(err) {
-		err := exec.Command("restic", "init").Run()
+		err := exec.Command("/restic", "init").Run()
 		if err != nil {
 			log.Println("RESTIC repository not created cause", err)
 			return
 		}
 	}
-	interval := os.Getenv(BACKUPCRON)
-	source := os.Getenv(SOURCEPATH)
+	interval := os.Getenv(BACKUP_CRON)
+	source := os.Getenv(SOURCE_PATH)
 	c := cron.New()
 	c.Start()
 	c.AddFunc(interval, func() {
@@ -113,27 +116,27 @@ func (pl *Controller) doStuff(release *rapi.Backup) {
 
 }
 
-func getRestikContainer(b *rapi.Backup) api.Container {
+func getRestikContainer(b *rapi.Backup, containerImage string) api.Container {
 	container := api.Container{
 		Name:            ContainerName,
-		Image:           Image,
+		Image:           containerImage,
 		ImagePullPolicy: api.PullAlways,
 	}
 	env := []api.EnvVar{
 		{
-			Name:  BACKUPCRON,
+			Name:  BACKUP_CRON,
 			Value: b.Spec.Schedule,
 		},
 		{
-			Name:  RESTICREPOSITORY,
+			Name:  RESTIC_REPOSITORY,
 			Value: b.Spec.Destination.Path,
 		},
 		{
-			Name:  SOURCEPATH,
+			Name:  SOURCE_PATH,
 			Value: b.Spec.Source.Path,
 		},
 		{
-			Name:  RESTICPASSWORD,
+			Name:  RESTIC_PASSWORD,
 			Value: "123", //TODO
 		},
 	}
@@ -143,7 +146,7 @@ func getRestikContainer(b *rapi.Backup) api.Container {
 	container.Args = append(container.Args, "watch")
 	container.Args = append(container.Args, "--v=10")
 	backupVolumeMount := api.VolumeMount{
-		Name:      VolumeName,
+		Name:      b.Spec.Destination.Volume.Name,
 		MountPath: b.Spec.Destination.Path,
 	}
 	sourceVolumeMount := api.VolumeMount{
@@ -216,7 +219,7 @@ func (pl *Controller) updateObjectAndStartBackup(b *rapi.Backup) error {
 		BackupConfig: b.Name,
 	}
 	ls := labels.SelectorFromSet(set)
-	restikContainer := getRestikContainer(b)
+	restikContainer := getRestikContainer(b, pl.Image)
 	object := getKubeObject(kubeClient, b.Spec.Destination.Volume, b.Namespace, ls, restikContainer)
 	ob, err := yaml.Marshal(object)
 	if err != nil {
@@ -269,7 +272,7 @@ func (pl *Controller) updateObjectAndStopBackup(b *rapi.Backup) error {
 		BackupConfig: b.Name,
 	}
 	ls := labels.SelectorFromSet(set)
-	restikContainer := getRestikContainer(b)
+	restikContainer := getRestikContainer(b, pl.Image)
 	object := getKubeObject(kubeClient, b.Spec.Destination.Volume, b.Namespace, ls, restikContainer)
 	ob, err := yaml.Marshal(object)
 	if err != nil {
