@@ -1,4 +1,4 @@
-package kube
+package api
 
 import (
 	"time"
@@ -8,6 +8,7 @@ import (
 )
 
 type StatusCode int32
+type RetentionStrategy string
 
 const (
 	// StatusUnknown indicates that a backup is in an uncertain state.
@@ -16,6 +17,16 @@ const (
 	StatusSuccess StatusCode = 1
 	// StatusFailed indicates that the last backup is failed.
 	StatusFailed StatusCode = 2
+)
+
+const (
+	KeepLast    RetentionStrategy = "keep-last"
+	KeepHourly  RetentionStrategy = "keep-hourly"
+	KeepDaily   RetentionStrategy = "keep-daily"
+	KeepWeekly  RetentionStrategy = "keep-weekly"
+	KeepMonthly RetentionStrategy = "keep-monthly"
+	KeepYearly  RetentionStrategy = "keep-yearly"
+	KeepTag     RetentionStrategy = "keep-tag"
 )
 
 type Backup struct {
@@ -32,8 +43,20 @@ type BackupSpec struct {
 	Destination BackupDestination `json:"destination"`
 	// How frequently backup command will be run
 	Schedule string `json:"schedule"`
+	// Tags of a snapshots
+	Tags []string `json:"tags, omitempty"`
+	// retention policy of snapshots
+	BackupRetentionPolicy RetentionPolicy `json:"backupRetentionPolicy"`
 	//  Some policy based garbage collection of old snapshots
 	GarbageCollection string `json:"garbageCollection,omitempty"`
+	//Secret where password of the restic is saved
+	BackupSecretRef SecretRef `json:"backupSecretRef"`
+}
+
+type SecretRef struct {
+	Name string `json:"name"`
+	// key of restic password
+	Key string `json:"key"`
 }
 
 type BackupStatus struct {
@@ -59,4 +82,13 @@ type BackupSource struct {
 type BackupDestination struct {
 	Volume api.Volume `json:"volume"`
 	Path   string     `json:"path"`
+}
+
+type RetentionPolicy struct {
+	Strategy          RetentionStrategy `json:"strategy"`
+	SnapshotCount     int64             `json:"snapshotCount"`
+	RetentionHostname string            `json:",retentionHostname,omitempty"`
+	RetentionTags     []string          `json:"retentionTags,omitempty"`
+	//To cleanup unreferenced data
+	Prune bool `json:"prune,omitempty"`
 }

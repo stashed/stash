@@ -1,4 +1,4 @@
-package kube
+package api
 
 import (
 	"k8s.io/kubernetes/pkg/api"

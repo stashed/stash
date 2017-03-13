@@ -7,12 +7,14 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"time"
 
 	rapi "github.com/appscode/restik/api"
 	tcs "github.com/appscode/restik/client/clientset"
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
+	"github.com/restic/restic/src/restic/errors"
 	"gopkg.in/robfig/cron.v2"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/apis/extensions"
@@ -90,23 +92,70 @@ func (w *Controller) RunAndHold() {
 }
 
 func RunBackup() {
-	repo := os.Getenv(RESTIC_REPOSITORY)
-	_, err := os.Stat(filepath.Join(repo, "config"))
+	factory := cmdutil.NewFactory(nil)
+	config, err := factory.ClientConfig()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	extClient := tcs.NewExtensionsForConfigOrDie(config)
+	client, err := factory.ClientSet()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	namespace := os.Getenv(Namespace)
+	tprName := os.Getenv(TPR)
+	backup, err := extClient.Backup(namespace).Get(tprName)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	password, err := getPasswordFromSecret(client, backup.Spec.BackupSecretRef, backup.Namespace)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	err = os.Setenv(RESTIC_PASSWORD, password)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	repo := backup.Spec.Destination.Path
+	_, err = os.Stat(filepath.Join(repo, "config"))
 	if os.IsNotExist(err) {
-		err := exec.Command("/restic", "init").Run()
+		_, err := execLocal(fmt.Sprintf("/restic init --repo %s", repo))
 		if err != nil {
 			log.Println("RESTIC repository not created cause", err)
 			return
 		}
 	}
-	interval := os.Getenv(BACKUP_CRON)
-	source := os.Getenv(SOURCE_PATH)
+	interval := backup.Spec.Schedule
 	c := cron.New()
 	c.Start()
 	c.AddFunc(interval, func() {
-		err := exec.Command("/restic", "backup", source).Run()
+		backup, err := extClient.Backup(namespace).Get(tprName)
 		if err != nil {
 			log.Println(err)
+		}
+		password, err := getPasswordFromSecret(client, backup.Spec.BackupSecretRef, backup.Namespace)
+		err = os.Setenv(RESTIC_PASSWORD, password)
+		if err != nil {
+			log.Println(err)
+		}
+		cmd := fmt.Sprintf("/restic -r %s backup %s", backup.Spec.Destination.Path, backup.Spec.Source.Path)
+		// add tags if any
+		for _, t := range backup.Spec.Tags {
+			cmd = cmd + " --tag " + t
+		}
+		// Take Backup
+		_, err = execLocal(cmd)
+		if err != nil {
+			log.Println("Restick backup failed cause ", err)
+		}
+		err = snapshotRetention(backup)
+		if err != nil {
+			log.Println("Snapshot retention failed cause ", err)
 		}
 	})
 	wait.Until(func() {}, time.Second, wait.NeverStop)
@@ -124,20 +173,12 @@ func getRestikContainer(b *rapi.Backup, containerImage string) api.Container {
 	}
 	env := []api.EnvVar{
 		{
-			Name:  BACKUP_CRON,
-			Value: b.Spec.Schedule,
+			Name:  Namespace,
+			Value: b.Namespace,
 		},
 		{
-			Name:  RESTIC_REPOSITORY,
-			Value: b.Spec.Destination.Path,
-		},
-		{
-			Name:  SOURCE_PATH,
-			Value: b.Spec.Source.Path,
-		},
-		{
-			Name:  RESTIC_PASSWORD,
-			Value: "123", //TODO
+			Name:  TPR,
+			Value: b.Name,
 		},
 	}
 	for _, e := range env {
@@ -333,4 +374,41 @@ func removeVolume(volumes []api.Volume, name string) []api.Volume {
 		}
 	}
 	return volumes
+}
+
+func snapshotRetention(b *rapi.Backup) error {
+	cmd := fmt.Sprintf("/restic -r %s forget --%s %d", b.Spec.Destination.Path, b.Spec.BackupRetentionPolicy.Strategy, b.Spec.BackupRetentionPolicy.SnapshotCount)
+	if len(b.Spec.BackupRetentionPolicy.RetentionHostname) != 0 {
+		cmd = cmd + " --hostname " + b.Spec.BackupRetentionPolicy.RetentionHostname
+	}
+	if len(b.Spec.BackupRetentionPolicy.RetentionTags) != 0 {
+		for _, t := range b.Spec.BackupRetentionPolicy.RetentionTags {
+			cmd = cmd + " --tag " + t
+		}
+	}
+	if b.Spec.BackupRetentionPolicy.Prune == true {
+		cmd = cmd + " prune "
+	}
+	_, err := execLocal(cmd)
+	return err
+}
+
+func execLocal(s string) (string, error) {
+	parts := strings.Fields(s)
+	head := parts[0]
+	parts = parts[1:]
+	cmdOut, err := exec.Command(head, parts...).Output()
+	return strings.TrimSuffix(string(cmdOut), "\n"), err
+}
+
+func getPasswordFromSecret(client *internalclientset.Clientset, secretRef rapi.SecretRef, namespace string) (string, error) {
+	secret, err := client.Core().Secrets(namespace).Get(secretRef.Name)
+	if err != nil {
+		return "", err
+	}
+	password, ok := secret.Data[secretRef.Key]
+	if !ok {
+		return "", errors.New("Restic Password not found")
+	}
+	return string(password), nil
 }

@@ -12,6 +12,17 @@ spec:
     volume:
       awsElasticBlockStore:
         fsType: ext4
-        volumeID: vol-070c71e7c31f64628
+        volumeID: vol-***************
       name: restik-volume
   schedule: "0 * * * * *"
+  tags:
+  - sau
+  backupRetentionPolicy:
+    strategy: keep-last
+    snapshotCount: 1
+    prune: true
+    retentionTags:
+    - sau
+  backupSecretRef:
+    name: secret
+    key: password

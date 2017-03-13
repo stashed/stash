@@ -1,4 +1,4 @@
-package kube
+package api
 
 import (
 	schema "k8s.io/kubernetes/pkg/api/unversioned"

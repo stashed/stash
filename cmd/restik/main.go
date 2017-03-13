@@ -8,7 +8,6 @@ import (
 	"github.com/appscode/go/version"
 	logs "github.com/appscode/log/golog"
 	_ "github.com/appscode/restik/api/install"
-	"github.com/appscode/restik/pkg/backup"
 	"github.com/appscode/restik/pkg/cmd"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -30,7 +29,7 @@ func main() {
 
 	rootCmd.AddCommand(version.NewCmdVersion())
 	rootCmd.AddCommand(cmd.NewCmdRun())
-	rootCmd.AddCommand(backup.NewCmdBackup())
+	rootCmd.AddCommand(cmd.NewCmdBackup())
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
