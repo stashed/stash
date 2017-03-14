@@ -1,9 +1,5 @@
 package controller
 
-import (
-	"k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
-)
-
 const (
 	BackupConfig          = "backup.appscode.com/config"
 	ContainerName         = "restic-sidecar"
@@ -17,4 +13,3 @@ const (
 	StatefulSet           = "StatefulSet"
 	Password              = "password"
 )
-

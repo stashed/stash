@@ -1,14 +1,16 @@
 package test
 
-import ("testing"
-	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
-	tcs "github.com/appscode/restik/client/clientset"
-	"log"
+import (
 	"fmt"
+	"log"
+	"testing"
+
+	tcs "github.com/appscode/restik/client/clientset"
+	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 )
 
 func TestBackupUpdate(t *testing.T) {
-		factory := cmdutil.NewFactory(nil)
+	factory := cmdutil.NewFactory(nil)
 	config, err := factory.ClientConfig()
 	if err != nil {
 		log.Println(err)

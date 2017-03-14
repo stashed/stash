@@ -7,11 +7,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"time"
 
 	rapi "github.com/appscode/restik/api"
-	"github.com/appscode/restik/client/clientset"
 	tcs "github.com/appscode/restik/client/clientset"
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
@@ -28,7 +28,6 @@ import (
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/util/wait"
 	"k8s.io/kubernetes/pkg/watch"
-	"reflect"
 )
 
 type Controller struct {
@@ -157,7 +156,7 @@ func RunBackup() {
 		if err != nil {
 			log.Println("Restick backup failed cause ", err)
 			backup.Status.LastBackupStatus = rapi.StatusFailed
-		}else {
+		} else {
 			backup.Status.LastSuccessfullBackup = time.Now()
 			backup.Status.LastBackupStatus = rapi.StatusSuccess
 		}
@@ -166,7 +165,7 @@ func RunBackup() {
 			log.Println("Snapshot retention failed cause ", err)
 		}
 		updateStatusForBackup(backup)
-		backup, err = extClient.Backup(backup.Namespace).UpdateStatus(backup)
+		backup, err = extClient.Backup(backup.Namespace).Update(backup)
 		if err != nil {
 			log.Println(err)
 		}
