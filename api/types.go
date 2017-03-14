@@ -46,17 +46,7 @@ type BackupSpec struct {
 	// Tags of a snapshots
 	Tags []string `json:"tags, omitempty"`
 	// retention policy of snapshots
-	BackupRetentionPolicy RetentionPolicy `json:"backupRetentionPolicy"`
-	//  Some policy based garbage collection of old snapshots
-	GarbageCollection string `json:"garbageCollection,omitempty"`
-	//Secret where password of the restic is saved
-	BackupSecretRef SecretRef `json:"backupSecretRef"`
-}
-
-type SecretRef struct {
-	Name string `json:"name"`
-	// key of restic password
-	Key string `json:"key"`
+	RetentionPolicy RetentionPolicy `json:"retentionPolicy"`
 }
 
 type BackupStatus struct {
@@ -80,15 +70,16 @@ type BackupSource struct {
 }
 
 type BackupDestination struct {
-	Volume api.Volume `json:"volume"`
-	Path   string     `json:"path"`
+	Volume               api.Volume `json:"volume"`
+	Path                 string     `json:"path"`
+	RepositorySecretName string     `json:"repositorySecretName"`
 }
 
 type RetentionPolicy struct {
-	Strategy          RetentionStrategy `json:"strategy"`
-	SnapshotCount     int64             `json:"snapshotCount"`
-	RetentionHostname string            `json:",retentionHostname,omitempty"`
-	RetentionTags     []string          `json:"retentionTags,omitempty"`
+	Strategy       RetentionStrategy `json:"strategy"`
+	SnapshotCount  int64             `json:"snapshotCount"`
+	RetainHostname string            `json:",retainHostname,omitempty"`
+	RetainTags     []string          `json:"retainTags,omitempty"`
 	//To cleanup unreferenced data
 	Prune bool `json:"prune,omitempty"`
 }

@@ -5,11 +5,17 @@ import (
 )
 
 const (
-	BackupConfig    = "backup.appscode.com/config"
-	ContainerName   = "restic-sidecar"
-	Namespace       = "RESTIK_NAMESPACE"
-	TPR             = "TPR"
-	RESTIC_PASSWORD = "RESTIC_PASSWORD"
+	BackupConfig          = "backup.appscode.com/config"
+	ContainerName         = "restic-sidecar"
+	Namespace             = "RESTIK_NAMESPACE"
+	TPR                   = "TPR"
+	RESTIC_PASSWORD       = "RESTIC_PASSWORD"
+	ReplicationController = "ReplicationController"
+	ReplicaSet            = "ReplicaSet"
+	Deployment            = "Deployment"
+	DaemonSet             = "DaemonSet"
+	StatefulSet           = "StatefulSet"
+	Password              = "password"
 )
 
 type backupServer struct {

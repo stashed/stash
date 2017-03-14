@@ -6,9 +6,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"time"
+
+	"math/rand"
 
 	rapi "github.com/appscode/restik/api"
 	tcs "github.com/appscode/restik/client/clientset"
@@ -17,6 +18,7 @@ import (
 	"github.com/restic/restic/src/restic/errors"
 	"gopkg.in/robfig/cron.v2"
 	"k8s.io/kubernetes/pkg/api"
+	"k8s.io/kubernetes/pkg/apis/apps"
 	"k8s.io/kubernetes/pkg/apis/extensions"
 	"k8s.io/kubernetes/pkg/client/cache"
 	"k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
@@ -42,6 +44,10 @@ func New(c *rest.Config, image string) *Controller {
 		SyncPeriod: time.Minute * 2,
 		Image:      image,
 	}
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
 }
 
 // Blocks caller. Intended to be called as a Go routine.
@@ -72,20 +78,6 @@ func (w *Controller) RunAndHold() {
 					log.Println(err)
 				}
 			},
-			UpdateFunc: func(old, new interface{}) {
-				oldObj, ok := old.(*rapi.Backup)
-				if !ok {
-					return
-				}
-				newObj, ok := new.(*rapi.Backup)
-				if !ok {
-					return
-				}
-				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) {
-					glog.Infoln("Got one updated backp object", newObj)
-					w.doStuff(newObj)
-				}
-			},
 		},
 	)
 	controller.Run(wait.NeverStop)
@@ -111,7 +103,7 @@ func RunBackup() {
 		log.Println(err)
 		return
 	}
-	password, err := getPasswordFromSecret(client, backup.Spec.BackupSecretRef, backup.Namespace)
+	password, err := getPasswordFromSecret(client, backup.Spec.Destination.RepositorySecretName, backup.Namespace)
 	if err != nil {
 		log.Println(err)
 		return
@@ -133,12 +125,22 @@ func RunBackup() {
 	interval := backup.Spec.Schedule
 	c := cron.New()
 	c.Start()
+	event := &api.Event{
+		ObjectMeta: api.ObjectMeta{
+			Namespace: backup.Namespace,
+		},
+		InvolvedObject: api.ObjectReference{
+			Kind:      backup.Kind,
+			Namespace: backup.Namespace,
+			Name:      backup.Name,
+		},
+	}
 	c.AddFunc(interval, func() {
 		backup, err := extClient.Backup(namespace).Get(tprName)
 		if err != nil {
 			log.Println(err)
 		}
-		password, err := getPasswordFromSecret(client, backup.Spec.BackupSecretRef, backup.Namespace)
+		password, err := getPasswordFromSecret(client, backup.Spec.Destination.RepositorySecretName, backup.Namespace)
 		err = os.Setenv(RESTIC_PASSWORD, password)
 		if err != nil {
 			log.Println(err)
@@ -149,20 +151,22 @@ func RunBackup() {
 			cmd = cmd + " --tag " + t
 		}
 		// Take Backup
-		_, err = execLocal(cmd)
+		backupOutput, err := execLocal(cmd)
 		if err != nil {
 			log.Println("Restick backup failed cause ", err)
 		}
-		err = snapshotRetention(backup)
+		retentionOutput, err := snapshotRetention(backup)
 		if err != nil {
 			log.Println("Snapshot retention failed cause ", err)
 		}
+		event.Namespace = backup.Name + "-" + randStringRunes(5)
+		event.Message = fmt.Sprintf("Backup : \n %s \n Retention: \n %s", backupOutput, retentionOutput)
+		_, err = client.Core().Events(backup.Namespace).Create(event)
+		if err != nil {
+			log.Println(err)
+		}
 	})
 	wait.Until(func() {}, time.Second, wait.NeverStop)
-}
-
-func (pl *Controller) doStuff(release *rapi.Backup) {
-
 }
 
 func getRestikContainer(b *rapi.Backup, containerImage string) api.Container {
@@ -272,7 +276,7 @@ func (pl *Controller) updateObjectAndStartBackup(b *rapi.Backup) error {
 	}
 	opts := api.ListOptions{}
 	switch _type {
-	case "ReplicationController":
+	case ReplicationController:
 		rc := &api.ReplicationController{}
 		if err := yaml.Unmarshal(ob, rc); err != nil {
 			return err
@@ -284,22 +288,57 @@ func (pl *Controller) updateObjectAndStartBackup(b *rapi.Backup) error {
 			return err
 		}
 		opts.LabelSelector = findSelectors(newRC.Spec.Template.Labels)
-
-	case "ReplicaSet":
+		err = restartPods(kubeClient, b.Namespace, opts)
+	case ReplicaSet:
 		replicaset := &extensions.ReplicaSet{}
 		if err := yaml.Unmarshal(ob, replicaset); err != nil {
 			return err
 		}
 		replicaset.Spec.Template.Spec.Containers = append(replicaset.Spec.Template.Spec.Containers, restikContainer)
 		replicaset.Spec.Template.Spec.Volumes = append(replicaset.Spec.Template.Spec.Volumes, b.Spec.Destination.Volume)
-		newRC, err := kubeClient.Extensions().ReplicaSets(b.Namespace).Update(replicaset)
+		newReplicaset, err := kubeClient.Extensions().ReplicaSets(b.Namespace).Update(replicaset)
 		if err != nil {
 			return err
 		}
-		opts.LabelSelector = findSelectors(newRC.Spec.Template.Labels)
+		opts.LabelSelector = findSelectors(newReplicaset.Spec.Template.Labels)
+		err = restartPods(kubeClient, b.Namespace, opts)
+	case Deployment:
+		deployment := &extensions.Deployment{}
+		if err := yaml.Unmarshal(ob, deployment); err != nil {
+			return err
+		}
+		deployment.Spec.Template.Spec.Containers = append(deployment.Spec.Template.Spec.Containers, restikContainer)
+		deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, b.Spec.Destination.Volume)
+		_, err := kubeClient.Extensions().Deployments(b.Namespace).Update(deployment)
+		if err != nil {
+			return err
+		}
+	case DaemonSet:
+		daemonset := &extensions.DaemonSet{}
+		if err := yaml.Unmarshal(ob, daemonset); err != nil {
+			return err
+		}
+		daemonset.Spec.Template.Spec.Containers = append(daemonset.Spec.Template.Spec.Containers, restikContainer)
+		daemonset.Spec.Template.Spec.Volumes = append(daemonset.Spec.Template.Spec.Volumes, b.Spec.Destination.Volume)
+		newDaemonset, err := kubeClient.Extensions().DaemonSets(b.Namespace).Update(daemonset)
+		if err != nil {
+			return err
+		}
+		opts.LabelSelector = findSelectors(newDaemonset.Spec.Template.Labels)
+		err = restartPods(kubeClient, b.Namespace, opts)
+	case StatefulSet:
+		statefulset := &apps.StatefulSet{}
+		if err := yaml.Unmarshal(ob, statefulset); err != nil {
+			return err
+		}
+		statefulset.Spec.Template.Spec.Containers = append(statefulset.Spec.Template.Spec.Containers, restikContainer)
+		statefulset.Spec.Template.Spec.Volumes = append(statefulset.Spec.Template.Spec.Volumes, b.Spec.Destination.Volume)
+		_, err := kubeClient.Apps().StatefulSets(b.Namespace).Update(statefulset)
+		if err != nil {
+			return err
+		}
 	}
-	//TODO add other objects
-	err = restartPods(kubeClient, b.Namespace, opts)
+	err = pl.addAnnotation(b)
 	return err
 }
 
@@ -325,7 +364,7 @@ func (pl *Controller) updateObjectAndStopBackup(b *rapi.Backup) error {
 	}
 	opts := api.ListOptions{}
 	switch _type {
-	case "ReplicationController":
+	case ReplicationController:
 		rc := &api.ReplicationController{}
 		if err := yaml.Unmarshal(ob, rc); err != nil {
 			return err
@@ -337,22 +376,56 @@ func (pl *Controller) updateObjectAndStopBackup(b *rapi.Backup) error {
 			return err
 		}
 		opts.LabelSelector = findSelectors(newRC.Spec.Template.Labels)
-
-	case "ReplicaSet":
+		err = restartPods(kubeClient, b.Namespace, opts)
+	case ReplicaSet:
 		replicaset := &extensions.ReplicaSet{}
 		if err := yaml.Unmarshal(ob, replicaset); err != nil {
 			return err
 		}
 		replicaset.Spec.Template.Spec.Containers = removeContainer(replicaset.Spec.Template.Spec.Containers, ContainerName)
 		replicaset.Spec.Template.Spec.Volumes = removeVolume(replicaset.Spec.Template.Spec.Volumes, b.Spec.Destination.Volume.Name)
-		newRC, err := kubeClient.Extensions().ReplicaSets(b.Namespace).Update(replicaset)
+		newReplicaset, err := kubeClient.Extensions().ReplicaSets(b.Namespace).Update(replicaset)
 		if err != nil {
 			return err
 		}
-		opts.LabelSelector = findSelectors(newRC.Spec.Template.Labels)
+		opts.LabelSelector = findSelectors(newReplicaset.Spec.Template.Labels)
+		err = restartPods(kubeClient, b.Namespace, opts)
+	case DaemonSet:
+		daemonset := &extensions.DaemonSet{}
+		if err := yaml.Unmarshal(ob, daemonset); err != nil {
+			return err
+		}
+		daemonset.Spec.Template.Spec.Containers = removeContainer(daemonset.Spec.Template.Spec.Containers, ContainerName)
+		daemonset.Spec.Template.Spec.Volumes = removeVolume(daemonset.Spec.Template.Spec.Volumes, b.Spec.Destination.Volume.Name)
+		newDaemonset, err := kubeClient.Extensions().DaemonSets(b.Namespace).Update(daemonset)
+		if err != nil {
+			return err
+		}
+		opts.LabelSelector = findSelectors(newDaemonset.Spec.Template.Labels)
+		err = restartPods(kubeClient, b.Namespace, opts)
+	case Deployment:
+		deployment := &extensions.Deployment{}
+		if err := yaml.Unmarshal(ob, deployment); err != nil {
+			return err
+		}
+		deployment.Spec.Template.Spec.Containers = removeContainer(deployment.Spec.Template.Spec.Containers, ContainerName)
+		deployment.Spec.Template.Spec.Volumes = removeVolume(deployment.Spec.Template.Spec.Volumes, b.Spec.Destination.Volume.Name)
+		_, err := kubeClient.Extensions().Deployments(b.Namespace).Update(deployment)
+		if err != nil {
+			return err
+		}
+	case StatefulSet:
+		statefulset := &apps.StatefulSet{}
+		if err := yaml.Unmarshal(ob, statefulset); err != nil {
+			return err
+		}
+		statefulset.Spec.Template.Spec.Containers = removeContainer(statefulset.Spec.Template.Spec.Containers, ContainerName)
+		statefulset.Spec.Template.Spec.Volumes = removeVolume(statefulset.Spec.Template.Spec.Volumes, b.Spec.Destination.Volume.Name)
+		_, err := kubeClient.Apps().StatefulSets(b.Namespace).Update(statefulset)
+		if err != nil {
+			return err
+		}
 	}
-	//TODO add other objects
-	err = restartPods(kubeClient, b.Namespace, opts)
 	return err
 }
 
@@ -376,21 +449,21 @@ func removeVolume(volumes []api.Volume, name string) []api.Volume {
 	return volumes
 }
 
-func snapshotRetention(b *rapi.Backup) error {
-	cmd := fmt.Sprintf("/restic -r %s forget --%s %d", b.Spec.Destination.Path, b.Spec.BackupRetentionPolicy.Strategy, b.Spec.BackupRetentionPolicy.SnapshotCount)
-	if len(b.Spec.BackupRetentionPolicy.RetentionHostname) != 0 {
-		cmd = cmd + " --hostname " + b.Spec.BackupRetentionPolicy.RetentionHostname
+func snapshotRetention(b *rapi.Backup) (string, error) {
+	cmd := fmt.Sprintf("/restic -r %s forget --%s %d", b.Spec.Destination.Path, b.Spec.RetentionPolicy.Strategy, b.Spec.RetentionPolicy.SnapshotCount)
+	if len(b.Spec.RetentionPolicy.RetainHostname) != 0 {
+		cmd = cmd + " --hostname " + b.Spec.RetentionPolicy.RetainHostname
 	}
-	if len(b.Spec.BackupRetentionPolicy.RetentionTags) != 0 {
-		for _, t := range b.Spec.BackupRetentionPolicy.RetentionTags {
+	if len(b.Spec.RetentionPolicy.RetainTags) != 0 {
+		for _, t := range b.Spec.RetentionPolicy.RetainTags {
 			cmd = cmd + " --tag " + t
 		}
 	}
-	if b.Spec.BackupRetentionPolicy.Prune == true {
+	if b.Spec.RetentionPolicy.Prune == true {
 		cmd = cmd + " prune "
 	}
-	_, err := execLocal(cmd)
-	return err
+	output, err := execLocal(cmd)
+	return output, err
 }
 
 func execLocal(s string) (string, error) {
@@ -401,14 +474,32 @@ func execLocal(s string) (string, error) {
 	return strings.TrimSuffix(string(cmdOut), "\n"), err
 }
 
-func getPasswordFromSecret(client *internalclientset.Clientset, secretRef rapi.SecretRef, namespace string) (string, error) {
-	secret, err := client.Core().Secrets(namespace).Get(secretRef.Name)
+func getPasswordFromSecret(client *internalclientset.Clientset, secretName, namespace string) (string, error) {
+	secret, err := client.Core().Secrets(namespace).Get(secretName)
 	if err != nil {
 		return "", err
 	}
-	password, ok := secret.Data[secretRef.Key]
+	password, ok := secret.Data[Password]
 	if !ok {
 		return "", errors.New("Restic Password not found")
 	}
 	return string(password), nil
+}
+
+func (pl *Controller) addAnnotation(b *rapi.Backup) error {
+	annotation := make(map[string]string)
+	annotation["backup.appscode.com/image"] = pl.Image
+	b.ObjectMeta.Annotations = annotation
+	_, err := pl.Client.Backup(b.Namespace).Update(b)
+	return err
+}
+
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func randStringRunes(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
 }
