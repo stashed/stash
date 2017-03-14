@@ -3,15 +3,15 @@ package controller
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"math/rand"
-
 	rapi "github.com/appscode/restik/api"
+	"github.com/appscode/restik/client/clientset"
 	tcs "github.com/appscode/restik/client/clientset"
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
@@ -28,6 +28,7 @@ import (
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/util/wait"
 	"k8s.io/kubernetes/pkg/watch"
+	"reflect"
 )
 
 type Controller struct {
@@ -140,6 +141,7 @@ func RunBackup() {
 		if err != nil {
 			log.Println(err)
 		}
+		backup.Status.LastBackupStatus = rapi.StatusUnknown
 		password, err := getPasswordFromSecret(client, backup.Spec.Destination.RepositorySecretName, backup.Namespace)
 		err = os.Setenv(RESTIC_PASSWORD, password)
 		if err != nil {
@@ -154,10 +156,19 @@ func RunBackup() {
 		backupOutput, err := execLocal(cmd)
 		if err != nil {
 			log.Println("Restick backup failed cause ", err)
+			backup.Status.LastBackupStatus = rapi.StatusFailed
+		}else {
+			backup.Status.LastSuccessfullBackup = time.Now()
+			backup.Status.LastBackupStatus = rapi.StatusSuccess
 		}
 		retentionOutput, err := snapshotRetention(backup)
 		if err != nil {
 			log.Println("Snapshot retention failed cause ", err)
+		}
+		updateStatusForBackup(backup)
+		backup, err = extClient.Backup(backup.Namespace).UpdateStatus(backup)
+		if err != nil {
+			log.Println(err)
 		}
 		event.Namespace = backup.Name + "-" + randStringRunes(5)
 		event.Message = fmt.Sprintf("Backup : \n %s \n Retention: \n %s", backupOutput, retentionOutput)
@@ -450,7 +461,10 @@ func removeVolume(volumes []api.Volume, name string) []api.Volume {
 }
 
 func snapshotRetention(b *rapi.Backup) (string, error) {
-	cmd := fmt.Sprintf("/restic -r %s forget --%s %d", b.Spec.Destination.Path, b.Spec.RetentionPolicy.Strategy, b.Spec.RetentionPolicy.SnapshotCount)
+	cmd := fmt.Sprintf("/restic -r %s forget --%s", b.Spec.Destination.Path, b.Spec.RetentionPolicy.Strategy)
+	if b.Spec.RetentionPolicy.SnapshotCount != 0 {
+		cmd = fmt.Sprintf("%s %d", cmd, b.Spec.RetentionPolicy.SnapshotCount)
+	}
 	if len(b.Spec.RetentionPolicy.RetainHostname) != 0 {
 		cmd = cmd + " --hostname " + b.Spec.RetentionPolicy.RetainHostname
 	}
@@ -502,4 +516,12 @@ func randStringRunes(n int) string {
 		b[i] = letterRunes[rand.Intn(len(letterRunes))]
 	}
 	return string(b)
+}
+
+func updateStatusForBackup(backup *rapi.Backup) {
+	backup.Status.BackupCount++
+	backup.Status.LastBackup = time.Now()
+	if reflect.DeepEqual(backup.Status.Created, time.Time{}) {
+		backup.Status.Created = time.Now()
+	}
 }

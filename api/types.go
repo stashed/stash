@@ -54,7 +54,6 @@ type BackupStatus struct {
 	Created               time.Time  `json:"created,omitempty"`
 	LastBackup            time.Time  `json:"lastBackup,omitempty"`
 	LastSuccessfullBackup time.Time  `json:"lastSuccessfullBackup"`
-	Message               string     `json:"message"`
 	BackupCount           int64      `json:"backupCount"`
 }
 

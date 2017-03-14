@@ -1,28 +1,29 @@
 apiVersion: appscode.com/v1beta1
 kind: Backup
 metadata:
-  name: saumanbackup
-  namespace: default
+  name: restikbackup
+  namespace: test
 spec:
   backupSource:
     volumeName: "test-volume"
-    path: /mypath
+    path: /testpath
   destination:
-    path: /restikvolume
+    path: /restikvolumesauman
+    repositorySecretName: restiksecret
     volume:
       awsElasticBlockStore:
         fsType: ext4
-        volumeID: vol-***************
+        volumeID: vol-****************
       name: restik-volume
   schedule: "0 * * * * *"
   tags:
-  - sau
-  backupRetentionPolicy:
-    strategy: keep-last
-    snapshotCount: 1
+  - test
+  retentionPolicy:
+    strategy: keep-hourly
+    snapshotCount: 5
     prune: true
     retentionTags:
-    - sau
-  backupSecretRef:
-    name: secret
-    key: password
+    - test
+
+
+

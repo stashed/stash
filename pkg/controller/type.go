@@ -18,6 +18,3 @@ const (
 	Password              = "password"
 )
 
-type backupServer struct {
-	kubeClient *internalclientset.Clientset
-}
