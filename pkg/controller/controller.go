@@ -66,6 +66,11 @@ func (w *Controller) RunAndHold() {
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				glog.Infoln("Got one added bacup obejct", obj.(*rapi.Backup))
+				_, ok := obj.(*rapi.Backup).ObjectMeta.Annotations[ImageAnnotation]
+				if ok {
+					glog.Infoln("Got one added backup obejct the was previously deployed", obj.(*rapi.Backup))
+					return
+				}
 				err := w.updateObjectAndStartBackup(obj.(*rapi.Backup))
 				if err != nil {
 					log.Println(err)
@@ -76,6 +81,25 @@ func (w *Controller) RunAndHold() {
 				err := w.updateObjectAndStopBackup(obj.(*rapi.Backup))
 				if err != nil {
 					log.Println(err)
+				}
+			},
+			UpdateFunc: func(old, new interface{}) {
+				oldObj, ok := old.(*rapi.Backup)
+				if !ok {
+					return
+				}
+				newObj, ok := new.(*rapi.Backup)
+				if !ok {
+					return
+				}
+				oldImage, _ := oldObj.ObjectMeta.Annotations[ImageAnnotation]
+				newImage, _ := newObj.ObjectMeta.Annotations[ImageAnnotation]
+				if oldImage != newImage {
+					glog.Infoln("Got one updated backp object for image", newObj)
+					err := w.updateImage(newObj, newImage)
+					if err != nil {
+						log.Println(err)
+					}
 				}
 			},
 		},
@@ -125,52 +149,58 @@ func RunBackup() {
 	interval := backup.Spec.Schedule
 	c := cron.New()
 	c.Start()
-	event := &api.Event{
-		ObjectMeta: api.ObjectMeta{
-			Namespace: backup.Namespace,
-		},
-		InvolvedObject: api.ObjectReference{
-			Kind:      backup.Kind,
-			Namespace: backup.Namespace,
-			Name:      backup.Name,
-		},
-	}
 	c.AddFunc(interval, func() {
 		backup, err := extClient.Backup(namespace).Get(tprName)
 		if err != nil {
 			log.Println(err)
 		}
-		backup.Status.LastBackupStatus = rapi.StatusUnknown
+		event := &api.Event{
+			ObjectMeta: api.ObjectMeta{
+				Namespace: backup.Namespace,
+			},
+			InvolvedObject: api.ObjectReference{
+				Kind:      backup.Kind,
+				Namespace: backup.Namespace,
+				Name:      backup.Name,
+			},
+		}
 		password, err := getPasswordFromSecret(client, backup.Spec.Destination.RepositorySecretName, backup.Namespace)
 		err = os.Setenv(RESTIC_PASSWORD, password)
 		if err != nil {
 			log.Println(err)
 		}
+		backupStartTime := time.Now()
 		cmd := fmt.Sprintf("/restic -r %s backup %s", backup.Spec.Destination.Path, backup.Spec.Source.Path)
 		// add tags if any
 		for _, t := range backup.Spec.Tags {
 			cmd = cmd + " --tag " + t
 		}
 		// Take Backup
-		backupOutput, err := execLocal(cmd)
+		_, err = execLocal(cmd)
 		if err != nil {
 			log.Println("Restick backup failed cause ", err)
-			backup.Status.LastBackupStatus = rapi.StatusFailed
+			event.Reason = "Failed"
 		} else {
-			backup.Status.LastSuccessfullBackup = time.Now()
-			backup.Status.LastBackupStatus = rapi.StatusSuccess
+			backup.Status.LastSuccessfullBackupTime = backupStartTime
+			event.Reason = "Success"
 		}
-		retentionOutput, err := snapshotRetention(backup)
+		backupEndTime := time.Now()
+		_, err = snapshotRetention(backup)
 		if err != nil {
 			log.Println("Snapshot retention failed cause ", err)
 		}
-		updateStatusForBackup(backup)
+		backup.Status.BackupCount++
+		backup.Status.LastBackupTime = backupStartTime
+		if reflect.DeepEqual(backup.Status.FirstBackupTime, time.Time{}) {
+			backup.Status.FirstBackupTime = backupStartTime
+		}
+		backup.Status.LastBackupDuration = backupEndTime.Sub(backupStartTime).Seconds()
 		backup, err = extClient.Backup(backup.Namespace).Update(backup)
 		if err != nil {
 			log.Println(err)
 		}
-		event.Namespace = backup.Name + "-" + randStringRunes(5)
-		event.Message = fmt.Sprintf("Backup : \n %s \n Retention: \n %s", backupOutput, retentionOutput)
+		event.Name = backup.Name + "-" + randStringRunes(5)
+		//event.Message = fmt.Sprintf("Backup : \n %s \n Retention: \n %s", backupOutput, retentionOutput)
 		_, err = client.Core().Events(backup.Namespace).Create(event)
 		if err != nil {
 			log.Println(err)
@@ -229,7 +259,7 @@ func restartPods(kubeClient *internalclientset.Clientset, namespace string, opts
 	return nil
 }
 
-func getKubeObject(kubeClient *internalclientset.Clientset, destination api.Volume, namespace string, ls labels.Selector, restikContainer api.Container) map[string]interface{} {
+func getKubeObject(kubeClient *internalclientset.Clientset, destination api.Volume, namespace string, ls labels.Selector) map[string]interface{} {
 	uslist := &runtime.UnstructuredList{}
 	err := kubeClient.Core().RESTClient().Get().Resource("replicationcontrollers").Namespace(namespace).LabelsSelectorParam(ls).Do().Into(uslist)
 	if err == nil && len(uslist.Items) != 0 {
@@ -275,7 +305,7 @@ func (pl *Controller) updateObjectAndStartBackup(b *rapi.Backup) error {
 	}
 	ls := labels.SelectorFromSet(set)
 	restikContainer := getRestikContainer(b, pl.Image)
-	object := getKubeObject(kubeClient, b.Spec.Destination.Volume, b.Namespace, ls, restikContainer)
+	object := getKubeObject(kubeClient, b.Spec.Destination.Volume, b.Namespace, ls)
 	ob, err := yaml.Marshal(object)
 	if err != nil {
 		return err
@@ -337,6 +367,7 @@ func (pl *Controller) updateObjectAndStartBackup(b *rapi.Backup) error {
 		opts.LabelSelector = findSelectors(newDaemonset.Spec.Template.Labels)
 		err = restartPods(kubeClient, b.Namespace, opts)
 	case StatefulSet:
+		//TODO Handle the workflow
 		statefulset := &apps.StatefulSet{}
 		if err := yaml.Unmarshal(ob, statefulset); err != nil {
 			return err
@@ -362,8 +393,7 @@ func (pl *Controller) updateObjectAndStopBackup(b *rapi.Backup) error {
 		BackupConfig: b.Name,
 	}
 	ls := labels.SelectorFromSet(set)
-	restikContainer := getRestikContainer(b, pl.Image)
-	object := getKubeObject(kubeClient, b.Spec.Destination.Volume, b.Namespace, ls, restikContainer)
+	object := getKubeObject(kubeClient, b.Spec.Destination.Volume, b.Namespace, ls)
 	ob, err := yaml.Marshal(object)
 	if err != nil {
 		return err
@@ -439,10 +469,100 @@ func (pl *Controller) updateObjectAndStopBackup(b *rapi.Backup) error {
 	return err
 }
 
+func (pl *Controller) updateImage(b *rapi.Backup, image string) error {
+	factory := cmdutil.NewFactory(nil)
+	kubeClient, err := factory.ClientSet()
+	if err != nil {
+		return err
+	}
+	set := labels.Set{
+		BackupConfig: b.Name,
+	}
+	ls := labels.SelectorFromSet(set)
+	object := getKubeObject(kubeClient, b.Spec.Destination.Volume, b.Namespace, ls)
+	ob, err := yaml.Marshal(object)
+	if err != nil {
+		return err
+	}
+	_type, ok := object["kind"].(string)
+	if !ok {
+		return nil
+	}
+	opts := api.ListOptions{}
+	switch _type {
+	case ReplicationController:
+		rc := &api.ReplicationController{}
+		if err := yaml.Unmarshal(ob, rc); err != nil {
+			return err
+		}
+		rc.Spec.Template.Spec.Containers = updateImageForRestikContainer(rc.Spec.Template.Spec.Containers, ContainerName, image)
+		newRC, err := kubeClient.Core().ReplicationControllers(b.Namespace).Update(rc)
+		if err != nil {
+			return err
+		}
+		opts.LabelSelector = findSelectors(newRC.Spec.Template.Labels)
+		err = restartPods(kubeClient, b.Namespace, opts)
+	case ReplicaSet:
+		replicaset := &extensions.ReplicaSet{}
+		if err := yaml.Unmarshal(ob, replicaset); err != nil {
+			return err
+		}
+		replicaset.Spec.Template.Spec.Containers = updateImageForRestikContainer(replicaset.Spec.Template.Spec.Containers, ContainerName, image)
+		newReplicaset, err := kubeClient.Extensions().ReplicaSets(b.Namespace).Update(replicaset)
+		if err != nil {
+			return err
+		}
+		opts.LabelSelector = findSelectors(newReplicaset.Spec.Template.Labels)
+		err = restartPods(kubeClient, b.Namespace, opts)
+	case DaemonSet:
+		daemonset := &extensions.DaemonSet{}
+		if err := yaml.Unmarshal(ob, daemonset); err != nil {
+			return err
+		}
+		daemonset.Spec.Template.Spec.Containers = updateImageForRestikContainer(daemonset.Spec.Template.Spec.Containers, ContainerName, image)
+		newDaemonset, err := kubeClient.Extensions().DaemonSets(b.Namespace).Update(daemonset)
+		if err != nil {
+			return err
+		}
+		opts.LabelSelector = findSelectors(newDaemonset.Spec.Template.Labels)
+		err = restartPods(kubeClient, b.Namespace, opts)
+	case Deployment:
+		deployment := &extensions.Deployment{}
+		if err := yaml.Unmarshal(ob, deployment); err != nil {
+			return err
+		}
+		deployment.Spec.Template.Spec.Containers = updateImageForRestikContainer(deployment.Spec.Template.Spec.Containers, ContainerName, image)
+		_, err := kubeClient.Extensions().Deployments(b.Namespace).Update(deployment)
+		if err != nil {
+			return err
+		}
+	case StatefulSet:
+		statefulset := &apps.StatefulSet{}
+		if err := yaml.Unmarshal(ob, statefulset); err != nil {
+			return err
+		}
+		statefulset.Spec.Template.Spec.Containers = updateImageForRestikContainer(statefulset.Spec.Template.Spec.Containers, ContainerName, image)
+		_, err := kubeClient.Apps().StatefulSets(b.Namespace).Update(statefulset)
+		if err != nil {
+			return err
+		}
+	}
+	return err
+}
+
 func removeContainer(c []api.Container, name string) []api.Container {
 	for i, v := range c {
 		if v.Name == name {
 			c = append(c[:i], c[i+1:]...)
+			break
+		}
+	}
+	return c
+}
+func updateImageForRestikContainer(c []api.Container, name, image string) []api.Container {
+	for i, v := range c {
+		if v.Name == name {
+			c[i].Image = image
 			break
 		}
 	}
@@ -460,9 +580,14 @@ func removeVolume(volumes []api.Volume, name string) []api.Volume {
 }
 
 func snapshotRetention(b *rapi.Backup) (string, error) {
-	cmd := fmt.Sprintf("/restic -r %s forget --%s", b.Spec.Destination.Path, b.Spec.RetentionPolicy.Strategy)
-	if b.Spec.RetentionPolicy.SnapshotCount != 0 {
-		cmd = fmt.Sprintf("%s %d", cmd, b.Spec.RetentionPolicy.SnapshotCount)
+	cmd := fmt.Sprintf("/restic -r %s forget", b.Spec.Destination.Path)
+	if b.Spec.RetentionPolicy.SnapshotCount != 0 && len(string(b.Spec.RetentionPolicy.Strategy)) != 0 {
+		cmd = fmt.Sprintf("%s --%s %d", cmd, b.Spec.RetentionPolicy.Strategy, b.Spec.RetentionPolicy.SnapshotCount)
+	}
+	if len(b.Spec.RetentionPolicy.KeepTags) != 0 {
+		for _, t := range b.Spec.RetentionPolicy.KeepTags {
+			cmd = cmd + " --keep-tag " + t
+		}
 	}
 	if len(b.Spec.RetentionPolicy.RetainHostname) != 0 {
 		cmd = cmd + " --hostname " + b.Spec.RetentionPolicy.RetainHostname
@@ -471,9 +596,6 @@ func snapshotRetention(b *rapi.Backup) (string, error) {
 		for _, t := range b.Spec.RetentionPolicy.RetainTags {
 			cmd = cmd + " --tag " + t
 		}
-	}
-	if b.Spec.RetentionPolicy.Prune == true {
-		cmd = cmd + " prune "
 	}
 	output, err := execLocal(cmd)
 	return output, err
@@ -501,7 +623,7 @@ func getPasswordFromSecret(client *internalclientset.Clientset, secretName, name
 
 func (pl *Controller) addAnnotation(b *rapi.Backup) error {
 	annotation := make(map[string]string)
-	annotation["backup.appscode.com/image"] = pl.Image
+	annotation[ImageAnnotation] = pl.Image
 	b.ObjectMeta.Annotations = annotation
 	_, err := pl.Client.Backup(b.Namespace).Update(b)
 	return err
@@ -515,12 +637,4 @@ func randStringRunes(n int) string {
 		b[i] = letterRunes[rand.Intn(len(letterRunes))]
 	}
 	return string(b)
-}
-
-func updateStatusForBackup(backup *rapi.Backup) {
-	backup.Status.BackupCount++
-	backup.Status.LastBackup = time.Now()
-	if reflect.DeepEqual(backup.Status.Created, time.Time{}) {
-		backup.Status.Created = time.Now()
-	}
 }

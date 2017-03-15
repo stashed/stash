@@ -12,4 +12,5 @@ const (
 	DaemonSet             = "DaemonSet"
 	StatefulSet           = "StatefulSet"
 	Password              = "password"
+	ImageAnnotation       = "backup.appscode.com/image"
 )

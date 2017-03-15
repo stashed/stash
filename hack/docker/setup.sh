@@ -57,10 +57,10 @@ COPY restik /restik
 
 ENTRYPOINT ["/restik"]
 EOL
-    local cmd="docker build -t sauman/$IMG:$TAG ."
+    local cmd="docker build -t appscode/$IMG:$TAG ."
     echo $cmd; $cmd
 
-    rm restik Dockerfile
+    rm restik Dockerfile restic
     popd
 }
 

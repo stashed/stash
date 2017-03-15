@@ -7,17 +7,7 @@ import (
 	"k8s.io/kubernetes/pkg/api/unversioned"
 )
 
-type StatusCode int32
 type RetentionStrategy string
-
-const (
-	// StatusUnknown indicates that a backup is in an uncertain state.
-	StatusUnknown StatusCode = 0
-	// StatusSuccess indicates that the last backup is successfull.
-	StatusSuccess StatusCode = 1
-	// StatusFailed indicates that the last backup is failed.
-	StatusFailed StatusCode = 2
-)
 
 const (
 	KeepLast    RetentionStrategy = "keep-last"
@@ -26,7 +16,6 @@ const (
 	KeepWeekly  RetentionStrategy = "keep-weekly"
 	KeepMonthly RetentionStrategy = "keep-monthly"
 	KeepYearly  RetentionStrategy = "keep-yearly"
-	KeepTag     RetentionStrategy = "keep-tag"
 )
 
 type Backup struct {
@@ -50,11 +39,11 @@ type BackupSpec struct {
 }
 
 type BackupStatus struct {
-	LastBackupStatus      StatusCode `json:"lastBackupStatus"`
-	Created               time.Time  `json:"created,omitempty"`
-	LastBackup            time.Time  `json:"lastBackup,omitempty"`
-	LastSuccessfullBackup time.Time  `json:"lastSuccessfullBackup"`
-	BackupCount           int64      `json:"backupCount"`
+	FirstBackupTime           time.Time `json:"firstBackupTime,omitempty"`
+	LastBackupTime            time.Time `json:"lastBackupTime,omitempty"`
+	LastSuccessfullBackupTime time.Time `json:"lastSuccessfullBackupTime,omitempty"`
+	LastBackupDuration        float64   `json:"lastBackupDuration,omitempty"`
+	BackupCount               int64     `json:"backupCount,omitempty"`
 }
 
 type BackupList struct {
@@ -75,10 +64,11 @@ type BackupDestination struct {
 }
 
 type RetentionPolicy struct {
-	Strategy       RetentionStrategy `json:"strategy"`
-	SnapshotCount  int64             `json:"snapshotCount"`
+	Strategy       RetentionStrategy `json:"strategy,omitempty"`
+	KeepTags       []string          `json:"keepTags,omitempty"`
+	SnapshotCount  int64             `json:"snapshotCount,omitempty"`
 	RetainHostname string            `json:",retainHostname,omitempty"`
 	RetainTags     []string          `json:"retainTags,omitempty"`
 	//To cleanup unreferenced data
-	Prune bool `json:"prune,omitempty"`
+	//Prune bool `json:"prune,omitempty"` //TODO not working for now.
 }
