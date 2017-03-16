@@ -18,7 +18,6 @@ import (
 	"github.com/restic/restic/src/restic/errors"
 	"gopkg.in/robfig/cron.v2"
 	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/apis/apps"
 	"k8s.io/kubernetes/pkg/apis/extensions"
 	"k8s.io/kubernetes/pkg/client/cache"
 	"k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
@@ -73,14 +72,14 @@ func (w *Controller) RunAndHold() {
 				}
 				err := w.updateObjectAndStartBackup(obj.(*rapi.Backup))
 				if err != nil {
-					log.Println(err)
+					log.Println("ERROR :", err)
 				}
 			},
 			DeleteFunc: func(obj interface{}) {
 				glog.Infoln("Got one deleted backu object", obj.(*rapi.Backup))
 				err := w.updateObjectAndStopBackup(obj.(*rapi.Backup))
 				if err != nil {
-					log.Println(err)
+					log.Println("ERROR: ", err)
 				}
 			},
 			UpdateFunc: func(old, new interface{}) {
@@ -98,7 +97,7 @@ func (w *Controller) RunAndHold() {
 					glog.Infoln("Got one updated backp object for image", newObj)
 					err := w.updateImage(newObj, newImage)
 					if err != nil {
-						log.Println(err)
+						log.Println("ERROR: ", err)
 					}
 				}
 			},
@@ -367,17 +366,7 @@ func (pl *Controller) updateObjectAndStartBackup(b *rapi.Backup) error {
 		opts.LabelSelector = findSelectors(newDaemonset.Spec.Template.Labels)
 		err = restartPods(kubeClient, b.Namespace, opts)
 	case StatefulSet:
-		//TODO Handle the workflow
-		statefulset := &apps.StatefulSet{}
-		if err := yaml.Unmarshal(ob, statefulset); err != nil {
-			return err
-		}
-		statefulset.Spec.Template.Spec.Containers = append(statefulset.Spec.Template.Spec.Containers, restikContainer)
-		statefulset.Spec.Template.Spec.Volumes = append(statefulset.Spec.Template.Spec.Volumes, b.Spec.Destination.Volume)
-		_, err := kubeClient.Apps().StatefulSets(b.Namespace).Update(statefulset)
-		if err != nil {
-			return err
-		}
+		return errors.New(fmt.Sprintf("The Object referred bt the backup object (%s) is a statefulset. Try manually", b.Name))
 	}
 	err = pl.addAnnotation(b)
 	return err
@@ -455,16 +444,7 @@ func (pl *Controller) updateObjectAndStopBackup(b *rapi.Backup) error {
 			return err
 		}
 	case StatefulSet:
-		statefulset := &apps.StatefulSet{}
-		if err := yaml.Unmarshal(ob, statefulset); err != nil {
-			return err
-		}
-		statefulset.Spec.Template.Spec.Containers = removeContainer(statefulset.Spec.Template.Spec.Containers, ContainerName)
-		statefulset.Spec.Template.Spec.Volumes = removeVolume(statefulset.Spec.Template.Spec.Volumes, b.Spec.Destination.Volume.Name)
-		_, err := kubeClient.Apps().StatefulSets(b.Namespace).Update(statefulset)
-		if err != nil {
-			return err
-		}
+		return errors.New(fmt.Sprintf("The Object referred bt the backup object (%s) is a statefulset. Try manually", b.Name))
 	}
 	return err
 }
@@ -537,15 +517,7 @@ func (pl *Controller) updateImage(b *rapi.Backup, image string) error {
 			return err
 		}
 	case StatefulSet:
-		statefulset := &apps.StatefulSet{}
-		if err := yaml.Unmarshal(ob, statefulset); err != nil {
-			return err
-		}
-		statefulset.Spec.Template.Spec.Containers = updateImageForRestikContainer(statefulset.Spec.Template.Spec.Containers, ContainerName, image)
-		_, err := kubeClient.Apps().StatefulSets(b.Namespace).Update(statefulset)
-		if err != nil {
-			return err
-		}
+		return errors.New(fmt.Sprintf("The Object referred bt the backup object (%s) is a statefulset. Try manually", b.Name))
 	}
 	return err
 }
@@ -581,8 +553,23 @@ func removeVolume(volumes []api.Volume, name string) []api.Volume {
 
 func snapshotRetention(b *rapi.Backup) (string, error) {
 	cmd := fmt.Sprintf("/restic -r %s forget", b.Spec.Destination.Path)
-	if b.Spec.RetentionPolicy.SnapshotCount != 0 && len(string(b.Spec.RetentionPolicy.Strategy)) != 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, b.Spec.RetentionPolicy.Strategy, b.Spec.RetentionPolicy.SnapshotCount)
+	if b.Spec.RetentionPolicy.KeepLastCount > 0 {
+		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepLast, b.Spec.RetentionPolicy.KeepLastCount)
+	}
+	if b.Spec.RetentionPolicy.KeepHourlyCount > 0 {
+		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepHourly, b.Spec.RetentionPolicy.KeepHourlyCount)
+	}
+	if b.Spec.RetentionPolicy.KeepDailyCount > 0 {
+		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepDaily, b.Spec.RetentionPolicy.KeepDailyCount)
+	}
+	if b.Spec.RetentionPolicy.KeepWeeklyCount > 0 {
+		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepWeekly, b.Spec.RetentionPolicy.KeepWeeklyCount)
+	}
+	if b.Spec.RetentionPolicy.KeepMonthlyCount > 0 {
+		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepMonthly, b.Spec.RetentionPolicy.KeepMonthlyCount)
+	}
+	if b.Spec.RetentionPolicy.KeepYearlyCount > 0 {
+		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepYearly, b.Spec.RetentionPolicy.KeepYearlyCount)
 	}
 	if len(b.Spec.RetentionPolicy.KeepTags) != 0 {
 		for _, t := range b.Spec.RetentionPolicy.KeepTags {

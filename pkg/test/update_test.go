@@ -5,7 +5,6 @@ import (
 	"log"
 	"testing"
 
-	"github.com/appscode/restik/api"
 	tcs "github.com/appscode/restik/client/clientset"
 	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 )
@@ -24,7 +23,8 @@ func TestBackupUpdate(t *testing.T) {
 	}
 	//b.ObjectMeta.Annotations[controller.ImageAnnotation] = "sauman/restik:latest"
 	//b.Spec.Tags = append(b.Spec.Tags, "kala")
-	b.Spec.RetentionPolicy.Strategy = api.RetentionStrategy("")
+	var a []string
+	b.Spec.RetentionPolicy.KeepTags = a
 	b, err = extClient.Backup("test").Update(b)
 	if err != nil {
 		fmt.Println(err)

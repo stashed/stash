@@ -35,7 +35,7 @@ type BackupSpec struct {
 	// Tags of a snapshots
 	Tags []string `json:"tags, omitempty"`
 	// retention policy of snapshots
-	RetentionPolicy RetentionPolicy `json:"retentionPolicy"`
+	RetentionPolicy RetentionPolicy `json:"retentionPolicy,omitempty"`
 }
 
 type BackupStatus struct {
@@ -64,11 +64,14 @@ type BackupDestination struct {
 }
 
 type RetentionPolicy struct {
-	Strategy       RetentionStrategy `json:"strategy,omitempty"`
-	KeepTags       []string          `json:"keepTags,omitempty"`
-	SnapshotCount  int64             `json:"snapshotCount,omitempty"`
-	RetainHostname string            `json:",retainHostname,omitempty"`
-	RetainTags     []string          `json:"retainTags,omitempty"`
-	//To cleanup unreferenced data
-	//Prune bool `json:"prune,omitempty"` //TODO not working for now.
+	KeepLastCount    int      `json:"keepLastCount,omitempty"`
+	KeepHourlyCount  int      `json:"keepHourlyCount,omitempty"`
+	KeepDailyCount   int      `json:"keepDailyCount,omitempty"`
+	KeepWeeklyCount  int      `json:"keepWeeklyCount,omitempty"`
+	KeepMonthlyCount int      `json:"keepMonthlyCount,omitempty"`
+	KeepYearlyCount  int      `json:"keepyearlyCount,omitempty"`
+	KeepTags         []string `json:"keepTags,omitempty"`
+	RetainHostname   string   `json:",retainHostname,omitempty"`
+	RetainTags       []string `json:"retainTags,omitempty"`
+	// Prune bool `json:"prune,omitempty"` //TODO
 }
