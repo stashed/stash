@@ -17,15 +17,12 @@ func TestBackupUpdate(t *testing.T) {
 		return
 	}
 	extClient := tcs.NewExtensionsForConfigOrDie(config)
-	b, err := extClient.Backup("test").Get("saumanbackup")
+	b, err := extClient.Backups("test").Get("saumanbackup")
 	if err != nil {
 		fmt.Println(err)
 	}
-	//b.ObjectMeta.Annotations[controller.ImageAnnotation] = "sauman/restik:latest"
-	//b.Spec.Tags = append(b.Spec.Tags, "kala")
-	var a []string
-	b.Spec.RetentionPolicy.KeepTags = a
-	b, err = extClient.Backup("test").Update(b)
+	b.Spec.RetentionPolicy.KeepLastSnapshots = 5
+	b, err = extClient.Backups("test").Update(b)
 	if err != nil {
 		fmt.Println(err)
 	}

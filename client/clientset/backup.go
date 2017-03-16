@@ -8,7 +8,7 @@ import (
 )
 
 type BackupNamespacer interface {
-	Backup(namespace string) BackupInterface
+	Backups(namespace string) BackupInterface
 }
 
 type BackupInterface interface {

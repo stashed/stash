@@ -31,6 +31,6 @@ func NewFakeExtensionClient(objects ...runtime.Object) *FakeExtensionClient {
 	return &FakeExtensionClient{&fakePtr}
 }
 
-func (m *FakeExtensionClient) Certificates(ns string) client.BackupInterface {
+func (m *FakeExtensionClient) Backups(ns string) client.BackupInterface {
 	return &FakeBackup{m.Fake, ns}
 }

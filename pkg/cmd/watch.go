@@ -6,10 +6,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewCmdBackup() *cobra.Command {
+func NewCmdWatch() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "watch",
-		Short: "",
+		Short: "Run restic backup",
 		Run: func(cmd *cobra.Command, args []string) {
 			controller.RunBackup()
 		},

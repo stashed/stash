@@ -33,7 +33,7 @@ type BackupSpec struct {
 	// How frequently backup command will be run
 	Schedule string `json:"schedule"`
 	// Tags of a snapshots
-	Tags []string `json:"tags, omitempty"`
+	Tags []string `json:"tags,omitempty"`
 	// retention policy of snapshots
 	RetentionPolicy RetentionPolicy `json:"retentionPolicy,omitempty"`
 }
@@ -71,7 +71,7 @@ type RetentionPolicy struct {
 	KeepMonthlySnapshots int      `json:"keepMonthlySnapshots,omitempty"`
 	KeepYearlySnapshots  int      `json:"keepYearlySnapshots,omitempty"`
 	KeepTags             []string `json:"keepTags,omitempty"`
-	RetainHostname       string   `json:",retainHostname,omitempty"`
+	RetainHostname       string   `json:"retainHostname,omitempty"`
 	RetainTags           []string `json:"retainTags,omitempty"`
 	// Prune bool `json:"prune,omitempty"` //TODO
 }

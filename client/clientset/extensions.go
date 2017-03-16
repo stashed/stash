@@ -24,7 +24,7 @@ type ExtensionsClient struct {
 	restClient rest.Interface
 }
 
-func (a *ExtensionsClient) Backup(namespace string) BackupInterface {
+func (a *ExtensionsClient) Backups(namespace string) BackupInterface {
 	return newBackup(a, namespace)
 }
 
@@ -57,7 +57,7 @@ func NewExtensionsForConfigOrDie(c *rest.Config) *ExtensionsClient {
 }
 
 // New creates a new ExtensionsV1beta1Client for the given RESTClient.
-func NewNewACExtensions(c rest.Interface) *ExtensionsClient {
+func NewACExtensions(c rest.Interface) *ExtensionsClient {
 	return &ExtensionsClient{c}
 }
 

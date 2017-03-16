@@ -13,4 +13,5 @@ const (
 	StatefulSet           = "StatefulSet"
 	Password              = "password"
 	ImageAnnotation       = "backup.appscode.com/image"
+	Force                 = "force"
 )
