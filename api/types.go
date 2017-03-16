@@ -64,14 +64,14 @@ type BackupDestination struct {
 }
 
 type RetentionPolicy struct {
-	KeepLastCount    int      `json:"keepLastCount,omitempty"`
-	KeepHourlyCount  int      `json:"keepHourlyCount,omitempty"`
-	KeepDailyCount   int      `json:"keepDailyCount,omitempty"`
-	KeepWeeklyCount  int      `json:"keepWeeklyCount,omitempty"`
-	KeepMonthlyCount int      `json:"keepMonthlyCount,omitempty"`
-	KeepYearlyCount  int      `json:"keepyearlyCount,omitempty"`
-	KeepTags         []string `json:"keepTags,omitempty"`
-	RetainHostname   string   `json:",retainHostname,omitempty"`
-	RetainTags       []string `json:"retainTags,omitempty"`
+	KeepLastSnapshots    int      `json:"keepLastSnapshots,omitempty"`
+	KeepHourlySnapshots  int      `json:"keepHourlySnapshots,omitempty"`
+	KeepDailySnapshots   int      `json:"keepDailySnapshots,omitempty"`
+	KeepWeeklySnapshots  int      `json:"keepWeeklySnapshots,omitempty"`
+	KeepMonthlySnapshots int      `json:"keepMonthlySnapshots,omitempty"`
+	KeepYearlySnapshots  int      `json:"keepYearlySnapshots,omitempty"`
+	KeepTags             []string `json:"keepTags,omitempty"`
+	RetainHostname       string   `json:",retainHostname,omitempty"`
+	RetainTags           []string `json:"retainTags,omitempty"`
 	// Prune bool `json:"prune,omitempty"` //TODO
 }

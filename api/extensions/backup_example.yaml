@@ -1,7 +1,7 @@
 apiVersion: appscode.com/v1beta1
 kind: Backup
 metadata:
-  name: saumanbackup
+  name: testbackup
   namespace: test
 spec:
   backupSource:
@@ -9,7 +9,7 @@ spec:
     path: /mypathreplicaset
   destination:
     path: /restikreporeplicaset
-    repositorySecretName: saumansecret
+    repositorySecretName: testsecret
     volume:
       awsElasticBlockStore:
         fsType: ext4
@@ -19,7 +19,6 @@ spec:
   tags:
   - test
   retentionPolicy:
-    strategy: keep-last
-    snapshotCount: 2
     keepTags:
-    - sauman
+    - test
+    keepLastSnapshots: 10

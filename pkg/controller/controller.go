@@ -553,23 +553,23 @@ func removeVolume(volumes []api.Volume, name string) []api.Volume {
 
 func snapshotRetention(b *rapi.Backup) (string, error) {
 	cmd := fmt.Sprintf("/restic -r %s forget", b.Spec.Destination.Path)
-	if b.Spec.RetentionPolicy.KeepLastCount > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepLast, b.Spec.RetentionPolicy.KeepLastCount)
+	if b.Spec.RetentionPolicy.KeepLastSnapshots > 0 {
+		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepLast, b.Spec.RetentionPolicy.KeepLastSnapshots)
 	}
-	if b.Spec.RetentionPolicy.KeepHourlyCount > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepHourly, b.Spec.RetentionPolicy.KeepHourlyCount)
+	if b.Spec.RetentionPolicy.KeepHourlySnapshots > 0 {
+		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepHourly, b.Spec.RetentionPolicy.KeepHourlySnapshots)
 	}
-	if b.Spec.RetentionPolicy.KeepDailyCount > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepDaily, b.Spec.RetentionPolicy.KeepDailyCount)
+	if b.Spec.RetentionPolicy.KeepDailySnapshots > 0 {
+		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepDaily, b.Spec.RetentionPolicy.KeepDailySnapshots)
 	}
-	if b.Spec.RetentionPolicy.KeepWeeklyCount > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepWeekly, b.Spec.RetentionPolicy.KeepWeeklyCount)
+	if b.Spec.RetentionPolicy.KeepWeeklySnapshots > 0 {
+		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepWeekly, b.Spec.RetentionPolicy.KeepWeeklySnapshots)
 	}
-	if b.Spec.RetentionPolicy.KeepMonthlyCount > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepMonthly, b.Spec.RetentionPolicy.KeepMonthlyCount)
+	if b.Spec.RetentionPolicy.KeepMonthlySnapshots > 0 {
+		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepMonthly, b.Spec.RetentionPolicy.KeepMonthlySnapshots)
 	}
-	if b.Spec.RetentionPolicy.KeepYearlyCount > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepYearly, b.Spec.RetentionPolicy.KeepYearlyCount)
+	if b.Spec.RetentionPolicy.KeepYearlySnapshots > 0 {
+		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepYearly, b.Spec.RetentionPolicy.KeepYearlySnapshots)
 	}
 	if len(b.Spec.RetentionPolicy.KeepTags) != 0 {
 		for _, t := range b.Spec.RetentionPolicy.KeepTags {
