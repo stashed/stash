@@ -20,7 +20,7 @@ import (
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/apis/extensions"
 	"k8s.io/kubernetes/pkg/client/cache"
-	"k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
+	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	rest "k8s.io/kubernetes/pkg/client/restclient"
 	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 	"k8s.io/kubernetes/pkg/labels"
@@ -31,7 +31,7 @@ import (
 
 type Controller struct {
 	ExtClient tcs.ExtensionInterface
-	Client    *internalclientset.Clientset
+	Client    clientset.Interface
 	// sync time to sync the list.
 	SyncPeriod time.Duration
 	// image of sidecar container
@@ -41,7 +41,7 @@ type Controller struct {
 func New(c *rest.Config, image string) *Controller {
 	return &Controller{
 		ExtClient:  tcs.NewExtensionsForConfigOrDie(c),
-		Client:     internalclientset.NewForConfigOrDie(c),
+		Client:     clientset.NewForConfigOrDie(c),
 		SyncPeriod: time.Minute * 2,
 		Image:      image,
 	}
@@ -257,7 +257,7 @@ func getRestikContainer(b *rapi.Backup, containerImage string) api.Container {
 	return container
 }
 
-func restartPods(kubeClient *internalclientset.Clientset, namespace string, opts api.ListOptions) error {
+func restartPods(kubeClient clientset.Interface, namespace string, opts api.ListOptions) error {
 	pods, err := kubeClient.Core().Pods(namespace).List(opts)
 	if err != nil {
 		return err
@@ -273,7 +273,7 @@ func restartPods(kubeClient *internalclientset.Clientset, namespace string, opts
 	return nil
 }
 
-func getKubeObject(kubeClient *internalclientset.Clientset, destination api.Volume, namespace string, ls labels.Selector) map[string]interface{} {
+func getKubeObject(kubeClient clientset.Interface, destination api.Volume, namespace string, ls labels.Selector) map[string]interface{} {
 	uslist := &runtime.UnstructuredList{}
 	err := kubeClient.Core().RESTClient().Get().Resource("replicationcontrollers").Namespace(namespace).LabelsSelectorParam(ls).Do().Into(uslist)
 	if err == nil && len(uslist.Items) != 0 {
@@ -318,7 +318,7 @@ func (pl *Controller) updateObjectAndStartBackup(b *rapi.Backup) error {
 	}
 	_type, ok := object["kind"].(string)
 	if !ok {
-		return nil
+		return errors.New("Object kind not found")
 	}
 	opts := api.ListOptions{}
 	switch _type {
@@ -587,7 +587,7 @@ func execLocal(s string) (string, error) {
 	return strings.TrimSuffix(string(cmdOut), "\n"), err
 }
 
-func getPasswordFromSecret(client *internalclientset.Clientset, secretName, namespace string) (string, error) {
+func getPasswordFromSecret(client *clientset.Clientset, secretName, namespace string) (string, error) {
 	secret, err := client.Core().Secrets(namespace).Get(secretName)
 	if err != nil {
 		return "", err

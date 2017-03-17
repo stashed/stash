@@ -14,9 +14,9 @@ type FakeBackup struct {
 	ns   string
 }
 
-var certResource = schema.GroupVersionResource{Group: "appscode.com", Version: "v1beta1", Resource: "certificates"}
+var certResource = schema.GroupVersionResource{Group: "appscode.com", Version: "v1beta1", Resource: "backups"}
 
-// Get returns the Certificate by name.
+// Get returns the Backups by name.
 func (mock *FakeBackup) Get(name string) (*aci.Backup, error) {
 	obj, err := mock.Fake.
 		Invokes(testing.NewGetAction(certResource, mock.ns, name), &aci.Backup{})
@@ -27,7 +27,7 @@ func (mock *FakeBackup) Get(name string) (*aci.Backup, error) {
 	return obj.(*aci.Backup), err
 }
 
-// List returns the a of Certificates.
+// List returns the a of Backups.
 func (mock *FakeBackup) List(opts api.ListOptions) (*aci.BackupList, error) {
 	obj, err := mock.Fake.
 		Invokes(testing.NewListAction(certResource, mock.ns, opts), &aci.Backup{})
@@ -49,7 +49,7 @@ func (mock *FakeBackup) List(opts api.ListOptions) (*aci.BackupList, error) {
 	return list, err
 }
 
-// Create creates a new Certificate.
+// Create creates a new Backup.
 func (mock *FakeBackup) Create(svc *aci.Backup) (*aci.Backup, error) {
 	obj, err := mock.Fake.
 		Invokes(testing.NewCreateAction(certResource, mock.ns, svc), &aci.Backup{})
@@ -60,7 +60,7 @@ func (mock *FakeBackup) Create(svc *aci.Backup) (*aci.Backup, error) {
 	return obj.(*aci.Backup), err
 }
 
-// Update updates a Certificate.
+// Update updates a Backup.
 func (mock *FakeBackup) Update(svc *aci.Backup) (*aci.Backup, error) {
 	obj, err := mock.Fake.
 		Invokes(testing.NewUpdateAction(certResource, mock.ns, svc), &aci.Backup{})
@@ -71,7 +71,7 @@ func (mock *FakeBackup) Update(svc *aci.Backup) (*aci.Backup, error) {
 	return obj.(*aci.Backup), err
 }
 
-// Delete deletes a Certificate by name.
+// Delete deletes a Backup by name.
 func (mock *FakeBackup) Delete(name string, _ *api.DeleteOptions) error {
 	_, err := mock.Fake.
 		Invokes(testing.NewDeleteAction(certResource, mock.ns, name), &aci.Backup{})

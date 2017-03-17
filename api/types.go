@@ -27,7 +27,7 @@ type Backup struct {
 
 type BackupSpec struct {
 	// Source of the backup volumename:path
-	Source BackupSource `json:"backupSource"`
+	Source BackupSource `json:"source"`
 	// Destination of the backup
 	Destination BackupDestination `json:"destination"`
 	// How frequently backup command will be run
