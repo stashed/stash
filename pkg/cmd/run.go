@@ -15,6 +15,7 @@ func NewCmdRun() *cobra.Command {
 	var (
 		masterURL      string
 		kubeconfigPath string
+		image          string
 	)
 
 	cmd := &cobra.Command{
@@ -29,13 +30,14 @@ func NewCmdRun() *cobra.Command {
 			}
 			defer runtime.HandleCrash()
 
-			w := controller.New(config)
-			fmt.Println("Starting tillerc...")
+			w := controller.New(config, image)
+			fmt.Println("Starting restik controller...")
 			w.RunAndHold()
 		},
 	}
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
+	cmd.Flags().StringVar(&image, "image", "appscode/restik:latest", "Image that will be used by restic-sidecar container.")
 
 	return cmd
 }

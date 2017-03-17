@@ -1,4 +1,4 @@
-package kube
+package api
 
 import (
 	"time"
@@ -7,55 +7,71 @@ import (
 	"k8s.io/kubernetes/pkg/api/unversioned"
 )
 
-type Certificate struct {
+type RetentionStrategy string
+
+const (
+	KeepLast    RetentionStrategy = "keep-last"
+	KeepHourly  RetentionStrategy = "keep-hourly"
+	KeepDaily   RetentionStrategy = "keep-daily"
+	KeepWeekly  RetentionStrategy = "keep-weekly"
+	KeepMonthly RetentionStrategy = "keep-monthly"
+	KeepYearly  RetentionStrategy = "keep-yearly"
+)
+
+type Backup struct {
 	unversioned.TypeMeta `json:",inline,omitempty"`
 	api.ObjectMeta       `json:"metadata,omitempty"`
-	Spec                 CertificateSpec   `json:"spec,omitempty"`
-	Status               CertificateStatus `json:"status,omitempty"`
+	Spec                 BackupSpec   `json:"spec,omitempty"`
+	Status               BackupStatus `json:"status,omitempty"`
 }
 
-type CertificateSpec struct {
-	// Tries to obtain a single certificate using all domains passed into Domains.
-	// The first domain in domains is used for the CommonName field of the certificate, all other
-	// domains are added using the Subject Alternate Names extension.
-	Domains []string `json:"domains,omitempty"`
-
-	// DNS Provider.
-	Provider string `json:"provider,omitempty"`
-	Email    string `json:"email,omitempty"`
-
-	// This is the ingress Reference that will be used if provider is http
-	HTTPProviderIngressReference api.ObjectReference `json:"httpProviderIngressReference,omitempty"`
-
-	// ProviderCredentialSecretName is used to create the acme client, that will do
-	// needed processing in DNS.
-	ProviderCredentialSecretName string `json:"providerCredentialSecretName,omitempty"`
-
-	// Secret contains ACMEUser information. If empty tries to find an Secret via domains
-	// if not found create an ACMEUser and stores as a secret.
-	ACMEUserSecretName string `json:"acmeUserSecretName"`
-
-	// ACME server that will be used to obtain this certificate.
-	ACMEServerURL string `json:"acmeStagingURL"`
+type BackupSpec struct {
+	// Source of the backup volumename:path
+	Source BackupSource `json:"backupSource"`
+	// Destination of the backup
+	Destination BackupDestination `json:"destination"`
+	// How frequently backup command will be run
+	Schedule string `json:"schedule"`
+	// Tags of a snapshots
+	Tags []string `json:"tags,omitempty"`
+	// retention policy of snapshots
+	RetentionPolicy RetentionPolicy `json:"retentionPolicy,omitempty"`
 }
 
-type CertificateStatus struct {
-	CertificateObtained bool                   `json:"certificateObtained"`
-	Message             string                 `json:"message"`
-	Created             time.Time              `json:"created,omitempty"`
-	ACMEUserSecretName  string                 `json:"acmeUserSecretName,omitempty"`
-	Details             ACMECertificateDetails `json:"details,omitempty"`
+type BackupStatus struct {
+	FirstBackupTime           time.Time `json:"firstBackupTime,omitempty"`
+	LastBackupTime            time.Time `json:"lastBackupTime,omitempty"`
+	LastSuccessfullBackupTime time.Time `json:"lastSuccessfullBackupTime,omitempty"`
+	LastBackupDuration        float64   `json:"lastBackupDuration,omitempty"`
+	BackupCount               int64     `json:"backupCount,omitempty"`
 }
 
-type ACMECertificateDetails struct {
-	Domain        string `json:"domain"`
-	CertURL       string `json:"certUrl"`
-	CertStableURL string `json:"certStableUrl"`
-	AccountRef    string `json:"accountRef,omitempty"`
-}
-
-type CertificateList struct {
+type BackupList struct {
 	unversioned.TypeMeta `json:",inline"`
 	unversioned.ListMeta `json:"metadata,omitempty"`
-	Items                []Certificate `json:"items,omitempty"`
+	Items                []Backup `json:"items,omitempty"`
+}
+
+type BackupSource struct {
+	VolumeName string `json:"volumeName"`
+	Path       string `json:"path"`
+}
+
+type BackupDestination struct {
+	Volume               api.Volume `json:"volume"`
+	Path                 string     `json:"path"`
+	RepositorySecretName string     `json:"repositorySecretName"`
+}
+
+type RetentionPolicy struct {
+	KeepLastSnapshots    int      `json:"keepLastSnapshots,omitempty"`
+	KeepHourlySnapshots  int      `json:"keepHourlySnapshots,omitempty"`
+	KeepDailySnapshots   int      `json:"keepDailySnapshots,omitempty"`
+	KeepWeeklySnapshots  int      `json:"keepWeeklySnapshots,omitempty"`
+	KeepMonthlySnapshots int      `json:"keepMonthlySnapshots,omitempty"`
+	KeepYearlySnapshots  int      `json:"keepYearlySnapshots,omitempty"`
+	KeepTags             []string `json:"keepTags,omitempty"`
+	RetainHostname       string   `json:"retainHostname,omitempty"`
+	RetainTags           []string `json:"retainTags,omitempty"`
+	// Prune bool `json:"prune,omitempty"` //TODO
 }

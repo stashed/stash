@@ -1,4 +1,4 @@
-package kube
+package api
 
 import (
 	"k8s.io/kubernetes/pkg/api"
@@ -30,14 +30,13 @@ var (
 // Adds the list of known types to api.Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		&Certificate{},
-		&CertificateList{},
+		&Backup{},
+		&BackupList{},
 
 		&api.ListOptions{},
-		&api.DeleteOptions{},
 	)
 	return nil
 }
 
-func (obj *Certificate) GetObjectKind() schema.ObjectKind     { return &obj.TypeMeta }
-func (obj *CertificateList) GetObjectKind() schema.ObjectKind { return &obj.TypeMeta }
+func (obj *Backup) GetObjectKind() schema.ObjectKind     { return &obj.TypeMeta }
+func (obj *BackupList) GetObjectKind() schema.ObjectKind { return &obj.TypeMeta }

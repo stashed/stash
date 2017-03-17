@@ -14,25 +14,25 @@ const (
 
 type ExtensionInterface interface {
 	RESTClient() rest.Interface
-	CertificateNamespacer
+	BackupNamespacer
 }
 
 // AppsCodeExtensionsClient is used to interact with experimental Kubernetes features.
 // Features of Extensions group are not supported and may be changed or removed in
 // incompatible ways at any time.
-type AppsCodeExtensionsClient struct {
+type ExtensionsClient struct {
 	restClient rest.Interface
 }
 
-func (a *AppsCodeExtensionsClient) Certificate(namespace string) CertificateInterface {
-	return newCertificate(a, namespace)
+func (a *ExtensionsClient) Backups(namespace string) BackupInterface {
+	return newBackup(a, namespace)
 }
 
 // NewAppsCodeExtensions creates a new AppsCodeExtensionsClient for the given config. This client
 // provides access to experimental Kubernetes features.
 // Features of Extensions group are not supported and may be changed or removed in
 // incompatible ways at any time.
-func NewACExtensionsForConfig(c *rest.Config) (*AppsCodeExtensionsClient, error) {
+func NewACExtensionsForConfig(c *rest.Config) (*ExtensionsClient, error) {
 	config := *c
 	if err := setExtensionsDefaults(&config); err != nil {
 		return nil, err
@@ -41,14 +41,14 @@ func NewACExtensionsForConfig(c *rest.Config) (*AppsCodeExtensionsClient, error)
 	if err != nil {
 		return nil, err
 	}
-	return &AppsCodeExtensionsClient{client}, nil
+	return &ExtensionsClient{client}, nil
 }
 
 // NewAppsCodeExtensionsOrDie creates a new AppsCodeExtensionsClient for the given config and
 // panics if there is an error in the config.
 // Features of Extensions group are not supported and may be changed or removed in
 // incompatible ways at any time.
-func NewExtensionsForConfigOrDie(c *rest.Config) *AppsCodeExtensionsClient {
+func NewExtensionsForConfigOrDie(c *rest.Config) *ExtensionsClient {
 	client, err := NewACExtensionsForConfig(c)
 	if err != nil {
 		panic(err)
@@ -57,8 +57,8 @@ func NewExtensionsForConfigOrDie(c *rest.Config) *AppsCodeExtensionsClient {
 }
 
 // New creates a new ExtensionsV1beta1Client for the given RESTClient.
-func NewNewACExtensions(c rest.Interface) *AppsCodeExtensionsClient {
-	return &AppsCodeExtensionsClient{c}
+func NewACExtensions(c rest.Interface) *ExtensionsClient {
+	return &ExtensionsClient{c}
 }
 
 func setExtensionsDefaults(config *rest.Config) error {
@@ -91,7 +91,7 @@ func setExtensionsDefaults(config *rest.Config) error {
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *AppsCodeExtensionsClient) RESTClient() rest.Interface {
+func (c *ExtensionsClient) RESTClient() rest.Interface {
 	if c == nil {
 		return nil
 	}

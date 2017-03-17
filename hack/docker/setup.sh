@@ -55,13 +55,12 @@ FROM alpine
 COPY restic /restic
 COPY restik /restik
 
-USER nobody:nobody
 ENTRYPOINT ["/restik"]
 EOL
     local cmd="docker build -t appscode/$IMG:$TAG ."
     echo $cmd; $cmd
 
-    rm restik Dockerfile
+    rm restik Dockerfile restic
     popd
 }
 

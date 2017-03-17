@@ -1,13 +1,19 @@
 hash: 872bd0d6fa2dbf7fef16155b3cfda623af3c9a917ba4de477b6d80db6b8cd8c6
-updated: 2017-03-02T15:41:40.536328878-08:00
+updated: 2017-03-06T19:44:25.573854807+06:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
   subpackages:
   - compute/metadata
   - internal
+- name: github.com/appscode/go
+  version: 7ba1c0a441c6c319a501e54db6e93deaff5fe0dd
+  subpackages:
+  - version
 - name: github.com/appscode/log
   version: 68e0e42e42c01371f3950571fc87c2298a51dd8f
+  subpackages:
+  - golog
 - name: github.com/blang/semver
   version: 31b736133b98f26d5e078ec9eb591666edfd091f
 - name: github.com/coreos/go-oidc
@@ -30,16 +36,46 @@ imports:
   version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
   subpackages:
   - spew
+- name: github.com/dgrijalva/jwt-go
+  version: 01aeca54ebda6e0fbfafd0a524d234159c05ec20
 - name: github.com/docker/distribution
   version: cd27f179f2c10c5d300e6d09025b538c475b0d51
   subpackages:
   - digest
   - reference
+- name: github.com/docker/engine-api
+  version: dea108d3aa0c67d7162a3fd8aa65f38a430019fd
+  subpackages:
+  - client
+  - client/transport
+  - client/transport/cancellable
+  - types
+  - types/blkiodev
+  - types/container
+  - types/filters
+  - types/network
+  - types/reference
+  - types/registry
+  - types/strslice
+  - types/time
+  - types/versions
+- name: github.com/docker/go-connections
+  version: f549a9393d05688dff0992ef3efd8bbe6c628aeb
+  subpackages:
+  - nat
+  - sockets
+  - tlsconfig
+- name: github.com/docker/go-units
+  version: 0bbddae09c5a5419a8c6dcdd7ff90da3d450393b
 - name: github.com/emicklei/go-restful
   version: 89ef8af493ab468a45a42bb0d89a06fccdd2fb22
   subpackages:
   - log
   - swagger
+- name: github.com/evanphx/json-patch
+  version: 465937c80b3c07a7c7ad20cc934898646a91c1de
+- name: github.com/exponent-io/jsonpath
+  version: d6023ce2651d8eafb5c75bb0c7167536102ec9f5
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
 - name: github.com/go-openapi/jsonpointer
@@ -80,6 +116,10 @@ imports:
   - vanity/command
 - name: github.com/golang/glog
   version: 44145f04b68cf362d9c4df2182967c2275eaefed
+- name: github.com/golang/groupcache
+  version: 02826c3e79038b59d737d3b1c0a1d937f71a4433
+  subpackages:
+  - lru
 - name: github.com/golang/protobuf
   version: 8616e8ee5e20a1704615e6c8d7afcdac06087a67
   subpackages:
@@ -91,6 +131,8 @@ imports:
   version: 3ca23474a7c7203e0a0a070fd33508f6efdb9b3d
 - name: github.com/imdario/mergo
   version: 6633656539c1639d9d78127b7d47c622b5d7b6dc
+- name: github.com/inconshreveable/mousetrap
+  version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
 - name: github.com/jonboulle/clockwork
   version: 72f9bd7c4e0c2a40055ab3d0f09654f730cce982
 - name: github.com/juju/ratelimit
@@ -107,6 +149,10 @@ imports:
   version: 8a290539e2e8629dbc4e6bad948158f790ec31f4
 - name: github.com/PuerkitoBio/urlesc
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
+- name: github.com/spf13/cobra
+  version: f62e98d28ab7ad31d707ba837a966378465c7b57
+  subpackages:
+  - doc
 - name: github.com/spf13/pflag
   version: 5ccb023bc27df288a957c5e994cd44fd19619465
 - name: github.com/ugorji/go
@@ -180,16 +226,32 @@ imports:
 - name: gopkg.in/yaml.v2
   version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 - name: k8s.io/kubernetes
-  version: 029c3a408176b55c30846f0faedf56aae5992e9b
+  version: e9eeec655e7fdee50d4e19200f9707d1cd4a3371
   subpackages:
+  - federation/apis/federation
+  - federation/apis/federation/install
+  - federation/apis/federation/v1beta1
+  - federation/client/clientset_generated/federation_internalclientset
+  - federation/client/clientset_generated/federation_internalclientset/typed/core/internalversion
+  - federation/client/clientset_generated/federation_internalclientset/typed/extensions/internalversion
+  - federation/client/clientset_generated/federation_internalclientset/typed/federation/internalversion
   - pkg/api
+  - pkg/api/annotations
+  - pkg/api/endpoints
   - pkg/api/errors
+  - pkg/api/events
   - pkg/api/install
   - pkg/api/meta
   - pkg/api/meta/metatypes
+  - pkg/api/pod
   - pkg/api/resource
+  - pkg/api/rest
+  - pkg/api/service
   - pkg/api/unversioned
+  - pkg/api/unversioned/validation
+  - pkg/api/util
   - pkg/api/v1
+  - pkg/api/validation
   - pkg/api/validation/path
   - pkg/apimachinery
   - pkg/apimachinery/announced
@@ -213,9 +275,13 @@ imports:
   - pkg/apis/certificates
   - pkg/apis/certificates/install
   - pkg/apis/certificates/v1alpha1
+  - pkg/apis/componentconfig
+  - pkg/apis/componentconfig/install
+  - pkg/apis/componentconfig/v1alpha1
   - pkg/apis/extensions
   - pkg/apis/extensions/install
   - pkg/apis/extensions/v1beta1
+  - pkg/apis/extensions/validation
   - pkg/apis/policy
   - pkg/apis/policy/install
   - pkg/apis/policy/v1beta1
@@ -224,9 +290,24 @@ imports:
   - pkg/apis/rbac/v1alpha1
   - pkg/apis/storage
   - pkg/apis/storage/install
+  - pkg/apis/storage/util
   - pkg/apis/storage/v1beta1
+  - pkg/auth/authenticator
   - pkg/auth/user
+  - pkg/capabilities
   - pkg/client/cache
+  - pkg/client/clientset_generated/internalclientset
+  - pkg/client/clientset_generated/internalclientset/typed/apps/internalversion
+  - pkg/client/clientset_generated/internalclientset/typed/authentication/internalversion
+  - pkg/client/clientset_generated/internalclientset/typed/authorization/internalversion
+  - pkg/client/clientset_generated/internalclientset/typed/autoscaling/internalversion
+  - pkg/client/clientset_generated/internalclientset/typed/batch/internalversion
+  - pkg/client/clientset_generated/internalclientset/typed/certificates/internalversion
+  - pkg/client/clientset_generated/internalclientset/typed/core/internalversion
+  - pkg/client/clientset_generated/internalclientset/typed/extensions/internalversion
+  - pkg/client/clientset_generated/internalclientset/typed/policy/internalversion
+  - pkg/client/clientset_generated/internalclientset/typed/rbac/internalversion
+  - pkg/client/clientset_generated/internalclientset/typed/storage/internalversion
   - pkg/client/clientset_generated/release_1_5
   - pkg/client/clientset_generated/release_1_5/fake
   - pkg/client/clientset_generated/release_1_5/typed/apps/v1beta1
@@ -254,21 +335,36 @@ imports:
   - pkg/client/clientset_generated/release_1_5/typed/storage/v1beta1
   - pkg/client/clientset_generated/release_1_5/typed/storage/v1beta1/fake
   - pkg/client/metrics
+  - pkg/client/record
   - pkg/client/restclient
+  - pkg/client/retry
   - pkg/client/testing/core
   - pkg/client/transport
   - pkg/client/typed/discovery
   - pkg/client/typed/discovery/fake
+  - pkg/client/typed/dynamic
+  - pkg/client/unversioned
   - pkg/client/unversioned/auth
   - pkg/client/unversioned/clientcmd
   - pkg/client/unversioned/clientcmd/api
   - pkg/client/unversioned/clientcmd/api/latest
   - pkg/client/unversioned/clientcmd/api/v1
+  - pkg/controller
+  - pkg/controller/deployment/util
   - pkg/conversion
   - pkg/conversion/queryparams
+  - pkg/credentialprovider
+  - pkg/fieldpath
   - pkg/fields
   - pkg/genericapiserver/openapi/common
+  - pkg/kubectl
+  - pkg/kubectl/cmd/util
+  - pkg/kubectl/resource
+  - pkg/kubelet/qos
+  - pkg/kubelet/types
   - pkg/labels
+  - pkg/master/ports
+  - pkg/registry/extensions/thirdpartyresourcedata
   - pkg/runtime
   - pkg/runtime/serializer
   - pkg/runtime/serializer/json
@@ -276,28 +372,40 @@ imports:
   - pkg/runtime/serializer/recognizer
   - pkg/runtime/serializer/streaming
   - pkg/runtime/serializer/versioning
+  - pkg/security/apparmor
+  - pkg/security/podsecuritypolicy/seccomp
+  - pkg/security/podsecuritypolicy/util
   - pkg/selection
+  - pkg/serviceaccount
+  - pkg/storage
   - pkg/types
   - pkg/util
   - pkg/util/cert
   - pkg/util/clock
+  - pkg/util/config
   - pkg/util/diff
   - pkg/util/errors
+  - pkg/util/exec
   - pkg/util/flag
   - pkg/util/flowcontrol
   - pkg/util/framer
+  - pkg/util/hash
   - pkg/util/homedir
   - pkg/util/integer
   - pkg/util/intstr
   - pkg/util/json
   - pkg/util/jsonpath
   - pkg/util/labels
-  - pkg/util/logs
   - pkg/util/net
+  - pkg/util/net/sets
+  - pkg/util/node
   - pkg/util/parsers
+  - pkg/util/pod
   - pkg/util/rand
   - pkg/util/runtime
   - pkg/util/sets
+  - pkg/util/slice
+  - pkg/util/strategicpatch
   - pkg/util/uuid
   - pkg/util/validation
   - pkg/util/validation/field
@@ -309,6 +417,7 @@ imports:
   - plugin/pkg/client/auth
   - plugin/pkg/client/auth/gcp
   - plugin/pkg/client/auth/oidc
+  - third_party/forked/golang/json
   - third_party/forked/golang/reflect
   - third_party/forked/golang/template
 testImports:

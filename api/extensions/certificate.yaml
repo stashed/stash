@@ -1,7 +1,0 @@
-metadata:
-  name: certificate.appscode.com
-apiVersion: extensions/v1beta1
-kind: ThirdPartyResource
-description: "A specification of a Let's Encrypt Certificate to manage."
-versions:
-  - name: v1beta1
