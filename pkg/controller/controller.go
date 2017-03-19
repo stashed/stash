@@ -273,33 +273,37 @@ func restartPods(kubeClient clientset.Interface, namespace string, opts api.List
 	return nil
 }
 
-func getKubeObject(kubeClient clientset.Interface, destination api.Volume, namespace string, ls labels.Selector) map[string]interface{} {
-	uslist := &runtime.UnstructuredList{}
-	err := kubeClient.Core().RESTClient().Get().Resource("replicationcontrollers").Namespace(namespace).LabelsSelectorParam(ls).Do().Into(uslist)
-	if err == nil && len(uslist.Items) != 0 {
-		return uslist.Items[0].Object
+func getKubeObject(kubeClient clientset.Interface, namespace string, ls labels.Selector) ([]byte, error, string) {
+	rcs, err := kubeClient.Core().ReplicationControllers(namespace).List(api.ListOptions{LabelSelector: ls})
+	if err == nil && len(rcs.Items) != 0 {
+		b, err := yaml.Marshal(rcs.Items[0])
+		return b, err, ReplicationController
 	}
 
-	err = kubeClient.Extensions().RESTClient().Get().Resource("replicasets").Namespace(namespace).LabelsSelectorParam(ls).Do().Into(uslist)
-	if err == nil && len(uslist.Items) != 0 {
-		return uslist.Items[0].Object
+	replicasets, err := kubeClient.Extensions().ReplicaSets(namespace).List(api.ListOptions{LabelSelector: ls})
+	if err == nil && len(replicasets.Items) != 0 {
+		b, err := yaml.Marshal(replicasets.Items[0])
+		return b, err, ReplicaSet
 	}
 
-	err = kubeClient.Extensions().RESTClient().Get().Resource("deployments").Namespace(namespace).LabelsSelectorParam(ls).Do().Into(uslist)
-	if err == nil && len(uslist.Items) != 0 {
-		return uslist.Items[0].Object
+	deployments, err := kubeClient.Extensions().Deployments(namespace).List(api.ListOptions{LabelSelector: ls})
+	if err == nil && len(deployments.Items) != 0 {
+		b, err := yaml.Marshal(deployments.Items[0])
+		return b, err, Deployment
 	}
 
-	err = kubeClient.Extensions().RESTClient().Get().Resource("daemonsets").Namespace(namespace).LabelsSelectorParam(ls).Do().Into(uslist)
-	if err == nil && len(uslist.Items) != 0 {
-		return uslist.Items[0].Object
+	daemonsets, err := kubeClient.Extensions().DaemonSets(namespace).List(api.ListOptions{LabelSelector: ls})
+	if err == nil && len(daemonsets.Items) != 0 {
+		b, err := yaml.Marshal(daemonsets.Items[0])
+		return b, err, DaemonSet
 	}
 
-	err = kubeClient.Apps().RESTClient().Get().Resource("statefulsets").Namespace(namespace).LabelsSelectorParam(ls).Do().Into(uslist)
-	if err == nil && len(uslist.Items) != 0 {
-		return uslist.Items[0].Object
+	statefulsets, err := kubeClient.Apps().StatefulSets(namespace).List(api.ListOptions{LabelSelector: ls})
+	if err == nil && len(statefulsets.Items) != 0 {
+		b, err := yaml.Marshal(statefulsets.Items[0])
+		return b, err, StatefulSet
 	}
-	return nil
+	return nil, nil, ""
 }
 
 func findSelectors(lb map[string]string) labels.Selector {
@@ -311,14 +315,12 @@ func findSelectors(lb map[string]string) labels.Selector {
 func (pl *Controller) updateObjectAndStartBackup(b *rapi.Backup) error {
 	ls := labels.SelectorFromSet(labels.Set{BackupConfig: b.Name})
 	restikContainer := getRestikContainer(b, pl.Image)
-	object := getKubeObject(pl.Client, b.Spec.Destination.Volume, b.Namespace, ls)
-	ob, err := yaml.Marshal(object)
+	ob, err, _type := getKubeObject(pl.Client, b.Namespace, ls)
 	if err != nil {
 		return err
 	}
-	_type, ok := object["kind"].(string)
-	if !ok {
-		return errors.New("Object kind not found")
+	if ob == nil || _type == "" {
+		return errors.New(fmt.Sprintf("No object found for backup %s ", b.Name))
 	}
 	opts := api.ListOptions{}
 	switch _type {
@@ -375,20 +377,17 @@ func (pl *Controller) updateObjectAndStartBackup(b *rapi.Backup) error {
 	case StatefulSet:
 		return errors.New(fmt.Sprintf("The Object referred bt the backup object (%s) is a statefulset. Try manually", b.Name))
 	}
-	err = pl.addAnnotation(b)
-	return err
+	return pl.addAnnotation(b)
 }
 
 func (pl *Controller) updateObjectAndStopBackup(b *rapi.Backup) error {
 	ls := labels.SelectorFromSet(labels.Set{BackupConfig: b.Name})
-	object := getKubeObject(pl.Client, b.Spec.Destination.Volume, b.Namespace, ls)
-	ob, err := yaml.Marshal(object)
+	ob, err, _type := getKubeObject(pl.Client, b.Namespace, ls)
 	if err != nil {
 		return err
 	}
-	_type, ok := object["kind"].(string)
-	if !ok {
-		return nil
+	if ob == nil || _type == "" {
+		return errors.New(fmt.Sprintf("No object found for backup %s ", b.Name))
 	}
 	opts := api.ListOptions{}
 	switch _type {
@@ -404,7 +403,7 @@ func (pl *Controller) updateObjectAndStopBackup(b *rapi.Backup) error {
 			return err
 		}
 		opts.LabelSelector = findSelectors(newRC.Spec.Template.Labels)
-		err = restartPods(pl.Client, b.Namespace, opts)
+		return restartPods(pl.Client, b.Namespace, opts)
 	case ReplicaSet:
 		replicaset := &extensions.ReplicaSet{}
 		if err := yaml.Unmarshal(ob, replicaset); err != nil {
@@ -417,7 +416,7 @@ func (pl *Controller) updateObjectAndStopBackup(b *rapi.Backup) error {
 			return err
 		}
 		opts.LabelSelector = findSelectors(newReplicaset.Spec.Template.Labels)
-		err = restartPods(pl.Client, b.Namespace, opts)
+		return restartPods(pl.Client, b.Namespace, opts)
 	case DaemonSet:
 		daemonset := &extensions.DaemonSet{}
 		if err := yaml.Unmarshal(ob, daemonset); err != nil {
@@ -430,7 +429,7 @@ func (pl *Controller) updateObjectAndStopBackup(b *rapi.Backup) error {
 			return err
 		}
 		opts.LabelSelector = findSelectors(newDaemonset.Spec.Template.Labels)
-		err = restartPods(pl.Client, b.Namespace, opts)
+		return restartPods(pl.Client, b.Namespace, opts)
 	case Deployment:
 		deployment := &extensions.Deployment{}
 		if err := yaml.Unmarshal(ob, deployment); err != nil {
@@ -445,19 +444,17 @@ func (pl *Controller) updateObjectAndStopBackup(b *rapi.Backup) error {
 	case StatefulSet:
 		return errors.New(fmt.Sprintf("The Object referred bt the backup object (%s) is a statefulset. Try manually", b.Name))
 	}
-	return err
+	return nil
 }
 
 func (pl *Controller) updateImage(b *rapi.Backup, image string) error {
 	ls := labels.SelectorFromSet(labels.Set{BackupConfig: b.Name})
-	object := getKubeObject(pl.Client, b.Spec.Destination.Volume, b.Namespace, ls)
-	ob, err := yaml.Marshal(object)
+	ob, err, _type := getKubeObject(pl.Client, b.Namespace, ls)
 	if err != nil {
 		return err
 	}
-	_type, ok := object["kind"].(string)
-	if !ok {
-		return nil
+	if ob == nil || _type == "" {
+		return errors.New(fmt.Sprintf("No object found for backup %s ", b.Name))
 	}
 	opts := api.ListOptions{}
 	switch _type {
@@ -472,7 +469,7 @@ func (pl *Controller) updateImage(b *rapi.Backup, image string) error {
 			return err
 		}
 		opts.LabelSelector = findSelectors(newRC.Spec.Template.Labels)
-		err = restartPods(pl.Client, b.Namespace, opts)
+		return restartPods(pl.Client, b.Namespace, opts)
 	case ReplicaSet:
 		replicaset := &extensions.ReplicaSet{}
 		if err := yaml.Unmarshal(ob, replicaset); err != nil {
@@ -484,7 +481,7 @@ func (pl *Controller) updateImage(b *rapi.Backup, image string) error {
 			return err
 		}
 		opts.LabelSelector = findSelectors(newReplicaset.Spec.Template.Labels)
-		err = restartPods(pl.Client, b.Namespace, opts)
+		return restartPods(pl.Client, b.Namespace, opts)
 	case DaemonSet:
 		daemonset := &extensions.DaemonSet{}
 		if err := yaml.Unmarshal(ob, daemonset); err != nil {
@@ -496,7 +493,7 @@ func (pl *Controller) updateImage(b *rapi.Backup, image string) error {
 			return err
 		}
 		opts.LabelSelector = findSelectors(newDaemonset.Spec.Template.Labels)
-		err = restartPods(pl.Client, b.Namespace, opts)
+		return restartPods(pl.Client, b.Namespace, opts)
 	case Deployment:
 		deployment := &extensions.Deployment{}
 		if err := yaml.Unmarshal(ob, deployment); err != nil {
@@ -510,7 +507,7 @@ func (pl *Controller) updateImage(b *rapi.Backup, image string) error {
 	case StatefulSet:
 		return errors.New(fmt.Sprintf("The Object referred bt the backup object (%s) is a statefulset. Try manually", b.Name))
 	}
-	return err
+	return nil
 }
 
 func removeContainer(c []api.Container, name string) []api.Container {
