@@ -3,11 +3,11 @@ package controller
 import (
 	"fmt"
 	"log"
-	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -45,10 +45,6 @@ func New(c *rest.Config, image string) *Controller {
 		SyncPeriod: time.Minute * 2,
 		Image:      image,
 	}
-}
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
 }
 
 // Blocks caller. Intended to be called as a Go routine.
@@ -216,7 +212,7 @@ func RunBackup() {
 		if err != nil {
 			log.Println(err)
 		}
-		event.Name = backup.Name + "-" + randStringRunes(5)
+		event.Name = backup.Name + "-" + strconv.Itoa(int(backup.Status.BackupCount))
 		//event.Message = fmt.Sprintf("Backup : \n %s \n Retention: \n %s", backupOutput, retentionOutput)
 		_, err = client.Core().Events(backup.Namespace).Create(event)
 		if err != nil {
@@ -375,7 +371,7 @@ func (pl *Controller) updateObjectAndStartBackup(b *rapi.Backup) error {
 		opts.LabelSelector = findSelectors(newDaemonset.Spec.Template.Labels)
 		err = restartPods(pl.Client, b.Namespace, opts)
 	case StatefulSet:
-		return errors.New(fmt.Sprintf("The Object referred bt the backup object (%s) is a statefulset. Try manually", b.Name))
+		return errors.New(fmt.Sprintf("The Object referred by the backup object (%s) is a statefulset. Try manually", b.Name))
 	}
 	return pl.addAnnotation(b)
 }
@@ -603,14 +599,4 @@ func (pl *Controller) addAnnotation(b *rapi.Backup) error {
 	b.ObjectMeta.Annotations[ImageAnnotation] = pl.Image
 	_, err := pl.ExtClient.Backups(b.Namespace).Update(b)
 	return err
-}
-
-var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
-func randStringRunes(n int) string {
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letterRunes[rand.Intn(len(letterRunes))]
-	}
-	return string(b)
 }

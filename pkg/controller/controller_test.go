@@ -113,8 +113,6 @@ func TestUpdateImage(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-
-
 func getFakeController() *Controller {
 	fakeController := &Controller{
 		Client:     fakeclientset.NewSimpleClientset(),
