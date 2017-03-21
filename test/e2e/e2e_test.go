@@ -127,6 +127,10 @@ func TestBackups(t *testing.T) {
 	if !assert.Nil(t, err) {
 		return
 	}
+	err = checkDaemonsetAfterBackupDelete(watcher, daemonset)
+	if !assert.Nil(t, err) {
+		return
+	}
 	fmt.Println("SUCCESS: Daemonset Backup")
 }
 

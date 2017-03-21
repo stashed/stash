@@ -9,7 +9,7 @@ import (
 	"log"
 )
 
-var namespace = "test"
+var namespace = "sauman"
 var podTemplate = &api.PodTemplateSpec{
 	ObjectMeta: api.ObjectMeta{
 		Name: "nginx",

@@ -40,3 +40,31 @@ func checkEventForBackup(watcher *controller.Controller, eventName string) error
 	}
 	return err
 }
+
+func checkDaemonsetAfterBackupDelete(watcher *controller.Controller, daemonset string) error {
+	try := 0
+	var err error
+	for {
+		fmt.Println("Waiting 20 sec for checking restik-sedecar deletion...")
+		time.Sleep(time.Second * 20)
+		d, _ := watcher.Client.Extensions().DaemonSets(namespace).Get(daemonset)
+		err = checkContainer(d.Spec.Template.Spec.Containers)
+		if err == nil {
+			break
+		}
+		try ++
+		if try > 6 {
+			break
+		}
+	}
+	return err
+}
+
+func checkContainer (containers []api.Container) error {
+	for _, c := range containers {
+		if c.Name == controller.ContainerName {
+			return errors.New("ERROR: Restik sidecar not deleted")
+		}
+	}
+	return nil
+}
