@@ -14,7 +14,7 @@ func runController() (*controller.Controller, error) {
 	if err != nil {
 		return &controller.Controller{}, err
 	}
-	controller := controller.New(config, "sauman/restik:backup_controller")
+	controller := controller.New(config, "sauman/restik:test")
 	go controller.RunAndHold()
 	return controller, nil
 }
@@ -31,11 +31,12 @@ func checkEventForBackup(watcher *controller.Controller, eventName string) error
 		if try > 5 {
 			return err
 		}
-		fmt.Println("Waiting for 30 second")
+		fmt.Println("Waiting for 30 second for events of backup process")
 		time.Sleep(time.Second * 30)
+		try++
 	}
 	if event.Reason == "Failed" {
-		return errors.New("Restic backup failed")
+		return errors.New("Restic backup failed.")
 	}
-	return nil
+	return err
 }
