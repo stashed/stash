@@ -203,18 +203,17 @@ func RunBackup() {
 			log.Println("Snapshot retention failed cause ", err)
 		}
 		backup.Status.BackupCount++
+		event.Name = backup.Name + "-" + strconv.Itoa(int(backup.Status.BackupCount))
+		_, err = client.Core().Events(backup.Namespace).Create(event)
+		if err != nil {
+			log.Println(err)
+		}
 		backup.Status.LastBackupTime = backupStartTime
 		if reflect.DeepEqual(backup.Status.FirstBackupTime, time.Time{}) {
 			backup.Status.FirstBackupTime = backupStartTime
 		}
 		backup.Status.LastBackupDuration = backupEndTime.Sub(backupStartTime).Seconds()
 		backup, err = extClient.Backups(backup.Namespace).Update(backup)
-		if err != nil {
-			log.Println(err)
-		}
-		event.Name = backup.Name + "-" + strconv.Itoa(int(backup.Status.BackupCount))
-		//event.Message = fmt.Sprintf("Backup : \n %s \n Retention: \n %s", backupOutput, retentionOutput)
-		_, err = client.Core().Events(backup.Namespace).Create(event)
 		if err != nil {
 			log.Println(err)
 		}
@@ -371,7 +370,7 @@ func (pl *Controller) updateObjectAndStartBackup(b *rapi.Backup) error {
 		opts.LabelSelector = findSelectors(newDaemonset.Spec.Template.Labels)
 		err = restartPods(pl.Client, b.Namespace, opts)
 	case StatefulSet:
-		return errors.New(fmt.Sprintf("The Object referred by the backup object (%s) is a statefulset. Try manually", b.Name))
+		return errors.New(fmt.Sprintf("The Object referred by the backup object (%s) is a statefulset.", b.Name))
 	}
 	return pl.addAnnotation(b)
 }
@@ -438,7 +437,7 @@ func (pl *Controller) updateObjectAndStopBackup(b *rapi.Backup) error {
 			return err
 		}
 	case StatefulSet:
-		return errors.New(fmt.Sprintf("The Object referred bt the backup object (%s) is a statefulset. Try manually", b.Name))
+		return errors.New(fmt.Sprintf("The Object referred bt the backup object (%s) is a statefulset.", b.Name))
 	}
 	return nil
 }
@@ -501,7 +500,7 @@ func (pl *Controller) updateImage(b *rapi.Backup, image string) error {
 			return err
 		}
 	case StatefulSet:
-		return errors.New(fmt.Sprintf("The Object referred bt the backup object (%s) is a statefulset. Try manually", b.Name))
+		return errors.New(fmt.Sprintf("The Object referred bt the backup object (%s) is a statefulset.", b.Name))
 	}
 	return nil
 }
@@ -580,7 +579,7 @@ func execLocal(s string) (string, error) {
 	return strings.TrimSuffix(string(cmdOut), "\n"), err
 }
 
-func getPasswordFromSecret(client *clientset.Clientset, secretName, namespace string) (string, error) {
+func getPasswordFromSecret(client clientset.Interface, secretName, namespace string) (string, error) {
 	secret, err := client.Core().Secrets(namespace).Get(secretName)
 	if err != nil {
 		return "", err

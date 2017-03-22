@@ -1,15 +1,18 @@
 package test
 
 import (
+	"fmt"
+	"log"
+
 	rapi "github.com/appscode/restik/api"
 	"github.com/appscode/restik/pkg/controller"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/unversioned"
+	"k8s.io/kubernetes/pkg/apis/apps"
 	"k8s.io/kubernetes/pkg/apis/extensions"
-	"log"
 )
 
-var namespace = "sauman"
+var namespace string
 var podTemplate = &api.PodTemplateSpec{
 	ObjectMeta: api.ObjectMeta{
 		Name: "nginx",
@@ -39,6 +42,23 @@ var podTemplate = &api.PodTemplateSpec{
 			},
 		},
 	},
+}
+
+func createTestNamespace(watcher *controller.Controller, name string) error {
+	namespace = name
+	ns := &api.Namespace{
+		ObjectMeta: api.ObjectMeta{
+			Name: name,
+		},
+	}
+	_, err := watcher.Client.Core().Namespaces().Create(ns)
+	return err
+}
+
+func deleteTestNamespace(watcher *controller.Controller, name string) {
+	if err := watcher.Client.Core().Namespaces().Delete(name, &api.DeleteOptions{}); err != nil {
+		fmt.Println(err)
+	}
 }
 
 func createReplicationController(watcher *controller.Controller, name string, backupName string) error {
@@ -156,14 +176,8 @@ func createReplicaset(watcher *controller.Controller, name string, backupName st
 	return err
 }
 
-func deleteReplicaset(watcher *controller.Controller, name string)  {
-	if err:= watcher.Client.Extensions().ReplicaSets(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
-		log.Println(err)
-	}
-}
-
-func deleteEvent(watcher *controller.Controller, name string) {
-	if err := watcher.Client.Core().Events(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
+func deleteReplicaset(watcher *controller.Controller, name string) {
+	if err := watcher.Client.Extensions().ReplicaSets(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
 		log.Println(err)
 	}
 }
@@ -192,7 +206,7 @@ func createDeployment(watcher *controller.Controller, name string, backupName st
 }
 
 func deleteDeployment(watcher *controller.Controller, name string) {
-	if err:= watcher.Client.Extensions().Deployments(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
+	if err := watcher.Client.Extensions().Deployments(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
 		log.Println(err)
 	}
 }
@@ -218,4 +232,93 @@ func deleteDaemonset(watcher *controller.Controller, name string) {
 	if err := watcher.Client.Extensions().DaemonSets(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
 		log.Println(err)
 	}
+}
+
+func createStatefulSet(watcher *controller.Controller, name string, backupName string, svc string) error {
+	s := &apps.StatefulSet{
+		ObjectMeta: api.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+			Labels: map[string]string{
+				"backup.appscode.com/config": backupName,
+			},
+		},
+		Spec: apps.StatefulSetSpec{
+			Replicas:    1,
+			Template:    *podTemplate,
+			ServiceName: svc,
+		},
+	}
+	container := api.Container{
+		Name:            controller.ContainerName,
+		Image:           "appscode/restik:latest",
+		ImagePullPolicy: api.PullAlways,
+		Env: []api.EnvVar{
+			{
+				Name:  controller.Namespace,
+				Value: namespace,
+			},
+			{
+				Name:  controller.TPR,
+				Value: backupName,
+			},
+		},
+	}
+	container.Args = append(container.Args, "watch")
+	container.Args = append(container.Args, "--v=10")
+	backupVolumeMount := api.VolumeMount{
+		Name:      "test-volume",
+		MountPath: "/source_path",
+	}
+	sourceVolumeMount := api.VolumeMount{
+		Name:      "restik-vol",
+		MountPath: "/repo_path",
+	}
+	container.VolumeMounts = append(container.VolumeMounts, backupVolumeMount)
+	container.VolumeMounts = append(container.VolumeMounts, sourceVolumeMount)
+	s.Spec.Template.Spec.Containers = append(s.Spec.Template.Spec.Containers, container)
+	s.Spec.Template.Spec.Volumes = append(s.Spec.Template.Spec.Volumes, api.Volume{
+		Name: "restik-vol",
+		VolumeSource: api.VolumeSource{
+			EmptyDir: &api.EmptyDirVolumeSource{},
+		},
+	})
+	_, err := watcher.Client.Apps().StatefulSets(namespace).Create(s)
+	return err
+}
+
+func deleteStatefulset(watcher *controller.Controller, name string) {
+	if err := watcher.Client.Apps().StatefulSets(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
+		log.Println(err)
+	}
+}
+
+func createService(watcher *controller.Controller, name string) error {
+	svc := &api.Service{
+		ObjectMeta: api.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+			Labels: map[string]string{
+				"app": "nginx",
+			},
+		},
+		Spec: api.ServiceSpec{
+			Selector: map[string]string{
+				"app": "nginx",
+			},
+			Ports: []api.ServicePort{
+				{
+					Port: 80,
+					Name: "web",
+				},
+			},
+		},
+	}
+	_, err := watcher.Client.Core().Services(namespace).Create(svc)
+	return err
+}
+
+func deleteService(watcher *controller.Controller, name string) {
+	err := watcher.Client.Core().Services(namespace).Delete(name, &api.DeleteOptions{})
+	log.Println(err)
 }

@@ -37,6 +37,5 @@ func (m *FakeExtensionClient) Backups(ns string) client.BackupInterface {
 }
 
 func (c *FakeExtensionClient) RESTClient() rest.Interface {
-	var ret *rest.RESTClient
-	return ret
+	return nil
 }
