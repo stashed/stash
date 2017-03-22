@@ -2,6 +2,7 @@ package fake
 
 import (
 	aci "github.com/appscode/restik/api"
+	"github.com/appscode/restik/client/clientset"
 	"k8s.io/kubernetes/pkg/api"
 	schema "k8s.io/kubernetes/pkg/api/unversioned"
 	testing "k8s.io/kubernetes/pkg/client/testing/core"
@@ -14,7 +15,7 @@ type FakeBackup struct {
 	ns   string
 }
 
-var backupResource = schema.GroupVersionResource{Group: "appscode.com", Version: "v1beta1", Resource: "backups"}
+var backupResource = schema.GroupVersionResource{Group: "appscode.com", Version: "v1beta1", Resource: client.ResourceTypeBackup}
 
 // Get returns the Backups by name.
 func (mock *FakeBackup) Get(name string) (*aci.Backup, error) {

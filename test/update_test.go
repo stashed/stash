@@ -17,7 +17,7 @@ func TestBackupUpdate(t *testing.T) {
 		return
 	}
 	extClient := tcs.NewExtensionsForConfigOrDie(config)
-	b, err := extClient.Backups("test").Get("saumanbackup")
+	b, err := extClient.Backups("test").Get("backup-test")
 	if err != nil {
 		fmt.Println(err)
 	}

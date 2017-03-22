@@ -10,6 +10,7 @@ import (
 	"k8s.io/kubernetes/pkg/api/unversioned"
 	"k8s.io/kubernetes/pkg/apis/apps"
 	"k8s.io/kubernetes/pkg/apis/extensions"
+	"github.com/appscode/restik/client/clientset"
 )
 
 var namespace string
@@ -72,7 +73,7 @@ func createReplicationController(watcher *controller.Controller, name string, ba
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				"backup.appscode.com/config": backupName,
+				controller.BackupConfig: backupName,
 			},
 		},
 		Spec: api.ReplicationControllerSpec{
@@ -118,7 +119,7 @@ func createBackup(watcher *controller.Controller, backupName string, secretName 
 	backup := &rapi.Backup{
 		TypeMeta: unversioned.TypeMeta{
 			APIVersion: "appscode.com/v1beta1",
-			Kind:       "Backup",
+			Kind:      client.ResourceKindBackup,
 		},
 		ObjectMeta: api.ObjectMeta{
 			Name:      backupName,
@@ -159,7 +160,7 @@ func createReplicaset(watcher *controller.Controller, name string, backupName st
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				"backup.appscode.com/config": backupName,
+				controller.BackupConfig: backupName,
 			},
 		},
 		Spec: extensions.ReplicaSetSpec{
@@ -188,7 +189,7 @@ func createDeployment(watcher *controller.Controller, name string, backupName st
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				"backup.appscode.com/config": backupName,
+				controller.BackupConfig: backupName,
 			},
 		},
 		Spec: extensions.DeploymentSpec{
@@ -217,7 +218,7 @@ func createDaemonsets(watcher *controller.Controller, name string, backupName st
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				"backup.appscode.com/config": backupName,
+				controller.BackupConfig: backupName,
 			},
 		},
 		Spec: extensions.DaemonSetSpec{
@@ -240,7 +241,7 @@ func createStatefulSet(watcher *controller.Controller, name string, backupName s
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				"backup.appscode.com/config": backupName,
+				controller.BackupConfig: backupName,
 			},
 		},
 		Spec: apps.StatefulSetSpec{
