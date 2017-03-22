@@ -4,6 +4,7 @@ import (
 	"github.com/appscode/restik/client/clientset"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/apimachinery/registered"
+	rest "k8s.io/kubernetes/pkg/client/restclient"
 	testing "k8s.io/kubernetes/pkg/client/testing/core"
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/watch"
@@ -33,4 +34,8 @@ func NewFakeExtensionClient(objects ...runtime.Object) *FakeExtensionClient {
 
 func (m *FakeExtensionClient) Backups(ns string) client.BackupInterface {
 	return &FakeBackup{m.Fake, ns}
+}
+
+func (c *FakeExtensionClient) RESTClient() rest.Interface {
+	return nil
 }

@@ -2,6 +2,7 @@ package fake
 
 import (
 	aci "github.com/appscode/restik/api"
+	"github.com/appscode/restik/client/clientset"
 	"k8s.io/kubernetes/pkg/api"
 	schema "k8s.io/kubernetes/pkg/api/unversioned"
 	testing "k8s.io/kubernetes/pkg/client/testing/core"
@@ -14,12 +15,12 @@ type FakeBackup struct {
 	ns   string
 }
 
-var certResource = schema.GroupVersionResource{Group: "appscode.com", Version: "v1beta1", Resource: "certificates"}
+var backupResource = schema.GroupVersionResource{Group: "appscode.com", Version: "v1beta1", Resource: client.ResourceTypeBackup}
 
-// Get returns the Certificate by name.
+// Get returns the Backups by name.
 func (mock *FakeBackup) Get(name string) (*aci.Backup, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewGetAction(certResource, mock.ns, name), &aci.Backup{})
+		Invokes(testing.NewGetAction(backupResource, mock.ns, name), &aci.Backup{})
 
 	if obj == nil {
 		return nil, err
@@ -27,10 +28,10 @@ func (mock *FakeBackup) Get(name string) (*aci.Backup, error) {
 	return obj.(*aci.Backup), err
 }
 
-// List returns the a of Certificates.
+// List returns the a of Backups.
 func (mock *FakeBackup) List(opts api.ListOptions) (*aci.BackupList, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewListAction(certResource, mock.ns, opts), &aci.Backup{})
+		Invokes(testing.NewListAction(backupResource, mock.ns, opts), &aci.Backup{})
 
 	if obj == nil {
 		return nil, err
@@ -49,10 +50,10 @@ func (mock *FakeBackup) List(opts api.ListOptions) (*aci.BackupList, error) {
 	return list, err
 }
 
-// Create creates a new Certificate.
+// Create creates a new Backup.
 func (mock *FakeBackup) Create(svc *aci.Backup) (*aci.Backup, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewCreateAction(certResource, mock.ns, svc), &aci.Backup{})
+		Invokes(testing.NewCreateAction(backupResource, mock.ns, svc), &aci.Backup{})
 
 	if obj == nil {
 		return nil, err
@@ -60,10 +61,10 @@ func (mock *FakeBackup) Create(svc *aci.Backup) (*aci.Backup, error) {
 	return obj.(*aci.Backup), err
 }
 
-// Update updates a Certificate.
+// Update updates a Backup.
 func (mock *FakeBackup) Update(svc *aci.Backup) (*aci.Backup, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewUpdateAction(certResource, mock.ns, svc), &aci.Backup{})
+		Invokes(testing.NewUpdateAction(backupResource, mock.ns, svc), &aci.Backup{})
 
 	if obj == nil {
 		return nil, err
@@ -71,17 +72,17 @@ func (mock *FakeBackup) Update(svc *aci.Backup) (*aci.Backup, error) {
 	return obj.(*aci.Backup), err
 }
 
-// Delete deletes a Certificate by name.
+// Delete deletes a Backup by name.
 func (mock *FakeBackup) Delete(name string, _ *api.DeleteOptions) error {
 	_, err := mock.Fake.
-		Invokes(testing.NewDeleteAction(certResource, mock.ns, name), &aci.Backup{})
+		Invokes(testing.NewDeleteAction(backupResource, mock.ns, name), &aci.Backup{})
 
 	return err
 }
 
 func (mock *FakeBackup) UpdateStatus(srv *aci.Backup) (*aci.Backup, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(certResource, "status", mock.ns, srv), &aci.Backup{})
+		Invokes(testing.NewUpdateSubresourceAction(backupResource, "status", mock.ns, srv), &aci.Backup{})
 
 	if obj == nil {
 		return nil, err
@@ -91,5 +92,5 @@ func (mock *FakeBackup) UpdateStatus(srv *aci.Backup) (*aci.Backup, error) {
 
 func (mock *FakeBackup) Watch(opts api.ListOptions) (watch.Interface, error) {
 	return mock.Fake.
-		InvokesWatch(testing.NewWatchAction(certResource, mock.ns, opts))
+		InvokesWatch(testing.NewWatchAction(backupResource, mock.ns, opts))
 }
