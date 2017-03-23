@@ -8,8 +8,7 @@ This guide will walk you through deploying the Backup controller.
 ## Deploying Backup
 
 ### Create Third Party Resource
-`Backup process` depends on one Third Party Resource Object `backup.appscode.com`. This object
-can be created using following data.
+`Backup process` depends on Third Party Resource Object `backup.appscode.com`. This object can be created using following data.
 
 ```yaml
 apiVersion: extensions/v1beta1
@@ -74,12 +73,13 @@ spec:
 as AppsCode Backup. In metadata the `name` and `namespace` indicates the resource identifying name and its Kubernetes namespace.
 
 **Line 6-20**: Backup spec has all the information needed to configure the backup process. 
-In source field user needs to specify the volume name and the path of which he/she wants to take backup.
-In destination field user needs to specify the path and the volume where he/she wants to store the backup snapshots.
-In repositorySecretName user adds name of the secret that will be used as  password of the backup repository. In secret user will add a key `password`, which will be used as the password for the backup repository. secret must be in the same namespace of backup.
-User can add tag for the snapshots. Multiple tags are allowed for a single snapshot.
-User needs to add the `schedule`. Its a cron scedule. It will be in cron format. You can learn about cron format [here](http://www.nncron.ru/help/EN/working/cron-format.htm).
-In retentionPolicy user adds the policy of keeping snapshots. Retention policy options are below.
+
+* In `source` field user needs to specify the volume name and the path of which he/she wants to take backup.
+* In `destination` field user needs to specify the path and the volume where he/she wants to store the backup snapshots.
+* In `repositorySecretName` user adds name of the secret. In secret user will add a key `password`, which will be used as the password for the backup repository. Secret and Backup must be under the same namespace.
+* User can add tag for the snapshots by using `tags` field. Multiple tags are allowed for a single snapshot.
+* User needs to add the `schedule`. Its the time interval of taking snapshots. It will be in cron format. You can learn about cron format from [here](http://www.nncron.ru/help/EN/working/cron-format.htm).
+* In `retentionPolicy` user adds the policy of keeping snapshots. Retention policy options are below.
 
 ```
 # keepLastSnapshots: n --> never delete the n last (most recent) snapshots
@@ -93,9 +93,9 @@ In retentionPolicy user adds the policy of keeping snapshots. Retention policy o
 One can restrict removing snapshots to those which have a particular hostname with the `retainHostname` , or tags with the `retainTags` option. 
 When multiple `retainTags` are specified, only the snapshots which have all the tags are considered.
 
-### Enable Backup
+## Enable Backup
 
-For enabling the backup process for a particular kubernetes object like `RC`, `Replica Set`, `Deployment`, `DaemonSet` user adds a label `backup.appscode.com/config: <name_of_tpr>`.`<name_of_tpr>` is the name of backup object. And then user creates the backup object for starting backub.
+For enabling the backup process for a particular kubernetes object like `RC`, `Replica Set`, `Deployment`, `DaemonSet` user adds a label `backup.appscode.com/config: <name_of_tpr>`. `<name_of_tpr>` is the name of backup object. And then user creates the backup object for starting backub.
 In case of StaefulSet user has to add the restic-sidecar container manually.
 
 ```yaml
@@ -114,7 +114,6 @@ spec:
   serviceName: test-svc
   template:
     metadata:
-      creationTimestamp: null
       labels:
         app: nginx
       name: nginx
@@ -152,17 +151,17 @@ spec:
 ## Disable Backup
 
 For disabling backup process one needs to delete the corresponding backup object in case of `RC`, `Replica Set`, `Deployment`, `DaemonSet`.
-In case of `Statefulset` user need to delete the corresponding backup object as well as remove the side container from the Statefulset.
+In case of `Statefulset` user needs to delete the corresponding backup object as well as remove the side container from the Statefulset manually.
 
 ## Update Image
 
 If one wants to update the restik image for particular backup object he/she needs to update the annotation `backup.appscode.com/image:` of the backup object.
-And of course for `Statefulset` one needs to update the restic-container with the new image.
+And of course for `Statefulset` one needs to update the restic-container with the new image manually.
 
 ## Backup Nodes
 
-Users might be interested in take backup of host paths. This can be done by deploying a `DaemonSet`  with a do nothing busybox container. 
-Restic TPR controller can use that as a vessel for running restic side card containers.
+If one interested in take backup of host paths, this can be done by deploying a `DaemonSet`  with a do nothing busybox container. 
+Restik TPR controller can use that as a vessel for running restic side card containers.
 
 ## Recovery process
 The recover process will be left to users for now.
