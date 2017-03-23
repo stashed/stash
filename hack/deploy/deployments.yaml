@@ -1,0 +1,22 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+  name: appscode-backup
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: appscode-backup
+  template:
+    metadata:
+      labels:
+        run: appscode-backup
+    spec:
+      containers:
+      - name: appscode-backup
+        args:
+        - run
+        image: appscode/restik:latest
+        imagePullPolicy: Always
