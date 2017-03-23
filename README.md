@@ -16,8 +16,6 @@ Kubernetes 1.3+
 
 1. Create `backup.appscode.com` Third Party Resource
 2. Deploy backup to kubernetes.
-<!--## Status
-We are actively working on this project. You can read the proposal here: https://github.com/appscode/restik/issues/1 . If you have any comments give your feedback there.-->
 
 ## Developer Guide
 Want to learn whats happening under the hood, read [the developer guide](docs/developer-guide/README.md).
