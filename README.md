@@ -8,8 +8,7 @@
 ## Supported Versions
 Kubernetes 1.5+
 
-##Supported Workloads 
-
+## Supported Workloads 
 Restik supports backup of following Workloads
 
 * Replication Controller
