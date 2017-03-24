@@ -18,14 +18,8 @@ Restik supports backup of following Workloads
 * Daemon Set
 * StatefulSet
 
-<!--## User Guide
- To deploy backup in Kubernetes follow this [guide](docs/user-guide/README.md). In short this contains those two steps-->
-
 ## Installation
 Installation and Upgrade process are described [here](docs/user-guide/install.md)
-
-<!--1. Create `backup.appscode.com` Third Party Resource
-2. Deploy backup to kubernetes.-->
 
 ## How to backup
 

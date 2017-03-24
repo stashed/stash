@@ -10,7 +10,7 @@
 glide slow
 
 # Build
-./hack/make.py build restik
+./hack/make.py
 ```
 
 ## Build Docker

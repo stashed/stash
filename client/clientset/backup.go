@@ -17,6 +17,8 @@ const (
 	ResourceTypeBackup = "backups"
 )
 
+const GroupName = "appscode.com"
+
 type BackupInterface interface {
 	List(opts api.ListOptions) (*aci.BackupList, error)
 	Get(name string) (*aci.Backup, error)

@@ -75,8 +75,8 @@ func setExtensionsDefaults(config *rest.Config) error {
 		config.UserAgent = rest.DefaultKubernetesUserAgent()
 	}
 
-	if config.GroupVersion == nil || config.GroupVersion.Group != "appscode.com" {
-		g, err := registered.Group("appscode.com")
+	if config.GroupVersion == nil || config.GroupVersion.Group != GroupName {
+		g, err := registered.Group(GroupName)
 		if err != nil {
 			return err
 		}

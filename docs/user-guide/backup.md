@@ -42,7 +42,7 @@ $ kubectl apply -f https://raw.githubusercontent.com/appscode/restik/master/hack
 ```
 
 ## Backup
-This resource type is backed by an controller which take backup of kubernetes volumes from any running pod in Kubernetes. It can also take backup of host paths from Nodes in Kubernetes.
+This resource type is backed by a controller which take backup of kubernetes volumes from any running pod in Kubernetes. It can also take backup of host paths from Nodes in Kubernetes.
 
 ### Resource
 A AppsCode Backup resource Looks like at the kubernetes level:
