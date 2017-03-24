@@ -14,12 +14,12 @@ Currently the project includes all its required dependencies inside `vendor` to 
 ### Run Test
 #### Run Unit Test by
 ```sh
-go test -v ./pkg/...
+./hack/make.py test unit
 ```
 
 #### Run e2e Test
 ```sh
-go test ./test/e2e -v
+./hack/make.py test e2e
 ```
 
 ### Local Build

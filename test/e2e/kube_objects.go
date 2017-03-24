@@ -252,7 +252,7 @@ func createStatefulSet(watcher *controller.Controller, name string, backupName s
 	}
 	container := api.Container{
 		Name:            controller.ContainerName,
-		Image:           "appscode/restik:latest",
+		Image:           image,
 		ImagePullPolicy: api.PullAlways,
 		Env: []api.EnvVar{
 			{
