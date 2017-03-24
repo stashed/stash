@@ -27,7 +27,8 @@ One can start the backup process by following this [guide](docs/user-guide/backu
 
 ## How to recover
 
-The recover process will be left to users for now. It can ve done following this [process](https://restic.readthedocs.io/en/stable/Manual/#restore-a-snapshot)
+The recover process will be left to users for now. It can be done by running `$ /restic -r <restik_repo> restore snapshot_id --target <target_dir>` inside the restic-sidecar container. 
+You can find the details [here](https://restic.readthedocs.io/en/stable/Manual/#restore-a-snapshot) 
 
 ## Developer Guide
 Want to learn whats happening under the hood, read [the developer guide](docs/developer-guide/README.md).

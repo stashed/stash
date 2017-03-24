@@ -156,7 +156,9 @@ Restik TPR controller can use that as a vessel for running restic side card cont
 
 ## Update Backup
 
-One can update the source path, retention policy, tags of the backup object. After updating the backup object backup process will follow the new backup strategy.
+One can update the bckup source, retention policy, tags of the backup object. After updating the backup object backup process will follow the new backup strategy.
+If user wants to update the image of restic-sidecar container he/she needs to update the `backup.appscode.com/image` in field inannotation in the backup object. This will automatically update the restic-sidecar container.
+In case of Statefulset user needs to update the sidecar container manually.
 
 ## Disable Backup
 
