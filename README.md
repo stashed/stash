@@ -11,15 +11,15 @@ Kubernetes 1.3+
 <!--## User Guide
  To deploy backup in Kubernetes follow this [guide](docs/user-guide/README.md). In short this contains those two steps-->
 
-## Install Restik and Update Restik
-Installation and Update process ware described [here](docs/user-guide/install.md)
+## Installation
+Installation and Upgrade process are described [here](docs/user-guide/install.md)
 
 <!--1. Create `backup.appscode.com` Third Party Resource
 2. Deploy backup to kubernetes.-->
 
 ## How to backup
 
-One can start the backup process bt following this [guide](docs/user-guide/backup.md)
+One can start the backup process by following this [guide](docs/user-guide/backup.md)
 
 ## How to recover
 
