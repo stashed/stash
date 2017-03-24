@@ -6,7 +6,7 @@
 **Feautures**
  - Support backup for any kubernetes [volumes](https://kubernetes.io/docs/concepts/storage/volumes/).
 ## Supported Versions
-Kubernetes 1.3+
+Kubernetes 1.5+
 
 ##Supported Workloads 
 
@@ -16,7 +16,7 @@ Restik supports backup of following Workloads
 * Replica Set 
 * Deployment
 * Daemon Set
-* StatefulSet
+* Stateful Set
 
 ## Installation
 Installation and Upgrade process are described [here](docs/user-guide/install.md)
