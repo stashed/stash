@@ -8,6 +8,16 @@
 ## Supported Versions
 Kubernetes 1.3+
 
+##Supported Workloads 
+
+Restik supports backup of following Workloads
+
+* Replication Controller
+* Replica Set 
+* Deployment
+* Daemon Set
+* StatefulSet
+
 <!--## User Guide
  To deploy backup in Kubernetes follow this [guide](docs/user-guide/README.md). In short this contains those two steps-->
 
@@ -27,6 +37,9 @@ The recover process will be left to users for now. It can ve done following this
 
 ## Developer Guide
 Want to learn whats happening under the hood, read [the developer guide](docs/developer-guide/README.md).
+
+## Architectural Design
+If you want to know how Backup Controller is working, read this [doc](docs/developer-guide/design.md).
 
 ## Contribution
 If you're interested in being a contributor, read [the contribution guide](docs/contribution/README.md).
