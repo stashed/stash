@@ -11,6 +11,7 @@ import (
 	"github.com/appscode/restik/pkg/cmd"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	_ "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/fake"
 )
 
 func main() {

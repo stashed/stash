@@ -18,6 +18,8 @@ import (
 	"github.com/restic/restic/src/restic/errors"
 	"gopkg.in/robfig/cron.v2"
 	"k8s.io/kubernetes/pkg/api"
+	k8serrors "k8s.io/kubernetes/pkg/api/errors"
+	"k8s.io/kubernetes/pkg/api/unversioned"
 	"k8s.io/kubernetes/pkg/apis/extensions"
 	"k8s.io/kubernetes/pkg/client/cache"
 	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
@@ -49,6 +51,7 @@ func New(c *rest.Config, image string) *Controller {
 
 // Blocks caller. Intended to be called as a Go routine.
 func (w *Controller) RunAndHold() {
+	w.ensureResource()
 	lw := &cache.ListWatch{
 		ListFunc: func(opts api.ListOptions) (runtime.Object, error) {
 			return w.ExtClient.Backups(api.NamespaceAll).List(api.ListOptions{})
@@ -73,7 +76,7 @@ func (w *Controller) RunAndHold() {
 					}
 					err := w.updateObjectAndStartBackup(b)
 					if err != nil {
-						log.Println("ERROR :", err)
+						log.Println(err)
 					}
 				}
 			},
@@ -503,6 +506,31 @@ func (pl *Controller) updateImage(b *rapi.Backup, image string) error {
 		return errors.New(fmt.Sprintf("The Object referred bt the backup object (%s) is a statefulset.", b.Name))
 	}
 	return nil
+}
+
+func (w *Controller) ensureResource() {
+	_, err := w.Client.Extensions().ThirdPartyResources().Get(tcs.ResourceNameBackup + "." + tcs.GroupName)
+	if k8serrors.IsNotFound(err) {
+		tpr := &extensions.ThirdPartyResource{
+			TypeMeta: unversioned.TypeMeta{
+				APIVersion: "extensions/v1beta1",
+				Kind:       "ThirdPartyResource",
+			},
+			ObjectMeta: api.ObjectMeta{
+				Name: tcs.ResourceNameBackup + "." + tcs.GroupName,
+			},
+			Versions: []extensions.APIVersion{
+				{
+					Name: "v1beta1",
+				},
+			},
+		}
+		_, err := w.Client.Extensions().ThirdPartyResources().Create(tpr)
+		if err != nil {
+			// This should fail if there is one third party resource data missing.
+			log.Fatalln(tpr.Name, "failed to create, causes", err.Error())
+		}
+	}
 }
 
 func removeContainer(c []api.Container, name string) []api.Container {

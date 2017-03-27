@@ -154,6 +154,18 @@ def default():
     fmt()
     die(call('GO15VENDOREXPERIMENT=1 ' + libbuild.GOC + ' install ./cmd/...'))
 
+def test(type):
+    if type == 'unit':
+        unit_test()
+    elif type == 'e2e':
+        e2e_test()
+
+
+def unit_test():
+      die(call(libbuild.GOC + ' test -v ./pkg/controller...'))
+
+def e2e_test():
+    die(call(libbuild.GOC + ' test -v ./test/e2e/... -timeout 10h'))
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
