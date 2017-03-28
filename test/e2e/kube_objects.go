@@ -321,5 +321,7 @@ func createService(watcher *controller.Controller, name string) error {
 
 func deleteService(watcher *controller.Controller, name string) {
 	err := watcher.Client.Core().Services(namespace).Delete(name, &api.DeleteOptions{})
-	log.Println(err)
+	if err != nil {
+		log.Println(err)
+	}
 }
