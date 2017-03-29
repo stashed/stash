@@ -1,14 +1,21 @@
 package test
 
 import (
-	"log"
 	"math/rand"
 	"testing"
 	"time"
 
+	"flag"
+	"github.com/appscode/log"
 	"github.com/appscode/restik/pkg/controller"
 	"github.com/stretchr/testify/assert"
 )
+
+func init() {
+	flag.Set("logtostderr", "true")
+	flag.Set("v", "5")
+	flag.Parse()
+}
 
 func TestBackups(t *testing.T) {
 	randStr := RandStringRunes(10)
@@ -24,32 +31,32 @@ func TestBackups(t *testing.T) {
 	var statefulset = "restik-test-statefulset-" + randStr
 	var svc = "restik-test-svc-" + randStr
 	var daemonset = "restik-test-daemonset-" + randStr
-	log.Println("###############==Running e2e tests for Restik==#############")
+	log.Infoln("###############==Running e2e tests for Restik==#############")
 	watcher, err := runController()
 	if !assert.Nil(t, err) {
 		return
 	}
 	namespace := "test-" + randStr
-	log.Println("\n\nCreating namespace -->", namespace)
+	log.Infoln("\n\nCreating namespace -->", namespace)
 	err = createTestNamespace(watcher, namespace)
 	if !assert.Nil(t, err) {
 		return
 	}
 	defer deleteTestNamespace(watcher, namespace)
-	log.Println("Creating secret with password -->", repoSecret)
+	log.Infoln("Creating secret with password -->", repoSecret)
 	err = createSecret(watcher, repoSecret)
 	if !assert.Nil(t, err) {
 		return
 	}
 	defer deleteSecret(watcher, repoSecret)
 
-	log.Println("\n***********************************************************\nCreating Daemonset -->", daemonset)
+	log.Infoln("\n***********************************************************\nCreating Daemonset -->", daemonset)
 	err = createDaemonsets(watcher, daemonset, backupDaemonset)
 	if !assert.Nil(t, err) {
 		return
 	}
 	time.Sleep(time.Second * 10)
-	log.Printf("Starting backup(%s) for Daemonset...\n", backupDaemonset)
+	log.Infof("Starting backup(%s) for Daemonset...\n", backupDaemonset)
 	err = createBackup(watcher, backupDaemonset, repoSecret)
 	if !assert.Nil(t, err) {
 		return
@@ -58,7 +65,7 @@ func TestBackups(t *testing.T) {
 	if !assert.Nil(t, err) {
 		return
 	}
-	log.Println("Removing backup for Daemonset")
+	log.Infoln("Removing backup for Daemonset")
 	err = deleteBackup(watcher, backupDaemonset)
 	if !assert.Nil(t, err) {
 		return
@@ -67,15 +74,15 @@ func TestBackups(t *testing.T) {
 	if !assert.Nil(t, err) {
 		return
 	}
-	log.Println("SUCCESS: Daemonset Backup")
+	log.Infoln("SUCCESS: Daemonset Backup")
 	deleteDaemonset(watcher, daemonset)
-	log.Println("\n************************************************************\nCreating ReplicationController -->", rc)
+	log.Infoln("\n************************************************************\nCreating ReplicationController -->", rc)
 	err = createReplicationController(watcher, rc, backupRC)
 	if !assert.Nil(t, err) {
 		return
 	}
 	time.Sleep(time.Second * 10)
-	log.Printf("Starting backup(%s) for ReplicationController...\n", backupRC)
+	log.Infof("Starting backup(%s) for ReplicationController...\n", backupRC)
 	err = createBackup(watcher, backupRC, repoSecret)
 	if !assert.Nil(t, err) {
 		return
@@ -85,7 +92,7 @@ func TestBackups(t *testing.T) {
 	if !assert.Nil(t, err) {
 		return
 	}
-	log.Println("Removing backup for ReplicationController")
+	log.Infoln("Removing backup for ReplicationController")
 	err = deleteBackup(watcher, backupRC)
 	if !assert.Nil(t, err) {
 		return
@@ -94,16 +101,16 @@ func TestBackups(t *testing.T) {
 	if !assert.Nil(t, err) {
 		return
 	}
-	log.Println("SUCCESS: ReplicationController Backup")
+	log.Infoln("SUCCESS: ReplicationController Backup")
 	deleteReplicationController(watcher, rc)
 
-	log.Println("\n***********************************************************\nCreating Replicaset -->", rs)
+	log.Infoln("\n***********************************************************\nCreating Replicaset -->", rs)
 	err = createReplicaset(watcher, rs, backupReplicaset)
 	if !assert.Nil(t, err) {
 		return
 	}
 	time.Sleep(time.Second * 10)
-	log.Printf("Starting backup(%s) for Replicaset...\n", backupReplicaset)
+	log.Infof("Starting backup(%s) for Replicaset...\n", backupReplicaset)
 	err = createBackup(watcher, backupReplicaset, repoSecret)
 	if !assert.Nil(t, err) {
 		return
@@ -112,7 +119,7 @@ func TestBackups(t *testing.T) {
 	if !assert.Nil(t, err) {
 		return
 	}
-	log.Println("Removing backup for Replicaset")
+	log.Infoln("Removing backup for Replicaset")
 	err = deleteBackup(watcher, backupReplicaset)
 	if !assert.Nil(t, err) {
 		return
@@ -121,17 +128,17 @@ func TestBackups(t *testing.T) {
 	if !assert.Nil(t, err) {
 		return
 	}
-	log.Println("SUCCESS : Replicaset Backup")
+	log.Infoln("SUCCESS : Replicaset Backup")
 	deleteReplicaset(watcher, rs)
 
-	log.Println("\n***********************************************************\nCreating Deployment -->", deployment)
+	log.Infoln("\n***********************************************************\nCreating Deployment -->", deployment)
 	err = createDeployment(watcher, deployment, backupDeployment)
 	if !assert.Nil(t, err) {
 		return
 	}
 	time.Sleep(time.Second * 10)
 	defer deleteDeployment(watcher, deployment)
-	log.Printf("Starting backup(%s) for deployment...\n", backupDeployment)
+	log.Infof("Starting backup(%s) for deployment...\n", backupDeployment)
 	err = createBackup(watcher, backupDeployment, repoSecret)
 	if !assert.Nil(t, err) {
 		return
@@ -140,7 +147,7 @@ func TestBackups(t *testing.T) {
 	if !assert.Nil(t, err) {
 		return
 	}
-	log.Println("Removing backup for Deployment")
+	log.Infoln("Removing backup for Deployment")
 	err = deleteBackup(watcher, backupDeployment)
 	if !assert.Nil(t, err) {
 		return
@@ -149,9 +156,9 @@ func TestBackups(t *testing.T) {
 	if !assert.Nil(t, err) {
 		return
 	}
-	log.Println("SUCCESS: Deployment Backup")
+	log.Infoln("SUCCESS: Deployment Backup")
 
-	log.Println("\n***********************************************************\nCreating Statefulset with Backup -->", statefulset)
+	log.Infoln("\n***********************************************************\nCreating Statefulset with Backup -->", statefulset)
 	err = createService(watcher, svc)
 	if !assert.Nil(t, err) {
 		return
@@ -171,7 +178,7 @@ func TestBackups(t *testing.T) {
 	if !assert.Nil(t, err) {
 		return
 	}
-	log.Println("SUCCESS: Statefulset Backup")
+	log.Infoln("SUCCESS: Statefulset Backup")
 	deleteStatefulset(watcher, statefulset)
 	deleteService(watcher, svc)
 }

@@ -2,11 +2,11 @@ package test
 
 import (
 	"errors"
-	"log"
 	"os/user"
 	"path/filepath"
 	"time"
 
+	"github.com/appscode/log"
 	"github.com/appscode/restik/pkg/controller"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
@@ -40,7 +40,7 @@ func checkEventForBackup(watcher *controller.Controller, eventName string) error
 		if try > 12 {
 			return err
 		}
-		log.Println("Waiting for 10 second for events of backup process")
+		log.Infoln("Waiting for 10 second for events of backup process")
 		time.Sleep(time.Second * 10)
 		try++
 	}
@@ -55,7 +55,7 @@ func checkContainerAfterBackupDelete(watcher *controller.Controller, name string
 	var err error
 	var containers []api.Container
 	for {
-		log.Println("Waiting 20 sec for checking restik-sedecar deletion")
+		log.Infoln("Waiting 20 sec for checking restik-sedecar deletion")
 		time.Sleep(time.Second * 20)
 		switch _type {
 		case controller.ReplicationController:

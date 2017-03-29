@@ -42,7 +42,7 @@ type BackupStatus struct {
 	FirstBackupTime           time.Time `json:"firstBackupTime,omitempty"`
 	LastBackupTime            time.Time `json:"lastBackupTime,omitempty"`
 	LastSuccessfullBackupTime time.Time `json:"lastSuccessfullBackupTime,omitempty"`
-	LastBackupDuration        float64   `json:"lastBackupDuration,omitempty"`
+	LastBackupDuration        string    `json:"lastBackupDuration,omitempty"`
 	BackupCount               int64     `json:"backupCount,omitempty"`
 }
 

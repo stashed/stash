@@ -2,7 +2,6 @@ package controller
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/appscode/log"
 	rapi "github.com/appscode/restik/api"
 	tcs "github.com/appscode/restik/client/clientset"
 	"github.com/ghodss/yaml"
@@ -76,7 +76,7 @@ func (w *Controller) RunAndHold() {
 					}
 					err := w.updateObjectAndStartBackup(b)
 					if err != nil {
-						log.Println(err)
+						log.Errorln(err)
 					}
 				}
 			},
@@ -85,7 +85,7 @@ func (w *Controller) RunAndHold() {
 					glog.Infoln("Got one deleted backup object", b)
 					err := w.updateObjectAndStopBackup(b)
 					if err != nil {
-						log.Println("ERROR: ", err)
+						log.Errorln(err)
 					}
 				}
 			},
@@ -109,7 +109,7 @@ func (w *Controller) RunAndHold() {
 					glog.Infoln("Got one updated backp object for image", newObj)
 					err := w.updateImage(newObj, newImage)
 					if err != nil {
-						log.Println("ERROR: ", err)
+						log.Errorln(err)
 					}
 				}
 			},
@@ -122,43 +122,43 @@ func RunBackup() {
 	factory := cmdutil.NewFactory(nil)
 	config, err := factory.ClientConfig()
 	if err != nil {
-		log.Println(err)
+		log.Errorln(err)
 		return
 	}
 	extClient := tcs.NewExtensionsForConfigOrDie(config)
 	client, err := factory.ClientSet()
 	if err != nil {
-		log.Println(err)
+		log.Errorln(err)
 		return
 	}
 	namespace := os.Getenv(Namespace)
 	tprName := os.Getenv(TPR)
 	backup, err := extClient.Backups(namespace).Get(tprName)
 	if err != nil {
-		log.Println(err)
+		log.Errorln(err)
 		return
 	}
 	password, err := getPasswordFromSecret(client, backup.Spec.Destination.RepositorySecretName, backup.Namespace)
 	if err != nil {
-		log.Println(err)
+		log.Errorln(err)
 		return
 	}
 	err = os.Setenv(RESTIC_PASSWORD, password)
 	if err != nil {
-		log.Println(err)
+		log.Errorln(err)
 		return
 	}
 	repo := backup.Spec.Destination.Path
 	_, err = os.Stat(filepath.Join(repo, "config"))
 	if os.IsNotExist(err) {
 		if _, err = execLocal(fmt.Sprintf("/restic init --repo %s", repo)); err != nil {
-			log.Println("RESTIC repository not created cause", err)
+			log.Errorln("RESTIC repository not created cause", err)
 			return
 		}
 	}
 	interval := backup.Spec.Schedule
 	if _, err = cron.Parse(interval); err != nil {
-		log.Println(err)
+		log.Errorln(err)
 		return
 	}
 	c := cron.New()
@@ -166,7 +166,7 @@ func RunBackup() {
 	c.AddFunc(interval, func() {
 		backup, err := extClient.Backups(namespace).Get(tprName)
 		if err != nil {
-			log.Println(err)
+			log.Errorln(err)
 		}
 		event := &api.Event{
 			ObjectMeta: api.ObjectMeta{
@@ -181,7 +181,7 @@ func RunBackup() {
 		password, err := getPasswordFromSecret(client, backup.Spec.Destination.RepositorySecretName, backup.Namespace)
 		err = os.Setenv(RESTIC_PASSWORD, password)
 		if err != nil {
-			log.Println(err)
+			log.Errorln(err)
 		}
 		backupStartTime := time.Now()
 		cmd := fmt.Sprintf("/restic -r %s backup %s", backup.Spec.Destination.Path, backup.Spec.Source.Path)
@@ -194,7 +194,7 @@ func RunBackup() {
 		// Take Backup
 		_, err = execLocal(cmd)
 		if err != nil {
-			log.Println("Restick backup failed cause ", err)
+			log.Errorln("Restick backup failed cause ", err)
 			event.Reason = "Failed"
 		} else {
 			backup.Status.LastSuccessfullBackupTime = backupStartTime
@@ -203,22 +203,22 @@ func RunBackup() {
 		backupEndTime := time.Now()
 		_, err = snapshotRetention(backup)
 		if err != nil {
-			log.Println("Snapshot retention failed cause ", err)
+			log.Errorln("Snapshot retention failed cause ", err)
 		}
 		backup.Status.BackupCount++
 		event.Name = backup.Name + "-" + strconv.Itoa(int(backup.Status.BackupCount))
 		_, err = client.Core().Events(backup.Namespace).Create(event)
 		if err != nil {
-			log.Println(err)
+			log.Errorln(err)
 		}
 		backup.Status.LastBackupTime = backupStartTime
 		if reflect.DeepEqual(backup.Status.FirstBackupTime, time.Time{}) {
 			backup.Status.FirstBackupTime = backupStartTime
 		}
-		backup.Status.LastBackupDuration = backupEndTime.Sub(backupStartTime).Seconds()
+		backup.Status.LastBackupDuration = backupEndTime.Sub(backupStartTime).String()
 		backup, err = extClient.Backups(backup.Namespace).Update(backup)
 		if err != nil {
-			log.Println(err)
+			log.Errorln(err)
 		}
 	})
 	wait.Until(func() {}, time.Second, wait.NeverStop)
@@ -265,7 +265,7 @@ func restartPods(kubeClient clientset.Interface, namespace string, opts api.List
 		err = kubeClient.Core().Pods(namespace).Delete(pod.Name, deleteOpts)
 		if err != nil {
 			errMessage := fmt.Sprint("Failed to restart pod %s cause %v", pod.Name, err)
-			log.Println(errMessage)
+			log.Errorln(errMessage)
 		}
 	}
 	return nil
@@ -373,7 +373,8 @@ func (pl *Controller) updateObjectAndStartBackup(b *rapi.Backup) error {
 		opts.LabelSelector = findSelectors(newDaemonset.Spec.Template.Labels)
 		err = restartPods(pl.Client, b.Namespace, opts)
 	case StatefulSet:
-		return errors.New(fmt.Sprintf("The Object referred by the backup object (%s) is a statefulset.", b.Name))
+		log.Warningln(fmt.Sprintf("The Object referred by the backup object (%s) is a statefulset.", b.Name))
+		return nil
 	}
 	return pl.addAnnotation(b)
 }
@@ -440,7 +441,8 @@ func (pl *Controller) updateObjectAndStopBackup(b *rapi.Backup) error {
 			return err
 		}
 	case StatefulSet:
-		return errors.New(fmt.Sprintf("The Object referred bt the backup object (%s) is a statefulset.", b.Name))
+		log.Warningln(fmt.Sprintf("The Object referred bt the backup object (%s) is a statefulset.", b.Name))
+		return nil
 	}
 	return nil
 }
@@ -503,7 +505,8 @@ func (pl *Controller) updateImage(b *rapi.Backup, image string) error {
 			return err
 		}
 	case StatefulSet:
-		return errors.New(fmt.Sprintf("The Object referred bt the backup object (%s) is a statefulset.", b.Name))
+		log.Warningln(fmt.Sprintf("The Object referred bt the backup object (%s) is a statefulset.", b.Name))
+		return nil
 	}
 	return nil
 }

@@ -1,5 +1,5 @@
 hash: 872bd0d6fa2dbf7fef16155b3cfda623af3c9a917ba4de477b6d80db6b8cd8c6
-updated: 2017-03-22T14:35:36.32175428+06:00
+updated: 2017-03-29T11:13:53.372321567+06:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -7,7 +7,7 @@ imports:
   - compute/metadata
   - internal
 - name: github.com/appscode/go
-  version: b9008e99fa90d7806f404e0eab52bdecb4444826
+  version: c8deaa7e2fdb25334d9d1f8589a13183703c7158
   subpackages:
   - version
 - name: github.com/appscode/log
@@ -152,7 +152,7 @@ imports:
 - name: github.com/PuerkitoBio/urlesc
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/restic/restic
-  version: c85055bb03ed8fbc65c37cdad53011a0db6de8ea
+  version: 6935f823890bde5da9ffebd1885d99a3b096d863
   subpackages:
   - src/restic/errors
 - name: github.com/spf13/cobra
@@ -234,7 +234,7 @@ imports:
 - name: gopkg.in/yaml.v2
   version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 - name: k8s.io/kubernetes
-  version: 894ff23729bbc0055907dd3a496afb725396adda
+  version: ea8f6637b639246faa14a8d5c6f864100fcb77a9
   subpackages:
   - federation/apis/federation
   - federation/apis/federation/install

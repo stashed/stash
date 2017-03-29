@@ -2,15 +2,15 @@ package test
 
 import (
 	"fmt"
-	"log"
 
+	"github.com/appscode/log"
 	rapi "github.com/appscode/restik/api"
+	"github.com/appscode/restik/client/clientset"
 	"github.com/appscode/restik/pkg/controller"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/unversioned"
 	"k8s.io/kubernetes/pkg/apis/apps"
 	"k8s.io/kubernetes/pkg/apis/extensions"
-	"github.com/appscode/restik/client/clientset"
 )
 
 var namespace string
@@ -87,7 +87,7 @@ func createReplicationController(watcher *controller.Controller, name string, ba
 
 func deleteReplicationController(watcher *controller.Controller, name string) {
 	if err := watcher.Client.Core().ReplicationControllers(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
-		log.Println(err)
+		log.Errorln(err)
 	}
 }
 
@@ -111,7 +111,7 @@ func createSecret(watcher *controller.Controller, name string) error {
 
 func deleteSecret(watcher *controller.Controller, name string) {
 	if err := watcher.Client.Core().Secrets(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
-		log.Println(err)
+		log.Errorln(err)
 	}
 }
 
@@ -119,7 +119,7 @@ func createBackup(watcher *controller.Controller, backupName string, secretName 
 	backup := &rapi.Backup{
 		TypeMeta: unversioned.TypeMeta{
 			APIVersion: "appscode.com/v1beta1",
-			Kind:      client.ResourceKindBackup,
+			Kind:       client.ResourceKindBackup,
 		},
 		ObjectMeta: api.ObjectMeta{
 			Name:      backupName,
@@ -179,7 +179,7 @@ func createReplicaset(watcher *controller.Controller, name string, backupName st
 
 func deleteReplicaset(watcher *controller.Controller, name string) {
 	if err := watcher.Client.Extensions().ReplicaSets(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
-		log.Println(err)
+		log.Errorln(err)
 	}
 }
 
@@ -208,7 +208,7 @@ func createDeployment(watcher *controller.Controller, name string, backupName st
 
 func deleteDeployment(watcher *controller.Controller, name string) {
 	if err := watcher.Client.Extensions().Deployments(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
-		log.Println(err)
+		log.Errorln(err)
 	}
 }
 
@@ -231,7 +231,7 @@ func createDaemonsets(watcher *controller.Controller, name string, backupName st
 
 func deleteDaemonset(watcher *controller.Controller, name string) {
 	if err := watcher.Client.Extensions().DaemonSets(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
-		log.Println(err)
+		log.Errorln(err)
 	}
 }
 
@@ -290,7 +290,7 @@ func createStatefulSet(watcher *controller.Controller, name string, backupName s
 
 func deleteStatefulset(watcher *controller.Controller, name string) {
 	if err := watcher.Client.Apps().StatefulSets(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
-		log.Println(err)
+		log.Errorln(err)
 	}
 }
 
@@ -322,6 +322,6 @@ func createService(watcher *controller.Controller, name string) error {
 func deleteService(watcher *controller.Controller, name string) {
 	err := watcher.Client.Core().Services(namespace).Delete(name, &api.DeleteOptions{})
 	if err != nil {
-		log.Println(err)
+		log.Errorln(err)
 	}
 }
