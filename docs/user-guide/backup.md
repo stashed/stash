@@ -24,7 +24,7 @@ versions:
 
 ```sh
 # Create Third Party Resource
-$ kubectl apply -f https://raw.githubusercontent.com/appscode/restik/master/api/extensions/backup.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/appscode/k8s-addons/master/api/extensions/backup.yaml
 ```
 
 
