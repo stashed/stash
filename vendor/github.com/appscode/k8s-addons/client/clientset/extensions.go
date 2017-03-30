@@ -17,6 +17,7 @@ type AppsCodeExtensionInterface interface {
 	IngressNamespacer
 	AlertNamespacer
 	CertificateNamespacer
+	BackupNamespacer
 }
 
 // AppsCodeExtensionsClient is used to interact with experimental Kubernetes features.

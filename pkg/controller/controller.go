@@ -32,7 +32,7 @@ import (
 )
 
 type Controller struct {
-	ExtClient *tcs.AppsCodeExtensionsClient
+	ExtClient tcs.AppsCodeExtensionInterface
 	Client    clientset.Interface
 	// sync time to sync the list.
 	SyncPeriod time.Duration
