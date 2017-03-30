@@ -373,7 +373,7 @@ func (pl *Controller) updateObjectAndStartBackup(b *rapi.Backup) error {
 		opts.LabelSelector = findSelectors(newDaemonset.Spec.Template.Labels)
 		err = restartPods(pl.Client, b.Namespace, opts)
 	case StatefulSet:
-		log.Warningln(fmt.Sprintf("The Object referred by the backup object (%s) is a statefulset.", b.Name))
+		log.Warningf("The Object referred by the backup object (%s) is a statefulset.", b.Name)
 		return nil
 	}
 	return pl.addAnnotation(b)
@@ -441,7 +441,7 @@ func (pl *Controller) updateObjectAndStopBackup(b *rapi.Backup) error {
 			return err
 		}
 	case StatefulSet:
-		log.Warningln(fmt.Sprintf("The Object referred bt the backup object (%s) is a statefulset.", b.Name))
+		log.Warningf("The Object referred bt the backup object (%s) is a statefulset.", b.Name)
 		return nil
 	}
 	return nil
@@ -505,7 +505,7 @@ func (pl *Controller) updateImage(b *rapi.Backup, image string) error {
 			return err
 		}
 	case StatefulSet:
-		log.Warningln(fmt.Sprintf("The Object referred bt the backup object (%s) is a statefulset.", b.Name))
+		log.Warningf("The Object referred bt the backup object (%s) is a statefulset.", b.Name)
 		return nil
 	}
 	return nil
