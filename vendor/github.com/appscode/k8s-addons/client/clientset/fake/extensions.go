@@ -1,7 +1,7 @@
 package fake
 
 import (
-	"github.com/appscode/restik/client/clientset"
+	"github.com/appscode/k8s-addons/client/clientset"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/apimachinery/registered"
 	rest "k8s.io/kubernetes/pkg/client/restclient"
@@ -13,6 +13,8 @@ import (
 type FakeExtensionClient struct {
 	*testing.Fake
 }
+
+var _ clientset.AppsCodeExtensionInterface = &FakeExtensionClient{}
 
 func NewFakeExtensionClient(objects ...runtime.Object) *FakeExtensionClient {
 	o := testing.NewObjectTracker(api.Scheme, api.Codecs.UniversalDecoder())
@@ -32,10 +34,25 @@ func NewFakeExtensionClient(objects ...runtime.Object) *FakeExtensionClient {
 	return &FakeExtensionClient{&fakePtr}
 }
 
-func (m *FakeExtensionClient) Backups(ns string) client.BackupInterface {
+func (a *FakeExtensionClient) Ingress(namespace string) clientset.IngressInterface {
+	return &FakeIngress{a.Fake, namespace}
+}
+
+func (a *FakeExtensionClient) Alert(namespace string) clientset.AlertInterface {
+	return &FakeAlert{a.Fake, namespace}
+}
+
+func (m *FakeExtensionClient) Certificate(ns string) clientset.CertificateInterface {
+	return &FakeCertificate{m.Fake, ns}
+}
+
+func (m *FakeExtensionClient) Backups(ns string) clientset.BackupInterface {
 	return &FakeBackup{m.Fake, ns}
 }
 
+// RESTClient returns a RESTClient that is used to communicate
+// with API server by this client implementation.
 func (c *FakeExtensionClient) RESTClient() rest.Interface {
-	return nil
+	var ret *rest.RESTClient
+	return ret
 }

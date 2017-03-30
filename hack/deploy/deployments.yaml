@@ -18,5 +18,6 @@ spec:
       - name: appscode-backup
         args:
         - run
+        - -v=3
         image: appscode/restik:latest
         imagePullPolicy: Always

@@ -1,4 +1,4 @@
-package client
+package clientset
 
 import (
 	"fmt"
@@ -12,19 +12,34 @@ const (
 	defaultAPIPath = "/apis"
 )
 
-type ExtensionInterface interface {
+type AppsCodeExtensionInterface interface {
 	RESTClient() rest.Interface
+	IngressNamespacer
+	AlertNamespacer
+	CertificateNamespacer
 	BackupNamespacer
 }
 
 // AppsCodeExtensionsClient is used to interact with experimental Kubernetes features.
 // Features of Extensions group are not supported and may be changed or removed in
 // incompatible ways at any time.
-type ExtensionsClient struct {
+type AppsCodeExtensionsClient struct {
 	restClient rest.Interface
 }
 
-func (a *ExtensionsClient) Backups(namespace string) BackupInterface {
+func (a *AppsCodeExtensionsClient) Ingress(namespace string) IngressInterface {
+	return newExtendedIngress(a, namespace)
+}
+
+func (a *AppsCodeExtensionsClient) Alert(namespace string) AlertInterface {
+	return newAlert(a, namespace)
+}
+
+func (a *AppsCodeExtensionsClient) Certificate(namespace string) CertificateInterface {
+	return newCertificate(a, namespace)
+}
+
+func (a *AppsCodeExtensionsClient) Backups(namespace string) BackupInterface {
 	return newBackup(a, namespace)
 }
 
@@ -32,7 +47,7 @@ func (a *ExtensionsClient) Backups(namespace string) BackupInterface {
 // provides access to experimental Kubernetes features.
 // Features of Extensions group are not supported and may be changed or removed in
 // incompatible ways at any time.
-func NewACExtensionsForConfig(c *rest.Config) (*ExtensionsClient, error) {
+func NewACExtensionsForConfig(c *rest.Config) (*AppsCodeExtensionsClient, error) {
 	config := *c
 	if err := setExtensionsDefaults(&config); err != nil {
 		return nil, err
@@ -41,14 +56,14 @@ func NewACExtensionsForConfig(c *rest.Config) (*ExtensionsClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ExtensionsClient{client}, nil
+	return &AppsCodeExtensionsClient{client}, nil
 }
 
 // NewAppsCodeExtensionsOrDie creates a new AppsCodeExtensionsClient for the given config and
 // panics if there is an error in the config.
 // Features of Extensions group are not supported and may be changed or removed in
 // incompatible ways at any time.
-func NewExtensionsForConfigOrDie(c *rest.Config) *ExtensionsClient {
+func NewACExtensionsForConfigOrDie(c *rest.Config) *AppsCodeExtensionsClient {
 	client, err := NewACExtensionsForConfig(c)
 	if err != nil {
 		panic(err)
@@ -57,8 +72,8 @@ func NewExtensionsForConfigOrDie(c *rest.Config) *ExtensionsClient {
 }
 
 // New creates a new ExtensionsV1beta1Client for the given RESTClient.
-func NewACExtensions(c rest.Interface) *ExtensionsClient {
-	return &ExtensionsClient{c}
+func NewNewACExtensions(c rest.Interface) *AppsCodeExtensionsClient {
+	return &AppsCodeExtensionsClient{c}
 }
 
 func setExtensionsDefaults(config *rest.Config) error {
@@ -75,8 +90,8 @@ func setExtensionsDefaults(config *rest.Config) error {
 		config.UserAgent = rest.DefaultKubernetesUserAgent()
 	}
 
-	if config.GroupVersion == nil || config.GroupVersion.Group != GroupName {
-		g, err := registered.Group(GroupName)
+	if config.GroupVersion == nil || config.GroupVersion.Group != "appscode.com" {
+		g, err := registered.Group("appscode.com")
 		if err != nil {
 			return err
 		}
@@ -91,7 +106,7 @@ func setExtensionsDefaults(config *rest.Config) error {
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *ExtensionsClient) RESTClient() rest.Interface {
+func (c *AppsCodeExtensionsClient) RESTClient() rest.Interface {
 	if c == nil {
 		return nil
 	}

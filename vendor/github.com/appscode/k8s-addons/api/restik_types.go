@@ -73,5 +73,4 @@ type RetentionPolicy struct {
 	KeepTags             []string `json:"keepTags,omitempty"`
 	RetainHostname       string   `json:"retainHostname,omitempty"`
 	RetainTags           []string `json:"retainTags,omitempty"`
-	// Prune bool `json:"prune,omitempty"` //TODO
 }

@@ -1,0 +1,7 @@
+metadata:
+  name: alert.appscode.com
+apiVersion: extensions/v1beta1
+kind: ThirdPartyResource
+description: "Alert support for Kubernetes by appscode.com"
+versions:
+  - name: v1beta1

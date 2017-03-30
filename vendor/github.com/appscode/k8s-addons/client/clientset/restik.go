@@ -1,7 +1,7 @@
-package client
+package clientset
 
 import (
-	aci "github.com/appscode/restik/api"
+	aci "github.com/appscode/k8s-addons/api"
 	"k8s.io/kubernetes/pkg/api"
 	rest "k8s.io/kubernetes/pkg/client/restclient"
 	"k8s.io/kubernetes/pkg/watch"
@@ -16,8 +16,6 @@ const (
 	ResourceNameBackup = "backup"
 	ResourceTypeBackup = "backups"
 )
-
-const GroupName = "appscode.com"
 
 type BackupInterface interface {
 	List(opts api.ListOptions) (*aci.BackupList, error)
@@ -34,7 +32,7 @@ type BackupImpl struct {
 	ns string
 }
 
-func newBackup(c *ExtensionsClient, namespace string) *BackupImpl {
+func newBackup(c *AppsCodeExtensionsClient, namespace string) *BackupImpl {
 	return &BackupImpl{c.restClient, namespace}
 }
 

@@ -30,6 +30,15 @@ var (
 // Adds the list of known types to api.Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
+		&Ingress{},
+		&IngressList{},
+
+		&Alert{},
+		&AlertList{},
+
+		&Certificate{},
+		&CertificateList{},
+
 		&Backup{},
 		&BackupList{},
 
@@ -37,6 +46,15 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	)
 	return nil
 }
+
+func (obj *Ingress) GetObjectKind() schema.ObjectKind     { return &obj.TypeMeta }
+func (obj *IngressList) GetObjectKind() schema.ObjectKind { return &obj.TypeMeta }
+
+func (obj *Alert) GetObjectKind() schema.ObjectKind     { return &obj.TypeMeta }
+func (obj *AlertList) GetObjectKind() schema.ObjectKind { return &obj.TypeMeta }
+
+func (obj *Certificate) GetObjectKind() schema.ObjectKind     { return &obj.TypeMeta }
+func (obj *CertificateList) GetObjectKind() schema.ObjectKind { return &obj.TypeMeta }
 
 func (obj *Backup) GetObjectKind() schema.ObjectKind     { return &obj.TypeMeta }
 func (obj *BackupList) GetObjectKind() schema.ObjectKind { return &obj.TypeMeta }
