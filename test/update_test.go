@@ -5,7 +5,7 @@ import (
 	"log"
 	"testing"
 
-	tcs "github.com/appscode/restik/client/clientset"
+	tcs "github.com/appscode/k8s-addons/client/clientset"
 	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 )
 
@@ -16,7 +16,7 @@ func TestBackupUpdate(t *testing.T) {
 		log.Println(err)
 		return
 	}
-	extClient := tcs.NewExtensionsForConfigOrDie(config)
+	extClient := tcs.NewACExtensionsForConfigOrDie(config)
 	b, err := extClient.Backups("test").Get("backup-test")
 	if err != nil {
 		fmt.Println(err)

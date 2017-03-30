@@ -32,7 +32,7 @@ import (
 )
 
 type Controller struct {
-	ExtClient tcs.AppsCodeExtensionsClient
+	ExtClient *tcs.AppsCodeExtensionsClient
 	Client    clientset.Interface
 	// sync time to sync the list.
 	SyncPeriod time.Duration
@@ -512,7 +512,7 @@ func (pl *Controller) updateImage(b *rapi.Backup, image string) error {
 }
 
 func (w *Controller) ensureResource() {
-	_, err := w.Client.Extensions().ThirdPartyResources().Get(tcs.ResourceNameBackup + "." + tcs.GroupName)
+	_, err := w.Client.Extensions().ThirdPartyResources().Get(tcs.ResourceNameBackup + "." + rapi.GroupName)
 	if k8serrors.IsNotFound(err) {
 		tpr := &extensions.ThirdPartyResource{
 			TypeMeta: unversioned.TypeMeta{
@@ -520,7 +520,7 @@ func (w *Controller) ensureResource() {
 				Kind:       "ThirdPartyResource",
 			},
 			ObjectMeta: api.ObjectMeta{
-				Name: tcs.ResourceNameBackup + "." + tcs.GroupName,
+				Name: tcs.ResourceNameBackup + "." + rapi.GroupName,
 			},
 			Versions: []extensions.APIVersion{
 				{
