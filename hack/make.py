@@ -75,17 +75,15 @@ def version():
 
 
 def fmt():
-    die(call('goimports -w api client cmd pkg'))
-    call('gofmt -s -w api client cmd pkg')
+    die(call('goimports -w cmd pkg'))
+    call('gofmt -s -w cmd pkg')
 
 
 def vet():
-    call('go vet ./api/... ./client/... ./cmd/... ./pkg/...')
+    call('go vet ./cmd/... ./pkg/...')
 
 
 def lint():
-    call('golint ./api/...')
-    call('golint ./client/...')
     call('golint ./cmd/...')
     call('golint ./pkg/...')
 

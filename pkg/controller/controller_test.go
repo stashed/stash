@@ -5,7 +5,6 @@ import (
 	"time"
 
 	rapi "github.com/appscode/restik/api"
-	"github.com/appscode/restik/client/clientset"
 	"github.com/appscode/restik/client/clientset/fake"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/kubernetes/pkg/api"

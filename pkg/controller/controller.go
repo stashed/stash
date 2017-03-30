@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
+	rapi "github.com/appscode/k8s-addons/api"
+	tcs "github.com/appscode/k8s-addons/client/clientset"
 	"github.com/appscode/log"
-	rapi "github.com/appscode/restik/api"
-	tcs "github.com/appscode/restik/client/clientset"
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
 	"github.com/restic/restic/src/restic/errors"
@@ -32,7 +32,7 @@ import (
 )
 
 type Controller struct {
-	ExtClient tcs.ExtensionInterface
+	ExtClient tcs.AppsCodeExtensionsClient
 	Client    clientset.Interface
 	// sync time to sync the list.
 	SyncPeriod time.Duration
@@ -42,7 +42,7 @@ type Controller struct {
 
 func New(c *rest.Config, image string) *Controller {
 	return &Controller{
-		ExtClient:  tcs.NewExtensionsForConfigOrDie(c),
+		ExtClient:  tcs.NewACExtensionsForConfigOrDie(c),
 		Client:     clientset.NewForConfigOrDie(c),
 		SyncPeriod: time.Minute * 2,
 		Image:      image,
@@ -125,7 +125,7 @@ func RunBackup() {
 		log.Errorln(err)
 		return
 	}
-	extClient := tcs.NewExtensionsForConfigOrDie(config)
+	extClient := tcs.NewACExtensionsForConfigOrDie(config)
 	client, err := factory.ClientSet()
 	if err != nil {
 		log.Errorln(err)
