@@ -1,0 +1,4 @@
+image: appscode/restik
+imagePullPolicy: Always
+imageTag: latest
+namespace: default

@@ -1,0 +1,27 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ template "fullname" . }}
+    chart: {{.Chart.Name}}-{{.Chart.Version}}
+    heritage: {{.Release.Service}}
+    release: {{.Release.Name}}
+  name: {{ template "fullname" . }}
+  namespace: {{.Values.namespace}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ template "fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}
+    spec:
+      containers:
+      - args:
+        - run
+        - -v=3
+        image: {{.Values.image}}:{{.Values.imageTag}}
+        imagePullPolicy: {{.Values.imagePullPolicy}}
+        name: appscode-backup
