@@ -1,4 +1,4 @@
-#Architecture 
+# Architecture 
 
 This guide will walk you through the architectural design of Backup Controller.
 
@@ -30,3 +30,4 @@ This is a loader type process that watches restic TPR and translates that into t
 As mentioned before, first time side car containers are added, pods will be restarted by controller. Who performs the restart will be done on a case-by-case basis. 
 For example, Kubernetes itself will restarts pods behind a deployment. In such cases, TPR controller will let Kubernetes do that.
 
+## Original Tracking Issue: https://github.com/appscode/restik/issues/1
