@@ -1,8 +1,6 @@
 package api
 
 import (
-	"time"
-
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/unversioned"
 	"k8s.io/kubernetes/pkg/util/intstr"
@@ -230,7 +228,7 @@ type CertificateSpec struct {
 type CertificateStatus struct {
 	CertificateObtained bool                   `json:"certificateObtained"`
 	Message             string                 `json:"message"`
-	Created             time.Time              `json:"created,omitempty"`
+	CreationTime        *unversioned.Time      `json:"creationTime,omitempty"`
 	ACMEUserSecretName  string                 `json:"acmeUserSecretName,omitempty"`
 	Details             ACMECertificateDetails `json:"details,omitempty"`
 }

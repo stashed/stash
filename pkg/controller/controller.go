@@ -183,7 +183,7 @@ func RunBackup() {
 		if err != nil {
 			log.Errorln(err)
 		}
-		backupStartTime := time.Now()
+		backupStartTime := unversioned.Now()
 		cmd := fmt.Sprintf("/restic -r %s backup %s", backup.Spec.Destination.Path, backup.Spec.Source.Path)
 		// add tags if any
 		for _, t := range backup.Spec.Tags {
@@ -197,10 +197,10 @@ func RunBackup() {
 			log.Errorln("Restick backup failed cause ", err)
 			event.Reason = "Failed"
 		} else {
-			backup.Status.LastSuccessfullBackupTime = backupStartTime
+			backup.Status.LastSuccessfullBackupTime = &backupStartTime
 			event.Reason = "Success"
 		}
-		backupEndTime := time.Now()
+		backupEndTime := unversioned.Now()
 		_, err = snapshotRetention(backup)
 		if err != nil {
 			log.Errorln("Snapshot retention failed cause ", err)
@@ -211,11 +211,11 @@ func RunBackup() {
 		if err != nil {
 			log.Errorln(err)
 		}
-		backup.Status.LastBackupTime = backupStartTime
+		backup.Status.LastBackupTime = &backupStartTime
 		if reflect.DeepEqual(backup.Status.FirstBackupTime, time.Time{}) {
-			backup.Status.FirstBackupTime = backupStartTime
+			backup.Status.FirstBackupTime = &backupStartTime
 		}
-		backup.Status.LastBackupDuration = backupEndTime.Sub(backupStartTime).String()
+		backup.Status.LastBackupDuration = backupEndTime.Sub(backupStartTime.Time).String()
 		backup, err = extClient.Backups(backup.Namespace).Update(backup)
 		if err != nil {
 			log.Errorln(err)

@@ -5,8 +5,6 @@ import (
 	"k8s.io/kubernetes/pkg/api/unversioned"
 )
 
-type AlertStatus string
-
 // Alert types for appscode.
 type Alert struct {
 	unversioned.TypeMeta `json:",inline"`
@@ -21,6 +19,26 @@ type Alert struct {
 	// Status is the current state of the Alert.
 	// More info: http://releases.k8s.io/release-1.2/docs/devel/api-conventions.md#spec-and-status
 	Status AlertStatus `json:"status,omitempty"`
+}
+
+type AlertPhase string
+
+const (
+	// used for Alert that are currently creating
+	PhaseAlertCreating AlertPhase = "Creating"
+	// used for Alert that are created
+	PhaseAlertCreated AlertPhase = "Created"
+	// used for Alert that are currently deleting
+	PhaseAlertDeleting AlertPhase = "Deleting"
+	// used for Alert that are Failed
+	PhaseAlertFailed AlertPhase = "Failed"
+)
+
+type AlertStatus struct {
+	CreationTime *unversioned.Time `json:"creationTime,omitempty"`
+	UpdateTime   *unversioned.Time `json:"updateTime,omitempty"`
+	Phase        AlertPhase        `json:"phase,omitempty"`
+	Reason       string            `json:"reason,omitempty"`
 }
 
 // AlertList is a collection of Alert.
