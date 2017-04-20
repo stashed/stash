@@ -237,8 +237,10 @@ def update_registry(version):
     lf = dist + '/latest.txt'
     write_file(lf, version)
     for name in os.listdir(dist):
+        if os.path.isfile(dist + '/' + name):
+            continue
         if name not in BIN_MATRIX:
-            return
+            continue
         call("gsutil cp {2} {0}/binaries/{1}/latest.txt".format(bucket, name, lf), cwd=REPO_ROOT)
         if BIN_MATRIX[name].get('release', False):
             call('gsutil acl ch -u AllUsers:R -r {0}/binaries/{1}/latest.txt'.format(bucket, name), cwd=REPO_ROOT)

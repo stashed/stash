@@ -1,5 +1,18 @@
 #!/bin/bash
 
+DOCKER_REGISTRY=${DOCKER_REGISTRY:-appscode}
+source $(dirname "${BASH_SOURCE}")/lib.sh
+
+# override this one if you need to change push & pull
+docker_push() {
+	attic_up
+}
+
+docker_pull() {
+	attic_pull
+}
+
+
 source_repo() {
 	RETVAL=0
 
@@ -29,7 +42,7 @@ source_repo() {
 			docker_pull
 			;;
 		gcr)
-			docker_gcr
+			gcr_pull
 			;;
 		release)
 			docker_release
@@ -79,7 +92,7 @@ binary_repo() {
 			docker_pull
 			;;
 		gcr)
-			docker_gcr
+			gcr_pull
 			;;
 		release)
 			docker_release
