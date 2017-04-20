@@ -1,8 +1,6 @@
 package api
 
 import (
-	"time"
-
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/unversioned"
 )
@@ -39,11 +37,11 @@ type BackupSpec struct {
 }
 
 type BackupStatus struct {
-	FirstBackupTime           time.Time `json:"firstBackupTime,omitempty"`
-	LastBackupTime            time.Time `json:"lastBackupTime,omitempty"`
-	LastSuccessfullBackupTime time.Time `json:"lastSuccessfullBackupTime,omitempty"`
-	LastBackupDuration        string    `json:"lastBackupDuration,omitempty"`
-	BackupCount               int64     `json:"backupCount,omitempty"`
+	FirstBackupTime           *unversioned.Time `json:"firstBackupTime,omitempty"`
+	LastBackupTime            *unversioned.Time `json:"lastBackupTime,omitempty"`
+	LastSuccessfullBackupTime *unversioned.Time `json:"lastSuccessfullBackupTime,omitempty"`
+	LastBackupDuration        string            `json:"lastBackupDuration,omitempty"`
+	BackupCount               int64             `json:"backupCount,omitempty"`
 }
 
 type BackupList struct {
