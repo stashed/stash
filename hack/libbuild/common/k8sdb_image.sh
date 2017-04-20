@@ -1,15 +1,15 @@
 #!/bin/bash
 
-DOCKER_REGISTRY=${DOCKER_REGISTRY:-appscode}
+DOCKER_REGISTRY=${DOCKER_REGISTRY:-k8sdb}
 source $(dirname "${BASH_SOURCE}")/lib.sh
 
 # override this one if you need to change push & pull
 docker_push() {
-	attic_up
+	hub_canary
 }
 
 docker_pull() {
-	attic_pull
+	hub_pull
 }
 
 
@@ -32,9 +32,6 @@ source_repo() {
 		build_docker)
 			build_docker
 			;;
-		build_docker_phd)
-			build_docker_phd
-			;;
 		clean)
 			clean
 			;;
@@ -44,8 +41,8 @@ source_repo() {
 		pull)
 			docker_pull
 			;;
-		gcr)
-			gcr_pull
+		release)
+			docker_release
 			;;
 		check)
 			docker_check
@@ -63,7 +60,7 @@ source_repo() {
 			docker_rmi
 			;;
 		*)	(10)
-			echo $"Usage: $0 {build|build_binary|build_docker|clean|push|pull|check|sh|rm|rmi}"
+			echo $"Usage: $0 {build|build_binary|build_docker|clean|push|pull|release|check|sh|rm|rmi}"
 			RETVAL=1
 	esac
 	exit $RETVAL
@@ -91,8 +88,8 @@ binary_repo() {
 		pull)
 			docker_pull
 			;;
-		gcr)
-			gcr_pull
+		release)
+			docker_release
 			;;
 		check)
 			docker_check
@@ -110,7 +107,7 @@ binary_repo() {
 			docker_rmi
 			;;
 		*)	(10)
-			echo $"Usage: $0 {build|clean|push|pull|check|sh|rm|rmi}"
+			echo $"Usage: $0 {build|clean|push|pull|release|check|sh|rm|rmi}"
 			RETVAL=1
 	esac
 	exit $RETVAL
