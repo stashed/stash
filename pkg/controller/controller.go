@@ -40,6 +40,15 @@ type Controller struct {
 	Image string
 }
 
+type cronController struct {
+	extClient  tcs.AppsCodeExtensionInterface
+	kubeClient clientset.Interface
+	tprName    string
+	namespace  string
+	crons      *cron.Cron
+	backup     *rapi.Backup
+}
+
 func New(c *rest.Config, image string) *Controller {
 	return &Controller{
 		ExtClient:  tcs.NewACExtensionsForConfigOrDie(c),
@@ -98,6 +107,16 @@ func (w *Controller) RunAndHold() {
 				if !ok {
 					return
 				}
+				_, err := cron.Parse(newObj.Spec.Schedule)
+				if err != nil {
+					log.Errorln(err)
+					//create event
+					newObj.Spec.Schedule = ""
+					_, err := w.ExtClient.Backups(newObj.Namespace).Update(newObj)
+					if err != nil {
+						log.Errorln(err)
+					}
+				}
 				var oldImage, newImage string
 				if oldObj.ObjectMeta.Annotations != nil {
 					oldImage, _ = oldObj.ObjectMeta.Annotations[ImageAnnotation]
@@ -118,13 +137,6 @@ func (w *Controller) RunAndHold() {
 	controller.Run(wait.NeverStop)
 }
 
-type cronHelper struct {
-	extClient  tcs.AppsCodeExtensionInterface
-	kubeClient clientset.Interface
-	tprName    string
-	namespace  string
-}
-
 func RunBackup() {
 	factory := cmdutil.NewFactory(nil)
 	config, err := factory.ClientConfig()
@@ -137,79 +149,91 @@ func RunBackup() {
 		log.Errorln(err)
 		return
 	}
-	helper := &cronHelper{
+	helper := &cronController{
 		extClient:  tcs.NewACExtensionsForConfigOrDie(config),
 		kubeClient: client,
 		namespace:  os.Getenv(Namespace),
 		tprName:    os.Getenv(TPR),
+		crons:      cron.New(),
 	}
-	backup, err := helper.extClient.Backups(helper.namespace).Get(helper.tprName)
-	if err != nil {
-		log.Errorln(err)
-		return
+	lw := &cache.ListWatch{
+		ListFunc: func(opts api.ListOptions) (runtime.Object, error) {
+			return helper.extClient.Backups(api.NamespaceAll).List(api.ListOptions{})
+		},
+		WatchFunc: func(options api.ListOptions) (watch.Interface, error) {
+			return helper.extClient.Backups(api.NamespaceAll).Watch(api.ListOptions{})
+		},
 	}
-	password, err := getPasswordFromSecret(client, backup.Spec.Destination.RepositorySecretName, backup.Namespace)
+	_, cronController := cache.NewInformer(lw,
+		&rapi.Backup{},
+		time.Minute*2,
+		cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				if b, ok := obj.(*rapi.Backup); ok {
+					helper.backup = b
+					err = helper.startCronBackupProcedure()
+					if err != nil {
+						log.Errorln(err)
+						return
+					}
+				}
+			},
+			UpdateFunc: func(old, new interface{}) {
+				oldObj, ok := old.(*rapi.Backup)
+				if !ok {
+					return
+				}
+				newObj, ok := new.(*rapi.Backup)
+				if !ok {
+					return
+				}
+				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) {
+					helper.backup = newObj
+					err = helper.startCronBackupProcedure()
+					if err != nil {
+						log.Errorln(err)
+						return
+					}
+				}
+			},
+		})
+	cronController.Run(wait.NeverStop)
+}
+
+func (helper *cronController) startCronBackupProcedure() error {
+	backup := helper.backup
+	password, err := getPasswordFromSecret(helper.kubeClient, backup.Spec.Destination.RepositorySecretName, backup.Namespace)
 	if err != nil {
-		log.Errorln(err)
-		return
+		return err
 	}
 	err = os.Setenv(RESTIC_PASSWORD, password)
 	if err != nil {
-		log.Errorln(err)
-		return
+		return err
 	}
 	repo := backup.Spec.Destination.Path
 	_, err = os.Stat(filepath.Join(repo, "config"))
 	if os.IsNotExist(err) {
 		if _, err = execLocal(fmt.Sprintf("/restic init --repo %s", repo)); err != nil {
-			log.Errorln("RESTIC repository not created cause", err)
-			return
+			return err
 		}
+	}
+	// Remove previous jobs
+	for _, v := range helper.crons.Entries() {
+		helper.crons.Remove(v.ID)
 	}
 	interval := backup.Spec.Schedule
 	if _, err = cron.Parse(interval); err != nil {
-		log.Errorln(err)
-		return
+		return err
 	}
-	c := cron.New()
-	c.Start()
-	id, err := c.AddFunc(interval, helper.runCronJob)
+	_, err = helper.crons.AddFunc(interval, helper.runCronJob)
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
-	go helper.ensureCronInterval(c, interval, id)
-	wait.Until(func() {}, time.Second, wait.NeverStop)
+	return nil
 }
 
-func (helper *cronHelper) ensureCronInterval(c *cron.Cron, interval, id cron.EntryID) {
-	var previousIinterval string
-	for {
-		previousIinterval = interval
-		time.Sleep(time.Second * 120)
-		updatedBackup, err := helper.extClient.Backups(helper.namespace).Get(helper.tprName)
-		if err != nil {
-			log.Errorln(err)
-		}
-		interval = updatedBackup.Spec.Schedule
-		if interval != previousIinterval {
-			if _, err = cron.Parse(updatedBackup.Spec.Schedule); err != nil {
-				log.Errorln(err)
-				continue
-			}
-			c.Remove(id)
-			id, err = c.AddFunc(updatedBackup.Spec.Schedule, helper.runCronJob)
-			if err != nil {
-				log.Fatalln(err)
-			}
-		}
-	}
-}
-
-func (helper *cronHelper) runCronJob() {
-	backup, err := helper.extClient.Backups(helper.namespace).Get(helper.tprName)
-	if err != nil {
-		log.Errorln(err)
-	}
+func (helper *cronController) runCronJob() {
+	backup := helper.backup
 	event := &api.Event{
 		ObjectMeta: api.ObjectMeta{
 			Namespace: backup.Namespace,
@@ -224,6 +248,7 @@ func (helper *cronHelper) runCronJob() {
 	err = os.Setenv(RESTIC_PASSWORD, password)
 	if err != nil {
 		log.Errorln(err)
+		return
 	}
 	backupStartTime := unversioned.Now()
 	cmd := fmt.Sprintf("/restic -r %s backup %s", backup.Spec.Destination.Path, backup.Spec.Source.Path)
@@ -304,7 +329,7 @@ func restartPods(kubeClient clientset.Interface, namespace string, opts api.List
 		deleteOpts := &api.DeleteOptions{}
 		err = kubeClient.Core().Pods(namespace).Delete(pod.Name, deleteOpts)
 		if err != nil {
-			errMessage := fmt.Sprint("Failed to restart pod %s cause %v", pod.Name, err)
+			errMessage := fmt.Sprintf("Failed to restart pod %s cause %v", pod.Name, err)
 			log.Errorln(errMessage)
 		}
 	}
