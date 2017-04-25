@@ -13,6 +13,7 @@ import (
 	rapi "github.com/appscode/k8s-addons/api"
 	tcs "github.com/appscode/k8s-addons/client/clientset"
 	"github.com/appscode/log"
+	"github.com/appscode/restik/pkg/eventer"
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
 	"github.com/restic/restic/src/restic/errors"
@@ -24,6 +25,7 @@ import (
 	"k8s.io/kubernetes/pkg/client/cache"
 	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	rest "k8s.io/kubernetes/pkg/client/restclient"
+	//	"k8s.io/kubernetes/pkg/fields"
 	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 	"k8s.io/kubernetes/pkg/labels"
 	"k8s.io/kubernetes/pkg/runtime"
@@ -41,12 +43,13 @@ type Controller struct {
 }
 
 type cronController struct {
-	extClient  tcs.AppsCodeExtensionInterface
-	kubeClient clientset.Interface
-	tprName    string
-	namespace  string
-	crons      *cron.Cron
-	backup     *rapi.Backup
+	extClient     tcs.AppsCodeExtensionInterface
+	kubeClient    clientset.Interface
+	tprName       string
+	namespace     string
+	crons         *cron.Cron
+	backup        *rapi.Backup
+	eventRecorder eventer.EventRecorderInterface
 }
 
 func New(c *rest.Config, image string) *Controller {
@@ -107,16 +110,6 @@ func (w *Controller) RunAndHold() {
 				if !ok {
 					return
 				}
-				_, err := cron.Parse(newObj.Spec.Schedule)
-				if err != nil {
-					log.Errorln(err)
-					//create event
-					newObj.Spec.Schedule = ""
-					_, err := w.ExtClient.Backups(newObj.Namespace).Update(newObj)
-					if err != nil {
-						log.Errorln(err)
-					}
-				}
 				var oldImage, newImage string
 				if oldObj.ObjectMeta.Annotations != nil {
 					oldImage, _ = oldObj.ObjectMeta.Annotations[ImageAnnotation]
@@ -150,18 +143,28 @@ func RunBackup() {
 		return
 	}
 	helper := &cronController{
-		extClient:  tcs.NewACExtensionsForConfigOrDie(config),
-		kubeClient: client,
-		namespace:  os.Getenv(Namespace),
-		tprName:    os.Getenv(TPR),
-		crons:      cron.New(),
+		extClient:     tcs.NewACExtensionsForConfigOrDie(config),
+		kubeClient:    client,
+		namespace:     os.Getenv(Namespace),
+		tprName:       os.Getenv(TPR),
+		crons:         cron.New(),
+		eventRecorder: eventer.NewEventRecorder(client, "Restik sidecar Watcher"),
+	}
+
+	//get kubeobject
+	labelMap := map[string]string{
+		BackupObject: "",
 	}
 	lw := &cache.ListWatch{
 		ListFunc: func(opts api.ListOptions) (runtime.Object, error) {
-			return helper.extClient.Backups(api.NamespaceAll).List(api.ListOptions{})
+			return helper.extClient.Backups(helper.namespace).List(api.ListOptions{
+				LabelSelector: labels.SelectorFromSet(labels.Set(labelMap)),
+			})
 		},
 		WatchFunc: func(options api.ListOptions) (watch.Interface, error) {
-			return helper.extClient.Backups(api.NamespaceAll).Watch(api.ListOptions{})
+			return helper.extClient.Backups(helper.namespace).Watch(api.ListOptions{
+				FieldSelector: labels.SelectorFromSet(labels.Set(labelMap)),
+			})
 		},
 	}
 	_, cronController := cache.NewInformer(lw,
@@ -223,7 +226,16 @@ func (helper *cronController) startCronBackupProcedure() error {
 	}
 	interval := backup.Spec.Schedule
 	if _, err = cron.Parse(interval); err != nil {
-		return err
+		er := err
+		//Reset Wrong Schedule
+		helper.backup.Spec.Schedule = ""
+		// Create event
+		helper.eventRecorder.PushEvent(api.EventTypeWarning, eventer.EventReasonCronExpressionFailed, err.Error(), backup)
+		_, err = helper.extClient.Backups(backup.Namespace).Update(backup)
+		if err != nil {
+			log.Errorln(err)
+		}
+		return er
 	}
 	_, err = helper.crons.AddFunc(interval, helper.runCronJob)
 	if err != nil {
@@ -234,16 +246,6 @@ func (helper *cronController) startCronBackupProcedure() error {
 
 func (helper *cronController) runCronJob() {
 	backup := helper.backup
-	event := &api.Event{
-		ObjectMeta: api.ObjectMeta{
-			Namespace: backup.Namespace,
-		},
-		InvolvedObject: api.ObjectReference{
-			Kind:      backup.Kind,
-			Namespace: backup.Namespace,
-			Name:      backup.Name,
-		},
-	}
 	password, err := getPasswordFromSecret(helper.kubeClient, backup.Spec.Destination.RepositorySecretName, backup.Namespace)
 	err = os.Setenv(RESTIC_PASSWORD, password)
 	if err != nil {
@@ -260,12 +262,13 @@ func (helper *cronController) runCronJob() {
 	cmd = cmd + " --" + Force
 	// Take Backup
 	_, err = execLocal(cmd)
+	reason := ""
 	if err != nil {
-		log.Errorln("Restick backup failed cause ", err)
-		event.Reason = "Failed"
+		log.Errorln("Restik backup failed cause ", err)
+		reason = eventer.EventReasonBackupFailed
 	} else {
 		backup.Status.LastSuccessfullBackupTime = &backupStartTime
-		event.Reason = "Success"
+		reason = eventer.EventReasonBackupSuccess
 	}
 	backupEndTime := unversioned.Now()
 	_, err = snapshotRetention(backup)
@@ -273,11 +276,8 @@ func (helper *cronController) runCronJob() {
 		log.Errorln("Snapshot retention failed cause ", err)
 	}
 	backup.Status.BackupCount++
-	event.Name = backup.Name + "-" + strconv.Itoa(int(backup.Status.BackupCount))
-	_, err = helper.kubeClient.Core().Events(backup.Namespace).Create(event)
-	if err != nil {
-		log.Errorln(err)
-	}
+	message := "Backup operation number = " + strconv.Itoa(int(backup.Status.BackupCount))
+	helper.eventRecorder.PushEvent(api.EventTypeNormal, reason, message, backup)
 	backup.Status.LastBackupTime = &backupStartTime
 	if reflect.DeepEqual(backup.Status.FirstBackupTime, time.Time{}) {
 		backup.Status.FirstBackupTime = &backupStartTime
@@ -386,6 +386,7 @@ func (pl *Controller) updateObjectAndStartBackup(b *rapi.Backup) error {
 		return errors.New(fmt.Sprintf("No object found for backup %s ", b.Name))
 	}
 	opts := api.ListOptions{}
+
 	switch _type {
 	case ReplicationController:
 		rc := &api.ReplicationController{}
@@ -441,7 +442,15 @@ func (pl *Controller) updateObjectAndStartBackup(b *rapi.Backup) error {
 		log.Warningf("The Object referred by the backup object (%s) is a statefulset.", b.Name)
 		return nil
 	}
-	return pl.addAnnotation(b)
+	err = pl.addAnnotation(b)
+	if err != nil {
+		return err
+	}
+	err = pl.addLabel(b)
+	if err != nil {
+		return err
+	}
+
 }
 
 func (pl *Controller) updateObjectAndStopBackup(b *rapi.Backup) error {
@@ -694,4 +703,11 @@ func (pl *Controller) addAnnotation(b *rapi.Backup) error {
 	b.ObjectMeta.Annotations[ImageAnnotation] = pl.Image
 	_, err := pl.ExtClient.Backups(b.Namespace).Update(b)
 	return err
+}
+
+func (pl *Controller) addLabel(b *rapi.Backup) error  {
+	if b.ObjectMeta.Labels == nil {
+		b.ObjectMeta.Labels = make(map[string]string)
+	}
+
 }

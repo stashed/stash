@@ -10,6 +10,8 @@ import (
 	"github.com/appscode/restik/pkg/controller"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
+	"k8s.io/kubernetes/pkg/fields"
+	"github.com/appscode/restik/pkg/eventer"
 )
 
 var image = "appscode/restik:latest"
@@ -28,14 +30,24 @@ func runController() (*controller.Controller, error) {
 	return controller, nil
 }
 
-func checkEventForBackup(watcher *controller.Controller, eventName string) error {
+func checkEventForBackup(watcher *controller.Controller, objName string) error {
 	var err error
-	event := &api.Event{}
 	try := 0
+			sets := fields.Set{
+				"involvedObject.kind" : "Backup",
+				"involvedObject.name" : objName,
+				"involvedObject.namespace" : namespace,
+				"type" : api.EventTypeNormal,
+		}
+	fieldSelector := fields.SelectorFromSet(sets)
 	for {
-		event, err = watcher.Client.Core().Events(namespace).Get(eventName)
+		events, err := watcher.Client.Core().Events(namespace).List(api.ListOptions{FieldSelector: fieldSelector})
 		if err == nil {
-			break
+			for _, e := range events.Items {
+				if e.Reason == eventer.EventReasonBackupSuccess  {
+					return nil
+				}
+			}
 		}
 		if try > 12 {
 			return err
@@ -44,9 +56,7 @@ func checkEventForBackup(watcher *controller.Controller, eventName string) error
 		time.Sleep(time.Second * 10)
 		try++
 	}
-	if event.Reason == "Failed" {
-		return errors.New("Restic backup failed.")
-	}
+		return errors.New("Restik backup failed.")
 	return err
 }
 
