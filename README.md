@@ -1,4 +1,4 @@
-
+[![Go Report Card](https://goreportcard.com/badge/github.com/appscode/restik)](https://goreportcard.com/report/github.com/appscode/restik)
 
 ## Restik
  Restik provides support to backup your Kubernetes Volumes
