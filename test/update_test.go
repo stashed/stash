@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	tcs "github.com/appscode/k8s-addons/client/clientset"
-	"k8s.io/kubernetes/pkg/api"
 	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 )
 
@@ -18,22 +17,13 @@ func TestBackupUpdate(t *testing.T) {
 		return
 	}
 	extClient := tcs.NewACExtensionsForConfigOrDie(config)
-	b, err := extClient.Backups("sauman").Get("saumanbackup")
+	b, err := extClient.Backups("test").Get("testbackup")
 	if err != nil {
 		fmt.Println(err)
 	}
 	b.Spec.Schedule = "0 * * * * *"
-	b.Spec.Destination.Volume = api.Volume{
-		Name: "newVolume",
-		VolumeSource: api.VolumeSource{
-			AWSElasticBlockStore: &api.AWSElasticBlockStoreVolumeSource{
-				VolumeID: "vol-0acaeb242223da89b",
-				FSType:   "ext4",
-			},
-		},
-	}
 	b.Spec.RetentionPolicy.KeepLastSnapshots = 5
-	b, err = extClient.Backups("sauman").Update(b)
+	b, err = extClient.Backups("test").Update(b)
 	if err != nil {
 		fmt.Println(err)
 	}

@@ -221,7 +221,7 @@ func (cronWatcher *cronController) startCronBackupProcedure() error {
 	if _, err = cron.Parse(interval); err != nil {
 		er := err
 		//Reset Wrong Schedule
-		cronWatcher.backup.Spec.Schedule = ""
+		backup.Spec.Schedule = ""
 		// Create event
 		cronWatcher.eventRecorder.PushEvent(api.EventTypeWarning, eventer.EventReasonCronExpressionFailed, err.Error(), backup)
 		_, err = cronWatcher.extClient.Backups(backup.Namespace).Update(backup)
