@@ -2,7 +2,6 @@ package controller
 
 const (
 	BackupConfig          = "backup.appscode.com/config"
-	BackupObject          = "backup.appscode.com/refference"
 	ContainerName         = "restic-sidecar"
 	Namespace             = "RESTIK_NAMESPACE"
 	TPR                   = "TPR"
