@@ -25,7 +25,6 @@ import (
 	"k8s.io/kubernetes/pkg/client/cache"
 	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	rest "k8s.io/kubernetes/pkg/client/restclient"
-	//	"k8s.io/kubernetes/pkg/fields"
 	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 	"k8s.io/kubernetes/pkg/labels"
 	"k8s.io/kubernetes/pkg/runtime"
@@ -142,7 +141,7 @@ func RunBackup() {
 		log.Errorln(err)
 		return
 	}
-	helper := &cronController{
+	cronWatcher := &cronController{
 		extClient:     tcs.NewACExtensionsForConfigOrDie(config),
 		kubeClient:    client,
 		namespace:     os.Getenv(Namespace),
@@ -150,21 +149,13 @@ func RunBackup() {
 		crons:         cron.New(),
 		eventRecorder: eventer.NewEventRecorder(client, "Restik sidecar Watcher"),
 	}
-
-	//get kubeobject
-	labelMap := map[string]string{
-		BackupObject: "",
-	}
+	cronWatcher.crons.Start()
 	lw := &cache.ListWatch{
 		ListFunc: func(opts api.ListOptions) (runtime.Object, error) {
-			return helper.extClient.Backups(helper.namespace).List(api.ListOptions{
-				LabelSelector: labels.SelectorFromSet(labels.Set(labelMap)),
-			})
+			return cronWatcher.extClient.Backups(cronWatcher.namespace).List(api.ListOptions{})
 		},
 		WatchFunc: func(options api.ListOptions) (watch.Interface, error) {
-			return helper.extClient.Backups(helper.namespace).Watch(api.ListOptions{
-				FieldSelector: labels.SelectorFromSet(labels.Set(labelMap)),
-			})
+			return cronWatcher.extClient.Backups(cronWatcher.namespace).Watch(api.ListOptions{})
 		},
 	}
 	_, cronController := cache.NewInformer(lw,
@@ -173,11 +164,13 @@ func RunBackup() {
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				if b, ok := obj.(*rapi.Backup); ok {
-					helper.backup = b
-					err = helper.startCronBackupProcedure()
-					if err != nil {
-						log.Errorln(err)
-						return
+					if b.Name == cronWatcher.tprName {
+						cronWatcher.backup = b
+						err = cronWatcher.startCronBackupProcedure()
+						if err != nil {
+							log.Errorln(err)
+							return
+						}
 					}
 				}
 			},
@@ -190,9 +183,9 @@ func RunBackup() {
 				if !ok {
 					return
 				}
-				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) {
-					helper.backup = newObj
-					err = helper.startCronBackupProcedure()
+				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) && newObj.Name == cronWatcher.tprName {
+					cronWatcher.backup = newObj
+					err = cronWatcher.startCronBackupProcedure()
 					if err != nil {
 						log.Errorln(err)
 						return
@@ -203,9 +196,9 @@ func RunBackup() {
 	cronController.Run(wait.NeverStop)
 }
 
-func (helper *cronController) startCronBackupProcedure() error {
-	backup := helper.backup
-	password, err := getPasswordFromSecret(helper.kubeClient, backup.Spec.Destination.RepositorySecretName, backup.Namespace)
+func (cronWatcher *cronController) startCronBackupProcedure() error {
+	backup := cronWatcher.backup
+	password, err := getPasswordFromSecret(cronWatcher.kubeClient, backup.Spec.Destination.RepositorySecretName, backup.Namespace)
 	if err != nil {
 		return err
 	}
@@ -221,32 +214,32 @@ func (helper *cronController) startCronBackupProcedure() error {
 		}
 	}
 	// Remove previous jobs
-	for _, v := range helper.crons.Entries() {
-		helper.crons.Remove(v.ID)
+	for _, v := range cronWatcher.crons.Entries() {
+		cronWatcher.crons.Remove(v.ID)
 	}
 	interval := backup.Spec.Schedule
 	if _, err = cron.Parse(interval); err != nil {
 		er := err
 		//Reset Wrong Schedule
-		helper.backup.Spec.Schedule = ""
+		cronWatcher.backup.Spec.Schedule = ""
 		// Create event
-		helper.eventRecorder.PushEvent(api.EventTypeWarning, eventer.EventReasonCronExpressionFailed, err.Error(), backup)
-		_, err = helper.extClient.Backups(backup.Namespace).Update(backup)
+		cronWatcher.eventRecorder.PushEvent(api.EventTypeWarning, eventer.EventReasonCronExpressionFailed, err.Error(), backup)
+		_, err = cronWatcher.extClient.Backups(backup.Namespace).Update(backup)
 		if err != nil {
 			log.Errorln(err)
 		}
 		return er
 	}
-	_, err = helper.crons.AddFunc(interval, helper.runCronJob)
+	_, err = cronWatcher.crons.AddFunc(interval, cronWatcher.runCronJob)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (helper *cronController) runCronJob() {
-	backup := helper.backup
-	password, err := getPasswordFromSecret(helper.kubeClient, backup.Spec.Destination.RepositorySecretName, backup.Namespace)
+func (cronWatcher *cronController) runCronJob() {
+	backup := cronWatcher.backup
+	password, err := getPasswordFromSecret(cronWatcher.kubeClient, backup.Spec.Destination.RepositorySecretName, backup.Namespace)
 	err = os.Setenv(RESTIC_PASSWORD, password)
 	if err != nil {
 		log.Errorln(err)
@@ -277,13 +270,13 @@ func (helper *cronController) runCronJob() {
 	}
 	backup.Status.BackupCount++
 	message := "Backup operation number = " + strconv.Itoa(int(backup.Status.BackupCount))
-	helper.eventRecorder.PushEvent(api.EventTypeNormal, reason, message, backup)
+	cronWatcher.eventRecorder.PushEvent(api.EventTypeNormal, reason, message, backup)
 	backup.Status.LastBackupTime = &backupStartTime
 	if reflect.DeepEqual(backup.Status.FirstBackupTime, time.Time{}) {
 		backup.Status.FirstBackupTime = &backupStartTime
 	}
 	backup.Status.LastBackupDuration = backupEndTime.Sub(backupStartTime.Time).String()
-	backup, err = helper.extClient.Backups(backup.Namespace).Update(backup)
+	backup, err = cronWatcher.extClient.Backups(backup.Namespace).Update(backup)
 	if err != nil {
 		log.Errorln(err)
 	}
@@ -386,7 +379,6 @@ func (pl *Controller) updateObjectAndStartBackup(b *rapi.Backup) error {
 		return errors.New(fmt.Sprintf("No object found for backup %s ", b.Name))
 	}
 	opts := api.ListOptions{}
-
 	switch _type {
 	case ReplicationController:
 		rc := &api.ReplicationController{}
@@ -442,15 +434,9 @@ func (pl *Controller) updateObjectAndStartBackup(b *rapi.Backup) error {
 		log.Warningf("The Object referred by the backup object (%s) is a statefulset.", b.Name)
 		return nil
 	}
-	err = pl.addAnnotation(b)
-	if err != nil {
-		return err
-	}
-	err = pl.addLabel(b)
-	if err != nil {
-		return err
-	}
-
+	pl.addAnnotation(b)
+	_, err = pl.ExtClient.Backups(b.Namespace).Update(b)
+	return err
 }
 
 func (pl *Controller) updateObjectAndStopBackup(b *rapi.Backup) error {
@@ -696,18 +682,9 @@ func getPasswordFromSecret(client clientset.Interface, secretName, namespace str
 	return string(password), nil
 }
 
-func (pl *Controller) addAnnotation(b *rapi.Backup) error {
+func (pl *Controller) addAnnotation(b *rapi.Backup) {
 	if b.ObjectMeta.Annotations == nil {
 		b.ObjectMeta.Annotations = make(map[string]string)
 	}
 	b.ObjectMeta.Annotations[ImageAnnotation] = pl.Image
-	_, err := pl.ExtClient.Backups(b.Namespace).Update(b)
-	return err
-}
-
-func (pl *Controller) addLabel(b *rapi.Backup) error  {
-	if b.ObjectMeta.Labels == nil {
-		b.ObjectMeta.Labels = make(map[string]string)
-	}
-
 }

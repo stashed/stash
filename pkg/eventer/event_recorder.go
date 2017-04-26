@@ -9,9 +9,10 @@ import (
 )
 
 const (
-	EventReasonCronExpressionFailed = "Failed"
-	EventReasonBackupSuccess        = "Success"
-	EventReasonBackupFailed         = "Failed"
+	EventReasonCronExpressionFailed    = "Failed"
+	EventReasonBackupDestinationFailed = "Failed"
+	EventReasonBackupSuccess           = "Success"
+	EventReasonBackupFailed            = "Failed"
 )
 
 type EventRecorderInterface interface {
