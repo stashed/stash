@@ -17,10 +17,11 @@ func TestBackupUpdate(t *testing.T) {
 		return
 	}
 	extClient := tcs.NewACExtensionsForConfigOrDie(config)
-	b, err := extClient.Backups("test").Get("backup-test")
+	b, err := extClient.Backups("test").Get("testbackup")
 	if err != nil {
 		fmt.Println(err)
 	}
+	b.Spec.Schedule = "0 * * * * *"
 	b.Spec.RetentionPolicy.KeepLastSnapshots = 5
 	b, err = extClient.Backups("test").Update(b)
 	if err != nil {

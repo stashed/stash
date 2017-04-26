@@ -23,6 +23,7 @@ import (
 	"k8s.io/kubernetes/pkg/apis/extensions"
 	"k8s.io/kubernetes/pkg/client/cache"
 	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
+	"k8s.io/kubernetes/pkg/client/record"
 	rest "k8s.io/kubernetes/pkg/client/restclient"
 	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 	"k8s.io/kubernetes/pkg/labels"
@@ -38,6 +39,16 @@ type Controller struct {
 	SyncPeriod time.Duration
 	// image of sidecar container
 	Image string
+}
+
+type cronController struct {
+	extClient     tcs.AppsCodeExtensionInterface
+	kubeClient    clientset.Interface
+	tprName       string
+	namespace     string
+	crons         *cron.Cron
+	backup        *rapi.Backup
+	eventRecorder record.EventRecorder
 }
 
 func New(c *rest.Config, image string) *Controller {
@@ -125,103 +136,150 @@ func RunBackup() {
 		log.Errorln(err)
 		return
 	}
-	extClient := tcs.NewACExtensionsForConfigOrDie(config)
 	client, err := factory.ClientSet()
 	if err != nil {
 		log.Errorln(err)
 		return
 	}
-	namespace := os.Getenv(Namespace)
-	tprName := os.Getenv(TPR)
-	backup, err := extClient.Backups(namespace).Get(tprName)
-	if err != nil {
-		log.Errorln(err)
-		return
+	cronWatcher := &cronController{
+		extClient:     tcs.NewACExtensionsForConfigOrDie(config),
+		kubeClient:    client,
+		namespace:     os.Getenv(RestikNamespace),
+		tprName:       os.Getenv(RestikResourceName),
+		crons:         cron.New(),
+		eventRecorder: NewEventRecorder(client, "Restik sidecar Watcher"),
 	}
-	password, err := getPasswordFromSecret(client, backup.Spec.Destination.RepositorySecretName, backup.Namespace)
+	cronWatcher.crons.Start()
+	lw := &cache.ListWatch{
+		ListFunc: func(opts api.ListOptions) (runtime.Object, error) {
+			return cronWatcher.extClient.Backups(cronWatcher.namespace).List(api.ListOptions{})
+		},
+		WatchFunc: func(options api.ListOptions) (watch.Interface, error) {
+			return cronWatcher.extClient.Backups(cronWatcher.namespace).Watch(api.ListOptions{})
+		},
+	}
+	_, cronController := cache.NewInformer(lw,
+		&rapi.Backup{},
+		time.Minute*2,
+		cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				if b, ok := obj.(*rapi.Backup); ok {
+					if b.Name == cronWatcher.tprName {
+						cronWatcher.backup = b
+						err = cronWatcher.startCronBackupProcedure()
+						if err != nil {
+							log.Errorln(err)
+							return
+						}
+					}
+				}
+			},
+			UpdateFunc: func(old, new interface{}) {
+				oldObj, ok := old.(*rapi.Backup)
+				if !ok {
+					return
+				}
+				newObj, ok := new.(*rapi.Backup)
+				if !ok {
+					return
+				}
+				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) && newObj.Name == cronWatcher.tprName {
+					cronWatcher.backup = newObj
+					err = cronWatcher.startCronBackupProcedure()
+					if err != nil {
+						log.Errorln(err)
+						return
+					}
+				}
+			},
+		})
+	cronController.Run(wait.NeverStop)
+}
+
+func (cronWatcher *cronController) startCronBackupProcedure() error {
+	backup := cronWatcher.backup
+	password, err := getPasswordFromSecret(cronWatcher.kubeClient, backup.Spec.Destination.RepositorySecretName, backup.Namespace)
 	if err != nil {
-		log.Errorln(err)
-		return
+		return err
 	}
 	err = os.Setenv(RESTIC_PASSWORD, password)
 	if err != nil {
-		log.Errorln(err)
-		return
+		return err
 	}
 	repo := backup.Spec.Destination.Path
 	_, err = os.Stat(filepath.Join(repo, "config"))
 	if os.IsNotExist(err) {
 		if _, err = execLocal(fmt.Sprintf("/restic init --repo %s", repo)); err != nil {
-			log.Errorln("RESTIC repository not created cause", err)
-			return
+			return err
 		}
+	}
+	// Remove previous jobs
+	for _, v := range cronWatcher.crons.Entries() {
+		cronWatcher.crons.Remove(v.ID)
 	}
 	interval := backup.Spec.Schedule
 	if _, err = cron.Parse(interval); err != nil {
+		er := err
+		//Reset Wrong Schedule
+		backup.Spec.Schedule = ""
+		// Create event
+		cronWatcher.eventRecorder.Event(backup, api.EventTypeWarning, EventReasonCronExpressionFailed, err.Error())
+		_, err = cronWatcher.extClient.Backups(backup.Namespace).Update(backup)
+		if err != nil {
+			log.Errorln(err)
+		}
+		return er
+	}
+	_, err = cronWatcher.crons.AddFunc(interval, cronWatcher.runCronJob)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (cronWatcher *cronController) runCronJob() {
+	backup := cronWatcher.backup
+	password, err := getPasswordFromSecret(cronWatcher.kubeClient, backup.Spec.Destination.RepositorySecretName, backup.Namespace)
+	err = os.Setenv(RESTIC_PASSWORD, password)
+	if err != nil {
 		log.Errorln(err)
 		return
 	}
-	c := cron.New()
-	c.Start()
-	c.AddFunc(interval, func() {
-		backup, err := extClient.Backups(namespace).Get(tprName)
-		if err != nil {
-			log.Errorln(err)
-		}
-		event := &api.Event{
-			ObjectMeta: api.ObjectMeta{
-				Namespace: backup.Namespace,
-			},
-			InvolvedObject: api.ObjectReference{
-				Kind:      backup.Kind,
-				Namespace: backup.Namespace,
-				Name:      backup.Name,
-			},
-		}
-		password, err := getPasswordFromSecret(client, backup.Spec.Destination.RepositorySecretName, backup.Namespace)
-		err = os.Setenv(RESTIC_PASSWORD, password)
-		if err != nil {
-			log.Errorln(err)
-		}
-		backupStartTime := unversioned.Now()
-		cmd := fmt.Sprintf("/restic -r %s backup %s", backup.Spec.Destination.Path, backup.Spec.Source.Path)
-		// add tags if any
-		for _, t := range backup.Spec.Tags {
-			cmd = cmd + " --tag " + t
-		}
-		// Force flag
-		cmd = cmd + " --" + Force
-		// Take Backup
-		_, err = execLocal(cmd)
-		if err != nil {
-			log.Errorln("Restick backup failed cause ", err)
-			event.Reason = "Failed"
-		} else {
-			backup.Status.LastSuccessfullBackupTime = &backupStartTime
-			event.Reason = "Success"
-		}
-		backupEndTime := unversioned.Now()
-		_, err = snapshotRetention(backup)
-		if err != nil {
-			log.Errorln("Snapshot retention failed cause ", err)
-		}
-		backup.Status.BackupCount++
-		event.Name = backup.Name + "-" + strconv.Itoa(int(backup.Status.BackupCount))
-		_, err = client.Core().Events(backup.Namespace).Create(event)
-		if err != nil {
-			log.Errorln(err)
-		}
-		backup.Status.LastBackupTime = &backupStartTime
-		if reflect.DeepEqual(backup.Status.FirstBackupTime, time.Time{}) {
-			backup.Status.FirstBackupTime = &backupStartTime
-		}
-		backup.Status.LastBackupDuration = backupEndTime.Sub(backupStartTime.Time).String()
-		backup, err = extClient.Backups(backup.Namespace).Update(backup)
-		if err != nil {
-			log.Errorln(err)
-		}
-	})
-	wait.Until(func() {}, time.Second, wait.NeverStop)
+	backupStartTime := unversioned.Now()
+	cmd := fmt.Sprintf("/restic -r %s backup %s", backup.Spec.Destination.Path, backup.Spec.Source.Path)
+	// add tags if any
+	for _, t := range backup.Spec.Tags {
+		cmd = cmd + " --tag " + t
+	}
+	// Force flag
+	cmd = cmd + " --" + Force
+	// Take Backup
+	_, err = execLocal(cmd)
+	reason := ""
+	if err != nil {
+		log.Errorln("Restik backup failed cause ", err)
+		reason = EventReasonBackupFailed
+	} else {
+		backup.Status.LastSuccessfullBackupTime = &backupStartTime
+		reason = EventReasonBackupSuccess
+	}
+	backupEndTime := unversioned.Now()
+	_, err = snapshotRetention(backup)
+	if err != nil {
+		log.Errorln("Snapshot retention failed cause ", err)
+	}
+	backup.Status.BackupCount++
+	message := "Backup operation number = " + strconv.Itoa(int(backup.Status.BackupCount))
+	cronWatcher.eventRecorder.Event(backup, api.EventTypeNormal, reason, message)
+	backup.Status.LastBackupTime = &backupStartTime
+	if reflect.DeepEqual(backup.Status.FirstBackupTime, time.Time{}) {
+		backup.Status.FirstBackupTime = &backupStartTime
+	}
+	backup.Status.LastBackupDuration = backupEndTime.Sub(backupStartTime.Time).String()
+	backup, err = cronWatcher.extClient.Backups(backup.Namespace).Update(backup)
+	if err != nil {
+		log.Errorln(err)
+	}
 }
 
 func getRestikContainer(b *rapi.Backup, containerImage string) api.Container {
@@ -231,11 +289,11 @@ func getRestikContainer(b *rapi.Backup, containerImage string) api.Container {
 		ImagePullPolicy: api.PullAlways,
 		Env: []api.EnvVar{
 			{
-				Name:  Namespace,
+				Name:  RestikNamespace,
 				Value: b.Namespace,
 			},
 			{
-				Name:  TPR,
+				Name:  RestikResourceName,
 				Value: b.Name,
 			},
 		},
@@ -264,7 +322,7 @@ func restartPods(kubeClient clientset.Interface, namespace string, opts api.List
 		deleteOpts := &api.DeleteOptions{}
 		err = kubeClient.Core().Pods(namespace).Delete(pod.Name, deleteOpts)
 		if err != nil {
-			errMessage := fmt.Sprint("Failed to restart pod %s cause %v", pod.Name, err)
+			errMessage := fmt.Sprintf("Failed to restart pod %s cause %v", pod.Name, err)
 			log.Errorln(errMessage)
 		}
 	}
@@ -376,7 +434,9 @@ func (pl *Controller) updateObjectAndStartBackup(b *rapi.Backup) error {
 		log.Warningf("The Object referred by the backup object (%s) is a statefulset.", b.Name)
 		return nil
 	}
-	return pl.addAnnotation(b)
+	pl.addAnnotation(b)
+	_, err = pl.ExtClient.Backups(b.Namespace).Update(b)
+	return err
 }
 
 func (pl *Controller) updateObjectAndStopBackup(b *rapi.Backup) error {
@@ -622,11 +682,23 @@ func getPasswordFromSecret(client clientset.Interface, secretName, namespace str
 	return string(password), nil
 }
 
-func (pl *Controller) addAnnotation(b *rapi.Backup) error {
+func (pl *Controller) addAnnotation(b *rapi.Backup) {
 	if b.ObjectMeta.Annotations == nil {
 		b.ObjectMeta.Annotations = make(map[string]string)
 	}
 	b.ObjectMeta.Annotations[ImageAnnotation] = pl.Image
-	_, err := pl.ExtClient.Backups(b.Namespace).Update(b)
-	return err
+}
+
+func NewEventRecorder(client clientset.Interface, component string) record.EventRecorder {
+	// Event Broadcaster
+	broadcaster := record.NewBroadcaster()
+	broadcaster.StartEventWatcher(
+		func(event *api.Event) {
+			if _, err := client.Core().Events(event.Namespace).Create(event); err != nil {
+				log.Errorln(err)
+			}
+		},
+	)
+	// Event Recorder
+	return broadcaster.NewRecorder(api.EventSource{Component: component})
 }

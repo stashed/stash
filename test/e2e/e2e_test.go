@@ -61,7 +61,7 @@ func TestBackups(t *testing.T) {
 	if !assert.Nil(t, err) {
 		return
 	}
-	err = checkEventForBackup(watcher, backupDaemonset+"-1")
+	err = checkEventForBackup(watcher, backupDaemonset)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -88,7 +88,7 @@ func TestBackups(t *testing.T) {
 		return
 	}
 
-	err = checkEventForBackup(watcher, backupRC+"-1")
+	err = checkEventForBackup(watcher, backupRC)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -115,7 +115,7 @@ func TestBackups(t *testing.T) {
 	if !assert.Nil(t, err) {
 		return
 	}
-	err = checkEventForBackup(watcher, backupReplicaset+"-1")
+	err = checkEventForBackup(watcher, backupReplicaset)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -143,7 +143,7 @@ func TestBackups(t *testing.T) {
 	if !assert.Nil(t, err) {
 		return
 	}
-	err = checkEventForBackup(watcher, backupDeployment+"-1")
+	err = checkEventForBackup(watcher, backupDeployment)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -174,7 +174,7 @@ func TestBackups(t *testing.T) {
 	}
 	defer deleteBackup(watcher, backupStatefulset)
 
-	err = checkEventForBackup(watcher, backupStatefulset+"-1")
+	err = checkEventForBackup(watcher, backupStatefulset)
 	if !assert.Nil(t, err) {
 		return
 	}

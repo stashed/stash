@@ -3,8 +3,8 @@ package controller
 const (
 	BackupConfig          = "backup.appscode.com/config"
 	ContainerName         = "restic-sidecar"
-	Namespace             = "RESTIK_NAMESPACE"
-	TPR                   = "TPR"
+	RestikNamespace       = "RESTIK_NAMESPACE"
+	RestikResourceName    = "RESTIK_RESOURCE_NAME"
 	RESTIC_PASSWORD       = "RESTIC_PASSWORD"
 	ReplicationController = "ReplicationController"
 	ReplicaSet            = "ReplicaSet"
@@ -14,4 +14,10 @@ const (
 	Password              = "password"
 	ImageAnnotation       = "backup.appscode.com/image"
 	Force                 = "force"
+)
+
+const (
+	EventReasonCronExpressionFailed = "Failed"
+	EventReasonBackupSuccess        = "Success"
+	EventReasonBackupFailed         = "Failed"
 )
