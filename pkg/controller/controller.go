@@ -13,7 +13,6 @@ import (
 	rapi "github.com/appscode/k8s-addons/api"
 	tcs "github.com/appscode/k8s-addons/client/clientset"
 	"github.com/appscode/log"
-	"github.com/appscode/restik/pkg/eventer"
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
 	"github.com/restic/restic/src/restic/errors"
@@ -24,6 +23,7 @@ import (
 	"k8s.io/kubernetes/pkg/apis/extensions"
 	"k8s.io/kubernetes/pkg/client/cache"
 	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
+	"k8s.io/kubernetes/pkg/client/record"
 	rest "k8s.io/kubernetes/pkg/client/restclient"
 	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 	"k8s.io/kubernetes/pkg/labels"
@@ -48,7 +48,7 @@ type cronController struct {
 	namespace     string
 	crons         *cron.Cron
 	backup        *rapi.Backup
-	eventRecorder eventer.EventRecorderInterface
+	eventRecorder record.EventRecorder
 }
 
 func New(c *rest.Config, image string) *Controller {
@@ -144,10 +144,10 @@ func RunBackup() {
 	cronWatcher := &cronController{
 		extClient:     tcs.NewACExtensionsForConfigOrDie(config),
 		kubeClient:    client,
-		namespace:     os.Getenv(Namespace),
-		tprName:       os.Getenv(TPR),
+		namespace:     os.Getenv(RestikNamespace),
+		tprName:       os.Getenv(RestikResourceName),
 		crons:         cron.New(),
-		eventRecorder: eventer.NewEventRecorder(client, "Restik sidecar Watcher"),
+		eventRecorder: NewEventRecorder(client, "Restik sidecar Watcher"),
 	}
 	cronWatcher.crons.Start()
 	lw := &cache.ListWatch{
@@ -223,7 +223,7 @@ func (cronWatcher *cronController) startCronBackupProcedure() error {
 		//Reset Wrong Schedule
 		backup.Spec.Schedule = ""
 		// Create event
-		cronWatcher.eventRecorder.PushEvent(api.EventTypeWarning, eventer.EventReasonCronExpressionFailed, err.Error(), backup)
+		cronWatcher.eventRecorder.Event(backup, api.EventTypeWarning, EventReasonCronExpressionFailed, err.Error())
 		_, err = cronWatcher.extClient.Backups(backup.Namespace).Update(backup)
 		if err != nil {
 			log.Errorln(err)
@@ -258,10 +258,10 @@ func (cronWatcher *cronController) runCronJob() {
 	reason := ""
 	if err != nil {
 		log.Errorln("Restik backup failed cause ", err)
-		reason = eventer.EventReasonBackupFailed
+		reason = EventReasonBackupFailed
 	} else {
 		backup.Status.LastSuccessfullBackupTime = &backupStartTime
-		reason = eventer.EventReasonBackupSuccess
+		reason = EventReasonBackupSuccess
 	}
 	backupEndTime := unversioned.Now()
 	_, err = snapshotRetention(backup)
@@ -270,7 +270,7 @@ func (cronWatcher *cronController) runCronJob() {
 	}
 	backup.Status.BackupCount++
 	message := "Backup operation number = " + strconv.Itoa(int(backup.Status.BackupCount))
-	cronWatcher.eventRecorder.PushEvent(api.EventTypeNormal, reason, message, backup)
+	cronWatcher.eventRecorder.Event(backup, api.EventTypeNormal, reason, message)
 	backup.Status.LastBackupTime = &backupStartTime
 	if reflect.DeepEqual(backup.Status.FirstBackupTime, time.Time{}) {
 		backup.Status.FirstBackupTime = &backupStartTime
@@ -289,11 +289,11 @@ func getRestikContainer(b *rapi.Backup, containerImage string) api.Container {
 		ImagePullPolicy: api.PullAlways,
 		Env: []api.EnvVar{
 			{
-				Name:  Namespace,
+				Name:  RestikNamespace,
 				Value: b.Namespace,
 			},
 			{
-				Name:  TPR,
+				Name:  RestikResourceName,
 				Value: b.Name,
 			},
 		},
@@ -687,4 +687,18 @@ func (pl *Controller) addAnnotation(b *rapi.Backup) {
 		b.ObjectMeta.Annotations = make(map[string]string)
 	}
 	b.ObjectMeta.Annotations[ImageAnnotation] = pl.Image
+}
+
+func NewEventRecorder(client clientset.Interface, component string) record.EventRecorder {
+	// Event Broadcaster
+	broadcaster := record.NewBroadcaster()
+	broadcaster.StartEventWatcher(
+		func(event *api.Event) {
+			if _, err := client.Core().Events(event.Namespace).Create(event); err != nil {
+				log.Errorln(err)
+			}
+		},
+	)
+	// Event Recorder
+	return broadcaster.NewRecorder(api.EventSource{Component: component})
 }
