@@ -362,7 +362,7 @@ func getKubeObject(kubeClient clientset.Interface, namespace string, ls labels.S
 		b, err := yaml.Marshal(statefulsets.Items[0])
 		return b, err, StatefulSet
 	}
-	return nil, nil, ""
+	return nil, errors.New("Workload not found"), ""
 }
 
 func findSelectors(lb map[string]string) labels.Selector {
