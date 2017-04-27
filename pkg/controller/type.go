@@ -17,7 +17,8 @@ const (
 )
 
 const (
-	EventReasonCronExpressionFailed = "Failed"
-	EventReasonBackupSuccess        = "Success"
-	EventReasonBackupFailed         = "Failed"
+	EventReasonInvalidCronExpression         = "Invalid"
+	EventReasonSuccessfulCronExpressionReset = "Success"
+	EventReasonSuccessfulBackup              = "Success"
+	EventReasonFailedToBackup                = "Failed"
 )

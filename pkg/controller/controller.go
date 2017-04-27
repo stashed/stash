@@ -223,16 +223,16 @@ func (cronWatcher *cronController) startCronBackupProcedure() error {
 	}
 	interval := backup.Spec.Schedule
 	if _, err = cron.Parse(interval); err != nil {
+		log.Errorln(err)
+		cronWatcher.eventRecorder.Event(backup, api.EventTypeWarning, EventReasonInvalidCronExpression, err.Error())
 		//Reset Wrong Schedule
 		backup.Spec.Schedule = ""
-		// Create event
-		cronWatcher.eventRecorder.Event(backup, api.EventTypeWarning, EventReasonCronExpressionFailed, err.Error())
-		_, er := cronWatcher.extClient.Backups(backup.Namespace).Update(backup)
-		if er != nil {
-			errMsg := err.Error() + "\n" + er.Error()
-			return errors.New(errMsg)
+		_, err = cronWatcher.extClient.Backups(backup.Namespace).Update(backup)
+		if err != nil {
+			return err
 		}
-		return err
+		cronWatcher.eventRecorder.Event(backup, api.EventTypeNormal, EventReasonSuccessfulCronExpressionReset, "Cron expression reset")
+		return nil
 	}
 	_, err = cronWatcher.crons.AddFunc(interval, cronWatcher.runCronJob)
 	if err != nil {
@@ -262,10 +262,10 @@ func (cronWatcher *cronController) runCronJob() {
 	reason := ""
 	if err != nil {
 		log.Errorln("Restik backup failed cause ", err)
-		reason = EventReasonBackupFailed
+		reason = EventReasonFailedToBackup
 	} else {
 		backup.Status.LastSuccessfullBackupTime = &backupStartTime
-		reason = EventReasonBackupSuccess
+		reason = EventReasonSuccessfulBackup
 	}
 	backupEndTime := unversioned.Now()
 	_, err = snapshotRetention(backup)
