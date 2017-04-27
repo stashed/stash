@@ -3,13 +3,12 @@
 ## TL;DR;
 
 ```bash
-$ helm install stable/restik
+$ helm install hack/chart/restik
 ```
 
 ## Introduction
 
 This chart bootstraps a [Restik controller](https://github.com/appscode/restik) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
-
 
 ## Prerequisites
 
@@ -18,7 +17,7 @@ This chart bootstraps a [Restik controller](https://github.com/appscode/restik) 
 ## Installing the Chart
 To install the chart with the release name `my-release`:
 ```bash
-$ helm install --name my-release stable/restik
+$ helm install --name my-release hack/chart/restik
 ```
 The command deploys Restik Controller on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
 
@@ -39,9 +38,7 @@ The command removes all the Kubernetes components associated with the chart and 
 The following tables lists the configurable parameters of the Restik chart and their default values.
 
 
-| Parameter                  | Description                                | Default                                                    |
-| -----------------------    | ----------------------------------         | ---------------------------------------------------------- |
-| `image`                    |  Container image to run      | `appscode/restik`   |
-| `imagePullPolicy`          |  Image pull policy           | `Always`   |
-| `imageTag`                 |  Image tag of contianer      | `latest`   |
-| `namespace`                |     namespace of Restik Controller  | `default`   |
+| Parameter                  | Description                | Default                                                    |
+| -----------------------    | ----------------------     | ------------------- |
+| `image`                    |  Container image to run    | `appscode/restik`   |
+| `imageTag`                 |  Image tag of container    | `latest`            |

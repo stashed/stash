@@ -7,7 +7,6 @@ metadata:
     heritage: {{.Release.Service}}
     release: {{.Release.Name}}
   name: {{ template "fullname" . }}
-  namespace: {{.Values.namespace}}
 spec:
   replicas: 1
   selector:
@@ -21,7 +20,7 @@ spec:
       containers:
       - args:
         - run
-        - -v=3
+        - --v=3
+        - --image={{.Values.image}}:{{.Values.imageTag}}
         image: {{.Values.image}}:{{.Values.imageTag}}
-        imagePullPolicy: {{.Values.imagePullPolicy}}
-        name: appscode-backup
+        name: {{ template "fullname" . }}
