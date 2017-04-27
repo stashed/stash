@@ -11,7 +11,6 @@ import (
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
 	"k8s.io/kubernetes/pkg/fields"
-	"github.com/appscode/restik/pkg/eventer"
 )
 
 var image = "appscode/restik:latest"
@@ -26,7 +25,13 @@ func runController() (*controller.Controller, error) {
 		return &controller.Controller{}, err
 	}
 	controller := controller.New(config, image)
-	go controller.RunAndHold()
+	go func () {
+		err := controller.RunAndHold()
+		if err != nil {
+			log.Errorln(err)
+		}
+
+	}()
 	return controller, nil
 }
 
@@ -44,7 +49,7 @@ func checkEventForBackup(watcher *controller.Controller, objName string) error {
 		events, err := watcher.Client.Core().Events(namespace).List(api.ListOptions{FieldSelector: fieldSelector})
 		if err == nil {
 			for _, e := range events.Items {
-				if e.Reason == eventer.EventReasonBackupSuccess  {
+				if e.Reason == controller.EventReasonBackupSuccess  {
 					return nil
 				}
 			}
