@@ -223,16 +223,16 @@ func (cronWatcher *cronController) startCronBackupProcedure() error {
 	}
 	interval := backup.Spec.Schedule
 	if _, err = cron.Parse(interval); err != nil {
-		er := err
 		//Reset Wrong Schedule
 		backup.Spec.Schedule = ""
 		// Create event
 		cronWatcher.eventRecorder.Event(backup, api.EventTypeWarning, EventReasonCronExpressionFailed, err.Error())
-		_, err = cronWatcher.extClient.Backups(backup.Namespace).Update(backup)
-		if err != nil {
-			log.Errorln(err)
+		_, er := cronWatcher.extClient.Backups(backup.Namespace).Update(backup)
+		if er != nil {
+			errMsg := err.Error() + "\n" + er.Error()
+			return errors.New(errMsg)
 		}
-		return er
+		return err
 	}
 	_, err = cronWatcher.crons.AddFunc(interval, cronWatcher.runCronJob)
 	if err != nil {
