@@ -11,6 +11,7 @@ import (
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
 	"k8s.io/kubernetes/pkg/fields"
+	"github.com/k8sdb/apimachinery/pkg/eventer"
 )
 
 var image = "appscode/restik:latest"

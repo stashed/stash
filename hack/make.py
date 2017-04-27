@@ -75,17 +75,19 @@ def version():
 
 
 def fmt():
-    die(call('goimports -w cmd pkg'))
-    call('gofmt -s -w cmd pkg')
+    libbuild.ungroup_go_imports('cmd', 'pkg', 'test')
+    die(call('goimports -w cmd pkg test'))
+    call('gofmt -s -w cmd pkg test')
 
 
 def vet():
-    call('go vet ./cmd/... ./pkg/...')
+    call('go vet ./cmd/... ./pkg/... ./test/...')
 
 
 def lint():
     call('golint ./cmd/...')
     call('golint ./pkg/...')
+    call('golint ./test/...')
 
 
 def gen():
@@ -162,8 +164,10 @@ def test(type):
 def unit_test():
       die(call(libbuild.GOC + ' test -v ./pkg/controller...'))
 
+
 def e2e_test():
     die(call(libbuild.GOC + ' test -v ./test/e2e/... -timeout 10h'))
+
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
