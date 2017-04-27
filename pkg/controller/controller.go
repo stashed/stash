@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -15,7 +16,6 @@ import (
 	"github.com/appscode/log"
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
-	"github.com/restic/restic/src/restic/errors"
 	"gopkg.in/robfig/cron.v2"
 	"k8s.io/kubernetes/pkg/api"
 	k8serrors "k8s.io/kubernetes/pkg/api/errors"
@@ -61,8 +61,10 @@ func New(c *rest.Config, image string) *Controller {
 }
 
 // Blocks caller. Intended to be called as a Go routine.
-func (w *Controller) RunAndHold() {
-	w.ensureResource()
+func (w *Controller) RunAndHold() error {
+	if err := w.ensureResource(); err != nil {
+		return err
+	}
 	lw := &cache.ListWatch{
 		ListFunc: func(opts api.ListOptions) (runtime.Object, error) {
 			return w.ExtClient.Backups(api.NamespaceAll).List(api.ListOptions{})
@@ -103,10 +105,12 @@ func (w *Controller) RunAndHold() {
 			UpdateFunc: func(old, new interface{}) {
 				oldObj, ok := old.(*rapi.Backup)
 				if !ok {
+					log.Errorln(errors.New("Error validating backup object"))
 					return
 				}
 				newObj, ok := new.(*rapi.Backup)
 				if !ok {
+					log.Errorln(errors.New("Error validating backup object"))
 					return
 				}
 				var oldImage, newImage string
@@ -127,19 +131,18 @@ func (w *Controller) RunAndHold() {
 		},
 	)
 	controller.Run(wait.NeverStop)
+	return nil
 }
 
-func RunBackup() {
+func RunBackup() error {
 	factory := cmdutil.NewFactory(nil)
 	config, err := factory.ClientConfig()
 	if err != nil {
-		log.Errorln(err)
-		return
+		return err
 	}
 	client, err := factory.ClientSet()
 	if err != nil {
-		log.Errorln(err)
-		return
+		return err
 	}
 	cronWatcher := &cronController{
 		extClient:     tcs.NewACExtensionsForConfigOrDie(config),
@@ -169,7 +172,6 @@ func RunBackup() {
 						err = cronWatcher.startCronBackupProcedure()
 						if err != nil {
 							log.Errorln(err)
-							return
 						}
 					}
 				}
@@ -177,10 +179,12 @@ func RunBackup() {
 			UpdateFunc: func(old, new interface{}) {
 				oldObj, ok := old.(*rapi.Backup)
 				if !ok {
+					log.Errorln(errors.New("Error validating backup object"))
 					return
 				}
 				newObj, ok := new.(*rapi.Backup)
 				if !ok {
+					log.Errorln(errors.New("Error validating backup object"))
 					return
 				}
 				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) && newObj.Name == cronWatcher.tprName {
@@ -188,12 +192,12 @@ func RunBackup() {
 					err = cronWatcher.startCronBackupProcedure()
 					if err != nil {
 						log.Errorln(err)
-						return
 					}
 				}
 			},
 		})
 	cronController.Run(wait.NeverStop)
+	return nil
 }
 
 func (cronWatcher *cronController) startCronBackupProcedure() error {
@@ -322,8 +326,7 @@ func restartPods(kubeClient clientset.Interface, namespace string, opts api.List
 		deleteOpts := &api.DeleteOptions{}
 		err = kubeClient.Core().Pods(namespace).Delete(pod.Name, deleteOpts)
 		if err != nil {
-			errMessage := fmt.Sprintf("Failed to restart pod %s cause %v", pod.Name, err)
-			log.Errorln(errMessage)
+			return err
 		}
 	}
 	return nil
@@ -433,6 +436,9 @@ func (pl *Controller) updateObjectAndStartBackup(b *rapi.Backup) error {
 	case StatefulSet:
 		log.Warningf("The Object referred by the backup object (%s) is a statefulset.", b.Name)
 		return nil
+	}
+	if err != nil {
+		return err
 	}
 	pl.addAnnotation(b)
 	_, err = pl.ExtClient.Backups(b.Namespace).Update(b)
@@ -571,7 +577,7 @@ func (pl *Controller) updateImage(b *rapi.Backup, image string) error {
 	return nil
 }
 
-func (w *Controller) ensureResource() {
+func (w *Controller) ensureResource() error {
 	_, err := w.Client.Extensions().ThirdPartyResources().Get(tcs.ResourceNameBackup + "." + rapi.GroupName)
 	if k8serrors.IsNotFound(err) {
 		tpr := &extensions.ThirdPartyResource{
@@ -591,9 +597,10 @@ func (w *Controller) ensureResource() {
 		_, err := w.Client.Extensions().ThirdPartyResources().Create(tpr)
 		if err != nil {
 			// This should fail if there is one third party resource data missing.
-			log.Fatalln(tpr.Name, "failed to create, causes", err.Error())
+			return err
 		}
 	}
+	return nil
 }
 
 func removeContainer(c []api.Container, name string) []api.Container {
