@@ -256,11 +256,11 @@ func createStatefulSet(watcher *controller.Controller, name string, backupName s
 		ImagePullPolicy: api.PullAlways,
 		Env: []api.EnvVar{
 			{
-				Name:  controller.Namespace,
+				Name:  controller.RestikNamespace,
 				Value: namespace,
 			},
 			{
-				Name:  controller.TPR,
+				Name:  controller.RestikResourceName,
 				Value: backupName,
 			},
 		},
