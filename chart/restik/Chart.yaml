@@ -1,0 +1,10 @@
+apiVersion: v1
+description: Restik provides controller that takes backup of kubernetes volume.
+icon: https://cdn.appscode.com/images/icon/restik.png
+name: restik
+version: 0.1.0
+sources:
+  - https://github.com/appscode/restik
+maintainers:
+  - name: 'AppsCode Inc.'
+    email: support@appscode.com

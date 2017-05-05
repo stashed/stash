@@ -12,7 +12,7 @@ import (
 func addConversionFuncs(scheme *runtime.Scheme) error {
 	// Add field label conversions for kinds having selectable nothing but ObjectMeta fields.
 	var err error
-	for _, k := range []string{"Ingress", "Alert"} {
+	for _, k := range []string{"Ingress", "Alert", "Backup", "Certificate"} {
 		kind := k // don't close over range variables
 		err = api.Scheme.AddFieldLabelConversionFunc("appscode.com/v1", kind,
 			func(label, value string) (string, string, error) {

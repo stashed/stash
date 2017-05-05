@@ -1,5 +1,5 @@
-hash: 872bd0d6fa2dbf7fef16155b3cfda623af3c9a917ba4de477b6d80db6b8cd8c6
-updated: 2017-04-20T14:20:14.133078336-07:00
+hash: b25c0f55d7ea5a52cd4d941f994336b30c68835c6f42216214a7f31eddb9a29a
+updated: 2017-05-05T09:38:11.538423991-07:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -7,11 +7,11 @@ imports:
   - compute/metadata
   - internal
 - name: github.com/appscode/go
-  version: bd371af23fb2398b60c065a9e07df5084422d6ad
+  version: fbfd196f17c81a31482577c232884ac38ae6da34
   subpackages:
   - version
 - name: github.com/appscode/k8s-addons
-  version: 4d09e2d4774d66c1b0a13f5d893a5d0e90d060b3
+  version: 8861b7938c5626baa96ebeb5c4146342806cd591
   subpackages:
   - api
   - api/install
@@ -84,7 +84,7 @@ imports:
 - name: github.com/exponent-io/jsonpath
   version: d6023ce2651d8eafb5c75bb0c7167536102ec9f5
 - name: github.com/ghodss/yaml
-  version: 0ca9ea5df5451ffdf184b4428c902747c2c11cd7
+  version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
 - name: github.com/go-openapi/jsonpointer
   version: 46af16f9f7b149af66e5d1bd010e3574dc06de98
 - name: github.com/go-openapi/jsonreference
@@ -152,20 +152,14 @@ imports:
   - jwriter
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
-- name: github.com/pkg/errors
-  version: a22138067af1c4942683050411a841ade67fe1eb
 - name: github.com/PuerkitoBio/purell
   version: 8a290539e2e8629dbc4e6bad948158f790ec31f4
 - name: github.com/PuerkitoBio/urlesc
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
-- name: github.com/restic/restic
-  version: aed0126102093afcdb3949907761d1a8bf7b57be
-  subpackages:
-  - src/restic/errors
 - name: github.com/spf13/cobra
-  version: 10f6b9d7e1631a54ad07c5c0fb71c28a1abfd3c2
+  version: db6b9a8b3f3f400c8ecb4a4d7d02245b8facad66
 - name: github.com/spf13/pflag
-  version: 2300d0f8576fe575f71aaa5b9bbe4e1b0dc2eb51
+  version: 80fe0fb4eba54167e2ccae1c6c950e72abf61b73
 - name: github.com/ugorji/go
   version: f1f1a805ed361a0e078bb537e4ea78cd37dcf065
   subpackages:
@@ -237,9 +231,9 @@ imports:
 - name: gopkg.in/robfig/cron.v2
   version: be2e0b0deed5a68ffee390b4583a13aff8321535
 - name: gopkg.in/yaml.v2
-  version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
+  version: cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b
 - name: k8s.io/kubernetes
-  version: 114f8911f9597be669a747ab72787e0bd74c9359
+  version: 8eb75a5810cba92ccad845ca360cf924f2385881
   subpackages:
   - federation/apis/federation
   - federation/apis/federation/install

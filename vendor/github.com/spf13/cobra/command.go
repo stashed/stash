@@ -11,8 +11,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//Package cobra is a commander providing a simple interface to create powerful modern CLI interfaces.
-//In addition to providing an interface, Cobra simultaneously provides a controller to organize your application code.
+// Package cobra is a commander providing a simple interface to create powerful modern CLI interfaces.
+// In addition to providing an interface, Cobra simultaneously provides a controller to organize your application code.
 package cobra
 
 import (
@@ -113,6 +113,9 @@ type Command struct {
 	commandsMaxNameLen        int
 	// is commands slice are sorted or not
 	commandsAreSorted bool
+
+	// flagErrorBuf contains all error messages from pflag.
+	flagErrorBuf *bytes.Buffer
 
 	args          []string             // actual args parsed from flags
 	output        io.Writer            // out writer if set in SetOutput(w)
@@ -215,9 +218,8 @@ func (c *Command) UsageFunc() (f func(*Command) error) {
 	if c.usageFunc != nil {
 		return c.usageFunc
 	}
-
 	if c.HasParent() {
-		return c.parent.UsageFunc()
+		return c.Parent().UsageFunc()
 	}
 	return func(c *Command) error {
 		c.mergePersistentFlags()
@@ -239,30 +241,19 @@ func (c *Command) Usage() error {
 // HelpFunc returns either the function set by SetHelpFunc for this command
 // or a parent, or it returns a function with default help behavior.
 func (c *Command) HelpFunc() func(*Command, []string) {
-	if helpFunc := c.checkHelpFunc(); helpFunc != nil {
-		return helpFunc
+	if c.helpFunc != nil {
+		return c.helpFunc
 	}
-	return func(*Command, []string) {
+	if c.HasParent() {
+		return c.Parent().HelpFunc()
+	}
+	return func(c *Command, a []string) {
 		c.mergePersistentFlags()
 		err := tmpl(c.OutOrStdout(), c.HelpTemplate(), c)
 		if err != nil {
 			c.Println(err)
 		}
 	}
-}
-
-// checkHelpFunc checks if there is helpFunc in ancestors of c.
-func (c *Command) checkHelpFunc() func(*Command, []string) {
-	if c == nil {
-		return nil
-	}
-	if c.helpFunc != nil {
-		return c.helpFunc
-	}
-	if c.HasParent() {
-		return c.parent.checkHelpFunc()
-	}
-	return nil
 }
 
 // Help puts out the help for the command.
@@ -378,64 +369,63 @@ func (c *Command) HelpTemplate() string {
 {{end}}{{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}`
 }
 
-// Really only used when casting a command to a commander.
-func (c *Command) resetChildrensParents() {
-	for _, x := range c.commands {
-		x.parent = c
-	}
-}
-
-func hasNoOptDefVal(name string, f *flag.FlagSet) bool {
-	flag := f.Lookup(name)
+func hasNoOptDefVal(name string, fs *flag.FlagSet) bool {
+	flag := fs.Lookup(name)
 	if flag == nil {
 		return false
 	}
-	return len(flag.NoOptDefVal) > 0
+	return flag.NoOptDefVal != ""
 }
 
 func shortHasNoOptDefVal(name string, fs *flag.FlagSet) bool {
-	result := false
-	fs.VisitAll(func(flag *flag.Flag) {
-		if flag.Shorthand == name && len(flag.NoOptDefVal) > 0 {
-			result = true
-		}
-	})
-	return result
+	if len(name) == 0 {
+		return false
+	}
+
+	flag := fs.ShorthandLookup(name[:1])
+	if flag == nil {
+		return false
+	}
+	return flag.NoOptDefVal != ""
 }
 
 func stripFlags(args []string, c *Command) []string {
-	if len(args) < 1 {
+	if len(args) == 0 {
 		return args
 	}
 	c.mergePersistentFlags()
 
 	commands := []string{}
-
 	inQuote := false
-	inFlag := false
-	for _, y := range args {
+	flags := c.Flags()
+
+Loop:
+	for len(args) > 0 {
+		s := args[0]
+		args = args[1:]
 		if !inQuote {
 			switch {
-			case strings.HasPrefix(y, "\""):
+			case strings.HasPrefix(s, "\"") || strings.Contains(s, "=\""):
 				inQuote = true
-			case strings.Contains(y, "=\""):
-				inQuote = true
-			case strings.HasPrefix(y, "--") && !strings.Contains(y, "="):
-				// TODO: this isn't quite right, we should really check ahead for 'true' or 'false'
-				inFlag = !hasNoOptDefVal(y[2:], c.Flags())
-			case strings.HasPrefix(y, "-") && !strings.Contains(y, "=") && len(y) == 2 && !shortHasNoOptDefVal(y[1:], c.Flags()):
-				inFlag = true
-			case inFlag:
-				inFlag = false
-			case y == "":
-			// strip empty commands, as the go tests expect this to be ok....
-			case !strings.HasPrefix(y, "-"):
-				commands = append(commands, y)
-				inFlag = false
+			case strings.HasPrefix(s, "--") && !strings.Contains(s, "=") && !hasNoOptDefVal(s[2:], flags):
+				// If '--flag arg' then
+				// delete arg from args.
+				fallthrough // (do the same as below)
+			case strings.HasPrefix(s, "-") && !strings.Contains(s, "=") && len(s) == 2 && !shortHasNoOptDefVal(s[1:], flags):
+				// If '-f arg' then
+				// delete 'arg' from args or break the loop if len(args) <= 1.
+				if len(args) <= 1 {
+					break Loop
+				} else {
+					args = args[1:]
+					continue
+				}
+			case s != "" && !strings.HasPrefix(s, "-"):
+				commands = append(commands, s)
 			}
 		}
 
-		if strings.HasSuffix(y, "\"") && !strings.HasSuffix(y, "\\\"") {
+		if strings.HasSuffix(s, "\"") && !strings.HasSuffix(s, "\\\"") {
 			inQuote = false
 		}
 	}
@@ -735,7 +725,13 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 func (c *Command) initHelpFlag() {
 	c.mergePersistentFlags()
 	if c.Flags().Lookup("help") == nil {
-		c.Flags().BoolP("help", "h", false, "help for "+c.Name())
+		usage := "help for "
+		if c.Name() == "" {
+			usage += "this command"
+		} else {
+			usage += c.Name()
+		}
+		c.Flags().BoolP("help", "h", false, usage)
 	}
 }
 
@@ -759,6 +755,7 @@ func (c *Command) initHelpCmd() {
 					c.Printf("Unknown help topic %#q\n", args)
 					c.Root().Usage()
 				} else {
+					cmd.initHelpFlag() // make possible 'help' flag to be shown
 					cmd.Help()
 				}
 			},
@@ -922,6 +919,7 @@ func (c *Command) DebugFlags() {
 				}
 			})
 		}
+		c.Println(x.flagErrorBuf)
 		if x.HasSubCommands() {
 			for _, y := range x.commands {
 				debugflags(y)
@@ -1062,7 +1060,10 @@ func (c *Command) GlobalNormalizationFunc() func(f *flag.FlagSet, name string) f
 func (c *Command) Flags() *flag.FlagSet {
 	if c.flags == nil {
 		c.flags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
-		c.flags.SetOutput(c.OutOrStderr())
+		if c.flagErrorBuf == nil {
+			c.flagErrorBuf = new(bytes.Buffer)
+		}
+		c.flags.SetOutput(c.flagErrorBuf)
 	}
 
 	return c.flags
@@ -1087,7 +1088,10 @@ func (c *Command) LocalFlags() *flag.FlagSet {
 
 	if c.lflags == nil {
 		c.lflags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
-		c.lflags.SetOutput(c.OutOrStderr())
+		if c.flagErrorBuf == nil {
+			c.flagErrorBuf = new(bytes.Buffer)
+		}
+		c.lflags.SetOutput(c.flagErrorBuf)
 	}
 	c.lflags.SortFlags = c.Flags().SortFlags
 
@@ -1107,6 +1111,10 @@ func (c *Command) InheritedFlags() *flag.FlagSet {
 
 	if c.iflags == nil {
 		c.iflags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
+		if c.flagErrorBuf == nil {
+			c.flagErrorBuf = new(bytes.Buffer)
+		}
+		c.iflags.SetOutput(c.flagErrorBuf)
 	}
 
 	local := c.LocalFlags()
@@ -1127,17 +1135,22 @@ func (c *Command) NonInheritedFlags() *flag.FlagSet {
 func (c *Command) PersistentFlags() *flag.FlagSet {
 	if c.pflags == nil {
 		c.pflags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
-		c.pflags.SetOutput(c.OutOrStderr())
+		if c.flagErrorBuf == nil {
+			c.flagErrorBuf = new(bytes.Buffer)
+		}
+		c.pflags.SetOutput(c.flagErrorBuf)
 	}
 	return c.pflags
 }
 
 // ResetFlags is used in testing.
 func (c *Command) ResetFlags() {
+	c.flagErrorBuf = new(bytes.Buffer)
+	c.flagErrorBuf.Reset()
 	c.flags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
-	c.flags.SetOutput(c.OutOrStderr())
+	c.flags.SetOutput(c.flagErrorBuf)
 	c.pflags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
-	c.pflags.SetOutput(c.OutOrStderr())
+	c.pflags.SetOutput(c.flagErrorBuf)
 }
 
 // HasFlags checks if the command contains any flags (local plus persistent from the entire structure).
@@ -1236,7 +1249,7 @@ func (c *Command) mergePersistentFlags() {
 func (c *Command) updateParentsPflags() {
 	if c.parentsPflags == nil {
 		c.parentsPflags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
-		c.parentsPflags.SetOutput(c.OutOrStderr())
+		c.parentsPflags.SetOutput(c.flagErrorBuf)
 		c.parentsPflags.SortFlags = false
 	}
 

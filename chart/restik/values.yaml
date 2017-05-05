@@ -1,0 +1,8 @@
+##
+## Restik chart configuration
+##
+
+## Image that will be used in Restik controller and in Restik sidecar container
+
+image: appscode/restik
+imageTag: latest

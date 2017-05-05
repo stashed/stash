@@ -3,9 +3,9 @@ package test
 import (
 	"fmt"
 
-	"github.com/appscode/log"
 	rapi "github.com/appscode/k8s-addons/api"
 	"github.com/appscode/k8s-addons/client/clientset"
+	"github.com/appscode/log"
 	"github.com/appscode/restik/pkg/controller"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/unversioned"

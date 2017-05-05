@@ -1,11 +1,11 @@
 package test
 
 import (
+	"flag"
 	"math/rand"
 	"testing"
 	"time"
 
-	"flag"
 	"github.com/appscode/log"
 	"github.com/appscode/restik/pkg/controller"
 	"github.com/stretchr/testify/assert"
