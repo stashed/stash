@@ -5,6 +5,7 @@ import (
 	"time"
 
 	_ "github.com/appscode/k8s-addons/api/install"
+	"github.com/appscode/log"
 	"github.com/appscode/restik/pkg/controller"
 	"github.com/spf13/cobra"
 	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
@@ -30,9 +31,12 @@ func NewCmdRun() *cobra.Command {
 			}
 			defer runtime.HandleCrash()
 
-			w := controller.New(config, image)
+			w := controller.NewRestikController(config, image)
 			fmt.Println("Starting restik controller...")
-			w.RunAndHold()
+			err = w.RunAndHold()
+			if err != nil {
+				log.Errorln(err)
+			}
 		},
 	}
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
