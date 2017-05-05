@@ -25,13 +25,13 @@ type AlertPhase string
 
 const (
 	// used for Alert that are currently creating
-	PhaseAlertCreating AlertPhase = "Creating"
+	AlertPhaseCreating AlertPhase = "Creating"
 	// used for Alert that are created
-	PhaseAlertCreated AlertPhase = "Created"
+	AlertPhaseCreated AlertPhase = "Created"
 	// used for Alert that are currently deleting
-	PhaseAlertDeleting AlertPhase = "Deleting"
+	AlertPhaseDeleting AlertPhase = "Deleting"
 	// used for Alert that are Failed
-	PhaseAlertFailed AlertPhase = "Failed"
+	AlertPhaseFailed AlertPhase = "Failed"
 )
 
 type AlertStatus struct {

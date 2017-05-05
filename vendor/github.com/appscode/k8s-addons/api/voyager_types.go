@@ -171,6 +171,15 @@ type HTTPExtendedIngressPath struct {
 }
 
 type IngressBackend struct {
+	// Host names to forward traffic to. If empty traffic will be
+	// forwarded to all subsets instance.
+	// If set only matched hosts will get the traffic.
+	// This is an handy way to send traffic to Specific
+	// StatefulSet pod.
+	// IE. Setting [web-0] will send traffic to only web-0 host
+	// for this StatefulSet, https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#creating-a-statefulset
+	HostNames []string `json:"hostNames,omitempty"`
+
 	// Specifies the name of the referenced service.
 	ServiceName string `json:"serviceName,omitempty"`
 
@@ -180,6 +189,17 @@ type IngressBackend struct {
 
 // ExtendedIngressBackend describes all endpoints for a given service and port.
 type ExtendedIngressBackend struct {
+	// TODO (@sadlil) Consider Embedding IngressBackend.
+
+	// Host names to forward traffic to. If empty traffic will be
+	// forwarded to all subsets instance.
+	// If set only matched hosts will get the traffic.
+	// This is an handy way to send traffic to Specific
+	// StatefulSet pod.
+	// IE. Setting [web-0] will send traffic to only web-0 host
+	// for this StatefulSet, https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#creating-a-statefulset
+	HostNames []string `json:"hostNames,omitempty"`
+
 	// Specifies the name of the referenced service.
 	ServiceName string `json:"serviceName,omitempty"`
 

@@ -1,5 +1,5 @@
 hash: b25c0f55d7ea5a52cd4d941f994336b30c68835c6f42216214a7f31eddb9a29a
-updated: 2017-04-27T09:19:59.85719871-07:00
+updated: 2017-05-05T09:38:11.538423991-07:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -7,11 +7,11 @@ imports:
   - compute/metadata
   - internal
 - name: github.com/appscode/go
-  version: 012bea0c1af6e00bca05dd1c795bd7c7a9b2b235
+  version: fbfd196f17c81a31482577c232884ac38ae6da34
   subpackages:
   - version
 - name: github.com/appscode/k8s-addons
-  version: 4d09e2d4774d66c1b0a13f5d893a5d0e90d060b3
+  version: 8861b7938c5626baa96ebeb5c4146342806cd591
   subpackages:
   - api
   - api/install
@@ -84,7 +84,7 @@ imports:
 - name: github.com/exponent-io/jsonpath
   version: d6023ce2651d8eafb5c75bb0c7167536102ec9f5
 - name: github.com/ghodss/yaml
-  version: 0ca9ea5df5451ffdf184b4428c902747c2c11cd7
+  version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
 - name: github.com/go-openapi/jsonpointer
   version: 46af16f9f7b149af66e5d1bd010e3574dc06de98
 - name: github.com/go-openapi/jsonreference
@@ -152,20 +152,14 @@ imports:
   - jwriter
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
-- name: github.com/pkg/errors
-  version: a22138067af1c4942683050411a841ade67fe1eb
 - name: github.com/PuerkitoBio/purell
   version: 8a290539e2e8629dbc4e6bad948158f790ec31f4
 - name: github.com/PuerkitoBio/urlesc
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
-- name: github.com/restic/restic
-  version: 51e7d26053e16ad3b644c706da11159f139a8acd
-  subpackages:
-  - src/restic/errors
 - name: github.com/spf13/cobra
-  version: 3d7bff8a321b0a0f88b115558bb7e21bec9124ab
+  version: db6b9a8b3f3f400c8ecb4a4d7d02245b8facad66
 - name: github.com/spf13/pflag
-  version: f1d95a35e132e8a1868023a08932b14f0b8b8fcb
+  version: 80fe0fb4eba54167e2ccae1c6c950e72abf61b73
 - name: github.com/ugorji/go
   version: f1f1a805ed361a0e078bb537e4ea78cd37dcf065
   subpackages:
