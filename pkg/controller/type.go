@@ -1,5 +1,15 @@
 package controller
 
+import (
+	"time"
+
+	rapi "github.com/appscode/k8s-addons/api"
+	tcs "github.com/appscode/k8s-addons/client/clientset"
+	"gopkg.in/robfig/cron.v2"
+	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
+	"k8s.io/kubernetes/pkg/client/record"
+)
+
 const (
 	BackupConfig          = "backup.appscode.com/config"
 	ContainerName         = "restic-sidecar"
@@ -17,8 +27,30 @@ const (
 )
 
 const (
-	EventReasonInvalidCronExpression         = "Invalid"
-	EventReasonSuccessfulCronExpressionReset = "Success"
-	EventReasonSuccessfulBackup              = "Success"
-	EventReasonFailedToBackup                = "Failed"
+	EventReasonInvalidCronExpression         = "InvalidCronExpression"
+	EventReasonSuccessfulCronExpressionReset = "SuccessfulCronExpressionReset"
+	EventReasonSuccessfulBackup              = "SuccessfulBackup"
+	EventReasonFailedToBackup                = "FailedBackup"
+	EventReasonFailedToRetention             = "FailedRetention"
+	EventReasonFailedToUpdate                = "FailedUpdateBackup"
+	EventReasonFailedCronJob                 = "FailedCronJob"
 )
+
+type Controller struct {
+	ExtClient tcs.AppsCodeExtensionInterface
+	Client    clientset.Interface
+	// sync time to sync the list.
+	SyncPeriod time.Duration
+	// image of sidecar container
+	Image string
+}
+
+type cronController struct {
+	extClient     tcs.AppsCodeExtensionInterface
+	kubeClient    clientset.Interface
+	tprName       string
+	namespace     string
+	crons         *cron.Cron
+	backup        *rapi.Backup
+	eventRecorder record.EventRecorder
+}

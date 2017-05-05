@@ -24,7 +24,7 @@ func runController() (*controller.Controller, error) {
 	if err != nil {
 		return &controller.Controller{}, err
 	}
-	controller := controller.New(config, image)
+	controller := controller.NewRestikController(config, image)
 	go func() {
 		err := controller.RunAndHold()
 		if err != nil {

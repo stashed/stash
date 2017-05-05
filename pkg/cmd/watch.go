@@ -12,7 +12,11 @@ func NewCmdWatch() *cobra.Command {
 		Use:   "watch",
 		Short: "Run restic backup",
 		Run: func(cmd *cobra.Command, args []string) {
-			err := controller.RunBackup()
+			cronController, err := controller.NewCronController()
+			if err != nil {
+				log.Fatalln(err)
+			}
+			err = cronController.RunBackup()
 			if err != nil {
 				log.Errorln(err)
 			}
