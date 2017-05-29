@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	_ "github.com/appscode/k8s-addons/api/install"
 	"github.com/appscode/log"
+	_ "github.com/appscode/restik/api/install"
 	"github.com/appscode/restik/pkg/controller"
 	"github.com/spf13/cobra"
 )

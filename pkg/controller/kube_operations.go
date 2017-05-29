@@ -3,8 +3,8 @@ package controller
 import (
 	"errors"
 
-	rapi "github.com/appscode/k8s-addons/api"
 	"github.com/appscode/log"
+	rapi "github.com/appscode/restik/api"
 	"github.com/ghodss/yaml"
 	"k8s.io/kubernetes/pkg/api"
 	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"

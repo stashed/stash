@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	rapi "github.com/appscode/k8s-addons/api"
-	tcs "github.com/appscode/k8s-addons/client/clientset"
 	"github.com/appscode/log"
+	rapi "github.com/appscode/restik/api"
+	tcs "github.com/appscode/restik/client/clientset"
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
 	"k8s.io/kubernetes/pkg/api"

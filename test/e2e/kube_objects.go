@@ -3,9 +3,9 @@ package test
 import (
 	"fmt"
 
-	rapi "github.com/appscode/k8s-addons/api"
-	"github.com/appscode/k8s-addons/client/clientset"
 	"github.com/appscode/log"
+	rapi "github.com/appscode/restik/api"
+	"github.com/appscode/restik/client/clientset"
 	"github.com/appscode/restik/pkg/controller"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/unversioned"
@@ -118,7 +118,7 @@ func deleteSecret(watcher *controller.Controller, name string) {
 func createBackup(watcher *controller.Controller, backupName string, secretName string) error {
 	backup := &rapi.Backup{
 		TypeMeta: unversioned.TypeMeta{
-			APIVersion: "appscode.com/v1beta1",
+			APIVersion: "backup.appscode.com/v1beta1",
 			Kind:       clientset.ResourceKindBackup,
 		},
 		ObjectMeta: api.ObjectMeta{

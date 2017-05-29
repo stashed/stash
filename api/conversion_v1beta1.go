@@ -1,11 +1,9 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/apis/extensions"
 	"k8s.io/kubernetes/pkg/runtime"
 )
 
@@ -14,7 +12,7 @@ func addConversionFuncs(scheme *runtime.Scheme) error {
 	var err error
 	for _, k := range []string{"Backup"} {
 		kind := k // don't close over range variables
-		err = api.Scheme.AddFieldLabelConversionFunc("appscode.com/v1", kind,
+		err = api.Scheme.AddFieldLabelConversionFunc("backup.appscode.com/v1", kind,
 			func(label, value string) (string, string, error) {
 				switch label {
 				case "metadata.name", "metadata.namespace":

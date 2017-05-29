@@ -14,7 +14,7 @@ type FakeBackup struct {
 	ns   string
 }
 
-var backupResource = schema.GroupVersionResource{Group: "appscode.com", Version: "v1beta1", Resource: "backups"}
+var backupResource = schema.GroupVersionResource{Group: "backup.appscode.com", Version: "v1beta1", Resource: "backups"}
 
 // Get returns the Backups by name.
 func (mock *FakeBackup) Get(name string) (*aci.Backup, error) {

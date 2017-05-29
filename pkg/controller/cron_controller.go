@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	rapi "github.com/appscode/k8s-addons/api"
-	tcs "github.com/appscode/k8s-addons/client/clientset"
 	"github.com/appscode/log"
+	rapi "github.com/appscode/restik/api"
+	tcs "github.com/appscode/restik/client/clientset"
 	"gopkg.in/robfig/cron.v2"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/unversioned"
