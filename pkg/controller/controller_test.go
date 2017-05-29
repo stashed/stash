@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	rapi "github.com/appscode/k8s-addons/api"
-	"github.com/appscode/k8s-addons/client/clientset"
-	"github.com/appscode/k8s-addons/client/clientset/fake"
+	rapi "github.com/appscode/restik/api"
+	"github.com/appscode/restik/client/clientset"
+	"github.com/appscode/restik/client/clientset/fake"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/unversioned"
@@ -53,7 +53,7 @@ var fakeRc = &api.ReplicationController{
 var fakeBackup = &rapi.Backup{
 	TypeMeta: unversioned.TypeMeta{
 		Kind:       clientset.ResourceKindBackup,
-		APIVersion: "appscode.com/v1beta1",
+		APIVersion: "backup.appscode.com/v1beta1",
 	},
 	ObjectMeta: api.ObjectMeta{
 		Name:      backupName,

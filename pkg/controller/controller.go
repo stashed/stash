@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	rapi "github.com/appscode/k8s-addons/api"
-	tcs "github.com/appscode/k8s-addons/client/clientset"
 	"github.com/appscode/log"
+	rapi "github.com/appscode/restik/api"
+	tcs "github.com/appscode/restik/client/clientset"
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
 	"k8s.io/kubernetes/pkg/api"
@@ -120,7 +120,7 @@ func (pl *Controller) updateObjectAndStartBackup(b *rapi.Backup) error {
 	switch typ {
 	case ReplicationController:
 		rc := &api.ReplicationController{}
-		if err := yaml.Unmarshal(ob, rc); err != nil {
+		if err = yaml.Unmarshal(ob, rc); err != nil {
 			return err
 		}
 		rc.Spec.Template.Spec.Containers = append(rc.Spec.Template.Spec.Containers, restikContainer)
@@ -130,10 +130,12 @@ func (pl *Controller) updateObjectAndStartBackup(b *rapi.Backup) error {
 			return err
 		}
 		opts.LabelSelector = findSelectors(newRC.Spec.Template.Labels)
-		err = restartPods(pl.Client, b.Namespace, opts)
+		if err = restartPods(pl.Client, b.Namespace, opts); err != nil {
+			return err
+		}
 	case ReplicaSet:
 		replicaset := &extensions.ReplicaSet{}
-		if err := yaml.Unmarshal(ob, replicaset); err != nil {
+		if err = yaml.Unmarshal(ob, replicaset); err != nil {
 			return err
 		}
 		replicaset.Spec.Template.Spec.Containers = append(replicaset.Spec.Template.Spec.Containers, restikContainer)
@@ -143,15 +145,17 @@ func (pl *Controller) updateObjectAndStartBackup(b *rapi.Backup) error {
 			return err
 		}
 		opts.LabelSelector = findSelectors(newReplicaset.Spec.Template.Labels)
-		err = restartPods(pl.Client, b.Namespace, opts)
+		if err = restartPods(pl.Client, b.Namespace, opts); err != nil {
+			return err
+		}
 	case Deployment:
 		deployment := &extensions.Deployment{}
-		if err := yaml.Unmarshal(ob, deployment); err != nil {
+		if err = yaml.Unmarshal(ob, deployment); err != nil {
 			return err
 		}
 		deployment.Spec.Template.Spec.Containers = append(deployment.Spec.Template.Spec.Containers, restikContainer)
 		deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, b.Spec.Destination.Volume)
-		_, err := pl.Client.Extensions().Deployments(b.Namespace).Update(deployment)
+		_, err = pl.Client.Extensions().Deployments(b.Namespace).Update(deployment)
 		if err != nil {
 			return err
 		}
@@ -167,13 +171,12 @@ func (pl *Controller) updateObjectAndStartBackup(b *rapi.Backup) error {
 			return err
 		}
 		opts.LabelSelector = findSelectors(newDaemonset.Spec.Template.Labels)
-		err = restartPods(pl.Client, b.Namespace, opts)
+		if err = restartPods(pl.Client, b.Namespace, opts); err != nil {
+			return err
+		}
 	case StatefulSet:
 		log.Warningf("The Object referred by the backup object (%s) is a statefulset.", b.Name)
 		return nil
-	}
-	if err != nil {
-		return err
 	}
 	pl.addAnnotation(b)
 	_, err = pl.ExtClient.Backups(b.Namespace).Update(b)

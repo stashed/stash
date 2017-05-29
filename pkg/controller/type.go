@@ -3,8 +3,8 @@ package controller
 import (
 	"time"
 
-	rapi "github.com/appscode/k8s-addons/api"
-	tcs "github.com/appscode/k8s-addons/client/clientset"
+	rapi "github.com/appscode/restik/api"
+	tcs "github.com/appscode/restik/client/clientset"
 	"gopkg.in/robfig/cron.v2"
 	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	"k8s.io/kubernetes/pkg/client/record"

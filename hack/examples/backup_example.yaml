@@ -1,4 +1,4 @@
-apiVersion: appscode.com/v1beta1
+apiVersion: backup.appscode.com/v1beta1
 kind: Backup
 metadata:
   name: testbackup

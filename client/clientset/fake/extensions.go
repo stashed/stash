@@ -1,7 +1,7 @@
 package fake
 
 import (
-	"github.com/appscode/k8s-addons/client/clientset"
+	"github.com/appscode/restik/client/clientset"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/apimachinery/registered"
 	rest "k8s.io/kubernetes/pkg/client/restclient"
@@ -19,7 +19,7 @@ var _ clientset.AppsCodeExtensionInterface = &FakeExtensionClient{}
 func NewFakeExtensionClient(objects ...runtime.Object) *FakeExtensionClient {
 	o := testing.NewObjectTracker(api.Scheme, api.Codecs.UniversalDecoder())
 	for _, obj := range objects {
-		if obj.GetObjectKind().GroupVersionKind().Group == "appscode.com" {
+		if obj.GetObjectKind().GroupVersionKind().Group == "backup.appscode.com" {
 			if err := o.Add(obj); err != nil {
 				panic(err)
 			}
@@ -34,17 +34,6 @@ func NewFakeExtensionClient(objects ...runtime.Object) *FakeExtensionClient {
 	return &FakeExtensionClient{&fakePtr}
 }
 
-func (a *FakeExtensionClient) Ingress(namespace string) clientset.IngressInterface {
-	return &FakeIngress{a.Fake, namespace}
-}
-
-func (a *FakeExtensionClient) Alert(namespace string) clientset.AlertInterface {
-	return &FakeAlert{a.Fake, namespace}
-}
-
-func (m *FakeExtensionClient) Certificate(ns string) clientset.CertificateInterface {
-	return &FakeCertificate{m.Fake, ns}
-}
 
 func (m *FakeExtensionClient) Backups(ns string) clientset.BackupInterface {
 	return &FakeBackup{m.Fake, ns}

@@ -5,7 +5,7 @@ import (
 	"log"
 	"testing"
 
-	tcs "github.com/appscode/k8s-addons/client/clientset"
+	tcs "github.com/appscode/restik/client/clientset"
 	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 )
 

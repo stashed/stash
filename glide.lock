@@ -1,5 +1,5 @@
 hash: b25c0f55d7ea5a52cd4d941f994336b30c68835c6f42216214a7f31eddb9a29a
-updated: 2017-05-05T09:38:11.538423991-07:00
+updated: 2017-05-29T16:23:11.408343048+06:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -7,16 +7,9 @@ imports:
   - compute/metadata
   - internal
 - name: github.com/appscode/go
-  version: fbfd196f17c81a31482577c232884ac38ae6da34
+  version: 04abd631dc552c01c9448db0763611932590cbc4
   subpackages:
   - version
-- name: github.com/appscode/k8s-addons
-  version: 8861b7938c5626baa96ebeb5c4146342806cd591
-  subpackages:
-  - api
-  - api/install
-  - client/clientset
-  - client/clientset/fake
 - name: github.com/appscode/log
   version: 68e0e42e42c01371f3950571fc87c2298a51dd8f
   subpackages:
@@ -157,9 +150,9 @@ imports:
 - name: github.com/PuerkitoBio/urlesc
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/spf13/cobra
-  version: db6b9a8b3f3f400c8ecb4a4d7d02245b8facad66
+  version: e606913c4ee45fec232e67e70105fb6c866b95d9
 - name: github.com/spf13/pflag
-  version: 80fe0fb4eba54167e2ccae1c6c950e72abf61b73
+  version: e57e3eeb33f795204c1ca35f56c44f83227c6e66
 - name: github.com/ugorji/go
   version: f1f1a805ed361a0e078bb537e4ea78cd37dcf065
   subpackages:
@@ -233,7 +226,7 @@ imports:
 - name: gopkg.in/yaml.v2
   version: cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b
 - name: k8s.io/kubernetes
-  version: 8eb75a5810cba92ccad845ca360cf924f2385881
+  version: f07eea23494be1e7c11a8e2cf51bd96d1ec9fdf1
   subpackages:
   - federation/apis/federation
   - federation/apis/federation/install

@@ -4,7 +4,7 @@ package clientset
 import (
 	"fmt"
 
-	_ "github.com/appscode/k8s-addons/api/install"
+	_ "github.com/appscode/restik/api/install"
 	_ "k8s.io/kubernetes/pkg/api/install"
 	"k8s.io/kubernetes/pkg/apimachinery/registered"
 	_ "k8s.io/kubernetes/pkg/apis/apps/install"
