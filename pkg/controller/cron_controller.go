@@ -158,7 +158,7 @@ func (cronWatcher *cronController) runCronJob() error {
 	// Force flag
 	cmd = cmd + " --" + Force
 	// Take Backup
-	reason := ""
+	var reason string
 	errMessage := ""
 	_, err = execLocal(cmd)
 	if err != nil {
