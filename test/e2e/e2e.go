@@ -13,7 +13,7 @@ import (
 	"k8s.io/kubernetes/pkg/fields"
 )
 
-var image = "sauman/restik:latest"
+var image = "appscode/restik:latest"
 
 func runController() (*controller.Controller, error) {
 	usr, err := user.Current()

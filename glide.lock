@@ -1,5 +1,5 @@
 hash: b25c0f55d7ea5a52cd4d941f994336b30c68835c6f42216214a7f31eddb9a29a
-updated: 2017-05-29T13:54:18.626445855+06:00
+updated: 2017-05-29T16:23:11.408343048+06:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -10,13 +10,6 @@ imports:
   version: 04abd631dc552c01c9448db0763611932590cbc4
   subpackages:
   - version
-- name: github.com/appscode/k8s-addons
-  version: a710ffd2f413cb9fb766ee5a71c835fca23f9ca0
-  subpackages:
-  - api
-  - api/install
-  - client/clientset
-  - client/clientset/fake
 - name: github.com/appscode/log
   version: 68e0e42e42c01371f3950571fc87c2298a51dd8f
   subpackages:

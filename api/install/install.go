@@ -11,7 +11,7 @@ func init() {
 		&announced.GroupMetaFactoryArgs{
 			GroupName:                  api.GroupName,
 			VersionPreferenceOrder:     []string{api.V1beta1SchemeGroupVersion.Version},
-			ImportPrefix:               "github.com/appscode/k8s-addons/api",
+			ImportPrefix:               "github.com/appscode/restik/api",
 			RootScopedKinds:            sets.NewString("PodSecurityPolicy", "ThirdPartyResource"),
 			AddInternalObjectsToScheme: api.AddToScheme,
 		},
