@@ -5,4 +5,3 @@ metadata:
 description: "Backup and restore support for Kubernetes persistent volumes by AppsCode"
 versions:
   - name: v1beta1
-  

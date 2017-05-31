@@ -51,11 +51,11 @@ func (w *Controller) RunAndHold() error {
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				if b, ok := obj.(*rapi.Restik); ok {
-					glog.Infoln("Got one added bacup obejct", b)
+					glog.Infoln("Got one added Restik obejct", b)
 					if b.ObjectMeta.Annotations != nil {
 						_, ok := b.ObjectMeta.Annotations[ImageAnnotation]
 						if ok {
-							glog.Infoln("Got one added backup obejct that was previously deployed", b)
+							glog.Infoln("Got one added Restik obejct that was previously deployed", b)
 							return
 						}
 					}
@@ -67,7 +67,7 @@ func (w *Controller) RunAndHold() error {
 			},
 			DeleteFunc: func(obj interface{}) {
 				if b, ok := obj.(*rapi.Restik); ok {
-					glog.Infoln("Got one deleted backup object", b)
+					glog.Infoln("Got one deleted Restik object", b)
 					err := w.updateObjectAndStopBackup(b)
 					if err != nil {
 						log.Errorln(err)
@@ -77,12 +77,12 @@ func (w *Controller) RunAndHold() error {
 			UpdateFunc: func(old, new interface{}) {
 				oldObj, ok := old.(*rapi.Restik)
 				if !ok {
-					log.Errorln(errors.New("Error validating backup object"))
+					log.Errorln(errors.New("Error validating Restik object"))
 					return
 				}
 				newObj, ok := new.(*rapi.Restik)
 				if !ok {
-					log.Errorln(errors.New("Error validating backup object"))
+					log.Errorln(errors.New("Error validating Restik object"))
 					return
 				}
 				var oldImage, newImage string
@@ -93,7 +93,7 @@ func (w *Controller) RunAndHold() error {
 					newImage, _ = newObj.ObjectMeta.Annotations[ImageAnnotation]
 				}
 				if oldImage != newImage {
-					glog.Infoln("Got one updated backp object for image", newObj)
+					glog.Infoln("Got one updated Restik object for image", newObj)
 					err := w.updateImage(newObj, newImage)
 					if err != nil {
 						log.Errorln(err)
@@ -114,7 +114,7 @@ func (pl *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
 		return err
 	}
 	if ob == nil || typ == "" {
-		return errors.New(fmt.Sprintf("No object found for backup %s ", r.Name))
+		return errors.New(fmt.Sprintf("No object found for Restik %s ", r.Name))
 	}
 	opts := api.ListOptions{}
 	switch typ {
@@ -175,7 +175,7 @@ func (pl *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
 			return err
 		}
 	case StatefulSet:
-		log.Warningf("The Object referred by the backup object (%s) is a statefulset.", r.Name)
+		log.Warningf("The Object referred by the Restik object (%s) is a statefulset.", r.Name)
 		return nil
 	}
 	pl.addAnnotation(r)
@@ -190,7 +190,7 @@ func (pl *Controller) updateObjectAndStopBackup(r *rapi.Restik) error {
 		return err
 	}
 	if ob == nil || typ == "" {
-		return errors.New(fmt.Sprintf("No object found for backup %s ", r.Name))
+		return errors.New(fmt.Sprintf("No object found for Restik %s ", r.Name))
 	}
 	opts := api.ListOptions{}
 	switch typ {
@@ -245,7 +245,7 @@ func (pl *Controller) updateObjectAndStopBackup(r *rapi.Restik) error {
 			return err
 		}
 	case StatefulSet:
-		log.Warningf("The Object referred bt the backup object (%s) is a statefulset.", r.Name)
+		log.Warningf("The Object referred by the Restik object (%s) is a statefulset.", r.Name)
 		return nil
 	}
 	return nil
@@ -258,7 +258,7 @@ func (pl *Controller) updateImage(r *rapi.Restik, image string) error {
 		return err
 	}
 	if ob == nil || typ == "" {
-		return errors.New(fmt.Sprintf("No object found for backup %s ", r.Name))
+		return errors.New(fmt.Sprintf("No object found for Restik %s ", r.Name))
 	}
 	opts := api.ListOptions{}
 	switch typ {
@@ -309,7 +309,7 @@ func (pl *Controller) updateImage(r *rapi.Restik, image string) error {
 			return err
 		}
 	case StatefulSet:
-		log.Warningf("The Object referred bt the backup object (%s) is a statefulset.", r.Name)
+		log.Warningf("The Object referred bt the Restik object (%s) is a statefulset.", r.Name)
 		return nil
 	}
 	return nil
