@@ -20,11 +20,11 @@ const (
 type RestikInterface interface {
 	List(opts api.ListOptions) (*aci.RestikList, error)
 	Get(name string) (*aci.Restik, error)
-	Create(backup *aci.Restik) (*aci.Restik, error)
-	Update(backup *aci.Restik) (*aci.Restik, error)
+	Create(restik *aci.Restik) (*aci.Restik, error)
+	Update(restik *aci.Restik) (*aci.Restik, error)
 	Delete(name string, options *api.DeleteOptions) error
 	Watch(opts api.ListOptions) (watch.Interface, error)
-	UpdateStatus(backup *aci.Restik) (*aci.Restik, error)
+	UpdateStatus(restik *aci.Restik) (*aci.Restik, error)
 }
 
 type RestikImpl struct {
@@ -58,24 +58,24 @@ func (c *RestikImpl) Get(name string) (result *aci.Restik, err error) {
 	return
 }
 
-func (c *RestikImpl) Create(backup *aci.Restik) (result *aci.Restik, err error) {
+func (c *RestikImpl) Create(restik *aci.Restik) (result *aci.Restik, err error) {
 	result = &aci.Restik{}
 	err = c.r.Post().
 		Namespace(c.ns).
 		Resource(ResourceTypeRestik).
-		Body(backup).
+		Body(restik).
 		Do().
 		Into(result)
 	return
 }
 
-func (c *RestikImpl) Update(backup *aci.Restik) (result *aci.Restik, err error) {
+func (c *RestikImpl) Update(restik *aci.Restik) (result *aci.Restik, err error) {
 	result = &aci.Restik{}
 	err = c.r.Put().
 		Namespace(c.ns).
 		Resource(ResourceTypeRestik).
-		Name(backup.Name).
-		Body(backup).
+		Name(restik.Name).
+		Body(restik).
 		Do().
 		Into(result)
 	return
@@ -100,14 +100,14 @@ func (c *RestikImpl) Watch(opts api.ListOptions) (watch.Interface, error) {
 		Watch()
 }
 
-func (c *RestikImpl) UpdateStatus(backup *aci.Restik) (result *aci.Restik, err error) {
+func (c *RestikImpl) UpdateStatus(restik *aci.Restik) (result *aci.Restik, err error) {
 	result = &aci.Restik{}
 	err = c.r.Put().
 		Namespace(c.ns).
 		Resource(ResourceTypeRestik).
-		Name(backup.Name).
+		Name(restik.Name).
 		SubResource("status").
-		Body(backup).
+		Body(restik).
 		Do().
 		Into(result)
 	return

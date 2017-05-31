@@ -14,12 +14,12 @@ type FakeRestik struct {
 	ns   string
 }
 
-var backupResource = schema.GroupVersionResource{Group: "backup.appscode.com", Version: "v1beta1", Resource: "backups"}
+var restikResource = schema.GroupVersionResource{Group: "backup.appscode.com", Version: "v1beta1", Resource: "restiks"}
 
 // Get returns the Restiks by name.
 func (mock *FakeRestik) Get(name string) (*aci.Restik, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewGetAction(backupResource, mock.ns, name), &aci.Restik{})
+		Invokes(testing.NewGetAction(restikResource, mock.ns, name), &aci.Restik{})
 
 	if obj == nil {
 		return nil, err
@@ -30,7 +30,7 @@ func (mock *FakeRestik) Get(name string) (*aci.Restik, error) {
 // List returns the a of Restiks.
 func (mock *FakeRestik) List(opts api.ListOptions) (*aci.RestikList, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewListAction(backupResource, mock.ns, opts), &aci.Restik{})
+		Invokes(testing.NewListAction(restikResource, mock.ns, opts), &aci.Restik{})
 
 	if obj == nil {
 		return nil, err
@@ -52,7 +52,7 @@ func (mock *FakeRestik) List(opts api.ListOptions) (*aci.RestikList, error) {
 // Create creates a new Restik.
 func (mock *FakeRestik) Create(svc *aci.Restik) (*aci.Restik, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewCreateAction(backupResource, mock.ns, svc), &aci.Restik{})
+		Invokes(testing.NewCreateAction(restikResource, mock.ns, svc), &aci.Restik{})
 
 	if obj == nil {
 		return nil, err
@@ -63,7 +63,7 @@ func (mock *FakeRestik) Create(svc *aci.Restik) (*aci.Restik, error) {
 // Update updates a Restik.
 func (mock *FakeRestik) Update(svc *aci.Restik) (*aci.Restik, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewUpdateAction(backupResource, mock.ns, svc), &aci.Restik{})
+		Invokes(testing.NewUpdateAction(restikResource, mock.ns, svc), &aci.Restik{})
 
 	if obj == nil {
 		return nil, err
@@ -74,14 +74,14 @@ func (mock *FakeRestik) Update(svc *aci.Restik) (*aci.Restik, error) {
 // Delete deletes a Restik by name.
 func (mock *FakeRestik) Delete(name string, _ *api.DeleteOptions) error {
 	_, err := mock.Fake.
-		Invokes(testing.NewDeleteAction(backupResource, mock.ns, name), &aci.Restik{})
+		Invokes(testing.NewDeleteAction(restikResource, mock.ns, name), &aci.Restik{})
 
 	return err
 }
 
 func (mock *FakeRestik) UpdateStatus(srv *aci.Restik) (*aci.Restik, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(backupResource, "status", mock.ns, srv), &aci.Restik{})
+		Invokes(testing.NewUpdateSubresourceAction(restikResource, "status", mock.ns, srv), &aci.Restik{})
 
 	if obj == nil {
 		return nil, err
@@ -91,5 +91,5 @@ func (mock *FakeRestik) UpdateStatus(srv *aci.Restik) (*aci.Restik, error) {
 
 func (mock *FakeRestik) Watch(opts api.ListOptions) (watch.Interface, error) {
 	return mock.Fake.
-		InvokesWatch(testing.NewWatchAction(backupResource, mock.ns, opts))
+		InvokesWatch(testing.NewWatchAction(restikResource, mock.ns, opts))
 }

@@ -1,5 +1,5 @@
 apiVersion: backup.appscode.com/v1beta1
-kind: Backup
+kind: Restik
 metadata:
   name: testbackup
   namespace: test

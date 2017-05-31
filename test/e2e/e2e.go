@@ -13,7 +13,7 @@ import (
 	"k8s.io/kubernetes/pkg/fields"
 )
 
-var image = "appscode/restik:latest"
+var image = "sauman/restik:latest"
 
 func runController() (*controller.Controller, error) {
 	usr, err := user.Current()
@@ -39,7 +39,7 @@ func checkEventForBackup(watcher *controller.Controller, objName string) error {
 	var err error
 	try := 0
 	sets := fields.Set{
-		"involvedObject.kind":      "Backup",
+		"involvedObject.kind":      "Restik",
 		"involvedObject.name":      objName,
 		"involvedObject.namespace": namespace,
 		"type": api.EventTypeNormal,

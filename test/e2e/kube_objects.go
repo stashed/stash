@@ -115,8 +115,8 @@ func deleteSecret(watcher *controller.Controller, name string) {
 	}
 }
 
-func createBackup(watcher *controller.Controller, backupName string, secretName string) error {
-	backup := &rapi.Restik{
+func createRestik(watcher *controller.Controller, backupName string, secretName string) error {
+	restik := &rapi.Restik{
 		TypeMeta: unversioned.TypeMeta{
 			APIVersion: "backup.appscode.com/v1beta1",
 			Kind:       clientset.ResourceKindRestik,
@@ -146,21 +146,21 @@ func createBackup(watcher *controller.Controller, backupName string, secretName 
 			},
 		},
 	}
-	_, err := watcher.ExtClient.Restiks(namespace).Create(backup)
+	_, err := watcher.ExtClient.Restiks(namespace).Create(restik)
 	return err
 }
 
-func deleteBackup(watcher *controller.Controller, backupName string) error {
-	return watcher.ExtClient.Restiks(namespace).Delete(backupName, nil)
+func deleteRestik(watcher *controller.Controller, restikName string) error {
+	return watcher.ExtClient.Restiks(namespace).Delete(restikName, nil)
 }
 
-func createReplicaset(watcher *controller.Controller, name string, backupName string) error {
+func createReplicaset(watcher *controller.Controller, name string, restikName string) error {
 	replicaset := &extensions.ReplicaSet{
 		ObjectMeta: api.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				controller.BackupConfig: backupName,
+				controller.BackupConfig: restikName,
 			},
 		},
 		Spec: extensions.ReplicaSetSpec{
@@ -183,13 +183,13 @@ func deleteReplicaset(watcher *controller.Controller, name string) {
 	}
 }
 
-func createDeployment(watcher *controller.Controller, name string, backupName string) error {
+func createDeployment(watcher *controller.Controller, name string, restikName string) error {
 	deployment := &extensions.Deployment{
 		ObjectMeta: api.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				controller.BackupConfig: backupName,
+				controller.BackupConfig: restikName,
 			},
 		},
 		Spec: extensions.DeploymentSpec{
@@ -235,13 +235,13 @@ func deleteDaemonset(watcher *controller.Controller, name string) {
 	}
 }
 
-func createStatefulSet(watcher *controller.Controller, name string, backupName string, svc string) error {
+func createStatefulSet(watcher *controller.Controller, name string, restikName string, svc string) error {
 	s := &apps.StatefulSet{
 		ObjectMeta: api.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				controller.BackupConfig: backupName,
+				controller.BackupConfig: restikName,
 			},
 		},
 		Spec: apps.StatefulSetSpec{
@@ -261,7 +261,7 @@ func createStatefulSet(watcher *controller.Controller, name string, backupName s
 			},
 			{
 				Name:  controller.RestikResourceName,
-				Value: backupName,
+				Value: restikName,
 			},
 		},
 	}

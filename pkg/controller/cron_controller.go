@@ -72,12 +72,12 @@ func (cronWatcher *cronController) RunBackup() error {
 			UpdateFunc: func(old, new interface{}) {
 				oldObj, ok := old.(*rapi.Restik)
 				if !ok {
-					log.Errorln(errors.New("Error validating backup object"))
+					log.Errorln(errors.New("Error validating Restik object"))
 					return
 				}
 				newObj, ok := new.(*rapi.Restik)
 				if !ok {
-					log.Errorln(errors.New("Error validating backup object"))
+					log.Errorln(errors.New("Error validating Restik object"))
 					return
 				}
 				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) && newObj.Name == cronWatcher.tprName {

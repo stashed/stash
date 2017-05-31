@@ -57,7 +57,7 @@ func TestBackups(t *testing.T) {
 	}
 	time.Sleep(time.Second * 10)
 	log.Infof("Starting backup(%s) for Daemonset...\n", backupDaemonset)
-	err = createBackup(watcher, backupDaemonset, repoSecret)
+	err = createRestik(watcher, backupDaemonset, repoSecret)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -66,7 +66,7 @@ func TestBackups(t *testing.T) {
 		return
 	}
 	log.Infoln("Removing backup for Daemonset")
-	err = deleteBackup(watcher, backupDaemonset)
+	err = deleteRestik(watcher, backupDaemonset)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -83,7 +83,7 @@ func TestBackups(t *testing.T) {
 	}
 	time.Sleep(time.Second * 10)
 	log.Infof("Starting backup(%s) for ReplicationController...\n", backupRC)
-	err = createBackup(watcher, backupRC, repoSecret)
+	err = createRestik(watcher, backupRC, repoSecret)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -93,7 +93,7 @@ func TestBackups(t *testing.T) {
 		return
 	}
 	log.Infoln("Removing backup for ReplicationController")
-	err = deleteBackup(watcher, backupRC)
+	err = deleteRestik(watcher, backupRC)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -111,7 +111,7 @@ func TestBackups(t *testing.T) {
 	}
 	time.Sleep(time.Second * 10)
 	log.Infof("Starting backup(%s) for Replicaset...\n", backupReplicaset)
-	err = createBackup(watcher, backupReplicaset, repoSecret)
+	err = createRestik(watcher, backupReplicaset, repoSecret)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -120,7 +120,7 @@ func TestBackups(t *testing.T) {
 		return
 	}
 	log.Infoln("Removing backup for Replicaset")
-	err = deleteBackup(watcher, backupReplicaset)
+	err = deleteRestik(watcher, backupReplicaset)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -139,7 +139,7 @@ func TestBackups(t *testing.T) {
 	time.Sleep(time.Second * 10)
 	defer deleteDeployment(watcher, deployment)
 	log.Infof("Starting backup(%s) for deployment...\n", backupDeployment)
-	err = createBackup(watcher, backupDeployment, repoSecret)
+	err = createRestik(watcher, backupDeployment, repoSecret)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -148,7 +148,7 @@ func TestBackups(t *testing.T) {
 		return
 	}
 	log.Infoln("Removing backup for Deployment")
-	err = deleteBackup(watcher, backupDeployment)
+	err = deleteRestik(watcher, backupDeployment)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -168,11 +168,11 @@ func TestBackups(t *testing.T) {
 		return
 	}
 	time.Sleep(time.Second * 10)
-	err = createBackup(watcher, backupStatefulset, repoSecret)
+	err = createRestik(watcher, backupStatefulset, repoSecret)
 	if !assert.Nil(t, err) {
 		return
 	}
-	defer deleteBackup(watcher, backupStatefulset)
+	defer deleteRestik(watcher, backupStatefulset)
 
 	err = checkEventForBackup(watcher, backupStatefulset)
 	if !assert.Nil(t, err) {
