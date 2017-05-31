@@ -19,8 +19,8 @@ var (
 func v1addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(V1beta1SchemeGroupVersion,
 
-		&Backup{},
-		&BackupList{},
+		&Restik{},
+		&RestikList{},
 
 		&v1.ListOptions{},
 	)

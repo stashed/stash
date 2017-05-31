@@ -13,7 +13,7 @@ import (
 	fakeclientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/fake"
 )
 
-var backupName = "appscode-backup"
+var backupName = "appscode-restik"
 
 var fakeRc = &api.ReplicationController{
 	TypeMeta: unversioned.TypeMeta{
@@ -50,21 +50,21 @@ var fakeRc = &api.ReplicationController{
 		},
 	},
 }
-var fakeBackup = &rapi.Backup{
+var fakeBackup = &rapi.Restik{
 	TypeMeta: unversioned.TypeMeta{
-		Kind:       clientset.ResourceKindBackup,
+		Kind:       clientset.ResourceKindRestik,
 		APIVersion: "backup.appscode.com/v1beta1",
 	},
 	ObjectMeta: api.ObjectMeta{
 		Name:      backupName,
 		Namespace: "default",
 	},
-	Spec: rapi.BackupSpec{
-		Source: rapi.BackupSource{
+	Spec: rapi.RestikSpec{
+		Source: rapi.Source{
 			VolumeName: "volume-test",
 			Path:       "/mypath",
 		},
-		Destination: rapi.BackupDestination{
+		Destination: rapi.Destination{
 			Path:                 "/restik_repo",
 			RepositorySecretName: "restik-secret",
 			Volume: api.Volume{
@@ -88,7 +88,7 @@ func TestUpdateObjectAndStartBackup(t *testing.T) {
 	fakeController := getFakeController()
 	_, err := fakeController.Client.Core().ReplicationControllers("default").Create(fakeRc)
 	assert.Nil(t, err)
-	b, err := fakeController.ExtClient.Backups("default").Create(fakeBackup)
+	b, err := fakeController.ExtClient.Restiks("default").Create(fakeBackup)
 	assert.Nil(t, err)
 	err = fakeController.updateObjectAndStartBackup(b)
 	assert.Nil(t, err)
@@ -98,7 +98,7 @@ func TestUpdateObjectAndStopBackup(t *testing.T) {
 	fakeController := getFakeController()
 	_, err := fakeController.Client.Core().ReplicationControllers("default").Create(fakeRc)
 	assert.Nil(t, err)
-	b, err := fakeController.ExtClient.Backups("default").Create(fakeBackup)
+	b, err := fakeController.ExtClient.Restiks("default").Create(fakeBackup)
 	assert.Nil(t, err)
 	err = fakeController.updateObjectAndStopBackup(b)
 	assert.Nil(t, err)
@@ -108,7 +108,7 @@ func TestUpdateImage(t *testing.T) {
 	fakeController := getFakeController()
 	_, err := fakeController.Client.Core().ReplicationControllers("default").Create(fakeRc)
 	assert.Nil(t, err)
-	b, err := fakeController.ExtClient.Backups("default").Create(fakeBackup)
+	b, err := fakeController.ExtClient.Restiks("default").Create(fakeBackup)
 	assert.Nil(t, err)
 	err = fakeController.updateImage(b, "appscode/restik:fakelatest")
 	assert.Nil(t, err)

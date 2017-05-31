@@ -45,7 +45,7 @@ func getKubeObject(kubeClient clientset.Interface, namespace string, ls labels.S
 	return nil, "", errors.New("Workload not found")
 }
 
-func getRestikContainer(b *rapi.Backup, containerImage string) api.Container {
+func getRestikContainer(r *rapi.Restik, containerImage string) api.Container {
 	container := api.Container{
 		Name:            ContainerName,
 		Image:           containerImage,
@@ -53,34 +53,34 @@ func getRestikContainer(b *rapi.Backup, containerImage string) api.Container {
 		Env: []api.EnvVar{
 			{
 				Name:  RestikNamespace,
-				Value: b.Namespace,
+				Value: r.Namespace,
 			},
 			{
 				Name:  RestikResourceName,
-				Value: b.Name,
+				Value: r.Name,
 			},
 		},
 	}
 	container.Args = append(container.Args, "watch")
 	container.Args = append(container.Args, "--v=10")
 	backupVolumeMount := api.VolumeMount{
-		Name:      b.Spec.Destination.Volume.Name,
-		MountPath: b.Spec.Destination.Path,
+		Name:      r.Spec.Destination.Volume.Name,
+		MountPath: r.Spec.Destination.Path,
 	}
 	sourceVolumeMount := api.VolumeMount{
-		Name:      b.Spec.Source.VolumeName,
-		MountPath: b.Spec.Source.Path,
+		Name:      r.Spec.Source.VolumeName,
+		MountPath: r.Spec.Source.Path,
 	}
 	container.VolumeMounts = append(container.VolumeMounts, backupVolumeMount)
 	container.VolumeMounts = append(container.VolumeMounts, sourceVolumeMount)
 	return container
 }
 
-func (pl *Controller) addAnnotation(b *rapi.Backup) {
-	if b.ObjectMeta.Annotations == nil {
-		b.ObjectMeta.Annotations = make(map[string]string)
+func (pl *Controller) addAnnotation(r *rapi.Restik) {
+	if r.ObjectMeta.Annotations == nil {
+		r.ObjectMeta.Annotations = make(map[string]string)
 	}
-	b.ObjectMeta.Annotations[ImageAnnotation] = pl.Image
+	r.ObjectMeta.Annotations[ImageAnnotation] = pl.Image
 }
 
 func findSelectors(lb map[string]string) labels.Selector {

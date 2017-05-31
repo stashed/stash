@@ -14,7 +14,7 @@ const (
 
 type AppsCodeExtensionInterface interface {
 	RESTClient() rest.Interface
-	BackupNamespacer
+	RestikNamespacer
 }
 
 // AppsCodeExtensionsClient is used to interact with experimental Kubernetes features.
@@ -24,8 +24,8 @@ type AppsCodeExtensionsClient struct {
 	restClient rest.Interface
 }
 
-func (a *AppsCodeExtensionsClient) Backups(namespace string) BackupInterface {
-	return newBackup(a, namespace)
+func (a *AppsCodeExtensionsClient) Restiks(namespace string) RestikInterface {
+	return newRestik(a, namespace)
 }
 
 // NewAppsCodeExtensions creates a new AppsCodeExtensionsClient for the given config. This client

@@ -48,20 +48,20 @@ func (cronWatcher *cronController) RunBackup() error {
 	cronWatcher.crons.Start()
 	lw := &cache.ListWatch{
 		ListFunc: func(opts api.ListOptions) (runtime.Object, error) {
-			return cronWatcher.extClient.Backups(cronWatcher.namespace).List(api.ListOptions{})
+			return cronWatcher.extClient.Restiks(cronWatcher.namespace).List(api.ListOptions{})
 		},
 		WatchFunc: func(options api.ListOptions) (watch.Interface, error) {
-			return cronWatcher.extClient.Backups(cronWatcher.namespace).Watch(api.ListOptions{})
+			return cronWatcher.extClient.Restiks(cronWatcher.namespace).Watch(api.ListOptions{})
 		},
 	}
 	_, cronController := cache.NewInformer(lw,
-		&rapi.Backup{},
+		&rapi.Restik{},
 		time.Minute*2,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				if b, ok := obj.(*rapi.Backup); ok {
+				if b, ok := obj.(*rapi.Restik); ok {
 					if b.Name == cronWatcher.tprName {
-						cronWatcher.backup = b
+						cronWatcher.restik = b
 						err := cronWatcher.startCronBackupProcedure()
 						if err != nil {
 							log.Errorln(err)
@@ -70,18 +70,18 @@ func (cronWatcher *cronController) RunBackup() error {
 				}
 			},
 			UpdateFunc: func(old, new interface{}) {
-				oldObj, ok := old.(*rapi.Backup)
+				oldObj, ok := old.(*rapi.Restik)
 				if !ok {
 					log.Errorln(errors.New("Error validating backup object"))
 					return
 				}
-				newObj, ok := new.(*rapi.Backup)
+				newObj, ok := new.(*rapi.Restik)
 				if !ok {
 					log.Errorln(errors.New("Error validating backup object"))
 					return
 				}
 				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) && newObj.Name == cronWatcher.tprName {
-					cronWatcher.backup = newObj
+					cronWatcher.restik = newObj
 					err := cronWatcher.startCronBackupProcedure()
 					if err != nil {
 						log.Errorln(err)
@@ -94,7 +94,7 @@ func (cronWatcher *cronController) RunBackup() error {
 }
 
 func (cronWatcher *cronController) startCronBackupProcedure() error {
-	backup := cronWatcher.backup
+	backup := cronWatcher.restik
 	password, err := getPasswordFromSecret(cronWatcher.kubeClient, backup.Spec.Destination.RepositorySecretName, backup.Namespace)
 	if err != nil {
 		return err
@@ -120,7 +120,7 @@ func (cronWatcher *cronController) startCronBackupProcedure() error {
 		cronWatcher.eventRecorder.Event(backup, api.EventTypeWarning, EventReasonInvalidCronExpression, err.Error())
 		//Reset Wrong Schedule
 		backup.Spec.Schedule = ""
-		_, err = cronWatcher.extClient.Backups(backup.Namespace).Update(backup)
+		_, err = cronWatcher.extClient.Restiks(backup.Namespace).Update(backup)
 		if err != nil {
 			return err
 		}
@@ -140,8 +140,8 @@ func (cronWatcher *cronController) startCronBackupProcedure() error {
 }
 
 func (cronWatcher *cronController) runCronJob() error {
-	backup := cronWatcher.backup
-	password, err := getPasswordFromSecret(cronWatcher.kubeClient, cronWatcher.backup.Spec.Destination.RepositorySecretName, backup.Namespace)
+	backup := cronWatcher.restik
+	password, err := getPasswordFromSecret(cronWatcher.kubeClient, cronWatcher.restik.Spec.Destination.RepositorySecretName, backup.Namespace)
 	if err != nil {
 		return err
 	}
@@ -166,7 +166,7 @@ func (cronWatcher *cronController) runCronJob() error {
 		errMessage = " ERROR: " + err.Error()
 		reason = EventReasonFailedToBackup
 	} else {
-		backup.Status.LastSuccessfullBackupTime = &backupStartTime
+		backup.Status.LastSuccessfulBackupTime = &backupStartTime
 		reason = EventReasonSuccessfulBackup
 	}
 	backup.Status.BackupCount++
@@ -183,7 +183,7 @@ func (cronWatcher *cronController) runCronJob() error {
 		backup.Status.FirstBackupTime = &backupStartTime
 	}
 	backup.Status.LastBackupDuration = backupEndTime.Sub(backupStartTime.Time).String()
-	backup, err = cronWatcher.extClient.Backups(backup.Namespace).Update(backup)
+	backup, err = cronWatcher.extClient.Restiks(backup.Namespace).Update(backup)
 	if err != nil {
 		log.Errorln(err)
 		cronWatcher.eventRecorder.Event(backup, api.EventTypeNormal, EventReasonFailedToUpdate, err.Error())
@@ -191,36 +191,36 @@ func (cronWatcher *cronController) runCronJob() error {
 	return nil
 }
 
-func snapshotRetention(b *rapi.Backup) (string, error) {
-	cmd := fmt.Sprintf("/restic -r %s forget", b.Spec.Destination.Path)
-	if b.Spec.RetentionPolicy.KeepLastSnapshots > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepLast, b.Spec.RetentionPolicy.KeepLastSnapshots)
+func snapshotRetention(r *rapi.Restik) (string, error) {
+	cmd := fmt.Sprintf("/restic -r %s forget", r.Spec.Destination.Path)
+	if r.Spec.RetentionPolicy.KeepLastSnapshots > 0 {
+		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepLast, r.Spec.RetentionPolicy.KeepLastSnapshots)
 	}
-	if b.Spec.RetentionPolicy.KeepHourlySnapshots > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepHourly, b.Spec.RetentionPolicy.KeepHourlySnapshots)
+	if r.Spec.RetentionPolicy.KeepHourlySnapshots > 0 {
+		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepHourly, r.Spec.RetentionPolicy.KeepHourlySnapshots)
 	}
-	if b.Spec.RetentionPolicy.KeepDailySnapshots > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepDaily, b.Spec.RetentionPolicy.KeepDailySnapshots)
+	if r.Spec.RetentionPolicy.KeepDailySnapshots > 0 {
+		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepDaily, r.Spec.RetentionPolicy.KeepDailySnapshots)
 	}
-	if b.Spec.RetentionPolicy.KeepWeeklySnapshots > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepWeekly, b.Spec.RetentionPolicy.KeepWeeklySnapshots)
+	if r.Spec.RetentionPolicy.KeepWeeklySnapshots > 0 {
+		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepWeekly, r.Spec.RetentionPolicy.KeepWeeklySnapshots)
 	}
-	if b.Spec.RetentionPolicy.KeepMonthlySnapshots > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepMonthly, b.Spec.RetentionPolicy.KeepMonthlySnapshots)
+	if r.Spec.RetentionPolicy.KeepMonthlySnapshots > 0 {
+		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepMonthly, r.Spec.RetentionPolicy.KeepMonthlySnapshots)
 	}
-	if b.Spec.RetentionPolicy.KeepYearlySnapshots > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepYearly, b.Spec.RetentionPolicy.KeepYearlySnapshots)
+	if r.Spec.RetentionPolicy.KeepYearlySnapshots > 0 {
+		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepYearly, r.Spec.RetentionPolicy.KeepYearlySnapshots)
 	}
-	if len(b.Spec.RetentionPolicy.KeepTags) != 0 {
-		for _, t := range b.Spec.RetentionPolicy.KeepTags {
+	if len(r.Spec.RetentionPolicy.KeepTags) != 0 {
+		for _, t := range r.Spec.RetentionPolicy.KeepTags {
 			cmd = cmd + " --keep-tag " + t
 		}
 	}
-	if len(b.Spec.RetentionPolicy.RetainHostname) != 0 {
-		cmd = cmd + " --hostname " + b.Spec.RetentionPolicy.RetainHostname
+	if len(r.Spec.RetentionPolicy.RetainHostname) != 0 {
+		cmd = cmd + " --hostname " + r.Spec.RetentionPolicy.RetainHostname
 	}
-	if len(b.Spec.RetentionPolicy.RetainTags) != 0 {
-		for _, t := range b.Spec.RetentionPolicy.RetainTags {
+	if len(r.Spec.RetentionPolicy.RetainTags) != 0 {
+		for _, t := range r.Spec.RetentionPolicy.RetainTags {
 			cmd = cmd + " --tag " + t
 		}
 	}

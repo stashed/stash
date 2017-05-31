@@ -116,22 +116,22 @@ func deleteSecret(watcher *controller.Controller, name string) {
 }
 
 func createBackup(watcher *controller.Controller, backupName string, secretName string) error {
-	backup := &rapi.Backup{
+	backup := &rapi.Restik{
 		TypeMeta: unversioned.TypeMeta{
 			APIVersion: "backup.appscode.com/v1beta1",
-			Kind:       clientset.ResourceKindBackup,
+			Kind:       clientset.ResourceKindRestik,
 		},
 		ObjectMeta: api.ObjectMeta{
 			Name:      backupName,
 			Namespace: namespace,
 		},
-		Spec: rapi.BackupSpec{
-			Source: rapi.BackupSource{
+		Spec: rapi.RestikSpec{
+			Source: rapi.Source{
 				Path:       "/source_path",
 				VolumeName: "test-volume",
 			},
 			Schedule: "* * * * * *",
-			Destination: rapi.BackupDestination{
+			Destination: rapi.Destination{
 				Path:                 "/repo_path",
 				RepositorySecretName: secretName,
 				Volume: api.Volume{
@@ -146,12 +146,12 @@ func createBackup(watcher *controller.Controller, backupName string, secretName 
 			},
 		},
 	}
-	_, err := watcher.ExtClient.Backups(namespace).Create(backup)
+	_, err := watcher.ExtClient.Restiks(namespace).Create(backup)
 	return err
 }
 
 func deleteBackup(watcher *controller.Controller, backupName string) error {
-	return watcher.ExtClient.Backups(namespace).Delete(backupName, nil)
+	return watcher.ExtClient.Restiks(namespace).Delete(backupName, nil)
 }
 
 func createReplicaset(watcher *controller.Controller, name string, backupName string) error {
