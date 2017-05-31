@@ -3,19 +3,19 @@
 
 
 ## High Level Tasks
-* Create `backup.appscode.com` Third Party Resource
+* Create `restik.backup.appscode.com` Third Party Resource
 * Create Backup Deployment
 
 ## Deploying Backup
 
 ### Create Third Party Resource
-`Backup process` depends on Third Party Resource Object `backup.appscode.com`. This object can be created using following data.
+`Backup process` depends on Third Party Resource Object `restik.backup.appscode.com`. This object can be created using following data.
 
 ```yaml
 apiVersion: extensions/v1beta1
 kind: ThirdPartyResource
 metadata:
-  name: backup.appscode.com
+  name: restik.backup.appscode.com
 description: "Backup and restore support for Kubernetes persistent volumes by AppsCode"
 versions:
   - name: v1beta1
@@ -29,7 +29,7 @@ $ kubectl apply -f https://raw.githubusercontent.com/appscode/restik/master/api/
 
 
 ### Deploy Controller
-Backup controller communicates with kube-apiserver at inCluster mode if no master or kubeconfig is provided. It watches Backup resource to handle backup process.
+Restik controller communicates with kube-apiserver at inCluster mode if no master or kubeconfig is provided. It watches Restik resource to handle backup process.
 ```
 $ kubectl apply -f https://raw.githubusercontent.com/appscode/restik/master/hack/deploy/deployments.yaml
 ```
@@ -41,15 +41,15 @@ $ kubectl apply -f https://raw.githubusercontent.com/appscode/restik/master/hack
 --image           // Restik image name with version to be run in restic-sidecar (appscode/restik:latest)
 ```
 
-## Backup
+## Restik
 This resource type is backed by a controller which take backup of kubernetes volumes from any running pod in Kubernetes. It can also take backup of host paths from Nodes in Kubernetes.
 
 ### Resource
-A AppsCode Backup resource Looks like at the kubernetes level:
+A AppsCode Restik resource Looks like at the kubernetes level:
 
 ```yaml
-apiVersion: appscode.com/v1beta1
-kind: Backup
+apiVersion: backup.appscode.com/v1beta1
+kind: Restik
 metadata:
   name: test-backup
   namespace: default
@@ -70,10 +70,10 @@ spec:
     keepLastSnapshots: 3
 ```
 
-**Line 1-3**: With all other Kubernetes config, AppsCode Backup resource needs `apiVersion`, `kind` and `metadata` fields. `apiVersion` and `kind` needs to be exactly same as `appscode.com/v1beta1`, and, `specific version` currently as `v1beta1`, to identify the resource
-as AppsCode Backup. In metadata the `name` and `namespace` indicates the resource identifying name and its Kubernetes namespace.
+**Line 1-3**: With all other Kubernetes config, AppsCode Restik resource needs `apiVersion`, `kind` and `metadata` fields. `apiVersion` and `kind` needs to be exactly same as `appscode.com/v1beta1`, and, `specific version` currently as `v1beta1`, to identify the resource
+as AppsCode Restik. In metadata the `name` and `namespace` indicates the resource identifying name and its Kubernetes namespace.
 
-**Line 6-20**: Backup spec has all the information needed to configure the backup process. 
+**Line 6-20**: Restik spec has all the information needed to configure the backup process. 
 
 * In `source` field user needs to specify the volume name and the path of which he/she wants to take backup.
 * In `destination` field user needs to specify the path and the volume where he/she wants to store the backup snapshots.
@@ -96,7 +96,7 @@ When multiple `retainTags` are specified, only the snapshots which have all the 
 
 ## Enable Backup
 
-For enabling the backup process for a particular kubernetes object like `RC`, `Replica Set`, `Deployment`, `DaemonSet` user adds a label `backup.appscode.com/config: <name_of_tpr>`. `<name_of_tpr>` is the name of backup object. And then user creates the backup object for starting backub.
+For enabling the backup process for a particular kubernetes object like `RC`, `Replica Set`, `Deployment`, `DaemonSet` user adds a label `backup.appscode.com/config: <name_of_tpr>`. `<name_of_tpr>` is the name of Restik object. And then user creates the Restik object for starting backup process.
 In case of StaefulSet user has to add the restic-sidecar container manually.
 
 ```yaml
@@ -152,15 +152,15 @@ spec:
 ## Backup Nodes
 
 If one interested in take backup of host paths, this can be done by deploying a `DaemonSet` with a do nothing busybox container. 
-Restik TPR controller can use that as a vessel for running restic side card containers.
+Restik TPR controller can use that as a vessel for running restic sidecar containers.
 
 ## Update Backup
 
-One can update the bckup source, retention policy, tags of the backup object. After updating the backup object backup process will follow the new backup strategy.
+One can update the source, retention policy, tags, cron schedule of the Restik object. After updating the Restik object backup process will follow the new backup strategy.
 If user wants to update the image of restic-sidecar container he/she needs to update the `backup.appscode.com/image` in field annotation in the backup object. This will automatically update the restic-sidecar container.
 In case of Statefulset user needs to update the sidecar container manually.
 
 ## Disable Backup
 
-For disabling backup process one needs to delete the corresponding backup object in case of `RC`, `Replica Set`, `Deployment`, `DaemonSet`.
+For disabling backup process one needs to delete the corresponding Restik object in case of `RC`, `Replica Set`, `Deployment`, `DaemonSet`.
 In case of `Statefulset` user needs to delete the corresponding backup object as well as remove the side container from the Statefulset manually.

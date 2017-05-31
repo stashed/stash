@@ -16,19 +16,19 @@ const (
 	KeepYearly  RetentionStrategy = "keep-yearly"
 )
 
-type Backup struct {
+type Restik struct {
 	unversioned.TypeMeta `json:",inline,omitempty"`
 	api.ObjectMeta       `json:"metadata,omitempty"`
-	Spec                 BackupSpec   `json:"spec,omitempty"`
-	Status               BackupStatus `json:"status,omitempty"`
+	Spec                 RestikSpec   `json:"spec,omitempty"`
+	Status               RestikStatus `json:"status,omitempty"`
 }
 
-type BackupSpec struct {
-	// Source of the backup volumename:path
-	Source BackupSource `json:"source"`
+type RestikSpec struct {
+	// Source of the backup volumeName:path
+	Source Source `json:"source"`
 	// Destination of the backup
-	Destination BackupDestination `json:"destination"`
-	// How frequently backup command will be run
+	Destination Destination `json:"destination"`
+	// How frequently restic command will be run
 	Schedule string `json:"schedule"`
 	// Tags of a snapshots
 	Tags []string `json:"tags,omitempty"`
@@ -36,26 +36,26 @@ type BackupSpec struct {
 	RetentionPolicy RetentionPolicy `json:"retentionPolicy,omitempty"`
 }
 
-type BackupStatus struct {
+type RestikStatus struct {
 	FirstBackupTime           *unversioned.Time `json:"firstBackupTime,omitempty"`
 	LastBackupTime            *unversioned.Time `json:"lastBackupTime,omitempty"`
-	LastSuccessfullBackupTime *unversioned.Time `json:"lastSuccessfullBackupTime,omitempty"`
+	LastSuccessfulBackupTime *unversioned.Time `json:"lastSuccessfulBackupTime,omitempty"`
 	LastBackupDuration        string            `json:"lastBackupDuration,omitempty"`
 	BackupCount               int64             `json:"backupCount,omitempty"`
 }
 
-type BackupList struct {
+type RestikList struct {
 	unversioned.TypeMeta `json:",inline"`
 	unversioned.ListMeta `json:"metadata,omitempty"`
-	Items                []Backup `json:"items,omitempty"`
+	Items                []Restik `json:"items,omitempty"`
 }
 
-type BackupSource struct {
+type Source struct {
 	VolumeName string `json:"volumeName"`
 	Path       string `json:"path"`
 }
 
-type BackupDestination struct {
+type Destination struct {
 	Volume               api.Volume `json:"volume"`
 	Path                 string     `json:"path"`
 	RepositorySecretName string     `json:"repositorySecretName"`

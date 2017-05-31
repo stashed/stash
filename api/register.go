@@ -31,13 +31,13 @@ var (
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 
-		&Backup{},
-		&BackupList{},
+		&Restik{},
+		&RestikList{},
 
 		&api.ListOptions{},
 	)
 	return nil
 }
 
-func (obj *Backup) GetObjectKind() schema.ObjectKind     { return &obj.TypeMeta }
-func (obj *BackupList) GetObjectKind() schema.ObjectKind { return &obj.TypeMeta }
+func (obj *Restik) GetObjectKind() schema.ObjectKind     { return &obj.TypeMeta }
+func (obj *RestikList) GetObjectKind() schema.ObjectKind { return &obj.TypeMeta }

@@ -35,8 +35,8 @@ func NewFakeExtensionClient(objects ...runtime.Object) *FakeExtensionClient {
 }
 
 
-func (m *FakeExtensionClient) Backups(ns string) clientset.BackupInterface {
-	return &FakeBackup{m.Fake, ns}
+func (m *FakeExtensionClient) Restiks(ns string) clientset.RestikInterface {
+	return &FakeRestik{m.Fake, ns}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

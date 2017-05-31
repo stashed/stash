@@ -9,28 +9,28 @@ import (
 	"k8s.io/kubernetes/pkg/watch"
 )
 
-type FakeBackup struct {
+type FakeRestik struct {
 	Fake *testing.Fake
 	ns   string
 }
 
-var backupResource = schema.GroupVersionResource{Group: "backup.appscode.com", Version: "v1beta1", Resource: "backups"}
+var restikResource = schema.GroupVersionResource{Group: "backup.appscode.com", Version: "v1beta1", Resource: "restiks"}
 
-// Get returns the Backups by name.
-func (mock *FakeBackup) Get(name string) (*aci.Backup, error) {
+// Get returns the Restiks by name.
+func (mock *FakeRestik) Get(name string) (*aci.Restik, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewGetAction(backupResource, mock.ns, name), &aci.Backup{})
+		Invokes(testing.NewGetAction(restikResource, mock.ns, name), &aci.Restik{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*aci.Backup), err
+	return obj.(*aci.Restik), err
 }
 
-// List returns the a of Backups.
-func (mock *FakeBackup) List(opts api.ListOptions) (*aci.BackupList, error) {
+// List returns the a of Restiks.
+func (mock *FakeRestik) List(opts api.ListOptions) (*aci.RestikList, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewListAction(backupResource, mock.ns, opts), &aci.Backup{})
+		Invokes(testing.NewListAction(restikResource, mock.ns, opts), &aci.Restik{})
 
 	if obj == nil {
 		return nil, err
@@ -40,8 +40,8 @@ func (mock *FakeBackup) List(opts api.ListOptions) (*aci.BackupList, error) {
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &aci.BackupList{}
-	for _, item := range obj.(*aci.BackupList).Items {
+	list := &aci.RestikList{}
+	for _, item := range obj.(*aci.RestikList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)
 		}
@@ -49,47 +49,47 @@ func (mock *FakeBackup) List(opts api.ListOptions) (*aci.BackupList, error) {
 	return list, err
 }
 
-// Create creates a new Backup.
-func (mock *FakeBackup) Create(svc *aci.Backup) (*aci.Backup, error) {
+// Create creates a new Restik.
+func (mock *FakeRestik) Create(svc *aci.Restik) (*aci.Restik, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewCreateAction(backupResource, mock.ns, svc), &aci.Backup{})
+		Invokes(testing.NewCreateAction(restikResource, mock.ns, svc), &aci.Restik{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*aci.Backup), err
+	return obj.(*aci.Restik), err
 }
 
-// Update updates a Backup.
-func (mock *FakeBackup) Update(svc *aci.Backup) (*aci.Backup, error) {
+// Update updates a Restik.
+func (mock *FakeRestik) Update(svc *aci.Restik) (*aci.Restik, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewUpdateAction(backupResource, mock.ns, svc), &aci.Backup{})
+		Invokes(testing.NewUpdateAction(restikResource, mock.ns, svc), &aci.Restik{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*aci.Backup), err
+	return obj.(*aci.Restik), err
 }
 
-// Delete deletes a Backup by name.
-func (mock *FakeBackup) Delete(name string, _ *api.DeleteOptions) error {
+// Delete deletes a Restik by name.
+func (mock *FakeRestik) Delete(name string, _ *api.DeleteOptions) error {
 	_, err := mock.Fake.
-		Invokes(testing.NewDeleteAction(backupResource, mock.ns, name), &aci.Backup{})
+		Invokes(testing.NewDeleteAction(restikResource, mock.ns, name), &aci.Restik{})
 
 	return err
 }
 
-func (mock *FakeBackup) UpdateStatus(srv *aci.Backup) (*aci.Backup, error) {
+func (mock *FakeRestik) UpdateStatus(srv *aci.Restik) (*aci.Restik, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(backupResource, "status", mock.ns, srv), &aci.Backup{})
+		Invokes(testing.NewUpdateSubresourceAction(restikResource, "status", mock.ns, srv), &aci.Restik{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*aci.Backup), err
+	return obj.(*aci.Restik), err
 }
 
-func (mock *FakeBackup) Watch(opts api.ListOptions) (watch.Interface, error) {
+func (mock *FakeRestik) Watch(opts api.ListOptions) (watch.Interface, error) {
 	return mock.Fake.
-		InvokesWatch(testing.NewWatchAction(backupResource, mock.ns, opts))
+		InvokesWatch(testing.NewWatchAction(restikResource, mock.ns, opts))
 }

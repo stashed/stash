@@ -51,6 +51,6 @@ type cronController struct {
 	tprName       string
 	namespace     string
 	crons         *cron.Cron
-	backup        *rapi.Backup
+	restik        *rapi.Restik
 	eventRecorder record.EventRecorder
 }

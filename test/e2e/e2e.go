@@ -39,7 +39,7 @@ func checkEventForBackup(watcher *controller.Controller, objName string) error {
 	var err error
 	try := 0
 	sets := fields.Set{
-		"involvedObject.kind":      "Backup",
+		"involvedObject.kind":      "Restik",
 		"involvedObject.name":      objName,
 		"involvedObject.namespace": namespace,
 		"type": api.EventTypeNormal,
