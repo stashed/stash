@@ -59,11 +59,17 @@ func (cronWatcher *cronController) RunBackup() error {
 		time.Minute*2,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				if b, ok := obj.(*rapi.Restik); ok {
-					if b.Name == cronWatcher.tprName {
-						cronWatcher.restik = b
+				if r, ok := obj.(*rapi.Restik); ok {
+					if r.Name == cronWatcher.tprName {
+						cronWatcher.restik = r
 						err := cronWatcher.startCronBackupProcedure()
 						if err != nil {
+							cronWatcher.eventRecorder.Eventf(
+								r,
+								api.EventTypeWarning,
+								EventReasonFailedToBackup,
+								"Failed to start backup process reason %v", err,
+							)
 							log.Errorln(err)
 						}
 					}
@@ -84,6 +90,12 @@ func (cronWatcher *cronController) RunBackup() error {
 					cronWatcher.restik = newObj
 					err := cronWatcher.startCronBackupProcedure()
 					if err != nil {
+						cronWatcher.eventRecorder.Eventf(
+							newObj,
+							api.EventTypeWarning,
+							EventReasonFailedToBackup,
+							"Failed to update backup process reason %v", err,
+						)
 						log.Errorln(err)
 					}
 				}
@@ -94,8 +106,8 @@ func (cronWatcher *cronController) RunBackup() error {
 }
 
 func (cronWatcher *cronController) startCronBackupProcedure() error {
-	backup := cronWatcher.restik
-	password, err := getPasswordFromSecret(cronWatcher.kubeClient, backup.Spec.Destination.RepositorySecretName, backup.Namespace)
+	restik := cronWatcher.restik
+	password, err := getPasswordFromSecret(cronWatcher.kubeClient, restik.Spec.Destination.RepositorySecretName, restik.Namespace)
 	if err != nil {
 		return err
 	}
@@ -103,7 +115,7 @@ func (cronWatcher *cronController) startCronBackupProcedure() error {
 	if err != nil {
 		return err
 	}
-	repo := backup.Spec.Destination.Path
+	repo := restik.Spec.Destination.Path
 	_, err = os.Stat(filepath.Join(repo, "config"))
 	if os.IsNotExist(err) {
 		if _, err = execLocal(fmt.Sprintf("/restic init --repo %s", repo)); err != nil {
@@ -114,23 +126,23 @@ func (cronWatcher *cronController) startCronBackupProcedure() error {
 	for _, v := range cronWatcher.crons.Entries() {
 		cronWatcher.crons.Remove(v.ID)
 	}
-	interval := backup.Spec.Schedule
+	interval := restik.Spec.Schedule
 	if _, err = cron.Parse(interval); err != nil {
 		log.Errorln(err)
-		cronWatcher.eventRecorder.Event(backup, api.EventTypeWarning, EventReasonInvalidCronExpression, err.Error())
+		cronWatcher.eventRecorder.Event(restik, api.EventTypeWarning, EventReasonInvalidCronExpression, err.Error())
 		//Reset Wrong Schedule
-		backup.Spec.Schedule = ""
-		_, err = cronWatcher.extClient.Restiks(backup.Namespace).Update(backup)
+		restik.Spec.Schedule = ""
+		_, err = cronWatcher.extClient.Restiks(restik.Namespace).Update(restik)
 		if err != nil {
 			return err
 		}
-		cronWatcher.eventRecorder.Event(backup, api.EventTypeNormal, EventReasonSuccessfulCronExpressionReset, "Cron expression reset")
+		cronWatcher.eventRecorder.Event(restik, api.EventTypeNormal, EventReasonSuccessfulCronExpressionReset, "Cron expression reset")
 		return nil
 	}
 	_, err = cronWatcher.crons.AddFunc(interval, func() {
 		if err := cronWatcher.runCronJob(); err != nil {
+			cronWatcher.eventRecorder.Event(restik, api.EventTypeWarning, EventReasonFailedCronJob, err.Error())
 			log.Errorln(err)
-			cronWatcher.eventRecorder.Event(backup, api.EventTypeWarning, EventReasonFailedCronJob, err.Error())
 		}
 	})
 	if err != nil {
