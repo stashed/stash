@@ -25,7 +25,7 @@ import (
 
 func NewRestikController(c *rest.Config, image string) *Controller {
 	return &Controller{
-		ExtClient:  tcs.NewACExtensionsForConfigOrDie(c),
+		ExtClient:  tcs.NewExtensionsForConfigOrDie(c),
 		Client:     clientset.NewForConfigOrDie(c),
 		SyncPeriod: time.Minute * 2,
 		Image:      image,

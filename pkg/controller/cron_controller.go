@@ -35,8 +35,8 @@ func NewCronController() (*cronController, error) {
 		return nil, err
 	}
 	return &cronController{
-		extClient:     tcs.NewACExtensionsForConfigOrDie(config),
-		kubeClient:    client,
+		extClient:     tcs.NewExtensionsForConfigOrDie(config),
+		client:        client,
 		namespace:     os.Getenv(RestikNamespace),
 		tprName:       os.Getenv(RestikResourceName),
 		crons:         cron.New(),
@@ -107,7 +107,7 @@ func (cronWatcher *cronController) RunBackup() error {
 
 func (cronWatcher *cronController) startCronBackupProcedure() error {
 	restik := cronWatcher.restik
-	password, err := getPasswordFromSecret(cronWatcher.kubeClient, restik.Spec.Destination.RepositorySecretName, restik.Namespace)
+	password, err := getPasswordFromSecret(cronWatcher.client, restik.Spec.Destination.RepositorySecretName, restik.Namespace)
 	if err != nil {
 		return err
 	}
@@ -153,7 +153,7 @@ func (cronWatcher *cronController) startCronBackupProcedure() error {
 
 func (cronWatcher *cronController) runCronJob() error {
 	backup := cronWatcher.restik
-	password, err := getPasswordFromSecret(cronWatcher.kubeClient, cronWatcher.restik.Spec.Destination.RepositorySecretName, backup.Namespace)
+	password, err := getPasswordFromSecret(cronWatcher.client, cronWatcher.restik.Spec.Destination.RepositorySecretName, backup.Namespace)
 	if err != nil {
 		return err
 	}

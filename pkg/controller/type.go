@@ -37,7 +37,7 @@ const (
 )
 
 type Controller struct {
-	ExtClient tcs.AppsCodeExtensionInterface
+	ExtClient tcs.ExtensionInterface
 	Client    clientset.Interface
 	// sync time to sync the list.
 	SyncPeriod time.Duration
@@ -46,8 +46,8 @@ type Controller struct {
 }
 
 type cronController struct {
-	extClient     tcs.AppsCodeExtensionInterface
-	kubeClient    clientset.Interface
+	extClient     tcs.ExtensionInterface
+	client        clientset.Interface
 	tprName       string
 	namespace     string
 	crons         *cron.Cron
