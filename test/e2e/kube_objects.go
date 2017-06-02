@@ -52,18 +52,18 @@ func createTestNamespace(watcher *controller.Controller, name string) error {
 			Name: name,
 		},
 	}
-	_, err := watcher.Client.Core().Namespaces().Create(ns)
+	_, err := watcher.Clientset.Core().Namespaces().Create(ns)
 	return err
 }
 
 func deleteTestNamespace(watcher *controller.Controller, name string) {
-	if err := watcher.Client.Core().Namespaces().Delete(name, &api.DeleteOptions{}); err != nil {
+	if err := watcher.Clientset.Core().Namespaces().Delete(name, &api.DeleteOptions{}); err != nil {
 		fmt.Println(err)
 	}
 }
 
 func createReplicationController(watcher *controller.Controller, name string, backupName string) error {
-	kubeClient := watcher.Client
+	kubeClient := watcher.Clientset
 	rc := &api.ReplicationController{
 		TypeMeta: unversioned.TypeMeta{
 			APIVersion: "v1",
@@ -86,7 +86,7 @@ func createReplicationController(watcher *controller.Controller, name string, ba
 }
 
 func deleteReplicationController(watcher *controller.Controller, name string) {
-	if err := watcher.Client.Core().ReplicationControllers(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
+	if err := watcher.Clientset.Core().ReplicationControllers(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
 		log.Errorln(err)
 	}
 }
@@ -105,12 +105,12 @@ func createSecret(watcher *controller.Controller, name string) error {
 			"password": []byte("appscode"),
 		},
 	}
-	_, err := watcher.Client.Core().Secrets(namespace).Create(secret)
+	_, err := watcher.Clientset.Core().Secrets(namespace).Create(secret)
 	return err
 }
 
 func deleteSecret(watcher *controller.Controller, name string) {
-	if err := watcher.Client.Core().Secrets(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
+	if err := watcher.Clientset.Core().Secrets(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
 		log.Errorln(err)
 	}
 }
@@ -146,12 +146,12 @@ func createRestik(watcher *controller.Controller, backupName string, secretName 
 			},
 		},
 	}
-	_, err := watcher.ExtClient.Restiks(namespace).Create(restik)
+	_, err := watcher.ExtClientset.Restiks(namespace).Create(restik)
 	return err
 }
 
 func deleteRestik(watcher *controller.Controller, restikName string) error {
-	return watcher.ExtClient.Restiks(namespace).Delete(restikName, nil)
+	return watcher.ExtClientset.Restiks(namespace).Delete(restikName, nil)
 }
 
 func createReplicaset(watcher *controller.Controller, name string, restikName string) error {
@@ -173,12 +173,12 @@ func createReplicaset(watcher *controller.Controller, name string, restikName st
 			},
 		},
 	}
-	_, err := watcher.Client.Extensions().ReplicaSets(namespace).Create(replicaset)
+	_, err := watcher.Clientset.Extensions().ReplicaSets(namespace).Create(replicaset)
 	return err
 }
 
 func deleteReplicaset(watcher *controller.Controller, name string) {
-	if err := watcher.Client.Extensions().ReplicaSets(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
+	if err := watcher.Clientset.Extensions().ReplicaSets(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
 		log.Errorln(err)
 	}
 }
@@ -202,12 +202,12 @@ func createDeployment(watcher *controller.Controller, name string, restikName st
 			Template: *podTemplate,
 		},
 	}
-	_, err := watcher.Client.Extensions().Deployments(namespace).Create(deployment)
+	_, err := watcher.Clientset.Extensions().Deployments(namespace).Create(deployment)
 	return err
 }
 
 func deleteDeployment(watcher *controller.Controller, name string) {
-	if err := watcher.Client.Extensions().Deployments(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
+	if err := watcher.Clientset.Extensions().Deployments(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
 		log.Errorln(err)
 	}
 }
@@ -225,12 +225,12 @@ func createDaemonsets(watcher *controller.Controller, name string, backupName st
 			Template: *podTemplate,
 		},
 	}
-	_, err := watcher.Client.Extensions().DaemonSets(namespace).Create(daemonset)
+	_, err := watcher.Clientset.Extensions().DaemonSets(namespace).Create(daemonset)
 	return err
 }
 
 func deleteDaemonset(watcher *controller.Controller, name string) {
-	if err := watcher.Client.Extensions().DaemonSets(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
+	if err := watcher.Clientset.Extensions().DaemonSets(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
 		log.Errorln(err)
 	}
 }
@@ -284,12 +284,12 @@ func createStatefulSet(watcher *controller.Controller, name string, restikName s
 			EmptyDir: &api.EmptyDirVolumeSource{},
 		},
 	})
-	_, err := watcher.Client.Apps().StatefulSets(namespace).Create(s)
+	_, err := watcher.Clientset.Apps().StatefulSets(namespace).Create(s)
 	return err
 }
 
 func deleteStatefulset(watcher *controller.Controller, name string) {
-	if err := watcher.Client.Apps().StatefulSets(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
+	if err := watcher.Clientset.Apps().StatefulSets(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
 		log.Errorln(err)
 	}
 }
@@ -315,12 +315,12 @@ func createService(watcher *controller.Controller, name string) error {
 			},
 		},
 	}
-	_, err := watcher.Client.Core().Services(namespace).Create(svc)
+	_, err := watcher.Clientset.Core().Services(namespace).Create(svc)
 	return err
 }
 
 func deleteService(watcher *controller.Controller, name string) {
-	err := watcher.Client.Core().Services(namespace).Delete(name, &api.DeleteOptions{})
+	err := watcher.Clientset.Core().Services(namespace).Delete(name, &api.DeleteOptions{})
 	if err != nil {
 		log.Errorln(err)
 	}

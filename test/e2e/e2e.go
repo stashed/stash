@@ -46,7 +46,7 @@ func checkEventForBackup(watcher *controller.Controller, objName string) error {
 	}
 	fieldSelector := fields.SelectorFromSet(sets)
 	for {
-		events, err := watcher.Client.Core().Events(namespace).List(api.ListOptions{FieldSelector: fieldSelector})
+		events, err := watcher.Clientset.Core().Events(namespace).List(api.ListOptions{FieldSelector: fieldSelector})
 		if err == nil {
 			for _, e := range events.Items {
 				if e.Reason == controller.EventReasonSuccessfulBackup {
@@ -74,23 +74,23 @@ func checkContainerAfterBackupDelete(watcher *controller.Controller, name string
 		time.Sleep(time.Second * 20)
 		switch _type {
 		case controller.ReplicationController:
-			rc, err := watcher.Client.Core().ReplicationControllers(namespace).Get(name)
+			rc, err := watcher.Clientset.Core().ReplicationControllers(namespace).Get(name)
 			if err != nil {
 				containers = rc.Spec.Template.Spec.Containers
 			}
 		case controller.ReplicaSet:
-			rs, err := watcher.Client.Extensions().ReplicaSets(namespace).Get(name)
+			rs, err := watcher.Clientset.Extensions().ReplicaSets(namespace).Get(name)
 			if err != nil {
 				containers = rs.Spec.Template.Spec.Containers
 			}
 		case controller.Deployment:
-			deployment, err := watcher.Client.Extensions().Deployments(namespace).Get(name)
+			deployment, err := watcher.Clientset.Extensions().Deployments(namespace).Get(name)
 			if err != nil {
 				containers = deployment.Spec.Template.Spec.Containers
 			}
 
 		case controller.DaemonSet:
-			daemonset, err := watcher.Client.Extensions().DaemonSets(namespace).Get(name)
+			daemonset, err := watcher.Clientset.Extensions().DaemonSets(namespace).Get(name)
 			if err != nil {
 				containers = daemonset.Spec.Template.Spec.Containers
 			}

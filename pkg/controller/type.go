@@ -37,8 +37,8 @@ const (
 )
 
 type Controller struct {
-	ExtClient tcs.ExtensionInterface
-	Client    clientset.Interface
+	ExtClientset tcs.ExtensionInterface
+	Clientset    clientset.Interface
 	// sync time to sync the list.
 	SyncPeriod time.Duration
 	// image of sidecar container
@@ -46,8 +46,8 @@ type Controller struct {
 }
 
 type cronController struct {
-	extClient     tcs.ExtensionInterface
-	client        clientset.Interface
+	extClientset  tcs.ExtensionInterface
+	clientset     clientset.Interface
 	tprName       string
 	namespace     string
 	crons         *cron.Cron

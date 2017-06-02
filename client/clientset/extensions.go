@@ -30,11 +30,11 @@ func (a *ExtensionClient) Restiks(namespace string) RestikInterface {
 	return newRestik(a, namespace)
 }
 
-// NewExtensionsForConfig creates a new ExtensionClient for the given config. This client
+// NewForConfig creates a new ExtensionClient for the given config. This client
 // provides access to experimental Kubernetes features.
 // Features of Extensions group are not supported and may be changed or removed in
 // incompatible ways at any time.
-func NewExtensionsForConfig(c *rest.Config) (*ExtensionClient, error) {
+func NewForConfig(c *rest.Config) (*ExtensionClient, error) {
 	config := *c
 	if err := setExtensionsDefaults(&config); err != nil {
 		return nil, err
@@ -46,12 +46,12 @@ func NewExtensionsForConfig(c *rest.Config) (*ExtensionClient, error) {
 	return &ExtensionClient{client}, nil
 }
 
-// NewExtensionsForConfigOrDie creates a new ExtensionClient for the given config and
+// NewForConfigOrDie creates a new ExtensionClient for the given config and
 // panics if there is an error in the config.
 // Features of Extensions group are not supported and may be changed or removed in
 // incompatible ways at any time.
-func NewExtensionsForConfigOrDie(c *rest.Config) *ExtensionClient {
-	client, err := NewExtensionsForConfig(c)
+func NewForConfigOrDie(c *rest.Config) *ExtensionClient {
+	client, err := NewForConfig(c)
 	if err != nil {
 		panic(err)
 	}
@@ -59,7 +59,7 @@ func NewExtensionsForConfigOrDie(c *rest.Config) *ExtensionClient {
 }
 
 // New creates a new ExtensionClient for the given RESTClient.
-func NewExtensions(c rest.Interface) *ExtensionClient {
+func New(c rest.Interface) *ExtensionClient {
 	return &ExtensionClient{c}
 }
 

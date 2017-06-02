@@ -16,7 +16,7 @@ func TestBackupUpdate(t *testing.T) {
 		log.Println(err)
 		return
 	}
-	restikClient := tcs.NewExtensionsForConfigOrDie(config)
+	restikClient := tcs.NewForConfigOrDie(config)
 	b, err := restikClient.Restiks("test").Get("testbackup")
 	if err != nil {
 		fmt.Println(err)
