@@ -88,7 +88,7 @@ func TestUpdateObjectAndStartBackup(t *testing.T) {
 	fakeController := getFakeController()
 	_, err := fakeController.Client.Core().ReplicationControllers("default").Create(fakeRc)
 	assert.Nil(t, err)
-	b, err := fakeController.ExtClient.Restiks("default").Create(fakeRestik)
+	b, err := fakeController.RestikClient.Restiks("default").Create(fakeRestik)
 	assert.Nil(t, err)
 	err = fakeController.updateObjectAndStartBackup(b)
 	assert.Nil(t, err)
@@ -98,7 +98,7 @@ func TestUpdateObjectAndStopBackup(t *testing.T) {
 	fakeController := getFakeController()
 	_, err := fakeController.Client.Core().ReplicationControllers("default").Create(fakeRc)
 	assert.Nil(t, err)
-	b, err := fakeController.ExtClient.Restiks("default").Create(fakeRestik)
+	b, err := fakeController.RestikClient.Restiks("default").Create(fakeRestik)
 	assert.Nil(t, err)
 	err = fakeController.updateObjectAndStopBackup(b)
 	assert.Nil(t, err)
@@ -108,7 +108,7 @@ func TestUpdateImage(t *testing.T) {
 	fakeController := getFakeController()
 	_, err := fakeController.Client.Core().ReplicationControllers("default").Create(fakeRc)
 	assert.Nil(t, err)
-	b, err := fakeController.ExtClient.Restiks("default").Create(fakeRestik)
+	b, err := fakeController.RestikClient.Restiks("default").Create(fakeRestik)
 	assert.Nil(t, err)
 	err = fakeController.updateImage(b, "appscode/restik:fakelatest")
 	assert.Nil(t, err)
@@ -116,10 +116,10 @@ func TestUpdateImage(t *testing.T) {
 
 func getFakeController() *Controller {
 	fakeController := &Controller{
-		Client:     fakeclientset.NewSimpleClientset(),
-		ExtClient:  fake.NewFakeExtensionClient(),
-		SyncPeriod: time.Minute * 2,
-		Image:      "appscode/restik:fake",
+		Client:       fakeclientset.NewSimpleClientset(),
+		RestikClient: fake.NewFakeExtensionClient(),
+		SyncPeriod:   time.Minute * 2,
+		Image:        "appscode/restik:fake",
 	}
 	return fakeController
 }

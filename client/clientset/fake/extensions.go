@@ -14,7 +14,7 @@ type FakeExtensionClient struct {
 	*testing.Fake
 }
 
-var _ clientset.AppsCodeExtensionInterface = &FakeExtensionClient{}
+var _ clientset.AppsCodeRestikInterface = &FakeExtensionClient{}
 
 func NewFakeExtensionClient(objects ...runtime.Object) *FakeExtensionClient {
 	o := testing.NewObjectTracker(api.Scheme, api.Codecs.UniversalDecoder())

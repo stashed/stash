@@ -32,7 +32,7 @@ type RestikImpl struct {
 	ns string
 }
 
-func newRestik(c *AppsCodeExtensionsClient, namespace string) *RestikImpl {
+func newRestik(c *AppsCodeRestikClient, namespace string) *RestikImpl {
 	return &RestikImpl{c.restClient, namespace}
 }
 

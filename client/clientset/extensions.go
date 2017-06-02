@@ -12,44 +12,44 @@ const (
 	defaultAPIPath = "/apis"
 )
 
-type AppsCodeExtensionInterface interface {
+type AppsCodeRestikInterface interface {
 	RESTClient() rest.Interface
 	RestikNamespacer
 }
 
-// AppsCodeExtensionsClient is used to interact with experimental Kubernetes features.
+// AppsCodeRestikClient is used to interact with experimental Kubernetes features.
 // Features of Extensions group are not supported and may be changed or removed in
 // incompatible ways at any time.
-type AppsCodeExtensionsClient struct {
+type AppsCodeRestikClient struct {
 	restClient rest.Interface
 }
 
-func (a *AppsCodeExtensionsClient) Restiks(namespace string) RestikInterface {
+func (a *AppsCodeRestikClient) Restiks(namespace string) RestikInterface {
 	return newRestik(a, namespace)
 }
 
-// NewAppsCodeExtensions creates a new AppsCodeExtensionsClient for the given config. This client
+// NewAppsCodeExtensions creates a new AppsCodeRestikClient for the given config. This client
 // provides access to experimental Kubernetes features.
 // Features of Extensions group are not supported and may be changed or removed in
 // incompatible ways at any time.
-func NewACExtensionsForConfig(c *rest.Config) (*AppsCodeExtensionsClient, error) {
+func NewACRestikForConfig(c *rest.Config) (*AppsCodeRestikClient, error) {
 	config := *c
-	if err := setExtensionsDefaults(&config); err != nil {
+	if err := setRestikDefaults(&config); err != nil {
 		return nil, err
 	}
 	client, err := rest.RESTClientFor(&config)
 	if err != nil {
 		return nil, err
 	}
-	return &AppsCodeExtensionsClient{client}, nil
+	return &AppsCodeRestikClient{client}, nil
 }
 
-// NewAppsCodeExtensionsOrDie creates a new AppsCodeExtensionsClient for the given config and
+// NewACRestikForConfigOrDie creates a new AppsCodeRestikClient for the given config and
 // panics if there is an error in the config.
 // Features of Extensions group are not supported and may be changed or removed in
 // incompatible ways at any time.
-func NewACExtensionsForConfigOrDie(c *rest.Config) *AppsCodeExtensionsClient {
-	client, err := NewACExtensionsForConfig(c)
+func NewACRestikForConfigOrDie(c *rest.Config) *AppsCodeRestikClient {
+	client, err := NewACRestikForConfig(c)
 	if err != nil {
 		panic(err)
 	}
@@ -57,11 +57,11 @@ func NewACExtensionsForConfigOrDie(c *rest.Config) *AppsCodeExtensionsClient {
 }
 
 // New creates a new ExtensionsV1beta1Client for the given RESTClient.
-func NewNewACExtensions(c rest.Interface) *AppsCodeExtensionsClient {
-	return &AppsCodeExtensionsClient{c}
+func NewACRestik(c rest.Interface) *AppsCodeRestikClient {
+	return &AppsCodeRestikClient{c}
 }
 
-func setExtensionsDefaults(config *rest.Config) error {
+func setRestikDefaults(config *rest.Config) error {
 	gv, err := schema.ParseGroupVersion("backup.appscode.com/v1beta1")
 	if err != nil {
 		return err
@@ -91,7 +91,7 @@ func setExtensionsDefaults(config *rest.Config) error {
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *AppsCodeExtensionsClient) RESTClient() rest.Interface {
+func (c *AppsCodeRestikClient) RESTClient() rest.Interface {
 	if c == nil {
 		return nil
 	}
