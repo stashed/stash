@@ -37,8 +37,8 @@ const (
 )
 
 type Controller struct {
-	RestikClient tcs.AppsCodeRestikInterface
-	Client       clientset.Interface
+	ExtClient tcs.ExtensionInterface
+	Client    clientset.Interface
 	// sync time to sync the list.
 	SyncPeriod time.Duration
 	// image of sidecar container
@@ -46,8 +46,8 @@ type Controller struct {
 }
 
 type cronController struct {
-	restikClient  tcs.AppsCodeRestikInterface
-	kubeClient    clientset.Interface
+	extClient     tcs.ExtensionInterface
+	client        clientset.Interface
 	tprName       string
 	namespace     string
 	crons         *cron.Cron

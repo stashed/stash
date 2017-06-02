@@ -7,6 +7,7 @@ import (
 	testing "k8s.io/kubernetes/pkg/client/testing/core"
 	"k8s.io/kubernetes/pkg/labels"
 	"k8s.io/kubernetes/pkg/watch"
+	"github.com/appscode/restik/client/clientset"
 )
 
 type FakeRestik struct {
@@ -15,6 +16,8 @@ type FakeRestik struct {
 }
 
 var restikResource = schema.GroupVersionResource{Group: "backup.appscode.com", Version: "v1beta1", Resource: "restiks"}
+
+var _ clientset.RestikInterface = &FakeRestik{}
 
 // Get returns the Restiks by name.
 func (mock *FakeRestik) Get(name string) (*aci.Restik, error) {

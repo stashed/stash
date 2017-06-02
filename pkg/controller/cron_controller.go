@@ -35,8 +35,8 @@ func NewCronController() (*cronController, error) {
 		return nil, err
 	}
 	return &cronController{
-		restikClient:  tcs.NewACRestikForConfigOrDie(config),
-		kubeClient:    client,
+		extClient:     tcs.NewExtensionsForConfigOrDie(config),
+		client:        client,
 		namespace:     os.Getenv(RestikNamespace),
 		tprName:       os.Getenv(RestikResourceName),
 		crons:         cron.New(),
@@ -48,10 +48,10 @@ func (cronWatcher *cronController) RunBackup() error {
 	cronWatcher.crons.Start()
 	lw := &cache.ListWatch{
 		ListFunc: func(opts api.ListOptions) (runtime.Object, error) {
-			return cronWatcher.restikClient.Restiks(cronWatcher.namespace).List(api.ListOptions{})
+			return cronWatcher.extClient.Restiks(cronWatcher.namespace).List(api.ListOptions{})
 		},
 		WatchFunc: func(options api.ListOptions) (watch.Interface, error) {
-			return cronWatcher.restikClient.Restiks(cronWatcher.namespace).Watch(api.ListOptions{})
+			return cronWatcher.extClient.Restiks(cronWatcher.namespace).Watch(api.ListOptions{})
 		},
 	}
 	_, cronController := cache.NewInformer(lw,
@@ -107,7 +107,7 @@ func (cronWatcher *cronController) RunBackup() error {
 
 func (cronWatcher *cronController) startCronBackupProcedure() error {
 	restik := cronWatcher.restik
-	password, err := getPasswordFromSecret(cronWatcher.kubeClient, restik.Spec.Destination.RepositorySecretName, restik.Namespace)
+	password, err := getPasswordFromSecret(cronWatcher.client, restik.Spec.Destination.RepositorySecretName, restik.Namespace)
 	if err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func (cronWatcher *cronController) startCronBackupProcedure() error {
 		cronWatcher.eventRecorder.Event(restik, api.EventTypeWarning, EventReasonInvalidCronExpression, err.Error())
 		//Reset Wrong Schedule
 		restik.Spec.Schedule = ""
-		_, err = cronWatcher.restikClient.Restiks(restik.Namespace).Update(restik)
+		_, err = cronWatcher.extClient.Restiks(restik.Namespace).Update(restik)
 		if err != nil {
 			return err
 		}
@@ -153,7 +153,7 @@ func (cronWatcher *cronController) startCronBackupProcedure() error {
 
 func (cronWatcher *cronController) runCronJob() error {
 	backup := cronWatcher.restik
-	password, err := getPasswordFromSecret(cronWatcher.kubeClient, cronWatcher.restik.Spec.Destination.RepositorySecretName, backup.Namespace)
+	password, err := getPasswordFromSecret(cronWatcher.client, cronWatcher.restik.Spec.Destination.RepositorySecretName, backup.Namespace)
 	if err != nil {
 		return err
 	}
@@ -195,7 +195,7 @@ func (cronWatcher *cronController) runCronJob() error {
 		backup.Status.FirstBackupTime = &backupStartTime
 	}
 	backup.Status.LastBackupDuration = backupEndTime.Sub(backupStartTime.Time).String()
-	backup, err = cronWatcher.restikClient.Restiks(backup.Namespace).Update(backup)
+	backup, err = cronWatcher.extClient.Restiks(backup.Namespace).Update(backup)
 	if err != nil {
 		log.Errorln(err)
 		cronWatcher.eventRecorder.Event(backup, api.EventTypeNormal, EventReasonFailedToUpdate, err.Error())

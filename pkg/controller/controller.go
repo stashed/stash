@@ -25,10 +25,10 @@ import (
 
 func NewRestikController(c *rest.Config, image string) *Controller {
 	return &Controller{
-		RestikClient: tcs.NewACRestikForConfigOrDie(c),
-		Client:       clientset.NewForConfigOrDie(c),
-		SyncPeriod:   time.Minute * 2,
-		Image:        image,
+		ExtClient:  tcs.NewExtensionsForConfigOrDie(c),
+		Client:     clientset.NewForConfigOrDie(c),
+		SyncPeriod: time.Minute * 2,
+		Image:      image,
 	}
 }
 
@@ -39,10 +39,10 @@ func (w *Controller) RunAndHold() error {
 	}
 	lw := &cache.ListWatch{
 		ListFunc: func(opts api.ListOptions) (runtime.Object, error) {
-			return w.RestikClient.Restiks(api.NamespaceAll).List(api.ListOptions{})
+			return w.ExtClient.Restiks(api.NamespaceAll).List(api.ListOptions{})
 		},
 		WatchFunc: func(options api.ListOptions) (watch.Interface, error) {
-			return w.RestikClient.Restiks(api.NamespaceAll).Watch(api.ListOptions{})
+			return w.ExtClient.Restiks(api.NamespaceAll).Watch(api.ListOptions{})
 		},
 	}
 	_, controller := cache.NewInformer(lw,
@@ -179,7 +179,7 @@ func (pl *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
 		return nil
 	}
 	pl.addAnnotation(r)
-	_, err = pl.RestikClient.Restiks(r.Namespace).Update(r)
+	_, err = pl.ExtClient.Restiks(r.Namespace).Update(r)
 	return err
 }
 

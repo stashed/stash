@@ -146,12 +146,12 @@ func createRestik(watcher *controller.Controller, backupName string, secretName 
 			},
 		},
 	}
-	_, err := watcher.RestikClient.Restiks(namespace).Create(restik)
+	_, err := watcher.ExtClient.Restiks(namespace).Create(restik)
 	return err
 }
 
 func deleteRestik(watcher *controller.Controller, restikName string) error {
-	return watcher.RestikClient.Restiks(namespace).Delete(restikName, nil)
+	return watcher.ExtClient.Restiks(namespace).Delete(restikName, nil)
 }
 
 func createReplicaset(watcher *controller.Controller, name string, restikName string) error {

@@ -10,13 +10,13 @@ import (
 	"k8s.io/kubernetes/pkg/watch"
 )
 
-type FakeRestikClient struct {
+type FakeExtensionClient struct {
 	*testing.Fake
 }
 
-var _ clientset.AppsCodeRestikInterface = &FakeRestikClient{}
+var _ clientset.ExtensionInterface = &FakeExtensionClient{}
 
-func NewFakeRestikClient(objects ...runtime.Object) *FakeRestikClient {
+func NewFakeRestikClient(objects ...runtime.Object) *FakeExtensionClient {
 	o := testing.NewObjectTracker(api.Scheme, api.Codecs.UniversalDecoder())
 	for _, obj := range objects {
 		if obj.GetObjectKind().GroupVersionKind().Group == "backup.appscode.com" {
@@ -31,17 +31,17 @@ func NewFakeRestikClient(objects ...runtime.Object) *FakeRestikClient {
 
 	fakePtr.AddWatchReactor("*", testing.DefaultWatchReactor(watch.NewFake(), nil))
 
-	return &FakeRestikClient{&fakePtr}
+	return &FakeExtensionClient{&fakePtr}
 }
 
 
-func (m *FakeRestikClient) Restiks(ns string) clientset.RestikInterface {
+func (m *FakeExtensionClient) Restiks(ns string) clientset.RestikInterface {
 	return &FakeRestik{m.Fake, ns}
 }
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *FakeRestikClient) RESTClient() rest.Interface {
+func (c *FakeExtensionClient) RESTClient() rest.Interface {
 	var ret *rest.RESTClient
 	return ret
 }
