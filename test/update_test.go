@@ -16,14 +16,14 @@ func TestBackupUpdate(t *testing.T) {
 		log.Println(err)
 		return
 	}
-	RestikClient := tcs.NewACRestikForConfigOrDie(config)
-	b, err := RestikClient.Restiks("test").Get("testbackup")
+	restikClient := tcs.NewACRestikForConfigOrDie(config)
+	b, err := restikClient.Restiks("test").Get("testbackup")
 	if err != nil {
 		fmt.Println(err)
 	}
 	b.Spec.Schedule = "0 * * * * *"
 	b.Spec.RetentionPolicy.KeepLastSnapshots = 5
-	b, err = RestikClient.Restiks("test").Update(b)
+	b, err = restikClient.Restiks("test").Update(b)
 	if err != nil {
 		fmt.Println(err)
 	}

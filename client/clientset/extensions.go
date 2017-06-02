@@ -28,7 +28,7 @@ func (a *AppsCodeRestikClient) Restiks(namespace string) RestikInterface {
 	return newRestik(a, namespace)
 }
 
-// NewAppsCodeExtensions creates a new AppsCodeRestikClient for the given config. This client
+// NewACRestikForConfig creates a new AppsCodeRestikClient for the given config. This client
 // provides access to experimental Kubernetes features.
 // Features of Extensions group are not supported and may be changed or removed in
 // incompatible ways at any time.
