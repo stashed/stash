@@ -117,7 +117,7 @@ func TestUpdateImage(t *testing.T) {
 func getFakeController() *Controller {
 	fakeController := &Controller{
 		Client:       fakeclientset.NewSimpleClientset(),
-		RestikClient: fake.NewFakeExtensionClient(),
+		RestikClient: fake.NewFakeRestikClient(),
 		SyncPeriod:   time.Minute * 2,
 		Image:        "appscode/restik:fake",
 	}
