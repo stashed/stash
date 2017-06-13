@@ -70,7 +70,7 @@ spec:
     keepLastSnapshots: 3
 ```
 
-**Line 1-3**: With all other Kubernetes config, AppsCode Restik resource needs `apiVersion`, `kind` and `metadata` fields. `apiVersion` and `kind` needs to be exactly same as `appscode.com/v1alpha1`, and, `specific version` currently as `v1alpha1`, to identify the resource
+**Line 1-3**: With all other Kubernetes config, AppsCode Restik resource needs `apiVersion`, `kind` and `metadata` fields. `apiVersion` and `kind` needs to be exactly same as `backup.appscode.com/v1alpha1`, and, `specific version` currently as `v1alpha1`, to identify the resource
 as AppsCode Restik. In metadata the `name` and `namespace` indicates the resource identifying name and its Kubernetes namespace.
 
 **Line 6-20**: Restik spec has all the information needed to configure the backup process. 
