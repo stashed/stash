@@ -66,7 +66,7 @@ detect_tag() {
     if [ "$git_tag" != '' ]; then
         TAG=$git_tag
         TAG_STRATEGY='git_tag'
-    elif [ "$git_branch" != 'master' ] && [ "$git_branch" != 'HEAD' ]; then
+    elif [ "$git_branch" != 'master' ] && [ "$git_branch" != 'HEAD' ] && [[ "$git_branch" != release-* ]]; then
         TAG=$git_branch
         TAG_STRATEGY='git_branch'
     else
@@ -115,7 +115,8 @@ attic_up() {
 	local cmd="docker tag $DOCKER_REGISTRY/$IMG:$TAG docker.appscode.com/$IMG:$TAG"
 	echo $cmd; $cmd
 	cmd="docker push docker.appscode.com/$IMG:$TAG"
-	echo $cmd; $cmd
+	echo $cmd 
+	until $cmd; do echo "Try again"; done
 }
 
 hub_up() {

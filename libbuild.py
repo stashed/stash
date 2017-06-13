@@ -5,6 +5,7 @@ from __future__ import absolute_import
 
 import datetime
 import fnmatch
+import glob
 import io
 import json
 import os
@@ -59,7 +60,7 @@ def metadata(cwd, goos='', goarch=''):
     if md['git_tag']:
         md['version'] = md['git_tag']
         md['version_strategy'] = 'tag'
-    elif not md['git_branch'] in ['master', 'HEAD']:
+    elif not md['git_branch'] in ['master', 'HEAD'] and not md['git_branch'].startswith('release-'):
         md['version'] = md['git_branch']
         md['version_strategy'] = 'branch'
     else:
@@ -196,12 +197,11 @@ def upload_to_cloud(folder, f, version):
     if not isinstance(buckets, dict):
         buckets = {buckets: ''}
     for bucket, region in buckets.items():
-        dst = "{bucket}/binaries/{name}/{version}/{file}{ext}".format(
+        dst = "{bucket}/binaries/{name}/{version}/{file}".format(
             bucket=bucket,
             name=name,
             version=version,
-            file=f,
-            ext='.exe' if '-windows-' in f else ''
+            file=f
         )
         if bucket.startswith('gs://'):
             upload_to_gcs(folder, f, dst, BIN_MATRIX[name].get('release', False))
@@ -256,6 +256,10 @@ def ungroup_go_imports(*paths):
             for dir, _, files in os.walk(p):
                 for f in fnmatch.filter(files, '*.go'):
                     _ungroup_go_imports(dir + '/' + f)
+        else:
+            for f in glob.glob(p):
+                print('Ungrouping imports of file: ' + f)
+                _ungroup_go_imports(f)
 
 
 BEGIN_IMPORT_REGEX = ur'import \(\s*'

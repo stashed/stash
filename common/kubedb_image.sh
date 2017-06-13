@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DOCKER_REGISTRY=${DOCKER_REGISTRY:-k8sdb}
+DOCKER_REGISTRY=${DOCKER_REGISTRY:-kubedb}
 source $(dirname "${BASH_SOURCE}")/lib.sh
 
 # override this one if you need to change push & pull
