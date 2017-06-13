@@ -328,7 +328,7 @@ func (w *Controller) ensureResource() error {
 			},
 			Versions: []extensions.APIVersion{
 				{
-					Name: "v1beta1",
+					Name: "v1alpha1",
 				},
 			},
 		}
