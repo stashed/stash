@@ -15,7 +15,7 @@ type FakeRestik struct {
 	ns   string
 }
 
-var restikResource = schema.GroupVersionResource{Group: "backup.appscode.com", Version: "v1beta1", Resource: "restiks"}
+var restikResource = schema.GroupVersionResource{Group: "backup.appscode.com", Version: "v1alpha1", Resource: "restiks"}
 
 var _ clientset.RestikInterface = &FakeRestik{}
 

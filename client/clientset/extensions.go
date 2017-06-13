@@ -64,13 +64,13 @@ func New(c rest.Interface) *ExtensionClient {
 }
 
 func setExtensionsDefaults(config *rest.Config) error {
-	gv, err := schema.ParseGroupVersion("backup.appscode.com/v1beta1")
+	gv, err := schema.ParseGroupVersion("backup.appscode.com/v1alpha1")
 	if err != nil {
 		return err
 	}
-	// if backup.appscode.com/v1beta1 is not enabled, return an error
+	// if backup.appscode.com/v1alpha1 is not enabled, return an error
 	if !registered.IsEnabledVersion(gv) {
-		return fmt.Errorf("backup.appscode.com/v1beta1 is not enabled")
+		return fmt.Errorf("backup.appscode.com/v1alpha1 is not enabled")
 	}
 	config.APIPath = defaultAPIPath
 	if config.UserAgent == "" {

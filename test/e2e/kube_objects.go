@@ -118,7 +118,7 @@ func deleteSecret(watcher *controller.Controller, name string) {
 func createRestik(watcher *controller.Controller, backupName string, secretName string) error {
 	restik := &rapi.Restik{
 		TypeMeta: unversioned.TypeMeta{
-			APIVersion: "backup.appscode.com/v1beta1",
+			APIVersion: "backup.appscode.com/v1alpha1",
 			Kind:       clientset.ResourceKindRestik,
 		},
 		ObjectMeta: api.ObjectMeta{

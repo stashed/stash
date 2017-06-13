@@ -1,4 +1,4 @@
-apiVersion: backup.appscode.com/v1beta1
+apiVersion: backup.appscode.com/v1alpha1
 kind: Restik
 metadata:
   name: testbackup

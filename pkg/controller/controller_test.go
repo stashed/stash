@@ -53,7 +53,7 @@ var fakeRc = &api.ReplicationController{
 var fakeRestik = &rapi.Restik{
 	TypeMeta: unversioned.TypeMeta{
 		Kind:       clientset.ResourceKindRestik,
-		APIVersion: "backup.appscode.com/v1beta1",
+		APIVersion: "backup.appscode.com/v1alpha1",
 	},
 	ObjectMeta: api.ObjectMeta{
 		Name:      restikName,
