@@ -33,21 +33,21 @@ func NewRestikController(c *rest.Config, image string) *Controller {
 }
 
 // Blocks caller. Intended to be called as a Go routine.
-func (w *Controller) RunAndHold() error {
-	if err := w.ensureResource(); err != nil {
+func (c *Controller) RunAndHold() error {
+	if err := c.ensureResource(); err != nil {
 		return err
 	}
 	lw := &cache.ListWatch{
 		ListFunc: func(opts api.ListOptions) (runtime.Object, error) {
-			return w.ExtClientset.Restiks(api.NamespaceAll).List(api.ListOptions{})
+			return c.ExtClientset.Restiks(api.NamespaceAll).List(api.ListOptions{})
 		},
 		WatchFunc: func(options api.ListOptions) (watch.Interface, error) {
-			return w.ExtClientset.Restiks(api.NamespaceAll).Watch(api.ListOptions{})
+			return c.ExtClientset.Restiks(api.NamespaceAll).Watch(api.ListOptions{})
 		},
 	}
-	_, controller := cache.NewInformer(lw,
+	_, ctrl := cache.NewInformer(lw,
 		&rapi.Restik{},
-		w.SyncPeriod,
+		c.SyncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				if b, ok := obj.(*rapi.Restik); ok {
@@ -59,7 +59,7 @@ func (w *Controller) RunAndHold() error {
 							return
 						}
 					}
-					err := w.updateObjectAndStartBackup(b)
+					err := c.updateObjectAndStartBackup(b)
 					if err != nil {
 						log.Errorln(err)
 					}
@@ -68,7 +68,7 @@ func (w *Controller) RunAndHold() error {
 			DeleteFunc: func(obj interface{}) {
 				if b, ok := obj.(*rapi.Restik); ok {
 					glog.Infoln("Got one deleted Restik object", b)
-					err := w.updateObjectAndStopBackup(b)
+					err := c.updateObjectAndStopBackup(b)
 					if err != nil {
 						log.Errorln(err)
 					}
@@ -94,7 +94,7 @@ func (w *Controller) RunAndHold() error {
 				}
 				if oldImage != newImage {
 					glog.Infoln("Got one updated Restik object for image", newObj)
-					err := w.updateImage(newObj, newImage)
+					err := c.updateImage(newObj, newImage)
 					if err != nil {
 						log.Errorln(err)
 					}
@@ -102,14 +102,14 @@ func (w *Controller) RunAndHold() error {
 			},
 		},
 	)
-	controller.Run(wait.NeverStop)
+	ctrl.Run(wait.NeverStop)
 	return nil
 }
 
-func (pl *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
+func (c *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
 	ls := labels.SelectorFromSet(labels.Set{BackupConfig: r.Name})
-	restikContainer := getRestikContainer(r, pl.Image)
-	ob, typ, err := getKubeObject(pl.Clientset, r.Namespace, ls)
+	restikContainer := getRestikContainer(r, c.Image)
+	ob, typ, err := getKubeObject(c.Clientset, r.Namespace, ls)
 	if err != nil {
 		return err
 	}
@@ -125,12 +125,12 @@ func (pl *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
 		}
 		rc.Spec.Template.Spec.Containers = append(rc.Spec.Template.Spec.Containers, restikContainer)
 		rc.Spec.Template.Spec.Volumes = append(rc.Spec.Template.Spec.Volumes, r.Spec.Destination.Volume)
-		newRC, err := pl.Clientset.Core().ReplicationControllers(r.Namespace).Update(rc)
+		newRC, err := c.Clientset.Core().ReplicationControllers(r.Namespace).Update(rc)
 		if err != nil {
 			return err
 		}
 		opts.LabelSelector = findSelectors(newRC.Spec.Template.Labels)
-		if err = restartPods(pl.Clientset, r.Namespace, opts); err != nil {
+		if err = restartPods(c.Clientset, r.Namespace, opts); err != nil {
 			return err
 		}
 	case ReplicaSet:
@@ -140,12 +140,12 @@ func (pl *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
 		}
 		replicaset.Spec.Template.Spec.Containers = append(replicaset.Spec.Template.Spec.Containers, restikContainer)
 		replicaset.Spec.Template.Spec.Volumes = append(replicaset.Spec.Template.Spec.Volumes, r.Spec.Destination.Volume)
-		newReplicaset, err := pl.Clientset.Extensions().ReplicaSets(r.Namespace).Update(replicaset)
+		newReplicaset, err := c.Clientset.Extensions().ReplicaSets(r.Namespace).Update(replicaset)
 		if err != nil {
 			return err
 		}
 		opts.LabelSelector = findSelectors(newReplicaset.Spec.Template.Labels)
-		if err = restartPods(pl.Clientset, r.Namespace, opts); err != nil {
+		if err = restartPods(c.Clientset, r.Namespace, opts); err != nil {
 			return err
 		}
 	case Deployment:
@@ -155,7 +155,7 @@ func (pl *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
 		}
 		deployment.Spec.Template.Spec.Containers = append(deployment.Spec.Template.Spec.Containers, restikContainer)
 		deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, r.Spec.Destination.Volume)
-		_, err = pl.Clientset.Extensions().Deployments(r.Namespace).Update(deployment)
+		_, err = c.Clientset.Extensions().Deployments(r.Namespace).Update(deployment)
 		if err != nil {
 			return err
 		}
@@ -166,26 +166,26 @@ func (pl *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
 		}
 		daemonset.Spec.Template.Spec.Containers = append(daemonset.Spec.Template.Spec.Containers, restikContainer)
 		daemonset.Spec.Template.Spec.Volumes = append(daemonset.Spec.Template.Spec.Volumes, r.Spec.Destination.Volume)
-		newDaemonset, err := pl.Clientset.Extensions().DaemonSets(r.Namespace).Update(daemonset)
+		newDaemonset, err := c.Clientset.Extensions().DaemonSets(r.Namespace).Update(daemonset)
 		if err != nil {
 			return err
 		}
 		opts.LabelSelector = findSelectors(newDaemonset.Spec.Template.Labels)
-		if err = restartPods(pl.Clientset, r.Namespace, opts); err != nil {
+		if err = restartPods(c.Clientset, r.Namespace, opts); err != nil {
 			return err
 		}
 	case StatefulSet:
 		log.Warningf("The Object referred by the Restik object (%s) is a statefulset.", r.Name)
 		return nil
 	}
-	pl.addAnnotation(r)
-	_, err = pl.ExtClientset.Restiks(r.Namespace).Update(r)
+	c.addAnnotation(r)
+	_, err = c.ExtClientset.Restiks(r.Namespace).Update(r)
 	return err
 }
 
-func (pl *Controller) updateObjectAndStopBackup(r *rapi.Restik) error {
+func (c *Controller) updateObjectAndStopBackup(r *rapi.Restik) error {
 	ls := labels.SelectorFromSet(labels.Set{BackupConfig: r.Name})
-	ob, typ, err := getKubeObject(pl.Clientset, r.Namespace, ls)
+	ob, typ, err := getKubeObject(c.Clientset, r.Namespace, ls)
 	if err != nil {
 		return err
 	}
@@ -201,12 +201,12 @@ func (pl *Controller) updateObjectAndStopBackup(r *rapi.Restik) error {
 		}
 		rc.Spec.Template.Spec.Containers = removeContainer(rc.Spec.Template.Spec.Containers, ContainerName)
 		rc.Spec.Template.Spec.Volumes = removeVolume(rc.Spec.Template.Spec.Volumes, r.Spec.Destination.Volume.Name)
-		newRC, err := pl.Clientset.Core().ReplicationControllers(r.Namespace).Update(rc)
+		newRC, err := c.Clientset.Core().ReplicationControllers(r.Namespace).Update(rc)
 		if err != nil {
 			return err
 		}
 		opts.LabelSelector = findSelectors(newRC.Spec.Template.Labels)
-		return restartPods(pl.Clientset, r.Namespace, opts)
+		return restartPods(c.Clientset, r.Namespace, opts)
 	case ReplicaSet:
 		replicaset := &extensions.ReplicaSet{}
 		if err := yaml.Unmarshal(ob, replicaset); err != nil {
@@ -214,12 +214,12 @@ func (pl *Controller) updateObjectAndStopBackup(r *rapi.Restik) error {
 		}
 		replicaset.Spec.Template.Spec.Containers = removeContainer(replicaset.Spec.Template.Spec.Containers, ContainerName)
 		replicaset.Spec.Template.Spec.Volumes = removeVolume(replicaset.Spec.Template.Spec.Volumes, r.Spec.Destination.Volume.Name)
-		newReplicaset, err := pl.Clientset.Extensions().ReplicaSets(r.Namespace).Update(replicaset)
+		newReplicaset, err := c.Clientset.Extensions().ReplicaSets(r.Namespace).Update(replicaset)
 		if err != nil {
 			return err
 		}
 		opts.LabelSelector = findSelectors(newReplicaset.Spec.Template.Labels)
-		return restartPods(pl.Clientset, r.Namespace, opts)
+		return restartPods(c.Clientset, r.Namespace, opts)
 	case DaemonSet:
 		daemonset := &extensions.DaemonSet{}
 		if err := yaml.Unmarshal(ob, daemonset); err != nil {
@@ -227,12 +227,12 @@ func (pl *Controller) updateObjectAndStopBackup(r *rapi.Restik) error {
 		}
 		daemonset.Spec.Template.Spec.Containers = removeContainer(daemonset.Spec.Template.Spec.Containers, ContainerName)
 		daemonset.Spec.Template.Spec.Volumes = removeVolume(daemonset.Spec.Template.Spec.Volumes, r.Spec.Destination.Volume.Name)
-		newDaemonset, err := pl.Clientset.Extensions().DaemonSets(r.Namespace).Update(daemonset)
+		newDaemonset, err := c.Clientset.Extensions().DaemonSets(r.Namespace).Update(daemonset)
 		if err != nil {
 			return err
 		}
 		opts.LabelSelector = findSelectors(newDaemonset.Spec.Template.Labels)
-		return restartPods(pl.Clientset, r.Namespace, opts)
+		return restartPods(c.Clientset, r.Namespace, opts)
 	case Deployment:
 		deployment := &extensions.Deployment{}
 		if err := yaml.Unmarshal(ob, deployment); err != nil {
@@ -240,7 +240,7 @@ func (pl *Controller) updateObjectAndStopBackup(r *rapi.Restik) error {
 		}
 		deployment.Spec.Template.Spec.Containers = removeContainer(deployment.Spec.Template.Spec.Containers, ContainerName)
 		deployment.Spec.Template.Spec.Volumes = removeVolume(deployment.Spec.Template.Spec.Volumes, r.Spec.Destination.Volume.Name)
-		_, err := pl.Clientset.Extensions().Deployments(r.Namespace).Update(deployment)
+		_, err := c.Clientset.Extensions().Deployments(r.Namespace).Update(deployment)
 		if err != nil {
 			return err
 		}
@@ -251,9 +251,9 @@ func (pl *Controller) updateObjectAndStopBackup(r *rapi.Restik) error {
 	return nil
 }
 
-func (pl *Controller) updateImage(r *rapi.Restik, image string) error {
+func (c *Controller) updateImage(r *rapi.Restik, image string) error {
 	ls := labels.SelectorFromSet(labels.Set{BackupConfig: r.Name})
-	ob, typ, err := getKubeObject(pl.Clientset, r.Namespace, ls)
+	ob, typ, err := getKubeObject(c.Clientset, r.Namespace, ls)
 	if err != nil {
 		return err
 	}
@@ -268,43 +268,43 @@ func (pl *Controller) updateImage(r *rapi.Restik, image string) error {
 			return err
 		}
 		rc.Spec.Template.Spec.Containers = updateImageForRestikContainer(rc.Spec.Template.Spec.Containers, ContainerName, image)
-		newRC, err := pl.Clientset.Core().ReplicationControllers(r.Namespace).Update(rc)
+		newRC, err := c.Clientset.Core().ReplicationControllers(r.Namespace).Update(rc)
 		if err != nil {
 			return err
 		}
 		opts.LabelSelector = findSelectors(newRC.Spec.Template.Labels)
-		return restartPods(pl.Clientset, r.Namespace, opts)
+		return restartPods(c.Clientset, r.Namespace, opts)
 	case ReplicaSet:
 		replicaset := &extensions.ReplicaSet{}
 		if err := yaml.Unmarshal(ob, replicaset); err != nil {
 			return err
 		}
 		replicaset.Spec.Template.Spec.Containers = updateImageForRestikContainer(replicaset.Spec.Template.Spec.Containers, ContainerName, image)
-		newReplicaset, err := pl.Clientset.Extensions().ReplicaSets(r.Namespace).Update(replicaset)
+		newReplicaset, err := c.Clientset.Extensions().ReplicaSets(r.Namespace).Update(replicaset)
 		if err != nil {
 			return err
 		}
 		opts.LabelSelector = findSelectors(newReplicaset.Spec.Template.Labels)
-		return restartPods(pl.Clientset, r.Namespace, opts)
+		return restartPods(c.Clientset, r.Namespace, opts)
 	case DaemonSet:
 		daemonset := &extensions.DaemonSet{}
 		if err := yaml.Unmarshal(ob, daemonset); err != nil {
 			return err
 		}
 		daemonset.Spec.Template.Spec.Containers = updateImageForRestikContainer(daemonset.Spec.Template.Spec.Containers, ContainerName, image)
-		newDaemonset, err := pl.Clientset.Extensions().DaemonSets(r.Namespace).Update(daemonset)
+		newDaemonset, err := c.Clientset.Extensions().DaemonSets(r.Namespace).Update(daemonset)
 		if err != nil {
 			return err
 		}
 		opts.LabelSelector = findSelectors(newDaemonset.Spec.Template.Labels)
-		return restartPods(pl.Clientset, r.Namespace, opts)
+		return restartPods(c.Clientset, r.Namespace, opts)
 	case Deployment:
 		deployment := &extensions.Deployment{}
 		if err := yaml.Unmarshal(ob, deployment); err != nil {
 			return err
 		}
 		deployment.Spec.Template.Spec.Containers = updateImageForRestikContainer(deployment.Spec.Template.Spec.Containers, ContainerName, image)
-		_, err := pl.Clientset.Extensions().Deployments(r.Namespace).Update(deployment)
+		_, err := c.Clientset.Extensions().Deployments(r.Namespace).Update(deployment)
 		if err != nil {
 			return err
 		}
@@ -315,8 +315,8 @@ func (pl *Controller) updateImage(r *rapi.Restik, image string) error {
 	return nil
 }
 
-func (w *Controller) ensureResource() error {
-	_, err := w.Clientset.Extensions().ThirdPartyResources().Get(tcs.ResourceNameRestik + "." + rapi.GroupName)
+func (c *Controller) ensureResource() error {
+	_, err := c.Clientset.Extensions().ThirdPartyResources().Get(tcs.ResourceNameRestik + "." + rapi.GroupName)
 	if k8serrors.IsNotFound(err) {
 		tpr := &extensions.ThirdPartyResource{
 			TypeMeta: unversioned.TypeMeta{
@@ -332,7 +332,7 @@ func (w *Controller) ensureResource() error {
 				},
 			},
 		}
-		_, err := w.Clientset.Extensions().ThirdPartyResources().Create(tpr)
+		_, err := c.Clientset.Extensions().ThirdPartyResources().Create(tpr)
 		if err != nil {
 			// This should fail if there is one third party resource data missing.
 			return err

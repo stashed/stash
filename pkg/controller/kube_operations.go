@@ -76,11 +76,11 @@ func getRestikContainer(r *rapi.Restik, containerImage string) api.Container {
 	return container
 }
 
-func (pl *Controller) addAnnotation(r *rapi.Restik) {
+func (c *Controller) addAnnotation(r *rapi.Restik) {
 	if r.ObjectMeta.Annotations == nil {
 		r.ObjectMeta.Annotations = make(map[string]string)
 	}
-	r.ObjectMeta.Annotations[ImageAnnotation] = pl.Image
+	r.ObjectMeta.Annotations[ImageAnnotation] = c.Image
 }
 
 func findSelectors(lb map[string]string) labels.Selector {
