@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"strings"
 
-	aci "github.com/appscode/restik/api"
 	"github.com/appscode/log"
+	aci "github.com/appscode/restik/api"
 	"github.com/ghodss/yaml"
 	"k8s.io/kubernetes/pkg/api"
 	schema "k8s.io/kubernetes/pkg/api/unversioned"
@@ -148,8 +148,8 @@ func (c *extendedCodec) EncodeParameters(obj runtime.Object, to schema.GroupVers
 func setDefaultVersionKind(obj runtime.Object) {
 	// Check the values can are In type Extended Ingress
 	defaultGVK := schema.GroupVersionKind{
-		Group:   aci.V1beta1SchemeGroupVersion.Group,
-		Version: aci.V1beta1SchemeGroupVersion.Version,
+		Group:   aci.V1alpha1SchemeGroupVersion.Group,
+		Version: aci.V1alpha1SchemeGroupVersion.Version,
 	}
 
 	fullyQualifiedKind := reflect.ValueOf(obj).Type().String()

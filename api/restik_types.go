@@ -37,11 +37,11 @@ type RestikSpec struct {
 }
 
 type RestikStatus struct {
-	FirstBackupTime           *unversioned.Time `json:"firstBackupTime,omitempty"`
-	LastBackupTime            *unversioned.Time `json:"lastBackupTime,omitempty"`
+	FirstBackupTime          *unversioned.Time `json:"firstBackupTime,omitempty"`
+	LastBackupTime           *unversioned.Time `json:"lastBackupTime,omitempty"`
 	LastSuccessfulBackupTime *unversioned.Time `json:"lastSuccessfulBackupTime,omitempty"`
-	LastBackupDuration        string            `json:"lastBackupDuration,omitempty"`
-	BackupCount               int64             `json:"backupCount,omitempty"`
+	LastBackupDuration       string            `json:"lastBackupDuration,omitempty"`
+	BackupCount              int64             `json:"backupCount,omitempty"`
 }
 
 type RestikList struct {

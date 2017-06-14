@@ -18,7 +18,7 @@ metadata:
   name: restik.backup.appscode.com
 description: "Backup and restore support for Kubernetes persistent volumes by AppsCode"
 versions:
-  - name: v1beta1
+  - name: v1alpha1
 ```
 
 
@@ -48,7 +48,7 @@ This resource type is backed by a controller which take backup of kubernetes vol
 A AppsCode Restik resource Looks like at the kubernetes level:
 
 ```yaml
-apiVersion: backup.appscode.com/v1beta1
+apiVersion: backup.appscode.com/v1alpha1
 kind: Restik
 metadata:
   name: test-backup
@@ -70,7 +70,7 @@ spec:
     keepLastSnapshots: 3
 ```
 
-**Line 1-3**: With all other Kubernetes config, AppsCode Restik resource needs `apiVersion`, `kind` and `metadata` fields. `apiVersion` and `kind` needs to be exactly same as `appscode.com/v1beta1`, and, `specific version` currently as `v1beta1`, to identify the resource
+**Line 1-3**: With all other Kubernetes config, AppsCode Restik resource needs `apiVersion`, `kind` and `metadata` fields. `apiVersion` and `kind` needs to be exactly same as `backup.appscode.com/v1alpha1`, and, `specific version` currently as `v1alpha1`, to identify the resource
 as AppsCode Restik. In metadata the `name` and `namespace` indicates the resource identifying name and its Kubernetes namespace.
 
 **Line 6-20**: Restik spec has all the information needed to configure the backup process. 
