@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"strings"
 
-	aci "github.com/appscode/restik/api"
 	"github.com/appscode/log"
+	aci "github.com/appscode/restik/api"
 	"github.com/ghodss/yaml"
 	"k8s.io/kubernetes/pkg/api"
 	schema "k8s.io/kubernetes/pkg/api/unversioned"

@@ -34,7 +34,6 @@ func NewFakeRestikClient(objects ...runtime.Object) *FakeExtensionClient {
 	return &FakeExtensionClient{&fakePtr}
 }
 
-
 func (m *FakeExtensionClient) Restiks(ns string) clientset.RestikInterface {
 	return &FakeRestik{m.Fake, ns}
 }

@@ -2,12 +2,12 @@ package fake
 
 import (
 	aci "github.com/appscode/restik/api"
+	"github.com/appscode/restik/client/clientset"
 	"k8s.io/kubernetes/pkg/api"
 	schema "k8s.io/kubernetes/pkg/api/unversioned"
 	testing "k8s.io/kubernetes/pkg/client/testing/core"
 	"k8s.io/kubernetes/pkg/labels"
 	"k8s.io/kubernetes/pkg/watch"
-	"github.com/appscode/restik/client/clientset"
 )
 
 type FakeRestik struct {
