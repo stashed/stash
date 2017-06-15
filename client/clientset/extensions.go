@@ -2,9 +2,10 @@ package clientset
 
 import (
 	"fmt"
-metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-"k8s.io/client-go/pkg/api"
-"k8s.io/client-go/rest"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/pkg/api"
+	"k8s.io/client-go/rest"
 )
 
 const (

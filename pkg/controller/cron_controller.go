@@ -10,17 +10,17 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
 	"github.com/appscode/log"
-	rapi "github.com/appscode/restik/api"
 	tcs "github.com/appscode/restik/client/clientset"
 	"gopkg.in/robfig/cron.v2"
-apiv1 "k8s.io/client-go/pkg/api/v1"
-metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-"k8s.io/client-go/tools/cache"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apimachinery/pkg/watch"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/tools/cache"
 	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
-"k8s.io/apimachinery/pkg/runtime"
-"k8s.io/apimachinery/pkg/util/wait"
-"k8s.io/apimachinery/pkg/watch"
 )
 
 func NewCronController() (*cronController, error) {

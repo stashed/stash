@@ -2,9 +2,9 @@ package clientset
 
 import (
 	aci "github.com/appscode/restik/api"
-apiv1 "k8s.io/client-go/pkg/api/v1"
-"k8s.io/client-go/rest"
-"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/apimachinery/pkg/watch"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/rest"
 )
 
 type RestikNamespacer interface {

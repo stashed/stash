@@ -3,9 +3,10 @@ package clientset
 // These imports are the API groups the client will support.
 import (
 	"fmt"
+
 	_ "github.com/appscode/restik/api/install"
+	"k8s.io/client-go/pkg/api"
 	_ "k8s.io/kubernetes/pkg/api/install"
-"k8s.io/client-go/pkg/api"
 	_ "k8s.io/kubernetes/pkg/apis/apps/install"
 	_ "k8s.io/kubernetes/pkg/apis/authentication/install"
 	_ "k8s.io/kubernetes/pkg/apis/authorization/install"

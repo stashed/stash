@@ -2,13 +2,13 @@ package controller
 
 import (
 	"errors"
+
 	"github.com/appscode/log"
-	rapi "github.com/appscode/restik/api"
 	"github.com/ghodss/yaml"
-apiv1 "k8s.io/client-go/pkg/api/v1"
-clientset "k8s.io/client-go/kubernetes"
-"k8s.io/client-go/tools/record"
-"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/labels"
+	clientset "k8s.io/client-go/kubernetes"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/tools/record"
 )
 
 func getKubeObject(kubeClient clientset.Interface, namespace string, ls labels.Selector) ([]byte, string, error) {

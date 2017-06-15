@@ -3,12 +3,12 @@ package controller
 import (
 	"testing"
 	"time"
-	rapi "github.com/appscode/restik/api"
+
 	"github.com/appscode/restik/client/clientset"
 	"github.com/appscode/restik/client/clientset/fake"
 	"github.com/stretchr/testify/assert"
-apiv1 "k8s.io/client-go/pkg/api/v1"
-metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
 	fakeclientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/fake"
 )
 

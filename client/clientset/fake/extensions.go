@@ -2,12 +2,11 @@ package fake
 
 import (
 	"github.com/appscode/restik/client/clientset"
-apiv1 "k8s.io/client-go/pkg/api/v1"
-"k8s.io/client-go/pkg/api"
-"k8s.io/client-go/rest"
-"k8s.io/client-go/testing"
-"k8s.io/apimachinery/pkg/runtime"
-"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/watch"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/testing"
 )
 
 type FakeExtensionClient struct {
