@@ -10,11 +10,11 @@ import (
 func init() {
 	if err := announced.NewGroupMetaFactory(
 		&announced.GroupMetaFactoryArgs{
-			GroupName:                  api.GroupName,
+			GroupName:                  rapi.GroupName,
 			VersionPreferenceOrder:     []string{rapi.V1alpha1SchemeGroupVersion.Version},
 			ImportPrefix:               "github.com/appscode/restik/api",
-			RootScopedKinds:            sets.NewString("PodSecurityPolicy", "ThirdPartyResource"),
-			AddInternalObjectsToScheme: api.AddToScheme,
+			RootScopedKinds:            sets.NewString("ThirdPartyResource"),
+			AddInternalObjectsToScheme: rapi.AddToScheme,
 		},
 		announced.VersionToSchemeFunc{
 			rapi.V1alpha1SchemeGroupVersion.Version: rapi.V1alpha1AddToScheme,

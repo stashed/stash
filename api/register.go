@@ -30,7 +30,6 @@ var (
 // Adds the list of known types to apiv1.Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-
 		&Restik{},
 		&RestikList{},
 
