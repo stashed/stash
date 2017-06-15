@@ -203,6 +203,7 @@ func (cronWatcher *cronController) runCronJob() error {
 		log.Errorln(err)
 		cronWatcher.eventRecorder.Event(backup, apiv1.EventTypeNormal, EventReasonFailedToUpdate, err.Error())
 	}
+	cronWatcher.restik = backup
 	return nil
 }
 
