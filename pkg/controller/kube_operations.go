@@ -128,7 +128,7 @@ func NewEventRecorder(client clientset.Interface, component string) record.Event
 		},
 	)
 	// Event Recorder
-	return broadcaster.NewRecorder(api.Registry, apiv1.EventSource{Component: component})
+	return broadcaster.NewRecorder(api.Scheme, apiv1.EventSource{Component: component})
 }
 
 func removeContainer(c []apiv1.Container, name string) []apiv1.Container {

@@ -7,7 +7,7 @@ import (
 
 	"github.com/appscode/log"
 	rapi "github.com/appscode/restik/api"
-	tcs "github.com/appscode/restik/client/clientset"
+	rcs "github.com/appscode/restik/client/clientset"
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -19,14 +19,13 @@ import (
 	clientset "k8s.io/client-go/kubernetes"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 )
 
-func NewRestikController(c *rest.Config, image string) *Controller {
+func NewRestikController(kubeClient clientset.Interface, extClient rcs.ExtensionInterface, image string) *Controller {
 	return &Controller{
-		ExtClientset: tcs.NewForConfigOrDie(c),
-		Clientset:    clientset.NewForConfigOrDie(c),
+		Clientset:    kubeClient,
+		ExtClientset: extClient,
 		SyncPeriod:   time.Minute * 2,
 		Image:        image,
 	}
@@ -316,7 +315,7 @@ func (c *Controller) updateImage(r *rapi.Restik, image string) error {
 }
 
 func (c *Controller) ensureResource() error {
-	_, err := c.Clientset.ExtensionsV1beta1().ThirdPartyResources().Get(tcs.ResourceNameRestik+"."+rapi.GroupName, metav1.GetOptions{})
+	_, err := c.Clientset.ExtensionsV1beta1().ThirdPartyResources().Get(rcs.ResourceNameRestik+"."+rapi.GroupName, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		tpr := &extensions.ThirdPartyResource{
 			TypeMeta: metav1.TypeMeta{
@@ -324,7 +323,7 @@ func (c *Controller) ensureResource() error {
 				Kind:       "ThirdPartyResource",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name: tcs.ResourceNameRestik + "." + rapi.GroupName,
+				Name: rcs.ResourceNameRestik + "." + rapi.GroupName,
 			},
 			Versions: []extensions.APIVersion{
 				{

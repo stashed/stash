@@ -13,34 +13,25 @@ import (
 
 	"github.com/appscode/log"
 	rapi "github.com/appscode/restik/api"
-	tcs "github.com/appscode/restik/client/clientset"
+	rcs "github.com/appscode/restik/client/clientset"
 	"gopkg.in/robfig/cron.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
+	clientset "k8s.io/client-go/kubernetes"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/cache"
-	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 )
 
-func NewCronController() (*cronController, error) {
-	factory := cmdutil.NewFactory(nil)
-	config, err := factory.ClientConfig()
-	if err != nil {
-		return nil, err
-	}
-	client, err := factory.ClientSet()
-	if err != nil {
-		return nil, err
-	}
+func NewCronController(kubeClient clientset.Interface, extClient rcs.ExtensionInterface) (*cronController, error) {
 	return &cronController{
-		extClientset:  tcs.NewForConfigOrDie(config),
-		clientset:     client,
+		clientset:     kubeClient,
+		extClientset:  extClient,
 		namespace:     os.Getenv(RestikNamespace),
 		tprName:       os.Getenv(RestikResourceName),
 		crons:         cron.New(),
-		eventRecorder: NewEventRecorder(client, "Restik sidecar Watcher"),
+		eventRecorder: NewEventRecorder(kubeClient, "Restik sidecar Watcher"),
 	}, nil
 }
 
