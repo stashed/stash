@@ -6,8 +6,10 @@ import:
   version: master
 - package: github.com/spf13/pflag
   version: master
-- package: k8s.io/kubernetes
-  version: ~1.5.0
+- package: k8s.io/apimachinery
+  version: 75b8dd260ef0469d96d578705a87cffd0e09dab8
+- package: k8s.io/client-go
+  version: v3.0.0-beta.0
 - package: gopkg.in/yaml.v2
   version: v2
 - package: gopkg.in/robfig/cron.v2
