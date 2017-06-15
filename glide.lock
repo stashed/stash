@@ -1,5 +1,5 @@
 hash: b95bc97b2999acfc9ef27c9ccfb92256902474b73b7692226d9b5e1bf72894ca
-updated: 2017-06-14T19:21:36.078019859-07:00
+updated: 2017-06-14T19:50:25.701037982-07:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -9,6 +9,7 @@ imports:
 - name: github.com/appscode/go
   version: 5eabd32a8a0fe824b5e12c37dc53a0afea8507c9
   subpackages:
+  - encoding/json/types
   - version
 - name: github.com/appscode/log
   version: 68e0e42e42c01371f3950571fc87c2298a51dd8f
@@ -111,6 +112,10 @@ imports:
   version: 72f9bd7c4e0c2a40055ab3d0f09654f730cce982
 - name: github.com/juju/ratelimit
   version: 77ed1c8a01217656d2080ad51981f6e99adaa177
+- name: github.com/k8sdb/apimachinery
+  version: a6849727f72de3285ba2230a6c91e6101a834e18
+  subpackages:
+  - api
 - name: github.com/mailru/easyjson
   version: d5b7844b561a7bc640052f1b935f7b800330d7e0
   subpackages:
@@ -235,26 +240,46 @@ imports:
   version: 3627aeb7d4f6ade38f995d2c923e459146493c7e
   subpackages:
   - discovery
+  - discovery/fake
   - kubernetes
+  - kubernetes/fake
   - kubernetes/scheme
   - kubernetes/typed/apps/v1beta1
+  - kubernetes/typed/apps/v1beta1/fake
   - kubernetes/typed/authentication/v1
+  - kubernetes/typed/authentication/v1/fake
   - kubernetes/typed/authentication/v1beta1
+  - kubernetes/typed/authentication/v1beta1/fake
   - kubernetes/typed/authorization/v1
+  - kubernetes/typed/authorization/v1/fake
   - kubernetes/typed/authorization/v1beta1
+  - kubernetes/typed/authorization/v1beta1/fake
   - kubernetes/typed/autoscaling/v1
+  - kubernetes/typed/autoscaling/v1/fake
   - kubernetes/typed/autoscaling/v2alpha1
+  - kubernetes/typed/autoscaling/v2alpha1/fake
   - kubernetes/typed/batch/v1
+  - kubernetes/typed/batch/v1/fake
   - kubernetes/typed/batch/v2alpha1
+  - kubernetes/typed/batch/v2alpha1/fake
   - kubernetes/typed/certificates/v1beta1
+  - kubernetes/typed/certificates/v1beta1/fake
   - kubernetes/typed/core/v1
+  - kubernetes/typed/core/v1/fake
   - kubernetes/typed/extensions/v1beta1
+  - kubernetes/typed/extensions/v1beta1/fake
   - kubernetes/typed/policy/v1beta1
+  - kubernetes/typed/policy/v1beta1/fake
   - kubernetes/typed/rbac/v1alpha1
+  - kubernetes/typed/rbac/v1alpha1/fake
   - kubernetes/typed/rbac/v1beta1
+  - kubernetes/typed/rbac/v1beta1/fake
   - kubernetes/typed/settings/v1alpha1
+  - kubernetes/typed/settings/v1alpha1/fake
   - kubernetes/typed/storage/v1
+  - kubernetes/typed/storage/v1/fake
   - kubernetes/typed/storage/v1beta1
+  - kubernetes/typed/storage/v1beta1/fake
   - pkg/api
   - pkg/api/install
   - pkg/api/v1

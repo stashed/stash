@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/appscode/log"
+	rapi "github.com/appscode/restik/api"
 	tcs "github.com/appscode/restik/client/clientset"
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
@@ -37,19 +38,19 @@ func (c *Controller) RunAndHold() error {
 		return err
 	}
 	lw := &cache.ListWatch{
-		ListFunc: func(opts apiv1.ListOptions) (runtime.Object, error) {
-			return c.ExtClientset.Restiks(apiv1.NamespaceAll).List(apiv1.ListOptions{})
+		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
+			return c.ExtClientset.Restiks(apiv1.NamespaceAll).List(metav1.ListOptions{})
 		},
-		WatchFunc: func(options apiv1.ListOptions) (watch.Interface, error) {
-			return c.ExtClientset.Restiks(apiv1.NamespaceAll).Watch(apiv1.ListOptions{})
+		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+			return c.ExtClientset.Restiks(apiv1.NamespaceAll).Watch(metav1.ListOptions{})
 		},
 	}
 	_, ctrl := cache.NewInformer(lw,
-		&rapiv1.Restik{},
+		&rapi.Restik{},
 		c.SyncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				if b, ok := obj.(*rapiv1.Restik); ok {
+				if b, ok := obj.(*rapi.Restik); ok {
 					glog.Infoln("Got one added Restik obejct", b)
 					if b.ObjectMeta.Annotations != nil {
 						_, ok := b.ObjectMeta.Annotations[ImageAnnotation]
@@ -65,7 +66,7 @@ func (c *Controller) RunAndHold() error {
 				}
 			},
 			DeleteFunc: func(obj interface{}) {
-				if b, ok := obj.(*rapiv1.Restik); ok {
+				if b, ok := obj.(*rapi.Restik); ok {
 					glog.Infoln("Got one deleted Restik object", b)
 					err := c.updateObjectAndStopBackup(b)
 					if err != nil {
@@ -74,12 +75,12 @@ func (c *Controller) RunAndHold() error {
 				}
 			},
 			UpdateFunc: func(old, new interface{}) {
-				oldObj, ok := old.(*rapiv1.Restik)
+				oldObj, ok := old.(*rapi.Restik)
 				if !ok {
 					log.Errorln(errors.New("Error validating Restik object"))
 					return
 				}
-				newObj, ok := new.(*rapiv1.Restik)
+				newObj, ok := new.(*rapi.Restik)
 				if !ok {
 					log.Errorln(errors.New("Error validating Restik object"))
 					return
@@ -105,7 +106,7 @@ func (c *Controller) RunAndHold() error {
 	return nil
 }
 
-func (c *Controller) updateObjectAndStartBackup(r *rapiv1.Restik) error {
+func (c *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
 	ls := labels.SelectorFromSet(labels.Set{BackupConfig: r.Name})
 	restikContainer := getRestikContainer(r, c.Image)
 	ob, typ, err := getKubeObject(c.Clientset, r.Namespace, ls)
@@ -115,7 +116,7 @@ func (c *Controller) updateObjectAndStartBackup(r *rapiv1.Restik) error {
 	if ob == nil || typ == "" {
 		return errors.New(fmt.Sprintf("No object found for Restik %s ", r.Name))
 	}
-	opts := apiv1.ListOptions{}
+	opts := metav1.ListOptions{}
 	switch typ {
 	case ReplicationController:
 		rc := &apiv1.ReplicationController{}
@@ -182,7 +183,7 @@ func (c *Controller) updateObjectAndStartBackup(r *rapiv1.Restik) error {
 	return err
 }
 
-func (c *Controller) updateObjectAndStopBackup(r *rapiv1.Restik) error {
+func (c *Controller) updateObjectAndStopBackup(r *rapi.Restik) error {
 	ls := labels.SelectorFromSet(labels.Set{BackupConfig: r.Name})
 	ob, typ, err := getKubeObject(c.Clientset, r.Namespace, ls)
 	if err != nil {
@@ -191,7 +192,7 @@ func (c *Controller) updateObjectAndStopBackup(r *rapiv1.Restik) error {
 	if ob == nil || typ == "" {
 		return errors.New(fmt.Sprintf("No object found for Restik %s ", r.Name))
 	}
-	opts := apiv1.ListOptions{}
+	opts := metav1.ListOptions{}
 	switch typ {
 	case ReplicationController:
 		rc := &apiv1.ReplicationController{}
@@ -250,7 +251,7 @@ func (c *Controller) updateObjectAndStopBackup(r *rapiv1.Restik) error {
 	return nil
 }
 
-func (c *Controller) updateImage(r *rapiv1.Restik, image string) error {
+func (c *Controller) updateImage(r *rapi.Restik, image string) error {
 	ls := labels.SelectorFromSet(labels.Set{BackupConfig: r.Name})
 	ob, typ, err := getKubeObject(c.Clientset, r.Namespace, ls)
 	if err != nil {
@@ -259,7 +260,7 @@ func (c *Controller) updateImage(r *rapiv1.Restik, image string) error {
 	if ob == nil || typ == "" {
 		return errors.New(fmt.Sprintf("No object found for Restik %s ", r.Name))
 	}
-	opts := apiv1.ListOptions{}
+	opts := metav1.ListOptions{}
 	switch typ {
 	case ReplicationController:
 		rc := &apiv1.ReplicationController{}
@@ -315,7 +316,7 @@ func (c *Controller) updateImage(r *rapiv1.Restik, image string) error {
 }
 
 func (c *Controller) ensureResource() error {
-	_, err := c.Clientset.Extensions().ThirdPartyResources().Get(tcs.ResourceNameRestik + "." + rapiv1.GroupName)
+	_, err := c.Clientset.Extensions().ThirdPartyResources().Get(tcs.ResourceNameRestik + "." + rapi.GroupName)
 	if kerr.IsNotFound(err) {
 		tpr := &extensions.ThirdPartyResource{
 			TypeMeta: metav1.TypeMeta{
@@ -323,7 +324,7 @@ func (c *Controller) ensureResource() error {
 				Kind:       "ThirdPartyResource",
 			},
 			ObjectMeta: apiv1.ObjectMeta{
-				Name: tcs.ResourceNameRestik + "." + rapiv1.GroupName,
+				Name: tcs.ResourceNameRestik + "." + rapi.GroupName,
 			},
 			Versions: []extensions.APIVersion{
 				{

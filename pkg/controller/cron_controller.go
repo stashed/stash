@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/appscode/log"
+	rapi "github.com/appscode/restik/api"
 	tcs "github.com/appscode/restik/client/clientset"
 	"gopkg.in/robfig/cron.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,19 +47,19 @@ func NewCronController() (*cronController, error) {
 func (cronWatcher *cronController) RunBackup() error {
 	cronWatcher.crons.Start()
 	lw := &cache.ListWatch{
-		ListFunc: func(opts apiv1.ListOptions) (runtime.Object, error) {
-			return cronWatcher.extClientset.Restiks(cronWatcher.namespace).List(apiv1.ListOptions{})
+		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
+			return cronWatcher.extClientset.Restiks(cronWatcher.namespace).List(metav1.ListOptions{})
 		},
-		WatchFunc: func(options apiv1.ListOptions) (watch.Interface, error) {
-			return cronWatcher.extClientset.Restiks(cronWatcher.namespace).Watch(apiv1.ListOptions{})
+		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+			return cronWatcher.extClientset.Restiks(cronWatcher.namespace).Watch(metav1.ListOptions{})
 		},
 	}
 	_, cronController := cache.NewInformer(lw,
-		&rapiv1.Restik{},
+		&rapi.Restik{},
 		time.Minute*2,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				if r, ok := obj.(*rapiv1.Restik); ok {
+				if r, ok := obj.(*rapi.Restik); ok {
 					if r.Name == cronWatcher.tprName {
 						cronWatcher.restik = r
 						err := cronWatcher.startCronBackupProcedure()
@@ -75,12 +76,12 @@ func (cronWatcher *cronController) RunBackup() error {
 				}
 			},
 			UpdateFunc: func(old, new interface{}) {
-				oldObj, ok := old.(*rapiv1.Restik)
+				oldObj, ok := old.(*rapi.Restik)
 				if !ok {
 					log.Errorln(errors.New("Error validating Restik object"))
 					return
 				}
-				newObj, ok := new.(*rapiv1.Restik)
+				newObj, ok := new.(*rapi.Restik)
 				if !ok {
 					log.Errorln(errors.New("Error validating Restik object"))
 					return
@@ -202,25 +203,25 @@ func (cronWatcher *cronController) runCronJob() error {
 	return nil
 }
 
-func snapshotRetention(r *rapiv1.Restik) (string, error) {
+func snapshotRetention(r *rapi.Restik) (string, error) {
 	cmd := fmt.Sprintf("/restic -r %s forget", r.Spec.Destination.Path)
 	if r.Spec.RetentionPolicy.KeepLastSnapshots > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, rapiv1.KeepLast, r.Spec.RetentionPolicy.KeepLastSnapshots)
+		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepLast, r.Spec.RetentionPolicy.KeepLastSnapshots)
 	}
 	if r.Spec.RetentionPolicy.KeepHourlySnapshots > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, rapiv1.KeepHourly, r.Spec.RetentionPolicy.KeepHourlySnapshots)
+		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepHourly, r.Spec.RetentionPolicy.KeepHourlySnapshots)
 	}
 	if r.Spec.RetentionPolicy.KeepDailySnapshots > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, rapiv1.KeepDaily, r.Spec.RetentionPolicy.KeepDailySnapshots)
+		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepDaily, r.Spec.RetentionPolicy.KeepDailySnapshots)
 	}
 	if r.Spec.RetentionPolicy.KeepWeeklySnapshots > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, rapiv1.KeepWeekly, r.Spec.RetentionPolicy.KeepWeeklySnapshots)
+		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepWeekly, r.Spec.RetentionPolicy.KeepWeeklySnapshots)
 	}
 	if r.Spec.RetentionPolicy.KeepMonthlySnapshots > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, rapiv1.KeepMonthly, r.Spec.RetentionPolicy.KeepMonthlySnapshots)
+		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepMonthly, r.Spec.RetentionPolicy.KeepMonthlySnapshots)
 	}
 	if r.Spec.RetentionPolicy.KeepYearlySnapshots > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, rapiv1.KeepYearly, r.Spec.RetentionPolicy.KeepYearlySnapshots)
+		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepYearly, r.Spec.RetentionPolicy.KeepYearlySnapshots)
 	}
 	if len(r.Spec.RetentionPolicy.KeepTags) != 0 {
 		for _, t := range r.Spec.RetentionPolicy.KeepTags {

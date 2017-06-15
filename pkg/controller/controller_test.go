@@ -4,12 +4,13 @@ import (
 	"testing"
 	"time"
 
+	rapi "github.com/appscode/restik/api"
 	"github.com/appscode/restik/client/clientset"
 	"github.com/appscode/restik/client/clientset/fake"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	fakeclientset "k8s.io/client-go/kubernetes/fake"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
-	fakeclientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/fake"
 )
 
 var restikName = "appscode-restik"
@@ -19,7 +20,7 @@ var fakeRc = &apiv1.ReplicationController{
 		Kind:       "ReplicationController",
 		APIVersion: "v1",
 	},
-	ObjectMeta: apiv1.ObjectMeta{
+	ObjectMeta: metav1.ObjectMeta{
 		Name:      "appscode-rc",
 		Namespace: "default",
 		Labels: map[string]string{
@@ -32,7 +33,7 @@ var fakeRc = &apiv1.ReplicationController{
 			"app": "nginx",
 		},
 		Template: &apiv1.PodTemplateSpec{
-			ObjectMeta: apiv1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name: "nginx",
 				Labels: map[string]string{
 					"app": "nginx",
@@ -49,21 +50,21 @@ var fakeRc = &apiv1.ReplicationController{
 		},
 	},
 }
-var fakeRestik = &rapiv1.Restik{
+var fakeRestik = &rapi.Restik{
 	TypeMeta: metav1.TypeMeta{
 		Kind:       clientset.ResourceKindRestik,
 		APIVersion: "backup.appscode.com/v1alpha1",
 	},
-	ObjectMeta: apiv1.ObjectMeta{
+	ObjectMeta: metav1.ObjectMeta{
 		Name:      restikName,
 		Namespace: "default",
 	},
-	Spec: rapiv1.RestikSpec{
-		Source: rapiv1.Source{
+	Spec: rapi.RestikSpec{
+		Source: rapi.Source{
 			VolumeName: "volume-test",
 			Path:       "/mypath",
 		},
-		Destination: rapiv1.Destination{
+		Destination: rapi.Destination{
 			Path:                 "/restik_repo",
 			RepositorySecretName: "restik-secret",
 			Volume: apiv1.Volume{
@@ -77,7 +78,7 @@ var fakeRestik = &rapiv1.Restik{
 			},
 		},
 		Schedule: "* * * * * *",
-		RetentionPolicy: rapiv1.RetentionPolicy{
+		RetentionPolicy: rapi.RetentionPolicy{
 			KeepLastSnapshots: 10,
 		},
 	},

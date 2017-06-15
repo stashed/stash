@@ -4,39 +4,42 @@ import (
 	"errors"
 
 	"github.com/appscode/log"
+	rapi "github.com/appscode/restik/api"
 	"github.com/ghodss/yaml"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/pkg/api"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/record"
 )
 
 func getKubeObject(kubeClient clientset.Interface, namespace string, ls labels.Selector) ([]byte, string, error) {
-	rcs, err := kubeClient.Core().ReplicationControllers(namespace).List(apiv1.ListOptions{LabelSelector: ls})
+	rcs, err := kubeClient.CoreV1().ReplicationControllers(namespace).List(metav1.ListOptions{LabelSelector: ls.String()})
 	if err == nil && len(rcs.Items) != 0 {
 		b, err := yaml.Marshal(rcs.Items[0])
 		return b, ReplicationController, err
 	}
 
-	replicasets, err := kubeClient.Extensions().ReplicaSets(namespace).List(apiv1.ListOptions{LabelSelector: ls})
+	replicasets, err := kubeClient.ExtensionsV1beta1().ReplicaSets(namespace).List(metav1.ListOptions{LabelSelector: ls.String()})
 	if err == nil && len(replicasets.Items) != 0 {
 		b, err := yaml.Marshal(replicasets.Items[0])
 		return b, ReplicaSet, err
 	}
 
-	deployments, err := kubeClient.Extensions().Deployments(namespace).List(apiv1.ListOptions{LabelSelector: ls})
+	deployments, err := kubeClient.ExtensionsV1beta1().Deployments(namespace).List(metav1.ListOptions{LabelSelector: ls.String()})
 	if err == nil && len(deployments.Items) != 0 {
 		b, err := yaml.Marshal(deployments.Items[0])
 		return b, Deployment, err
 	}
 
-	daemonsets, err := kubeClient.Extensions().DaemonSets(namespace).List(apiv1.ListOptions{LabelSelector: ls})
+	daemonsets, err := kubeClient.ExtensionsV1beta1().DaemonSets(namespace).List(metav1.ListOptions{LabelSelector: ls.String()})
 	if err == nil && len(daemonsets.Items) != 0 {
 		b, err := yaml.Marshal(daemonsets.Items[0])
 		return b, DaemonSet, err
 	}
 
-	statefulsets, err := kubeClient.Apps().StatefulSets(namespace).List(apiv1.ListOptions{LabelSelector: ls})
+	statefulsets, err := kubeClient.AppsV1beta1().StatefulSets(namespace).List(metav1.ListOptions{LabelSelector: ls.String()})
 	if err == nil && len(statefulsets.Items) != 0 {
 		b, err := yaml.Marshal(statefulsets.Items[0])
 		return b, StatefulSet, err
@@ -44,7 +47,7 @@ func getKubeObject(kubeClient clientset.Interface, namespace string, ls labels.S
 	return nil, "", errors.New("Workload not found")
 }
 
-func getRestikContainer(r *rapiv1.Restik, containerImage string) apiv1.Container {
+func getRestikContainer(r *rapi.Restik, containerImage string) apiv1.Container {
 	container := apiv1.Container{
 		Name:            ContainerName,
 		Image:           containerImage,
@@ -75,7 +78,7 @@ func getRestikContainer(r *rapiv1.Restik, containerImage string) apiv1.Container
 	return container
 }
 
-func (c *Controller) addAnnotation(r *rapiv1.Restik) {
+func (c *Controller) addAnnotation(r *rapi.Restik) {
 	if r.ObjectMeta.Annotations == nil {
 		r.ObjectMeta.Annotations = make(map[string]string)
 	}
@@ -88,14 +91,14 @@ func findSelectors(lb map[string]string) labels.Selector {
 	return selectors
 }
 
-func restartPods(kubeClient clientset.Interface, namespace string, opts apiv1.ListOptions) error {
-	pods, err := kubeClient.Core().Pods(namespace).List(opts)
+func restartPods(kubeClient clientset.Interface, namespace string, opts metav1.ListOptions) error {
+	pods, err := kubeClient.CoreV1().Pods(namespace).List(opts)
 	if err != nil {
 		return err
 	}
 	for _, pod := range pods.Items {
-		deleteOpts := &apiv1.DeleteOptions{}
-		err = kubeClient.Core().Pods(namespace).Delete(pod.Name, deleteOpts)
+		deleteOpts := &metav1.DeleteOptions{}
+		err = kubeClient.CoreV1().Pods(namespace).Delete(pod.Name, deleteOpts)
 		if err != nil {
 			return err
 		}
@@ -103,7 +106,7 @@ func restartPods(kubeClient clientset.Interface, namespace string, opts apiv1.Li
 	return nil
 }
 func getPasswordFromSecret(client clientset.Interface, secretName, namespace string) (string, error) {
-	secret, err := client.Core().Secrets(namespace).Get(secretName)
+	secret, err := client.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -119,13 +122,13 @@ func NewEventRecorder(client clientset.Interface, component string) record.Event
 	broadcaster := record.NewBroadcaster()
 	broadcaster.StartEventWatcher(
 		func(event *apiv1.Event) {
-			if _, err := client.Core().Events(event.Namespace).Create(event); err != nil {
+			if _, err := client.CoreV1().Events(event.Namespace).Create(event); err != nil {
 				log.Errorln(err)
 			}
 		},
 	)
 	// Event Recorder
-	return broadcaster.NewRecorder(apiv1.EventSource{Component: component})
+	return broadcaster.NewRecorder(api.Registry, apiv1.EventSource{Component: component})
 }
 
 func removeContainer(c []apiv1.Container, name string) []apiv1.Container {
