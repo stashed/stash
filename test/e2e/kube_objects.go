@@ -3,6 +3,7 @@ package test
 import (
 	"fmt"
 
+	"github.com/appscode/go/types"
 	"github.com/appscode/log"
 	rapi "github.com/appscode/restik/api"
 	"github.com/appscode/restik/client/clientset"
@@ -77,11 +78,11 @@ func createReplicationController(watcher *controller.Controller, name string, ba
 			},
 		},
 		Spec: apiv1.ReplicationControllerSpec{
-			Replicas: 1,
+			Replicas: types.Int32P(1),
 			Template: podTemplate,
 		},
 	}
-	_, err := kubeClient.Core().ReplicationControllers(namespace).Create(rc)
+	_, err := kubeClient.CoreV1().ReplicationControllers(namespace).Create(rc)
 	return err
 }
 
@@ -164,7 +165,7 @@ func createReplicaset(watcher *controller.Controller, name string, restikName st
 			},
 		},
 		Spec: extensions.ReplicaSetSpec{
-			Replicas: 1,
+			Replicas: types.Int32P(1),
 			Template: *podTemplate,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
@@ -193,7 +194,7 @@ func createDeployment(watcher *controller.Controller, name string, restikName st
 			},
 		},
 		Spec: extensions.DeploymentSpec{
-			Replicas: 1,
+			Replicas: types.Int32P(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app": "nginx",
@@ -245,7 +246,7 @@ func createStatefulSet(watcher *controller.Controller, name string, restikName s
 			},
 		},
 		Spec: apps.StatefulSetSpec{
-			Replicas:    1,
+			Replicas:    types.Int32P(1),
 			Template:    *podTemplate,
 			ServiceName: svc,
 		},
