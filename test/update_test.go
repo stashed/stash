@@ -6,15 +6,16 @@ import (
 	"testing"
 
 	tcs "github.com/appscode/restik/client/clientset"
-	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 func TestBackupUpdate(t *testing.T) {
-	factory := cmdutil.NewFactory(nil)
-	config, err := factory.ClientConfig()
+	rules := clientcmd.NewDefaultClientConfigLoadingRules()
+	rules.DefaultClientConfig = &clientcmd.DefaultClientConfig
+	overrides := &clientcmd.ConfigOverrides{ClusterDefaults: clientcmd.ClusterDefaults}
+	config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(rules, overrides).ClientConfig()
 	if err != nil {
-		log.Println(err)
-		return
+		log.Fatalln(err)
 	}
 	restikClient := tcs.NewForConfigOrDie(config)
 	b, err := restikClient.Restiks("test").Get("testbackup")
@@ -25,7 +26,6 @@ func TestBackupUpdate(t *testing.T) {
 	b.Spec.RetentionPolicy.KeepLastSnapshots = 5
 	b, err = restikClient.Restiks("test").Update(b)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatalln(err)
 	}
-
 }
