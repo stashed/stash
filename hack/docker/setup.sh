@@ -14,7 +14,7 @@ source "$REPO_ROOT/hack/libbuild/common/public_image.sh"
 
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
 IMG=restik
-RESTIC_VER=0.5.0
+RESTIC_VER=0.6.1
 
 DIST=$REPO_ROOT/dist
 mkdir -p $DIST
