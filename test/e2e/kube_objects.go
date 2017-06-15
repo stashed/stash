@@ -7,26 +7,26 @@ import (
 	rapi "github.com/appscode/restik/api"
 	"github.com/appscode/restik/client/clientset"
 	"github.com/appscode/restik/pkg/controller"
-	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/api/unversioned"
-	"k8s.io/kubernetes/pkg/apis/apps"
-	"k8s.io/kubernetes/pkg/apis/extensions"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
+	apps "k8s.io/client-go/pkg/apis/apps/v1beta1"
+	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
 var namespace string
-var podTemplate = &api.PodTemplateSpec{
-	ObjectMeta: api.ObjectMeta{
+var podTemplate = &apiv1.PodTemplateSpec{
+	ObjectMeta: metav1.ObjectMeta{
 		Name: "nginx",
 		Labels: map[string]string{
 			"app": "nginx",
 		},
 	},
-	Spec: api.PodSpec{
-		Containers: []api.Container{
+	Spec: apiv1.PodSpec{
+		Containers: []apiv1.Container{
 			{
 				Name:  "nginx",
 				Image: "nginx",
-				VolumeMounts: []api.VolumeMount{
+				VolumeMounts: []apiv1.VolumeMount{
 					{
 						Name:      "test-volume",
 						MountPath: "/source_path",
@@ -34,11 +34,11 @@ var podTemplate = &api.PodTemplateSpec{
 				},
 			},
 		},
-		Volumes: []api.Volume{
+		Volumes: []apiv1.Volume{
 			{
 				Name: "test-volume",
-				VolumeSource: api.VolumeSource{
-					EmptyDir: &api.EmptyDirVolumeSource{},
+				VolumeSource: apiv1.VolumeSource{
+					EmptyDir: &apiv1.EmptyDirVolumeSource{},
 				},
 			},
 		},
@@ -47,36 +47,36 @@ var podTemplate = &api.PodTemplateSpec{
 
 func createTestNamespace(watcher *controller.Controller, name string) error {
 	namespace = name
-	ns := &api.Namespace{
-		ObjectMeta: api.ObjectMeta{
+	ns := &apiv1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
 	}
-	_, err := watcher.Clientset.Core().Namespaces().Create(ns)
+	_, err := watcher.Clientset.CoreV1().Namespaces().Create(ns)
 	return err
 }
 
 func deleteTestNamespace(watcher *controller.Controller, name string) {
-	if err := watcher.Clientset.Core().Namespaces().Delete(name, &api.DeleteOptions{}); err != nil {
+	if err := watcher.Clientset.CoreV1().Namespaces().Delete(name, &metav1.DeleteOptions{}); err != nil {
 		fmt.Println(err)
 	}
 }
 
 func createReplicationController(watcher *controller.Controller, name string, backupName string) error {
 	kubeClient := watcher.Clientset
-	rc := &api.ReplicationController{
-		TypeMeta: unversioned.TypeMeta{
+	rc := &apiv1.ReplicationController{
+		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "ReplicationController",
 		},
-		ObjectMeta: api.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
 				controller.BackupConfig: backupName,
 			},
 		},
-		Spec: api.ReplicationControllerSpec{
+		Spec: apiv1.ReplicationControllerSpec{
 			Replicas: 1,
 			Template: podTemplate,
 		},
@@ -86,18 +86,18 @@ func createReplicationController(watcher *controller.Controller, name string, ba
 }
 
 func deleteReplicationController(watcher *controller.Controller, name string) {
-	if err := watcher.Clientset.Core().ReplicationControllers(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
+	if err := watcher.Clientset.CoreV1().ReplicationControllers(namespace).Delete(name, &metav1.DeleteOptions{}); err != nil {
 		log.Errorln(err)
 	}
 }
 
 func createSecret(watcher *controller.Controller, name string) error {
-	secret := &api.Secret{
-		TypeMeta: unversioned.TypeMeta{
+	secret := &apiv1.Secret{
+		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Secret",
 		},
-		ObjectMeta: api.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
@@ -105,23 +105,23 @@ func createSecret(watcher *controller.Controller, name string) error {
 			"password": []byte("appscode"),
 		},
 	}
-	_, err := watcher.Clientset.Core().Secrets(namespace).Create(secret)
+	_, err := watcher.Clientset.CoreV1().Secrets(namespace).Create(secret)
 	return err
 }
 
 func deleteSecret(watcher *controller.Controller, name string) {
-	if err := watcher.Clientset.Core().Secrets(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
+	if err := watcher.Clientset.CoreV1().Secrets(namespace).Delete(name, &metav1.DeleteOptions{}); err != nil {
 		log.Errorln(err)
 	}
 }
 
 func createRestik(watcher *controller.Controller, backupName string, secretName string) error {
 	restik := &rapi.Restik{
-		TypeMeta: unversioned.TypeMeta{
+		TypeMeta: metav1.TypeMeta{
 			APIVersion: "backup.appscode.com/v1alpha1",
 			Kind:       clientset.ResourceKindRestik,
 		},
-		ObjectMeta: api.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      backupName,
 			Namespace: namespace,
 		},
@@ -134,10 +134,10 @@ func createRestik(watcher *controller.Controller, backupName string, secretName 
 			Destination: rapi.Destination{
 				Path:                 "/repo_path",
 				RepositorySecretName: secretName,
-				Volume: api.Volume{
+				Volume: apiv1.Volume{
 					Name: "restik-vol",
-					VolumeSource: api.VolumeSource{
-						EmptyDir: &api.EmptyDirVolumeSource{},
+					VolumeSource: apiv1.VolumeSource{
+						EmptyDir: &apiv1.EmptyDirVolumeSource{},
 					},
 				},
 			},
@@ -156,7 +156,7 @@ func deleteRestik(watcher *controller.Controller, restikName string) error {
 
 func createReplicaset(watcher *controller.Controller, name string, restikName string) error {
 	replicaset := &extensions.ReplicaSet{
-		ObjectMeta: api.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
@@ -166,26 +166,26 @@ func createReplicaset(watcher *controller.Controller, name string, restikName st
 		Spec: extensions.ReplicaSetSpec{
 			Replicas: 1,
 			Template: *podTemplate,
-			Selector: &unversioned.LabelSelector{
+			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app": "nginx",
 				},
 			},
 		},
 	}
-	_, err := watcher.Clientset.Extensions().ReplicaSets(namespace).Create(replicaset)
+	_, err := watcher.Clientset.ExtensionsV1beta1().ReplicaSets(namespace).Create(replicaset)
 	return err
 }
 
 func deleteReplicaset(watcher *controller.Controller, name string) {
-	if err := watcher.Clientset.Extensions().ReplicaSets(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
+	if err := watcher.Clientset.ExtensionsV1beta1().ReplicaSets(namespace).Delete(name, &metav1.DeleteOptions{}); err != nil {
 		log.Errorln(err)
 	}
 }
 
 func createDeployment(watcher *controller.Controller, name string, restikName string) error {
 	deployment := &extensions.Deployment{
-		ObjectMeta: api.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
@@ -194,7 +194,7 @@ func createDeployment(watcher *controller.Controller, name string, restikName st
 		},
 		Spec: extensions.DeploymentSpec{
 			Replicas: 1,
-			Selector: &unversioned.LabelSelector{
+			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app": "nginx",
 				},
@@ -202,19 +202,19 @@ func createDeployment(watcher *controller.Controller, name string, restikName st
 			Template: *podTemplate,
 		},
 	}
-	_, err := watcher.Clientset.Extensions().Deployments(namespace).Create(deployment)
+	_, err := watcher.Clientset.ExtensionsV1beta1().Deployments(namespace).Create(deployment)
 	return err
 }
 
 func deleteDeployment(watcher *controller.Controller, name string) {
-	if err := watcher.Clientset.Extensions().Deployments(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
+	if err := watcher.Clientset.ExtensionsV1beta1().Deployments(namespace).Delete(name, &metav1.DeleteOptions{}); err != nil {
 		log.Errorln(err)
 	}
 }
 
 func createDaemonsets(watcher *controller.Controller, name string, backupName string) error {
 	daemonset := &extensions.DaemonSet{
-		ObjectMeta: api.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
@@ -225,19 +225,19 @@ func createDaemonsets(watcher *controller.Controller, name string, backupName st
 			Template: *podTemplate,
 		},
 	}
-	_, err := watcher.Clientset.Extensions().DaemonSets(namespace).Create(daemonset)
+	_, err := watcher.Clientset.ExtensionsV1beta1().DaemonSets(namespace).Create(daemonset)
 	return err
 }
 
 func deleteDaemonset(watcher *controller.Controller, name string) {
-	if err := watcher.Clientset.Extensions().DaemonSets(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
+	if err := watcher.Clientset.ExtensionsV1beta1().DaemonSets(namespace).Delete(name, &metav1.DeleteOptions{}); err != nil {
 		log.Errorln(err)
 	}
 }
 
 func createStatefulSet(watcher *controller.Controller, name string, restikName string, svc string) error {
 	s := &apps.StatefulSet{
-		ObjectMeta: api.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
@@ -250,11 +250,11 @@ func createStatefulSet(watcher *controller.Controller, name string, restikName s
 			ServiceName: svc,
 		},
 	}
-	container := api.Container{
+	container := apiv1.Container{
 		Name:            controller.ContainerName,
 		Image:           image,
-		ImagePullPolicy: api.PullAlways,
-		Env: []api.EnvVar{
+		ImagePullPolicy: apiv1.PullAlways,
+		Env: []apiv1.EnvVar{
 			{
 				Name:  controller.RestikNamespace,
 				Value: namespace,
@@ -267,47 +267,47 @@ func createStatefulSet(watcher *controller.Controller, name string, restikName s
 	}
 	container.Args = append(container.Args, "watch")
 	container.Args = append(container.Args, "--v=10")
-	backupVolumeMount := api.VolumeMount{
+	backupVolumeMount := apiv1.VolumeMount{
 		Name:      "test-volume",
 		MountPath: "/source_path",
 	}
-	sourceVolumeMount := api.VolumeMount{
+	sourceVolumeMount := apiv1.VolumeMount{
 		Name:      "restik-vol",
 		MountPath: "/repo_path",
 	}
 	container.VolumeMounts = append(container.VolumeMounts, backupVolumeMount)
 	container.VolumeMounts = append(container.VolumeMounts, sourceVolumeMount)
 	s.Spec.Template.Spec.Containers = append(s.Spec.Template.Spec.Containers, container)
-	s.Spec.Template.Spec.Volumes = append(s.Spec.Template.Spec.Volumes, api.Volume{
+	s.Spec.Template.Spec.Volumes = append(s.Spec.Template.Spec.Volumes, apiv1.Volume{
 		Name: "restik-vol",
-		VolumeSource: api.VolumeSource{
-			EmptyDir: &api.EmptyDirVolumeSource{},
+		VolumeSource: apiv1.VolumeSource{
+			EmptyDir: &apiv1.EmptyDirVolumeSource{},
 		},
 	})
-	_, err := watcher.Clientset.Apps().StatefulSets(namespace).Create(s)
+	_, err := watcher.Clientset.AppsV1beta1().StatefulSets(namespace).Create(s)
 	return err
 }
 
 func deleteStatefulset(watcher *controller.Controller, name string) {
-	if err := watcher.Clientset.Apps().StatefulSets(namespace).Delete(name, &api.DeleteOptions{}); err != nil {
+	if err := watcher.Clientset.AppsV1beta1().StatefulSets(namespace).Delete(name, &metav1.DeleteOptions{}); err != nil {
 		log.Errorln(err)
 	}
 }
 
 func createService(watcher *controller.Controller, name string) error {
-	svc := &api.Service{
-		ObjectMeta: api.ObjectMeta{
+	svc := &apiv1.Service{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
 				"app": "nginx",
 			},
 		},
-		Spec: api.ServiceSpec{
+		Spec: apiv1.ServiceSpec{
 			Selector: map[string]string{
 				"app": "nginx",
 			},
-			Ports: []api.ServicePort{
+			Ports: []apiv1.ServicePort{
 				{
 					Port: 80,
 					Name: "web",
@@ -315,12 +315,12 @@ func createService(watcher *controller.Controller, name string) error {
 			},
 		},
 	}
-	_, err := watcher.Clientset.Core().Services(namespace).Create(svc)
+	_, err := watcher.Clientset.CoreV1().Services(namespace).Create(svc)
 	return err
 }
 
 func deleteService(watcher *controller.Controller, name string) {
-	err := watcher.Clientset.Core().Services(namespace).Delete(name, &api.DeleteOptions{})
+	err := watcher.Clientset.CoreV1().Services(namespace).Delete(name, &metav1.DeleteOptions{})
 	if err != nil {
 		log.Errorln(err)
 	}

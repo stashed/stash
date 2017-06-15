@@ -7,9 +7,12 @@ import (
 	"time"
 
 	"github.com/appscode/log"
+	rcs "github.com/appscode/restik/client/clientset"
 	"github.com/appscode/restik/pkg/controller"
-	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clientset "k8s.io/client-go/kubernetes"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/kubernetes/pkg/fields"
 )
 
@@ -24,15 +27,17 @@ func runController() (*controller.Controller, error) {
 	if err != nil {
 		return &controller.Controller{}, err
 	}
-	controller := controller.NewRestikController(config, image)
+	kubeClient := clientset.NewForConfigOrDie(config)
+	restikClient := rcs.NewForConfigOrDie(config)
+	ctrl := controller.NewRestikController(kubeClient, restikClient, image)
 	go func() {
-		err := controller.RunAndHold()
+		err := ctrl.RunAndHold()
 		if err != nil {
 			log.Errorln(err)
 		}
 
 	}()
-	return controller, nil
+	return ctrl, nil
 }
 
 func checkEventForBackup(watcher *controller.Controller, objName string) error {
@@ -42,11 +47,11 @@ func checkEventForBackup(watcher *controller.Controller, objName string) error {
 		"involvedObject.kind":      "Restik",
 		"involvedObject.name":      objName,
 		"involvedObject.namespace": namespace,
-		"type": api.EventTypeNormal,
+		"type": apiv1.EventTypeNormal,
 	}
 	fieldSelector := fields.SelectorFromSet(sets)
 	for {
-		events, err := watcher.Clientset.Core().Events(namespace).List(api.ListOptions{FieldSelector: fieldSelector})
+		events, err := watcher.Clientset.CoreV1().Events(namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
 		if err == nil {
 			for _, e := range events.Items {
 				if e.Reason == controller.EventReasonSuccessfulBackup {
@@ -68,29 +73,29 @@ func checkEventForBackup(watcher *controller.Controller, objName string) error {
 func checkContainerAfterBackupDelete(watcher *controller.Controller, name string, _type string) error {
 	try := 0
 	var err error
-	var containers []api.Container
+	var containers []apiv1.Container
 	for {
 		log.Infoln("Waiting 20 sec for checking restik-sedecar deletion")
 		time.Sleep(time.Second * 20)
 		switch _type {
 		case controller.ReplicationController:
-			rc, err := watcher.Clientset.Core().ReplicationControllers(namespace).Get(name)
+			rc, err := watcher.Clientset.CoreV1().ReplicationControllers(namespace).Get(name, metav1.GetOptions{})
 			if err != nil {
 				containers = rc.Spec.Template.Spec.Containers
 			}
 		case controller.ReplicaSet:
-			rs, err := watcher.Clientset.Extensions().ReplicaSets(namespace).Get(name)
+			rs, err := watcher.Clientset.ExtensionsV1beta1().ReplicaSets(namespace).Get(name, metav1.GetOptions{})
 			if err != nil {
 				containers = rs.Spec.Template.Spec.Containers
 			}
 		case controller.Deployment:
-			deployment, err := watcher.Clientset.Extensions().Deployments(namespace).Get(name)
+			deployment, err := watcher.Clientset.ExtensionsV1beta1().Deployments(namespace).Get(name, metav1.GetOptions{})
 			if err != nil {
 				containers = deployment.Spec.Template.Spec.Containers
 			}
 
 		case controller.DaemonSet:
-			daemonset, err := watcher.Clientset.Extensions().DaemonSets(namespace).Get(name)
+			daemonset, err := watcher.Clientset.ExtensionsV1beta1().DaemonSets(namespace).Get(name, metav1.GetOptions{})
 			if err != nil {
 				containers = daemonset.Spec.Template.Spec.Containers
 			}
@@ -107,7 +112,7 @@ func checkContainerAfterBackupDelete(watcher *controller.Controller, name string
 	return err
 }
 
-func checkContainerDeletion(containers []api.Container) error {
+func checkContainerDeletion(containers []apiv1.Container) error {
 	for _, c := range containers {
 		if c.Name == controller.ContainerName {
 			return errors.New("ERROR: Restik sidecar not deleted")

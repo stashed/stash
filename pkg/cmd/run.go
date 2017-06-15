@@ -28,11 +28,11 @@ func NewCmdRun() *cobra.Command {
 			}
 			kubeClient := clientset.NewForConfigOrDie(config)
 			restikClient := rcs.NewForConfigOrDie(config)
-			w := controller.NewRestikController(kubeClient, restikClient, image)
+			ctrl := controller.NewRestikController(kubeClient, restikClient, image)
 
 			log.Infoln("Starting restik operator...")
 			defer runtime.HandleCrash()
-			err = w.RunAndHold()
+			err = ctrl.RunAndHold()
 			if err != nil {
 				log.Errorln(err)
 			}
