@@ -2,9 +2,9 @@ package clientset
 
 import (
 	aci "github.com/appscode/restik/api"
-	"k8s.io/kubernetes/pkg/api"
-	rest "k8s.io/kubernetes/pkg/client/restclient"
-	"k8s.io/kubernetes/pkg/watch"
+apiv1 "k8s.io/client-go/pkg/api/v1"
+"k8s.io/client-go/rest"
+"k8s.io/apimachinery/pkg/watch"
 )
 
 type RestikNamespacer interface {
@@ -18,12 +18,12 @@ const (
 )
 
 type RestikInterface interface {
-	List(opts api.ListOptions) (*aci.RestikList, error)
+	List(opts apiv1.ListOptions) (*aci.RestikList, error)
 	Get(name string) (*aci.Restik, error)
 	Create(restik *aci.Restik) (*aci.Restik, error)
 	Update(restik *aci.Restik) (*aci.Restik, error)
-	Delete(name string, options *api.DeleteOptions) error
-	Watch(opts api.ListOptions) (watch.Interface, error)
+	Delete(name string, options *apiv1.DeleteOptions) error
+	Watch(opts apiv1.ListOptions) (watch.Interface, error)
 	UpdateStatus(restik *aci.Restik) (*aci.Restik, error)
 }
 
@@ -38,7 +38,7 @@ func newRestik(c *ExtensionClient, namespace string) *RestikImpl {
 	return &RestikImpl{c.restClient, namespace}
 }
 
-func (c *RestikImpl) List(opts api.ListOptions) (result *aci.RestikList, err error) {
+func (c *RestikImpl) List(opts apiv1.ListOptions) (result *aci.RestikList, err error) {
 	result = &aci.RestikList{}
 	err = c.r.Get().
 		Namespace(c.ns).
@@ -83,7 +83,7 @@ func (c *RestikImpl) Update(restik *aci.Restik) (result *aci.Restik, err error) 
 	return
 }
 
-func (c *RestikImpl) Delete(name string, options *api.DeleteOptions) (err error) {
+func (c *RestikImpl) Delete(name string, options *apiv1.DeleteOptions) (err error) {
 	return c.r.Delete().
 		Namespace(c.ns).
 		Resource(ResourceTypeRestik).
@@ -93,7 +93,7 @@ func (c *RestikImpl) Delete(name string, options *api.DeleteOptions) (err error)
 		Error()
 }
 
-func (c *RestikImpl) Watch(opts api.ListOptions) (watch.Interface, error) {
+func (c *RestikImpl) Watch(opts apiv1.ListOptions) (watch.Interface, error) {
 	return c.r.Get().
 		Prefix("watch").
 		Namespace(c.ns).

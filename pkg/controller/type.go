@@ -2,12 +2,11 @@ package controller
 
 import (
 	"time"
-
 	rapi "github.com/appscode/restik/api"
 	tcs "github.com/appscode/restik/client/clientset"
 	"gopkg.in/robfig/cron.v2"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
-	"k8s.io/kubernetes/pkg/client/record"
+clientset "k8s.io/client-go/kubernetes"
+"k8s.io/client-go/tools/record"
 )
 
 const (

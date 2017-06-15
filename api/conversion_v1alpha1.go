@@ -2,9 +2,8 @@ package api
 
 import (
 	"fmt"
-
-	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/runtime"
+apiv1 "k8s.io/client-go/pkg/api/v1"
+"k8s.io/apimachinery/pkg/runtime"
 )
 
 func addConversionFuncs(scheme *runtime.Scheme) error {
@@ -12,7 +11,7 @@ func addConversionFuncs(scheme *runtime.Scheme) error {
 	var err error
 	for _, k := range []string{"Restik"} {
 		kind := k // don't close over range variables
-		err = api.Scheme.AddFieldLabelConversionFunc("backup.appscode.com/v1", kind,
+		err = apiv1.Scheme.AddFieldLabelConversionFunc("backup.appscode.com/v1", kind,
 			func(label, value string) (string, string, error) {
 				switch label {
 				case "metadata.name", "metadata.namespace":

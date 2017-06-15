@@ -2,10 +2,9 @@ package clientset
 
 import (
 	"fmt"
-
-	schema "k8s.io/kubernetes/pkg/api/unversioned"
-	"k8s.io/kubernetes/pkg/apimachinery/registered"
-	rest "k8s.io/kubernetes/pkg/client/restclient"
+metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+"k8s.io/client-go/pkg/api"
+"k8s.io/client-go/rest"
 )
 
 const (
@@ -64,12 +63,12 @@ func New(c rest.Interface) *ExtensionClient {
 }
 
 func setExtensionsDefaults(config *rest.Config) error {
-	gv, err := schema.ParseGroupVersion("backup.appscode.com/v1alpha1")
+	gv, err := metav1.ParseGroupVersion("backup.appscode.com/v1alpha1")
 	if err != nil {
 		return err
 	}
 	// if backup.appscode.com/v1alpha1 is not enabled, return an error
-	if !registered.IsEnabledVersion(gv) {
+	if !api.IsEnabledVersion(gv) {
 		return fmt.Errorf("backup.appscode.com/v1alpha1 is not enabled")
 	}
 	config.APIPath = defaultAPIPath
@@ -78,7 +77,7 @@ func setExtensionsDefaults(config *rest.Config) error {
 	}
 
 	if config.GroupVersion == nil || config.GroupVersion.Group != "backup.appscode.com" {
-		g, err := registered.Group("backup.appscode.com")
+		g, err := api.Group("backup.appscode.com")
 		if err != nil {
 			return err
 		}

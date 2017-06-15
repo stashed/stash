@@ -4,23 +4,22 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
 	"github.com/appscode/log"
 	rapi "github.com/appscode/restik/api"
 	tcs "github.com/appscode/restik/client/clientset"
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
-	"k8s.io/kubernetes/pkg/api"
-	k8serrors "k8s.io/kubernetes/pkg/api/errors"
-	"k8s.io/kubernetes/pkg/api/unversioned"
-	"k8s.io/kubernetes/pkg/apis/extensions"
-	"k8s.io/kubernetes/pkg/client/cache"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
-	rest "k8s.io/kubernetes/pkg/client/restclient"
-	"k8s.io/kubernetes/pkg/labels"
-	"k8s.io/kubernetes/pkg/runtime"
-	"k8s.io/kubernetes/pkg/util/wait"
-	"k8s.io/kubernetes/pkg/watch"
+apiv1 "k8s.io/client-go/pkg/api/v1"
+kerr "k8s.io/apimachinery/pkg/api/errors"
+metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
+"k8s.io/client-go/tools/cache"
+clientset "k8s.io/client-go/kubernetes"
+"k8s.io/client-go/rest"
+"k8s.io/apimachinery/pkg/labels"
+"k8s.io/apimachinery/pkg/runtime"
+"k8s.io/apimachinery/pkg/util/wait"
+"k8s.io/apimachinery/pkg/watch"
 )
 
 func NewRestikController(c *rest.Config, image string) *Controller {
@@ -38,19 +37,19 @@ func (c *Controller) RunAndHold() error {
 		return err
 	}
 	lw := &cache.ListWatch{
-		ListFunc: func(opts api.ListOptions) (runtime.Object, error) {
-			return c.ExtClientset.Restiks(api.NamespaceAll).List(api.ListOptions{})
+		ListFunc: func(opts apiv1.ListOptions) (runtime.Object, error) {
+			return c.ExtClientset.Restiks(apiv1.NamespaceAll).List(apiv1.ListOptions{})
 		},
-		WatchFunc: func(options api.ListOptions) (watch.Interface, error) {
-			return c.ExtClientset.Restiks(api.NamespaceAll).Watch(api.ListOptions{})
+		WatchFunc: func(options apiv1.ListOptions) (watch.Interface, error) {
+			return c.ExtClientset.Restiks(apiv1.NamespaceAll).Watch(apiv1.ListOptions{})
 		},
 	}
 	_, ctrl := cache.NewInformer(lw,
-		&rapi.Restik{},
+		&rapiv1.Restik{},
 		c.SyncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				if b, ok := obj.(*rapi.Restik); ok {
+				if b, ok := obj.(*rapiv1.Restik); ok {
 					glog.Infoln("Got one added Restik obejct", b)
 					if b.ObjectMeta.Annotations != nil {
 						_, ok := b.ObjectMeta.Annotations[ImageAnnotation]
@@ -66,7 +65,7 @@ func (c *Controller) RunAndHold() error {
 				}
 			},
 			DeleteFunc: func(obj interface{}) {
-				if b, ok := obj.(*rapi.Restik); ok {
+				if b, ok := obj.(*rapiv1.Restik); ok {
 					glog.Infoln("Got one deleted Restik object", b)
 					err := c.updateObjectAndStopBackup(b)
 					if err != nil {
@@ -75,12 +74,12 @@ func (c *Controller) RunAndHold() error {
 				}
 			},
 			UpdateFunc: func(old, new interface{}) {
-				oldObj, ok := old.(*rapi.Restik)
+				oldObj, ok := old.(*rapiv1.Restik)
 				if !ok {
 					log.Errorln(errors.New("Error validating Restik object"))
 					return
 				}
-				newObj, ok := new.(*rapi.Restik)
+				newObj, ok := new.(*rapiv1.Restik)
 				if !ok {
 					log.Errorln(errors.New("Error validating Restik object"))
 					return
@@ -106,7 +105,7 @@ func (c *Controller) RunAndHold() error {
 	return nil
 }
 
-func (c *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
+func (c *Controller) updateObjectAndStartBackup(r *rapiv1.Restik) error {
 	ls := labels.SelectorFromSet(labels.Set{BackupConfig: r.Name})
 	restikContainer := getRestikContainer(r, c.Image)
 	ob, typ, err := getKubeObject(c.Clientset, r.Namespace, ls)
@@ -116,10 +115,10 @@ func (c *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
 	if ob == nil || typ == "" {
 		return errors.New(fmt.Sprintf("No object found for Restik %s ", r.Name))
 	}
-	opts := api.ListOptions{}
+	opts := apiv1.ListOptions{}
 	switch typ {
 	case ReplicationController:
-		rc := &api.ReplicationController{}
+		rc := &apiv1.ReplicationController{}
 		if err = yaml.Unmarshal(ob, rc); err != nil {
 			return err
 		}
@@ -183,7 +182,7 @@ func (c *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
 	return err
 }
 
-func (c *Controller) updateObjectAndStopBackup(r *rapi.Restik) error {
+func (c *Controller) updateObjectAndStopBackup(r *rapiv1.Restik) error {
 	ls := labels.SelectorFromSet(labels.Set{BackupConfig: r.Name})
 	ob, typ, err := getKubeObject(c.Clientset, r.Namespace, ls)
 	if err != nil {
@@ -192,10 +191,10 @@ func (c *Controller) updateObjectAndStopBackup(r *rapi.Restik) error {
 	if ob == nil || typ == "" {
 		return errors.New(fmt.Sprintf("No object found for Restik %s ", r.Name))
 	}
-	opts := api.ListOptions{}
+	opts := apiv1.ListOptions{}
 	switch typ {
 	case ReplicationController:
-		rc := &api.ReplicationController{}
+		rc := &apiv1.ReplicationController{}
 		if err := yaml.Unmarshal(ob, rc); err != nil {
 			return err
 		}
@@ -251,7 +250,7 @@ func (c *Controller) updateObjectAndStopBackup(r *rapi.Restik) error {
 	return nil
 }
 
-func (c *Controller) updateImage(r *rapi.Restik, image string) error {
+func (c *Controller) updateImage(r *rapiv1.Restik, image string) error {
 	ls := labels.SelectorFromSet(labels.Set{BackupConfig: r.Name})
 	ob, typ, err := getKubeObject(c.Clientset, r.Namespace, ls)
 	if err != nil {
@@ -260,10 +259,10 @@ func (c *Controller) updateImage(r *rapi.Restik, image string) error {
 	if ob == nil || typ == "" {
 		return errors.New(fmt.Sprintf("No object found for Restik %s ", r.Name))
 	}
-	opts := api.ListOptions{}
+	opts := apiv1.ListOptions{}
 	switch typ {
 	case ReplicationController:
-		rc := &api.ReplicationController{}
+		rc := &apiv1.ReplicationController{}
 		if err := yaml.Unmarshal(ob, rc); err != nil {
 			return err
 		}
@@ -316,15 +315,15 @@ func (c *Controller) updateImage(r *rapi.Restik, image string) error {
 }
 
 func (c *Controller) ensureResource() error {
-	_, err := c.Clientset.Extensions().ThirdPartyResources().Get(tcs.ResourceNameRestik + "." + rapi.GroupName)
-	if k8serrors.IsNotFound(err) {
+	_, err := c.Clientset.Extensions().ThirdPartyResources().Get(tcs.ResourceNameRestik + "." + rapiv1.GroupName)
+	if kerr.IsNotFound(err) {
 		tpr := &extensions.ThirdPartyResource{
-			TypeMeta: unversioned.TypeMeta{
+			TypeMeta: metav1.TypeMeta{
 				APIVersion: "extensions/v1beta1",
 				Kind:       "ThirdPartyResource",
 			},
-			ObjectMeta: api.ObjectMeta{
-				Name: tcs.ResourceNameRestik + "." + rapi.GroupName,
+			ObjectMeta: apiv1.ObjectMeta{
+				Name: tcs.ResourceNameRestik + "." + rapiv1.GroupName,
 			},
 			Versions: []extensions.APIVersion{
 				{

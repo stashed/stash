@@ -1,8 +1,8 @@
 package api
 
 import (
-	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/api/unversioned"
+apiv1 "k8s.io/client-go/pkg/api/v1"
+metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type RetentionStrategy string
@@ -17,8 +17,8 @@ const (
 )
 
 type Restik struct {
-	unversioned.TypeMeta `json:",inline,omitempty"`
-	api.ObjectMeta       `json:"metadata,omitempty"`
+	metav1.TypeMeta `json:",inline,omitempty"`
+	apiv1.ObjectMeta       `json:"metadata,omitempty"`
 	Spec                 RestikSpec   `json:"spec,omitempty"`
 	Status               RestikStatus `json:"status,omitempty"`
 }
@@ -37,16 +37,16 @@ type RestikSpec struct {
 }
 
 type RestikStatus struct {
-	FirstBackupTime          *unversioned.Time `json:"firstBackupTime,omitempty"`
-	LastBackupTime           *unversioned.Time `json:"lastBackupTime,omitempty"`
-	LastSuccessfulBackupTime *unversioned.Time `json:"lastSuccessfulBackupTime,omitempty"`
+	FirstBackupTime          *metav1.Time `json:"firstBackupTime,omitempty"`
+	LastBackupTime           *metav1.Time `json:"lastBackupTime,omitempty"`
+	LastSuccessfulBackupTime *metav1.Time `json:"lastSuccessfulBackupTime,omitempty"`
 	LastBackupDuration       string            `json:"lastBackupDuration,omitempty"`
 	BackupCount              int64             `json:"backupCount,omitempty"`
 }
 
 type RestikList struct {
-	unversioned.TypeMeta `json:",inline"`
-	unversioned.ListMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
 	Items                []Restik `json:"items,omitempty"`
 }
 
@@ -56,7 +56,7 @@ type Source struct {
 }
 
 type Destination struct {
-	Volume               api.Volume `json:"volume"`
+	Volume               apiv1.Volume `json:"volume"`
 	Path                 string     `json:"path"`
 	RepositorySecretName string     `json:"repositorySecretName"`
 }

@@ -2,8 +2,8 @@ package install
 
 import (
 	"github.com/appscode/restik/api"
-	"k8s.io/kubernetes/pkg/apimachinery/announced"
-	"k8s.io/kubernetes/pkg/util/sets"
+"k8s.io/apimachinery/pkg/apimachinery/announced"
+"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func init() {

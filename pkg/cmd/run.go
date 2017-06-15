@@ -3,13 +3,12 @@ package cmd
 import (
 	"fmt"
 	"time"
-
 	"github.com/appscode/log"
 	_ "github.com/appscode/restik/api/install"
 	"github.com/appscode/restik/pkg/controller"
 	"github.com/spf13/cobra"
-	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
-	"k8s.io/kubernetes/pkg/util/runtime"
+"k8s.io/client-go/tools/clientcmd"
+"k8s.io/apimachinery/pkg/util/runtime"
 )
 
 func NewCmdRun() *cobra.Command {

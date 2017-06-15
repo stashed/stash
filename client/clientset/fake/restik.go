@@ -3,11 +3,11 @@ package fake
 import (
 	aci "github.com/appscode/restik/api"
 	"github.com/appscode/restik/client/clientset"
-	"k8s.io/kubernetes/pkg/api"
-	schema "k8s.io/kubernetes/pkg/api/unversioned"
-	testing "k8s.io/kubernetes/pkg/client/testing/core"
-	"k8s.io/kubernetes/pkg/labels"
-	"k8s.io/kubernetes/pkg/watch"
+apiv1 "k8s.io/client-go/pkg/api/v1"
+metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+"k8s.io/client-go/testing"
+"k8s.io/apimachinery/pkg/labels"
+"k8s.io/apimachinery/pkg/watch"
 )
 
 type FakeRestik struct {
@@ -15,7 +15,7 @@ type FakeRestik struct {
 	ns   string
 }
 
-var restikResource = schema.GroupVersionResource{Group: "backup.appscode.com", Version: "v1alpha1", Resource: "restiks"}
+var restikResource = metav1.GroupVersionResource{Group: "backup.appscode.com", Version: "v1alpha1", Resource: "restiks"}
 
 var _ clientset.RestikInterface = &FakeRestik{}
 
@@ -31,7 +31,7 @@ func (mock *FakeRestik) Get(name string) (*aci.Restik, error) {
 }
 
 // List returns the a of Restiks.
-func (mock *FakeRestik) List(opts api.ListOptions) (*aci.RestikList, error) {
+func (mock *FakeRestik) List(opts apiv1.ListOptions) (*aci.RestikList, error) {
 	obj, err := mock.Fake.
 		Invokes(testing.NewListAction(restikResource, mock.ns, opts), &aci.Restik{})
 
@@ -75,7 +75,7 @@ func (mock *FakeRestik) Update(svc *aci.Restik) (*aci.Restik, error) {
 }
 
 // Delete deletes a Restik by name.
-func (mock *FakeRestik) Delete(name string, _ *api.DeleteOptions) error {
+func (mock *FakeRestik) Delete(name string, _ *apiv1.DeleteOptions) error {
 	_, err := mock.Fake.
 		Invokes(testing.NewDeleteAction(restikResource, mock.ns, name), &aci.Restik{})
 
@@ -92,7 +92,7 @@ func (mock *FakeRestik) UpdateStatus(srv *aci.Restik) (*aci.Restik, error) {
 	return obj.(*aci.Restik), err
 }
 
-func (mock *FakeRestik) Watch(opts api.ListOptions) (watch.Interface, error) {
+func (mock *FakeRestik) Watch(opts apiv1.ListOptions) (watch.Interface, error) {
 	return mock.Fake.
 		InvokesWatch(testing.NewWatchAction(restikResource, mock.ns, opts))
 }

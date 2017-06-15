@@ -3,44 +3,43 @@ package controller
 import (
 	"testing"
 	"time"
-
 	rapi "github.com/appscode/restik/api"
 	"github.com/appscode/restik/client/clientset"
 	"github.com/appscode/restik/client/clientset/fake"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/api/unversioned"
+apiv1 "k8s.io/client-go/pkg/api/v1"
+metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	fakeclientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/fake"
 )
 
 var restikName = "appscode-restik"
 
-var fakeRc = &api.ReplicationController{
-	TypeMeta: unversioned.TypeMeta{
+var fakeRc = &apiv1.ReplicationController{
+	TypeMeta: metav1.TypeMeta{
 		Kind:       "ReplicationController",
 		APIVersion: "v1",
 	},
-	ObjectMeta: api.ObjectMeta{
+	ObjectMeta: apiv1.ObjectMeta{
 		Name:      "appscode-rc",
 		Namespace: "default",
 		Labels: map[string]string{
 			"backup.appscode.com/config": restikName,
 		},
 	},
-	Spec: api.ReplicationControllerSpec{
+	Spec: apiv1.ReplicationControllerSpec{
 		Replicas: 1,
 		Selector: map[string]string{
 			"app": "nginx",
 		},
-		Template: &api.PodTemplateSpec{
-			ObjectMeta: api.ObjectMeta{
+		Template: &apiv1.PodTemplateSpec{
+			ObjectMeta: apiv1.ObjectMeta{
 				Name: "nginx",
 				Labels: map[string]string{
 					"app": "nginx",
 				},
 			},
-			Spec: api.PodSpec{
-				Containers: []api.Container{
+			Spec: apiv1.PodSpec{
+				Containers: []apiv1.Container{
 					{
 						Name:  "nginx",
 						Image: "nginx",
@@ -50,27 +49,27 @@ var fakeRc = &api.ReplicationController{
 		},
 	},
 }
-var fakeRestik = &rapi.Restik{
-	TypeMeta: unversioned.TypeMeta{
+var fakeRestik = &rapiv1.Restik{
+	TypeMeta: metav1.TypeMeta{
 		Kind:       clientset.ResourceKindRestik,
 		APIVersion: "backup.appscode.com/v1alpha1",
 	},
-	ObjectMeta: api.ObjectMeta{
+	ObjectMeta: apiv1.ObjectMeta{
 		Name:      restikName,
 		Namespace: "default",
 	},
-	Spec: rapi.RestikSpec{
-		Source: rapi.Source{
+	Spec: rapiv1.RestikSpec{
+		Source: rapiv1.Source{
 			VolumeName: "volume-test",
 			Path:       "/mypath",
 		},
-		Destination: rapi.Destination{
+		Destination: rapiv1.Destination{
 			Path:                 "/restik_repo",
 			RepositorySecretName: "restik-secret",
-			Volume: api.Volume{
+			Volume: apiv1.Volume{
 				Name: "restik-volume",
-				VolumeSource: api.VolumeSource{
-					AWSElasticBlockStore: &api.AWSElasticBlockStoreVolumeSource{
+				VolumeSource: apiv1.VolumeSource{
+					AWSElasticBlockStore: &apiv1.AWSElasticBlockStoreVolumeSource{
 						FSType:   "ext4",
 						VolumeID: "vol-12345",
 					},
@@ -78,7 +77,7 @@ var fakeRestik = &rapi.Restik{
 			},
 		},
 		Schedule: "* * * * * *",
-		RetentionPolicy: rapi.RetentionPolicy{
+		RetentionPolicy: rapiv1.RetentionPolicy{
 			KeepLastSnapshots: 10,
 		},
 	},
