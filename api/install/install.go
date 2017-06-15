@@ -1,24 +1,25 @@
 package install
 
 import (
-	"github.com/appscode/restik/api"
-	"k8s.io/kubernetes/pkg/apimachinery/announced"
-	"k8s.io/kubernetes/pkg/util/sets"
+	rapi "github.com/appscode/restik/api"
+	"k8s.io/apimachinery/pkg/apimachinery/announced"
+	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/client-go/pkg/api"
 )
 
 func init() {
 	if err := announced.NewGroupMetaFactory(
 		&announced.GroupMetaFactoryArgs{
 			GroupName:                  api.GroupName,
-			VersionPreferenceOrder:     []string{api.V1alpha1SchemeGroupVersion.Version},
+			VersionPreferenceOrder:     []string{rapi.V1alpha1SchemeGroupVersion.Version},
 			ImportPrefix:               "github.com/appscode/restik/api",
 			RootScopedKinds:            sets.NewString("PodSecurityPolicy", "ThirdPartyResource"),
 			AddInternalObjectsToScheme: api.AddToScheme,
 		},
 		announced.VersionToSchemeFunc{
-			api.V1alpha1SchemeGroupVersion.Version: api.V1alpha1AddToScheme,
+			rapi.V1alpha1SchemeGroupVersion.Version: rapi.V1alpha1AddToScheme,
 		},
-	).Announce().RegisterAndEnable(); err != nil {
+	).Announce(api.GroupFactoryRegistry).RegisterAndEnable(api.Registry, api.Scheme); err != nil {
 		panic(err)
 	}
 }

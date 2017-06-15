@@ -4,10 +4,10 @@ import (
 	"time"
 
 	rapi "github.com/appscode/restik/api"
-	tcs "github.com/appscode/restik/client/clientset"
+	rcs "github.com/appscode/restik/client/clientset"
 	"gopkg.in/robfig/cron.v2"
-	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
-	"k8s.io/kubernetes/pkg/client/record"
+	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/record"
 )
 
 const (
@@ -37,7 +37,7 @@ const (
 )
 
 type Controller struct {
-	ExtClientset tcs.ExtensionInterface
+	ExtClientset rcs.ExtensionInterface
 	Clientset    clientset.Interface
 	// sync time to sync the list.
 	SyncPeriod time.Duration
@@ -46,7 +46,7 @@ type Controller struct {
 }
 
 type cronController struct {
-	extClientset  tcs.ExtensionInterface
+	extClientset  rcs.ExtensionInterface
 	clientset     clientset.Interface
 	tprName       string
 	namespace     string

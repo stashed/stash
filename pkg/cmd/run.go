@@ -1,15 +1,14 @@
 package cmd
 
 import (
-	"fmt"
-	"time"
-
 	"github.com/appscode/log"
 	_ "github.com/appscode/restik/api/install"
+	rcs "github.com/appscode/restik/client/clientset"
 	"github.com/appscode/restik/pkg/controller"
 	"github.com/spf13/cobra"
-	"k8s.io/kubernetes/pkg/client/unversioned/clientcmd"
-	"k8s.io/kubernetes/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/runtime"
+	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 func NewCmdRun() *cobra.Command {
@@ -25,15 +24,15 @@ func NewCmdRun() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
 			if err != nil {
-				fmt.Printf("Could not get kubernetes config: %s", err)
-				time.Sleep(30 * time.Minute)
-				panic(err)
+				log.Fatalf("Could not get kubernetes config: %s", err)
 			}
-			defer runtime.HandleCrash()
+			kubeClient := clientset.NewForConfigOrDie(config)
+			restikClient := rcs.NewForConfigOrDie(config)
+			ctrl := controller.NewRestikController(kubeClient, restikClient, image)
 
-			w := controller.NewRestikController(config, image)
-			fmt.Println("Starting restik controller...")
-			err = w.RunAndHold()
+			log.Infoln("Starting restik operator...")
+			defer runtime.HandleCrash()
+			err = ctrl.RunAndHold()
 			if err != nil {
 				log.Errorln(err)
 			}

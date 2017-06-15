@@ -13,45 +13,36 @@ import (
 
 	"github.com/appscode/log"
 	rapi "github.com/appscode/restik/api"
-	tcs "github.com/appscode/restik/client/clientset"
+	rcs "github.com/appscode/restik/client/clientset"
 	"gopkg.in/robfig/cron.v2"
-	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/api/unversioned"
-	"k8s.io/kubernetes/pkg/client/cache"
-	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
-	"k8s.io/kubernetes/pkg/runtime"
-	"k8s.io/kubernetes/pkg/util/wait"
-	"k8s.io/kubernetes/pkg/watch"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apimachinery/pkg/watch"
+	clientset "k8s.io/client-go/kubernetes"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/tools/cache"
 )
 
-func NewCronController() (*cronController, error) {
-	factory := cmdutil.NewFactory(nil)
-	config, err := factory.ClientConfig()
-	if err != nil {
-		return nil, err
-	}
-	client, err := factory.ClientSet()
-	if err != nil {
-		return nil, err
-	}
+func NewCronController(kubeClient clientset.Interface, extClient rcs.ExtensionInterface) (*cronController, error) {
 	return &cronController{
-		extClientset:  tcs.NewForConfigOrDie(config),
-		clientset:     client,
+		clientset:     kubeClient,
+		extClientset:  extClient,
 		namespace:     os.Getenv(RestikNamespace),
 		tprName:       os.Getenv(RestikResourceName),
 		crons:         cron.New(),
-		eventRecorder: NewEventRecorder(client, "Restik sidecar Watcher"),
+		eventRecorder: NewEventRecorder(kubeClient, "Restik sidecar Watcher"),
 	}, nil
 }
 
 func (cronWatcher *cronController) RunBackup() error {
 	cronWatcher.crons.Start()
 	lw := &cache.ListWatch{
-		ListFunc: func(opts api.ListOptions) (runtime.Object, error) {
-			return cronWatcher.extClientset.Restiks(cronWatcher.namespace).List(api.ListOptions{})
+		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
+			return cronWatcher.extClientset.Restiks(cronWatcher.namespace).List(metav1.ListOptions{})
 		},
-		WatchFunc: func(options api.ListOptions) (watch.Interface, error) {
-			return cronWatcher.extClientset.Restiks(cronWatcher.namespace).Watch(api.ListOptions{})
+		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+			return cronWatcher.extClientset.Restiks(cronWatcher.namespace).Watch(metav1.ListOptions{})
 		},
 	}
 	_, cronController := cache.NewInformer(lw,
@@ -66,7 +57,7 @@ func (cronWatcher *cronController) RunBackup() error {
 						if err != nil {
 							cronWatcher.eventRecorder.Eventf(
 								r,
-								api.EventTypeWarning,
+								apiv1.EventTypeWarning,
 								EventReasonFailedToBackup,
 								"Failed to start backup process reason %v", err,
 							)
@@ -92,7 +83,7 @@ func (cronWatcher *cronController) RunBackup() error {
 					if err != nil {
 						cronWatcher.eventRecorder.Eventf(
 							newObj,
-							api.EventTypeWarning,
+							apiv1.EventTypeWarning,
 							EventReasonFailedToBackup,
 							"Failed to update backup process reason %v", err,
 						)
@@ -129,19 +120,19 @@ func (cronWatcher *cronController) startCronBackupProcedure() error {
 	interval := restik.Spec.Schedule
 	if _, err = cron.Parse(interval); err != nil {
 		log.Errorln(err)
-		cronWatcher.eventRecorder.Event(restik, api.EventTypeWarning, EventReasonInvalidCronExpression, err.Error())
+		cronWatcher.eventRecorder.Event(restik, apiv1.EventTypeWarning, EventReasonInvalidCronExpression, err.Error())
 		//Reset Wrong Schedule
 		restik.Spec.Schedule = ""
 		_, err = cronWatcher.extClientset.Restiks(restik.Namespace).Update(restik)
 		if err != nil {
 			return err
 		}
-		cronWatcher.eventRecorder.Event(restik, api.EventTypeNormal, EventReasonSuccessfulCronExpressionReset, "Cron expression reset")
+		cronWatcher.eventRecorder.Event(restik, apiv1.EventTypeNormal, EventReasonSuccessfulCronExpressionReset, "Cron expression reset")
 		return nil
 	}
 	_, err = cronWatcher.crons.AddFunc(interval, func() {
 		if err := cronWatcher.runCronJob(); err != nil {
-			cronWatcher.eventRecorder.Event(restik, api.EventTypeWarning, EventReasonFailedCronJob, err.Error())
+			cronWatcher.eventRecorder.Event(restik, apiv1.EventTypeWarning, EventReasonFailedCronJob, err.Error())
 			log.Errorln(err)
 		}
 	})
@@ -161,7 +152,7 @@ func (cronWatcher *cronController) runCronJob() error {
 	if err != nil {
 		return err
 	}
-	backupStartTime := unversioned.Now()
+	backupStartTime := metav1.Now()
 	cmd := fmt.Sprintf("/restic -r %s backup %s", backup.Spec.Destination.Path, backup.Spec.Source.Path)
 	// add tags if any
 	for _, t := range backup.Spec.Tags {
@@ -183,12 +174,12 @@ func (cronWatcher *cronController) runCronJob() error {
 	}
 	backup.Status.BackupCount++
 	message := "Backup operation number = " + strconv.Itoa(int(backup.Status.BackupCount))
-	cronWatcher.eventRecorder.Event(backup, api.EventTypeNormal, reason, message+errMessage)
-	backupEndTime := unversioned.Now()
+	cronWatcher.eventRecorder.Event(backup, apiv1.EventTypeNormal, reason, message+errMessage)
+	backupEndTime := metav1.Now()
 	_, err = snapshotRetention(backup)
 	if err != nil {
 		log.Errorln("Snapshot retention failed cause ", err)
-		cronWatcher.eventRecorder.Event(backup, api.EventTypeNormal, EventReasonFailedToRetention, message+" ERROR: "+err.Error())
+		cronWatcher.eventRecorder.Event(backup, apiv1.EventTypeNormal, EventReasonFailedToRetention, message+" ERROR: "+err.Error())
 	}
 	backup.Status.LastBackupTime = &backupStartTime
 	if reflect.DeepEqual(backup.Status.FirstBackupTime, time.Time{}) {
@@ -198,7 +189,7 @@ func (cronWatcher *cronController) runCronJob() error {
 	backup, err = cronWatcher.extClientset.Restiks(backup.Namespace).Update(backup)
 	if err != nil {
 		log.Errorln(err)
-		cronWatcher.eventRecorder.Event(backup, api.EventTypeNormal, EventReasonFailedToUpdate, err.Error())
+		cronWatcher.eventRecorder.Event(backup, apiv1.EventTypeNormal, EventReasonFailedToUpdate, err.Error())
 	}
 	return nil
 }
