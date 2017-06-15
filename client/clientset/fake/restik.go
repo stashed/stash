@@ -5,8 +5,8 @@ import (
 	"github.com/appscode/restik/client/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/watch"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/testing"
 )
 
@@ -15,7 +15,7 @@ type FakeRestik struct {
 	ns   string
 }
 
-var restikResource = metav1.GroupVersionResource{Group: "backup.appscode.com", Version: "v1alpha1", Resource: "restiks"}
+var restikResource = schema.GroupVersionResource{Group: "backup.appscode.com", Version: "v1alpha1", Resource: "restiks"}
 
 var _ clientset.RestikInterface = &FakeRestik{}
 
@@ -31,7 +31,7 @@ func (mock *FakeRestik) Get(name string) (*aci.Restik, error) {
 }
 
 // List returns the a of Restiks.
-func (mock *FakeRestik) List(opts apiv1.ListOptions) (*aci.RestikList, error) {
+func (mock *FakeRestik) List(opts metav1.ListOptions) (*aci.RestikList, error) {
 	obj, err := mock.Fake.
 		Invokes(testing.NewListAction(restikResource, mock.ns, opts), &aci.Restik{})
 
@@ -75,7 +75,7 @@ func (mock *FakeRestik) Update(svc *aci.Restik) (*aci.Restik, error) {
 }
 
 // Delete deletes a Restik by name.
-func (mock *FakeRestik) Delete(name string, _ *apiv1.DeleteOptions) error {
+func (mock *FakeRestik) Delete(name string, _ *metav1.DeleteOptions) error {
 	_, err := mock.Fake.
 		Invokes(testing.NewDeleteAction(restikResource, mock.ns, name), &aci.Restik{})
 
@@ -92,7 +92,7 @@ func (mock *FakeRestik) UpdateStatus(srv *aci.Restik) (*aci.Restik, error) {
 	return obj.(*aci.Restik), err
 }
 
-func (mock *FakeRestik) Watch(opts apiv1.ListOptions) (watch.Interface, error) {
+func (mock *FakeRestik) Watch(opts metav1.ListOptions) (watch.Interface, error) {
 	return mock.Fake.
 		InvokesWatch(testing.NewWatchAction(restikResource, mock.ns, opts))
 }
