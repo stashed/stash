@@ -4,11 +4,11 @@ import (
 	"github.com/appscode/log"
 	_ "github.com/appscode/restik/api/install"
 	rcs "github.com/appscode/restik/client/clientset"
+	"github.com/appscode/restik/pkg/analytics"
 	"github.com/appscode/restik/pkg/controller"
 	"github.com/spf13/cobra"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	"github.com/appscode/restik/pkg/analytics"
 )
 
 func NewCmdWatch(version string) *cobra.Command {

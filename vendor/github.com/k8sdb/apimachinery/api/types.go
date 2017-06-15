@@ -1,15 +1,13 @@
 package api
 
-import (
-	apiv1 "k8s.io/client-go/pkg/api/v1"
-)
+import "k8s.io/kubernetes/pkg/api"
 
 // StorageSpec defines storage provisioning
 type StorageSpec struct {
 	// Name of the StorageClass to use when requesting storage provisioning.
 	Class string `json:"class"`
 	// Persistent Volume Claim
-	apiv1.PersistentVolumeClaimSpec `json:",inline,omitempty"`
+	api.PersistentVolumeClaimSpec `json:",inline,omitempty"`
 }
 
 type InitSpec struct {
@@ -18,8 +16,8 @@ type InitSpec struct {
 }
 
 type ScriptSourceSpec struct {
-	ScriptPath         string `json:"scriptPath,omitempty"`
-	apiv1.VolumeSource `json:",inline,omitempty"`
+	ScriptPath       string `json:"scriptPath,omitempty"`
+	api.VolumeSource `json:",inline,omitempty"`
 }
 
 type SnapshotSourceSpec struct {
@@ -34,7 +32,7 @@ type BackupScheduleSpec struct {
 
 type SnapshotStorageSpec struct {
 	// Snapshot storage secret
-	StorageSecret *apiv1.SecretVolumeSource `json:"storageSecret,omitempty"`
+	StorageSecret *api.SecretVolumeSource `json:"storageSecret,omitempty"`
 	// Cloud bucket name
 	BucketName string `json:"bucketName,omitempty"`
 }
