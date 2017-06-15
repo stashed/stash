@@ -1,5 +1,5 @@
 hash: b95bc97b2999acfc9ef27c9ccfb92256902474b73b7692226d9b5e1bf72894ca
-updated: 2017-06-14T20:45:51.603620915-07:00
+updated: 2017-06-15T14:38:53.143673903+06:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -9,7 +9,6 @@ imports:
 - name: github.com/appscode/go
   version: 5eabd32a8a0fe824b5e12c37dc53a0afea8507c9
   subpackages:
-  - encoding/json/types
   - types
   - version
 - name: github.com/appscode/log
@@ -83,10 +82,6 @@ imports:
   version: 72f9bd7c4e0c2a40055ab3d0f09654f730cce982
 - name: github.com/juju/ratelimit
   version: 77ed1c8a01217656d2080ad51981f6e99adaa177
-- name: github.com/k8sdb/apimachinery
-  version: a6849727f72de3285ba2230a6c91e6101a834e18
-  subpackages:
-  - api
 - name: github.com/mailru/easyjson
   version: d5b7844b561a7bc640052f1b935f7b800330d7e0
   subpackages:
@@ -314,7 +309,7 @@ imports:
   - util/homedir
   - util/integer
 - name: k8s.io/kubernetes
-  version: 8eb75a5810cba92ccad845ca360cf924f2385881
+  version: f07eea23494be1e7c11a8e2cf51bd96d1ec9fdf1
   subpackages:
   - pkg/api
   - pkg/api/errors
