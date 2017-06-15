@@ -14,6 +14,7 @@ import (
 	"github.com/appscode/log"
 	rapi "github.com/appscode/restik/api"
 	rcs "github.com/appscode/restik/client/clientset"
+	"github.com/appscode/restik/pkg/analytics"
 	"gopkg.in/robfig/cron.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -55,6 +56,7 @@ func (cronWatcher *cronController) RunBackup() error {
 						cronWatcher.restik = r
 						err := cronWatcher.startCronBackupProcedure()
 						if err != nil {
+							restikCronFailedToAdd()
 							cronWatcher.eventRecorder.Eventf(
 								r,
 								apiv1.EventTypeWarning,
@@ -62,6 +64,8 @@ func (cronWatcher *cronController) RunBackup() error {
 								"Failed to start backup process reason %v", err,
 							)
 							log.Errorln(err)
+						} else {
+							restikCronSuccessfullyAdded()
 						}
 					}
 				}
@@ -81,6 +85,7 @@ func (cronWatcher *cronController) RunBackup() error {
 					cronWatcher.restik = newObj
 					err := cronWatcher.startCronBackupProcedure()
 					if err != nil {
+						restikCronFailedToModify()
 						cronWatcher.eventRecorder.Eventf(
 							newObj,
 							apiv1.EventTypeWarning,
@@ -88,6 +93,8 @@ func (cronWatcher *cronController) RunBackup() error {
 							"Failed to update backup process reason %v", err,
 						)
 						log.Errorln(err)
+					} else {
+						restikCronSuccessfullyModified()
 					}
 				}
 			},
@@ -132,8 +139,11 @@ func (cronWatcher *cronController) startCronBackupProcedure() error {
 	}
 	_, err = cronWatcher.crons.AddFunc(interval, func() {
 		if err := cronWatcher.runCronJob(); err != nil {
+			restikJobFailure()
 			cronWatcher.eventRecorder.Event(restik, apiv1.EventTypeWarning, EventReasonFailedCronJob, err.Error())
 			log.Errorln(err)
+		} else {
+			restikJobSuccess()
 		}
 	})
 	if err != nil {
@@ -168,9 +178,11 @@ func (cronWatcher *cronController) runCronJob() error {
 		log.Errorln("Restik backup failed cause ", err)
 		errMessage = " ERROR: " + err.Error()
 		reason = EventReasonFailedToBackup
+		restikBackupFailure()
 	} else {
 		backup.Status.LastSuccessfulBackupTime = &backupStartTime
 		reason = EventReasonSuccessfulBackup
+		restikBackupSuccess()
 	}
 	backup.Status.BackupCount++
 	message := "Backup operation number = " + strconv.Itoa(int(backup.Status.BackupCount))
@@ -238,4 +250,36 @@ func execLocal(s string) (string, error) {
 	parts = parts[1:]
 	cmdOut, err := exec.Command(head, parts...).Output()
 	return strings.TrimSuffix(string(cmdOut), "\n"), err
+}
+
+func restikCronSuccessfullyAdded() {
+	analytics.SendEvent("restic-cron", "added", "success")
+}
+
+func restikCronFailedToAdd() {
+	analytics.SendEvent("restic-cron", "added", "failure")
+}
+
+func restikCronSuccessfullyModified() {
+	analytics.SendEvent("restic-cron", "modified", "success")
+}
+
+func restikCronFailedToModify() {
+	analytics.SendEvent("restic-cron", "modified", "failure")
+}
+
+func restikBackupSuccess() {
+	analytics.SendEvent("restic-cron", "backup", "success")
+}
+
+func restikBackupFailure() {
+	analytics.SendEvent("restic-cron", "backup", "failure")
+}
+
+func restikJobSuccess() {
+	analytics.SendEvent("restic-cron", "job", "success")
+}
+
+func restikJobFailure() {
+	analytics.SendEvent("restic-cron", "job", "failure")
 }

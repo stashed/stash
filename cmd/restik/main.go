@@ -31,8 +31,8 @@ func main() {
 	rootCmd.PersistentFlags().AddGoFlagSet(flag.CommandLine)
 
 	rootCmd.AddCommand(version.NewCmdVersion())
-	rootCmd.AddCommand(cmd.NewCmdRun())
-	rootCmd.AddCommand(cmd.NewCmdWatch())
+	rootCmd.AddCommand(cmd.NewCmdRun(Version))
+	rootCmd.AddCommand(cmd.NewCmdWatch(Version))
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)

@@ -4,6 +4,7 @@ import (
 	"github.com/appscode/log"
 	_ "github.com/appscode/restik/api/install"
 	rcs "github.com/appscode/restik/client/clientset"
+	"github.com/appscode/restik/pkg/analytics"
 	"github.com/appscode/restik/pkg/controller"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -11,11 +12,12 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func NewCmdRun() *cobra.Command {
+func NewCmdRun(version string) *cobra.Command {
 	var (
-		masterURL      string
-		kubeconfigPath string
-		image          string
+		masterURL       string
+		kubeconfigPath  string
+		image           string
+		enableAnalytics bool = true
 	)
 
 	cmd := &cobra.Command{
@@ -31,6 +33,12 @@ func NewCmdRun() *cobra.Command {
 			ctrl := controller.NewRestikController(kubeClient, restikClient, image)
 
 			log.Infoln("Starting restik operator...")
+
+			if enableAnalytics {
+				analytics.Enable()
+			}
+			analytics.SendEvent(image, "started", version)
+
 			defer runtime.HandleCrash()
 			err = ctrl.RunAndHold()
 			if err != nil {
@@ -41,6 +49,9 @@ func NewCmdRun() *cobra.Command {
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&image, "image", "appscode/restik:latest", "Image that will be used by restic-sidecar container.")
+
+	// Analytics flags
+	cmd.Flags().BoolVar(&enableAnalytics, "analytics", enableAnalytics, "Send analytical event to Google Analytics")
 
 	return cmd
 }
