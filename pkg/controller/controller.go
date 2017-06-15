@@ -125,11 +125,11 @@ func (c *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
 		}
 		rc.Spec.Template.Spec.Containers = append(rc.Spec.Template.Spec.Containers, restikContainer)
 		rc.Spec.Template.Spec.Volumes = append(rc.Spec.Template.Spec.Volumes, r.Spec.Destination.Volume)
-		newRC, err := c.Clientset.Core().ReplicationControllers(r.Namespace).Update(rc)
+		newRC, err := c.Clientset.CoreV1().ReplicationControllers(r.Namespace).Update(rc)
 		if err != nil {
 			return err
 		}
-		opts.LabelSelector = findSelectors(newRC.Spec.Template.Labels)
+		opts.LabelSelector = findSelectors(newRC.Spec.Template.Labels).String()
 		if err = restartPods(c.Clientset, r.Namespace, opts); err != nil {
 			return err
 		}
@@ -140,11 +140,11 @@ func (c *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
 		}
 		replicaset.Spec.Template.Spec.Containers = append(replicaset.Spec.Template.Spec.Containers, restikContainer)
 		replicaset.Spec.Template.Spec.Volumes = append(replicaset.Spec.Template.Spec.Volumes, r.Spec.Destination.Volume)
-		newReplicaset, err := c.Clientset.Extensions().ReplicaSets(r.Namespace).Update(replicaset)
+		newReplicaset, err := c.Clientset.ExtensionsV1beta1().ReplicaSets(r.Namespace).Update(replicaset)
 		if err != nil {
 			return err
 		}
-		opts.LabelSelector = findSelectors(newReplicaset.Spec.Template.Labels)
+		opts.LabelSelector = findSelectors(newReplicaset.Spec.Template.Labels).String()
 		if err = restartPods(c.Clientset, r.Namespace, opts); err != nil {
 			return err
 		}
@@ -155,7 +155,7 @@ func (c *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
 		}
 		deployment.Spec.Template.Spec.Containers = append(deployment.Spec.Template.Spec.Containers, restikContainer)
 		deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, r.Spec.Destination.Volume)
-		_, err = c.Clientset.Extensions().Deployments(r.Namespace).Update(deployment)
+		_, err = c.Clientset.ExtensionsV1beta1().Deployments(r.Namespace).Update(deployment)
 		if err != nil {
 			return err
 		}
@@ -166,11 +166,11 @@ func (c *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
 		}
 		daemonset.Spec.Template.Spec.Containers = append(daemonset.Spec.Template.Spec.Containers, restikContainer)
 		daemonset.Spec.Template.Spec.Volumes = append(daemonset.Spec.Template.Spec.Volumes, r.Spec.Destination.Volume)
-		newDaemonset, err := c.Clientset.Extensions().DaemonSets(r.Namespace).Update(daemonset)
+		newDaemonset, err := c.Clientset.ExtensionsV1beta1().DaemonSets(r.Namespace).Update(daemonset)
 		if err != nil {
 			return err
 		}
-		opts.LabelSelector = findSelectors(newDaemonset.Spec.Template.Labels)
+		opts.LabelSelector = findSelectors(newDaemonset.Spec.Template.Labels).String()
 		if err = restartPods(c.Clientset, r.Namespace, opts); err != nil {
 			return err
 		}
@@ -205,7 +205,7 @@ func (c *Controller) updateObjectAndStopBackup(r *rapi.Restik) error {
 		if err != nil {
 			return err
 		}
-		opts.LabelSelector = findSelectors(newRC.Spec.Template.Labels)
+		opts.LabelSelector = findSelectors(newRC.Spec.Template.Labels).String()
 		return restartPods(c.Clientset, r.Namespace, opts)
 	case ReplicaSet:
 		replicaset := &extensions.ReplicaSet{}
@@ -214,11 +214,11 @@ func (c *Controller) updateObjectAndStopBackup(r *rapi.Restik) error {
 		}
 		replicaset.Spec.Template.Spec.Containers = removeContainer(replicaset.Spec.Template.Spec.Containers, ContainerName)
 		replicaset.Spec.Template.Spec.Volumes = removeVolume(replicaset.Spec.Template.Spec.Volumes, r.Spec.Destination.Volume.Name)
-		newReplicaset, err := c.Clientset.Extensions().ReplicaSets(r.Namespace).Update(replicaset)
+		newReplicaset, err := c.Clientset.ExtensionsV1beta1().ReplicaSets(r.Namespace).Update(replicaset)
 		if err != nil {
 			return err
 		}
-		opts.LabelSelector = findSelectors(newReplicaset.Spec.Template.Labels)
+		opts.LabelSelector = findSelectors(newReplicaset.Spec.Template.Labels).String()
 		return restartPods(c.Clientset, r.Namespace, opts)
 	case DaemonSet:
 		daemonset := &extensions.DaemonSet{}
@@ -227,11 +227,11 @@ func (c *Controller) updateObjectAndStopBackup(r *rapi.Restik) error {
 		}
 		daemonset.Spec.Template.Spec.Containers = removeContainer(daemonset.Spec.Template.Spec.Containers, ContainerName)
 		daemonset.Spec.Template.Spec.Volumes = removeVolume(daemonset.Spec.Template.Spec.Volumes, r.Spec.Destination.Volume.Name)
-		newDaemonset, err := c.Clientset.Extensions().DaemonSets(r.Namespace).Update(daemonset)
+		newDaemonset, err := c.Clientset.ExtensionsV1beta1().DaemonSets(r.Namespace).Update(daemonset)
 		if err != nil {
 			return err
 		}
-		opts.LabelSelector = findSelectors(newDaemonset.Spec.Template.Labels)
+		opts.LabelSelector = findSelectors(newDaemonset.Spec.Template.Labels).String()
 		return restartPods(c.Clientset, r.Namespace, opts)
 	case Deployment:
 		deployment := &extensions.Deployment{}
@@ -240,7 +240,7 @@ func (c *Controller) updateObjectAndStopBackup(r *rapi.Restik) error {
 		}
 		deployment.Spec.Template.Spec.Containers = removeContainer(deployment.Spec.Template.Spec.Containers, ContainerName)
 		deployment.Spec.Template.Spec.Volumes = removeVolume(deployment.Spec.Template.Spec.Volumes, r.Spec.Destination.Volume.Name)
-		_, err := c.Clientset.Extensions().Deployments(r.Namespace).Update(deployment)
+		_, err := c.Clientset.ExtensionsV1beta1().Deployments(r.Namespace).Update(deployment)
 		if err != nil {
 			return err
 		}
@@ -272,7 +272,7 @@ func (c *Controller) updateImage(r *rapi.Restik, image string) error {
 		if err != nil {
 			return err
 		}
-		opts.LabelSelector = findSelectors(newRC.Spec.Template.Labels)
+		opts.LabelSelector = findSelectors(newRC.Spec.Template.Labels).String()
 		return restartPods(c.Clientset, r.Namespace, opts)
 	case ReplicaSet:
 		replicaset := &extensions.ReplicaSet{}
@@ -280,11 +280,11 @@ func (c *Controller) updateImage(r *rapi.Restik, image string) error {
 			return err
 		}
 		replicaset.Spec.Template.Spec.Containers = updateImageForRestikContainer(replicaset.Spec.Template.Spec.Containers, ContainerName, image)
-		newReplicaset, err := c.Clientset.Extensions().ReplicaSets(r.Namespace).Update(replicaset)
+		newReplicaset, err := c.Clientset.ExtensionsV1beta1().ReplicaSets(r.Namespace).Update(replicaset)
 		if err != nil {
 			return err
 		}
-		opts.LabelSelector = findSelectors(newReplicaset.Spec.Template.Labels)
+		opts.LabelSelector = findSelectors(newReplicaset.Spec.Template.Labels).String()
 		return restartPods(c.Clientset, r.Namespace, opts)
 	case DaemonSet:
 		daemonset := &extensions.DaemonSet{}
@@ -292,11 +292,11 @@ func (c *Controller) updateImage(r *rapi.Restik, image string) error {
 			return err
 		}
 		daemonset.Spec.Template.Spec.Containers = updateImageForRestikContainer(daemonset.Spec.Template.Spec.Containers, ContainerName, image)
-		newDaemonset, err := c.Clientset.Extensions().DaemonSets(r.Namespace).Update(daemonset)
+		newDaemonset, err := c.Clientset.ExtensionsV1beta1().DaemonSets(r.Namespace).Update(daemonset)
 		if err != nil {
 			return err
 		}
-		opts.LabelSelector = findSelectors(newDaemonset.Spec.Template.Labels)
+		opts.LabelSelector = findSelectors(newDaemonset.Spec.Template.Labels).String()
 		return restartPods(c.Clientset, r.Namespace, opts)
 	case Deployment:
 		deployment := &extensions.Deployment{}
@@ -316,14 +316,14 @@ func (c *Controller) updateImage(r *rapi.Restik, image string) error {
 }
 
 func (c *Controller) ensureResource() error {
-	_, err := c.Clientset.Extensions().ThirdPartyResources().Get(tcs.ResourceNameRestik + "." + rapi.GroupName)
+	_, err := c.Clientset.ExtensionsV1beta1().ThirdPartyResources().Get(tcs.ResourceNameRestik+"."+rapi.GroupName, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		tpr := &extensions.ThirdPartyResource{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "extensions/v1beta1",
 				Kind:       "ThirdPartyResource",
 			},
-			ObjectMeta: apiv1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name: tcs.ResourceNameRestik + "." + rapi.GroupName,
 			},
 			Versions: []extensions.APIVersion{
