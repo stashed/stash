@@ -47,9 +47,7 @@ might happen among different releases of the operator.
 
 ---
 
-**The restik operator collects anonymous usage statistics to help us learning
-how the software is being used and how we can improve it. To disable stats collection,
-run the operator with the flag** `--analytics=false`.
+**The restik operator collects anonymous usage statistics to help us learn how the software is being used and how we can improve it. To disable stats collection, run the operator with the flag** `--analytics=false`.
 
 ---
 
