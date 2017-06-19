@@ -151,7 +151,14 @@ def to_upper_camel(lower_snake):
 def go_build(name, goos, goarch, main):
     linker_opts = []
     if BIN_MATRIX[name].get('go_version', False):
-        for k, v in metadata(REPO_ROOT, goos, goarch).items():
+        md = metadata(REPO_ROOT, goos, goarch)
+        if md['version_strategy'] == 'tag':
+            del md['commit_timestamp']
+            del md['build_timestamp']
+            del md['build_host']
+            del md['build_host_os']
+            del md['build_host_arch']
+        for k, v in md.items():
             linker_opts.append('-X')
             linker_opts.append('main.' + to_upper_camel(k) + '=' + v)
 
