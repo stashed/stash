@@ -75,19 +75,19 @@ def version():
 
 
 def fmt():
-    libbuild.ungroup_go_imports('api', 'client', 'cmd', 'pkg', 'test')
-    die(call('goimports -w api client cmd pkg test'))
-    call('gofmt -s -w api client cmd pkg test')
+    libbuild.ungroup_go_imports('api', 'client', '*.go', 'pkg', 'test')
+    die(call('goimports -w api client *.go pkg test'))
+    call('gofmt -s -w api client *.go pkg test')
 
 
 def vet():
-    call('go vet ./api/... ./client/... ./cmd/... ./pkg/... ./test/...')
+    call('go vet ./api/... ./client/... *.go ./pkg/... ./test/...')
 
 
 def lint():
     call('golint ./api/...')
     call('golint ./client/...')
-    call('golint ./cmd/...')
+    call('golint *.go')
     call('golint ./pkg/...')
     call('golint ./test/...')
 
@@ -102,9 +102,9 @@ def build_cmd(name):
         if 'distro' in cfg:
             for goos, archs in cfg['distro'].items():
                 for goarch in archs:
-                    libbuild.go_build(name, goos, goarch, main='cmd/{}/*.go'.format(name))
+                    libbuild.go_build(name, goos, goarch, main='*.go')
         else:
-            libbuild.go_build(name, libbuild.GOHOSTOS, libbuild.GOHOSTARCH, main='cmd/{}/*.go'.format(name))
+            libbuild.go_build(name, libbuild.GOHOSTOS, libbuild.GOHOSTARCH, main='*.go')
 
 
 def build_cmds():
@@ -148,13 +148,13 @@ def update_registry():
 
 
 def install():
-    die(call('GO15VENDOREXPERIMENT=1 ' + libbuild.GOC + ' install ./cmd/...'))
+    die(call('GO15VENDOREXPERIMENT=1 ' + libbuild.GOC + ' install .'))
 
 
 def default():
     gen()
     fmt()
-    die(call('GO15VENDOREXPERIMENT=1 ' + libbuild.GOC + ' install ./cmd/...'))
+    die(call('GO15VENDOREXPERIMENT=1 ' + libbuild.GOC + ' install . ./test/...'))
 
 def test(type):
     if type == 'unit':
