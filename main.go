@@ -8,10 +8,9 @@ import (
 	"github.com/appscode/go/version"
 	logs "github.com/appscode/log/golog"
 	_ "github.com/appscode/restik/api/install"
-	"github.com/appscode/restik/pkg/cmd"
+	_ "github.com/appscode/restik/client/clientset/fake"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	_ "github.com/appscode/restik/client/clientset/fake"
 	_ "k8s.io/client-go/kubernetes/fake"
 )
 
@@ -30,8 +29,8 @@ func main() {
 	rootCmd.PersistentFlags().AddGoFlagSet(flag.CommandLine)
 
 	rootCmd.AddCommand(version.NewCmdVersion())
-	rootCmd.AddCommand(cmd.NewCmdRun(Version))
-	rootCmd.AddCommand(cmd.NewCmdWatch(Version))
+	rootCmd.AddCommand(NewCmdRun(Version))
+	rootCmd.AddCommand(NewCmdWatch(Version))
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)

@@ -10,10 +10,10 @@ import (
 	rcs "github.com/appscode/restik/client/clientset"
 	"github.com/appscode/restik/pkg/controller"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	clientset "k8s.io/client-go/kubernetes"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/apimachinery/pkg/fields"
 )
 
 var image = "appscode/restik:latest"
