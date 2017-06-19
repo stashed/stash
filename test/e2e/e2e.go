@@ -13,7 +13,7 @@ import (
 	clientset "k8s.io/client-go/kubernetes"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/kubernetes/pkg/fields"
+	"k8s.io/apimachinery/pkg/fields"
 )
 
 var image = "appscode/restik:latest"
@@ -75,7 +75,7 @@ func checkContainerAfterBackupDelete(watcher *controller.Controller, name string
 	var err error
 	var containers []apiv1.Container
 	for {
-		log.Infoln("Waiting 20 sec for checking restik-sedecar deletion")
+		log.Infoln("Waiting 20 sec for checking restik-sidecar deletion")
 		time.Sleep(time.Second * 20)
 		switch _type {
 		case controller.ReplicationController:

@@ -11,9 +11,8 @@ import (
 	"github.com/appscode/restik/pkg/cmd"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	// Add fake package as a dependency to add this under vendor
 	_ "github.com/appscode/restik/client/clientset/fake"
-	_ "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/fake"
+	_ "k8s.io/client-go/kubernetes/fake"
 )
 
 func main() {

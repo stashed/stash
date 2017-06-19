@@ -6,10 +6,10 @@ import (
 
 	rapi "github.com/appscode/restik/api"
 	"github.com/appscode/restik/client/clientset"
-	"github.com/appscode/restik/client/clientset/fake"
+	rfake "github.com/appscode/restik/client/clientset/fake"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	fakeclientset "k8s.io/client-go/kubernetes/fake"
+	fake "k8s.io/client-go/kubernetes/fake"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
@@ -116,8 +116,8 @@ func TestUpdateImage(t *testing.T) {
 
 func getFakeController() *Controller {
 	fakeController := &Controller{
-		Clientset:    fakeclientset.NewSimpleClientset(),
-		ExtClientset: fake.NewFakeRestikClient(),
+		Clientset:    fake.NewSimpleClientset(),
+		ExtClientset: rfake.NewFakeRestikClient(),
 		SyncPeriod:   time.Minute * 2,
 		Image:        "appscode/restik:fake",
 	}
