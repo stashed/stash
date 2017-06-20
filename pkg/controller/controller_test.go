@@ -119,7 +119,7 @@ func getFakeController() *Controller {
 		Clientset:    fake.NewSimpleClientset(),
 		ExtClientset: rfake.NewFakeRestikClient(),
 		SyncPeriod:   time.Minute * 2,
-		Image:        "appscode/restik:fake",
+		Tag:          "canary",
 	}
 	return fakeController
 }

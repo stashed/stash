@@ -24,12 +24,12 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-func NewRestikController(kubeClient clientset.Interface, extClient rcs.ExtensionInterface, image string) *Controller {
+func NewRestikController(kubeClient clientset.Interface, extClient rcs.ExtensionInterface, tag string) *Controller {
 	return &Controller{
 		Clientset:    kubeClient,
 		ExtClientset: extClient,
+		Tag:          tag,
 		SyncPeriod:   time.Minute * 2,
-		Image:        image,
 	}
 }
 
@@ -142,7 +142,7 @@ func (c *Controller) RunAndHold() {
 
 func (c *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
 	ls := labels.SelectorFromSet(labels.Set{BackupConfig: r.Name})
-	restikContainer := getRestikContainer(r, c.Image)
+	restikContainer := c.getSidecarContainer(r)
 	ob, typ, err := getKubeObject(c.Clientset, r.Namespace, ls)
 	if err != nil {
 		return err

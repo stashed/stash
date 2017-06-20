@@ -5,6 +5,7 @@ import (
 
 	"github.com/appscode/log"
 	rapi "github.com/appscode/restik/api"
+	"github.com/appscode/restik/pkg/docker"
 	"github.com/ghodss/yaml"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -47,24 +48,24 @@ func getKubeObject(kubeClient clientset.Interface, namespace string, ls labels.S
 	return nil, "", errors.New("Workload not found")
 }
 
-func getRestikContainer(r *rapi.Restik, containerImage string) apiv1.Container {
-	container := apiv1.Container{
-		Name:            ContainerName,
-		Image:           containerImage,
-		ImagePullPolicy: apiv1.PullAlways,
+func (c *Controller) getSidecarContainer(r *rapi.Restik) apiv1.Container {
+	sidecar := apiv1.Container{
+		Name:            docker.RestikContainer,
+		Image:           docker.ImageOperator + ":" + c.Tag,
+		ImagePullPolicy: apiv1.PullIfNotPresent,
 		Env: []apiv1.EnvVar{
 			{
-				Name:  RestikNamespace,
+				Name:  docker.RestikNamespace,
 				Value: r.Namespace,
 			},
 			{
-				Name:  RestikResourceName,
+				Name:  docker.RestikName,
 				Value: r.Name,
 			},
 		},
 	}
-	container.Args = append(container.Args, "watch")
-	container.Args = append(container.Args, "--v=10")
+	sidecar.Args = append(sidecar.Args, "watch")
+	sidecar.Args = append(sidecar.Args, "--v=10")
 	backupVolumeMount := apiv1.VolumeMount{
 		Name:      r.Spec.Destination.Volume.Name,
 		MountPath: r.Spec.Destination.Path,
@@ -73,16 +74,16 @@ func getRestikContainer(r *rapi.Restik, containerImage string) apiv1.Container {
 		Name:      r.Spec.Source.VolumeName,
 		MountPath: r.Spec.Source.Path,
 	}
-	container.VolumeMounts = append(container.VolumeMounts, backupVolumeMount)
-	container.VolumeMounts = append(container.VolumeMounts, sourceVolumeMount)
-	return container
+	sidecar.VolumeMounts = append(sidecar.VolumeMounts, backupVolumeMount)
+	sidecar.VolumeMounts = append(sidecar.VolumeMounts, sourceVolumeMount)
+	return sidecar
 }
 
 func (c *Controller) addAnnotation(r *rapi.Restik) {
 	if r.ObjectMeta.Annotations == nil {
 		r.ObjectMeta.Annotations = make(map[string]string)
 	}
-	r.ObjectMeta.Annotations[ImageAnnotation] = c.Image
+	r.ObjectMeta.Annotations[ImageAnnotation] = c.Tag
 }
 
 func findSelectors(lb map[string]string) labels.Selector {
