@@ -52,6 +52,11 @@ build_docker() {
     cat >Dockerfile <<EOL
 FROM alpine
 
+RUN set -x \
+  && apk update \
+  && apk add ca-certificates \
+  && rm -rf /var/cache/apk/*
+
 COPY restic /restic
 COPY restik /restik
 
