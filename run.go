@@ -22,6 +22,15 @@ func NewCmdRun(version string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "run",
 		Short: "Run restic operator",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			if enableAnalytics {
+				analytics.Enable()
+			}
+			analytics.SendEvent("operator", "started", version)
+		},
+		PostRun: func(cmd *cobra.Command, args []string) {
+			analytics.SendEvent("operator", "stopped", version)
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
 			if err != nil {
@@ -31,12 +40,7 @@ func NewCmdRun(version string) *cobra.Command {
 			restikClient := rcs.NewForConfigOrDie(config)
 			ctrl := controller.NewRestikController(kubeClient, restikClient, image)
 
-			log.Infoln("Starting restik operator...")
-
-			if enableAnalytics {
-				analytics.Enable()
-			}
-			analytics.SendEvent(image, "started", version)
+			log.Infoln("Starting operator...")
 
 			defer runtime.HandleCrash()
 			err = ctrl.RunAndHold()
