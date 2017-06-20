@@ -3,8 +3,8 @@ package controller
 import (
 	"errors"
 
-	rapi "github.com/appscode/restik/api"
-	"github.com/appscode/restik/pkg/docker"
+	rapi "github.com/appscode/stash/api"
+	"github.com/appscode/stash/pkg/docker"
 	"github.com/ghodss/yaml"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -45,9 +45,9 @@ func getKubeObject(kubeClient clientset.Interface, namespace string, ls labels.S
 	return nil, "", errors.New("Workload not found")
 }
 
-func (c *Controller) GetSidecarContainer(r *rapi.Restik) apiv1.Container {
+func (c *Controller) GetSidecarContainer(r *rapi.Stash) apiv1.Container {
 	sidecar := apiv1.Container{
-		Name:            docker.RestikContainer,
+		Name:            docker.StashContainer,
 		Image:           docker.ImageOperator + ":" + c.SidecarImageTag,
 		ImagePullPolicy: apiv1.PullIfNotPresent,
 		Args: []string{
@@ -71,7 +71,7 @@ func (c *Controller) GetSidecarContainer(r *rapi.Restik) apiv1.Container {
 	return sidecar
 }
 
-func (c *Controller) addAnnotation(r *rapi.Restik) {
+func (c *Controller) addAnnotation(r *rapi.Stash) {
 	if r.ObjectMeta.Annotations == nil {
 		r.ObjectMeta.Annotations = make(map[string]string)
 	}
@@ -108,7 +108,7 @@ func removeContainer(c []apiv1.Container, name string) []apiv1.Container {
 	}
 	return c
 }
-func updateImageForRestikContainer(c []apiv1.Container, name, image string) []apiv1.Container {
+func updateImageForStashContainer(c []apiv1.Container, name, image string) []apiv1.Container {
 	for i, v := range c {
 		if v.Name == name {
 			c[i].Image = image

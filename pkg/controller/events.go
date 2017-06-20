@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"github.com/appscode/restik/pkg/analytics"
+	"github.com/appscode/stash/pkg/analytics"
 )
 
 func sidecarSuccessfullyAdd() {

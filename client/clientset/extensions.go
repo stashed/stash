@@ -6,7 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	kapi "k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/rest"
-	"github.com/appscode/restik/api"
+	"github.com/appscode/stash/api"
 )
 
 const (
@@ -15,7 +15,7 @@ const (
 
 type ExtensionInterface interface {
 	RESTClient() rest.Interface
-	RestikNamespacer
+	StashNamespacer
 }
 
 // ExtensionsClient is used to interact with experimental Kubernetes features.
@@ -27,8 +27,8 @@ type ExtensionClient struct {
 
 var _ ExtensionInterface = &ExtensionClient{}
 
-func (a *ExtensionClient) Restiks(namespace string) RestikInterface {
-	return newRestik(a, namespace)
+func (a *ExtensionClient) Stashs(namespace string) StashInterface {
+	return newStash(a, namespace)
 }
 
 // NewForConfig creates a new ExtensionClient for the given config. This client

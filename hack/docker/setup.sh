@@ -7,13 +7,13 @@ set -o pipefail
 GOPATH=$(go env GOPATH)
 SRC=$GOPATH/src
 BIN=$GOPATH/bin
-REPO_ROOT=$GOPATH/src/github.com/appscode/restik
+REPO_ROOT=$GOPATH/src/github.com/appscode/stash
 
 source "$REPO_ROOT/hack/libbuild/common/lib.sh"
 source "$REPO_ROOT/hack/libbuild/common/public_image.sh"
 
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
-IMG=restik
+IMG=stash
 RESTIC_VER=0.6.1
 
 DIST=$REPO_ROOT/dist
@@ -24,14 +24,14 @@ fi
 
 clean() {
     pushd $REPO_ROOT/hack/docker
-    rm -rf restic restik Dockerfile
+    rm -rf restic stash Dockerfile
     popd
 }
 
 build_binary() {
     pushd $REPO_ROOT
     ./hack/builddeps.sh
-    ./hack/make.py build restik
+    ./hack/make.py build stash
     detect_tag $DIST/.tag
     popd
 }
@@ -40,8 +40,8 @@ build_docker() {
     pushd $REPO_ROOT/hack/docker
 
     # Download restic
-    cp $DIST/restik/restik-linux-amd64 restik
-    chmod 755 restik
+    cp $DIST/stash/stash-linux-amd64 stash
+    chmod 755 stash
 
     # Download restic
     wget https://github.com/restic/restic/releases/download/v${RESTIC_VER}/restic_${RESTIC_VER}_linux_amd64.bz2
@@ -58,14 +58,14 @@ RUN set -x \
   && rm -rf /var/cache/apk/*
 
 COPY restic /restic
-COPY restik /restik
+COPY stash /stash
 
-ENTRYPOINT ["/restik"]
+ENTRYPOINT ["/stash"]
 EOL
     local cmd="docker build -t appscode/$IMG:$TAG ."
     echo $cmd; $cmd
 
-    rm restik Dockerfile restic
+    rm stash Dockerfile restic
     popd
 }
 

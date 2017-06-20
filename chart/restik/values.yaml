@@ -1,8 +1,8 @@
 ##
-## Restik chart configuration
+## Stash chart configuration
 ##
 
-## Image that will be used in Restik controller and in Restik sidecar container
+## Image that will be used in Stash controller and in Stash sidecar container
 
-image: appscode/restik
+image: appscode/stash
 imageTag: latest

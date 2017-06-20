@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/appscode/log"
-	rapi "github.com/appscode/restik/api"
+	rapi "github.com/appscode/stash/api"
 	"github.com/ghodss/yaml"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"

@@ -1,7 +1,7 @@
 package fake
 
 import (
-	"github.com/appscode/restik/client/clientset"
+	"github.com/appscode/stash/client/clientset"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/pkg/api"
@@ -15,7 +15,7 @@ type FakeExtensionClient struct {
 
 var _ clientset.ExtensionInterface = &FakeExtensionClient{}
 
-func NewFakeRestikClient(objects ...runtime.Object) *FakeExtensionClient {
+func NewFakeStashClient(objects ...runtime.Object) *FakeExtensionClient {
 	o := testing.NewObjectTracker(api.Registry, api.Scheme, api.Codecs.UniversalDecoder())
 	for _, obj := range objects {
 		if obj.GetObjectKind().GroupVersionKind().Group == "backup.appscode.com" {
@@ -33,8 +33,8 @@ func NewFakeRestikClient(objects ...runtime.Object) *FakeExtensionClient {
 	return &FakeExtensionClient{&fakePtr}
 }
 
-func (m *FakeExtensionClient) Restiks(ns string) clientset.RestikInterface {
-	return &FakeRestik{m.Fake, ns}
+func (m *FakeExtensionClient) Stashs(ns string) clientset.StashInterface {
+	return &FakeStash{m.Fake, ns}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

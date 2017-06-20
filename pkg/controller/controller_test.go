@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/appscode/restik/api"
-	"github.com/appscode/restik/client/clientset"
-	rfake "github.com/appscode/restik/client/clientset/fake"
+	"github.com/appscode/stash/api"
+	"github.com/appscode/stash/client/clientset"
+	rfake "github.com/appscode/stash/client/clientset/fake"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	fake "k8s.io/client-go/kubernetes/fake"
@@ -14,7 +14,7 @@ import (
 	"github.com/appscode/go/types"
 )
 
-var restikName = "appscode-restik"
+var stashName = "appscode-stash"
 
 var fakeRc = &apiv1.ReplicationController{
 	TypeMeta: metav1.TypeMeta{
@@ -25,7 +25,7 @@ var fakeRc = &apiv1.ReplicationController{
 		Name:      "appscode-rc",
 		Namespace: "default",
 		Labels: map[string]string{
-			"restik.appscode.com/config": restikName,
+			"stash.appscode.com/config": stashName,
 		},
 	},
 	Spec: apiv1.ReplicationControllerSpec{
@@ -51,25 +51,25 @@ var fakeRc = &apiv1.ReplicationController{
 		},
 	},
 }
-var fakeRestik = &api.Restik{
+var fakeStash = &api.Stash{
 	TypeMeta: metav1.TypeMeta{
-		Kind:       clientset.ResourceKindRestik,
+		Kind:       clientset.ResourceKindStash,
 		APIVersion: api.GroupName,
 	},
 	ObjectMeta: metav1.ObjectMeta{
-		Name:      restikName,
+		Name:      stashName,
 		Namespace: "default",
 	},
-	Spec: api.RestikSpec{
+	Spec: api.StashSpec{
 		Source: api.Source{
 			VolumeName: "volume-test",
 			Path:       "/mypath",
 		},
 		Destination: api.Destination{
-			Path:                 "/restik_repo",
-			RepositorySecretName: "restik-secret",
+			Path:                 "/stash_repo",
+			RepositorySecretName: "stash-secret",
 			Volume: apiv1.Volume{
-				Name: "restik-volume",
+				Name: "stash-volume",
 				VolumeSource: apiv1.VolumeSource{
 					AWSElasticBlockStore: &apiv1.AWSElasticBlockStoreVolumeSource{
 						FSType:   "ext4",
@@ -89,7 +89,7 @@ func TestUpdateObjectAndStartBackup(t *testing.T) {
 	fakeController := getFakeController()
 	_, err := fakeController.Clientset.Core().ReplicationControllers("default").Create(fakeRc)
 	assert.Nil(t, err)
-	b, err := fakeController.ExtClientset.Restiks("default").Create(fakeRestik)
+	b, err := fakeController.ExtClientset.Stashs("default").Create(fakeStash)
 	assert.Nil(t, err)
 	err = fakeController.updateObjectAndStartBackup(b)
 	assert.Nil(t, err)
@@ -99,7 +99,7 @@ func TestUpdateObjectAndStopBackup(t *testing.T) {
 	fakeController := getFakeController()
 	_, err := fakeController.Clientset.Core().ReplicationControllers("default").Create(fakeRc)
 	assert.Nil(t, err)
-	b, err := fakeController.ExtClientset.Restiks("default").Create(fakeRestik)
+	b, err := fakeController.ExtClientset.Stashs("default").Create(fakeStash)
 	assert.Nil(t, err)
 	err = fakeController.updateObjectAndStopBackup(b)
 	assert.Nil(t, err)
@@ -109,16 +109,16 @@ func TestUpdateImage(t *testing.T) {
 	fakeController := getFakeController()
 	_, err := fakeController.Clientset.Core().ReplicationControllers("default").Create(fakeRc)
 	assert.Nil(t, err)
-	b, err := fakeController.ExtClientset.Restiks("default").Create(fakeRestik)
+	b, err := fakeController.ExtClientset.Stashs("default").Create(fakeStash)
 	assert.Nil(t, err)
-	err = fakeController.updateImage(b, "appscode/restik:fakelatest")
+	err = fakeController.updateImage(b, "appscode/stash:fakelatest")
 	assert.Nil(t, err)
 }
 
 func getFakeController() *Controller {
 	fakeController := &Controller{
 		Clientset:       fake.NewSimpleClientset(),
-		ExtClientset:    rfake.NewFakeRestikClient(),
+		ExtClientset:    rfake.NewFakeStashClient(),
 		SyncPeriod:      time.Minute * 2,
 		SidecarImageTag: "canary",
 	}

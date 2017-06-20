@@ -4,7 +4,7 @@ package clientset
 import (
 	"fmt"
 
-	_ "github.com/appscode/restik/api/install"
+	_ "github.com/appscode/stash/api/install"
 	"k8s.io/client-go/pkg/api"
 )
 

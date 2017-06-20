@@ -5,7 +5,7 @@
 # - ???
 # - Profit
 
-pushd $GOPATH/src/github.com/appscode/restik
+pushd $GOPATH/src/github.com/appscode/stash
 
 glide up -v
 glide vc --only-code --no-tests

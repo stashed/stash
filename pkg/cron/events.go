@@ -1,7 +1,7 @@
 package cron
 
 import (
-	"github.com/appscode/restik/pkg/analytics"
+	"github.com/appscode/stash/pkg/analytics"
 )
 
 func crondSuccessfullyAdded() {
@@ -28,10 +28,10 @@ func backupFailure() {
 	analytics.SendEvent("crond", "backup", "failure")
 }
 
-func restikJobSuccess() {
+func stashJobSuccess() {
 	analytics.SendEvent("crond", "job", "success")
 }
 
-func restikJobFailure() {
+func stashJobFailure() {
 	analytics.SendEvent("crond", "job", "failure")
 }

@@ -7,8 +7,8 @@ import (
 
 	acrt "github.com/appscode/go/runtime"
 	"github.com/appscode/log"
-	rapi "github.com/appscode/restik/api"
-	rcs "github.com/appscode/restik/client/clientset"
+	rapi "github.com/appscode/stash/api"
+	rcs "github.com/appscode/stash/client/clientset"
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -24,18 +24,18 @@ import (
 )
 
 const (
-	ContainerName      = "restik"
-	RestikNamespace    = "RESTIK_NAMESPACE"
-	RestikResourceName = "RESTIK_RESOURCE_NAME"
+	ContainerName      = "stash"
+	StashNamespace    = "STASH_NAMESPACE"
+	StashResourceName = "STASH_RESOURCE_NAME"
 
-	BackupConfig          = "restik.appscode.com/config"
+	BackupConfig          = "stash.appscode.com/config"
 	RESTIC_PASSWORD       = "RESTIC_PASSWORD"
 	ReplicationController = "ReplicationController"
 	ReplicaSet            = "ReplicaSet"
 	Deployment            = "Deployment"
 	DaemonSet             = "DaemonSet"
 	StatefulSet           = "StatefulSet"
-	ImageAnnotation       = "restik.appscode.com/image"
+	ImageAnnotation       = "stash.appscode.com/image"
 	Force                 = "force"
 )
 
@@ -58,7 +58,7 @@ func NewController(kubeClient clientset.Interface, extClient rcs.ExtensionInterf
 }
 
 func (c *Controller) Setup() error {
-	_, err := c.Clientset.ExtensionsV1beta1().ThirdPartyResources().Get(rcs.ResourceNameRestik+"."+rapi.GroupName, metav1.GetOptions{})
+	_, err := c.Clientset.ExtensionsV1beta1().ThirdPartyResources().Get(rcs.ResourceNameStash+"."+rapi.GroupName, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		tpr := &extensions.ThirdPartyResource{
 			TypeMeta: metav1.TypeMeta{
@@ -66,7 +66,7 @@ func (c *Controller) Setup() error {
 				Kind:       "ThirdPartyResource",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name: rcs.ResourceNameRestik + "." + rapi.GroupName,
+				Name: rcs.ResourceNameStash + "." + rapi.GroupName,
 			},
 			Versions: []extensions.APIVersion{
 				{
@@ -89,23 +89,23 @@ func (c *Controller) RunAndHold() {
 
 	lw := &cache.ListWatch{
 		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
-			return c.ExtClientset.Restiks(apiv1.NamespaceAll).List(metav1.ListOptions{})
+			return c.ExtClientset.Stashs(apiv1.NamespaceAll).List(metav1.ListOptions{})
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return c.ExtClientset.Restiks(apiv1.NamespaceAll).Watch(metav1.ListOptions{})
+			return c.ExtClientset.Stashs(apiv1.NamespaceAll).Watch(metav1.ListOptions{})
 		},
 	}
 	_, ctrl := cache.NewInformer(lw,
-		&rapi.Restik{},
+		&rapi.Stash{},
 		c.SyncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				if b, ok := obj.(*rapi.Restik); ok {
-					glog.Infoln("Got one added Restik obejct", b)
+				if b, ok := obj.(*rapi.Stash); ok {
+					glog.Infoln("Got one added Stash obejct", b)
 					if b.ObjectMeta.Annotations != nil {
 						_, ok := b.ObjectMeta.Annotations[ImageAnnotation]
 						if ok {
-							glog.Infoln("Got one added Restik obejct that was previously deployed", b)
+							glog.Infoln("Got one added Stash obejct that was previously deployed", b)
 							return
 						}
 					}
@@ -119,8 +119,8 @@ func (c *Controller) RunAndHold() {
 				}
 			},
 			DeleteFunc: func(obj interface{}) {
-				if b, ok := obj.(*rapi.Restik); ok {
-					glog.Infoln("Got one deleted Restik object", b)
+				if b, ok := obj.(*rapi.Stash); ok {
+					glog.Infoln("Got one deleted Stash object", b)
 					err := c.updateObjectAndStopBackup(b)
 					if err != nil {
 						sidecarFailedToDelete()
@@ -131,14 +131,14 @@ func (c *Controller) RunAndHold() {
 				}
 			},
 			UpdateFunc: func(old, new interface{}) {
-				oldObj, ok := old.(*rapi.Restik)
+				oldObj, ok := old.(*rapi.Stash)
 				if !ok {
-					log.Errorln(errors.New("Error validating Restik object"))
+					log.Errorln(errors.New("Error validating Stash object"))
 					return
 				}
-				newObj, ok := new.(*rapi.Restik)
+				newObj, ok := new.(*rapi.Stash)
 				if !ok {
-					log.Errorln(errors.New("Error validating Restik object"))
+					log.Errorln(errors.New("Error validating Stash object"))
 					return
 				}
 				var oldImage, newImage string
@@ -149,7 +149,7 @@ func (c *Controller) RunAndHold() {
 					newImage = newObj.ObjectMeta.Annotations[ImageAnnotation]
 				}
 				if oldImage != newImage {
-					glog.Infoln("Got one updated Restik object for image", newObj)
+					glog.Infoln("Got one updated Stash object for image", newObj)
 					err := c.updateImage(newObj, newImage)
 					if err != nil {
 						sidecarFailedToUpdate()
@@ -164,14 +164,14 @@ func (c *Controller) RunAndHold() {
 	ctrl.Run(wait.NeverStop)
 }
 
-func (c *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
+func (c *Controller) updateObjectAndStartBackup(r *rapi.Stash) error {
 	ls := labels.SelectorFromSet(labels.Set{BackupConfig: r.Name})
 	ob, typ, err := getKubeObject(c.Clientset, r.Namespace, ls)
 	if err != nil {
 		return err
 	}
 	if ob == nil || typ == "" {
-		return errors.New(fmt.Sprintf("No object found for Restik %s ", r.Name))
+		return errors.New(fmt.Sprintf("No object found for Stash %s ", r.Name))
 	}
 	opts := metav1.ListOptions{}
 	switch typ {
@@ -232,22 +232,22 @@ func (c *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
 			return err
 		}
 	case StatefulSet:
-		log.Warningf("The Object referred by the Restik object (%s) is a statefulset.", r.Name)
+		log.Warningf("The Object referred by the Stash object (%s) is a statefulset.", r.Name)
 		return nil
 	}
 	c.addAnnotation(r)
-	_, err = c.ExtClientset.Restiks(r.Namespace).Update(r)
+	_, err = c.ExtClientset.Stashs(r.Namespace).Update(r)
 	return err
 }
 
-func (c *Controller) updateObjectAndStopBackup(r *rapi.Restik) error {
+func (c *Controller) updateObjectAndStopBackup(r *rapi.Stash) error {
 	ls := labels.SelectorFromSet(labels.Set{BackupConfig: r.Name})
 	ob, typ, err := getKubeObject(c.Clientset, r.Namespace, ls)
 	if err != nil {
 		return err
 	}
 	if ob == nil || typ == "" {
-		return errors.New(fmt.Sprintf("No object found for Restik %s ", r.Name))
+		return errors.New(fmt.Sprintf("No object found for Stash %s ", r.Name))
 	}
 	opts := metav1.ListOptions{}
 	switch typ {
@@ -302,20 +302,20 @@ func (c *Controller) updateObjectAndStopBackup(r *rapi.Restik) error {
 			return err
 		}
 	case StatefulSet:
-		log.Warningf("The Object referred by the Restik object (%s) is a statefulset.", r.Name)
+		log.Warningf("The Object referred by the Stash object (%s) is a statefulset.", r.Name)
 		return nil
 	}
 	return nil
 }
 
-func (c *Controller) updateImage(r *rapi.Restik, image string) error {
+func (c *Controller) updateImage(r *rapi.Stash, image string) error {
 	ls := labels.SelectorFromSet(labels.Set{BackupConfig: r.Name})
 	ob, typ, err := getKubeObject(c.Clientset, r.Namespace, ls)
 	if err != nil {
 		return err
 	}
 	if ob == nil || typ == "" {
-		return errors.New(fmt.Sprintf("No object found for Restik %s ", r.Name))
+		return errors.New(fmt.Sprintf("No object found for Stash %s ", r.Name))
 	}
 	opts := metav1.ListOptions{}
 	switch typ {
@@ -324,7 +324,7 @@ func (c *Controller) updateImage(r *rapi.Restik, image string) error {
 		if err := yaml.Unmarshal(ob, rc); err != nil {
 			return err
 		}
-		rc.Spec.Template.Spec.Containers = updateImageForRestikContainer(rc.Spec.Template.Spec.Containers, ContainerName, image)
+		rc.Spec.Template.Spec.Containers = updateImageForStashContainer(rc.Spec.Template.Spec.Containers, ContainerName, image)
 		newRC, err := c.Clientset.CoreV1().ReplicationControllers(r.Namespace).Update(rc)
 		if err != nil {
 			return err
@@ -336,7 +336,7 @@ func (c *Controller) updateImage(r *rapi.Restik, image string) error {
 		if err := yaml.Unmarshal(ob, replicaset); err != nil {
 			return err
 		}
-		replicaset.Spec.Template.Spec.Containers = updateImageForRestikContainer(replicaset.Spec.Template.Spec.Containers, ContainerName, image)
+		replicaset.Spec.Template.Spec.Containers = updateImageForStashContainer(replicaset.Spec.Template.Spec.Containers, ContainerName, image)
 		newReplicaset, err := c.Clientset.ExtensionsV1beta1().ReplicaSets(r.Namespace).Update(replicaset)
 		if err != nil {
 			return err
@@ -348,7 +348,7 @@ func (c *Controller) updateImage(r *rapi.Restik, image string) error {
 		if err := yaml.Unmarshal(ob, daemonset); err != nil {
 			return err
 		}
-		daemonset.Spec.Template.Spec.Containers = updateImageForRestikContainer(daemonset.Spec.Template.Spec.Containers, ContainerName, image)
+		daemonset.Spec.Template.Spec.Containers = updateImageForStashContainer(daemonset.Spec.Template.Spec.Containers, ContainerName, image)
 		newDaemonset, err := c.Clientset.ExtensionsV1beta1().DaemonSets(r.Namespace).Update(daemonset)
 		if err != nil {
 			return err
@@ -360,13 +360,13 @@ func (c *Controller) updateImage(r *rapi.Restik, image string) error {
 		if err := yaml.Unmarshal(ob, deployment); err != nil {
 			return err
 		}
-		deployment.Spec.Template.Spec.Containers = updateImageForRestikContainer(deployment.Spec.Template.Spec.Containers, ContainerName, image)
+		deployment.Spec.Template.Spec.Containers = updateImageForStashContainer(deployment.Spec.Template.Spec.Containers, ContainerName, image)
 		_, err := c.Clientset.ExtensionsV1beta1().Deployments(r.Namespace).Update(deployment)
 		if err != nil {
 			return err
 		}
 	case StatefulSet:
-		log.Warningf("The Object referred bt the Restik object (%s) is a statefulset.", r.Name)
+		log.Warningf("The Object referred bt the Stash object (%s) is a statefulset.", r.Name)
 		return nil
 	}
 	return nil
