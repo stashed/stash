@@ -27,7 +27,7 @@ func NewCmdRun(version string) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "run",
-		Short: "Run stash operator",
+		Short: "Run Stash operator",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			if enableAnalytics {
 				analytics.Enable()

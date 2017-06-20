@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	ContainerName      = "stash"
+	ContainerName     = "stash"
 	StashNamespace    = "STASH_NAMESPACE"
 	StashResourceName = "STASH_RESOURCE_NAME"
 
@@ -58,7 +58,7 @@ func NewController(kubeClient clientset.Interface, extClient rcs.ExtensionInterf
 }
 
 func (c *Controller) Setup() error {
-	_, err := c.Clientset.ExtensionsV1beta1().ThirdPartyResources().Get(rcs.ResourceNameStash+"."+rapi.GroupName, metav1.GetOptions{})
+	_, err := c.Clientset.ExtensionsV1beta1().ThirdPartyResources().Get(rcs.ResourceNameRestic+"."+rapi.GroupName, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		tpr := &extensions.ThirdPartyResource{
 			TypeMeta: metav1.TypeMeta{
@@ -66,7 +66,7 @@ func (c *Controller) Setup() error {
 				Kind:       "ThirdPartyResource",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name: rcs.ResourceNameStash + "." + rapi.GroupName,
+				Name: rcs.ResourceNameRestic + "." + rapi.GroupName,
 			},
 			Versions: []extensions.APIVersion{
 				{
@@ -89,10 +89,10 @@ func (c *Controller) RunAndHold() {
 
 	lw := &cache.ListWatch{
 		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
-			return c.ExtClientset.Stashs(apiv1.NamespaceAll).List(metav1.ListOptions{})
+			return c.ExtClientset.Restics(apiv1.NamespaceAll).List(metav1.ListOptions{})
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return c.ExtClientset.Stashs(apiv1.NamespaceAll).Watch(metav1.ListOptions{})
+			return c.ExtClientset.Restics(apiv1.NamespaceAll).Watch(metav1.ListOptions{})
 		},
 	}
 	_, ctrl := cache.NewInformer(lw,
@@ -236,7 +236,7 @@ func (c *Controller) updateObjectAndStartBackup(r *rapi.Restic) error {
 		return nil
 	}
 	c.addAnnotation(r)
-	_, err = c.ExtClientset.Stashs(r.Namespace).Update(r)
+	_, err = c.ExtClientset.Restics(r.Namespace).Update(r)
 	return err
 }
 

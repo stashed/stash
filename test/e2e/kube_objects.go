@@ -120,7 +120,7 @@ func createStash(watcher *controller.Controller, backupName string, secretName s
 	stash := &api.Restic{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "stash.appscode.com/v1alpha1",
-			Kind:       clientset.ResourceKindStash,
+			Kind:       clientset.ResourceKindRestic,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      backupName,
@@ -147,12 +147,12 @@ func createStash(watcher *controller.Controller, backupName string, secretName s
 			},
 		},
 	}
-	_, err := watcher.ExtClientset.Stashs(namespace).Create(stash)
+	_, err := watcher.ExtClientset.Restics(namespace).Create(stash)
 	return err
 }
 
 func deleteStash(watcher *controller.Controller, stashName string) error {
-	return watcher.ExtClientset.Stashs(namespace).Delete(stashName, nil)
+	return watcher.ExtClientset.Restics(namespace).Delete(stashName, nil)
 }
 
 func createReplicaset(watcher *controller.Controller, name string, stashName string) error {

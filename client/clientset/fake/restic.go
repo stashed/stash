@@ -1,7 +1,7 @@
 package fake
 
 import (
-	rapi "github.com/appscode/stash/api"
+	sapi "github.com/appscode/stash/api"
 	"github.com/appscode/stash/client/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -15,25 +15,25 @@ type FakeStash struct {
 	ns   string
 }
 
-var stashResource = schema.GroupVersionResource{Group: "backup.appscode.com", Version: "v1alpha1", Resource: "stashs"}
+var stashResource = schema.GroupVersionResource{Group: sapi.GroupName, Version: "v1alpha1", Resource: "stashs"}
 
-var _ clientset.StashInterface = &FakeStash{}
+var _ clientset.ResticInterface = &FakeStash{}
 
 // Get returns the Stashs by name.
-func (mock *FakeStash) Get(name string) (*rapi.Restic, error) {
+func (mock *FakeStash) Get(name string) (*sapi.Restic, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewGetAction(stashResource, mock.ns, name), &rapi.Restic{})
+		Invokes(testing.NewGetAction(stashResource, mock.ns, name), &sapi.Restic{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*rapi.Restic), err
+	return obj.(*sapi.Restic), err
 }
 
 // List returns the a of Stashs.
-func (mock *FakeStash) List(opts metav1.ListOptions) (*rapi.ResticList, error) {
+func (mock *FakeStash) List(opts metav1.ListOptions) (*sapi.ResticList, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewListAction(stashResource, mock.ns, opts), &rapi.Restic{})
+		Invokes(testing.NewListAction(stashResource, mock.ns, opts), &sapi.Restic{})
 
 	if obj == nil {
 		return nil, err
@@ -43,8 +43,8 @@ func (mock *FakeStash) List(opts metav1.ListOptions) (*rapi.ResticList, error) {
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &rapi.ResticList{}
-	for _, item := range obj.(*rapi.ResticList).Items {
+	list := &sapi.ResticList{}
+	for _, item := range obj.(*sapi.ResticList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)
 		}
@@ -53,43 +53,43 @@ func (mock *FakeStash) List(opts metav1.ListOptions) (*rapi.ResticList, error) {
 }
 
 // Create creates a new Stash.
-func (mock *FakeStash) Create(svc *rapi.Restic) (*rapi.Restic, error) {
+func (mock *FakeStash) Create(svc *sapi.Restic) (*sapi.Restic, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewCreateAction(stashResource, mock.ns, svc), &rapi.Restic{})
+		Invokes(testing.NewCreateAction(stashResource, mock.ns, svc), &sapi.Restic{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*rapi.Restic), err
+	return obj.(*sapi.Restic), err
 }
 
 // Update updates a Stash.
-func (mock *FakeStash) Update(svc *rapi.Restic) (*rapi.Restic, error) {
+func (mock *FakeStash) Update(svc *sapi.Restic) (*sapi.Restic, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewUpdateAction(stashResource, mock.ns, svc), &rapi.Restic{})
+		Invokes(testing.NewUpdateAction(stashResource, mock.ns, svc), &sapi.Restic{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*rapi.Restic), err
+	return obj.(*sapi.Restic), err
 }
 
 // Delete deletes a Stash by name.
 func (mock *FakeStash) Delete(name string, _ *metav1.DeleteOptions) error {
 	_, err := mock.Fake.
-		Invokes(testing.NewDeleteAction(stashResource, mock.ns, name), &rapi.Restic{})
+		Invokes(testing.NewDeleteAction(stashResource, mock.ns, name), &sapi.Restic{})
 
 	return err
 }
 
-func (mock *FakeStash) UpdateStatus(srv *rapi.Restic) (*rapi.Restic, error) {
+func (mock *FakeStash) UpdateStatus(srv *sapi.Restic) (*sapi.Restic, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(stashResource, "status", mock.ns, srv), &rapi.Restic{})
+		Invokes(testing.NewUpdateSubresourceAction(stashResource, "status", mock.ns, srv), &sapi.Restic{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*rapi.Restic), err
+	return obj.(*sapi.Restic), err
 }
 
 func (mock *FakeStash) Watch(opts metav1.ListOptions) (watch.Interface, error) {

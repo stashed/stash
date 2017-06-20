@@ -18,13 +18,13 @@ func TestBackupUpdate(t *testing.T) {
 		log.Fatalln(err)
 	}
 	stashClient := tcs.NewForConfigOrDie(config)
-	b, err := stashClient.Stashs("test").Get("testbackup")
+	b, err := stashClient.Restics("test").Get("testbackup")
 	if err != nil {
 		fmt.Println(err)
 	}
 	b.Spec.Schedule = "0 * * * * *"
 	b.Spec.RetentionPolicy.KeepLastSnapshots = 5
-	b, err = stashClient.Stashs("test").Update(b)
+	b, err = stashClient.Restics("test").Update(b)
 	if err != nil {
 		log.Fatalln(err)
 	}

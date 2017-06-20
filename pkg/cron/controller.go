@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/appscode/log"
-	rapi "github.com/appscode/stash/api"
-	rcs "github.com/appscode/stash/client/clientset"
+	sapi "github.com/appscode/stash/api"
+	scs "github.com/appscode/stash/client/clientset"
 	"github.com/appscode/stash/pkg/eventer"
 	"gopkg.in/robfig/cron.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	ContainerName      = "stash"
+	ContainerName     = "stash"
 	StashNamespace    = "STASH_NAMESPACE"
 	StashResourceName = "STASH_RESOURCE_NAME"
 
@@ -44,21 +44,21 @@ const (
 )
 
 type controller struct {
-	KubeClient   clientset.Interface
-	StashClient rcs.ExtensionInterface
+	KubeClient  clientset.Interface
+	StashClient scs.ExtensionInterface
 
 	resourceNamespace string
 	resourceName      string
-	resource          *rapi.Restic
+	resource          *sapi.Restic
 
 	crons         *cron.Cron
 	eventRecorder record.EventRecorder
 }
 
-func NewController(kubeClient clientset.Interface, stashClient rcs.ExtensionInterface, namespace, name string) *controller {
+func NewController(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, namespace, name string) *controller {
 	return &controller{
 		KubeClient:        kubeClient,
-		StashClient:      stashClient,
+		StashClient:       stashClient,
 		resourceNamespace: namespace,
 		resourceName:      name,
 		crons:             cron.New(),
@@ -71,18 +71,18 @@ func (c *controller) RunAndHold() {
 
 	lw := &cache.ListWatch{
 		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
-			return c.StashClient.Stashs(c.resourceNamespace).List(metav1.ListOptions{})
+			return c.StashClient.Restics(c.resourceNamespace).List(metav1.ListOptions{})
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return c.StashClient.Stashs(c.resourceNamespace).Watch(metav1.ListOptions{})
+			return c.StashClient.Restics(c.resourceNamespace).Watch(metav1.ListOptions{})
 		},
 	}
 	_, ctrl := cache.NewInformer(lw,
-		&rapi.Restic{},
+		&sapi.Restic{},
 		time.Minute*2,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				if r, ok := obj.(*rapi.Restic); ok {
+				if r, ok := obj.(*sapi.Restic); ok {
 					if r.Name == c.resourceName {
 						c.resource = r
 						err := c.startCronBackupProcedure()
@@ -102,12 +102,12 @@ func (c *controller) RunAndHold() {
 				}
 			},
 			UpdateFunc: func(old, new interface{}) {
-				oldObj, ok := old.(*rapi.Restic)
+				oldObj, ok := old.(*sapi.Restic)
 				if !ok {
 					log.Errorln(errors.New("Error validating Stash object"))
 					return
 				}
-				newObj, ok := new.(*rapi.Restic)
+				newObj, ok := new.(*sapi.Restic)
 				if !ok {
 					log.Errorln(errors.New("Error validating Stash object"))
 					return
@@ -160,7 +160,7 @@ func (c *controller) startCronBackupProcedure() error {
 		c.eventRecorder.Event(stash, apiv1.EventTypeWarning, eventer.EventReasonInvalidCronExpression, err.Error())
 		//Reset Wrong Schedule
 		stash.Spec.Schedule = ""
-		_, err = c.StashClient.Stashs(stash.Namespace).Update(stash)
+		_, err = c.StashClient.Restics(stash.Namespace).Update(stash)
 		if err != nil {
 			return err
 		}
@@ -228,7 +228,7 @@ func (c *controller) runCronJob() error {
 		backup.Status.FirstBackupTime = &backupStartTime
 	}
 	backup.Status.LastBackupDuration = backupEndTime.Sub(backupStartTime.Time).String()
-	backup, err = c.StashClient.Stashs(backup.Namespace).Update(backup)
+	backup, err = c.StashClient.Restics(backup.Namespace).Update(backup)
 	if err != nil {
 		log.Errorln(err)
 		c.eventRecorder.Event(backup, apiv1.EventTypeNormal, eventer.EventReasonFailedToUpdate, err.Error())
@@ -237,25 +237,25 @@ func (c *controller) runCronJob() error {
 	return nil
 }
 
-func snapshotRetention(r *rapi.Restic) (string, error) {
+func snapshotRetention(r *sapi.Restic) (string, error) {
 	cmd := fmt.Sprintf("/restic -r %s forget", r.Spec.Destination.Path)
 	if r.Spec.RetentionPolicy.KeepLastSnapshots > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepLast, r.Spec.RetentionPolicy.KeepLastSnapshots)
+		cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepLast, r.Spec.RetentionPolicy.KeepLastSnapshots)
 	}
 	if r.Spec.RetentionPolicy.KeepHourlySnapshots > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepHourly, r.Spec.RetentionPolicy.KeepHourlySnapshots)
+		cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepHourly, r.Spec.RetentionPolicy.KeepHourlySnapshots)
 	}
 	if r.Spec.RetentionPolicy.KeepDailySnapshots > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepDaily, r.Spec.RetentionPolicy.KeepDailySnapshots)
+		cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepDaily, r.Spec.RetentionPolicy.KeepDailySnapshots)
 	}
 	if r.Spec.RetentionPolicy.KeepWeeklySnapshots > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepWeekly, r.Spec.RetentionPolicy.KeepWeeklySnapshots)
+		cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepWeekly, r.Spec.RetentionPolicy.KeepWeeklySnapshots)
 	}
 	if r.Spec.RetentionPolicy.KeepMonthlySnapshots > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepMonthly, r.Spec.RetentionPolicy.KeepMonthlySnapshots)
+		cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepMonthly, r.Spec.RetentionPolicy.KeepMonthlySnapshots)
 	}
 	if r.Spec.RetentionPolicy.KeepYearlySnapshots > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepYearly, r.Spec.RetentionPolicy.KeepYearlySnapshots)
+		cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepYearly, r.Spec.RetentionPolicy.KeepYearlySnapshots)
 	}
 	if len(r.Spec.RetentionPolicy.KeepTags) != 0 {
 		for _, t := range r.Spec.RetentionPolicy.KeepTags {

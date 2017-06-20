@@ -49,7 +49,7 @@ A AppsCode Stash resource Looks like at the kubernetes level:
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
-kind: Stash
+kind: Restic
 metadata:
   name: test-backup
   namespace: default

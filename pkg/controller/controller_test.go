@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/appscode/go/types"
 	"github.com/appscode/stash/api"
 	"github.com/appscode/stash/client/clientset"
 	rfake "github.com/appscode/stash/client/clientset/fake"
@@ -11,7 +12,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	fake "k8s.io/client-go/kubernetes/fake"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
-	"github.com/appscode/go/types"
 )
 
 var stashName = "appscode-stash"
@@ -53,7 +53,7 @@ var fakeRc = &apiv1.ReplicationController{
 }
 var fakeStash = &api.Restic{
 	TypeMeta: metav1.TypeMeta{
-		Kind:       clientset.ResourceKindStash,
+		Kind:       clientset.ResourceKindRestic,
 		APIVersion: api.GroupName,
 	},
 	ObjectMeta: metav1.ObjectMeta{
@@ -89,7 +89,7 @@ func TestUpdateObjectAndStartBackup(t *testing.T) {
 	fakeController := getFakeController()
 	_, err := fakeController.Clientset.Core().ReplicationControllers("default").Create(fakeRc)
 	assert.Nil(t, err)
-	b, err := fakeController.ExtClientset.Stashs("default").Create(fakeStash)
+	b, err := fakeController.ExtClientset.Restics("default").Create(fakeStash)
 	assert.Nil(t, err)
 	err = fakeController.updateObjectAndStartBackup(b)
 	assert.Nil(t, err)
@@ -99,7 +99,7 @@ func TestUpdateObjectAndStopBackup(t *testing.T) {
 	fakeController := getFakeController()
 	_, err := fakeController.Clientset.Core().ReplicationControllers("default").Create(fakeRc)
 	assert.Nil(t, err)
-	b, err := fakeController.ExtClientset.Stashs("default").Create(fakeStash)
+	b, err := fakeController.ExtClientset.Restics("default").Create(fakeStash)
 	assert.Nil(t, err)
 	err = fakeController.updateObjectAndStopBackup(b)
 	assert.Nil(t, err)
@@ -109,7 +109,7 @@ func TestUpdateImage(t *testing.T) {
 	fakeController := getFakeController()
 	_, err := fakeController.Clientset.Core().ReplicationControllers("default").Create(fakeRc)
 	assert.Nil(t, err)
-	b, err := fakeController.ExtClientset.Stashs("default").Create(fakeStash)
+	b, err := fakeController.ExtClientset.Restics("default").Create(fakeStash)
 	assert.Nil(t, err)
 	err = fakeController.updateImage(b, "appscode/stash:fakelatest")
 	assert.Nil(t, err)

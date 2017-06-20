@@ -3,10 +3,10 @@ package clientset
 import (
 	"fmt"
 
+	sapi "github.com/appscode/stash/api"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	kapi "k8s.io/client-go/pkg/api"
+	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/rest"
-	"github.com/appscode/stash/api"
 )
 
 const (
@@ -15,7 +15,7 @@ const (
 
 type ExtensionInterface interface {
 	RESTClient() rest.Interface
-	StashNamespacer
+	ResticGetter
 }
 
 // ExtensionsClient is used to interact with experimental Kubernetes features.
@@ -27,8 +27,8 @@ type ExtensionClient struct {
 
 var _ ExtensionInterface = &ExtensionClient{}
 
-func (a *ExtensionClient) Stashs(namespace string) StashInterface {
-	return newStash(a, namespace)
+func (c *ExtensionClient) Restics(namespace string) ResticInterface {
+	return newRestic(c, namespace)
 }
 
 // NewForConfig creates a new ExtensionClient for the given config. This client
@@ -65,21 +65,21 @@ func New(c rest.Interface) *ExtensionClient {
 }
 
 func setExtensionsDefaults(config *rest.Config) error {
-	gv, err := schema.ParseGroupVersion(api.GroupName +  "/v1alpha1")
+	gv, err := schema.ParseGroupVersion(sapi.GroupName + "/v1alpha1")
 	if err != nil {
 		return err
 	}
 	// if stash.appscode.com/v1alpha1 is not enabled, return an error
-	if !kapi.Registry.IsEnabledVersion(gv) {
-		return fmt.Errorf(api.GroupName +  "/v1alpha1 is not enabled")
+	if !api.Registry.IsEnabledVersion(gv) {
+		return fmt.Errorf(sapi.GroupName + "/v1alpha1 is not enabled")
 	}
 	config.APIPath = defaultAPIPath
 	if config.UserAgent == "" {
 		config.UserAgent = rest.DefaultKubernetesUserAgent()
 	}
 
-	if config.GroupVersion == nil || config.GroupVersion.Group != api.GroupName {
-		g, err := kapi.Registry.Group(api.GroupName)
+	if config.GroupVersion == nil || config.GroupVersion.Group != sapi.GroupName {
+		g, err := api.Registry.Group(sapi.GroupName)
 		if err != nil {
 			return err
 		}

@@ -21,7 +21,7 @@ func NewCmdCrond(version string) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "crond",
-		Short: "Run stash cron daemon",
+		Short: "Run Stash cron daemon",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			if enableAnalytics {
 				analytics.Enable()
