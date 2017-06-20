@@ -11,10 +11,11 @@ import (
 )
 
 const (
+	ContainerName      = "restik"
+	RestikNamespace    = "RESTIK_NAMESPACE"
+	RestikResourceName = "RESTIK_RESOURCE_NAME"
+
 	BackupConfig          = "backup.appscode.com/config"
-	ContainerName         = "restic-sidecar"
-	RestikNamespace       = "RESTIK_NAMESPACE"
-	RestikResourceName    = "RESTIK_RESOURCE_NAME"
 	RESTIC_PASSWORD       = "RESTIC_PASSWORD"
 	ReplicationController = "ReplicationController"
 	ReplicaSet            = "ReplicaSet"
@@ -42,7 +43,7 @@ type Controller struct {
 	// sync time to sync the list.
 	SyncPeriod time.Duration
 	// image of sidecar container
-	Image string
+	Tag string
 }
 
 type cronController struct {
