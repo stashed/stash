@@ -37,7 +37,6 @@ spec:
         volumeMounts:
           - mountPath: /var/pv
             name: data-volume
-            readOnly: true
       volumes:
         - emptyDir: {}
           name: data-volume
