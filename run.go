@@ -9,6 +9,7 @@ import (
 	rcs "github.com/appscode/restik/client/clientset"
 	"github.com/appscode/restik/pkg/analytics"
 	"github.com/appscode/restik/pkg/controller"
+	"github.com/appscode/restik/pkg/docker"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	clientset "k8s.io/client-go/kubernetes"
@@ -17,9 +18,9 @@ import (
 
 func NewCmdRun(version string) *cobra.Command {
 	var (
-		masterURL      string
-		kubeconfigPath string
-		tag            string = stringz.Val(v.Version.Version, "canary")
+		masterURL       string
+		kubeconfigPath  string
+		tag             string = stringz.Val(v.Version.Version, "canary")
 		address         string = ":56790"
 		enableAnalytics bool   = true
 	)
@@ -37,6 +38,10 @@ func NewCmdRun(version string) *cobra.Command {
 			analytics.SendEvent("operator", "stopped", version)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
+			if err := docker.CheckDockerImageVersion(docker.ImageOperator, tag); err != nil {
+				log.Fatalf(`Image %v:%v not found.`, docker.ImageOperator, tag)
+			}
+
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
 			if err != nil {
 				log.Fatalln(err)
