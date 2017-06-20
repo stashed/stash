@@ -96,7 +96,7 @@ When multiple `retainTags` are specified, only the snapshots which have all the 
 
 ## Enable Backup
 
-For enabling the backup process for a particular kubernetes object like `RC`, `Replica Set`, `Deployment`, `DaemonSet` user adds a label `stash.appscode.com/config: <name_of_tpr>`. `<name_of_tpr>` is the name of Stash object. And then user creates the Stash object for starting backup process.
+For enabling the backup process for a particular kubernetes object like `RC`, `Replica Set`, `Deployment`, `DaemonSet` user adds a label `restic.appscode.com/config: <name_of_tpr>`. `<name_of_tpr>` is the name of Stash object. And then user creates the Stash object for starting backup process.
 In case of StaefulSet user has to add the restic-sidecar container manually.
 
 ```yaml
@@ -104,7 +104,7 @@ apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
   labels:
-    stash.appscode.com/config: test-backup
+    restic.appscode.com/config: test-backup
   name: test-statefulset
   namespace: default
 spec:
@@ -157,7 +157,7 @@ Stash TPR controller can use that as a vessel for running restic sidecar contain
 ## Update Backup
 
 One can update the source, retention policy, tags, cron schedule of the Stash object. After updating the Stash object backup process will follow the new backup strategy.
-If user wants to update the image of restic-sidecar container he/she needs to update the `stash.appscode.com/image` in field annotation in the backup object. This will automatically update the restic-sidecar container.
+If user wants to update the image of restic-sidecar container he/she needs to update the `restic.appscode.com/image` in field annotation in the backup object. This will automatically update the restic-sidecar container.
 In case of Statefulset user needs to update the sidecar container manually.
 
 ## Disable Backup

@@ -28,14 +28,14 @@ const (
 	StashNamespace    = "STASH_NAMESPACE"
 	StashResourceName = "STASH_RESOURCE_NAME"
 
-	BackupConfig          = "stash.appscode.com/config"
+	BackupConfig          = "restic.appscode.com/config"
 	RESTIC_PASSWORD       = "RESTIC_PASSWORD"
 	ReplicationController = "ReplicationController"
 	ReplicaSet            = "ReplicaSet"
 	Deployment            = "Deployment"
 	DaemonSet             = "DaemonSet"
 	StatefulSet           = "StatefulSet"
-	ImageAnnotation       = "stash.appscode.com/image"
+	ImageAnnotation       = "restic.appscode.com/image"
 	Force                 = "force"
 )
 

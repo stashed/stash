@@ -25,7 +25,7 @@ var fakeRc = &apiv1.ReplicationController{
 		Name:      "appscode-rc",
 		Namespace: "default",
 		Labels: map[string]string{
-			"stash.appscode.com/config": stashName,
+			"restic.appscode.com/config": stashName,
 		},
 	},
 	Spec: apiv1.ReplicationControllerSpec{
