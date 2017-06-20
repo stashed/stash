@@ -3,7 +3,7 @@
 ## TL;DR;
 
 ```bash
-$ helm install hack/chart/stash
+$ helm install chart/stash
 ```
 
 ## Introduction
@@ -17,7 +17,7 @@ This chart bootstraps a [Stash controller](https://github.com/appscode/stash) de
 ## Installing the Chart
 To install the chart with the release name `my-release`:
 ```bash
-$ helm install --name my-release hack/chart/stash
+$ helm install --name my-release chart/stash
 ```
 The command deploys Stash Controller on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
 
