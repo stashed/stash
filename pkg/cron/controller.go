@@ -31,7 +31,7 @@ const (
 	RestikNamespace    = "RESTIK_NAMESPACE"
 	RestikResourceName = "RESTIK_RESOURCE_NAME"
 
-	BackupConfig          = "backup.appscode.com/config"
+	BackupConfig          = "restik.appscode.com/config"
 	RESTIC_PASSWORD       = "RESTIC_PASSWORD"
 	ReplicationController = "ReplicationController"
 	ReplicaSet            = "ReplicaSet"
@@ -39,7 +39,7 @@ const (
 	DaemonSet             = "DaemonSet"
 	StatefulSet           = "StatefulSet"
 	Password              = "password"
-	ImageAnnotation       = "backup.appscode.com/image"
+	ImageAnnotation       = "restik.appscode.com/image"
 	Force                 = "force"
 )
 

@@ -5,7 +5,7 @@ import (
 
 	"github.com/appscode/go/types"
 	"github.com/appscode/log"
-	rapi "github.com/appscode/restik/api"
+	api "github.com/appscode/restik/api"
 	"github.com/appscode/restik/client/clientset"
 	"github.com/appscode/restik/pkg/controller"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -117,22 +117,22 @@ func deleteSecret(watcher *controller.Controller, name string) {
 }
 
 func createRestik(watcher *controller.Controller, backupName string, secretName string) error {
-	restik := &rapi.Restik{
+	restik := &api.Restik{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "backup.appscode.com/v1alpha1",
+			APIVersion: "stash.appscode.com/v1alpha1",
 			Kind:       clientset.ResourceKindRestik,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      backupName,
 			Namespace: namespace,
 		},
-		Spec: rapi.RestikSpec{
-			Source: rapi.Source{
+		Spec: api.RestikSpec{
+			Source: api.Source{
 				Path:       "/source_path",
 				VolumeName: "test-volume",
 			},
 			Schedule: "* * * * * *",
-			Destination: rapi.Destination{
+			Destination: api.Destination{
 				Path:                 "/repo_path",
 				RepositorySecretName: secretName,
 				Volume: apiv1.Volume{
@@ -142,7 +142,7 @@ func createRestik(watcher *controller.Controller, backupName string, secretName 
 					},
 				},
 			},
-			RetentionPolicy: rapi.RetentionPolicy{
+			RetentionPolicy: api.RetentionPolicy{
 				KeepLastSnapshots: 5,
 			},
 		},

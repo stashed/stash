@@ -4,8 +4,9 @@ import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/pkg/api"
+	kapi "k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/rest"
+	"github.com/appscode/restik/api"
 )
 
 const (
@@ -64,21 +65,21 @@ func New(c rest.Interface) *ExtensionClient {
 }
 
 func setExtensionsDefaults(config *rest.Config) error {
-	gv, err := schema.ParseGroupVersion("backup.appscode.com/v1alpha1")
+	gv, err := schema.ParseGroupVersion(api.GroupName +  "/v1alpha1")
 	if err != nil {
 		return err
 	}
-	// if backup.appscode.com/v1alpha1 is not enabled, return an error
-	if !api.Registry.IsEnabledVersion(gv) {
-		return fmt.Errorf("backup.appscode.com/v1alpha1 is not enabled")
+	// if stash.appscode.com/v1alpha1 is not enabled, return an error
+	if !kapi.Registry.IsEnabledVersion(gv) {
+		return fmt.Errorf(api.GroupName +  "/v1alpha1 is not enabled")
 	}
 	config.APIPath = defaultAPIPath
 	if config.UserAgent == "" {
 		config.UserAgent = rest.DefaultKubernetesUserAgent()
 	}
 
-	if config.GroupVersion == nil || config.GroupVersion.Group != "backup.appscode.com" {
-		g, err := api.Registry.Group("backup.appscode.com")
+	if config.GroupVersion == nil || config.GroupVersion.Group != api.GroupName {
+		g, err := kapi.Registry.Group(api.GroupName)
 		if err != nil {
 			return err
 		}

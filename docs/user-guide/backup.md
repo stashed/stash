@@ -48,7 +48,7 @@ This resource type is backed by a controller which take backup of kubernetes vol
 A AppsCode Restik resource Looks like at the kubernetes level:
 
 ```yaml
-apiVersion: backup.appscode.com/v1alpha1
+apiVersion: stash.appscode.com/v1alpha1
 kind: Restik
 metadata:
   name: test-backup
@@ -70,7 +70,7 @@ spec:
     keepLastSnapshots: 3
 ```
 
-**Line 1-3**: With all other Kubernetes config, AppsCode Restik resource needs `apiVersion`, `kind` and `metadata` fields. `apiVersion` and `kind` needs to be exactly same as `backup.appscode.com/v1alpha1`, and, `specific version` currently as `v1alpha1`, to identify the resource
+**Line 1-3**: With all other Kubernetes config, AppsCode Restik resource needs `apiVersion`, `kind` and `metadata` fields. `apiVersion` and `kind` needs to be exactly same as `stash.appscode.com/v1alpha1`, and, `specific version` currently as `v1alpha1`, to identify the resource
 as AppsCode Restik. In metadata the `name` and `namespace` indicates the resource identifying name and its Kubernetes namespace.
 
 **Line 6-20**: Restik spec has all the information needed to configure the backup process. 
@@ -96,7 +96,7 @@ When multiple `retainTags` are specified, only the snapshots which have all the 
 
 ## Enable Backup
 
-For enabling the backup process for a particular kubernetes object like `RC`, `Replica Set`, `Deployment`, `DaemonSet` user adds a label `backup.appscode.com/config: <name_of_tpr>`. `<name_of_tpr>` is the name of Restik object. And then user creates the Restik object for starting backup process.
+For enabling the backup process for a particular kubernetes object like `RC`, `Replica Set`, `Deployment`, `DaemonSet` user adds a label `restik.appscode.com/config: <name_of_tpr>`. `<name_of_tpr>` is the name of Restik object. And then user creates the Restik object for starting backup process.
 In case of StaefulSet user has to add the restic-sidecar container manually.
 
 ```yaml
@@ -104,7 +104,7 @@ apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
   labels:
-    backup.appscode.com/config: test-backup
+    restik.appscode.com/config: test-backup
   name: test-statefulset
   namespace: default
 spec:
@@ -157,7 +157,7 @@ Restik TPR controller can use that as a vessel for running restic sidecar contai
 ## Update Backup
 
 One can update the source, retention policy, tags, cron schedule of the Restik object. After updating the Restik object backup process will follow the new backup strategy.
-If user wants to update the image of restic-sidecar container he/she needs to update the `backup.appscode.com/image` in field annotation in the backup object. This will automatically update the restic-sidecar container.
+If user wants to update the image of restic-sidecar container he/she needs to update the `restik.appscode.com/image` in field annotation in the backup object. This will automatically update the restic-sidecar container.
 In case of Statefulset user needs to update the sidecar container manually.
 
 ## Disable Backup
