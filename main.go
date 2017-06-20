@@ -19,7 +19,8 @@ func main() {
 	defer logs.FlushLogs()
 
 	var rootCmd = &cobra.Command{
-		Use: "restik",
+		Use:   "restik",
+		Short: `Restik by AppsCode - Backup your Kubernetes Volumes`,
 		PersistentPreRun: func(c *cobra.Command, args []string) {
 			c.Flags().VisitAll(func(flag *pflag.Flag) {
 				log.Printf("FLAG: --%s=%q", flag.Name, flag.Value)

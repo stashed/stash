@@ -1,18 +1,22 @@
 package: github.com/appscode/restik
 import:
+- package: github.com/appscode/go
 - package: github.com/appscode/log
 - package: github.com/ghodss/yaml
+  version: v1.0.0
+- package: github.com/golang/glog
+- package: github.com/jpillora/go-ogle-analytics
+- package: github.com/prometheus/client_golang
+  version: v0.8.0
 - package: github.com/spf13/cobra
-  version: master
 - package: github.com/spf13/pflag
-  version: master
+- package: gopkg.in/robfig/cron.v2
+  version: v2
 - package: k8s.io/apimachinery
   version: 75b8dd260ef0469d96d578705a87cffd0e09dab8
 - package: k8s.io/client-go
   version: v3.0.0-beta.0
 - package: gopkg.in/yaml.v2
-  version: v2
-- package: gopkg.in/robfig/cron.v2
   version: v2
 testImport:
 - package: github.com/stretchr/testify

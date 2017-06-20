@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	acrt "github.com/appscode/go/runtime"
 	"github.com/appscode/log"
 	rapi "github.com/appscode/restik/api"
 	rcs "github.com/appscode/restik/client/clientset"
@@ -32,11 +33,36 @@ func NewRestikController(kubeClient clientset.Interface, extClient rcs.Extension
 	}
 }
 
-// Blocks caller. Intended to be called as a Go routine.
-func (c *Controller) RunAndHold() error {
-	if err := c.ensureResource(); err != nil {
-		return err
+func (c *Controller) Setup() error {
+	_, err := c.Clientset.ExtensionsV1beta1().ThirdPartyResources().Get(rcs.ResourceNameRestik+"."+rapi.GroupName, metav1.GetOptions{})
+	if kerr.IsNotFound(err) {
+		tpr := &extensions.ThirdPartyResource{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "extensions/v1beta1",
+				Kind:       "ThirdPartyResource",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: rcs.ResourceNameRestik + "." + rapi.GroupName,
+			},
+			Versions: []extensions.APIVersion{
+				{
+					Name: "v1alpha1",
+				},
+			},
+		}
+		_, err := c.Clientset.ExtensionsV1beta1().ThirdPartyResources().Create(tpr)
+		if err != nil {
+			// This should fail if there is one third party resource data missing.
+			return err
+		}
 	}
+	return nil
+}
+
+// Blocks caller. Intended to be called as a Go routine.
+func (c *Controller) RunAndHold() {
+	defer acrt.HandleCrash()
+
 	lw := &cache.ListWatch{
 		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
 			return c.ExtClientset.Restiks(apiv1.NamespaceAll).List(metav1.ListOptions{})
@@ -112,7 +138,6 @@ func (c *Controller) RunAndHold() error {
 		},
 	)
 	ctrl.Run(wait.NeverStop)
-	return nil
 }
 
 func (c *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
@@ -320,32 +345,6 @@ func (c *Controller) updateImage(r *rapi.Restik, image string) error {
 	case StatefulSet:
 		log.Warningf("The Object referred bt the Restik object (%s) is a statefulset.", r.Name)
 		return nil
-	}
-	return nil
-}
-
-func (c *Controller) ensureResource() error {
-	_, err := c.Clientset.ExtensionsV1beta1().ThirdPartyResources().Get(rcs.ResourceNameRestik+"."+rapi.GroupName, metav1.GetOptions{})
-	if kerr.IsNotFound(err) {
-		tpr := &extensions.ThirdPartyResource{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "extensions/v1beta1",
-				Kind:       "ThirdPartyResource",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: rcs.ResourceNameRestik + "." + rapi.GroupName,
-			},
-			Versions: []extensions.APIVersion{
-				{
-					Name: "v1alpha1",
-				},
-			},
-		}
-		_, err := c.Clientset.Extensions().ThirdPartyResources().Create(tpr)
-		if err != nil {
-			// This should fail if there is one third party resource data missing.
-			return err
-		}
 	}
 	return nil
 }
