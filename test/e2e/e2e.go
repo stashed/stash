@@ -9,6 +9,7 @@ import (
 	"github.com/appscode/log"
 	rcs "github.com/appscode/restik/client/clientset"
 	"github.com/appscode/restik/pkg/controller"
+	"github.com/appscode/restik/pkg/eventer"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	clientset "k8s.io/client-go/kubernetes"
@@ -29,7 +30,7 @@ func runController() (*controller.Controller, error) {
 	}
 	kubeClient := clientset.NewForConfigOrDie(config)
 	restikClient := rcs.NewForConfigOrDie(config)
-	ctrl := controller.NewRestikController(kubeClient, restikClient, image)
+	ctrl := controller.NewController(kubeClient, restikClient, image)
 	if err := ctrl.Setup(); err != nil {
 		log.Errorln(err)
 	}
@@ -51,7 +52,7 @@ func checkEventForBackup(watcher *controller.Controller, objName string) error {
 		events, err := watcher.Clientset.CoreV1().Events(namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
 		if err == nil {
 			for _, e := range events.Items {
-				if e.Reason == controller.EventReasonSuccessfulBackup {
+				if e.Reason == eventer.EventReasonSuccessfulBackup {
 					return nil
 				}
 			}

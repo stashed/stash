@@ -31,7 +31,7 @@ func main() {
 
 	rootCmd.AddCommand(version.NewCmdVersion())
 	rootCmd.AddCommand(NewCmdRun(Version))
-	rootCmd.AddCommand(NewCmdWatch(Version))
+	rootCmd.AddCommand(NewCmdCrond(Version))
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)

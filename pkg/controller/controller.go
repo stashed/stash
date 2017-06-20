@@ -24,7 +24,33 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-func NewRestikController(kubeClient clientset.Interface, extClient rcs.ExtensionInterface, tag string) *Controller {
+const (
+	ContainerName      = "restik"
+	RestikNamespace    = "RESTIK_NAMESPACE"
+	RestikResourceName = "RESTIK_RESOURCE_NAME"
+
+	BackupConfig          = "backup.appscode.com/config"
+	RESTIC_PASSWORD       = "RESTIC_PASSWORD"
+	ReplicationController = "ReplicationController"
+	ReplicaSet            = "ReplicaSet"
+	Deployment            = "Deployment"
+	DaemonSet             = "DaemonSet"
+	StatefulSet           = "StatefulSet"
+	Password              = "password"
+	ImageAnnotation       = "backup.appscode.com/image"
+	Force                 = "force"
+)
+
+type Controller struct {
+	ExtClientset rcs.ExtensionInterface
+	Clientset    clientset.Interface
+	// sync time to sync the list.
+	SyncPeriod time.Duration
+	// image of sidecar container
+	Tag string
+}
+
+func NewController(kubeClient clientset.Interface, extClient rcs.ExtensionInterface, tag string) *Controller {
 	return &Controller{
 		Clientset:    kubeClient,
 		ExtClientset: extClient,
