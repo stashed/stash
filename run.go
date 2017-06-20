@@ -1,12 +1,14 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/appscode/log"
 	rcs "github.com/appscode/restik/client/clientset"
 	"github.com/appscode/restik/pkg/analytics"
 	"github.com/appscode/restik/pkg/controller"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/util/runtime"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -16,7 +18,8 @@ func NewCmdRun(version string) *cobra.Command {
 		masterURL       string
 		kubeconfigPath  string
 		image           string
-		enableAnalytics bool = true
+		address         string = ":56790"
+		enableAnalytics bool   = true
 	)
 
 	cmd := &cobra.Command{
@@ -34,26 +37,29 @@ func NewCmdRun(version string) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
 			if err != nil {
-				log.Fatalf("Could not get kubernetes config: %s", err)
+				log.Fatalln(err)
 			}
 			kubeClient := clientset.NewForConfigOrDie(config)
 			restikClient := rcs.NewForConfigOrDie(config)
+
 			ctrl := controller.NewRestikController(kubeClient, restikClient, image)
+			err = ctrl.Setup()
+			if err != nil {
+				log.Fatalln(err)
+			}
 
 			log.Infoln("Starting operator...")
+			go ctrl.RunAndHold()
 
-			defer runtime.HandleCrash()
-			err = ctrl.RunAndHold()
-			if err != nil {
-				log.Errorln(err)
-			}
+			http.Handle("/metrics", promhttp.Handler())
+			log.Infoln("Listening on", address)
+			log.Fatal(http.ListenAndServe(address, nil))
 		},
 	}
-	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
-	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
+	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
+	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&image, "image", "appscode/restik:latest", "Image that will be used by restic-sidecar container.")
-
-	// Analytics flags
+	cmd.Flags().StringVar(&address, "address", address, "Address to listen on for web interface and telemetry.")
 	cmd.Flags().BoolVar(&enableAnalytics, "analytics", enableAnalytics, "Send analytical event to Google Analytics")
 
 	return cmd

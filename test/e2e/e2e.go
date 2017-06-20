@@ -30,13 +30,10 @@ func runController() (*controller.Controller, error) {
 	kubeClient := clientset.NewForConfigOrDie(config)
 	restikClient := rcs.NewForConfigOrDie(config)
 	ctrl := controller.NewRestikController(kubeClient, restikClient, image)
-	go func() {
-		err := ctrl.RunAndHold()
-		if err != nil {
-			log.Errorln(err)
-		}
-
-	}()
+	if err := ctrl.Setup(); err != nil {
+		log.Errorln(err)
+	}
+	go ctrl.RunAndHold()
 	return ctrl, nil
 }
 
