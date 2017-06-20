@@ -9,7 +9,6 @@ import (
 	"github.com/appscode/log"
 	rapi "github.com/appscode/restik/api"
 	rcs "github.com/appscode/restik/client/clientset"
-	"github.com/appscode/restik/pkg/analytics"
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -113,10 +112,10 @@ func (c *Controller) RunAndHold() {
 					}
 					err := c.updateObjectAndStartBackup(b)
 					if err != nil {
-						restikSidecarFailedToCreate()
+						sidecarFailedToAdd()
 						log.Errorln(err)
 					} else {
-						restikSidecarSuccessfullyCreated()
+						sidecarSuccessfullyAdd()
 					}
 				}
 			},
@@ -125,10 +124,10 @@ func (c *Controller) RunAndHold() {
 					glog.Infoln("Got one deleted Restik object", b)
 					err := c.updateObjectAndStopBackup(b)
 					if err != nil {
-						restikSidecarFailedToDelete()
+						sidecarFailedToDelete()
 						log.Errorln(err)
 					} else {
-						restikSidecarSuccessfullyDeleted()
+						sidecarSuccessfullyDeleted()
 					}
 				}
 			},
@@ -154,10 +153,10 @@ func (c *Controller) RunAndHold() {
 					glog.Infoln("Got one updated Restik object for image", newObj)
 					err := c.updateImage(newObj, newImage)
 					if err != nil {
-						restikSidecarFailedToUpdate()
+						sidecarFailedToUpdate()
 						log.Errorln(err)
 					} else {
-						restikSidecarSuccessfullyUpdated()
+						sidecarSuccessfullyUpdated()
 					}
 				}
 			},
@@ -168,7 +167,7 @@ func (c *Controller) RunAndHold() {
 
 func (c *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
 	ls := labels.SelectorFromSet(labels.Set{BackupConfig: r.Name})
-	restikContainer := c.getSidecarContainer(r)
+	restikContainer := c.GetSidecarContainer(r)
 	ob, typ, err := getKubeObject(c.Clientset, r.Namespace, ls)
 	if err != nil {
 		return err
@@ -373,28 +372,4 @@ func (c *Controller) updateImage(r *rapi.Restik, image string) error {
 		return nil
 	}
 	return nil
-}
-
-func restikSidecarSuccessfullyCreated() {
-	analytics.SendEvent(ContainerName, "created", "success")
-}
-
-func restikSidecarFailedToCreate() {
-	analytics.SendEvent(ContainerName, "created", "failure")
-}
-
-func restikSidecarSuccessfullyUpdated() {
-	analytics.SendEvent(ContainerName, "updated", "success")
-}
-
-func restikSidecarFailedToUpdate() {
-	analytics.SendEvent(ContainerName, "updated", "failure")
-}
-
-func restikSidecarSuccessfullyDeleted() {
-	analytics.SendEvent(ContainerName, "deleted", "success")
-}
-
-func restikSidecarFailedToDelete() {
-	analytics.SendEvent(ContainerName, "deleted", "failure")
 }

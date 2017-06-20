@@ -14,7 +14,6 @@ import (
 	"github.com/appscode/log"
 	rapi "github.com/appscode/restik/api"
 	rcs "github.com/appscode/restik/client/clientset"
-	"github.com/appscode/restik/pkg/analytics"
 	"github.com/appscode/restik/pkg/eventer"
 	"gopkg.in/robfig/cron.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -88,7 +87,7 @@ func (c *controller) RunAndHold() {
 						c.resource = r
 						err := c.startCronBackupProcedure()
 						if err != nil {
-							restikCronFailedToAdd()
+							crondFailedToAdd()
 							c.eventRecorder.Eventf(
 								r,
 								apiv1.EventTypeWarning,
@@ -97,7 +96,7 @@ func (c *controller) RunAndHold() {
 							)
 							log.Errorln(err)
 						} else {
-							restikCronSuccessfullyAdded()
+							crondSuccessfullyAdded()
 						}
 					}
 				}
@@ -117,7 +116,7 @@ func (c *controller) RunAndHold() {
 					c.resource = newObj
 					err := c.startCronBackupProcedure()
 					if err != nil {
-						restikCronFailedToModify()
+						crondFailedToModify()
 						c.eventRecorder.Eventf(
 							newObj,
 							apiv1.EventTypeWarning,
@@ -126,7 +125,7 @@ func (c *controller) RunAndHold() {
 						)
 						log.Errorln(err)
 					} else {
-						restikCronSuccessfullyModified()
+						crondSuccessfullyModified()
 					}
 				}
 			},
@@ -134,9 +133,9 @@ func (c *controller) RunAndHold() {
 	ctrl.Run(wait.NeverStop)
 }
 
-func (cronWatcher *controller) startCronBackupProcedure() error {
-	restik := cronWatcher.resource
-	password, err := getPasswordFromSecret(cronWatcher.KubeClient, restik.Spec.Destination.RepositorySecretName, restik.Namespace)
+func (c *controller) startCronBackupProcedure() error {
+	restik := c.resource
+	password, err := getPasswordFromSecret(c.KubeClient, restik.Spec.Destination.RepositorySecretName, restik.Namespace)
 	if err != nil {
 		return err
 	}
@@ -152,26 +151,26 @@ func (cronWatcher *controller) startCronBackupProcedure() error {
 		}
 	}
 	// Remove previous jobs
-	for _, v := range cronWatcher.crons.Entries() {
-		cronWatcher.crons.Remove(v.ID)
+	for _, v := range c.crons.Entries() {
+		c.crons.Remove(v.ID)
 	}
 	interval := restik.Spec.Schedule
 	if _, err = cron.Parse(interval); err != nil {
 		log.Errorln(err)
-		cronWatcher.eventRecorder.Event(restik, apiv1.EventTypeWarning, eventer.EventReasonInvalidCronExpression, err.Error())
+		c.eventRecorder.Event(restik, apiv1.EventTypeWarning, eventer.EventReasonInvalidCronExpression, err.Error())
 		//Reset Wrong Schedule
 		restik.Spec.Schedule = ""
-		_, err = cronWatcher.RestikClient.Restiks(restik.Namespace).Update(restik)
+		_, err = c.RestikClient.Restiks(restik.Namespace).Update(restik)
 		if err != nil {
 			return err
 		}
-		cronWatcher.eventRecorder.Event(restik, apiv1.EventTypeNormal, eventer.EventReasonSuccessfulCronExpressionReset, "Cron expression reset")
+		c.eventRecorder.Event(restik, apiv1.EventTypeNormal, eventer.EventReasonSuccessfulCronExpressionReset, "Cron expression reset")
 		return nil
 	}
-	_, err = cronWatcher.crons.AddFunc(interval, func() {
-		if err := cronWatcher.runCronJob(); err != nil {
+	_, err = c.crons.AddFunc(interval, func() {
+		if err := c.runCronJob(); err != nil {
 			restikJobFailure()
-			cronWatcher.eventRecorder.Event(restik, apiv1.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
+			c.eventRecorder.Event(restik, apiv1.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
 			log.Errorln(err)
 		} else {
 			restikJobSuccess()
@@ -183,9 +182,9 @@ func (cronWatcher *controller) startCronBackupProcedure() error {
 	return nil
 }
 
-func (cronWatcher *controller) runCronJob() error {
-	backup := cronWatcher.resource
-	password, err := getPasswordFromSecret(cronWatcher.KubeClient, cronWatcher.resource.Spec.Destination.RepositorySecretName, backup.Namespace)
+func (c *controller) runCronJob() error {
+	backup := c.resource
+	password, err := getPasswordFromSecret(c.KubeClient, c.resource.Spec.Destination.RepositorySecretName, backup.Namespace)
 	if err != nil {
 		return err
 	}
@@ -209,32 +208,32 @@ func (cronWatcher *controller) runCronJob() error {
 		log.Errorln("Restik backup failed cause ", err)
 		errMessage = " ERROR: " + err.Error()
 		reason = eventer.EventReasonFailedToBackup
-		restikBackupFailure()
+		backupFailure()
 	} else {
 		backup.Status.LastSuccessfulBackupTime = &backupStartTime
 		reason = eventer.EventReasonSuccessfulBackup
-		restikBackupSuccess()
+		backupSuccess()
 	}
 	backup.Status.BackupCount++
 	message := "Backup operation number = " + strconv.Itoa(int(backup.Status.BackupCount))
-	cronWatcher.eventRecorder.Event(backup, apiv1.EventTypeNormal, reason, message+errMessage)
+	c.eventRecorder.Event(backup, apiv1.EventTypeNormal, reason, message+errMessage)
 	backupEndTime := metav1.Now()
 	_, err = snapshotRetention(backup)
 	if err != nil {
 		log.Errorln("Snapshot retention failed cause ", err)
-		cronWatcher.eventRecorder.Event(backup, apiv1.EventTypeNormal, eventer.EventReasonFailedToRetention, message+" ERROR: "+err.Error())
+		c.eventRecorder.Event(backup, apiv1.EventTypeNormal, eventer.EventReasonFailedToRetention, message+" ERROR: "+err.Error())
 	}
 	backup.Status.LastBackupTime = &backupStartTime
 	if reflect.DeepEqual(backup.Status.FirstBackupTime, time.Time{}) {
 		backup.Status.FirstBackupTime = &backupStartTime
 	}
 	backup.Status.LastBackupDuration = backupEndTime.Sub(backupStartTime.Time).String()
-	backup, err = cronWatcher.RestikClient.Restiks(backup.Namespace).Update(backup)
+	backup, err = c.RestikClient.Restiks(backup.Namespace).Update(backup)
 	if err != nil {
 		log.Errorln(err)
-		cronWatcher.eventRecorder.Event(backup, apiv1.EventTypeNormal, eventer.EventReasonFailedToUpdate, err.Error())
+		c.eventRecorder.Event(backup, apiv1.EventTypeNormal, eventer.EventReasonFailedToUpdate, err.Error())
 	}
-	cronWatcher.resource = backup
+	c.resource = backup
 	return nil
 }
 
@@ -293,36 +292,4 @@ func getPasswordFromSecret(client clientset.Interface, secretName, namespace str
 		return "", errors.New("Restic Password not found")
 	}
 	return string(password), nil
-}
-
-func restikCronSuccessfullyAdded() {
-	analytics.SendEvent("restic-cron", "added", "success")
-}
-
-func restikCronFailedToAdd() {
-	analytics.SendEvent("restic-cron", "added", "failure")
-}
-
-func restikCronSuccessfullyModified() {
-	analytics.SendEvent("restic-cron", "modified", "success")
-}
-
-func restikCronFailedToModify() {
-	analytics.SendEvent("restic-cron", "modified", "failure")
-}
-
-func restikBackupSuccess() {
-	analytics.SendEvent("restic-cron", "backup", "success")
-}
-
-func restikBackupFailure() {
-	analytics.SendEvent("restic-cron", "backup", "failure")
-}
-
-func restikJobSuccess() {
-	analytics.SendEvent("restic-cron", "job", "success")
-}
-
-func restikJobFailure() {
-	analytics.SendEvent("restic-cron", "job", "failure")
 }

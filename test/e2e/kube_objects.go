@@ -254,7 +254,7 @@ func createStatefulSet(watcher *controller.Controller, name string, restikName s
 	container := apiv1.Container{
 		Name:            controller.ContainerName,
 		Image:           image,
-		ImagePullPolicy: apiv1.PullAlways,
+		ImagePullPolicy: apiv1.PullIfNotPresent,
 		Env: []apiv1.EnvVar{
 			{
 				Name:  controller.RestikNamespace,

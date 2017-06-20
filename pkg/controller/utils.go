@@ -45,7 +45,7 @@ func getKubeObject(kubeClient clientset.Interface, namespace string, ls labels.S
 	return nil, "", errors.New("Workload not found")
 }
 
-func (c *Controller) getSidecarContainer(r *rapi.Restik) apiv1.Container {
+func (c *Controller) GetSidecarContainer(r *rapi.Restik) apiv1.Container {
 	sidecar := apiv1.Container{
 		Name:            docker.RestikContainer,
 		Image:           docker.ImageOperator + ":" + c.Tag,
