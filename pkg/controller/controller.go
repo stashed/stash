@@ -96,11 +96,11 @@ func (c *Controller) RunAndHold() {
 		},
 	}
 	_, ctrl := cache.NewInformer(lw,
-		&rapi.Stash{},
+		&rapi.Restic{},
 		c.SyncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				if b, ok := obj.(*rapi.Stash); ok {
+				if b, ok := obj.(*rapi.Restic); ok {
 					glog.Infoln("Got one added Stash obejct", b)
 					if b.ObjectMeta.Annotations != nil {
 						_, ok := b.ObjectMeta.Annotations[ImageAnnotation]
@@ -119,7 +119,7 @@ func (c *Controller) RunAndHold() {
 				}
 			},
 			DeleteFunc: func(obj interface{}) {
-				if b, ok := obj.(*rapi.Stash); ok {
+				if b, ok := obj.(*rapi.Restic); ok {
 					glog.Infoln("Got one deleted Stash object", b)
 					err := c.updateObjectAndStopBackup(b)
 					if err != nil {
@@ -131,12 +131,12 @@ func (c *Controller) RunAndHold() {
 				}
 			},
 			UpdateFunc: func(old, new interface{}) {
-				oldObj, ok := old.(*rapi.Stash)
+				oldObj, ok := old.(*rapi.Restic)
 				if !ok {
 					log.Errorln(errors.New("Error validating Stash object"))
 					return
 				}
-				newObj, ok := new.(*rapi.Stash)
+				newObj, ok := new.(*rapi.Restic)
 				if !ok {
 					log.Errorln(errors.New("Error validating Stash object"))
 					return
@@ -164,7 +164,7 @@ func (c *Controller) RunAndHold() {
 	ctrl.Run(wait.NeverStop)
 }
 
-func (c *Controller) updateObjectAndStartBackup(r *rapi.Stash) error {
+func (c *Controller) updateObjectAndStartBackup(r *rapi.Restic) error {
 	ls := labels.SelectorFromSet(labels.Set{BackupConfig: r.Name})
 	ob, typ, err := getKubeObject(c.Clientset, r.Namespace, ls)
 	if err != nil {
@@ -240,7 +240,7 @@ func (c *Controller) updateObjectAndStartBackup(r *rapi.Stash) error {
 	return err
 }
 
-func (c *Controller) updateObjectAndStopBackup(r *rapi.Stash) error {
+func (c *Controller) updateObjectAndStopBackup(r *rapi.Restic) error {
 	ls := labels.SelectorFromSet(labels.Set{BackupConfig: r.Name})
 	ob, typ, err := getKubeObject(c.Clientset, r.Namespace, ls)
 	if err != nil {
@@ -308,7 +308,7 @@ func (c *Controller) updateObjectAndStopBackup(r *rapi.Stash) error {
 	return nil
 }
 
-func (c *Controller) updateImage(r *rapi.Stash, image string) error {
+func (c *Controller) updateImage(r *rapi.Restic, image string) error {
 	ls := labels.SelectorFromSet(labels.Set{BackupConfig: r.Name})
 	ob, typ, err := getKubeObject(c.Clientset, r.Namespace, ls)
 	if err != nil {

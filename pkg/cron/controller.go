@@ -49,7 +49,7 @@ type controller struct {
 
 	resourceNamespace string
 	resourceName      string
-	resource          *rapi.Stash
+	resource          *rapi.Restic
 
 	crons         *cron.Cron
 	eventRecorder record.EventRecorder
@@ -78,11 +78,11 @@ func (c *controller) RunAndHold() {
 		},
 	}
 	_, ctrl := cache.NewInformer(lw,
-		&rapi.Stash{},
+		&rapi.Restic{},
 		time.Minute*2,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				if r, ok := obj.(*rapi.Stash); ok {
+				if r, ok := obj.(*rapi.Restic); ok {
 					if r.Name == c.resourceName {
 						c.resource = r
 						err := c.startCronBackupProcedure()
@@ -102,12 +102,12 @@ func (c *controller) RunAndHold() {
 				}
 			},
 			UpdateFunc: func(old, new interface{}) {
-				oldObj, ok := old.(*rapi.Stash)
+				oldObj, ok := old.(*rapi.Restic)
 				if !ok {
 					log.Errorln(errors.New("Error validating Stash object"))
 					return
 				}
-				newObj, ok := new.(*rapi.Stash)
+				newObj, ok := new.(*rapi.Restic)
 				if !ok {
 					log.Errorln(errors.New("Error validating Stash object"))
 					return
@@ -237,7 +237,7 @@ func (c *controller) runCronJob() error {
 	return nil
 }
 
-func snapshotRetention(r *rapi.Stash) (string, error) {
+func snapshotRetention(r *rapi.Restic) (string, error) {
 	cmd := fmt.Sprintf("/restic -r %s forget", r.Spec.Destination.Path)
 	if r.Spec.RetentionPolicy.KeepLastSnapshots > 0 {
 		cmd = fmt.Sprintf("%s --%s %d", cmd, rapi.KeepLast, r.Spec.RetentionPolicy.KeepLastSnapshots)

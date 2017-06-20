@@ -1,0 +1,7 @@
+apiVersion: extensions/v1beta1
+kind: ThirdPartyResource
+metadata:
+  name: restic.stash.appscode.com
+description: "Stash by AppsCode - Backup Kubernetes persistent volumes"
+versions:
+  - name: v1alpha1

@@ -45,7 +45,7 @@ func getKubeObject(kubeClient clientset.Interface, namespace string, ls labels.S
 	return nil, "", errors.New("Workload not found")
 }
 
-func (c *Controller) GetSidecarContainer(r *rapi.Stash) apiv1.Container {
+func (c *Controller) GetSidecarContainer(r *rapi.Restic) apiv1.Container {
 	sidecar := apiv1.Container{
 		Name:            docker.StashContainer,
 		Image:           docker.ImageOperator + ":" + c.SidecarImageTag,
@@ -71,7 +71,7 @@ func (c *Controller) GetSidecarContainer(r *rapi.Stash) apiv1.Container {
 	return sidecar
 }
 
-func (c *Controller) addAnnotation(r *rapi.Stash) {
+func (c *Controller) addAnnotation(r *rapi.Restic) {
 	if r.ObjectMeta.Annotations == nil {
 		r.ObjectMeta.Annotations = make(map[string]string)
 	}

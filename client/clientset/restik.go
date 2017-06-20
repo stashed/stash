@@ -18,13 +18,13 @@ const (
 )
 
 type StashInterface interface {
-	List(opts metav1.ListOptions) (*rapi.StashList, error)
-	Get(name string) (*rapi.Stash, error)
-	Create(stash *rapi.Stash) (*rapi.Stash, error)
-	Update(stash *rapi.Stash) (*rapi.Stash, error)
+	List(opts metav1.ListOptions) (*rapi.ResticList, error)
+	Get(name string) (*rapi.Restic, error)
+	Create(stash *rapi.Restic) (*rapi.Restic, error)
+	Update(stash *rapi.Restic) (*rapi.Restic, error)
 	Delete(name string, options *metav1.DeleteOptions) error
 	Watch(opts metav1.ListOptions) (watch.Interface, error)
-	UpdateStatus(stash *rapi.Stash) (*rapi.Stash, error)
+	UpdateStatus(stash *rapi.Restic) (*rapi.Restic, error)
 }
 
 type StashImpl struct {
@@ -38,8 +38,8 @@ func newStash(c *ExtensionClient, namespace string) *StashImpl {
 	return &StashImpl{c.restClient, namespace}
 }
 
-func (c *StashImpl) List(opts metav1.ListOptions) (result *rapi.StashList, err error) {
-	result = &rapi.StashList{}
+func (c *StashImpl) List(opts metav1.ListOptions) (result *rapi.ResticList, err error) {
+	result = &rapi.ResticList{}
 	err = c.r.Get().
 		Namespace(c.ns).
 		Resource(ResourceTypeStash).
@@ -49,8 +49,8 @@ func (c *StashImpl) List(opts metav1.ListOptions) (result *rapi.StashList, err e
 	return
 }
 
-func (c *StashImpl) Get(name string) (result *rapi.Stash, err error) {
-	result = &rapi.Stash{}
+func (c *StashImpl) Get(name string) (result *rapi.Restic, err error) {
+	result = &rapi.Restic{}
 	err = c.r.Get().
 		Namespace(c.ns).
 		Resource(ResourceTypeStash).
@@ -60,8 +60,8 @@ func (c *StashImpl) Get(name string) (result *rapi.Stash, err error) {
 	return
 }
 
-func (c *StashImpl) Create(stash *rapi.Stash) (result *rapi.Stash, err error) {
-	result = &rapi.Stash{}
+func (c *StashImpl) Create(stash *rapi.Restic) (result *rapi.Restic, err error) {
+	result = &rapi.Restic{}
 	err = c.r.Post().
 		Namespace(c.ns).
 		Resource(ResourceTypeStash).
@@ -71,8 +71,8 @@ func (c *StashImpl) Create(stash *rapi.Stash) (result *rapi.Stash, err error) {
 	return
 }
 
-func (c *StashImpl) Update(stash *rapi.Stash) (result *rapi.Stash, err error) {
-	result = &rapi.Stash{}
+func (c *StashImpl) Update(stash *rapi.Restic) (result *rapi.Restic, err error) {
+	result = &rapi.Restic{}
 	err = c.r.Put().
 		Namespace(c.ns).
 		Resource(ResourceTypeStash).
@@ -102,8 +102,8 @@ func (c *StashImpl) Watch(opts metav1.ListOptions) (watch.Interface, error) {
 		Watch()
 }
 
-func (c *StashImpl) UpdateStatus(stash *rapi.Stash) (result *rapi.Stash, err error) {
-	result = &rapi.Stash{}
+func (c *StashImpl) UpdateStatus(stash *rapi.Restic) (result *rapi.Restic, err error) {
+	result = &rapi.Restic{}
 	err = c.r.Put().
 		Namespace(c.ns).
 		Resource(ResourceTypeStash).

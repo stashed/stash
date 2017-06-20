@@ -117,7 +117,7 @@ func deleteSecret(watcher *controller.Controller, name string) {
 }
 
 func createStash(watcher *controller.Controller, backupName string, secretName string) error {
-	stash := &api.Stash{
+	stash := &api.Restic{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "stash.appscode.com/v1alpha1",
 			Kind:       clientset.ResourceKindStash,
@@ -126,7 +126,7 @@ func createStash(watcher *controller.Controller, backupName string, secretName s
 			Name:      backupName,
 			Namespace: namespace,
 		},
-		Spec: api.StashSpec{
+		Spec: api.ResticSpec{
 			Source: api.Source{
 				Path:       "/source_path",
 				VolumeName: "test-volume",

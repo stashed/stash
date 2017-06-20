@@ -51,7 +51,7 @@ var fakeRc = &apiv1.ReplicationController{
 		},
 	},
 }
-var fakeStash = &api.Stash{
+var fakeStash = &api.Restic{
 	TypeMeta: metav1.TypeMeta{
 		Kind:       clientset.ResourceKindStash,
 		APIVersion: api.GroupName,
@@ -60,7 +60,7 @@ var fakeStash = &api.Stash{
 		Name:      stashName,
 		Namespace: "default",
 	},
-	Spec: api.StashSpec{
+	Spec: api.ResticSpec{
 		Source: api.Source{
 			VolumeName: "volume-test",
 			Path:       "/mypath",
