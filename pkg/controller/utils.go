@@ -3,16 +3,13 @@ package controller
 import (
 	"errors"
 
-	"github.com/appscode/log"
 	rapi "github.com/appscode/restik/api"
 	"github.com/appscode/restik/pkg/docker"
 	"github.com/ghodss/yaml"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
-	"k8s.io/client-go/tools/record"
 )
 
 func getKubeObject(kubeClient clientset.Interface, namespace string, ls labels.Selector) ([]byte, string, error) {
@@ -53,29 +50,24 @@ func (c *Controller) getSidecarContainer(r *rapi.Restik) apiv1.Container {
 		Name:            docker.RestikContainer,
 		Image:           docker.ImageOperator + ":" + c.Tag,
 		ImagePullPolicy: apiv1.PullIfNotPresent,
-		Env: []apiv1.EnvVar{
+		Args: []string{
+			"crond",
+			"--v=3",
+			"--namespace=" + r.Namespace,
+			"--name=" + r.Name,
+		},
+		VolumeMounts: []apiv1.VolumeMount{
 			{
-				Name:  docker.RestikNamespace,
-				Value: r.Namespace,
-			},
-			{
-				Name:  docker.RestikName,
-				Value: r.Name,
+				Name:      r.Spec.Source.VolumeName,
+				MountPath: r.Spec.Source.Path,
 			},
 		},
 	}
-	sidecar.Args = append(sidecar.Args, "watch")
-	sidecar.Args = append(sidecar.Args, "--v=10")
 	backupVolumeMount := apiv1.VolumeMount{
 		Name:      r.Spec.Destination.Volume.Name,
 		MountPath: r.Spec.Destination.Path,
 	}
-	sourceVolumeMount := apiv1.VolumeMount{
-		Name:      r.Spec.Source.VolumeName,
-		MountPath: r.Spec.Source.Path,
-	}
 	sidecar.VolumeMounts = append(sidecar.VolumeMounts, backupVolumeMount)
-	sidecar.VolumeMounts = append(sidecar.VolumeMounts, sourceVolumeMount)
 	return sidecar
 }
 
@@ -105,31 +97,6 @@ func restartPods(kubeClient clientset.Interface, namespace string, opts metav1.L
 		}
 	}
 	return nil
-}
-func getPasswordFromSecret(client clientset.Interface, secretName, namespace string) (string, error) {
-	secret, err := client.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
-	if err != nil {
-		return "", err
-	}
-	password, ok := secret.Data[Password]
-	if !ok {
-		return "", errors.New("Restic Password not found")
-	}
-	return string(password), nil
-}
-
-func NewEventRecorder(client clientset.Interface, component string) record.EventRecorder {
-	// Event Broadcaster
-	broadcaster := record.NewBroadcaster()
-	broadcaster.StartEventWatcher(
-		func(event *apiv1.Event) {
-			if _, err := client.CoreV1().Events(event.Namespace).Create(event); err != nil {
-				log.Errorln(err)
-			}
-		},
-	)
-	// Event Recorder
-	return broadcaster.NewRecorder(api.Scheme, apiv1.EventSource{Component: component})
 }
 
 func removeContainer(c []apiv1.Container, name string) []apiv1.Container {
