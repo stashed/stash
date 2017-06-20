@@ -116,10 +116,10 @@ func TestUpdateImage(t *testing.T) {
 
 func getFakeController() *Controller {
 	fakeController := &Controller{
-		Clientset:    fake.NewSimpleClientset(),
-		ExtClientset: rfake.NewFakeRestikClient(),
-		SyncPeriod:   time.Minute * 2,
-		Tag:          "canary",
+		Clientset:       fake.NewSimpleClientset(),
+		ExtClientset:    rfake.NewFakeRestikClient(),
+		SyncPeriod:      time.Minute * 2,
+		SidecarImageTag: "canary",
 	}
 	return fakeController
 }

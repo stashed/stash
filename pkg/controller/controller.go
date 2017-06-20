@@ -28,15 +28,14 @@ const (
 	RestikNamespace    = "RESTIK_NAMESPACE"
 	RestikResourceName = "RESTIK_RESOURCE_NAME"
 
-	BackupConfig          = "backup.appscode.com/config"
+	BackupConfig          = "restik.appscode.com/config"
 	RESTIC_PASSWORD       = "RESTIC_PASSWORD"
 	ReplicationController = "ReplicationController"
 	ReplicaSet            = "ReplicaSet"
 	Deployment            = "Deployment"
 	DaemonSet             = "DaemonSet"
 	StatefulSet           = "StatefulSet"
-	Password              = "password"
-	ImageAnnotation       = "backup.appscode.com/image"
+	ImageAnnotation       = "restik.appscode.com/image"
 	Force                 = "force"
 )
 
@@ -46,15 +45,15 @@ type Controller struct {
 	// sync time to sync the list.
 	SyncPeriod time.Duration
 	// image of sidecar container
-	Tag string
+	SidecarImageTag string
 }
 
 func NewController(kubeClient clientset.Interface, extClient rcs.ExtensionInterface, tag string) *Controller {
 	return &Controller{
-		Clientset:    kubeClient,
-		ExtClientset: extClient,
-		Tag:          tag,
-		SyncPeriod:   time.Minute * 2,
+		Clientset:       kubeClient,
+		ExtClientset:    extClient,
+		SidecarImageTag: tag,
+		SyncPeriod:      time.Minute * 2,
 	}
 }
 
@@ -144,10 +143,10 @@ func (c *Controller) RunAndHold() {
 				}
 				var oldImage, newImage string
 				if oldObj.ObjectMeta.Annotations != nil {
-					oldImage, _ = oldObj.ObjectMeta.Annotations[ImageAnnotation]
+					oldImage = oldObj.ObjectMeta.Annotations[ImageAnnotation]
 				}
 				if newObj.ObjectMeta.Annotations != nil {
-					newImage, _ = newObj.ObjectMeta.Annotations[ImageAnnotation]
+					newImage = newObj.ObjectMeta.Annotations[ImageAnnotation]
 				}
 				if oldImage != newImage {
 					glog.Infoln("Got one updated Restik object for image", newObj)
@@ -167,7 +166,6 @@ func (c *Controller) RunAndHold() {
 
 func (c *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
 	ls := labels.SelectorFromSet(labels.Set{BackupConfig: r.Name})
-	restikContainer := c.GetSidecarContainer(r)
 	ob, typ, err := getKubeObject(c.Clientset, r.Namespace, ls)
 	if err != nil {
 		return err
@@ -182,7 +180,7 @@ func (c *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
 		if err = yaml.Unmarshal(ob, rc); err != nil {
 			return err
 		}
-		rc.Spec.Template.Spec.Containers = append(rc.Spec.Template.Spec.Containers, restikContainer)
+		rc.Spec.Template.Spec.Containers = append(rc.Spec.Template.Spec.Containers, c.GetSidecarContainer(r))
 		rc.Spec.Template.Spec.Volumes = append(rc.Spec.Template.Spec.Volumes, r.Spec.Destination.Volume)
 		newRC, err := c.Clientset.CoreV1().ReplicationControllers(r.Namespace).Update(rc)
 		if err != nil {
@@ -197,7 +195,7 @@ func (c *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
 		if err = yaml.Unmarshal(ob, replicaset); err != nil {
 			return err
 		}
-		replicaset.Spec.Template.Spec.Containers = append(replicaset.Spec.Template.Spec.Containers, restikContainer)
+		replicaset.Spec.Template.Spec.Containers = append(replicaset.Spec.Template.Spec.Containers, c.GetSidecarContainer(r))
 		replicaset.Spec.Template.Spec.Volumes = append(replicaset.Spec.Template.Spec.Volumes, r.Spec.Destination.Volume)
 		newReplicaset, err := c.Clientset.ExtensionsV1beta1().ReplicaSets(r.Namespace).Update(replicaset)
 		if err != nil {
@@ -212,7 +210,7 @@ func (c *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
 		if err = yaml.Unmarshal(ob, deployment); err != nil {
 			return err
 		}
-		deployment.Spec.Template.Spec.Containers = append(deployment.Spec.Template.Spec.Containers, restikContainer)
+		deployment.Spec.Template.Spec.Containers = append(deployment.Spec.Template.Spec.Containers, c.GetSidecarContainer(r))
 		deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, r.Spec.Destination.Volume)
 		_, err = c.Clientset.ExtensionsV1beta1().Deployments(r.Namespace).Update(deployment)
 		if err != nil {
@@ -223,7 +221,7 @@ func (c *Controller) updateObjectAndStartBackup(r *rapi.Restik) error {
 		if err := yaml.Unmarshal(ob, daemonset); err != nil {
 			return err
 		}
-		daemonset.Spec.Template.Spec.Containers = append(daemonset.Spec.Template.Spec.Containers, restikContainer)
+		daemonset.Spec.Template.Spec.Containers = append(daemonset.Spec.Template.Spec.Containers, c.GetSidecarContainer(r))
 		daemonset.Spec.Template.Spec.Volumes = append(daemonset.Spec.Template.Spec.Volumes, r.Spec.Destination.Volume)
 		newDaemonset, err := c.Clientset.ExtensionsV1beta1().DaemonSets(r.Namespace).Update(daemonset)
 		if err != nil {
@@ -260,7 +258,7 @@ func (c *Controller) updateObjectAndStopBackup(r *rapi.Restik) error {
 		}
 		rc.Spec.Template.Spec.Containers = removeContainer(rc.Spec.Template.Spec.Containers, ContainerName)
 		rc.Spec.Template.Spec.Volumes = removeVolume(rc.Spec.Template.Spec.Volumes, r.Spec.Destination.Volume.Name)
-		newRC, err := c.Clientset.Core().ReplicationControllers(r.Namespace).Update(rc)
+		newRC, err := c.Clientset.CoreV1().ReplicationControllers(r.Namespace).Update(rc)
 		if err != nil {
 			return err
 		}
@@ -327,7 +325,7 @@ func (c *Controller) updateImage(r *rapi.Restik, image string) error {
 			return err
 		}
 		rc.Spec.Template.Spec.Containers = updateImageForRestikContainer(rc.Spec.Template.Spec.Containers, ContainerName, image)
-		newRC, err := c.Clientset.Core().ReplicationControllers(r.Namespace).Update(rc)
+		newRC, err := c.Clientset.CoreV1().ReplicationControllers(r.Namespace).Update(rc)
 		if err != nil {
 			return err
 		}
@@ -363,7 +361,7 @@ func (c *Controller) updateImage(r *rapi.Restik, image string) error {
 			return err
 		}
 		deployment.Spec.Template.Spec.Containers = updateImageForRestikContainer(deployment.Spec.Template.Spec.Containers, ContainerName, image)
-		_, err := c.Clientset.Extensions().Deployments(r.Namespace).Update(deployment)
+		_, err := c.Clientset.ExtensionsV1beta1().Deployments(r.Namespace).Update(deployment)
 		if err != nil {
 			return err
 		}

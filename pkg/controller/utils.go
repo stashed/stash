@@ -48,7 +48,7 @@ func getKubeObject(kubeClient clientset.Interface, namespace string, ls labels.S
 func (c *Controller) GetSidecarContainer(r *rapi.Restik) apiv1.Container {
 	sidecar := apiv1.Container{
 		Name:            docker.RestikContainer,
-		Image:           docker.ImageOperator + ":" + c.Tag,
+		Image:           docker.ImageOperator + ":" + c.SidecarImageTag,
 		ImagePullPolicy: apiv1.PullIfNotPresent,
 		Args: []string{
 			"crond",
@@ -75,7 +75,7 @@ func (c *Controller) addAnnotation(r *rapi.Restik) {
 	if r.ObjectMeta.Annotations == nil {
 		r.ObjectMeta.Annotations = make(map[string]string)
 	}
-	r.ObjectMeta.Annotations[ImageAnnotation] = c.Tag
+	r.ObjectMeta.Annotations[ImageAnnotation] = c.SidecarImageTag
 }
 
 func findSelectors(lb map[string]string) labels.Selector {

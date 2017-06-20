@@ -65,7 +65,6 @@ func NewCmdRun(version string) *cobra.Command {
 	}
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&tag, "sidecar-tag", tag, "Tag of appscode/restik used as sidecar")
 	cmd.Flags().StringVar(&address, "address", address, "Address to listen on for web interface and telemetry.")
 	cmd.Flags().BoolVar(&enableAnalytics, "analytics", enableAnalytics, "Send analytical event to Google Analytics")
 
