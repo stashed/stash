@@ -1,4 +1,4 @@
-package: github.com/appscode/restik
+package: github.com/appscode/stash
 import:
 - package: github.com/appscode/go
 - package: github.com/appscode/log

@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/appscode/log"
-	rcs "github.com/appscode/restik/client/clientset"
-	"github.com/appscode/restik/pkg/analytics"
-	"github.com/appscode/restik/pkg/cron"
+	rcs "github.com/appscode/stash/client/clientset"
+	"github.com/appscode/stash/pkg/analytics"
+	"github.com/appscode/stash/pkg/cron"
 	"github.com/spf13/cobra"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -21,7 +21,7 @@ func NewCmdCrond(version string) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "crond",
-		Short: "Run restik cron daemon",
+		Short: "Run Stash cron daemon",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			if enableAnalytics {
 				analytics.Enable()
@@ -37,9 +37,9 @@ func NewCmdCrond(version string) *cobra.Command {
 				log.Fatalf("Could not get kubernetes config: %s", err)
 			}
 			kubeClient := clientset.NewForConfigOrDie(config)
-			restikClient := rcs.NewForConfigOrDie(config)
+			stashClient := rcs.NewForConfigOrDie(config)
 
-			ctrl := cron.NewController(kubeClient, restikClient, namespace, name)
+			ctrl := cron.NewController(kubeClient, stashClient, namespace, name)
 			ctrl.RunAndHold()
 		},
 	}

@@ -30,13 +30,13 @@ var (
 // Adds the list of known types to apiv1.Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		&Restik{},
-		&RestikList{},
+		&Restic{},
+		&ResticList{},
 
 		&metav1.ListOptions{},
 	)
 	return nil
 }
 
-func (obj *Restik) GetObjectKind() schema.ObjectKind     { return &obj.TypeMeta }
-func (obj *RestikList) GetObjectKind() schema.ObjectKind { return &obj.TypeMeta }
+func (obj *Restic) GetObjectKind() schema.ObjectKind     { return &obj.TypeMeta }
+func (obj *ResticList) GetObjectKind() schema.ObjectKind { return &obj.TypeMeta }

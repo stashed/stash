@@ -3,6 +3,7 @@ package clientset
 import (
 	"fmt"
 
+	sapi "github.com/appscode/stash/api"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/pkg/api"
 	"k8s.io/client-go/rest"
@@ -14,7 +15,7 @@ const (
 
 type ExtensionInterface interface {
 	RESTClient() rest.Interface
-	RestikNamespacer
+	ResticGetter
 }
 
 // ExtensionsClient is used to interact with experimental Kubernetes features.
@@ -26,8 +27,8 @@ type ExtensionClient struct {
 
 var _ ExtensionInterface = &ExtensionClient{}
 
-func (a *ExtensionClient) Restiks(namespace string) RestikInterface {
-	return newRestik(a, namespace)
+func (c *ExtensionClient) Restics(namespace string) ResticInterface {
+	return newRestic(c, namespace)
 }
 
 // NewForConfig creates a new ExtensionClient for the given config. This client
@@ -64,21 +65,21 @@ func New(c rest.Interface) *ExtensionClient {
 }
 
 func setExtensionsDefaults(config *rest.Config) error {
-	gv, err := schema.ParseGroupVersion("backup.appscode.com/v1alpha1")
+	gv, err := schema.ParseGroupVersion(sapi.GroupName + "/v1alpha1")
 	if err != nil {
 		return err
 	}
-	// if backup.appscode.com/v1alpha1 is not enabled, return an error
+	// if stash.appscode.com/v1alpha1 is not enabled, return an error
 	if !api.Registry.IsEnabledVersion(gv) {
-		return fmt.Errorf("backup.appscode.com/v1alpha1 is not enabled")
+		return fmt.Errorf(sapi.GroupName + "/v1alpha1 is not enabled")
 	}
 	config.APIPath = defaultAPIPath
 	if config.UserAgent == "" {
 		config.UserAgent = rest.DefaultKubernetesUserAgent()
 	}
 
-	if config.GroupVersion == nil || config.GroupVersion.Group != "backup.appscode.com" {
-		g, err := api.Registry.Group("backup.appscode.com")
+	if config.GroupVersion == nil || config.GroupVersion.Group != sapi.GroupName {
+		g, err := api.Registry.Group(sapi.GroupName)
 		if err != nil {
 			return err
 		}

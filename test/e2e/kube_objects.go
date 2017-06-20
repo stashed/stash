@@ -5,9 +5,9 @@ import (
 
 	"github.com/appscode/go/types"
 	"github.com/appscode/log"
-	rapi "github.com/appscode/restik/api"
-	"github.com/appscode/restik/client/clientset"
-	"github.com/appscode/restik/pkg/controller"
+	api "github.com/appscode/stash/api"
+	"github.com/appscode/stash/client/clientset"
+	"github.com/appscode/stash/pkg/controller"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	apps "k8s.io/client-go/pkg/apis/apps/v1beta1"
@@ -116,52 +116,52 @@ func deleteSecret(watcher *controller.Controller, name string) {
 	}
 }
 
-func createRestik(watcher *controller.Controller, backupName string, secretName string) error {
-	restik := &rapi.Restik{
+func createStash(watcher *controller.Controller, backupName string, secretName string) error {
+	stash := &api.Restic{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "backup.appscode.com/v1alpha1",
-			Kind:       clientset.ResourceKindRestik,
+			APIVersion: "stash.appscode.com/v1alpha1",
+			Kind:       clientset.ResourceKindRestic,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      backupName,
 			Namespace: namespace,
 		},
-		Spec: rapi.RestikSpec{
-			Source: rapi.Source{
+		Spec: api.ResticSpec{
+			Source: api.Source{
 				Path:       "/source_path",
 				VolumeName: "test-volume",
 			},
 			Schedule: "* * * * * *",
-			Destination: rapi.Destination{
+			Destination: api.Destination{
 				Path:                 "/repo_path",
 				RepositorySecretName: secretName,
 				Volume: apiv1.Volume{
-					Name: "restik-vol",
+					Name: "stash-vol",
 					VolumeSource: apiv1.VolumeSource{
 						EmptyDir: &apiv1.EmptyDirVolumeSource{},
 					},
 				},
 			},
-			RetentionPolicy: rapi.RetentionPolicy{
+			RetentionPolicy: api.RetentionPolicy{
 				KeepLastSnapshots: 5,
 			},
 		},
 	}
-	_, err := watcher.ExtClientset.Restiks(namespace).Create(restik)
+	_, err := watcher.ExtClientset.Restics(namespace).Create(stash)
 	return err
 }
 
-func deleteRestik(watcher *controller.Controller, restikName string) error {
-	return watcher.ExtClientset.Restiks(namespace).Delete(restikName, nil)
+func deleteStash(watcher *controller.Controller, stashName string) error {
+	return watcher.ExtClientset.Restics(namespace).Delete(stashName, nil)
 }
 
-func createReplicaset(watcher *controller.Controller, name string, restikName string) error {
+func createReplicaset(watcher *controller.Controller, name string, stashName string) error {
 	replicaset := &extensions.ReplicaSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				controller.BackupConfig: restikName,
+				controller.BackupConfig: stashName,
 			},
 		},
 		Spec: extensions.ReplicaSetSpec{
@@ -184,13 +184,13 @@ func deleteReplicaset(watcher *controller.Controller, name string) {
 	}
 }
 
-func createDeployment(watcher *controller.Controller, name string, restikName string) error {
+func createDeployment(watcher *controller.Controller, name string, stashName string) error {
 	deployment := &extensions.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				controller.BackupConfig: restikName,
+				controller.BackupConfig: stashName,
 			},
 		},
 		Spec: extensions.DeploymentSpec{
@@ -236,13 +236,13 @@ func deleteDaemonset(watcher *controller.Controller, name string) {
 	}
 }
 
-func createStatefulSet(watcher *controller.Controller, name string, restikName string, svc string) error {
+func createStatefulSet(watcher *controller.Controller, name string, stashName string, svc string) error {
 	s := &apps.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				controller.BackupConfig: restikName,
+				controller.BackupConfig: stashName,
 			},
 		},
 		Spec: apps.StatefulSetSpec{
@@ -254,15 +254,15 @@ func createStatefulSet(watcher *controller.Controller, name string, restikName s
 	container := apiv1.Container{
 		Name:            controller.ContainerName,
 		Image:           image,
-		ImagePullPolicy: apiv1.PullAlways,
+		ImagePullPolicy: apiv1.PullIfNotPresent,
 		Env: []apiv1.EnvVar{
 			{
-				Name:  controller.RestikNamespace,
+				Name:  controller.StashNamespace,
 				Value: namespace,
 			},
 			{
-				Name:  controller.RestikResourceName,
-				Value: restikName,
+				Name:  controller.StashResourceName,
+				Value: stashName,
 			},
 		},
 	}
@@ -273,14 +273,14 @@ func createStatefulSet(watcher *controller.Controller, name string, restikName s
 		MountPath: "/source_path",
 	}
 	sourceVolumeMount := apiv1.VolumeMount{
-		Name:      "restik-vol",
+		Name:      "stash-vol",
 		MountPath: "/repo_path",
 	}
 	container.VolumeMounts = append(container.VolumeMounts, backupVolumeMount)
 	container.VolumeMounts = append(container.VolumeMounts, sourceVolumeMount)
 	s.Spec.Template.Spec.Containers = append(s.Spec.Template.Spec.Containers, container)
 	s.Spec.Template.Spec.Volumes = append(s.Spec.Template.Spec.Volumes, apiv1.Volume{
-		Name: "restik-vol",
+		Name: "stash-vol",
 		VolumeSource: apiv1.VolumeSource{
 			EmptyDir: &apiv1.EmptyDirVolumeSource{},
 		},

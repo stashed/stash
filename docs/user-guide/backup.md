@@ -3,19 +3,19 @@
 
 
 ## High Level Tasks
-* Create `restik.backup.appscode.com` Third Party Resource
+* Create `stash.backup.appscode.com` Third Party Resource
 * Create Backup Deployment
 
 ## Deploying Backup
 
 ### Create Third Party Resource
-`Backup process` depends on Third Party Resource Object `restik.backup.appscode.com`. This object can be created using following data.
+`Backup process` depends on Third Party Resource Object `stash.backup.appscode.com`. This object can be created using following data.
 
 ```yaml
 apiVersion: extensions/v1beta1
 kind: ThirdPartyResource
 metadata:
-  name: restik.backup.appscode.com
+  name: stash.backup.appscode.com
 description: "Backup and restore support for Kubernetes persistent volumes by AppsCode"
 versions:
   - name: v1alpha1
@@ -24,32 +24,32 @@ versions:
 
 ```sh
 # Create Third Party Resource
-$ kubectl apply -f https://raw.githubusercontent.com/appscode/restik/master/api/extensions/backup.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/master/api/extensions/backup.yaml
 ```
 
 
 ### Deploy Controller
-Restik controller communicates with kube-apiserver at inCluster mode if no master or kubeconfig is provided. It watches Restik resource to handle backup process.
+Stash controller communicates with kube-apiserver at inCluster mode if no master or kubeconfig is provided. It watches Stash resource to handle backup process.
 ```
-$ kubectl apply -f https://raw.githubusercontent.com/appscode/restik/master/hack/deploy/deployments.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/master/hack/deploy/deployments.yaml
 ```
 
 #### Configuration Options
 ```
 --master          // The address of the Kubernetes API server (overrides any value in kubeconfig)
 --kubeconfig      // Path to kubeconfig file with authorization information (the master location is set by the master flag)
---image           // Restik image name with version to be run in restic-sidecar (appscode/restik:latest)
+--image           // Stash image name with version to be run in restic-sidecar (appscode/stash:latest)
 ```
 
-## Restik
+## Stash
 This resource type is backed by a controller which take backup of kubernetes volumes from any running pod in Kubernetes. It can also take backup of host paths from Nodes in Kubernetes.
 
 ### Resource
-A AppsCode Restik resource Looks like at the kubernetes level:
+A AppsCode Stash resource Looks like at the kubernetes level:
 
 ```yaml
-apiVersion: backup.appscode.com/v1alpha1
-kind: Restik
+apiVersion: stash.appscode.com/v1alpha1
+kind: Restic
 metadata:
   name: test-backup
   namespace: default
@@ -58,11 +58,11 @@ spec:
     volumeName: "test-volume"
     path: /mypath
   destination:
-    path: /restikrepo
+    path: /stashrepo
     repositorySecretName: test-secret
     volume:
       emptyDir: {}
-      name: restik-volume
+      name: stash-volume
   schedule: "0 * * * * *"
   tags:
   - testTag
@@ -70,10 +70,10 @@ spec:
     keepLastSnapshots: 3
 ```
 
-**Line 1-3**: With all other Kubernetes config, AppsCode Restik resource needs `apiVersion`, `kind` and `metadata` fields. `apiVersion` and `kind` needs to be exactly same as `backup.appscode.com/v1alpha1`, and, `specific version` currently as `v1alpha1`, to identify the resource
-as AppsCode Restik. In metadata the `name` and `namespace` indicates the resource identifying name and its Kubernetes namespace.
+**Line 1-3**: With all other Kubernetes config, AppsCode Stash resource needs `apiVersion`, `kind` and `metadata` fields. `apiVersion` and `kind` needs to be exactly same as `stash.appscode.com/v1alpha1`, and, `specific version` currently as `v1alpha1`, to identify the resource
+as AppsCode Stash. In metadata the `name` and `namespace` indicates the resource identifying name and its Kubernetes namespace.
 
-**Line 6-20**: Restik spec has all the information needed to configure the backup process. 
+**Line 6-20**: Stash spec has all the information needed to configure the backup process. 
 
 * In `source` field user needs to specify the volume name and the path of which he/she wants to take backup.
 * In `destination` field user needs to specify the path and the volume where he/she wants to store the backup snapshots.
@@ -96,7 +96,7 @@ When multiple `retainTags` are specified, only the snapshots which have all the 
 
 ## Enable Backup
 
-For enabling the backup process for a particular kubernetes object like `RC`, `Replica Set`, `Deployment`, `DaemonSet` user adds a label `backup.appscode.com/config: <name_of_tpr>`. `<name_of_tpr>` is the name of Restik object. And then user creates the Restik object for starting backup process.
+For enabling the backup process for a particular kubernetes object like `RC`, `Replica Set`, `Deployment`, `DaemonSet` user adds a label `restic.appscode.com/config: <name_of_tpr>`. `<name_of_tpr>` is the name of Stash object. And then user creates the Stash object for starting backup process.
 In case of StaefulSet user has to add the restic-sidecar container manually.
 
 ```yaml
@@ -104,7 +104,7 @@ apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
   labels:
-    backup.appscode.com/config: test-backup
+    restic.appscode.com/config: test-backup
   name: test-statefulset
   namespace: default
 spec:
@@ -130,37 +130,37 @@ spec:
         - watch
         - --v=10
         env:
-        - name: RESTIK_NAMESPACE
+        - name: STASH_NAMESPACE
           value: default
         - name: TPR
           value: test-backup
-        image: appscode/restik:latest
+        image: appscode/stash:latest
         imagePullPolicy: Always
         name: restic-sidecar
         volumeMounts:
         - mountPath: /source_path
           name: test-volume
         - mountPath: /repo_path
-          name: restik-vol
+          name: stash-vol
       volumes:
       - emptyDir: {}
         name: test-volume
       - emptyDir: {}
-        name: restik-vol
+        name: stash-vol
 ```
 
 ## Backup Nodes
 
 If one interested in take backup of host paths, this can be done by deploying a `DaemonSet` with a do nothing busybox container. 
-Restik TPR controller can use that as a vessel for running restic sidecar containers.
+Stash TPR controller can use that as a vessel for running restic sidecar containers.
 
 ## Update Backup
 
-One can update the source, retention policy, tags, cron schedule of the Restik object. After updating the Restik object backup process will follow the new backup strategy.
-If user wants to update the image of restic-sidecar container he/she needs to update the `backup.appscode.com/image` in field annotation in the backup object. This will automatically update the restic-sidecar container.
+One can update the source, retention policy, tags, cron schedule of the Stash object. After updating the Stash object backup process will follow the new backup strategy.
+If user wants to update the image of restic-sidecar container he/she needs to update the `restic.appscode.com/image` in field annotation in the backup object. This will automatically update the restic-sidecar container.
 In case of Statefulset user needs to update the sidecar container manually.
 
 ## Disable Backup
 
-For disabling backup process one needs to delete the corresponding Restik object in case of `RC`, `Replica Set`, `Deployment`, `DaemonSet`.
+For disabling backup process one needs to delete the corresponding Stash object in case of `RC`, `Replica Set`, `Deployment`, `DaemonSet`.
 In case of `Statefulset` user needs to delete the corresponding backup object as well as remove the side container from the Statefulset manually.

@@ -25,12 +25,12 @@ glide slow
 # This will push docker image to other repositories
 
 # Add docker tag for your repository
-docker tag appscode/restik:<tag> <image>:<tag>
+docker tag appscode/stash:<tag> <image>:<tag>
 
 # Push Image
 docker push <image>:<tag>
 
 # Example:
-docker tag appscode/restik:default sauman/restik:default
-docker push sauman/restik:default
+docker tag appscode/stash:default sauman/stash:default
+docker push sauman/stash:default
 ```

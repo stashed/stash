@@ -1,5 +1,5 @@
-apiVersion: backup.appscode.com/v1alpha1
-kind: Restik
+apiVersion: stash.appscode.com/v1alpha1
+kind: Restic
 metadata:
   name: testbackup
   namespace: test
@@ -8,13 +8,13 @@ spec:
     volumeName: "test-volume"
     path: /mypathreplicaset
   destination:
-    path: /restikreporeplicaset
+    path: /stashreporeplicaset
     repositorySecretName: testsecret
     volume:
       awsElasticBlockStore:
         fsType: ext4
         volumeID: vol-*******
-      name: restik-volume
+      name: stash-volume
   schedule: "0 * * * * *"
   tags:
   - test

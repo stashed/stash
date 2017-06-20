@@ -1,12 +1,12 @@
 package docker
 
 const (
-	ImageOperator = "appscode/restik"
+	ImageOperator = "appscode/stash"
 )
 
 const (
-	OperatorName    = "restik-operator"
-	RestikContainer = "restik"
-	RestikNamespace = "RESTIK_NAMESPACE"
-	RestikName      = "RESTIK_NAME"
+	OperatorName   = "stash-operator"
+	StashContainer = "stash"
+	StashNamespace = "STASH_NAMESPACE"
+	StashName      = "STASH_NAME"
 )

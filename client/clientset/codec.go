@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/appscode/log"
-	rapi "github.com/appscode/restik/api"
+	sapi "github.com/appscode/stash/api"
 	"github.com/ghodss/yaml"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -149,8 +149,8 @@ func (c *extendedCodec) EncodeParameters(obj runtime.Object, to schema.GroupVers
 func setDefaultVersionKind(obj runtime.Object) {
 	// Check the values can are In type Extended Ingress
 	defaultGVK := schema.GroupVersionKind{
-		Group:   rapi.V1alpha1SchemeGroupVersion.Group,
-		Version: rapi.V1alpha1SchemeGroupVersion.Version,
+		Group:   sapi.V1alpha1SchemeGroupVersion.Group,
+		Version: sapi.V1alpha1SchemeGroupVersion.Version,
 	}
 
 	fullyQualifiedKind := reflect.ValueOf(obj).Type().String()

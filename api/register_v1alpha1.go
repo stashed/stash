@@ -17,8 +17,8 @@ var (
 // Adds the list of known types to api.Scheme.
 func v1addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(V1alpha1SchemeGroupVersion,
-		&Restik{},
-		&RestikList{},
+		&Restic{},
+		&ResticList{},
 
 		&metav1.ListOptions{},
 	)

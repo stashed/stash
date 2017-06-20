@@ -6,10 +6,10 @@ import (
 	stringz "github.com/appscode/go/strings"
 	v "github.com/appscode/go/version"
 	"github.com/appscode/log"
-	rcs "github.com/appscode/restik/client/clientset"
-	"github.com/appscode/restik/pkg/analytics"
-	"github.com/appscode/restik/pkg/controller"
-	"github.com/appscode/restik/pkg/docker"
+	rcs "github.com/appscode/stash/client/clientset"
+	"github.com/appscode/stash/pkg/analytics"
+	"github.com/appscode/stash/pkg/controller"
+	"github.com/appscode/stash/pkg/docker"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	clientset "k8s.io/client-go/kubernetes"
@@ -27,7 +27,7 @@ func NewCmdRun(version string) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "run",
-		Short: "Run restik operator",
+		Short: "Run Stash operator",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			if enableAnalytics {
 				analytics.Enable()
@@ -47,9 +47,9 @@ func NewCmdRun(version string) *cobra.Command {
 				log.Fatalln(err)
 			}
 			kubeClient := clientset.NewForConfigOrDie(config)
-			restikClient := rcs.NewForConfigOrDie(config)
+			stashClient := rcs.NewForConfigOrDie(config)
 
-			ctrl := controller.NewController(kubeClient, restikClient, tag)
+			ctrl := controller.NewController(kubeClient, stashClient, tag)
 			err = ctrl.Setup()
 			if err != nil {
 				log.Fatalln(err)
@@ -65,7 +65,6 @@ func NewCmdRun(version string) *cobra.Command {
 	}
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&tag, "sidecar-tag", tag, "Tag of appscode/restik used as sidecar")
 	cmd.Flags().StringVar(&address, "address", address, "Address to listen on for web interface and telemetry.")
 	cmd.Flags().BoolVar(&enableAnalytics, "analytics", enableAnalytics, "Send analytical event to Google Analytics")
 

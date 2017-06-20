@@ -16,14 +16,14 @@ const (
 	KeepYearly  RetentionStrategy = "keep-yearly"
 )
 
-type Restik struct {
+type Restic struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              RestikSpec   `json:"spec,omitempty"`
-	Status            RestikStatus `json:"status,omitempty"`
+	Spec              ResticSpec   `json:"spec,omitempty"`
+	Status            ResticStatus `json:"status,omitempty"`
 }
 
-type RestikSpec struct {
+type ResticSpec struct {
 	// Source of the backup volumeName:path
 	Source Source `json:"source"`
 	// Destination of the backup
@@ -36,7 +36,7 @@ type RestikSpec struct {
 	RetentionPolicy RetentionPolicy `json:"retentionPolicy,omitempty"`
 }
 
-type RestikStatus struct {
+type ResticStatus struct {
 	FirstBackupTime          *metav1.Time `json:"firstBackupTime,omitempty"`
 	LastBackupTime           *metav1.Time `json:"lastBackupTime,omitempty"`
 	LastSuccessfulBackupTime *metav1.Time `json:"lastSuccessfulBackupTime,omitempty"`
@@ -44,10 +44,10 @@ type RestikStatus struct {
 	BackupCount              int64        `json:"backupCount,omitempty"`
 }
 
-type RestikList struct {
+type ResticList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Restik `json:"items,omitempty"`
+	Items           []Restic `json:"items,omitempty"`
 }
 
 type Source struct {

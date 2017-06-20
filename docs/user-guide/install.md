@@ -1,10 +1,10 @@
-## Install Restik
+## Install Stash
 ```
-git clone https://github.com/appscode/restik.git
+git clone https://github.com/appscode/stash.git
 ./hack/make.py
 ```
 
-## Upgrade Restik
+## Upgrade Stash
 ```
-To upgrade Restik User needs to pull the particular branch and rebuild it for now.
+To upgrade Stash User needs to pull the particular branch and rebuild it for now.
 ```

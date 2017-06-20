@@ -1,7 +1,7 @@
 package install
 
 import (
-	rapi "github.com/appscode/restik/api"
+	rapi "github.com/appscode/stash/api"
 	"k8s.io/apimachinery/pkg/apimachinery/announced"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/pkg/api"
@@ -12,7 +12,7 @@ func init() {
 		&announced.GroupMetaFactoryArgs{
 			GroupName:                  rapi.GroupName,
 			VersionPreferenceOrder:     []string{rapi.V1alpha1SchemeGroupVersion.Version},
-			ImportPrefix:               "github.com/appscode/restik/api",
+			ImportPrefix:               "github.com/appscode/stash/api",
 			RootScopedKinds:            sets.NewString("ThirdPartyResource"),
 			AddInternalObjectsToScheme: rapi.AddToScheme,
 		},

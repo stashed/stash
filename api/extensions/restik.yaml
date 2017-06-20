@@ -1,7 +1,0 @@
-apiVersion: extensions/v1beta1
-kind: ThirdPartyResource
-metadata:
-  name: restik.backup.appscode.com
-description: "Backup and restore support for Kubernetes persistent volumes by AppsCode"
-versions:
-  - name: v1alpha1

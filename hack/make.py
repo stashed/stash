@@ -35,10 +35,10 @@ import subprocess
 import sys
 from os.path import expandvars
 
-libbuild.REPO_ROOT = expandvars('$GOPATH') + '/src/github.com/appscode/restik'
+libbuild.REPO_ROOT = expandvars('$GOPATH') + '/src/github.com/appscode/stash'
 BUILD_METADATA = libbuild.metadata(libbuild.REPO_ROOT)
 libbuild.BIN_MATRIX = {
-    'restik': {
+    'stash': {
         'type': 'go',
         'go_version': True,
         'use_cgo': False,

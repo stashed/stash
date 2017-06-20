@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/appscode/log"
-	"github.com/appscode/restik/pkg/controller"
+	"github.com/appscode/stash/pkg/controller"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,14 +24,14 @@ func TestBackups(t *testing.T) {
 	var backupDeployment = "backup-test-deployment-" + randStr
 	var backupDaemonset = "backup-test-daemonset-" + randStr
 	var backupStatefulset = "backup-test-statefulset-" + randStr
-	var repoSecret = "restik-test-secret-" + randStr
-	var rs = "restik-test-replicaset-" + randStr
-	var deployment = "restik-test-deployment-" + randStr
-	var rc = "restik-test-rc-" + randStr
-	var statefulset = "restik-test-statefulset-" + randStr
-	var svc = "restik-test-svc-" + randStr
-	var daemonset = "restik-test-daemonset-" + randStr
-	log.Infoln("###############==Running e2e tests for Restik==#############")
+	var repoSecret = "stash-test-secret-" + randStr
+	var rs = "stash-test-replicaset-" + randStr
+	var deployment = "stash-test-deployment-" + randStr
+	var rc = "stash-test-rc-" + randStr
+	var statefulset = "stash-test-statefulset-" + randStr
+	var svc = "stash-test-svc-" + randStr
+	var daemonset = "stash-test-daemonset-" + randStr
+	log.Infoln("###############==Running e2e tests for Stash==#############")
 	watcher, err := runController()
 	if !assert.Nil(t, err) {
 		return
@@ -57,7 +57,7 @@ func TestBackups(t *testing.T) {
 	}
 	time.Sleep(time.Second * 10)
 	log.Infof("Starting backup(%s) for Daemonset...\n", backupDaemonset)
-	err = createRestik(watcher, backupDaemonset, repoSecret)
+	err = createStash(watcher, backupDaemonset, repoSecret)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -66,7 +66,7 @@ func TestBackups(t *testing.T) {
 		return
 	}
 	log.Infoln("Removing backup for Daemonset")
-	err = deleteRestik(watcher, backupDaemonset)
+	err = deleteStash(watcher, backupDaemonset)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -83,7 +83,7 @@ func TestBackups(t *testing.T) {
 	}
 	time.Sleep(time.Second * 10)
 	log.Infof("Starting backup(%s) for ReplicationController...\n", backupRC)
-	err = createRestik(watcher, backupRC, repoSecret)
+	err = createStash(watcher, backupRC, repoSecret)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -93,7 +93,7 @@ func TestBackups(t *testing.T) {
 		return
 	}
 	log.Infoln("Removing backup for ReplicationController")
-	err = deleteRestik(watcher, backupRC)
+	err = deleteStash(watcher, backupRC)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -111,7 +111,7 @@ func TestBackups(t *testing.T) {
 	}
 	time.Sleep(time.Second * 10)
 	log.Infof("Starting backup(%s) for Replicaset...\n", backupReplicaset)
-	err = createRestik(watcher, backupReplicaset, repoSecret)
+	err = createStash(watcher, backupReplicaset, repoSecret)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -120,7 +120,7 @@ func TestBackups(t *testing.T) {
 		return
 	}
 	log.Infoln("Removing backup for Replicaset")
-	err = deleteRestik(watcher, backupReplicaset)
+	err = deleteStash(watcher, backupReplicaset)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -139,7 +139,7 @@ func TestBackups(t *testing.T) {
 	time.Sleep(time.Second * 10)
 	defer deleteDeployment(watcher, deployment)
 	log.Infof("Starting backup(%s) for deployment...\n", backupDeployment)
-	err = createRestik(watcher, backupDeployment, repoSecret)
+	err = createStash(watcher, backupDeployment, repoSecret)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -148,7 +148,7 @@ func TestBackups(t *testing.T) {
 		return
 	}
 	log.Infoln("Removing backup for Deployment")
-	err = deleteRestik(watcher, backupDeployment)
+	err = deleteStash(watcher, backupDeployment)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -168,11 +168,11 @@ func TestBackups(t *testing.T) {
 		return
 	}
 	time.Sleep(time.Second * 10)
-	err = createRestik(watcher, backupStatefulset, repoSecret)
+	err = createStash(watcher, backupStatefulset, repoSecret)
 	if !assert.Nil(t, err) {
 		return
 	}
-	defer deleteRestik(watcher, backupStatefulset)
+	defer deleteStash(watcher, backupStatefulset)
 
 	err = checkEventForBackup(watcher, backupStatefulset)
 	if !assert.Nil(t, err) {
