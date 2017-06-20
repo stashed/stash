@@ -2,22 +2,59 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   labels:
-  name: appscode-backup
-  namespace: default
+    app: restik-operator
+  name: restik-operator
+  namespace: kube-system
 spec:
   replicas: 1
   selector:
     matchLabels:
-      run: appscode-backup
+      app: restik-operator
   template:
     metadata:
       labels:
-        run: appscode-backup
+        app: restik-operator
     spec:
       containers:
-      - name: appscode-backup
+      - name: restik-operator
         args:
         - run
-        - -v=3
-        image: appscode/restik:latest
-        imagePullPolicy: Always
+        - --v=3
+        image: appscode/restik:$TAG
+        ports:
+        - containerPort: 56790
+          name: http
+          protocol: TCP
+      - name: pushgateway
+        args:
+        - -web.listen-address=56789
+        - -persistence.file=/var/pv/pushgateway.dat
+        image: prom/pushgateway:v0.4.0
+        ports:
+        - containerPort: 56789
+          name: prom
+          protocol: TCP
+        volumeMounts:
+          - mountPath: /var/pv
+            name: data-volume
+      volumes:
+        - emptyDir: {}
+          name: data-volume
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: restik-operator
+  name: restik-operator
+  namespace: kube-system
+spec:
+  ports:
+  - name: prom
+    port: 56789
+    targetPort: prom
+  - name: http
+    port: 56790
+    targetPort: http
+  selector:
+    app: restik-operator
