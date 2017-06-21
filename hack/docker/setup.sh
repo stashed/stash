@@ -83,9 +83,7 @@ docker_push() {
         echo "Are you trying to 'release' binaries to prod?"
         exit 1
     fi
-    if [[ "$(docker images -q appscode/$IMG:$TAG 2> /dev/null)" != "" ]]; then
-        docker push appscode/$IMG:$TAG
-    fi
+    hub_canary
 }
 
 docker_release() {
@@ -97,10 +95,7 @@ docker_release() {
         echo "'apply_tag' to release binaries and/or docker images."
         exit 1
     fi
-
-    if [[ "$(docker images -q appscode/$IMG:$TAG 2> /dev/null)" != "" ]]; then
-        docker push appscode/$IMG:$TAG
-    fi
+    hub_up
 }
 
 source_repo $@
