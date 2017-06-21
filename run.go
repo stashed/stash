@@ -56,7 +56,7 @@ func NewCmdRun(version string) *cobra.Command {
 			}
 
 			log.Infoln("Starting operator...")
-			go ctrl.RunAndHold()
+			ctrl.Run()
 
 			http.Handle("/metrics", promhttp.Handler())
 			log.Infoln("Listening on", address)

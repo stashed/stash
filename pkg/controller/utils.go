@@ -1,54 +1,58 @@
 package controller
 
 import (
-	"errors"
-
 	rapi "github.com/appscode/stash/api"
+	sapi "github.com/appscode/stash/api"
 	"github.com/appscode/stash/pkg/docker"
-	"github.com/ghodss/yaml"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	clientset "k8s.io/client-go/kubernetes"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
-func getKubeObject(kubeClient clientset.Interface, namespace string, ls labels.Selector) ([]byte, string, error) {
-	rcs, err := kubeClient.CoreV1().ReplicationControllers(namespace).List(metav1.ListOptions{LabelSelector: ls.String()})
-	if err == nil && len(rcs.Items) != 0 {
-		b, err := yaml.Marshal(rcs.Items[0])
-		return b, ReplicationController, err
+func (c *Controller) FindRestic(obj metav1.ObjectMeta) (*sapi.Restic, error) {
+	restics, err := c.StashClient.Restics(obj.Namespace).List(metav1.ListOptions{})
+	if kerr.IsNotFound(err) {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
 	}
+	for _, restic := range restics.Items {
+		selector, err := metav1.LabelSelectorAsSelector(&restic.Spec.Selector)
+		//return nil, fmt.Errorf("invalid selector: %v", err)
+		if err == nil {
+			if selector.Matches(labels.Set(obj.Labels)) {
+				return &restic, nil
+			}
+		}
+	}
+	return nil, nil
+}
 
-	replicasets, err := kubeClient.ExtensionsV1beta1().ReplicaSets(namespace).List(metav1.ListOptions{LabelSelector: ls.String()})
-	if err == nil && len(replicasets.Items) != 0 {
-		b, err := yaml.Marshal(replicasets.Items[0])
-		return b, ReplicaSet, err
-	}
+func (c *Controller) restartPods(namespace string, selector *metav1.LabelSelector) error {
+	return c.KubeClient.CoreV1().Pods(namespace).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{
+		LabelSelector: selector.String(),
+	})
+}
 
-	deployments, err := kubeClient.ExtensionsV1beta1().Deployments(namespace).List(metav1.ListOptions{LabelSelector: ls.String()})
-	if err == nil && len(deployments.Items) != 0 {
-		b, err := yaml.Marshal(deployments.Items[0])
-		return b, Deployment, err
+func getString(m map[string]string, key string) string {
+	if m == nil {
+		return ""
 	}
-
-	daemonsets, err := kubeClient.ExtensionsV1beta1().DaemonSets(namespace).List(metav1.ListOptions{LabelSelector: ls.String()})
-	if err == nil && len(daemonsets.Items) != 0 {
-		b, err := yaml.Marshal(daemonsets.Items[0])
-		return b, DaemonSet, err
-	}
-
-	statefulsets, err := kubeClient.AppsV1beta1().StatefulSets(namespace).List(metav1.ListOptions{LabelSelector: ls.String()})
-	if err == nil && len(statefulsets.Items) != 0 {
-		b, err := yaml.Marshal(statefulsets.Items[0])
-		return b, StatefulSet, err
-	}
-	return nil, "", errors.New("Workload not found")
+	return m[key]
 }
 
 func (c *Controller) GetSidecarContainer(r *rapi.Restic) apiv1.Container {
+	tag := c.SidecarImageTag
+	if r.Annotations != nil {
+		if v, ok := r.Annotations[sapi.VersionTag]; ok {
+			tag = v
+		}
+	}
+
 	sidecar := apiv1.Container{
 		Name:            docker.StashContainer,
-		Image:           docker.ImageOperator + ":" + c.SidecarImageTag,
+		Image:           docker.ImageOperator + ":" + tag,
 		ImagePullPolicy: apiv1.PullIfNotPresent,
 		Args: []string{
 			"crond",
@@ -75,43 +79,13 @@ func (c *Controller) addAnnotation(r *rapi.Restic) {
 	if r.ObjectMeta.Annotations == nil {
 		r.ObjectMeta.Annotations = make(map[string]string)
 	}
-	r.ObjectMeta.Annotations[ImageAnnotation] = c.SidecarImageTag
-}
-
-func findSelectors(lb map[string]string) labels.Selector {
-	set := labels.Set(lb)
-	selectors := labels.SelectorFromSet(set)
-	return selectors
-}
-
-func restartPods(kubeClient clientset.Interface, namespace string, opts metav1.ListOptions) error {
-	pods, err := kubeClient.CoreV1().Pods(namespace).List(opts)
-	if err != nil {
-		return err
-	}
-	for _, pod := range pods.Items {
-		deleteOpts := &metav1.DeleteOptions{}
-		err = kubeClient.CoreV1().Pods(namespace).Delete(pod.Name, deleteOpts)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	r.ObjectMeta.Annotations[sapi.VersionTag] = c.SidecarImageTag
 }
 
 func removeContainer(c []apiv1.Container, name string) []apiv1.Container {
 	for i, v := range c {
 		if v.Name == name {
 			c = append(c[:i], c[i+1:]...)
-			break
-		}
-	}
-	return c
-}
-func updateImageForStashContainer(c []apiv1.Container, name, image string) []apiv1.Container {
-	for i, v := range c {
-		if v.Name == name {
-			c[i].Image = image
 			break
 		}
 	}
