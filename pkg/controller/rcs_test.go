@@ -51,6 +51,7 @@ var fakeRc = &apiv1.ReplicationController{
 		},
 	},
 }
+
 var fakeStash = &api.Restic{
 	TypeMeta: metav1.TypeMeta{
 		Kind:       clientset.ResourceKindRestic,
@@ -85,37 +86,27 @@ var fakeStash = &api.Restic{
 	},
 }
 
-func TestUpdateObjectAndStartBackup(t *testing.T) {
-	fakeController := getFakeController()
-	_, err := fakeController.KubeClient.Core().ReplicationControllers("default").Create(fakeRc)
+func TestEnsureReplicationControllerSidecar(t *testing.T) {
+	ctrl := getTestController()
+	resource, err := ctrl.KubeClient.CoreV1().ReplicationControllers("default").Create(fakeRc)
 	assert.Nil(t, err)
-	b, err := fakeController.StashClient.Restics("default").Create(fakeStash)
+	restic, err := ctrl.StashClient.Restics("default").Create(fakeStash)
 	assert.Nil(t, err)
-	err = fakeController.updateObjectAndStartBackup(b)
-	assert.Nil(t, err)
-}
-
-func TestUpdateObjectAndStopBackup(t *testing.T) {
-	fakeController := getFakeController()
-	_, err := fakeController.KubeClient.Core().ReplicationControllers("default").Create(fakeRc)
-	assert.Nil(t, err)
-	b, err := fakeController.StashClient.Restics("default").Create(fakeStash)
-	assert.Nil(t, err)
-	err = fakeController.updateObjectAndStopBackup(b)
+	ctrl.EnsureReplicationControllerSidecar(resource, restic)
 	assert.Nil(t, err)
 }
 
-func TestUpdateImage(t *testing.T) {
-	fakeController := getFakeController()
-	_, err := fakeController.KubeClient.Core().ReplicationControllers("default").Create(fakeRc)
+func TestEnsureReplicationControllerSidecarDeleted(t *testing.T) {
+	ctrl := getTestController()
+	resource, err := ctrl.KubeClient.CoreV1().ReplicationControllers("default").Create(fakeRc)
 	assert.Nil(t, err)
-	b, err := fakeController.StashClient.Restics("default").Create(fakeStash)
+	restic, err := ctrl.StashClient.Restics("default").Create(fakeStash)
 	assert.Nil(t, err)
-	err = fakeController.updateImage(b, "appscode/stash:fakelatest")
+	err = ctrl.EnsureReplicationControllerSidecarDeleted(resource, restic)
 	assert.Nil(t, err)
 }
 
-func getFakeController() *Controller {
+func getTestController() *Controller {
 	fakeController := &Controller{
 		KubeClient:      fake.NewSimpleClientset(),
 		StashClient:     rfake.NewFakeStashClient(),

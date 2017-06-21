@@ -52,7 +52,13 @@ func (c *Controller) WatchReplicationControllers() {
 						log.Errorf("No Restic found for ReplicationController %s@%s.", resource.Name, resource.Namespace)
 						return
 					}
-					c.EnsureReplicationControllerSidecar(resource, restic)
+					err = c.EnsureReplicationControllerSidecar(resource, restic)
+					if err != nil {
+						log.Errorf("Failed to add sidecar for ReplicationController %s@%s.", resource.Name, resource.Namespace)
+						sidecarFailedToAdd()
+						return
+					}
+					sidecarSuccessfullyAdd()
 				}
 			},
 		},
@@ -60,25 +66,22 @@ func (c *Controller) WatchReplicationControllers() {
 	ctrl.Run(wait.NeverStop)
 }
 
-func (c *Controller) EnsureReplicationControllerSidecar(resouce *apiv1.ReplicationController, restic *sapi.Restic) {
-	resouce.Spec.Template.Spec.Containers = append(resouce.Spec.Template.Spec.Containers, c.GetSidecarContainer(restic))
-	resouce.Spec.Template.Spec.Volumes = append(resouce.Spec.Template.Spec.Volumes, restic.Spec.Destination.Volume)
-	if resouce.Annotations == nil {
-		resouce.Annotations = make(map[string]string)
+func (c *Controller) EnsureReplicationControllerSidecar(resource *apiv1.ReplicationController, restic *sapi.Restic) error {
+	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, c.GetSidecarContainer(restic))
+	resource.Spec.Template.Spec.Volumes = append(resource.Spec.Template.Spec.Volumes, restic.Spec.Destination.Volume)
+	if resource.Annotations == nil {
+		resource.Annotations = make(map[string]string)
 	}
-	resouce.Annotations[sapi.ConfigName] = restic.Name
-	resouce.Annotations[sapi.VersionTag] = c.SidecarImageTag
+	resource.Annotations[sapi.ConfigName] = restic.Name
+	resource.Annotations[sapi.VersionTag] = c.SidecarImageTag
 
-	resouce, err := c.KubeClient.CoreV1().ReplicationControllers(resouce.Namespace).Update(resouce)
+	resource, err := c.KubeClient.CoreV1().ReplicationControllers(resource.Namespace).Update(resource)
 	if kerr.IsNotFound(err) {
-		return
+		return nil
 	} else if err != nil {
-		sidecarFailedToAdd()
-		log.Errorf("Failed to add sidecar for ReplicationController %s@%s.", resouce.Name, resouce.Namespace)
-		return
+		return err
 	}
-	sidecarSuccessfullyAdd()
-	c.restartPods(resouce.Namespace, &metav1.LabelSelector{MatchLabels: resouce.Spec.Selector})
+	return c.restartPods(resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector})
 }
 
 func (c *Controller) EnsureReplicationControllerSidecarDeleted(resource *apiv1.ReplicationController, restic *sapi.Restic) error {
@@ -89,15 +92,15 @@ func (c *Controller) EnsureReplicationControllerSidecarDeleted(resource *apiv1.R
 		delete(resource.Annotations, sapi.VersionTag)
 	}
 
-	resouce, err := c.KubeClient.CoreV1().ReplicationControllers(resource.Namespace).Update(resource)
+	resource, err := c.KubeClient.CoreV1().ReplicationControllers(resource.Namespace).Update(resource)
 	if kerr.IsNotFound(err) {
 		return nil
 	} else if err != nil {
 		sidecarFailedToAdd()
-		log.Errorf("Failed to add sidecar for ReplicationController %s@%s.", resouce.Name, resouce.Namespace)
+		log.Errorf("Failed to add sidecar for ReplicationController %s@%s.", resource.Name, resource.Namespace)
 		return err
 	}
 	sidecarSuccessfullyDeleted()
-	c.restartPods(resouce.Namespace, &metav1.LabelSelector{MatchLabels: resouce.Spec.Selector})
+	c.restartPods(resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector})
 	return nil
 }

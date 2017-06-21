@@ -164,7 +164,7 @@ def test(type):
 
 
 def unit_test():
-      die(call(libbuild.GOC + ' test -v ./pkg/controller...'))
+      die(call(libbuild.GOC + ' test -v ./pkg/...'))
 
 
 def e2e_test():
