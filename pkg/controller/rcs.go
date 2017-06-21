@@ -15,6 +15,11 @@ import (
 
 // Blocks caller. Intended to be called as a Go routine.
 func (c *Controller) WatchReplicationControllers() {
+	if !c.IsPreferredAPIResource(apiv1.SchemeGroupVersion.String(), "ReplicationController") {
+		log.Warningf("Skipping watching non-preferred GroupVersion:%s Kind:%s", apiv1.SchemeGroupVersion.String(), "ReplicationController")
+		return
+	}
+
 	defer acrt.HandleCrash()
 
 	lw := &cache.ListWatch{

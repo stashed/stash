@@ -10,6 +10,22 @@ import (
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
+func (c *Controller) IsPreferredAPIResource(groupVersion, kind string) bool {
+	if resourceList, err := c.KubeClient.Discovery().ServerPreferredResources(); err == nil {
+		for _, resources := range resourceList {
+			if resources.GroupVersion != groupVersion {
+				continue
+			}
+			for _, resource := range resources.APIResources {
+				if resources.GroupVersion == groupVersion && resource.Kind == kind {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
 func (c *Controller) FindRestic(obj metav1.ObjectMeta) (*sapi.Restic, error) {
 	restics, err := c.StashClient.Restics(obj.Namespace).List(metav1.ListOptions{})
 	if kerr.IsNotFound(err) {

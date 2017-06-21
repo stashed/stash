@@ -7,6 +7,4 @@ const (
 const (
 	OperatorName   = "stash-operator"
 	StashContainer = "stash"
-	StashNamespace = "STASH_NAMESPACE"
-	StashName      = "STASH_NAME"
 )

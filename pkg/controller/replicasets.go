@@ -16,6 +16,11 @@ import (
 
 // Blocks caller. Intended to be called as a Go routine.
 func (c *Controller) WatchReplicaSets() {
+	if !c.IsPreferredAPIResource(extensions.SchemeGroupVersion.String(), "ReplicaSet") {
+		log.Warningf("Skipping watching non-preferred GroupVersion:%s Kind:%s", extensions.SchemeGroupVersion.String(), "ReplicaSet")
+		return
+	}
+
 	defer acrt.HandleCrash()
 
 	lw := &cache.ListWatch{

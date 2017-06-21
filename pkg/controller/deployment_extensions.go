@@ -16,6 +16,11 @@ import (
 
 // Blocks caller. Intended to be called as a Go routine.
 func (c *Controller) WatchDeploymentExtensions() {
+	if !c.IsPreferredAPIResource(extensions.SchemeGroupVersion.String(), "Deployment") {
+		log.Warningf("Skipping watching non-preferred GroupVersion:%s Kind:%s", extensions.SchemeGroupVersion.String(), "Deployment")
+		return
+	}
+
 	defer acrt.HandleCrash()
 
 	lw := &cache.ListWatch{
