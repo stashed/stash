@@ -48,31 +48,6 @@ func (c *Controller) FindRestic(obj metav1.ObjectMeta) (*sapi.Restic, error) {
 	return nil, nil
 }
 
-func LabelSelectorRequirementsAsSelector(selector *metav1.LabelSelector) (labels.Selector, error) {
-	result := labels.SelectorFromSet(selector.MatchLabels)
-	for _, expr := range selector.MatchExpressions {
-		var op selection.Operator
-		switch expr.Operator {
-		case metav1.LabelSelectorOpIn:
-			op = selection.In
-		case metav1.LabelSelectorOpNotIn:
-			op = selection.NotIn
-		case metav1.LabelSelectorOpExists:
-			op = selection.Exists
-		case metav1.LabelSelectorOpDoesNotExist:
-			op = selection.DoesNotExist
-		default:
-			return nil, fmt.Errorf("%q is not a valid label selector operator", expr.Operator)
-		}
-		r, err := labels.NewRequirement(expr.Key, op, expr.Values)
-		if err != nil {
-			return nil, err
-		}
-		result = result.Add(*r)
-	}
-	return result, nil
-}
-
 func (c *Controller) restartPods(namespace string, selector *metav1.LabelSelector) error {
 	// ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
 	// ref: https://github.com/kubernetes/kubernetes/blob/310ea94b6e0694ab08e3aa6185919be92419e932/pkg/api/helper/helpers.go#L357
