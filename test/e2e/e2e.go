@@ -38,7 +38,7 @@ func runController() (*controller.Controller, error) {
 	return ctrl, nil
 }
 
-func checkEventForBackup(watcher *controller.Controller, objName string) error {
+func checkEventForBackup(ctrl *controller.Controller, objName string) error {
 	var err error
 	try := 0
 	sets := fields.Set{
@@ -49,7 +49,7 @@ func checkEventForBackup(watcher *controller.Controller, objName string) error {
 	}
 	fieldSelector := fields.SelectorFromSet(sets)
 	for {
-		events, err := watcher.KubeClient.CoreV1().Events(namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
+		events, err := ctrl.KubeClient.CoreV1().Events(namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
 		if err == nil {
 			for _, e := range events.Items {
 				if e.Reason == eventer.EventReasonSuccessfulBackup {
