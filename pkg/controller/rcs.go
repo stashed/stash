@@ -48,7 +48,7 @@ func (c *Controller) WatchReplicationControllers() {
 						log.Errorf("Error while searching Restic for ReplicationController %s@%s.", resource.Name, resource.Namespace)
 						return
 					}
-					if restic != nil {
+					if restic == nil {
 						log.Errorf("No Restic found for ReplicationController %s@%s.", resource.Name, resource.Namespace)
 						return
 					}

@@ -30,7 +30,7 @@ func runController() (*controller.Controller, error) {
 	}
 	kubeClient := clientset.NewForConfigOrDie(config)
 	stashClient := rcs.NewForConfigOrDie(config)
-	ctrl := controller.NewController(kubeClient, stashClient, image)
+	ctrl := controller.NewController(kubeClient, stashClient, "canary")
 	if err := ctrl.Setup(); err != nil {
 		log.Errorln(err)
 	}

@@ -49,7 +49,7 @@ func (c *Controller) WatchReplicaSets() {
 						log.Errorf("Error while searching Restic for ReplicaSet %s@%s.", resource.Name, resource.Namespace)
 						return
 					}
-					if restic != nil {
+					if restic == nil {
 						log.Errorf("No Restic found for ReplicaSet %s@%s.", resource.Name, resource.Namespace)
 						return
 					}

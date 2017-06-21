@@ -49,7 +49,7 @@ func (c *Controller) WatchDaemonSets() {
 						log.Errorf("Error while searching Restic for DaemonSet %s@%s.", resource.Name, resource.Namespace)
 						return
 					}
-					if restic != nil {
+					if restic == nil {
 						log.Errorf("No Restic found for DaemonSet %s@%s.", resource.Name, resource.Namespace)
 						return
 					}

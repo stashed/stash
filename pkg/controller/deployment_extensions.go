@@ -49,7 +49,7 @@ func (c *Controller) WatchDeploymentExtensions() {
 						log.Errorf("Error while searching Restic for Deployment %s@%s.", resource.Name, resource.Namespace)
 						return
 					}
-					if restic != nil {
+					if restic == nil {
 						log.Errorf("No Restic found for Deployment %s@%s.", resource.Name, resource.Namespace)
 						return
 					}
