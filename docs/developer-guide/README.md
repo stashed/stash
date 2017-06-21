@@ -11,6 +11,10 @@ To install glide follow [these instructions](https://github.com/Masterminds/glid
 
 Currently the project includes all its required dependencies inside `vendor` to make things easier.
 
+```sh
+glide slow
+```
+
 ### Run Test
 #### Run Unit Test by
 ```sh
