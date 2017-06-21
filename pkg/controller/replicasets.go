@@ -16,7 +16,7 @@ import (
 
 // Blocks caller. Intended to be called as a Go routine.
 func (c *Controller) WatchReplicaSets() {
-	if !c.IsPreferredAPIResource("extensions/v1beta1", "ReplicaSet") {
+	if !c.IsPreferredAPIResource(extensions.SchemeGroupVersion.String(), "ReplicaSet") {
 		return
 	}
 

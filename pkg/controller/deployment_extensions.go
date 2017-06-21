@@ -16,7 +16,7 @@ import (
 
 // Blocks caller. Intended to be called as a Go routine.
 func (c *Controller) WatchDeploymentExtensions() {
-	if !c.IsPreferredAPIResource("extensions/v1beta1", "Deployment") {
+	if !c.IsPreferredAPIResource(extensions.SchemeGroupVersion.String(), "Deployment") {
 		return
 	}
 

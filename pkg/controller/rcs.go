@@ -15,7 +15,7 @@ import (
 
 // Blocks caller. Intended to be called as a Go routine.
 func (c *Controller) WatchReplicationControllers() {
-	if !c.IsPreferredAPIResource("core/v1", "ReplicationController") {
+	if !c.IsPreferredAPIResource(apiv1.SchemeGroupVersion.String(), "ReplicationController") {
 		return
 	}
 

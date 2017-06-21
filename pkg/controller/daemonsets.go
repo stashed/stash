@@ -16,7 +16,7 @@ import (
 
 // Blocks caller. Intended to be called as a Go routine.
 func (c *Controller) WatchDaemonSets() {
-	if !c.IsPreferredAPIResource("extensions/v1beta1", "DaemonSet") {
+	if !c.IsPreferredAPIResource(extensions.SchemeGroupVersion.String(), "DaemonSet") {
 		return
 	}
 
