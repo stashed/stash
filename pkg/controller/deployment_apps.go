@@ -17,6 +17,7 @@ import (
 // Blocks caller. Intended to be called as a Go routine.
 func (c *Controller) WatchDeploymentApps() {
 	if !c.IsPreferredAPIResource(apps.SchemeGroupVersion.String(), "Deployment") {
+		log.Warningf("Skipping watching non-preferred GroupVersion:%s Kind:%s", apps.SchemeGroupVersion.String(), "Deployment")
 		return
 	}
 

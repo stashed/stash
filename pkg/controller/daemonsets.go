@@ -17,6 +17,7 @@ import (
 // Blocks caller. Intended to be called as a Go routine.
 func (c *Controller) WatchDaemonSets() {
 	if !c.IsPreferredAPIResource(extensions.SchemeGroupVersion.String(), "DaemonSet") {
+		log.Warningf("Skipping watching non-preferred GroupVersion:%s Kind:%s", extensions.SchemeGroupVersion.String(), "DaemonSet")
 		return
 	}
 
