@@ -87,9 +87,9 @@ var fakeStash = &api.Restic{
 
 func TestUpdateObjectAndStartBackup(t *testing.T) {
 	fakeController := getFakeController()
-	_, err := fakeController.Clientset.Core().ReplicationControllers("default").Create(fakeRc)
+	_, err := fakeController.KubeClient.Core().ReplicationControllers("default").Create(fakeRc)
 	assert.Nil(t, err)
-	b, err := fakeController.ExtClientset.Restics("default").Create(fakeStash)
+	b, err := fakeController.StashClient.Restics("default").Create(fakeStash)
 	assert.Nil(t, err)
 	err = fakeController.updateObjectAndStartBackup(b)
 	assert.Nil(t, err)
@@ -97,9 +97,9 @@ func TestUpdateObjectAndStartBackup(t *testing.T) {
 
 func TestUpdateObjectAndStopBackup(t *testing.T) {
 	fakeController := getFakeController()
-	_, err := fakeController.Clientset.Core().ReplicationControllers("default").Create(fakeRc)
+	_, err := fakeController.KubeClient.Core().ReplicationControllers("default").Create(fakeRc)
 	assert.Nil(t, err)
-	b, err := fakeController.ExtClientset.Restics("default").Create(fakeStash)
+	b, err := fakeController.StashClient.Restics("default").Create(fakeStash)
 	assert.Nil(t, err)
 	err = fakeController.updateObjectAndStopBackup(b)
 	assert.Nil(t, err)
@@ -107,9 +107,9 @@ func TestUpdateObjectAndStopBackup(t *testing.T) {
 
 func TestUpdateImage(t *testing.T) {
 	fakeController := getFakeController()
-	_, err := fakeController.Clientset.Core().ReplicationControllers("default").Create(fakeRc)
+	_, err := fakeController.KubeClient.Core().ReplicationControllers("default").Create(fakeRc)
 	assert.Nil(t, err)
-	b, err := fakeController.ExtClientset.Restics("default").Create(fakeStash)
+	b, err := fakeController.StashClient.Restics("default").Create(fakeStash)
 	assert.Nil(t, err)
 	err = fakeController.updateImage(b, "appscode/stash:fakelatest")
 	assert.Nil(t, err)
@@ -117,8 +117,8 @@ func TestUpdateImage(t *testing.T) {
 
 func getFakeController() *Controller {
 	fakeController := &Controller{
-		Clientset:       fake.NewSimpleClientset(),
-		ExtClientset:    rfake.NewFakeStashClient(),
+		KubeClient:      fake.NewSimpleClientset(),
+		StashClient:     rfake.NewFakeStashClient(),
 		SyncPeriod:      time.Minute * 2,
 		SidecarImageTag: "canary",
 	}

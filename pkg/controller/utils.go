@@ -4,13 +4,47 @@ import (
 	"errors"
 
 	rapi "github.com/appscode/stash/api"
+	sapi "github.com/appscode/stash/api"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/ghodss/yaml"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	clientset "k8s.io/client-go/kubernetes"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
+
+func (c *Controller) FindRestic(obj metav1.ObjectMeta) (*sapi.Restic, error) {
+	restics, err := c.StashClient.Restics(obj.Namespace).List(metav1.ListOptions{})
+	if kerr.IsNotFound(err) {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+	for _, restic := range restics.Items {
+		selector, err := metav1.LabelSelectorAsSelector(&restic.Spec.Selector)
+		//return nil, fmt.Errorf("invalid selector: %v", err)
+		if err == nil {
+			if selector.Matches(labels.Set(obj.Labels)) {
+				return &restic, nil
+			}
+		}
+	}
+	return nil, nil
+}
+
+func (c *Controller) restartPods(namespace string, selector *metav1.LabelSelector) error {
+	return c.KubeClient.CoreV1().Pods(namespace).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{
+		LabelSelector: selector.String(),
+	})
+}
+
+func getString(m map[string]string, key string) string {
+	if m == nil {
+		return ""
+	}
+	return m[key]
+}
 
 func getKubeObject(kubeClient clientset.Interface, namespace string, ls labels.Selector) ([]byte, string, error) {
 	rcs, err := kubeClient.CoreV1().ReplicationControllers(namespace).List(metav1.ListOptions{LabelSelector: ls.String()})
@@ -75,28 +109,13 @@ func (c *Controller) addAnnotation(r *rapi.Restic) {
 	if r.ObjectMeta.Annotations == nil {
 		r.ObjectMeta.Annotations = make(map[string]string)
 	}
-	r.ObjectMeta.Annotations[ImageAnnotation] = c.SidecarImageTag
+	r.ObjectMeta.Annotations[sapi.VersionTag] = c.SidecarImageTag
 }
 
 func findSelectors(lb map[string]string) labels.Selector {
 	set := labels.Set(lb)
 	selectors := labels.SelectorFromSet(set)
 	return selectors
-}
-
-func restartPods(kubeClient clientset.Interface, namespace string, opts metav1.ListOptions) error {
-	pods, err := kubeClient.CoreV1().Pods(namespace).List(opts)
-	if err != nil {
-		return err
-	}
-	for _, pod := range pods.Items {
-		deleteOpts := &metav1.DeleteOptions{}
-		err = kubeClient.CoreV1().Pods(namespace).Delete(pod.Name, deleteOpts)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func removeContainer(c []apiv1.Container, name string) []apiv1.Container {

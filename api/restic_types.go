@@ -24,6 +24,9 @@ type Restic struct {
 }
 
 type ResticSpec struct {
+	// Selector is a label query over a set of resources, in this case pods.
+	// Required.
+	Selector metav1.LabelSelector `json:"selector,omitempty"`
 	// Source of the backup volumeName:path
 	Source Source `json:"source"`
 	// Destination of the backup
