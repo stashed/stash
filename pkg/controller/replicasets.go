@@ -16,6 +16,10 @@ import (
 
 // Blocks caller. Intended to be called as a Go routine.
 func (c *Controller) WatchReplicaSets() {
+	if !c.IsPreferredAPIResource("extensions/v1beta1", "ReplicaSet") {
+		return
+	}
+
 	defer acrt.HandleCrash()
 
 	lw := &cache.ListWatch{

@@ -15,6 +15,10 @@ import (
 
 // Blocks caller. Intended to be called as a Go routine.
 func (c *Controller) WatchReplicationControllers() {
+	if !c.IsPreferredAPIResource("core/v1", "ReplicationController") {
+		return
+	}
+
 	defer acrt.HandleCrash()
 
 	lw := &cache.ListWatch{
