@@ -116,7 +116,7 @@ func deleteSecret(ctrl *controller.Controller, name string) {
 	}
 }
 
-func createStash(ctrl *controller.Controller, backupName string, secretName string) error {
+func createRestic(ctrl *controller.Controller, backupName string, secretName string) error {
 	stash := &sapi.Restic{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "stash.appscode.com/v1alpha1",
@@ -151,7 +151,7 @@ func createStash(ctrl *controller.Controller, backupName string, secretName stri
 	return err
 }
 
-func deleteStash(ctrl *controller.Controller, stashName string) error {
+func deleteRestic(ctrl *controller.Controller, stashName string) error {
 	return ctrl.StashClient.Restics(namespace).Delete(stashName, nil)
 }
 
