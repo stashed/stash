@@ -14,7 +14,7 @@ source "$REPO_ROOT/hack/libbuild/common/public_image.sh"
 
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
 IMG=stash
-RESTIC_VER=0.6.1
+RESTIC_VER=${RESTIC_VER:-SOURCE}
 
 DIST=$REPO_ROOT/dist
 mkdir -p $DIST
@@ -33,6 +33,25 @@ build_binary() {
     ./hack/builddeps.sh
     ./hack/make.py build stash
     detect_tag $DIST/.tag
+
+    if [ $RESTIC_VER = 'SOURCE' ]; then
+        rm -rf $DIST/restic
+        cd $DIST
+        clone https://github.com/appscode/restic.git
+        cd restic
+        checkout stashed
+        gb build
+        mv bin/restic restic
+    else
+        # Download restic
+        rm -rf $DIST/restic
+        mkdir $DIST/restic
+        cd $DIST/restic
+        wget https://github.com/restic/restic/releases/download/v${RESTIC_VER}/restic_${RESTIC_VER}_linux_amd64.bz2
+        bzip2 -d restic_${RESTIC_VER}_linux_amd64.bz2
+        mv restic_${RESTIC_VER}_linux_amd64 restic
+    fi
+
     popd
 }
 
@@ -43,11 +62,8 @@ build_docker() {
     cp $DIST/stash/stash-linux-amd64 stash
     chmod 755 stash
 
-    # Download restic
-    wget https://github.com/restic/restic/releases/download/v${RESTIC_VER}/restic_${RESTIC_VER}_linux_amd64.bz2
-    bzip2 -d restic_${RESTIC_VER}_linux_amd64.bz2
-    mv restic_${RESTIC_VER}_linux_amd64 restic
-    chmod +x restic
+    cp $DIST/restic/restic restic
+    chmod 755 restic
 
     cat >Dockerfile <<EOL
 FROM alpine
