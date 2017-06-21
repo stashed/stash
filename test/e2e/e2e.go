@@ -34,7 +34,7 @@ func runController() (*controller.Controller, error) {
 	if err := ctrl.Setup(); err != nil {
 		log.Errorln(err)
 	}
-	go ctrl.RunAndHold()
+	ctrl.Run()
 	return ctrl, nil
 }
 

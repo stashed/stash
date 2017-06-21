@@ -5,7 +5,7 @@ import (
 
 	"github.com/appscode/go/types"
 	"github.com/appscode/log"
-	api "github.com/appscode/stash/api"
+	sapi "github.com/appscode/stash/api"
 	"github.com/appscode/stash/client/clientset"
 	"github.com/appscode/stash/pkg/controller"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -74,7 +74,7 @@ func createReplicationController(watcher *controller.Controller, name string, ba
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				controller.ConfigName: backupName,
+				sapi.ConfigName: backupName,
 			},
 		},
 		Spec: apiv1.ReplicationControllerSpec{
@@ -117,7 +117,7 @@ func deleteSecret(watcher *controller.Controller, name string) {
 }
 
 func createStash(watcher *controller.Controller, backupName string, secretName string) error {
-	stash := &api.Restic{
+	stash := &sapi.Restic{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "stash.appscode.com/v1alpha1",
 			Kind:       clientset.ResourceKindRestic,
@@ -126,13 +126,13 @@ func createStash(watcher *controller.Controller, backupName string, secretName s
 			Name:      backupName,
 			Namespace: namespace,
 		},
-		Spec: api.ResticSpec{
-			Source: api.Source{
+		Spec: sapi.ResticSpec{
+			Source: sapi.Source{
 				Path:       "/source_path",
 				VolumeName: "test-volume",
 			},
 			Schedule: "* * * * * *",
-			Destination: api.Destination{
+			Destination: sapi.Destination{
 				Path:                 "/repo_path",
 				RepositorySecretName: secretName,
 				Volume: apiv1.Volume{
@@ -142,7 +142,7 @@ func createStash(watcher *controller.Controller, backupName string, secretName s
 					},
 				},
 			},
-			RetentionPolicy: api.RetentionPolicy{
+			RetentionPolicy: sapi.RetentionPolicy{
 				KeepLastSnapshots: 5,
 			},
 		},
@@ -161,7 +161,7 @@ func createReplicaset(watcher *controller.Controller, name string, stashName str
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				controller.ConfigName: stashName,
+				sapi.ConfigName: stashName,
 			},
 		},
 		Spec: extensions.ReplicaSetSpec{
@@ -190,7 +190,7 @@ func createDeployment(watcher *controller.Controller, name string, stashName str
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				controller.ConfigName: stashName,
+				sapi.ConfigName: stashName,
 			},
 		},
 		Spec: extensions.DeploymentSpec{
@@ -219,7 +219,7 @@ func createDaemonsets(watcher *controller.Controller, name string, backupName st
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				controller.ConfigName: backupName,
+				sapi.ConfigName: backupName,
 			},
 		},
 		Spec: extensions.DaemonSetSpec{
@@ -242,7 +242,7 @@ func createStatefulSet(watcher *controller.Controller, name string, stashName st
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				controller.ConfigName: stashName,
+				sapi.ConfigName: stashName,
 			},
 		},
 		Spec: apps.StatefulSetSpec{
