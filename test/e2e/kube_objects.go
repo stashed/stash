@@ -127,6 +127,11 @@ func createRestic(ctrl *controller.Controller, backupName string, secretName str
 			Namespace: namespace,
 		},
 		Spec: sapi.ResticSpec{
+			Selector: metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app": "stash-e2e",
+				},
+			},
 			Source: sapi.Source{
 				Path:       "/source_path",
 				VolumeName: "test-volume",
@@ -161,7 +166,7 @@ func createReplicaset(ctrl *controller.Controller, name string, stashName string
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				sapi.ConfigName: stashName,
+				"app": "stash-e2e",
 			},
 		},
 		Spec: extensions.ReplicaSetSpec{
@@ -190,7 +195,7 @@ func createDeployment(ctrl *controller.Controller, name string, stashName string
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				sapi.ConfigName: stashName,
+				"app": "stash-e2e",
 			},
 		},
 		Spec: extensions.DeploymentSpec{
@@ -219,7 +224,7 @@ func createDaemonsets(ctrl *controller.Controller, name string, backupName strin
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				sapi.ConfigName: backupName,
+				"app": "stash-e2e",
 			},
 		},
 		Spec: extensions.DaemonSetSpec{
@@ -242,7 +247,7 @@ func createStatefulSet(ctrl *controller.Controller, name string, stashName strin
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				sapi.ConfigName: stashName,
+				"app": "stash-e2e",
 			},
 		},
 		Spec: apps.StatefulSetSpec{

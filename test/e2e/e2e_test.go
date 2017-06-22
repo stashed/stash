@@ -50,32 +50,6 @@ func TestBackups(t *testing.T) {
 	}
 	defer deleteSecret(watcher, repoSecret)
 
-	log.Infoln("\n***********************************************************\nCreating Daemonset -->", daemonset)
-	err = createDaemonsets(watcher, daemonset, backupDaemonset)
-	if !assert.Nil(t, err) {
-		return
-	}
-	time.Sleep(time.Second * 10)
-	log.Infof("Starting backup(%s) for Daemonset...\n", backupDaemonset)
-	err = createRestic(watcher, backupDaemonset, repoSecret)
-	if !assert.Nil(t, err) {
-		return
-	}
-	err = checkEventForBackup(watcher, backupDaemonset)
-	if !assert.Nil(t, err) {
-		return
-	}
-	log.Infoln("Removing backup for Daemonset")
-	err = deleteRestic(watcher, backupDaemonset)
-	if !assert.Nil(t, err) {
-		return
-	}
-	err = checkContainerAfterBackupDelete(watcher, daemonset, controller.DaemonSet)
-	if !assert.Nil(t, err) {
-		return
-	}
-	log.Infoln("SUCCESS: Daemonset Backup")
-	deleteDaemonset(watcher, daemonset)
 	log.Infoln("\n************************************************************\nCreating ReplicationController -->", rc)
 	err = createReplicationController(watcher, rc, backupRC)
 	if !assert.Nil(t, err) {
@@ -157,6 +131,33 @@ func TestBackups(t *testing.T) {
 		return
 	}
 	log.Infoln("SUCCESS: Deployment Backup")
+
+	log.Infoln("\n***********************************************************\nCreating Daemonset -->", daemonset)
+	err = createDaemonsets(watcher, daemonset, backupDaemonset)
+	if !assert.Nil(t, err) {
+		return
+	}
+	time.Sleep(time.Second * 10)
+	log.Infof("Starting backup(%s) for Daemonset...\n", backupDaemonset)
+	err = createRestic(watcher, backupDaemonset, repoSecret)
+	if !assert.Nil(t, err) {
+		return
+	}
+	err = checkEventForBackup(watcher, backupDaemonset)
+	if !assert.Nil(t, err) {
+		return
+	}
+	log.Infoln("Removing backup for Daemonset")
+	err = deleteRestic(watcher, backupDaemonset)
+	if !assert.Nil(t, err) {
+		return
+	}
+	err = checkContainerAfterBackupDelete(watcher, daemonset, controller.DaemonSet)
+	if !assert.Nil(t, err) {
+		return
+	}
+	log.Infoln("SUCCESS: Daemonset Backup")
+	deleteDaemonset(watcher, daemonset)
 
 	log.Infoln("\n***********************************************************\nCreating Statefulset with Backup -->", statefulset)
 	err = createService(watcher, svc)
