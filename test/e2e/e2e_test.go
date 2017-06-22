@@ -50,50 +50,26 @@ func TestBackups(t *testing.T) {
 	}
 	defer deleteSecret(watcher, repoSecret)
 
-	log.Infoln("\n***********************************************************\nCreating Daemonset -->", daemonset)
-	err = createDaemonsets(watcher, daemonset, backupDaemonset)
-	if !assert.Nil(t, err) {
-		return
-	}
-	time.Sleep(time.Second * 10)
-	log.Infof("Starting backup(%s) for Daemonset...\n", backupDaemonset)
-	err = createStash(watcher, backupDaemonset, repoSecret)
-	if !assert.Nil(t, err) {
-		return
-	}
-	err = checkEventForBackup(watcher, backupDaemonset)
-	if !assert.Nil(t, err) {
-		return
-	}
-	log.Infoln("Removing backup for Daemonset")
-	err = deleteStash(watcher, backupDaemonset)
-	if !assert.Nil(t, err) {
-		return
-	}
-	err = checkContainerAfterBackupDelete(watcher, daemonset, controller.DaemonSet)
-	if !assert.Nil(t, err) {
-		return
-	}
-	log.Infoln("SUCCESS: Daemonset Backup")
-	deleteDaemonset(watcher, daemonset)
 	log.Infoln("\n************************************************************\nCreating ReplicationController -->", rc)
+	log.Infof("Starting backup(%s) for ReplicationController...\n", backupRC)
+	err = createRestic(watcher, backupRC, repoSecret)
+	if !assert.Nil(t, err) {
+		return
+	}
+	time.Sleep(time.Second * 5)
 	err = createReplicationController(watcher, rc, backupRC)
 	if !assert.Nil(t, err) {
 		return
 	}
-	time.Sleep(time.Second * 10)
-	log.Infof("Starting backup(%s) for ReplicationController...\n", backupRC)
-	err = createStash(watcher, backupRC, repoSecret)
-	if !assert.Nil(t, err) {
-		return
-	}
+
+	// TODO: Check for side-car added.
 
 	err = checkEventForBackup(watcher, backupRC)
 	if !assert.Nil(t, err) {
 		return
 	}
 	log.Infoln("Removing backup for ReplicationController")
-	err = deleteStash(watcher, backupRC)
+	err = deleteRestic(watcher, backupRC)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -111,7 +87,7 @@ func TestBackups(t *testing.T) {
 	}
 	time.Sleep(time.Second * 10)
 	log.Infof("Starting backup(%s) for Replicaset...\n", backupReplicaset)
-	err = createStash(watcher, backupReplicaset, repoSecret)
+	err = createRestic(watcher, backupReplicaset, repoSecret)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -120,7 +96,7 @@ func TestBackups(t *testing.T) {
 		return
 	}
 	log.Infoln("Removing backup for Replicaset")
-	err = deleteStash(watcher, backupReplicaset)
+	err = deleteRestic(watcher, backupReplicaset)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -139,7 +115,7 @@ func TestBackups(t *testing.T) {
 	time.Sleep(time.Second * 10)
 	defer deleteDeployment(watcher, deployment)
 	log.Infof("Starting backup(%s) for deployment...\n", backupDeployment)
-	err = createStash(watcher, backupDeployment, repoSecret)
+	err = createRestic(watcher, backupDeployment, repoSecret)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -148,7 +124,7 @@ func TestBackups(t *testing.T) {
 		return
 	}
 	log.Infoln("Removing backup for Deployment")
-	err = deleteStash(watcher, backupDeployment)
+	err = deleteRestic(watcher, backupDeployment)
 	if !assert.Nil(t, err) {
 		return
 	}
@@ -157,6 +133,33 @@ func TestBackups(t *testing.T) {
 		return
 	}
 	log.Infoln("SUCCESS: Deployment Backup")
+
+	log.Infoln("\n***********************************************************\nCreating Daemonset -->", daemonset)
+	err = createDaemonsets(watcher, daemonset, backupDaemonset)
+	if !assert.Nil(t, err) {
+		return
+	}
+	time.Sleep(time.Second * 10)
+	log.Infof("Starting backup(%s) for Daemonset...\n", backupDaemonset)
+	err = createRestic(watcher, backupDaemonset, repoSecret)
+	if !assert.Nil(t, err) {
+		return
+	}
+	err = checkEventForBackup(watcher, backupDaemonset)
+	if !assert.Nil(t, err) {
+		return
+	}
+	log.Infoln("Removing backup for Daemonset")
+	err = deleteRestic(watcher, backupDaemonset)
+	if !assert.Nil(t, err) {
+		return
+	}
+	err = checkContainerAfterBackupDelete(watcher, daemonset, controller.DaemonSet)
+	if !assert.Nil(t, err) {
+		return
+	}
+	log.Infoln("SUCCESS: Daemonset Backup")
+	deleteDaemonset(watcher, daemonset)
 
 	log.Infoln("\n***********************************************************\nCreating Statefulset with Backup -->", statefulset)
 	err = createService(watcher, svc)
@@ -168,11 +171,11 @@ func TestBackups(t *testing.T) {
 		return
 	}
 	time.Sleep(time.Second * 10)
-	err = createStash(watcher, backupStatefulset, repoSecret)
+	err = createRestic(watcher, backupStatefulset, repoSecret)
 	if !assert.Nil(t, err) {
 		return
 	}
-	defer deleteStash(watcher, backupStatefulset)
+	defer deleteRestic(watcher, backupStatefulset)
 
 	err = checkEventForBackup(watcher, backupStatefulset)
 	if !assert.Nil(t, err) {
