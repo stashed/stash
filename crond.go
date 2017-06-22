@@ -4,13 +4,13 @@ import (
 	"github.com/appscode/log"
 	rcs "github.com/appscode/stash/client/clientset"
 	"github.com/appscode/stash/pkg/analytics"
-	"github.com/appscode/stash/pkg/cron"
+	"github.com/appscode/stash/pkg/scheduler"
 	"github.com/spf13/cobra"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func NewCmdCrond(version string) *cobra.Command {
+func NewCmdSchedule(version string) *cobra.Command {
 	var (
 		masterURL       string
 		kubeconfigPath  string
@@ -20,26 +20,26 @@ func NewCmdCrond(version string) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "crond",
+		Use:   "schedule",
 		Short: "Run Stash cron daemon",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			if enableAnalytics {
 				analytics.Enable()
 			}
-			analytics.SendEvent("crond", "started", version)
+			analytics.SendEvent("scheduler", "started", version)
 		},
 		PostRun: func(cmd *cobra.Command, args []string) {
-			analytics.SendEvent("crond", "stopped", version)
+			analytics.SendEvent("scheduler", "stopped", version)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
 			if err != nil {
-				log.Fatalf("Could not get kubernetes config: %s", err)
+				log.Fatalf("Could not get Kubernetes config: %s", err)
 			}
 			kubeClient := clientset.NewForConfigOrDie(config)
 			stashClient := rcs.NewForConfigOrDie(config)
 
-			ctrl := cron.NewController(kubeClient, stashClient, namespace, name)
+			ctrl := scheduler.NewController(kubeClient, stashClient, namespace, name)
 			ctrl.RunAndHold()
 		},
 	}

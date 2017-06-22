@@ -75,7 +75,7 @@ func (c *Controller) GetSidecarContainer(r *rapi.Restic) apiv1.Container {
 		Image:           docker.ImageOperator + ":" + tag,
 		ImagePullPolicy: apiv1.PullIfNotPresent,
 		Args: []string{
-			"crond",
+			"schedule",
 			"--v=3",
 			"--namespace=" + r.Namespace,
 			"--name=" + r.Name,

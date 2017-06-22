@@ -1,4 +1,4 @@
-package cron
+package scheduler
 
 import (
 	"errors"
@@ -43,8 +43,8 @@ type controller struct {
 	resourceVersion string
 	locked          chan struct{}
 
-	scheduler *cron.Cron
-	recorder  record.EventRecorder
+	cron     *cron.Cron
+	recorder record.EventRecorder
 }
 
 func NewController(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, namespace, name string) *controller {
@@ -54,12 +54,12 @@ func NewController(kubeClient clientset.Interface, stashClient scs.ExtensionInte
 		resourceNamespace: namespace,
 		resourceName:      name,
 		resource:          make(chan *sapi.Restic),
-		recorder:          eventer.NewEventRecorder(kubeClient, "stash-crond"),
+		recorder:          eventer.NewEventRecorder(kubeClient, "stash-scheduler"),
 	}
 }
 
 func (c *controller) RunAndHold() {
-	c.scheduler.Start()
+	c.cron.Start()
 
 	lw := &cache.ListWatch{
 		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
@@ -79,7 +79,7 @@ func (c *controller) RunAndHold() {
 						c.resource <- r
 						err := c.configureScheduler()
 						if err != nil {
-							crondFailedToAdd()
+							schedulerFailedToAdd()
 							c.recorder.Eventf(
 								r,
 								apiv1.EventTypeWarning,
@@ -88,7 +88,7 @@ func (c *controller) RunAndHold() {
 							)
 							log.Errorln(err)
 						} else {
-							crondSuccessfullyAdded()
+							schedulerSuccessfullyAdded()
 						}
 					}
 				}
@@ -108,7 +108,7 @@ func (c *controller) RunAndHold() {
 					c.resource <- newObj
 					err := c.configureScheduler()
 					if err != nil {
-						crondFailedToModify()
+						schedulerFailedToModify()
 						c.recorder.Eventf(
 							newObj,
 							apiv1.EventTypeWarning,
@@ -117,14 +117,14 @@ func (c *controller) RunAndHold() {
 						)
 						log.Errorln(err)
 					} else {
-						crondSuccessfullyModified()
+						schedulerSuccessfullyModified()
 					}
 				}
 			},
 			DeleteFunc: func(obj interface{}) {
 				if r, ok := obj.(*sapi.Restic); ok {
 					if r.Name == c.resourceName {
-						c.scheduler.Stop()
+						c.cron.Stop()
 					}
 				}
 			},
@@ -135,10 +135,10 @@ func (c *controller) RunAndHold() {
 func (c *controller) configureScheduler() error {
 	r := <-c.resource
 	c.resourceVersion = r.ResourceVersion
-	if c.scheduler == nil {
+	if c.cron == nil {
 		c.locked = make(chan struct{})
 		c.locked <- struct{}{}
-		c.scheduler = cron.New()
+		c.cron = cron.New()
 	}
 
 	password, err := getPasswordFromSecret(c.KubeClient, r.Spec.Destination.RepositorySecretName, r.Namespace)
@@ -157,8 +157,8 @@ func (c *controller) configureScheduler() error {
 		}
 	}
 	// Remove previous jobs
-	for _, v := range c.scheduler.Entries() {
-		c.scheduler.Remove(v.ID)
+	for _, v := range c.cron.Entries() {
+		c.cron.Remove(v.ID)
 	}
 	interval := r.Spec.Schedule
 	if _, err = cron.Parse(interval); err != nil {
@@ -173,7 +173,7 @@ func (c *controller) configureScheduler() error {
 		c.recorder.Event(r, apiv1.EventTypeNormal, eventer.EventReasonSuccessfulCronExpressionReset, "Cron expression reset")
 		return nil
 	}
-	_, err = c.scheduler.AddFunc(interval, func() {
+	_, err = c.cron.AddFunc(interval, func() {
 		if err := c.runOnce(); err != nil {
 			stashJobFailure()
 			c.recorder.Event(r, apiv1.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
