@@ -16,6 +16,7 @@ import (
 	scs "github.com/appscode/stash/client/clientset"
 	"github.com/appscode/stash/pkg/eventer"
 	"gopkg.in/robfig/cron.v2"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -27,20 +28,9 @@ import (
 )
 
 const (
-	ContainerName     = "stash"
-	StashNamespace    = "STASH_NAMESPACE"
-	StashResourceName = "STASH_RESOURCE_NAME"
-
-	BackupConfig          = "restic.appscode.com/config"
-	RESTIC_PASSWORD       = "RESTIC_PASSWORD"
-	ReplicationController = "ReplicationController"
-	ReplicaSet            = "ReplicaSet"
-	Deployment            = "Deployment"
-	DaemonSet             = "DaemonSet"
-	StatefulSet           = "StatefulSet"
-	Password              = "password"
-	ImageAnnotation       = "restic.appscode.com/image"
-	Force                 = "force"
+	RESTIC_PASSWORD = "RESTIC_PASSWORD"
+	Password        = "password"
+	Force           = "force"
 )
 
 type controller struct {
@@ -49,10 +39,13 @@ type controller struct {
 
 	resourceNamespace string
 	resourceName      string
-	resource          *sapi.Restic
 
-	crons         *cron.Cron
-	eventRecorder record.EventRecorder
+	resource        chan *sapi.Restic
+	resourceVersion string
+	locked          chan struct{}
+
+	scheduler *cron.Cron
+	recorder  record.EventRecorder
 }
 
 func NewController(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, namespace, name string) *controller {
@@ -61,13 +54,13 @@ func NewController(kubeClient clientset.Interface, stashClient scs.ExtensionInte
 		StashClient:       stashClient,
 		resourceNamespace: namespace,
 		resourceName:      name,
-		crons:             cron.New(),
-		eventRecorder:     eventer.NewEventRecorder(kubeClient, "stash-crond"),
+		resource:          make(chan *sapi.Restic),
+		recorder:          eventer.NewEventRecorder(kubeClient, "stash-crond"),
 	}
 }
 
 func (c *controller) RunAndHold() {
-	c.crons.Start()
+	c.scheduler.Start()
 
 	lw := &cache.ListWatch{
 		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
@@ -84,11 +77,11 @@ func (c *controller) RunAndHold() {
 			AddFunc: func(obj interface{}) {
 				if r, ok := obj.(*sapi.Restic); ok {
 					if r.Name == c.resourceName {
-						c.resource = r
-						err := c.startCronBackupProcedure()
+						c.resource <- r
+						err := c.configureScheduler()
 						if err != nil {
 							crondFailedToAdd()
-							c.eventRecorder.Eventf(
+							c.recorder.Eventf(
 								r,
 								apiv1.EventTypeWarning,
 								eventer.EventReasonFailedToBackup,
@@ -113,11 +106,11 @@ func (c *controller) RunAndHold() {
 					return
 				}
 				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) && newObj.Name == c.resourceName {
-					c.resource = newObj
-					err := c.startCronBackupProcedure()
+					c.resource <- newObj
+					err := c.configureScheduler()
 					if err != nil {
 						crondFailedToModify()
-						c.eventRecorder.Eventf(
+						c.recorder.Eventf(
 							newObj,
 							apiv1.EventTypeWarning,
 							eventer.EventReasonFailedToBackup,
@@ -129,13 +122,27 @@ func (c *controller) RunAndHold() {
 					}
 				}
 			},
+			DeleteFunc: func(obj interface{}) {
+				if r, ok := obj.(*sapi.Restic); ok {
+					if r.Name == c.resourceName {
+						c.scheduler.Stop()
+					}
+				}
+			},
 		})
 	ctrl.Run(wait.NeverStop)
 }
 
-func (c *controller) startCronBackupProcedure() error {
-	stash := c.resource
-	password, err := getPasswordFromSecret(c.KubeClient, stash.Spec.Destination.RepositorySecretName, stash.Namespace)
+func (c *controller) configureScheduler() error {
+	r := <-c.resource
+	c.resourceVersion = r.ResourceVersion
+	if c.scheduler == nil {
+		c.locked = make(chan struct{})
+		c.locked <- struct{}{}
+		c.scheduler = cron.New()
+	}
+
+	password, err := getPasswordFromSecret(c.KubeClient, r.Spec.Destination.RepositorySecretName, r.Namespace)
 	if err != nil {
 		return err
 	}
@@ -143,7 +150,7 @@ func (c *controller) startCronBackupProcedure() error {
 	if err != nil {
 		return err
 	}
-	repo := stash.Spec.Destination.Path
+	repo := r.Spec.Destination.Path
 	_, err = os.Stat(filepath.Join(repo, "config"))
 	if os.IsNotExist(err) {
 		if _, err = execLocal(fmt.Sprintf("/restic init --repo %s", repo)); err != nil {
@@ -151,26 +158,26 @@ func (c *controller) startCronBackupProcedure() error {
 		}
 	}
 	// Remove previous jobs
-	for _, v := range c.crons.Entries() {
-		c.crons.Remove(v.ID)
+	for _, v := range c.scheduler.Entries() {
+		c.scheduler.Remove(v.ID)
 	}
-	interval := stash.Spec.Schedule
+	interval := r.Spec.Schedule
 	if _, err = cron.Parse(interval); err != nil {
 		log.Errorln(err)
-		c.eventRecorder.Event(stash, apiv1.EventTypeWarning, eventer.EventReasonInvalidCronExpression, err.Error())
+		c.recorder.Event(r, apiv1.EventTypeWarning, eventer.EventReasonInvalidCronExpression, err.Error())
 		//Reset Wrong Schedule
-		stash.Spec.Schedule = ""
-		_, err = c.StashClient.Restics(stash.Namespace).Update(stash)
+		r.Spec.Schedule = ""
+		_, err = c.StashClient.Restics(r.Namespace).Update(r)
 		if err != nil {
 			return err
 		}
-		c.eventRecorder.Event(stash, apiv1.EventTypeNormal, eventer.EventReasonSuccessfulCronExpressionReset, "Cron expression reset")
+		c.recorder.Event(r, apiv1.EventTypeNormal, eventer.EventReasonSuccessfulCronExpressionReset, "Cron expression reset")
 		return nil
 	}
-	_, err = c.crons.AddFunc(interval, func() {
-		if err := c.runCronJob(); err != nil {
+	_, err = c.scheduler.AddFunc(interval, func() {
+		if err := c.takeBackup(); err != nil {
 			stashJobFailure()
-			c.eventRecorder.Event(stash, apiv1.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
+			c.recorder.Event(r, apiv1.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
 			log.Errorln(err)
 		} else {
 			stashJobSuccess()
@@ -182,9 +189,29 @@ func (c *controller) startCronBackupProcedure() error {
 	return nil
 }
 
-func (c *controller) runCronJob() error {
-	backup := c.resource
-	password, err := getPasswordFromSecret(c.KubeClient, c.resource.Spec.Destination.RepositorySecretName, backup.Namespace)
+func (c *controller) takeBackup() error {
+	select {
+	case <-c.locked:
+		log.Infof("Acquired lock for Restic %s@%s", c.resourceName, c.resourceNamespace)
+		defer func() {
+			c.locked <- struct{}{}
+		}()
+	default:
+		log.Warningf("Skipping backup schedule for Restic %s@%s", c.resourceName, c.resourceNamespace)
+		return nil
+	}
+
+	resource, err := c.StashClient.Restics(c.resourceNamespace).Get(c.resourceName)
+	if kerr.IsNotFound(err) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+	if resource.ResourceVersion != c.resourceVersion {
+		return fmt.Errorf("Restic %s@%s version %s does not match expected version %s", resource.Name, resource.Namespace, resource.ResourceVersion, c.resourceVersion)
+	}
+
+	password, err := getPasswordFromSecret(c.KubeClient, resource.Spec.Destination.RepositorySecretName, resource.Namespace)
 	if err != nil {
 		return err
 	}
@@ -193,9 +220,9 @@ func (c *controller) runCronJob() error {
 		return err
 	}
 	backupStartTime := metav1.Now()
-	cmd := fmt.Sprintf("/restic -r %s backup %s", backup.Spec.Destination.Path, backup.Spec.Source.Path)
+	cmd := fmt.Sprintf("/restic -r %s backup %s", resource.Spec.Destination.Path, resource.Spec.Source.Path)
 	// add tags if any
-	for _, t := range backup.Spec.Tags {
+	for _, t := range resource.Spec.Tags {
 		cmd = cmd + " --tag " + t
 	}
 	// Force flag
@@ -210,30 +237,29 @@ func (c *controller) runCronJob() error {
 		reason = eventer.EventReasonFailedToBackup
 		backupFailure()
 	} else {
-		backup.Status.LastSuccessfulBackupTime = &backupStartTime
+		resource.Status.LastSuccessfulBackupTime = &backupStartTime
 		reason = eventer.EventReasonSuccessfulBackup
 		backupSuccess()
 	}
-	backup.Status.BackupCount++
-	message := "Backup operation number = " + strconv.Itoa(int(backup.Status.BackupCount))
-	c.eventRecorder.Event(backup, apiv1.EventTypeNormal, reason, message+errMessage)
+	resource.Status.BackupCount++
+	message := "Backup operation number = " + strconv.Itoa(int(resource.Status.BackupCount))
+	c.recorder.Event(resource, apiv1.EventTypeNormal, reason, message+errMessage)
 	backupEndTime := metav1.Now()
-	_, err = snapshotRetention(backup)
+	_, err = snapshotRetention(resource)
 	if err != nil {
 		log.Errorln("Snapshot retention failed cause ", err)
-		c.eventRecorder.Event(backup, apiv1.EventTypeNormal, eventer.EventReasonFailedToRetention, message+" ERROR: "+err.Error())
+		c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToRetention, message+" ERROR: "+err.Error())
 	}
-	backup.Status.LastBackupTime = &backupStartTime
-	if reflect.DeepEqual(backup.Status.FirstBackupTime, time.Time{}) {
-		backup.Status.FirstBackupTime = &backupStartTime
+	resource.Status.LastBackupTime = &backupStartTime
+	if reflect.DeepEqual(resource.Status.FirstBackupTime, time.Time{}) {
+		resource.Status.FirstBackupTime = &backupStartTime
 	}
-	backup.Status.LastBackupDuration = backupEndTime.Sub(backupStartTime.Time).String()
-	backup, err = c.StashClient.Restics(backup.Namespace).Update(backup)
+	resource.Status.LastBackupDuration = backupEndTime.Sub(backupStartTime.Time).String()
+	resource, err = c.StashClient.Restics(resource.Namespace).Update(resource)
 	if err != nil {
 		log.Errorln(err)
-		c.eventRecorder.Event(backup, apiv1.EventTypeNormal, eventer.EventReasonFailedToUpdate, err.Error())
+		c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToUpdate, err.Error())
 	}
-	c.resource = backup
 	return nil
 }
 
