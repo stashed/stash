@@ -20,7 +20,7 @@ func NewCmdRun(version string) *cobra.Command {
 	var (
 		masterURL       string
 		kubeconfigPath  string
-		tag             string = stringz.Val(v.Version.Version, "canary")
+		tag             string = stringz.Val(Version, "canary")
 		address         string = ":56790"
 		enableAnalytics bool   = true
 	)
