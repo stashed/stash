@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	stringz "github.com/appscode/go/strings"
-	v "github.com/appscode/go/version"
 	"github.com/appscode/log"
 	rcs "github.com/appscode/stash/client/clientset"
 	"github.com/appscode/stash/pkg/analytics"
