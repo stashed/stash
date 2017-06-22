@@ -39,7 +39,7 @@ build_binary() {
         cd $DIST
         clone https://github.com/appscode/restic.git
         cd restic
-        checkout stashed
+        checkout master
         gb build
         mv bin/restic restic
     else
