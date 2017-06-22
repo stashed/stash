@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
-	"strconv"
 	"strings"
 	"time"
 
@@ -220,18 +219,26 @@ func (c *controller) runOnce() error {
 		return err
 	}
 
-	c.runBackup(resource)
-
-	_, err = forgetSnapshots(resource)
+	err = c.runBackup(resource)
 	if err != nil {
-		log.Errorln("Snapshot retention failed cause ", err)
+		log.Errorln("Backup operation failed for Reestic %s@%s due to %s", resource.Name, resource.Namespace, err)
+		backupFailure()
+		c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToBackup, " ERROR: "+err.Error())
+	} else {
+		backupSuccess()
+		c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonSuccessfulBackup, "Backup completed successfully.")
+	}
+
+	err = forgetSnapshots(resource)
+	if err != nil {
+		log.Errorln("Failed to forget old snapshots for Restic %s@%s due to %s", resource.Name, resource.Namespace, err)
 		c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToRetention, " ERROR: "+err.Error())
 	}
 
 	return nil
 }
 
-func (c *controller) runBackup(resource *sapi.Restic) {
+func (c *controller) runBackup(resource *sapi.Restic) error {
 	startTime := metav1.Now()
 	cmd := fmt.Sprintf("/restic -r %s backup %s", resource.Spec.Destination.Path, resource.Spec.Source.Path)
 	// add tags if any
@@ -239,40 +246,28 @@ func (c *controller) runBackup(resource *sapi.Restic) {
 		cmd = cmd + " --tag " + t
 	}
 	// Force flag
-	cmd = cmd + " --" + Force
+	cmd = cmd + " --force"
 
-	// Take Backup
-	var reason string
-	errMessage := ""
 	_, err := execLocal(cmd)
 	if err != nil {
-		log.Errorln("Stash backup failed cause ", err)
-		errMessage = " ERROR: " + err.Error()
-		reason = eventer.EventReasonFailedToBackup
-		backupFailure()
-	} else {
-		resource.Status.LastSuccessfulBackupTime = &startTime
-		reason = eventer.EventReasonSuccessfulBackup
-		backupSuccess()
+		return err
 	}
+	endTime := metav1.Now()
 
 	resource.Status.BackupCount++
-	message := "Backup operation number = " + strconv.Itoa(int(resource.Status.BackupCount))
-	c.recorder.Event(resource, apiv1.EventTypeNormal, reason, message+errMessage)
-	endTime := metav1.Now()
 	resource.Status.LastBackupTime = &startTime
-	if reflect.DeepEqual(resource.Status.FirstBackupTime, time.Time{}) {
+	if resource.Status.FirstBackupTime == nil {
 		resource.Status.FirstBackupTime = &startTime
 	}
 	resource.Status.LastBackupDuration = endTime.Sub(startTime.Time).String()
 	_, err = c.StashClient.Restics(resource.Namespace).Update(resource)
 	if err != nil {
-		log.Errorln(err)
-		c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToUpdate, err.Error())
+		log.Errorf("Failed to update status for Restic %s@%s due to %s", resource.Name, resource.Namespace, err)
 	}
+	return nil
 }
 
-func forgetSnapshots(r *sapi.Restic) (string, error) {
+func forgetSnapshots(r *sapi.Restic) error {
 	cmd := fmt.Sprintf("/restic -r %s forget", r.Spec.Destination.Path)
 	if r.Spec.RetentionPolicy.KeepLastSnapshots > 0 {
 		cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepLast, r.Spec.RetentionPolicy.KeepLastSnapshots)
@@ -303,7 +298,8 @@ func forgetSnapshots(r *sapi.Restic) (string, error) {
 	for _, t := range r.Spec.Tags {
 		cmd = cmd + " --tag " + t
 	}
-	return execLocal(cmd)
+	_, err := execLocal(cmd)
+	return err
 }
 
 func execLocal(s string) (string, error) {
