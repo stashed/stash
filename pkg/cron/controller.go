@@ -42,6 +42,7 @@ type controller struct {
 
 	resource        chan *sapi.Restic
 	resourceVersion string
+	locked          chan struct{}
 
 	scheduler *cron.Cron
 	recorder  record.EventRecorder
@@ -53,7 +54,7 @@ func NewController(kubeClient clientset.Interface, stashClient scs.ExtensionInte
 		StashClient:       stashClient,
 		resourceNamespace: namespace,
 		resourceName:      name,
-		scheduler:         cron.New(),
+		resource:          make(chan *sapi.Restic),
 		recorder:          eventer.NewEventRecorder(kubeClient, "stash-crond"),
 	}
 }
@@ -121,6 +122,13 @@ func (c *controller) RunAndHold() {
 					}
 				}
 			},
+			DeleteFunc: func(obj interface{}) {
+				if r, ok := obj.(*sapi.Restic); ok {
+					if r.Name == c.resourceName {
+						c.scheduler.Stop()
+					}
+				}
+			},
 		})
 	ctrl.Run(wait.NeverStop)
 }
@@ -128,6 +136,11 @@ func (c *controller) RunAndHold() {
 func (c *controller) configureScheduler() error {
 	r := <-c.resource
 	c.resourceVersion = r.ResourceVersion
+	if c.scheduler == nil {
+		c.locked = make(chan struct{})
+		c.locked <- struct{}{}
+		c.scheduler = cron.New()
+	}
 
 	password, err := getPasswordFromSecret(c.KubeClient, r.Spec.Destination.RepositorySecretName, r.Namespace)
 	if err != nil {
@@ -177,6 +190,17 @@ func (c *controller) configureScheduler() error {
 }
 
 func (c *controller) takeBackup() error {
+	select {
+	case <-c.locked:
+		log.Infof("Acquired lock for Restic %s@%s", c.resourceName, c.resourceNamespace)
+		defer func() {
+			c.locked <- struct{}{}
+		}()
+	default:
+		log.Warningf("Skipping backup schedule for Restic %s@%s", c.resourceName, c.resourceNamespace)
+		return nil
+	}
+
 	resource, err := c.StashClient.Restics(c.resourceNamespace).Get(c.resourceName)
 	if kerr.IsNotFound(err) {
 		return nil
