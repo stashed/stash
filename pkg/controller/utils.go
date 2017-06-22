@@ -1,15 +1,12 @@
 package controller
 
 import (
-	"fmt"
-
 	rapi "github.com/appscode/stash/api"
 	sapi "github.com/appscode/stash/api"
 	"github.com/appscode/stash/pkg/docker"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
@@ -30,7 +27,7 @@ func (c *Controller) IsPreferredAPIResource(groupVersion, kind string) bool {
 }
 
 func (c *Controller) FindRestic(obj metav1.ObjectMeta) (*sapi.Restic, error) {
-	restics, err := c.StashClient.Restics(obj.Namespace).List(metav1.ListOptions{})
+	restics, err := c.StashClient.Restics(obj.Namespace).List(metav1.ListOptions{LabelSelector: labels.Everything().String()})
 	if kerr.IsNotFound(err) {
 		return nil, nil
 	} else if err != nil {
@@ -49,31 +46,12 @@ func (c *Controller) FindRestic(obj metav1.ObjectMeta) (*sapi.Restic, error) {
 }
 
 func (c *Controller) restartPods(namespace string, selector *metav1.LabelSelector) error {
-	// ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
-	// ref: https://github.com/kubernetes/kubernetes/blob/310ea94b6e0694ab08e3aa6185919be92419e932/pkg/api/helper/helpers.go#L357
-	result := labels.SelectorFromSet(selector.MatchLabels)
-	for _, expr := range selector.MatchExpressions {
-		var op selection.Operator
-		switch expr.Operator {
-		case metav1.LabelSelectorOpIn:
-			op = selection.In
-		case metav1.LabelSelectorOpNotIn:
-			op = selection.NotIn
-		case metav1.LabelSelectorOpExists:
-			op = selection.Exists
-		case metav1.LabelSelectorOpDoesNotExist:
-			op = selection.DoesNotExist
-		default:
-			return fmt.Errorf("%q is not a valid label selector operator", expr.Operator)
-		}
-		r, err := labels.NewRequirement(expr.Key, op, expr.Values)
-		if err != nil {
-			return err
-		}
-		result = result.Add(*r)
+	r, err := metav1.LabelSelectorAsSelector(selector)
+	if err != nil {
+		return err
 	}
 	return c.KubeClient.CoreV1().Pods(namespace).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{
-		LabelSelector: result.String(),
+		LabelSelector: r.String(),
 	})
 }
 

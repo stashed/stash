@@ -51,16 +51,18 @@ func TestBackups(t *testing.T) {
 	defer deleteSecret(watcher, repoSecret)
 
 	log.Infoln("\n************************************************************\nCreating ReplicationController -->", rc)
-	err = createReplicationController(watcher, rc, backupRC)
-	if !assert.Nil(t, err) {
-		return
-	}
-	time.Sleep(time.Second * 10)
 	log.Infof("Starting backup(%s) for ReplicationController...\n", backupRC)
 	err = createRestic(watcher, backupRC, repoSecret)
 	if !assert.Nil(t, err) {
 		return
 	}
+	time.Sleep(time.Second * 5)
+	err = createReplicationController(watcher, rc, backupRC)
+	if !assert.Nil(t, err) {
+		return
+	}
+
+	// TODO: Check for side-car added.
 
 	err = checkEventForBackup(watcher, backupRC)
 	if !assert.Nil(t, err) {
