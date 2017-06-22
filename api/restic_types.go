@@ -73,5 +73,4 @@ type RetentionPolicy struct {
 	KeepYearlySnapshots  int      `json:"keepYearlySnapshots,omitempty"`
 	KeepTags             []string `json:"keepTags,omitempty"`
 	RetainHostname       string   `json:"retainHostname,omitempty"`
-	RetainTags           []string `json:"retainTags,omitempty"`
 }
