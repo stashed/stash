@@ -134,7 +134,7 @@ func createRestic(ctrl *controller.Controller, backupName string, secretName str
 			},
 			FileGroups: []sapi.FileGroup{
 				{
-					Path:       "/source_path",
+					Path: "/source_path",
 					RetentionPolicy: sapi.RetentionPolicy{
 						KeepLastSnapshots: 5,
 					},
@@ -144,7 +144,7 @@ func createRestic(ctrl *controller.Controller, backupName string, secretName str
 			Backend: sapi.Backend{
 				RepositorySecretName: secretName,
 				Local: &sapi.LocalSpec{
-					Path:                 "/repo_path",
+					Path: "/repo_path",
 					Volume: apiv1.Volume{
 						Name: "stash-vol",
 						VolumeSource: apiv1.VolumeSource{
