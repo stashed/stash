@@ -66,7 +66,7 @@ var fakeStash = &api.Restic{
 			VolumeName: "volume-test",
 			Path:       "/mypath",
 		},
-		Destination: api.Destination{
+		Backend: api.Backend{
 			Path:                 "/stash_repo",
 			RepositorySecretName: "stash-secret",
 			Volume: apiv1.Volume{

@@ -24,19 +24,10 @@ type Restic struct {
 }
 
 type ResticSpec struct {
-	// Selector is a label query over a set of resources, in this case pods.
-	// Required.
-	Selector metav1.LabelSelector `json:"selector,omitempty"`
-	// Source of the backup volumeName:path
-	Source Source `json:"source"`
-	// Destination of the backup
-	Destination Destination `json:"destination"`
-	// How frequently restic command will be run
-	Schedule string `json:"schedule"`
-	// Tags of a snapshots
-	Tags []string `json:"tags,omitempty"`
-	// retention policy of snapshots
-	RetentionPolicy RetentionPolicy `json:"retentionPolicy,omitempty"`
+	Selector   metav1.LabelSelector `json:"selector,omitempty"`
+	FileGroups []FileGroup          `json:"fileGroups,omitempty"`
+	Backend    Backend              `json:"backend,omitempty"`
+	Schedule   string               `json:"schedule,omitempty"`
 }
 
 type ResticStatus struct {
@@ -53,15 +44,48 @@ type ResticList struct {
 	Items           []Restic `json:"items,omitempty"`
 }
 
-type Source struct {
-	VolumeName string `json:"volumeName"`
-	Path       string `json:"path"`
+type FileGroup struct {
+	// Source of the backup volumeName:path
+	Path string `json:"path,omitempty"`
+	// Tags of a snapshots
+	Tags []string `json:"tags,omitempty"`
+	// retention policy of snapshots
+	RetentionPolicy RetentionPolicy `json:"retentionPolicy,omitempty"`
 }
 
-type Destination struct {
-	Volume               apiv1.Volume `json:"volume"`
-	Path                 string       `json:"path"`
-	RepositorySecretName string       `json:"repositorySecretName"`
+type Source struct {
+	VolumeName string `json:"volumeName,omitempty"`
+	Path       string `json:"path,omitempty"`
+}
+
+type Backend struct {
+	Local                *LocalSpec `json:"local"`
+	S3                   *S3Spec    `json:"s3,omitempty"`
+	GCS                  *GCSSpec   `json:"gcs,omitempty"`
+	Azure                *AzureSpec `json:"azure,omitempty"`
+	RepositorySecretName string     `json:"repositorySecretName,omitempty"`
+}
+
+type LocalSpec struct {
+	Volume apiv1.Volume `json:"volume,omitempty"`
+	Path   string       `json:"path,omitempty"`
+}
+
+type S3Spec struct {
+	Endpoint string `json:"endpoint,omitempty"`
+	Bucket   string `json:"bucket,omiempty"`
+	Prefix   string `json:"prefix,omitempty"`
+}
+
+type GCSSpec struct {
+	Location string `json:"location,omitempty"`
+	Bucket   string `json:"bucket,omiempty"`
+	Prefix   string `json:"prefix,omitempty"`
+}
+
+type AzureSpec struct {
+	Container string `json:"container,omitempty"`
+	Prefix    string `json:"prefix,omitempty"`
 }
 
 type RetentionPolicy struct {
@@ -72,5 +96,4 @@ type RetentionPolicy struct {
 	KeepMonthlySnapshots int      `json:"keepMonthlySnapshots,omitempty"`
 	KeepYearlySnapshots  int      `json:"keepYearlySnapshots,omitempty"`
 	KeepTags             []string `json:"keepTags,omitempty"`
-	RetainHostname       string   `json:"retainHostname,omitempty"`
 }

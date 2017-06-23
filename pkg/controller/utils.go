@@ -80,18 +80,15 @@ func (c *Controller) GetSidecarContainer(r *rapi.Restic) apiv1.Container {
 			"--namespace=" + r.Namespace,
 			"--name=" + r.Name,
 		},
-		VolumeMounts: []apiv1.VolumeMount{
+	}
+	if r.Spec.Backend.Local != nil {
+		sidecar.VolumeMounts = []apiv1.VolumeMount{
 			{
-				Name:      r.Spec.Source.VolumeName,
-				MountPath: r.Spec.Source.Path,
+				Name:      r.Spec.Backend.Local.Volume.Name,
+				MountPath: r.Spec.Backend.Local.Path,
 			},
-		},
+		}
 	}
-	backupVolumeMount := apiv1.VolumeMount{
-		Name:      r.Spec.Destination.Volume.Name,
-		MountPath: r.Spec.Destination.Path,
-	}
-	sidecar.VolumeMounts = append(sidecar.VolumeMounts, backupVolumeMount)
 	return sidecar
 }
 
