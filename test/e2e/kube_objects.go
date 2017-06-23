@@ -132,23 +132,26 @@ func createRestic(ctrl *controller.Controller, backupName string, secretName str
 					"app": "stash-e2e",
 				},
 			},
-			Source: sapi.Source{
-				Path:       "/source_path",
-				VolumeName: "test-volume",
-			},
-			Schedule: "* * * * * *",
-			Backend: sapi.Backend{
-				Path:                 "/repo_path",
-				RepositorySecretName: secretName,
-				Volume: apiv1.Volume{
-					Name: "stash-vol",
-					VolumeSource: apiv1.VolumeSource{
-						EmptyDir: &apiv1.EmptyDirVolumeSource{},
+			FileGroups: []sapi.FileGroup{
+				{
+					Path:       "/source_path",
+					RetentionPolicy: sapi.RetentionPolicy{
+						KeepLastSnapshots: 5,
 					},
 				},
 			},
-			RetentionPolicy: sapi.RetentionPolicy{
-				KeepLastSnapshots: 5,
+			Schedule: "* * * * * *",
+			Backend: sapi.Backend{
+				RepositorySecretName: secretName,
+				Local: &sapi.LocalSpec{
+					Path:                 "/repo_path",
+					Volume: apiv1.Volume{
+						Name: "stash-vol",
+						VolumeSource: apiv1.VolumeSource{
+							EmptyDir: &apiv1.EmptyDirVolumeSource{},
+						},
+					},
+				},
 			},
 		},
 	}
