@@ -63,7 +63,6 @@ type Backend struct {
 	S3                   *S3Spec    `json:"s3,omitempty"`
 	GCS                  *GCSSpec   `json:"gcs,omitempty"`
 	Azure                *AzureSpec `json:"azure,omitempty"`
-	Swift                *SwiftSpec `json:"swift,omitempty"`
 	RepositorySecretName string     `json:"repositorySecretName,omitempty"`
 }
 
@@ -74,7 +73,6 @@ type LocalSpec struct {
 
 type S3Spec struct {
 	Endpoint string `json:"endpoint,omitempty"`
-	UseHTTP  bool   `json:"useHTTP,omitempty"`
 	Bucket   string `json:"bucket,omiempty"`
 	Prefix   string `json:"prefix,omitempty"`
 }
@@ -86,11 +84,6 @@ type GCSSpec struct {
 }
 
 type AzureSpec struct {
-	Container string `json:"container,omitempty"`
-	Prefix    string `json:"prefix,omitempty"`
-}
-
-type SwiftSpec struct {
 	Container string `json:"container,omitempty"`
 	Prefix    string `json:"prefix,omitempty"`
 }

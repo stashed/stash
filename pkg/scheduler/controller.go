@@ -14,6 +14,7 @@ import (
 	sapi "github.com/appscode/stash/api"
 	scs "github.com/appscode/stash/client/clientset"
 	"github.com/appscode/stash/pkg/eventer"
+	"github.com/appscode/stash/pkg/restic"
 	"gopkg.in/robfig/cron.v2"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -166,25 +167,32 @@ func (c *controller) configureScheduler() error {
 		c.cron = cron.New()
 	}
 
-	password, err := getPasswordFromSecret(c.KubeClient, r.Spec.Backend.RepositorySecretName, r.Namespace)
+	err := restic.PrepareEnv(c.KubeClient, r)
 	if err != nil {
 		return err
 	}
-	err = os.Setenv(RESTIC_PASSWORD, password)
-	if err != nil {
-		return err
-	}
-	repo := r.Spec.Backend.Path
-	_, err = os.Stat(filepath.Join(repo, "config"))
-	if os.IsNotExist(err) {
-		if _, err = execLocal(fmt.Sprintf("/restic init --repo %s", repo)); err != nil {
-			return err
-		}
-	}
+
+	//password, err := getPasswordFromSecret(c.KubeClient, r.Spec.Backend.RepositorySecretName, r.Namespace)
+	//if err != nil {
+	//	return err
+	//}
+	//err = os.Setenv(RESTIC_PASSWORD, password)
+	//if err != nil {
+	//	return err
+	//}
+	//repo := r.Spec.Backend.Path
+	//_, err = os.Stat(filepath.Join(repo, "config"))
+	//if os.IsNotExist(err) {
+	//	if _, err = execLocal(fmt.Sprintf("/restic init --repo %s", repo)); err != nil {
+	//		return err
+	//	}
+	//}
+
 	// Remove previous jobs
 	for _, v := range c.cron.Entries() {
 		c.cron.Remove(v.ID)
 	}
+
 	interval := r.Spec.Schedule
 	if _, err = cron.Parse(interval); err != nil {
 		log.Errorln(err)
@@ -235,15 +243,6 @@ func (c *controller) runOnce() error {
 		return fmt.Errorf("Restic %s@%s version %s does not match expected version %s", resource.Name, resource.Namespace, resource.ResourceVersion, c.resourceVersion)
 	}
 
-	password, err := getPasswordFromSecret(c.KubeClient, resource.Spec.Backend.RepositorySecretName, resource.Namespace)
-	if err != nil {
-		return err
-	}
-	err = os.Setenv(RESTIC_PASSWORD, secret.Data[Password])
-	if err != nil {
-		return err
-	}
-
 	err = c.runBackup(resource)
 	if err != nil {
 		log.Errorln("Backup operation failed for Reestic %s@%s due to %s", resource.Name, resource.Namespace, err)
@@ -265,17 +264,19 @@ func (c *controller) runOnce() error {
 
 func (c *controller) runBackup(resource *sapi.Restic) error {
 	startTime := metav1.Now()
-	cmd := fmt.Sprintf("/restic -r %s backup %s", resource.Spec.Backend.Path, resource.Spec.Source.Path)
-	// add tags if any
-	for _, t := range resource.Spec.Tags {
-		cmd = cmd + " --tag " + t
-	}
-	// Force flag
-	cmd = cmd + " --force"
+	for _, fg := range resource.Spec.FileGroups {
+		cmd := fmt.Sprintf("/restic backup %s", fg.Path)
+		// add tags if any
+		for _, tag := range fg.Tags {
+			cmd = cmd + " --tag " + tag
+		}
+		// Force flag
+		cmd = cmd + " --force"
 
-	_, err := execLocal(cmd)
-	if err != nil {
-		return err
+		_, err := execLocal(cmd)
+		if err != nil {
+			return err
+		}
 	}
 	endTime := metav1.Now()
 
@@ -285,7 +286,7 @@ func (c *controller) runBackup(resource *sapi.Restic) error {
 		resource.Status.FirstBackupTime = &startTime
 	}
 	resource.Status.LastBackupDuration = endTime.Sub(startTime.Time).String()
-	_, err = c.StashClient.Restics(resource.Namespace).Update(resource)
+	_, err := c.StashClient.Restics(resource.Namespace).Update(resource)
 	if err != nil {
 		log.Errorf("Failed to update status for Restic %s@%s due to %s", resource.Name, resource.Namespace, err)
 	}
@@ -293,38 +294,44 @@ func (c *controller) runBackup(resource *sapi.Restic) error {
 }
 
 func forgetSnapshots(r *sapi.Restic) error {
-	cmd := fmt.Sprintf("/restic -r %s forget", r.Spec.Backend.Path)
-	if r.Spec.RetentionPolicy.KeepLastSnapshots > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepLast, r.Spec.RetentionPolicy.KeepLastSnapshots)
-	}
-	if r.Spec.RetentionPolicy.KeepHourlySnapshots > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepHourly, r.Spec.RetentionPolicy.KeepHourlySnapshots)
-	}
-	if r.Spec.RetentionPolicy.KeepDailySnapshots > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepDaily, r.Spec.RetentionPolicy.KeepDailySnapshots)
-	}
-	if r.Spec.RetentionPolicy.KeepWeeklySnapshots > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepWeekly, r.Spec.RetentionPolicy.KeepWeeklySnapshots)
-	}
-	if r.Spec.RetentionPolicy.KeepMonthlySnapshots > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepMonthly, r.Spec.RetentionPolicy.KeepMonthlySnapshots)
-	}
-	if r.Spec.RetentionPolicy.KeepYearlySnapshots > 0 {
-		cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepYearly, r.Spec.RetentionPolicy.KeepYearlySnapshots)
-	}
-	if len(r.Spec.RetentionPolicy.KeepTags) != 0 {
-		for _, t := range r.Spec.RetentionPolicy.KeepTags {
-			cmd = cmd + " --keep-tag " + t
+	for _, fg := range r.Spec.FileGroups {
+		cmd := "/restic forget"
+		if fg.RetentionPolicy.KeepLastSnapshots > 0 {
+			cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepLast, fg.RetentionPolicy.KeepLastSnapshots)
+		}
+		if fg.RetentionPolicy.KeepHourlySnapshots > 0 {
+			cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepHourly, fg.RetentionPolicy.KeepHourlySnapshots)
+		}
+		if fg.RetentionPolicy.KeepDailySnapshots > 0 {
+			cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepDaily, fg.RetentionPolicy.KeepDailySnapshots)
+		}
+		if fg.RetentionPolicy.KeepWeeklySnapshots > 0 {
+			cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepWeekly, fg.RetentionPolicy.KeepWeeklySnapshots)
+		}
+		if fg.RetentionPolicy.KeepMonthlySnapshots > 0 {
+			cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepMonthly, fg.RetentionPolicy.KeepMonthlySnapshots)
+		}
+		if fg.RetentionPolicy.KeepYearlySnapshots > 0 {
+			cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepYearly, fg.RetentionPolicy.KeepYearlySnapshots)
+		}
+		if len(fg.RetentionPolicy.KeepTags) != 0 {
+			for _, t := range fg.RetentionPolicy.KeepTags {
+				cmd = cmd + " --keep-tag " + t
+			}
+		}
+		// Debug
+		//if len(fg.RetentionPolicy.RetainHostname) != 0 {
+		//	cmd = cmd + " --hostname " + fg.RetentionPolicy.RetainHostname
+		//}
+		for _, t := range fg.Tags {
+			cmd = cmd + " --tag " + t
+		}
+		_, err := execLocal(cmd)
+		if err != nil {
+			return err
 		}
 	}
-	if len(r.Spec.RetentionPolicy.RetainHostname) != 0 {
-		cmd = cmd + " --hostname " + r.Spec.RetentionPolicy.RetainHostname
-	}
-	for _, t := range r.Spec.Tags {
-		cmd = cmd + " --tag " + t
-	}
-	_, err := execLocal(cmd)
-	return err
+	return nil
 }
 
 func execLocal(s string) (string, error) {
@@ -347,10 +354,14 @@ func getPasswordFromSecret(client clientset.Interface, secretName, namespace str
 	return string(password), nil
 }
 
-func (c *controller) getRepositorySecret(secretName, namespace string) (map[string][]byte, error) {
+func (c *controller) getRepositorySecret(secretName, namespace string) (map[string]string, error) {
 	secret, err := c.KubeClient.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
-	return secret.Data, nil
+	data := make(map[string]string)
+	for k, v := range secret.Data {
+		data[k] = string(v)
+	}
+	return data, nil
 }
