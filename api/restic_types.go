@@ -27,6 +27,7 @@ type ResticSpec struct {
 	Selector   metav1.LabelSelector `json:"selector,omitempty"`
 	FileGroups []FileGroup          `json:"fileGroups,omitempty"`
 	Backend    Backend              `json:"backend,omitempty"`
+	Schedule   string               `json:"schedule,omitempty"`
 }
 
 type ResticStatus struct {
@@ -46,8 +47,6 @@ type ResticList struct {
 type FileGroup struct {
 	// Source of the backup volumeName:path
 	Path string `json:"path,omitempty"`
-	// How frequently restic command will be run
-	Schedule string `json:"schedule,omitempty"`
 	// Tags of a snapshots
 	Tags []string `json:"tags,omitempty"`
 	// retention policy of snapshots

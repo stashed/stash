@@ -58,6 +58,31 @@ func NewController(kubeClient clientset.Interface, stashClient scs.ExtensionInte
 	}
 }
 
+// Init and/or connect to repo
+func (c *controller) InitRepo() error {
+	resource, err := c.StashClient.Restics(c.resourceNamespace).Get(c.resourceName)
+	if err != nil {
+		return err
+	}
+	data, err := c.getRepositorySecret(resource.Spec.Backend.RepositorySecretName, resource.Namespace)
+	if err != nil {
+		return err
+	}
+
+	err = os.Setenv(RESTIC_PASSWORD, string(data[Password]))
+	if err != nil {
+		return err
+	}
+	repo := resource.Spec.Backend.Local.Path
+	_, err = os.Stat(filepath.Join(repo, "config"))
+	if os.IsNotExist(err) {
+		if _, err = execLocal(fmt.Sprintf("/restic init --repo %s", repo)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (c *controller) RunAndHold() {
 	c.cron.Start()
 
@@ -214,7 +239,7 @@ func (c *controller) runOnce() error {
 	if err != nil {
 		return err
 	}
-	err = os.Setenv(RESTIC_PASSWORD, password)
+	err = os.Setenv(RESTIC_PASSWORD, secret.Data[Password])
 	if err != nil {
 		return err
 	}
@@ -320,4 +345,12 @@ func getPasswordFromSecret(client clientset.Interface, secretName, namespace str
 		return "", errors.New("Restic Password not found")
 	}
 	return string(password), nil
+}
+
+func (c *controller) getRepositorySecret(secretName, namespace string) (map[string][]byte, error) {
+	secret, err := c.KubeClient.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return secret.Data, nil
 }
