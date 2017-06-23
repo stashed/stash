@@ -63,7 +63,7 @@ func (c *Controller) WatchReplicaSets() {
 
 func (c *Controller) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, restic *sapi.Restic) {
 	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, c.GetSidecarContainer(restic))
-	resource.Spec.Template.Spec.Volumes = append(resource.Spec.Template.Spec.Volumes, restic.Spec.Destination.Volume)
+	resource.Spec.Template.Spec.Volumes = append(resource.Spec.Template.Spec.Volumes, restic.Spec.Backend.Volume)
 	if resource.Annotations == nil {
 		resource.Annotations = make(map[string]string)
 	}
@@ -84,7 +84,7 @@ func (c *Controller) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, re
 
 func (c *Controller) EnsureReplicaSetSidecarDeleted(resource *extensions.ReplicaSet, restic *sapi.Restic) error {
 	resource.Spec.Template.Spec.Containers = removeContainer(resource.Spec.Template.Spec.Containers, ContainerName)
-	resource.Spec.Template.Spec.Volumes = removeVolume(resource.Spec.Template.Spec.Volumes, restic.Spec.Destination.Volume.Name)
+	resource.Spec.Template.Spec.Volumes = removeVolume(resource.Spec.Template.Spec.Volumes, restic.Spec.Backend.Volume.Name)
 	if resource.Annotations != nil {
 		delete(resource.Annotations, sapi.ConfigName)
 		delete(resource.Annotations, sapi.VersionTag)

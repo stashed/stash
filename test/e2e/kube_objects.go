@@ -137,7 +137,7 @@ func createRestic(ctrl *controller.Controller, backupName string, secretName str
 				VolumeName: "test-volume",
 			},
 			Schedule: "* * * * * *",
-			Destination: sapi.Destination{
+			Backend: sapi.Backend{
 				Path:                 "/repo_path",
 				RepositorySecretName: secretName,
 				Volume: apiv1.Volume{

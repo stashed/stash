@@ -141,7 +141,7 @@ func (c *controller) configureScheduler() error {
 		c.cron = cron.New()
 	}
 
-	password, err := getPasswordFromSecret(c.KubeClient, r.Spec.Destination.RepositorySecretName, r.Namespace)
+	password, err := getPasswordFromSecret(c.KubeClient, r.Spec.Backend.RepositorySecretName, r.Namespace)
 	if err != nil {
 		return err
 	}
@@ -149,7 +149,7 @@ func (c *controller) configureScheduler() error {
 	if err != nil {
 		return err
 	}
-	repo := r.Spec.Destination.Path
+	repo := r.Spec.Backend.Path
 	_, err = os.Stat(filepath.Join(repo, "config"))
 	if os.IsNotExist(err) {
 		if _, err = execLocal(fmt.Sprintf("/restic init --repo %s", repo)); err != nil {
@@ -210,7 +210,7 @@ func (c *controller) runOnce() error {
 		return fmt.Errorf("Restic %s@%s version %s does not match expected version %s", resource.Name, resource.Namespace, resource.ResourceVersion, c.resourceVersion)
 	}
 
-	password, err := getPasswordFromSecret(c.KubeClient, resource.Spec.Destination.RepositorySecretName, resource.Namespace)
+	password, err := getPasswordFromSecret(c.KubeClient, resource.Spec.Backend.RepositorySecretName, resource.Namespace)
 	if err != nil {
 		return err
 	}
@@ -240,7 +240,7 @@ func (c *controller) runOnce() error {
 
 func (c *controller) runBackup(resource *sapi.Restic) error {
 	startTime := metav1.Now()
-	cmd := fmt.Sprintf("/restic -r %s backup %s", resource.Spec.Destination.Path, resource.Spec.Source.Path)
+	cmd := fmt.Sprintf("/restic -r %s backup %s", resource.Spec.Backend.Path, resource.Spec.Source.Path)
 	// add tags if any
 	for _, t := range resource.Spec.Tags {
 		cmd = cmd + " --tag " + t
@@ -268,7 +268,7 @@ func (c *controller) runBackup(resource *sapi.Restic) error {
 }
 
 func forgetSnapshots(r *sapi.Restic) error {
-	cmd := fmt.Sprintf("/restic -r %s forget", r.Spec.Destination.Path)
+	cmd := fmt.Sprintf("/restic -r %s forget", r.Spec.Backend.Path)
 	if r.Spec.RetentionPolicy.KeepLastSnapshots > 0 {
 		cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepLast, r.Spec.RetentionPolicy.KeepLastSnapshots)
 	}
