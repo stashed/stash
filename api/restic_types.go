@@ -60,18 +60,17 @@ type Source struct {
 }
 
 type Backend struct {
-	Local                LocalSpec `json:"local"`
-	S3                   S3Spec    `json:"s3,omitempty"`
-	GCS                  GCSSpec   `json:"gcs,omitempty"`
-	Azure                AzureSpec `json:"azure,omitempty"`
-	Swift                SwiftSpec `json:"swift,omitempty"`
-	RepositorySecretName string    `json:"repositorySecretName,omitempty"`
+	Local                *LocalSpec `json:"local"`
+	S3                   *S3Spec    `json:"s3,omitempty"`
+	GCS                  *GCSSpec   `json:"gcs,omitempty"`
+	Azure                *AzureSpec `json:"azure,omitempty"`
+	Swift                *SwiftSpec `json:"swift,omitempty"`
+	RepositorySecretName string     `json:"repositorySecretName,omitempty"`
 }
 
 type LocalSpec struct {
-	Volume     apiv1.Volume `json:"volume,omitempty"`
-	Path       string       `json:"path,omitempty"`
-	VolumeName string       `json:"volumeName,omitempty"`
+	Volume apiv1.Volume `json:"volume,omitempty"`
+	Path   string       `json:"path,omitempty"`
 }
 
 type S3Spec struct {
