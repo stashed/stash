@@ -77,6 +77,7 @@ COPY restic /restic
 COPY stash /stash
 
 ENTRYPOINT ["/stash"]
+EXPOSE 56790
 EOL
     local cmd="docker build -t appscode/$IMG:$TAG ."
     echo $cmd; $cmd
