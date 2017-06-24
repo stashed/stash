@@ -16,6 +16,8 @@ const (
 	StashNamespace    = "STASH_NAMESPACE"
 	StashResourceName = "STASH_RESOURCE_NAME"
 
+	ScratchDirVolumeName = "stash-scratchdir"
+
 	RESTIC_PASSWORD       = "RESTIC_PASSWORD"
 	ReplicationController = "ReplicationController"
 	ReplicaSet            = "ReplicaSet"

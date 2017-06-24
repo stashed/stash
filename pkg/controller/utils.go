@@ -62,7 +62,7 @@ func getString(m map[string]string, key string) string {
 	return m[key]
 }
 
-func (c *Controller) GetSidecarContainer(r *rapi.Restic) apiv1.Container {
+func (c *Controller) GetSidecarContainer(r *rapi.Restic, prefixHostname bool) apiv1.Container {
 	tag := c.SidecarImageTag
 	if r.Annotations != nil {
 		if v, ok := r.Annotations[sapi.VersionTag]; ok {
@@ -79,15 +79,23 @@ func (c *Controller) GetSidecarContainer(r *rapi.Restic) apiv1.Container {
 			"--v=3",
 			"--namespace=" + r.Namespace,
 			"--name=" + r.Name,
+			"--scratchDir=/tmp",
+		},
+		VolumeMounts: []apiv1.VolumeMount{
+			{
+				Name:      ScratchDirVolumeName,
+				MountPath: "/tmp",
+			},
 		},
 	}
+	if prefixHostname {
+		sidecar.Args = append(sidecar.Args, "--prefixHostname=true")
+	}
 	if r.Spec.Backend.Local != nil {
-		sidecar.VolumeMounts = []apiv1.VolumeMount{
-			{
-				Name:      r.Spec.Backend.Local.Volume.Name,
-				MountPath: r.Spec.Backend.Local.Path,
-			},
-		}
+		sidecar.VolumeMounts = append(sidecar.VolumeMounts, apiv1.VolumeMount{
+			Name:      r.Spec.Backend.Local.Volume.Name,
+			MountPath: r.Spec.Backend.Local.Path,
+		})
 	}
 	return sidecar
 }
@@ -107,6 +115,15 @@ func removeContainer(c []apiv1.Container, name string) []apiv1.Container {
 		}
 	}
 	return c
+}
+
+func addScratchVolume(volumes []apiv1.Volume) []apiv1.Volume {
+	return append(volumes, apiv1.Volume{
+		Name: ScratchDirVolumeName,
+		VolumeSource: apiv1.VolumeSource{
+			EmptyDir: &apiv1.EmptyDirVolumeSource{},
+		},
+	})
 }
 
 func removeVolume(volumes []apiv1.Volume, name string) []apiv1.Volume {
