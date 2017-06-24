@@ -56,6 +56,10 @@ func NewCmdSchedule(version string) *cobra.Command {
 			}
 
 			ctrl := scheduler.NewController(kubeClient, stashClient, namespace, name, prefixHostname, scratchDir)
+			err = ctrl.Setup()
+			if err != nil {
+				log.Fatalf("Failed to setup scheduler: %s", err)
+			}
 			ctrl.RunAndHold()
 		},
 	}

@@ -1,4 +1,4 @@
-package restic
+package scheduler
 
 import (
 	"errors"
@@ -9,7 +9,6 @@ import (
 
 	sapi "github.com/appscode/stash/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clientset "k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -27,23 +26,23 @@ const (
 	AZURE_ACCOUNT_KEY  = "AZURE_ACCOUNT_KEY"
 )
 
-func ExportEnvVars(client clientset.Interface, resource *sapi.Restic, prefixHostname bool, scratchDir string) error {
+func (c *controller) SetEnvVars(resource *sapi.Restic) error {
 	backend := resource.Spec.Backend
 	if backend.RepositorySecretName == "" {
 		return errors.New("Missing repository secret name")
 	}
-	secret, err := client.CoreV1().Secrets(resource.Namespace).Get(backend.RepositorySecretName, metav1.GetOptions{})
+	secret, err := c.KubeClient.CoreV1().Secrets(resource.Namespace).Get(backend.RepositorySecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 	if v, ok := secret.Data[RESTIC_PASSWORD]; !ok {
 		return errors.New("Missing repository password")
 	} else {
-		os.Setenv(RESTIC_PASSWORD, string(v))
+		c.sh.SetEnv(RESTIC_PASSWORD, string(v))
 	}
 
 	hostname := ""
-	if prefixHostname {
+	if c.prefixHostname {
 		hostname, err = os.Hostname()
 		if err != nil {
 			return err
@@ -52,27 +51,27 @@ func ExportEnvVars(client clientset.Interface, resource *sapi.Restic, prefixHost
 
 	if backend.Local != nil {
 		r := backend.Local.Path
-		os.Setenv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
+		c.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
 	} else if backend.S3 != nil {
 		r := fmt.Sprintf("s3:%s:%s:%s", backend.S3.Endpoint, backend.S3.Bucket, backend.S3.Prefix)
-		os.Setenv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
-		os.Setenv(AWS_ACCESS_KEY_ID, string(secret.Data[AWS_ACCESS_KEY_ID]))
-		os.Setenv(AWS_SECRET_ACCESS_KEY, string(secret.Data[AWS_SECRET_ACCESS_KEY]))
+		c.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
+		c.sh.SetEnv(AWS_ACCESS_KEY_ID, string(secret.Data[AWS_ACCESS_KEY_ID]))
+		c.sh.SetEnv(AWS_SECRET_ACCESS_KEY, string(secret.Data[AWS_SECRET_ACCESS_KEY]))
 	} else if backend.GCS != nil {
 		r := fmt.Sprintf("gs:%s:%s:%s", backend.GCS.Location, backend.GCS.Bucket, backend.GCS.Prefix)
-		os.Setenv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
-		os.Setenv(GOOGLE_PROJECT_ID, string(secret.Data[GOOGLE_PROJECT_ID]))
-		jsonKeyPath := filepath.Join(scratchDir, "gcs_sa.json")
+		c.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
+		c.sh.SetEnv(GOOGLE_PROJECT_ID, string(secret.Data[GOOGLE_PROJECT_ID]))
+		jsonKeyPath := filepath.Join(c.scratchDir, "gcs_sa.json")
 		err = ioutil.WriteFile(jsonKeyPath, secret.Data[GOOGLE_SERVICE_ACCOUNT_JSON_KEY], 600)
 		if err != nil {
 			return err
 		}
-		os.Setenv(GOOGLE_APPLICATION_CREDENTIALS, jsonKeyPath)
+		c.sh.SetEnv(GOOGLE_APPLICATION_CREDENTIALS, jsonKeyPath)
 	} else if backend.Azure != nil {
 		r := fmt.Sprintf("azure:%s:%s", backend.Azure.Container, backend.Azure.Prefix)
-		os.Setenv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
-		os.Setenv(AZURE_ACCOUNT_NAME, string(secret.Data[AZURE_ACCOUNT_NAME]))
-		os.Setenv(AZURE_ACCOUNT_KEY, string(secret.Data[AZURE_ACCOUNT_KEY]))
+		c.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
+		c.sh.SetEnv(AZURE_ACCOUNT_NAME, string(secret.Data[AZURE_ACCOUNT_NAME]))
+		c.sh.SetEnv(AZURE_ACCOUNT_KEY, string(secret.Data[AZURE_ACCOUNT_KEY]))
 	}
 	return nil
 }

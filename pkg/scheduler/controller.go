@@ -3,16 +3,14 @@ package scheduler
 import (
 	"errors"
 	"fmt"
-	"os/exec"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/appscode/log"
 	sapi "github.com/appscode/stash/api"
 	scs "github.com/appscode/stash/client/clientset"
 	"github.com/appscode/stash/pkg/eventer"
-	"github.com/appscode/stash/pkg/restic"
+	shell "github.com/codeskyblue/go-sh"
 	"gopkg.in/robfig/cron.v2"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,37 +37,45 @@ type controller struct {
 	resourceVersion string
 	locked          chan struct{}
 
+	sh       *shell.Session
 	cron     *cron.Cron
 	recorder record.EventRecorder
 }
 
 func NewController(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, namespace, name string, prefixHostname bool, scratchDir string) *controller {
-	return &controller{
+	ctrl := &controller{
 		KubeClient:        kubeClient,
 		StashClient:       stashClient,
 		resourceNamespace: namespace,
 		resourceName:      name,
 		prefixHostname:    prefixHostname,
 		scratchDir:        scratchDir,
+		sh:                shell.NewSession(),
 		resource:          make(chan *sapi.Restic),
 		recorder:          eventer.NewEventRecorder(kubeClient, "stash-scheduler"),
 	}
+	ctrl.sh.SetDir(ctrl.scratchDir)
+	ctrl.sh.ShowCMD = true
+	return ctrl
 }
 
 // Init and/or connect to repo
-func (c *controller) InitRepo() error {
+func (c *controller) Setup() error {
 	resource, err := c.StashClient.Restics(c.resourceNamespace).Get(c.resourceName)
 	if err != nil {
 		return err
 	}
 
-	err = restic.ExportEnvVars(c.KubeClient, resource, c.prefixHostname, c.scratchDir)
+	err = c.SetEnvVars(resource)
 	if err != nil {
 		return err
 	}
 
-	if _, err := execLocal("/restic init"); err != nil {
-		return err
+	if err = c.sh.Command("/restic", "snapshots", "--json").Run(); err != nil {
+		err = c.sh.Command("/restic", "init").Run()
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -157,7 +163,7 @@ func (c *controller) configureScheduler() error {
 		c.cron = cron.New()
 	}
 
-	err := restic.ExportEnvVars(c.KubeClient, r, c.prefixHostname, c.scratchDir)
+	err := c.SetEnvVars(r)
 	if err != nil {
 		return err
 	}
@@ -227,7 +233,7 @@ func (c *controller) runOnce() error {
 		c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonSuccessfulBackup, "Backup completed successfully.")
 	}
 
-	err = forgetSnapshots(resource)
+	err = c.forgetSnapshots(resource)
 	if err != nil {
 		log.Errorln("Failed to forget old snapshots for Restic %s@%s due to %s", resource.Name, resource.Namespace, err)
 		c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToRetention, " ERROR: "+err.Error())
@@ -239,15 +245,13 @@ func (c *controller) runOnce() error {
 func (c *controller) runBackup(resource *sapi.Restic) error {
 	startTime := metav1.Now()
 	for _, fg := range resource.Spec.FileGroups {
-		cmd := fmt.Sprintf("/restic backup %s", fg.Path)
+		args := []interface{}{"backup", fg.Path, "--force"}
 		// add tags if any
 		for _, tag := range fg.Tags {
-			cmd = cmd + " --tag " + tag
+			args = append(args, "--tag")
+			args = append(args, tag)
 		}
-		// Force flag
-		cmd = cmd + " --force"
-
-		_, err := execLocal(cmd)
+		err := c.sh.Command("/restic", args...).Run()
 		if err != nil {
 			return err
 		}
@@ -267,47 +271,45 @@ func (c *controller) runBackup(resource *sapi.Restic) error {
 	return nil
 }
 
-func forgetSnapshots(r *sapi.Restic) error {
+func (c *controller) forgetSnapshots(r *sapi.Restic) error {
 	for _, fg := range r.Spec.FileGroups {
-		cmd := "/restic forget"
+		args := []interface{}{"forget"}
 		if fg.RetentionPolicy.KeepLastSnapshots > 0 {
-			cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepLast, fg.RetentionPolicy.KeepLastSnapshots)
+			args = append(args, sapi.KeepLast)
+			args = append(args, fg.RetentionPolicy.KeepLastSnapshots)
 		}
 		if fg.RetentionPolicy.KeepHourlySnapshots > 0 {
-			cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepHourly, fg.RetentionPolicy.KeepHourlySnapshots)
+			args = append(args, sapi.KeepHourly)
+			args = append(args, fg.RetentionPolicy.KeepHourlySnapshots)
 		}
 		if fg.RetentionPolicy.KeepDailySnapshots > 0 {
-			cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepDaily, fg.RetentionPolicy.KeepDailySnapshots)
+			args = append(args, sapi.KeepDaily)
+			args = append(args, fg.RetentionPolicy.KeepDailySnapshots)
 		}
 		if fg.RetentionPolicy.KeepWeeklySnapshots > 0 {
-			cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepWeekly, fg.RetentionPolicy.KeepWeeklySnapshots)
+			args = append(args, sapi.KeepWeekly)
+			args = append(args, fg.RetentionPolicy.KeepWeeklySnapshots)
 		}
 		if fg.RetentionPolicy.KeepMonthlySnapshots > 0 {
-			cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepMonthly, fg.RetentionPolicy.KeepMonthlySnapshots)
+			args = append(args, sapi.KeepMonthly)
+			args = append(args, fg.RetentionPolicy.KeepMonthlySnapshots)
 		}
 		if fg.RetentionPolicy.KeepYearlySnapshots > 0 {
-			cmd = fmt.Sprintf("%s --%s %d", cmd, sapi.KeepYearly, fg.RetentionPolicy.KeepYearlySnapshots)
+			args = append(args, sapi.KeepYearly)
+			args = append(args, fg.RetentionPolicy.KeepYearlySnapshots)
 		}
-		if len(fg.RetentionPolicy.KeepTags) != 0 {
-			for _, t := range fg.RetentionPolicy.KeepTags {
-				cmd = cmd + " --keep-tag " + t
-			}
+		for _, tag := range fg.RetentionPolicy.KeepTags {
+			args = append(args, "--keep-tag")
+			args = append(args, tag)
 		}
-		for _, t := range fg.Tags {
-			cmd = cmd + " --tag " + t
+		for _, tag := range fg.Tags {
+			args = append(args, "--tag")
+			args = append(args, tag)
 		}
-		_, err := execLocal(cmd)
+		err := c.sh.Command("/restic", args...).Run()
 		if err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-func execLocal(s string) (string, error) {
-	parts := strings.Fields(s)
-	head := parts[0]
-	parts = parts[1:]
-	cmdOut, err := exec.Command(head, parts...).Output()
-	return strings.TrimSuffix(string(cmdOut), "\n"), err
 }
