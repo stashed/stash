@@ -99,7 +99,27 @@ func (c *controller) SetEnvVars(resource *sapi.Restic) error {
 		c.sh.SetEnv(AZURE_ACCOUNT_NAME, string(secret.Data[AZURE_ACCOUNT_NAME]))
 		c.sh.SetEnv(AZURE_ACCOUNT_KEY, string(secret.Data[AZURE_ACCOUNT_KEY]))
 	} else if backend.Swift != nil {
-
+		r := fmt.Sprintf("swift:%s:%s", backend.Swift.Container, backend.Swift.Prefix)
+		c.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
+		// For keystone v1 authentication
+		c.sh.SetEnv(ST_AUTH, string(secret.Data[ST_AUTH]))
+		c.sh.SetEnv(ST_USER, string(secret.Data[ST_USER]))
+		c.sh.SetEnv(ST_KEY, string(secret.Data[ST_KEY]))
+		// For keystone v2 authentication (some variables are optional)
+		c.sh.SetEnv(OS_AUTH_URL, string(secret.Data[OS_AUTH_URL]))
+		c.sh.SetEnv(OS_REGION_NAME, string(secret.Data[OS_REGION_NAME]))
+		c.sh.SetEnv(OS_USERNAME, string(secret.Data[OS_USERNAME]))
+		c.sh.SetEnv(OS_PASSWORD, string(secret.Data[OS_PASSWORD]))
+		c.sh.SetEnv(OS_TENANT_ID, string(secret.Data[OS_TENANT_ID]))
+		c.sh.SetEnv(OS_TENANT_NAME, string(secret.Data[OS_TENANT_NAME]))
+		// For keystone v3 authentication (some variables are optional)
+		c.sh.SetEnv(OS_USER_DOMAIN_NAME, string(secret.Data[OS_USER_DOMAIN_NAME]))
+		c.sh.SetEnv(OS_PROJECT_NAME, string(secret.Data[AZURE_ACCOUNT_NAME]))
+		c.sh.SetEnv(AZURE_ACCOUNT_NAME, string(secret.Data[OS_PROJECT_NAME]))
+		c.sh.SetEnv(OS_PROJECT_DOMAIN_NAME, string(secret.Data[OS_PROJECT_DOMAIN_NAME]))
+		// For authentication based on tokens
+		c.sh.SetEnv(OS_STORAGE_URL, string(secret.Data[OS_STORAGE_URL]))
+		c.sh.SetEnv(OS_AUTH_TOKEN, string(secret.Data[OS_AUTH_TOKEN]))
 	} else if backend.Rest != nil {
 		u, err := url.Parse(backend.Rest.URL)
 		if err != nil {
