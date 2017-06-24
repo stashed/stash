@@ -17,6 +17,7 @@ const (
 	StashResourceName = "STASH_RESOURCE_NAME"
 
 	ScratchDirVolumeName = "stash-scratchdir"
+	PodinfoVolumeName    = "stash-podinfo"
 
 	RESTIC_PASSWORD       = "RESTIC_PASSWORD"
 	ReplicationController = "ReplicationController"

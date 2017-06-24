@@ -126,6 +126,25 @@ func addScratchVolume(volumes []apiv1.Volume) []apiv1.Volume {
 	})
 }
 
+// https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#store-pod-fields
+func addDownwardVolume(volumes []apiv1.Volume) []apiv1.Volume {
+	return append(volumes, apiv1.Volume{
+		Name: PodinfoVolumeName,
+		VolumeSource: apiv1.VolumeSource{
+			DownwardAPI: &apiv1.DownwardAPIVolumeSource{
+				Items: []apiv1.DownwardAPIVolumeFile{
+					{
+						Path: "labels",
+						FieldRef: &apiv1.ObjectFieldSelector{
+							FieldPath: "metadata.labels",
+						},
+					},
+				},
+			},
+		},
+	})
+}
+
 func removeVolume(volumes []apiv1.Volume, name string) []apiv1.Volume {
 	for i, v := range volumes {
 		if v.Name == name {
