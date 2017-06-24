@@ -1,5 +1,5 @@
 hash: 821aa597a2fbf33dfcb4976d86d43321c0a358ca62395324d7f06e2ac9be83d7
-updated: 2017-06-23T23:15:45.323091242-07:00
+updated: 2017-06-24T05:13:59.019969094-07:00
 imports:
 - name: github.com/appscode/go
   version: ecda61fa4e8943020e9948723e49c4ae544f7a3a
@@ -63,7 +63,7 @@ imports:
   subpackages:
   - lru
 - name: github.com/golang/protobuf
-  version: 8616e8ee5e20a1704615e6c8d7afcdac06087a67
+  version: 8ee79997227bf9b34611aee7946ae64735e6fd93
   subpackages:
   - proto
 - name: github.com/google/gofuzz
@@ -101,6 +101,7 @@ imports:
   subpackages:
   - prometheus
   - prometheus/promhttp
+  - prometheus/push
 - name: github.com/prometheus/client_model
   version: fa8ad6fec33561be4280a8f0514318c79d7f6cb6
   subpackages:

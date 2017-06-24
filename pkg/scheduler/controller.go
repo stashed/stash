@@ -27,16 +27,21 @@ const (
 	resticExe = "/restic"
 )
 
+type Options struct {
+	ResourceNamespace string
+	ResourceName      string
+
+	PrefixHostname bool
+	ScratchDir     string
+	PushgatewayURL string
+	PodLabelsPath  string
+}
+
 type controller struct {
 	KubeClient  clientset.Interface
 	StashClient scs.ExtensionInterface
 
-	resourceNamespace string
-	resourceName      string
-
-	prefixHostname bool
-	scratchDir     string
-
+	opt             Options
 	resource        chan *sapi.Restic
 	resourceVersion string
 	locked          chan struct{}
@@ -46,26 +51,23 @@ type controller struct {
 	recorder record.EventRecorder
 }
 
-func NewController(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, namespace, name string, prefixHostname bool, scratchDir string) *controller {
+func NewController(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt Options) *controller {
 	ctrl := &controller{
-		KubeClient:        kubeClient,
-		StashClient:       stashClient,
-		resourceNamespace: namespace,
-		resourceName:      name,
-		prefixHostname:    prefixHostname,
-		scratchDir:        scratchDir,
-		sh:                shell.NewSession(),
-		resource:          make(chan *sapi.Restic),
-		recorder:          eventer.NewEventRecorder(kubeClient, "stash-scheduler"),
+		KubeClient:  kubeClient,
+		StashClient: stashClient,
+		opt:         opt,
+		sh:          shell.NewSession(),
+		resource:    make(chan *sapi.Restic),
+		recorder:    eventer.NewEventRecorder(kubeClient, "stash-scheduler"),
 	}
-	ctrl.sh.SetDir(ctrl.scratchDir)
+	ctrl.sh.SetDir(ctrl.opt.ScratchDir)
 	ctrl.sh.ShowCMD = true
 	return ctrl
 }
 
 // Init and/or connect to repo
 func (c *controller) Setup() error {
-	resource, err := c.StashClient.Restics(c.resourceNamespace).Get(c.resourceName)
+	resource, err := c.StashClient.Restics(c.opt.ResourceNamespace).Get(c.opt.ResourceName)
 	if err != nil {
 		return err
 	}
@@ -89,10 +91,10 @@ func (c *controller) RunAndHold() {
 
 	lw := &cache.ListWatch{
 		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
-			return c.StashClient.Restics(c.resourceNamespace).List(metav1.ListOptions{})
+			return c.StashClient.Restics(c.opt.ResourceNamespace).List(metav1.ListOptions{})
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return c.StashClient.Restics(c.resourceNamespace).Watch(metav1.ListOptions{})
+			return c.StashClient.Restics(c.opt.ResourceNamespace).Watch(metav1.ListOptions{})
 		},
 	}
 	_, ctrl := cache.NewInformer(lw,
@@ -101,7 +103,7 @@ func (c *controller) RunAndHold() {
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				if r, ok := obj.(*sapi.Restic); ok {
-					if r.Name == c.resourceName {
+					if r.Name == c.opt.ResourceName {
 						c.resource <- r
 						err := c.configureScheduler()
 						if err != nil {
@@ -130,7 +132,7 @@ func (c *controller) RunAndHold() {
 					log.Errorln(errors.New("Error validating Stash object"))
 					return
 				}
-				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) && newObj.Name == c.resourceName {
+				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) && newObj.Name == c.opt.ResourceName {
 					c.resource <- newObj
 					err := c.configureScheduler()
 					if err != nil {
@@ -149,7 +151,7 @@ func (c *controller) RunAndHold() {
 			},
 			DeleteFunc: func(obj interface{}) {
 				if r, ok := obj.(*sapi.Restic); ok {
-					if r.Name == c.resourceName {
+					if r.Name == c.opt.ResourceName {
 						c.cron.Stop()
 					}
 				}
@@ -208,16 +210,16 @@ func (c *controller) configureScheduler() error {
 func (c *controller) runOnce() error {
 	select {
 	case <-c.locked:
-		log.Infof("Acquired lock for Restic %s@%s", c.resourceName, c.resourceNamespace)
+		log.Infof("Acquired lock for Restic %s@%s", c.opt.ResourceName, c.opt.ResourceNamespace)
 		defer func() {
 			c.locked <- struct{}{}
 		}()
 	default:
-		log.Warningf("Skipping backup schedule for Restic %s@%s", c.resourceName, c.resourceNamespace)
+		log.Warningf("Skipping backup schedule for Restic %s@%s", c.opt.ResourceName, c.opt.ResourceNamespace)
 		return nil
 	}
 
-	resource, err := c.StashClient.Restics(c.resourceNamespace).Get(c.resourceName)
+	resource, err := c.StashClient.Restics(c.opt.ResourceNamespace).Get(c.opt.ResourceName)
 	if kerr.IsNotFound(err) {
 		return nil
 	} else if err != nil {

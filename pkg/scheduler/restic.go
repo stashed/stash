@@ -68,7 +68,7 @@ func (c *controller) SetEnvVars(resource *sapi.Restic) error {
 	}
 
 	hostname := ""
-	if c.prefixHostname {
+	if c.opt.PrefixHostname {
 		hostname, err = os.Hostname()
 		if err != nil {
 			return err
@@ -87,7 +87,7 @@ func (c *controller) SetEnvVars(resource *sapi.Restic) error {
 		r := fmt.Sprintf("gs:%s:%s:%s", backend.GCS.Location, backend.GCS.Bucket, backend.GCS.Prefix)
 		c.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
 		c.sh.SetEnv(GOOGLE_PROJECT_ID, string(secret.Data[GOOGLE_PROJECT_ID]))
-		jsonKeyPath := filepath.Join(c.scratchDir, "gcs_sa.json")
+		jsonKeyPath := filepath.Join(c.opt.ScratchDir, "gcs_sa.json")
 		err = ioutil.WriteFile(jsonKeyPath, secret.Data[GOOGLE_SERVICE_ACCOUNT_JSON_KEY], 600)
 		if err != nil {
 			return err
