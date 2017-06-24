@@ -63,10 +63,8 @@ func NewCmdSchedule(version string) *cobra.Command {
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&namespace, "namespace", namespace, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&name, "name", name, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().BoolVar(&prefixHostname, "prefix-hostname", prefixHostname, "Add Hostname as prefix to repository. This should be true for StatefulSets & DaemonSets. This should be false in all other cases.")
+	cmd.Flags().BoolVar(&prefixHostname, "prefix-hostname", prefixHostname, "If set, adds Hostname as prefix to repository. This should be true for StatefulSets & DaemonSets. This should be false in all other cases.")
 	cmd.Flags().StringVar(&scratchDir, "scratch-dir", scratchDir, "Directory used to store temporary files. Use an `emptyDir` in Kubernetes.")
-
-	// prefixHostname
 
 	// Analytics flags
 	cmd.Flags().BoolVar(&enableAnalytics, "analytics", enableAnalytics, "Send analytical event to Google Analytics")
