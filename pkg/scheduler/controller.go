@@ -211,6 +211,35 @@ func (c *controller) configureScheduler() error {
 	return nil
 }
 
+var (
+	restic_session_success = prometheus.NewDesc(
+		prometheus.BuildFQName("restic", "session", "success"),
+		"Indicates if session was successfully completed",
+		[]string{"session"}, nil,
+	)
+	restic_session_fail = prometheus.NewDesc(
+		prometheus.BuildFQName("restic", "session", "fail"),
+		"Indicates if session failed",
+		[]string{"session"}, nil,
+	)
+	restic_session_duration_seconds_total = prometheus.NewDesc(
+		prometheus.BuildFQName("restic", "session", "duration_seconds_total"),
+		"Total seconds taken to complete restic session",
+		[]string{"session"}, nil,
+	)
+
+	restic_backup_duration_seconds = prometheus.NewDesc(
+		prometheus.BuildFQName("restic", "backup", "duration_seconds"),
+		"Seconds taken to backup a filegroup",
+		[]string{"session", "filegroup"}, nil,
+	)
+	restic_gc_duration_seconds = prometheus.NewDesc(
+		prometheus.BuildFQName("restic", "gc", "duration_seconds"),
+		"Seconds taken to forget snapshots of a filegroup",
+		[]string{"session", "filegroup"}, nil,
+	)
+)
+
 func (c *controller) runOnce() (err error) {
 	select {
 	case <-c.locked:
@@ -236,25 +265,57 @@ func (c *controller) runOnce() (err error) {
 	}
 
 	startTime := metav1.Now()
+	sessionID := strconv.FormatInt(startTime.Unix(), 10)
+	var (
+		restic_session_success = prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace:   "restic",
+			Subsystem:   "session",
+			Name:        "success",
+			Help:        "Indicates if session was successfully completed",
+			ConstLabels: prometheus.Labels{"session": sessionID},
+		})
+		restic_session_fail = prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace:   "restic",
+			Subsystem:   "session",
+			Name:        "fail",
+			Help:        "Indicates if session failed",
+			ConstLabels: prometheus.Labels{"session": sessionID},
+		})
+		restic_session_duration_seconds_total = prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace:   "restic",
+			Subsystem:   "session",
+			Name:        "duration_seconds_total",
+			Help:        "Total seconds taken to complete restic session",
+			ConstLabels: prometheus.Labels{"session": sessionID},
+		})
+		restic_session_duration_seconds = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace:   "restic",
+			Subsystem:   "session",
+			Name:        "duration_seconds",
+			Help:        "Total seconds taken to complete restic session",
+			ConstLabels: prometheus.Labels{"session": sessionID},
+		}, []string{"session", "filegroup", "op"})
+	)
+
 	defer func() {
 		endTime := metav1.Now()
-		totalRuns := prometheus.NewCounter(prometheus.CounterOpts{
-			Name: "testname1",
-			Help: "testhelp1",
-		})
-		totalRuns.Inc()
-		totalFails := prometheus.NewCounter(prometheus.CounterOpts{
-			Name: "testname1",
-			Help: "testhelp1",
-		})
-		totalDuration := prometheus.NewGauge(prometheus.GaugeOpts{
-			Name:        "testname2",
-			Help:        "testhelp2",
-			ConstLabels: prometheus.Labels{"foo": "bar", "dings": "bums"},
-		})
-		totalDuration.Set(endTime.Sub(startTime.Time).Seconds())
+		if err != nil {
+			restic_session_success.Set(1)
+			restic_session_fail.Set(0)
+		} else {
+			restic_session_success.Set(0)
+			restic_session_fail.Set(1)
+		}
+		restic_session_duration_seconds_total.Set(endTime.Sub(startTime.Time).Seconds())
+
 		job := resource.Namespace + "-" + c.opt.Workload
-		push.Collectors(job, c.GroupingKeys(resource), c.opt.PushgatewayURL, totalRuns, totalFails, totalDuration)
+		push.Collectors(job,
+			c.GroupingKeys(resource),
+			c.opt.PushgatewayURL,
+			restic_session_success,
+			restic_session_fail,
+			restic_session_duration_seconds_total,
+			restic_session_duration_seconds)
 
 		resource.Status.BackupCount++
 		resource.Status.LastBackupTime = &startTime
@@ -266,48 +327,37 @@ func (c *controller) runOnce() (err error) {
 			log.Errorf("Failed to update status for Restic %s@%s due to %s", resource.Name, resource.Namespace, err)
 		}
 	}()
+
 	for _, fg := range resource.Spec.FileGroups {
-		err = c.processFileGroup(resource, fg, strconv.FormatInt(startTime.Unix(), 10))
+		backupMetric := restic_session_duration_seconds.WithLabelValues(sessionID, sanitizeLabelValue(fg.Path), "backup")
+		err = c.measure(c.takeBackup, resource, fg, backupMetric)
 		if err != nil {
+			log.Errorln("Backup operation failed for Reestic %s@%s due to %s", resource.Name, resource.Namespace, err)
+			backupFailure()
+			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToBackup, " ERROR: "+err.Error())
+			return
+		} else {
+			backupSuccess()
+			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonSuccessfulBackup, "Backup completed successfully.")
+		}
+
+		gcMetric := restic_session_duration_seconds.WithLabelValues(sessionID, sanitizeLabelValue(fg.Path), "gc")
+		err = c.measure(c.forgetSnapshots, resource, fg, gcMetric)
+		if err != nil {
+			log.Errorln("Failed to forget old snapshots for Restic %s@%s due to %s", resource.Name, resource.Namespace, err)
+			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToRetention, " ERROR: "+err.Error())
 			return
 		}
 	}
 	return
 }
 
-func (c *controller) processFileGroup(resource *sapi.Restic, fg sapi.FileGroup, sessionID string) (err error) {
+func (c *controller) measure(f func(*sapi.Restic, sapi.FileGroup) error, resource *sapi.Restic, fg sapi.FileGroup, g prometheus.Gauge) (err error) {
 	startTime := time.Now()
 	defer func() {
-		d := time.Now().Sub(startTime)
-		if c.opt.PushgatewayURL != "" {
-			metric2 := prometheus.NewGauge(prometheus.GaugeOpts{
-				Name:        "restic_backup_duration_seconds",
-				Help:        "Seconds taken to backup a filegroup",
-				ConstLabels: prometheus.Labels{"filegroup": sanitizeLabelValue(fg.Path), "session": sessionID},
-			})
-			metric2.Set(d.Seconds())
-
-			job := resource.Namespace + "-" + c.opt.Workload
-			push.Collectors(job, c.GroupingKeys(resource), c.opt.PushgatewayURL, metric2)
-		}
+		g.Set(time.Now().Sub(startTime).Seconds())
 	}()
-
-	err = c.takeBackup(resource, fg)
-	if err != nil {
-		log.Errorln("Backup operation failed for Reestic %s@%s due to %s", resource.Name, resource.Namespace, err)
-		backupFailure()
-		c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToBackup, " ERROR: "+err.Error())
-	} else {
-		backupSuccess()
-		c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonSuccessfulBackup, "Backup completed successfully.")
-	}
-
-	err = c.forgetSnapshots(resource, fg)
-	if err != nil {
-		log.Errorln("Failed to forget old snapshots for Restic %s@%s due to %s", resource.Name, resource.Namespace, err)
-		c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToRetention, " ERROR: "+err.Error())
-	}
-
+	err = f(resource, fg)
 	return
 }
 
