@@ -42,6 +42,7 @@ build_binary() {
         checkout master
         gb build
         mv bin/restic restic
+        rm -rf $DIST/restic/src $DIST/restic/vendor
     else
         # Download restic
         rm -rf $DIST/restic

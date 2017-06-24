@@ -1,8 +1,8 @@
-hash: e41c8b2685efda09e81b281b91293c8023463f350edda2a59c5a2276e5b5b841
-updated: 2017-06-19T19:33:19.364540687-07:00
+hash: 821aa597a2fbf33dfcb4976d86d43321c0a358ca62395324d7f06e2ac9be83d7
+updated: 2017-06-23T23:15:45.323091242-07:00
 imports:
 - name: github.com/appscode/go
-  version: 5eabd32a8a0fe824b5e12c37dc53a0afea8507c9
+  version: ecda61fa4e8943020e9948723e49c4ae544f7a3a
   subpackages:
   - runtime
   - strings
@@ -16,6 +16,10 @@ imports:
   version: 3ac7bf7a47d159a033b107610db8a1b6575507a4
   subpackages:
   - quantile
+- name: github.com/codegangsta/inject
+  version: 33e0aa1cb7c019ccc3fbe049a8262a6403d30504
+- name: github.com/codeskyblue/go-sh
+  version: b097669b1569203c3ce05a6b8717d43140fdb3d5
 - name: github.com/davecgh/go-spew
   version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
   subpackages:
@@ -116,7 +120,7 @@ imports:
 - name: github.com/Sirupsen/logrus
   version: 3ec0642a7fb6488f65b06f9040adc67e3990296a
 - name: github.com/spf13/cobra
-  version: 99b5d838ca16c25cc4944e323684f8415e8b10ba
+  version: d638dcb7c7c1c9b62f3a6297a17834980d245dc7
 - name: github.com/spf13/pflag
   version: e57e3eeb33f795204c1ca35f56c44f83227c6e66
 - name: github.com/ugorji/go
