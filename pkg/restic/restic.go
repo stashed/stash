@@ -23,8 +23,8 @@ const (
 	GOOGLE_SERVICE_ACCOUNT_JSON_KEY = "GOOGLE_SERVICE_ACCOUNT_JSON_KEY"
 	GOOGLE_APPLICATION_CREDENTIALS  = "GOOGLE_APPLICATION_CREDENTIALS"
 
-	ACCOUNT_NAME = "ACCOUNT_NAME"
-	ACCOUNT_KEY  = "ACCOUNT_KEY"
+	AZURE_ACCOUNT_NAME = "AZURE_ACCOUNT_NAME"
+	AZURE_ACCOUNT_KEY  = "AZURE_ACCOUNT_KEY"
 )
 
 func PrepareEnv(client clientset.Interface, resource *sapi.Restic, prefixHostname bool, scratchDir string) error {
@@ -71,8 +71,8 @@ func PrepareEnv(client clientset.Interface, resource *sapi.Restic, prefixHostnam
 	} else if backend.Azure != nil {
 		r := fmt.Sprintf("azure:%s:%s", backend.Azure.Container, backend.Azure.Prefix)
 		os.Setenv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
-		os.Setenv(ACCOUNT_NAME, string(secret.Data[ACCOUNT_NAME]))
-		os.Setenv(ACCOUNT_KEY, string(secret.Data[ACCOUNT_KEY]))
+		os.Setenv(AZURE_ACCOUNT_NAME, string(secret.Data[AZURE_ACCOUNT_NAME]))
+		os.Setenv(AZURE_ACCOUNT_KEY, string(secret.Data[AZURE_ACCOUNT_KEY]))
 	}
 	return nil
 }
