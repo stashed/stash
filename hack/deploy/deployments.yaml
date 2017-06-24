@@ -32,7 +32,7 @@ spec:
         image: prom/pushgateway:v0.4.0
         ports:
         - containerPort: 56789
-          name: prom
+          name: pushgateway
           protocol: TCP
         volumeMounts:
           - mountPath: /var/pv
@@ -50,9 +50,9 @@ metadata:
   namespace: kube-system
 spec:
   ports:
-  - name: prom
+  - name: pushgateway
     port: 56789
-    targetPort: prom
+    targetPort: pushgateway
   - name: http
     port: 56790
     targetPort: http
