@@ -2,9 +2,7 @@ package scheduler
 
 import (
 	sapi "github.com/appscode/stash/api"
-	_ "github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
-	_ "github.com/prometheus/client_golang/prometheus/push"
 	"gopkg.in/ini.v1"
 )
 
