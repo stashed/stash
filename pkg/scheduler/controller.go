@@ -3,9 +3,7 @@ package scheduler
 import (
 	"errors"
 	"fmt"
-	"os"
 	"os/exec"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"time"
@@ -25,12 +23,6 @@ import (
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
-)
-
-const (
-	RESTIC_PASSWORD = "RESTIC_PASSWORD"
-	Password        = "password"
-	Force           = "force"
 )
 
 type controller struct {
@@ -70,21 +62,14 @@ func (c *controller) InitRepo() error {
 	if err != nil {
 		return err
 	}
-	data, err := c.getRepositorySecret(resource.Spec.Backend.RepositorySecretName, resource.Namespace)
+
+	err = restic.ExportEnvVars(c.KubeClient, resource, c.prefixHostname, c.scratchDir)
 	if err != nil {
 		return err
 	}
 
-	err = os.Setenv(RESTIC_PASSWORD, string(data[Password]))
-	if err != nil {
+	if _, err := execLocal("/restic init"); err != nil {
 		return err
-	}
-	repo := resource.Spec.Backend.Local.Path
-	_, err = os.Stat(filepath.Join(repo, "config"))
-	if os.IsNotExist(err) {
-		if _, err = execLocal(fmt.Sprintf("/restic init --repo %s", repo)); err != nil {
-			return err
-		}
 	}
 	return nil
 }
@@ -176,22 +161,6 @@ func (c *controller) configureScheduler() error {
 	if err != nil {
 		return err
 	}
-
-	//password, err := getPasswordFromSecret(c.KubeClient, r.Spec.Backend.RepositorySecretName, r.Namespace)
-	//if err != nil {
-	//	return err
-	//}
-	//err = os.Setenv(RESTIC_PASSWORD, password)
-	//if err != nil {
-	//	return err
-	//}
-	//repo := r.Spec.Backend.Path
-	//_, err = os.Stat(filepath.Join(repo, "config"))
-	//if os.IsNotExist(err) {
-	//	if _, err = execLocal(fmt.Sprintf("/restic init --repo %s", repo)); err != nil {
-	//		return err
-	//	}
-	//}
 
 	// Remove previous jobs
 	for _, v := range c.cron.Entries() {
@@ -324,10 +293,6 @@ func forgetSnapshots(r *sapi.Restic) error {
 				cmd = cmd + " --keep-tag " + t
 			}
 		}
-		// Debug
-		//if len(fg.RetentionPolicy.RetainHostname) != 0 {
-		//	cmd = cmd + " --hostname " + fg.RetentionPolicy.RetainHostname
-		//}
 		for _, t := range fg.Tags {
 			cmd = cmd + " --tag " + t
 		}
@@ -345,28 +310,4 @@ func execLocal(s string) (string, error) {
 	parts = parts[1:]
 	cmdOut, err := exec.Command(head, parts...).Output()
 	return strings.TrimSuffix(string(cmdOut), "\n"), err
-}
-
-func getPasswordFromSecret(client clientset.Interface, secretName, namespace string) (string, error) {
-	secret, err := client.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
-	if err != nil {
-		return "", err
-	}
-	password, ok := secret.Data[Password]
-	if !ok {
-		return "", errors.New("Restic Password not found")
-	}
-	return string(password), nil
-}
-
-func (c *controller) getRepositorySecret(secretName, namespace string) (map[string]string, error) {
-	secret, err := c.KubeClient.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-	data := make(map[string]string)
-	for k, v := range secret.Data {
-		data[k] = string(v)
-	}
-	return data, nil
 }
