@@ -59,11 +59,15 @@ type Source struct {
 }
 
 type Backend struct {
-	Local                *LocalSpec `json:"local"`
-	S3                   *S3Spec    `json:"s3,omitempty"`
-	GCS                  *GCSSpec   `json:"gcs,omitempty"`
-	Azure                *AzureSpec `json:"azure,omitempty"`
-	RepositorySecretName string     `json:"repositorySecretName,omitempty"`
+	RepositorySecretName string `json:"repositorySecretName,omitempty"`
+
+	Local *LocalSpec      `json:"local"`
+	S3    *S3Spec         `json:"s3,omitempty"`
+	GCS   *GCSSpec        `json:"gcs,omitempty"`
+	Azure *AzureSpec      `json:"azure,omitempty"`
+	Swift *SwiftSpec      `json:"swift,omitempty"`
+	B2    *B2Spec         `json:"b2,omitempty"`
+	Rest  *RestServerSpec `json:"rest,omitempty"`
 }
 
 type LocalSpec struct {
@@ -86,6 +90,20 @@ type GCSSpec struct {
 type AzureSpec struct {
 	Container string `json:"container,omitempty"`
 	Prefix    string `json:"prefix,omitempty"`
+}
+
+type SwiftSpec struct {
+	Container string `json:"container,omitempty"`
+	Prefix    string `json:"prefix,omitempty"`
+}
+
+type B2Spec struct {
+	Bucket string `json:"bucket,omiempty"`
+	Prefix string `json:"prefix,omitempty"`
+}
+
+type RestServerSpec struct {
+	URL string `json:"url,omiempty"`
 }
 
 type RetentionPolicy struct {

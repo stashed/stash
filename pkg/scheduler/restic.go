@@ -24,6 +24,9 @@ const (
 
 	AZURE_ACCOUNT_NAME = "AZURE_ACCOUNT_NAME"
 	AZURE_ACCOUNT_KEY  = "AZURE_ACCOUNT_KEY"
+
+	B2_ACCOUNT_ID  = "B2_ACCOUNT_ID"
+	B2_ACCOUNT_KEY = "B2_ACCOUNT_KEY"
 )
 
 func (c *controller) SetEnvVars(resource *sapi.Restic) error {
