@@ -62,7 +62,7 @@ func PrepareEnv(client clientset.Interface, resource *sapi.Restic, prefixHostnam
 		r := fmt.Sprintf("gs:%s:%s:%s", backend.GCS.Location, backend.GCS.Bucket, backend.GCS.Prefix)
 		os.Setenv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
 		os.Setenv(GOOGLE_PROJECT_ID, string(secret.Data[GOOGLE_PROJECT_ID]))
-		jsonKeyPath := scratchDir + "google_sa.json"
+		jsonKeyPath := filepath.Join(scratchDir, "gcs_sa.json")
 		err = ioutil.WriteFile(jsonKeyPath, secret.Data[GOOGLE_SERVICE_ACCOUNT_JSON_KEY], 600)
 		if err != nil {
 			return err
