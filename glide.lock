@@ -1,5 +1,5 @@
-hash: 821aa597a2fbf33dfcb4976d86d43321c0a358ca62395324d7f06e2ac9be83d7
-updated: 2017-06-23T23:15:45.323091242-07:00
+hash: 6eb27d91ee08a4666cf2881fccf12edc986e55e059cadd149e2800d07296d069
+updated: 2017-06-24T05:53:20.752675209-07:00
 imports:
 - name: github.com/appscode/go
   version: ecda61fa4e8943020e9948723e49c4ae544f7a3a
@@ -101,6 +101,7 @@ imports:
   subpackages:
   - prometheus
   - prometheus/promhttp
+  - prometheus/push
 - name: github.com/prometheus/client_model
   version: fa8ad6fec33561be4280a8f0514318c79d7f6cb6
   subpackages:
@@ -159,6 +160,8 @@ imports:
   - width
 - name: gopkg.in/inf.v0
   version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
+- name: gopkg.in/ini.v1
+  version: d3de07a94d22b4a0972deb4b96d790c2c0ce8333
 - name: gopkg.in/robfig/cron.v2
   version: be2e0b0deed5a68ffee390b4583a13aff8321535
 - name: gopkg.in/yaml.v2

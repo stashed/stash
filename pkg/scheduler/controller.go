@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"time"
 
 	"github.com/appscode/log"
@@ -11,6 +12,8 @@ import (
 	scs "github.com/appscode/stash/client/clientset"
 	"github.com/appscode/stash/pkg/eventer"
 	shell "github.com/codeskyblue/go-sh"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/push"
 	"gopkg.in/robfig/cron.v2"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,16 +30,22 @@ const (
 	resticExe = "/restic"
 )
 
+type Options struct {
+	Workload          string
+	ResourceNamespace string
+	ResourceName      string
+
+	PrefixHostname bool
+	ScratchDir     string
+	PushgatewayURL string
+	PodLabelsPath  string
+}
+
 type controller struct {
 	KubeClient  clientset.Interface
 	StashClient scs.ExtensionInterface
 
-	resourceNamespace string
-	resourceName      string
-
-	prefixHostname bool
-	scratchDir     string
-
+	opt             Options
 	resource        chan *sapi.Restic
 	resourceVersion string
 	locked          chan struct{}
@@ -46,26 +55,23 @@ type controller struct {
 	recorder record.EventRecorder
 }
 
-func NewController(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, namespace, name string, prefixHostname bool, scratchDir string) *controller {
+func NewController(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt Options) *controller {
 	ctrl := &controller{
-		KubeClient:        kubeClient,
-		StashClient:       stashClient,
-		resourceNamespace: namespace,
-		resourceName:      name,
-		prefixHostname:    prefixHostname,
-		scratchDir:        scratchDir,
-		sh:                shell.NewSession(),
-		resource:          make(chan *sapi.Restic),
-		recorder:          eventer.NewEventRecorder(kubeClient, "stash-scheduler"),
+		KubeClient:  kubeClient,
+		StashClient: stashClient,
+		opt:         opt,
+		sh:          shell.NewSession(),
+		resource:    make(chan *sapi.Restic),
+		recorder:    eventer.NewEventRecorder(kubeClient, "stash-scheduler"),
 	}
-	ctrl.sh.SetDir(ctrl.scratchDir)
+	ctrl.sh.SetDir(ctrl.opt.ScratchDir)
 	ctrl.sh.ShowCMD = true
 	return ctrl
 }
 
 // Init and/or connect to repo
 func (c *controller) Setup() error {
-	resource, err := c.StashClient.Restics(c.resourceNamespace).Get(c.resourceName)
+	resource, err := c.StashClient.Restics(c.opt.ResourceNamespace).Get(c.opt.ResourceName)
 	if err != nil {
 		return err
 	}
@@ -89,10 +95,10 @@ func (c *controller) RunAndHold() {
 
 	lw := &cache.ListWatch{
 		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
-			return c.StashClient.Restics(c.resourceNamespace).List(metav1.ListOptions{})
+			return c.StashClient.Restics(c.opt.ResourceNamespace).List(metav1.ListOptions{})
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return c.StashClient.Restics(c.resourceNamespace).Watch(metav1.ListOptions{})
+			return c.StashClient.Restics(c.opt.ResourceNamespace).Watch(metav1.ListOptions{})
 		},
 	}
 	_, ctrl := cache.NewInformer(lw,
@@ -101,7 +107,7 @@ func (c *controller) RunAndHold() {
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				if r, ok := obj.(*sapi.Restic); ok {
-					if r.Name == c.resourceName {
+					if r.Name == c.opt.ResourceName {
 						c.resource <- r
 						err := c.configureScheduler()
 						if err != nil {
@@ -130,7 +136,7 @@ func (c *controller) RunAndHold() {
 					log.Errorln(errors.New("Error validating Stash object"))
 					return
 				}
-				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) && newObj.Name == c.resourceName {
+				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) && newObj.Name == c.opt.ResourceName {
 					c.resource <- newObj
 					err := c.configureScheduler()
 					if err != nil {
@@ -149,7 +155,7 @@ func (c *controller) RunAndHold() {
 			},
 			DeleteFunc: func(obj interface{}) {
 				if r, ok := obj.(*sapi.Restic); ok {
-					if r.Name == c.resourceName {
+					if r.Name == c.opt.ResourceName {
 						c.cron.Stop()
 					}
 				}
@@ -205,115 +211,174 @@ func (c *controller) configureScheduler() error {
 	return nil
 }
 
-func (c *controller) runOnce() error {
+func (c *controller) runOnce() (err error) {
 	select {
 	case <-c.locked:
-		log.Infof("Acquired lock for Restic %s@%s", c.resourceName, c.resourceNamespace)
+		log.Infof("Acquired lock for Restic %s@%s", c.opt.ResourceName, c.opt.ResourceNamespace)
 		defer func() {
 			c.locked <- struct{}{}
 		}()
 	default:
-		log.Warningf("Skipping backup schedule for Restic %s@%s", c.resourceName, c.resourceNamespace)
-		return nil
+		log.Warningf("Skipping backup schedule for Restic %s@%s", c.opt.ResourceName, c.opt.ResourceNamespace)
+		return
 	}
 
-	resource, err := c.StashClient.Restics(c.resourceNamespace).Get(c.resourceName)
+	var resource *sapi.Restic
+	resource, err = c.StashClient.Restics(c.opt.ResourceNamespace).Get(c.opt.ResourceName)
 	if kerr.IsNotFound(err) {
-		return nil
+		err = nil
+		return
 	} else if err != nil {
-		return err
+		return
 	}
 	if resource.ResourceVersion != c.resourceVersion {
 		return fmt.Errorf("Restic %s@%s version %s does not match expected version %s", resource.Name, resource.Namespace, resource.ResourceVersion, c.resourceVersion)
 	}
 
-	err = c.runBackup(resource)
-	if err != nil {
-		log.Errorln("Backup operation failed for Reestic %s@%s due to %s", resource.Name, resource.Namespace, err)
-		backupFailure()
-		c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToBackup, " ERROR: "+err.Error())
-	} else {
-		backupSuccess()
-		c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonSuccessfulBackup, "Backup completed successfully.")
-	}
-
-	err = c.forgetSnapshots(resource)
-	if err != nil {
-		log.Errorln("Failed to forget old snapshots for Restic %s@%s due to %s", resource.Name, resource.Namespace, err)
-		c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToRetention, " ERROR: "+err.Error())
-	}
-
-	return nil
-}
-
-func (c *controller) runBackup(resource *sapi.Restic) error {
 	startTime := metav1.Now()
-	for _, fg := range resource.Spec.FileGroups {
-		args := []interface{}{"backup", fg.Path, "--force"}
-		// add tags if any
-		for _, tag := range fg.Tags {
-			args = append(args, "--tag")
-			args = append(args, tag)
-		}
-		err := c.sh.Command(resticExe, args...).Run()
-		if err != nil {
-			return err
-		}
-	}
-	endTime := metav1.Now()
+	sessionID := strconv.FormatInt(startTime.Unix(), 10)
+	var (
+		restic_session_success = prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace:   "restic",
+			Subsystem:   "session",
+			Name:        "success",
+			Help:        "Indicates if session was successfully completed",
+			ConstLabels: prometheus.Labels{"session": sessionID},
+		})
+		restic_session_fail = prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace:   "restic",
+			Subsystem:   "session",
+			Name:        "fail",
+			Help:        "Indicates if session failed",
+			ConstLabels: prometheus.Labels{"session": sessionID},
+		})
+		restic_session_duration_seconds_total = prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace:   "restic",
+			Subsystem:   "session",
+			Name:        "duration_seconds_total",
+			Help:        "Total seconds taken to complete restic session",
+			ConstLabels: prometheus.Labels{"session": sessionID},
+		})
+		restic_session_duration_seconds = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace:   "restic",
+			Subsystem:   "session",
+			Name:        "duration_seconds",
+			Help:        "Total seconds taken to complete restic session",
+			ConstLabels: prometheus.Labels{"session": sessionID},
+		}, []string{"session", "filegroup", "op"})
+	)
 
-	resource.Status.BackupCount++
-	resource.Status.LastBackupTime = &startTime
-	if resource.Status.FirstBackupTime == nil {
-		resource.Status.FirstBackupTime = &startTime
+	defer func() {
+		endTime := metav1.Now()
+		if err != nil {
+			restic_session_success.Set(1)
+			restic_session_fail.Set(0)
+		} else {
+			restic_session_success.Set(0)
+			restic_session_fail.Set(1)
+		}
+		restic_session_duration_seconds_total.Set(endTime.Sub(startTime.Time).Seconds())
+
+		job := resource.Namespace + "-" + c.opt.Workload
+		push.Collectors(job,
+			c.GroupingKeys(resource),
+			c.opt.PushgatewayURL,
+			restic_session_success,
+			restic_session_fail,
+			restic_session_duration_seconds_total,
+			restic_session_duration_seconds)
+
+		resource.Status.BackupCount++
+		resource.Status.LastBackupTime = &startTime
+		if resource.Status.FirstBackupTime == nil {
+			resource.Status.FirstBackupTime = &startTime
+		}
+		resource.Status.LastBackupDuration = endTime.Sub(startTime.Time).String()
+		if _, e2 := c.StashClient.Restics(resource.Namespace).Update(resource); e2 != nil {
+			log.Errorf("Failed to update status for Restic %s@%s due to %s", resource.Name, resource.Namespace, err)
+		}
+	}()
+
+	for _, fg := range resource.Spec.FileGroups {
+		backupOpMetric := restic_session_duration_seconds.WithLabelValues(sessionID, sanitizeLabelValue(fg.Path), "backup")
+		err = c.measure(c.takeBackup, resource, fg, backupOpMetric)
+		if err != nil {
+			log.Errorln("Backup operation failed for Reestic %s@%s due to %s", resource.Name, resource.Namespace, err)
+			backupFailure()
+			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToBackup, " ERROR: "+err.Error())
+			return
+		} else {
+			backupSuccess()
+			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonSuccessfulBackup, "Backup completed successfully.")
+		}
+
+		forgetOpMetric := restic_session_duration_seconds.WithLabelValues(sessionID, sanitizeLabelValue(fg.Path), "forget")
+		err = c.measure(c.forgetSnapshots, resource, fg, forgetOpMetric)
+		if err != nil {
+			log.Errorln("Failed to forget old snapshots for Restic %s@%s due to %s", resource.Name, resource.Namespace, err)
+			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToRetention, " ERROR: "+err.Error())
+			return
+		}
 	}
-	resource.Status.LastBackupDuration = endTime.Sub(startTime.Time).String()
-	_, err := c.StashClient.Restics(resource.Namespace).Update(resource)
-	if err != nil {
-		log.Errorf("Failed to update status for Restic %s@%s due to %s", resource.Name, resource.Namespace, err)
-	}
-	return nil
+	return
 }
 
-func (c *controller) forgetSnapshots(r *sapi.Restic) error {
-	for _, fg := range r.Spec.FileGroups {
-		args := []interface{}{"forget"}
-		if fg.RetentionPolicy.KeepLastSnapshots > 0 {
-			args = append(args, sapi.KeepLast)
-			args = append(args, fg.RetentionPolicy.KeepLastSnapshots)
-		}
-		if fg.RetentionPolicy.KeepHourlySnapshots > 0 {
-			args = append(args, sapi.KeepHourly)
-			args = append(args, fg.RetentionPolicy.KeepHourlySnapshots)
-		}
-		if fg.RetentionPolicy.KeepDailySnapshots > 0 {
-			args = append(args, sapi.KeepDaily)
-			args = append(args, fg.RetentionPolicy.KeepDailySnapshots)
-		}
-		if fg.RetentionPolicy.KeepWeeklySnapshots > 0 {
-			args = append(args, sapi.KeepWeekly)
-			args = append(args, fg.RetentionPolicy.KeepWeeklySnapshots)
-		}
-		if fg.RetentionPolicy.KeepMonthlySnapshots > 0 {
-			args = append(args, sapi.KeepMonthly)
-			args = append(args, fg.RetentionPolicy.KeepMonthlySnapshots)
-		}
-		if fg.RetentionPolicy.KeepYearlySnapshots > 0 {
-			args = append(args, sapi.KeepYearly)
-			args = append(args, fg.RetentionPolicy.KeepYearlySnapshots)
-		}
-		for _, tag := range fg.RetentionPolicy.KeepTags {
-			args = append(args, "--keep-tag")
-			args = append(args, tag)
-		}
-		for _, tag := range fg.Tags {
-			args = append(args, "--tag")
-			args = append(args, tag)
-		}
-		err := c.sh.Command(resticExe, args...).Run()
-		if err != nil {
-			return err
-		}
+func (c *controller) measure(f func(*sapi.Restic, sapi.FileGroup) error, resource *sapi.Restic, fg sapi.FileGroup, g prometheus.Gauge) (err error) {
+	startTime := time.Now()
+	defer func() {
+		g.Set(time.Now().Sub(startTime).Seconds())
+	}()
+	err = f(resource, fg)
+	return
+}
+
+func (c *controller) takeBackup(resource *sapi.Restic, fg sapi.FileGroup) error {
+	args := []interface{}{"backup", fg.Path, "--force"}
+	// add tags if any
+	for _, tag := range fg.Tags {
+		args = append(args, "--tag")
+		args = append(args, tag)
+	}
+	return c.sh.Command(resticExe, args...).Run()
+}
+
+func (c *controller) forgetSnapshots(resource *sapi.Restic, fg sapi.FileGroup) error {
+	args := []interface{}{"forget"}
+	if fg.RetentionPolicy.KeepLastSnapshots > 0 {
+		args = append(args, sapi.KeepLast)
+		args = append(args, fg.RetentionPolicy.KeepLastSnapshots)
+	}
+	if fg.RetentionPolicy.KeepHourlySnapshots > 0 {
+		args = append(args, sapi.KeepHourly)
+		args = append(args, fg.RetentionPolicy.KeepHourlySnapshots)
+	}
+	if fg.RetentionPolicy.KeepDailySnapshots > 0 {
+		args = append(args, sapi.KeepDaily)
+		args = append(args, fg.RetentionPolicy.KeepDailySnapshots)
+	}
+	if fg.RetentionPolicy.KeepWeeklySnapshots > 0 {
+		args = append(args, sapi.KeepWeekly)
+		args = append(args, fg.RetentionPolicy.KeepWeeklySnapshots)
+	}
+	if fg.RetentionPolicy.KeepMonthlySnapshots > 0 {
+		args = append(args, sapi.KeepMonthly)
+		args = append(args, fg.RetentionPolicy.KeepMonthlySnapshots)
+	}
+	if fg.RetentionPolicy.KeepYearlySnapshots > 0 {
+		args = append(args, sapi.KeepYearly)
+		args = append(args, fg.RetentionPolicy.KeepYearlySnapshots)
+	}
+	for _, tag := range fg.RetentionPolicy.KeepTags {
+		args = append(args, "--keep-tag")
+		args = append(args, tag)
+	}
+	for _, tag := range fg.Tags {
+		args = append(args, "--tag")
+		args = append(args, tag)
+	}
+	err := c.sh.Command(resticExe, args...).Run()
+	if err != nil {
+		return err
 	}
 	return nil
 }

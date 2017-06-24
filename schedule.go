@@ -16,13 +16,17 @@ import (
 
 func NewCmdSchedule(version string) *cobra.Command {
 	var (
-		masterURL       string
-		kubeconfigPath  string
-		namespace       string
-		name            string
-		prefixHostname  bool   = true
-		scratchDir      string = "/tmp"
-		enableAnalytics bool   = true
+		masterURL      string
+		kubeconfigPath string
+		opt            scheduler.Options = scheduler.Options{
+			ResourceNamespace: "",
+			ResourceName:      "",
+			PrefixHostname:    true,
+			ScratchDir:        "/tmp",
+			PushgatewayURL:    "http://stash-operator:56789",
+			PodLabelsPath:     "/etc/labels",
+		}
+		enableAnalytics bool = true
 	)
 
 	cmd := &cobra.Command{
@@ -45,17 +49,17 @@ func NewCmdSchedule(version string) *cobra.Command {
 			kubeClient := clientset.NewForConfigOrDie(config)
 			stashClient := rcs.NewForConfigOrDie(config)
 
-			scratchDir = strings.TrimSuffix(scratchDir, "/")
-			err = os.MkdirAll(scratchDir, 0755)
+			opt.ScratchDir = strings.TrimSuffix(opt.ScratchDir, "/")
+			err = os.MkdirAll(opt.ScratchDir, 0755)
 			if err != nil {
 				log.Fatalf("Failed to create scratch dir: %s", err)
 			}
-			err = ioutil.WriteFile(scratchDir+"/.stash", []byte("test"), 644)
+			err = ioutil.WriteFile(opt.ScratchDir+"/.stash", []byte("test"), 644)
 			if err != nil {
 				log.Fatalf("No write access in scratch dir: %s", err)
 			}
 
-			ctrl := scheduler.NewController(kubeClient, stashClient, namespace, name, prefixHostname, scratchDir)
+			ctrl := scheduler.NewController(kubeClient, stashClient, opt)
 			err = ctrl.Setup()
 			if err != nil {
 				log.Fatalf("Failed to setup scheduler: %s", err)
@@ -65,10 +69,13 @@ func NewCmdSchedule(version string) *cobra.Command {
 	}
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&namespace, "namespace", namespace, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
-	cmd.Flags().StringVar(&name, "name", name, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().BoolVar(&prefixHostname, "prefix-hostname", prefixHostname, "If set, adds Hostname as prefix to repository. This should be true for StatefulSets & DaemonSets. This should be false in all other cases.")
-	cmd.Flags().StringVar(&scratchDir, "scratch-dir", scratchDir, "Directory used to store temporary files. Use an `emptyDir` in Kubernetes.")
+	cmd.Flags().StringVar(&opt.Workload, "workload", opt.Workload, "Name of workload that owns this pod")
+	cmd.Flags().StringVar(&opt.ResourceNamespace, "namespace", opt.ResourceNamespace, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
+	cmd.Flags().StringVar(&opt.ResourceName, "name", opt.ResourceName, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
+	cmd.Flags().BoolVar(&opt.PrefixHostname, "prefix-hostname", opt.PrefixHostname, "If set, adds Hostname as prefix to repository. This should be true for StatefulSets & DaemonSets. This should be false in all other cases.")
+	cmd.Flags().StringVar(&opt.ScratchDir, "scratch-dir", opt.ScratchDir, "Directory used to store temporary files. Use an `emptyDir` in Kubernetes.")
+	cmd.Flags().StringVar(&opt.PushgatewayURL, "pushgateway-url", opt.PushgatewayURL, "URL of Prometheus pushgateway used to cache backup metrics")
+	cmd.Flags().StringVar(&opt.PodLabelsPath, "pod-labels-path", opt.PodLabelsPath, "Path to pod labels file mounted via Kubernetes Downward api")
 
 	// Analytics flags
 	cmd.Flags().BoolVar(&enableAnalytics, "analytics", enableAnalytics, "Send analytical event to Google Analytics")
