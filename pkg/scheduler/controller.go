@@ -211,35 +211,6 @@ func (c *controller) configureScheduler() error {
 	return nil
 }
 
-var (
-	restic_session_success = prometheus.NewDesc(
-		prometheus.BuildFQName("restic", "session", "success"),
-		"Indicates if session was successfully completed",
-		[]string{"session"}, nil,
-	)
-	restic_session_fail = prometheus.NewDesc(
-		prometheus.BuildFQName("restic", "session", "fail"),
-		"Indicates if session failed",
-		[]string{"session"}, nil,
-	)
-	restic_session_duration_seconds_total = prometheus.NewDesc(
-		prometheus.BuildFQName("restic", "session", "duration_seconds_total"),
-		"Total seconds taken to complete restic session",
-		[]string{"session"}, nil,
-	)
-
-	restic_backup_duration_seconds = prometheus.NewDesc(
-		prometheus.BuildFQName("restic", "backup", "duration_seconds"),
-		"Seconds taken to backup a filegroup",
-		[]string{"session", "filegroup"}, nil,
-	)
-	restic_gc_duration_seconds = prometheus.NewDesc(
-		prometheus.BuildFQName("restic", "gc", "duration_seconds"),
-		"Seconds taken to forget snapshots of a filegroup",
-		[]string{"session", "filegroup"}, nil,
-	)
-)
-
 func (c *controller) runOnce() (err error) {
 	select {
 	case <-c.locked:
@@ -329,8 +300,8 @@ func (c *controller) runOnce() (err error) {
 	}()
 
 	for _, fg := range resource.Spec.FileGroups {
-		backupMetric := restic_session_duration_seconds.WithLabelValues(sessionID, sanitizeLabelValue(fg.Path), "backup")
-		err = c.measure(c.takeBackup, resource, fg, backupMetric)
+		backupOpMetric := restic_session_duration_seconds.WithLabelValues(sessionID, sanitizeLabelValue(fg.Path), "backup")
+		err = c.measure(c.takeBackup, resource, fg, backupOpMetric)
 		if err != nil {
 			log.Errorln("Backup operation failed for Reestic %s@%s due to %s", resource.Name, resource.Namespace, err)
 			backupFailure()
@@ -341,8 +312,8 @@ func (c *controller) runOnce() (err error) {
 			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonSuccessfulBackup, "Backup completed successfully.")
 		}
 
-		gcMetric := restic_session_duration_seconds.WithLabelValues(sessionID, sanitizeLabelValue(fg.Path), "gc")
-		err = c.measure(c.forgetSnapshots, resource, fg, gcMetric)
+		forgetOpMetric := restic_session_duration_seconds.WithLabelValues(sessionID, sanitizeLabelValue(fg.Path), "forget")
+		err = c.measure(c.forgetSnapshots, resource, fg, forgetOpMetric)
 		if err != nil {
 			log.Errorln("Failed to forget old snapshots for Restic %s@%s due to %s", resource.Name, resource.Namespace, err)
 			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToRetention, " ERROR: "+err.Error())
