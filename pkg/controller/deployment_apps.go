@@ -62,7 +62,7 @@ func (c *Controller) WatchDeploymentApps() {
 }
 
 func (c *Controller) EnsureDeploymentAppSidecar(resource *apps.Deployment, restic *sapi.Restic) {
-	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, c.GetSidecarContainer(restic, true))
+	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, c.GetSidecarContainer(restic, false))
 	resource.Spec.Template.Spec.Volumes = addScratchVolume(resource.Spec.Template.Spec.Volumes)
 	if restic.Spec.Backend.Local != nil {
 		resource.Spec.Template.Spec.Volumes = append(resource.Spec.Template.Spec.Volumes, restic.Spec.Backend.Local.Volume)

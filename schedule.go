@@ -20,7 +20,7 @@ func NewCmdSchedule(version string) *cobra.Command {
 		kubeconfigPath  string
 		namespace       string
 		name            string
-		prefixHostname  bool
+		prefixHostname  bool   = true
 		scratchDir      string = "/tmp"
 		enableAnalytics bool   = true
 	)
