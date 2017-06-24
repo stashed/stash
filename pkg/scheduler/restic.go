@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path/filepath"
 
@@ -25,8 +26,30 @@ const (
 	AZURE_ACCOUNT_NAME = "AZURE_ACCOUNT_NAME"
 	AZURE_ACCOUNT_KEY  = "AZURE_ACCOUNT_KEY"
 
+	REST_SERVER_USERNAME = "REST_SERVER_USERNAME"
+	REST_SERVER_PASSWORD = "REST_SERVER_PASSWORD"
+
 	B2_ACCOUNT_ID  = "B2_ACCOUNT_ID"
 	B2_ACCOUNT_KEY = "B2_ACCOUNT_KEY"
+
+	// For keystone v1 authentication
+	ST_AUTH = "ST_AUTH"
+	ST_USER = "ST_USER"
+	ST_KEY  = "ST_KEY"
+	// For keystone v2 authentication (some variables are optional)
+	OS_AUTH_URL    = "OS_AUTH_URL"
+	OS_REGION_NAME = "OS_REGION_NAME"
+	OS_USERNAME    = "OS_USERNAME"
+	OS_PASSWORD    = "OS_PASSWORD"
+	OS_TENANT_ID   = "OS_TENANT_ID"
+	OS_TENANT_NAME = "OS_TENANT_NAME"
+	// For keystone v3 authentication (some variables are optional)
+	OS_USER_DOMAIN_NAME    = "OS_USER_DOMAIN_NAME"
+	OS_PROJECT_NAME        = "OS_PROJECT_NAME"
+	OS_PROJECT_DOMAIN_NAME = "OS_PROJECT_DOMAIN_NAME"
+	// For authentication based on tokens
+	OS_STORAGE_URL = "OS_STORAGE_URL"
+	OS_AUTH_TOKEN  = "OS_AUTH_TOKEN"
 )
 
 func (c *controller) SetEnvVars(resource *sapi.Restic) error {
@@ -75,6 +98,28 @@ func (c *controller) SetEnvVars(resource *sapi.Restic) error {
 		c.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
 		c.sh.SetEnv(AZURE_ACCOUNT_NAME, string(secret.Data[AZURE_ACCOUNT_NAME]))
 		c.sh.SetEnv(AZURE_ACCOUNT_KEY, string(secret.Data[AZURE_ACCOUNT_KEY]))
+	} else if backend.Swift != nil {
+
+	} else if backend.Rest != nil {
+		u, err := url.Parse(backend.Rest.URL)
+		if err != nil {
+			return err
+		}
+		if username, ok := secret.Data[REST_SERVER_USERNAME]; ok {
+			if password, ok := secret.Data[REST_SERVER_PASSWORD]; ok {
+				u.User = url.UserPassword(string(username), string(password))
+			} else {
+				u.User = url.User(string(username))
+			}
+		}
+		u.Path = filepath.Join(u.Path, hostname) // TODO: check
+		r := fmt.Sprintf("rest:%s", u.String())
+		c.sh.SetEnv(RESTIC_REPOSITORY, r)
+	} else if backend.B2 != nil {
+		r := fmt.Sprintf("b2:%s:%s", backend.B2.Bucket, backend.B2.Prefix)
+		c.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
+		c.sh.SetEnv(B2_ACCOUNT_ID, string(secret.Data[B2_ACCOUNT_ID]))
+		c.sh.SetEnv(B2_ACCOUNT_KEY, string(secret.Data[B2_ACCOUNT_KEY]))
 	}
 	return nil
 }
