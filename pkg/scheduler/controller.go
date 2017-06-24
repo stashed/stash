@@ -23,6 +23,10 @@ import (
 	"k8s.io/client-go/tools/record"
 )
 
+const (
+	resticExe = "/restic"
+)
+
 type controller struct {
 	KubeClient  clientset.Interface
 	StashClient scs.ExtensionInterface
@@ -71,8 +75,8 @@ func (c *controller) Setup() error {
 		return err
 	}
 
-	if err = c.sh.Command("/restic", "snapshots", "--json").Run(); err != nil {
-		err = c.sh.Command("/restic", "init").Run()
+	if err = c.sh.Command(resticExe, "snapshots", "--json").Run(); err != nil {
+		err = c.sh.Command(resticExe, "init").Run()
 		if err != nil {
 			return err
 		}
@@ -251,7 +255,7 @@ func (c *controller) runBackup(resource *sapi.Restic) error {
 			args = append(args, "--tag")
 			args = append(args, tag)
 		}
-		err := c.sh.Command("/restic", args...).Run()
+		err := c.sh.Command(resticExe, args...).Run()
 		if err != nil {
 			return err
 		}
@@ -306,7 +310,7 @@ func (c *controller) forgetSnapshots(r *sapi.Restic) error {
 			args = append(args, "--tag")
 			args = append(args, tag)
 		}
-		err := c.sh.Command("/restic", args...).Run()
+		err := c.sh.Command(resticExe, args...).Run()
 		if err != nil {
 			return err
 		}
