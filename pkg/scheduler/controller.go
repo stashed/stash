@@ -28,6 +28,7 @@ const (
 )
 
 type Options struct {
+	Workload          string
 	ResourceNamespace string
 	ResourceName      string
 

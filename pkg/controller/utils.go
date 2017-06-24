@@ -62,7 +62,7 @@ func getString(m map[string]string, key string) string {
 	return m[key]
 }
 
-func (c *Controller) GetSidecarContainer(r *rapi.Restic, prefixHostname bool) apiv1.Container {
+func (c *Controller) GetSidecarContainer(r *rapi.Restic, workload string, prefixHostname bool) apiv1.Container {
 	tag := c.SidecarImageTag
 	if r.Annotations != nil {
 		if v, ok := r.Annotations[sapi.VersionTag]; ok {
@@ -77,9 +77,9 @@ func (c *Controller) GetSidecarContainer(r *rapi.Restic, prefixHostname bool) ap
 		Args: []string{
 			"schedule",
 			"--v=3",
+			"--workload=" + workload,
 			"--namespace=" + r.Namespace,
 			"--name=" + r.Name,
-			"--scratchDir=/tmp",
 		},
 		VolumeMounts: []apiv1.VolumeMount{
 			{

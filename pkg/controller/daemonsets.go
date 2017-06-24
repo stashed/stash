@@ -62,7 +62,7 @@ func (c *Controller) WatchDaemonSets() {
 }
 
 func (c *Controller) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, restic *sapi.Restic) {
-	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, c.GetSidecarContainer(restic, true))
+	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, c.GetSidecarContainer(restic, resource.Name, true))
 	resource.Spec.Template.Spec.Volumes = addScratchVolume(resource.Spec.Template.Spec.Volumes)
 	resource.Spec.Template.Spec.Volumes = addDownwardVolume(resource.Spec.Template.Spec.Volumes)
 	if restic.Spec.Backend.Local != nil {
