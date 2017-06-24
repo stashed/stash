@@ -27,7 +27,7 @@ const (
 	AZURE_ACCOUNT_KEY  = "AZURE_ACCOUNT_KEY"
 )
 
-func PrepareEnv(client clientset.Interface, resource *sapi.Restic, prefixHostname bool, scratchDir string) error {
+func ExportEnvVars(client clientset.Interface, resource *sapi.Restic, prefixHostname bool, scratchDir string) error {
 	backend := resource.Spec.Backend
 	if backend.RepositorySecretName == "" {
 		return errors.New("Missing repository secret name")

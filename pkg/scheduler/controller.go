@@ -172,7 +172,7 @@ func (c *controller) configureScheduler() error {
 		c.cron = cron.New()
 	}
 
-	err := restic.PrepareEnv(c.KubeClient, r, c.prefixHostname, c.scratchDir)
+	err := restic.ExportEnvVars(c.KubeClient, r, c.prefixHostname, c.scratchDir)
 	if err != nil {
 		return err
 	}
