@@ -40,6 +40,9 @@ type controller struct {
 	resourceNamespace string
 	resourceName      string
 
+	prefixHostname bool
+	scratchDir     string
+
 	resource        chan *sapi.Restic
 	resourceVersion string
 	locked          chan struct{}
@@ -48,12 +51,14 @@ type controller struct {
 	recorder record.EventRecorder
 }
 
-func NewController(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, namespace, name string) *controller {
+func NewController(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, namespace, name string, prefixHostname bool, scratchDir string) *controller {
 	return &controller{
 		KubeClient:        kubeClient,
 		StashClient:       stashClient,
 		resourceNamespace: namespace,
 		resourceName:      name,
+		prefixHostname:    prefixHostname,
+		scratchDir:        scratchDir,
 		resource:          make(chan *sapi.Restic),
 		recorder:          eventer.NewEventRecorder(kubeClient, "stash-scheduler"),
 	}
@@ -167,7 +172,7 @@ func (c *controller) configureScheduler() error {
 		c.cron = cron.New()
 	}
 
-	err := restic.PrepareEnv(c.KubeClient, r)
+	err := restic.ExportEnvVars(c.KubeClient, r, c.prefixHostname, c.scratchDir)
 	if err != nil {
 		return err
 	}
