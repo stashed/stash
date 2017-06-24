@@ -2,6 +2,8 @@ package: github.com/appscode/stash
 import:
 - package: github.com/appscode/go
 - package: github.com/appscode/log
+- package: github.com/codeskyblue/go-sh
+  version: master
 - package: github.com/ghodss/yaml
   version: v1.0.0
 - package: github.com/golang/glog
