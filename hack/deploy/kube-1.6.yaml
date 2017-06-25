@@ -78,6 +78,7 @@ spec:
       labels:
         app: stash-operator
     spec:
+      serviceAccountName: stash-operator
       containers:
       - name: stash-operator
         args:
