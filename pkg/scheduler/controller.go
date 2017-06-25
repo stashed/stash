@@ -44,7 +44,7 @@ type controller struct {
 	rchan           chan *sapi.Restic
 	resourceVersion string
 	locked          chan struct{}
-	exe             *cli.ResticWrapper
+	resticCLI       *cli.ResticWrapper
 	sh              *shell.Session
 	cron            *cron.Cron
 	recorder        record.EventRecorder
@@ -56,7 +56,7 @@ func NewController(kubeClient clientset.Interface, stashClient scs.ExtensionInte
 		KubeClient:  kubeClient,
 		StashClient: stashClient,
 		opt:         opt,
-		exe:         cli.New(opt.ScratchDir, opt.PrefixHostname),
+		resticCLI:   cli.New(opt.ScratchDir, opt.PrefixHostname),
 		rchan:       make(chan *sapi.Restic),
 		recorder:    eventer.NewEventRecorder(kubeClient, "stash-scheduler"),
 		syncPeriod:  30 * time.Second,
@@ -79,11 +79,11 @@ func (c *controller) Setup() error {
 	if err != nil {
 		return err
 	}
-	err = c.exe.SetupEnv(resource, secret)
+	err = c.resticCLI.SetupEnv(resource, secret)
 	if err != nil {
 		return err
 	}
-	return c.exe.InitRepositoryIfAbsent()
+	return c.resticCLI.InitRepositoryIfAbsent()
 }
 
 func (c *controller) RunAndHold() {
@@ -176,7 +176,7 @@ func (c *controller) configureScheduler() error {
 	if err != nil {
 		return err
 	}
-	err = c.exe.SetupEnv(r, secret)
+	err = c.resticCLI.SetupEnv(r, secret)
 	if err != nil {
 		return err
 	}
@@ -305,7 +305,7 @@ func (c *controller) runOnce() (err error) {
 
 	for _, fg := range resource.Spec.FileGroups {
 		backupOpMetric := restic_session_duration_seconds.WithLabelValues(sessionID, sanitizeLabelValue(fg.Path), "backup")
-		err = c.measure(c.exe.Backup, resource, fg, backupOpMetric)
+		err = c.measure(c.resticCLI.Backup, resource, fg, backupOpMetric)
 		if err != nil {
 			log.Errorln("Backup operation failed for Reestic %s@%s due to %s", resource.Name, resource.Namespace, err)
 			backupFailure()
@@ -317,7 +317,7 @@ func (c *controller) runOnce() (err error) {
 		}
 
 		forgetOpMetric := restic_session_duration_seconds.WithLabelValues(sessionID, sanitizeLabelValue(fg.Path), "forget")
-		err = c.measure(c.exe.Forget, resource, fg, forgetOpMetric)
+		err = c.measure(c.resticCLI.Forget, resource, fg, forgetOpMetric)
 		if err != nil {
 			log.Errorln("Failed to forget old snapshots for Restic %s@%s due to %s", resource.Name, resource.Namespace, err)
 			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToRetention, " ERROR: "+err.Error())
