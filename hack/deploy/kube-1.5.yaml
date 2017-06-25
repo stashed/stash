@@ -20,7 +20,7 @@ spec:
         args:
         - run
         - --v=3
-        image: appscode/stash:$TAG
+        image: appscode/stash:3.0.0
         ports:
         - containerPort: 56790
           name: http
