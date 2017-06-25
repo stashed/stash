@@ -19,38 +19,9 @@ func (f *Framework) StatefulSet(namespace string) apps.StatefulSet {
 			},
 		},
 		Spec: apps.StatefulSetSpec{
-			Replicas: types.Int32P(1),
-			Template: apiv1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "nginx",
-					Labels: map[string]string{
-						"app": "nginx",
-					},
-				},
-				Spec: apiv1.PodSpec{
-					Containers: []apiv1.Container{
-						{
-							Name:  "nginx",
-							Image: "nginx",
-							VolumeMounts: []apiv1.VolumeMount{
-								{
-									Name:      "test-volume",
-									MountPath: "/source_path",
-								},
-							},
-						},
-					},
-					Volumes: []apiv1.Volume{
-						{
-							Name: "test-volume",
-							VolumeSource: apiv1.VolumeSource{
-								EmptyDir: &apiv1.EmptyDirVolumeSource{},
-							},
-						},
-					},
-				},
-			},
-			ServiceName: svc,
+			Replicas:    types.Int32P(1),
+			Template:    &f.PodTemplate(),
+			ServiceName: TEST_HEADLESS_SERVICE,
 		},
 	}
 	container := apiv1.Container{

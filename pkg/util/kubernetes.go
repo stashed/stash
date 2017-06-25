@@ -1,17 +1,21 @@
-package controller
+package util
 
 import (
+	"strconv"
+
 	rapi "github.com/appscode/stash/api"
 	sapi "github.com/appscode/stash/api"
+	scs "github.com/appscode/stash/client/clientset"
 	"github.com/appscode/stash/pkg/docker"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	clientset "k8s.io/client-go/kubernetes"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
-func (c *Controller) IsPreferredAPIResource(groupVersion, kind string) bool {
-	if resourceList, err := c.KubeClient.Discovery().ServerPreferredResources(); err == nil {
+func IsPreferredAPIResource(kubeClient clientset.Interface, groupVersion, kind string) bool {
+	if resourceList, err := kubeClient.Discovery().ServerPreferredResources(); err == nil {
 		for _, resources := range resourceList {
 			if resources.GroupVersion != groupVersion {
 				continue
@@ -26,8 +30,8 @@ func (c *Controller) IsPreferredAPIResource(groupVersion, kind string) bool {
 	return false
 }
 
-func (c *Controller) FindRestic(obj metav1.ObjectMeta) (*sapi.Restic, error) {
-	restics, err := c.StashClient.Restics(obj.Namespace).List(metav1.ListOptions{LabelSelector: labels.Everything().String()})
+func FindRestic(stashClient scs.ExtensionInterface, obj metav1.ObjectMeta) (*sapi.Restic, error) {
+	restics, err := stashClient.Restics(obj.Namespace).List(metav1.ListOptions{LabelSelector: labels.Everything().String()})
 	if kerr.IsNotFound(err) {
 		return nil, nil
 	} else if err != nil {
@@ -45,25 +49,24 @@ func (c *Controller) FindRestic(obj metav1.ObjectMeta) (*sapi.Restic, error) {
 	return nil, nil
 }
 
-func (c *Controller) restartPods(namespace string, selector *metav1.LabelSelector) error {
+func RestartPods(kubeClient clientset.Interface, namespace string, selector *metav1.LabelSelector) error {
 	r, err := metav1.LabelSelectorAsSelector(selector)
 	if err != nil {
 		return err
 	}
-	return c.KubeClient.CoreV1().Pods(namespace).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{
+	return kubeClient.CoreV1().Pods(namespace).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{
 		LabelSelector: r.String(),
 	})
 }
 
-func getString(m map[string]string, key string) string {
+func GetString(m map[string]string, key string) string {
 	if m == nil {
 		return ""
 	}
 	return m[key]
 }
 
-func (c *Controller) GetSidecarContainer(r *rapi.Restic, workload string, prefixHostname bool) apiv1.Container {
-	tag := c.SidecarImageTag
+func GetSidecarContainer(r *rapi.Restic, tag, workload string, prefixHostname bool) apiv1.Container {
 	if r.Annotations != nil {
 		if v, ok := r.Annotations[sapi.VersionTag]; ok {
 			tag = v
@@ -80,6 +83,7 @@ func (c *Controller) GetSidecarContainer(r *rapi.Restic, workload string, prefix
 			"--workload=" + workload,
 			"--namespace=" + r.Namespace,
 			"--name=" + r.Name,
+			"--prefixHostname=" + strconv.FormatBool(prefixHostname),
 		},
 		VolumeMounts: []apiv1.VolumeMount{
 			{
@@ -87,9 +91,6 @@ func (c *Controller) GetSidecarContainer(r *rapi.Restic, workload string, prefix
 				MountPath: "/tmp",
 			},
 		},
-	}
-	if prefixHostname {
-		sidecar.Args = append(sidecar.Args, "--prefixHostname=true")
 	}
 	if r.Spec.Backend.Local != nil {
 		sidecar.VolumeMounts = append(sidecar.VolumeMounts, apiv1.VolumeMount{
@@ -100,14 +101,14 @@ func (c *Controller) GetSidecarContainer(r *rapi.Restic, workload string, prefix
 	return sidecar
 }
 
-func (c *Controller) addAnnotation(r *rapi.Restic) {
+func AddAnnotation(r *rapi.Restic, tag string) {
 	if r.ObjectMeta.Annotations == nil {
 		r.ObjectMeta.Annotations = make(map[string]string)
 	}
-	r.ObjectMeta.Annotations[sapi.VersionTag] = c.SidecarImageTag
+	r.ObjectMeta.Annotations[sapi.VersionTag] = tag
 }
 
-func removeContainer(c []apiv1.Container, name string) []apiv1.Container {
+func RemoveContainer(c []apiv1.Container, name string) []apiv1.Container {
 	for i, v := range c {
 		if v.Name == name {
 			c = append(c[:i], c[i+1:]...)
@@ -117,7 +118,7 @@ func removeContainer(c []apiv1.Container, name string) []apiv1.Container {
 	return c
 }
 
-func addScratchVolume(volumes []apiv1.Volume) []apiv1.Volume {
+func AddScratchVolume(volumes []apiv1.Volume) []apiv1.Volume {
 	return append(volumes, apiv1.Volume{
 		Name: ScratchDirVolumeName,
 		VolumeSource: apiv1.VolumeSource{
@@ -127,7 +128,7 @@ func addScratchVolume(volumes []apiv1.Volume) []apiv1.Volume {
 }
 
 // https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#store-pod-fields
-func addDownwardVolume(volumes []apiv1.Volume) []apiv1.Volume {
+func AddDownwardVolume(volumes []apiv1.Volume) []apiv1.Volume {
 	return append(volumes, apiv1.Volume{
 		Name: PodinfoVolumeName,
 		VolumeSource: apiv1.VolumeSource{
@@ -145,7 +146,7 @@ func addDownwardVolume(volumes []apiv1.Volume) []apiv1.Volume {
 	})
 }
 
-func removeVolume(volumes []apiv1.Volume, name string) []apiv1.Volume {
+func RemoveVolume(volumes []apiv1.Volume, name string) []apiv1.Volume {
 	for i, v := range volumes {
 		if v.Name == name {
 			volumes = append(volumes[:i], volumes[i+1:]...)
