@@ -1,4 +1,4 @@
-package scheduler
+package cli
 
 import (
 	"errors"
@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 
 	sapi "github.com/appscode/stash/api"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 const (
@@ -52,74 +52,68 @@ const (
 	OS_AUTH_TOKEN  = "OS_AUTH_TOKEN"
 )
 
-func (c *controller) SetEnvVars(resource *sapi.Restic) error {
-	backend := resource.Spec.Backend
-	if backend.RepositorySecretName == "" {
-		return errors.New("Missing repository secret name")
-	}
-	secret, err := c.KubeClient.CoreV1().Secrets(resource.Namespace).Get(backend.RepositorySecretName, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
+func (w *ResticWrapper) SetupEnv(resource *sapi.Restic, secret *apiv1.Secret) error {
 	if v, ok := secret.Data[RESTIC_PASSWORD]; !ok {
 		return errors.New("Missing repository password")
 	} else {
-		c.sh.SetEnv(RESTIC_PASSWORD, string(v))
+		w.sh.SetEnv(RESTIC_PASSWORD, string(v))
 	}
 
+	var err error
 	hostname := ""
-	if c.opt.PrefixHostname {
+	if w.prefixHostname {
 		hostname, err = os.Hostname()
 		if err != nil {
 			return err
 		}
 	}
 
+	backend := resource.Spec.Backend
 	if backend.Local != nil {
 		r := backend.Local.Path
-		c.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
+		w.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
 	} else if backend.S3 != nil {
 		r := fmt.Sprintf("s3:%s:%s:%s", backend.S3.Endpoint, backend.S3.Bucket, backend.S3.Prefix)
-		c.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
-		c.sh.SetEnv(AWS_ACCESS_KEY_ID, string(secret.Data[AWS_ACCESS_KEY_ID]))
-		c.sh.SetEnv(AWS_SECRET_ACCESS_KEY, string(secret.Data[AWS_SECRET_ACCESS_KEY]))
+		w.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
+		w.sh.SetEnv(AWS_ACCESS_KEY_ID, string(secret.Data[AWS_ACCESS_KEY_ID]))
+		w.sh.SetEnv(AWS_SECRET_ACCESS_KEY, string(secret.Data[AWS_SECRET_ACCESS_KEY]))
 	} else if backend.GCS != nil {
 		r := fmt.Sprintf("gs:%s:%s:%s", backend.GCS.Location, backend.GCS.Bucket, backend.GCS.Prefix)
-		c.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
-		c.sh.SetEnv(GOOGLE_PROJECT_ID, string(secret.Data[GOOGLE_PROJECT_ID]))
-		jsonKeyPath := filepath.Join(c.opt.ScratchDir, "gcs_sa.json")
+		w.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
+		w.sh.SetEnv(GOOGLE_PROJECT_ID, string(secret.Data[GOOGLE_PROJECT_ID]))
+		jsonKeyPath := filepath.Join(w.scratchDir, "gcs_sa.json")
 		err = ioutil.WriteFile(jsonKeyPath, secret.Data[GOOGLE_SERVICE_ACCOUNT_JSON_KEY], 600)
 		if err != nil {
 			return err
 		}
-		c.sh.SetEnv(GOOGLE_APPLICATION_CREDENTIALS, jsonKeyPath)
+		w.sh.SetEnv(GOOGLE_APPLICATION_CREDENTIALS, jsonKeyPath)
 	} else if backend.Azure != nil {
 		r := fmt.Sprintf("azure:%s:%s", backend.Azure.Container, backend.Azure.Prefix)
-		c.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
-		c.sh.SetEnv(AZURE_ACCOUNT_NAME, string(secret.Data[AZURE_ACCOUNT_NAME]))
-		c.sh.SetEnv(AZURE_ACCOUNT_KEY, string(secret.Data[AZURE_ACCOUNT_KEY]))
+		w.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
+		w.sh.SetEnv(AZURE_ACCOUNT_NAME, string(secret.Data[AZURE_ACCOUNT_NAME]))
+		w.sh.SetEnv(AZURE_ACCOUNT_KEY, string(secret.Data[AZURE_ACCOUNT_KEY]))
 	} else if backend.Swift != nil {
 		r := fmt.Sprintf("swift:%s:%s", backend.Swift.Container, backend.Swift.Prefix)
-		c.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
+		w.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
 		// For keystone v1 authentication
-		c.sh.SetEnv(ST_AUTH, string(secret.Data[ST_AUTH]))
-		c.sh.SetEnv(ST_USER, string(secret.Data[ST_USER]))
-		c.sh.SetEnv(ST_KEY, string(secret.Data[ST_KEY]))
+		w.sh.SetEnv(ST_AUTH, string(secret.Data[ST_AUTH]))
+		w.sh.SetEnv(ST_USER, string(secret.Data[ST_USER]))
+		w.sh.SetEnv(ST_KEY, string(secret.Data[ST_KEY]))
 		// For keystone v2 authentication (some variables are optional)
-		c.sh.SetEnv(OS_AUTH_URL, string(secret.Data[OS_AUTH_URL]))
-		c.sh.SetEnv(OS_REGION_NAME, string(secret.Data[OS_REGION_NAME]))
-		c.sh.SetEnv(OS_USERNAME, string(secret.Data[OS_USERNAME]))
-		c.sh.SetEnv(OS_PASSWORD, string(secret.Data[OS_PASSWORD]))
-		c.sh.SetEnv(OS_TENANT_ID, string(secret.Data[OS_TENANT_ID]))
-		c.sh.SetEnv(OS_TENANT_NAME, string(secret.Data[OS_TENANT_NAME]))
+		w.sh.SetEnv(OS_AUTH_URL, string(secret.Data[OS_AUTH_URL]))
+		w.sh.SetEnv(OS_REGION_NAME, string(secret.Data[OS_REGION_NAME]))
+		w.sh.SetEnv(OS_USERNAME, string(secret.Data[OS_USERNAME]))
+		w.sh.SetEnv(OS_PASSWORD, string(secret.Data[OS_PASSWORD]))
+		w.sh.SetEnv(OS_TENANT_ID, string(secret.Data[OS_TENANT_ID]))
+		w.sh.SetEnv(OS_TENANT_NAME, string(secret.Data[OS_TENANT_NAME]))
 		// For keystone v3 authentication (some variables are optional)
-		c.sh.SetEnv(OS_USER_DOMAIN_NAME, string(secret.Data[OS_USER_DOMAIN_NAME]))
-		c.sh.SetEnv(OS_PROJECT_NAME, string(secret.Data[AZURE_ACCOUNT_NAME]))
-		c.sh.SetEnv(AZURE_ACCOUNT_NAME, string(secret.Data[OS_PROJECT_NAME]))
-		c.sh.SetEnv(OS_PROJECT_DOMAIN_NAME, string(secret.Data[OS_PROJECT_DOMAIN_NAME]))
+		w.sh.SetEnv(OS_USER_DOMAIN_NAME, string(secret.Data[OS_USER_DOMAIN_NAME]))
+		w.sh.SetEnv(OS_PROJECT_NAME, string(secret.Data[AZURE_ACCOUNT_NAME]))
+		w.sh.SetEnv(AZURE_ACCOUNT_NAME, string(secret.Data[OS_PROJECT_NAME]))
+		w.sh.SetEnv(OS_PROJECT_DOMAIN_NAME, string(secret.Data[OS_PROJECT_DOMAIN_NAME]))
 		// For authentication based on tokens
-		c.sh.SetEnv(OS_STORAGE_URL, string(secret.Data[OS_STORAGE_URL]))
-		c.sh.SetEnv(OS_AUTH_TOKEN, string(secret.Data[OS_AUTH_TOKEN]))
+		w.sh.SetEnv(OS_STORAGE_URL, string(secret.Data[OS_STORAGE_URL]))
+		w.sh.SetEnv(OS_AUTH_TOKEN, string(secret.Data[OS_AUTH_TOKEN]))
 	} else if backend.Rest != nil {
 		u, err := url.Parse(backend.Rest.URL)
 		if err != nil {
@@ -134,12 +128,12 @@ func (c *controller) SetEnvVars(resource *sapi.Restic) error {
 		}
 		u.Path = filepath.Join(u.Path, hostname) // TODO: check
 		r := fmt.Sprintf("rest:%s", u.String())
-		c.sh.SetEnv(RESTIC_REPOSITORY, r)
+		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 	} else if backend.B2 != nil {
 		r := fmt.Sprintf("b2:%s:%s", backend.B2.Bucket, backend.B2.Prefix)
-		c.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
-		c.sh.SetEnv(B2_ACCOUNT_ID, string(secret.Data[B2_ACCOUNT_ID]))
-		c.sh.SetEnv(B2_ACCOUNT_KEY, string(secret.Data[B2_ACCOUNT_KEY]))
+		w.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
+		w.sh.SetEnv(B2_ACCOUNT_ID, string(secret.Data[B2_ACCOUNT_ID]))
+		w.sh.SetEnv(B2_ACCOUNT_KEY, string(secret.Data[B2_ACCOUNT_KEY]))
 	}
 	return nil
 }

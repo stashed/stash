@@ -10,6 +10,7 @@ import (
 	"github.com/appscode/log"
 	sapi "github.com/appscode/stash/api"
 	scs "github.com/appscode/stash/client/clientset"
+	"github.com/appscode/stash/pkg/cli"
 	"github.com/appscode/stash/pkg/eventer"
 	shell "github.com/codeskyblue/go-sh"
 	"github.com/prometheus/client_golang/prometheus"
@@ -26,10 +27,6 @@ import (
 	"k8s.io/client-go/tools/record"
 )
 
-const (
-	resticExe = "/restic"
-)
-
 type Options struct {
 	Workload          string
 	ResourceNamespace string
@@ -44,9 +41,10 @@ type controller struct {
 	KubeClient      clientset.Interface
 	StashClient     scs.ExtensionInterface
 	opt             Options
-	resource        chan *sapi.Restic
+	rchan           chan *sapi.Restic
 	resourceVersion string
 	locked          chan struct{}
+	resticCLI       *cli.ResticWrapper
 	sh              *shell.Session
 	cron            *cron.Cron
 	recorder        record.EventRecorder
@@ -58,8 +56,8 @@ func NewController(kubeClient clientset.Interface, stashClient scs.ExtensionInte
 		KubeClient:  kubeClient,
 		StashClient: stashClient,
 		opt:         opt,
-		sh:          shell.NewSession(),
-		resource:    make(chan *sapi.Restic),
+		resticCLI:   cli.New(opt.ScratchDir, opt.PrefixHostname),
+		rchan:       make(chan *sapi.Restic),
 		recorder:    eventer.NewEventRecorder(kubeClient, "stash-scheduler"),
 		syncPeriod:  30 * time.Second,
 	}
@@ -74,19 +72,18 @@ func (c *controller) Setup() error {
 	if err != nil {
 		return err
 	}
-
-	err = c.SetEnvVars(resource)
+	if resource.Spec.Backend.RepositorySecretName == "" {
+		return errors.New("Missing repository secret name")
+	}
+	secret, err := c.KubeClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.RepositorySecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
-
-	if err = c.sh.Command(resticExe, "snapshots", "--json").Run(); err != nil {
-		err = c.sh.Command(resticExe, "init").Run()
-		if err != nil {
-			return err
-		}
+	err = c.resticCLI.SetupEnv(resource, secret)
+	if err != nil {
+		return err
 	}
-	return nil
+	return c.resticCLI.InitRepositoryIfAbsent()
 }
 
 func (c *controller) RunAndHold() {
@@ -107,7 +104,7 @@ func (c *controller) RunAndHold() {
 			AddFunc: func(obj interface{}) {
 				if r, ok := obj.(*sapi.Restic); ok {
 					if r.Name == c.opt.ResourceName {
-						c.resource <- r
+						c.rchan <- r
 						err := c.configureScheduler()
 						if err != nil {
 							schedulerFailedToAdd()
@@ -136,7 +133,7 @@ func (c *controller) RunAndHold() {
 					return
 				}
 				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) && newObj.Name == c.opt.ResourceName {
-					c.resource <- newObj
+					c.rchan <- newObj
 					err := c.configureScheduler()
 					if err != nil {
 						schedulerFailedToModify()
@@ -164,7 +161,7 @@ func (c *controller) RunAndHold() {
 }
 
 func (c *controller) configureScheduler() error {
-	r := <-c.resource
+	r := <-c.rchan
 	c.resourceVersion = r.ResourceVersion
 	if c.cron == nil {
 		c.locked = make(chan struct{})
@@ -172,7 +169,14 @@ func (c *controller) configureScheduler() error {
 		c.cron = cron.New()
 	}
 
-	err := c.SetEnvVars(r)
+	if r.Spec.Backend.RepositorySecretName == "" {
+		return errors.New("Missing repository secret name")
+	}
+	secret, err := c.KubeClient.CoreV1().Secrets(r.Namespace).Get(r.Spec.Backend.RepositorySecretName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	err = c.resticCLI.SetupEnv(r, secret)
 	if err != nil {
 		return err
 	}
@@ -301,7 +305,7 @@ func (c *controller) runOnce() (err error) {
 
 	for _, fg := range resource.Spec.FileGroups {
 		backupOpMetric := restic_session_duration_seconds.WithLabelValues(sessionID, sanitizeLabelValue(fg.Path), "backup")
-		err = c.measure(c.takeBackup, resource, fg, backupOpMetric)
+		err = c.measure(c.resticCLI.Backup, resource, fg, backupOpMetric)
 		if err != nil {
 			log.Errorln("Backup operation failed for Reestic %s@%s due to %s", resource.Name, resource.Namespace, err)
 			backupFailure()
@@ -313,7 +317,7 @@ func (c *controller) runOnce() (err error) {
 		}
 
 		forgetOpMetric := restic_session_duration_seconds.WithLabelValues(sessionID, sanitizeLabelValue(fg.Path), "forget")
-		err = c.measure(c.forgetSnapshots, resource, fg, forgetOpMetric)
+		err = c.measure(c.resticCLI.Forget, resource, fg, forgetOpMetric)
 		if err != nil {
 			log.Errorln("Failed to forget old snapshots for Restic %s@%s due to %s", resource.Name, resource.Namespace, err)
 			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToRetention, " ERROR: "+err.Error())
@@ -330,55 +334,4 @@ func (c *controller) measure(f func(*sapi.Restic, sapi.FileGroup) error, resourc
 	}()
 	err = f(resource, fg)
 	return
-}
-
-func (c *controller) takeBackup(resource *sapi.Restic, fg sapi.FileGroup) error {
-	args := []interface{}{"backup", fg.Path, "--force"}
-	// add tags if any
-	for _, tag := range fg.Tags {
-		args = append(args, "--tag")
-		args = append(args, tag)
-	}
-	return c.sh.Command(resticExe, args...).Run()
-}
-
-func (c *controller) forgetSnapshots(resource *sapi.Restic, fg sapi.FileGroup) error {
-	args := []interface{}{"forget"}
-	if fg.RetentionPolicy.KeepLastSnapshots > 0 {
-		args = append(args, sapi.KeepLast)
-		args = append(args, fg.RetentionPolicy.KeepLastSnapshots)
-	}
-	if fg.RetentionPolicy.KeepHourlySnapshots > 0 {
-		args = append(args, sapi.KeepHourly)
-		args = append(args, fg.RetentionPolicy.KeepHourlySnapshots)
-	}
-	if fg.RetentionPolicy.KeepDailySnapshots > 0 {
-		args = append(args, sapi.KeepDaily)
-		args = append(args, fg.RetentionPolicy.KeepDailySnapshots)
-	}
-	if fg.RetentionPolicy.KeepWeeklySnapshots > 0 {
-		args = append(args, sapi.KeepWeekly)
-		args = append(args, fg.RetentionPolicy.KeepWeeklySnapshots)
-	}
-	if fg.RetentionPolicy.KeepMonthlySnapshots > 0 {
-		args = append(args, sapi.KeepMonthly)
-		args = append(args, fg.RetentionPolicy.KeepMonthlySnapshots)
-	}
-	if fg.RetentionPolicy.KeepYearlySnapshots > 0 {
-		args = append(args, sapi.KeepYearly)
-		args = append(args, fg.RetentionPolicy.KeepYearlySnapshots)
-	}
-	for _, tag := range fg.RetentionPolicy.KeepTags {
-		args = append(args, "--keep-tag")
-		args = append(args, tag)
-	}
-	for _, tag := range fg.Tags {
-		args = append(args, "--tag")
-		args = append(args, tag)
-	}
-	err := c.sh.Command(resticExe, args...).Run()
-	if err != nil {
-		return err
-	}
-	return nil
 }
