@@ -3,7 +3,7 @@ package e2e_test
 import (
 	sapi "github.com/appscode/stash/api"
 	"github.com/appscode/stash/pkg/util"
-	"github.com/appscode/stash/test/e2e/matcher"
+	. "github.com/appscode/stash/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/client-go/pkg/apis/apps/v1beta1"
@@ -75,7 +75,7 @@ var _ = Describe("DeploymentApp", func() {
 			By("Deleting restic " + restic.Name)
 			f.DeleteRestic(restic.ObjectMeta)
 
-			f.WaitUntilDeploymentAppCondition(deployment.ObjectMeta, matcher.HaveSidecar(util.StashContainer))
+			f.WaitUntilDeploymentAppCondition(deployment.ObjectMeta, HaveSidecar(util.StashContainer))
 		})
 	})
 })
