@@ -14,6 +14,11 @@ import (
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
+const (
+	ScratchDirVolumeName = "stash-scratchdir"
+	PodinfoVolumeName    = "stash-podinfo"
+)
+
 func IsPreferredAPIResource(kubeClient clientset.Interface, groupVersion, kind string) bool {
 	if resourceList, err := kubeClient.Discovery().ServerPreferredResources(); err == nil {
 		for _, resources := range resourceList {
@@ -66,7 +71,7 @@ func GetString(m map[string]string, key string) string {
 	return m[key]
 }
 
-func GetSidecarContainer(r *rapi.Restic, tag, workload string, prefixHostname bool) apiv1.Container {
+func GetSidecarContainer(r *rapi.Restic, tag, app string, prefixHostname bool) apiv1.Container {
 	if r.Annotations != nil {
 		if v, ok := r.Annotations[sapi.VersionTag]; ok {
 			tag = v
@@ -80,7 +85,7 @@ func GetSidecarContainer(r *rapi.Restic, tag, workload string, prefixHostname bo
 		Args: []string{
 			"schedule",
 			"--v=3",
-			"--workload=" + workload,
+			"--app=" + app,
 			"--namespace=" + r.Namespace,
 			"--name=" + r.Name,
 			"--prefixHostname=" + strconv.FormatBool(prefixHostname),

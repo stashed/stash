@@ -4,6 +4,7 @@ import (
 	acrt "github.com/appscode/go/runtime"
 	"github.com/appscode/log"
 	sapi "github.com/appscode/stash/api"
+	"github.com/appscode/stash/pkg/util"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -16,7 +17,7 @@ import (
 
 // Blocks caller. Intended to be called as a Go routine.
 func (c *Controller) WatchDaemonSets() {
-	if !c.IsPreferredAPIResource(extensions.SchemeGroupVersion.String(), "DaemonSet") {
+	if !util.IsPreferredAPIResource(c.KubeClient, extensions.SchemeGroupVersion.String(), "DaemonSet") {
 		log.Warningf("Skipping watching non-preferred GroupVersion:%s Kind:%s", extensions.SchemeGroupVersion.String(), "DaemonSet")
 		return
 	}
@@ -39,7 +40,7 @@ func (c *Controller) WatchDaemonSets() {
 				if resource, ok := obj.(*extensions.DaemonSet); ok {
 					log.Infof("DaemonSet %s@%s added", resource.Name, resource.Namespace)
 
-					restic, err := c.FindRestic(resource.ObjectMeta)
+					restic, err := util.FindRestic(c.StashClient, resource.ObjectMeta)
 					if err != nil {
 						log.Errorf("Error while searching Restic for DaemonSet %s@%s.", resource.Name, resource.Namespace)
 						return
@@ -57,14 +58,14 @@ func (c *Controller) WatchDaemonSets() {
 }
 
 func (c *Controller) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, restic *sapi.Restic) error {
-	if name := getString(resource.Annotations, sapi.ConfigName); name != "" {
+	if name := util.GetString(resource.Annotations, sapi.ConfigName); name != "" {
 		log.Infof("Restic sidecar already exists for DaemonSet %s@%s.", resource.Name, resource.Namespace)
 		return nil
 	}
 
-	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, c.GetSidecarContainer(restic, resource.Name, true))
-	resource.Spec.Template.Spec.Volumes = addScratchVolume(resource.Spec.Template.Spec.Volumes)
-	resource.Spec.Template.Spec.Volumes = addDownwardVolume(resource.Spec.Template.Spec.Volumes)
+	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.GetSidecarContainer(restic, c.SidecarImageTag, resource.Name, true))
+	resource.Spec.Template.Spec.Volumes = util.AddScratchVolume(resource.Spec.Template.Spec.Volumes)
+	resource.Spec.Template.Spec.Volumes = util.AddDownwardVolume(resource.Spec.Template.Spec.Volumes)
 	if restic.Spec.Backend.Local != nil {
 		resource.Spec.Template.Spec.Volumes = append(resource.Spec.Template.Spec.Volumes, restic.Spec.Backend.Local.Volume)
 	}
@@ -83,15 +84,15 @@ func (c *Controller) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, rest
 		return err
 	}
 	sidecarSuccessfullyAdd()
-	return c.restartPods(resource.Namespace, resource.Spec.Selector)
+	return util.RestartPods(c.KubeClient, resource.Namespace, resource.Spec.Selector)
 }
 
 func (c *Controller) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSet, restic *sapi.Restic) error {
-	resource.Spec.Template.Spec.Containers = removeContainer(resource.Spec.Template.Spec.Containers, ContainerName)
-	resource.Spec.Template.Spec.Volumes = removeVolume(resource.Spec.Template.Spec.Volumes, ScratchDirVolumeName)
-	resource.Spec.Template.Spec.Volumes = removeVolume(resource.Spec.Template.Spec.Volumes, PodinfoVolumeName)
+	resource.Spec.Template.Spec.Containers = util.RemoveContainer(resource.Spec.Template.Spec.Containers, ContainerName)
+	resource.Spec.Template.Spec.Volumes = util.RemoveVolume(resource.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
+	resource.Spec.Template.Spec.Volumes = util.RemoveVolume(resource.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
 	if restic.Spec.Backend.Local != nil {
-		resource.Spec.Template.Spec.Volumes = removeVolume(resource.Spec.Template.Spec.Volumes, restic.Spec.Backend.Local.Volume.Name)
+		resource.Spec.Template.Spec.Volumes = util.RemoveVolume(resource.Spec.Template.Spec.Volumes, restic.Spec.Backend.Local.Volume.Name)
 	}
 	if resource.Annotations != nil {
 		delete(resource.Annotations, sapi.ConfigName)
@@ -107,6 +108,6 @@ func (c *Controller) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSe
 		return err
 	}
 	sidecarSuccessfullyAdd()
-	c.restartPods(resource.Namespace, resource.Spec.Selector)
+	util.RestartPods(c.KubeClient, resource.Namespace, resource.Spec.Selector)
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	acrt "github.com/appscode/go/runtime"
 	"github.com/appscode/log"
 	sapi "github.com/appscode/stash/api"
+	"github.com/appscode/stash/pkg/util"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -15,7 +16,7 @@ import (
 
 // Blocks caller. Intended to be called as a Go routine.
 func (c *Controller) WatchReplicationControllers() {
-	if !c.IsPreferredAPIResource(apiv1.SchemeGroupVersion.String(), "ReplicationController") {
+	if !util.IsPreferredAPIResource(c.KubeClient, apiv1.SchemeGroupVersion.String(), "ReplicationController") {
 		log.Warningf("Skipping watching non-preferred GroupVersion:%s Kind:%s", apiv1.SchemeGroupVersion.String(), "ReplicationController")
 		return
 	}
@@ -38,7 +39,7 @@ func (c *Controller) WatchReplicationControllers() {
 				if resource, ok := obj.(*apiv1.ReplicationController); ok {
 					log.Infof("ReplicationController %s@%s added", resource.Name, resource.Namespace)
 
-					restic, err := c.FindRestic(resource.ObjectMeta)
+					restic, err := util.FindRestic(c.StashClient, resource.ObjectMeta)
 					if err != nil {
 						log.Errorf("Error while searching Restic for ReplicationController %s@%s.", resource.Name, resource.Namespace)
 						return
@@ -62,14 +63,14 @@ func (c *Controller) WatchReplicationControllers() {
 }
 
 func (c *Controller) EnsureReplicationControllerSidecar(resource *apiv1.ReplicationController, restic *sapi.Restic) error {
-	if name := getString(resource.Annotations, sapi.ConfigName); name != "" {
+	if name := util.GetString(resource.Annotations, sapi.ConfigName); name != "" {
 		log.Infof("Restic sidecar already exists for ReplicationController %s@%s.", resource.Name, resource.Namespace)
 		return nil
 	}
 
-	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, c.GetSidecarContainer(restic, resource.Name, false))
-	resource.Spec.Template.Spec.Volumes = addScratchVolume(resource.Spec.Template.Spec.Volumes)
-	resource.Spec.Template.Spec.Volumes = addDownwardVolume(resource.Spec.Template.Spec.Volumes)
+	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.GetSidecarContainer(restic, c.SidecarImageTag, resource.Name, false))
+	resource.Spec.Template.Spec.Volumes = util.AddScratchVolume(resource.Spec.Template.Spec.Volumes)
+	resource.Spec.Template.Spec.Volumes = util.AddDownwardVolume(resource.Spec.Template.Spec.Volumes)
 	if restic.Spec.Backend.Local != nil {
 		resource.Spec.Template.Spec.Volumes = append(resource.Spec.Template.Spec.Volumes, restic.Spec.Backend.Local.Volume)
 	}
@@ -85,15 +86,15 @@ func (c *Controller) EnsureReplicationControllerSidecar(resource *apiv1.Replicat
 	} else if err != nil {
 		return err
 	}
-	return c.restartPods(resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector})
+	return util.RestartPods(c.KubeClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector})
 }
 
 func (c *Controller) EnsureReplicationControllerSidecarDeleted(resource *apiv1.ReplicationController, restic *sapi.Restic) error {
-	resource.Spec.Template.Spec.Containers = removeContainer(resource.Spec.Template.Spec.Containers, ContainerName)
-	resource.Spec.Template.Spec.Volumes = removeVolume(resource.Spec.Template.Spec.Volumes, ScratchDirVolumeName)
-	resource.Spec.Template.Spec.Volumes = removeVolume(resource.Spec.Template.Spec.Volumes, PodinfoVolumeName)
+	resource.Spec.Template.Spec.Containers = util.RemoveContainer(resource.Spec.Template.Spec.Containers, ContainerName)
+	resource.Spec.Template.Spec.Volumes = util.RemoveVolume(resource.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
+	resource.Spec.Template.Spec.Volumes = util.RemoveVolume(resource.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
 	if restic.Spec.Backend.Local != nil {
-		resource.Spec.Template.Spec.Volumes = removeVolume(resource.Spec.Template.Spec.Volumes, restic.Spec.Backend.Local.Volume.Name)
+		resource.Spec.Template.Spec.Volumes = util.RemoveVolume(resource.Spec.Template.Spec.Volumes, restic.Spec.Backend.Local.Volume.Name)
 	}
 	if resource.Annotations != nil {
 		delete(resource.Annotations, sapi.ConfigName)
@@ -109,6 +110,6 @@ func (c *Controller) EnsureReplicationControllerSidecarDeleted(resource *apiv1.R
 		return err
 	}
 	sidecarSuccessfullyDeleted()
-	c.restartPods(resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector})
+	util.RestartPods(c.KubeClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector})
 	return nil
 }

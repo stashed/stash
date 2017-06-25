@@ -16,16 +16,10 @@ const (
 	StashNamespace    = "STASH_NAMESPACE"
 	StashResourceName = "STASH_RESOURCE_NAME"
 
-	ScratchDirVolumeName = "stash-scratchdir"
-	PodinfoVolumeName    = "stash-podinfo"
-
-	RESTIC_PASSWORD       = "RESTIC_PASSWORD"
 	ReplicationController = "ReplicationController"
 	ReplicaSet            = "ReplicaSet"
 	Deployment            = "Deployment"
 	DaemonSet             = "DaemonSet"
-	StatefulSet           = "StatefulSet"
-	Force                 = "force"
 )
 
 type Controller struct {

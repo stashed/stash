@@ -23,8 +23,8 @@ func sanitizeLabelValue(name string) string {
 }
 
 func (c *Scheduler) JobName(resource *sapi.Restic) string {
-	if c.opt.Workload != "" {
-		return sanitizeLabelValue(resource.Namespace + "-" + c.opt.Workload)
+	if c.opt.App != "" {
+		return sanitizeLabelValue(resource.Namespace + "-" + c.opt.App)
 	}
 	if host, err := os.Hostname(); err != nil {
 		return sanitizeLabelValue(resource.Namespace + "-" + host)
@@ -36,6 +36,9 @@ func (c *Scheduler) GroupingKeys(resource *sapi.Restic) map[string]string {
 	labels := make(map[string]string)
 	if c.opt.PrefixHostname {
 		labels = push.HostnameGroupingKey()
+	}
+	if c.opt.App != "" {
+		labels["app"] = sanitizeLabelValue(c.opt.App)
 	}
 	labels["namespace"] = resource.Namespace
 	labels["stash_config"] = resource.Name

@@ -27,7 +27,7 @@ import (
 )
 
 type Options struct {
-	Workload          string
+	App               string
 	ResourceNamespace string
 	ResourceName      string
 	PrefixHostname    bool
