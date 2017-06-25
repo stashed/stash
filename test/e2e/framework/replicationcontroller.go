@@ -8,6 +8,7 @@ import (
 )
 
 func (f *Framework) ReplicationController(namespace string) apiv1.ReplicationController {
+	podTemplate := f.PodTemplate()
 	return apiv1.ReplicationController{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
@@ -18,7 +19,7 @@ func (f *Framework) ReplicationController(namespace string) apiv1.ReplicationCon
 		},
 		Spec: apiv1.ReplicationControllerSpec{
 			Replicas: types.Int32P(1),
-			Template: &f.PodTemplate(),
+			Template: &podTemplate,
 		},
 	}
 }
