@@ -35,7 +35,7 @@ type Controller struct {
 	syncPeriod      time.Duration
 }
 
-func NewController(kubeClient clientset.Interface, extClient scs.ExtensionInterface, tag string) *Controller {
+func New(kubeClient clientset.Interface, extClient scs.ExtensionInterface, tag string) *Controller {
 	return &Controller{
 		KubeClient:      kubeClient,
 		StashClient:     extClient,

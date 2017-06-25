@@ -48,7 +48,7 @@ func NewCmdRun(version string) *cobra.Command {
 			kubeClient := clientset.NewForConfigOrDie(config)
 			stashClient := rcs.NewForConfigOrDie(config)
 
-			ctrl := controller.NewController(kubeClient, stashClient, tag)
+			ctrl := controller.New(kubeClient, stashClient, tag)
 			err = ctrl.Setup()
 			if err != nil {
 				log.Fatalln(err)
