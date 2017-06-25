@@ -40,7 +40,7 @@ func NewController(kubeClient clientset.Interface, extClient scs.ExtensionInterf
 		KubeClient:      kubeClient,
 		StashClient:     extClient,
 		SidecarImageTag: tag,
-		syncPeriod:      time.Minute * 2,
+		syncPeriod:  30 * time.Second,
 	}
 }
 

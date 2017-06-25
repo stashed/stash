@@ -39,11 +39,6 @@ func (c *Controller) WatchDaemonSets() {
 				if resource, ok := obj.(*extensions.DaemonSet); ok {
 					log.Infof("DaemonSet %s@%s added", resource.Name, resource.Namespace)
 
-					if name := getString(resource.Annotations, sapi.ConfigName); name != "" {
-						log.Infof("Restic sidecar already exists for DaemonSet %s@%s.", resource.Name, resource.Namespace)
-						return
-					}
-
 					restic, err := c.FindRestic(resource.ObjectMeta)
 					if err != nil {
 						log.Errorf("Error while searching Restic for DaemonSet %s@%s.", resource.Name, resource.Namespace)
@@ -62,6 +57,11 @@ func (c *Controller) WatchDaemonSets() {
 }
 
 func (c *Controller) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, restic *sapi.Restic) {
+	if name := getString(resource.Annotations, sapi.ConfigName); name != "" {
+		log.Infof("Restic sidecar already exists for DaemonSet %s@%s.", resource.Name, resource.Namespace)
+		return
+	}
+
 	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, c.GetSidecarContainer(restic, resource.Name, true))
 	resource.Spec.Template.Spec.Volumes = addScratchVolume(resource.Spec.Template.Spec.Volumes)
 	resource.Spec.Template.Spec.Volumes = addDownwardVolume(resource.Spec.Template.Spec.Volumes)

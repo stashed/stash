@@ -39,11 +39,6 @@ func (c *Controller) WatchDeploymentExtensions() {
 				if resource, ok := obj.(*extensions.Deployment); ok {
 					log.Infof("Deployment %s@%s added", resource.Name, resource.Namespace)
 
-					if name := getString(resource.Annotations, sapi.ConfigName); name != "" {
-						log.Infof("Restic sidecar already exists for Deployment %s@%s.", resource.Name, resource.Namespace)
-						return
-					}
-
 					restic, err := c.FindRestic(resource.ObjectMeta)
 					if err != nil {
 						log.Errorf("Error while searching Restic for Deployment %s@%s.", resource.Name, resource.Namespace)
@@ -62,6 +57,11 @@ func (c *Controller) WatchDeploymentExtensions() {
 }
 
 func (c *Controller) EnsureDeploymentExtensionSidecar(resource *extensions.Deployment, restic *sapi.Restic) {
+	if name := getString(resource.Annotations, sapi.ConfigName); name != "" {
+		log.Infof("Restic sidecar already exists for Deployment %s@%s.", resource.Name, resource.Namespace)
+		return
+	}
+
 	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, c.GetSidecarContainer(restic, resource.Name, false))
 	resource.Spec.Template.Spec.Volumes = addScratchVolume(resource.Spec.Template.Spec.Volumes)
 	resource.Spec.Template.Spec.Volumes = addDownwardVolume(resource.Spec.Template.Spec.Volumes)
