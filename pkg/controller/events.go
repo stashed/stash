@@ -12,14 +12,6 @@ func sidecarFailedToAdd() {
 	analytics.SendEvent("operator", "added", "failure")
 }
 
-func sidecarSuccessfullyUpdated() {
-	analytics.SendEvent("operator", "updated", "success")
-}
-
-func sidecarFailedToUpdate() {
-	analytics.SendEvent("operator", "updated", "failure")
-}
-
 func sidecarSuccessfullyDeleted() {
 	analytics.SendEvent("operator", "deleted", "success")
 }

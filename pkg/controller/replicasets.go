@@ -103,7 +103,7 @@ func (c *Controller) EnsureReplicaSetSidecarDeleted(resource *extensions.Replica
 	if kerr.IsNotFound(err) {
 		return nil
 	} else if err != nil {
-		sidecarFailedToAdd()
+		sidecarFailedToDelete()
 		log.Errorf("Failed to add sidecar for ReplicaSet %s@%s.", resource.Name, resource.Namespace)
 		return err
 	}

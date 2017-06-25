@@ -103,7 +103,7 @@ func (c *Controller) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSe
 	if kerr.IsNotFound(err) {
 		return nil
 	} else if err != nil {
-		sidecarFailedToAdd()
+		sidecarFailedToDelete()
 		log.Errorf("Failed to add sidecar for DaemonSet %s@%s.", resource.Name, resource.Namespace)
 		return err
 	}

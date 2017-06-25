@@ -105,7 +105,7 @@ func (c *Controller) EnsureReplicationControllerSidecarDeleted(resource *apiv1.R
 	if kerr.IsNotFound(err) {
 		return nil
 	} else if err != nil {
-		sidecarFailedToAdd()
+		sidecarFailedToDelete()
 		log.Errorf("Failed to add sidecar for ReplicationController %s@%s.", resource.Name, resource.Namespace)
 		return err
 	}

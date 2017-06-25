@@ -103,7 +103,6 @@ func (c *Scheduler) RunAndHold() {
 						c.rchan <- r
 						err := c.configureScheduler()
 						if err != nil {
-							schedulerFailedToAdd()
 							c.recorder.Eventf(
 								r,
 								apiv1.EventTypeWarning,
@@ -111,8 +110,6 @@ func (c *Scheduler) RunAndHold() {
 								"Failed to start backup process reason %v", err,
 							)
 							log.Errorln(err)
-						} else {
-							schedulerSuccessfullyAdded()
 						}
 					}
 				}
@@ -132,7 +129,6 @@ func (c *Scheduler) RunAndHold() {
 					c.rchan <- newObj
 					err := c.configureScheduler()
 					if err != nil {
-						schedulerFailedToModify()
 						c.recorder.Eventf(
 							newObj,
 							apiv1.EventTypeWarning,
@@ -140,8 +136,6 @@ func (c *Scheduler) RunAndHold() {
 							"Failed to update backup process reason %v", err,
 						)
 						log.Errorln(err)
-					} else {
-						schedulerSuccessfullyModified()
 					}
 				}
 			},
@@ -197,11 +191,8 @@ func (c *Scheduler) configureScheduler() error {
 	}
 	_, err = c.cron.AddFunc(interval, func() {
 		if err := c.runOnce(); err != nil {
-			stashJobFailure()
 			c.recorder.Event(r, apiv1.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
 			log.Errorln(err)
-		} else {
-			stashJobSuccess()
 		}
 	})
 	if err != nil {
@@ -304,11 +295,9 @@ func (c *Scheduler) runOnce() (err error) {
 		err = c.measure(c.resticCLI.Backup, resource, fg, backupOpMetric)
 		if err != nil {
 			log.Errorln("Backup operation failed for Reestic %s@%s due to %s", resource.Name, resource.Namespace, err)
-			backupFailure()
 			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToBackup, " ERROR: "+err.Error())
 			return
 		} else {
-			backupSuccess()
 			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonSuccessfulBackup, "Backup completed successfully.")
 		}
 

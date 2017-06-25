@@ -103,7 +103,7 @@ func (c *Controller) EnsureDeploymentExtensionSidecarDeleted(resource *extension
 	if kerr.IsNotFound(err) {
 		return nil
 	} else if err != nil {
-		sidecarFailedToAdd()
+		sidecarFailedToDelete()
 		log.Errorf("Failed to add sidecar for Deployment %s@%s.", resource.Name, resource.Namespace)
 		return err
 	}
