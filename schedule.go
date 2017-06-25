@@ -23,7 +23,7 @@ func NewCmdSchedule(version string) *cobra.Command {
 			ResourceName:      "",
 			PrefixHostname:    true,
 			ScratchDir:        "/tmp",
-			PushgatewayURL:    "http://stash-operator:56789",
+			PushgatewayURL:    "http://stash-operator.kube-system.svc:56789",
 			PodLabelsPath:     "/etc/labels",
 		}
 		enableAnalytics bool = true

@@ -15,7 +15,6 @@ import (
 )
 
 const (
-	OperatorName   = "stash-operator"
 	StashContainer = "stash"
 
 	ScratchDirVolumeName = "stash-scratchdir"

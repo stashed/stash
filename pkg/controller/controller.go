@@ -11,17 +11,6 @@ import (
 	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
-const (
-	ContainerName     = "stash"
-	StashNamespace    = "STASH_NAMESPACE"
-	StashResourceName = "STASH_RESOURCE_NAME"
-
-	ReplicationController = "ReplicationController"
-	ReplicaSet            = "ReplicaSet"
-	Deployment            = "Deployment"
-	DaemonSet             = "DaemonSet"
-)
-
 type Controller struct {
 	kubeClient      clientset.Interface
 	stashClient     scs.ExtensionInterface
