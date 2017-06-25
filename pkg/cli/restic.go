@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"time"
+
 	sapi "github.com/appscode/stash/api"
 	shell "github.com/codeskyblue/go-sh"
 )
@@ -26,9 +28,21 @@ func New(scratchDir string, prefixHostname bool) *resticWrapper {
 	return ctrl
 }
 
-func (w *resticWrapper) ListSnapshots() error {
-	err := w.sh.Command(Exe, "snapshots", "--json").Run()
-	return nil
+type Snapshot struct {
+	ID       string    `json:"id"`
+	Time     time.Time `json:"time"`
+	Tree     string    `json:"tree"`
+	Paths    []string  `json:"paths"`
+	Hostname string    `json:"hostname"`
+	Username string    `json:"username"`
+	UID      int       `json:"uid"`
+	Gid      int       `json:"gid"`
+}
+
+func (w *resticWrapper) ListSnapshots() ([]Snapshot, error) {
+	result := make([]Snapshot, 0)
+	err := w.sh.Command(Exe, "snapshots", "--json").UnmarshalJSON(&result)
+	return result, err
 }
 
 func (w *resticWrapper) InitRepositoryIfAbsent() error {
