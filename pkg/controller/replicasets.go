@@ -56,10 +56,10 @@ func (c *Controller) WatchReplicaSets() {
 	ctrl.Run(wait.NeverStop)
 }
 
-func (c *Controller) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, restic *sapi.Restic) {
+func (c *Controller) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, restic *sapi.Restic) error {
 	if name := getString(resource.Annotations, sapi.ConfigName); name != "" {
 		log.Infof("Restic sidecar already exists for ReplicaSet %s@%s.", resource.Name, resource.Namespace)
-		return
+		return nil
 	}
 
 	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, c.GetSidecarContainer(restic, resource.Name, false))
@@ -76,14 +76,14 @@ func (c *Controller) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, re
 
 	resource, err := c.KubeClient.ExtensionsV1beta1().ReplicaSets(resource.Namespace).Update(resource)
 	if kerr.IsNotFound(err) {
-		return
+		return nil
 	} else if err != nil {
 		sidecarFailedToAdd()
 		log.Errorf("Failed to add sidecar for ReplicaSet %s@%s.", resource.Name, resource.Namespace)
-		return
+		return err
 	}
 	sidecarSuccessfullyAdd()
-	c.restartPods(resource.Namespace, resource.Spec.Selector)
+	return c.restartPods(resource.Namespace, resource.Spec.Selector)
 }
 
 func (c *Controller) EnsureReplicaSetSidecarDeleted(resource *extensions.ReplicaSet, restic *sapi.Restic) error {

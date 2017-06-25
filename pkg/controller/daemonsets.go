@@ -56,10 +56,10 @@ func (c *Controller) WatchDaemonSets() {
 	ctrl.Run(wait.NeverStop)
 }
 
-func (c *Controller) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, restic *sapi.Restic) {
+func (c *Controller) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, restic *sapi.Restic) error {
 	if name := getString(resource.Annotations, sapi.ConfigName); name != "" {
 		log.Infof("Restic sidecar already exists for DaemonSet %s@%s.", resource.Name, resource.Namespace)
-		return
+		return nil
 	}
 
 	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, c.GetSidecarContainer(restic, resource.Name, true))
@@ -76,14 +76,14 @@ func (c *Controller) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, rest
 
 	resource, err := c.KubeClient.ExtensionsV1beta1().DaemonSets(resource.Namespace).Update(resource)
 	if kerr.IsNotFound(err) {
-		return
+		return nil
 	} else if err != nil {
 		sidecarFailedToAdd()
 		log.Errorf("Failed to add sidecar for DaemonSet %s@%s.", resource.Name, resource.Namespace)
-		return
+		return err
 	}
 	sidecarSuccessfullyAdd()
-	c.restartPods(resource.Namespace, resource.Spec.Selector)
+	return c.restartPods(resource.Namespace, resource.Spec.Selector)
 }
 
 func (c *Controller) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSet, restic *sapi.Restic) error {

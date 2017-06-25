@@ -56,10 +56,10 @@ func (c *Controller) WatchDeploymentExtensions() {
 	ctrl.Run(wait.NeverStop)
 }
 
-func (c *Controller) EnsureDeploymentExtensionSidecar(resource *extensions.Deployment, restic *sapi.Restic) {
+func (c *Controller) EnsureDeploymentExtensionSidecar(resource *extensions.Deployment, restic *sapi.Restic) error {
 	if name := getString(resource.Annotations, sapi.ConfigName); name != "" {
 		log.Infof("Restic sidecar already exists for Deployment %s@%s.", resource.Name, resource.Namespace)
-		return
+		return nil
 	}
 
 	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, c.GetSidecarContainer(restic, resource.Name, false))
@@ -76,14 +76,14 @@ func (c *Controller) EnsureDeploymentExtensionSidecar(resource *extensions.Deplo
 
 	resource, err := c.KubeClient.ExtensionsV1beta1().Deployments(resource.Namespace).Update(resource)
 	if kerr.IsNotFound(err) {
-		return
+		return nil
 	} else if err != nil {
 		sidecarFailedToAdd()
 		log.Errorf("Failed to add sidecar for Deployment %s@%s.", resource.Name, resource.Namespace)
-		return
+		return err
 	}
 	sidecarSuccessfullyAdd()
-	c.restartPods(resource.Namespace, resource.Spec.Selector)
+	return c.restartPods(resource.Namespace, resource.Spec.Selector)
 }
 
 func (c *Controller) EnsureDeploymentExtensionSidecarDeleted(resource *extensions.Deployment, restic *sapi.Restic) error {
