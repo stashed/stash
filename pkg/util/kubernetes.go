@@ -15,6 +15,9 @@ import (
 )
 
 const (
+	OperatorName   = "stash-operator"
+	StashContainer = "stash"
+
 	ScratchDirVolumeName = "stash-scratchdir"
 	PodinfoVolumeName    = "stash-podinfo"
 )
@@ -79,7 +82,7 @@ func GetSidecarContainer(r *rapi.Restic, tag, app string, prefixHostname bool) a
 	}
 
 	sidecar := apiv1.Container{
-		Name:            docker.StashContainer,
+		Name:            StashContainer,
 		Image:           docker.ImageOperator + ":" + tag,
 		ImagePullPolicy: apiv1.PullIfNotPresent,
 		Args: []string{

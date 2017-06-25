@@ -6,6 +6,8 @@ import (
 
 const (
 	registryUrl = "https://registry-1.docker.io/"
+
+	ImageOperator = "appscode/stash"
 )
 
 func CheckDockerImageVersion(repository, reference string) error {
