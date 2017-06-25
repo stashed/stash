@@ -12,7 +12,6 @@ import (
 	scs "github.com/appscode/stash/client/clientset"
 	"github.com/appscode/stash/pkg/cli"
 	"github.com/appscode/stash/pkg/eventer"
-	shell "github.com/codeskyblue/go-sh"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
 	"gopkg.in/robfig/cron.v2"
@@ -45,7 +44,6 @@ type Scheduler struct {
 	resourceVersion string
 	locked          chan struct{}
 	resticCLI       *cli.ResticWrapper
-	sh              *shell.Session
 	cron            *cron.Cron
 	recorder        record.EventRecorder
 	syncPeriod      time.Duration
@@ -61,8 +59,6 @@ func New(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt
 		recorder:    eventer.NewEventRecorder(kubeClient, "stash-scheduler"),
 		syncPeriod:  30 * time.Second,
 	}
-	ctrl.sh.SetDir(ctrl.opt.ScratchDir)
-	ctrl.sh.ShowCMD = true
 	return ctrl
 }
 

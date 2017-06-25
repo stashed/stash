@@ -1,20 +1,24 @@
 package framework
 
 import (
-	"fmt"
-
-	"github.com/appscode/go/types"
-	"github.com/appscode/log"
-	sapi "github.com/appscode/stash/api"
-	"github.com/appscode/stash/client/clientset"
-	"github.com/appscode/stash/pkg/controller"
+	"github.com/appscode/go/crypto/rand"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
-	apps "k8s.io/client-go/pkg/apis/apps/v1beta1"
-	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
-type Framework struct {
-
+func (f *Framework) Namespace() apiv1.Namespace {
+	return apiv1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: rand.WithUniqSuffix("test-stash"),
+		},
+	}
 }
 
+func (f *Framework) CreateNamespace(obj apiv1.Namespace) error {
+	_, err := f.KubeClient.CoreV1().Namespaces().Create(&obj)
+	return err
+}
+
+func (f *Framework) DeleteNamespace(meta metav1.ObjectMeta) error {
+	return f.KubeClient.CoreV1().Namespaces().Delete(meta.Name, &metav1.DeleteOptions{})
+}
