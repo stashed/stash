@@ -7,19 +7,17 @@ import (
 	rcs "github.com/appscode/stash/client/clientset"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/test/e2e/framework"
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/mitchellh/go-homedir"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	clientset "k8s.io/client-go/kubernetes"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
 var (
 	ctrl *controller.Controller
 	f    *framework.Framework
-	ns   apiv1.Namespace
 )
 
 func TestE2e(t *testing.T) {
@@ -39,8 +37,7 @@ var _ = BeforeSuite(func() {
 	stashClient := rcs.NewForConfigOrDie(config)
 
 	f = framework.New(kubeClient, stashClient)
-	ns = f.Namespace()
-	err = f.CreateNamespace(f)
+	err = f.CreateNamespace()
 	Expect(err).NotTo(HaveOccurred())
 
 	ctrl = controller.New(kubeClient, stashClient, "canary")
@@ -51,5 +48,5 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	f.DeleteNamespace(ns.ObjectMeta)
+	f.DeleteNamespace()
 })

@@ -1,4 +1,4 @@
-package json_response_matcher
+package matcher
 
 import (
 	"fmt"
