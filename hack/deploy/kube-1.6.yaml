@@ -1,0 +1,123 @@
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: stash-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: stash-operator
+subjects:
+- kind: ServiceAccount
+  name: stash-operator
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: stash-operator
+rules:
+- apiGroups:
+  - extensions
+  resources:
+  - thirdpartyresources
+  verbs: ["get", "create"]
+- apiGroups:
+  - stash.appscode.com
+  resources:
+  - restics
+  verbs: ["*"]
+- apiGroups:
+  - extensions
+  resources:
+  - deployments
+  - replicasets
+  - daemonsets
+  verbs: ["list", "watch", "update"]
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs: ["list", "watch", "update"]
+- apiGroups: [""]
+  resources:
+  - replicationcontrollers
+  verbs: ["list", "watch", "update"]
+- apiGroups: [""]
+  resources:
+  - secrets
+  verbs: ["get"]
+- apiGroups: [""]
+  resources:
+  - events
+  verbs: ["create"]
+- apiGroups: [""]
+  resources:
+  - pods
+  verbs: ["list", delete"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: stash-operator
+  namespace: kube-system
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: stash-operator
+  name: stash-operator
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stash-operator
+  template:
+    metadata:
+      labels:
+        app: stash-operator
+    spec:
+      containers:
+      - name: stash-operator
+        args:
+        - run
+        - --v=3
+        image: appscode/stash:3.0.0
+        ports:
+        - containerPort: 56790
+          name: http
+          protocol: TCP
+      - name: pushgateway
+        args:
+        - -web.listen-address=56789
+        - -persistence.file=/var/pv/pushgateway.dat
+        image: prom/pushgateway:v0.4.0
+        ports:
+        - containerPort: 56789
+          name: pushgateway
+          protocol: TCP
+        volumeMounts:
+          - mountPath: /var/pv
+            name: data-volume
+      volumes:
+        - emptyDir: {}
+          name: data-volume
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: stash-operator
+  name: stash-operator
+  namespace: kube-system
+spec:
+  ports:
+  - name: pushgateway
+    port: 56789
+    targetPort: pushgateway
+  - name: http
+    port: 56790
+    targetPort: http
+  selector:
+    app: stash-operator
