@@ -39,11 +39,6 @@ func (c *Controller) WatchDeploymentApps() {
 				if resource, ok := obj.(*apps.Deployment); ok {
 					log.Infof("Deployment %s@%s added", resource.Name, resource.Namespace)
 
-					if name := getString(resource.Annotations, sapi.ConfigName); name != "" {
-						log.Infof("Restic sidecar already exists for Deployment %s@%s.", resource.Name, resource.Namespace)
-						return
-					}
-
 					restic, err := c.FindRestic(resource.ObjectMeta)
 					if err != nil {
 						log.Errorf("Error while searching Restic for Deployment %s@%s.", resource.Name, resource.Namespace)
@@ -61,7 +56,12 @@ func (c *Controller) WatchDeploymentApps() {
 	ctrl.Run(wait.NeverStop)
 }
 
-func (c *Controller) EnsureDeploymentAppSidecar(resource *apps.Deployment, restic *sapi.Restic) {
+func (c *Controller) EnsureDeploymentAppSidecar(resource *apps.Deployment, restic *sapi.Restic) error {
+	if name := getString(resource.Annotations, sapi.ConfigName); name != "" {
+		log.Infof("Restic sidecar already exists for Deployment %s@%s.", resource.Name, resource.Namespace)
+		return nil
+	}
+
 	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, c.GetSidecarContainer(restic, resource.Name, false))
 	resource.Spec.Template.Spec.Volumes = addScratchVolume(resource.Spec.Template.Spec.Volumes)
 	resource.Spec.Template.Spec.Volumes = addDownwardVolume(resource.Spec.Template.Spec.Volumes)
@@ -76,14 +76,14 @@ func (c *Controller) EnsureDeploymentAppSidecar(resource *apps.Deployment, resti
 
 	resource, err := c.KubeClient.AppsV1beta1().Deployments(resource.Namespace).Update(resource)
 	if kerr.IsNotFound(err) {
-		return
+		return nil
 	} else if err != nil {
 		sidecarFailedToAdd()
 		log.Errorf("Failed to add sidecar for Deployment %s@%s.", resource.Name, resource.Namespace)
-		return
+		return err
 	}
 	sidecarSuccessfullyAdd()
-	c.restartPods(resource.Namespace, resource.Spec.Selector)
+	return c.restartPods(resource.Namespace, resource.Spec.Selector)
 }
 
 func (c *Controller) EnsureDeploymentAppSidecarDeleted(resource *apps.Deployment, restic *sapi.Restic) error {

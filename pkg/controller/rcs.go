@@ -38,11 +38,6 @@ func (c *Controller) WatchReplicationControllers() {
 				if resource, ok := obj.(*apiv1.ReplicationController); ok {
 					log.Infof("ReplicationController %s@%s added", resource.Name, resource.Namespace)
 
-					if name := getString(resource.Annotations, sapi.ConfigName); name != "" {
-						log.Infof("Restic sidecar already exists for ReplicationController %s@%s.", resource.Name, resource.Namespace)
-						return
-					}
-
 					restic, err := c.FindRestic(resource.ObjectMeta)
 					if err != nil {
 						log.Errorf("Error while searching Restic for ReplicationController %s@%s.", resource.Name, resource.Namespace)
@@ -67,6 +62,11 @@ func (c *Controller) WatchReplicationControllers() {
 }
 
 func (c *Controller) EnsureReplicationControllerSidecar(resource *apiv1.ReplicationController, restic *sapi.Restic) error {
+	if name := getString(resource.Annotations, sapi.ConfigName); name != "" {
+		log.Infof("Restic sidecar already exists for ReplicationController %s@%s.", resource.Name, resource.Namespace)
+		return nil
+	}
+
 	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, c.GetSidecarContainer(restic, resource.Name, false))
 	resource.Spec.Template.Spec.Volumes = addScratchVolume(resource.Spec.Template.Spec.Volumes)
 	resource.Spec.Template.Spec.Volumes = addDownwardVolume(resource.Spec.Template.Spec.Volumes)

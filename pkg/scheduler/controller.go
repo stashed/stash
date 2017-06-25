@@ -61,7 +61,7 @@ func NewController(kubeClient clientset.Interface, stashClient scs.ExtensionInte
 		sh:          shell.NewSession(),
 		resource:    make(chan *sapi.Restic),
 		recorder:    eventer.NewEventRecorder(kubeClient, "stash-scheduler"),
-		syncPeriod:  2 * time.Minute,
+		syncPeriod:  30 * time.Second,
 	}
 	ctrl.sh.SetDir(ctrl.opt.ScratchDir)
 	ctrl.sh.ShowCMD = true
