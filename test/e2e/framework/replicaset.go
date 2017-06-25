@@ -29,10 +29,10 @@ func (f *Framework) ReplicaSet(namespace string) extensions.ReplicaSet {
 }
 
 func (f *Framework) CreateReplicaSet(obj extensions.ReplicaSet) error {
-	_, err := f.KubeClient.ExtensionsV1beta1().ReplicaSets(obj.Namespace).Create(&obj)
+	_, err := f.kubeClient.ExtensionsV1beta1().ReplicaSets(obj.Namespace).Create(&obj)
 	return err
 }
 
 func (f *Framework) DeleteReplicaSet(meta metav1.ObjectMeta) error {
-	return f.KubeClient.ExtensionsV1beta1().ReplicaSets(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+	return f.kubeClient.ExtensionsV1beta1().ReplicaSets(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
 }

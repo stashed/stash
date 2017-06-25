@@ -25,10 +25,10 @@ func (f *Framework) ReplicationController(namespace string) apiv1.ReplicationCon
 }
 
 func (f *Framework) CreateReplicationController(obj apiv1.ReplicationController) error {
-	_, err := f.KubeClient.CoreV1().ReplicationControllers(obj.Namespace).Create(&obj)
+	_, err := f.kubeClient.CoreV1().ReplicationControllers(obj.Namespace).Create(&obj)
 	return err
 }
 
 func (f *Framework) DeleteReplicationController(meta metav1.ObjectMeta) error {
-	return f.KubeClient.CoreV1().ReplicationControllers(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+	return f.kubeClient.CoreV1().ReplicationControllers(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
 }

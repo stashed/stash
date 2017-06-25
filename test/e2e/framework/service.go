@@ -20,10 +20,10 @@ func (f *Framework) HeadlessService(namespace string) apiv1.Service {
 }
 
 func (f *Framework) CreateService(obj apiv1.Service) error {
-	_, err := f.KubeClient.CoreV1().Services(obj.Namespace).Create(&obj)
+	_, err := f.kubeClient.CoreV1().Services(obj.Namespace).Create(&obj)
 	return err
 }
 
 func (f *Framework) DeleteService(meta metav1.ObjectMeta) error {
-	return f.KubeClient.CoreV1().Services(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+	return f.kubeClient.CoreV1().Services(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
 }

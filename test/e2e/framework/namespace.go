@@ -15,10 +15,10 @@ func (f *Framework) Namespace() apiv1.Namespace {
 }
 
 func (f *Framework) CreateNamespace(obj apiv1.Namespace) error {
-	_, err := f.KubeClient.CoreV1().Namespaces().Create(&obj)
+	_, err := f.kubeClient.CoreV1().Namespaces().Create(&obj)
 	return err
 }
 
 func (f *Framework) DeleteNamespace(meta metav1.ObjectMeta) error {
-	return f.KubeClient.CoreV1().Namespaces().Delete(meta.Name, &metav1.DeleteOptions{})
+	return f.kubeClient.CoreV1().Namespaces().Delete(meta.Name, &metav1.DeleteOptions{})
 }

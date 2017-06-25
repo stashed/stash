@@ -6,6 +6,13 @@ import (
 )
 
 type Framework struct {
-	KubeClient  clientset.Interface
-	StashClient scs.ExtensionInterface
+	kubeClient  clientset.Interface
+	stashClient scs.ExtensionInterface
+}
+
+func New(kubeClient clientset.Interface, extClient scs.ExtensionInterface) *Framework {
+	return &Framework{
+		kubeClient:  kubeClient,
+		stashClient: extClient,
+	}
 }

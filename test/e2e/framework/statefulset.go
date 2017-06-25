@@ -34,10 +34,10 @@ func (f *Framework) StatefulSet(r sapi.Restic) apps.StatefulSet {
 }
 
 func (f *Framework) CreateStatefulSet(obj apps.StatefulSet) error {
-	_, err := f.KubeClient.AppsV1beta1().StatefulSets(obj.Namespace).Create(&obj)
+	_, err := f.kubeClient.AppsV1beta1().StatefulSets(obj.Namespace).Create(&obj)
 	return err
 }
 
 func (f *Framework) DeleteStatefulset(meta metav1.ObjectMeta) error {
-	return f.KubeClient.AppsV1beta1().StatefulSets(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+	return f.kubeClient.AppsV1beta1().StatefulSets(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
 }

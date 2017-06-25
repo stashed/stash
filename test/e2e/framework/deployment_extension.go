@@ -29,10 +29,10 @@ func (f *Framework) DeploymentExtension(namespace string) extensions.Deployment 
 }
 
 func (f *Framework) CreateDeploymentExtension(obj extensions.Deployment) error {
-	_, err := f.KubeClient.ExtensionsV1beta1().Deployments(obj.Namespace).Create(&obj)
+	_, err := f.kubeClient.ExtensionsV1beta1().Deployments(obj.Namespace).Create(&obj)
 	return err
 }
 
 func (f *Framework) DeleteDeploymentExtension(meta metav1.ObjectMeta) error {
-	return f.KubeClient.ExtensionsV1beta1().Deployments(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+	return f.kubeClient.ExtensionsV1beta1().Deployments(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
 }

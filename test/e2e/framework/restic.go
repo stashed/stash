@@ -50,10 +50,10 @@ func (f *Framework) Restic(namespace string) sapi.Restic {
 }
 
 func (f *Framework) CreateRestic(obj sapi.Restic) error {
-	_, err := f.StashClient.Restics(obj.Namespace).Create(&obj)
+	_, err := f.stashClient.Restics(obj.Namespace).Create(&obj)
 	return err
 }
 
 func (f *Framework) DeleteRestic(meta metav1.ObjectMeta) error {
-	return f.StashClient.Restics(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+	return f.stashClient.Restics(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
 }

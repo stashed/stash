@@ -62,10 +62,10 @@ func (f *Framework) SecretForAzureBackend(namespace string) apiv1.Secret {
 // TODO: Add more methods for Swift, Backblaze B2, Rest server backend.
 
 func (f *Framework) CreateSecret(obj apiv1.Secret) error {
-	_, err := f.KubeClient.CoreV1().Secrets(obj.Namespace).Create(&obj)
+	_, err := f.kubeClient.CoreV1().Secrets(obj.Namespace).Create(&obj)
 	return err
 }
 
 func (f *Framework) DeleteSecret(meta metav1.ObjectMeta) error {
-	return f.KubeClient.CoreV1().Secrets(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+	return f.kubeClient.CoreV1().Secrets(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
 }

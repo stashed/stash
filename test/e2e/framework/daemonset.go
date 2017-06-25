@@ -22,10 +22,10 @@ func (f *Framework) DaemonSet(namespace string) extensions.DaemonSet {
 }
 
 func (f *Framework) CreateDaemonSet(obj extensions.DaemonSet) error {
-	_, err := f.KubeClient.ExtensionsV1beta1().DaemonSets(obj.Namespace).Create(&obj)
+	_, err := f.kubeClient.ExtensionsV1beta1().DaemonSets(obj.Namespace).Create(&obj)
 	return err
 }
 
 func (f *Framework) DeleteDaemonSet(meta metav1.ObjectMeta) error {
-	return f.KubeClient.ExtensionsV1beta1().DaemonSets(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+	return f.kubeClient.ExtensionsV1beta1().DaemonSets(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
 }
