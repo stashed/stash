@@ -88,9 +88,9 @@ var fakeStash = &api.Restic{
 
 func TestEnsureReplicationControllerSidecar(t *testing.T) {
 	ctrl := getTestController()
-	resource, err := ctrl.KubeClient.CoreV1().ReplicationControllers("default").Create(fakeRc)
+	resource, err := ctrl.kubeClient.CoreV1().ReplicationControllers("default").Create(fakeRc)
 	assert.Nil(t, err)
-	restic, err := ctrl.StashClient.Restics("default").Create(fakeStash)
+	restic, err := ctrl.stashClient.Restics("default").Create(fakeStash)
 	assert.Nil(t, err)
 	ctrl.EnsureReplicationControllerSidecar(resource, restic)
 	assert.Nil(t, err)
@@ -98,9 +98,9 @@ func TestEnsureReplicationControllerSidecar(t *testing.T) {
 
 func TestEnsureReplicationControllerSidecarDeleted(t *testing.T) {
 	ctrl := getTestController()
-	resource, err := ctrl.KubeClient.CoreV1().ReplicationControllers("default").Create(fakeRc)
+	resource, err := ctrl.kubeClient.CoreV1().ReplicationControllers("default").Create(fakeRc)
 	assert.Nil(t, err)
-	restic, err := ctrl.StashClient.Restics("default").Create(fakeStash)
+	restic, err := ctrl.stashClient.Restics("default").Create(fakeStash)
 	assert.Nil(t, err)
 	err = ctrl.EnsureReplicationControllerSidecarDeleted(resource, restic)
 	assert.Nil(t, err)
@@ -108,8 +108,8 @@ func TestEnsureReplicationControllerSidecarDeleted(t *testing.T) {
 
 func getTestController() *Controller {
 	fakeController := &Controller{
-		KubeClient:      fake.NewSimpleClientset(),
-		StashClient:     rfake.NewFakeStashClient(),
+		kubeClient:      fake.NewSimpleClientset(),
+		stashClient:     rfake.NewFakeStashClient(),
 		syncPeriod:      time.Minute * 2,
 		SidecarImageTag: "canary",
 	}

@@ -59,7 +59,7 @@ func NewCmdSchedule(version string) *cobra.Command {
 				log.Fatalf("No write access in scratch dir: %s", err)
 			}
 
-			ctrl := scheduler.NewController(kubeClient, stashClient, opt)
+			ctrl := scheduler.New(kubeClient, stashClient, opt)
 			err = ctrl.Setup()
 			if err != nil {
 				log.Fatalf("Failed to setup scheduler: %s", err)
@@ -69,7 +69,7 @@ func NewCmdSchedule(version string) *cobra.Command {
 	}
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&opt.Workload, "workload", opt.Workload, "Name of workload that owns this pod")
+	cmd.Flags().StringVar(&opt.App, "app", opt.App, "Name of app where sidecar pod is added")
 	cmd.Flags().StringVar(&opt.ResourceNamespace, "namespace", opt.ResourceNamespace, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&opt.ResourceName, "name", opt.ResourceName, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().BoolVar(&opt.PrefixHostname, "prefix-hostname", opt.PrefixHostname, "If set, adds Hostname as prefix to repository. This should be true for StatefulSets & DaemonSets. This should be false in all other cases.")

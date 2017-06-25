@@ -1,4 +1,4 @@
-package test
+package e2e_test
 
 import (
 	"fmt"
@@ -53,18 +53,18 @@ func createTestNamespace(ctrl *controller.Controller, name string) error {
 			Name: name,
 		},
 	}
-	_, err := ctrl.KubeClient.CoreV1().Namespaces().Create(ns)
+	_, err := ctrl.kubeClient.CoreV1().Namespaces().Create(ns)
 	return err
 }
 
 func deleteTestNamespace(watcher *controller.Controller, name string) {
-	if err := watcher.KubeClient.CoreV1().Namespaces().Delete(name, &metav1.DeleteOptions{}); err != nil {
+	if err := watcher.kubeClient.CoreV1().Namespaces().Delete(name, &metav1.DeleteOptions{}); err != nil {
 		fmt.Println(err)
 	}
 }
 
 func createReplicationController(watcher *controller.Controller, name string, backupName string) error {
-	kubeClient := watcher.KubeClient
+	kubeClient := watcher.kubeClient
 	rc := &apiv1.ReplicationController{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -87,7 +87,7 @@ func createReplicationController(watcher *controller.Controller, name string, ba
 }
 
 func deleteReplicationController(ctrl *controller.Controller, name string) {
-	if err := ctrl.KubeClient.CoreV1().ReplicationControllers(namespace).Delete(name, &metav1.DeleteOptions{}); err != nil {
+	if err := ctrl.kubeClient.CoreV1().ReplicationControllers(namespace).Delete(name, &metav1.DeleteOptions{}); err != nil {
 		log.Errorln(err)
 	}
 }
@@ -106,12 +106,12 @@ func createSecret(ctrl *controller.Controller, name string) error {
 			"password": []byte("appscode"),
 		},
 	}
-	_, err := ctrl.KubeClient.CoreV1().Secrets(namespace).Create(secret)
+	_, err := ctrl.kubeClient.CoreV1().Secrets(namespace).Create(secret)
 	return err
 }
 
 func deleteSecret(ctrl *controller.Controller, name string) {
-	if err := ctrl.KubeClient.CoreV1().Secrets(namespace).Delete(name, &metav1.DeleteOptions{}); err != nil {
+	if err := ctrl.kubeClient.CoreV1().Secrets(namespace).Delete(name, &metav1.DeleteOptions{}); err != nil {
 		log.Errorln(err)
 	}
 }
@@ -155,12 +155,12 @@ func createRestic(ctrl *controller.Controller, backupName string, secretName str
 			},
 		},
 	}
-	_, err := ctrl.StashClient.Restics(namespace).Create(stash)
+	_, err := ctrl.stashClient.Restics(namespace).Create(stash)
 	return err
 }
 
 func deleteRestic(ctrl *controller.Controller, stashName string) error {
-	return ctrl.StashClient.Restics(namespace).Delete(stashName, nil)
+	return ctrl.stashClient.Restics(namespace).Delete(stashName, nil)
 }
 
 func createReplicaset(ctrl *controller.Controller, name string, stashName string) error {
@@ -182,12 +182,12 @@ func createReplicaset(ctrl *controller.Controller, name string, stashName string
 			},
 		},
 	}
-	_, err := ctrl.KubeClient.ExtensionsV1beta1().ReplicaSets(namespace).Create(replicaset)
+	_, err := ctrl.kubeClient.ExtensionsV1beta1().ReplicaSets(namespace).Create(replicaset)
 	return err
 }
 
 func deleteReplicaset(watcher *controller.Controller, name string) {
-	if err := watcher.KubeClient.ExtensionsV1beta1().ReplicaSets(namespace).Delete(name, &metav1.DeleteOptions{}); err != nil {
+	if err := watcher.kubeClient.ExtensionsV1beta1().ReplicaSets(namespace).Delete(name, &metav1.DeleteOptions{}); err != nil {
 		log.Errorln(err)
 	}
 }
@@ -211,12 +211,12 @@ func createDeployment(ctrl *controller.Controller, name string, stashName string
 			Template: *podTemplate,
 		},
 	}
-	_, err := ctrl.KubeClient.ExtensionsV1beta1().Deployments(namespace).Create(deployment)
+	_, err := ctrl.kubeClient.ExtensionsV1beta1().Deployments(namespace).Create(deployment)
 	return err
 }
 
 func deleteDeployment(ctrl *controller.Controller, name string) {
-	if err := ctrl.KubeClient.ExtensionsV1beta1().Deployments(namespace).Delete(name, &metav1.DeleteOptions{}); err != nil {
+	if err := ctrl.kubeClient.ExtensionsV1beta1().Deployments(namespace).Delete(name, &metav1.DeleteOptions{}); err != nil {
 		log.Errorln(err)
 	}
 }
@@ -234,12 +234,12 @@ func createDaemonsets(ctrl *controller.Controller, name string, backupName strin
 			Template: *podTemplate,
 		},
 	}
-	_, err := ctrl.KubeClient.ExtensionsV1beta1().DaemonSets(namespace).Create(daemonset)
+	_, err := ctrl.kubeClient.ExtensionsV1beta1().DaemonSets(namespace).Create(daemonset)
 	return err
 }
 
 func deleteDaemonset(ctrl *controller.Controller, name string) {
-	if err := ctrl.KubeClient.ExtensionsV1beta1().DaemonSets(namespace).Delete(name, &metav1.DeleteOptions{}); err != nil {
+	if err := ctrl.kubeClient.ExtensionsV1beta1().DaemonSets(namespace).Delete(name, &metav1.DeleteOptions{}); err != nil {
 		log.Errorln(err)
 	}
 }
@@ -293,12 +293,12 @@ func createStatefulSet(ctrl *controller.Controller, name string, stashName strin
 			EmptyDir: &apiv1.EmptyDirVolumeSource{},
 		},
 	})
-	_, err := ctrl.KubeClient.AppsV1beta1().StatefulSets(namespace).Create(s)
+	_, err := ctrl.kubeClient.AppsV1beta1().StatefulSets(namespace).Create(s)
 	return err
 }
 
 func deleteStatefulset(ctrl *controller.Controller, name string) {
-	if err := ctrl.KubeClient.AppsV1beta1().StatefulSets(namespace).Delete(name, &metav1.DeleteOptions{}); err != nil {
+	if err := ctrl.kubeClient.AppsV1beta1().StatefulSets(namespace).Delete(name, &metav1.DeleteOptions{}); err != nil {
 		log.Errorln(err)
 	}
 }
@@ -324,12 +324,12 @@ func createService(ctrl *controller.Controller, name string) error {
 			},
 		},
 	}
-	_, err := ctrl.KubeClient.CoreV1().Services(namespace).Create(svc)
+	_, err := ctrl.kubeClient.CoreV1().Services(namespace).Create(svc)
 	return err
 }
 
 func deleteService(ctrl *controller.Controller, name string) {
-	err := ctrl.KubeClient.CoreV1().Services(namespace).Delete(name, &metav1.DeleteOptions{})
+	err := ctrl.kubeClient.CoreV1().Services(namespace).Delete(name, &metav1.DeleteOptions{})
 	if err != nil {
 		log.Errorln(err)
 	}

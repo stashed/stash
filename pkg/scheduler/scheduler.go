@@ -12,7 +12,6 @@ import (
 	scs "github.com/appscode/stash/client/clientset"
 	"github.com/appscode/stash/pkg/cli"
 	"github.com/appscode/stash/pkg/eventer"
-	shell "github.com/codeskyblue/go-sh"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
 	"gopkg.in/robfig/cron.v2"
@@ -28,7 +27,7 @@ import (
 )
 
 type Options struct {
-	Workload          string
+	App               string
 	ResourceNamespace string
 	ResourceName      string
 	PrefixHostname    bool
@@ -37,45 +36,42 @@ type Options struct {
 	PodLabelsPath     string
 }
 
-type controller struct {
-	KubeClient      clientset.Interface
-	StashClient     scs.ExtensionInterface
+type Scheduler struct {
+	kubeClient      clientset.Interface
+	stashClient     scs.ExtensionInterface
 	opt             Options
 	rchan           chan *sapi.Restic
 	resourceVersion string
 	locked          chan struct{}
 	resticCLI       *cli.ResticWrapper
-	sh              *shell.Session
 	cron            *cron.Cron
 	recorder        record.EventRecorder
 	syncPeriod      time.Duration
 }
 
-func NewController(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt Options) *controller {
-	ctrl := &controller{
-		KubeClient:  kubeClient,
-		StashClient: stashClient,
+func New(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt Options) *Scheduler {
+	ctrl := &Scheduler{
+		kubeClient:  kubeClient,
+		stashClient: stashClient,
 		opt:         opt,
 		resticCLI:   cli.New(opt.ScratchDir, opt.PrefixHostname),
 		rchan:       make(chan *sapi.Restic),
 		recorder:    eventer.NewEventRecorder(kubeClient, "stash-scheduler"),
 		syncPeriod:  30 * time.Second,
 	}
-	ctrl.sh.SetDir(ctrl.opt.ScratchDir)
-	ctrl.sh.ShowCMD = true
 	return ctrl
 }
 
 // Init and/or connect to repo
-func (c *controller) Setup() error {
-	resource, err := c.StashClient.Restics(c.opt.ResourceNamespace).Get(c.opt.ResourceName)
+func (c *Scheduler) Setup() error {
+	resource, err := c.stashClient.Restics(c.opt.ResourceNamespace).Get(c.opt.ResourceName)
 	if err != nil {
 		return err
 	}
 	if resource.Spec.Backend.RepositorySecretName == "" {
 		return errors.New("Missing repository secret name")
 	}
-	secret, err := c.KubeClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.RepositorySecretName, metav1.GetOptions{})
+	secret, err := c.kubeClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.RepositorySecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -86,15 +82,15 @@ func (c *controller) Setup() error {
 	return c.resticCLI.InitRepositoryIfAbsent()
 }
 
-func (c *controller) RunAndHold() {
+func (c *Scheduler) RunAndHold() {
 	c.cron.Start()
 
 	lw := &cache.ListWatch{
 		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
-			return c.StashClient.Restics(c.opt.ResourceNamespace).List(metav1.ListOptions{})
+			return c.stashClient.Restics(c.opt.ResourceNamespace).List(metav1.ListOptions{})
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return c.StashClient.Restics(c.opt.ResourceNamespace).Watch(metav1.ListOptions{})
+			return c.stashClient.Restics(c.opt.ResourceNamespace).Watch(metav1.ListOptions{})
 		},
 	}
 	_, ctrl := cache.NewInformer(lw,
@@ -160,7 +156,7 @@ func (c *controller) RunAndHold() {
 	ctrl.Run(wait.NeverStop)
 }
 
-func (c *controller) configureScheduler() error {
+func (c *Scheduler) configureScheduler() error {
 	r := <-c.rchan
 	c.resourceVersion = r.ResourceVersion
 	if c.cron == nil {
@@ -172,7 +168,7 @@ func (c *controller) configureScheduler() error {
 	if r.Spec.Backend.RepositorySecretName == "" {
 		return errors.New("Missing repository secret name")
 	}
-	secret, err := c.KubeClient.CoreV1().Secrets(r.Namespace).Get(r.Spec.Backend.RepositorySecretName, metav1.GetOptions{})
+	secret, err := c.kubeClient.CoreV1().Secrets(r.Namespace).Get(r.Spec.Backend.RepositorySecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -192,7 +188,7 @@ func (c *controller) configureScheduler() error {
 		c.recorder.Event(r, apiv1.EventTypeWarning, eventer.EventReasonInvalidCronExpression, err.Error())
 		//Reset Wrong Schedule
 		r.Spec.Schedule = ""
-		_, err = c.StashClient.Restics(r.Namespace).Update(r)
+		_, err = c.stashClient.Restics(r.Namespace).Update(r)
 		if err != nil {
 			return err
 		}
@@ -214,7 +210,7 @@ func (c *controller) configureScheduler() error {
 	return nil
 }
 
-func (c *controller) runOnce() (err error) {
+func (c *Scheduler) runOnce() (err error) {
 	select {
 	case <-c.locked:
 		log.Infof("Acquired lock for Restic %s@%s", c.opt.ResourceName, c.opt.ResourceNamespace)
@@ -227,7 +223,7 @@ func (c *controller) runOnce() (err error) {
 	}
 
 	var resource *sapi.Restic
-	resource, err = c.StashClient.Restics(c.opt.ResourceNamespace).Get(c.opt.ResourceName)
+	resource, err = c.stashClient.Restics(c.opt.ResourceNamespace).Get(c.opt.ResourceName)
 	if kerr.IsNotFound(err) {
 		err = nil
 		return
@@ -298,7 +294,7 @@ func (c *controller) runOnce() (err error) {
 			resource.Status.FirstBackupTime = &startTime
 		}
 		resource.Status.LastBackupDuration = endTime.Sub(startTime.Time).String()
-		if _, e2 := c.StashClient.Restics(resource.Namespace).Update(resource); e2 != nil {
+		if _, e2 := c.stashClient.Restics(resource.Namespace).Update(resource); e2 != nil {
 			log.Errorf("Failed to update status for Restic %s@%s due to %s", resource.Name, resource.Namespace, err)
 		}
 	}()
@@ -327,7 +323,7 @@ func (c *controller) runOnce() (err error) {
 	return
 }
 
-func (c *controller) measure(f func(*sapi.Restic, sapi.FileGroup) error, resource *sapi.Restic, fg sapi.FileGroup, g prometheus.Gauge) (err error) {
+func (c *Scheduler) measure(f func(*sapi.Restic, sapi.FileGroup) error, resource *sapi.Restic, fg sapi.FileGroup, g prometheus.Gauge) (err error) {
 	startTime := time.Now()
 	defer func() {
 		g.Set(time.Now().Sub(startTime).Seconds())
