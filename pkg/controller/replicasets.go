@@ -33,7 +33,7 @@ func (c *Controller) WatchReplicaSets() {
 	}
 	_, ctrl := cache.NewInformer(lw,
 		&extensions.ReplicaSet{},
-		c.SyncPeriod,
+		c.syncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				if resource, ok := obj.(*extensions.ReplicaSet); ok {

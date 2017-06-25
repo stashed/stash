@@ -110,7 +110,7 @@ func getTestController() *Controller {
 	fakeController := &Controller{
 		KubeClient:      fake.NewSimpleClientset(),
 		StashClient:     rfake.NewFakeStashClient(),
-		SyncPeriod:      time.Minute * 2,
+		syncPeriod:      time.Minute * 2,
 		SidecarImageTag: "canary",
 	}
 	return fakeController

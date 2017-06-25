@@ -34,25 +34,23 @@ type Options struct {
 	Workload          string
 	ResourceNamespace string
 	ResourceName      string
-
-	PrefixHostname bool
-	ScratchDir     string
-	PushgatewayURL string
-	PodLabelsPath  string
+	PrefixHostname    bool
+	ScratchDir        string
+	PushgatewayURL    string
+	PodLabelsPath     string
 }
 
 type controller struct {
-	KubeClient  clientset.Interface
-	StashClient scs.ExtensionInterface
-
+	KubeClient      clientset.Interface
+	StashClient     scs.ExtensionInterface
 	opt             Options
 	resource        chan *sapi.Restic
 	resourceVersion string
 	locked          chan struct{}
-
-	sh       *shell.Session
-	cron     *cron.Cron
-	recorder record.EventRecorder
+	sh              *shell.Session
+	cron            *cron.Cron
+	recorder        record.EventRecorder
+	syncPeriod      time.Duration
 }
 
 func NewController(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt Options) *controller {
@@ -63,6 +61,7 @@ func NewController(kubeClient clientset.Interface, stashClient scs.ExtensionInte
 		sh:          shell.NewSession(),
 		resource:    make(chan *sapi.Restic),
 		recorder:    eventer.NewEventRecorder(kubeClient, "stash-scheduler"),
+		syncPeriod:  2 * time.Minute,
 	}
 	ctrl.sh.SetDir(ctrl.opt.ScratchDir)
 	ctrl.sh.ShowCMD = true
@@ -103,7 +102,7 @@ func (c *controller) RunAndHold() {
 	}
 	_, ctrl := cache.NewInformer(lw,
 		&sapi.Restic{},
-		time.Minute*2,
+		c.syncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				if r, ok := obj.(*sapi.Restic); ok {
@@ -279,14 +278,15 @@ func (c *controller) runOnce() (err error) {
 		}
 		restic_session_duration_seconds_total.Set(endTime.Sub(startTime.Time).Seconds())
 
-		job := resource.Namespace + "-" + c.opt.Workload
-		push.Collectors(job,
-			c.GroupingKeys(resource),
-			c.opt.PushgatewayURL,
-			restic_session_success,
-			restic_session_fail,
-			restic_session_duration_seconds_total,
-			restic_session_duration_seconds)
+		if c.opt.PushgatewayURL != "" {
+			push.Collectors(c.JobName(resource),
+				c.GroupingKeys(resource),
+				c.opt.PushgatewayURL,
+				restic_session_success,
+				restic_session_fail,
+				restic_session_duration_seconds_total,
+				restic_session_duration_seconds)
+		}
 
 		resource.Status.BackupCount++
 		resource.Status.LastBackupTime = &startTime

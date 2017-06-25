@@ -33,7 +33,7 @@ func (c *Controller) WatchDeploymentApps() {
 	}
 	_, ctrl := cache.NewInformer(lw,
 		&apps.Deployment{},
-		c.SyncPeriod,
+		c.syncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				if resource, ok := obj.(*apps.Deployment); ok {

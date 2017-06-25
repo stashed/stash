@@ -29,12 +29,10 @@ const (
 )
 
 type Controller struct {
-	KubeClient  clientset.Interface
-	StashClient scs.ExtensionInterface
-	// sync time to sync the list.
-	SyncPeriod time.Duration
-	// image of sidecar container
+	KubeClient      clientset.Interface
+	StashClient     scs.ExtensionInterface
 	SidecarImageTag string
+	syncPeriod      time.Duration
 }
 
 func NewController(kubeClient clientset.Interface, extClient scs.ExtensionInterface, tag string) *Controller {
@@ -42,7 +40,7 @@ func NewController(kubeClient clientset.Interface, extClient scs.ExtensionInterf
 		KubeClient:      kubeClient,
 		StashClient:     extClient,
 		SidecarImageTag: tag,
-		SyncPeriod:      time.Minute * 2,
+		syncPeriod:      time.Minute * 2,
 	}
 }
 
