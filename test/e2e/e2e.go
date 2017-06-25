@@ -1,4 +1,4 @@
-package test
+package e2e
 
 import (
 	"errors"
