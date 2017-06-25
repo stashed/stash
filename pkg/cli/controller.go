@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	exe = "/restic"
+	Exe = "/restic"
 )
 
 type resticWrapper struct {
@@ -21,19 +21,19 @@ func New(scratchDir string, prefixHostname bool) *resticWrapper {
 		scratchDir:     scratchDir,
 		prefixHostname: prefixHostname,
 	}
-	ctrl.sh.SetDir(cwd)
+	ctrl.sh.SetDir(scratchDir)
 	ctrl.sh.ShowCMD = true
 	return ctrl
 }
 
 func (w *resticWrapper) ListSnapshots() error {
-	err := w.sh.Command(exe, "snapshots", "--json").Run()
+	err := w.sh.Command(Exe, "snapshots", "--json").Run()
 	return nil
 }
 
 func (w *resticWrapper) InitRepositoryIfAbsent() error {
-	if err := w.sh.Command(exe, "snapshots", "--json").Run(); err != nil {
-		err = w.sh.Command(exe, "init").Run()
+	if err := w.sh.Command(Exe, "snapshots", "--json").Run(); err != nil {
+		err = w.sh.Command(Exe, "init").Run()
 		if err != nil {
 			return err
 		}
@@ -48,7 +48,7 @@ func (w *resticWrapper) Backup(resource *sapi.Restic, fg sapi.FileGroup) error {
 		args = append(args, "--tag")
 		args = append(args, tag)
 	}
-	return w.sh.Command(exe, args...).Run()
+	return w.sh.Command(Exe, args...).Run()
 }
 
 func (w *resticWrapper) Forget(resource *sapi.Restic, fg sapi.FileGroup) error {
@@ -85,7 +85,7 @@ func (w *resticWrapper) Forget(resource *sapi.Restic, fg sapi.FileGroup) error {
 		args = append(args, "--tag")
 		args = append(args, tag)
 	}
-	err := w.sh.Command(exe, args...).Run()
+	err := w.sh.Command(Exe, args...).Run()
 	if err != nil {
 		return err
 	}
