@@ -27,7 +27,7 @@ spec:
           protocol: TCP
       - name: pushgateway
         args:
-        - -web.listen-address=56789
+        - -web.listen-address=:56789
         - -persistence.file=/var/pv/pushgateway.dat
         image: prom/pushgateway:v0.4.0
         ports:
