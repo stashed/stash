@@ -59,7 +59,7 @@ func NewCmdSchedule(version string) *cobra.Command {
 				log.Fatalf("No write access in scratch dir: %s", err)
 			}
 
-			ctrl := scheduler.NewController(kubeClient, stashClient, opt)
+			ctrl := scheduler.New(kubeClient, stashClient, opt)
 			err = ctrl.Setup()
 			if err != nil {
 				log.Fatalf("Failed to setup scheduler: %s", err)

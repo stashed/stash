@@ -3,7 +3,6 @@ package e2e_test
 import (
 	"flag"
 	"math/rand"
-
 	"time"
 
 	"github.com/appscode/log"

@@ -37,7 +37,7 @@ type Options struct {
 	PodLabelsPath     string
 }
 
-type controller struct {
+type Scheduler struct {
 	KubeClient      clientset.Interface
 	StashClient     scs.ExtensionInterface
 	opt             Options
@@ -51,8 +51,8 @@ type controller struct {
 	syncPeriod      time.Duration
 }
 
-func NewController(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt Options) *controller {
-	ctrl := &controller{
+func New(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt Options) *Scheduler {
+	ctrl := &Scheduler{
 		KubeClient:  kubeClient,
 		StashClient: stashClient,
 		opt:         opt,
@@ -67,7 +67,7 @@ func NewController(kubeClient clientset.Interface, stashClient scs.ExtensionInte
 }
 
 // Init and/or connect to repo
-func (c *controller) Setup() error {
+func (c *Scheduler) Setup() error {
 	resource, err := c.StashClient.Restics(c.opt.ResourceNamespace).Get(c.opt.ResourceName)
 	if err != nil {
 		return err
@@ -86,7 +86,7 @@ func (c *controller) Setup() error {
 	return c.resticCLI.InitRepositoryIfAbsent()
 }
 
-func (c *controller) RunAndHold() {
+func (c *Scheduler) RunAndHold() {
 	c.cron.Start()
 
 	lw := &cache.ListWatch{
@@ -160,7 +160,7 @@ func (c *controller) RunAndHold() {
 	ctrl.Run(wait.NeverStop)
 }
 
-func (c *controller) configureScheduler() error {
+func (c *Scheduler) configureScheduler() error {
 	r := <-c.rchan
 	c.resourceVersion = r.ResourceVersion
 	if c.cron == nil {
@@ -214,7 +214,7 @@ func (c *controller) configureScheduler() error {
 	return nil
 }
 
-func (c *controller) runOnce() (err error) {
+func (c *Scheduler) runOnce() (err error) {
 	select {
 	case <-c.locked:
 		log.Infof("Acquired lock for Restic %s@%s", c.opt.ResourceName, c.opt.ResourceNamespace)
@@ -327,7 +327,7 @@ func (c *controller) runOnce() (err error) {
 	return
 }
 
-func (c *controller) measure(f func(*sapi.Restic, sapi.FileGroup) error, resource *sapi.Restic, fg sapi.FileGroup, g prometheus.Gauge) (err error) {
+func (c *Scheduler) measure(f func(*sapi.Restic, sapi.FileGroup) error, resource *sapi.Restic, fg sapi.FileGroup, g prometheus.Gauge) (err error) {
 	startTime := time.Now()
 	defer func() {
 		g.Set(time.Now().Sub(startTime).Seconds())
