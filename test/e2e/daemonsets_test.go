@@ -6,6 +6,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Daemonsets", func() {
+var _ = Describe("DaemonSets", func() {
 
 })
