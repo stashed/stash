@@ -11,14 +11,14 @@ const (
 	Exe = "/restic"
 )
 
-type resticWrapper struct {
+type ResticWrapper struct {
 	sh             *shell.Session
 	scratchDir     string
 	prefixHostname bool
 }
 
-func New(scratchDir string, prefixHostname bool) *resticWrapper {
-	ctrl := &resticWrapper{
+func New(scratchDir string, prefixHostname bool) *ResticWrapper {
+	ctrl := &ResticWrapper{
 		sh:             shell.NewSession(),
 		scratchDir:     scratchDir,
 		prefixHostname: prefixHostname,
@@ -39,23 +39,20 @@ type Snapshot struct {
 	Gid      int       `json:"gid"`
 }
 
-func (w *resticWrapper) ListSnapshots() ([]Snapshot, error) {
+func (w *ResticWrapper) ListSnapshots() ([]Snapshot, error) {
 	result := make([]Snapshot, 0)
 	err := w.sh.Command(Exe, "snapshots", "--json").UnmarshalJSON(&result)
 	return result, err
 }
 
-func (w *resticWrapper) InitRepositoryIfAbsent() error {
+func (w *ResticWrapper) InitRepositoryIfAbsent() error {
 	if err := w.sh.Command(Exe, "snapshots", "--json").Run(); err != nil {
-		err = w.sh.Command(Exe, "init").Run()
-		if err != nil {
-			return err
-		}
+		return w.sh.Command(Exe, "init").Run()
 	}
 	return nil
 }
 
-func (w *resticWrapper) Backup(resource *sapi.Restic, fg sapi.FileGroup) error {
+func (w *ResticWrapper) Backup(resource *sapi.Restic, fg sapi.FileGroup) error {
 	args := []interface{}{"backup", fg.Path, "--force"}
 	// add tags if any
 	for _, tag := range fg.Tags {
@@ -65,7 +62,7 @@ func (w *resticWrapper) Backup(resource *sapi.Restic, fg sapi.FileGroup) error {
 	return w.sh.Command(Exe, args...).Run()
 }
 
-func (w *resticWrapper) Forget(resource *sapi.Restic, fg sapi.FileGroup) error {
+func (w *ResticWrapper) Forget(resource *sapi.Restic, fg sapi.FileGroup) error {
 	args := []interface{}{"forget"}
 	if fg.RetentionPolicy.KeepLastSnapshots > 0 {
 		args = append(args, sapi.KeepLast)

@@ -52,11 +52,7 @@ const (
 	OS_AUTH_TOKEN  = "OS_AUTH_TOKEN"
 )
 
-func (w *resticWrapper) SetupEnv(resource *sapi.Restic, secret *apiv1.Secret) error {
-	backend := resource.Spec.Backend
-	if backend.RepositorySecretName == "" {
-		return errors.New("Missing repository secret name")
-	}
+func (w *ResticWrapper) SetupEnv(resource *sapi.Restic, secret *apiv1.Secret) error {
 	if v, ok := secret.Data[RESTIC_PASSWORD]; !ok {
 		return errors.New("Missing repository password")
 	} else {
@@ -72,6 +68,7 @@ func (w *resticWrapper) SetupEnv(resource *sapi.Restic, secret *apiv1.Secret) er
 		}
 	}
 
+	backend := resource.Spec.Backend
 	if backend.Local != nil {
 		r := backend.Local.Path
 		w.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
