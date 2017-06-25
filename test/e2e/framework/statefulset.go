@@ -38,6 +38,6 @@ func (f *Framework) CreateStatefulSet(obj apps.StatefulSet) error {
 	return err
 }
 
-func (f *Framework) DeleteStatefulset(meta metav1.ObjectMeta) error {
+func (f *Framework) DeleteStatefulSet(meta metav1.ObjectMeta) error {
 	return f.kubeClient.AppsV1beta1().StatefulSets(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
 }

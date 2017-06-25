@@ -47,7 +47,7 @@ func (f *Framework) WaitForDeploymentAppCondition(meta metav1.ObjectMeta, condit
 	}).Should(condition)
 }
 
-func (f *Framework) WaituntilDeploymentAppCondition(meta metav1.ObjectMeta, condition GomegaMatcher) {
+func (f *Framework) WaitUntilDeploymentAppCondition(meta metav1.ObjectMeta, condition GomegaMatcher) {
 	Eventually(func() *apps.Deployment {
 		obj, err := f.kubeClient.AppsV1beta1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())

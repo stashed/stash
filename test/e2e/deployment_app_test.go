@@ -27,13 +27,13 @@ var _ = Describe("DeploymentApp", func() {
 			f.DeleteRestic(restic.ObjectMeta)
 		})
 
-		Context("new rs", func() {
+		Context("new Deployment", func() {
 			It(`should backup to "Local"" backend`, func() {
 				By("Creating restic " + restic.Name)
 				err = f.CreateRestic(restic)
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Creating rs " + deployment.Name)
+				By("Creating Deployment " + deployment.Name)
 				err = f.CreateDeploymentApp(deployment)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -41,9 +41,9 @@ var _ = Describe("DeploymentApp", func() {
 			})
 		})
 
-		Context("existing rs", func() {
+		Context("existing Deployment", func() {
 			It(`should backup to "Local"" backend`, func() {
-				By("Creating rs " + deployment.Name)
+				By("Creating Deployment " + deployment.Name)
 				err = f.CreateDeploymentApp(deployment)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -66,7 +66,7 @@ var _ = Describe("DeploymentApp", func() {
 			err = f.CreateRestic(restic)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Creating rs " + deployment.Name)
+			By("Creating Deployment " + deployment.Name)
 			err = f.CreateDeploymentApp(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
