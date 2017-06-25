@@ -17,7 +17,7 @@ import (
 
 // Blocks caller. Intended to be called as a Go routine.
 func (c *Controller) WatchDeploymentApps() {
-	if !util.IsPreferredAPIResource(c.KubeClient, apps.SchemeGroupVersion.String(), "Deployment") {
+	if !util.IsPreferredAPIResource(c.kubeClient, apps.SchemeGroupVersion.String(), "Deployment") {
 		log.Warningf("Skipping watching non-preferred GroupVersion:%s Kind:%s", apps.SchemeGroupVersion.String(), "Deployment")
 		return
 	}
@@ -26,10 +26,10 @@ func (c *Controller) WatchDeploymentApps() {
 
 	lw := &cache.ListWatch{
 		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
-			return c.KubeClient.AppsV1beta1().Deployments(apiv1.NamespaceAll).List(metav1.ListOptions{})
+			return c.kubeClient.AppsV1beta1().Deployments(apiv1.NamespaceAll).List(metav1.ListOptions{})
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return c.KubeClient.AppsV1beta1().Deployments(apiv1.NamespaceAll).Watch(metav1.ListOptions{})
+			return c.kubeClient.AppsV1beta1().Deployments(apiv1.NamespaceAll).Watch(metav1.ListOptions{})
 		},
 	}
 	_, ctrl := cache.NewInformer(lw,
@@ -40,7 +40,7 @@ func (c *Controller) WatchDeploymentApps() {
 				if resource, ok := obj.(*apps.Deployment); ok {
 					log.Infof("Deployment %s@%s added", resource.Name, resource.Namespace)
 
-					restic, err := util.FindRestic(c.StashClient, resource.ObjectMeta)
+					restic, err := util.FindRestic(c.stashClient, resource.ObjectMeta)
 					if err != nil {
 						log.Errorf("Error while searching Restic for Deployment %s@%s.", resource.Name, resource.Namespace)
 						return
@@ -75,7 +75,7 @@ func (c *Controller) EnsureDeploymentAppSidecar(resource *apps.Deployment, resti
 	resource.Annotations[sapi.ConfigName] = restic.Name
 	resource.Annotations[sapi.VersionTag] = c.SidecarImageTag
 
-	resource, err := c.KubeClient.AppsV1beta1().Deployments(resource.Namespace).Update(resource)
+	resource, err := c.kubeClient.AppsV1beta1().Deployments(resource.Namespace).Update(resource)
 	if kerr.IsNotFound(err) {
 		return nil
 	} else if err != nil {
@@ -84,7 +84,7 @@ func (c *Controller) EnsureDeploymentAppSidecar(resource *apps.Deployment, resti
 		return err
 	}
 	sidecarSuccessfullyAdd()
-	return util.RestartPods(c.KubeClient, resource.Namespace, resource.Spec.Selector)
+	return util.RestartPods(c.kubeClient, resource.Namespace, resource.Spec.Selector)
 }
 
 func (c *Controller) EnsureDeploymentAppSidecarDeleted(resource *apps.Deployment, restic *sapi.Restic) error {
@@ -99,7 +99,7 @@ func (c *Controller) EnsureDeploymentAppSidecarDeleted(resource *apps.Deployment
 		delete(resource.Annotations, sapi.VersionTag)
 	}
 
-	resource, err := c.KubeClient.AppsV1beta1().Deployments(resource.Namespace).Update(resource)
+	resource, err := c.kubeClient.AppsV1beta1().Deployments(resource.Namespace).Update(resource)
 	if kerr.IsNotFound(err) {
 		return nil
 	} else if err != nil {
@@ -108,6 +108,6 @@ func (c *Controller) EnsureDeploymentAppSidecarDeleted(resource *apps.Deployment
 		return err
 	}
 	sidecarSuccessfullyDeleted()
-	util.RestartPods(c.KubeClient, resource.Namespace, resource.Spec.Selector)
+	util.RestartPods(c.kubeClient, resource.Namespace, resource.Spec.Selector)
 	return nil
 }

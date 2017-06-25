@@ -23,23 +23,23 @@ const (
 )
 
 type Controller struct {
-	KubeClient      clientset.Interface
-	StashClient     scs.ExtensionInterface
+	kubeClient      clientset.Interface
+	stashClient     scs.ExtensionInterface
 	SidecarImageTag string
 	syncPeriod      time.Duration
 }
 
 func New(kubeClient clientset.Interface, extClient scs.ExtensionInterface, tag string) *Controller {
 	return &Controller{
-		KubeClient:      kubeClient,
-		StashClient:     extClient,
+		kubeClient:      kubeClient,
+		stashClient:     extClient,
 		SidecarImageTag: tag,
 		syncPeriod:      30 * time.Second,
 	}
 }
 
 func (c *Controller) Setup() error {
-	_, err := c.KubeClient.ExtensionsV1beta1().ThirdPartyResources().Get(scs.ResourceNameRestic+"."+sapi.GroupName, metav1.GetOptions{})
+	_, err := c.kubeClient.ExtensionsV1beta1().ThirdPartyResources().Get(scs.ResourceNameRestic+"."+sapi.GroupName, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		tpr := &extensions.ThirdPartyResource{
 			TypeMeta: metav1.TypeMeta{
@@ -55,7 +55,7 @@ func (c *Controller) Setup() error {
 				},
 			},
 		}
-		_, err := c.KubeClient.ExtensionsV1beta1().ThirdPartyResources().Create(tpr)
+		_, err := c.kubeClient.ExtensionsV1beta1().ThirdPartyResources().Create(tpr)
 		if err != nil {
 			// This should fail if there is one third party resource data missing.
 			return err

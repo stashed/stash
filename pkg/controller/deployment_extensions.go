@@ -17,7 +17,7 @@ import (
 
 // Blocks caller. Intended to be called as a Go routine.
 func (c *Controller) WatchDeploymentExtensions() {
-	if !util.IsPreferredAPIResource(c.KubeClient, extensions.SchemeGroupVersion.String(), "Deployment") {
+	if !util.IsPreferredAPIResource(c.kubeClient, extensions.SchemeGroupVersion.String(), "Deployment") {
 		log.Warningf("Skipping watching non-preferred GroupVersion:%s Kind:%s", extensions.SchemeGroupVersion.String(), "Deployment")
 		return
 	}
@@ -26,10 +26,10 @@ func (c *Controller) WatchDeploymentExtensions() {
 
 	lw := &cache.ListWatch{
 		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
-			return c.KubeClient.ExtensionsV1beta1().Deployments(apiv1.NamespaceAll).List(metav1.ListOptions{})
+			return c.kubeClient.ExtensionsV1beta1().Deployments(apiv1.NamespaceAll).List(metav1.ListOptions{})
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return c.KubeClient.ExtensionsV1beta1().Deployments(apiv1.NamespaceAll).Watch(metav1.ListOptions{})
+			return c.kubeClient.ExtensionsV1beta1().Deployments(apiv1.NamespaceAll).Watch(metav1.ListOptions{})
 		},
 	}
 	_, ctrl := cache.NewInformer(lw,
@@ -40,7 +40,7 @@ func (c *Controller) WatchDeploymentExtensions() {
 				if resource, ok := obj.(*extensions.Deployment); ok {
 					log.Infof("Deployment %s@%s added", resource.Name, resource.Namespace)
 
-					restic, err := util.FindRestic(c.StashClient, resource.ObjectMeta)
+					restic, err := util.FindRestic(c.stashClient, resource.ObjectMeta)
 					if err != nil {
 						log.Errorf("Error while searching Restic for Deployment %s@%s.", resource.Name, resource.Namespace)
 						return
@@ -75,7 +75,7 @@ func (c *Controller) EnsureDeploymentExtensionSidecar(resource *extensions.Deplo
 	resource.Annotations[sapi.ConfigName] = restic.Name
 	resource.Annotations[sapi.VersionTag] = c.SidecarImageTag
 
-	resource, err := c.KubeClient.ExtensionsV1beta1().Deployments(resource.Namespace).Update(resource)
+	resource, err := c.kubeClient.ExtensionsV1beta1().Deployments(resource.Namespace).Update(resource)
 	if kerr.IsNotFound(err) {
 		return nil
 	} else if err != nil {
@@ -84,7 +84,7 @@ func (c *Controller) EnsureDeploymentExtensionSidecar(resource *extensions.Deplo
 		return err
 	}
 	sidecarSuccessfullyAdd()
-	return util.RestartPods(c.KubeClient, resource.Namespace, resource.Spec.Selector)
+	return util.RestartPods(c.kubeClient, resource.Namespace, resource.Spec.Selector)
 }
 
 func (c *Controller) EnsureDeploymentExtensionSidecarDeleted(resource *extensions.Deployment, restic *sapi.Restic) error {
@@ -99,7 +99,7 @@ func (c *Controller) EnsureDeploymentExtensionSidecarDeleted(resource *extension
 		delete(resource.Annotations, sapi.VersionTag)
 	}
 
-	resource, err := c.KubeClient.ExtensionsV1beta1().Deployments(resource.Namespace).Update(resource)
+	resource, err := c.kubeClient.ExtensionsV1beta1().Deployments(resource.Namespace).Update(resource)
 	if kerr.IsNotFound(err) {
 		return nil
 	} else if err != nil {
@@ -108,6 +108,6 @@ func (c *Controller) EnsureDeploymentExtensionSidecarDeleted(resource *extension
 		return err
 	}
 	sidecarSuccessfullyDeleted()
-	util.RestartPods(c.KubeClient, resource.Namespace, resource.Spec.Selector)
+	util.RestartPods(c.kubeClient, resource.Namespace, resource.Spec.Selector)
 	return nil
 }

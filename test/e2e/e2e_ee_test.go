@@ -49,7 +49,7 @@ func checkEventForBackup(ctrl *controller.Controller, objName string) error {
 	}
 	fieldSelector := fields.SelectorFromSet(sets)
 	for {
-		events, err := ctrl.KubeClient.CoreV1().Events(namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
+		events, err := ctrl.kubeClient.CoreV1().Events(namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
 		if err == nil {
 			for _, e := range events.Items {
 				if e.Reason == eventer.EventReasonSuccessfulBackup {
@@ -77,23 +77,23 @@ func checkContainerAfterBackupDelete(watcher *controller.Controller, name string
 		time.Sleep(time.Second * 20)
 		switch _type {
 		case controller.ReplicationController:
-			rc, err := watcher.KubeClient.CoreV1().ReplicationControllers(namespace).Get(name, metav1.GetOptions{})
+			rc, err := watcher.kubeClient.CoreV1().ReplicationControllers(namespace).Get(name, metav1.GetOptions{})
 			if err != nil {
 				containers = rc.Spec.Template.Spec.Containers
 			}
 		case controller.ReplicaSet:
-			rs, err := watcher.KubeClient.ExtensionsV1beta1().ReplicaSets(namespace).Get(name, metav1.GetOptions{})
+			rs, err := watcher.kubeClient.ExtensionsV1beta1().ReplicaSets(namespace).Get(name, metav1.GetOptions{})
 			if err != nil {
 				containers = rs.Spec.Template.Spec.Containers
 			}
 		case controller.Deployment:
-			deployment, err := watcher.KubeClient.ExtensionsV1beta1().Deployments(namespace).Get(name, metav1.GetOptions{})
+			deployment, err := watcher.kubeClient.ExtensionsV1beta1().Deployments(namespace).Get(name, metav1.GetOptions{})
 			if err != nil {
 				containers = deployment.Spec.Template.Spec.Containers
 			}
 
 		case controller.DaemonSet:
-			daemonset, err := watcher.KubeClient.ExtensionsV1beta1().DaemonSets(namespace).Get(name, metav1.GetOptions{})
+			daemonset, err := watcher.kubeClient.ExtensionsV1beta1().DaemonSets(namespace).Get(name, metav1.GetOptions{})
 			if err != nil {
 				containers = daemonset.Spec.Template.Spec.Containers
 			}

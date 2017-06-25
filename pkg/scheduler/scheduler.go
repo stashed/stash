@@ -37,8 +37,8 @@ type Options struct {
 }
 
 type Scheduler struct {
-	KubeClient      clientset.Interface
-	StashClient     scs.ExtensionInterface
+	kubeClient      clientset.Interface
+	stashClient     scs.ExtensionInterface
 	opt             Options
 	rchan           chan *sapi.Restic
 	resourceVersion string
@@ -51,8 +51,8 @@ type Scheduler struct {
 
 func New(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt Options) *Scheduler {
 	ctrl := &Scheduler{
-		KubeClient:  kubeClient,
-		StashClient: stashClient,
+		kubeClient:  kubeClient,
+		stashClient: stashClient,
 		opt:         opt,
 		resticCLI:   cli.New(opt.ScratchDir, opt.PrefixHostname),
 		rchan:       make(chan *sapi.Restic),
@@ -64,14 +64,14 @@ func New(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt
 
 // Init and/or connect to repo
 func (c *Scheduler) Setup() error {
-	resource, err := c.StashClient.Restics(c.opt.ResourceNamespace).Get(c.opt.ResourceName)
+	resource, err := c.stashClient.Restics(c.opt.ResourceNamespace).Get(c.opt.ResourceName)
 	if err != nil {
 		return err
 	}
 	if resource.Spec.Backend.RepositorySecretName == "" {
 		return errors.New("Missing repository secret name")
 	}
-	secret, err := c.KubeClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.RepositorySecretName, metav1.GetOptions{})
+	secret, err := c.kubeClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.RepositorySecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -87,10 +87,10 @@ func (c *Scheduler) RunAndHold() {
 
 	lw := &cache.ListWatch{
 		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
-			return c.StashClient.Restics(c.opt.ResourceNamespace).List(metav1.ListOptions{})
+			return c.stashClient.Restics(c.opt.ResourceNamespace).List(metav1.ListOptions{})
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return c.StashClient.Restics(c.opt.ResourceNamespace).Watch(metav1.ListOptions{})
+			return c.stashClient.Restics(c.opt.ResourceNamespace).Watch(metav1.ListOptions{})
 		},
 	}
 	_, ctrl := cache.NewInformer(lw,
@@ -168,7 +168,7 @@ func (c *Scheduler) configureScheduler() error {
 	if r.Spec.Backend.RepositorySecretName == "" {
 		return errors.New("Missing repository secret name")
 	}
-	secret, err := c.KubeClient.CoreV1().Secrets(r.Namespace).Get(r.Spec.Backend.RepositorySecretName, metav1.GetOptions{})
+	secret, err := c.kubeClient.CoreV1().Secrets(r.Namespace).Get(r.Spec.Backend.RepositorySecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -188,7 +188,7 @@ func (c *Scheduler) configureScheduler() error {
 		c.recorder.Event(r, apiv1.EventTypeWarning, eventer.EventReasonInvalidCronExpression, err.Error())
 		//Reset Wrong Schedule
 		r.Spec.Schedule = ""
-		_, err = c.StashClient.Restics(r.Namespace).Update(r)
+		_, err = c.stashClient.Restics(r.Namespace).Update(r)
 		if err != nil {
 			return err
 		}
@@ -223,7 +223,7 @@ func (c *Scheduler) runOnce() (err error) {
 	}
 
 	var resource *sapi.Restic
-	resource, err = c.StashClient.Restics(c.opt.ResourceNamespace).Get(c.opt.ResourceName)
+	resource, err = c.stashClient.Restics(c.opt.ResourceNamespace).Get(c.opt.ResourceName)
 	if kerr.IsNotFound(err) {
 		err = nil
 		return
@@ -294,7 +294,7 @@ func (c *Scheduler) runOnce() (err error) {
 			resource.Status.FirstBackupTime = &startTime
 		}
 		resource.Status.LastBackupDuration = endTime.Sub(startTime.Time).String()
-		if _, e2 := c.StashClient.Restics(resource.Namespace).Update(resource); e2 != nil {
+		if _, e2 := c.stashClient.Restics(resource.Namespace).Update(resource); e2 != nil {
 			log.Errorf("Failed to update status for Restic %s@%s due to %s", resource.Name, resource.Namespace, err)
 		}
 	}()

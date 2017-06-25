@@ -16,7 +16,7 @@ import (
 
 // Blocks caller. Intended to be called as a Go routine.
 func (c *Controller) WatchReplicationControllers() {
-	if !util.IsPreferredAPIResource(c.KubeClient, apiv1.SchemeGroupVersion.String(), "ReplicationController") {
+	if !util.IsPreferredAPIResource(c.kubeClient, apiv1.SchemeGroupVersion.String(), "ReplicationController") {
 		log.Warningf("Skipping watching non-preferred GroupVersion:%s Kind:%s", apiv1.SchemeGroupVersion.String(), "ReplicationController")
 		return
 	}
@@ -25,10 +25,10 @@ func (c *Controller) WatchReplicationControllers() {
 
 	lw := &cache.ListWatch{
 		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
-			return c.KubeClient.CoreV1().ReplicationControllers(apiv1.NamespaceAll).List(metav1.ListOptions{})
+			return c.kubeClient.CoreV1().ReplicationControllers(apiv1.NamespaceAll).List(metav1.ListOptions{})
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return c.KubeClient.CoreV1().ReplicationControllers(apiv1.NamespaceAll).Watch(metav1.ListOptions{})
+			return c.kubeClient.CoreV1().ReplicationControllers(apiv1.NamespaceAll).Watch(metav1.ListOptions{})
 		},
 	}
 	_, ctrl := cache.NewInformer(lw,
@@ -39,7 +39,7 @@ func (c *Controller) WatchReplicationControllers() {
 				if resource, ok := obj.(*apiv1.ReplicationController); ok {
 					log.Infof("ReplicationController %s@%s added", resource.Name, resource.Namespace)
 
-					restic, err := util.FindRestic(c.StashClient, resource.ObjectMeta)
+					restic, err := util.FindRestic(c.stashClient, resource.ObjectMeta)
 					if err != nil {
 						log.Errorf("Error while searching Restic for ReplicationController %s@%s.", resource.Name, resource.Namespace)
 						return
@@ -80,13 +80,13 @@ func (c *Controller) EnsureReplicationControllerSidecar(resource *apiv1.Replicat
 	resource.Annotations[sapi.ConfigName] = restic.Name
 	resource.Annotations[sapi.VersionTag] = c.SidecarImageTag
 
-	resource, err := c.KubeClient.CoreV1().ReplicationControllers(resource.Namespace).Update(resource)
+	resource, err := c.kubeClient.CoreV1().ReplicationControllers(resource.Namespace).Update(resource)
 	if kerr.IsNotFound(err) {
 		return nil
 	} else if err != nil {
 		return err
 	}
-	return util.RestartPods(c.KubeClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector})
+	return util.RestartPods(c.kubeClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector})
 }
 
 func (c *Controller) EnsureReplicationControllerSidecarDeleted(resource *apiv1.ReplicationController, restic *sapi.Restic) error {
@@ -101,7 +101,7 @@ func (c *Controller) EnsureReplicationControllerSidecarDeleted(resource *apiv1.R
 		delete(resource.Annotations, sapi.VersionTag)
 	}
 
-	resource, err := c.KubeClient.CoreV1().ReplicationControllers(resource.Namespace).Update(resource)
+	resource, err := c.kubeClient.CoreV1().ReplicationControllers(resource.Namespace).Update(resource)
 	if kerr.IsNotFound(err) {
 		return nil
 	} else if err != nil {
@@ -110,6 +110,6 @@ func (c *Controller) EnsureReplicationControllerSidecarDeleted(resource *apiv1.R
 		return err
 	}
 	sidecarSuccessfullyDeleted()
-	util.RestartPods(c.KubeClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector})
+	util.RestartPods(c.kubeClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector})
 	return nil
 }
