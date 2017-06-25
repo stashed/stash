@@ -7,7 +7,7 @@ import (
 	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
-func (f *Framework) Replicaset(namespace string) extensions.ReplicaSet {
+func (f *Framework) ReplicaSet(namespace string) extensions.ReplicaSet {
 	return extensions.ReplicaSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
@@ -28,11 +28,11 @@ func (f *Framework) Replicaset(namespace string) extensions.ReplicaSet {
 	}
 }
 
-func (f *Framework) CreateReplicaset(obj extensions.ReplicaSet) error {
+func (f *Framework) CreateReplicaSet(obj extensions.ReplicaSet) error {
 	_, err := f.KubeClient.ExtensionsV1beta1().ReplicaSets(obj.Namespace).Create(&obj)
 	return err
 }
 
-func (f *Framework) DeleteReplicaset(meta metav1.ObjectMeta) error {
+func (f *Framework) DeleteReplicaSet(meta metav1.ObjectMeta) error {
 	return f.KubeClient.ExtensionsV1beta1().ReplicaSets(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
 }

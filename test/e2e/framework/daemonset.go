@@ -6,7 +6,7 @@ import (
 	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
-func (f *Framework) Daemonset(namespace string) extensions.DaemonSet {
+func (f *Framework) DaemonSet(namespace string) extensions.DaemonSet {
 	return extensions.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
@@ -21,11 +21,11 @@ func (f *Framework) Daemonset(namespace string) extensions.DaemonSet {
 	}
 }
 
-func (f *Framework) CreateDaemonset(obj extensions.DaemonSet) error {
+func (f *Framework) CreateDaemonSet(obj extensions.DaemonSet) error {
 	_, err := f.KubeClient.ExtensionsV1beta1().DaemonSets(obj.Namespace).Create(&obj)
 	return err
 }
 
-func (f *Framework) DeleteDaemonset(meta metav1.ObjectMeta) error {
+func (f *Framework) DeleteDaemonSet(meta metav1.ObjectMeta) error {
 	return f.KubeClient.ExtensionsV1beta1().DaemonSets(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
 }
