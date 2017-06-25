@@ -8,7 +8,7 @@ import (
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
-func (f *Framework) Restic(namespace string) sapi.Restic {
+func (f *Framework) Restic() sapi.Restic {
 	return sapi.Restic{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: sapi.SchemeGroupVersion.String(),
@@ -16,7 +16,7 @@ func (f *Framework) Restic(namespace string) sapi.Restic {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
-			Namespace: namespace,
+			Namespace: f.namespace,
 		},
 		Spec: sapi.ResticSpec{
 			Selector: metav1.LabelSelector{

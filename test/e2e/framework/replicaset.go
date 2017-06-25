@@ -7,11 +7,11 @@ import (
 	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
-func (f *Framework) ReplicaSet(namespace string) extensions.ReplicaSet {
+func (f *Framework) ReplicaSet() extensions.ReplicaSet {
 	return extensions.ReplicaSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
-			Namespace: namespace,
+			Namespace: f.namespace,
 			Labels: map[string]string{
 				"app": "stash-e2e",
 			},

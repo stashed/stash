@@ -7,12 +7,12 @@ import (
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
-func (f *Framework) ReplicationController(namespace string) apiv1.ReplicationController {
+func (f *Framework) ReplicationController() apiv1.ReplicationController {
 	podTemplate := f.PodTemplate()
 	return apiv1.ReplicationController{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
-			Namespace: namespace,
+			Namespace: f.namespace,
 			Labels: map[string]string{
 				"app": "stash-e2e",
 			},

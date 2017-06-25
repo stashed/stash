@@ -7,11 +7,11 @@ import (
 	apps "k8s.io/client-go/pkg/apis/apps/v1beta1"
 )
 
-func (f *Framework) DeploymentApp(namespace string) apps.Deployment {
+func (f *Framework) DeploymentApp() apps.Deployment {
 	return apps.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
-			Namespace: namespace,
+			Namespace: f.namespace,
 			Labels: map[string]string{
 				"app": "stash-e2e",
 			},

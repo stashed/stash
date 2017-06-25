@@ -9,11 +9,11 @@ const (
 	TEST_HEADLESS_SERVICE = "headless"
 )
 
-func (f *Framework) HeadlessService(namespace string) apiv1.Service {
+func (f *Framework) HeadlessService() apiv1.Service {
 	return apiv1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      TEST_HEADLESS_SERVICE,
-			Namespace: namespace,
+			Namespace: f.namespace,
 		},
 		Spec: apiv1.ServiceSpec{},
 	}
