@@ -3,6 +3,8 @@ package e2e_test
 import (
 	. "github.com/appscode/stash"
 	sapi "github.com/appscode/stash/api"
+	"github.com/appscode/stash/pkg/util"
+	"github.com/appscode/stash/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
@@ -74,6 +76,7 @@ var _ = Describe("ReplicationController", func() {
 			By("Deleting restic " + restic.Name)
 			f.DeleteRestic(restic.ObjectMeta)
 
+			f.WaitUntilReplicaSetCondition(rc.ObjectMeta, matcher.HaveSidecar(util.StashContainer))
 		})
 	})
 })

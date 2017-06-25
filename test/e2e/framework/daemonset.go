@@ -2,8 +2,6 @@ package framework
 
 import (
 	"github.com/appscode/go/crypto/rand"
-	"github.com/appscode/stash/pkg/util"
-	. "github.com/appscode/stash/test/e2e/matcher"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,5 +37,13 @@ func (f *Framework) WaitForDaemonSetCondition(meta metav1.ObjectMeta, condition 
 		obj, err := f.kubeClient.ExtensionsV1beta1().DaemonSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		return obj
-	}).Should(HaveSidecar(util.StashContainer))
+	}).Should(condition)
+}
+
+func (f *Framework) WaitUntilDaemonSetCondition(meta metav1.ObjectMeta, condition GomegaMatcher) {
+	Eventually(func() *extensions.DaemonSet {
+		obj, err := f.kubeClient.ExtensionsV1beta1().DaemonSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		Expect(err).NotTo(HaveOccurred())
+		return obj
+	}).ShouldNot(condition)
 }
