@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"fmt"
+
 	acrt "github.com/appscode/go/runtime"
 	"github.com/appscode/log"
 	sapi "github.com/appscode/stash/api"
@@ -69,6 +71,15 @@ func (c *Controller) EnsureDeploymentExtensionSidecar(resource *extensions.Deplo
 		}
 		sidecarSuccessfullyAdd()
 	}()
+
+	if restic.Spec.Backend.RepositorySecretName == "" {
+		err = fmt.Errorf("Missing repository secret name for Restic %s@%s.", restic.Name, restic.Namespace)
+		return
+	}
+	_, err = c.kubeClient.CoreV1().Secrets(resource.Namespace).Get(restic.Spec.Backend.RepositorySecretName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
 
 	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.GetSidecarContainer(restic, c.SidecarImageTag, resource.Name, false))
 	resource.Spec.Template.Spec.Volumes = util.AddScratchVolume(resource.Spec.Template.Spec.Volumes)
