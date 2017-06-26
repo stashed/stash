@@ -11,6 +11,11 @@ import (
 	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
+const (
+	msec10      = 10 * 1000 * 1000 * time.Nanosecond
+	maxAttempts = 3
+)
+
 type Controller struct {
 	kubeClient      clientset.Interface
 	stashClient     scs.ExtensionInterface
