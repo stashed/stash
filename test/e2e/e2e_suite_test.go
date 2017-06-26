@@ -16,6 +16,7 @@ import (
 	. "github.com/onsi/gomega"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"fmt"
 )
 
 var (
@@ -51,7 +52,9 @@ var _ = BeforeSuite(func() {
 	ctrl = controller.New(kubeClient, stashClient, "canary")
 	err = ctrl.Setup()
 	Expect(err).NotTo(HaveOccurred())
+	fmt.Println("<><><><><><<>", time.Now())
 	f.EventuallyTPR("restic." + sapi.GroupName).Should(Succeed())
+	fmt.Println("<><><><><><<>", time.Now())
 
 	ctrl.Run()
 })
