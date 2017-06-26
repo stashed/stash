@@ -5,7 +5,8 @@ import (
 
 	stringz "github.com/appscode/go/strings"
 	"github.com/appscode/log"
-	rcs "github.com/appscode/stash/client/clientset"
+	"github.com/appscode/pat"
+	scs "github.com/appscode/stash/client/clientset"
 	"github.com/appscode/stash/pkg/analytics"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/docker"
@@ -15,12 +16,18 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+var (
+	kubeClient  clientset.Interface
+	stashClient scs.ExtensionInterface
+)
+
 func NewCmdRun(version string) *cobra.Command {
 	var (
 		masterURL       string
 		kubeconfigPath  string
 		tag             string = stringz.Val(Version, "canary")
 		address         string = ":56790"
+		scratchDir        string = "/tmp"
 		enableAnalytics bool   = true
 	)
 
@@ -45,8 +52,8 @@ func NewCmdRun(version string) *cobra.Command {
 			if err != nil {
 				log.Fatalln(err)
 			}
-			kubeClient := clientset.NewForConfigOrDie(config)
-			stashClient := rcs.NewForConfigOrDie(config)
+			kubeClient = clientset.NewForConfigOrDie(config)
+			stashClient = scs.NewForConfigOrDie(config)
 
 			ctrl := controller.New(kubeClient, stashClient, tag)
 			err = ctrl.Setup()
@@ -57,7 +64,9 @@ func NewCmdRun(version string) *cobra.Command {
 			log.Infoln("Starting operator...")
 			ctrl.Run()
 
-			http.Handle("/metrics", promhttp.Handler())
+			m := pat.New()
+			m.Get("/metrics", promhttp.Handler())
+			http.Handle("/", m)
 			log.Infoln("Listening on", address)
 			log.Fatal(http.ListenAndServe(address, nil))
 		},
@@ -65,6 +74,7 @@ func NewCmdRun(version string) *cobra.Command {
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&address, "address", address, "Address to listen on for web interface and telemetry.")
+	cmd.Flags().StringVar(&scratchDir, "scratch-dir", scratchDir, "Directory used to store temporary files. Use an `emptyDir` in Kubernetes.")
 	cmd.Flags().BoolVar(&enableAnalytics, "analytics", enableAnalytics, "Send analytical event to Google Analytics")
 
 	return cmd

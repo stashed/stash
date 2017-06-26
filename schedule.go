@@ -46,8 +46,8 @@ func NewCmdSchedule(version string) *cobra.Command {
 			if err != nil {
 				log.Fatalf("Could not get Kubernetes config: %s", err)
 			}
-			kubeClient := clientset.NewForConfigOrDie(config)
-			stashClient := rcs.NewForConfigOrDie(config)
+			kubeClient = clientset.NewForConfigOrDie(config)
+			stashClient = rcs.NewForConfigOrDie(config)
 
 			opt.ScratchDir = strings.TrimSuffix(opt.ScratchDir, "/")
 			err = os.MkdirAll(opt.ScratchDir, 0755)
