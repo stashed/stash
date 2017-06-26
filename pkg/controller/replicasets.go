@@ -15,6 +15,7 @@ import (
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	"k8s.io/client-go/tools/cache"
+	"github.com/tamalsaha/go-oneliners"
 )
 
 // Blocks caller. Intended to be called as a Go routine.
@@ -60,6 +61,7 @@ func (c *Controller) WatchReplicaSets() {
 }
 
 func (c *Controller) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, restic *sapi.Restic) (err error) {
+	oneliners.FILE()
 	if name := util.GetString(resource.Annotations, sapi.ConfigName); name != "" {
 		log.Infof("Restic sidecar already exists for ReplicaSet %s@%s.", resource.Name, resource.Namespace)
 		return nil
@@ -71,16 +73,19 @@ func (c *Controller) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, re
 		}
 		sidecarSuccessfullyAdd()
 	}()
-
+	oneliners.FILE()
 	if restic.Spec.Backend.RepositorySecretName == "" {
+		oneliners.FILE()
 		err = fmt.Errorf("Missing repository secret name for Restic %s@%s.", restic.Name, restic.Namespace)
 		return
 	}
+	oneliners.FILE()
 	_, err = c.kubeClient.CoreV1().Secrets(resource.Namespace).Get(restic.Spec.Backend.RepositorySecretName, metav1.GetOptions{})
 	if err != nil {
+		oneliners.FILE()
 		return err
 	}
-
+	oneliners.FILE()
 	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.GetSidecarContainer(restic, c.SidecarImageTag, resource.Name, false))
 	resource.Spec.Template.Spec.Volumes = util.AddScratchVolume(resource.Spec.Template.Spec.Volumes)
 	resource.Spec.Template.Spec.Volumes = util.AddDownwardVolume(resource.Spec.Template.Spec.Volumes)
@@ -93,6 +98,7 @@ func (c *Controller) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, re
 	resource.Annotations[sapi.ConfigName] = restic.Name
 	resource.Annotations[sapi.VersionTag] = c.SidecarImageTag
 	resource, err = c.kubeClient.ExtensionsV1beta1().ReplicaSets(resource.Namespace).Update(resource)
+	oneliners.FILE(err)
 	if kerr.IsNotFound(err) {
 		err = nil
 		return
@@ -100,12 +106,15 @@ func (c *Controller) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, re
 		log.Errorf("Failed to add sidecar for ReplicaSet %s@%s.", resource.Name, resource.Namespace)
 		return
 	}
-
+	oneliners.FILE()
 	err = util.WaitUntilReplicaSetReady(c.kubeClient, resource.ObjectMeta)
 	if err != nil {
+		oneliners.FILE()
 		return
 	}
+	oneliners.FILE()
 	err = util.WaitUntilSidecarAdded(c.kubeClient, resource.Namespace, resource.Spec.Selector)
+	oneliners.FILE(err)
 	return err
 }
 
