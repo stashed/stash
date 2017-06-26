@@ -3,13 +3,13 @@ package controller
 import (
 	acrt "github.com/appscode/go/runtime"
 	sapi "github.com/appscode/stash/api"
+	"github.com/tamalsaha/go-oneliners"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/cache"
-	"github.com/tamalsaha/go-oneliners"
 )
 
 // Blocks caller. Intended to be called as a Go routine.
@@ -30,11 +30,13 @@ func (c *Controller) WatchRestics() {
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				if resource, ok := obj.(*sapi.Restic); ok {
+					oneliners.FILE("+++++++++++++++++++++++++++++++++++++++++++++++++++AAA " + resource.Name + "@" + resource.Namespace)
 					c.EnsureSidecar(resource)
 				}
 			},
 			DeleteFunc: func(obj interface{}) {
 				if resource, ok := obj.(*sapi.Restic); ok {
+					oneliners.FILE("+++++++++++++++++++++++++++++++++++++++++++++++++++DDD " + resource.Name + "@" + resource.Namespace)
 					c.EnsureSidecarDeleted(resource)
 				}
 			},

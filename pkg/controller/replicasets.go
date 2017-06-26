@@ -7,6 +7,7 @@ import (
 	"github.com/appscode/log"
 	sapi "github.com/appscode/stash/api"
 	"github.com/appscode/stash/pkg/util"
+	"github.com/tamalsaha/go-oneliners"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -15,7 +16,6 @@ import (
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	"k8s.io/client-go/tools/cache"
-	"github.com/tamalsaha/go-oneliners"
 )
 
 // Blocks caller. Intended to be called as a Go routine.
@@ -42,6 +42,7 @@ func (c *Controller) WatchReplicaSets() {
 			AddFunc: func(obj interface{}) {
 				oneliners.FILE("--------------------------------------------")
 				if resource, ok := obj.(*extensions.ReplicaSet); ok {
+					oneliners.FILE("-------------------------------------------- " + resource.Name + "@" + resource.Namespace)
 					log.Infof("ReplicaSet %s@%s added", resource.Name, resource.Namespace)
 
 					restic, err := util.FindRestic(c.stashClient, resource.ObjectMeta)

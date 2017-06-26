@@ -54,6 +54,7 @@ func (c *Controller) Setup() error {
 }
 
 func (c *Controller) Run() {
+	go c.WatchNamespaces()
 	go c.WatchRestics()
 	go c.WatchDaemonSets()
 	go c.WatchDeploymentApps()
