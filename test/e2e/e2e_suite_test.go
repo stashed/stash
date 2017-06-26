@@ -30,7 +30,9 @@ var _ = BeforeSuite(func() {
 	userHome, err := homedir.Dir()
 	Expect(err).NotTo(HaveOccurred())
 
-	config, err := clientcmd.BuildConfigFromFlags("", filepath.Join(userHome, ".kube/config"))
+	kubeconfigPath := filepath.Join(userHome, ".kube/config")
+	By("Using kubeconfig from " + kubeconfigPath)
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	Expect(err).NotTo(HaveOccurred())
 
 	kubeClient := clientset.NewForConfigOrDie(config)
@@ -39,6 +41,7 @@ var _ = BeforeSuite(func() {
 	f = framework.New(kubeClient, stashClient)
 	err = f.CreateNamespace()
 	Expect(err).NotTo(HaveOccurred())
+	By("Using test namespace " + f.Namespace())
 
 	ctrl = controller.New(kubeClient, stashClient, "canary")
 	err = ctrl.Setup()
