@@ -26,7 +26,7 @@ func (f *Framework) Restic() sapi.Restic {
 			},
 			FileGroups: []sapi.FileGroup{
 				{
-					Path: "/source_path",
+					Path: "/bin",
 					RetentionPolicy: sapi.RetentionPolicy{
 						KeepLastSnapshots: 5,
 					},
@@ -36,9 +36,9 @@ func (f *Framework) Restic() sapi.Restic {
 			Backend: sapi.Backend{
 				RepositorySecretName: "------------",
 				Local: &sapi.LocalSpec{
-					Path: "/repo_path",
+					Path: "/repo",
 					Volume: apiv1.Volume{
-						Name: "stash-vol",
+						Name: "repo",
 						VolumeSource: apiv1.VolumeSource{
 							EmptyDir: &apiv1.EmptyDirVolumeSource{},
 						},
