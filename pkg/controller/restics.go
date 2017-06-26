@@ -3,7 +3,6 @@ package controller
 import (
 	acrt "github.com/appscode/go/runtime"
 	sapi "github.com/appscode/stash/api"
-	"github.com/tamalsaha/go-oneliners"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -30,13 +29,11 @@ func (c *Controller) WatchRestics() {
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				if resource, ok := obj.(*sapi.Restic); ok {
-					oneliners.FILE("+++++++++++++++++++++++++++++++++++++++++++++++++++AAA " + resource.Name + "@" + resource.Namespace)
 					c.EnsureSidecar(resource)
 				}
 			},
 			DeleteFunc: func(obj interface{}) {
 				if resource, ok := obj.(*sapi.Restic); ok {
-					oneliners.FILE("+++++++++++++++++++++++++++++++++++++++++++++++++++DDD " + resource.Name + "@" + resource.Namespace)
 					c.EnsureSidecarDeleted(resource)
 				}
 			},
@@ -54,7 +51,6 @@ func (c *Controller) EnsureSidecar(restic *sapi.Restic) {
 
 	if resources, err := c.kubeClient.ExtensionsV1beta1().ReplicaSets(restic.Namespace).List(metav1.ListOptions{LabelSelector: restic.Spec.Selector.String()}); err == nil {
 		for _, resource := range resources.Items {
-			oneliners.FILE("+++++++++++++++++++++++++++++++++++++++++++++++++++")
 			go c.EnsureReplicaSetSidecar(&resource, restic)
 		}
 	}

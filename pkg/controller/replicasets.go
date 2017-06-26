@@ -8,7 +8,6 @@ import (
 	"github.com/appscode/log"
 	sapi "github.com/appscode/stash/api"
 	"github.com/appscode/stash/pkg/util"
-	"github.com/tamalsaha/go-oneliners"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -41,9 +40,7 @@ func (c *Controller) WatchReplicaSets() {
 		c.syncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				oneliners.FILE("--------------------------------------------")
 				if resource, ok := obj.(*extensions.ReplicaSet); ok {
-					oneliners.FILE("-------------------------------------------- " + resource.Name + "@" + resource.Namespace)
 					log.Infof("ReplicaSet %s@%s added", resource.Name, resource.Namespace)
 
 					restic, err := util.FindRestic(c.stashClient, resource.ObjectMeta)
@@ -64,7 +61,6 @@ func (c *Controller) WatchReplicaSets() {
 }
 
 func (c *Controller) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, restic *sapi.Restic) (err error) {
-	oneliners.FILE()
 	if name := util.GetString(resource.Annotations, sapi.ConfigName); name != "" {
 		log.Infof("Restic sidecar already exists for ReplicaSet %s@%s.", resource.Name, resource.Namespace)
 		return nil
@@ -76,19 +72,14 @@ func (c *Controller) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, re
 		}
 		sidecarSuccessfullyAdd()
 	}()
-	oneliners.FILE()
 	if restic.Spec.Backend.RepositorySecretName == "" {
-		oneliners.FILE()
 		err = fmt.Errorf("Missing repository secret name for Restic %s@%s.", restic.Name, restic.Namespace)
 		return
 	}
-	oneliners.FILE()
 	_, err = c.kubeClient.CoreV1().Secrets(resource.Namespace).Get(restic.Spec.Backend.RepositorySecretName, metav1.GetOptions{})
 	if err != nil {
-		oneliners.FILE()
 		return err
 	}
-	oneliners.FILE()
 
 	attempt := 0
 	for ; attempt < maxAttempts; attempt = attempt + 1 {
@@ -121,15 +112,11 @@ func (c *Controller) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, re
 		return
 	}
 
-	oneliners.FILE()
 	err = util.WaitUntilReplicaSetReady(c.kubeClient, resource.ObjectMeta)
 	if err != nil {
-		oneliners.FILE()
 		return
 	}
-	oneliners.FILE()
 	err = util.WaitUntilSidecarAdded(c.kubeClient, resource.Namespace, resource.Spec.Selector)
-	oneliners.FILE(err)
 	return err
 }
 

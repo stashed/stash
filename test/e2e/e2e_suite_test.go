@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
 	"time"
@@ -16,7 +17,6 @@ import (
 	. "github.com/onsi/gomega"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	"fmt"
 )
 
 var (
