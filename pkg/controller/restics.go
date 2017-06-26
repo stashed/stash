@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/cache"
+	"github.com/tamalsaha/go-oneliners"
 )
 
 // Blocks caller. Intended to be called as a Go routine.
@@ -51,6 +52,7 @@ func (c *Controller) EnsureSidecar(restic *sapi.Restic) {
 
 	if resources, err := c.kubeClient.ExtensionsV1beta1().ReplicaSets(restic.Namespace).List(metav1.ListOptions{LabelSelector: restic.Spec.Selector.String()}); err == nil {
 		for _, resource := range resources.Items {
+			oneliners.FILE("+++++++++++++++++++++++++++++++++++++++++++++++++++")
 			go c.EnsureReplicaSetSidecar(&resource, restic)
 		}
 	}

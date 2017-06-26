@@ -40,6 +40,7 @@ func (c *Controller) WatchReplicaSets() {
 		c.syncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
+				oneliners.FILE("--------------------------------------------")
 				if resource, ok := obj.(*extensions.ReplicaSet); ok {
 					log.Infof("ReplicaSet %s@%s added", resource.Name, resource.Namespace)
 
