@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	clientset "k8s.io/client-go/kubernetes"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
+	"github.com/appscode/go/types"
 )
 
 const (
@@ -57,6 +58,17 @@ func FindRestic(stashClient scs.ExtensionInterface, obj metav1.ObjectMeta) (*sap
 		}
 	}
 	return nil, nil
+}
+
+func WaitUntilReplicaSetReady(kubeClient clientset.Interface, meta metav1.ObjectMeta) error {
+	return backoff.Retry(func() error {
+		if obj, err := kubeClient.ExtensionsV1beta1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+			if types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas {
+				return nil
+			}
+		}
+		return errors.New("check again")
+	}, backoff.NewConstantBackOff(2*time.Second))
 }
 
 func WaitUntilSidecarAdded(kubeClient clientset.Interface, namespace string, selector *metav1.LabelSelector) error {

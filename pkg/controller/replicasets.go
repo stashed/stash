@@ -1,10 +1,15 @@
 package controller
 
 import (
+	"errors"
+	"time"
+
 	acrt "github.com/appscode/go/runtime"
+	"github.com/appscode/go/types"
 	"github.com/appscode/log"
 	sapi "github.com/appscode/stash/api"
 	"github.com/appscode/stash/pkg/util"
+	"github.com/cenkalti/backoff"
 	"github.com/tamalsaha/go-oneliners"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -90,8 +95,21 @@ func (c *Controller) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, re
 		log.Errorf("Failed to add sidecar for ReplicaSet %s@%s.", resource.Name, resource.Namespace)
 		return err
 	}
-	sidecarSuccessfullyAdd()
-	return util.WaitUntilSidecarAdded(c.kubeClient, resource.Namespace, resource.Spec.Selector)
+
+	backoff.Retry(func() error {
+		if obj, err := c.kubeClient.ExtensionsV1beta1().ReplicaSets(resource.Namespace).Get(resource.Name, metav1.GetOptions{}); err == nil {
+			if types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas {
+				return nil
+			}
+		}
+		return errors.New("check again")
+	}, backoff.NewConstantBackOff(2*time.Second))
+
+	err = util.WaitUntilSidecarAdded(c.kubeClient, resource.Namespace, resource.Spec.Selector)
+	if err == nil {
+		sidecarSuccessfullyAdd()
+	}
+	return err
 }
 
 func (c *Controller) EnsureReplicaSetSidecarDeleted(resource *extensions.ReplicaSet, restic *sapi.Restic) error {
