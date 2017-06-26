@@ -52,9 +52,7 @@ var _ = BeforeSuite(func() {
 	ctrl = controller.New(kubeClient, stashClient, "canary")
 	err = ctrl.Setup()
 	Expect(err).NotTo(HaveOccurred())
-	fmt.Println("<><><><><><<>", time.Now())
 	f.EventuallyTPR("restic." + sapi.GroupName).Should(Succeed())
-	fmt.Println("<><><><><><<>", time.Now())
 
 	ctrl.Run()
 })
