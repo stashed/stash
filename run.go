@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	stringz "github.com/appscode/go/strings"
 	"github.com/appscode/log"
 	"github.com/appscode/pat"
+	sapi "github.com/appscode/stash/api"
 	scs "github.com/appscode/stash/client/clientset"
 	"github.com/appscode/stash/pkg/analytics"
 	"github.com/appscode/stash/pkg/controller"
@@ -19,6 +21,8 @@ import (
 var (
 	kubeClient  clientset.Interface
 	stashClient scs.ExtensionInterface
+
+	scratchDir string = "/tmp"
 )
 
 func NewCmdRun(version string) *cobra.Command {
@@ -27,7 +31,6 @@ func NewCmdRun(version string) *cobra.Command {
 		kubeconfigPath  string
 		tag             string = stringz.Val(Version, "canary")
 		address         string = ":56790"
-		scratchDir        string = "/tmp"
 		enableAnalytics bool   = true
 	)
 
@@ -66,6 +69,11 @@ func NewCmdRun(version string) *cobra.Command {
 
 			m := pat.New()
 			m.Get("/metrics", promhttp.Handler())
+
+			pattern := fmt.Sprintf("/%s/v1beta1/namespaces/%s/restics/%s/metrics", sapi.GroupName, PathParamNamespace, PathParamName)
+			log.Infof("URL pattern: %s", pattern)
+			m.Get(pattern, http.HandlerFunc(ExportSnapshots))
+
 			http.Handle("/", m)
 			log.Infoln("Listening on", address)
 			log.Fatal(http.ListenAndServe(address, nil))

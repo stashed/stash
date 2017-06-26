@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/url"
-	"os"
 	"path/filepath"
 
 	"github.com/appscode/log"
@@ -60,42 +59,33 @@ func (w *ResticWrapper) SetupEnv(resource *sapi.Restic, secret *apiv1.Secret) er
 		w.sh.SetEnv(RESTIC_PASSWORD, string(v))
 	}
 
-	var err error
-	hostname := ""
-	if w.prefixHostname {
-		hostname, err = os.Hostname()
-		if err != nil {
-			return err
-		}
-	}
-
 	backend := resource.Spec.Backend
 	if backend.Local != nil {
 		r := backend.Local.Path
-		w.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
+		w.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, w.hostname))
 	} else if backend.S3 != nil {
 		r := fmt.Sprintf("s3:%s:%s:%s", backend.S3.Endpoint, backend.S3.Bucket, backend.S3.Prefix)
-		w.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
+		w.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, w.hostname))
 		w.sh.SetEnv(AWS_ACCESS_KEY_ID, string(secret.Data[AWS_ACCESS_KEY_ID]))
 		w.sh.SetEnv(AWS_SECRET_ACCESS_KEY, string(secret.Data[AWS_SECRET_ACCESS_KEY]))
 	} else if backend.GCS != nil {
 		r := fmt.Sprintf("gs:%s:%s:%s", backend.GCS.Location, backend.GCS.Bucket, backend.GCS.Prefix)
-		w.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
+		w.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, w.hostname))
 		w.sh.SetEnv(GOOGLE_PROJECT_ID, string(secret.Data[GOOGLE_PROJECT_ID]))
 		jsonKeyPath := filepath.Join(w.scratchDir, "gcs_sa.json")
-		err = ioutil.WriteFile(jsonKeyPath, secret.Data[GOOGLE_SERVICE_ACCOUNT_JSON_KEY], 600)
+		err := ioutil.WriteFile(jsonKeyPath, secret.Data[GOOGLE_SERVICE_ACCOUNT_JSON_KEY], 600)
 		if err != nil {
 			return err
 		}
 		w.sh.SetEnv(GOOGLE_APPLICATION_CREDENTIALS, jsonKeyPath)
 	} else if backend.Azure != nil {
 		r := fmt.Sprintf("azure:%s:%s", backend.Azure.Container, backend.Azure.Prefix)
-		w.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
+		w.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, w.hostname))
 		w.sh.SetEnv(AZURE_ACCOUNT_NAME, string(secret.Data[AZURE_ACCOUNT_NAME]))
 		w.sh.SetEnv(AZURE_ACCOUNT_KEY, string(secret.Data[AZURE_ACCOUNT_KEY]))
 	} else if backend.Swift != nil {
 		r := fmt.Sprintf("swift:%s:%s", backend.Swift.Container, backend.Swift.Prefix)
-		w.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
+		w.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, w.hostname))
 		// For keystone v1 authentication
 		w.sh.SetEnv(ST_AUTH, string(secret.Data[ST_AUTH]))
 		w.sh.SetEnv(ST_USER, string(secret.Data[ST_USER]))
@@ -127,12 +117,12 @@ func (w *ResticWrapper) SetupEnv(resource *sapi.Restic, secret *apiv1.Secret) er
 				u.User = url.User(string(username))
 			}
 		}
-		u.Path = filepath.Join(u.Path, hostname) // TODO: check
+		u.Path = filepath.Join(u.Path, w.hostname) // TODO: check
 		r := fmt.Sprintf("rest:%s", u.String())
 		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 	} else if backend.B2 != nil {
 		r := fmt.Sprintf("b2:%s:%s", backend.B2.Bucket, backend.B2.Prefix)
-		w.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, hostname))
+		w.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, w.hostname))
 		w.sh.SetEnv(B2_ACCOUNT_ID, string(secret.Data[B2_ACCOUNT_ID]))
 		w.sh.SetEnv(B2_ACCOUNT_KEY, string(secret.Data[B2_ACCOUNT_KEY]))
 	}

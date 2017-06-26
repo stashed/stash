@@ -3,6 +3,7 @@ package scheduler
 import (
 	"errors"
 	"fmt"
+	"os"
 	"reflect"
 	"strconv"
 	"time"
@@ -53,19 +54,27 @@ type Scheduler struct {
 	syncPeriod  time.Duration
 }
 
-func New(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt Options) *Scheduler {
+func New(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt Options) (*Scheduler, error) {
 	ctrl := &Scheduler{
 		kubeClient:  kubeClient,
 		stashClient: stashClient,
 		opt:         opt,
-		resticCLI:   cli.New(opt.ScratchDir, opt.PrefixHostname),
 		rchan:       make(chan *sapi.Restic, 1),
 		cron:        cron.New(),
 		locked:      make(chan struct{}, 1),
 		recorder:    eventer.NewEventRecorder(kubeClient, "stash-scheduler"),
 		syncPeriod:  30 * time.Second,
 	}
-	return ctrl
+	if opt.PrefixHostname {
+		hostname, err := os.Hostname()
+		if err != nil {
+			return nil, err
+		}
+		ctrl.resticCLI = cli.New(opt.ScratchDir, hostname)
+	} else {
+		ctrl.resticCLI = cli.New(opt.ScratchDir, "")
+	}
+	return ctrl, nil
 }
 
 // Init and/or connect to repo
