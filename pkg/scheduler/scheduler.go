@@ -68,6 +68,7 @@ func (c *Scheduler) Setup() error {
 	if err != nil {
 		return err
 	}
+	log.Infof("Found restic %s", resource.Name)
 	if resource.Spec.Backend.RepositorySecretName == "" {
 		return errors.New("Missing repository secret name")
 	}
@@ -75,6 +76,7 @@ func (c *Scheduler) Setup() error {
 	if err != nil {
 		return err
 	}
+	log.Infof("Found repository secret %s", secret.Name)
 	err = c.resticCLI.SetupEnv(resource, secret)
 	if err != nil {
 		return err
