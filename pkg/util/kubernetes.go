@@ -81,7 +81,7 @@ func WaitUntilSidecarAdded(kubeClient clientset.Interface, namespace string, sel
 			}
 			if !found {
 				e2 := kubeClient.CoreV1().Pods(namespace).Delete(pod.Name, &metav1.DeleteOptions{})
-				if e2 != nil && !kerr.IsNotFound(e2) {
+				if e2 != nil {
 					podErr = e2
 				}
 			}
@@ -113,7 +113,7 @@ func WaitUntilSidecarRemoved(kubeClient clientset.Interface, namespace string, s
 			}
 			if found {
 				e2 := kubeClient.CoreV1().Pods(namespace).Delete(pod.Name, &metav1.DeleteOptions{})
-				if e2 != nil && !kerr.IsNotFound(e2) {
+				if e2 != nil {
 					podErr = e2
 				}
 			}
