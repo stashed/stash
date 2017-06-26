@@ -86,7 +86,8 @@ func (c *Controller) EnsureReplicationControllerSidecar(resource *apiv1.Replicat
 	} else if err != nil {
 		return err
 	}
-	return util.RestartPods(c.kubeClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector})
+	sidecarSuccessfullyAdd()
+	return util.WaitUntilSidecarAdded(c.kubeClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector})
 }
 
 func (c *Controller) EnsureReplicationControllerSidecarDeleted(resource *apiv1.ReplicationController, restic *sapi.Restic) error {
@@ -110,6 +111,5 @@ func (c *Controller) EnsureReplicationControllerSidecarDeleted(resource *apiv1.R
 		return err
 	}
 	sidecarSuccessfullyDeleted()
-	util.RestartPods(c.kubeClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector})
-	return nil
+	return util.WaitUntilSidecarRemoved(c.kubeClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector})
 }

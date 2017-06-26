@@ -2,11 +2,13 @@ package util
 
 import (
 	"strconv"
+	"time"
 
 	rapi "github.com/appscode/stash/api"
 	sapi "github.com/appscode/stash/api"
 	scs "github.com/appscode/stash/client/clientset"
 	"github.com/appscode/stash/pkg/docker"
+	"github.com/cenkalti/backoff"
 	"github.com/tamalsaha/go-oneliners"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -56,16 +58,81 @@ func FindRestic(stashClient scs.ExtensionInterface, obj metav1.ObjectMeta) (*sap
 	return nil, nil
 }
 
-func RestartPods(kubeClient clientset.Interface, namespace string, selector *metav1.LabelSelector) error {
-	r, err := metav1.LabelSelectorAsSelector(selector)
-	if err != nil {
-		return err
-	}
-	oneliners.FILE(r.String())
-	return kubeClient.CoreV1().Pods(namespace).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{
-		LabelSelector: r.String(),
-	})
+func WaitUntilSidecarAdded(kubeClient clientset.Interface, namespace string, selector *metav1.LabelSelector) error {
+	return backoff.Retry(func() error {
+		r, err := metav1.LabelSelectorAsSelector(selector)
+		if err != nil {
+			return err
+		}
+		oneliners.FILE(r.String())
+		pods, err := kubeClient.CoreV1().Pods(namespace).List(metav1.ListOptions{LabelSelector: r.String()})
+		if err != nil {
+			return err
+		}
+
+		var podErr error
+		for _, pod := range pods.Items {
+			found := false
+			for _, c := range pod.Spec.Containers {
+				if c.Name == StashContainer {
+					found = true
+					break
+				}
+			}
+			if !found {
+				e2 := kubeClient.CoreV1().Pods(namespace).Delete(pod.Name, &metav1.DeleteOptions{})
+				if e2 != nil && !kerr.IsNotFound(e2) {
+					podErr = e2
+				}
+			}
+		}
+		return podErr
+	}, backoff.NewConstantBackOff(2*time.Second))
 }
+
+func WaitUntilSidecarRemoved(kubeClient clientset.Interface, namespace string, selector *metav1.LabelSelector) error {
+	return backoff.Retry(func() error {
+		r, err := metav1.LabelSelectorAsSelector(selector)
+		if err != nil {
+			return err
+		}
+		oneliners.FILE(r.String())
+		pods, err := kubeClient.CoreV1().Pods(namespace).List(metav1.ListOptions{LabelSelector: r.String()})
+		if err != nil {
+			return err
+		}
+
+		var podErr error
+		for _, pod := range pods.Items {
+			found := false
+			for _, c := range pod.Spec.Containers {
+				if c.Name == StashContainer {
+					found = true
+					break
+				}
+			}
+			if found {
+				e2 := kubeClient.CoreV1().Pods(namespace).Delete(pod.Name, &metav1.DeleteOptions{})
+				if e2 != nil && !kerr.IsNotFound(e2) {
+					podErr = e2
+				}
+			}
+		}
+		return podErr
+	}, backoff.NewConstantBackOff(2*time.Second))
+}
+
+//
+//func RestartPods(kubeClient clientset.Interface, namespace string, selector *metav1.LabelSelector) error {
+//	r, err := metav1.LabelSelectorAsSelector(selector)
+//	if err != nil {
+//		return err
+//	}
+//	oneliners.FILE(r.String())
+//	return kubeClient.CoreV1().Pods(namespace).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{
+//		LabelSelector: r.String(),
+//	})
+//}
 
 func GetString(m map[string]string, key string) string {
 	if m == nil {

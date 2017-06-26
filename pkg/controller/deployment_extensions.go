@@ -84,7 +84,7 @@ func (c *Controller) EnsureDeploymentExtensionSidecar(resource *extensions.Deplo
 		return err
 	}
 	sidecarSuccessfullyAdd()
-	return util.RestartPods(c.kubeClient, resource.Namespace, resource.Spec.Selector)
+	return util.WaitUntilSidecarAdded(c.kubeClient, resource.Namespace, resource.Spec.Selector)
 }
 
 func (c *Controller) EnsureDeploymentExtensionSidecarDeleted(resource *extensions.Deployment, restic *sapi.Restic) error {
@@ -108,6 +108,5 @@ func (c *Controller) EnsureDeploymentExtensionSidecarDeleted(resource *extension
 		return err
 	}
 	sidecarSuccessfullyDeleted()
-	util.RestartPods(c.kubeClient, resource.Namespace, resource.Spec.Selector)
-	return nil
+	return util.WaitUntilSidecarRemoved(c.kubeClient, resource.Namespace, resource.Spec.Selector)
 }

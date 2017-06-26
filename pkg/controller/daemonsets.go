@@ -84,7 +84,7 @@ func (c *Controller) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, rest
 		return err
 	}
 	sidecarSuccessfullyAdd()
-	return util.RestartPods(c.kubeClient, resource.Namespace, resource.Spec.Selector)
+	return util.WaitUntilSidecarAdded(c.kubeClient, resource.Namespace, resource.Spec.Selector)
 }
 
 func (c *Controller) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSet, restic *sapi.Restic) error {
@@ -108,6 +108,5 @@ func (c *Controller) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSe
 		return err
 	}
 	sidecarSuccessfullyAdd()
-	util.RestartPods(c.kubeClient, resource.Namespace, resource.Spec.Selector)
-	return nil
+	return util.WaitUntilSidecarRemoved(c.kubeClient, resource.Namespace, resource.Spec.Selector)
 }
