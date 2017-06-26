@@ -7,7 +7,6 @@ import (
 	"github.com/appscode/log"
 	sapi "github.com/appscode/stash/api"
 	"github.com/appscode/stash/pkg/util"
-	"github.com/tamalsaha/go-oneliners"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -62,7 +61,6 @@ func (c *Controller) WatchReplicaSets() {
 
 func (c *Controller) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, restic *sapi.Restic) (err error) {
 	if name := util.GetString(resource.Annotations, sapi.ConfigName); name != "" {
-		oneliners.FILE("Restic sidecar already exists for ReplicaSet ", resource.Name, resource.Namespace, "|||||||||", name)
 		log.Infof("Restic sidecar already exists for ReplicaSet %s@%s.", resource.Name, resource.Namespace)
 		return nil
 	}
@@ -83,13 +81,9 @@ func (c *Controller) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, re
 		return err
 	}
 
-	oneliners.FILE()
 	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.GetSidecarContainer(restic, c.SidecarImageTag, resource.Name, false))
-	oneliners.FILE()
 	resource.Spec.Template.Spec.Volumes = util.AddScratchVolume(resource.Spec.Template.Spec.Volumes)
-	oneliners.FILE()
 	resource.Spec.Template.Spec.Volumes = util.AddDownwardVolume(resource.Spec.Template.Spec.Volumes)
-	oneliners.FILE()
 	if restic.Spec.Backend.Local != nil {
 		resource.Spec.Template.Spec.Volumes = append(resource.Spec.Template.Spec.Volumes, restic.Spec.Backend.Local.Volume)
 	}
