@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"strconv"
 	"time"
@@ -13,7 +14,6 @@ import (
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
-	"github.com/tamalsaha/go-oneliners"
 	"gopkg.in/robfig/cron.v2"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,6 +24,11 @@ import (
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
+)
+
+const (
+	msec10      = 10 * 1000 * 1000 * time.Nanosecond
+	maxAttempts = 3
 )
 
 type Options struct {
@@ -103,9 +108,7 @@ func (c *Scheduler) RunAndHold() {
 		c.syncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				oneliners.FILE()
 				if r, ok := obj.(*sapi.Restic); ok {
-					oneliners.FILE("____+++++_________", r.Name)
 					if r.Name == c.opt.ResourceName {
 						c.rchan <- r
 						err := c.configureScheduler()
@@ -122,7 +125,6 @@ func (c *Scheduler) RunAndHold() {
 				}
 			},
 			UpdateFunc: func(old, new interface{}) {
-				oneliners.FILE()
 				oldObj, ok := old.(*sapi.Restic)
 				if !ok {
 					log.Errorln(errors.New("Invalid Restic object"))
@@ -133,7 +135,6 @@ func (c *Scheduler) RunAndHold() {
 					log.Errorln(errors.New("Invalid Restic object"))
 					return
 				}
-				oneliners.FILE("____~~~~~~~~_________", oldObj.Name, "[][]", newObj.Name)
 				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) && newObj.Name == c.opt.ResourceName {
 					c.rchan <- newObj
 					err := c.configureScheduler()
@@ -160,9 +161,7 @@ func (c *Scheduler) RunAndHold() {
 }
 
 func (c *Scheduler) configureScheduler() error {
-	oneliners.FILE()
 	r := <-c.rchan
-	oneliners.FILE()
 
 	if r.Spec.Backend.RepositorySecretName == "" {
 		return errors.New("Missing repository secret name")
@@ -228,13 +227,11 @@ func (c *Scheduler) runOnce() (err error) {
 	if err != nil {
 		return
 	}
-	oneliners.FILE()
 	err = c.resticCLI.SetupEnv(resource, secret)
 	if err != nil {
 		return err
 	}
 	c.resticCLI.DumpEnv()
-	oneliners.FILE()
 
 	err = c.resticCLI.InitRepositoryIfAbsent()
 	if err != nil {
@@ -295,14 +292,30 @@ func (c *Scheduler) runOnce() (err error) {
 				restic_session_duration_seconds)
 		}
 
-		resource.Status.BackupCount++
-		resource.Status.LastBackupTime = &startTime
-		if resource.Status.FirstBackupTime == nil {
-			resource.Status.FirstBackupTime = &startTime
+		attempt := 0
+		for ; attempt < maxAttempts; attempt = attempt + 1 {
+			resource.Status.BackupCount++
+			resource.Status.LastBackupTime = &startTime
+			if resource.Status.FirstBackupTime == nil {
+				resource.Status.FirstBackupTime = &startTime
+			}
+			resource.Status.LastBackupDuration = endTime.Sub(startTime.Time).String()
+			_, err := c.stashClient.Restics(resource.Namespace).Update(resource)
+			if err == nil {
+				break
+			}
+			log.Errorf("Attempt %d failed to update status for Restic %s@%s due to %s.", attempt, resource.Name, resource.Namespace, err)
+			time.Sleep(msec10)
+			if kerr.IsConflict(err) {
+				resource, err = c.stashClient.Restics(resource.Namespace).Get(resource.Name)
+				if err != nil {
+					return
+				}
+			}
 		}
-		resource.Status.LastBackupDuration = endTime.Sub(startTime.Time).String()
-		if _, e2 := c.stashClient.Restics(resource.Namespace).Update(resource); e2 != nil {
-			log.Errorf("Failed to update status for Restic %s@%s due to %s", resource.Name, resource.Namespace, err)
+		if attempt >= maxAttempts {
+			err = fmt.Errorf("Failed to add sidecar for ReplicaSet %s@%s after %d attempts.", resource.Name, resource.Namespace, attempt)
+			return
 		}
 	}()
 
