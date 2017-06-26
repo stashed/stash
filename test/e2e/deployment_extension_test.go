@@ -28,7 +28,7 @@ var _ = Describe("DeploymentExtension", func() {
 		})
 
 		Context("new Deployment", func() {
-			It(`should backup to "Local"" backend`, func() {
+			It(`should backup to "Local" backend`, func() {
 				By("Creating restic " + restic.Name)
 				err = f.CreateRestic(restic)
 				Expect(err).NotTo(HaveOccurred())
@@ -42,7 +42,7 @@ var _ = Describe("DeploymentExtension", func() {
 		})
 
 		Context("existing Deployment", func() {
-			It(`should backup to "Local"" backend`, func() {
+			It(`should backup to "Local" backend`, func() {
 				By("Creating Deployment " + deployment.Name)
 				err = f.CreateDeploymentExtension(deployment)
 				Expect(err).NotTo(HaveOccurred())
@@ -75,7 +75,7 @@ var _ = Describe("DeploymentExtension", func() {
 			By("Deleting restic " + restic.Name)
 			f.DeleteRestic(restic.ObjectMeta)
 
-			f.WaitUntilDeploymentExtensionCondition(deployment.ObjectMeta, HaveSidecar(util.StashContainer))
+			f.EventuallyDeploymentExtension(deployment.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		})
 	})
 })

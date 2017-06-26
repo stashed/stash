@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	Exe = "/restic"
+	Exe = "/bin/restic"
 )
 
 type ResticWrapper struct {

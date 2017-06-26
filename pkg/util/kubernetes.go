@@ -1,12 +1,16 @@
 package util
 
 import (
+	"errors"
 	"strconv"
+	"time"
 
+	"github.com/appscode/go/types"
 	rapi "github.com/appscode/stash/api"
 	sapi "github.com/appscode/stash/api"
 	scs "github.com/appscode/stash/client/clientset"
 	"github.com/appscode/stash/pkg/docker"
+	"github.com/cenkalti/backoff"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -45,15 +49,136 @@ func FindRestic(stashClient scs.ExtensionInterface, obj metav1.ObjectMeta) (*sap
 		return nil, err
 	}
 	for _, restic := range restics.Items {
-		selector, err := metav1.LabelSelectorAsSelector(&restic.Spec.Selector)
-		//return nil, fmt.Errorf("invalid selector: %v", err)
-		if err == nil {
+		if selector, err := metav1.LabelSelectorAsSelector(&restic.Spec.Selector); err == nil {
 			if selector.Matches(labels.Set(obj.Labels)) {
 				return &restic, nil
 			}
 		}
 	}
 	return nil, nil
+}
+
+func WaitUntilReplicaSetReady(kubeClient clientset.Interface, meta metav1.ObjectMeta) error {
+	return backoff.Retry(func() error {
+		if obj, err := kubeClient.ExtensionsV1beta1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+			if types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas {
+				return nil
+			}
+		}
+		return errors.New("check again")
+	}, backoff.NewConstantBackOff(2*time.Second))
+}
+
+func WaitUntilDeploymentExtensionReady(kubeClient clientset.Interface, meta metav1.ObjectMeta) error {
+	return backoff.Retry(func() error {
+		if obj, err := kubeClient.ExtensionsV1beta1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+			if types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas {
+				return nil
+			}
+		}
+		return errors.New("check again")
+	}, backoff.NewConstantBackOff(2*time.Second))
+}
+
+func WaitUntilDeploymentAppReady(kubeClient clientset.Interface, meta metav1.ObjectMeta) error {
+	return backoff.Retry(func() error {
+		if obj, err := kubeClient.AppsV1beta1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+			if types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas {
+				return nil
+			}
+		}
+		return errors.New("check again")
+	}, backoff.NewConstantBackOff(2*time.Second))
+}
+
+func WaitUntilDaemonSetReady(kubeClient clientset.Interface, meta metav1.ObjectMeta) error {
+	return backoff.Retry(func() error {
+		if obj, err := kubeClient.ExtensionsV1beta1().DaemonSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+			if obj.Status.DesiredNumberScheduled == obj.Status.NumberReady {
+				return nil
+			}
+		}
+		return errors.New("check again")
+	}, backoff.NewConstantBackOff(2*time.Second))
+}
+
+func WaitUntilReplicationControllerReady(kubeClient clientset.Interface, meta metav1.ObjectMeta) error {
+	return backoff.Retry(func() error {
+		if obj, err := kubeClient.CoreV1().ReplicationControllers(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+			if types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas {
+				return nil
+			}
+		}
+		return errors.New("check again")
+	}, backoff.NewConstantBackOff(2*time.Second))
+}
+
+func WaitUntilSidecarAdded(kubeClient clientset.Interface, namespace string, selector *metav1.LabelSelector) error {
+	return backoff.Retry(func() error {
+		r, err := metav1.LabelSelectorAsSelector(selector)
+		if err != nil {
+			return err
+		}
+		pods, err := kubeClient.CoreV1().Pods(namespace).List(metav1.ListOptions{LabelSelector: r.String()})
+		if err != nil {
+			return err
+		}
+
+		var podsToRestart []apiv1.Pod
+		for _, pod := range pods.Items {
+			found := false
+			for _, c := range pod.Spec.Containers {
+				if c.Name == StashContainer {
+					found = true
+					break
+				}
+			}
+			if !found {
+				podsToRestart = append(podsToRestart, pod)
+			}
+		}
+		if len(podsToRestart) == 0 {
+			return nil
+		}
+		for _, pod := range podsToRestart {
+			kubeClient.CoreV1().Pods(namespace).Delete(pod.Name, &metav1.DeleteOptions{})
+		}
+		return errors.New("check again")
+	}, backoff.NewConstantBackOff(2*time.Second))
+}
+
+func WaitUntilSidecarRemoved(kubeClient clientset.Interface, namespace string, selector *metav1.LabelSelector) error {
+	return backoff.Retry(func() error {
+		r, err := metav1.LabelSelectorAsSelector(selector)
+		if err != nil {
+			return err
+		}
+		pods, err := kubeClient.CoreV1().Pods(namespace).List(metav1.ListOptions{LabelSelector: r.String()})
+		if err != nil {
+			return err
+		}
+
+		var podsToRestart []apiv1.Pod
+		for _, pod := range pods.Items {
+			found := false
+			for _, c := range pod.Spec.Containers {
+				if c.Name == StashContainer {
+					found = true
+					break
+				}
+			}
+			if found {
+				podsToRestart = append(podsToRestart, pod)
+			}
+		}
+		if len(podsToRestart) == 0 {
+			return nil
+		}
+		for _, pod := range podsToRestart {
+			kubeClient.CoreV1().Pods(namespace).Delete(pod.Name, &metav1.DeleteOptions{})
+		}
+		return errors.New("check again")
+	}, backoff.NewConstantBackOff(2*time.Second))
 }
 
 func RestartPods(kubeClient clientset.Interface, namespace string, selector *metav1.LabelSelector) error {
@@ -79,7 +204,6 @@ func GetSidecarContainer(r *rapi.Restic, tag, app string, prefixHostname bool) a
 			tag = v
 		}
 	}
-
 	sidecar := apiv1.Container{
 		Name:            StashContainer,
 		Image:           docker.ImageOperator + ":" + tag,
@@ -87,17 +211,24 @@ func GetSidecarContainer(r *rapi.Restic, tag, app string, prefixHostname bool) a
 		Args: []string{
 			"schedule",
 			"--v=3",
-			"--app=" + app,
 			"--namespace=" + r.Namespace,
 			"--name=" + r.Name,
-			"--prefixHostname=" + strconv.FormatBool(prefixHostname),
+			"--app=" + app,
+			"--prefix-hostname=" + strconv.FormatBool(prefixHostname),
 		},
 		VolumeMounts: []apiv1.VolumeMount{
 			{
 				Name:      ScratchDirVolumeName,
 				MountPath: "/tmp",
 			},
+			{
+				Name:      PodinfoVolumeName,
+				MountPath: "/etc",
+			},
 		},
+	}
+	if tag == "canary" {
+		sidecar.ImagePullPolicy = apiv1.PullAlways
 	}
 	if r.Spec.Backend.Local != nil {
 		sidecar.VolumeMounts = append(sidecar.VolumeMounts, apiv1.VolumeMount{
@@ -106,13 +237,6 @@ func GetSidecarContainer(r *rapi.Restic, tag, app string, prefixHostname bool) a
 		})
 	}
 	return sidecar
-}
-
-func AddAnnotation(r *rapi.Restic, tag string) {
-	if r.ObjectMeta.Annotations == nil {
-		r.ObjectMeta.Annotations = make(map[string]string)
-	}
-	r.ObjectMeta.Annotations[sapi.VersionTag] = tag
 }
 
 func RemoveContainer(c []apiv1.Container, name string) []apiv1.Container {

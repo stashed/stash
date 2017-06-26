@@ -3,20 +3,20 @@
 
 
 ## High Level Tasks
-* Create `stash.backup.appscode.com` Third Party Resource
+* Create `restic.stash.appscode.com` Third Party Resource
 * Create Backup Deployment
 
 ## Deploying Backup
 
 ### Create Third Party Resource
-`Backup process` depends on Third Party Resource Object `stash.backup.appscode.com`. This object can be created using following data.
+`Backup process` depends on Third Party Resource Object `restic.stash.appscode.com`. This object can be created using following data.
 
 ```yaml
 apiVersion: extensions/v1beta1
 kind: ThirdPartyResource
 metadata:
-  name: stash.backup.appscode.com
-description: "Backup and restore support for Kubernetes persistent volumes by AppsCode"
+  name: restic.stash.appscode.com
+description: "Stash by AppsCode - Backup & restore Kubernetes volumes"
 versions:
   - name: v1alpha1
 ```

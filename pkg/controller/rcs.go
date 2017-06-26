@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"fmt"
+
 	acrt "github.com/appscode/go/runtime"
 	"github.com/appscode/log"
 	sapi "github.com/appscode/stash/api"
@@ -62,10 +64,26 @@ func (c *Controller) WatchReplicationControllers() {
 	ctrl.Run(wait.NeverStop)
 }
 
-func (c *Controller) EnsureReplicationControllerSidecar(resource *apiv1.ReplicationController, restic *sapi.Restic) error {
+func (c *Controller) EnsureReplicationControllerSidecar(resource *apiv1.ReplicationController, restic *sapi.Restic) (err error) {
 	if name := util.GetString(resource.Annotations, sapi.ConfigName); name != "" {
 		log.Infof("Restic sidecar already exists for ReplicationController %s@%s.", resource.Name, resource.Namespace)
 		return nil
+	}
+	defer func() {
+		if err != nil {
+			sidecarFailedToDelete()
+			return
+		}
+		sidecarSuccessfullyAdd()
+	}()
+
+	if restic.Spec.Backend.RepositorySecretName == "" {
+		err = fmt.Errorf("Missing repository secret name for Restic %s@%s.", restic.Name, restic.Namespace)
+		return
+	}
+	_, err = c.kubeClient.CoreV1().Secrets(resource.Namespace).Get(restic.Spec.Backend.RepositorySecretName, metav1.GetOptions{})
+	if err != nil {
+		return err
 	}
 
 	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.GetSidecarContainer(restic, c.SidecarImageTag, resource.Name, false))
@@ -79,17 +97,32 @@ func (c *Controller) EnsureReplicationControllerSidecar(resource *apiv1.Replicat
 	}
 	resource.Annotations[sapi.ConfigName] = restic.Name
 	resource.Annotations[sapi.VersionTag] = c.SidecarImageTag
-
-	resource, err := c.kubeClient.CoreV1().ReplicationControllers(resource.Namespace).Update(resource)
+	resource, err = c.kubeClient.CoreV1().ReplicationControllers(resource.Namespace).Update(resource)
 	if kerr.IsNotFound(err) {
-		return nil
+		err = nil
+		return
 	} else if err != nil {
-		return err
+		log.Errorf("Failed to add sidecar for ReplicationController %s@%s.", resource.Name, resource.Namespace)
+		return
 	}
-	return util.RestartPods(c.kubeClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector})
+
+	err = util.WaitUntilReplicationControllerReady(c.kubeClient, resource.ObjectMeta)
+	if err != nil {
+		return
+	}
+	err = util.WaitUntilSidecarAdded(c.kubeClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector})
+	return err
 }
 
-func (c *Controller) EnsureReplicationControllerSidecarDeleted(resource *apiv1.ReplicationController, restic *sapi.Restic) error {
+func (c *Controller) EnsureReplicationControllerSidecarDeleted(resource *apiv1.ReplicationController, restic *sapi.Restic) (err error) {
+	defer func() {
+		if err != nil {
+			sidecarFailedToDelete()
+			return
+		}
+		sidecarSuccessfullyDeleted()
+	}()
+
 	resource.Spec.Template.Spec.Containers = util.RemoveContainer(resource.Spec.Template.Spec.Containers, util.StashContainer)
 	resource.Spec.Template.Spec.Volumes = util.RemoveVolume(resource.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 	resource.Spec.Template.Spec.Volumes = util.RemoveVolume(resource.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
@@ -100,16 +133,19 @@ func (c *Controller) EnsureReplicationControllerSidecarDeleted(resource *apiv1.R
 		delete(resource.Annotations, sapi.ConfigName)
 		delete(resource.Annotations, sapi.VersionTag)
 	}
-
-	resource, err := c.kubeClient.CoreV1().ReplicationControllers(resource.Namespace).Update(resource)
+	resource, err = c.kubeClient.CoreV1().ReplicationControllers(resource.Namespace).Update(resource)
 	if kerr.IsNotFound(err) {
-		return nil
+		err = nil
+		return
 	} else if err != nil {
-		sidecarFailedToDelete()
 		log.Errorf("Failed to add sidecar for ReplicationController %s@%s.", resource.Name, resource.Namespace)
-		return err
+		return
 	}
-	sidecarSuccessfullyDeleted()
-	util.RestartPods(c.kubeClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector})
-	return nil
+
+	err = util.WaitUntilReplicationControllerReady(c.kubeClient, resource.ObjectMeta)
+	if err != nil {
+		return
+	}
+	err = util.WaitUntilSidecarRemoved(c.kubeClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector})
+	return err
 }

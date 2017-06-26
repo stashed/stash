@@ -7,7 +7,7 @@ import (
 )
 
 // GroupName is the group name use in this package
-const GroupName = "backup.appscode.com"
+const GroupName = "stash.appscode.com"
 
 // SchemeGroupVersion is group version used to register these objects
 var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: runtime.APIVersionInternal}
