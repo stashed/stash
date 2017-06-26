@@ -4,7 +4,6 @@ import (
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
 	. "github.com/onsi/gomega"
-	. "github.com/onsi/gomega/types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
@@ -39,18 +38,10 @@ func (f *Framework) DeleteReplicaSet(meta metav1.ObjectMeta) error {
 	return f.kubeClient.ExtensionsV1beta1().ReplicaSets(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
 }
 
-func (f *Framework) WaitForReplicaSetCondition(meta metav1.ObjectMeta, condition GomegaMatcher) {
-	Eventually(func() *extensions.ReplicaSet {
+func (f *Framework) EventuallyReplicaSet(meta metav1.ObjectMeta) GomegaAsyncAssertion {
+	return Eventually(func() *extensions.ReplicaSet {
 		obj, err := f.kubeClient.ExtensionsV1beta1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		return obj
-	}).Should(condition)
-}
-
-func (f *Framework) WaitUntilReplicaSetCondition(meta metav1.ObjectMeta, condition GomegaMatcher) {
-	Eventually(func() *extensions.ReplicaSet {
-		obj, err := f.kubeClient.ExtensionsV1beta1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
-		Expect(err).NotTo(HaveOccurred())
-		return obj
-	}).ShouldNot(condition)
+	})
 }

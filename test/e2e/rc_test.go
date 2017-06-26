@@ -75,7 +75,7 @@ var _ = Describe("ReplicationController", func() {
 			By("Deleting restic " + restic.Name)
 			f.DeleteRestic(restic.ObjectMeta)
 
-			f.WaitUntilReplicationControllerCondition(rc.ObjectMeta, HaveSidecar(util.StashContainer))
+			f.EventuallyReplicationController(rc.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		})
 	})
 })

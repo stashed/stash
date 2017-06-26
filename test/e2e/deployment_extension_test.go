@@ -75,7 +75,7 @@ var _ = Describe("DeploymentExtension", func() {
 			By("Deleting restic " + restic.Name)
 			f.DeleteRestic(restic.ObjectMeta)
 
-			f.WaitUntilDeploymentExtensionCondition(deployment.ObjectMeta, HaveSidecar(util.StashContainer))
+			f.EventuallyDeploymentExtension(deployment.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		})
 	})
 })

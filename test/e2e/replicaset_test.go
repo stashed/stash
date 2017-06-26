@@ -37,7 +37,7 @@ var _ = Describe("ReplicaSet", func() {
 				err = f.CreateReplicaSet(rs)
 				Expect(err).NotTo(HaveOccurred())
 
-				f.WaitUntilReplicaSetCondition(rs.ObjectMeta, HaveSidecar(util.StashContainer))
+				f.EventuallyReplicaSet(rs.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 				f.WaitForBackupEvent(restic.Name)
 			})
 		})
@@ -76,7 +76,7 @@ var _ = Describe("ReplicaSet", func() {
 			By("Deleting restic " + restic.Name)
 			f.DeleteRestic(restic.ObjectMeta)
 
-			f.WaitUntilReplicaSetCondition(rs.ObjectMeta, HaveSidecar(util.StashContainer))
+			f.EventuallyReplicaSet(rs.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		})
 	})
 })

@@ -75,7 +75,7 @@ var _ = Describe("DaemonSet", func() {
 			By("Deleting restic " + restic.Name)
 			f.DeleteRestic(restic.ObjectMeta)
 
-			f.WaitUntilReplicaSetCondition(ds.ObjectMeta, HaveSidecar(util.StashContainer))
+			f.EventuallyReplicaSet(ds.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		})
 	})
 })

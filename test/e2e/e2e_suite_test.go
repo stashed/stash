@@ -3,7 +3,9 @@ package e2e_test
 import (
 	"path/filepath"
 	"testing"
+	"time"
 
+	sapi "github.com/appscode/stash/api"
 	rcs "github.com/appscode/stash/client/clientset"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/test/e2e/framework"
@@ -27,6 +29,8 @@ func TestE2e(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
+	SetDefaultEventuallyTimeout(1 * time.Minute)
+
 	userHome, err := homedir.Dir()
 	Expect(err).NotTo(HaveOccurred())
 
@@ -46,6 +50,7 @@ var _ = BeforeSuite(func() {
 	ctrl = controller.New(kubeClient, stashClient, "canary")
 	err = ctrl.Setup()
 	Expect(err).NotTo(HaveOccurred())
+	f.EventuallyTPR(sapi.GroupName)
 
 	ctrl.Run()
 })
