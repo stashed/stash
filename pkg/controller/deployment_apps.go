@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"time"
 
 	acrt "github.com/appscode/go/runtime"
 	"github.com/appscode/log"
@@ -81,23 +82,34 @@ func (c *Controller) EnsureDeploymentAppSidecar(resource *apps.Deployment, resti
 		return err
 	}
 
-	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.GetSidecarContainer(restic, c.SidecarImageTag, resource.Name, false))
-	resource.Spec.Template.Spec.Volumes = util.AddScratchVolume(resource.Spec.Template.Spec.Volumes)
-	resource.Spec.Template.Spec.Volumes = util.AddDownwardVolume(resource.Spec.Template.Spec.Volumes)
-	if restic.Spec.Backend.Local != nil {
-		resource.Spec.Template.Spec.Volumes = append(resource.Spec.Template.Spec.Volumes, restic.Spec.Backend.Local.Volume)
+	attempt := 0
+	for ; attempt < maxAttempts; attempt = attempt + 1 {
+		resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.GetSidecarContainer(restic, c.SidecarImageTag, resource.Name, false))
+		resource.Spec.Template.Spec.Volumes = util.AddScratchVolume(resource.Spec.Template.Spec.Volumes)
+		resource.Spec.Template.Spec.Volumes = util.AddDownwardVolume(resource.Spec.Template.Spec.Volumes)
+		if restic.Spec.Backend.Local != nil {
+			resource.Spec.Template.Spec.Volumes = append(resource.Spec.Template.Spec.Volumes, restic.Spec.Backend.Local.Volume)
+		}
+		if resource.Annotations == nil {
+			resource.Annotations = make(map[string]string)
+		}
+		resource.Annotations[sapi.ConfigName] = restic.Name
+		resource.Annotations[sapi.VersionTag] = c.SidecarImageTag
+		resource, err = c.kubeClient.AppsV1beta1().Deployments(resource.Namespace).Update(resource)
+		if err == nil {
+			break
+		}
+		log.Errorf("Attempt %d failed to add sidecar for Deployment %s@%s due to %s.", attempt, resource.Name, resource.Namespace, err)
+		time.Sleep(msec10)
+		if kerr.IsConflict(err) {
+			resource, err = c.kubeClient.AppsV1beta1().Deployments(resource.Namespace).Get(resource.Name, metav1.GetOptions{})
+			if err != nil {
+				return
+			}
+		}
 	}
-	if resource.Annotations == nil {
-		resource.Annotations = make(map[string]string)
-	}
-	resource.Annotations[sapi.ConfigName] = restic.Name
-	resource.Annotations[sapi.VersionTag] = c.SidecarImageTag
-	resource, err = c.kubeClient.AppsV1beta1().Deployments(resource.Namespace).Update(resource)
-	if kerr.IsNotFound(err) {
-		err = nil
-		return
-	} else if err != nil {
-		log.Errorf("Failed to add sidecar for Deployment %s@%s.", resource.Name, resource.Namespace)
+	if attempt >= maxAttempts {
+		err = fmt.Errorf("Failed to add sidecar for Deployment %s@%s after %d attempts.", resource.Name, resource.Namespace, attempt)
 		return
 	}
 
@@ -118,22 +130,33 @@ func (c *Controller) EnsureDeploymentAppSidecarDeleted(resource *apps.Deployment
 		sidecarSuccessfullyDeleted()
 	}()
 
-	resource.Spec.Template.Spec.Containers = util.RemoveContainer(resource.Spec.Template.Spec.Containers, util.StashContainer)
-	resource.Spec.Template.Spec.Volumes = util.RemoveVolume(resource.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
-	resource.Spec.Template.Spec.Volumes = util.RemoveVolume(resource.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
-	if restic.Spec.Backend.Local != nil {
-		resource.Spec.Template.Spec.Volumes = util.RemoveVolume(resource.Spec.Template.Spec.Volumes, restic.Spec.Backend.Local.Volume.Name)
+	attempt := 0
+	for ; attempt < maxAttempts; attempt = attempt + 1 {
+		resource.Spec.Template.Spec.Containers = util.RemoveContainer(resource.Spec.Template.Spec.Containers, util.StashContainer)
+		resource.Spec.Template.Spec.Volumes = util.RemoveVolume(resource.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
+		resource.Spec.Template.Spec.Volumes = util.RemoveVolume(resource.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
+		if restic.Spec.Backend.Local != nil {
+			resource.Spec.Template.Spec.Volumes = util.RemoveVolume(resource.Spec.Template.Spec.Volumes, restic.Spec.Backend.Local.Volume.Name)
+		}
+		if resource.Annotations != nil {
+			delete(resource.Annotations, sapi.ConfigName)
+			delete(resource.Annotations, sapi.VersionTag)
+		}
+		resource, err = c.kubeClient.AppsV1beta1().Deployments(resource.Namespace).Update(resource)
+		if err == nil {
+			break
+		}
+		log.Errorf("Attempt %d failed to delete sidecar for Deployment %s@%s due to %s.", attempt, resource.Name, resource.Namespace, err)
+		time.Sleep(msec10)
+		if kerr.IsConflict(err) {
+			resource, err = c.kubeClient.AppsV1beta1().Deployments(resource.Namespace).Get(resource.Name, metav1.GetOptions{})
+			if err != nil {
+				return
+			}
+		}
 	}
-	if resource.Annotations != nil {
-		delete(resource.Annotations, sapi.ConfigName)
-		delete(resource.Annotations, sapi.VersionTag)
-	}
-	resource, err = c.kubeClient.AppsV1beta1().Deployments(resource.Namespace).Update(resource)
-	if kerr.IsNotFound(err) {
-		err = nil
-		return
-	} else if err != nil {
-		log.Errorf("Failed to add sidecar for Deployment %s@%s.", resource.Name, resource.Namespace)
+	if attempt >= maxAttempts {
+		err = fmt.Errorf("Failed to delete sidecar for Deployment %s@%s after %d attempts.", resource.Name, resource.Namespace, attempt)
 		return
 	}
 
