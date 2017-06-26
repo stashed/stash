@@ -28,7 +28,7 @@ var _ = Describe("ReplicaSet", func() {
 		})
 
 		Context("new ReplicaSet", func() {
-			It(`should backup to "Local"" backend`, func() {
+			FIt(`should backup to "Local" backend`, func() {
 				By("Creating restic " + restic.Name)
 				err = f.CreateRestic(restic)
 				Expect(err).NotTo(HaveOccurred())
@@ -42,7 +42,7 @@ var _ = Describe("ReplicaSet", func() {
 		})
 
 		Context("existing ReplicaSet", func() {
-			It(`should backup to "Local"" backend`, func() {
+			It(`should backup to "Local" backend`, func() {
 				By("Creating ReplicaSet " + rs.Name)
 				err = f.CreateReplicaSet(rs)
 				Expect(err).NotTo(HaveOccurred())

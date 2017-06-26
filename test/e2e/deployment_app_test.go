@@ -28,7 +28,7 @@ var _ = Describe("DeploymentApp", func() {
 		})
 
 		Context("new Deployment", func() {
-			It(`should backup to "Local"" backend`, func() {
+			It(`should backup to "Local" backend`, func() {
 				By("Creating restic " + restic.Name)
 				err = f.CreateRestic(restic)
 				Expect(err).NotTo(HaveOccurred())
@@ -42,7 +42,7 @@ var _ = Describe("DeploymentApp", func() {
 		})
 
 		Context("existing Deployment", func() {
-			It(`should backup to "Local"" backend`, func() {
+			It(`should backup to "Local" backend`, func() {
 				By("Creating Deployment " + deployment.Name)
 				err = f.CreateDeploymentApp(deployment)
 				Expect(err).NotTo(HaveOccurred())

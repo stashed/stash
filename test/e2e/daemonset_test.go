@@ -28,7 +28,7 @@ var _ = Describe("DaemonSet", func() {
 		})
 
 		Context("new DaemonSet", func() {
-			It(`should backup to "Local"" backend`, func() {
+			It(`should backup to "Local" backend`, func() {
 				By("Creating restic " + restic.Name)
 				err = f.CreateRestic(restic)
 				Expect(err).NotTo(HaveOccurred())
@@ -42,7 +42,7 @@ var _ = Describe("DaemonSet", func() {
 		})
 
 		Context("existing DaemonSet", func() {
-			It(`should backup to "Local"" backend`, func() {
+			It(`should backup to "Local" backend`, func() {
 				By("Creating DaemonSet " + ds.Name)
 				err = f.CreateDaemonSet(ds)
 				Expect(err).NotTo(HaveOccurred())

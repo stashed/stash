@@ -30,7 +30,7 @@ var _ = Describe("StatefulSet", func() {
 		})
 
 		Context("new StatefulSet", func() {
-			It(`should backup to "Local"" backend`, func() {
+			It(`should backup to "Local" backend`, func() {
 				By("Creating restic " + restic.Name)
 				err = f.CreateRestic(restic)
 				Expect(err).NotTo(HaveOccurred())
