@@ -51,7 +51,6 @@ func FindRestic(stashClient scs.ExtensionInterface, obj metav1.ObjectMeta) (*sap
 	}
 	for _, restic := range restics.Items {
 		if selector, err := metav1.LabelSelectorAsSelector(&restic.Spec.Selector); err == nil {
-			oneliners.FILE(selector.String(), "----------", labels.Set(obj.Labels).String())
 			if selector.Matches(labels.Set(obj.Labels)) {
 				return &restic, nil
 			}
@@ -121,7 +120,6 @@ func WaitUntilSidecarAdded(kubeClient clientset.Interface, namespace string, sel
 		if err != nil {
 			return err
 		}
-		oneliners.FILE(r.String())
 		pods, err := kubeClient.CoreV1().Pods(namespace).List(metav1.ListOptions{LabelSelector: r.String()})
 		if err != nil {
 			return err
@@ -156,7 +154,6 @@ func WaitUntilSidecarRemoved(kubeClient clientset.Interface, namespace string, s
 		if err != nil {
 			return err
 		}
-		oneliners.FILE(r.String())
 		pods, err := kubeClient.CoreV1().Pods(namespace).List(metav1.ListOptions{LabelSelector: r.String()})
 		if err != nil {
 			return err
@@ -190,7 +187,6 @@ func RestartPods(kubeClient clientset.Interface, namespace string, selector *met
 	if err != nil {
 		return err
 	}
-	oneliners.FILE(r.String())
 	return kubeClient.CoreV1().Pods(namespace).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{
 		LabelSelector: r.String(),
 	})
