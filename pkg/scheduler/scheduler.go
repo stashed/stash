@@ -57,6 +57,8 @@ func New(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt
 		opt:         opt,
 		resticCLI:   cli.New(opt.ScratchDir, opt.PrefixHostname),
 		rchan:       make(chan *sapi.Restic),
+		cron:        cron.New(),
+		locked:      make(chan struct{}),
 		recorder:    eventer.NewEventRecorder(kubeClient, "stash-scheduler"),
 		syncPeriod:  30 * time.Second,
 	}
@@ -98,6 +100,7 @@ func (c *Scheduler) Setup() error {
 
 func (c *Scheduler) RunAndHold() {
 	c.cron.Start()
+	c.locked <- struct{}{}
 
 	lw := &cache.ListWatch{
 		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
@@ -167,11 +170,6 @@ func (c *Scheduler) RunAndHold() {
 func (c *Scheduler) configureScheduler() error {
 	r := <-c.rchan
 	c.resourceVersion = r.ResourceVersion
-	if c.cron == nil {
-		c.locked = make(chan struct{})
-		c.locked <- struct{}{}
-		c.cron = cron.New()
-	}
 
 	if r.Spec.Backend.RepositorySecretName == "" {
 		return errors.New("Missing repository secret name")
