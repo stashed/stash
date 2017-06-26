@@ -1,8 +1,6 @@
 package util
 
 import (
-	"io/ioutil"
-	"os"
 	"strconv"
 
 	rapi "github.com/appscode/stash/api"
@@ -63,6 +61,7 @@ func RestartPods(kubeClient clientset.Interface, namespace string, selector *met
 	if err != nil {
 		return err
 	}
+	oneliners.FILE(r.String())
 	return kubeClient.CoreV1().Pods(namespace).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{
 		LabelSelector: r.String(),
 	})
@@ -81,20 +80,17 @@ func GetSidecarContainer(r *rapi.Restic, tag, app string, prefixHostname bool) a
 			tag = v
 		}
 	}
-
-	ioutil.WriteFile("/tmp/ginkgo.txt", []byte(tag), os.ModeAppend)
-
 	sidecar := apiv1.Container{
 		Name:            StashContainer,
 		Image:           docker.ImageOperator + ":" + tag,
-		ImagePullPolicy: apiv1.PullAlways,
+		ImagePullPolicy: apiv1.PullIfNotPresent,
 		Args: []string{
 			"schedule",
 			"--v=3",
-			"--app=" + app,
 			"--namespace=" + r.Namespace,
 			"--name=" + r.Name,
-			"--prefixHostname=" + strconv.FormatBool(prefixHostname),
+			"--app=" + app,
+			"--prefix-hostname=" + strconv.FormatBool(prefixHostname),
 		},
 		VolumeMounts: []apiv1.VolumeMount{
 			{
@@ -106,6 +102,9 @@ func GetSidecarContainer(r *rapi.Restic, tag, app string, prefixHostname bool) a
 				MountPath: "/etc",
 			},
 		},
+	}
+	if tag == "canary" {
+		sidecar.ImagePullPolicy = apiv1.PullAlways
 	}
 	if r.Spec.Backend.Local != nil {
 		sidecar.VolumeMounts = append(sidecar.VolumeMounts, apiv1.VolumeMount{
