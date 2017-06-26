@@ -97,6 +97,10 @@ func GetSidecarContainer(r *rapi.Restic, tag, app string, prefixHostname bool) a
 				Name:      ScratchDirVolumeName,
 				MountPath: "/tmp",
 			},
+			{
+				Name:      PodinfoVolumeName,
+				MountPath: "/etc",
+			},
 		},
 	}
 	if r.Spec.Backend.Local != nil {

@@ -23,8 +23,8 @@ var _ = Describe("ReplicaSet", func() {
 
 	Describe("Sidecar added to", func() {
 		AfterEach(func() {
-			f.DeleteReplicaSet(rs.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
+			//f.DeleteReplicaSet(rs.ObjectMeta)
+			//f.DeleteRestic(restic.ObjectMeta)
 		})
 
 		Context("new ReplicaSet", func() {
@@ -37,6 +37,7 @@ var _ = Describe("ReplicaSet", func() {
 				err = f.CreateReplicaSet(rs)
 				Expect(err).NotTo(HaveOccurred())
 
+				f.WaitUntilReplicaSetCondition(rs.ObjectMeta, HaveSidecar(util.StashContainer))
 				f.WaitForBackupEvent(restic.Name)
 			})
 		})

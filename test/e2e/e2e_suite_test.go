@@ -51,5 +51,5 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	f.DeleteNamespace()
+	// f.DeleteNamespace()
 })
