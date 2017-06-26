@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
-
+	logs "github.com/appscode/log/golog"
 	sapi "github.com/appscode/stash/api"
 	rcs "github.com/appscode/stash/client/clientset"
 	"github.com/appscode/stash/pkg/controller"
@@ -23,14 +23,14 @@ var (
 )
 
 func TestE2e(t *testing.T) {
+	logs.InitLogs()
 	RegisterFailHandler(Fail)
+	SetDefaultEventuallyTimeout(1 * time.Minute)
 	junitReporter := reporters.NewJUnitReporter("junit.xml")
 	RunSpecsWithDefaultAndCustomReporters(t, "E2e Suite", []Reporter{junitReporter})
 }
 
 var _ = BeforeSuite(func() {
-	SetDefaultEventuallyTimeout(1 * time.Minute)
-
 	userHome, err := homedir.Dir()
 	Expect(err).NotTo(HaveOccurred())
 
