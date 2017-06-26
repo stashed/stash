@@ -2,7 +2,6 @@ package scheduler
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
 	"strconv"
 	"time"
@@ -38,16 +37,15 @@ type Options struct {
 }
 
 type Scheduler struct {
-	kubeClient      clientset.Interface
-	stashClient     scs.ExtensionInterface
-	opt             Options
-	rchan           chan *sapi.Restic
-	resourceVersion string
-	locked          chan struct{}
-	resticCLI       *cli.ResticWrapper
-	cron            *cron.Cron
-	recorder        record.EventRecorder
-	syncPeriod      time.Duration
+	kubeClient  clientset.Interface
+	stashClient scs.ExtensionInterface
+	opt         Options
+	rchan       chan *sapi.Restic
+	locked      chan struct{}
+	resticCLI   *cli.ResticWrapper
+	cron        *cron.Cron
+	recorder    record.EventRecorder
+	syncPeriod  time.Duration
 }
 
 func New(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt Options) *Scheduler {
@@ -164,27 +162,10 @@ func (c *Scheduler) RunAndHold() {
 func (c *Scheduler) configureScheduler() error {
 	oneliners.FILE()
 	r := <-c.rchan
-	c.resourceVersion = r.ResourceVersion
 	oneliners.FILE()
 
 	if r.Spec.Backend.RepositorySecretName == "" {
 		return errors.New("Missing repository secret name")
-	}
-	secret, err := c.kubeClient.CoreV1().Secrets(r.Namespace).Get(r.Spec.Backend.RepositorySecretName, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-	oneliners.FILE()
-	err = c.resticCLI.SetupEnv(r, secret)
-	if err != nil {
-		return err
-	}
-	c.resticCLI.DumpEnv()
-	oneliners.FILE()
-
-	err = c.resticCLI.InitRepositoryIfAbsent()
-	if err != nil {
-		return err
 	}
 
 	// Remove previous jobs
@@ -193,7 +174,7 @@ func (c *Scheduler) configureScheduler() error {
 	}
 
 	interval := r.Spec.Schedule
-	if _, err = cron.Parse(interval); err != nil {
+	if _, err := cron.Parse(interval); err != nil {
 		log.Errorln(err)
 		c.recorder.Event(r, apiv1.EventTypeWarning, eventer.EventReasonInvalidCronExpression, err.Error())
 		//Reset Wrong Schedule
@@ -205,7 +186,7 @@ func (c *Scheduler) configureScheduler() error {
 		c.recorder.Event(r, apiv1.EventTypeNormal, eventer.EventReasonSuccessfulCronExpressionReset, "Cron expression reset")
 		return nil
 	}
-	_, err = c.cron.AddFunc(interval, func() {
+	_, err := c.cron.AddFunc(interval, func() {
 		if err := c.runOnce(); err != nil {
 			c.recorder.Event(r, apiv1.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
 			log.Errorln(err)
@@ -237,8 +218,27 @@ func (c *Scheduler) runOnce() (err error) {
 	} else if err != nil {
 		return
 	}
-	if resource.ResourceVersion != c.resourceVersion {
-		return fmt.Errorf("Restic %s@%s version %s does not match expected version %s", resource.Name, resource.Namespace, resource.ResourceVersion, c.resourceVersion)
+
+	if resource.Spec.Backend.RepositorySecretName == "" {
+		err = errors.New("Missing repository secret name")
+		return
+	}
+	var secret *apiv1.Secret
+	secret, err = c.kubeClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.RepositorySecretName, metav1.GetOptions{})
+	if err != nil {
+		return
+	}
+	oneliners.FILE()
+	err = c.resticCLI.SetupEnv(resource, secret)
+	if err != nil {
+		return err
+	}
+	c.resticCLI.DumpEnv()
+	oneliners.FILE()
+
+	err = c.resticCLI.InitRepositoryIfAbsent()
+	if err != nil {
+		return err
 	}
 
 	startTime := metav1.Now()
