@@ -1,5 +1,5 @@
 hash: b0cb3c5f74a20a006c6bc780c2fc58df8587c85b0c8f3975a5654b179a7b3a2b
-updated: 2017-06-26T03:29:34.238459079-07:00
+updated: 2017-06-26T09:12:21.187868069-07:00
 imports:
 - name: github.com/appscode/go
   version: ecda61fa4e8943020e9948723e49c4ae544f7a3a
@@ -13,6 +13,8 @@ imports:
   version: 68e0e42e42c01371f3950571fc87c2298a51dd8f
   subpackages:
   - golog
+- name: github.com/appscode/pat
+  version: 48ff78925b7955367d8a048fc2b5cec8efadf8d3
 - name: github.com/beorn7/perks
   version: 3ac7bf7a47d159a033b107610db8a1b6575507a4
   subpackages:

@@ -37,9 +37,13 @@ spec:
         volumeMounts:
           - mountPath: /var/pv
             name: data-volume
+          - mountPath: /tmp
+            name: stash-scratchdir
       volumes:
         - emptyDir: {}
           name: data-volume
+        - emptyDir: {}
+          name: stash-scratchdir
 ---
 apiVersion: v1
 kind: Service
