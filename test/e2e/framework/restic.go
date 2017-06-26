@@ -26,7 +26,7 @@ func (f *Framework) Restic() sapi.Restic {
 			},
 			FileGroups: []sapi.FileGroup{
 				{
-					Path: "/bin",
+					Path: "/lib",
 					RetentionPolicy: sapi.RetentionPolicy{
 						KeepLastSnapshots: 5,
 					},
@@ -34,7 +34,7 @@ func (f *Framework) Restic() sapi.Restic {
 			},
 			Schedule: "@every 10m",
 			Backend: sapi.Backend{
-				RepositorySecretName: "------------",
+				RepositorySecretName: "",
 				Local: &sapi.LocalSpec{
 					Path: "/repo",
 					Volume: apiv1.Volume{
