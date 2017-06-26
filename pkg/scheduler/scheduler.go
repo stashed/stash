@@ -90,7 +90,9 @@ func (c *Scheduler) Setup() error {
 
 func (c *Scheduler) RunAndHold() {
 	c.cron.Start()
+	oneliners.FILE()
 	c.locked <- struct{}{}
+	oneliners.FILE()
 
 	lw := &cache.ListWatch{
 		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
@@ -105,6 +107,7 @@ func (c *Scheduler) RunAndHold() {
 		c.syncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
+				oneliners.FILE()
 				if r, ok := obj.(*sapi.Restic); ok {
 					oneliners.FILE("____+++++_________", r.Name)
 					if r.Name == c.opt.ResourceName {
@@ -123,6 +126,7 @@ func (c *Scheduler) RunAndHold() {
 				}
 			},
 			UpdateFunc: func(old, new interface{}) {
+				oneliners.FILE()
 				oldObj, ok := old.(*sapi.Restic)
 				if !ok {
 					log.Errorln(errors.New("Invalid Restic object"))
@@ -160,8 +164,10 @@ func (c *Scheduler) RunAndHold() {
 }
 
 func (c *Scheduler) configureScheduler() error {
+	oneliners.FILE()
 	r := <-c.rchan
 	c.resourceVersion = r.ResourceVersion
+	oneliners.FILE()
 
 	if r.Spec.Backend.RepositorySecretName == "" {
 		return errors.New("Missing repository secret name")
@@ -170,11 +176,18 @@ func (c *Scheduler) configureScheduler() error {
 	if err != nil {
 		return err
 	}
+	oneliners.FILE()
 	err = c.resticCLI.SetupEnv(r, secret)
 	if err != nil {
 		return err
 	}
 	c.resticCLI.DumpEnv()
+	oneliners.FILE()
+
+	err = c.resticCLI.InitRepositoryIfAbsent()
+	if err != nil {
+		return err
+	}
 
 	// Remove previous jobs
 	for _, v := range c.cron.Entries() {
