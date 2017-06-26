@@ -11,7 +11,6 @@ import (
 	scs "github.com/appscode/stash/client/clientset"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/cenkalti/backoff"
-	"github.com/tamalsaha/go-oneliners"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
