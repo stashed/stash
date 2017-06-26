@@ -1,12 +1,15 @@
 package util
 
 import (
+	"io/ioutil"
+	"os"
 	"strconv"
 
 	rapi "github.com/appscode/stash/api"
 	sapi "github.com/appscode/stash/api"
 	scs "github.com/appscode/stash/client/clientset"
 	"github.com/appscode/stash/pkg/docker"
+	"github.com/tamalsaha/go-oneliners"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -45,9 +48,8 @@ func FindRestic(stashClient scs.ExtensionInterface, obj metav1.ObjectMeta) (*sap
 		return nil, err
 	}
 	for _, restic := range restics.Items {
-		selector, err := metav1.LabelSelectorAsSelector(&restic.Spec.Selector)
-		//return nil, fmt.Errorf("invalid selector: %v", err)
-		if err == nil {
+		if selector, err := metav1.LabelSelectorAsSelector(&restic.Spec.Selector); err == nil {
+			oneliners.FILE(selector.String(), "----------", labels.Set(obj.Labels).String())
 			if selector.Matches(labels.Set(obj.Labels)) {
 				return &restic, nil
 			}
@@ -80,10 +82,12 @@ func GetSidecarContainer(r *rapi.Restic, tag, app string, prefixHostname bool) a
 		}
 	}
 
+	ioutil.WriteFile("/tmp/ginkgo.txt", []byte(tag), os.ModeAppend)
+
 	sidecar := apiv1.Container{
 		Name:            StashContainer,
 		Image:           docker.ImageOperator + ":" + tag,
-		ImagePullPolicy: apiv1.PullIfNotPresent,
+		ImagePullPolicy: apiv1.PullAlways,
 		Args: []string{
 			"schedule",
 			"--v=3",

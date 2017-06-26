@@ -23,7 +23,7 @@ func (f *Framework) ReplicaSet() extensions.ReplicaSet {
 			Template: f.PodTemplate(),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": "busybox",
+					"app": "stash-e2e",
 				},
 			},
 		},

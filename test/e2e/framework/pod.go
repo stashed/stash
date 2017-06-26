@@ -10,7 +10,7 @@ func (f *Framework) PodTemplate() apiv1.PodTemplateSpec {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "busybox",
 			Labels: map[string]string{
-				"app": "busybox",
+				"app": "stash-e2e",
 			},
 		},
 		Spec: apiv1.PodSpec{
