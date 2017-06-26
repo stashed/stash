@@ -92,7 +92,8 @@ func (c *Scheduler) Setup() error {
 	}
 	c.resticCLI.DumpEnv()
 	oneliners.FILE()
-	return c.resticCLI.InitRepositoryIfAbsent()
+	// return c.resticCLI.InitRepositoryIfAbsent()
+	return nil
 }
 
 func (c *Scheduler) RunAndHold() {

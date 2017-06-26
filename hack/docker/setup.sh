@@ -75,10 +75,10 @@ RUN set -x \
   && apk add ca-certificates \
   && rm -rf /var/cache/apk/*
 
-COPY restic /restic
-COPY stash /stash
+COPY restic /bin/restic
+COPY stash /bin/stash
 
-ENTRYPOINT ["/stash"]
+ENTRYPOINT ["/bin/stash"]
 EXPOSE 56789 56790
 EOL
     local cmd="docker build -t appscode/$IMG:$TAG ."

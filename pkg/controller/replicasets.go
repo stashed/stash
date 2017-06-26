@@ -52,7 +52,6 @@ func (c *Controller) WatchReplicaSets() {
 						log.Errorf("No Restic found for ReplicaSet %s@%s.", resource.Name, resource.Namespace)
 						return
 					}
-					oneliners.FILE("Found matching restic-----------------")
 					c.EnsureReplicaSetSidecar(resource, restic)
 				}
 			},
