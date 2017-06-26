@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
 	logs "github.com/appscode/log/golog"
 	sapi "github.com/appscode/stash/api"
 	rcs "github.com/appscode/stash/client/clientset"
@@ -27,7 +28,7 @@ func TestE2e(t *testing.T) {
 	RegisterFailHandler(Fail)
 	SetDefaultEventuallyTimeout(1 * time.Minute)
 	junitReporter := reporters.NewJUnitReporter("junit.xml")
-	RunSpecsWithDefaultAndCustomReporters(t, "E2e Suite", []Reporter{junitReporter})
+	RunSpecsWithDefaultAndCustomReporters(t, "e2e Suite", []Reporter{junitReporter})
 }
 
 var _ = BeforeSuite(func() {
@@ -50,7 +51,7 @@ var _ = BeforeSuite(func() {
 	ctrl = controller.New(kubeClient, stashClient, "canary")
 	err = ctrl.Setup()
 	Expect(err).NotTo(HaveOccurred())
-	f.EventuallyTPR(sapi.GroupName)
+	f.EventuallyTPR("restic." + sapi.GroupName).Should(Succeed())
 
 	ctrl.Run()
 })
