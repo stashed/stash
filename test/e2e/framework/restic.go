@@ -32,7 +32,7 @@ func (f *Framework) Restic() sapi.Restic {
 					},
 				},
 			},
-			Schedule: "* * * * * *",
+			Schedule: "@every 10m",
 			Backend: sapi.Backend{
 				RepositorySecretName: "------------",
 				Local: &sapi.LocalSpec{
