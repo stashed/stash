@@ -144,6 +144,6 @@ func (w *ResticWrapper) DumpEnv() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("ENV:\n", string(out))
+	log.Debugf("ENV:\n%s", string(out))
 	return nil
 }
