@@ -122,17 +122,16 @@ func WaitUntilSidecarRemoved(kubeClient clientset.Interface, namespace string, s
 	}, backoff.NewConstantBackOff(2*time.Second))
 }
 
-//
-//func RestartPods(kubeClient clientset.Interface, namespace string, selector *metav1.LabelSelector) error {
-//	r, err := metav1.LabelSelectorAsSelector(selector)
-//	if err != nil {
-//		return err
-//	}
-//	oneliners.FILE(r.String())
-//	return kubeClient.CoreV1().Pods(namespace).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{
-//		LabelSelector: r.String(),
-//	})
-//}
+func RestartPods(kubeClient clientset.Interface, namespace string, selector *metav1.LabelSelector) error {
+	r, err := metav1.LabelSelectorAsSelector(selector)
+	if err != nil {
+		return err
+	}
+	oneliners.FILE(r.String())
+	return kubeClient.CoreV1().Pods(namespace).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{
+		LabelSelector: r.String(),
+	})
+}
 
 func GetString(m map[string]string, key string) string {
 	if m == nil {
