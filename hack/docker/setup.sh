@@ -40,8 +40,11 @@ build_binary() {
         clone https://github.com/appscode/restic.git
         cd restic
         checkout master
-        gb build
-        mv bin/restic $DIST/restic-bin
+        echo "Build binary using golang docker image"
+        docker run --rm -ti \
+            -v `pwd`:/go/src/github.com/restic/restic \
+            -w /go/src/github.com/restic/restic golang:1.8.3-alpine go run build.go
+        mv restic $DIST/restic-bin
         rm -rf *
         mv $DIST/restic-bin $DIST/restic/restic
     else
