@@ -57,11 +57,18 @@ func (c *Controller) WatchDaemonSets() {
 	ctrl.Run(wait.NeverStop)
 }
 
-func (c *Controller) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, restic *sapi.Restic) error {
+func (c *Controller) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, restic *sapi.Restic) (err error) {
 	if name := util.GetString(resource.Annotations, sapi.ConfigName); name != "" {
 		log.Infof("Restic sidecar already exists for DaemonSet %s@%s.", resource.Name, resource.Namespace)
-		return nil
+		return
 	}
+	defer func() {
+		if err != nil {
+			sidecarFailedToAdd()
+			return
+		}
+		sidecarSuccessfullyAdd()
+	}()
 
 	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.GetSidecarContainer(restic, c.SidecarImageTag, resource.Name, true))
 	resource.Spec.Template.Spec.Volumes = util.AddScratchVolume(resource.Spec.Template.Spec.Volumes)
@@ -74,20 +81,32 @@ func (c *Controller) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, rest
 	}
 	resource.Annotations[sapi.ConfigName] = restic.Name
 	resource.Annotations[sapi.VersionTag] = c.SidecarImageTag
-
-	resource, err := c.kubeClient.ExtensionsV1beta1().DaemonSets(resource.Namespace).Update(resource)
+	resource, err = c.kubeClient.ExtensionsV1beta1().DaemonSets(resource.Namespace).Update(resource)
 	if kerr.IsNotFound(err) {
-		return nil
+		err = nil
+		return
 	} else if err != nil {
-		sidecarFailedToAdd()
 		log.Errorf("Failed to add sidecar for DaemonSet %s@%s.", resource.Name, resource.Namespace)
-		return err
+		return
 	}
-	sidecarSuccessfullyAdd()
-	return util.WaitUntilSidecarAdded(c.kubeClient, resource.Namespace, resource.Spec.Selector)
+
+	err = util.WaitUntilDaemonSetReady(c.kubeClient, resource.ObjectMeta)
+	if err != nil {
+		return
+	}
+	err = util.WaitUntilSidecarAdded(c.kubeClient, resource.Namespace, resource.Spec.Selector)
+	return
 }
 
-func (c *Controller) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSet, restic *sapi.Restic) error {
+func (c *Controller) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSet, restic *sapi.Restic) (err error) {
+	defer func() {
+		if err != nil {
+			sidecarFailedToDelete()
+			return
+		}
+		sidecarSuccessfullyAdd()
+	}()
+
 	resource.Spec.Template.Spec.Containers = util.RemoveContainer(resource.Spec.Template.Spec.Containers, util.StashContainer)
 	resource.Spec.Template.Spec.Volumes = util.RemoveVolume(resource.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 	resource.Spec.Template.Spec.Volumes = util.RemoveVolume(resource.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
@@ -98,15 +117,19 @@ func (c *Controller) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSe
 		delete(resource.Annotations, sapi.ConfigName)
 		delete(resource.Annotations, sapi.VersionTag)
 	}
-
-	resource, err := c.kubeClient.ExtensionsV1beta1().DaemonSets(resource.Namespace).Update(resource)
+	resource, err = c.kubeClient.ExtensionsV1beta1().DaemonSets(resource.Namespace).Update(resource)
 	if kerr.IsNotFound(err) {
-		return nil
+		err = nil
+		return
 	} else if err != nil {
-		sidecarFailedToDelete()
 		log.Errorf("Failed to add sidecar for DaemonSet %s@%s.", resource.Name, resource.Namespace)
-		return err
+		return
 	}
-	sidecarSuccessfullyAdd()
-	return util.WaitUntilSidecarRemoved(c.kubeClient, resource.Namespace, resource.Spec.Selector)
+
+	err = util.WaitUntilDaemonSetReady(c.kubeClient, resource.ObjectMeta)
+	if err != nil {
+		return
+	}
+	err = util.WaitUntilSidecarRemoved(c.kubeClient, resource.Namespace, resource.Spec.Selector)
+	return
 }

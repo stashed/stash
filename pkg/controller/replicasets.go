@@ -1,15 +1,10 @@
 package controller
 
 import (
-	"errors"
-	"time"
-
 	acrt "github.com/appscode/go/runtime"
-	"github.com/appscode/go/types"
 	"github.com/appscode/log"
 	sapi "github.com/appscode/stash/api"
 	"github.com/appscode/stash/pkg/util"
-	"github.com/cenkalti/backoff"
 	"github.com/tamalsaha/go-oneliners"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -64,12 +59,19 @@ func (c *Controller) WatchReplicaSets() {
 	ctrl.Run(wait.NeverStop)
 }
 
-func (c *Controller) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, restic *sapi.Restic) error {
+func (c *Controller) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, restic *sapi.Restic) (err error) {
 	if name := util.GetString(resource.Annotations, sapi.ConfigName); name != "" {
 		oneliners.FILE("Restic sidecar already exists for ReplicaSet ", resource.Name, resource.Namespace, "|||||||||", name)
 		log.Infof("Restic sidecar already exists for ReplicaSet %s@%s.", resource.Name, resource.Namespace)
 		return nil
 	}
+	defer func() {
+		if err != nil {
+			sidecarFailedToDelete()
+			return
+		}
+		sidecarSuccessfullyAdd()
+	}()
 
 	oneliners.FILE()
 	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.GetSidecarContainer(restic, c.SidecarImageTag, resource.Name, false))
@@ -86,33 +88,32 @@ func (c *Controller) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, re
 	}
 	resource.Annotations[sapi.ConfigName] = restic.Name
 	resource.Annotations[sapi.VersionTag] = c.SidecarImageTag
-
-	resource, err := c.kubeClient.ExtensionsV1beta1().ReplicaSets(resource.Namespace).Update(resource)
+	resource, err = c.kubeClient.ExtensionsV1beta1().ReplicaSets(resource.Namespace).Update(resource)
 	if kerr.IsNotFound(err) {
-		return nil
+		err = nil
+		return
 	} else if err != nil {
-		sidecarFailedToAdd()
 		log.Errorf("Failed to add sidecar for ReplicaSet %s@%s.", resource.Name, resource.Namespace)
-		return err
+		return
 	}
 
-	backoff.Retry(func() error {
-		if obj, err := c.kubeClient.ExtensionsV1beta1().ReplicaSets(resource.Namespace).Get(resource.Name, metav1.GetOptions{}); err == nil {
-			if types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas {
-				return nil
-			}
-		}
-		return errors.New("check again")
-	}, backoff.NewConstantBackOff(2*time.Second))
-
+	err = util.WaitUntilReplicaSetReady(c.kubeClient, resource.ObjectMeta)
+	if err != nil {
+		return
+	}
 	err = util.WaitUntilSidecarAdded(c.kubeClient, resource.Namespace, resource.Spec.Selector)
-	if err == nil {
-		sidecarSuccessfullyAdd()
-	}
 	return err
 }
 
-func (c *Controller) EnsureReplicaSetSidecarDeleted(resource *extensions.ReplicaSet, restic *sapi.Restic) error {
+func (c *Controller) EnsureReplicaSetSidecarDeleted(resource *extensions.ReplicaSet, restic *sapi.Restic) (err error) {
+	defer func() {
+		if err != nil {
+			sidecarFailedToDelete()
+			return
+		}
+		sidecarSuccessfullyDeleted()
+	}()
+
 	resource.Spec.Template.Spec.Containers = util.RemoveContainer(resource.Spec.Template.Spec.Containers, util.StashContainer)
 	resource.Spec.Template.Spec.Volumes = util.RemoveVolume(resource.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 	resource.Spec.Template.Spec.Volumes = util.RemoveVolume(resource.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
@@ -123,15 +124,19 @@ func (c *Controller) EnsureReplicaSetSidecarDeleted(resource *extensions.Replica
 		delete(resource.Annotations, sapi.ConfigName)
 		delete(resource.Annotations, sapi.VersionTag)
 	}
-
-	resource, err := c.kubeClient.ExtensionsV1beta1().ReplicaSets(resource.Namespace).Update(resource)
+	resource, err = c.kubeClient.ExtensionsV1beta1().ReplicaSets(resource.Namespace).Update(resource)
 	if kerr.IsNotFound(err) {
-		return nil
+		err = nil
+		return
 	} else if err != nil {
-		sidecarFailedToDelete()
 		log.Errorf("Failed to add sidecar for ReplicaSet %s@%s.", resource.Name, resource.Namespace)
-		return err
+		return
 	}
-	sidecarSuccessfullyDeleted()
-	return util.WaitUntilSidecarRemoved(c.kubeClient, resource.Namespace, resource.Spec.Selector)
+
+	err = util.WaitUntilReplicaSetReady(c.kubeClient, resource.ObjectMeta)
+	if err != nil {
+		return
+	}
+	err = util.WaitUntilSidecarRemoved(c.kubeClient, resource.Namespace, resource.Spec.Selector)
+	return err
 }

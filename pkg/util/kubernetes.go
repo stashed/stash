@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/appscode/go/types"
 	rapi "github.com/appscode/stash/api"
 	sapi "github.com/appscode/stash/api"
 	scs "github.com/appscode/stash/client/clientset"
@@ -16,7 +17,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	clientset "k8s.io/client-go/kubernetes"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
-	"github.com/appscode/go/types"
 )
 
 const (
@@ -63,6 +63,50 @@ func FindRestic(stashClient scs.ExtensionInterface, obj metav1.ObjectMeta) (*sap
 func WaitUntilReplicaSetReady(kubeClient clientset.Interface, meta metav1.ObjectMeta) error {
 	return backoff.Retry(func() error {
 		if obj, err := kubeClient.ExtensionsV1beta1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+			if types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas {
+				return nil
+			}
+		}
+		return errors.New("check again")
+	}, backoff.NewConstantBackOff(2*time.Second))
+}
+
+func WaitUntilDeploymentExtensionReady(kubeClient clientset.Interface, meta metav1.ObjectMeta) error {
+	return backoff.Retry(func() error {
+		if obj, err := kubeClient.ExtensionsV1beta1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+			if types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas {
+				return nil
+			}
+		}
+		return errors.New("check again")
+	}, backoff.NewConstantBackOff(2*time.Second))
+}
+
+func WaitUntilDeploymentAppReady(kubeClient clientset.Interface, meta metav1.ObjectMeta) error {
+	return backoff.Retry(func() error {
+		if obj, err := kubeClient.AppsV1beta1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+			if types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas {
+				return nil
+			}
+		}
+		return errors.New("check again")
+	}, backoff.NewConstantBackOff(2*time.Second))
+}
+
+func WaitUntilDaemonSetReady(kubeClient clientset.Interface, meta metav1.ObjectMeta) error {
+	return backoff.Retry(func() error {
+		if obj, err := kubeClient.ExtensionsV1beta1().DaemonSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+			if obj.Status.DesiredNumberScheduled == obj.Status.NumberReady {
+				return nil
+			}
+		}
+		return errors.New("check again")
+	}, backoff.NewConstantBackOff(2*time.Second))
+}
+
+func WaitUntilReplicationControllerReady(kubeClient clientset.Interface, meta metav1.ObjectMeta) error {
+	return backoff.Retry(func() error {
+		if obj, err := kubeClient.CoreV1().ReplicationControllers(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
 			if types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas {
 				return nil
 			}
