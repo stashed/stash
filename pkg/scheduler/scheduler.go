@@ -14,6 +14,7 @@ import (
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
+	"github.com/tamalsaha/go-oneliners"
 	"gopkg.in/robfig/cron.v2"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,7 +25,6 @@ import (
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
-	"github.com/tamalsaha/go-oneliners"
 )
 
 type Options struct {
@@ -56,9 +56,9 @@ func New(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt
 		stashClient: stashClient,
 		opt:         opt,
 		resticCLI:   cli.New(opt.ScratchDir, opt.PrefixHostname),
-		rchan:       make(chan *sapi.Restic),
+		rchan:       make(chan *sapi.Restic, 1),
 		cron:        cron.New(),
-		locked:      make(chan struct{}),
+		locked:      make(chan struct{}, 1),
 		recorder:    eventer.NewEventRecorder(kubeClient, "stash-scheduler"),
 		syncPeriod:  30 * time.Second,
 	}
@@ -90,9 +90,7 @@ func (c *Scheduler) Setup() error {
 
 func (c *Scheduler) RunAndHold() {
 	c.cron.Start()
-	oneliners.FILE()
 	c.locked <- struct{}{}
-	oneliners.FILE()
 
 	lw := &cache.ListWatch{
 		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
