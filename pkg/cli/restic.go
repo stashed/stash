@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"strconv"
 	"time"
 
 	sapi "github.com/appscode/stash/api"
@@ -65,31 +66,31 @@ func (w *ResticWrapper) Backup(resource *sapi.Restic, fg sapi.FileGroup) error {
 func (w *ResticWrapper) Forget(resource *sapi.Restic, fg sapi.FileGroup) error {
 	args := []interface{}{"forget"}
 	if fg.RetentionPolicy.KeepLastSnapshots > 0 {
-		args = append(args, sapi.KeepLast)
-		args = append(args, fg.RetentionPolicy.KeepLastSnapshots)
+		args = append(args, string(sapi.KeepLast))
+		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepLastSnapshots))
 	}
 	if fg.RetentionPolicy.KeepHourlySnapshots > 0 {
-		args = append(args, sapi.KeepHourly)
-		args = append(args, fg.RetentionPolicy.KeepHourlySnapshots)
+		args = append(args, string(sapi.KeepHourly))
+		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepHourlySnapshots))
 	}
 	if fg.RetentionPolicy.KeepDailySnapshots > 0 {
-		args = append(args, sapi.KeepDaily)
-		args = append(args, fg.RetentionPolicy.KeepDailySnapshots)
+		args = append(args, string(sapi.KeepDaily))
+		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepDailySnapshots))
 	}
 	if fg.RetentionPolicy.KeepWeeklySnapshots > 0 {
-		args = append(args, sapi.KeepWeekly)
-		args = append(args, fg.RetentionPolicy.KeepWeeklySnapshots)
+		args = append(args, string(sapi.KeepWeekly))
+		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepWeeklySnapshots))
 	}
 	if fg.RetentionPolicy.KeepMonthlySnapshots > 0 {
-		args = append(args, sapi.KeepMonthly)
-		args = append(args, fg.RetentionPolicy.KeepMonthlySnapshots)
+		args = append(args, string(sapi.KeepMonthly))
+		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepMonthlySnapshots))
 	}
 	if fg.RetentionPolicy.KeepYearlySnapshots > 0 {
-		args = append(args, sapi.KeepYearly)
-		args = append(args, fg.RetentionPolicy.KeepYearlySnapshots)
+		args = append(args, string(sapi.KeepYearly))
+		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepYearlySnapshots))
 	}
 	for _, tag := range fg.RetentionPolicy.KeepTags {
-		args = append(args, "--keep-tag")
+		args = append(args, string(sapi.KeepTag))
 		args = append(args, tag)
 	}
 	for _, tag := range fg.Tags {

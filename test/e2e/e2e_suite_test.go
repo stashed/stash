@@ -49,6 +49,7 @@ var _ = BeforeSuite(func() {
 	By("Using test namespace " + f.Namespace())
 
 	ctrl = controller.New(kubeClient, stashClient, "canary")
+	By("Registering TPR group " + sapi.GroupName)
 	err = ctrl.Setup()
 	Expect(err).NotTo(HaveOccurred())
 	f.EventuallyTPR("restic." + sapi.GroupName).Should(Succeed())
