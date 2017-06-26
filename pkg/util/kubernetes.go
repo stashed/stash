@@ -1,6 +1,7 @@
 package util
 
 import (
+	"errors"
 	"strconv"
 	"time"
 
@@ -70,7 +71,7 @@ func WaitUntilSidecarAdded(kubeClient clientset.Interface, namespace string, sel
 			return err
 		}
 
-		var podErr error
+		var podsToRestart []apiv1.Pod
 		for _, pod := range pods.Items {
 			found := false
 			for _, c := range pod.Spec.Containers {
@@ -80,13 +81,16 @@ func WaitUntilSidecarAdded(kubeClient clientset.Interface, namespace string, sel
 				}
 			}
 			if !found {
-				e2 := kubeClient.CoreV1().Pods(namespace).Delete(pod.Name, &metav1.DeleteOptions{})
-				if e2 != nil {
-					podErr = e2
-				}
+				podsToRestart = append(podsToRestart, pod)
 			}
 		}
-		return podErr
+		if len(podsToRestart) == 0 {
+			return nil
+		}
+		for _, pod := range podsToRestart {
+			kubeClient.CoreV1().Pods(namespace).Delete(pod.Name, &metav1.DeleteOptions{})
+		}
+		return errors.New("check again")
 	}, backoff.NewConstantBackOff(2*time.Second))
 }
 
@@ -102,7 +106,7 @@ func WaitUntilSidecarRemoved(kubeClient clientset.Interface, namespace string, s
 			return err
 		}
 
-		var podErr error
+		var podsToRestart []apiv1.Pod
 		for _, pod := range pods.Items {
 			found := false
 			for _, c := range pod.Spec.Containers {
@@ -112,13 +116,16 @@ func WaitUntilSidecarRemoved(kubeClient clientset.Interface, namespace string, s
 				}
 			}
 			if found {
-				e2 := kubeClient.CoreV1().Pods(namespace).Delete(pod.Name, &metav1.DeleteOptions{})
-				if e2 != nil {
-					podErr = e2
-				}
+				podsToRestart = append(podsToRestart, pod)
 			}
 		}
-		return podErr
+		if len(podsToRestart) == 0 {
+			return nil
+		}
+		for _, pod := range podsToRestart {
+			kubeClient.CoreV1().Pods(namespace).Delete(pod.Name, &metav1.DeleteOptions{})
+		}
+		return errors.New("check again")
 	}, backoff.NewConstantBackOff(2*time.Second))
 }
 

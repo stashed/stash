@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-  <testsuite tests="1" failures="0" time="39.138864897">
+  <testsuite tests="1" failures="0" time="39.134492225">
       <testcase name="DaemonSet Sidecar added to new DaemonSet should backup to &#34;Local&#34; backend" classname="E2e Suite" time="0">
           <skipped></skipped>
       </testcase>
@@ -18,6 +18,9 @@
       <testcase name="DeploymentExtension Sidecar removed when restic is deleted" classname="E2e Suite" time="0">
           <skipped></skipped>
       </testcase>
+      <testcase name="StatefulSet Sidecar added to new StatefulSet should backup to &#34;Local&#34; backend" classname="E2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
       <testcase name="ReplicationController Sidecar added to new rc should backup to &#34;Local&#34; backend" classname="E2e Suite" time="0">
           <skipped></skipped>
       </testcase>
@@ -27,6 +30,13 @@
       <testcase name="ReplicationController Sidecar removed when restic is deleted" classname="E2e Suite" time="0">
           <skipped></skipped>
       </testcase>
+      <testcase name="ReplicaSet Sidecar added to new ReplicaSet should backup to &#34;Local&#34; backend" classname="E2e Suite" time="39.087516447"></testcase>
+      <testcase name="ReplicaSet Sidecar added to existing ReplicaSet should backup to &#34;Local&#34; backend" classname="E2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="ReplicaSet Sidecar removed when restic is deleted" classname="E2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
       <testcase name="DeploymentApp Sidecar added to new Deployment should backup to &#34;Local&#34; backend" classname="E2e Suite" time="0">
           <skipped></skipped>
       </testcase>
@@ -34,16 +44,6 @@
           <skipped></skipped>
       </testcase>
       <testcase name="DeploymentApp Sidecar removed when restic is deleted" classname="E2e Suite" time="0">
-          <skipped></skipped>
-      </testcase>
-      <testcase name="StatefulSet Sidecar added to new StatefulSet should backup to &#34;Local&#34; backend" classname="E2e Suite" time="0">
-          <skipped></skipped>
-      </testcase>
-      <testcase name="ReplicaSet Sidecar added to new ReplicaSet should backup to &#34;Local&#34; backend" classname="E2e Suite" time="39.079042944"></testcase>
-      <testcase name="ReplicaSet Sidecar added to existing ReplicaSet should backup to &#34;Local&#34; backend" classname="E2e Suite" time="0">
-          <skipped></skipped>
-      </testcase>
-      <testcase name="ReplicaSet Sidecar removed when restic is deleted" classname="E2e Suite" time="0">
           <skipped></skipped>
       </testcase>
   </testsuite>
