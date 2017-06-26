@@ -8,12 +8,13 @@ import (
 type RetentionStrategy string
 
 const (
-	KeepLast    RetentionStrategy = "keep-last"
-	KeepHourly  RetentionStrategy = "keep-hourly"
-	KeepDaily   RetentionStrategy = "keep-daily"
-	KeepWeekly  RetentionStrategy = "keep-weekly"
-	KeepMonthly RetentionStrategy = "keep-monthly"
-	KeepYearly  RetentionStrategy = "keep-yearly"
+	KeepLast    RetentionStrategy = "--keep-last"
+	KeepHourly  RetentionStrategy = "--keep-hourly"
+	KeepDaily   RetentionStrategy = "--keep-daily"
+	KeepWeekly  RetentionStrategy = "--keep-weekly"
+	KeepMonthly RetentionStrategy = "--keep-monthly"
+	KeepYearly  RetentionStrategy = "--keep-yearly"
+	KeepTag     RetentionStrategy = "--keep-tag"
 )
 
 type Restic struct {
