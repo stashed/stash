@@ -239,13 +239,6 @@ func GetSidecarContainer(r *rapi.Restic, tag, app string, prefixHostname bool) a
 	return sidecar
 }
 
-func AddAnnotation(r *rapi.Restic, tag string) {
-	if r.ObjectMeta.Annotations == nil {
-		r.ObjectMeta.Annotations = make(map[string]string)
-	}
-	r.ObjectMeta.Annotations[sapi.VersionTag] = tag
-}
-
 func RemoveContainer(c []apiv1.Container, name string) []apiv1.Container {
 	for i, v := range c {
 		if v.Name == name {
