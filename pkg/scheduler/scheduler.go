@@ -24,6 +24,7 @@ import (
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
+	"github.com/tamalsaha/go-oneliners"
 )
 
 type Options struct {
@@ -105,6 +106,7 @@ func (c *Scheduler) RunAndHold() {
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				if r, ok := obj.(*sapi.Restic); ok {
+					oneliners.FILE("____+++++_________", r.Name)
 					if r.Name == c.opt.ResourceName {
 						c.rchan <- r
 						err := c.configureScheduler()
@@ -113,7 +115,7 @@ func (c *Scheduler) RunAndHold() {
 								r,
 								apiv1.EventTypeWarning,
 								eventer.EventReasonFailedToBackup,
-								"Failed to start backup process reason %v", err,
+								"Failed to start Stash scehduler reason %v", err,
 							)
 							log.Errorln(err)
 						}
@@ -123,14 +125,15 @@ func (c *Scheduler) RunAndHold() {
 			UpdateFunc: func(old, new interface{}) {
 				oldObj, ok := old.(*sapi.Restic)
 				if !ok {
-					log.Errorln(errors.New("Error validating Stash object"))
+					log.Errorln(errors.New("Invalid Restic object"))
 					return
 				}
 				newObj, ok := new.(*sapi.Restic)
 				if !ok {
-					log.Errorln(errors.New("Error validating Stash object"))
+					log.Errorln(errors.New("Invalid Restic object"))
 					return
 				}
+				oneliners.FILE("____~~~~~~~~_________", oldObj.Name, "[][]", newObj.Name)
 				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) && newObj.Name == c.opt.ResourceName {
 					c.rchan <- newObj
 					err := c.configureScheduler()
@@ -139,7 +142,7 @@ func (c *Scheduler) RunAndHold() {
 							newObj,
 							apiv1.EventTypeWarning,
 							eventer.EventReasonFailedToBackup,
-							"Failed to update backup process reason %v", err,
+							"Failed to update Stash scheduler reason %v", err,
 						)
 						log.Errorln(err)
 					}
