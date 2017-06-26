@@ -1,5 +1,5 @@
 hash: b0cb3c5f74a20a006c6bc780c2fc58df8587c85b0c8f3975a5654b179a7b3a2b
-updated: 2017-06-26T09:12:21.187868069-07:00
+updated: 2017-06-26T09:39:09.719649874-07:00
 imports:
 - name: github.com/appscode/go
   version: ecda61fa4e8943020e9948723e49c4ae544f7a3a
@@ -155,7 +155,6 @@ imports:
   version: e90d6d0afc4c315a0d87a568ae68577cc15149a0
   subpackages:
   - context
-  - context/ctxhttp
   - html
   - html/atom
   - html/charset
