@@ -6,6 +6,7 @@ import (
 	. "github.com/appscode/stash/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	apiv1 "k8s.io/client-go/pkg/api/v1"
 	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
@@ -13,11 +14,14 @@ var _ = Describe("ReplicaSet", func() {
 	var (
 		err    error
 		restic sapi.Restic
+		cred   apiv1.Secret
 		rs     extensions.ReplicaSet
 	)
 
 	BeforeEach(func() {
+		cred = f.SecretForLocalBackend()
 		restic = f.Restic()
+		restic.Spec.Backend.RepositorySecretName = cred.Name
 		rs = f.ReplicaSet()
 	})
 
@@ -25,10 +29,15 @@ var _ = Describe("ReplicaSet", func() {
 		AfterEach(func() {
 			//f.DeleteReplicaSet(rs.ObjectMeta)
 			//f.DeleteRestic(restic.ObjectMeta)
+			//f.DeleteSecret(cred.ObjectMeta)
 		})
 
 		Context("new ReplicaSet", func() {
 			FIt(`should backup to "Local" backend`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
 				By("Creating restic " + restic.Name)
 				err = f.CreateRestic(restic)
 				Expect(err).NotTo(HaveOccurred())
@@ -44,6 +53,10 @@ var _ = Describe("ReplicaSet", func() {
 
 		Context("existing ReplicaSet", func() {
 			It(`should backup to "Local" backend`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
 				By("Creating ReplicaSet " + rs.Name)
 				err = f.CreateReplicaSet(rs)
 				Expect(err).NotTo(HaveOccurred())

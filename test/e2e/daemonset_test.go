@@ -13,17 +13,17 @@ var _ = Describe("DaemonSet", func() {
 	var (
 		err    error
 		restic sapi.Restic
-		ds     extensions.DaemonSet
+		daemon extensions.DaemonSet
 	)
 
 	BeforeEach(func() {
 		restic = f.Restic()
-		ds = f.DaemonSet()
+		daemon = f.DaemonSet()
 	})
 
 	Describe("Sidecar added to", func() {
 		AfterEach(func() {
-			f.DeleteReplicaSet(ds.ObjectMeta)
+			f.DeleteReplicaSet(daemon.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 		})
 
@@ -33,8 +33,8 @@ var _ = Describe("DaemonSet", func() {
 				err = f.CreateRestic(restic)
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Creating DaemonSet " + ds.Name)
-				err = f.CreateDaemonSet(ds)
+				By("Creating DaemonSet " + daemon.Name)
+				err = f.CreateDaemonSet(daemon)
 				Expect(err).NotTo(HaveOccurred())
 
 				f.WaitForBackupEvent(restic.Name)
@@ -43,8 +43,8 @@ var _ = Describe("DaemonSet", func() {
 
 		Context("existing DaemonSet", func() {
 			It(`should backup to "Local" backend`, func() {
-				By("Creating DaemonSet " + ds.Name)
-				err = f.CreateDaemonSet(ds)
+				By("Creating DaemonSet " + daemon.Name)
+				err = f.CreateDaemonSet(daemon)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating restic " + restic.Name)
@@ -58,7 +58,7 @@ var _ = Describe("DaemonSet", func() {
 
 	Describe("Sidecar removed", func() {
 		AfterEach(func() {
-			f.DeleteReplicaSet(ds.ObjectMeta)
+			f.DeleteReplicaSet(daemon.ObjectMeta)
 		})
 
 		It(`when restic is deleted`, func() {
@@ -66,8 +66,8 @@ var _ = Describe("DaemonSet", func() {
 			err = f.CreateRestic(restic)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Creating DaemonSet " + ds.Name)
-			err = f.CreateDaemonSet(ds)
+			By("Creating DaemonSet " + daemon.Name)
+			err = f.CreateDaemonSet(daemon)
 			Expect(err).NotTo(HaveOccurred())
 
 			f.WaitForBackupEvent(restic.Name)
@@ -75,7 +75,7 @@ var _ = Describe("DaemonSet", func() {
 			By("Deleting restic " + restic.Name)
 			f.DeleteRestic(restic.ObjectMeta)
 
-			f.EventuallyReplicaSet(ds.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
+			f.EventuallyReplicaSet(daemon.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		})
 	})
 })
