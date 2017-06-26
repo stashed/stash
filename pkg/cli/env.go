@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/appscode/log"
 	sapi "github.com/appscode/stash/api"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
@@ -135,5 +136,14 @@ func (w *ResticWrapper) SetupEnv(resource *sapi.Restic, secret *apiv1.Secret) er
 		w.sh.SetEnv(B2_ACCOUNT_ID, string(secret.Data[B2_ACCOUNT_ID]))
 		w.sh.SetEnv(B2_ACCOUNT_KEY, string(secret.Data[B2_ACCOUNT_KEY]))
 	}
+	return nil
+}
+
+func (w *ResticWrapper) DumpEnv() error {
+	out, err := w.sh.Command("env").Output()
+	if err != nil {
+		return err
+	}
+	log.Infof("ENV:\n", string(out))
 	return nil
 }

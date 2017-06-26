@@ -14,6 +14,7 @@ import (
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
+	"github.com/tamalsaha/go-oneliners"
 	"gopkg.in/robfig/cron.v2"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -64,23 +65,33 @@ func New(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt
 
 // Init and/or connect to repo
 func (c *Scheduler) Setup() error {
+	oneliners.FILE()
 	resource, err := c.stashClient.Restics(c.opt.ResourceNamespace).Get(c.opt.ResourceName)
 	if err != nil {
+		oneliners.FILE(err)
 		return err
 	}
+	oneliners.FILE()
 	log.Infof("Found restic %s", resource.Name)
 	if resource.Spec.Backend.RepositorySecretName == "" {
+		oneliners.FILE()
 		return errors.New("Missing repository secret name")
 	}
+	oneliners.FILE()
 	secret, err := c.kubeClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.RepositorySecretName, metav1.GetOptions{})
 	if err != nil {
+		oneliners.FILE(err)
 		return err
 	}
+	oneliners.FILE()
 	log.Infof("Found repository secret %s", secret.Name)
 	err = c.resticCLI.SetupEnv(resource, secret)
 	if err != nil {
+		oneliners.FILE(err)
 		return err
 	}
+	c.resticCLI.DumpEnv()
+	oneliners.FILE()
 	return c.resticCLI.InitRepositoryIfAbsent()
 }
 
@@ -172,6 +183,7 @@ func (c *Scheduler) configureScheduler() error {
 	if err != nil {
 		return err
 	}
+	c.resticCLI.DumpEnv()
 
 	// Remove previous jobs
 	for _, v := range c.cron.Entries() {

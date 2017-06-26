@@ -5,6 +5,7 @@ import (
 
 	sapi "github.com/appscode/stash/api"
 	shell "github.com/codeskyblue/go-sh"
+	oneliners "github.com/tamalsaha/go-oneliners"
 )
 
 const (
@@ -47,6 +48,7 @@ func (w *ResticWrapper) ListSnapshots() ([]Snapshot, error) {
 
 func (w *ResticWrapper) InitRepositoryIfAbsent() error {
 	if err := w.sh.Command(Exe, "snapshots", "--json").Run(); err != nil {
+		oneliners.FILE()
 		return w.sh.Command(Exe, "init").Run()
 	}
 	return nil
