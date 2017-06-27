@@ -95,7 +95,7 @@ func (c *Controller) EnsureDeploymentExtensionSidecar(resource *extensions.Deplo
 		}
 		resource.Annotations[sapi.ConfigName] = restic.Name
 		resource.Annotations[sapi.VersionTag] = c.SidecarImageTag
-		resource, err = c.kubeClient.ExtensionsV1beta1().Deployments(resource.Namespace).Update(resource)
+		_, err = c.kubeClient.ExtensionsV1beta1().Deployments(resource.Namespace).Update(resource)
 		if err == nil {
 			break
 		}
@@ -142,7 +142,7 @@ func (c *Controller) EnsureDeploymentExtensionSidecarDeleted(resource *extension
 			delete(resource.Annotations, sapi.ConfigName)
 			delete(resource.Annotations, sapi.VersionTag)
 		}
-		resource, err = c.kubeClient.ExtensionsV1beta1().Deployments(resource.Namespace).Update(resource)
+		_, err = c.kubeClient.ExtensionsV1beta1().Deployments(resource.Namespace).Update(resource)
 		if err == nil {
 			break
 		}

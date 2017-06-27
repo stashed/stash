@@ -94,7 +94,7 @@ func (c *Controller) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, re
 		}
 		resource.Annotations[sapi.ConfigName] = restic.Name
 		resource.Annotations[sapi.VersionTag] = c.SidecarImageTag
-		resource, err = c.kubeClient.ExtensionsV1beta1().ReplicaSets(resource.Namespace).Update(resource)
+		_, err = c.kubeClient.ExtensionsV1beta1().ReplicaSets(resource.Namespace).Update(resource)
 		if err == nil {
 			break
 		}
@@ -141,7 +141,7 @@ func (c *Controller) EnsureReplicaSetSidecarDeleted(resource *extensions.Replica
 			delete(resource.Annotations, sapi.ConfigName)
 			delete(resource.Annotations, sapi.VersionTag)
 		}
-		resource, err = c.kubeClient.ExtensionsV1beta1().ReplicaSets(resource.Namespace).Update(resource)
+		_, err = c.kubeClient.ExtensionsV1beta1().ReplicaSets(resource.Namespace).Update(resource)
 		if err == nil {
 			break
 		}
