@@ -1,15 +1,18 @@
-stashoperator:
-  deploymentStrategy: RollingUpdate
-  namespace: kube-system
-  pushgateway:
-    image: prom/pushgateway
-    imagePullPolicy: IfNotPresent
-    imageTag: v0.4.0
-  replicas: 1
-  restartPolicy: Always
+# Default values for stash.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+replicaCount: 1
+pushgateway:
+  image: prom/pushgateway
+  pullPolicy: IfNotPresent
+  tag: v0.4.0
+operator:
+  image: appscode/stash
+  pullPolicy: IfNotPresent
+  tag: 0.1.0
   serviceType: ClusterIP
   sessionAffinity: None
-  stashoperator:
-    image: appscode/stash
-    imagePullPolicy: IfNotPresent
-    imageTag: 0.1.0
+## Install Default RBAC roles and bindings
+rbac:
+  install: false
+  apiVersion: v1beta1

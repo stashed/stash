@@ -41,4 +41,4 @@ The following tables lists the configurable parameters of the Stash chart and th
 | Parameter                  | Description                | Default                                                    |
 | -----------------------    | ----------------------     | ------------------- |
 | `image`                    |  Container image to run    | `appscode/stash`   |
-| `imageTag`                 |  Image tag of container    | `latest`            |
+| `tag`                 |  Image tag of container    | `latest`            |

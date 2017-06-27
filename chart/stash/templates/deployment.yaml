@@ -7,9 +7,9 @@ metadata:
     heritage: "{{ .Release.Service }}"
     release: "{{ .Release.Name }}"
   name: '{{ template "fullname" . }}-stash-operator'
-  namespace: '{{.Values.stashoperator.namespace}}'
+  namespace: '{{.Values.operator.namespace}}'
 spec:
-  replicas: {{.Values.stashoperator.replicas}}
+  replicas: {{.Values.operator.replicas}}
   selector:
     matchLabels:
       app: '{{.Release.Name}}-stash-operator'
@@ -30,8 +30,8 @@ spec:
       - args:
         - run
         - --v=3
-        image: '{{.Values.stashoperator.stashoperator.image}}:{{.Values.stashoperator.stashoperator.imageTag}}'
-        imagePullPolicy: '{{.Values.stashoperator.stashoperator.imagePullPolicy}}'
+        image: '{{.Values.operator.operator.image}}:{{.Values.operator.operator.tag}}'
+        pullPolicy: '{{.Values.operator.operator.pullPolicy}}'
         name: stash-operator
         ports:
         - containerPort: 56790
@@ -41,8 +41,8 @@ spec:
       - args:
         - -web.listen-address=:56789
         - -persistence.file=/var/pv/pushgateway.dat
-        image: '{{.Values.stashoperator.pushgateway.image}}:{{.Values.stashoperator.pushgateway.imageTag}}'
-        imagePullPolicy: '{{.Values.stashoperator.pushgateway.imagePullPolicy}}'
+        image: '{{.Values.operator.pushgateway.image}}:{{.Values.operator.pushgateway.tag}}'
+        pullPolicy: '{{.Values.operator.pushgateway.pullPolicy}}'
         name: pushgateway
         ports:
         - containerPort: 56789
@@ -54,5 +54,5 @@ spec:
           name: data-volume
         - mountPath: /tmp
           name: stash-scratchdir
-      restartPolicy: '{{.Values.stashoperator.restartPolicy}}'
+      restartPolicy: '{{.Values.operator.restartPolicy}}'
       schedulerName: default-scheduler
