@@ -27,13 +27,13 @@ check_antipackage()
 
 # ref: https://github.com/ellisonbg/antipackage
 import antipackage
-from github.appscode.libbuild import libbuild
+from github.appscode.libbuild import libbuild, pydotenv
 
 import os
 import os.path
 import subprocess
 import sys
-from os.path import expandvars
+from os.path import expandvars, join, dirname
 
 libbuild.REPO_ROOT = expandvars('$GOPATH') + '/src/github.com/appscode/stash'
 BUILD_METADATA = libbuild.metadata(libbuild.REPO_ROOT)
@@ -156,19 +156,21 @@ def default():
     fmt()
     die(call('GO15VENDOREXPERIMENT=1 ' + libbuild.GOC + ' install . ./test/...'))
 
-def test(type):
+def test(type, *args):
+    pydotenv.load_dotenv(join(libbuild.REPO_ROOT, 'test/e2e/config/.env'))
     if type == 'unit':
         unit_test()
     elif type == 'e2e':
         e2e_test()
-
+    else:
+        print '{test unit|minikube|e2e}'
 
 def unit_test():
       die(call(libbuild.GOC + ' test -v ./pkg/...'))
 
 
 def e2e_test():
-    die(call(libbuild.GOC + ' test -v ./test/e2e/... -timeout 10h'))
+    die(call('ginkgo -r --progress --trace -- --v=3'))
 
 
 if __name__ == "__main__":
