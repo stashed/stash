@@ -170,7 +170,7 @@ def unit_test():
 
 
 def e2e_test():
-    die(call('ginkgo -r --v --progress --trace -- --v=3'))
+    die(call('ginkgo -r --progress --trace -- --v=3'))
 
 
 if __name__ == "__main__":

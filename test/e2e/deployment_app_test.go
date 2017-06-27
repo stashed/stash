@@ -24,7 +24,9 @@ var _ = Describe("DeploymentApp", func() {
 		f = root.Invoke()
 	})
 	JustBeforeEach(func() {
-		Expect(cred).NotTo(BeZero())
+		if missing, _ := BeZero().Match(cred); missing {
+			Skip("Missing repository credential")
+		}
 		restic = f.Restic()
 		restic.Spec.Backend.RepositorySecretName = cred.Name
 		deployment = f.DeploymentApp()

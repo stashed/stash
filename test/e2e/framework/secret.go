@@ -27,6 +27,11 @@ func (f *Invocation) SecretForLocalBackend() apiv1.Secret {
 }
 
 func (f *Invocation) SecretForS3Backend() apiv1.Secret {
+	if os.Getenv(cli.AWS_ACCESS_KEY_ID) == "" ||
+		os.Getenv(cli.AWS_SECRET_ACCESS_KEY) == "" {
+		return apiv1.Secret{}
+	}
+
 	return apiv1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(f.app + "-s3"),
@@ -34,13 +39,18 @@ func (f *Invocation) SecretForS3Backend() apiv1.Secret {
 		},
 		Data: map[string][]byte{
 			cli.RESTIC_PASSWORD:       []byte(TEST_RESTIC_PASSWORD),
-			cli.AWS_ACCESS_KEY_ID:     []byte(cli.AWS_ACCESS_KEY_ID),
-			cli.AWS_SECRET_ACCESS_KEY: []byte(cli.AWS_SECRET_ACCESS_KEY),
+			cli.AWS_ACCESS_KEY_ID:     []byte(os.Getenv(cli.AWS_ACCESS_KEY_ID)),
+			cli.AWS_SECRET_ACCESS_KEY: []byte(os.Getenv(cli.AWS_SECRET_ACCESS_KEY)),
 		},
 	}
 }
 
 func (f *Invocation) SecretForGCSBackend() apiv1.Secret {
+	if os.Getenv(cli.GOOGLE_PROJECT_ID) == "" ||
+		(os.Getenv(cli.GOOGLE_APPLICATION_CREDENTIALS) == "" && os.Getenv(cli.GOOGLE_SERVICE_ACCOUNT_JSON_KEY) == "") {
+		return apiv1.Secret{}
+	}
+
 	jsonKey := os.Getenv(cli.GOOGLE_SERVICE_ACCOUNT_JSON_KEY)
 	if jsonKey == "" {
 		if keyBytes, err := ioutil.ReadFile(os.Getenv(cli.GOOGLE_APPLICATION_CREDENTIALS)); err == nil {
@@ -54,13 +64,18 @@ func (f *Invocation) SecretForGCSBackend() apiv1.Secret {
 		},
 		Data: map[string][]byte{
 			cli.RESTIC_PASSWORD:                 []byte(TEST_RESTIC_PASSWORD),
-			cli.GOOGLE_PROJECT_ID:               []byte(cli.GOOGLE_PROJECT_ID),
+			cli.GOOGLE_PROJECT_ID:               []byte(os.Getenv(cli.GOOGLE_PROJECT_ID)),
 			cli.GOOGLE_SERVICE_ACCOUNT_JSON_KEY: []byte(jsonKey),
 		},
 	}
 }
 
 func (f *Invocation) SecretForAzureBackend() apiv1.Secret {
+	if os.Getenv(cli.AZURE_ACCOUNT_NAME) == "" ||
+		os.Getenv(cli.AZURE_ACCOUNT_KEY) == "" {
+		return apiv1.Secret{}
+	}
+
 	return apiv1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(f.app + "-azure"),
@@ -68,8 +83,8 @@ func (f *Invocation) SecretForAzureBackend() apiv1.Secret {
 		},
 		Data: map[string][]byte{
 			cli.RESTIC_PASSWORD:    []byte(TEST_RESTIC_PASSWORD),
-			cli.AZURE_ACCOUNT_NAME: []byte(cli.AZURE_ACCOUNT_NAME),
-			cli.AZURE_ACCOUNT_KEY:  []byte(cli.AZURE_ACCOUNT_KEY),
+			cli.AZURE_ACCOUNT_NAME: []byte(os.Getenv(cli.AZURE_ACCOUNT_NAME)),
+			cli.AZURE_ACCOUNT_KEY:  []byte(os.Getenv(cli.AZURE_ACCOUNT_KEY)),
 		},
 	}
 }
