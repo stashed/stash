@@ -19,6 +19,16 @@ var _ = Describe("DeploymentExtension", func() {
 		cred       apiv1.Secret
 		deployment extensions.Deployment
 	)
+
+	BeforeEach(func() {
+		f = root.Invoke()
+	})
+	JustBeforeEach(func() {
+		restic = f.Restic()
+		restic.Spec.Backend.RepositorySecretName = cred.Name
+		deployment = f.DeploymentExtension()
+	})
+
 	var (
 		shouldBackupNewDeployment = func() {
 			By("Creating repository Secret " + cred.Name)
@@ -40,60 +50,37 @@ var _ = Describe("DeploymentExtension", func() {
 			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
 				return r.Status.BackupCount
 			}, BeNumerically(">=", 1)))
+
+			By("Waiting for backup event")
+			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
-	)
 
-	BeforeEach(func() {
-		f = root.Invoke()
-		cred = f.SecretForLocalBackend()
-		restic = f.Restic()
-		restic.Spec.Backend.RepositorySecretName = cred.Name
-		deployment = f.DeploymentExtension()
-	})
+		shouldBackupExistingDeployment = func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
 
-	Describe("Sidecar added to", func() {
-		AfterEach(func() {
-			f.DeleteDeploymentExtension(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
-		})
+			By("Creating DeploymentExtension " + deployment.Name)
+			err = f.CreateDeploymentExtension(deployment)
+			Expect(err).NotTo(HaveOccurred())
 
-		Context("new DeploymentExtension", func() {
-			It(`should backup to "Local" backend`, shouldBackupNewDeployment)
-		})
+			By("Creating restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
 
-		Context("existing DeploymentExtension", func() {
-			It(`should backup to "Local" backend`, func() {
-				By("Creating repository Secret " + cred.Name)
-				err = f.CreateSecret(cred)
-				Expect(err).NotTo(HaveOccurred())
+			By("Waiting for sidecar")
+			f.EventuallyDeploymentExtension(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
-				By("Creating DeploymentExtension " + deployment.Name)
-				err = f.CreateDeploymentExtension(deployment)
-				Expect(err).NotTo(HaveOccurred())
+			By("Waiting for backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 1)))
 
-				By("Creating restic " + restic.Name)
-				err = f.CreateRestic(restic)
-				Expect(err).NotTo(HaveOccurred())
+			By("Waiting for backup event")
+			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+		}
 
-				By("Waiting for sidecar")
-				f.EventuallyDeploymentExtension(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
-
-				By("Waiting for backup to complete")
-				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
-					return r.Status.BackupCount
-				}, BeNumerically(">=", 1)))
-			})
-		})
-	})
-
-	Describe("Sidecar removed", func() {
-		AfterEach(func() {
-			f.DeleteDeploymentExtension(deployment.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
-		})
-
-		It(`when restic is deleted`, func() {
+		shouldStopBackup = func() {
 			By("Creating repository Secret " + cred.Name)
 			err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
@@ -118,6 +105,81 @@ var _ = Describe("DeploymentExtension", func() {
 			f.DeleteRestic(restic.ObjectMeta)
 
 			f.EventuallyDeploymentExtension(deployment.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
+		}
+	)
+
+	Describe("Creating restic for", func() {
+		AfterEach(func() {
+			f.DeleteDeploymentExtension(deployment.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+		})
+
+		Context(`"Local" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+			})
+			It(`should backup new DeploymentExtension`, shouldBackupNewDeployment)
+			It(`should backup existing DeploymentExtension`, shouldBackupExistingDeployment)
+		})
+
+		Context(`"S3" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForS3Backend()
+			})
+			It(`should backup new DeploymentExtension`, shouldBackupNewDeployment)
+			It(`should backup existing DeploymentExtension`, shouldBackupExistingDeployment)
+		})
+
+		Context(`"GCS" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForGCSBackend()
+			})
+			It(`should backup new DeploymentExtension`, shouldBackupNewDeployment)
+			It(`should backup existing DeploymentExtension`, shouldBackupExistingDeployment)
+		})
+
+		Context(`"Azure" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForAzureBackend()
+			})
+			It(`should backup new DeploymentExtension`, shouldBackupNewDeployment)
+			It(`should backup existing DeploymentExtension`, shouldBackupExistingDeployment)
+		})
+	})
+
+	Describe("Deleting restic for", func() {
+		AfterEach(func() {
+			f.DeleteDeploymentExtension(deployment.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+		})
+
+		Context(`"Local" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+			})
+			It(`should stop backup`, shouldStopBackup)
+		})
+
+		Context(`"S3" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForS3Backend()
+			})
+			It(`should stop backup`, shouldStopBackup)
+		})
+
+		Context(`"GCS" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForGCSBackend()
+			})
+			It(`should stop backup`, shouldStopBackup)
+		})
+
+		Context(`"Azure" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForAzureBackend()
+			})
+			It(`should stop backup`, shouldStopBackup)
 		})
 	})
 })

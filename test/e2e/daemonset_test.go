@@ -9,8 +9,6 @@ import (
 	. "github.com/onsi/gomega"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
-	"github.com/ncw/swift/rs"
-	"github.com/constabulary/gb/testdata/src/f"
 )
 
 var _ = Describe("DaemonSet", func() {
@@ -31,7 +29,7 @@ var _ = Describe("DaemonSet", func() {
 		daemon = f.DaemonSet()
 	})
 
-	var(
+	var (
 		shouldBackupNewDaemonSet = func() {
 			By("Creating repository Secret " + cred.Name)
 			err = f.CreateSecret(cred)
