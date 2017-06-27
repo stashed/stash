@@ -19,6 +19,30 @@ var _ = Describe("DeploymentExtension", func() {
 		cred       apiv1.Secret
 		deployment extensions.Deployment
 	)
+	var (
+		shouldBackupNewDeployment = func()  {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating DeploymentExtension " + deployment.Name)
+			err = f.CreateDeploymentExtension(deployment)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Waiting for sidecar")
+			f.EventuallyDeploymentExtension(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+			By("Waiting for backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 1)))
+		}
+	)
+	
 
 	BeforeEach(func() {
 		f = root.Invoke()
@@ -36,27 +60,7 @@ var _ = Describe("DeploymentExtension", func() {
 		})
 
 		Context("new DeploymentExtension", func() {
-			It(`should backup to "Local" backend`, func() {
-				By("Creating repository Secret " + cred.Name)
-				err = f.CreateSecret(cred)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Creating restic " + restic.Name)
-				err = f.CreateRestic(restic)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Creating DeploymentExtension " + deployment.Name)
-				err = f.CreateDeploymentExtension(deployment)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Waiting for sidecar")
-				f.EventuallyDeploymentExtension(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
-
-				By("Waiting for backup to complete")
-				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
-					return r.Status.BackupCount
-				}, BeNumerically(">=", 1)))
-			})
+			FIt(`should backup to "Local" backend`, shouldBackupNewDeployment)
 		})
 
 		Context("existing DeploymentExtension", func() {
