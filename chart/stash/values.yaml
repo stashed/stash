@@ -2,16 +2,14 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 replicaCount: 1
-pushgateway:
-  image: prom/pushgateway
-  pullPolicy: IfNotPresent
-  tag: v0.4.0
 operator:
   image: appscode/stash
   pullPolicy: IfNotPresent
   tag: 0.1.0
-  serviceType: ClusterIP
-  sessionAffinity: None
+pushgateway:
+  image: prom/pushgateway
+  pullPolicy: IfNotPresent
+  tag: v0.4.0
 ## Install Default RBAC roles and bindings
 rbac:
   install: false
