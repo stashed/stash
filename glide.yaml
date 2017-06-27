@@ -14,7 +14,9 @@ import:
 - package: github.com/prometheus/client_golang
   version: v0.8.0
 - package: github.com/spf13/cobra
+  version: master
 - package: github.com/spf13/pflag
+  version: master
 - package: gopkg.in/ini.v1
   version: v1.28.0
 - package: gopkg.in/robfig/cron.v2
