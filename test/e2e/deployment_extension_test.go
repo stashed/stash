@@ -20,7 +20,7 @@ var _ = Describe("DeploymentExtension", func() {
 		deployment extensions.Deployment
 	)
 	var (
-		shouldBackupNewDeployment = func()  {
+		shouldBackupNewDeployment = func() {
 			By("Creating repository Secret " + cred.Name)
 			err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
@@ -42,7 +42,6 @@ var _ = Describe("DeploymentExtension", func() {
 			}, BeNumerically(">=", 1)))
 		}
 	)
-	
 
 	BeforeEach(func() {
 		f = root.Invoke()
