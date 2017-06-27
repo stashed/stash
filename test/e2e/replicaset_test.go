@@ -31,7 +31,7 @@ var _ = Describe("ReplicaSet", func() {
 	})
 
 	var (
-		shouldBackupNewReplicaset = func() {
+		shouldBackupNewReplicaSet = func() {
 			By("Creating repository Secret " + cred.Name)
 			err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
@@ -120,7 +120,7 @@ var _ = Describe("ReplicaSet", func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 			})
-			It(`should backup new ReplicaSet`, shouldBackupNewReplicaset)
+			It(`should backup new ReplicaSet`, shouldBackupNewReplicaSet)
 			It(`should backup existing ReplicaSet`, shouldBackupExistingReplicaSet)
 		})
 
@@ -128,7 +128,7 @@ var _ = Describe("ReplicaSet", func() {
 			BeforeEach(func() {
 				cred = f.SecretForS3Backend()
 			})
-			It(`should backup new ReplicaSet`, shouldBackupNewReplicaset)
+			It(`should backup new ReplicaSet`, shouldBackupNewReplicaSet)
 			It(`should backup existing ReplicaSet`, shouldBackupExistingReplicaSet)
 		})
 
@@ -136,7 +136,7 @@ var _ = Describe("ReplicaSet", func() {
 			BeforeEach(func() {
 				cred = f.SecretForGCSBackend()
 			})
-			It(`should backup new ReplicaSet`, shouldBackupNewReplicaset)
+			It(`should backup new ReplicaSet`, shouldBackupNewReplicaSet)
 			It(`should backup existing ReplicaSet`, shouldBackupExistingReplicaSet)
 		})
 
@@ -144,7 +144,7 @@ var _ = Describe("ReplicaSet", func() {
 			BeforeEach(func() {
 				cred = f.SecretForAzureBackend()
 			})
-			It(`should backup new ReplicaSet`, shouldBackupNewReplicaset)
+			It(`should backup new ReplicaSet`, shouldBackupNewReplicaSet)
 			It(`should backup existing ReplicaSet`, shouldBackupExistingReplicaSet)
 		})
 	})
@@ -182,6 +182,5 @@ var _ = Describe("ReplicaSet", func() {
 			})
 			It(`should stop backup`, shouldStopBackup)
 		})
-
 	})
 })
