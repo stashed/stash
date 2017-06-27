@@ -28,7 +28,6 @@ var _ = Describe("StatefulSet", func() {
 		if missing, _ := BeZero().Match(cred); missing {
 			Skip("Missing repository credential")
 		}
-		restic = f.Restic()
 		restic.Spec.Backend.RepositorySecretName = cred.Name
 		svc = f.HeadlessService()
 		ss = f.StatefulSet(restic)
@@ -78,6 +77,7 @@ var _ = Describe("StatefulSet", func() {
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
+				restic = f.ResticForLocalBackend()
 			})
 			It(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
 		})
@@ -85,6 +85,7 @@ var _ = Describe("StatefulSet", func() {
 		Context(`"S3" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForS3Backend()
+				restic = f.ResticForS3Backend()
 			})
 			It(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
 		})
@@ -92,6 +93,7 @@ var _ = Describe("StatefulSet", func() {
 		Context(`"GCS" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForGCSBackend()
+				restic = f.ResticForGCSBackend()
 			})
 			It(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
 		})
@@ -99,6 +101,7 @@ var _ = Describe("StatefulSet", func() {
 		Context(`"Azure" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForAzureBackend()
+				restic = f.ResticForAzureBackend()
 			})
 			It(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
 		})

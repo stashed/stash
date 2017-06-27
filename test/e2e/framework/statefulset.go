@@ -20,7 +20,7 @@ func (f *Invocation) StatefulSet(r sapi.Restic) apps.StatefulSet {
 			},
 		},
 		Spec: apps.StatefulSetSpec{
-			Replicas: types.Int32P(1),
+			Replicas:    types.Int32P(1),
 			Template:    f.PodTemplate(),
 			ServiceName: TEST_HEADLESS_SERVICE,
 		},
