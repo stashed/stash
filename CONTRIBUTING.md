@@ -13,7 +13,7 @@ If you have a question about Stash or having problem using it, you can contact u
 If you have found a bug with Stash or want to request for new features, please [file an issue](https://github.com/appscode/Stash/issues/new). 
 
 ## Submit PR
-If you fix a bug or developed a new feature, feel free to submit a PR. In either case, please file a [Github issue]((https://github.com/appscode/Stash/issues/new)) first, so that we can have a discussion on it.
+If you fix a bug or developed a new feature, feel free to submit a PR. In either case, please file a [Github issue]((https://github.com/appscode/stash/issues/new)) first, so that we can have a discussion on it.
 
 1. Fork the git repo.
 2. Add Your changes
