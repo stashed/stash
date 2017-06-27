@@ -60,6 +60,9 @@ var _ = Describe("StatefulSet", func() {
 				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
 					return r.Status.BackupCount
 				}, BeNumerically(">=", 1)))
+
+				By("Waiting for backup event")
+				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 			})
 		})
 	})

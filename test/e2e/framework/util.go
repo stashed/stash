@@ -1,10 +1,6 @@
 package framework
 
 import (
-	"errors"
-	"time"
-
-	"github.com/appscode/log"
 	"github.com/appscode/stash/pkg/eventer"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,29 +36,12 @@ func (f *Framework) EventualWarning(meta metav1.ObjectMeta) GomegaAsyncAssertion
 	})
 }
 
-func (f *Framework) WaitForBackupEvent(objName string) error {
-	try := 0
-	fieldSelector := fields.SelectorFromSet(fields.Set{
-		"involvedObject.kind":      "Stash",
-		"involvedObject.name":      objName,
-		"involvedObject.namespace": f.namespace,
-		"type": apiv1.EventTypeNormal,
-	})
-	for {
-		events, err := f.kubeClient.CoreV1().Events(f.namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
-		if err == nil {
-			for _, e := range events.Items {
-				if e.Reason == eventer.EventReasonSuccessfulBackup {
-					return nil
-				}
-			}
+func (f *Framework) CountSuccessfulBackups(events []apiv1.Event) int {
+	count := 0
+	for _, e := range events {
+		if e.Reason == eventer.EventReasonSuccessfulBackup {
+			count++
 		}
-		if try > 12 {
-			return err
-		}
-		log.Infoln("Waiting for 10 second for events of backup process")
-		time.Sleep(time.Second * 3)
-		try++
 	}
-	return errors.New("Stash backup failed.")
+	return count
 }

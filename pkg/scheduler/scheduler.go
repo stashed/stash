@@ -52,7 +52,6 @@ type Scheduler struct {
 	cron        *cron.Cron
 	recorder    record.EventRecorder
 	syncPeriod  time.Duration
-	hostname    string
 }
 
 func New(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt Options) (*Scheduler, error) {
@@ -67,12 +66,11 @@ func New(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt
 		syncPeriod:  30 * time.Second,
 	}
 	if opt.PrefixHostname {
-		var err error
-		ctrl.hostname, err = os.Hostname()
+		hostname, err := os.Hostname()
 		if err != nil {
 			return nil, err
 		}
-		ctrl.resticCLI = cli.New(opt.ScratchDir, ctrl.hostname)
+		ctrl.resticCLI = cli.New(opt.ScratchDir, hostname)
 	} else {
 		ctrl.resticCLI = cli.New(opt.ScratchDir, "")
 	}
@@ -338,7 +336,8 @@ func (c *Scheduler) runOnce() (err error) {
 			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToBackup, " Error taking backup: "+err.Error())
 			return
 		} else {
-			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonSuccessfulBackup, "Backuped host:"+c.hostname+" path:"+fg.Path)
+			hostname, _ := os.Hostname()
+			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonSuccessfulBackup, "Backuped host:"+hostname+" path:"+fg.Path)
 		}
 
 		forgetOpMetric := restic_session_duration_seconds.WithLabelValues(sessionID, sanitizeLabelValue(fg.Path), "forget")
