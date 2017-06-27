@@ -21,7 +21,7 @@ func (f *Framework) DeploymentApp() apps.Deployment {
 			Replicas: types.Int32P(1),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": "nginx",
+					"app": "stash-e2e",
 				},
 			},
 			Template: f.PodTemplate(),
