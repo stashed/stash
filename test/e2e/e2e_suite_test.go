@@ -24,7 +24,7 @@ const (
 
 var (
 	ctrl *controller.Controller
-	f    *framework.Framework
+	root *framework.Framework
 )
 
 func TestE2e(t *testing.T) {
@@ -47,20 +47,20 @@ var _ = BeforeSuite(func() {
 	kubeClient := clientset.NewForConfigOrDie(config)
 	stashClient := rcs.NewForConfigOrDie(config)
 
-	f = framework.New(kubeClient, stashClient)
-	err = f.CreateNamespace()
+	root = framework.New(kubeClient, stashClient)
+	err = root.CreateNamespace()
 	Expect(err).NotTo(HaveOccurred())
-	By("Using test namespace " + f.Namespace())
+	By("Using test namespace " + root.Namespace())
 
 	ctrl = controller.New(kubeClient, stashClient, "canary")
 	By("Registering TPR group " + sapi.GroupName)
 	err = ctrl.Setup()
 	Expect(err).NotTo(HaveOccurred())
-	f.EventuallyTPR("restic." + sapi.GroupName).Should(Succeed())
+	root.EventuallyTPR("restic." + sapi.GroupName).Should(Succeed())
 
 	ctrl.Run()
 })
 
 var _ = AfterSuite(func() {
-	// f.DeleteNamespace()
+	// root.DeleteNamespace()
 })

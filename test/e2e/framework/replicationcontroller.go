@@ -8,18 +8,21 @@ import (
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
-func (f *Framework) ReplicationController() apiv1.ReplicationController {
+func (f *Invocation) ReplicationController() apiv1.ReplicationController {
 	podTemplate := f.PodTemplate()
 	return apiv1.ReplicationController{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
 			Namespace: f.namespace,
 			Labels: map[string]string{
-				"app": "stash-e2e",
+				"app": f.app,
 			},
 		},
 		Spec: apiv1.ReplicationControllerSpec{
 			Replicas: types.Int32P(1),
+			Selector: map[string]string{
+				"app": f.app,
+			},
 			Template: &podTemplate,
 		},
 	}
@@ -31,7 +34,7 @@ func (f *Framework) CreateReplicationController(obj apiv1.ReplicationController)
 }
 
 func (f *Framework) DeleteReplicationController(meta metav1.ObjectMeta) error {
-	return f.kubeClient.CoreV1().ReplicationControllers(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+	return f.kubeClient.CoreV1().ReplicationControllers(meta.Namespace).Delete(meta.Name, deleteInForeground())
 }
 
 func (f *Framework) EventuallyReplicationController(meta metav1.ObjectMeta) GomegaAsyncAssertion {

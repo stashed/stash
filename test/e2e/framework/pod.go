@@ -5,12 +5,12 @@ import (
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
-func (f *Framework) PodTemplate() apiv1.PodTemplateSpec {
+func (f *Invocation) PodTemplate() apiv1.PodTemplateSpec {
 	return apiv1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "busybox",
 			Labels: map[string]string{
-				"app": "stash-e2e",
+				"app": f.app,
 			},
 		},
 		Spec: apiv1.PodSpec{

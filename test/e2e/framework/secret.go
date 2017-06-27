@@ -11,10 +11,10 @@ const (
 	TEST_RESTIC_PASSWORD = "not@secret"
 )
 
-func (f *Framework) SecretForLocalBackend() apiv1.Secret {
+func (f *Invocation) SecretForLocalBackend() apiv1.Secret {
 	return apiv1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix("gcs"),
+			Name:      rand.WithUniqSuffix(f.app + "-local"),
 			Namespace: f.namespace,
 		},
 		Data: map[string][]byte{
@@ -23,10 +23,10 @@ func (f *Framework) SecretForLocalBackend() apiv1.Secret {
 	}
 }
 
-func (f *Framework) SecretForS3Backend() apiv1.Secret {
+func (f *Invocation) SecretForS3Backend() apiv1.Secret {
 	return apiv1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix("gcs"),
+			Name:      rand.WithUniqSuffix(f.app + "-s3"),
 			Namespace: f.namespace,
 		},
 		Data: map[string][]byte{
@@ -35,10 +35,10 @@ func (f *Framework) SecretForS3Backend() apiv1.Secret {
 	}
 }
 
-func (f *Framework) SecretForGCSBackend() apiv1.Secret {
+func (f *Invocation) SecretForGCSBackend() apiv1.Secret {
 	return apiv1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix("gcs"),
+			Name:      rand.WithUniqSuffix(f.app + "-gcs"),
 			Namespace: f.namespace,
 		},
 		Data: map[string][]byte{
@@ -47,10 +47,10 @@ func (f *Framework) SecretForGCSBackend() apiv1.Secret {
 	}
 }
 
-func (f *Framework) SecretForAzureBackend() apiv1.Secret {
+func (f *Invocation) SecretForAzureBackend() apiv1.Secret {
 	return apiv1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix("gcs"),
+			Name:      rand.WithUniqSuffix(f.app + "-azure"),
 			Namespace: f.namespace,
 		},
 		Data: map[string][]byte{
@@ -67,5 +67,5 @@ func (f *Framework) CreateSecret(obj apiv1.Secret) error {
 }
 
 func (f *Framework) DeleteSecret(meta metav1.ObjectMeta) error {
-	return f.kubeClient.CoreV1().Secrets(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+	return f.kubeClient.CoreV1().Secrets(meta.Namespace).Delete(meta.Name, deleteInForeground())
 }

@@ -138,6 +138,11 @@ func (c *Controller) EnsureReplicationControllerSidecarDeleted(resource *apiv1.R
 
 	attempt := 0
 	for ; attempt < maxAttempts; attempt = attempt + 1 {
+		if name := util.GetString(resource.Annotations, sapi.ConfigName); name == "" {
+			log.Infof("Restic sidecar already removed for ReplicationController %s@%s.", resource.Name, resource.Namespace)
+			return nil
+		}
+
 		resource.Spec.Template.Spec.Containers = util.RemoveContainer(resource.Spec.Template.Spec.Containers, util.StashContainer)
 		resource.Spec.Template.Spec.Volumes = util.RemoveVolume(resource.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		resource.Spec.Template.Spec.Volumes = util.RemoveVolume(resource.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)

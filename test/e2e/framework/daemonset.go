@@ -7,16 +7,21 @@ import (
 	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
-func (f *Framework) DaemonSet() extensions.DaemonSet {
+func (f *Invocation) DaemonSet() extensions.DaemonSet {
 	daemon := extensions.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
 			Namespace: f.namespace,
 			Labels: map[string]string{
-				"app": "stash-e2e",
+				"app": f.app,
 			},
 		},
 		Spec: extensions.DaemonSetSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app": f.app,
+				},
+			},
 			Template: f.PodTemplate(),
 		},
 	}
@@ -36,7 +41,7 @@ func (f *Framework) CreateDaemonSet(obj extensions.DaemonSet) error {
 }
 
 func (f *Framework) DeleteDaemonSet(meta metav1.ObjectMeta) error {
-	return f.kubeClient.ExtensionsV1beta1().DaemonSets(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+	return f.kubeClient.ExtensionsV1beta1().DaemonSets(meta.Namespace).Delete(meta.Name, deleteInForeground())
 }
 
 func (f *Framework) EventuallyDaemonSet(meta metav1.ObjectMeta) GomegaAsyncAssertion {

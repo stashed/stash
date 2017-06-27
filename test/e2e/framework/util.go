@@ -45,3 +45,13 @@ func (f *Framework) CountSuccessfulBackups(events []apiv1.Event) int {
 	}
 	return count
 }
+
+func deleteInBackground() *metav1.DeleteOptions {
+	policy := metav1.DeletePropagationBackground
+	return &metav1.DeleteOptions{PropagationPolicy: &policy}
+}
+
+func deleteInForeground() *metav1.DeleteOptions {
+	policy := metav1.DeletePropagationForeground
+	return &metav1.DeleteOptions{PropagationPolicy: &policy}
+}

@@ -9,7 +9,7 @@ import (
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
-func (f *Framework) Restic() sapi.Restic {
+func (f *Invocation) Restic() sapi.Restic {
 	return sapi.Restic{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: sapi.SchemeGroupVersion.String(),
@@ -22,7 +22,7 @@ func (f *Framework) Restic() sapi.Restic {
 		Spec: sapi.ResticSpec{
 			Selector: metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": "stash-e2e",
+					"app": f.app,
 				},
 			},
 			FileGroups: []sapi.FileGroup{
@@ -56,7 +56,7 @@ func (f *Framework) CreateRestic(obj sapi.Restic) error {
 }
 
 func (f *Framework) DeleteRestic(meta metav1.ObjectMeta) error {
-	return f.stashClient.Restics(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+	return f.stashClient.Restics(meta.Namespace).Delete(meta.Name, deleteInForeground())
 }
 
 func (f *Framework) EventuallyRestic(meta metav1.ObjectMeta) GomegaAsyncAssertion {

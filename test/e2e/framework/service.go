@@ -9,7 +9,7 @@ const (
 	TEST_HEADLESS_SERVICE = "headless"
 )
 
-func (f *Framework) HeadlessService() apiv1.Service {
+func (f *Invocation) HeadlessService() apiv1.Service {
 	return apiv1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      TEST_HEADLESS_SERVICE,
@@ -25,5 +25,5 @@ func (f *Framework) CreateService(obj apiv1.Service) error {
 }
 
 func (f *Framework) DeleteService(meta metav1.ObjectMeta) error {
-	return f.kubeClient.CoreV1().Services(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+	return f.kubeClient.CoreV1().Services(meta.Namespace).Delete(meta.Name, deleteInForeground())
 }

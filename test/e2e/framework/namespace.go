@@ -20,5 +20,5 @@ func (f *Framework) CreateNamespace() error {
 }
 
 func (f *Framework) DeleteNamespace() error {
-	return f.kubeClient.CoreV1().Namespaces().Delete(f.namespace, &metav1.DeleteOptions{})
+	return f.kubeClient.CoreV1().Namespaces().Delete(f.namespace, deleteInBackground())
 }

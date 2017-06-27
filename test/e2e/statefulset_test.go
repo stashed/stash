@@ -3,6 +3,7 @@ package e2e_test
 import (
 	sapi "github.com/appscode/stash/api"
 	"github.com/appscode/stash/pkg/util"
+	"github.com/appscode/stash/test/e2e/framework"
 	. "github.com/appscode/stash/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -13,6 +14,7 @@ import (
 var _ = Describe("StatefulSet", func() {
 	var (
 		err    error
+		f      *framework.Invocation
 		restic sapi.Restic
 		cred   apiv1.Secret
 		svc    apiv1.Service
@@ -20,6 +22,7 @@ var _ = Describe("StatefulSet", func() {
 	)
 
 	BeforeEach(func() {
+		f = root.Invoke()
 		cred = f.SecretForLocalBackend()
 		restic = f.Restic()
 		restic.Spec.Backend.RepositorySecretName = cred.Name
