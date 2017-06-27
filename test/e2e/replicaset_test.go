@@ -83,11 +83,11 @@ var _ = Describe("ReplicaSet", func() {
 
 	Describe("Sidecar removed", func() {
 		AfterEach(func() {
-			// f.DeleteReplicaSet(rs.ObjectMeta)
-			// f.DeleteSecret(cred.ObjectMeta)
+			 f.DeleteReplicaSet(rs.ObjectMeta)
+			 f.DeleteSecret(cred.ObjectMeta)
 		})
 
-		FIt(`when restic is deleted`, func() {
+		It(`when restic is deleted`, func() {
 			By("Creating repository Secret " + cred.Name)
 			err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
