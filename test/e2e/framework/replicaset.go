@@ -19,11 +19,6 @@ func (f *Invocation) ReplicaSet() extensions.ReplicaSet {
 		},
 		Spec: extensions.ReplicaSetSpec{
 			Replicas: types.Int32P(1),
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"app": f.app,
-				},
-			},
 			Template: f.PodTemplate(),
 		},
 	}
