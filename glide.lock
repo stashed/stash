@@ -1,5 +1,5 @@
-hash: b0cb3c5f74a20a006c6bc780c2fc58df8587c85b0c8f3975a5654b179a7b3a2b
-updated: 2017-06-26T09:39:09.719649874-07:00
+hash: f6401bf7ae726163fca774326545e264d044ea66520622e4c21fc78f14bb546f
+updated: 2017-06-27T07:04:34.070093364-07:00
 imports:
 - name: github.com/appscode/go
   version: ecda61fa4e8943020e9948723e49c4ae544f7a3a
@@ -25,6 +25,10 @@ imports:
   version: 33e0aa1cb7c019ccc3fbe049a8262a6403d30504
 - name: github.com/codeskyblue/go-sh
   version: b097669b1569203c3ce05a6b8717d43140fdb3d5
+- name: github.com/cpuguy83/go-md2man
+  version: 71acacd42f85e5e82f70a55327789582a5200a90
+  subpackages:
+  - md2man
 - name: github.com/davecgh/go-spew
   version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
   subpackages:
@@ -68,7 +72,7 @@ imports:
   subpackages:
   - lru
 - name: github.com/golang/protobuf
-  version: 8ee79997227bf9b34611aee7946ae64735e6fd93
+  version: 8616e8ee5e20a1704615e6c8d7afcdac06087a67
   subpackages:
   - proto
 - name: github.com/google/gofuzz
@@ -137,10 +141,16 @@ imports:
   version: 8a290539e2e8629dbc4e6bad948158f790ec31f4
 - name: github.com/PuerkitoBio/urlesc
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
+- name: github.com/russross/blackfriday
+  version: 300106c228d52c8941d4b3de6054a6062a86dda3
+- name: github.com/shurcooL/sanitized_anchor_name
+  version: 10ef21a441db47d8b13ebcc5fd2310f636973c77
 - name: github.com/Sirupsen/logrus
   version: 3ec0642a7fb6488f65b06f9040adc67e3990296a
 - name: github.com/spf13/cobra
   version: 4d647c8944eb42504a714e57e97f244ed6344722
+  subpackages:
+  - doc
 - name: github.com/spf13/pflag
   version: e57e3eeb33f795204c1ca35f56c44f83227c6e66
 - name: github.com/ugorji/go
@@ -155,6 +165,7 @@ imports:
   version: e90d6d0afc4c315a0d87a568ae68577cc15149a0
   subpackages:
   - context
+  - context/ctxhttp
   - html
   - html/atom
   - html/charset
