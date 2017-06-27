@@ -80,7 +80,7 @@ spec:
     spec:
       serviceAccountName: stash-operator
       containers:
-      - name: stash-operator
+      - name: operator
         args:
         - run
         - --v=3

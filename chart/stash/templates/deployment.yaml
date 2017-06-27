@@ -1,18 +1,14 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
+  name: {{ template "fullname" . }}
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     app: "{{ template "fullname" . }}"
     heritage: "{{ .Release.Service }}"
     release: "{{ .Release.Name }}"
-  name: '{{ template "fullname" . }}-stash-operator'
-  namespace: '{{.Values.operator.namespace}}'
 spec:
-  replicas: {{.Values.operator.replicas}}
-  selector:
-    matchLabels:
-      app: '{{.Release.Name}}-stash-operator'
+  replicas: {{.Values.replicaCount}}
   template:
     metadata:
       labels:
@@ -21,18 +17,16 @@ spec:
         heritage: "{{ .Release.Service }}"
         release: "{{ .Release.Name }}"
     spec:
-      volumes:
-      - emptyDir: {}
-        name: data-volume
-      - emptyDir: {}
-        name: stash-scratchdir
+{{- if .Values.rbac.install }}
+      serviceAccountName: {{ template "fullname" . }}
+{{- end }}
       containers:
       - args:
         - run
         - --v=3
-        image: '{{.Values.operator.operator.image}}:{{.Values.operator.operator.tag}}'
-        pullPolicy: '{{.Values.operator.operator.pullPolicy}}'
-        name: stash-operator
+        image: '{{.Values.operator.image}}:{{.Values.operator.tag}}'
+        imagePullPolicy: '{{.Values.operator.pullPolicy}}'
+        name: operator
         ports:
         - containerPort: 56790
           name: http
@@ -41,8 +35,8 @@ spec:
       - args:
         - -web.listen-address=:56789
         - -persistence.file=/var/pv/pushgateway.dat
-        image: '{{.Values.operator.pushgateway.image}}:{{.Values.operator.pushgateway.tag}}'
-        pullPolicy: '{{.Values.operator.pushgateway.pullPolicy}}'
+        image: '{{.Values.pushgateway.image}}:{{.Values.pushgateway.tag}}'
+        imagePullPolicy: '{{.Values.pushgateway.pullPolicy}}'
         name: pushgateway
         ports:
         - containerPort: 56789
@@ -54,5 +48,8 @@ spec:
           name: data-volume
         - mountPath: /tmp
           name: stash-scratchdir
-      restartPolicy: '{{.Values.operator.restartPolicy}}'
-      schedulerName: default-scheduler
+      volumes:
+        - emptyDir: {}
+          name: data-volume
+        - emptyDir: {}
+          name: stash-scratchdir

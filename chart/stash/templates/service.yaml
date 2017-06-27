@@ -1,13 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
+  name: {{ template "fullname" . }}
   labels:
-    app: stash-operator
-    chart: '{{.Chart.Name}}-{{.Chart.Version}}'
-    heritage: '{{.Release.Service}}'
-    release: '{{.Release.Name}}'
-  name: '{{ template "fullname" . }}-stash-operator'
-  namespace: '{{.Values.operator.namespace}}'
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
 spec:
   ports:
   - name: pushgateway
@@ -19,6 +18,5 @@ spec:
     protocol: TCP
     targetPort: http
   selector:
-    app: '{{.Release.Name}}-stash-operator'
-  sessionAffinity: '{{.Values.operator.sessionAffinity}}'
+    app: {{ template "fullname" . }}
   type: '{{.Values.operator.serviceType}}'
