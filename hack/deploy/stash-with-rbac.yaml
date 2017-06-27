@@ -1,17 +1,4 @@
 apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRoleBinding
-metadata:
-  name: stash-operator
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: stash-operator
-subjects:
-- kind: ServiceAccount
-  name: stash-operator
-  namespace: kube-system
----
-apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
   name: stash-operator
@@ -54,6 +41,19 @@ rules:
   resources:
   - pods
   verbs: ["list", delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: stash-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: stash-operator
+subjects:
+- kind: ServiceAccount
+  name: stash-operator
+  namespace: kube-system
 ---
 apiVersion: v1
 kind: ServiceAccount

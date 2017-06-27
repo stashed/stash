@@ -1,0 +1,58 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    app: "{{ template "fullname" . }}"
+    heritage: "{{ .Release.Service }}"
+    release: "{{ .Release.Name }}"
+  name: '{{ template "fullname" . }}-stash-operator'
+  namespace: '{{.Values.stashoperator.namespace}}'
+spec:
+  replicas: {{.Values.stashoperator.replicas}}
+  selector:
+    matchLabels:
+      app: '{{.Release.Name}}-stash-operator'
+  template:
+    metadata:
+      labels:
+        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+        app: {{ template "fullname" . }}
+        heritage: "{{ .Release.Service }}"
+        release: "{{ .Release.Name }}"
+    spec:
+      volumes:
+      - emptyDir: {}
+        name: data-volume
+      - emptyDir: {}
+        name: stash-scratchdir
+      containers:
+      - args:
+        - run
+        - --v=3
+        image: '{{.Values.stashoperator.stashoperator.image}}:{{.Values.stashoperator.stashoperator.imageTag}}'
+        imagePullPolicy: '{{.Values.stashoperator.stashoperator.imagePullPolicy}}'
+        name: stash-operator
+        ports:
+        - containerPort: 56790
+          name: http
+          protocol: TCP
+        terminationMessagePolicy: File
+      - args:
+        - -web.listen-address=:56789
+        - -persistence.file=/var/pv/pushgateway.dat
+        image: '{{.Values.stashoperator.pushgateway.image}}:{{.Values.stashoperator.pushgateway.imageTag}}'
+        imagePullPolicy: '{{.Values.stashoperator.pushgateway.imagePullPolicy}}'
+        name: pushgateway
+        ports:
+        - containerPort: 56789
+          name: pushgateway
+          protocol: TCP
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /var/pv
+          name: data-volume
+        - mountPath: /tmp
+          name: stash-scratchdir
+      restartPolicy: '{{.Values.stashoperator.restartPolicy}}'
+      schedulerName: default-scheduler
