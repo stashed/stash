@@ -27,7 +27,6 @@ var _ = Describe("ReplicaSet", func() {
 		if missing, _ := BeZero().Match(cred); missing {
 			Skip("Missing repository credential")
 		}
-		restic = f.Restic()
 		restic.Spec.Backend.RepositorySecretName = cred.Name
 		rs = f.ReplicaSet()
 	})
@@ -121,6 +120,7 @@ var _ = Describe("ReplicaSet", func() {
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
+				restic = f.ResticForLocalBackend()
 			})
 			It(`should backup new ReplicaSet`, shouldBackupNewReplicaSet)
 			It(`should backup existing ReplicaSet`, shouldBackupExistingReplicaSet)
@@ -129,6 +129,7 @@ var _ = Describe("ReplicaSet", func() {
 		Context(`"S3" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForS3Backend()
+				restic = f.ResticForS3Backend()
 			})
 			It(`should backup new ReplicaSet`, shouldBackupNewReplicaSet)
 			It(`should backup existing ReplicaSet`, shouldBackupExistingReplicaSet)
@@ -137,6 +138,7 @@ var _ = Describe("ReplicaSet", func() {
 		Context(`"GCS" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForGCSBackend()
+				restic = f.ResticForGCSBackend()
 			})
 			It(`should backup new ReplicaSet`, shouldBackupNewReplicaSet)
 			It(`should backup existing ReplicaSet`, shouldBackupExistingReplicaSet)
@@ -145,6 +147,7 @@ var _ = Describe("ReplicaSet", func() {
 		Context(`"Azure" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForAzureBackend()
+				restic = f.ResticForAzureBackend()
 			})
 			It(`should backup new ReplicaSet`, shouldBackupNewReplicaSet)
 			It(`should backup existing ReplicaSet`, shouldBackupExistingReplicaSet)
@@ -160,6 +163,7 @@ var _ = Describe("ReplicaSet", func() {
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
+				restic = f.ResticForLocalBackend()
 			})
 			It(`should stop backup`, shouldStopBackup)
 		})
@@ -167,6 +171,7 @@ var _ = Describe("ReplicaSet", func() {
 		Context(`"S3" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForS3Backend()
+				restic = f.ResticForS3Backend()
 			})
 			It(`should stop backup`, shouldStopBackup)
 		})
@@ -174,6 +179,7 @@ var _ = Describe("ReplicaSet", func() {
 		Context(`"GCS" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForGCSBackend()
+				restic = f.ResticForGCSBackend()
 			})
 			It(`should stop backup`, shouldStopBackup)
 		})
@@ -181,6 +187,7 @@ var _ = Describe("ReplicaSet", func() {
 		Context(`"Azure" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForAzureBackend()
+				restic = f.ResticForAzureBackend()
 			})
 			It(`should stop backup`, shouldStopBackup)
 		})
