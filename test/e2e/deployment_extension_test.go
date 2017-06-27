@@ -59,7 +59,7 @@ var _ = Describe("DeploymentExtension", func() {
 		})
 
 		Context("new DeploymentExtension", func() {
-			FIt(`should backup to "Local" backend`, shouldBackupNewDeployment)
+			It(`should backup to "Local" backend`, shouldBackupNewDeployment)
 		})
 
 		Context("existing DeploymentExtension", func() {
