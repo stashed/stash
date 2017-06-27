@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	msec10      = 10 * 1000 * 1000 * time.Nanosecond
-	maxAttempts = 5
+	updateRetryInterval = 10 * 1000 * 1000 * time.Nanosecond
+	maxAttempts         = 5
 )
 
 type Controller struct {

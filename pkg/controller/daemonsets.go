@@ -61,10 +61,6 @@ func (c *Controller) WatchDaemonSets() {
 }
 
 func (c *Controller) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, restic *sapi.Restic) (err error) {
-	if name := util.GetString(resource.Annotations, sapi.ConfigName); name != "" {
-		log.Infof("Restic sidecar already exists for DaemonSet %s@%s.", resource.Name, resource.Namespace)
-		return
-	}
 	defer func() {
 		if err != nil {
 			sidecarFailedToAdd()
@@ -84,6 +80,11 @@ func (c *Controller) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, rest
 
 	attempt := 0
 	for ; attempt < maxAttempts; attempt = attempt + 1 {
+		if name := util.GetString(resource.Annotations, sapi.ConfigName); name != "" {
+			log.Infof("Restic sidecar already exists for DaemonSet %s@%s.", resource.Name, resource.Namespace)
+			return
+		}
+
 		resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.GetSidecarContainer(restic, c.SidecarImageTag, resource.Name, true))
 		resource.Spec.Template.Spec.Volumes = util.AddScratchVolume(resource.Spec.Template.Spec.Volumes)
 		resource.Spec.Template.Spec.Volumes = util.AddDownwardVolume(resource.Spec.Template.Spec.Volumes)
@@ -100,7 +101,7 @@ func (c *Controller) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, rest
 			break
 		}
 		log.Errorf("Attempt %d failed to add sidecar for DaemonSet %s@%s due to %s.", attempt, resource.Name, resource.Namespace, err)
-		time.Sleep(msec10)
+		time.Sleep(updateRetryInterval)
 		if kerr.IsConflict(err) {
 			resource, err = c.kubeClient.ExtensionsV1beta1().DaemonSets(resource.Namespace).Get(resource.Name, metav1.GetOptions{})
 			if err != nil {
@@ -132,6 +133,11 @@ func (c *Controller) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSe
 
 	attempt := 0
 	for ; attempt < maxAttempts; attempt = attempt + 1 {
+		if name := util.GetString(resource.Annotations, sapi.ConfigName); name == "" {
+			log.Infof("Restic sidecar already removed for DaemonSet %s@%s.", resource.Name, resource.Namespace)
+			return
+		}
+
 		resource.Spec.Template.Spec.Containers = util.RemoveContainer(resource.Spec.Template.Spec.Containers, util.StashContainer)
 		resource.Spec.Template.Spec.Volumes = util.RemoveVolume(resource.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		resource.Spec.Template.Spec.Volumes = util.RemoveVolume(resource.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
@@ -147,7 +153,7 @@ func (c *Controller) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSe
 			break
 		}
 		log.Errorf("Attempt %d failed to delete sidecar for DaemonSet %s@%s due to %s.", attempt, resource.Name, resource.Namespace, err)
-		time.Sleep(msec10)
+		time.Sleep(updateRetryInterval)
 		if kerr.IsConflict(err) {
 			resource, err = c.kubeClient.ExtensionsV1beta1().DaemonSets(resource.Namespace).Get(resource.Name, metav1.GetOptions{})
 			if err != nil {

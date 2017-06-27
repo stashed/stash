@@ -66,10 +66,6 @@ func (c *Controller) WatchReplicationControllers() {
 }
 
 func (c *Controller) EnsureReplicationControllerSidecar(resource *apiv1.ReplicationController, restic *sapi.Restic) (err error) {
-	if name := util.GetString(resource.Annotations, sapi.ConfigName); name != "" {
-		log.Infof("Restic sidecar already exists for ReplicationController %s@%s.", resource.Name, resource.Namespace)
-		return nil
-	}
 	defer func() {
 		if err != nil {
 			sidecarFailedToDelete()
@@ -89,6 +85,11 @@ func (c *Controller) EnsureReplicationControllerSidecar(resource *apiv1.Replicat
 
 	attempt := 0
 	for ; attempt < maxAttempts; attempt = attempt + 1 {
+		if name := util.GetString(resource.Annotations, sapi.ConfigName); name != "" {
+			log.Infof("Restic sidecar already exists for ReplicationController %s@%s.", resource.Name, resource.Namespace)
+			return nil
+		}
+
 		resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.GetSidecarContainer(restic, c.SidecarImageTag, resource.Name, false))
 		resource.Spec.Template.Spec.Volumes = util.AddScratchVolume(resource.Spec.Template.Spec.Volumes)
 		resource.Spec.Template.Spec.Volumes = util.AddDownwardVolume(resource.Spec.Template.Spec.Volumes)
@@ -105,7 +106,7 @@ func (c *Controller) EnsureReplicationControllerSidecar(resource *apiv1.Replicat
 			break
 		}
 		log.Errorf("Attempt %d failed to add sidecar for ReplicationController %s@%s due to %s.", attempt, resource.Name, resource.Namespace, err)
-		time.Sleep(msec10)
+		time.Sleep(updateRetryInterval)
 		if kerr.IsConflict(err) {
 			resource, err = c.kubeClient.CoreV1().ReplicationControllers(resource.Namespace).Get(resource.Name, metav1.GetOptions{})
 			if err != nil {
@@ -152,7 +153,7 @@ func (c *Controller) EnsureReplicationControllerSidecarDeleted(resource *apiv1.R
 			break
 		}
 		log.Errorf("Attempt %d failed to delete sidecar for ReplicationController %s@%s due to %s.", attempt, resource.Name, resource.Namespace, err)
-		time.Sleep(msec10)
+		time.Sleep(updateRetryInterval)
 		if kerr.IsConflict(err) {
 			resource, err = c.kubeClient.CoreV1().ReplicationControllers(resource.Namespace).Get(resource.Name, metav1.GetOptions{})
 			if err != nil {
