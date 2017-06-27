@@ -1,16 +1,12 @@
 package main
 
 import (
-	"flag"
-	"log"
 	"os"
 
-	"github.com/appscode/go/version"
 	logs "github.com/appscode/log/golog"
 	_ "github.com/appscode/stash/api/install"
 	_ "github.com/appscode/stash/client/clientset/fake"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
+	"github.com/appscode/stash/pkg/cmds"
 	_ "k8s.io/client-go/kubernetes/fake"
 )
 
@@ -18,22 +14,7 @@ func main() {
 	logs.InitLogs()
 	defer logs.FlushLogs()
 
-	var rootCmd = &cobra.Command{
-		Use:   "stash",
-		Short: `Stash by AppsCode - Backup your Kubernetes Volumes`,
-		PersistentPreRun: func(c *cobra.Command, args []string) {
-			c.Flags().VisitAll(func(flag *pflag.Flag) {
-				log.Printf("FLAG: --%s=%q", flag.Name, flag.Value)
-			})
-		},
-	}
-	rootCmd.PersistentFlags().AddGoFlagSet(flag.CommandLine)
-
-	rootCmd.AddCommand(version.NewCmdVersion())
-	rootCmd.AddCommand(NewCmdRun(Version))
-	rootCmd.AddCommand(NewCmdSchedule(Version))
-
-	if err := rootCmd.Execute(); err != nil {
+	if err := cmds.NewCmdStash(Version).Execute(); err != nil {
 		os.Exit(1)
 	}
 	os.Exit(0)

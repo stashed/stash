@@ -1,4 +1,4 @@
-package main
+package cmds
 
 import (
 	"fmt"
@@ -29,7 +29,7 @@ func NewCmdRun(version string) *cobra.Command {
 	var (
 		masterURL       string
 		kubeconfigPath  string
-		tag             string = stringz.Val(Version, "canary")
+		tag             string = stringz.Val(version, "canary")
 		address         string = ":56790"
 		enableAnalytics bool   = true
 	)
