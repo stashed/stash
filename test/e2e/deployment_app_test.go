@@ -24,7 +24,7 @@ var _ = Describe("DeploymentApp", func() {
 		f = root.Invoke()
 	})
 	JustBeforeEach(func() {
-		Expect(cred).NotTo(BeNil())
+		Expect(cred).NotTo(BeZero())
 		restic = f.Restic()
 		restic.Spec.Backend.RepositorySecretName = cred.Name
 		deployment = f.DeploymentApp()

@@ -23,7 +23,7 @@ var _ = Describe("ReplicationController", func() {
 		f = root.Invoke()
 	})
 	JustBeforeEach(func() {
-		Expect(cred).NotTo(BeNil())
+		Expect(cred).NotTo(BeZero())
 		restic = f.Restic()
 		restic.Spec.Backend.RepositorySecretName = cred.Name
 		rc = f.ReplicationController()
