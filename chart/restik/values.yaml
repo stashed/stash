@@ -1,8 +1,0 @@
-##
-## Stash chart configuration
-##
-
-## Image that will be used in Stash controller and in Stash sidecar container
-
-image: appscode/stash
-imageTag: latest

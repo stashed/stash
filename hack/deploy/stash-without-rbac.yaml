@@ -16,7 +16,7 @@ spec:
         app: stash-operator
     spec:
       containers:
-      - name: stash-operator
+      - name: operator
         args:
         - run
         - --v=3
