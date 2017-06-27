@@ -58,45 +58,14 @@ $ docker push <image>:<tag>
 $ ./hack/gendocs/make.sh 
 ```
 
-### Run Tests
+### Testing Stash
 #### Unit tests
 ```sh
-go test -v ./pkg/...
+$ ./hack/make.py test unit
 ```
 
 #### Run e2e tests
 Stash uses [Ginkgo](http://onsi.github.io/ginkgo/) to run e2e tests.
-
-#### Run e2e Test
-```
-$ ./hack/make.py test minikube # Run Test against minikube, this requires minikube to be set up and started.
-
-$ ./hack/make.py test e2e -cloud-provider=gce # Test e2e against gce cluster
-
-$ ./hack/make.py test integration -cloud-provider=gce # Run Integration test against gce
-                                                      # This requires stash to be deployed in the cluster.
-
-```
-
-```
-- Run only one e2e test
-$ ./hack/make.py test e2e -cloud-provider=gce -test-only=CoreIngress
-
-
-- Run One test but do not delete all resource that are created
-$ ./hack/make.py test minikube -cloud-provider=gce -test-only=CoreIngress -cleanup=false
-
-
-- Run Service IP Persist test with provided IP
-$ ./hack/make.py test e2e -cloud-provider=gce -test-only=CreateIPPersist -lb-ip=35.184.104.215
-
-```
-
-Tests are run only in namespaces prefixed with `test-`. So, to run tests in your desired namespace, follow these steps:
-```
-# create a Kubernetes namespace in minikube with
-kubectl create ns test-<any-name-you-want>
-
-# run tests
-./hack/make.py test minikube -namespace test-<any-name-you-want> -max-test=1
+```sh
+$ ./hack/make.py test e2e
 ```
