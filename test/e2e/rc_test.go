@@ -13,11 +13,14 @@ var _ = Describe("ReplicationController", func() {
 	var (
 		err    error
 		restic sapi.Restic
+		cred   apiv1.Secret
 		rc     apiv1.ReplicationController
 	)
 
 	BeforeEach(func() {
+		cred = f.SecretForLocalBackend()
 		restic = f.Restic()
+		restic.Spec.Backend.RepositorySecretName = cred.Name
 		rc = f.ReplicationController()
 	})
 
@@ -25,25 +28,40 @@ var _ = Describe("ReplicationController", func() {
 		AfterEach(func() {
 			f.DeleteReplicationController(rc.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
 		})
 
-		Context("new rc", func() {
+		Context("new ReplicationController", func() {
 			It(`should backup to "Local" backend`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
 				By("Creating restic " + restic.Name)
 				err = f.CreateRestic(restic)
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Creating rc " + rc.Name)
+				By("Creating ReplicationController " + rc.Name)
 				err = f.CreateReplicationController(rc)
 				Expect(err).NotTo(HaveOccurred())
 
-				f.WaitForBackupEvent(restic.Name)
+				By("Waiting for sidecar")
+				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Waiting for backup to complete")
+				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
+					return r.Status.BackupCount
+				}, BeNumerically(">=", 1)))
 			})
 		})
 
-		Context("existing rc", func() {
+		Context("existing ReplicationController", func() {
 			It(`should backup to "Local" backend`, func() {
-				By("Creating rc " + rc.Name)
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating ReplicationController " + rc.Name)
 				err = f.CreateReplicationController(rc)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -51,7 +69,13 @@ var _ = Describe("ReplicationController", func() {
 				err = f.CreateRestic(restic)
 				Expect(err).NotTo(HaveOccurred())
 
-				f.WaitForBackupEvent(restic.Name)
+				By("Waiting for sidecar")
+				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Waiting for backup to complete")
+				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
+					return r.Status.BackupCount
+				}, BeNumerically(">=", 1)))
 			})
 		})
 	})
@@ -59,18 +83,29 @@ var _ = Describe("ReplicationController", func() {
 	Describe("Sidecar removed", func() {
 		AfterEach(func() {
 			f.DeleteReplicationController(rc.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
 		})
 
 		It(`when restic is deleted`, func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
 			By("Creating restic " + restic.Name)
 			err = f.CreateRestic(restic)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Creating rc " + rc.Name)
+			By("Creating ReplicationController " + rc.Name)
 			err = f.CreateReplicationController(rc)
 			Expect(err).NotTo(HaveOccurred())
 
-			f.WaitForBackupEvent(restic.Name)
+			By("Waiting for sidecar")
+			f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+			By("Waiting for backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 1)))
 
 			By("Deleting restic " + restic.Name)
 			f.DeleteRestic(restic.ObjectMeta)

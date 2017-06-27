@@ -83,8 +83,8 @@ var _ = Describe("ReplicaSet", func() {
 
 	Describe("Sidecar removed", func() {
 		AfterEach(func() {
-			 f.DeleteReplicaSet(rs.ObjectMeta)
-			 f.DeleteSecret(cred.ObjectMeta)
+			f.DeleteReplicaSet(rs.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
 		})
 
 		It(`when restic is deleted`, func() {

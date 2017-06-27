@@ -5,6 +5,7 @@ import (
 	"github.com/appscode/go/types"
 	sapi "github.com/appscode/stash/api"
 	"github.com/appscode/stash/pkg/util"
+	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apps "k8s.io/client-go/pkg/apis/apps/v1beta1"
 )
@@ -40,4 +41,12 @@ func (f *Framework) CreateStatefulSet(obj apps.StatefulSet) error {
 
 func (f *Framework) DeleteStatefulSet(meta metav1.ObjectMeta) error {
 	return f.kubeClient.AppsV1beta1().StatefulSets(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+}
+
+func (f *Framework) EventuallyStatefulSet(meta metav1.ObjectMeta) GomegaAsyncAssertion {
+	return Eventually(func() *apps.StatefulSet {
+		obj, err := f.kubeClient.AppsV1beta1().StatefulSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		Expect(err).NotTo(HaveOccurred())
+		return obj
+	})
 }
