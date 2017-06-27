@@ -163,14 +163,14 @@ def test(type, *args):
     elif type == 'e2e':
         e2e_test()
     else:
-        print '{test unit|minikube|e2e}'
+        print '{test unit|e2e}'
 
 def unit_test():
       die(call(libbuild.GOC + ' test -v ./pkg/...'))
 
 
 def e2e_test():
-    die(call('ginkgo -r --progress --trace -- --v=3'))
+    die(call('ginkgo -r --v --progress --trace -- --v=3'))
 
 
 if __name__ == "__main__":
