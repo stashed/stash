@@ -23,22 +23,17 @@ var _ = Describe("StatefulSet", func() {
 
 	BeforeEach(func() {
 		f = root.Invoke()
-		cred = f.SecretForLocalBackend()
+	})
+	JustBeforeEach(func() {
+		Expect(cred).NotTo(BeNil())
 		restic = f.Restic()
 		restic.Spec.Backend.RepositorySecretName = cred.Name
 		svc = f.HeadlessService()
 		ss = f.StatefulSet(restic)
 	})
 
-	Describe("Sidecar added to", func() {
-		AfterEach(func() {
-			f.DeleteStatefulSet(ss.ObjectMeta)
-			f.DeleteService(svc.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
-		})
-
-		Context("new StatefulSet", func() {
+	var (
+		shouldBackupNewStatefulSet = func() {
 			It(`should backup to "Local" backend`, func() {
 				By("Creating repository Secret " + cred.Name)
 				err = f.CreateSecret(cred)
@@ -67,6 +62,43 @@ var _ = Describe("StatefulSet", func() {
 				By("Waiting for backup event")
 				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 			})
+		}
+	)
+
+	Describe("Creating restic for", func() {
+		AfterEach(func() {
+			f.DeleteStatefulSet(ss.ObjectMeta)
+			f.DeleteService(svc.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+		})
+
+		Context(`"Local" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+			})
+			It(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
+		})
+
+		Context(`"S3" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForS3Backend()
+			})
+			It(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
+		})
+
+		Context(`"GCS" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForGCSBackend()
+			})
+			It(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
+		})
+
+		Context(`"Azure" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForAzureBackend()
+			})
+			It(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
 		})
 	})
 })

@@ -24,6 +24,7 @@ var _ = Describe("DaemonSet", func() {
 		f = root.Invoke()
 	})
 	JustBeforeEach(func() {
+		Expect(cred).NotTo(BeNil())
 		restic = f.Restic()
 		restic.Spec.Backend.RepositorySecretName = cred.Name
 		daemon = f.DaemonSet()
