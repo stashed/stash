@@ -15,7 +15,18 @@ func (f *Invocation) HeadlessService() apiv1.Service {
 			Name:      TEST_HEADLESS_SERVICE,
 			Namespace: f.namespace,
 		},
-		Spec: apiv1.ServiceSpec{},
+		Spec: apiv1.ServiceSpec{
+			Selector: map[string]string{
+				"app": f.app,
+			},
+			ClusterIP: apiv1.ClusterIPNone,
+			Ports: []apiv1.ServicePort{
+				{
+					Name: "http",
+					Port: 80,
+				},
+			},
+		},
 	}
 }
 
