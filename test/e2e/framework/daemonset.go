@@ -17,11 +17,6 @@ func (f *Invocation) DaemonSet() extensions.DaemonSet {
 			},
 		},
 		Spec: extensions.DaemonSetSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"app": f.app,
-				},
-			},
 			Template: f.PodTemplate(),
 		},
 	}

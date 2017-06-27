@@ -19,11 +19,6 @@ func (f *Invocation) DeploymentExtension() extensions.Deployment {
 		},
 		Spec: extensions.DeploymentSpec{
 			Replicas: types.Int32P(1),
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"app": f.app,
-				},
-			},
 			Template: f.PodTemplate(),
 		},
 	}

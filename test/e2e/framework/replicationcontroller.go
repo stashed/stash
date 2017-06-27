@@ -20,9 +20,6 @@ func (f *Invocation) ReplicationController() apiv1.ReplicationController {
 		},
 		Spec: apiv1.ReplicationControllerSpec{
 			Replicas: types.Int32P(1),
-			Selector: map[string]string{
-				"app": f.app,
-			},
 			Template: &podTemplate,
 		},
 	}
