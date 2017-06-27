@@ -144,7 +144,7 @@ func WaitUntilSidecarAdded(kubeClient clientset.Interface, namespace string, sel
 			kubeClient.CoreV1().Pods(namespace).Delete(pod.Name, &metav1.DeleteOptions{})
 		}
 		return errors.New("check again")
-	}, backoff.NewConstantBackOff(2*time.Second))
+	}, backoff.NewConstantBackOff(3*time.Second))
 }
 
 func WaitUntilSidecarRemoved(kubeClient clientset.Interface, namespace string, selector *metav1.LabelSelector) error {
@@ -178,7 +178,7 @@ func WaitUntilSidecarRemoved(kubeClient clientset.Interface, namespace string, s
 			kubeClient.CoreV1().Pods(namespace).Delete(pod.Name, &metav1.DeleteOptions{})
 		}
 		return errors.New("check again")
-	}, backoff.NewConstantBackOff(2*time.Second))
+	}, backoff.NewConstantBackOff(3*time.Second))
 }
 
 func RestartPods(kubeClient clientset.Interface, namespace string, selector *metav1.LabelSelector) error {

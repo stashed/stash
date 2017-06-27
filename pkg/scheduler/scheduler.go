@@ -52,6 +52,7 @@ type Scheduler struct {
 	cron        *cron.Cron
 	recorder    record.EventRecorder
 	syncPeriod  time.Duration
+	hostname    string
 }
 
 func New(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt Options) (*Scheduler, error) {
@@ -66,11 +67,12 @@ func New(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt
 		syncPeriod:  30 * time.Second,
 	}
 	if opt.PrefixHostname {
-		hostname, err := os.Hostname()
+		var err error
+		ctrl.hostname, err = os.Hostname()
 		if err != nil {
 			return nil, err
 		}
-		ctrl.resticCLI = cli.New(opt.ScratchDir, hostname)
+		ctrl.resticCLI = cli.New(opt.ScratchDir, ctrl.hostname)
 	} else {
 		ctrl.resticCLI = cli.New(opt.ScratchDir, "")
 	}
@@ -333,17 +335,17 @@ func (c *Scheduler) runOnce() (err error) {
 		err = c.measure(c.resticCLI.Backup, resource, fg, backupOpMetric)
 		if err != nil {
 			log.Errorln("Backup operation failed for Reestic %s@%s due to %s", resource.Name, resource.Namespace, err)
-			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToBackup, " ERROR: "+err.Error())
+			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToBackup, " Error taking backup: "+err.Error())
 			return
 		} else {
-			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonSuccessfulBackup, "Backup completed successfully.")
+			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonSuccessfulBackup, "Backuped host:"+c.hostname+" path:"+fg.Path)
 		}
 
 		forgetOpMetric := restic_session_duration_seconds.WithLabelValues(sessionID, sanitizeLabelValue(fg.Path), "forget")
 		err = c.measure(c.resticCLI.Forget, resource, fg, forgetOpMetric)
 		if err != nil {
 			log.Errorln("Failed to forget old snapshots for Restic %s@%s due to %s", resource.Name, resource.Namespace, err)
-			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToRetention, " ERROR: "+err.Error())
+			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToRetention, " Error forgetting snapshots: "+err.Error())
 			return
 		}
 	}

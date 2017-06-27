@@ -27,13 +27,13 @@ var _ = Describe("ReplicaSet", func() {
 
 	Describe("Sidecar added to", func() {
 		AfterEach(func() {
-			//f.DeleteReplicaSet(rs.ObjectMeta)
-			//f.DeleteRestic(restic.ObjectMeta)
-			//f.DeleteSecret(cred.ObjectMeta)
+			f.DeleteReplicaSet(rs.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
 		})
 
 		Context("new ReplicaSet", func() {
-			FIt(`should backup to "Local" backend`, func() {
+			It(`should backup to "Local" backend`, func() {
 				By("Creating repository Secret " + cred.Name)
 				err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
@@ -46,8 +46,13 @@ var _ = Describe("ReplicaSet", func() {
 				err = f.CreateReplicaSet(rs)
 				Expect(err).NotTo(HaveOccurred())
 
-				f.EventuallyReplicaSet(rs.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
-				f.WaitForBackupEvent(restic.Name)
+				By("Waiting for sidecar")
+				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Waiting for backup to complete")
+				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
+					return r.Status.BackupCount
+				}, BeNumerically(">=", 1)))
 			})
 		})
 
@@ -65,17 +70,28 @@ var _ = Describe("ReplicaSet", func() {
 				err = f.CreateRestic(restic)
 				Expect(err).NotTo(HaveOccurred())
 
-				f.WaitForBackupEvent(restic.Name)
+				By("Waiting for sidecar")
+				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Waiting for backup to complete")
+				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
+					return r.Status.BackupCount
+				}, BeNumerically(">=", 1)))
 			})
 		})
 	})
 
 	Describe("Sidecar removed", func() {
 		AfterEach(func() {
-			f.DeleteReplicaSet(rs.ObjectMeta)
+			// f.DeleteReplicaSet(rs.ObjectMeta)
+			// f.DeleteSecret(cred.ObjectMeta)
 		})
 
-		It(`when restic is deleted`, func() {
+		FIt(`when restic is deleted`, func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
 			By("Creating restic " + restic.Name)
 			err = f.CreateRestic(restic)
 			Expect(err).NotTo(HaveOccurred())
@@ -84,7 +100,13 @@ var _ = Describe("ReplicaSet", func() {
 			err = f.CreateReplicaSet(rs)
 			Expect(err).NotTo(HaveOccurred())
 
-			f.WaitForBackupEvent(restic.Name)
+			By("Waiting for sidecar")
+			f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+			By("Waiting for backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 1)))
 
 			By("Deleting restic " + restic.Name)
 			f.DeleteRestic(restic.ObjectMeta)

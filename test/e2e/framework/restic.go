@@ -4,6 +4,7 @@ import (
 	"github.com/appscode/go/crypto/rand"
 	sapi "github.com/appscode/stash/api"
 	"github.com/appscode/stash/client/clientset"
+	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
@@ -32,7 +33,7 @@ func (f *Framework) Restic() sapi.Restic {
 					},
 				},
 			},
-			Schedule: "@every 10m",
+			Schedule: "@every 1m",
 			Backend: sapi.Backend{
 				RepositorySecretName: "",
 				Local: &sapi.LocalSpec{
@@ -56,4 +57,12 @@ func (f *Framework) CreateRestic(obj sapi.Restic) error {
 
 func (f *Framework) DeleteRestic(meta metav1.ObjectMeta) error {
 	return f.stashClient.Restics(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+}
+
+func (f *Framework) EventuallyRestic(meta metav1.ObjectMeta) GomegaAsyncAssertion {
+	return Eventually(func() *sapi.Restic {
+		obj, err := f.stashClient.Restics(meta.Namespace).Get(meta.Name)
+		Expect(err).NotTo(HaveOccurred())
+		return obj
+	})
 }
