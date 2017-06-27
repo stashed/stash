@@ -49,8 +49,8 @@ rules:
   - pods
   verbs: ["list", delete"]
 ---
-kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/{{ required "A valid .Values.rbac.apiVersion entry required!" .Values.rbac.apiVersion }}
+kind: ClusterRoleBinding
 metadata:
   name: {{ $serviceName }}
   labels:
