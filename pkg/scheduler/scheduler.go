@@ -337,7 +337,7 @@ func (c *Scheduler) runOnce() (err error) {
 			return
 		} else {
 			hostname, _ := os.Hostname()
-			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonSuccessfulBackup, "Backuped host:"+hostname+" path:"+fg.Path)
+			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonSuccessfulBackup, "Backed up pod:"+hostname+" path:"+fg.Path)
 		}
 
 		forgetOpMetric := restic_session_duration_seconds.WithLabelValues(sessionID, sanitizeLabelValue(fg.Path), "forget")

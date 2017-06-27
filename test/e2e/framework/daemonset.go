@@ -8,7 +8,7 @@ import (
 )
 
 func (f *Framework) DaemonSet() extensions.DaemonSet {
-	return extensions.DaemonSet{
+	daemon := extensions.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
 			Namespace: f.namespace,
@@ -20,6 +20,14 @@ func (f *Framework) DaemonSet() extensions.DaemonSet {
 			Template: f.PodTemplate(),
 		},
 	}
+	if nodes, err := f.kubeClient.CoreV1().Nodes().List(metav1.ListOptions{}); err == nil {
+		if len(nodes.Items) > 0 {
+			daemon.Spec.Template.Spec.NodeSelector = map[string]string{
+				"kubernetes.io/hostname": nodes.Items[0].Labels["kubernetes.io/hostname"],
+			}
+		}
+	}
+	return daemon
 }
 
 func (f *Framework) CreateDaemonSet(obj extensions.DaemonSet) error {
