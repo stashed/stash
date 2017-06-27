@@ -18,6 +18,10 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+const (
+	TIMEOUT = 20 * time.Minute
+)
+
 var (
 	ctrl *controller.Controller
 	f    *framework.Framework
@@ -26,7 +30,7 @@ var (
 func TestE2e(t *testing.T) {
 	logs.InitLogs()
 	RegisterFailHandler(Fail)
-	SetDefaultEventuallyTimeout(1 * time.Minute)
+	SetDefaultEventuallyTimeout(TIMEOUT)
 	junitReporter := reporters.NewJUnitReporter("junit.xml")
 	RunSpecsWithDefaultAndCustomReporters(t, "e2e Suite", []Reporter{junitReporter})
 }

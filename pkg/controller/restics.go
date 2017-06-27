@@ -43,31 +43,37 @@ func (c *Controller) WatchRestics() {
 }
 
 func (c *Controller) EnsureSidecar(restic *sapi.Restic) {
-	if resources, err := c.kubeClient.CoreV1().ReplicationControllers(restic.Namespace).List(metav1.ListOptions{LabelSelector: restic.Spec.Selector.String()}); err == nil {
+	sel, err := metav1.LabelSelectorAsSelector(&restic.Spec.Selector)
+	if err != nil {
+		return
+	}
+	opt := metav1.ListOptions{LabelSelector: sel.String()}
+
+	if resources, err := c.kubeClient.CoreV1().ReplicationControllers(restic.Namespace).List(opt); err == nil {
 		for _, resource := range resources.Items {
 			go c.EnsureReplicationControllerSidecar(&resource, restic)
 		}
 	}
 
-	if resources, err := c.kubeClient.ExtensionsV1beta1().ReplicaSets(restic.Namespace).List(metav1.ListOptions{LabelSelector: restic.Spec.Selector.String()}); err == nil {
+	if resources, err := c.kubeClient.ExtensionsV1beta1().ReplicaSets(restic.Namespace).List(opt); err == nil {
 		for _, resource := range resources.Items {
 			go c.EnsureReplicaSetSidecar(&resource, restic)
 		}
 	}
 
-	if resources, err := c.kubeClient.ExtensionsV1beta1().Deployments(restic.Namespace).List(metav1.ListOptions{LabelSelector: restic.Spec.Selector.String()}); err == nil {
+	if resources, err := c.kubeClient.ExtensionsV1beta1().Deployments(restic.Namespace).List(opt); err == nil {
 		for _, resource := range resources.Items {
 			go c.EnsureDeploymentExtensionSidecar(&resource, restic)
 		}
 	}
 
-	if resources, err := c.kubeClient.AppsV1beta1().Deployments(restic.Namespace).List(metav1.ListOptions{LabelSelector: restic.Spec.Selector.String()}); err == nil {
+	if resources, err := c.kubeClient.AppsV1beta1().Deployments(restic.Namespace).List(opt); err == nil {
 		for _, resource := range resources.Items {
 			go c.EnsureDeploymentAppSidecar(&resource, restic)
 		}
 	}
 
-	if resources, err := c.kubeClient.ExtensionsV1beta1().DaemonSets(restic.Namespace).List(metav1.ListOptions{LabelSelector: restic.Spec.Selector.String()}); err == nil {
+	if resources, err := c.kubeClient.ExtensionsV1beta1().DaemonSets(restic.Namespace).List(opt); err == nil {
 		for _, resource := range resources.Items {
 			go c.EnsureDaemonSetSidecar(&resource, restic)
 		}
@@ -75,31 +81,34 @@ func (c *Controller) EnsureSidecar(restic *sapi.Restic) {
 }
 
 func (c *Controller) EnsureSidecarDeleted(restic *sapi.Restic) {
-	if resources, err := c.kubeClient.CoreV1().ReplicationControllers(restic.Namespace).List(metav1.ListOptions{LabelSelector: restic.Spec.Selector.String()}); err == nil {
+	sel, err := metav1.LabelSelectorAsSelector(&restic.Spec.Selector)
+	if err != nil {
+		return
+	}
+	opt := metav1.ListOptions{LabelSelector: sel.String()}
+
+	if resources, err := c.kubeClient.CoreV1().ReplicationControllers(restic.Namespace).List(opt); err == nil {
 		for _, resource := range resources.Items {
 			go c.EnsureReplicationControllerSidecarDeleted(&resource, restic)
 		}
 	}
 
-	if resources, err := c.kubeClient.ExtensionsV1beta1().ReplicaSets(restic.Namespace).List(metav1.ListOptions{LabelSelector: restic.Spec.Selector.String()}); err == nil {
+	if resources, err := c.kubeClient.ExtensionsV1beta1().ReplicaSets(restic.Namespace).List(opt); err == nil {
 		for _, resource := range resources.Items {
 			go c.EnsureReplicaSetSidecarDeleted(&resource, restic)
 		}
 	}
-
-	if resources, err := c.kubeClient.ExtensionsV1beta1().Deployments(restic.Namespace).List(metav1.ListOptions{LabelSelector: restic.Spec.Selector.String()}); err == nil {
+	if resources, err := c.kubeClient.ExtensionsV1beta1().Deployments(restic.Namespace).List(opt); err == nil {
 		for _, resource := range resources.Items {
 			go c.EnsureDeploymentExtensionSidecarDeleted(&resource, restic)
 		}
 	}
-
-	if resources, err := c.kubeClient.AppsV1beta1().Deployments(restic.Namespace).List(metav1.ListOptions{LabelSelector: restic.Spec.Selector.String()}); err == nil {
+	if resources, err := c.kubeClient.AppsV1beta1().Deployments(restic.Namespace).List(opt); err == nil {
 		for _, resource := range resources.Items {
 			go c.EnsureDeploymentAppSidecarDeleted(&resource, restic)
 		}
 	}
-
-	if resources, err := c.kubeClient.ExtensionsV1beta1().DaemonSets(restic.Namespace).List(metav1.ListOptions{LabelSelector: restic.Spec.Selector.String()}); err == nil {
+	if resources, err := c.kubeClient.ExtensionsV1beta1().DaemonSets(restic.Namespace).List(opt); err == nil {
 		for _, resource := range resources.Items {
 			go c.EnsureDaemonSetSidecarDeleted(&resource, restic)
 		}
