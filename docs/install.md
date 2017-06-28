@@ -18,7 +18,7 @@ Stash can be installed via [Helm](https://helm.sh/) using the [chart](/chart/sta
 ```bash
 $ helm install chart/stash --name my-release
 ```
-To see the detailed configuration options, visit [here](chart/stash/README.md).
+To see the detailed configuration options, visit [here](/chart/stash/README.md).
 
 
 ## Verify installation
