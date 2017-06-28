@@ -1,4 +1,26 @@
-# How to backup
+# Tutorial
+
+
+```yaml
+$ kubectl create secret generic stash-demo --from-literal=RESTIC_PASSWORD=changeit
+secret "stash-demo" created
+
+$ kubectl get secret stash-demo -o yaml
+apiVersion: v1
+data:
+  RESTIC_PASSWORD: Y2hhbmdlaXQ=
+kind: Secret
+metadata:
+  creationTimestamp: 2017-06-28T08:17:00Z
+  name: stash-demo
+  namespace: default
+  resourceVersion: "333"
+  selfLink: /api/v1/namespaces/default/secrets/stash-demo
+  uid: 28fe07e7-5bda-11e7-89db-080027bd2b24
+type: Opaque
+```
+
+
 
 
 
