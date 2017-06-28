@@ -1,4 +1,5 @@
-# Installation
+# Installation Guide
+
 ## Using YAML
 Stash can be installed using YAML files includes in the [/hack/deploy](/hack/deploy) folder.
 
@@ -11,11 +12,6 @@ $ curl https://raw.githubusercontent.com/appscode/stash/master/hack/deploy/stash
 $ curl https://raw.githubusercontent.com/appscode/stash/master/hack/deploy/stash-with-rbac.yaml \
   | kubectl apply -f -
 ```
-
-Once Controller is *Running* It will create the [required ThirdPartyResources for ingress and certificates](/docs/developer-guide#third-party-resources).
-Check the Controller is running or not via `kubectl get pods` there should be a pod nameed `appscode-voyager-xxxxxxxxxx-xxxxx`.
-Now Create Your Ingress/Certificated.
-
 
 ## Using Helm
 Stash can be installed via [Helm](https://helm.sh/) using the [chart](/chart/stash) included in this repository. To install the chart with the release name `my-release`:
@@ -37,3 +33,5 @@ Now, to confirm TPR groups have been registered by the operator, run the followi
 ```sh
 $ kubectl get thirdpartyresources restic.stash.appscode.com
 ```
+
+Now, you are ready to [take your first backup](/docs/tutorial.md) using Stash.
