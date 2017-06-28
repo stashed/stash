@@ -100,9 +100,10 @@ spec:
 ```
 
 Here,
- - `spec.selector` is used to select workloads upon which this `Restic` configuration will be applied. In this tutorial, `busybox` Deployment labels match this `Restic`-s selectors.
+ - `spec.selector` is used to select workloads upon which this `Restic` configuration will be applied. `Restic` always selects workloads in the same Kubernetes namespace. In this tutorial, `busybox` Deployment labels match this `Restic`-s selectors.
  - `spec.fileGroups` indicates an array of local paths that will be backed up using restic. For each path, users can also define the retention policy for old snapshots. Here, we are backing up the `/lib` folder and only keeping the last 5 snaphsots.
  - `spec.backend.local` indicates that restic will store the snapshots in a local path `/repo`. For the purpose of this tutorial, we are using an `emptyDir` to store the snapshots. But any Kubernets volume that can be mounted locally can be used as a backend (example, NFS, Ceph, etc). Stash can also store snapshots in cloud storage solutions like, S3, GCS, Azure OpenStack Swift, etc.
+  - `spec.backend.repositorySecretName` points to the Kubernetes secret created earlier in this tutorial. `Restic` always points to secrets in its own namespace. This secret is used to pass restic repository password and other cloud provider secrets to `restic` binary.
   - `spec.schedule` is a [cron expression](https://github.com/robfig/cron/blob/v2/doc.go#L26) that indicates that file groups will be backed up every 1 minute.
 
 
@@ -257,17 +258,29 @@ You can also exec into the `busybox` Deployment to check list of snapshots.
 
 ```sh
 $ kubectl get pods -l app=stash-demo
+NAME                          READY     STATUS    RESTARTS   AGE
+stash-demo-3001144127-3fsbn   2/2       Running   0          49s
 
-$ kubectl exec -it <> -c stash sh
-
-# inside the stash sidecar container
-$ export RESTIC_PASSWORD=chageit
-$ export RESTIC_REPOSITORY=/repo
-$ restic snapshots
+$ kubectl exec -it stash-demo-3001144127-3fsbn -c stash sh
+/ # export RESTIC_REPOSITORY=/repo
+/ # export RESTIC_PASSWORD=changeit
+/ # restic snapshots
+ID        Date                 Host                         Tags        Directory
+----------------------------------------------------------------------
+c275bb54  2017-06-28 10:18:29  stash-demo-3001144127-3fsbn              /lib
 ```
 
 ## Stop Backup
 To stop taking backup of `/lib` folder, delete the `stash-demo` Restic tpr. As a result, Stash operator will remove the sidecar container from `busybox` Deployment.
+```sh
+$ kubectl delete restic stash-demo
+restic "stash-demo" deleted
+
+$ kubectl get pods -l app=stash-demo
+NAME                          READY     STATUS        RESTARTS   AGE
+stash-demo-3001144127-3fsbn   2/2       Terminating   0          3m
+stash-demo-3651400299-8c14s   1/1       Running       0          5s
+```
 
 ## Cleaning up
 To cleanup the Kubernetes resources created by this tutorial, run:
