@@ -52,54 +52,13 @@ The `.spec` section has 4 main parts:
 | `keepWeeklySnapshots`  | integer | --keep-weekly n    | For the last n weeks which have one or more snapshots, only keep the last one for that week.       |
 | `keepMonthlySnapshots` | integer | --keep-monthly n   | For the last n months which have one or more snapshots, only keep the last one for that month.     |
 | `keepYearlySnapshots`  | integer | --keep-yearly n    | For the last n years which have one or more snapshots, only keep the last one for that year.       |
-| `keepTags`             |         | --keep-tag <tag>   | Keep all snapshots which have all tags specified by this option (can be specified multiple times). |
+| `keepTags`             | array   | --keep-tag <tag>   | Keep all snapshots which have all tags specified by this option (can be specified multiple times). |
+
+You can set one or more of these retention policy options together. To learn more, read [here](
+https://restic.readthedocs.io/en/latest/manual.html#removing-snapshots-according-to-a-policy).
 
 
-
-
-
-The forget command accepts the following parameters:
-
---keep-last n 
---keep-hourly n 
---keep-daily n 
-
-
-
-                
-One can restrict removing snapshots to those which have a particular hostname with the `retainHostname` , or tags with the `retainTags` option. 
-When multiple `retainTags` are specified, only the snapshots which have all the tags are considered.
-
-
-
-type RetentionPolicy struct {
-	KeepLastSnapshots    int      `json:"keepLastSnapshots,omitempty"`
-	KeepHourlySnapshots  int      `json:"keepHourlySnapshots,omitempty"`
-	KeepDailySnapshots   int      `json:"keepDailySnapshots,omitempty"`
-	KeepWeeklySnapshots  int      `json:"keepWeeklySnapshots,omitempty"`
-	KeepMonthlySnapshots int      `json:"keepMonthlySnapshots,omitempty"`
-	KeepYearlySnapshots  int      `json:"keepYearlySnapshots,omitempty"`
-	KeepTags             []string `json:"keepTags,omitempty"`
-}
-
-
-  -l, --keep-last n         keep the last n snapshots
-  -H,
-  -d, 
-  -w, --keep-weekly n       keep the last n weekly snapshots
-  -m, --keep-monthly n      keep the last n monthly snapshots
-  -y, --keep-yearly n       keep the last n yearly snapshots
-      --keep-tag tag        keep snapshots with this tag (can be specified multiple times)
-  -G, --group-by-tags       Group by host,paths,tags instead of just host,paths
-      --host host           only consider snapshots with the given host
-      --hostname hostname   only consider snapshots with the given hostname (deprecated)
-      --tag tag             only consider snapshots which include this tag (can be specified multiple times)
-      --path path           only consider snapshots which include this (absolute) path (can be specified multiple times)
-  -n, --dry-run             do not delete anything, just print what would be done
-      --prune               automatically run the 'prune' command if snapshots have been removed
-  -h, --help                help for forget
-
-
+ 
 
 
 
