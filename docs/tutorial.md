@@ -8,15 +8,15 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   labels:
-    app: stash-e2e-dktul6
-  name: stash-zjp2xq
-  namespace: test-stash-dy4tec
+    app: stash-demo
+  name: stash-demo
+  namespace: default
 spec:
   replicas: 1
   template:
     metadata:
       labels:
-        app: stash-e2e-dktul6
+        app: stash-demo
       name: busybox
     spec:
       containers:
@@ -57,13 +57,13 @@ type: Opaque
 
 
 ```yaml
-$ kubectl get restic -n test-stash-bdvdfs stash-y7rey3 -o yaml
+$ kubectl get restic -n default stash-demo -o yaml
 
 apiVersion: stash.appscode.com/v1alpha1
 kind: Restic
 metadata:
-  name: stash-y7rey3
-  namespace: test-stash-bdvdfs
+  name: stash-demo
+  namespace: default
   resourceVersion: "151"
 spec:
   backend:
@@ -72,7 +72,7 @@ spec:
       volume:
         emptyDir: {}
         name: repo
-    repositorySecretName: stash-e2e-6gcic3-local-qrt24p
+    repositorySecretName: stash-demo-local-qrt24p
   fileGroups:
   - path: /lib
     retentionPolicy:
@@ -80,7 +80,7 @@ spec:
   schedule: '@every 1m'
   selector:
     matchLabels:
-      app: stash-e2e-6gcic3
+      app: stash-demo
 ```
 
 ```sh
@@ -91,12 +91,12 @@ NAMESPACE           NAME                           READY     STATUS    RESTARTS 
 kube-system         kube-addon-manager-minikube    1/1       Running   0          1m
 kube-system         kube-dns-1301475494-wcjt5      3/3       Running   0          1m
 kube-system         kubernetes-dashboard-q2485     1/1       Running   0          1m
-test-stash-bdvdfs   stash-7yrb2m-681367776-p8mff   2/2       Running   0          1m
+default   stash-7yrb2m-681367776-p8mff   2/2       Running   0          1m
 
 
 
 
-~/g/s/g/a/stash (ug) $ kubectl get pods -n test-stash-bdvdfs
+~/g/s/g/a/stash (ug) $ kubectl get pods -n default
 NAME                           READY     STATUS    RESTARTS   AGE
 stash-7yrb2m-681367776-p8mff   2/2       Running   0          3m
 ~/g/s/g/a/stash (ug) $ 
@@ -106,16 +106,16 @@ stash-7yrb2m-681367776-p8mff   2/2       Running   0          3m
 
 
 ```yaml
-$ kubectl get restic -n test-stash-bdvdfs stash-y7rey3 -o yaml
+$ kubectl get restic -n default stash-demo -o yaml
 
 apiVersion: stash.appscode.com/v1alpha1
 kind: Restic
 metadata:
   creationTimestamp: 2017-06-28T08:37:48Z
-  name: stash-y7rey3
-  namespace: test-stash-bdvdfs
+  name: stash-demo
+  namespace: default
   resourceVersion: "440"
-  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/test-stash-bdvdfs/restics/stash-y7rey3
+  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/stash-demo
   uid: 10be2e8c-5bdd-11e7-9f08-08002778c951
 spec:
   backend:
@@ -124,7 +124,7 @@ spec:
       volume:
         emptyDir: {}
         name: repo
-    repositorySecretName: stash-e2e-6gcic3-local-qrt24p
+    repositorySecretName: stash-demo
   fileGroups:
   - path: /lib
     retentionPolicy:
@@ -132,7 +132,7 @@ spec:
   schedule: '@every 1m'
   selector:
     matchLabels:
-      app: stash-e2e-6gcic3
+      app: stash-demo
 status:
   backupCount: 3
   firstBackupTime: 2017-06-28T08:39:08Z
@@ -155,9 +155,9 @@ metadata:
   creationTimestamp: 2017-06-28T08:28:37Z
   generation: 2
   labels:
-    app: stash-e2e-dktul6
-  name: stash-zjp2xq
-  namespace: test-stash-dy4tec
+    app: stash-demo
+  name: stash-demo
+  namespace: default
   resourceVersion: "436"
   selfLink: /apis/extensions/v1beta1/namespaces/test-stash-dy4tec/deployments/stash-zjp2xq
   uid: c893e438-5bdb-11e7-8520-080027c24619
@@ -167,7 +167,7 @@ spec:
   revisionHistoryLimit: 2
   selector:
     matchLabels:
-      app: stash-e2e-dktul6
+      app: stash-demo
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -177,7 +177,7 @@ spec:
     metadata:
       creationTimestamp: null
       labels:
-        app: stash-e2e-dktul6
+        app: stash-demo
       name: busybox
     spec:
       containers:
