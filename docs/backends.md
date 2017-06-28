@@ -32,6 +32,7 @@ type: Opaque
 ```
 
 Now, you can create a Restic tpr using this secret. Following parameters are availble for `Local` backend.
+
 | Parameter      |                                                                                 |
 |----------------|---------------------------------------------------------------------------------|
 | `local.path`   | Path where this volume will be mounted in the sidecar container. Example: /repo |
