@@ -45,14 +45,15 @@ The `.spec` section has 4 main parts:
 - spec.fileGroups[].retentionPolicy is an optional field. This defines how old snapshots are forgot and pruned by `restic`. If set, these options directly translate into flags for `restic forget` command. Stash always runs `restic forget` command with `--prune` option to actually remove the data that was referenced by the snapshot from the repository. Retention policy options are below.
 
 | Policy                 | Value | Description |
-|------------------------|----------
-| `keepLastSnapshots`    | integer | --> never delete the n last (most recent) snapshots
-| `keepHourlySnapshots`  | integer |--> for the last n hours in which a snapshot was made, keep only the last snapshot for each hour.
-| `keepDailySnapshots`   | integer |--> for the last n days which have one or more snapshots, only keep the last one for that day.
-| `keepWeeklySnapshots`  | integer |--> for the last n weeks which have one or more snapshots, only keep the last one for that week.
-| `keepMonthlySnapshots` | integer |--> for the last n months which have one or more snapshots, only keep the last one for that month.
-| `keepYearlySnapshots`  | integer |--> for the last n years which have one or more snapshots, only keep the last one for that year.
-| `keepTags`             | keep all snapshots which have all tags specified by this option.
+|------------------------|---------|-----------|
+| `keepLastSnapshots`    | integer | --> never delete the n last (most recent) snapshots |
+| `keepHourlySnapshots`  | integer |--> for the last n hours in which a snapshot was made, keep only the last snapshot for each hour. |
+| `keepDailySnapshots`   | integer |--> for the last n days which have one or more snapshots, only keep the last one for that day. |
+| `keepWeeklySnapshots`  | integer |--> for the last n weeks which have one or more snapshots, only keep the last one for that week. | 
+| `keepMonthlySnapshots` | integer |--> for the last n months which have one or more snapshots, only keep the last one for that month. |
+| `keepYearlySnapshots`  | integer |--> for the last n years which have one or more snapshots, only keep the last one for that year. |
+| `keepTags`             | keep all snapshots which have all tags specified by this option. |
+
                 
 One can restrict removing snapshots to those which have a particular hostname with the `retainHostname` , or tags with the `retainTags` option. 
 When multiple `retainTags` are specified, only the snapshots which have all the tags are considered.
