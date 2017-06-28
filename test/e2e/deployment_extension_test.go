@@ -122,7 +122,7 @@ var _ = Describe("DeploymentExtension", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 			})
-			FIt(`should backup new DeploymentExtension`, shouldBackupNewDeployment)
+			It(`should backup new DeploymentExtension`, shouldBackupNewDeployment)
 			It(`should backup existing DeploymentExtension`, shouldBackupExistingDeployment)
 		})
 
