@@ -107,7 +107,7 @@ Here,
   - `spec.schedule` is a [cron expression](https://github.com/robfig/cron/blob/v2/doc.go#L26) that indicates that file groups will be backed up every 1 minute.
 
 
-Stash operator watches for `Restic` objects using Kubernetes api. Stash operator will notice that the `busybox` Deployment matches the selector for `stash-demo` Restic object. So, it will add a sidecar container named `stash` to `busybox` Deployment and restart the running `busybox` pods.
+Stash operator watches for `Restic` objects using Kubernetes api. Stash operator will notice that the `busybox` Deployment matches the selector for `stash-demo` Restic object. So, it will add a sidecar container named `stash` to `busybox` Deployment and restart the running `busybox` pods. Since a local backend is used in `stash-demo` Restic, sidecar container will be mounted the corresponding persistent volume.
 
 ```sh
 $ kubectl get pods -l app=stash-demo
