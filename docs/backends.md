@@ -4,9 +4,9 @@ Backend are where snapshots stored by `restic`. This document lists the various 
 ## Local
 `Local` backend refers to a local path inside `stash` sidecar container. Any Kubernetes supported [persistent volume](https://kubernetes.io/docs/concepts/storage/volumes/) can be used here. Some examples are: `emptyDir` for testing, NFS, Ceph, GlusterFS, etc. To configure this backend, following secret keys are needed:
 
-| Key               | Description                                    |
-|-------------------|------------------------------------------------|
-| `RESTIC_PASSWORD` | Password used to encrypt snapshots by `restic` |
+| Key               | Description                                                |
+|-------------------|------------------------------------------------------------|
+| `RESTIC_PASSWORD` | `Required`. Password used to encrypt snapshots by `restic` |
 
 ```sh
 $ echo -n 'changeit' > RESTIC_PASSWORD
@@ -33,10 +33,10 @@ type: Opaque
 
 Now, you can create a Restic tpr using this secret. Following parameters are availble for `Local` backend.
 
-| Parameter      | Description                                                                     |
-|----------------|---------------------------------------------------------------------------------|
-| `local.path`   | Path where this volume will be mounted in the sidecar container. Example: /repo |
-| `local.volume` | Any Kubernetes volume                                                           |
+| Parameter      | Description                                                                                 |
+|----------------|---------------------------------------------------------------------------------------------|
+| `local.path`   | `Required`. Path where this volume will be mounted in the sidecar container. Example: /repo |
+| `local.volume` | `Required`. Any Kubernetes volume                                                           |
 
 ```sh
 $ kubectl create -f ./docs/examples/backends/local/local-restic.yaml 
@@ -75,11 +75,11 @@ spec:
 # AWS S3
 Stash supports AWS S3 service or [Minio](https://minio.io/) servers as backend. To configure this backend, following secret keys are needed:
 
-| Key                     | Description                                    |
-|-------------------------|------------------------------------------------|
-| `RESTIC_PASSWORD`       | Password used to encrypt snapshots by `restic` |
-| `AWS_ACCESS_KEY_ID`     | AWS / Minio access key ID                      |
-| `AWS_SECRET_ACCESS_KEY` | AWS / Minio secret access key                  |
+| Key                     | Description                                                |
+|-------------------------|------------------------------------------------------------|
+| `RESTIC_PASSWORD`       | `Required`. Password used to encrypt snapshots by `restic` |
+| `AWS_ACCESS_KEY_ID`     | `Required`. AWS / Minio access key ID                      |
+| `AWS_SECRET_ACCESS_KEY` | `Required`. AWS / Minio secret access key                  |
 
 ```sh
 $ echo -n 'changeit' > RESTIC_PASSWORD
@@ -115,9 +115,9 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 
 | Parameter     | Description                                                                     |
 |---------------|---------------------------------------------------------------------------------|
-| `s3.endpoint` | For S3, use `s3.amazonaws.com`. If your bucket is in a different location, S3 server (s3.amazonaws.com) will redirect restic to the correct endpoint. For an S3-compatible server that is not Amazon (like Minio), or is only available via HTTP, you can specify the endpoint like this: `http://server:port`. |
-| `s3.bucket`   | Name of Bucket                                                                  |
-| `s3.prefix`   | Path prefix into bucket where repository will be created.                       |
+| `s3.endpoint` | `Required`. For S3, use `s3.amazonaws.com`. If your bucket is in a different location, S3 server (s3.amazonaws.com) will redirect restic to the correct endpoint. For an S3-compatible server that is not Amazon (like Minio), or is only available via HTTP, you can specify the endpoint like this: `http://server:port`. |
+| `s3.bucket`   | `Required`. Name of Bucket                                                      |
+| `s3.prefix`   | `Optional`. Path prefix into bucket where repository will be created.           |
 
 
 ```sh
