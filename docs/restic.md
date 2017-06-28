@@ -3,7 +3,59 @@
 ## What is Restic
 A `Restic` is a Kubernetes `Third Party Object` (TPR). It provides declarative configuration for [restic](https://github.com/restic/restic) is a Kubernetes friendly way. You only need to describe the desired backup operations in a Restic object, and the Stash operator will reconfigure the actual workloads to the desired state for you.
 
+## Restic Spec
+As with all other Kubernetes objects, a Restic needs `apiVersion`, `kind`, and `metadata` fields. It also needs a `.spec` section. Below is an example Restic object.
 
+```yaml
+apiVersion: stash.appscode.com/v1alpha1
+kind: Restic
+metadata:
+  name: stash-demo
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: stash-demo
+  fileGroups:
+  - path: /lib
+    retentionPolicy:
+      keepLastSnapshots: 5
+  backend:
+    local:
+      path: /repo
+      volume:
+        emptyDir: {}
+        name: repo
+    repositorySecretName: stash-demo
+  schedule: '@every 1m'
+```
+
+The `.spec` section has 4 main parts:
+
+### .spec.selector
+`.spec.selector` is a required field that specifies a [label selector](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) for the Deployments, ReplicaSets, ReplicatinControllers, DaemonSets and StatefulSets targeted by this Restic. Selectors are always matched against the labels of Deployments, ReplicaSets, ReplicatinControllers, DaemonSets and StatefulSets in the same namespace as Restic object itself. You can create Deployment, etc and its matching Restic is any order. As long as the labels match, Stash operator will add sidecar container to the workload.
+
+### `spec.fileGroups`
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 
 
 
 
