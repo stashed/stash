@@ -10,6 +10,7 @@ You can check that the secret was created like this:
 
 ```yaml
 $ kubectl get secret stash-demo -o yaml
+
 apiVersion: v1
 data:
   RESTIC_PASSWORD: Y2hhbmdlaXQ=
