@@ -12,10 +12,8 @@ spec:
     retentionPolicy:
       keepLastSnapshots: 5
   backend:
-    local:
-      path: /repo
-      volume:
-        emptyDir: {}
-        name: repo
+    azure:
+      container: stashqa
+      prefix: demo
     repositorySecretName: azure-secret
   schedule: '@every 1m'
