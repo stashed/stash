@@ -1,7 +1,6 @@
 package scheduler
 
 import (
-	"os"
 	"regexp"
 	"strings"
 
@@ -23,13 +22,7 @@ func sanitizeLabelValue(name string) string {
 }
 
 func (c *Scheduler) JobName(resource *sapi.Restic) string {
-	if c.opt.App != "" {
-		return sanitizeLabelValue(resource.Namespace + "-" + c.opt.App)
-	}
-	if host, err := os.Hostname(); err != nil {
-		return sanitizeLabelValue(resource.Namespace + "-" + host)
-	}
-	return ""
+	return sanitizeLabelValue(resource.Namespace + "-" + resource.Name)
 }
 
 func (c *Scheduler) GroupingKeys(resource *sapi.Restic) map[string]string {

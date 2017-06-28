@@ -282,16 +282,16 @@ func (c *Scheduler) runOnce() (err error) {
 
 	defer func() {
 		endTime := metav1.Now()
-		if err != nil {
-			restic_session_success.Set(1)
-			restic_session_fail.Set(0)
-		} else {
-			restic_session_success.Set(0)
-			restic_session_fail.Set(1)
-		}
-		restic_session_duration_seconds_total.Set(endTime.Sub(startTime.Time).Seconds())
-
 		if c.opt.PushgatewayURL != "" {
+			if err != nil {
+				restic_session_success.Set(1)
+				restic_session_fail.Set(0)
+			} else {
+				restic_session_success.Set(0)
+				restic_session_fail.Set(1)
+			}
+			restic_session_duration_seconds_total.Set(endTime.Sub(startTime.Time).Seconds())
+
 			push.Collectors(c.JobName(resource),
 				c.GroupingKeys(resource),
 				c.opt.PushgatewayURL,
