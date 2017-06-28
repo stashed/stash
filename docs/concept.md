@@ -44,15 +44,27 @@ The `.spec` section has 4 main parts:
 
 - spec.fileGroups[].retentionPolicy is an optional field. This defines how old snapshots are forgot and pruned by `restic`. If set, these options directly translate into flags for `restic forget` command. Stash always runs `restic forget` command with `--prune` option to actually remove the data that was referenced by the snapshot from the repository. Retention policy options are below.
 
-| Policy                 | Value | Description |
-|------------------------|---------|-----------|
-| `keepLastSnapshots`    | integer | --> never delete the n last (most recent) snapshots |
-| `keepHourlySnapshots`  | integer |--> for the last n hours in which a snapshot was made, keep only the last snapshot for each hour. |
-| `keepDailySnapshots`   | integer |--> for the last n days which have one or more snapshots, only keep the last one for that day. |
-| `keepWeeklySnapshots`  | integer |--> for the last n weeks which have one or more snapshots, only keep the last one for that week. | 
-| `keepMonthlySnapshots` | integer |--> for the last n months which have one or more snapshots, only keep the last one for that month. |
-| `keepYearlySnapshots`  | integer |--> for the last n years which have one or more snapshots, only keep the last one for that year. |
-| `keepTags`             | keep all snapshots which have all tags specified by this option. |
+| Policy                 | Value   | restic forget flag | Description                                                                                        |
+|------------------------|---------|--------------------|----------------------------------------------------------------------------------------------------|
+| `keepLastSnapshots`    | integer | --keep-last n      | Never delete the n last (most recent) snapshots                                                    |
+| `keepHourlySnapshots`  | integer | --keep-hourly n    | For the last n hours in which a snapshot was made, keep only the last snapshot for each hour.      |
+| `keepDailySnapshots`   | integer | --keep-daily n     | For the last n days which have one or more snapshots, only keep the last one for that day.         |
+| `keepWeeklySnapshots`  | integer | --keep-weekly n    | For the last n weeks which have one or more snapshots, only keep the last one for that week.       |
+| `keepMonthlySnapshots` | integer | --keep-monthly n   | For the last n months which have one or more snapshots, only keep the last one for that month.     |
+| `keepYearlySnapshots`  | integer | --keep-yearly n    | For the last n years which have one or more snapshots, only keep the last one for that year.       |
+| `keepTags`             |         | --keep-tag <tag>   | Keep all snapshots which have all tags specified by this option (can be specified multiple times). |
+
+
+
+
+
+The forget command accepts the following parameters:
+
+--keep-last n 
+--keep-hourly n 
+--keep-daily n 
+
+
 
                 
 One can restrict removing snapshots to those which have a particular hostname with the `retainHostname` , or tags with the `retainTags` option. 
@@ -69,6 +81,24 @@ type RetentionPolicy struct {
 	KeepYearlySnapshots  int      `json:"keepYearlySnapshots,omitempty"`
 	KeepTags             []string `json:"keepTags,omitempty"`
 }
+
+
+  -l, --keep-last n         keep the last n snapshots
+  -H,
+  -d, 
+  -w, --keep-weekly n       keep the last n weekly snapshots
+  -m, --keep-monthly n      keep the last n monthly snapshots
+  -y, --keep-yearly n       keep the last n yearly snapshots
+      --keep-tag tag        keep snapshots with this tag (can be specified multiple times)
+  -G, --group-by-tags       Group by host,paths,tags instead of just host,paths
+      --host host           only consider snapshots with the given host
+      --hostname hostname   only consider snapshots with the given hostname (deprecated)
+      --tag tag             only consider snapshots which include this tag (can be specified multiple times)
+      --path path           only consider snapshots which include this (absolute) path (can be specified multiple times)
+  -n, --dry-run             do not delete anything, just print what would be done
+      --prune               automatically run the 'prune' command if snapshots have been removed
+  -h, --help                help for forget
+
 
 
 
