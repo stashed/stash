@@ -1,0 +1,21 @@
+apiVersion: stash.appscode.com/v1alpha1
+kind: Restic
+metadata:
+  name: stash-demo
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: stash-demo
+  fileGroups:
+  - path: /lib
+    retentionPolicy:
+      keepLastSnapshots: 5
+  backend:
+    local:
+      path: /repo
+      volume:
+        emptyDir: {}
+        name: repo
+    repositorySecretName: stash-demo
+  schedule: '@every 1m'

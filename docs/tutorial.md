@@ -1,7 +1,7 @@
-# Tutorial
+# Using Stash
+This tutorial will show you how to use Stash to backup a Kubernetes deployment. To start, install Stash in your cluster following the steps [here](/docs/install.md). This tutorial can be run using [minikube](https://github.com/kubernetes/minikube).
 
-
-
+In this tutorial, we are going to backup the `/lib` folder of a `busybox` pod into a local backend. First deploy the following `busybox` Deployment in your cluster.
 
 ```yaml
 apiVersion: extensions/v1beta1
@@ -30,11 +30,19 @@ spec:
 ```
 
 ```sh
-$ kubectl get pods -n default
-NAME                         READY     STATUS    RESTARTS   AGE
-stash-demo-681367776-p8mff   1/1       Running   0          15s
+$  kubectl create -f ./docs/examples/tutorial/busybox.yaml
+deployment "stash-demo" created
 ```
 
+Run the following command to confirm that busybox pods are running.
+
+```sh
+$ kubectl get pods -l app=stash-demo
+NAME                          READY     STATUS    RESTARTS   AGE
+stash-demo-3651400299-0s1xb   1/1       Running   0          58s
+```
+
+Now, create a `Secret` that contains the key `RESTIC_PASSWORD`. This will be used as the password for your restic repository.
 
 ```sh
 $ kubectl create secret generic stash-demo --from-literal=RESTIC_PASSWORD=changeit
@@ -60,16 +68,22 @@ metadata:
 type: Opaque
 ```
 
+Now, create a `Restic` tpr with selectors matching the labels of the `busybox` Deployment. 
 
 ```yaml
-$ kubectl get restic -n default stash-demo -o yaml
-
 apiVersion: stash.appscode.com/v1alpha1
 kind: Restic
 metadata:
   name: stash-demo
   namespace: default
 spec:
+  selector:
+    matchLabels:
+      app: stash-demo
+  fileGroups:
+  - path: /lib
+    retentionPolicy:
+      keepLastSnapshots: 5
   backend:
     local:
       path: /repo
@@ -77,15 +91,15 @@ spec:
         emptyDir: {}
         name: repo
     repositorySecretName: stash-demo
-  fileGroups:
-  - path: /lib
-    retentionPolicy:
-      keepLastSnapshots: 5
   schedule: '@every 1m'
-  selector:
-    matchLabels:
-      app: stash-demo
 ```
+
+```sh
+$ kubectl create -f ./docs/examples/tutorial/restic.yaml 
+restic "stash-demo" created
+```
+
+
 
 
 
