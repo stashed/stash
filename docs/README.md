@@ -18,16 +18,16 @@
 Kubernetes 1.5+
 
 ## Installation
-TO install Stash, please follow the guide [here](docs/install.md).
+TO install Stash, please follow the guide [here](/docs/install.md).
 
 ## Using Stash
-Want to learn how to use Stash? Please start [here](docs/tutorial.md).
+Want to learn how to use Stash? Please start [here](/docs/tutorial.md).
 
 ## Contribution guidelines
-Want to help improve Stash? Please start [here](CONTRIBUTION.md).
+Want to help improve Stash? Please start [here](/CONTRIBUTION.md).
 
 ## Status
-TO learn about current status of this project, please see [here](docs/status.md).
+TO learn about current status of this project, please see [here](/docs/status.md).
 
 ## Versioning Policy
 There are 2 parts to versioning policy:
@@ -51,6 +51,5 @@ might happen among different releases of the operator.
 ## Support
 If you have any questions, you can reach out to us.
 * [Slack](https://slack.appscode.com)
-* [Forum](https://discuss.appscode.com)
 * [Twitter](https://twitter.com/AppsCodeHQ)
 * [Website](https://appscode.com)
