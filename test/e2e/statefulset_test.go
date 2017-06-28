@@ -66,10 +66,10 @@ var _ = Describe("StatefulSet", func() {
 
 	Describe("Creating restic for", func() {
 		AfterEach(func() {
-			//f.DeleteStatefulSet(ss.ObjectMeta)
-			//f.DeleteService(svc.ObjectMeta)
-			//f.DeleteRestic(restic.ObjectMeta)
-			//f.DeleteSecret(cred.ObjectMeta)
+			f.DeleteStatefulSet(ss.ObjectMeta)
+			f.DeleteService(svc.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
 		})
 
 		Context(`"Local" backend`, func() {
@@ -77,7 +77,7 @@ var _ = Describe("StatefulSet", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 			})
-			FIt(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
+			It(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
 		})
 
 		Context(`"S3" backend`, func() {
