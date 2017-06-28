@@ -1,6 +1,6 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/appscode/stash)](https://goreportcard.com/report/github.com/appscode/stash)
 
-## Stash
+# Stash
  Stash by AppsCode is a Kubernetes operator for [restic](https://github.com/restic/restic). Using Stash, you can backup Kubernetes volumes mounted in following types of workloads:
  
 - Replication Controller
@@ -9,33 +9,22 @@
 - Daemon Set
 - Stateful Set
 
-**Features**
- - Support backup for any kubernetes [volumes](https://kubernetes.io/docs/concepts/storage/volumes/).
+## Features
+ - Periodically backup for any kubernetes [volumes](https://kubernetes.io/docs/concepts/storage/volumes/).
+ - Store backed up files in various cloud storage provider, including S3, GCS, Azure, etc.
+ - Prometheus ready metrics for backup process.
 
 ## Supported Versions
 Kubernetes 1.5+
 
-## Supported Workloads 
-Stash supports backup of following Workloads
-
-
 ## Installation
-Installation and Upgrade process are described [here](docs/user-guide/install.md)
+TO install Stash, please follow the guide [here](docs/install.md).
 
-## How to backup
+## Using Stash
+Want to learn how to use Stash? Please start [here](docs/tutorial.md).
 
-One can start the backup process by following this [guide](docs/user-guide/backup.md)
-
-## How to recover
-
-The recover process will be left to users for now. It can be done by running `$ /restic -r <stash_repo> restore snapshot_id --target <target_dir>` inside the restic-sidecar container. 
-You can find the details [here](https://restic.readthedocs.io/en/stable/Manual/#restore-a-snapshot) 
-
-## Developer Guide
-Want to learn whats happening under the hood, read [the developer guide](docs/developer-guide/README.md).
-
-## Architectural Design
-If you want to know how Backup Controller is working, read this [doc](docs/developer-guide/design.md).
+## Contribution guidelines
+Want to help improve Stash? Please start [here](CONTRIBUTION.md).
 
 ## Versioning Policy
 There are 2 parts to versioning policy:
@@ -53,15 +42,11 @@ might happen among different releases of the operator.
 
 ---
 
-## Contribution Guidelines
-If you're interested in being a contributor, read [the contribution guide](docs/contribution/README.md).
-
 ## Acknowledgement
  - Restic https://github.com/restic/restic
 
 ## Support
 If you have any questions, you can reach out to us.
-
 * [Slack](https://slack.appscode.com)
 * [Forum](https://discuss.appscode.com)
 * [Twitter](https://twitter.com/AppsCodeHQ)
