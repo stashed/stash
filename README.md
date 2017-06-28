@@ -43,7 +43,7 @@ might happen among different releases of the operator.
 ---
 
 ## Acknowledgement
- - Restic https://github.com/restic/restic
+ - Many thanks for [Alexander Neumann](https://github.com/fd0) for [Restic](https://github.com/restic/restic) project.
 
 ## Support
 If you have any questions, you can reach out to us.
