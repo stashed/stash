@@ -65,3 +65,5 @@ spec:
       - emptyDir: {}
         name: repo
 ```
+
+You can find the full working example in [examples folder](/docs/examples/workloads/statefulset.yaml).
