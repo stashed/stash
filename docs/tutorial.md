@@ -216,6 +216,7 @@ status:
   updatedReplicas: 1
 ```
 
+Now, wait a few minutes so that restic can take a backup of the `/lib` folder. To confirm, check the `status.backupCount` of `stash-demo` Restic tpr.
 
 ```yaml
 $ kubectl get restic stash-demo -o yaml
@@ -252,6 +253,21 @@ status:
   lastBackupTime: 2017-06-28T08:41:08Z
 ```
 
+You can also exec into the `busybox` Deployment to check list of snapshots.
+
+```sh
+$ kubectl get pods -l app=stash-demo
+
+$ kubectl exec -it <> -c stash sh
+
+# inside the stash sidecar container
+$ export RESTIC_PASSWORD=chageit
+$ export RESTIC_REPOSITORY=/repo
+$ restic snapshots
+```
+
+## Stop Backup
+To stop taking backup of `/lib` folder, delete the `stash-demo` Restic tpr. As a result, Stash operator will remove the sidecar container from `busybox` Deployment.
 
 ## Cleaning up
 To cleanup the Kubernetes resources created by this tutorial, run:
@@ -262,19 +278,3 @@ $ kubectl delete restic stash-demo
 ```
 
 If you would like to uninstall Stash operator, please follow the steps [here](/docs/uninstall.md).
-
-## Backup Nodes
-
-If one interested in take backup of host paths, this can be done by deploying a `DaemonSet` with a do nothing busybox container. 
-Stash TPR controller can use that as a vessel for running restic sidecar containers.
-
-## Update Backup
-
-One can update the source, retention policy, tags, cron schedule of the Stash object. After updating the Stash object backup process will follow the new backup strategy.
-If user wants to update the image of restic-sidecar container he/she needs to update the `restic.appscode.com/image` in field annotation in the backup object. This will automatically update the restic-sidecar container.
-In case of Statefulset user needs to update the sidecar container manually.
-
-## Disable Backup
-
-For disabling backup process one needs to delete the corresponding Stash object in case of `RC`, `Replica Set`, `Deployment`, `DaemonSet`.
-In case of `Statefulset` user needs to delete the corresponding backup object as well as remove the side container from the Statefulset manually.
