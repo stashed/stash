@@ -70,6 +70,11 @@ type: Opaque
 
 Now, create a `Restic` tpr with selectors matching the labels of the `busybox` Deployment. 
 
+```sh
+$ kubectl create -f ./docs/examples/tutorial/restic.yaml 
+restic "stash-demo" created
+```
+
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
 kind: Restic
@@ -100,10 +105,6 @@ Here,
  - `spec.backend.local` indicates that restic will store the snapshots in a local path `/repo`. For the purpose of this tutorial, we are using an `emptyDir` to store the snapshots. But any Kubernets volume that can be mounted locally can be used as a backend (example, NFS, Ceph, etc). Stash can also store snapshots in cloud storage solutions like, S3, GCS, Azure OpenStack Swift, etc.
   - `spec.schedule` is a [cron expression](https://github.com/robfig/cron/blob/v2/doc.go#L26) that indicates that file groups will be backed up every 1 minute.
 
-```sh
-$ kubectl create -f ./docs/examples/tutorial/restic.yaml 
-restic "stash-demo" created
-```
 
 Stash operator watches for `Restic` objects using Kubernetes api. Stash operator will notice that the `busybox` Deployment matches the selector for `stash-demo` Restic object. So, it will add a sidecar container named `stash` to `busybox` Deployment and restart the running `busybox` pods.
 
