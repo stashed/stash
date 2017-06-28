@@ -270,7 +270,7 @@ ID        Date                 Host                         Tags        Director
 c275bb54  2017-06-28 08:39:08  stash-demo-3001144127-3fsbn              /lib
 ```
 
-## Stopping Backup
+## Disable Backup
 To stop taking backup of `/lib` folder, delete the `stash-demo` Restic tpr. As a result, Stash operator will remove the sidecar container from `busybox` Deployment.
 ```sh
 $ kubectl delete restic stash-demo
