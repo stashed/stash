@@ -31,7 +31,6 @@ spec:
 
 ```sh
 $ kubectl get pods -n default
-
 NAME                         READY     STATUS    RESTARTS   AGE
 stash-demo-681367776-p8mff   1/1       Running   0          15s
 ```
