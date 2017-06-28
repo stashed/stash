@@ -38,11 +38,9 @@ The `.spec` section has 4 main parts:
 ### spec.fileGroups
 `spec.fileGroups` is a required field that specifies one or more directories that are backed up by [restic](https://github.com/restic/restic). For each directory, you can specify custom tags and retention policy for snapshots.
 
-- spec.fileGroups[].path represents a local directory that backed up by `restic`.
-
-- spec.fileGroups[].tags is an optional field. This can be used to apply one or more custom tag to snaphsots taken from this path.
-
-- spec.fileGroups[].retentionPolicy is an optional field. This defines how old snapshots are forgot and pruned by `restic`. If set, these options directly translate into flags for `restic forget` command. Stash always runs `restic forget` command with `--prune` option to actually remove the data that was referenced by the snapshot from the repository. Retention policy options are below.
+ - `spec.fileGroups[].path` represents a local directory that backed up by `restic`.
+ - `spec.fileGroups[].tags` is an optional field. This can be used to apply one or more custom tag to snaphsots taken from this path.
+ - `spec.fileGroups[].retentionPolicy` is an optional field. This defines how old snapshots are forgot and pruned by `restic`. If set, these options directly translate into flags for `restic forget` command. Stash always runs `restic forget` command with `--prune` option to actually remove the data that was referenced by the snapshot from the repository. Retention policy options are below.
 
 | Policy                 | Value   | restic forget flag | Description                                                                                        |
 |------------------------|---------|--------------------|----------------------------------------------------------------------------------------------------|
