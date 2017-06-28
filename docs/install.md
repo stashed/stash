@@ -4,10 +4,12 @@ Stash can be installed using YAML files includes in the [/hack/deploy](/hack/dep
 
 ```sh
 # Install without RBAC roles
-$ curl https://raw.githubusercontent.com/appscode/stash/master/hack/deploy/stash-without-rbac.yaml | kubectl apply -f -
+$ curl https://raw.githubusercontent.com/appscode/stash/master/hack/deploy/stash-without-rbac.yaml \
+  | kubectl apply -f -
 
 # Install with RBAC roles
-$ curl https://raw.githubusercontent.com/appscode/stash/master/hack/deploy/stash-with-rbac.yaml | kubectl apply -f -
+$ curl https://raw.githubusercontent.com/appscode/stash/master/hack/deploy/stash-with-rbac.yaml \
+  | kubectl apply -f -
 ```
 
 Once Controller is *Running* It will create the [required ThirdPartyResources for ingress and certificates](/docs/developer-guide#third-party-resources).
