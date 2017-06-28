@@ -26,9 +26,6 @@ Want to learn how to use Stash? Please start [here](/docs/tutorial.md).
 ## Contribution guidelines
 Want to help improve Stash? Please start [here](/CONTRIBUTING.md).
 
-## Status
-TO learn about current status of this project, please see [here](/docs/status.md).
-
 ## Versioning Policy
 There are 2 parts to versioning policy:
  - Operator version: Stash __does not follow semver__, rather the _major_ version of operator points to the
