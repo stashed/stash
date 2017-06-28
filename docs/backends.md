@@ -72,6 +72,7 @@ spec:
       app: local-restic
 ```
 
+
 # AWS S3
 Stash supports AWS S3 service or [Minio](https://minio.io/) servers as backend. To configure this backend, following secret keys are needed:
 
@@ -153,6 +154,7 @@ spec:
       app: s3-restic
 ```
 
+
 # Google Cloud Storage (GCS)
 Stash supports Google Cloud Storage(GCS) as backend. To configure this backend, following secret keys are needed:
 
@@ -233,21 +235,6 @@ spec:
     matchLabels:
       app: gcs-restic
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 # Microsoft Azure Storage
