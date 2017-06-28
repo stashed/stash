@@ -1,0 +1,54 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: deployment-demo
+  name: workload
+  namespace: default
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: deployment-demo
+      name: busybox
+    spec:
+      containers:
+      - command:
+        - sleep
+        - "3600"
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        name: busybox
+      restartPolicy: Always
+---
+apiVersion: v1
+data:
+  RESTIC_PASSWORD: bm90QHNlY3JldA==
+kind: Secret
+metadata:
+  name: deployment-secret
+  namespace: default
+type: Opaque
+---
+apiVersion: stash.appscode.com/v1alpha1
+kind: Restic
+metadata:
+  name: deployment-restic
+  namespace: default
+spec:
+  backend:
+    local:
+      path: /repo
+      volume:
+        emptyDir: {}
+        name: repo
+    repositorySecretName: deployment-secret
+  fileGroups:
+  - path: /lib
+    retentionPolicy:
+      keepLastSnapshots: 5
+  schedule: '@every 1m'
+  selector:
+    matchLabels:
+      app: deployment-demo
