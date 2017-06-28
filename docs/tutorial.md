@@ -111,8 +111,8 @@ Stash operator watches for `Restic` objects using Kubernetes api. Stash operator
 
 ```sh
 $ kubectl get pods -l app=stash-demo
-NAME                         READY     STATUS    RESTARTS   AGE
-stash-demo-681367776-p8mff   2/2       Running   0          3m
+NAME                          READY     STATUS    RESTARTS   AGE
+stash-demo-3001144127-3fsbn   2/2       Running   0          3m
 ```
 
 ```yaml
@@ -248,10 +248,10 @@ spec:
     matchLabels:
       app: stash-demo
 status:
-  backupCount: 3
+  backupCount: 1
   firstBackupTime: 2017-06-28T08:39:08Z
   lastBackupDuration: 1.575411972s
-  lastBackupTime: 2017-06-28T08:41:08Z
+  lastBackupTime: 2017-06-28T08:39:08Z
 ```
 
 You can also exec into the `busybox` Deployment to check list of snapshots.
@@ -267,7 +267,7 @@ $ kubectl exec -it stash-demo-3001144127-3fsbn -c stash sh
 / # restic snapshots
 ID        Date                 Host                         Tags        Directory
 ----------------------------------------------------------------------
-c275bb54  2017-06-28 10:18:29  stash-demo-3001144127-3fsbn              /lib
+c275bb54  2017-06-28 08:39:08  stash-demo-3001144127-3fsbn              /lib
 ```
 
 ## Stop Backup
