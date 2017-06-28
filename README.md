@@ -1,7 +1,15 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/appscode/stash)](https://goreportcard.com/report/github.com/appscode/stash)
 
 ## Stash
- Stash provides support to backup your Kubernetes Volumes
+ Stash by AppsCOde is a Kubernetes operator for [restic](https://github.com/restic/restic). Using STash, you can backup Kubernetes volumes mounted in following types of workloads:
+ 
+- Replication Controller
+- Replica Set 
+- Deployment
+- Daemon Set
+- Stateful Set
+
+  provides support to backup your Kubernetes Volumes
 
 **Feautures**
  - Support backup for any kubernetes [volumes](https://kubernetes.io/docs/concepts/storage/volumes/).
@@ -12,11 +20,6 @@ Kubernetes 1.5+
 ## Supported Workloads 
 Stash supports backup of following Workloads
 
-* Replication Controller
-* Replica Set 
-* Deployment
-* Daemon Set
-* Stateful Set
 
 ## Installation
 Installation and Upgrade process are described [here](docs/user-guide/install.md)
