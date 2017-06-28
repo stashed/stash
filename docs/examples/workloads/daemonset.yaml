@@ -19,9 +19,14 @@ spec:
         image: busybox
         imagePullPolicy: IfNotPresent
         name: busybox
-      nodeSelector:
-        kubernetes.io/hostname: minikube
+        volumeMounts:
+        - mountPath: /srv/host-etc
+          name: host-etc
       restartPolicy: Always
+      volumes:
+      - hostPath:
+          path: /etc
+        name: host-etc
 ---
 apiVersion: v1
 data:
@@ -40,7 +45,7 @@ metadata:
 spec:
   backend:
     local:
-      path: /repo
+      path: /srv/host-etc
       volume:
         emptyDir: {}
         name: repo
