@@ -15,7 +15,7 @@ stash run [flags]
 
 ```
       --address string         Address to listen on for web interface and telemetry. (default ":56790")
-      --analytics              Send analytical event to Google Analytics (default true)
+      --analytics              Send analytical events to Google Analytics (default true)
   -h, --help                   help for run
       --kubeconfig string      Path to kubeconfig file with authorization information (the master location is set by the master flag).
       --master string          The address of the Kubernetes API server (overrides any value in kubeconfig)
