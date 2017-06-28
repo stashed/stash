@@ -2,15 +2,15 @@
 
 # Stash
  Stash by AppsCode is a Kubernetes operator for [restic](https://github.com/restic/restic). Using Stash, you can backup Kubernetes volumes mounted in following types of workloads:
- 
+- Deployment
 - Replication Controller
 - Replica Set 
-- Deployment
 - Daemon Set
 - Stateful Set
 
 ## Features
- - Periodically backup for any kubernetes [volumes](https://kubernetes.io/docs/concepts/storage/volumes/).
+ - Fast, secure, efficient backup of any kubernetes [volumes](https://kubernetes.io/docs/concepts/storage/volumes/).
+ - Automates configuration of `restic` for periodic backup.
  - Store backed up files in various cloud storage provider, including S3, GCS, Azure, etc.
  - Prometheus ready metrics for backup process.
 
