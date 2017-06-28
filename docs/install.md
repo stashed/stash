@@ -25,3 +25,5 @@ To check if Stash operator pods have started, run the following command:
 ```sh
 $ kubectl get pods --all-namespaces -l app=stash --watch
 ```
+
+Once the operator pods are running, you can cancel the above command by typing `Ctrl+C`.
