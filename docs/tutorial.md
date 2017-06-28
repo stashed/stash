@@ -34,7 +34,7 @@ $  kubectl create -f ./docs/examples/tutorial/busybox.yaml
 deployment "stash-demo" created
 ```
 
-Run the following command to confirm that busybox pods are running.
+Run the following command to confirm that `busybox` pods are running.
 
 ```sh
 $ kubectl get pods -l app=stash-demo
