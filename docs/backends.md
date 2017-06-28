@@ -10,11 +10,32 @@ Backend are where snapshots stored by `restic`. This document lists the various 
 
 ```sh
 $ echo -n 'changeit' > RESTIC_PASSWORD
-$ kubectl create secret generic stash-local --from-file=./RESTIC_PASSWORD
-secret "stash-local" created
+$ kubectl create secret generic local-secret --from-file=./RESTIC_PASSWORD
+secret "local-secret" created
 ```
 
 ```yaml
-$ kubectl get secret stash-local -o yaml
+$ kubectl get secret local-secret -o yaml
+
+apiVersion: v1
+data:
+  RESTIC_PASSWORD: Y2hhbmdlaXQ=
+kind: Secret
+metadata:
+  creationTimestamp: 2017-06-28T12:06:19Z
+  name: stash-local
+  namespace: default
+  resourceVersion: "1440"
+  selfLink: /api/v1/namespaces/default/secrets/stash-local
+  uid: 31a47380-5bfa-11e7-bb52-08002711f4aa
+type: Opaque
+```
+
+
+
+```yaml
 
 ```
+
+## 
+
