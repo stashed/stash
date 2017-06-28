@@ -65,18 +65,18 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   labels:
-    app: stash-operator
+    app: stash
   name: stash-operator
   namespace: kube-system
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: stash-operator
+      app: stash
   template:
     metadata:
       labels:
-        app: stash-operator
+        app: stash
     spec:
       serviceAccountName: stash-operator
       containers:
@@ -113,7 +113,7 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: stash-operator
+    app: stash
   name: stash-operator
   namespace: kube-system
 spec:
@@ -125,4 +125,4 @@ spec:
     port: 56790
     targetPort: http
   selector:
-    app: stash-operator
+    app: stash
