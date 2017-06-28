@@ -99,27 +99,23 @@ $ kubectl create -f ./docs/examples/tutorial/restic.yaml
 restic "stash-demo" created
 ```
 
-
-
-
-
-
-
+Stash operator watches for `Restic` objects using Kubernetes api. Stash operator will notice that the `busybox` Deployment matches the selector for `stash-demo` Restic object. So, it will add a sidecar container named `stash` to `busybox` Deployment and restart the running `busybox` pods.
 
 ```sh
-$ kubectl get pods -n default
+$ kubectl get pods -l app=stash-demo
 NAME                         READY     STATUS    RESTARTS   AGE
 stash-demo-681367776-p8mff   2/2       Running   0          3m
 ```
 
-
 ```yaml
+$ kubectl get deployment busybox -o yaml
+
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   annotations:
     deployment.kubernetes.io/revision: "2"
-    restic.appscode.com/config: stash-epggzp
+    restic.appscode.com/config: stash-demo
     restic.appscode.com/tag: canary
   creationTimestamp: 2017-06-28T08:28:37Z
   generation: 2
@@ -128,7 +124,7 @@ metadata:
   name: stash-demo
   namespace: default
   resourceVersion: "436"
-  selfLink: /apis/extensions/v1beta1/namespaces/test-stash-dy4tec/deployments/stash-zjp2xq
+  selfLink: /apis/extensions/v1beta1/namespaces/default/deployments/stash-demo
   uid: c893e438-5bdb-11e7-8520-080027c24619
 spec:
   progressDeadlineSeconds: 600
@@ -162,9 +158,9 @@ spec:
       - args:
         - schedule
         - --v=3
-        - --namespace=test-stash-dy4tec
-        - --name=stash-epggzp
-        - --app=stash-zjp2xq
+        - --namespace=default
+        - --name=stash-demo
+        - --app=stash-demo
         - --prefix-hostname=false
         image: appscode/stash:canary
         imagePullPolicy: Always
@@ -203,7 +199,7 @@ status:
     type: Available
   - lastTransitionTime: 2017-06-28T08:28:38Z
     lastUpdateTime: 2017-06-28T08:28:38Z
-    message: ReplicaSet "stash-zjp2xq-3019705014" has successfully progressed.
+    message: ReplicaSet "stash-demo-3019705014" has successfully progressed.
     reason: NewReplicaSetAvailable
     status: "True"
     type: Progressing
