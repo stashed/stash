@@ -162,8 +162,8 @@ spec:
         - --name=stash-demo
         - --app=stash-demo
         - --prefix-hostname=false
-        image: appscode/stash:canary
-        imagePullPolicy: Always
+        image: appscode/stash:0.2.0
+        imagePullPolicy: IfNotPresent
         name: stash
         resources: {}
         terminationMessagePath: /dev/termination-log
