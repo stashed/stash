@@ -121,7 +121,7 @@ var _ = Describe("ReplicationController", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 			})
-			FIt(`should backup new ReplicationController`, shouldBackupNewReplicationController)
+			It(`should backup new ReplicationController`, shouldBackupNewReplicationController)
 			It(`should backup existing ReplicationController`, shouldBackupExistingReplicationController)
 		})
 

@@ -1,0 +1,55 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  labels:
+    app: daemonset-demo
+  name: workload
+  namespace: default
+spec:
+  template:
+    metadata:
+      labels:
+        app: daemonset-demo
+      name: busybox
+    spec:
+      containers:
+      - command:
+        - sleep
+        - "3600"
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        name: busybox
+      nodeSelector:
+        kubernetes.io/hostname: minikube
+      restartPolicy: Always
+---
+apiVersion: v1
+data:
+  RESTIC_PASSWORD: bm90QHNlY3JldA==
+kind: Secret
+metadata:
+  name: daemonset-secret
+  namespace: default
+type: Opaque
+---
+apiVersion: stash.appscode.com/v1alpha1
+kind: Restic
+metadata:
+  name: daemonset-restic
+  namespace: default
+spec:
+  backend:
+    local:
+      path: /repo
+      volume:
+        emptyDir: {}
+        name: repo
+    repositorySecretName: daemonset-secret
+  fileGroups:
+  - path: /lib
+    retentionPolicy:
+      keepLastSnapshots: 5
+  schedule: '@every 1m'
+  selector:
+    matchLabels:
+      app: daemonset-demo
