@@ -18,7 +18,7 @@
 Kubernetes 1.5+
 
 ## Installation
-TO install Stash, please follow the guide [here](/docs/install.md).
+To install Stash, please follow the guide [here](/docs/install.md).
 
 ## Using Stash
 Want to learn how to use Stash? Please start [here](/docs/tutorial.md).
