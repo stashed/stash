@@ -31,7 +31,12 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic tpr using this secret.
+Now, you can create a Restic tpr using this secret. Following parameters are availble for `Local` backend.
+| Parameter      |                                                                                 |
+|----------------|---------------------------------------------------------------------------------|
+| `local.path`   | Path where this volume will be mounted in the sidecar container. Example: /repo |
+| `local.volume` | Any Kubernetes volume                                                           |
+
 ```sh
 $ kubectl create -f ./docs/examples/backends/local/local-restic.yaml 
 restic "local-restic" created
@@ -67,7 +72,7 @@ spec:
 ```
 
 # AWS S3
-To configure AWS S3 backend, following secret keys are needed:
+Stash supports AWS S3 service or [Minio](https://minio.io/) servers as backend. To configure this backend, following secret keys are needed:
 
 | Key                     | Description                                    |
 |-------------------------|------------------------------------------------|

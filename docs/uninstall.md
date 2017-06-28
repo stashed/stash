@@ -17,9 +17,9 @@ $ kubectl get pods --all-namespaces -l app=stash
 kubectl get restic.stash.appscode.com --all-namespaces -o yaml > data.yaml
 ```
 
-4. Delete existing `Restic` objects from all namespaces one by one.
+4. To delete existing `Restic` objects from all namespaces, run the following command in each namespace one by one.
 ```
-kubectl delete ingress.appscode.com --all --cascade=false
+kubectl delete restic.stash.appscode.com --all --cascade=false
 ```
 
 5. Delete the old TPR-registration.
