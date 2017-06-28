@@ -32,3 +32,8 @@ $ kubectl get pods --all-namespaces -l app=stash --watch
 ```
 
 Once the operator pods are running, you can cancel the above command by typing `Ctrl+C`.
+
+Now, to confirm TPR groups have been registered by the operator, run the following command:
+```sh
+$ kubectl get thirdpartyresources restic.stash.appscode.com
+```
