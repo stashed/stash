@@ -4,7 +4,7 @@ metadata:
   labels:
     app: replicaset-demo
   name: workload
-  namespace: test-stash-dshovk
+  namespace: default
 spec:
   replicas: 1
   template:
@@ -31,14 +31,14 @@ data:
 kind: Secret
 metadata:
   name: replicaset-secret
-  namespace: test-stash-dshovk
+  namespace: default
 type: Opaque
 ---
 apiVersion: stash.appscode.com/v1alpha1
 kind: Restic
 metadata:
   name: replicaset-restic
-  namespace: test-stash-dshovk
+  namespace: default
 spec:
   backend:
     local:

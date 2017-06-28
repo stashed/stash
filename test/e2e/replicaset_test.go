@@ -122,7 +122,7 @@ var _ = Describe("ReplicaSet", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 			})
-			FIt(`should backup new ReplicaSet`, shouldBackupNewReplicaSet)
+			It(`should backup new ReplicaSet`, shouldBackupNewReplicaSet)
 			It(`should backup existing ReplicaSet`, shouldBackupExistingReplicaSet)
 		})
 

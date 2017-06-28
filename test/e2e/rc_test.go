@@ -111,9 +111,9 @@ var _ = Describe("ReplicationController", func() {
 
 	Describe("Creating restic for", func() {
 		AfterEach(func() {
-			f.DeleteReplicationController(rc.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
+			//f.DeleteReplicationController(rc.ObjectMeta)
+			//f.DeleteRestic(restic.ObjectMeta)
+			//f.DeleteSecret(cred.ObjectMeta)
 		})
 
 		Context(`"Local" backend`, func() {
@@ -121,7 +121,7 @@ var _ = Describe("ReplicationController", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 			})
-			It(`should backup new ReplicationController`, shouldBackupNewReplicationController)
+			FIt(`should backup new ReplicationController`, shouldBackupNewReplicationController)
 			It(`should backup existing ReplicationController`, shouldBackupExistingReplicationController)
 		})
 
