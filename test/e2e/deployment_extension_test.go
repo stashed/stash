@@ -112,9 +112,9 @@ var _ = Describe("DeploymentExtension", func() {
 
 	Describe("Creating restic for", func() {
 		AfterEach(func() {
-			//f.DeleteDeploymentExtension(deployment.ObjectMeta)
-			//f.DeleteRestic(restic.ObjectMeta)
-			//f.DeleteSecret(cred.ObjectMeta)
+			f.DeleteDeploymentExtension(deployment.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
 		})
 
 		Context(`"Local" backend`, func() {

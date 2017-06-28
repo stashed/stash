@@ -112,9 +112,9 @@ var _ = Describe("ReplicaSet", func() {
 
 	Describe("Creating restic for", func() {
 		AfterEach(func() {
-			//f.DeleteReplicaSet(rs.ObjectMeta)
-			//f.DeleteRestic(restic.ObjectMeta)
-			//f.DeleteSecret(cred.ObjectMeta)
+			f.DeleteReplicaSet(rs.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
 		})
 
 		Context(`"Local" backend`, func() {

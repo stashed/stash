@@ -112,9 +112,9 @@ var _ = Describe("DaemonSet", func() {
 
 	Describe("Creating restic for", func() {
 		AfterEach(func() {
-			//f.DeleteDaemonSet(daemon.ObjectMeta)
-			//f.DeleteRestic(restic.ObjectMeta)
-			//f.DeleteSecret(cred.ObjectMeta)
+			f.DeleteDaemonSet(daemon.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
 		})
 
 		Context(`"Local" backend`, func() {
@@ -122,7 +122,7 @@ var _ = Describe("DaemonSet", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 			})
-			FIt(`should backup new DaemonSet`, shouldBackupNewDaemonSet)
+			It(`should backup new DaemonSet`, shouldBackupNewDaemonSet)
 			It(`should backup existing DaemonSet`, shouldBackupExistingDaemonSet)
 		})
 

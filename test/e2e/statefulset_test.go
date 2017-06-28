@@ -35,43 +35,41 @@ var _ = Describe("StatefulSet", func() {
 
 	var (
 		shouldBackupNewStatefulSet = func() {
-			It(`should backup to "Local" backend`, func() {
-				By("Creating repository Secret " + cred.Name)
-				err = f.CreateSecret(cred)
-				Expect(err).NotTo(HaveOccurred())
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
 
-				By("Creating restic " + restic.Name)
-				err = f.CreateRestic(restic)
-				Expect(err).NotTo(HaveOccurred())
+			By("Creating restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
 
-				By("Creating service " + svc.Name)
-				err = f.CreateService(svc)
-				Expect(err).NotTo(HaveOccurred())
+			By("Creating service " + svc.Name)
+			err = f.CreateService(svc)
+			Expect(err).NotTo(HaveOccurred())
 
-				By("Creating StatefulSet " + ss.Name)
-				err = f.CreateStatefulSet(ss)
-				Expect(err).NotTo(HaveOccurred())
+			By("Creating StatefulSet " + ss.Name)
+			err = f.CreateStatefulSet(ss)
+			Expect(err).NotTo(HaveOccurred())
 
-				By("Waiting for sidecar")
-				f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			By("Waiting for sidecar")
+			f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
-				By("Waiting for backup to complete")
-				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
-					return r.Status.BackupCount
-				}, BeNumerically(">=", 1)))
+			By("Waiting for backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 1)))
 
-				By("Waiting for backup event")
-				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
-			})
+			By("Waiting for backup event")
+			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
 	)
 
 	Describe("Creating restic for", func() {
 		AfterEach(func() {
-			f.DeleteStatefulSet(ss.ObjectMeta)
-			f.DeleteService(svc.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
+			//f.DeleteStatefulSet(ss.ObjectMeta)
+			//f.DeleteService(svc.ObjectMeta)
+			//f.DeleteRestic(restic.ObjectMeta)
+			//f.DeleteSecret(cred.ObjectMeta)
 		})
 
 		Context(`"Local" backend`, func() {
@@ -79,7 +77,7 @@ var _ = Describe("StatefulSet", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 			})
-			It(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
+			FIt(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
 		})
 
 		Context(`"S3" backend`, func() {

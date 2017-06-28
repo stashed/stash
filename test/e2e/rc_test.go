@@ -111,9 +111,9 @@ var _ = Describe("ReplicationController", func() {
 
 	Describe("Creating restic for", func() {
 		AfterEach(func() {
-			//f.DeleteReplicationController(rc.ObjectMeta)
-			//f.DeleteRestic(restic.ObjectMeta)
-			//f.DeleteSecret(cred.ObjectMeta)
+			f.DeleteReplicationController(rc.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
 		})
 
 		Context(`"Local" backend`, func() {
