@@ -1,10 +1,14 @@
 # Tutorial
 
 
-```yaml
+```sh
 $ kubectl create secret generic stash-demo --from-literal=RESTIC_PASSWORD=changeit
 secret "stash-demo" created
+```
 
+You can check that the secret was created like this:
+
+```yaml
 $ kubectl get secret stash-demo -o yaml
 apiVersion: v1
 data:
