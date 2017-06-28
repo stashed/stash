@@ -5,7 +5,7 @@ Stash suuports the following types of Kubernetes workloads.
 ## Deployments
 To backup a Deployment, create a Restic with matching selectors. You can find the full working demo in [examples folder](/docs/examples/workloads/deployment.yaml).
 
-## Deployments, ReplicaSets and ReplicationControllers
+## ReplicaSets
 To backup a ReplicaSet, create a Restic with matching selectors. You can find the full working demo in [examples folder](/docs/examples/workloads/replicaset.yaml).
 
 ## ReplicationControllers
