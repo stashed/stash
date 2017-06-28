@@ -1,3 +1,8 @@
+# Restics
+
+## What is Restic
+A `Restic` is a Kubernetes `Third Party Object` (TPR). It provides declarative configuration for [restic](https://github.com/restic/restic) is a Kubernetes friendly way. You only need to describe the desired backup operations in a Restic object, and the Stash operator will reconfigure the actual workloads to the desired state for you.
+
 
 
 
@@ -7,6 +12,8 @@
 * Create Backup Deployment
 
 ## Deploying Backup
+
+
 
 ### Create Third Party Resource
 `Backup process` depends on Third Party Resource Object `restic.stash.appscode.com`. This object can be created using following data.
