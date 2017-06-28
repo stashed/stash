@@ -18,7 +18,12 @@ Now Create Your Ingress/Certificated.
 
 
 ## Using Helm
-Stash can be installed via [Helm](https://helm.sh/) using the [chart](/chart/stash) included in this repository. TO see various configuration options, visit [here](chart/stash/README.md).
+Stash can be installed via [Helm](https://helm.sh/) using the [chart](/chart/stash) included in this repository. To install the chart with the release name `my-release`:
+```bash
+$ helm install chart/stash --name my-release
+```
+To see the detailed configuration options, visit [here](chart/stash/README.md).
+
 
 ## Verify installation
 To check if Stash operator pods have started, run the following command:
