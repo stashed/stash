@@ -1,6 +1,36 @@
 # Tutorial
 
 
+
+
+```yaml
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: stash-e2e-dktul6
+  name: stash-zjp2xq
+  namespace: test-stash-dy4tec
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: stash-e2e-dktul6
+      name: busybox
+    spec:
+      containers:
+      - command:
+        - sleep
+        - "3600"
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        name: busybox
+      restartPolicy: Always
+```
+
+
+
 ```sh
 $ kubectl create secret generic stash-demo --from-literal=RESTIC_PASSWORD=changeit
 secret "stash-demo" created
@@ -26,6 +56,193 @@ type: Opaque
 ```
 
 
+```yaml
+$ kubectl get restic -n test-stash-bdvdfs stash-y7rey3 -o yaml
+
+apiVersion: stash.appscode.com/v1alpha1
+kind: Restic
+metadata:
+  name: stash-y7rey3
+  namespace: test-stash-bdvdfs
+  resourceVersion: "151"
+spec:
+  backend:
+    local:
+      path: /repo
+      volume:
+        emptyDir: {}
+        name: repo
+    repositorySecretName: stash-e2e-6gcic3-local-qrt24p
+  fileGroups:
+  - path: /lib
+    retentionPolicy:
+      keepLastSnapshots: 5
+  schedule: '@every 1m'
+  selector:
+    matchLabels:
+      app: stash-e2e-6gcic3
+```
+
+```sh
+~/g/s/g/a/stash (ug) $ 
+~/g/s/g/a/stash (ug) $ 
+~/g/s/g/a/stash (ug) $ kubectl get pods --all-namespaces
+NAMESPACE           NAME                           READY     STATUS    RESTARTS   AGE
+kube-system         kube-addon-manager-minikube    1/1       Running   0          1m
+kube-system         kube-dns-1301475494-wcjt5      3/3       Running   0          1m
+kube-system         kubernetes-dashboard-q2485     1/1       Running   0          1m
+test-stash-bdvdfs   stash-7yrb2m-681367776-p8mff   2/2       Running   0          1m
+
+
+
+
+~/g/s/g/a/stash (ug) $ kubectl get pods -n test-stash-bdvdfs
+NAME                           READY     STATUS    RESTARTS   AGE
+stash-7yrb2m-681367776-p8mff   2/2       Running   0          3m
+~/g/s/g/a/stash (ug) $ 
+~/g/s/g/a/stash (ug) $ 
+~/g/s/g/a/stash (ug) $ 
+```
+
+
+```yaml
+$ kubectl get restic -n test-stash-bdvdfs stash-y7rey3 -o yaml
+
+apiVersion: stash.appscode.com/v1alpha1
+kind: Restic
+metadata:
+  creationTimestamp: 2017-06-28T08:37:48Z
+  name: stash-y7rey3
+  namespace: test-stash-bdvdfs
+  resourceVersion: "440"
+  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/test-stash-bdvdfs/restics/stash-y7rey3
+  uid: 10be2e8c-5bdd-11e7-9f08-08002778c951
+spec:
+  backend:
+    local:
+      path: /repo
+      volume:
+        emptyDir: {}
+        name: repo
+    repositorySecretName: stash-e2e-6gcic3-local-qrt24p
+  fileGroups:
+  - path: /lib
+    retentionPolicy:
+      keepLastSnapshots: 5
+  schedule: '@every 1m'
+  selector:
+    matchLabels:
+      app: stash-e2e-6gcic3
+status:
+  backupCount: 3
+  firstBackupTime: 2017-06-28T08:39:08Z
+  lastBackupDuration: 1.575411972s
+  lastBackupTime: 2017-06-28T08:41:08Z
+```
+
+
+
+
+
+```yaml
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "2"
+    restic.appscode.com/config: stash-epggzp
+    restic.appscode.com/tag: canary
+  creationTimestamp: 2017-06-28T08:28:37Z
+  generation: 2
+  labels:
+    app: stash-e2e-dktul6
+  name: stash-zjp2xq
+  namespace: test-stash-dy4tec
+  resourceVersion: "436"
+  selfLink: /apis/extensions/v1beta1/namespaces/test-stash-dy4tec/deployments/stash-zjp2xq
+  uid: c893e438-5bdb-11e7-8520-080027c24619
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: stash-e2e-dktul6
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: stash-e2e-dktul6
+      name: busybox
+    spec:
+      containers:
+      - command:
+        - sleep
+        - "3600"
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        name: busybox
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      - args:
+        - schedule
+        - --v=3
+        - --namespace=test-stash-dy4tec
+        - --name=stash-epggzp
+        - --app=stash-zjp2xq
+        - --prefix-hostname=false
+        image: appscode/stash:canary
+        imagePullPolicy: Always
+        name: stash
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /tmp
+          name: stash-scratchdir
+        - mountPath: /etc
+          name: stash-podinfo
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: stash-scratchdir
+      - downwardAPI:
+          defaultMode: 420
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.labels
+            path: labels
+        name: stash-podinfo
+status:
+  conditions:
+  - lastTransitionTime: 2017-06-28T08:28:37Z
+    lastUpdateTime: 2017-06-28T08:28:37Z
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - lastTransitionTime: 2017-06-28T08:28:38Z
+    lastUpdateTime: 2017-06-28T08:28:38Z
+    message: ReplicaSet "stash-zjp2xq-3019705014" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 2
+  replicas: 1
+  unavailableReplicas: 1
+  updatedReplicas: 1
+```
 
 
 
