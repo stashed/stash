@@ -55,6 +55,9 @@ The `.spec` section has 4 main parts:
 You can set one or more of these retention policy options together. To learn more, read [here](
 https://restic.readthedocs.io/en/latest/manual.html#removing-snapshots-according-to-a-policy).
 
+### spec.backend
+To learn how to configure various backends for Restic, please visit [here](/docs/backends.md).
+
 ### spec.schedule
 `spec.schedule` is a [cron expression](https://github.com/robfig/cron/blob/v2/doc.go#L26) that indicates how often `restic` commands are invokved for file groups.
 At each tick, `restic backup` and `restic forget` commands are run for each of the configured file groups.
