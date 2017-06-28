@@ -35,11 +35,39 @@ The `.spec` section has 4 main parts:
 ### .spec.selector
 `.spec.selector` is a required field that specifies a [label selector](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) for the Deployments, ReplicaSets, ReplicatinControllers, DaemonSets and StatefulSets targeted by this Restic. Selectors are always matched against the labels of Deployments, ReplicaSets, ReplicatinControllers, DaemonSets and StatefulSets in the same namespace as Restic object itself. You can create Deployment, etc and its matching Restic is any order. As long as the labels match, Stash operator will add sidecar container to the workload.
 
-### `spec.fileGroups`
+### spec.fileGroups
+`spec.fileGroups` is a required field that specifies one or more directories that are backed up by [restic](https://github.com/restic/restic). For each directory, you can specify custom tags and retention policy for snapshots.
+
+- spec.fileGroups[].path represents a local directory that backed up by `restic`.
+
+- spec.fileGroups[].tags is an optional field. This can be used to apply one or more custom tag to snaphsots taken from this path.
+
+- spec.fileGroups[].retentionPolicy is an optional field. This defines how old snapshots are forgot and pruned by `restic`. If set, these options directly translate into flags for `restic forget` command. Stash always runs `restic forget` command with `--prune` option to actually remove the data that was referenced by the snapshot from the repository. Retention policy options are below.
+
+| Policy                 | Value | Description |
+|------------------------|----------
+| `keepLastSnapshots`    | integer | --> never delete the n last (most recent) snapshots
+| `keepHourlySnapshots`  | integer |--> for the last n hours in which a snapshot was made, keep only the last snapshot for each hour.
+| `keepDailySnapshots`   | integer |--> for the last n days which have one or more snapshots, only keep the last one for that day.
+| `keepWeeklySnapshots`  | integer |--> for the last n weeks which have one or more snapshots, only keep the last one for that week.
+| `keepMonthlySnapshots` | integer |--> for the last n months which have one or more snapshots, only keep the last one for that month.
+| `keepYearlySnapshots`  | integer |--> for the last n years which have one or more snapshots, only keep the last one for that year.
+| `keepTags`             | keep all snapshots which have all tags specified by this option.
+                
+One can restrict removing snapshots to those which have a particular hostname with the `retainHostname` , or tags with the `retainTags` option. 
+When multiple `retainTags` are specified, only the snapshots which have all the tags are considered.
 
 
 
-
+type RetentionPolicy struct {
+	KeepLastSnapshots    int      `json:"keepLastSnapshots,omitempty"`
+	KeepHourlySnapshots  int      `json:"keepHourlySnapshots,omitempty"`
+	KeepDailySnapshots   int      `json:"keepDailySnapshots,omitempty"`
+	KeepWeeklySnapshots  int      `json:"keepWeeklySnapshots,omitempty"`
+	KeepMonthlySnapshots int      `json:"keepMonthlySnapshots,omitempty"`
+	KeepYearlySnapshots  int      `json:"keepYearlySnapshots,omitempty"`
+	KeepTags             []string `json:"keepTags,omitempty"`
+}
 
 
 
