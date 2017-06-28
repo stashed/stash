@@ -81,6 +81,6 @@ func NewCmdSchedule(version string) *cobra.Command {
 	cmd.Flags().StringVar(&opt.PodLabelsPath, "pod-labels-path", opt.PodLabelsPath, "Path to pod labels file mounted via Kubernetes Downward api")
 
 	// Analytics flags
-	cmd.Flags().BoolVar(&enableAnalytics, "analytics", enableAnalytics, "Send analytical event to Google Analytics")
+	cmd.Flags().BoolVar(&enableAnalytics, "analytics", enableAnalytics, "Send analytical events to Google Analytics")
 	return cmd
 }

@@ -14,7 +14,7 @@ stash schedule [flags]
 ### Options
 
 ```
-      --analytics                Send analytical event to Google Analytics (default true)
+      --analytics                Send analytical events to Google Analytics (default true)
       --app string               Name of app where sidecar pod is added
   -h, --help                     help for schedule
       --kubeconfig string        Path to kubeconfig file with authorization information (the master location is set by the master flag).

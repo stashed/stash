@@ -1,0 +1,21 @@
+apiVersion: stash.appscode.com/v1alpha1
+kind: Restic
+metadata:
+  name: local-restic
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: local-restic
+  fileGroups:
+  - path: /lib
+    retentionPolicy:
+      keepLastSnapshots: 5
+  backend:
+    local:
+      path: /repo
+      volume:
+        emptyDir: {}
+        name: repo
+    repositorySecretName: local-secret
+  schedule: '@every 1m'

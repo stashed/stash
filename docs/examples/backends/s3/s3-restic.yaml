@@ -1,0 +1,20 @@
+apiVersion: stash.appscode.com/v1alpha1
+kind: Restic
+metadata:
+  name: s3-restic
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: s3-restic
+  fileGroups:
+  - path: /lib
+    retentionPolicy:
+      keepLastSnapshots: 5
+  backend:
+    s3:
+      endpoint: 's3.amazonaws.com'
+      bucket: stash-qa
+      prefix: demo
+    repositorySecretName: s3-secret
+  schedule: '@every 1m'

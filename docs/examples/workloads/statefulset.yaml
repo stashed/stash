@@ -1,0 +1,102 @@
+apiVersion: v1
+data:
+  RESTIC_PASSWORD: bm90QHNlY3JldA==
+kind: Secret
+metadata:
+  name: statefulset-secret
+  namespace: default
+type: Opaque
+---
+apiVersion: stash.appscode.com/v1alpha1
+kind: Restic
+metadata:
+  name: statefulset-restic
+  namespace: default
+spec:
+  backend:
+    local:
+      path: /repo
+      volume:
+        emptyDir: {}
+        name: repo
+    repositorySecretName: statefulset-secret
+  fileGroups:
+  - path: /lib
+    retentionPolicy:
+      keepLastSnapshots: 5
+  schedule: '@every 1m'
+  selector:
+    matchLabels:
+      app: statefulset-demo
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: headless
+  namespace: default
+spec:
+  clusterIP: None
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: statefulset-demo
+  type: ClusterIP
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  labels:
+    app: statefulset-demo
+  name: workload
+  namespace: default
+spec:
+  replicas: 1
+  serviceName: headless
+  template:
+    metadata:
+      labels:
+        app: statefulset-demo
+      name: busybox
+    spec:
+      containers:
+      - command:
+        - sleep
+        - "3600"
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        name: busybox
+        resources: {}
+      - args:
+        - schedule
+        - --v=3
+        - --namespace=default
+        - --name=statefulset-restic
+        - --app=workload
+        - --prefix-hostname=true
+        image: appscode/stash:canary
+        imagePullPolicy: IfNotPresent
+        name: stash
+        volumeMounts:
+        - mountPath: /tmp
+          name: stash-scratchdir
+        - mountPath: /etc
+          name: stash-podinfo
+        - mountPath: /repo
+          name: repo
+      restartPolicy: Always
+      volumes:
+      - emptyDir: {}
+        name: stash-scratchdir
+      - downwardAPI:
+          defaultMode: 420
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.labels
+            path: labels
+        name: stash-podinfo
+      - emptyDir: {}
+        name: repo

@@ -1,0 +1,20 @@
+apiVersion: stash.appscode.com/v1alpha1
+kind: Restic
+metadata:
+  name: gcs-restic
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: gcs-restic
+  fileGroups:
+  - path: /lib
+    retentionPolicy:
+      keepLastSnapshots: 5
+  backend:
+    gcs:
+      location: /repo
+      bucket: stash-qa
+      prefix: demo
+    repositorySecretName: gcs-secret
+  schedule: '@every 1m'
