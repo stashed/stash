@@ -82,3 +82,6 @@ To stop taking backup, you can do 2 things:
 
 - Delete the Restic tpr. Stash operator will remove the sidecar container from all matching workloads.
 - Change the labels of a workload. Stash operator will remove sidecar container from that workload. This way you can selectively stop backup of a Deployment, ReplicaSet, etc.
+
+## Restore Backup
+No special support is required to restore backups taken via Stash. Just run the standard `restic restore` command to restore files from backends. To learn more please visit [here](https://restic.readthedocs.io/en/latest/manual.html#restore-a-snapshot).
