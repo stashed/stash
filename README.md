@@ -24,7 +24,7 @@ TO install Stash, please follow the guide [here](/docs/install.md).
 Want to learn how to use Stash? Please start [here](/docs/tutorial.md).
 
 ## Contribution guidelines
-Want to help improve Stash? Please start [here](/CONTRIBUTION.md).
+Want to help improve Stash? Please start [here](/CONTRIBUTING.md).
 
 ## Status
 TO learn about current status of this project, please see [here](/docs/status.md).
