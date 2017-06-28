@@ -78,8 +78,8 @@ Stash supports AWS S3 service or [Minio](https://minio.io/) servers as backend. 
 | Key                     | Description                                    |
 |-------------------------|------------------------------------------------|
 | `RESTIC_PASSWORD`       | Password used to encrypt snapshots by `restic` |
-| `AWS_ACCESS_KEY_ID`     | AWS access key ID                              |
-| `AWS_SECRET_ACCESS_KEY` | AWS secret access key                          |
+| `AWS_ACCESS_KEY_ID`     | AWS / Minio access key ID                      |
+| `AWS_SECRET_ACCESS_KEY` | AWS / Minio secret access key                  |
 
 ```sh
 $ echo -n 'changeit' > RESTIC_PASSWORD
@@ -111,5 +111,47 @@ metadata:
 type: Opaque
 ```
 
-## 
+Now, you can create a Restic tpr using this secret. Following parameters are availble for `S3` backend.
+
+| Parameter     |                                                                                 |
+|---------------|---------------------------------------------------------------------------------|
+| `s3.endpoint` | For S3, use `s3.amazonaws.com`. If your bucket is in a different location, S3 server (s3.amazonaws.com) will redirect restic to the correct endpoint. For an S3-compatible server that is not Amazon (like Minio), or is only available via HTTP, you can specify the endpoint like this: `http://server:port` |
+| `s3.bucket`   | Name of Bucket                                                                  |
+| `s3.prefix`   | Path prefix into bucket where repository will be created.                       |
+
+
+```sh
+$ kubectl create -f ./docs/examples/backends/s3/s3-restic.yaml 
+restic "s3-restic" created
+```
+
+```yaml
+$ kubectl get restic s3-restic -o yaml
+apiVersion: stash.appscode.com/v1alpha1
+kind: Restic
+metadata:
+  creationTimestamp: 2017-06-28T12:14:48Z
+  name: s3-restic
+  namespace: default
+  resourceVersion: "2000"
+  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/s3-restic
+  uid: 617e3487-5bfb-11e7-bb52-08002711f4aa
+spec:
+  backend:
+    local:
+      path: /repo
+      volume:
+        emptyDir: {}
+        name: repo
+    repositorySecretName: local-secret
+  fileGroups:
+  - path: /lib
+    retentionPolicy:
+      keepLastSnapshots: 5
+  schedule: '@every 1m'
+  selector:
+    matchLabels:
+      app: s3-restic
+```
+
 
