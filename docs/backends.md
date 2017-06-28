@@ -33,7 +33,7 @@ type: Opaque
 
 Now, you can create a Restic tpr using this secret. Following parameters are availble for `Local` backend.
 
-| Parameter      |                                                                                 |
+| Parameter      | Description                                                                     |
 |----------------|---------------------------------------------------------------------------------|
 | `local.path`   | Path where this volume will be mounted in the sidecar container. Example: /repo |
 | `local.volume` | Any Kubernetes volume                                                           |
@@ -113,9 +113,9 @@ type: Opaque
 
 Now, you can create a Restic tpr using this secret. Following parameters are availble for `S3` backend.
 
-| Parameter     |                                                                                 |
+| Parameter     | Description                                                                     |
 |---------------|---------------------------------------------------------------------------------|
-| `s3.endpoint` | For S3, use `s3.amazonaws.com`. If your bucket is in a different location, S3 server (s3.amazonaws.com) will redirect restic to the correct endpoint. For an S3-compatible server that is not Amazon (like Minio), or is only available via HTTP, you can specify the endpoint like this: `http://server:port` |
+| `s3.endpoint` | For S3, use `s3.amazonaws.com`. If your bucket is in a different location, S3 server (s3.amazonaws.com) will redirect restic to the correct endpoint. For an S3-compatible server that is not Amazon (like Minio), or is only available via HTTP, you can specify the endpoint like this: `http://server:port`. |
 | `s3.bucket`   | Name of Bucket                                                                  |
 | `s3.prefix`   | Path prefix into bucket where repository will be created.                       |
 
@@ -138,12 +138,11 @@ metadata:
   uid: 617e3487-5bfb-11e7-bb52-08002711f4aa
 spec:
   backend:
-    local:
-      path: /repo
-      volume:
-        emptyDir: {}
-        name: repo
-    repositorySecretName: local-secret
+    s3:
+      endpoint: 's3.amazonaws.com'
+      bucket: stash-qa
+      prefix: demo
+    repositorySecretName: s3-secret
   fileGroups:
   - path: /lib
     retentionPolicy:
