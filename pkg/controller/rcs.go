@@ -51,7 +51,7 @@ func (c *Controller) WatchReplicationControllers() {
 						log.Errorf("No Restic found for ReplicationController %s@%s.", resource.Name, resource.Namespace)
 						return
 					}
-					err = c.EnsureReplicationControllerSidecar(resource, restic)
+					err = c.EnsureReplicationControllerSidecar(resource, nil, restic)
 					if err != nil {
 						log.Errorf("Failed to add sidecar for ReplicationController %s@%s.", resource.Name, resource.Namespace)
 						sidecarFailedToAdd()
@@ -65,7 +65,7 @@ func (c *Controller) WatchReplicationControllers() {
 	ctrl.Run(wait.NeverStop)
 }
 
-func (c *Controller) EnsureReplicationControllerSidecar(resource *apiv1.ReplicationController, restic *sapi.Restic) (err error) {
+func (c *Controller) EnsureReplicationControllerSidecar(resource *apiv1.ReplicationController, old, new *sapi.Restic) (err error) {
 	defer func() {
 		if err != nil {
 			sidecarFailedToDelete()
@@ -74,11 +74,11 @@ func (c *Controller) EnsureReplicationControllerSidecar(resource *apiv1.Replicat
 		sidecarSuccessfullyAdd()
 	}()
 
-	if restic.Spec.Backend.RepositorySecretName == "" {
-		err = fmt.Errorf("Missing repository secret name for Restic %s@%s.", restic.Name, restic.Namespace)
+	if new.Spec.Backend.RepositorySecretName == "" {
+		err = fmt.Errorf("Missing repository secret name for Restic %s@%s.", new.Name, new.Namespace)
 		return
 	}
-	_, err = c.kubeClient.CoreV1().Secrets(resource.Namespace).Get(restic.Spec.Backend.RepositorySecretName, metav1.GetOptions{})
+	_, err = c.kubeClient.CoreV1().Secrets(resource.Namespace).Get(new.Spec.Backend.RepositorySecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -90,16 +90,16 @@ func (c *Controller) EnsureReplicationControllerSidecar(resource *apiv1.Replicat
 			return nil
 		}
 
-		resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.GetSidecarContainer(restic, c.SidecarImageTag, "rc/"+resource.Name))
-		resource.Spec.Template.Spec.Volumes = util.AddScratchVolume(resource.Spec.Template.Spec.Volumes)
-		resource.Spec.Template.Spec.Volumes = util.AddDownwardVolume(resource.Spec.Template.Spec.Volumes)
-		if restic.Spec.Backend.Local != nil {
-			resource.Spec.Template.Spec.Volumes = append(resource.Spec.Template.Spec.Volumes, restic.Spec.Backend.Local.Volume)
+		resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.SidecarImageTag, "rc/"+resource.Name))
+		resource.Spec.Template.Spec.Volumes = util.EnsureScratchVolume(resource.Spec.Template.Spec.Volumes)
+		resource.Spec.Template.Spec.Volumes = util.EnsureDownwardVolume(resource.Spec.Template.Spec.Volumes)
+		if new.Spec.Backend.Local != nil {
+			resource.Spec.Template.Spec.Volumes = append(resource.Spec.Template.Spec.Volumes, new.Spec.Backend.Local.Volume)
 		}
 		if resource.Annotations == nil {
 			resource.Annotations = make(map[string]string)
 		}
-		resource.Annotations[sapi.ConfigName] = restic.Name
+		resource.Annotations[sapi.ConfigName] = new.Name
 		resource.Annotations[sapi.VersionTag] = c.SidecarImageTag
 		_, err = c.kubeClient.CoreV1().ReplicationControllers(resource.Namespace).Update(resource)
 		if err == nil {
@@ -143,11 +143,11 @@ func (c *Controller) EnsureReplicationControllerSidecarDeleted(resource *apiv1.R
 			return nil
 		}
 
-		resource.Spec.Template.Spec.Containers = util.RemoveContainer(resource.Spec.Template.Spec.Containers, util.StashContainer)
-		resource.Spec.Template.Spec.Volumes = util.RemoveVolume(resource.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
-		resource.Spec.Template.Spec.Volumes = util.RemoveVolume(resource.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
+		resource.Spec.Template.Spec.Containers = util.EnsureContainerDeleted(resource.Spec.Template.Spec.Containers, util.StashContainer)
+		resource.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(resource.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
+		resource.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(resource.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
 		if restic.Spec.Backend.Local != nil {
-			resource.Spec.Template.Spec.Volumes = util.RemoveVolume(resource.Spec.Template.Spec.Volumes, restic.Spec.Backend.Local.Volume.Name)
+			resource.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(resource.Spec.Template.Spec.Volumes, restic.Spec.Backend.Local.Volume.Name)
 		}
 		if resource.Annotations != nil {
 			delete(resource.Annotations, sapi.ConfigName)

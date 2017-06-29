@@ -1,7 +1,11 @@
 package controller
 
 import (
+	"errors"
+	"reflect"
+
 	acrt "github.com/appscode/go/runtime"
+	"github.com/appscode/log"
 	sapi "github.com/appscode/stash/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -29,7 +33,22 @@ func (c *Controller) WatchRestics() {
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				if resource, ok := obj.(*sapi.Restic); ok {
-					c.EnsureSidecar(resource)
+					c.EnsureSidecar(nil, resource)
+				}
+			},
+			UpdateFunc: func(old, new interface{}) {
+				oldObj, ok := old.(*sapi.Restic)
+				if !ok {
+					log.Errorln(errors.New("Invalid Restic object"))
+					return
+				}
+				newObj, ok := new.(*sapi.Restic)
+				if !ok {
+					log.Errorln(errors.New("Invalid Restic object"))
+					return
+				}
+				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) {
+					c.EnsureSidecar(oldObj, newObj)
 				}
 			},
 			DeleteFunc: func(obj interface{}) {
@@ -42,40 +61,40 @@ func (c *Controller) WatchRestics() {
 	ctrl.Run(wait.NeverStop)
 }
 
-func (c *Controller) EnsureSidecar(restic *sapi.Restic) {
-	sel, err := metav1.LabelSelectorAsSelector(&restic.Spec.Selector)
+func (c *Controller) EnsureSidecar(old, new *sapi.Restic) {
+	sel, err := metav1.LabelSelectorAsSelector(&new.Spec.Selector)
 	if err != nil {
 		return
 	}
 	opt := metav1.ListOptions{LabelSelector: sel.String()}
 
-	if resources, err := c.kubeClient.CoreV1().ReplicationControllers(restic.Namespace).List(opt); err == nil {
+	if resources, err := c.kubeClient.CoreV1().ReplicationControllers(new.Namespace).List(opt); err == nil {
 		for _, resource := range resources.Items {
-			go c.EnsureReplicationControllerSidecar(&resource, restic)
+			go c.EnsureReplicationControllerSidecar(&resource, old, new)
 		}
 	}
 
-	if resources, err := c.kubeClient.ExtensionsV1beta1().ReplicaSets(restic.Namespace).List(opt); err == nil {
+	if resources, err := c.kubeClient.ExtensionsV1beta1().ReplicaSets(new.Namespace).List(opt); err == nil {
 		for _, resource := range resources.Items {
-			go c.EnsureReplicaSetSidecar(&resource, restic)
+			go c.EnsureReplicaSetSidecar(&resource, old, new)
 		}
 	}
 
-	if resources, err := c.kubeClient.ExtensionsV1beta1().Deployments(restic.Namespace).List(opt); err == nil {
+	if resources, err := c.kubeClient.ExtensionsV1beta1().Deployments(new.Namespace).List(opt); err == nil {
 		for _, resource := range resources.Items {
-			go c.EnsureDeploymentExtensionSidecar(&resource, restic)
+			go c.EnsureDeploymentExtensionSidecar(&resource, old, new)
 		}
 	}
 
-	if resources, err := c.kubeClient.AppsV1beta1().Deployments(restic.Namespace).List(opt); err == nil {
+	if resources, err := c.kubeClient.AppsV1beta1().Deployments(new.Namespace).List(opt); err == nil {
 		for _, resource := range resources.Items {
-			go c.EnsureDeploymentAppSidecar(&resource, restic)
+			go c.EnsureDeploymentAppSidecar(&resource, old, new)
 		}
 	}
 
-	if resources, err := c.kubeClient.ExtensionsV1beta1().DaemonSets(restic.Namespace).List(opt); err == nil {
+	if resources, err := c.kubeClient.ExtensionsV1beta1().DaemonSets(new.Namespace).List(opt); err == nil {
 		for _, resource := range resources.Items {
-			go c.EnsureDaemonSetSidecar(&resource, restic)
+			go c.EnsureDaemonSetSidecar(&resource, old, new)
 		}
 	}
 }

@@ -25,9 +25,9 @@ func (f *Invocation) StatefulSet(r sapi.Restic) apps.StatefulSet {
 			ServiceName: TEST_HEADLESS_SERVICE,
 		},
 	}
-	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.GetSidecarContainer(&r, "canary", "ss/"+resource.Name))
-	resource.Spec.Template.Spec.Volumes = util.AddScratchVolume(resource.Spec.Template.Spec.Volumes)
-	resource.Spec.Template.Spec.Volumes = util.AddDownwardVolume(resource.Spec.Template.Spec.Volumes)
+	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.CreateSidecarContainer(&r, "canary", "ss/"+resource.Name))
+	resource.Spec.Template.Spec.Volumes = util.EnsureScratchVolume(resource.Spec.Template.Spec.Volumes)
+	resource.Spec.Template.Spec.Volumes = util.EnsureDownwardVolume(resource.Spec.Template.Spec.Volumes)
 	if r.Spec.Backend.Local != nil {
 		resource.Spec.Template.Spec.Volumes = append(resource.Spec.Template.Spec.Volumes, r.Spec.Backend.Local.Volume)
 	}

@@ -197,7 +197,7 @@ func GetString(m map[string]string, key string) string {
 	return m[key]
 }
 
-func GetSidecarContainer(r *rapi.Restic, tag, workload string) apiv1.Container {
+func CreateSidecarContainer(r *rapi.Restic, tag, workload string) apiv1.Container {
 	if r.Annotations != nil {
 		if v, ok := r.Annotations[sapi.VersionTag]; ok {
 			tag = v
@@ -245,6 +245,14 @@ func GetSidecarContainer(r *rapi.Restic, tag, workload string) apiv1.Container {
 	if tag == "canary" {
 		sidecar.ImagePullPolicy = apiv1.PullAlways
 	}
+	for _, srcVol := range r.Spec.VolumeMounts {
+		sidecar.VolumeMounts = append(sidecar.VolumeMounts, apiv1.VolumeMount{
+			Name:      srcVol.Name,
+			MountPath: srcVol.MountPath,
+			SubPath:   srcVol.SubPath,
+			ReadOnly:  true,
+		})
+	}
 	if r.Spec.Backend.Local != nil {
 		sidecar.VolumeMounts = append(sidecar.VolumeMounts, apiv1.VolumeMount{
 			Name:      r.Spec.Backend.Local.Volume.Name,
@@ -254,7 +262,7 @@ func GetSidecarContainer(r *rapi.Restic, tag, workload string) apiv1.Container {
 	return sidecar
 }
 
-func RemoveContainer(c []apiv1.Container, name string) []apiv1.Container {
+func EnsureContainerDeleted(c []apiv1.Container, name string) []apiv1.Container {
 	for i, v := range c {
 		if v.Name == name {
 			c = append(c[:i], c[i+1:]...)
@@ -264,35 +272,50 @@ func RemoveContainer(c []apiv1.Container, name string) []apiv1.Container {
 	return c
 }
 
-func AddScratchVolume(volumes []apiv1.Volume) []apiv1.Volume {
-	return append(volumes, apiv1.Volume{
-		Name: ScratchDirVolumeName,
-		VolumeSource: apiv1.VolumeSource{
-			EmptyDir: &apiv1.EmptyDirVolumeSource{},
-		},
-	})
+func HasVolume(volumes []apiv1.Volume, name string) bool {
+	for _, vol := range volumes {
+		if vol.Name == ScratchDirVolumeName {
+			return true
+		}
+	}
+	return false
+}
+
+func EnsureScratchVolume(volumes []apiv1.Volume) []apiv1.Volume {
+	if !HasVolume(volumes, ScratchDirVolumeName) {
+		return append(volumes, apiv1.Volume{
+			Name: ScratchDirVolumeName,
+			VolumeSource: apiv1.VolumeSource{
+				EmptyDir: &apiv1.EmptyDirVolumeSource{},
+			},
+		})
+	}
+	return volumes
 }
 
 // https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#store-pod-fields
-func AddDownwardVolume(volumes []apiv1.Volume) []apiv1.Volume {
-	return append(volumes, apiv1.Volume{
-		Name: PodinfoVolumeName,
-		VolumeSource: apiv1.VolumeSource{
-			DownwardAPI: &apiv1.DownwardAPIVolumeSource{
-				Items: []apiv1.DownwardAPIVolumeFile{
-					{
-						Path: "labels",
-						FieldRef: &apiv1.ObjectFieldSelector{
-							FieldPath: "metadata.labels",
+func EnsureDownwardVolume(volumes []apiv1.Volume) []apiv1.Volume {
+	if !HasVolume(volumes, PodinfoVolumeName) {
+		return append(volumes, apiv1.Volume{
+			Name: PodinfoVolumeName,
+			VolumeSource: apiv1.VolumeSource{
+				DownwardAPI: &apiv1.DownwardAPIVolumeSource{
+					Items: []apiv1.DownwardAPIVolumeFile{
+						{
+							Path: "labels",
+							FieldRef: &apiv1.ObjectFieldSelector{
+								FieldPath: "metadata.labels",
+							},
 						},
 					},
 				},
 			},
-		},
-	})
+		})
+	}
+	return volumes
 }
 
-func RemoveVolume(volumes []apiv1.Volume, name string) []apiv1.Volume {
+func EnsureVolumeDeleted(volumes []apiv1.Volume, name string) []apiv1.Volume {
 	for i, v := range volumes {
 		if v.Name == name {
 			volumes = append(volumes[:i], volumes[i+1:]...)
