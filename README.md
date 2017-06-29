@@ -26,7 +26,8 @@ Want to learn how to use Stash? Please start [here](/docs/tutorial.md).
 ## Contribution guidelines
 Want to help improve Stash? Please start [here](/CONTRIBUTING.md).
 
-## 
+## Project Status
+Wondering what features are coming next? Please visit [here](/ROADMAP.md). 
 
 ---
 
