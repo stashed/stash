@@ -13,18 +13,14 @@ const (
 )
 
 type ResticWrapper struct {
-	sh          *shell.Session
-	scratchDir  string
-	podName     string
-	smartPrefix string
+	sh         *shell.Session
+	scratchDir string
 }
 
-func New(scratchDir string, smartPrefix, podName string) *ResticWrapper {
+func New(scratchDir string) *ResticWrapper {
 	ctrl := &ResticWrapper{
-		sh:          shell.NewSession(),
-		scratchDir:  scratchDir,
-		smartPrefix: smartPrefix,
-		podName:     podName,
+		sh:         shell.NewSession(),
+		scratchDir: scratchDir,
 	}
 	ctrl.sh.SetDir(scratchDir)
 	ctrl.sh.ShowCMD = true

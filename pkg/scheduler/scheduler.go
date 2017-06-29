@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"reflect"
-	"strconv"
 	"time"
 
 	"github.com/appscode/log"
@@ -45,6 +44,19 @@ type Options struct {
 	PodLabelsPath  string
 }
 
+func (opt Options) autoPrefix(resource *sapi.Restic) string {
+	switch resource.Spec.AutoPrefix {
+	case sapi.None:
+		return ""
+	case sapi.NodeName:
+		return opt.NodeName
+	case sapi.PodName:
+		return opt.PodName
+	default:
+		return opt.SmartPrefix
+	}
+}
+
 type Scheduler struct {
 	kubeClient  clientset.Interface
 	stashClient scs.ExtensionInterface
@@ -65,7 +77,7 @@ func New(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt
 		rchan:       make(chan *sapi.Restic, 1),
 		cron:        cron.New(),
 		locked:      make(chan struct{}, 1),
-		resticCLI : cli.New(opt.ScratchDir, opt.SmartPrefix, opt.PodName),
+		resticCLI:   cli.New(opt.ScratchDir),
 		recorder:    eventer.NewEventRecorder(kubeClient, "stash-scheduler"),
 		syncPeriod:  30 * time.Second,
 	}
@@ -86,7 +98,7 @@ func (c *Scheduler) Setup() error {
 		return err
 	}
 	log.Infof("Found repository secret %s", secret.Name)
-	err = c.resticCLI.SetupEnv(resource, secret)
+	err = c.resticCLI.SetupEnv(resource, secret, c.opt.autoPrefix(resource))
 	if err != nil {
 		return err
 	}
@@ -230,7 +242,7 @@ func (c *Scheduler) runOnce() (err error) {
 	if err != nil {
 		return
 	}
-	err = c.resticCLI.SetupEnv(resource, secret)
+	err = c.resticCLI.SetupEnv(resource, secret, c.opt.autoPrefix(resource))
 	if err != nil {
 		return err
 	}
@@ -242,36 +254,31 @@ func (c *Scheduler) runOnce() (err error) {
 	}
 
 	startTime := metav1.Now()
-	sessionID := strconv.FormatInt(startTime.Unix(), 10)
 	var (
 		restic_session_success = prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace:   "restic",
-			Subsystem:   "session",
-			Name:        "success",
-			Help:        "Indicates if session was successfully completed",
-			ConstLabels: prometheus.Labels{"session": sessionID},
+			Namespace: "restic",
+			Subsystem: "session",
+			Name:      "success",
+			Help:      "Indicates if session was successfully completed",
 		})
 		restic_session_fail = prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace:   "restic",
-			Subsystem:   "session",
-			Name:        "fail",
-			Help:        "Indicates if session failed",
-			ConstLabels: prometheus.Labels{"session": sessionID},
+			Namespace: "restic",
+			Subsystem: "session",
+			Name:      "fail",
+			Help:      "Indicates if session failed",
 		})
 		restic_session_duration_seconds_total = prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace:   "restic",
-			Subsystem:   "session",
-			Name:        "duration_seconds_total",
-			Help:        "Total seconds taken to complete restic session",
-			ConstLabels: prometheus.Labels{"session": sessionID},
+			Namespace: "restic",
+			Subsystem: "session",
+			Name:      "duration_seconds_total",
+			Help:      "Total seconds taken to complete restic session",
 		})
 		restic_session_duration_seconds = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace:   "restic",
-			Subsystem:   "session",
-			Name:        "duration_seconds",
-			Help:        "Total seconds taken to complete restic session",
-			ConstLabels: prometheus.Labels{"session": sessionID},
-		}, []string{"session", "filegroup", "op"})
+			Namespace: "restic",
+			Subsystem: "session",
+			Name:      "duration_seconds",
+			Help:      "Total seconds taken to complete restic session",
+		}, []string{"filegroup", "op"})
 	)
 
 	defer func() {
@@ -323,7 +330,7 @@ func (c *Scheduler) runOnce() (err error) {
 	}()
 
 	for _, fg := range resource.Spec.FileGroups {
-		backupOpMetric := restic_session_duration_seconds.WithLabelValues(sessionID, sanitizeLabelValue(fg.Path), "backup")
+		backupOpMetric := restic_session_duration_seconds.WithLabelValues(sanitizeLabelValue(fg.Path), "backup")
 		err = c.measure(c.resticCLI.Backup, resource, fg, backupOpMetric)
 		if err != nil {
 			log.Errorln("Backup operation failed for Reestic %s@%s due to %s", resource.Name, resource.Namespace, err)
@@ -334,7 +341,7 @@ func (c *Scheduler) runOnce() (err error) {
 			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonSuccessfulBackup, "Backed up pod:"+hostname+" path:"+fg.Path)
 		}
 
-		forgetOpMetric := restic_session_duration_seconds.WithLabelValues(sessionID, sanitizeLabelValue(fg.Path), "forget")
+		forgetOpMetric := restic_session_duration_seconds.WithLabelValues(sanitizeLabelValue(fg.Path), "forget")
 		err = c.measure(c.resticCLI.Forget, resource, fg, forgetOpMetric)
 		if err != nil {
 			log.Errorln("Failed to forget old snapshots for Restic %s@%s due to %s", resource.Name, resource.Namespace, err)

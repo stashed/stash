@@ -54,7 +54,7 @@ const (
 	OS_AUTH_TOKEN  = "OS_AUTH_TOKEN"
 )
 
-func (w *ResticWrapper) SetupEnv(resource *sapi.Restic, secret *apiv1.Secret) error {
+func (w *ResticWrapper) SetupEnv(resource *sapi.Restic, secret *apiv1.Secret, autoPrefix string) error {
 	if v, ok := secret.Data[RESTIC_PASSWORD]; !ok {
 		return errors.New("Missing repository password")
 	} else {
@@ -69,21 +69,24 @@ func (w *ResticWrapper) SetupEnv(resource *sapi.Restic, secret *apiv1.Secret) er
 
 	backend := resource.Spec.Backend
 	if backend.Local != nil {
-		// if resource.Spec.SkipSmartPrefix
-
-
-
-
-		r := backend.Local.Path
-		w.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, w.hostname))
+		r := filepath.Join(backend.Local.Path, autoPrefix)
+		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 	} else if backend.S3 != nil {
-		r := fmt.Sprintf("s3:%s:%s:%s", backend.S3.Endpoint, backend.S3.Bucket, backend.S3.Prefix)
-		w.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, w.hostname))
+		prefix := filepath.Join(backend.S3.Prefix, autoPrefix)
+		if prefix == "" {
+			prefix = "stash"
+		}
+		r := fmt.Sprintf("s3:%s:%s:%s", backend.S3.Endpoint, backend.S3.Bucket, prefix)
+		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 		w.sh.SetEnv(AWS_ACCESS_KEY_ID, string(secret.Data[AWS_ACCESS_KEY_ID]))
 		w.sh.SetEnv(AWS_SECRET_ACCESS_KEY, string(secret.Data[AWS_SECRET_ACCESS_KEY]))
 	} else if backend.GCS != nil {
-		r := fmt.Sprintf("gs:%s:%s:%s", backend.GCS.Location, backend.GCS.Bucket, backend.GCS.Prefix)
-		w.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, w.hostname))
+		prefix := filepath.Join(backend.GCS.Prefix, autoPrefix)
+		if prefix == "" {
+			prefix = "stash"
+		}
+		r := fmt.Sprintf("gs:%s:%s:%s", backend.GCS.Location, backend.GCS.Bucket, prefix)
+		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 		w.sh.SetEnv(GOOGLE_PROJECT_ID, string(secret.Data[GOOGLE_PROJECT_ID]))
 		jsonKeyPath := filepath.Join(w.scratchDir, "gcs_sa.json")
 		err := ioutil.WriteFile(jsonKeyPath, secret.Data[GOOGLE_SERVICE_ACCOUNT_JSON_KEY], 600)
@@ -92,13 +95,21 @@ func (w *ResticWrapper) SetupEnv(resource *sapi.Restic, secret *apiv1.Secret) er
 		}
 		w.sh.SetEnv(GOOGLE_APPLICATION_CREDENTIALS, jsonKeyPath)
 	} else if backend.Azure != nil {
-		r := fmt.Sprintf("azure:%s:%s", backend.Azure.Container, backend.Azure.Prefix)
-		w.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, w.hostname))
+		prefix := filepath.Join(backend.Azure.Prefix, autoPrefix)
+		if prefix == "" {
+			prefix = "stash"
+		}
+		r := fmt.Sprintf("azure:%s:%s", backend.Azure.Container, prefix)
+		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 		w.sh.SetEnv(AZURE_ACCOUNT_NAME, string(secret.Data[AZURE_ACCOUNT_NAME]))
 		w.sh.SetEnv(AZURE_ACCOUNT_KEY, string(secret.Data[AZURE_ACCOUNT_KEY]))
 	} else if backend.Swift != nil {
-		r := fmt.Sprintf("swift:%s:%s", backend.Swift.Container, backend.Swift.Prefix)
-		w.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, w.hostname))
+		prefix := filepath.Join(backend.Swift.Prefix, autoPrefix)
+		if prefix == "" {
+			prefix = "stash"
+		}
+		r := fmt.Sprintf("swift:%s:%s", backend.Swift.Container, prefix)
+		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 		// For keystone v1 authentication
 		w.sh.SetEnv(ST_AUTH, string(secret.Data[ST_AUTH]))
 		w.sh.SetEnv(ST_USER, string(secret.Data[ST_USER]))
@@ -130,12 +141,16 @@ func (w *ResticWrapper) SetupEnv(resource *sapi.Restic, secret *apiv1.Secret) er
 				u.User = url.User(string(username))
 			}
 		}
-		u.Path = filepath.Join(u.Path, w.hostname) // TODO: check
+		u.Path = filepath.Join(u.Path, autoPrefix) // TODO: check
 		r := fmt.Sprintf("rest:%s", u.String())
 		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 	} else if backend.B2 != nil {
-		r := fmt.Sprintf("b2:%s:%s", backend.B2.Bucket, backend.B2.Prefix)
-		w.sh.SetEnv(RESTIC_REPOSITORY, filepath.Join(r, w.hostname))
+		prefix := filepath.Join(backend.B2.Prefix, autoPrefix)
+		if prefix == "" {
+			prefix = "stash"
+		}
+		r := fmt.Sprintf("b2:%s:%s", backend.B2.Bucket, prefix)
+		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 		w.sh.SetEnv(B2_ACCOUNT_ID, string(secret.Data[B2_ACCOUNT_ID]))
 		w.sh.SetEnv(B2_ACCOUNT_KEY, string(secret.Data[B2_ACCOUNT_KEY]))
 	}

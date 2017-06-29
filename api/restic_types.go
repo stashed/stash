@@ -13,11 +13,11 @@ type Restic struct {
 }
 
 type ResticSpec struct {
-	Selector        metav1.LabelSelector `json:"selector,omitempty"`
-	FileGroups      []FileGroup          `json:"fileGroups,omitempty"`
-	Backend         Backend              `json:"backend,omitempty"`
-	Schedule        string               `json:"schedule,omitempty"`
-	SkipSmartPrefix bool                 `json:"skipSmartPrefix,omitempty"`
+	Selector   metav1.LabelSelector `json:"selector,omitempty"`
+	FileGroups []FileGroup          `json:"fileGroups,omitempty"`
+	Backend    Backend              `json:"backend,omitempty"`
+	Schedule   string               `json:"schedule,omitempty"`
+	AutoPrefix PrefixType           `json:"autoPrefix,omitempty"`
 	// Pod volumes to mount into the sidecar container's filesystem.
 	VolumeMounts []apiv1.VolumeMount `json:"volumeMounts,omitempty"`
 }
