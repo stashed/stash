@@ -93,9 +93,17 @@ func (w *ResticWrapper) Forget(resource *sapi.Restic, fg sapi.FileGroup) error {
 		args = append(args, string(sapi.KeepTag))
 		args = append(args, tag)
 	}
-	err := w.sh.Command(Exe, args...).Run()
-	if err != nil {
-		return err
+	if fg.RetentionPolicy.Prune {
+		args = append(args, "--prune")
+	}
+	if fg.RetentionPolicy.DryRun {
+		args = append(args, "--dry-run")
+	}
+	if len(args) > 1 {
+		err := w.sh.Command(Exe, args...).Run()
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

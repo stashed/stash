@@ -115,4 +115,6 @@ type RetentionPolicy struct {
 	KeepMonthly int      `json:"keepMonthly,omitempty"`
 	KeepYearly  int      `json:"keepYearly,omitempty"`
 	KeepTags    []string `json:"keepTags,omitempty"`
+	Prune       bool     `json:"prune,omitempty"`
+	DryRun      bool     `json:"dryRun,omitempty"`
 }
