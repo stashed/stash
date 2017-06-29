@@ -1,5 +1,4 @@
 # Contribution Guidelines
-Want to hack on Stash?
 
 ## Developer Guide
 We have a [Developer Guide](/docs/developer-guide/README.md) that outlines everything you need to know from setting up your

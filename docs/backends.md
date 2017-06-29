@@ -1,3 +1,5 @@
+> New to Stash? Please start with [here](/docs/tutorial.md).
+
 # Stash Backends
 Backend is where `restic` stores snapshots. For any backend, a Kubernetes Secret in the same namespace is needed to provide restic repository credentials. This Secret can be configured by setting `spec.backend.repositorySecretName` field. This document lists the various supported backends for Stash and how to configure those.
 

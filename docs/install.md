@@ -1,3 +1,5 @@
+> New to Stash? Please start with [here](/docs/tutorial.md).
+
 # Installation Guide
 
 ## Using YAML
