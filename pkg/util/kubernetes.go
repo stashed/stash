@@ -351,7 +351,7 @@ func MergeLocalVolume(volumes []apiv1.Volume, old, new *sapi.Restic) []apiv1.Vol
 		if oldPos != -1 {
 			volumes[oldPos] = new.Spec.Backend.Local.Volume
 		} else {
-			volumes = append(volumes, new.Spec.Backend.Local.Volume)
+			volumes = UpsertVolume(volumes, new.Spec.Backend.Local.Volume)
 		}
 	} else {
 		if oldPos != -1 {
