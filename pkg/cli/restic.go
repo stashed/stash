@@ -65,41 +65,45 @@ func (w *ResticWrapper) Backup(resource *sapi.Restic, fg sapi.FileGroup) error {
 
 func (w *ResticWrapper) Forget(resource *sapi.Restic, fg sapi.FileGroup) error {
 	args := []interface{}{"forget"}
-	if fg.RetentionPolicy.KeepLastSnapshots > 0 {
+	if fg.RetentionPolicy.KeepLast > 0 {
 		args = append(args, string(sapi.KeepLast))
-		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepLastSnapshots))
+		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepLast))
 	}
-	if fg.RetentionPolicy.KeepHourlySnapshots > 0 {
+	if fg.RetentionPolicy.KeepHourly > 0 {
 		args = append(args, string(sapi.KeepHourly))
-		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepHourlySnapshots))
+		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepHourly))
 	}
-	if fg.RetentionPolicy.KeepDailySnapshots > 0 {
+	if fg.RetentionPolicy.KeepDaily > 0 {
 		args = append(args, string(sapi.KeepDaily))
-		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepDailySnapshots))
+		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepDaily))
 	}
-	if fg.RetentionPolicy.KeepWeeklySnapshots > 0 {
+	if fg.RetentionPolicy.KeepWeekly > 0 {
 		args = append(args, string(sapi.KeepWeekly))
-		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepWeeklySnapshots))
+		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepWeekly))
 	}
-	if fg.RetentionPolicy.KeepMonthlySnapshots > 0 {
+	if fg.RetentionPolicy.KeepMonthly > 0 {
 		args = append(args, string(sapi.KeepMonthly))
-		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepMonthlySnapshots))
+		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepMonthly))
 	}
-	if fg.RetentionPolicy.KeepYearlySnapshots > 0 {
+	if fg.RetentionPolicy.KeepYearly > 0 {
 		args = append(args, string(sapi.KeepYearly))
-		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepYearlySnapshots))
+		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepYearly))
 	}
 	for _, tag := range fg.RetentionPolicy.KeepTags {
 		args = append(args, string(sapi.KeepTag))
 		args = append(args, tag)
 	}
-	for _, tag := range fg.Tags {
-		args = append(args, "--tag")
-		args = append(args, tag)
+	if fg.RetentionPolicy.Prune {
+		args = append(args, "--prune")
 	}
-	err := w.sh.Command(Exe, args...).Run()
-	if err != nil {
-		return err
+	if fg.RetentionPolicy.DryRun {
+		args = append(args, "--dry-run")
+	}
+	if len(args) > 1 {
+		err := w.sh.Command(Exe, args...).Run()
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

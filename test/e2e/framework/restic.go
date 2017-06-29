@@ -29,7 +29,7 @@ func (f *Invocation) _restic() sapi.Restic {
 				{
 					Path: "/lib",
 					RetentionPolicy: sapi.RetentionPolicy{
-						KeepLastSnapshots: 5,
+						KeepLast: 5,
 					},
 				},
 			},

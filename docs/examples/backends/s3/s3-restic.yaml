@@ -10,7 +10,7 @@ spec:
   fileGroups:
   - path: /lib
     retentionPolicy:
-      keepLastSnapshots: 5
+      keepLast: 5
   backend:
     s3:
       endpoint: 's3.amazonaws.com'

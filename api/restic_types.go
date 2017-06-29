@@ -5,18 +5,6 @@ import (
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
-type RetentionStrategy string
-
-const (
-	KeepLast    RetentionStrategy = "--keep-last"
-	KeepHourly  RetentionStrategy = "--keep-hourly"
-	KeepDaily   RetentionStrategy = "--keep-daily"
-	KeepWeekly  RetentionStrategy = "--keep-weekly"
-	KeepMonthly RetentionStrategy = "--keep-monthly"
-	KeepYearly  RetentionStrategy = "--keep-yearly"
-	KeepTag     RetentionStrategy = "--keep-tag"
-)
-
 type Restic struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -107,12 +95,26 @@ type RestServerSpec struct {
 	URL string `json:"url,omiempty"`
 }
 
+type RetentionStrategy string
+
+const (
+	KeepLast    RetentionStrategy = "--keep-last"
+	KeepHourly  RetentionStrategy = "--keep-hourly"
+	KeepDaily   RetentionStrategy = "--keep-daily"
+	KeepWeekly  RetentionStrategy = "--keep-weekly"
+	KeepMonthly RetentionStrategy = "--keep-monthly"
+	KeepYearly  RetentionStrategy = "--keep-yearly"
+	KeepTag     RetentionStrategy = "--keep-tag"
+)
+
 type RetentionPolicy struct {
-	KeepLastSnapshots    int      `json:"keepLastSnapshots,omitempty"`
-	KeepHourlySnapshots  int      `json:"keepHourlySnapshots,omitempty"`
-	KeepDailySnapshots   int      `json:"keepDailySnapshots,omitempty"`
-	KeepWeeklySnapshots  int      `json:"keepWeeklySnapshots,omitempty"`
-	KeepMonthlySnapshots int      `json:"keepMonthlySnapshots,omitempty"`
-	KeepYearlySnapshots  int      `json:"keepYearlySnapshots,omitempty"`
-	KeepTags             []string `json:"keepTags,omitempty"`
+	KeepLast    int      `json:"keepLast,omitempty"`
+	KeepHourly  int      `json:"keepHourly,omitempty"`
+	KeepDaily   int      `json:"keepDaily,omitempty"`
+	KeepWeekly  int      `json:"keepWeekly,omitempty"`
+	KeepMonthly int      `json:"keepMonthly,omitempty"`
+	KeepYearly  int      `json:"keepYearly,omitempty"`
+	KeepTags    []string `json:"keepTags,omitempty"`
+	Prune       bool     `json:"prune,omitempty"`
+	DryRun      bool     `json:"dryRun,omitempty"`
 }
