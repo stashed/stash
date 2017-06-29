@@ -21,7 +21,7 @@ spec:
   fileGroups:
   - path: /lib
     retentionPolicy:
-      keepLastSnapshots: 5
+      keepLast: 5
   backend:
     local:
       path: /repo
@@ -44,15 +44,15 @@ The `.spec` section has 4 main parts:
  - `spec.fileGroups[].tags` is an optional field. This can be used to apply one or more custom tag to snaphsots taken from this path.
  - `spec.fileGroups[].retentionPolicy` is an optional field. This defines how old snapshots are forgot and pruned by `restic`. If set, these options directly translate into flags for `restic forget` command. Stash always runs `restic forget` command with `--prune` option to actually remove the data that was referenced by the snapshot from the repository. Retention policy options are below.
 
-| Policy                 | Value   | restic forget flag | Description                                                                                        |
-|------------------------|---------|--------------------|----------------------------------------------------------------------------------------------------|
-| `keepLastSnapshots`    | integer | --keep-last n      | Never delete the n last (most recent) snapshots                                                    |
-| `keepHourlySnapshots`  | integer | --keep-hourly n    | For the last n hours in which a snapshot was made, keep only the last snapshot for each hour.      |
-| `keepDailySnapshots`   | integer | --keep-daily n     | For the last n days which have one or more snapshots, only keep the last one for that day.         |
-| `keepWeeklySnapshots`  | integer | --keep-weekly n    | For the last n weeks which have one or more snapshots, only keep the last one for that week.       |
-| `keepMonthlySnapshots` | integer | --keep-monthly n   | For the last n months which have one or more snapshots, only keep the last one for that month.     |
-| `keepYearlySnapshots`  | integer | --keep-yearly n    | For the last n years which have one or more snapshots, only keep the last one for that year.       |
-| `keepTags`             | array   | --keep-tag <tag>   | Keep all snapshots which have all tags specified by this option (can be specified multiple times). |
+| Policy        | Value   | restic forget flag | Description                                                                                        |
+|---------------|---------|--------------------|----------------------------------------------------------------------------------------------------|
+| `keepLast`    | integer | --keep-last n      | Never delete the n last (most recent) snapshots                                                    |
+| `keepHourly`  | integer | --keep-hourly n    | For the last n hours in which a snapshot was made, keep only the last snapshot for each hour.      |
+| `keepDaily`   | integer | --keep-daily n     | For the last n days which have one or more snapshots, only keep the last one for that day.         |
+| `keepWeekly`  | integer | --keep-weekly n    | For the last n weeks which have one or more snapshots, only keep the last one for that week.       |
+| `keepMonthly` | integer | --keep-monthly n   | For the last n months which have one or more snapshots, only keep the last one for that month.     |
+| `keepYearly`  | integer | --keep-yearly n    | For the last n years which have one or more snapshots, only keep the last one for that year.       |
+| `keepTags`    | array   | --keep-tag <tag>   | Keep all snapshots which have all tags specified by this option (can be specified multiple times). |
 
 You can set one or more of these retention policy options together. To learn more, read [here](
 https://restic.readthedocs.io/en/latest/manual.html#removing-snapshots-according-to-a-policy).

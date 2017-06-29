@@ -10,7 +10,7 @@ spec:
   fileGroups:
   - path: /lib
     retentionPolicy:
-      keepLastSnapshots: 5
+      keepLast: 5
   backend:
     local:
       path: /repo

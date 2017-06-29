@@ -21,4 +21,4 @@ spec:
   retentionPolicy:
     keepTags:
     - test
-    keepLastSnapshots: 10
+    keepLast: 10

@@ -67,7 +67,7 @@ spec:
   fileGroups:
   - path: /lib
     retentionPolicy:
-      keepLastSnapshots: 5
+      keepLast: 5
   schedule: '@every 1m'
   selector:
     matchLabels:
@@ -149,7 +149,7 @@ spec:
   fileGroups:
   - path: /lib
     retentionPolicy:
-      keepLastSnapshots: 5
+      keepLast: 5
   schedule: '@every 1m'
   selector:
     matchLabels:
@@ -231,7 +231,7 @@ spec:
   fileGroups:
   - path: /lib
     retentionPolicy:
-      keepLastSnapshots: 5
+      keepLast: 5
   schedule: '@every 1m'
   selector:
     matchLabels:
@@ -311,7 +311,7 @@ spec:
   fileGroups:
   - path: /lib
     retentionPolicy:
-      keepLastSnapshots: 5
+      keepLast: 5
   schedule: '@every 1m'
   selector:
     matchLabels:
