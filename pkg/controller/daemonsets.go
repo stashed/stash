@@ -1,7 +1,9 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
+	"reflect"
 	"time"
 
 	acrt "github.com/appscode/go/runtime"
@@ -53,6 +55,35 @@ func (c *Controller) WatchDaemonSets() {
 						return
 					}
 					c.EnsureDaemonSetSidecar(resource, nil, restic)
+				}
+			},
+			UpdateFunc: func(old, new interface{}) {
+				oldObj, ok := old.(*extensions.DaemonSet)
+				if !ok {
+					log.Errorln(errors.New("Invalid DaemonSet object"))
+					return
+				}
+				newObj, ok := new.(*extensions.DaemonSet)
+				if !ok {
+					log.Errorln(errors.New("Invalid DaemonSet object"))
+					return
+				}
+				if !reflect.DeepEqual(oldObj.Labels, newObj.Labels) {
+					oldRestic, err := util.FindRestic(c.stashClient, oldObj.ObjectMeta)
+					if err != nil {
+						log.Errorf("Error while searching Restic for DaemonSet %s@%s.", oldObj.Name, oldObj.Namespace)
+						return
+					}
+					newRestic, err := util.FindRestic(c.stashClient, newObj.ObjectMeta)
+					if err != nil {
+						log.Errorf("Error while searching Restic for DaemonSet %s@%s.", newObj.Name, newObj.Namespace)
+						return
+					}
+					if newRestic != nil {
+						c.EnsureDaemonSetSidecar(newObj, oldRestic, newRestic)
+					} else if oldRestic != nil {
+						c.EnsureDaemonSetSidecarDeleted(newObj, oldRestic)
+					}
 				}
 			},
 		},

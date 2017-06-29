@@ -1,7 +1,9 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
+	"reflect"
 	"time"
 
 	acrt "github.com/appscode/go/runtime"
@@ -53,6 +55,35 @@ func (c *Controller) WatchReplicaSets() {
 						return
 					}
 					c.EnsureReplicaSetSidecar(resource, nil, restic)
+				}
+			},
+			UpdateFunc: func(old, new interface{}) {
+				oldObj, ok := old.(*extensions.ReplicaSet)
+				if !ok {
+					log.Errorln(errors.New("Invalid ReplicaSet object"))
+					return
+				}
+				newObj, ok := new.(*extensions.ReplicaSet)
+				if !ok {
+					log.Errorln(errors.New("Invalid ReplicaSet object"))
+					return
+				}
+				if !reflect.DeepEqual(oldObj.Labels, newObj.Labels) {
+					oldRestic, err := util.FindRestic(c.stashClient, oldObj.ObjectMeta)
+					if err != nil {
+						log.Errorf("Error while searching Restic for ReplicaSet %s@%s.", oldObj.Name, oldObj.Namespace)
+						return
+					}
+					newRestic, err := util.FindRestic(c.stashClient, newObj.ObjectMeta)
+					if err != nil {
+						log.Errorf("Error while searching Restic for ReplicaSet %s@%s.", newObj.Name, newObj.Namespace)
+						return
+					}
+					if newRestic != nil {
+						c.EnsureReplicaSetSidecar(newObj, oldRestic, newRestic)
+					} else if oldRestic != nil {
+						c.EnsureReplicaSetSidecarDeleted(newObj, oldRestic)
+					}
 				}
 			},
 		},

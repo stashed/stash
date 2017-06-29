@@ -1,7 +1,9 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
+	"reflect"
 	"time"
 
 	acrt "github.com/appscode/go/runtime"
@@ -58,6 +60,35 @@ func (c *Controller) WatchReplicationControllers() {
 						return
 					}
 					sidecarSuccessfullyAdd()
+				}
+			},
+			UpdateFunc: func(old, new interface{}) {
+				oldObj, ok := old.(*apiv1.ReplicationController)
+				if !ok {
+					log.Errorln(errors.New("Invalid ReplicationController object"))
+					return
+				}
+				newObj, ok := new.(*apiv1.ReplicationController)
+				if !ok {
+					log.Errorln(errors.New("Invalid ReplicationController object"))
+					return
+				}
+				if !reflect.DeepEqual(oldObj.Labels, newObj.Labels) {
+					oldRestic, err := util.FindRestic(c.stashClient, oldObj.ObjectMeta)
+					if err != nil {
+						log.Errorf("Error while searching Restic for ReplicationController %s@%s.", oldObj.Name, oldObj.Namespace)
+						return
+					}
+					newRestic, err := util.FindRestic(c.stashClient, newObj.ObjectMeta)
+					if err != nil {
+						log.Errorf("Error while searching Restic for ReplicationController %s@%s.", newObj.Name, newObj.Namespace)
+						return
+					}
+					if newRestic != nil {
+						c.EnsureReplicationControllerSidecar(newObj, oldRestic, newRestic)
+					} else if oldRestic != nil {
+						c.EnsureReplicationControllerSidecarDeleted(newObj, oldRestic)
+					}
 				}
 			},
 		},

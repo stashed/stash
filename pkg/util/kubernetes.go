@@ -1,7 +1,9 @@
 package util
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/appscode/go/types"
@@ -47,12 +49,27 @@ func FindRestic(stashClient scs.ExtensionInterface, obj metav1.ObjectMeta) (*sap
 	} else if err != nil {
 		return nil, err
 	}
+
+	result := make([]*sapi.Restic, 0)
 	for _, restic := range restics.Items {
 		if selector, err := metav1.LabelSelectorAsSelector(&restic.Spec.Selector); err == nil {
 			if selector.Matches(labels.Set(obj.Labels)) {
-				return &restic, nil
+				result = append(result, &restic)
 			}
 		}
+	}
+	if len(result) > 1 {
+		var msg bytes.Buffer
+		msg.WriteString(fmt.Sprintf("Workload %s@%s matches multiple Restics:", obj.Name, obj.Namespace))
+		for i, restic := range result {
+			if i > 0 {
+				msg.WriteString(", ")
+			}
+			msg.WriteString(restic.Name)
+		}
+		return nil, errors.New(msg.String())
+	} else if len(result) == 1 {
+		return result[0], nil
 	}
 	return nil, nil
 }
