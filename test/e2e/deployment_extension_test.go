@@ -120,7 +120,7 @@ var _ = Describe("DeploymentExtension", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating DeploymentExtension " + deployment.Name)
-			err = f.CreateDeploymentExtension(rs)
+			err = f.CreateDeploymentExtension(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -153,7 +153,7 @@ var _ = Describe("DeploymentExtension", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating DeploymentExtension " + deployment.Name)
-			err = f.CreateDeploymentExtension(rs)
+			err = f.CreateDeploymentExtension(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")

@@ -120,7 +120,7 @@ var _ = Describe("DaemonSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating DaemonSet " + daemon.Name)
-			err = f.CreateDaemonSet(rs)
+			err = f.CreateDaemonSet(daemon)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -153,7 +153,7 @@ var _ = Describe("DaemonSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating DaemonSet " + daemon.Name)
-			err = f.CreateDaemonSet(rs)
+			err = f.CreateDaemonSet(daemon)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")

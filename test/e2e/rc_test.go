@@ -119,7 +119,7 @@ var _ = Describe("ReplicationController", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating ReplicationController " + rc.Name)
-			err = f.CreateReplicationController(rs)
+			err = f.CreateReplicationController(rc)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -152,7 +152,7 @@ var _ = Describe("ReplicationController", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating ReplicationController " + rc.Name)
-			err = f.CreateReplicationController(rs)
+			err = f.CreateReplicationController(rc)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
