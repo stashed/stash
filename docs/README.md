@@ -1,12 +1,12 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/appscode/stash)](https://goreportcard.com/report/github.com/appscode/stash)
 
 # Stash
- Stash by AppsCode is a Kubernetes operator for [restic](https://github.com/restic/restic). Using Stash, you can backup Kubernetes volumes mounted in following types of workloads:
+ Stash by AppsCode is a Kubernetes operator for [restic](https://github.com/restic/restic). If you are running production workloads in Kubernetes, you might want to take backup of your disks. Traditional tools are too complex to setup and maintain in a dynamic compute environment like Kubernetes. `restic` is a backup program that is fast, efficient and secure with few moving parts. Stash is a TPR controller based on `restic` to address these issues. Using Stash, you can backup Kubernetes volumes mounted in following types of workloads:
 - Deployment
-- Stateful Set
-- Replica Set
-- Daemon Set
-- Replication Controller
+- DaemonSet
+- ReplicaSet
+- ReplicationController
+- StatefulSet
 
 ## Features
  - Fast, secure, efficient backup of any kubernetes [volumes](https://kubernetes.io/docs/concepts/storage/volumes/).
@@ -27,7 +27,7 @@ Want to learn how to use Stash? Please start [here](/docs/tutorial.md).
 Want to help improve Stash? Please start [here](/CONTRIBUTING.md).
 
 ## Project Status
-Wondering what features are coming next? Please visit [here](/ROADMAP.md). 
+Wondering what features are coming next? Please visit [here](/ROADMAP.md).
 
 ---
 
