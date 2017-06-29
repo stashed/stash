@@ -8,7 +8,7 @@ Stash operator exposes Prometheus native monitoring data via `/metrics` endpoint
 ## Monitoring Backup Operation
 Since backup operations are run as cron jobs, Stash can use [Prometheus Pushgateway](https://github.com/prometheus/pushgateway) cache metrics for backup operation. The installation scripts for Stash operator deploys a Prometheus Pushgateway as a sidecar container. You can configure a Prometheus server to scrape this Pushgateway. Backup operations send the following metrics to this Pushgateway:
 
- - `restic_session_success{job="<restic.namespace>-<restic.name>", app="workload"}`: Indicates if session was successfully completed
- - `restic_session_fail{job="<restic.namespace>-<restic.name>", app="workload"}`: Indicates if session failed
- - `restic_session_duration_seconds_total{job="<restic.namespace>-<restic.name>", app="workload"}`: Total seconds taken to complete restic session
- - `restic_session_duration_seconds{job="<restic.namespace>-<restic.name>", app="workload", filegroup="dir1", op="backup|forget"}`: Total seconds taken to complete restic session
+ - `restic_session_success{job="<restic.namespace>-<restic.name>", app="<workload>"}`: Indicates if session was successfully completed
+ - `restic_session_fail{job="<restic.namespace>-<restic.name>", app="<workload>"}`: Indicates if session failed
+ - `restic_session_duration_seconds_total{job="<restic.namespace>-<restic.name>", app="<workload>"}`: Total seconds taken to complete restic session
+ - `restic_session_duration_seconds{job="<restic.namespace>-<restic.name>", app="<workload>", filegroup="dir1", op="backup|forget"}`: Total seconds taken to complete restic session
