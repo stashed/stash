@@ -298,36 +298,74 @@ func HasVolume(volumes []apiv1.Volume, name string) bool {
 	return false
 }
 
-func EnsureScratchVolume(volumes []apiv1.Volume) []apiv1.Volume {
-	if !HasVolume(volumes, ScratchDirVolumeName) {
-		return append(volumes, apiv1.Volume{
-			Name: ScratchDirVolumeName,
-			VolumeSource: apiv1.VolumeSource{
-				EmptyDir: &apiv1.EmptyDirVolumeSource{},
-			},
-		})
+func UpsertContainer(containers []apiv1.Container, nv apiv1.Container) []apiv1.Container {
+	for i, vol := range containers {
+		if vol.Name == nv.Name {
+			containers[i] = nv
+			return containers
+		}
 	}
-	return volumes
+	return append(containers, nv)
+}
+
+func UpsertVolume(volumes []apiv1.Volume, nv apiv1.Volume) []apiv1.Volume {
+	for i, vol := range volumes {
+		if vol.Name == nv.Name {
+			volumes[i] = nv
+			return volumes
+		}
+	}
+	return append(volumes, nv)
+}
+
+func UpsertScratchVolume(volumes []apiv1.Volume) []apiv1.Volume {
+	return UpsertVolume(volumes, apiv1.Volume{
+		Name: ScratchDirVolumeName,
+		VolumeSource: apiv1.VolumeSource{
+			EmptyDir: &apiv1.EmptyDirVolumeSource{},
+		},
+	})
 }
 
 // https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#store-pod-fields
-func EnsureDownwardVolume(volumes []apiv1.Volume) []apiv1.Volume {
-	if !HasVolume(volumes, PodinfoVolumeName) {
-		return append(volumes, apiv1.Volume{
-			Name: PodinfoVolumeName,
-			VolumeSource: apiv1.VolumeSource{
-				DownwardAPI: &apiv1.DownwardAPIVolumeSource{
-					Items: []apiv1.DownwardAPIVolumeFile{
-						{
-							Path: "labels",
-							FieldRef: &apiv1.ObjectFieldSelector{
-								FieldPath: "metadata.labels",
-							},
+func UpsertDownwardVolume(volumes []apiv1.Volume) []apiv1.Volume {
+	return UpsertVolume(volumes, apiv1.Volume{
+		Name: PodinfoVolumeName,
+		VolumeSource: apiv1.VolumeSource{
+			DownwardAPI: &apiv1.DownwardAPIVolumeSource{
+				Items: []apiv1.DownwardAPIVolumeFile{
+					{
+						Path: "labels",
+						FieldRef: &apiv1.ObjectFieldSelector{
+							FieldPath: "metadata.labels",
 						},
 					},
 				},
 			},
-		})
+		},
+	})
+}
+
+func MergeLocalVolume(volumes []apiv1.Volume, old, new *sapi.Restic) []apiv1.Volume {
+	oldPos := -1
+	if old != nil && old.Spec.Backend.Local != nil {
+		for i, vol := range volumes {
+			if vol.Name == old.Spec.Backend.Local.Volume.Name {
+				oldPos = i
+				break
+			}
+		}
+	}
+	if new.Spec.Backend.Local != nil {
+		if oldPos != -1 {
+			volumes[oldPos] = new.Spec.Backend.Local.Volume
+		} else {
+			volumes = append(volumes, new.Spec.Backend.Local.Volume)
+		}
+	} else {
+		if oldPos != -1 {
+			volumes = append(volumes[:oldPos], volumes[oldPos+1:]...)
+		}
 	}
 	return volumes
 }

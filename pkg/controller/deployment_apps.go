@@ -111,17 +111,16 @@ func (c *Controller) EnsureDeploymentAppSidecar(resource *apps.Deployment, old, 
 
 	attempt := 0
 	for ; attempt < maxAttempts; attempt = attempt + 1 {
-		if name := util.GetString(resource.Annotations, sapi.ConfigName); name != "" {
-			log.Infof("Restic sidecar already exists for Deployment %s@%s.", resource.Name, resource.Namespace)
+		if name := util.GetString(resource.Annotations, sapi.ConfigName); name != new.Name {
+			log.Infof("Restic %s sidecar already added for Deployment %s@%s.", name, resource.Name, resource.Namespace)
 			return nil
 		}
 
-		resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.SidecarImageTag, "Deployment/"+resource.Name))
-		resource.Spec.Template.Spec.Volumes = util.EnsureScratchVolume(resource.Spec.Template.Spec.Volumes)
-		resource.Spec.Template.Spec.Volumes = util.EnsureDownwardVolume(resource.Spec.Template.Spec.Volumes)
-		if new.Spec.Backend.Local != nil {
-			resource.Spec.Template.Spec.Volumes = append(resource.Spec.Template.Spec.Volumes, new.Spec.Backend.Local.Volume)
-		}
+		resource.Spec.Template.Spec.Containers = util.UpsertContainer(resource.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.SidecarImageTag, "Deployment/"+resource.Name))
+		resource.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(resource.Spec.Template.Spec.Volumes)
+		resource.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(resource.Spec.Template.Spec.Volumes)
+		resource.Spec.Template.Spec.Volumes = util.MergeLocalVolume(resource.Spec.Template.Spec.Volumes, old, new)
+
 		if resource.Annotations == nil {
 			resource.Annotations = make(map[string]string)
 		}
