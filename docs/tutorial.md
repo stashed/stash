@@ -1,5 +1,3 @@
-> New to Stash? Please start with [here](/docs/tutorial.md).
-
 # Using Stash
 This tutorial will show you how to use Stash to backup a Kubernetes deployment. To start, install Stash in your cluster following the steps [here](/docs/install.md). This tutorial can be run using [minikube](https://github.com/kubernetes/minikube).
 
