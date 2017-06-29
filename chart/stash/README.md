@@ -48,7 +48,7 @@ The following tables lists the configurable parameters of the Stash chart and th
 | `pushgateway.tag`        | Prometheus pushgateway container image tag                        | `v0.4.0`           |
 | `pushgateway.pullPolicy` | Prometheus pushgateway container image pull policy                | `IfNotPresent`     |
 | `rbac.install`           | install required rbac service account, roles and rolebindings     | `false`            |
-| `rbac.apiVersion`        | rbac api version v1alpha1&#124;v1beta1                            | `v1beta1`          |
+| `rbac.apiVersion`        | rbac api version v1alpha1\|v1beta1                                | `v1beta1`          |
 
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example:
