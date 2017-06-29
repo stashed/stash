@@ -265,6 +265,12 @@ func AddDownwardVolume(volumes []apiv1.Volume) []apiv1.Volume {
 			DownwardAPI: &apiv1.DownwardAPIVolumeSource{
 				Items: []apiv1.DownwardAPIVolumeFile{
 					{
+						Path: "nodename",
+						FieldRef: &apiv1.ObjectFieldSelector{
+							FieldPath: "spec.nodeName",
+						},
+					},
+					{
 						Path: "labels",
 						FieldRef: &apiv1.ObjectFieldSelector{
 							FieldPath: "metadata.labels",
