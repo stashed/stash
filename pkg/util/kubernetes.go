@@ -227,7 +227,6 @@ func CreateSidecarContainer(r *rapi.Restic, tag, workload string) apiv1.Containe
 		ImagePullPolicy: apiv1.PullIfNotPresent,
 		Args: []string{
 			"schedule",
-			"--v=3",
 			"--restic-name=" + r.Name,
 			"--workload=" + workload,
 		},
@@ -262,6 +261,9 @@ func CreateSidecarContainer(r *rapi.Restic, tag, workload string) apiv1.Containe
 	}
 	if tag == "canary" {
 		sidecar.ImagePullPolicy = apiv1.PullAlways
+		sidecar.Args = append(sidecar.Args, "--v=5")
+	} else {
+		sidecar.Args = append(sidecar.Args, "--v=3")
 	}
 	for _, srcVol := range r.Spec.VolumeMounts {
 		sidecar.VolumeMounts = append(sidecar.VolumeMounts, apiv1.VolumeMount{
