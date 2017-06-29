@@ -111,7 +111,7 @@ func (c *Controller) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, old,
 
 	attempt := 0
 	for ; attempt < maxAttempts; attempt = attempt + 1 {
-		if name := util.GetString(resource.Annotations, sapi.ConfigName); name != new.Name {
+		if name := util.GetString(resource.Annotations, sapi.ConfigName); name != "" && name != new.Name {
 			log.Infof("Restic %s sidecar already added for DaemonSet %s@%s.", name, resource.Name, resource.Namespace)
 			return nil
 		}

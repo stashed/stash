@@ -111,7 +111,7 @@ func (c *Controller) EnsureDeploymentExtensionSidecar(resource *extensions.Deplo
 
 	attempt := 0
 	for ; attempt < maxAttempts; attempt = attempt + 1 {
-		if name := util.GetString(resource.Annotations, sapi.ConfigName); name != new.Name {
+		if name := util.GetString(resource.Annotations, sapi.ConfigName); name != "" && name != new.Name {
 			log.Infof("Restic %s sidecar already added for Deployment %s@%s.", name, resource.Name, resource.Namespace)
 			return nil
 		}
