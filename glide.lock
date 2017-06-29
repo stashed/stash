@@ -1,5 +1,5 @@
 hash: f6401bf7ae726163fca774326545e264d044ea66520622e4c21fc78f14bb546f
-updated: 2017-06-27T07:04:34.070093364-07:00
+updated: 2017-06-29T06:58:03.997800894-07:00
 imports:
 - name: github.com/appscode/go
   version: ecda61fa4e8943020e9948723e49c4ae544f7a3a
@@ -130,7 +130,7 @@ imports:
   subpackages:
   - go
 - name: github.com/prometheus/common
-  version: 13ba4ddd0caa9c28ca7b7bffe1dfa9ed8d5ef207
+  version: 0866df4b85a18d652b6965be022d007cdf076822
   subpackages:
   - expfmt
   - internal/bitbucket.org/ww/goautoneg
@@ -148,7 +148,7 @@ imports:
 - name: github.com/Sirupsen/logrus
   version: 3ec0642a7fb6488f65b06f9040adc67e3990296a
 - name: github.com/spf13/cobra
-  version: 4d647c8944eb42504a714e57e97f244ed6344722
+  version: 8c6fa02d2225de0f9bdcb7ca912556f68d172d8c
   subpackages:
   - doc
 - name: github.com/spf13/pflag
@@ -364,7 +364,7 @@ testImports:
 - name: github.com/mitchellh/go-homedir
   version: d682a8f0cf139663a984ff12528da460ca963de9
 - name: github.com/onsi/ginkgo
-  version: f24729c07644086231e82a4bc3a1cc2feff06e71
+  version: 6665a7cf0a58963034f099ffcd3bc4e4a11c300c
   subpackages:
   - config
   - internal/codelocation
