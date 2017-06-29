@@ -1,11 +1,18 @@
 package framework
 
 import (
+	"time"
+
 	"github.com/appscode/stash/pkg/eventer"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
+)
+
+const (
+	updateRetryInterval = 10 * 1000 * 1000 * time.Nanosecond
+	maxAttempts         = 5
 )
 
 func (f *Framework) EventualEvent(meta metav1.ObjectMeta) GomegaAsyncAssertion {

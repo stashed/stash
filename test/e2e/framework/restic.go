@@ -1,10 +1,15 @@
 package framework
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/appscode/go/crypto/rand"
+	"github.com/appscode/log"
 	sapi "github.com/appscode/stash/api"
 	"github.com/appscode/stash/client/clientset"
 	. "github.com/onsi/gomega"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
@@ -106,6 +111,25 @@ func (f *Framework) CreateRestic(obj sapi.Restic) error {
 
 func (f *Framework) DeleteRestic(meta metav1.ObjectMeta) error {
 	return f.stashClient.Restics(meta.Namespace).Delete(meta.Name, deleteInForeground())
+}
+
+func (f *Framework) UpdateRestic(meta metav1.ObjectMeta, transformer func(sapi.Restic) sapi.Restic) error {
+	attempt := 0
+	for ; attempt < maxAttempts; attempt = attempt + 1 {
+		cur, err := f.stashClient.Restics(meta.Namespace).Get(meta.Name)
+		if kerr.IsNotFound(err) {
+			return nil
+		} else if err == nil {
+			modified := transformer(*cur)
+			_, err = f.stashClient.Restics(cur.Namespace).Update(&modified)
+			if err == nil {
+				return nil
+			}
+		}
+		log.Errorf("Attempt %d failed to update Restic %s@%s due to %s.", attempt, cur.Name, cur.Namespace, err)
+		time.Sleep(updateRetryInterval)
+	}
+	return fmt.Errorf("Failed to update Restic %s@%s after %d attempts.", meta.Name, meta.Namespace, attempt)
 }
 
 func (f *Framework) EventuallyRestic(meta metav1.ObjectMeta) GomegaAsyncAssertion {
