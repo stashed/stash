@@ -7,6 +7,7 @@ import (
 	. "github.com/appscode/stash/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
@@ -107,6 +108,74 @@ var _ = Describe("ReplicationController", func() {
 
 			f.EventuallyReplicationController(rc.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		}
+
+		shouldStopBackupIfLabelChanged = func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating ReplicationController " + rc.Name)
+			err = f.CreateReplicationController(rs)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Waiting for sidecar")
+			f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+			By("Waiting for backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 1)))
+
+			By("Removing labels of ReplicationController " + rc.Name)
+			err = f.UpdateReplicationController(rc.ObjectMeta, func(in apiv1.ReplicationController) apiv1.ReplicationController {
+				in.Labels = map[string]string{
+					"app": "unmatched",
+				}
+				return in
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			f.EventuallyReplicationController(rc.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
+		}
+
+		shouldStopBackupIfSelectorChanged = func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating ReplicationController " + rc.Name)
+			err = f.CreateReplicationController(rs)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Waiting for sidecar")
+			f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+			By("Waiting for backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 1)))
+
+			By("Change selector of Restic " + restic.Name)
+			err = f.UpdateRestic(restic.ObjectMeta, func(in sapi.Restic) sapi.Restic {
+				in.Spec.Selector = metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app": "unmatched",
+					},
+				}
+				return in
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			f.EventuallyReplicationController(rc.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
+		}
 	)
 
 	Describe("Creating restic for", func() {
@@ -151,6 +220,32 @@ var _ = Describe("ReplicationController", func() {
 			It(`should backup new ReplicationController`, shouldBackupNewReplicationController)
 			It(`should backup existing ReplicationController`, shouldBackupExistingReplicationController)
 		})
+	})
+
+	Describe("Changing ReplicationController labels", func() {
+		AfterEach(func() {
+			f.DeleteReplicationController(rc.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+		})
+		BeforeEach(func() {
+			cred = f.SecretForLocalBackend()
+			restic = f.ResticForLocalBackend()
+		})
+		It(`should stop backup`, shouldStopBackupIfLabelChanged)
+	})
+
+	Describe("Changing Restic selector", func() {
+		AfterEach(func() {
+			f.DeleteReplicationController(rc.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+		})
+		BeforeEach(func() {
+			cred = f.SecretForLocalBackend()
+			restic = f.ResticForLocalBackend()
+		})
+		It(`should stop backup`, shouldStopBackupIfSelectorChanged)
 	})
 
 	Describe("Deleting restic for", func() {
