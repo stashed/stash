@@ -1,3 +1,5 @@
+> New to Stash? Please start with [here](/docs/tutorial.md).
+
 # Monitoring Stash
 
 Stash has native support for monitoring via Prometheus.

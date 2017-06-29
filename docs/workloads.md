@@ -1,3 +1,5 @@
+> New to Stash? Please start with [here](/docs/tutorial.md).
+
 # Supported Workloads
 
 Stash suports the following types of Kubernetes workloads.
