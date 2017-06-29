@@ -26,13 +26,9 @@ func (c *Scheduler) JobName(resource *sapi.Restic) string {
 }
 
 func (c *Scheduler) GroupingKeys(resource *sapi.Restic) map[string]string {
-	labels := make(map[string]string)
-	if c.opt.PrefixHostname {
-		labels = push.HostnameGroupingKey()
-	}
-	if c.opt.App != "" {
-		labels["app"] = sanitizeLabelValue(c.opt.App)
-	}
+	labels := push.HostnameGroupingKey()
+	labels["app"] = sanitizeLabelValue(c.opt.AppName)
+	labels["kind"] = sanitizeLabelValue(c.opt.AppKind)
 	labels["namespace"] = resource.Namespace
 	labels["stash_config"] = resource.Name
 	if cfg, err := ini.LooseLoad(c.opt.PodLabelsPath); err == nil {

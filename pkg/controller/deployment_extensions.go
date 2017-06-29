@@ -85,7 +85,7 @@ func (c *Controller) EnsureDeploymentExtensionSidecar(resource *extensions.Deplo
 			return nil
 		}
 
-		resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.GetSidecarContainer(restic, c.SidecarImageTag, resource.Name, false))
+		resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.GetSidecarContainer(restic, c.SidecarImageTag, "Deployment/"+resource.Name))
 		resource.Spec.Template.Spec.Volumes = util.AddScratchVolume(resource.Spec.Template.Spec.Volumes)
 		resource.Spec.Template.Spec.Volumes = util.AddDownwardVolume(resource.Spec.Template.Spec.Volumes)
 		if restic.Spec.Backend.Local != nil {

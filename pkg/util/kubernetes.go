@@ -2,7 +2,6 @@ package util
 
 import (
 	"errors"
-	"strconv"
 	"time"
 
 	"github.com/appscode/go/types"
@@ -198,7 +197,7 @@ func GetString(m map[string]string, key string) string {
 	return m[key]
 }
 
-func GetSidecarContainer(r *rapi.Restic, tag, app string, prefixHostname bool) apiv1.Container {
+func GetSidecarContainer(r *rapi.Restic, tag, workload string) apiv1.Container {
 	if r.Annotations != nil {
 		if v, ok := r.Annotations[sapi.VersionTag]; ok {
 			tag = v
@@ -212,8 +211,25 @@ func GetSidecarContainer(r *rapi.Restic, tag, app string, prefixHostname bool) a
 			"schedule",
 			"--v=3",
 			"--restic-name=" + r.Name,
-			"--app=" + app,
-			"--prefix-hostname=" + strconv.FormatBool(prefixHostname),
+			"--workload=" + workload,
+		},
+		Env: []apiv1.EnvVar{
+			{
+				Name: "NODE_NAME",
+				ValueFrom: &apiv1.EnvVarSource{
+					FieldRef: &apiv1.ObjectFieldSelector{
+						FieldPath: "spec.nodeName",
+					},
+				},
+			},
+			{
+				Name: "POD_NAME",
+				ValueFrom: &apiv1.EnvVarSource{
+					FieldRef: &apiv1.ObjectFieldSelector{
+						FieldPath: "metadata.name",
+					},
+				},
+			},
 		},
 		VolumeMounts: []apiv1.VolumeMount{
 			{
@@ -264,12 +280,6 @@ func AddDownwardVolume(volumes []apiv1.Volume) []apiv1.Volume {
 		VolumeSource: apiv1.VolumeSource{
 			DownwardAPI: &apiv1.DownwardAPIVolumeSource{
 				Items: []apiv1.DownwardAPIVolumeFile{
-					{
-						Path: "nodename",
-						FieldRef: &apiv1.ObjectFieldSelector{
-							FieldPath: "spec.nodeName",
-						},
-					},
 					{
 						Path: "labels",
 						FieldRef: &apiv1.ObjectFieldSelector{

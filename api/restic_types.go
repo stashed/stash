@@ -17,9 +17,9 @@ type ResticSpec struct {
 	FileGroups      []FileGroup          `json:"fileGroups,omitempty"`
 	Backend         Backend              `json:"backend,omitempty"`
 	Schedule        string               `json:"schedule,omitempty"`
-	SkipSmartPrefix bool `json:"skipSmartPrefix,omitempty"`
+	SkipSmartPrefix bool                 `json:"skipSmartPrefix,omitempty"`
 	// Pod volumes to mount into the sidecar container's filesystem.
-	VolumeMounts []apiv1.VolumeMount  `json:"volumeMounts,omitempty"`
+	VolumeMounts []apiv1.VolumeMount `json:"volumeMounts,omitempty"`
 }
 
 type ResticStatus struct {

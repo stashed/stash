@@ -39,7 +39,9 @@ type Options struct {
 	ResticName     string
 	ScratchDir     string
 	PushgatewayURL string
-	NodeNamePath   string
+	NodeName       string
+	PodName        string
+	SmartPrefix    string
 	PodLabelsPath  string
 }
 
@@ -55,27 +57,18 @@ type Scheduler struct {
 	syncPeriod  time.Duration
 }
 
-func New(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt Options) (*Scheduler, error) {
-	ctrl := &Scheduler{
+func New(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt Options) *Scheduler {
+	return &Scheduler{
 		kubeClient:  kubeClient,
 		stashClient: stashClient,
 		opt:         opt,
 		rchan:       make(chan *sapi.Restic, 1),
 		cron:        cron.New(),
 		locked:      make(chan struct{}, 1),
+		resticCLI : cli.New(opt.ScratchDir, opt.SmartPrefix, opt.PodName),
 		recorder:    eventer.NewEventRecorder(kubeClient, "stash-scheduler"),
 		syncPeriod:  30 * time.Second,
 	}
-	if opt.PrefixHostname {
-		hostname, err := os.Hostname()
-		if err != nil {
-			return nil, err
-		}
-		ctrl.resticCLI = cli.New(opt.ScratchDir, hostname)
-	} else {
-		ctrl.resticCLI = cli.New(opt.ScratchDir, "")
-	}
-	return ctrl, nil
 }
 
 // Init and/or connect to repo
