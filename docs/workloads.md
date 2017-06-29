@@ -77,4 +77,4 @@ spec:
         name: repo
 ```
 
-You can find the full working example in [examples folder](/docs/examples/workloads/statefulset.yaml). To learn about the meaning of various flags, please visit [here](/docs/reference/stash_run.md).
+You can find the full working example in [examples folder](/docs/examples/workloads/statefulset.yaml). To learn about the meaning of various flags, please visit [here](/docs/reference/stash_schedule.md).
