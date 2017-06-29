@@ -50,7 +50,7 @@ spec:
         - --restic-name=statefulset-restic
         - --app=workload
         - --prefix-hostname=true
-        image: appscode/stash:canary
+        image: appscode/stash:0.2.0
         imagePullPolicy: IfNotPresent
         name: stash
         volumeMounts:
