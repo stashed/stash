@@ -27,7 +27,7 @@ func (f *Invocation) _restic() sapi.Restic {
 			},
 			FileGroups: []sapi.FileGroup{
 				{
-					Path: "/lib",
+					Path: TestSourceDataMountPath,
 					RetentionPolicy: sapi.RetentionPolicy{
 						KeepLast: 5,
 					},
