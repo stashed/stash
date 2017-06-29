@@ -70,6 +70,9 @@ func (w *ResticWrapper) SetupEnv(resource *sapi.Restic, secret *apiv1.Secret, au
 	backend := resource.Spec.Backend
 	if backend.Local != nil {
 		r := filepath.Join(backend.Local.Path, autoPrefix)
+		if err := os.MkdirAll(r, 0755); err != nil {
+			return err
+		}
 		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 	} else if backend.S3 != nil {
 		prefix := filepath.Join(backend.S3.Prefix, autoPrefix)
