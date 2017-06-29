@@ -38,7 +38,7 @@ func (f *Invocation) _restic() sapi.Restic {
 					},
 				},
 			},
-			Schedule: "@every 1m",
+			Schedule: "@every 15s",
 			VolumeMounts: []apiv1.VolumeMount{
 				{
 					Name:      TestSourceDataVolumeName,

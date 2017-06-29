@@ -132,8 +132,10 @@ var _ = Describe("ReplicaSet", func() {
 			}, BeNumerically(">=", 1)))
 
 			By("Removing labels of ReplicaSet " + rs.Name)
-			err = f.UpdateReplicaSet(restic.ObjectMeta, func(in extensions.ReplicaSet) extensions.ReplicaSet {
-				in.Labels = nil
+			err = f.UpdateReplicaSet(rs.ObjectMeta, func(in extensions.ReplicaSet) extensions.ReplicaSet {
+				in.Labels = map[string]string{
+					"app": "unmatched",
+				}
 				return in
 			})
 			Expect(err).NotTo(HaveOccurred())
