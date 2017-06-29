@@ -79,7 +79,7 @@ func (c *Controller) WatchDeploymentApps() {
 						log.Errorf("Error while searching Restic for Deployment %s@%s.", newObj.Name, newObj.Namespace)
 						return
 					}
-					if reflect.DeepEqual(oldRestic, newRestic) {
+					if util.ResticEqual(oldRestic, newRestic) {
 						return
 					}
 					if newRestic != nil {

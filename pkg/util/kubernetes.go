@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/appscode/go/types"
@@ -369,4 +370,15 @@ func EnsureVolumeDeleted(volumes []apiv1.Volume, name string) []apiv1.Volume {
 		}
 	}
 	return volumes
+}
+
+func ResticEqual(old, new *sapi.Restic) bool {
+	var oldSpec, newSpec *sapi.ResticSpec
+	if old != nil {
+		oldSpec = &old.Spec
+	}
+	if new != nil {
+		newSpec = &new.Spec
+	}
+	return reflect.DeepEqual(oldSpec, newSpec)
 }

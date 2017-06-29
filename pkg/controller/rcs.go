@@ -84,7 +84,7 @@ func (c *Controller) WatchReplicationControllers() {
 						log.Errorf("Error while searching Restic for ReplicationController %s@%s.", newObj.Name, newObj.Namespace)
 						return
 					}
-					if reflect.DeepEqual(oldRestic, newRestic) {
+					if util.ResticEqual(oldRestic, newRestic) {
 						return
 					}
 					if newRestic != nil {
