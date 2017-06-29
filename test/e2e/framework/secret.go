@@ -1,11 +1,15 @@
 package framework
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/appscode/go/crypto/rand"
+	"github.com/appscode/log"
 	"github.com/appscode/stash/pkg/cli"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
@@ -94,6 +98,25 @@ func (f *Invocation) SecretForAzureBackend() apiv1.Secret {
 func (f *Framework) CreateSecret(obj apiv1.Secret) error {
 	_, err := f.kubeClient.CoreV1().Secrets(obj.Namespace).Create(&obj)
 	return err
+}
+
+func (f *Framework) UpdateSecret(meta metav1.ObjectMeta, transformer func(apiv1.Secret) apiv1.Secret) error {
+	attempt := 0
+	for ; attempt < maxAttempts; attempt = attempt + 1 {
+		cur, err := f.kubeClient.CoreV1().Secrets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		if kerr.IsNotFound(err) {
+			return nil
+		} else if err == nil {
+			modified := transformer(*cur)
+			_, err = f.kubeClient.CoreV1().Secrets(cur.Namespace).Update(&modified)
+			if err == nil {
+				return nil
+			}
+		}
+		log.Errorf("Attempt %d failed to update Secret %s@%s due to %s.", attempt, cur.Name, cur.Namespace, err)
+		time.Sleep(updateRetryInterval)
+	}
+	return fmt.Errorf("Failed to update Secret %s@%s after %d attempts.", meta.Name, meta.Namespace, attempt)
 }
 
 func (f *Framework) DeleteSecret(meta metav1.ObjectMeta) error {

@@ -15,16 +15,13 @@ stash schedule [flags]
 
 ```
       --analytics                Send analytical events to Google Analytics (default true)
-      --app string               Name of app where sidecar pod is added
   -h, --help                     help for schedule
       --kubeconfig string        Path to kubeconfig file with authorization information (the master location is set by the master flag).
       --master string            The address of the Kubernetes API server (overrides any value in kubeconfig)
-      --name string              Path to kubeconfig file with authorization information (the master location is set by the master flag).
-      --namespace string         The address of the Kubernetes API server (overrides any value in kubeconfig)
-      --pod-labels-path string   Path to pod labels file mounted via Kubernetes Downward api (default "/etc/labels")
-      --prefix-hostname          If set, adds Hostname as prefix to repository. This should be true for StatefulSets & DaemonSets. This should be false in all other cases. (default true)
       --pushgateway-url string   URL of Prometheus pushgateway used to cache backup metrics (default "http://stash-operator.kube-system.svc:56789")
+      --restic-name string       Path to kubeconfig file with authorization information (the master location is set by the master flag).
       --scratch-dir emptyDir     Directory used to store temporary files. Use an emptyDir in Kubernetes. (default "/tmp")
+      --workload string          "Kind/Name" of workload where sidecar pod is added (eg, Deployment/apiserver)
 ```
 
 ### Options inherited from parent commands

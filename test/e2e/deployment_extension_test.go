@@ -7,6 +7,7 @@ import (
 	. "github.com/appscode/stash/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
@@ -108,6 +109,74 @@ var _ = Describe("DeploymentExtension", func() {
 
 			f.EventuallyDeploymentExtension(deployment.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		}
+
+		shouldStopBackupIfLabelChanged = func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating DeploymentExtension " + deployment.Name)
+			err = f.CreateDeploymentExtension(rs)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Waiting for sidecar")
+			f.EventuallyDeploymentExtension(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+			By("Waiting for backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 1)))
+
+			By("Removing labels of DeploymentExtension " + deployment.Name)
+			err = f.UpdateDeploymentExtension(deployment.ObjectMeta, func(in extensions.Deployment) extensions.Deployment {
+				in.Labels = map[string]string{
+					"app": "unmatched",
+				}
+				return in
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			f.EventuallyDeploymentExtension(deployment.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
+		}
+
+		shouldStopBackupIfSelectorChanged = func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating DeploymentExtension " + deployment.Name)
+			err = f.CreateDeploymentExtension(rs)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Waiting for sidecar")
+			f.EventuallyDeploymentExtension(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+			By("Waiting for backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 1)))
+
+			By("Change selector of Restic " + restic.Name)
+			err = f.UpdateRestic(restic.ObjectMeta, func(in sapi.Restic) sapi.Restic {
+				in.Spec.Selector = metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app": "unmatched",
+					},
+				}
+				return in
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			f.EventuallyDeploymentExtension(deployment.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
+		}
 	)
 
 	Describe("Creating restic for", func() {
@@ -152,6 +221,32 @@ var _ = Describe("DeploymentExtension", func() {
 			It(`should backup new DeploymentExtension`, shouldBackupNewDeployment)
 			It(`should backup existing DeploymentExtension`, shouldBackupExistingDeployment)
 		})
+	})
+
+	Describe("Changing DeploymentExtension labels", func() {
+		AfterEach(func() {
+			f.DeleteDeploymentExtension(deployment.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+		})
+		BeforeEach(func() {
+			cred = f.SecretForLocalBackend()
+			restic = f.ResticForLocalBackend()
+		})
+		It(`should stop backup`, shouldStopBackupIfLabelChanged)
+	})
+
+	Describe("Changing Restic selector", func() {
+		AfterEach(func() {
+			f.DeleteDeploymentExtension(deployment.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+		})
+		BeforeEach(func() {
+			cred = f.SecretForLocalBackend()
+			restic = f.ResticForLocalBackend()
+		})
+		It(`should stop backup`, shouldStopBackupIfSelectorChanged)
 	})
 
 	Describe("Deleting restic for", func() {

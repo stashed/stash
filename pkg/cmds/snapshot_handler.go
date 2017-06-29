@@ -14,9 +14,9 @@ import (
 )
 
 const (
-	PathParamNamespace = ":namespace"
-	PathParamName      = ":name"
-	QueryParamHostname = "hostname"
+	PathParamNamespace   = ":namespace"
+	PathParamName        = ":name"
+	QueryParamAutoPrefix = "autoPrefix"
 )
 
 func ExportSnapshots(w http.ResponseWriter, r *http.Request) {
@@ -35,8 +35,7 @@ func ExportSnapshots(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Missing parameter:"+PathParamName, http.StatusBadRequest)
 		return
 	}
-	hostname := r.URL.Query().Get(QueryParamHostname)
-	resticCLI := cli.New(scratchDir, hostname)
+	resticCLI := cli.New(scratchDir)
 
 	var resource *sapi.Restic
 	resource, err := stashClient.Restics(namespace).Get(name)
@@ -61,7 +60,7 @@ func ExportSnapshots(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = resticCLI.SetupEnv(resource, secret)
+	err = resticCLI.SetupEnv(resource, secret, r.URL.Query().Get(QueryParamAutoPrefix))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -1,8 +1,10 @@
 package util
 
 import (
+	"bytes"
 	"errors"
-	"strconv"
+	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/appscode/go/types"
@@ -48,12 +50,27 @@ func FindRestic(stashClient scs.ExtensionInterface, obj metav1.ObjectMeta) (*sap
 	} else if err != nil {
 		return nil, err
 	}
+
+	result := make([]*sapi.Restic, 0)
 	for _, restic := range restics.Items {
 		if selector, err := metav1.LabelSelectorAsSelector(&restic.Spec.Selector); err == nil {
 			if selector.Matches(labels.Set(obj.Labels)) {
-				return &restic, nil
+				result = append(result, &restic)
 			}
 		}
+	}
+	if len(result) > 1 {
+		var msg bytes.Buffer
+		msg.WriteString(fmt.Sprintf("Workload %s@%s matches multiple Restics:", obj.Name, obj.Namespace))
+		for i, restic := range result {
+			if i > 0 {
+				msg.WriteString(", ")
+			}
+			msg.WriteString(restic.Name)
+		}
+		return nil, errors.New(msg.String())
+	} else if len(result) == 1 {
+		return result[0], nil
 	}
 	return nil, nil
 }
@@ -198,7 +215,7 @@ func GetString(m map[string]string, key string) string {
 	return m[key]
 }
 
-func GetSidecarContainer(r *rapi.Restic, tag, app string, prefixHostname bool) apiv1.Container {
+func CreateSidecarContainer(r *rapi.Restic, tag, workload string) apiv1.Container {
 	if r.Annotations != nil {
 		if v, ok := r.Annotations[sapi.VersionTag]; ok {
 			tag = v
@@ -210,11 +227,26 @@ func GetSidecarContainer(r *rapi.Restic, tag, app string, prefixHostname bool) a
 		ImagePullPolicy: apiv1.PullIfNotPresent,
 		Args: []string{
 			"schedule",
-			"--v=3",
-			"--namespace=" + r.Namespace,
-			"--name=" + r.Name,
-			"--app=" + app,
-			"--prefix-hostname=" + strconv.FormatBool(prefixHostname),
+			"--restic-name=" + r.Name,
+			"--workload=" + workload,
+		},
+		Env: []apiv1.EnvVar{
+			{
+				Name: "NODE_NAME",
+				ValueFrom: &apiv1.EnvVarSource{
+					FieldRef: &apiv1.ObjectFieldSelector{
+						FieldPath: "spec.nodeName",
+					},
+				},
+			},
+			{
+				Name: "POD_NAME",
+				ValueFrom: &apiv1.EnvVarSource{
+					FieldRef: &apiv1.ObjectFieldSelector{
+						FieldPath: "metadata.name",
+					},
+				},
+			},
 		},
 		VolumeMounts: []apiv1.VolumeMount{
 			{
@@ -229,6 +261,17 @@ func GetSidecarContainer(r *rapi.Restic, tag, app string, prefixHostname bool) a
 	}
 	if tag == "canary" {
 		sidecar.ImagePullPolicy = apiv1.PullAlways
+		sidecar.Args = append(sidecar.Args, "--v=5")
+	} else {
+		sidecar.Args = append(sidecar.Args, "--v=3")
+	}
+	for _, srcVol := range r.Spec.VolumeMounts {
+		sidecar.VolumeMounts = append(sidecar.VolumeMounts, apiv1.VolumeMount{
+			Name:      srcVol.Name,
+			MountPath: srcVol.MountPath,
+			SubPath:   srcVol.SubPath,
+			ReadOnly:  true,
+		})
 	}
 	if r.Spec.Backend.Local != nil {
 		sidecar.VolumeMounts = append(sidecar.VolumeMounts, apiv1.VolumeMount{
@@ -239,18 +282,37 @@ func GetSidecarContainer(r *rapi.Restic, tag, app string, prefixHostname bool) a
 	return sidecar
 }
 
-func RemoveContainer(c []apiv1.Container, name string) []apiv1.Container {
-	for i, v := range c {
-		if v.Name == name {
-			c = append(c[:i], c[i+1:]...)
-			break
+func EnsureContainerDeleted(containers []apiv1.Container, name string) []apiv1.Container {
+	for i, c := range containers {
+		if c.Name == name {
+			return append(containers[:i], containers[i+1:]...)
 		}
 	}
-	return c
+	return containers
 }
 
-func AddScratchVolume(volumes []apiv1.Volume) []apiv1.Volume {
-	return append(volumes, apiv1.Volume{
+func UpsertContainer(containers []apiv1.Container, nv apiv1.Container) []apiv1.Container {
+	for i, vol := range containers {
+		if vol.Name == nv.Name {
+			containers[i] = nv
+			return containers
+		}
+	}
+	return append(containers, nv)
+}
+
+func UpsertVolume(volumes []apiv1.Volume, nv apiv1.Volume) []apiv1.Volume {
+	for i, vol := range volumes {
+		if vol.Name == nv.Name {
+			volumes[i] = nv
+			return volumes
+		}
+	}
+	return append(volumes, nv)
+}
+
+func UpsertScratchVolume(volumes []apiv1.Volume) []apiv1.Volume {
+	return UpsertVolume(volumes, apiv1.Volume{
 		Name: ScratchDirVolumeName,
 		VolumeSource: apiv1.VolumeSource{
 			EmptyDir: &apiv1.EmptyDirVolumeSource{},
@@ -259,8 +321,8 @@ func AddScratchVolume(volumes []apiv1.Volume) []apiv1.Volume {
 }
 
 // https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#store-pod-fields
-func AddDownwardVolume(volumes []apiv1.Volume) []apiv1.Volume {
-	return append(volumes, apiv1.Volume{
+func UpsertDownwardVolume(volumes []apiv1.Volume) []apiv1.Volume {
+	return UpsertVolume(volumes, apiv1.Volume{
 		Name: PodinfoVolumeName,
 		VolumeSource: apiv1.VolumeSource{
 			DownwardAPI: &apiv1.DownwardAPIVolumeSource{
@@ -277,12 +339,46 @@ func AddDownwardVolume(volumes []apiv1.Volume) []apiv1.Volume {
 	})
 }
 
-func RemoveVolume(volumes []apiv1.Volume, name string) []apiv1.Volume {
-	for i, v := range volumes {
-		if v.Name == name {
-			volumes = append(volumes[:i], volumes[i+1:]...)
-			break
+func MergeLocalVolume(volumes []apiv1.Volume, old, new *sapi.Restic) []apiv1.Volume {
+	oldPos := -1
+	if old != nil && old.Spec.Backend.Local != nil {
+		for i, vol := range volumes {
+			if vol.Name == old.Spec.Backend.Local.Volume.Name {
+				oldPos = i
+				break
+			}
+		}
+	}
+	if new.Spec.Backend.Local != nil {
+		if oldPos != -1 {
+			volumes[oldPos] = new.Spec.Backend.Local.Volume
+		} else {
+			volumes = UpsertVolume(volumes, new.Spec.Backend.Local.Volume)
+		}
+	} else {
+		if oldPos != -1 {
+			volumes = append(volumes[:oldPos], volumes[oldPos+1:]...)
 		}
 	}
 	return volumes
+}
+
+func EnsureVolumeDeleted(volumes []apiv1.Volume, name string) []apiv1.Volume {
+	for i, v := range volumes {
+		if v.Name == name {
+			return append(volumes[:i], volumes[i+1:]...)
+		}
+	}
+	return volumes
+}
+
+func ResticEqual(old, new *sapi.Restic) bool {
+	var oldSpec, newSpec *sapi.ResticSpec
+	if old != nil {
+		oldSpec = &old.Spec
+	}
+	if new != nil {
+		newSpec = &new.Spec
+	}
+	return reflect.DeepEqual(oldSpec, newSpec)
 }
