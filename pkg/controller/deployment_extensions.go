@@ -79,6 +79,9 @@ func (c *Controller) WatchDeploymentExtensions() {
 						log.Errorf("Error while searching Restic for Deployment %s@%s.", newObj.Name, newObj.Namespace)
 						return
 					}
+					if reflect.DeepEqual(oldRestic, newRestic) {
+						return
+					}
 					if newRestic != nil {
 						c.EnsureDeploymentExtensionSidecar(newObj, oldRestic, newRestic)
 					} else if oldRestic != nil {

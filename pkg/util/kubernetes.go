@@ -289,15 +289,6 @@ func EnsureContainerDeleted(c []apiv1.Container, name string) []apiv1.Container 
 	return c
 }
 
-func HasVolume(volumes []apiv1.Volume, name string) bool {
-	for _, vol := range volumes {
-		if vol.Name == ScratchDirVolumeName {
-			return true
-		}
-	}
-	return false
-}
-
 func UpsertContainer(containers []apiv1.Container, nv apiv1.Container) []apiv1.Container {
 	for i, vol := range containers {
 		if vol.Name == nv.Name {

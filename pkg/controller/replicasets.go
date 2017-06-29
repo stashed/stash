@@ -79,6 +79,9 @@ func (c *Controller) WatchReplicaSets() {
 						log.Errorf("Error while searching Restic for ReplicaSet %s@%s.", newObj.Name, newObj.Namespace)
 						return
 					}
+					if reflect.DeepEqual(oldRestic, newRestic) {
+						return
+					}
 					if newRestic != nil {
 						c.EnsureReplicaSetSidecar(newObj, oldRestic, newRestic)
 					} else if oldRestic != nil {

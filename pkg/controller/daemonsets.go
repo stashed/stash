@@ -79,6 +79,9 @@ func (c *Controller) WatchDaemonSets() {
 						log.Errorf("Error while searching Restic for DaemonSet %s@%s.", newObj.Name, newObj.Namespace)
 						return
 					}
+					if reflect.DeepEqual(oldRestic, newRestic) {
+						return
+					}
 					if newRestic != nil {
 						c.EnsureDaemonSetSidecar(newObj, oldRestic, newRestic)
 					} else if oldRestic != nil {
