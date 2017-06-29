@@ -2,7 +2,6 @@ package controller
 
 import (
 	"errors"
-	"reflect"
 
 	acrt "github.com/appscode/go/runtime"
 	"github.com/appscode/log"
@@ -50,7 +49,7 @@ func (c *Controller) WatchRestics() {
 					log.Errorln(errors.New("Invalid Restic object"))
 					return
 				}
-				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) {
+				if !util.ResticEqual(oldObj, newObj) {
 					c.EnsureSidecar(oldObj, newObj)
 				}
 			},

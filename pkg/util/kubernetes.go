@@ -282,14 +282,13 @@ func CreateSidecarContainer(r *rapi.Restic, tag, workload string) apiv1.Containe
 	return sidecar
 }
 
-func EnsureContainerDeleted(c []apiv1.Container, name string) []apiv1.Container {
-	for i, v := range c {
-		if v.Name == name {
-			c = append(c[:i], c[i+1:]...)
-			break
+func EnsureContainerDeleted(containers []apiv1.Container, name string) []apiv1.Container {
+	for i, c := range containers {
+		if c.Name == name {
+			return append(containers[:i], containers[i+1:]...)
 		}
 	}
-	return c
+	return containers
 }
 
 func UpsertContainer(containers []apiv1.Container, nv apiv1.Container) []apiv1.Container {
@@ -367,8 +366,7 @@ func MergeLocalVolume(volumes []apiv1.Volume, old, new *sapi.Restic) []apiv1.Vol
 func EnsureVolumeDeleted(volumes []apiv1.Volume, name string) []apiv1.Volume {
 	for i, v := range volumes {
 		if v.Name == name {
-			volumes = append(volumes[:i], volumes[i+1:]...)
-			break
+			return append(volumes[:i], volumes[i+1:]...)
 		}
 	}
 	return volumes
