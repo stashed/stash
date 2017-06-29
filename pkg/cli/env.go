@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/url"
+	"os"
 	"path/filepath"
 
 	"github.com/appscode/log"
@@ -15,6 +16,7 @@ import (
 const (
 	RESTIC_REPOSITORY = "RESTIC_REPOSITORY"
 	RESTIC_PASSWORD   = "RESTIC_PASSWORD"
+	TMPDIR            = "TMPDIR"
 
 	AWS_ACCESS_KEY_ID     = "AWS_ACCESS_KEY_ID"
 	AWS_SECRET_ACCESS_KEY = "AWS_SECRET_ACCESS_KEY"
@@ -58,6 +60,12 @@ func (w *ResticWrapper) SetupEnv(resource *sapi.Restic, secret *apiv1.Secret) er
 	} else {
 		w.sh.SetEnv(RESTIC_PASSWORD, string(v))
 	}
+
+	tmpDir := filepath.Join(w.scratchDir, "restic-tmp")
+	if err := os.MkdirAll(tmpDir, 0755); err != nil {
+		return err
+	}
+	w.sh.SetEnv(TMPDIR, tmpDir)
 
 	backend := resource.Spec.Backend
 	if backend.Local != nil {
