@@ -293,3 +293,12 @@ $ kubectl delete restic stash-demo
 ```
 
 If you would like to uninstall Stash operator, please follow the steps [here](/docs/uninstall.md).
+
+
+## Next Steps
+- Learn about the details of Restic tpr [here](/docs/concept.md).
+- See the list of supported backends and how to configure them [here](/docs/backends.md).
+- See working examples for supported workload types [here](/docs/workloads.md).
+- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/monitoring.md).
+- Wondering what features are coming next? Please visit [here](/ROADMAP.md). 
+- Want to hack on Stash? Check our [contribution guidelines](/CONTRIBUTING.md).
