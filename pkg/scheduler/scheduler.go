@@ -45,7 +45,7 @@ type Options struct {
 }
 
 func (opt Options) autoPrefix(resource *sapi.Restic) string {
-	switch resource.Spec.AutoPrefix {
+	switch resource.Spec.UseAutoPrefix {
 	case sapi.None:
 		return ""
 	case sapi.NodeName:
