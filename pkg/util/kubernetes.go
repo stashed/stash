@@ -211,8 +211,7 @@ func GetSidecarContainer(r *rapi.Restic, tag, app string, prefixHostname bool) a
 		Args: []string{
 			"schedule",
 			"--v=3",
-			"--namespace=" + r.Namespace,
-			"--name=" + r.Name,
+			"--restic-name=" + r.Name,
 			"--app=" + app,
 			"--prefix-hostname=" + strconv.FormatBool(prefixHostname),
 		},

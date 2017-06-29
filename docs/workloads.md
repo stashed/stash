@@ -47,8 +47,7 @@ spec:
       - args:
         - schedule
         - --v=3
-        - --namespace=default
-        - --name=statefulset-restic
+        - --restic-name=statefulset-restic
         - --app=workload
         - --prefix-hostname=true
         image: appscode/stash:canary

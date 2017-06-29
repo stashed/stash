@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"github.com/appscode/log"
 	rcs "github.com/appscode/stash/client/clientset"
 	"github.com/appscode/stash/pkg/analytics"
@@ -19,12 +20,12 @@ func NewCmdSchedule(version string) *cobra.Command {
 		masterURL      string
 		kubeconfigPath string
 		opt            scheduler.Options = scheduler.Options{
-			ResourceNamespace: "",
-			ResourceName:      "",
-			PrefixHostname:    true,
-			ScratchDir:        "/tmp",
-			PushgatewayURL:    "http://stash-operator.kube-system.svc:56789",
-			PodLabelsPath:     "/etc/labels",
+			ResticNamespace: namespace(),
+			ResticName:      "",
+			PrefixHostname:  true,
+			ScratchDir:      "/tmp",
+			PushgatewayURL:  "http://stash-operator.kube-system.svc:56789",
+			PodLabelsPath:   "/etc/labels",
 		}
 		enableAnalytics bool = true
 	)
@@ -73,8 +74,7 @@ func NewCmdSchedule(version string) *cobra.Command {
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&opt.App, "app", opt.App, "Name of app where sidecar pod is added")
-	cmd.Flags().StringVar(&opt.ResourceNamespace, "namespace", opt.ResourceNamespace, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
-	cmd.Flags().StringVar(&opt.ResourceName, "name", opt.ResourceName, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
+	cmd.Flags().StringVar(&opt.ResticName, "restic-name", opt.ResticName, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().BoolVar(&opt.PrefixHostname, "prefix-hostname", opt.PrefixHostname, "If set, adds Hostname as prefix to repository. This should be true for StatefulSets & DaemonSets. This should be false in all other cases.")
 	cmd.Flags().StringVar(&opt.ScratchDir, "scratch-dir", opt.ScratchDir, "Directory used to store temporary files. Use an `emptyDir` in Kubernetes.")
 	cmd.Flags().StringVar(&opt.PushgatewayURL, "pushgateway-url", opt.PushgatewayURL, "URL of Prometheus pushgateway used to cache backup metrics")
@@ -83,4 +83,17 @@ func NewCmdSchedule(version string) *cobra.Command {
 	// Analytics flags
 	cmd.Flags().BoolVar(&enableAnalytics, "analytics", enableAnalytics, "Send analytical events to Google Analytics")
 	return cmd
+}
+
+
+func namespace() string {
+	if ns := os.Getenv("OPERATOR_NAMESPACE"); ns != "" {
+		return ns
+	}
+	if data, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil {
+		if ns := strings.TrimSpace(string(data)); len(ns) > 0 {
+			return ns
+		}
+	}
+	return metav1.NamespaceDefault
 }

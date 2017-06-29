@@ -20,7 +20,6 @@ stash schedule [flags]
       --kubeconfig string        Path to kubeconfig file with authorization information (the master location is set by the master flag).
       --master string            The address of the Kubernetes API server (overrides any value in kubeconfig)
       --name string              Path to kubeconfig file with authorization information (the master location is set by the master flag).
-      --namespace string         The address of the Kubernetes API server (overrides any value in kubeconfig)
       --pod-labels-path string   Path to pod labels file mounted via Kubernetes Downward api (default "/etc/labels")
       --prefix-hostname          If set, adds Hostname as prefix to repository. This should be true for StatefulSets & DaemonSets. This should be false in all other cases. (default true)
       --pushgateway-url string   URL of Prometheus pushgateway used to cache backup metrics (default "http://stash-operator.kube-system.svc:56789")

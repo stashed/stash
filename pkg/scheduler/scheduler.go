@@ -33,13 +33,13 @@ const (
 )
 
 type Options struct {
-	App               string
-	ResourceNamespace string
-	ResourceName      string
-	PrefixHostname    bool
-	ScratchDir        string
-	PushgatewayURL    string
-	PodLabelsPath     string
+	App             string
+	ResticNamespace string
+	ResticName      string
+	PrefixHostname  bool
+	ScratchDir      string
+	PushgatewayURL  string
+	PodLabelsPath   string
 }
 
 type Scheduler struct {
@@ -79,7 +79,7 @@ func New(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt
 
 // Init and/or connect to repo
 func (c *Scheduler) Setup() error {
-	resource, err := c.stashClient.Restics(c.opt.ResourceNamespace).Get(c.opt.ResourceName)
+	resource, err := c.stashClient.Restics(c.opt.ResticNamespace).Get(c.opt.ResticName)
 	if err != nil {
 		return err
 	}
@@ -106,10 +106,10 @@ func (c *Scheduler) RunAndHold() {
 
 	lw := &cache.ListWatch{
 		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
-			return c.stashClient.Restics(c.opt.ResourceNamespace).List(metav1.ListOptions{})
+			return c.stashClient.Restics(c.opt.ResticNamespace).List(metav1.ListOptions{})
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return c.stashClient.Restics(c.opt.ResourceNamespace).Watch(metav1.ListOptions{})
+			return c.stashClient.Restics(c.opt.ResticNamespace).Watch(metav1.ListOptions{})
 		},
 	}
 	_, ctrl := cache.NewInformer(lw,
@@ -118,7 +118,7 @@ func (c *Scheduler) RunAndHold() {
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				if r, ok := obj.(*sapi.Restic); ok {
-					if r.Name == c.opt.ResourceName {
+					if r.Name == c.opt.ResticName {
 						c.rchan <- r
 						err := c.configureScheduler()
 						if err != nil {
@@ -144,7 +144,7 @@ func (c *Scheduler) RunAndHold() {
 					log.Errorln(errors.New("Invalid Restic object"))
 					return
 				}
-				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) && newObj.Name == c.opt.ResourceName {
+				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) && newObj.Name == c.opt.ResticName {
 					c.rchan <- newObj
 					err := c.configureScheduler()
 					if err != nil {
@@ -160,7 +160,7 @@ func (c *Scheduler) RunAndHold() {
 			},
 			DeleteFunc: func(obj interface{}) {
 				if r, ok := obj.(*sapi.Restic); ok {
-					if r.Name == c.opt.ResourceName {
+					if r.Name == c.opt.ResticName {
 						c.cron.Stop()
 					}
 				}
@@ -209,17 +209,17 @@ func (c *Scheduler) configureScheduler() error {
 func (c *Scheduler) runOnce() (err error) {
 	select {
 	case <-c.locked:
-		log.Infof("Acquired lock for Restic %s@%s", c.opt.ResourceName, c.opt.ResourceNamespace)
+		log.Infof("Acquired lock for Restic %s@%s", c.opt.ResticName, c.opt.ResticNamespace)
 		defer func() {
 			c.locked <- struct{}{}
 		}()
 	default:
-		log.Warningf("Skipping backup schedule for Restic %s@%s", c.opt.ResourceName, c.opt.ResourceNamespace)
+		log.Warningf("Skipping backup schedule for Restic %s@%s", c.opt.ResticName, c.opt.ResticNamespace)
 		return
 	}
 
 	var resource *sapi.Restic
-	resource, err = c.stashClient.Restics(c.opt.ResourceNamespace).Get(c.opt.ResourceName)
+	resource, err = c.stashClient.Restics(c.opt.ResticNamespace).Get(c.opt.ResticName)
 	if kerr.IsNotFound(err) {
 		err = nil
 		return
