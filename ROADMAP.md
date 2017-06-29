@@ -14,7 +14,7 @@ These are pre-releases done so that users can test Stash.
 This is going to be the first release of Stash and uses Kubernetes client-go 3.0.0. We plan to mark the last 0.x.0 release as 3.0.0. This version will support Kubernetes 1.5 & 1.6 .
 
 ### Release 4.0.0
-This in going to using client-go 4.0.0. This is going to include a number of breaking changes (example, use CustomResoureDefinition instead of TPRs) and be supported for Kubernetes 1.7. Please see the issues in release milestone [here](https://github.com/appscode/stash/milestone/3).
+This relased will be based on client-go 4.0.0. This is going to include a number of breaking changes (example, use CustomResoureDefinition instead of TPRs) and be supported for Kubernetes 1.7+. Please see the issues in release milestone [here](https://github.com/appscode/stash/milestone/3).
 
 ## Backend Support
 Stash currently includes a forked version of [restic](https://github.com/restic/restic). You can find our forked version [here](https://github.com/appscode/restic). Our forked version adds support for [GCS](https://github.com/restic/restic/pull/1052) and [Azure](https://github.com/restic/restic/pull/1059) backend. If you would like these changes merged into upstream project, please upvote the corresponding issues.
