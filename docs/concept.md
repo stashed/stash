@@ -73,16 +73,13 @@ At each tick, `restic backup` and `restic forget` commands are run for each of t
 ### spec.useAutoPrefix
 When workloads use more than one replicas, the `restic` repository path needs to be set so that data from different replicas do not overwrite one another. `spec.useAutoPrefix` defines how Stash modifies `prefix` repository prefix to handle this. There are 4 possible options.
 
- - `Smart` option modifies repository prefix based on the workload kind. _This is the default value. `Smart` auto prefix is used, when no value is set. Usually, you should not need to use any other options._
-
-
-
-| Value      | Description                                                                            |
-|------------|----------------------------------------------------------------------------------------|  
-| `Smart`    |                          |
-| `NodeName` | Adds Node name to backend prefix for any type of workload.                             |
-| `PodName`  | Adds Pod name to backend prefix for any type of workload.                              |
-| `None`     | Uses user provided backend prefix unchanged for any type of workload.                  |
+ - `Smart` option modifies repository prefix based on the workload kind. _This is the default value. This option is used, when no value is set. Usually, you should not need to use any other options._ This is how it works:
+    - StatefulSet: Adds Pod name as prefix to user provided backend prefix. If your StatefulSet dynamically allocates PVCs, this helps to backup them in their own `restic` repository.
+    - DaemonSet: Adds Node name as prefix to user provided backend prefix. This allows you to backup data from each node on a separate `restic` repository.
+    - Deployment, ReplicaSet, ReplicationController: Uses user provided backend prefix unchanged.
+ - `NodeName` option adds Node name to backend prefix for any type of workload.
+ - `PodName` option adds Pod name to backend prefix for any type of workload.
+ - `None` option uses user provided backend prefix unchanged for any type of workload.
 
 ### spec.volumeMounts
 `spec.volumeMounts` refers to volumes to be mounted in `stash` sidecar to get access to fileGroup paths.
