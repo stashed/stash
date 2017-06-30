@@ -19,17 +19,20 @@ spec:
     matchLabels:
       app: stash-demo
   fileGroups:
-  - path: /lib
+  - path: /source/data
     retentionPolicy:
       keepLast: 5
   backend:
     local:
-      path: /repo
+      path: /safe/data
       volume:
         emptyDir: {}
-        name: repo
+        name: safe-data
     repositorySecretName: stash-demo
   schedule: '@every 1m'
+  volumeMounts:
+  - mountPath: /source/data
+    name: source-data
 ```
 
 The `.spec` section has 4 main parts:

@@ -8,7 +8,7 @@ spec:
     matchLabels:
       app: s3-restic
   fileGroups:
-  - path: /lib
+  - path: /source/data
     retentionPolicy:
       keepLast: 5
   backend:
@@ -18,3 +18,6 @@ spec:
       prefix: demo
     repositorySecretName: s3-secret
   schedule: '@every 1m'
+  volumeMounts:
+  - mountPath: /source/data
+    name: source-data
