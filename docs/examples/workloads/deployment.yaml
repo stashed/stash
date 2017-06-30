@@ -20,7 +20,14 @@ spec:
         image: busybox
         imagePullPolicy: IfNotPresent
         name: busybox
+        volumeMounts:
+        - mountPath: /source/data
+          name: source-data
       restartPolicy: Always
+      volumes:
+      - gitRepo:
+          repository: https://github.com/appscode/stash-data.git
+        name: source-data
 ---
 apiVersion: v1
 data:
@@ -37,6 +44,13 @@ metadata:
   name: deployment-restic
   namespace: default
 spec:
+  selector:
+    matchLabels:
+      app: deployment-demo
+  fileGroups:
+  - path: /source/data
+    retentionPolicy:
+      keepLast: 5
   backend:
     local:
       path: /repo
@@ -44,11 +58,7 @@ spec:
         emptyDir: {}
         name: repo
     repositorySecretName: deployment-secret
-  fileGroups:
-  - path: /lib
-    retentionPolicy:
-      keepLast: 5
   schedule: '@every 1m'
-  selector:
-    matchLabels:
-      app: deployment-demo
+  volumeMounts:
+  - mountPath: /source/data
+    name: source-data

@@ -13,6 +13,13 @@ metadata:
   name: statefulset-restic
   namespace: default
 spec:
+  selector:
+    matchLabels:
+      app: statefulset-demo
+  fileGroups:
+  - path: /source/data
+    retentionPolicy:
+      keepLast: 5
   backend:
     local:
       path: /repo
@@ -20,14 +27,10 @@ spec:
         emptyDir: {}
         name: repo
     repositorySecretName: statefulset-secret
-  fileGroups:
-  - path: /lib
-    retentionPolicy:
-      keepLast: 5
   schedule: '@every 1m'
-  selector:
-    matchLabels:
-      app: statefulset-demo
+  volumeMounts:
+  - mountPath: /source/data
+    name: source-data
 ---
 apiVersion: v1
 kind: Service
@@ -68,12 +71,25 @@ spec:
         image: busybox
         imagePullPolicy: IfNotPresent
         name: busybox
-        resources: {}
+        volumeMounts:
+        - mountPath: /source/data
+          name: source-data
       - args:
         - schedule
-        - --v=3
         - --restic-name=statefulset-restic
-        - --app=StatefulSet/workload
+        - --workload=StatefulSet/workload
+        - --v=3
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
         image: appscode/stash:0.2.0
         imagePullPolicy: IfNotPresent
         name: stash
@@ -82,10 +98,16 @@ spec:
           name: stash-scratchdir
         - mountPath: /etc
           name: stash-podinfo
-        - mountPath: /repo
-          name: repo
+        - mountPath: /source/data
+          name: source-data
+          readOnly: true
+        - mountPath: /safe/data
+          name: safe-data
       restartPolicy: Always
       volumes:
+      - gitRepo:
+          repository: https://github.com/appscode/stash-data.git
+        name: source-data
       - emptyDir: {}
         name: stash-scratchdir
       - downwardAPI:
@@ -97,4 +119,4 @@ spec:
             path: labels
         name: stash-podinfo
       - emptyDir: {}
-        name: repo
+        name: safe-data

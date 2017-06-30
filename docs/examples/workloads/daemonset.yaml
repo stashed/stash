@@ -43,18 +43,21 @@ metadata:
   name: daemonset-restic
   namespace: default
 spec:
+  selector:
+    matchLabels:
+      app: daemonset-demo
+  fileGroups:
+  - path: /srv/host-etc
+    retentionPolicy:
+      keepLast: 5
   backend:
     local:
-      path: /srv/host-etc
+      path: /repo
       volume:
         emptyDir: {}
         name: repo
     repositorySecretName: daemonset-secret
-  fileGroups:
-  - path: /lib
-    retentionPolicy:
-      keepLast: 5
   schedule: '@every 1m'
-  selector:
-    matchLabels:
-      app: daemonset-demo
+  volumeMounts:
+  - mountPath: /srv/host-etc
+    name: host-etc
