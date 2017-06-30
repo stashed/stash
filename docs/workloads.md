@@ -68,7 +68,7 @@ spec:
         volumeMounts:
         - mountPath: /tmp
           name: stash-scratchdir
-        - mountPath: /etc
+        - mountPath: /etc/stash
           name: stash-podinfo
         - mountPath: /source/data
           name: source-data

@@ -255,7 +255,7 @@ func CreateSidecarContainer(r *rapi.Restic, tag, workload string) apiv1.Containe
 			},
 			{
 				Name:      PodinfoVolumeName,
-				MountPath: "/etc",
+				MountPath: "/etc/stash",
 			},
 		},
 	}
