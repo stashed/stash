@@ -100,7 +100,7 @@ You can find the full working demo in [examples folder](/docs/examples/workloads
    - Deployment: Deployments/xyz, Deployment/xyz, deployments/xyz, deployment/xyz 
    - ReplicaSet: ReplicaSets/xyz, ReplicaSet/xyz, replicasets/xyz, replicaset/xyz, rs/xyz
    - RepliationController: ReplicationControllers/xyz, ReplicationController/xyz, replicationcontrollers/xyz, replicationcontroller/xyz, rc/xyz
-   - DaemonSet: StatefulSets/xyz, StatefulSet/xyz
-   - StatefulSet: DaemonSets/xyz, DaemonSet/xyz, daemonsets/xyz, daemonset/xyz
+   - DaemonSet: DaemonSets/xyz, DaemonSet/xyz, daemonsets/xyz, daemonset/xyz
+   - StatefulSet: StatefulSets/xyz, StatefulSet/xyz
 
 To learn about the meaning of various flags, please visit [here](/docs/reference/stash_schedule.md).
