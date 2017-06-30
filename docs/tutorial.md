@@ -98,6 +98,7 @@ spec:
   - path: /source/data
     retentionPolicy:
       keepLast: 5
+      prune: true
   backend:
     local:
       path: /safe/data
@@ -117,7 +118,7 @@ Here,
  - `spec.backend.local` indicates that restic will store the snapshots in a local path `/safe/data`. For the purpose of this tutorial, we are using an `emptyDir` to store the snapshots. But any Kubernetes volume that can be mounted locally can be used as a backend (example, NFS, Ceph, etc). Stash can also store snapshots in cloud storage solutions like, S3, GCS, Azure, etc.
   - `spec.backend.repositorySecretName` points to the Kubernetes secret created earlier in this tutorial. `Restic` always points to secrets in its own namespace. This secret is used to pass restic repository password and other cloud provider secrets to `restic` binary.
   - `spec.schedule` is a [cron expression](https://github.com/robfig/cron/blob/v2/doc.go#L26) that indicates that file groups will be backed up every 1 minute.
-  - `spec.volumeMounts` refers to volumes to be mounted in `stash` sidecar to get access fileGroup path `/source/data`.
+  - `spec.volumeMounts` refers to volumes to be mounted in `stash` sidecar to get access to fileGroup path `/source/data`.
 
 Stash operator watches for `Restic` objects using Kubernetes api. Stash operator will notice that the `busybox` Deployment matches the selector for `stash-demo` Restic object. So, it will add a sidecar container named `stash` to `busybox` Deployment and restart the running `busybox` pods. Since a local backend is used in `stash-demo` Restic, sidecar container will be mounted the corresponding persistent volume.
 
@@ -273,6 +274,7 @@ spec:
   - path: /source/data
     retentionPolicy:
       keepLast: 5
+      prune: true
   backend:
     local:
       path: /safe/data

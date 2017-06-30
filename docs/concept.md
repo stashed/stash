@@ -22,6 +22,7 @@ spec:
   - path: /source/data
     retentionPolicy:
       keepLast: 5
+      prune: true
   backend:
     local:
       path: /safe/data
@@ -45,7 +46,7 @@ The `.spec` section has 4 main parts:
 
  - `spec.fileGroups[].path` represents a local directory that backed up by `restic`.
  - `spec.fileGroups[].tags` is an optional field. This can be used to apply one or more custom tag to snapshots taken from this path.
- - `spec.fileGroups[].retentionPolicy` is an optional field. This defines how old snapshots are forgot and pruned by `restic`. If set, these options directly translate into flags for `restic forget` command. Stash always runs `restic forget` command with `--prune` option to actually remove the data that was referenced by the snapshot from the repository. Retention policy options are below.
+ - `spec.fileGroups[].retentionPolicy` is an optional field. This defines how old snapshots are forgot by `restic`. If set, these options directly translate into flags for `restic forget` command. Retention policy options are below.
 
 | Policy        | Value   | restic forget flag | Description                                                                                        |
 |---------------|---------|--------------------|----------------------------------------------------------------------------------------------------|
@@ -56,6 +57,8 @@ The `.spec` section has 4 main parts:
 | `keepMonthly` | integer | --keep-monthly n   | For the last n months which have one or more snapshots, only keep the last one for that month.     |
 | `keepYearly`  | integer | --keep-yearly n    | For the last n years which have one or more snapshots, only keep the last one for that year.       |
 | `keepTags`    | array   | --keep-tag <tag>   | Keep all snapshots which have all tags specified by this option (can be specified multiple times). |
+| `prune`       | bool    | --prune            | If set, actually removes the data that was referenced by the snapshot from the repository.         |
+| `dryRun`      | bool    | --dry-run          | Instructs `restic` to not remove anything but print which snapshots would be removed.              |
 
 You can set one or more of these retention policy options together. To learn more, read [here](
 https://restic.readthedocs.io/en/latest/manual.html#removing-snapshots-according-to-a-policy).
@@ -64,11 +67,25 @@ https://restic.readthedocs.io/en/latest/manual.html#removing-snapshots-according
 To learn how to configure various backends for Restic, please visit [here](/docs/backends.md).
 
 ### spec.schedule
-`spec.schedule` is a [cron expression](https://github.com/robfig/cron/blob/v2/doc.go#L26) that indicates how often `restic` commands are invokved for file groups.
+`spec.schedule` is a [cron expression](https://github.com/robfig/cron/blob/v2/doc.go#L26) that indicates how often `restic` commands are invoked for file groups.
 At each tick, `restic backup` and `restic forget` commands are run for each of the configured file groups.
 
+### spec.useAutoPrefix
+When workloads use more than one replicas, the `restic` repository path needs to be set so that data from different replicas do not overwrite one another. `spec.useAutoPrefix` defines how Stash modifies backend repository prefix to handle this. There are 4 possible options.
+
+ - `Smart` option modifies repository prefix based on the workload kind. _This is the default value. This option is used, when no value is set. Usually, you should not need to use any other options._ This is how it works:
+    - StatefulSet: Adds Pod name as prefix to user provided backend prefix. If your StatefulSet dynamically allocates PVCs, this helps to backup them in their own `restic` repository.
+    - DaemonSet: Adds Node name as prefix to user provided backend prefix. This allows you to backup data from each node on a separate `restic` repository.
+    - Deployment, ReplicaSet, ReplicationController: Uses user provided backend prefix unchanged.
+ - `NodeName` option adds Node name to backend prefix for any type of workload.
+ - `PodName` option adds Pod name to backend prefix for any type of workload.
+ - `None` option uses user provided backend prefix unchanged for any type of workload.
+
+### spec.volumeMounts
+`spec.volumeMounts` refers to volumes to be mounted in `stash` sidecar to get access to fileGroup paths.
+
 ## Restic Status
-Stash operator updates `.status` of a Restic tpr everytime a backup operation is completed. 
+Stash operator updates `.status` of a Restic tpr every time a backup operation is completed. 
 
  - `status.backupCount` indicated the total number of backup operation completed for this Restic tpr.
  - `status.firstBackupTime` indicates the timestamp of first backup operation.
@@ -79,7 +96,7 @@ Stash operator updates `.status` of a Restic tpr everytime a backup operation is
 ## Workload Annotations
 For each workload where a sidecar container is added by Stash operator, the following annotations are added:
  - `restic.appscode.com/config` indicates the name of Restic tpr.
- - `restic.appscode.com/tag` indicates the tag of appscode/stash Docker image that was added as sidecar.
+ - `restic.appscode.com/tag` indicates the tag of `appscode/stash` Docker image that was added as sidecar.
 
 ## Updating Restic
 The sidecar container watches for changes in the Restic fileGroups, backend and schedule. These changes are automatically applied on the next run of `restic` commands. If the selector of a Restic tpr

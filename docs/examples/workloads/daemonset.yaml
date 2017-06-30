@@ -50,6 +50,7 @@ spec:
   - path: /srv/host-etc
     retentionPolicy:
       keepLast: 5
+      prune: true
   backend:
     local:
       path: /repo

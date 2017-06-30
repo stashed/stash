@@ -98,7 +98,7 @@ func NewCmdSchedule(version string) *cobra.Command {
 				if err != nil {
 					log.Fatalf(`Unknown ReplicationController %s@%s`, opt.AppName, opt.Namespace)
 				}
-			case "StatefulSets", "StatefulSet", "ss":
+			case "StatefulSets", "StatefulSet":
 				opt.AppKind = "StatefulSet"
 				opt.SmartPrefix = opt.PodName
 				_, err := kubeClient.AppsV1beta1().StatefulSets(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
@@ -137,7 +137,7 @@ func NewCmdSchedule(version string) *cobra.Command {
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&workload, "workload", workload, `"Kind/Name" of workload where sidecar pod is added (eg, Deployment/apiserver)`)
-	cmd.Flags().StringVar(&opt.ResticName, "restic-name", opt.ResticName, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
+	cmd.Flags().StringVar(&opt.ResticName, "restic-name", opt.ResticName, "Name of the Restic used as configuration.")
 	cmd.Flags().StringVar(&opt.ScratchDir, "scratch-dir", opt.ScratchDir, "Directory used to store temporary files. Use an `emptyDir` in Kubernetes.")
 	cmd.Flags().StringVar(&opt.PushgatewayURL, "pushgateway-url", opt.PushgatewayURL, "URL of Prometheus pushgateway used to cache backup metrics")
 
