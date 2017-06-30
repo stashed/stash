@@ -71,7 +71,7 @@ To learn how to configure various backends for Restic, please visit [here](/docs
 At each tick, `restic backup` and `restic forget` commands are run for each of the configured file groups.
 
 ### spec.useAutoPrefix
-When workloads use more than one replicas, the `restic` repository path needs to be set so that data from different replicas do not overwrite one another. `spec.useAutoPrefix` defines how Stash modifies `prefix` repository prefix to handle this. There are 4 possible options.
+When workloads use more than one replicas, the `restic` repository path needs to be set so that data from different replicas do not overwrite one another. `spec.useAutoPrefix` defines how Stash modifies backend repository prefix to handle this. There are 4 possible options.
 
  - `Smart` option modifies repository prefix based on the workload kind. _This is the default value. This option is used, when no value is set. Usually, you should not need to use any other options._ This is how it works:
     - StatefulSet: Adds Pod name as prefix to user provided backend prefix. If your StatefulSet dynamically allocates PVCs, this helps to backup them in their own `restic` repository.
