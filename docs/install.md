@@ -1,4 +1,4 @@
-> New to Stash? Please start with [here](/docs/tutorial.md).
+> New to Stash? Please start [here](/docs/tutorial.md).
 
 # Installation Guide
 
@@ -7,11 +7,12 @@ Stash can be installed using YAML files includes in the [/hack/deploy](/hack/dep
 
 ```sh
 # Install without RBAC roles
-$ curl https://raw.githubusercontent.com/appscode/stash/master/hack/deploy/stash-without-rbac.yaml \
+$ curl https://raw.githubusercontent.com/appscode/stash/0.2.0/hack/deploy/stash-without-rbac.yaml \
   | kubectl apply -f -
 
+
 # Install with RBAC roles
-$ curl https://raw.githubusercontent.com/appscode/stash/master/hack/deploy/stash-with-rbac.yaml \
+$ curl https://raw.githubusercontent.com/appscode/stash/0.2.0/hack/deploy/stash-with-rbac.yaml \
   | kubectl apply -f -
 ```
 

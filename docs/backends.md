@@ -1,4 +1,4 @@
-> New to Stash? Please start with [here](/docs/tutorial.md).
+> New to Stash? Please start [here](/docs/tutorial.md).
 
 # Stash Backends
 Backend is where `restic` stores snapshots. For any backend, a Kubernetes Secret in the same namespace is needed to provide restic repository credentials. This Secret can be configured by setting `spec.backend.repositorySecretName` field. This document lists the various supported backends for Stash and how to configure those.
@@ -57,6 +57,13 @@ metadata:
   selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/local-restic
   uid: 617e3487-5bfb-11e7-bb52-08002711f4aa
 spec:
+  selector:
+    matchLabels:
+      app: local-restic
+  fileGroups:
+  - path: /source/data
+    retentionPolicy:
+      keepLast: 5
   backend:
     local:
       path: /repo
@@ -64,14 +71,10 @@ spec:
         emptyDir: {}
         name: repo
     repositorySecretName: local-secret
-  fileGroups:
-  - path: /lib
-    retentionPolicy:
-      keepLast: 5
   schedule: '@every 1m'
-  selector:
-    matchLabels:
-      app: local-restic
+  volumeMounts:
+  - mountPath: /source/data
+    name: source-data
 ```
 
 
@@ -140,20 +143,23 @@ metadata:
   selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/s3-restic
   uid: 7036ba69-5c01-11e7-bb52-08002711f4aa
 spec:
-  backend:
-    repositorySecretName: s3-secret
-    s3:
-      bucket: stash-qa
-      endpoint: s3.amazonaws.com
-      prefix: demo
-  fileGroups:
-  - path: /lib
-    retentionPolicy:
-      keepLast: 5
-  schedule: '@every 1m'
   selector:
     matchLabels:
       app: s3-restic
+  fileGroups:
+  - path: /source/data
+    retentionPolicy:
+      keepLast: 5
+  backend:
+    s3:
+      endpoint: 's3.amazonaws.com'
+      bucket: stash-qa
+      prefix: demo
+    repositorySecretName: s3-secret
+  schedule: '@every 1m'
+  volumeMounts:
+  - mountPath: /source/data
+    name: source-data
 ```
 
 
@@ -183,7 +189,7 @@ $ kubectl get secret gcs-secret -o yaml
 apiVersion: v1
 data:
   GOOGLE_PROJECT_ID: PHlvdXItcHJvamVjdC1pZD4=
-  GOOGLE_SERVICE_ACCOUNT_JSON_KEY: ewogICJ0eXBlIjogInNlcnZpY2VfYWNjb3VudCIsCiAgInByb2plY3RfaWQiOiAicmVzdGljLXFhIiwKICAicHJpdmF0ZV9rZXlfaWQiOiAiNDJlMGMzMTk3NGE4NzRiYmJkMzNmNjQxNDBkOTI0Y2U5ZjkyZTM4MyIsCiAgInByaXZhdGVfa2V5IjogIi0tLS0tQkVHSU4gUFJJVkFURSBLRVktLS0tLVxuTUlJRXZRSUJBREFOQmdrcWhraUc5dzBCQVFFRkFBU0NCS2N3Z2dTakFnRUFBb0lCQVFDd205NGx0eHNSd0QvelxuQi82TC8yNVJQMXdlUWJSeTBVUS8xUGRjbnUrSlMzQnBOb0ZoUEJDYWdzV3loSFJwUzVpN011WDJXOVNlaVUrNFxudHpZcXZmeDFpSTAzNUZYVmhaOXhvb0ZpYjdvYTMxclJaUTY1STc4bGxoQ1hyQXNmdFZ0VWRhQmM2cWV6c0FlUFxuNDJwUGJRb2V4WDFsU2ZmS0tiNzl6UUJiM2dxaERadmxybDMvRzdqaW5pVGhFTUx3YWxjQzZSRGFLQXNiQUIveVxuK09LaTQ5dTkzYlRmdFplaERwY1dBVVQ3S3lqdUd5Z0tGQmdhYk1JVjNHSUpBaGxnV1I4TC9sMm41YWQ0WkE5NlxuK3UrSUpqdExyTkdlOTlwbHJURWcwRFQyNkNGYXRiMnlwWmJQQ1I0b1dzUmprZENjZ0hBWXRIWU9weWIzRnZodFxuNGd2ZzIyNUhBZ01CQUFFQ2dnRUFCcVhuWjk0THE5QmoxOTh1S3REenN5VkNiM1VqdU1xOTJmVkhWbm81SkI3dFxuM1ZnSzZNRWRFdVBuVXovL0xkT0ZyVTVPTDhibkt3eWFMcWJlNkI3OHVPUHFCUGVZYjVBM0gwenh0K1hpeUk0dFxuMmdJRzJ0dEluNzZWWTFBN252Ynh1QzB4V3k0T0lBcDVUbVpPSXkxRW0wSHQ1WGt5VmE3YW5LMHgzVU52ZlA1NFxuOFkwSzdySy8vWkZSQ2lPb25LY1NvamdZTS9uY2R5cjNLM2hpTUN3bWh1dHZoTFRjSG9lWDk4RURjYnNlU0ZCNlxuRXkvOHpxYzNvN1VTUWUxUDVxb1hkdVRxNU5Nb0tCdkJudmVxeG0xbGx2cDRiMEl1Y3lmZkNlazNuS0lndm03N1xucUJUVUdIaktQLzcvOGdGSDNFd2J2VC83WUV5NTVpK0xhVFpyS2tGNm9RS0JnUUQ0LzVTVjNnMEw5bkZjZ3VPV1xuMWQ0a3FPSTJHWmNCc1l3dWp4K0ZrdFBzRUM1L0FVTXMxRlhKcTR2MGVvZHAxbW1sd0VCamlGVC9vSy95Y05hYlxuWklVTGpFeC9IM1RoS3U2QVdiSmdjbU94OGYvTU40SXhOU1Y1QW1DUnB5SEg2UUdTb3Fkc0c4a0g3dWZ1SjlJdVxucnM2MExyZ2JBdWs0M1lmY0V4M0hUODE5VVFLQmdRQzFrekNxS3FNWk9haTVlME5ub3A5ZFNEVGliSUdpRGVJY1xuZzFaeENGa2dCeU5JaUdIdmxhWmlMNFRiL3Q1NmowTFpsL1dJNjc5UlFMSXk0NmU0N1dlNko0MzhweWF2VjRpdVxuU2lPS01yR2V5cXpGVFhRSDVYaW5CUHhtTk96cG9EaVJyeUFVeGd0bWtIeEpOYlRhdS8zbHNpL0Nyc0RyTkJQNlxuVitENURsZHNGd0tCZ1FEVmVYRnZKNGV4K09CcHV3SGFZSk5xaEt3a1M3NHVRb1QzcWRjUmtyZEVEUDkvL1pvVlxuQmhwaW8wT0RIOFdXMUsrUTNvbVZpOTJycDUwUlV2SjdHU3dEb1k0MzhzVW5Bc0tsb2NFUGRTTEovYnNiMzM4c1xuSnU5d2xyd3FROHJ2ZEhIWHdNR2ZLeGNvU1FmcEk1VE1WeXg2U0ErcGdNNW81V3pFSGxPS2ZIMmxjUUtCZ0FuaVxucVpPYUhxY1E3STZzbDA3ZEc3QUlibGlsYjZsUytDeDFPZytOVk16WmxxSXNTcWl3alE1clorQlNUK3A4UWpkMlxuZm5lbDNoU2VZUlZFTDYxeHYyUHpJMWZPQWQwcDl0Y0dVa2tEMlllN29ReGMyeVJTNmU2dDVzL3BzYnhHYk00QlxucXMxMnVzZ3F0Wm1Hd3dIbG1qMFhKbUtEQVIzTkNBbHBIMlp2MFhLaEFvR0FQMXh4WFFnbHRuc2RZYjRQK0RHTVxuV3VlSXI5Yys0dWxjYTNWdmZna0FGa1RoOWdrN3E3WDJGK0Y5Z1lscVQyK1h5RkphMnRlREhKOUdSME5Da09iNlxuWTVPSk1UTkREUU9kSXdzS1VvZVg4d0p4YVhXSmpxWFBGWDZ0djBkTlpVME5jbzNBMFV2ZjlOd25CTW0vUDZMTFxuclRGS0M5bmNqOWVVNTFTUXdmaW45K3M9XG4tLS0tLUVORCBQUklWQVRFIEtFWS0tLS0tXG4iLAogICJjbGllbnRfZW1haWwiOiAicmVzdGljLXRlc3RpbmdAcmVzdGljLXFhLmlhbS5nc2VydmljZWFjY291bnQuY29tIiwKICAiY2xpZW50X2lkIjogIjEwMjY5NTk1MzE0NzQzNDk1ODk1MSIsCiAgImF1dGhfdXJpIjogImh0dHBzOi8vYWNjb3VudHMuZ29vZ2xlLmNvbS9vL29hdXRoMi9hdXRoIiwKICAidG9rZW5fdXJpIjogImh0dHBzOi8vYWNjb3VudHMuZ29vZ2xlLmNvbS9vL29hdXRoMi90b2tlbiIsCiAgImF1dGhfcHJvdmlkZXJfeDUwOV9jZXJ0X3VybCI6ICJodHRwczovL3d3dy5nb29nbGVhcGlzLmNvbS9vYXV0aDIvdjEvY2VydHMiLAogICJjbGllbnRfeDUwOV9jZXJ0X3VybCI6ICJodHRwczovL3d3dy5nb29nbGVhcGlzLmNvbS9yb2JvdC92MS9tZXRhZGF0YS94NTA5L3Jlc3RpYy10ZXN0aW5nJTQwcmVzdGljLXFhLmlhbS5nc2VydmljZWFjY291bnQuY29tIgp9Cg==
+  GOOGLE_SERVICE_ACCOUNT_JSON_KEY: ewogICJ0eXBlIjogInNlcnZpY2VfYWNjb3V...9tIgp9Cg==
   RESTIC_PASSWORD: Y2hhbmdlaXQ=
 kind: Secret
 metadata:
@@ -222,20 +228,23 @@ metadata:
   selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/gcs-restic
   uid: 54b1bad3-5c03-11e7-bb52-08002711f4aa
 spec:
-  backend:
-    gcs:
-      bucket: stash-qa
-      location: /repo
-      prefix: demo
-    repositorySecretName: gcs-secret
-  fileGroups:
-  - path: /lib
-    retentionPolicy:
-      keepLast: 5
-  schedule: '@every 1m'
   selector:
     matchLabels:
       app: gcs-restic
+  fileGroups:
+  - path: /source/data
+    retentionPolicy:
+      keepLast: 5
+  backend:
+    gcs:
+      location: /repo
+      bucket: stash-qa
+      prefix: demo
+    repositorySecretName: gcs-secret
+  schedule: '@every 1m'
+  volumeMounts:
+  - mountPath: /source/data
+    name: source-data
 ```
 
 
@@ -303,17 +312,20 @@ metadata:
   selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/azure-restic
   uid: 0e8eb89b-5c06-11e7-bb52-08002711f4aa
 spec:
+  selector:
+    matchLabels:
+      app: azure-restic
+  fileGroups:
+  - path: /source/data
+    retentionPolicy:
+      keepLast: 5
   backend:
     azure:
       container: stashqa
       prefix: demo
     repositorySecretName: azure-secret
-  fileGroups:
-  - path: /lib
-    retentionPolicy:
-      keepLast: 5
   schedule: '@every 1m'
-  selector:
-    matchLabels:
-      app: azure-restic
+  volumeMounts:
+  - mountPath: /source/data
+    name: source-data
 ```

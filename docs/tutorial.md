@@ -3,7 +3,7 @@ This tutorial will show you how to use Stash to backup a Kubernetes deployment. 
 and the kubectl command-line tool must be configured to communicate with your cluster. If you do not already have a cluster,
 you can create one by using [Minikube](https://github.com/kubernetes/minikube). Now, install Stash in your cluster following the steps [here](/docs/install.md).
 
-In this tutorial, we are going to backup the `/lib` folder of a `busybox` pod into a local backend. First deploy the following `busybox` Deployment in your cluster.
+In this tutorial, we are going to backup the `/source/data` folder of a `busybox` pod into a local backend. First deploy the following `busybox` Deployment in your cluster. Here we are using a git repository as source volume for demonstration purpose.
 
 ```yaml
 apiVersion: extensions/v1beta1
@@ -28,7 +28,14 @@ spec:
         image: busybox
         imagePullPolicy: IfNotPresent
         name: busybox
+        volumeMounts:
+        - mountPath: /source/data
+          name: source-data
       restartPolicy: Always
+      volumes:
+      - gitRepo:
+          repository: https://github.com/appscode/stash-data.git
+        name: source-data
 ```
 
 ```sh
@@ -88,26 +95,29 @@ spec:
     matchLabels:
       app: stash-demo
   fileGroups:
-  - path: /lib
+  - path: /source/data
     retentionPolicy:
       keepLast: 5
   backend:
     local:
-      path: /repo
+      path: /safe/data
       volume:
         emptyDir: {}
-        name: repo
+        name: safe-data
     repositorySecretName: stash-demo
   schedule: '@every 1m'
+  volumeMounts:
+  - mountPath: /source/data
+    name: source-data
 ```
 
 Here,
- - `spec.selector` is used to select workloads upon which this `Restic` configuration will be applied. `Restic` always selects workloads in the same Kubernetes namespace. In this tutorial, `busybox` Deployment labels match this `Restic`-s selectors.
- - `spec.fileGroups` indicates an array of local paths that will be backed up using restic. For each path, users can also define the retention policy for old snapshots. Here, we are backing up the `/lib` folder and only keeping the last 5 snaphsots.
- - `spec.backend.local` indicates that restic will store the snapshots in a local path `/repo`. For the purpose of this tutorial, we are using an `emptyDir` to store the snapshots. But any Kubernets volume that can be mounted locally can be used as a backend (example, NFS, Ceph, etc). Stash can also store snapshots in cloud storage solutions like, S3, GCS, Azure, etc.
+ - `spec.selector` is used to select workloads upon which this `Restic` configuration will be applied. `Restic` always selects workloads in the same Kubernetes namespace. In this tutorial, labels of `busybox` Deployment match this `Restic`'s selectors.
+ - `spec.fileGroups` indicates an array of local paths that will be backed up using restic. For each path, users can also define the retention policy for old snapshots. Here, we are backing up the `/source/data` folder and only keeping the last 5 snapshots.
+ - `spec.backend.local` indicates that restic will store the snapshots in a local path `/safe/data`. For the purpose of this tutorial, we are using an `emptyDir` to store the snapshots. But any Kubernetes volume that can be mounted locally can be used as a backend (example, NFS, Ceph, etc). Stash can also store snapshots in cloud storage solutions like, S3, GCS, Azure, etc.
   - `spec.backend.repositorySecretName` points to the Kubernetes secret created earlier in this tutorial. `Restic` always points to secrets in its own namespace. This secret is used to pass restic repository password and other cloud provider secrets to `restic` binary.
   - `spec.schedule` is a [cron expression](https://github.com/robfig/cron/blob/v2/doc.go#L26) that indicates that file groups will be backed up every 1 minute.
-
+  - `spec.volumeMounts` refers to volumes to be mounted in `stash` sidecar to get access fileGroup path `/source/data`.
 
 Stash operator watches for `Restic` objects using Kubernetes api. Stash operator will notice that the `busybox` Deployment matches the selector for `stash-demo` Restic object. So, it will add a sidecar container named `stash` to `busybox` Deployment and restart the running `busybox` pods. Since a local backend is used in `stash-demo` Restic, sidecar container will be mounted the corresponding persistent volume.
 
@@ -133,9 +143,9 @@ metadata:
     app: stash-demo
   name: stash-demo
   namespace: default
-  resourceVersion: "436"
+  resourceVersion: "1703"
   selfLink: /apis/extensions/v1beta1/namespaces/default/deployments/stash-demo
-  uid: c893e438-5bdb-11e7-8520-080027c24619
+  uid: e7fe819c-5d2c-11e7-bc7e-0800278d42f6
 spec:
   progressDeadlineSeconds: 600
   replicas: 1
@@ -165,12 +175,25 @@ spec:
         resources: {}
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /source/data
+          name: source-data
       - args:
         - schedule
-        - --v=3
         - --restic-name=stash-demo
-        - --app=stash-demo
-        - --prefix-hostname=false
+        - --workload=Deployment/stash-demo
+        - --v=3
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
         image: appscode/stash:0.2.0
         imagePullPolicy: IfNotPresent
         name: stash
@@ -182,12 +205,20 @@ spec:
           name: stash-scratchdir
         - mountPath: /etc
           name: stash-podinfo
+        - mountPath: /source/data
+          name: source-data
+          readOnly: true
+        - mountPath: /safe/data
+          name: safe-data
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext: {}
       terminationGracePeriodSeconds: 30
       volumes:
+      - gitRepo:
+          repository: https://github.com/appscode/stash-data.git
+        name: source-data
       - emptyDir: {}
         name: stash-scratchdir
       - downwardAPI:
@@ -198,6 +229,8 @@ spec:
               fieldPath: metadata.labels
             path: labels
         name: stash-podinfo
+      - emptyDir: {}
+        name: safe-data
 status:
   conditions:
   - lastTransitionTime: 2017-06-28T08:28:37Z
@@ -218,7 +251,7 @@ status:
   updatedReplicas: 1
 ```
 
-Now, wait a few minutes so that restic can take a backup of the `/lib` folder. To confirm, check the `status.backupCount` of `stash-demo` Restic tpr.
+Now, wait a few minutes so that restic can take a backup of the `/source/data` folder. To confirm, check the `status.backupCount` of `stash-demo` Restic tpr.
 
 ```yaml
 $ kubectl get restic stash-demo -o yaml
@@ -233,21 +266,24 @@ metadata:
   selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/stash-demo
   uid: 10be2e8c-5bdd-11e7-9f08-08002778c951
 spec:
-  backend:
-    local:
-      path: /repo
-      volume:
-        emptyDir: {}
-        name: repo
-    repositorySecretName: stash-demo
-  fileGroups:
-  - path: /lib
-    retentionPolicy:
-      keepLast: 5
-  schedule: '@every 1m'
   selector:
     matchLabels:
       app: stash-demo
+  fileGroups:
+  - path: /source/data
+    retentionPolicy:
+      keepLast: 5
+  backend:
+    local:
+      path: /safe/data
+      volume:
+        emptyDir: {}
+        name: safe-data
+    repositorySecretName: stash-demo
+  schedule: '@every 1m'
+  volumeMounts:
+  - mountPath: /source/data
+    name: source-data
 status:
   backupCount: 1
   firstBackupTime: 2017-06-28T08:39:08Z
@@ -268,11 +304,11 @@ $ kubectl exec -it stash-demo-3001144127-3fsbn -c stash sh
 / # restic snapshots
 ID        Date                 Host                         Tags        Directory
 ----------------------------------------------------------------------
-c275bb54  2017-06-28 08:39:08  stash-demo-3001144127-3fsbn              /lib
+c275bb54  2017-06-28 08:39:08  stash-demo-3001144127-3fsbn              /source/data
 ```
 
 ## Disable Backup
-To stop taking backup of `/lib` folder, delete the `stash-demo` Restic tpr. As a result, Stash operator will remove the sidecar container from `busybox` Deployment.
+To stop taking backup of `/source/data` folder, delete the `stash-demo` Restic tpr. As a result, Stash operator will remove the sidecar container from `busybox` Deployment.
 ```sh
 $ kubectl delete restic stash-demo
 restic "stash-demo" deleted

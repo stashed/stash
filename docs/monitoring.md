@@ -1,4 +1,4 @@
-> New to Stash? Please start with [here](/docs/tutorial.md).
+> New to Stash? Please start [here](/docs/tutorial.md).
 
 # Monitoring Stash
 

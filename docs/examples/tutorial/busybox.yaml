@@ -20,4 +20,11 @@ spec:
         image: busybox
         imagePullPolicy: IfNotPresent
         name: busybox
+        volumeMounts:
+        - mountPath: /source/data
+          name: source-data
       restartPolicy: Always
+      volumes:
+      - gitRepo:
+          repository: https://github.com/appscode/stash-data.git
+        name: source-data
