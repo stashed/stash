@@ -71,6 +71,9 @@ To learn how to configure various backends for Restic, please visit [here](/docs
 At each tick, `restic backup` and `restic forget` commands are run for each of the configured file groups.
 
 ### spec.useAutoPrefix
+When workloads use more than one replicas, the `restic` repository path needs to be set so that data from different replicas do not overwrite one another. `spec.useAutoPrefix` defines how Stash modifies `prefix` repository prefix to handle this. There are 4 possible options. The default value is `Smart`. `Smart` auto prefix is used, when no value is set. Usually, you should not need to use any other options.
+
+`Smart` option modifies repository prefix based on the workload kind.
 
 | Value      | Description                                                                            |
 |------------|----------------------------------------------------------------------------------------|  
