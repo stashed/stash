@@ -92,7 +92,7 @@ func (w *ResticWrapper) SetupEnv(resource *sapi.Restic, secret *apiv1.Secret, au
 		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 		w.sh.SetEnv(GOOGLE_PROJECT_ID, string(secret.Data[GOOGLE_PROJECT_ID]))
 		jsonKeyPath := filepath.Join(w.scratchDir, "gcs_sa.json")
-		err := ioutil.WriteFile(jsonKeyPath, secret.Data[GOOGLE_SERVICE_ACCOUNT_JSON_KEY], 600)
+		err := ioutil.WriteFile(jsonKeyPath, secret.Data[GOOGLE_SERVICE_ACCOUNT_JSON_KEY], 0644)
 		if err != nil {
 			return err
 		}
