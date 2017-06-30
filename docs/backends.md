@@ -64,6 +64,7 @@ spec:
   - path: /source/data
     retentionPolicy:
       keepLast: 5
+      prune: true
   backend:
     local:
       path: /repo
@@ -150,6 +151,7 @@ spec:
   - path: /source/data
     retentionPolicy:
       keepLast: 5
+      prune: true
   backend:
     s3:
       endpoint: 's3.amazonaws.com'
@@ -235,6 +237,7 @@ spec:
   - path: /source/data
     retentionPolicy:
       keepLast: 5
+      prune: true
   backend:
     gcs:
       location: /repo
@@ -319,6 +322,7 @@ spec:
   - path: /source/data
     retentionPolicy:
       keepLast: 5
+      prune: true
   backend:
     azure:
       container: stashqa

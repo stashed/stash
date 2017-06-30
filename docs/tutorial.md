@@ -98,6 +98,7 @@ spec:
   - path: /source/data
     retentionPolicy:
       keepLast: 5
+      prune: true
   backend:
     local:
       path: /safe/data
@@ -273,6 +274,7 @@ spec:
   - path: /source/data
     retentionPolicy:
       keepLast: 5
+      prune: true
   backend:
     local:
       path: /safe/data
