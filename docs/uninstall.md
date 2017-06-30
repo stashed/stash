@@ -1,4 +1,4 @@
-> New to Stash? Please start with [here](/docs/tutorial.md).
+> New to Stash? Please start [here](/docs/tutorial.md).
 
 # Uninstall Stash
 Please follow the steps below to uninsall Stash:
