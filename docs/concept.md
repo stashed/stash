@@ -70,6 +70,9 @@ To learn how to configure various backends for Restic, please visit [here](/docs
 `spec.schedule` is a [cron expression](https://github.com/robfig/cron/blob/v2/doc.go#L26) that indicates how often `restic` commands are invoked for file groups.
 At each tick, `restic backup` and `restic forget` commands are run for each of the configured file groups.
 
+### spec.volumeMounts
+`spec.volumeMounts` refers to volumes to be mounted in `stash` sidecar to get access to fileGroup paths.
+
 ## Restic Status
 Stash operator updates `.status` of a Restic tpr every time a backup operation is completed. 
 
