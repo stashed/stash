@@ -97,24 +97,10 @@ spec:
 You can find the full working demo in [examples folder](/docs/examples/workloads/statefulset.yaml). The section you should change for your own StatefulSet are:
  - `--restic-name` flag should be set to the name of the Restic used as configuration.
  - `--workload` flag points to "Kind/Name" of workload where sidecar pod is added. Here are some examples:
-   - Deployment: Deployments/abc, Deployment/abc, deployments/abc, deployment/abc 
-   - ReplicaSet:
-   - RepliationController:
-   - DaemonSet:
-   - StatefulSet:
+   - Deployment: Deployments/xyz, Deployment/xyz, deployments/xyz, deployment/xyz 
+   - ReplicaSet: ReplicaSets/xyz, ReplicaSet/xyz, replicasets/xyz, replicaset/xyz, rs/xyz
+   - RepliationController: ReplicationControllers/xyz, ReplicationController/xyz, replicationcontrollers/xyz, replicationcontroller/xyz, rc/xyz
+   - DaemonSet: StatefulSets/xyz, StatefulSet/xyz
+   - StatefulSet: DaemonSets/xyz, DaemonSet/xyz, daemonsets/xyz, daemonset/xyz
 
 To learn about the meaning of various flags, please visit [here](/docs/reference/stash_schedule.md).
-
-
-
-
-
-			case "ReplicaSets", "ReplicaSet", "replicasets", "replicaset", "rs":
-			case "ReplicationControllers", "ReplicationController", "replicationcontrollers", "replicationcontroller", "rc":
-			case "StatefulSets", "StatefulSet":
-			case "DaemonSets", "DaemonSet", "daemonsets", "daemonset":
-        
-
-
-
-
