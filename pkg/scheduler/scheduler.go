@@ -103,7 +103,9 @@ func (c *Scheduler) Setup() error {
 		return err
 	}
 	c.resticCLI.DumpEnv()
-	return c.resticCLI.InitRepositoryIfAbsent()
+	// ignore error but helps debug bad setup.
+	c.resticCLI.InitRepositoryIfAbsent()
+	return nil
 }
 
 func (c *Scheduler) RunAndHold() {
