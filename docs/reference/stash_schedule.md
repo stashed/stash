@@ -19,7 +19,7 @@ stash schedule [flags]
       --kubeconfig string        Path to kubeconfig file with authorization information (the master location is set by the master flag).
       --master string            The address of the Kubernetes API server (overrides any value in kubeconfig)
       --pushgateway-url string   URL of Prometheus pushgateway used to cache backup metrics (default "http://stash-operator.kube-system.svc:56789")
-      --restic-name string       Path to kubeconfig file with authorization information (the master location is set by the master flag).
+      --restic-name string       Name of the Restic used as configuration.
       --scratch-dir emptyDir     Directory used to store temporary files. Use an emptyDir in Kubernetes. (default "/tmp")
       --workload string          "Kind/Name" of workload where sidecar pod is added (eg, Deployment/apiserver)
 ```

@@ -75,20 +75,20 @@ func (w *ResticWrapper) SetupEnv(resource *sapi.Restic, secret *apiv1.Secret, au
 		}
 		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 	} else if backend.S3 != nil {
-		prefix := filepath.Join(backend.S3.Prefix, autoPrefix)
+		prefix := filepath.Join(backend.S3.Bucket, backend.S3.Prefix, autoPrefix)
 		if prefix == "" {
 			prefix = "stash"
 		}
-		r := fmt.Sprintf("s3:%s:%s:%s", backend.S3.Endpoint, backend.S3.Bucket, prefix)
+		r := fmt.Sprintf("s3:%s/%s", backend.S3.Endpoint, prefix)
 		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 		w.sh.SetEnv(AWS_ACCESS_KEY_ID, string(secret.Data[AWS_ACCESS_KEY_ID]))
 		w.sh.SetEnv(AWS_SECRET_ACCESS_KEY, string(secret.Data[AWS_SECRET_ACCESS_KEY]))
 	} else if backend.GCS != nil {
-		prefix := filepath.Join(backend.GCS.Prefix, autoPrefix)
+		prefix := filepath.Join(backend.GCS.Bucket, backend.GCS.Prefix, autoPrefix)
 		if prefix == "" {
 			prefix = "stash"
 		}
-		r := fmt.Sprintf("gs:%s:%s:%s", backend.GCS.Location, backend.GCS.Bucket, prefix)
+		r := fmt.Sprintf("gs:%s/%s", backend.GCS.Location, prefix)
 		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 		w.sh.SetEnv(GOOGLE_PROJECT_ID, string(secret.Data[GOOGLE_PROJECT_ID]))
 		jsonKeyPath := filepath.Join(w.scratchDir, "gcs_sa.json")
@@ -102,7 +102,7 @@ func (w *ResticWrapper) SetupEnv(resource *sapi.Restic, secret *apiv1.Secret, au
 		if prefix == "" {
 			prefix = "stash"
 		}
-		r := fmt.Sprintf("azure:%s:%s", backend.Azure.Container, prefix)
+		r := fmt.Sprintf("azure:%s/%s", backend.Azure.Container, prefix)
 		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 		w.sh.SetEnv(AZURE_ACCOUNT_NAME, string(secret.Data[AZURE_ACCOUNT_NAME]))
 		w.sh.SetEnv(AZURE_ACCOUNT_KEY, string(secret.Data[AZURE_ACCOUNT_KEY]))
@@ -111,7 +111,7 @@ func (w *ResticWrapper) SetupEnv(resource *sapi.Restic, secret *apiv1.Secret, au
 		if prefix == "" {
 			prefix = "stash"
 		}
-		r := fmt.Sprintf("swift:%s:%s", backend.Swift.Container, prefix)
+		r := fmt.Sprintf("swift:%s/%s", backend.Swift.Container, prefix)
 		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 		// For keystone v1 authentication
 		w.sh.SetEnv(ST_AUTH, string(secret.Data[ST_AUTH]))
