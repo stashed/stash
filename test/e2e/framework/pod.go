@@ -13,7 +13,6 @@ const (
 func (f *Invocation) PodTemplate() apiv1.PodTemplateSpec {
 	return apiv1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "busybox",
 			Labels: map[string]string{
 				"app": f.app,
 			},
