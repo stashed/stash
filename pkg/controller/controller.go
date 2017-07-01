@@ -42,6 +42,9 @@ func (c *Controller) Setup() error {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name: scs.ResourceNameRestic + "." + sapi.GroupName,
+				Labels: map[string]string{
+					"app": "stash",
+				},
 			},
 			Description: "Stash by AppsCode - Backup your Kubernetes Volumes",
 			Versions: []extensions.APIVersion{
