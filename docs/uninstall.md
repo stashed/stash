@@ -26,5 +26,5 @@ kubectl delete restic.stash.appscode.com --all --cascade=false
 
 5. Delete the old TPR-registration.
 ```sh
-kubectl delete thirdpartyresource restic.stash.appscode.com
+kubectl delete thirdpartyresource -l app=stash
 ```
