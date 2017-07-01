@@ -1,7 +1,7 @@
 > New to Stash? Please start [here](/docs/tutorial.md).
 
 # Uninstall Stash
-Please follow the steps below to uninsall Stash:
+Please follow the steps below to uninstall Stash:
 
 1. Delete the deployment and service used for Stash operator.
 ```sh
