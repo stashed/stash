@@ -34,7 +34,7 @@ Once the operator pods are running, you can cancel the above command by typing `
 
 Now, to confirm TPR groups have been registered by the operator, run the following command:
 ```sh
-$ kubectl get thirdpartyresources restic.stash.appscode.com
+$ kubectl get thirdpartyresources -l app=stash
 ```
 
 Now, you are ready to [take your first backup](/docs/tutorial.md) using Stash.
