@@ -3,7 +3,7 @@
 # Stash Backends
 Backend is where `restic` stores snapshots. For any backend, a Kubernetes Secret in the same namespace is needed to provide restic repository credentials. This Secret can be configured by setting `spec.backend.repositorySecretName` field. This document lists the various supported backends for Stash and how to configure those.
 
-## Local
+### Local
 `Local` backend refers to a local path inside `stash` sidecar container. Any Kubernetes supported [persistent volume](https://kubernetes.io/docs/concepts/storage/volumes/) can be used here. Some examples are: `emptyDir` for testing, NFS, Ceph, GlusterFS, etc. To configure this backend, following secret keys are needed:
 
 | Key               | Description                                                |
@@ -79,7 +79,7 @@ spec:
 ```
 
 
-# AWS S3
+### AWS S3
 Stash supports AWS S3 service or [Minio](https://minio.io/) servers as backend. To configure this backend, following secret keys are needed:
 
 | Key                     | Description                                                |
@@ -165,7 +165,7 @@ spec:
 ```
 
 
-# Google Cloud Storage (GCS)
+### Google Cloud Storage (GCS)
 Stash supports Google Cloud Storage(GCS) as backend. To configure this backend, following secret keys are needed:
 
 | Key                               | Description                                                |
@@ -251,7 +251,7 @@ spec:
 ```
 
 
-# Microsoft Azure Storage
+### Microsoft Azure Storage
 Stash supports Microsoft Azure Storage as backend. To configure this backend, following secret keys are needed:
 
 | Key                     | Description                                                |
