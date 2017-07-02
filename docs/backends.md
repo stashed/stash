@@ -33,7 +33,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic tpr using this secret. Following parameters are availble for `Local` backend.
+Now, you can create a Restic tpr using this secret. Following parameters are available for `Local` backend.
 
 | Parameter      | Description                                                                                 |
 |----------------|---------------------------------------------------------------------------------------------|
@@ -41,7 +41,7 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 | `local.volume` | `Required`. Any Kubernetes volume                                                           |
 
 ```sh
-$ kubectl create -f ./docs/examples/backends/local/local-restic.yaml 
+$ kubectl create -f ./docs/examples/backends/local/local-restic.yaml
 restic "local-restic" created
 ```
 
@@ -118,7 +118,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic tpr using this secret. Following parameters are availble for `S3` backend.
+Now, you can create a Restic tpr using this secret. Following parameters are available for `S3` backend.
 
 | Parameter     | Description                                                                     |
 |---------------|---------------------------------------------------------------------------------|
@@ -127,7 +127,7 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 | `s3.prefix`   | `Optional`. Path prefix into bucket where repository will be created.           |
 
 ```sh
-$ kubectl create -f ./docs/examples/backends/s3/s3-restic.yaml 
+$ kubectl create -f ./docs/examples/backends/s3/s3-restic.yaml
 restic "s3-restic" created
 ```
 
@@ -204,7 +204,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic tpr using this secret. Following parameters are availble for `gcs` backend.
+Now, you can create a Restic tpr using this secret. Following parameters are available for `gcs` backend.
 
 | Parameter      | Description                                                                     |
 |----------------|---------------------------------------------------------------------------------|
@@ -213,7 +213,7 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 | `gcs.prefix`   | `Optional`. Path prefix into bucket where repository will be created.           |
 
 ```sh
-$ kubectl create -f ./docs/examples/backends/gcs/gcs-restic.yaml 
+$ kubectl create -f ./docs/examples/backends/gcs/gcs-restic.yaml
 restic "gcs-restic" created
 ```
 
@@ -290,7 +290,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic tpr using this secret. Following parameters are availble for `Azure` backend.
+Now, you can create a Restic tpr using this secret. Following parameters are available for `Azure` backend.
 
 | Parameter     | Description                                                                     |
 |---------------|---------------------------------------------------------------------------------|
@@ -298,7 +298,7 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 | `azure.prefix`    | `Optional`. Path prefix into bucket where repository will be created.       |
 
 ```sh
-$ kubectl create -f ./docs/examples/backends/azure/azure-restic.yaml 
+$ kubectl create -f ./docs/examples/backends/azure/azure-restic.yaml
 restic "azure-restic" created
 ```
 
