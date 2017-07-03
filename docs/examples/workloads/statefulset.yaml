@@ -91,7 +91,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.name
-        image: appscode/stash:0.2.0
+        image: appscode/stash:0.3.0
         imagePullPolicy: IfNotPresent
         name: stash
         volumeMounts:
