@@ -251,6 +251,7 @@ spec:
 ```
 
 
+
 ### Microsoft Azure Storage
 Stash supports Microsoft Azure Storage as backend. To configure this backend, following secret keys are needed:
 
@@ -328,6 +329,118 @@ spec:
       container: stashqa
       prefix: demo
     repositorySecretName: azure-secret
+  schedule: '@every 1m'
+  volumeMounts:
+  - mountPath: /source/data
+    name: source-data
+```
+
+
+### OpenStack Swift
+Stash supports OpenStack Swift as backend. To configure this backend, following secret keys are needed:
+
+| Key                      | Description                                                |
+|--------------------------|------------------------------------------------------------|
+| `RESTIC_PASSWORD`        | `Required`. Password used to encrypt snapshots by `restic` |
+| `ST_AUTH`                | For keystone v1 authentication                             |
+| `ST_USER`                | For keystone v1 authentication                             |
+| `ST_KEY`                 | For keystone v1 authentication                             |
+| `OS_AUTH_URL`            | For keystone v2 authentication                             |
+| `OS_REGION_NAME`         | For keystone v2 authentication                             |
+| `OS_USERNAME`            | For keystone v2 authentication                             |
+| `OS_PASSWORD`            | For keystone v2 authentication                             |
+| `OS_TENANT_ID`           | For keystone v2 authentication                             |
+| `OS_TENANT_NAME`         | For keystone v2 authentication                             |
+| `OS_AUTH_URL`            | For keystone v3 authentication                             |
+| `OS_REGION_NAME`         | For keystone v3 authentication                             |
+| `OS_USERNAME`            | For keystone v3 authentication                             |
+| `OS_PASSWORD`            | For keystone v3 authentication                             |
+| `OS_USER_DOMAIN_NAME`    | For keystone v3 authentication                             |
+| `OS_PROJECT_NAME`        | For keystone v3 authentication                             |
+| `OS_PROJECT_DOMAIN_NAME` | For keystone v3 authentication                             |
+| `OS_STORAGE_URL`         | For authentication based on tokens                         |
+| `OS_AUTH_TOKEN`          | For authentication based on tokens                         |
+
+```sh
+$ echo -n 'changeit' > RESTIC_PASSWORD
+$ echo -n '<your-auth-url>' > OS_AUTH_URL
+$ echo -n '<your-tenant-id>' > OS_TENANT_ID
+$ echo -n '<your-tenant-name>' > OS_TENANT_NAME
+$ echo -n '<your-username>' > OS_USERNAME
+$ echo -n '<your-password>' > OS_PASSWORD
+$ echo -n '<your-region>' > OS_REGION_NAME
+$ kubectl create secret generic swift-secret \
+    --from-file=./RESTIC_PASSWORD \
+    --from-file=./OS_AUTH_URL \
+    --from-file=./OS_TENANT_ID \
+    --from-file=./OS_TENANT_NAME \
+    --from-file=./OS_USERNAME \
+    --from-file=./OS_PASSWORD \
+    --from-file=./OS_REGION_NAME
+secret "swift-secret" created
+```
+
+```yaml
+$ kubectl get secret swift-secret -o yaml
+
+apiVersion: v1
+data:
+  OS_AUTH_URL: PHlvdXItYXV0aC11cmw+
+  OS_PASSWORD: PHlvdXItcGFzc3dvcmQ+
+  OS_REGION_NAME: PHlvdXItcmVnaW9uPg==
+  OS_TENANT_ID: PHlvdXItdGVuYW50LWlkPg==
+  OS_TENANT_NAME: PHlvdXItdGVuYW50LW5hbWU+
+  OS_USERNAME: PHlvdXItdXNlcm5hbWU+
+  RESTIC_PASSWORD: Y2hhbmdlaXQ=
+kind: Secret
+metadata:
+  creationTimestamp: 2017-07-03T19:17:39Z
+  name: swift-secret
+  namespace: default
+  resourceVersion: "36381"
+  selfLink: /api/v1/namespaces/default/secrets/swift-secret
+  uid: 47b4bcab-6024-11e7-879a-080027726d6b
+type: Opaque
+```
+
+Now, you can create a Restic tpr using this secret. Following parameters are available for `Swift` backend.
+
+| Parameter         | Description                                                                 |
+|-------------------|-----------------------------------------------------------------------------|
+| `swift.container` | `Required`. Name of Storage container                                       |
+| `swift.prefix`    | `Optional`. Path prefix into bucket where repository will be created.       |
+
+```sh
+$ kubectl create -f ./docs/examples/backends/swift/swift-restic.yaml
+restic "swift-restic" created
+```
+
+```yaml
+$ kubectl get restic swift-restic -o yaml
+
+apiVersion: stash.appscode.com/v1alpha1
+kind: Restic
+metadata:
+  creationTimestamp: 2017-06-28T13:31:14Z
+  name: swift-restic
+  namespace: default
+  resourceVersion: "7070"
+  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/swift-restic
+  uid: 0e8eb89b-5c06-11e7-bb52-08002711f4aa
+spec:
+  selector:
+    matchLabels:
+      app: swift-restic
+  fileGroups:
+  - path: /source/data
+    retentionPolicy:
+      keepLast: 5
+      prune: true
+  backend:
+    swift:
+      container: stashqa
+      prefix: demo
+    repositorySecretName: swift-secret
   schedule: '@every 1m'
   volumeMounts:
   - mountPath: /source/data
