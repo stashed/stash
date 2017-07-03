@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net/url"
 	"os"
 	"path/filepath"
 
@@ -120,27 +119,29 @@ func (w *ResticWrapper) SetupEnv(resource *sapi.Restic, secret *apiv1.Secret, au
 		// For authentication based on tokens
 		w.sh.SetEnv(OS_STORAGE_URL, string(secret.Data[OS_STORAGE_URL]))
 		w.sh.SetEnv(OS_AUTH_TOKEN, string(secret.Data[OS_AUTH_TOKEN]))
-	} else if backend.Rest != nil {
-		u, err := url.Parse(backend.Rest.URL)
-		if err != nil {
-			return err
-		}
-		if username, ok := secret.Data[REST_SERVER_USERNAME]; ok {
-			if password, ok := secret.Data[REST_SERVER_PASSWORD]; ok {
-				u.User = url.UserPassword(string(username), string(password))
-			} else {
-				u.User = url.User(string(username))
-			}
-		}
-		u.Path = filepath.Join(u.Path, autoPrefix) // TODO: check
-		r := fmt.Sprintf("rest:%s", u.String())
-		w.sh.SetEnv(RESTIC_REPOSITORY, r)
-	} else if backend.B2 != nil {
-		prefix := filepath.Join(backend.B2.Prefix, autoPrefix)
-		r := fmt.Sprintf("b2:%s:%s", backend.B2.Bucket, prefix)
-		w.sh.SetEnv(RESTIC_REPOSITORY, r)
-		w.sh.SetEnv(B2_ACCOUNT_ID, string(secret.Data[B2_ACCOUNT_ID]))
-		w.sh.SetEnv(B2_ACCOUNT_KEY, string(secret.Data[B2_ACCOUNT_KEY]))
+		/*
+			} else if backend.Rest != nil {
+				u, err := url.Parse(backend.Rest.URL)
+				if err != nil {
+					return err
+				}
+				if username, ok := secret.Data[REST_SERVER_USERNAME]; ok {
+					if password, ok := secret.Data[REST_SERVER_PASSWORD]; ok {
+						u.User = url.UserPassword(string(username), string(password))
+					} else {
+						u.User = url.User(string(username))
+					}
+				}
+				u.Path = filepath.Join(u.Path, autoPrefix) // TODO: check
+				r := fmt.Sprintf("rest:%s", u.String())
+				w.sh.SetEnv(RESTIC_REPOSITORY, r)
+			} else if backend.B2 != nil {
+				prefix := filepath.Join(backend.B2.Prefix, autoPrefix)
+				r := fmt.Sprintf("b2:%s:%s", backend.B2.Bucket, prefix)
+				w.sh.SetEnv(RESTIC_REPOSITORY, r)
+				w.sh.SetEnv(B2_ACCOUNT_ID, string(secret.Data[B2_ACCOUNT_ID]))
+				w.sh.SetEnv(B2_ACCOUNT_KEY, string(secret.Data[B2_ACCOUNT_KEY]))
+		*/
 	}
 	return nil
 }
