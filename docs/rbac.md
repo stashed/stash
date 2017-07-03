@@ -53,7 +53,7 @@ subjects:
   namespace: default
 ```
 
-You can find full working examples [here](./docs/examples/workloads).
+You can find full working examples [here](/docs/examples/workloads).
 
 
 Further discussion is ongoing whether Stash should automatically configure RBAC for workload service accounts. Please give your feedback [here](https://github.com/appscode/stash/issues/123).
