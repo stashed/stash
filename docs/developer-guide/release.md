@@ -8,7 +8,7 @@ The following steps must be done from a Linux x64 bit machine.
 - Build and push stash docker image:
 ```sh
 $ cd ~/go/src/github.com/appscode/stash
-./hack/docker/stash/setup.sh; env APPSCODE_ENV=prod ./hack/docker/stash/setup.sh release
+./hack/docker/setup.sh; env APPSCODE_ENV=prod ./hack/docker/setup.sh release
 ```
 
 - Now, update the release notes in Github. See previous release notes to get an idea what to include there.
