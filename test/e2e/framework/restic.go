@@ -84,9 +84,8 @@ func (f *Invocation) ResticForGCSBackend() sapi.Restic {
 	r.Spec.Backend = sapi.Backend{
 		RepositorySecretName: "",
 		GCS: &sapi.GCSSpec{
-			Location: "us-west1",
-			Bucket:   "stash-qa",
-			Prefix:   f.app,
+			Bucket: "stash-qa",
+			Prefix: f.app,
 		},
 	}
 	return r
