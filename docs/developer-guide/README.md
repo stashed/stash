@@ -55,7 +55,7 @@ $ docker push <image>:<tag>
 
 #### Generate CLI Reference Docs
 ```sh
-$ ./hack/gendocs/make.sh 
+$ ./hack/gendocs/make.sh
 ```
 
 ### Testing Stash
@@ -69,3 +69,5 @@ Stash uses [Ginkgo](http://onsi.github.io/ginkgo/) to run e2e tests.
 ```sh
 $ ./hack/make.py test e2e
 ```
+
+To run e2e tests against remote backends, you need to set cloud provider credentials in `./hack/config/.env`. You can see an example file in `./hack/config/.env.example`.
