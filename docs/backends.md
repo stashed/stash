@@ -251,6 +251,7 @@ spec:
 ```
 
 
+
 ### Microsoft Azure Storage
 Stash supports Microsoft Azure Storage as backend. To configure this backend, following secret keys are needed:
 
@@ -296,6 +297,44 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 |---------------|---------------------------------------------------------------------------------|
 | `azure.container` | `Required`. Name of Storage container                                       |
 | `azure.prefix`    | `Optional`. Path prefix into bucket where repository will be created.       |
+
+```sh
+$ kubectl create -f ./docs/examples/backends/azure/azure-restic.yaml
+restic "azure-restic" created
+```
+
+```yaml
+$ kubectl get restic azure-restic -o yaml
+
+apiVersion: stash.appscode.com/v1alpha1
+kind: Restic
+metadata:
+  creationTimestamp: 2017-06-28T13:31:14Z
+  name: azure-restic
+  namespace: default
+  resourceVersion: "7070"
+  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/azure-restic
+  uid: 0e8eb89b-5c06-11e7-bb52-08002711f4aa
+spec:
+  selector:
+    matchLabels:
+      app: azure-restic
+  fileGroups:
+  - path: /source/data
+    retentionPolicy:
+      keepLast: 5
+      prune: true
+  backend:
+    azure:
+      container: stashqa
+      prefix: demo
+    repositorySecretName: azure-secret
+  schedule: '@every 1m'
+  volumeMounts:
+  - mountPath: /source/data
+    name: source-data
+```
+
 
 ### OpenStack Swift
 Stash supports OpenStack Swift as backend. To configure this backend, following secret keys are needed:
