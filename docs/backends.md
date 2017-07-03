@@ -339,43 +339,71 @@ spec:
 ### OpenStack Swift
 Stash supports OpenStack Swift as backend. To configure this backend, following secret keys are needed:
 
-| Key                     | Description                                                |
-|-------------------------|------------------------------------------------------------|
-| `RESTIC_PASSWORD`       | `Required`. Password used to encrypt snapshots by `restic` |
-| `AZURE_ACCOUNT_NAME`    | `Required`. Azure Storage account name                     |
-| `AZURE_ACCOUNT_KEY`     | `Required`. Azure Storage account key                      |
+| Key                      | Description                                                |
+|--------------------------|------------------------------------------------------------|
+| `RESTIC_PASSWORD`        | `Required`. Password used to encrypt snapshots by `restic` |
+| `ST_AUTH`                | For keystone v1 authentication                             |
+| `ST_USER`                | For keystone v1 authentication                             |
+| `ST_KEY`                 | For keystone v1 authentication                             |
+| `OS_AUTH_URL`            | For keystone v2 authentication                             |
+| `OS_REGION_NAME`         | For keystone v2 authentication                             |
+| `OS_USERNAME`            | For keystone v2 authentication                             |
+| `OS_PASSWORD`            | For keystone v2 authentication                             |
+| `OS_TENANT_ID`           | For keystone v2 authentication                             |
+| `OS_TENANT_NAME`         | For keystone v2 authentication                             |
+| `OS_AUTH_URL`            | For keystone v3 authentication                             |
+| `OS_REGION_NAME`         | For keystone v3 authentication                             |
+| `OS_USERNAME`            | For keystone v3 authentication                             |
+| `OS_PASSWORD`            | For keystone v3 authentication                             |
+| `OS_USER_DOMAIN_NAME`    | For keystone v3 authentication                             |
+| `OS_PROJECT_NAME`        | For keystone v3 authentication                             |
+| `OS_PROJECT_DOMAIN_NAME` | For keystone v3 authentication                             |
+| `OS_STORAGE_URL`         | For authentication based on tokens                         |
+| `OS_AUTH_TOKEN`          | For authentication based on tokens                         |
 
 ```sh
 $ echo -n 'changeit' > RESTIC_PASSWORD
-$ echo -n '<your-azure-storage-account-name>' > AZURE_ACCOUNT_NAME
-$ echo -n '<your-azure-storage-account-key>' > AZURE_ACCOUNT_KEY
-$ kubectl create secret generic azure-secret \
+$ echo -n '<your-auth-url>' > OS_AUTH_URL
+$ echo -n '<your-tenant-id>' > OS_TENANT_ID
+$ echo -n '<your-tenant-name>' > OS_TENANT_NAME
+$ echo -n '<your-username>' > OS_USERNAME
+$ echo -n '<your-password>' > OS_PASSWORD
+$ echo -n '<your-region>' > OS_REGION_NAME
+$ kubectl create secret generic swift-secret \
     --from-file=./RESTIC_PASSWORD \
-    --from-file=./AZURE_ACCOUNT_NAME \
-    --from-file=./AZURE_ACCOUNT_KEY
-secret "azure-secret" created
+    --from-file=./OS_AUTH_URL \
+    --from-file=./OS_TENANT_ID \
+    --from-file=./OS_TENANT_NAME \
+    --from-file=./OS_USERNAME \
+    --from-file=./OS_PASSWORD \
+    --from-file=./OS_REGION_NAME
+secret "swift-secret" created
 ```
 
 ```yaml
-$ kubectl get secret azure-secret -o yaml
+$ kubectl get secret swift-secret -o yaml
 
 apiVersion: v1
 data:
-  AZURE_ACCOUNT_KEY: PHlvdXItYXp1cmUtc3RvcmFnZS1hY2NvdW50LWtleT4=
-  AZURE_ACCOUNT_NAME: PHlvdXItYXp1cmUtc3RvcmFnZS1hY2NvdW50LW5hbWU+
+  OS_AUTH_URL: PHlvdXItYXV0aC11cmw+
+  OS_PASSWORD: PHlvdXItcGFzc3dvcmQ+
+  OS_REGION_NAME: PHlvdXItcmVnaW9uPg==
+  OS_TENANT_ID: PHlvdXItdGVuYW50LWlkPg==
+  OS_TENANT_NAME: PHlvdXItdGVuYW50LW5hbWU+
+  OS_USERNAME: PHlvdXItdXNlcm5hbWU+
   RESTIC_PASSWORD: Y2hhbmdlaXQ=
 kind: Secret
 metadata:
-  creationTimestamp: 2017-06-28T13:27:16Z
-  name: azure-secret
+  creationTimestamp: 2017-07-03T19:17:39Z
+  name: swift-secret
   namespace: default
-  resourceVersion: "6809"
-  selfLink: /api/v1/namespaces/default/secrets/azure-secret
-  uid: 80f658d1-5c05-11e7-bb52-08002711f4aa
+  resourceVersion: "36381"
+  selfLink: /api/v1/namespaces/default/secrets/swift-secret
+  uid: 47b4bcab-6024-11e7-879a-080027726d6b
 type: Opaque
 ```
 
-Now, you can create a Restic tpr using this secret. Following parameters are available for `Azure` backend.
+Now, you can create a Restic tpr using this secret. Following parameters are available for `Swift` backend.
 
 | Parameter         | Description                                                                 |
 |-------------------|-----------------------------------------------------------------------------|
