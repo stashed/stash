@@ -23,10 +23,11 @@ rules:
 - apiGroups:
   - apps
   resources:
-  - replicasets
+  - deployments
   verbs: ["list", "watch", "update"]
 - apiGroups: [""]
   resources:
+  - namespaces
   - replicationcontrollers
   verbs: ["list", "watch", "update"]
 - apiGroups: [""]
