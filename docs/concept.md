@@ -39,7 +39,7 @@ spec:
 The `.spec` section has 4 main parts:
 
 ### .spec.selector
-`.spec.selector` is a required field that specifies a [label selector](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) for the Deployments, ReplicaSets, ReplicatinControllers, DaemonSets and StatefulSets targeted by this Restic. Selectors are always matched against the labels of Deployments, ReplicaSets, ReplicatinControllers, DaemonSets and StatefulSets in the same namespace as Restic object itself. You can create Deployment, etc and its matching Restic is any order. As long as the labels match, Stash operator will add sidecar container to the workload.
+`.spec.selector` is a required field that specifies a [label selector](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) for the Deployments, ReplicaSets, ReplicatinControllers, DaemonSets and StatefulSets targeted by this Restic. Selectors are always matched against the labels of Deployments, ReplicaSets, ReplicatinControllers, DaemonSets and StatefulSets in the same namespace as Restic object itself. You can create Deployment, etc and its matching Restic is any order. As long as the labels match, Stash operator will add sidecar container to the workload.  If multiple `Restic` objects are matched to a given workload, Stash operator will error out and avoid adding sidecar container.
 
 ### spec.fileGroups
 `spec.fileGroups` is a required field that specifies one or more directories that are backed up by [restic](https://github.com/restic/restic). For each directory, you can specify custom tags and retention policy for snapshots.

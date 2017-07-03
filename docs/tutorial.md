@@ -113,7 +113,7 @@ spec:
 ```
 
 Here,
- - `spec.selector` is used to select workloads upon which this `Restic` configuration will be applied. `Restic` always selects workloads in the same Kubernetes namespace. In this tutorial, labels of `busybox` Deployment match this `Restic`'s selectors.
+ - `spec.selector` is used to select workloads upon which this `Restic` configuration will be applied. `Restic` always selects workloads in the same Kubernetes namespace. In this tutorial, labels of `busybox` Deployment match this `Restic`'s selectors. If multiple `Restic` objects are matched to a given workload, Stash operator will error out and avoid adding sidecar container.
  - `spec.fileGroups` indicates an array of local paths that will be backed up using restic. For each path, users can also define the retention policy for old snapshots. Here, we are backing up the `/source/data` folder and only keeping the last 5 snapshots.
  - `spec.backend.local` indicates that restic will store the snapshots in a local path `/safe/data`. For the purpose of this tutorial, we are using an `emptyDir` to store the snapshots. But any Kubernetes volume that can be mounted locally can be used as a backend (example, NFS, Ceph, etc). Stash can also store snapshots in cloud storage solutions like, S3, GCS, Azure, etc.
   - `spec.backend.repositorySecretName` points to the Kubernetes secret created earlier in this tutorial. `Restic` always points to secrets in its own namespace. This secret is used to pass restic repository password and other cloud provider secrets to `restic` binary.
