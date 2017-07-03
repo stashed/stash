@@ -23,10 +23,11 @@ rules:
 - apiGroups:
   - apps
   resources:
-  - replicasets
+  - deployments
   verbs: ["list", "watch", "update"]
 - apiGroups: [""]
   resources:
+  - namespaces
   - replicationcontrollers
   verbs: ["list", "watch", "update"]
 - apiGroups: [""]
@@ -126,3 +127,34 @@ spec:
     targetPort: http
   selector:
     app: stash
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: stash-sidecar
+  labels:
+    app: stash
+rules:
+- apiGroups:
+  - stash.appscode.com
+  resources: ["*"]
+  verbs: ["*"]
+- apiGroups:
+  - extensions
+  resources:
+  - deployments
+  - daemonsets
+  - replicasets
+  verbs: ["get"]
+- apiGroups: [""]
+  resources:
+  - replicationcontrollers
+  verbs: ["*"]
+- apiGroups: [""]
+  resources:
+  - secrets
+  verbs: ["get"]
+- apiGroups: [""]
+  resources:
+  - events
+  verbs: ["create"]
