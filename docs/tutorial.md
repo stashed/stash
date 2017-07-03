@@ -337,5 +337,6 @@ If you would like to uninstall Stash operator, please follow the steps [here](/d
 - See the list of supported backends and how to configure them [here](/docs/backends.md).
 - See working examples for supported workload types [here](/docs/workloads.md).
 - Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/monitoring.md).
+- Learn about how to configure [RBAC roles](/docs/rbac.md).
 - Wondering what features are coming next? Please visit [here](/ROADMAP.md). 
 - Want to hack on Stash? Check our [contribution guidelines](/CONTRIBUTING.md).
