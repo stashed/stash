@@ -95,7 +95,7 @@ func (f *Invocation) SecretForAzureBackend() apiv1.Secret {
 
 func (f *Invocation) SecretForSwiftBackend() apiv1.Secret {
 	if os.Getenv(cli.OS_AUTH_URL) == "" ||
-		( os.Getenv(cli.OS_TENANT_ID) == "" && os.Getenv(cli.OS_TENANT_NAME) == "" ) ||
+		(os.Getenv(cli.OS_TENANT_ID) == "" && os.Getenv(cli.OS_TENANT_NAME) == "") ||
 		os.Getenv(cli.OS_USERNAME) == "" ||
 		os.Getenv(cli.OS_PASSWORD) == "" {
 		return apiv1.Secret{}
