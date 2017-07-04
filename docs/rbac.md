@@ -35,7 +35,7 @@ rules:
   verbs: ["create"]
 ```
 
-`stash-sidecar` ClusterRole will be automatically created, if you installed Stash using one of the documented methods [here](/docs/install.md).
+Create `stash-sidecar` ClusterRole, if it is not already present.
 
 Now, create a RoleBinding for service account used to a workload.
 ```yaml

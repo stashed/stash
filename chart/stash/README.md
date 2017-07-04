@@ -54,14 +54,14 @@ The following tables lists the configurable parameters of the Stash chart and th
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example:
 
 ```bash
-$ helm install --name my-release --set image.tag=v0.2.1 stable/stash
+$ helm install --name my-release --set image.tag=v0.2.1 chart/stash
 ```
 
 Alternatively, a YAML file that specifies the values for the parameters can be provided while
 installing the chart. For example:
 
 ```bash
-$ helm install --name my-release --values values.yaml stable/stash
+$ helm install --name my-release --values values.yaml chart/stash
 ```
 
 ## RBAC
@@ -86,7 +86,7 @@ If the output contains "beta" or both "alpha" and "beta" you can may install wit
 To enable the creation of RBAC resources (On clusters with RBAC). Do the following:
 
 ```console
-$ helm install --name my-release stable/stash --set rbac.install=true
+$ helm install --name my-release chart/stash --set rbac.install=true
 ```
 
 ### Changing RBAC manifest apiVersion
@@ -94,5 +94,5 @@ $ helm install --name my-release stable/stash --set rbac.install=true
 By default the RBAC resources are generated with the "v1beta1" apiVersion. To use "v1alpha1" do the following:
 
 ```console
-$ helm install --name my-release stable/stash --set rbac.install=true,rbac.apiVersion=v1alpha1
+$ helm install --name my-release chart/stash --set rbac.install=true,rbac.apiVersion=v1alpha1
 ```
