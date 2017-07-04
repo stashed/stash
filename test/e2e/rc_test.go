@@ -220,6 +220,15 @@ var _ = Describe("ReplicationController", func() {
 			It(`should backup new ReplicationController`, shouldBackupNewReplicationController)
 			It(`should backup existing ReplicationController`, shouldBackupExistingReplicationController)
 		})
+
+		Context(`"Swift" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForSwiftBackend()
+				restic = f.ResticForSwiftBackend()
+			})
+			It(`should backup new ReplicationController`, shouldBackupNewReplicationController)
+			It(`should backup existing ReplicationController`, shouldBackupExistingReplicationController)
+		})
 	})
 
 	Describe("Changing ReplicationController labels", func() {
@@ -282,6 +291,14 @@ var _ = Describe("ReplicationController", func() {
 			BeforeEach(func() {
 				cred = f.SecretForAzureBackend()
 				restic = f.ResticForAzureBackend()
+			})
+			It(`should stop backup`, shouldStopBackup)
+		})
+
+		Context(`"Swift" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForSwiftBackend()
+				restic = f.ResticForSwiftBackend()
 			})
 			It(`should stop backup`, shouldStopBackup)
 		})

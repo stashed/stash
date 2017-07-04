@@ -103,6 +103,18 @@ func (f *Invocation) ResticForAzureBackend() sapi.Restic {
 	return r
 }
 
+func (f *Invocation) ResticForSwiftBackend() sapi.Restic {
+	r := f._restic()
+	r.Spec.Backend = sapi.Backend{
+		RepositorySecretName: "",
+		Swift: &sapi.SwiftSpec{
+			Container: "stash-qa",
+			Prefix:    f.app,
+		},
+	}
+	return r
+}
+
 func (f *Framework) CreateRestic(obj sapi.Restic) error {
 	_, err := f.stashClient.Restics(obj.Namespace).Create(&obj)
 	return err

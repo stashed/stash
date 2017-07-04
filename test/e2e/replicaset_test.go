@@ -221,6 +221,15 @@ var _ = Describe("ReplicaSet", func() {
 			It(`should backup new ReplicaSet`, shouldBackupNewReplicaSet)
 			It(`should backup existing ReplicaSet`, shouldBackupExistingReplicaSet)
 		})
+
+		Context(`"Swift" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForSwiftBackend()
+				restic = f.ResticForSwiftBackend()
+			})
+			It(`should backup new ReplicaSet`, shouldBackupNewReplicaSet)
+			It(`should backup existing ReplicaSet`, shouldBackupExistingReplicaSet)
+		})
 	})
 
 	Describe("Changing ReplicaSet labels", func() {
@@ -283,6 +292,14 @@ var _ = Describe("ReplicaSet", func() {
 			BeforeEach(func() {
 				cred = f.SecretForAzureBackend()
 				restic = f.ResticForAzureBackend()
+			})
+			It(`should stop backup`, shouldStopBackup)
+		})
+
+		Context(`"Swift" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForSwiftBackend()
+				restic = f.ResticForSwiftBackend()
 			})
 			It(`should stop backup`, shouldStopBackup)
 		})
