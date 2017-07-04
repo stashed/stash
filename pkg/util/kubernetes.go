@@ -248,6 +248,7 @@ func CreateSidecarContainer(r *rapi.Restic, tag, workload string) apiv1.Containe
 				},
 			},
 		},
+		Resources: r.Spec.Resources,
 		VolumeMounts: []apiv1.VolumeMount{
 			{
 				Name:      ScratchDirVolumeName,

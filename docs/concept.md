@@ -81,6 +81,9 @@ When workloads use more than one replicas, the `restic` repository path needs to
  - `PodName` option adds Pod name to backend prefix for any type of workload.
  - `None` option uses user provided backend prefix unchanged for any type of workload.
 
+### spec.resources
+`spec.resources` refers to compute resources required by the `stash` sidecar container. To learn more, visit [here](http://kubernetes.io/docs/user-guide/compute-resources/).
+
 ### spec.volumeMounts
 `spec.volumeMounts` refers to volumes to be mounted in `stash` sidecar to get access to fileGroup paths.
 

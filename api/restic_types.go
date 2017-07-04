@@ -20,6 +20,8 @@ type ResticSpec struct {
 	UseAutoPrefix PrefixType           `json:"useAutoPrefix,omitempty"`
 	// Pod volumes to mount into the sidecar container's filesystem.
 	VolumeMounts []apiv1.VolumeMount `json:"volumeMounts,omitempty"`
+	// Compute Resources required by the sidecar container.
+	Resources apiv1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 type ResticStatus struct {
