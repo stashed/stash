@@ -221,6 +221,15 @@ var _ = Describe("DaemonSet", func() {
 			It(`should backup new DaemonSet`, shouldBackupNewDaemonSet)
 			It(`should backup existing DaemonSet`, shouldBackupExistingDaemonSet)
 		})
+
+		Context(`"Swift" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForSwiftBackend()
+				restic = f.ResticForSwiftBackend()
+			})
+			It(`should backup new DaemonSet`, shouldBackupNewDaemonSet)
+			It(`should backup existing DaemonSet`, shouldBackupExistingDaemonSet)
+		})
 	})
 
 	Describe("Changing DaemonSet labels", func() {
@@ -283,6 +292,14 @@ var _ = Describe("DaemonSet", func() {
 			BeforeEach(func() {
 				cred = f.SecretForAzureBackend()
 				restic = f.ResticForAzureBackend()
+			})
+			It(`should stop backup`, shouldStopBackup)
+		})
+
+		Context(`"Swift" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForSwiftBackend()
+				restic = f.ResticForSwiftBackend()
 			})
 			It(`should stop backup`, shouldStopBackup)
 		})

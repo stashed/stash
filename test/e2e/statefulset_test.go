@@ -103,5 +103,13 @@ var _ = Describe("StatefulSet", func() {
 			})
 			It(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
 		})
+
+		Context(`"Swift" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForSwiftBackend()
+				restic = f.ResticForSwiftBackend()
+			})
+			It(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
+		})
 	})
 })

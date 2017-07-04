@@ -93,6 +93,31 @@ func (f *Invocation) SecretForAzureBackend() apiv1.Secret {
 	}
 }
 
+func (f *Invocation) SecretForSwiftBackend() apiv1.Secret {
+	if os.Getenv(cli.OS_AUTH_URL) == "" ||
+		(os.Getenv(cli.OS_TENANT_ID) == "" && os.Getenv(cli.OS_TENANT_NAME) == "") ||
+		os.Getenv(cli.OS_USERNAME) == "" ||
+		os.Getenv(cli.OS_PASSWORD) == "" {
+		return apiv1.Secret{}
+	}
+
+	return apiv1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rand.WithUniqSuffix(f.app + "-swift"),
+			Namespace: f.namespace,
+		},
+		Data: map[string][]byte{
+			cli.RESTIC_PASSWORD: []byte(TEST_RESTIC_PASSWORD),
+			cli.OS_AUTH_URL:     []byte(os.Getenv(cli.OS_AUTH_URL)),
+			cli.OS_TENANT_ID:    []byte(os.Getenv(cli.OS_TENANT_ID)),
+			cli.OS_TENANT_NAME:  []byte(os.Getenv(cli.OS_TENANT_NAME)),
+			cli.OS_USERNAME:     []byte(os.Getenv(cli.OS_USERNAME)),
+			cli.OS_PASSWORD:     []byte(os.Getenv(cli.OS_PASSWORD)),
+			cli.OS_REGION_NAME:  []byte(os.Getenv(cli.OS_REGION_NAME)),
+		},
+	}
+}
+
 // TODO: Add more methods for Swift, Backblaze B2, Rest server backend.
 
 func (f *Framework) CreateSecret(obj apiv1.Secret) error {
