@@ -47,11 +47,6 @@ type FileGroup struct {
 	RetentionPolicy RetentionPolicy `json:"retentionPolicy,omitempty"`
 }
 
-type Source struct {
-	VolumeName string `json:"volumeName,omitempty"`
-	Path       string `json:"path,omitempty"`
-}
-
 type Backend struct {
 	RepositorySecretName string `json:"repositorySecretName,omitempty"`
 
