@@ -14,6 +14,20 @@ const (
 	None
 )
 
+func (m PrefixType) String() string {
+	switch m {
+	case Smart:
+		return "Smart"
+	case NodeName:
+		return "NodeName"
+	case PodName:
+		return "PodName"
+	case None:
+		return "None"
+	}
+	return "<invalid>"
+}
+
 func (m PrefixType) MarshalJSON() ([]byte, error) {
 	switch m {
 	case Smart:
