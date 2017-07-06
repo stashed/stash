@@ -113,3 +113,5 @@ To stop taking backup, you can do 2 things:
 
 ## Restore Backup
 No special support is required to restore backups taken via Stash. Just run the standard `restic restore` command to restore files from backends. To learn more please visit [here](https://restic.readthedocs.io/en/latest/manual.html#restore-a-snapshot).
+
+NB: We are gathering ideas of how to improve the UX for recovery process. Please share your ideas/use-cases [here](https://github.com/appscode/stash/issues/131).
