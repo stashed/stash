@@ -17,7 +17,7 @@ $ curl https://raw.githubusercontent.com/appscode/stash/0.3.1/hack/deploy/stash-
 ```
 
 ## Using Helm
-Stash can be installed via [Helm](https://helm.sh/) using the [chart](/chart/stash) included in this repository. To install the chart with the release name `my-release`:
+Stash can be installed via [Helm](https://helm.sh/) using the [chart](/chart/stash) included in this repository or from official charts repository. To install the chart with the release name `my-release`:
 ```bash
 $ helm install chart/stash --name my-release
 ```
