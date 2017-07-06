@@ -23,6 +23,7 @@ import (
 const (
 	StashContainer = "stash"
 
+	LocalVolumeName      = "stash-local"
 	ScratchDirVolumeName = "stash-scratchdir"
 	PodinfoVolumeName    = "stash-podinfo"
 )
@@ -276,7 +277,7 @@ func CreateSidecarContainer(r *rapi.Restic, tag, workload string) apiv1.Containe
 	}
 	if r.Spec.Backend.Local != nil {
 		sidecar.VolumeMounts = append(sidecar.VolumeMounts, apiv1.VolumeMount{
-			Name:      r.Spec.Backend.Local.Volume.Name,
+			Name:      LocalVolumeName,
 			MountPath: r.Spec.Backend.Local.Path,
 		})
 	}
@@ -344,7 +345,7 @@ func MergeLocalVolume(volumes []apiv1.Volume, old, new *sapi.Restic) []apiv1.Vol
 	oldPos := -1
 	if old != nil && old.Spec.Backend.Local != nil {
 		for i, vol := range volumes {
-			if vol.Name == old.Spec.Backend.Local.Volume.Name {
+			if vol.Name == LocalVolumeName {
 				oldPos = i
 				break
 			}
@@ -352,9 +353,9 @@ func MergeLocalVolume(volumes []apiv1.Volume, old, new *sapi.Restic) []apiv1.Vol
 	}
 	if new.Spec.Backend.Local != nil {
 		if oldPos != -1 {
-			volumes[oldPos] = new.Spec.Backend.Local.Volume
+			volumes[oldPos] = apiv1.Volume{Name: LocalVolumeName, VolumeSource: new.Spec.Backend.Local.Volume}
 		} else {
-			volumes = UpsertVolume(volumes, new.Spec.Backend.Local.Volume)
+			volumes = UpsertVolume(volumes, apiv1.Volume{Name: LocalVolumeName, VolumeSource: new.Spec.Backend.Local.Volume})
 		}
 	} else {
 		if oldPos != -1 {
