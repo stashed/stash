@@ -175,7 +175,7 @@ func (c *Controller) EnsureDeploymentExtensionSidecarDeleted(resource *extension
 		resource.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(resource.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		resource.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(resource.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
 		if restic.Spec.Backend.Local != nil {
-			resource.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(resource.Spec.Template.Spec.Volumes, restic.Spec.Backend.Local.Volume.Name)
+			resource.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(resource.Spec.Template.Spec.Volumes, util.LocalVolumeName)
 		}
 		if resource.Annotations != nil {
 			delete(resource.Annotations, sapi.ConfigName)
