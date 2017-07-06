@@ -82,7 +82,7 @@ func (w *ResticWrapper) SetupEnv(resource *sapi.Restic, secret *apiv1.Secret, au
 		w.sh.SetEnv(AWS_SECRET_ACCESS_KEY, string(secret.Data[AWS_SECRET_ACCESS_KEY]))
 	} else if backend.GCS != nil {
 		prefix := strings.TrimPrefix(filepath.Join(backend.GCS.Prefix, autoPrefix), "/")
-		r := fmt.Sprintf("gs:%s/%s", backend.GCS.Bucket, prefix)
+		r := fmt.Sprintf("gs:%s:/%s", backend.GCS.Bucket, prefix)
 		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 		w.sh.SetEnv(GOOGLE_PROJECT_ID, string(secret.Data[GOOGLE_PROJECT_ID]))
 		jsonKeyPath := filepath.Join(w.scratchDir, "gcs_sa.json")
@@ -93,7 +93,7 @@ func (w *ResticWrapper) SetupEnv(resource *sapi.Restic, secret *apiv1.Secret, au
 		w.sh.SetEnv(GOOGLE_APPLICATION_CREDENTIALS, jsonKeyPath)
 	} else if backend.Azure != nil {
 		prefix := strings.TrimPrefix(filepath.Join(backend.Azure.Prefix, autoPrefix), "/")
-		r := fmt.Sprintf("azure:%s/%s", backend.Azure.Container, prefix)
+		r := fmt.Sprintf("azure:%s:/%s", backend.Azure.Container, prefix)
 		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 		w.sh.SetEnv(AZURE_ACCOUNT_NAME, string(secret.Data[AZURE_ACCOUNT_NAME]))
 		w.sh.SetEnv(AZURE_ACCOUNT_KEY, string(secret.Data[AZURE_ACCOUNT_KEY]))
