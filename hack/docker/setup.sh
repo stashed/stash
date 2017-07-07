@@ -15,6 +15,7 @@ source "$REPO_ROOT/hack/libbuild/common/public_image.sh"
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
 IMG=stash
 RESTIC_VER=${RESTIC_VER:-SOURCE}
+RESTIC_BRANCH=${RESTIC_BRANCH:-stash-0.4.0}
 
 DIST=$REPO_ROOT/dist
 mkdir -p $DIST
@@ -39,7 +40,7 @@ build_binary() {
         cd $DIST
         clone https://github.com/appscode/restic.git
         cd restic
-        checkout master
+        checkout $RESTIC_BRANCH
         echo "Build binary using golang docker image"
         docker run --rm -ti \
             -v `pwd`:/go/src/github.com/restic/restic \
