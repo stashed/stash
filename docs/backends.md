@@ -336,7 +336,7 @@ spec:
 
 
 ### OpenStack Swift
-Stash supports OpenStack Swift as backend. To configure this backend, following secret keys are needed:
+Stash supports [OpenStack Swift as backend](https://restic.readthedocs.io/en/stable/manual.html#openstack-swift). To configure this backend, following secret keys are needed:
 
 | Key                      | Description                                                |
 |--------------------------|------------------------------------------------------------|
