@@ -104,7 +104,6 @@ spec:
       path: /safe/data
       volumeSource:
         emptyDir: {}
-        name: safe-data
     storageSecretName: stash-demo
   schedule: '@every 1m'
   volumeMounts:
@@ -210,7 +209,7 @@ spec:
           name: source-data
           readOnly: true
         - mountPath: /safe/data
-          name: safe-data
+          name: stash-local
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
@@ -231,7 +230,7 @@ spec:
             path: labels
         name: stash-podinfo
       - emptyDir: {}
-        name: safe-data
+        name: stash-local
 status:
   conditions:
   - lastTransitionTime: 2017-06-28T08:28:37Z
@@ -280,7 +279,6 @@ spec:
       path: /safe/data
       volumeSource:
         emptyDir: {}
-        name: safe-data
     storageSecretName: stash-demo
   schedule: '@every 1m'
   volumeMounts:

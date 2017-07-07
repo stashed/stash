@@ -17,7 +17,6 @@ spec:
       path: /safe/data
       volumeSource:
         emptyDir: {}
-        name: safe-data
     storageSecretName: stash-demo
   schedule: '@every 1m'
   volumeMounts:

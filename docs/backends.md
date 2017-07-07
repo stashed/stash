@@ -70,7 +70,6 @@ spec:
       path: /repo
       volumeSource:
         emptyDir: {}
-        name: repo
     storageSecretName: local-secret
   schedule: '@every 1m'
   volumeMounts:

@@ -76,7 +76,6 @@ spec:
       path: /repo
       volumeSource:
         emptyDir: {}
-        name: repo
     storageSecretName: rc-secret
   schedule: '@every 1m'
   volumeMounts:

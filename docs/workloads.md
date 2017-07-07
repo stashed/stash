@@ -74,7 +74,7 @@ spec:
           name: source-data
           readOnly: true
         - mountPath: /safe/data
-          name: safe-data
+          name: stash-local
       restartPolicy: Always
       volumes:
       - gitRepo:
@@ -91,7 +91,7 @@ spec:
             path: labels
         name: stash-podinfo
       - emptyDir: {}
-        name: safe-data
+        name: stash-local
 ```
 
 You can find the full working demo in [examples folder](/docs/examples/workloads/statefulset.yaml). The section you should change for your own StatefulSet are:
