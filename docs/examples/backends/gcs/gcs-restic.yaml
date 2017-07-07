@@ -17,7 +17,7 @@ spec:
       location: /repo
       bucket: stash-qa
       prefix: demo
-    repositorySecretName: gcs-secret
+    storageSecretName: gcs-secret
   schedule: '@every 1m'
   volumeMounts:
   - mountPath: /source/data

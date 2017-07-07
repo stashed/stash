@@ -1,7 +1,7 @@
 > New to Stash? Please start [here](/docs/tutorial.md).
 
 # Stash Backends
-Backend is where `restic` stores snapshots. For any backend, a Kubernetes Secret in the same namespace is needed to provide restic repository credentials. This Secret can be configured by setting `spec.backend.repositorySecretName` field. This document lists the various supported backends for Stash and how to configure those.
+Backend is where `restic` stores snapshots. For any backend, a Kubernetes Secret in the same namespace is needed to provide restic repository credentials. This Secret can be configured by setting `spec.backend.storageSecretName` field. This document lists the various supported backends for Stash and how to configure those.
 
 ### Local
 `Local` backend refers to a local path inside `stash` sidecar container. Any Kubernetes supported [persistent volume](https://kubernetes.io/docs/concepts/storage/volumes/) can be used here. Some examples are: `emptyDir` for testing, NFS, Ceph, GlusterFS, etc. To configure this backend, following secret keys are needed:
@@ -71,7 +71,7 @@ spec:
       volumeSource:
         emptyDir: {}
         name: repo
-    repositorySecretName: local-secret
+    storageSecretName: local-secret
   schedule: '@every 1m'
   volumeMounts:
   - mountPath: /source/data
@@ -157,7 +157,7 @@ spec:
       endpoint: 's3.amazonaws.com'
       bucket: stash-qa
       prefix: demo
-    repositorySecretName: s3-secret
+    storageSecretName: s3-secret
   schedule: '@every 1m'
   volumeMounts:
   - mountPath: /source/data
@@ -243,7 +243,7 @@ spec:
       location: /repo
       bucket: stash-qa
       prefix: demo
-    repositorySecretName: gcs-secret
+    storageSecretName: gcs-secret
   schedule: '@every 1m'
   volumeMounts:
   - mountPath: /source/data
@@ -328,7 +328,7 @@ spec:
     azure:
       container: stashqa
       prefix: demo
-    repositorySecretName: azure-secret
+    storageSecretName: azure-secret
   schedule: '@every 1m'
   volumeMounts:
   - mountPath: /source/data
@@ -440,7 +440,7 @@ spec:
     swift:
       container: stashqa
       prefix: demo
-    repositorySecretName: swift-secret
+    storageSecretName: swift-secret
   schedule: '@every 1m'
   volumeMounts:
   - mountPath: /source/data

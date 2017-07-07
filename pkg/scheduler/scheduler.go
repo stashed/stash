@@ -90,10 +90,10 @@ func (c *Scheduler) Setup() error {
 		return err
 	}
 	log.Infof("Found restic %s", resource.Name)
-	if resource.Spec.Backend.RepositorySecretName == "" {
+	if resource.Spec.Backend.StorageSecretName == "" {
 		return errors.New("Missing repository secret name")
 	}
-	secret, err := c.kubeClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.RepositorySecretName, metav1.GetOptions{})
+	secret, err := c.kubeClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -180,7 +180,7 @@ func (c *Scheduler) RunAndHold() {
 func (c *Scheduler) configureScheduler() error {
 	r := <-c.rchan
 
-	if r.Spec.Backend.RepositorySecretName == "" {
+	if r.Spec.Backend.StorageSecretName == "" {
 		return errors.New("Missing repository secret name")
 	}
 
@@ -235,12 +235,12 @@ func (c *Scheduler) runOnce() (err error) {
 		return
 	}
 
-	if resource.Spec.Backend.RepositorySecretName == "" {
+	if resource.Spec.Backend.StorageSecretName == "" {
 		err = errors.New("Missing repository secret name")
 		return
 	}
 	var secret *apiv1.Secret
-	secret, err = c.kubeClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.RepositorySecretName, metav1.GetOptions{})
+	secret, err = c.kubeClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return
 	}

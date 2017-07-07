@@ -52,7 +52,7 @@ func (f *Invocation) _restic() sapi.Restic {
 func (f *Invocation) ResticForLocalBackend() sapi.Restic {
 	r := f._restic()
 	r.Spec.Backend = sapi.Backend{
-		RepositorySecretName: "",
+		StorageSecretName: "",
 		Local: &sapi.LocalSpec{
 			Path: "/safe/data",
 			VolumeSource: apiv1.VolumeSource{
@@ -66,7 +66,7 @@ func (f *Invocation) ResticForLocalBackend() sapi.Restic {
 func (f *Invocation) ResticForS3Backend() sapi.Restic {
 	r := f._restic()
 	r.Spec.Backend = sapi.Backend{
-		RepositorySecretName: "",
+		StorageSecretName: "",
 		S3: &sapi.S3Spec{
 			Endpoint: "s3.amazonaws.com",
 			Bucket:   "stash-qa",
@@ -79,7 +79,7 @@ func (f *Invocation) ResticForS3Backend() sapi.Restic {
 func (f *Invocation) ResticForGCSBackend() sapi.Restic {
 	r := f._restic()
 	r.Spec.Backend = sapi.Backend{
-		RepositorySecretName: "",
+		StorageSecretName: "",
 		GCS: &sapi.GCSSpec{
 			Bucket: "stash-qa",
 			Prefix: f.app,
@@ -91,7 +91,7 @@ func (f *Invocation) ResticForGCSBackend() sapi.Restic {
 func (f *Invocation) ResticForAzureBackend() sapi.Restic {
 	r := f._restic()
 	r.Spec.Backend = sapi.Backend{
-		RepositorySecretName: "",
+		StorageSecretName: "",
 		Azure: &sapi.AzureSpec{
 			Container: "stashqa",
 			Prefix:    f.app,
@@ -103,7 +103,7 @@ func (f *Invocation) ResticForAzureBackend() sapi.Restic {
 func (f *Invocation) ResticForSwiftBackend() sapi.Restic {
 	r := f._restic()
 	r.Spec.Backend = sapi.Backend{
-		RepositorySecretName: "",
+		StorageSecretName: "",
 		Swift: &sapi.SwiftSpec{
 			Container: "stash-qa",
 			Prefix:    f.app,

@@ -47,12 +47,12 @@ func ExportSnapshots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if resource.Spec.Backend.RepositorySecretName == "" {
+	if resource.Spec.Backend.StorageSecretName == "" {
 		http.Error(w, "Missing repository secret name", http.StatusBadRequest)
 		return
 	}
 	var secret *apiv1.Secret
-	secret, err = kubeClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.RepositorySecretName, metav1.GetOptions{})
+	secret, err = kubeClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return

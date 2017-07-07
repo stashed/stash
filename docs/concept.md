@@ -29,7 +29,7 @@ spec:
       volumeSource:
         emptyDir: {}
         name: safe-data
-    repositorySecretName: stash-demo
+    storageSecretName: stash-demo
   schedule: '@every 1m'
   volumeMounts:
   - mountPath: /source/data
