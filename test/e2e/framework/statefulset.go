@@ -30,7 +30,7 @@ func (f *Invocation) StatefulSet(r sapi.Restic) apps.StatefulSet {
 	resource.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(resource.Spec.Template.Spec.Volumes)
 	resource.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(resource.Spec.Template.Spec.Volumes)
 	if r.Spec.Backend.Local != nil {
-		resource.Spec.Template.Spec.Volumes = append(resource.Spec.Template.Spec.Volumes, apiv1.Volume{Name: util.LocalVolumeName, VolumeSource: r.Spec.Backend.Local.Volume})
+		resource.Spec.Template.Spec.Volumes = append(resource.Spec.Template.Spec.Volumes, apiv1.Volume{Name: util.LocalVolumeName, VolumeSource: r.Spec.Backend.Local.VolumeSource})
 	}
 	return resource
 }

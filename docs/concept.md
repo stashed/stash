@@ -26,7 +26,7 @@ spec:
   backend:
     local:
       path: /safe/data
-      volume:
+      volumeSource:
         emptyDir: {}
         name: safe-data
     repositorySecretName: stash-demo

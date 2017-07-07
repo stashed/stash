@@ -353,9 +353,9 @@ func MergeLocalVolume(volumes []apiv1.Volume, old, new *sapi.Restic) []apiv1.Vol
 	}
 	if new.Spec.Backend.Local != nil {
 		if oldPos != -1 {
-			volumes[oldPos] = apiv1.Volume{Name: LocalVolumeName, VolumeSource: new.Spec.Backend.Local.Volume}
+			volumes[oldPos] = apiv1.Volume{Name: LocalVolumeName, VolumeSource: new.Spec.Backend.Local.VolumeSource}
 		} else {
-			volumes = UpsertVolume(volumes, apiv1.Volume{Name: LocalVolumeName, VolumeSource: new.Spec.Backend.Local.Volume})
+			volumes = UpsertVolume(volumes, apiv1.Volume{Name: LocalVolumeName, VolumeSource: new.Spec.Backend.Local.VolumeSource})
 		}
 	} else {
 		if oldPos != -1 {
