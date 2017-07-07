@@ -55,7 +55,7 @@ func (f *Invocation) ResticForLocalBackend() sapi.Restic {
 		RepositorySecretName: "",
 		Local: &sapi.LocalSpec{
 			Path: "/safe/data",
-			Volume: apiv1.VolumeSource{
+			VolumeSource: apiv1.VolumeSource{
 				EmptyDir: &apiv1.EmptyDirVolumeSource{},
 			},
 		},

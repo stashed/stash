@@ -68,7 +68,7 @@ spec:
   backend:
     local:
       path: /repo
-      volume:
+      volumeSource:
         emptyDir: {}
         name: repo
     repositorySecretName: local-secret
