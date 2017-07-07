@@ -77,7 +77,7 @@ spec:
       volumeSource:
         emptyDir: {}
         name: repo
-    repositorySecretName: replicaset-secret
+    storageSecretName: replicaset-secret
   schedule: '@every 1m'
   volumeMounts:
   - mountPath: /source/data

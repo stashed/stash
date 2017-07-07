@@ -76,7 +76,7 @@ spec:
       volumeSource:
         emptyDir: {}
         name: repo
-    repositorySecretName: daemonset-secret
+    storageSecretName: daemonset-secret
   schedule: '@every 1m'
   volumeMounts:
   - mountPath: /srv/host-etc

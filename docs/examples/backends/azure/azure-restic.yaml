@@ -16,7 +16,7 @@ spec:
     azure:
       container: stashqa
       prefix: demo
-    repositorySecretName: azure-secret
+    storageSecretName: azure-secret
   schedule: '@every 1m'
   volumeMounts:
   - mountPath: /source/data

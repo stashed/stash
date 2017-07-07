@@ -17,7 +17,7 @@ spec:
       endpoint: 's3.amazonaws.com'
       bucket: stash-qa
       prefix: demo
-    repositorySecretName: s3-secret
+    storageSecretName: s3-secret
   schedule: '@every 1m'
   volumeMounts:
   - mountPath: /source/data

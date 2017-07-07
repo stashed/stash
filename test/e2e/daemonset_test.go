@@ -28,7 +28,7 @@ var _ = Describe("DaemonSet", func() {
 		if missing, _ := BeZero().Match(cred); missing {
 			Skip("Missing repository credential")
 		}
-		restic.Spec.Backend.RepositorySecretName = cred.Name
+		restic.Spec.Backend.StorageSecretName = cred.Name
 		daemon = f.DaemonSet()
 	})
 

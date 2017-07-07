@@ -48,7 +48,7 @@ type FileGroup struct {
 }
 
 type Backend struct {
-	RepositorySecretName string `json:"repositorySecretName,omitempty"`
+	StorageSecretName string `json:"storageSecretName,omitempty"`
 
 	Local *LocalSpec `json:"local"`
 	S3    *S3Spec    `json:"s3,omitempty"`

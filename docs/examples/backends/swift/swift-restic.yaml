@@ -16,7 +16,7 @@ spec:
     swift:
       container: stashqa
       prefix: demo
-    repositorySecretName: swift-secret
+    storageSecretName: swift-secret
   schedule: '@every 1m'
   volumeMounts:
   - mountPath: /source/data
