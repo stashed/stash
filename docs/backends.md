@@ -207,7 +207,6 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 
 | Parameter      | Description                                                                     |
 |----------------|---------------------------------------------------------------------------------|
-| `gcs.location` | `Required`. Name of Google Cloud region.                                        |
 | `gcs.bucket`   | `Required`. Name of Bucket                                                      |
 | `gcs.prefix`   | `Optional`. Path prefix into bucket where repository will be created.           |
 
@@ -239,7 +238,6 @@ spec:
       prune: true
   backend:
     gcs:
-      location: /repo
       bucket: stash-qa
       prefix: demo
     storageSecretName: gcs-secret
