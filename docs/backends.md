@@ -122,7 +122,7 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 | Parameter     | Description                                                                     |
 |---------------|---------------------------------------------------------------------------------|
 | `s3.endpoint` | `Required`. For S3, use `s3.amazonaws.com`. If your bucket is in a different location, S3 server (s3.amazonaws.com) will redirect restic to the correct endpoint. For an S3-compatible server that is not Amazon (like Minio), or is only available via HTTP, you can specify the endpoint like this: `http://server:port`. |
-| `s3.bucket`   | `Required`. Name of Bucket                                                      |
+| `s3.bucket`   | `Required`. Name of Bucket. If the bucket does not exist yet it will be created in the default location (`us-east-1` for S3). It is not possible at the moment to have restic create a new bucket in a different location, so you need to create it using a different program.        |
 | `s3.prefix`   | `Optional`. Path prefix into bucket where repository will be created.           |
 
 ```sh
@@ -207,7 +207,7 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 
 | Parameter      | Description                                                                     |
 |----------------|---------------------------------------------------------------------------------|
-| `gcs.bucket`   | `Required`. Name of Bucket                                                      |
+| `gcs.bucket`   | `Required`. Name of Bucket. If the bucket does not exist yet, it will be created in the default location (US). It is not possible at the moment to have restic create a new bucket in a different location, so you need to create it using a different program.        |
 | `gcs.prefix`   | `Optional`. Path prefix into bucket where repository will be created.           |
 
 ```sh
