@@ -15,7 +15,7 @@ type FakeStash struct {
 	ns   string
 }
 
-var stashResource = schema.GroupVersionResource{Group: sapi.GroupName, Version: "v1alpha1", Resource: "stashs"}
+var stashResource = schema.GroupVersionResource{Group: sapi.GroupName, Version: "v1alpha1", Resource: "restics"}
 
 var _ clientset.ResticInterface = &FakeStash{}
 
