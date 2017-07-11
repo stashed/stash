@@ -5,7 +5,6 @@ import (
 	"github.com/appscode/stash/client/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/testing"
 )
@@ -15,7 +14,7 @@ type FakeStash struct {
 	ns   string
 }
 
-var stashResource = schema.GroupVersionResource{Group: sapi.GroupName, Version: "v1alpha1", Resource: "stashs"}
+var stashResource = sapi.V1alpha1SchemeGroupVersion.WithResource("restics")
 
 var _ clientset.ResticInterface = &FakeStash{}
 
