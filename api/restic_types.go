@@ -56,7 +56,7 @@ type FileGroup struct {
 type Backend struct {
 	StorageSecretName string `json:"storageSecretName,omitempty"`
 
-	Local *LocalSpec `json:"local"`
+	Local *LocalSpec `json:"local,omitempty"`
 	S3    *S3Spec    `json:"s3,omitempty"`
 	GCS   *GCSSpec   `json:"gcs,omitempty"`
 	Azure *AzureSpec `json:"azure,omitempty"`
