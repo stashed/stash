@@ -5,6 +5,12 @@ import (
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
+const (
+	ResourceKindRestic = "Restic"
+	ResourceNameRestic = "restic"
+	ResourceTypeRestic = "restics"
+)
+
 type Restic struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

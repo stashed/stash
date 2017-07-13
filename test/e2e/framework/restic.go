@@ -6,34 +6,33 @@ import (
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/log"
-	sapi "github.com/appscode/stash/api"
-	"github.com/appscode/stash/client/clientset"
+	tapi "github.com/appscode/stash/api"
 	. "github.com/onsi/gomega"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
-func (f *Invocation) _restic() sapi.Restic {
-	return sapi.Restic{
+func (f *Invocation) _restic() tapi.Restic {
+	return tapi.Restic{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: sapi.SchemeGroupVersion.String(),
-			Kind:       clientset.ResourceKindRestic,
+			APIVersion: tapi.SchemeGroupVersion.String(),
+			Kind:       tapi.ResourceKindRestic,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
 			Namespace: f.namespace,
 		},
-		Spec: sapi.ResticSpec{
+		Spec: tapi.ResticSpec{
 			Selector: metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app": f.app,
 				},
 			},
-			FileGroups: []sapi.FileGroup{
+			FileGroups: []tapi.FileGroup{
 				{
 					Path: TestSourceDataMountPath,
-					RetentionPolicy: sapi.RetentionPolicy{
+					RetentionPolicy: tapi.RetentionPolicy{
 						KeepLast: 5,
 					},
 				},
@@ -49,11 +48,11 @@ func (f *Invocation) _restic() sapi.Restic {
 	}
 }
 
-func (f *Invocation) ResticForLocalBackend() sapi.Restic {
+func (f *Invocation) ResticForLocalBackend() tapi.Restic {
 	r := f._restic()
-	r.Spec.Backend = sapi.Backend{
+	r.Spec.Backend = tapi.Backend{
 		StorageSecretName: "",
-		Local: &sapi.LocalSpec{
+		Local: &tapi.LocalSpec{
 			Path: "/safe/data",
 			VolumeSource: apiv1.VolumeSource{
 				EmptyDir: &apiv1.EmptyDirVolumeSource{},
@@ -63,11 +62,11 @@ func (f *Invocation) ResticForLocalBackend() sapi.Restic {
 	return r
 }
 
-func (f *Invocation) ResticForS3Backend() sapi.Restic {
+func (f *Invocation) ResticForS3Backend() tapi.Restic {
 	r := f._restic()
-	r.Spec.Backend = sapi.Backend{
+	r.Spec.Backend = tapi.Backend{
 		StorageSecretName: "",
-		S3: &sapi.S3Spec{
+		S3: &tapi.S3Spec{
 			Endpoint: "s3.amazonaws.com",
 			Bucket:   "stash-qa",
 			Prefix:   f.app,
@@ -76,11 +75,11 @@ func (f *Invocation) ResticForS3Backend() sapi.Restic {
 	return r
 }
 
-func (f *Invocation) ResticForGCSBackend() sapi.Restic {
+func (f *Invocation) ResticForGCSBackend() tapi.Restic {
 	r := f._restic()
-	r.Spec.Backend = sapi.Backend{
+	r.Spec.Backend = tapi.Backend{
 		StorageSecretName: "",
-		GCS: &sapi.GCSSpec{
+		GCS: &tapi.GCSSpec{
 			Bucket: "stash-qa",
 			Prefix: f.app,
 		},
@@ -88,11 +87,11 @@ func (f *Invocation) ResticForGCSBackend() sapi.Restic {
 	return r
 }
 
-func (f *Invocation) ResticForAzureBackend() sapi.Restic {
+func (f *Invocation) ResticForAzureBackend() tapi.Restic {
 	r := f._restic()
-	r.Spec.Backend = sapi.Backend{
+	r.Spec.Backend = tapi.Backend{
 		StorageSecretName: "",
-		Azure: &sapi.AzureSpec{
+		Azure: &tapi.AzureSpec{
 			Container: "stashqa",
 			Prefix:    f.app,
 		},
@@ -100,11 +99,11 @@ func (f *Invocation) ResticForAzureBackend() sapi.Restic {
 	return r
 }
 
-func (f *Invocation) ResticForSwiftBackend() sapi.Restic {
+func (f *Invocation) ResticForSwiftBackend() tapi.Restic {
 	r := f._restic()
-	r.Spec.Backend = sapi.Backend{
+	r.Spec.Backend = tapi.Backend{
 		StorageSecretName: "",
-		Swift: &sapi.SwiftSpec{
+		Swift: &tapi.SwiftSpec{
 			Container: "stash-qa",
 			Prefix:    f.app,
 		},
@@ -112,7 +111,7 @@ func (f *Invocation) ResticForSwiftBackend() sapi.Restic {
 	return r
 }
 
-func (f *Framework) CreateRestic(obj sapi.Restic) error {
+func (f *Framework) CreateRestic(obj tapi.Restic) error {
 	_, err := f.stashClient.Restics(obj.Namespace).Create(&obj)
 	return err
 }
@@ -121,7 +120,7 @@ func (f *Framework) DeleteRestic(meta metav1.ObjectMeta) error {
 	return f.stashClient.Restics(meta.Namespace).Delete(meta.Name, deleteInForeground())
 }
 
-func (f *Framework) UpdateRestic(meta metav1.ObjectMeta, transformer func(sapi.Restic) sapi.Restic) error {
+func (f *Framework) UpdateRestic(meta metav1.ObjectMeta, transformer func(tapi.Restic) tapi.Restic) error {
 	attempt := 0
 	for ; attempt < maxAttempts; attempt = attempt + 1 {
 		cur, err := f.stashClient.Restics(meta.Namespace).Get(meta.Name)
@@ -141,7 +140,7 @@ func (f *Framework) UpdateRestic(meta metav1.ObjectMeta, transformer func(sapi.R
 }
 
 func (f *Framework) EventuallyRestic(meta metav1.ObjectMeta) GomegaAsyncAssertion {
-	return Eventually(func() *sapi.Restic {
+	return Eventually(func() *tapi.Restic {
 		obj, err := f.stashClient.Restics(meta.Namespace).Get(meta.Name)
 		Expect(err).NotTo(HaveOccurred())
 		return obj

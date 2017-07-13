@@ -3,7 +3,7 @@ package controller
 import (
 	"time"
 
-	sapi "github.com/appscode/stash/api"
+	tapi "github.com/appscode/stash/api"
 	scs "github.com/appscode/stash/client/clientset"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,7 +33,7 @@ func New(kubeClient clientset.Interface, extClient scs.ExtensionInterface, tag s
 }
 
 func (c *Controller) Setup() error {
-	_, err := c.kubeClient.ExtensionsV1beta1().ThirdPartyResources().Get(scs.ResourceNameRestic+"."+sapi.GroupName, metav1.GetOptions{})
+	_, err := c.kubeClient.ExtensionsV1beta1().ThirdPartyResources().Get(tapi.ResourceNameRestic+"."+tapi.GroupName, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		tpr := &extensions.ThirdPartyResource{
 			TypeMeta: metav1.TypeMeta{
@@ -41,7 +41,7 @@ func (c *Controller) Setup() error {
 				Kind:       "ThirdPartyResource",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name: scs.ResourceNameRestic + "." + sapi.GroupName,
+				Name: tapi.ResourceNameRestic + "." + tapi.GroupName,
 				Labels: map[string]string{
 					"app": "stash",
 				},
