@@ -3,7 +3,7 @@ This tutorial will show you how to use Stash to backup a Kubernetes deployment. 
 and the kubectl command-line tool must be configured to communicate with your cluster. If you do not already have a cluster,
 you can create one by using [Minikube](https://github.com/kubernetes/minikube). Now, install Stash in your cluster following the steps [here](/docs/install.md).
 
-In this tutorial, we are going to backup the `/source/data` folder of a `busybox` pod into a local backend. First deploy the following `busybox` Deployment in your cluster. Here we are using a git repository as source volume for demonstration purpose.
+In this tutorial, we are going to backup the `/source/data` folder of a `busybox` pod into a local backend. First, deploy the following `busybox` Deployment in your cluster. Here we are using a git repository as source volume for demonstration purpose.
 
 ```yaml
 apiVersion: extensions/v1beta1
@@ -114,7 +114,7 @@ spec:
 Here,
  - `spec.selector` is used to select workloads upon which this `Restic` configuration will be applied. `Restic` always selects workloads in the same Kubernetes namespace. In this tutorial, labels of `busybox` Deployment match this `Restic`'s selectors. If multiple `Restic` objects are matched to a given workload, Stash operator will error out and avoid adding sidecar container.
  - `spec.fileGroups` indicates an array of local paths that will be backed up using restic. For each path, users can also define the retention policy for old snapshots. Here, we are backing up the `/source/data` folder and only keeping the last 5 snapshots.
- - `spec.backend.local` indicates that restic will store the snapshots in a local path `/safe/data`. For the purpose of this tutorial, we are using an `emptyDir` to store the snapshots. But any Kubernetes volume that can be mounted locally can be used as a backend (example, NFS, Ceph, etc). Stash can also store snapshots in cloud storage solutions like, S3, GCS, Azure, etc. To use a remote backend, you need to confiure the storage secret to include your cloud provider credentials and set one of `spec.backend.(s3|gcs|azure|swift)`. Please visit [here](https://github.com/appscode/stash/blob/master/docs/backends.md) for more detailed examples.
+ - `spec.backend.local` indicates that restic will store the snapshots in a local path `/safe/data`. For the purpose of this tutorial, we are using an `emptyDir` to store the snapshots. But any Kubernetes volume that can be mounted locally can be used as a backend (example, NFS, Ceph, etc). Stash can also store snapshots in cloud storage solutions like S3, GCS, Azure, etc. To use a remote backend, you need to configure the storage secret to include your cloud provider credentials and set one of `spec.backend.(s3|gcs|azure|swift)`. Please visit [here](https://github.com/appscode/stash/blob/master/docs/backends.md) for more detailed examples.
  
   - `spec.backend.storageSecretName` points to the Kubernetes secret created earlier in this tutorial. `Restic` always points to secrets in its own namespace. This secret is used to pass restic repository password and other cloud provider secrets to `restic` binary.
   - `spec.schedule` is a [cron expression](https://github.com/robfig/cron/blob/v2/doc.go#L26) that indicates that file groups will be backed up every 1 minute.
