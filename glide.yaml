@@ -20,6 +20,8 @@ import:
 - package: gopkg.in/ini.v1
   version: v1.28.0
 - package: gopkg.in/robfig/cron.v2
+  repo: https://github.com/appscode/cron.git
+  vcs: git
   version: v2
 - package: k8s.io/apimachinery
   version: 75b8dd260ef0469d96d578705a87cffd0e09dab8
