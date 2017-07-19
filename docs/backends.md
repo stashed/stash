@@ -10,7 +10,7 @@ Backend is where `restic` stores snapshots. For any backend, a Kubernetes Secret
 |-------------------|------------------------------------------------------------|
 | `RESTIC_PASSWORD` | `Required`. Password used to encrypt snapshots by `restic` |
 
-```sh
+```console
 $ echo -n 'changeit' > RESTIC_PASSWORD
 $ kubectl create secret generic local-secret --from-file=./RESTIC_PASSWORD
 secret "local-secret" created
@@ -40,7 +40,7 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 | `local.path`   | `Required`. Path where this volume will be mounted in the sidecar container. Example: /repo |
 | `local.volume` | `Required`. Any Kubernetes volume                                                           |
 
-```sh
+```console
 $ kubectl create -f ./docs/examples/backends/local/local-restic.yaml
 restic "local-restic" created
 ```
@@ -87,7 +87,7 @@ Stash supports AWS S3 service or [Minio](https://minio.io/) servers as backend. 
 | `AWS_ACCESS_KEY_ID`     | `Required`. AWS / Minio access key ID                      |
 | `AWS_SECRET_ACCESS_KEY` | `Required`. AWS / Minio secret access key                  |
 
-```sh
+```console
 $ echo -n 'changeit' > RESTIC_PASSWORD
 $ echo -n '<your-aws-access-key-id-here>' > AWS_ACCESS_KEY_ID
 $ echo -n '<your-aws-secret-access-key-here>' > AWS_SECRET_ACCESS_KEY
@@ -125,7 +125,7 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 | `s3.bucket`   | `Required`. Name of Bucket. If the bucket does not exist yet it will be created in the default location (`us-east-1` for S3). It is not possible at the moment to have restic create a new bucket in a different location, so you need to create it using a different program.        |
 | `s3.prefix`   | `Optional`. Path prefix into bucket where repository will be created.           |
 
-```sh
+```console
 $ kubectl create -f ./docs/examples/backends/s3/s3-restic.yaml
 restic "s3-restic" created
 ```
@@ -173,7 +173,7 @@ Stash supports Google Cloud Storage(GCS) as backend. To configure this backend, 
 | `GOOGLE_PROJECT_ID`               | `Required`. Google Cloud project ID                        |
 | `GOOGLE_SERVICE_ACCOUNT_JSON_KEY` | `Required`. Google Cloud service account json key          |
 
-```sh
+```console
 $ echo -n 'changeit' > RESTIC_PASSWORD
 $ echo -n '<your-project-id>' > GOOGLE_PROJECT_ID
 $ mv downloaded-sa-json.key > GOOGLE_SERVICE_ACCOUNT_JSON_KEY
@@ -210,7 +210,7 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 | `gcs.bucket`   | `Required`. Name of Bucket. If the bucket does not exist yet, it will be created in the default location (US). It is not possible at the moment to have restic create a new bucket in a different location, so you need to create it using a different program.        |
 | `gcs.prefix`   | `Optional`. Path prefix into bucket where repository will be created.           |
 
-```sh
+```console
 $ kubectl create -f ./docs/examples/backends/gcs/gcs-restic.yaml
 restic "gcs-restic" created
 ```
@@ -258,7 +258,7 @@ Stash supports Microsoft Azure Storage as backend. To configure this backend, fo
 | `AZURE_ACCOUNT_NAME`    | `Required`. Azure Storage account name                     |
 | `AZURE_ACCOUNT_KEY`     | `Required`. Azure Storage account key                      |
 
-```sh
+```console
 $ echo -n 'changeit' > RESTIC_PASSWORD
 $ echo -n '<your-azure-storage-account-name>' > AZURE_ACCOUNT_NAME
 $ echo -n '<your-azure-storage-account-key>' > AZURE_ACCOUNT_KEY
@@ -295,7 +295,7 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 | `azure.container` | `Required`. Name of Storage container                                       |
 | `azure.prefix`    | `Optional`. Path prefix into bucket where repository will be created.       |
 
-```sh
+```console
 $ kubectl create -f ./docs/examples/backends/azure/azure-restic.yaml
 restic "azure-restic" created
 ```
@@ -358,7 +358,7 @@ Stash supports [OpenStack Swift as backend](https://restic.readthedocs.io/en/sta
 | `OS_STORAGE_URL`         | For authentication based on tokens                         |
 | `OS_AUTH_TOKEN`          | For authentication based on tokens                         |
 
-```sh
+```console
 $ echo -n 'changeit' > RESTIC_PASSWORD
 $ echo -n '<your-auth-url>' > OS_AUTH_URL
 $ echo -n '<your-tenant-id>' > OS_TENANT_ID
@@ -407,7 +407,7 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 | `swift.container` | `Required`. Name of Storage container                                       |
 | `swift.prefix`    | `Optional`. Path prefix into bucket where repository will be created.       |
 
-```sh
+```console
 $ kubectl create -f ./docs/examples/backends/swift/swift-restic.yaml
 restic "swift-restic" created
 ```

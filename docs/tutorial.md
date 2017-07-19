@@ -38,14 +38,14 @@ spec:
         name: source-data
 ```
 
-```sh
+```console
 $  kubectl create -f ./docs/examples/tutorial/busybox.yaml
 deployment "stash-demo" created
 ```
 
 Run the following command to confirm that `busybox` pods are running.
 
-```sh
+```console
 $ kubectl get pods -l app=stash-demo
 NAME                          READY     STATUS    RESTARTS   AGE
 stash-demo-3651400299-0s1xb   1/1       Running   0          58s
@@ -53,7 +53,7 @@ stash-demo-3651400299-0s1xb   1/1       Running   0          58s
 
 Now, create a `Secret` that contains the key `RESTIC_PASSWORD`. This will be used as the password for your restic repository.
 
-```sh
+```console
 $ kubectl create secret generic stash-demo --from-literal=RESTIC_PASSWORD=changeit
 secret "stash-demo" created
 ```
@@ -79,7 +79,7 @@ type: Opaque
 
 Now, create a `Restic` tpr with selectors matching the labels of the `busybox` Deployment. 
 
-```sh
+```console
 $ kubectl create -f ./docs/examples/tutorial/restic.yaml 
 restic "stash-demo" created
 ```
@@ -122,7 +122,7 @@ Here,
 
 Stash operator watches for `Restic` objects using Kubernetes api. Stash operator will notice that the `busybox` Deployment matches the selector for `stash-demo` Restic object. So, it will add a sidecar container named `stash` to `busybox` Deployment and restart the running `busybox` pods. Since a local backend is used in `stash-demo` Restic, sidecar container will be mounted the corresponding persistent volume.
 
-```sh
+```console
 $ kubectl get pods -l app=stash-demo
 NAME                          READY     STATUS    RESTARTS   AGE
 stash-demo-3001144127-3fsbn   2/2       Running   0          3m
@@ -294,7 +294,7 @@ status:
 
 You can also exec into the `busybox` Deployment to check list of snapshots.
 
-```sh
+```console
 $ kubectl get pods -l app=stash-demo
 NAME                          READY     STATUS    RESTARTS   AGE
 stash-demo-3001144127-3fsbn   2/2       Running   0          49s
@@ -310,7 +310,7 @@ c275bb54  2017-06-28 08:39:08  stash-demo-3001144127-3fsbn              /source/
 
 ## Disable Backup
 To stop taking backup of `/source/data` folder, delete the `stash-demo` Restic tpr. As a result, Stash operator will remove the sidecar container from `busybox` Deployment.
-```sh
+```console
 $ kubectl delete restic stash-demo
 restic "stash-demo" deleted
 
@@ -322,7 +322,7 @@ stash-demo-3651400299-8c14s   1/1       Running       0          5s
 
 ## Cleaning up
 To cleanup the Kubernetes resources created by this tutorial, run:
-```sh
+```console
 $ kubectl delete deployment stash-demo
 $ kubectl delete secret stash-demo
 $ kubectl delete restic stash-demo

@@ -5,7 +5,7 @@
 ## Using YAML
 Stash can be installed using YAML files includes in the [/hack/deploy](/hack/deploy) folder.
 
-```sh
+```console
 # Install without RBAC roles
 $ curl https://raw.githubusercontent.com/appscode/stash/0.4.1/hack/deploy/stash-without-rbac.yaml \
   | kubectl apply -f -
@@ -26,14 +26,14 @@ To see the detailed configuration options, visit [here](/chart/stash/README.md).
 
 ## Verify installation
 To check if Stash operator pods have started, run the following command:
-```sh
+```console
 $ kubectl get pods --all-namespaces -l app=stash --watch
 ```
 
 Once the operator pods are running, you can cancel the above command by typing `Ctrl+C`.
 
 Now, to confirm TPR groups have been registered by the operator, run the following command:
-```sh
+```console
 $ kubectl get thirdpartyresources -l app=stash
 ```
 

@@ -4,18 +4,18 @@
 Please follow the steps below to uninstall Stash:
 
 1. Delete the deployment and service used for Stash operator.
-```sh
+```console
 $ kubectl delete deployment -l app=stash -n <operator-namespace>
 $ kubectl delete service -l app=stash -n <operator-namespace>
 ```
 
 2. Now, wait several seconds for Stash to stop running. To confirm that Stash operator pod(s) have stopped running, run:
-```sh
+```console
 $ kubectl get pods --all-namespaces -l app=stash
 ```
 
 3. To keep a copy of your existing `Restic` objects, run:
-```sh
+```console
 kubectl get restic.stash.appscode.com --all-namespaces -o yaml > data.yaml
 ```
 
@@ -25,6 +25,6 @@ kubectl delete restic.stash.appscode.com --all --cascade=false
 ```
 
 5. Delete the old TPR-registration.
-```sh
+```console
 kubectl delete thirdpartyresource -l app=stash
 ```

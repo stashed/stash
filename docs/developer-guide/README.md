@@ -15,14 +15,14 @@ development environment, please follow [these instructions](https://golang.org/d
 
 #### Download Source
 
-```sh
+```console
 $ go get github.com/appscode/stash
 $ cd $(go env GOPATH)/src/github.com/appscode/stash
 ```
 
 #### Install Dev tools
 To install various dev tools for Stash, run the following command:
-```sh
+```console
 $ ./hack/builddeps.sh
 ```
 
@@ -35,14 +35,14 @@ $ stash version
 #### Dependency management
 Stash uses [Glide](https://github.com/Masterminds/glide) to manage dependencies. Dependencies are already checked in the `vendor` folder.
 If you want to update/add dependencies, run:
-```sh
+```console
 $ glide slow
 ```
 
 #### Build Docker images
 To build and push your custom Docker image, follow the steps below. To release a new version of Stash, please follow the [release guide](/docs/developer-guide/release.md).
 
-```sh
+```console
 # Build Docker image
 $ ./hack/docker/stash/setup.sh; ./hack/docker/stash/setup.sh push
 
@@ -54,19 +54,19 @@ $ docker push <image>:<tag>
 ```
 
 #### Generate CLI Reference Docs
-```sh
+```console
 $ ./hack/gendocs/make.sh
 ```
 
 ### Testing Stash
 #### Unit tests
-```sh
+```console
 $ ./hack/make.py test unit
 ```
 
 #### Run e2e tests
 Stash uses [Ginkgo](http://onsi.github.io/ginkgo/) to run e2e tests.
-```sh
+```console
 $ ./hack/make.py test e2e
 ```
 
