@@ -1,5 +1,5 @@
-hash: f6401bf7ae726163fca774326545e264d044ea66520622e4c21fc78f14bb546f
-updated: 2017-07-03T12:52:12.057609421-07:00
+hash: cbf45f2d6e1f19db1bc6f84e5eb06a7dc6109eaed5f896e4e9f5b623fc43463d
+updated: 2017-07-18T18:19:30.678620606-07:00
 imports:
 - name: github.com/appscode/go
   version: 9fde097ebcef0add8325c8fbee63ae01e7da530e
@@ -20,7 +20,7 @@ imports:
   subpackages:
   - quantile
 - name: github.com/cenkalti/backoff
-  version: 5d150e7eec023ce7a124856b37c68e54b4050ac7
+  version: 61153c768f31ee5f130071d08fc82b85208528de
 - name: github.com/codegangsta/inject
   version: 33e0aa1cb7c019ccc3fbe049a8262a6403d30504
 - name: github.com/codeskyblue/go-sh
@@ -106,7 +106,7 @@ imports:
   subpackages:
   - pbutil
 - name: github.com/onsi/gomega
-  version: c990b8b3a34c8814a6657daebe8e19ff4d9647a1
+  version: c893efa28eb45626cdaa76c9f653b62488858837
   subpackages:
   - format
   - internal/assertion
@@ -148,7 +148,7 @@ imports:
 - name: github.com/Sirupsen/logrus
   version: 3ec0642a7fb6488f65b06f9040adc67e3990296a
 - name: github.com/spf13/cobra
-  version: 8c6fa02d2225de0f9bdcb7ca912556f68d172d8c
+  version: 715f41bd7a70b5111f898b71ab484da52ee6266d
   subpackages:
   - doc
 - name: github.com/spf13/pflag
@@ -206,9 +206,11 @@ imports:
 - name: gopkg.in/ini.v1
   version: d3de07a94d22b4a0972deb4b96d790c2c0ce8333
 - name: gopkg.in/robfig/cron.v2
-  version: be2e0b0deed5a68ffee390b4583a13aff8321535
+  version: ca60c6d796d4b1f7bb2a8fd5271d8a59aeffb4bf
+  repo: https://github.com/appscode/cron.git
+  vcs: git
 - name: gopkg.in/yaml.v2
-  version: cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b
+  version: 3b4ad1db5b2a649883ff3782f5f9f6fb52be71af
 - name: k8s.io/apimachinery
   version: 75b8dd260ef0469d96d578705a87cffd0e09dab8
   subpackages:
@@ -364,7 +366,7 @@ testImports:
 - name: github.com/mitchellh/go-homedir
   version: d682a8f0cf139663a984ff12528da460ca963de9
 - name: github.com/onsi/ginkgo
-  version: 1e72798a2620664d2ab32ffd4473c102fcd4894d
+  version: 9eda700730cba42af70d53180f9dcce9266bc2bc
   subpackages:
   - config
   - internal/codelocation
