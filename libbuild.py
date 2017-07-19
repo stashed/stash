@@ -38,6 +38,7 @@ def _goenv():
 
 
 GOENV = _goenv()
+GOPATH = GOENV["GOPATH"]
 GOHOSTOS = GOENV["GOHOSTOS"]
 GOHOSTARCH = GOENV["GOHOSTARCH"]
 GOC = 'go'
@@ -175,18 +176,37 @@ def go_build(name, goos, goarch, main):
     bindir = 'dist/{name}'.format(name=name)
     if not os.path.isdir(bindir):
         os.makedirs(bindir)
-    cmd = "GOOS={goos} GOARCH={goarch} {cgo_env} {goc} build -o {bindir}/{name}-{goos}-{goarch}{ext} {cgo} {ldflags} {main}".format(
-        name=name,
-        goc=GOC,
-        goos=goos,
-        goarch=goarch,
-        bindir=bindir,
-        cgo_env=cgo_env,
-        cgo=cgo,
-        ldflags=ldflags,
-        ext='.exe' if goos == 'windows' else '',
-        main=main
-    )
+    if goos == 'alpine':
+        repo_dir = REPO_ROOT[len(GOPATH):]
+        uid = check_output('id -u').strip()
+        cmd = "docker run --rm -ti -u {uid} -v {repo_root}:/go{repo_dir} -w /go{repo_dir} -e {cgo_env} golang:1.8.3-alpine {goc} build -o {bindir}/{name}-{goos}-{goarch}{ext} {cgo} {ldflags} {main}".format(
+            repo_root=REPO_ROOT,
+            repo_dir=repo_dir,
+            uid=uid,
+            name=name,
+            goc=GOC,
+            goos=goos,
+            goarch=goarch,
+            bindir=bindir,
+            cgo_env=cgo_env,
+            cgo=cgo,
+            ldflags=ldflags,
+            ext='.exe' if goos == 'windows' else '',
+            main=main
+        )
+    else:
+        cmd = "GOOS={goos} GOARCH={goarch} {cgo_env} {goc} build -o {bindir}/{name}-{goos}-{goarch}{ext} {cgo} {ldflags} {main}".format(
+            name=name,
+            goc=GOC,
+            goos=goos,
+            goarch=goarch,
+            bindir=bindir,
+            cgo_env=cgo_env,
+            cgo=cgo,
+            ldflags=ldflags,
+            ext='.exe' if goos == 'windows' else '',
+            main=main
+        )
     die(call(cmd, cwd=REPO_ROOT))
     print('')
 
