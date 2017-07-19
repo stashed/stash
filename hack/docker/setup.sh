@@ -65,7 +65,7 @@ build_docker() {
     pushd $REPO_ROOT/hack/docker
 
     # Download restic
-    cp $DIST/stash/stash-linux-amd64 stash
+    cp $DIST/stash/stash-alpine-amd64 stash
     chmod 755 stash
 
     cp $DIST/restic/restic restic
@@ -75,9 +75,7 @@ build_docker() {
 FROM alpine
 
 RUN set -x \
-  && apk update \
-  && apk add ca-certificates \
-  && rm -rf /var/cache/apk/*
+  && apk add --update --no-cache ca-certificates
 
 COPY restic /bin/restic
 COPY stash /bin/stash

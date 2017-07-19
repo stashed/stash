@@ -43,7 +43,7 @@ libbuild.BIN_MATRIX = {
         'go_version': True,
         'use_cgo': False,
         'distro': {
-            'linux': ['amd64']
+            'alpine': ['amd64']
         }
     }
 }
