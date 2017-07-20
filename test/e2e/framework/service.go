@@ -14,15 +14,15 @@ const (
 	TEST_HEADLESS_SERVICE = "headless"
 )
 
-func (f *Invocation) HeadlessService() apiv1.Service {
+func (fi *Invocation) HeadlessService() apiv1.Service {
 	return apiv1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      TEST_HEADLESS_SERVICE,
-			Namespace: f.namespace,
+			Namespace: fi.namespace,
 		},
 		Spec: apiv1.ServiceSpec{
 			Selector: map[string]string{
-				"app": f.app,
+				"app": fi.app,
 			},
 			ClusterIP: apiv1.ClusterIPNone,
 			Ports: []apiv1.ServicePort{

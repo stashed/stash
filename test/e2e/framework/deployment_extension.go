@@ -13,18 +13,18 @@ import (
 	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
-func (f *Invocation) DeploymentExtension() extensions.Deployment {
+func (fi *Invocation) DeploymentExtension() extensions.Deployment {
 	return extensions.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
-			Namespace: f.namespace,
+			Namespace: fi.namespace,
 			Labels: map[string]string{
-				"app": f.app,
+				"app": fi.app,
 			},
 		},
 		Spec: extensions.DeploymentSpec{
 			Replicas: types.Int32P(1),
-			Template: f.PodTemplate(),
+			Template: fi.PodTemplate(),
 		},
 	}
 }

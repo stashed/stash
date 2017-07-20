@@ -12,20 +12,20 @@ import (
 	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
-func (f *Invocation) DaemonSet() extensions.DaemonSet {
+func (fi *Invocation) DaemonSet() extensions.DaemonSet {
 	daemon := extensions.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
-			Namespace: f.namespace,
+			Namespace: fi.namespace,
 			Labels: map[string]string{
-				"app": f.app,
+				"app": fi.app,
 			},
 		},
 		Spec: extensions.DaemonSetSpec{
-			Template: f.PodTemplate(),
+			Template: fi.PodTemplate(),
 		},
 	}
-	if nodes, err := f.kubeClient.CoreV1().Nodes().List(metav1.ListOptions{}); err == nil {
+	if nodes, err := fi.kubeClient.CoreV1().Nodes().List(metav1.ListOptions{}); err == nil {
 		if len(nodes.Items) > 0 {
 			daemon.Spec.Template.Spec.NodeSelector = map[string]string{
 				"kubernetes.io/hostname": nodes.Items[0].Labels["kubernetes.io/hostname"],

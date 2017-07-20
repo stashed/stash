@@ -10,11 +10,11 @@ const (
 	TestSourceDataMountPath  = "/source/data"
 )
 
-func (f *Invocation) PodTemplate() apiv1.PodTemplateSpec {
+func (fi *Invocation) PodTemplate() apiv1.PodTemplateSpec {
 	return apiv1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
-				"app": f.app,
+				"app": fi.app,
 			},
 		},
 		Spec: apiv1.PodSpec{

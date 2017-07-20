@@ -13,7 +13,7 @@ import (
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
-func (f *Invocation) _restic() tapi.Restic {
+func (fi *Invocation) _restic() tapi.Restic {
 	return tapi.Restic{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: tapi.SchemeGroupVersion.String(),
@@ -21,12 +21,12 @@ func (f *Invocation) _restic() tapi.Restic {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
-			Namespace: f.namespace,
+			Namespace: fi.namespace,
 		},
 		Spec: tapi.ResticSpec{
 			Selector: metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": f.app,
+					"app": fi.app,
 				},
 			},
 			FileGroups: []tapi.FileGroup{
@@ -48,8 +48,8 @@ func (f *Invocation) _restic() tapi.Restic {
 	}
 }
 
-func (f *Invocation) ResticForLocalBackend() tapi.Restic {
-	r := f._restic()
+func (fi *Invocation) ResticForLocalBackend() tapi.Restic {
+	r := fi._restic()
 	r.Spec.Backend = tapi.Backend{
 		StorageSecretName: "",
 		Local: &tapi.LocalSpec{
@@ -62,50 +62,50 @@ func (f *Invocation) ResticForLocalBackend() tapi.Restic {
 	return r
 }
 
-func (f *Invocation) ResticForS3Backend() tapi.Restic {
-	r := f._restic()
+func (fi *Invocation) ResticForS3Backend() tapi.Restic {
+	r := fi._restic()
 	r.Spec.Backend = tapi.Backend{
 		StorageSecretName: "",
 		S3: &tapi.S3Spec{
 			Endpoint: "s3.amazonaws.com",
 			Bucket:   "stash-qa",
-			Prefix:   f.app,
+			Prefix:   fi.app,
 		},
 	}
 	return r
 }
 
-func (f *Invocation) ResticForGCSBackend() tapi.Restic {
-	r := f._restic()
+func (fi *Invocation) ResticForGCSBackend() tapi.Restic {
+	r := fi._restic()
 	r.Spec.Backend = tapi.Backend{
 		StorageSecretName: "",
 		GCS: &tapi.GCSSpec{
 			Bucket: "stash-qa",
-			Prefix: f.app,
+			Prefix: fi.app,
 		},
 	}
 	return r
 }
 
-func (f *Invocation) ResticForAzureBackend() tapi.Restic {
-	r := f._restic()
+func (fi *Invocation) ResticForAzureBackend() tapi.Restic {
+	r := fi._restic()
 	r.Spec.Backend = tapi.Backend{
 		StorageSecretName: "",
 		Azure: &tapi.AzureSpec{
 			Container: "stashqa",
-			Prefix:    f.app,
+			Prefix:    fi.app,
 		},
 	}
 	return r
 }
 
-func (f *Invocation) ResticForSwiftBackend() tapi.Restic {
-	r := f._restic()
+func (fi *Invocation) ResticForSwiftBackend() tapi.Restic {
+	r := fi._restic()
 	r.Spec.Backend = tapi.Backend{
 		StorageSecretName: "",
 		Swift: &tapi.SwiftSpec{
 			Container: "stash-qa",
-			Prefix:    f.app,
+			Prefix:    fi.app,
 		},
 	}
 	return r

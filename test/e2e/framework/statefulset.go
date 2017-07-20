@@ -11,18 +11,18 @@ import (
 	apps "k8s.io/client-go/pkg/apis/apps/v1beta1"
 )
 
-func (f *Invocation) StatefulSet(r sapi.Restic) apps.StatefulSet {
+func (fi *Invocation) StatefulSet(r sapi.Restic) apps.StatefulSet {
 	resource := apps.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
 			Namespace: r.Namespace,
 			Labels: map[string]string{
-				"app": f.app,
+				"app": fi.app,
 			},
 		},
 		Spec: apps.StatefulSetSpec{
 			Replicas:    types.Int32P(1),
-			Template:    f.PodTemplate(),
+			Template:    fi.PodTemplate(),
 			ServiceName: TEST_HEADLESS_SERVICE,
 		},
 	}

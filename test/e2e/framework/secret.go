@@ -18,11 +18,11 @@ const (
 	TEST_RESTIC_PASSWORD = "not@secret"
 )
 
-func (f *Invocation) SecretForLocalBackend() apiv1.Secret {
+func (fi *Invocation) SecretForLocalBackend() apiv1.Secret {
 	return apiv1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix(f.app + "-local"),
-			Namespace: f.namespace,
+			Name:      rand.WithUniqSuffix(fi.app + "-local"),
+			Namespace: fi.namespace,
 		},
 		Data: map[string][]byte{
 			cli.RESTIC_PASSWORD: []byte(TEST_RESTIC_PASSWORD),
@@ -30,7 +30,7 @@ func (f *Invocation) SecretForLocalBackend() apiv1.Secret {
 	}
 }
 
-func (f *Invocation) SecretForS3Backend() apiv1.Secret {
+func (fi *Invocation) SecretForS3Backend() apiv1.Secret {
 	if os.Getenv(cli.AWS_ACCESS_KEY_ID) == "" ||
 		os.Getenv(cli.AWS_SECRET_ACCESS_KEY) == "" {
 		return apiv1.Secret{}
@@ -38,8 +38,8 @@ func (f *Invocation) SecretForS3Backend() apiv1.Secret {
 
 	return apiv1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix(f.app + "-s3"),
-			Namespace: f.namespace,
+			Name:      rand.WithUniqSuffix(fi.app + "-s3"),
+			Namespace: fi.namespace,
 		},
 		Data: map[string][]byte{
 			cli.RESTIC_PASSWORD:       []byte(TEST_RESTIC_PASSWORD),
@@ -49,7 +49,7 @@ func (f *Invocation) SecretForS3Backend() apiv1.Secret {
 	}
 }
 
-func (f *Invocation) SecretForGCSBackend() apiv1.Secret {
+func (fi *Invocation) SecretForGCSBackend() apiv1.Secret {
 	if os.Getenv(cli.GOOGLE_PROJECT_ID) == "" ||
 		(os.Getenv(cli.GOOGLE_APPLICATION_CREDENTIALS) == "" && os.Getenv(cli.GOOGLE_SERVICE_ACCOUNT_JSON_KEY) == "") {
 		return apiv1.Secret{}
@@ -63,8 +63,8 @@ func (f *Invocation) SecretForGCSBackend() apiv1.Secret {
 	}
 	return apiv1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix(f.app + "-gcs"),
-			Namespace: f.namespace,
+			Name:      rand.WithUniqSuffix(fi.app + "-gcs"),
+			Namespace: fi.namespace,
 		},
 		Data: map[string][]byte{
 			cli.RESTIC_PASSWORD:                 []byte(TEST_RESTIC_PASSWORD),
@@ -74,7 +74,7 @@ func (f *Invocation) SecretForGCSBackend() apiv1.Secret {
 	}
 }
 
-func (f *Invocation) SecretForAzureBackend() apiv1.Secret {
+func (fi *Invocation) SecretForAzureBackend() apiv1.Secret {
 	if os.Getenv(cli.AZURE_ACCOUNT_NAME) == "" ||
 		os.Getenv(cli.AZURE_ACCOUNT_KEY) == "" {
 		return apiv1.Secret{}
@@ -82,8 +82,8 @@ func (f *Invocation) SecretForAzureBackend() apiv1.Secret {
 
 	return apiv1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix(f.app + "-azure"),
-			Namespace: f.namespace,
+			Name:      rand.WithUniqSuffix(fi.app + "-azure"),
+			Namespace: fi.namespace,
 		},
 		Data: map[string][]byte{
 			cli.RESTIC_PASSWORD:    []byte(TEST_RESTIC_PASSWORD),
@@ -93,7 +93,7 @@ func (f *Invocation) SecretForAzureBackend() apiv1.Secret {
 	}
 }
 
-func (f *Invocation) SecretForSwiftBackend() apiv1.Secret {
+func (fi *Invocation) SecretForSwiftBackend() apiv1.Secret {
 	if os.Getenv(cli.OS_AUTH_URL) == "" ||
 		(os.Getenv(cli.OS_TENANT_ID) == "" && os.Getenv(cli.OS_TENANT_NAME) == "") ||
 		os.Getenv(cli.OS_USERNAME) == "" ||
@@ -103,8 +103,8 @@ func (f *Invocation) SecretForSwiftBackend() apiv1.Secret {
 
 	return apiv1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix(f.app + "-swift"),
-			Namespace: f.namespace,
+			Name:      rand.WithUniqSuffix(fi.app + "-swift"),
+			Namespace: fi.namespace,
 		},
 		Data: map[string][]byte{
 			cli.RESTIC_PASSWORD: []byte(TEST_RESTIC_PASSWORD),
