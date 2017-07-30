@@ -5,8 +5,19 @@ Please follow the steps below to uninstall Stash:
 
 1. Delete the deployment and service used for Stash operator.
 ```console
-$ kubectl delete deployment -l app=stash -n <operator-namespace>
-$ kubectl delete service -l app=stash -n <operator-namespace>
+$ ./hack/deploy/uninstall.sh
++ kubectl delete deployment -l app=stash -n kube-system
+deployment "stash-operator" deleted
++ kubectl delete service -l app=stash -n kube-system
+service "stash-operator" deleted
++ kubectl delete secret -l app=stash -n kube-system
+No resources found
++ kubectl delete serviceaccount -l app=stash -n kube-system
+No resources found
++ kubectl delete clusterrolebindings -l app=stash -n kube-system
+No resources found
++ kubectl delete clusterrole -l app=stash -n kube-system
+No resources found
 ```
 
 2. Now, wait several seconds for Stash to stop running. To confirm that Stash operator pod(s) have stopped running, run:
