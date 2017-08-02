@@ -3,7 +3,7 @@ This tutorial will show you how to use Stash to backup a Kubernetes deployment. 
 and the kubectl command-line tool must be configured to communicate with your cluster. If you do not already have a cluster,
 you can create one by using [Minikube](https://github.com/kubernetes/minikube). Now, install Stash in your cluster following the steps [here](/docs/install.md).
 
-In this tutorial, we are going to backup the `/source/data` folder of a `busybox` pod into a local backend. First, deploy the following `busybox` Deployment in your cluster. Here we are using a git repository as source volume for demonstration purpose.
+In this tutorial, we are going to backup the `/source/data` folder of a `busybox` pod into a local backend. First deploy the following `busybox` Deployment in your cluster. Here we are using a git repository as source volume for demonstration purpose.
 
 ```yaml
 apiVersion: extensions/v1beta1
