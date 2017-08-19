@@ -1,5 +1,5 @@
 hash: 6016fd237421e1bc34f82c201c31b371b800cbf2decfa6e050c7ddbf508c6971
-updated: 2017-08-18T22:26:18.577473382-07:00
+updated: 2017-08-18T23:10:44.413277507-07:00
 imports:
 - name: github.com/appscode/go
   version: 45732d59b2277b9c7ffdc41d2d5c07a899a20a70
@@ -9,6 +9,8 @@ imports:
   - strings
   - types
   - version
+- name: github.com/appscode/go-version
+  version: 97adb342c1792e9f59701c1d96bf3612d0fc7621
 - name: github.com/appscode/log
   version: 68e0e42e42c01371f3950571fc87c2298a51dd8f
   subpackages:
