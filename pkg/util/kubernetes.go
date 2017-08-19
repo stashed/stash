@@ -109,6 +109,17 @@ func WaitUntilDeploymentAppReady(kubeClient clientset.Interface, meta metav1.Obj
 	}, backoff.NewConstantBackOff(2*time.Second))
 }
 
+func WaitUntilStatefulSetReady(kubeClient clientset.Interface, meta metav1.ObjectMeta) error {
+	return backoff.Retry(func() error {
+		if obj, err := kubeClient.AppsV1beta1().StatefulSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+			if types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas {
+				return nil
+			}
+		}
+		return errors.New("check again")
+	}, backoff.NewConstantBackOff(2*time.Second))
+}
+
 func WaitUntilDaemonSetReady(kubeClient clientset.Interface, meta metav1.ObjectMeta) error {
 	return backoff.Retry(func() error {
 		if obj, err := kubeClient.ExtensionsV1beta1().DaemonSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
