@@ -1,8 +1,8 @@
-hash: cbf45f2d6e1f19db1bc6f84e5eb06a7dc6109eaed5f896e4e9f5b623fc43463d
-updated: 2017-07-18T18:19:30.678620606-07:00
+hash: e712c700348321e6bb53da19c074e61df2025c2af41288b1bdc518029869333f
+updated: 2017-08-18T21:28:19.612895404-07:00
 imports:
 - name: github.com/appscode/go
-  version: 9fde097ebcef0add8325c8fbee63ae01e7da530e
+  version: 45732d59b2277b9c7ffdc41d2d5c07a899a20a70
   subpackages:
   - crypto/rand
   - runtime
@@ -26,7 +26,7 @@ imports:
 - name: github.com/codeskyblue/go-sh
   version: b097669b1569203c3ce05a6b8717d43140fdb3d5
 - name: github.com/cpuguy83/go-md2man
-  version: 71acacd42f85e5e82f70a55327789582a5200a90
+  version: a65d4d2de4d5f7c74868dfa9b202a3c8be315aaa
   subpackages:
   - md2man
 - name: github.com/davecgh/go-spew
@@ -106,7 +106,7 @@ imports:
   subpackages:
   - pbutil
 - name: github.com/onsi/gomega
-  version: c893efa28eb45626cdaa76c9f653b62488858837
+  version: d59fa0ac68bb5dd932ee8d24eed631cdd519efc3
   subpackages:
   - format
   - internal/assertion
@@ -130,7 +130,7 @@ imports:
   subpackages:
   - go
 - name: github.com/prometheus/common
-  version: 13ba4ddd0caa9c28ca7b7bffe1dfa9ed8d5ef207
+  version: 61f87aac8082fa8c3c5655c7608d7478d46ac2ad
   subpackages:
   - expfmt
   - internal/bitbucket.org/ww/goautoneg
@@ -148,7 +148,7 @@ imports:
 - name: github.com/Sirupsen/logrus
   version: 3ec0642a7fb6488f65b06f9040adc67e3990296a
 - name: github.com/spf13/cobra
-  version: 715f41bd7a70b5111f898b71ab484da52ee6266d
+  version: cb731b898346822cc0c225c28550a8a29d93c732
   subpackages:
   - doc
 - name: github.com/spf13/pflag
@@ -166,9 +166,6 @@ imports:
   subpackages:
   - context
   - context/ctxhttp
-  - html
-  - html/atom
-  - html/charset
   - http2
   - http2/hpack
   - idna
@@ -181,18 +178,7 @@ imports:
   version: 2910a502d2bf9e43193af9d68ca516529614eed3
   subpackages:
   - cases
-  - encoding
-  - encoding/charmap
-  - encoding/htmlindex
-  - encoding/internal
-  - encoding/internal/identifier
-  - encoding/japanese
-  - encoding/korean
-  - encoding/simplifiedchinese
-  - encoding/traditionalchinese
-  - encoding/unicode
   - internal/tag
-  - internal/utf8internal
   - language
   - runes
   - secure/bidirule
@@ -210,9 +196,9 @@ imports:
   repo: https://github.com/appscode/cron.git
   vcs: git
 - name: gopkg.in/yaml.v2
-  version: 3b4ad1db5b2a649883ff3782f5f9f6fb52be71af
+  version: eb3733d160e74a9c7e442f435eb3bea458e1d19f
 - name: k8s.io/apimachinery
-  version: 75b8dd260ef0469d96d578705a87cffd0e09dab8
+  version: 85ace5365f33b16fc735c866a12e3c765b9700f2
   subpackages:
   - pkg/api/errors
   - pkg/api/meta
@@ -257,7 +243,7 @@ imports:
   - third_party/forked/golang/json
   - third_party/forked/golang/reflect
 - name: k8s.io/client-go
-  version: 3627aeb7d4f6ade38f995d2c923e459146493c7e
+  version: 21300e3e11c918b8e6a70fb7293b310683d6c046
   subpackages:
   - discovery
   - discovery/fake
@@ -364,9 +350,9 @@ imports:
   - util/integer
 testImports:
 - name: github.com/mitchellh/go-homedir
-  version: d682a8f0cf139663a984ff12528da460ca963de9
+  version: b8bc1bf767474819792c23f32d8286a45736f1c6
 - name: github.com/onsi/ginkgo
-  version: 9eda700730cba42af70d53180f9dcce9266bc2bc
+  version: bb93381d543b0e5725244abe752214a110791d01
   subpackages:
   - config
   - internal/codelocation
@@ -375,7 +361,6 @@ testImports:
   - internal/leafnodes
   - internal/remote
   - internal/spec
-  - internal/spec_iterator
   - internal/specrunner
   - internal/suite
   - internal/testingtproxy

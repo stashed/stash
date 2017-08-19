@@ -7,18 +7,18 @@ import (
 )
 
 type version struct {
-	Version         string
-	VersionStrategy string
-	Os              string
-	Arch            string
-	CommitHash      string
-	GitBranch       string
-	GitTag          string
-	CommitTimestamp string
-	BuildTimestamp  string
-	BuildHost       string
-	BuildHostOs     string
-	BuildHostArch   string
+	Version         string `json:"version,omitempty"`
+	VersionStrategy string `json:"versionStrategy,omitempty"`
+	Os              string `json:"os,omitempty"`
+	Arch            string `json:"arch,omitempty"`
+	CommitHash      string `json:"commitHash,omitempty"`
+	GitBranch       string `json:"gitBranch,omitempty"`
+	GitTag          string `json:"gitTag,omitempty"`
+	CommitTimestamp string `json:"commitTimestamp,omitempty"`
+	BuildTimestamp  string `json:"buildTimestamp,omitempty"`
+	BuildHost       string `json:"buildHost,omitempty"`
+	BuildHostOs     string `json:"buildHostOs,omitempty"`
+	BuildHostArch   string `json:"buildHostArch,omitempty"`
 }
 
 func (v *version) Print() {
@@ -52,6 +52,7 @@ func NewCmdVersion() *cobra.Command {
 	versionCmd := &cobra.Command{
 		Use:   "version",
 		Short: "Prints binary version number.",
+		DisableAutoGenTag: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			Version.Print()
 		},
