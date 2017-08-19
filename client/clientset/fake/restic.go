@@ -15,6 +15,7 @@ type FakeStash struct {
 }
 
 var stashResource = tapi.V1alpha1SchemeGroupVersion.WithResource(tapi.ResourceTypeRestic)
+var stashKind = tapi.V1alpha1SchemeGroupVersion.WithKind(tapi.ResourceKindRestic)
 
 var _ clientset.ResticInterface = &FakeStash{}
 
@@ -32,7 +33,7 @@ func (mock *FakeStash) Get(name string) (*tapi.Restic, error) {
 // List returns the a of Stashs.
 func (mock *FakeStash) List(opts metav1.ListOptions) (*tapi.ResticList, error) {
 	obj, err := mock.Fake.
-		Invokes(testing.NewListAction(stashResource, mock.ns, opts), &tapi.Restic{})
+		Invokes(testing.NewListAction(stashResource, stashKind, mock.ns, opts), &tapi.Restic{})
 
 	if obj == nil {
 		return nil, err

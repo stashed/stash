@@ -17,7 +17,7 @@ type FakeExtensionClient struct {
 var _ clientset.ExtensionInterface = &FakeExtensionClient{}
 
 func NewFakeStashClient(objects ...runtime.Object) *FakeExtensionClient {
-	o := testing.NewObjectTracker(api.Registry, api.Scheme, api.Codecs.UniversalDecoder())
+	o := testing.NewObjectTracker(api.Scheme, api.Codecs.UniversalDecoder())
 	for _, obj := range objects {
 		if obj.GetObjectKind().GroupVersionKind().Group == sapi.GroupName {
 			if err := o.Add(obj); err != nil {
@@ -27,10 +27,8 @@ func NewFakeStashClient(objects ...runtime.Object) *FakeExtensionClient {
 	}
 
 	fakePtr := testing.Fake{}
-	fakePtr.AddReactor("*", "*", testing.ObjectReaction(o, api.Registry.RESTMapper()))
-
+	fakePtr.AddReactor("*", "*", testing.ObjectReaction(o))
 	fakePtr.AddWatchReactor("*", testing.DefaultWatchReactor(watch.NewFake(), nil))
-
 	return &FakeExtensionClient{&fakePtr}
 }
 
