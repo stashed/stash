@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/appscode/go-version"
 	acrt "github.com/appscode/go/runtime"
 	"github.com/appscode/log"
 	sapi "github.com/appscode/stash/api"
@@ -24,7 +25,17 @@ import (
 func (c *Controller) WatchStatefulSets() {
 	// Skip v
 	if info, err := c.kubeClient.Discovery().ServerVersion(); err == nil {
-		if info.Major == "1" && info.Minor <= "6" {
+		v1_6, err := version.NewConstraint("<= 1.6")
+		if err != nil {
+			log.Warningf("Skipping watching StatefulSet for, Reason: %v", err)
+			return
+		}
+		v, err := version.NewVersion(info.Major + "." + info.Minor)
+		if err != nil {
+			log.Warningf("Skipping watching StatefulSet for, Reason: %v", err)
+			return
+		}
+		if v1_6.Check(v) {
 			log.Warningf("Skipping watching StatefulSet for Kubernetes version: %s.%s.%s[%s]", info.Major, info.Minor, info.String())
 			return
 		}
