@@ -1,5 +1,5 @@
-hash: 6016fd237421e1bc34f82c201c31b371b800cbf2decfa6e050c7ddbf508c6971
-updated: 2017-08-18T23:10:44.413277507-07:00
+hash: dd1863fc1631f72c5fb44104a3ea042bd911521d86630f610f009ad5d4af39ce
+updated: 2017-08-19T23:46:20.522414938-07:00
 imports:
 - name: github.com/appscode/go
   version: 45732d59b2277b9c7ffdc41d2d5c07a899a20a70
@@ -11,6 +11,8 @@ imports:
   - version
 - name: github.com/appscode/go-version
   version: 97adb342c1792e9f59701c1d96bf3612d0fc7621
+- name: github.com/appscode/kutil
+  version: e40797351f29f4f5c4e7417c3f7164928100d568
 - name: github.com/appscode/log
   version: 68e0e42e42c01371f3950571fc87c2298a51dd8f
   subpackages:
@@ -112,6 +114,8 @@ imports:
   - buffer
   - jlexer
   - jwriter
+- name: github.com/mattbaird/jsonpatch
+  version: d220c21cb65bebf730343aee4c00ba60be2d3235
 - name: github.com/matttproud/golang_protobuf_extensions
   version: fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a
   subpackages:
@@ -159,7 +163,7 @@ imports:
 - name: github.com/Sirupsen/logrus
   version: 3ec0642a7fb6488f65b06f9040adc67e3990296a
 - name: github.com/spf13/cobra
-  version: cb731b898346822cc0c225c28550a8a29d93c732
+  version: 4a7b7e65864c064d48dce82efbbfed2bdc0bf2aa
   subpackages:
   - doc
 - name: github.com/spf13/pflag

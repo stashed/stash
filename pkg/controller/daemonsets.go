@@ -4,13 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"time"
 
 	acrt "github.com/appscode/go/runtime"
+	"github.com/appscode/kutil"
 	"github.com/appscode/log"
 	sapi "github.com/appscode/stash/api"
 	"github.com/appscode/stash/pkg/util"
-	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -112,14 +111,13 @@ func (c *Controller) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, old,
 		return err
 	}
 
-	attempt := 0
-	for ; attempt < maxAttempts; attempt = attempt + 1 {
-		if name := util.GetString(resource.Annotations, sapi.ConfigName); name != "" && name != new.Name {
-			log.Infof("Restic %s sidecar already added for DaemonSet %s@%s.", name, resource.Name, resource.Namespace)
-			return nil
-		}
+	if name := util.GetString(resource.Annotations, sapi.ConfigName); name != "" && name != new.Name {
+		log.Infof("Restic %s sidecar already added for DaemonSet %s@%s.", name, resource.Name, resource.Namespace)
+		return nil
+	}
 
-		resource.Spec.Template.Spec.Containers = util.UpsertContainer(resource.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.SidecarImageTag, "DaemonSet/"+resource.Name))
+	_, err = kutil.PatchDaemonSet(c.kubeClient, resource, func(resource *extensions.DaemonSet) {
+		resource.Spec.Template.Spec.Containers = kutil.UpsertContainer(resource.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.SidecarImageTag, "DaemonSet/"+resource.Name))
 		resource.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(resource.Spec.Template.Spec.Volumes)
 		resource.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(resource.Spec.Template.Spec.Volumes)
 		resource.Spec.Template.Spec.Volumes = util.MergeLocalVolume(resource.Spec.Template.Spec.Volumes, old, new)
@@ -129,25 +127,12 @@ func (c *Controller) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, old,
 		}
 		resource.Annotations[sapi.ConfigName] = new.Name
 		resource.Annotations[sapi.VersionTag] = c.SidecarImageTag
-		_, err = c.kubeClient.ExtensionsV1beta1().DaemonSets(resource.Namespace).Update(resource)
-		if err == nil {
-			break
-		}
-		log.Errorf("Attempt %d failed to add sidecar for DaemonSet %s@%s due to %s.", attempt, resource.Name, resource.Namespace, err)
-		time.Sleep(updateRetryInterval)
-		if kerr.IsConflict(err) {
-			resource, err = c.kubeClient.ExtensionsV1beta1().DaemonSets(resource.Namespace).Get(resource.Name, metav1.GetOptions{})
-			if err != nil {
-				return
-			}
-		}
-	}
-	if attempt >= maxAttempts {
-		err = fmt.Errorf("Failed to add sidecar for DaemonSet %s@%s after %d attempts.", resource.Name, resource.Namespace, attempt)
+	})
+	if err != nil {
 		return
 	}
 
-	err = util.WaitUntilDaemonSetReady(c.kubeClient, resource.ObjectMeta)
+	err = kutil.WaitUntilDaemonSetReady(c.kubeClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}
@@ -164,42 +149,28 @@ func (c *Controller) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSe
 		sidecarSuccessfullyAdd()
 	}()
 
-	attempt := 0
-	for ; attempt < maxAttempts; attempt = attempt + 1 {
-		if name := util.GetString(resource.Annotations, sapi.ConfigName); name == "" {
-			log.Infof("Restic sidecar already removed for DaemonSet %s@%s.", resource.Name, resource.Namespace)
-			return
-		}
-
-		resource.Spec.Template.Spec.Containers = util.EnsureContainerDeleted(resource.Spec.Template.Spec.Containers, util.StashContainer)
-		resource.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(resource.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
-		resource.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(resource.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
-		if restic.Spec.Backend.Local != nil {
-			resource.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(resource.Spec.Template.Spec.Volumes, util.LocalVolumeName)
-		}
-		if resource.Annotations != nil {
-			delete(resource.Annotations, sapi.ConfigName)
-			delete(resource.Annotations, sapi.VersionTag)
-		}
-		_, err = c.kubeClient.ExtensionsV1beta1().DaemonSets(resource.Namespace).Update(resource)
-		if err == nil {
-			break
-		}
-		log.Errorf("Attempt %d failed to delete sidecar for DaemonSet %s@%s due to %s.", attempt, resource.Name, resource.Namespace, err)
-		time.Sleep(updateRetryInterval)
-		if kerr.IsConflict(err) {
-			resource, err = c.kubeClient.ExtensionsV1beta1().DaemonSets(resource.Namespace).Get(resource.Name, metav1.GetOptions{})
-			if err != nil {
-				return
-			}
-		}
+	if name := util.GetString(resource.Annotations, sapi.ConfigName); name == "" {
+		log.Infof("Restic sidecar already removed for DaemonSet %s@%s.", resource.Name, resource.Namespace)
+		return nil
 	}
-	if attempt >= maxAttempts {
-		err = fmt.Errorf("Failed to delete sidecar for DaemonSet %s@%s after %d attempts.", resource.Name, resource.Namespace, attempt)
+
+	_, err = kutil.PatchDaemonSet(c.kubeClient, resource, func(obj *extensions.DaemonSet) {
+		obj.Spec.Template.Spec.Containers = kutil.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
+		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
+		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
+		if restic.Spec.Backend.Local != nil {
+			obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.LocalVolumeName)
+		}
+		if obj.Annotations != nil {
+			delete(obj.Annotations, sapi.ConfigName)
+			delete(obj.Annotations, sapi.VersionTag)
+		}
+	})
+	if err != nil {
 		return
 	}
 
-	err = util.WaitUntilDaemonSetReady(c.kubeClient, resource.ObjectMeta)
+	err = kutil.WaitUntilDaemonSetReady(c.kubeClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}
