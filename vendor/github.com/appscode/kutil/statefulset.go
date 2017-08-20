@@ -51,7 +51,7 @@ func TryPatchStatefulSet(c clientset.Interface, meta metav1.ObjectMeta, transfor
 			return PatchStatefulSet(c, cur, transform)
 		}
 		glog.Errorf("Attempt %d failed to patch StatefulSet %s@%s due to %s.", attempt, cur.Name, cur.Namespace, err)
-		time.Sleep(updateRetryInterval)
+		time.Sleep(retryInterval)
 	}
 	return nil, fmt.Errorf("Failed to patch StatefulSet %s@%s after %d attempts.", meta.Name, meta.Namespace, attempt)
 }
@@ -67,7 +67,7 @@ func UpdateStatefulSet(c clientset.Interface, meta metav1.ObjectMeta, transform 
 			return c.AppsV1beta1().StatefulSets(cur.Namespace).Update(cur)
 		}
 		glog.Errorf("Attempt %d failed to update StatefulSet %s@%s due to %s.", attempt, cur.Name, cur.Namespace, err)
-		time.Sleep(updateRetryInterval)
+		time.Sleep(retryInterval)
 	}
 	return nil, fmt.Errorf("Failed to update StatefulSet %s@%s after %d attempts.", meta.Name, meta.Namespace, attempt)
 }

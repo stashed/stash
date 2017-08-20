@@ -3,17 +3,18 @@ package kutil
 import (
 	"time"
 
+	"github.com/appscode/go-version"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
 )
 
 const (
-	updateRetryInterval = 10 * 1000 * 1000 * time.Nanosecond
-	maxAttempts         = 5
+	retryInterval = 10 * time.Millisecond
+	maxAttempts   = 5
 )
 
-func IsPreferredAPIResource(kubeClient clientset.Interface, groupVersion, kind string) bool {
-	if resourceList, err := kubeClient.Discovery().ServerPreferredResources(); err == nil {
+func IsPreferredAPIResource(c clientset.Interface, groupVersion, kind string) bool {
+	if resourceList, err := c.Discovery().ServerPreferredResources(); err == nil {
 		for _, resources := range resourceList {
 			if resources.GroupVersion != groupVersion {
 				continue
@@ -26,6 +27,22 @@ func IsPreferredAPIResource(kubeClient clientset.Interface, groupVersion, kind s
 		}
 	}
 	return false
+}
+
+func CheckAPIVersion(c clientset.Interface, constraint string) (bool, error) {
+	info, err := c.Discovery().ServerVersion()
+	if err != nil {
+		return false, err
+	}
+	cond, err := version.NewConstraint(constraint)
+	if err != nil {
+		return false, err
+	}
+	v, err := version.NewVersion(info.Major + "." + info.Minor)
+	if err != nil {
+		return false, err
+	}
+	return cond.Check(v), nil
 }
 
 func DeleteInBackground() *metav1.DeleteOptions {

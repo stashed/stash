@@ -36,17 +36,17 @@ func (fi *Invocation) StatefulSet(r sapi.Restic) apps.StatefulSet {
 }
 
 func (f *Framework) CreateStatefulSet(obj apps.StatefulSet) error {
-	_, err := f.kubeClient.AppsV1beta1().StatefulSets(obj.Namespace).Create(&obj)
+	_, err := f.KubeClient.AppsV1beta1().StatefulSets(obj.Namespace).Create(&obj)
 	return err
 }
 
 func (f *Framework) DeleteStatefulSet(meta metav1.ObjectMeta) error {
-	return f.kubeClient.AppsV1beta1().StatefulSets(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	return f.KubeClient.AppsV1beta1().StatefulSets(meta.Namespace).Delete(meta.Name, deleteInForeground())
 }
 
 func (f *Framework) EventuallyStatefulSet(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() *apps.StatefulSet {
-		obj, err := f.kubeClient.AppsV1beta1().StatefulSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		obj, err := f.KubeClient.AppsV1beta1().StatefulSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		return obj
 	})

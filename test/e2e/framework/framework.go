@@ -7,15 +7,15 @@ import (
 )
 
 type Framework struct {
-	kubeClient  clientset.Interface
-	stashClient scs.ExtensionInterface
+	KubeClient  clientset.Interface
+	StashClient scs.ExtensionInterface
 	namespace   string
 }
 
 func New(kubeClient clientset.Interface, extClient scs.ExtensionInterface) *Framework {
 	return &Framework{
-		kubeClient:  kubeClient,
-		stashClient: extClient,
+		KubeClient:  kubeClient,
+		StashClient: extClient,
 		namespace:   rand.WithUniqSuffix("test-stash"),
 	}
 }

@@ -112,23 +112,23 @@ func (fi *Invocation) ResticForSwiftBackend() tapi.Restic {
 }
 
 func (f *Framework) CreateRestic(obj tapi.Restic) error {
-	_, err := f.stashClient.Restics(obj.Namespace).Create(&obj)
+	_, err := f.StashClient.Restics(obj.Namespace).Create(&obj)
 	return err
 }
 
 func (f *Framework) DeleteRestic(meta metav1.ObjectMeta) error {
-	return f.stashClient.Restics(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	return f.StashClient.Restics(meta.Namespace).Delete(meta.Name, deleteInForeground())
 }
 
 func (f *Framework) UpdateRestic(meta metav1.ObjectMeta, transformer func(tapi.Restic) tapi.Restic) error {
 	attempt := 0
 	for ; attempt < maxAttempts; attempt = attempt + 1 {
-		cur, err := f.stashClient.Restics(meta.Namespace).Get(meta.Name)
+		cur, err := f.StashClient.Restics(meta.Namespace).Get(meta.Name)
 		if kerr.IsNotFound(err) {
 			return nil
 		} else if err == nil {
 			modified := transformer(*cur)
-			_, err = f.stashClient.Restics(cur.Namespace).Update(&modified)
+			_, err = f.StashClient.Restics(cur.Namespace).Update(&modified)
 			if err == nil {
 				return nil
 			}
@@ -141,7 +141,7 @@ func (f *Framework) UpdateRestic(meta metav1.ObjectMeta, transformer func(tapi.R
 
 func (f *Framework) EventuallyRestic(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() *tapi.Restic {
-		obj, err := f.stashClient.Restics(meta.Namespace).Get(meta.Name)
+		obj, err := f.StashClient.Restics(meta.Namespace).Get(meta.Name)
 		Expect(err).NotTo(HaveOccurred())
 		return obj
 	})

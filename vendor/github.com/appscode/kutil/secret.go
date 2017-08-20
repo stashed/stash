@@ -48,7 +48,7 @@ func TryPatchSecret(c clientset.Interface, meta metav1.ObjectMeta, transform fun
 			return PatchSecret(c, cur, transform)
 		}
 		glog.Errorf("Attempt %d failed to patch Secret %s@%s due to %s.", attempt, cur.Name, cur.Namespace, err)
-		time.Sleep(updateRetryInterval)
+		time.Sleep(retryInterval)
 	}
 	return nil, fmt.Errorf("Failed to patch Secret %s@%s after %d attempts.", meta.Name, meta.Namespace, attempt)
 }
@@ -64,7 +64,7 @@ func UpdateSecret(c clientset.Interface, meta metav1.ObjectMeta, transform func(
 			return c.CoreV1().Secrets(cur.Namespace).Update(cur)
 		}
 		glog.Errorf("Attempt %d failed to update Secret %s@%s due to %s.", attempt, cur.Name, cur.Namespace, err)
-		time.Sleep(updateRetryInterval)
+		time.Sleep(retryInterval)
 	}
 	return nil, fmt.Errorf("Failed to update Secret %s@%s after %d attempts.", meta.Name, meta.Namespace, attempt)
 }
