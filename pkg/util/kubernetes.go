@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/appscode/go/types"
+	"github.com/appscode/kutil"
 	rapi "github.com/appscode/stash/api"
 	sapi "github.com/appscode/stash/api"
 	scs "github.com/appscode/stash/client/clientset"
@@ -76,61 +76,6 @@ func FindRestic(stashClient scs.ExtensionInterface, obj metav1.ObjectMeta) (*sap
 	return nil, nil
 }
 
-func WaitUntilReplicaSetReady(kubeClient clientset.Interface, meta metav1.ObjectMeta) error {
-	return backoff.Retry(func() error {
-		if obj, err := kubeClient.ExtensionsV1beta1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
-			if types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas {
-				return nil
-			}
-		}
-		return errors.New("check again")
-	}, backoff.NewConstantBackOff(2*time.Second))
-}
-
-func WaitUntilDeploymentExtensionReady(kubeClient clientset.Interface, meta metav1.ObjectMeta) error {
-	return backoff.Retry(func() error {
-		if obj, err := kubeClient.ExtensionsV1beta1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
-			if types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas {
-				return nil
-			}
-		}
-		return errors.New("check again")
-	}, backoff.NewConstantBackOff(2*time.Second))
-}
-
-func WaitUntilDeploymentAppReady(kubeClient clientset.Interface, meta metav1.ObjectMeta) error {
-	return backoff.Retry(func() error {
-		if obj, err := kubeClient.AppsV1beta1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
-			if types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas {
-				return nil
-			}
-		}
-		return errors.New("check again")
-	}, backoff.NewConstantBackOff(2*time.Second))
-}
-
-func WaitUntilDaemonSetReady(kubeClient clientset.Interface, meta metav1.ObjectMeta) error {
-	return backoff.Retry(func() error {
-		if obj, err := kubeClient.ExtensionsV1beta1().DaemonSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
-			if obj.Status.DesiredNumberScheduled == obj.Status.NumberReady {
-				return nil
-			}
-		}
-		return errors.New("check again")
-	}, backoff.NewConstantBackOff(2*time.Second))
-}
-
-func WaitUntilReplicationControllerReady(kubeClient clientset.Interface, meta metav1.ObjectMeta) error {
-	return backoff.Retry(func() error {
-		if obj, err := kubeClient.CoreV1().ReplicationControllers(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
-			if types.Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas {
-				return nil
-			}
-		}
-		return errors.New("check again")
-	}, backoff.NewConstantBackOff(2*time.Second))
-}
-
 func WaitUntilSidecarAdded(kubeClient clientset.Interface, namespace string, selector *metav1.LabelSelector) error {
 	return backoff.Retry(func() error {
 		r, err := metav1.LabelSelectorAsSelector(selector)
@@ -197,16 +142,6 @@ func WaitUntilSidecarRemoved(kubeClient clientset.Interface, namespace string, s
 		}
 		return errors.New("check again")
 	}, backoff.NewConstantBackOff(3*time.Second))
-}
-
-func RestartPods(kubeClient clientset.Interface, namespace string, selector *metav1.LabelSelector) error {
-	r, err := metav1.LabelSelectorAsSelector(selector)
-	if err != nil {
-		return err
-	}
-	return kubeClient.CoreV1().Pods(namespace).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{
-		LabelSelector: r.String(),
-	})
 }
 
 func GetString(m map[string]string, key string) string {
@@ -284,37 +219,8 @@ func CreateSidecarContainer(r *rapi.Restic, tag, workload string) apiv1.Containe
 	return sidecar
 }
 
-func EnsureContainerDeleted(containers []apiv1.Container, name string) []apiv1.Container {
-	for i, c := range containers {
-		if c.Name == name {
-			return append(containers[:i], containers[i+1:]...)
-		}
-	}
-	return containers
-}
-
-func UpsertContainer(containers []apiv1.Container, nv apiv1.Container) []apiv1.Container {
-	for i, vol := range containers {
-		if vol.Name == nv.Name {
-			containers[i] = nv
-			return containers
-		}
-	}
-	return append(containers, nv)
-}
-
-func UpsertVolume(volumes []apiv1.Volume, nv apiv1.Volume) []apiv1.Volume {
-	for i, vol := range volumes {
-		if vol.Name == nv.Name {
-			volumes[i] = nv
-			return volumes
-		}
-	}
-	return append(volumes, nv)
-}
-
 func UpsertScratchVolume(volumes []apiv1.Volume) []apiv1.Volume {
-	return UpsertVolume(volumes, apiv1.Volume{
+	return kutil.UpsertVolume(volumes, apiv1.Volume{
 		Name: ScratchDirVolumeName,
 		VolumeSource: apiv1.VolumeSource{
 			EmptyDir: &apiv1.EmptyDirVolumeSource{},
@@ -324,7 +230,7 @@ func UpsertScratchVolume(volumes []apiv1.Volume) []apiv1.Volume {
 
 // https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#store-pod-fields
 func UpsertDownwardVolume(volumes []apiv1.Volume) []apiv1.Volume {
-	return UpsertVolume(volumes, apiv1.Volume{
+	return kutil.UpsertVolume(volumes, apiv1.Volume{
 		Name: PodinfoVolumeName,
 		VolumeSource: apiv1.VolumeSource{
 			DownwardAPI: &apiv1.DownwardAPIVolumeSource{
@@ -355,7 +261,7 @@ func MergeLocalVolume(volumes []apiv1.Volume, old, new *sapi.Restic) []apiv1.Vol
 		if oldPos != -1 {
 			volumes[oldPos] = apiv1.Volume{Name: LocalVolumeName, VolumeSource: new.Spec.Backend.Local.VolumeSource}
 		} else {
-			volumes = UpsertVolume(volumes, apiv1.Volume{Name: LocalVolumeName, VolumeSource: new.Spec.Backend.Local.VolumeSource})
+			volumes = kutil.UpsertVolume(volumes, apiv1.Volume{Name: LocalVolumeName, VolumeSource: new.Spec.Backend.Local.VolumeSource})
 		}
 	} else {
 		if oldPos != -1 {

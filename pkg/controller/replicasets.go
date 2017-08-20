@@ -4,13 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"time"
 
 	acrt "github.com/appscode/go/runtime"
+	"github.com/appscode/kutil"
 	"github.com/appscode/log"
 	sapi "github.com/appscode/stash/api"
 	"github.com/appscode/stash/pkg/util"
-	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -111,14 +110,13 @@ func (c *Controller) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, ol
 		return err
 	}
 
-	attempt := 0
-	for ; attempt < maxAttempts; attempt = attempt + 1 {
-		if name := util.GetString(resource.Annotations, sapi.ConfigName); name != "" && name != new.Name {
-			log.Infof("Restic %s sidecar already added for ReplicaSet %s@%s.", name, resource.Name, resource.Namespace)
-			return nil
-		}
+	if name := util.GetString(resource.Annotations, sapi.ConfigName); name != "" && name != new.Name {
+		log.Infof("Restic %s sidecar already added for ReplicaSet %s@%s.", name, resource.Name, resource.Namespace)
+		return nil
+	}
 
-		resource.Spec.Template.Spec.Containers = util.UpsertContainer(resource.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.SidecarImageTag, "ReplicaSet/"+resource.Name))
+	_, err = kutil.PatchReplicaSet(c.kubeClient, resource, func(resource *extensions.ReplicaSet) {
+		resource.Spec.Template.Spec.Containers = kutil.UpsertContainer(resource.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.SidecarImageTag, "ReplicaSet/"+resource.Name))
 		resource.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(resource.Spec.Template.Spec.Volumes)
 		resource.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(resource.Spec.Template.Spec.Volumes)
 		resource.Spec.Template.Spec.Volumes = util.MergeLocalVolume(resource.Spec.Template.Spec.Volumes, old, new)
@@ -128,25 +126,12 @@ func (c *Controller) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, ol
 		}
 		resource.Annotations[sapi.ConfigName] = new.Name
 		resource.Annotations[sapi.VersionTag] = c.SidecarImageTag
-		_, err = c.kubeClient.ExtensionsV1beta1().ReplicaSets(resource.Namespace).Update(resource)
-		if err == nil {
-			break
-		}
-		log.Errorf("Attempt %d failed to add sidecar for ReplicaSet %s@%s due to %s.", attempt, resource.Name, resource.Namespace, err)
-		time.Sleep(updateRetryInterval)
-		if kerr.IsConflict(err) {
-			resource, err = c.kubeClient.ExtensionsV1beta1().ReplicaSets(resource.Namespace).Get(resource.Name, metav1.GetOptions{})
-			if err != nil {
-				return
-			}
-		}
-	}
-	if attempt >= maxAttempts {
-		err = fmt.Errorf("Failed to add sidecar for ReplicaSet %s@%s after %d attempts.", resource.Name, resource.Namespace, attempt)
+	})
+	if err != nil {
 		return
 	}
 
-	err = util.WaitUntilReplicaSetReady(c.kubeClient, resource.ObjectMeta)
+	err = kutil.WaitUntilReplicaSetReady(c.kubeClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}
@@ -163,14 +148,13 @@ func (c *Controller) EnsureReplicaSetSidecarDeleted(resource *extensions.Replica
 		sidecarSuccessfullyDeleted()
 	}()
 
-	attempt := 0
-	for ; attempt < maxAttempts; attempt = attempt + 1 {
-		if name := util.GetString(resource.Annotations, sapi.ConfigName); name == "" {
-			log.Infof("Restic sidecar already removed for ReplicaSet %s@%s.", resource.Name, resource.Namespace)
-			return nil
-		}
+	if name := util.GetString(resource.Annotations, sapi.ConfigName); name == "" {
+		log.Infof("Restic sidecar already removed for ReplicaSet %s@%s.", resource.Name, resource.Namespace)
+		return nil
+	}
 
-		resource.Spec.Template.Spec.Containers = util.EnsureContainerDeleted(resource.Spec.Template.Spec.Containers, util.StashContainer)
+	_, err = kutil.PatchReplicaSet(c.kubeClient, resource, func(resource *extensions.ReplicaSet) {
+		resource.Spec.Template.Spec.Containers = kutil.EnsureContainerDeleted(resource.Spec.Template.Spec.Containers, util.StashContainer)
 		resource.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(resource.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		resource.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(resource.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
 		if restic.Spec.Backend.Local != nil {
@@ -180,25 +164,12 @@ func (c *Controller) EnsureReplicaSetSidecarDeleted(resource *extensions.Replica
 			delete(resource.Annotations, sapi.ConfigName)
 			delete(resource.Annotations, sapi.VersionTag)
 		}
-		_, err = c.kubeClient.ExtensionsV1beta1().ReplicaSets(resource.Namespace).Update(resource)
-		if err == nil {
-			break
-		}
-		log.Errorf("Attempt %d failed to delete sidecar for ReplicaSet %s@%s due to %s.", attempt, resource.Name, resource.Namespace, err)
-		time.Sleep(updateRetryInterval)
-		if kerr.IsConflict(err) {
-			resource, err = c.kubeClient.ExtensionsV1beta1().ReplicaSets(resource.Namespace).Get(resource.Name, metav1.GetOptions{})
-			if err != nil {
-				return
-			}
-		}
-	}
-	if attempt >= maxAttempts {
-		err = fmt.Errorf("Failed to add sidecar for ReplicaSet %s@%s after %d attempts.", resource.Name, resource.Namespace, attempt)
+	})
+	if err == nil {
 		return
 	}
 
-	err = util.WaitUntilReplicaSetReady(c.kubeClient, resource.ObjectMeta)
+	err = kutil.WaitUntilReplicaSetReady(c.kubeClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}
