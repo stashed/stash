@@ -14,14 +14,23 @@ import (
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
-func PatchService(c clientset.Interface, cur *apiv1.Service, transform func(*apiv1.Service)) (*apiv1.Service, error) {
+func CreateOrPatchService(c clientset.Interface, obj *apiv1.Service) (*apiv1.Service, error) {
+	cur, err := c.CoreV1().Services(obj.Namespace).Get(obj.Name, metav1.GetOptions{})
+	if kerr.IsNotFound(err) {
+		return c.CoreV1().Services(obj.Namespace).Create(obj)
+	} else if err != nil {
+		return nil, err
+	}
+	return PatchService(c, cur, func(*apiv1.Service) *apiv1.Service { return obj })
+}
+
+func PatchService(c clientset.Interface, cur *apiv1.Service, transform func(*apiv1.Service) *apiv1.Service) (*apiv1.Service, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, err
 	}
 
-	transform(cur)
-	modJson, err := json.Marshal(cur)
+	modJson, err := json.Marshal(transform(cur))
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +47,7 @@ func PatchService(c clientset.Interface, cur *apiv1.Service, transform func(*api
 	return c.CoreV1().Services(cur.Namespace).Patch(cur.Name, types.JSONPatchType, pb)
 }
 
-func TryPatchService(c clientset.Interface, meta metav1.ObjectMeta, transform func(*apiv1.Service)) (*apiv1.Service, error) {
+func TryPatchService(c clientset.Interface, meta metav1.ObjectMeta, transform func(*apiv1.Service) *apiv1.Service) (*apiv1.Service, error) {
 	attempt := 0
 	for ; attempt < maxAttempts; attempt = attempt + 1 {
 		cur, err := c.CoreV1().Services(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
@@ -53,15 +62,14 @@ func TryPatchService(c clientset.Interface, meta metav1.ObjectMeta, transform fu
 	return nil, fmt.Errorf("Failed to patch Service %s@%s after %d attempts.", meta.Name, meta.Namespace, attempt)
 }
 
-func UpdateService(c clientset.Interface, meta metav1.ObjectMeta, transform func(*apiv1.Service)) (*apiv1.Service, error) {
+func UpdateService(c clientset.Interface, meta metav1.ObjectMeta, transform func(*apiv1.Service) *apiv1.Service) (*apiv1.Service, error) {
 	attempt := 0
 	for ; attempt < maxAttempts; attempt = attempt + 1 {
 		cur, err := c.CoreV1().Services(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(err) {
 			return cur, err
 		} else if err == nil {
-			transform(cur)
-			return c.CoreV1().Services(cur.Namespace).Update(cur)
+			return c.CoreV1().Services(cur.Namespace).Update(transform(cur))
 		}
 		glog.Errorf("Attempt %d failed to update Service %s@%s due to %s.", attempt, cur.Name, cur.Namespace, err)
 		time.Sleep(retryInterval)

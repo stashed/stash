@@ -17,14 +17,23 @@ import (
 	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
-func PatchReplicaSet(c clientset.Interface, cur *extensions.ReplicaSet, transform func(*extensions.ReplicaSet)) (*extensions.ReplicaSet, error) {
+func CreateOrPatchReplicaSet(c clientset.Interface, obj *extensions.ReplicaSet) (*extensions.ReplicaSet, error) {
+	cur, err := c.ExtensionsV1beta1().ReplicaSets(obj.Namespace).Get(obj.Name, metav1.GetOptions{})
+	if kerr.IsNotFound(err) {
+		return c.ExtensionsV1beta1().ReplicaSets(obj.Namespace).Create(obj)
+	} else if err != nil {
+		return nil, err
+	}
+	return PatchReplicaSet(c, cur, func(*extensions.ReplicaSet) *extensions.ReplicaSet { return obj })
+}
+
+func PatchReplicaSet(c clientset.Interface, cur *extensions.ReplicaSet, transform func(*extensions.ReplicaSet) *extensions.ReplicaSet) (*extensions.ReplicaSet, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, err
 	}
 
-	transform(cur)
-	modJson, err := json.Marshal(cur)
+	modJson, err := json.Marshal(transform(cur))
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +50,7 @@ func PatchReplicaSet(c clientset.Interface, cur *extensions.ReplicaSet, transfor
 	return c.ExtensionsV1beta1().ReplicaSets(cur.Namespace).Patch(cur.Name, types.JSONPatchType, pb)
 }
 
-func TryPatchReplicaSet(c clientset.Interface, meta metav1.ObjectMeta, transform func(*extensions.ReplicaSet)) (*extensions.ReplicaSet, error) {
+func TryPatchReplicaSet(c clientset.Interface, meta metav1.ObjectMeta, transform func(*extensions.ReplicaSet) *extensions.ReplicaSet) (*extensions.ReplicaSet, error) {
 	attempt := 0
 	for ; attempt < maxAttempts; attempt = attempt + 1 {
 		cur, err := c.ExtensionsV1beta1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
@@ -56,15 +65,14 @@ func TryPatchReplicaSet(c clientset.Interface, meta metav1.ObjectMeta, transform
 	return nil, fmt.Errorf("Failed to patch ReplicaSet %s@%s after %d attempts.", meta.Name, meta.Namespace, attempt)
 }
 
-func UpdateReplicaSet(c clientset.Interface, meta metav1.ObjectMeta, transform func(*extensions.ReplicaSet)) (*extensions.ReplicaSet, error) {
+func UpdateReplicaSet(c clientset.Interface, meta metav1.ObjectMeta, transform func(*extensions.ReplicaSet) *extensions.ReplicaSet) (*extensions.ReplicaSet, error) {
 	attempt := 0
 	for ; attempt < maxAttempts; attempt = attempt + 1 {
 		cur, err := c.ExtensionsV1beta1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(err) {
 			return cur, err
 		} else if err == nil {
-			transform(cur)
-			return c.ExtensionsV1beta1().ReplicaSets(cur.Namespace).Update(cur)
+			return c.ExtensionsV1beta1().ReplicaSets(cur.Namespace).Update(transform(cur))
 		}
 		glog.Errorf("Attempt %d failed to update ReplicaSet %s@%s due to %s.", attempt, cur.Name, cur.Namespace, err)
 		time.Sleep(retryInterval)

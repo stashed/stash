@@ -38,7 +38,7 @@ func CheckAPIVersion(c clientset.Interface, constraint string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	v, err := version.NewVersion(info.Major + "." + info.Minor)
+	v, err := version.NewVersion(info.GitVersion)
 	if err != nil {
 		return false, err
 	}

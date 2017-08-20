@@ -116,17 +116,18 @@ func (c *Controller) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, old,
 		return nil
 	}
 
-	_, err = kutil.PatchDaemonSet(c.kubeClient, resource, func(resource *extensions.DaemonSet) {
-		resource.Spec.Template.Spec.Containers = kutil.UpsertContainer(resource.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.SidecarImageTag, "DaemonSet/"+resource.Name))
-		resource.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(resource.Spec.Template.Spec.Volumes)
-		resource.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(resource.Spec.Template.Spec.Volumes)
-		resource.Spec.Template.Spec.Volumes = util.MergeLocalVolume(resource.Spec.Template.Spec.Volumes, old, new)
+	_, err = kutil.PatchDaemonSet(c.kubeClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
+		obj.Spec.Template.Spec.Containers = kutil.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.SidecarImageTag, "DaemonSet/"+obj.Name))
+		obj.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(obj.Spec.Template.Spec.Volumes)
+		obj.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(obj.Spec.Template.Spec.Volumes)
+		obj.Spec.Template.Spec.Volumes = util.MergeLocalVolume(obj.Spec.Template.Spec.Volumes, old, new)
 
-		if resource.Annotations == nil {
-			resource.Annotations = make(map[string]string)
+		if obj.Annotations == nil {
+			obj.Annotations = make(map[string]string)
 		}
-		resource.Annotations[sapi.ConfigName] = new.Name
-		resource.Annotations[sapi.VersionTag] = c.SidecarImageTag
+		obj.Annotations[sapi.ConfigName] = new.Name
+		obj.Annotations[sapi.VersionTag] = c.SidecarImageTag
+		return obj
 	})
 	if err != nil {
 		return
@@ -154,7 +155,7 @@ func (c *Controller) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSe
 		return nil
 	}
 
-	_, err = kutil.PatchDaemonSet(c.kubeClient, resource, func(obj *extensions.DaemonSet) {
+	_, err = kutil.PatchDaemonSet(c.kubeClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
 		obj.Spec.Template.Spec.Containers = kutil.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
@@ -165,6 +166,7 @@ func (c *Controller) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSe
 			delete(obj.Annotations, sapi.ConfigName)
 			delete(obj.Annotations, sapi.VersionTag)
 		}
+		return obj
 	})
 	if err != nil {
 		return
