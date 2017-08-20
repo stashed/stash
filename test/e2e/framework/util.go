@@ -23,7 +23,7 @@ func (f *Framework) EventualEvent(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 			"involvedObject.namespace": meta.Namespace,
 			"type": apiv1.EventTypeNormal,
 		})
-		events, err := f.kubeClient.CoreV1().Events(f.namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
+		events, err := f.KubeClient.CoreV1().Events(f.namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
 		Expect(err).NotTo(HaveOccurred())
 		return events.Items
 	})
@@ -37,7 +37,7 @@ func (f *Framework) EventualWarning(meta metav1.ObjectMeta) GomegaAsyncAssertion
 			"involvedObject.namespace": meta.Namespace,
 			"type": apiv1.EventTypeWarning,
 		})
-		events, err := f.kubeClient.CoreV1().Events(f.namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
+		events, err := f.KubeClient.CoreV1().Events(f.namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
 		Expect(err).NotTo(HaveOccurred())
 		return events.Items
 	})

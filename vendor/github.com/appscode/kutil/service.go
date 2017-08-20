@@ -48,7 +48,7 @@ func TryPatchService(c clientset.Interface, meta metav1.ObjectMeta, transform fu
 			return PatchService(c, cur, transform)
 		}
 		glog.Errorf("Attempt %d failed to patch Service %s@%s due to %s.", attempt, cur.Name, cur.Namespace, err)
-		time.Sleep(updateRetryInterval)
+		time.Sleep(retryInterval)
 	}
 	return nil, fmt.Errorf("Failed to patch Service %s@%s after %d attempts.", meta.Name, meta.Namespace, attempt)
 }
@@ -64,7 +64,7 @@ func UpdateService(c clientset.Interface, meta metav1.ObjectMeta, transform func
 			return c.CoreV1().Services(cur.Namespace).Update(cur)
 		}
 		glog.Errorf("Attempt %d failed to update Service %s@%s due to %s.", attempt, cur.Name, cur.Namespace, err)
-		time.Sleep(updateRetryInterval)
+		time.Sleep(retryInterval)
 	}
 	return nil, fmt.Errorf("Failed to update Service %s@%s after %d attempts.", meta.Name, meta.Namespace, attempt)
 }

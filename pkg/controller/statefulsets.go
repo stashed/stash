@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/appscode/go-version"
 	acrt "github.com/appscode/go/runtime"
 	"github.com/appscode/kutil"
 	"github.com/appscode/log"
@@ -23,21 +22,9 @@ import (
 // Blocks caller. Intended to be called as a Go routine.
 func (c *Controller) WatchStatefulSets() {
 	// Skip v
-	if info, err := c.kubeClient.Discovery().ServerVersion(); err == nil {
-		v1_6, err := version.NewConstraint("<= 1.6")
-		if err != nil {
-			log.Warningf("Skipping watching StatefulSet for, Reason: %v", err)
-			return
-		}
-		v, err := version.NewVersion(info.Major + "." + info.Minor)
-		if err != nil {
-			log.Warningf("Skipping watching StatefulSet for, Reason: %v", err)
-			return
-		}
-		if v1_6.Check(v) {
-			log.Warningf("Skipping watching StatefulSet for Kubernetes version: %s.%s.%s[%s]", info.Major, info.Minor, info.String())
-			return
-		}
+	if matches, err := kutil.CheckAPIVersion(c.kubeClient, "<= 1.6"); err != nil || matches {
+		log.Warningf("Skipping watching StatefulSet for, Reason: %v", err)
+		return
 	}
 	if !util.IsPreferredAPIResource(c.kubeClient, apps.SchemeGroupVersion.String(), "StatefulSet") {
 		log.Warningf("Skipping watching non-preferred GroupVersion:%s Kind:%s", apps.SchemeGroupVersion.String(), "StatefulSet")

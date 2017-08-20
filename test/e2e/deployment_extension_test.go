@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"github.com/appscode/kutil"
 	sapi "github.com/appscode/stash/api"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/appscode/stash/test/e2e/framework"
@@ -132,11 +133,10 @@ var _ = Describe("DeploymentExtension", func() {
 			}, BeNumerically(">=", 1)))
 
 			By("Removing labels of DeploymentExtension " + deployment.Name)
-			err = f.UpdateDeploymentExtension(deployment.ObjectMeta, func(in extensions.Deployment) extensions.Deployment {
+			_, err = kutil.PatchDeploymentExtension(f.KubeClient, &deployment, func(in *extensions.Deployment) {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}
-				return in
 			})
 			Expect(err).NotTo(HaveOccurred())
 

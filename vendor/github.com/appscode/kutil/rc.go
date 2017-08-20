@@ -51,7 +51,7 @@ func TryPatchRC(c clientset.Interface, meta metav1.ObjectMeta, transform func(*a
 			return PatchRC(c, cur, transform)
 		}
 		glog.Errorf("Attempt %d failed to patch ReplicationController %s@%s due to %s.", attempt, cur.Name, cur.Namespace, err)
-		time.Sleep(updateRetryInterval)
+		time.Sleep(retryInterval)
 	}
 	return nil, fmt.Errorf("Failed to patch ReplicationController %s@%s after %d attempts.", meta.Name, meta.Namespace, attempt)
 }
@@ -67,7 +67,7 @@ func UpdateRC(c clientset.Interface, meta metav1.ObjectMeta, transform func(*api
 			return c.CoreV1().ReplicationControllers(cur.Namespace).Update(cur)
 		}
 		glog.Errorf("Attempt %d failed to update ReplicationController %s@%s due to %s.", attempt, cur.Name, cur.Namespace, err)
-		time.Sleep(updateRetryInterval)
+		time.Sleep(retryInterval)
 	}
 	return nil, fmt.Errorf("Failed to update ReplicationController %s@%s after %d attempts.", meta.Name, meta.Namespace, attempt)
 }

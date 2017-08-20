@@ -51,7 +51,7 @@ func TryPatchReplicaSet(c clientset.Interface, meta metav1.ObjectMeta, transform
 			return PatchReplicaSet(c, cur, transform)
 		}
 		glog.Errorf("Attempt %d failed to patch ReplicaSet %s@%s due to %s.", attempt, cur.Name, cur.Namespace, err)
-		time.Sleep(updateRetryInterval)
+		time.Sleep(retryInterval)
 	}
 	return nil, fmt.Errorf("Failed to patch ReplicaSet %s@%s after %d attempts.", meta.Name, meta.Namespace, attempt)
 }
@@ -67,7 +67,7 @@ func UpdateReplicaSet(c clientset.Interface, meta metav1.ObjectMeta, transform f
 			return c.ExtensionsV1beta1().ReplicaSets(cur.Namespace).Update(cur)
 		}
 		glog.Errorf("Attempt %d failed to update ReplicaSet %s@%s due to %s.", attempt, cur.Name, cur.Namespace, err)
-		time.Sleep(updateRetryInterval)
+		time.Sleep(retryInterval)
 	}
 	return nil, fmt.Errorf("Failed to update ReplicaSet %s@%s after %d attempts.", meta.Name, meta.Namespace, attempt)
 }

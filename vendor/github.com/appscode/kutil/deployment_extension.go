@@ -51,7 +51,7 @@ func TryPatchDeploymentExtension(c clientset.Interface, meta metav1.ObjectMeta, 
 			return PatchDeploymentExtension(c, cur, transform)
 		}
 		glog.Errorf("Attempt %d failed to patch Deployment %s@%s due to %s.", attempt, cur.Name, cur.Namespace, err)
-		time.Sleep(updateRetryInterval)
+		time.Sleep(retryInterval)
 	}
 	return nil, fmt.Errorf("Failed to patch Deployment %s@%s after %d attempts.", meta.Name, meta.Namespace, attempt)
 }
@@ -67,7 +67,7 @@ func TryUpdateDeploymentExtension(c clientset.Interface, meta metav1.ObjectMeta,
 			return c.ExtensionsV1beta1().Deployments(cur.Namespace).Update(cur)
 		}
 		glog.Errorf("Attempt %d failed to update Deployment %s@%s due to %s.", attempt, cur.Name, cur.Namespace, err)
-		time.Sleep(updateRetryInterval)
+		time.Sleep(retryInterval)
 	}
 	return nil, fmt.Errorf("Failed to update Deployment %s@%s after %d attempts.", meta.Name, meta.Namespace, attempt)
 }

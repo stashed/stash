@@ -50,7 +50,7 @@ func TryPatchDaemonSet(c clientset.Interface, meta metav1.ObjectMeta, transform 
 			return PatchDaemonSet(c, cur, transform)
 		}
 		glog.Errorf("Attempt %d failed to patch DaemonSet %s@%s due to %s.", attempt, cur.Name, cur.Namespace, err)
-		time.Sleep(updateRetryInterval)
+		time.Sleep(retryInterval)
 	}
 	return nil, fmt.Errorf("Failed to patch DaemonSet %s@%s after %d attempts.", meta.Name, meta.Namespace, attempt)
 }
@@ -66,7 +66,7 @@ func TryUpdateDaemonSet(c clientset.Interface, meta metav1.ObjectMeta, transform
 			return c.ExtensionsV1beta1().DaemonSets(cur.Namespace).Update(cur)
 		}
 		glog.Errorf("Attempt %d failed to update DaemonSet %s@%s due to %s.", attempt, cur.Name, cur.Namespace, err)
-		time.Sleep(updateRetryInterval)
+		time.Sleep(retryInterval)
 	}
 	return nil, fmt.Errorf("Failed to update DaemonSet %s@%s after %d attempts.", meta.Name, meta.Namespace, attempt)
 }
