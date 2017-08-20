@@ -116,17 +116,18 @@ func (c *Controller) EnsureDeploymentExtensionSidecar(resource *extensions.Deplo
 		return nil
 	}
 
-	_, err = kutil.PatchDeploymentExtension(c.kubeClient, resource, func(resource *extensions.Deployment) {
-		resource.Spec.Template.Spec.Containers = kutil.UpsertContainer(resource.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.SidecarImageTag, "Deployment/"+resource.Name))
-		resource.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(resource.Spec.Template.Spec.Volumes)
-		resource.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(resource.Spec.Template.Spec.Volumes)
-		resource.Spec.Template.Spec.Volumes = util.MergeLocalVolume(resource.Spec.Template.Spec.Volumes, old, new)
+	_, err = kutil.PatchDeploymentExtension(c.kubeClient, resource, func(obj *extensions.Deployment) *extensions.Deployment {
+		obj.Spec.Template.Spec.Containers = kutil.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.SidecarImageTag, "Deployment/"+obj.Name))
+		obj.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(obj.Spec.Template.Spec.Volumes)
+		obj.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(obj.Spec.Template.Spec.Volumes)
+		obj.Spec.Template.Spec.Volumes = util.MergeLocalVolume(obj.Spec.Template.Spec.Volumes, old, new)
 
-		if resource.Annotations == nil {
-			resource.Annotations = make(map[string]string)
+		if obj.Annotations == nil {
+			obj.Annotations = make(map[string]string)
 		}
-		resource.Annotations[sapi.ConfigName] = new.Name
-		resource.Annotations[sapi.VersionTag] = c.SidecarImageTag
+		obj.Annotations[sapi.ConfigName] = new.Name
+		obj.Annotations[sapi.VersionTag] = c.SidecarImageTag
+		return obj
 	})
 	if err != nil {
 		return
@@ -154,17 +155,18 @@ func (c *Controller) EnsureDeploymentExtensionSidecarDeleted(resource *extension
 		return nil
 	}
 
-	_, err = kutil.PatchDeploymentExtension(c.kubeClient, resource, func(resource *extensions.Deployment) {
-		resource.Spec.Template.Spec.Containers = kutil.EnsureContainerDeleted(resource.Spec.Template.Spec.Containers, util.StashContainer)
-		resource.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(resource.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
-		resource.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(resource.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
+	_, err = kutil.PatchDeploymentExtension(c.kubeClient, resource, func(obj *extensions.Deployment) *extensions.Deployment {
+		obj.Spec.Template.Spec.Containers = kutil.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
+		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
+		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
 		if restic.Spec.Backend.Local != nil {
-			resource.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(resource.Spec.Template.Spec.Volumes, util.LocalVolumeName)
+			obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.LocalVolumeName)
 		}
-		if resource.Annotations != nil {
-			delete(resource.Annotations, sapi.ConfigName)
-			delete(resource.Annotations, sapi.VersionTag)
+		if obj.Annotations != nil {
+			delete(obj.Annotations, sapi.ConfigName)
+			delete(obj.Annotations, sapi.VersionTag)
 		}
+		return obj
 	})
 	if err != nil {
 		return
