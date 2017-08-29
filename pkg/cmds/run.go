@@ -12,8 +12,10 @@ import (
 	"github.com/appscode/stash/pkg/analytics"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/docker"
+	"github.com/appscode/stash/pkg/migrator"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
+	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -57,10 +59,15 @@ func NewCmdRun(version string) *cobra.Command {
 			}
 			kubeClient = clientset.NewForConfigOrDie(config)
 			stashClient = scs.NewForConfigOrDie(config)
+			crdClient := apiextensionsclient.NewForConfigOrDie(config)
 
-			ctrl := controller.New(kubeClient, stashClient, tag)
+			ctrl := controller.New(kubeClient, crdClient, stashClient, tag)
 			err = ctrl.Setup()
 			if err != nil {
+				log.Fatalln(err)
+			}
+
+			if err = migrator.NewMigrator(kubeClient, crdClient).RunMigration(); err != nil {
 				log.Fatalln(err)
 			}
 

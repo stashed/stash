@@ -2,19 +2,30 @@ package framework
 
 import (
 	sapi "github.com/appscode/stash/api"
+	"github.com/appscode/stash/pkg/util"
 	. "github.com/onsi/gomega"
+	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
-func (f *Framework) EventuallyTPR(name string) GomegaAsyncAssertion {
+func (f *Framework) EventuallyCRD(name string) GomegaAsyncAssertion {
 	return Eventually(func() error {
-		_, err := f.KubeClient.ExtensionsV1beta1().ThirdPartyResources().Get("restic."+sapi.GroupName, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		// TPR group registration has 10 sec delay inside Kuberneteas api server. So, needs the extra check.
-		_, err = f.StashClient.Restics(apiv1.NamespaceDefault).List(metav1.ListOptions{})
-		return err
+		return util.WaitForCRDReady(
+			f.KubeClient.CoreV1().RESTClient(),
+			[]*apiextensions.CustomResourceDefinition{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: sapi.ResourceTypeRestic + "." + sapi.V1alpha1SchemeGroupVersion.Group,
+					},
+					Spec: apiextensions.CustomResourceDefinitionSpec{
+						Group:   sapi.GroupName,
+						Version: sapi.V1alpha1SchemeGroupVersion.Version,
+						Names: apiextensions.CustomResourceDefinitionNames{
+							Plural: sapi.ResourceTypeRestic,
+						},
+					},
+				},
+			},
+		)
 	})
 }
