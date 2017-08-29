@@ -187,12 +187,18 @@ func handleValues(av, bv interface{}, p string, patch []JsonPatchOperation) ([]J
 		}
 	case []interface{}:
 		bt := bv.([]interface{})
-		if len(at) != len(bt) {
-			// arrays are not the same
-			patch = append(patch, compareArray(at, bt, p)...)
-
+		if isSimpleArray(at) && isSimpleArray(bt) {
+			patch = append(patch, compareEditDistance(at, bt, p)...)
 		} else {
-			for i, _ := range bt {
+			n := min(len(at), len(bt))
+			for i := len(at) - 1; i >= n; i-- {
+				patch = append(patch, NewPatch("remove", makePath(p, i), nil))
+			}
+			for i := n; i < len(bt); i++ {
+				patch = append(patch, NewPatch("add", makePath(p, i), bt[i]))
+			}
+			for i := 0; i < n; i++ {
+				var err error
 				patch, err = handleValues(at[i], bt[i], makePath(p, i), patch)
 				if err != nil {
 					return nil, err
@@ -212,32 +218,97 @@ func handleValues(av, bv interface{}, p string, patch []JsonPatchOperation) ([]J
 	return patch, nil
 }
 
-func compareArray(av, bv []interface{}, p string) []JsonPatchOperation {
-	retval := []JsonPatchOperation{}
-	//	var err error
-	for i, v := range av {
-		found := false
-		for _, v2 := range bv {
-			if reflect.DeepEqual(v, v2) {
-				found = true
+func isBasicType(a interface{}) bool {
+	switch a.(type) {
+	case string, float64, bool:
+	default:
+		return false
+	}
+	return true
+}
+
+func isSimpleArray(a []interface{}) bool {
+	for i := range a {
+		switch a[i].(type) {
+		case string, float64, bool:
+		default:
+			val := reflect.ValueOf(a[i])
+			if val.Kind() == reflect.Map {
+				for _, k := range val.MapKeys() {
+					av := val.MapIndex(k)
+					if av.Kind() == reflect.Ptr || av.Kind() == reflect.Interface {
+						if av.IsNil() {
+							continue
+						}
+						av = av.Elem()
+					}
+					if av.Kind() != reflect.String && av.Kind() != reflect.Float64 && av.Kind() != reflect.Bool {
+						return false
+					}
+				}
+				return true
 			}
+			return false
 		}
-		if !found {
-			retval = append(retval, NewPatch("remove", makePath(p, i), nil))
+	}
+	return true
+}
+
+// https://en.wikipedia.org/wiki/Wagner%E2%80%93Fischer_algorithm
+// Adapted from https://github.com/texttheater/golang-levenshtein
+func compareEditDistance(s, t []interface{}, p string) []JsonPatchOperation {
+	m := len(s)
+	n := len(t)
+
+	d := make([][]int, m+1)
+	for i := 0; i <= m; i++ {
+		d[i] = make([]int, n+1)
+		d[i][0] = i
+	}
+	for j := 0; j <= n; j++ {
+		d[0][j] = j
+	}
+
+	for j := 1; j <= n; j++ {
+		for i := 1; i <= m; i++ {
+			if reflect.DeepEqual(s[i-1], t[j-1]) {
+				d[i][j] = d[i-1][j-1] // no op required
+			} else {
+				del := d[i-1][j] + 1
+				add := d[i][j-1] + 1
+				rep := d[i-1][j-1] + 1
+				d[i][j] = min(rep, min(add, del))
+			}
 		}
 	}
 
-	for i, v := range bv {
-		found := false
-		for _, v2 := range av {
-			if reflect.DeepEqual(v, v2) {
-				found = true
-			}
-		}
-		if !found {
-			retval = append(retval, NewPatch("add", makePath(p, i), v))
-		}
-	}
+	return backtrace(s, t, p, m, n, d)
+}
 
-	return retval
+func min(x int, y int) int {
+	if y < x {
+		return y
+	}
+	return x
+}
+
+func backtrace(s, t []interface{}, p string, i int, j int, matrix [][]int) []JsonPatchOperation {
+	if i > 0 && matrix[i-1][j]+1 == matrix[i][j] {
+		return append(backtrace(s, t, p, i-1, j, matrix), NewPatch("remove", makePath(p, i-1), nil))
+	}
+	if j > 0 && matrix[i][j-1]+1 == matrix[i][j] {
+		return append(backtrace(s, t, p, i, j-1, matrix), NewPatch("add", makePath(p, i), t[j-1]))
+	}
+	if i > 0 && j > 0 && matrix[i-1][j-1]+1 == matrix[i][j] {
+		if isBasicType(s[0]) {
+			return append(backtrace(s, t, p, i-1, j-1, matrix), NewPatch("replace", makePath(p, i-1), t[j-1]))
+		}
+
+		p2, _ := handleValues(s[j-1], t[j-1], makePath(p, i-1), []JsonPatchOperation{})
+		return append(backtrace(s, t, p, i-1, j-1, matrix), p2...)
+	}
+	if i > 0 && j > 0 && matrix[i-1][j-1] == matrix[i][j] {
+		return backtrace(s, t, p, i-1, j-1, matrix)
+	}
+	return []JsonPatchOperation{}
 }

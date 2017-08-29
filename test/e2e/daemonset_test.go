@@ -1,7 +1,7 @@
 package e2e_test
 
 import (
-	"github.com/appscode/kutil"
+	extensionsv1beta1kutil "github.com/appscode/kutil/extensions/v1beta1"
 	sapi "github.com/appscode/stash/api"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/appscode/stash/test/e2e/framework"
@@ -133,10 +133,11 @@ var _ = Describe("DaemonSet", func() {
 			}, BeNumerically(">=", 1)))
 
 			By("Removing labels of DaemonSet " + daemon.Name)
-			_, err = kutil.PatchDaemonSet(f.KubeClient, &daemon, func(in *extensions.DaemonSet) {
+			_, err = extensionsv1beta1kutil.PatchDaemonSet(f.KubeClient, &daemon, func(in *extensions.DaemonSet) *extensions.DaemonSet {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}
+				return in
 			})
 			Expect(err).NotTo(HaveOccurred())
 

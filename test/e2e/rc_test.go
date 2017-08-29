@@ -1,7 +1,7 @@
 package e2e_test
 
 import (
-	"github.com/appscode/kutil"
+	corev1kutil "github.com/appscode/kutil/core/v1"
 	sapi "github.com/appscode/stash/api"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/appscode/stash/test/e2e/framework"
@@ -132,10 +132,11 @@ var _ = Describe("ReplicationController", func() {
 			}, BeNumerically(">=", 1)))
 
 			By("Removing labels of ReplicationController " + rc.Name)
-			_, err = kutil.PatchRC(f.KubeClient, &rc, func(in *apiv1.ReplicationController) {
+			_, err = corev1kutil.PatchRC(f.KubeClient, &rc, func(in *apiv1.ReplicationController) *apiv1.ReplicationController {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}
+				return in
 			})
 			Expect(err).NotTo(HaveOccurred())
 

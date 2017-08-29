@@ -6,7 +6,7 @@ import (
 	"reflect"
 
 	acrt "github.com/appscode/go/runtime"
-	"github.com/appscode/kutil"
+	kutil "github.com/appscode/kutil/core/v1"
 	"github.com/appscode/log"
 	sapi "github.com/appscode/stash/api"
 	"github.com/appscode/stash/pkg/util"

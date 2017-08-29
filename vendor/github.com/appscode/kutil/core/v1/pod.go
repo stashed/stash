@@ -1,10 +1,30 @@
-package kutil
+package v1
 
 import (
+	"errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
+
+// ref: https://github.com/coreos/prometheus-operator/blob/c79166fcff3dae7bb8bc1e6bddc81837c2d97c04/pkg/k8sutil/k8sutil.go#L64
+// PodRunningAndReady returns whether a pod is running and each container has
+// passed it's ready state.
+func PodRunningAndReady(pod apiv1.Pod) (bool, error) {
+	switch pod.Status.Phase {
+	case apiv1.PodFailed, apiv1.PodSucceeded:
+		return false, errors.New("pod completed")
+	case apiv1.PodRunning:
+		for _, cond := range pod.Status.Conditions {
+			if cond.Type != apiv1.PodReady {
+				continue
+			}
+			return cond.Status == apiv1.ConditionTrue, nil
+		}
+		return false, errors.New("pod ready condition not found")
+	}
+	return false, nil
+}
 
 func RestartPods(kubeClient clientset.Interface, namespace string, selector *metav1.LabelSelector) error {
 	r, err := metav1.LabelSelectorAsSelector(selector)

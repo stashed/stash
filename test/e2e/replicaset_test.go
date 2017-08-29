@@ -1,7 +1,7 @@
 package e2e_test
 
 import (
-	"github.com/appscode/kutil"
+	extensionv1beta1kutil "github.com/appscode/kutil/extensions/v1beta1"
 	sapi "github.com/appscode/stash/api"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/appscode/stash/test/e2e/framework"
@@ -133,10 +133,11 @@ var _ = Describe("ReplicaSet", func() {
 			}, BeNumerically(">=", 1)))
 
 			By("Removing labels of ReplicaSet " + rs.Name)
-			_, err = kutil.PatchReplicaSet(f.KubeClient, &rs, func(in *extensions.ReplicaSet) {
+			_, err = extensionv1beta1kutil.PatchReplicaSet(f.KubeClient, &rs, func(in *extensions.ReplicaSet) *extensions.ReplicaSet {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}
+				return in
 			})
 			Expect(err).NotTo(HaveOccurred())
 
