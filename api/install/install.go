@@ -13,7 +13,7 @@ func init() {
 			GroupName:                  rapi.GroupName,
 			VersionPreferenceOrder:     []string{rapi.V1alpha1SchemeGroupVersion.Version},
 			ImportPrefix:               "github.com/appscode/stash/api",
-			RootScopedKinds:            sets.NewString("ThirdPartyResource"),
+			RootScopedKinds:            sets.NewString("CustomResourceDefinition"),
 			AddInternalObjectsToScheme: rapi.AddToScheme,
 		},
 		announced.VersionToSchemeFunc{

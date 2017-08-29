@@ -14,6 +14,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
+	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -46,17 +47,18 @@ var _ = BeforeSuite(func() {
 
 	kubeClient := clientset.NewForConfigOrDie(config)
 	stashClient := rcs.NewForConfigOrDie(config)
+	crdClient := apiextensionsclient.NewForConfigOrDie(config)
 
 	root = framework.New(kubeClient, stashClient)
 	err = root.CreateNamespace()
 	Expect(err).NotTo(HaveOccurred())
 	By("Using test namespace " + root.Namespace())
 
-	ctrl = controller.New(kubeClient, stashClient, "canary")
+	ctrl = controller.New(kubeClient, crdClient, stashClient, "canary")
 	By("Registering TPR group " + sapi.GroupName)
 	err = ctrl.Setup()
 	Expect(err).NotTo(HaveOccurred())
-	root.EventuallyTPR("restic." + sapi.GroupName).Should(Succeed())
+	root.EventuallyCRD("restic." + sapi.GroupName).Should(Succeed())
 
 	ctrl.Run()
 })
