@@ -1,12 +1,13 @@
-package kutil
+package v1
 
 import (
 	"encoding/json"
 	"fmt"
 	"time"
 
+	"github.com/appscode/jsonpatch"
+	"github.com/appscode/kutil"
 	"github.com/golang/glog"
-	"github.com/mattbaird/jsonpatch"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -14,14 +15,18 @@ import (
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
-func CreateOrPatchService(c clientset.Interface, obj *apiv1.Service) (*apiv1.Service, error) {
-	cur, err := c.CoreV1().Services(obj.Namespace).Get(obj.Name, metav1.GetOptions{})
+func EnsureService(c clientset.Interface, meta metav1.ObjectMeta, transform func(*apiv1.Service) *apiv1.Service) (*apiv1.Service, error) {
+	return CreateOrPatchService(c, meta, transform)
+}
+
+func CreateOrPatchService(c clientset.Interface, meta metav1.ObjectMeta, transform func(*apiv1.Service) *apiv1.Service) (*apiv1.Service, error) {
+	cur, err := c.CoreV1().Services(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
-		return c.CoreV1().Services(obj.Namespace).Create(obj)
+		return c.CoreV1().Services(meta.Namespace).Create(transform(&apiv1.Service{ObjectMeta: meta}))
 	} else if err != nil {
 		return nil, err
 	}
-	return PatchService(c, cur, func(*apiv1.Service) *apiv1.Service { return obj })
+	return PatchService(c, cur, transform)
 }
 
 func PatchService(c clientset.Interface, cur *apiv1.Service, transform func(*apiv1.Service) *apiv1.Service) (*apiv1.Service, error) {
@@ -39,6 +44,9 @@ func PatchService(c clientset.Interface, cur *apiv1.Service, transform func(*api
 	if err != nil {
 		return nil, err
 	}
+	if len(patch) == 0 {
+		return cur, nil
+	}
 	pb, err := json.MarshalIndent(patch, "", "  ")
 	if err != nil {
 		return nil, err
@@ -49,7 +57,7 @@ func PatchService(c clientset.Interface, cur *apiv1.Service, transform func(*api
 
 func TryPatchService(c clientset.Interface, meta metav1.ObjectMeta, transform func(*apiv1.Service) *apiv1.Service) (*apiv1.Service, error) {
 	attempt := 0
-	for ; attempt < maxAttempts; attempt = attempt + 1 {
+	for ; attempt < kutil.MaxAttempts; attempt = attempt + 1 {
 		cur, err := c.CoreV1().Services(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(err) {
 			return cur, err
@@ -57,14 +65,14 @@ func TryPatchService(c clientset.Interface, meta metav1.ObjectMeta, transform fu
 			return PatchService(c, cur, transform)
 		}
 		glog.Errorf("Attempt %d failed to patch Service %s@%s due to %s.", attempt, cur.Name, cur.Namespace, err)
-		time.Sleep(retryInterval)
+		time.Sleep(kutil.RetryInterval)
 	}
 	return nil, fmt.Errorf("Failed to patch Service %s@%s after %d attempts.", meta.Name, meta.Namespace, attempt)
 }
 
-func UpdateService(c clientset.Interface, meta metav1.ObjectMeta, transform func(*apiv1.Service) *apiv1.Service) (*apiv1.Service, error) {
+func TryUpdateService(c clientset.Interface, meta metav1.ObjectMeta, transform func(*apiv1.Service) *apiv1.Service) (*apiv1.Service, error) {
 	attempt := 0
-	for ; attempt < maxAttempts; attempt = attempt + 1 {
+	for ; attempt < kutil.MaxAttempts; attempt = attempt + 1 {
 		cur, err := c.CoreV1().Services(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(err) {
 			return cur, err
@@ -72,7 +80,7 @@ func UpdateService(c clientset.Interface, meta metav1.ObjectMeta, transform func
 			return c.CoreV1().Services(cur.Namespace).Update(transform(cur))
 		}
 		glog.Errorf("Attempt %d failed to update Service %s@%s due to %s.", attempt, cur.Name, cur.Namespace, err)
-		time.Sleep(retryInterval)
+		time.Sleep(kutil.RetryInterval)
 	}
 	return nil, fmt.Errorf("Failed to update Service %s@%s after %d attempts.", meta.Name, meta.Namespace, attempt)
 }

@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/appscode/kutil"
+	corev1kutil "github.com/appscode/kutil/core/v1"
 	rapi "github.com/appscode/stash/api"
 	sapi "github.com/appscode/stash/api"
 	scs "github.com/appscode/stash/client/clientset"
@@ -220,7 +220,7 @@ func CreateSidecarContainer(r *rapi.Restic, tag, workload string) apiv1.Containe
 }
 
 func UpsertScratchVolume(volumes []apiv1.Volume) []apiv1.Volume {
-	return kutil.UpsertVolume(volumes, apiv1.Volume{
+	return corev1kutil.UpsertVolume(volumes, apiv1.Volume{
 		Name: ScratchDirVolumeName,
 		VolumeSource: apiv1.VolumeSource{
 			EmptyDir: &apiv1.EmptyDirVolumeSource{},
@@ -230,7 +230,7 @@ func UpsertScratchVolume(volumes []apiv1.Volume) []apiv1.Volume {
 
 // https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#store-pod-fields
 func UpsertDownwardVolume(volumes []apiv1.Volume) []apiv1.Volume {
-	return kutil.UpsertVolume(volumes, apiv1.Volume{
+	return corev1kutil.UpsertVolume(volumes, apiv1.Volume{
 		Name: PodinfoVolumeName,
 		VolumeSource: apiv1.VolumeSource{
 			DownwardAPI: &apiv1.DownwardAPIVolumeSource{
@@ -261,7 +261,7 @@ func MergeLocalVolume(volumes []apiv1.Volume, old, new *sapi.Restic) []apiv1.Vol
 		if oldPos != -1 {
 			volumes[oldPos] = apiv1.Volume{Name: LocalVolumeName, VolumeSource: new.Spec.Backend.Local.VolumeSource}
 		} else {
-			volumes = kutil.UpsertVolume(volumes, apiv1.Volume{Name: LocalVolumeName, VolumeSource: new.Spec.Backend.Local.VolumeSource})
+			volumes = corev1kutil.UpsertVolume(volumes, apiv1.Volume{Name: LocalVolumeName, VolumeSource: new.Spec.Backend.Local.VolumeSource})
 		}
 	} else {
 		if oldPos != -1 {

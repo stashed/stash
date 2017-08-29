@@ -1,8 +1,8 @@
-hash: dd1863fc1631f72c5fb44104a3ea042bd911521d86630f610f009ad5d4af39ce
-updated: 2017-08-20T13:30:55.412279926-07:00
+hash: f4e962856c74626d223ede2341786b01738074585058b163bf3a7cbc1cea0f3f
+updated: 2017-08-29T15:31:50.17991248+06:00
 imports:
 - name: github.com/appscode/go
-  version: 45732d59b2277b9c7ffdc41d2d5c07a899a20a70
+  version: a6256fcfa308eb6aa22fe292930fec3dba84ba6a
   subpackages:
   - crypto/rand
   - runtime
@@ -11,8 +11,14 @@ imports:
   - version
 - name: github.com/appscode/go-version
   version: 97adb342c1792e9f59701c1d96bf3612d0fc7621
+- name: github.com/appscode/jsonpatch
+  version: 3cdd2454b5443228620ea11294085ec3489936a6
 - name: github.com/appscode/kutil
-  version: 2f13263248103d55bc9dcfa3a067055d3e3271aa
+  version: 5d208c60e3be8e3b244d64d8f76e0462afe2bcbd
+  subpackages:
+  - apps/v1beta1
+  - core/v1
+  - extensions/v1beta1
 - name: github.com/appscode/log
   version: 68e0e42e42c01371f3950571fc87c2298a51dd8f
   subpackages:
@@ -20,7 +26,7 @@ imports:
 - name: github.com/appscode/pat
   version: 48ff78925b7955367d8a048fc2b5cec8efadf8d3
 - name: github.com/beorn7/perks
-  version: 3ac7bf7a47d159a033b107610db8a1b6575507a4
+  version: 4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9
   subpackages:
   - quantile
 - name: github.com/cenkalti/backoff
@@ -30,7 +36,7 @@ imports:
 - name: github.com/codeskyblue/go-sh
   version: b097669b1569203c3ce05a6b8717d43140fdb3d5
 - name: github.com/cpuguy83/go-md2man
-  version: a65d4d2de4d5f7c74868dfa9b202a3c8be315aaa
+  version: 1d903dcb749992f3741d744c0f8376b4bd7eb3e1
   subpackages:
   - md2man
 - name: github.com/davecgh/go-spew
@@ -75,7 +81,7 @@ imports:
   - proto
   - sortkeys
 - name: github.com/golang/glog
-  version: 44145f04b68cf362d9c4df2182967c2275eaefed
+  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
 - name: github.com/golang/groupcache
   version: 02826c3e79038b59d737d3b1c0a1d937f71a4433
   subpackages:
@@ -114,8 +120,6 @@ imports:
   - buffer
   - jlexer
   - jwriter
-- name: github.com/mattbaird/jsonpatch
-  version: d220c21cb65bebf730343aee4c00ba60be2d3235
 - name: github.com/matttproud/golang_protobuf_extensions
   version: fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a
   subpackages:
@@ -141,7 +145,7 @@ imports:
   - prometheus/promhttp
   - prometheus/push
 - name: github.com/prometheus/client_model
-  version: fa8ad6fec33561be4280a8f0514318c79d7f6cb6
+  version: 6f3806018612930941127f2a7c6c453ba2c527d2
   subpackages:
   - go
 - name: github.com/prometheus/common
@@ -151,7 +155,9 @@ imports:
   - internal/bitbucket.org/ww/goautoneg
   - model
 - name: github.com/prometheus/procfs
-  version: 454a56f35412459b5e684fd5ec0f9211b94f002a
+  version: 65c1f6f8f0fc1e2185eb9863a3bc751496404259
+  subpackages:
+  - xfs
 - name: github.com/PuerkitoBio/purell
   version: 8a290539e2e8629dbc4e6bad948158f790ec31f4
 - name: github.com/PuerkitoBio/urlesc
@@ -163,7 +169,7 @@ imports:
 - name: github.com/Sirupsen/logrus
   version: 3ec0642a7fb6488f65b06f9040adc67e3990296a
 - name: github.com/spf13/cobra
-  version: 4a7b7e65864c064d48dce82efbbfed2bdc0bf2aa
+  version: 2df9a531813370438a4d79bfc33e21f58063ed87
   subpackages:
   - doc
 - name: github.com/spf13/pflag
@@ -368,7 +374,7 @@ testImports:
 - name: github.com/mitchellh/go-homedir
   version: b8bc1bf767474819792c23f32d8286a45736f1c6
 - name: github.com/onsi/ginkgo
-  version: bb93381d543b0e5725244abe752214a110791d01
+  version: 67b9df7f55fe1165fd9ad49aca7754cce01a42b8
   subpackages:
   - config
   - internal/codelocation
@@ -377,6 +383,7 @@ testImports:
   - internal/leafnodes
   - internal/remote
   - internal/spec
+  - internal/spec_iterator
   - internal/specrunner
   - internal/suite
   - internal/testingtproxy

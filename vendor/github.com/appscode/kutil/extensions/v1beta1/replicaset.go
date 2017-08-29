@@ -1,4 +1,4 @@
-package kutil
+package v1beta1
 
 import (
 	"encoding/json"
@@ -7,9 +7,10 @@ import (
 	"time"
 
 	. "github.com/appscode/go/types"
+	"github.com/appscode/jsonpatch"
+	"github.com/appscode/kutil"
 	"github.com/cenkalti/backoff"
 	"github.com/golang/glog"
-	"github.com/mattbaird/jsonpatch"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -17,14 +18,18 @@ import (
 	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
-func CreateOrPatchReplicaSet(c clientset.Interface, obj *extensions.ReplicaSet) (*extensions.ReplicaSet, error) {
-	cur, err := c.ExtensionsV1beta1().ReplicaSets(obj.Namespace).Get(obj.Name, metav1.GetOptions{})
+func EnsureReplicaSet(c clientset.Interface, meta metav1.ObjectMeta, transform func(*extensions.ReplicaSet) *extensions.ReplicaSet) (*extensions.ReplicaSet, error) {
+	return CreateOrPatchReplicaSet(c, meta, transform)
+}
+
+func CreateOrPatchReplicaSet(c clientset.Interface, meta metav1.ObjectMeta, transform func(*extensions.ReplicaSet) *extensions.ReplicaSet) (*extensions.ReplicaSet, error) {
+	cur, err := c.ExtensionsV1beta1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
-		return c.ExtensionsV1beta1().ReplicaSets(obj.Namespace).Create(obj)
+		return c.ExtensionsV1beta1().ReplicaSets(meta.Namespace).Create(transform(&extensions.ReplicaSet{ObjectMeta: meta}))
 	} else if err != nil {
 		return nil, err
 	}
-	return PatchReplicaSet(c, cur, func(*extensions.ReplicaSet) *extensions.ReplicaSet { return obj })
+	return PatchReplicaSet(c, cur, transform)
 }
 
 func PatchReplicaSet(c clientset.Interface, cur *extensions.ReplicaSet, transform func(*extensions.ReplicaSet) *extensions.ReplicaSet) (*extensions.ReplicaSet, error) {
@@ -42,6 +47,9 @@ func PatchReplicaSet(c clientset.Interface, cur *extensions.ReplicaSet, transfor
 	if err != nil {
 		return nil, err
 	}
+	if len(patch) == 0 {
+		return cur, nil
+	}
 	pb, err := json.MarshalIndent(patch, "", "  ")
 	if err != nil {
 		return nil, err
@@ -52,7 +60,7 @@ func PatchReplicaSet(c clientset.Interface, cur *extensions.ReplicaSet, transfor
 
 func TryPatchReplicaSet(c clientset.Interface, meta metav1.ObjectMeta, transform func(*extensions.ReplicaSet) *extensions.ReplicaSet) (*extensions.ReplicaSet, error) {
 	attempt := 0
-	for ; attempt < maxAttempts; attempt = attempt + 1 {
+	for ; attempt < kutil.MaxAttempts; attempt = attempt + 1 {
 		cur, err := c.ExtensionsV1beta1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(err) {
 			return cur, err
@@ -60,14 +68,14 @@ func TryPatchReplicaSet(c clientset.Interface, meta metav1.ObjectMeta, transform
 			return PatchReplicaSet(c, cur, transform)
 		}
 		glog.Errorf("Attempt %d failed to patch ReplicaSet %s@%s due to %s.", attempt, cur.Name, cur.Namespace, err)
-		time.Sleep(retryInterval)
+		time.Sleep(kutil.RetryInterval)
 	}
 	return nil, fmt.Errorf("Failed to patch ReplicaSet %s@%s after %d attempts.", meta.Name, meta.Namespace, attempt)
 }
 
-func UpdateReplicaSet(c clientset.Interface, meta metav1.ObjectMeta, transform func(*extensions.ReplicaSet) *extensions.ReplicaSet) (*extensions.ReplicaSet, error) {
+func TryUpdateReplicaSet(c clientset.Interface, meta metav1.ObjectMeta, transform func(*extensions.ReplicaSet) *extensions.ReplicaSet) (*extensions.ReplicaSet, error) {
 	attempt := 0
-	for ; attempt < maxAttempts; attempt = attempt + 1 {
+	for ; attempt < kutil.MaxAttempts; attempt = attempt + 1 {
 		cur, err := c.ExtensionsV1beta1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(err) {
 			return cur, err
@@ -75,7 +83,7 @@ func UpdateReplicaSet(c clientset.Interface, meta metav1.ObjectMeta, transform f
 			return c.ExtensionsV1beta1().ReplicaSets(cur.Namespace).Update(transform(cur))
 		}
 		glog.Errorf("Attempt %d failed to update ReplicaSet %s@%s due to %s.", attempt, cur.Name, cur.Namespace, err)
-		time.Sleep(retryInterval)
+		time.Sleep(kutil.RetryInterval)
 	}
 	return nil, fmt.Errorf("Failed to update ReplicaSet %s@%s after %d attempts.", meta.Name, meta.Namespace, attempt)
 }

@@ -125,10 +125,6 @@ func (*extendedCodec) DecodeParameters(parameters url.Values, from schema.GroupV
 	if len(parameters) == 0 {
 		return nil
 	}
-	_, okDelete := into.(*metav1.DeleteOptions)
-	if _, okList := into.(*metav1.ListOptions); okList || okDelete {
-		from = schema.GroupVersion{Version: "v1"}
-	}
 	return runtime.NewParameterCodec(api.Scheme).DecodeParameters(parameters, from, into)
 }
 
@@ -138,10 +134,6 @@ func (c *extendedCodec) EncodeParameters(obj runtime.Object, to schema.GroupVers
 	result := url.Values{}
 	if obj == nil {
 		return result, nil
-	}
-	_, okDelete := obj.(*metav1.DeleteOptions)
-	if _, okList := obj.(*metav1.ListOptions); okList || okDelete {
-		to = schema.GroupVersion{Version: "v1"}
 	}
 	return runtime.NewParameterCodec(api.Scheme).EncodeParameters(obj, to)
 }
