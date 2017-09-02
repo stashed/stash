@@ -95,13 +95,6 @@ func (c *Controller) WatchReplicaSets() {
 }
 
 func (c *Controller) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, old, new *sapi.Restic) (err error) {
-	defer func() {
-		if err != nil {
-			sidecarFailedToDelete()
-			return
-		}
-		sidecarSuccessfullyAdd()
-	}()
 	if new.Spec.Backend.StorageSecretName == "" {
 		err = fmt.Errorf("Missing repository secret name for Restic %s@%s.", new.Name, new.Namespace)
 		return
@@ -142,14 +135,6 @@ func (c *Controller) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, ol
 }
 
 func (c *Controller) EnsureReplicaSetSidecarDeleted(resource *extensions.ReplicaSet, restic *sapi.Restic) (err error) {
-	defer func() {
-		if err != nil {
-			sidecarFailedToDelete()
-			return
-		}
-		sidecarSuccessfullyDeleted()
-	}()
-
 	if name := util.GetString(resource.Annotations, sapi.ConfigName); name == "" {
 		log.Infof("Restic sidecar already removed for ReplicaSet %s@%s.", resource.Name, resource.Namespace)
 		return nil

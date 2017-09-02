@@ -95,14 +95,6 @@ func (c *Controller) WatchDeploymentApps() {
 }
 
 func (c *Controller) EnsureDeploymentAppSidecar(resource *apps.Deployment, old, new *sapi.Restic) (err error) {
-	defer func() {
-		if err != nil {
-			sidecarFailedToDelete()
-			return
-		}
-		sidecarSuccessfullyAdd()
-	}()
-
 	if new.Spec.Backend.StorageSecretName == "" {
 		err = fmt.Errorf("Missing repository secret name for Restic %s@%s.", new.Name, new.Namespace)
 		return
@@ -143,14 +135,6 @@ func (c *Controller) EnsureDeploymentAppSidecar(resource *apps.Deployment, old, 
 }
 
 func (c *Controller) EnsureDeploymentAppSidecarDeleted(resource *apps.Deployment, restic *sapi.Restic) (err error) {
-	defer func() {
-		if err != nil {
-			sidecarFailedToDelete()
-			return
-		}
-		sidecarSuccessfullyDeleted()
-	}()
-
 	if name := util.GetString(resource.Annotations, sapi.ConfigName); name == "" {
 		log.Infof("Restic sidecar already removed for Deployment %s@%s.", resource.Name, resource.Namespace)
 		return nil

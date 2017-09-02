@@ -15,7 +15,11 @@ func main() {
 	rootCmd := cmds.NewCmdStash("")
 	dir := runtime.GOPath() + "/src/github.com/appscode/stash/docs/reference"
 	fmt.Printf("Generating cli markdown tree in: %v\n", dir)
-	err := os.MkdirAll(dir, 0755)
+	err := os.RemoveAll(dir)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = os.MkdirAll(dir, 0755)
 	if err != nil {
 		log.Fatal(err)
 	}
