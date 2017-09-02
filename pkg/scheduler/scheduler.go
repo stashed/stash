@@ -42,6 +42,7 @@ type Options struct {
 	PodName        string
 	SmartPrefix    string
 	PodLabelsPath  string
+	ResyncPeriod   time.Duration
 }
 
 func (opt Options) autoPrefix(resource *sapi.Restic) string {
@@ -66,7 +67,6 @@ type Scheduler struct {
 	resticCLI   *cli.ResticWrapper
 	cron        *cron.Cron
 	recorder    record.EventRecorder
-	syncPeriod  time.Duration
 }
 
 func New(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt Options) *Scheduler {
@@ -79,7 +79,6 @@ func New(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt
 		locked:      make(chan struct{}, 1),
 		resticCLI:   cli.New(opt.ScratchDir),
 		recorder:    eventer.NewEventRecorder(kubeClient, "stash-scheduler"),
-		syncPeriod:  30 * time.Second,
 	}
 }
 
@@ -122,7 +121,7 @@ func (c *Scheduler) RunAndHold() {
 	}
 	_, ctrl := cache.NewInformer(lw,
 		&sapi.Restic{},
-		c.syncPeriod,
+		c.opt.ResyncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				if r, ok := obj.(*sapi.Restic); ok {

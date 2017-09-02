@@ -31,7 +31,7 @@ func (c *Controller) WatchRestics() {
 	}
 	_, ctrl := cache.NewInformer(lw,
 		&sapi.Restic{},
-		c.syncPeriod,
+		c.resyncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				if resource, ok := obj.(*sapi.Restic); ok {

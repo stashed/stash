@@ -3,6 +3,7 @@ package cmds
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	stringz "github.com/appscode/go/strings"
 	"github.com/appscode/log"
@@ -30,8 +31,9 @@ func NewCmdRun(version string) *cobra.Command {
 	var (
 		masterURL      string
 		kubeconfigPath string
-		tag            string = stringz.Val(version, "canary")
-		address        string = ":56790"
+		tag            string        = stringz.Val(version, "canary")
+		address        string        = ":56790"
+		resyncPeriod   time.Duration = 5 * time.Minute
 	)
 
 	cmd := &cobra.Command{
@@ -51,7 +53,7 @@ func NewCmdRun(version string) *cobra.Command {
 			stashClient = scs.NewForConfigOrDie(config)
 			crdClient := apiextensionsclient.NewForConfigOrDie(config)
 
-			ctrl := controller.New(kubeClient, crdClient, stashClient, tag)
+			ctrl := controller.New(kubeClient, crdClient, stashClient, tag, resyncPeriod)
 			err = ctrl.Setup()
 			if err != nil {
 				log.Fatalln(err)
@@ -80,6 +82,7 @@ func NewCmdRun(version string) *cobra.Command {
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&address, "address", address, "Address to listen on for web interface and telemetry.")
 	cmd.Flags().StringVar(&scratchDir, "scratch-dir", scratchDir, "Directory used to store temporary files. Use an `emptyDir` in Kubernetes.")
+	cmd.Flags().DurationVar(&resyncPeriod, "resync-period", resyncPeriod, "If non-zero, will re-list this often. Otherwise, re-list will be delayed aslong as possible (until the upstream source closes the watch or times out.")
 
 	return cmd
 }

@@ -45,7 +45,7 @@ func (c *Controller) WatchStatefulSets() {
 	}
 	_, ctrl := cache.NewInformer(lw,
 		&apps.StatefulSet{},
-		c.syncPeriod,
+		c.resyncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				if resource, ok := obj.(*apps.StatefulSet); ok {

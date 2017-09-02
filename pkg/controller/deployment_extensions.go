@@ -39,7 +39,7 @@ func (c *Controller) WatchDeploymentExtensions() {
 	}
 	_, ctrl := cache.NewInformer(lw,
 		&extensions.Deployment{},
-		c.syncPeriod,
+		c.resyncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				if resource, ok := obj.(*extensions.Deployment); ok {

@@ -23,16 +23,16 @@ type Controller struct {
 	stashClient     scs.ExtensionInterface
 	crdClient       apiextensionsclient.Interface
 	SidecarImageTag string
-	syncPeriod      time.Duration
+	resyncPeriod    time.Duration
 }
 
-func New(kubeClient clientset.Interface, crdClient apiextensionsclient.Interface, extClient scs.ExtensionInterface, tag string) *Controller {
+func New(kubeClient clientset.Interface, crdClient apiextensionsclient.Interface, extClient scs.ExtensionInterface, tag string, resyncPeriod time.Duration) *Controller {
 	return &Controller{
 		kubeClient:      kubeClient,
 		stashClient:     extClient,
 		crdClient:       crdClient,
 		SidecarImageTag: tag,
-		syncPeriod:      30 * time.Second,
+		resyncPeriod:    resyncPeriod,
 	}
 }
 

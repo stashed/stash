@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/appscode/log"
 	rcs "github.com/appscode/stash/client/clientset"
@@ -27,6 +28,7 @@ func NewCmdSchedule() *cobra.Command {
 			ScratchDir:     "/tmp",
 			PushgatewayURL: "http://stash-operator.kube-system.svc:56789",
 			PodLabelsPath:  "/etc/stash/labels",
+			ResyncPeriod:   5 * time.Minute,
 		}
 	)
 
@@ -130,6 +132,7 @@ func NewCmdSchedule() *cobra.Command {
 	cmd.Flags().StringVar(&opt.ResticName, "restic-name", opt.ResticName, "Name of the Restic used as configuration.")
 	cmd.Flags().StringVar(&opt.ScratchDir, "scratch-dir", opt.ScratchDir, "Directory used to store temporary files. Use an `emptyDir` in Kubernetes.")
 	cmd.Flags().StringVar(&opt.PushgatewayURL, "pushgateway-url", opt.PushgatewayURL, "URL of Prometheus pushgateway used to cache backup metrics")
+	cmd.Flags().DurationVar(&opt.ResyncPeriod, "resync-period", opt.ResyncPeriod, "If non-zero, will re-list this often. Otherwise, re-list will be delayed aslong as possible (until the upstream source closes the watch or times out.")
 
 	return cmd
 }
