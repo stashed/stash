@@ -55,10 +55,8 @@ func (c *Controller) WatchReplicationControllers() {
 					err = c.EnsureReplicationControllerSidecar(resource, nil, restic)
 					if err != nil {
 						log.Errorf("Failed to add sidecar for ReplicationController %s@%s.", resource.Name, resource.Namespace)
-						sidecarFailedToAdd()
 						return
 					}
-					sidecarSuccessfullyAdd()
 				}
 			},
 			UpdateFunc: func(old, new interface{}) {
@@ -99,14 +97,6 @@ func (c *Controller) WatchReplicationControllers() {
 }
 
 func (c *Controller) EnsureReplicationControllerSidecar(resource *apiv1.ReplicationController, old, new *sapi.Restic) (err error) {
-	defer func() {
-		if err != nil {
-			sidecarFailedToDelete()
-			return
-		}
-		sidecarSuccessfullyAdd()
-	}()
-
 	if new.Spec.Backend.StorageSecretName == "" {
 		err = fmt.Errorf("Missing repository secret name for Restic %s@%s.", new.Name, new.Namespace)
 		return
@@ -147,14 +137,6 @@ func (c *Controller) EnsureReplicationControllerSidecar(resource *apiv1.Replicat
 }
 
 func (c *Controller) EnsureReplicationControllerSidecarDeleted(resource *apiv1.ReplicationController, restic *sapi.Restic) (err error) {
-	defer func() {
-		if err != nil {
-			sidecarFailedToDelete()
-			return
-		}
-		sidecarSuccessfullyDeleted()
-	}()
-
 	if name := util.GetString(resource.Annotations, sapi.ConfigName); name == "" {
 		log.Infof("Restic sidecar already removed for ReplicationController %s@%s.", resource.Name, resource.Namespace)
 		return nil

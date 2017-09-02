@@ -101,14 +101,6 @@ func (c *Controller) WatchStatefulSets() {
 }
 
 func (c *Controller) EnsureStatefulSetSidecar(resource *apps.StatefulSet, old, new *sapi.Restic) (err error) {
-	defer func() {
-		if err != nil {
-			sidecarFailedToDelete()
-			return
-		}
-		sidecarSuccessfullyAdd()
-	}()
-
 	if new.Spec.Backend.StorageSecretName == "" {
 		err = fmt.Errorf("Missing repository secret name for Restic %s@%s.", new.Name, new.Namespace)
 		return
@@ -149,14 +141,6 @@ func (c *Controller) EnsureStatefulSetSidecar(resource *apps.StatefulSet, old, n
 }
 
 func (c *Controller) EnsureStatefulSetSidecarDeleted(resource *apps.StatefulSet, restic *sapi.Restic) (err error) {
-	defer func() {
-		if err != nil {
-			sidecarFailedToDelete()
-			return
-		}
-		sidecarSuccessfullyDeleted()
-	}()
-
 	if name := util.GetString(resource.Annotations, sapi.ConfigName); name == "" {
 		log.Infof("Restic sidecar already removed for StatefulSet %s@%s.", resource.Name, resource.Namespace)
 		return nil

@@ -14,7 +14,6 @@ stash schedule [flags]
 ### Options
 
 ```
-      --analytics                Send analytical events to Google Analytics (default true)
   -h, --help                     help for schedule
       --kubeconfig string        Path to kubeconfig file with authorization information (the master location is set by the master flag).
       --master string            The address of the Kubernetes API server (overrides any value in kubeconfig)
@@ -28,6 +27,7 @@ stash schedule [flags]
 
 ```
       --alsologtostderr                  log to standard error as well as files
+      --analytics                        Send analytical events to Google Analytics (default true)
       --log_backtrace_at traceLocation   when logging hits line file:N, emit a stack trace (default :0)
       --log_dir string                   If non-empty, write log files in this directory
       --logtostderr                      log to standard error instead of files
@@ -38,5 +38,4 @@ stash schedule [flags]
 
 ### SEE ALSO
 * [stash](stash.md)	 - Stash by AppsCode - Backup your Kubernetes Volumes
-
 

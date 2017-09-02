@@ -9,7 +9,6 @@ import (
 	"github.com/appscode/pat"
 	sapi "github.com/appscode/stash/api"
 	scs "github.com/appscode/stash/client/clientset"
-	"github.com/appscode/stash/pkg/analytics"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/migrator"
@@ -29,25 +28,16 @@ var (
 
 func NewCmdRun(version string) *cobra.Command {
 	var (
-		masterURL       string
-		kubeconfigPath  string
-		tag             string = stringz.Val(version, "canary")
-		address         string = ":56790"
-		enableAnalytics bool   = true
+		masterURL      string
+		kubeconfigPath string
+		tag            string = stringz.Val(version, "canary")
+		address        string = ":56790"
 	)
 
 	cmd := &cobra.Command{
-		Use:   "run",
-		Short: "Run Stash operator",
-		PreRun: func(cmd *cobra.Command, args []string) {
-			if enableAnalytics {
-				analytics.Enable()
-			}
-			analytics.SendEvent("operator", "started", version)
-		},
-		PostRun: func(cmd *cobra.Command, args []string) {
-			analytics.SendEvent("operator", "stopped", version)
-		},
+		Use:               "run",
+		Short:             "Run Stash operator",
+		DisableAutoGenTag: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := docker.CheckDockerImageVersion(docker.ImageOperator, tag); err != nil {
 				log.Fatalf(`Image %v:%v not found.`, docker.ImageOperator, tag)
@@ -90,7 +80,6 @@ func NewCmdRun(version string) *cobra.Command {
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&address, "address", address, "Address to listen on for web interface and telemetry.")
 	cmd.Flags().StringVar(&scratchDir, "scratch-dir", scratchDir, "Directory used to store temporary files. Use an `emptyDir` in Kubernetes.")
-	cmd.Flags().BoolVar(&enableAnalytics, "analytics", enableAnalytics, "Send analytical events to Google Analytics")
 
 	return cmd
 }

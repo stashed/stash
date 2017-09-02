@@ -95,14 +95,6 @@ func (c *Controller) WatchDaemonSets() {
 }
 
 func (c *Controller) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, old, new *sapi.Restic) (err error) {
-	defer func() {
-		if err != nil {
-			sidecarFailedToAdd()
-			return
-		}
-		sidecarSuccessfullyAdd()
-	}()
-
 	if new.Spec.Backend.StorageSecretName == "" {
 		err = fmt.Errorf("Missing repository secret name for Restic %s@%s.", new.Name, new.Namespace)
 		return
@@ -143,14 +135,6 @@ func (c *Controller) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, old,
 }
 
 func (c *Controller) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSet, restic *sapi.Restic) (err error) {
-	defer func() {
-		if err != nil {
-			sidecarFailedToDelete()
-			return
-		}
-		sidecarSuccessfullyAdd()
-	}()
-
 	if name := util.GetString(resource.Annotations, sapi.ConfigName); name == "" {
 		log.Infof("Restic sidecar already removed for DaemonSet %s@%s.", resource.Name, resource.Namespace)
 		return nil

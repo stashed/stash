@@ -7,7 +7,6 @@ import (
 
 	"github.com/appscode/log"
 	rcs "github.com/appscode/stash/client/clientset"
-	"github.com/appscode/stash/pkg/analytics"
 	"github.com/appscode/stash/pkg/scheduler"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
@@ -17,7 +16,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func NewCmdSchedule(version string) *cobra.Command {
+func NewCmdSchedule() *cobra.Command {
 	var (
 		masterURL      string
 		kubeconfigPath string
@@ -29,21 +28,12 @@ func NewCmdSchedule(version string) *cobra.Command {
 			PushgatewayURL: "http://stash-operator.kube-system.svc:56789",
 			PodLabelsPath:  "/etc/stash/labels",
 		}
-		enableAnalytics bool = true
 	)
 
 	cmd := &cobra.Command{
-		Use:   "schedule",
-		Short: "Run Stash cron daemon",
-		PreRun: func(cmd *cobra.Command, args []string) {
-			if enableAnalytics {
-				analytics.Enable()
-			}
-			analytics.SendEvent("scheduler", "started", version)
-		},
-		PostRun: func(cmd *cobra.Command, args []string) {
-			analytics.SendEvent("scheduler", "stopped", version)
-		},
+		Use:               "schedule",
+		Short:             "Run Stash cron daemon",
+		DisableAutoGenTag: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
 			if err != nil {
@@ -141,8 +131,6 @@ func NewCmdSchedule(version string) *cobra.Command {
 	cmd.Flags().StringVar(&opt.ScratchDir, "scratch-dir", opt.ScratchDir, "Directory used to store temporary files. Use an `emptyDir` in Kubernetes.")
 	cmd.Flags().StringVar(&opt.PushgatewayURL, "pushgateway-url", opt.PushgatewayURL, "URL of Prometheus pushgateway used to cache backup metrics")
 
-	// Analytics flags
-	cmd.Flags().BoolVar(&enableAnalytics, "analytics", enableAnalytics, "Send analytical events to Google Analytics")
 	return cmd
 }
 
