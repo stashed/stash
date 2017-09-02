@@ -32,9 +32,9 @@ $ kubectl get pods --all-namespaces -l app=stash --watch
 
 Once the operator pods are running, you can cancel the above command by typing `Ctrl+C`.
 
-Now, to confirm TPR groups have been registered by the operator, run the following command:
+Now, to confirm CRD groups have been registered by the operator, run the following command:
 ```console
-$ kubectl get thirdpartyresources -l app=stash
+$ kubectl get crd -l app=stash
 ```
 
 Now, you are ready to [take your first backup](/docs/tutorial.md) using Stash.

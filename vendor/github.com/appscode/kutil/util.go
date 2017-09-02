@@ -3,7 +3,7 @@ package kutil
 import (
 	"time"
 
-	"github.com/appscode/go-version"
+	"github.com/hashicorp/go-version"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
 )
@@ -42,7 +42,7 @@ func CheckAPIVersion(c clientset.Interface, constraint string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return cond.Check(v.ToBuilder().ResetPrerelease().ResetMetadata().Done()), nil
+	return cond.Check(v.ToMutator().ResetPrerelease().ResetMetadata().Done()), nil
 }
 
 func DeleteInBackground() *metav1.DeleteOptions {

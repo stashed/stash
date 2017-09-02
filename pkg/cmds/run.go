@@ -8,8 +8,8 @@ import (
 	stringz "github.com/appscode/go/strings"
 	"github.com/appscode/log"
 	"github.com/appscode/pat"
-	sapi "github.com/appscode/stash/api"
-	scs "github.com/appscode/stash/client/clientset"
+	sapi "github.com/appscode/stash/apis/stash"
+	scs "github.com/appscode/stash/client/internalclientset/typed/stash/internalversion"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/migrator"
@@ -22,7 +22,7 @@ import (
 
 var (
 	kubeClient  clientset.Interface
-	stashClient scs.ExtensionInterface
+	stashClient scs.ResticsGetter
 
 	scratchDir string = "/tmp"
 )

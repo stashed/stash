@@ -35,7 +35,7 @@ kubectl get restic.stash.appscode.com --all-namespaces -o yaml > data.yaml
 kubectl delete restic.stash.appscode.com --all --cascade=false
 ```
 
-5. Delete the old TPR-registration.
+5. Delete the old CRD-registration.
 ```console
-kubectl delete thirdpartyresource -l app=stash
+kubectl delete crd -l app=stash
 ```

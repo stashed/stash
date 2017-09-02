@@ -8,9 +8,8 @@ import (
 	"time"
 
 	corev1kutil "github.com/appscode/kutil/core/v1"
-	rapi "github.com/appscode/stash/api"
-	sapi "github.com/appscode/stash/api"
-	scs "github.com/appscode/stash/client/clientset"
+	sapi "github.com/appscode/stash/apis/stash"
+	scs "github.com/appscode/stash/client/internalclientset/typed/stash/internalversion"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/cenkalti/backoff"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -44,7 +43,7 @@ func IsPreferredAPIResource(kubeClient clientset.Interface, groupVersion, kind s
 	return false
 }
 
-func FindRestic(stashClient scs.ExtensionInterface, obj metav1.ObjectMeta) (*sapi.Restic, error) {
+func FindRestic(stashClient scs.ResticsGetter, obj metav1.ObjectMeta) (*sapi.Restic, error) {
 	restics, err := stashClient.Restics(obj.Namespace).List(metav1.ListOptions{LabelSelector: labels.Everything().String()})
 	if kerr.IsNotFound(err) {
 		return nil, nil
@@ -151,7 +150,7 @@ func GetString(m map[string]string, key string) string {
 	return m[key]
 }
 
-func CreateSidecarContainer(r *rapi.Restic, tag, workload string) apiv1.Container {
+func CreateSidecarContainer(r *sapi.Restic, tag, workload string) apiv1.Container {
 	if r.Annotations != nil {
 		if v, ok := r.Annotations[sapi.VersionTag]; ok {
 			tag = v

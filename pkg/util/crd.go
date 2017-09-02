@@ -38,5 +38,5 @@ func WaitForCRDReady(restClient rest.Interface, crds []*apiextensions.CustomReso
 		return true, nil
 	})
 
-	return errors.Wrap(err, fmt.Sprintf("timed out waiting for TPR"))
+	return errors.Wrap(err, fmt.Sprintf("timed out waiting for CRD"))
 }

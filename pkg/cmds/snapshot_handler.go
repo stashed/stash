@@ -6,7 +6,7 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/appscode/pat"
-	sapi "github.com/appscode/stash/api"
+	sapi "github.com/appscode/stash/apis/stash"
 	"github.com/appscode/stash/pkg/cli"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,7 +38,7 @@ func ExportSnapshots(w http.ResponseWriter, r *http.Request) {
 	resticCLI := cli.New(scratchDir)
 
 	var resource *sapi.Restic
-	resource, err := stashClient.Restics(namespace).Get(name)
+	resource, err := stashClient.Restics(namespace).Get(name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return

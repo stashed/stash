@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/appscode/log"
-	rcs "github.com/appscode/stash/client/clientset"
+	scs "github.com/appscode/stash/client/internalclientset/typed/stash/internalversion"
 	"github.com/appscode/stash/pkg/scheduler"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
@@ -42,7 +42,7 @@ func NewCmdSchedule() *cobra.Command {
 				log.Fatalf("Could not get Kubernetes config: %s", err)
 			}
 			kubeClient = clientset.NewForConfigOrDie(config)
-			stashClient = rcs.NewForConfigOrDie(config)
+			stashClient = scs.NewForConfigOrDie(config)
 
 			opt.NodeName = os.Getenv("NODE_NAME")
 			if opt.NodeName == "" {

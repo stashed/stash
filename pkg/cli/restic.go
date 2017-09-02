@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	sapi "github.com/appscode/stash/api"
+	sapi "github.com/appscode/stash/apis/stash"
 	shell "github.com/codeskyblue/go-sh"
 )
 

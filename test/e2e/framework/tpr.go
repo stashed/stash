@@ -1,7 +1,8 @@
 package framework
 
 import (
-	sapi "github.com/appscode/stash/api"
+	sapi "github.com/appscode/stash/apis/stash"
+	sapi_v1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	. "github.com/onsi/gomega"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -15,13 +16,13 @@ func (f *Framework) EventuallyCRD(name string) GomegaAsyncAssertion {
 			[]*apiextensions.CustomResourceDefinition{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: sapi.ResourceTypeRestic + "." + sapi.V1alpha1SchemeGroupVersion.Group,
+						Name: sapi_v1alpha1.ResourceTypeRestic + "." + sapi_v1alpha1.SchemeGroupVersion.Group,
 					},
 					Spec: apiextensions.CustomResourceDefinitionSpec{
 						Group:   sapi.GroupName,
-						Version: sapi.V1alpha1SchemeGroupVersion.Version,
+						Version: sapi_v1alpha1.SchemeGroupVersion.Version,
 						Names: apiextensions.CustomResourceDefinitionNames{
-							Plural: sapi.ResourceTypeRestic,
+							Plural: sapi_v1alpha1.ResourceTypeRestic,
 						},
 					},
 				},
