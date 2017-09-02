@@ -1,5 +1,5 @@
 hash: c7dd04dcb6c7033f76d549607f83de0081cffec0243f43843951b983213fa93d
-updated: 2017-09-02T00:00:38.8275285-07:00
+updated: 2017-09-02T05:30:49.43793012-07:00
 imports:
 - name: github.com/appscode/go
   version: d1fbd14e5c6e78557c12f6d2c9c282b3c0d0c612
@@ -14,7 +14,7 @@ imports:
 - name: github.com/appscode/jsonpatch
   version: 3cdd2454b5443228620ea11294085ec3489936a6
 - name: github.com/appscode/kutil
-  version: 5d208c60e3be8e3b244d64d8f76e0462afe2bcbd
+  version: 87c31170ba187b2560f986fd3928418fde80c383
   subpackages:
   - apps/v1beta1
   - core/v1
@@ -159,9 +159,7 @@ imports:
   - internal/bitbucket.org/ww/goautoneg
   - model
 - name: github.com/prometheus/procfs
-  version: 65c1f6f8f0fc1e2185eb9863a3bc751496404259
-  subpackages:
-  - xfs
+  version: 454a56f35412459b5e684fd5ec0f9211b94f002a
 - name: github.com/PuerkitoBio/purell
   version: 8a290539e2e8629dbc4e6bad948158f790ec31f4
 - name: github.com/PuerkitoBio/urlesc

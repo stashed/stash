@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	RetryInterval = 10 * time.Millisecond
-	MaxAttempts   = 5
+	RetryInterval = 50 * time.Millisecond
+	RetryTimeout  = 2 * time.Second
 )
 
 func IsPreferredAPIResource(c clientset.Interface, groupVersion, kind string) bool {
