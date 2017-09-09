@@ -3,7 +3,7 @@
 # Restics
 
 ## What is Restic
-A `Restic` is a Kubernetes `Third Party Object` (TPR). It provides declarative configuration for [restic](https://github.com/restic/restic) in a Kubernetes native way. You only need to describe the desired backup operations in a Restic object, and the Stash operator will reconfigure the matching workloads to the desired state for you.
+A `Restic` is a Kubernetes `CustomResourceDefinition` (CRD). It provides declarative configuration for [restic](https://github.com/restic/restic) in a Kubernetes native way. You only need to describe the desired backup operations in a Restic object, and the Stash operator will reconfigure the matching workloads to the desired state for you.
 
 ## Restic Spec
 As with all other Kubernetes objects, a Restic needs `apiVersion`, `kind`, and `metadata` fields. It also needs a `.spec` section. Below is an example Restic object.

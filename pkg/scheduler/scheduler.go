@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/appscode/log"
-	sapi "github.com/appscode/stash/api"
-	scs "github.com/appscode/stash/client/clientset"
+	sapi_v1alpha1 "github.com/appscode/stash/apis/stash"
+	scs "github.com/appscode/stash/client/internalclientset/typed/stash/internalversion"
 	"github.com/appscode/stash/pkg/cli"
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/prometheus/client_golang/prometheus"
@@ -45,13 +45,13 @@ type Options struct {
 	ResyncPeriod   time.Duration
 }
 
-func (opt Options) autoPrefix(resource *sapi.Restic) string {
+func (opt Options) autoPrefix(resource *sapi_v1alpha1.Restic) string {
 	switch resource.Spec.UseAutoPrefix {
-	case sapi.None:
+	case sapi_v1alpha1.None:
 		return ""
-	case sapi.NodeName:
+	case sapi_v1alpha1.NodeName:
 		return opt.NodeName
-	case sapi.PodName:
+	case sapi_v1alpha1.PodName:
 		return opt.PodName
 	default:
 		return opt.SmartPrefix
@@ -60,21 +60,21 @@ func (opt Options) autoPrefix(resource *sapi.Restic) string {
 
 type Scheduler struct {
 	kubeClient  clientset.Interface
-	stashClient scs.ExtensionInterface
+	stashClient scs.ResticsGetter
 	opt         Options
-	rchan       chan *sapi.Restic
+	rchan       chan *sapi_v1alpha1.Restic
 	locked      chan struct{}
 	resticCLI   *cli.ResticWrapper
 	cron        *cron.Cron
 	recorder    record.EventRecorder
 }
 
-func New(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt Options) *Scheduler {
+func New(kubeClient clientset.Interface, stashClient scs.ResticsGetter, opt Options) *Scheduler {
 	return &Scheduler{
 		kubeClient:  kubeClient,
 		stashClient: stashClient,
 		opt:         opt,
-		rchan:       make(chan *sapi.Restic, 1),
+		rchan:       make(chan *sapi_v1alpha1.Restic, 1),
 		cron:        cron.New(),
 		locked:      make(chan struct{}, 1),
 		resticCLI:   cli.New(opt.ScratchDir),
@@ -84,7 +84,7 @@ func New(kubeClient clientset.Interface, stashClient scs.ExtensionInterface, opt
 
 // Init and/or connect to repo
 func (c *Scheduler) Setup() error {
-	resource, err := c.stashClient.Restics(c.opt.Namespace).Get(c.opt.ResticName)
+	resource, err := c.stashClient.Restics(c.opt.Namespace).Get(c.opt.ResticName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -120,11 +120,11 @@ func (c *Scheduler) RunAndHold() {
 		},
 	}
 	_, ctrl := cache.NewInformer(lw,
-		&sapi.Restic{},
+		&sapi_v1alpha1.Restic{},
 		c.opt.ResyncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				if r, ok := obj.(*sapi.Restic); ok {
+				if r, ok := obj.(*sapi_v1alpha1.Restic); ok {
 					if r.Name == c.opt.ResticName {
 						c.rchan <- r
 						err := c.configureScheduler()
@@ -141,12 +141,12 @@ func (c *Scheduler) RunAndHold() {
 				}
 			},
 			UpdateFunc: func(old, new interface{}) {
-				oldObj, ok := old.(*sapi.Restic)
+				oldObj, ok := old.(*sapi_v1alpha1.Restic)
 				if !ok {
 					log.Errorln(errors.New("Invalid Restic object"))
 					return
 				}
-				newObj, ok := new.(*sapi.Restic)
+				newObj, ok := new.(*sapi_v1alpha1.Restic)
 				if !ok {
 					log.Errorln(errors.New("Invalid Restic object"))
 					return
@@ -166,7 +166,7 @@ func (c *Scheduler) RunAndHold() {
 				}
 			},
 			DeleteFunc: func(obj interface{}) {
-				if r, ok := obj.(*sapi.Restic); ok {
+				if r, ok := obj.(*sapi_v1alpha1.Restic); ok {
 					if r.Name == c.opt.ResticName {
 						c.cron.Stop()
 					}
@@ -225,8 +225,8 @@ func (c *Scheduler) runOnce() (err error) {
 		return
 	}
 
-	var resource *sapi.Restic
-	resource, err = c.stashClient.Restics(c.opt.Namespace).Get(c.opt.ResticName)
+	var resource *sapi_v1alpha1.Restic
+	resource, err = c.stashClient.Restics(c.opt.Namespace).Get(c.opt.ResticName, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		err = nil
 		return
@@ -318,7 +318,7 @@ func (c *Scheduler) runOnce() (err error) {
 			log.Errorf("Attempt %d failed to update status for Restic %s@%s due to %s.", attempt, resource.Name, resource.Namespace, err)
 			time.Sleep(msec10)
 			if kerr.IsConflict(err) {
-				resource, err = c.stashClient.Restics(resource.Namespace).Get(resource.Name)
+				resource, err = c.stashClient.Restics(resource.Namespace).Get(resource.Name, metav1.GetOptions{})
 				if err != nil {
 					return
 				}
@@ -353,7 +353,7 @@ func (c *Scheduler) runOnce() (err error) {
 	return
 }
 
-func (c *Scheduler) measure(f func(*sapi.Restic, sapi.FileGroup) error, resource *sapi.Restic, fg sapi.FileGroup, g prometheus.Gauge) (err error) {
+func (c *Scheduler) measure(f func(*sapi_v1alpha1.Restic, sapi_v1alpha1.FileGroup) error, resource *sapi_v1alpha1.Restic, fg sapi_v1alpha1.FileGroup, g prometheus.Gauge) (err error) {
 	startTime := time.Now()
 	defer func() {
 		g.Set(time.Now().Sub(startTime).Seconds())

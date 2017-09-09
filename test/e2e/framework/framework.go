@@ -2,17 +2,17 @@ package framework
 
 import (
 	"github.com/appscode/go/crypto/rand"
-	scs "github.com/appscode/stash/client/clientset"
+	scs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	clientset "k8s.io/client-go/kubernetes"
 )
 
 type Framework struct {
 	KubeClient  clientset.Interface
-	StashClient scs.ExtensionInterface
+	StashClient scs.ResticsGetter
 	namespace   string
 }
 
-func New(kubeClient clientset.Interface, extClient scs.ExtensionInterface) *Framework {
+func New(kubeClient clientset.Interface, extClient scs.ResticsGetter) *Framework {
 	return &Framework{
 		KubeClient:  kubeClient,
 		StashClient: extClient,

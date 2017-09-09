@@ -2,7 +2,7 @@ package e2e_test
 
 import (
 	extensionv1beta1kutil "github.com/appscode/kutil/extensions/v1beta1"
-	sapi "github.com/appscode/stash/api"
+	sapi "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/appscode/stash/test/e2e/framework"
 	. "github.com/appscode/stash/test/e2e/matcher"

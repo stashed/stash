@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	sapi "github.com/appscode/stash/api"
+	sapi "github.com/appscode/stash/apis/stash"
 	"github.com/prometheus/client_golang/prometheus/push"
 	"gopkg.in/ini.v1"
 )

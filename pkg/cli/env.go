@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/appscode/log"
-	sapi "github.com/appscode/stash/api"
+	sapi "github.com/appscode/stash/apis/stash"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 

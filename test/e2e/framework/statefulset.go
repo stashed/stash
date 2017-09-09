@@ -3,7 +3,8 @@ package framework
 import (
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
-	sapi "github.com/appscode/stash/api"
+	"github.com/appscode/stash/apis/stash"
+	sapi "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,7 +27,13 @@ func (fi *Invocation) StatefulSet(r sapi.Restic) apps.StatefulSet {
 			ServiceName: TEST_HEADLESS_SERVICE,
 		},
 	}
-	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.CreateSidecarContainer(&r, "canary", "ss/"+resource.Name))
+
+	var out stash.Restic
+	err := sapi.Convert_v1alpha1_Restic_To_stash_Restic(&r, &out, nil)
+	if err != nil {
+		panic(err)
+	}
+	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.CreateSidecarContainer(&out, "canary", "ss/"+resource.Name))
 	resource.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(resource.Spec.Template.Spec.Volumes)
 	resource.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(resource.Spec.Template.Spec.Volumes)
 	if r.Spec.Backend.Local != nil {

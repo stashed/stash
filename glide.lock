@@ -1,5 +1,5 @@
-hash: c7dd04dcb6c7033f76d549607f83de0081cffec0243f43843951b983213fa93d
-updated: 2017-09-02T05:30:49.43793012-07:00
+hash: 704eda1c083d35e6c6ab724c86c53196ede8fe55b614593ffae9708c410bf994
+updated: 2017-09-08T14:30:24.606815114-07:00
 imports:
 - name: github.com/appscode/go
   version: d1fbd14e5c6e78557c12f6d2c9c282b3c0d0c612
@@ -9,12 +9,10 @@ imports:
   - strings
   - types
   - version
-- name: github.com/appscode/go-version
-  version: 97adb342c1792e9f59701c1d96bf3612d0fc7621
 - name: github.com/appscode/jsonpatch
   version: 3cdd2454b5443228620ea11294085ec3489936a6
 - name: github.com/appscode/kutil
-  version: 87c31170ba187b2560f986fd3928418fde80c383
+  version: f2221b482d48b0b0e9ad27324d23b857bbe9f7ca
   subpackages:
   - apps/v1beta1
   - core/v1
@@ -97,7 +95,9 @@ imports:
 - name: github.com/gorilla/mux
   version: 0a192a193177452756c362c20087ddafcf6829c4
 - name: github.com/hashicorp/go-version
-  version: 03c5bf6be031b6dd45afec16b1cf94fc8938bc77
+  version: ac737305c16432f4c660c6fc68cdcda4b5a0b5ae
+  repo: https://github.com/appscode/go-version.git
+  vcs: git
 - name: github.com/hashicorp/golang-lru
   version: a0d98a5f288019575c6d1f4bb1573fef2d1fcdc4
   subpackages:
@@ -171,7 +171,7 @@ imports:
 - name: github.com/Sirupsen/logrus
   version: 3ec0642a7fb6488f65b06f9040adc67e3990296a
 - name: github.com/spf13/cobra
-  version: 3c0b56b677e04926dfa835a1b3f11cd4f62f076e
+  version: b78744579491c1ceeaaa3b40205e56b0591b93a3
   subpackages:
   - doc
 - name: github.com/spf13/pflag
@@ -395,8 +395,6 @@ imports:
   - util/homedir
   - util/integer
 testImports:
-- name: github.com/mitchellh/go-homedir
-  version: b8bc1bf767474819792c23f32d8286a45736f1c6
 - name: github.com/onsi/ginkgo
   version: 9eda700730cba42af70d53180f9dcce9266bc2bc
   subpackages:
