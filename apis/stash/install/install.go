@@ -6,6 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/apimachinery/announced"
 	"k8s.io/apimachinery/pkg/apimachinery/registered"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // Install registers the API group and adds types to a scheme
@@ -15,6 +16,7 @@ func Install(groupFactoryRegistry announced.APIGroupFactoryRegistry, registry *r
 			GroupName:                  sapi.GroupName,
 			VersionPreferenceOrder:     []string{v1alpha1.SchemeGroupVersion.Version},
 			ImportPrefix:               "github.com/appscode/stash/apis/stash",
+			RootScopedKinds:            sets.NewString("CustomResourceDefinition"),
 			AddInternalObjectsToScheme: sapi.AddToScheme,
 		},
 		announced.VersionToSchemeFunc{
