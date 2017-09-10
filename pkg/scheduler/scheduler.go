@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/appscode/log"
-	sapi_v1alpha1 "github.com/appscode/stash/apis/stash"
-	scs "github.com/appscode/stash/client/internalclientset/typed/stash/internalversion"
+	sapi_v1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
+	scs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/cli"
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/prometheus/client_golang/prometheus"

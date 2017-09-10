@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/appscode/log"
-	scs "github.com/appscode/stash/client/internalclientset/typed/stash/internalversion"
+	scs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/scheduler"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"

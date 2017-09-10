@@ -1,4 +1,4 @@
-package stash
+package v1alpha1
 
 const (
 	ResticKey  = "restic.appscode.com"
