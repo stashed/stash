@@ -7,7 +7,7 @@ import (
 
 	"github.com/appscode/log"
 	sapi "github.com/appscode/stash/apis/stash"
-	sapi_v1alpha1 "github.com/appscode/stash/apis/stash"
+	sapi_v1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/hashicorp/go-version"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"

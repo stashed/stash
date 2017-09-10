@@ -5,7 +5,7 @@ import (
 
 	sapi "github.com/appscode/stash/apis/stash"
 	sapi_v1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
-	scs "github.com/appscode/stash/client/internalclientset/typed/stash/internalversion"
+	scs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"

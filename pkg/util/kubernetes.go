@@ -8,8 +8,8 @@ import (
 	"time"
 
 	corev1kutil "github.com/appscode/kutil/core/v1"
-	sapi "github.com/appscode/stash/apis/stash"
-	scs "github.com/appscode/stash/client/internalclientset/typed/stash/internalversion"
+	sapi_v1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
+	scs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/cenkalti/backoff"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -43,7 +43,7 @@ func IsPreferredAPIResource(kubeClient clientset.Interface, groupVersion, kind s
 	return false
 }
 
-func FindRestic(stashClient scs.ResticsGetter, obj metav1.ObjectMeta) (*sapi.Restic, error) {
+func FindRestic(stashClient scs.ResticsGetter, obj metav1.ObjectMeta) (*sapi_v1alpha1.Restic, error) {
 	restics, err := stashClient.Restics(obj.Namespace).List(metav1.ListOptions{LabelSelector: labels.Everything().String()})
 	if kerr.IsNotFound(err) {
 		return nil, nil
@@ -51,7 +51,7 @@ func FindRestic(stashClient scs.ResticsGetter, obj metav1.ObjectMeta) (*sapi.Res
 		return nil, err
 	}
 
-	result := make([]*sapi.Restic, 0)
+	result := make([]*sapi_v1alpha1.Restic, 0)
 	for _, restic := range restics.Items {
 		if selector, err := metav1.LabelSelectorAsSelector(&restic.Spec.Selector); err == nil {
 			if selector.Matches(labels.Set(obj.Labels)) {
@@ -150,9 +150,9 @@ func GetString(m map[string]string, key string) string {
 	return m[key]
 }
 
-func CreateSidecarContainer(r *sapi.Restic, tag, workload string) apiv1.Container {
+func CreateSidecarContainer(r *sapi_v1alpha1.Restic, tag, workload string) apiv1.Container {
 	if r.Annotations != nil {
-		if v, ok := r.Annotations[sapi.VersionTag]; ok {
+		if v, ok := r.Annotations[sapi_v1alpha1.VersionTag]; ok {
 			tag = v
 		}
 	}
@@ -246,7 +246,7 @@ func UpsertDownwardVolume(volumes []apiv1.Volume) []apiv1.Volume {
 	})
 }
 
-func MergeLocalVolume(volumes []apiv1.Volume, old, new *sapi.Restic) []apiv1.Volume {
+func MergeLocalVolume(volumes []apiv1.Volume, old, new *sapi_v1alpha1.Restic) []apiv1.Volume {
 	oldPos := -1
 	if old != nil && old.Spec.Backend.Local != nil {
 		for i, vol := range volumes {
@@ -279,8 +279,8 @@ func EnsureVolumeDeleted(volumes []apiv1.Volume, name string) []apiv1.Volume {
 	return volumes
 }
 
-func ResticEqual(old, new *sapi.Restic) bool {
-	var oldSpec, newSpec *sapi.ResticSpec
+func ResticEqual(old, new *sapi_v1alpha1.Restic) bool {
+	var oldSpec, newSpec *sapi_v1alpha1.ResticSpec
 	if old != nil {
 		oldSpec = &old.Spec
 	}

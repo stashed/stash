@@ -9,7 +9,7 @@ import (
 	kutil "github.com/appscode/kutil/apps/v1beta1"
 	corekutil "github.com/appscode/kutil/core/v1"
 	"github.com/appscode/log"
-	sapi "github.com/appscode/stash/apis/stash"
+	sapi "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
