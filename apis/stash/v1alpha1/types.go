@@ -14,7 +14,6 @@ const (
 // +genclient=true
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +resource:path=restics
 
 type Restic struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`
