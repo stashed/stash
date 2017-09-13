@@ -130,7 +130,7 @@ func (c *Scheduler) RunAndHold() {
 						err := c.configureScheduler()
 						if err != nil {
 							c.recorder.Eventf(
-								r,
+								r.ObjectReference(),
 								apiv1.EventTypeWarning,
 								eventer.EventReasonFailedToBackup,
 								"Failed to start Stash scehduler reason %v", err,
@@ -156,7 +156,7 @@ func (c *Scheduler) RunAndHold() {
 					err := c.configureScheduler()
 					if err != nil {
 						c.recorder.Eventf(
-							newObj,
+							newObj.ObjectReference(),
 							apiv1.EventTypeWarning,
 							eventer.EventReasonFailedToBackup,
 							"Failed to update Stash scheduler reason %v", err,
