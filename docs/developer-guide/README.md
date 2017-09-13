@@ -44,7 +44,7 @@ To build and push your custom Docker image, follow the steps below. To release a
 
 ```console
 # Build Docker image
-$ ./hack/docker/stash/setup.sh; ./hack/docker/stash/setup.sh push
+$ ./hack/docker/setup.sh; ./hack/docker/setup.sh push
 
 # Add docker tag for your repository
 $ docker tag appscode/stash:<tag> <image>:<tag>
