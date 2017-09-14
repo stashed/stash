@@ -14,7 +14,7 @@ source "$REPO_ROOT/hack/libbuild/common/public_image.sh"
 
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
 IMG=stash
-RESTIC_VER=${RESTIC_VER:-SOURCE}
+RESTIC_VER=${RESTIC_VER:-0.7.2}
 RESTIC_BRANCH=${RESTIC_BRANCH:-stash-0.5.0}
 
 DIST=$REPO_ROOT/dist
