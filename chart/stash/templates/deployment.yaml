@@ -15,15 +15,13 @@ spec:
         app: "{{ template "name" . }}"
         release: "{{ .Release.Name }}"
     spec:
-{{- if .Values.rbac.install }}
-      serviceAccountName: {{ template "fullname" . }}
-{{- end }}
+      serviceAccountName: {{ if .Values.rbac.create }}{{ template "fullname" . }}{{ else }}"{{ .Values.rbac.serviceAccountName }}"{{ end }}
       containers:
       - args:
         - run
         - --v=3
-        image: '{{ .Values.operator.image }}:{{ .Values.operator.tag }}'
-        imagePullPolicy: '{{ .Values.operator.pullPolicy }}'
+        image: {{ .Values.operator.image }}:{{ .Values.operator.tag }}
+        imagePullPolicy: {{ .Values.operator.pullPolicy }}
         name: operator
         ports:
         - containerPort: 56790
