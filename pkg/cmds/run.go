@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/appscode/go/log"
 	stringz "github.com/appscode/go/strings"
-	"github.com/appscode/log"
 	"github.com/appscode/pat"
 	sapi "github.com/appscode/stash/apis/stash"
 	scs "github.com/appscode/stash/client/typed/stash/v1alpha1"

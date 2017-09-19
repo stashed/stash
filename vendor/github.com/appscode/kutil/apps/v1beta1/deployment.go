@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	. "github.com/appscode/go/types"
-	"github.com/appscode/jsonpatch"
 	"github.com/appscode/kutil"
 	"github.com/golang/glog"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
 	apps "k8s.io/client-go/pkg/apis/apps/v1beta1"
@@ -41,19 +41,15 @@ func PatchDeployment(c clientset.Interface, cur *apps.Deployment, transform func
 		return nil, err
 	}
 
-	patch, err := jsonpatch.CreatePatch(curJson, modJson)
+	patch, err := strategicpatch.CreateTwoWayMergePatch(curJson, modJson, apps.Deployment{})
 	if err != nil {
 		return nil, err
 	}
-	if len(patch) == 0 {
+	if len(patch) == 0 || string(patch) == "{}" {
 		return cur, nil
 	}
-	pb, err := json.MarshalIndent(patch, "", "  ")
-	if err != nil {
-		return nil, err
-	}
-	glog.V(5).Infof("Patching Deployment %s@%s with %s.", cur.Name, cur.Namespace, string(pb))
-	return c.AppsV1beta1().Deployments(cur.Namespace).Patch(cur.Name, types.JSONPatchType, pb)
+	glog.V(5).Infof("Patching Deployment %s@%s with %s.", cur.Name, cur.Namespace, string(patch))
+	return c.AppsV1beta1().Deployments(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
 }
 
 func TryPatchDeployment(c clientset.Interface, meta metav1.ObjectMeta, transform func(*apps.Deployment) *apps.Deployment) (result *apps.Deployment, err error) {

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/appscode/log"
+	"github.com/appscode/go/log"
 	scs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/scheduler"
 	"github.com/appscode/stash/pkg/util"

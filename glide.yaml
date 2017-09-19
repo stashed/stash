@@ -1,46 +1,46 @@
 package: github.com/appscode/stash
 import:
 - package: github.com/appscode/go
+- package: github.com/appscode/kutil
+  version: release-4.0
+- package: github.com/appscode/pat
+- package: github.com/cenkalti/backoff
+  version: v1.1.0
+- package: github.com/codeskyblue/go-sh
+  version: master
+- package: github.com/golang/glog
 - package: github.com/hashicorp/go-version
   repo: https://github.com/appscode/go-version.git
   vcs: git
   version: master
-- package: github.com/appscode/kutil
-  version: release-4.0
-- package: github.com/appscode/log
-- package: github.com/cenkalti/backoff
-  version: master
-- package: github.com/codeskyblue/go-sh
-  version: master
-- package: github.com/ghodss/yaml
-  version: v1.0.0
 - package: github.com/heroku/docker-registry-client
   version: 95467b6cacee2a06f112a3cf7e47a70fad6000cf
+- package: github.com/Sirupsen/logrus
+  version: v0.10.0
 - package: github.com/jpillora/go-ogle-analytics
+- package: github.com/onsi/gomega
+  version: v1.2.0
+- package: github.com/pkg/errors
 - package: github.com/prometheus/client_golang
   version: v0.8.0
 - package: github.com/spf13/cobra
   version: master
 - package: github.com/spf13/pflag
-  version: master
+  version: v1.0.0
 - package: gopkg.in/ini.v1
-  version: v1.28.0
+  version: v1.28.2
 - package: gopkg.in/robfig/cron.v2
   repo: https://github.com/appscode/cron.git
   vcs: git
   version: v2
-- package: github.com/juju/ratelimit
-  version: 5b9ff866471762aa2ab2dced63c9fb6f53921342
 - package: k8s.io/apiextensions-apiserver
   version: 7a4256d6a8b6b6b01386ada95105c9fa9ce44264
 - package: k8s.io/apimachinery
   version: 1fd2e63a9a370677308a42f24fd40c86438afddf
 - package: k8s.io/client-go
   version: v4.0.0
-- package: gopkg.in/yaml.v2
-  version: v2
+- package: k8s.io/kubernetes
+  version: ~1.7
 testImport:
-- package: github.com/stretchr/testify
-  version: v1.1.4
-- package: github.com/appscode/kutil
-  version: release-4.0
+- package: github.com/onsi/ginkgo
+  version: v1.4.0

@@ -2,50 +2,44 @@ package v1beta1
 
 import (
 	"errors"
+	"fmt"
+	"reflect"
 
+	"github.com/appscode/kutil"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
 func GetGroupVersionKind(v interface{}) schema.GroupVersionKind {
-	switch v.(type) {
-	case *extensions.Ingress:
-		return extensions.SchemeGroupVersion.WithKind("Ingress")
-	case *extensions.DaemonSet:
-		return extensions.SchemeGroupVersion.WithKind("DaemonSet")
-	case *extensions.ReplicaSet:
-		return extensions.SchemeGroupVersion.WithKind("ReplicaSet")
-	case *extensions.Deployment:
-		return extensions.SchemeGroupVersion.WithKind("Deployment")
-	case *extensions.ThirdPartyResource:
-		return extensions.SchemeGroupVersion.WithKind("ThirdPartyResource")
-	default:
-		return schema.GroupVersionKind{}
-	}
+	return extensions.SchemeGroupVersion.WithKind(kutil.GetKind(v))
 }
 
 func AssignTypeKind(v interface{}) error {
+	if reflect.ValueOf(v).Kind() != reflect.Ptr {
+		return fmt.Errorf("%v must be a pointer", v)
+	}
+
 	switch u := v.(type) {
 	case *extensions.Ingress:
 		u.APIVersion = extensions.SchemeGroupVersion.String()
-		u.Kind = "Ingress"
+		u.Kind = kutil.GetKind(v)
 		return nil
 	case *extensions.DaemonSet:
 		u.APIVersion = extensions.SchemeGroupVersion.String()
-		u.Kind = "DaemonSet"
+		u.Kind = kutil.GetKind(v)
 		return nil
 	case *extensions.ReplicaSet:
 		u.APIVersion = extensions.SchemeGroupVersion.String()
-		u.Kind = "ReplicaSet"
+		u.Kind = kutil.GetKind(v)
 		return nil
 	case *extensions.Deployment:
 		u.APIVersion = extensions.SchemeGroupVersion.String()
-		u.Kind = "Deployment"
+		u.Kind = kutil.GetKind(v)
 		return nil
 	case *extensions.ThirdPartyResource:
 		u.APIVersion = extensions.SchemeGroupVersion.String()
-		u.Kind = "ThirdPartyResource"
+		u.Kind = kutil.GetKind(v)
 		return nil
 	}
-	return errors.New("Unknown api object type")
+	return errors.New("unknown api object type")
 }

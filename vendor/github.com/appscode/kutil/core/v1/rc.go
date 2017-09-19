@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	. "github.com/appscode/go/types"
-	"github.com/appscode/jsonpatch"
 	"github.com/appscode/kutil"
 	"github.com/golang/glog"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
@@ -41,19 +41,15 @@ func PatchRC(c clientset.Interface, cur *apiv1.ReplicationController, transform 
 		return nil, err
 	}
 
-	patch, err := jsonpatch.CreatePatch(curJson, modJson)
+	patch, err := strategicpatch.CreateTwoWayMergePatch(curJson, modJson, apiv1.ReplicationController{})
 	if err != nil {
 		return nil, err
 	}
-	if len(patch) == 0 {
+	if len(patch) == 0 || string(patch) == "{}" {
 		return cur, nil
 	}
-	pb, err := json.MarshalIndent(patch, "", "  ")
-	if err != nil {
-		return nil, err
-	}
-	glog.V(5).Infof("Patching ReplicationController %s@%s with %s.", cur.Name, cur.Namespace, string(pb))
-	return c.CoreV1().ReplicationControllers(cur.Namespace).Patch(cur.Name, types.JSONPatchType, pb)
+	glog.V(5).Infof("Patching ReplicationController %s@%s with %s.", cur.Name, cur.Namespace, string(patch))
+	return c.CoreV1().ReplicationControllers(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
 }
 
 func TryPatchRC(c clientset.Interface, meta metav1.ObjectMeta, transform func(*apiv1.ReplicationController) *apiv1.ReplicationController) (result *apiv1.ReplicationController, err error) {

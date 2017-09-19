@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/appscode/go/crypto/rand"
-	"github.com/appscode/log"
+	"github.com/appscode/go/log"
 	sapi "github.com/appscode/stash/apis/stash/v1alpha1"
 	. "github.com/onsi/gomega"
 	kerr "k8s.io/apimachinery/pkg/api/errors"

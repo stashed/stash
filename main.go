@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	logs "github.com/appscode/log/golog"
+	logs "github.com/appscode/go/log/golog"
 	_ "github.com/appscode/stash/client/fake"
 	_ "github.com/appscode/stash/client/internalclientset/scheme"
 	"github.com/appscode/stash/pkg/cmds"

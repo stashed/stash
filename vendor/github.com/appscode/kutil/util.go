@@ -1,11 +1,11 @@
 package kutil
 
 import (
-	"time"
-
 	"github.com/hashicorp/go-version"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
+	"reflect"
+	"time"
 )
 
 const (
@@ -53,4 +53,12 @@ func DeleteInBackground() *metav1.DeleteOptions {
 func DeleteInForeground() *metav1.DeleteOptions {
 	policy := metav1.DeletePropagationForeground
 	return &metav1.DeleteOptions{PropagationPolicy: &policy}
+}
+
+func GetKind(v interface{}) string {
+	val := reflect.ValueOf(v)
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+	return val.Type().Name()
 }

@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/appscode/log"
+	"github.com/appscode/go/log"
 	sapi_v1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
 	scs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/cli"

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	logs "github.com/appscode/log/golog"
+	logs "github.com/appscode/go/log/golog"
 	sapi "github.com/appscode/stash/apis/stash"
 	"github.com/appscode/stash/client/internalclientset/typed/stash/internalversion"
 	_ "github.com/appscode/stash/client/scheme"
