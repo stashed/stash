@@ -12,5 +12,7 @@ pushgateway:
   tag: v0.4.0
 ## Install Default RBAC roles and bindings
 rbac:
-  install: false
-  apiVersion: v1beta1
+  ## If true, create & use RBAC resources
+  create: false
+  ## Ignored if rbac.create is true
+  serviceAccountName: default
