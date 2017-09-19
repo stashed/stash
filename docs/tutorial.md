@@ -129,7 +129,7 @@ stash-demo-3001144127-3fsbn   2/2       Running   0          3m
 ```
 
 ```yaml
-$ kubectl get deployment busybox -o yaml
+$ kubectl get deployment stash-demo -o yaml
 
 apiVersion: extensions/v1beta1
 kind: Deployment
