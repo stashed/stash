@@ -3,8 +3,8 @@ package controller
 import (
 	"errors"
 
+	"github.com/appscode/go/log"
 	acrt "github.com/appscode/go/runtime"
-	"github.com/appscode/log"
 	sapi "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

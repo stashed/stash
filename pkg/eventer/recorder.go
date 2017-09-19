@@ -1,7 +1,7 @@
 package eventer
 
 import (
-	"github.com/appscode/log"
+	"github.com/appscode/go/log"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api"
 	apiv1 "k8s.io/client-go/pkg/api/v1"

@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/appscode/jsonpatch"
 	"github.com/appscode/kutil"
 	core_util "github.com/appscode/kutil/core/v1"
 	"github.com/golang/glog"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
 	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
@@ -41,19 +41,15 @@ func PatchDaemonSet(c clientset.Interface, cur *extensions.DaemonSet, transform 
 		return nil, err
 	}
 
-	patch, err := jsonpatch.CreatePatch(curJson, modJson)
+	patch, err := strategicpatch.CreateTwoWayMergePatch(curJson, modJson, extensions.DaemonSet{})
 	if err != nil {
 		return nil, err
 	}
-	if len(patch) == 0 {
+	if len(patch) == 0 || string(patch) == "{}" {
 		return cur, nil
 	}
-	pb, err := json.MarshalIndent(patch, "", "  ")
-	if err != nil {
-		return nil, err
-	}
-	glog.V(5).Infof("Patching DaemonSet %s@%s with %s.", cur.Name, cur.Namespace, string(pb))
-	result, err := c.ExtensionsV1beta1().DaemonSets(cur.Namespace).Patch(cur.Name, types.JSONPatchType, pb)
+	glog.V(5).Infof("Patching DaemonSet %s@%s with %s.", cur.Name, cur.Namespace, string(patch))
+	result, err := c.ExtensionsV1beta1().DaemonSets(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
 	if ok, err := kutil.CheckAPIVersion(c, "<= 1.5"); err == nil && ok {
 		// https://kubernetes.io/docs/tasks/manage-daemon/update-daemon-set/
 		core_util.RestartPods(c, cur.Namespace, cur.Spec.Selector)
