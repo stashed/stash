@@ -67,7 +67,7 @@ func TryPatchServiceAccount(c clientset.Interface, meta metav1.ObjectMeta, trans
 	})
 
 	if err != nil {
-		err = fmt.Errorf("Failed to patch ServiceAccount %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
+		err = fmt.Errorf("failed to patch ServiceAccount %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
 	}
 	return
 }
@@ -88,7 +88,7 @@ func TryUpdateServiceAccount(c clientset.Interface, meta metav1.ObjectMeta, tran
 	})
 
 	if err != nil {
-		err = fmt.Errorf("Failed to update ServiceAccount %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
+		err = fmt.Errorf("failed to update ServiceAccount %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
 	}
 	return
 }

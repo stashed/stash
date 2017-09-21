@@ -4,7 +4,7 @@ import (
 	"flag"
 	"log"
 
-	. "github.com/appscode/log"
+	. "github.com/appscode/go/log"
 )
 
 func init() {

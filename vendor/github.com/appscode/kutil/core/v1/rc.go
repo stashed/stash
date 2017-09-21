@@ -68,7 +68,7 @@ func TryPatchRC(c clientset.Interface, meta metav1.ObjectMeta, transform func(*a
 	})
 
 	if err != nil {
-		err = fmt.Errorf("Failed to patch ReplicationController %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
+		err = fmt.Errorf("failed to patch ReplicationController %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
 	}
 	return
 }
@@ -89,7 +89,7 @@ func TryUpdateRC(c clientset.Interface, meta metav1.ObjectMeta, transform func(*
 	})
 
 	if err != nil {
-		err = fmt.Errorf("Failed to update ReplicationController %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
+		err = fmt.Errorf("failed to update ReplicationController %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
 	}
 	return
 }

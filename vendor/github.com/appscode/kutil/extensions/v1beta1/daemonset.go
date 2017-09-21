@@ -73,7 +73,7 @@ func TryPatchDaemonSet(c clientset.Interface, meta metav1.ObjectMeta, transform 
 	})
 
 	if err != nil {
-		err = fmt.Errorf("Failed to patch DaemonSet %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
+		err = fmt.Errorf("failed to patch DaemonSet %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
 	}
 	return
 }
@@ -94,7 +94,7 @@ func TryUpdateDaemonSet(c clientset.Interface, meta metav1.ObjectMeta, transform
 	})
 
 	if err != nil {
-		err = fmt.Errorf("Failed to update DaemonSet %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
+		err = fmt.Errorf("failed to update DaemonSet %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
 	}
 	return
 }

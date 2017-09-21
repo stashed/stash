@@ -68,7 +68,7 @@ func TryPatchStatefulSet(c clientset.Interface, meta metav1.ObjectMeta, transfor
 	})
 
 	if err != nil {
-		err = fmt.Errorf("Failed to patch StatefulSet %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
+		err = fmt.Errorf("failed to patch StatefulSet %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
 	}
 	return
 }
@@ -89,7 +89,7 @@ func TryUpdateStatefulSet(c clientset.Interface, meta metav1.ObjectMeta, transfo
 	})
 
 	if err != nil {
-		err = fmt.Errorf("Failed to update StatefulSet %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
+		err = fmt.Errorf("failed to update StatefulSet %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
 	}
 	return
 }

@@ -67,7 +67,7 @@ func TryPatchSecret(c clientset.Interface, meta metav1.ObjectMeta, transform fun
 	})
 
 	if err != nil {
-		err = fmt.Errorf("Failed to patch Secret %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
+		err = fmt.Errorf("failed to patch Secret %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
 	}
 	return
 }
@@ -88,7 +88,7 @@ func TryUpdateSecret(c clientset.Interface, meta metav1.ObjectMeta, transform fu
 	})
 
 	if err != nil {
-		err = fmt.Errorf("Failed to update Secret %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
+		err = fmt.Errorf("failed to update Secret %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
 	}
 	return
 }

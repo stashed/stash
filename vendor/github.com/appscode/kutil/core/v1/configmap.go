@@ -67,7 +67,7 @@ func TryPatchConfigMap(c clientset.Interface, meta metav1.ObjectMeta, transform 
 	})
 
 	if err != nil {
-		err = fmt.Errorf("Failed to patch ConfigMap %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
+		err = fmt.Errorf("failed to patch ConfigMap %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
 	}
 	return
 }
@@ -88,7 +88,7 @@ func TryUpdateConfigMap(c clientset.Interface, meta metav1.ObjectMeta, transform
 	})
 
 	if err != nil {
-		err = fmt.Errorf("Failed to update ConfigMap %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
+		err = fmt.Errorf("failed to update ConfigMap %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
 	}
 	return
 }

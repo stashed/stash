@@ -68,7 +68,7 @@ func TryPatchDeployment(c clientset.Interface, meta metav1.ObjectMeta, transform
 	})
 
 	if err != nil {
-		err = fmt.Errorf("Failed to patch Deployment %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
+		err = fmt.Errorf("failed to patch Deployment %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
 	}
 	return
 }
@@ -89,7 +89,7 @@ func TryUpdateDeployment(c clientset.Interface, meta metav1.ObjectMeta, transfor
 	})
 
 	if err != nil {
-		err = fmt.Errorf("Failed to update Deployment %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
+		err = fmt.Errorf("failed to update Deployment %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
 	}
 	return
 }

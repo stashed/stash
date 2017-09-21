@@ -1,8 +1,8 @@
 hash: a1a3463cc8b60fc3632b51cfb275788f85b2d14a89510ae67959b96c6d3c7a8c
-updated: 2017-09-18T22:49:05.843133826-07:00
+updated: 2017-09-21T15:35:42.309970919-07:00
 imports:
 - name: github.com/appscode/go
-  version: d1fbd14e5c6e78557c12f6d2c9c282b3c0d0c612
+  version: 40c185ab12c60de0218e5e5c319a032498c21695
   subpackages:
   - context
   - crypto/rand
@@ -13,13 +13,11 @@ imports:
   - types
   - version
 - name: github.com/appscode/kutil
-  version: 1f75c33d081d0e7e1073ed9e8a5774e5c8c93e86
+  version: 6788b3a7e56c2f71e4c41f44835b8f1fafca8c16
   subpackages:
   - apps/v1beta1
   - core/v1
   - extensions/v1beta1
-- name: github.com/appscode/log
-  version: 68e0e42e42c01371f3950571fc87c2298a51dd8f
 - name: github.com/appscode/pat
   version: 48ff78925b7955367d8a048fc2b5cec8efadf8d3
 - name: github.com/beorn7/perks
@@ -33,7 +31,7 @@ imports:
 - name: github.com/codeskyblue/go-sh
   version: b097669b1569203c3ce05a6b8717d43140fdb3d5
 - name: github.com/cpuguy83/go-md2man
-  version: 71acacd42f85e5e82f70a55327789582a5200a90
+  version: 1d903dcb749992f3741d744c0f8376b4bd7eb3e1
   subpackages:
   - md2man
 - name: github.com/davecgh/go-spew
@@ -140,7 +138,7 @@ imports:
   - matchers/support/goraph/util
   - types
 - name: github.com/pkg/errors
-  version: a22138067af1c4942683050411a841ade67fe1eb
+  version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/prometheus/client_golang
   version: c5b7fccd204277076155f10851dad72b76a49317
   subpackages:

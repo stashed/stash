@@ -68,7 +68,7 @@ func TryPatchReplicaSet(c clientset.Interface, meta metav1.ObjectMeta, transform
 	})
 
 	if err != nil {
-		err = fmt.Errorf("Failed to patch ReplicaSet %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
+		err = fmt.Errorf("failed to patch ReplicaSet %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
 	}
 	return
 }
@@ -89,7 +89,7 @@ func TryUpdateReplicaSet(c clientset.Interface, meta metav1.ObjectMeta, transfor
 	})
 
 	if err != nil {
-		err = fmt.Errorf("Failed to update ReplicaSet %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
+		err = fmt.Errorf("failed to update ReplicaSet %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
 	}
 	return
 }
