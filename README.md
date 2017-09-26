@@ -15,9 +15,15 @@
  - Prometheus ready metrics for backup process.
 
 ## Supported Versions
-Kubernetes 1.5+
+Please pick a version of Stash that matches your Kubernetes installation.
+
+| Stash Version                                                            | Docs                                                                  | Kubernetes Version |
+|--------------------------------------------------------------------------|-----------------------------------------------------------------------|--------------------|
+| [0.5.0](https://github.com/appscode/stash/releases/tag/0.5.0) (uses CRD) | [User Guide](https://github.com/appscode/stash/tree/0.5.0/docs) | 1.7.x+             |
+| [0.4.1](https://github.com/appscode/stash/releases/tag/0.4.1) (uses TPR) | [User Guide](https://github.com/appscode/stash/tree/0.4.1/docs) | 1.5.x - 1.7.x      |
 
 ## Installation
+
 To install Stash, please follow the guide [here](/docs/install.md).
 
 ## Using Stash
