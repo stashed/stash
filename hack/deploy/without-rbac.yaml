@@ -14,6 +14,8 @@ spec:
     metadata:
       labels:
         app: stash
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
     spec:
       containers:
       - name: operator
@@ -44,6 +46,9 @@ spec:
           name: data-volume
         - emptyDir: {}
           name: stash-scratchdir
+      tolerations:
+      - key: "CriticalAddonsOnly"
+        operator: "Exists"
 ---
 apiVersion: v1
 kind: Service

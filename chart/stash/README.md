@@ -42,13 +42,14 @@ The following tables lists the configurable parameters of the Stash chart and th
 | --------------------------| ----------------------------------------------------------------- | ------------------ |
 | `replicaCount`            | Number of stash operator replicas to create (only 1 is supported) | `1`                |
 | `operator.image`          | operator container image                                          | `appscode/stash`   |
-| `operator.tag`            | operator container image tag                                      | `0.5.0-rc.0`            |
+| `operator.tag`            | operator container image tag                                      | `0.5.0-rc.0`       |
 | `operator.pullPolicy`     | operator container image pull policy                              | `IfNotPresent`     |
 | `pushgateway.image`       | Prometheus pushgateway container image                            | `prom/pushgateway` |
 | `pushgateway.tag`         | Prometheus pushgateway container image tag                        | `v0.4.0`           |
 | `pushgateway.pullPolicy`  | Prometheus pushgateway container image pull policy                | `IfNotPresent`     |
+| `criticalAddon`           | If true, installs Stash operator as critical addon                | `false`            |
 | `rbac.create`             | install required rbac service account, roles and rolebindings     | `false`            |
-| `rbac.serviceAccountName` | ServiceAccount Stash will use (ignored if rbac.create=true)     | `default`          |
+| `rbac.serviceAccountName` | ServiceAccount Stash will use (ignored if rbac.create=true)       | `default`          |
 
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example:

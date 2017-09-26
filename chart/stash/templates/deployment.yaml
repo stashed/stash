@@ -14,6 +14,10 @@ spec:
       labels:
         app: "{{ template "name" . }}"
         release: "{{ .Release.Name }}"
+{{- if and .Values.criticalAddon (eq .Release.Namespace "kube-system") }}
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+{{- end }}
     spec:
       serviceAccountName: {{ if .Values.rbac.create }}{{ template "fullname" . }}{{ else }}"{{ .Values.rbac.serviceAccountName }}"{{ end }}
       containers:
@@ -49,3 +53,8 @@ spec:
           name: data-volume
         - emptyDir: {}
           name: stash-scratchdir
+{{- if and .Values.criticalAddon (eq .Release.Namespace "kube-system") }}
+      tolerations:
+      - key: "CriticalAddonsOnly"
+        operator: "Exists"
+{{- end -}}
