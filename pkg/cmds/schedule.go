@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/appscode/go/log"
+	"github.com/appscode/kutil"
 	scs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/scheduler"
 	"github.com/appscode/stash/pkg/util"
@@ -23,7 +24,7 @@ func NewCmdSchedule() *cobra.Command {
 		kubeconfigPath string
 		workload       string
 		opt            scheduler.Options = scheduler.Options{
-			Namespace:      namespace(),
+			Namespace:      kutil.Namespace(),
 			ResticName:     "",
 			ScratchDir:     "/tmp",
 			PushgatewayURL: "http://stash-operator.kube-system.svc:56789",
@@ -135,16 +136,4 @@ func NewCmdSchedule() *cobra.Command {
 	cmd.Flags().DurationVar(&opt.ResyncPeriod, "resync-period", opt.ResyncPeriod, "If non-zero, will re-list this often. Otherwise, re-list will be delayed aslong as possible (until the upstream source closes the watch or times out.")
 
 	return cmd
-}
-
-func namespace() string {
-	if ns := os.Getenv("OPERATOR_NAMESPACE"); ns != "" {
-		return ns
-	}
-	if data, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil {
-		if ns := strings.TrimSpace(string(data)); len(ns) > 0 {
-			return ns
-		}
-	}
-	return metav1.NamespaceDefault
 }
