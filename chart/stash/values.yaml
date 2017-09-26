@@ -10,6 +10,9 @@ pushgateway:
   image: prom/pushgateway
   pullPolicy: IfNotPresent
   tag: v0.4.0
+## Installs Stash operator as critical addon
+## https://kubernetes.io/docs/tasks/administer-cluster/guaranteed-scheduling-critical-addon-pods/
+criticalAddon: false
 ## Install Default RBAC roles and bindings
 rbac:
   ## If true, create & use RBAC resources
