@@ -9,6 +9,17 @@ DOCKER_REPO_ROOT="/go/src/$PACKAGE_NAME"
 
 pushd $REPO_ROOT
 
+## Generate ugorji stuff
+docker run --rm -ti -u $(id -u):$(id -g) \
+    -v "$REPO_ROOT":"$DOCKER_REPO_ROOT" \
+    -w "$DOCKER_REPO_ROOT/apis/stash/v1alpha1" \
+    appscode/gengo:canary codecgen -o prefix_type.generated.go prefix_type.go
+
+docker run --rm -ti -u $(id -u):$(id -g) \
+    -v "$REPO_ROOT":"$DOCKER_REPO_ROOT" \
+    -w "$DOCKER_REPO_ROOT/apis/stash/v1alpha1" \
+    appscode/gengo:canary codecgen -o types.generated.go types.go
+
 # Generate defaults
 docker run --rm -ti -u $(id -u):$(id -g) \
     -v "$REPO_ROOT":"$DOCKER_REPO_ROOT" \
