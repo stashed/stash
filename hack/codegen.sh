@@ -10,6 +10,8 @@ DOCKER_REPO_ROOT="/go/src/$PACKAGE_NAME"
 pushd $REPO_ROOT
 
 ## Generate ugorji stuff
+rm "$REPO_ROOT"/apis/stash/v1alpha1/*.generated.go
+
 docker run --rm -ti -u $(id -u):$(id -g) \
     -v "$REPO_ROOT":"$DOCKER_REPO_ROOT" \
     -w "$DOCKER_REPO_ROOT/apis/stash/v1alpha1" \
