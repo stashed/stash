@@ -7,8 +7,9 @@ import (
 
 	"github.com/appscode/go/log"
 	acrt "github.com/appscode/go/runtime"
-	corekutil "github.com/appscode/kutil/core/v1"
-	kutil "github.com/appscode/kutil/extensions/v1beta1"
+	"github.com/appscode/kutil"
+	core_util "github.com/appscode/kutil/core/v1"
+	ext_util "github.com/appscode/kutil/extensions/v1beta1"
 	sapi "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,7 +23,7 @@ import (
 
 // Blocks caller. Intended to be called as a Go routine.
 func (c *Controller) WatchReplicaSets() {
-	if !util.IsPreferredAPIResource(c.kubeClient, extensions.SchemeGroupVersion.String(), "ReplicaSet") {
+	if !kutil.IsPreferredAPIResource(c.kubeClient, extensions.SchemeGroupVersion.String(), "ReplicaSet") {
 		log.Warningf("Skipping watching non-preferred GroupVersion:%s Kind:%s", extensions.SchemeGroupVersion.String(), "ReplicaSet")
 		return
 	}
@@ -109,8 +110,8 @@ func (c *Controller) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, ol
 		return nil
 	}
 
-	_, err = kutil.PatchReplicaSet(c.kubeClient, resource, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
-		obj.Spec.Template.Spec.Containers = corekutil.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.SidecarImageTag, "ReplicaSet/"+obj.Name))
+	_, err = ext_util.PatchReplicaSet(c.kubeClient, resource, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
+		obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.SidecarImageTag, "ReplicaSet/"+obj.Name))
 		obj.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(obj.Spec.Template.Spec.Volumes)
 		obj.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(obj.Spec.Template.Spec.Volumes)
 		obj.Spec.Template.Spec.Volumes = util.MergeLocalVolume(obj.Spec.Template.Spec.Volumes, old, new)
@@ -126,7 +127,7 @@ func (c *Controller) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, ol
 		return
 	}
 
-	err = kutil.WaitUntilReplicaSetReady(c.kubeClient, resource.ObjectMeta)
+	err = ext_util.WaitUntilReplicaSetReady(c.kubeClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}
@@ -140,8 +141,8 @@ func (c *Controller) EnsureReplicaSetSidecarDeleted(resource *extensions.Replica
 		return nil
 	}
 
-	_, err = kutil.PatchReplicaSet(c.kubeClient, resource, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
-		obj.Spec.Template.Spec.Containers = corekutil.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
+	_, err = ext_util.PatchReplicaSet(c.kubeClient, resource, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
+		obj.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
 		if restic.Spec.Backend.Local != nil {
@@ -157,7 +158,7 @@ func (c *Controller) EnsureReplicaSetSidecarDeleted(resource *extensions.Replica
 		return
 	}
 
-	err = kutil.WaitUntilReplicaSetReady(c.kubeClient, resource.ObjectMeta)
+	err = ext_util.WaitUntilReplicaSetReady(c.kubeClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}

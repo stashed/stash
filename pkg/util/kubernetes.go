@@ -27,22 +27,6 @@ const (
 	PodinfoVolumeName    = "stash-podinfo"
 )
 
-func IsPreferredAPIResource(kubeClient clientset.Interface, groupVersion, kind string) bool {
-	if resourceList, err := kubeClient.Discovery().ServerPreferredResources(); err == nil {
-		for _, resources := range resourceList {
-			if resources.GroupVersion != groupVersion {
-				continue
-			}
-			for _, resource := range resources.APIResources {
-				if resources.GroupVersion == groupVersion && resource.Kind == kind {
-					return true
-				}
-			}
-		}
-	}
-	return false
-}
-
 func FindRestic(stashClient scs.ResticsGetter, obj metav1.ObjectMeta) (*sapi_v1alpha1.Restic, error) {
 	restics, err := stashClient.Restics(obj.Namespace).List(metav1.ListOptions{LabelSelector: labels.Everything().String()})
 	if kerr.IsNotFound(err) {

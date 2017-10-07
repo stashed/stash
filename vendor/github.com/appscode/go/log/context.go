@@ -134,7 +134,7 @@ func formatString(c gtx.Context, format string) string {
 	}
 	if val := context.ID(c); val != "" {
 		// if context is not nil, adding context values as formatted by the provider.
-		format = "%s " + format
+		format = "[%s] " + format
 	}
 	return format
 }

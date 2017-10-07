@@ -7,8 +7,9 @@ import (
 
 	"github.com/appscode/go/log"
 	acrt "github.com/appscode/go/runtime"
-	kutil "github.com/appscode/kutil/apps/v1beta1"
-	corekutil "github.com/appscode/kutil/core/v1"
+	"github.com/appscode/kutil"
+	apps_util "github.com/appscode/kutil/apps/v1beta1"
+	core_util "github.com/appscode/kutil/core/v1"
 	sapi "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,7 +23,7 @@ import (
 
 // Blocks caller. Intended to be called as a Go routine.
 func (c *Controller) WatchDeployments() {
-	if !util.IsPreferredAPIResource(c.kubeClient, apps.SchemeGroupVersion.String(), "Deployment") {
+	if !kutil.IsPreferredAPIResource(c.kubeClient, apps.SchemeGroupVersion.String(), "Deployment") {
 		log.Warningf("Skipping watching non-preferred GroupVersion:%s Kind:%s", apps.SchemeGroupVersion.String(), "Deployment")
 		return
 	}
@@ -109,8 +110,8 @@ func (c *Controller) EnsureDeploymentSidecar(resource *apps.Deployment, old, new
 		return nil
 	}
 
-	_, err = kutil.PatchDeployment(c.kubeClient, resource, func(obj *apps.Deployment) *apps.Deployment {
-		obj.Spec.Template.Spec.Containers = corekutil.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.SidecarImageTag, "Deployment/"+obj.Name))
+	_, err = apps_util.PatchDeployment(c.kubeClient, resource, func(obj *apps.Deployment) *apps.Deployment {
+		obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.SidecarImageTag, "Deployment/"+obj.Name))
 		obj.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(obj.Spec.Template.Spec.Volumes)
 		obj.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(obj.Spec.Template.Spec.Volumes)
 		obj.Spec.Template.Spec.Volumes = util.MergeLocalVolume(obj.Spec.Template.Spec.Volumes, old, new)
@@ -126,7 +127,7 @@ func (c *Controller) EnsureDeploymentSidecar(resource *apps.Deployment, old, new
 		return
 	}
 
-	err = kutil.WaitUntilDeploymentReady(c.kubeClient, resource.ObjectMeta)
+	err = apps_util.WaitUntilDeploymentReady(c.kubeClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}
@@ -140,8 +141,8 @@ func (c *Controller) EnsureDeploymentSidecarDeleted(resource *apps.Deployment, r
 		return nil
 	}
 
-	_, err = kutil.PatchDeployment(c.kubeClient, resource, func(obj *apps.Deployment) *apps.Deployment {
-		obj.Spec.Template.Spec.Containers = corekutil.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
+	_, err = apps_util.PatchDeployment(c.kubeClient, resource, func(obj *apps.Deployment) *apps.Deployment {
+		obj.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
 		if restic.Spec.Backend.Local != nil {
@@ -157,7 +158,7 @@ func (c *Controller) EnsureDeploymentSidecarDeleted(resource *apps.Deployment, r
 		return
 	}
 
-	err = kutil.WaitUntilDeploymentReady(c.kubeClient, resource.ObjectMeta)
+	err = apps_util.WaitUntilDeploymentReady(c.kubeClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}
