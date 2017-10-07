@@ -21,7 +21,7 @@ import (
 )
 
 // Blocks caller. Intended to be called as a Go routine.
-func (c *Controller) WatchDeploymentApps() {
+func (c *Controller) WatchDeployments() {
 	if !util.IsPreferredAPIResource(c.kubeClient, apps.SchemeGroupVersion.String(), "Deployment") {
 		log.Warningf("Skipping watching non-preferred GroupVersion:%s Kind:%s", apps.SchemeGroupVersion.String(), "Deployment")
 		return
@@ -54,7 +54,7 @@ func (c *Controller) WatchDeploymentApps() {
 						log.Errorf("No Restic found for Deployment %s@%s.", resource.Name, resource.Namespace)
 						return
 					}
-					c.EnsureDeploymentAppSidecar(resource, nil, restic)
+					c.EnsureDeploymentSidecar(resource, nil, restic)
 				}
 			},
 			UpdateFunc: func(old, new interface{}) {
@@ -83,9 +83,9 @@ func (c *Controller) WatchDeploymentApps() {
 						return
 					}
 					if newRestic != nil {
-						c.EnsureDeploymentAppSidecar(newObj, oldRestic, newRestic)
+						c.EnsureDeploymentSidecar(newObj, oldRestic, newRestic)
 					} else if oldRestic != nil {
-						c.EnsureDeploymentAppSidecarDeleted(newObj, oldRestic)
+						c.EnsureDeploymentSidecarDeleted(newObj, oldRestic)
 					}
 				}
 			},
@@ -94,7 +94,7 @@ func (c *Controller) WatchDeploymentApps() {
 	ctrl.Run(wait.NeverStop)
 }
 
-func (c *Controller) EnsureDeploymentAppSidecar(resource *apps.Deployment, old, new *sapi.Restic) (err error) {
+func (c *Controller) EnsureDeploymentSidecar(resource *apps.Deployment, old, new *sapi.Restic) (err error) {
 	if new.Spec.Backend.StorageSecretName == "" {
 		err = fmt.Errorf("Missing repository secret name for Restic %s@%s.", new.Name, new.Namespace)
 		return
@@ -134,7 +134,7 @@ func (c *Controller) EnsureDeploymentAppSidecar(resource *apps.Deployment, old, 
 	return err
 }
 
-func (c *Controller) EnsureDeploymentAppSidecarDeleted(resource *apps.Deployment, restic *sapi.Restic) (err error) {
+func (c *Controller) EnsureDeploymentSidecarDeleted(resource *apps.Deployment, restic *sapi.Restic) (err error) {
 	if name := util.GetString(resource.Annotations, sapi.ConfigName); name == "" {
 		log.Infof("Restic sidecar already removed for Deployment %s@%s.", resource.Name, resource.Namespace)
 		return nil

@@ -130,16 +130,6 @@ func (c *Controller) EnsureSidecar(old, new *sapi.Restic) {
 				}
 			}
 		}
-
-		if resources, err := c.kubeClient.ExtensionsV1beta1().Deployments(new.Namespace).List(*newOpt); err == nil {
-			for _, resource := range resources.Items {
-				delete(oldObjs, resource.Name)
-				go c.EnsureDeploymentExtensionSidecar(&resource, old, new)
-			}
-		}
-		for _, resource := range oldObjs {
-			go c.EnsureDeploymentExtensionSidecarDeleted(&resource, old)
-		}
 	}
 
 	{
@@ -199,15 +189,9 @@ func (c *Controller) EnsureSidecarDeleted(restic *sapi.Restic) {
 			go c.EnsureReplicationControllerSidecarDeleted(&resource, restic)
 		}
 	}
-
 	if resources, err := c.kubeClient.ExtensionsV1beta1().ReplicaSets(restic.Namespace).List(opt); err == nil {
 		for _, resource := range resources.Items {
 			go c.EnsureReplicaSetSidecarDeleted(&resource, restic)
-		}
-	}
-	if resources, err := c.kubeClient.ExtensionsV1beta1().Deployments(restic.Namespace).List(opt); err == nil {
-		for _, resource := range resources.Items {
-			go c.EnsureDeploymentExtensionSidecarDeleted(&resource, restic)
 		}
 	}
 	if resources, err := c.kubeClient.AppsV1beta1().Deployments(restic.Namespace).List(opt); err == nil {
