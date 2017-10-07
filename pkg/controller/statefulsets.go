@@ -7,9 +7,9 @@ import (
 
 	"github.com/appscode/go/log"
 	acrt "github.com/appscode/go/runtime"
-	kutil "github.com/appscode/kutil"
-	kutilappsv1beta1 "github.com/appscode/kutil/apps/v1beta1"
-	corekutil "github.com/appscode/kutil/core/v1"
+	"github.com/appscode/kutil"
+	apps_util "github.com/appscode/kutil/apps/v1beta1"
+	core_util "github.com/appscode/kutil/core/v1"
 	sapi "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,7 +28,7 @@ func (c *Controller) WatchStatefulSets() {
 		log.Warningf("Skipping watching StatefulSet for, Reason: %v", err)
 		return
 	}
-	if !util.IsPreferredAPIResource(c.kubeClient, apps.SchemeGroupVersion.String(), "StatefulSet") {
+	if !kutil.IsPreferredAPIResource(c.kubeClient, apps.SchemeGroupVersion.String(), "StatefulSet") {
 		log.Warningf("Skipping watching non-preferred GroupVersion:%s Kind:%s", apps.SchemeGroupVersion.String(), "StatefulSet")
 		return
 	}
@@ -115,8 +115,8 @@ func (c *Controller) EnsureStatefulSetSidecar(resource *apps.StatefulSet, old, n
 		return nil
 	}
 
-	_, err = kutilappsv1beta1.PatchStatefulSet(c.kubeClient, resource, func(obj *apps.StatefulSet) *apps.StatefulSet {
-		obj.Spec.Template.Spec.Containers = corekutil.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.SidecarImageTag, "StatefulSet/"+obj.Name))
+	_, err = apps_util.PatchStatefulSet(c.kubeClient, resource, func(obj *apps.StatefulSet) *apps.StatefulSet {
+		obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.SidecarImageTag, "StatefulSet/"+obj.Name))
 		obj.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(obj.Spec.Template.Spec.Volumes)
 		obj.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(obj.Spec.Template.Spec.Volumes)
 		obj.Spec.Template.Spec.Volumes = util.MergeLocalVolume(obj.Spec.Template.Spec.Volumes, old, new)
@@ -132,7 +132,7 @@ func (c *Controller) EnsureStatefulSetSidecar(resource *apps.StatefulSet, old, n
 		return
 	}
 
-	err = kutilappsv1beta1.WaitUntilStatefulSetReady(c.kubeClient, resource.ObjectMeta)
+	err = apps_util.WaitUntilStatefulSetReady(c.kubeClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}
@@ -146,8 +146,8 @@ func (c *Controller) EnsureStatefulSetSidecarDeleted(resource *apps.StatefulSet,
 		return nil
 	}
 
-	_, err = kutilappsv1beta1.PatchStatefulSet(c.kubeClient, resource, func(obj *apps.StatefulSet) *apps.StatefulSet {
-		obj.Spec.Template.Spec.Containers = corekutil.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
+	_, err = apps_util.PatchStatefulSet(c.kubeClient, resource, func(obj *apps.StatefulSet) *apps.StatefulSet {
+		obj.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
 		if restic.Spec.Backend.Local != nil {
@@ -163,7 +163,7 @@ func (c *Controller) EnsureStatefulSetSidecarDeleted(resource *apps.StatefulSet,
 		return
 	}
 
-	err = kutilappsv1beta1.WaitUntilStatefulSetReady(c.kubeClient, resource.ObjectMeta)
+	err = apps_util.WaitUntilStatefulSetReady(c.kubeClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}

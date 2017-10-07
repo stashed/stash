@@ -2,9 +2,14 @@ package context
 
 import (
 	gtx "context"
+	"github.com/google/uuid"
 )
 
 type keyID struct{}
+
+func Background() gtx.Context {
+	return gtx.WithValue(gtx.Background(), keyID{}, uuid.New().String())
+}
 
 func WithID(ctx gtx.Context, id string) gtx.Context {
 	return gtx.WithValue(ctx, keyID{}, id)

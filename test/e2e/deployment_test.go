@@ -1,7 +1,7 @@
 package e2e_test
 
 import (
-	extensionv1beta1kutil "github.com/appscode/kutil/extensions/v1beta1"
+	appsv1beta1kutil "github.com/appscode/kutil/apps/v1beta1"
 	sapi "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/appscode/stash/test/e2e/framework"
@@ -10,16 +10,16 @@ import (
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
-	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	apps "k8s.io/client-go/pkg/apis/apps/v1beta1"
 )
 
-var _ = Describe("DeploymentExtension", func() {
+var _ = Describe("Deployment", func() {
 	var (
 		err        error
 		f          *framework.Invocation
 		restic     sapi.Restic
 		cred       apiv1.Secret
-		deployment extensions.Deployment
+		deployment apps.Deployment
 	)
 
 	BeforeEach(func() {
@@ -30,7 +30,7 @@ var _ = Describe("DeploymentExtension", func() {
 			Skip("Missing repository credential")
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
-		deployment = f.DeploymentExtension()
+		deployment = f.Deployment()
 	})
 
 	var (
@@ -43,12 +43,12 @@ var _ = Describe("DeploymentExtension", func() {
 			err = f.CreateRestic(restic)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Creating DeploymentExtension " + deployment.Name)
-			err = f.CreateDeploymentExtension(deployment)
+			By("Creating Deployment " + deployment.Name)
+			err = f.CreateDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyDeploymentExtension(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for backup to complete")
 			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
@@ -64,8 +64,8 @@ var _ = Describe("DeploymentExtension", func() {
 			err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Creating DeploymentExtension " + deployment.Name)
-			err = f.CreateDeploymentExtension(deployment)
+			By("Creating Deployment " + deployment.Name)
+			err = f.CreateDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -73,7 +73,7 @@ var _ = Describe("DeploymentExtension", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyDeploymentExtension(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for backup to complete")
 			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
@@ -93,12 +93,12 @@ var _ = Describe("DeploymentExtension", func() {
 			err = f.CreateRestic(restic)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Creating DeploymentExtension " + deployment.Name)
-			err = f.CreateDeploymentExtension(deployment)
+			By("Creating Deployment " + deployment.Name)
+			err = f.CreateDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyDeploymentExtension(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for backup to complete")
 			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
@@ -108,7 +108,7 @@ var _ = Describe("DeploymentExtension", func() {
 			By("Deleting restic " + restic.Name)
 			f.DeleteRestic(restic.ObjectMeta)
 
-			f.EventuallyDeploymentExtension(deployment.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
+			f.EventuallyDeployment(deployment.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		}
 
 		shouldStopBackupIfLabelChanged = func() {
@@ -120,20 +120,20 @@ var _ = Describe("DeploymentExtension", func() {
 			err = f.CreateRestic(restic)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Creating DeploymentExtension " + deployment.Name)
-			err = f.CreateDeploymentExtension(deployment)
+			By("Creating Deployment " + deployment.Name)
+			err = f.CreateDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyDeploymentExtension(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for backup to complete")
 			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
 				return r.Status.BackupCount
 			}, BeNumerically(">=", 1)))
 
-			By("Removing labels of DeploymentExtension " + deployment.Name)
-			_, err = extensionv1beta1kutil.PatchDeployment(f.KubeClient, &deployment, func(in *extensions.Deployment) *extensions.Deployment {
+			By("Removing labels of Deployment " + deployment.Name)
+			_, err = appsv1beta1kutil.PatchDeployment(f.KubeClient, &deployment, func(in *apps.Deployment) *apps.Deployment {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}
@@ -141,7 +141,7 @@ var _ = Describe("DeploymentExtension", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			f.EventuallyDeploymentExtension(deployment.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
+			f.EventuallyDeployment(deployment.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		}
 
 		shouldStopBackupIfSelectorChanged = func() {
@@ -153,12 +153,12 @@ var _ = Describe("DeploymentExtension", func() {
 			err = f.CreateRestic(restic)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Creating DeploymentExtension " + deployment.Name)
-			err = f.CreateDeploymentExtension(deployment)
+			By("Creating Deployment " + deployment.Name)
+			err = f.CreateDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
-			f.EventuallyDeploymentExtension(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for backup to complete")
 			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
@@ -176,13 +176,13 @@ var _ = Describe("DeploymentExtension", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			f.EventuallyDeploymentExtension(deployment.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
+			f.EventuallyDeployment(deployment.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		}
 	)
 
 	Describe("Creating restic for", func() {
 		AfterEach(func() {
-			f.DeleteDeploymentExtension(deployment.ObjectMeta)
+			f.DeleteDeployment(deployment.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 		})
@@ -192,8 +192,8 @@ var _ = Describe("DeploymentExtension", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 			})
-			It(`should backup new DeploymentExtension`, shouldBackupNewDeployment)
-			It(`should backup existing DeploymentExtension`, shouldBackupExistingDeployment)
+			It(`should backup new Deployment`, shouldBackupNewDeployment)
+			It(`should backup existing Deployment`, shouldBackupExistingDeployment)
 		})
 
 		Context(`"S3" backend`, func() {
@@ -201,8 +201,8 @@ var _ = Describe("DeploymentExtension", func() {
 				cred = f.SecretForS3Backend()
 				restic = f.ResticForS3Backend()
 			})
-			It(`should backup new DeploymentExtension`, shouldBackupNewDeployment)
-			It(`should backup existing DeploymentExtension`, shouldBackupExistingDeployment)
+			It(`should backup new Deployment`, shouldBackupNewDeployment)
+			It(`should backup existing Deployment`, shouldBackupExistingDeployment)
 		})
 
 		Context(`"GCS" backend`, func() {
@@ -210,8 +210,8 @@ var _ = Describe("DeploymentExtension", func() {
 				cred = f.SecretForGCSBackend()
 				restic = f.ResticForGCSBackend()
 			})
-			It(`should backup new DeploymentExtension`, shouldBackupNewDeployment)
-			It(`should backup existing DeploymentExtension`, shouldBackupExistingDeployment)
+			It(`should backup new Deployment`, shouldBackupNewDeployment)
+			It(`should backup existing Deployment`, shouldBackupExistingDeployment)
 		})
 
 		Context(`"Azure" backend`, func() {
@@ -219,8 +219,8 @@ var _ = Describe("DeploymentExtension", func() {
 				cred = f.SecretForAzureBackend()
 				restic = f.ResticForAzureBackend()
 			})
-			It(`should backup new DeploymentExtension`, shouldBackupNewDeployment)
-			It(`should backup existing DeploymentExtension`, shouldBackupExistingDeployment)
+			It(`should backup new Deployment`, shouldBackupNewDeployment)
+			It(`should backup existing Deployment`, shouldBackupExistingDeployment)
 		})
 
 		Context(`"Swift" backend`, func() {
@@ -228,14 +228,14 @@ var _ = Describe("DeploymentExtension", func() {
 				cred = f.SecretForSwiftBackend()
 				restic = f.ResticForSwiftBackend()
 			})
-			It(`should backup new DeploymentExtension`, shouldBackupNewDeployment)
-			It(`should backup existing DeploymentExtension`, shouldBackupExistingDeployment)
+			It(`should backup new Deployment`, shouldBackupNewDeployment)
+			It(`should backup existing Deployment`, shouldBackupExistingDeployment)
 		})
 	})
 
-	Describe("Changing DeploymentExtension labels", func() {
+	Describe("Changing Deployment labels", func() {
 		AfterEach(func() {
-			f.DeleteDeploymentExtension(deployment.ObjectMeta)
+			f.DeleteDeployment(deployment.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 		})
@@ -248,7 +248,7 @@ var _ = Describe("DeploymentExtension", func() {
 
 	Describe("Changing Restic selector", func() {
 		AfterEach(func() {
-			f.DeleteDeploymentExtension(deployment.ObjectMeta)
+			f.DeleteDeployment(deployment.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 		})
@@ -261,7 +261,7 @@ var _ = Describe("DeploymentExtension", func() {
 
 	Describe("Deleting restic for", func() {
 		AfterEach(func() {
-			f.DeleteDeploymentExtension(deployment.ObjectMeta)
+			f.DeleteDeployment(deployment.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 		})
 

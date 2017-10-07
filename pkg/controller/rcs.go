@@ -7,7 +7,8 @@ import (
 
 	"github.com/appscode/go/log"
 	acrt "github.com/appscode/go/runtime"
-	kutil "github.com/appscode/kutil/core/v1"
+	"github.com/appscode/kutil"
+	coire_util "github.com/appscode/kutil/core/v1"
 	sapi "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,7 +21,7 @@ import (
 
 // Blocks caller. Intended to be called as a Go routine.
 func (c *Controller) WatchReplicationControllers() {
-	if !util.IsPreferredAPIResource(c.kubeClient, apiv1.SchemeGroupVersion.String(), "ReplicationController") {
+	if !kutil.IsPreferredAPIResource(c.kubeClient, apiv1.SchemeGroupVersion.String(), "ReplicationController") {
 		log.Warningf("Skipping watching non-preferred GroupVersion:%s Kind:%s", apiv1.SchemeGroupVersion.String(), "ReplicationController")
 		return
 	}
@@ -111,8 +112,8 @@ func (c *Controller) EnsureReplicationControllerSidecar(resource *apiv1.Replicat
 		return nil
 	}
 
-	_, err = kutil.PatchRC(c.kubeClient, resource, func(obj *apiv1.ReplicationController) *apiv1.ReplicationController {
-		obj.Spec.Template.Spec.Containers = kutil.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.SidecarImageTag, "rc/"+obj.Name))
+	_, err = coire_util.PatchRC(c.kubeClient, resource, func(obj *apiv1.ReplicationController) *apiv1.ReplicationController {
+		obj.Spec.Template.Spec.Containers = coire_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.SidecarImageTag, "rc/"+obj.Name))
 		obj.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(obj.Spec.Template.Spec.Volumes)
 		obj.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(obj.Spec.Template.Spec.Volumes)
 		obj.Spec.Template.Spec.Volumes = util.MergeLocalVolume(obj.Spec.Template.Spec.Volumes, old, new)
@@ -128,7 +129,7 @@ func (c *Controller) EnsureReplicationControllerSidecar(resource *apiv1.Replicat
 		return
 	}
 
-	err = kutil.WaitUntilRCReady(c.kubeClient, resource.ObjectMeta)
+	err = coire_util.WaitUntilRCReady(c.kubeClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}
@@ -142,8 +143,8 @@ func (c *Controller) EnsureReplicationControllerSidecarDeleted(resource *apiv1.R
 		return nil
 	}
 
-	_, err = kutil.PatchRC(c.kubeClient, resource, func(obj *apiv1.ReplicationController) *apiv1.ReplicationController {
-		obj.Spec.Template.Spec.Containers = kutil.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
+	_, err = coire_util.PatchRC(c.kubeClient, resource, func(obj *apiv1.ReplicationController) *apiv1.ReplicationController {
+		obj.Spec.Template.Spec.Containers = coire_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
 		if restic.Spec.Backend.Local != nil {
@@ -159,7 +160,7 @@ func (c *Controller) EnsureReplicationControllerSidecarDeleted(resource *apiv1.R
 		return
 	}
 
-	err = kutil.WaitUntilRCReady(c.kubeClient, resource.ObjectMeta)
+	err = coire_util.WaitUntilRCReady(c.kubeClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}

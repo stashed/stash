@@ -7,8 +7,9 @@ import (
 
 	"github.com/appscode/go/log"
 	acrt "github.com/appscode/go/runtime"
+	"github.com/appscode/kutil"
 	corekutil "github.com/appscode/kutil/core/v1"
-	kutil "github.com/appscode/kutil/extensions/v1beta1"
+	ext_util "github.com/appscode/kutil/extensions/v1beta1"
 	sapi "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,7 +23,7 @@ import (
 
 // Blocks caller. Intended to be called as a Go routine.
 func (c *Controller) WatchDaemonSets() {
-	if !util.IsPreferredAPIResource(c.kubeClient, extensions.SchemeGroupVersion.String(), "DaemonSet") {
+	if !kutil.IsPreferredAPIResource(c.kubeClient, extensions.SchemeGroupVersion.String(), "DaemonSet") {
 		log.Warningf("Skipping watching non-preferred GroupVersion:%s Kind:%s", extensions.SchemeGroupVersion.String(), "DaemonSet")
 		return
 	}
@@ -109,7 +110,7 @@ func (c *Controller) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, old,
 		return nil
 	}
 
-	_, err = kutil.PatchDaemonSet(c.kubeClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
+	_, err = ext_util.PatchDaemonSet(c.kubeClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
 		obj.Spec.Template.Spec.Containers = corekutil.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.SidecarImageTag, "DaemonSet/"+obj.Name))
 		obj.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(obj.Spec.Template.Spec.Volumes)
 		obj.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(obj.Spec.Template.Spec.Volumes)
@@ -126,7 +127,7 @@ func (c *Controller) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, old,
 		return
 	}
 
-	err = kutil.WaitUntilDaemonSetReady(c.kubeClient, resource.ObjectMeta)
+	err = ext_util.WaitUntilDaemonSetReady(c.kubeClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}
@@ -140,7 +141,7 @@ func (c *Controller) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSe
 		return nil
 	}
 
-	_, err = kutil.PatchDaemonSet(c.kubeClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
+	_, err = ext_util.PatchDaemonSet(c.kubeClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
 		obj.Spec.Template.Spec.Containers = corekutil.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
@@ -157,7 +158,7 @@ func (c *Controller) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSe
 		return
 	}
 
-	err = kutil.WaitUntilDaemonSetReady(c.kubeClient, resource.ObjectMeta)
+	err = ext_util.WaitUntilDaemonSetReady(c.kubeClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}

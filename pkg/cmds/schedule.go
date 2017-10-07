@@ -10,11 +10,9 @@ import (
 	"github.com/appscode/kutil"
 	scs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/scheduler"
-	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
-	apps "k8s.io/client-go/pkg/apis/apps/v1beta1"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -63,15 +61,8 @@ func NewCmdSchedule() *cobra.Command {
 			case "Deployments", "Deployment", "deployments", "deployment":
 				opt.AppKind = "Deployment"
 				opt.SmartPrefix = ""
-				if util.IsPreferredAPIResource(kubeClient, apps.GroupName, opt.AppKind) {
-					_, err := kubeClient.AppsV1beta1().Deployments(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
-					if err != nil {
-						_, err := kubeClient.ExtensionsV1beta1().Deployments(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
-						if err != nil {
-							log.Fatalf(`Unknown Deployment %s@%s`, opt.AppName, opt.Namespace)
-						}
-					}
-				} else {
+				_, err := kubeClient.AppsV1beta1().Deployments(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
+				if err != nil {
 					_, err := kubeClient.ExtensionsV1beta1().Deployments(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
 					if err != nil {
 						log.Fatalf(`Unknown Deployment %s@%s`, opt.AppName, opt.Namespace)

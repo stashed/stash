@@ -8,7 +8,7 @@ import (
 	apps "k8s.io/client-go/pkg/apis/apps/v1beta1"
 )
 
-func (fi *Invocation) DeploymentApp() apps.Deployment {
+func (fi *Invocation) Deployment() apps.Deployment {
 	return apps.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
@@ -24,16 +24,16 @@ func (fi *Invocation) DeploymentApp() apps.Deployment {
 	}
 }
 
-func (f *Framework) CreateDeploymentApp(obj apps.Deployment) error {
+func (f *Framework) CreateDeployment(obj apps.Deployment) error {
 	_, err := f.KubeClient.AppsV1beta1().Deployments(obj.Namespace).Create(&obj)
 	return err
 }
 
-func (f *Framework) DeleteDeploymentApp(meta metav1.ObjectMeta) error {
+func (f *Framework) DeleteDeployment(meta metav1.ObjectMeta) error {
 	return f.KubeClient.AppsV1beta1().Deployments(meta.Namespace).Delete(meta.Name, deleteInForeground())
 }
 
-func (f *Framework) EventuallyDeploymentApp(meta metav1.ObjectMeta) GomegaAsyncAssertion {
+func (f *Framework) EventuallyDeployment(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() *apps.Deployment {
 		obj, err := f.KubeClient.AppsV1beta1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())

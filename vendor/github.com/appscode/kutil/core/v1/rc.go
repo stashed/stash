@@ -23,7 +23,14 @@ func EnsureRC(c clientset.Interface, meta metav1.ObjectMeta, transform func(*api
 func CreateOrPatchRC(c clientset.Interface, meta metav1.ObjectMeta, transform func(*apiv1.ReplicationController) *apiv1.ReplicationController) (*apiv1.ReplicationController, error) {
 	cur, err := c.CoreV1().ReplicationControllers(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
-		return c.CoreV1().ReplicationControllers(meta.Namespace).Create(transform(&apiv1.ReplicationController{ObjectMeta: meta}))
+		glog.V(3).Infof("Creating ReplicationController %s/%s.", meta.Namespace, meta.Name)
+		return c.CoreV1().ReplicationControllers(meta.Namespace).Create(transform(&apiv1.ReplicationController{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "ReplicationController",
+				APIVersion: apiv1.SchemeGroupVersion.String(),
+			},
+			ObjectMeta: meta,
+		}))
 	} else if err != nil {
 		return nil, err
 	}
@@ -48,7 +55,7 @@ func PatchRC(c clientset.Interface, cur *apiv1.ReplicationController, transform 
 	if len(patch) == 0 || string(patch) == "{}" {
 		return cur, nil
 	}
-	glog.V(5).Infof("Patching ReplicationController %s@%s with %s.", cur.Name, cur.Namespace, string(patch))
+	glog.V(3).Infof("Patching ReplicationController %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
 	return c.CoreV1().ReplicationControllers(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
 }
 
@@ -63,12 +70,12 @@ func TryPatchRC(c clientset.Interface, meta metav1.ObjectMeta, transform func(*a
 			result, e2 = PatchRC(c, cur, transform)
 			return e2 == nil, nil
 		}
-		glog.Errorf("Attempt %d failed to patch ReplicationController %s@%s due to %v.", attempt, cur.Name, cur.Namespace, e2)
+		glog.Errorf("Attempt %d failed to patch ReplicationController %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
 		return false, nil
 	})
 
 	if err != nil {
-		err = fmt.Errorf("failed to patch ReplicationController %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
+		err = fmt.Errorf("failed to patch ReplicationController %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}
 	return
 }
@@ -84,12 +91,12 @@ func TryUpdateRC(c clientset.Interface, meta metav1.ObjectMeta, transform func(*
 			result, e2 = c.CoreV1().ReplicationControllers(cur.Namespace).Update(transform(cur))
 			return e2 == nil, nil
 		}
-		glog.Errorf("Attempt %d failed to update ReplicationController %s@%s due to %v.", attempt, cur.Name, cur.Namespace, e2)
+		glog.Errorf("Attempt %d failed to update ReplicationController %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
 		return false, nil
 	})
 
 	if err != nil {
-		err = fmt.Errorf("failed to update ReplicationController %s@%s after %d attempts due to %v", meta.Name, meta.Namespace, attempt, err)
+		err = fmt.Errorf("failed to update ReplicationController %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}
 	return
 }

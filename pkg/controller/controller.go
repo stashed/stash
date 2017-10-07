@@ -80,8 +80,7 @@ func (c *Controller) Run() {
 	go c.WatchRestics()
 	go c.WatchDaemonSets()
 	go c.WatchStatefulSets()
-	go c.WatchDeploymentApps()
-	go c.WatchDeploymentExtensions()
+	go c.WatchDeployments()
 	go c.WatchReplicaSets()
 	go c.WatchReplicationControllers()
 }

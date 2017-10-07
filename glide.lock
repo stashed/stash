@@ -1,8 +1,8 @@
 hash: a1a3463cc8b60fc3632b51cfb275788f85b2d14a89510ae67959b96c6d3c7a8c
-updated: 2017-09-25T20:10:44.444620418-07:00
+updated: 2017-10-07T05:07:04.263644852-07:00
 imports:
 - name: github.com/appscode/go
-  version: 5f5a94d551a6a3147a2dfc5e287da0fc251b1bac
+  version: b2ff0c0b3293cc848d781d1efb57ffda5fa0226e
   subpackages:
   - context
   - crypto/rand
@@ -13,7 +13,7 @@ imports:
   - types
   - version
 - name: github.com/appscode/kutil
-  version: 81416f2ec1a1e6009abf8455e083c5a5b0fda763
+  version: f23ee81f4bb9fcced03b907400f105469b9898fc
   subpackages:
   - apps/v1beta1
   - core/v1
@@ -56,6 +56,8 @@ imports:
   - log
 - name: github.com/emicklei/go-restful-swagger12
   version: dcef7f55730566d41eae5db10e7d6981829720f6
+- name: github.com/evanphx/json-patch
+  version: ba18e35c5c1b36ef6334cad706eb681153d2d379
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
 - name: github.com/go-openapi/analysis
@@ -76,7 +78,7 @@ imports:
   - proto
   - sortkeys
 - name: github.com/golang/glog
-  version: 44145f04b68cf362d9c4df2182967c2275eaefed
+  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
 - name: github.com/golang/groupcache
   version: 02826c3e79038b59d737d3b1c0a1d937f71a4433
   subpackages:
@@ -87,6 +89,8 @@ imports:
   - proto
 - name: github.com/google/gofuzz
   version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
+- name: github.com/google/uuid
+  version: 7e072fc3a7be179aee6d3359e46015aa8c995314
 - name: github.com/gorilla/context
   version: 215affda49addc4c8ef7e2534915df2c8c35c6cd
 - name: github.com/gorilla/mux
@@ -138,7 +142,7 @@ imports:
   - matchers/support/goraph/util
   - types
 - name: github.com/pkg/errors
-  version: a22138067af1c4942683050411a841ade67fe1eb
+  version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/prometheus/client_golang
   version: c5b7fccd204277076155f10851dad72b76a49317
   subpackages:
@@ -170,7 +174,7 @@ imports:
 - name: github.com/Sirupsen/logrus
   version: 4b6ea7319e214d98c938f12692336f7ca9348d6b
 - name: github.com/spf13/cobra
-  version: b78744579491c1ceeaaa3b40205e56b0591b93a3
+  version: bc69223348ce9692e3ab90f04c375ac6cd71e9ba
   subpackages:
   - doc
 - name: github.com/spf13/pflag
@@ -277,6 +281,7 @@ imports:
   - pkg/util/framer
   - pkg/util/intstr
   - pkg/util/json
+  - pkg/util/jsonmergepatch
   - pkg/util/mergepatch
   - pkg/util/net
   - pkg/util/rand
@@ -394,7 +399,7 @@ imports:
   - util/homedir
   - util/integer
 - name: k8s.io/kubernetes
-  version: 4bc5e7f9a6c25dc4c03d4d656f2cefd21540e28c
+  version: bc6162cc70b4a39a7f39391564e0dd0be60b39e9
   subpackages:
   - pkg/api
   - pkg/api/install

@@ -7,8 +7,9 @@ import (
 
 	"github.com/appscode/go/log"
 	acrt "github.com/appscode/go/runtime"
-	kutil "github.com/appscode/kutil/apps/v1beta1"
-	corekutil "github.com/appscode/kutil/core/v1"
+	"github.com/appscode/kutil"
+	apps_util "github.com/appscode/kutil/apps/v1beta1"
+	core_util "github.com/appscode/kutil/core/v1"
 	sapi "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,8 +22,8 @@ import (
 )
 
 // Blocks caller. Intended to be called as a Go routine.
-func (c *Controller) WatchDeploymentApps() {
-	if !util.IsPreferredAPIResource(c.kubeClient, apps.SchemeGroupVersion.String(), "Deployment") {
+func (c *Controller) WatchDeployments() {
+	if !kutil.IsPreferredAPIResource(c.kubeClient, apps.SchemeGroupVersion.String(), "Deployment") {
 		log.Warningf("Skipping watching non-preferred GroupVersion:%s Kind:%s", apps.SchemeGroupVersion.String(), "Deployment")
 		return
 	}
@@ -54,7 +55,7 @@ func (c *Controller) WatchDeploymentApps() {
 						log.Errorf("No Restic found for Deployment %s@%s.", resource.Name, resource.Namespace)
 						return
 					}
-					c.EnsureDeploymentAppSidecar(resource, nil, restic)
+					c.EnsureDeploymentSidecar(resource, nil, restic)
 				}
 			},
 			UpdateFunc: func(old, new interface{}) {
@@ -83,9 +84,9 @@ func (c *Controller) WatchDeploymentApps() {
 						return
 					}
 					if newRestic != nil {
-						c.EnsureDeploymentAppSidecar(newObj, oldRestic, newRestic)
+						c.EnsureDeploymentSidecar(newObj, oldRestic, newRestic)
 					} else if oldRestic != nil {
-						c.EnsureDeploymentAppSidecarDeleted(newObj, oldRestic)
+						c.EnsureDeploymentSidecarDeleted(newObj, oldRestic)
 					}
 				}
 			},
@@ -94,7 +95,7 @@ func (c *Controller) WatchDeploymentApps() {
 	ctrl.Run(wait.NeverStop)
 }
 
-func (c *Controller) EnsureDeploymentAppSidecar(resource *apps.Deployment, old, new *sapi.Restic) (err error) {
+func (c *Controller) EnsureDeploymentSidecar(resource *apps.Deployment, old, new *sapi.Restic) (err error) {
 	if new.Spec.Backend.StorageSecretName == "" {
 		err = fmt.Errorf("Missing repository secret name for Restic %s@%s.", new.Name, new.Namespace)
 		return
@@ -109,8 +110,8 @@ func (c *Controller) EnsureDeploymentAppSidecar(resource *apps.Deployment, old, 
 		return nil
 	}
 
-	_, err = kutil.PatchDeployment(c.kubeClient, resource, func(obj *apps.Deployment) *apps.Deployment {
-		obj.Spec.Template.Spec.Containers = corekutil.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.SidecarImageTag, "Deployment/"+obj.Name))
+	_, err = apps_util.PatchDeployment(c.kubeClient, resource, func(obj *apps.Deployment) *apps.Deployment {
+		obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.SidecarImageTag, "Deployment/"+obj.Name))
 		obj.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(obj.Spec.Template.Spec.Volumes)
 		obj.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(obj.Spec.Template.Spec.Volumes)
 		obj.Spec.Template.Spec.Volumes = util.MergeLocalVolume(obj.Spec.Template.Spec.Volumes, old, new)
@@ -126,7 +127,7 @@ func (c *Controller) EnsureDeploymentAppSidecar(resource *apps.Deployment, old, 
 		return
 	}
 
-	err = kutil.WaitUntilDeploymentReady(c.kubeClient, resource.ObjectMeta)
+	err = apps_util.WaitUntilDeploymentReady(c.kubeClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}
@@ -134,14 +135,14 @@ func (c *Controller) EnsureDeploymentAppSidecar(resource *apps.Deployment, old, 
 	return err
 }
 
-func (c *Controller) EnsureDeploymentAppSidecarDeleted(resource *apps.Deployment, restic *sapi.Restic) (err error) {
+func (c *Controller) EnsureDeploymentSidecarDeleted(resource *apps.Deployment, restic *sapi.Restic) (err error) {
 	if name := util.GetString(resource.Annotations, sapi.ConfigName); name == "" {
 		log.Infof("Restic sidecar already removed for Deployment %s@%s.", resource.Name, resource.Namespace)
 		return nil
 	}
 
-	_, err = kutil.PatchDeployment(c.kubeClient, resource, func(obj *apps.Deployment) *apps.Deployment {
-		obj.Spec.Template.Spec.Containers = corekutil.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
+	_, err = apps_util.PatchDeployment(c.kubeClient, resource, func(obj *apps.Deployment) *apps.Deployment {
+		obj.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
 		if restic.Spec.Backend.Local != nil {
@@ -157,7 +158,7 @@ func (c *Controller) EnsureDeploymentAppSidecarDeleted(resource *apps.Deployment
 		return
 	}
 
-	err = kutil.WaitUntilDeploymentReady(c.kubeClient, resource.ObjectMeta)
+	err = apps_util.WaitUntilDeploymentReady(c.kubeClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}
