@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/appscode/go/log"
+	"github.com/appscode/kutil"
 	sapi "github.com/appscode/stash/apis/stash"
 	sapi_v1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
-	"github.com/appscode/stash/pkg/util"
 	"github.com/hashicorp/go-version"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -151,10 +151,7 @@ func (m *migrator) createCRDs() error {
 			}
 		}
 	}
-	return util.WaitForCRDReady(
-		m.kubeClient.CoreV1().RESTClient(),
-		crds,
-	)
+	return kutil.WaitForCRDReady(m.kubeClient.CoreV1().RESTClient(), crds)
 }
 
 func (m *migrator) rollback() error {

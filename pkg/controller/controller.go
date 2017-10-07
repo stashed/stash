@@ -3,10 +3,10 @@ package controller
 import (
 	"time"
 
+	"github.com/appscode/kutil"
 	sapi "github.com/appscode/stash/apis/stash"
 	sapi_v1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
 	scs "github.com/appscode/stash/client/typed/stash/v1alpha1"
-	"github.com/appscode/stash/pkg/util"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -69,10 +69,7 @@ func (c *Controller) ensureCustomResourceDefinitions() error {
 			}
 		}
 	}
-	return util.WaitForCRDReady(
-		c.kubeClient.CoreV1().RESTClient(),
-		crds,
-	)
+	return kutil.WaitForCRDReady(c.kubeClient.CoreV1().RESTClient(), crds)
 }
 
 func (c *Controller) Run() {
