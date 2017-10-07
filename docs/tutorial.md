@@ -6,7 +6,7 @@ you can create one by using [Minikube](https://github.com/kubernetes/minikube). 
 In this tutorial, we are going to backup the `/source/data` folder of a `busybox` pod into a local backend. First deploy the following `busybox` Deployment in your cluster. Here we are using a git repository as source volume for demonstration purpose.
 
 ```yaml
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
   labels:
@@ -131,7 +131,7 @@ stash-demo-3001144127-3fsbn   2/2       Running   0          3m
 ```yaml
 $ kubectl get deployment stash-demo -o yaml
 
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
   annotations:
@@ -145,7 +145,7 @@ metadata:
   name: stash-demo
   namespace: default
   resourceVersion: "1703"
-  selfLink: /apis/extensions/v1beta1/namespaces/default/deployments/stash-demo
+  selfLink: /apis/apps/v1beta1/namespaces/default/deployments/stash-demo
   uid: e7fe819c-5d2c-11e7-bc7e-0800278d42f6
 spec:
   progressDeadlineSeconds: 600
