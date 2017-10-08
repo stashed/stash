@@ -58,7 +58,7 @@ func (c *StashController) initDaemonSetWatcher() {
 				c.dsQueue.Add(key)
 			}
 		},
-	}, cache.Indexers{})
+	}, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
 	c.dsLister = ext_listers.NewDaemonSetLister(c.dsIndexer)
 }
 

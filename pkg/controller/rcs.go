@@ -57,7 +57,7 @@ func (c *StashController) initRCWatcher() {
 				c.rcQueue.Add(key)
 			}
 		},
-	}, cache.Indexers{})
+	}, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
 	c.rcLister = core_listers.NewReplicationControllerLister(c.rcIndexer)
 }
 

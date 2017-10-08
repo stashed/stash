@@ -60,7 +60,7 @@ func (c *StashController) initResticWatcher() {
 				c.rQueue.Add(key)
 			}
 		},
-	}, cache.Indexers{})
+	}, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
 	c.rLister = stash_listers.NewResticLister(c.rIndexer)
 }
 
