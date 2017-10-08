@@ -59,7 +59,7 @@ func (c *StashController) initReplicaSetWatcher() {
 				c.rsQueue.Add(key)
 			}
 		},
-	}, cache.Indexers{})
+	}, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
 	c.rsLister = ext_listers.NewReplicaSetLister(c.rsIndexer)
 }
 

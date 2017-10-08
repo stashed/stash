@@ -59,7 +59,7 @@ func (c *StashController) initStatefulSetWatcher() {
 				c.ssQueue.Add(key)
 			}
 		},
-	}, cache.Indexers{})
+	}, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
 	c.ssLister = apps_listers.NewStatefulSetLister(c.ssIndexer)
 }
 

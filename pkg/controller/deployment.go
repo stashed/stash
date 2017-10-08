@@ -59,7 +59,7 @@ func (c *StashController) initDeploymentWatcher() {
 				c.dpQueue.Add(key)
 			}
 		},
-	}, cache.Indexers{})
+	}, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
 	c.dpLister = apps_listers.NewDeploymentLister(c.dpIndexer)
 }
 
