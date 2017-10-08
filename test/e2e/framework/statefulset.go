@@ -3,7 +3,7 @@ package framework
 import (
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
-	sapi "github.com/appscode/stash/apis/stash/v1alpha1"
+	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -11,7 +11,7 @@ import (
 	apps "k8s.io/client-go/pkg/apis/apps/v1beta1"
 )
 
-func (fi *Invocation) StatefulSet(r sapi.Restic) apps.StatefulSet {
+func (fi *Invocation) StatefulSet(r api.Restic) apps.StatefulSet {
 	resource := apps.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),

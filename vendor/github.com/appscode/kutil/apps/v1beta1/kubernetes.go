@@ -7,7 +7,6 @@ import (
 
 	"github.com/appscode/kutil"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 	apps "k8s.io/client-go/pkg/apis/apps/v1beta1"
 )
 
@@ -31,46 +30,4 @@ func AssignTypeKind(v interface{}) error {
 		return nil
 	}
 	return errors.New("unknown api object type")
-}
-
-func ObjectReferenceFor(v interface{}) *apiv1.ObjectReference {
-	switch u := v.(type) {
-	case apps.StatefulSet:
-		return &apiv1.ObjectReference{
-			APIVersion:      apps.SchemeGroupVersion.String(),
-			Kind:            kutil.GetKind(v),
-			Namespace:       u.Namespace,
-			Name:            u.Name,
-			UID:             u.UID,
-			ResourceVersion: u.ResourceVersion,
-		}
-	case *apps.StatefulSet:
-		return &apiv1.ObjectReference{
-			APIVersion:      apps.SchemeGroupVersion.String(),
-			Kind:            kutil.GetKind(v),
-			Namespace:       u.Namespace,
-			Name:            u.Name,
-			UID:             u.UID,
-			ResourceVersion: u.ResourceVersion,
-		}
-	case apps.Deployment:
-		return &apiv1.ObjectReference{
-			APIVersion:      apps.SchemeGroupVersion.String(),
-			Kind:            kutil.GetKind(v),
-			Namespace:       u.Namespace,
-			Name:            u.Name,
-			UID:             u.UID,
-			ResourceVersion: u.ResourceVersion,
-		}
-	case *apps.Deployment:
-		return &apiv1.ObjectReference{
-			APIVersion:      apps.SchemeGroupVersion.String(),
-			Kind:            kutil.GetKind(v),
-			Namespace:       u.Namespace,
-			Name:            u.Name,
-			UID:             u.UID,
-			ResourceVersion: u.ResourceVersion,
-		}
-	}
-	return &apiv1.ObjectReference{}
 }

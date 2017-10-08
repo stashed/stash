@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	sapi "github.com/appscode/stash/apis/stash/v1alpha1"
+	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/prometheus/client_golang/prometheus/push"
 	"gopkg.in/ini.v1"
 )
@@ -21,11 +21,11 @@ func sanitizeLabelValue(name string) string {
 	return strings.Replace(name, "/", "|", -1)
 }
 
-func (c *Scheduler) JobName(resource *sapi.Restic) string {
+func (c *Scheduler) JobName(resource *api.Restic) string {
 	return sanitizeLabelValue(resource.Namespace + "-" + resource.Name)
 }
 
-func (c *Scheduler) GroupingKeys(resource *sapi.Restic) map[string]string {
+func (c *Scheduler) GroupingKeys(resource *api.Restic) map[string]string {
 	labels := push.HostnameGroupingKey()
 	labels["app"] = sanitizeLabelValue(c.opt.AppName)
 	labels["kind"] = sanitizeLabelValue(c.opt.AppKind)

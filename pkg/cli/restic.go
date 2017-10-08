@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	sapi "github.com/appscode/stash/apis/stash/v1alpha1"
+	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	shell "github.com/codeskyblue/go-sh"
 )
 
@@ -51,7 +51,7 @@ func (w *ResticWrapper) InitRepositoryIfAbsent() error {
 	return nil
 }
 
-func (w *ResticWrapper) Backup(resource *sapi.Restic, fg sapi.FileGroup) error {
+func (w *ResticWrapper) Backup(resource *api.Restic, fg api.FileGroup) error {
 	args := []interface{}{"backup", fg.Path, "--force"}
 	// add tags if any
 	for _, tag := range fg.Tags {
@@ -61,34 +61,34 @@ func (w *ResticWrapper) Backup(resource *sapi.Restic, fg sapi.FileGroup) error {
 	return w.sh.Command(Exe, args...).Run()
 }
 
-func (w *ResticWrapper) Forget(resource *sapi.Restic, fg sapi.FileGroup) error {
+func (w *ResticWrapper) Forget(resource *api.Restic, fg api.FileGroup) error {
 	args := []interface{}{"forget"}
 	if fg.RetentionPolicy.KeepLast > 0 {
-		args = append(args, string(sapi.KeepLast))
+		args = append(args, string(api.KeepLast))
 		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepLast))
 	}
 	if fg.RetentionPolicy.KeepHourly > 0 {
-		args = append(args, string(sapi.KeepHourly))
+		args = append(args, string(api.KeepHourly))
 		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepHourly))
 	}
 	if fg.RetentionPolicy.KeepDaily > 0 {
-		args = append(args, string(sapi.KeepDaily))
+		args = append(args, string(api.KeepDaily))
 		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepDaily))
 	}
 	if fg.RetentionPolicy.KeepWeekly > 0 {
-		args = append(args, string(sapi.KeepWeekly))
+		args = append(args, string(api.KeepWeekly))
 		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepWeekly))
 	}
 	if fg.RetentionPolicy.KeepMonthly > 0 {
-		args = append(args, string(sapi.KeepMonthly))
+		args = append(args, string(api.KeepMonthly))
 		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepMonthly))
 	}
 	if fg.RetentionPolicy.KeepYearly > 0 {
-		args = append(args, string(sapi.KeepYearly))
+		args = append(args, string(api.KeepYearly))
 		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepYearly))
 	}
 	for _, tag := range fg.RetentionPolicy.KeepTags {
-		args = append(args, string(sapi.KeepTag))
+		args = append(args, string(api.KeepTag))
 		args = append(args, tag)
 	}
 	if fg.RetentionPolicy.Prune {

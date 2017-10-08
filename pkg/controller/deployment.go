@@ -1,117 +1,162 @@
 package controller
 
 import (
-	"errors"
 	"fmt"
-	"reflect"
 
 	"github.com/appscode/go/log"
-	acrt "github.com/appscode/go/runtime"
 	"github.com/appscode/kutil"
 	apps_util "github.com/appscode/kutil/apps/v1beta1"
 	core_util "github.com/appscode/kutil/core/v1"
-	sapi "github.com/appscode/stash/apis/stash/v1alpha1"
+	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
+	"github.com/golang/glog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
+	rt "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
+	apps_listers "k8s.io/client-go/listers/apps/v1beta1"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	apps "k8s.io/client-go/pkg/apis/apps/v1beta1"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/util/workqueue"
 )
 
-// Blocks caller. Intended to be called as a Go routine.
-func (c *Controller) WatchDeployments() {
-	if !kutil.IsPreferredAPIResource(c.kubeClient, apps.SchemeGroupVersion.String(), "Deployment") {
-		log.Warningf("Skipping watching non-preferred GroupVersion:%s Kind:%s", apps.SchemeGroupVersion.String(), "Deployment")
-		return
-	}
-
-	defer acrt.HandleCrash()
-
+func (c *StashController) initDeploymentWatcher() {
 	lw := &cache.ListWatch{
-		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
-			return c.kubeClient.AppsV1beta1().Deployments(apiv1.NamespaceAll).List(metav1.ListOptions{})
+		ListFunc: func(options metav1.ListOptions) (rt.Object, error) {
+			return c.k8sClient.AppsV1beta1().Deployments(apiv1.NamespaceAll).List(options)
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return c.kubeClient.AppsV1beta1().Deployments(apiv1.NamespaceAll).Watch(metav1.ListOptions{})
+			return c.k8sClient.AppsV1beta1().Deployments(apiv1.NamespaceAll).Watch(options)
 		},
 	}
-	_, ctrl := cache.NewInformer(lw,
-		&apps.Deployment{},
-		c.resyncPeriod,
-		cache.ResourceEventHandlerFuncs{
-			AddFunc: func(obj interface{}) {
-				if resource, ok := obj.(*apps.Deployment); ok {
-					log.Infof("Deployment %s@%s added", resource.Name, resource.Namespace)
 
-					restic, err := util.FindRestic(c.stashClient, resource.ObjectMeta)
-					if err != nil {
-						log.Errorf("Error while searching Restic for Deployment %s@%s.", resource.Name, resource.Namespace)
-						return
-					}
-					if restic == nil {
-						log.Errorf("No Restic found for Deployment %s@%s.", resource.Name, resource.Namespace)
-						return
-					}
-					c.EnsureDeploymentSidecar(resource, nil, restic)
-				}
-			},
-			UpdateFunc: func(old, new interface{}) {
-				oldObj, ok := old.(*apps.Deployment)
-				if !ok {
-					log.Errorln(errors.New("Invalid Deployment object"))
-					return
-				}
-				newObj, ok := new.(*apps.Deployment)
-				if !ok {
-					log.Errorln(errors.New("Invalid Deployment object"))
-					return
-				}
-				if !reflect.DeepEqual(oldObj.Labels, newObj.Labels) {
-					oldRestic, err := util.FindRestic(c.stashClient, oldObj.ObjectMeta)
-					if err != nil {
-						log.Errorf("Error while searching Restic for Deployment %s@%s.", oldObj.Name, oldObj.Namespace)
-						return
-					}
-					newRestic, err := util.FindRestic(c.stashClient, newObj.ObjectMeta)
-					if err != nil {
-						log.Errorf("Error while searching Restic for Deployment %s@%s.", newObj.Name, newObj.Namespace)
-						return
-					}
-					if util.ResticEqual(oldRestic, newRestic) {
-						return
-					}
-					if newRestic != nil {
-						c.EnsureDeploymentSidecar(newObj, oldRestic, newRestic)
-					} else if oldRestic != nil {
-						c.EnsureDeploymentSidecarDeleted(newObj, oldRestic)
-					}
-				}
-			},
+	// create the workqueue
+	c.dpQueue = workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "deployment")
+
+	// Bind the workqueue to a cache with the help of an informer. This way we make sure that
+	// whenever the cache is updated, the pod key is added to the workqueue.
+	// Note that when we finally process the item from the workqueue, we might see a newer version
+	// of the Deployment than the version which was responsible for triggering the update.
+	c.dpIndexer, c.dpInformer = cache.NewIndexerInformer(lw, &apps.Deployment{}, c.options.ResyncPeriod, cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			key, err := cache.MetaNamespaceKeyFunc(obj)
+			if err == nil {
+				c.dpQueue.Add(key)
+			}
 		},
-	)
-	ctrl.Run(wait.NeverStop)
+		UpdateFunc: func(old interface{}, new interface{}) {
+			key, err := cache.MetaNamespaceKeyFunc(new)
+			if err == nil {
+				c.dpQueue.Add(key)
+			}
+		},
+		DeleteFunc: func(obj interface{}) {
+			// IndexerInformer uses a delta queue, therefore for deletes we have to use this
+			// key function.
+			key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
+			if err == nil {
+				c.dpQueue.Add(key)
+			}
+		},
+	}, cache.Indexers{})
+	c.dpLister = apps_listers.NewDeploymentLister(c.dpIndexer)
 }
 
-func (c *Controller) EnsureDeploymentSidecar(resource *apps.Deployment, old, new *sapi.Restic) (err error) {
+func (c *StashController) runDeploymentWatcher() {
+	for c.processNextDeployment() {
+	}
+}
+
+func (c *StashController) processNextDeployment() bool {
+	// Wait until there is a new item in the working queue
+	key, quit := c.dpQueue.Get()
+	if quit {
+		return false
+	}
+	// Tell the queue that we are done with processing this key. This unblocks the key for other workers
+	// This allows safe parallel processing because two deployments with the same key are never processed in
+	// parallel.
+	defer c.dpQueue.Done(key)
+
+	// Invoke the method containing the business logic
+	err := c.runDeploymentInitializer(key.(string))
+	if err == nil {
+		// Forget about the #AddRateLimited history of the key on every successful synchronization.
+		// This ensures that future processing of updates for this key is not delayed because of
+		// an outdated error history.
+		c.dpQueue.Forget(key)
+		return true
+	}
+	log.Errorln("Failed to process Deployment %v. Reason: %s", key, err)
+
+	// This controller retries 5 times if something goes wrong. After that, it stops trying.
+	if c.dpQueue.NumRequeues(key) < c.options.MaxNumRequeues {
+		glog.Infof("Error syncing deployment %v: %v", key, err)
+
+		// Re-enqueue the key rate limited. Based on the rate limiter on the
+		// queue and the re-enqueue history, the key will be processed later again.
+		c.dpQueue.AddRateLimited(key)
+		return true
+	}
+
+	c.dpQueue.Forget(key)
+	// Report to an external entity that, even after several retries, we could not successfully process this key
+	runtime.HandleError(err)
+	glog.Infof("Dropping deployment %q out of the queue: %v", key, err)
+	return true
+}
+
+// syncToStdout is the business logic of the controller. In this controller it simply prints
+// information about the deployment to stdout. In case an error happened, it has to simply return the error.
+// The retry logic should not be part of the business logic.
+func (c *StashController) runDeploymentInitializer(key string) error {
+	obj, exists, err := c.dpIndexer.GetByKey(key)
+	if err != nil {
+		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)
+		return err
+	}
+
+	if !exists {
+		// Below we will warm up our cache with a Deployment, so that we will see a delete for one d
+		fmt.Printf("Deployment %s does not exist anymore\n", key)
+	} else {
+		dp := obj.(*apps.Deployment)
+		fmt.Printf("Sync/Add/Update for Deployment %s\n", dp.GetName())
+
+		oldRestic, err := util.GetAppliedRestic(dp.Annotations)
+		if err != nil {
+			return err
+		}
+		newRestic, err := util.FindRestic(c.rLister, dp.ObjectMeta)
+		if err != nil {
+			log.Errorf("Error while searching Restic for Deployment %s/%s.", dp.Name, dp.Namespace)
+			return err
+		}
+		if util.ResticEqual(oldRestic, newRestic) {
+			return nil
+		}
+		if newRestic != nil {
+			c.EnsureDeploymentSidecar(dp, oldRestic, newRestic)
+		} else if oldRestic != nil {
+			c.EnsureDeploymentSidecarDeleted(dp, oldRestic)
+		}
+	}
+	return nil
+}
+
+func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old, new *api.Restic) (err error) {
 	if new.Spec.Backend.StorageSecretName == "" {
-		err = fmt.Errorf("Missing repository secret name for Restic %s@%s.", new.Name, new.Namespace)
+		err = fmt.Errorf("missing repository secret name for Restic %s/%s", new.Namespace, new.Name)
 		return
 	}
-	_, err = c.kubeClient.CoreV1().Secrets(resource.Namespace).Get(new.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	_, err = c.k8sClient.CoreV1().Secrets(resource.Namespace).Get(new.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
-	if name := util.GetString(resource.Annotations, sapi.ConfigName); name != "" && name != new.Name {
-		log.Infof("Restic %s sidecar already added for Deployment %s@%s.", name, resource.Name, resource.Namespace)
-		return nil
-	}
-
-	_, err = apps_util.PatchDeployment(c.kubeClient, resource, func(obj *apps.Deployment) *apps.Deployment {
-		obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.SidecarImageTag, "Deployment/"+obj.Name))
+	_, err = apps_util.PatchDeployment(c.k8sClient, resource, func(obj *apps.Deployment) *apps.Deployment {
+		obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.options.SidecarImageTag, "Deployment/"+obj.Name))
 		obj.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(obj.Spec.Template.Spec.Volumes)
 		obj.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(obj.Spec.Template.Spec.Volumes)
 		obj.Spec.Template.Spec.Volumes = util.MergeLocalVolume(obj.Spec.Template.Spec.Volumes, old, new)
@@ -119,29 +164,30 @@ func (c *Controller) EnsureDeploymentSidecar(resource *apps.Deployment, old, new
 		if obj.Annotations == nil {
 			obj.Annotations = make(map[string]string)
 		}
-		obj.Annotations[sapi.ConfigName] = new.Name
-		obj.Annotations[sapi.VersionTag] = c.SidecarImageTag
+		data, _ := kutil.MarshalToJson(new, api.SchemeGroupVersion)
+		obj.Annotations[api.ConfigName] = string(data)
+		obj.Annotations[api.VersionTag] = c.options.SidecarImageTag
 		return obj
 	})
 	if err != nil {
 		return
 	}
 
-	err = apps_util.WaitUntilDeploymentReady(c.kubeClient, resource.ObjectMeta)
+	err = apps_util.WaitUntilDeploymentReady(c.k8sClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}
-	err = util.WaitUntilSidecarAdded(c.kubeClient, resource.Namespace, resource.Spec.Selector)
+	err = util.WaitUntilSidecarAdded(c.k8sClient, resource.Namespace, resource.Spec.Selector)
 	return err
 }
 
-func (c *Controller) EnsureDeploymentSidecarDeleted(resource *apps.Deployment, restic *sapi.Restic) (err error) {
-	if name := util.GetString(resource.Annotations, sapi.ConfigName); name == "" {
+func (c *StashController) EnsureDeploymentSidecarDeleted(resource *apps.Deployment, restic *api.Restic) (err error) {
+	if name := util.GetString(resource.Annotations, api.ConfigName); name == "" {
 		log.Infof("Restic sidecar already removed for Deployment %s@%s.", resource.Name, resource.Namespace)
 		return nil
 	}
 
-	_, err = apps_util.PatchDeployment(c.kubeClient, resource, func(obj *apps.Deployment) *apps.Deployment {
+	_, err = apps_util.PatchDeployment(c.k8sClient, resource, func(obj *apps.Deployment) *apps.Deployment {
 		obj.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
@@ -149,8 +195,8 @@ func (c *Controller) EnsureDeploymentSidecarDeleted(resource *apps.Deployment, r
 			obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.LocalVolumeName)
 		}
 		if obj.Annotations != nil {
-			delete(obj.Annotations, sapi.ConfigName)
-			delete(obj.Annotations, sapi.VersionTag)
+			delete(obj.Annotations, api.ConfigName)
+			delete(obj.Annotations, api.VersionTag)
 		}
 		return obj
 	})
@@ -158,10 +204,10 @@ func (c *Controller) EnsureDeploymentSidecarDeleted(resource *apps.Deployment, r
 		return
 	}
 
-	err = apps_util.WaitUntilDeploymentReady(c.kubeClient, resource.ObjectMeta)
+	err = apps_util.WaitUntilDeploymentReady(c.k8sClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}
-	err = util.WaitUntilSidecarRemoved(c.kubeClient, resource.Namespace, resource.Spec.Selector)
+	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, resource.Spec.Selector)
 	return err
 }

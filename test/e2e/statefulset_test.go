@@ -1,7 +1,7 @@
 package e2e_test
 
 import (
-	sapi "github.com/appscode/stash/apis/stash/v1alpha1"
+	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/appscode/stash/test/e2e/framework"
 	. "github.com/appscode/stash/test/e2e/matcher"
@@ -15,7 +15,7 @@ var _ = Describe("StatefulSet", func() {
 	var (
 		err    error
 		f      *framework.Invocation
-		restic sapi.Restic
+		restic api.Restic
 		cred   apiv1.Secret
 		svc    apiv1.Service
 		ss     apps.StatefulSet
@@ -55,7 +55,7 @@ var _ = Describe("StatefulSet", func() {
 			f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
 				return r.Status.BackupCount
 			}, BeNumerically(">=", 1)))
 

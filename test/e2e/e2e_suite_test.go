@@ -7,16 +7,15 @@ import (
 
 	logs "github.com/appscode/go/log/golog"
 	sapi "github.com/appscode/stash/apis/stash"
-	"github.com/appscode/stash/client/internalclientset/typed/stash/internalversion"
 	_ "github.com/appscode/stash/client/scheme"
-	scs "github.com/appscode/stash/client/typed/stash/v1alpha1"
+	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/test/e2e/framework"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 )
@@ -26,7 +25,7 @@ const (
 )
 
 var (
-	ctrl *controller.Controller
+	ctrl *controller.StashController
 	root *framework.Framework
 )
 
@@ -44,9 +43,8 @@ var _ = BeforeSuite(func() {
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	Expect(err).NotTo(HaveOccurred())
 
-	kubeClient := clientset.NewForConfigOrDie(config)
-	stashClient := scs.NewForConfigOrDie(config)
-	internalClient := internalversion.NewForConfigOrDie(config)
+	kubeClient := kubernetes.NewForConfigOrDie(config)
+	stashClient := cs.NewForConfigOrDie(config)
 	crdClient := apiextensionsclient.NewForConfigOrDie(config)
 
 	root = framework.New(kubeClient, stashClient)
@@ -54,13 +52,23 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	By("Using test namespace " + root.Namespace())
 
-	ctrl = controller.New(kubeClient, crdClient, internalClient, "canary", 5*time.Minute)
+	opts := controller.Options{
+		SidecarImageTag: "canary",
+		ResyncPeriod:    5 * time.Minute,
+	}
+	ctrl = controller.New(kubeClient, crdClient, stashClient, opts)
 	By("Registering CRD group " + sapi.GroupName)
 	err = ctrl.Setup()
 	Expect(err).NotTo(HaveOccurred())
 	root.EventuallyCRD("restic." + sapi.GroupName).Should(Succeed())
 
-	ctrl.Run()
+	// Now let's start the controller
+	stop := make(chan struct{})
+	defer close(stop)
+	go ctrl.Run(1, stop)
+
+	// Wait forever
+	select {}
 })
 
 var _ = AfterSuite(func() {

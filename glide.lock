@@ -1,5 +1,5 @@
-hash: a1a3463cc8b60fc3632b51cfb275788f85b2d14a89510ae67959b96c6d3c7a8c
-updated: 2017-10-07T05:07:04.263644852-07:00
+hash: 6ce5205063d91283c2a4dc5809c3faa08f31bf626e7197b35b82e0f199d603cc
+updated: 2017-10-08T12:41:08.306327151-07:00
 imports:
 - name: github.com/appscode/go
   version: b2ff0c0b3293cc848d781d1efb57ffda5fa0226e
@@ -13,7 +13,7 @@ imports:
   - types
   - version
 - name: github.com/appscode/kutil
-  version: f23ee81f4bb9fcced03b907400f105469b9898fc
+  version: fde5cdb8797b8821b15485fad747f3dd649fd1c3
   subpackages:
   - apps/v1beta1
   - core/v1
@@ -174,11 +174,13 @@ imports:
 - name: github.com/Sirupsen/logrus
   version: 4b6ea7319e214d98c938f12692336f7ca9348d6b
 - name: github.com/spf13/cobra
-  version: bc69223348ce9692e3ab90f04c375ac6cd71e9ba
+  version: 83b1f039622680cde7a373eb1f85e10db8506673
   subpackages:
   - doc
 - name: github.com/spf13/pflag
-  version: e57e3eeb33f795204c1ca35f56c44f83227c6e66
+  version: 8f62c03454809f9fe034ed3b4f564dfd50e7067b
+  repo: https://github.com/appscode/pflag.git
+  vcs: git
 - name: github.com/ugorji/go
   version: ded73eae5db7e7a0ef6f55aace87a2873c5d2b74
   subpackages:
@@ -344,6 +346,9 @@ imports:
   - kubernetes/typed/storage/v1/fake
   - kubernetes/typed/storage/v1beta1
   - kubernetes/typed/storage/v1beta1/fake
+  - listers/apps/v1beta1
+  - listers/core/v1
+  - listers/extensions/v1beta1
   - pkg/api
   - pkg/api/v1
   - pkg/api/v1/ref
@@ -398,6 +403,7 @@ imports:
   - util/flowcontrol
   - util/homedir
   - util/integer
+  - util/workqueue
 - name: k8s.io/kubernetes
   version: bc6162cc70b4a39a7f39391564e0dd0be60b39e9
   subpackages:
