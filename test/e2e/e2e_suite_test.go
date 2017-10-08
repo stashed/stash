@@ -63,12 +63,9 @@ var _ = BeforeSuite(func() {
 	root.EventuallyCRD("restic." + sapi.GroupName).Should(Succeed())
 
 	// Now let's start the controller
-	stop := make(chan struct{})
-	defer close(stop)
-	go ctrl.Run(1, stop)
-
-	// Wait forever
-	select {}
+	// stop := make(chan struct{})
+	// defer close(stop)
+	go ctrl.Run(1, nil)
 })
 
 var _ = AfterSuite(func() {

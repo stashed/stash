@@ -2,6 +2,7 @@ package controller
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	rt "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
@@ -18,16 +19,12 @@ func (c *StashController) initNamespaceWatcher() {
 		},
 	}
 
-	// Bind the workqueue to a cache with the help of an informer. This way we make sure that
-	// whenever the cache is updated, the pod key is added to the workqueue.
-	// Note that when we finally process the item from the workqueue, we might see a newer version
-	// of the Namespace than the version which was responsible for triggering the update.
 	c.nsIndexer, c.nsInformer = cache.NewIndexerInformer(lw, &apiv1.Namespace{}, c.options.ResyncPeriod, cache.ResourceEventHandlerFuncs{
 		DeleteFunc: func(obj interface{}) {
 			if ns, ok := obj.(*apiv1.Namespace); ok {
-				restics, err := c.stashClient.Restics(ns.Name).List(metav1.ListOptions{})
+				restics, err := c.rLister.Restics(ns.Name).List(labels.Everything())
 				if err == nil {
-					for _, restic := range restics.Items {
+					for _, restic := range restics {
 						c.stashClient.Restics(restic.Namespace).Delete(restic.Name, &metav1.DeleteOptions{})
 					}
 				}

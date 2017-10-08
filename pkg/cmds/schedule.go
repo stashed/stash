@@ -65,7 +65,7 @@ func NewCmdSchedule() *cobra.Command {
 				if err != nil {
 					_, err := kubeClient.ExtensionsV1beta1().Deployments(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
 					if err != nil {
-						log.Fatalf(`Unknown Deployment %s@%s`, opt.AppName, opt.Namespace)
+						log.Fatalf(`Unknown Deployment %s/%s`, opt.Namespace, opt.AppName)
 					}
 				}
 			case "ReplicaSets", "ReplicaSet", "replicasets", "replicaset", "rs":
@@ -73,28 +73,28 @@ func NewCmdSchedule() *cobra.Command {
 				opt.SmartPrefix = ""
 				_, err := kubeClient.ExtensionsV1beta1().ReplicaSets(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
 				if err != nil {
-					log.Fatalf(`Unknown ReplicaSet %s@%s`, opt.AppName, opt.Namespace)
+					log.Fatalf(`Unknown ReplicaSet %s/%s`, opt.Namespace, opt.AppName)
 				}
 			case "ReplicationControllers", "ReplicationController", "replicationcontrollers", "replicationcontroller", "rc":
 				opt.AppKind = "ReplicationController"
 				opt.SmartPrefix = ""
 				_, err := kubeClient.CoreV1().ReplicationControllers(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
 				if err != nil {
-					log.Fatalf(`Unknown ReplicationController %s@%s`, opt.AppName, opt.Namespace)
+					log.Fatalf(`Unknown ReplicationController %s/%s`, opt.Namespace, opt.AppName)
 				}
 			case "StatefulSets", "StatefulSet":
 				opt.AppKind = "StatefulSet"
 				opt.SmartPrefix = opt.PodName
 				_, err := kubeClient.AppsV1beta1().StatefulSets(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
 				if err != nil {
-					log.Fatalf(`Unknown StatefulSet %s@%s`, opt.AppName, opt.Namespace)
+					log.Fatalf(`Unknown StatefulSet %s/%s`, opt.Namespace, opt.AppName)
 				}
 			case "DaemonSets", "DaemonSet", "daemonsets", "daemonset":
 				opt.AppKind = "DaemonSet"
 				opt.SmartPrefix = opt.NodeName
 				_, err := kubeClient.ExtensionsV1beta1().DaemonSets(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
 				if err != nil {
-					log.Fatalf(`Unknown DaemonSet %s@%s`, opt.AppName, opt.Namespace)
+					log.Fatalf(`Unknown DaemonSet %s/%s`, opt.Namespace, opt.AppName)
 				}
 			default:
 				log.Fatalf(`Unrecognized workload "Kind" %v`, opt.AppKind)

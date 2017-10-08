@@ -216,12 +216,12 @@ func (c *Scheduler) configureScheduler() error {
 func (c *Scheduler) runOnce() (err error) {
 	select {
 	case <-c.locked:
-		log.Infof("Acquired lock for Restic %s@%s", c.opt.ResticName, c.opt.Namespace)
+		log.Infof("Acquired lock for Restic %s/%s", c.opt.Namespace, c.opt.ResticName)
 		defer func() {
 			c.locked <- struct{}{}
 		}()
 	default:
-		log.Warningf("Skipping backup schedule for Restic %s@%s", c.opt.ResticName, c.opt.Namespace)
+		log.Warningf("Skipping backup schedule for Restic %s/%s", c.opt.Namespace, c.opt.ResticName)
 		return
 	}
 
@@ -235,7 +235,7 @@ func (c *Scheduler) runOnce() (err error) {
 	}
 
 	if resource.Spec.Backend.StorageSecretName == "" {
-		err = errors.New("Missing repository secret name")
+		err = errors.New("missing repository secret name")
 		return
 	}
 	var secret *apiv1.Secret
@@ -315,7 +315,7 @@ func (c *Scheduler) runOnce() (err error) {
 			if err == nil {
 				break
 			}
-			log.Errorf("Attempt %d failed to update status for Restic %s@%s due to %s.", attempt, resource.Name, resource.Namespace, err)
+			log.Errorf("Attempt %d failed to update status for Restic %s/%s due to %s.", attempt, resource.Namespace, resource.Name, err)
 			time.Sleep(msec10)
 			if kerr.IsConflict(err) {
 				resource, err = c.stashClient.Restics(resource.Namespace).Get(resource.Name, metav1.GetOptions{})
@@ -325,7 +325,7 @@ func (c *Scheduler) runOnce() (err error) {
 			}
 		}
 		if attempt >= maxAttempts {
-			err = fmt.Errorf("Failed to add sidecar for ReplicaSet %s@%s after %d attempts.", resource.Name, resource.Namespace, attempt)
+			err = fmt.Errorf("failed to add sidecar for ReplicaSet %s/%s after %d attempts", resource.Namespace, resource.Name, attempt)
 			return
 		}
 	}()
@@ -334,7 +334,7 @@ func (c *Scheduler) runOnce() (err error) {
 		backupOpMetric := restic_session_duration_seconds.WithLabelValues(sanitizeLabelValue(fg.Path), "backup")
 		err = c.measure(c.resticCLI.Backup, resource, fg, backupOpMetric)
 		if err != nil {
-			log.Errorln("Backup operation failed for Reestic %s@%s due to %s", resource.Name, resource.Namespace, err)
+			log.Errorln("Backup operation failed for Reestic %s/%s due to %s", resource.Namespace, resource.Name, err)
 			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToBackup, " Error taking backup: "+err.Error())
 			return
 		} else {
@@ -345,7 +345,7 @@ func (c *Scheduler) runOnce() (err error) {
 		forgetOpMetric := restic_session_duration_seconds.WithLabelValues(sanitizeLabelValue(fg.Path), "forget")
 		err = c.measure(c.resticCLI.Forget, resource, fg, forgetOpMetric)
 		if err != nil {
-			log.Errorln("Failed to forget old snapshots for Restic %s@%s due to %s", resource.Name, resource.Namespace, err)
+			log.Errorln("Failed to forget old snapshots for Restic %s/%s due to %s", resource.Namespace, resource.Name, err)
 			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToRetention, " Error forgetting snapshots: "+err.Error())
 			return
 		}

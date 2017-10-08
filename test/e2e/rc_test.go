@@ -165,7 +165,7 @@ var _ = Describe("ReplicationController", func() {
 			}, BeNumerically(">=", 1)))
 
 			By("Change selector of Restic " + restic.Name)
-			err = f.UpdateRestic(restic.ObjectMeta, func(in api.Restic) api.Restic {
+			err = f.UpdateRestic(restic.ObjectMeta, func(in *api.Restic) *api.Restic {
 				in.Spec.Selector = metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						"app": "unmatched",
