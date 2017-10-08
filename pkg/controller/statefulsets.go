@@ -80,7 +80,7 @@ func (c *StashController) processNextStatefulSet() bool {
 	defer c.ssQueue.Done(key)
 
 	// Invoke the method containing the business logic
-	err := c.runStatefulSetInitializer(key.(string))
+	err := c.runStatefulSetInjector(key.(string))
 	if err == nil {
 		// Forget about the #AddRateLimited history of the key on every successful synchronization.
 		// This ensures that future processing of updates for this key is not delayed because of
@@ -110,7 +110,7 @@ func (c *StashController) processNextStatefulSet() bool {
 // syncToStdout is the business logic of the controller. In this controller it simply prints
 // information about the deployment to stdout. In case an error happened, it has to simply return the error.
 // The retry logic should not be part of the business logic.
-func (c *StashController) runStatefulSetInitializer(key string) error {
+func (c *StashController) runStatefulSetInjector(key string) error {
 	obj, exists, err := c.ssIndexer.GetByKey(key)
 	if err != nil {
 		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)

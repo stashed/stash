@@ -78,7 +78,7 @@ func (c *StashController) processNextRC() bool {
 	defer c.rcQueue.Done(key)
 
 	// Invoke the method containing the business logic
-	err := c.runRCInitializer(key.(string))
+	err := c.runRCInjector(key.(string))
 	if err == nil {
 		// Forget about the #AddRateLimited history of the key on every successful synchronization.
 		// This ensures that future processing of updates for this key is not delayed because of
@@ -108,7 +108,7 @@ func (c *StashController) processNextRC() bool {
 // syncToStdout is the business logic of the controller. In this controller it simply prints
 // information about the deployment to stdout. In case an error happened, it has to simply return the error.
 // The retry logic should not be part of the business logic.
-func (c *StashController) runRCInitializer(key string) error {
+func (c *StashController) runRCInjector(key string) error {
 	obj, exists, err := c.rcIndexer.GetByKey(key)
 	if err != nil {
 		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)
