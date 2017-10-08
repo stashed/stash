@@ -180,11 +180,6 @@ func (c *StashController) EnsureReplicationControllerSidecar(resource *apiv1.Rep
 }
 
 func (c *StashController) EnsureReplicationControllerSidecarDeleted(resource *apiv1.ReplicationController, restic *api.Restic) (err error) {
-	if name := util.GetString(resource.Annotations, api.ConfigName); name == "" {
-		log.Infof("Restic sidecar already removed for ReplicationController %s@%s.", resource.Name, resource.Namespace)
-		return nil
-	}
-
 	_, err = core_util.PatchRC(c.k8sClient, resource, func(obj *apiv1.ReplicationController) *apiv1.ReplicationController {
 		obj.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)

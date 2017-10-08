@@ -8,11 +8,11 @@ import (
 
 type Framework struct {
 	KubeClient  kubernetes.Interface
-	StashClient cs.ResticsGetter
+	StashClient cs.StashV1alpha1Interface
 	namespace   string
 }
 
-func New(kubeClient kubernetes.Interface, extClient cs.ResticsGetter) *Framework {
+func New(kubeClient kubernetes.Interface, extClient cs.StashV1alpha1Interface) *Framework {
 	return &Framework{
 		KubeClient:  kubeClient,
 		StashClient: extClient,

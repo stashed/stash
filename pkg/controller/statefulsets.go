@@ -182,11 +182,6 @@ func (c *StashController) EnsureStatefulSetSidecar(resource *apps.StatefulSet, o
 }
 
 func (c *StashController) EnsureStatefulSetSidecarDeleted(resource *apps.StatefulSet, restic *api.Restic) (err error) {
-	if name := util.GetString(resource.Annotations, api.ConfigName); name == "" {
-		log.Infof("Restic sidecar already removed for StatefulSet %s@%s.", resource.Name, resource.Namespace)
-		return nil
-	}
-
 	_, err = apps_util.PatchStatefulSet(c.k8sClient, resource, func(obj *apps.StatefulSet) *apps.StatefulSet {
 		obj.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)

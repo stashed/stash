@@ -88,13 +88,13 @@ func (c *StashController) Setup() error {
 	if err := c.ensureCustomResourceDefinitions(); err != nil {
 		return err
 	}
-	c.initNamespaceWatcher()
-	c.initResticWatcher()
 	c.initDaemonSetWatcher()
 	c.initDeploymentWatcher()
 	c.initRCWatcher()
 	c.initReplicaSetWatcher()
 	c.initStatefulSetWatcher()
+	c.initNamespaceWatcher()
+	c.initResticWatcher()
 	return nil
 }
 
@@ -140,7 +140,7 @@ func (c *StashController) Run(threadiness int, stopCh chan struct{}) {
 	defer c.rcQueue.ShutDown()
 	defer c.rsQueue.ShutDown()
 	defer c.ssQueue.ShutDown()
-	glog.Info("Starting Vault controller")
+	glog.Info("Starting Stash controller")
 
 	go c.nsInformer.Run(stopCh)
 	go c.rInformer.Run(stopCh)
@@ -190,5 +190,5 @@ func (c *StashController) Run(threadiness int, stopCh chan struct{}) {
 	}
 
 	<-stopCh
-	glog.Info("Stopping Vault controller")
+	glog.Info("Stopping Stash controller")
 }
