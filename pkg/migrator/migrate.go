@@ -16,7 +16,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/wait"
-	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes"
 	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
@@ -26,13 +26,13 @@ type migrationState struct {
 }
 
 type migrator struct {
-	kubeClient       clientset.Interface
+	kubeClient       kubernetes.Interface
 	apiExtKubeClient apiextensionsclient.Interface
 
 	migrationState *migrationState
 }
 
-func NewMigrator(kubeClient clientset.Interface, apiExtKubeClient apiextensionsclient.Interface) *migrator {
+func NewMigrator(kubeClient kubernetes.Interface, apiExtKubeClient apiextensionsclient.Interface) *migrator {
 	return &migrator{
 		migrationState:   &migrationState{},
 		kubeClient:       kubeClient,

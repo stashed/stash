@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/appscode/go/log"
-	sapi_v1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
-	scs "github.com/appscode/stash/client/typed/stash/v1alpha1"
+	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/cli"
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/prometheus/client_golang/prometheus"
@@ -20,7 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
-	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
@@ -45,13 +45,13 @@ type Options struct {
 	ResyncPeriod   time.Duration
 }
 
-func (opt Options) autoPrefix(resource *sapi_v1alpha1.Restic) string {
+func (opt Options) autoPrefix(resource *api.Restic) string {
 	switch resource.Spec.UseAutoPrefix {
-	case sapi_v1alpha1.None:
+	case api.None:
 		return ""
-	case sapi_v1alpha1.NodeName:
+	case api.NodeName:
 		return opt.NodeName
-	case sapi_v1alpha1.PodName:
+	case api.PodName:
 		return opt.PodName
 	default:
 		return opt.SmartPrefix
@@ -59,22 +59,22 @@ func (opt Options) autoPrefix(resource *sapi_v1alpha1.Restic) string {
 }
 
 type Scheduler struct {
-	kubeClient  clientset.Interface
-	stashClient scs.ResticsGetter
+	kubeClient  kubernetes.Interface
+	stashClient cs.ResticsGetter
 	opt         Options
-	rchan       chan *sapi_v1alpha1.Restic
+	rchan       chan *api.Restic
 	locked      chan struct{}
 	resticCLI   *cli.ResticWrapper
 	cron        *cron.Cron
 	recorder    record.EventRecorder
 }
 
-func New(kubeClient clientset.Interface, stashClient scs.ResticsGetter, opt Options) *Scheduler {
+func New(kubeClient kubernetes.Interface, stashClient cs.ResticsGetter, opt Options) *Scheduler {
 	return &Scheduler{
 		kubeClient:  kubeClient,
 		stashClient: stashClient,
 		opt:         opt,
-		rchan:       make(chan *sapi_v1alpha1.Restic, 1),
+		rchan:       make(chan *api.Restic, 1),
 		cron:        cron.New(),
 		locked:      make(chan struct{}, 1),
 		resticCLI:   cli.New(opt.ScratchDir),
@@ -120,11 +120,11 @@ func (c *Scheduler) RunAndHold() {
 		},
 	}
 	_, ctrl := cache.NewInformer(lw,
-		&sapi_v1alpha1.Restic{},
+		&api.Restic{},
 		c.opt.ResyncPeriod,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				if r, ok := obj.(*sapi_v1alpha1.Restic); ok {
+				if r, ok := obj.(*api.Restic); ok {
 					if r.Name == c.opt.ResticName {
 						c.rchan <- r
 						err := c.configureScheduler()
@@ -141,12 +141,12 @@ func (c *Scheduler) RunAndHold() {
 				}
 			},
 			UpdateFunc: func(old, new interface{}) {
-				oldObj, ok := old.(*sapi_v1alpha1.Restic)
+				oldObj, ok := old.(*api.Restic)
 				if !ok {
 					log.Errorln(errors.New("Invalid Restic object"))
 					return
 				}
-				newObj, ok := new.(*sapi_v1alpha1.Restic)
+				newObj, ok := new.(*api.Restic)
 				if !ok {
 					log.Errorln(errors.New("Invalid Restic object"))
 					return
@@ -166,7 +166,7 @@ func (c *Scheduler) RunAndHold() {
 				}
 			},
 			DeleteFunc: func(obj interface{}) {
-				if r, ok := obj.(*sapi_v1alpha1.Restic); ok {
+				if r, ok := obj.(*api.Restic); ok {
 					if r.Name == c.opt.ResticName {
 						c.cron.Stop()
 					}
@@ -225,7 +225,7 @@ func (c *Scheduler) runOnce() (err error) {
 		return
 	}
 
-	var resource *sapi_v1alpha1.Restic
+	var resource *api.Restic
 	resource, err = c.stashClient.Restics(c.opt.Namespace).Get(c.opt.ResticName, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		err = nil
@@ -353,7 +353,7 @@ func (c *Scheduler) runOnce() (err error) {
 	return
 }
 
-func (c *Scheduler) measure(f func(*sapi_v1alpha1.Restic, sapi_v1alpha1.FileGroup) error, resource *sapi_v1alpha1.Restic, fg sapi_v1alpha1.FileGroup, g prometheus.Gauge) (err error) {
+func (c *Scheduler) measure(f func(*api.Restic, api.FileGroup) error, resource *api.Restic, fg api.FileGroup, g prometheus.Gauge) (err error) {
 	startTime := time.Now()
 	defer func() {
 		g.Set(time.Now().Sub(startTime).Seconds())

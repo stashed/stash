@@ -1,8 +1,8 @@
 package e2e_test
 
 import (
-	extensionsv1beta1kutil "github.com/appscode/kutil/extensions/v1beta1"
-	sapi "github.com/appscode/stash/apis/stash/v1alpha1"
+	ext_util "github.com/appscode/kutil/extensions/v1beta1"
+	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/appscode/stash/test/e2e/framework"
 	. "github.com/appscode/stash/test/e2e/matcher"
@@ -17,7 +17,7 @@ var _ = Describe("DaemonSet", func() {
 	var (
 		err    error
 		f      *framework.Invocation
-		restic sapi.Restic
+		restic api.Restic
 		cred   apiv1.Secret
 		daemon extensions.DaemonSet
 	)
@@ -51,7 +51,7 @@ var _ = Describe("DaemonSet", func() {
 			f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
 				return r.Status.BackupCount
 			}, BeNumerically(">=", 1)))
 
@@ -76,7 +76,7 @@ var _ = Describe("DaemonSet", func() {
 			f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
 				return r.Status.BackupCount
 			}, BeNumerically(">=", 1)))
 
@@ -101,7 +101,7 @@ var _ = Describe("DaemonSet", func() {
 			f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
 				return r.Status.BackupCount
 			}, BeNumerically(">=", 1)))
 
@@ -128,12 +128,12 @@ var _ = Describe("DaemonSet", func() {
 			f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
 				return r.Status.BackupCount
 			}, BeNumerically(">=", 1)))
 
 			By("Removing labels of DaemonSet " + daemon.Name)
-			_, err = extensionsv1beta1kutil.PatchDaemonSet(f.KubeClient, &daemon, func(in *extensions.DaemonSet) *extensions.DaemonSet {
+			_, err = ext_util.PatchDaemonSet(f.KubeClient, &daemon, func(in *extensions.DaemonSet) *extensions.DaemonSet {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}
@@ -161,12 +161,12 @@ var _ = Describe("DaemonSet", func() {
 			f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *sapi.Restic) int64 {
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
 				return r.Status.BackupCount
 			}, BeNumerically(">=", 1)))
 
 			By("Change selector of Restic " + restic.Name)
-			err = f.UpdateRestic(restic.ObjectMeta, func(in sapi.Restic) sapi.Restic {
+			err = f.UpdateRestic(restic.ObjectMeta, func(in api.Restic) api.Restic {
 				in.Spec.Selector = metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						"app": "unmatched",

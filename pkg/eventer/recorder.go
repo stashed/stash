@@ -2,13 +2,14 @@ package eventer
 
 import (
 	"github.com/appscode/go/log"
-	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/record"
 )
 
 const (
+	EventReasonInvalidRestic                 = "InvalidRestic"
 	EventReasonInvalidCronExpression         = "InvalidCronExpression"
 	EventReasonSuccessfulCronExpressionReset = "SuccessfulCronExpressionReset"
 	EventReasonSuccessfulBackup              = "SuccessfulBackup"
@@ -18,7 +19,7 @@ const (
 	EventReasonFailedCronJob                 = "FailedCronJob"
 )
 
-func NewEventRecorder(client clientset.Interface, component string) record.EventRecorder {
+func NewEventRecorder(client kubernetes.Interface, component string) record.EventRecorder {
 	// Event Broadcaster
 	broadcaster := record.NewBroadcaster()
 	broadcaster.StartEventWatcher(

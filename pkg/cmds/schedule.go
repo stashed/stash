@@ -8,11 +8,11 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/kutil"
-	scs "github.com/appscode/stash/client/typed/stash/v1alpha1"
+	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/scheduler"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -40,8 +40,8 @@ func NewCmdSchedule() *cobra.Command {
 			if err != nil {
 				log.Fatalf("Could not get Kubernetes config: %s", err)
 			}
-			kubeClient = clientset.NewForConfigOrDie(config)
-			stashClient = scs.NewForConfigOrDie(config)
+			kubeClient = kubernetes.NewForConfigOrDie(config)
+			stashClient = cs.NewForConfigOrDie(config)
 
 			opt.NodeName = os.Getenv("NODE_NAME")
 			if opt.NodeName == "" {

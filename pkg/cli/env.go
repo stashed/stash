@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/appscode/go/log"
-	sapi "github.com/appscode/stash/apis/stash/v1alpha1"
+	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
@@ -54,7 +54,7 @@ const (
 	OS_AUTH_TOKEN  = "OS_AUTH_TOKEN"
 )
 
-func (w *ResticWrapper) SetupEnv(resource *sapi.Restic, secret *apiv1.Secret, autoPrefix string) error {
+func (w *ResticWrapper) SetupEnv(resource *api.Restic, secret *apiv1.Secret, autoPrefix string) error {
 	if v, ok := secret.Data[RESTIC_PASSWORD]; !ok {
 		return errors.New("Missing repository password")
 	} else {

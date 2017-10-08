@@ -13,9 +13,13 @@ import (
 	"github.com/pkg/errors"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
+	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/rest"
 )
@@ -114,4 +118,67 @@ func GetKind(v interface{}) string {
 		val = val.Elem()
 	}
 	return val.Type().Name()
+}
+
+func GetObjectReference(v interface{}, gv schema.GroupVersion) *apiv1.ObjectReference {
+	m, err := meta.Accessor(v)
+	if err != nil {
+		return &apiv1.ObjectReference{}
+	}
+	return &apiv1.ObjectReference{
+		APIVersion:      gv.String(),
+		Kind:            GetKind(v),
+		Namespace:       m.GetNamespace(),
+		Name:            m.GetName(),
+		UID:             m.GetUID(),
+		ResourceVersion: m.GetResourceVersion(),
+	}
+}
+
+// MarshalToYAML marshals an object into yaml.
+func MarshalToYAML(obj runtime.Object, gv schema.GroupVersion) ([]byte, error) {
+	mediaType := "application/yaml"
+	info, ok := runtime.SerializerInfoForMediaType(clientsetscheme.Codecs.SupportedMediaTypes(), mediaType)
+	if !ok {
+		return []byte{}, fmt.Errorf("unsupported media type %q", mediaType)
+	}
+
+	encoder := clientsetscheme.Codecs.EncoderForVersion(info.Serializer, gv)
+	return runtime.Encode(encoder, obj)
+}
+
+// UnmarshalToYAML unmarshals an object into yaml.
+func UnmarshalToYAML(data []byte, gv schema.GroupVersion) (runtime.Object, error) {
+	mediaType := "application/yaml"
+	info, ok := runtime.SerializerInfoForMediaType(clientsetscheme.Codecs.SupportedMediaTypes(), mediaType)
+	if !ok {
+		return nil, fmt.Errorf("unsupported media type %q", mediaType)
+	}
+
+	decoder := clientsetscheme.Codecs.DecoderToVersion(info.Serializer, gv)
+	return runtime.Decode(decoder, data)
+}
+
+// MarshalToJson marshals an object into json.
+func MarshalToJson(obj runtime.Object, gv schema.GroupVersion) ([]byte, error) {
+	mediaType := "application/json"
+	info, ok := runtime.SerializerInfoForMediaType(clientsetscheme.Codecs.SupportedMediaTypes(), mediaType)
+	if !ok {
+		return []byte{}, fmt.Errorf("unsupported media type %q", mediaType)
+	}
+
+	encoder := clientsetscheme.Codecs.EncoderForVersion(info.Serializer, gv)
+	return runtime.Encode(encoder, obj)
+}
+
+// UnmarshalToJSON unmarshals an object into json.
+func UnmarshalToJSON(data []byte, gv schema.GroupVersion) (runtime.Object, error) {
+	mediaType := "application/json"
+	info, ok := runtime.SerializerInfoForMediaType(clientsetscheme.Codecs.SupportedMediaTypes(), mediaType)
+	if !ok {
+		return nil, fmt.Errorf("unsupported media type %q", mediaType)
+	}
+
+	decoder := clientsetscheme.Codecs.DecoderToVersion(info.Serializer, gv)
+	return runtime.Decode(decoder, data)
 }

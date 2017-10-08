@@ -7,15 +7,16 @@ import (
 	"reflect"
 	"time"
 
-	corev1kutil "github.com/appscode/kutil/core/v1"
-	sapi_v1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
-	scs "github.com/appscode/stash/client/typed/stash/v1alpha1"
+	"github.com/appscode/kutil"
+	core_util "github.com/appscode/kutil/core/v1"
+	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/cenkalti/backoff"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
@@ -27,25 +28,43 @@ const (
 	PodinfoVolumeName    = "stash-podinfo"
 )
 
-func FindRestic(stashClient scs.ResticsGetter, obj metav1.ObjectMeta) (*sapi_v1alpha1.Restic, error) {
-	restics, err := stashClient.Restics(obj.Namespace).List(metav1.ListOptions{LabelSelector: labels.Everything().String()})
+func GetAppliedRestic(m map[string]string) (*api.Restic, error) {
+	data := GetString(m, api.ConfigName)
+	if data == "" {
+		return nil, nil
+	}
+	obj, err := kutil.UnmarshalToJSON([]byte(data), api.SchemeGroupVersion)
+	if err != nil {
+		return nil, err
+	}
+	restic, ok := obj.(*api.Restic)
+	if !ok {
+		return nil, fmt.Errorf("%s annotations has invalid Rectic object", api.ConfigName)
+	}
+	return restic, nil
+}
+
+func FindRestic(lister stash_listers.ResticLister, obj metav1.ObjectMeta) (*api.Restic, error) {
+	restics, err := lister.Restics(obj.Namespace).List(labels.Everything())
 	if kerr.IsNotFound(err) {
 		return nil, nil
 	} else if err != nil {
 		return nil, err
 	}
 
-	result := make([]*sapi_v1alpha1.Restic, 0)
-	for _, restic := range restics.Items {
-		if selector, err := metav1.LabelSelectorAsSelector(&restic.Spec.Selector); err == nil {
-			if selector.Matches(labels.Set(obj.Labels)) {
-				result = append(result, &restic)
-			}
+	result := make([]*api.Restic, 0)
+	for _, restic := range restics {
+		selector, err := metav1.LabelSelectorAsSelector(&restic.Spec.Selector)
+		if err != nil {
+			return nil, err
+		}
+		if selector.Matches(labels.Set(obj.Labels)) {
+			result = append(result, restic)
 		}
 	}
 	if len(result) > 1 {
 		var msg bytes.Buffer
-		msg.WriteString(fmt.Sprintf("Workload %s@%s matches multiple Restics:", obj.Name, obj.Namespace))
+		msg.WriteString(fmt.Sprintf("Workload %s/%s matches multiple Restics:", obj.Namespace, obj.Name))
 		for i, restic := range result {
 			if i > 0 {
 				msg.WriteString(", ")
@@ -59,7 +78,7 @@ func FindRestic(stashClient scs.ResticsGetter, obj metav1.ObjectMeta) (*sapi_v1a
 	return nil, nil
 }
 
-func WaitUntilSidecarAdded(kubeClient clientset.Interface, namespace string, selector *metav1.LabelSelector) error {
+func WaitUntilSidecarAdded(kubeClient kubernetes.Interface, namespace string, selector *metav1.LabelSelector) error {
 	return backoff.Retry(func() error {
 		r, err := metav1.LabelSelectorAsSelector(selector)
 		if err != nil {
@@ -93,7 +112,7 @@ func WaitUntilSidecarAdded(kubeClient clientset.Interface, namespace string, sel
 	}, backoff.NewConstantBackOff(3*time.Second))
 }
 
-func WaitUntilSidecarRemoved(kubeClient clientset.Interface, namespace string, selector *metav1.LabelSelector) error {
+func WaitUntilSidecarRemoved(kubeClient kubernetes.Interface, namespace string, selector *metav1.LabelSelector) error {
 	return backoff.Retry(func() error {
 		r, err := metav1.LabelSelectorAsSelector(selector)
 		if err != nil {
@@ -134,9 +153,9 @@ func GetString(m map[string]string, key string) string {
 	return m[key]
 }
 
-func CreateSidecarContainer(r *sapi_v1alpha1.Restic, tag, workload string) apiv1.Container {
+func CreateSidecarContainer(r *api.Restic, tag, workload string) apiv1.Container {
 	if r.Annotations != nil {
-		if v, ok := r.Annotations[sapi_v1alpha1.VersionTag]; ok {
+		if v, ok := r.Annotations[api.VersionTag]; ok {
 			tag = v
 		}
 	}
@@ -203,7 +222,7 @@ func CreateSidecarContainer(r *sapi_v1alpha1.Restic, tag, workload string) apiv1
 }
 
 func UpsertScratchVolume(volumes []apiv1.Volume) []apiv1.Volume {
-	return corev1kutil.UpsertVolume(volumes, apiv1.Volume{
+	return core_util.UpsertVolume(volumes, apiv1.Volume{
 		Name: ScratchDirVolumeName,
 		VolumeSource: apiv1.VolumeSource{
 			EmptyDir: &apiv1.EmptyDirVolumeSource{},
@@ -213,7 +232,7 @@ func UpsertScratchVolume(volumes []apiv1.Volume) []apiv1.Volume {
 
 // https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#store-pod-fields
 func UpsertDownwardVolume(volumes []apiv1.Volume) []apiv1.Volume {
-	return corev1kutil.UpsertVolume(volumes, apiv1.Volume{
+	return core_util.UpsertVolume(volumes, apiv1.Volume{
 		Name: PodinfoVolumeName,
 		VolumeSource: apiv1.VolumeSource{
 			DownwardAPI: &apiv1.DownwardAPIVolumeSource{
@@ -230,7 +249,7 @@ func UpsertDownwardVolume(volumes []apiv1.Volume) []apiv1.Volume {
 	})
 }
 
-func MergeLocalVolume(volumes []apiv1.Volume, old, new *sapi_v1alpha1.Restic) []apiv1.Volume {
+func MergeLocalVolume(volumes []apiv1.Volume, old, new *api.Restic) []apiv1.Volume {
 	oldPos := -1
 	if old != nil && old.Spec.Backend.Local != nil {
 		for i, vol := range volumes {
@@ -244,7 +263,7 @@ func MergeLocalVolume(volumes []apiv1.Volume, old, new *sapi_v1alpha1.Restic) []
 		if oldPos != -1 {
 			volumes[oldPos] = apiv1.Volume{Name: LocalVolumeName, VolumeSource: new.Spec.Backend.Local.VolumeSource}
 		} else {
-			volumes = corev1kutil.UpsertVolume(volumes, apiv1.Volume{Name: LocalVolumeName, VolumeSource: new.Spec.Backend.Local.VolumeSource})
+			volumes = core_util.UpsertVolume(volumes, apiv1.Volume{Name: LocalVolumeName, VolumeSource: new.Spec.Backend.Local.VolumeSource})
 		}
 	} else {
 		if oldPos != -1 {
@@ -263,8 +282,8 @@ func EnsureVolumeDeleted(volumes []apiv1.Volume, name string) []apiv1.Volume {
 	return volumes
 }
 
-func ResticEqual(old, new *sapi_v1alpha1.Restic) bool {
-	var oldSpec, newSpec *sapi_v1alpha1.ResticSpec
+func ResticEqual(old, new *api.Restic) bool {
+	var oldSpec, newSpec *api.ResticSpec
 	if old != nil {
 		oldSpec = &old.Spec
 	}

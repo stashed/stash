@@ -1,117 +1,161 @@
 package controller
 
 import (
-	"errors"
 	"fmt"
-	"reflect"
 
 	"github.com/appscode/go/log"
-	acrt "github.com/appscode/go/runtime"
-	"github.com/appscode/kutil"
-	corekutil "github.com/appscode/kutil/core/v1"
+	core_util "github.com/appscode/kutil/core/v1"
 	ext_util "github.com/appscode/kutil/extensions/v1beta1"
-	sapi "github.com/appscode/stash/apis/stash/v1alpha1"
+	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
+	"github.com/golang/glog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
+	rt "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
+	ext_listers "k8s.io/client-go/listers/extensions/v1beta1"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/util/workqueue"
 )
 
-// Blocks caller. Intended to be called as a Go routine.
-func (c *Controller) WatchDaemonSets() {
-	if !kutil.IsPreferredAPIResource(c.kubeClient, extensions.SchemeGroupVersion.String(), "DaemonSet") {
-		log.Warningf("Skipping watching non-preferred GroupVersion:%s Kind:%s", extensions.SchemeGroupVersion.String(), "DaemonSet")
-		return
-	}
-
-	defer acrt.HandleCrash()
-
+func (c *StashController) initDaemonSetWatcher() {
 	lw := &cache.ListWatch{
-		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
-			return c.kubeClient.ExtensionsV1beta1().DaemonSets(apiv1.NamespaceAll).List(metav1.ListOptions{})
+		ListFunc: func(options metav1.ListOptions) (rt.Object, error) {
+			return c.k8sClient.ExtensionsV1beta1().DaemonSets(apiv1.NamespaceAll).List(options)
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return c.kubeClient.ExtensionsV1beta1().DaemonSets(apiv1.NamespaceAll).Watch(metav1.ListOptions{})
+			return c.k8sClient.ExtensionsV1beta1().DaemonSets(apiv1.NamespaceAll).Watch(options)
 		},
 	}
-	_, ctrl := cache.NewInformer(lw,
-		&extensions.DaemonSet{},
-		c.resyncPeriod,
-		cache.ResourceEventHandlerFuncs{
-			AddFunc: func(obj interface{}) {
-				if resource, ok := obj.(*extensions.DaemonSet); ok {
-					log.Infof("DaemonSet %s@%s added", resource.Name, resource.Namespace)
 
-					restic, err := util.FindRestic(c.stashClient, resource.ObjectMeta)
-					if err != nil {
-						log.Errorf("Error while searching Restic for DaemonSet %s@%s.", resource.Name, resource.Namespace)
-						return
-					}
-					if restic == nil {
-						log.Errorf("No Restic found for DaemonSet %s@%s.", resource.Name, resource.Namespace)
-						return
-					}
-					c.EnsureDaemonSetSidecar(resource, nil, restic)
-				}
-			},
-			UpdateFunc: func(old, new interface{}) {
-				oldObj, ok := old.(*extensions.DaemonSet)
-				if !ok {
-					log.Errorln(errors.New("Invalid DaemonSet object"))
-					return
-				}
-				newObj, ok := new.(*extensions.DaemonSet)
-				if !ok {
-					log.Errorln(errors.New("Invalid DaemonSet object"))
-					return
-				}
-				if !reflect.DeepEqual(oldObj.Labels, newObj.Labels) {
-					oldRestic, err := util.FindRestic(c.stashClient, oldObj.ObjectMeta)
-					if err != nil {
-						log.Errorf("Error while searching Restic for DaemonSet %s@%s.", oldObj.Name, oldObj.Namespace)
-						return
-					}
-					newRestic, err := util.FindRestic(c.stashClient, newObj.ObjectMeta)
-					if err != nil {
-						log.Errorf("Error while searching Restic for DaemonSet %s@%s.", newObj.Name, newObj.Namespace)
-						return
-					}
-					if util.ResticEqual(oldRestic, newRestic) {
-						return
-					}
-					if newRestic != nil {
-						c.EnsureDaemonSetSidecar(newObj, oldRestic, newRestic)
-					} else if oldRestic != nil {
-						c.EnsureDaemonSetSidecarDeleted(newObj, oldRestic)
-					}
-				}
-			},
+	// create the workqueue
+	c.dsQueue = workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "daemonset")
+
+	// Bind the workqueue to a cache with the help of an informer. This way we make sure that
+	// whenever the cache is updated, the pod key is added to the workqueue.
+	// Note that when we finally process the item from the workqueue, we might see a newer version
+	// of the DaemonSet than the version which was responsible for triggering the update.
+	c.dsIndexer, c.dsInformer = cache.NewIndexerInformer(lw, &extensions.DaemonSet{}, c.options.ResyncPeriod, cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			key, err := cache.MetaNamespaceKeyFunc(obj)
+			if err == nil {
+				c.dsQueue.Add(key)
+			}
 		},
-	)
-	ctrl.Run(wait.NeverStop)
+		UpdateFunc: func(old interface{}, new interface{}) {
+			key, err := cache.MetaNamespaceKeyFunc(new)
+			if err == nil {
+				c.dsQueue.Add(key)
+			}
+		},
+		DeleteFunc: func(obj interface{}) {
+			// IndexerInformer uses a delta queue, therefore for deletes we have to use this
+			// key function.
+			key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
+			if err == nil {
+				c.dsQueue.Add(key)
+			}
+		},
+	}, cache.Indexers{})
+	c.dsLister = ext_listers.NewDaemonSetLister(c.dsIndexer)
 }
 
-func (c *Controller) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, old, new *sapi.Restic) (err error) {
+func (c *StashController) runDaemonSetWatcher() {
+	for c.processNextDaemonSet() {
+	}
+}
+
+func (c *StashController) processNextDaemonSet() bool {
+	// Wait until there is a new item in the working queue
+	key, quit := c.dsQueue.Get()
+	if quit {
+		return false
+	}
+	// Tell the queue that we are done with processing this key. This unblocks the key for other workers
+	// This allows safe parallel processing because two deployments with the same key are never processed in
+	// parallel.
+	defer c.dsQueue.Done(key)
+
+	// Invoke the method containing the business logic
+	err := c.runDaemonSetInitializer(key.(string))
+	if err == nil {
+		// Forget about the #AddRateLimited history of the key on every successful synchronization.
+		// This ensures that future processing of updates for this key is not delayed because of
+		// an outdated error history.
+		c.dsQueue.Forget(key)
+		return true
+	}
+	log.Errorln("Failed to process DaemonSet %v. Reason: %s", key, err)
+
+	// This controller retries 5 times if something goes wrong. After that, it stops trying.
+	if c.dsQueue.NumRequeues(key) < c.options.MaxNumRequeues {
+		glog.Infof("Error syncing deployment %v: %v", key, err)
+
+		// Re-enqueue the key rate limited. Based on the rate limiter on the
+		// queue and the re-enqueue history, the key will be processed later again.
+		c.dsQueue.AddRateLimited(key)
+		return true
+	}
+
+	c.dsQueue.Forget(key)
+	// Report to an external entity that, even after several retries, we could not successfully process this key
+	runtime.HandleError(err)
+	glog.Infof("Dropping deployment %q out of the queue: %v", key, err)
+	return true
+}
+
+// syncToStdout is the business logic of the controller. In this controller it simply prints
+// information about the deployment to stdout. In case an error happened, it has to simply return the error.
+// The retry logic should not be part of the business logic.
+func (c *StashController) runDaemonSetInitializer(key string) error {
+	obj, exists, err := c.dsIndexer.GetByKey(key)
+	if err != nil {
+		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)
+		return err
+	}
+
+	if !exists {
+		// Below we will warm up our cache with a DaemonSet, so that we will see a delete for one d
+		fmt.Printf("DaemonSet %s does not exist anymore\n", key)
+	} else {
+		ds := obj.(*extensions.DaemonSet)
+		fmt.Printf("Sync/Add/Update for DaemonSet %s\n", ds.GetName())
+
+		oldRestic, err := util.GetAppliedRestic(ds.Annotations)
+		if err != nil {
+			return err
+		}
+		newRestic, err := util.FindRestic(c.rLister, ds.ObjectMeta)
+		if err != nil {
+			log.Errorf("Error while searching Restic for DaemonSet %s/%s.", ds.Name, ds.Namespace)
+			return err
+		}
+		if util.ResticEqual(oldRestic, newRestic) {
+			return nil
+		}
+		if newRestic != nil {
+			c.EnsureDaemonSetSidecar(ds, oldRestic, newRestic)
+		} else if oldRestic != nil {
+			c.EnsureDaemonSetSidecarDeleted(ds, oldRestic)
+		}
+	}
+	return nil
+}
+
+func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, old, new *api.Restic) (err error) {
 	if new.Spec.Backend.StorageSecretName == "" {
-		err = fmt.Errorf("Missing repository secret name for Restic %s@%s.", new.Name, new.Namespace)
+		err = fmt.Errorf("missing repository secret name for Restic %s/%s", new.Namespace, new.Name)
 		return
 	}
-	_, err = c.kubeClient.CoreV1().Secrets(resource.Namespace).Get(new.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	_, err = c.k8sClient.CoreV1().Secrets(resource.Namespace).Get(new.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
-	if name := util.GetString(resource.Annotations, sapi.ConfigName); name != "" && name != new.Name {
-		log.Infof("Restic %s sidecar already added for DaemonSet %s@%s.", name, resource.Name, resource.Namespace)
-		return nil
-	}
-
-	_, err = ext_util.PatchDaemonSet(c.kubeClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
-		obj.Spec.Template.Spec.Containers = corekutil.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.SidecarImageTag, "DaemonSet/"+obj.Name))
+	resource, err = ext_util.PatchDaemonSet(c.k8sClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
+		obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.options.SidecarImageTag, "DaemonSet/"+obj.Name))
 		obj.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(obj.Spec.Template.Spec.Volumes)
 		obj.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(obj.Spec.Template.Spec.Volumes)
 		obj.Spec.Template.Spec.Volumes = util.MergeLocalVolume(obj.Spec.Template.Spec.Volumes, old, new)
@@ -119,38 +163,38 @@ func (c *Controller) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, old,
 		if obj.Annotations == nil {
 			obj.Annotations = make(map[string]string)
 		}
-		obj.Annotations[sapi.ConfigName] = new.Name
-		obj.Annotations[sapi.VersionTag] = c.SidecarImageTag
+		obj.Annotations[api.ConfigName] = new.Name
+		obj.Annotations[api.VersionTag] = c.options.SidecarImageTag
 		return obj
 	})
 	if err != nil {
 		return
 	}
 
-	err = ext_util.WaitUntilDaemonSetReady(c.kubeClient, resource.ObjectMeta)
+	err = ext_util.WaitUntilDaemonSetReady(c.k8sClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}
-	err = util.WaitUntilSidecarAdded(c.kubeClient, resource.Namespace, resource.Spec.Selector)
+	err = util.WaitUntilSidecarAdded(c.k8sClient, resource.Namespace, resource.Spec.Selector)
 	return
 }
 
-func (c *Controller) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSet, restic *sapi.Restic) (err error) {
-	if name := util.GetString(resource.Annotations, sapi.ConfigName); name == "" {
+func (c *StashController) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSet, restic *api.Restic) (err error) {
+	if name := util.GetString(resource.Annotations, api.ConfigName); name == "" {
 		log.Infof("Restic sidecar already removed for DaemonSet %s@%s.", resource.Name, resource.Namespace)
 		return nil
 	}
 
-	_, err = ext_util.PatchDaemonSet(c.kubeClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
-		obj.Spec.Template.Spec.Containers = corekutil.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
+	_, err = ext_util.PatchDaemonSet(c.k8sClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
+		obj.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
 		if restic.Spec.Backend.Local != nil {
 			obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.LocalVolumeName)
 		}
 		if obj.Annotations != nil {
-			delete(obj.Annotations, sapi.ConfigName)
-			delete(obj.Annotations, sapi.VersionTag)
+			delete(obj.Annotations, api.ConfigName)
+			delete(obj.Annotations, api.VersionTag)
 		}
 		return obj
 	})
@@ -158,10 +202,10 @@ func (c *Controller) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSe
 		return
 	}
 
-	err = ext_util.WaitUntilDaemonSetReady(c.kubeClient, resource.ObjectMeta)
+	err = ext_util.WaitUntilDaemonSetReady(c.k8sClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}
-	err = util.WaitUntilSidecarRemoved(c.kubeClient, resource.Namespace, resource.Spec.Selector)
+	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, resource.Spec.Selector)
 	return
 }
