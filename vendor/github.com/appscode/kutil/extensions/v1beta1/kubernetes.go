@@ -43,3 +43,12 @@ func AssignTypeKind(v interface{}) error {
 	}
 	return errors.New("unknown api object type")
 }
+
+func IsOwnedByDeployment(rs *extensions.ReplicaSet) bool {
+	for _, ref := range rs.OwnerReferences {
+		if ref.Kind == "Deployment" && ref.Name != "" {
+			return true
+		}
+	}
+	return false
+}
