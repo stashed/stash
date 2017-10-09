@@ -162,9 +162,18 @@ func (c *StashController) EnsureReplicationControllerSidecar(resource *apiv1.Rep
 		if obj.Annotations == nil {
 			obj.Annotations = make(map[string]string)
 		}
-		data, _ := kutil.MarshalToJson(new, api.SchemeGroupVersion)
+		r := &api.Restic{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: api.SchemeGroupVersion.String(),
+				Kind:       api.ResourceKindRestic,
+			},
+			ObjectMeta: new.ObjectMeta,
+			Spec:       new.Spec,
+		}
+		data, _ := kutil.MarshalToJson(r, api.SchemeGroupVersion)
 		obj.Annotations[api.LastAppliedConfiguration] = string(data)
 		obj.Annotations[api.VersionTag] = c.options.SidecarImageTag
+
 		return obj
 	})
 	if err != nil {
