@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"reflect"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"github.com/appscode/kutil"
 	core_util "github.com/appscode/kutil/core/v1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -290,5 +291,7 @@ func ResticEqual(old, new *api.Restic) bool {
 	if new != nil {
 		newSpec = &new.Spec
 	}
-	return reflect.DeepEqual(oldSpec, newSpec)
+	return cmp.Equal(oldSpec, newSpec, cmp.Comparer(func(x, y resource.Quantity) bool {
+		return x.Cmp(y) == 0
+	}))
 }
