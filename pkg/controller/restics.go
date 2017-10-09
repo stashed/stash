@@ -102,7 +102,7 @@ func (c *StashController) processNextRestic() bool {
 		c.rQueue.Forget(key)
 		return true
 	}
-	log.Errorln("Failed to process Restic %v. Reason: %s", key, err)
+	log.Errorf("Failed to process Restic %v. Reason: %s", key, err)
 
 	// This controller retries 5 times if something goes wrong. After that, it stops trying.
 	if c.rQueue.NumRequeues(key) < c.options.MaxNumRequeues {

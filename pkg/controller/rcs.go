@@ -86,7 +86,7 @@ func (c *StashController) processNextRC() bool {
 		c.rcQueue.Forget(key)
 		return true
 	}
-	log.Errorln("Failed to process ReplicationController %v. Reason: %s", key, err)
+	log.Errorf("Failed to process ReplicationController %v. Reason: %s", key, err)
 
 	// This controller retries 5 times if something goes wrong. After that, it stops trying.
 	if c.rcQueue.NumRequeues(key) < c.options.MaxNumRequeues {
@@ -135,9 +135,9 @@ func (c *StashController) runRCInjector(key string) error {
 			return nil
 		}
 		if newRestic != nil {
-			c.EnsureReplicationControllerSidecar(rc, oldRestic, newRestic)
+			return c.EnsureReplicationControllerSidecar(rc, oldRestic, newRestic)
 		} else if oldRestic != nil {
-			c.EnsureReplicationControllerSidecarDeleted(rc, oldRestic)
+			return c.EnsureReplicationControllerSidecarDeleted(rc, oldRestic)
 		}
 	}
 	return nil

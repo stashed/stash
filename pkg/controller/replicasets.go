@@ -88,7 +88,7 @@ func (c *StashController) processNextReplicaSet() bool {
 		c.rsQueue.Forget(key)
 		return true
 	}
-	log.Errorln("Failed to process ReplicaSet %v. Reason: %s", key, err)
+	log.Errorf("Failed to process ReplicaSet %v. Reason: %s", key, err)
 
 	// This controller retries 5 times if something goes wrong. After that, it stops trying.
 	if c.rsQueue.NumRequeues(key) < c.options.MaxNumRequeues {
@@ -142,9 +142,9 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 			return nil
 		}
 		if newRestic != nil {
-			c.EnsureReplicaSetSidecar(rs, oldRestic, newRestic)
+			return c.EnsureReplicaSetSidecar(rs, oldRestic, newRestic)
 		} else if oldRestic != nil {
-			c.EnsureReplicaSetSidecarDeleted(rs, oldRestic)
+			return c.EnsureReplicaSetSidecarDeleted(rs, oldRestic)
 		}
 	}
 	return nil

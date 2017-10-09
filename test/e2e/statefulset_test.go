@@ -267,7 +267,7 @@ var _ = Describe("StatefulSet", func() {
 			cred = f.SecretForLocalBackend()
 			restic = f.ResticForLocalBackend()
 		})
-		It(`should stop backup`, shouldStopBackupIfLabelChanged)
+		FIt(`should stop backup`, shouldStopBackupIfLabelChanged)
 	})
 
 	Describe("Changing Restic selector", func() {
