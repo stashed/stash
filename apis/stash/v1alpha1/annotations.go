@@ -1,7 +1,7 @@
 package v1alpha1
 
 const (
-	ResticKey  = "restic.appscode.com"
-	ConfigName = ResticKey + "/config"
-	VersionTag = ResticKey + "/tag"
+	ResticKey                = "restic.appscode.com"
+	LastAppliedConfiguration = ResticKey + "/last-applied-configuration"
+	VersionTag               = ResticKey + "/tag"
 )

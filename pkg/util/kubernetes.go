@@ -29,7 +29,7 @@ const (
 )
 
 func GetAppliedRestic(m map[string]string) (*api.Restic, error) {
-	data := GetString(m, api.ConfigName)
+	data := GetString(m, api.LastAppliedConfiguration)
 	if data == "" {
 		return nil, nil
 	}
@@ -39,7 +39,7 @@ func GetAppliedRestic(m map[string]string) (*api.Restic, error) {
 	}
 	restic, ok := obj.(*api.Restic)
 	if !ok {
-		return nil, fmt.Errorf("%s annotations has invalid Rectic object", api.ConfigName)
+		return nil, fmt.Errorf("%s annotations has invalid Rectic object", api.LastAppliedConfiguration)
 	}
 	return restic, nil
 }

@@ -165,7 +165,7 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 			obj.Annotations = make(map[string]string)
 		}
 		data, _ := kutil.MarshalToJson(new, api.SchemeGroupVersion)
-		obj.Annotations[api.ConfigName] = string(data)
+		obj.Annotations[api.LastAppliedConfiguration] = string(data)
 		obj.Annotations[api.VersionTag] = c.options.SidecarImageTag
 		return obj
 	})
@@ -190,7 +190,7 @@ func (c *StashController) EnsureDeploymentSidecarDeleted(resource *apps.Deployme
 			obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.LocalVolumeName)
 		}
 		if obj.Annotations != nil {
-			delete(obj.Annotations, api.ConfigName)
+			delete(obj.Annotations, api.LastAppliedConfiguration)
 			delete(obj.Annotations, api.VersionTag)
 		}
 		return obj
