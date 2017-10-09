@@ -1,5 +1,5 @@
 hash: 6ce5205063d91283c2a4dc5809c3faa08f31bf626e7197b35b82e0f199d603cc
-updated: 2017-10-08T12:41:08.306327151-07:00
+updated: 2017-10-09T01:51:40.687119758-07:00
 imports:
 - name: github.com/appscode/go
   version: b2ff0c0b3293cc848d781d1efb57ffda5fa0226e
@@ -13,7 +13,7 @@ imports:
   - types
   - version
 - name: github.com/appscode/kutil
-  version: fde5cdb8797b8821b15485fad747f3dd649fd1c3
+  version: edecb186bc1f64f153c2581b18b42440890906f0
   subpackages:
   - apps/v1beta1
   - core/v1
@@ -127,6 +127,10 @@ imports:
   version: fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a
   subpackages:
   - pbutil
+- name: github.com/ncw/swift
+  version: 9d3f812e23d270d1c66a9a01e20af1005061cdc4
+  subpackages:
+  - rs
 - name: github.com/onsi/gomega
   version: c893efa28eb45626cdaa76c9f653b62488858837
   subpackages:
@@ -174,7 +178,7 @@ imports:
 - name: github.com/Sirupsen/logrus
   version: 4b6ea7319e214d98c938f12692336f7ca9348d6b
 - name: github.com/spf13/cobra
-  version: 83b1f039622680cde7a373eb1f85e10db8506673
+  version: 50204810fdb5010baae72e4f41b303689cbdcc9f
   subpackages:
   - doc
 - name: github.com/spf13/pflag

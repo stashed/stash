@@ -124,6 +124,11 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 		rs := obj.(*extensions.ReplicaSet)
 		fmt.Printf("Sync/Add/Update for ReplicaSet %s\n", rs.GetName())
 
+		// If owned by a Deployment, skip it.
+		if ext_util.IsOwnedByDeployment(rs) {
+			return nil
+		}
+
 		oldRestic, err := util.GetAppliedRestic(rs.Annotations)
 		if err != nil {
 			return err

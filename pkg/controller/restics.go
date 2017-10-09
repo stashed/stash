@@ -5,6 +5,7 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/kutil"
+	ext_util "github.com/appscode/kutil/extensions/v1beta1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/eventer"
@@ -162,6 +163,10 @@ func (c *StashController) EnsureSidecar(restic *api.Restic) {
 	{
 		if resources, err := c.rsLister.ReplicaSets(restic.Namespace).List(sel); err == nil {
 			for _, resource := range resources {
+				// If owned by a Deployment, skip it.
+				if ext_util.IsOwnedByDeployment(resource) {
+					continue
+				}
 				key, err := cache.MetaNamespaceKeyFunc(resource)
 				if err == nil {
 					c.rsQueue.Add(key)
