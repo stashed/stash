@@ -191,19 +191,19 @@ func (c *Scheduler) configureScheduler() error {
 	interval := r.Spec.Schedule
 	if _, err := cron.Parse(interval); err != nil {
 		log.Errorln(err)
-		c.recorder.Event(r, apiv1.EventTypeWarning, eventer.EventReasonInvalidCronExpression, err.Error())
+		c.recorder.Event(r.ObjectReference(), apiv1.EventTypeWarning, eventer.EventReasonInvalidCronExpression, err.Error())
 		//Reset Wrong Schedule
 		r.Spec.Schedule = ""
 		_, err = c.stashClient.Restics(r.Namespace).Update(r)
 		if err != nil {
 			return err
 		}
-		c.recorder.Event(r, apiv1.EventTypeNormal, eventer.EventReasonSuccessfulCronExpressionReset, "Cron expression reset")
+		c.recorder.Event(r.ObjectReference(), apiv1.EventTypeNormal, eventer.EventReasonSuccessfulCronExpressionReset, "Cron expression reset")
 		return nil
 	}
 	_, err := c.cron.AddFunc(interval, func() {
 		if err := c.runOnce(); err != nil {
-			c.recorder.Event(r, apiv1.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
+			c.recorder.Event(r.ObjectReference(), apiv1.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
 			log.Errorln(err)
 		}
 	})
@@ -335,18 +335,18 @@ func (c *Scheduler) runOnce() (err error) {
 		err = c.measure(c.resticCLI.Backup, resource, fg, backupOpMetric)
 		if err != nil {
 			log.Errorln("Backup operation failed for Reestic %s/%s due to %s", resource.Namespace, resource.Name, err)
-			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToBackup, " Error taking backup: "+err.Error())
+			c.recorder.Event(resource.ObjectReference(), apiv1.EventTypeNormal, eventer.EventReasonFailedToBackup, " Error taking backup: "+err.Error())
 			return
 		} else {
 			hostname, _ := os.Hostname()
-			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonSuccessfulBackup, "Backed up pod:"+hostname+" path:"+fg.Path)
+			c.recorder.Event(resource.ObjectReference(), apiv1.EventTypeNormal, eventer.EventReasonSuccessfulBackup, "Backed up pod:"+hostname+" path:"+fg.Path)
 		}
 
 		forgetOpMetric := restic_session_duration_seconds.WithLabelValues(sanitizeLabelValue(fg.Path), "forget")
 		err = c.measure(c.resticCLI.Forget, resource, fg, forgetOpMetric)
 		if err != nil {
 			log.Errorln("Failed to forget old snapshots for Restic %s/%s due to %s", resource.Namespace, resource.Name, err)
-			c.recorder.Event(resource, apiv1.EventTypeNormal, eventer.EventReasonFailedToRetention, " Error forgetting snapshots: "+err.Error())
+			c.recorder.Event(resource.ObjectReference(), apiv1.EventTypeNormal, eventer.EventReasonFailedToRetention, " Error forgetting snapshots: "+err.Error())
 			return
 		}
 	}
