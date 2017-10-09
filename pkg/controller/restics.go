@@ -48,9 +48,21 @@ func (c *StashController) initResticWatcher() {
 			}
 		},
 		UpdateFunc: func(old interface{}, new interface{}) {
-			key, err := cache.MetaNamespaceKeyFunc(new)
-			if err == nil {
-				c.rQueue.Add(key)
+			oldObj, ok := old.(*api.Restic)
+			if !ok {
+				log.Errorln("Invalid Restic object")
+				return
+			}
+			newObj, ok := new.(*api.Restic)
+			if !ok {
+				log.Errorln("Invalid Restic object")
+				return
+			}
+			if !util.ResticEqual(oldObj, newObj) {
+				key, err := cache.MetaNamespaceKeyFunc(new)
+				if err == nil {
+					c.rQueue.Add(key)
+				}
 			}
 		},
 		DeleteFunc: func(obj interface{}) {
