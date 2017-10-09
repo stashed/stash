@@ -88,7 +88,7 @@ func (c *StashController) processNextStatefulSet() bool {
 		c.ssQueue.Forget(key)
 		return true
 	}
-	log.Errorln("Failed to process StatefulSet %v. Reason: %s", key, err)
+	log.Errorf("Failed to process StatefulSet %v. Reason: %s", key, err)
 
 	// This controller retries 5 times if something goes wrong. After that, it stops trying.
 	if c.ssQueue.NumRequeues(key) < c.options.MaxNumRequeues {
@@ -137,9 +137,9 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 			return nil
 		}
 		if newRestic != nil {
-			c.EnsureStatefulSetSidecar(ss, oldRestic, newRestic)
+			return c.EnsureStatefulSetSidecar(ss, oldRestic, newRestic)
 		} else if oldRestic != nil {
-			c.EnsureStatefulSetSidecarDeleted(ss, oldRestic)
+			return c.EnsureStatefulSetSidecarDeleted(ss, oldRestic)
 		}
 	}
 	return nil
@@ -152,7 +152,7 @@ func (c *StashController) EnsureStatefulSetSidecar(resource *apps.StatefulSet, o
 	}
 	_, err = c.k8sClient.CoreV1().Secrets(resource.Namespace).Get(new.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
-		return err
+		return
 	}
 
 	resource, err = apps_util.PatchStatefulSet(c.k8sClient, resource, func(obj *apps.StatefulSet) *apps.StatefulSet {

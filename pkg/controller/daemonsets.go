@@ -88,7 +88,7 @@ func (c *StashController) processNextDaemonSet() bool {
 		c.dsQueue.Forget(key)
 		return true
 	}
-	log.Errorln("Failed to process DaemonSet %v. Reason: %s", key, err)
+	log.Errorf("Failed to process DaemonSet %v. Reason: %s", key, err)
 
 	// This controller retries 5 times if something goes wrong. After that, it stops trying.
 	if c.dsQueue.NumRequeues(key) < c.options.MaxNumRequeues {
@@ -137,9 +137,9 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 			return nil
 		}
 		if newRestic != nil {
-			c.EnsureDaemonSetSidecar(ds, oldRestic, newRestic)
+			return c.EnsureDaemonSetSidecar(ds, oldRestic, newRestic)
 		} else if oldRestic != nil {
-			c.EnsureDaemonSetSidecarDeleted(ds, oldRestic)
+			return c.EnsureDaemonSetSidecarDeleted(ds, oldRestic)
 		}
 	}
 	return nil

@@ -24,6 +24,9 @@ func (fi *Invocation) StatefulSet(r api.Restic) apps.StatefulSet {
 			Replicas:    types.Int32P(1),
 			Template:    fi.PodTemplate(),
 			ServiceName: TEST_HEADLESS_SERVICE,
+			UpdateStrategy: apps.StatefulSetUpdateStrategy{
+				Type: apps.RollingUpdateStatefulSetStrategyType,
+			},
 		},
 	}
 

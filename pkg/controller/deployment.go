@@ -88,7 +88,7 @@ func (c *StashController) processNextDeployment() bool {
 		c.dpQueue.Forget(key)
 		return true
 	}
-	log.Errorln("Failed to process Deployment %v. Reason: %s", key, err)
+	log.Errorf("Failed to process Deployment %v. Reason: %s", key, err)
 
 	// This controller retries 5 times if something goes wrong. After that, it stops trying.
 	if c.dpQueue.NumRequeues(key) < c.options.MaxNumRequeues {
@@ -137,9 +137,9 @@ func (c *StashController) runDeploymentInjector(key string) error {
 			return nil
 		}
 		if newRestic != nil {
-			c.EnsureDeploymentSidecar(dp, oldRestic, newRestic)
+			return c.EnsureDeploymentSidecar(dp, oldRestic, newRestic)
 		} else if oldRestic != nil {
-			c.EnsureDeploymentSidecarDeleted(dp, oldRestic)
+			return c.EnsureDeploymentSidecarDeleted(dp, oldRestic)
 		}
 	}
 	return nil
