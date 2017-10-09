@@ -300,7 +300,7 @@ NAME                          READY     STATUS    RESTARTS   AGE
 stash-demo-3001144127-3fsbn   2/2       Running   0          49s
 
 $ kubectl exec -it stash-demo-3001144127-3fsbn -c stash sh
-/ # export RESTIC_REPOSITORY=/repo
+/ # export RESTIC_REPOSITORY=/safe/data
 / # export RESTIC_PASSWORD=changeit
 / # restic snapshots
 ID        Date                 Host                         Tags        Directory
