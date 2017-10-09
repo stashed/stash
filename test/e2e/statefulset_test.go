@@ -228,6 +228,15 @@ var _ = Describe("StatefulSet", func() {
 			XIt(`should backup existing StatefulSet`, shouldBackupExistingStatefulSet)
 		})
 
+		Context(`"DO" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForDOBackend()
+				restic = f.ResticForDOBackend()
+			})
+			XIt(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
+			XIt(`should backup existing StatefulSet`, shouldBackupExistingStatefulSet)
+		})
+
 		Context(`"GCS" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForGCSBackend()
@@ -303,6 +312,14 @@ var _ = Describe("StatefulSet", func() {
 			BeforeEach(func() {
 				cred = f.SecretForS3Backend()
 				restic = f.ResticForS3Backend()
+			})
+			XIt(`should stop backup`, shouldStopBackup)
+		})
+
+		Context(`"DO" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForDOBackend()
+				restic = f.ResticForDOBackend()
 			})
 			XIt(`should stop backup`, shouldStopBackup)
 		})

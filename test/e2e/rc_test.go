@@ -204,6 +204,15 @@ var _ = Describe("ReplicationController", func() {
 			It(`should backup existing ReplicationController`, shouldBackupExistingReplicationController)
 		})
 
+		Context(`"DO" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForDOBackend()
+				restic = f.ResticForDOBackend()
+			})
+			It(`should backup new ReplicationController`, shouldBackupNewReplicationController)
+			It(`should backup existing ReplicationController`, shouldBackupExistingReplicationController)
+		})
+
 		Context(`"GCS" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForGCSBackend()
@@ -276,6 +285,14 @@ var _ = Describe("ReplicationController", func() {
 			BeforeEach(func() {
 				cred = f.SecretForS3Backend()
 				restic = f.ResticForS3Backend()
+			})
+			It(`should stop backup`, shouldStopBackup)
+		})
+
+		Context(`"DO" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForDOBackend()
+				restic = f.ResticForDOBackend()
 			})
 			It(`should stop backup`, shouldStopBackup)
 		})
