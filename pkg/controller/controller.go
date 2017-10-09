@@ -55,6 +55,12 @@ type StashController struct {
 	dsInformer cache.Controller
 	dsLister   ext_listers.DaemonSetLister
 
+	// StatefulSet
+	ssQueue    workqueue.RateLimitingInterface
+	ssIndexer  cache.Indexer
+	ssInformer cache.Controller
+	ssLister   apps_listers.StatefulSetLister
+
 	// ReplicationController
 	rcQueue    workqueue.RateLimitingInterface
 	rcIndexer  cache.Indexer
@@ -66,12 +72,6 @@ type StashController struct {
 	rsIndexer  cache.Indexer
 	rsInformer cache.Controller
 	rsLister   ext_listers.ReplicaSetLister
-
-	// StatefulSet
-	ssQueue    workqueue.RateLimitingInterface
-	ssIndexer  cache.Indexer
-	ssInformer cache.Controller
-	ssLister   apps_listers.StatefulSetLister
 }
 
 func New(kubeClient kubernetes.Interface, crdClient apiextensionsclient.Interface, stashClient cs.StashV1alpha1Interface, options Options) *StashController {
@@ -88,13 +88,13 @@ func (c *StashController) Setup() error {
 	if err := c.ensureCustomResourceDefinitions(); err != nil {
 		return err
 	}
-	c.initDaemonSetWatcher()
-	c.initDeploymentWatcher()
-	c.initRCWatcher()
-	c.initReplicaSetWatcher()
-	c.initStatefulSetWatcher()
 	c.initNamespaceWatcher()
 	c.initResticWatcher()
+	c.initDeploymentWatcher()
+	c.initDaemonSetWatcher()
+	c.initStatefulSetWatcher()
+	c.initRCWatcher()
+	c.initReplicaSetWatcher()
 	return nil
 }
 
@@ -135,20 +135,20 @@ func (c *StashController) Run(threadiness int, stopCh chan struct{}) {
 
 	// Let the workers stop when we are done
 	defer c.rQueue.ShutDown()
-	defer c.dsQueue.ShutDown()
 	defer c.dpQueue.ShutDown()
+	defer c.dsQueue.ShutDown()
+	defer c.ssQueue.ShutDown()
 	defer c.rcQueue.ShutDown()
 	defer c.rsQueue.ShutDown()
-	defer c.ssQueue.ShutDown()
 	glog.Info("Starting Stash controller")
 
 	go c.nsInformer.Run(stopCh)
 	go c.rInformer.Run(stopCh)
-	go c.dsInformer.Run(stopCh)
 	go c.dpInformer.Run(stopCh)
+	go c.dsInformer.Run(stopCh)
+	go c.ssInformer.Run(stopCh)
 	go c.rcInformer.Run(stopCh)
 	go c.rsInformer.Run(stopCh)
-	go c.ssInformer.Run(stopCh)
 
 	// Wait for all involved caches to be synced, before processing items from the queue is started
 	if !cache.WaitForCacheSync(stopCh, c.nsInformer.HasSynced) {
@@ -182,11 +182,11 @@ func (c *StashController) Run(threadiness int, stopCh chan struct{}) {
 
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(c.runResticWatcher, time.Second, stopCh)
-		go wait.Until(c.runDaemonSetWatcher, time.Second, stopCh)
 		go wait.Until(c.runDeploymentWatcher, time.Second, stopCh)
+		go wait.Until(c.runDaemonSetWatcher, time.Second, stopCh)
+		go wait.Until(c.runStatefulSetWatcher, time.Second, stopCh)
 		go wait.Until(c.runRCWatcher, time.Second, stopCh)
 		go wait.Until(c.runReplicaSetWatcher, time.Second, stopCh)
-		go wait.Until(c.runStatefulSetWatcher, time.Second, stopCh)
 	}
 
 	<-stopCh

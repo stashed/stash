@@ -151,30 +151,6 @@ func (c *StashController) EnsureSidecar(restic *api.Restic) {
 		return
 	}
 	{
-		if resources, err := c.rcLister.ReplicationControllers(restic.Namespace).List(sel); err == nil {
-			for _, resource := range resources {
-				key, err := cache.MetaNamespaceKeyFunc(resource)
-				if err == nil {
-					c.rcQueue.Add(key)
-				}
-			}
-		}
-	}
-	{
-		if resources, err := c.rsLister.ReplicaSets(restic.Namespace).List(sel); err == nil {
-			for _, resource := range resources {
-				// If owned by a Deployment, skip it.
-				if ext_util.IsOwnedByDeployment(resource) {
-					continue
-				}
-				key, err := cache.MetaNamespaceKeyFunc(resource)
-				if err == nil {
-					c.rsQueue.Add(key)
-				}
-			}
-		}
-	}
-	{
 		if resources, err := c.dpLister.Deployments(restic.Namespace).List(sel); err == nil {
 			for _, resource := range resources {
 				key, err := cache.MetaNamespaceKeyFunc(resource)
@@ -204,21 +180,9 @@ func (c *StashController) EnsureSidecar(restic *api.Restic) {
 			}
 		}
 	}
-}
-
-func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
-	if resources, err := c.rcLister.ReplicationControllers(namespace).List(labels.Everything()); err == nil {
-		for _, resource := range resources {
-			restic, err := util.GetAppliedRestic(resource.Annotations)
-			if err != nil {
-				c.recorder.Eventf(
-					kutil.GetObjectReference(resource, apiv1.SchemeGroupVersion),
-					apiv1.EventTypeWarning,
-					eventer.EventReasonInvalidRestic,
-					"Reason: %s",
-					err.Error(),
-				)
-			} else if restic != nil && restic.Namespace == namespace && restic.Name == name {
+	{
+		if resources, err := c.rcLister.ReplicationControllers(restic.Namespace).List(sel); err == nil {
+			for _, resource := range resources {
 				key, err := cache.MetaNamespaceKeyFunc(resource)
 				if err == nil {
 					c.rcQueue.Add(key)
@@ -226,18 +190,13 @@ func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
 			}
 		}
 	}
-	if resources, err := c.rsLister.ReplicaSets(namespace).List(labels.Everything()); err == nil {
-		for _, resource := range resources {
-			restic, err := util.GetAppliedRestic(resource.Annotations)
-			if err != nil {
-				c.recorder.Eventf(
-					kutil.GetObjectReference(resource, extensions.SchemeGroupVersion),
-					apiv1.EventTypeWarning,
-					eventer.EventReasonInvalidRestic,
-					"Reason: %s",
-					err.Error(),
-				)
-			} else if restic != nil && restic.Namespace == namespace && restic.Name == name {
+	{
+		if resources, err := c.rsLister.ReplicaSets(restic.Namespace).List(sel); err == nil {
+			for _, resource := range resources {
+				// If owned by a Deployment, skip it.
+				if ext_util.IsOwnedByDeployment(resource) {
+					continue
+				}
 				key, err := cache.MetaNamespaceKeyFunc(resource)
 				if err == nil {
 					c.rsQueue.Add(key)
@@ -245,6 +204,9 @@ func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
 			}
 		}
 	}
+}
+
+func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
 	if resources, err := c.dpLister.Deployments(namespace).List(labels.Everything()); err == nil {
 		for _, resource := range resources {
 			restic, err := util.GetAppliedRestic(resource.Annotations)
@@ -298,6 +260,44 @@ func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
 				key, err := cache.MetaNamespaceKeyFunc(resource)
 				if err == nil {
 					c.ssQueue.Add(key)
+				}
+			}
+		}
+	}
+	if resources, err := c.rcLister.ReplicationControllers(namespace).List(labels.Everything()); err == nil {
+		for _, resource := range resources {
+			restic, err := util.GetAppliedRestic(resource.Annotations)
+			if err != nil {
+				c.recorder.Eventf(
+					kutil.GetObjectReference(resource, apiv1.SchemeGroupVersion),
+					apiv1.EventTypeWarning,
+					eventer.EventReasonInvalidRestic,
+					"Reason: %s",
+					err.Error(),
+				)
+			} else if restic != nil && restic.Namespace == namespace && restic.Name == name {
+				key, err := cache.MetaNamespaceKeyFunc(resource)
+				if err == nil {
+					c.rcQueue.Add(key)
+				}
+			}
+		}
+	}
+	if resources, err := c.rsLister.ReplicaSets(namespace).List(labels.Everything()); err == nil {
+		for _, resource := range resources {
+			restic, err := util.GetAppliedRestic(resource.Annotations)
+			if err != nil {
+				c.recorder.Eventf(
+					kutil.GetObjectReference(resource, extensions.SchemeGroupVersion),
+					apiv1.EventTypeWarning,
+					eventer.EventReasonInvalidRestic,
+					"Reason: %s",
+					err.Error(),
+				)
+			} else if restic != nil && restic.Namespace == namespace && restic.Name == name {
+				key, err := cache.MetaNamespaceKeyFunc(resource)
+				if err == nil {
+					c.rsQueue.Add(key)
 				}
 			}
 		}
