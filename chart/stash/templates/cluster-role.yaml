@@ -29,20 +29,19 @@ rules:
 - apiGroups:
   - extensions
   resources:
-  - deployments
   - replicasets
   - daemonsets
-  verbs: ["list", "watch", "update"]
+  verbs: ["list", "watch", "patch"]
 - apiGroups:
   - apps
   resources:
   - deployments
-  verbs: ["list", "watch", "update"]
+  verbs: ["list", "watch", "patch"]
 - apiGroups: [""]
   resources:
   - namespaces
   - replicationcontrollers
-  verbs: ["list", "watch", "update"]
+  verbs: ["list", "watch", "patch"]
 - apiGroups: [""]
   resources:
   - secrets
