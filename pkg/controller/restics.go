@@ -182,16 +182,16 @@ func (c *StashController) EnsureSidecar(restic *api.Restic) {
 			}
 		}
 	}
-	{
-		if resources, err := c.ssLister.StatefulSets(restic.Namespace).List(sel); err == nil {
-			for _, resource := range resources {
-				key, err := cache.MetaNamespaceKeyFunc(resource)
-				if err == nil {
-					c.ssQueue.Add(key)
-				}
-			}
-		}
-	}
+	//{
+	//	if resources, err := c.ssLister.StatefulSets(restic.Namespace).List(sel); err == nil {
+	//		for _, resource := range resources {
+	//			key, err := cache.MetaNamespaceKeyFunc(resource)
+	//			if err == nil {
+	//				c.ssQueue.Add(key)
+	//			}
+	//		}
+	//	}
+	//}
 	{
 		if resources, err := c.rcLister.ReplicationControllers(restic.Namespace).List(sel); err == nil {
 			for _, resource := range resources {
@@ -257,25 +257,25 @@ func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
 			}
 		}
 	}
-	if resources, err := c.ssLister.StatefulSets(namespace).List(labels.Everything()); err == nil {
-		for _, resource := range resources {
-			restic, err := util.GetAppliedRestic(resource.Annotations)
-			if err != nil {
-				c.recorder.Eventf(
-					kutil.GetObjectReference(resource, apps.SchemeGroupVersion),
-					apiv1.EventTypeWarning,
-					eventer.EventReasonInvalidRestic,
-					"Reason: %s",
-					err.Error(),
-				)
-			} else if restic != nil && restic.Namespace == namespace && restic.Name == name {
-				key, err := cache.MetaNamespaceKeyFunc(resource)
-				if err == nil {
-					c.ssQueue.Add(key)
-				}
-			}
-		}
-	}
+	//if resources, err := c.ssLister.StatefulSets(namespace).List(labels.Everything()); err == nil {
+	//	for _, resource := range resources {
+	//		restic, err := util.GetAppliedRestic(resource.Annotations)
+	//		if err != nil {
+	//			c.recorder.Eventf(
+	//				kutil.GetObjectReference(resource, apps.SchemeGroupVersion),
+	//				apiv1.EventTypeWarning,
+	//				eventer.EventReasonInvalidRestic,
+	//				"Reason: %s",
+	//				err.Error(),
+	//			)
+	//		} else if restic != nil && restic.Namespace == namespace && restic.Name == name {
+	//			key, err := cache.MetaNamespaceKeyFunc(resource)
+	//			if err == nil {
+	//				c.ssQueue.Add(key)
+	//			}
+	//		}
+	//	}
+	//}
 	if resources, err := c.rcLister.ReplicationControllers(namespace).List(labels.Everything()); err == nil {
 		for _, resource := range resources {
 			restic, err := util.GetAppliedRestic(resource.Annotations)
