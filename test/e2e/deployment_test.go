@@ -205,6 +205,15 @@ var _ = Describe("Deployment", func() {
 			It(`should backup existing Deployment`, shouldBackupExistingDeployment)
 		})
 
+		Context(`"DO" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForDOBackend()
+				restic = f.ResticForDOBackend()
+			})
+			It(`should backup new Deployment`, shouldBackupNewDeployment)
+			It(`should backup existing Deployment`, shouldBackupExistingDeployment)
+		})
+
 		Context(`"GCS" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForGCSBackend()
@@ -277,6 +286,14 @@ var _ = Describe("Deployment", func() {
 			BeforeEach(func() {
 				cred = f.SecretForS3Backend()
 				restic = f.ResticForS3Backend()
+			})
+			It(`should stop backup`, shouldStopBackup)
+		})
+
+		Context(`"DO" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForDOBackend()
+				restic = f.ResticForDOBackend()
 			})
 			It(`should stop backup`, shouldStopBackup)
 		})

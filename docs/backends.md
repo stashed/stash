@@ -81,11 +81,11 @@ spec:
 ### AWS S3
 Stash supports AWS S3 service or [Minio](https://minio.io/) servers as backend. To configure this backend, following secret keys are needed:
 
-| Key                     | Description                                                |
-|-------------------------|------------------------------------------------------------|
-| `RESTIC_PASSWORD`       | `Required`. Password used to encrypt snapshots by `restic` |
-| `AWS_ACCESS_KEY_ID`     | `Required`. AWS / Minio access key ID                      |
-| `AWS_SECRET_ACCESS_KEY` | `Required`. AWS / Minio secret access key                  |
+| Key                     | Description                                                     |
+|-------------------------|-----------------------------------------------------------------|
+| `RESTIC_PASSWORD`       | `Required`. Password used to encrypt snapshots by `restic`      |
+| `AWS_ACCESS_KEY_ID`     | `Required`. AWS / Minio / DigitalOcean Spaces access key ID     |
+| `AWS_SECRET_ACCESS_KEY` | `Required`. AWS / Minio / DigitalOcean Spaces secret access key |
 
 ```console
 $ echo -n 'changeit' > RESTIC_PASSWORD
@@ -121,7 +121,7 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 
 | Parameter     | Description                                                                     |
 |---------------|---------------------------------------------------------------------------------|
-| `s3.endpoint` | `Required`. For S3, use `s3.amazonaws.com`. If your bucket is in a different location, S3 server (s3.amazonaws.com) will redirect restic to the correct endpoint. For an S3-compatible server that is not Amazon (like Minio), or is only available via HTTP, you can specify the endpoint like this: `http://server:port`. |
+| `s3.endpoint` | `Required`. For S3, use `s3.amazonaws.com`. If your bucket is in a different location, S3 server (s3.amazonaws.com) will redirect restic to the correct endpoint. For DigitalOCean, use `nyc3.digitaloceanspaces.com` etc. depending on your bucket region. For an S3-compatible server that is not Amazon (like Minio), or is only available via HTTP, you can specify the endpoint like this: `http://server:port`. |
 | `s3.bucket`   | `Required`. Name of Bucket. If the bucket does not exist yet it will be created in the default location (`us-east-1` for S3). It is not possible at the moment to have restic create a new bucket in a different location, so you need to create it using a different program.        |
 | `s3.prefix`   | `Optional`. Path prefix into bucket where repository will be created.           |
 

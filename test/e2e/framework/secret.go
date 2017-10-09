@@ -45,6 +45,30 @@ func (fi *Invocation) SecretForS3Backend() apiv1.Secret {
 	}
 }
 
+const (
+	DO_ACCESS_KEY_ID     = "DO_ACCESS_KEY_ID"
+	DO_SECRET_ACCESS_KEY = "DO_SECRET_ACCESS_KEY"
+)
+
+func (fi *Invocation) SecretForDOBackend() apiv1.Secret {
+	if os.Getenv(DO_ACCESS_KEY_ID) == "" ||
+		os.Getenv(DO_SECRET_ACCESS_KEY) == "" {
+		return apiv1.Secret{}
+	}
+
+	return apiv1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rand.WithUniqSuffix(fi.app + "-s3"),
+			Namespace: fi.namespace,
+		},
+		Data: map[string][]byte{
+			cli.RESTIC_PASSWORD:       []byte(TEST_RESTIC_PASSWORD),
+			cli.AWS_ACCESS_KEY_ID:     []byte(os.Getenv(DO_ACCESS_KEY_ID)),
+			cli.AWS_SECRET_ACCESS_KEY: []byte(os.Getenv(DO_SECRET_ACCESS_KEY)),
+		},
+	}
+}
+
 func (fi *Invocation) SecretForGCSBackend() apiv1.Secret {
 	if os.Getenv(cli.GOOGLE_PROJECT_ID) == "" ||
 		(os.Getenv(cli.GOOGLE_APPLICATION_CREDENTIALS) == "" && os.Getenv(cli.GOOGLE_SERVICE_ACCOUNT_JSON_KEY) == "") {

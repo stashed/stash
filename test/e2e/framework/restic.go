@@ -71,6 +71,19 @@ func (fi *Invocation) ResticForS3Backend() api.Restic {
 	return r
 }
 
+func (fi *Invocation) ResticForDOBackend() api.Restic {
+	r := fi._restic()
+	r.Spec.Backend = api.Backend{
+		StorageSecretName: "",
+		S3: &api.S3Spec{
+			Endpoint: "nyc3.digitaloceanspaces.com",
+			Bucket:   "stash-qa",
+			Prefix:   fi.app,
+		},
+	}
+	return r
+}
+
 func (fi *Invocation) ResticForGCSBackend() api.Restic {
 	r := fi._restic()
 	r.Spec.Backend = api.Backend{

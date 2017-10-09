@@ -205,6 +205,15 @@ var _ = Describe("DaemonSet", func() {
 			It(`should backup existing DaemonSet`, shouldBackupExistingDaemonSet)
 		})
 
+		Context(`"DO" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForDOBackend()
+				restic = f.ResticForDOBackend()
+			})
+			It(`should backup new DaemonSet`, shouldBackupNewDaemonSet)
+			It(`should backup existing DaemonSet`, shouldBackupExistingDaemonSet)
+		})
+
 		Context(`"GCS" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForGCSBackend()
@@ -277,6 +286,14 @@ var _ = Describe("DaemonSet", func() {
 			BeforeEach(func() {
 				cred = f.SecretForS3Backend()
 				restic = f.ResticForS3Backend()
+			})
+			It(`should stop backup`, shouldStopBackup)
+		})
+
+		Context(`"DO" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForDOBackend()
+				restic = f.ResticForDOBackend()
 			})
 			It(`should stop backup`, shouldStopBackup)
 		})
