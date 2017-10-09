@@ -7,6 +7,7 @@ import (
 
 	logs "github.com/appscode/go/log/golog"
 	sapi "github.com/appscode/stash/apis/stash"
+	"github.com/appscode/stash/client/scheme"
 	_ "github.com/appscode/stash/client/scheme"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/controller"
@@ -16,6 +17,7 @@ import (
 	. "github.com/onsi/gomega"
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/client-go/kubernetes"
+	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 )
@@ -46,6 +48,7 @@ var _ = BeforeSuite(func() {
 	kubeClient := kubernetes.NewForConfigOrDie(config)
 	stashClient := cs.NewForConfigOrDie(config)
 	crdClient := apiextensionsclient.NewForConfigOrDie(config)
+	scheme.AddToScheme(clientsetscheme.Scheme)
 
 	root = framework.New(kubeClient, stashClient)
 	err = root.CreateNamespace()

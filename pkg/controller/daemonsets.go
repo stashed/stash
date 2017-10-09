@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/log"
+	"github.com/appscode/kutil"
 	core_util "github.com/appscode/kutil/core/v1"
 	ext_util "github.com/appscode/kutil/extensions/v1beta1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -163,7 +164,8 @@ func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet,
 		if obj.Annotations == nil {
 			obj.Annotations = make(map[string]string)
 		}
-		obj.Annotations[api.ConfigName] = new.Name
+		data, _ := kutil.MarshalToJson(new, api.SchemeGroupVersion)
+		obj.Annotations[api.ConfigName] = string(data)
 		obj.Annotations[api.VersionTag] = c.options.SidecarImageTag
 		return obj
 	})
@@ -180,7 +182,7 @@ func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet,
 }
 
 func (c *StashController) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSet, restic *api.Restic) (err error) {
-	_, err = ext_util.PatchDaemonSet(c.k8sClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
+	resource, err = ext_util.PatchDaemonSet(c.k8sClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
 		obj.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
