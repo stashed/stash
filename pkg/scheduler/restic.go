@@ -39,7 +39,7 @@ func (c *Scheduler) initResticWatcher() {
 	// of the Restic than the version which was responsible for triggering the update.
 	c.rIndexer, c.rInformer = cache.NewIndexerInformer(lw, &api.Restic{}, c.opt.ResyncPeriod, cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			if r, ok := obj.(*api.Restic); ok && r.Name == c.opt.ResticName {
+			if r, ok := obj.(*api.Restic); ok && r.Name == c.opt.ResticName && r.IsValid() == nil {
 				key, err := cache.MetaNamespaceKeyFunc(obj)
 				if err == nil {
 					c.rQueue.Add(key)
@@ -57,7 +57,7 @@ func (c *Scheduler) initResticWatcher() {
 				log.Errorln("Invalid Restic object")
 				return
 			}
-			if !util.ResticEqual(oldObj, newObj) && newObj.Name == c.opt.ResticName {
+			if !util.ResticEqual(oldObj, newObj) && newObj.Name == c.opt.ResticName && newObj.IsValid() == nil {
 				key, err := cache.MetaNamespaceKeyFunc(new)
 				if err == nil {
 					c.rQueue.Add(key)
@@ -95,7 +95,7 @@ func (c *Scheduler) processNextRestic() bool {
 	defer c.rQueue.Done(key)
 
 	// Invoke the method containing the business logic
-	err := c.runResticInjector(key.(string))
+	err := c.runResticScheduler(key.(string))
 	if err == nil {
 		// Forget about the #AddRateLimited history of the key on every successful synchronization.
 		// This ensures that future processing of updates for this key is not delayed because of
@@ -125,7 +125,7 @@ func (c *Scheduler) processNextRestic() bool {
 // syncToStdout is the business logic of the controller. In this controller it simply prints
 // information about the deployment to stdout. In case an error happened, it has to simply return the error.
 // The retry logic should not be part of the business logic.
-func (c *Scheduler) runResticInjector(key string) error {
+func (c *Scheduler) runResticScheduler(key string) error {
 	obj, exists, err := c.rIndexer.GetByKey(key)
 	if err != nil {
 		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)

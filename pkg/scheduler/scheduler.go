@@ -98,8 +98,8 @@ func (c *Scheduler) Setup() error {
 		return err
 	}
 	log.Infof("Found restic %s", resource.Name)
-	if resource.Spec.Backend.StorageSecretName == "" {
-		return errors.New("missing repository secret name")
+	if err := resource.IsValid(); err != nil {
+		return err
 	}
 	secret, err := c.k8sClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
@@ -146,38 +146,17 @@ func (c *Scheduler) Run(threadiness int, stopCh chan struct{}) {
 func (c *Scheduler) configureScheduler() error {
 	r := <-c.rchan
 
-	if r.Spec.Backend.StorageSecretName == "" {
-		return errors.New("missing repository secret name")
-	}
-
 	// Remove previous jobs
 	for _, v := range c.cron.Entries() {
 		c.cron.Remove(v.ID)
 	}
-
-	interval := r.Spec.Schedule
-	if _, err := cron.Parse(interval); err != nil {
-		log.Errorln(err)
-		c.recorder.Event(r.ObjectReference(), apiv1.EventTypeWarning, eventer.EventReasonInvalidCronExpression, err.Error())
-		// Reset Wrong Schedule
-		r.Spec.Schedule = "" // TODO: Add validator
-		_, err = c.stashClient.Restics(r.Namespace).Update(r)
-		if err != nil {
-			return err
-		}
-		c.recorder.Event(r.ObjectReference(), apiv1.EventTypeNormal, eventer.EventReasonSuccessfulCronExpressionReset, "Cron expression reset")
-		return nil
-	}
-	_, err := c.cron.AddFunc(interval, func() {
+	_, err := c.cron.AddFunc(r.Spec.Schedule, func() {
 		if err := c.runOnce(); err != nil {
 			c.recorder.Event(r.ObjectReference(), apiv1.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
 			log.Errorln(err)
 		}
 	})
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (c *Scheduler) runOnce() (err error) {
