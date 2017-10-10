@@ -7,12 +7,12 @@ Stash can be installed using YAML files includes in the [/hack/deploy](/hack/dep
 
 ```console
 # Install without RBAC roles
-$ curl https://raw.githubusercontent.com/appscode/stash/0.5.0/hack/deploy/without-rbac.yaml \
+$ curl https://raw.githubusercontent.com/appscode/stash/0.5.1/hack/deploy/without-rbac.yaml \
   | kubectl apply -f -
 
 
 # Install with RBAC roles
-$ curl https://raw.githubusercontent.com/appscode/stash/0.5.0/hack/deploy/with-rbac.yaml \
+$ curl https://raw.githubusercontent.com/appscode/stash/0.5.1/hack/deploy/with-rbac.yaml \
   | kubectl apply -f -
 ```
 
@@ -64,13 +64,13 @@ $ POD_NAMESPACE=kube-system
 $ POD_NAME=$(kubectl get pods -n $POD_NAMESPACE -l app=stash -o jsonpath={.items[0].metadata.name})
 $ kubectl exec -it $POD_NAME -c operator -n $POD_NAMESPACE stash version
 
-Version = 0.5.0
+Version = 0.5.1
 VersionStrategy = tag
 Os = alpine
 Arch = amd64
 CommitHash = 85b0f16ab1b915633e968aac0ee23f877808ef49
 GitBranch = release-0.5
-GitTag = 0.5.0
+GitTag = 0.5.1
 CommitTimestamp = 2017-10-10T05:24:23
 
 $ kubectl exec -it $POD_NAME -c operator -n $POD_NAMESPACE restic version
