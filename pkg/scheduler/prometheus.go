@@ -21,11 +21,11 @@ func sanitizeLabelValue(name string) string {
 	return strings.Replace(name, "/", "|", -1)
 }
 
-func (c *Scheduler) JobName(resource *api.Restic) string {
+func (c *Controller) JobName(resource *api.Restic) string {
 	return sanitizeLabelValue(resource.Namespace + "-" + resource.Name)
 }
 
-func (c *Scheduler) GroupingKeys(resource *api.Restic) map[string]string {
+func (c *Controller) GroupingKeys(resource *api.Restic) map[string]string {
 	labels := push.HostnameGroupingKey()
 	labels["app"] = sanitizeLabelValue(c.opt.AppName)
 	labels["kind"] = sanitizeLabelValue(c.opt.AppKind)

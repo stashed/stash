@@ -61,7 +61,7 @@ func (opt Options) autoPrefix(resource *api.Restic) string {
 	}
 }
 
-type Scheduler struct {
+type Controller struct {
 	k8sClient   kubernetes.Interface
 	stashClient cs.StashV1alpha1Interface
 	opt         Options
@@ -78,8 +78,8 @@ type Scheduler struct {
 	rLister   stash_listers.ResticLister
 }
 
-func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, opt Options) *Scheduler {
-	return &Scheduler{
+func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, opt Options) *Controller {
+	return &Controller{
 		k8sClient:   k8sClient,
 		stashClient: stashClient,
 		opt:         opt,
@@ -92,7 +92,7 @@ func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, 
 }
 
 // Init and/or connect to repo
-func (c *Scheduler) Setup() error {
+func (c *Controller) Setup() error {
 	resource, err := c.stashClient.Restics(c.opt.Namespace).Get(c.opt.ResticName, metav1.GetOptions{})
 	if err != nil {
 		return err
@@ -117,7 +117,7 @@ func (c *Scheduler) Setup() error {
 	return nil
 }
 
-func (c *Scheduler) Run(threadiness int, stopCh chan struct{}) {
+func (c *Controller) Run(threadiness int, stopCh chan struct{}) {
 	c.cron.Start()
 	c.locked <- struct{}{}
 
@@ -143,7 +143,7 @@ func (c *Scheduler) Run(threadiness int, stopCh chan struct{}) {
 	glog.Info("Stopping Stash scheduler")
 }
 
-func (c *Scheduler) configureScheduler() error {
+func (c *Controller) configureScheduler() error {
 	r := <-c.rchan
 
 	// Remove previous jobs
@@ -159,7 +159,7 @@ func (c *Scheduler) configureScheduler() error {
 	return err
 }
 
-func (c *Scheduler) runOnce() (err error) {
+func (c *Controller) runOnce() (err error) {
 	select {
 	case <-c.locked:
 		log.Infof("Acquired lock for Restic %s/%s", c.opt.Namespace, c.opt.ResticName)
@@ -283,7 +283,7 @@ func (c *Scheduler) runOnce() (err error) {
 	return
 }
 
-func (c *Scheduler) measure(f func(*api.Restic, api.FileGroup) error, resource *api.Restic, fg api.FileGroup, g prometheus.Gauge) (err error) {
+func (c *Controller) measure(f func(*api.Restic, api.FileGroup) error, resource *api.Restic, fg api.FileGroup, g prometheus.Gauge) (err error) {
 	startTime := time.Now()
 	defer func() {
 		g.Set(time.Now().Sub(startTime).Seconds())

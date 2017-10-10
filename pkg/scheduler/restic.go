@@ -18,7 +18,7 @@ import (
 	"k8s.io/client-go/util/workqueue"
 )
 
-func (c *Scheduler) initResticWatcher() {
+func (c *Controller) initResticWatcher() {
 	// TODO: Watch one Restic object, when support for Kubernetes 1.8 is dropped.
 	// ref: https://github.com/kubernetes/kubernetes/pull/53345
 	lw := &cache.ListWatch{
@@ -78,12 +78,12 @@ func (c *Scheduler) initResticWatcher() {
 	c.rLister = stash_listers.NewResticLister(c.rIndexer)
 }
 
-func (c *Scheduler) runResticWatcher() {
+func (c *Controller) runResticWatcher() {
 	for c.processNextRestic() {
 	}
 }
 
-func (c *Scheduler) processNextRestic() bool {
+func (c *Controller) processNextRestic() bool {
 	// Wait until there is a new item in the working queue
 	key, quit := c.rQueue.Get()
 	if quit {
@@ -125,7 +125,7 @@ func (c *Scheduler) processNextRestic() bool {
 // syncToStdout is the business logic of the controller. In this controller it simply prints
 // information about the deployment to stdout. In case an error happened, it has to simply return the error.
 // The retry logic should not be part of the business logic.
-func (c *Scheduler) runResticScheduler(key string) error {
+func (c *Controller) runResticScheduler(key string) error {
 	obj, exists, err := c.rIndexer.GetByKey(key)
 	if err != nil {
 		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)
