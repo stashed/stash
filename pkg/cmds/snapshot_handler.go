@@ -35,7 +35,7 @@ func ExportSnapshots(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Missing parameter:"+PathParamName, http.StatusBadRequest)
 		return
 	}
-	resticCLI := cli.New(scratchDir)
+	resticCLI := cli.New(scratchDir, "")
 
 	var resource *api.Restic
 	resource, err := stashClient.Restics(namespace).Get(name, metav1.GetOptions{})

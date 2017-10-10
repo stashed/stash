@@ -34,18 +34,19 @@ const (
 )
 
 type Options struct {
-	AppKind        string
-	AppName        string
-	Namespace      string
-	ResticName     string
-	ScratchDir     string
-	PushgatewayURL string
-	NodeName       string
-	PodName        string
-	SmartPrefix    string
-	PodLabelsPath  string
-	ResyncPeriod   time.Duration
-	MaxNumRequeues int
+	AppKind          string
+	AppName          string
+	Namespace        string
+	ResticName       string
+	ScratchDir       string
+	PushgatewayURL   string
+	NodeName         string
+	PodName          string
+	SmartPrefix      string
+	SnapshotHostname string
+	PodLabelsPath    string
+	ResyncPeriod     time.Duration
+	MaxNumRequeues   int
 }
 
 func (opt Options) autoPrefix(resource *api.Restic) string {
@@ -86,7 +87,7 @@ func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, 
 		rchan:       make(chan *api.Restic, 1),
 		cron:        cron.New(),
 		locked:      make(chan struct{}, 1),
-		resticCLI:   cli.New(opt.ScratchDir),
+		resticCLI:   cli.New(opt.ScratchDir, opt.SnapshotHostname),
 		recorder:    eventer.NewEventRecorder(k8sClient, "stash-scheduler"),
 	}
 }
