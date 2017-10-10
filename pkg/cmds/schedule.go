@@ -28,6 +28,7 @@ func NewCmdSchedule() *cobra.Command {
 			PushgatewayURL: "http://stash-operator.kube-system.svc:56789",
 			PodLabelsPath:  "/etc/stash/labels",
 			ResyncPeriod:   5 * time.Minute,
+			MaxNumRequeues: 5,
 		}
 	)
 
@@ -115,7 +116,12 @@ func NewCmdSchedule() *cobra.Command {
 			if err != nil {
 				log.Fatalf("Failed to setup scheduler: %s", err)
 			}
-			ctrl.RunAndHold()
+			stop := make(chan struct{})
+			defer close(stop)
+			go ctrl.Run(1, stop)
+
+			// Wait forever
+			select {}
 		},
 	}
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
