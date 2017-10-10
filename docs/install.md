@@ -57,6 +57,8 @@ $ kubectl describe restic -n <namespace> <name>
 
 
 ## Detect Stash version
+To detect Stash version, exec into the operator pod and run `stash version` command.
+
 ```console
 $ POD_NAMESPACE=kube-system
 $ POD_NAME=$(kubectl get pods -n $POD_NAMESPACE -l app=stash -o jsonpath={.items[0].metadata.name})
