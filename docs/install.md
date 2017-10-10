@@ -70,4 +70,8 @@ CommitHash = 85b0f16ab1b915633e968aac0ee23f877808ef49
 GitBranch = release-0.5
 GitTag = 0.5.0
 CommitTimestamp = 2017-10-10T05:24:23
+
+$ kubectl exec -it $POD_NAME -c operator -n $POD_NAMESPACE restic version
+restic 0.7.3
+compiled with go1.9 on linux/amd64
 ```
