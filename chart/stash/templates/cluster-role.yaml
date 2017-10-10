@@ -54,4 +54,9 @@ rules:
   resources:
   - pods
   verbs: ["list", delete"]
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  verbs: ["get", "create", "delete", "patch"]
 {{ end }}

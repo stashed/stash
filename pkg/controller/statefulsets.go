@@ -155,6 +155,13 @@ func (c *StashController) EnsureStatefulSetSidecar(resource *apps.StatefulSet, o
 		return
 	}
 
+	if c.options.EnableRBAC {
+		err := c.ensureRoleBinding(kutil.GetObjectReference(resource, apps.SchemeGroupVersion), resource.Spec.Template.Spec.ServiceAccountName)
+		if err != nil {
+			return err
+		}
+	}
+
 	resource, err = apps_util.PatchStatefulSet(c.k8sClient, resource, func(obj *apps.StatefulSet) *apps.StatefulSet {
 		obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.options.SidecarImageTag, "StatefulSet/"+obj.Name))
 		obj.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(obj.Spec.Template.Spec.Volumes)
@@ -191,6 +198,13 @@ func (c *StashController) EnsureStatefulSetSidecar(resource *apps.StatefulSet, o
 }
 
 func (c *StashController) EnsureStatefulSetSidecarDeleted(resource *apps.StatefulSet, restic *api.Restic) (err error) {
+	if c.options.EnableRBAC {
+		err := c.ensureRoleBindingDeleted(resource.ObjectMeta)
+		if err != nil {
+			return err
+		}
+	}
+
 	resource, err = apps_util.PatchStatefulSet(c.k8sClient, resource, func(obj *apps.StatefulSet) *apps.StatefulSet {
 		obj.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)

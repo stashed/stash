@@ -5,6 +5,7 @@ import (
 )
 
 type Options struct {
+	EnableRBAC bool
 	SidecarImageTag string
 	ResyncPeriod    time.Duration
 	MaxNumRequeues  int
