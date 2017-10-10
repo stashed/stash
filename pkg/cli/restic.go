@@ -15,12 +15,14 @@ const (
 type ResticWrapper struct {
 	sh         *shell.Session
 	scratchDir string
+	hostname   string
 }
 
-func New(scratchDir string) *ResticWrapper {
+func New(scratchDir, hostname string) *ResticWrapper {
 	ctrl := &ResticWrapper{
 		sh:         shell.NewSession(),
 		scratchDir: scratchDir,
+		hostname:   hostname,
 	}
 	ctrl.sh.SetDir(scratchDir)
 	ctrl.sh.ShowCMD = true
@@ -53,6 +55,10 @@ func (w *ResticWrapper) InitRepositoryIfAbsent() error {
 
 func (w *ResticWrapper) Backup(resource *api.Restic, fg api.FileGroup) error {
 	args := []interface{}{"backup", fg.Path, "--force"}
+	if w.hostname != "" {
+		args = append(args, "--hostname")
+		args = append(args, w.hostname)
+	}
 	// add tags if any
 	for _, tag := range fg.Tags {
 		args = append(args, "--tag")

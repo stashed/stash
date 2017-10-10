@@ -62,6 +62,7 @@ func NewCmdSchedule() *cobra.Command {
 			case "Deployments", "Deployment", "deployments", "deployment":
 				opt.AppKind = "Deployment"
 				opt.SmartPrefix = ""
+				opt.SnapshotHostname = opt.AppName
 				_, err := kubeClient.AppsV1beta1().Deployments(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
 				if err != nil {
 					_, err := kubeClient.ExtensionsV1beta1().Deployments(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
@@ -72,6 +73,7 @@ func NewCmdSchedule() *cobra.Command {
 			case "ReplicaSets", "ReplicaSet", "replicasets", "replicaset", "rs":
 				opt.AppKind = "ReplicaSet"
 				opt.SmartPrefix = ""
+				opt.SnapshotHostname = opt.AppName
 				_, err := kubeClient.ExtensionsV1beta1().ReplicaSets(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
 				if err != nil {
 					log.Fatalf(`Unknown ReplicaSet %s/%s`, opt.Namespace, opt.AppName)
@@ -79,6 +81,7 @@ func NewCmdSchedule() *cobra.Command {
 			case "ReplicationControllers", "ReplicationController", "replicationcontrollers", "replicationcontroller", "rc":
 				opt.AppKind = "ReplicationController"
 				opt.SmartPrefix = ""
+				opt.SnapshotHostname = opt.AppName
 				_, err := kubeClient.CoreV1().ReplicationControllers(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
 				if err != nil {
 					log.Fatalf(`Unknown ReplicationController %s/%s`, opt.Namespace, opt.AppName)
@@ -86,6 +89,7 @@ func NewCmdSchedule() *cobra.Command {
 			case "StatefulSets", "StatefulSet":
 				opt.AppKind = "StatefulSet"
 				opt.SmartPrefix = opt.PodName
+				opt.SnapshotHostname = opt.PodName
 				_, err := kubeClient.AppsV1beta1().StatefulSets(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
 				if err != nil {
 					log.Fatalf(`Unknown StatefulSet %s/%s`, opt.Namespace, opt.AppName)
@@ -93,6 +97,7 @@ func NewCmdSchedule() *cobra.Command {
 			case "DaemonSets", "DaemonSet", "daemonsets", "daemonset":
 				opt.AppKind = "DaemonSet"
 				opt.SmartPrefix = opt.NodeName
+				opt.SnapshotHostname = opt.NodeName
 				_, err := kubeClient.ExtensionsV1beta1().DaemonSets(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
 				if err != nil {
 					log.Fatalf(`Unknown DaemonSet %s/%s`, opt.Namespace, opt.AppName)
