@@ -23,25 +23,24 @@ rules:
   - "*"
 - apiGroups:
   - stash.appscode.com
-  resources:
-  - restics
+  resources: ["*"]
   verbs: ["*"]
 - apiGroups:
   - extensions
   resources:
   - replicasets
   - daemonsets
-  verbs: ["list", "watch", "patch"]
+  verbs: ["get", "list", "watch", "patch"]
 - apiGroups:
   - apps
   resources:
   - deployments
-  verbs: ["list", "watch", "patch"]
+  verbs: ["get", "list", "watch", "patch"]
 - apiGroups: [""]
   resources:
   - namespaces
   - replicationcontrollers
-  verbs: ["list", "watch", "patch"]
+  verbs: ["get", "list", "watch", "patch"]
 - apiGroups: [""]
   resources:
   - secrets
