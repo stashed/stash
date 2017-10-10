@@ -4,26 +4,28 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"reflect"
 	"time"
 
 	"github.com/appscode/go/log"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
+	stash_util "github.com/appscode/stash/client/typed/stash/v1alpha1/util"
+	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/cli"
 	"github.com/appscode/stash/pkg/eventer"
+	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
 	"gopkg.in/robfig/cron.v2"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/workqueue"
 )
 
 const (
@@ -43,6 +45,7 @@ type Options struct {
 	SmartPrefix    string
 	PodLabelsPath  string
 	ResyncPeriod   time.Duration
+	MaxNumRequeues int
 }
 
 func (opt Options) autoPrefix(resource *api.Restic) string {
@@ -59,26 +62,32 @@ func (opt Options) autoPrefix(resource *api.Restic) string {
 }
 
 type Scheduler struct {
-	kubeClient  kubernetes.Interface
-	stashClient cs.ResticsGetter
+	k8sClient   kubernetes.Interface
+	stashClient cs.StashV1alpha1Interface
 	opt         Options
 	rchan       chan *api.Restic
 	locked      chan struct{}
 	resticCLI   *cli.ResticWrapper
 	cron        *cron.Cron
 	recorder    record.EventRecorder
+
+	// Restic
+	rQueue    workqueue.RateLimitingInterface
+	rIndexer  cache.Indexer
+	rInformer cache.Controller
+	rLister   stash_listers.ResticLister
 }
 
-func New(kubeClient kubernetes.Interface, stashClient cs.ResticsGetter, opt Options) *Scheduler {
+func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, opt Options) *Scheduler {
 	return &Scheduler{
-		kubeClient:  kubeClient,
+		k8sClient:   k8sClient,
 		stashClient: stashClient,
 		opt:         opt,
 		rchan:       make(chan *api.Restic, 1),
 		cron:        cron.New(),
 		locked:      make(chan struct{}, 1),
 		resticCLI:   cli.New(opt.ScratchDir),
-		recorder:    eventer.NewEventRecorder(kubeClient, "stash-scheduler"),
+		recorder:    eventer.NewEventRecorder(k8sClient, "stash-scheduler"),
 	}
 }
 
@@ -89,10 +98,10 @@ func (c *Scheduler) Setup() error {
 		return err
 	}
 	log.Infof("Found restic %s", resource.Name)
-	if resource.Spec.Backend.StorageSecretName == "" {
-		return errors.New("Missing repository secret name")
+	if err := resource.IsValid(); err != nil {
+		return err
 	}
-	secret, err := c.kubeClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	secret, err := c.k8sClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -104,113 +113,50 @@ func (c *Scheduler) Setup() error {
 	c.resticCLI.DumpEnv()
 	// ignore error but helps debug bad setup.
 	c.resticCLI.InitRepositoryIfAbsent()
+	c.initResticWatcher()
 	return nil
 }
 
-func (c *Scheduler) RunAndHold() {
+func (c *Scheduler) Run(threadiness int, stopCh chan struct{}) {
 	c.cron.Start()
 	c.locked <- struct{}{}
 
-	lw := &cache.ListWatch{
-		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
-			return c.stashClient.Restics(c.opt.Namespace).List(metav1.ListOptions{})
-		},
-		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return c.stashClient.Restics(c.opt.Namespace).Watch(metav1.ListOptions{})
-		},
+	defer runtime.HandleCrash()
+
+	// Let the workers stop when we are done
+	defer c.rQueue.ShutDown()
+	glog.Info("Starting Stash scheduler")
+
+	go c.rInformer.Run(stopCh)
+
+	// Wait for all involved caches to be synced, before processing items from the queue is started
+	if !cache.WaitForCacheSync(stopCh, c.rInformer.HasSynced) {
+		runtime.HandleError(fmt.Errorf("timed out waiting for caches to sync"))
+		return
 	}
-	_, ctrl := cache.NewInformer(lw,
-		&api.Restic{},
-		c.opt.ResyncPeriod,
-		cache.ResourceEventHandlerFuncs{
-			AddFunc: func(obj interface{}) {
-				if r, ok := obj.(*api.Restic); ok {
-					if r.Name == c.opt.ResticName {
-						c.rchan <- r
-						err := c.configureScheduler()
-						if err != nil {
-							c.recorder.Eventf(
-								r.ObjectReference(),
-								apiv1.EventTypeWarning,
-								eventer.EventReasonFailedToBackup,
-								"Failed to start Stash scehduler reason %v", err,
-							)
-							log.Errorln(err)
-						}
-					}
-				}
-			},
-			UpdateFunc: func(old, new interface{}) {
-				oldObj, ok := old.(*api.Restic)
-				if !ok {
-					log.Errorln(errors.New("Invalid Restic object"))
-					return
-				}
-				newObj, ok := new.(*api.Restic)
-				if !ok {
-					log.Errorln(errors.New("Invalid Restic object"))
-					return
-				}
-				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) && newObj.Name == c.opt.ResticName {
-					c.rchan <- newObj
-					err := c.configureScheduler()
-					if err != nil {
-						c.recorder.Eventf(
-							newObj.ObjectReference(),
-							apiv1.EventTypeWarning,
-							eventer.EventReasonFailedToBackup,
-							"Failed to update Stash scheduler reason %v", err,
-						)
-						log.Errorln(err)
-					}
-				}
-			},
-			DeleteFunc: func(obj interface{}) {
-				if r, ok := obj.(*api.Restic); ok {
-					if r.Name == c.opt.ResticName {
-						c.cron.Stop()
-					}
-				}
-			},
-		})
-	ctrl.Run(wait.NeverStop)
+
+	for i := 0; i < threadiness; i++ {
+		go wait.Until(c.runResticWatcher, time.Second, stopCh)
+	}
+
+	<-stopCh
+	glog.Info("Stopping Stash scheduler")
 }
 
 func (c *Scheduler) configureScheduler() error {
 	r := <-c.rchan
 
-	if r.Spec.Backend.StorageSecretName == "" {
-		return errors.New("Missing repository secret name")
-	}
-
 	// Remove previous jobs
 	for _, v := range c.cron.Entries() {
 		c.cron.Remove(v.ID)
 	}
-
-	interval := r.Spec.Schedule
-	if _, err := cron.Parse(interval); err != nil {
-		log.Errorln(err)
-		c.recorder.Event(r.ObjectReference(), apiv1.EventTypeWarning, eventer.EventReasonInvalidCronExpression, err.Error())
-		//Reset Wrong Schedule
-		r.Spec.Schedule = ""
-		_, err = c.stashClient.Restics(r.Namespace).Update(r)
-		if err != nil {
-			return err
-		}
-		c.recorder.Event(r.ObjectReference(), apiv1.EventTypeNormal, eventer.EventReasonSuccessfulCronExpressionReset, "Cron expression reset")
-		return nil
-	}
-	_, err := c.cron.AddFunc(interval, func() {
+	_, err := c.cron.AddFunc(r.Spec.Schedule, func() {
 		if err := c.runOnce(); err != nil {
 			c.recorder.Event(r.ObjectReference(), apiv1.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
 			log.Errorln(err)
 		}
 	})
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (c *Scheduler) runOnce() (err error) {
@@ -226,7 +172,7 @@ func (c *Scheduler) runOnce() (err error) {
 	}
 
 	var resource *api.Restic
-	resource, err = c.stashClient.Restics(c.opt.Namespace).Get(c.opt.ResticName, metav1.GetOptions{})
+	resource, err = c.rLister.Restics(c.opt.Namespace).Get(c.opt.ResticName)
 	if kerr.IsNotFound(err) {
 		err = nil
 		return
@@ -239,7 +185,7 @@ func (c *Scheduler) runOnce() (err error) {
 		return
 	}
 	var secret *apiv1.Secret
-	secret, err = c.kubeClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	secret, err = c.k8sClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return
 	}
@@ -303,31 +249,15 @@ func (c *Scheduler) runOnce() (err error) {
 				restic_session_duration_seconds)
 		}
 
-		attempt := 0
-		for ; attempt < maxAttempts; attempt = attempt + 1 {
-			resource.Status.BackupCount++
-			resource.Status.LastBackupTime = &startTime
-			if resource.Status.FirstBackupTime == nil {
-				resource.Status.FirstBackupTime = &startTime
+		stash_util.PatchRestic(c.stashClient, resource, func(in *api.Restic) *api.Restic {
+			in.Status.BackupCount++
+			in.Status.LastBackupTime = &startTime
+			if in.Status.FirstBackupTime == nil {
+				in.Status.FirstBackupTime = &startTime
 			}
-			resource.Status.LastBackupDuration = endTime.Sub(startTime.Time).String()
-			_, err := c.stashClient.Restics(resource.Namespace).Update(resource)
-			if err == nil {
-				break
-			}
-			log.Errorf("Attempt %d failed to update status for Restic %s/%s due to %s.", attempt, resource.Namespace, resource.Name, err)
-			time.Sleep(msec10)
-			if kerr.IsConflict(err) {
-				resource, err = c.stashClient.Restics(resource.Namespace).Get(resource.Name, metav1.GetOptions{})
-				if err != nil {
-					return
-				}
-			}
-		}
-		if attempt >= maxAttempts {
-			err = fmt.Errorf("failed to add sidecar for ReplicaSet %s/%s after %d attempts", resource.Namespace, resource.Name, attempt)
-			return
-		}
+			in.Status.LastBackupDuration = endTime.Sub(startTime.Time).String()
+			return in
+		})
 	}()
 
 	for _, fg := range resource.Spec.FileGroups {

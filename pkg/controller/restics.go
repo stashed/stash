@@ -42,9 +42,22 @@ func (c *StashController) initResticWatcher() {
 	// of the Restic than the version which was responsible for triggering the update.
 	c.rIndexer, c.rInformer = cache.NewIndexerInformer(lw, &api.Restic{}, c.options.ResyncPeriod, cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			key, err := cache.MetaNamespaceKeyFunc(obj)
-			if err == nil {
-				c.rQueue.Add(key)
+			if r, ok := obj.(*api.Restic); ok {
+				if err := r.IsValid(); err != nil {
+					c.recorder.Eventf(
+						r.ObjectReference(),
+						apiv1.EventTypeWarning,
+						eventer.EventReasonInvalidRestic,
+						"Reason %v",
+						err,
+					)
+					return
+				} else {
+					key, err := cache.MetaNamespaceKeyFunc(obj)
+					if err == nil {
+						c.rQueue.Add(key)
+					}
+				}
 			}
 		},
 		UpdateFunc: func(old interface{}, new interface{}) {
@@ -58,7 +71,16 @@ func (c *StashController) initResticWatcher() {
 				log.Errorln("Invalid Restic object")
 				return
 			}
-			if !util.ResticEqual(oldObj, newObj) {
+			if err := newObj.IsValid(); err != nil {
+				c.recorder.Eventf(
+					newObj.ObjectReference(),
+					apiv1.EventTypeWarning,
+					eventer.EventReasonInvalidRestic,
+					"Reason %v",
+					err,
+				)
+				return
+			} else if !util.ResticEqual(oldObj, newObj) {
 				key, err := cache.MetaNamespaceKeyFunc(new)
 				if err == nil {
 					c.rQueue.Add(key)

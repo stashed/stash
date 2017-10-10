@@ -15,18 +15,19 @@ rules:
   resources: ["*"]
   verbs: ["*"]
 - apiGroups:
-  - extensions
+  - apps
   resources:
   - deployments
+  verbs: ["get"]
+- apiGroups:
+  - extensions
+  resources:
   - daemonsets
   - replicasets
   verbs: ["get"]
 - apiGroups: [""]
   resources:
   - replicationcontrollers
-  verbs: ["*"]
-- apiGroups: [""]
-  resources:
   - secrets
   verbs: ["get"]
 - apiGroups: [""]
