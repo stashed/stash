@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/log"
+	stringz "github.com/appscode/go/strings"
 	"github.com/appscode/kutil"
 	core_util "github.com/appscode/kutil/core/v1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -154,7 +155,8 @@ func (c *StashController) EnsureReplicationControllerSidecar(resource *apiv1.Rep
 	}
 
 	if c.options.EnableRBAC {
-		err := c.ensureRoleBinding(kutil.GetObjectReference(resource, apiv1.SchemeGroupVersion), resource.Spec.Template.Spec.ServiceAccountName)
+		sa := stringz.Val(resource.Spec.Template.Spec.ServiceAccountName, "default")
+		err := c.ensureRoleBinding(kutil.GetObjectReference(resource, apiv1.SchemeGroupVersion), sa)
 		if err != nil {
 			return err
 		}
