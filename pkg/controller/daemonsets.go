@@ -155,6 +155,13 @@ func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet,
 		return err
 	}
 
+	if c.options.EnableRBAC {
+		err := c.ensureRoleBinding(kutil.GetObjectReference(resource, extensions.SchemeGroupVersion), resource.Spec.Template.Spec.ServiceAccountName)
+		if err != nil {
+			return err
+		}
+	}
+
 	resource, err = ext_util.PatchDaemonSet(c.k8sClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
 		obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.options.SidecarImageTag, "DaemonSet/"+obj.Name))
 		obj.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(obj.Spec.Template.Spec.Volumes)
@@ -191,6 +198,13 @@ func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet,
 }
 
 func (c *StashController) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSet, restic *api.Restic) (err error) {
+	if c.options.EnableRBAC {
+		err := c.ensureRoleBindingDeleted(resource.ObjectMeta)
+		if err != nil {
+			return err
+		}
+	}
+
 	resource, err = ext_util.PatchDaemonSet(c.k8sClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
 		obj.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)

@@ -24,6 +24,7 @@ spec:
       - args:
         - run
         - --v=3
+        - --rbac={{ .Values.rbac.create }}
         image: {{ .Values.operator.image }}:{{ .Values.operator.tag }}
         imagePullPolicy: {{ .Values.operator.pullPolicy }}
         name: operator
