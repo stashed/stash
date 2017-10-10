@@ -55,7 +55,7 @@ The `.spec` section has 4 main parts:
 | `keepWeekly`  | integer | --keep-weekly n    | For the last n weeks which have one or more snapshots, only keep the last one for that week.       |
 | `keepMonthly` | integer | --keep-monthly n   | For the last n months which have one or more snapshots, only keep the last one for that month.     |
 | `keepYearly`  | integer | --keep-yearly n    | For the last n years which have one or more snapshots, only keep the last one for that year.       |
-| `keepTags`    | array   | --keep-tag <tag>   | Keep all snapshots which have all tags specified by this option (can be specified multiple times). |
+| `keepTags`    | array   | --keep-tag <tag>   | Keep all snapshots which have all tags specified by this option (can be specified multiple times). [`--tag foo,tag bar`](https://github.com/restic/restic/blob/master/doc/060_forget.rst) style tagging is not supported. |
 | `prune`       | bool    | --prune            | If set, actually removes the data that was referenced by the snapshot from the repository.         |
 | `dryRun`      | bool    | --dry-run          | Instructs `restic` to not remove anything but print which snapshots would be removed.              |
 
