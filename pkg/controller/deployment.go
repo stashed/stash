@@ -129,7 +129,7 @@ func (c *StashController) runDeploymentInjector(key string) error {
 		if err != nil {
 			return err
 		}
-		newRestic, err := util.FindRestic(c.rLister, dp.ObjectMeta)
+		newRestic, err := util.FindRestic(c.rstLister, dp.ObjectMeta)
 		if err != nil {
 			log.Errorf("Error while searching Restic for Deployment %s/%s.", dp.Name, dp.Namespace)
 			return err

@@ -9,9 +9,14 @@ const (
 	ResourceKindRestic = "Restic"
 	ResourceNameRestic = "restic"
 	ResourceTypeRestic = "restics"
+
+	ResourceKindRecovery = "Recovery"
+	ResourceNameRecovery = "recovery"
+	ResourceTypeRecovery = "recoveries"
 )
 
 // +genclient=true
+// +k8s:openapi-gen=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 type Restic struct {
@@ -47,6 +52,39 @@ type ResticList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Restic `json:"items,omitempty"`
+}
+
+// +genclient=true
+// +k8s:openapi-gen=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+type Recovery struct {
+	metav1.TypeMeta   `json:",inline,omitempty"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Spec              RecoverySpec   `json:"spec,omitempty"`
+	Status            RecoveryStatus `json:"status,omitempty"`
+}
+
+type RecoverySpec struct {
+	Restic     string `json:"restic,omitempty"`
+	SnapshotID string `json:"snapshotID,omitempty"`
+	// Path       string `json:"path,omitempty"`
+	// Host       string `json:"path,omitempty"`
+	// target volume where snapshot will be restored
+	VolumeMounts []apiv1.VolumeMount `json:"volumeMounts,omitempty"`
+}
+
+type RecoveryStatus struct {
+	RecoveryStatus   string `json:"recoveryStatus,omitempty"`
+	RecoveryDuration string `json:"recoveryDuration,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+type RecoveryList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []Recovery `json:"items,omitempty"`
 }
 
 type FileGroup struct {

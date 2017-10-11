@@ -14,3 +14,14 @@ func (r Restic) ObjectReference() *apiv1.ObjectReference {
 		ResourceVersion: r.ResourceVersion,
 	}
 }
+
+func (r Recovery) ObjectReference() *apiv1.ObjectReference {
+	return &apiv1.ObjectReference{
+		APIVersion:      SchemeGroupVersion.String(),
+		Kind:            ResourceKindRecovery,
+		Namespace:       r.Namespace,
+		Name:            r.Name,
+		UID:             r.UID,
+		ResourceVersion: r.ResourceVersion,
+	}
+}

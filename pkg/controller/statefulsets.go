@@ -129,7 +129,7 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 		if err != nil {
 			return err
 		}
-		newRestic, err := util.FindRestic(c.rLister, ss.ObjectMeta)
+		newRestic, err := util.FindRestic(c.rstLister, ss.ObjectMeta)
 		if err != nil {
 			log.Errorf("Error while searching Restic for StatefulSet %s/%s.", ss.Name, ss.Namespace)
 			return err

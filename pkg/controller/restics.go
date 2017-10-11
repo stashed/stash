@@ -34,13 +34,13 @@ func (c *StashController) initResticWatcher() {
 	}
 
 	// create the workqueue
-	c.rQueue = workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "restic")
+	c.rstQueue = workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "restic")
 
 	// Bind the workqueue to a cache with the help of an informer. This way we make sure that
 	// whenever the cache is updated, the pod key is added to the workqueue.
 	// Note that when we finally process the item from the workqueue, we might see a newer version
 	// of the Restic than the version which was responsible for triggering the update.
-	c.rIndexer, c.rInformer = cache.NewIndexerInformer(lw, &api.Restic{}, c.options.ResyncPeriod, cache.ResourceEventHandlerFuncs{
+	c.rstIndexer, c.rstInformer = cache.NewIndexerInformer(lw, &api.Restic{}, c.options.ResyncPeriod, cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			if r, ok := obj.(*api.Restic); ok {
 				if err := r.IsValid(); err != nil {
@@ -55,7 +55,7 @@ func (c *StashController) initResticWatcher() {
 				} else {
 					key, err := cache.MetaNamespaceKeyFunc(obj)
 					if err == nil {
-						c.rQueue.Add(key)
+						c.rstQueue.Add(key)
 					}
 				}
 			}
@@ -83,7 +83,7 @@ func (c *StashController) initResticWatcher() {
 			} else if !util.ResticEqual(oldObj, newObj) {
 				key, err := cache.MetaNamespaceKeyFunc(new)
 				if err == nil {
-					c.rQueue.Add(key)
+					c.rstQueue.Add(key)
 				}
 			}
 		},
@@ -92,11 +92,11 @@ func (c *StashController) initResticWatcher() {
 			// key function.
 			key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 			if err == nil {
-				c.rQueue.Add(key)
+				c.rstQueue.Add(key)
 			}
 		},
 	}, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
-	c.rLister = stash_listers.NewResticLister(c.rIndexer)
+	c.rstLister = stash_listers.NewResticLister(c.rstIndexer)
 }
 
 func (c *StashController) runResticWatcher() {
@@ -106,14 +106,14 @@ func (c *StashController) runResticWatcher() {
 
 func (c *StashController) processNextRestic() bool {
 	// Wait until there is a new item in the working queue
-	key, quit := c.rQueue.Get()
+	key, quit := c.rstQueue.Get()
 	if quit {
 		return false
 	}
 	// Tell the queue that we are done with processing this key. This unblocks the key for other workers
 	// This allows safe parallel processing because two deployments with the same key are never processed in
 	// parallel.
-	defer c.rQueue.Done(key)
+	defer c.rstQueue.Done(key)
 
 	// Invoke the method containing the business logic
 	err := c.runResticInjector(key.(string))
@@ -121,22 +121,22 @@ func (c *StashController) processNextRestic() bool {
 		// Forget about the #AddRateLimited history of the key on every successful synchronization.
 		// This ensures that future processing of updates for this key is not delayed because of
 		// an outdated error history.
-		c.rQueue.Forget(key)
+		c.rstQueue.Forget(key)
 		return true
 	}
 	log.Errorf("Failed to process Restic %v. Reason: %s", key, err)
 
 	// This controller retries 5 times if something goes wrong. After that, it stops trying.
-	if c.rQueue.NumRequeues(key) < c.options.MaxNumRequeues {
+	if c.rstQueue.NumRequeues(key) < c.options.MaxNumRequeues {
 		glog.Infof("Error syncing deployment %v: %v", key, err)
 
 		// Re-enqueue the key rate limited. Based on the rate limiter on the
 		// queue and the re-enqueue history, the key will be processed later again.
-		c.rQueue.AddRateLimited(key)
+		c.rstQueue.AddRateLimited(key)
 		return true
 	}
 
-	c.rQueue.Forget(key)
+	c.rstQueue.Forget(key)
 	// Report to an external entity that, even after several retries, we could not successfully process this key
 	runtime.HandleError(err)
 	glog.Infof("Dropping deployment %q out of the queue: %v", key, err)
@@ -147,7 +147,7 @@ func (c *StashController) processNextRestic() bool {
 // information about the deployment to stdout. In case an error happened, it has to simply return the error.
 // The retry logic should not be part of the business logic.
 func (c *StashController) runResticInjector(key string) error {
-	obj, exists, err := c.rIndexer.GetByKey(key)
+	obj, exists, err := c.rstIndexer.GetByKey(key)
 	if err != nil {
 		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)
 		return err

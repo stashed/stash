@@ -129,7 +129,7 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 		if err != nil {
 			return err
 		}
-		newRestic, err := util.FindRestic(c.rLister, ds.ObjectMeta)
+		newRestic, err := util.FindRestic(c.rstLister, ds.ObjectMeta)
 		if err != nil {
 			log.Errorf("Error while searching Restic for DaemonSet %s/%s.", ds.Name, ds.Namespace)
 			return err

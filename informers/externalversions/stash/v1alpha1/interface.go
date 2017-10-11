@@ -24,6 +24,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
+	// Recoveries returns a RecoveryInformer.
+	Recoveries() RecoveryInformer
 	// Restics returns a ResticInformer.
 	Restics() ResticInformer
 }
@@ -35,6 +37,11 @@ type version struct {
 // New returns a new Interface.
 func New(f internalinterfaces.SharedInformerFactory) Interface {
 	return &version{f}
+}
+
+// Recoveries returns a RecoveryInformer.
+func (v *version) Recoveries() RecoveryInformer {
+	return &recoveryInformer{factory: v.SharedInformerFactory}
 }
 
 // Restics returns a ResticInformer.

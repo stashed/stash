@@ -10,6 +10,7 @@ import (
 
 const (
 	EventReasonInvalidRestic                 = "InvalidRestic"
+	EventReasonInvalidRecovery               = "InvalidRecovery"
 	EventReasonInvalidCronExpression         = "InvalidCronExpression"
 	EventReasonSuccessfulCronExpressionReset = "SuccessfulCronExpressionReset"
 	EventReasonSuccessfulBackup              = "SuccessfulBackup"

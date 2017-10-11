@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/appscode/kutil"
-	sapi "github.com/appscode/stash/apis/stash"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
@@ -38,10 +37,16 @@ type StashController struct {
 	nsInformer cache.Controller
 
 	// Restic
-	rQueue    workqueue.RateLimitingInterface
-	rIndexer  cache.Indexer
-	rInformer cache.Controller
-	rLister   stash_listers.ResticLister
+	rstQueue    workqueue.RateLimitingInterface
+	rstIndexer  cache.Indexer
+	rstInformer cache.Controller
+	rstLister   stash_listers.ResticLister
+
+	// Recovery
+	recQueue    workqueue.RateLimitingInterface
+	recIndexer  cache.Indexer
+	recInformer cache.Controller
+	recLister   stash_listers.RecoveryLister
 
 	// Deployment
 	dpQueue    workqueue.RateLimitingInterface
@@ -90,6 +95,7 @@ func (c *StashController) Setup() error {
 	}
 	c.initNamespaceWatcher()
 	c.initResticWatcher()
+	c.initRecoveryWatcher()
 	c.initDeploymentWatcher()
 	c.initDaemonSetWatcher()
 	// c.initStatefulSetWatcher()
@@ -100,23 +106,8 @@ func (c *StashController) Setup() error {
 
 func (c *StashController) ensureCustomResourceDefinitions() error {
 	crds := []*apiextensions.CustomResourceDefinition{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:   sapi.ResourceTypeRestic + "." + api.SchemeGroupVersion.Group,
-				Labels: map[string]string{"app": "stash"},
-			},
-			Spec: apiextensions.CustomResourceDefinitionSpec{
-				Group:   sapi.GroupName,
-				Version: api.SchemeGroupVersion.Version,
-				Scope:   apiextensions.NamespaceScoped,
-				Names: apiextensions.CustomResourceDefinitionNames{
-					Singular:   sapi.ResourceNameRestic,
-					Plural:     sapi.ResourceTypeRestic,
-					Kind:       sapi.ResourceKindRestic,
-					ShortNames: []string{"rst"},
-				},
-			},
-		},
+		api.Restic{}.CustomResourceDefinition(),
+		api.Recovery{}.CustomResourceDefinition(),
 	}
 	for _, crd := range crds {
 		_, err := c.crdClient.ApiextensionsV1beta1().CustomResourceDefinitions().Get(crd.Name, metav1.GetOptions{})
@@ -134,7 +125,8 @@ func (c *StashController) Run(threadiness int, stopCh chan struct{}) {
 	defer runtime.HandleCrash()
 
 	// Let the workers stop when we are done
-	defer c.rQueue.ShutDown()
+	defer c.rstQueue.ShutDown()
+	defer c.recQueue.ShutDown()
 	defer c.dpQueue.ShutDown()
 	defer c.dsQueue.ShutDown()
 	// defer c.ssQueue.ShutDown()
@@ -143,7 +135,8 @@ func (c *StashController) Run(threadiness int, stopCh chan struct{}) {
 	glog.Info("Starting Stash controller")
 
 	go c.nsInformer.Run(stopCh)
-	go c.rInformer.Run(stopCh)
+	go c.rstInformer.Run(stopCh)
+	go c.recInformer.Run(stopCh)
 	go c.dpInformer.Run(stopCh)
 	go c.dsInformer.Run(stopCh)
 	// go c.ssInformer.Run(stopCh)
@@ -155,7 +148,11 @@ func (c *StashController) Run(threadiness int, stopCh chan struct{}) {
 		runtime.HandleError(fmt.Errorf("timed out waiting for caches to sync"))
 		return
 	}
-	if !cache.WaitForCacheSync(stopCh, c.rInformer.HasSynced) {
+	if !cache.WaitForCacheSync(stopCh, c.rstInformer.HasSynced) {
+		runtime.HandleError(fmt.Errorf("timed out waiting for caches to sync"))
+		return
+	}
+	if !cache.WaitForCacheSync(stopCh, c.recInformer.HasSynced) {
 		runtime.HandleError(fmt.Errorf("timed out waiting for caches to sync"))
 		return
 	}
@@ -182,6 +179,7 @@ func (c *StashController) Run(threadiness int, stopCh chan struct{}) {
 
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(c.runResticWatcher, time.Second, stopCh)
+		go wait.Until(c.runRecoveryWatcher, time.Second, stopCh)
 		go wait.Until(c.runDeploymentWatcher, time.Second, stopCh)
 		go wait.Until(c.runDaemonSetWatcher, time.Second, stopCh)
 		// go wait.Until(c.runStatefulSetWatcher, time.Second, stopCh)

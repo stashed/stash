@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/appscode/kutil"
@@ -294,4 +295,15 @@ func ResticEqual(old, new *api.Restic) bool {
 	return cmp.Equal(oldSpec, newSpec, cmp.Comparer(func(x, y resource.Quantity) bool {
 		return x.Cmp(y) == 0
 	}))
+}
+
+func RecoveryEqual(old, new *api.Recovery) bool {
+	var oldSpec, newSpec *api.RecoverySpec
+	if old != nil {
+		oldSpec = &old.Spec
+	}
+	if new != nil {
+		newSpec = &new.Spec
+	}
+	return reflect.DeepEqual(oldSpec, newSpec)
 }
