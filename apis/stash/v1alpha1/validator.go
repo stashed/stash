@@ -16,3 +16,13 @@ func (r Restic) IsValid() error {
 	}
 	return nil
 }
+
+func (r Recovery) IsValid() error {
+	if r.Spec.Restic == "" {
+		return fmt.Errorf("missing restic name")
+	}
+	if len(r.Spec.VolumeMounts) == 0 {
+		return fmt.Errorf("missing target vollume")
+	}
+	return nil
+}

@@ -43,6 +43,12 @@ type StashController struct {
 	rInformer cache.Controller
 	rLister   stash_listers.ResticLister
 
+	// Recovery
+	rcvQueue    workqueue.RateLimitingInterface
+	rcvIndexer  cache.Indexer
+	rcvInformer cache.Controller
+	rcvLister   stash_listers.ResticLister
+
 	// Deployment
 	dpQueue    workqueue.RateLimitingInterface
 	dpIndexer  cache.Indexer
@@ -114,6 +120,23 @@ func (c *StashController) ensureCustomResourceDefinitions() error {
 					Plural:     sapi.ResourceTypeRestic,
 					Kind:       sapi.ResourceKindRestic,
 					ShortNames: []string{"rst"},
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   sapi.ResourceTypeRecovery + "." + api.SchemeGroupVersion.Group,
+				Labels: map[string]string{"app": "stash"},
+			},
+			Spec: apiextensions.CustomResourceDefinitionSpec{
+				Group:   sapi.GroupName,
+				Version: api.SchemeGroupVersion.Version,
+				Scope:   apiextensions.NamespaceScoped,
+				Names: apiextensions.CustomResourceDefinitionNames{
+					Singular:   sapi.ResourceNameRecovery,
+					Plural:     sapi.ResourceTypeRecovery,
+					Kind:       sapi.ResourceKindRecovery,
+					ShortNames: []string{"rcv"},
 				},
 			},
 		},
