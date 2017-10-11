@@ -127,7 +127,7 @@ func (c *StashController) runRCInjector(key string) error {
 		if err != nil {
 			return err
 		}
-		newRestic, err := util.FindRestic(c.rLister, rc.ObjectMeta)
+		newRestic, err := util.FindRestic(c.rstLister, rc.ObjectMeta)
 		if err != nil {
 			log.Errorf("Error while searching Restic for ReplicationController %s/%s.", rc.Name, rc.Namespace)
 			return err

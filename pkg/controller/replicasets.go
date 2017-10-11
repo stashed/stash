@@ -134,7 +134,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 		if err != nil {
 			return err
 		}
-		newRestic, err := util.FindRestic(c.rLister, rs.ObjectMeta)
+		newRestic, err := util.FindRestic(c.rstLister, rs.ObjectMeta)
 		if err != nil {
 			log.Errorf("Error while searching Restic for ReplicaSet %s/%s.", rs.Name, rs.Namespace)
 			return err

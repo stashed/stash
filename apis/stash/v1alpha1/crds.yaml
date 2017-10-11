@@ -29,7 +29,7 @@ spec:
       listKind: RecoveryList
       plural: recoveries
       shortNames:
-      - rcv
+      - rec
       singular: recovery
     scope: Namespaced
     version: v1alpha1

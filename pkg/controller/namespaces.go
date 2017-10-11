@@ -22,7 +22,7 @@ func (c *StashController) initNamespaceWatcher() {
 	c.nsIndexer, c.nsInformer = cache.NewIndexerInformer(lw, &apiv1.Namespace{}, c.options.ResyncPeriod, cache.ResourceEventHandlerFuncs{
 		DeleteFunc: func(obj interface{}) {
 			if ns, ok := obj.(*apiv1.Namespace); ok {
-				restics, err := c.rLister.Restics(ns.Name).List(labels.Everything())
+				restics, err := c.rstLister.Restics(ns.Name).List(labels.Everything())
 				if err == nil {
 					for _, restic := range restics {
 						c.stashClient.Restics(restic.Namespace).Delete(restic.Name, &metav1.DeleteOptions{})
