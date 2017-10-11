@@ -11,7 +11,7 @@
 ## Features
  - Fast, secure, efficient backup of any kubernetes [volumes](https://kubernetes.io/docs/concepts/storage/volumes/).
  - Automates configuration of `restic` for periodic backup.
- - Store backed up files in various cloud storage provider, including S3, GCS, Azure, OpenStack Swift etc.
+ - Store backed up files in various cloud storage provider, including S3, GCS, Azure, OpenStack Swift, DigitalOcean Spaces etc.
  - Prometheus ready metrics for backup process.
 
 ## Supported Versions
