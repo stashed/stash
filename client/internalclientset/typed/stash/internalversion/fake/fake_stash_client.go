@@ -26,6 +26,10 @@ type FakeStash struct {
 	*testing.Fake
 }
 
+func (c *FakeStash) Recoveries(namespace string) internalversion.RecoveryInterface {
+	return &FakeRecoveries{c, namespace}
+}
+
 func (c *FakeStash) Restics(namespace string) internalversion.ResticInterface {
 	return &FakeRestics{c, namespace}
 }
