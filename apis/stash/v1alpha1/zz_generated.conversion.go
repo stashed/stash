@@ -257,7 +257,7 @@ func Convert_stash_Recovery_To_v1alpha1_Recovery(in *stash.Recovery, out *Recove
 
 func autoConvert_v1alpha1_RecoveryList_To_stash_RecoveryList(in *RecoveryList, out *stash.RecoveryList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]stash.Restic)(unsafe.Pointer(&in.Items))
+	out.Items = *(*[]stash.Recovery)(unsafe.Pointer(&in.Items))
 	return nil
 }
 
@@ -268,7 +268,7 @@ func Convert_v1alpha1_RecoveryList_To_stash_RecoveryList(in *RecoveryList, out *
 
 func autoConvert_stash_RecoveryList_To_v1alpha1_RecoveryList(in *stash.RecoveryList, out *RecoveryList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]Restic)(unsafe.Pointer(&in.Items))
+	out.Items = *(*[]Recovery)(unsafe.Pointer(&in.Items))
 	return nil
 }
 

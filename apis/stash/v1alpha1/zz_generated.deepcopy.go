@@ -184,9 +184,9 @@ func DeepCopy_v1alpha1_RecoveryList(in interface{}, out interface{}, c *conversi
 		*out = *in
 		if in.Items != nil {
 			in, out := &in.Items, &out.Items
-			*out = make([]Restic, len(*in))
+			*out = make([]Recovery, len(*in))
 			for i := range *in {
-				if err := DeepCopy_v1alpha1_Restic(&(*in)[i], &(*out)[i], c); err != nil {
+				if err := DeepCopy_v1alpha1_Recovery(&(*in)[i], &(*out)[i], c); err != nil {
 					return err
 				}
 			}

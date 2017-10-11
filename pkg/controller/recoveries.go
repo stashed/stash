@@ -29,7 +29,7 @@ func (c *StashController) initRecoveryWatcher() {
 	}
 
 	// create the workqueue
-	c.recQueue = workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "restic")
+	c.recQueue = workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "recovery")
 
 	// Bind the workqueue to a cache with the help of an informer. This way we make sure that
 	// whenever the cache is updated, the pod key is added to the workqueue.

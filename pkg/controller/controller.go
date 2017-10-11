@@ -136,6 +136,7 @@ func (c *StashController) Run(threadiness int, stopCh chan struct{}) {
 
 	go c.nsInformer.Run(stopCh)
 	go c.rstInformer.Run(stopCh)
+	go c.recInformer.Run(stopCh)
 	go c.dpInformer.Run(stopCh)
 	go c.dsInformer.Run(stopCh)
 	// go c.ssInformer.Run(stopCh)

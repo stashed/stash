@@ -6,9 +6,10 @@ import (
 )
 
 const (
-	ResourceKindRestic   = "Restic"
-	ResourceNameRestic   = "restic"
-	ResourceTypeRestic   = "restics"
+	ResourceKindRestic = "Restic"
+	ResourceNameRestic = "restic"
+	ResourceTypeRestic = "restics"
+
 	ResourceKindRecovery = "Recovery"
 	ResourceNameRecovery = "recovery"
 	ResourceTypeRecovery = "recoveries"
@@ -83,7 +84,7 @@ type RecoveryStatus struct {
 type RecoveryList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Restic `json:"items,omitempty"`
+	Items           []Recovery `json:"items,omitempty"`
 }
 
 type FileGroup struct {

@@ -16,25 +16,25 @@ import (
 
 const (
 	// ----- content types ----
-	codecSelferC_UTF85631 = 1
-	codecSelferC_RAW5631  = 0
+	codecSelferC_UTF88024 = 1
+	codecSelferC_RAW8024  = 0
 	// ----- value types used ----
-	codecSelferValueTypeArray5631 = 10
-	codecSelferValueTypeMap5631   = 9
+	codecSelferValueTypeArray8024 = 10
+	codecSelferValueTypeMap8024   = 9
 	// ----- containerStateValues ----
-	codecSelfer_containerMapKey5631    = 2
-	codecSelfer_containerMapValue5631  = 3
-	codecSelfer_containerMapEnd5631    = 4
-	codecSelfer_containerArrayElem5631 = 6
-	codecSelfer_containerArrayEnd5631  = 7
+	codecSelfer_containerMapKey8024    = 2
+	codecSelfer_containerMapValue8024  = 3
+	codecSelfer_containerMapEnd8024    = 4
+	codecSelfer_containerArrayElem8024 = 6
+	codecSelfer_containerArrayEnd8024  = 7
 )
 
 var (
-	codecSelferBitsize5631                         = uint8(reflect.TypeOf(uint(0)).Bits())
-	codecSelferOnlyMapOrArrayEncodeToStructErr5631 = errors.New(`only encoded map or array can be decoded into a struct`)
+	codecSelferBitsize8024                         = uint8(reflect.TypeOf(uint(0)).Bits())
+	codecSelferOnlyMapOrArrayEncodeToStructErr8024 = errors.New(`only encoded map or array can be decoded into a struct`)
 )
 
-type codecSelfer5631 struct{}
+type codecSelfer8024 struct{}
 
 func init() {
 	if codec1978.GenVersion != 5 {
@@ -48,7 +48,7 @@ func init() {
 }
 
 func (x PrefixType) CodecEncodeSelf(e *codec1978.Encoder) {
-	var h codecSelfer5631
+	var h codecSelfer8024
 	z, r := codec1978.GenHelperEncoder(e)
 	_, _, _ = h, z, r
 	yym1 := z.EncBinary()
@@ -63,7 +63,7 @@ func (x PrefixType) CodecEncodeSelf(e *codec1978.Encoder) {
 }
 
 func (x *PrefixType) CodecDecodeSelf(d *codec1978.Decoder) {
-	var h codecSelfer5631
+	var h codecSelfer8024
 	z, r := codec1978.GenHelperDecoder(d)
 	_, _, _ = h, z, r
 	yym1 := z.DecBinary()
@@ -73,6 +73,6 @@ func (x *PrefixType) CodecDecodeSelf(d *codec1978.Decoder) {
 	} else if !yym1 && z.IsJSONHandle() {
 		z.DecJSONUnmarshal(x)
 	} else {
-		*((*int)(x)) = int(r.DecodeInt(codecSelferBitsize5631))
+		*((*int)(x)) = int(r.DecodeInt(codecSelferBitsize8024))
 	}
 }

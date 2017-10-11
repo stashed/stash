@@ -83,7 +83,7 @@ type RecoveryStatus struct {
 type RecoveryList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Restic `json:"items,omitempty"`
+	Items           []Recovery `json:"items,omitempty"`
 }
 
 type FileGroup struct {
