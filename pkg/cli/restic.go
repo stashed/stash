@@ -111,3 +111,23 @@ func (w *ResticWrapper) Forget(resource *api.Restic, fg api.FileGroup) error {
 	}
 	return nil
 }
+
+func (w *ResticWrapper) Restore(recovery *api.Recovery) error {
+	args := []interface{}{"restore"}
+	if len(recovery.Spec.SnapshotID) != 0 {
+		args = append(args, recovery.Spec.SnapshotID)
+	} else {
+		args = append(args, "latest")
+	}
+	if len(recovery.Spec.Host) != 0 {
+		args = append(args, "--host")
+		args = append(args, recovery.Spec.Host)
+	}
+	if len(recovery.Spec.Path) != 0 {
+		args = append(args, "--path")
+		args = append(args, recovery.Spec.Path)
+	}
+	args = append(args, "--target")
+	args = append(args, recovery.Spec.VolumeMounts[0].MountPath)
+	return w.sh.Command(Exe, args...).Run()
+}

@@ -6,8 +6,10 @@ import (
 )
 
 const (
-	TestSourceDataVolumeName = "source-data"
-	TestSourceDataMountPath  = "/source/data"
+	TestSourceDataVolumeName    = "source-data"
+	TestSourceDataMountPath     = "/source/data"
+	TestRecoveredDataVolumeName = "recover-data"
+	TestRecoveredDataMountPath  = "/recover/data"
 )
 
 func (fi *Invocation) PodTemplate() apiv1.PodTemplateSpec {

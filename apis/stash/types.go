@@ -62,15 +62,16 @@ type Recovery struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 	Spec              RecoverySpec   `json:"spec,omitempty"`
+	Volumes           []apiv1.Volume `json:"volumes,omitempty"`
 	Status            RecoveryStatus `json:"status,omitempty"`
 }
 
 type RecoverySpec struct {
-	Restic     string `json:"restic,omitempty"`
-	SnapshotID string `json:"snapshotID,omitempty"`
-	// Path       string `json:"path,omitempty"`
-	// Host       string `json:"path,omitempty"`
-	// target volume where snapshot will be restored
+	Restic       string              `json:"restic,omitempty"`
+	SnapshotID   string              `json:"snapshotID,omitempty"`
+	Path         string              `json:"path,omitempty"`
+	Host         string              `json:"host,omitempty"`
+	SnapshotId   string              `json:"snapshotID,omitempty"`
 	VolumeMounts []apiv1.VolumeMount `json:"volumeMounts,omitempty"`
 }
 

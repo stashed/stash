@@ -6,6 +6,7 @@ import (
 	"github.com/appscode/go/log"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
+	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
@@ -14,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
+	batch "k8s.io/client-go/pkg/apis/batch/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 )
@@ -151,9 +153,46 @@ func (c *StashController) runRecoveryInjector(key string) error {
 	if !exists {
 		// Below we will warm up our cache with a Recovery, so that we will see a delete for one d
 		fmt.Printf("Recovery %s does not exist anymore\n", key)
-	} else {
-		d := obj.(*api.Recovery)
-		fmt.Printf("Sync/Add/Update for Recovery %s\n", d.GetName())
 	}
+
+	d := obj.(*api.Recovery)
+	fmt.Printf("Sync/Add/Update for Recovery %s\n", d.GetName())
+	return c.createJob(d)
+}
+
+func (c *StashController) createJob(rec *api.Recovery) error {
+	job := &batch.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rec.Name,
+			Namespace: rec.Namespace,
+		},
+		Spec: batch.JobSpec{
+			Template: apiv1.PodTemplateSpec{
+				Spec: apiv1.PodSpec{
+					Containers: []apiv1.Container{
+						{
+							Name:  util.StashContainer,
+							Image: docker.ImageOperator + ":recovery",
+							Args: []string{
+								"recover",
+								"--recovery-name=" + rec.Name,
+								"--v=10",
+							},
+							VolumeMounts: rec.Spec.VolumeMounts,
+						},
+					},
+					RestartPolicy: "OnFailure",
+					Volumes:       rec.Volumes,
+				},
+			},
+		},
+	}
+
+	job, err := c.k8sClient.BatchV1().Jobs(rec.Namespace).Create(job)
+	if err != nil {
+		return err
+	}
+
+	log.Infoln("Recovery job created:", job.Name)
 	return nil
 }

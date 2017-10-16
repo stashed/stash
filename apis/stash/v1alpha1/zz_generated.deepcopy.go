@@ -172,6 +172,17 @@ func DeepCopy_v1alpha1_Recovery(in interface{}, out interface{}, c *conversion.C
 		if err := DeepCopy_v1alpha1_RecoverySpec(&in.Spec, &out.Spec, c); err != nil {
 			return err
 		}
+		if in.Volumes != nil {
+			in, out := &in.Volumes, &out.Volumes
+			*out = make([]v1.Volume, len(*in))
+			for i := range *in {
+				if newVal, err := c.DeepCopy(&(*in)[i]); err != nil {
+					return err
+				} else {
+					(*out)[i] = *newVal.(*v1.Volume)
+				}
+			}
+		}
 		return nil
 	}
 }

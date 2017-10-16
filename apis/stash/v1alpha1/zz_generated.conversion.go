@@ -228,6 +228,7 @@ func autoConvert_v1alpha1_Recovery_To_stash_Recovery(in *Recovery, out *stash.Re
 	if err := Convert_v1alpha1_RecoverySpec_To_stash_RecoverySpec(&in.Spec, &out.Spec, s); err != nil {
 		return err
 	}
+	out.Volumes = *(*[]v1.Volume)(unsafe.Pointer(&in.Volumes))
 	if err := Convert_v1alpha1_RecoveryStatus_To_stash_RecoveryStatus(&in.Status, &out.Status, s); err != nil {
 		return err
 	}
@@ -244,6 +245,7 @@ func autoConvert_stash_Recovery_To_v1alpha1_Recovery(in *stash.Recovery, out *Re
 	if err := Convert_stash_RecoverySpec_To_v1alpha1_RecoverySpec(&in.Spec, &out.Spec, s); err != nil {
 		return err
 	}
+	out.Volumes = *(*[]v1.Volume)(unsafe.Pointer(&in.Volumes))
 	if err := Convert_stash_RecoveryStatus_To_v1alpha1_RecoveryStatus(&in.Status, &out.Status, s); err != nil {
 		return err
 	}
@@ -280,6 +282,9 @@ func Convert_stash_RecoveryList_To_v1alpha1_RecoveryList(in *stash.RecoveryList,
 func autoConvert_v1alpha1_RecoverySpec_To_stash_RecoverySpec(in *RecoverySpec, out *stash.RecoverySpec, s conversion.Scope) error {
 	out.Restic = in.Restic
 	out.SnapshotID = in.SnapshotID
+	out.Path = in.Path
+	out.Host = in.Host
+	out.SnapshotId = in.SnapshotId
 	out.VolumeMounts = *(*[]v1.VolumeMount)(unsafe.Pointer(&in.VolumeMounts))
 	return nil
 }
@@ -292,6 +297,9 @@ func Convert_v1alpha1_RecoverySpec_To_stash_RecoverySpec(in *RecoverySpec, out *
 func autoConvert_stash_RecoverySpec_To_v1alpha1_RecoverySpec(in *stash.RecoverySpec, out *RecoverySpec, s conversion.Scope) error {
 	out.Restic = in.Restic
 	out.SnapshotID = in.SnapshotID
+	out.Path = in.Path
+	out.Host = in.Host
+	out.SnapshotId = in.SnapshotId
 	out.VolumeMounts = *(*[]v1.VolumeMount)(unsafe.Pointer(&in.VolumeMounts))
 	return nil
 }

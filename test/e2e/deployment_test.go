@@ -20,6 +20,7 @@ var _ = Describe("Deployment", func() {
 		restic     api.Restic
 		cred       apiv1.Secret
 		deployment apps.Deployment
+		recovery   api.Recovery
 	)
 
 	BeforeEach(func() {
@@ -178,13 +179,44 @@ var _ = Describe("Deployment", func() {
 
 			f.EventuallyDeployment(deployment.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		}
+
+		shouldRestoreNewDeployment = func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating Deployment " + deployment.Name)
+			err = f.CreateDeployment(deployment)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Waiting for sidecar")
+			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+			By("Waiting for backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 1)))
+
+			By("Waiting for backup event")
+			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+
+			By("Creating recovery " + recovery.Name)
+			err = f.CreateRecovery(recovery)
+			Expect(err).NotTo(HaveOccurred())
+
+			f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
+		}
 	)
 
 	Describe("Creating restic for", func() {
 		AfterEach(func() {
-			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
+			//f.DeleteDeployment(deployment.ObjectMeta)
+			//f.DeleteRestic(restic.ObjectMeta)
+			//f.DeleteSecret(cred.ObjectMeta)
 		})
 
 		Context(`"Local" backend`, func() {
@@ -200,9 +232,11 @@ var _ = Describe("Deployment", func() {
 			BeforeEach(func() {
 				cred = f.SecretForS3Backend()
 				restic = f.ResticForS3Backend()
+				recovery = f.RecoveryForRestic(restic.Name)
 			})
 			It(`should backup new Deployment`, shouldBackupNewDeployment)
 			It(`should backup existing Deployment`, shouldBackupExistingDeployment)
+			FIt(`should restore new Deployment`, shouldRestoreNewDeployment)
 		})
 
 		Context(`"DO" backend`, func() {
