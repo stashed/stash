@@ -6,20 +6,16 @@ import (
 
 	"github.com/appscode/kutil"
 	"github.com/golang/glog"
+	apiv1 "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/apimachinery/pkg/util/wait"
-	clientset "k8s.io/client-go/kubernetes"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
-func EnsureService(c clientset.Interface, meta metav1.ObjectMeta, transform func(*apiv1.Service) *apiv1.Service) (*apiv1.Service, error) {
-	return CreateOrPatchService(c, meta, transform)
-}
-
-func CreateOrPatchService(c clientset.Interface, meta metav1.ObjectMeta, transform func(*apiv1.Service) *apiv1.Service) (*apiv1.Service, error) {
+func CreateOrPatchService(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*apiv1.Service) *apiv1.Service) (*apiv1.Service, error) {
 	cur, err := c.CoreV1().Services(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating Service %s/%s.", meta.Namespace, meta.Name)
@@ -36,7 +32,7 @@ func CreateOrPatchService(c clientset.Interface, meta metav1.ObjectMeta, transfo
 	return PatchService(c, cur, transform)
 }
 
-func PatchService(c clientset.Interface, cur *apiv1.Service, transform func(*apiv1.Service) *apiv1.Service) (*apiv1.Service, error) {
+func PatchService(c kubernetes.Interface, cur *apiv1.Service, transform func(*apiv1.Service) *apiv1.Service) (*apiv1.Service, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, err
@@ -58,7 +54,7 @@ func PatchService(c clientset.Interface, cur *apiv1.Service, transform func(*api
 	return c.CoreV1().Services(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
 }
 
-func TryPatchService(c clientset.Interface, meta metav1.ObjectMeta, transform func(*apiv1.Service) *apiv1.Service) (result *apiv1.Service, err error) {
+func TryPatchService(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*apiv1.Service) *apiv1.Service) (result *apiv1.Service, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
@@ -79,7 +75,7 @@ func TryPatchService(c clientset.Interface, meta metav1.ObjectMeta, transform fu
 	return
 }
 
-func TryUpdateService(c clientset.Interface, meta metav1.ObjectMeta, transform func(*apiv1.Service) *apiv1.Service) (result *apiv1.Service, err error) {
+func TryUpdateService(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*apiv1.Service) *apiv1.Service) (result *apiv1.Service, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++

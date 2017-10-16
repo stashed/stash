@@ -33,15 +33,12 @@ type Interface interface {
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	*stashinternalversion.StashClient
+	stash *stashinternalversion.StashClient
 }
 
 // Stash retrieves the StashClient
 func (c *Clientset) Stash() stashinternalversion.StashInterface {
-	if c == nil {
-		return nil
-	}
-	return c.StashClient
+	return c.stash
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -60,7 +57,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	}
 	var cs Clientset
 	var err error
-	cs.StashClient, err = stashinternalversion.NewForConfig(&configShallowCopy)
+	cs.stash, err = stashinternalversion.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +74,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 // panics if there is an error in the config.
 func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
-	cs.StashClient = stashinternalversion.NewForConfigOrDie(c)
+	cs.stash = stashinternalversion.NewForConfigOrDie(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
 	return &cs
@@ -86,7 +83,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
-	cs.StashClient = stashinternalversion.New(c)
+	cs.stash = stashinternalversion.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs

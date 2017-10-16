@@ -2,7 +2,7 @@ package: github.com/appscode/stash
 import:
 - package: github.com/appscode/go
 - package: github.com/appscode/kutil
-  version: release-4.0
+  version: release-5.0
 - package: github.com/appscode/pat
 - package: github.com/cenkalti/backoff
   version: v1.1.0
@@ -15,9 +15,9 @@ import:
   vcs: git
   version: master
 - package: github.com/heroku/docker-registry-client
-  version: 95467b6cacee2a06f112a3cf7e47a70fad6000cf
-- package: github.com/Sirupsen/logrus
-  version: v0.10.0
+  repo: https://github.com/appscode/docker-registry-client.git
+  vcs: git
+  version: release-1.8
 - package: github.com/jpillora/go-ogle-analytics
 - package: github.com/onsi/gomega
   version: v1.2.0
@@ -36,14 +36,14 @@ import:
   repo: https://github.com/appscode/cron.git
   vcs: git
   version: v2
+- package: k8s.io/api
+  version: fe29995db37613b9c5b2a647544cf627bfa8d299
 - package: k8s.io/apiextensions-apiserver
-  version: 7a4256d6a8b6b6b01386ada95105c9fa9ce44264
+  version: release-1.8
 - package: k8s.io/apimachinery
-  version: 1fd2e63a9a370677308a42f24fd40c86438afddf
+  version: 019ae5ada31de202164b118aee88ee2d14075c31
 - package: k8s.io/client-go
-  version: v4.0.0
-- package: k8s.io/kubernetes
-  version: ~1.7
+  version: v5.0.0
 testImport:
 - package: github.com/onsi/ginkgo
   version: v1.4.0

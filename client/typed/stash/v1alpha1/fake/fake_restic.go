@@ -36,50 +36,7 @@ var resticsResource = schema.GroupVersionResource{Group: "stash.appscode.com", V
 
 var resticsKind = schema.GroupVersionKind{Group: "stash.appscode.com", Version: "v1alpha1", Kind: "Restic"}
 
-func (c *FakeRestics) Create(restic *v1alpha1.Restic) (result *v1alpha1.Restic, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(resticsResource, c.ns, restic), &v1alpha1.Restic{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.Restic), err
-}
-
-func (c *FakeRestics) Update(restic *v1alpha1.Restic) (result *v1alpha1.Restic, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(resticsResource, c.ns, restic), &v1alpha1.Restic{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.Restic), err
-}
-
-func (c *FakeRestics) UpdateStatus(restic *v1alpha1.Restic) (*v1alpha1.Restic, error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(resticsResource, "status", c.ns, restic), &v1alpha1.Restic{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.Restic), err
-}
-
-func (c *FakeRestics) Delete(name string, options *v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(resticsResource, c.ns, name), &v1alpha1.Restic{})
-
-	return err
-}
-
-func (c *FakeRestics) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(resticsResource, c.ns, listOptions)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.ResticList{})
-	return err
-}
-
+// Get takes name of the restic, and returns the corresponding restic object, and an error if there is any.
 func (c *FakeRestics) Get(name string, options v1.GetOptions) (result *v1alpha1.Restic, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(resticsResource, c.ns, name), &v1alpha1.Restic{})
@@ -90,6 +47,7 @@ func (c *FakeRestics) Get(name string, options v1.GetOptions) (result *v1alpha1.
 	return obj.(*v1alpha1.Restic), err
 }
 
+// List takes label and field selectors, and returns the list of Restics that match those selectors.
 func (c *FakeRestics) List(opts v1.ListOptions) (result *v1alpha1.ResticList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(resticsResource, resticsKind, c.ns, opts), &v1alpha1.ResticList{})
@@ -116,6 +74,56 @@ func (c *FakeRestics) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(resticsResource, c.ns, opts))
 
+}
+
+// Create takes the representation of a restic and creates it.  Returns the server's representation of the restic, and an error, if there is any.
+func (c *FakeRestics) Create(restic *v1alpha1.Restic) (result *v1alpha1.Restic, err error) {
+	obj, err := c.Fake.
+		Invokes(testing.NewCreateAction(resticsResource, c.ns, restic), &v1alpha1.Restic{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.Restic), err
+}
+
+// Update takes the representation of a restic and updates it. Returns the server's representation of the restic, and an error, if there is any.
+func (c *FakeRestics) Update(restic *v1alpha1.Restic) (result *v1alpha1.Restic, err error) {
+	obj, err := c.Fake.
+		Invokes(testing.NewUpdateAction(resticsResource, c.ns, restic), &v1alpha1.Restic{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.Restic), err
+}
+
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+func (c *FakeRestics) UpdateStatus(restic *v1alpha1.Restic) (*v1alpha1.Restic, error) {
+	obj, err := c.Fake.
+		Invokes(testing.NewUpdateSubresourceAction(resticsResource, "status", c.ns, restic), &v1alpha1.Restic{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.Restic), err
+}
+
+// Delete takes name of the restic and deletes it. Returns an error if one occurs.
+func (c *FakeRestics) Delete(name string, options *v1.DeleteOptions) error {
+	_, err := c.Fake.
+		Invokes(testing.NewDeleteAction(resticsResource, c.ns, name), &v1alpha1.Restic{})
+
+	return err
+}
+
+// DeleteCollection deletes a collection of objects.
+func (c *FakeRestics) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(resticsResource, c.ns, listOptions)
+
+	_, err := c.Fake.Invokes(action, &v1alpha1.ResticList{})
+	return err
 }
 
 // Patch applies the patch and returns the patched restic.

@@ -6,8 +6,8 @@ import (
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/stash/pkg/cli"
+	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 const (
