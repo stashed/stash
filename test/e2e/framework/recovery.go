@@ -22,18 +22,12 @@ func (fi *Invocation) RecoveryForRestic(resticName string) api.Recovery {
 		},
 		Spec: api.RecoverySpec{
 			Restic: resticName,
-			VolumeMounts: []apiv1.VolumeMount{
+			Volumes: []apiv1.Volume{
 				{
-					Name:      TestRecoveredDataVolumeName,
-					MountPath: TestRecoveredDataMountPath,
-				},
-			},
-		},
-		Volumes: []apiv1.Volume{
-			{
-				Name: TestRecoveredDataVolumeName,
-				VolumeSource: apiv1.VolumeSource{
-					EmptyDir: &apiv1.EmptyDirVolumeSource{},
+					Name: TestSourceDataVolumeName,
+					VolumeSource: apiv1.VolumeSource{
+						EmptyDir: &apiv1.EmptyDirVolumeSource{},
+					},
 				},
 			},
 		},
@@ -53,6 +47,6 @@ func (f *Framework) EventuallyRecoverySucceed(meta metav1.ObjectMeta) GomegaAsyn
 	return Eventually(func() bool {
 		obj, err := f.StashClient.Recoveries(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
-		return obj.Status.RecoveryStatus == "SUCCEED"
+		return obj.Status == "SUCCEED"
 	}, time.Minute*5, time.Minute*2)
 }

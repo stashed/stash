@@ -356,4 +356,31 @@ var _ = Describe("Deployment", func() {
 			It(`should stop backup`, shouldStopBackup)
 		})
 	})
+
+	Describe("Creating recovery for", func() {
+		AfterEach(func() {
+			f.DeleteDeployment(deployment.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+			f.DeleteRecovery(recovery.ObjectMeta)
+		})
+
+		Context(`"Local" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForLocalBackend()
+			})
+			It(`should backup new Deployment`, shouldBackupNewDeployment)
+			It(`should backup existing Deployment`, shouldBackupExistingDeployment)
+		})
+
+		Context(`"S3" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForS3Backend()
+				restic = f.ResticForS3Backend()
+				recovery = f.RecoveryForRestic(restic.Name)
+			})
+			FIt(`should restore new Deployment`, shouldRestoreNewDeployment)
+		})
+	})
 })

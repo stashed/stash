@@ -153,6 +153,7 @@ func (c *StashController) runRecoveryInjector(key string) error {
 	if !exists {
 		// Below we will warm up our cache with a Recovery, so that we will see a delete for one d
 		fmt.Printf("Recovery %s does not exist anymore\n", key)
+		return nil
 	}
 
 	d := obj.(*api.Recovery)
@@ -161,6 +162,17 @@ func (c *StashController) runRecoveryInjector(key string) error {
 }
 
 func (c *StashController) createJob(rec *api.Recovery) error {
+	restic, err := c.stashClient.Restics(rec.Namespace).Get(rec.Spec.Restic, metav1.GetOptions{})
+	if err != nil {
+		log.Infoln(err)
+		return err
+	}
+
+	if err = restic.IsValid(); err != nil {
+		log.Infoln(err)
+		return err
+	}
+
 	job := &batch.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rec.Name,
@@ -178,17 +190,17 @@ func (c *StashController) createJob(rec *api.Recovery) error {
 								"--recovery-name=" + rec.Name,
 								"--v=10",
 							},
-							VolumeMounts: rec.Spec.VolumeMounts,
+							VolumeMounts: restic.Spec.VolumeMounts, // use volume mounts specified in restic
 						},
 					},
 					RestartPolicy: "OnFailure",
-					Volumes:       rec.Volumes,
+					Volumes:       rec.Spec.Volumes,
 				},
 			},
 		},
 	}
 
-	job, err := c.k8sClient.BatchV1().Jobs(rec.Namespace).Create(job)
+	job, err = c.k8sClient.BatchV1().Jobs(rec.Namespace).Create(job)
 	if err != nil {
 		return err
 	}

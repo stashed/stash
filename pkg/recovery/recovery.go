@@ -10,105 +10,76 @@ import (
 	"github.com/appscode/stash/pkg/cli"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 type RecoveryOpt struct {
 	Namespace    string
 	RecoveryName string
-	ResticName   string
 	KubeClient   kubernetes.Interface
 	StashClient  cs.StashV1alpha1Interface
-	Recovery     *api.Recovery
-	Restic       *api.Restic
-	Secret       *apiv1.Secret
-	resticCLI    *cli.ResticWrapper
 }
 
 func (opt *RecoveryOpt) RunRecovery() {
-	var err error
-	opt.Recovery, err = opt.StashClient.Recoveries(opt.Namespace).Get(opt.RecoveryName, metav1.GetOptions{})
+	recovery, err := opt.StashClient.Recoveries(opt.Namespace).Get(opt.RecoveryName, metav1.GetOptions{})
 	if err != nil {
 		log.Infoln(err)
 		return
 	}
 
-	if len(opt.Recovery.Spec.Restic) == 0 {
-		log.Infoln("Restic name missing")
-		opt.Recovery.Status.RecoveryStatus = "FAILED: Restic name missing"
-		_, err = opt.StashClient.Recoveries(opt.Namespace).Update(opt.Recovery)
-		if err != nil {
-			log.Infoln("Recovery failed, error updating recovery status")
-		}
-		return
-	}
-
-	if len(opt.Recovery.Spec.VolumeMounts) == 0 {
-		log.Infoln("Target volume not specified")
-		opt.Recovery.Status.RecoveryStatus = "FAILED: Target volume not specified"
-		_, err = opt.StashClient.Recoveries(opt.Namespace).Update(opt.Recovery)
-		if err != nil {
-			log.Infoln("Recovery failed, error updating recovery status")
-		}
-		return
-	}
-
-	opt.ResticName = opt.Recovery.Spec.Restic
-
-	err = opt.RecoverOrErr()
-	if err != nil {
+	if err = recovery.IsValid(); err != nil {
 		log.Infoln(err)
-		opt.Recovery.Status.RecoveryStatus = "FAILED:" + err.Error()
-		_, err = opt.StashClient.Recoveries(opt.Namespace).Update(opt.Recovery)
-		if err != nil {
-			log.Infoln("Recovery failed, error updating recovery status")
-		}
+		opt.UpdateRecoveryStatus(recovery, "FAILED:"+err.Error())
 		return
 	}
 
-	opt.Recovery.Status.RecoveryStatus = "SUCCEED"
-	_, err = opt.StashClient.Recoveries(opt.Namespace).Update(opt.Recovery)
-	if err != nil {
-		log.Infoln("Recovery succeed, error updating recovery status")
+	if err = opt.RecoverOrErr(recovery); err != nil {
+		log.Infoln(err)
+		opt.UpdateRecoveryStatus(recovery, "FAILED:"+err.Error())
+		return
 	}
 
-	log.Infoln("Recovery succeed, status updated")
-
-	time.Sleep(time.Minute * 30)
+	opt.UpdateRecoveryStatus(recovery, "SUCCEED")
+	time.Sleep(time.Minute * 30) // TODO @ Dipta: REMOVE IT
 }
 
-func (opt *RecoveryOpt) RecoverOrErr() error {
-	var err error
-	if opt.Restic, err = opt.StashClient.Restics(opt.Namespace).Get(opt.ResticName, metav1.GetOptions{}); err != nil {
-		log.Infoln(err)
+func (opt *RecoveryOpt) RecoverOrErr(recovery *api.Recovery) error {
+	restic, err := opt.StashClient.Restics(opt.Namespace).Get(recovery.Spec.Restic, metav1.GetOptions{})
+	if err != nil {
 		return err
 	}
 
-	if opt.Restic.Status.BackupCount < 1 {
-		log.Infoln("No backup found")
+	if err = restic.IsValid(); err != nil {
+		return err
+	}
+
+	if restic.Status.BackupCount < 1 {
 		return fmt.Errorf("no backup found")
 	}
 
-	if len(opt.Restic.Spec.Backend.StorageSecretName) == 0 {
-		log.Infoln("Secret name missing")
-		return fmt.Errorf("secret name missing")
-	}
-
-	if opt.Secret, err = opt.KubeClient.CoreV1().Secrets(opt.Namespace).Get(opt.Restic.Spec.Backend.StorageSecretName, metav1.GetOptions{}); err != nil {
-		log.Infoln(err)
+	secret, err := opt.KubeClient.CoreV1().Secrets(opt.Namespace).Get(restic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	if err != nil {
 		return err
 	}
 
 	cli := cli.New("/tmp", "")
-	if err = cli.SetupEnv(opt.Restic, opt.Secret, ""); err != nil {
-		log.Infoln(err)
+	if err = cli.SetupEnv(restic, secret, ""); err != nil {
 		return err
 	}
 
-	if err = cli.Restore(opt.Recovery); err != nil {
-		log.Infoln(err)
-		return err
+	for _, fg := range restic.Spec.FileGroups {
+		if err = cli.Restore(fg.Path); err != nil {
+			return err
+		}
 	}
 
 	return nil
+}
+
+func (opt *RecoveryOpt) UpdateRecoveryStatus(recovery *api.Recovery, status string) {
+	recovery.Status = status
+	if _, err := opt.StashClient.Recoveries(opt.Namespace).Update(recovery); err != nil {
+		log.Infoln("Error updating recovery status:", status)
+	} else {
+		log.Infoln("Updated recovery status:", status)
+	}
 }

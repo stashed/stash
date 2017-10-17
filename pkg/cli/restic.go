@@ -112,22 +112,12 @@ func (w *ResticWrapper) Forget(resource *api.Restic, fg api.FileGroup) error {
 	return nil
 }
 
-func (w *ResticWrapper) Restore(recovery *api.Recovery) error {
+func (w *ResticWrapper) Restore(path string) error {
 	args := []interface{}{"restore"}
-	if len(recovery.Spec.SnapshotID) != 0 {
-		args = append(args, recovery.Spec.SnapshotID)
-	} else {
-		args = append(args, "latest")
-	}
-	if len(recovery.Spec.Host) != 0 {
-		args = append(args, "--host")
-		args = append(args, recovery.Spec.Host)
-	}
-	if len(recovery.Spec.Path) != 0 {
-		args = append(args, "--path")
-		args = append(args, recovery.Spec.Path)
-	}
+	args = append(args, "latest") // TODO @ Dipta: Add support for specific snapshotID
+	args = append(args, "--path")
+	args = append(args, path) // source-path specified in restic fileGroup
 	args = append(args, "--target")
-	args = append(args, recovery.Spec.VolumeMounts[0].MountPath)
+	args = append(args, path) // restore in same path as source-path
 	return w.sh.Command(Exe, args...).Run()
 }

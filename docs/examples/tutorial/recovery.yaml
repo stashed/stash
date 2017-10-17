@@ -5,9 +5,7 @@ metadata:
   namespace: default
 spec:
   restic: stash-demo
-  volumeMounts:
-  - mountPath: /recover/data
-    name: recover-data
-volumes:
-- name: recover-data
-  emptyDir: {}
+  volumes:
+  - name: source-data
+    emptyDir: {}
+
