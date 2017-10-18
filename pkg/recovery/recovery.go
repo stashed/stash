@@ -2,7 +2,6 @@ package recovery
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/appscode/go/log"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -39,7 +38,6 @@ func (opt *RecoveryOpt) RunRecovery() {
 	}
 
 	opt.UpdateRecoveryStatus(recovery, "SUCCEED")
-	time.Sleep(time.Minute * 30) // TODO @ Dipta: REMOVE IT
 }
 
 func (opt *RecoveryOpt) RecoverOrErr(recovery *api.Recovery) error {

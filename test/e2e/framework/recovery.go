@@ -26,7 +26,9 @@ func (fi *Invocation) RecoveryForRestic(resticName string) api.Recovery {
 				{
 					Name: TestSourceDataVolumeName,
 					VolumeSource: apiv1.VolumeSource{
-						EmptyDir: &apiv1.EmptyDirVolumeSource{},
+						HostPath: &apiv1.HostPathVolumeSource{
+							Path: "/data/stash-test/restic-restored",
+						},
 					},
 				},
 			},
@@ -48,5 +50,5 @@ func (f *Framework) EventuallyRecoverySucceed(meta metav1.ObjectMeta) GomegaAsyn
 		obj, err := f.StashClient.Recoveries(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		return obj.Status == "SUCCEED"
-	}, time.Minute*5, time.Minute*2)
+	}, time.Minute*5, time.Second*5)
 }

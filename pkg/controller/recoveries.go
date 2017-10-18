@@ -158,10 +158,10 @@ func (c *StashController) runRecoveryInjector(key string) error {
 
 	d := obj.(*api.Recovery)
 	fmt.Printf("Sync/Add/Update for Recovery %s\n", d.GetName())
-	return c.createJob(d)
+	return c.createRecoveryJob(d)
 }
 
-func (c *StashController) createJob(rec *api.Recovery) error {
+func (c *StashController) createRecoveryJob(rec *api.Recovery) error {
 	restic, err := c.stashClient.Restics(rec.Namespace).Get(rec.Spec.Restic, metav1.GetOptions{})
 	if err != nil {
 		log.Infoln(err)
@@ -198,6 +198,22 @@ func (c *StashController) createJob(rec *api.Recovery) error {
 				},
 			},
 		},
+	}
+
+	// local backend
+	if restic.Spec.Backend.Local != nil {
+		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts,
+			apiv1.VolumeMount{
+				Name:      util.LocalVolumeName,
+				MountPath: restic.Spec.Backend.Local.Path,
+			})
+
+		// user don't need to specify "stash-local" volume, we collect it from restic-spec
+		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes,
+			apiv1.Volume{
+				Name:         util.LocalVolumeName,
+				VolumeSource: restic.Spec.Backend.Local.VolumeSource,
+			})
 	}
 
 	job, err = c.k8sClient.BatchV1().Jobs(rec.Namespace).Create(job)

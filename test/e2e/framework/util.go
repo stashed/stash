@@ -1,6 +1,7 @@
 package framework
 
 import (
+	"os/exec"
 	"time"
 
 	"github.com/appscode/stash/pkg/eventer"
@@ -61,4 +62,10 @@ func deleteInBackground() *metav1.DeleteOptions {
 func deleteInForeground() *metav1.DeleteOptions {
 	policy := metav1.DeletePropagationForeground
 	return &metav1.DeleteOptions{PropagationPolicy: &policy}
+}
+
+func CleanupMinikubeHostPath() error {
+	cmd := "minikube"
+	args := []string{"ssh", "sudo rm -rf /data/stash-test"}
+	return exec.Command(cmd, args...).Run()
 }

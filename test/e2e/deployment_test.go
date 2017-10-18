@@ -180,7 +180,7 @@ var _ = Describe("Deployment", func() {
 			f.EventuallyDeployment(deployment.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		}
 
-		shouldRestoreNewDeployment = func() {
+		shouldRestoreDeployment = func() {
 			By("Creating repository Secret " + cred.Name)
 			err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
@@ -214,9 +214,9 @@ var _ = Describe("Deployment", func() {
 
 	Describe("Creating restic for", func() {
 		AfterEach(func() {
-			//f.DeleteDeployment(deployment.ObjectMeta)
-			//f.DeleteRestic(restic.ObjectMeta)
-			//f.DeleteSecret(cred.ObjectMeta)
+			f.DeleteDeployment(deployment.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
 		})
 
 		Context(`"Local" backend`, func() {
@@ -236,7 +236,6 @@ var _ = Describe("Deployment", func() {
 			})
 			It(`should backup new Deployment`, shouldBackupNewDeployment)
 			It(`should backup existing Deployment`, shouldBackupExistingDeployment)
-			FIt(`should restore new Deployment`, shouldRestoreNewDeployment)
 		})
 
 		Context(`"DO" backend`, func() {
@@ -363,15 +362,16 @@ var _ = Describe("Deployment", func() {
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 			f.DeleteRecovery(recovery.ObjectMeta)
+			framework.CleanupMinikubeHostPath()
 		})
 
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
-				restic = f.ResticForLocalBackend()
+				restic = f.ResticForHostPathLocalBackend()
+				recovery = f.RecoveryForRestic(restic.Name)
 			})
-			It(`should backup new Deployment`, shouldBackupNewDeployment)
-			It(`should backup existing Deployment`, shouldBackupExistingDeployment)
+			It(`should restore deployment backup`, shouldRestoreDeployment)
 		})
 
 		Context(`"S3" backend`, func() {
@@ -380,7 +380,7 @@ var _ = Describe("Deployment", func() {
 				restic = f.ResticForS3Backend()
 				recovery = f.RecoveryForRestic(restic.Name)
 			})
-			FIt(`should restore new Deployment`, shouldRestoreNewDeployment)
+			It(`should restore deployment backup`, shouldRestoreDeployment)
 		})
 	})
 })

@@ -58,6 +58,22 @@ func (fi *Invocation) ResticForLocalBackend() api.Restic {
 	return r
 }
 
+func (fi *Invocation) ResticForHostPathLocalBackend() api.Restic {
+	r := fi._restic()
+	r.Spec.Backend = api.Backend{
+		StorageSecretName: "",
+		Local: &api.LocalSpec{
+			Path: "/safe/data",
+			VolumeSource: apiv1.VolumeSource{
+				HostPath: &apiv1.HostPathVolumeSource{
+					Path: "/data/stash-test/restic-repo",
+				},
+			},
+		},
+	}
+	return r
+}
+
 func (fi *Invocation) ResticForS3Backend() api.Restic {
 	r := fi._restic()
 	r.Spec.Backend = api.Backend{
