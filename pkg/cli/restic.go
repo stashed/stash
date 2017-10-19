@@ -112,11 +112,13 @@ func (w *ResticWrapper) Forget(resource *api.Restic, fg api.FileGroup) error {
 	return nil
 }
 
-func (w *ResticWrapper) Restore(path string) error {
+func (w *ResticWrapper) Restore(path, host string) error {
 	args := []interface{}{"restore"}
 	args = append(args, "latest") // TODO @ Dipta: Add support for specific snapshotID
 	args = append(args, "--path")
 	args = append(args, path) // source-path specified in restic fileGroup
+	args = append(args, "--host")
+	args = append(args, host)
 	args = append(args, "--target")
 	args = append(args, path) // restore in same path as source-path
 	return w.sh.Command(Exe, args...).Run()

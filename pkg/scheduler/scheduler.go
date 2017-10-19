@@ -49,19 +49,6 @@ type Options struct {
 	MaxNumRequeues   int
 }
 
-func (opt Options) autoPrefix(resource *api.Restic) string {
-	switch resource.Spec.UseAutoPrefix {
-	case api.None:
-		return ""
-	case api.NodeName:
-		return opt.NodeName
-	case api.PodName:
-		return opt.PodName
-	default:
-		return opt.SmartPrefix
-	}
-}
-
 type Controller struct {
 	k8sClient   kubernetes.Interface
 	stashClient cs.StashV1alpha1Interface
@@ -107,7 +94,7 @@ func (c *Controller) Setup() error {
 		return err
 	}
 	log.Infof("Found repository secret %s", secret.Name)
-	err = c.resticCLI.SetupEnv(resource, secret, c.opt.autoPrefix(resource))
+	err = c.resticCLI.SetupEnv(resource, secret, c.opt.SmartPrefix)
 	if err != nil {
 		return err
 	}
@@ -190,7 +177,7 @@ func (c *Controller) runOnce() (err error) {
 	if err != nil {
 		return
 	}
-	err = c.resticCLI.SetupEnv(resource, secret, c.opt.autoPrefix(resource))
+	err = c.resticCLI.SetupEnv(resource, secret, c.opt.SmartPrefix)
 	if err != nil {
 		return err
 	}

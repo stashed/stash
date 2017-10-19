@@ -24,5 +24,33 @@ func (r Recovery) IsValid() error {
 	if len(r.Spec.Volumes) == 0 {
 		return fmt.Errorf("missing target vollume")
 	}
+
+	if r.Spec.Workload == "" {
+		return fmt.Errorf("missing workload")
+	}
+	appKind, _, err := ExtractWorkload(r.Spec.Workload)
+	if err != nil {
+		return err
+	}
+	switch appKind {
+	case AppKindDeployment, AppKindReplicaSet, AppKindReplicationController:
+		if len(r.Spec.PodOrdinal) != 0 || len(r.Spec.NodeSelector) != 0 {
+			return fmt.Errorf("should not specify podOrdinal/nodeSelector for workload kind %s", appKind)
+		}
+	case AppKindStatefulSet:
+		if len(r.Spec.PodOrdinal) == 0 {
+			return fmt.Errorf("must specify podOrdinal for workload kind %s", appKind)
+		}
+		if len(r.Spec.NodeSelector) != 0 {
+			return fmt.Errorf("should not specify nodeSelector for workload kind %s", appKind)
+		}
+	case AppKindDaemonSet:
+		if len(r.Spec.NodeSelector) == 0 {
+			return fmt.Errorf("must specify nodeSelector for workload kind %s", appKind)
+		}
+		if len(r.Spec.PodOrdinal) != 0 {
+			return fmt.Errorf("should not specify podOrdinal for workload kind %s", appKind)
+		}
+	}
 	return nil
 }

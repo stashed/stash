@@ -273,6 +273,9 @@ func Convert_stash_RecoveryList_To_v1alpha1_RecoveryList(in *stash.RecoveryList,
 
 func autoConvert_v1alpha1_RecoverySpec_To_stash_RecoverySpec(in *RecoverySpec, out *stash.RecoverySpec, s conversion.Scope) error {
 	out.Restic = in.Restic
+	out.Workload = in.Workload
+	out.PodOrdinal = in.PodOrdinal
+	out.NodeSelector = *(*map[string]string)(unsafe.Pointer(&in.NodeSelector))
 	out.Volumes = *(*[]v1.Volume)(unsafe.Pointer(&in.Volumes))
 	return nil
 }
@@ -284,6 +287,9 @@ func Convert_v1alpha1_RecoverySpec_To_stash_RecoverySpec(in *RecoverySpec, out *
 
 func autoConvert_stash_RecoverySpec_To_v1alpha1_RecoverySpec(in *stash.RecoverySpec, out *RecoverySpec, s conversion.Scope) error {
 	out.Restic = in.Restic
+	out.Workload = in.Workload
+	out.PodOrdinal = in.PodOrdinal
+	out.NodeSelector = *(*map[string]string)(unsafe.Pointer(&in.NodeSelector))
 	out.Volumes = *(*[]v1.Volume)(unsafe.Pointer(&in.Volumes))
 	return nil
 }
@@ -374,7 +380,6 @@ func autoConvert_v1alpha1_ResticSpec_To_stash_ResticSpec(in *ResticSpec, out *st
 		return err
 	}
 	out.Schedule = in.Schedule
-	out.UseAutoPrefix = stash.PrefixType(in.UseAutoPrefix)
 	out.VolumeMounts = *(*[]v1.VolumeMount)(unsafe.Pointer(&in.VolumeMounts))
 	out.Resources = in.Resources
 	return nil
@@ -392,7 +397,6 @@ func autoConvert_stash_ResticSpec_To_v1alpha1_ResticSpec(in *stash.ResticSpec, o
 		return err
 	}
 	out.Schedule = in.Schedule
-	out.UseAutoPrefix = PrefixType(in.UseAutoPrefix)
 	out.VolumeMounts = *(*[]v1.VolumeMount)(unsafe.Pointer(&in.VolumeMounts))
 	out.Resources = in.Resources
 	return nil

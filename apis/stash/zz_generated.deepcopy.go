@@ -200,6 +200,13 @@ func DeepCopy_stash_RecoverySpec(in interface{}, out interface{}, c *conversion.
 		in := in.(*RecoverySpec)
 		out := out.(*RecoverySpec)
 		*out = *in
+		if in.NodeSelector != nil {
+			in, out := &in.NodeSelector, &out.NodeSelector
+			*out = make(map[string]string)
+			for key, val := range *in {
+				(*out)[key] = val
+			}
+		}
 		if in.Volumes != nil {
 			in, out := &in.Volumes, &out.Volumes
 			*out = make([]v1.Volume, len(*in))

@@ -26,11 +26,10 @@ type Restic struct {
 }
 
 type ResticSpec struct {
-	Selector      metav1.LabelSelector `json:"selector,omitempty"`
-	FileGroups    []FileGroup          `json:"fileGroups,omitempty"`
-	Backend       Backend              `json:"backend,omitempty"`
-	Schedule      string               `json:"schedule,omitempty"`
-	UseAutoPrefix PrefixType           `json:"useAutoPrefix,omitempty"`
+	Selector   metav1.LabelSelector `json:"selector,omitempty"`
+	FileGroups []FileGroup          `json:"fileGroups,omitempty"`
+	Backend    Backend              `json:"backend,omitempty"`
+	Schedule   string               `json:"schedule,omitempty"`
 	// Pod volumes to mount into the sidecar container's filesystem.
 	VolumeMounts []apiv1.VolumeMount `json:"volumeMounts,omitempty"`
 	// Compute Resources required by the sidecar container.
@@ -145,8 +144,11 @@ type Recovery struct {
 }
 
 type RecoverySpec struct {
-	Restic  string         `json:"restic,omitempty"`
-	Volumes []apiv1.Volume `json:"volumes,omitempty"`
+	Restic       string            `json:"restic,omitempty"`
+	Workload     string            `json:"workload,omitempty"`
+	PodOrdinal   string            `json:"podOrdinal,omitempty"`
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	Volumes      []apiv1.Volume    `json:"volumes,omitempty"`
 }
 
 type RecoveryList struct {

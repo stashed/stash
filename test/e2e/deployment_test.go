@@ -204,6 +204,8 @@ var _ = Describe("Deployment", func() {
 			By("Waiting for backup event")
 			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
+			recovery.Spec.Workload = "deploy/" + deployment.Name
+
 			By("Creating recovery " + recovery.Name)
 			err = f.CreateRecovery(recovery)
 			Expect(err).NotTo(HaveOccurred())
@@ -232,7 +234,6 @@ var _ = Describe("Deployment", func() {
 			BeforeEach(func() {
 				cred = f.SecretForS3Backend()
 				restic = f.ResticForS3Backend()
-				recovery = f.RecoveryForRestic(restic.Name)
 			})
 			It(`should backup new Deployment`, shouldBackupNewDeployment)
 			It(`should backup existing Deployment`, shouldBackupExistingDeployment)
@@ -358,11 +359,11 @@ var _ = Describe("Deployment", func() {
 
 	Describe("Creating recovery for", func() {
 		AfterEach(func() {
-			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
-			f.DeleteRecovery(recovery.ObjectMeta)
-			framework.CleanupMinikubeHostPath()
+			//f.DeleteDeployment(deployment.ObjectMeta)
+			//f.DeleteRestic(restic.ObjectMeta)
+			//f.DeleteSecret(cred.ObjectMeta)
+			//f.DeleteRecovery(recovery.ObjectMeta)
+			//framework.CleanupMinikubeHostPath()
 		})
 
 		Context(`"Local" backend`, func() {
@@ -371,7 +372,7 @@ var _ = Describe("Deployment", func() {
 				restic = f.ResticForHostPathLocalBackend()
 				recovery = f.RecoveryForRestic(restic.Name)
 			})
-			It(`should restore deployment backup`, shouldRestoreDeployment)
+			FIt(`should restore deployment backup`, shouldRestoreDeployment)
 		})
 
 		Context(`"S3" backend`, func() {

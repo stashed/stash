@@ -2,6 +2,7 @@ package recovery
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/appscode/go/log"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -45,11 +46,9 @@ func (opt *RecoveryOpt) RecoverOrErr(recovery *api.Recovery) error {
 	if err != nil {
 		return err
 	}
-
 	if err = restic.IsValid(); err != nil {
 		return err
 	}
-
 	if restic.Status.BackupCount < 1 {
 		return fmt.Errorf("no backup found")
 	}
@@ -59,13 +58,27 @@ func (opt *RecoveryOpt) RecoverOrErr(recovery *api.Recovery) error {
 		return err
 	}
 
-	cli := cli.New("/tmp", "")
-	if err = cli.SetupEnv(restic, secret, ""); err != nil {
+	nodeName := os.Getenv("NODE_NAME")
+	if nodeName == "" {
+		log.Fatalln(`Missing ENV var "NODE_NAME"`)
+	}
+	appKind, appName, err := api.ExtractWorkload(recovery.Spec.Workload)
+	if err != nil {
+		return err
+	}
+	podName, _ := api.StatefulSetPodName(appName, recovery.Spec.PodOrdinal) // ignore error for other appKind
+	hostname, smartPrefix, err := api.HostnamePrefixForAppKind(appKind, appName, podName, nodeName)
+	if err != nil {
+		return err
+	}
+
+	cli := cli.New("/tmp", hostname)
+	if err = cli.SetupEnv(restic, secret, smartPrefix); err != nil {
 		return err
 	}
 
 	for _, fg := range restic.Spec.FileGroups {
-		if err = cli.Restore(fg.Path); err != nil {
+		if err = cli.Restore(fg.Path, hostname); err != nil {
 			return err
 		}
 	}

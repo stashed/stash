@@ -20,6 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
+	batch "k8s.io/client-go/pkg/apis/batch/v1"
 )
 
 const (
@@ -306,4 +307,62 @@ func RecoveryEqual(old, new *api.Recovery) bool {
 		newSpec = &new.Spec
 	}
 	return reflect.DeepEqual(oldSpec, newSpec)
+}
+
+func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *batch.Job {
+	job := &batch.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      recovery.Name,
+			Namespace: recovery.Namespace,
+		},
+		Spec: batch.JobSpec{
+			Template: apiv1.PodTemplateSpec{
+				Spec: apiv1.PodSpec{
+					Containers: []apiv1.Container{
+						{
+							Name:  StashContainer,
+							Image: docker.ImageOperator + ":" + tag,
+							Args: []string{
+								"recover",
+								"--recovery-name=" + recovery.Name,
+								"--v=10",
+							},
+							Env: []apiv1.EnvVar{
+								{
+									Name: "NODE_NAME",
+									ValueFrom: &apiv1.EnvVarSource{
+										FieldRef: &apiv1.ObjectFieldSelector{
+											FieldPath: "spec.nodeName",
+										},
+									},
+								},
+							},
+							VolumeMounts: restic.Spec.VolumeMounts, // use volume mounts specified in restic
+						},
+					},
+					RestartPolicy: "OnFailure",
+					Volumes:       recovery.Spec.Volumes,
+					NodeSelector:  recovery.Spec.NodeSelector,
+				},
+			},
+		},
+	}
+
+	// local backend
+	if restic.Spec.Backend.Local != nil {
+		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts,
+			apiv1.VolumeMount{
+				Name:      LocalVolumeName,
+				MountPath: restic.Spec.Backend.Local.Path,
+			})
+
+		// user don't need to specify "stash-local" volume, we collect it from restic-spec
+		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes,
+			apiv1.Volume{
+				Name:         LocalVolumeName,
+				VolumeSource: restic.Spec.Backend.Local.VolumeSource,
+			})
+	}
+
+	return job
 }

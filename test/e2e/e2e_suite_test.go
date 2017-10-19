@@ -56,7 +56,7 @@ var _ = BeforeSuite(func() {
 	By("Using test namespace " + root.Namespace())
 
 	opts := controller.Options{
-		SidecarImageTag: "canary",
+		SidecarImageTag: "recovery", //"canary",
 		ResyncPeriod:    5 * time.Minute,
 	}
 	ctrl = controller.New(kubeClient, crdClient, stashClient, opts)

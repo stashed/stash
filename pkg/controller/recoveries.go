@@ -6,7 +6,6 @@ import (
 	"github.com/appscode/go/log"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
-	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
@@ -15,7 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	apiv1 "k8s.io/client-go/pkg/api/v1"
-	batch "k8s.io/client-go/pkg/apis/batch/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 )
@@ -158,10 +156,10 @@ func (c *StashController) runRecoveryInjector(key string) error {
 
 	d := obj.(*api.Recovery)
 	fmt.Printf("Sync/Add/Update for Recovery %s\n", d.GetName())
-	return c.createRecoveryJob(d)
+	return c.runRecoveryJob(d)
 }
 
-func (c *StashController) createRecoveryJob(rec *api.Recovery) error {
+func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 	restic, err := c.stashClient.Restics(rec.Namespace).Get(rec.Spec.Restic, metav1.GetOptions{})
 	if err != nil {
 		log.Infoln(err)
@@ -173,51 +171,8 @@ func (c *StashController) createRecoveryJob(rec *api.Recovery) error {
 		return err
 	}
 
-	job := &batch.Job{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      rec.Name,
-			Namespace: rec.Namespace,
-		},
-		Spec: batch.JobSpec{
-			Template: apiv1.PodTemplateSpec{
-				Spec: apiv1.PodSpec{
-					Containers: []apiv1.Container{
-						{
-							Name:  util.StashContainer,
-							Image: docker.ImageOperator + ":recovery",
-							Args: []string{
-								"recover",
-								"--recovery-name=" + rec.Name,
-								"--v=10",
-							},
-							VolumeMounts: restic.Spec.VolumeMounts, // use volume mounts specified in restic
-						},
-					},
-					RestartPolicy: "OnFailure",
-					Volumes:       rec.Spec.Volumes,
-				},
-			},
-		},
-	}
-
-	// local backend
-	if restic.Spec.Backend.Local != nil {
-		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts,
-			apiv1.VolumeMount{
-				Name:      util.LocalVolumeName,
-				MountPath: restic.Spec.Backend.Local.Path,
-			})
-
-		// user don't need to specify "stash-local" volume, we collect it from restic-spec
-		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes,
-			apiv1.Volume{
-				Name:         util.LocalVolumeName,
-				VolumeSource: restic.Spec.Backend.Local.VolumeSource,
-			})
-	}
-
-	job, err = c.k8sClient.BatchV1().Jobs(rec.Namespace).Create(job)
-	if err != nil {
+	job := util.CreateRecoveryJob(rec, restic, c.options.SidecarImageTag)
+	if job, err = c.k8sClient.BatchV1().Jobs(rec.Namespace).Create(job); err != nil {
 		return err
 	}
 

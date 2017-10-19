@@ -8,10 +8,10 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/kutil"
+	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/scheduler"
 	"github.com/spf13/cobra"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -52,58 +52,15 @@ func NewCmdSchedule() *cobra.Command {
 			if opt.PodName == "" {
 				log.Fatalln(`Missing ENV var "POD_NAME"`)
 			}
-
-			app := strings.SplitN(workload, "/", 2)
-			if len(app) != 2 {
-				log.Fatalf(`--workload flag must be in the format "Kind/Name", but found %v`, workload)
+			if opt.AppKind, opt.AppName, err = api.ExtractWorkload(workload); err != nil {
+				log.Fatalf(err.Error())
 			}
-			opt.AppName = app[1]
-			switch app[0] {
-			case "Deployments", "Deployment", "deployments", "deployment":
-				opt.AppKind = "Deployment"
-				opt.SmartPrefix = ""
-				opt.SnapshotHostname = opt.AppName
-				_, err := kubeClient.AppsV1beta1().Deployments(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
-				if err != nil {
-					_, err := kubeClient.ExtensionsV1beta1().Deployments(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
-					if err != nil {
-						log.Fatalf(`Unknown Deployment %s/%s`, opt.Namespace, opt.AppName)
-					}
-				}
-			case "ReplicaSets", "ReplicaSet", "replicasets", "replicaset", "rs":
-				opt.AppKind = "ReplicaSet"
-				opt.SmartPrefix = ""
-				opt.SnapshotHostname = opt.AppName
-				_, err := kubeClient.ExtensionsV1beta1().ReplicaSets(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
-				if err != nil {
-					log.Fatalf(`Unknown ReplicaSet %s/%s`, opt.Namespace, opt.AppName)
-				}
-			case "ReplicationControllers", "ReplicationController", "replicationcontrollers", "replicationcontroller", "rc":
-				opt.AppKind = "ReplicationController"
-				opt.SmartPrefix = ""
-				opt.SnapshotHostname = opt.AppName
-				_, err := kubeClient.CoreV1().ReplicationControllers(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
-				if err != nil {
-					log.Fatalf(`Unknown ReplicationController %s/%s`, opt.Namespace, opt.AppName)
-				}
-			case "StatefulSets", "StatefulSet":
-				opt.AppKind = "StatefulSet"
-				opt.SmartPrefix = opt.PodName
-				opt.SnapshotHostname = opt.PodName
-				_, err := kubeClient.AppsV1beta1().StatefulSets(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
-				if err != nil {
-					log.Fatalf(`Unknown StatefulSet %s/%s`, opt.Namespace, opt.AppName)
-				}
-			case "DaemonSets", "DaemonSet", "daemonsets", "daemonset":
-				opt.AppKind = "DaemonSet"
-				opt.SmartPrefix = opt.NodeName
-				opt.SnapshotHostname = opt.NodeName
-				_, err := kubeClient.ExtensionsV1beta1().DaemonSets(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
-				if err != nil {
-					log.Fatalf(`Unknown DaemonSet %s/%s`, opt.Namespace, opt.AppName)
-				}
-			default:
-				log.Fatalf(`Unrecognized workload "Kind" %v`, opt.AppKind)
+			if opt.SnapshotHostname, opt.SmartPrefix, err = api.HostnamePrefixForAppKind(
+				opt.AppKind, opt.AppName, opt.PodName, opt.NodeName); err != nil {
+				log.Fatalf(err.Error())
+			}
+			if err = api.CheckWorkloadExists(kubeClient, opt.Namespace, opt.AppKind, opt.AppName); err != nil {
+				log.Fatalf(err.Error())
 			}
 
 			opt.ScratchDir = strings.TrimSuffix(opt.ScratchDir, "/")
