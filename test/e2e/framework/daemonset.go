@@ -4,6 +4,7 @@ import (
 	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
 )
 
@@ -18,6 +19,9 @@ func (fi *Invocation) DaemonSet() extensions.DaemonSet {
 		},
 		Spec: extensions.DaemonSetSpec{
 			Template: fi.PodTemplate(),
+			UpdateStrategy: extensions.DaemonSetUpdateStrategy{
+				RollingUpdate: &extensions.RollingUpdateDaemonSet{MaxUnavailable: &intstr.IntOrString{IntVal: 0}},
+			},
 		},
 	}
 	if nodes, err := fi.KubeClient.CoreV1().Nodes().List(metav1.ListOptions{}); err == nil {

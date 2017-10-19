@@ -204,6 +204,9 @@ var _ = Describe("DaemonSet", func() {
 			By("Waiting for backup event")
 			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
+			recovery.Spec.Workload = "daemonset/" + daemon.Name
+			recovery.Spec.NodeSelector = map[string]string{"kubernetes.io/hostname": "minikube"}
+
 			By("Creating recovery " + recovery.Name)
 			err = f.CreateRecovery(recovery)
 			Expect(err).NotTo(HaveOccurred())

@@ -359,11 +359,11 @@ var _ = Describe("Deployment", func() {
 
 	Describe("Creating recovery for", func() {
 		AfterEach(func() {
-			//f.DeleteDeployment(deployment.ObjectMeta)
-			//f.DeleteRestic(restic.ObjectMeta)
-			//f.DeleteSecret(cred.ObjectMeta)
-			//f.DeleteRecovery(recovery.ObjectMeta)
-			//framework.CleanupMinikubeHostPath()
+			f.DeleteDeployment(deployment.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+			f.DeleteRecovery(recovery.ObjectMeta)
+			framework.CleanupMinikubeHostPath()
 		})
 
 		Context(`"Local" backend`, func() {
@@ -372,7 +372,7 @@ var _ = Describe("Deployment", func() {
 				restic = f.ResticForHostPathLocalBackend()
 				recovery = f.RecoveryForRestic(restic.Name)
 			})
-			FIt(`should restore deployment backup`, shouldRestoreDeployment)
+			It(`should restore deployment backup`, shouldRestoreDeployment)
 		})
 
 		Context(`"S3" backend`, func() {
