@@ -4,9 +4,9 @@ import (
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
 	rbac_util "github.com/appscode/kutil/rbac/v1beta1"
+	apiv1 "k8s.io/api/core/v1"
+	rbac "k8s.io/api/rbac/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
-	rbac "k8s.io/client-go/pkg/apis/rbac/v1beta1"
 )
 
 const (

@@ -11,16 +11,16 @@ import (
 
 	"github.com/hashicorp/go-version"
 	"github.com/pkg/errors"
+	apiv1 "k8s.io/api/core/v1"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
-	clientset "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/rest"
 )
 
@@ -41,7 +41,7 @@ func Namespace() string {
 	return apiv1.NamespaceDefault
 }
 
-func IsPreferredAPIResource(c clientset.Interface, groupVersion, kind string) bool {
+func IsPreferredAPIResource(c kubernetes.Interface, groupVersion, kind string) bool {
 	if resourceList, err := c.Discovery().ServerPreferredResources(); err == nil {
 		for _, resources := range resourceList {
 			if resources.GroupVersion != groupVersion {
@@ -57,7 +57,7 @@ func IsPreferredAPIResource(c clientset.Interface, groupVersion, kind string) bo
 	return false
 }
 
-func CheckAPIVersion(c clientset.Interface, constraint string) (bool, error) {
+func CheckAPIVersion(c kubernetes.Interface, constraint string) (bool, error) {
 	info, err := c.Discovery().ServerVersion()
 	if err != nil {
 		return false, err
@@ -81,7 +81,7 @@ func WaitForCRDReady(restClient rest.Interface, crds []*apiextensions.CustomReso
 			if err != nil {
 				// RESTClient returns *apierrors.StatusError for any status codes < 200 or > 206
 				// and http.Client.Do errors are returned directly.
-				if se, ok := err.(*apierrors.StatusError); ok {
+				if se, ok := err.(*kerr.StatusError); ok {
 					if se.Status().Code == http.StatusNotFound {
 						return false, nil
 					}

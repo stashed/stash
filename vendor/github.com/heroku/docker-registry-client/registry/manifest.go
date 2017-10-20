@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/docker/distribution/digest"
+	"github.com/opencontainers/go-digest"
 	manifestV1 "github.com/docker/distribution/manifest/schema1"
 	manifestV2 "github.com/docker/distribution/manifest/schema2"
 )
@@ -80,7 +80,7 @@ func (registry *Registry) ManifestDigest(repository, reference string) (digest.D
 	if err != nil {
 		return "", err
 	}
-	return digest.ParseDigest(resp.Header.Get("Docker-Content-Digest"))
+	return digest.Parse(resp.Header.Get("Docker-Content-Digest"))
 }
 
 func (registry *Registry) DeleteManifest(repository string, digest digest.Digest) error {
