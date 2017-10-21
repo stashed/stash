@@ -17,7 +17,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
 	"gopkg.in/robfig/cron.v2"
-	apiv1 "k8s.io/api/core/v1"
+	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -153,7 +153,7 @@ func (c *Controller) configureScheduler() error {
 	}
 	_, err := c.cron.AddFunc(r.Spec.Schedule, func() {
 		if err := c.runOnce(); err != nil {
-			c.recorder.Event(r.ObjectReference(), apiv1.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
+			c.recorder.Event(r.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
 			log.Errorln(err)
 		}
 	})
@@ -185,7 +185,7 @@ func (c *Controller) runOnce() (err error) {
 		err = errors.New("missing repository secret name")
 		return
 	}
-	var secret *apiv1.Secret
+	var secret *core.Secret
 	secret, err = c.k8sClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return
@@ -266,18 +266,18 @@ func (c *Controller) runOnce() (err error) {
 		err = c.measure(c.resticCLI.Backup, resource, fg, backupOpMetric)
 		if err != nil {
 			log.Errorln("Backup operation failed for Reestic %s/%s due to %s", resource.Namespace, resource.Name, err)
-			c.recorder.Event(resource.ObjectReference(), apiv1.EventTypeNormal, eventer.EventReasonFailedToBackup, " Error taking backup: "+err.Error())
+			c.recorder.Event(resource.ObjectReference(), core.EventTypeNormal, eventer.EventReasonFailedToBackup, " Error taking backup: "+err.Error())
 			return
 		} else {
 			hostname, _ := os.Hostname()
-			c.recorder.Event(resource.ObjectReference(), apiv1.EventTypeNormal, eventer.EventReasonSuccessfulBackup, "Backed up pod:"+hostname+" path:"+fg.Path)
+			c.recorder.Event(resource.ObjectReference(), core.EventTypeNormal, eventer.EventReasonSuccessfulBackup, "Backed up pod:"+hostname+" path:"+fg.Path)
 		}
 
 		forgetOpMetric := restic_session_duration_seconds.WithLabelValues(sanitizeLabelValue(fg.Path), "forget")
 		err = c.measure(c.resticCLI.Forget, resource, fg, forgetOpMetric)
 		if err != nil {
 			log.Errorln("Failed to forget old snapshots for Restic %s/%s due to %s", resource.Namespace, resource.Name, err)
-			c.recorder.Event(resource.ObjectReference(), apiv1.EventTypeNormal, eventer.EventReasonFailedToRetention, " Error forgetting snapshots: "+err.Error())
+			c.recorder.Event(resource.ObjectReference(), core.EventTypeNormal, eventer.EventReasonFailedToRetention, " Error forgetting snapshots: "+err.Error())
 			return
 		}
 	}

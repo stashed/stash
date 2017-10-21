@@ -1,7 +1,7 @@
 package v1alpha1
 
 import (
-	apiv1 "k8s.io/api/core/v1"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -32,9 +32,9 @@ type ResticSpec struct {
 	Schedule      string               `json:"schedule,omitempty"`
 	UseAutoPrefix PrefixType           `json:"useAutoPrefix,omitempty"`
 	// Pod volumes to mount into the sidecar container's filesystem.
-	VolumeMounts []apiv1.VolumeMount `json:"volumeMounts,omitempty"`
+	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty"`
 	// Compute Resources required by the sidecar container.
-	Resources apiv1.ResourceRequirements `json:"resources,omitempty"`
+	Resources core.ResourceRequirements `json:"resources,omitempty"`
 }
 
 type ResticStatus struct {
@@ -70,7 +70,7 @@ type RecoverySpec struct {
 	// Path       string `json:"path,omitempty"`
 	// Host       string `json:"path,omitempty"`
 	// target volume where snapshot will be restored
-	VolumeMounts []apiv1.VolumeMount `json:"volumeMounts,omitempty"`
+	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty"`
 }
 
 type RecoveryStatus struct {
@@ -108,8 +108,8 @@ type Backend struct {
 }
 
 type LocalSpec struct {
-	VolumeSource apiv1.VolumeSource `json:"volumeSource,omitempty"`
-	Path         string             `json:"path,omitempty"`
+	VolumeSource core.VolumeSource `json:"volumeSource,omitempty"`
+	Path         string            `json:"path,omitempty"`
 }
 
 type S3Spec struct {

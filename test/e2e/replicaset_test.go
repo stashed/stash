@@ -8,7 +8,7 @@ import (
 	. "github.com/appscode/stash/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	apiv1 "k8s.io/api/core/v1"
+	core "k8s.io/api/core/v1"
 	extensions "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -18,7 +18,7 @@ var _ = Describe("ReplicaSet", func() {
 		err    error
 		f      *framework.Invocation
 		restic api.Restic
-		cred   apiv1.Secret
+		cred   core.Secret
 		rs     extensions.ReplicaSet
 	)
 

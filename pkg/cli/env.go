@@ -10,7 +10,7 @@ import (
 
 	"github.com/appscode/go/log"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
-	apiv1 "k8s.io/api/core/v1"
+	core "k8s.io/api/core/v1"
 )
 
 const (
@@ -54,7 +54,7 @@ const (
 	OS_AUTH_TOKEN  = "OS_AUTH_TOKEN"
 )
 
-func (w *ResticWrapper) SetupEnv(resource *api.Restic, secret *apiv1.Secret, autoPrefix string) error {
+func (w *ResticWrapper) SetupEnv(resource *api.Restic, secret *core.Secret, autoPrefix string) error {
 	if v, ok := secret.Data[RESTIC_PASSWORD]; !ok {
 		return errors.New("Missing repository password")
 	} else {

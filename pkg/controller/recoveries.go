@@ -9,7 +9,7 @@ import (
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
-	apiv1 "k8s.io/api/core/v1"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	rt "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -21,10 +21,10 @@ import (
 func (c *StashController) initRecoveryWatcher() {
 	lw := &cache.ListWatch{
 		ListFunc: func(options metav1.ListOptions) (rt.Object, error) {
-			return c.stashClient.Recoveries(apiv1.NamespaceAll).List(options)
+			return c.stashClient.Recoveries(core.NamespaceAll).List(options)
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return c.stashClient.Recoveries(apiv1.NamespaceAll).Watch(options)
+			return c.stashClient.Recoveries(core.NamespaceAll).Watch(options)
 		},
 	}
 
@@ -41,7 +41,7 @@ func (c *StashController) initRecoveryWatcher() {
 				if err := r.IsValid(); err != nil {
 					c.recorder.Eventf(
 						r.ObjectReference(),
-						apiv1.EventTypeWarning,
+						core.EventTypeWarning,
 						eventer.EventReasonInvalidRecovery,
 						"Reason %v",
 						err,
@@ -69,7 +69,7 @@ func (c *StashController) initRecoveryWatcher() {
 			if err := newObj.IsValid(); err != nil {
 				c.recorder.Eventf(
 					newObj.ObjectReference(),
-					apiv1.EventTypeWarning,
+					core.EventTypeWarning,
 					eventer.EventReasonInvalidRecovery,
 					"Reason %v",
 					err,

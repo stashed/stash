@@ -9,7 +9,7 @@ import (
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
-	apiv1 "k8s.io/api/core/v1"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	rt "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -146,7 +146,7 @@ func (c *Controller) runResticScheduler(key string) error {
 		if err != nil {
 			c.recorder.Eventf(
 				r.ObjectReference(),
-				apiv1.EventTypeWarning,
+				core.EventTypeWarning,
 				eventer.EventReasonFailedToBackup,
 				"Failed to start Stash scheduler reason %v",
 				err,

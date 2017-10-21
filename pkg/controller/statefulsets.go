@@ -12,7 +12,7 @@ import (
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	apps "k8s.io/api/apps/v1beta1"
-	apiv1 "k8s.io/api/core/v1"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	rt "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -25,10 +25,10 @@ import (
 func (c *StashController) initStatefulSetWatcher() {
 	lw := &cache.ListWatch{
 		ListFunc: func(options metav1.ListOptions) (rt.Object, error) {
-			return c.k8sClient.AppsV1beta1().StatefulSets(apiv1.NamespaceAll).List(options)
+			return c.k8sClient.AppsV1beta1().StatefulSets(core.NamespaceAll).List(options)
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return c.k8sClient.AppsV1beta1().StatefulSets(apiv1.NamespaceAll).Watch(options)
+			return c.k8sClient.AppsV1beta1().StatefulSets(core.NamespaceAll).Watch(options)
 		},
 	}
 

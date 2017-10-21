@@ -11,7 +11,7 @@ import (
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
-	apiv1 "k8s.io/api/core/v1"
+	core "k8s.io/api/core/v1"
 	extensions "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	rt "k8s.io/apimachinery/pkg/runtime"
@@ -25,10 +25,10 @@ import (
 func (c *StashController) initReplicaSetWatcher() {
 	lw := &cache.ListWatch{
 		ListFunc: func(options metav1.ListOptions) (rt.Object, error) {
-			return c.k8sClient.ExtensionsV1beta1().ReplicaSets(apiv1.NamespaceAll).List(options)
+			return c.k8sClient.ExtensionsV1beta1().ReplicaSets(core.NamespaceAll).List(options)
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return c.k8sClient.ExtensionsV1beta1().ReplicaSets(apiv1.NamespaceAll).Watch(options)
+			return c.k8sClient.ExtensionsV1beta1().ReplicaSets(core.NamespaceAll).Watch(options)
 		},
 	}
 

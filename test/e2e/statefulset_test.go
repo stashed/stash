@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1beta1"
-	apiv1 "k8s.io/api/core/v1"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -18,8 +18,8 @@ var _ = Describe("StatefulSet", func() {
 		err    error
 		f      *framework.Invocation
 		restic api.Restic
-		cred   apiv1.Secret
-		svc    apiv1.Service
+		cred   core.Secret
+		svc    core.Service
 		ss     apps.StatefulSet
 	)
 
