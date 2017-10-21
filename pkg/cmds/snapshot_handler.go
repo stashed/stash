@@ -8,7 +8,7 @@ import (
 	"github.com/appscode/pat"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/cli"
-	apiv1 "k8s.io/api/core/v1"
+	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -51,7 +51,7 @@ func ExportSnapshots(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Missing repository secret name", http.StatusBadRequest)
 		return
 	}
-	var secret *apiv1.Secret
+	var secret *core.Secret
 	secret, err = kubeClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		http.Error(w, err.Error(), http.StatusNotFound)

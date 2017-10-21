@@ -1,11 +1,11 @@
 package v1alpha1
 
 import (
-	apiv1 "k8s.io/api/core/v1"
+	core "k8s.io/api/core/v1"
 )
 
-func (r Restic) ObjectReference() *apiv1.ObjectReference {
-	return &apiv1.ObjectReference{
+func (r Restic) ObjectReference() *core.ObjectReference {
+	return &core.ObjectReference{
 		APIVersion:      SchemeGroupVersion.String(),
 		Kind:            ResourceKindRestic,
 		Namespace:       r.Namespace,
@@ -15,8 +15,8 @@ func (r Restic) ObjectReference() *apiv1.ObjectReference {
 	}
 }
 
-func (r Recovery) ObjectReference() *apiv1.ObjectReference {
-	return &apiv1.ObjectReference{
+func (r Recovery) ObjectReference() *core.ObjectReference {
+	return &core.ObjectReference{
 		APIVersion:      SchemeGroupVersion.String(),
 		Kind:            ResourceKindRecovery,
 		Namespace:       r.Namespace,

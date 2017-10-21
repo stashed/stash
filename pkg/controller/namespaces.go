@@ -1,7 +1,7 @@
 package controller
 
 import (
-	apiv1 "k8s.io/api/core/v1"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	rt "k8s.io/apimachinery/pkg/runtime"
@@ -19,9 +19,9 @@ func (c *StashController) initNamespaceWatcher() {
 		},
 	}
 
-	c.nsIndexer, c.nsInformer = cache.NewIndexerInformer(lw, &apiv1.Namespace{}, c.options.ResyncPeriod, cache.ResourceEventHandlerFuncs{
+	c.nsIndexer, c.nsInformer = cache.NewIndexerInformer(lw, &core.Namespace{}, c.options.ResyncPeriod, cache.ResourceEventHandlerFuncs{
 		DeleteFunc: func(obj interface{}) {
-			if ns, ok := obj.(*apiv1.Namespace); ok {
+			if ns, ok := obj.(*core.Namespace); ok {
 				restics, err := c.rstLister.Restics(ns.Name).List(labels.Everything())
 				if err == nil {
 					for _, restic := range restics {

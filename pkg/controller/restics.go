@@ -12,7 +12,7 @@ import (
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	apps "k8s.io/api/apps/v1beta1"
-	apiv1 "k8s.io/api/core/v1"
+	core "k8s.io/api/core/v1"
 	extensions "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -26,10 +26,10 @@ import (
 func (c *StashController) initResticWatcher() {
 	lw := &cache.ListWatch{
 		ListFunc: func(options metav1.ListOptions) (rt.Object, error) {
-			return c.stashClient.Restics(apiv1.NamespaceAll).List(options)
+			return c.stashClient.Restics(core.NamespaceAll).List(options)
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return c.stashClient.Restics(apiv1.NamespaceAll).Watch(options)
+			return c.stashClient.Restics(core.NamespaceAll).Watch(options)
 		},
 	}
 
@@ -46,7 +46,7 @@ func (c *StashController) initResticWatcher() {
 				if err := r.IsValid(); err != nil {
 					c.recorder.Eventf(
 						r.ObjectReference(),
-						apiv1.EventTypeWarning,
+						core.EventTypeWarning,
 						eventer.EventReasonInvalidRestic,
 						"Reason %v",
 						err,
@@ -74,7 +74,7 @@ func (c *StashController) initResticWatcher() {
 			if err := newObj.IsValid(); err != nil {
 				c.recorder.Eventf(
 					newObj.ObjectReference(),
-					apiv1.EventTypeWarning,
+					core.EventTypeWarning,
 					eventer.EventReasonInvalidRestic,
 					"Reason %v",
 					err,
@@ -177,7 +177,7 @@ func (c *StashController) EnsureSidecar(restic *api.Restic) {
 	if err != nil {
 		c.recorder.Eventf(
 			restic.ObjectReference(),
-			apiv1.EventTypeWarning,
+			core.EventTypeWarning,
 			eventer.EventReasonInvalidRestic,
 			"Reason: %s",
 			err.Error(),
@@ -247,7 +247,7 @@ func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
 			if err != nil {
 				c.recorder.Eventf(
 					kutil.GetObjectReference(resource, apps.SchemeGroupVersion),
-					apiv1.EventTypeWarning,
+					core.EventTypeWarning,
 					eventer.EventReasonInvalidRestic,
 					"Reason: %s",
 					err.Error(),
@@ -266,7 +266,7 @@ func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
 			if err != nil {
 				c.recorder.Eventf(
 					kutil.GetObjectReference(resource, extensions.SchemeGroupVersion),
-					apiv1.EventTypeWarning,
+					core.EventTypeWarning,
 					eventer.EventReasonInvalidRestic,
 					"Reason: %s",
 					err.Error(),
@@ -285,7 +285,7 @@ func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
 	//		if err != nil {
 	//			c.recorder.Eventf(
 	//				kutil.GetObjectReference(resource, apps.SchemeGroupVersion),
-	//				apiv1.EventTypeWarning,
+	//				core.EventTypeWarning,
 	//				eventer.EventReasonInvalidRestic,
 	//				"Reason: %s",
 	//				err.Error(),
@@ -303,8 +303,8 @@ func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
 			restic, err := util.GetAppliedRestic(resource.Annotations)
 			if err != nil {
 				c.recorder.Eventf(
-					kutil.GetObjectReference(resource, apiv1.SchemeGroupVersion),
-					apiv1.EventTypeWarning,
+					kutil.GetObjectReference(resource, core.SchemeGroupVersion),
+					core.EventTypeWarning,
 					eventer.EventReasonInvalidRestic,
 					"Reason: %s",
 					err.Error(),
@@ -323,7 +323,7 @@ func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
 			if err != nil {
 				c.recorder.Eventf(
 					kutil.GetObjectReference(resource, extensions.SchemeGroupVersion),
-					apiv1.EventTypeWarning,
+					core.EventTypeWarning,
 					eventer.EventReasonInvalidRestic,
 					"Reason: %s",
 					err.Error(),

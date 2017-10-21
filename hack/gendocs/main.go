@@ -2,12 +2,11 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"os"
-
 	"github.com/appscode/go/runtime"
 	"github.com/appscode/stash/pkg/cmds"
 	"github.com/spf13/cobra/doc"
+	"log"
+	"os"
 )
 
 // ref: https://github.com/spf13/cobra/blob/master/doc/md_docs.md

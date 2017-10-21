@@ -5,7 +5,7 @@ import (
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	stash_util "github.com/appscode/stash/client/typed/stash/v1alpha1/util"
 	. "github.com/onsi/gomega"
-	apiv1 "k8s.io/api/core/v1"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -34,7 +34,7 @@ func (fi *Invocation) _restic() api.Restic {
 				},
 			},
 			Schedule: "@every 15s",
-			VolumeMounts: []apiv1.VolumeMount{
+			VolumeMounts: []core.VolumeMount{
 				{
 					Name:      TestSourceDataVolumeName,
 					MountPath: TestSourceDataMountPath,
@@ -50,8 +50,8 @@ func (fi *Invocation) ResticForLocalBackend() api.Restic {
 		StorageSecretName: "",
 		Local: &api.LocalSpec{
 			Path: "/safe/data",
-			VolumeSource: apiv1.VolumeSource{
-				EmptyDir: &apiv1.EmptyDirVolumeSource{},
+			VolumeSource: core.VolumeSource{
+				EmptyDir: &core.EmptyDirVolumeSource{},
 			},
 		},
 	}
