@@ -30,7 +30,7 @@ func (fi *Invocation) StatefulSet(r api.Restic) apps.StatefulSet {
 		},
 	}
 
-	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.CreateSidecarContainer(&r, "canary", "ss/"+resource.Name))
+	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.CreateSidecarContainer(&r, "recovery", "StatefulSet/"+resource.Name))
 	resource.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(resource.Spec.Template.Spec.Volumes)
 	resource.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(resource.Spec.Template.Spec.Volumes)
 	if r.Spec.Backend.Local != nil {

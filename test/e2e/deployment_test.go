@@ -181,29 +181,7 @@ var _ = Describe("Deployment", func() {
 		}
 
 		shouldRestoreDeployment = func() {
-			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Creating restic " + restic.Name)
-			err = f.CreateRestic(restic)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Creating Deployment " + deployment.Name)
-			err = f.CreateDeployment(deployment)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Waiting for sidecar")
-			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
-
-			By("Waiting for backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
-				return r.Status.BackupCount
-			}, BeNumerically(">=", 1)))
-
-			By("Waiting for backup event")
-			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
-
+			shouldBackupNewDeployment()
 			recovery.Spec.Workload = "deploy/" + deployment.Name
 
 			By("Creating recovery " + recovery.Name)
@@ -372,7 +350,7 @@ var _ = Describe("Deployment", func() {
 				restic = f.ResticForHostPathLocalBackend()
 				recovery = f.RecoveryForRestic(restic.Name)
 			})
-			It(`should restore deployment backup`, shouldRestoreDeployment)
+			It(`should restore local deployment backup`, shouldRestoreDeployment)
 		})
 
 		Context(`"S3" backend`, func() {
@@ -381,7 +359,7 @@ var _ = Describe("Deployment", func() {
 				restic = f.ResticForS3Backend()
 				recovery = f.RecoveryForRestic(restic.Name)
 			})
-			It(`should restore deployment backup`, shouldRestoreDeployment)
+			It(`should restore s3 deployment backup`, shouldRestoreDeployment)
 		})
 	})
 })

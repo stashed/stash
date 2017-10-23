@@ -30,9 +30,9 @@ func ExtractWorkload(workload string) (appKind, appName string, err error) {
 		appKind = AppKindReplicaSet
 	case "ReplicationControllers", "ReplicationController", "replicationcontrollers", "replicationcontroller", "rc":
 		appKind = AppKindReplicationController
-	case "StatefulSets", "StatefulSet":
+	case "StatefulSets", "StatefulSet", "statefulsets", "statefulset":
 		appKind = AppKindStatefulSet
-	case "DaemonSets", "DaemonSet", "daemonsets", "daemonset":
+	case "DaemonSets", "DaemonSet", "daemonsets", "daemonset", "ds":
 		appKind = AppKindDaemonSet
 	default:
 		err = fmt.Errorf(`unrecognized workload "Kind" %v`, app[0])

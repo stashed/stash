@@ -15,12 +15,13 @@ import (
 
 var _ = Describe("StatefulSet", func() {
 	var (
-		err    error
-		f      *framework.Invocation
-		restic api.Restic
-		cred   apiv1.Secret
-		svc    apiv1.Service
-		ss     apps.StatefulSet
+		err      error
+		f        *framework.Invocation
+		restic   api.Restic
+		cred     apiv1.Secret
+		svc      apiv1.Service
+		ss       apps.StatefulSet
+		recovery api.Recovery
 	)
 
 	BeforeEach(func() {
@@ -200,6 +201,18 @@ var _ = Describe("StatefulSet", func() {
 
 			f.EventuallyStatefulSet(ss.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		}
+
+		shouldRestoreStatefulSet = func() {
+			shouldBackupNewStatefulSet()
+			recovery.Spec.Workload = "StatefulSet/" + ss.Name
+			recovery.Spec.PodOrdinal = "0"
+
+			By("Creating recovery " + recovery.Name)
+			err = f.CreateRecovery(recovery)
+			Expect(err).NotTo(HaveOccurred())
+
+			f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
+		}
 	)
 
 	Describe("Creating restic for", func() {
@@ -346,6 +359,34 @@ var _ = Describe("StatefulSet", func() {
 				restic = f.ResticForSwiftBackend()
 			})
 			XIt(`should stop backup`, shouldStopBackup)
+		})
+	})
+
+	Describe("Creating recovery for", func() {
+		AfterEach(func() {
+			f.DeleteStatefulSet(ss.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+			f.DeleteRecovery(recovery.ObjectMeta)
+			framework.CleanupMinikubeHostPath()
+		})
+
+		Context(`"Local" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForHostPathLocalBackend()
+				recovery = f.RecoveryForRestic(restic.Name)
+			})
+			It(`should restore local StatefulSet backup`, shouldRestoreStatefulSet)
+		})
+
+		Context(`"S3" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForS3Backend()
+				restic = f.ResticForS3Backend()
+				recovery = f.RecoveryForRestic(restic.Name)
+			})
+			It(`should restore s3 StatefulSet backup`, shouldRestoreStatefulSet)
 		})
 	})
 })

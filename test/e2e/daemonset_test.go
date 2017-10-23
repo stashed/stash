@@ -181,29 +181,7 @@ var _ = Describe("DaemonSet", func() {
 		}
 
 		shouldRestoreDemonset = func() {
-			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Creating restic " + restic.Name)
-			err = f.CreateRestic(restic)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Creating DaemonSet " + daemon.Name)
-			err = f.CreateDaemonSet(daemon)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Waiting for sidecar")
-			f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
-
-			By("Waiting for backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
-				return r.Status.BackupCount
-			}, BeNumerically(">=", 1)))
-
-			By("Waiting for backup event")
-			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
-
+			shouldBackupNewDaemonSet()
 			recovery.Spec.Workload = "daemonset/" + daemon.Name
 			recovery.Spec.NodeSelector = map[string]string{"kubernetes.io/hostname": "minikube"}
 
@@ -373,7 +351,7 @@ var _ = Describe("DaemonSet", func() {
 				restic = f.ResticForHostPathLocalBackend()
 				recovery = f.RecoveryForRestic(restic.Name)
 			})
-			It(`should restore daemonset backup`, shouldRestoreDemonset)
+			It(`should restore local daemonset backup`, shouldRestoreDemonset)
 		})
 
 		Context(`"S3" backend`, func() {
@@ -382,7 +360,7 @@ var _ = Describe("DaemonSet", func() {
 				restic = f.ResticForS3Backend()
 				recovery = f.RecoveryForRestic(restic.Name)
 			})
-			It(`should restore daemonset backup`, shouldRestoreDemonset)
+			It(`should restore s3 daemonset backup`, shouldRestoreDemonset)
 		})
 	})
 })
