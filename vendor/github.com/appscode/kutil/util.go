@@ -2,16 +2,10 @@ package kutil
 
 import (
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"reflect"
-	"strings"
-	"time"
-
 	"github.com/hashicorp/go-version"
 	"github.com/pkg/errors"
-	apiv1 "k8s.io/api/core/v1"
+	"io/ioutil"
+	core "k8s.io/api/core/v1"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -22,6 +16,11 @@ import (
 	"k8s.io/client-go/kubernetes"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"net/http"
+	"os"
+	"reflect"
+	"strings"
+	"time"
 )
 
 const (
@@ -38,7 +37,7 @@ func Namespace() string {
 			return ns
 		}
 	}
-	return apiv1.NamespaceDefault
+	return core.NamespaceDefault
 }
 
 func IsPreferredAPIResource(c kubernetes.Interface, groupVersion, kind string) bool {
@@ -120,12 +119,12 @@ func GetKind(v interface{}) string {
 	return val.Type().Name()
 }
 
-func GetObjectReference(v interface{}, gv schema.GroupVersion) *apiv1.ObjectReference {
+func GetObjectReference(v interface{}, gv schema.GroupVersion) *core.ObjectReference {
 	m, err := meta.Accessor(v)
 	if err != nil {
-		return &apiv1.ObjectReference{}
+		return &core.ObjectReference{}
 	}
-	return &apiv1.ObjectReference{
+	return &core.ObjectReference{
 		APIVersion:      gv.String(),
 		Kind:            GetKind(v),
 		Namespace:       m.GetNamespace(),

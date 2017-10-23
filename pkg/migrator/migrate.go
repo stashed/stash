@@ -7,12 +7,12 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/kutil"
-	sapi "github.com/appscode/stash/apis/stash"
-	sapi_v1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
+	"github.com/appscode/stash/apis/stash"
+	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/hashicorp/go-version"
 	extensions "k8s.io/api/extensions/v1beta1"
-	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	crd_api "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -27,12 +27,12 @@ type migrationState struct {
 
 type migrator struct {
 	kubeClient       kubernetes.Interface
-	apiExtKubeClient apiextensionsclient.Interface
+	apiExtKubeClient crd_cs.ApiextensionsV1beta1Interface
 
 	migrationState *migrationState
 }
 
-func NewMigrator(kubeClient kubernetes.Interface, apiExtKubeClient apiextensionsclient.Interface) *migrator {
+func NewMigrator(kubeClient kubernetes.Interface, apiExtKubeClient crd_cs.ApiextensionsV1beta1Interface) *migrator {
 	return &migrator{
 		migrationState:   &migrationState{},
 		kubeClient:       kubeClient,
@@ -55,7 +55,7 @@ func (m *migrator) isMigrationNeeded() (bool, error) {
 
 	if mv == 7 {
 		_, err := m.kubeClient.ExtensionsV1beta1().ThirdPartyResources().Get(
-			sapi_v1alpha1.ResourceNameRestic+"."+sapi_v1alpha1.SchemeGroupVersion.Group,
+			api.ResourceNameRestic+"."+api.SchemeGroupVersion.Group,
 			metav1.GetOptions{},
 		)
 		if err != nil {
@@ -108,14 +108,14 @@ func (m *migrator) deleteTPRs() error {
 	tprClient := m.kubeClient.ExtensionsV1beta1().ThirdPartyResources()
 
 	deleteTPR := func(resourceName string) error {
-		name := resourceName + "." + sapi_v1alpha1.SchemeGroupVersion.Group
+		name := resourceName + "." + api.SchemeGroupVersion.Group
 		if err := tprClient.Delete(name, &metav1.DeleteOptions{}); err != nil {
 			return fmt.Errorf("failed to remove %s TPR", name)
 		}
 		return nil
 	}
 
-	if err := deleteTPR(sapi_v1alpha1.ResourceNameRestic); err != nil {
+	if err := deleteTPR(api.ResourceNameRestic); err != nil {
 		return err
 	}
 
@@ -123,29 +123,29 @@ func (m *migrator) deleteTPRs() error {
 }
 
 func (m *migrator) createCRDs() error {
-	crds := []*apiextensions.CustomResourceDefinition{
+	crds := []*crd_api.CustomResourceDefinition{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:   sapi_v1alpha1.ResourceTypeRestic + "." + sapi_v1alpha1.SchemeGroupVersion.Group,
+				Name:   api.ResourceTypeRestic + "." + api.SchemeGroupVersion.Group,
 				Labels: map[string]string{"app": "stash"},
 			},
-			Spec: apiextensions.CustomResourceDefinitionSpec{
-				Group:   sapi.GroupName,
-				Version: sapi_v1alpha1.SchemeGroupVersion.Version,
-				Scope:   apiextensions.NamespaceScoped,
-				Names: apiextensions.CustomResourceDefinitionNames{
-					Singular:   sapi_v1alpha1.ResourceNameRestic,
-					Plural:     sapi_v1alpha1.ResourceTypeRestic,
-					Kind:       sapi_v1alpha1.ResourceKindRestic,
+			Spec: crd_api.CustomResourceDefinitionSpec{
+				Group:   stash.GroupName,
+				Version: api.SchemeGroupVersion.Version,
+				Scope:   crd_api.NamespaceScoped,
+				Names: crd_api.CustomResourceDefinitionNames{
+					Singular:   api.ResourceNameRestic,
+					Plural:     api.ResourceTypeRestic,
+					Kind:       api.ResourceKindRestic,
 					ShortNames: []string{"rst"},
 				},
 			},
 		},
 	}
 	for _, crd := range crds {
-		_, err := m.apiExtKubeClient.ApiextensionsV1beta1().CustomResourceDefinitions().Get(crd.Name, metav1.GetOptions{})
+		_, err := m.apiExtKubeClient.CustomResourceDefinitions().Get(crd.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(err) {
-			_, err = m.apiExtKubeClient.ApiextensionsV1beta1().CustomResourceDefinitions().Create(crd)
+			_, err = m.apiExtKubeClient.CustomResourceDefinitions().Create(crd)
 			if err != nil {
 				return err
 			}
@@ -184,10 +184,10 @@ func (m *migrator) rollback() error {
 }
 
 func (m *migrator) deleteCRDs() error {
-	crdClient := m.apiExtKubeClient.ApiextensionsV1beta1().CustomResourceDefinitions()
+	crdClient := m.apiExtKubeClient.CustomResourceDefinitions()
 
 	deleteCRD := func(resourceType string) error {
-		name := resourceType + "." + sapi_v1alpha1.SchemeGroupVersion.Group
+		name := resourceType + "." + api.SchemeGroupVersion.Group
 		err := crdClient.Delete(name, &metav1.DeleteOptions{})
 		if err != nil {
 			return fmt.Errorf(`Failed to delete CRD "%s""`, name)
@@ -195,21 +195,21 @@ func (m *migrator) deleteCRDs() error {
 		return nil
 	}
 
-	if err := deleteCRD(sapi_v1alpha1.ResourceTypeRestic); err != nil {
+	if err := deleteCRD(api.ResourceTypeRestic); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *migrator) createTPRs() error {
-	if err := m.createTPR(sapi_v1alpha1.ResourceNameRestic); err != nil {
+	if err := m.createTPR(api.ResourceNameRestic); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (m *migrator) createTPR(resourceName string) error {
-	name := resourceName + "." + sapi_v1alpha1.SchemeGroupVersion.Group
+	name := resourceName + "." + api.SchemeGroupVersion.Group
 	_, err := m.kubeClient.ExtensionsV1beta1().ThirdPartyResources().Get(name, metav1.GetOptions{})
 	if !kerr.IsNotFound(err) {
 		return err
@@ -228,7 +228,7 @@ func (m *migrator) createTPR(resourceName string) error {
 		},
 		Versions: []extensions.APIVersion{
 			{
-				Name: sapi_v1alpha1.SchemeGroupVersion.Version,
+				Name: api.SchemeGroupVersion.Version,
 			},
 		},
 	}

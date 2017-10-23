@@ -1,5 +1,5 @@
 hash: 0bc2aba8e1684e2409f7c186b3365cc3ab511162b0592621ebba296149f1766a
-updated: 2017-10-20T14:53:07.12617906-07:00
+updated: 2017-10-23T15:46:00.76099697-07:00
 imports:
 - name: github.com/appscode/go
   version: c01120782e8b487d1c86ab4299241edfe36a3ca2
@@ -13,7 +13,7 @@ imports:
   - types
   - version
 - name: github.com/appscode/kutil
-  version: 6bc797dda352c4f8dfad7f0599574bba35724d12
+  version: 4d8a2fab71adaeb35394044fae59b03735ea4e39
   subpackages:
   - apps/v1beta1
   - core/v1
@@ -217,6 +217,7 @@ imports:
   version: 1c05540f6879653db88113bc4a2b70aec4bd491f
   subpackages:
   - context
+  - context/ctxhttp
   - html
   - html/atom
   - html/charset
@@ -296,7 +297,6 @@ imports:
   subpackages:
   - pkg/apis/apiextensions
   - pkg/apis/apiextensions/v1beta1
-  - pkg/client/clientset/clientset
   - pkg/client/clientset/clientset/scheme
   - pkg/client/clientset/clientset/typed/apiextensions/v1beta1
 - name: k8s.io/apimachinery
@@ -434,7 +434,7 @@ imports:
   subpackages:
   - pkg/common
 - name: k8s.io/kubernetes
-  version: f38e43b221d08850172a9a4ea785a86a3ffa3b3a
+  version: 0b9efaeb34a2fc51ff8e4d34ad9bc6375459c4a4
   subpackages:
   - pkg/api
   - pkg/api/helper

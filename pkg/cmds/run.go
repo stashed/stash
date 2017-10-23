@@ -8,14 +8,14 @@ import (
 	"github.com/appscode/go/log"
 	stringz "github.com/appscode/go/strings"
 	"github.com/appscode/pat"
-	sapi "github.com/appscode/stash/apis/stash"
+	api "github.com/appscode/stash/apis/stash"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/migrator"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
-	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -54,7 +54,7 @@ func NewCmdRun(version string) *cobra.Command {
 			}
 			kubeClient = kubernetes.NewForConfigOrDie(config)
 			stashClient = cs.NewForConfigOrDie(config)
-			crdClient := apiextensionsclient.NewForConfigOrDie(config)
+			crdClient := crd_cs.NewForConfigOrDie(config)
 
 			ctrl := controller.New(kubeClient, crdClient, stashClient, opts)
 			err = ctrl.Setup()
@@ -75,7 +75,7 @@ func NewCmdRun(version string) *cobra.Command {
 			m := pat.New()
 			m.Get("/metrics", promhttp.Handler())
 
-			pattern := fmt.Sprintf("/%s/v1beta1/namespaces/%s/restics/%s/metrics", sapi.GroupName, PathParamNamespace, PathParamName)
+			pattern := fmt.Sprintf("/%s/v1beta1/namespaces/%s/restics/%s/metrics", api.GroupName, PathParamNamespace, PathParamName)
 			log.Infof("URL pattern: %s", pattern)
 			m.Get(pattern, http.HandlerFunc(ExportSnapshots))
 

@@ -6,7 +6,7 @@ import (
 
 	"github.com/appscode/kutil"
 	"github.com/golang/glog"
-	apiv1 "k8s.io/api/core/v1"
+	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -15,14 +15,14 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func CreateOrPatchSecret(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*apiv1.Secret) *apiv1.Secret) (*apiv1.Secret, error) {
+func CreateOrPatchSecret(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.Secret) *core.Secret) (*core.Secret, error) {
 	cur, err := c.CoreV1().Secrets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating Secret %s/%s.", meta.Namespace, meta.Name)
-		return c.CoreV1().Secrets(meta.Namespace).Create(transform(&apiv1.Secret{
+		return c.CoreV1().Secrets(meta.Namespace).Create(transform(&core.Secret{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Secret",
-				APIVersion: apiv1.SchemeGroupVersion.String(),
+				APIVersion: core.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
 		}))
@@ -32,7 +32,7 @@ func CreateOrPatchSecret(c kubernetes.Interface, meta metav1.ObjectMeta, transfo
 	return PatchSecret(c, cur, transform)
 }
 
-func PatchSecret(c kubernetes.Interface, cur *apiv1.Secret, transform func(*apiv1.Secret) *apiv1.Secret) (*apiv1.Secret, error) {
+func PatchSecret(c kubernetes.Interface, cur *core.Secret, transform func(*core.Secret) *core.Secret) (*core.Secret, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func PatchSecret(c kubernetes.Interface, cur *apiv1.Secret, transform func(*apiv
 		return nil, err
 	}
 
-	patch, err := strategicpatch.CreateTwoWayMergePatch(curJson, modJson, apiv1.Secret{})
+	patch, err := strategicpatch.CreateTwoWayMergePatch(curJson, modJson, core.Secret{})
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func PatchSecret(c kubernetes.Interface, cur *apiv1.Secret, transform func(*apiv
 	return c.CoreV1().Secrets(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
 }
 
-func TryPatchSecret(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*apiv1.Secret) *apiv1.Secret) (result *apiv1.Secret, err error) {
+func TryPatchSecret(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.Secret) *core.Secret) (result *core.Secret, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
@@ -75,7 +75,7 @@ func TryPatchSecret(c kubernetes.Interface, meta metav1.ObjectMeta, transform fu
 	return
 }
 
-func TryUpdateSecret(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*apiv1.Secret) *apiv1.Secret) (result *apiv1.Secret, err error) {
+func TryUpdateSecret(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.Secret) *core.Secret) (result *core.Secret, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
