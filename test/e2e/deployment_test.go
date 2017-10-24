@@ -8,9 +8,9 @@ import (
 	. "github.com/appscode/stash/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	apps "k8s.io/api/apps/v1beta1"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
-	apps "k8s.io/client-go/pkg/apis/apps/v1beta1"
 )
 
 var _ = Describe("Deployment", func() {
@@ -18,7 +18,7 @@ var _ = Describe("Deployment", func() {
 		err        error
 		f          *framework.Invocation
 		restic     api.Restic
-		cred       apiv1.Secret
+		cred       core.Secret
 		deployment apps.Deployment
 		recovery   api.Recovery
 	)
@@ -350,7 +350,7 @@ var _ = Describe("Deployment", func() {
 				restic = f.ResticForHostPathLocalBackend()
 				recovery = f.RecoveryForRestic(restic.Name)
 			})
-			It(`should restore local deployment backup`, shouldRestoreDeployment)
+			FIt(`should restore local deployment backup`, shouldRestoreDeployment)
 		})
 
 		Context(`"S3" backend`, func() {

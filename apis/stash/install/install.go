@@ -15,7 +15,6 @@ func Install(groupFactoryRegistry announced.APIGroupFactoryRegistry, registry *r
 		&announced.GroupMetaFactoryArgs{
 			GroupName:                  sapi.GroupName,
 			VersionPreferenceOrder:     []string{v1alpha1.SchemeGroupVersion.Version},
-			ImportPrefix:               "github.com/appscode/stash/apis/stash",
 			RootScopedKinds:            sets.NewString("CustomResourceDefinition"),
 			AddInternalObjectsToScheme: sapi.AddToScheme,
 		},

@@ -6,9 +6,9 @@ import (
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	. "github.com/onsi/gomega"
+	apps "k8s.io/api/apps/v1beta1"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
-	apps "k8s.io/client-go/pkg/apis/apps/v1beta1"
 )
 
 func (fi *Invocation) StatefulSet(r api.Restic) apps.StatefulSet {
@@ -34,7 +34,7 @@ func (fi *Invocation) StatefulSet(r api.Restic) apps.StatefulSet {
 	resource.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(resource.Spec.Template.Spec.Volumes)
 	resource.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(resource.Spec.Template.Spec.Volumes)
 	if r.Spec.Backend.Local != nil {
-		resource.Spec.Template.Spec.Volumes = append(resource.Spec.Template.Spec.Volumes, apiv1.Volume{Name: util.LocalVolumeName, VolumeSource: r.Spec.Backend.Local.VolumeSource})
+		resource.Spec.Template.Spec.Volumes = append(resource.Spec.Template.Spec.Volumes, core.Volume{Name: util.LocalVolumeName, VolumeSource: r.Spec.Backend.Local.VolumeSource})
 	}
 	return resource
 }

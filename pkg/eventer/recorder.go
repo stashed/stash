@@ -2,9 +2,9 @@ package eventer
 
 import (
 	"github.com/appscode/go/log"
+	core "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 )
 
@@ -24,12 +24,12 @@ func NewEventRecorder(client kubernetes.Interface, component string) record.Even
 	// Event Broadcaster
 	broadcaster := record.NewBroadcaster()
 	broadcaster.StartEventWatcher(
-		func(event *apiv1.Event) {
+		func(event *core.Event) {
 			if _, err := client.CoreV1().Events(event.Namespace).Create(event); err != nil {
 				log.Errorln(err)
 			}
 		},
 	)
 	// Event Recorder
-	return broadcaster.NewRecorder(api.Scheme, apiv1.EventSource{Component: component})
+	return broadcaster.NewRecorder(scheme.Scheme, core.EventSource{Component: component})
 }

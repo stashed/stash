@@ -6,16 +6,16 @@ import (
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/stash/pkg/cli"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 const (
 	TEST_RESTIC_PASSWORD = "not@secret"
 )
 
-func (fi *Invocation) SecretForLocalBackend() apiv1.Secret {
-	return apiv1.Secret{
+func (fi *Invocation) SecretForLocalBackend() core.Secret {
+	return core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(fi.app + "-local"),
 			Namespace: fi.namespace,
@@ -26,13 +26,13 @@ func (fi *Invocation) SecretForLocalBackend() apiv1.Secret {
 	}
 }
 
-func (fi *Invocation) SecretForS3Backend() apiv1.Secret {
+func (fi *Invocation) SecretForS3Backend() core.Secret {
 	if os.Getenv(cli.AWS_ACCESS_KEY_ID) == "" ||
 		os.Getenv(cli.AWS_SECRET_ACCESS_KEY) == "" {
-		return apiv1.Secret{}
+		return core.Secret{}
 	}
 
-	return apiv1.Secret{
+	return core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(fi.app + "-s3"),
 			Namespace: fi.namespace,
@@ -50,13 +50,13 @@ const (
 	DO_SECRET_ACCESS_KEY = "DO_SECRET_ACCESS_KEY"
 )
 
-func (fi *Invocation) SecretForDOBackend() apiv1.Secret {
+func (fi *Invocation) SecretForDOBackend() core.Secret {
 	if os.Getenv(DO_ACCESS_KEY_ID) == "" ||
 		os.Getenv(DO_SECRET_ACCESS_KEY) == "" {
-		return apiv1.Secret{}
+		return core.Secret{}
 	}
 
-	return apiv1.Secret{
+	return core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(fi.app + "-s3"),
 			Namespace: fi.namespace,
@@ -69,10 +69,10 @@ func (fi *Invocation) SecretForDOBackend() apiv1.Secret {
 	}
 }
 
-func (fi *Invocation) SecretForGCSBackend() apiv1.Secret {
+func (fi *Invocation) SecretForGCSBackend() core.Secret {
 	if os.Getenv(cli.GOOGLE_PROJECT_ID) == "" ||
 		(os.Getenv(cli.GOOGLE_APPLICATION_CREDENTIALS) == "" && os.Getenv(cli.GOOGLE_SERVICE_ACCOUNT_JSON_KEY) == "") {
-		return apiv1.Secret{}
+		return core.Secret{}
 	}
 
 	jsonKey := os.Getenv(cli.GOOGLE_SERVICE_ACCOUNT_JSON_KEY)
@@ -81,7 +81,7 @@ func (fi *Invocation) SecretForGCSBackend() apiv1.Secret {
 			jsonKey = string(keyBytes)
 		}
 	}
-	return apiv1.Secret{
+	return core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(fi.app + "-gcs"),
 			Namespace: fi.namespace,
@@ -94,13 +94,13 @@ func (fi *Invocation) SecretForGCSBackend() apiv1.Secret {
 	}
 }
 
-func (fi *Invocation) SecretForAzureBackend() apiv1.Secret {
+func (fi *Invocation) SecretForAzureBackend() core.Secret {
 	if os.Getenv(cli.AZURE_ACCOUNT_NAME) == "" ||
 		os.Getenv(cli.AZURE_ACCOUNT_KEY) == "" {
-		return apiv1.Secret{}
+		return core.Secret{}
 	}
 
-	return apiv1.Secret{
+	return core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(fi.app + "-azure"),
 			Namespace: fi.namespace,
@@ -113,15 +113,15 @@ func (fi *Invocation) SecretForAzureBackend() apiv1.Secret {
 	}
 }
 
-func (fi *Invocation) SecretForSwiftBackend() apiv1.Secret {
+func (fi *Invocation) SecretForSwiftBackend() core.Secret {
 	if os.Getenv(cli.OS_AUTH_URL) == "" ||
 		(os.Getenv(cli.OS_TENANT_ID) == "" && os.Getenv(cli.OS_TENANT_NAME) == "") ||
 		os.Getenv(cli.OS_USERNAME) == "" ||
 		os.Getenv(cli.OS_PASSWORD) == "" {
-		return apiv1.Secret{}
+		return core.Secret{}
 	}
 
-	return apiv1.Secret{
+	return core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(fi.app + "-swift"),
 			Namespace: fi.namespace,
@@ -140,7 +140,7 @@ func (fi *Invocation) SecretForSwiftBackend() apiv1.Secret {
 
 // TODO: Add more methods for Swift, Backblaze B2, Rest server backend.
 
-func (f *Framework) CreateSecret(obj apiv1.Secret) error {
+func (f *Framework) CreateSecret(obj core.Secret) error {
 	_, err := f.KubeClient.CoreV1().Secrets(obj.Namespace).Create(&obj)
 	return err
 }

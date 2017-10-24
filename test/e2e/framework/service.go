@@ -1,26 +1,26 @@
 package framework
 
 import (
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 const (
 	TEST_HEADLESS_SERVICE = "headless"
 )
 
-func (fi *Invocation) HeadlessService() apiv1.Service {
-	return apiv1.Service{
+func (fi *Invocation) HeadlessService() core.Service {
+	return core.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      TEST_HEADLESS_SERVICE,
 			Namespace: fi.namespace,
 		},
-		Spec: apiv1.ServiceSpec{
+		Spec: core.ServiceSpec{
 			Selector: map[string]string{
 				"app": fi.app,
 			},
-			ClusterIP: apiv1.ClusterIPNone,
-			Ports: []apiv1.ServicePort{
+			ClusterIP: core.ClusterIPNone,
+			Ports: []core.ServicePort{
 				{
 					Name: "http",
 					Port: 80,
@@ -30,7 +30,7 @@ func (fi *Invocation) HeadlessService() apiv1.Service {
 	}
 }
 
-func (f *Framework) CreateService(obj apiv1.Service) error {
+func (f *Framework) CreateService(obj core.Service) error {
 	_, err := f.KubeClient.CoreV1().Services(obj.Namespace).Create(&obj)
 	return err
 }

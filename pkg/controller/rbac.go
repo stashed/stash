@@ -4,9 +4,9 @@ import (
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
 	rbac_util "github.com/appscode/kutil/rbac/v1beta1"
+	core "k8s.io/api/core/v1"
+	rbac "k8s.io/api/rbac/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
-	rbac "k8s.io/client-go/pkg/apis/rbac/v1beta1"
 )
 
 const (
@@ -17,7 +17,7 @@ func (c *StashController) getRoleBindingName(name string) string {
 	return name + "-" + sidecarClusterRole
 }
 
-func (c *StashController) ensureOwnerReference(rb metav1.ObjectMeta, resource *apiv1.ObjectReference) metav1.ObjectMeta {
+func (c *StashController) ensureOwnerReference(rb metav1.ObjectMeta, resource *core.ObjectReference) metav1.ObjectMeta {
 	fi := -1
 	for i, ref := range rb.OwnerReferences {
 		if ref.Kind == ref.Kind && ref.Name == ref.Name {
@@ -37,7 +37,7 @@ func (c *StashController) ensureOwnerReference(rb metav1.ObjectMeta, resource *a
 	return rb
 }
 
-func (c *StashController) ensureRoleBinding(resource *apiv1.ObjectReference, sa string) error {
+func (c *StashController) ensureRoleBinding(resource *core.ObjectReference, sa string) error {
 	meta := metav1.ObjectMeta{
 		Namespace: resource.Namespace,
 		Name:      c.getRoleBindingName(resource.Name),

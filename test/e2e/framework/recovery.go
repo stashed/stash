@@ -6,8 +6,8 @@ import (
 	"github.com/appscode/go/crypto/rand"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	. "github.com/onsi/gomega"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 func (fi *Invocation) RecoveryForRestic(resticName string) api.Recovery {
@@ -22,11 +22,11 @@ func (fi *Invocation) RecoveryForRestic(resticName string) api.Recovery {
 		},
 		Spec: api.RecoverySpec{
 			Restic: resticName,
-			Volumes: []apiv1.Volume{
+			Volumes: []core.Volume{
 				{
 					Name: TestSourceDataVolumeName,
-					VolumeSource: apiv1.VolumeSource{
-						HostPath: &apiv1.HostPathVolumeSource{
+					VolumeSource: core.VolumeSource{
+						HostPath: &core.HostPathVolumeSource{
 							Path: "/data/stash-test/restic-restored",
 						},
 					},

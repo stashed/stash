@@ -1,8 +1,8 @@
 package framework
 
 import (
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 const (
@@ -10,24 +10,24 @@ const (
 	TestSourceDataMountPath  = "/source/data"
 )
 
-func (fi *Invocation) PodTemplate() apiv1.PodTemplateSpec {
-	return apiv1.PodTemplateSpec{
+func (fi *Invocation) PodTemplate() core.PodTemplateSpec {
+	return core.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
 				"app": fi.app,
 			},
 		},
-		Spec: apiv1.PodSpec{
-			Containers: []apiv1.Container{
+		Spec: core.PodSpec{
+			Containers: []core.Container{
 				{
 					Name:            "busybox",
 					Image:           "busybox",
-					ImagePullPolicy: apiv1.PullIfNotPresent,
+					ImagePullPolicy: core.PullIfNotPresent,
 					Command: []string{
 						"sleep",
 						"3600",
 					},
-					VolumeMounts: []apiv1.VolumeMount{
+					VolumeMounts: []core.VolumeMount{
 						{
 							Name:      TestSourceDataVolumeName,
 							MountPath: TestSourceDataMountPath,
@@ -35,11 +35,11 @@ func (fi *Invocation) PodTemplate() apiv1.PodTemplateSpec {
 					},
 				},
 			},
-			Volumes: []apiv1.Volume{
+			Volumes: []core.Volume{
 				{
 					Name: TestSourceDataVolumeName,
-					VolumeSource: apiv1.VolumeSource{
-						GitRepo: &apiv1.GitRepoVolumeSource{
+					VolumeSource: core.VolumeSource{
+						GitRepo: &core.GitRepoVolumeSource{
 							Repository: "https://github.com/appscode/stash-data.git",
 						},
 					},

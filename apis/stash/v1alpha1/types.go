@@ -1,8 +1,8 @@
 package v1alpha1
 
 import (
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 const (
@@ -14,7 +14,7 @@ const (
 	ResourceTypeRecovery = "recoveries"
 )
 
-// +genclient=true
+// +genclient
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -31,9 +31,9 @@ type ResticSpec struct {
 	Backend    Backend              `json:"backend,omitempty"`
 	Schedule   string               `json:"schedule,omitempty"`
 	// Pod volumes to mount into the sidecar container's filesystem.
-	VolumeMounts []apiv1.VolumeMount `json:"volumeMounts,omitempty"`
+	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty"`
 	// Compute Resources required by the sidecar container.
-	Resources apiv1.ResourceRequirements `json:"resources,omitempty"`
+	Resources core.ResourceRequirements `json:"resources,omitempty"`
 }
 
 type ResticStatus struct {
@@ -74,8 +74,8 @@ type Backend struct {
 }
 
 type LocalSpec struct {
-	VolumeSource apiv1.VolumeSource `json:"volumeSource,omitempty"`
-	Path         string             `json:"path,omitempty"`
+	VolumeSource core.VolumeSource `json:"volumeSource,omitempty"`
+	Path         string            `json:"path,omitempty"`
 }
 
 type S3Spec struct {
@@ -148,8 +148,10 @@ type RecoverySpec struct {
 	Workload     string            `json:"workload,omitempty"`
 	PodOrdinal   string            `json:"podOrdinal,omitempty"`
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	Volumes      []apiv1.Volume    `json:"volumes,omitempty"`
+	Volumes      []core.Volume     `json:"volumes,omitempty"`
 }
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 type RecoveryList struct {
 	metav1.TypeMeta `json:",inline"`

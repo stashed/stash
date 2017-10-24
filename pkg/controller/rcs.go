@@ -10,12 +10,12 @@ import (
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	rt "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	core_listers "k8s.io/client-go/listers/core/v1"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 )
@@ -23,10 +23,10 @@ import (
 func (c *StashController) initRCWatcher() {
 	lw := &cache.ListWatch{
 		ListFunc: func(options metav1.ListOptions) (rt.Object, error) {
-			return c.k8sClient.CoreV1().ReplicationControllers(apiv1.NamespaceAll).List(options)
+			return c.k8sClient.CoreV1().ReplicationControllers(core.NamespaceAll).List(options)
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return c.k8sClient.CoreV1().ReplicationControllers(apiv1.NamespaceAll).Watch(options)
+			return c.k8sClient.CoreV1().ReplicationControllers(core.NamespaceAll).Watch(options)
 		},
 	}
 
@@ -37,7 +37,7 @@ func (c *StashController) initRCWatcher() {
 	// whenever the cache is updated, the pod key is added to the workqueue.
 	// Note that when we finally process the item from the workqueue, we might see a newer version
 	// of the ReplicationController than the version which was responsible for triggering the update.
-	c.rcIndexer, c.rcInformer = cache.NewIndexerInformer(lw, &apiv1.ReplicationController{}, c.options.ResyncPeriod, cache.ResourceEventHandlerFuncs{
+	c.rcIndexer, c.rcInformer = cache.NewIndexerInformer(lw, &core.ReplicationController{}, c.options.ResyncPeriod, cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			key, err := cache.MetaNamespaceKeyFunc(obj)
 			if err == nil {
@@ -120,7 +120,7 @@ func (c *StashController) runRCInjector(key string) error {
 		// Below we will warm up our cache with a ReplicationController, so that we will see a delete for one d
 		fmt.Printf("ReplicationController %s does not exist anymore\n", key)
 	} else {
-		rc := obj.(*apiv1.ReplicationController)
+		rc := obj.(*core.ReplicationController)
 		fmt.Printf("Sync/Add/Update for ReplicationController %s\n", rc.GetName())
 
 		oldRestic, err := util.GetAppliedRestic(rc.Annotations)
@@ -144,7 +144,7 @@ func (c *StashController) runRCInjector(key string) error {
 	return nil
 }
 
-func (c *StashController) EnsureReplicationControllerSidecar(resource *apiv1.ReplicationController, old, new *api.Restic) (err error) {
+func (c *StashController) EnsureReplicationControllerSidecar(resource *core.ReplicationController, old, new *api.Restic) (err error) {
 	if new.Spec.Backend.StorageSecretName == "" {
 		err = fmt.Errorf("missing repository secret name for Restic %s/%s", new.Namespace, new.Name)
 		return
@@ -156,13 +156,13 @@ func (c *StashController) EnsureReplicationControllerSidecar(resource *apiv1.Rep
 
 	if c.options.EnableRBAC {
 		sa := stringz.Val(resource.Spec.Template.Spec.ServiceAccountName, "default")
-		err := c.ensureRoleBinding(kutil.GetObjectReference(resource, apiv1.SchemeGroupVersion), sa)
+		err := c.ensureRoleBinding(kutil.GetObjectReference(resource, core.SchemeGroupVersion), sa)
 		if err != nil {
 			return err
 		}
 	}
 
-	resource, err = core_util.PatchRC(c.k8sClient, resource, func(obj *apiv1.ReplicationController) *apiv1.ReplicationController {
+	resource, err = core_util.PatchRC(c.k8sClient, resource, func(obj *core.ReplicationController) *core.ReplicationController {
 		obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.options.SidecarImageTag, "rc/"+obj.Name))
 		obj.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(obj.Spec.Template.Spec.Volumes)
 		obj.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(obj.Spec.Template.Spec.Volumes)
@@ -197,7 +197,7 @@ func (c *StashController) EnsureReplicationControllerSidecar(resource *apiv1.Rep
 	return err
 }
 
-func (c *StashController) EnsureReplicationControllerSidecarDeleted(resource *apiv1.ReplicationController, restic *api.Restic) (err error) {
+func (c *StashController) EnsureReplicationControllerSidecarDeleted(resource *core.ReplicationController, restic *api.Restic) (err error) {
 	if c.options.EnableRBAC {
 		err := c.ensureRoleBindingDeleted(resource.ObjectMeta)
 		if err != nil {
@@ -205,7 +205,7 @@ func (c *StashController) EnsureReplicationControllerSidecarDeleted(resource *ap
 		}
 	}
 
-	resource, err = core_util.PatchRC(c.k8sClient, resource, func(obj *apiv1.ReplicationController) *apiv1.ReplicationController {
+	resource, err = core_util.PatchRC(c.k8sClient, resource, func(obj *core.ReplicationController) *core.ReplicationController {
 		obj.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)

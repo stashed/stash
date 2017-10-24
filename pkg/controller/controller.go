@@ -10,8 +10,8 @@ import (
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/golang/glog"
-	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	crd_api "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -28,7 +28,7 @@ import (
 type StashController struct {
 	k8sClient   kubernetes.Interface
 	stashClient cs.StashV1alpha1Interface
-	crdClient   apiextensionsclient.Interface
+	crdClient   crd_cs.ApiextensionsV1beta1Interface
 	options     Options
 	recorder    record.EventRecorder
 
@@ -79,7 +79,7 @@ type StashController struct {
 	rsLister   ext_listers.ReplicaSetLister
 }
 
-func New(kubeClient kubernetes.Interface, crdClient apiextensionsclient.Interface, stashClient cs.StashV1alpha1Interface, options Options) *StashController {
+func New(kubeClient kubernetes.Interface, crdClient crd_cs.ApiextensionsV1beta1Interface, stashClient cs.StashV1alpha1Interface, options Options) *StashController {
 	return &StashController{
 		k8sClient:   kubeClient,
 		stashClient: stashClient,
@@ -105,14 +105,14 @@ func (c *StashController) Setup() error {
 }
 
 func (c *StashController) ensureCustomResourceDefinitions() error {
-	crds := []*apiextensions.CustomResourceDefinition{
+	crds := []*crd_api.CustomResourceDefinition{
 		api.Restic{}.CustomResourceDefinition(),
 		api.Recovery{}.CustomResourceDefinition(),
 	}
 	for _, crd := range crds {
-		_, err := c.crdClient.ApiextensionsV1beta1().CustomResourceDefinitions().Get(crd.Name, metav1.GetOptions{})
+		_, err := c.crdClient.CustomResourceDefinitions().Get(crd.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(err) {
-			_, err = c.crdClient.ApiextensionsV1beta1().CustomResourceDefinitions().Create(crd)
+			_, err = c.crdClient.CustomResourceDefinitions().Create(crd)
 			if err != nil {
 				return err
 			}

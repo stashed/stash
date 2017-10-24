@@ -36,50 +36,7 @@ var recoveriesResource = schema.GroupVersionResource{Group: "stash.appscode.com"
 
 var recoveriesKind = schema.GroupVersionKind{Group: "stash.appscode.com", Version: "v1alpha1", Kind: "Recovery"}
 
-func (c *FakeRecoveries) Create(recovery *v1alpha1.Recovery) (result *v1alpha1.Recovery, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(recoveriesResource, c.ns, recovery), &v1alpha1.Recovery{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.Recovery), err
-}
-
-func (c *FakeRecoveries) Update(recovery *v1alpha1.Recovery) (result *v1alpha1.Recovery, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(recoveriesResource, c.ns, recovery), &v1alpha1.Recovery{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.Recovery), err
-}
-
-func (c *FakeRecoveries) UpdateStatus(recovery *v1alpha1.Recovery) (*v1alpha1.Recovery, error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(recoveriesResource, "status", c.ns, recovery), &v1alpha1.Recovery{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.Recovery), err
-}
-
-func (c *FakeRecoveries) Delete(name string, options *v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(recoveriesResource, c.ns, name), &v1alpha1.Recovery{})
-
-	return err
-}
-
-func (c *FakeRecoveries) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(recoveriesResource, c.ns, listOptions)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.RecoveryList{})
-	return err
-}
-
+// Get takes name of the recovery, and returns the corresponding recovery object, and an error if there is any.
 func (c *FakeRecoveries) Get(name string, options v1.GetOptions) (result *v1alpha1.Recovery, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(recoveriesResource, c.ns, name), &v1alpha1.Recovery{})
@@ -90,6 +47,7 @@ func (c *FakeRecoveries) Get(name string, options v1.GetOptions) (result *v1alph
 	return obj.(*v1alpha1.Recovery), err
 }
 
+// List takes label and field selectors, and returns the list of Recoveries that match those selectors.
 func (c *FakeRecoveries) List(opts v1.ListOptions) (result *v1alpha1.RecoveryList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(recoveriesResource, recoveriesKind, c.ns, opts), &v1alpha1.RecoveryList{})
@@ -116,6 +74,56 @@ func (c *FakeRecoveries) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(recoveriesResource, c.ns, opts))
 
+}
+
+// Create takes the representation of a recovery and creates it.  Returns the server's representation of the recovery, and an error, if there is any.
+func (c *FakeRecoveries) Create(recovery *v1alpha1.Recovery) (result *v1alpha1.Recovery, err error) {
+	obj, err := c.Fake.
+		Invokes(testing.NewCreateAction(recoveriesResource, c.ns, recovery), &v1alpha1.Recovery{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.Recovery), err
+}
+
+// Update takes the representation of a recovery and updates it. Returns the server's representation of the recovery, and an error, if there is any.
+func (c *FakeRecoveries) Update(recovery *v1alpha1.Recovery) (result *v1alpha1.Recovery, err error) {
+	obj, err := c.Fake.
+		Invokes(testing.NewUpdateAction(recoveriesResource, c.ns, recovery), &v1alpha1.Recovery{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.Recovery), err
+}
+
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+func (c *FakeRecoveries) UpdateStatus(recovery *v1alpha1.Recovery) (*v1alpha1.Recovery, error) {
+	obj, err := c.Fake.
+		Invokes(testing.NewUpdateSubresourceAction(recoveriesResource, "status", c.ns, recovery), &v1alpha1.Recovery{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.Recovery), err
+}
+
+// Delete takes name of the recovery and deletes it. Returns an error if one occurs.
+func (c *FakeRecoveries) Delete(name string, options *v1.DeleteOptions) error {
+	_, err := c.Fake.
+		Invokes(testing.NewDeleteAction(recoveriesResource, c.ns, name), &v1alpha1.Recovery{})
+
+	return err
+}
+
+// DeleteCollection deletes a collection of objects.
+func (c *FakeRecoveries) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(recoveriesResource, c.ns, listOptions)
+
+	_, err := c.Fake.Invokes(action, &v1alpha1.RecoveryList{})
+	return err
 }
 
 // Patch applies the patch and returns the patched recovery.

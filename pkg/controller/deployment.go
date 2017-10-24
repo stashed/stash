@@ -11,13 +11,13 @@ import (
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
+	apps "k8s.io/api/apps/v1beta1"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	rt "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	apps_listers "k8s.io/client-go/listers/apps/v1beta1"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
-	apps "k8s.io/client-go/pkg/apis/apps/v1beta1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 )
@@ -25,10 +25,10 @@ import (
 func (c *StashController) initDeploymentWatcher() {
 	lw := &cache.ListWatch{
 		ListFunc: func(options metav1.ListOptions) (rt.Object, error) {
-			return c.k8sClient.AppsV1beta1().Deployments(apiv1.NamespaceAll).List(options)
+			return c.k8sClient.AppsV1beta1().Deployments(core.NamespaceAll).List(options)
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return c.k8sClient.AppsV1beta1().Deployments(apiv1.NamespaceAll).Watch(options)
+			return c.k8sClient.AppsV1beta1().Deployments(core.NamespaceAll).Watch(options)
 		},
 	}
 

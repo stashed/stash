@@ -59,6 +59,41 @@ func newRecoveries(c *StashClient, namespace string) *recoveries {
 	}
 }
 
+// Get takes name of the recovery, and returns the corresponding recovery object, and an error if there is any.
+func (c *recoveries) Get(name string, options v1.GetOptions) (result *stash.Recovery, err error) {
+	result = &stash.Recovery{}
+	err = c.client.Get().
+		Namespace(c.ns).
+		Resource("recoveries").
+		Name(name).
+		VersionedParams(&options, scheme.ParameterCodec).
+		Do().
+		Into(result)
+	return
+}
+
+// List takes label and field selectors, and returns the list of Recoveries that match those selectors.
+func (c *recoveries) List(opts v1.ListOptions) (result *stash.RecoveryList, err error) {
+	result = &stash.RecoveryList{}
+	err = c.client.Get().
+		Namespace(c.ns).
+		Resource("recoveries").
+		VersionedParams(&opts, scheme.ParameterCodec).
+		Do().
+		Into(result)
+	return
+}
+
+// Watch returns a watch.Interface that watches the requested recoveries.
+func (c *recoveries) Watch(opts v1.ListOptions) (watch.Interface, error) {
+	opts.Watch = true
+	return c.client.Get().
+		Namespace(c.ns).
+		Resource("recoveries").
+		VersionedParams(&opts, scheme.ParameterCodec).
+		Watch()
+}
+
 // Create takes the representation of a recovery and creates it.  Returns the server's representation of the recovery, and an error, if there is any.
 func (c *recoveries) Create(recovery *stash.Recovery) (result *stash.Recovery, err error) {
 	result = &stash.Recovery{}
@@ -85,7 +120,7 @@ func (c *recoveries) Update(recovery *stash.Recovery) (result *stash.Recovery, e
 }
 
 // UpdateStatus was generated because the type contains a Status member.
-// Add a +genclientstatus=false comment above the type to avoid generating UpdateStatus().
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 
 func (c *recoveries) UpdateStatus(recovery *stash.Recovery) (result *stash.Recovery, err error) {
 	result = &stash.Recovery{}
@@ -120,41 +155,6 @@ func (c *recoveries) DeleteCollection(options *v1.DeleteOptions, listOptions v1.
 		Body(options).
 		Do().
 		Error()
-}
-
-// Get takes name of the recovery, and returns the corresponding recovery object, and an error if there is any.
-func (c *recoveries) Get(name string, options v1.GetOptions) (result *stash.Recovery, err error) {
-	result = &stash.Recovery{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("recoveries").
-		Name(name).
-		VersionedParams(&options, scheme.ParameterCodec).
-		Do().
-		Into(result)
-	return
-}
-
-// List takes label and field selectors, and returns the list of Recoveries that match those selectors.
-func (c *recoveries) List(opts v1.ListOptions) (result *stash.RecoveryList, err error) {
-	result = &stash.RecoveryList{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("recoveries").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Do().
-		Into(result)
-	return
-}
-
-// Watch returns a watch.Interface that watches the requested recoveries.
-func (c *recoveries) Watch(opts v1.ListOptions) (watch.Interface, error) {
-	opts.Watch = true
-	return c.client.Get().
-		Namespace(c.ns).
-		Resource("recoveries").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Watch()
 }
 
 // Patch applies the patch and returns the patched recovery.

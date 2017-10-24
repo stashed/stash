@@ -6,12 +6,12 @@ import (
 	"reflect"
 
 	"github.com/appscode/kutil"
+	rbac "k8s.io/api/rbac/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	rbacv1beta1 "k8s.io/client-go/pkg/apis/rbac/v1beta1"
 )
 
 func GetGroupVersionKind(v interface{}) schema.GroupVersionKind {
-	return rbacv1beta1.SchemeGroupVersion.WithKind(kutil.GetKind(v))
+	return rbac.SchemeGroupVersion.WithKind(kutil.GetKind(v))
 }
 
 func AssignTypeKind(v interface{}) error {
@@ -20,20 +20,20 @@ func AssignTypeKind(v interface{}) error {
 	}
 
 	switch u := v.(type) {
-	case *rbacv1beta1.Role:
-		u.APIVersion = rbacv1beta1.SchemeGroupVersion.String()
+	case *rbac.Role:
+		u.APIVersion = rbac.SchemeGroupVersion.String()
 		u.Kind = kutil.GetKind(v)
 		return nil
-	case *rbacv1beta1.RoleBinding:
-		u.APIVersion = rbacv1beta1.SchemeGroupVersion.String()
+	case *rbac.RoleBinding:
+		u.APIVersion = rbac.SchemeGroupVersion.String()
 		u.Kind = kutil.GetKind(v)
 		return nil
-	case *rbacv1beta1.ClusterRole:
-		u.APIVersion = rbacv1beta1.SchemeGroupVersion.String()
+	case *rbac.ClusterRole:
+		u.APIVersion = rbac.SchemeGroupVersion.String()
 		u.Kind = kutil.GetKind(v)
 		return nil
-	case *rbacv1beta1.ClusterRoleBinding:
-		u.APIVersion = rbacv1beta1.SchemeGroupVersion.String()
+	case *rbac.ClusterRoleBinding:
+		u.APIVersion = rbac.SchemeGroupVersion.String()
 		u.Kind = kutil.GetKind(v)
 		return nil
 	}

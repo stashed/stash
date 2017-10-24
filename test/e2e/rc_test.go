@@ -8,8 +8,8 @@ import (
 	. "github.com/appscode/stash/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 var _ = Describe("ReplicationController", func() {
@@ -17,8 +17,8 @@ var _ = Describe("ReplicationController", func() {
 		err      error
 		f        *framework.Invocation
 		restic   api.Restic
-		cred     apiv1.Secret
-		rc       apiv1.ReplicationController
+		cred     core.Secret
+		rc       core.ReplicationController
 		recovery api.Recovery
 	)
 
@@ -133,7 +133,7 @@ var _ = Describe("ReplicationController", func() {
 			}, BeNumerically(">=", 1)))
 
 			By("Removing labels of ReplicationController " + rc.Name)
-			_, err = core_util.PatchRC(f.KubeClient, &rc, func(in *apiv1.ReplicationController) *apiv1.ReplicationController {
+			_, err = core_util.PatchRC(f.KubeClient, &rc, func(in *core.ReplicationController) *core.ReplicationController {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}

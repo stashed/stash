@@ -215,9 +215,8 @@ func (r *PolicyRuleBuilder) Rule() (PolicyRule, error) {
 			return PolicyRule{}, fmt.Errorf("non-resource rule may not have apiGroups, resources, or resourceNames: %#v", r.PolicyRule)
 		}
 	case len(r.PolicyRule.Resources) > 0:
-		if len(r.PolicyRule.NonResourceURLs) != 0 {
-			return PolicyRule{}, fmt.Errorf("resource rule may not have nonResourceURLs: %#v", r.PolicyRule)
-		}
+		// resource rule may not have nonResourceURLs
+
 		if len(r.PolicyRule.APIGroups) == 0 {
 			// this a common bug
 			return PolicyRule{}, fmt.Errorf("resource rule must have apiGroups: %#v", r.PolicyRule)
@@ -349,7 +348,7 @@ func NewRoleBindingForClusterRole(roleName, namespace string) *RoleBindingBuilde
 // Groups adds the specified groups as the subjects of the RoleBinding.
 func (r *RoleBindingBuilder) Groups(groups ...string) *RoleBindingBuilder {
 	for _, group := range groups {
-		r.RoleBinding.Subjects = append(r.RoleBinding.Subjects, Subject{Kind: GroupKind, APIGroup: GroupName, Name: group})
+		r.RoleBinding.Subjects = append(r.RoleBinding.Subjects, Subject{Kind: GroupKind, Name: group})
 	}
 	return r
 }
@@ -357,7 +356,7 @@ func (r *RoleBindingBuilder) Groups(groups ...string) *RoleBindingBuilder {
 // Users adds the specified users as the subjects of the RoleBinding.
 func (r *RoleBindingBuilder) Users(users ...string) *RoleBindingBuilder {
 	for _, user := range users {
-		r.RoleBinding.Subjects = append(r.RoleBinding.Subjects, Subject{Kind: UserKind, APIGroup: GroupName, Name: user})
+		r.RoleBinding.Subjects = append(r.RoleBinding.Subjects, Subject{Kind: UserKind, Name: user})
 	}
 	return r
 }

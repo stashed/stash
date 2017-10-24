@@ -14,13 +14,13 @@ import (
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/cenkalti/backoff"
 	"github.com/google/go-cmp/cmp"
+	batch "k8s.io/api/batch/v1"
+	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
-	batch "k8s.io/client-go/pkg/apis/batch/v1"
 )
 
 const (
@@ -92,7 +92,7 @@ func WaitUntilSidecarAdded(kubeClient kubernetes.Interface, namespace string, se
 			return err
 		}
 
-		var podsToRestart []apiv1.Pod
+		var podsToRestart []core.Pod
 		for _, pod := range pods.Items {
 			found := false
 			for _, c := range pod.Spec.Containers {
@@ -126,7 +126,7 @@ func WaitUntilSidecarRemoved(kubeClient kubernetes.Interface, namespace string, 
 			return err
 		}
 
-		var podsToRestart []apiv1.Pod
+		var podsToRestart []core.Pod
 		for _, pod := range pods.Items {
 			found := false
 			for _, c := range pod.Spec.Containers {
@@ -156,41 +156,41 @@ func GetString(m map[string]string, key string) string {
 	return m[key]
 }
 
-func CreateSidecarContainer(r *api.Restic, tag, workload string) apiv1.Container {
+func CreateSidecarContainer(r *api.Restic, tag, workload string) core.Container {
 	if r.Annotations != nil {
 		if v, ok := r.Annotations[api.VersionTag]; ok {
 			tag = v
 		}
 	}
-	sidecar := apiv1.Container{
+	sidecar := core.Container{
 		Name:            StashContainer,
 		Image:           docker.ImageOperator + ":" + tag,
-		ImagePullPolicy: apiv1.PullIfNotPresent,
+		ImagePullPolicy: core.PullIfNotPresent,
 		Args: []string{
 			"schedule",
 			"--restic-name=" + r.Name,
 			"--workload=" + workload,
 		},
-		Env: []apiv1.EnvVar{
+		Env: []core.EnvVar{
 			{
 				Name: "NODE_NAME",
-				ValueFrom: &apiv1.EnvVarSource{
-					FieldRef: &apiv1.ObjectFieldSelector{
+				ValueFrom: &core.EnvVarSource{
+					FieldRef: &core.ObjectFieldSelector{
 						FieldPath: "spec.nodeName",
 					},
 				},
 			},
 			{
 				Name: "POD_NAME",
-				ValueFrom: &apiv1.EnvVarSource{
-					FieldRef: &apiv1.ObjectFieldSelector{
+				ValueFrom: &core.EnvVarSource{
+					FieldRef: &core.ObjectFieldSelector{
 						FieldPath: "metadata.name",
 					},
 				},
 			},
 		},
 		Resources: r.Spec.Resources,
-		VolumeMounts: []apiv1.VolumeMount{
+		VolumeMounts: []core.VolumeMount{
 			{
 				Name:      ScratchDirVolumeName,
 				MountPath: "/tmp",
@@ -202,13 +202,13 @@ func CreateSidecarContainer(r *api.Restic, tag, workload string) apiv1.Container
 		},
 	}
 	if tag == "canary" {
-		sidecar.ImagePullPolicy = apiv1.PullAlways
+		sidecar.ImagePullPolicy = core.PullAlways
 		sidecar.Args = append(sidecar.Args, "--v=5")
 	} else {
 		sidecar.Args = append(sidecar.Args, "--v=3")
 	}
 	for _, srcVol := range r.Spec.VolumeMounts {
-		sidecar.VolumeMounts = append(sidecar.VolumeMounts, apiv1.VolumeMount{
+		sidecar.VolumeMounts = append(sidecar.VolumeMounts, core.VolumeMount{
 			Name:      srcVol.Name,
 			MountPath: srcVol.MountPath,
 			SubPath:   srcVol.SubPath,
@@ -216,7 +216,7 @@ func CreateSidecarContainer(r *api.Restic, tag, workload string) apiv1.Container
 		})
 	}
 	if r.Spec.Backend.Local != nil {
-		sidecar.VolumeMounts = append(sidecar.VolumeMounts, apiv1.VolumeMount{
+		sidecar.VolumeMounts = append(sidecar.VolumeMounts, core.VolumeMount{
 			Name:      LocalVolumeName,
 			MountPath: r.Spec.Backend.Local.Path,
 		})
@@ -224,25 +224,25 @@ func CreateSidecarContainer(r *api.Restic, tag, workload string) apiv1.Container
 	return sidecar
 }
 
-func UpsertScratchVolume(volumes []apiv1.Volume) []apiv1.Volume {
-	return core_util.UpsertVolume(volumes, apiv1.Volume{
+func UpsertScratchVolume(volumes []core.Volume) []core.Volume {
+	return core_util.UpsertVolume(volumes, core.Volume{
 		Name: ScratchDirVolumeName,
-		VolumeSource: apiv1.VolumeSource{
-			EmptyDir: &apiv1.EmptyDirVolumeSource{},
+		VolumeSource: core.VolumeSource{
+			EmptyDir: &core.EmptyDirVolumeSource{},
 		},
 	})
 }
 
 // https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#store-pod-fields
-func UpsertDownwardVolume(volumes []apiv1.Volume) []apiv1.Volume {
-	return core_util.UpsertVolume(volumes, apiv1.Volume{
+func UpsertDownwardVolume(volumes []core.Volume) []core.Volume {
+	return core_util.UpsertVolume(volumes, core.Volume{
 		Name: PodinfoVolumeName,
-		VolumeSource: apiv1.VolumeSource{
-			DownwardAPI: &apiv1.DownwardAPIVolumeSource{
-				Items: []apiv1.DownwardAPIVolumeFile{
+		VolumeSource: core.VolumeSource{
+			DownwardAPI: &core.DownwardAPIVolumeSource{
+				Items: []core.DownwardAPIVolumeFile{
 					{
 						Path: "labels",
-						FieldRef: &apiv1.ObjectFieldSelector{
+						FieldRef: &core.ObjectFieldSelector{
 							FieldPath: "metadata.labels",
 						},
 					},
@@ -252,7 +252,7 @@ func UpsertDownwardVolume(volumes []apiv1.Volume) []apiv1.Volume {
 	})
 }
 
-func MergeLocalVolume(volumes []apiv1.Volume, old, new *api.Restic) []apiv1.Volume {
+func MergeLocalVolume(volumes []core.Volume, old, new *api.Restic) []core.Volume {
 	oldPos := -1
 	if old != nil && old.Spec.Backend.Local != nil {
 		for i, vol := range volumes {
@@ -264,9 +264,9 @@ func MergeLocalVolume(volumes []apiv1.Volume, old, new *api.Restic) []apiv1.Volu
 	}
 	if new.Spec.Backend.Local != nil {
 		if oldPos != -1 {
-			volumes[oldPos] = apiv1.Volume{Name: LocalVolumeName, VolumeSource: new.Spec.Backend.Local.VolumeSource}
+			volumes[oldPos] = core.Volume{Name: LocalVolumeName, VolumeSource: new.Spec.Backend.Local.VolumeSource}
 		} else {
-			volumes = core_util.UpsertVolume(volumes, apiv1.Volume{Name: LocalVolumeName, VolumeSource: new.Spec.Backend.Local.VolumeSource})
+			volumes = core_util.UpsertVolume(volumes, core.Volume{Name: LocalVolumeName, VolumeSource: new.Spec.Backend.Local.VolumeSource})
 		}
 	} else {
 		if oldPos != -1 {
@@ -276,7 +276,7 @@ func MergeLocalVolume(volumes []apiv1.Volume, old, new *api.Restic) []apiv1.Volu
 	return volumes
 }
 
-func EnsureVolumeDeleted(volumes []apiv1.Volume, name string) []apiv1.Volume {
+func EnsureVolumeDeleted(volumes []core.Volume, name string) []core.Volume {
 	for i, v := range volumes {
 		if v.Name == name {
 			return append(volumes[:i], volumes[i+1:]...)
@@ -316,9 +316,9 @@ func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *
 			Namespace: recovery.Namespace,
 		},
 		Spec: batch.JobSpec{
-			Template: apiv1.PodTemplateSpec{
-				Spec: apiv1.PodSpec{
-					Containers: []apiv1.Container{
+			Template: core.PodTemplateSpec{
+				Spec: core.PodSpec{
+					Containers: []core.Container{
 						{
 							Name:  StashContainer,
 							Image: docker.ImageOperator + ":" + tag,
@@ -327,11 +327,11 @@ func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *
 								"--recovery-name=" + recovery.Name,
 								"--v=10",
 							},
-							Env: []apiv1.EnvVar{
+							Env: []core.EnvVar{
 								{
 									Name: "NODE_NAME",
-									ValueFrom: &apiv1.EnvVarSource{
-										FieldRef: &apiv1.ObjectFieldSelector{
+									ValueFrom: &core.EnvVarSource{
+										FieldRef: &core.ObjectFieldSelector{
 											FieldPath: "spec.nodeName",
 										},
 									},
@@ -351,14 +351,14 @@ func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *
 	// local backend
 	if restic.Spec.Backend.Local != nil {
 		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts,
-			apiv1.VolumeMount{
+			core.VolumeMount{
 				Name:      LocalVolumeName,
 				MountPath: restic.Spec.Backend.Local.Path,
 			})
 
 		// user don't need to specify "stash-local" volume, we collect it from restic-spec
 		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes,
-			apiv1.Volume{
+			core.Volume{
 				Name:         LocalVolumeName,
 				VolumeSource: restic.Spec.Backend.Local.VolumeSource,
 			})

@@ -6,9 +6,9 @@ import (
 
 	"github.com/appscode/stash/pkg/eventer"
 	. "github.com/onsi/gomega"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 const (
@@ -17,12 +17,12 @@ const (
 )
 
 func (f *Framework) EventualEvent(meta metav1.ObjectMeta) GomegaAsyncAssertion {
-	return Eventually(func() []apiv1.Event {
+	return Eventually(func() []core.Event {
 		fieldSelector := fields.SelectorFromSet(fields.Set{
 			"involvedObject.kind":      "Restic",
 			"involvedObject.name":      meta.Name,
 			"involvedObject.namespace": meta.Namespace,
-			"type": apiv1.EventTypeNormal,
+			"type": core.EventTypeNormal,
 		})
 		events, err := f.KubeClient.CoreV1().Events(f.namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
 		Expect(err).NotTo(HaveOccurred())
@@ -31,12 +31,12 @@ func (f *Framework) EventualEvent(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 }
 
 func (f *Framework) EventualWarning(meta metav1.ObjectMeta) GomegaAsyncAssertion {
-	return Eventually(func() []apiv1.Event {
+	return Eventually(func() []core.Event {
 		fieldSelector := fields.SelectorFromSet(fields.Set{
 			"involvedObject.kind":      "Restic",
 			"involvedObject.name":      meta.Name,
 			"involvedObject.namespace": meta.Namespace,
-			"type": apiv1.EventTypeWarning,
+			"type": core.EventTypeWarning,
 		})
 		events, err := f.KubeClient.CoreV1().Events(f.namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
 		Expect(err).NotTo(HaveOccurred())
@@ -44,7 +44,7 @@ func (f *Framework) EventualWarning(meta metav1.ObjectMeta) GomegaAsyncAssertion
 	})
 }
 
-func (f *Framework) CountSuccessfulBackups(events []apiv1.Event) int {
+func (f *Framework) CountSuccessfulBackups(events []core.Event) int {
 	count := 0
 	for _, e := range events {
 		if e.Reason == eventer.EventReasonSuccessfulBackup {

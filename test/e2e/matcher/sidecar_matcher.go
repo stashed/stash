@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/onsi/gomega/types"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
-	apps "k8s.io/client-go/pkg/apis/apps/v1beta1"
-	extensions "k8s.io/client-go/pkg/apis/extensions/v1beta1"
+	apps "k8s.io/api/apps/v1beta1"
+	core "k8s.io/api/core/v1"
+	extensions "k8s.io/api/extensions/v1beta1"
 )
 
 func HaveSidecar(expected string) types.GomegaMatcher {
@@ -21,9 +21,9 @@ type sidecarMatcher struct {
 
 func (matcher *sidecarMatcher) Match(actual interface{}) (success bool, err error) {
 	switch obj := actual.(type) {
-	case *apiv1.Pod:
+	case *core.Pod:
 		return matcher.find(obj.Spec.Containers)
-	case *apiv1.ReplicationController:
+	case *core.ReplicationController:
 		return matcher.find(obj.Spec.Template.Spec.Containers)
 	case *extensions.ReplicaSet:
 		return matcher.find(obj.Spec.Template.Spec.Containers)
@@ -35,14 +35,14 @@ func (matcher *sidecarMatcher) Match(actual interface{}) (success bool, err erro
 		return matcher.find(obj.Spec.Template.Spec.Containers)
 	case *apps.StatefulSet:
 		return matcher.find(obj.Spec.Template.Spec.Containers)
-	case []apiv1.Container:
+	case []core.Container:
 		return matcher.find(obj)
 	default:
 		return false, fmt.Errorf("Unknown object type")
 	}
 }
 
-func (matcher *sidecarMatcher) find(containers []apiv1.Container) (success bool, err error) {
+func (matcher *sidecarMatcher) find(containers []core.Container) (success bool, err error) {
 	for _, c := range containers {
 		if c.Name == matcher.expected {
 			return true, nil

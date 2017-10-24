@@ -6,13 +6,13 @@ import (
 	"reflect"
 
 	"github.com/appscode/kutil"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	apiv1 "k8s.io/client-go/pkg/api/v1"
 )
 
 func GetGroupVersionKind(v interface{}) schema.GroupVersionKind {
-	return apiv1.SchemeGroupVersion.WithKind(kutil.GetKind(v))
+	return core.SchemeGroupVersion.WithKind(kutil.GetKind(v))
 }
 
 func AssignTypeKind(v interface{}) error {
@@ -21,60 +21,60 @@ func AssignTypeKind(v interface{}) error {
 	}
 
 	switch u := v.(type) {
-	case *apiv1.Pod:
-		u.APIVersion = apiv1.SchemeGroupVersion.String()
+	case *core.Pod:
+		u.APIVersion = core.SchemeGroupVersion.String()
 		u.Kind = kutil.GetKind(v)
 		return nil
-	case *apiv1.ReplicationController:
-		u.APIVersion = apiv1.SchemeGroupVersion.String()
+	case *core.ReplicationController:
+		u.APIVersion = core.SchemeGroupVersion.String()
 		u.Kind = kutil.GetKind(v)
 		return nil
-	case *apiv1.ConfigMap:
-		u.APIVersion = apiv1.SchemeGroupVersion.String()
+	case *core.ConfigMap:
+		u.APIVersion = core.SchemeGroupVersion.String()
 		u.Kind = kutil.GetKind(v)
 		return nil
-	case *apiv1.Secret:
-		u.APIVersion = apiv1.SchemeGroupVersion.String()
+	case *core.Secret:
+		u.APIVersion = core.SchemeGroupVersion.String()
 		u.Kind = kutil.GetKind(v)
 		return nil
-	case *apiv1.Service:
-		u.APIVersion = apiv1.SchemeGroupVersion.String()
+	case *core.Service:
+		u.APIVersion = core.SchemeGroupVersion.String()
 		u.Kind = kutil.GetKind(v)
 		return nil
-	case *apiv1.PersistentVolumeClaim:
-		u.APIVersion = apiv1.SchemeGroupVersion.String()
+	case *core.PersistentVolumeClaim:
+		u.APIVersion = core.SchemeGroupVersion.String()
 		u.Kind = kutil.GetKind(v)
 		return nil
-	case *apiv1.PersistentVolume:
-		u.APIVersion = apiv1.SchemeGroupVersion.String()
+	case *core.PersistentVolume:
+		u.APIVersion = core.SchemeGroupVersion.String()
 		u.Kind = kutil.GetKind(v)
 		return nil
-	case *apiv1.Node:
-		u.APIVersion = apiv1.SchemeGroupVersion.String()
+	case *core.Node:
+		u.APIVersion = core.SchemeGroupVersion.String()
 		u.Kind = kutil.GetKind(v)
 		return nil
-	case *apiv1.ServiceAccount:
-		u.APIVersion = apiv1.SchemeGroupVersion.String()
+	case *core.ServiceAccount:
+		u.APIVersion = core.SchemeGroupVersion.String()
 		u.Kind = kutil.GetKind(v)
 		return nil
-	case *apiv1.Namespace:
-		u.APIVersion = apiv1.SchemeGroupVersion.String()
+	case *core.Namespace:
+		u.APIVersion = core.SchemeGroupVersion.String()
 		u.Kind = kutil.GetKind(v)
 		return nil
-	case *apiv1.Endpoints:
-		u.APIVersion = apiv1.SchemeGroupVersion.String()
+	case *core.Endpoints:
+		u.APIVersion = core.SchemeGroupVersion.String()
 		u.Kind = kutil.GetKind(v)
 		return nil
-	case *apiv1.ComponentStatus:
-		u.APIVersion = apiv1.SchemeGroupVersion.String()
+	case *core.ComponentStatus:
+		u.APIVersion = core.SchemeGroupVersion.String()
 		u.Kind = kutil.GetKind(v)
 		return nil
-	case *apiv1.LimitRange:
-		u.APIVersion = apiv1.SchemeGroupVersion.String()
+	case *core.LimitRange:
+		u.APIVersion = core.SchemeGroupVersion.String()
 		u.Kind = kutil.GetKind(v)
 		return nil
-	case *apiv1.Event:
-		u.APIVersion = apiv1.SchemeGroupVersion.String()
+	case *core.Event:
+		u.APIVersion = core.SchemeGroupVersion.String()
 		u.Kind = kutil.GetKind(v)
 		return nil
 	}
@@ -125,7 +125,7 @@ func RemoveFinalizer(m metav1.ObjectMeta, finalizer string) metav1.ObjectMeta {
 	return m
 }
 
-func EnsureContainerDeleted(containers []apiv1.Container, name string) []apiv1.Container {
+func EnsureContainerDeleted(containers []core.Container, name string) []core.Container {
 	for i, c := range containers {
 		if c.Name == name {
 			return append(containers[:i], containers[i+1:]...)
@@ -134,7 +134,7 @@ func EnsureContainerDeleted(containers []apiv1.Container, name string) []apiv1.C
 	return containers
 }
 
-func UpsertContainer(containers []apiv1.Container, nv apiv1.Container) []apiv1.Container {
+func UpsertContainer(containers []core.Container, nv core.Container) []core.Container {
 	for i, vol := range containers {
 		if vol.Name == nv.Name {
 			containers[i] = nv
@@ -151,7 +151,7 @@ func GetString(m map[string]string, key string) string {
 	return m[key]
 }
 
-func UpsertVolume(volumes []apiv1.Volume, nv apiv1.Volume) []apiv1.Volume {
+func UpsertVolume(volumes []core.Volume, nv core.Volume) []core.Volume {
 	for i, vol := range volumes {
 		if vol.Name == nv.Name {
 			volumes[i] = nv
@@ -161,7 +161,7 @@ func UpsertVolume(volumes []apiv1.Volume, nv apiv1.Volume) []apiv1.Volume {
 	return append(volumes, nv)
 }
 
-func EnsureVolumeDeleted(volumes []apiv1.Volume, name string) []apiv1.Volume {
+func EnsureVolumeDeleted(volumes []core.Volume, name string) []core.Volume {
 	for i, v := range volumes {
 		if v.Name == name {
 			return append(volumes[:i], volumes[i+1:]...)
@@ -170,7 +170,7 @@ func EnsureVolumeDeleted(volumes []apiv1.Volume, name string) []apiv1.Volume {
 	return volumes
 }
 
-func UpsertVolumeMount(mounts []apiv1.VolumeMount, nv apiv1.VolumeMount) []apiv1.VolumeMount {
+func UpsertVolumeMount(mounts []core.VolumeMount, nv core.VolumeMount) []core.VolumeMount {
 	for i, vol := range mounts {
 		if vol.Name == nv.Name {
 			mounts[i] = nv
@@ -180,7 +180,7 @@ func UpsertVolumeMount(mounts []apiv1.VolumeMount, nv apiv1.VolumeMount) []apiv1
 	return append(mounts, nv)
 }
 
-func EnsureVolumeMountDeleted(mounts []apiv1.VolumeMount, name string) []apiv1.VolumeMount {
+func EnsureVolumeMountDeleted(mounts []core.VolumeMount, name string) []core.VolumeMount {
 	for i, v := range mounts {
 		if v.Name == name {
 			return append(mounts[:i], mounts[i+1:]...)
@@ -189,7 +189,7 @@ func EnsureVolumeMountDeleted(mounts []apiv1.VolumeMount, name string) []apiv1.V
 	return mounts
 }
 
-func UpsertEnvVar(vars []apiv1.EnvVar, nv apiv1.EnvVar) []apiv1.EnvVar {
+func UpsertEnvVar(vars []core.EnvVar, nv core.EnvVar) []core.EnvVar {
 	for i, vol := range vars {
 		if vol.Name == nv.Name {
 			vars[i] = nv
@@ -199,7 +199,7 @@ func UpsertEnvVar(vars []apiv1.EnvVar, nv apiv1.EnvVar) []apiv1.EnvVar {
 	return append(vars, nv)
 }
 
-func EnsureEnvVarDeleted(vars []apiv1.EnvVar, name string) []apiv1.EnvVar {
+func EnsureEnvVarDeleted(vars []core.EnvVar, name string) []core.EnvVar {
 	for i, v := range vars {
 		if v.Name == name {
 			return append(vars[:i], vars[i+1:]...)
