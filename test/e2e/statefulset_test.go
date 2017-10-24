@@ -33,7 +33,7 @@ var _ = Describe("StatefulSet", func() {
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
 		svc = f.HeadlessService()
-		ss = f.StatefulSet(restic)
+		ss = f.StatefulSet(restic, TestSidecarImageTag)
 	})
 
 	var (

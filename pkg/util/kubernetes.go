@@ -366,3 +366,39 @@ func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *
 
 	return job
 }
+
+func CheckWorkloadExists(kubeClient kubernetes.Interface, namespace, appKind, appName string) error {
+	switch appKind {
+	case api.AppKindDeployment:
+		_, err := kubeClient.AppsV1beta1().Deployments(namespace).Get(appName, metav1.GetOptions{})
+		if err != nil {
+			_, err := kubeClient.ExtensionsV1beta1().Deployments(namespace).Get(appName, metav1.GetOptions{})
+			if err != nil {
+				fmt.Errorf(`unknown Deployment %s/%s`, namespace, appName)
+			}
+		}
+	case api.AppKindReplicaSet:
+		_, err := kubeClient.ExtensionsV1beta1().ReplicaSets(namespace).Get(appName, metav1.GetOptions{})
+		if err != nil {
+			fmt.Errorf(`unknown ReplicaSet %s/%s`, namespace, appName)
+		}
+	case api.AppKindReplicationController:
+		_, err := kubeClient.CoreV1().ReplicationControllers(namespace).Get(appName, metav1.GetOptions{})
+		if err != nil {
+			fmt.Errorf(`unknown ReplicationController %s/%s`, namespace, appName)
+		}
+	case api.AppKindStatefulSet:
+		_, err := kubeClient.AppsV1beta1().StatefulSets(namespace).Get(appName, metav1.GetOptions{})
+		if err != nil {
+			fmt.Errorf(`unknown StatefulSet %s/%s`, namespace, appName)
+		}
+	case api.AppKindDaemonSet:
+		_, err := kubeClient.ExtensionsV1beta1().DaemonSets(namespace).Get(appName, metav1.GetOptions{})
+		if err != nil {
+			fmt.Errorf(`unknown DaemonSet %s/%s`, namespace, appName)
+		}
+	default:
+		fmt.Errorf(`unrecognized workload "Kind" %v`, appKind)
+	}
+	return nil
+}

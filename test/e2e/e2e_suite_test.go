@@ -22,7 +22,8 @@ import (
 )
 
 const (
-	TIMEOUT = 20 * time.Minute
+	TIMEOUT             = 20 * time.Minute
+	TestSidecarImageTag = "recovery" // "canary"
 )
 
 var (
@@ -55,7 +56,7 @@ var _ = BeforeSuite(func() {
 	By("Using test namespace " + root.Namespace())
 
 	opts := controller.Options{
-		SidecarImageTag: "recovery", //"canary",
+		SidecarImageTag: TestSidecarImageTag,
 		ResyncPeriod:    5 * time.Minute,
 	}
 	ctrl = controller.New(kubeClient, crdClient, stashClient, opts)
@@ -71,5 +72,5 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	//root.DeleteNamespace()
+	root.DeleteNamespace()
 })

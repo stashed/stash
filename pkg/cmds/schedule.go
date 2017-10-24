@@ -11,6 +11,7 @@ import (
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/scheduler"
+	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -59,7 +60,7 @@ func NewCmdSchedule() *cobra.Command {
 				opt.AppKind, opt.AppName, opt.PodName, opt.NodeName); err != nil {
 				log.Fatalf(err.Error())
 			}
-			if err = api.CheckWorkloadExists(kubeClient, opt.Namespace, opt.AppKind, opt.AppName); err != nil {
+			if err = util.CheckWorkloadExists(kubeClient, opt.Namespace, opt.AppKind, opt.AppName); err != nil {
 				log.Fatalf(err.Error())
 			}
 
