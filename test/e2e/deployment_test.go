@@ -343,11 +343,11 @@ var _ = Describe("Deployment", func() {
 
 	Describe("Creating recovery for", func() {
 		AfterEach(func() {
-			f.DeleteDeployment(deployment.ObjectMeta)
+			/*f.DeleteDeployment(deployment.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 			f.DeleteRecovery(recovery.ObjectMeta)
-			framework.CleanupMinikubeHostPath()
+			framework.CleanupMinikubeHostPath()*/
 		})
 
 		Context(`"Local" backend`, func() {
