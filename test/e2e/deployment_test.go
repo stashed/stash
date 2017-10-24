@@ -350,7 +350,7 @@ var _ = Describe("Deployment", func() {
 				restic = f.ResticForHostPathLocalBackend()
 				recovery = f.RecoveryForRestic(restic.Name)
 			})
-			FIt(`should restore local deployment backup`, shouldRestoreDeployment)
+			It(`should restore local deployment backup`, shouldRestoreDeployment)
 		})
 
 		Context(`"S3" backend`, func() {
