@@ -132,7 +132,7 @@ type RetentionPolicy struct {
 	DryRun      bool     `json:"dryRun,omitempty"`
 }
 
-// +genclient=true
+// +genclient
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
