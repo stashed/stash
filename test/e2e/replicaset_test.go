@@ -182,7 +182,10 @@ var _ = Describe("ReplicaSet", func() {
 
 		shouldRestoreReplicaSet = func() {
 			shouldBackupNewReplicaSet()
-			recovery.Spec.Workload = "replicaset/" + rs.Name
+			recovery.Spec.Workload = api.LocalTypedReference{
+				Kind: api.AppKindReplicaSet,
+				Name: rs.Name,
+			}
 
 			By("Creating recovery " + recovery.Name)
 			err = f.CreateRecovery(recovery)

@@ -8,7 +8,6 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/kutil"
-	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/scheduler"
 	"github.com/appscode/stash/pkg/util"
@@ -21,8 +20,7 @@ func NewCmdSchedule() *cobra.Command {
 	var (
 		masterURL      string
 		kubeconfigPath string
-		workload       string
-		opt            scheduler.Options = scheduler.Options{
+		opt            = scheduler.Options{
 			Namespace:      kutil.Namespace(),
 			ResticName:     "",
 			ScratchDir:     "/tmp",
@@ -53,14 +51,14 @@ func NewCmdSchedule() *cobra.Command {
 			if opt.PodName == "" {
 				log.Fatalln(`Missing ENV var "POD_NAME"`)
 			}
-			if opt.AppKind, opt.AppName, err = api.ExtractWorkload(workload); err != nil {
+
+			if err := opt.Workload.Canonicalize(); err != nil {
 				log.Fatalf(err.Error())
 			}
-			if opt.SnapshotHostname, opt.SmartPrefix, err = api.HostnamePrefixForAppKind(
-				opt.AppKind, opt.AppName, opt.PodName, opt.NodeName); err != nil {
+			if opt.SnapshotHostname, opt.SmartPrefix, err = opt.Workload.HostnamePrefixForWorkload(opt.PodName, opt.NodeName); err != nil {
 				log.Fatalf(err.Error())
 			}
-			if err = util.CheckWorkloadExists(kubeClient, opt.Namespace, opt.AppKind, opt.AppName); err != nil {
+			if err = util.CheckWorkloadExists(kubeClient, opt.Namespace, opt.Workload); err != nil {
 				log.Fatalf(err.Error())
 			}
 
@@ -89,7 +87,8 @@ func NewCmdSchedule() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&workload, "workload", workload, `"Kind/Name" of workload where sidecar pod is added (eg, Deployment/apiserver)`)
+	cmd.Flags().StringVar(&opt.Workload.Kind, "workload-kind", opt.Workload.Kind, "Kind of workload where sidecar pod is added.")
+	cmd.Flags().StringVar(&opt.Workload.Name, "workload-name", opt.Workload.Name, "Name of workload where sidecar pod is added.")
 	cmd.Flags().StringVar(&opt.ResticName, "restic-name", opt.ResticName, "Name of the Restic used as configuration.")
 	cmd.Flags().StringVar(&opt.ScratchDir, "scratch-dir", opt.ScratchDir, "Directory used to store temporary files. Use an `emptyDir` in Kubernetes.")
 	cmd.Flags().StringVar(&opt.PushgatewayURL, "pushgateway-url", opt.PushgatewayURL, "URL of Prometheus pushgateway used to cache backup metrics")

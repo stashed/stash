@@ -156,7 +156,7 @@ func GetString(m map[string]string, key string) string {
 	return m[key]
 }
 
-func CreateSidecarContainer(r *api.Restic, tag, workload string) core.Container {
+func CreateSidecarContainer(r *api.Restic, tag string, workload api.LocalTypedReference) core.Container {
 	if r.Annotations != nil {
 		if v, ok := r.Annotations[api.VersionTag]; ok {
 			tag = v
@@ -169,7 +169,8 @@ func CreateSidecarContainer(r *api.Restic, tag, workload string) core.Container 
 		Args: []string{
 			"schedule",
 			"--restic-name=" + r.Name,
-			"--workload=" + workload,
+			"--workload-kind=" + workload.Kind,
+			"--workload-name=" + workload.Name,
 		},
 		Env: []core.EnvVar{
 			{
@@ -327,22 +328,12 @@ func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *
 								"--recovery-name=" + recovery.Name,
 								"--v=10",
 							},
-							Env: []core.EnvVar{
-								{
-									Name: "NODE_NAME",
-									ValueFrom: &core.EnvVarSource{
-										FieldRef: &core.ObjectFieldSelector{
-											FieldPath: "spec.nodeName",
-										},
-									},
-								},
-							},
 							VolumeMounts: restic.Spec.VolumeMounts, // use volume mounts specified in restic
 						},
 					},
 					RestartPolicy: "OnFailure",
 					Volumes:       recovery.Spec.Volumes,
-					NodeSelector:  recovery.Spec.NodeSelector,
+					NodeName:      recovery.Spec.NodeName,
 				},
 			},
 		},
@@ -367,38 +358,38 @@ func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *
 	return job
 }
 
-func CheckWorkloadExists(kubeClient kubernetes.Interface, namespace, appKind, appName string) error {
-	switch appKind {
+func CheckWorkloadExists(kubeClient kubernetes.Interface, namespace string, workload api.LocalTypedReference) error {
+	switch workload.Kind {
 	case api.AppKindDeployment:
-		_, err := kubeClient.AppsV1beta1().Deployments(namespace).Get(appName, metav1.GetOptions{})
+		_, err := kubeClient.AppsV1beta1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
 		if err != nil {
-			_, err := kubeClient.ExtensionsV1beta1().Deployments(namespace).Get(appName, metav1.GetOptions{})
+			_, err := kubeClient.ExtensionsV1beta1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
 			if err != nil {
-				fmt.Errorf(`unknown Deployment %s/%s`, namespace, appName)
+				fmt.Errorf(`unknown Deployment %s/%s`, namespace, workload.Name)
 			}
 		}
 	case api.AppKindReplicaSet:
-		_, err := kubeClient.ExtensionsV1beta1().ReplicaSets(namespace).Get(appName, metav1.GetOptions{})
+		_, err := kubeClient.ExtensionsV1beta1().ReplicaSets(namespace).Get(workload.Name, metav1.GetOptions{})
 		if err != nil {
-			fmt.Errorf(`unknown ReplicaSet %s/%s`, namespace, appName)
+			fmt.Errorf(`unknown ReplicaSet %s/%s`, namespace, workload.Name)
 		}
 	case api.AppKindReplicationController:
-		_, err := kubeClient.CoreV1().ReplicationControllers(namespace).Get(appName, metav1.GetOptions{})
+		_, err := kubeClient.CoreV1().ReplicationControllers(namespace).Get(workload.Name, metav1.GetOptions{})
 		if err != nil {
-			fmt.Errorf(`unknown ReplicationController %s/%s`, namespace, appName)
+			fmt.Errorf(`unknown ReplicationController %s/%s`, namespace, workload.Name)
 		}
 	case api.AppKindStatefulSet:
-		_, err := kubeClient.AppsV1beta1().StatefulSets(namespace).Get(appName, metav1.GetOptions{})
+		_, err := kubeClient.AppsV1beta1().StatefulSets(namespace).Get(workload.Name, metav1.GetOptions{})
 		if err != nil {
-			fmt.Errorf(`unknown StatefulSet %s/%s`, namespace, appName)
+			fmt.Errorf(`unknown StatefulSet %s/%s`, namespace, workload.Name)
 		}
 	case api.AppKindDaemonSet:
-		_, err := kubeClient.ExtensionsV1beta1().DaemonSets(namespace).Get(appName, metav1.GetOptions{})
+		_, err := kubeClient.ExtensionsV1beta1().DaemonSets(namespace).Get(workload.Name, metav1.GetOptions{})
 		if err != nil {
-			fmt.Errorf(`unknown DaemonSet %s/%s`, namespace, appName)
+			fmt.Errorf(`unknown DaemonSet %s/%s`, namespace, workload.Name)
 		}
 	default:
-		fmt.Errorf(`unrecognized workload "Kind" %v`, appKind)
+		fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
 	}
 	return nil
 }

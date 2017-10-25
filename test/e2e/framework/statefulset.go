@@ -30,7 +30,11 @@ func (fi *Invocation) StatefulSet(r api.Restic, sidecarImageTag string) apps.Sta
 		},
 	}
 
-	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.CreateSidecarContainer(&r, sidecarImageTag, "StatefulSet/"+resource.Name))
+	workload := api.LocalTypedReference{
+		Kind: api.AppKindStatefulSet,
+		Name: resource.Name,
+	}
+	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.CreateSidecarContainer(&r, sidecarImageTag, workload))
 	resource.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(resource.Spec.Template.Spec.Volumes)
 	resource.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(resource.Spec.Template.Spec.Volumes)
 	if r.Spec.Backend.Local != nil {

@@ -25,31 +25,28 @@ func (r Recovery) IsValid() error {
 		return fmt.Errorf("missing target vollume")
 	}
 
-	if r.Spec.Workload == "" {
-		return fmt.Errorf("missing workload")
-	}
-	appKind, _, err := ExtractWorkload(r.Spec.Workload)
-	if err != nil {
+	if err := r.Spec.Workload.Canonicalize(); err != nil {
 		return err
 	}
-	switch appKind {
+
+	switch r.Spec.Workload.Kind {
 	case AppKindDeployment, AppKindReplicaSet, AppKindReplicationController:
-		if len(r.Spec.PodOrdinal) != 0 || len(r.Spec.NodeSelector) != 0 {
-			return fmt.Errorf("should not specify podOrdinal/nodeSelector for workload kind %s", appKind)
+		if r.Spec.PodOrdinal != "" || r.Spec.NodeName != "" {
+			return fmt.Errorf("should not specify podOrdinal/nodeSelector for workload kind %s", r.Spec.Workload.Kind)
 		}
 	case AppKindStatefulSet:
-		if len(r.Spec.PodOrdinal) == 0 {
-			return fmt.Errorf("must specify podOrdinal for workload kind %s", appKind)
+		if r.Spec.PodOrdinal == "" {
+			return fmt.Errorf("must specify podOrdinal for workload kind %s", r.Spec.Workload.Kind)
 		}
-		if len(r.Spec.NodeSelector) != 0 {
-			return fmt.Errorf("should not specify nodeSelector for workload kind %s", appKind)
+		if r.Spec.NodeName != "" {
+			return fmt.Errorf("should not specify nodeSelector for workload kind %s", r.Spec.Workload.Kind)
 		}
 	case AppKindDaemonSet:
-		if len(r.Spec.NodeSelector) == 0 {
-			return fmt.Errorf("must specify nodeSelector for workload kind %s", appKind)
+		if r.Spec.NodeName == "" {
+			return fmt.Errorf("must specify nodeSelector for workload kind %s", r.Spec.Workload.Kind)
 		}
-		if len(r.Spec.PodOrdinal) != 0 {
-			return fmt.Errorf("should not specify podOrdinal for workload kind %s", appKind)
+		if r.Spec.PodOrdinal != "" {
+			return fmt.Errorf("should not specify podOrdinal for workload kind %s", r.Spec.Workload.Kind)
 		}
 	}
 	return nil

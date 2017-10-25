@@ -181,7 +181,10 @@ var _ = Describe("ReplicationController", func() {
 
 		shouldRestoreRC = func() {
 			shouldBackupNewReplicationController()
-			recovery.Spec.Workload = "replicationcontroller/" + rc.Name
+			recovery.Spec.Workload = api.LocalTypedReference{
+				Kind: api.AppKindReplicationController,
+				Name: rc.Name,
+			}
 
 			By("Creating recovery " + recovery.Name)
 			err = f.CreateRecovery(recovery)

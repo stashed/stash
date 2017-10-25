@@ -2,7 +2,6 @@ package v1alpha1
 
 import (
 	"fmt"
-	"strings"
 )
 
 const (
@@ -13,42 +12,48 @@ const (
 	AppKindDaemonSet             = "DaemonSet"
 )
 
-func ExtractWorkload(workload string) (appKind, appName string, err error) {
-	app := strings.SplitN(workload, "/", 2)
-	if len(app) != 2 {
-		err = fmt.Errorf(`workload must be in the format "Kind/Name", but found %v`, workload)
-		return
+func (workload *LocalTypedReference) Canonicalize() error {
+	if workload.Name == "" || workload.Kind == "" {
+		return fmt.Errorf("missing workload name or kind")
 	}
-	appName = app[1]
-	switch app[0] {
+	switch workload.Kind {
 	case "Deployments", "Deployment", "deployments", "deployment", "deploy":
-		appKind = AppKindDeployment
+		workload.Kind = AppKindDeployment
 	case "ReplicaSets", "ReplicaSet", "replicasets", "replicaset", "rs":
-		appKind = AppKindReplicaSet
+		workload.Kind = AppKindReplicaSet
 	case "ReplicationControllers", "ReplicationController", "replicationcontrollers", "replicationcontroller", "rc":
-		appKind = AppKindReplicationController
+		workload.Kind = AppKindReplicationController
 	case "StatefulSets", "StatefulSet", "statefulsets", "statefulset":
-		appKind = AppKindStatefulSet
+		workload.Kind = AppKindStatefulSet
 	case "DaemonSets", "DaemonSet", "daemonsets", "daemonset", "ds":
-		appKind = AppKindDaemonSet
+		workload.Kind = AppKindDaemonSet
 	default:
-		err = fmt.Errorf(`unrecognized workload "Kind" %v`, app[0])
+		return fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
 	}
-	return
+	return nil
 }
 
-func HostnamePrefixForAppKind(appKind, appName, podName, nodeName string) (hostname, prefix string, err error) {
-	switch appKind {
+func (workload *LocalTypedReference) HostnamePrefixForWorkload(podName, nodeName string) (hostname, prefix string, err error) {
+	if workload.Name == "" || workload.Kind == "" {
+		return "", "", fmt.Errorf("missing workload name or kind")
+	}
+	switch workload.Kind {
 	case AppKindDeployment, AppKindReplicaSet, AppKindReplicationController:
-		hostname = appName
+		hostname = workload.Name
 	case AppKindStatefulSet:
+		if podName == "" {
+			return "", "", fmt.Errorf("missing podName for %s", AppKindStatefulSet)
+		}
 		hostname = podName
 	case AppKindDaemonSet:
-		hostname = nodeName + "/" + appName
+		if nodeName == "" {
+			return "", "", fmt.Errorf("missing nodeName for %s", AppKindDaemonSet)
+		}
+		hostname = nodeName + "/" + workload.Name
 	default:
-		err = fmt.Errorf(`unrecognized workload "Kind" %v`, appKind)
+		return "", "", fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
 	}
-	prefix = appKind + "/" + hostname
+	prefix = workload.Kind + "/" + hostname
 	return
 }
 

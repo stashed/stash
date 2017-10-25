@@ -34,8 +34,7 @@ const (
 )
 
 type Options struct {
-	AppKind          string
-	AppName          string
+	Workload         api.LocalTypedReference
 	Namespace        string
 	ResticName       string
 	ScratchDir       string

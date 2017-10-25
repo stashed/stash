@@ -182,7 +182,10 @@ var _ = Describe("Deployment", func() {
 
 		shouldRestoreDeployment = func() {
 			shouldBackupNewDeployment()
-			recovery.Spec.Workload = "deploy/" + deployment.Name
+			recovery.Spec.Workload = api.LocalTypedReference{
+				Kind: api.AppKindDeployment,
+				Name: deployment.Name,
+			}
 
 			By("Creating recovery " + recovery.Name)
 			err = f.CreateRecovery(recovery)

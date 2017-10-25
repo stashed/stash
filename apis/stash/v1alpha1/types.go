@@ -144,11 +144,11 @@ type Recovery struct {
 }
 
 type RecoverySpec struct {
-	Restic       string            `json:"restic,omitempty"`
-	Workload     string            `json:"workload,omitempty"`
-	PodOrdinal   string            `json:"podOrdinal,omitempty"`
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	Volumes      []core.Volume     `json:"volumes,omitempty"`
+	Restic     string              `json:"restic,omitempty"`
+	Workload   LocalTypedReference `json:"workload,omitempty"`
+	PodOrdinal string              `json:"podOrdinal,omitempty"`
+	NodeName   string              `json:"nodeName,omitempty"`
+	Volumes    []core.Volume       `json:"volumes,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -157,4 +157,19 @@ type RecoveryList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Recovery `json:"items,omitempty"`
+}
+
+// LocalTypedReference contains enough information to let you inspect or modify the referred object.
+type LocalTypedReference struct {
+	// Kind of the referent.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// +optional
+	Kind string `json:"kind,omitempty"`
+	// Name of the referent.
+	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+	// +optional
+	Name string `json:"name,omitempty""`
+	// API version of the referent.
+	// +optional
+	APIVersion string `json:"apiVersion,omitempty"`
 }

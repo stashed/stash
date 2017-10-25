@@ -2,7 +2,6 @@ package recovery
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/appscode/go/log"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -58,16 +57,9 @@ func (opt *RecoveryOpt) RecoverOrErr(recovery *api.Recovery) error {
 		return err
 	}
 
-	nodeName := os.Getenv("NODE_NAME")
-	if nodeName == "" {
-		log.Fatalln(`Missing ENV var "NODE_NAME"`)
-	}
-	appKind, appName, err := api.ExtractWorkload(recovery.Spec.Workload)
-	if err != nil {
-		return err
-	}
-	podName, _ := api.StatefulSetPodName(appName, recovery.Spec.PodOrdinal) // ignore error for other appKind
-	hostname, smartPrefix, err := api.HostnamePrefixForAppKind(appKind, appName, podName, nodeName)
+	nodeName := recovery.Spec.NodeName
+	podName, _ := api.StatefulSetPodName(recovery.Spec.Workload.Name, recovery.Spec.PodOrdinal)       // ignore error for other kinds
+	hostname, smartPrefix, err := recovery.Spec.Workload.HostnamePrefixForWorkload(podName, nodeName) // workload canonicalized during IsValid check
 	if err != nil {
 		return err
 	}

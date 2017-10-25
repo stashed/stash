@@ -182,8 +182,11 @@ var _ = Describe("DaemonSet", func() {
 
 		shouldRestoreDemonset = func() {
 			shouldBackupNewDaemonSet()
-			recovery.Spec.Workload = "daemonset/" + daemon.Name
-			recovery.Spec.NodeSelector = map[string]string{"kubernetes.io/hostname": "minikube"}
+			recovery.Spec.Workload = api.LocalTypedReference{
+				Kind: api.AppKindDaemonSet,
+				Name: daemon.Name,
+			}
+			recovery.Spec.NodeName = "minikube"
 
 			By("Creating recovery " + recovery.Name)
 			err = f.CreateRecovery(recovery)
