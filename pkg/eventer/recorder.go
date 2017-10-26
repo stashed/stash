@@ -20,6 +20,7 @@ const (
 	EventReasonFailedToRetention             = "FailedRetention"
 	EventReasonFailedToUpdate                = "FailedUpdateBackup"
 	EventReasonFailedCronJob                 = "FailedCronJob"
+	EventReasonFailedToDelete                = "FailedDelete"
 )
 
 func NewEventRecorder(client kubernetes.Interface, component string) record.EventRecorder {

@@ -7,11 +7,13 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/appscode/go/log"
 	"github.com/appscode/kutil"
 	core_util "github.com/appscode/kutil/core/v1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/docker"
+	"github.com/appscode/stash/pkg/eventer"
 	"github.com/cenkalti/backoff"
 	"github.com/google/go-cmp/cmp"
 	batch "k8s.io/api/batch/v1"
@@ -20,7 +22,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/record"
 )
 
 const (
@@ -400,4 +404,52 @@ func CheckWorkloadExists(kubeClient kubernetes.Interface, namespace string, work
 		fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
 	}
 	return nil
+}
+
+func DeleteRecoveryJob(client kubernetes.Interface, recorder record.EventRecorder, rec *api.Recovery, job *batch.Job) {
+	if err := client.BatchV1().Jobs(job.Namespace).Delete(job.Name, nil); err != nil && !kerr.IsNotFound(err) {
+		recorder.Eventf(
+			rec.ObjectReference(),
+			core.EventTypeWarning,
+			eventer.EventReasonFailedToDelete,
+			"Failed to delete Job. Reason: %v", err,
+		)
+		log.Errorln(err)
+	}
+
+	if r, err := metav1.LabelSelectorAsSelector(job.Spec.Selector); err != nil {
+		log.Errorln(err)
+	} else {
+		err = client.CoreV1().Pods(job.Namespace).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{LabelSelector: r.String()})
+		if err != nil {
+			recorder.Eventf(
+				rec.ObjectReference(),
+				core.EventTypeWarning,
+				eventer.EventReasonFailedToDelete,
+				"Failed to delete Pods. Reason: %v", err,
+			)
+			log.Errorln(err)
+		}
+	}
+}
+
+func CheckRecoveryJob(client kubernetes.Interface, recorder record.EventRecorder, rec *api.Recovery, job *batch.Job) {
+	retryInterval := 2 * time.Second
+	retryTimeout := 30 * time.Minute
+
+	err := wait.PollImmediate(retryInterval, retryTimeout, func() (bool, error) {
+		obj, err := client.BatchV1().Jobs(job.Namespace).Get(job.Name, metav1.GetOptions{})
+		if err != nil {
+			return false, err
+		}
+		if obj.Status.Succeeded > 0 {
+			return true, nil
+		}
+		return false, fmt.Errorf("recovery job not completed")
+	})
+	if err != nil {
+		log.Errorln(err)
+	}
+
+	DeleteRecoveryJob(client, recorder, rec, job)
 }

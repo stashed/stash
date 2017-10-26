@@ -125,7 +125,7 @@ func (c *StashController) processNextRecovery() bool {
 
 	// This controller retries 5 times if something goes wrong. After that, it stops trying.
 	if c.recQueue.NumRequeues(key) < c.options.MaxNumRequeues {
-		glog.Infof("Error syncing deployment %v: %v", key, err)
+		glog.Infof("Error syncing recovery %v: %v", key, err)
 
 		// Re-enqueue the key rate limited. Based on the rate limiter on the
 		// queue and the re-enqueue history, the key will be processed later again.
@@ -194,5 +194,7 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 
 	log.Infoln("Recovery job created:", job.Name)
 	stash_util.SetRecoveryStatusPhase(c.stashClient, rec, api.RecoveryRunning)
+
+	go util.CheckRecoveryJob(c.k8sClient, c.recorder, rec, job)
 	return nil
 }
