@@ -313,8 +313,16 @@ func RecoveryEqual(old, new *api.Recovery) bool {
 func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *batch.Job {
 	job := &batch.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      recovery.Name,
+			Name:      "stash-" + recovery.Name,
 			Namespace: recovery.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: api.SchemeGroupVersion.String(),
+					Kind:       api.ResourceKindRecovery,
+					Name:       recovery.Name,
+					UID:        recovery.UID,
+				},
+			},
 		},
 		Spec: batch.JobSpec{
 			Template: core.PodTemplateSpec{

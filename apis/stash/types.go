@@ -139,8 +139,8 @@ type RetentionPolicy struct {
 type Recovery struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              RecoverySpec `json:"spec,omitempty"`
-	Status            string       `json:"status,omitempty"`
+	Spec              RecoverySpec   `json:"spec,omitempty"`
+	Status            RecoveryStatus `json:"status,omitempty"`
 }
 
 type RecoverySpec struct {
@@ -172,4 +172,24 @@ type LocalTypedReference struct {
 	// API version of the referent.
 	// +optional
 	APIVersion string `json:"apiVersion,omitempty"`
+}
+
+type RecoveryPhase string
+
+const (
+	RecoveryPending   RecoveryPhase = "Pending"
+	RecoveryRunning   RecoveryPhase = "Running"
+	RecoverySucceeded RecoveryPhase = "Succeeded"
+	RecoveryFailed    RecoveryPhase = "Failed"
+	RecoveryUnknown   RecoveryPhase = "Unknown"
+)
+
+type RecoveryStatus struct {
+	Phase RecoveryPhase  `json:"phase,omitempty"`
+	Stats []RestoreStats `json:"stats,omitempty"`
+}
+
+type RestoreStats struct {
+	Path     string `json:"path,omitempty"`
+	Duration string `json:"duration,omitempty"`
 }

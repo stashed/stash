@@ -49,6 +49,6 @@ func (f *Framework) EventuallyRecoverySucceed(meta metav1.ObjectMeta) GomegaAsyn
 	return Eventually(func() bool {
 		obj, err := f.StashClient.Recoveries(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
-		return obj.Status == "SUCCEED"
+		return obj.Status.Phase == api.RecoverySucceeded
 	}, time.Minute*5, time.Second*5)
 }

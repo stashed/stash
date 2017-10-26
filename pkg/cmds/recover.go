@@ -4,6 +4,7 @@ import (
 	"github.com/appscode/go/log"
 	"github.com/appscode/kutil"
 	"github.com/appscode/stash/client/typed/stash/v1alpha1"
+	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/recovery"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
@@ -31,6 +32,7 @@ func NewCmdRecover() *cobra.Command {
 				KubeClient:   kubernetes.NewForConfigOrDie(config),
 				StashClient:  v1alpha1.NewForConfigOrDie(config),
 				RecoveryName: recoveryName,
+				Recorder:     eventer.NewEventRecorder(kubeClient, "stash-recovery"),
 			}
 			opt.RunRecovery()
 		},

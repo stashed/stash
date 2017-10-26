@@ -5,6 +5,7 @@ import (
 
 	"github.com/appscode/go/log"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	stash_util "github.com/appscode/stash/client/typed/stash/v1alpha1/util"
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/util"
@@ -134,7 +135,7 @@ func (c *StashController) processNextRecovery() bool {
 	c.recQueue.Forget(key)
 	// Report to an external entity that, even after several retries, we could not successfully process this key
 	runtime.HandleError(err)
-	glog.Infof("Dropping deployment %q out of the queue: %v", key, err)
+	glog.Infof("Dropping recovery %q out of the queue: %v", key, err)
 	return true
 }
 
@@ -162,20 +163,28 @@ func (c *StashController) runRecoveryInjector(key string) error {
 func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 	restic, err := c.stashClient.Restics(rec.Namespace).Get(rec.Spec.Restic, metav1.GetOptions{})
 	if err != nil {
-		log.Infoln(err)
+		log.Errorln(err)
+		stash_util.SetRecoveryStatusPhase(c.stashClient, rec, api.RecoveryFailed)
+		c.recorder.Event(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedRecovery, err.Error())
 		return err
 	}
 
 	if err = restic.IsValid(); err != nil {
-		log.Infoln(err)
+		log.Errorln(err)
+		stash_util.SetRecoveryStatusPhase(c.stashClient, rec, api.RecoveryFailed)
+		c.recorder.Event(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedRecovery, err.Error())
 		return err
 	}
 
 	job := util.CreateRecoveryJob(rec, restic, c.options.SidecarImageTag)
 	if job, err = c.k8sClient.BatchV1().Jobs(rec.Namespace).Create(job); err != nil {
+		log.Errorln(err)
+		stash_util.SetRecoveryStatusPhase(c.stashClient, rec, api.RecoveryFailed)
+		c.recorder.Event(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedRecovery, err.Error())
 		return err
 	}
 
 	log.Infoln("Recovery job created:", job.Name)
+	stash_util.SetRecoveryStatusPhase(c.stashClient, rec, api.RecoveryRunning)
 	return nil
 }

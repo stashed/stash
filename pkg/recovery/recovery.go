@@ -6,9 +6,13 @@ import (
 	"github.com/appscode/go/log"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
+	stash_util "github.com/appscode/stash/client/typed/stash/v1alpha1/util"
 	"github.com/appscode/stash/pkg/cli"
+	"github.com/appscode/stash/pkg/eventer"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/record"
 )
 
 type RecoveryOpt struct {
@@ -16,28 +20,33 @@ type RecoveryOpt struct {
 	RecoveryName string
 	KubeClient   kubernetes.Interface
 	StashClient  cs.StashV1alpha1Interface
+	Recorder     record.EventRecorder
 }
 
 func (opt *RecoveryOpt) RunRecovery() {
 	recovery, err := opt.StashClient.Recoveries(opt.Namespace).Get(opt.RecoveryName, metav1.GetOptions{})
 	if err != nil {
-		log.Infoln(err)
+		log.Errorln(err)
 		return
 	}
 
 	if err = recovery.IsValid(); err != nil {
-		log.Infoln(err)
-		opt.UpdateRecoveryStatus(recovery, "FAILED:"+err.Error())
+		log.Errorln(err)
+		stash_util.SetRecoveryStatusPhase(opt.StashClient, recovery, api.RecoveryFailed)
+		opt.Recorder.Event(recovery.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedRecovery, err.Error())
 		return
 	}
 
 	if err = opt.RecoverOrErr(recovery); err != nil {
-		log.Infoln(err)
-		opt.UpdateRecoveryStatus(recovery, "FAILED:"+err.Error())
+		log.Errorln(err)
+		stash_util.SetRecoveryStatusPhase(opt.StashClient, recovery, api.RecoveryFailed)
+		opt.Recorder.Event(recovery.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedRecovery, err.Error())
 		return
 	}
 
-	opt.UpdateRecoveryStatus(recovery, "SUCCEED")
+	log.Infoln("Recovery succeed")
+	stash_util.SetRecoveryStatusPhase(opt.StashClient, recovery, api.RecoverySucceeded) // TODO: status.Stats
+	opt.Recorder.Event(recovery.ObjectReference(), core.EventTypeNormal, eventer.EventReasonSuccessfulRecovery, "Recovery succeed")
 }
 
 func (opt *RecoveryOpt) RecoverOrErr(recovery *api.Recovery) error {
@@ -76,13 +85,4 @@ func (opt *RecoveryOpt) RecoverOrErr(recovery *api.Recovery) error {
 	}
 
 	return nil
-}
-
-func (opt *RecoveryOpt) UpdateRecoveryStatus(recovery *api.Recovery, status string) {
-	recovery.Status = status
-	if _, err := opt.StashClient.Recoveries(opt.Namespace).Update(recovery); err != nil {
-		log.Infoln("Error updating recovery status:", status)
-	} else {
-		log.Infoln("Updated recovery status:", status)
-	}
 }
