@@ -32,8 +32,8 @@ func NewCmdRecover() *cobra.Command {
 				KubeClient:   kubernetes.NewForConfigOrDie(config),
 				StashClient:  v1alpha1.NewForConfigOrDie(config),
 				RecoveryName: recoveryName,
-				Recorder:     eventer.NewEventRecorder(kubeClient, "stash-recovery"),
 			}
+			opt.Recorder = eventer.NewEventRecorder(opt.KubeClient, "stash-recovery")
 			opt.RunRecovery()
 		},
 	}
