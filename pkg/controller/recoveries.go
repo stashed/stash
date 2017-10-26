@@ -11,6 +11,7 @@ import (
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	rt "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -161,6 +162,10 @@ func (c *StashController) runRecoveryInjector(key string) error {
 }
 
 func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
+	if rec.Status.Phase == api.RecoverySucceeded || rec.Status.Phase == api.RecoveryRunning {
+		return nil
+	}
+
 	restic, err := c.stashClient.Restics(rec.Namespace).Get(rec.Spec.Restic, metav1.GetOptions{})
 	if err != nil {
 		log.Errorln(err)
@@ -178,6 +183,9 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 
 	job := util.CreateRecoveryJob(rec, restic, c.options.SidecarImageTag)
 	if job, err = c.k8sClient.BatchV1().Jobs(rec.Namespace).Create(job); err != nil {
+		if kerr.IsAlreadyExists(err) {
+			return nil
+		}
 		log.Errorln(err)
 		stash_util.SetRecoveryStatusPhase(c.stashClient, rec, api.RecoveryFailed)
 		c.recorder.Event(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedRecovery, err.Error())
