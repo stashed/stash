@@ -408,12 +408,7 @@ func CheckWorkloadExists(kubeClient kubernetes.Interface, namespace string, work
 
 func DeleteRecoveryJob(client kubernetes.Interface, recorder record.EventRecorder, rec *api.Recovery, job *batch.Job) {
 	if err := client.BatchV1().Jobs(job.Namespace).Delete(job.Name, nil); err != nil && !kerr.IsNotFound(err) {
-		recorder.Eventf(
-			rec.ObjectReference(),
-			core.EventTypeWarning,
-			eventer.EventReasonFailedToDelete,
-			"Failed to delete Job. Reason: %v", err,
-		)
+		recorder.Eventf(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToDelete, "Failed to delete Job. Reason: %v", err)
 		log.Errorln(err)
 	}
 
@@ -422,12 +417,7 @@ func DeleteRecoveryJob(client kubernetes.Interface, recorder record.EventRecorde
 	} else {
 		err = client.CoreV1().Pods(job.Namespace).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{LabelSelector: r.String()})
 		if err != nil {
-			recorder.Eventf(
-				rec.ObjectReference(),
-				core.EventTypeWarning,
-				eventer.EventReasonFailedToDelete,
-				"Failed to delete Pods. Reason: %v", err,
-			)
+			recorder.Eventf(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToDelete, "Failed to delete Pods. Reason: %v", err)
 			log.Errorln(err)
 		}
 	}
@@ -445,7 +435,8 @@ func CheckRecoveryJob(client kubernetes.Interface, recorder record.EventRecorder
 		if obj.Status.Succeeded > 0 {
 			return true, nil
 		}
-		return false, fmt.Errorf("recovery job not completed")
+		log.Infoln("Checking recovery job: not completed")
+		return false, nil
 	})
 	if err != nil {
 		log.Errorln(err)
