@@ -24,13 +24,16 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/leaderelection"
+	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 )
 
 const (
-	msec10      = 10 * 1000 * 1000 * time.Nanosecond
-	maxAttempts = 3
+	msec10              = 10 * 1000 * 1000 * time.Nanosecond
+	maxAttempts         = 3
+	leaderElectionLease = 3 * time.Second
 )
 
 type Options struct {
@@ -277,4 +280,45 @@ func (c *Controller) measure(f func(*api.Restic, api.FileGroup) error, resource 
 	}()
 	err = f(resource, fg)
 	return
+}
+
+func (c *Controller) LeaderElection(stopBackup chan struct{}) {
+	configMapName := "leader-lock-" + c.opt.Workload.Name
+	configMap := &core.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      configMapName,
+			Namespace: c.opt.Namespace,
+		},
+	}
+	if _, err := c.k8sClient.CoreV1().ConfigMaps(c.opt.Namespace).Create(configMap); err != nil && !kerr.IsAlreadyExists(err) {
+		log.Fatal(err)
+	}
+
+	resLock := &resourcelock.ConfigMapLock{
+		ConfigMapMeta: configMap.ObjectMeta,
+		Client:        c.k8sClient.CoreV1(),
+		LockConfig: resourcelock.ResourceLockConfig{
+			Identity:      c.opt.PodName,
+			EventRecorder: &record.FakeRecorder{}, // TODO: replace with real event
+		},
+	}
+
+	go func() {
+		leaderelection.RunOrDie(leaderelection.LeaderElectionConfig{
+			Lock:          resLock,
+			LeaseDuration: leaderElectionLease,
+			RenewDeadline: leaderElectionLease * 2 / 3,
+			RetryPeriod:   leaderElectionLease / 3,
+			Callbacks: leaderelection.LeaderCallbacks{
+				OnStartedLeading: func(stop <-chan struct{}) {
+					log.Infoln("Got leadership, preparing backup scheduler")
+					go c.Run(1, stopBackup)
+				},
+				OnStoppedLeading: func() {
+					log.Infoln("Lost leadership, stopping backup scheduler")
+					stopBackup <- struct{}{}
+				},
+			},
+		})
+	}()
 }

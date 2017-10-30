@@ -79,7 +79,7 @@ func NewCmdSchedule() *cobra.Command {
 			}
 			stop := make(chan struct{})
 			defer close(stop)
-			go ctrl.Run(1, stop)
+			ctrl.LeaderElection(stop)
 
 			// Wait forever
 			select {}
