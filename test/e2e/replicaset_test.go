@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"github.com/appscode/go/types"
 	ext_util "github.com/appscode/kutil/extensions/v1beta1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
@@ -193,6 +194,34 @@ var _ = Describe("ReplicaSet", func() {
 
 			f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
 		}
+
+		shouldElectLeaderAndBackupRS = func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
+
+			rs.Spec.Replicas = types.Int32P(2) // two replicas
+			By("Creating ReplicaSet " + rs.Name)
+			err = f.CreateReplicaSet(rs)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Waiting for sidecar")
+			f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+			f.CheckLeaderElection(rs.ObjectMeta)
+
+			By("Waiting for backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 1)))
+
+			By("Waiting for backup event")
+			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+		}
 	)
 
 	Describe("Creating restic for", func() {
@@ -363,6 +392,22 @@ var _ = Describe("ReplicaSet", func() {
 				recovery = f.RecoveryForRestic(restic.Name)
 			})
 			It(`should restore s3 replicaset backup`, shouldRestoreReplicaSet)
+		})
+	})
+
+	FDescribe("Leader election for", func() {
+		AfterEach(func() {
+			f.DeleteReplicaSet(rs.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+		})
+
+		Context(`"Local" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForLocalBackend()
+			})
+			It(`should elect leader and backup new RS`, shouldElectLeaderAndBackupRS)
 		})
 	})
 })

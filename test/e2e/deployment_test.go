@@ -215,29 +215,7 @@ var _ = Describe("Deployment", func() {
 			By("Waiting for sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
-			var podName string
-
-			By("Waiting for configmap annotation")
-			Eventually(func() bool {
-				var err error
-				if podName, err = f.GetLeaderAnnotation(deployment.ObjectMeta); err != nil || podName == "" {
-					return false
-				}
-				return true
-			}).Should(BeTrue())
-
-			By("Deleting leader pod: " + podName)
-			err = f.KubeClient.CoreV1().Pods(deployment.Namespace).Delete(podName, &metav1.DeleteOptions{})
-			Expect(err).ShouldNot(HaveOccurred())
-
-			By("Waiting for reconfigure configmap annotation")
-			Eventually(func() bool {
-				podNameNew, err := f.GetLeaderAnnotation(deployment.ObjectMeta)
-				if err != nil || podNameNew == "" || podNameNew == podName {
-					return false
-				}
-				return true
-			}).Should(BeTrue())
+			f.CheckLeaderElection(deployment.ObjectMeta)
 
 			By("Waiting for backup to complete")
 			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
