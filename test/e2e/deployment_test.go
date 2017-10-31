@@ -198,7 +198,7 @@ var _ = Describe("Deployment", func() {
 			f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
 		}
 
-		shouldElectleaderAndBackupDeployment = func() {
+		shouldElectLeaderAndBackupDeployment = func() {
 			By("Creating repository Secret " + cred.Name)
 			err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
@@ -207,13 +207,37 @@ var _ = Describe("Deployment", func() {
 			err = f.CreateRestic(restic)
 			Expect(err).NotTo(HaveOccurred())
 
-			deployment.Spec.Replicas = types.Int32P(2)
+			deployment.Spec.Replicas = types.Int32P(2) // two replicas
 			By("Creating Deployment " + deployment.Name)
 			err = f.CreateDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+			var podName string
+
+			By("Waiting for configmap annotation")
+			Eventually(func() bool {
+				var err error
+				if podName, err = f.GetLeaderAnnotation(deployment.ObjectMeta); err != nil || podName == "" {
+					return false
+				}
+				return true
+			}).Should(BeTrue())
+
+			By("Deleting leader pod: " + podName)
+			err = f.KubeClient.CoreV1().Pods(deployment.Namespace).Delete(podName, &metav1.DeleteOptions{})
+			Expect(err).ShouldNot(HaveOccurred())
+
+			By("Waiting for reconfigure configmap annotation")
+			Eventually(func() bool {
+				podNameNew, err := f.GetLeaderAnnotation(deployment.ObjectMeta)
+				if err != nil || podNameNew == "" || podNameNew == podName {
+					return false
+				}
+				return true
+			}).Should(BeTrue())
 
 			By("Waiting for backup to complete")
 			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
@@ -451,7 +475,7 @@ var _ = Describe("Deployment", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 			})
-			It(`should backup new Deployment`, shouldElectleaderAndBackupDeployment)
+			It(`should elect leader and backup new Deployment`, shouldElectLeaderAndBackupDeployment)
 		})
 	})
 })
