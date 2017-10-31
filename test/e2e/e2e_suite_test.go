@@ -23,7 +23,7 @@ import (
 
 const (
 	TIMEOUT             = 20 * time.Minute
-	TestSidecarImageTag = "recovery" // "canary"
+	TestSidecarImageTag = "leader-election" // "canary"
 )
 
 var (
@@ -72,5 +72,5 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	root.DeleteNamespace()
+	//root.DeleteNamespace()
 })
