@@ -3,6 +3,7 @@ package scheduler
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"time"
 
@@ -24,6 +25,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/leaderelection"
+	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 )
@@ -279,4 +282,62 @@ func (c *Controller) measure(f func(*api.Restic, api.FileGroup) error, resource 
 	}()
 	err = f(resource, fg)
 	return
+}
+
+func (c *Controller) SetupAndRun(stopBackup chan struct{}) {
+	err := os.MkdirAll(c.opt.ScratchDir, 0755)
+	if err != nil {
+		log.Fatalf("Failed to create scratch dir: %s", err)
+	}
+	err = ioutil.WriteFile(c.opt.ScratchDir+"/.stash", []byte("test"), 644)
+	if err != nil {
+		log.Fatalf("No write access in scratch dir: %s", err)
+	}
+	if err = c.Setup(); err != nil {
+		log.Fatalf("Failed to setup scheduler: %s", err)
+	}
+	go c.Run(1, stopBackup)
+}
+
+func (c *Controller) ElectLeader(ownerRef metav1.OwnerReference, stopBackup chan struct{}) {
+	configMap := &core.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ConfigMapPrefix + c.opt.Workload.Name,
+			Namespace: c.opt.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				ownerRef,
+			},
+		},
+	}
+	if _, err := c.k8sClient.CoreV1().ConfigMaps(c.opt.Namespace).Create(configMap); err != nil && !kerr.IsAlreadyExists(err) {
+		log.Fatal(err)
+	}
+
+	resLock := &resourcelock.ConfigMapLock{
+		ConfigMapMeta: configMap.ObjectMeta,
+		Client:        c.k8sClient.CoreV1(),
+		LockConfig: resourcelock.ResourceLockConfig{
+			Identity:      c.opt.PodName,
+			EventRecorder: &record.FakeRecorder{}, // TODO: replace with real event
+		},
+	}
+
+	go func() {
+		leaderelection.RunOrDie(leaderelection.LeaderElectionConfig{
+			Lock:          resLock,
+			LeaseDuration: LeaderElectionLease,
+			RenewDeadline: LeaderElectionLease * 2 / 3,
+			RetryPeriod:   LeaderElectionLease / 3,
+			Callbacks: leaderelection.LeaderCallbacks{
+				OnStartedLeading: func(stop <-chan struct{}) {
+					log.Infoln("Got leadership, preparing backup scheduler")
+					c.SetupAndRun(stopBackup)
+				},
+				OnStoppedLeading: func() {
+					log.Infoln("Lost leadership, stopping backup scheduler")
+					stopBackup <- struct{}{}
+				},
+			},
+		})
+	}()
 }

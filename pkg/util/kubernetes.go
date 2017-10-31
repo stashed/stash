@@ -16,8 +16,10 @@ import (
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/cenkalti/backoff"
 	"github.com/google/go-cmp/cmp"
+	apps "k8s.io/api/apps/v1beta1"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
+	extensions "k8s.io/api/extensions/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -370,40 +372,37 @@ func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *
 	return job
 }
 
-func CheckWorkloadExists(kubeClient kubernetes.Interface, namespace string, workload api.LocalTypedReference) error {
+func CheckWorkloadExists(kubeClient kubernetes.Interface, namespace string, workload api.LocalTypedReference) (obj interface{}, err error) {
 	switch workload.Kind {
 	case api.AppKindDeployment:
-		_, err := kubeClient.AppsV1beta1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
+		obj, err = kubeClient.AppsV1beta1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
 		if err != nil {
-			_, err := kubeClient.ExtensionsV1beta1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
-			if err != nil {
-				fmt.Errorf(`unknown Deployment %s/%s`, namespace, workload.Name)
-			}
+			err = fmt.Errorf(`unknown Deployment %s/%s`, namespace, workload.Name)
 		}
 	case api.AppKindReplicaSet:
-		_, err := kubeClient.ExtensionsV1beta1().ReplicaSets(namespace).Get(workload.Name, metav1.GetOptions{})
+		obj, err = kubeClient.ExtensionsV1beta1().ReplicaSets(namespace).Get(workload.Name, metav1.GetOptions{})
 		if err != nil {
-			fmt.Errorf(`unknown ReplicaSet %s/%s`, namespace, workload.Name)
+			err = fmt.Errorf(`unknown ReplicaSet %s/%s`, namespace, workload.Name)
 		}
 	case api.AppKindReplicationController:
-		_, err := kubeClient.CoreV1().ReplicationControllers(namespace).Get(workload.Name, metav1.GetOptions{})
+		obj, err = kubeClient.CoreV1().ReplicationControllers(namespace).Get(workload.Name, metav1.GetOptions{})
 		if err != nil {
-			fmt.Errorf(`unknown ReplicationController %s/%s`, namespace, workload.Name)
+			err = fmt.Errorf(`unknown ReplicationController %s/%s`, namespace, workload.Name)
 		}
 	case api.AppKindStatefulSet:
-		_, err := kubeClient.AppsV1beta1().StatefulSets(namespace).Get(workload.Name, metav1.GetOptions{})
+		obj, err = kubeClient.AppsV1beta1().StatefulSets(namespace).Get(workload.Name, metav1.GetOptions{})
 		if err != nil {
-			fmt.Errorf(`unknown StatefulSet %s/%s`, namespace, workload.Name)
+			err = fmt.Errorf(`unknown StatefulSet %s/%s`, namespace, workload.Name)
 		}
 	case api.AppKindDaemonSet:
-		_, err := kubeClient.ExtensionsV1beta1().DaemonSets(namespace).Get(workload.Name, metav1.GetOptions{})
+		obj, err = kubeClient.ExtensionsV1beta1().DaemonSets(namespace).Get(workload.Name, metav1.GetOptions{})
 		if err != nil {
-			fmt.Errorf(`unknown DaemonSet %s/%s`, namespace, workload.Name)
+			err = fmt.Errorf(`unknown DaemonSet %s/%s`, namespace, workload.Name)
 		}
 	default:
-		fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
+		err = fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
 	}
-	return nil
+	return
 }
 
 func DeleteRecoveryJob(client kubernetes.Interface, recorder record.EventRecorder, rec *api.Recovery, job *batch.Job) {
@@ -443,4 +442,33 @@ func CheckRecoveryJob(client kubernetes.Interface, recorder record.EventRecorder
 	}
 
 	DeleteRecoveryJob(client, recorder, rec, job)
+}
+
+func WorkloadAsOwnerRef(obj interface{}, workload api.LocalTypedReference) (ownerRef metav1.OwnerReference, err error) {
+	ownerRef = metav1.OwnerReference{
+		Kind: workload.Kind,
+		Name: workload.Name,
+	}
+
+	switch workload.Kind {
+	case api.AppKindDeployment:
+		ownerRef.APIVersion = apps.SchemeGroupVersion.String()
+		ownerRef.UID = obj.(*apps.Deployment).ObjectMeta.UID
+	case api.AppKindReplicaSet:
+		ownerRef.APIVersion = extensions.SchemeGroupVersion.String()
+		ownerRef.UID = obj.(*extensions.ReplicaSet).ObjectMeta.UID
+	case api.AppKindReplicationController:
+		ownerRef.APIVersion = core.SchemeGroupVersion.String()
+		ownerRef.UID = obj.(*core.ReplicationController).ObjectMeta.UID
+	case api.AppKindStatefulSet:
+		ownerRef.APIVersion = apps.SchemeGroupVersion.String()
+		ownerRef.UID = obj.(*apps.StatefulSet).ObjectMeta.UID
+	case api.AppKindDaemonSet:
+		ownerRef.APIVersion = extensions.SchemeGroupVersion.String()
+		ownerRef.UID = obj.(*extensions.DaemonSet).ObjectMeta.UID
+	default:
+		err = fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
+	}
+
+	return
 }

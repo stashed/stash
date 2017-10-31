@@ -441,9 +441,9 @@ var _ = Describe("Deployment", func() {
 
 	Describe("Leader election for", func() {
 		AfterEach(func() {
-			/*f.DeleteDeployment(deployment.ObjectMeta)
+			f.DeleteDeployment(deployment.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)*/
+			f.DeleteSecret(cred.ObjectMeta)
 		})
 
 		Context(`"Local" backend`, func() {
@@ -451,7 +451,7 @@ var _ = Describe("Deployment", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 			})
-			FIt(`should backup new Deployment`, shouldElectleaderAndBackupDeployment)
+			It(`should backup new Deployment`, shouldElectleaderAndBackupDeployment)
 		})
 	})
 })
