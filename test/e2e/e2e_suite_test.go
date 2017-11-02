@@ -72,5 +72,5 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	//root.DeleteNamespace()
+	root.DeleteNamespace()
 })

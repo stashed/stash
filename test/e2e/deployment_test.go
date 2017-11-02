@@ -244,15 +244,15 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating Deployment " + deployment.Name)
-			err = f.CreateDeployment(deployment)
+			dep, err := f.CreateAndReturnDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Waiting for sidecar")
-			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			// By("Waiting for sidecar")
+			// f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
-			By("Checking initializer status")
-			_, err := f.KubeClient.AppsV1beta1().Deployments(deployment.Namespace).Get(deployment.Name, metav1.GetOptions{})
-			Expect(err).NotTo(HaveOccurred())
+			// sidecar should be added as soon as deployment created, we don't need to wait for it
+			By("Checking sidecar created")
+			Expect(dep).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for backup to complete")
 			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
@@ -494,12 +494,12 @@ var _ = Describe("Deployment", func() {
 		})
 	})
 
-	FDescribe("Stash initializer for", func() {
+	Describe("Stash initializer for", func() {
 		AfterEach(func() {
-			/*f.DeleteDeployment(deployment.ObjectMeta)
+			f.DeleteDeployment(deployment.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
-			f.DeleteReplicationController(initConfig.ObjectMeta)*/
+			f.DeleteInitializerConfiguration(initConfig.ObjectMeta)
 		})
 
 		Context(`"Local" backend`, func() {

@@ -29,6 +29,10 @@ func (f *Framework) CreateDeployment(obj apps.Deployment) error {
 	return err
 }
 
+func (f *Framework) CreateAndReturnDeployment(obj apps.Deployment) (*apps.Deployment, error) {
+	return f.KubeClient.AppsV1beta1().Deployments(obj.Namespace).Create(&obj)
+}
+
 func (f *Framework) DeleteDeployment(meta metav1.ObjectMeta) error {
 	return f.KubeClient.AppsV1beta1().Deployments(meta.Namespace).Delete(meta.Name, deleteInForeground())
 }

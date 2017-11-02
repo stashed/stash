@@ -486,4 +486,3 @@ func ShouldRemovePendingInitializer(initializers *metav1.Initializers) bool {
 	}
 	return false
 }
-
