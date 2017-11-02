@@ -51,7 +51,7 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating Deployment " + deployment.Name)
-			err = f.CreateDeployment(deployment)
+			_, err = f.CreateDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -72,7 +72,7 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating Deployment " + deployment.Name)
-			err = f.CreateDeployment(deployment)
+			_, err = f.CreateDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -101,7 +101,7 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating Deployment " + deployment.Name)
-			err = f.CreateDeployment(deployment)
+			_, err = f.CreateDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -128,7 +128,7 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating Deployment " + deployment.Name)
-			err = f.CreateDeployment(deployment)
+			_, err = f.CreateDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -161,7 +161,7 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating Deployment " + deployment.Name)
-			err = f.CreateDeployment(deployment)
+			_, err = f.CreateDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -211,7 +211,7 @@ var _ = Describe("Deployment", func() {
 
 			deployment.Spec.Replicas = types.Int32P(2) // two replicas
 			By("Creating Deployment " + deployment.Name)
-			err = f.CreateDeployment(deployment)
+			_, err = f.CreateDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -244,7 +244,7 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating Deployment " + deployment.Name)
-			dep, err := f.CreateAndReturnDeployment(deployment)
+			dep, err := f.CreateDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			// By("Waiting for sidecar")
