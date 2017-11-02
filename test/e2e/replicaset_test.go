@@ -395,7 +395,7 @@ var _ = Describe("ReplicaSet", func() {
 		})
 	})
 
-	FDescribe("Leader election for", func() {
+	Describe("Leader election for", func() {
 		AfterEach(func() {
 			f.DeleteReplicaSet(rs.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)

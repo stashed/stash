@@ -11,6 +11,7 @@ import (
 	. "github.com/appscode/stash/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"k8s.io/api/admissionregistration/v1alpha1"
 	apps "k8s.io/api/apps/v1beta1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -25,6 +26,7 @@ var _ = Describe("Deployment", func() {
 		cred       core.Secret
 		deployment apps.Deployment
 		recovery   api.Recovery
+		initConfig v1alpha1.InitializerConfiguration
 	)
 
 	BeforeEach(func() {
@@ -216,6 +218,41 @@ var _ = Describe("Deployment", func() {
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			f.CheckLeaderElection(deployment.ObjectMeta)
+
+			By("Waiting for backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 1)))
+
+			By("Waiting for backup event")
+			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+		}
+
+		shouldRemoveInitializerAndBackupDeployment = func() {
+			By("Creating repository Initializer " + initConfig.Name)
+			err = f.CreateInitializerConfiguration(initConfig)
+			Expect(err).NotTo(HaveOccurred())
+
+			time.Sleep(time.Second * 3)
+
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating Deployment " + deployment.Name)
+			err = f.CreateDeployment(deployment)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Waiting for sidecar")
+			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+			By("Checking initializer status")
+			_, err := f.KubeClient.AppsV1beta1().Deployments(deployment.Namespace).Get(deployment.Name, metav1.GetOptions{})
+			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for backup to complete")
 			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
@@ -454,6 +491,24 @@ var _ = Describe("Deployment", func() {
 				restic = f.ResticForLocalBackend()
 			})
 			It(`should elect leader and backup new Deployment`, shouldElectLeaderAndBackupDeployment)
+		})
+	})
+
+	FDescribe("Stash initializer for", func() {
+		AfterEach(func() {
+			/*f.DeleteDeployment(deployment.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+			f.DeleteReplicationController(initConfig.ObjectMeta)*/
+		})
+
+		Context(`"Local" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForLocalBackend()
+				initConfig = f.InitializerForResources([]string{"deployments"})
+			})
+			It("should remove stash initializer and backup new Deployment", shouldRemoveInitializerAndBackupDeployment)
 		})
 	})
 })

@@ -30,11 +30,11 @@ import (
 )
 
 const (
-	StashContainer = "stash"
-
+	StashContainer       = "stash"
 	LocalVolumeName      = "stash-local"
 	ScratchDirVolumeName = "stash-scratchdir"
 	PodinfoVolumeName    = "stash-podinfo"
+	StashInitializerName = "stash.appscode.com"
 )
 
 func GetAppliedRestic(m map[string]string) (*api.Restic, error) {
@@ -472,3 +472,18 @@ func WorkloadAsOwnerRef(obj interface{}, workload api.LocalTypedReference) (owne
 
 	return
 }
+
+func CheckWorkloadInitializer(initializers *metav1.Initializers) bool {
+	if initializers != nil && len(initializers.Pending) > 0 && initializers.Pending[0].Name != StashInitializerName {
+		return false
+	}
+	return true
+}
+
+func ShouldRemovePendingInitializer(initializers *metav1.Initializers) bool {
+	if initializers != nil && len(initializers.Pending) > 0 && initializers.Pending[0].Name == StashInitializerName {
+		return true
+	}
+	return false
+}
+
