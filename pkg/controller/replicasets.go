@@ -132,30 +132,27 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 			return nil
 		}
 
-		// If owned by a Deployment, skip it.
-		if ext_util.IsOwnedByDeployment(rs) {
-			return nil
+		if !ext_util.IsOwnedByDeployment(rs) {
+			oldRestic, err := util.GetAppliedRestic(rs.Annotations)
+			if err != nil {
+				return err
+			}
+			newRestic, err := util.FindRestic(c.rstLister, rs.ObjectMeta)
+			if err != nil {
+				log.Errorf("Error while searching Restic for ReplicaSet %s/%s.", rs.Name, rs.Namespace)
+				return err
+			}
+			if util.ResticEqual(oldRestic, newRestic) {
+				return nil
+			}
+			if newRestic != nil {
+				return c.EnsureReplicaSetSidecar(rs, oldRestic, newRestic)
+			} else if oldRestic != nil {
+				return c.EnsureReplicaSetSidecarDeleted(rs, oldRestic)
+			}
 		}
 
-		oldRestic, err := util.GetAppliedRestic(rs.Annotations)
-		if err != nil {
-			return err
-		}
-		newRestic, err := util.FindRestic(c.rstLister, rs.ObjectMeta)
-		if err != nil {
-			log.Errorf("Error while searching Restic for ReplicaSet %s/%s.", rs.Name, rs.Namespace)
-			return err
-		}
-		if util.ResticEqual(oldRestic, newRestic) {
-			return nil
-		}
-		if newRestic != nil {
-			return c.EnsureReplicaSetSidecar(rs, oldRestic, newRestic)
-		} else if oldRestic != nil {
-			return c.EnsureReplicaSetSidecarDeleted(rs, oldRestic)
-		}
-
-		// not restic workload, just remove the pending stash initializer
+		// not restic workload or owned by a deployment, just remove the pending stash initializer
 		if util.ShouldRemovePendingInitializer(rs.Initializers) {
 			_, err = ext_util.PatchReplicaSet(c.k8sClient, rs, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
 				fmt.Println("Removing pending stash initializer for", obj.Name)
