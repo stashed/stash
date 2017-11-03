@@ -441,14 +441,12 @@ var _ = Describe("ReplicationController", func() {
 			f.DeleteReplicationController(rc.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
-			f.DeleteInitializerConfiguration(f.InitializerForResources([]string{"replicationcontrollers"}).ObjectMeta)
 		})
 
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
-				f.CreateInitializerConfiguration(f.InitializerForResources([]string{"replicationcontrollers"}))
 			})
 			It("should initialize and backup new RC", shouldInitializeAndBackupRC)
 		})

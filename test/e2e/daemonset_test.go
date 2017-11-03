@@ -398,14 +398,12 @@ var _ = Describe("DaemonSet", func() {
 			f.DeleteDaemonSet(daemon.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
-			f.DeleteInitializerConfiguration(f.InitializerForResources([]string{"daemonsets"}).ObjectMeta)
 		})
 
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
-				f.CreateInitializerConfiguration(f.InitializerForResources([]string{"daemonsets"}))
 			})
 			It("should initialize and backup new DaemonSet", shouldInitializeAndBackupDaemonSet)
 		})

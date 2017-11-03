@@ -11,7 +11,6 @@ import (
 	. "github.com/appscode/stash/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"k8s.io/api/admissionregistration/v1alpha1"
 	apps "k8s.io/api/apps/v1beta1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -26,7 +25,6 @@ var _ = Describe("Deployment", func() {
 		cred       core.Secret
 		deployment apps.Deployment
 		recovery   api.Recovery
-		initConfig v1alpha1.InitializerConfiguration
 	)
 
 	BeforeEach(func() {
@@ -229,12 +227,6 @@ var _ = Describe("Deployment", func() {
 		}
 
 		shouldInitializeAndBackupDeployment = func() {
-			By("Creating repository Initializer " + initConfig.Name)
-			err = f.CreateInitializerConfiguration(initConfig)
-			Expect(err).NotTo(HaveOccurred())
-
-			time.Sleep(time.Second * 3)
-
 			By("Creating repository Secret " + cred.Name)
 			err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
@@ -499,14 +491,12 @@ var _ = Describe("Deployment", func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
-			f.DeleteInitializerConfiguration(initConfig.ObjectMeta)
 		})
 
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
-				initConfig = f.InitializerForResources([]string{"deployments"})
 			})
 			It("should initialize and backup new Deployment", shouldInitializeAndBackupDeployment)
 		})

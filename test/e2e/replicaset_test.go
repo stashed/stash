@@ -1,8 +1,6 @@
 package e2e_test
 
 import (
-	"time"
-
 	"github.com/appscode/go/types"
 	ext_util "github.com/appscode/kutil/extensions/v1beta1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -11,7 +9,6 @@ import (
 	. "github.com/appscode/stash/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"k8s.io/api/admissionregistration/v1alpha1"
 	core "k8s.io/api/core/v1"
 	extensions "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,13 +16,12 @@ import (
 
 var _ = Describe("ReplicaSet", func() {
 	var (
-		err        error
-		f          *framework.Invocation
-		restic     api.Restic
-		cred       core.Secret
-		rs         extensions.ReplicaSet
-		recovery   api.Recovery
-		initConfig v1alpha1.InitializerConfiguration
+		err      error
+		f        *framework.Invocation
+		restic   api.Restic
+		cred     core.Secret
+		rs       extensions.ReplicaSet
+		recovery api.Recovery
 	)
 
 	BeforeEach(func() {
@@ -228,12 +224,6 @@ var _ = Describe("ReplicaSet", func() {
 		}
 
 		shouldInitializeAndBackupReplicaSet = func() {
-			By("Creating repository Initializer " + initConfig.Name)
-			err = f.CreateInitializerConfiguration(initConfig)
-			Expect(err).NotTo(HaveOccurred())
-
-			time.Sleep(time.Second * 3)
-
 			By("Creating repository Secret " + cred.Name)
 			err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
@@ -452,14 +442,12 @@ var _ = Describe("ReplicaSet", func() {
 			f.DeleteReplicaSet(rs.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
-			f.DeleteInitializerConfiguration(initConfig.ObjectMeta)
 		})
 
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
-				initConfig = f.InitializerForResources([]string{"replicasets"})
 			})
 			It("should initialize and backup new ReplicaSet", shouldInitializeAndBackupReplicaSet)
 		})

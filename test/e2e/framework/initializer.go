@@ -6,7 +6,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (fi *Invocation) InitializerForResources(resources []string) v1alpha1.InitializerConfiguration {
+func (f *Framework) InitializerForWorkloads() v1alpha1.InitializerConfiguration {
+	resources := []string{"deployments", "replicasets", "replicationcontrollers", "daemonsets", "statefulsets"}
 	return v1alpha1.InitializerConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "stash-initializer-config",

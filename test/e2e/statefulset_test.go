@@ -428,14 +428,12 @@ var _ = Describe("StatefulSet", func() {
 			f.DeleteStatefulSet(ss.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
-			f.DeleteInitializerConfiguration(f.InitializerForResources([]string{"statefulsets"}).ObjectMeta)
 		})
 
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
-				f.CreateInitializerConfiguration(f.InitializerForResources([]string{"statefulsets"}))
 			})
 			It("should initialize and backup new StatefulSet", shouldInitializeAndBackupStatefulSet)
 		})
