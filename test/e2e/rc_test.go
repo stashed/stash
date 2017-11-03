@@ -222,7 +222,7 @@ var _ = Describe("ReplicationController", func() {
 			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
 
-		shouldRemoveInitializerAndBackupRC = func() {
+		shouldInitializeAndBackupRC = func() {
 			By("Creating repository Secret " + cred.Name)
 			err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
@@ -450,7 +450,7 @@ var _ = Describe("ReplicationController", func() {
 				restic = f.ResticForLocalBackend()
 				f.CreateInitializerConfiguration(f.InitializerForResources([]string{"replicationcontrollers"}))
 			})
-			It("should remove stash initializer and backup new RC", shouldRemoveInitializerAndBackupRC)
+			It("should remove stash initializer and backup new RC", shouldInitializeAndBackupRC)
 		})
 	})
 })

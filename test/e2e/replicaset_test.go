@@ -227,7 +227,7 @@ var _ = Describe("ReplicaSet", func() {
 			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
 
-		shouldRemoveInitializerAndBackupReplicaSet = func() {
+		shouldInitializeAndBackupReplicaSet = func() {
 			By("Creating repository Initializer " + initConfig.Name)
 			err = f.CreateInitializerConfiguration(initConfig)
 			Expect(err).NotTo(HaveOccurred())
@@ -461,7 +461,7 @@ var _ = Describe("ReplicaSet", func() {
 				restic = f.ResticForLocalBackend()
 				initConfig = f.InitializerForResources([]string{"replicasets"})
 			})
-			It("should remove stash initializer and backup new RS", shouldRemoveInitializerAndBackupReplicaSet)
+			It("should remove stash initializer and backup new RS", shouldInitializeAndBackupReplicaSet)
 		})
 	})
 })
