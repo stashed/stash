@@ -51,7 +51,7 @@ var _ = Describe("StatefulSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating StatefulSet " + ss.Name)
-			err = f.CreateStatefulSet(ss)
+			_, err = f.CreateStatefulSet(ss)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -76,7 +76,7 @@ var _ = Describe("StatefulSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating StatefulSet " + ss.Name)
-			err = f.CreateStatefulSet(ss)
+			_, err = f.CreateStatefulSet(ss)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -109,7 +109,7 @@ var _ = Describe("StatefulSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating StatefulSet " + ss.Name)
-			err = f.CreateStatefulSet(ss)
+			_, err = f.CreateStatefulSet(ss)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -140,7 +140,7 @@ var _ = Describe("StatefulSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating StatefulSet " + ss.Name)
-			err = f.CreateStatefulSet(ss)
+			_, err = f.CreateStatefulSet(ss)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -177,7 +177,7 @@ var _ = Describe("StatefulSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating StatefulSet " + ss.Name)
-			err = f.CreateStatefulSet(ss)
+			_, err = f.CreateStatefulSet(ss)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -215,6 +215,36 @@ var _ = Describe("StatefulSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
+		}
+
+		shouldInitializeAndBackupStatefulSet = func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating service " + svc.Name)
+			err = f.CreateService(svc)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating StatefulSet " + ss.Name)
+			obj, err := f.CreateStatefulSet(ss)
+			Expect(err).NotTo(HaveOccurred())
+
+			// sidecar should be added as soon as workload created, we don't need to wait for it
+			By("Checking sidecar created")
+			Expect(obj).Should(HaveSidecar(util.StashContainer))
+
+			By("Waiting for backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 1)))
+
+			By("Waiting for backup event")
+			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
 	)
 
@@ -390,6 +420,24 @@ var _ = Describe("StatefulSet", func() {
 				recovery = f.RecoveryForRestic(restic.Name)
 			})
 			It(`should restore s3 StatefulSet backup`, shouldRestoreStatefulSet)
+		})
+	})
+
+	Describe("Stash initializer for", func() {
+		AfterEach(func() {
+			f.DeleteStatefulSet(ss.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+			f.DeleteInitializerConfiguration(f.InitializerForResources([]string{"statefulsets"}).ObjectMeta)
+		})
+
+		Context(`"Local" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForLocalBackend()
+				f.CreateInitializerConfiguration(f.InitializerForResources([]string{"statefulsets"}))
+			})
+			It("should initialize and backup new StatefulSet", shouldInitializeAndBackupStatefulSet)
 		})
 	})
 })
