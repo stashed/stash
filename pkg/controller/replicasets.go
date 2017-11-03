@@ -25,9 +25,11 @@ import (
 func (c *StashController) initReplicaSetWatcher() {
 	lw := &cache.ListWatch{
 		ListFunc: func(options metav1.ListOptions) (rt.Object, error) {
+			options.IncludeUninitialized = true
 			return c.k8sClient.ExtensionsV1beta1().ReplicaSets(core.NamespaceAll).List(options)
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+			options.IncludeUninitialized = true
 			return c.k8sClient.ExtensionsV1beta1().ReplicaSets(core.NamespaceAll).Watch(options)
 		},
 	}
@@ -125,6 +127,11 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 		rs := obj.(*extensions.ReplicaSet)
 		fmt.Printf("Sync/Add/Update for ReplicaSet %s\n", rs.GetName())
 
+		if !util.CheckWorkloadInitializer(rs.Initializers) {
+			fmt.Printf("Not stash's turn to initialize %s\n", rs.GetName())
+			return nil
+		}
+
 		// If owned by a Deployment, skip it.
 		if ext_util.IsOwnedByDeployment(rs) {
 			return nil
@@ -146,6 +153,23 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 			return c.EnsureReplicaSetSidecar(rs, oldRestic, newRestic)
 		} else if oldRestic != nil {
 			return c.EnsureReplicaSetSidecarDeleted(rs, oldRestic)
+		}
+
+		// not restic workload, just remove the pending stash initializer
+		if util.ShouldRemovePendingInitializer(rs.Initializers) {
+			_, err = ext_util.PatchReplicaSet(c.k8sClient, rs, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
+				fmt.Println("Removing pending stash initializer for", obj.Name)
+				if len(obj.Initializers.Pending) == 1 {
+					obj.Initializers = nil
+				} else {
+					obj.Initializers.Pending = obj.Initializers.Pending[1:]
+				}
+				return obj
+			})
+			if err != nil {
+				log.Errorf("Error while removing pending stash initializer for %s/%s. Reason: %s", rs.Name, rs.Namespace, err)
+				return err
+			}
 		}
 	}
 	return nil
@@ -170,6 +194,15 @@ func (c *StashController) EnsureReplicaSetSidecar(resource *extensions.ReplicaSe
 	}
 
 	resource, err = ext_util.PatchReplicaSet(c.k8sClient, resource, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
+		if util.ShouldRemovePendingInitializer(obj.Initializers) {
+			fmt.Println("Removing pending stash initializer for", obj.Name)
+			if len(obj.Initializers.Pending) == 1 {
+				obj.Initializers = nil
+			} else {
+				obj.Initializers.Pending = obj.Initializers.Pending[1:]
+			}
+		}
+
 		workload := api.LocalTypedReference{
 			Kind: api.AppKindReplicaSet,
 			Name: obj.Name,
