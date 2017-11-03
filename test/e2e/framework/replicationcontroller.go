@@ -25,9 +25,8 @@ func (fi *Invocation) ReplicationController() core.ReplicationController {
 	}
 }
 
-func (f *Framework) CreateReplicationController(obj core.ReplicationController) error {
-	_, err := f.KubeClient.CoreV1().ReplicationControllers(obj.Namespace).Create(&obj)
-	return err
+func (f *Framework) CreateReplicationController(obj core.ReplicationController) (*core.ReplicationController, error) {
+	return f.KubeClient.CoreV1().ReplicationControllers(obj.Namespace).Create(&obj)
 }
 
 func (f *Framework) DeleteReplicationController(meta metav1.ObjectMeta) error {
