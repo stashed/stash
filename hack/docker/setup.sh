@@ -14,13 +14,13 @@ source "$REPO_ROOT/hack/libbuild/common/public_image.sh"
 
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
 IMG=stash
-RESTIC_VER=${RESTIC_VER:-SOURCE}
-RESTIC_BRANCH=${RESTIC_BRANCH:-stash-0.4.0}
+RESTIC_VER=${RESTIC_VER:-0.7.3}
+RESTIC_BRANCH=${RESTIC_BRANCH:-stash-0.4.1}
 
 DIST=$REPO_ROOT/dist
 mkdir -p $DIST
 if [ -f "$DIST/.tag" ]; then
-	export $(cat $DIST/.tag | xargs)
+    export $(cat $DIST/.tag | xargs)
 fi
 
 clean() {
@@ -44,7 +44,7 @@ build_binary() {
         echo "Build binary using golang docker image"
         docker run --rm -ti \
             -v `pwd`:/go/src/github.com/restic/restic \
-            -w /go/src/github.com/restic/restic golang:1.8.3-alpine go run build.go
+            -w /go/src/github.com/restic/restic golang:1.9.2-alpine go build ./cmd/restic
         mv restic $DIST/restic-bin
         rm -rf *
         mv $DIST/restic-bin $DIST/restic/restic
