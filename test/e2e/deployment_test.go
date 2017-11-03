@@ -508,7 +508,7 @@ var _ = Describe("Deployment", func() {
 				restic = f.ResticForLocalBackend()
 				initConfig = f.InitializerForResources([]string{"deployments"})
 			})
-			It("should remove stash initializer and backup new Deployment", shouldInitializeAndBackupDeployment)
+			It("should initialize and backup new Deployment", shouldInitializeAndBackupDeployment)
 		})
 	})
 })

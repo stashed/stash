@@ -407,7 +407,7 @@ var _ = Describe("DaemonSet", func() {
 				restic = f.ResticForLocalBackend()
 				f.CreateInitializerConfiguration(f.InitializerForResources([]string{"daemonsets"}))
 			})
-			It("should remove stash initializer and backup new RC", shouldInitializeAndBackupDaemonSet)
+			It("should initialize and backup new DaemonSet", shouldInitializeAndBackupDaemonSet)
 		})
 	})
 })

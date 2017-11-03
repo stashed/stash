@@ -450,7 +450,7 @@ var _ = Describe("ReplicationController", func() {
 				restic = f.ResticForLocalBackend()
 				f.CreateInitializerConfiguration(f.InitializerForResources([]string{"replicationcontrollers"}))
 			})
-			It("should remove stash initializer and backup new RC", shouldInitializeAndBackupRC)
+			It("should initialize and backup new RC", shouldInitializeAndBackupRC)
 		})
 	})
 })

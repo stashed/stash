@@ -461,7 +461,7 @@ var _ = Describe("ReplicaSet", func() {
 				restic = f.ResticForLocalBackend()
 				initConfig = f.InitializerForResources([]string{"replicasets"})
 			})
-			It("should remove stash initializer and backup new RS", shouldInitializeAndBackupReplicaSet)
+			It("should initialize and backup new ReplicaSet", shouldInitializeAndBackupReplicaSet)
 		})
 	})
 })
