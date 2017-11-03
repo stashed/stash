@@ -34,9 +34,8 @@ func (fi *Invocation) DaemonSet() extensions.DaemonSet {
 	return daemon
 }
 
-func (f *Framework) CreateDaemonSet(obj extensions.DaemonSet) error {
-	_, err := f.KubeClient.ExtensionsV1beta1().DaemonSets(obj.Namespace).Create(&obj)
-	return err
+func (f *Framework) CreateDaemonSet(obj extensions.DaemonSet) (*extensions.DaemonSet, error) {
+	return f.KubeClient.ExtensionsV1beta1().DaemonSets(obj.Namespace).Create(&obj)
 }
 
 func (f *Framework) DeleteDaemonSet(meta metav1.ObjectMeta) error {

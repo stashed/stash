@@ -45,7 +45,7 @@ var _ = Describe("DaemonSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating DaemonSet " + daemon.Name)
-			err = f.CreateDaemonSet(daemon)
+			_, err = f.CreateDaemonSet(daemon)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -66,7 +66,7 @@ var _ = Describe("DaemonSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating DaemonSet " + daemon.Name)
-			err = f.CreateDaemonSet(daemon)
+			_, err = f.CreateDaemonSet(daemon)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -95,7 +95,7 @@ var _ = Describe("DaemonSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating DaemonSet " + daemon.Name)
-			err = f.CreateDaemonSet(daemon)
+			_, err = f.CreateDaemonSet(daemon)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -122,7 +122,7 @@ var _ = Describe("DaemonSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating DaemonSet " + daemon.Name)
-			err = f.CreateDaemonSet(daemon)
+			_, err = f.CreateDaemonSet(daemon)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -155,7 +155,7 @@ var _ = Describe("DaemonSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating DaemonSet " + daemon.Name)
-			err = f.CreateDaemonSet(daemon)
+			_, err = f.CreateDaemonSet(daemon)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -193,6 +193,32 @@ var _ = Describe("DaemonSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
+		}
+
+		shouldInitializeAndBackupDaemonSet = func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating DaemonSet " + daemon.Name)
+			obj, err := f.CreateDaemonSet(daemon)
+			Expect(err).NotTo(HaveOccurred())
+
+			// sidecar should be added as soon as workload created, we don't need to wait for it
+			By("Checking sidecar created")
+			Expect(obj).Should(HaveSidecar(util.StashContainer))
+
+			By("Waiting for backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 1)))
+
+			By("Waiting for backup event")
+			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
 	)
 
@@ -364,6 +390,24 @@ var _ = Describe("DaemonSet", func() {
 				recovery = f.RecoveryForRestic(restic.Name)
 			})
 			It(`should restore s3 daemonset backup`, shouldRestoreDemonset)
+		})
+	})
+
+	Describe("Stash initializer for", func() {
+		AfterEach(func() {
+			f.DeleteDaemonSet(daemon.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+			f.DeleteInitializerConfiguration(f.InitializerForResources([]string{"daemonsets"}).ObjectMeta)
+		})
+
+		Context(`"Local" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForLocalBackend()
+				f.CreateInitializerConfiguration(f.InitializerForResources([]string{"daemonsets"}))
+			})
+			It("should remove stash initializer and backup new RC", shouldInitializeAndBackupDaemonSet)
 		})
 	})
 })
