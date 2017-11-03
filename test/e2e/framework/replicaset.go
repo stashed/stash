@@ -24,9 +24,8 @@ func (fi *Invocation) ReplicaSet() extensions.ReplicaSet {
 	}
 }
 
-func (f *Framework) CreateReplicaSet(obj extensions.ReplicaSet) error {
-	_, err := f.KubeClient.ExtensionsV1beta1().ReplicaSets(obj.Namespace).Create(&obj)
-	return err
+func (f *Framework) CreateReplicaSet(obj extensions.ReplicaSet) (*extensions.ReplicaSet, error) {
+	return f.KubeClient.ExtensionsV1beta1().ReplicaSets(obj.Namespace).Create(&obj)
 }
 
 func (f *Framework) DeleteReplicaSet(meta metav1.ObjectMeta) error {

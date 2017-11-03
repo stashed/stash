@@ -244,7 +244,7 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating Deployment " + deployment.Name)
-			dep, err := f.CreateDeployment(deployment)
+			obj, err := f.CreateDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			// By("Waiting for sidecar")
@@ -252,7 +252,7 @@ var _ = Describe("Deployment", func() {
 
 			// sidecar should be added as soon as deployment created, we don't need to wait for it
 			By("Checking sidecar created")
-			Expect(dep).Should(HaveSidecar(util.StashContainer))
+			Expect(obj).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for backup to complete")
 			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {

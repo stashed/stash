@@ -1,6 +1,8 @@
 package e2e_test
 
 import (
+	"time"
+
 	"github.com/appscode/go/types"
 	ext_util "github.com/appscode/kutil/extensions/v1beta1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -9,6 +11,7 @@ import (
 	. "github.com/appscode/stash/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"k8s.io/api/admissionregistration/v1alpha1"
 	core "k8s.io/api/core/v1"
 	extensions "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,12 +19,13 @@ import (
 
 var _ = Describe("ReplicaSet", func() {
 	var (
-		err      error
-		f        *framework.Invocation
-		restic   api.Restic
-		cred     core.Secret
-		rs       extensions.ReplicaSet
-		recovery api.Recovery
+		err        error
+		f          *framework.Invocation
+		restic     api.Restic
+		cred       core.Secret
+		rs         extensions.ReplicaSet
+		recovery   api.Recovery
+		initConfig v1alpha1.InitializerConfiguration
 	)
 
 	BeforeEach(func() {
@@ -46,7 +50,7 @@ var _ = Describe("ReplicaSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating ReplicaSet " + rs.Name)
-			err = f.CreateReplicaSet(rs)
+			_, err = f.CreateReplicaSet(rs)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -67,7 +71,7 @@ var _ = Describe("ReplicaSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating ReplicaSet " + rs.Name)
-			err = f.CreateReplicaSet(rs)
+			_, err = f.CreateReplicaSet(rs)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -96,7 +100,7 @@ var _ = Describe("ReplicaSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating ReplicaSet " + rs.Name)
-			err = f.CreateReplicaSet(rs)
+			_, err = f.CreateReplicaSet(rs)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -123,7 +127,7 @@ var _ = Describe("ReplicaSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating ReplicaSet " + rs.Name)
-			err = f.CreateReplicaSet(rs)
+			_, err = f.CreateReplicaSet(rs)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -156,7 +160,7 @@ var _ = Describe("ReplicaSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating ReplicaSet " + rs.Name)
-			err = f.CreateReplicaSet(rs)
+			_, err = f.CreateReplicaSet(rs)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -206,13 +210,45 @@ var _ = Describe("ReplicaSet", func() {
 
 			rs.Spec.Replicas = types.Int32P(2) // two replicas
 			By("Creating ReplicaSet " + rs.Name)
-			err = f.CreateReplicaSet(rs)
+			_, err = f.CreateReplicaSet(rs)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
 			f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			f.CheckLeaderElection(rs.ObjectMeta)
+
+			By("Waiting for backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 1)))
+
+			By("Waiting for backup event")
+			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+		}
+
+		shouldRemoveInitializerAndBackupReplicaSet = func() {
+			By("Creating repository Initializer " + initConfig.Name)
+			err = f.CreateInitializerConfiguration(initConfig)
+			Expect(err).NotTo(HaveOccurred())
+
+			time.Sleep(time.Second * 3)
+
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating ReplicaSet " + rs.Name)
+			obj, err := f.CreateReplicaSet(rs)
+			Expect(err).NotTo(HaveOccurred())
+
+			// sidecar should be added as soon as workload created, we don't need to wait for it
+			By("Checking sidecar created")
+			Expect(obj).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for backup to complete")
 			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
@@ -408,6 +444,24 @@ var _ = Describe("ReplicaSet", func() {
 				restic = f.ResticForLocalBackend()
 			})
 			It(`should elect leader and backup new RS`, shouldElectLeaderAndBackupRS)
+		})
+	})
+
+	Describe("Stash initializer for", func() {
+		AfterEach(func() {
+			f.DeleteReplicaSet(rs.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+			f.DeleteInitializerConfiguration(initConfig.ObjectMeta)
+		})
+
+		Context(`"Local" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForLocalBackend()
+				initConfig = f.InitializerForResources([]string{"replicasets"})
+			})
+			It("should remove stash initializer and backup new RS", shouldRemoveInitializerAndBackupReplicaSet)
 		})
 	})
 })
