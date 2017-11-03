@@ -98,7 +98,7 @@ func (c *StashController) Setup() error {
 	c.initRecoveryWatcher()
 	c.initDeploymentWatcher()
 	c.initDaemonSetWatcher()
-	// c.initStatefulSetWatcher()
+	c.initStatefulSetWatcher()
 	c.initRCWatcher()
 	c.initReplicaSetWatcher()
 	return nil
@@ -129,7 +129,7 @@ func (c *StashController) Run(threadiness int, stopCh chan struct{}) {
 	defer c.recQueue.ShutDown()
 	defer c.dpQueue.ShutDown()
 	defer c.dsQueue.ShutDown()
-	// defer c.ssQueue.ShutDown()
+	defer c.ssQueue.ShutDown()
 	defer c.rcQueue.ShutDown()
 	defer c.rsQueue.ShutDown()
 	glog.Info("Starting Stash controller")
@@ -139,7 +139,7 @@ func (c *StashController) Run(threadiness int, stopCh chan struct{}) {
 	go c.recInformer.Run(stopCh)
 	go c.dpInformer.Run(stopCh)
 	go c.dsInformer.Run(stopCh)
-	// go c.ssInformer.Run(stopCh)
+	go c.ssInformer.Run(stopCh)
 	go c.rcInformer.Run(stopCh)
 	go c.rsInformer.Run(stopCh)
 
@@ -172,17 +172,17 @@ func (c *StashController) Run(threadiness int, stopCh chan struct{}) {
 		runtime.HandleError(fmt.Errorf("timed out waiting for caches to sync"))
 		return
 	}
-	//if !cache.WaitForCacheSync(stopCh, c.ssInformer.HasSynced) {
-	//	runtime.HandleError(fmt.Errorf("timed out waiting for caches to sync"))
-	//	return
-	//}
+	if !cache.WaitForCacheSync(stopCh, c.ssInformer.HasSynced) {
+		runtime.HandleError(fmt.Errorf("timed out waiting for caches to sync"))
+		return
+	}
 
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(c.runResticWatcher, time.Second, stopCh)
 		go wait.Until(c.runRecoveryWatcher, time.Second, stopCh)
 		go wait.Until(c.runDeploymentWatcher, time.Second, stopCh)
 		go wait.Until(c.runDaemonSetWatcher, time.Second, stopCh)
-		// go wait.Until(c.runStatefulSetWatcher, time.Second, stopCh)
+		go wait.Until(c.runStatefulSetWatcher, time.Second, stopCh)
 		go wait.Until(c.runRCWatcher, time.Second, stopCh)
 		go wait.Until(c.runReplicaSetWatcher, time.Second, stopCh)
 	}
