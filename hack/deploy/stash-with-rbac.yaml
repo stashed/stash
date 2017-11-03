@@ -10,8 +10,7 @@ rules:
   verbs: ["get", "create"]
 - apiGroups:
   - stash.appscode.com
-  resources:
-  - restics
+  resources: ["*"]
   verbs: ["*"]
 - apiGroups:
   - extensions
@@ -19,17 +18,17 @@ rules:
   - deployments
   - replicasets
   - daemonsets
-  verbs: ["list", "watch", "update"]
+  verbs: ["get", "list", "watch", "update"]
 - apiGroups:
   - apps
   resources:
   - deployments
-  verbs: ["list", "watch", "update"]
+  verbs: ["get", "list", "watch", "update"]
 - apiGroups: [""]
   resources:
   - namespaces
   - replicationcontrollers
-  verbs: ["list", "watch", "update"]
+  verbs: ["get", "list", "watch", "update"]
 - apiGroups: [""]
   resources:
   - secrets
@@ -42,10 +41,17 @@ rules:
   resources:
   - pods
   verbs: ["list", delete"]
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  verbs: ["get", "create", "delete", "update"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
+  labels:
+    app: stash
   name: stash-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -59,6 +65,8 @@ subjects:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
+  labels:
+    app: stash
   name: stash-operator
   namespace: kube-system
 ---
@@ -131,9 +139,9 @@ spec:
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
-  name: stash-sidecar
   labels:
     app: stash
+  name: stash-sidecar
 rules:
 - apiGroups:
   - stash.appscode.com
@@ -149,9 +157,6 @@ rules:
 - apiGroups: [""]
   resources:
   - replicationcontrollers
-  verbs: ["*"]
-- apiGroups: [""]
-  resources:
   - secrets
   verbs: ["get"]
 - apiGroups: [""]
