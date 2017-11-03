@@ -25,9 +25,11 @@ import (
 func (c *StashController) initDaemonSetWatcher() {
 	lw := &cache.ListWatch{
 		ListFunc: func(options metav1.ListOptions) (rt.Object, error) {
+			options.IncludeUninitialized = true
 			return c.k8sClient.ExtensionsV1beta1().DaemonSets(core.NamespaceAll).List(options)
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+			options.IncludeUninitialized = true
 			return c.k8sClient.ExtensionsV1beta1().DaemonSets(core.NamespaceAll).Watch(options)
 		},
 	}
@@ -125,6 +127,11 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 		ds := obj.(*extensions.DaemonSet)
 		fmt.Printf("Sync/Add/Update for DaemonSet %s\n", ds.GetName())
 
+		if !util.CheckWorkloadInitializer(ds.Initializers) {
+			fmt.Printf("Not stash's turn to initialize %s\n", ds.GetName())
+			return nil
+		}
+
 		oldRestic, err := util.GetAppliedRestic(ds.Annotations)
 		if err != nil {
 			return err
@@ -141,6 +148,23 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 			return c.EnsureDaemonSetSidecar(ds, oldRestic, newRestic)
 		} else if oldRestic != nil {
 			return c.EnsureDaemonSetSidecarDeleted(ds, oldRestic)
+		}
+
+		// not restic workload, just remove the pending stash initializer
+		if util.ShouldRemovePendingInitializer(ds.Initializers) {
+			_, err = ext_util.PatchDaemonSet(c.k8sClient, ds, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
+				fmt.Println("Removing pending stash initializer for", obj.Name)
+				if len(obj.Initializers.Pending) == 1 {
+					obj.Initializers = nil
+				} else {
+					obj.Initializers.Pending = obj.Initializers.Pending[1:]
+				}
+				return obj
+			})
+			if err != nil {
+				log.Errorf("Error while removing pending stash initializer for %s/%s. Reason: %s", ds.Name, ds.Namespace, err)
+				return err
+			}
 		}
 	}
 	return nil
@@ -165,6 +189,15 @@ func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet,
 	}
 
 	resource, err = ext_util.PatchDaemonSet(c.k8sClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
+		if util.ShouldRemovePendingInitializer(obj.Initializers) {
+			fmt.Println("Removing pending stash initializer for", obj.Name)
+			if len(obj.Initializers.Pending) == 1 {
+				obj.Initializers = nil
+			} else {
+				obj.Initializers.Pending = obj.Initializers.Pending[1:]
+			}
+		}
+
 		workload := api.LocalTypedReference{
 			Kind: api.AppKindDaemonSet,
 			Name: obj.Name,
