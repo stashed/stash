@@ -1,10 +1,10 @@
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
-  name: {{ template "fullname" . }}
+  name: {{ template "stash.fullname" . }}
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    app: "{{ template "name" . }}"
+    app: "{{ template "stash.name" . }}"
     heritage: "{{ .Release.Service }}"
     release: "{{ .Release.Name }}"
 spec:
@@ -12,14 +12,14 @@ spec:
   template:
     metadata:
       labels:
-        app: "{{ template "name" . }}"
+        app: "{{ template "stash.name" . }}"
         release: "{{ .Release.Name }}"
 {{- if and .Values.criticalAddon (eq .Release.Namespace "kube-system") }}
       annotations:
         scheduler.alpha.kubernetes.io/critical-pod: ''
 {{- end }}
     spec:
-      serviceAccountName: {{ if .Values.rbac.create }}{{ template "fullname" . }}{{ else }}"{{ .Values.rbac.serviceAccountName }}"{{ end }}
+      serviceAccountName: {{ if .Values.rbac.create }}{{ template "stash.fullname" . }}{{ else }}"{{ .Values.rbac.serviceAccountName }}"{{ end }}
       containers:
       - args:
         - run
