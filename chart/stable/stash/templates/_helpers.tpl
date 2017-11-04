@@ -3,7 +3,7 @@
 Expand the name of the chart.
 */}}
 {{- define "stash.name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 24 -}}
+{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
@@ -12,5 +12,5 @@ We truncate at 45 chars because some Kubernetes name fields are limited to this 
 */}}
 {{- define "stash.fullname" -}}
 {{- $name := default .Chart.Name .Values.nameOverride -}}
-{{- printf "%s-%s" $name .Release.Name | trunc 45 -}}
+{{- printf "%s-%s" $name .Release.Name | trunc 63 -}}
 {{- end -}}
