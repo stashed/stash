@@ -26,7 +26,11 @@ spec:
         - --v=3
         - --rbac={{ .Values.rbac.create }}
         image: {{ .Values.operator.image }}:{{ .Values.operator.tag }}
-        imagePullPolicy: {{ .Values.operator.pullPolicy }}
+        imagePullPolicy: {{ default "" .Values.imagePullPolicy | quote }}
+        {{- if .Values.imagePullSecrets }}
+        imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+        {{- end }}
         name: operator
         ports:
         - containerPort: 56790
@@ -37,7 +41,11 @@ spec:
         - -web.listen-address=:56789
         - -persistence.file=/var/pv/pushgateway.dat
         image: '{{ .Values.pushgateway.image }}:{{ .Values.pushgateway.tag }}'
-        imagePullPolicy: '{{ .Values.pushgateway.pullPolicy }}'
+        imagePullPolicy: {{ default "" .Values.imagePullPolicy | quote }}
+        {{- if .Values.imagePullSecrets }}
+        imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+        {{- end }}
         name: pushgateway
         ports:
         - containerPort: 56789
