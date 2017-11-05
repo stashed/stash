@@ -7,13 +7,11 @@ Stash can be installed using YAML files includes in the [/hack/deploy](/hack/dep
 
 ```console
 # Install without RBAC roles
-$ curl https://raw.githubusercontent.com/appscode/stash/0.5.1/hack/deploy/without-rbac.yaml \
-  | kubectl apply -f -
+$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.5.1/hack/deploy/without-rbac.yaml
 
 
 # Install with RBAC roles
-$ curl https://raw.githubusercontent.com/appscode/stash/0.5.1/hack/deploy/with-rbac.yaml \
-  | kubectl apply -f -
+$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.5.1/hack/deploy/with-rbac.yaml
 ```
 
 ## Using Helm
