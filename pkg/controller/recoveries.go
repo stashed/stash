@@ -5,11 +5,13 @@ import (
 
 	"github.com/appscode/go/log"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	stash_util "github.com/appscode/stash/client/typed/stash/v1alpha1/util"
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	rt "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -123,7 +125,7 @@ func (c *StashController) processNextRecovery() bool {
 
 	// This controller retries 5 times if something goes wrong. After that, it stops trying.
 	if c.recQueue.NumRequeues(key) < c.options.MaxNumRequeues {
-		glog.Infof("Error syncing deployment %v: %v", key, err)
+		glog.Infof("Error syncing recovery %v: %v", key, err)
 
 		// Re-enqueue the key rate limited. Based on the rate limiter on the
 		// queue and the re-enqueue history, the key will be processed later again.
@@ -134,7 +136,7 @@ func (c *StashController) processNextRecovery() bool {
 	c.recQueue.Forget(key)
 	// Report to an external entity that, even after several retries, we could not successfully process this key
 	runtime.HandleError(err)
-	glog.Infof("Dropping deployment %q out of the queue: %v", key, err)
+	glog.Infof("Dropping recovery %q out of the queue: %v", key, err)
 	return true
 }
 
@@ -151,9 +153,49 @@ func (c *StashController) runRecoveryInjector(key string) error {
 	if !exists {
 		// Below we will warm up our cache with a Recovery, so that we will see a delete for one d
 		fmt.Printf("Recovery %s does not exist anymore\n", key)
-	} else {
-		d := obj.(*api.Recovery)
-		fmt.Printf("Sync/Add/Update for Recovery %s\n", d.GetName())
+		return nil
 	}
+
+	d := obj.(*api.Recovery)
+	fmt.Printf("Sync/Add/Update for Recovery %s\n", d.GetName())
+	return c.runRecoveryJob(d)
+}
+
+func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
+	if rec.Status.Phase == api.RecoverySucceeded || rec.Status.Phase == api.RecoveryRunning {
+		return nil
+	}
+
+	restic, err := c.stashClient.Restics(rec.Namespace).Get(rec.Spec.Restic, metav1.GetOptions{})
+	if err != nil {
+		log.Errorln(err)
+		stash_util.SetRecoveryStatusPhase(c.stashClient, rec, api.RecoveryFailed)
+		c.recorder.Event(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedRecovery, err.Error())
+		return err
+	}
+
+	if err = restic.IsValid(); err != nil {
+		log.Errorln(err)
+		stash_util.SetRecoveryStatusPhase(c.stashClient, rec, api.RecoveryFailed)
+		c.recorder.Event(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedRecovery, err.Error())
+		return err
+	}
+
+	job := util.CreateRecoveryJob(rec, restic, c.options.SidecarImageTag)
+	if job, err = c.k8sClient.BatchV1().Jobs(rec.Namespace).Create(job); err != nil {
+		if kerr.IsAlreadyExists(err) {
+			return nil
+		}
+		log.Errorln(err)
+		stash_util.SetRecoveryStatusPhase(c.stashClient, rec, api.RecoveryFailed)
+		c.recorder.Event(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedRecovery, err.Error())
+		return err
+	}
+
+	log.Infoln("Recovery job created:", job.Name)
+	c.recorder.Eventf(rec.ObjectReference(), core.EventTypeNormal, eventer.EventReasonJobCreated, "Recovery job created: %s", job.Name)
+	stash_util.SetRecoveryStatusPhase(c.stashClient, rec, api.RecoveryRunning)
+
+	go util.CheckRecoveryJob(c.k8sClient, c.recorder, rec, job)
 	return nil
 }

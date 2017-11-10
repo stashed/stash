@@ -1,6 +1,8 @@
 package e2e_test
 
 import (
+	"time"
+
 	apps_util "github.com/appscode/kutil/apps/v1beta1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
@@ -10,6 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1beta1"
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -20,6 +23,7 @@ var _ = Describe("Deployment", func() {
 		restic     api.Restic
 		cred       core.Secret
 		deployment apps.Deployment
+		recovery   api.Recovery
 	)
 
 	BeforeEach(func() {
@@ -178,6 +182,20 @@ var _ = Describe("Deployment", func() {
 
 			f.EventuallyDeployment(deployment.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		}
+
+		shouldRestoreDeployment = func() {
+			shouldBackupNewDeployment()
+			recovery.Spec.Workload = api.LocalTypedReference{
+				Kind: api.AppKindDeployment,
+				Name: deployment.Name,
+			}
+
+			By("Creating recovery " + recovery.Name)
+			err = f.CreateRecovery(recovery)
+			Expect(err).NotTo(HaveOccurred())
+
+			f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
+		}
 	)
 
 	Describe("Creating restic for", func() {
@@ -320,6 +338,77 @@ var _ = Describe("Deployment", func() {
 				restic = f.ResticForSwiftBackend()
 			})
 			It(`should stop backup`, shouldStopBackup)
+		})
+	})
+
+	Describe("Creating recovery for", func() {
+		AfterEach(func() {
+			f.DeleteDeployment(deployment.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+			f.DeleteRecovery(recovery.ObjectMeta)
+			framework.CleanupMinikubeHostPath()
+		})
+
+		Context(`"Local" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForHostPathLocalBackend()
+				recovery = f.RecoveryForRestic(restic.Name)
+			})
+			It(`should restore local deployment backup`, shouldRestoreDeployment)
+		})
+
+		Context(`"S3" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForS3Backend()
+				restic = f.ResticForS3Backend()
+				recovery = f.RecoveryForRestic(restic.Name)
+			})
+			It(`should restore s3 deployment backup`, shouldRestoreDeployment)
+		})
+	})
+
+	Describe("Recovery as job's owner-ref", func() {
+		AfterEach(func() {
+			f.DeleteDeployment(deployment.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+			f.DeleteRecovery(recovery.ObjectMeta)
+			framework.CleanupMinikubeHostPath()
+		})
+
+		Context(`"Local" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForHostPathLocalBackend()
+				recovery = f.RecoveryForRestic(restic.Name)
+			})
+			It(`should delete job after recovery deleted`, func() {
+				By("Creating restic " + restic.Name)
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating recovery " + recovery.Name)
+				err = f.CreateRecovery(recovery)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Checking Job exists")
+				Eventually(func() bool {
+					_, err := f.KubeClient.BatchV1().Jobs(recovery.Namespace).Get("stash-"+recovery.Name, metav1.GetOptions{})
+					return err != nil
+				}, time.Minute*3, time.Second*2).Should(BeTrue())
+
+				By("Deleting recovery " + recovery.Name)
+				err = f.DeleteRecovery(recovery.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Checking Job deleted")
+				Eventually(func() bool {
+					_, err := f.KubeClient.BatchV1().Jobs(recovery.Namespace).Get("stash-"+recovery.Name, metav1.GetOptions{})
+					return kerr.IsNotFound(err) || kerr.IsGone(err)
+				}, time.Minute*3, time.Second*2).Should(BeTrue())
+			})
 		})
 	})
 })

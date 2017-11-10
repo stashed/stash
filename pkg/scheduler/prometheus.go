@@ -27,8 +27,8 @@ func (c *Controller) JobName(resource *api.Restic) string {
 
 func (c *Controller) GroupingKeys(resource *api.Restic) map[string]string {
 	labels := push.HostnameGroupingKey()
-	labels["app"] = sanitizeLabelValue(c.opt.AppName)
-	labels["kind"] = sanitizeLabelValue(c.opt.AppKind)
+	labels["app"] = sanitizeLabelValue(c.opt.Workload.Name)
+	labels["kind"] = sanitizeLabelValue(c.opt.Workload.Kind)
 	labels["namespace"] = resource.Namespace
 	labels["stash_config"] = resource.Name
 	if cfg, err := ini.LooseLoad(c.opt.PodLabelsPath); err == nil {

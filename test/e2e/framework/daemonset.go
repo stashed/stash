@@ -5,6 +5,7 @@ import (
 	. "github.com/onsi/gomega"
 	extensions "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func (fi *Invocation) DaemonSet() extensions.DaemonSet {
@@ -18,6 +19,9 @@ func (fi *Invocation) DaemonSet() extensions.DaemonSet {
 		},
 		Spec: extensions.DaemonSetSpec{
 			Template: fi.PodTemplate(),
+			UpdateStrategy: extensions.DaemonSetUpdateStrategy{
+				RollingUpdate: &extensions.RollingUpdateDaemonSet{MaxUnavailable: &intstr.IntOrString{IntVal: 0}},
+			},
 		},
 	}
 	if nodes, err := fi.KubeClient.CoreV1().Nodes().List(metav1.ListOptions{}); err == nil {

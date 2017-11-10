@@ -1,8 +1,8 @@
 hash: 0bc2aba8e1684e2409f7c186b3365cc3ab511162b0592621ebba296149f1766a
-updated: 2017-10-23T15:46:00.76099697-07:00
+updated: 2017-11-10T01:58:04.783122356-08:00
 imports:
 - name: github.com/appscode/go
-  version: c01120782e8b487d1c86ab4299241edfe36a3ca2
+  version: 6c0d0eba230ad31f74a18b44beee6f865b01bdec
   subpackages:
   - context
   - crypto/rand
@@ -13,7 +13,7 @@ imports:
   - types
   - version
 - name: github.com/appscode/kutil
-  version: 4d8a2fab71adaeb35394044fae59b03735ea4e39
+  version: 45e137524b677cd540822364a8c4efedf57db119
   subpackages:
   - apps/v1beta1
   - core/v1
@@ -75,7 +75,7 @@ imports:
   - proto
   - sortkeys
 - name: github.com/golang/glog
-  version: 44145f04b68cf362d9c4df2182967c2275eaefed
+  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
 - name: github.com/golang/groupcache
   version: 02826c3e79038b59d737d3b1c0a1d937f71a4433
   subpackages:
@@ -91,7 +91,7 @@ imports:
 - name: github.com/google/btree
   version: 7d79101e329e5a3adf994758c578dab82b90c017
 - name: github.com/google/go-cmp
-  version: 7ffe1921f7d789634416694ae7145ebbc1ac82b2
+  version: 98232909528519e571b2e69fbe546b6ef35f5780
   subpackages:
   - cmp
   - cmp/internal/diff
@@ -202,7 +202,7 @@ imports:
 - name: github.com/sirupsen/logrus
   version: 89742aefa4b206dcf400792f3bd35b542998eb3b
 - name: github.com/spf13/cobra
-  version: 7b2c5ac9fc04fc5efafb60700713d4fa609b777b
+  version: 2da4a54c5ceefcee7ca5dd0eea1e18a3b6366489
   subpackages:
   - doc
 - name: github.com/spf13/pflag
@@ -293,7 +293,7 @@ imports:
   - storage/v1
   - storage/v1beta1
 - name: k8s.io/apiextensions-apiserver
-  version: 89b2a556a65053a90552eaed26f810df4a266367
+  version: 5bc0d8f05a92b3a09bcf1a9db442a29c0b7a514d
   subpackages:
   - pkg/apis/apiextensions
   - pkg/apis/apiextensions/v1beta1
@@ -434,7 +434,7 @@ imports:
   subpackages:
   - pkg/common
 - name: k8s.io/kubernetes
-  version: 0b9efaeb34a2fc51ff8e4d34ad9bc6375459c4a4
+  version: f0efb3cb883751c5ffdbe6d515f3cb4fbe7b7acd
   subpackages:
   - pkg/api
   - pkg/api/helper

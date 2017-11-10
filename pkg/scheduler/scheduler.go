@@ -34,8 +34,7 @@ const (
 )
 
 type Options struct {
-	AppKind          string
-	AppName          string
+	Workload         api.LocalTypedReference
 	Namespace        string
 	ResticName       string
 	ScratchDir       string
@@ -47,19 +46,6 @@ type Options struct {
 	PodLabelsPath    string
 	ResyncPeriod     time.Duration
 	MaxNumRequeues   int
-}
-
-func (opt Options) autoPrefix(resource *api.Restic) string {
-	switch resource.Spec.UseAutoPrefix {
-	case api.None:
-		return ""
-	case api.NodeName:
-		return opt.NodeName
-	case api.PodName:
-		return opt.PodName
-	default:
-		return opt.SmartPrefix
-	}
 }
 
 type Controller struct {
@@ -107,7 +93,7 @@ func (c *Controller) Setup() error {
 		return err
 	}
 	log.Infof("Found repository secret %s", secret.Name)
-	err = c.resticCLI.SetupEnv(resource, secret, c.opt.autoPrefix(resource))
+	err = c.resticCLI.SetupEnv(resource, secret, c.opt.SmartPrefix)
 	if err != nil {
 		return err
 	}
@@ -190,7 +176,7 @@ func (c *Controller) runOnce() (err error) {
 	if err != nil {
 		return
 	}
-	err = c.resticCLI.SetupEnv(resource, secret, c.opt.autoPrefix(resource))
+	err = c.resticCLI.SetupEnv(resource, secret, c.opt.SmartPrefix)
 	if err != nil {
 		return err
 	}

@@ -50,8 +50,8 @@ var Version version
 
 func NewCmdVersion() *cobra.Command {
 	versionCmd := &cobra.Command{
-		Use:   "version",
-		Short: "Prints binary version number.",
+		Use:               "version",
+		Short:             "Prints binary version number.",
 		DisableAutoGenTag: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			Version.Print()

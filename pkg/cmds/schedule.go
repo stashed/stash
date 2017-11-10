@@ -10,8 +10,8 @@ import (
 	"github.com/appscode/kutil"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/scheduler"
+	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -20,8 +20,7 @@ func NewCmdSchedule() *cobra.Command {
 	var (
 		masterURL      string
 		kubeconfigPath string
-		workload       string
-		opt            scheduler.Options = scheduler.Options{
+		opt            = scheduler.Options{
 			Namespace:      kutil.Namespace(),
 			ResticName:     "",
 			ScratchDir:     "/tmp",
@@ -53,57 +52,14 @@ func NewCmdSchedule() *cobra.Command {
 				log.Fatalln(`Missing ENV var "POD_NAME"`)
 			}
 
-			app := strings.SplitN(workload, "/", 2)
-			if len(app) != 2 {
-				log.Fatalf(`--workload flag must be in the format "Kind/Name", but found %v`, workload)
+			if err := opt.Workload.Canonicalize(); err != nil {
+				log.Fatalf(err.Error())
 			}
-			opt.AppName = app[1]
-			switch app[0] {
-			case "Deployments", "Deployment", "deployments", "deployment":
-				opt.AppKind = "Deployment"
-				opt.SmartPrefix = ""
-				opt.SnapshotHostname = opt.AppName
-				_, err := kubeClient.AppsV1beta1().Deployments(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
-				if err != nil {
-					_, err := kubeClient.ExtensionsV1beta1().Deployments(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
-					if err != nil {
-						log.Fatalf(`Unknown Deployment %s/%s`, opt.Namespace, opt.AppName)
-					}
-				}
-			case "ReplicaSets", "ReplicaSet", "replicasets", "replicaset", "rs":
-				opt.AppKind = "ReplicaSet"
-				opt.SmartPrefix = ""
-				opt.SnapshotHostname = opt.AppName
-				_, err := kubeClient.ExtensionsV1beta1().ReplicaSets(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
-				if err != nil {
-					log.Fatalf(`Unknown ReplicaSet %s/%s`, opt.Namespace, opt.AppName)
-				}
-			case "ReplicationControllers", "ReplicationController", "replicationcontrollers", "replicationcontroller", "rc":
-				opt.AppKind = "ReplicationController"
-				opt.SmartPrefix = ""
-				opt.SnapshotHostname = opt.AppName
-				_, err := kubeClient.CoreV1().ReplicationControllers(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
-				if err != nil {
-					log.Fatalf(`Unknown ReplicationController %s/%s`, opt.Namespace, opt.AppName)
-				}
-			case "StatefulSets", "StatefulSet":
-				opt.AppKind = "StatefulSet"
-				opt.SmartPrefix = opt.PodName
-				opt.SnapshotHostname = opt.PodName
-				_, err := kubeClient.AppsV1beta1().StatefulSets(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
-				if err != nil {
-					log.Fatalf(`Unknown StatefulSet %s/%s`, opt.Namespace, opt.AppName)
-				}
-			case "DaemonSets", "DaemonSet", "daemonsets", "daemonset":
-				opt.AppKind = "DaemonSet"
-				opt.SmartPrefix = opt.NodeName
-				opt.SnapshotHostname = opt.NodeName
-				_, err := kubeClient.ExtensionsV1beta1().DaemonSets(opt.Namespace).Get(opt.AppName, metav1.GetOptions{})
-				if err != nil {
-					log.Fatalf(`Unknown DaemonSet %s/%s`, opt.Namespace, opt.AppName)
-				}
-			default:
-				log.Fatalf(`Unrecognized workload "Kind" %v`, opt.AppKind)
+			if opt.SnapshotHostname, opt.SmartPrefix, err = opt.Workload.HostnamePrefix(opt.PodName, opt.NodeName); err != nil {
+				log.Fatalf(err.Error())
+			}
+			if err = util.CheckWorkloadExists(kubeClient, opt.Namespace, opt.Workload); err != nil {
+				log.Fatalf(err.Error())
 			}
 
 			opt.ScratchDir = strings.TrimSuffix(opt.ScratchDir, "/")
@@ -131,7 +87,8 @@ func NewCmdSchedule() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&workload, "workload", workload, `"Kind/Name" of workload where sidecar pod is added (eg, Deployment/apiserver)`)
+	cmd.Flags().StringVar(&opt.Workload.Kind, "workload-kind", opt.Workload.Kind, "Kind of workload where sidecar pod is added.")
+	cmd.Flags().StringVar(&opt.Workload.Name, "workload-name", opt.Workload.Name, "Name of workload where sidecar pod is added.")
 	cmd.Flags().StringVar(&opt.ResticName, "restic-name", opt.ResticName, "Name of the Restic used as configuration.")
 	cmd.Flags().StringVar(&opt.ScratchDir, "scratch-dir", opt.ScratchDir, "Directory used to store temporary files. Use an `emptyDir` in Kubernetes.")
 	cmd.Flags().StringVar(&opt.PushgatewayURL, "pushgateway-url", opt.PushgatewayURL, "URL of Prometheus pushgateway used to cache backup metrics")

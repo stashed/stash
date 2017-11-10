@@ -1,0 +1,11 @@
+apiVersion: stash.appscode.com/v1alpha1
+kind: Recovery
+metadata:
+  name: stash-demo
+  namespace: default
+spec:
+  restic: stash-demo
+  volumes:
+  - name: source-data
+    emptyDir: {}
+

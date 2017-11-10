@@ -26,15 +26,15 @@ type Restic struct {
 }
 
 type ResticSpec struct {
-	Selector      metav1.LabelSelector `json:"selector,omitempty"`
-	FileGroups    []FileGroup          `json:"fileGroups,omitempty"`
-	Backend       Backend              `json:"backend,omitempty"`
-	Schedule      string               `json:"schedule,omitempty"`
-	UseAutoPrefix PrefixType           `json:"useAutoPrefix,omitempty"`
+	Selector   metav1.LabelSelector `json:"selector,omitempty"`
+	FileGroups []FileGroup          `json:"fileGroups,omitempty"`
+	Backend    Backend              `json:"backend,omitempty"`
+	Schedule   string               `json:"schedule,omitempty"`
 	// Pod volumes to mount into the sidecar container's filesystem.
 	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty"`
 	// Compute Resources required by the sidecar container.
-	Resources core.ResourceRequirements `json:"resources,omitempty"`
+	Resources         core.ResourceRequirements `json:"resources,omitempty"`
+	RetentionPolicies []RetentionPolicy         `json:"retentionPolicies,omitempty"`
 }
 
 type ResticStatus struct {
@@ -53,46 +53,13 @@ type ResticList struct {
 	Items           []Restic `json:"items,omitempty"`
 }
 
-// +genclient
-// +k8s:openapi-gen=true
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-type Recovery struct {
-	metav1.TypeMeta   `json:",inline,omitempty"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              RecoverySpec   `json:"spec,omitempty"`
-	Status            RecoveryStatus `json:"status,omitempty"`
-}
-
-type RecoverySpec struct {
-	Restic     string `json:"restic,omitempty"`
-	SnapshotID string `json:"snapshotID,omitempty"`
-	// Path       string `json:"path,omitempty"`
-	// Host       string `json:"path,omitempty"`
-	// target volume where snapshot will be restored
-	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty"`
-}
-
-type RecoveryStatus struct {
-	RecoveryStatus   string `json:"recoveryStatus,omitempty"`
-	RecoveryDuration string `json:"recoveryDuration,omitempty"`
-}
-
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-type RecoveryList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Recovery `json:"items,omitempty"`
-}
-
 type FileGroup struct {
 	// Source of the backup volumeName:path
 	Path string `json:"path,omitempty"`
 	// Tags of a snapshots
 	Tags []string `json:"tags,omitempty"`
 	// retention policy of snapshots
-	RetentionPolicy RetentionPolicy `json:"retentionPolicy,omitempty"`
+	RetentionPolicyName string `json:"retentionPolicyName,omitempty"`
 }
 
 type Backend struct {
@@ -114,12 +81,12 @@ type LocalSpec struct {
 
 type S3Spec struct {
 	Endpoint string `json:"endpoint,omitempty"`
-	Bucket   string `json:"bucket,omiempty"`
+	Bucket   string `json:"bucket,omitempty"`
 	Prefix   string `json:"prefix,omitempty"`
 }
 
 type GCSSpec struct {
-	Bucket string `json:"bucket,omiempty"`
+	Bucket string `json:"bucket,omitempty"`
 	Prefix string `json:"prefix,omitempty"`
 }
 
@@ -134,12 +101,12 @@ type SwiftSpec struct {
 }
 
 type B2Spec struct {
-	Bucket string `json:"bucket,omiempty"`
+	Bucket string `json:"bucket,omitempty"`
 	Prefix string `json:"prefix,omitempty"`
 }
 
 type RestServerSpec struct {
-	URL string `json:"url,omiempty"`
+	URL string `json:"url,omitempty"`
 }
 
 type RetentionStrategy string
@@ -155,6 +122,7 @@ const (
 )
 
 type RetentionPolicy struct {
+	Name        string   `json:"name,omitempty"`
 	KeepLast    int      `json:"keepLast,omitempty"`
 	KeepHourly  int      `json:"keepHourly,omitempty"`
 	KeepDaily   int      `json:"keepDaily,omitempty"`
@@ -164,4 +132,66 @@ type RetentionPolicy struct {
 	KeepTags    []string `json:"keepTags,omitempty"`
 	Prune       bool     `json:"prune,omitempty"`
 	DryRun      bool     `json:"dryRun,omitempty"`
+}
+
+// +genclient
+// +k8s:openapi-gen=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+type Recovery struct {
+	metav1.TypeMeta   `json:",inline,omitempty"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Spec              RecoverySpec   `json:"spec,omitempty"`
+	Status            RecoveryStatus `json:"status,omitempty"`
+}
+
+type RecoverySpec struct {
+	Restic     string              `json:"restic,omitempty"`
+	Workload   LocalTypedReference `json:"workload,omitempty"`
+	PodOrdinal string              `json:"podOrdinal,omitempty"`
+	NodeName   string              `json:"nodeName,omitempty"`
+	Volumes    []core.Volume       `json:"volumes,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+type RecoveryList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []Recovery `json:"items,omitempty"`
+}
+
+// LocalTypedReference contains enough information to let you inspect or modify the referred object.
+type LocalTypedReference struct {
+	// Kind of the referent.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// +optional
+	Kind string `json:"kind,omitempty"`
+	// Name of the referent.
+	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+	// +optional
+	Name string `json:"name,omitempty""`
+	// API version of the referent.
+	// +optional
+	APIVersion string `json:"apiVersion,omitempty"`
+}
+
+type RecoveryPhase string
+
+const (
+	RecoveryPending   RecoveryPhase = "Pending"
+	RecoveryRunning   RecoveryPhase = "Running"
+	RecoverySucceeded RecoveryPhase = "Succeeded"
+	RecoveryFailed    RecoveryPhase = "Failed"
+	RecoveryUnknown   RecoveryPhase = "Unknown"
+)
+
+type RecoveryStatus struct {
+	Phase RecoveryPhase  `json:"phase,omitempty"`
+	Stats []RestoreStats `json:"stats,omitempty"`
+}
+
+type RestoreStats struct {
+	Path     string `json:"path,omitempty"`
+	Duration string `json:"duration,omitempty"`
 }

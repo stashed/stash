@@ -27,10 +27,8 @@ func (fi *Invocation) _restic() api.Restic {
 			},
 			FileGroups: []api.FileGroup{
 				{
-					Path: TestSourceDataMountPath,
-					RetentionPolicy: api.RetentionPolicy{
-						KeepLast: 5,
-					},
+					Path:                TestSourceDataMountPath,
+					RetentionPolicyName: "keep-last-5",
 				},
 			},
 			Schedule: "@every 15s",
@@ -38,6 +36,12 @@ func (fi *Invocation) _restic() api.Restic {
 				{
 					Name:      TestSourceDataVolumeName,
 					MountPath: TestSourceDataMountPath,
+				},
+			},
+			RetentionPolicies: []api.RetentionPolicy{
+				{
+					Name:     "keep-last-5",
+					KeepLast: 5,
 				},
 			},
 		},
@@ -52,6 +56,22 @@ func (fi *Invocation) ResticForLocalBackend() api.Restic {
 			Path: "/safe/data",
 			VolumeSource: core.VolumeSource{
 				EmptyDir: &core.EmptyDirVolumeSource{},
+			},
+		},
+	}
+	return r
+}
+
+func (fi *Invocation) ResticForHostPathLocalBackend() api.Restic {
+	r := fi._restic()
+	r.Spec.Backend = api.Backend{
+		StorageSecretName: "",
+		Local: &api.LocalSpec{
+			Path: "/safe/data",
+			VolumeSource: core.VolumeSource{
+				HostPath: &core.HostPathVolumeSource{
+					Path: "/data/stash-test/restic-repo",
+				},
 			},
 		},
 	}

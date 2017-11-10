@@ -7,19 +7,24 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/appscode/go/log"
 	"github.com/appscode/kutil"
 	core_util "github.com/appscode/kutil/core/v1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/docker"
+	"github.com/appscode/stash/pkg/eventer"
 	"github.com/cenkalti/backoff"
 	"github.com/google/go-cmp/cmp"
+	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/record"
 )
 
 const (
@@ -155,7 +160,7 @@ func GetString(m map[string]string, key string) string {
 	return m[key]
 }
 
-func CreateSidecarContainer(r *api.Restic, tag, workload string) core.Container {
+func CreateSidecarContainer(r *api.Restic, tag string, workload api.LocalTypedReference) core.Container {
 	if r.Annotations != nil {
 		if v, ok := r.Annotations[api.VersionTag]; ok {
 			tag = v
@@ -168,7 +173,8 @@ func CreateSidecarContainer(r *api.Restic, tag, workload string) core.Container 
 		Args: []string{
 			"schedule",
 			"--restic-name=" + r.Name,
-			"--workload=" + workload,
+			"--workload-kind=" + workload.Kind,
+			"--workload-name=" + workload.Name,
 		},
 		Env: []core.EnvVar{
 			{
@@ -306,4 +312,139 @@ func RecoveryEqual(old, new *api.Recovery) bool {
 		newSpec = &new.Spec
 	}
 	return reflect.DeepEqual(oldSpec, newSpec)
+}
+
+func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *batch.Job {
+	job := &batch.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "stash-" + recovery.Name,
+			Namespace: recovery.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: api.SchemeGroupVersion.String(),
+					Kind:       api.ResourceKindRecovery,
+					Name:       recovery.Name,
+					UID:        recovery.UID,
+				},
+			},
+		},
+		Spec: batch.JobSpec{
+			Template: core.PodTemplateSpec{
+				Spec: core.PodSpec{
+					Containers: []core.Container{
+						{
+							Name:  StashContainer,
+							Image: docker.ImageOperator + ":" + tag,
+							Args: []string{
+								"recover",
+								"--recovery-name=" + recovery.Name,
+								"--v=10",
+							},
+							VolumeMounts: restic.Spec.VolumeMounts, // use volume mounts specified in restic
+						},
+					},
+					RestartPolicy: core.RestartPolicyOnFailure,
+					Volumes:       recovery.Spec.Volumes,
+					NodeName:      recovery.Spec.NodeName,
+				},
+			},
+		},
+	}
+
+	// local backend
+	if restic.Spec.Backend.Local != nil {
+		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts,
+			core.VolumeMount{
+				Name:      LocalVolumeName,
+				MountPath: restic.Spec.Backend.Local.Path,
+			})
+
+		// user don't need to specify "stash-local" volume, we collect it from restic-spec
+		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes,
+			core.Volume{
+				Name:         LocalVolumeName,
+				VolumeSource: restic.Spec.Backend.Local.VolumeSource,
+			})
+	}
+
+	return job
+}
+
+func CheckWorkloadExists(k8sClient kubernetes.Interface, namespace string, workload api.LocalTypedReference) error {
+	if err := workload.Canonicalize(); err != nil {
+		return err
+	}
+
+	switch workload.Kind {
+	case api.AppKindDeployment:
+		_, err := k8sClient.AppsV1beta1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
+		if err != nil {
+			_, err := k8sClient.ExtensionsV1beta1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
+			if err != nil {
+				fmt.Errorf(`unknown Deployment %s/%s`, namespace, workload.Name)
+			}
+		}
+	case api.AppKindReplicaSet:
+		_, err := k8sClient.ExtensionsV1beta1().ReplicaSets(namespace).Get(workload.Name, metav1.GetOptions{})
+		if err != nil {
+			fmt.Errorf(`unknown ReplicaSet %s/%s`, namespace, workload.Name)
+		}
+	case api.AppKindReplicationController:
+		_, err := k8sClient.CoreV1().ReplicationControllers(namespace).Get(workload.Name, metav1.GetOptions{})
+		if err != nil {
+			fmt.Errorf(`unknown ReplicationController %s/%s`, namespace, workload.Name)
+		}
+	case api.AppKindStatefulSet:
+		_, err := k8sClient.AppsV1beta1().StatefulSets(namespace).Get(workload.Name, metav1.GetOptions{})
+		if err != nil {
+			fmt.Errorf(`unknown StatefulSet %s/%s`, namespace, workload.Name)
+		}
+	case api.AppKindDaemonSet:
+		_, err := k8sClient.ExtensionsV1beta1().DaemonSets(namespace).Get(workload.Name, metav1.GetOptions{})
+		if err != nil {
+			fmt.Errorf(`unknown DaemonSet %s/%s`, namespace, workload.Name)
+		}
+	default:
+		fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
+	}
+	return nil
+}
+
+func DeleteRecoveryJob(client kubernetes.Interface, recorder record.EventRecorder, rec *api.Recovery, job *batch.Job) {
+	if err := client.BatchV1().Jobs(job.Namespace).Delete(job.Name, nil); err != nil && !kerr.IsNotFound(err) {
+		recorder.Eventf(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToDelete, "Failed to delete Job. Reason: %v", err)
+		log.Errorln(err)
+	}
+
+	if r, err := metav1.LabelSelectorAsSelector(job.Spec.Selector); err != nil {
+		log.Errorln(err)
+	} else {
+		err = client.CoreV1().Pods(job.Namespace).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{LabelSelector: r.String()})
+		if err != nil {
+			recorder.Eventf(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToDelete, "Failed to delete Pods. Reason: %v", err)
+			log.Errorln(err)
+		}
+	}
+}
+
+func CheckRecoveryJob(client kubernetes.Interface, recorder record.EventRecorder, rec *api.Recovery, job *batch.Job) {
+	retryInterval := 2 * time.Second
+	retryTimeout := 30 * time.Minute
+
+	err := wait.PollImmediate(retryInterval, retryTimeout, func() (bool, error) {
+		obj, err := client.BatchV1().Jobs(job.Namespace).Get(job.Name, metav1.GetOptions{})
+		if err != nil {
+			return false, err
+		}
+		if obj.Status.Succeeded > 0 {
+			return true, nil
+		}
+		log.Infoln("Checking recovery job: not completed")
+		return false, nil
+	})
+	if err != nil {
+		log.Errorln(err)
+	}
+
+	DeleteRecoveryJob(client, recorder, rec, job)
 }

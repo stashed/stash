@@ -15,11 +15,12 @@ import (
 
 var _ = Describe("DaemonSet", func() {
 	var (
-		err    error
-		f      *framework.Invocation
-		restic api.Restic
-		cred   core.Secret
-		daemon extensions.DaemonSet
+		err      error
+		f        *framework.Invocation
+		restic   api.Restic
+		cred     core.Secret
+		daemon   extensions.DaemonSet
+		recovery api.Recovery
 	)
 
 	BeforeEach(func() {
@@ -178,6 +179,21 @@ var _ = Describe("DaemonSet", func() {
 
 			f.EventuallyDaemonSet(daemon.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		}
+
+		shouldRestoreDemonset = func() {
+			shouldBackupNewDaemonSet()
+			recovery.Spec.Workload = api.LocalTypedReference{
+				Kind: api.AppKindDaemonSet,
+				Name: daemon.Name,
+			}
+			recovery.Spec.NodeName = "minikube"
+
+			By("Creating recovery " + recovery.Name)
+			err = f.CreateRecovery(recovery)
+			Expect(err).NotTo(HaveOccurred())
+
+			f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
+		}
 	)
 
 	Describe("Creating restic for", func() {
@@ -320,6 +336,34 @@ var _ = Describe("DaemonSet", func() {
 				restic = f.ResticForSwiftBackend()
 			})
 			It(`should stop backup`, shouldStopBackup)
+		})
+	})
+
+	Describe("Creating recovery for", func() {
+		AfterEach(func() {
+			f.DeleteDaemonSet(daemon.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+			f.DeleteRecovery(recovery.ObjectMeta)
+			framework.CleanupMinikubeHostPath()
+		})
+
+		Context(`"Local" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForHostPathLocalBackend()
+				recovery = f.RecoveryForRestic(restic.Name)
+			})
+			It(`should restore local daemonset backup`, shouldRestoreDemonset)
+		})
+
+		Context(`"S3" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForS3Backend()
+				restic = f.ResticForS3Backend()
+				recovery = f.RecoveryForRestic(restic.Name)
+			})
+			It(`should restore s3 daemonset backup`, shouldRestoreDemonset)
 		})
 	})
 })
