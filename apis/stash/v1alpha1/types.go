@@ -33,7 +33,8 @@ type ResticSpec struct {
 	// Pod volumes to mount into the sidecar container's filesystem.
 	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty"`
 	// Compute Resources required by the sidecar container.
-	Resources core.ResourceRequirements `json:"resources,omitempty"`
+	Resources         core.ResourceRequirements `json:"resources,omitempty"`
+	RetentionPolicies []RetentionPolicy         `json:"retentionPolicies,omitempty"`
 }
 
 type ResticStatus struct {
@@ -58,7 +59,7 @@ type FileGroup struct {
 	// Tags of a snapshots
 	Tags []string `json:"tags,omitempty"`
 	// retention policy of snapshots
-	RetentionPolicy RetentionPolicy `json:"retentionPolicy,omitempty"`
+	RetentionPolicyName string `json:"retentionPolicyName,omitempty"`
 }
 
 type Backend struct {
@@ -80,12 +81,12 @@ type LocalSpec struct {
 
 type S3Spec struct {
 	Endpoint string `json:"endpoint,omitempty"`
-	Bucket   string `json:"bucket,omiempty"`
+	Bucket   string `json:"bucket,omitempty"`
 	Prefix   string `json:"prefix,omitempty"`
 }
 
 type GCSSpec struct {
-	Bucket string `json:"bucket,omiempty"`
+	Bucket string `json:"bucket,omitempty"`
 	Prefix string `json:"prefix,omitempty"`
 }
 
@@ -100,12 +101,12 @@ type SwiftSpec struct {
 }
 
 type B2Spec struct {
-	Bucket string `json:"bucket,omiempty"`
+	Bucket string `json:"bucket,omitempty"`
 	Prefix string `json:"prefix,omitempty"`
 }
 
 type RestServerSpec struct {
-	URL string `json:"url,omiempty"`
+	URL string `json:"url,omitempty"`
 }
 
 type RetentionStrategy string
@@ -121,6 +122,7 @@ const (
 )
 
 type RetentionPolicy struct {
+	Name        string   `json:"name,omitempty"`
 	KeepLast    int      `json:"keepLast,omitempty"`
 	KeepHourly  int      `json:"keepHourly,omitempty"`
 	KeepDaily   int      `json:"keepDaily,omitempty"`
