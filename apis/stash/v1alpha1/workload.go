@@ -34,7 +34,7 @@ func (workload *LocalTypedReference) Canonicalize() error {
 	return nil
 }
 
-func (workload LocalTypedReference) HostnamePrefixForWorkload(podName, nodeName string) (hostname, prefix string, err error) {
+func (workload LocalTypedReference) HostnamePrefix(podName, nodeName string) (hostname, prefix string, err error) {
 	if err := workload.Canonicalize(); err != nil {
 		return "", "", err
 	}

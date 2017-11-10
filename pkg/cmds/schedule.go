@@ -55,7 +55,7 @@ func NewCmdSchedule() *cobra.Command {
 			if err := opt.Workload.Canonicalize(); err != nil {
 				log.Fatalf(err.Error())
 			}
-			if opt.SnapshotHostname, opt.SmartPrefix, err = opt.Workload.HostnamePrefixForWorkload(opt.PodName, opt.NodeName); err != nil {
+			if opt.SnapshotHostname, opt.SmartPrefix, err = opt.Workload.HostnamePrefix(opt.PodName, opt.NodeName); err != nil {
 				log.Fatalf(err.Error())
 			}
 			if err = util.CheckWorkloadExists(kubeClient, opt.Namespace, opt.Workload); err != nil {
