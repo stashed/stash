@@ -1,18 +1,30 @@
-## stash
+## stash recover
 
-Stash by AppsCode - Backup your Kubernetes Volumes
+Recover restic backup
 
 ### Synopsis
 
 
-Stash is a Kubernetes operator for restic. For more information, visit here: https://github.com/appscode/stash/tree/master/docs
+Recover restic backup
+
+```
+stash recover [flags]
+```
 
 ### Options
 
 ```
+  -h, --help                   help for recover
+      --kubeconfig string      Path to kubeconfig file with authorization information (the master location is set by the master flag).
+      --master string          The address of the Kubernetes API server (overrides any value in kubeconfig)
+      --recovery-name string   Name of the Recovery CRD.
+```
+
+### Options inherited from parent commands
+
+```
       --alsologtostderr                  log to standard error as well as files
       --analytics                        Send analytical events to Google Analytics (default true)
-  -h, --help                             help for stash
       --log_backtrace_at traceLocation   when logging hits line file:N, emit a stack trace (default :0)
       --log_dir string                   If non-empty, write log files in this directory
       --logtostderr                      log to standard error instead of files
@@ -22,8 +34,5 @@ Stash is a Kubernetes operator for restic. For more information, visit here: htt
 ```
 
 ### SEE ALSO
-* [stash recover](stash_recover.md)	 - Recover restic backup
-* [stash run](stash_run.md)	 - Run Stash operator
-* [stash schedule](stash_schedule.md)	 - Run Stash cron daemon
-* [stash version](stash_version.md)	 - Prints binary version number.
+* [stash](stash.md)	 - Stash by AppsCode - Backup your Kubernetes Volumes
 
