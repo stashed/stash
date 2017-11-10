@@ -158,9 +158,7 @@ func Convert_stash_Backend_To_v1alpha1_Backend(in *stash.Backend, out *Backend, 
 func autoConvert_v1alpha1_FileGroup_To_stash_FileGroup(in *FileGroup, out *stash.FileGroup, s conversion.Scope) error {
 	out.Path = in.Path
 	out.Tags = *(*[]string)(unsafe.Pointer(&in.Tags))
-	if err := Convert_v1alpha1_RetentionPolicy_To_stash_RetentionPolicy(&in.RetentionPolicy, &out.RetentionPolicy, s); err != nil {
-		return err
-	}
+	out.RetentionPolicyName = in.RetentionPolicyName
 	return nil
 }
 
@@ -172,9 +170,7 @@ func Convert_v1alpha1_FileGroup_To_stash_FileGroup(in *FileGroup, out *stash.Fil
 func autoConvert_stash_FileGroup_To_v1alpha1_FileGroup(in *stash.FileGroup, out *FileGroup, s conversion.Scope) error {
 	out.Path = in.Path
 	out.Tags = *(*[]string)(unsafe.Pointer(&in.Tags))
-	if err := Convert_stash_RetentionPolicy_To_v1alpha1_RetentionPolicy(&in.RetentionPolicy, &out.RetentionPolicy, s); err != nil {
-		return err
-	}
+	out.RetentionPolicyName = in.RetentionPolicyName
 	return nil
 }
 
@@ -442,6 +438,7 @@ func autoConvert_v1alpha1_ResticSpec_To_stash_ResticSpec(in *ResticSpec, out *st
 	out.Schedule = in.Schedule
 	out.VolumeMounts = *(*[]v1.VolumeMount)(unsafe.Pointer(&in.VolumeMounts))
 	out.Resources = in.Resources
+	out.RetentionPolicies = *(*[]stash.RetentionPolicy)(unsafe.Pointer(&in.RetentionPolicies))
 	return nil
 }
 
@@ -459,6 +456,7 @@ func autoConvert_stash_ResticSpec_To_v1alpha1_ResticSpec(in *stash.ResticSpec, o
 	out.Schedule = in.Schedule
 	out.VolumeMounts = *(*[]v1.VolumeMount)(unsafe.Pointer(&in.VolumeMounts))
 	out.Resources = in.Resources
+	out.RetentionPolicies = *(*[]RetentionPolicy)(unsafe.Pointer(&in.RetentionPolicies))
 	return nil
 }
 
@@ -518,6 +516,7 @@ func Convert_stash_RestoreStats_To_v1alpha1_RestoreStats(in *stash.RestoreStats,
 }
 
 func autoConvert_v1alpha1_RetentionPolicy_To_stash_RetentionPolicy(in *RetentionPolicy, out *stash.RetentionPolicy, s conversion.Scope) error {
+	out.Name = in.Name
 	out.KeepLast = in.KeepLast
 	out.KeepHourly = in.KeepHourly
 	out.KeepDaily = in.KeepDaily
@@ -536,6 +535,7 @@ func Convert_v1alpha1_RetentionPolicy_To_stash_RetentionPolicy(in *RetentionPoli
 }
 
 func autoConvert_stash_RetentionPolicy_To_v1alpha1_RetentionPolicy(in *stash.RetentionPolicy, out *RetentionPolicy, s conversion.Scope) error {
+	out.Name = in.Name
 	out.KeepLast = in.KeepLast
 	out.KeepHourly = in.KeepHourly
 	out.KeepDaily = in.KeepDaily

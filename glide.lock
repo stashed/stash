@@ -1,5 +1,5 @@
-hash: 81401eaa32ebb68df2e6a709a65bfff6d9668248c6265cbdea962cbdd7d8838c
-updated: 2017-10-30T04:39:20.134302741-07:00
+hash: 0bc2aba8e1684e2409f7c186b3365cc3ab511162b0592621ebba296149f1766a
+updated: 2017-11-10T01:58:04.783122356-08:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -7,7 +7,7 @@ imports:
   - compute/metadata
   - internal
 - name: github.com/appscode/go
-  version: c01120782e8b487d1c86ab4299241edfe36a3ca2
+  version: 6c0d0eba230ad31f74a18b44beee6f865b01bdec
   subpackages:
   - context
   - crypto/rand
@@ -18,7 +18,7 @@ imports:
   - types
   - version
 - name: github.com/appscode/kutil
-  version: f285e7ec40eabb87501872402235d38378ec5a02
+  version: 45e137524b677cd540822364a8c4efedf57db119
   subpackages:
   - apps/v1beta1
   - core/v1
@@ -89,7 +89,7 @@ imports:
   - proto
   - sortkeys
 - name: github.com/golang/glog
-  version: 44145f04b68cf362d9c4df2182967c2275eaefed
+  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
 - name: github.com/golang/groupcache
   version: 02826c3e79038b59d737d3b1c0a1d937f71a4433
   subpackages:
@@ -105,7 +105,7 @@ imports:
 - name: github.com/google/btree
   version: 7d79101e329e5a3adf994758c578dab82b90c017
 - name: github.com/google/go-cmp
-  version: 7ffe1921f7d789634416694ae7145ebbc1ac82b2
+  version: 98232909528519e571b2e69fbe546b6ef35f5780
   subpackages:
   - cmp
   - cmp/internal/diff
@@ -225,7 +225,7 @@ imports:
 - name: github.com/sirupsen/logrus
   version: f006c2ac4710855cf0f916dd6b77acf6b048dc6e
 - name: github.com/spf13/cobra
-  version: b3426bbac13d7110c4d8fce456ea0012f79f3b8b
+  version: 2da4a54c5ceefcee7ca5dd0eea1e18a3b6366489
   subpackages:
   - doc
 - name: github.com/spf13/pflag
@@ -486,7 +486,7 @@ imports:
   subpackages:
   - pkg/common
 - name: k8s.io/kubernetes
-  version: 0b9efaeb34a2fc51ff8e4d34ad9bc6375459c4a4
+  version: f0efb3cb883751c5ffdbe6d515f3cb4fbe7b7acd
   subpackages:
   - pkg/api
   - pkg/api/helper
