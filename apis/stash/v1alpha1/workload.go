@@ -2,6 +2,7 @@ package v1alpha1
 
 import (
 	"fmt"
+	"strings"
 )
 
 const (
@@ -16,16 +17,16 @@ func (workload *LocalTypedReference) Canonicalize() error {
 	if workload.Name == "" || workload.Kind == "" {
 		return fmt.Errorf("missing workload name or kind")
 	}
-	switch workload.Kind {
-	case "Deployments", "Deployment", "deployments", "deployment", "deploy":
+	switch strings.ToLower(workload.Kind) {
+	case "deployments", "deployment", "deploy":
 		workload.Kind = AppKindDeployment
-	case "ReplicaSets", "ReplicaSet", "replicasets", "replicaset", "rs":
+	case "replicasets", "replicaset", "rs":
 		workload.Kind = AppKindReplicaSet
-	case "ReplicationControllers", "ReplicationController", "replicationcontrollers", "replicationcontroller", "rc":
+	case "replicationcontrollers", "replicationcontroller", "rc":
 		workload.Kind = AppKindReplicationController
-	case "StatefulSets", "StatefulSet", "statefulsets", "statefulset":
+	case "statefulsets", "statefulset":
 		workload.Kind = AppKindStatefulSet
-	case "DaemonSets", "DaemonSet", "daemonsets", "daemonset", "ds":
+	case "daemonsets", "daemonset", "ds":
 		workload.Kind = AppKindDaemonSet
 	default:
 		return fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
@@ -33,7 +34,7 @@ func (workload *LocalTypedReference) Canonicalize() error {
 	return nil
 }
 
-func (workload *LocalTypedReference) HostnamePrefixForWorkload(podName, nodeName string) (hostname, prefix string, err error) {
+func (workload LocalTypedReference) HostnamePrefixForWorkload(podName, nodeName string) (hostname, prefix string, err error) {
 	if workload.Name == "" || workload.Kind == "" {
 		return "", "", fmt.Errorf("missing workload name or kind")
 	}
