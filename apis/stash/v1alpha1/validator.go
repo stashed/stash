@@ -7,6 +7,19 @@ import (
 )
 
 func (r Restic) IsValid() error {
+	for i, fg := range r.Spec.FileGroups {
+		found := false
+		for _, policy := range r.Spec.RetentionPolicies {
+			if policy.Name == fg.RetentionPolicyName {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("spec.fileGroups[%d].retentionPolicyName %s is not found", i, fg.RetentionPolicyName)
+		}
+	}
+
 	_, err := cron.Parse(r.Spec.Schedule)
 	if err != nil {
 		return fmt.Errorf("spec.schedule %s is invalid. Reason: %s", r.Spec.Schedule, err)
