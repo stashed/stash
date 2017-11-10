@@ -343,7 +343,7 @@ func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *
 							VolumeMounts: restic.Spec.VolumeMounts, // use volume mounts specified in restic
 						},
 					},
-					RestartPolicy: "OnFailure",
+					RestartPolicy: core.RestartPolicyOnFailure,
 					Volumes:       recovery.Spec.Volumes,
 					NodeName:      recovery.Spec.NodeName,
 				},
@@ -370,33 +370,37 @@ func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *
 	return job
 }
 
-func CheckWorkloadExists(kubeClient kubernetes.Interface, namespace string, workload api.LocalTypedReference) error {
+func CheckWorkloadExists(k8sClient kubernetes.Interface, namespace string, workload api.LocalTypedReference) error {
+	if err := workload.Canonicalize(); err != nil {
+		return err
+	}
+
 	switch workload.Kind {
 	case api.AppKindDeployment:
-		_, err := kubeClient.AppsV1beta1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
+		_, err := k8sClient.AppsV1beta1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
 		if err != nil {
-			_, err := kubeClient.ExtensionsV1beta1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
+			_, err := k8sClient.ExtensionsV1beta1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
 			if err != nil {
 				fmt.Errorf(`unknown Deployment %s/%s`, namespace, workload.Name)
 			}
 		}
 	case api.AppKindReplicaSet:
-		_, err := kubeClient.ExtensionsV1beta1().ReplicaSets(namespace).Get(workload.Name, metav1.GetOptions{})
+		_, err := k8sClient.ExtensionsV1beta1().ReplicaSets(namespace).Get(workload.Name, metav1.GetOptions{})
 		if err != nil {
 			fmt.Errorf(`unknown ReplicaSet %s/%s`, namespace, workload.Name)
 		}
 	case api.AppKindReplicationController:
-		_, err := kubeClient.CoreV1().ReplicationControllers(namespace).Get(workload.Name, metav1.GetOptions{})
+		_, err := k8sClient.CoreV1().ReplicationControllers(namespace).Get(workload.Name, metav1.GetOptions{})
 		if err != nil {
 			fmt.Errorf(`unknown ReplicationController %s/%s`, namespace, workload.Name)
 		}
 	case api.AppKindStatefulSet:
-		_, err := kubeClient.AppsV1beta1().StatefulSets(namespace).Get(workload.Name, metav1.GetOptions{})
+		_, err := k8sClient.AppsV1beta1().StatefulSets(namespace).Get(workload.Name, metav1.GetOptions{})
 		if err != nil {
 			fmt.Errorf(`unknown StatefulSet %s/%s`, namespace, workload.Name)
 		}
 	case api.AppKindDaemonSet:
-		_, err := kubeClient.ExtensionsV1beta1().DaemonSets(namespace).Get(workload.Name, metav1.GetOptions{})
+		_, err := k8sClient.ExtensionsV1beta1().DaemonSets(namespace).Get(workload.Name, metav1.GetOptions{})
 		if err != nil {
 			fmt.Errorf(`unknown DaemonSet %s/%s`, namespace, workload.Name)
 		}

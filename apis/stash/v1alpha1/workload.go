@@ -35,6 +35,10 @@ func (workload *LocalTypedReference) Canonicalize() error {
 }
 
 func (workload LocalTypedReference) HostnamePrefixForWorkload(podName, nodeName string) (hostname, prefix string, err error) {
+	if err := workload.Canonicalize(); err != nil {
+		return "", "", err
+	}
+
 	if workload.Name == "" || workload.Kind == "" {
 		return "", "", fmt.Errorf("missing workload name or kind")
 	}

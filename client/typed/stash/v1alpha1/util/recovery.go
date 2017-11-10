@@ -43,7 +43,7 @@ func PatchRecovery(c cs.StashV1alpha1Interface, cur *api.Recovery, transform fun
 		return nil, err
 	}
 
-	modJson, err := json.Marshal(transform(cur))
+	modJson, err := json.Marshal(transform(cur.DeepCopy()))
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func TryUpdateRecovery(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, tran
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.Recoveries(cur.Namespace).Update(transform(cur))
+			result, e2 = c.Recoveries(cur.Namespace).Update(transform(cur.DeepCopy()))
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to update Recovery %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
