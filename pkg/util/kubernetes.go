@@ -452,11 +452,13 @@ func CheckRecoveryJob(client kubernetes.Interface, recorder record.EventRecorder
 }
 
 func WorkloadAsOwnerRef(obj interface{}, workload api.LocalTypedReference) (ownerRef metav1.OwnerReference, err error) {
+	if err := workload.Canonicalize(); err != nil {
+		return metav1.OwnerReference{}, err
+	}
 	ownerRef = metav1.OwnerReference{
 		Kind: workload.Kind,
 		Name: workload.Name,
 	}
-
 	switch workload.Kind {
 	case api.AppKindDeployment:
 		ownerRef.APIVersion = apps.SchemeGroupVersion.String()
