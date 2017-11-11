@@ -132,26 +132,27 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 			return nil
 		}
 
-		oldRestic, err := util.GetAppliedRestic(ss.Annotations)
-		if err != nil {
-			return err
-		}
-		newRestic, err := util.FindRestic(c.rstLister, ss.ObjectMeta)
-		if err != nil {
-			log.Errorf("Error while searching Restic for StatefulSet %s/%s.", ss.Name, ss.Namespace)
-			return err
-		}
-		if util.ResticEqual(oldRestic, newRestic) {
-			return nil
-		}
-		if newRestic != nil {
-			return c.EnsureStatefulSetSidecar(ss, oldRestic, newRestic)
-		} else if oldRestic != nil {
-			return c.EnsureStatefulSetSidecarDeleted(ss, oldRestic)
-		}
-
-		// not restic workload, just remove the pending stash initializer
 		if util.ToBeInitializedBySelf(ss.Initializers) {
+			// StatefulSets are supported during initializer phase
+			oldRestic, err := util.GetAppliedRestic(ss.Annotations)
+			if err != nil {
+				return err
+			}
+			newRestic, err := util.FindRestic(c.rstLister, ss.ObjectMeta)
+			if err != nil {
+				log.Errorf("Error while searching Restic for StatefulSet %s/%s.", ss.Name, ss.Namespace)
+				return err
+			}
+			if util.ResticEqual(oldRestic, newRestic) {
+				return nil
+			}
+			if newRestic != nil {
+				return c.EnsureStatefulSetSidecar(ss, oldRestic, newRestic)
+			} else if oldRestic != nil {
+				return c.EnsureStatefulSetSidecarDeleted(ss, oldRestic)
+			}
+
+			// not restic workload, just remove the pending stash initializer
 			_, err = apps_util.PatchStatefulSet(c.k8sClient, ss, func(obj *apps.StatefulSet) *apps.StatefulSet {
 				fmt.Println("Removing pending stash initializer for", obj.Name)
 				if len(obj.Initializers.Pending) == 1 {
