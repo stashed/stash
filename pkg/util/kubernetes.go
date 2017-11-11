@@ -16,10 +16,8 @@ import (
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/cenkalti/backoff"
 	"github.com/google/go-cmp/cmp"
-	apps "k8s.io/api/apps/v1beta1"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
-	extensions "k8s.io/api/extensions/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -411,58 +409,8 @@ func CheckRecoveryJob(client kubernetes.Interface, recorder record.EventRecorder
 	DeleteRecoveryJob(client, recorder, rec, job)
 }
 
-func WorkloadAsOwnerRef(obj interface{}, workload api.LocalTypedReference) (ownerRef metav1.OwnerReference, err error) {
-	if err := workload.Canonicalize(); err != nil {
-		return metav1.OwnerReference{}, err
-	}
-	ownerRef = metav1.OwnerReference{
-		Kind: workload.Kind,
-		Name: workload.Name,
-	}
-	switch workload.Kind {
-	case api.AppKindDeployment:
-		ownerRef.APIVersion = apps.SchemeGroupVersion.String()
-		ownerRef.UID = obj.(*apps.Deployment).ObjectMeta.UID
-	case api.AppKindReplicaSet:
-		ownerRef.APIVersion = extensions.SchemeGroupVersion.String()
-		ownerRef.UID = obj.(*extensions.ReplicaSet).ObjectMeta.UID
-	case api.AppKindReplicationController:
-		ownerRef.APIVersion = core.SchemeGroupVersion.String()
-		ownerRef.UID = obj.(*core.ReplicationController).ObjectMeta.UID
-	case api.AppKindStatefulSet:
-		ownerRef.APIVersion = apps.SchemeGroupVersion.String()
-		ownerRef.UID = obj.(*apps.StatefulSet).ObjectMeta.UID
-	case api.AppKindDaemonSet:
-		ownerRef.APIVersion = extensions.SchemeGroupVersion.String()
-		ownerRef.UID = obj.(*extensions.DaemonSet).ObjectMeta.UID
-	default:
-		err = fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
-	}
-
-	return
-}
-
 func GetConfigmapLockName(workload api.LocalTypedReference) string {
 	return fmt.Sprintf("lock-%s-%s", workload.Kind, workload.Name)
-}
-
-func CreateConfigmapLock(k8sClient kubernetes.Interface, namespace string, ref metav1.OwnerReference) error {
-	configMap := &core.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: GetConfigmapLockName(api.LocalTypedReference{
-				Kind: ref.Kind,
-				Name: ref.Name,
-			}),
-			Namespace: namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				ref,
-			},
-		},
-	}
-	if _, err := k8sClient.CoreV1().ConfigMaps(namespace).Create(configMap); err != nil && !kerr.IsAlreadyExists(err) {
-		return err
-	}
-	return nil
 }
 
 func DeleteConfigmapLock(k8sClient kubernetes.Interface, namespace string, workload api.LocalTypedReference) error {

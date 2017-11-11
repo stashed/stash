@@ -121,6 +121,12 @@ func (c *StashController) runDeploymentInjector(key string) error {
 	if !exists {
 		// Below we will warm up our cache with a Deployment, so that we will see a delete for one d
 		fmt.Printf("Deployment %s does not exist anymore\n", key)
+
+		ns, name, err := cache.SplitMetaNamespaceKey(key)
+		if err != nil {
+			return err
+		}
+		util.DeleteConfigmapLock(c.k8sClient, ns, api.LocalTypedReference{Kind: api.AppKindDeployment, Name: name})
 	} else {
 		dp := obj.(*apps.Deployment)
 		fmt.Printf("Sync/Add/Update for Deployment %s\n", dp.GetName())
@@ -162,16 +168,6 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 		if err != nil {
 			return err
 		}
-	}
-
-	err = util.CreateConfigmapLock(c.k8sClient, resource.Namespace, metav1.OwnerReference{
-		Kind:       api.AppKindDeployment,
-		Name:       resource.Name,
-		APIVersion: apps.SchemeGroupVersion.String(),
-		UID:        resource.UID,
-	})
-	if err != nil {
-		return err
 	}
 
 	resource, err = apps_util.PatchDeployment(c.k8sClient, resource, func(obj *apps.Deployment) *apps.Deployment {

@@ -43,6 +43,10 @@ rules:
   verbs: ["get", "list", "watch", "patch"]
 - apiGroups: [""]
   resources:
+  - configmaps
+  verbs: ["delete"]
+- apiGroups: [""]
+  resources:
   - secrets
   verbs: ["get"]
 - apiGroups: [""]

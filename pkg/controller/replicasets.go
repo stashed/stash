@@ -121,6 +121,12 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 	if !exists {
 		// Below we will warm up our cache with a ReplicaSet, so that we will see a delete for one d
 		fmt.Printf("ReplicaSet %s does not exist anymore\n", key)
+
+		ns, name, err := cache.SplitMetaNamespaceKey(key)
+		if err != nil {
+			return err
+		}
+		util.DeleteConfigmapLock(c.k8sClient, ns, api.LocalTypedReference{Kind: api.AppKindReplicaSet, Name: name})
 	} else {
 		rs := obj.(*extensions.ReplicaSet)
 		fmt.Printf("Sync/Add/Update for ReplicaSet %s\n", rs.GetName())
@@ -167,16 +173,6 @@ func (c *StashController) EnsureReplicaSetSidecar(resource *extensions.ReplicaSe
 		if err != nil {
 			return err
 		}
-	}
-
-	err = util.CreateConfigmapLock(c.k8sClient, resource.Namespace, metav1.OwnerReference{
-		Kind:       api.AppKindReplicaSet,
-		Name:       resource.Name,
-		APIVersion: extensions.SchemeGroupVersion.String(),
-		UID:        resource.UID,
-	})
-	if err != nil {
-		return err
 	}
 
 	resource, err = ext_util.PatchReplicaSet(c.k8sClient, resource, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {

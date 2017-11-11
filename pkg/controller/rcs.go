@@ -119,6 +119,12 @@ func (c *StashController) runRCInjector(key string) error {
 	if !exists {
 		// Below we will warm up our cache with a ReplicationController, so that we will see a delete for one d
 		fmt.Printf("ReplicationController %s does not exist anymore\n", key)
+
+		ns, name, err := cache.SplitMetaNamespaceKey(key)
+		if err != nil {
+			return err
+		}
+		util.DeleteConfigmapLock(c.k8sClient, ns, api.LocalTypedReference{Kind: api.AppKindReplicationController, Name: name})
 	} else {
 		rc := obj.(*core.ReplicationController)
 		fmt.Printf("Sync/Add/Update for ReplicationController %s\n", rc.GetName())
@@ -160,16 +166,6 @@ func (c *StashController) EnsureReplicationControllerSidecar(resource *core.Repl
 		if err != nil {
 			return err
 		}
-	}
-
-	err = util.CreateConfigmapLock(c.k8sClient, resource.Namespace, metav1.OwnerReference{
-		Kind:       api.AppKindReplicationController,
-		Name:       resource.Name,
-		APIVersion: core.SchemeGroupVersion.String(),
-		UID:        resource.UID,
-	})
-	if err != nil {
-		return err
 	}
 
 	resource, err = core_util.PatchRC(c.k8sClient, resource, func(obj *core.ReplicationController) *core.ReplicationController {
