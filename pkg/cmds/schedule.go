@@ -10,6 +10,7 @@ import (
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/scheduler"
+	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -57,7 +58,9 @@ func NewCmdSchedule() *cobra.Command {
 			if opt.SnapshotHostname, opt.SmartPrefix, err = opt.Workload.HostnamePrefix(opt.PodName, opt.NodeName); err != nil {
 				log.Fatalf(err.Error())
 			}
-
+			if err = util.WorkloadExists(kubeClient, opt.Namespace, opt.Workload); err != nil {
+				log.Fatalf(err.Error())
+			}
 			opt.ScratchDir = strings.TrimSuffix(opt.ScratchDir, "/") // setup ScratchDir in SetupAndRun
 
 			ctrl := scheduler.New(kubeClient, stashClient, opt)
