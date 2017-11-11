@@ -162,6 +162,16 @@ func (c *StashController) EnsureReplicationControllerSidecar(resource *core.Repl
 		}
 	}
 
+	err = util.CreateConfigmapLock(c.k8sClient, resource.Namespace, metav1.OwnerReference{
+		Kind:       api.AppKindReplicationController,
+		Name:       resource.Name,
+		APIVersion: core.SchemeGroupVersion.String(),
+		UID:        resource.UID,
+	})
+	if err != nil {
+		return err
+	}
+
 	resource, err = core_util.PatchRC(c.k8sClient, resource, func(obj *core.ReplicationController) *core.ReplicationController {
 		workload := api.LocalTypedReference{
 			Kind: api.AppKindReplicationController,
@@ -231,5 +241,9 @@ func (c *StashController) EnsureReplicationControllerSidecarDeleted(resource *co
 		return
 	}
 	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector})
+	if err != nil {
+		return
+	}
+	util.DeleteConfigmapLock(c.k8sClient, resource.Namespace, api.LocalTypedReference{Kind: api.AppKindReplicationController, Name: resource.Name})
 	return err
 }

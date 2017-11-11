@@ -10,7 +10,6 @@ import (
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/scheduler"
-	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -58,17 +57,6 @@ func NewCmdSchedule() *cobra.Command {
 			if opt.SnapshotHostname, opt.SmartPrefix, err = opt.Workload.HostnamePrefix(opt.PodName, opt.NodeName); err != nil {
 				log.Fatalf(err.Error())
 			}
-			if err = util.CheckWorkloadExists(kubeClient, opt.Namespace, opt.Workload); err != nil {
-				log.Fatalf(err.Error())
-			}
-			workloadObj, err := util.CheckWorkloadExists(kubeClient, opt.Namespace, opt.Workload)
-			if err != nil {
-				log.Fatalf(err.Error())
-			}
-			ownerRef, err := util.WorkloadAsOwnerRef(workloadObj, opt.Workload)
-			if err != nil {
-				log.Fatalf(err.Error())
-			}
 
 			opt.ScratchDir = strings.TrimSuffix(opt.ScratchDir, "/") // setup ScratchDir in SetupAndRun
 
@@ -79,7 +67,7 @@ func NewCmdSchedule() *cobra.Command {
 			// split code from here for leader election
 			switch opt.Workload.Kind {
 			case api.AppKindDeployment, api.AppKindReplicaSet, api.AppKindReplicationController:
-				ctrl.ElectLeader(ownerRef, stopBackup)
+				ctrl.ElectLeader(stopBackup)
 			default:
 				ctrl.SetupAndRun(stopBackup)
 			}

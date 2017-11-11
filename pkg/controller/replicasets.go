@@ -169,6 +169,16 @@ func (c *StashController) EnsureReplicaSetSidecar(resource *extensions.ReplicaSe
 		}
 	}
 
+	err = util.CreateConfigmapLock(c.k8sClient, resource.Namespace, metav1.OwnerReference{
+		Kind:       api.AppKindReplicaSet,
+		Name:       resource.Name,
+		APIVersion: extensions.SchemeGroupVersion.String(),
+		UID:        resource.UID,
+	})
+	if err != nil {
+		return err
+	}
+
 	resource, err = ext_util.PatchReplicaSet(c.k8sClient, resource, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
 		workload := api.LocalTypedReference{
 			Kind: api.AppKindReplicaSet,
@@ -238,5 +248,9 @@ func (c *StashController) EnsureReplicaSetSidecarDeleted(resource *extensions.Re
 		return
 	}
 	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, resource.Spec.Selector)
-	return err
+	if err != nil {
+		return
+	}
+	util.DeleteConfigmapLock(c.k8sClient, resource.Namespace, api.LocalTypedReference{Kind: api.AppKindReplicaSet, Name: resource.Name})
+	return
 }

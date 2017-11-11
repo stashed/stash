@@ -372,46 +372,6 @@ func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *
 	return job
 }
 
-func CheckWorkloadExists(k8sClient kubernetes.Interface, namespace string, workload api.LocalTypedReference) error {
-	if err := workload.Canonicalize(); err != nil {
-		return err
-	}
-
-	switch workload.Kind {
-	case api.AppKindDeployment:
-		_, err := k8sClient.AppsV1beta1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
-		if err != nil {
-			_, err := k8sClient.ExtensionsV1beta1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
-			if err != nil {
-				fmt.Errorf(`unknown Deployment %s/%s`, namespace, workload.Name)
-			}
-		}
-	case api.AppKindReplicaSet:
-		_, err := k8sClient.ExtensionsV1beta1().ReplicaSets(namespace).Get(workload.Name, metav1.GetOptions{})
-		if err != nil {
-			fmt.Errorf(`unknown ReplicaSet %s/%s`, namespace, workload.Name)
-		}
-	case api.AppKindReplicationController:
-		_, err := k8sClient.CoreV1().ReplicationControllers(namespace).Get(workload.Name, metav1.GetOptions{})
-		if err != nil {
-			fmt.Errorf(`unknown ReplicationController %s/%s`, namespace, workload.Name)
-		}
-	case api.AppKindStatefulSet:
-		_, err := k8sClient.AppsV1beta1().StatefulSets(namespace).Get(workload.Name, metav1.GetOptions{})
-		if err != nil {
-			fmt.Errorf(`unknown StatefulSet %s/%s`, namespace, workload.Name)
-		}
-	case api.AppKindDaemonSet:
-		_, err := k8sClient.ExtensionsV1beta1().DaemonSets(namespace).Get(workload.Name, metav1.GetOptions{})
-		if err != nil {
-			fmt.Errorf(`unknown DaemonSet %s/%s`, namespace, workload.Name)
-		}
-	default:
-		fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
-	}
-	return nil
-}
-
 func DeleteRecoveryJob(client kubernetes.Interface, recorder record.EventRecorder, rec *api.Recovery, job *batch.Job) {
 	if err := client.BatchV1().Jobs(job.Namespace).Delete(job.Name, nil); err != nil && !kerr.IsNotFound(err) {
 		recorder.Eventf(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToDelete, "Failed to delete Job. Reason: %v", err)
@@ -480,4 +440,31 @@ func WorkloadAsOwnerRef(obj interface{}, workload api.LocalTypedReference) (owne
 	}
 
 	return
+}
+
+func GetConfigmapLockName(workload api.LocalTypedReference) string {
+	return fmt.Sprintf("lock-%s-%s", workload.Kind, workload.Name)
+}
+
+func CreateConfigmapLock(k8sClient kubernetes.Interface, namespace string, ref metav1.OwnerReference) error {
+	configMap := &core.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: GetConfigmapLockName(api.LocalTypedReference{
+				Kind: ref.Kind,
+				Name: ref.Name,
+			}),
+			Namespace: namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				ref,
+			},
+		},
+	}
+	if _, err := k8sClient.CoreV1().ConfigMaps(namespace).Create(configMap); err != nil && !kerr.IsAlreadyExists(err) {
+		return err
+	}
+	return nil
+}
+
+func DeleteConfigmapLock(k8sClient kubernetes.Interface, namespace string, workload api.LocalTypedReference) error {
+	return k8sClient.CoreV1().ConfigMaps(namespace).Delete(GetConfigmapLockName(workload), &metav1.DeleteOptions{})
 }

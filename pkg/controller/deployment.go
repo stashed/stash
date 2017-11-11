@@ -164,6 +164,16 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 		}
 	}
 
+	err = util.CreateConfigmapLock(c.k8sClient, resource.Namespace, metav1.OwnerReference{
+		Kind:       api.AppKindDeployment,
+		Name:       resource.Name,
+		APIVersion: apps.SchemeGroupVersion.String(),
+		UID:        resource.UID,
+	})
+	if err != nil {
+		return err
+	}
+
 	resource, err = apps_util.PatchDeployment(c.k8sClient, resource, func(obj *apps.Deployment) *apps.Deployment {
 		workload := api.LocalTypedReference{
 			Kind: api.AppKindDeployment,
@@ -233,5 +243,9 @@ func (c *StashController) EnsureDeploymentSidecarDeleted(resource *apps.Deployme
 		return
 	}
 	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, resource.Spec.Selector)
+	if err != nil {
+		return
+	}
+	util.DeleteConfigmapLock(c.k8sClient, resource.Namespace, api.LocalTypedReference{Kind: api.AppKindDeployment, Name: resource.Name})
 	return err
 }
