@@ -436,14 +436,14 @@ func CheckRecoveryJob(client kubernetes.Interface, recorder record.EventRecorder
 	DeleteRecoveryJob(client, recorder, rec, job)
 }
 
-func CheckWorkloadInitializer(initializers *metav1.Initializers) bool {
+func ToBeInitializedByPeer(initializers *metav1.Initializers) bool {
 	if initializers != nil && len(initializers.Pending) > 0 && initializers.Pending[0].Name != StashInitializerName {
-		return false
+		return true
 	}
-	return true
+	return false
 }
 
-func ShouldRemovePendingInitializer(initializers *metav1.Initializers) bool {
+func ToBeInitializedBySelf(initializers *metav1.Initializers) bool {
 	if initializers != nil && len(initializers.Pending) > 0 && initializers.Pending[0].Name == StashInitializerName {
 		return true
 	}

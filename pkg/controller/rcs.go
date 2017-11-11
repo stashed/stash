@@ -131,7 +131,7 @@ func (c *StashController) runRCInjector(key string) error {
 		rc := obj.(*core.ReplicationController)
 		fmt.Printf("Sync/Add/Update for ReplicationController %s\n", rc.GetName())
 
-		if !util.CheckWorkloadInitializer(rc.Initializers) {
+		if util.ToBeInitializedByPeer(rc.Initializers) {
 			fmt.Printf("Not stash's turn to initialize %s\n", rc.GetName())
 			return nil
 		}
@@ -155,7 +155,7 @@ func (c *StashController) runRCInjector(key string) error {
 		}
 
 		// not restic workload, just remove the pending stash initializer
-		if util.ShouldRemovePendingInitializer(rc.Initializers) {
+		if util.ToBeInitializedBySelf(rc.Initializers) {
 			_, err = core_util.PatchRC(c.k8sClient, rc, func(obj *core.ReplicationController) *core.ReplicationController {
 				fmt.Println("Removing pending stash initializer for", obj.Name)
 				if len(obj.Initializers.Pending) == 1 {
@@ -193,7 +193,7 @@ func (c *StashController) EnsureReplicationControllerSidecar(resource *core.Repl
 	}
 
 	resource, err = core_util.PatchRC(c.k8sClient, resource, func(obj *core.ReplicationController) *core.ReplicationController {
-		if util.ShouldRemovePendingInitializer(obj.Initializers) {
+		if util.ToBeInitializedBySelf(obj.Initializers) {
 			fmt.Println("Removing pending stash initializer for", obj.Name)
 			if len(obj.Initializers.Pending) == 1 {
 				obj.Initializers = nil

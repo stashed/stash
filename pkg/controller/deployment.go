@@ -133,7 +133,7 @@ func (c *StashController) runDeploymentInjector(key string) error {
 		dp := obj.(*apps.Deployment)
 		fmt.Printf("Sync/Add/Update for Deployment %s\n", dp.GetName())
 
-		if !util.CheckWorkloadInitializer(dp.Initializers) {
+		if util.ToBeInitializedByPeer(dp.Initializers) {
 			fmt.Printf("Not stash's turn to initialize %s\n", dp.GetName())
 			return nil
 		}
@@ -157,7 +157,7 @@ func (c *StashController) runDeploymentInjector(key string) error {
 		}
 
 		// not restic workload, just remove the pending stash initializer
-		if util.ShouldRemovePendingInitializer(dp.Initializers) {
+		if util.ToBeInitializedBySelf(dp.Initializers) {
 			_, err = apps_util.PatchDeployment(c.k8sClient, dp, func(obj *apps.Deployment) *apps.Deployment {
 				fmt.Println("Removing pending stash initializer for", obj.Name)
 				if len(obj.Initializers.Pending) == 1 {
@@ -195,7 +195,7 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 	}
 
 	resource, err = apps_util.PatchDeployment(c.k8sClient, resource, func(obj *apps.Deployment) *apps.Deployment {
-		if util.ShouldRemovePendingInitializer(obj.Initializers) {
+		if util.ToBeInitializedBySelf(obj.Initializers) {
 			fmt.Println("Removing pending stash initializer for", obj.Name)
 			if len(obj.Initializers.Pending) == 1 {
 				obj.Initializers = nil

@@ -133,7 +133,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 		rs := obj.(*extensions.ReplicaSet)
 		fmt.Printf("Sync/Add/Update for ReplicaSet %s\n", rs.GetName())
 
-		if !util.CheckWorkloadInitializer(rs.Initializers) {
+		if util.ToBeInitializedByPeer(rs.Initializers) {
 			fmt.Printf("Not stash's turn to initialize %s\n", rs.GetName())
 			return nil
 		}
@@ -159,7 +159,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 		}
 
 		// not restic workload or owned by a deployment, just remove the pending stash initializer
-		if util.ShouldRemovePendingInitializer(rs.Initializers) {
+		if util.ToBeInitializedBySelf(rs.Initializers) {
 			_, err = ext_util.PatchReplicaSet(c.k8sClient, rs, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
 				fmt.Println("Removing pending stash initializer for", obj.Name)
 				if len(obj.Initializers.Pending) == 1 {
@@ -197,7 +197,7 @@ func (c *StashController) EnsureReplicaSetSidecar(resource *extensions.ReplicaSe
 	}
 
 	resource, err = ext_util.PatchReplicaSet(c.k8sClient, resource, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
-		if util.ShouldRemovePendingInitializer(obj.Initializers) {
+		if util.ToBeInitializedBySelf(obj.Initializers) {
 			fmt.Println("Removing pending stash initializer for", obj.Name)
 			if len(obj.Initializers.Pending) == 1 {
 				obj.Initializers = nil

@@ -127,7 +127,7 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 		ss := obj.(*apps.StatefulSet)
 		fmt.Printf("Sync/Add/Update for StatefulSet %s\n", ss.GetName())
 
-		if !util.CheckWorkloadInitializer(ss.Initializers) {
+		if util.ToBeInitializedByPeer(ss.Initializers) {
 			fmt.Printf("Not stash's turn to initialize %s\n", ss.GetName())
 			return nil
 		}
@@ -151,7 +151,7 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 		}
 
 		// not restic workload, just remove the pending stash initializer
-		if util.ShouldRemovePendingInitializer(ss.Initializers) {
+		if util.ToBeInitializedBySelf(ss.Initializers) {
 			_, err = apps_util.PatchStatefulSet(c.k8sClient, ss, func(obj *apps.StatefulSet) *apps.StatefulSet {
 				fmt.Println("Removing pending stash initializer for", obj.Name)
 				if len(obj.Initializers.Pending) == 1 {
@@ -189,7 +189,7 @@ func (c *StashController) EnsureStatefulSetSidecar(resource *apps.StatefulSet, o
 	}
 
 	resource, err = apps_util.PatchStatefulSet(c.k8sClient, resource, func(obj *apps.StatefulSet) *apps.StatefulSet {
-		if util.ShouldRemovePendingInitializer(obj.Initializers) {
+		if util.ToBeInitializedBySelf(obj.Initializers) {
 			fmt.Println("Removing pending stash initializer for", obj.Name)
 			if len(obj.Initializers.Pending) == 1 {
 				obj.Initializers = nil
