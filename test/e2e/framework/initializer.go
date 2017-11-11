@@ -7,10 +7,9 @@ import (
 )
 
 func (f *Framework) InitializerForWorkloads() v1alpha1.InitializerConfiguration {
-	resources := []string{"deployments", "replicasets", "replicationcontrollers", "daemonsets", "statefulsets"}
 	return v1alpha1.InitializerConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "stash-initializer-config",
+			Name: "stash-initializer",
 		},
 		Initializers: []v1alpha1.Initializer{
 			{
@@ -19,7 +18,13 @@ func (f *Framework) InitializerForWorkloads() v1alpha1.InitializerConfiguration 
 					{
 						APIGroups:   []string{"*"},
 						APIVersions: []string{"*"},
-						Resources:   resources,
+						Resources: []string{
+							"deployments",
+							"replicasets",
+							"replicationcontrollers",
+							"daemonsets",
+							"statefulsets",
+						},
 					},
 				},
 			},
