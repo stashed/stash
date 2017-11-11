@@ -21,7 +21,8 @@ stash schedule [flags]
       --restic-name string       Name of the Restic used as configuration.
       --resync-period duration   If non-zero, will re-list this often. Otherwise, re-list will be delayed aslong as possible (until the upstream source closes the watch or times out. (default 5m0s)
       --scratch-dir emptyDir     Directory used to store temporary files. Use an emptyDir in Kubernetes. (default "/tmp")
-      --workload string          "Kind/Name" of workload where sidecar pod is added (eg, Deployment/apiserver)
+      --workload-kind string     Kind of workload where sidecar pod is added.
+      --workload-name string     Name of workload where sidecar pod is added.
 ```
 
 ### Options inherited from parent commands

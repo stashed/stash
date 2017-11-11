@@ -67,8 +67,8 @@ func (opt *RecoveryOpt) RecoverOrErr(recovery *api.Recovery) error {
 	}
 
 	nodeName := recovery.Spec.NodeName
-	podName, _ := api.StatefulSetPodName(recovery.Spec.Workload.Name, recovery.Spec.PodOrdinal)       // ignore error for other kinds
-	hostname, smartPrefix, err := recovery.Spec.Workload.HostnamePrefixForWorkload(podName, nodeName) // workload canonicalized during IsValid check
+	podName, _ := api.StatefulSetPodName(recovery.Spec.Workload.Name, recovery.Spec.PodOrdinal) // ignore error for other kinds
+	hostname, smartPrefix, err := recovery.Spec.Workload.HostnamePrefix(podName, nodeName)      // workload canonicalized during IsValid check
 	if err != nil {
 		return err
 	}

@@ -2,18 +2,11 @@ package context
 
 import (
 	gtx "context"
+
 	"github.com/google/uuid"
 )
 
 type keyID struct{}
-
-func Background() gtx.Context {
-	return gtx.WithValue(gtx.Background(), keyID{}, uuid.New().String())
-}
-
-func WithID(ctx gtx.Context, id string) gtx.Context {
-	return gtx.WithValue(ctx, keyID{}, id)
-}
 
 func ID(ctx gtx.Context) string {
 	if ctx == nil {
@@ -23,4 +16,16 @@ func ID(ctx gtx.Context) string {
 		return v.(string)
 	}
 	return ""
+}
+
+func WithID(ctx gtx.Context, id string) gtx.Context {
+	return gtx.WithValue(ctx, keyID{}, id)
+}
+
+func NewID(ctx gtx.Context) gtx.Context {
+	return WithID(ctx, uuid.New().String())
+}
+
+func Background() gtx.Context {
+	return NewID(gtx.Background())
 }

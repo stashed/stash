@@ -223,7 +223,6 @@ func (in *FileGroup) DeepCopyInto(out *FileGroup) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
-	in.RetentionPolicy.DeepCopyInto(&out.RetentionPolicy)
 	return
 }
 
@@ -493,6 +492,13 @@ func (in *ResticSpec) DeepCopyInto(out *ResticSpec) {
 		}
 	}
 	in.Resources.DeepCopyInto(&out.Resources)
+	if in.RetentionPolicies != nil {
+		in, out := &in.RetentionPolicies, &out.RetentionPolicies
+		*out = make([]RetentionPolicy, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	return
 }
 

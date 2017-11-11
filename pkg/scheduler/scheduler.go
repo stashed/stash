@@ -14,6 +14,7 @@ import (
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/cli"
 	"github.com/appscode/stash/pkg/eventer"
+	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
@@ -299,29 +300,15 @@ func (c *Controller) SetupAndRun(stopBackup chan struct{}) {
 	go c.Run(1, stopBackup)
 }
 
-func (c *Controller) ElectLeader(ownerRef metav1.OwnerReference, stopBackup chan struct{}) {
-	configMap := &core.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      ConfigMapPrefix + c.opt.Workload.Name,
-			Namespace: c.opt.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				ownerRef,
-			},
-		},
+func (c *Controller) ElectLeader(stopBackup chan struct{}) {
+	rlc := resourcelock.ResourceLockConfig{
+		Identity:      c.opt.PodName,
+		EventRecorder: c.recorder,
 	}
-	if _, err := c.k8sClient.CoreV1().ConfigMaps(c.opt.Namespace).Create(configMap); err != nil && !kerr.IsAlreadyExists(err) {
-		log.Fatal(err)
+	resLock, err := resourcelock.New(resourcelock.ConfigMapsResourceLock, c.opt.Namespace, util.GetConfigmapLockName(c.opt.Workload), c.k8sClient.CoreV1(), rlc)
+	if err != nil {
+		log.Fatalln(err)
 	}
-
-	resLock := &resourcelock.ConfigMapLock{
-		ConfigMapMeta: configMap.ObjectMeta,
-		Client:        c.k8sClient.CoreV1(),
-		LockConfig: resourcelock.ResourceLockConfig{
-			Identity:      c.opt.PodName,
-			EventRecorder: &record.FakeRecorder{}, // TODO: replace with real event
-		},
-	}
-
 	go func() {
 		leaderelection.RunOrDie(leaderelection.LeaderElectionConfig{
 			Lock:          resLock,

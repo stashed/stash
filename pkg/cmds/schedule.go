@@ -55,17 +55,13 @@ func NewCmdSchedule() *cobra.Command {
 			if err := opt.Workload.Canonicalize(); err != nil {
 				log.Fatalf(err.Error())
 			}
-			if opt.SnapshotHostname, opt.SmartPrefix, err = opt.Workload.HostnamePrefixForWorkload(opt.PodName, opt.NodeName); err != nil {
+			if opt.SnapshotHostname, opt.SmartPrefix, err = opt.Workload.HostnamePrefix(opt.PodName, opt.NodeName); err != nil {
 				log.Fatalf(err.Error())
 			}
-			workloadObj, err := util.CheckWorkloadExists(kubeClient, opt.Namespace, opt.Workload)
-			if err != nil {
+			if err = util.WorkloadExists(kubeClient, opt.Namespace, opt.Workload); err != nil {
 				log.Fatalf(err.Error())
 			}
-			ownerRef, err := util.WorkloadAsOwnerRef(workloadObj, opt.Workload)
-			if err != nil {
-				log.Fatalf(err.Error())
-			}
+			opt.ScratchDir = strings.TrimSuffix(opt.ScratchDir, "/") // setup ScratchDir in SetupAndRun
 
 			opt.ScratchDir = strings.TrimSuffix(opt.ScratchDir, "/") // setup ScratchDir in SetupAndRun
 
@@ -76,7 +72,7 @@ func NewCmdSchedule() *cobra.Command {
 			// split code from here for leader election
 			switch opt.Workload.Kind {
 			case api.AppKindDeployment, api.AppKindReplicaSet, api.AppKindReplicationController:
-				ctrl.ElectLeader(ownerRef, stopBackup)
+				ctrl.ElectLeader(stopBackup)
 			default:
 				ctrl.SetupAndRun(stopBackup)
 			}

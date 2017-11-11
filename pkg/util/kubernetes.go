@@ -16,10 +16,8 @@ import (
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/cenkalti/backoff"
 	"github.com/google/go-cmp/cmp"
-	apps "k8s.io/api/apps/v1beta1"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
-	extensions "k8s.io/api/extensions/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -345,7 +343,7 @@ func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *
 							VolumeMounts: restic.Spec.VolumeMounts, // use volume mounts specified in restic
 						},
 					},
-					RestartPolicy: "OnFailure",
+					RestartPolicy: core.RestartPolicyOnFailure,
 					Volumes:       recovery.Spec.Volumes,
 					NodeName:      recovery.Spec.NodeName,
 				},
@@ -372,37 +370,31 @@ func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *
 	return job
 }
 
-func CheckWorkloadExists(kubeClient kubernetes.Interface, namespace string, workload api.LocalTypedReference) (obj interface{}, err error) {
+func WorkloadExists(k8sClient kubernetes.Interface, namespace string, workload api.LocalTypedReference) error {
+	if err := workload.Canonicalize(); err != nil {
+		return err
+	}
+
 	switch workload.Kind {
 	case api.AppKindDeployment:
-		obj, err = kubeClient.AppsV1beta1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
-		if err != nil {
-			err = fmt.Errorf(`unknown Deployment %s/%s`, namespace, workload.Name)
-		}
+		_, err := k8sClient.AppsV1beta1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
+		return err
 	case api.AppKindReplicaSet:
-		obj, err = kubeClient.ExtensionsV1beta1().ReplicaSets(namespace).Get(workload.Name, metav1.GetOptions{})
-		if err != nil {
-			err = fmt.Errorf(`unknown ReplicaSet %s/%s`, namespace, workload.Name)
-		}
+		_, err := k8sClient.ExtensionsV1beta1().ReplicaSets(namespace).Get(workload.Name, metav1.GetOptions{})
+		return err
 	case api.AppKindReplicationController:
-		obj, err = kubeClient.CoreV1().ReplicationControllers(namespace).Get(workload.Name, metav1.GetOptions{})
-		if err != nil {
-			err = fmt.Errorf(`unknown ReplicationController %s/%s`, namespace, workload.Name)
-		}
+		_, err := k8sClient.CoreV1().ReplicationControllers(namespace).Get(workload.Name, metav1.GetOptions{})
+		return err
 	case api.AppKindStatefulSet:
-		obj, err = kubeClient.AppsV1beta1().StatefulSets(namespace).Get(workload.Name, metav1.GetOptions{})
-		if err != nil {
-			err = fmt.Errorf(`unknown StatefulSet %s/%s`, namespace, workload.Name)
-		}
+		_, err := k8sClient.AppsV1beta1().StatefulSets(namespace).Get(workload.Name, metav1.GetOptions{})
+		return err
 	case api.AppKindDaemonSet:
-		obj, err = kubeClient.ExtensionsV1beta1().DaemonSets(namespace).Get(workload.Name, metav1.GetOptions{})
-		if err != nil {
-			err = fmt.Errorf(`unknown DaemonSet %s/%s`, namespace, workload.Name)
-		}
+		_, err := k8sClient.ExtensionsV1beta1().DaemonSets(namespace).Get(workload.Name, metav1.GetOptions{})
+		return err
 	default:
-		err = fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
+		fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
 	}
-	return
+	return nil
 }
 
 func DeleteRecoveryJob(client kubernetes.Interface, recorder record.EventRecorder, rec *api.Recovery, job *batch.Job) {
@@ -444,35 +436,6 @@ func CheckRecoveryJob(client kubernetes.Interface, recorder record.EventRecorder
 	DeleteRecoveryJob(client, recorder, rec, job)
 }
 
-func WorkloadAsOwnerRef(obj interface{}, workload api.LocalTypedReference) (ownerRef metav1.OwnerReference, err error) {
-	ownerRef = metav1.OwnerReference{
-		Kind: workload.Kind,
-		Name: workload.Name,
-	}
-
-	switch workload.Kind {
-	case api.AppKindDeployment:
-		ownerRef.APIVersion = apps.SchemeGroupVersion.String()
-		ownerRef.UID = obj.(*apps.Deployment).ObjectMeta.UID
-	case api.AppKindReplicaSet:
-		ownerRef.APIVersion = extensions.SchemeGroupVersion.String()
-		ownerRef.UID = obj.(*extensions.ReplicaSet).ObjectMeta.UID
-	case api.AppKindReplicationController:
-		ownerRef.APIVersion = core.SchemeGroupVersion.String()
-		ownerRef.UID = obj.(*core.ReplicationController).ObjectMeta.UID
-	case api.AppKindStatefulSet:
-		ownerRef.APIVersion = apps.SchemeGroupVersion.String()
-		ownerRef.UID = obj.(*apps.StatefulSet).ObjectMeta.UID
-	case api.AppKindDaemonSet:
-		ownerRef.APIVersion = extensions.SchemeGroupVersion.String()
-		ownerRef.UID = obj.(*extensions.DaemonSet).ObjectMeta.UID
-	default:
-		err = fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
-	}
-
-	return
-}
-
 func CheckWorkloadInitializer(initializers *metav1.Initializers) bool {
 	if initializers != nil && len(initializers.Pending) > 0 && initializers.Pending[0].Name != StashInitializerName {
 		return false
@@ -485,4 +448,12 @@ func ShouldRemovePendingInitializer(initializers *metav1.Initializers) bool {
 		return true
 	}
 	return false
+}
+
+func GetConfigmapLockName(workload api.LocalTypedReference) string {
+	return fmt.Sprintf("lock-%s-%s", workload.Kind, workload.Name)
+}
+
+func DeleteConfigmapLock(k8sClient kubernetes.Interface, namespace string, workload api.LocalTypedReference) error {
+	return k8sClient.CoreV1().ConfigMaps(namespace).Delete(GetConfigmapLockName(workload), &metav1.DeleteOptions{})
 }

@@ -68,39 +68,48 @@ func (w *ResticWrapper) Backup(resource *api.Restic, fg api.FileGroup) error {
 }
 
 func (w *ResticWrapper) Forget(resource *api.Restic, fg api.FileGroup) error {
+	// Get retentionPolicy for fileGroup, ignore if not found
+	retentionPolicy := api.RetentionPolicy{}
+	for _, policy := range resource.Spec.RetentionPolicies {
+		if policy.Name == fg.RetentionPolicyName {
+			retentionPolicy = policy
+			break
+		}
+	}
+
 	args := []interface{}{"forget"}
-	if fg.RetentionPolicy.KeepLast > 0 {
+	if retentionPolicy.KeepLast > 0 {
 		args = append(args, string(api.KeepLast))
-		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepLast))
+		args = append(args, strconv.Itoa(retentionPolicy.KeepLast))
 	}
-	if fg.RetentionPolicy.KeepHourly > 0 {
+	if retentionPolicy.KeepHourly > 0 {
 		args = append(args, string(api.KeepHourly))
-		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepHourly))
+		args = append(args, strconv.Itoa(retentionPolicy.KeepHourly))
 	}
-	if fg.RetentionPolicy.KeepDaily > 0 {
+	if retentionPolicy.KeepDaily > 0 {
 		args = append(args, string(api.KeepDaily))
-		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepDaily))
+		args = append(args, strconv.Itoa(retentionPolicy.KeepDaily))
 	}
-	if fg.RetentionPolicy.KeepWeekly > 0 {
+	if retentionPolicy.KeepWeekly > 0 {
 		args = append(args, string(api.KeepWeekly))
-		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepWeekly))
+		args = append(args, strconv.Itoa(retentionPolicy.KeepWeekly))
 	}
-	if fg.RetentionPolicy.KeepMonthly > 0 {
+	if retentionPolicy.KeepMonthly > 0 {
 		args = append(args, string(api.KeepMonthly))
-		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepMonthly))
+		args = append(args, strconv.Itoa(retentionPolicy.KeepMonthly))
 	}
-	if fg.RetentionPolicy.KeepYearly > 0 {
+	if retentionPolicy.KeepYearly > 0 {
 		args = append(args, string(api.KeepYearly))
-		args = append(args, strconv.Itoa(fg.RetentionPolicy.KeepYearly))
+		args = append(args, strconv.Itoa(retentionPolicy.KeepYearly))
 	}
-	for _, tag := range fg.RetentionPolicy.KeepTags {
+	for _, tag := range retentionPolicy.KeepTags {
 		args = append(args, string(api.KeepTag))
 		args = append(args, tag)
 	}
-	if fg.RetentionPolicy.Prune {
+	if retentionPolicy.Prune {
 		args = append(args, "--prune")
 	}
-	if fg.RetentionPolicy.DryRun {
+	if retentionPolicy.DryRun {
 		args = append(args, "--dry-run")
 	}
 	if len(args) > 1 {
