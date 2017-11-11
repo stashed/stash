@@ -1,13 +1,13 @@
 package cmds
 
 import (
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/kutil"
+	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/scheduler"
 	"github.com/appscode/stash/pkg/util"
@@ -58,28 +58,22 @@ func NewCmdSchedule() *cobra.Command {
 			if opt.SnapshotHostname, opt.SmartPrefix, err = opt.Workload.HostnamePrefix(opt.PodName, opt.NodeName); err != nil {
 				log.Fatalf(err.Error())
 			}
-			if err = util.CheckWorkloadExists(kubeClient, opt.Namespace, opt.Workload); err != nil {
+			if err = util.WorkloadExists(kubeClient, opt.Namespace, opt.Workload); err != nil {
 				log.Fatalf(err.Error())
 			}
-
-			opt.ScratchDir = strings.TrimSuffix(opt.ScratchDir, "/")
-			err = os.MkdirAll(opt.ScratchDir, 0755)
-			if err != nil {
-				log.Fatalf("Failed to create scratch dir: %s", err)
-			}
-			err = ioutil.WriteFile(opt.ScratchDir+"/.stash", []byte("test"), 644)
-			if err != nil {
-				log.Fatalf("No write access in scratch dir: %s", err)
-			}
+			opt.ScratchDir = strings.TrimSuffix(opt.ScratchDir, "/") // setup ScratchDir in SetupAndRun
 
 			ctrl := scheduler.New(kubeClient, stashClient, opt)
-			err = ctrl.Setup()
-			if err != nil {
-				log.Fatalf("Failed to setup scheduler: %s", err)
+			stopBackup := make(chan struct{})
+			defer close(stopBackup)
+
+			// split code from here for leader election
+			switch opt.Workload.Kind {
+			case api.AppKindDeployment, api.AppKindReplicaSet, api.AppKindReplicationController:
+				ctrl.ElectLeader(stopBackup)
+			default:
+				ctrl.SetupAndRun(stopBackup)
 			}
-			stop := make(chan struct{})
-			defer close(stop)
-			go ctrl.Run(1, stop)
 
 			// Wait forever
 			select {}

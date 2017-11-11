@@ -22,8 +22,6 @@ import:
 - package: github.com/onsi/gomega
   version: v1.2.0
 - package: github.com/pkg/errors
-- package: github.com/prometheus/client_golang
-  version: v0.8.0
 - package: github.com/spf13/cobra
   version: master
 - package: github.com/spf13/pflag
@@ -37,13 +35,24 @@ import:
   vcs: git
   version: v2
 - package: k8s.io/api
-  version: fe29995db37613b9c5b2a647544cf627bfa8d299
-- package: k8s.io/apiextensions-apiserver
   version: release-1.8
 - package: k8s.io/apimachinery
-  version: 019ae5ada31de202164b118aee88ee2d14075c31
+  version: release-1.8
 - package: k8s.io/client-go
-  version: v5.0.0
-testImport:
+  version: kubernetes-1.8.3-beta.0
+- package: k8s.io/apiextensions-apiserver
+  version: release-1.8
+- package: k8s.io/kubernetes
+  repo: https://github.com/appscode/kubernetes.git
+  version: v1.8.3
+  vcs: git
+- package: github.com/prometheus/client_golang
+  version: v0.8.0
+- package: github.com/prometheus/common
+  version: 3233b24a36715a2fe36d162260457857a56d672d
+- package: github.com/sirupsen/logrus
+  version: v1.0.3
+- package: github.com/docker/distribution
+  version: edc3ab29cdff8694dd6feb85cfeb4b5f1b38ed9c
 - package: github.com/onsi/ginkgo
   version: v1.4.0

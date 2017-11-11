@@ -370,7 +370,7 @@ func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *
 	return job
 }
 
-func CheckWorkloadExists(k8sClient kubernetes.Interface, namespace string, workload api.LocalTypedReference) error {
+func WorkloadExists(k8sClient kubernetes.Interface, namespace string, workload api.LocalTypedReference) error {
 	if err := workload.Canonicalize(); err != nil {
 		return err
 	}
@@ -378,32 +378,19 @@ func CheckWorkloadExists(k8sClient kubernetes.Interface, namespace string, workl
 	switch workload.Kind {
 	case api.AppKindDeployment:
 		_, err := k8sClient.AppsV1beta1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
-		if err != nil {
-			_, err := k8sClient.ExtensionsV1beta1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
-			if err != nil {
-				fmt.Errorf(`unknown Deployment %s/%s`, namespace, workload.Name)
-			}
-		}
+		return err
 	case api.AppKindReplicaSet:
 		_, err := k8sClient.ExtensionsV1beta1().ReplicaSets(namespace).Get(workload.Name, metav1.GetOptions{})
-		if err != nil {
-			fmt.Errorf(`unknown ReplicaSet %s/%s`, namespace, workload.Name)
-		}
+		return err
 	case api.AppKindReplicationController:
 		_, err := k8sClient.CoreV1().ReplicationControllers(namespace).Get(workload.Name, metav1.GetOptions{})
-		if err != nil {
-			fmt.Errorf(`unknown ReplicationController %s/%s`, namespace, workload.Name)
-		}
+		return err
 	case api.AppKindStatefulSet:
 		_, err := k8sClient.AppsV1beta1().StatefulSets(namespace).Get(workload.Name, metav1.GetOptions{})
-		if err != nil {
-			fmt.Errorf(`unknown StatefulSet %s/%s`, namespace, workload.Name)
-		}
+		return err
 	case api.AppKindDaemonSet:
 		_, err := k8sClient.ExtensionsV1beta1().DaemonSets(namespace).Get(workload.Name, metav1.GetOptions{})
-		if err != nil {
-			fmt.Errorf(`unknown DaemonSet %s/%s`, namespace, workload.Name)
-		}
+		return err
 	default:
 		fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
 	}
@@ -447,4 +434,12 @@ func CheckRecoveryJob(client kubernetes.Interface, recorder record.EventRecorder
 	}
 
 	DeleteRecoveryJob(client, recorder, rec, job)
+}
+
+func GetConfigmapLockName(workload api.LocalTypedReference) string {
+	return fmt.Sprintf("lock-%s-%s", workload.Kind, workload.Name)
+}
+
+func DeleteConfigmapLock(k8sClient kubernetes.Interface, namespace string, workload api.LocalTypedReference) error {
+	return k8sClient.CoreV1().ConfigMaps(namespace).Delete(GetConfigmapLockName(workload), &metav1.DeleteOptions{})
 }

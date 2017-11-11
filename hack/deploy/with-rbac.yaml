@@ -39,6 +39,10 @@ rules:
   verbs: ["get", "list", "watch", "patch"]
 - apiGroups: [""]
   resources:
+  - configmaps
+  verbs: ["delete"]
+- apiGroups: [""]
+  resources:
   - secrets
   verbs: ["get"]
 - apiGroups: [""]
@@ -177,6 +181,10 @@ rules:
   - replicationcontrollers
   - secrets
   verbs: ["get"]
+- apiGroups: [""]
+  resources:
+  - configmaps
+  verbs: ["create", "update", "get"]
 - apiGroups: [""]
   resources:
   - events

@@ -3,6 +3,7 @@ package e2e_test
 import (
 	"time"
 
+	"github.com/appscode/go/types"
 	apps_util "github.com/appscode/kutil/apps/v1beta1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
@@ -195,6 +196,34 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
+		}
+
+		shouldElectLeaderAndBackupDeployment = func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
+
+			deployment.Spec.Replicas = types.Int32P(2) // two replicas
+			By("Creating Deployment " + deployment.Name)
+			err = f.CreateDeployment(deployment)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Waiting for sidecar")
+			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+			f.CheckLeaderElection(deployment.ObjectMeta)
+
+			By("Waiting for backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 1)))
+
+			By("Waiting for backup event")
+			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
 	)
 
@@ -409,6 +438,22 @@ var _ = Describe("Deployment", func() {
 					return kerr.IsNotFound(err) || kerr.IsGone(err)
 				}, time.Minute*3, time.Second*2).Should(BeTrue())
 			})
+		})
+	})
+
+	Describe("Leader election for", func() {
+		AfterEach(func() {
+			f.DeleteDeployment(deployment.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+		})
+
+		Context(`"Local" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForLocalBackend()
+			})
+			It(`should elect leader and backup new Deployment`, shouldElectLeaderAndBackupDeployment)
 		})
 	})
 })

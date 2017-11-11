@@ -1,5 +1,5 @@
-hash: 0bc2aba8e1684e2409f7c186b3365cc3ab511162b0592621ebba296149f1766a
-updated: 2017-11-10T01:58:04.783122356-08:00
+hash: dfae8e6290d081506cc9d8528f165cbfecb4ba40e6f0ddfc6f531ef5a70955cc
+updated: 2017-11-11T04:21:38.907892666-08:00
 imports:
 - name: github.com/appscode/go
   version: 6c0d0eba230ad31f74a18b44beee6f865b01bdec
@@ -32,7 +32,7 @@ imports:
 - name: github.com/codeskyblue/go-sh
   version: 703901965097a6b3155c0f6f774efb877b483f64
 - name: github.com/cpuguy83/go-md2man
-  version: 71acacd42f85e5e82f70a55327789582a5200a90
+  version: 1d903dcb749992f3741d744c0f8376b4bd7eb3e1
   subpackages:
   - md2man
 - name: github.com/davecgh/go-spew
@@ -151,6 +151,26 @@ imports:
   version: fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a
   subpackages:
   - pbutil
+- name: github.com/onsi/ginkgo
+  version: 9eda700730cba42af70d53180f9dcce9266bc2bc
+  subpackages:
+  - config
+  - internal/codelocation
+  - internal/containernode
+  - internal/failer
+  - internal/leafnodes
+  - internal/remote
+  - internal/spec
+  - internal/spec_iterator
+  - internal/specrunner
+  - internal/suite
+  - internal/testingtproxy
+  - internal/writer
+  - reporters
+  - reporters/stenographer
+  - reporters/stenographer/support/go-colorable
+  - reporters/stenographer/support/go-isatty
+  - types
 - name: github.com/onsi/gomega
   version: c893efa28eb45626cdaa76c9f653b62488858837
   subpackages:
@@ -182,7 +202,7 @@ imports:
   subpackages:
   - go
 - name: github.com/prometheus/common
-  version: 13ba4ddd0caa9c28ca7b7bffe1dfa9ed8d5ef207
+  version: 3233b24a36715a2fe36d162260457857a56d672d
   subpackages:
   - expfmt
   - internal/bitbucket.org/ww/goautoneg
@@ -200,7 +220,7 @@ imports:
 - name: github.com/shurcooL/sanitized_anchor_name
   version: 10ef21a441db47d8b13ebcc5fd2310f636973c77
 - name: github.com/sirupsen/logrus
-  version: 89742aefa4b206dcf400792f3bd35b542998eb3b
+  version: f006c2ac4710855cf0f916dd6b77acf6b048dc6e
 - name: github.com/spf13/cobra
   version: 2da4a54c5ceefcee7ca5dd0eea1e18a3b6366489
   subpackages:
@@ -266,7 +286,7 @@ imports:
 - name: gopkg.in/yaml.v2
   version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 - name: k8s.io/api
-  version: fe29995db37613b9c5b2a647544cf627bfa8d299
+  version: 4df58c811fe2e65feb879227b2b245e4dc26e7ad
   subpackages:
   - admissionregistration/v1alpha1
   - apps/v1beta1
@@ -351,7 +371,7 @@ imports:
   - third_party/forked/golang/json
   - third_party/forked/golang/reflect
 - name: k8s.io/client-go
-  version: 35874c597fed17ca62cd197e516d7d5ff9a2958c
+  version: 60bf397d7966ab2285d3ba7701ead2cc376111d4
   subpackages:
   - discovery
   - discovery/fake
@@ -419,6 +439,8 @@ imports:
   - tools/clientcmd/api
   - tools/clientcmd/api/latest
   - tools/clientcmd/api/v1
+  - tools/leaderelection
+  - tools/leaderelection/resourcelock
   - tools/metrics
   - tools/pager
   - tools/record
@@ -434,7 +456,9 @@ imports:
   subpackages:
   - pkg/common
 - name: k8s.io/kubernetes
-  version: f0efb3cb883751c5ffdbe6d515f3cb4fbe7b7acd
+  version: bd3f06169027dbe485a1791860b3768d54b199dd
+  repo: https://github.com/appscode/kubernetes.git
+  vcs: git
   subpackages:
   - pkg/api
   - pkg/api/helper
@@ -519,24 +543,4 @@ imports:
   - pkg/master/ports
   - pkg/util/parsers
   - pkg/util/pointer
-testImports:
-- name: github.com/onsi/ginkgo
-  version: 9eda700730cba42af70d53180f9dcce9266bc2bc
-  subpackages:
-  - config
-  - internal/codelocation
-  - internal/containernode
-  - internal/failer
-  - internal/leafnodes
-  - internal/remote
-  - internal/spec
-  - internal/spec_iterator
-  - internal/specrunner
-  - internal/suite
-  - internal/testingtproxy
-  - internal/writer
-  - reporters
-  - reporters/stenographer
-  - reporters/stenographer/support/go-colorable
-  - reporters/stenographer/support/go-isatty
-  - types
+testImports: []

@@ -3,6 +3,7 @@ package scheduler
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/cli"
 	"github.com/appscode/stash/pkg/eventer"
+	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
@@ -24,13 +26,17 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/leaderelection"
+	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 )
 
 const (
-	msec10      = 10 * 1000 * 1000 * time.Nanosecond
-	maxAttempts = 3
+	msec10              = 10 * 1000 * 1000 * time.Nanosecond
+	maxAttempts         = 3
+	LeaderElectionLease = 3 * time.Second
+	ConfigMapPrefix     = "leader-lock-"
 )
 
 type Options struct {
@@ -277,4 +283,48 @@ func (c *Controller) measure(f func(*api.Restic, api.FileGroup) error, resource 
 	}()
 	err = f(resource, fg)
 	return
+}
+
+func (c *Controller) SetupAndRun(stopBackup chan struct{}) {
+	err := os.MkdirAll(c.opt.ScratchDir, 0755)
+	if err != nil {
+		log.Fatalf("Failed to create scratch dir: %s", err)
+	}
+	err = ioutil.WriteFile(c.opt.ScratchDir+"/.stash", []byte("test"), 644)
+	if err != nil {
+		log.Fatalf("No write access in scratch dir: %s", err)
+	}
+	if err = c.Setup(); err != nil {
+		log.Fatalf("Failed to setup scheduler: %s", err)
+	}
+	go c.Run(1, stopBackup)
+}
+
+func (c *Controller) ElectLeader(stopBackup chan struct{}) {
+	rlc := resourcelock.ResourceLockConfig{
+		Identity:      c.opt.PodName,
+		EventRecorder: c.recorder,
+	}
+	resLock, err := resourcelock.New(resourcelock.ConfigMapsResourceLock, c.opt.Namespace, util.GetConfigmapLockName(c.opt.Workload), c.k8sClient.CoreV1(), rlc)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	go func() {
+		leaderelection.RunOrDie(leaderelection.LeaderElectionConfig{
+			Lock:          resLock,
+			LeaseDuration: LeaderElectionLease,
+			RenewDeadline: LeaderElectionLease * 2 / 3,
+			RetryPeriod:   LeaderElectionLease / 3,
+			Callbacks: leaderelection.LeaderCallbacks{
+				OnStartedLeading: func(stop <-chan struct{}) {
+					log.Infoln("Got leadership, preparing backup scheduler")
+					c.SetupAndRun(stopBackup)
+				},
+				OnStoppedLeading: func() {
+					log.Infoln("Lost leadership, stopping backup scheduler")
+					stopBackup <- struct{}{}
+				},
+			},
+		})
+	}()
 }

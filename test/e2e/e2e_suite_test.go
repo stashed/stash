@@ -25,7 +25,7 @@ import (
 
 const (
 	TIMEOUT             = 20 * time.Minute
-	TestSidecarImageTag = "recovery" // "canary"
+	TestSidecarImageTag = "canary"
 )
 
 var (
