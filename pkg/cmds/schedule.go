@@ -63,8 +63,6 @@ func NewCmdSchedule() *cobra.Command {
 			}
 			opt.ScratchDir = strings.TrimSuffix(opt.ScratchDir, "/") // setup ScratchDir in SetupAndRun
 
-			opt.ScratchDir = strings.TrimSuffix(opt.ScratchDir, "/") // setup ScratchDir in SetupAndRun
-
 			ctrl := scheduler.New(kubeClient, stashClient, opt)
 			stopBackup := make(chan struct{})
 			defer close(stopBackup)
