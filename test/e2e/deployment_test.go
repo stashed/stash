@@ -49,7 +49,7 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating Deployment " + deployment.Name)
-			err = f.CreateDeployment(deployment)
+			_, err = f.CreateDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -70,7 +70,7 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating Deployment " + deployment.Name)
-			err = f.CreateDeployment(deployment)
+			_, err = f.CreateDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -99,7 +99,7 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating Deployment " + deployment.Name)
-			err = f.CreateDeployment(deployment)
+			_, err = f.CreateDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -126,7 +126,7 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating Deployment " + deployment.Name)
-			err = f.CreateDeployment(deployment)
+			_, err = f.CreateDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -159,7 +159,7 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating Deployment " + deployment.Name)
-			err = f.CreateDeployment(deployment)
+			_, err = f.CreateDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -209,13 +209,42 @@ var _ = Describe("Deployment", func() {
 
 			deployment.Spec.Replicas = types.Int32P(2) // two replicas
 			By("Creating Deployment " + deployment.Name)
-			err = f.CreateDeployment(deployment)
+			_, err = f.CreateDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			f.CheckLeaderElection(deployment.ObjectMeta)
+
+			By("Waiting for backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 1)))
+
+			By("Waiting for backup event")
+			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+		}
+
+		shouldInitializeAndBackupDeployment = func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating Deployment " + deployment.Name)
+			obj, err := f.CreateDeployment(deployment)
+			Expect(err).NotTo(HaveOccurred())
+
+			// By("Waiting for sidecar")
+			// f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+			// sidecar should be added as soon as deployment created, we don't need to wait for it
+			By("Checking sidecar created")
+			Expect(obj).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for backup to complete")
 			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
@@ -454,6 +483,22 @@ var _ = Describe("Deployment", func() {
 				restic = f.ResticForLocalBackend()
 			})
 			It(`should elect leader and backup new Deployment`, shouldElectLeaderAndBackupDeployment)
+		})
+	})
+
+	Describe("Stash initializer for", func() {
+		AfterEach(func() {
+			f.DeleteDeployment(deployment.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+		})
+
+		Context(`"Local" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForLocalBackend()
+			})
+			It("should initialize and backup new Deployment", shouldInitializeAndBackupDeployment)
 		})
 	})
 })

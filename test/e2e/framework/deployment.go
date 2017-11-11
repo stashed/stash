@@ -24,9 +24,8 @@ func (fi *Invocation) Deployment() apps.Deployment {
 	}
 }
 
-func (f *Framework) CreateDeployment(obj apps.Deployment) error {
-	_, err := f.KubeClient.AppsV1beta1().Deployments(obj.Namespace).Create(&obj)
-	return err
+func (f *Framework) CreateDeployment(obj apps.Deployment) (*apps.Deployment, error) {
+	return f.KubeClient.AppsV1beta1().Deployments(obj.Namespace).Create(&obj)
 }
 
 func (f *Framework) DeleteDeployment(meta metav1.ObjectMeta) error {

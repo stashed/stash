@@ -1,5 +1,5 @@
 hash: dfae8e6290d081506cc9d8528f165cbfecb4ba40e6f0ddfc6f531ef5a70955cc
-updated: 2017-11-11T04:21:38.907892666-08:00
+updated: 2017-11-11T04:47:19.801156362-08:00
 imports:
 - name: github.com/appscode/go
   version: 6c0d0eba230ad31f74a18b44beee6f865b01bdec

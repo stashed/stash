@@ -45,7 +45,7 @@ var _ = Describe("ReplicationController", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating ReplicationController " + rc.Name)
-			err = f.CreateReplicationController(rc)
+			_, err = f.CreateReplicationController(rc)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -66,7 +66,7 @@ var _ = Describe("ReplicationController", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating ReplicationController " + rc.Name)
-			err = f.CreateReplicationController(rc)
+			_, err = f.CreateReplicationController(rc)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -95,7 +95,7 @@ var _ = Describe("ReplicationController", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating ReplicationController " + rc.Name)
-			err = f.CreateReplicationController(rc)
+			_, err = f.CreateReplicationController(rc)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -122,7 +122,7 @@ var _ = Describe("ReplicationController", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating ReplicationController " + rc.Name)
-			err = f.CreateReplicationController(rc)
+			_, err = f.CreateReplicationController(rc)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -155,7 +155,7 @@ var _ = Describe("ReplicationController", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating ReplicationController " + rc.Name)
-			err = f.CreateReplicationController(rc)
+			_, err = f.CreateReplicationController(rc)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
@@ -205,13 +205,39 @@ var _ = Describe("ReplicationController", func() {
 
 			rc.Spec.Replicas = types.Int32P(2) // two replicas
 			By("Creating ReplicationController " + rc.Name)
-			err = f.CreateReplicationController(rc)
+			_, err = f.CreateReplicationController(rc)
 			Expect(err).NotTo(HaveOccurred())
 
 			f.CheckLeaderElection(rc.ObjectMeta)
 
 			By("Waiting for sidecar")
 			f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+			By("Waiting for backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 1)))
+
+			By("Waiting for backup event")
+			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+		}
+
+		shouldInitializeAndBackupRC = func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating ReplicationController " + rc.Name)
+			obj, err := f.CreateReplicationController(rc)
+			Expect(err).NotTo(HaveOccurred())
+
+			// sidecar should be added as soon as workload created, we don't need to wait for it
+			By("Checking sidecar created")
+			Expect(obj).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for backup to complete")
 			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
@@ -407,6 +433,22 @@ var _ = Describe("ReplicationController", func() {
 				restic = f.ResticForLocalBackend()
 			})
 			It(`should elect leader and backup new RC`, shouldElectLeaderAndBackupRC)
+		})
+	})
+
+	Describe("Stash initializer for", func() {
+		AfterEach(func() {
+			f.DeleteReplicationController(rc.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+		})
+
+		Context(`"Local" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForLocalBackend()
+			})
+			It("should initialize and backup new RC", shouldInitializeAndBackupRC)
 		})
 	})
 })

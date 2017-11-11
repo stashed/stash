@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"flag"
 	"path/filepath"
 	"testing"
 	"time"
@@ -29,9 +30,15 @@ const (
 )
 
 var (
-	ctrl *controller.StashController
-	root *framework.Framework
+	ctrl             *controller.StashController
+	root             *framework.Framework
+	createInitConfig bool
 )
+
+func init() {
+	// ./hack/make.py test e2e -init-config=true -v=3
+	flag.BoolVar(&createInitConfig, "init-config", false, "create initializer config")
+}
 
 func TestE2e(t *testing.T) {
 	logs.InitLogs()
@@ -67,6 +74,11 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	root.EventuallyCRD("restic." + api.GroupName).Should(Succeed())
 
+	if createInitConfig {
+		By("Creating workload initializer")
+		root.CreateInitializerConfiguration(root.InitializerForWorkloads())
+	}
+
 	// Now let's start the controller
 	// stop := make(chan struct{})
 	// defer close(stop)
@@ -75,4 +87,7 @@ var _ = BeforeSuite(func() {
 
 var _ = AfterSuite(func() {
 	root.DeleteNamespace()
+	if createInitConfig {
+		root.DeleteInitializerConfiguration(root.InitializerForWorkloads().ObjectMeta)
+	}
 })

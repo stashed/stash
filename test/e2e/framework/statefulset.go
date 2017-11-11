@@ -43,9 +43,8 @@ func (fi *Invocation) StatefulSet(r api.Restic, sidecarImageTag string) apps.Sta
 	return resource
 }
 
-func (f *Framework) CreateStatefulSet(obj apps.StatefulSet) error {
-	_, err := f.KubeClient.AppsV1beta1().StatefulSets(obj.Namespace).Create(&obj)
-	return err
+func (f *Framework) CreateStatefulSet(obj apps.StatefulSet) (*apps.StatefulSet, error) {
+	return f.KubeClient.AppsV1beta1().StatefulSets(obj.Namespace).Create(&obj)
 }
 
 func (f *Framework) DeleteStatefulSet(meta metav1.ObjectMeta) error {
