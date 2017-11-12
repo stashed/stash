@@ -132,3 +132,7 @@ func (w *ResticWrapper) Restore(path, host string) error {
 	args = append(args, path) // restore in same path as source-path
 	return w.sh.Command(Exe, args...).Run()
 }
+
+func (w *ResticWrapper) Check() error {
+	return w.sh.Command("check").Run()
+}
