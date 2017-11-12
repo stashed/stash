@@ -340,12 +340,20 @@ func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *
 								"--recovery-name=" + recovery.Name,
 								"--v=10",
 							},
-							VolumeMounts: restic.Spec.VolumeMounts, // use volume mounts specified in restic
+							VolumeMounts: append(restic.Spec.VolumeMounts, core.VolumeMount{
+								Name:      ScratchDirVolumeName,
+								MountPath: "/tmp",
+							}), // use volume mounts specified in restic
 						},
 					},
 					RestartPolicy: core.RestartPolicyOnFailure,
-					Volumes:       recovery.Spec.Volumes,
-					NodeName:      recovery.Spec.NodeName,
+					Volumes: append(recovery.Spec.Volumes, core.Volume{
+						Name: ScratchDirVolumeName,
+						VolumeSource: core.VolumeSource{
+							EmptyDir: &core.EmptyDirVolumeSource{},
+						},
+					}),
+					NodeName: recovery.Spec.NodeName,
 				},
 			},
 		},
@@ -376,19 +384,19 @@ func WorkloadExists(k8sClient kubernetes.Interface, namespace string, workload a
 	}
 
 	switch workload.Kind {
-	case api.AppKindDeployment:
+	case api.KindDeployment:
 		_, err := k8sClient.AppsV1beta1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
 		return err
-	case api.AppKindReplicaSet:
+	case api.KindReplicaSet:
 		_, err := k8sClient.ExtensionsV1beta1().ReplicaSets(namespace).Get(workload.Name, metav1.GetOptions{})
 		return err
-	case api.AppKindReplicationController:
+	case api.KindReplicationController:
 		_, err := k8sClient.CoreV1().ReplicationControllers(namespace).Get(workload.Name, metav1.GetOptions{})
 		return err
-	case api.AppKindStatefulSet:
+	case api.KindStatefulSet:
 		_, err := k8sClient.AppsV1beta1().StatefulSets(namespace).Get(workload.Name, metav1.GetOptions{})
 		return err
-	case api.AppKindDaemonSet:
+	case api.KindDaemonSet:
 		_, err := k8sClient.ExtensionsV1beta1().DaemonSets(namespace).Get(workload.Name, metav1.GetOptions{})
 		return err
 	default:

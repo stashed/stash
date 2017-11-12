@@ -128,7 +128,7 @@ func (c *StashController) runDeploymentInjector(key string) error {
 		if err != nil {
 			return err
 		}
-		util.DeleteConfigmapLock(c.k8sClient, ns, api.LocalTypedReference{Kind: api.AppKindDeployment, Name: name})
+		util.DeleteConfigmapLock(c.k8sClient, ns, api.LocalTypedReference{Kind: api.KindDeployment, Name: name})
 	} else {
 		dp := obj.(*apps.Deployment)
 		fmt.Printf("Sync/Add/Update for Deployment %s\n", dp.GetName())
@@ -205,7 +205,7 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 		}
 
 		workload := api.LocalTypedReference{
-			Kind: api.AppKindDeployment,
+			Kind: api.KindDeployment,
 			Name: obj.Name,
 		}
 		obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.options.SidecarImageTag, workload))
@@ -275,6 +275,6 @@ func (c *StashController) EnsureDeploymentSidecarDeleted(resource *apps.Deployme
 	if err != nil {
 		return
 	}
-	util.DeleteConfigmapLock(c.k8sClient, resource.Namespace, api.LocalTypedReference{Kind: api.AppKindDeployment, Name: resource.Name})
+	util.DeleteConfigmapLock(c.k8sClient, resource.Namespace, api.LocalTypedReference{Kind: api.KindDeployment, Name: resource.Name})
 	return err
 }

@@ -126,7 +126,7 @@ func (c *StashController) runRCInjector(key string) error {
 		if err != nil {
 			return err
 		}
-		util.DeleteConfigmapLock(c.k8sClient, ns, api.LocalTypedReference{Kind: api.AppKindReplicationController, Name: name})
+		util.DeleteConfigmapLock(c.k8sClient, ns, api.LocalTypedReference{Kind: api.KindReplicationController, Name: name})
 	} else {
 		rc := obj.(*core.ReplicationController)
 		fmt.Printf("Sync/Add/Update for ReplicationController %s\n", rc.GetName())
@@ -203,7 +203,7 @@ func (c *StashController) EnsureReplicationControllerSidecar(resource *core.Repl
 		}
 
 		workload := api.LocalTypedReference{
-			Kind: api.AppKindReplicationController,
+			Kind: api.KindReplicationController,
 			Name: obj.Name,
 		}
 		obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.options.SidecarImageTag, workload))
@@ -273,6 +273,6 @@ func (c *StashController) EnsureReplicationControllerSidecarDeleted(resource *co
 	if err != nil {
 		return
 	}
-	util.DeleteConfigmapLock(c.k8sClient, resource.Namespace, api.LocalTypedReference{Kind: api.AppKindReplicationController, Name: resource.Name})
+	util.DeleteConfigmapLock(c.k8sClient, resource.Namespace, api.LocalTypedReference{Kind: api.KindReplicationController, Name: resource.Name})
 	return err
 }

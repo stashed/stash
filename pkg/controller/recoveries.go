@@ -170,14 +170,14 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 	if err != nil {
 		log.Errorln(err)
 		stash_util.SetRecoveryStatusPhase(c.stashClient, rec, api.RecoveryFailed)
-		c.recorder.Event(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedRecovery, err.Error())
+		c.recorder.Event(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToRecover, err.Error())
 		return err
 	}
 
 	if err = restic.IsValid(); err != nil {
 		log.Errorln(err)
 		stash_util.SetRecoveryStatusPhase(c.stashClient, rec, api.RecoveryFailed)
-		c.recorder.Event(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedRecovery, err.Error())
+		c.recorder.Event(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToRecover, err.Error())
 		return err
 	}
 
@@ -188,7 +188,7 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 		}
 		log.Errorln(err)
 		stash_util.SetRecoveryStatusPhase(c.stashClient, rec, api.RecoveryFailed)
-		c.recorder.Event(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedRecovery, err.Error())
+		c.recorder.Event(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToRecover, err.Error())
 		return err
 	}
 

@@ -183,7 +183,7 @@ var _ = Describe("DaemonSet", func() {
 		shouldRestoreDemonset = func() {
 			shouldBackupNewDaemonSet()
 			recovery.Spec.Workload = api.LocalTypedReference{
-				Kind: api.AppKindDaemonSet,
+				Kind: api.KindDaemonSet,
 				Name: daemon.Name,
 			}
 			recovery.Spec.NodeName = "minikube"

@@ -4,7 +4,6 @@ import (
 	"github.com/appscode/go/log"
 	"github.com/appscode/kutil"
 	"github.com/appscode/stash/client/typed/stash/v1alpha1"
-	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/recovery"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
@@ -27,14 +26,13 @@ func NewCmdRecover() *cobra.Command {
 			if err != nil {
 				log.Fatalln(err)
 			}
-			opt := &recovery.RecoveryOpt{
-				Namespace:    kutil.Namespace(),
-				KubeClient:   kubernetes.NewForConfigOrDie(config),
-				StashClient:  v1alpha1.NewForConfigOrDie(config),
-				RecoveryName: recoveryName,
-			}
-			opt.Recorder = eventer.NewEventRecorder(opt.KubeClient, "stash-recovery")
-			opt.RunRecovery()
+			c := recovery.New(
+				kubernetes.NewForConfigOrDie(config),
+				v1alpha1.NewForConfigOrDie(config),
+				kutil.Namespace(),
+				recoveryName,
+			)
+			c.Run()
 		},
 	}
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")

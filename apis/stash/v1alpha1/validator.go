@@ -43,18 +43,18 @@ func (r Recovery) IsValid() error {
 	}
 
 	switch r.Spec.Workload.Kind {
-	case AppKindDeployment, AppKindReplicaSet, AppKindReplicationController:
+	case KindDeployment, KindReplicaSet, KindReplicationController:
 		if r.Spec.PodOrdinal != "" || r.Spec.NodeName != "" {
 			return fmt.Errorf("should not specify podOrdinal/nodeSelector for workload kind %s", r.Spec.Workload.Kind)
 		}
-	case AppKindStatefulSet:
+	case KindStatefulSet:
 		if r.Spec.PodOrdinal == "" {
 			return fmt.Errorf("must specify podOrdinal for workload kind %s", r.Spec.Workload.Kind)
 		}
 		if r.Spec.NodeName != "" {
 			return fmt.Errorf("should not specify nodeSelector for workload kind %s", r.Spec.Workload.Kind)
 		}
-	case AppKindDaemonSet:
+	case KindDaemonSet:
 		if r.Spec.NodeName == "" {
 			return fmt.Errorf("must specify nodeSelector for workload kind %s", r.Spec.Workload.Kind)
 		}

@@ -2,6 +2,7 @@ package recovery
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/appscode/go/log"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -15,16 +16,26 @@ import (
 	"k8s.io/client-go/tools/record"
 )
 
-type RecoveryOpt struct {
-	Namespace    string
-	RecoveryName string
-	KubeClient   kubernetes.Interface
-	StashClient  cs.StashV1alpha1Interface
-	Recorder     record.EventRecorder
+type Controller struct {
+	k8sClient    kubernetes.Interface
+	stashClient  cs.StashV1alpha1Interface
+	namespace    string
+	recoveryName string
+	recorder     record.EventRecorder
 }
 
-func (opt *RecoveryOpt) RunRecovery() {
-	recovery, err := opt.StashClient.Recoveries(opt.Namespace).Get(opt.RecoveryName, metav1.GetOptions{})
+func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, namespace, name string) *Controller {
+	return &Controller{
+		k8sClient:    k8sClient,
+		stashClient:  stashClient,
+		namespace:    namespace,
+		recoveryName: name,
+		recorder:     eventer.NewEventRecorder(k8sClient, "stash-restorer"),
+	}
+}
+
+func (c *Controller) Run() {
+	recovery, err := c.stashClient.Recoveries(c.namespace).Get(c.recoveryName, metav1.GetOptions{})
 	if err != nil {
 		log.Errorln(err)
 		return
@@ -32,25 +43,25 @@ func (opt *RecoveryOpt) RunRecovery() {
 
 	if err = recovery.IsValid(); err != nil {
 		log.Errorln(err)
-		stash_util.SetRecoveryStatusPhase(opt.StashClient, recovery, api.RecoveryFailed)
-		opt.Recorder.Event(recovery.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedRecovery, err.Error())
+		stash_util.SetRecoveryStatusPhase(c.stashClient, recovery, api.RecoveryFailed)
+		c.recorder.Event(recovery.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToRecover, err.Error())
 		return
 	}
 
-	if err = opt.RecoverOrErr(recovery); err != nil {
+	if err = c.RecoverOrErr(recovery); err != nil {
 		log.Errorln(err)
-		stash_util.SetRecoveryStatusPhase(opt.StashClient, recovery, api.RecoveryFailed)
-		opt.Recorder.Event(recovery.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedRecovery, err.Error())
+		stash_util.SetRecoveryStatusPhase(c.stashClient, recovery, api.RecoveryFailed)
+		c.recorder.Event(recovery.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToRecover, err.Error())
 		return
 	}
 
 	log.Infoln("Recovery succeed")
-	stash_util.SetRecoveryStatusPhase(opt.StashClient, recovery, api.RecoverySucceeded) // TODO: status.Stats
-	opt.Recorder.Event(recovery.ObjectReference(), core.EventTypeNormal, eventer.EventReasonSuccessfulRecovery, "Recovery succeed")
+	stash_util.SetRecoveryStatusPhase(c.stashClient, recovery, api.RecoverySucceeded) // TODO: status.Stats
+	c.recorder.Event(recovery.ObjectReference(), core.EventTypeNormal, eventer.EventReasonSuccessfulRecovery, "Recovery succeed")
 }
 
-func (opt *RecoveryOpt) RecoverOrErr(recovery *api.Recovery) error {
-	restic, err := opt.StashClient.Restics(opt.Namespace).Get(recovery.Spec.Restic, metav1.GetOptions{})
+func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
+	restic, err := c.stashClient.Restics(c.namespace).Get(recovery.Spec.Restic, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -61,14 +72,14 @@ func (opt *RecoveryOpt) RecoverOrErr(recovery *api.Recovery) error {
 		return fmt.Errorf("no backup found")
 	}
 
-	secret, err := opt.KubeClient.CoreV1().Secrets(opt.Namespace).Get(restic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	secret, err := c.k8sClient.CoreV1().Secrets(c.namespace).Get(restic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
 	nodeName := recovery.Spec.NodeName
 	podName, _ := api.StatefulSetPodName(recovery.Spec.Workload.Name, recovery.Spec.PodOrdinal) // ignore error for other kinds
-	hostname, smartPrefix, err := recovery.Spec.Workload.HostnamePrefix(podName, nodeName)      // workload canonicalized during IsValid check
+	hostname, smartPrefix, err := recovery.Spec.Workload.HostnamePrefix(podName, nodeName)
 	if err != nil {
 		return err
 	}
@@ -78,11 +89,28 @@ func (opt *RecoveryOpt) RecoverOrErr(recovery *api.Recovery) error {
 		return err
 	}
 
+	var errRec error
 	for _, fg := range restic.Spec.FileGroups {
-		if err = cli.Restore(fg.Path, hostname); err != nil {
-			return err
+		d, err := c.measure(cli.Restore, fg.Path, hostname)
+		if err != nil {
+			errRec = fmt.Errorf("failed to recover FileGroup %s. Reason: %v", fg.Path, err)
+
+			c.recorder.Event(recovery.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToRecover, " Error restoring: "+err.Error())
+			if r, err := stash_util.SetRecoveryStats(c.stashClient, recovery, fg.Path, d, api.RecoveryFailed); err == nil {
+				recovery = r
+			}
+		} else {
+			if r, err := stash_util.SetRecoveryStats(c.stashClient, recovery, fg.Path, d, api.RecoverySucceeded); err == nil {
+				recovery = r
+			}
 		}
 	}
 
-	return nil
+	return errRec
+}
+
+func (c *Controller) measure(f func(string, string) error, path, host string) (time.Duration, error) {
+	startTime := time.Now()
+	err := f(path, host)
+	return time.Now().Sub(startTime), err
 }
