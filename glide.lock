@@ -1,5 +1,5 @@
 hash: dfae8e6290d081506cc9d8528f165cbfecb4ba40e6f0ddfc6f531ef5a70955cc
-updated: 2017-11-11T04:47:19.801156362-08:00
+updated: 2017-11-11T16:26:15.983444489-08:00
 imports:
 - name: github.com/appscode/go
   version: 6c0d0eba230ad31f74a18b44beee6f865b01bdec
@@ -13,7 +13,7 @@ imports:
   - types
   - version
 - name: github.com/appscode/kutil
-  version: 45e137524b677cd540822364a8c4efedf57db119
+  version: 4b4f67973f42bf9a5355c6b4c2d00040833d4143
   subpackages:
   - apps/v1beta1
   - core/v1
@@ -32,7 +32,7 @@ imports:
 - name: github.com/codeskyblue/go-sh
   version: 703901965097a6b3155c0f6f774efb877b483f64
 - name: github.com/cpuguy83/go-md2man
-  version: 1d903dcb749992f3741d744c0f8376b4bd7eb3e1
+  version: 71acacd42f85e5e82f70a55327789582a5200a90
   subpackages:
   - md2man
 - name: github.com/davecgh/go-spew

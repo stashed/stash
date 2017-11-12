@@ -1,10 +1,12 @@
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
-  labels:
-    app: stash
   name: stash-operator
   namespace: kube-system
+  labels:
+    app: stash
+  initializers:
+    pending: []
 spec:
   replicas: 1
   selector:

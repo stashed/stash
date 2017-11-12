@@ -22,15 +22,15 @@ rules:
   resources: ["*"]
   verbs: ["*"]
 - apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs: ["get", "list", "watch", "patch"]
+- apiGroups:
   - extensions
   resources:
   - replicasets
   - daemonsets
-  verbs: ["get", "list", "watch", "patch"]
-- apiGroups:
-  - apps
-  resources:
-  - deployments
   verbs: ["get", "list", "watch", "patch"]
 - apiGroups: [""]
   resources:
@@ -40,7 +40,7 @@ rules:
 - apiGroups: [""]
   resources:
   - configmaps
-  verbs: ["delete"]
+  verbs: ["create", "update", "get", "delete"]
 - apiGroups: [""]
   resources:
   - secrets
@@ -56,6 +56,7 @@ rules:
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
+  - clusterroles
   - rolebindings
   verbs: ["get", "create", "delete", "patch"]
 ---
@@ -85,10 +86,12 @@ metadata:
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
-  labels:
-    app: stash
   name: stash-operator
   namespace: kube-system
+  labels:
+    app: stash
+  initializers:
+    pending: []
 spec:
   replicas: 1
   selector:
@@ -153,39 +156,3 @@ spec:
     targetPort: http
   selector:
     app: stash
----
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRole
-metadata:
-  labels:
-    app: stash
-  name: stash-sidecar
-rules:
-- apiGroups:
-  - stash.appscode.com
-  resources: ["*"]
-  verbs: ["*"]
-- apiGroups:
-  - apps
-  resources:
-  - deployments
-  verbs: ["get"]
-- apiGroups:
-  - extensions
-  resources:
-  - daemonsets
-  - replicasets
-  verbs: ["get"]
-- apiGroups: [""]
-  resources:
-  - replicationcontrollers
-  - secrets
-  verbs: ["get"]
-- apiGroups: [""]
-  resources:
-  - configmaps
-  verbs: ["create", "update", "get"]
-- apiGroups: [""]
-  resources:
-  - events
-  verbs: ["create"]
