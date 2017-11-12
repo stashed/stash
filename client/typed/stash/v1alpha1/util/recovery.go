@@ -3,6 +3,7 @@ package util
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/kutil"
@@ -116,4 +117,25 @@ func SetRecoveryStatus(c cs.StashV1alpha1Interface, rec *api.Recovery, status ap
 
 func SetRecoveryStatusPhase(c cs.StashV1alpha1Interface, rec *api.Recovery, phase api.RecoveryPhase) {
 	SetRecoveryStatus(c, rec, api.RecoveryStatus{Phase: phase})
+}
+
+func SetRecoveryStats(c cs.StashV1alpha1Interface, recovery *api.Recovery, path string, d time.Duration, phase api.RecoveryPhase) (*api.Recovery, error) {
+	return PatchRecovery(c, recovery, func(in *api.Recovery) *api.Recovery {
+		found := false
+		for _, stats := range in.Status.Stats {
+			if stats.Path == path {
+				found = true
+				stats.Duration = d.String()
+				stats.Phase = phase
+			}
+		}
+		if !found {
+			recovery.Status.Stats = append(recovery.Status.Stats, api.RestoreStats{
+				Path:     path,
+				Duration: d.String(),
+				Phase:    phase,
+			})
+		}
+		return in
+	})
 }

@@ -16,7 +16,7 @@ const (
 	EventReasonSuccessfulBackup              = "SuccessfulBackup"
 	EventReasonFailedToBackup                = "FailedBackup"
 	EventReasonSuccessfulRecovery            = "SuccessfulRecovery"
-	EventReasonFailedRecovery                = "FailedRecovery"
+	EventReasonFailedToRecover               = "FailedRecovery"
 	EventReasonFailedToRetention             = "FailedRetention"
 	EventReasonFailedToUpdate                = "FailedUpdateBackup"
 	EventReasonFailedCronJob                 = "FailedCronJob"

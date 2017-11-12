@@ -128,7 +128,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 		if err != nil {
 			return err
 		}
-		util.DeleteConfigmapLock(c.k8sClient, ns, api.LocalTypedReference{Kind: api.AppKindReplicaSet, Name: name})
+		util.DeleteConfigmapLock(c.k8sClient, ns, api.LocalTypedReference{Kind: api.KindReplicaSet, Name: name})
 	} else {
 		rs := obj.(*extensions.ReplicaSet)
 		fmt.Printf("Sync/Add/Update for ReplicaSet %s\n", rs.GetName())
@@ -207,7 +207,7 @@ func (c *StashController) EnsureReplicaSetSidecar(resource *extensions.ReplicaSe
 		}
 
 		workload := api.LocalTypedReference{
-			Kind: api.AppKindReplicaSet,
+			Kind: api.KindReplicaSet,
 			Name: obj.Name,
 		}
 		obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.options.SidecarImageTag, workload))
@@ -277,6 +277,6 @@ func (c *StashController) EnsureReplicaSetSidecarDeleted(resource *extensions.Re
 	if err != nil {
 		return
 	}
-	util.DeleteConfigmapLock(c.k8sClient, resource.Namespace, api.LocalTypedReference{Kind: api.AppKindReplicaSet, Name: resource.Name})
+	util.DeleteConfigmapLock(c.k8sClient, resource.Namespace, api.LocalTypedReference{Kind: api.KindReplicaSet, Name: resource.Name})
 	return
 }

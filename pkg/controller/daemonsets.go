@@ -199,7 +199,7 @@ func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet,
 		}
 
 		workload := api.LocalTypedReference{
-			Kind: api.AppKindDaemonSet,
+			Kind: api.KindDaemonSet,
 			Name: obj.Name,
 		}
 		obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.options.SidecarImageTag, workload))

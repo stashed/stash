@@ -69,7 +69,7 @@ func NewCmdSchedule() *cobra.Command {
 
 			// split code from here for leader election
 			switch opt.Workload.Kind {
-			case api.AppKindDeployment, api.AppKindReplicaSet, api.AppKindReplicationController:
+			case api.KindDeployment, api.KindReplicaSet, api.KindReplicationController:
 				ctrl.ElectLeader(stopBackup)
 			default:
 				ctrl.SetupAndRun(stopBackup)

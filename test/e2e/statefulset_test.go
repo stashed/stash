@@ -205,7 +205,7 @@ var _ = Describe("StatefulSet", func() {
 		shouldRestoreStatefulSet = func() {
 			shouldBackupNewStatefulSet()
 			recovery.Spec.Workload = api.LocalTypedReference{
-				Kind: api.AppKindStatefulSet,
+				Kind: api.KindStatefulSet,
 				Name: ss.Name,
 			}
 			recovery.Spec.PodOrdinal = "0"

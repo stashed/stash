@@ -183,7 +183,7 @@ var _ = Describe("ReplicationController", func() {
 		shouldRestoreRC = func() {
 			shouldBackupNewReplicationController()
 			recovery.Spec.Workload = api.LocalTypedReference{
-				Kind: api.AppKindReplicationController,
+				Kind: api.KindReplicationController,
 				Name: rc.Name,
 			}
 

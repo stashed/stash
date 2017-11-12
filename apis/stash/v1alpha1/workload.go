@@ -6,11 +6,11 @@ import (
 )
 
 const (
-	AppKindDeployment            = "Deployment"
-	AppKindReplicaSet            = "ReplicaSet"
-	AppKindReplicationController = "ReplicationController"
-	AppKindStatefulSet           = "StatefulSet"
-	AppKindDaemonSet             = "DaemonSet"
+	KindDeployment            = "Deployment"
+	KindReplicaSet            = "ReplicaSet"
+	KindReplicationController = "ReplicationController"
+	KindStatefulSet           = "StatefulSet"
+	KindDaemonSet             = "DaemonSet"
 )
 
 func (workload *LocalTypedReference) Canonicalize() error {
@@ -19,15 +19,15 @@ func (workload *LocalTypedReference) Canonicalize() error {
 	}
 	switch strings.ToLower(workload.Kind) {
 	case "deployments", "deployment", "deploy":
-		workload.Kind = AppKindDeployment
+		workload.Kind = KindDeployment
 	case "replicasets", "replicaset", "rs":
-		workload.Kind = AppKindReplicaSet
+		workload.Kind = KindReplicaSet
 	case "replicationcontrollers", "replicationcontroller", "rc":
-		workload.Kind = AppKindReplicationController
+		workload.Kind = KindReplicationController
 	case "statefulsets", "statefulset":
-		workload.Kind = AppKindStatefulSet
+		workload.Kind = KindStatefulSet
 	case "daemonsets", "daemonset", "ds":
-		workload.Kind = AppKindDaemonSet
+		workload.Kind = KindDaemonSet
 	default:
 		return fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
 	}
@@ -43,16 +43,16 @@ func (workload LocalTypedReference) HostnamePrefix(podName, nodeName string) (ho
 		return "", "", fmt.Errorf("missing workload name or kind")
 	}
 	switch workload.Kind {
-	case AppKindDeployment, AppKindReplicaSet, AppKindReplicationController:
+	case KindDeployment, KindReplicaSet, KindReplicationController:
 		return workload.Name, workload.Kind + "/" + workload.Name, nil
-	case AppKindStatefulSet:
+	case KindStatefulSet:
 		if podName == "" {
-			return "", "", fmt.Errorf("missing podName for %s", AppKindStatefulSet)
+			return "", "", fmt.Errorf("missing podName for %s", KindStatefulSet)
 		}
 		return podName, workload.Kind + "/" + podName, nil
-	case AppKindDaemonSet:
+	case KindDaemonSet:
 		if nodeName == "" {
-			return "", "", fmt.Errorf("missing nodeName for %s", AppKindDaemonSet)
+			return "", "", fmt.Errorf("missing nodeName for %s", KindDaemonSet)
 		}
 		return nodeName, workload.Kind + "/" + workload.Name + "/" + nodeName, nil
 	default:

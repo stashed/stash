@@ -31,7 +31,7 @@ func (fi *Invocation) StatefulSet(r api.Restic, sidecarImageTag string) apps.Sta
 	}
 
 	workload := api.LocalTypedReference{
-		Kind: api.AppKindStatefulSet,
+		Kind: api.KindStatefulSet,
 		Name: resource.Name,
 	}
 	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.CreateSidecarContainer(&r, sidecarImageTag, workload))

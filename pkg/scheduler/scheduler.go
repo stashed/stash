@@ -258,7 +258,7 @@ func (c *Controller) runOnce() (err error) {
 		err = c.measure(c.resticCLI.Backup, resource, fg, backupOpMetric)
 		if err != nil {
 			log.Errorln("Backup operation failed for Reestic %s/%s due to %s", resource.Namespace, resource.Name, err)
-			c.recorder.Event(resource.ObjectReference(), core.EventTypeNormal, eventer.EventReasonFailedToBackup, " Error taking backup: "+err.Error())
+			c.recorder.Event(resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToBackup, " Error taking backup: "+err.Error())
 			return
 		} else {
 			hostname, _ := os.Hostname()
@@ -269,7 +269,7 @@ func (c *Controller) runOnce() (err error) {
 		err = c.measure(c.resticCLI.Forget, resource, fg, forgetOpMetric)
 		if err != nil {
 			log.Errorln("Failed to forget old snapshots for Restic %s/%s due to %s", resource.Namespace, resource.Name, err)
-			c.recorder.Event(resource.ObjectReference(), core.EventTypeNormal, eventer.EventReasonFailedToRetention, " Error forgetting snapshots: "+err.Error())
+			c.recorder.Event(resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToRetention, " Error forgetting snapshots: "+err.Error())
 			return
 		}
 	}

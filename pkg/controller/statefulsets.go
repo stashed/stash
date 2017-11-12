@@ -200,7 +200,7 @@ func (c *StashController) EnsureStatefulSetSidecar(resource *apps.StatefulSet, o
 		}
 
 		workload := api.LocalTypedReference{
-			Kind: api.AppKindStatefulSet,
+			Kind: api.KindStatefulSet,
 			Name: obj.Name,
 		}
 		obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.options.SidecarImageTag, workload))

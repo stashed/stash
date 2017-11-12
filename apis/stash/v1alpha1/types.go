@@ -170,7 +170,7 @@ type LocalTypedReference struct {
 	// Name of the referent.
 	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
 	// +optional
-	Name string `json:"name,omitempty""`
+	Name string `json:"name,omitempty"`
 	// API version of the referent.
 	// +optional
 	APIVersion string `json:"apiVersion,omitempty"`
@@ -192,6 +192,7 @@ type RecoveryStatus struct {
 }
 
 type RestoreStats struct {
-	Path     string `json:"path,omitempty"`
-	Duration string `json:"duration,omitempty"`
+	Path     string        `json:"path,omitempty"`
+	Phase    RecoveryPhase `json:"phase,omitempty"`
+	Duration string        `json:"duration,omitempty"`
 }

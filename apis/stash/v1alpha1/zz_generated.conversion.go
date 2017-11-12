@@ -495,6 +495,7 @@ func Convert_stash_ResticStatus_To_v1alpha1_ResticStatus(in *stash.ResticStatus,
 
 func autoConvert_v1alpha1_RestoreStats_To_stash_RestoreStats(in *RestoreStats, out *stash.RestoreStats, s conversion.Scope) error {
 	out.Path = in.Path
+	out.Phase = stash.RecoveryPhase(in.Phase)
 	out.Duration = in.Duration
 	return nil
 }
@@ -506,6 +507,7 @@ func Convert_v1alpha1_RestoreStats_To_stash_RestoreStats(in *RestoreStats, out *
 
 func autoConvert_stash_RestoreStats_To_v1alpha1_RestoreStats(in *stash.RestoreStats, out *RestoreStats, s conversion.Scope) error {
 	out.Path = in.Path
+	out.Phase = RecoveryPhase(in.Phase)
 	out.Duration = in.Duration
 	return nil
 }
