@@ -415,24 +415,17 @@ func DeleteRecoveryJob(client kubernetes.Interface, recorder record.EventRecorde
 }
 
 func CheckRecoveryJob(client kubernetes.Interface, recorder record.EventRecorder, rec *api.Recovery, job *batch.Job) {
-	retryInterval := 2 * time.Second
-	retryTimeout := 30 * time.Minute
-
-	err := wait.PollImmediate(retryInterval, retryTimeout, func() (bool, error) {
+	retryInterval := 3 * time.Minute
+	err := wait.PollInfinite(retryInterval, func() (bool, error) {
 		obj, err := client.BatchV1().Jobs(job.Namespace).Get(job.Name, metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
-		if obj.Status.Succeeded > 0 {
-			return true, nil
-		}
-		log.Infoln("Checking recovery job: not completed")
-		return false, nil
+		return obj.Status.Succeeded > 0, nil
 	})
 	if err != nil {
 		log.Errorln(err)
 	}
-
 	DeleteRecoveryJob(client, recorder, rec, job)
 }
 

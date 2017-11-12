@@ -27,6 +27,11 @@ rules:
   - deployments
   verbs: ["get", "list", "watch", "patch"]
 - apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs: ["get", "create", "delete"]
+- apiGroups:
   - extensions
   resources:
   - replicasets
@@ -52,7 +57,7 @@ rules:
 - apiGroups: [""]
   resources:
   - pods
-  verbs: ["list", delete"]
+  verbs: ["list", delete", "deletecollection"]
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
