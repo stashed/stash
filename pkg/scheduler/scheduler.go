@@ -58,7 +58,6 @@ type Controller struct {
 	k8sClient   kubernetes.Interface
 	stashClient cs.StashV1alpha1Interface
 	opt         Options
-	rchan       chan *api.Restic
 	locked      chan struct{}
 	resticCLI   *cli.ResticWrapper
 	cron        *cron.Cron
@@ -76,7 +75,6 @@ func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, 
 		k8sClient:   k8sClient,
 		stashClient: stashClient,
 		opt:         opt,
-		rchan:       make(chan *api.Restic, 1),
 		cron:        cron.New(),
 		locked:      make(chan struct{}, 1),
 		resticCLI:   cli.New(opt.ScratchDir, opt.SnapshotHostname),
@@ -136,9 +134,7 @@ func (c *Controller) Run(threadiness int, stopCh chan struct{}) {
 	glog.Info("Stopping Stash scheduler")
 }
 
-func (c *Controller) configureScheduler() error {
-	r := <-c.rchan
-
+func (c *Controller) configureScheduler(r *api.Restic) error {
 	// Remove previous jobs
 	for _, v := range c.cron.Entries() {
 		c.cron.Remove(v.ID)
@@ -149,7 +145,39 @@ func (c *Controller) configureScheduler() error {
 			log.Errorln(err)
 		}
 	})
+	if err != nil {
+		return err
+	}
+	_, err = c.cron.AddFunc("0 0 */3 * *", func() { c.checkOnce() })
 	return err
+}
+
+func (c *Controller) checkOnce() (err error) {
+	select {
+	case <-c.locked:
+		log.Infof("Acquired lock for Restic %s/%s", c.opt.Namespace, c.opt.ResticName)
+		defer func() {
+			c.locked <- struct{}{}
+		}()
+	default:
+		log.Warningf("Skipping checkup schedule for Restic %s/%s", c.opt.Namespace, c.opt.ResticName)
+		return
+	}
+
+	var resource *api.Restic
+	resource, err = c.rLister.Restics(c.opt.Namespace).Get(c.opt.ResticName)
+	if kerr.IsNotFound(err) {
+		err = nil
+		return
+	} else if err != nil {
+		return
+	}
+
+	err = c.resticCLI.Check()
+	if err != nil {
+		c.recorder.Eventf(resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToRecover, "Repository check failed for workload %s %s/%s. Reason: %v", c.opt.Workload.Kind, c.opt.Namespace, c.opt.Workload.Name, err)
+	}
+	return
 }
 
 func (c *Controller) runOnce() (err error) {

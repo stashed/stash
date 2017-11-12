@@ -93,9 +93,7 @@ func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
 	for _, fg := range restic.Spec.FileGroups {
 		d, err := c.measure(cli.Restore, fg.Path, hostname)
 		if err != nil {
-			errRec = fmt.Errorf("failed to recover FileGroup %s. Reason: %v", fg.Path, err)
-
-			c.recorder.Event(recovery.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToRecover, " Error restoring: "+err.Error())
+			c.recorder.Eventf(recovery.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToRecover, "failed to recover FileGroup %s. Reason: %v", fg.Path, err)
 			if r, err := stash_util.SetRecoveryStats(c.stashClient, recovery, fg.Path, d, api.RecoveryFailed); err == nil {
 				recovery = r
 			}

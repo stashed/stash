@@ -141,8 +141,7 @@ func (c *Controller) runResticScheduler(key string) error {
 		r := obj.(*api.Restic)
 		fmt.Printf("Sync/Add/Update for Restic %s\n", r.GetName())
 
-		c.rchan <- r
-		err := c.configureScheduler()
+		err := c.configureScheduler(r)
 		if err != nil {
 			c.recorder.Eventf(
 				r.ObjectReference(),
