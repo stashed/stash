@@ -134,5 +134,5 @@ func (w *ResticWrapper) Restore(path, host string) error {
 }
 
 func (w *ResticWrapper) Check() error {
-	return w.sh.Command("check").Run()
+	return w.sh.Command(Exe, "check").Run()
 }
