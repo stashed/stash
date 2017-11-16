@@ -48,5 +48,6 @@ func NewCmdStash(version string) *cobra.Command {
 	rootCmd.AddCommand(NewCmdRun(version))
 	rootCmd.AddCommand(NewCmdSchedule())
 	rootCmd.AddCommand(NewCmdRecover())
+	rootCmd.AddCommand(NewCmdBackup())
 	return rootCmd
 }

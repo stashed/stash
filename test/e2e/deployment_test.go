@@ -254,6 +254,31 @@ var _ = Describe("Deployment", func() {
 			By("Waiting for backup event")
 			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
+
+		shouldOfflineBackupNewDeployment = func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating Deployment " + deployment.Name)
+			_, err = f.CreateDeployment(deployment)
+			Expect(err).NotTo(HaveOccurred())
+
+			//By("Waiting for sidecar")
+			//f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+			By("Waiting for backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 1)))
+
+			By("Waiting for backup event")
+			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+		}
 	)
 
 	Describe("Creating restic for", func() {
@@ -499,6 +524,23 @@ var _ = Describe("Deployment", func() {
 				restic = f.ResticForLocalBackend()
 			})
 			It("should initialize and backup new Deployment", shouldInitializeAndBackupDeployment)
+		})
+	})
+
+	FDescribe("Offline backup for", func() {
+		//AfterEach(func() {
+		//	f.DeleteDeployment(deployment.ObjectMeta)
+		//	f.DeleteRestic(restic.ObjectMeta)
+		//	f.DeleteSecret(cred.ObjectMeta)
+		//})
+
+		Context(`"Local" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForLocalBackend()
+				restic.Spec.OfflineBackup = true
+			})
+			It(`should backup new Deployment`, shouldOfflineBackupNewDeployment)
 		})
 	})
 })

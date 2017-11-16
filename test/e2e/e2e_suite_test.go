@@ -18,7 +18,6 @@ import (
 	. "github.com/onsi/gomega"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
@@ -26,7 +25,7 @@ import (
 
 const (
 	TIMEOUT             = 20 * time.Minute
-	TestSidecarImageTag = "canary"
+	TestSidecarImageTag = "offline-backup"
 )
 
 var (
@@ -86,7 +85,7 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	root.DeleteNamespace()
+	// root.DeleteNamespace()
 	if createInitConfig {
 		root.DeleteInitializerConfiguration(root.InitializerForWorkloads().ObjectMeta)
 	}

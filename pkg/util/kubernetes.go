@@ -161,6 +161,17 @@ func GetString(m map[string]string, key string) string {
 	return m[key]
 }
 
+func CreateInitContainer(r *api.Restic, tag string, workload api.LocalTypedReference) core.Container {
+	container := CreateSidecarContainer(r, tag, workload)
+	container.Args = []string{
+		"backup",
+		"--restic-name=" + r.Name,
+		"--workload-kind=" + workload.Kind,
+		"--workload-name=" + workload.Name,
+	}
+	return container
+}
+
 func CreateSidecarContainer(r *api.Restic, tag string, workload api.LocalTypedReference) core.Container {
 	if r.Annotations != nil {
 		if v, ok := r.Annotations[api.VersionTag]; ok {

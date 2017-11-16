@@ -153,6 +153,9 @@ func (c *StashController) runDeploymentInjector(key string) error {
 			return nil
 		}
 		if newRestic != nil {
+			if *dp.Spec.Replicas > 1 {
+				return fmt.Errorf("cannot perform offline backup for deployment with replicas > 1")
+			}
 			return c.EnsureDeploymentSidecar(dp, oldRestic, newRestic)
 		} else if oldRestic != nil {
 			return c.EnsureDeploymentSidecarDeleted(dp, oldRestic)
@@ -214,7 +217,13 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 			Kind: api.KindDeployment,
 			Name: obj.Name,
 		}
-		obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.options.SidecarImageTag, workload))
+		if new.Spec.OfflineBackup {
+			obj.Spec.Template.Spec.InitContainers = []core.Container{
+				util.CreateInitContainer(new, c.options.SidecarImageTag, workload),
+			}
+		} else {
+			obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.options.SidecarImageTag, workload))
+		}
 		obj.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(obj.Spec.Template.Spec.Volumes)
 		obj.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(obj.Spec.Template.Spec.Volumes)
 		obj.Spec.Template.Spec.Volumes = util.MergeLocalVolume(obj.Spec.Template.Spec.Volumes, old, new)

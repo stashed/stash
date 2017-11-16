@@ -16,7 +16,7 @@ func New(kubeClient kubernetes.Interface, extClient cs.StashV1alpha1Interface) *
 	return &Framework{
 		KubeClient:  kubeClient,
 		StashClient: extClient,
-		namespace:   rand.WithUniqSuffix("test-stash"),
+		namespace:   "test-stash", //rand.WithUniqSuffix("test-stash"),
 	}
 }
 
