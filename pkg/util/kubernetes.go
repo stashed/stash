@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/record"
+	"strings"
 )
 
 const (
@@ -452,7 +453,7 @@ func ToBeInitializedBySelf(initializers *metav1.Initializers) bool {
 }
 
 func GetConfigmapLockName(workload api.LocalTypedReference) string {
-	return fmt.Sprintf("lock-%s-%s", workload.Kind, workload.Name)
+	return strings.ToLower(fmt.Sprintf("lock-%s-%s", workload.Kind, workload.Name))
 }
 
 func DeleteConfigmapLock(k8sClient kubernetes.Interface, namespace string, workload api.LocalTypedReference) error {
