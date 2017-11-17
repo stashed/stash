@@ -163,12 +163,7 @@ func GetString(m map[string]string, key string) string {
 
 func CreateInitContainer(r *api.Restic, tag string, workload api.LocalTypedReference) core.Container {
 	container := CreateSidecarContainer(r, tag, workload)
-	container.Args = []string{
-		"backup",
-		"--restic-name=" + r.Name,
-		"--workload-kind=" + workload.Kind,
-		"--workload-name=" + workload.Name,
-	}
+	container.Args = append(container.Args, "--offline=true")
 	return container
 }
 

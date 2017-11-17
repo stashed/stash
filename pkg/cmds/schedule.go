@@ -7,7 +7,6 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/kutil/meta"
-	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/scheduler"
 	"github.com/appscode/stash/pkg/util"
@@ -64,19 +63,12 @@ func NewCmdSchedule() *cobra.Command {
 			opt.ScratchDir = strings.TrimSuffix(opt.ScratchDir, "/") // setup ScratchDir in SetupAndRun
 
 			ctrl := scheduler.New(kubeClient, stashClient, opt)
-			stopBackup := make(chan struct{})
-			defer close(stopBackup)
 
-			// split code from here for leader election
-			switch opt.Workload.Kind {
-			case api.KindDeployment, api.KindReplicaSet, api.KindReplicationController:
-				ctrl.ElectLeader(stopBackup)
-			default:
-				ctrl.SetupAndRun(stopBackup)
+			if opt.RunOffline {
+				ctrl.Backup()
+			} else {
+				ctrl.BackupScheduler()
 			}
-
-			// Wait forever
-			select {}
 		},
 	}
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
@@ -87,6 +79,7 @@ func NewCmdSchedule() *cobra.Command {
 	cmd.Flags().StringVar(&opt.ScratchDir, "scratch-dir", opt.ScratchDir, "Directory used to store temporary files. Use an `emptyDir` in Kubernetes.")
 	cmd.Flags().StringVar(&opt.PushgatewayURL, "pushgateway-url", opt.PushgatewayURL, "URL of Prometheus pushgateway used to cache backup metrics")
 	cmd.Flags().DurationVar(&opt.ResyncPeriod, "resync-period", opt.ResyncPeriod, "If non-zero, will re-list this often. Otherwise, re-list will be delayed aslong as possible (until the upstream source closes the watch or times out.")
+	cmd.Flags().BoolVar(&opt.RunOffline, "offline", opt.RunOffline, "Run backup in offline mode.")
 
 	return cmd
 }

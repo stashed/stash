@@ -215,7 +215,7 @@ var _ = Describe("Deployment", func() {
 			By("Waiting for sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
-			f.CheckLeaderElection(deployment.ObjectMeta)
+			f.CheckLeaderElection(deployment.ObjectMeta, api.KindDeployment)
 
 			By("Waiting for backup to complete")
 			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
@@ -527,18 +527,18 @@ var _ = Describe("Deployment", func() {
 		})
 	})
 
-	FDescribe("Offline backup for", func() {
-		//AfterEach(func() {
-		//	f.DeleteDeployment(deployment.ObjectMeta)
-		//	f.DeleteRestic(restic.ObjectMeta)
-		//	f.DeleteSecret(cred.ObjectMeta)
-		//})
+	Describe("Offline backup for", func() {
+		AfterEach(func() {
+			f.DeleteDeployment(deployment.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+		})
 
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
-				restic.Spec.OfflineBackup = true
+				restic.Spec.Type = api.BackupOffline
 			})
 			It(`should backup new Deployment`, shouldOfflineBackupNewDeployment)
 		})

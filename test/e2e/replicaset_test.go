@@ -212,7 +212,7 @@ var _ = Describe("ReplicaSet", func() {
 			By("Waiting for sidecar")
 			f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
-			f.CheckLeaderElection(rs.ObjectMeta)
+			f.CheckLeaderElection(rs.ObjectMeta, api.KindReplicaSet)
 
 			By("Waiting for backup to complete")
 			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {

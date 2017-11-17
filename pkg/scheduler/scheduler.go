@@ -52,6 +52,7 @@ type Options struct {
 	PodLabelsPath    string
 	ResyncPeriod     time.Duration
 	MaxNumRequeues   int
+	RunOffline       bool
 }
 
 type Controller struct {
@@ -82,33 +83,108 @@ func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, 
 	}
 }
 
+func (c *Controller) Backup() {
+	resource, err := c.setup()
+	if err != nil {
+		log.Fatalf("failed to setup backup: %s", err)
+	}
+	if err := c.runResticBackup(resource); err != nil {
+		c.recorder.Event(resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
+		log.Fatal(err)
+	}
+}
+
+func (c *Controller) BackupScheduler() {
+	stopBackup := make(chan struct{})
+	defer close(stopBackup)
+
+	// split code from here for leader election
+	switch c.opt.Workload.Kind {
+	case api.KindDeployment, api.KindReplicaSet, api.KindReplicationController:
+		c.electLeader(stopBackup)
+	default:
+		c.setupAndRunScheduler(stopBackup)
+	}
+
+	// Wait forever
+	select {}
+}
+
 // Init and/or connect to repo
-func (c *Controller) Setup() error {
+func (c *Controller) setup() (*api.Restic, error) {
+	// setup scratch-dir
+	if err := os.MkdirAll(c.opt.ScratchDir, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create scratch dir: %s", err)
+	}
+	if err := ioutil.WriteFile(c.opt.ScratchDir+"/.stash", []byte("test"), 644); err != nil {
+		return nil, fmt.Errorf("no write access in scratch dir: %s", err)
+	}
+
+	// check resource
 	resource, err := c.stashClient.Restics(c.opt.Namespace).Get(c.opt.ResticName, metav1.GetOptions{})
 	if err != nil {
-		return err
+		return nil, err
 	}
 	log.Infof("Found restic %s", resource.Name)
 	if err := resource.IsValid(); err != nil {
-		return err
+		return nil, err
 	}
 	secret, err := c.k8sClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
-		return err
+		return nil, err
 	}
 	log.Infof("Found repository secret %s", secret.Name)
-	err = c.resticCLI.SetupEnv(resource, secret, c.opt.SmartPrefix)
-	if err != nil {
-		return err
+
+	// setup restic-cli
+	if err = c.resticCLI.SetupEnv(resource, secret, c.opt.SmartPrefix); err != nil {
+		return nil, err
 	}
-	// c.resticCLI.DumpEnv()
-	// ignore error but helps debug bad setup.
-	c.resticCLI.InitRepositoryIfAbsent()
-	c.initResticWatcher()
-	return nil
+	if err = c.resticCLI.InitRepositoryIfAbsent(); err != nil {
+		return nil, err
+	}
+
+	return resource, nil
 }
 
-func (c *Controller) Run(threadiness int, stopCh chan struct{}) {
+func (c *Controller) setupAndRunScheduler(stopBackup chan struct{}) {
+	if _, err := c.setup(); err != nil {
+		log.Fatalf("Failed to setup scheduler: %s", err)
+	}
+	// setup restic watcher, not required for offline backup
+	c.initResticWatcher()
+	go c.runBackupScheduler(1, stopBackup)
+}
+
+func (c *Controller) electLeader(stopBackup chan struct{}) {
+	rlc := resourcelock.ResourceLockConfig{
+		Identity:      c.opt.PodName,
+		EventRecorder: c.recorder,
+	}
+	resLock, err := resourcelock.New(resourcelock.ConfigMapsResourceLock, c.opt.Namespace, util.GetConfigmapLockName(c.opt.Workload), c.k8sClient.CoreV1(), rlc)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	go func() {
+		leaderelection.RunOrDie(leaderelection.LeaderElectionConfig{
+			Lock:          resLock,
+			LeaseDuration: LeaderElectionLease,
+			RenewDeadline: LeaderElectionLease * 2 / 3,
+			RetryPeriod:   LeaderElectionLease / 3,
+			Callbacks: leaderelection.LeaderCallbacks{
+				OnStartedLeading: func(stop <-chan struct{}) {
+					log.Infoln("Got leadership, preparing backup scheduler")
+					c.setupAndRunScheduler(stopBackup)
+				},
+				OnStoppedLeading: func() {
+					log.Infoln("Lost leadership, stopping backup scheduler")
+					stopBackup <- struct{}{}
+				},
+			},
+		})
+	}()
+}
+
+func (c *Controller) runBackupScheduler(threadiness int, stopCh chan struct{}) {
 	c.cron.Start()
 	c.locked <- struct{}{}
 
@@ -140,7 +216,7 @@ func (c *Controller) configureScheduler(r *api.Restic) error {
 		c.cron.Remove(v.ID)
 	}
 	_, err := c.cron.AddFunc(r.Spec.Schedule, func() {
-		if err := c.runOnce(); err != nil {
+		if err := c.runOnceForScheduler(); err != nil {
 			c.recorder.Event(r.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
 			log.Errorln(err)
 		}
@@ -180,7 +256,7 @@ func (c *Controller) checkOnce() (err error) {
 	return
 }
 
-func (c *Controller) runOnce() (err error) {
+func (c *Controller) runOnceForScheduler() error {
 	select {
 	case <-c.locked:
 		log.Infof("Acquired lock for Restic %s/%s", c.opt.Namespace, c.opt.ResticName)
@@ -189,38 +265,37 @@ func (c *Controller) runOnce() (err error) {
 		}()
 	default:
 		log.Warningf("Skipping backup schedule for Restic %s/%s", c.opt.Namespace, c.opt.ResticName)
-		return
+		return nil
 	}
 
-	var resource *api.Restic
-	resource, err = c.rLister.Restics(c.opt.Namespace).Get(c.opt.ResticName)
+	// check resource again, previously done in setup()
+	resource, err := c.rLister.Restics(c.opt.Namespace).Get(c.opt.ResticName)
 	if kerr.IsNotFound(err) {
-		err = nil
-		return
+		return nil
 	} else if err != nil {
-		return
+		return err
 	}
-
 	if resource.Spec.Backend.StorageSecretName == "" {
-		err = errors.New("missing repository secret name")
-		return
+		return errors.New("missing repository secret name")
 	}
-	var secret *core.Secret
-	secret, err = c.k8sClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.StorageSecretName, metav1.GetOptions{})
-	if err != nil {
-		return
-	}
-	err = c.resticCLI.SetupEnv(resource, secret, c.opt.SmartPrefix)
-	if err != nil {
-		return err
-	}
-	// c.resticCLI.DumpEnv()
-
-	err = c.resticCLI.InitRepositoryIfAbsent()
+	secret, err := c.k8sClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
+	// setup restic again, previously done in setup()
+	if err = c.resticCLI.SetupEnv(resource, secret, c.opt.SmartPrefix); err != nil {
+		return err
+	}
+	if err = c.resticCLI.InitRepositoryIfAbsent(); err != nil {
+		return err
+	}
+
+	// run final restic backup command
+	return c.runResticBackup(resource)
+}
+
+func (c *Controller) runResticBackup(resource *api.Restic) (err error) {
 	startTime := metav1.Now()
 	var (
 		restic_session_success = prometheus.NewGauge(prometheus.GaugeOpts{
@@ -311,48 +386,4 @@ func (c *Controller) measure(f func(*api.Restic, api.FileGroup) error, resource 
 	}()
 	err = f(resource, fg)
 	return
-}
-
-func (c *Controller) SetupAndRun(stopBackup chan struct{}) {
-	err := os.MkdirAll(c.opt.ScratchDir, 0755)
-	if err != nil {
-		log.Fatalf("Failed to create scratch dir: %s", err)
-	}
-	err = ioutil.WriteFile(c.opt.ScratchDir+"/.stash", []byte("test"), 644)
-	if err != nil {
-		log.Fatalf("No write access in scratch dir: %s", err)
-	}
-	if err = c.Setup(); err != nil {
-		log.Fatalf("Failed to setup scheduler: %s", err)
-	}
-	go c.Run(1, stopBackup)
-}
-
-func (c *Controller) ElectLeader(stopBackup chan struct{}) {
-	rlc := resourcelock.ResourceLockConfig{
-		Identity:      c.opt.PodName,
-		EventRecorder: c.recorder,
-	}
-	resLock, err := resourcelock.New(resourcelock.ConfigMapsResourceLock, c.opt.Namespace, util.GetConfigmapLockName(c.opt.Workload), c.k8sClient.CoreV1(), rlc)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	go func() {
-		leaderelection.RunOrDie(leaderelection.LeaderElectionConfig{
-			Lock:          resLock,
-			LeaseDuration: LeaderElectionLease,
-			RenewDeadline: LeaderElectionLease * 2 / 3,
-			RetryPeriod:   LeaderElectionLease / 3,
-			Callbacks: leaderelection.LeaderCallbacks{
-				OnStartedLeading: func(stop <-chan struct{}) {
-					log.Infoln("Got leadership, preparing backup scheduler")
-					c.SetupAndRun(stopBackup)
-				},
-				OnStoppedLeading: func() {
-					log.Infoln("Lost leadership, stopping backup scheduler")
-					stopBackup <- struct{}{}
-				},
-			},
-		})
-	}()
 }

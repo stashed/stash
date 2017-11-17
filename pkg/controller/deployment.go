@@ -153,7 +153,7 @@ func (c *StashController) runDeploymentInjector(key string) error {
 			return nil
 		}
 		if newRestic != nil {
-			if *dp.Spec.Replicas > 1 {
+			if newRestic.Spec.Type == api.BackupOffline && *dp.Spec.Replicas > 1 {
 				return fmt.Errorf("cannot perform offline backup for deployment with replicas > 1")
 			}
 			return c.EnsureDeploymentSidecar(dp, oldRestic, newRestic)
@@ -217,7 +217,7 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 			Kind: api.KindDeployment,
 			Name: obj.Name,
 		}
-		if new.Spec.OfflineBackup {
+		if new.Spec.Type == api.BackupOffline {
 			obj.Spec.Template.Spec.InitContainers = []core.Container{
 				util.CreateInitContainer(new, c.options.SidecarImageTag, workload),
 			}

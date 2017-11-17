@@ -208,7 +208,7 @@ var _ = Describe("ReplicationController", func() {
 			_, err = f.CreateReplicationController(rc)
 			Expect(err).NotTo(HaveOccurred())
 
-			f.CheckLeaderElection(rc.ObjectMeta)
+			f.CheckLeaderElection(rc.ObjectMeta, api.KindReplicationController)
 
 			By("Waiting for sidecar")
 			f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(util.StashContainer))
