@@ -2,7 +2,7 @@ package cmds
 
 import (
 	"github.com/appscode/go/log"
-	"github.com/appscode/kutil"
+	"github.com/appscode/kutil/meta"
 	"github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/recovery"
 	"github.com/spf13/cobra"
@@ -29,7 +29,7 @@ func NewCmdRecover() *cobra.Command {
 			c := recovery.New(
 				kubernetes.NewForConfigOrDie(config),
 				v1alpha1.NewForConfigOrDie(config),
-				kutil.Namespace(),
+				meta.Namespace(),
 				recoveryName,
 			)
 			c.Run()

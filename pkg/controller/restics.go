@@ -4,22 +4,21 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/log"
-	"github.com/appscode/kutil"
 	ext_util "github.com/appscode/kutil/extensions/v1beta1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
-	apps "k8s.io/api/apps/v1beta1"
 	core "k8s.io/api/core/v1"
-	extensions "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	rt "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/reference"
 	"k8s.io/client-go/util/workqueue"
 )
 
@@ -245,13 +244,15 @@ func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
 		for _, resource := range resources {
 			restic, err := util.GetAppliedRestic(resource.Annotations)
 			if err != nil {
-				c.recorder.Eventf(
-					kutil.GetObjectReference(resource, apps.SchemeGroupVersion),
-					core.EventTypeWarning,
-					eventer.EventReasonInvalidRestic,
-					"Reason: %s",
-					err.Error(),
-				)
+				if ref, e2 := reference.GetReference(scheme.Scheme, resource); e2 == nil {
+					c.recorder.Eventf(
+						ref,
+						core.EventTypeWarning,
+						eventer.EventReasonInvalidRestic,
+						"Reason: %s",
+						err.Error(),
+					)
+				}
 			} else if restic != nil && restic.Namespace == namespace && restic.Name == name {
 				key, err := cache.MetaNamespaceKeyFunc(resource)
 				if err == nil {
@@ -264,13 +265,15 @@ func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
 		for _, resource := range resources {
 			restic, err := util.GetAppliedRestic(resource.Annotations)
 			if err != nil {
-				c.recorder.Eventf(
-					kutil.GetObjectReference(resource, extensions.SchemeGroupVersion),
-					core.EventTypeWarning,
-					eventer.EventReasonInvalidRestic,
-					"Reason: %s",
-					err.Error(),
-				)
+				if ref, e2 := reference.GetReference(scheme.Scheme, resource); e2 == nil {
+					c.recorder.Eventf(
+						ref,
+						core.EventTypeWarning,
+						eventer.EventReasonInvalidRestic,
+						"Reason: %s",
+						err.Error(),
+					)
+				}
 			} else if restic != nil && restic.Namespace == namespace && restic.Name == name {
 				key, err := cache.MetaNamespaceKeyFunc(resource)
 				if err == nil {
@@ -302,13 +305,15 @@ func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
 		for _, resource := range resources {
 			restic, err := util.GetAppliedRestic(resource.Annotations)
 			if err != nil {
-				c.recorder.Eventf(
-					kutil.GetObjectReference(resource, core.SchemeGroupVersion),
-					core.EventTypeWarning,
-					eventer.EventReasonInvalidRestic,
-					"Reason: %s",
-					err.Error(),
-				)
+				if ref, e2 := reference.GetReference(scheme.Scheme, resource); e2 == nil {
+					c.recorder.Eventf(
+						ref,
+						core.EventTypeWarning,
+						eventer.EventReasonInvalidRestic,
+						"Reason: %s",
+						err.Error(),
+					)
+				}
 			} else if restic != nil && restic.Namespace == namespace && restic.Name == name {
 				key, err := cache.MetaNamespaceKeyFunc(resource)
 				if err == nil {
@@ -321,13 +326,15 @@ func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
 		for _, resource := range resources {
 			restic, err := util.GetAppliedRestic(resource.Annotations)
 			if err != nil {
-				c.recorder.Eventf(
-					kutil.GetObjectReference(resource, extensions.SchemeGroupVersion),
-					core.EventTypeWarning,
-					eventer.EventReasonInvalidRestic,
-					"Reason: %s",
-					err.Error(),
-				)
+				if ref, e2 := reference.GetReference(scheme.Scheme, resource); e2 == nil {
+					c.recorder.Eventf(
+						ref,
+						core.EventTypeWarning,
+						eventer.EventReasonInvalidRestic,
+						"Reason: %s",
+						err.Error(),
+					)
+				}
 			} else if restic != nil && restic.Namespace == namespace && restic.Name == name {
 				key, err := cache.MetaNamespaceKeyFunc(resource)
 				if err == nil {

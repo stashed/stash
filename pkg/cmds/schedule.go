@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/appscode/go/log"
-	"github.com/appscode/kutil"
+	"github.com/appscode/kutil/meta"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/scheduler"
@@ -21,7 +21,7 @@ func NewCmdSchedule() *cobra.Command {
 		masterURL      string
 		kubeconfigPath string
 		opt            = scheduler.Options{
-			Namespace:      kutil.Namespace(),
+			Namespace:      meta.Namespace(),
 			ResticName:     "",
 			ScratchDir:     "/tmp",
 			PushgatewayURL: "http://stash-operator.kube-system.svc:56789",

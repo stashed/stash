@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/appscode/kutil"
+	"github.com/appscode/kutil/meta"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 func GetGroupVersionKind(v interface{}) schema.GroupVersionKind {
-	return api.SchemeGroupVersion.WithKind(kutil.GetKind(v))
+	return api.SchemeGroupVersion.WithKind(meta.GetKind(v))
 }
 
 func AssignTypeKind(v interface{}) error {
@@ -22,7 +22,7 @@ func AssignTypeKind(v interface{}) error {
 	switch u := v.(type) {
 	case *api.Restic:
 		u.APIVersion = api.SchemeGroupVersion.String()
-		u.Kind = kutil.GetKind(v)
+		u.Kind = meta.GetKind(v)
 		return nil
 	}
 	return errors.New("unknown api object type")

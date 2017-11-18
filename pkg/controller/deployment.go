@@ -5,9 +5,9 @@ import (
 
 	"github.com/appscode/go/log"
 	stringz "github.com/appscode/go/strings"
-	"github.com/appscode/kutil"
 	apps_util "github.com/appscode/kutil/apps/v1beta1"
 	core_util "github.com/appscode/kutil/core/v1"
+	"github.com/appscode/kutil/meta"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
@@ -17,8 +17,10 @@ import (
 	rt "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/kubernetes/scheme"
 	apps_listers "k8s.io/client-go/listers/apps/v1beta1"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/reference"
 	"k8s.io/client-go/util/workqueue"
 )
 
@@ -188,7 +190,11 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 
 	if c.options.EnableRBAC {
 		sa := stringz.Val(resource.Spec.Template.Spec.ServiceAccountName, "default")
-		err := c.ensureRoleBinding(kutil.GetObjectReference(resource, apps.SchemeGroupVersion), sa)
+		ref, err := reference.GetReference(scheme.Scheme, resource)
+		if err != nil {
+			return err
+		}
+		err = c.ensureRoleBinding(ref, sa)
 		if err != nil {
 			return err
 		}
@@ -224,7 +230,7 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 			ObjectMeta: new.ObjectMeta,
 			Spec:       new.Spec,
 		}
-		data, _ := kutil.MarshalToJson(r, api.SchemeGroupVersion)
+		data, _ := meta.MarshalToJson(r, api.SchemeGroupVersion)
 		obj.Annotations[api.LastAppliedConfiguration] = string(data)
 		obj.Annotations[api.VersionTag] = c.options.SidecarImageTag
 

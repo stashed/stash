@@ -5,9 +5,9 @@ import (
 
 	"github.com/appscode/go/log"
 	stringz "github.com/appscode/go/strings"
-	"github.com/appscode/kutil"
 	core_util "github.com/appscode/kutil/core/v1"
 	ext_util "github.com/appscode/kutil/extensions/v1beta1"
+	"github.com/appscode/kutil/meta"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
@@ -17,8 +17,10 @@ import (
 	rt "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/kubernetes/scheme"
 	ext_listers "k8s.io/client-go/listers/extensions/v1beta1"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/reference"
 	"k8s.io/client-go/util/workqueue"
 )
 
@@ -182,7 +184,11 @@ func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet,
 
 	if c.options.EnableRBAC {
 		sa := stringz.Val(resource.Spec.Template.Spec.ServiceAccountName, "default")
-		err := c.ensureRoleBinding(kutil.GetObjectReference(resource, extensions.SchemeGroupVersion), sa)
+		ref, err := reference.GetReference(scheme.Scheme, resource)
+		if err != nil {
+			return err
+		}
+		err = c.ensureRoleBinding(ref, sa)
 		if err != nil {
 			return err
 		}
@@ -219,7 +225,7 @@ func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet,
 			ObjectMeta: new.ObjectMeta,
 			Spec:       new.Spec,
 		}
-		data, _ := kutil.MarshalToJson(r, api.SchemeGroupVersion)
+		data, _ := meta.MarshalToJson(r, api.SchemeGroupVersion)
 		obj.Annotations[api.LastAppliedConfiguration] = string(data)
 		obj.Annotations[api.VersionTag] = c.options.SidecarImageTag
 		return obj

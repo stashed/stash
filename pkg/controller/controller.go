@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/appscode/kutil"
+	apiext_util "github.com/appscode/kutil/apiextensions/v1beta1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
@@ -121,7 +121,7 @@ func (c *StashController) ensureCustomResourceDefinitions() error {
 			}
 		}
 	}
-	return kutil.WaitForCRDReady(c.k8sClient.CoreV1().RESTClient(), crds)
+	return apiext_util.WaitForCRDReady(c.k8sClient.CoreV1().RESTClient(), crds)
 }
 
 func (c *StashController) Run(threadiness int, stopCh chan struct{}) {
