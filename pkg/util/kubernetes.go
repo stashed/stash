@@ -5,11 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/appscode/go/log"
-	"github.com/appscode/kutil"
 	core_util "github.com/appscode/kutil/core/v1"
+	"github.com/appscode/kutil/meta"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/docker"
@@ -25,7 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/record"
-	"strings"
 )
 
 const (
@@ -41,7 +41,7 @@ func GetAppliedRestic(m map[string]string) (*api.Restic, error) {
 	if data == "" {
 		return nil, nil
 	}
-	obj, err := kutil.UnmarshalToJSON([]byte(data), api.SchemeGroupVersion)
+	obj, err := meta.UnmarshalToJSON([]byte(data), api.SchemeGroupVersion)
 	if err != nil {
 		return nil, err
 	}

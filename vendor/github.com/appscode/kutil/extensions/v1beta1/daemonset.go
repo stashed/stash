@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
+	"github.com/appscode/kutil/meta"
 )
 
 func CreateOrPatchDaemonSet(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*extensions.DaemonSet) *extensions.DaemonSet) (*extensions.DaemonSet, error) {
@@ -53,7 +54,7 @@ func PatchDaemonSet(c kubernetes.Interface, cur *extensions.DaemonSet, transform
 	}
 	glog.V(3).Infof("Patching DaemonSet %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
 	result, err := c.ExtensionsV1beta1().DaemonSets(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
-	if ok, err := kutil.CheckAPIVersion(c, "<= 1.5"); err == nil && ok {
+	if ok, err := meta.CheckAPIVersion(c, "<= 1.5"); err == nil && ok {
 		// https://kubernetes.io/docs/tasks/manage-daemon/update-daemon-set/
 		core_util.RestartPods(c, cur.Namespace, cur.Spec.Selector)
 	}

@@ -1,8 +1,8 @@
 hash: dfae8e6290d081506cc9d8528f165cbfecb4ba40e6f0ddfc6f531ef5a70955cc
-updated: 2017-11-11T16:26:15.983444489-08:00
+updated: 2017-11-18T11:29:12.924029859-08:00
 imports:
 - name: github.com/appscode/go
-  version: 6c0d0eba230ad31f74a18b44beee6f865b01bdec
+  version: 1cd97c853ad364376f9c792106deb0bfd197bca0
   subpackages:
   - context
   - crypto/rand
@@ -13,11 +13,13 @@ imports:
   - types
   - version
 - name: github.com/appscode/kutil
-  version: 4b4f67973f42bf9a5355c6b4c2d00040833d4143
+  version: c7547d78847930f4b48c4e3b3d6fe1d8b0309bd7
   subpackages:
+  - apiextensions/v1beta1
   - apps/v1beta1
   - core/v1
   - extensions/v1beta1
+  - meta
   - rbac/v1beta1
 - name: github.com/appscode/pat
   version: 48ff78925b7955367d8a048fc2b5cec8efadf8d3
@@ -32,7 +34,7 @@ imports:
 - name: github.com/codeskyblue/go-sh
   version: 703901965097a6b3155c0f6f774efb877b483f64
 - name: github.com/cpuguy83/go-md2man
-  version: 71acacd42f85e5e82f70a55327789582a5200a90
+  version: 1d903dcb749992f3741d744c0f8376b4bd7eb3e1
   subpackages:
   - md2man
 - name: github.com/davecgh/go-spew
@@ -100,7 +102,7 @@ imports:
 - name: github.com/google/gofuzz
   version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
 - name: github.com/google/uuid
-  version: e367a344cbe8e08149f9951115dc299ebd42b919
+  version: 8c31c18f31ede9fc8eae72290a7e7a8064e9b3e3
 - name: github.com/googleapis/gnostic
   version: 0c5108395e2debce0d731cf0287ddf7242066aba
   subpackages:
@@ -141,6 +143,10 @@ imports:
   version: 36b14963da70d11297d313183d7e6388c8510e1e
 - name: github.com/juju/ratelimit
   version: 5b9ff866471762aa2ab2dced63c9fb6f53921342
+- name: github.com/kubernetes/apimachinery
+  version: 18a564baac720819100827c16fdebcadb05b2d0d
+  subpackages:
+  - pkg/conversion
 - name: github.com/mailru/easyjson
   version: d5b7844b561a7bc640052f1b935f7b800330d7e0
   subpackages:
@@ -222,7 +228,7 @@ imports:
 - name: github.com/sirupsen/logrus
   version: f006c2ac4710855cf0f916dd6b77acf6b048dc6e
 - name: github.com/spf13/cobra
-  version: 2da4a54c5ceefcee7ca5dd0eea1e18a3b6366489
+  version: d6948b782c9f4799ea3cd225f6de4131c29c243a
   subpackages:
   - doc
 - name: github.com/spf13/pflag
