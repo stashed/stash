@@ -8,18 +8,18 @@ import (
 	"github.com/appscode/go/log"
 	"github.com/appscode/kutil/meta"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
-	"github.com/appscode/stash/pkg/scheduler"
+	"github.com/appscode/stash/pkg/backup"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func NewCmdSchedule() *cobra.Command {
+func NewCmdBackup() *cobra.Command {
 	var (
 		masterURL      string
 		kubeconfigPath string
-		opt            = scheduler.Options{
+		opt            = backup.Options{
 			Namespace:      meta.Namespace(),
 			ResticName:     "",
 			ScratchDir:     "/tmp",
@@ -31,8 +31,8 @@ func NewCmdSchedule() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:               "schedule",
-		Short:             "Run Stash cron daemon",
+		Use:               "backup",
+		Short:             "Run Stash Backup",
 		DisableAutoGenTag: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
@@ -62,7 +62,7 @@ func NewCmdSchedule() *cobra.Command {
 			}
 			opt.ScratchDir = strings.TrimSuffix(opt.ScratchDir, "/") // setup ScratchDir in SetupAndRun
 
-			ctrl := scheduler.New(kubeClient, stashClient, opt)
+			ctrl := backup.New(kubeClient, stashClient, opt)
 
 			if opt.RunOffline {
 				ctrl.Backup()

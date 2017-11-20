@@ -178,7 +178,7 @@ func CreateSidecarContainer(r *api.Restic, tag string, workload api.LocalTypedRe
 		Image:           docker.ImageOperator + ":" + tag,
 		ImagePullPolicy: core.PullIfNotPresent,
 		Args: []string{
-			"schedule",
+			"backup",
 			"--restic-name=" + r.Name,
 			"--workload-kind=" + workload.Kind,
 			"--workload-name=" + workload.Name,
