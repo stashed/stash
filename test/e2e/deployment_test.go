@@ -268,8 +268,8 @@ var _ = Describe("Deployment", func() {
 			_, err = f.CreateDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
-			//By("Waiting for sidecar")
-			//f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+			By("Waiting for init-container")
+			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
 
 			By("Waiting for backup to complete")
 			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
@@ -281,14 +281,14 @@ var _ = Describe("Deployment", func() {
 		}
 	)
 
-	Describe("Creating restic for", func() {
+	FDescribe("Creating restic for", func() {
 		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 		})
 
-		Context(`"Local" backend`, func() {
+		FContext(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
@@ -527,7 +527,7 @@ var _ = Describe("Deployment", func() {
 		})
 	})
 
-	Describe("Offline backup for", func() {
+	FDescribe("Offline backup for", func() {
 		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
