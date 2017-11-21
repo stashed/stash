@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/appscode/go/log"
+	. "github.com/appscode/go/types"
 	core_util "github.com/appscode/kutil/core/v1"
 	"github.com/appscode/kutil/meta"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -18,6 +19,7 @@ import (
 	"github.com/cenkalti/backoff"
 	"github.com/google/go-cmp/cmp"
 	batch "k8s.io/api/batch/v1"
+	batch_v1_beta "k8s.io/api/batch/v1beta1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -464,4 +466,62 @@ func GetConfigmapLockName(workload api.LocalTypedReference) string {
 
 func DeleteConfigmapLock(k8sClient kubernetes.Interface, namespace string, workload api.LocalTypedReference) error {
 	return k8sClient.CoreV1().ConfigMaps(namespace).Delete(GetConfigmapLockName(workload), &metav1.DeleteOptions{})
+}
+
+func CreateCronJobForDeletingPods(restic *api.Restic, tag string) *batch_v1_beta.CronJob {
+	selectors := ""
+
+	for k, v := range restic.Spec.Selector.MatchLabels {
+		selectors += k + "=" + v + ","
+	}
+	selectors = strings.TrimSuffix(selectors, ",") // remove last ","
+
+	job := &batch_v1_beta.CronJob{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "stash-" + restic.Name,
+			Namespace: restic.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: api.SchemeGroupVersion.String(),
+					Kind:       api.ResourceKindRestic,
+					Name:       restic.Name,
+					UID:        restic.UID,
+				},
+			},
+		},
+		Spec: batch_v1_beta.CronJobSpec{
+			Schedule: restic.Spec.Schedule,
+			JobTemplate: batch_v1_beta.JobTemplateSpec{
+				Spec: batch.JobSpec{
+					Template: core.PodTemplateSpec{
+						Spec: core.PodSpec{
+							Containers: []core.Container{
+								{
+									Name:  "stash-kubectl",
+									Image: "diptadas/kubectl" + ":" + tag,
+									Args: []string{
+										"kubectl",
+										"delete",
+										"pods",
+										"-l " + selectors,
+									},
+								},
+							},
+							RestartPolicy: core.RestartPolicyNever,
+						},
+					},
+				},
+			},
+		},
+	}
+	return job
+}
+
+func WaitUntilDeploymentReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
+	return wait.PollImmediate(1*time.Second, 60*time.Second, func() (bool, error) {
+		if obj, err := c.AppsV1beta1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+			return Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
+		}
+		return false, nil
+	})
 }

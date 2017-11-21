@@ -277,18 +277,18 @@ var _ = Describe("Deployment", func() {
 			}, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
-			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", 1)))
 		}
 	)
 
-	FDescribe("Creating restic for", func() {
+	Describe("Creating restic for", func() {
 		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 		})
 
-		FContext(`"Local" backend`, func() {
+		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
@@ -528,11 +528,11 @@ var _ = Describe("Deployment", func() {
 	})
 
 	FDescribe("Offline backup for", func() {
-		AfterEach(func() {
-			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
-		})
+		//AfterEach(func() {
+		//	f.DeleteDeployment(deployment.ObjectMeta)
+		//	f.DeleteRestic(restic.ObjectMeta)
+		//	f.DeleteSecret(cred.ObjectMeta)
+		//})
 
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
