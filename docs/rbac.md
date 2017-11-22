@@ -2,17 +2,17 @@
 title: rbac | Stash
 description: rbac of Stash
 menu:
-  product_stash_0.5.1:
+  product_stash_0.7.1:
     identifier: rbac-stash
     name: RBAC
     parent: getting-started
     weight: 45
 product_name: stash
-left_menu: product_stash_0.5.1
+left_menu: product_stash_0.7.1
 section_menu_id: getting-started
-url: /products/stash/0.5.1/getting-started/rbac
+url: /products/stash/0.7.1/getting-started/rbac/
 aliases:
-  - /products/stash/0.5.1/rbac
+  - /products/stash/0.7.1/rbac/
 ---
 
 # Configuring RBAC

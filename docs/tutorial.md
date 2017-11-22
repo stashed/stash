@@ -2,17 +2,17 @@
 title: Tutorial | Stash
 description: tutorial of Stash
 menu:
-  product_stash_0.5.1:
+  product_stash_0.7.1:
     identifier: tutorial-stash
     name: Tutorial
     parent: getting-started
     weight: 45
 product_name: stash
-left_menu: product_stash_0.5.1
+left_menu: product_stash_0.7.1
 section_menu_id: getting-started
-url: /products/stash/0.5.1/getting-started/tutorial
+url: /products/stash/0.7.1/getting-started/tutorial/
 aliases:
-  - /products/stash/0.5.1/tutorial
+  - /products/stash/0.7.1/tutorial/
 ---
 
 # Using Stash
@@ -212,7 +212,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.name
-        image: appscode/stash:0.5.1
+        image: appscode/stash:0.7.1
         imagePullPolicy: IfNotPresent
         name: stash
         resources: {}
