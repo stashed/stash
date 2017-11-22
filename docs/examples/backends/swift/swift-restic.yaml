@@ -1,22 +1,22 @@
 apiVersion: stash.appscode.com/v1alpha1
 kind: Restic
 metadata:
-  name: swift-restic
+  name: stash-restic
   namespace: default
 spec:
   selector:
     matchLabels:
-      app: swift-restic
+      app: stash-restic
   fileGroups:
   - path: /source/data
     retentionPolicy:
       keepLast: 5
       prune: true
   backend:
-    swift:
+    stash:
       container: stashqa
       prefix: demo
-    storageSecretName: swift-secret
+    storageSecretName: stash-secret
   schedule: '@every 1m'
   volumeMounts:
   - mountPath: /source/data

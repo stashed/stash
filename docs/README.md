@@ -10,9 +10,9 @@ menu:
 product_name: stash
 left_menu: product_stash_0.5.1
 section_menu_id: getting-started
-url: /products/swift/0.5.1/getting-started/
+url: /products/stash/0.5.1/getting-started/
 aliases:
-  - /products/swift/0.5.1/
+  - /products/stash/0.5.1/
 ---
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/appscode/stash)](https://goreportcard.com/report/github.com/appscode/stash)
@@ -28,7 +28,7 @@ aliases:
 ## Features
  - Fast, secure, efficient backup of any kubernetes [volumes](https://kubernetes.io/docs/concepts/storage/volumes/).
  - Automates configuration of `restic` for periodic backup.
- - Store backed up files in various cloud storage provider, including S3, GCS, Azure, OpenStack Swift, DigitalOcean Spaces etc.
+ - Store backed up files in various cloud storage provider, including S3, GCS, Azure, OpenStack stash, DigitalOcean Spaces etc.
  - Prometheus ready metrics for backup process.
 
 ## Supported Versions

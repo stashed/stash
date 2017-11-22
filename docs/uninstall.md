@@ -10,9 +10,9 @@ menu:
 product_name: stash
 left_menu: product_stash_0.5.1
 section_menu_id: getting-started
-url: /products/swift/0.5.1/getting-started/uninstall
+url: /products/stash/0.5.1/getting-started/uninstall
 aliases:
-  - /products/swift/0.5.1/uninstall
+  - /products/stash/0.5.1/uninstall
 ---
 
 > New to Stash? Please start [here](/docs/tutorial.md).
