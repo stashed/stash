@@ -1,3 +1,20 @@
+---
+title: Install | Stash
+description: Install of Stash
+menu:
+  product_stash_0.5.1:
+    identifier: install-stash
+    name: Install
+    parent: getting-started
+    weight: 35
+product_name: stash
+left_menu: product_stash_0.5.1
+section_menu_id: getting-started
+url: /products/swift/0.5.1/getting-started/install
+aliases:
+  - /products/swift/0.5.1/install
+---
+
 > New to Stash? Please start [here](/docs/tutorial.md).
 
 # Installation Guide
