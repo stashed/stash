@@ -336,6 +336,12 @@ func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *
 					UID:        recovery.UID,
 				},
 			},
+			Labels: map[string]string{
+				"app": "stash",
+			},
+			Annotations: map[string]string{
+				"restic-name": restic.Name,
+			},
 		},
 		Spec: batch.JobSpec{
 			Template: core.PodTemplateSpec{
@@ -470,7 +476,6 @@ func DeleteConfigmapLock(k8sClient kubernetes.Interface, namespace string, workl
 
 func CreateCronJobForDeletingPods(restic *api.Restic, tag string) *batch_v1_beta.CronJob {
 	selectors := ""
-
 	for k, v := range restic.Spec.Selector.MatchLabels {
 		selectors += k + "=" + v + ","
 	}
@@ -478,7 +483,7 @@ func CreateCronJobForDeletingPods(restic *api.Restic, tag string) *batch_v1_beta
 
 	job := &batch_v1_beta.CronJob{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "stash-" + restic.Name,
+			Name:      "stash-backup-" + restic.Name,
 			Namespace: restic.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				{
@@ -488,10 +493,24 @@ func CreateCronJobForDeletingPods(restic *api.Restic, tag string) *batch_v1_beta
 					UID:        restic.UID,
 				},
 			},
+			Labels: map[string]string{
+				"app": "stash",
+			},
+			Annotations: map[string]string{
+				"restic-name": restic.Name,
+			},
 		},
 		Spec: batch_v1_beta.CronJobSpec{
 			Schedule: restic.Spec.Schedule,
 			JobTemplate: batch_v1_beta.JobTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app": "stash",
+					},
+					Annotations: map[string]string{
+						"restic-name": restic.Name,
+					},
+				},
 				Spec: batch.JobSpec{
 					Template: core.PodTemplateSpec{
 						Spec: core.PodSpec{
@@ -518,7 +537,7 @@ func CreateCronJobForDeletingPods(restic *api.Restic, tag string) *batch_v1_beta
 }
 
 func WaitUntilDeploymentReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(1*time.Second, 60*time.Second, func() (bool, error) {
+	return wait.PollImmediate(1*time.Second, 5*time.Minute, func() (bool, error) {
 		if obj, err := c.AppsV1beta1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
 			return Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
 		}

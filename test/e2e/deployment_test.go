@@ -539,6 +539,7 @@ var _ = Describe("Deployment", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 				restic.Spec.Type = api.BackupOffline
+				restic.Spec.Schedule = "*/5 * * * *"
 			})
 			It(`should backup new Deployment`, shouldOfflineBackupNewDeployment)
 		})

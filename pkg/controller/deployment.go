@@ -153,21 +153,10 @@ func (c *StashController) runDeploymentInjector(key string) error {
 			return nil
 		}
 		if newRestic != nil {
-			if newRestic.Spec.Type == api.BackupOffline {
-				if *dp.Spec.Replicas > 1 {
-					return fmt.Errorf("cannot perform offline backup for deployment with replicas > 1")
-				}
-
-				if err = c.EnsureDeploymentSidecar(dp, oldRestic, newRestic); err != nil {
-					return err
-				}
-
-				job := util.CreateCronJobForDeletingPods(newRestic, "latest")
-				_, err := c.k8sClient.BatchV1beta1().CronJobs(newRestic.Namespace).Create(job)
-				return err
-			} else {
-				return c.EnsureDeploymentSidecar(dp, oldRestic, newRestic)
+			if newRestic.Spec.Type == api.BackupOffline && *dp.Spec.Replicas > 1 {
+				return fmt.Errorf("cannot perform offline backup for deployment with replicas > 1")
 			}
+			return c.EnsureDeploymentSidecar(dp, oldRestic, newRestic)
 		} else if oldRestic != nil {
 			return c.EnsureDeploymentSidecarDeleted(dp, oldRestic)
 		}

@@ -165,6 +165,13 @@ func (c *StashController) runResticInjector(key string) error {
 		d := obj.(*api.Restic)
 		fmt.Printf("Sync/Add/Update for Restic %s\n", d.GetName())
 
+		if d.Spec.Type == api.BackupOffline {
+			job := util.CreateCronJobForDeletingPods(d, "latest")
+			if _, err := c.k8sClient.BatchV1beta1().CronJobs(d.Namespace).Create(job); err != nil {
+				return err
+			}
+		}
+
 		c.EnsureSidecar(d)
 		c.EnsureSidecarDeleted(d.Namespace, d.Name)
 	}
