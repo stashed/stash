@@ -1,3 +1,17 @@
+title: Overview | Developer Guide
+description: Developer Guide Overview
+menu:
+  product_stash_0.5.1:
+    identifier: developer-guide-readme
+    name: Overview
+    parent: developer-guide
+    weight: 15
+product_name: stash
+left_menu: product_stash_0.5.1
+section_menu_id: developer-guide
+url: /products/stash/0.5.1/developer-guide/
+---
+
 ## Development Guide
 This document is intended to be the canonical source of truth for things like supported toolchain versions for building Stash.
 If you find a requirement that this doc does not capture, please submit an issue on github.
