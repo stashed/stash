@@ -1,5 +1,5 @@
 ---
-title: Stash version | Reference
+title: Version | Reference
 description: stash Version
 menu:
   product_stash_0.5.1:
