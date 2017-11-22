@@ -2,17 +2,17 @@
 title: Concept | Stash
 description: Concepts of Stash
 menu:
-  product_stash_0.7.1:
+  product_stash_0.5.1:
     identifier: concept-stash
     name: Concept
     parent: getting-started
     weight: 30
 product_name: stash
-left_menu: product_stash_0.7.1
+left_menu: product_stash_0.5.1
 section_menu_id: getting-started
-url: /products/stash/0.7.1/getting-started/concept/
+url: /products/stash/0.5.1/getting-started/concept/
 aliases:
-  - /products/stash/0.7.1/concept/
+  - /products/stash/0.5.1/concept/
 ---
 
 > New to Stash? Please start [here](/docs/tutorial.md).

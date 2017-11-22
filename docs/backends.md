@@ -2,17 +2,17 @@
 title: Backends | Stash
 description: Backends of Stash
 menu:
-  product_stash_0.7.1:
+  product_stash_0.5.1:
     identifier: backends-stash
     name: Backends
     parent: getting-started
     weight: 25
 product_name: stash
-left_menu: product_stash_0.7.1
+left_menu: product_stash_0.5.1
 section_menu_id: getting-started
-url: /products/stash/0.7.1/getting-started/backends/
+url: /products/stash/0.5.1/getting-started/backends/
 aliases:
-  - /products/stash/0.7.1/backends/
+  - /products/stash/0.5.1/backends/
 ---
 
 > New to Stash? Please start [here](/docs/tutorial.md).
@@ -350,8 +350,8 @@ spec:
 ```
 
 
-### OpenStack stash
-Stash supports [OpenStack stash as backend](https://restic.readthedocs.io/en/stable/manual.html#openstack-stash). To configure this backend, following secret keys are needed:
+### OpenStack Swift
+Stash supports [OpenStack Swift as backend](https://restic.readthedocs.io/en/stable/manual.html#openstack-swift). To configure this backend, following secret keys are needed:
 
 | Key                      | Description                                                |
 |--------------------------|------------------------------------------------------------|
@@ -383,7 +383,7 @@ $ echo -n '<your-tenant-name>' > OS_TENANT_NAME
 $ echo -n '<your-username>' > OS_USERNAME
 $ echo -n '<your-password>' > OS_PASSWORD
 $ echo -n '<your-region>' > OS_REGION_NAME
-$ kubectl create secret generic stash-secret \
+$ kubectl create secret generic swift-secret \
     --from-file=./RESTIC_PASSWORD \
     --from-file=./OS_AUTH_URL \
     --from-file=./OS_TENANT_ID \
@@ -391,11 +391,11 @@ $ kubectl create secret generic stash-secret \
     --from-file=./OS_USERNAME \
     --from-file=./OS_PASSWORD \
     --from-file=./OS_REGION_NAME
-secret "stash-secret" created
+secret "swift-secret" created
 ```
 
 ```yaml
-$ kubectl get secret stash-secret -o yaml
+$ kubectl get secret swift-secret -o yaml
 
 apiVersion: v1
 data:
@@ -409,52 +409,52 @@ data:
 kind: Secret
 metadata:
   creationTimestamp: 2017-07-03T19:17:39Z
-  name: stash-secret
+  name: swift-secret
   namespace: default
   resourceVersion: "36381"
-  selfLink: /api/v1/namespaces/default/secrets/stash-secret
+  selfLink: /api/v1/namespaces/default/secrets/swift-secret
   uid: 47b4bcab-6024-11e7-879a-080027726d6b
 type: Opaque
 ```
 
-Now, you can create a Restic tpr using this secret. Following parameters are available for `stash` backend.
+Now, you can create a Restic tpr using this secret. Following parameters are available for `Swift` backend.
 
 | Parameter         | Description                                                                 |
 |-------------------|-----------------------------------------------------------------------------|
-| `stash.container` | `Required`. Name of Storage container                                       |
-| `stash.prefix`    | `Optional`. Path prefix into bucket where repository will be created.       |
+| `swift.container` | `Required`. Name of Storage container                                       |
+| `swift.prefix`    | `Optional`. Path prefix into bucket where repository will be created.       |
 
 ```console
-$ kubectl create -f ./docs/examples/backends/stash/stash-restic.yaml
-restic "stash-restic" created
+$ kubectl create -f ./docs/examples/backends/swift/swift-restic.yaml
+restic "swift-restic" created
 ```
 
 ```yaml
-$ kubectl get restic stash-restic -o yaml
+$ kubectl get restic swift-restic -o yaml
 
 apiVersion: stash.appscode.com/v1alpha1
 kind: Restic
 metadata:
   creationTimestamp: 2017-06-28T13:31:14Z
-  name: stash-restic
+  name: swift-restic
   namespace: default
   resourceVersion: "7070"
-  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/stash-restic
+  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/swift-restic
   uid: 0e8eb89b-5c06-11e7-bb52-08002711f4aa
 spec:
   selector:
     matchLabels:
-      app: stash-restic
+      app: swift-restic
   fileGroups:
   - path: /source/data
     retentionPolicy:
       keepLast: 5
       prune: true
   backend:
-    stash:
+    swift:
       container: stashqa
       prefix: demo
-    storageSecretName: stash-secret
+    storageSecretName: swift-secret
   schedule: '@every 1m'
   volumeMounts:
   - mountPath: /source/data
