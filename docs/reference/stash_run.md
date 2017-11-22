@@ -1,3 +1,17 @@
+---
+title: Stash Run | Reference 
+description: Stash run
+menu:
+  product_stash_0.5.1:
+    identifier: stash-run
+    name: Stash Run
+    parent: reference
+    weight: 14
+product_name: stash
+left_menu: product_stash_0.5.1 
+section_menu_id: reference
+---
+
 ## stash run
 
 Run Stash operator

@@ -1,3 +1,16 @@
+---
+title: Stash version | Reference
+description: stash Version
+menu:
+  product_stash_0.5.1:
+    identifier: stash-version
+    name: Stash Version
+    parent: reference
+    weight: 20
+product_name: stash
+left_menu: product_stash_0.5.1
+section_menu_id: reference
+---
 ## stash version
 
 Prints binary version number.

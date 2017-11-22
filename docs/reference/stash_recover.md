@@ -1,3 +1,18 @@
+---
+title: Stash Recover | Stash
+description: Stash Recover
+menu:
+  product_stash_0.5.1:
+    identifier: reference-stash-recover
+    name: Stash Recover
+    parent: reference
+    weight: 30
+product_name: stash
+left_menu: product_stash_0.5.1
+section_menu_id: reference
+aliases:
+  - products/stash/0.5.1/reference/
+---
 ## stash recover
 
 Recover restic backup
