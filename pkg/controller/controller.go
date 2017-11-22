@@ -18,6 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	apps_listers "k8s.io/client-go/listers/apps/v1beta1"
+	batch_listers "k8s.io/client-go/listers/batch/v1"
 	core_listers "k8s.io/client-go/listers/core/v1"
 	ext_listers "k8s.io/client-go/listers/extensions/v1beta1"
 	"k8s.io/client-go/tools/cache"
@@ -77,6 +78,12 @@ type StashController struct {
 	rsIndexer  cache.Indexer
 	rsInformer cache.Controller
 	rsLister   ext_listers.ReplicaSetLister
+
+	// Job
+	jobQueue    workqueue.RateLimitingInterface
+	jobIndexer  cache.Indexer
+	jobInformer cache.Controller
+	jobLister   batch_listers.JobLister
 }
 
 func New(kubeClient kubernetes.Interface, crdClient crd_cs.ApiextensionsV1beta1Interface, stashClient cs.StashV1alpha1Interface, options Options) *StashController {
