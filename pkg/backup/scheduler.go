@@ -24,39 +24,41 @@ const (
 	LeaderElectionLease = 3 * time.Second
 )
 
-func (c *Controller) BackupScheduler() {
+func (c *Controller) BackupScheduler() error {
 	stopBackup := make(chan struct{})
 	defer close(stopBackup)
 
 	// split code from here for leader election
 	switch c.opt.Workload.Kind {
 	case api.KindDeployment, api.KindReplicaSet, api.KindReplicationController:
-		c.electLeader(stopBackup)
+		if err := c.electLeader(stopBackup); err != nil {
+			return err
+		}
 	default:
-		c.setupAndRunScheduler(stopBackup)
+		if err := c.setupAndRunScheduler(stopBackup); err != nil {
+			return err
+		}
 	}
-
-	// Wait forever
-	select {}
+	select {} // no error, wait forever
 }
 
-func (c *Controller) setupAndRunScheduler(stopBackup chan struct{}) {
+func (c *Controller) setupAndRunScheduler(stopBackup chan struct{}) error {
 	if _, err := c.setup(); err != nil {
-		log.Fatalf("Failed to setup backup: %s", err)
+		return fmt.Errorf("failed to setup backup: %s", err)
 	}
-	// setup restic watcher, not required for offline backup
-	c.initResticWatcher()
+	c.initResticWatcher() // setup restic watcher, not required for offline backup
 	go c.runScheduler(1, stopBackup)
+	return nil
 }
 
-func (c *Controller) electLeader(stopBackup chan struct{}) {
+func (c *Controller) electLeader(stopBackup chan struct{}) error {
 	rlc := resourcelock.ResourceLockConfig{
 		Identity:      c.opt.PodName,
 		EventRecorder: c.recorder,
 	}
 	resLock, err := resourcelock.New(resourcelock.ConfigMapsResourceLock, c.opt.Namespace, util.GetConfigmapLockName(c.opt.Workload), c.k8sClient.CoreV1(), rlc)
 	if err != nil {
-		log.Fatalln(err)
+		return fmt.Errorf("error during leader election: %s", err)
 	}
 	go func() {
 		leaderelection.RunOrDie(leaderelection.LeaderElectionConfig{
@@ -76,6 +78,7 @@ func (c *Controller) electLeader(stopBackup chan struct{}) {
 			},
 		})
 	}()
+	return nil
 }
 
 func (c *Controller) runScheduler(threadiness int, stopCh chan struct{}) {

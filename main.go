@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/appscode/go/log"
 	logs "github.com/appscode/go/log/golog"
 	_ "github.com/appscode/stash/client/fake"
 	_ "github.com/appscode/stash/client/internalclientset/scheme"
@@ -16,7 +17,9 @@ func main() {
 	defer logs.FlushLogs()
 
 	if err := cmds.NewCmdStash(Version).Execute(); err != nil {
+		log.Infoln("Error in Stash Main:", err)
 		os.Exit(1)
 	}
+	log.Infoln("Exiting Stash Main")
 	os.Exit(0)
 }

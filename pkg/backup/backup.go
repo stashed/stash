@@ -68,15 +68,16 @@ func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, 
 	}
 }
 
-func (c *Controller) Backup() {
+func (c *Controller) Backup() error {
 	resource, err := c.setup()
 	if err != nil {
-		log.Fatalf("failed to setup backup: %s", err)
+		return fmt.Errorf("failed to setup backup: %s", err)
 	}
 	if err := c.runResticBackup(resource); err != nil {
 		c.recorder.Event(resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
-		log.Fatal(err)
+		return fmt.Errorf("failed to run backup: %s", err)
 	}
+	return nil
 }
 
 // Init and/or connect to repo

@@ -2,6 +2,7 @@ package util
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -25,6 +26,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/record"
@@ -340,7 +343,8 @@ func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *
 				"app": "stash",
 			},
 			Annotations: map[string]string{
-				"restic-name": restic.Name,
+				"restic-name":     restic.Name,
+				"stash-operation": "recovery",
 			},
 		},
 		Spec: batch.JobSpec{
@@ -497,7 +501,8 @@ func CreateCronJobForDeletingPods(restic *api.Restic, tag string) *batch_v1_beta
 				"app": "stash",
 			},
 			Annotations: map[string]string{
-				"restic-name": restic.Name,
+				"restic-name":     restic.Name,
+				"stash-operation": "offline-backup",
 			},
 		},
 		Spec: batch_v1_beta.CronJobSpec{
@@ -508,7 +513,8 @@ func CreateCronJobForDeletingPods(restic *api.Restic, tag string) *batch_v1_beta
 						"app": "stash",
 					},
 					Annotations: map[string]string{
-						"restic-name": restic.Name,
+						"restic-name":     restic.Name,
+						"stash-operation": "offline-backup",
 					},
 				},
 				Spec: batch.JobSpec{
@@ -543,4 +549,33 @@ func WaitUntilDeploymentReady(c kubernetes.Interface, meta metav1.ObjectMeta) er
 		}
 		return false, nil
 	})
+}
+
+func CreateOrPatchCronJob(c kubernetes.Interface, job *batch_v1_beta.CronJob) (*batch_v1_beta.CronJob, error) {
+	cur, err := c.BatchV1beta1().CronJobs(job.Namespace).Get(job.Name, metav1.GetOptions{})
+	if kerr.IsNotFound(err) {
+		log.Infoln("Creating Cron Job %s/%s.", job.Namespace, job.Name)
+		return c.BatchV1beta1().CronJobs(job.Namespace).Create(job)
+	} else if err != nil {
+		return nil, err
+	}
+
+	// patch cronjob
+	curJson, err := json.Marshal(cur)
+	if err != nil {
+		return nil, err
+	}
+	modJson, err := json.Marshal(job)
+	if err != nil {
+		return nil, err
+	}
+	patch, err := strategicpatch.CreateTwoWayMergePatch(curJson, modJson, batch_v1_beta.CronJob{})
+	if err != nil {
+		return nil, err
+	}
+	if len(patch) == 0 || string(patch) == "{}" {
+		return cur, nil
+	}
+	log.Infoln("Patching Cron Job %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
+	return c.BatchV1beta1().CronJobs(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
 }

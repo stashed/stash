@@ -264,6 +264,13 @@ var _ = Describe("Deployment", func() {
 			err = f.CreateRestic(restic)
 			Expect(err).NotTo(HaveOccurred())
 
+			/*cronJobName := "stash-backup-" + restic.Name
+			By("Checking cron job created: " + cronJobName)
+			Eventually(func() error {
+				_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
+				return err
+			}).Should(BeNil())*/
+
 			By("Creating Deployment " + deployment.Name)
 			_, err = f.CreateDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
@@ -271,10 +278,15 @@ var _ = Describe("Deployment", func() {
 			By("Waiting for init-container")
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
 
-			By("Waiting for backup to complete")
+			By("Waiting for initial backup to complete")
 			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
 				return r.Status.BackupCount
 			}, BeNumerically(">=", 1)))
+
+			By("Waiting for next backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 2)))
 
 			By("Waiting for backup event")
 			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", 1)))
@@ -282,18 +294,18 @@ var _ = Describe("Deployment", func() {
 	)
 
 	Describe("Creating restic for", func() {
-		AfterEach(func() {
+		/*AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
-		})
+		})*/
 
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 			})
-			It(`should backup new Deployment`, shouldBackupNewDeployment)
+			FIt(`should backup new Deployment`, shouldBackupNewDeployment)
 			It(`should backup existing Deployment`, shouldBackupExistingDeployment)
 		})
 
@@ -527,7 +539,7 @@ var _ = Describe("Deployment", func() {
 		})
 	})
 
-	FDescribe("Offline backup for", func() {
+	Describe("Offline backup for", func() {
 		//AfterEach(func() {
 		//	f.DeleteDeployment(deployment.ObjectMeta)
 		//	f.DeleteRestic(restic.ObjectMeta)

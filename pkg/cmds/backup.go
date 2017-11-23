@@ -35,6 +35,10 @@ func NewCmdBackup() *cobra.Command {
 		Short:             "Run Stash Backup",
 		DisableAutoGenTag: true,
 		Run: func(cmd *cobra.Command, args []string) {
+			if opt.RunOffline { // TODO: remove force exit
+				return
+			}
+
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
 			if err != nil {
 				log.Fatalf("Could not get Kubernetes config: %s", err)
@@ -65,10 +69,17 @@ func NewCmdBackup() *cobra.Command {
 			ctrl := backup.New(kubeClient, stashClient, opt)
 
 			if opt.RunOffline {
-				ctrl.Backup()
+				log.Infoln("Running backup in offline mode")
+				if err = ctrl.Backup(); err != nil {
+					log.Fatal(err)
+				}
 			} else {
-				ctrl.BackupScheduler()
+				log.Infoln("Running backup in online mode")
+				if err = ctrl.BackupScheduler(); err != nil {
+					log.Fatal(err)
+				}
 			}
+			log.Infoln("Exiting Stash Backup")
 		},
 	}
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
