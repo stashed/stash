@@ -254,58 +254,21 @@ var _ = Describe("Deployment", func() {
 			By("Waiting for backup event")
 			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
-
-		shouldOfflineBackupNewDeployment = func() {
-			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Creating restic " + restic.Name)
-			err = f.CreateRestic(restic)
-			Expect(err).NotTo(HaveOccurred())
-
-			/*cronJobName := "stash-backup-" + restic.Name
-			By("Checking cron job created: " + cronJobName)
-			Eventually(func() error {
-				_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
-				return err
-			}).Should(BeNil())*/
-
-			By("Creating Deployment " + deployment.Name)
-			_, err = f.CreateDeployment(deployment)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Waiting for init-container")
-			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
-
-			By("Waiting for initial backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
-				return r.Status.BackupCount
-			}, BeNumerically(">=", 1)))
-
-			By("Waiting for next backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
-				return r.Status.BackupCount
-			}, BeNumerically(">=", 2)))
-
-			By("Waiting for backup event")
-			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", 1)))
-		}
 	)
 
 	Describe("Creating restic for", func() {
-		/*AfterEach(func() {
+		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
-		})*/
+		})
 
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 			})
-			FIt(`should backup new Deployment`, shouldBackupNewDeployment)
+			It(`should backup new Deployment`, shouldBackupNewDeployment)
 			It(`should backup existing Deployment`, shouldBackupExistingDeployment)
 		})
 
@@ -539,7 +502,7 @@ var _ = Describe("Deployment", func() {
 		})
 	})
 
-	Describe("Offline backup for", func() {
+	FDescribe("Offline backup for", func() {
 		//AfterEach(func() {
 		//	f.DeleteDeployment(deployment.ObjectMeta)
 		//	f.DeleteRestic(restic.ObjectMeta)
@@ -553,7 +516,42 @@ var _ = Describe("Deployment", func() {
 				restic.Spec.Type = api.BackupOffline
 				restic.Spec.Schedule = "*/5 * * * *"
 			})
-			It(`should backup new Deployment`, shouldOfflineBackupNewDeployment)
+			It(`should backup new Deployment`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic " + restic.Name)
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				/*cronJobName := "stash-backup-" + restic.Name
+				By("Checking cron job created: " + cronJobName)
+				Eventually(func() error {
+					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
+					return err
+				}).Should(BeNil())*/
+
+				By("Creating Deployment " + deployment.Name)
+				_, err = f.CreateDeployment(deployment)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for init-container")
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
+
+				By("Waiting for initial backup to complete")
+				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+					return r.Status.BackupCount
+				}, BeNumerically(">=", 1)))
+
+				By("Waiting for next backup to complete")
+				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+					return r.Status.BackupCount
+				}, BeNumerically(">=", 2)))
+
+				By("Waiting for backup event")
+				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", 1)))
+			})
 		})
 	})
 })
