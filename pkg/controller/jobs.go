@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/log"
+	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
@@ -17,7 +18,7 @@ import (
 )
 
 func (c *StashController) initJobWatcher() {
-	lw := &cache.ListWatch{
+	lw := &cache.ListWatch{ // TODO @ Dipta: only watch stash jobs
 		ListFunc: func(options metav1.ListOptions) (rt.Object, error) {
 			return c.k8sClient.BatchV1().Jobs(core.NamespaceAll).List(options)
 		},
@@ -98,6 +99,15 @@ func (c *StashController) runJobInjector(key string) error {
 	} else {
 		job := obj.(*batch.Job)
 		fmt.Printf("Sync/Add/Update for Job %s\n", job.GetName())
+
+		if job.Labels["app"] == util.AppLabelStash && job.Status.Succeeded > 0 {
+			fmt.Printf("Deleting succeeded job %s\n", job.GetName())
+			if err = util.DeleteStashJob(c.k8sClient, *job); err != nil {
+				fmt.Printf("Failed to delete stash job: %s, reason: %s\n", job.GetName(), err)
+				return err
+			}
+			fmt.Printf("Deleted stash job: %s\n", job.GetName())
+		}
 	}
 	return nil
 }

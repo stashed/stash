@@ -30,7 +30,7 @@ func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, 
 		stashClient:  stashClient,
 		namespace:    namespace,
 		recoveryName: name,
-		recorder:     eventer.NewEventRecorder(k8sClient, "stash-restorer"),
+		recorder:     eventer.NewEventRecorder(k8sClient, "stash-recovery"),
 	}
 }
 

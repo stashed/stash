@@ -247,7 +247,7 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 		return
 	}
 
-	err = util.WaitUntilDeploymentReady(c.k8sClient, resource.ObjectMeta)
+	err = apps_util.WaitUntilDeploymentReady(c.k8sClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}

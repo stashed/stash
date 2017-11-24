@@ -196,6 +196,5 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 	c.recorder.Eventf(rec.ObjectReference(), core.EventTypeNormal, eventer.EventReasonJobCreated, "Recovery job created: %s", job.Name)
 	stash_util.SetRecoveryStatusPhase(c.stashClient, rec, api.RecoveryRunning)
 
-	go util.CheckRecoveryJob(c.k8sClient, c.recorder, rec, job)
 	return nil
 }

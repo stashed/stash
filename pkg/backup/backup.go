@@ -181,7 +181,7 @@ func (c *Controller) runResticBackup(resource *api.Restic) (err error) {
 		backupOpMetric := restic_session_duration_seconds.WithLabelValues(sanitizeLabelValue(fg.Path), "backup")
 		err = c.measure(c.resticCLI.Backup, resource, fg, backupOpMetric)
 		if err != nil {
-			log.Errorln("Backup operation failed for Reestic %s/%s due to %s", resource.Namespace, resource.Name, err)
+			log.Errorln("Backup operation failed for Restic %s/%s due to %s", resource.Namespace, resource.Name, err)
 			c.recorder.Event(resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToBackup, " Error taking backup: "+err.Error())
 			return
 		} else {

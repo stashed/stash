@@ -10,13 +10,11 @@ import (
 	"time"
 
 	"github.com/appscode/go/log"
-	. "github.com/appscode/go/types"
 	core_util "github.com/appscode/kutil/core/v1"
 	"github.com/appscode/kutil/meta"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/docker"
-	"github.com/appscode/stash/pkg/eventer"
 	"github.com/cenkalti/backoff"
 	"github.com/google/go-cmp/cmp"
 	batch "k8s.io/api/batch/v1"
@@ -28,9 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/record"
 )
 
 const (
@@ -39,6 +35,19 @@ const (
 	ScratchDirVolumeName = "stash-scratchdir"
 	PodinfoVolumeName    = "stash-podinfo"
 	StashInitializerName = "stash.appscode.com"
+
+	RecoveryJobPrefix = "stash-recovery-"
+	KubectlCronPrefix = "stash-kubectl-cron-"
+	CheckJobPrefix    = "stash-check-"
+
+	AnnotationRestic    = "restic"
+	AnnotationRecovery  = "recovery"
+	AnnotationOperation = "operation"
+
+	OperationRecovery   = "recovery"
+	OperationCheck      = "check"
+	OperationDeletePods = "delete-pods"
+	AppLabelStash       = "stash"
 )
 
 func GetAppliedRestic(m map[string]string) (*api.Restic, error) {
@@ -347,7 +356,7 @@ func RecoveryEqual(old, new *api.Recovery) bool {
 func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *batch.Job {
 	job := &batch.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "stash-" + recovery.Name,
+			Name:      RecoveryJobPrefix + recovery.Name,
 			Namespace: recovery.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				{
@@ -358,11 +367,12 @@ func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *
 				},
 			},
 			Labels: map[string]string{
-				"app": "stash",
+				"app": AppLabelStash,
 			},
 			Annotations: map[string]string{
-				"restic-name":     restic.Name,
-				"stash-operation": "recovery",
+				AnnotationRestic:    restic.Name,
+				AnnotationRecovery:  recovery.Name,
+				AnnotationOperation: OperationRecovery,
 			},
 		},
 		Spec: batch.JobSpec{
@@ -442,38 +452,6 @@ func WorkloadExists(k8sClient kubernetes.Interface, namespace string, workload a
 	return nil
 }
 
-func DeleteRecoveryJob(client kubernetes.Interface, recorder record.EventRecorder, rec *api.Recovery, job *batch.Job) {
-	if err := client.BatchV1().Jobs(job.Namespace).Delete(job.Name, nil); err != nil && !kerr.IsNotFound(err) {
-		recorder.Eventf(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToDelete, "Failed to delete Job. Reason: %v", err)
-		log.Errorln(err)
-	}
-
-	if r, err := metav1.LabelSelectorAsSelector(job.Spec.Selector); err != nil {
-		log.Errorln(err)
-	} else {
-		err = client.CoreV1().Pods(job.Namespace).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{LabelSelector: r.String()})
-		if err != nil {
-			recorder.Eventf(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToDelete, "Failed to delete Pods. Reason: %v", err)
-			log.Errorln(err)
-		}
-	}
-}
-
-func CheckRecoveryJob(client kubernetes.Interface, recorder record.EventRecorder, rec *api.Recovery, job *batch.Job) {
-	retryInterval := 3 * time.Minute
-	err := wait.PollInfinite(retryInterval, func() (bool, error) {
-		obj, err := client.BatchV1().Jobs(job.Namespace).Get(job.Name, metav1.GetOptions{})
-		if err != nil {
-			return false, err
-		}
-		return obj.Status.Succeeded > 0, nil
-	})
-	if err != nil {
-		log.Errorln(err)
-	}
-	DeleteRecoveryJob(client, recorder, rec, job)
-}
-
 func ToBeInitializedByPeer(initializers *metav1.Initializers) bool {
 	if initializers != nil && len(initializers.Pending) > 0 && initializers.Pending[0].Name != StashInitializerName {
 		return true
@@ -505,7 +483,7 @@ func CreateCronJobForDeletingPods(restic *api.Restic, tag string) *batch_v1_beta
 
 	job := &batch_v1_beta.CronJob{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "stash-backup-" + restic.Name,
+			Name:      KubectlCronPrefix + restic.Name,
 			Namespace: restic.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				{
@@ -516,11 +494,11 @@ func CreateCronJobForDeletingPods(restic *api.Restic, tag string) *batch_v1_beta
 				},
 			},
 			Labels: map[string]string{
-				"app": "stash",
+				"app": AppLabelStash,
 			},
 			Annotations: map[string]string{
-				"restic-name":     restic.Name,
-				"stash-operation": "offline-backup",
+				AnnotationRestic:    restic.Name,
+				AnnotationOperation: OperationDeletePods,
 			},
 		},
 		Spec: batch_v1_beta.CronJobSpec{
@@ -531,8 +509,8 @@ func CreateCronJobForDeletingPods(restic *api.Restic, tag string) *batch_v1_beta
 						"app": "stash",
 					},
 					Annotations: map[string]string{
-						"restic-name":     restic.Name,
-						"stash-operation": "offline-backup",
+						AnnotationRestic:    restic.Name,
+						AnnotationOperation: OperationDeletePods,
 					},
 				},
 				Spec: batch.JobSpec{
@@ -558,15 +536,6 @@ func CreateCronJobForDeletingPods(restic *api.Restic, tag string) *batch_v1_beta
 		},
 	}
 	return job
-}
-
-func WaitUntilDeploymentReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(1*time.Second, 5*time.Minute, func() (bool, error) {
-		if obj, err := c.AppsV1beta1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
-			return Int32(obj.Spec.Replicas) == obj.Status.ReadyReplicas, nil
-		}
-		return false, nil
-	})
 }
 
 func CreateOrPatchCronJob(c kubernetes.Interface, job *batch_v1_beta.CronJob) (*batch_v1_beta.CronJob, error) {
@@ -596,4 +565,18 @@ func CreateOrPatchCronJob(c kubernetes.Interface, job *batch_v1_beta.CronJob) (*
 	}
 	log.Infoln("Patching Cron Job %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
 	return c.BatchV1beta1().CronJobs(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
+}
+
+func DeleteStashJob(client kubernetes.Interface, job batch.Job) error {
+	if err := client.BatchV1().Jobs(job.Namespace).Delete(job.Name, nil); err != nil && !kerr.IsNotFound(err) {
+		return fmt.Errorf("failed to delete job: %s, reason: %s", job.Name, err)
+	}
+	r, err := metav1.LabelSelectorAsSelector(job.Spec.Selector)
+	if err != nil {
+		return fmt.Errorf("failed to select pods for job: %s, reason: %s", job.Name, err)
+	}
+	if err = client.CoreV1().Pods(job.Namespace).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{LabelSelector: r.String()}); err != nil {
+		return fmt.Errorf("failed to delete pods for job: %s, reason: %s", job.Name, err)
+	}
+	return nil
 }
