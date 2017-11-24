@@ -218,9 +218,7 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 			Name: obj.Name,
 		}
 		if new.Spec.Type == api.BackupOffline {
-			obj.Spec.Template.Spec.InitContainers = []core.Container{
-				util.CreateInitContainer(new, c.options.SidecarImageTag, workload),
-			}
+			obj.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(obj.Spec.Template.Spec.InitContainers, util.CreateInitContainer(new, c.options.SidecarImageTag, workload))
 		} else {
 			obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.options.SidecarImageTag, workload))
 		}
@@ -253,7 +251,7 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 	if err != nil {
 		return
 	}
-	err = util.WaitUntilSidecarAdded(c.k8sClient, resource.Namespace, resource.Spec.Selector)
+	err = util.WaitUntilSidecarAdded(c.k8sClient, resource.Namespace, resource.Spec.Selector, new.Spec.Type == api.BackupOffline)
 	return err
 }
 
@@ -266,7 +264,11 @@ func (c *StashController) EnsureDeploymentSidecarDeleted(resource *apps.Deployme
 	}
 
 	resource, err = apps_util.PatchDeployment(c.k8sClient, resource, func(obj *apps.Deployment) *apps.Deployment {
-		obj.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
+		if restic.Spec.Type == api.BackupOffline {
+			obj.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.InitContainers, util.StashContainer)
+		} else {
+			obj.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
+		}
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
 		if restic.Spec.Backend.Local != nil {
@@ -286,7 +288,7 @@ func (c *StashController) EnsureDeploymentSidecarDeleted(resource *apps.Deployme
 	if err != nil {
 		return
 	}
-	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, resource.Spec.Selector)
+	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, resource.Spec.Selector, restic.Spec.Type == api.BackupOffline)
 	if err != nil {
 		return
 	}

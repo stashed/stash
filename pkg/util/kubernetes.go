@@ -91,7 +91,7 @@ func FindRestic(lister stash_listers.ResticLister, obj metav1.ObjectMeta) (*api.
 	return nil, nil
 }
 
-func WaitUntilSidecarAdded(kubeClient kubernetes.Interface, namespace string, selector *metav1.LabelSelector) error {
+func WaitUntilSidecarAdded(kubeClient kubernetes.Interface, namespace string, selector *metav1.LabelSelector, offline bool) error {
 	return backoff.Retry(func() error {
 		r, err := metav1.LabelSelectorAsSelector(selector)
 		if err != nil {
@@ -105,14 +105,15 @@ func WaitUntilSidecarAdded(kubeClient kubernetes.Interface, namespace string, se
 		var podsToRestart []core.Pod
 		for _, pod := range pods.Items {
 			found := false
-			for _, c := range pod.Spec.Containers {
-				if c.Name == StashContainer {
-					found = true
-					break
-				}
-			}
-			if !found {
+			if offline {
 				for _, c := range pod.Spec.InitContainers {
+					if c.Name == StashContainer {
+						found = true
+						break
+					}
+				}
+			} else {
+				for _, c := range pod.Spec.Containers {
 					if c.Name == StashContainer {
 						found = true
 						break
@@ -133,7 +134,7 @@ func WaitUntilSidecarAdded(kubeClient kubernetes.Interface, namespace string, se
 	}, backoff.NewConstantBackOff(3*time.Second))
 }
 
-func WaitUntilSidecarRemoved(kubeClient kubernetes.Interface, namespace string, selector *metav1.LabelSelector) error {
+func WaitUntilSidecarRemoved(kubeClient kubernetes.Interface, namespace string, selector *metav1.LabelSelector, offline bool) error {
 	return backoff.Retry(func() error {
 		r, err := metav1.LabelSelectorAsSelector(selector)
 		if err != nil {
@@ -147,10 +148,19 @@ func WaitUntilSidecarRemoved(kubeClient kubernetes.Interface, namespace string, 
 		var podsToRestart []core.Pod
 		for _, pod := range pods.Items {
 			found := false
-			for _, c := range pod.Spec.Containers {
-				if c.Name == StashContainer {
-					found = true
-					break
+			if offline {
+				for _, c := range pod.Spec.InitContainers {
+					if c.Name == StashContainer {
+						found = true
+						break
+					}
+				}
+			} else {
+				for _, c := range pod.Spec.Containers {
+					if c.Name == StashContainer {
+						found = true
+						break
+					}
 				}
 			}
 			if found {
