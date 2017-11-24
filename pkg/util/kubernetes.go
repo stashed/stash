@@ -112,6 +112,14 @@ func WaitUntilSidecarAdded(kubeClient kubernetes.Interface, namespace string, se
 				}
 			}
 			if !found {
+				for _, c := range pod.Spec.InitContainers {
+					if c.Name == StashContainer {
+						found = true
+						break
+					}
+				}
+			}
+			if !found {
 				podsToRestart = append(podsToRestart, pod)
 			}
 		}

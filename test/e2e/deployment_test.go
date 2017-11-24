@@ -514,7 +514,7 @@ var _ = Describe("Deployment", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "*/5 * * * *"
+				restic.Spec.Schedule = "*/2 * * * *"
 			})
 			It(`should backup new Deployment`, func() {
 				By("Creating repository Secret " + cred.Name)
@@ -525,12 +525,12 @@ var _ = Describe("Deployment", func() {
 				err = f.CreateRestic(restic)
 				Expect(err).NotTo(HaveOccurred())
 
-				/*cronJobName := "stash-backup-" + restic.Name
+				cronJobName := "stash-backup-" + restic.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
 					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
 					return err
-				}).Should(BeNil())*/
+				}).Should(BeNil())
 
 				By("Creating Deployment " + deployment.Name)
 				_, err = f.CreateDeployment(deployment)
