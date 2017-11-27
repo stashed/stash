@@ -2,7 +2,7 @@ package cmds
 
 import (
 	"github.com/appscode/go/log"
-	"github.com/appscode/kutil"
+	"github.com/appscode/kutil/meta"
 	"github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/check"
 	"github.com/spf13/cobra"
@@ -31,7 +31,7 @@ func NewCmdCheck() *cobra.Command {
 			c := check.New(
 				kubernetes.NewForConfigOrDie(config),
 				v1alpha1.NewForConfigOrDie(config),
-				kutil.Namespace(),
+				meta.Namespace(),
 				resticName,
 				hostName,
 				smartPrefix,
