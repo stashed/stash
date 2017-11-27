@@ -1,17 +1,14 @@
 ---
-title: Stash Run | Reference 
-description: Stash run
+title: Stash Run
 menu:
   product_stash_0.5.1:
     identifier: stash-run
     name: Stash Run
     parent: reference
-    weight: 14
 product_name: stash
-left_menu: product_stash_0.5.1 
+left_menu: product_stash_0.5.1
 section_menu_id: reference
 ---
-
 ## stash run
 
 Run Stash operator
@@ -51,5 +48,5 @@ stash run [flags]
 ```
 
 ### SEE ALSO
-* [stash](stash.md)	 - Stash by AppsCode - Backup your Kubernetes Volumes
+* [stash](/docs/reference/stash.md)	 - Stash by AppsCode - Backup your Kubernetes Volumes
 

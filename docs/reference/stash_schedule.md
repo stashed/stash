@@ -1,12 +1,10 @@
 ---
-title: Schedule | Stash
-description: Stash Schedule
+title: Stash Schedule
 menu:
   product_stash_0.5.1:
-    identifier: reference-stash-schedule
+    identifier: stash-schedule
     name: Stash Schedule
     parent: reference
-    weight: 40
 product_name: stash
 left_menu: product_stash_0.5.1
 section_menu_id: reference
@@ -52,5 +50,5 @@ stash schedule [flags]
 ```
 
 ### SEE ALSO
-* [stash](stash.md)	 - Stash by AppsCode - Backup your Kubernetes Volumes
+* [stash](/docs/reference/stash.md)	 - Stash by AppsCode - Backup your Kubernetes Volumes
 
