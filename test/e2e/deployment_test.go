@@ -502,12 +502,13 @@ var _ = Describe("Deployment", func() {
 		})
 	})
 
-	FDescribe("Offline backup for", func() {
-		//AfterEach(func() {
-		//	f.DeleteDeployment(deployment.ObjectMeta)
-		//	f.DeleteRestic(restic.ObjectMeta)
-		//	f.DeleteSecret(cred.ObjectMeta)
-		//})
+	Describe("Offline backup for", func() {
+		AfterEach(func() {
+			f.DeleteDeployment(deployment.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+			framework.CleanupMinikubeHostPath()
+		})
 
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {

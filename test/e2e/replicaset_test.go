@@ -452,4 +452,58 @@ var _ = Describe("ReplicaSet", func() {
 			It("should initialize and backup new ReplicaSet", shouldInitializeAndBackupReplicaSet)
 		})
 	})
+
+	Describe("Offline backup for", func() {
+		AfterEach(func() {
+			f.DeleteReplicaSet(rs.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+			framework.CleanupMinikubeHostPath()
+		})
+
+		Context(`"Local" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForHostPathLocalBackend()
+				restic.Spec.Type = api.BackupOffline
+				restic.Spec.Schedule = "*/5 * * * *"
+			})
+			It(`should backup new RS`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic " + restic.Name)
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				cronJobName := util.KubectlCronPrefix + restic.Name
+				By("Checking cron job created: " + cronJobName)
+				Eventually(func() error {
+					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
+					return err
+				}).Should(BeNil())
+
+				By("Creating RS " + rs.Name)
+				_, err = f.CreateReplicaSet(rs)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for init-container")
+				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
+
+				By("Waiting for initial backup to complete")
+				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+					return r.Status.BackupCount
+				}, BeNumerically(">=", 1)))
+
+				By("Waiting for next backup to complete")
+				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+					return r.Status.BackupCount
+				}, BeNumerically(">=", 2)))
+
+				By("Waiting for backup event")
+				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", 1)))
+			})
+		})
+	})
 })

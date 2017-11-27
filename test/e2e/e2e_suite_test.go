@@ -85,7 +85,7 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	// root.DeleteNamespace()
+	root.DeleteNamespace()
 	if createInitConfig {
 		root.DeleteInitializerConfiguration(root.InitializerForWorkloads().ObjectMeta)
 	}
