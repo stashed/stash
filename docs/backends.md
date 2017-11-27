@@ -1,3 +1,20 @@
+---
+title: Backends | Stash
+description: Backends of Stash
+menu:
+  product_stash_0.5.1:
+    identifier: backends-stash
+    name: Backends
+    parent: getting-started
+    weight: 25
+product_name: stash
+left_menu: product_stash_0.5.1
+section_menu_id: getting-started
+url: /products/stash/0.5.1/getting-started/backends/
+aliases:
+  - /products/stash/0.5.1/backends/
+---
+
 > New to Stash? Please start [here](/docs/tutorial.md).
 
 # Stash Backends

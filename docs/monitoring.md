@@ -1,3 +1,20 @@
+---
+title: Monitoring | Stash
+description: monitoring of Stash
+menu:
+  product_stash_0.5.1:
+    identifier: monitoring-stash
+    name: Monitoring
+    parent: getting-started
+    weight: 40
+product_name: stash
+left_menu: product_stash_0.5.1
+section_menu_id: getting-started
+url: /products/stash/0.5.1/getting-started/monitoring/
+aliases:
+  - /products/stash/0.5.1/monitoring/
+---
+
 > New to Stash? Please start [here](/docs/tutorial.md).
 
 # Monitoring Stash

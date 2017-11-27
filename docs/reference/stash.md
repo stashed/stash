@@ -1,3 +1,19 @@
+---
+title: Stash
+menu:
+  product_stash_0.5.1:
+    identifier: stash
+    name: Stash
+    parent: reference
+    weight: 0
+
+product_name: stash
+left_menu: product_stash_0.5.1
+section_menu_id: reference
+aliases:
+  - products/stash/0.5.1/reference/
+
+---
 ## stash
 
 Stash by AppsCode - Backup your Kubernetes Volumes
@@ -22,8 +38,8 @@ Stash is a Kubernetes operator for restic. For more information, visit here: htt
 ```
 
 ### SEE ALSO
-* [stash recover](stash_recover.md)	 - Recover restic backup
-* [stash run](stash_run.md)	 - Run Stash operator
-* [stash schedule](stash_schedule.md)	 - Run Stash cron daemon
-* [stash version](stash_version.md)	 - Prints binary version number.
+* [stash recover](/docs/reference/stash_recover.md)	 - Recover restic backup
+* [stash run](/docs/reference/stash_run.md)	 - Run Stash operator
+* [stash schedule](/docs/reference/stash_schedule.md)	 - Run Stash cron daemon
+* [stash version](/docs/reference/stash_version.md)	 - Prints binary version number.
 

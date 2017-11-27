@@ -1,3 +1,20 @@
+---
+title: Tutorial | Stash
+description: tutorial of Stash
+menu:
+  product_stash_0.5.1:
+    identifier: tutorial-stash
+    name: Tutorial
+    parent: getting-started
+    weight: 45
+product_name: stash
+left_menu: product_stash_0.5.1
+section_menu_id: getting-started
+url: /products/stash/0.5.1/getting-started/tutorial/
+aliases:
+  - /products/stash/0.5.1/tutorial/
+---
+
 # Using Stash
 This tutorial will show you how to use Stash to backup a Kubernetes deployment. At first, you need to have a Kubernetes cluster,
 and the kubectl command-line tool must be configured to communicate with your cluster. If you do not already have a cluster,

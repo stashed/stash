@@ -1,3 +1,20 @@
+---
+title: Overview | Stash
+description: Overview of Stash
+menu:
+  product_stash_0.5.1:
+    identifier: overview-stash
+    name: Overview
+    parent: getting-started
+    weight: 20
+product_name: stash
+left_menu: product_stash_0.5.1
+section_menu_id: getting-started
+url: /products/stash/0.5.1/getting-started/
+aliases:
+  - /products/stash/0.5.1/
+---
+
 [![Go Report Card](https://goreportcard.com/badge/github.com/appscode/stash)](https://goreportcard.com/report/github.com/appscode/stash)
 
 # Stash

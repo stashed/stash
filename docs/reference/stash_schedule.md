@@ -1,3 +1,14 @@
+---
+title: Stash Schedule
+menu:
+  product_stash_0.5.1:
+    identifier: stash-schedule
+    name: Stash Schedule
+    parent: reference
+product_name: stash
+left_menu: product_stash_0.5.1
+section_menu_id: reference
+---
 ## stash schedule
 
 Run Stash cron daemon
@@ -39,5 +50,5 @@ stash schedule [flags]
 ```
 
 ### SEE ALSO
-* [stash](stash.md)	 - Stash by AppsCode - Backup your Kubernetes Volumes
+* [stash](/docs/reference/stash.md)	 - Stash by AppsCode - Backup your Kubernetes Volumes
 

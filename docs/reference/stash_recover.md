@@ -1,3 +1,14 @@
+---
+title: Stash Recover
+menu:
+  product_stash_0.5.1:
+    identifier: stash-recover
+    name: Stash Recover
+    parent: reference
+product_name: stash
+left_menu: product_stash_0.5.1
+section_menu_id: reference
+---
 ## stash recover
 
 Recover restic backup
@@ -34,5 +45,5 @@ stash recover [flags]
 ```
 
 ### SEE ALSO
-* [stash](stash.md)	 - Stash by AppsCode - Backup your Kubernetes Volumes
+* [stash](/docs/reference/stash.md)	 - Stash by AppsCode - Backup your Kubernetes Volumes
 
