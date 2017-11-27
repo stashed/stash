@@ -13,10 +13,12 @@ import (
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/cli"
 	"github.com/appscode/stash/pkg/eventer"
+	"github.com/appscode/stash/pkg/util"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
 	"gopkg.in/robfig/cron.v2"
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
@@ -38,6 +40,7 @@ type Options struct {
 	ResyncPeriod     time.Duration
 	MaxNumRequeues   int
 	RunOffline       bool
+	ImageTag         string // image tag for check job
 }
 
 type Controller struct {
@@ -77,6 +80,18 @@ func (c *Controller) Backup() error {
 		c.recorder.Event(resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
 		return fmt.Errorf("failed to run backup: %s", err)
 	}
+	// create check job
+	job := util.CreateCheckJob(resource, c.opt.SnapshotHostname, c.opt.SmartPrefix, c.opt.ImageTag)
+	if job, err = c.k8sClient.BatchV1().Jobs(resource.Namespace).Create(job); err != nil {
+		if kerr.IsAlreadyExists(err) {
+			return nil
+		}
+		err = fmt.Errorf("failed to create check job, reason: %s", err)
+		c.recorder.Event(resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
+		return err
+	}
+	log.Infoln("Created check job:", job.Name)
+	c.recorder.Event(resource.ObjectReference(), core.EventTypeNormal, eventer.EventReasonCheckJobCreated, "Created check job: "+job.Name)
 	return nil
 }
 

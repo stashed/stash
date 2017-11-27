@@ -196,6 +196,7 @@ func GetString(m map[string]string, key string) string {
 func CreateInitContainer(r *api.Restic, tag string, workload api.LocalTypedReference) core.Container {
 	container := CreateSidecarContainer(r, tag, workload)
 	container.Args = append(container.Args, "--offline=true")
+	container.Args = append(container.Args, "--tag="+tag)
 	return container
 }
 
@@ -579,4 +580,67 @@ func DeleteStashJob(client kubernetes.Interface, job batch.Job) error {
 		return fmt.Errorf("failed to delete pods for job: %s, reason: %s", job.Name, err)
 	}
 	return nil
+}
+
+func CreateCheckJob(restic *api.Restic, hostName string, smartPrefix string, tag string) *batch.Job {
+	job := &batch.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      CheckJobPrefix + restic.Name,
+			Namespace: restic.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: api.SchemeGroupVersion.String(),
+					Kind:       api.ResourceKindRestic,
+					Name:       restic.Name,
+					UID:        restic.UID,
+				},
+			},
+			Labels: map[string]string{
+				"app": AppLabelStash,
+			},
+			Annotations: map[string]string{
+				AnnotationRestic:    restic.Name,
+				AnnotationOperation: OperationCheck,
+			},
+		},
+		Spec: batch.JobSpec{
+			Template: core.PodTemplateSpec{
+				Spec: core.PodSpec{
+					Containers: []core.Container{
+						{
+							Name:  StashContainer,
+							Image: docker.ImageOperator + ":" + tag,
+							Args: []string{
+								"check",
+								"--restic-name=" + restic.Name,
+								"--host-name=" + hostName,
+								"--smart-prefix=" + smartPrefix,
+								"--v=10",
+							},
+						},
+					},
+					RestartPolicy: core.RestartPolicyOnFailure,
+				},
+			},
+		},
+	}
+
+	// local backend
+	if restic.Spec.Backend.Local != nil {
+		job.Spec.Template.Spec.Containers[0].VolumeMounts = []core.VolumeMount{
+			{
+				Name:      LocalVolumeName,
+				MountPath: restic.Spec.Backend.Local.Path,
+			},
+		}
+
+		job.Spec.Template.Spec.Volumes = []core.Volume{
+			{
+				Name:         LocalVolumeName,
+				VolumeSource: restic.Spec.Backend.Local.VolumeSource,
+			},
+		}
+	}
+
+	return job
 }

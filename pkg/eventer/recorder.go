@@ -17,11 +17,14 @@ const (
 	EventReasonFailedToBackup                = "FailedBackup"
 	EventReasonSuccessfulRecovery            = "SuccessfulRecovery"
 	EventReasonFailedToRecover               = "FailedRecovery"
+	EventReasonSuccessfulCheck               = "SuccessfulCheck"
+	EventReasonFailedToCheck                 = "FailedCheck"
 	EventReasonFailedToRetention             = "FailedRetention"
 	EventReasonFailedToUpdate                = "FailedUpdateBackup"
 	EventReasonFailedCronJob                 = "FailedCronJob"
 	EventReasonFailedToDelete                = "FailedDelete"
 	EventReasonJobCreated                    = "RecoveryJobCreated"
+	EventReasonCheckJobCreated               = "CheckJobCreated"
 )
 
 func NewEventRecorder(client kubernetes.Interface, component string) record.EventRecorder {

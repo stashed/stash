@@ -512,9 +512,9 @@ var _ = Describe("Deployment", func() {
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
-				restic = f.ResticForLocalBackend()
+				restic = f.ResticForHostPathLocalBackend()
 				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "*/2 * * * *"
+				restic.Spec.Schedule = "*/5 * * * *"
 			})
 			It(`should backup new Deployment`, func() {
 				By("Creating repository Secret " + cred.Name)
