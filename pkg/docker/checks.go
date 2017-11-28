@@ -5,9 +5,9 @@ import (
 )
 
 const (
-	registryUrl = "https://registry-1.docker.io/"
-
+	registryUrl   = "https://registry-1.docker.io/"
 	ImageOperator = "appscode/stash"
+	ImageKubectl  = "appscode/kubectl"
 )
 
 func CheckDockerImageVersion(repository, reference string) error {

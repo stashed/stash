@@ -31,6 +31,7 @@ import (
 
 const (
 	StashContainer       = "stash"
+	KubectlContainer     = "stash-kubectl"
 	LocalVolumeName      = "stash-local"
 	ScratchDirVolumeName = "stash-scratchdir"
 	PodinfoVolumeName    = "stash-podinfo"
@@ -522,8 +523,8 @@ func CreateCronJobForDeletingPods(restic *api.Restic, tag string) *batch_v1_beta
 						Spec: core.PodSpec{
 							Containers: []core.Container{
 								{
-									Name:  "stash-kubectl",
-									Image: "diptadas/kubectl" + ":" + tag,
+									Name:  KubectlContainer,
+									Image: docker.ImageKubectl + ":" + tag,
 									Args: []string{
 										"kubectl",
 										"delete",
