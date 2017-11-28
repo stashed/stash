@@ -166,7 +166,13 @@ func (c *StashController) runResticInjector(key string) error {
 		fmt.Printf("Sync/Add/Update for Restic %s\n", d.GetName())
 
 		if d.Spec.Type == api.BackupOffline {
-			job := util.CreateCronJobForDeletingPods(d, "latest")
+			job := util.CreateCronJobForDeletingPods(d, "latest") // TODO: use specific kubectl version
+			if c.options.EnableRBAC {
+				if err = c.ensureKubectlRBAC(job.Name, job.Namespace); err != nil {
+					return fmt.Errorf("error ensuring rbac for kubectl cron job %s, reason: %s\n", job.Name, err)
+				}
+				job.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = kubectlRole + "-" + job.Name
+			}
 			if _, err = util.CreateOrPatchCronJob(c.k8sClient, job); err != nil {
 				return fmt.Errorf("error creating/patching cron job, reason: %s", err)
 			}

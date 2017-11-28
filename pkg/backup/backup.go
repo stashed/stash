@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/appscode/go/log"
+	core_util "github.com/appscode/kutil/core/v1"
+	rbac_util "github.com/appscode/kutil/rbac/v1beta1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	stash_util "github.com/appscode/stash/client/typed/stash/v1alpha1/util"
@@ -18,6 +20,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/push"
 	"gopkg.in/robfig/cron.v2"
 	core "k8s.io/api/core/v1"
+	rbac "k8s.io/api/rbac/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -41,6 +44,7 @@ type Options struct {
 	MaxNumRequeues   int
 	RunOffline       bool
 	ImageTag         string // image tag for check job
+	EnableRBAC       bool   // rbac for check job
 }
 
 type Controller struct {
@@ -58,6 +62,10 @@ type Controller struct {
 	rInformer cache.Controller
 	rLister   stash_listers.ResticLister
 }
+
+const (
+	checkRole = "stash-check"
+)
 
 func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, opt Options) *Controller {
 	return &Controller{
@@ -82,6 +90,12 @@ func (c *Controller) Backup() error {
 	}
 	// create check job
 	job := util.CreateCheckJob(resource, c.opt.SnapshotHostname, c.opt.SmartPrefix, c.opt.ImageTag)
+	if c.opt.EnableRBAC {
+		if err = c.ensureCheckRBAC(job.Name, job.Namespace); err != nil {
+			return fmt.Errorf("error ensuring rbac for check job %s, reason: %s\n", job.Name, err)
+		}
+		job.Spec.Template.Spec.ServiceAccountName = checkRole + "-" + job.Name
+	}
 	if job, err = c.k8sClient.BatchV1().Jobs(resource.Namespace).Create(job); err != nil {
 		if kerr.IsAlreadyExists(err) {
 			return nil
@@ -222,4 +236,83 @@ func (c *Controller) measure(f func(*api.Restic, api.FileGroup) error, resource 
 	}()
 	err = f(resource, fg)
 	return
+}
+
+func (c *Controller) ensureCheckRBAC(nameSuffix string, namespace string) error {
+	// ensure roles
+	meta := metav1.ObjectMeta{
+		Name:      checkRole,
+		Namespace: namespace,
+	}
+	_, err := rbac_util.CreateOrPatchRole(c.k8sClient, meta, func(in *rbac.Role) *rbac.Role {
+		if in.Labels == nil {
+			in.Labels = map[string]string{}
+		}
+		in.Labels["app"] = "stash"
+
+		in.Rules = []rbac.PolicyRule{
+			{
+				APIGroups: []string{api.SchemeGroupVersion.Group},
+				Resources: []string{"*"},
+				Verbs:     []string{"get"},
+			},
+			{
+				APIGroups: []string{core.GroupName},
+				Resources: []string{"secrets"},
+				Verbs:     []string{"get"},
+			},
+			{
+				APIGroups: []string{core.GroupName},
+				Resources: []string{"events"},
+				Verbs:     []string{"create"},
+			},
+		}
+		return in
+	})
+	if err != nil {
+		return err
+	}
+
+	// ensure service account
+	meta = metav1.ObjectMeta{
+		Name:      checkRole + "-" + nameSuffix,
+		Namespace: namespace,
+	}
+	_, err = core_util.CreateOrPatchServiceAccount(c.k8sClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
+		if in.Labels == nil {
+			in.Labels = map[string]string{}
+		}
+		in.Labels["app"] = "stash"
+		return in
+	})
+	if err != nil {
+		return err
+	}
+
+	// ensure role binding
+	meta = metav1.ObjectMeta{
+		Name:      checkRole + "-" + nameSuffix,
+		Namespace: namespace,
+	}
+	_, err = rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+		if in.Labels == nil {
+			in.Labels = map[string]string{}
+		}
+		in.Labels["app"] = "stash"
+
+		in.RoleRef = rbac.RoleRef{
+			APIGroup: rbac.GroupName,
+			Kind:     "Role",
+			Name:     meta.Name,
+		}
+		in.Subjects = []rbac.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      meta.Name,
+				Namespace: meta.Namespace,
+			},
+		}
+		return in
+	})
+	return err
 }

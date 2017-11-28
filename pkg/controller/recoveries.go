@@ -182,6 +182,12 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 	}
 
 	job := util.CreateRecoveryJob(rec, restic, c.options.SidecarImageTag)
+	if c.options.EnableRBAC {
+		if err = c.ensureRecoveryRBAC(job.Name, job.Namespace); err != nil {
+			return fmt.Errorf("error ensuring rbac for recovery job %s, reason: %s\n", job.Name, err)
+		}
+		job.Spec.Template.Spec.ServiceAccountName = recoveryRole + "-" + job.Name
+	}
 	if job, err = c.k8sClient.BatchV1().Jobs(rec.Namespace).Create(job); err != nil {
 		if kerr.IsAlreadyExists(err) {
 			return nil

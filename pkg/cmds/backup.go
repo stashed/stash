@@ -88,6 +88,7 @@ func NewCmdBackup() *cobra.Command {
 	cmd.Flags().DurationVar(&opt.ResyncPeriod, "resync-period", opt.ResyncPeriod, "If non-zero, will re-list this often. Otherwise, re-list will be delayed aslong as possible (until the upstream source closes the watch or times out.")
 	cmd.Flags().BoolVar(&opt.RunOffline, "offline", opt.RunOffline, "Run backup in offline mode.")
 	cmd.Flags().StringVar(&opt.ImageTag, "tag", opt.ImageTag, "Check job image tag.")
+	cmd.Flags().BoolVar(&opt.EnableRBAC, "rbac", opt.EnableRBAC, "Enable RBAC")
 
 	return cmd
 }

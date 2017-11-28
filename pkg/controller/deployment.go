@@ -218,7 +218,7 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 			Name: obj.Name,
 		}
 		if new.Spec.Type == api.BackupOffline {
-			obj.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(obj.Spec.Template.Spec.InitContainers, util.CreateInitContainer(new, c.options.SidecarImageTag, workload))
+			obj.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(obj.Spec.Template.Spec.InitContainers, util.CreateInitContainer(new, c.options.SidecarImageTag, workload, c.options.EnableRBAC))
 		} else {
 			obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.options.SidecarImageTag, workload))
 		}

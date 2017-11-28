@@ -193,10 +193,13 @@ func GetString(m map[string]string, key string) string {
 	return m[key]
 }
 
-func CreateInitContainer(r *api.Restic, tag string, workload api.LocalTypedReference) core.Container {
+func CreateInitContainer(r *api.Restic, tag string, workload api.LocalTypedReference, rbac bool) core.Container {
 	container := CreateSidecarContainer(r, tag, workload)
 	container.Args = append(container.Args, "--offline=true")
 	container.Args = append(container.Args, "--tag="+tag)
+	if rbac {
+		container.Args = append(container.Args, "--rbac=true")
+	}
 	return container
 }
 

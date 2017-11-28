@@ -66,7 +66,7 @@ func (fi *Invocation) StatefulSetWitInitContainer(r api.Restic, sidecarImageTag 
 		Kind: api.KindStatefulSet,
 		Name: resource.Name,
 	}
-	resource.Spec.Template.Spec.InitContainers = append(resource.Spec.Template.Spec.InitContainers, util.CreateInitContainer(&r, sidecarImageTag, workload))
+	resource.Spec.Template.Spec.InitContainers = append(resource.Spec.Template.Spec.InitContainers, util.CreateInitContainer(&r, sidecarImageTag, workload, false))
 	resource.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(resource.Spec.Template.Spec.Volumes)
 	resource.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(resource.Spec.Template.Spec.Volumes)
 	if r.Spec.Backend.Local != nil {

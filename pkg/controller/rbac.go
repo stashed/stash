@@ -3,6 +3,7 @@ package controller
 import (
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
+	core_util "github.com/appscode/kutil/core/v1"
 	rbac_util "github.com/appscode/kutil/rbac/v1beta1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	apps "k8s.io/api/apps/v1beta1"
@@ -14,6 +15,8 @@ import (
 
 const (
 	sidecarClusterRole = "stash-sidecar"
+	kubectlRole        = "stash-kubectl"
+	recoveryRole       = "stash-recovery"
 )
 
 func (c *StashController) getRoleBindingName(name string) string {
@@ -114,6 +117,154 @@ func (c *StashController) ensureSidecarClusterRole() error {
 				APIGroups: []string{core.GroupName},
 				Resources: []string{"events"},
 				Verbs:     []string{"create"},
+			},
+		}
+		return in
+	})
+	return err
+}
+
+func (c *StashController) ensureKubectlRBAC(nameSuffix string, namespace string) error {
+	// ensure roles
+	meta := metav1.ObjectMeta{
+		Name:      kubectlRole,
+		Namespace: namespace,
+	}
+	_, err := rbac_util.CreateOrPatchRole(c.k8sClient, meta, func(in *rbac.Role) *rbac.Role {
+		if in.Labels == nil {
+			in.Labels = map[string]string{}
+		}
+		in.Labels["app"] = "stash"
+
+		in.Rules = []rbac.PolicyRule{
+			{
+				APIGroups: []string{core.GroupName},
+				Resources: []string{"pods"},
+				Verbs:     []string{"delete"},
+			},
+		}
+		return in
+	})
+	if err != nil {
+		return err
+	}
+
+	// ensure service account
+	meta = metav1.ObjectMeta{
+		Name:      kubectlRole + "-" + nameSuffix,
+		Namespace: namespace,
+	}
+	_, err = core_util.CreateOrPatchServiceAccount(c.k8sClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
+		if in.Labels == nil {
+			in.Labels = map[string]string{}
+		}
+		in.Labels["app"] = "stash"
+		return in
+	})
+	if err != nil {
+		return err
+	}
+
+	// ensure role binding
+	meta = metav1.ObjectMeta{
+		Name:      kubectlRole + "-" + nameSuffix,
+		Namespace: namespace,
+	}
+	_, err = rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+		if in.Labels == nil {
+			in.Labels = map[string]string{}
+		}
+		in.Labels["app"] = "stash"
+
+		in.RoleRef = rbac.RoleRef{
+			APIGroup: rbac.GroupName,
+			Kind:     "Role",
+			Name:     meta.Name,
+		}
+		in.Subjects = []rbac.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      meta.Name,
+				Namespace: meta.Namespace,
+			},
+		}
+		return in
+	})
+	return err
+}
+
+func (c *StashController) ensureRecoveryRBAC(nameSuffix string, namespace string) error {
+	// ensure roles
+	meta := metav1.ObjectMeta{
+		Name:      recoveryRole,
+		Namespace: namespace,
+	}
+	_, err := rbac_util.CreateOrPatchRole(c.k8sClient, meta, func(in *rbac.Role) *rbac.Role {
+		if in.Labels == nil {
+			in.Labels = map[string]string{}
+		}
+		in.Labels["app"] = "stash"
+
+		in.Rules = []rbac.PolicyRule{
+			{
+				APIGroups: []string{api.SchemeGroupVersion.Group},
+				Resources: []string{"*"},
+				Verbs:     []string{"get"},
+			},
+			{
+				APIGroups: []string{core.GroupName},
+				Resources: []string{"secrets"},
+				Verbs:     []string{"get"},
+			},
+			{
+				APIGroups: []string{core.GroupName},
+				Resources: []string{"events"},
+				Verbs:     []string{"create"},
+			},
+		}
+		return in
+	})
+	if err != nil {
+		return err
+	}
+
+	// ensure service account
+	meta = metav1.ObjectMeta{
+		Name:      recoveryRole + "-" + nameSuffix,
+		Namespace: namespace,
+	}
+	_, err = core_util.CreateOrPatchServiceAccount(c.k8sClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
+		if in.Labels == nil {
+			in.Labels = map[string]string{}
+		}
+		in.Labels["app"] = "stash"
+		return in
+	})
+	if err != nil {
+		return err
+	}
+
+	// ensure role binding
+	meta = metav1.ObjectMeta{
+		Name:      recoveryRole + "-" + nameSuffix,
+		Namespace: namespace,
+	}
+	_, err = rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+		if in.Labels == nil {
+			in.Labels = map[string]string{}
+		}
+		in.Labels["app"] = "stash"
+
+		in.RoleRef = rbac.RoleRef{
+			APIGroup: rbac.GroupName,
+			Kind:     "Role",
+			Name:     meta.Name,
+		}
+		in.Subjects = []rbac.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      meta.Name,
+				Namespace: meta.Namespace,
 			},
 		}
 		return in
