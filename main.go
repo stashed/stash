@@ -17,8 +17,7 @@ func main() {
 	defer logs.FlushLogs()
 
 	if err := cmds.NewCmdStash(Version).Execute(); err != nil {
-		log.Infoln("Error in Stash Main:", err)
-		os.Exit(1)
+		log.Fatalln("Error in Stash Main:", err)
 	}
 	log.Infoln("Exiting Stash Main")
 	os.Exit(0)

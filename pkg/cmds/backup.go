@@ -21,7 +21,6 @@ func NewCmdBackup() *cobra.Command {
 		kubeconfigPath string
 		opt            = backup.Options{
 			Namespace:      meta.Namespace(),
-			ResticName:     "",
 			ScratchDir:     "/tmp",
 			PushgatewayURL: "http://stash-operator.kube-system.svc:56789",
 			PodLabelsPath:  "/etc/stash/labels",

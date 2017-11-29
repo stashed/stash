@@ -14,9 +14,9 @@ func NewCmdCheck() *cobra.Command {
 	var (
 		masterURL      string
 		kubeconfigPath string
-		resticName     string
-		hostName       string
-		smartPrefix    string
+		opt            = check.Options{
+			Namespace: meta.Namespace(),
+		}
 	)
 
 	cmd := &cobra.Command{
@@ -31,10 +31,7 @@ func NewCmdCheck() *cobra.Command {
 			c := check.New(
 				kubernetes.NewForConfigOrDie(config),
 				v1alpha1.NewForConfigOrDie(config),
-				meta.Namespace(),
-				resticName,
-				hostName,
-				smartPrefix,
+				opt,
 			)
 			if err = c.Run(); err != nil {
 				log.Fatal(err)
@@ -44,9 +41,9 @@ func NewCmdCheck() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&resticName, "restic-name", resticName, "Name of the Restic CRD.")
-	cmd.Flags().StringVar(&hostName, "host-name", hostName, "Host name for workload.")
-	cmd.Flags().StringVar(&smartPrefix, "smart-prefix", smartPrefix, "Smart prefix for workload")
+	cmd.Flags().StringVar(&opt.ResticName, "restic-name", opt.ResticName, "Name of the Restic CRD.")
+	cmd.Flags().StringVar(&opt.HostName, "host-name", opt.HostName, "Host name for workload.")
+	cmd.Flags().StringVar(&opt.SmartPrefix, "smart-prefix", opt.SmartPrefix, "Smart prefix for workload")
 
 	return cmd
 }

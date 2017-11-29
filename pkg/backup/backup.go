@@ -84,11 +84,19 @@ func (c *Controller) Backup() error {
 	if err != nil {
 		return fmt.Errorf("failed to setup backup: %s", err)
 	}
+
 	if err := c.runResticBackup(resource); err != nil {
-		// c.recorder.Event(resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
-		eventer.CreateEventWithLog(c.k8sClient, BackupEventComponent, resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
-		return fmt.Errorf("failed to run backup: %s", err)
+		eventer.CreateEventWithLog(
+			c.k8sClient,
+			BackupEventComponent,
+			resource.ObjectReference(),
+			core.EventTypeWarning,
+			eventer.EventReasonFailedCronJob,
+			fmt.Sprintf("Failed to run backup, reason: %s", err),
+		)
+		return fmt.Errorf("failed to run backup, reason: %s", err)
 	}
+
 	// create check job
 	job := util.CreateCheckJob(resource, c.opt.SnapshotHostname, c.opt.SmartPrefix, c.opt.ImageTag)
 	if c.opt.EnableRBAC {
@@ -97,15 +105,29 @@ func (c *Controller) Backup() error {
 		}
 		job.Spec.Template.Spec.ServiceAccountName = CheckRole + "-" + job.Name
 	}
+
 	if job, err = c.k8sClient.BatchV1().Jobs(resource.Namespace).Create(job); err != nil {
 		err = fmt.Errorf("failed to create check job, reason: %s", err)
-		// c.recorder.Event(resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
-		eventer.CreateEventWithLog(c.k8sClient, BackupEventComponent, resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
+		eventer.CreateEventWithLog(
+			c.k8sClient,
+			BackupEventComponent,
+			resource.ObjectReference(),
+			core.EventTypeWarning,
+			eventer.EventReasonFailedCronJob,
+			err.Error(),
+		)
 		return err
 	}
+
 	log.Infoln("Created check job:", job.Name)
-	// c.recorder.Event(resource.ObjectReference(), core.EventTypeNormal, eventer.EventReasonCheckJobCreated, "Created check job: "+job.Name)
-	eventer.CreateEventWithLog(c.k8sClient, BackupEventComponent, resource.ObjectReference(), core.EventTypeNormal, eventer.EventReasonCheckJobCreated, "Created check job: "+job.Name)
+	eventer.CreateEventWithLog(
+		c.k8sClient,
+		BackupEventComponent,
+		resource.ObjectReference(),
+		core.EventTypeNormal,
+		eventer.EventReasonCheckJobCreated,
+		fmt.Sprintf("Created check job: %s", job.Name),
+	)
 	return nil
 }
 
@@ -124,7 +146,7 @@ func (c *Controller) setup() (*api.Restic, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Infof("Found restic %s", resource.Name)
+	log.Infof("Found restic %s\n", resource.Name)
 	if err := resource.IsValid(); err != nil {
 		return nil, err
 	}
@@ -132,7 +154,7 @@ func (c *Controller) setup() (*api.Restic, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Infof("Found repository secret %s", secret.Name)
+	log.Infof("Found repository secret %s\n", secret.Name)
 
 	// setup restic-cli
 	if err = c.resticCLI.SetupEnv(resource, secret, c.opt.SmartPrefix); err != nil {
@@ -210,22 +232,40 @@ func (c *Controller) runResticBackup(resource *api.Restic) (err error) {
 		backupOpMetric := restic_session_duration_seconds.WithLabelValues(sanitizeLabelValue(fg.Path), "backup")
 		err = c.measure(c.resticCLI.Backup, resource, fg, backupOpMetric)
 		if err != nil {
-			log.Errorln("Backup operation failed for Restic %s/%s due to %s", resource.Namespace, resource.Name, err)
-			// c.recorder.Event(resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToBackup, " Error taking backup: "+err.Error())
-			eventer.CreateEventWithLog(c.k8sClient, BackupEventComponent, resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToBackup, " Error taking backup: "+err.Error())
+			log.Errorf("Backup operation failed for Restic %s/%s due to %s\n", resource.Namespace, resource.Name, err)
+			eventer.CreateEventWithLog(
+				c.k8sClient,
+				BackupEventComponent,
+				resource.ObjectReference(),
+				core.EventTypeWarning,
+				eventer.EventReasonFailedToBackup,
+				fmt.Sprintf("Backup operation failed for Restic %s/%s due to %s", resource.Namespace, resource.Name, err),
+			)
 			return
 		} else {
 			hostname, _ := os.Hostname()
-			// c.recorder.Event(resource.ObjectReference(), core.EventTypeNormal, eventer.EventReasonSuccessfulBackup, "Backed up pod:"+hostname+" path:"+fg.Path)
-			eventer.CreateEventWithLog(c.k8sClient, BackupEventComponent, resource.ObjectReference(), core.EventTypeNormal, eventer.EventReasonSuccessfulBackup, "Backed up pod:"+hostname+" path:"+fg.Path)
+			eventer.CreateEventWithLog(
+				c.k8sClient,
+				BackupEventComponent,
+				resource.ObjectReference(),
+				core.EventTypeNormal,
+				eventer.EventReasonSuccessfulBackup,
+				fmt.Sprintf("Backed up pod: %s, path: %s", hostname, fg.Path),
+			)
 		}
 
 		forgetOpMetric := restic_session_duration_seconds.WithLabelValues(sanitizeLabelValue(fg.Path), "forget")
 		err = c.measure(c.resticCLI.Forget, resource, fg, forgetOpMetric)
 		if err != nil {
-			log.Errorln("Failed to forget old snapshots for Restic %s/%s due to %s", resource.Namespace, resource.Name, err)
-			// c.recorder.Event(resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToRetention, " Error forgetting snapshots: "+err.Error())
-			eventer.CreateEventWithLog(c.k8sClient, BackupEventComponent, resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToRetention, " Error forgetting snapshots: "+err.Error())
+			log.Errorf("Failed to forget old snapshots for Restic %s/%s due to %s\n", resource.Namespace, resource.Name, err)
+			eventer.CreateEventWithLog(
+				c.k8sClient,
+				BackupEventComponent,
+				resource.ObjectReference(),
+				core.EventTypeWarning,
+				eventer.EventReasonFailedToRetention,
+				fmt.Sprintf("Failed to forget old snapshots for Restic %s/%s due to %s", resource.Namespace, resource.Name, err),
+			)
 			return
 		}
 	}
