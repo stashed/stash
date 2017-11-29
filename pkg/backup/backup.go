@@ -21,7 +21,6 @@ import (
 	"gopkg.in/robfig/cron.v2"
 	core "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1beta1"
-	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
@@ -64,7 +63,8 @@ type Controller struct {
 }
 
 const (
-	checkRole = "stash-check"
+	CheckRole            = "stash-check"
+	BackupEventComponent = "stash-backup"
 )
 
 func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, opt Options) *Controller {
@@ -75,7 +75,7 @@ func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, 
 		cron:        cron.New(),
 		locked:      make(chan struct{}, 1),
 		resticCLI:   cli.New(opt.ScratchDir, opt.SnapshotHostname),
-		recorder:    eventer.NewEventRecorder(k8sClient, "stash-backup"),
+		recorder:    eventer.NewEventRecorder(k8sClient, BackupEventComponent),
 	}
 }
 
@@ -85,7 +85,8 @@ func (c *Controller) Backup() error {
 		return fmt.Errorf("failed to setup backup: %s", err)
 	}
 	if err := c.runResticBackup(resource); err != nil {
-		c.recorder.Event(resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
+		// c.recorder.Event(resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
+		eventer.CreateEventWithLog(c.k8sClient, BackupEventComponent, resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
 		return fmt.Errorf("failed to run backup: %s", err)
 	}
 	// create check job
@@ -94,18 +95,17 @@ func (c *Controller) Backup() error {
 		if err = c.ensureCheckRBAC(job.Name, job.Namespace); err != nil {
 			return fmt.Errorf("error ensuring rbac for check job %s, reason: %s\n", job.Name, err)
 		}
-		job.Spec.Template.Spec.ServiceAccountName = checkRole + "-" + job.Name
+		job.Spec.Template.Spec.ServiceAccountName = CheckRole + "-" + job.Name
 	}
 	if job, err = c.k8sClient.BatchV1().Jobs(resource.Namespace).Create(job); err != nil {
-		if kerr.IsAlreadyExists(err) {
-			return nil
-		}
 		err = fmt.Errorf("failed to create check job, reason: %s", err)
-		c.recorder.Event(resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
+		// c.recorder.Event(resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
+		eventer.CreateEventWithLog(c.k8sClient, BackupEventComponent, resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
 		return err
 	}
 	log.Infoln("Created check job:", job.Name)
-	c.recorder.Event(resource.ObjectReference(), core.EventTypeNormal, eventer.EventReasonCheckJobCreated, "Created check job: "+job.Name)
+	// c.recorder.Event(resource.ObjectReference(), core.EventTypeNormal, eventer.EventReasonCheckJobCreated, "Created check job: "+job.Name)
+	eventer.CreateEventWithLog(c.k8sClient, BackupEventComponent, resource.ObjectReference(), core.EventTypeNormal, eventer.EventReasonCheckJobCreated, "Created check job: "+job.Name)
 	return nil
 }
 
@@ -211,18 +211,21 @@ func (c *Controller) runResticBackup(resource *api.Restic) (err error) {
 		err = c.measure(c.resticCLI.Backup, resource, fg, backupOpMetric)
 		if err != nil {
 			log.Errorln("Backup operation failed for Restic %s/%s due to %s", resource.Namespace, resource.Name, err)
-			c.recorder.Event(resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToBackup, " Error taking backup: "+err.Error())
+			// c.recorder.Event(resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToBackup, " Error taking backup: "+err.Error())
+			eventer.CreateEventWithLog(c.k8sClient, BackupEventComponent, resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToBackup, " Error taking backup: "+err.Error())
 			return
 		} else {
 			hostname, _ := os.Hostname()
-			c.recorder.Event(resource.ObjectReference(), core.EventTypeNormal, eventer.EventReasonSuccessfulBackup, "Backed up pod:"+hostname+" path:"+fg.Path)
+			// c.recorder.Event(resource.ObjectReference(), core.EventTypeNormal, eventer.EventReasonSuccessfulBackup, "Backed up pod:"+hostname+" path:"+fg.Path)
+			eventer.CreateEventWithLog(c.k8sClient, BackupEventComponent, resource.ObjectReference(), core.EventTypeNormal, eventer.EventReasonSuccessfulBackup, "Backed up pod:"+hostname+" path:"+fg.Path)
 		}
 
 		forgetOpMetric := restic_session_duration_seconds.WithLabelValues(sanitizeLabelValue(fg.Path), "forget")
 		err = c.measure(c.resticCLI.Forget, resource, fg, forgetOpMetric)
 		if err != nil {
 			log.Errorln("Failed to forget old snapshots for Restic %s/%s due to %s", resource.Namespace, resource.Name, err)
-			c.recorder.Event(resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToRetention, " Error forgetting snapshots: "+err.Error())
+			// c.recorder.Event(resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToRetention, " Error forgetting snapshots: "+err.Error())
+			eventer.CreateEventWithLog(c.k8sClient, BackupEventComponent, resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToRetention, " Error forgetting snapshots: "+err.Error())
 			return
 		}
 	}
@@ -241,7 +244,7 @@ func (c *Controller) measure(f func(*api.Restic, api.FileGroup) error, resource 
 func (c *Controller) ensureCheckRBAC(nameSuffix string, namespace string) error {
 	// ensure roles
 	meta := metav1.ObjectMeta{
-		Name:      checkRole,
+		Name:      CheckRole,
 		Namespace: namespace,
 	}
 	_, err := rbac_util.CreateOrPatchRole(c.k8sClient, meta, func(in *rbac.Role) *rbac.Role {
@@ -275,7 +278,7 @@ func (c *Controller) ensureCheckRBAC(nameSuffix string, namespace string) error 
 
 	// ensure service account
 	meta = metav1.ObjectMeta{
-		Name:      checkRole + "-" + nameSuffix,
+		Name:      CheckRole + "-" + nameSuffix,
 		Namespace: namespace,
 	}
 	_, err = core_util.CreateOrPatchServiceAccount(c.k8sClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
@@ -291,7 +294,7 @@ func (c *Controller) ensureCheckRBAC(nameSuffix string, namespace string) error 
 
 	// ensure role binding
 	meta = metav1.ObjectMeta{
-		Name:      checkRole + "-" + nameSuffix,
+		Name:      CheckRole + "-" + nameSuffix,
 		Namespace: namespace,
 	}
 	_, err = rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {

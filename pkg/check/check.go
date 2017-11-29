@@ -1,6 +1,8 @@
 package check
 
 import (
+	"fmt"
+
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/cli"
 	"github.com/appscode/stash/pkg/eventer"
@@ -8,6 +10,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/record"
+)
+
+const (
+	CheckEventComponent = "stash-check"
 )
 
 type Controller struct {
@@ -28,7 +34,7 @@ func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, 
 		resticName:  name,
 		hostName:    host,
 		smartPrefix: prefix,
-		recorder:    eventer.NewEventRecorder(k8sClient, "stash-check"),
+		recorder:    eventer.NewEventRecorder(k8sClient, CheckEventComponent),
 	}
 }
 
@@ -40,9 +46,12 @@ func (c *Controller) Run() (err error) {
 
 	defer func() {
 		if err != nil {
-			c.recorder.Eventf(restic.ObjectReference(), core.EventTypeNormal, eventer.EventReasonFailedToCheck, "Check failed for pod %s, reason: %s\n", c.hostName, err.Error())
+			// c.recorder.Eventf(restic.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToCheck, "Check failed for pod %s, reason: %s\n", c.hostName, err.Error())
+			eventer.CreateEventWithLog(c.k8sClient, CheckEventComponent, restic.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToCheck, fmt.Sprintf("Check failed for pod %s, reason: %s\n", c.hostName, err.Error()))
+
 		} else {
-			c.recorder.Eventf(restic.ObjectReference(), core.EventTypeNormal, eventer.EventReasonSuccessfulCheck, "Check successful for pod: %s\n", c.hostName)
+			// c.recorder.Eventf(restic.ObjectReference(), core.EventTypeNormal, eventer.EventReasonSuccessfulCheck, "Check successful for pod: %s\n", c.hostName)
+			eventer.CreateEventWithLog(c.k8sClient, CheckEventComponent, restic.ObjectReference(), core.EventTypeNormal, eventer.EventReasonSuccessfulCheck, fmt.Sprintf("Check successful for pod: %s\n", c.hostName))
 		}
 	}()
 
