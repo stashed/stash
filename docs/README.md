@@ -13,6 +13,7 @@ section_menu_id: getting-started
 url: /products/stash/0.5.1/getting-started/
 aliases:
   - /products/stash/0.5.1/
+  - /products/stash/0.5.1/README/
 ---
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/appscode/stash)](https://goreportcard.com/report/github.com/appscode/stash)
