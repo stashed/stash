@@ -242,7 +242,7 @@ func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet,
 	if err != nil {
 		return
 	}
-	err = util.WaitUntilSidecarAdded(c.k8sClient, resource.Namespace, resource.Spec.Selector, new.Spec.Type == api.BackupOffline)
+	err = util.WaitUntilSidecarAdded(c.k8sClient, resource.Namespace, resource.Spec.Selector, new.Spec.Type)
 	return
 }
 
@@ -279,6 +279,6 @@ func (c *StashController) EnsureDaemonSetSidecarDeleted(resource *extensions.Dae
 	if err != nil {
 		return
 	}
-	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, resource.Spec.Selector, restic.Spec.Type == api.BackupOffline)
+	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, resource.Spec.Selector, restic.Spec.Type)
 	return
 }

@@ -56,6 +56,18 @@ func NewCmdRun(version string) *cobra.Command {
 			stashClient = cs.NewForConfigOrDie(config)
 			crdClient := crd_cs.NewForConfigOrDie(config)
 
+			// get kube api server version
+			version, err := kubeClient.Discovery().ServerVersion()
+			if err != nil {
+				log.Fatalf("Error getting server version, reason: %s\n", err)
+			}
+
+			// check kubectl image
+			opts.KubectlImageTag = version.Major + "." + version.Minor + ".0"
+			if err := docker.CheckDockerImageVersion(docker.ImageKubectl, opts.KubectlImageTag); err != nil {
+				log.Fatalf(`Image %v:%v not found.`, docker.ImageKubectl, opts.KubectlImageTag)
+			}
+
 			ctrl := controller.New(kubeClient, crdClient, stashClient, opts)
 			err = ctrl.Setup()
 			if err != nil {

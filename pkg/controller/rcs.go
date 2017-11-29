@@ -249,7 +249,7 @@ func (c *StashController) EnsureReplicationControllerSidecar(resource *core.Repl
 	if err != nil {
 		return
 	}
-	err = util.WaitUntilSidecarAdded(c.k8sClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector}, new.Spec.Type == api.BackupOffline)
+	err = util.WaitUntilSidecarAdded(c.k8sClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector}, new.Spec.Type)
 	return err
 }
 
@@ -286,7 +286,7 @@ func (c *StashController) EnsureReplicationControllerSidecarDeleted(resource *co
 	if err != nil {
 		return
 	}
-	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector}, restic.Spec.Type == api.BackupOffline)
+	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector}, restic.Spec.Type)
 	if err != nil {
 		return
 	}

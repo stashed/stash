@@ -12,6 +12,7 @@ import (
 	_ "github.com/appscode/stash/client/scheme"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/controller"
+	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/test/e2e/framework"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
@@ -67,6 +68,16 @@ var _ = BeforeSuite(func() {
 		SidecarImageTag: TestSidecarImageTag,
 		ResyncPeriod:    5 * time.Minute,
 	}
+
+	// get kube api server version
+	version, err := kubeClient.Discovery().ServerVersion()
+	Expect(err).NotTo(HaveOccurred())
+
+	// check kubectl image
+	opts.KubectlImageTag = version.Major + "." + version.Minor + ".0"
+	err = docker.CheckDockerImageVersion(docker.ImageKubectl, opts.KubectlImageTag)
+	Expect(err).NotTo(HaveOccurred())
+
 	ctrl = controller.New(kubeClient, crdClient, stashClient, opts)
 	By("Registering CRD group " + api.GroupName)
 	err = ctrl.Setup()

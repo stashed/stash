@@ -9,6 +9,7 @@ import (
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	rt "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
@@ -18,11 +19,17 @@ import (
 )
 
 func (c *StashController) initJobWatcher() {
-	lw := &cache.ListWatch{ // TODO @ Dipta: only watch stash jobs
+	selector := labels.SelectorFromSet(map[string]string{
+		"app": util.AppLabelStash,
+	})
+
+	lw := &cache.ListWatch{
 		ListFunc: func(options metav1.ListOptions) (rt.Object, error) {
+			options.LabelSelector = selector.String()
 			return c.k8sClient.BatchV1().Jobs(core.NamespaceAll).List(options)
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+			options.LabelSelector = selector.String()
 			return c.k8sClient.BatchV1().Jobs(core.NamespaceAll).Watch(options)
 		},
 	}
@@ -100,7 +107,7 @@ func (c *StashController) runJobInjector(key string) error {
 		job := obj.(*batch.Job)
 		fmt.Printf("Sync/Add/Update for Job %s\n", job.GetName())
 
-		if job.Labels["app"] == util.AppLabelStash && job.Status.Succeeded > 0 {
+		if job.Status.Succeeded > 0 {
 			fmt.Printf("Deleting succeeded job %s\n", job.GetName())
 			if err = util.DeleteStashJob(c.k8sClient, *job); err != nil {
 				fmt.Printf("Failed to delete stash job: %s, reason: %s\n", job.GetName(), err)

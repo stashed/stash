@@ -41,7 +41,7 @@ type Options struct {
 	PodLabelsPath    string
 	ResyncPeriod     time.Duration
 	MaxNumRequeues   int
-	RunOffline       bool
+	RunViaCron       bool
 	ImageTag         string // image tag for check job
 	EnableRBAC       bool   // rbac for check job
 }

@@ -166,13 +166,7 @@ func (c *StashController) runResticInjector(key string) error {
 		fmt.Printf("Sync/Add/Update for Restic %s\n", d.GetName())
 
 		if d.Spec.Type == api.BackupOffline {
-			version, err := c.k8sClient.Discovery().ServerVersion()
-			if err != nil {
-				return fmt.Errorf("error getting server version, reason: %s\n", err)
-			}
-
-			kubectlVersion := version.Major + "." + version.Minor + ".0"
-			job := util.CreateCronJobForDeletingPods(d, kubectlVersion)
+			job := util.CreateCronJobForDeletingPods(d, c.options.KubectlImageTag)
 
 			if c.options.EnableRBAC {
 				if err = c.ensureKubectlRBAC(job.Name, job.Namespace); err != nil {

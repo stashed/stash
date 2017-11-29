@@ -243,7 +243,7 @@ func (c *StashController) EnsureStatefulSetSidecar(resource *apps.StatefulSet, o
 	if err != nil {
 		return
 	}
-	err = util.WaitUntilSidecarAdded(c.k8sClient, resource.Namespace, resource.Spec.Selector, new.Spec.Type == api.BackupOffline)
+	err = util.WaitUntilSidecarAdded(c.k8sClient, resource.Namespace, resource.Spec.Selector, new.Spec.Type)
 	return err
 }
 
@@ -280,6 +280,6 @@ func (c *StashController) EnsureStatefulSetSidecarDeleted(resource *apps.Statefu
 	if err != nil {
 		return
 	}
-	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, resource.Spec.Selector, restic.Spec.Type == api.BackupOffline)
+	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, resource.Spec.Selector, restic.Spec.Type)
 	return err
 }
