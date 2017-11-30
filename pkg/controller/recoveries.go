@@ -186,7 +186,7 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 		if err = c.ensureRecoveryRBAC(job.Name, job.Namespace); err != nil {
 			return fmt.Errorf("error ensuring rbac for recovery job %s, reason: %s\n", job.Name, err)
 		}
-		job.Spec.Template.Spec.ServiceAccountName = recoveryRole + "-" + job.Name
+		job.Spec.Template.Spec.ServiceAccountName = job.Name
 	}
 	if job, err = c.k8sClient.BatchV1().Jobs(rec.Namespace).Create(job); err != nil {
 		if kerr.IsAlreadyExists(err) {

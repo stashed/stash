@@ -172,7 +172,7 @@ func (c *StashController) runResticInjector(key string) error {
 				if err = c.ensureKubectlRBAC(job.Name, job.Namespace); err != nil {
 					return fmt.Errorf("error ensuring rbac for kubectl cron job %s, reason: %s\n", job.Name, err)
 				}
-				job.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = kubectlRole + "-" + job.Name
+				job.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = job.Name
 			}
 
 			if _, err = util.CreateOrPatchCronJob(c.k8sClient, job); err != nil {

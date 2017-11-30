@@ -14,6 +14,7 @@ import (
 	stash_util "github.com/appscode/stash/client/typed/stash/v1alpha1/util"
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/cli"
+	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/prometheus/client_golang/prometheus"
@@ -103,7 +104,7 @@ func (c *Controller) Backup() error {
 		if err = c.ensureCheckRBAC(job.Name, job.Namespace); err != nil {
 			return fmt.Errorf("error ensuring rbac for check job %s, reason: %s\n", job.Name, err)
 		}
-		job.Spec.Template.Spec.ServiceAccountName = CheckRole + "-" + job.Name
+		job.Spec.Template.Spec.ServiceAccountName = job.Name
 	}
 
 	if job, err = c.k8sClient.BatchV1().Jobs(resource.Namespace).Create(job); err != nil {
@@ -281,47 +282,14 @@ func (c *Controller) measure(f func(*api.Restic, api.FileGroup) error, resource 
 	return
 }
 
-func (c *Controller) ensureCheckRBAC(nameSuffix string, namespace string) error {
-	// ensure roles
-	meta := metav1.ObjectMeta{
-		Name:      CheckRole,
-		Namespace: namespace,
-	}
-	_, err := rbac_util.CreateOrPatchRole(c.k8sClient, meta, func(in *rbac.Role) *rbac.Role {
-		if in.Labels == nil {
-			in.Labels = map[string]string{}
-		}
-		in.Labels["app"] = "stash"
-
-		in.Rules = []rbac.PolicyRule{
-			{
-				APIGroups: []string{api.SchemeGroupVersion.Group},
-				Resources: []string{"*"},
-				Verbs:     []string{"get"},
-			},
-			{
-				APIGroups: []string{core.GroupName},
-				Resources: []string{"secrets"},
-				Verbs:     []string{"get"},
-			},
-			{
-				APIGroups: []string{core.GroupName},
-				Resources: []string{"events"},
-				Verbs:     []string{"create"},
-			},
-		}
-		return in
-	})
-	if err != nil {
-		return err
-	}
-
+// use Sidecar Cluster Role
+func (c *Controller) ensureCheckRBAC(resourceName string, namespace string) error {
 	// ensure service account
-	meta = metav1.ObjectMeta{
-		Name:      CheckRole + "-" + nameSuffix,
+	meta := metav1.ObjectMeta{
+		Name:      resourceName,
 		Namespace: namespace,
 	}
-	_, err = core_util.CreateOrPatchServiceAccount(c.k8sClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
+	_, err := core_util.CreateOrPatchServiceAccount(c.k8sClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
@@ -333,10 +301,6 @@ func (c *Controller) ensureCheckRBAC(nameSuffix string, namespace string) error 
 	}
 
 	// ensure role binding
-	meta = metav1.ObjectMeta{
-		Name:      CheckRole + "-" + nameSuffix,
-		Namespace: namespace,
-	}
 	_, err = rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
@@ -345,8 +309,8 @@ func (c *Controller) ensureCheckRBAC(nameSuffix string, namespace string) error 
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
-			Kind:     "Role",
-			Name:     meta.Name,
+			Kind:     "ClusterRole",
+			Name:     controller.SidecarClusterRole,
 		}
 		in.Subjects = []rbac.Subject{
 			{
