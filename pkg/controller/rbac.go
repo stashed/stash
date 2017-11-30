@@ -156,7 +156,7 @@ func (c *StashController) ensureKubectlRBAC(resourceName string, namespace strin
 			{
 				APIGroups: []string{core.GroupName},
 				Resources: []string{"pods"},
-				Verbs:     []string{"get", "list", "delete"},
+				Verbs:     []string{"get", "list", "delete", "deletecollection"},
 			},
 		}
 		return in
