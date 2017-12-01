@@ -5,7 +5,11 @@ metadata:
   namespace: default
 spec:
   restic: stash-demo
+  workload:
+    kind: Deployment
+    name: stash-demo
   volumes:
   - name: source-data
-    emptyDir: {}
+    hostPath:
+      path: /data/stash-test/restic-restored
 
