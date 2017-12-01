@@ -100,8 +100,10 @@ func (c *StashController) Setup() error {
 	if err := c.ensureCustomResourceDefinitions(); err != nil {
 		return err
 	}
-	if err := c.ensureSidecarClusterRole(); err != nil {
-		return err
+	if c.options.EnableRBAC {
+		if err := c.ensureSidecarClusterRole(); err != nil {
+			return err
+		}
 	}
 	c.initNamespaceWatcher()
 	c.initResticWatcher()
