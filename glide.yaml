@@ -15,9 +15,7 @@ import:
   vcs: git
   version: master
 - package: github.com/heroku/docker-registry-client
-  repo: https://github.com/appscode/docker-registry-client.git
-  vcs: git
-  version: release-1.8
+  version: master
 - package: github.com/jpillora/go-ogle-analytics
 - package: github.com/onsi/gomega
   version: v1.2.0

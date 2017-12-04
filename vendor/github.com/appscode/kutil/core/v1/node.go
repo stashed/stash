@@ -115,3 +115,10 @@ func NodeRunningAndReady(node core.Node) (bool, error) {
 	}
 	return false, nil
 }
+
+// IsMaster returns whether a node is a master.
+func IsMaster(node core.Node) bool {
+	_, ok17 := node.Labels["node-role.kubernetes.io/master"]
+	role16, ok16 := node.Labels["kubernetes.io/role"]
+	return ok17 || (ok16 && role16 == "master")
+}
