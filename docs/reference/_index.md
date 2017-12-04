@@ -6,5 +6,5 @@ menu:
     identifier: reference
     name: Reference
     weight: 1000
-left_menu: product_stash_0.5.1
+menu_name: product_stash_0.5.1
 ---

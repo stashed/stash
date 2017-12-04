@@ -8,7 +8,7 @@ menu:
     parent: getting-started
     weight: 55
 product_name: stash
-left_menu: product_stash_0.5.1
+menu_name: product_stash_0.5.1
 section_menu_id: getting-started
 url: /products/stash/0.5.1/getting-started/workloads/
 aliases:
