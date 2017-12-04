@@ -25,12 +25,14 @@ rules:
   - apps
   resources:
   - deployments
+  - statefulsets
   verbs: ["get", "list", "watch", "patch"]
 - apiGroups:
   - batch
   resources:
   - jobs
-  verbs: ["get", "create", "delete"]
+  - cronjobs
+  verbs: ["get", "list", "watch", "create", "delete", "patch"]
 - apiGroups:
   - extensions
   resources:
@@ -57,11 +59,13 @@ rules:
 - apiGroups: [""]
   resources:
   - pods
-  verbs: ["list", delete", "deletecollection"]
+  - serviceaccounts
+  verbs: ["get", "create", "list", "delete", "deletecollection"]
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
   - clusterroles
+  - roles
   - rolebindings
   verbs: ["get", "create", "delete", "patch"]
 ---
@@ -116,7 +120,7 @@ spec:
         - run
         - --v=3
         - --rbac=true
-        image: appscode/stash:0.5.1
+        image: appscode/stash:offline-backup
         ports:
         - containerPort: 56790
           name: http

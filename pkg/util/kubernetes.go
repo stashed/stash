@@ -2,6 +2,7 @@ package util
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -14,26 +15,40 @@ import (
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/docker"
-	"github.com/appscode/stash/pkg/eventer"
 	"github.com/cenkalti/backoff"
 	"github.com/google/go-cmp/cmp"
 	batch "k8s.io/api/batch/v1"
+	batch_v1_beta "k8s.io/api/batch/v1beta1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/record"
 )
 
 const (
 	StashContainer       = "stash"
+	KubectlContainer     = "stash-kubectl"
 	LocalVolumeName      = "stash-local"
 	ScratchDirVolumeName = "stash-scratchdir"
 	PodinfoVolumeName    = "stash-podinfo"
 	StashInitializerName = "stash.appscode.com"
+
+	RecoveryJobPrefix = "stash-recovery-"
+	KubectlCronPrefix = "stash-kubectl-cron-"
+	CheckJobPrefix    = "stash-check-"
+
+	AnnotationRestic    = "restic"
+	AnnotationRecovery  = "recovery"
+	AnnotationOperation = "operation"
+
+	OperationRecovery   = "recovery"
+	OperationCheck      = "check"
+	OperationDeletePods = "delete-pods"
+	AppLabelStash       = "stash"
 )
 
 func GetAppliedRestic(m map[string]string) (*api.Restic, error) {
@@ -86,7 +101,7 @@ func FindRestic(lister stash_listers.ResticLister, obj metav1.ObjectMeta) (*api.
 	return nil, nil
 }
 
-func WaitUntilSidecarAdded(kubeClient kubernetes.Interface, namespace string, selector *metav1.LabelSelector) error {
+func WaitUntilSidecarAdded(kubeClient kubernetes.Interface, namespace string, selector *metav1.LabelSelector, backupType api.BackupType) error {
 	return backoff.Retry(func() error {
 		r, err := metav1.LabelSelectorAsSelector(selector)
 		if err != nil {
@@ -100,10 +115,19 @@ func WaitUntilSidecarAdded(kubeClient kubernetes.Interface, namespace string, se
 		var podsToRestart []core.Pod
 		for _, pod := range pods.Items {
 			found := false
-			for _, c := range pod.Spec.Containers {
-				if c.Name == StashContainer {
-					found = true
-					break
+			if backupType == api.BackupOffline {
+				for _, c := range pod.Spec.InitContainers {
+					if c.Name == StashContainer {
+						found = true
+						break
+					}
+				}
+			} else {
+				for _, c := range pod.Spec.Containers {
+					if c.Name == StashContainer {
+						found = true
+						break
+					}
 				}
 			}
 			if !found {
@@ -120,7 +144,7 @@ func WaitUntilSidecarAdded(kubeClient kubernetes.Interface, namespace string, se
 	}, backoff.NewConstantBackOff(3*time.Second))
 }
 
-func WaitUntilSidecarRemoved(kubeClient kubernetes.Interface, namespace string, selector *metav1.LabelSelector) error {
+func WaitUntilSidecarRemoved(kubeClient kubernetes.Interface, namespace string, selector *metav1.LabelSelector, backupType api.BackupType) error {
 	return backoff.Retry(func() error {
 		r, err := metav1.LabelSelectorAsSelector(selector)
 		if err != nil {
@@ -134,10 +158,19 @@ func WaitUntilSidecarRemoved(kubeClient kubernetes.Interface, namespace string, 
 		var podsToRestart []core.Pod
 		for _, pod := range pods.Items {
 			found := false
-			for _, c := range pod.Spec.Containers {
-				if c.Name == StashContainer {
-					found = true
-					break
+			if backupType == api.BackupOffline {
+				for _, c := range pod.Spec.InitContainers {
+					if c.Name == StashContainer {
+						found = true
+						break
+					}
+				}
+			} else {
+				for _, c := range pod.Spec.Containers {
+					if c.Name == StashContainer {
+						found = true
+						break
+					}
 				}
 			}
 			if found {
@@ -161,6 +194,21 @@ func GetString(m map[string]string, key string) string {
 	return m[key]
 }
 
+func CreateInitContainer(r *api.Restic, tag string, workload api.LocalTypedReference, enableRBAC bool) core.Container {
+	container := CreateSidecarContainer(r, tag, workload)
+	container.Args = []string{
+		"backup",
+		"--restic-name=" + r.Name,
+		"--workload-kind=" + workload.Kind,
+		"--workload-name=" + workload.Name,
+		"--image-tag=" + tag,
+	}
+	if enableRBAC {
+		container.Args = append(container.Args, "--enable-rbac=true")
+	}
+	return container
+}
+
 func CreateSidecarContainer(r *api.Restic, tag string, workload api.LocalTypedReference) core.Container {
 	if r.Annotations != nil {
 		if v, ok := r.Annotations[api.VersionTag]; ok {
@@ -172,10 +220,11 @@ func CreateSidecarContainer(r *api.Restic, tag string, workload api.LocalTypedRe
 		Image:           docker.ImageOperator + ":" + tag,
 		ImagePullPolicy: core.PullIfNotPresent,
 		Args: []string{
-			"schedule",
+			"backup",
 			"--restic-name=" + r.Name,
 			"--workload-kind=" + workload.Kind,
 			"--workload-name=" + workload.Name,
+			"--run-via-cron=true",
 		},
 		Env: []core.EnvVar{
 			{
@@ -318,7 +367,7 @@ func RecoveryEqual(old, new *api.Recovery) bool {
 func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *batch.Job {
 	job := &batch.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "stash-" + recovery.Name,
+			Name:      RecoveryJobPrefix + recovery.Name,
 			Namespace: recovery.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				{
@@ -327,6 +376,14 @@ func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *
 					Name:       recovery.Name,
 					UID:        recovery.UID,
 				},
+			},
+			Labels: map[string]string{
+				"app": AppLabelStash,
+			},
+			Annotations: map[string]string{
+				AnnotationRestic:    restic.Name,
+				AnnotationRecovery:  recovery.Name,
+				AnnotationOperation: OperationRecovery,
 			},
 		},
 		Spec: batch.JobSpec{
@@ -406,38 +463,6 @@ func WorkloadExists(k8sClient kubernetes.Interface, namespace string, workload a
 	return nil
 }
 
-func DeleteRecoveryJob(client kubernetes.Interface, recorder record.EventRecorder, rec *api.Recovery, job *batch.Job) {
-	if err := client.BatchV1().Jobs(job.Namespace).Delete(job.Name, nil); err != nil && !kerr.IsNotFound(err) {
-		recorder.Eventf(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToDelete, "Failed to delete Job. Reason: %v", err)
-		log.Errorln(err)
-	}
-
-	if r, err := metav1.LabelSelectorAsSelector(job.Spec.Selector); err != nil {
-		log.Errorln(err)
-	} else {
-		err = client.CoreV1().Pods(job.Namespace).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{LabelSelector: r.String()})
-		if err != nil {
-			recorder.Eventf(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToDelete, "Failed to delete Pods. Reason: %v", err)
-			log.Errorln(err)
-		}
-	}
-}
-
-func CheckRecoveryJob(client kubernetes.Interface, recorder record.EventRecorder, rec *api.Recovery, job *batch.Job) {
-	retryInterval := 3 * time.Minute
-	err := wait.PollInfinite(retryInterval, func() (bool, error) {
-		obj, err := client.BatchV1().Jobs(job.Namespace).Get(job.Name, metav1.GetOptions{})
-		if err != nil {
-			return false, err
-		}
-		return obj.Status.Succeeded > 0, nil
-	})
-	if err != nil {
-		log.Errorln(err)
-	}
-	DeleteRecoveryJob(client, recorder, rec, job)
-}
-
 func ToBeInitializedByPeer(initializers *metav1.Initializers) bool {
 	if initializers != nil && len(initializers.Pending) > 0 && initializers.Pending[0].Name != StashInitializerName {
 		return true
@@ -458,4 +483,174 @@ func GetConfigmapLockName(workload api.LocalTypedReference) string {
 
 func DeleteConfigmapLock(k8sClient kubernetes.Interface, namespace string, workload api.LocalTypedReference) error {
 	return k8sClient.CoreV1().ConfigMaps(namespace).Delete(GetConfigmapLockName(workload), &metav1.DeleteOptions{})
+}
+
+func CreateCronJobForDeletingPods(restic *api.Restic, tag string) *batch_v1_beta.CronJob {
+	selectors := ""
+	for k, v := range restic.Spec.Selector.MatchLabels {
+		selectors += k + "=" + v + ","
+	}
+	selectors = strings.TrimSuffix(selectors, ",") // remove last ","
+
+	job := &batch_v1_beta.CronJob{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      KubectlCronPrefix + restic.Name,
+			Namespace: restic.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: api.SchemeGroupVersion.String(),
+					Kind:       api.ResourceKindRestic,
+					Name:       restic.Name,
+					UID:        restic.UID,
+				},
+			},
+			Labels: map[string]string{
+				"app": AppLabelStash,
+			},
+			Annotations: map[string]string{
+				AnnotationRestic:    restic.Name,
+				AnnotationOperation: OperationDeletePods,
+			},
+		},
+		Spec: batch_v1_beta.CronJobSpec{
+			Schedule: restic.Spec.Schedule,
+			JobTemplate: batch_v1_beta.JobTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app": "stash",
+					},
+					Annotations: map[string]string{
+						AnnotationRestic:    restic.Name,
+						AnnotationOperation: OperationDeletePods,
+					},
+				},
+				Spec: batch.JobSpec{
+					Template: core.PodTemplateSpec{
+						Spec: core.PodSpec{
+							Containers: []core.Container{
+								{
+									Name:  KubectlContainer,
+									Image: docker.ImageKubectl + ":" + tag,
+									Args: []string{
+										"kubectl",
+										"delete",
+										"pods",
+										"-l " + selectors,
+									},
+								},
+							},
+							RestartPolicy: core.RestartPolicyNever,
+						},
+					},
+				},
+			},
+		},
+	}
+	return job
+}
+
+func CreateOrPatchCronJob(c kubernetes.Interface, job *batch_v1_beta.CronJob) (*batch_v1_beta.CronJob, error) {
+	cur, err := c.BatchV1beta1().CronJobs(job.Namespace).Get(job.Name, metav1.GetOptions{})
+	if kerr.IsNotFound(err) {
+		log.Infoln("Creating Cron Job %s/%s.", job.Namespace, job.Name)
+		return c.BatchV1beta1().CronJobs(job.Namespace).Create(job)
+	} else if err != nil {
+		return nil, err
+	}
+
+	// patch cronjob
+	curJson, err := json.Marshal(cur)
+	if err != nil {
+		return nil, err
+	}
+	modJson, err := json.Marshal(job)
+	if err != nil {
+		return nil, err
+	}
+	patch, err := strategicpatch.CreateTwoWayMergePatch(curJson, modJson, batch_v1_beta.CronJob{})
+	if err != nil {
+		return nil, err
+	}
+	if len(patch) == 0 || string(patch) == "{}" {
+		return cur, nil
+	}
+	log.Infoln("Patching Cron Job %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
+	return c.BatchV1beta1().CronJobs(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
+}
+
+func DeleteStashJob(client kubernetes.Interface, job batch.Job) error {
+	if err := client.BatchV1().Jobs(job.Namespace).Delete(job.Name, nil); err != nil && !kerr.IsNotFound(err) {
+		return fmt.Errorf("failed to delete job: %s, reason: %s", job.Name, err)
+	}
+	r, err := metav1.LabelSelectorAsSelector(job.Spec.Selector)
+	if err != nil {
+		return fmt.Errorf("failed to select pods for job: %s, reason: %s", job.Name, err)
+	}
+	if err = client.CoreV1().Pods(job.Namespace).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{LabelSelector: r.String()}); err != nil {
+		return fmt.Errorf("failed to delete pods for job: %s, reason: %s", job.Name, err)
+	}
+	return nil
+}
+
+func CreateCheckJob(restic *api.Restic, hostName string, smartPrefix string, tag string) *batch.Job {
+	job := &batch.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      CheckJobPrefix + restic.Name,
+			Namespace: restic.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: api.SchemeGroupVersion.String(),
+					Kind:       api.ResourceKindRestic,
+					Name:       restic.Name,
+					UID:        restic.UID,
+				},
+			},
+			Labels: map[string]string{
+				"app": AppLabelStash,
+			},
+			Annotations: map[string]string{
+				AnnotationRestic:    restic.Name,
+				AnnotationOperation: OperationCheck,
+			},
+		},
+		Spec: batch.JobSpec{
+			Template: core.PodTemplateSpec{
+				Spec: core.PodSpec{
+					Containers: []core.Container{
+						{
+							Name:  StashContainer,
+							Image: docker.ImageOperator + ":" + tag,
+							Args: []string{
+								"check",
+								"--restic-name=" + restic.Name,
+								"--host-name=" + hostName,
+								"--smart-prefix=" + smartPrefix,
+								"--v=10",
+							},
+						},
+					},
+					RestartPolicy: core.RestartPolicyOnFailure,
+				},
+			},
+		},
+	}
+
+	// local backend
+	if restic.Spec.Backend.Local != nil {
+		job.Spec.Template.Spec.Containers[0].VolumeMounts = []core.VolumeMount{
+			{
+				Name:      LocalVolumeName,
+				MountPath: restic.Spec.Backend.Local.Path,
+			},
+		}
+
+		job.Spec.Template.Spec.Volumes = []core.Volume{
+			{
+				Name:         LocalVolumeName,
+				VolumeSource: restic.Spec.Backend.Local.VolumeSource,
+			},
+		}
+	}
+
+	return job
 }

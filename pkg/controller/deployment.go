@@ -153,6 +153,9 @@ func (c *StashController) runDeploymentInjector(key string) error {
 			return nil
 		}
 		if newRestic != nil {
+			if newRestic.Spec.Type == api.BackupOffline && *dp.Spec.Replicas > 1 {
+				return fmt.Errorf("cannot perform offline backup for deployment with replicas > 1")
+			}
 			return c.EnsureDeploymentSidecar(dp, oldRestic, newRestic)
 		} else if oldRestic != nil {
 			return c.EnsureDeploymentSidecarDeleted(dp, oldRestic)
@@ -214,7 +217,11 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 			Kind: api.KindDeployment,
 			Name: obj.Name,
 		}
-		obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.options.SidecarImageTag, workload))
+		if new.Spec.Type == api.BackupOffline {
+			obj.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(obj.Spec.Template.Spec.InitContainers, util.CreateInitContainer(new, c.options.SidecarImageTag, workload, c.options.EnableRBAC))
+		} else {
+			obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.options.SidecarImageTag, workload))
+		}
 		obj.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(obj.Spec.Template.Spec.Volumes)
 		obj.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(obj.Spec.Template.Spec.Volumes)
 		obj.Spec.Template.Spec.Volumes = util.MergeLocalVolume(obj.Spec.Template.Spec.Volumes, old, new)
@@ -244,7 +251,7 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 	if err != nil {
 		return
 	}
-	err = util.WaitUntilSidecarAdded(c.k8sClient, resource.Namespace, resource.Spec.Selector)
+	err = util.WaitUntilSidecarAdded(c.k8sClient, resource.Namespace, resource.Spec.Selector, new.Spec.Type)
 	return err
 }
 
@@ -257,7 +264,11 @@ func (c *StashController) EnsureDeploymentSidecarDeleted(resource *apps.Deployme
 	}
 
 	resource, err = apps_util.PatchDeployment(c.k8sClient, resource, func(obj *apps.Deployment) *apps.Deployment {
-		obj.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
+		if restic.Spec.Type == api.BackupOffline {
+			obj.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.InitContainers, util.StashContainer)
+		} else {
+			obj.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
+		}
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
 		if restic.Spec.Backend.Local != nil {
@@ -277,7 +288,7 @@ func (c *StashController) EnsureDeploymentSidecarDeleted(resource *apps.Deployme
 	if err != nil {
 		return
 	}
-	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, resource.Spec.Selector)
+	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, resource.Spec.Selector, restic.Spec.Type)
 	if err != nil {
 		return
 	}

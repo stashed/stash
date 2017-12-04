@@ -439,6 +439,7 @@ func autoConvert_v1alpha1_ResticSpec_To_stash_ResticSpec(in *ResticSpec, out *st
 	out.VolumeMounts = *(*[]v1.VolumeMount)(unsafe.Pointer(&in.VolumeMounts))
 	out.Resources = in.Resources
 	out.RetentionPolicies = *(*[]stash.RetentionPolicy)(unsafe.Pointer(&in.RetentionPolicies))
+	out.Type = stash.BackupType(in.Type)
 	return nil
 }
 
@@ -457,6 +458,7 @@ func autoConvert_stash_ResticSpec_To_v1alpha1_ResticSpec(in *stash.ResticSpec, o
 	out.VolumeMounts = *(*[]v1.VolumeMount)(unsafe.Pointer(&in.VolumeMounts))
 	out.Resources = in.Resources
 	out.RetentionPolicies = *(*[]RetentionPolicy)(unsafe.Pointer(&in.RetentionPolicies))
+	out.Type = BackupType(in.Type)
 	return nil
 }
 

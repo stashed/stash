@@ -4,19 +4,20 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/appscode/stash/pkg/scheduler"
+	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	"github.com/appscode/stash/pkg/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (f *Framework) CheckLeaderElection(meta metav1.ObjectMeta) {
+func (f *Framework) CheckLeaderElection(meta metav1.ObjectMeta, kind string) {
 	var podName string
 
 	By("Waiting for configmap annotation")
 	Eventually(func() bool {
 		var err error
-		if podName, err = f.GetLeaderIdentity(meta); err != nil {
+		if podName, err = f.GetLeaderIdentity(meta, kind); err != nil {
 			return false
 		}
 		return true
@@ -28,15 +29,18 @@ func (f *Framework) CheckLeaderElection(meta metav1.ObjectMeta) {
 
 	By("Waiting for reconfigure configmap annotation")
 	Eventually(func() bool {
-		if podNameNew, err := f.GetLeaderIdentity(meta); err != nil || podNameNew == podName {
+		if podNameNew, err := f.GetLeaderIdentity(meta, kind); err != nil || podNameNew == podName {
 			return false
 		}
 		return true
 	}).Should(BeTrue())
 }
 
-func (f *Framework) GetLeaderIdentity(meta metav1.ObjectMeta) (string, error) {
-	configMapName := scheduler.ConfigMapPrefix + meta.Name
+func (f *Framework) GetLeaderIdentity(meta metav1.ObjectMeta, kind string) (string, error) {
+	configMapName := util.GetConfigmapLockName(api.LocalTypedReference{
+		Kind: kind,
+		Name: meta.Name,
+	})
 	annotationKey := "control-plane.alpha.kubernetes.io/leader"
 	idKey := "holderIdentity"
 

@@ -35,6 +35,8 @@ type ResticSpec struct {
 	// Compute Resources required by the sidecar container.
 	Resources         core.ResourceRequirements `json:"resources,omitempty"`
 	RetentionPolicies []RetentionPolicy         `json:"retentionPolicies,omitempty"`
+	// https://github.com/appscode/stash/issues/225
+	Type BackupType `json:"type,omitempty"`
 }
 
 type ResticStatus struct {
@@ -108,6 +110,13 @@ type B2Spec struct {
 type RestServerSpec struct {
 	URL string `json:"url,omitempty"`
 }
+
+type BackupType string
+
+const (
+	BackupOnline  BackupType = "online"  // default, injects sidecar
+	BackupOffline BackupType = "offline" // injects init container
+)
 
 type RetentionStrategy string
 

@@ -7,22 +7,20 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/kutil/meta"
-	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
-	"github.com/appscode/stash/pkg/scheduler"
+	"github.com/appscode/stash/pkg/backup"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func NewCmdSchedule() *cobra.Command {
+func NewCmdBackup() *cobra.Command {
 	var (
 		masterURL      string
 		kubeconfigPath string
-		opt            = scheduler.Options{
+		opt            = backup.Options{
 			Namespace:      meta.Namespace(),
-			ResticName:     "",
 			ScratchDir:     "/tmp",
 			PushgatewayURL: "http://stash-operator.kube-system.svc:56789",
 			PodLabelsPath:  "/etc/stash/labels",
@@ -32,8 +30,8 @@ func NewCmdSchedule() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:               "schedule",
-		Short:             "Run Stash cron daemon",
+		Use:               "backup",
+		Short:             "Run Stash Backup",
 		DisableAutoGenTag: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
@@ -61,22 +59,22 @@ func NewCmdSchedule() *cobra.Command {
 			if err = util.WorkloadExists(kubeClient, opt.Namespace, opt.Workload); err != nil {
 				log.Fatalf(err.Error())
 			}
-			opt.ScratchDir = strings.TrimSuffix(opt.ScratchDir, "/") // setup ScratchDir in SetupAndRun
+			opt.ScratchDir = strings.TrimSuffix(opt.ScratchDir, "/") // make ScratchDir in setup()
 
-			ctrl := scheduler.New(kubeClient, stashClient, opt)
-			stopBackup := make(chan struct{})
-			defer close(stopBackup)
+			ctrl := backup.New(kubeClient, stashClient, opt)
 
-			// split code from here for leader election
-			switch opt.Workload.Kind {
-			case api.KindDeployment, api.KindReplicaSet, api.KindReplicationController:
-				ctrl.ElectLeader(stopBackup)
-			default:
-				ctrl.SetupAndRun(stopBackup)
+			if opt.RunViaCron {
+				log.Infoln("Running backup periodically via cron")
+				if err = ctrl.BackupScheduler(); err != nil {
+					log.Fatal(err)
+				}
+			} else {
+				log.Infoln("Running backup once")
+				if err = ctrl.Backup(); err != nil {
+					log.Fatal(err)
+				}
 			}
-
-			// Wait forever
-			select {}
+			log.Infoln("Exiting Stash Backup")
 		},
 	}
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
@@ -87,6 +85,9 @@ func NewCmdSchedule() *cobra.Command {
 	cmd.Flags().StringVar(&opt.ScratchDir, "scratch-dir", opt.ScratchDir, "Directory used to store temporary files. Use an `emptyDir` in Kubernetes.")
 	cmd.Flags().StringVar(&opt.PushgatewayURL, "pushgateway-url", opt.PushgatewayURL, "URL of Prometheus pushgateway used to cache backup metrics")
 	cmd.Flags().DurationVar(&opt.ResyncPeriod, "resync-period", opt.ResyncPeriod, "If non-zero, will re-list this often. Otherwise, re-list will be delayed aslong as possible (until the upstream source closes the watch or times out.")
+	cmd.Flags().BoolVar(&opt.RunViaCron, "run-via-cron", opt.RunViaCron, "Run backup periodically via cron.")
+	cmd.Flags().StringVar(&opt.ImageTag, "image-tag", opt.ImageTag, "Check job image tag.")
+	cmd.Flags().BoolVar(&opt.EnableRBAC, "enable-rbac", opt.EnableRBAC, "Enable RBAC")
 
 	return cmd
 }

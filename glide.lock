@@ -1,8 +1,8 @@
 hash: dfae8e6290d081506cc9d8528f165cbfecb4ba40e6f0ddfc6f531ef5a70955cc
-updated: 2017-11-18T11:29:12.924029859-08:00
+updated: 2017-11-27T18:35:09.210823123+06:00
 imports:
 - name: github.com/appscode/go
-  version: 1cd97c853ad364376f9c792106deb0bfd197bca0
+  version: 85b510edd14fe8d6beb2ad365afd3c5b3afc8c49
   subpackages:
   - context
   - crypto/rand
@@ -34,7 +34,7 @@ imports:
 - name: github.com/codeskyblue/go-sh
   version: 703901965097a6b3155c0f6f774efb877b483f64
 - name: github.com/cpuguy83/go-md2man
-  version: 1d903dcb749992f3741d744c0f8376b4bd7eb3e1
+  version: 71acacd42f85e5e82f70a55327789582a5200a90
   subpackages:
   - md2man
 - name: github.com/davecgh/go-spew
@@ -77,7 +77,7 @@ imports:
   - proto
   - sortkeys
 - name: github.com/golang/glog
-  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
+  version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/groupcache
   version: 02826c3e79038b59d737d3b1c0a1d937f71a4433
   subpackages:
@@ -93,7 +93,7 @@ imports:
 - name: github.com/google/btree
   version: 7d79101e329e5a3adf994758c578dab82b90c017
 - name: github.com/google/go-cmp
-  version: 98232909528519e571b2e69fbe546b6ef35f5780
+  version: 3f298f31d5756f2fe00ddfbeda978125ad24862e
   subpackages:
   - cmp
   - cmp/internal/diff
@@ -102,7 +102,7 @@ imports:
 - name: github.com/google/gofuzz
   version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
 - name: github.com/google/uuid
-  version: 8c31c18f31ede9fc8eae72290a7e7a8064e9b3e3
+  version: 4ebdd04351c754ab14fd5295c91fb901e07dfbcc
 - name: github.com/googleapis/gnostic
   version: 0c5108395e2debce0d731cf0287ddf7242066aba
   subpackages:
@@ -228,7 +228,7 @@ imports:
 - name: github.com/sirupsen/logrus
   version: f006c2ac4710855cf0f916dd6b77acf6b048dc6e
 - name: github.com/spf13/cobra
-  version: d6948b782c9f4799ea3cd225f6de4131c29c243a
+  version: 1be1d2841c773c01bee8289f55f7463b6e2c2539
   subpackages:
   - doc
 - name: github.com/spf13/pflag
@@ -433,6 +433,7 @@ imports:
   - kubernetes/typed/storage/v1beta1
   - kubernetes/typed/storage/v1beta1/fake
   - listers/apps/v1beta1
+  - listers/batch/v1
   - listers/core/v1
   - listers/extensions/v1beta1
   - pkg/version

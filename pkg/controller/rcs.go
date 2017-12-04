@@ -151,6 +151,9 @@ func (c *StashController) runRCInjector(key string) error {
 			return nil
 		}
 		if newRestic != nil {
+			if newRestic.Spec.Type == api.BackupOffline && *rc.Spec.Replicas > 1 {
+				return fmt.Errorf("cannot perform offline backup for rc with replicas > 1")
+			}
 			return c.EnsureReplicationControllerSidecar(rc, oldRestic, newRestic)
 		} else if oldRestic != nil {
 			return c.EnsureReplicationControllerSidecarDeleted(rc, oldRestic)
@@ -212,7 +215,11 @@ func (c *StashController) EnsureReplicationControllerSidecar(resource *core.Repl
 			Kind: api.KindReplicationController,
 			Name: obj.Name,
 		}
-		obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.options.SidecarImageTag, workload))
+		if new.Spec.Type == api.BackupOffline {
+			obj.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(obj.Spec.Template.Spec.InitContainers, util.CreateInitContainer(new, c.options.SidecarImageTag, workload, c.options.EnableRBAC))
+		} else {
+			obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.options.SidecarImageTag, workload))
+		}
 		obj.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(obj.Spec.Template.Spec.Volumes)
 		obj.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(obj.Spec.Template.Spec.Volumes)
 		obj.Spec.Template.Spec.Volumes = util.MergeLocalVolume(obj.Spec.Template.Spec.Volumes, old, new)
@@ -242,7 +249,7 @@ func (c *StashController) EnsureReplicationControllerSidecar(resource *core.Repl
 	if err != nil {
 		return
 	}
-	err = util.WaitUntilSidecarAdded(c.k8sClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector})
+	err = util.WaitUntilSidecarAdded(c.k8sClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector}, new.Spec.Type)
 	return err
 }
 
@@ -255,7 +262,11 @@ func (c *StashController) EnsureReplicationControllerSidecarDeleted(resource *co
 	}
 
 	resource, err = core_util.PatchRC(c.k8sClient, resource, func(obj *core.ReplicationController) *core.ReplicationController {
-		obj.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
+		if restic.Spec.Type == api.BackupOffline {
+			obj.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.InitContainers, util.StashContainer)
+		} else {
+			obj.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
+		}
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
 		if restic.Spec.Backend.Local != nil {
@@ -275,7 +286,7 @@ func (c *StashController) EnsureReplicationControllerSidecarDeleted(resource *co
 	if err != nil {
 		return
 	}
-	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector})
+	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector}, restic.Spec.Type)
 	if err != nil {
 		return
 	}

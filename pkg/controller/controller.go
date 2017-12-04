@@ -18,6 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	apps_listers "k8s.io/client-go/listers/apps/v1beta1"
+	batch_listers "k8s.io/client-go/listers/batch/v1"
 	core_listers "k8s.io/client-go/listers/core/v1"
 	ext_listers "k8s.io/client-go/listers/extensions/v1beta1"
 	"k8s.io/client-go/tools/cache"
@@ -77,6 +78,12 @@ type StashController struct {
 	rsIndexer  cache.Indexer
 	rsInformer cache.Controller
 	rsLister   ext_listers.ReplicaSetLister
+
+	// Job
+	jobQueue    workqueue.RateLimitingInterface
+	jobIndexer  cache.Indexer
+	jobInformer cache.Controller
+	jobLister   batch_listers.JobLister
 }
 
 func New(kubeClient kubernetes.Interface, crdClient crd_cs.ApiextensionsV1beta1Interface, stashClient cs.StashV1alpha1Interface, options Options) *StashController {
@@ -93,8 +100,10 @@ func (c *StashController) Setup() error {
 	if err := c.ensureCustomResourceDefinitions(); err != nil {
 		return err
 	}
-	if err := c.ensureSidecarClusterRole(); err != nil {
-		return err
+	if c.options.EnableRBAC {
+		if err := c.ensureSidecarClusterRole(); err != nil {
+			return err
+		}
 	}
 	c.initNamespaceWatcher()
 	c.initResticWatcher()
@@ -104,6 +113,7 @@ func (c *StashController) Setup() error {
 	c.initStatefulSetWatcher()
 	c.initRCWatcher()
 	c.initReplicaSetWatcher()
+	c.initJobWatcher()
 	return nil
 }
 
@@ -135,6 +145,7 @@ func (c *StashController) Run(threadiness int, stopCh chan struct{}) {
 	defer c.ssQueue.ShutDown()
 	defer c.rcQueue.ShutDown()
 	defer c.rsQueue.ShutDown()
+	defer c.jobQueue.ShutDown()
 	glog.Info("Starting Stash controller")
 
 	go c.nsInformer.Run(stopCh)
@@ -145,6 +156,7 @@ func (c *StashController) Run(threadiness int, stopCh chan struct{}) {
 	go c.ssInformer.Run(stopCh)
 	go c.rcInformer.Run(stopCh)
 	go c.rsInformer.Run(stopCh)
+	go c.jobInformer.Run(stopCh)
 
 	// Wait for all involved caches to be synced, before processing items from the queue is started
 	if !cache.WaitForCacheSync(stopCh, c.nsInformer.HasSynced) {
@@ -179,6 +191,10 @@ func (c *StashController) Run(threadiness int, stopCh chan struct{}) {
 		runtime.HandleError(fmt.Errorf("timed out waiting for caches to sync"))
 		return
 	}
+	if !cache.WaitForCacheSync(stopCh, c.jobInformer.HasSynced) {
+		runtime.HandleError(fmt.Errorf("timed out waiting for caches to sync"))
+		return
+	}
 
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(c.runResticWatcher, time.Second, stopCh)
@@ -188,6 +204,7 @@ func (c *StashController) Run(threadiness int, stopCh chan struct{}) {
 		go wait.Until(c.runStatefulSetWatcher, time.Second, stopCh)
 		go wait.Until(c.runRCWatcher, time.Second, stopCh)
 		go wait.Until(c.runReplicaSetWatcher, time.Second, stopCh)
+		go wait.Until(c.runJobWatcher, time.Second, stopCh)
 	}
 
 	<-stopCh
