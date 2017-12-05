@@ -30,6 +30,10 @@ aliases:
  - Fast, secure, efficient backup of any kubernetes [volumes](https://kubernetes.io/docs/concepts/storage/volumes/).
  - Automates configuration of `restic` for periodic backup.
  - Store backed up files in various cloud storage provider, including S3, GCS, Azure, OpenStack Swift, DigitalOcean Spaces etc.
+ - Restore backup easily.
+ - Periodically check integrity of backed up data.
+ - Take backup in offline mode.
+ - Support workload initializer for faster backup.
  - Prometheus ready metrics for backup process.
 
 ## Supported Versions
@@ -41,16 +45,20 @@ Please pick a version of Stash that matches your Kubernetes installation.
 | [0.4.2](https://github.com/appscode/stash/releases/tag/0.4.2) (uses TPR) | [User Guide](https://github.com/appscode/stash/tree/0.4.2/docs) | 1.5.x - 1.7.x      |
 
 ## Installation
+
 To install Stash, please follow the guide [here](/docs/install.md).
 
 ## Using Stash
-Want to learn how to use Stash? Please start [here](/docs/tutorial.md).
+Want to learn how to use Stash? Please start [here](/docs/tutorials/README.md).
 
 ## Contribution guidelines
 Want to help improve Stash? Please start [here](/CONTRIBUTING.md).
 
 ## Project Status
 Wondering what features are coming next? Please visit [here](/ROADMAP.md).
+
+## Developer Guide
+To view developer guide see [here](/docs/developer-guide/README.md).
 
 ---
 

@@ -1,36 +1,39 @@
 ---
-title: Stash Schedule
+title: Stash Backup
 menu:
   product_stash_0.5.1:
-    identifier: stash-schedule
-    name: Stash Schedule
+    identifier: stash-backup
+    name: Stash Backup
     parent: reference
 product_name: stash
 menu_name: product_stash_0.5.1
 section_menu_id: reference
 ---
-## stash schedule
+## stash backup
 
-Run Stash cron daemon
+Run Stash Backup
 
 ### Synopsis
 
 
-Run Stash cron daemon
+Run Stash Backup
 
 ```
-stash schedule [flags]
+stash backup [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help                     help for schedule
+      --enable-rbac              Enable RBAC
+  -h, --help                     help for backup
+      --image-tag string         Check job image tag.
       --kubeconfig string        Path to kubeconfig file with authorization information (the master location is set by the master flag).
       --master string            The address of the Kubernetes API server (overrides any value in kubeconfig)
       --pushgateway-url string   URL of Prometheus pushgateway used to cache backup metrics (default "http://stash-operator.kube-system.svc:56789")
       --restic-name string       Name of the Restic used as configuration.
       --resync-period duration   If non-zero, will re-list this often. Otherwise, re-list will be delayed aslong as possible (until the upstream source closes the watch or times out. (default 5m0s)
+      --run-via-cron             Run backup periodically via cron.
       --scratch-dir emptyDir     Directory used to store temporary files. Use an emptyDir in Kubernetes. (default "/tmp")
       --workload-kind string     Kind of workload where sidecar pod is added.
       --workload-name string     Name of workload where sidecar pod is added.

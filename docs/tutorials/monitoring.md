@@ -15,7 +15,7 @@ aliases:
   - /products/stash/0.5.1/monitoring/
 ---
 
-> New to Stash? Please start [here](/docs/tutorial.md).
+> New to Stash? Please start [here](/docs/tutorials/README.md).
 
 # Monitoring Stash
 
@@ -31,3 +31,17 @@ Since backup operations are run as cron jobs, Stash can use [Prometheus Pushgate
  - `restic_session_fail{job="<restic.namespace>-<restic.name>", app="<workload>"}`: Indicates if session failed
  - `restic_session_duration_seconds_total{job="<restic.namespace>-<restic.name>", app="<workload>"}`: Total seconds taken to complete restic session
  - `restic_session_duration_seconds{job="<restic.namespace>-<restic.name>", app="<workload>", filegroup="dir1", op="backup|forget"}`: Total seconds taken to complete restic session
+
+## Next Steps
+
+- Learn how to use Stash to backup a Kubernetes deployment [here](/docs/tutorials/backup.md).
+- Learn about the details of Restic CRD [here](/docs/concept_restic.md).
+- To restore a backup see [here](/docs/tutorials/restore.md).
+- Learn about the details of Recovery CRD [here](/docs/concept_recovery.md).
+- To run backup in offline mode see [here](/docs/tutorials/offline_backup.md)
+- See the list of supported backends and how to configure them [here](/docs/tutorials/backends.md).
+- See working examples for supported workload types [here](/docs/tutorials/workloads.md).
+- Learn about how to configure [RBAC roles](/docs/tutorials/rbac.md).
+- Learn about how to configure Stash operator as workload initializer [here](/docs/tutorials/initializer.md).
+- Wondering what features are coming next? Please visit [here](/ROADMAP.md). 
+- Want to hack on Stash? Check our [contribution guidelines](/CONTRIBUTING.md).

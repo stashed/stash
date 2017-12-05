@@ -15,6 +15,8 @@ aliases:
   - /products/stash/0.5.1/developer-guide/README/
 ---
 
+> New to Stash? Please start [here](/docs/tutorials/README.md).
+
 ## Development Guide
 This document is intended to be the canonical source of truth for things like supported toolchain versions for building Stash.
 If you find a requirement that this doc does not capture, please submit an issue on github.

@@ -15,8 +15,6 @@ aliases:
   - /products/stash/0.5.1/uninstall/
 ---
 
-> New to Stash? Please start [here](/docs/tutorial.md).
-
 # Uninstall Stash
 Please follow the steps below to uninstall Stash:
 
@@ -55,4 +53,9 @@ kubectl delete restic.stash.appscode.com --all --cascade=false
 5. Delete the old CRD-registration.
 ```console
 kubectl delete crd -l app=stash
+```
+
+6. Delete initializer configuration.
+```console
+kubectl delete initializerconfiguration stash-initializer-config
 ```

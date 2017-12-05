@@ -9,9 +9,7 @@ spec:
       app: s3-restic
   fileGroups:
   - path: /source/data
-    retentionPolicy:
-      keepLast: 5
-      prune: true
+    retentionPolicyName: 'keep-last-5'
   backend:
     s3:
       endpoint: 's3.amazonaws.com'
@@ -22,3 +20,7 @@ spec:
   volumeMounts:
   - mountPath: /source/data
     name: source-data
+  retentionPolicies:
+  - name: 'keep-last-5'
+    keepLast: 5
+    prune: true

@@ -15,8 +15,6 @@ aliases:
   - /products/stash/0.5.1/install/
 ---
 
-> New to Stash? Please start [here](/docs/tutorial.md).
-
 # Installation Guide
 
 ## Using YAML
@@ -44,6 +42,9 @@ To see the detailed configuration options, visit [here](/chart/stable/stash/READ
 To check if Stash operator pods have started, run the following command:
 ```console
 $ kubectl get pods --all-namespaces -l app=stash --watch
+
+NAMESPACE     NAME                              READY     STATUS    RESTARTS   AGE
+kube-system   stash-operator-859d6bdb56-m9br5   2/2       Running   2          5s
 ```
 
 Once the operator pods are running, you can cancel the above command by typing `Ctrl+C`.
@@ -51,12 +52,16 @@ Once the operator pods are running, you can cancel the above command by typing `
 Now, to confirm CRD groups have been registered by the operator, run the following command:
 ```console
 $ kubectl get crd -l app=stash
+
+NAME                            AGE
+recoveries.stash.appscode.com   5s
+restics.stash.appscode.com      5s
 ```
 
-Now, you are ready to [take your first backup](/docs/tutorial.md) using Stash.
+Now, you are ready to [take your first backup](/docs/tutorials/README.md) using Stash.
 
 
-## Using kubectl
+## Using kubectl for Restic
 ```console
 # List all Restic objects
 $ kubectl get restic --all-namespaces
@@ -69,6 +74,21 @@ $ kubectl get restic -n <namespace> <name> -o yaml
 
 # Describe Restic. Very useful to debug problems.
 $ kubectl describe restic -n <namespace> <name>
+```
+
+## Using kubectl for Recovery
+```console
+# List all Recovery objects
+$ kubectl get recovery --all-namespaces
+
+# List Recovery objects for a namespace
+$ kubectl get recovery -n <namespace>
+
+# Get Recovery YAML
+$ kubectl get recovery -n <namespace> <name> -o yaml
+
+# Describe Recovery. Very useful to debug problems.
+$ kubectl describe recovery -n <namespace> <name>
 ```
 
 
