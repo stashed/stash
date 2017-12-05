@@ -12,8 +12,6 @@ import (
 	"github.com/golang/glog"
 	crd_api "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
-	kerr "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -122,16 +120,7 @@ func (c *StashController) ensureCustomResourceDefinitions() error {
 		api.Restic{}.CustomResourceDefinition(),
 		api.Recovery{}.CustomResourceDefinition(),
 	}
-	for _, crd := range crds {
-		_, err := c.crdClient.CustomResourceDefinitions().Get(crd.Name, metav1.GetOptions{})
-		if kerr.IsNotFound(err) {
-			_, err = c.crdClient.CustomResourceDefinitions().Create(crd)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return apiext_util.WaitForCRDReady(c.k8sClient.CoreV1().RESTClient(), crds)
+	return apiext_util.RegisterCRDs(c.crdClient, crds)
 }
 
 func (c *StashController) Run(threadiness int, stopCh chan struct{}) {
