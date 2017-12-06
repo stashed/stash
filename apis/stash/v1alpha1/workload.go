@@ -44,17 +44,17 @@ func (workload LocalTypedReference) HostnamePrefix(podName, nodeName string) (ho
 	}
 	switch workload.Kind {
 	case KindDeployment, KindReplicaSet, KindReplicationController:
-		return workload.Name, workload.Kind + "/" + workload.Name, nil
+		return workload.Name, strings.ToLower(workload.Kind) + "/" + workload.Name, nil
 	case KindStatefulSet:
 		if podName == "" {
 			return "", "", fmt.Errorf("missing podName for %s", KindStatefulSet)
 		}
-		return podName, workload.Kind + "/" + podName, nil
+		return podName, strings.ToLower(workload.Kind) + "/" + podName, nil
 	case KindDaemonSet:
 		if nodeName == "" {
 			return "", "", fmt.Errorf("missing nodeName for %s", KindDaemonSet)
 		}
-		return nodeName, workload.Kind + "/" + workload.Name + "/" + nodeName, nil
+		return nodeName, strings.ToLower(workload.Kind) + "/" + workload.Name + "/" + nodeName, nil
 	default:
 		return "", "", fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
 	}
