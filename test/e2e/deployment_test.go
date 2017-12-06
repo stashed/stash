@@ -555,4 +555,22 @@ var _ = Describe("Deployment", func() {
 			})
 		})
 	})
+
+	Describe("No retention policy", func() {
+		AfterEach(func() {
+			f.DeleteDeployment(deployment.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+		})
+
+		Context(`"Local" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForLocalBackend()
+				restic.Spec.FileGroups[0].RetentionPolicyName = ""
+				restic.Spec.RetentionPolicies = []api.RetentionPolicy{}
+			})
+			It(`should backup new Deployment`, shouldBackupNewDeployment)
+		})
+	})
 })
