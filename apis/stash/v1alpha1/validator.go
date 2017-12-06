@@ -8,6 +8,10 @@ import (
 
 func (r Restic) IsValid() error {
 	for i, fg := range r.Spec.FileGroups {
+		if fg.RetentionPolicyName == "" {
+			continue
+		}
+
 		found := false
 		for _, policy := range r.Spec.RetentionPolicies {
 			if policy.Name == fg.RetentionPolicyName {
