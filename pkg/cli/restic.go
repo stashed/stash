@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -42,13 +43,16 @@ type Snapshot struct {
 
 func (w *ResticWrapper) ListSnapshots() ([]Snapshot, error) {
 	result := make([]Snapshot, 0)
-	err := w.sh.Command(Exe, "snapshots", "--json").UnmarshalJSON(&result)
+	args := w.appendCacheDirFlag([]interface{}{"snapshots", "--json"})
+	err := w.sh.Command(Exe, args...).UnmarshalJSON(&result)
 	return result, err
 }
 
 func (w *ResticWrapper) InitRepositoryIfAbsent() error {
-	if err := w.sh.Command(Exe, "snapshots", "--json").Run(); err != nil {
-		return w.sh.Command(Exe, "init").Run()
+	args := w.appendCacheDirFlag([]interface{}{"snapshots", "--json"})
+	if err := w.sh.Command(Exe, args...).Run(); err != nil {
+		args = w.appendCacheDirFlag([]interface{}{"init"})
+		return w.sh.Command(Exe, args...).Run()
 	}
 	return nil
 }
@@ -64,6 +68,7 @@ func (w *ResticWrapper) Backup(resource *api.Restic, fg api.FileGroup) error {
 		args = append(args, "--tag")
 		args = append(args, tag)
 	}
+	args = w.appendCacheDirFlag(args)
 	return w.sh.Command(Exe, args...).Run()
 }
 
@@ -113,10 +118,8 @@ func (w *ResticWrapper) Forget(resource *api.Restic, fg api.FileGroup) error {
 		args = append(args, "--dry-run")
 	}
 	if len(args) > 1 {
-		err := w.sh.Command(Exe, args...).Run()
-		if err != nil {
-			return err
-		}
+		args = w.appendCacheDirFlag(args)
+		return w.sh.Command(Exe, args...).Run()
 	}
 	return nil
 }
@@ -130,9 +133,16 @@ func (w *ResticWrapper) Restore(path, host string) error {
 	args = append(args, host)
 	args = append(args, "--target")
 	args = append(args, path) // restore in same path as source-path
+	args = w.appendCacheDirFlag(args)
 	return w.sh.Command(Exe, args...).Run()
 }
 
 func (w *ResticWrapper) Check() error {
-	return w.sh.Command(Exe, "check").Run()
+	args := w.appendCacheDirFlag([]interface{}{"check"})
+	return w.sh.Command(Exe, args...).Run()
+}
+
+func (w *ResticWrapper) appendCacheDirFlag(args []interface{}) []interface{} {
+	cacheDir := filepath.Join(w.scratchDir, "restic-cache")
+	return append(args, "--cache-dir", cacheDir)
 }

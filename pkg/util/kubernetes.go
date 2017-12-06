@@ -627,9 +627,23 @@ func CreateCheckJob(restic *api.Restic, hostName string, smartPrefix string, tag
 								"--smart-prefix=" + smartPrefix,
 								"--v=10",
 							},
+							VolumeMounts: []core.VolumeMount{
+								{
+									Name:      ScratchDirVolumeName,
+									MountPath: "/tmp",
+								},
+							},
 						},
 					},
 					RestartPolicy: core.RestartPolicyOnFailure,
+					Volumes: []core.Volume{
+						{
+							Name: ScratchDirVolumeName,
+							VolumeSource: core.VolumeSource{
+								EmptyDir: &core.EmptyDirVolumeSource{},
+							},
+						},
+					},
 				},
 			},
 		},
@@ -637,19 +651,18 @@ func CreateCheckJob(restic *api.Restic, hostName string, smartPrefix string, tag
 
 	// local backend
 	if restic.Spec.Backend.Local != nil {
-		job.Spec.Template.Spec.Containers[0].VolumeMounts = []core.VolumeMount{
-			{
+		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts,
+			core.VolumeMount{
 				Name:      LocalVolumeName,
 				MountPath: restic.Spec.Backend.Local.Path,
-			},
-		}
+			})
 
-		job.Spec.Template.Spec.Volumes = []core.Volume{
-			{
+		// user don't need to specify "stash-local" volume, we collect it from restic-spec
+		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes,
+			core.Volume{
 				Name:         LocalVolumeName,
 				VolumeSource: restic.Spec.Backend.Local.VolumeSource,
-			},
-		}
+			})
 	}
 
 	return job

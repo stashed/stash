@@ -26,7 +26,7 @@ import (
 
 const (
 	TIMEOUT             = 20 * time.Minute
-	TestSidecarImageTag = "offline-backup"
+	TestSidecarImageTag = "canary"
 )
 
 var (
@@ -77,6 +77,8 @@ var _ = BeforeSuite(func() {
 	opts.KubectlImageTag = version.Major + "." + version.Minor + ".0"
 	err = docker.CheckDockerImageVersion(docker.ImageKubectl, opts.KubectlImageTag)
 	Expect(err).NotTo(HaveOccurred())
+
+	opts.EnableRBAC = true
 
 	ctrl = controller.New(kubeClient, crdClient, stashClient, opts)
 	By("Registering CRD group " + api.GroupName)
