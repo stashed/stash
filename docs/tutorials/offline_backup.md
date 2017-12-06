@@ -141,7 +141,7 @@ metadata:
     deployment.kubernetes.io/revision: "2"
     restic.appscode.com/last-applied-configuration: |
       {"kind":"Restic","apiVersion":"stash.appscode.com/v1alpha1","metadata":{"name":"stash-demo","namespace":"default","selfLink":"/apis/stash.appscode.com/v1alpha1/namespaces/default/restics/stash-demo","uid":"c55d5918-d8da-11e7-be92-0800277f19c0","resourceVersion":"57719","creationTimestamp":"2017-12-04T10:06:18Z"},"spec":{"selector":{"matchLabels":{"app":"stash-demo"}},"fileGroups":[{"path":"/source/data","retentionPolicyName":"keep-last-5"}],"backend":{"storageSecretName":"stash-demo","local":{"volumeSource":{"hostPath":{"path":"/data/stash-test/restic-repo"}},"path":"/safe/data"}},"schedule":"@every 5m","volumeMounts":[{"name":"source-data","mountPath":"/source/data"}],"resources":{},"retentionPolicies":[{"name":"keep-last-5","keepLast":5,"prune":true}],"type":"offline"},"status":{}}
-    restic.appscode.com/tag: offline-backup
+    restic.appscode.com/tag: canary
   creationTimestamp: 2017-12-04T10:04:11Z
   generation: 2
   labels:
@@ -190,7 +190,7 @@ spec:
         - --restic-name=stash-demo
         - --workload-kind=Deployment
         - --workload-name=stash-demo
-        - --image-tag=offline-backup
+        - --image-tag=canary
         - --enable-rbac=true
         env:
         - name: NODE_NAME
@@ -203,7 +203,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.name
-        image: appscode/stash:offline-backup
+        image: appscode/stash:canary
         imagePullPolicy: IfNotPresent
         name: stash
         resources: {}
