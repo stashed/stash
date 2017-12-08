@@ -103,11 +103,11 @@ Uninstall old `Stash` operator by following [this]().
 
 We have changed repository location in new version of `Stash` to remove conflicts. To keep your old backups you should move the contents of old repositories to new locations. 
 
-| Workload Kind | Workload Name | Replicas | Old Location | New Location |
-| --- | --- | --- | --- | --- |
-| Deployment | my-deploy | 2 | stash-qa/demo | stash-qa/demo/deployment/my-deploy |
-| Satefulset | my-satefulset | 2 | stash-qa/demo/my-satefulset-0 <br> stash-qa/demo/my-satefulset-1 | stash-qa/demo/satefulset/my-satefulset-0 <br> stash-qa/demo/satefulset/my-satefulset-1 |
-| Daemonset | my-daemonset | - | stash-qa/demo/node-1 <br> stash-qa/demo/node-2 | stash-qa/demo/daemonset/my-daemonset/node-1 <br> stash-qa/demo/daemonset/my-daemonset/node-2 |
+| Workload Kind | Workload Name | Replicas | New Location |
+| --- | --- | --- | --- |
+| Deployment | my-deploy | 2 | stash-qa/demo/deployment/my-deploy |
+| Satefulset | my-satefulset | 2 | stash-qa/demo/satefulset/my-satefulset-0 <br> stash-qa/demo/satefulset/my-satefulset-1 |
+| Daemonset | my-daemonset | - | stash-qa/demo/daemonset/my-daemonset/node-1 <br> stash-qa/demo/daemonset/my-daemonset/node-2 |
 
 ### Step 5
 
