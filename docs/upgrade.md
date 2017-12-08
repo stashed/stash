@@ -101,7 +101,7 @@ Uninstall old `Stash` operator by following [this]().
 
 ### Step 4
 
-We have changed repository location in new version of `Stash` to remove conflicts. To keep your old backups you should move the contents of old repositories to new locations. 
+To keep your old backups you should move the contents of your old repositories to new locations.
 
 | Workload Kind | Workload Name | Replicas | New Location |
 | --- | --- | --- | --- |
