@@ -56,7 +56,15 @@ spec:
     matchLabels:
       app: stash-demo
   fileGroups:
-  - path: /source/data
+  - path: /source/data-1
+    retentionPolicy:
+      keepLast: 5
+      prune: true
+  - path: /source/data-2
+    retentionPolicy:
+      keepLast: 10
+      prune: true
+  - path: /source/data-3
     retentionPolicy:
       keepLast: 5
       prune: true
@@ -128,7 +136,11 @@ spec:
     matchLabels:
       app: stash-demo
   fileGroups:
-  - path: /source/data
+  - path: /source/data-1
+    retentionPolicyName: policy-1
+  - path: /source/data-2
+    retentionPolicyName: policy-2
+  - path: /source/data-3
     retentionPolicyName: policy-1
   backend:
     s3:
@@ -141,9 +153,12 @@ spec:
   - mountPath: /source/data
     name: source-data
   retentionPolicies:
-      name: policy-1
-      keepLast: 5
-      prune: true
+  - name: policy-1
+    keepLast: 5
+    prune: true
+  - name: policy-2
+    keepLast: 10
+    prune: true
 ```
 
 Now deploy your new `Restic` CRD.
