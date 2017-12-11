@@ -14,16 +14,18 @@ const (
 )
 
 type ResticWrapper struct {
-	sh         *shell.Session
-	scratchDir string
-	hostname   string
+	sh          *shell.Session
+	scratchDir  string
+	enableCache bool
+	hostname    string
 }
 
-func New(scratchDir, hostname string) *ResticWrapper {
+func New(scratchDir string, enableCache bool, hostname string) *ResticWrapper {
 	ctrl := &ResticWrapper{
-		sh:         shell.NewSession(),
-		scratchDir: scratchDir,
-		hostname:   hostname,
+		sh:          shell.NewSession(),
+		scratchDir:  scratchDir,
+		enableCache: enableCache,
+		hostname:    hostname,
 	}
 	ctrl.sh.SetDir(scratchDir)
 	ctrl.sh.ShowCMD = true
@@ -143,6 +145,9 @@ func (w *ResticWrapper) Check() error {
 }
 
 func (w *ResticWrapper) appendCacheDirFlag(args []interface{}) []interface{} {
-	cacheDir := filepath.Join(w.scratchDir, "restic-cache")
-	return append(args, "--cache-dir", cacheDir)
+	if w.enableCache {
+		cacheDir := filepath.Join(w.scratchDir, "restic-cache")
+		return append(args, "--cache-dir", cacheDir)
+	}
+	return append(args, "--no-cache")
 }

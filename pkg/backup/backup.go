@@ -75,7 +75,7 @@ func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, 
 		opt:         opt,
 		cron:        cron.New(),
 		locked:      make(chan struct{}, 1),
-		resticCLI:   cli.New(opt.ScratchDir, opt.SnapshotHostname),
+		resticCLI:   cli.New(opt.ScratchDir, true, opt.SnapshotHostname),
 		recorder:    eventer.NewEventRecorder(k8sClient, BackupEventComponent),
 	}
 }
