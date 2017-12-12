@@ -73,7 +73,7 @@ func (c *Controller) Run() (err error) {
 		return
 	}
 
-	cli := cli.New("/tmp", c.opt.HostName)
+	cli := cli.New("/tmp", false, c.opt.HostName)
 	if err = cli.SetupEnv(restic, secret, c.opt.SmartPrefix); err != nil {
 		return
 	}

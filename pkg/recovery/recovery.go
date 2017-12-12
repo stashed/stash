@@ -109,7 +109,7 @@ func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
 		return err
 	}
 
-	cli := cli.New("/tmp", hostname)
+	cli := cli.New("/tmp", false, hostname)
 	if err = cli.SetupEnv(restic, secret, smartPrefix); err != nil {
 		return err
 	}

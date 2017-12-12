@@ -78,6 +78,8 @@ var _ = BeforeSuite(func() {
 	err = docker.CheckDockerImageVersion(docker.ImageKubectl, opts.KubectlImageTag)
 	Expect(err).NotTo(HaveOccurred())
 
+	opts.EnableRBAC = true
+
 	ctrl = controller.New(kubeClient, crdClient, stashClient, opts)
 	By("Registering CRD group " + api.GroupName)
 	err = ctrl.Setup()
