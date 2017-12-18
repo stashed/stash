@@ -1,63 +1,14 @@
-## Upgrade Steps
+# Upgrading Stash
+
+## Upgrading from 0.5.1 to 0.6.0
+
+The format for `Restic` object has changed in backward incompatiable manner between 0.5.x and 0.6.0 . The steps involved in upgrading Stash operator to 0.6.0 from prior version involves the following steps:
 
 1. Backup all your old `Restic` CRDs.
 2. Delete your old `Restic` objects. It will stop taking backups and remove sidecars from pods.
 3. Uninstall old `Stash` operator.
-4. Move repositories to new location if you want to keep your old backups.
-5. Install new `Stash` operator.
-6. Update your backed up `Restic` CRDs and re-deploy them. It will add sidecar to pods again and continue backup.
+4. Move repositories to new location if you want to keep your old backups. We have changed repository location in new version of `Stash` to remove conflicts between  repositories for different target workloads.
 
-## Update Restic Spec
-
-1. `restic.spec.useAutoPrefix` is removed in new version of `Stash`. If you specify it in your old `Restic` CRD, you should remove it.
-2. `restic.spec.fileGroups[].retentionPolicy` is moved to `restic.spec.retentionPolicies[]` and referenced using `restic.spec.fileGroups[].retentionPolicyName`. 
-
-Consider following example:
-
-*Old version:*
-
-```yaml
-fileGroups:
-- path: /source/path-1
-  retentionPolicy:
-    keepLast: 5
-    prune: true
-- path: /source/path-2
-  retentionPolicy:
-    keepLast: 10
-- path: /source/path-3
-  retentionPolicy:
-    keepLast: 5
-    prune: true
-```  
-
-*New version:*
-
-```yaml
-fileGroups:
-- path: /source/path-1
-  retentionPolicyName: policy-1
-    keepLast: 5
-    prune: true
-- path: /source/path-2
-  retentionPolicyName: policy-2
-    keepLast: 10
-- path: /source/path-3
-  retentionPolicyName: policy-1
-    keepLast: 5
-    prune: true
-retentionPolicies:
-- name: policy-1
-    keepLast: 5
-    prune: true
-- name: policy-2
-    keepLast: 10
-```
-
-## Update Repository Location
-
-We have changed repository location in new version of `Stash` to remove conflicts between  repositories for different target workloads.
- 
 ### Old Version
 
 ```
@@ -85,6 +36,56 @@ Replication Controller: {BackendPrefix}/replicationcontroller/{WorkloadName}/
 Stateful Set:           {BackendPrefix}/statefulset/{PodName}/
 Daemon Set:             {BackendPrefix}/daemonset/{WorkloadName}/{NodeName}/
 ```
+
+5. Install new `Stash` operator.
+6. Update your backed up `Restic` CRDs in the following ways:
+- `restic.spec.useAutoPrefix` is removed in new version of `Stash`. If you specify it in your old `Restic` CRD, you should remove it.
+- `restic.spec.fileGroups[].retentionPolicy` is moved to `restic.spec.retentionPolicies[]` and referenced using `restic.spec.fileGroups[].retentionPolicyName`.
+
+Consider following example:
+
+*Old version:*
+
+```yaml
+fileGroups:
+- path: /source/path-1
+  retentionPolicy:
+    keepLast: 5
+    prune: true
+- path: /source/path-2
+  retentionPolicy:
+    keepLast: 10
+- path: /source/path-3
+  retentionPolicy:
+    keepLast: 5
+    prune: true
+```
+
+*New version:*
+
+```yaml
+fileGroups:
+- path: /source/path-1
+  retentionPolicyName: policy-1
+    keepLast: 5
+    prune: true
+- path: /source/path-2
+  retentionPolicyName: policy-2
+    keepLast: 10
+- path: /source/path-3
+  retentionPolicyName: policy-1
+    keepLast: 5
+    prune: true
+retentionPolicies:
+- name: policy-1
+    keepLast: 5
+    prune: true
+- name: policy-2
+    keepLast: 10
+```
+
+7. Now, re-deploy restic CRDs. It will add sidecar to pods again and continue backup.
+
 
 ## S3 Example
 
@@ -232,7 +233,7 @@ You can use [aws-cli](https://aws.amazon.com/cli) to do this:
 
 ```
 $ aws s3 mv s3://stash-qa/demo s3://stash-qa/demo/deployment/stash-demo --recursive
-``` 
+```
 
 ### Step 5
 
@@ -336,7 +337,7 @@ status:
   firstBackupTime: 2017-12-11T08:30:40Z
   lastBackupDuration: 18.786502029s
   lastBackupTime: 2017-12-11T09:37:38Z
-``` 
+```
 
 ## GCS Example
 
@@ -354,4 +355,4 @@ You can move old repository to new location using [gsutil](https://cloud.google.
 
 ```console
 $ gsutil mv gs://stash-qa/demo gs://stash-qa/demo/deployment/stash-demo
-``` 
+```
