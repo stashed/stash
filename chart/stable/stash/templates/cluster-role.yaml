@@ -60,8 +60,12 @@ rules:
   verbs: ["create"]
 - apiGroups: [""]
   resources:
+  - nodes
+  verbs: ["list"]
+- apiGroups: [""]
+  resources:
   - pods
-  verbs: ["list", delete", "deletecollection"]
+  verbs: ["list", "delete", "deletecollection"]
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
