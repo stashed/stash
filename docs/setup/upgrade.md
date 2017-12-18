@@ -218,7 +218,7 @@ stash-demo-788ffcf9c6-xh6nx   1/1       Running       0       1s
 
 #### Step 3
 
-Uninstall old `Stash` operator by following the instructions [here](/docs/uninstall.md).
+Uninstall old `Stash` operator by following the instructions [here](/docs/setup/uninstall.md).
 
 #### Step 4
 
@@ -237,7 +237,7 @@ $ aws s3 mv s3://stash-qa/demo s3://stash-qa/demo/deployment/stash-demo --recurs
 
 #### Step 5
 
-Install new `Stash` operator by following the instructions [here](/docs/install.md).
+Install new `Stash` operator by following the instructions [here](/docs/setup/install.md).
 
 #### Step 6
 

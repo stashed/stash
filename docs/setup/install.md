@@ -58,7 +58,7 @@ recoveries.stash.appscode.com   5s
 restics.stash.appscode.com      5s
 ```
 
-Now, you are ready to [take your first backup](/docs/tutorials/README.md) using Stash.
+Now, you are ready to [take your first backup](/docs/guides/README.md) using Stash.
 
 
 ## Using kubectl for Restic

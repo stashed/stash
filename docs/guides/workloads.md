@@ -15,7 +15,7 @@ aliases:
   - /products/stash/0.5.1/workloads/
 ---
 
-> New to Stash? Please start [here](/docs/tutorials/README.md).
+> New to Stash? Please start [here](/docs/guides/README.md).
 
 # Supported Workloads
 
@@ -35,7 +35,7 @@ To backup a DaemonSet, create a Restic with matching selectors. You can find a f
 
 ## StatefulSets
 Kubernetes does not support updating StatefulSet after they are created. It is recomanded to use initializer for StatefulSets. For details see [here](/docs/initializer.md).
-Otherwise you need to add Stash sidecar container to your StatefulSet manually. You can see the relevant portions of a working example below: 
+Otherwise you need to add Stash sidecar container to your StatefulSet manually. You can see the relevant portions of a working example below:
 
 ```yaml
 apiVersion: apps/v1beta1
@@ -132,14 +132,14 @@ To learn about the meaning of various flags, please visit [here](/docs/reference
 
 ## Next Steps
 
-- Learn how to use Stash to backup a Kubernetes deployment [here](/docs/tutorials/backup.md).
-- Learn about the details of Restic CRD [here](/docs/concept_restic.md).
-- To restore a backup see [here](/docs/tutorials/restore.md).
-- Learn about the details of Recovery CRD [here](/docs/concept_recovery.md).
-- To run backup in offline mode see [here](/docs/tutorials/offline_backup.md)
-- See the list of supported backends and how to configure them [here](/docs/tutorials/backends.md).
-- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/tutorials/monitoring.md).
-- Learn about how to configure [RBAC roles](/docs/tutorials/rbac.md).
-- Learn about how to configure Stash operator as workload initializer [here](/docs/tutorials/initializer.md).
-- Wondering what features are coming next? Please visit [here](/ROADMAP.md). 
-- Want to hack on Stash? Check our [contribution guidelines](/CONTRIBUTING.md).
+- Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/backup.md).
+- Learn about the details of Restic CRD [here](/docs/concepts/restic.md).
+- To restore a backup see [here](/docs/guides/restore.md).
+- Learn about the details of Recovery CRD [here](/docs/concepts/recovery.md).
+- To run backup in offline mode see [here](/docs/guides/offline_backup.md)
+- See the list of supported backends and how to configure them [here](/docs/guides/backends.md).
+- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/monitoring.md).
+- Learn about how to configure [RBAC roles](/docs/guides/rbac.md).
+- Learn about how to configure Stash operator as workload initializer [here](/docs/guides/initializer.md).
+- Wondering what features are coming next? Please visit [here](/ROADMAP.md).
+- Want to hack on Stash? Check our [contribution guidelines](/docs/CONTRIBUTING.md).

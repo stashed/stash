@@ -1,10 +1,10 @@
-> New to Stash? Please start [here](/docs/tutorials/README.md).
+> New to Stash? Please start [here](/docs/guides/README.md).
 
 ## Offline Backup
 
-This tutorial will show you how to backup a Kubernetes deployment using Stash in offline mode. By default, stash takes backup in [online](/docs/tutorials/backup.md) mode where sidecar container is added to take periodic backups and check backups. But sometimes you need to ensure that source data is not being modified while taking backup, that means running backup while keeping workload pod stopped. In such case you can run backup in offline mode. To do this you need to specify `spec.type=offline` in `Restic` CRD.
+This tutorial will show you how to backup a Kubernetes deployment using Stash in offline mode. By default, stash takes backup in [online](/docs/guides/backup.md) mode where sidecar container is added to take periodic backups and check backups. But sometimes you need to ensure that source data is not being modified while taking backup, that means running backup while keeping workload pod stopped. In such case you can run backup in offline mode. To do this you need to specify `spec.type=offline` in `Restic` CRD.
 
-At first, you need to have a Kubernetes cluster, and the kubectl command-line tool must be configured to communicate with your cluster. If you do not already have a cluster, you can create one by using [Minikube](https://github.com/kubernetes/minikube). Now, install Stash in your cluster following the steps [here](/docs/install.md).
+At first, you need to have a Kubernetes cluster, and the kubectl command-line tool must be configured to communicate with your cluster. If you do not already have a cluster, you can create one by using [Minikube](https://github.com/kubernetes/minikube). Now, install Stash in your cluster following the steps [here](/docs/setup/install.md).
 
 In this tutorial, we are going to backup the `/source/data` folder of a `busybox` pod into a local backend. First deploy the following `busybox` Deployment in your cluster. Here we are using a git repository as source volume for demonstration purpose.
 
@@ -328,18 +328,17 @@ $ kubectl delete secret stash-demo
 $ kubectl delete restic stash-demo
 ```
 
-If you would like to uninstall Stash operator, please follow the steps [here](/docs/uninstall.md).
+If you would like to uninstall Stash operator, please follow the steps [here](/docs/setup/uninstall.md).
 
 ## Next Steps
 
-- Learn how to use Stash to backup a Kubernetes deployment [here](/docs/tutorials/backup.md).
-- Learn about the details of Restic CRD [here](/docs/concept_restic.md).
-- To restore a backup see [here](/docs/tutorials/restore.md).
-- Learn about the details of Recovery CRD [here](/docs/concept_recovery.md).
-- See the list of supported backends and how to configure them [here](/docs/tutorials/backends.md).
-- See working examples for supported workload types [here](/docs/tutorials/workloads.md).
-- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/tutorials/monitoring.md).
-- Learn about how to configure [RBAC roles](/docs/tutorials/rbac.md).
-- Learn about how to configure Stash operator as workload initializer [here](/docs/tutorials/initializer.md).
-- Wondering what features are coming next? Please visit [here](/ROADMAP.md).
-- Want to hack on Stash? Check our [contribution guidelines](/CONTRIBUTING.md).
+- Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/backup.md).
+- Learn about the details of Restic CRD [here](/docs/concepts/restic.md).
+- To restore a backup see [here](/docs/guides/restore.md).
+- Learn about the details of Recovery CRD [here](/docs/concepts/recovery.md).
+- See the list of supported backends and how to configure them [here](/docs/guides/backends.md).
+- See working examples for supported workload types [here](/docs/guides/workloads.md).
+- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/monitoring.md).
+- Learn about how to configure [RBAC roles](/docs/guides/rbac.md).
+- Learn about how to configure Stash operator as workload initializer [here](/docs/guides/initializer.md).
+- Want to hack on Stash? Check our [contribution guidelines](/docs/CONTRIBUTING.md).
