@@ -58,7 +58,7 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 | `local.volume` | `Required`. Any Kubernetes volume                                                           |
 
 ```console
-$ kubectl create -f ./docs/examples/backends/local/local-restic.yaml
+$ kubectl apply -f ./docs/examples/backends/local/local-restic.yaml
 restic "local-restic" created
 ```
 
@@ -141,7 +141,7 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 | `s3.prefix`   | `Optional`. Path prefix into bucket where repository will be created.           |
 
 ```console
-$ kubectl create -f ./docs/examples/backends/s3/s3-restic.yaml
+$ kubectl apply -f ./docs/examples/backends/s3/s3-restic.yaml
 restic "s3-restic" created
 ```
 
@@ -222,7 +222,7 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 | `gcs.prefix`   | `Optional`. Path prefix into bucket where repository will be created.           |
 
 ```console
-$ kubectl create -f ./docs/examples/backends/gcs/gcs-restic.yaml
+$ kubectl apply -f ./docs/examples/backends/gcs/gcs-restic.yaml
 restic "gcs-restic" created
 ```
 
@@ -303,7 +303,7 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 | `azure.prefix`    | `Optional`. Path prefix into bucket where repository will be created.       |
 
 ```console
-$ kubectl create -f ./docs/examples/backends/azure/azure-restic.yaml
+$ kubectl apply -f ./docs/examples/backends/azure/azure-restic.yaml
 restic "azure-restic" created
 ```
 
@@ -411,7 +411,7 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 | `swift.prefix`    | `Optional`. Path prefix into bucket where repository will be created.       |
 
 ```console
-$ kubectl create -f ./docs/examples/backends/swift/swift-restic.yaml
+$ kubectl apply -f ./docs/examples/backends/swift/swift-restic.yaml
 restic "swift-restic" created
 ```
 
@@ -454,5 +454,5 @@ spec:
 - Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/tutorials/monitoring.md).
 - Learn about how to configure [RBAC roles](/docs/tutorials/rbac.md).
 - Learn about how to configure Stash operator as workload initializer [here](/docs/tutorials/initializer.md).
-- Wondering what features are coming next? Please visit [here](/ROADMAP.md). 
+- Wondering what features are coming next? Please visit [here](/ROADMAP.md).
 - Want to hack on Stash? Check our [contribution guidelines](/CONTRIBUTING.md).

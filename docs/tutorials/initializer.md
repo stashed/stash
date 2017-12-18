@@ -5,7 +5,7 @@
 Stash operator can be used as a workload [initializer](https://kubernetes.io/docs/admin/extensible-admission-controllers/#initializers). For this you need to create a `InitializerConfiguration` with initializer named `stash.appscode.com`.
 
 ```console
-$ kubectl create -f ./hack/deploy/initializer.yaml 
+$ kubectl apply -f ./hack/deploy/initializer.yaml
 initializerconfiguration "stash-initializer-config" created
 ```
 
@@ -13,6 +13,8 @@ initializerconfiguration "stash-initializer-config" created
 apiVersion: admissionregistration.k8s.io/v1alpha1
 kind: InitializerConfiguration
 metadata:
+  labels:
+    app: stash
   name: stash-initializer
 initializers:
 - name: stash.appscode.com
@@ -24,13 +26,12 @@ initializers:
     resources:
     - daemonsets
     - deployments
-    - jobs
     - replicasets
     - replicationcontrollers
     - statefulsets
 ```
 
-This is helpful when you create `Restic` before creating workload objects. This allows stash operator to initialize the target workloads by adding sidecar or, init-container before workload-pods are created. Thus stash operator do not need to delete workload pods for applying changes. 
+This is helpful when you create `Restic` before creating workload objects. This allows stash operator to initialize the target workloads by adding sidecar or, init-container before workload-pods are created. Thus stash operator do not need to delete workload pods for applying changes.
 
 This is particularly helpful for workload kind `StatefulSet` since kubernetes does not support updating StatefulSet after they are created.
 
@@ -45,5 +46,5 @@ This is particularly helpful for workload kind `StatefulSet` since kubernetes do
 - See working examples for supported workload types [here](/docs/tutorials/workloads.md).
 - Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/tutorials/monitoring.md).
 - Learn about how to configure [RBAC roles](/docs/tutorials/rbac.md).
-- Wondering what features are coming next? Please visit [here](/ROADMAP.md). 
+- Wondering what features are coming next? Please visit [here](/ROADMAP.md).
 - Want to hack on Stash? Check our [contribution guidelines](/CONTRIBUTING.md).

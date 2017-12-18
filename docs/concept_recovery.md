@@ -37,7 +37,7 @@ spec:
     kind: Deployment
     name: stash-demo
   volumes:
-  - name: source-data
+  - name: restored-data
     hostPath:
       path: /data/stash-test/restic-restored
 ```
@@ -66,7 +66,7 @@ spec:
     name: statefulset-demo
   podOrdinal: 0
   volumes:
-  - name: source-data
+  - name: restored-data
     hostPath:
       path: /data/stash-test/restic-restored
 ```
@@ -87,7 +87,7 @@ spec:
     name: daemonset-demo
   nodeName: minikube
   volumes:
-  - name: source-data
+  - name: restored-data
     hostPath:
       path: /data/stash-test/restic-restored
 ```

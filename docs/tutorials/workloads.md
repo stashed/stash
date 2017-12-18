@@ -85,7 +85,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.name
-        image: appscode/stash:canary
+        image: appscode/stash:0.5.1
         imagePullPolicy: IfNotPresent
         name: stash
         resources: {}

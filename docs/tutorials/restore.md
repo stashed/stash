@@ -6,7 +6,7 @@ This tutorial will show you how to restore a Stash backup. At first, backup a ku
 To restore a backup, you need to create a `Recovery` CRD by specifying `Restic`, target workload and volume where backup will be restored.
 
 ```console
-$ kubectl create -f ./docs/examples/tutorial/recovery.yaml 
+$ kubectl apply -f ./docs/examples/tutorial/recovery.yaml 
 recovery "stash-demo" created
 ```
 

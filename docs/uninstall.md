@@ -33,6 +33,8 @@ No resources found
 No resources found
 + kubectl delete clusterrole -l app=stash -n kube-system
 No resources found
++ kubectl delete initializerconfiguration -l app=stash
+initializerconfiguration "stash-initializer" deleted
 ```
 
 2. Now, wait several seconds for Stash to stop running. To confirm that Stash operator pod(s) have stopped running, run:
@@ -53,9 +55,4 @@ kubectl delete restic.stash.appscode.com --all --cascade=false
 5. Delete the old CRD-registration.
 ```console
 kubectl delete crd -l app=stash
-```
-
-6. Delete initializer configuration.
-```console
-kubectl delete initializerconfiguration stash-initializer-config
 ```

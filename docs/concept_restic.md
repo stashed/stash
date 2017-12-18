@@ -76,6 +76,7 @@ The default value for `spec.type` is `online`. For offline backup you need to sp
 
 | Policy        | Value   | restic forget flag | Description                                                                                        |
 |---------------|---------|--------------------|----------------------------------------------------------------------------------------------------|
+| `name`        | string  |                    | Name of retention policy provided by user. This is used in file groups to refer to a policy.       |
 | `keepLast`    | integer | --keep-last n      | Never delete the n last (most recent) snapshots                                                    |
 | `keepHourly`  | integer | --keep-hourly n    | For the last n hours in which a snapshot was made, keep only the last snapshot for each hour.      |
 | `keepDaily`   | integer | --keep-daily n     | For the last n days which have one or more snapshots, only keep the last one for that day.         |

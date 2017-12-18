@@ -26,7 +26,7 @@ you can create one by using [Minikube](https://github.com/kubernetes/minikube). 
 In this tutorial, we are going to backup the `/source/data` folder of a `busybox` pod into a local backend. First deploy the following `busybox` Deployment in your cluster. Here we are using a git repository as source volume for demonstration purpose.
 
 ```console
-$  kubectl create -f ./docs/examples/tutorial/busybox.yaml
+$  kubectl apply -f ./docs/examples/tutorial/busybox.yaml
 deployment "stash-demo" created
 ```
 
@@ -97,10 +97,10 @@ metadata:
 type: Opaque
 ```
 
-Now, create a `Restic` CRD with selectors matching the labels of the `busybox` Deployment. 
+Now, create a `Restic` CRD with selectors matching the labels of the `busybox` Deployment.
 
 ```console
-$ kubectl create -f ./docs/examples/tutorial/restic.yaml 
+$ kubectl apply -f ./docs/examples/tutorial/restic.yaml
 restic "stash-demo" created
 ```
 
@@ -139,7 +139,7 @@ Here,
  - `spec.retentionPolicies` defines an array of retention policies, which can be used in `fileGroups` using `retentionPolicyName`.
  - `spec.fileGroups` indicates an array of local paths that will be backed up using restic. For each path, users can also specify the retention policy for old snapshots using `retentionPolicyName`, which must be defined in `spec.retentionPolicies`. Here, we are backing up the `/source/data` folder and only keeping the last 5 snapshots.
  - `spec.backend.local` indicates that restic will store the snapshots in a local path `/safe/data`. For the purpose of this tutorial, we are using an `hostPath` to store the snapshots. But any Kubernetes volume that can be mounted locally can be used as a backend (example, NFS, Ceph, etc). Stash can also store snapshots in cloud storage solutions like S3, GCS, Azure, etc. To use a remote backend, you need to configure the storage secret to include your cloud provider credentials and set one of `spec.backend.(s3|gcs|azure|swift)`. Please visit [here](https://github.com/appscode/stash/blob/master/docs/backends.md) for more detailed examples.
- 
+
   - `spec.backend.storageSecretName` points to the Kubernetes secret created earlier in this tutorial. `Restic` always points to secrets in its own namespace. This secret is used to pass restic repository password and other cloud provider secrets to `restic` binary.
   - `spec.schedule` is a [cron expression](https://github.com/robfig/cron/blob/v2/doc.go#L26) that indicates that file groups will be backed up every 1 minute.
   - `spec.volumeMounts` refers to volumes to be mounted in `stash` sidecar to get access to fileGroup path `/source/data`.
@@ -223,7 +223,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.name
-        image: appscode/stash:canary
+        image: appscode/stash:0.5.1
         imagePullPolicy: IfNotPresent
         name: stash
         resources: {}
@@ -382,5 +382,5 @@ If you would like to uninstall Stash operator, please follow the steps [here](/d
 - Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/tutorials/monitoring.md).
 - Learn about how to configure [RBAC roles](/docs/tutorials/rbac.md).
 - Learn about how to configure Stash operator as workload initializer [here](/docs/tutorials/initializer.md).
-- Wondering what features are coming next? Please visit [here](/ROADMAP.md). 
+- Wondering what features are coming next? Please visit [here](/ROADMAP.md).
 - Want to hack on Stash? Check our [contribution guidelines](/CONTRIBUTING.md).
