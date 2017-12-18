@@ -27,7 +27,9 @@ type PrometheusExporter struct {
 	scratchDir  string
 }
 
-func (e PrometheusExporter) Handle(w http.ResponseWriter, r *http.Request) {
+var _ http.Handler = &PrometheusExporter{}
+
+func (e PrometheusExporter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	params, found := pat.FromContext(r.Context())
 	if !found {
 		http.Error(w, "Missing parameters", http.StatusBadRequest)

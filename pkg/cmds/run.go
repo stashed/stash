@@ -90,12 +90,12 @@ func NewCmdRun() *cobra.Command {
 
 			pattern := fmt.Sprintf("/%s/v1beta1/namespaces/%s/restics/%s/metrics", api.GroupName, PathParamNamespace, PathParamName)
 			log.Infof("URL pattern: %s", pattern)
-			exporter := PrometheusExporter{
+			exporter := &PrometheusExporter{
 				kubeClient:  kubeClient,
 				stashClient: stashClient,
 				scratchDir:  scratchDir,
 			}
-			m.Get(pattern, http.HandlerFunc(exporter.Handle))
+			m.Get(pattern, exporter)
 
 			http.Handle("/", m)
 			log.Infoln("Listening on", address)

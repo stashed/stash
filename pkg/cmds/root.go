@@ -60,5 +60,4 @@ func sendAnalytics(c *cobra.Command, clientID string) {
 			client.Send(ga.NewEvent(parts[0], strings.Join(parts[1:], "/")).Label(v.Version.Version))
 		}
 	}
-	scheme.AddToScheme(clientsetscheme.Scheme)
 }
