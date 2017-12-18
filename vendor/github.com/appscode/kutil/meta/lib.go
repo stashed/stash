@@ -28,6 +28,14 @@ func Namespace() string {
 	return core.NamespaceDefault
 }
 
+// PossiblyInCluster returns true if loading an inside-kubernetes-cluster is possible.
+func PossiblyInCluster() bool {
+	fi, err := os.Stat("/var/run/secrets/kubernetes.io/serviceaccount/token")
+	return os.Getenv("KUBERNETES_SERVICE_HOST") != "" &&
+		os.Getenv("KUBERNETES_SERVICE_PORT") != "" &&
+		err == nil && !fi.IsDir()
+}
+
 func IsPreferredAPIResource(c kubernetes.Interface, groupVersion, kind string) bool {
 	if resourceList, err := c.Discovery().ServerPreferredResources(); err == nil {
 		for _, resources := range resourceList {
