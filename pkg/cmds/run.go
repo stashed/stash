@@ -8,8 +8,6 @@ import (
 	"github.com/appscode/go/log"
 	stringz "github.com/appscode/go/strings"
 	v "github.com/appscode/go/version"
-	"github.com/appscode/kutil/meta"
-	"github.com/appscode/kutil/tools/analytics"
 	"github.com/appscode/pat"
 	api "github.com/appscode/stash/apis/stash"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
@@ -52,10 +50,6 @@ func NewCmdRun() *cobra.Command {
 			kubeClient := kubernetes.NewForConfigOrDie(config)
 			stashClient := cs.NewForConfigOrDie(config)
 			crdClient := crd_cs.NewForConfigOrDie(config)
-
-			if meta.PossiblyInCluster() {
-				sendAnalytics(cmd, analytics.ClientID(kubeClient.CoreV1().Nodes()))
-			}
 
 			// get kube api server version
 			version, err := kubeClient.Discovery().ServerVersion()

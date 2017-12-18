@@ -8,7 +8,6 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/kutil/meta"
-	"github.com/appscode/kutil/tools/analytics"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/backup"
 	"github.com/appscode/stash/pkg/util"
@@ -42,10 +41,6 @@ func NewCmdBackup() *cobra.Command {
 			}
 			kubeClient := kubernetes.NewForConfigOrDie(config)
 			stashClient := cs.NewForConfigOrDie(config)
-
-			if meta.PossiblyInCluster() {
-				sendAnalytics(cmd, analytics.ClientID(kubeClient.CoreV1().Nodes()))
-			}
 
 			opt.NodeName = os.Getenv("NODE_NAME")
 			if opt.NodeName == "" {

@@ -3,7 +3,6 @@ package cmds
 import (
 	"github.com/appscode/go/log"
 	"github.com/appscode/kutil/meta"
-	"github.com/appscode/kutil/tools/analytics"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/recovery"
 	"github.com/spf13/cobra"
@@ -29,10 +28,6 @@ func NewCmdRecover() *cobra.Command {
 			}
 			kubeClient := kubernetes.NewForConfigOrDie(config)
 			stashClient := cs.NewForConfigOrDie(config)
-
-			if meta.PossiblyInCluster() {
-				sendAnalytics(cmd, analytics.ClientID(kubeClient.CoreV1().Nodes()))
-			}
 
 			c := recovery.New(kubeClient, stashClient, meta.Namespace(), recoveryName)
 			c.Run()
