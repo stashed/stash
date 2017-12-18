@@ -1,12 +1,14 @@
 package cmds
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/kutil/meta"
+	"github.com/appscode/kutil/tools/analytics"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/backup"
 	"github.com/appscode/stash/pkg/util"
@@ -22,12 +24,12 @@ func NewCmdBackup() *cobra.Command {
 		opt            = backup.Options{
 			Namespace:      meta.Namespace(),
 			ScratchDir:     "/tmp",
-			PushgatewayURL: "http://stash-operator.kube-system.svc:56789",
 			PodLabelsPath:  "/etc/stash/labels",
 			ResyncPeriod:   5 * time.Minute,
 			MaxNumRequeues: 5,
 		}
 	)
+	opt.PushgatewayURL = fmt.Sprintf("http://stash-operator.%s.svc:56789", opt.Namespace)
 
 	cmd := &cobra.Command{
 		Use:               "backup",
@@ -38,8 +40,12 @@ func NewCmdBackup() *cobra.Command {
 			if err != nil {
 				log.Fatalf("Could not get Kubernetes config: %s", err)
 			}
-			kubeClient = kubernetes.NewForConfigOrDie(config)
-			stashClient = cs.NewForConfigOrDie(config)
+			kubeClient := kubernetes.NewForConfigOrDie(config)
+			stashClient := cs.NewForConfigOrDie(config)
+
+			if meta.PossiblyInCluster() {
+				sendAnalytics(cmd, analytics.ClientID(kubeClient.CoreV1().Nodes()))
+			}
 
 			opt.NodeName = os.Getenv("NODE_NAME")
 			if opt.NodeName == "" {

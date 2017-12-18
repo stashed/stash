@@ -7,6 +7,9 @@ import (
 
 	"github.com/appscode/go/log"
 	stringz "github.com/appscode/go/strings"
+	v "github.com/appscode/go/version"
+	"github.com/appscode/kutil/meta"
+	"github.com/appscode/kutil/tools/analytics"
 	"github.com/appscode/pat"
 	api "github.com/appscode/stash/apis/stash"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
@@ -20,23 +23,17 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-var (
-	kubeClient  kubernetes.Interface
-	stashClient cs.StashV1alpha1Interface
-
-	scratchDir string = "/tmp"
-)
-
-func NewCmdRun(version string) *cobra.Command {
+func NewCmdRun() *cobra.Command {
 	var (
 		masterURL      string
 		kubeconfigPath string
 		address        string = ":56790"
 		opts                  = controller.Options{
-			SidecarImageTag: stringz.Val(version, "canary"),
+			SidecarImageTag: stringz.Val(v.Version.Version, "canary"),
 			ResyncPeriod:    5 * time.Minute,
 			MaxNumRequeues:  5,
 		}
+		scratchDir = "/tmp"
 	)
 
 	cmd := &cobra.Command{
@@ -52,9 +49,13 @@ func NewCmdRun(version string) *cobra.Command {
 			if err != nil {
 				log.Fatalln(err)
 			}
-			kubeClient = kubernetes.NewForConfigOrDie(config)
-			stashClient = cs.NewForConfigOrDie(config)
+			kubeClient := kubernetes.NewForConfigOrDie(config)
+			stashClient := cs.NewForConfigOrDie(config)
 			crdClient := crd_cs.NewForConfigOrDie(config)
+
+			if meta.PossiblyInCluster() {
+				sendAnalytics(cmd, analytics.ClientID(kubeClient.CoreV1().Nodes()))
+			}
 
 			// get kube api server version
 			version, err := kubeClient.Discovery().ServerVersion()
@@ -89,7 +90,12 @@ func NewCmdRun(version string) *cobra.Command {
 
 			pattern := fmt.Sprintf("/%s/v1beta1/namespaces/%s/restics/%s/metrics", api.GroupName, PathParamNamespace, PathParamName)
 			log.Infof("URL pattern: %s", pattern)
-			m.Get(pattern, http.HandlerFunc(ExportSnapshots))
+			exporter := &PrometheusExporter{
+				kubeClient:  kubeClient,
+				stashClient: stashClient,
+				scratchDir:  scratchDir,
+			}
+			m.Get(pattern, exporter)
 
 			http.Handle("/", m)
 			log.Infoln("Listening on", address)

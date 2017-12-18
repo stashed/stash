@@ -3,7 +3,8 @@ package cmds
 import (
 	"github.com/appscode/go/log"
 	"github.com/appscode/kutil/meta"
-	"github.com/appscode/stash/client/typed/stash/v1alpha1"
+	"github.com/appscode/kutil/tools/analytics"
+	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/check"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
@@ -28,11 +29,14 @@ func NewCmdCheck() *cobra.Command {
 			if err != nil {
 				log.Fatalln(err)
 			}
-			c := check.New(
-				kubernetes.NewForConfigOrDie(config),
-				v1alpha1.NewForConfigOrDie(config),
-				opt,
-			)
+			kubeClient := kubernetes.NewForConfigOrDie(config)
+			stashClient := cs.NewForConfigOrDie(config)
+
+			if meta.PossiblyInCluster() {
+				sendAnalytics(cmd, analytics.ClientID(kubeClient.CoreV1().Nodes()))
+			}
+
+			c := check.New(kubeClient, stashClient, opt)
 			if err = c.Run(); err != nil {
 				log.Fatal(err)
 			}

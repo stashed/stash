@@ -7,10 +7,12 @@ import (
 
 	"github.com/appscode/pat"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/cli"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -19,7 +21,15 @@ const (
 	QueryParamAutoPrefix = "autoPrefix"
 )
 
-func ExportSnapshots(w http.ResponseWriter, r *http.Request) {
+type PrometheusExporter struct {
+	kubeClient  kubernetes.Interface
+	stashClient cs.StashV1alpha1Interface
+	scratchDir  string
+}
+
+var _ http.Handler = &PrometheusExporter{}
+
+func (e PrometheusExporter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	params, found := pat.FromContext(r.Context())
 	if !found {
 		http.Error(w, "Missing parameters", http.StatusBadRequest)
@@ -35,10 +45,10 @@ func ExportSnapshots(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Missing parameter:"+PathParamName, http.StatusBadRequest)
 		return
 	}
-	resticCLI := cli.New(scratchDir, true, "")
+	resticCLI := cli.New(e.scratchDir, true, "")
 
 	var resource *api.Restic
-	resource, err := stashClient.Restics(namespace).Get(name, metav1.GetOptions{})
+	resource, err := e.stashClient.Restics(namespace).Get(name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -52,7 +62,7 @@ func ExportSnapshots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var secret *core.Secret
-	secret, err = kubeClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	secret, err = e.kubeClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
