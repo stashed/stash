@@ -1,6 +1,6 @@
 > New to Stash? Please start [here](/docs/guides/README.md).
 
-## Offline Backup
+# Offline Backup
 
 This tutorial will show you how to backup a Kubernetes deployment using Stash in offline mode. By default, stash takes backup in [online](/docs/guides/backup.md) mode where sidecar container is added to take periodic backups and check backups. But sometimes you need to ensure that source data is not being modified while taking backup, that means running backup while keeping workload pod stopped. In such case you can run backup in offline mode. To do this you need to specify `spec.type=offline` in `Restic` CRD.
 

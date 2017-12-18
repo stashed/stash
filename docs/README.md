@@ -41,10 +41,7 @@ From here you can learn all about Stash's architecture and how to deploy and use
 - [Setup](/docs/setup/). Setup contains instructions for installing
   the Stash in various cloud providers.
 
-- [Tasks](/docs/guides). Tasks show you how to do a single directed activity with Stash.
-
-- [Guides](/docs/guides/). Guides are fully working stand-alone examples
-intended to highlight a particular set of Stash's features.
+- [Guides](/docs/guides/). Guides show you how to perform tasks with Stash intended to highlight a particular set of Stash's features.
 
 - [Reference](/docs/reference/). Detailed exhaustive lists of
 command-line options, configuration options, API definitions, and procedures.

@@ -1,6 +1,6 @@
 > New to Stash? Please start [here](/docs/guides/README.md).
 
-## Workload Initializer
+# Workload Initializer
 
 Stash operator can be used as a workload [initializer](https://kubernetes.io/docs/admin/extensible-admission-controllers/#initializers). For this you need to create a `InitializerConfiguration` with initializer named `stash.appscode.com`.
 

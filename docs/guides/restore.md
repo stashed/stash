@@ -1,6 +1,6 @@
 > New to Stash? Please start [here](/docs/guides/README.md).
 
-## Restore Backup
+# Restore Backup
 This tutorial will show you how to restore a Stash backup. At first, backup a kubernetes workload volume by following the steps [here](/docs/guides/backup.md).
 
 To restore a backup, you need to create a `Recovery` CRD by specifying `Restic`, target workload and volume where backup will be restored.
