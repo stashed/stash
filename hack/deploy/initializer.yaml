@@ -1,6 +1,8 @@
 apiVersion: admissionregistration.k8s.io/v1alpha1
 kind: InitializerConfiguration
 metadata:
+  labels:
+    app: stash
   name: stash-initializer
 initializers:
 - name: stash.appscode.com
@@ -12,7 +14,6 @@ initializers:
     resources:
     - daemonsets
     - deployments
-    - jobs
     - replicasets
     - replicationcontrollers
     - statefulsets

@@ -9,16 +9,19 @@ spec:
       app: local-restic
   fileGroups:
   - path: /source/data
-    retentionPolicy:
-      keepLast: 5
-      prune: true
+    retentionPolicyName: 'keep-last-5'
   backend:
     local:
       path: /repo
       volumeSource:
-        emptyDir: {}
+        hostPath:
+          path: /data/stash-test/restic-repo
     storageSecretName: local-secret
   schedule: '@every 1m'
   volumeMounts:
   - mountPath: /source/data
     name: source-data
+  retentionPolicies:
+  - name: 'keep-last-5'
+    keepLast: 5
+    prune: true

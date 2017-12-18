@@ -15,7 +15,7 @@ aliases:
   - /products/stash/0.5.1/workloads/
 ---
 
-> New to Stash? Please start [here](/docs/tutorial.md).
+> New to Stash? Please start [here](/docs/tutorials/README.md).
 
 # Supported Workloads
 
@@ -34,7 +34,8 @@ To backup a ReplicationController, create a Restic with matching selectors. You 
 To backup a DaemonSet, create a Restic with matching selectors. You can find a full working demo in [examples folder](/docs/examples/workloads/daemonset.yaml). This example shows how Stash can be used to backup host paths on all nodes of a cluster. First run a DaemonSet without nodeSelectors. This DaemonSet acts as a vector for Restic sidecar and mounts host paths that are to be backed up. In this example, we use a `busybox` container for this. Now, create a Restic that has a matching selector. This Restic also `spec.volumeMounts` the said host path and points to the host path in `spec.fileGroups`.
 
 ## StatefulSets
-Kubernetes does not support updating StatefulSet after they are created. So, Stash has limited automated support for StatefulSets. To backup volumes of a StatefulSet, please add Stash sidecar container to your StatefulSet. You can see the relevant portions of a working example below: 
+Kubernetes does not support updating StatefulSet after they are created. It is recomanded to use initializer for StatefulSets. For details see [here](/docs/initializer.md).
+Otherwise you need to add Stash sidecar container to your StatefulSet manually. You can see the relevant portions of a working example below: 
 
 ```yaml
 apiVersion: apps/v1beta1
@@ -60,13 +61,18 @@ spec:
         image: busybox
         imagePullPolicy: IfNotPresent
         name: busybox
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /source/data
           name: source-data
       - args:
-        - schedule
-        - --restic-name=statefulset-restic
-        - --workload=StatefulSet/workload
+        - backup
+        - --restic-name=stash-demo
+        - --workload-kind=Statefulset
+        - --workload-name=stash-demo
+        - --run-via-cron=true
         - --v=3
         env:
         - name: NODE_NAME
@@ -82,6 +88,9 @@ spec:
         image: appscode/stash:0.5.1
         imagePullPolicy: IfNotPresent
         name: stash
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /tmp
           name: stash-scratchdir
@@ -93,6 +102,7 @@ spec:
         - mountPath: /safe/data
           name: stash-local
       restartPolicy: Always
+      volumes:
       volumes:
       - gitRepo:
           repository: https://github.com/appscode/stash-data.git
@@ -107,17 +117,29 @@ spec:
               fieldPath: metadata.labels
             path: labels
         name: stash-podinfo
-      - emptyDir: {}
+      - hostPath:
+          path: /data/stash-test/restic-repo
+          type: ""
         name: stash-local
 ```
 
 You can find the full working demo in [examples folder](/docs/examples/workloads/statefulset.yaml). The section you should change for your own StatefulSet are:
  - `--restic-name` flag should be set to the name of the Restic used as configuration.
- - `--workload` flag points to "Kind/Name" of workload where sidecar pod is added. Here are some examples:
-   - Deployment: Deployments/xyz, Deployment/xyz, deployments/xyz, deployment/xyz 
-   - ReplicaSet: ReplicaSets/xyz, ReplicaSet/xyz, replicasets/xyz, replicaset/xyz, rs/xyz
-   - RepliationController: ReplicationControllers/xyz, ReplicationController/xyz, replicationcontrollers/xyz, replicationcontroller/xyz, rc/xyz
-   - DaemonSet: DaemonSets/xyz, DaemonSet/xyz, daemonsets/xyz, daemonset/xyz
-   - StatefulSet: StatefulSets/xyz, StatefulSet/xyz
+ - `--workload-kind` flag specifies the kind of workload (Deployment/Replicaset/RepliationController/DaemonSet/StatefulSet).
+ - `--workload-name` flag specifies the name of workload where sidecar pod is added.
 
-To learn about the meaning of various flags, please visit [here](/docs/reference/stash_schedule.md).
+To learn about the meaning of various flags, please visit [here](/docs/reference/stash_backup.md).
+
+## Next Steps
+
+- Learn how to use Stash to backup a Kubernetes deployment [here](/docs/tutorials/backup.md).
+- Learn about the details of Restic CRD [here](/docs/concept_restic.md).
+- To restore a backup see [here](/docs/tutorials/restore.md).
+- Learn about the details of Recovery CRD [here](/docs/concept_recovery.md).
+- To run backup in offline mode see [here](/docs/tutorials/offline_backup.md)
+- See the list of supported backends and how to configure them [here](/docs/tutorials/backends.md).
+- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/tutorials/monitoring.md).
+- Learn about how to configure [RBAC roles](/docs/tutorials/rbac.md).
+- Learn about how to configure Stash operator as workload initializer [here](/docs/tutorials/initializer.md).
+- Wondering what features are coming next? Please visit [here](/ROADMAP.md). 
+- Want to hack on Stash? Check our [contribution guidelines](/CONTRIBUTING.md).

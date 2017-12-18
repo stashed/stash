@@ -15,7 +15,7 @@ aliases:
   - /products/stash/0.5.1/backends/
 ---
 
-> New to Stash? Please start [here](/docs/tutorial.md).
+> New to Stash? Please start [here](/docs/tutorials/README.md).
 
 # Stash Backends
 Backend is where `restic` stores snapshots. For any backend, a Kubernetes Secret in the same namespace is needed to provide restic repository credentials. This Secret can be configured by setting `spec.backend.storageSecretName` field. This document lists the various supported backends for Stash and how to configure those.
@@ -58,40 +58,38 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 | `local.volume` | `Required`. Any Kubernetes volume                                                           |
 
 ```console
-$ kubectl create -f ./docs/examples/backends/local/local-restic.yaml
+$ kubectl apply -f ./docs/examples/backends/local/local-restic.yaml
 restic "local-restic" created
 ```
 
 ```yaml
-$ kubectl get restic local-restic -o yaml
 apiVersion: stash.appscode.com/v1alpha1
 kind: Restic
 metadata:
-  creationTimestamp: 2017-06-28T12:14:48Z
   name: local-restic
   namespace: default
-  resourceVersion: "2000"
-  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/local-restic
-  uid: 617e3487-5bfb-11e7-bb52-08002711f4aa
 spec:
   selector:
     matchLabels:
       app: local-restic
   fileGroups:
   - path: /source/data
-    retentionPolicy:
-      keepLast: 5
-      prune: true
+    retentionPolicyName: 'keep-last-5'
   backend:
     local:
       path: /repo
       volumeSource:
-        emptyDir: {}
+        hostPath:
+          path: /data/stash-test/restic-repo
     storageSecretName: local-secret
   schedule: '@every 1m'
   volumeMounts:
   - mountPath: /source/data
     name: source-data
+  retentionPolicies:
+  - name: 'keep-last-5'
+    keepLast: 5
+    prune: true
 ```
 
 
@@ -143,31 +141,23 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 | `s3.prefix`   | `Optional`. Path prefix into bucket where repository will be created.           |
 
 ```console
-$ kubectl create -f ./docs/examples/backends/s3/s3-restic.yaml
+$ kubectl apply -f ./docs/examples/backends/s3/s3-restic.yaml
 restic "s3-restic" created
 ```
 
 ```yaml
-$ kubectl get restic s3-restic -o yaml
-
 apiVersion: stash.appscode.com/v1alpha1
 kind: Restic
 metadata:
-  creationTimestamp: 2017-06-28T12:58:10Z
   name: s3-restic
   namespace: default
-  resourceVersion: "4889"
-  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/s3-restic
-  uid: 7036ba69-5c01-11e7-bb52-08002711f4aa
 spec:
   selector:
     matchLabels:
       app: s3-restic
   fileGroups:
   - path: /source/data
-    retentionPolicy:
-      keepLast: 5
-      prune: true
+    retentionPolicyName: 'keep-last-5'
   backend:
     s3:
       endpoint: 's3.amazonaws.com'
@@ -178,6 +168,10 @@ spec:
   volumeMounts:
   - mountPath: /source/data
     name: source-data
+  retentionPolicies:
+  - name: 'keep-last-5'
+    keepLast: 5
+    prune: true
 ```
 
 
@@ -228,31 +222,23 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 | `gcs.prefix`   | `Optional`. Path prefix into bucket where repository will be created.           |
 
 ```console
-$ kubectl create -f ./docs/examples/backends/gcs/gcs-restic.yaml
+$ kubectl apply -f ./docs/examples/backends/gcs/gcs-restic.yaml
 restic "gcs-restic" created
 ```
 
 ```yaml
-$ kubectl get restic gcs-restic -o yaml
-
 apiVersion: stash.appscode.com/v1alpha1
 kind: Restic
 metadata:
-  creationTimestamp: 2017-06-28T13:11:43Z
   name: gcs-restic
   namespace: default
-  resourceVersion: "5781"
-  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/gcs-restic
-  uid: 54b1bad3-5c03-11e7-bb52-08002711f4aa
 spec:
   selector:
     matchLabels:
       app: gcs-restic
   fileGroups:
   - path: /source/data
-    retentionPolicy:
-      keepLast: 5
-      prune: true
+    retentionPolicyName: 'keep-last-5'
   backend:
     gcs:
       bucket: stash-qa
@@ -262,6 +248,10 @@ spec:
   volumeMounts:
   - mountPath: /source/data
     name: source-data
+  retentionPolicies:
+  - name: 'keep-last-5'
+    keepLast: 5
+    prune: true
 ```
 
 
@@ -313,31 +303,23 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 | `azure.prefix`    | `Optional`. Path prefix into bucket where repository will be created.       |
 
 ```console
-$ kubectl create -f ./docs/examples/backends/azure/azure-restic.yaml
+$ kubectl apply -f ./docs/examples/backends/azure/azure-restic.yaml
 restic "azure-restic" created
 ```
 
 ```yaml
-$ kubectl get restic azure-restic -o yaml
-
 apiVersion: stash.appscode.com/v1alpha1
 kind: Restic
 metadata:
-  creationTimestamp: 2017-06-28T13:31:14Z
   name: azure-restic
   namespace: default
-  resourceVersion: "7070"
-  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/azure-restic
-  uid: 0e8eb89b-5c06-11e7-bb52-08002711f4aa
 spec:
   selector:
     matchLabels:
       app: azure-restic
   fileGroups:
   - path: /source/data
-    retentionPolicy:
-      keepLast: 5
-      prune: true
+    retentionPolicyName: 'keep-last-5'
   backend:
     azure:
       container: stashqa
@@ -347,6 +329,10 @@ spec:
   volumeMounts:
   - mountPath: /source/data
     name: source-data
+  retentionPolicies:
+  - name: 'keep-last-5'
+    keepLast: 5
+    prune: true
 ```
 
 
@@ -425,31 +411,23 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 | `swift.prefix`    | `Optional`. Path prefix into bucket where repository will be created.       |
 
 ```console
-$ kubectl create -f ./docs/examples/backends/swift/swift-restic.yaml
+$ kubectl apply -f ./docs/examples/backends/swift/swift-restic.yaml
 restic "swift-restic" created
 ```
 
 ```yaml
-$ kubectl get restic swift-restic -o yaml
-
 apiVersion: stash.appscode.com/v1alpha1
 kind: Restic
 metadata:
-  creationTimestamp: 2017-06-28T13:31:14Z
   name: swift-restic
   namespace: default
-  resourceVersion: "7070"
-  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/swift-restic
-  uid: 0e8eb89b-5c06-11e7-bb52-08002711f4aa
 spec:
   selector:
     matchLabels:
       app: swift-restic
   fileGroups:
   - path: /source/data
-    retentionPolicy:
-      keepLast: 5
-      prune: true
+    retentionPolicyName: 'keep-last-5'
   backend:
     swift:
       container: stashqa
@@ -459,4 +437,22 @@ spec:
   volumeMounts:
   - mountPath: /source/data
     name: source-data
+  retentionPolicies:
+  - name: 'keep-last-5'
+    keepLast: 5
+    prune: true
 ```
+
+## Next Steps
+
+- Learn how to use Stash to backup a Kubernetes deployment [here](/docs/tutorials/backup.md).
+- Learn about the details of Restic CRD [here](/docs/concept_restic.md).
+- To restore a backup see [here](/docs/tutorials/restore.md).
+- Learn about the details of Recovery CRD [here](/docs/concept_recovery.md).
+- To run backup in offline mode see [here](/docs/tutorials/offline_backup.md)
+- See working examples for supported workload types [here](/docs/tutorials/workloads.md).
+- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/tutorials/monitoring.md).
+- Learn about how to configure [RBAC roles](/docs/tutorials/rbac.md).
+- Learn about how to configure Stash operator as workload initializer [here](/docs/tutorials/initializer.md).
+- Wondering what features are coming next? Please visit [here](/ROADMAP.md).
+- Want to hack on Stash? Check our [contribution guidelines](/CONTRIBUTING.md).

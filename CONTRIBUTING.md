@@ -1,3 +1,5 @@
+> New to Stash? Please start [here](/docs/tutorials/README.md).
+
 # Contribution Guidelines
 
 AppsCode projects are [Apache 2.0 licensed](LICENSE) and accept contributions via

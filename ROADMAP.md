@@ -1,3 +1,5 @@
+> New to Stash? Please start [here](/docs/tutorials/README.md).
+
 # Project Status
 
 ## Versioning Policy

@@ -120,7 +120,7 @@ spec:
         - run
         - --v=3
         - --rbac=true
-        image: appscode/stash:offline-backup
+        image: appscode/stash:0.5.1
         ports:
         - containerPort: 56790
           name: http

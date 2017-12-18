@@ -36,19 +36,22 @@ spec:
       app: statefulset-demo
   fileGroups:
   - path: /source/data
-    retentionPolicy:
-      keepLast: 5
-      prune: true
+    retentionPolicyName: 'keep-last-5'
   backend:
     local:
       path: /repo
       volumeSource:
-        emptyDir: {}
+        hostPath:
+          path: /data/stash-test/restic-repo
     storageSecretName: statefulset-secret
   schedule: '@every 1m'
   volumeMounts:
   - mountPath: /source/data
     name: source-data
+  retentionPolicies:
+  - name: 'keep-last-5'
+    keepLast: 5
+    prune: true
 ---
 apiVersion: v1
 kind: Service
@@ -82,7 +85,6 @@ spec:
         app: statefulset-demo
       name: busybox
     spec:
-      serviceAccountName: statefulset-demo
       containers:
       - command:
         - sleep
@@ -90,13 +92,18 @@ spec:
         image: busybox
         imagePullPolicy: IfNotPresent
         name: busybox
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /source/data
           name: source-data
       - args:
-        - schedule
-        - --restic-name=statefulset-restic
-        - --workload=StatefulSet/workload
+        - backup
+        - --restic-name=stash-demo
+        - --workload-kind=Statefulset
+        - --workload-name=stash-demo
+        - --run-via-cron=true
         - --v=3
         env:
         - name: NODE_NAME
@@ -112,6 +119,9 @@ spec:
         image: appscode/stash:0.5.1
         imagePullPolicy: IfNotPresent
         name: stash
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /tmp
           name: stash-scratchdir
@@ -123,6 +133,7 @@ spec:
         - mountPath: /safe/data
           name: stash-local
       restartPolicy: Always
+      volumes:
       volumes:
       - gitRepo:
           repository: https://github.com/appscode/stash-data.git
@@ -137,5 +148,7 @@ spec:
               fieldPath: metadata.labels
             path: labels
         name: stash-podinfo
-      - emptyDir: {}
+      - hostPath:
+          path: /data/stash-test/restic-repo
+          type: ""
         name: stash-local

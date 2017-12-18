@@ -15,8 +15,6 @@ aliases:
   - /products/stash/0.5.1/uninstall/
 ---
 
-> New to Stash? Please start [here](/docs/tutorial.md).
-
 # Uninstall Stash
 Please follow the steps below to uninstall Stash:
 
@@ -35,6 +33,8 @@ No resources found
 No resources found
 + kubectl delete clusterrole -l app=stash -n kube-system
 No resources found
++ kubectl delete initializerconfiguration -l app=stash
+initializerconfiguration "stash-initializer" deleted
 ```
 
 2. Now, wait several seconds for Stash to stop running. To confirm that Stash operator pod(s) have stopped running, run:
