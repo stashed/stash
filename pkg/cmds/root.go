@@ -5,9 +5,8 @@ import (
 	"log"
 	"strings"
 
-	"github.com/appscode/go/analytics"
 	v "github.com/appscode/go/version"
-	"github.com/appscode/kutil/meta"
+	"github.com/appscode/kutil/tools/analytics"
 	"github.com/appscode/stash/client/scheme"
 	"github.com/jpillora/go-ogle-analytics"
 	"github.com/spf13/cobra"
@@ -20,6 +19,9 @@ const (
 )
 
 func NewRootCmd() *cobra.Command {
+	var (
+		enableAnalytics = true
+	)
 	var rootCmd = &cobra.Command{
 		Use:               "stash",
 		Short:             `Stash by AppsCode - Backup your Kubernetes Volumes`,
@@ -29,8 +31,12 @@ func NewRootCmd() *cobra.Command {
 			c.Flags().VisitAll(func(flag *pflag.Flag) {
 				log.Printf("FLAG: --%s=%q", flag.Name, flag.Value)
 			})
-			if !meta.PossiblyInCluster() {
-				sendAnalytics(c, analytics.ClientID())
+			if enableAnalytics && gaTrackingCode != "" {
+				if client, err := ga.NewClient(gaTrackingCode); err == nil {
+					client.ClientID(analytics.ClientID())
+					parts := strings.Split(c.CommandPath(), " ")
+					client.Send(ga.NewEvent(parts[0], strings.Join(parts[1:], "/")).Label(v.Version.Version))
+				}
 			}
 			scheme.AddToScheme(clientsetscheme.Scheme)
 		},
@@ -46,18 +52,4 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.AddCommand(NewCmdRecover())
 	rootCmd.AddCommand(NewCmdCheck())
 	return rootCmd
-}
-
-var (
-	enableAnalytics = true
-)
-
-func sendAnalytics(c *cobra.Command, clientID string) {
-	if enableAnalytics && gaTrackingCode != "" {
-		if client, err := ga.NewClient(gaTrackingCode); err == nil {
-			client.ClientID(clientID)
-			parts := strings.Split(c.CommandPath(), " ")
-			client.Send(ga.NewEvent(parts[0], strings.Join(parts[1:], "/")).Label(v.Version.Version))
-		}
-	}
 }

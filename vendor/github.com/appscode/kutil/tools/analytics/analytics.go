@@ -11,11 +11,26 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	cc "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/rest"
+	"github.com/appscode/kutil/meta"
+	"github.com/appscode/go/analytics"
+	"k8s.io/client-go/kubernetes"
 )
 
-func ClientID(kc cc.NodeInterface) string {
-	nodes, err := kc.List(metav1.ListOptions{
+func ClientID() string {
+	if !meta.PossiblyInCluster() {
+		return analytics.ClientID()
+	}
+
+	cfg, err := rest.InClusterConfig()
+	if err != nil {
+		return ""
+	}
+	client, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return ""
+	}
+	nodes, err := client.CoreV1().Nodes().List(metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(map[string]string{
 			"node-role.kubernetes.io/master": "",
 		}).String(),
@@ -24,7 +39,7 @@ func ClientID(kc cc.NodeInterface) string {
 		return reasonForError(err)
 	}
 	if len(nodes.Items) == 0 {
-		nodes, err = kc.List(metav1.ListOptions{
+		nodes, err = client.CoreV1().Nodes().List(metav1.ListOptions{
 			LabelSelector: labels.SelectorFromSet(map[string]string{
 				"kubernetes.io/hostname": "minikube",
 			}).String(),

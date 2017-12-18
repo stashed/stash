@@ -1,5 +1,5 @@
 hash: 6f32b235515f97ee7b2713b3134e3c6843d84cd8d58869d83193c4a99b4e3a2a
-updated: 2017-12-18T03:28:13.071281319-05:00
+updated: 2017-12-18T15:16:26.478453219-05:00
 imports:
 - name: github.com/appscode/go
   version: cb650d0b1a3c04a86595cf2a31fa704dbf1bc42a
@@ -15,7 +15,7 @@ imports:
   - types
   - version
 - name: github.com/appscode/kutil
-  version: 4d48d2cfab8ea01cd3b58a8f494734725f60acda
+  version: 582273a0791d4d99ab1345d9e4867bec460aaf5a
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
@@ -80,7 +80,7 @@ imports:
   - proto
   - sortkeys
 - name: github.com/golang/glog
-  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
+  version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/groupcache
   version: 02826c3e79038b59d737d3b1c0a1d937f71a4433
   subpackages:
