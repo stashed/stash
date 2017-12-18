@@ -15,7 +15,7 @@ aliases:
   - /products/stash/0.5.1/concept/
 ---
 
-> New to Stash? Please start [here](/docs/tutorials/README.md).
+> New to Stash? Please start [here](/docs/guides/README.md).
 
 # Recoveries
 
@@ -48,10 +48,10 @@ The `.spec` section has following parts:
 `spec.restic` specifies the `Restic` name that was used to take backups.
 
 ### spec.workload
-`spec.workload` specifies a target workload that was backed up using `Restic`. A single `Restic` backups all types of workloads that matches the label-selector, but you can only restore a specific workload using a `Recovery`. 
+`spec.workload` specifies a target workload that was backed up using `Restic`. A single `Restic` backups all types of workloads that matches the label-selector, but you can only restore a specific workload using a `Recovery`.
 
 ### spec.podOrdinal
-For workload kind `Statefulset`, you need to specify pod [index](https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#pods-in-a-statefulset) using `spec.podOrdinal`. You must not specify it for other workload kinds. For example:
+For workload kind `Statefulset`, you need to specify pod [index](https://kubernetes.io/docs/guides/stateful-application/basic-stateful-set/#pods-in-a-statefulset) using `spec.podOrdinal`. You must not specify it for other workload kinds. For example:
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
@@ -97,7 +97,7 @@ spec:
 
 ## Recovery Status
 
-Stash operator updates `.status` of a Recovery CRD when recovery operation is completed. 
+Stash operator updates `.status` of a Recovery CRD when recovery operation is completed.
 
  - `status.phase` indicates the current phase of overall recovery process. Possible values are `Pending`, `Running`, `Succeeded`, `Failed` and `Unknown`.
  - `status.stats` is a array status, each of which indicates the status for individual paths. Each element of the array has following fields:
@@ -107,14 +107,13 @@ Stash operator updates `.status` of a Recovery CRD when recovery operation is co
 
 ## Next Steps
 
-- Learn how to use Stash to backup a Kubernetes deployment [here](/docs/tutorials/backup.md).
-- Learn about the details of Restic CRD [here](/docs/concept_restic.md).
-- To restore a backup see [here](/docs/tutorials/restore.md).
-- To run backup in offline mode see [here](/docs/tutorials/offline_backup.md)
-- See the list of supported backends and how to configure them [here](/docs/tutorials/backends.md).
-- See working examples for supported workload types [here](/docs/tutorials/workloads.md).
-- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/tutorials/monitoring.md).
-- Learn about how to configure [RBAC roles](/docs/tutorials/rbac.md).
-- Learn about how to configure Stash operator as workload initializer [here](/docs/tutorials/initializer.md).
-- Wondering what features are coming next? Please visit [here](/ROADMAP.md). 
-- Want to hack on Stash? Check our [contribution guidelines](/CONTRIBUTING.md).
+- Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/backup.md).
+- Learn about the details of Restic CRD [here](/docs/concepts/restic.md).
+- To restore a backup see [here](/docs/guides/restore.md).
+- To run backup in offline mode see [here](/docs/guides/offline_backup.md)
+- See the list of supported backends and how to configure them [here](/docs/guides/backends.md).
+- See working examples for supported workload types [here](/docs/guides/workloads.md).
+- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/monitoring.md).
+- Learn about how to configure [RBAC roles](/docs/guides/rbac.md).
+- Learn about how to configure Stash operator as workload initializer [here](/docs/guides/initializer.md).
+- Want to hack on Stash? Check our [contribution guidelines](/docs/CONTRIBUTING.md).

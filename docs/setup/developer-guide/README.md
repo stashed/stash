@@ -15,7 +15,7 @@ aliases:
   - /products/stash/0.5.1/developer-guide/README/
 ---
 
-> New to Stash? Please start [here](/docs/tutorials/README.md).
+> New to Stash? Please start [here](/docs/guides/README.md).
 
 ## Development Guide
 This document is intended to be the canonical source of truth for things like supported toolchain versions for building Stash.
@@ -59,7 +59,7 @@ $ glide slow
 ```
 
 #### Build Docker images
-To build and push your custom Docker image, follow the steps below. To release a new version of Stash, please follow the [release guide](/docs/developer-guide/release.md).
+To build and push your custom Docker image, follow the steps below. To release a new version of Stash, please follow the [release guide](/docs/setup/developer-guide/release.md).
 
 ```console
 # Build Docker image

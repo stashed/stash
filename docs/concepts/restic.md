@@ -15,7 +15,7 @@ aliases:
   - /products/stash/0.5.1/concept/
 ---
 
-> New to Stash? Please start [here](/docs/tutorials/README.md).
+> New to Stash? Please start [here](/docs/guides/README.md).
 
 # Restics
 
@@ -61,7 +61,7 @@ The `.spec` section has following parts:
 `spec.selector` is a required field that specifies a [label selector](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) for the Deployments, ReplicaSets, ReplicationControllers, DaemonSets and StatefulSets targeted by this Restic. Selectors are always matched against the labels of Deployments, ReplicaSets, ReplicationControllers, DaemonSets and StatefulSets in the same namespace as Restic object itself. You can create Deployment, etc and its matching Restic is any order. As long as the labels match, Stash operator will add sidecar container to the workload.  If multiple `Restic` objects are matched to a given workload, Stash operator will error out and avoid adding sidecar container.
 
 ### spec.type
-The default value for `spec.type` is `online`. For offline backup you need to specify `spec.type=offline`. For more details see [here](/docs/tutorials/offline_backup.md).
+The default value for `spec.type` is `online`. For offline backup you need to specify `spec.type=offline`. For more details see [here](/docs/guides/offline_backup.md).
 
 ### spec.fileGroups
 `spec.fileGroups` is a required field that specifies one or more directories that are backed up by [restic](https://github.com/restic/restic). For each directory, you can specify custom tags and retention policy for snapshots.
@@ -91,7 +91,7 @@ You can set one or more of these retention policy options together. To learn mor
 https://restic.readthedocs.io/en/latest/manual.html#removing-snapshots-according-to-a-policy).
 
 ### spec.backend
-To learn how to configure various backends for Restic, please visit [here](/docs/tutorials/backends.md).
+To learn how to configure various backends for Restic, please visit [here](/docs/guides/backends.md).
 
 ### spec.schedule
 `spec.schedule` is a [cron expression](https://github.com/robfig/cron/blob/v2/doc.go#L26) that indicates how often `restic` commands are invoked for file groups.
@@ -134,14 +134,13 @@ To stop taking backup, you can do 2 things:
 
 ## Next Steps
 
-- Learn how to use Stash to backup a Kubernetes deployment [here](/docs/tutorials/backup.md).
-- To restore a backup see [here](/docs/tutorials/restore.md).
-- Learn about the details of Recovery CRD [here](/docs/concept_recovery.md).
-- To run backup in offline mode see [here](/docs/tutorials/offline_backup.md)
-- See the list of supported backends and how to configure them [here](/docs/tutorials/backends.md).
-- See working examples for supported workload types [here](/docs/tutorials/workloads.md).
-- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/tutorials/monitoring.md).
-- Learn about how to configure [RBAC roles](/docs/tutorials/rbac.md).
-- Learn about how to configure Stash operator as workload initializer [here](/docs/tutorials/initializer.md).
-- Wondering what features are coming next? Please visit [here](/ROADMAP.md). 
-- Want to hack on Stash? Check our [contribution guidelines](/CONTRIBUTING.md).
+- Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/backup.md).
+- To restore a backup see [here](/docs/guides/restore.md).
+- Learn about the details of Recovery CRD [here](/docs/concepts/recovery.md).
+- To run backup in offline mode see [here](/docs/guides/offline_backup.md)
+- See the list of supported backends and how to configure them [here](/docs/guides/backends.md).
+- See working examples for supported workload types [here](/docs/guides/workloads.md).
+- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/monitoring.md).
+- Learn about how to configure [RBAC roles](/docs/guides/rbac.md).
+- Learn about how to configure Stash operator as workload initializer [here](/docs/guides/initializer.md).
+- Want to hack on Stash? Check our [contribution guidelines](/docs/CONTRIBUTING.md).

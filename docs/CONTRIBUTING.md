@@ -26,7 +26,7 @@ If you have a question about Stash or having problem using it, you can contact u
 
 ## Bugs/Feature request
 
-If you have found a bug with Stash or want to request for new features, please [file an issue](https://github.com/appscode/Stash/issues/new). 
+If you have found a bug with Stash or want to request for new features, please [file an issue](https://github.com/appscode/Stash/issues/new).
 
 ## Submit PR
 

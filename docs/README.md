@@ -16,8 +16,6 @@ aliases:
   - /products/stash/0.5.1/README/
 ---
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/appscode/stash)](https://goreportcard.com/report/github.com/appscode/stash)
-
 # Stash
  Stash by AppsCode is a Kubernetes operator for [restic](https://github.com/restic/restic). If you are running production workloads in Kubernetes, you might want to take backup of your disks. Traditional tools are too complex to setup and maintain in a dynamic compute environment like Kubernetes. `restic` is a backup program that is fast, efficient and secure with few moving parts. Stash is a CRD controller for Kubernetes built around `restic` to address these issues. Using Stash, you can backup Kubernetes volumes mounted in following types of workloads:
 - Deployment
@@ -36,41 +34,26 @@ aliases:
  - Support workload initializer for faster backup.
  - Prometheus ready metrics for backup process.
 
-## Supported Versions
-Please pick a version of Stash that matches your Kubernetes installation.
+From here you can learn all about Stash's architecture and how to deploy and use Stash.
 
-| Stash Version                                                            | Docs                                                                  | Kubernetes Version |
-|--------------------------------------------------------------------------|-----------------------------------------------------------------------|--------------------|
-| [0.5.1](https://github.com/appscode/stash/releases/tag/0.5.1) (uses CRD) | [User Guide](https://github.com/appscode/stash/tree/0.5.1/docs) | 1.7.x+             |
-| [0.4.2](https://github.com/appscode/stash/releases/tag/0.4.2) (uses TPR) | [User Guide](https://github.com/appscode/stash/tree/0.4.2/docs) | 1.5.x - 1.7.x      |
+- [Concepts](/docs/concepts/). Concepts explain some significant aspect of Stash. This is where you can learn about what Stash does and how it does it.
 
-## Installation
+- [Setup](/docs/setup/). Setup contains instructions for installing
+  the Stash in various cloud providers.
 
-To install Stash, please follow the guide [here](/docs/install.md).
+- [Tasks](/docs/guides). Tasks show you how to do a single directed activity with Stash.
 
-## Using Stash
-Want to learn how to use Stash? Please start [here](/docs/tutorials/README.md).
+- [Guides](/docs/guides/). Guides are fully working stand-alone examples
+intended to highlight a particular set of Stash's features.
 
-## Contribution guidelines
-Want to help improve Stash? Please start [here](/CONTRIBUTING.md).
+- [Reference](/docs/reference/). Detailed exhaustive lists of
+command-line options, configuration options, API definitions, and procedures.
 
-## Project Status
-Wondering what features are coming next? Please visit [here](/ROADMAP.md).
-
-## Developer Guide
-To view developer guide see [here](/docs/developer-guide/README.md).
+We're always looking for help improving our documentation, so please don't hesitate to [file an issue](https://github.com/appscode/stash/issues/new) if you see some problem. Or better yet, submit your own [contributions](/docs/CONTRIBUTING.md) to help
+make our docs better.
 
 ---
 
 **The stash operator collects anonymous usage statistics to help us learn how the software is being used and how we can improve it. To disable stats collection, run the operator with the flag** `--analytics=false`.
 
 ---
-
-## Acknowledgement
- - Many thanks to [Alexander Neumann](https://github.com/fd0) for [Restic](https://github.com/restic/restic) project.
-
-## Support
-If you have any questions, you can reach out to us.
-* [Slack](https://slack.appscode.com)
-* [Twitter](https://twitter.com/AppsCodeHQ)
-* [Website](https://appscode.com)

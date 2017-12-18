@@ -28,19 +28,16 @@ Please pick a version of Stash that matches your Kubernetes installation.
 
 ## Installation
 
-To install Stash, please follow the guide [here](/docs/install.md).
+To install Stash, please follow the guide [here](/docs/setup/install.md).
 
 ## Using Stash
-Want to learn how to use Stash? Please start [here](/docs/tutorials/README.md).
+Want to learn how to use Stash? Please start [here](/docs/README.md).
 
 ## Contribution guidelines
-Want to help improve Stash? Please start [here](/CONTRIBUTING.md).
-
-## Project Status
-Wondering what features are coming next? Please visit [here](/ROADMAP.md).
+Want to help improve Stash? Please start [here](/docs/CONTRIBUTING.md).
 
 ## Developer Guide
-To view developer guide see [here](/docs/developer-guide/README.md).
+To view developer guide see [here](/docs/setup/developer-guide/README.md).
 
 ---
 
@@ -52,7 +49,7 @@ To view developer guide see [here](/docs/developer-guide/README.md).
  - Many thanks to [Alexander Neumann](https://github.com/fd0) for [Restic](https://github.com/restic/restic) project.
 
 ## Support
+
 If you have any questions, you can reach out to us.
 * [Slack](https://slack.appscode.com)
 * [Twitter](https://twitter.com/AppsCodeHQ)
-* [Website](https://appscode.com)
