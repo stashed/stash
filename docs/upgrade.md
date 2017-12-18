@@ -87,9 +87,9 @@ retentionPolicies:
 7. Now, re-deploy restic CRDs. It will add sidecar to pods again and continue backup.
 
 
-## S3 Example
+### Example: Upgrading S3 backed volume
 
-Make sure you have a running `Stash` operator of version `0.5.1`.
+Say, you are running `Stash` operator `0.5.1`.
 
 ```console
 $ kubectl get pods --all-namespaces -l app=stash
@@ -188,9 +188,9 @@ status:
   lastBackupTime: 2017-12-11T08:32:40Z
 ```
 
-A restic-repository is initialized in `demo` folder of your `stash-qa` bucket and so far 3 backups are created and stored there. Now following steps will upgrade version of `Stash` without loosing those 3 backups.
+A restic-repository is initialized in `demo` folder of your `stash-qa` bucket and so far 3 backups are created and stored there. Now, the following steps will upgrade version of `Stash` without loosing those 3 backups.
 
-### Step 1
+#### Step 1
 
 Dump your old `Restic` CRD in a file.
 
@@ -198,7 +198,7 @@ Dump your old `Restic` CRD in a file.
 $ kubectl get restic s3-restic -o yaml --export > s3-restic-dump.yaml
 ```
 
-### Step 2
+#### Step 2
 
 Delete the old `Restic` object.
 
@@ -216,11 +216,11 @@ stash-demo-6b5459b8d6-7rvpv   2/2       Terminating   0       5s
 stash-demo-788ffcf9c6-xh6nx   1/1       Running       0       1s
 ```
 
-### Step 3
+#### Step 3
 
-Uninstall old `Stash` operator by following [this]().
+Uninstall old `Stash` operator by following the instructions [here](/docs/uninstall.md).
 
-### Step 4
+#### Step 4
 
 To keep your old backups you should move the contents of your old repositories to new locations.
 
@@ -235,11 +235,11 @@ You can use [aws-cli](https://aws.amazon.com/cli) to do this:
 $ aws s3 mv s3://stash-qa/demo s3://stash-qa/demo/deployment/stash-demo --recursive
 ```
 
-### Step 5
+#### Step 5
 
-Install new `Stash` operator by following [this]().
+Install new `Stash` operator by following the instructions [here](/docs/install.md).
 
-### Step 6
+#### Step 6
 
 Now update your backed up `Restic` CRD as follows:
 
@@ -339,7 +339,8 @@ status:
   lastBackupTime: 2017-12-11T09:37:38Z
 ```
 
-## GCS Example
+
+### Example: Upgrading GCS backed volume
 
 Consider you have following gcs backend instead of s3 backend:
 
@@ -351,7 +352,7 @@ backend:
   storageSecretName: gcs-secret
 ```
 
-You can move old repository to new location using [gsutil](https://cloud.google.com/storage/docs/gsutil):
+You can follow the same steps as the above s3 example. To move old repository to new location using [gsutil](https://cloud.google.com/storage/docs/gsutil/commands/mv#renaming-bucket-subdirectories), run:
 
 ```console
 $ gsutil mv gs://stash-qa/demo gs://stash-qa/demo/deployment/stash-demo
