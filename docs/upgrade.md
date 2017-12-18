@@ -9,7 +9,7 @@ The format for `Restic` object has changed in backward incompatiable manner betw
 3. Uninstall old `Stash` operator.
 4. Move repositories to new location if you want to keep your old backups. We have changed repository location in new version of `Stash` to remove conflicts between  repositories for different target workloads.
 
-### Old Version
+**Old Version**
 
 ```
 Location depending on restic.spec.useAutoPrefix:
@@ -27,7 +27,7 @@ PodName:  {BackendPrefix}/{PodName}/
 None:     {BackendPrefix}/
 ```
 
-### New Version
+**New Version**
 
 ```
 Deployment:             {BackendPrefix}/deployment/{WorkloadName}/
@@ -44,7 +44,7 @@ Daemon Set:             {BackendPrefix}/daemonset/{WorkloadName}/{NodeName}/
 
 Consider following example:
 
-*Old version:*
+**Old version:**
 
 ```yaml
 fileGroups:
@@ -61,7 +61,7 @@ fileGroups:
     prune: true
 ```
 
-*New version:*
+**New version:**
 
 ```yaml
 fileGroups:
