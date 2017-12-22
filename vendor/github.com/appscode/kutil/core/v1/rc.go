@@ -16,7 +16,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func CreateOrPatchRC(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.ReplicationController) *core.ReplicationController) (*core.ReplicationController, bool, error) {
+func CreateOrPatchRC(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.ReplicationController) *core.ReplicationController) (*core.ReplicationController, kutil.VerbType, error) {
 	cur, err := c.CoreV1().ReplicationControllers(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating ReplicationController %s/%s.", meta.Namespace, meta.Name)
@@ -27,34 +27,34 @@ func CreateOrPatchRC(c kubernetes.Interface, meta metav1.ObjectMeta, transform f
 			},
 			ObjectMeta: meta,
 		}))
-		return out, true, err
+		return out, kutil.VerbCreated, err
 	} else if err != nil {
-		return nil, false, err
+		return nil, kutil.VerbUnchanged, err
 	}
 	return PatchRC(c, cur, transform)
 }
 
-func PatchRC(c kubernetes.Interface, cur *core.ReplicationController, transform func(*core.ReplicationController) *core.ReplicationController) (*core.ReplicationController, bool, error) {
+func PatchRC(c kubernetes.Interface, cur *core.ReplicationController, transform func(*core.ReplicationController) *core.ReplicationController) (*core.ReplicationController, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
-		return nil, false, err
+		return nil, kutil.VerbUnchanged, err
 	}
 
 	modJson, err := json.Marshal(transform(cur.DeepCopy()))
 	if err != nil {
-		return nil, false, err
+		return nil, kutil.VerbUnchanged, err
 	}
 
 	patch, err := strategicpatch.CreateTwoWayMergePatch(curJson, modJson, core.ReplicationController{})
 	if err != nil {
-		return nil, false, err
+		return nil, kutil.VerbUnchanged, err
 	}
 	if len(patch) == 0 || string(patch) == "{}" {
-		return cur, false, nil
+		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching ReplicationController %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
 	out, err := c.CoreV1().ReplicationControllers(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
-	return out, true, err
+	return out, kutil.VerbPatched, err
 }
 
 func TryPatchRC(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.ReplicationController) *core.ReplicationController) (result *core.ReplicationController, err error) {
