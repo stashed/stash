@@ -17,7 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-func CreateOrPatchRecovery(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(alert *api.Recovery) *api.Recovery) (*api.Recovery, bool, error) {
+func CreateOrPatchRecovery(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(alert *api.Recovery) *api.Recovery) (*api.Recovery, kutil.VerbType, error) {
 	cur, err := c.Recoveries(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating Recovery %s/%s.", meta.Namespace, meta.Name)
@@ -28,34 +28,34 @@ func CreateOrPatchRecovery(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, 
 			},
 			ObjectMeta: meta,
 		}))
-		return out, true, err
+		return out, kutil.VerbCreated, err
 	} else if err != nil {
-		return nil, false, err
+		return nil, kutil.VerbUnchanged, err
 	}
 	return PatchRecovery(c, cur, transform)
 }
 
-func PatchRecovery(c cs.StashV1alpha1Interface, cur *api.Recovery, transform func(*api.Recovery) *api.Recovery) (*api.Recovery, bool, error) {
+func PatchRecovery(c cs.StashV1alpha1Interface, cur *api.Recovery, transform func(*api.Recovery) *api.Recovery) (*api.Recovery, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
-		return nil, false, err
+		return nil, kutil.VerbUnchanged, err
 	}
 
 	modJson, err := json.Marshal(transform(cur.DeepCopy()))
 	if err != nil {
-		return nil, false, err
+		return nil, kutil.VerbUnchanged, err
 	}
 
 	patch, err := jsonmergepatch.CreateThreeWayJSONMergePatch(curJson, modJson, curJson)
 	if err != nil {
-		return nil, false, err
+		return nil, kutil.VerbUnchanged, err
 	}
 	if len(patch) == 0 || string(patch) == "{}" {
-		return cur, false, nil
+		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching Recovery %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
 	out, err := c.Recoveries(cur.Namespace).Patch(cur.Name, types.MergePatchType, patch)
-	return out, true, err
+	return out, kutil.VerbPatched, err
 }
 
 func TryPatchRecovery(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(*api.Recovery) *api.Recovery) (result *api.Recovery, err error) {

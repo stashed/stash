@@ -15,7 +15,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func CreateOrPatchCronJob(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*batch.CronJob) *batch.CronJob) (*batch.CronJob, bool, error) {
+func CreateOrPatchCronJob(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*batch.CronJob) *batch.CronJob) (*batch.CronJob, kutil.VerbType, error) {
 	cur, err := c.BatchV1beta1().CronJobs(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating CronJob %s/%s.", meta.Namespace, meta.Name)
@@ -26,34 +26,34 @@ func CreateOrPatchCronJob(c kubernetes.Interface, meta metav1.ObjectMeta, transf
 			},
 			ObjectMeta: meta,
 		}))
-		return out, true, err
+		return out, kutil.VerbCreated, err
 	} else if err != nil {
-		return nil, false, err
+		return nil, kutil.VerbUnchanged, err
 	}
 	return PatchCronJob(c, cur, transform)
 }
 
-func PatchCronJob(c kubernetes.Interface, cur *batch.CronJob, transform func(*batch.CronJob) *batch.CronJob) (*batch.CronJob, bool, error) {
+func PatchCronJob(c kubernetes.Interface, cur *batch.CronJob, transform func(*batch.CronJob) *batch.CronJob) (*batch.CronJob, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
-		return nil, false, err
+		return nil, kutil.VerbUnchanged, err
 	}
 
 	modJson, err := json.Marshal(transform(cur.DeepCopy()))
 	if err != nil {
-		return nil, false, err
+		return nil, kutil.VerbUnchanged, err
 	}
 
 	patch, err := strategicpatch.CreateTwoWayMergePatch(curJson, modJson, batch.CronJob{})
 	if err != nil {
-		return nil, false, err
+		return nil, kutil.VerbUnchanged, err
 	}
 	if len(patch) == 0 || string(patch) == "{}" {
-		return cur, false, nil
+		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching CronJob %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
 	out, err := c.BatchV1beta1().CronJobs(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
-	return out, true, err
+	return out, kutil.VerbPatched, err
 }
 
 func TryPatchCronJob(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*batch.CronJob) *batch.CronJob) (result *batch.CronJob, err error) {

@@ -15,7 +15,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func CreateOrPatchClusterRole(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*rbac.ClusterRole) *rbac.ClusterRole) (*rbac.ClusterRole, bool, error) {
+func CreateOrPatchClusterRole(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*rbac.ClusterRole) *rbac.ClusterRole) (*rbac.ClusterRole, kutil.VerbType, error) {
 	cur, err := c.RbacV1beta1().ClusterRoles().Get(meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating ClusterRole %s.", meta.Name)
@@ -26,34 +26,34 @@ func CreateOrPatchClusterRole(c kubernetes.Interface, meta metav1.ObjectMeta, tr
 			},
 			ObjectMeta: meta,
 		}))
-		return out, true, err
+		return out, kutil.VerbCreated, err
 	} else if err != nil {
-		return nil, false, err
+		return nil, kutil.VerbUnchanged, err
 	}
 	return PatchClusterRole(c, cur, transform)
 }
 
-func PatchClusterRole(c kubernetes.Interface, cur *rbac.ClusterRole, transform func(*rbac.ClusterRole) *rbac.ClusterRole) (*rbac.ClusterRole, bool, error) {
+func PatchClusterRole(c kubernetes.Interface, cur *rbac.ClusterRole, transform func(*rbac.ClusterRole) *rbac.ClusterRole) (*rbac.ClusterRole, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
-		return nil, false, err
+		return nil, kutil.VerbUnchanged, err
 	}
 
 	modJson, err := json.Marshal(transform(cur.DeepCopy()))
 	if err != nil {
-		return nil, false, err
+		return nil, kutil.VerbUnchanged, err
 	}
 
 	patch, err := strategicpatch.CreateTwoWayMergePatch(curJson, modJson, rbac.ClusterRole{})
 	if err != nil {
-		return nil, false, err
+		return nil, kutil.VerbUnchanged, err
 	}
 	if len(patch) == 0 || string(patch) == "{}" {
-		return cur, false, nil
+		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching ClusterRole %s with %s.", cur.Name, string(patch))
 	out, err := c.RbacV1beta1().ClusterRoles().Patch(cur.Name, types.StrategicMergePatchType, patch)
-	return out, true, err
+	return out, kutil.VerbPatched, err
 }
 
 func TryPatchClusterRole(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*rbac.ClusterRole) *rbac.ClusterRole) (result *rbac.ClusterRole, err error) {
