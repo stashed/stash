@@ -194,31 +194,21 @@ func (c *StashController) runResticInjector(key string) error {
 						UID:        restic.UID,
 					},
 				}
-
 				if in.Labels == nil {
 					in.Labels = map[string]string{}
 				}
 				in.Labels["app"] = util.AppLabelStash
 				in.Labels[util.AnnotationRestic] = restic.Name
+				in.Labels[util.AnnotationOperation] = util.OperationDeletePods
 
-				if in.Annotations == nil {
-					in.Annotations = map[string]string{}
-				}
-				in.Annotations[util.AnnotationOperation] = util.OperationDeletePods
-
-				// core_util.Ens
+				// spec
 				in.Spec.Schedule = restic.Spec.Schedule
-
 				if in.Spec.JobTemplate.Labels == nil {
 					in.Spec.JobTemplate.Labels = map[string]string{}
 				}
 				in.Spec.JobTemplate.Labels["app"] = util.AppLabelStash
 				in.Spec.JobTemplate.Labels[util.AnnotationRestic] = restic.Name
-
-				if in.Spec.JobTemplate.Annotations == nil {
-					in.Spec.JobTemplate.Annotations = map[string]string{}
-				}
-				in.Spec.JobTemplate.Annotations[util.AnnotationOperation] = util.OperationDeletePods
+				in.Spec.JobTemplate.Labels[util.AnnotationOperation] = util.OperationDeletePods
 
 				core_util.UpsertContainer(in.Spec.JobTemplate.Spec.Template.Spec.Containers, core.Container{
 					Name:  util.KubectlContainer,

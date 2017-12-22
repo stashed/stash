@@ -373,9 +373,7 @@ func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *
 				},
 			},
 			Labels: map[string]string{
-				"app": AppLabelStash,
-			},
-			Annotations: map[string]string{
+				"app":               AppLabelStash,
 				AnnotationRestic:    restic.Name,
 				AnnotationRecovery:  recovery.Name,
 				AnnotationOperation: OperationRecovery,
@@ -508,9 +506,7 @@ func CreateCheckJob(restic *api.Restic, hostName string, smartPrefix string, tag
 				},
 			},
 			Labels: map[string]string{
-				"app": AppLabelStash,
-			},
-			Annotations: map[string]string{
+				"app":               AppLabelStash,
 				AnnotationRestic:    restic.Name,
 				AnnotationOperation: OperationCheck,
 			},
