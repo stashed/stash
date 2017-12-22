@@ -15,43 +15,45 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func CreateOrPatchService(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.Service) *core.Service) (*core.Service, error) {
+func CreateOrPatchService(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.Service) *core.Service) (*core.Service, bool, error) {
 	cur, err := c.CoreV1().Services(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating Service %s/%s.", meta.Namespace, meta.Name)
-		return c.CoreV1().Services(meta.Namespace).Create(transform(&core.Service{
+		out, err := c.CoreV1().Services(meta.Namespace).Create(transform(&core.Service{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Service",
 				APIVersion: core.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
 		}))
+		return out, true, err
 	} else if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	return PatchService(c, cur, transform)
 }
 
-func PatchService(c kubernetes.Interface, cur *core.Service, transform func(*core.Service) *core.Service) (*core.Service, error) {
+func PatchService(c kubernetes.Interface, cur *core.Service, transform func(*core.Service) *core.Service) (*core.Service, bool, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	modJson, err := json.Marshal(transform(cur.DeepCopy()))
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	patch, err := strategicpatch.CreateTwoWayMergePatch(curJson, modJson, core.Service{})
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if len(patch) == 0 || string(patch) == "{}" {
-		return cur, nil
+		return cur, false, nil
 	}
 	glog.V(3).Infof("Patching Service %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
-	return c.CoreV1().Services(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
+	out, err := c.CoreV1().Services(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
+	return out, true, err
 }
 
 func TryPatchService(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.Service) *core.Service) (result *core.Service, err error) {
@@ -62,7 +64,7 @@ func TryPatchService(c kubernetes.Interface, meta metav1.ObjectMeta, transform f
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = PatchService(c, cur, transform)
+			result, _, e2 = PatchService(c, cur, transform)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to patch Service %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
@@ -94,4 +96,30 @@ func TryUpdateService(c kubernetes.Interface, meta metav1.ObjectMeta, transform 
 		err = fmt.Errorf("failed to update Service %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}
 	return
+}
+
+func MergeServicePorts(cur, desired []core.ServicePort) []core.ServicePort {
+	if len(cur) == 0 {
+		return desired
+	}
+
+	// ports
+	curPorts := make(map[int32]core.ServicePort)
+	for _, p := range cur {
+		curPorts[p.Port] = p
+	}
+	for i, dp := range desired {
+		cp, ok := curPorts[dp.Port]
+
+		// svc port not found
+		if !ok {
+			continue
+		}
+
+		if dp.NodePort == 0 {
+			dp.NodePort = cp.NodePort // avoid reassigning port
+		}
+		desired[i] = dp
+	}
+	return desired
 }

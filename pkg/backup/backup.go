@@ -289,7 +289,7 @@ func (c *Controller) ensureCheckRBAC(resourceName string, namespace string) erro
 		Name:      resourceName,
 		Namespace: namespace,
 	}
-	_, err := core_util.CreateOrPatchServiceAccount(c.k8sClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
+	_, _, err := core_util.CreateOrPatchServiceAccount(c.k8sClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
@@ -301,7 +301,7 @@ func (c *Controller) ensureCheckRBAC(resourceName string, namespace string) erro
 	}
 
 	// ensure role binding
-	_, err = rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}

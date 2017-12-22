@@ -154,7 +154,7 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 
 		// not restic workload, just remove the pending stash initializer
 		if util.ToBeInitializedBySelf(ds.Initializers) {
-			_, err = ext_util.PatchDaemonSet(c.k8sClient, ds, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
+			_, _, err = ext_util.PatchDaemonSet(c.k8sClient, ds, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
 				fmt.Println("Removing pending stash initializer for", obj.Name)
 				if len(obj.Initializers.Pending) == 1 {
 					obj.Initializers = nil
@@ -194,7 +194,7 @@ func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet,
 		}
 	}
 
-	resource, err = ext_util.PatchDaemonSet(c.k8sClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
+	resource, _, err = ext_util.PatchDaemonSet(c.k8sClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
 		if util.ToBeInitializedBySelf(obj.Initializers) {
 			fmt.Println("Removing pending stash initializer for", obj.Name)
 			if len(obj.Initializers.Pending) == 1 {
@@ -254,7 +254,7 @@ func (c *StashController) EnsureDaemonSetSidecarDeleted(resource *extensions.Dae
 		}
 	}
 
-	resource, err = ext_util.PatchDaemonSet(c.k8sClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
+	resource, _, err = ext_util.PatchDaemonSet(c.k8sClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
 		if restic.Spec.Type == api.BackupOffline {
 			obj.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.InitContainers, util.StashContainer)
 		} else {

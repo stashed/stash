@@ -161,7 +161,7 @@ func (c *StashController) runRCInjector(key string) error {
 
 		// not restic workload, just remove the pending stash initializer
 		if util.ToBeInitializedBySelf(rc.Initializers) {
-			_, err = core_util.PatchRC(c.k8sClient, rc, func(obj *core.ReplicationController) *core.ReplicationController {
+			_, _, err = core_util.PatchRC(c.k8sClient, rc, func(obj *core.ReplicationController) *core.ReplicationController {
 				fmt.Println("Removing pending stash initializer for", obj.Name)
 				if len(obj.Initializers.Pending) == 1 {
 					obj.Initializers = nil
@@ -201,7 +201,7 @@ func (c *StashController) EnsureReplicationControllerSidecar(resource *core.Repl
 		}
 	}
 
-	resource, err = core_util.PatchRC(c.k8sClient, resource, func(obj *core.ReplicationController) *core.ReplicationController {
+	resource, _, err = core_util.PatchRC(c.k8sClient, resource, func(obj *core.ReplicationController) *core.ReplicationController {
 		if util.ToBeInitializedBySelf(obj.Initializers) {
 			fmt.Println("Removing pending stash initializer for", obj.Name)
 			if len(obj.Initializers.Pending) == 1 {
@@ -261,7 +261,7 @@ func (c *StashController) EnsureReplicationControllerSidecarDeleted(resource *co
 		}
 	}
 
-	resource, err = core_util.PatchRC(c.k8sClient, resource, func(obj *core.ReplicationController) *core.ReplicationController {
+	resource, _, err = core_util.PatchRC(c.k8sClient, resource, func(obj *core.ReplicationController) *core.ReplicationController {
 		if restic.Spec.Type == api.BackupOffline {
 			obj.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.InitContainers, util.StashContainer)
 		} else {
