@@ -16,43 +16,45 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func CreateOrPatchReplicaSet(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*extensions.ReplicaSet) *extensions.ReplicaSet) (*extensions.ReplicaSet, error) {
+func CreateOrPatchReplicaSet(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*extensions.ReplicaSet) *extensions.ReplicaSet) (*extensions.ReplicaSet, bool, error) {
 	cur, err := c.ExtensionsV1beta1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating ReplicaSet %s/%s.", meta.Namespace, meta.Name)
-		return c.ExtensionsV1beta1().ReplicaSets(meta.Namespace).Create(transform(&extensions.ReplicaSet{
+		out, err := c.ExtensionsV1beta1().ReplicaSets(meta.Namespace).Create(transform(&extensions.ReplicaSet{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "ReplicaSet",
 				APIVersion: extensions.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
 		}))
+		return out, true, err
 	} else if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	return PatchReplicaSet(c, cur, transform)
 }
 
-func PatchReplicaSet(c kubernetes.Interface, cur *extensions.ReplicaSet, transform func(*extensions.ReplicaSet) *extensions.ReplicaSet) (*extensions.ReplicaSet, error) {
+func PatchReplicaSet(c kubernetes.Interface, cur *extensions.ReplicaSet, transform func(*extensions.ReplicaSet) *extensions.ReplicaSet) (*extensions.ReplicaSet, bool, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	modJson, err := json.Marshal(transform(cur.DeepCopy()))
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	patch, err := strategicpatch.CreateTwoWayMergePatch(curJson, modJson, extensions.ReplicaSet{})
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if len(patch) == 0 || string(patch) == "{}" {
-		return cur, nil
+		return cur, false, nil
 	}
 	glog.V(3).Infof("Patching ReplicaSet %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
-	return c.ExtensionsV1beta1().ReplicaSets(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
+	out, err := c.ExtensionsV1beta1().ReplicaSets(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
+	return out, true, err
 }
 
 func TryPatchReplicaSet(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*extensions.ReplicaSet) *extensions.ReplicaSet) (result *extensions.ReplicaSet, err error) {
@@ -63,7 +65,7 @@ func TryPatchReplicaSet(c kubernetes.Interface, meta metav1.ObjectMeta, transfor
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = PatchReplicaSet(c, cur, transform)
+			result, _, e2 = PatchReplicaSet(c, cur, transform)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to patch ReplicaSet %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)

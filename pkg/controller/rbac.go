@@ -49,7 +49,7 @@ func (c *StashController) ensureRoleBinding(resource *core.ObjectReference, sa s
 		Namespace: resource.Namespace,
 		Name:      c.getRoleBindingName(resource.Name),
 	}
-	_, err := rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		in.ObjectMeta = c.ensureOwnerReference(in.ObjectMeta, resource)
 
 		if in.Annotations == nil {
@@ -82,7 +82,7 @@ func (c *StashController) ensureRoleBindingDeleted(resource metav1.ObjectMeta) e
 
 func (c *StashController) ensureSidecarClusterRole() error {
 	meta := metav1.ObjectMeta{Name: SidecarClusterRole}
-	_, err := rbac_util.CreateOrPatchClusterRole(c.k8sClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+	_, _, err := rbac_util.CreateOrPatchClusterRole(c.k8sClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
@@ -151,7 +151,7 @@ func (c *StashController) ensureKubectlRBAC(resourceName string, namespace strin
 		Name:      KubectlRole,
 		Namespace: namespace,
 	}
-	_, err := rbac_util.CreateOrPatchRole(c.k8sClient, meta, func(in *rbac.Role) *rbac.Role {
+	_, _, err := rbac_util.CreateOrPatchRole(c.k8sClient, meta, func(in *rbac.Role) *rbac.Role {
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
@@ -175,7 +175,7 @@ func (c *StashController) ensureKubectlRBAC(resourceName string, namespace strin
 		Name:      resourceName,
 		Namespace: namespace,
 	}
-	_, err = core_util.CreateOrPatchServiceAccount(c.k8sClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
+	_, _, err = core_util.CreateOrPatchServiceAccount(c.k8sClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
@@ -187,7 +187,7 @@ func (c *StashController) ensureKubectlRBAC(resourceName string, namespace strin
 	}
 
 	// ensure role binding
-	_, err = rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
@@ -217,7 +217,7 @@ func (c *StashController) ensureRecoveryRBAC(resourceName string, namespace stri
 		Name:      resourceName,
 		Namespace: namespace,
 	}
-	_, err := core_util.CreateOrPatchServiceAccount(c.k8sClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
+	_, _, err := core_util.CreateOrPatchServiceAccount(c.k8sClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
@@ -229,7 +229,7 @@ func (c *StashController) ensureRecoveryRBAC(resourceName string, namespace stri
 	}
 
 	// ensure role binding
-	_, err = rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}

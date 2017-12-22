@@ -15,43 +15,45 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func CreateOrPatchServiceAccount(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.ServiceAccount) *core.ServiceAccount) (*core.ServiceAccount, error) {
+func CreateOrPatchServiceAccount(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.ServiceAccount) *core.ServiceAccount) (*core.ServiceAccount, bool, error) {
 	cur, err := c.CoreV1().ServiceAccounts(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating ServiceAccount %s/%s.", meta.Namespace, meta.Name)
-		return c.CoreV1().ServiceAccounts(meta.Namespace).Create(transform(&core.ServiceAccount{
+		out, err := c.CoreV1().ServiceAccounts(meta.Namespace).Create(transform(&core.ServiceAccount{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "ServiceAccount",
 				APIVersion: core.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
 		}))
+		return out, true, err
 	} else if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	return PatchServiceAccount(c, cur, transform)
 }
 
-func PatchServiceAccount(c kubernetes.Interface, cur *core.ServiceAccount, transform func(*core.ServiceAccount) *core.ServiceAccount) (*core.ServiceAccount, error) {
+func PatchServiceAccount(c kubernetes.Interface, cur *core.ServiceAccount, transform func(*core.ServiceAccount) *core.ServiceAccount) (*core.ServiceAccount, bool, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	modJson, err := json.Marshal(transform(cur.DeepCopy()))
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	patch, err := strategicpatch.CreateTwoWayMergePatch(curJson, modJson, core.ServiceAccount{})
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if len(patch) == 0 || string(patch) == "{}" {
-		return cur, nil
+		return cur, false, nil
 	}
 	glog.V(3).Infof("Patching ServiceAccount %s/%s with %s", cur.Namespace, cur.Name, string(patch))
-	return c.CoreV1().ServiceAccounts(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
+	out, err := c.CoreV1().ServiceAccounts(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
+	return out, true, err
 }
 
 func TryPatchServiceAccount(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.ServiceAccount) *core.ServiceAccount) (result *core.ServiceAccount, err error) {
@@ -62,7 +64,7 @@ func TryPatchServiceAccount(c kubernetes.Interface, meta metav1.ObjectMeta, tran
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = PatchServiceAccount(c, cur, transform)
+			result, _, e2 = PatchServiceAccount(c, cur, transform)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to patch ServiceAccount %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)

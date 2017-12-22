@@ -1,8 +1,8 @@
 hash: 6f32b235515f97ee7b2713b3134e3c6843d84cd8d58869d83193c4a99b4e3a2a
-updated: 2017-12-18T15:16:26.478453219-05:00
+updated: 2017-12-21T19:28:16.438694994-05:00
 imports:
 - name: github.com/appscode/go
-  version: cb650d0b1a3c04a86595cf2a31fa704dbf1bc42a
+  version: f08cee5a2aa53a1ab6d30e4ae11e381d1b265f81
   subpackages:
   - analytics
   - context
@@ -15,10 +15,11 @@ imports:
   - types
   - version
 - name: github.com/appscode/kutil
-  version: 582273a0791d4d99ab1345d9e4867bec460aaf5a
+  version: acdec48c1b1f04bb3cf42377fa5cd4eeb9bfafb3
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
+  - batch/v1beta1
   - core/v1
   - extensions/v1beta1
   - meta
@@ -96,7 +97,7 @@ imports:
 - name: github.com/google/btree
   version: 7d79101e329e5a3adf994758c578dab82b90c017
 - name: github.com/google/go-cmp
-  version: ab3beb0f1673c5cab43e36db4ea73c2613100e69
+  version: 97a1ff3c48253a51c601f6e4420181273b6ca0ea
   subpackages:
   - cmp
   - cmp/internal/diff

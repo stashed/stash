@@ -165,7 +165,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 
 		// not restic workload or owned by a deployment, just remove the pending stash initializer
 		if util.ToBeInitializedBySelf(rs.Initializers) {
-			_, err = ext_util.PatchReplicaSet(c.k8sClient, rs, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
+			_, _, err = ext_util.PatchReplicaSet(c.k8sClient, rs, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
 				fmt.Println("Removing pending stash initializer for", obj.Name)
 				if len(obj.Initializers.Pending) == 1 {
 					obj.Initializers = nil
@@ -205,7 +205,7 @@ func (c *StashController) EnsureReplicaSetSidecar(resource *extensions.ReplicaSe
 		}
 	}
 
-	resource, err = ext_util.PatchReplicaSet(c.k8sClient, resource, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
+	resource, _, err = ext_util.PatchReplicaSet(c.k8sClient, resource, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
 		if util.ToBeInitializedBySelf(obj.Initializers) {
 			fmt.Println("Removing pending stash initializer for", obj.Name)
 			if len(obj.Initializers.Pending) == 1 {
@@ -265,7 +265,7 @@ func (c *StashController) EnsureReplicaSetSidecarDeleted(resource *extensions.Re
 		}
 	}
 
-	resource, err = ext_util.PatchReplicaSet(c.k8sClient, resource, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
+	resource, _, err = ext_util.PatchReplicaSet(c.k8sClient, resource, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
 		if restic.Spec.Type == api.BackupOffline {
 			obj.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.InitContainers, util.StashContainer)
 		} else {

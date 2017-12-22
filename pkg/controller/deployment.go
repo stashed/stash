@@ -163,7 +163,7 @@ func (c *StashController) runDeploymentInjector(key string) error {
 
 		// not restic workload, just remove the pending stash initializer
 		if util.ToBeInitializedBySelf(dp.Initializers) {
-			_, err = apps_util.PatchDeployment(c.k8sClient, dp, func(obj *apps.Deployment) *apps.Deployment {
+			_, _, err = apps_util.PatchDeployment(c.k8sClient, dp, func(obj *apps.Deployment) *apps.Deployment {
 				fmt.Println("Removing pending stash initializer for", obj.Name)
 				if len(obj.Initializers.Pending) == 1 {
 					obj.Initializers = nil
@@ -203,7 +203,7 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 		}
 	}
 
-	resource, err = apps_util.PatchDeployment(c.k8sClient, resource, func(obj *apps.Deployment) *apps.Deployment {
+	resource, _, err = apps_util.PatchDeployment(c.k8sClient, resource, func(obj *apps.Deployment) *apps.Deployment {
 		if util.ToBeInitializedBySelf(obj.Initializers) {
 			fmt.Println("Removing pending stash initializer for", obj.Name)
 			if len(obj.Initializers.Pending) == 1 {
@@ -263,7 +263,7 @@ func (c *StashController) EnsureDeploymentSidecarDeleted(resource *apps.Deployme
 		}
 	}
 
-	resource, err = apps_util.PatchDeployment(c.k8sClient, resource, func(obj *apps.Deployment) *apps.Deployment {
+	resource, _, err = apps_util.PatchDeployment(c.k8sClient, resource, func(obj *apps.Deployment) *apps.Deployment {
 		if restic.Spec.Type == api.BackupOffline {
 			obj.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.InitContainers, util.StashContainer)
 		} else {

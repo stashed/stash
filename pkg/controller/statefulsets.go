@@ -155,7 +155,7 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 			}
 
 			// not restic workload, just remove the pending stash initializer
-			_, err = apps_util.PatchStatefulSet(c.k8sClient, ss, func(obj *apps.StatefulSet) *apps.StatefulSet {
+			_, _, err = apps_util.PatchStatefulSet(c.k8sClient, ss, func(obj *apps.StatefulSet) *apps.StatefulSet {
 				fmt.Println("Removing pending stash initializer for", obj.Name)
 				if len(obj.Initializers.Pending) == 1 {
 					obj.Initializers = nil
@@ -195,7 +195,7 @@ func (c *StashController) EnsureStatefulSetSidecar(resource *apps.StatefulSet, o
 		}
 	}
 
-	resource, err = apps_util.PatchStatefulSet(c.k8sClient, resource, func(obj *apps.StatefulSet) *apps.StatefulSet {
+	resource, _, err = apps_util.PatchStatefulSet(c.k8sClient, resource, func(obj *apps.StatefulSet) *apps.StatefulSet {
 		if util.ToBeInitializedBySelf(obj.Initializers) {
 			fmt.Println("Removing pending stash initializer for", obj.Name)
 			if len(obj.Initializers.Pending) == 1 {
@@ -255,7 +255,7 @@ func (c *StashController) EnsureStatefulSetSidecarDeleted(resource *apps.Statefu
 		}
 	}
 
-	resource, err = apps_util.PatchStatefulSet(c.k8sClient, resource, func(obj *apps.StatefulSet) *apps.StatefulSet {
+	resource, _, err = apps_util.PatchStatefulSet(c.k8sClient, resource, func(obj *apps.StatefulSet) *apps.StatefulSet {
 		if restic.Spec.Type == api.BackupOffline {
 			obj.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.InitContainers, util.StashContainer)
 		} else {

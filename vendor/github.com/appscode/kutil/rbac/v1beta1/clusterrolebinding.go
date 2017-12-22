@@ -15,43 +15,45 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func CreateOrPatchClusterRoleBinding(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*rbac.ClusterRoleBinding) *rbac.ClusterRoleBinding) (*rbac.ClusterRoleBinding, error) {
+func CreateOrPatchClusterRoleBinding(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*rbac.ClusterRoleBinding) *rbac.ClusterRoleBinding) (*rbac.ClusterRoleBinding, bool, error) {
 	cur, err := c.RbacV1beta1().ClusterRoleBindings().Get(meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating ClusterRoleBinding %s.", meta.Name)
-		return c.RbacV1beta1().ClusterRoleBindings().Create(transform(&rbac.ClusterRoleBinding{
+		out, err := c.RbacV1beta1().ClusterRoleBindings().Create(transform(&rbac.ClusterRoleBinding{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "ClusterRoleBinding",
 				APIVersion: rbac.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
 		}))
+		return out, true, err
 	} else if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	return PatchClusterRoleBinding(c, cur, transform)
 }
 
-func PatchClusterRoleBinding(c kubernetes.Interface, cur *rbac.ClusterRoleBinding, transform func(*rbac.ClusterRoleBinding) *rbac.ClusterRoleBinding) (*rbac.ClusterRoleBinding, error) {
+func PatchClusterRoleBinding(c kubernetes.Interface, cur *rbac.ClusterRoleBinding, transform func(*rbac.ClusterRoleBinding) *rbac.ClusterRoleBinding) (*rbac.ClusterRoleBinding, bool, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	modJson, err := json.Marshal(transform(cur.DeepCopy()))
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	patch, err := strategicpatch.CreateTwoWayMergePatch(curJson, modJson, rbac.ClusterRoleBinding{})
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if len(patch) == 0 || string(patch) == "{}" {
-		return cur, nil
+		return cur, false, nil
 	}
 	glog.V(3).Infof("Patching ClusterRoleBinding %s with %s.", cur.Name, string(patch))
-	return c.RbacV1beta1().ClusterRoleBindings().Patch(cur.Name, types.StrategicMergePatchType, patch)
+	out, err := c.RbacV1beta1().ClusterRoleBindings().Patch(cur.Name, types.StrategicMergePatchType, patch)
+	return out, true, err
 }
 
 func TryPatchClusterRoleBinding(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*rbac.ClusterRoleBinding) *rbac.ClusterRoleBinding) (result *rbac.ClusterRoleBinding, err error) {
@@ -62,7 +64,7 @@ func TryPatchClusterRoleBinding(c kubernetes.Interface, meta metav1.ObjectMeta, 
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = PatchClusterRoleBinding(c, cur, transform)
+			result, _, e2 = PatchClusterRoleBinding(c, cur, transform)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to patch ClusterRoleBinding %s due to %v.", attempt, cur.Name, e2)

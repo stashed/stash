@@ -15,48 +15,45 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-func EnsureRestic(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(alert *api.Restic) *api.Restic) (*api.Restic, error) {
-	return CreateOrPatchRestic(c, meta, transform)
-}
-
-func CreateOrPatchRestic(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(alert *api.Restic) *api.Restic) (*api.Restic, error) {
+func CreateOrPatchRestic(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(alert *api.Restic) *api.Restic) (*api.Restic, bool, error) {
 	cur, err := c.Restics(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating Restic %s/%s.", meta.Namespace, meta.Name)
-		return c.Restics(meta.Namespace).Create(transform(&api.Restic{
+		out, err := c.Restics(meta.Namespace).Create(transform(&api.Restic{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Restic",
 				APIVersion: api.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
 		}))
+		return out, true, err
 	} else if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	return PatchRestic(c, cur, transform)
 }
 
-func PatchRestic(c cs.StashV1alpha1Interface, cur *api.Restic, transform func(*api.Restic) *api.Restic) (*api.Restic, error) {
+func PatchRestic(c cs.StashV1alpha1Interface, cur *api.Restic, transform func(*api.Restic) *api.Restic) (*api.Restic, bool, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	modJson, err := json.Marshal(transform(cur.DeepCopy()))
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	patch, err := jsonmergepatch.CreateThreeWayJSONMergePatch(curJson, modJson, curJson)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if len(patch) == 0 || string(patch) == "{}" {
-		return cur, nil
+		return cur, false, nil
 	}
 	glog.V(3).Infof("Patching Restic %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
-	result, err := c.Restics(cur.Namespace).Patch(cur.Name, types.MergePatchType, patch)
-	return result, err
+	out, err := c.Restics(cur.Namespace).Patch(cur.Name, types.MergePatchType, patch)
+	return out, true, err
 }
 
 func TryPatchRestic(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(*api.Restic) *api.Restic) (result *api.Restic, err error) {
@@ -67,7 +64,7 @@ func TryPatchRestic(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transfo
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = PatchRestic(c, cur, transform)
+			result, _, e2 = PatchRestic(c, cur, transform)
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to patch Restic %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
