@@ -2,14 +2,12 @@ package util
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 	"time"
 
-	"github.com/appscode/go/log"
 	core_util "github.com/appscode/kutil/core/v1"
 	"github.com/appscode/kutil/meta"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -18,14 +16,11 @@ import (
 	"github.com/cenkalti/backoff"
 	"github.com/google/go-cmp/cmp"
 	batch "k8s.io/api/batch/v1"
-	batch_v1_beta "k8s.io/api/batch/v1beta1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -378,9 +373,7 @@ func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *
 				},
 			},
 			Labels: map[string]string{
-				"app": AppLabelStash,
-			},
-			Annotations: map[string]string{
+				"app":               AppLabelStash,
 				AnnotationRestic:    restic.Name,
 				AnnotationRecovery:  recovery.Name,
 				AnnotationOperation: OperationRecovery,
@@ -485,99 +478,6 @@ func DeleteConfigmapLock(k8sClient kubernetes.Interface, namespace string, workl
 	return k8sClient.CoreV1().ConfigMaps(namespace).Delete(GetConfigmapLockName(workload), &metav1.DeleteOptions{})
 }
 
-func CreateCronJobForDeletingPods(restic *api.Restic, tag string) *batch_v1_beta.CronJob {
-	selectors := ""
-	for k, v := range restic.Spec.Selector.MatchLabels {
-		selectors += k + "=" + v + ","
-	}
-	selectors = strings.TrimSuffix(selectors, ",") // remove last ","
-
-	job := &batch_v1_beta.CronJob{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      KubectlCronPrefix + restic.Name,
-			Namespace: restic.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: api.SchemeGroupVersion.String(),
-					Kind:       api.ResourceKindRestic,
-					Name:       restic.Name,
-					UID:        restic.UID,
-				},
-			},
-			Labels: map[string]string{
-				"app": AppLabelStash,
-			},
-			Annotations: map[string]string{
-				AnnotationRestic:    restic.Name,
-				AnnotationOperation: OperationDeletePods,
-			},
-		},
-		Spec: batch_v1_beta.CronJobSpec{
-			Schedule: restic.Spec.Schedule,
-			JobTemplate: batch_v1_beta.JobTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app": "stash",
-					},
-					Annotations: map[string]string{
-						AnnotationRestic:    restic.Name,
-						AnnotationOperation: OperationDeletePods,
-					},
-				},
-				Spec: batch.JobSpec{
-					Template: core.PodTemplateSpec{
-						Spec: core.PodSpec{
-							Containers: []core.Container{
-								{
-									Name:  KubectlContainer,
-									Image: docker.ImageKubectl + ":" + tag,
-									Args: []string{
-										"kubectl",
-										"delete",
-										"pods",
-										"-l " + selectors,
-									},
-								},
-							},
-							RestartPolicy: core.RestartPolicyNever,
-						},
-					},
-				},
-			},
-		},
-	}
-	return job
-}
-
-func CreateOrPatchCronJob(c kubernetes.Interface, job *batch_v1_beta.CronJob) (*batch_v1_beta.CronJob, error) {
-	cur, err := c.BatchV1beta1().CronJobs(job.Namespace).Get(job.Name, metav1.GetOptions{})
-	if kerr.IsNotFound(err) {
-		log.Infoln("Creating Cron Job %s/%s.", job.Namespace, job.Name)
-		return c.BatchV1beta1().CronJobs(job.Namespace).Create(job)
-	} else if err != nil {
-		return nil, err
-	}
-
-	// patch cronjob
-	curJson, err := json.Marshal(cur)
-	if err != nil {
-		return nil, err
-	}
-	modJson, err := json.Marshal(job)
-	if err != nil {
-		return nil, err
-	}
-	patch, err := strategicpatch.CreateTwoWayMergePatch(curJson, modJson, batch_v1_beta.CronJob{})
-	if err != nil {
-		return nil, err
-	}
-	if len(patch) == 0 || string(patch) == "{}" {
-		return cur, nil
-	}
-	log.Infoln("Patching Cron Job %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
-	return c.BatchV1beta1().CronJobs(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
-}
-
 func DeleteStashJob(client kubernetes.Interface, job batch.Job) error {
 	if err := client.BatchV1().Jobs(job.Namespace).Delete(job.Name, nil); err != nil && !kerr.IsNotFound(err) {
 		return fmt.Errorf("failed to delete job: %s, reason: %s", job.Name, err)
@@ -606,9 +506,7 @@ func CreateCheckJob(restic *api.Restic, hostName string, smartPrefix string, tag
 				},
 			},
 			Labels: map[string]string{
-				"app": AppLabelStash,
-			},
-			Annotations: map[string]string{
+				"app":               AppLabelStash,
 				AnnotationRestic:    restic.Name,
 				AnnotationOperation: OperationCheck,
 			},

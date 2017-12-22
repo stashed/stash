@@ -4,12 +4,16 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/log"
+	batch_util "github.com/appscode/kutil/batch/v1beta1"
+	core_util "github.com/appscode/kutil/core/v1"
 	ext_util "github.com/appscode/kutil/extensions/v1beta1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
+	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
+	batch "k8s.io/api/batch/v1beta1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -162,26 +166,70 @@ func (c *StashController) runResticInjector(key string) error {
 		}
 		c.EnsureSidecarDeleted(namespace, name)
 	} else {
-		d := obj.(*api.Restic)
-		fmt.Printf("Sync/Add/Update for Restic %s\n", d.GetName())
+		restic := obj.(*api.Restic)
+		fmt.Printf("Sync/Add/Update for Restic %s\n", restic.GetName())
 
-		if d.Spec.Type == api.BackupOffline {
-			job := util.CreateCronJobForDeletingPods(d, c.options.KubectlImageTag)
-
+		if restic.Spec.Type == api.BackupOffline {
+			m := metav1.ObjectMeta{
+				Name:      util.KubectlCronPrefix + restic.Name,
+				Namespace: restic.Namespace,
+			}
 			if c.options.EnableRBAC {
-				if err = c.ensureKubectlRBAC(job.Name, job.Namespace); err != nil {
-					return fmt.Errorf("error ensuring rbac for kubectl cron job %s, reason: %s\n", job.Name, err)
+				if err = c.ensureKubectlRBAC(m.Name, m.Namespace); err != nil {
+					return fmt.Errorf("error ensuring rbac for kubectl cron job %s, reason: %s\n", m.Name, err)
 				}
-				job.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = job.Name
 			}
 
-			if _, err = util.CreateOrPatchCronJob(c.k8sClient, job); err != nil {
-				return fmt.Errorf("error creating/patching cron job, reason: %s", err)
+			selector, err := metav1.LabelSelectorAsSelector(&restic.Spec.Selector)
+			if err != nil {
+				return err
 			}
+
+			_, _, err = batch_util.CreateOrPatchCronJob(c.k8sClient, m, func(in *batch.CronJob) *batch.CronJob {
+				in.OwnerReferences = []metav1.OwnerReference{
+					{
+						APIVersion: api.SchemeGroupVersion.String(),
+						Kind:       api.ResourceKindRestic,
+						Name:       restic.Name,
+						UID:        restic.UID,
+					},
+				}
+				if in.Labels == nil {
+					in.Labels = map[string]string{}
+				}
+				in.Labels["app"] = util.AppLabelStash
+				in.Labels[util.AnnotationRestic] = restic.Name
+				in.Labels[util.AnnotationOperation] = util.OperationDeletePods
+
+				// spec
+				in.Spec.Schedule = restic.Spec.Schedule
+				if in.Spec.JobTemplate.Labels == nil {
+					in.Spec.JobTemplate.Labels = map[string]string{}
+				}
+				in.Spec.JobTemplate.Labels["app"] = util.AppLabelStash
+				in.Spec.JobTemplate.Labels[util.AnnotationRestic] = restic.Name
+				in.Spec.JobTemplate.Labels[util.AnnotationOperation] = util.OperationDeletePods
+
+				core_util.UpsertContainer(in.Spec.JobTemplate.Spec.Template.Spec.Containers, core.Container{
+					Name:  util.KubectlContainer,
+					Image: docker.ImageKubectl + ":" + c.options.KubectlImageTag,
+					Args: []string{
+						"kubectl",
+						"delete",
+						"pods",
+						"-l " + selector.String(),
+					},
+				})
+				in.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
+				if c.options.EnableRBAC {
+					in.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = in.Name
+				}
+				return in
+			})
+			return err
 		}
-
-		c.EnsureSidecar(d)
-		c.EnsureSidecarDeleted(d.Namespace, d.Name)
+		c.EnsureSidecar(restic)
+		c.EnsureSidecarDeleted(restic.Namespace, restic.Name)
 	}
 	return nil
 }
