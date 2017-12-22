@@ -1,5 +1,5 @@
 hash: 6f32b235515f97ee7b2713b3134e3c6843d84cd8d58869d83193c4a99b4e3a2a
-updated: 2017-12-21T19:28:16.438694994-05:00
+updated: 2017-12-21T20:21:04.254768187-05:00
 imports:
 - name: github.com/appscode/go
   version: f08cee5a2aa53a1ab6d30e4ae11e381d1b265f81
@@ -15,7 +15,7 @@ imports:
   - types
   - version
 - name: github.com/appscode/kutil
-  version: acdec48c1b1f04bb3cf42377fa5cd4eeb9bfafb3
+  version: dfc5ff861bb2f5e80629103d821b9dfe317abfec
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
@@ -25,6 +25,8 @@ imports:
   - meta
   - rbac/v1beta1
   - tools/analytics
+- name: github.com/appscode/mergo
+  version: e3000cb3d28c72b837601cac94debd91032d19fe
 - name: github.com/appscode/pat
   version: 48ff78925b7955367d8a048fc2b5cec8efadf8d3
 - name: github.com/beorn7/perks

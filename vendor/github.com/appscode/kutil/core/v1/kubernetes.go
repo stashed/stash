@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/appscode/kutil/meta"
+	"github.com/appscode/mergo"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/conversion"
@@ -137,7 +138,11 @@ func EnsureContainerDeleted(containers []core.Container, name string) []core.Con
 func UpsertContainer(containers []core.Container, upsert core.Container) []core.Container {
 	for i, container := range containers {
 		if container.Name == upsert.Name {
-			containers[i] = upsert
+			err := mergo.MergeWithOverwrite(&container, upsert)
+			if err != nil {
+				panic(err)
+			}
+			containers[i] = container
 			return containers
 		}
 	}
