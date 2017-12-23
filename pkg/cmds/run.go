@@ -73,7 +73,7 @@ func NewCmdRun() *cobra.Command {
 				log.Fatalln(err)
 			}
 
-			log.Infoln("Starting operator...")
+			log.Infof("Starting operator version %s+%s ...", v.Version.Version, v.Version.CommitHash)
 			// Now let's start the controller
 			stop := make(chan struct{})
 			defer close(stop)
