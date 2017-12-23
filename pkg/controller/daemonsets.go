@@ -124,13 +124,13 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 
 	if !exists {
 		// Below we will warm up our cache with a DaemonSet, so that we will see a delete for one d
-		fmt.Printf("DaemonSet %s does not exist anymore\n", key)
+		glog.Warningf("DaemonSet %s does not exist anymore\n", key)
 	} else {
 		ds := obj.(*extensions.DaemonSet)
-		fmt.Printf("Sync/Add/Update for DaemonSet %s\n", ds.GetName())
+		glog.Infof("Sync/Add/Update for DaemonSet %s\n", ds.GetName())
 
 		if util.ToBeInitializedByPeer(ds.Initializers) {
-			fmt.Printf("Not stash's turn to initialize %s\n", ds.GetName())
+			glog.Warningf("Not stash's turn to initialize %s\n", ds.GetName())
 			return nil
 		}
 

@@ -124,13 +124,13 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 
 	if !exists {
 		// Below we will warm up our cache with a StatefulSet, so that we will see a delete for one d
-		fmt.Printf("StatefulSet %s does not exist anymore\n", key)
+		glog.Warningf("StatefulSet %s does not exist anymore\n", key)
 	} else {
 		ss := obj.(*apps.StatefulSet)
-		fmt.Printf("Sync/Add/Update for StatefulSet %s\n", ss.GetName())
+		glog.Infof("Sync/Add/Update for StatefulSet %s\n", ss.GetName())
 
 		if util.ToBeInitializedByPeer(ss.Initializers) {
-			fmt.Printf("Not stash's turn to initialize %s\n", ss.GetName())
+			glog.Warningf("Not stash's turn to initialize %s\n", ss.GetName())
 			return nil
 		}
 

@@ -152,12 +152,12 @@ func (c *StashController) runRecoveryInjector(key string) error {
 
 	if !exists {
 		// Below we will warm up our cache with a Recovery, so that we will see a delete for one d
-		fmt.Printf("Recovery %s does not exist anymore\n", key)
+		glog.Warningf("Recovery %s does not exist anymore\n", key)
 		return nil
 	}
 
 	d := obj.(*api.Recovery)
-	fmt.Printf("Sync/Add/Update for Recovery %s\n", d.GetName())
+	glog.Infof("Sync/Add/Update for Recovery %s\n", d.GetName())
 	return c.runRecoveryJob(d)
 }
 

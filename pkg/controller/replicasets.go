@@ -124,7 +124,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 
 	if !exists {
 		// Below we will warm up our cache with a ReplicaSet, so that we will see a delete for one d
-		fmt.Printf("ReplicaSet %s does not exist anymore\n", key)
+		glog.Warningf("ReplicaSet %s does not exist anymore\n", key)
 
 		ns, name, err := cache.SplitMetaNamespaceKey(key)
 		if err != nil {
@@ -133,10 +133,10 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 		util.DeleteConfigmapLock(c.k8sClient, ns, api.LocalTypedReference{Kind: api.KindReplicaSet, Name: name})
 	} else {
 		rs := obj.(*extensions.ReplicaSet)
-		fmt.Printf("Sync/Add/Update for ReplicaSet %s\n", rs.GetName())
+		glog.Infof("Sync/Add/Update for ReplicaSet %s\n", rs.GetName())
 
 		if util.ToBeInitializedByPeer(rs.Initializers) {
-			fmt.Printf("Not stash's turn to initialize %s\n", rs.GetName())
+			glog.Warningf("Not stash's turn to initialize %s\n", rs.GetName())
 			return nil
 		}
 

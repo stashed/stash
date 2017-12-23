@@ -1,8 +1,6 @@
 package controller
 
 import (
-	"fmt"
-
 	"github.com/appscode/go/log"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
@@ -101,19 +99,19 @@ func (c *StashController) runJobInjector(key string) error {
 		return err
 	}
 	if !exists {
-		fmt.Printf("Job %s does not exist anymore\n", key)
+		glog.Warningf("Job %s does not exist anymore\n", key)
 		return nil
 	} else {
 		job := obj.(*batch.Job)
-		fmt.Printf("Sync/Add/Update for Job %s\n", job.GetName())
+		glog.Infof("Sync/Add/Update for Job %s\n", job.GetName())
 
 		if job.Status.Succeeded > 0 {
-			fmt.Printf("Deleting succeeded job %s\n", job.GetName())
+			glog.Infof("Deleting succeeded job %s\n", job.GetName())
 			if err = util.DeleteStashJob(c.k8sClient, *job); err != nil {
-				fmt.Printf("Failed to delete stash job: %s, reason: %s\n", job.GetName(), err)
+				glog.Errorf("Failed to delete stash job: %s, reason: %s\n", job.GetName(), err)
 				return err
 			}
-			fmt.Printf("Deleted stash job: %s\n", job.GetName())
+			glog.Infof("Deleted stash job: %s\n", job.GetName())
 		}
 	}
 	return nil

@@ -158,7 +158,7 @@ func (c *StashController) runResticInjector(key string) error {
 
 	if !exists {
 		// Below we will warm up our cache with a Restic, so that we will see a delete for one d
-		fmt.Printf("Restic %s does not exist anymore\n", key)
+		glog.Warningf("Restic %s does not exist anymore\n", key)
 
 		namespace, name, err := cache.SplitMetaNamespaceKey(key)
 		if err != nil {
@@ -167,7 +167,7 @@ func (c *StashController) runResticInjector(key string) error {
 		c.EnsureSidecarDeleted(namespace, name)
 	} else {
 		restic := obj.(*api.Restic)
-		fmt.Printf("Sync/Add/Update for Restic %s\n", restic.GetName())
+		glog.Infof("Sync/Add/Update for Restic %s\n", restic.GetName())
 
 		if restic.Spec.Type == api.BackupOffline {
 			m := metav1.ObjectMeta{
