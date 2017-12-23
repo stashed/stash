@@ -1,8 +1,6 @@
 package backup
 
 import (
-	"fmt"
-
 	"github.com/appscode/go/log"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
@@ -134,12 +132,12 @@ func (c *Controller) runResticScheduler(key string) error {
 
 	if !exists {
 		// Below we will warm up our cache with a Restic, so that we will see a delete for one d
-		fmt.Printf("Restic %s does not exist anymore\n", key)
+		glog.Warningf("Restic %s does not exist anymore\n", key)
 
 		c.cron.Stop()
 	} else {
 		r := obj.(*api.Restic)
-		fmt.Printf("Sync/Add/Update for Restic %s\n", r.GetName())
+		glog.Infof("Sync/Add/Update for Restic %s\n", r.GetName())
 
 		err := c.configureScheduler(r)
 		if err != nil {

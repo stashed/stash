@@ -124,7 +124,7 @@ func (c *StashController) runDeploymentInjector(key string) error {
 
 	if !exists {
 		// Below we will warm up our cache with a Deployment, so that we will see a delete for one d
-		fmt.Printf("Deployment %s does not exist anymore\n", key)
+		glog.Warningf("Deployment %s does not exist anymore\n", key)
 
 		ns, name, err := cache.SplitMetaNamespaceKey(key)
 		if err != nil {
@@ -133,10 +133,10 @@ func (c *StashController) runDeploymentInjector(key string) error {
 		util.DeleteConfigmapLock(c.k8sClient, ns, api.LocalTypedReference{Kind: api.KindDeployment, Name: name})
 	} else {
 		dp := obj.(*apps.Deployment)
-		fmt.Printf("Sync/Add/Update for Deployment %s\n", dp.GetName())
+		glog.Infof("Sync/Add/Update for Deployment %s\n", dp.GetName())
 
 		if util.ToBeInitializedByPeer(dp.Initializers) {
-			fmt.Printf("Not stash's turn to initialize %s\n", dp.GetName())
+			glog.Warningf("Not stash's turn to initialize %s\n", dp.GetName())
 			return nil
 		}
 
