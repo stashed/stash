@@ -56,27 +56,6 @@ func PatchNode(c kubernetes.Interface, cur *core.Node, transform func(*core.Node
 	return out, kutil.VerbPatched, err
 }
 
-func TryPatchNode(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.Node) *core.Node) (result *core.Node, err error) {
-	attempt := 0
-	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
-		attempt++
-		cur, e2 := c.CoreV1().Nodes().Get(meta.Name, metav1.GetOptions{})
-		if kerr.IsNotFound(e2) {
-			return false, e2
-		} else if e2 == nil {
-			result, _, e2 = PatchNode(c, cur, transform)
-			return e2 == nil, nil
-		}
-		glog.Errorf("Attempt %d failed to patch Node %s due to %v.", attempt, cur.Name, e2)
-		return false, nil
-	})
-
-	if err != nil {
-		err = fmt.Errorf("failed to patch Node %s after %d attempts due to %v", meta.Name, attempt, err)
-	}
-	return
-}
-
 func TryUpdateNode(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.Node) *core.Node) (result *core.Node, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {

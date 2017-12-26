@@ -5,7 +5,9 @@ import (
 	"fmt"
 
 	. "github.com/appscode/go/types"
+	atypes "github.com/appscode/go/types"
 	"github.com/appscode/kutil"
+	core_util "github.com/appscode/kutil/core/v1"
 	"github.com/golang/glog"
 	apps "k8s.io/api/apps/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -57,27 +59,6 @@ func PatchStatefulSet(c kubernetes.Interface, cur *apps.StatefulSet, transform f
 	return out, kutil.VerbPatched, err
 }
 
-func TryPatchStatefulSet(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*apps.StatefulSet) *apps.StatefulSet) (result *apps.StatefulSet, err error) {
-	attempt := 0
-	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
-		attempt++
-		cur, e2 := c.AppsV1beta1().StatefulSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
-		if kerr.IsNotFound(e2) {
-			return false, e2
-		} else if e2 == nil {
-			result, _, e2 = PatchStatefulSet(c, cur, transform)
-			return e2 == nil, nil
-		}
-		glog.Errorf("Attempt %d failed to patch StatefulSet %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
-		return false, nil
-	})
-
-	if err != nil {
-		err = fmt.Errorf("failed to patch StatefulSet %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
-	}
-	return
-}
-
 func TryUpdateStatefulSet(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*apps.StatefulSet) *apps.StatefulSet) (result *apps.StatefulSet, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
@@ -106,4 +87,31 @@ func WaitUntilStatefulSetReady(kubeClient kubernetes.Interface, meta metav1.Obje
 		}
 		return false, nil
 	})
+}
+
+func DeleteStatefulSet(kubeClient kubernetes.Interface, meta metav1.ObjectMeta) error {
+	statefulSet, err := kubeClient.AppsV1beta1().StatefulSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	if err != nil {
+		if kerr.IsNotFound(err) {
+			return nil
+		} else {
+			return err
+		}
+	}
+
+	// Update StatefulSet
+	_, _, err = PatchStatefulSet(kubeClient, statefulSet, func(in *apps.StatefulSet) *apps.StatefulSet {
+		in.Spec.Replicas = atypes.Int32P(0)
+		return in
+	})
+	if err != nil {
+		return err
+	}
+
+	err = core_util.WaitUntilPodDeletedBySelector(kubeClient, statefulSet.Namespace, statefulSet.Spec.Selector)
+	if err != nil {
+		return err
+	}
+
+	return kubeClient.AppsV1beta1().StatefulSets(statefulSet.Namespace).Delete(statefulSet.Name, nil)
 }

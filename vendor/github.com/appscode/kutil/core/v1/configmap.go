@@ -56,27 +56,6 @@ func PatchConfigMap(c kubernetes.Interface, cur *core.ConfigMap, transform func(
 	return out, kutil.VerbPatched, err
 }
 
-func TryPatchConfigMap(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.ConfigMap) *core.ConfigMap) (result *core.ConfigMap, err error) {
-	attempt := 0
-	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
-		attempt++
-		cur, e2 := c.CoreV1().ConfigMaps(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
-		if kerr.IsNotFound(e2) {
-			return false, e2
-		} else if e2 == nil {
-			result, _, e2 = PatchConfigMap(c, cur, transform)
-			return e2 == nil, nil
-		}
-		glog.Errorf("Attempt %d failed to patch ConfigMap %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
-		return false, nil
-	})
-
-	if err != nil {
-		err = fmt.Errorf("failed to patch ConfigMap %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
-	}
-	return
-}
-
 func TryUpdateConfigMap(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.ConfigMap) *core.ConfigMap) (result *core.ConfigMap, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {

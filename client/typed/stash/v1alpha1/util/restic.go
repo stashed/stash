@@ -56,27 +56,6 @@ func PatchRestic(c cs.StashV1alpha1Interface, cur *api.Restic, transform func(*a
 	return out, kutil.VerbPatched, err
 }
 
-func TryPatchRestic(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(*api.Restic) *api.Restic) (result *api.Restic, err error) {
-	attempt := 0
-	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
-		attempt++
-		cur, e2 := c.Restics(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
-		if kerr.IsNotFound(e2) {
-			return false, e2
-		} else if e2 == nil {
-			result, _, e2 = PatchRestic(c, cur, transform)
-			return e2 == nil, nil
-		}
-		glog.Errorf("Attempt %d failed to patch Restic %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
-		return false, nil
-	})
-
-	if err != nil {
-		err = fmt.Errorf("failed to patch Restic %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
-	}
-	return
-}
-
 func TryUpdateRestic(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(*api.Restic) *api.Restic) (result *api.Restic, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
