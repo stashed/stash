@@ -56,27 +56,6 @@ func PatchSecret(c kubernetes.Interface, cur *core.Secret, transform func(*core.
 	return out, kutil.VerbPatched, err
 }
 
-func TryPatchSecret(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.Secret) *core.Secret) (result *core.Secret, err error) {
-	attempt := 0
-	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
-		attempt++
-		cur, e2 := c.CoreV1().Secrets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
-		if kerr.IsNotFound(e2) {
-			return false, e2
-		} else if e2 == nil {
-			result, _, e2 = PatchSecret(c, cur, transform)
-			return e2 == nil, nil
-		}
-		glog.Errorf("Attempt %d failed to patch Secret %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
-		return false, nil
-	})
-
-	if err != nil {
-		err = fmt.Errorf("failed to patch Secret %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
-	}
-	return
-}
-
 func TryUpdateSecret(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.Secret) *core.Secret) (result *core.Secret, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
@@ -96,4 +75,13 @@ func TryUpdateSecret(c kubernetes.Interface, meta metav1.ObjectMeta, transform f
 		err = fmt.Errorf("failed to update Secret %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}
 	return
+}
+
+func ObfuscateSecret(in core.Secret) *core.Secret {
+	data := make(map[string][]byte)
+	for k := range in.Data {
+		data[k] = []byte("-")
+	}
+	in.Data = data
+	return &in
 }

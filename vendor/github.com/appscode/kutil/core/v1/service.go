@@ -56,27 +56,6 @@ func PatchService(c kubernetes.Interface, cur *core.Service, transform func(*cor
 	return out, kutil.VerbPatched, err
 }
 
-func TryPatchService(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.Service) *core.Service) (result *core.Service, err error) {
-	attempt := 0
-	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
-		attempt++
-		cur, e2 := c.CoreV1().Services(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
-		if kerr.IsNotFound(e2) {
-			return false, e2
-		} else if e2 == nil {
-			result, _, e2 = PatchService(c, cur, transform)
-			return e2 == nil, nil
-		}
-		glog.Errorf("Attempt %d failed to patch Service %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
-		return false, nil
-	})
-
-	if err != nil {
-		err = fmt.Errorf("failed to patch Service %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
-	}
-	return
-}
-
 func TryUpdateService(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.Service) *core.Service) (result *core.Service, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
@@ -118,6 +97,9 @@ func MergeServicePorts(cur, desired []core.ServicePort) []core.ServicePort {
 
 		if dp.NodePort == 0 {
 			dp.NodePort = cp.NodePort // avoid reassigning port
+		}
+		if dp.Protocol == "" {
+			dp.Protocol = cp.Protocol
 		}
 		desired[i] = dp
 	}

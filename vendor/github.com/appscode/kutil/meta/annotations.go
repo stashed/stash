@@ -30,6 +30,22 @@ func GetString(m map[string]string, key string) string {
 	return m[key]
 }
 
+func HasKey(m map[string]string, key string) bool {
+	if m == nil {
+		return false
+	}
+	_, ok := m[key]
+	return ok
+}
+
+func RemoveKey(m map[string]string, key string) map[string]string {
+	if m == nil {
+		return nil
+	}
+	delete(m, key)
+	return m
+}
+
 func GetList(m map[string]string, key string) ([]string, error) {
 	if m == nil {
 		return []string{}, nil
