@@ -1,5 +1,5 @@
 hash: 6f32b235515f97ee7b2713b3134e3c6843d84cd8d58869d83193c4a99b4e3a2a
-updated: 2017-12-26T17:36:59.654755674-05:00
+updated: 2017-12-26T18:52:50.670266503-05:00
 imports:
 - name: github.com/appscode/go
   version: f08cee5a2aa53a1ab6d30e4ae11e381d1b265f81
@@ -15,7 +15,7 @@ imports:
   - types
   - version
 - name: github.com/appscode/kutil
-  version: 27239d39c245b5237d1035f2873db9c2d895c34b
+  version: 4b27a4da2b262e7fe6e81173aeb8001c007bfca2
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1

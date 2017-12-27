@@ -14,11 +14,9 @@ import (
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/cenkalti/backoff"
-	"github.com/google/go-cmp/cmp"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
@@ -343,9 +341,7 @@ func ResticEqual(old, new *api.Restic) bool {
 	if new != nil {
 		newSpec = &new.Spec
 	}
-	return cmp.Equal(oldSpec, newSpec, cmp.Comparer(func(x, y resource.Quantity) bool {
-		return x.Cmp(y) == 0
-	}))
+	return meta.Equal(oldSpec, newSpec)
 }
 
 func RecoveryEqual(old, new *api.Recovery) bool {
