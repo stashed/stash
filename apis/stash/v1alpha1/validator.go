@@ -35,8 +35,14 @@ func (r Restic) IsValid() error {
 }
 
 func (r Recovery) IsValid() error {
-	if r.Spec.Restic == "" {
-		return fmt.Errorf("missing restic name")
+	if r.Spec.Backend.StorageSecretName == "" {
+		return fmt.Errorf("missing repository secret name")
+	}
+	if len(r.Spec.Paths) == 0 {
+		return fmt.Errorf("missing filegroup paths")
+	}
+	if len(r.Spec.VolumeMounts) == 0 {
+		return fmt.Errorf("missing vollume mounts")
 	}
 	if len(r.Spec.Volumes) == 0 {
 		return fmt.Errorf("missing target vollume")

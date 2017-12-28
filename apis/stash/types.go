@@ -155,11 +155,13 @@ type Recovery struct {
 }
 
 type RecoverySpec struct {
-	Restic     string              `json:"restic,omitempty"`
-	Workload   LocalTypedReference `json:"workload,omitempty"`
-	PodOrdinal string              `json:"podOrdinal,omitempty"`
-	NodeName   string              `json:"nodeName,omitempty"`
-	Volumes    []core.Volume       `json:"volumes,omitempty"`
+	Backend      Backend             `json:"backend,omitempty"`
+	Paths        []string            `json:"paths,omitempty"`
+	Workload     LocalTypedReference `json:"workload,omitempty"`
+	PodOrdinal   string              `json:"podOrdinal,omitempty"`
+	NodeName     string              `json:"nodeName,omitempty"`
+	VolumeMounts []core.VolumeMount  `json:"volumeMounts,omitempty"`
+	Volumes      []core.Volume       `json:"volumes,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
