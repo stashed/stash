@@ -14,7 +14,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/record"
-	"github.com/appscode/restic/src/restic"
 )
 
 type Controller struct {
@@ -87,18 +86,7 @@ func (c *Controller) Run() {
 }
 
 func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
-	restic, err := c.stashClient.Restics(c.namespace).Get(recovery.Spec.Restic, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-	if err = restic.IsValid(); err != nil {
-		return err
-	}
-	if restic.Status.BackupCount < 1 {
-		return fmt.Errorf("no backup found")
-	}
-
-	secret, err := c.k8sClient.CoreV1().Secrets(c.namespace).Get(restic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	secret, err := c.k8sClient.CoreV1().Secrets(c.namespace).Get(recovery.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -111,13 +99,13 @@ func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
 	}
 
 	cli := cli.New("/tmp", false, hostname)
-	if err = cli.SetupEnv(restic.Spec.Backend, secret, smartPrefix); err != nil {
+	if err = cli.SetupEnv(recovery.Spec.Backend, secret, smartPrefix); err != nil {
 		return err
 	}
 
 	var errRec error
-	for _, fg := range restic.Spec.FileGroups {
-		d, err := c.measure(cli.Restore, fg.Path, hostname)
+	for _, path := range recovery.Spec.Paths {
+		d, err := c.measure(cli.Restore, path, hostname)
 		if err != nil {
 			errRec = err
 			eventer.CreateEventWithLog(
@@ -126,11 +114,11 @@ func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
 				recovery.ObjectReference(),
 				core.EventTypeWarning,
 				eventer.EventReasonFailedToRecover,
-				fmt.Sprintf("failed to recover FileGroup %s, reason: %v", fg.Path, err),
+				fmt.Sprintf("failed to recover FileGroup %s, reason: %v", path, err),
 			)
-			stash_util.SetRecoveryStats(c.stashClient, recovery, fg.Path, d, api.RecoveryFailed)
+			stash_util.SetRecoveryStats(c.stashClient, recovery, path, d, api.RecoveryFailed)
 		} else {
-			stash_util.SetRecoveryStats(c.stashClient, recovery, fg.Path, d, api.RecoverySucceeded)
+			stash_util.SetRecoveryStats(c.stashClient, recovery, path, d, api.RecoverySucceeded)
 		}
 	}
 

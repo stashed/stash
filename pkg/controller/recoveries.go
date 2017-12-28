@@ -166,29 +166,14 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 		return nil
 	}
 
-	restic, err := c.stashClient.Restics(rec.Namespace).Get(rec.Spec.Restic, metav1.GetOptions{})
-	if err != nil {
-		log.Errorln(err)
-		stash_util.SetRecoveryStatusPhase(c.stashClient, rec, api.RecoveryFailed)
-		c.recorder.Event(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToRecover, err.Error())
-		return err
-	}
-
-	if err = restic.IsValid(); err != nil {
-		log.Errorln(err)
-		stash_util.SetRecoveryStatusPhase(c.stashClient, rec, api.RecoveryFailed)
-		c.recorder.Event(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToRecover, err.Error())
-		return err
-	}
-
-	job := util.CreateRecoveryJob(rec, restic, c.options.SidecarImageTag)
+	job := util.CreateRecoveryJob(rec, c.options.SidecarImageTag)
 	if c.options.EnableRBAC {
-		if err = c.ensureRecoveryRBAC(job.Name, job.Namespace); err != nil {
+		if err := c.ensureRecoveryRBAC(job.Name, job.Namespace); err != nil {
 			return fmt.Errorf("error ensuring rbac for recovery job %s, reason: %s\n", job.Name, err)
 		}
 		job.Spec.Template.Spec.ServiceAccountName = job.Name
 	}
-	if job, err = c.k8sClient.BatchV1().Jobs(rec.Namespace).Create(job); err != nil {
+	if _, err := c.k8sClient.BatchV1().Jobs(rec.Namespace).Create(job); err != nil {
 		if kerr.IsAlreadyExists(err) {
 			return nil
 		}
