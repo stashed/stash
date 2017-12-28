@@ -31,6 +31,7 @@ var _ = Describe("ReplicationController", func() {
 			Skip("Missing repository credential")
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
+		recovery.Spec.Backend.StorageSecretName = cred.Name
 		rc = f.ReplicationController()
 	})
 
@@ -134,7 +135,7 @@ var _ = Describe("ReplicationController", func() {
 			}, BeNumerically(">=", 1)))
 
 			By("Removing labels of ReplicationController " + rc.Name)
-			_, err = core_util.PatchRC(f.KubeClient, &rc, func(in *core.ReplicationController) *core.ReplicationController {
+			_, _, err = core_util.PatchRC(f.KubeClient, &rc, func(in *core.ReplicationController) *core.ReplicationController {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}
@@ -405,7 +406,7 @@ var _ = Describe("ReplicationController", func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
-				recovery = f.RecoveryForRestic(restic.Name)
+				recovery = f.RecoveryForRestic(restic)
 			})
 			It(`should restore local rc backup`, shouldRestoreRC)
 		})
@@ -414,7 +415,7 @@ var _ = Describe("ReplicationController", func() {
 			BeforeEach(func() {
 				cred = f.SecretForS3Backend()
 				restic = f.ResticForS3Backend()
-				recovery = f.RecoveryForRestic(restic.Name)
+				recovery = f.RecoveryForRestic(restic)
 			})
 			It(`should restore s3 rc backup`, shouldRestoreRC)
 		})

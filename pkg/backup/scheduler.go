@@ -153,7 +153,7 @@ func (c *Controller) runOnceForScheduler() error {
 	}
 
 	// setup restic again, previously done in setup()
-	if err = c.resticCLI.SetupEnv(resource, secret, c.opt.SmartPrefix); err != nil {
+	if err = c.resticCLI.SetupEnv(resource.Spec.Backend, secret, c.opt.SmartPrefix); err != nil {
 		return err
 	}
 	if err = c.resticCLI.InitRepositoryIfAbsent(); err != nil {

@@ -32,6 +32,7 @@ var _ = Describe("StatefulSet", func() {
 			Skip("Missing repository credential")
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
+		recovery.Spec.Backend.StorageSecretName = cred.Name
 		svc = f.HeadlessService()
 		ss = f.StatefulSet(restic, TestSidecarImageTag)
 	})
@@ -152,7 +153,7 @@ var _ = Describe("StatefulSet", func() {
 			}, BeNumerically(">=", 1)))
 
 			By("Removing labels of StatefulSet " + ss.Name)
-			_, err = apps_util.PatchStatefulSet(f.KubeClient, &ss, func(in *apps.StatefulSet) *apps.StatefulSet {
+			_, _, err = apps_util.PatchStatefulSet(f.KubeClient, &ss, func(in *apps.StatefulSet) *apps.StatefulSet {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}
@@ -408,7 +409,7 @@ var _ = Describe("StatefulSet", func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
-				recovery = f.RecoveryForRestic(restic.Name)
+				recovery = f.RecoveryForRestic(restic)
 			})
 			It(`should restore local StatefulSet backup`, shouldRestoreStatefulSet)
 		})
@@ -417,7 +418,7 @@ var _ = Describe("StatefulSet", func() {
 			BeforeEach(func() {
 				cred = f.SecretForS3Backend()
 				restic = f.ResticForS3Backend()
-				recovery = f.RecoveryForRestic(restic.Name)
+				recovery = f.RecoveryForRestic(restic)
 			})
 			It(`should restore s3 StatefulSet backup`, shouldRestoreStatefulSet)
 		})

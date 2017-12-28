@@ -158,7 +158,7 @@ func (c *Controller) setup() (*api.Restic, error) {
 	log.Infof("Found repository secret %s\n", secret.Name)
 
 	// setup restic-cli
-	if err = c.resticCLI.SetupEnv(resource, secret, c.opt.SmartPrefix); err != nil {
+	if err = c.resticCLI.SetupEnv(resource.Spec.Backend, secret, c.opt.SmartPrefix); err != nil {
 		return nil, err
 	}
 	if err = c.resticCLI.InitRepositoryIfAbsent(); err != nil {

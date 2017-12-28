@@ -355,7 +355,21 @@ func RecoveryEqual(old, new *api.Recovery) bool {
 	return reflect.DeepEqual(oldSpec, newSpec)
 }
 
-func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *batch.Job {
+func CreateRecoveryJob(recovery *api.Recovery, tag string) *batch.Job {
+	volumes := make([]core.Volume, 0)
+	volumeMounts := make([]core.VolumeMount, 0)
+	for i, recVol := range recovery.Spec.RecoveredVolumes {
+		volumes = append(volumes, core.Volume{
+			Name:         fmt.Sprintf("vol-%d", i),
+			VolumeSource: recVol.VolumeSource,
+		})
+		volumeMounts = append(volumeMounts, core.VolumeMount{
+			Name:      fmt.Sprintf("vol-%d", i),
+			MountPath: recVol.MountPath,
+			SubPath:   recVol.SubPath,
+		})
+	}
+
 	job := &batch.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      RecoveryJobPrefix + recovery.Name,
@@ -370,7 +384,6 @@ func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *
 			},
 			Labels: map[string]string{
 				"app":               AppLabelStash,
-				AnnotationRestic:    restic.Name,
 				AnnotationRecovery:  recovery.Name,
 				AnnotationOperation: OperationRecovery,
 			},
@@ -387,14 +400,14 @@ func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *
 								"--recovery-name=" + recovery.Name,
 								"--v=10",
 							},
-							VolumeMounts: append(restic.Spec.VolumeMounts, core.VolumeMount{
+							VolumeMounts: append(volumeMounts, core.VolumeMount{
 								Name:      ScratchDirVolumeName,
 								MountPath: "/tmp",
-							}), // use volume mounts specified in restic
+							}),
 						},
 					},
 					RestartPolicy: core.RestartPolicyOnFailure,
-					Volumes: append(recovery.Spec.Volumes, core.Volume{
+					Volumes: append(volumes, core.Volume{
 						Name: ScratchDirVolumeName,
 						VolumeSource: core.VolumeSource{
 							EmptyDir: &core.EmptyDirVolumeSource{},
@@ -407,18 +420,18 @@ func CreateRecoveryJob(recovery *api.Recovery, restic *api.Restic, tag string) *
 	}
 
 	// local backend
-	if restic.Spec.Backend.Local != nil {
+	if recovery.Spec.Backend.Local != nil {
 		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts,
 			core.VolumeMount{
 				Name:      LocalVolumeName,
-				MountPath: restic.Spec.Backend.Local.Path,
+				MountPath: recovery.Spec.Backend.Local.Path,
 			})
 
 		// user don't need to specify "stash-local" volume, we collect it from restic-spec
 		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes,
 			core.Volume{
 				Name:         LocalVolumeName,
-				VolumeSource: restic.Spec.Backend.Local.VolumeSource,
+				VolumeSource: recovery.Spec.Backend.Local.VolumeSource,
 			})
 	}
 

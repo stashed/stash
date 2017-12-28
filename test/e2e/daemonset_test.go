@@ -31,6 +31,7 @@ var _ = Describe("DaemonSet", func() {
 			Skip("Missing repository credential")
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
+		recovery.Spec.Backend.StorageSecretName = cred.Name
 		daemon = f.DaemonSet()
 	})
 
@@ -134,7 +135,7 @@ var _ = Describe("DaemonSet", func() {
 			}, BeNumerically(">=", 1)))
 
 			By("Removing labels of DaemonSet " + daemon.Name)
-			_, err = ext_util.PatchDaemonSet(f.KubeClient, &daemon, func(in *extensions.DaemonSet) *extensions.DaemonSet {
+			_, _, err = ext_util.PatchDaemonSet(f.KubeClient, &daemon, func(in *extensions.DaemonSet) *extensions.DaemonSet {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}
@@ -378,7 +379,7 @@ var _ = Describe("DaemonSet", func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
-				recovery = f.RecoveryForRestic(restic.Name)
+				recovery = f.RecoveryForRestic(restic)
 			})
 			It(`should restore local daemonset backup`, shouldRestoreDemonset)
 		})
@@ -387,7 +388,7 @@ var _ = Describe("DaemonSet", func() {
 			BeforeEach(func() {
 				cred = f.SecretForS3Backend()
 				restic = f.ResticForS3Backend()
-				recovery = f.RecoveryForRestic(restic.Name)
+				recovery = f.RecoveryForRestic(restic)
 			})
 			It(`should restore s3 daemonset backup`, shouldRestoreDemonset)
 		})
