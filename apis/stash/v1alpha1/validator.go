@@ -41,11 +41,8 @@ func (r Recovery) IsValid() error {
 	if len(r.Spec.Paths) == 0 {
 		return fmt.Errorf("missing filegroup paths")
 	}
-	if len(r.Spec.VolumeMounts) == 0 {
-		return fmt.Errorf("missing vollume mounts")
-	}
-	if len(r.Spec.Volumes) == 0 {
-		return fmt.Errorf("missing target vollume")
+	if len(r.Spec.RecoveryVolumes) == 0 {
+		return fmt.Errorf("missing recovery vollume")
 	}
 
 	if err := r.Spec.Workload.Canonicalize(); err != nil {

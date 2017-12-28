@@ -356,6 +356,20 @@ func RecoveryEqual(old, new *api.Recovery) bool {
 }
 
 func CreateRecoveryJob(recovery *api.Recovery, tag string) *batch.Job {
+	volumes := make([]core.Volume, 0)
+	volumeMounts := make([]core.VolumeMount, 0)
+	for _, recVol := range recovery.Spec.RecoveryVolumes {
+		volumes = append(volumes, core.Volume{
+			Name:         recVol.Name,
+			VolumeSource: recVol.VolumeSource,
+		})
+		volumeMounts = append(volumeMounts, core.VolumeMount{
+			Name:      recVol.Name,
+			MountPath: recVol.MountPath,
+			SubPath:   recVol.SubPath,
+		})
+	}
+
 	job := &batch.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      RecoveryJobPrefix + recovery.Name,
@@ -386,14 +400,14 @@ func CreateRecoveryJob(recovery *api.Recovery, tag string) *batch.Job {
 								"--recovery-name=" + recovery.Name,
 								"--v=10",
 							},
-							VolumeMounts: append(recovery.Spec.VolumeMounts, core.VolumeMount{
+							VolumeMounts: append(volumeMounts, core.VolumeMount{
 								Name:      ScratchDirVolumeName,
 								MountPath: "/tmp",
-							}), // use volume mounts specified in restic
+							}),
 						},
 					},
 					RestartPolicy: core.RestartPolicyOnFailure,
-					Volumes: append(recovery.Spec.Volumes, core.Volume{
+					Volumes: append(volumes, core.Volume{
 						Name: ScratchDirVolumeName,
 						VolumeSource: core.VolumeSource{
 							EmptyDir: &core.EmptyDirVolumeSource{},

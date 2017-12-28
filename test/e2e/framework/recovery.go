@@ -25,12 +25,12 @@ func (fi *Invocation) RecoveryForRestic(restic api.Restic) api.Recovery {
 			Namespace: fi.namespace,
 		},
 		Spec: api.RecoverySpec{
-			Paths:        paths,
-			Backend:      restic.Spec.Backend,
-			VolumeMounts: restic.Spec.VolumeMounts,
-			Volumes: []core.Volume{
+			Paths:   paths,
+			Backend: restic.Spec.Backend,
+			RecoveryVolumes: []api.RecoveryVolume{
 				{
-					Name: TestSourceDataVolumeName,
+					Name:      TestSourceDataVolumeName,
+					MountPath: restic.Spec.VolumeMounts[0].MountPath,
 					VolumeSource: core.VolumeSource{
 						HostPath: &core.HostPathVolumeSource{
 							Path: "/data/stash-test/restic-restored",
