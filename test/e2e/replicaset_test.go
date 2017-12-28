@@ -32,6 +32,7 @@ var _ = Describe("ReplicaSet", func() {
 			Skip("Missing repository credential")
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
+		recovery.Spec.Backend.StorageSecretName = cred.Name
 		rs = f.ReplicaSet()
 	})
 
@@ -135,7 +136,7 @@ var _ = Describe("ReplicaSet", func() {
 			}, BeNumerically(">=", 1)))
 
 			By("Removing labels of ReplicaSet " + rs.Name)
-			_, err = ext_util.PatchReplicaSet(f.KubeClient, &rs, func(in *extensions.ReplicaSet) *extensions.ReplicaSet {
+			_, _, err = ext_util.PatchReplicaSet(f.KubeClient, &rs, func(in *extensions.ReplicaSet) *extensions.ReplicaSet {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}
@@ -406,7 +407,7 @@ var _ = Describe("ReplicaSet", func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
-				recovery = f.RecoveryForRestic(restic.Name)
+				recovery = f.RecoveryForRestic(restic)
 			})
 			It(`should restore local replicaset backup`, shouldRestoreReplicaSet)
 		})
@@ -415,7 +416,7 @@ var _ = Describe("ReplicaSet", func() {
 			BeforeEach(func() {
 				cred = f.SecretForS3Backend()
 				restic = f.ResticForS3Backend()
-				recovery = f.RecoveryForRestic(restic.Name)
+				recovery = f.RecoveryForRestic(restic)
 			})
 			It(`should restore s3 replicaset backup`, shouldRestoreReplicaSet)
 		})

@@ -35,6 +35,7 @@ var _ = Describe("Deployment", func() {
 			Skip("Missing repository credential")
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
+		recovery.Spec.Backend.StorageSecretName = cred.Name
 		deployment = f.Deployment()
 	})
 
@@ -138,7 +139,7 @@ var _ = Describe("Deployment", func() {
 			}, BeNumerically(">=", 1)))
 
 			By("Removing labels of Deployment " + deployment.Name)
-			_, err = apps_util.PatchDeployment(f.KubeClient, &deployment, func(in *apps.Deployment) *apps.Deployment {
+			_, _, err = apps_util.PatchDeployment(f.KubeClient, &deployment, func(in *apps.Deployment) *apps.Deployment {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}
@@ -412,7 +413,7 @@ var _ = Describe("Deployment", func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
-				recovery = f.RecoveryForRestic(restic.Name)
+				recovery = f.RecoveryForRestic(restic)
 			})
 			It(`should restore local deployment backup`, shouldRestoreDeployment)
 		})
@@ -421,7 +422,7 @@ var _ = Describe("Deployment", func() {
 			BeforeEach(func() {
 				cred = f.SecretForS3Backend()
 				restic = f.ResticForS3Backend()
-				recovery = f.RecoveryForRestic(restic.Name)
+				recovery = f.RecoveryForRestic(restic)
 			})
 			It(`should restore s3 deployment backup`, shouldRestoreDeployment)
 		})
@@ -440,7 +441,7 @@ var _ = Describe("Deployment", func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
-				recovery = f.RecoveryForRestic(restic.Name)
+				recovery = f.RecoveryForRestic(restic)
 			})
 			It(`should delete job after recovery deleted`, func() {
 				By("Creating restic " + restic.Name)
