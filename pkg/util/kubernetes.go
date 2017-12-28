@@ -358,13 +358,13 @@ func RecoveryEqual(old, new *api.Recovery) bool {
 func CreateRecoveryJob(recovery *api.Recovery, tag string) *batch.Job {
 	volumes := make([]core.Volume, 0)
 	volumeMounts := make([]core.VolumeMount, 0)
-	for _, recVol := range recovery.Spec.RecoveryVolumes {
+	for i, recVol := range recovery.Spec.RecoveredVolumes {
 		volumes = append(volumes, core.Volume{
-			Name:         recVol.Name,
+			Name:         fmt.Sprintf("vol-%d", i),
 			VolumeSource: recVol.VolumeSource,
 		})
 		volumeMounts = append(volumeMounts, core.VolumeMount{
-			Name:      recVol.Name,
+			Name:      fmt.Sprintf("vol-%d", i),
 			MountPath: recVol.MountPath,
 			SubPath:   recVol.SubPath,
 		})

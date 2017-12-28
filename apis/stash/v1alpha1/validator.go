@@ -41,7 +41,7 @@ func (r Recovery) IsValid() error {
 	if len(r.Spec.Paths) == 0 {
 		return fmt.Errorf("missing filegroup paths")
 	}
-	if len(r.Spec.RecoveryVolumes) == 0 {
+	if len(r.Spec.RecoveredVolumes) == 0 {
 		return fmt.Errorf("missing recovery vollume")
 	}
 

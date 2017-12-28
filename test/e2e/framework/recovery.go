@@ -27,9 +27,8 @@ func (fi *Invocation) RecoveryForRestic(restic api.Restic) api.Recovery {
 		Spec: api.RecoverySpec{
 			Paths:   paths,
 			Backend: restic.Spec.Backend,
-			RecoveryVolumes: []api.RecoveryVolume{
+			RecoveredVolumes: []api.RecoveredVolume{
 				{
-					Name:      TestSourceDataVolumeName,
 					MountPath: restic.Spec.VolumeMounts[0].MountPath,
 					VolumeSource: core.VolumeSource{
 						HostPath: &core.HostPathVolumeSource{

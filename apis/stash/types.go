@@ -155,12 +155,12 @@ type Recovery struct {
 }
 
 type RecoverySpec struct {
-	Backend         Backend             `json:"backend,omitempty"`
-	Paths           []string            `json:"paths,omitempty"`
-	Workload        LocalTypedReference `json:"workload,omitempty"`
-	PodOrdinal      string              `json:"podOrdinal,omitempty"`
-	NodeName        string              `json:"nodeName,omitempty"`
-	RecoveryVolumes []RecoveryVolume    `json:"recoveryVolumes,omitempty"`
+	Backend          Backend             `json:"backend,omitempty"`
+	Paths            []string            `json:"paths,omitempty"`
+	Workload         LocalTypedReference `json:"workload,omitempty"`
+	PodOrdinal       string              `json:"podOrdinal,omitempty"`
+	NodeName         string              `json:"nodeName,omitempty"`
+	RecoveredVolumes []RecoveredVolume   `json:"recoveredVolumes,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -171,8 +171,7 @@ type RecoveryList struct {
 	Items           []Recovery `json:"items,omitempty"`
 }
 
-type RecoveryVolume struct {
-	Name         string            `json:"name,omitempty"`
+type RecoveredVolume struct {
 	VolumeSource core.VolumeSource `json:"volumeSource,omitempty"`
 	MountPath    string            `json:"mountPath,omitempty"`
 	SubPath      string            `json:"subPath,omitempty"`
