@@ -172,7 +172,7 @@ type RecoveryList struct {
 }
 
 type RecoveredVolume struct {
-	VolumeSource core.VolumeSource `json:"volumeSource,omitempty"`
+	VolumeSource core.VolumeSource `json:",inline"`
 	MountPath    string            `json:"mountPath,omitempty"`
 	SubPath      string            `json:"subPath,omitempty"`
 }
