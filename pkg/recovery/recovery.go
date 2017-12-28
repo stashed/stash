@@ -14,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/record"
+	"github.com/appscode/restic/src/restic"
 )
 
 type Controller struct {
@@ -110,7 +111,7 @@ func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
 	}
 
 	cli := cli.New("/tmp", false, hostname)
-	if err = cli.SetupEnv(restic, secret, smartPrefix); err != nil {
+	if err = cli.SetupEnv(restic.Spec.Backend, secret, smartPrefix); err != nil {
 		return err
 	}
 

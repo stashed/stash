@@ -54,9 +54,9 @@ const (
 	OS_AUTH_TOKEN  = "OS_AUTH_TOKEN"
 )
 
-func (w *ResticWrapper) SetupEnv(resource *api.Restic, secret *core.Secret, autoPrefix string) error {
+func (w *ResticWrapper) SetupEnv(backend api.Backend, secret *core.Secret, autoPrefix string) error {
 	if v, ok := secret.Data[RESTIC_PASSWORD]; !ok {
-		return errors.New("Missing repository password")
+		return errors.New("missing repository password")
 	} else {
 		w.sh.SetEnv(RESTIC_PASSWORD, string(v))
 	}
@@ -67,7 +67,6 @@ func (w *ResticWrapper) SetupEnv(resource *api.Restic, secret *core.Secret, auto
 	}
 	w.sh.SetEnv(TMPDIR, tmpDir)
 
-	backend := resource.Spec.Backend
 	if backend.Local != nil {
 		r := filepath.Join(backend.Local.Path, autoPrefix)
 		if err := os.MkdirAll(r, 0755); err != nil {
