@@ -264,8 +264,8 @@ func CreateSidecarContainer(r *api.Restic, tag string, workload api.LocalTypedRe
 		})
 	}
 	if r.Spec.Backend.Local != nil {
-		_, volumeMount := SplitLocalSpec(*r.Spec.Backend.Local, LocalVolumeName)
-		sidecar.VolumeMounts = append(sidecar.VolumeMounts, volumeMount)
+		_, mnt := r.Spec.Backend.Local.ToVolumeAndMount(LocalVolumeName)
+		sidecar.VolumeMounts = append(sidecar.VolumeMounts, mnt)
 	}
 	return sidecar
 }
@@ -309,11 +309,11 @@ func MergeLocalVolume(volumes []core.Volume, old, new *api.Restic) []core.Volume
 		}
 	}
 	if new.Spec.Backend.Local != nil {
-		volume, _ := SplitLocalSpec(*new.Spec.Backend.Local, LocalVolumeName)
+		vol, _ := new.Spec.Backend.Local.ToVolumeAndMount(LocalVolumeName)
 		if oldPos != -1 {
-			volumes[oldPos] = volume
+			volumes[oldPos] = vol
 		} else {
-			volumes = core_util.UpsertVolume(volumes, volume)
+			volumes = core_util.UpsertVolume(volumes, vol)
 		}
 	} else {
 		if oldPos != -1 {
@@ -358,9 +358,9 @@ func CreateRecoveryJob(recovery *api.Recovery, tag string) *batch.Job {
 	volumes := make([]core.Volume, 0)
 	volumeMounts := make([]core.VolumeMount, 0)
 	for i, recVol := range recovery.Spec.RecoveredVolumes {
-		volume, volumeMount := SplitLocalSpec(recVol, fmt.Sprintf("vol-%d", i))
-		volumes = append(volumes, volume)
-		volumeMounts = append(volumeMounts, volumeMount)
+		vol, mnt := recVol.ToVolumeAndMount(fmt.Sprintf("vol-%d", i))
+		volumes = append(volumes, vol)
+		volumeMounts = append(volumeMounts, mnt)
 	}
 
 	job := &batch.Job{
@@ -414,10 +414,10 @@ func CreateRecoveryJob(recovery *api.Recovery, tag string) *batch.Job {
 
 	// local backend
 	if recovery.Spec.Backend.Local != nil {
-		volume, volumeMount := SplitLocalSpec(*recovery.Spec.Backend.Local, LocalVolumeName)
+		vol, mnt := recovery.Spec.Backend.Local.ToVolumeAndMount(LocalVolumeName)
 		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(
-			job.Spec.Template.Spec.Containers[0].VolumeMounts, volumeMount)
-		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, volume)
+			job.Spec.Template.Spec.Containers[0].VolumeMounts, mnt)
+		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, vol)
 	}
 
 	return job
@@ -544,24 +544,11 @@ func CreateCheckJob(restic *api.Restic, hostName string, smartPrefix string, tag
 	// local backend
 	// user don't need to specify "stash-local" volume, we collect it from restic-spec
 	if restic.Spec.Backend.Local != nil {
-		volume, volumeMount := SplitLocalSpec(*restic.Spec.Backend.Local, LocalVolumeName)
+		vol, mnt := restic.Spec.Backend.Local.ToVolumeAndMount(LocalVolumeName)
 		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(
-			job.Spec.Template.Spec.Containers[0].VolumeMounts, volumeMount)
-		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, volume)
+			job.Spec.Template.Spec.Containers[0].VolumeMounts, mnt)
+		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, vol)
 	}
 
 	return job
-}
-
-func SplitLocalSpec(localSpec api.LocalSpec, name string) (core.Volume, core.VolumeMount) {
-	volume := core.Volume{
-		Name:         name,
-		VolumeSource: localSpec.VolumeSource,
-	}
-	volumeMount := core.VolumeMount{
-		Name:      name,
-		MountPath: localSpec.MountPath,
-		SubPath:   localSpec.SubPath,
-	}
-	return volume, volumeMount
 }
