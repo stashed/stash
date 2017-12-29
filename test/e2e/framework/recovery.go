@@ -29,7 +29,7 @@ func (fi *Invocation) RecoveryForRestic(restic api.Restic) api.Recovery {
 			Backend: restic.Spec.Backend,
 			RecoveredVolumes: []api.LocalSpec{
 				{
-					Path: restic.Spec.VolumeMounts[0].MountPath,
+					MountPath: restic.Spec.VolumeMounts[0].MountPath,
 					VolumeSource: core.VolumeSource{
 						HostPath: &core.HostPathVolumeSource{
 							Path: "/data/stash-test/restic-restored",

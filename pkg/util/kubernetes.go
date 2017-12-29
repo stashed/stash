@@ -560,7 +560,7 @@ func SplitLocalSpec(localSpec api.LocalSpec, name string) (core.Volume, core.Vol
 	}
 	volumeMount := core.VolumeMount{
 		Name:      name,
-		MountPath: localSpec.Path,
+		MountPath: localSpec.MountPath,
 		SubPath:   localSpec.SubPath,
 	}
 	return volume, volumeMount

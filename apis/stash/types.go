@@ -78,7 +78,7 @@ type Backend struct {
 
 type LocalSpec struct {
 	VolumeSource core.VolumeSource `json:",inline"`
-	Path         string            `json:"path,omitempty"`
+	MountPath    string            `json:"mountPath,omitempty"`
 	SubPath      string            `json:"subPath,omitempty"`
 }
 

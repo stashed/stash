@@ -21,12 +21,13 @@ limitations under the License.
 package v1alpha1
 
 import (
+	unsafe "unsafe"
+
 	stash "github.com/appscode/stash/apis/stash"
 	v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
-	unsafe "unsafe"
 )
 
 func init() {
@@ -202,7 +203,7 @@ func Convert_stash_GCSSpec_To_v1alpha1_GCSSpec(in *stash.GCSSpec, out *GCSSpec, 
 
 func autoConvert_v1alpha1_LocalSpec_To_stash_LocalSpec(in *LocalSpec, out *stash.LocalSpec, s conversion.Scope) error {
 	out.VolumeSource = in.VolumeSource
-	out.Path = in.Path
+	out.MountPath = in.MountPath
 	out.SubPath = in.SubPath
 	return nil
 }
@@ -214,7 +215,7 @@ func Convert_v1alpha1_LocalSpec_To_stash_LocalSpec(in *LocalSpec, out *stash.Loc
 
 func autoConvert_stash_LocalSpec_To_v1alpha1_LocalSpec(in *stash.LocalSpec, out *LocalSpec, s conversion.Scope) error {
 	out.VolumeSource = in.VolumeSource
-	out.Path = in.Path
+	out.MountPath = in.MountPath
 	out.SubPath = in.SubPath
 	return nil
 }

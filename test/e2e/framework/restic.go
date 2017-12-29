@@ -53,7 +53,7 @@ func (fi *Invocation) ResticForLocalBackend() api.Restic {
 	r.Spec.Backend = api.Backend{
 		StorageSecretName: "",
 		Local: &api.LocalSpec{
-			Path: "/safe/data",
+			MountPath: "/safe/data",
 			VolumeSource: core.VolumeSource{
 				EmptyDir: &core.EmptyDirVolumeSource{},
 			},
@@ -67,7 +67,7 @@ func (fi *Invocation) ResticForHostPathLocalBackend() api.Restic {
 	r.Spec.Backend = api.Backend{
 		StorageSecretName: "",
 		Local: &api.LocalSpec{
-			Path: "/safe/data",
+			MountPath: "/safe/data",
 			VolumeSource: core.VolumeSource{
 				HostPath: &core.HostPathVolumeSource{
 					Path: "/data/stash-test/restic-repo",
