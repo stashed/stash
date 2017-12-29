@@ -210,16 +210,19 @@ func (c *StashController) runResticInjector(key string) error {
 				in.Spec.JobTemplate.Labels[util.AnnotationRestic] = restic.Name
 				in.Spec.JobTemplate.Labels[util.AnnotationOperation] = util.OperationDeletePods
 
-				core_util.UpsertContainer(in.Spec.JobTemplate.Spec.Template.Spec.Containers, core.Container{
-					Name:  util.KubectlContainer,
-					Image: docker.ImageKubectl + ":" + c.options.KubectlImageTag,
-					Args: []string{
-						"kubectl",
-						"delete",
-						"pods",
-						"-l " + selector.String(),
-					},
-				})
+				in.Spec.JobTemplate.Spec.Template.Spec.Containers = core_util.UpsertContainer(
+					in.Spec.JobTemplate.Spec.Template.Spec.Containers,
+					core.Container{
+						Name:  util.KubectlContainer,
+						Image: docker.ImageKubectl + ":" + c.options.KubectlImageTag,
+						Args: []string{
+							"kubectl",
+							"delete",
+							"pods",
+							"-l " + selector.String(),
+						},
+					})
+
 				in.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
 				if c.options.EnableRBAC {
 					in.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = in.Name

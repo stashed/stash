@@ -68,7 +68,7 @@ func (w *ResticWrapper) SetupEnv(backend api.Backend, secret *core.Secret, autoP
 	w.sh.SetEnv(TMPDIR, tmpDir)
 
 	if backend.Local != nil {
-		r := filepath.Join(backend.Local.Path, autoPrefix)
+		r := filepath.Join(backend.Local.MountPath, autoPrefix)
 		if err := os.MkdirAll(r, 0755); err != nil {
 			return err
 		}

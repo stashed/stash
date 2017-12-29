@@ -77,8 +77,9 @@ type Backend struct {
 }
 
 type LocalSpec struct {
-	VolumeSource core.VolumeSource `json:"volumeSource,omitempty"`
-	Path         string            `json:"path,omitempty"`
+	VolumeSource core.VolumeSource `json:",inline"`
+	MountPath    string            `json:"mountPath,omitempty"`
+	SubPath      string            `json:"subPath,omitempty"`
 }
 
 type S3Spec struct {
@@ -160,7 +161,7 @@ type RecoverySpec struct {
 	Workload         LocalTypedReference `json:"workload,omitempty"`
 	PodOrdinal       string              `json:"podOrdinal,omitempty"`
 	NodeName         string              `json:"nodeName,omitempty"`
-	RecoveredVolumes []RecoveredVolume   `json:"recoveredVolumes,omitempty"`
+	RecoveredVolumes []LocalSpec         `json:"recoveredVolumes,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -169,12 +170,6 @@ type RecoveryList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Recovery `json:"items,omitempty"`
-}
-
-type RecoveredVolume struct {
-	VolumeSource core.VolumeSource `json:",inline"`
-	MountPath    string            `json:"mountPath,omitempty"`
-	SubPath      string            `json:"subPath,omitempty"`
 }
 
 // LocalTypedReference contains enough information to let you inspect or modify the referred object.
