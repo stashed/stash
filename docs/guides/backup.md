@@ -120,9 +120,8 @@ spec:
   backend:
     local:
       path: /safe/data
-      volumeSource:
-        hostPath:
-          path: /data/stash-test/restic-repo
+      hostPath:
+        path: /data/stash-test/restic-repo
     storageSecretName: stash-demo
   schedule: '@every 1m'
   volumeMounts:
@@ -305,9 +304,8 @@ spec:
   backend:
     local:
       path: /safe/data
-      volumeSource:
-        hostPath:
-          path: /data/stash-test/restic-repo
+      hostPath:
+        path: /data/stash-test/restic-repo
     storageSecretName: stash-demo
   fileGroups:
   - path: /source/data

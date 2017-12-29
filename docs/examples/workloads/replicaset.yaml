@@ -72,9 +72,8 @@ spec:
   backend:
     local:
       path: /repo
-      volumeSource:
-        hostPath:
-          path: /data/stash-test/restic-repo
+      hostPath:
+        path: /data/stash-test/restic-repo
     storageSecretName: replicaset-secret
   schedule: '@every 1m'
   volumeMounts:
