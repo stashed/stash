@@ -9,14 +9,14 @@ spec:
     name: stash-demo
   backend:
     local:
-      path: /safe/data
+      mountPath: /safe/data
       hostPath:
         path: /data/stash-test/restic-repo
     storageSecretName: stash-demo
   paths:
   - /source/data
   recoveredVolumes:
-  - path: /source/data
+  - mountPath: /source/data
     hostPath:
       path: /data/stash-test/restic-restored
 

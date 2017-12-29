@@ -40,7 +40,7 @@ spec:
     retentionPolicyName: 'keep-last-5'
   backend:
     local:
-      path: /safe/data
+      mountPath: /safe/data
       hostPath:
         path: /data/stash-test/restic-repo
     storageSecretName: stash-demo

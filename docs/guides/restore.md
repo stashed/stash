@@ -22,14 +22,14 @@ spec:
     name: stash-demo
   backend:
     local:
-      path: /safe/data
+      mountPath: /safe/data
       hostPath:
         path: /data/stash-test/restic-repo
     storageSecretName: stash-demo
   paths:
   - /source/data
   recoveredVolumes:
-  - path: /source/data
+  - mountPath: /source/data
     hostPath:
       path: /data/stash-test/restic-restored
 ```
@@ -39,9 +39,9 @@ Here,
     - For workload kind `Statefulset`, you need to specify pod [index](https://kubernetes.io/docs/guides/stateful-application/basic-stateful-set/#pods-in-a-statefulset) using `spec.podOrdinal`.
     - For workload kind `Daemonset`, you need to specify node name using `spec.nodeName`.
  - `spec.backend` specifies the backend that was used in `Restic` to take backups.
- - `spec.path` specifies the file-group paths that was backed up using `Restic`.
- - `spec.recoveredVolumes` indicates an array of volumes where snapshots will be recovered. Here, `path` specifies where the volume will be mounted.
- Note that, `Recovery` recovers data in the same paths from where backup was taken (specified in `spec.path`). So, volumes must be mounted on those paths or their parent paths.
+ - `spec.paths` specifies the file-group paths that was backed up using `Restic`.
+ - `spec.recoveredVolumes` indicates an array of volumes where snapshots will be recovered. Here, `mountPath` specifies where the volume will be mounted.
+ Note that, `Recovery` recovers data in the same paths from where backup was taken (specified in `spec.paths`). So, volumes must be mounted on those paths or their parent paths.
 
 Stash operator watches for `Recovery` objects using Kubernetes api. It collects required snapshot information from the specified `Restic` object. Then it creates a recovery job that performs the recovery guides. On completion, job and associated pods are deleted by stash operator. To verify recovery, we can check the `Recovery` status.
 
@@ -68,14 +68,14 @@ spec:
     name: stash-demo
   backend:
     local:
-      path: /safe/data
+      mountPath: /safe/data
       hostPath:
         path: /data/stash-test/restic-repo
     storageSecretName: stash-demo
   paths:
   - /source/data
   recoveredVolumes:
-  - path: /source/data
+  - mountPath: /source/data
     hostPath:
       path: /data/stash-test/restic-restored
 status:

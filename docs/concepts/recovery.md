@@ -37,14 +37,14 @@ spec:
     name: stash-demo
   backend:
     local:
-      path: /safe/data
+      mountPath: /safe/data
       hostPath:
         path: /data/stash-test/restic-repo
     storageSecretName: stash-demo
   paths:
   - /source/data
   recoveredVolumes:
-  - path: /source/data
+  - mountPath: /source/data
     hostPath:
       path: /data/stash-test/restic-restored
 ```
@@ -70,14 +70,14 @@ spec:
   podOrdinal: 0
   backend:
     local:
-      path: /safe/data
+      mountPath: /safe/data
       hostPath:
         path: /data/stash-test/restic-repo
     storageSecretName: stash-demo
   paths:
   - /source/data
   recoveredVolumes:
-  - path: /source/data
+  - mountPath: /source/data
     hostPath:
       path: /data/stash-test/restic-restored
 ```
@@ -99,14 +99,14 @@ spec:
   nodeName: minikube
   backend:
     local:
-      path: /safe/data
+      mountPath: /safe/data
       hostPath:
         path: /data/stash-test/restic-repo
     storageSecretName: stash-demo
   paths:
   - /source/data
   recoveredVolumes:
-  - path: /source/data
+  - mountPath: /source/data
     hostPath:
       path: /data/stash-test/restic-restored
 ```
@@ -115,19 +115,19 @@ spec:
 Specifies the backend that was used in `Restic` to take backups.
 To learn how to configure various backends for Restic, please visit [here](/docs/guides/backends.md).
 
-### spec.path
+### spec.paths
 Array of strings specifying the file-group paths that was backed up using `Restic`.
 
 ### spec.recoveredVolumes
-Indicates an array of volumes where snapshots will be recovered. Here, `path` specifies where the volume will be mounted. 
-Note that, `Recovery` recovers data in the same paths from where backup was taken (specified in `spec.path`). So, volumes must be mounted on those paths or their parent paths.
+Indicates an array of volumes where snapshots will be recovered. Here, `path` specifies where the volume will be mounted.
+Note that, `Recovery` recovers data in the same paths from where backup was taken (specified in `spec.paths`). So, volumes must be mounted on those paths or their parent paths.
 Following parameters are available for `recoveredVolumes`.
 
 | Parameter                       | Description                                                                                   |
 |---------------------------------|-----------------------------------------------------------------------------------------------|
-| `recoveredVolumes.path`         | `Required`. Path where this volume will be mounted in the sidecar container. Example: `/repo` |
+| `recoveredVolumes.mountPath`    | `Required`. Path where this volume will be mounted in the sidecar container. Example: `/repo` |
 | `recoveredVolumes.subPath`      | `Optional`. Sub-path inside the referenced volume instead of its root.                        |
-| `recoveredVolumes.VolumeSource` | `Required`. Any Kubernetes volume. Can be specified inlined. Example: `hostPath`   
+| `recoveredVolumes.VolumeSource` | `Required`. Any Kubernetes volume. Can be specified inlined. Example: `hostPath`
 
 ## Recovery Status
 

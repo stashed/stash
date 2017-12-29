@@ -78,7 +78,7 @@ spec:
     retentionPolicyName: 'keep-last-5'
   backend:
     local:
-      path: /repo
+      mountPath: /repo
       hostPath:
         path: /data/stash-test/restic-repo
     storageSecretName: local-secret
