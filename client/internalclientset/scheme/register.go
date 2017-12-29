@@ -17,8 +17,6 @@ limitations under the License.
 package scheme
 
 import (
-	os "os"
-
 	stash "github.com/appscode/stash/apis/stash/install"
 	announced "k8s.io/apimachinery/pkg/apimachinery/announced"
 	registered "k8s.io/apimachinery/pkg/apimachinery/registered"
@@ -26,6 +24,7 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
+	os "os"
 )
 
 var Scheme = runtime.NewScheme()

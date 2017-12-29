@@ -264,10 +264,8 @@ func CreateSidecarContainer(r *api.Restic, tag string, workload api.LocalTypedRe
 		})
 	}
 	if r.Spec.Backend.Local != nil {
-		sidecar.VolumeMounts = append(sidecar.VolumeMounts, core.VolumeMount{
-			Name:      LocalVolumeName,
-			MountPath: r.Spec.Backend.Local.Path,
-		})
+		_, volumeMount := SplitLocalSpec(*r.Spec.Backend.Local, LocalVolumeName)
+		sidecar.VolumeMounts = append(sidecar.VolumeMounts, volumeMount)
 	}
 	return sidecar
 }
@@ -311,10 +309,11 @@ func MergeLocalVolume(volumes []core.Volume, old, new *api.Restic) []core.Volume
 		}
 	}
 	if new.Spec.Backend.Local != nil {
+		volume, _ := SplitLocalSpec(*new.Spec.Backend.Local, LocalVolumeName)
 		if oldPos != -1 {
-			volumes[oldPos] = core.Volume{Name: LocalVolumeName, VolumeSource: new.Spec.Backend.Local.VolumeSource}
+			volumes[oldPos] = volume
 		} else {
-			volumes = core_util.UpsertVolume(volumes, core.Volume{Name: LocalVolumeName, VolumeSource: new.Spec.Backend.Local.VolumeSource})
+			volumes = core_util.UpsertVolume(volumes, volume)
 		}
 	} else {
 		if oldPos != -1 {
@@ -359,15 +358,9 @@ func CreateRecoveryJob(recovery *api.Recovery, tag string) *batch.Job {
 	volumes := make([]core.Volume, 0)
 	volumeMounts := make([]core.VolumeMount, 0)
 	for i, recVol := range recovery.Spec.RecoveredVolumes {
-		volumes = append(volumes, core.Volume{
-			Name:         fmt.Sprintf("vol-%d", i),
-			VolumeSource: recVol.VolumeSource,
-		})
-		volumeMounts = append(volumeMounts, core.VolumeMount{
-			Name:      fmt.Sprintf("vol-%d", i),
-			MountPath: recVol.MountPath,
-			SubPath:   recVol.SubPath,
-		})
+		volume, volumeMount := SplitLocalSpec(recVol, fmt.Sprintf("vol-%d", i))
+		volumes = append(volumes, volume)
+		volumeMounts = append(volumeMounts, volumeMount)
 	}
 
 	job := &batch.Job{
@@ -421,18 +414,10 @@ func CreateRecoveryJob(recovery *api.Recovery, tag string) *batch.Job {
 
 	// local backend
 	if recovery.Spec.Backend.Local != nil {
-		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts,
-			core.VolumeMount{
-				Name:      LocalVolumeName,
-				MountPath: recovery.Spec.Backend.Local.Path,
-			})
-
-		// user don't need to specify "stash-local" volume, we collect it from restic-spec
-		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes,
-			core.Volume{
-				Name:         LocalVolumeName,
-				VolumeSource: recovery.Spec.Backend.Local.VolumeSource,
-			})
+		volume, volumeMount := SplitLocalSpec(*recovery.Spec.Backend.Local, LocalVolumeName)
+		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(
+			job.Spec.Template.Spec.Containers[0].VolumeMounts, volumeMount)
+		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, volume)
 	}
 
 	return job
@@ -557,20 +542,26 @@ func CreateCheckJob(restic *api.Restic, hostName string, smartPrefix string, tag
 	}
 
 	// local backend
+	// user don't need to specify "stash-local" volume, we collect it from restic-spec
 	if restic.Spec.Backend.Local != nil {
-		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts,
-			core.VolumeMount{
-				Name:      LocalVolumeName,
-				MountPath: restic.Spec.Backend.Local.Path,
-			})
-
-		// user don't need to specify "stash-local" volume, we collect it from restic-spec
-		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes,
-			core.Volume{
-				Name:         LocalVolumeName,
-				VolumeSource: restic.Spec.Backend.Local.VolumeSource,
-			})
+		volume, volumeMount := SplitLocalSpec(*restic.Spec.Backend.Local, LocalVolumeName)
+		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(
+			job.Spec.Template.Spec.Containers[0].VolumeMounts, volumeMount)
+		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, volume)
 	}
 
 	return job
+}
+
+func SplitLocalSpec(localSpec api.LocalSpec, name string) (core.Volume, core.VolumeMount) {
+	volume := core.Volume{
+		Name:         name,
+		VolumeSource: localSpec.VolumeSource,
+	}
+	volumeMount := core.VolumeMount{
+		Name:      name,
+		MountPath: localSpec.Path,
+		SubPath:   localSpec.SubPath,
+	}
+	return volume, volumeMount
 }
