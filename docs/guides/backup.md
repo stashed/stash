@@ -119,10 +119,9 @@ spec:
     retentionPolicyName: 'keep-last-5'
   backend:
     local:
-      path: /safe/data
-      volumeSource:
-        hostPath:
-          path: /data/stash-test/restic-repo
+      mountPath: /safe/data
+      hostPath:
+        path: /data/stash-test/restic-repo
     storageSecretName: stash-demo
   schedule: '@every 1m'
   volumeMounts:
@@ -304,10 +303,9 @@ metadata:
 spec:
   backend:
     local:
-      path: /safe/data
-      volumeSource:
-        hostPath:
-          path: /data/stash-test/restic-repo
+      mountPath: /safe/data
+      hostPath:
+        path: /data/stash-test/restic-repo
     storageSecretName: stash-demo
   fileGroups:
   - path: /source/data

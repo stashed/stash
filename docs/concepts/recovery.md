@@ -32,20 +32,24 @@ metadata:
   name: stash-demo
   namespace: default
 spec:
-  restic: stash-demo
   workload:
     kind: Deployment
     name: stash-demo
-  volumes:
-  - name: restored-data
+  backend:
+    local:
+      mountPath: /safe/data
+      hostPath:
+        path: /data/stash-test/restic-repo
+    storageSecretName: stash-demo
+  paths:
+  - /source/data
+  recoveredVolumes:
+  - mountPath: /source/data
     hostPath:
       path: /data/stash-test/restic-restored
 ```
 
 The `.spec` section has following parts:
-
-### spec.restic
-`spec.restic` specifies the `Restic` name that was used to take backups.
 
 ### spec.workload
 `spec.workload` specifies a target workload that was backed up using `Restic`. A single `Restic` backups all types of workloads that matches the label-selector, but you can only restore a specific workload using a `Recovery`.
@@ -60,13 +64,20 @@ metadata:
   name: statefulset-demo
   namespace: default
 spec:
-  restic: statefulset-demo
   workload:
     kind: Statefulset
     name: statefulset-demo
   podOrdinal: 0
-  volumes:
-  - name: restored-data
+  backend:
+    local:
+      mountPath: /safe/data
+      hostPath:
+        path: /data/stash-test/restic-repo
+    storageSecretName: stash-demo
+  paths:
+  - /source/data
+  recoveredVolumes:
+  - mountPath: /source/data
     hostPath:
       path: /data/stash-test/restic-restored
 ```
@@ -86,14 +97,37 @@ spec:
     kind: Daemonset
     name: daemonset-demo
   nodeName: minikube
-  volumes:
-  - name: restored-data
+  backend:
+    local:
+      mountPath: /safe/data
+      hostPath:
+        path: /data/stash-test/restic-repo
+    storageSecretName: stash-demo
+  paths:
+  - /source/data
+  recoveredVolumes:
+  - mountPath: /source/data
     hostPath:
       path: /data/stash-test/restic-restored
 ```
 
-### spec.volumes
-`spec.volumes` indicates an array of volumes where snapshots will be recovered. Here, `volume.name` should be same as the workload volume name that was backed up using `Restic`.
+### spec.backend
+Specifies the backend that was used in `Restic` to take backups.
+To learn how to configure various backends for Restic, please visit [here](/docs/guides/backends.md).
+
+### spec.paths
+Array of strings specifying the file-group paths that was backed up using `Restic`.
+
+### spec.recoveredVolumes
+Indicates an array of volumes where snapshots will be recovered. Here, `path` specifies where the volume will be mounted.
+Note that, `Recovery` recovers data in the same paths from where backup was taken (specified in `spec.paths`). So, volumes must be mounted on those paths or their parent paths.
+Following parameters are available for `recoveredVolumes`.
+
+| Parameter                       | Description                                                                                   |
+|---------------------------------|-----------------------------------------------------------------------------------------------|
+| `recoveredVolumes.mountPath`    | `Required`. Path where this volume will be mounted in the sidecar container. Example: `/repo` |
+| `recoveredVolumes.subPath`      | `Optional`. Sub-path inside the referenced volume instead of its root.                        |
+| `recoveredVolumes.VolumeSource` | `Required`. Any Kubernetes volume. Can be specified inlined. Example: `hostPath`
 
 ## Recovery Status
 

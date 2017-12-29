@@ -52,10 +52,11 @@ type: Opaque
 
 Now, you can create a Restic tpr using this secret. Following parameters are available for `Local` backend.
 
-| Parameter      | Description                                                                                 |
-|----------------|---------------------------------------------------------------------------------------------|
-| `local.path`   | `Required`. Path where this volume will be mounted in the sidecar container. Example: /repo |
-| `local.volume` | `Required`. Any Kubernetes volume                                                           |
+| Parameter            | Description                                                                                   |
+|----------------------|-----------------------------------------------------------------------------------------------|
+| `local.path`         | `Required`. Path where this volume will be mounted in the sidecar container. Example: `/repo` |
+| `local.subPath`      | `Optional`. Sub-path inside the referenced volume instead of its root.                        |
+| `local.VolumeSource` | `Required`. Any Kubernetes volume. Can be specified inlined. Example: `hostPath`              |
 
 ```console
 $ kubectl apply -f ./docs/examples/backends/local/local-restic.yaml
@@ -77,10 +78,9 @@ spec:
     retentionPolicyName: 'keep-last-5'
   backend:
     local:
-      path: /repo
-      volumeSource:
-        hostPath:
-          path: /data/stash-test/restic-repo
+      mountPath: /repo
+      hostPath:
+        path: /data/stash-test/restic-repo
     storageSecretName: local-secret
   schedule: '@every 1m'
   volumeMounts:

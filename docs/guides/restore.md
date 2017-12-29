@@ -17,22 +17,31 @@ metadata:
   name: stash-demo
   namespace: default
 spec:
-  restic: stash-demo
   workload:
     kind: Deployment
     name: stash-demo
-  volumes:
-  - name: source-data
+  backend:
+    local:
+      mountPath: /safe/data
+      hostPath:
+        path: /data/stash-test/restic-repo
+    storageSecretName: stash-demo
+  paths:
+  - /source/data
+  recoveredVolumes:
+  - mountPath: /source/data
     hostPath:
       path: /data/stash-test/restic-restored
 ```
 
 Here,
- - `spec.restic` specifies the `Restic` name that was used to take backups.
  - `spec.workload` specifies a target workload that was backed up using `Restic`. A single `Restic` backups all types of workloads that matches the label-selector, but you can only restore a specific workload using a `Recovery`.
     - For workload kind `Statefulset`, you need to specify pod [index](https://kubernetes.io/docs/guides/stateful-application/basic-stateful-set/#pods-in-a-statefulset) using `spec.podOrdinal`.
     - For workload kind `Daemonset`, you need to specify node name using `spec.nodeName`.
- - `spec.volumes` indicates an array of volumes where snapshots will be recovered. Here, `name` should be same as the workload volume name that was backed up using `Restic`.
+ - `spec.backend` specifies the backend that was used in `Restic` to take backups.
+ - `spec.paths` specifies the file-group paths that was backed up using `Restic`.
+ - `spec.recoveredVolumes` indicates an array of volumes where snapshots will be recovered. Here, `mountPath` specifies where the volume will be mounted.
+ Note that, `Recovery` recovers data in the same paths from where backup was taken (specified in `spec.paths`). So, volumes must be mounted on those paths or their parent paths.
 
 Stash operator watches for `Recovery` objects using Kubernetes api. It collects required snapshot information from the specified `Restic` object. Then it creates a recovery job that performs the recovery guides. On completion, job and associated pods are deleted by stash operator. To verify recovery, we can check the `Recovery` status.
 
@@ -54,14 +63,21 @@ metadata:
   selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/recoveries/stash-demo
   uid: 2bf74432-d8bc-11e7-be92-0800277f19c0
 spec:
-  restic: stash-demo
-  volumes:
-  - hostPath:
-      path: /data/stash-test/restic-restored
-    name: source-data
   workload:
     kind: Deployment
     name: stash-demo
+  backend:
+    local:
+      mountPath: /safe/data
+      hostPath:
+        path: /data/stash-test/restic-repo
+    storageSecretName: stash-demo
+  paths:
+  - /source/data
+  recoveredVolumes:
+  - mountPath: /source/data
+    hostPath:
+      path: /data/stash-test/restic-restored
 status:
   phase: Succeeded
 ```
