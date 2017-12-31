@@ -54,7 +54,7 @@ Now, you can create a Restic tpr using this secret. Following parameters are ava
 
 | Parameter            | Description                                                                                   |
 |----------------------|-----------------------------------------------------------------------------------------------|
-| `local.path`         | `Required`. Path where this volume will be mounted in the sidecar container. Example: `/repo` |
+| `local.mountPath`    | `Required`. Path where this volume will be mounted in the sidecar container. Example: `/repo` |
 | `local.subPath`      | `Optional`. Sub-path inside the referenced volume instead of its root.                        |
 | `local.VolumeSource` | `Required`. Any Kubernetes volume. Can be specified inlined. Example: `hostPath`              |
 
