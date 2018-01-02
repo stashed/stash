@@ -6,6 +6,7 @@ import (
 
 	. "github.com/appscode/go/types"
 	"github.com/appscode/kutil"
+	core_util "github.com/appscode/kutil/core/v1"
 	"github.com/golang/glog"
 	apps "k8s.io/api/apps/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -85,4 +86,24 @@ func WaitUntilDeploymentReady(c kubernetes.Interface, meta metav1.ObjectMeta) er
 		}
 		return false, nil
 	})
+}
+
+func DeleteDeployment(kubeClient kubernetes.Interface, meta metav1.ObjectMeta) error {
+	deployment, err := kubeClient.AppsV1beta1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	if err != nil {
+		if kerr.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+	deletePolicy := metav1.DeletePropagationForeground
+	if err := kubeClient.AppsV1beta1().Deployments(deployment.Namespace).Delete(deployment.Name, &metav1.DeleteOptions{
+		PropagationPolicy: &deletePolicy,
+	}); err != nil && !kerr.IsNotFound(err) {
+		return err
+	}
+	if err := core_util.WaitUntilPodDeletedBySelector(kubeClient, deployment.Namespace, deployment.Spec.Selector); err != nil {
+		return err
+	}
+	return nil
 }

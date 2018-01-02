@@ -1,6 +1,9 @@
 package kutil
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 const (
 	RetryInterval    = 50 * time.Millisecond
@@ -16,4 +19,8 @@ const (
 	VerbPatched   VerbType = "patched"
 	VerbUpdated   VerbType = "updated"
 	VerbDeleted   VerbType = "deleted"
+)
+
+var (
+	ErrNotFound = errors.New("not found")
 )
