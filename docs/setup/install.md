@@ -2,13 +2,13 @@
 title: Install
 description: Stash Install
 menu:
-  product_stash_0.6.0:
+  product_stash_0.6.1:
     identifier: install-stash
     name: Install
     parent: setup
     weight: 10
 product_name: stash
-menu_name: product_stash_0.6.0
+menu_name: product_stash_0.6.1
 section_menu_id: setup
 ---
 
@@ -19,11 +19,11 @@ Stash can be installed using YAML files includes in the [/hack/deploy](https://g
 
 ```console
 # Install without RBAC roles
-$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.6.0/hack/deploy/without-rbac.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.6.1/hack/deploy/without-rbac.yaml
 
 
 # Install with RBAC roles
-$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.6.0/hack/deploy/with-rbac.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.6.1/hack/deploy/with-rbac.yaml
 ```
 
 ## Using Helm
@@ -97,13 +97,13 @@ $ POD_NAMESPACE=kube-system
 $ POD_NAME=$(kubectl get pods -n $POD_NAMESPACE -l app=stash -o jsonpath={.items[0].metadata.name})
 $ kubectl exec -it $POD_NAME -c operator -n $POD_NAMESPACE stash version
 
-Version = 0.6.0
+Version = 0.6.1
 VersionStrategy = tag
 Os = alpine
 Arch = amd64
 CommitHash = 85b0f16ab1b915633e968aac0ee23f877808ef49
 GitBranch = release-0.5
-GitTag = 0.6.0
+GitTag = 0.6.1
 CommitTimestamp = 2017-10-10T05:24:23
 
 $ kubectl exec -it $POD_NAME -c operator -n $POD_NAMESPACE restic version

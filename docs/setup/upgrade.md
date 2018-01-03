@@ -2,21 +2,21 @@
 title: Upgrade | Stash
 description: Stash Upgrade
 menu:
-  product_stash_0.6.0:
+  product_stash_0.6.1:
     identifier: upgrade-stash
     name: Upgrade
     parent: setup
     weight: 15
 product_name: stash
-menu_name: product_stash_0.6.0
+menu_name: product_stash_0.6.1
 section_menu_id: setup
 ---
 
 # Upgrading Stash
 
-## Upgrading from 0.5.1 to 0.6.0
+## Upgrading from 0.5.1 to 0.6.1
 
-The format for `Restic` object has changed in backward incompatiable manner between 0.5.x and 0.6.0 . The steps involved in upgrading Stash operator to 0.6.0 from prior version involves the following steps:
+The format for `Restic` object has changed in backward incompatiable manner between 0.5.x and 0.6.1 . The steps involved in upgrading Stash operator to 0.6.1 from prior version involves the following steps:
 
 1. Backup all your old `Restic` CRDs.
 2. Delete your old `Restic` objects. It will stop taking backups and remove sidecars from pods.
