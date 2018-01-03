@@ -10,6 +10,7 @@ import (
 
 	core_util "github.com/appscode/kutil/core/v1"
 	"github.com/appscode/kutil/meta"
+	"github.com/appscode/kutil/tools/analytics"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/docker"
@@ -42,6 +43,10 @@ const (
 	OperationCheck      = "check"
 	OperationDeletePods = "delete-pods"
 	AppLabelStash       = "stash"
+)
+
+var (
+	AnalyticsClientID string
 )
 
 func GetAppliedRestic(m map[string]string) (*api.Restic, error) {
@@ -236,6 +241,10 @@ func CreateSidecarContainer(r *api.Restic, tag string, workload api.LocalTypedRe
 					},
 				},
 			},
+			{
+				Name:  analytics.Key,
+				Value: AnalyticsClientID,
+			},
 		},
 		Resources: r.Spec.Resources,
 		VolumeMounts: []core.VolumeMount{
@@ -393,6 +402,12 @@ func CreateRecoveryJob(recovery *api.Recovery, tag string) *batch.Job {
 								"--recovery-name=" + recovery.Name,
 								"--v=10",
 							},
+							Env: []core.EnvVar{
+								{
+									Name:  analytics.Key,
+									Value: AnalyticsClientID,
+								},
+							},
 							VolumeMounts: append(volumeMounts, core.VolumeMount{
 								Name:      ScratchDirVolumeName,
 								MountPath: "/tmp",
@@ -518,6 +533,12 @@ func CreateCheckJob(restic *api.Restic, hostName string, smartPrefix string, tag
 								"--host-name=" + hostName,
 								"--smart-prefix=" + smartPrefix,
 								"--v=10",
+							},
+							Env: []core.EnvVar{
+								{
+									Name:  analytics.Key,
+									Value: AnalyticsClientID,
+								},
 							},
 							VolumeMounts: []core.VolumeMount{
 								{
