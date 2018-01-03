@@ -99,7 +99,7 @@ func (c *Controller) Backup() error {
 	}
 
 	// create check job
-	job := util.CreateCheckJob(resource, c.opt.SnapshotHostname, c.opt.SmartPrefix, c.opt.ImageTag)
+	job := util.NewCheckJob(resource, c.opt.SnapshotHostname, c.opt.SmartPrefix, c.opt.ImageTag)
 	if c.opt.EnableRBAC {
 		if err = c.ensureCheckRBAC(job.Name, job.Namespace); err != nil {
 			return fmt.Errorf("error ensuring rbac for check job %s, reason: %s\n", job.Name, err)

@@ -209,9 +209,9 @@ func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet,
 			Name: obj.Name,
 		}
 		if new.Spec.Type == api.BackupOffline {
-			obj.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(obj.Spec.Template.Spec.InitContainers, util.CreateInitContainer(new, c.options.SidecarImageTag, workload, c.options.EnableRBAC))
+			obj.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(obj.Spec.Template.Spec.InitContainers, util.NewInitContainer(new, c.options.SidecarImageTag, workload, c.options.EnableRBAC))
 		} else {
-			obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.CreateSidecarContainer(new, c.options.SidecarImageTag, workload))
+			obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.NewSidecarContainer(new, c.options.SidecarImageTag, workload))
 		}
 		obj.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(obj.Spec.Template.Spec.Volumes)
 		obj.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(obj.Spec.Template.Spec.Volumes)
