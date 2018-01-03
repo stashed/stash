@@ -2,13 +2,13 @@
 title: Overview | Developer Guide
 description: Developer Guide Overview
 menu:
-  product_stash_0.5.1:
+  product_stash_0.6.0:
     identifier: developer-guide-readme
     name: Overview
     parent: developer-guide
     weight: 15
 product_name: stash
-menu_name: product_stash_0.5.1
+menu_name: product_stash_0.6.0
 section_menu_id: setup
 ---
 
@@ -26,7 +26,7 @@ Some of the Stash development helper scripts rely on a fairly up-to-date GNU too
 work just fine out-of-the-box.
 
 #### Setup GO
-Stash is written in Google's GO programming language. Currently, Stash is developed and tested on **go 1.8.3**. If you haven't set up a GO
+Stash is written in Google's GO programming language. Currently, Stash is developed and tested on **go 1.9.2**. If you haven't set up a GO
 development environment, please follow [these instructions](https://golang.org/doc/code.html) to install GO.
 
 #### Download Source

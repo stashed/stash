@@ -2,19 +2,19 @@
 title: Upgrade | Stash
 description: Stash Upgrade
 menu:
-  product_stash_0.5.1:
+  product_stash_0.6.0:
     identifier: upgrade-stash
     name: Upgrade
     parent: setup
     weight: 15
 product_name: stash
-menu_name: product_stash_0.5.1
+menu_name: product_stash_0.6.0
 section_menu_id: setup
 ---
 
 # Upgrading Stash
 
-## Upgrading from 0.5.1 to 0.6.0
+## Upgrading from 0.6.0 to 0.6.0
 
 The format for `Restic` object has changed in backward incompatiable manner between 0.5.x and 0.6.0 . The steps involved in upgrading Stash operator to 0.6.0 from prior version involves the following steps:
 
@@ -103,7 +103,7 @@ retentionPolicies:
 
 ### Example: Upgrading S3 backed volume
 
-Say, you are running `Stash` operator `0.5.1`.
+Say, you are running `Stash` operator `0.6.0`.
 
 ```console
 $ kubectl get pods --all-namespaces -l app=stash
@@ -112,13 +112,13 @@ kube-system   stash-operator-7cdc467c5b-drj2r   2/2       Running   0          2
 
 $ kubectl exec -it stash-operator-7cdc467c5b-drj2r -c operator -n kube-system stash version
 
-Version = 0.5.1
+Version = 0.6.0
 VersionStrategy = tag
 Os = alpine
 Arch = amd64
 CommitHash = f87995af4875d5e99978def17186ac1957871c1d
 GitBranch = release-0.5
-GitTag = 0.5.1
+GitTag = 0.6.0
 CommitTimestamp = 2017-10-10T17:05:31
 ```
 

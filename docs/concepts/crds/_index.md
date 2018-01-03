@@ -1,11 +1,11 @@
 ---
-title: Custom Resource Definitions | Stash
-description: Custom Resource Definitions
+title: Declarative API | Stash
+description: Declarative API
 menu:
-  product_stash_0.5.1:
+  product_stash_0.6.0:
     identifier: crds
     parent: concepts
-    name: Types of Alerts
+    name: Declarative API
     weight: 15
-menu_name: product_stash_0.5.1
+menu_name: product_stash_0.6.0
 ---
