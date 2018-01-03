@@ -5,17 +5,14 @@ menu:
   product_stash_0.5.1:
     identifier: workloads-stash
     name: Workloads
-    parent: getting-started
+    parent: guides
     weight: 55
 product_name: stash
 menu_name: product_stash_0.5.1
-section_menu_id: getting-started
-url: /products/stash/0.5.1/getting-started/workloads/
-aliases:
-  - /products/stash/0.5.1/workloads/
+section_menu_id: guides
 ---
 
-> New to Stash? Please start [here](/docs/guides/README.md).
+> New to Stash? Please start [here](/docs/concepts/README.md).
 
 # Supported Workloads
 
@@ -124,6 +121,7 @@ spec:
 ```
 
 You can find the full working demo in [examples folder](/docs/examples/workloads/statefulset.yaml). The section you should change for your own StatefulSet are:
+
  - `--restic-name` flag should be set to the name of the Restic used as configuration.
  - `--workload-kind` flag specifies the kind of workload (Deployment/Replicaset/RepliationController/DaemonSet/StatefulSet).
  - `--workload-name` flag specifies the name of workload where sidecar pod is added.
@@ -133,9 +131,9 @@ To learn about the meaning of various flags, please visit [here](/docs/reference
 ## Next Steps
 
 - Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/backup.md).
-- Learn about the details of Restic CRD [here](/docs/concepts/restic.md).
+- Learn about the details of Restic CRD [here](/docs/concepts/crds/restic.md).
 - To restore a backup see [here](/docs/guides/restore.md).
-- Learn about the details of Recovery CRD [here](/docs/concepts/recovery.md).
+- Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
 - To run backup in offline mode see [here](/docs/guides/offline_backup.md)
 - See the list of supported backends and how to configure them [here](/docs/guides/backends.md).
 - Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/monitoring.md).

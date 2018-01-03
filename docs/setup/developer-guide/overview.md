@@ -9,13 +9,10 @@ menu:
     weight: 15
 product_name: stash
 menu_name: product_stash_0.5.1
-section_menu_id: developer-guide
-url: /products/stash/0.5.1/developer-guide/
-aliases:
-  - /products/stash/0.5.1/developer-guide/README/
+section_menu_id: setup
 ---
 
-> New to Stash? Please start [here](/docs/guides/README.md).
+> New to Stash? Please start [here](/docs/concepts/README.md).
 
 ## Development Guide
 This document is intended to be the canonical source of truth for things like supported toolchain versions for building Stash.

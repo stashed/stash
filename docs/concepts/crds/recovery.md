@@ -1,21 +1,17 @@
 ---
-title: Concept | Stash
-description: Concepts of Stash
+title: Recovery Overview
 menu:
   product_stash_0.5.1:
-    identifier: concept-stash
-    name: Concept
-    parent: getting-started
-    weight: 30
+    identifier: recovery-overview
+    name: Recovery
+    parent: crds
+    weight: 5
 product_name: stash
 menu_name: product_stash_0.5.1
-section_menu_id: getting-started
-url: /products/stash/0.5.1/getting-started/concept/
-aliases:
-  - /products/stash/0.5.1/concept/
+section_menu_id: concepts
 ---
 
-> New to Stash? Please start [here](/docs/guides/README.md).
+> New to Stash? Please start [here](/docs/concepts/README.md).
 
 # Recoveries
 
@@ -142,7 +138,7 @@ Stash operator updates `.status` of a Recovery CRD when recovery operation is co
 ## Next Steps
 
 - Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/backup.md).
-- Learn about the details of Restic CRD [here](/docs/concepts/restic.md).
+- Learn about the details of Restic CRD [here](/docs/concepts/crds/restic.md).
 - To restore a backup see [here](/docs/guides/restore.md).
 - To run backup in offline mode see [here](/docs/guides/offline_backup.md)
 - See the list of supported backends and how to configure them [here](/docs/guides/backends.md).

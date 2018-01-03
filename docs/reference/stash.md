@@ -6,7 +6,6 @@ menu:
     name: Stash
     parent: reference
     weight: 0
-
 product_name: stash
 menu_name: product_stash_0.5.1
 section_menu_id: reference

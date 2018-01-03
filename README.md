@@ -31,13 +31,10 @@ Please pick a version of Stash that matches your Kubernetes installation.
 To install Stash, please follow the guide [here](/docs/setup/install.md).
 
 ## Using Stash
-Want to learn how to use Stash? Please start [here](/docs/README.md).
+Want to learn how to use Stash? Please start [here](/docs/guides/README.md).
 
 ## Contribution guidelines
 Want to help improve Stash? Please start [here](/docs/CONTRIBUTING.md).
-
-## Developer Guide
-To view developer guide see [here](/docs/setup/developer-guide/README.md).
 
 ---
 

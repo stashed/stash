@@ -5,6 +5,7 @@ menu:
   product_stash_0.5.1:
     identifier: developer-guide
     name: Developer Guide
-    weight: 30
+    parent: setup
+    weight: 40
 menu_name: product_stash_0.5.1
 ---

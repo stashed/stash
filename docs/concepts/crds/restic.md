@@ -1,21 +1,17 @@
 ---
-title: Concept | Stash
-description: Concepts of Stash
+title: Restic Overview
 menu:
   product_stash_0.5.1:
-    identifier: concept-stash
-    name: Concept
-    parent: getting-started
-    weight: 30
+    identifier: recovery-overview
+    name: Restic
+    parent: crds
+    weight: 5
 product_name: stash
-left_menu: product_stash_0.5.1
-section_menu_id: getting-started
-url: /products/stash/0.5.1/getting-started/concept/
-aliases:
-  - /products/stash/0.5.1/concept/
+menu_name: product_stash_0.5.1
+section_menu_id: concepts
 ---
 
-> New to Stash? Please start [here](/docs/guides/README.md).
+> New to Stash? Please start [here](/docs/concepts/README.md).
 
 # Restics
 
@@ -119,6 +115,7 @@ Stash operator updates `.status` of a Restic CRD every time a backup operation i
 
 ## Workload Annotations
 For each workload where a sidecar container is added by Stash operator, the following annotations are added:
+
  - `restic.appscode.com/last-applied-configuration` indicates the configuration of applied Restic CRD.
  - `restic.appscode.com/tag` indicates the tag of `appscode/stash` Docker image that was added as sidecar.
 
@@ -135,7 +132,7 @@ To stop taking backup, you can do 2 things:
 
 - Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/backup.md).
 - To restore a backup see [here](/docs/guides/restore.md).
-- Learn about the details of Recovery CRD [here](/docs/concepts/recovery.md).
+- Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
 - To run backup in offline mode see [here](/docs/guides/offline_backup.md)
 - See the list of supported backends and how to configure them [here](/docs/guides/backends.md).
 - See working examples for supported workload types [here](/docs/guides/workloads.md).

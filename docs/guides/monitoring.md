@@ -5,17 +5,14 @@ menu:
   product_stash_0.5.1:
     identifier: monitoring-stash
     name: Monitoring
-    parent: getting-started
+    parent: guides
     weight: 40
 product_name: stash
 menu_name: product_stash_0.5.1
-section_menu_id: getting-started
-url: /products/stash/0.5.1/getting-started/monitoring/
-aliases:
-  - /products/stash/0.5.1/monitoring/
+section_menu_id: guides
 ---
 
-> New to Stash? Please start [here](/docs/guides/README.md).
+> New to Stash? Please start [here](/docs/concepts/README.md).
 
 # Monitoring Stash
 
@@ -35,9 +32,9 @@ Since backup operations are run as cron jobs, Stash can use [Prometheus Pushgate
 ## Next Steps
 
 - Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/backup.md).
-- Learn about the details of Restic CRD [here](/docs/concepts/restic.md).
+- Learn about the details of Restic CRD [here](/docs/concepts/crds/restic.md).
 - To restore a backup see [here](/docs/guides/restore.md).
-- Learn about the details of Recovery CRD [here](/docs/concepts/recovery.md).
+- Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
 - To run backup in offline mode see [here](/docs/guides/offline_backup.md)
 - See the list of supported backends and how to configure them [here](/docs/guides/backends.md).
 - See working examples for supported workload types [here](/docs/guides/workloads.md).
