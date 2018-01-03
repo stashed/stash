@@ -2,37 +2,37 @@
 title: Install
 description: Stash Install
 menu:
-  product_stash_0.5.1:
+  product_stash_0.6.0:
     identifier: install-stash
     name: Install
     parent: setup
     weight: 10
 product_name: stash
-menu_name: product_stash_0.5.1
+menu_name: product_stash_0.6.0
 section_menu_id: setup
 ---
 
 # Installation Guide
 
 ## Using YAML
-Stash can be installed using YAML files includes in the [/hack/deploy](/hack/deploy) folder.
+Stash can be installed using YAML files includes in the [/hack/deploy](https://github.com/appscode/stash/tree/master/hack/deploy) folder.
 
 ```console
 # Install without RBAC roles
-$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.5.1/hack/deploy/without-rbac.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.6.0/hack/deploy/without-rbac.yaml
 
 
 # Install with RBAC roles
-$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.5.1/hack/deploy/with-rbac.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.6.0/hack/deploy/with-rbac.yaml
 ```
 
 ## Using Helm
-Stash can be installed via [Helm](https://helm.sh/) using the [chart](/chart/stable/stash) included in this repository or from official charts repository. To install the chart with the release name `my-release`:
+Stash can be installed via [Helm](https://helm.sh/) using the [chart](https://github.com/appscode/stash/tree/master/chart/stable/stash) included in this repository or from official charts repository. To install the chart with the release name `my-release`:
 ```bash
 $ helm repo update
 $ helm install stable/stash --name my-release
 ```
-To see the detailed configuration options, visit [here](/chart/stable/stash/README.md).
+To see the detailed configuration options, visit [here](https://github.com/appscode/stash/tree/master/chart/stable/stash).
 
 
 ## Verify installation
@@ -97,13 +97,13 @@ $ POD_NAMESPACE=kube-system
 $ POD_NAME=$(kubectl get pods -n $POD_NAMESPACE -l app=stash -o jsonpath={.items[0].metadata.name})
 $ kubectl exec -it $POD_NAME -c operator -n $POD_NAMESPACE stash version
 
-Version = 0.5.1
+Version = 0.6.0
 VersionStrategy = tag
 Os = alpine
 Arch = amd64
 CommitHash = 85b0f16ab1b915633e968aac0ee23f877808ef49
 GitBranch = release-0.5
-GitTag = 0.5.1
+GitTag = 0.6.0
 CommitTimestamp = 2017-10-10T05:24:23
 
 $ kubectl exec -it $POD_NAME -c operator -n $POD_NAMESPACE restic version

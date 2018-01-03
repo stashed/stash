@@ -2,13 +2,13 @@
 title: Workload Initializer | Stash
 description: Workload Initializer
 menu:
-  product_stash_0.5.1:
+  product_stash_0.6.0:
     identifier: initializer-stash
     name: Workload Initializer
     parent: guides
-    weight: 55
+    weight: 35
 product_name: stash
-menu_name: product_stash_0.5.1
+menu_name: product_stash_0.6.0
 section_menu_id: guides
 ---
 
@@ -16,7 +16,7 @@ section_menu_id: guides
 
 # Workload Initializer
 
-Stash operator can be used as a workload [initializer](https://kubernetes.io/docs/admin/extensible-admission-controllers/#initializers). For this you need to create a `InitializerConfiguration` with initializer named `stash.appscode.com`.
+Stash operator can be used as a workload [initializer](https://kubernetes.io/docs/admin/extensible-admission-controllers/#initializers). For this you need to create a `InitializerConfiguration` with initializer named `stash.appscode.com`. _Please note that, this uses an alpha feature of Kubernetes_.
 
 ```console
 $ kubectl apply -f ./hack/deploy/initializer.yaml

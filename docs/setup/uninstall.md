@@ -2,13 +2,13 @@
 title: Uninstall
 description: Stash Uninstall
 menu:
-  product_stash_0.5.1:
+  product_stash_0.6.0:
     identifier: uninstall-stash
     name: Uninstall
     parent: setup
     weight: 20
 product_name: stash
-menu_name: product_stash_0.5.1
+menu_name: product_stash_0.6.0
 section_menu_id: setup
 ---
 
