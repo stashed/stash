@@ -138,6 +138,25 @@ func (fi *Invocation) SecretForSwiftBackend() core.Secret {
 	}
 }
 
+func (fi *Invocation) SecretForB2Backend() core.Secret {
+	if os.Getenv(cli.B2_ACCOUNT_ID) == "" ||
+		os.Getenv(cli.B2_ACCOUNT_KEY) == "" {
+		return core.Secret{}
+	}
+
+	return core.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rand.WithUniqSuffix(fi.app + "-b2"),
+			Namespace: fi.namespace,
+		},
+		Data: map[string][]byte{
+			cli.RESTIC_PASSWORD: []byte(TEST_RESTIC_PASSWORD),
+			cli.B2_ACCOUNT_ID:   []byte(os.Getenv(cli.B2_ACCOUNT_ID)),
+			cli.B2_ACCOUNT_KEY:  []byte(os.Getenv(cli.B2_ACCOUNT_KEY)),
+		},
+	}
+}
+
 // TODO: Add more methods for Swift, Backblaze B2, Rest server backend.
 
 func (f *Framework) CreateSecret(obj core.Secret) error {

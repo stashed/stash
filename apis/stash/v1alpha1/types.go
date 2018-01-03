@@ -72,7 +72,7 @@ type Backend struct {
 	GCS   *GCSSpec   `json:"gcs,omitempty"`
 	Azure *AzureSpec `json:"azure,omitempty"`
 	Swift *SwiftSpec `json:"swift,omitempty"`
-	// B2    *B2Spec         `json:"b2,omitempty"`
+	B2    *B2Spec    `json:"b2,omitempty"`
 	// Rest  *RestServerSpec `json:"rest,omitempty"`
 }
 

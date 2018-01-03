@@ -119,6 +119,12 @@ func (w *ResticWrapper) SetupEnv(backend api.Backend, secret *core.Secret, autoP
 		// For authentication based on tokens
 		w.sh.SetEnv(OS_STORAGE_URL, string(secret.Data[OS_STORAGE_URL]))
 		w.sh.SetEnv(OS_AUTH_TOKEN, string(secret.Data[OS_AUTH_TOKEN]))
+	} else if backend.B2 != nil {
+		prefix := strings.TrimPrefix(filepath.Join(backend.B2.Prefix, autoPrefix), "/")
+		r := fmt.Sprintf("b2:%s:/%s", backend.B2.Bucket, prefix)
+		w.sh.SetEnv(RESTIC_REPOSITORY, r)
+		w.sh.SetEnv(B2_ACCOUNT_ID, string(secret.Data[B2_ACCOUNT_ID]))
+		w.sh.SetEnv(B2_ACCOUNT_KEY, string(secret.Data[B2_ACCOUNT_KEY]))
 		/*
 			} else if backend.Rest != nil {
 				u, err := url.Parse(backend.Rest.URL)
