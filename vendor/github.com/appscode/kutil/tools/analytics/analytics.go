@@ -4,31 +4,47 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
+	"io/ioutil"
 	"net"
+	"net/http"
+	"os"
 	"sort"
+	"time"
 
 	"github.com/appscode/go/analytics"
 	"github.com/appscode/kutil/meta"
+	"github.com/ghodss/yaml"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
+const (
+	Key = "APPSCODE_ANALYTICS_CLIENT_ID"
+)
+
 func ClientID() string {
+	defer runtime.HandleCrash()
+
 	if !meta.PossiblyInCluster() {
 		return analytics.ClientID()
 	}
 
+	if id := os.Getenv(Key); id != "" {
+		return id
+	}
+
 	cfg, err := rest.InClusterConfig()
 	if err != nil {
-		return ""
+		return "$k8s$inclusterconfig"
 	}
 	client, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		return ""
+		return "$k8s$newforconfig"
 	}
 	nodes, err := client.CoreV1().Nodes().List(metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(map[string]string{
@@ -57,7 +73,7 @@ func ClientID() string {
 		}
 	}
 	if len(ips) == 0 {
-		return ""
+		return tryGKE()
 	}
 	sort.Slice(ips, func(i, j int) bool { return bytes.Compare(ips[i], ips[j]) < 0 })
 	hasher := md5.New()
@@ -99,7 +115,45 @@ func ipBytes(ip net.IP) []byte {
 func reasonForError(err error) string {
 	switch t := err.(type) {
 	case kerr.APIStatus:
-		return string(t.Status().Reason)
+		return "$k8s$err$" + string(t.Status().Reason)
 	}
-	return string(metav1.StatusReasonUnknown)
+	return "$k8s$err$" + trim(err.Error(), 32) // 32 = length of uuid
+}
+
+// ref: https://cloud.google.com/compute/docs/storing-retrieving-metadata
+func tryGKE() string {
+	client := &http.Client{Timeout: time.Millisecond * 100}
+	req, err := http.NewRequest(http.MethodGet, "http://metadata.google.internal/computeMetadata/v1/instance/attributes/kube-env", nil)
+	if err != nil {
+		return "$gke$err$" + trim(err.Error(), 32) // 32 = length of uuid
+	}
+	req.Header.Set("Metadata-Flavor", "Google")
+	resp, err := client.Do(req)
+	if err != nil {
+		return "$gke$err$" + trim(err.Error(), 32) // 32 = length of uuid
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "$gke$ReadAll(resp.Body)"
+	}
+	data := make(map[string]interface{})
+	err = yaml.Unmarshal(body, &data)
+	if err != nil {
+		return "$gke$Unmarshal(body)"
+	}
+	v, ok := data["KUBERNETES_MASTER_NAME"]
+	if !ok {
+		return "$gke$KUBERNETES_MASTER_NAME"
+	}
+	masterIP := v.(string)
+	hashed := md5.Sum([]byte(masterIP))
+	return hex.EncodeToString(hashed[:])
+}
+
+func trim(s string, length int) string {
+	if len(s) > length {
+		return s[:length]
+	}
+	return s
 }

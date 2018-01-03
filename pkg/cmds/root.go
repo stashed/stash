@@ -8,6 +8,7 @@ import (
 	v "github.com/appscode/go/version"
 	"github.com/appscode/kutil/tools/analytics"
 	"github.com/appscode/stash/client/scheme"
+	"github.com/appscode/stash/pkg/util"
 	"github.com/jpillora/go-ogle-analytics"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -33,7 +34,8 @@ func NewRootCmd() *cobra.Command {
 			})
 			if enableAnalytics && gaTrackingCode != "" {
 				if client, err := ga.NewClient(gaTrackingCode); err == nil {
-					client.ClientID(analytics.ClientID())
+					util.AnalyticsClientID = analytics.ClientID()
+					client.ClientID(util.AnalyticsClientID)
 					parts := strings.Split(c.CommandPath(), " ")
 					client.Send(ga.NewEvent(parts[0], strings.Join(parts[1:], "/")).Label(v.Version.Version))
 				}

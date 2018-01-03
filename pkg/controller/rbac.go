@@ -120,11 +120,6 @@ func (c *StashController) ensureSidecarClusterRole() error {
 				Verbs:     []string{"create"},
 			},
 			{
-				APIGroups: []string{core.GroupName},
-				Resources: []string{"nodes"},
-				Verbs:     []string{"list"},
-			},
-			{
 				APIGroups: []string{batch.GroupName},
 				Resources: []string{"jobs"},
 				Verbs:     []string{"create"},
