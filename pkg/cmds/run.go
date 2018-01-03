@@ -14,6 +14,7 @@ import (
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/migrator"
+	"github.com/hashicorp/go-version"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
@@ -52,13 +53,16 @@ func NewCmdRun() *cobra.Command {
 			crdClient := crd_cs.NewForConfigOrDie(config)
 
 			// get kube api server version
-			version, err := kubeClient.Discovery().ServerVersion()
+			info, err := kubeClient.Discovery().ServerVersion()
 			if err != nil {
 				log.Fatalf("Error getting server version, reason: %s\n", err)
 			}
-
+			gv, err := version.NewVersion(info.GitVersion)
+			if err != nil {
+				log.Fatalf("Failed to parse server version, reason: %s\n", err)
+			}
 			// check kubectl image
-			opts.KubectlImageTag = version.Major + "." + version.Minor + ".0"
+			opts.KubectlImageTag = gv.ToMutator().ResetMetadata().ResetPrerelease().ResetPatch().String()
 			if err := docker.CheckDockerImageVersion(docker.ImageKubectl, opts.KubectlImageTag); err != nil {
 				log.Fatalf(`Image %v:%v not found.`, docker.ImageKubectl, opts.KubectlImageTag)
 			}
