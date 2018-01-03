@@ -1,12 +1,12 @@
 ---
 title: Stash Run
 menu:
-  product_stash_0.6.0:
+  product_stash_0.6.1:
     identifier: stash-run
     name: Stash Run
     parent: reference
 product_name: stash
-menu_name: product_stash_0.6.0
+menu_name: product_stash_0.6.1
 section_menu_id: reference
 ---
 ## stash run
