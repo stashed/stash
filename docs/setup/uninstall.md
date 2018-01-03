@@ -1,18 +1,15 @@
 ---
-title: Uninstall | Stash
-description: uninstall of Stash
+title: Uninstall
+description: Stash Uninstall
 menu:
   product_stash_0.5.1:
     identifier: uninstall-stash
     name: Uninstall
-    parent: getting-started
-    weight: 50
+    parent: setup
+    weight: 20
 product_name: stash
 menu_name: product_stash_0.5.1
-section_menu_id: getting-started
-url: /products/stash/0.5.1/getting-started/uninstall/
-aliases:
-  - /products/stash/0.5.1/uninstall/
+section_menu_id: setup
 ---
 
 # Uninstall Stash

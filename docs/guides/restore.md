@@ -1,4 +1,18 @@
-> New to Stash? Please start [here](/docs/guides/README.md).
+---
+title: Restore Volumes | Stash
+description: Restore Volumes using Stash
+menu:
+  product_stash_0.5.1:
+    identifier: restore-stash
+    name: Restore Volumes
+    parent: guides
+    weight: 45
+product_name: stash
+menu_name: product_stash_0.5.1
+section_menu_id: guides
+---
+
+> New to Stash? Please start [here](/docs/concepts/README.md).
 
 # Restore Backup
 This tutorial will show you how to restore a Stash backup. At first, backup a kubernetes workload volume by following the steps [here](/docs/guides/backup.md).
@@ -35,8 +49,9 @@ spec:
 ```
 
 Here,
+
  - `spec.workload` specifies a target workload that was backed up using `Restic`. A single `Restic` backups all types of workloads that matches the label-selector, but you can only restore a specific workload using a `Recovery`.
-    - For workload kind `Statefulset`, you need to specify pod [index](https://kubernetes.io/docs/guides/stateful-application/basic-stateful-set/#pods-in-a-statefulset) using `spec.podOrdinal`.
+    - For workload kind `Statefulset`, you need to specify pod [index](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#ordinal-index) using `spec.podOrdinal`.
     - For workload kind `Daemonset`, you need to specify node name using `spec.nodeName`.
  - `spec.backend` specifies the backend that was used in `Restic` to take backups.
  - `spec.paths` specifies the file-group paths that was backed up using `Restic`.
@@ -97,8 +112,8 @@ If you would like to uninstall Stash operator, please follow the steps [here](/d
 
 ## Next Steps
 
-- Learn about the details of Restic CRD [here](/docs/concepts/restic.md).
-- Learn about the details of Recovery CRD [here](/docs/concepts/recovery.md).
+- Learn about the details of Restic CRD [here](/docs/concepts/crds/restic.md).
+- Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
 - To run backup in offline mode see [here](/docs/guides/offline_backup.md)
 - See the list of supported backends and how to configure them [here](/docs/guides/backends.md).
 - See working examples for supported workload types [here](/docs/guides/workloads.md).

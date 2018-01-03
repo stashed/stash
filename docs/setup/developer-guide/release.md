@@ -3,15 +3,14 @@ title: Release | Stash
 description: Stash Release
 menu:
   product_stash_0.5.1:
-    identifier: release    
+    identifier: release
     name: Release
     parent: developer-guide
     weight: 15
 product_name: stash
 menu_name: product_stash_0.5.1
-section_menu_id: developer-guide
+section_menu_id: setup
 ---
-
 # Release Process
 
 The following steps must be done from a Linux x64 bit machine.

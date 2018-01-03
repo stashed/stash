@@ -1,21 +1,18 @@
 ---
-title: Backends | Stash
-description: Backends of Stash
+title: Supported Backends | Stash
+description: Supported Backends for Stash
 menu:
   product_stash_0.5.1:
     identifier: backends-stash
     name: Backends
-    parent: getting-started
+    parent: guides
     weight: 25
 product_name: stash
 menu_name: product_stash_0.5.1
-section_menu_id: getting-started
-url: /products/stash/0.5.1/getting-started/backends/
-aliases:
-  - /products/stash/0.5.1/backends/
+section_menu_id: guides
 ---
 
-> New to Stash? Please start [here](/docs/guides/README.md).
+> New to Stash? Please start [here](/docs/concepts/README.md).
 
 # Stash Backends
 Backend is where `restic` stores snapshots. For any backend, a Kubernetes Secret in the same namespace is needed to provide restic repository credentials. This Secret can be configured by setting `spec.backend.storageSecretName` field. This document lists the various supported backends for Stash and how to configure those.
@@ -336,7 +333,7 @@ spec:
 
 
 ### OpenStack Swift
-Stash supports [OpenStack Swift as backend](https://restic.readthedocs.io/en/stable/manual.html#openstack-swift). To configure this backend, following secret keys are needed:
+Stash supports [OpenStack Swift as backend](https://restic.readthedocs.io/en/stable/030_preparing_a_new_repo.html#openstack-swift). To configure this backend, following secret keys are needed:
 
 | Key                      | Description                                                |
 |--------------------------|------------------------------------------------------------|
@@ -526,9 +523,9 @@ spec:
 ## Next Steps
 
 - Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/backup.md).
-- Learn about the details of Restic CRD [here](/docs/concepts/restic.md).
+- Learn about the details of Restic CRD [here](/docs/concepts/crds/restic.md).
 - To restore a backup see [here](/docs/guides/restore.md).
-- Learn about the details of Recovery CRD [here](/docs/concepts/recovery.md).
+- Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
 - To run backup in offline mode see [here](/docs/guides/offline_backup.md)
 - See working examples for supported workload types [here](/docs/guides/workloads.md).
 - Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/monitoring.md).

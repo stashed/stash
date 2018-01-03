@@ -1,5 +1,20 @@
+---
+title: Stash Overview
+description: Stash Overview
+menu:
+  product_stash_0.5.1:
+    identifier: overview-concepts
+    name: Overview
+    parent: what-is-stash
+    weight: 10
+product_name: stash
+menu_name: product_stash_0.5.1
+section_menu_id: concepts
+---
 # Stash
+
  Stash by AppsCode is a Kubernetes operator for [restic](https://restic.net). If you are running production workloads in Kubernetes, you might want to take backup of your disks. Traditional tools are too complex to setup and maintain in a dynamic compute environment like Kubernetes. `restic` is a backup program that is fast, efficient and secure with few moving parts. Stash is a CRD controller for Kubernetes built around `restic` to address these issues. Using Stash, you can backup Kubernetes volumes mounted in following types of workloads:
+
 - Deployment
 - DaemonSet
 - ReplicaSet

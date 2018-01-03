@@ -1,18 +1,15 @@
 ---
-title: Install | Stash
-description: Install of Stash
+title: Install
+description: Stash Install
 menu:
   product_stash_0.5.1:
     identifier: install-stash
     name: Install
-    parent: getting-started
-    weight: 35
+    parent: setup
+    weight: 10
 product_name: stash
 menu_name: product_stash_0.5.1
-section_menu_id: getting-started
-url: /products/stash/0.5.1/getting-started/install/
-aliases:
-  - /products/stash/0.5.1/install/
+section_menu_id: setup
 ---
 
 # Installation Guide

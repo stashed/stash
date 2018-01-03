@@ -1,4 +1,18 @@
-> New to Stash? Please start [here](/docs/guides/README.md).
+---
+title: Offline Backup | Stash
+description: Offline Backup using Stash
+menu:
+  product_stash_0.5.1:
+    identifier: offline-stash
+    name: Offline Backup
+    parent: guides
+    weight: 45
+product_name: stash
+menu_name: product_stash_0.5.1
+section_menu_id: guides
+---
+
+> New to Stash? Please start [here](/docs/concepts/README.md).
 
 # Offline Backup
 
@@ -332,9 +346,9 @@ If you would like to uninstall Stash operator, please follow the steps [here](/d
 ## Next Steps
 
 - Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/backup.md).
-- Learn about the details of Restic CRD [here](/docs/concepts/restic.md).
+- Learn about the details of Restic CRD [here](/docs/concepts/crds/restic.md).
 - To restore a backup see [here](/docs/guides/restore.md).
-- Learn about the details of Recovery CRD [here](/docs/concepts/recovery.md).
+- Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
 - See the list of supported backends and how to configure them [here](/docs/guides/backends.md).
 - See working examples for supported workload types [here](/docs/guides/workloads.md).
 - Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/monitoring.md).
