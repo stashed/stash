@@ -317,6 +317,15 @@ var _ = Describe("Deployment", func() {
 			It(`should backup new Deployment`, shouldBackupNewDeployment)
 			It(`should backup existing Deployment`, shouldBackupExistingDeployment)
 		})
+
+		Context(`"B2" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForB2Backend()
+				restic = f.ResticForB2Backend()
+			})
+			It(`should backup new Deployment`, shouldBackupNewDeployment)
+			It(`should backup existing Deployment`, shouldBackupExistingDeployment)
+		})
 	})
 
 	Describe("Changing Deployment labels", func() {
@@ -395,6 +404,14 @@ var _ = Describe("Deployment", func() {
 			BeforeEach(func() {
 				cred = f.SecretForSwiftBackend()
 				restic = f.ResticForSwiftBackend()
+			})
+			It(`should stop backup`, shouldStopBackup)
+		})
+
+		Context(`"B2" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForB2Backend()
+				restic = f.ResticForB2Backend()
 			})
 			It(`should stop backup`, shouldStopBackup)
 		})

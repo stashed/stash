@@ -140,6 +140,18 @@ func (fi *Invocation) ResticForSwiftBackend() api.Restic {
 	return r
 }
 
+func (fi *Invocation) ResticForB2Backend() api.Restic {
+	r := fi._restic()
+	r.Spec.Backend = api.Backend{
+		StorageSecretName: "",
+		B2: &api.B2Spec{
+			Bucket: "stash-qa",
+			Prefix: fi.app,
+		},
+	}
+	return r
+}
+
 func (f *Framework) CreateRestic(obj api.Restic) error {
 	_, err := f.StashClient.Restics(obj.Namespace).Create(&obj)
 	return err

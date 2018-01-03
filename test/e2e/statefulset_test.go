@@ -310,6 +310,15 @@ var _ = Describe("StatefulSet", func() {
 			XIt(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
 			XIt(`should backup existing StatefulSet`, shouldBackupExistingStatefulSet)
 		})
+
+		Context(`"B2" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForB2Backend()
+				restic = f.ResticForB2Backend()
+			})
+			XIt(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
+			XIt(`should backup existing StatefulSet`, shouldBackupExistingStatefulSet)
+		})
 	})
 
 	Describe("Changing StatefulSet labels", func() {
@@ -391,6 +400,14 @@ var _ = Describe("StatefulSet", func() {
 			BeforeEach(func() {
 				cred = f.SecretForSwiftBackend()
 				restic = f.ResticForSwiftBackend()
+			})
+			XIt(`should stop backup`, shouldStopBackup)
+		})
+
+		Context(`"B2" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForB2Backend()
+				restic = f.ResticForB2Backend()
 			})
 			XIt(`should stop backup`, shouldStopBackup)
 		})
