@@ -1,7 +1,18 @@
 #!/bin/bash
+set -xeou pipefail
 
-set -x
-set -eou pipefail
+GOPATH=$(go env GOPATH)
+REPO_ROOT="$GOPATH/src/github.com/appscode/stash"
+
+export APPSCODE_ENV=prod
+
+pushd $REPO_ROOT
+
+rm -rf dist
 
 ./hack/docker/setup.sh
-env APPSCODE_ENV=prod ./hack/docker/setup.sh release
+./hack/docker/setup.sh release
+
+rm dist/.tag
+
+popd
