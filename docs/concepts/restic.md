@@ -20,7 +20,7 @@ aliases:
 # Restics
 
 ## What is Restic
-A `Restic` is a Kubernetes `CustomResourceDefinition` (CRD). It provides declarative configuration for [restic](https://github.com/restic/restic) in a Kubernetes native way. You only need to describe the desired backup operations in a Restic object, and the Stash operator will reconfigure the matching workloads to the desired state for you.
+A `Restic` is a Kubernetes `CustomResourceDefinition` (CRD). It provides declarative configuration for [restic](https://restic.net) in a Kubernetes native way. You only need to describe the desired backup operations in a Restic object, and the Stash operator will reconfigure the matching workloads to the desired state for you.
 
 ## Restic Spec
 As with all other Kubernetes objects, a Restic needs `apiVersion`, `kind`, and `metadata` fields. It also needs a `.spec` section. Below is an example Restic object.
@@ -63,7 +63,7 @@ The `.spec` section has following parts:
 The default value for `spec.type` is `online`. For offline backup you need to specify `spec.type=offline`. For more details see [here](/docs/guides/offline_backup.md).
 
 ### spec.fileGroups
-`spec.fileGroups` is a required field that specifies one or more directories that are backed up by [restic](https://github.com/restic/restic). For each directory, you can specify custom tags and retention policy for snapshots.
+`spec.fileGroups` is a required field that specifies one or more directories that are backed up by [restic](https://restic.net). For each directory, you can specify custom tags and retention policy for snapshots.
 
  - `spec.fileGroups[].path` represents a local directory that backed up by `restic`.
  - `spec.fileGroups[].tags` is an optional field. This can be used to apply one or more custom tag to snapshots taken from this path.

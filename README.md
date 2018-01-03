@@ -1,7 +1,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/appscode/stash)](https://goreportcard.com/report/github.com/appscode/stash)
 
 # Stash
- Stash by AppsCode is a Kubernetes operator for [restic](https://github.com/restic/restic). If you are running production workloads in Kubernetes, you might want to take backup of your disks. Traditional tools are too complex to setup and maintain in a dynamic compute environment like Kubernetes. `restic` is a backup program that is fast, efficient and secure with few moving parts. Stash is a CRD controller for Kubernetes built around `restic` to address these issues. Using Stash, you can backup Kubernetes volumes mounted in following types of workloads:
+ Stash by AppsCode is a Kubernetes operator for [restic](https://restic.net). If you are running production workloads in Kubernetes, you might want to take backup of your disks. Traditional tools are too complex to setup and maintain in a dynamic compute environment like Kubernetes. `restic` is a backup program that is fast, efficient and secure with few moving parts. Stash is a CRD controller for Kubernetes built around `restic` to address these issues. Using Stash, you can backup Kubernetes volumes mounted in following types of workloads:
 - Deployment
 - DaemonSet
 - ReplicaSet
@@ -41,15 +41,14 @@ To view developer guide see [here](/docs/setup/developer-guide/README.md).
 
 ---
 
-**The stash operator collects anonymous usage statistics to help us learn how the software is being used and how we can improve it. To disable stats collection, run the operator with the flag** `--analytics=false`.
+**Stash binaries collects anonymous usage statistics to help us learn how the software is being used and how we can improve it. To disable stats collection, run the operator with the flag** `--analytics=false`.
 
 ---
 
 ## Acknowledgement
- - Many thanks to [Alexander Neumann](https://github.com/fd0) for [Restic](https://github.com/restic/restic) project.
+ - Many thanks to [Alexander Neumann](https://github.com/fd0) for [Restic](https://restic.net) project.
 
 ## Support
+We use Slack for public discussions. To chit chat with us or the rest of the community, join us in the [AppsCode Slack team](https://appscode.slack.com/messages/C8NCX6N23/details/) channel `#stash`. To sign up, use our [Slack inviter](https://slack.appscode.com/).
 
-If you have any questions, you can reach out to us.
-* [Slack](https://slack.appscode.com)
-* [Twitter](https://twitter.com/AppsCodeHQ)
+If you have found a bug with Searchlight or want to request for new features, please [file an issue](https://github.com/appscode/stash/issues/new).
