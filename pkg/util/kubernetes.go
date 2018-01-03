@@ -192,8 +192,8 @@ func GetString(m map[string]string, key string) string {
 	return m[key]
 }
 
-func CreateInitContainer(r *api.Restic, tag string, workload api.LocalTypedReference, enableRBAC bool) core.Container {
-	container := CreateSidecarContainer(r, tag, workload)
+func NewInitContainer(r *api.Restic, tag string, workload api.LocalTypedReference, enableRBAC bool) core.Container {
+	container := NewSidecarContainer(r, tag, workload)
 	container.Args = []string{
 		"backup",
 		"--restic-name=" + r.Name,
@@ -207,7 +207,7 @@ func CreateInitContainer(r *api.Restic, tag string, workload api.LocalTypedRefer
 	return container
 }
 
-func CreateSidecarContainer(r *api.Restic, tag string, workload api.LocalTypedReference) core.Container {
+func NewSidecarContainer(r *api.Restic, tag string, workload api.LocalTypedReference) core.Container {
 	if r.Annotations != nil {
 		if v, ok := r.Annotations[api.VersionTag]; ok {
 			tag = v
@@ -363,7 +363,7 @@ func RecoveryEqual(old, new *api.Recovery) bool {
 	return reflect.DeepEqual(oldSpec, newSpec)
 }
 
-func CreateRecoveryJob(recovery *api.Recovery, tag string) *batch.Job {
+func NewRecoveryJob(recovery *api.Recovery, tag string) *batch.Job {
 	volumes := make([]core.Volume, 0)
 	volumeMounts := make([]core.VolumeMount, 0)
 	for i, recVol := range recovery.Spec.RecoveredVolumes {
@@ -501,7 +501,7 @@ func DeleteStashJob(client kubernetes.Interface, job batch.Job) error {
 	return nil
 }
 
-func CreateCheckJob(restic *api.Restic, hostName string, smartPrefix string, tag string) *batch.Job {
+func NewCheckJob(restic *api.Restic, hostName string, smartPrefix string, tag string) *batch.Job {
 	job := &batch.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      CheckJobPrefix + restic.Name,

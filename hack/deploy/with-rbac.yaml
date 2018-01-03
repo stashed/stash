@@ -63,8 +63,11 @@ rules:
 - apiGroups: [""]
   resources:
   - pods
-  - serviceaccounts
   verbs: ["get", "create", "list", "delete", "deletecollection"]
+- apiGroups: [""]
+  resources:
+  - serviceaccounts
+  verbs: ["get", "create", "patch", "delete"]
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:

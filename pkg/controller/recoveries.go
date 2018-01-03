@@ -166,7 +166,7 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 		return nil
 	}
 
-	job := util.CreateRecoveryJob(rec, c.options.SidecarImageTag)
+	job := util.NewRecoveryJob(rec, c.options.SidecarImageTag)
 	if c.options.EnableRBAC {
 		if err := c.ensureRecoveryRBAC(job.Name, job.Namespace); err != nil {
 			return fmt.Errorf("error ensuring rbac for recovery job %s, reason: %s\n", job.Name, err)
