@@ -81,21 +81,16 @@ fileGroups:
 fileGroups:
 - path: /source/path-1
   retentionPolicyName: policy-1
-    keepLast: 5
-    prune: true
 - path: /source/path-2
   retentionPolicyName: policy-2
-    keepLast: 10
 - path: /source/path-3
   retentionPolicyName: policy-1
-    keepLast: 5
-    prune: true
 retentionPolicies:
 - name: policy-1
-    keepLast: 5
-    prune: true
+  keepLast: 5
+  prune: true
 - name: policy-2
-    keepLast: 10
+  keepLast: 10
 ```
 
 7. Now, re-deploy restic CRDs. It will add sidecar to pods again and continue backup.
