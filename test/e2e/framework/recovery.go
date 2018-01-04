@@ -47,7 +47,7 @@ func (f *Framework) CreateRecovery(obj api.Recovery) error {
 }
 
 func (f *Framework) DeleteRecovery(meta metav1.ObjectMeta) error {
-	return f.StashClient.Recoveries(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	return f.StashClient.Recoveries(meta.Namespace).Delete(meta.Name, deleteInBackground())
 }
 
 func (f *Framework) EventuallyRecoverySucceed(meta metav1.ObjectMeta) GomegaAsyncAssertion {

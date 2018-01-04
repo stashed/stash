@@ -16,7 +16,9 @@ import (
 	rt "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/reference"
 	"k8s.io/client-go/util/workqueue"
 )
 
@@ -168,12 +170,11 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 
 	job := util.NewRecoveryJob(rec, c.options.SidecarImageTag)
 	if c.options.EnableRBAC {
-		if err := c.ensureRecoveryRBAC(job.Name, job.Namespace); err != nil {
-			return fmt.Errorf("error ensuring rbac for recovery job %s, reason: %s\n", job.Name, err)
-		}
 		job.Spec.Template.Spec.ServiceAccountName = job.Name
 	}
-	if _, err := c.k8sClient.BatchV1().Jobs(rec.Namespace).Create(job); err != nil {
+
+	job, err := c.k8sClient.BatchV1().Jobs(rec.Namespace).Create(job)
+	if err != nil {
 		if kerr.IsAlreadyExists(err) {
 			return nil
 		}
@@ -181,6 +182,16 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 		stash_util.SetRecoveryStatusPhase(c.stashClient, rec, api.RecoveryFailed)
 		c.recorder.Event(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToRecover, err.Error())
 		return err
+	}
+
+	if c.options.EnableRBAC {
+		ref, err := reference.GetReference(scheme.Scheme, job)
+		if err != nil {
+			return err
+		}
+		if err := c.ensureRecoveryRBAC(ref); err != nil {
+			return fmt.Errorf("error ensuring rbac for recovery job %s, reason: %s\n", job.Name, err)
+		}
 	}
 
 	log.Infoln("Recovery job created:", job.Name)

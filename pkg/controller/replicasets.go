@@ -199,7 +199,7 @@ func (c *StashController) EnsureReplicaSetSidecar(resource *extensions.ReplicaSe
 		if err != nil {
 			return err
 		}
-		err = c.ensureRoleBinding(ref, sa)
+		err = c.ensureSidecarRoleBinding(ref, sa)
 		if err != nil {
 			return err
 		}
@@ -259,7 +259,7 @@ func (c *StashController) EnsureReplicaSetSidecar(resource *extensions.ReplicaSe
 
 func (c *StashController) EnsureReplicaSetSidecarDeleted(resource *extensions.ReplicaSet, restic *api.Restic) (err error) {
 	if c.options.EnableRBAC {
-		err := c.ensureRoleBindingDeleted(resource.ObjectMeta)
+		err := c.ensureSidecarRoleBindingDeleted(resource.ObjectMeta)
 		if err != nil {
 			return err
 		}

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/appscode/go/types"
 	core_util "github.com/appscode/kutil/core/v1"
 	"github.com/appscode/kutil/meta"
 	"github.com/appscode/kutil/tools/analytics"
@@ -487,20 +488,6 @@ func DeleteConfigmapLock(k8sClient kubernetes.Interface, namespace string, workl
 	return k8sClient.CoreV1().ConfigMaps(namespace).Delete(GetConfigmapLockName(workload), &metav1.DeleteOptions{})
 }
 
-func DeleteStashJob(client kubernetes.Interface, job batch.Job) error {
-	if err := client.BatchV1().Jobs(job.Namespace).Delete(job.Name, nil); err != nil && !kerr.IsNotFound(err) {
-		return fmt.Errorf("failed to delete job: %s, reason: %s", job.Name, err)
-	}
-	r, err := metav1.LabelSelectorAsSelector(job.Spec.Selector)
-	if err != nil {
-		return fmt.Errorf("failed to select pods for job: %s, reason: %s", job.Name, err)
-	}
-	if err = client.CoreV1().Pods(job.Namespace).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{LabelSelector: r.String()}); err != nil {
-		return fmt.Errorf("failed to delete pods for job: %s, reason: %s", job.Name, err)
-	}
-	return nil
-}
-
 func NewCheckJob(restic *api.Restic, hostName string, smartPrefix string, tag string) *batch.Job {
 	job := &batch.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -572,4 +559,24 @@ func NewCheckJob(restic *api.Restic, hostName string, smartPrefix string, tag st
 	}
 
 	return job
+}
+
+func EnsureOwnerReference(meta metav1.ObjectMeta, owner *core.ObjectReference) metav1.ObjectMeta {
+	fi := -1
+	for i, ref := range meta.OwnerReferences {
+		if ref.Kind == owner.Kind && ref.Name == owner.Name {
+			fi = i
+			break
+		}
+	}
+	if fi == -1 {
+		meta.OwnerReferences = append(meta.OwnerReferences, metav1.OwnerReference{})
+		fi = len(meta.OwnerReferences) - 1
+	}
+	meta.OwnerReferences[fi].APIVersion = owner.APIVersion
+	meta.OwnerReferences[fi].Kind = owner.Kind
+	meta.OwnerReferences[fi].Name = owner.Name
+	meta.OwnerReferences[fi].UID = owner.UID
+	meta.OwnerReferences[fi].BlockOwnerDeletion = types.TrueP()
+	return meta
 }

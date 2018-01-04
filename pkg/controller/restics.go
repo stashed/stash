@@ -170,14 +170,9 @@ func (c *StashController) runResticInjector(key string) error {
 		glog.Infof("Sync/Add/Update for Restic %s\n", restic.GetName())
 
 		if restic.Spec.Type == api.BackupOffline {
-			m := metav1.ObjectMeta{
+			meta := metav1.ObjectMeta{
 				Name:      util.KubectlCronPrefix + restic.Name,
 				Namespace: restic.Namespace,
-			}
-			if c.options.EnableRBAC {
-				if err = c.ensureKubectlRBAC(m.Name, m.Namespace); err != nil {
-					return fmt.Errorf("error ensuring rbac for kubectl cron job %s, reason: %s\n", m.Name, err)
-				}
 			}
 
 			selector, err := metav1.LabelSelectorAsSelector(&restic.Spec.Selector)
@@ -185,7 +180,8 @@ func (c *StashController) runResticInjector(key string) error {
 				return err
 			}
 
-			_, _, err = batch_util.CreateOrPatchCronJob(c.k8sClient, m, func(in *batch.CronJob) *batch.CronJob {
+			cronJob, _, err := batch_util.CreateOrPatchCronJob(c.k8sClient, meta, func(in *batch.CronJob) *batch.CronJob {
+				// set restic as cron-job owner
 				in.OwnerReferences = []metav1.OwnerReference{
 					{
 						APIVersion: api.SchemeGroupVersion.String(),
@@ -194,6 +190,7 @@ func (c *StashController) runResticInjector(key string) error {
 						UID:        restic.UID,
 					},
 				}
+
 				if in.Labels == nil {
 					in.Labels = map[string]string{}
 				}
@@ -229,8 +226,22 @@ func (c *StashController) runResticInjector(key string) error {
 				}
 				return in
 			})
-			return err
+			if err != nil {
+				return err
+			}
+
+			if c.options.EnableRBAC {
+				ref, err := reference.GetReference(scheme.Scheme, cronJob)
+				if err != nil {
+					return err
+				}
+				if err = c.ensureKubectlRBAC(ref); err != nil {
+					return fmt.Errorf("error ensuring rbac for kubectl cron job %s, reason: %s\n", meta.Name, err)
+				}
+			}
 		}
+
+		// for online backup
 		c.EnsureSidecar(restic)
 		c.EnsureSidecarDeleted(restic.Namespace, restic.Name)
 	}
