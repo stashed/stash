@@ -24,8 +24,10 @@ import (
 	rbac "k8s.io/api/rbac/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/reference"
 	"k8s.io/client-go/util/workqueue"
 )
 
@@ -101,12 +103,8 @@ func (c *Controller) Backup() error {
 	// create check job
 	job := util.NewCheckJob(resource, c.opt.SnapshotHostname, c.opt.SmartPrefix, c.opt.ImageTag)
 	if c.opt.EnableRBAC {
-		if err = c.ensureCheckRBAC(job.Name, job.Namespace); err != nil {
-			return fmt.Errorf("error ensuring rbac for check job %s, reason: %s\n", job.Name, err)
-		}
 		job.Spec.Template.Spec.ServiceAccountName = job.Name
 	}
-
 	if job, err = c.k8sClient.BatchV1().Jobs(resource.Namespace).Create(job); err != nil {
 		err = fmt.Errorf("failed to create check job, reason: %s", err)
 		eventer.CreateEventWithLog(
@@ -118,6 +116,17 @@ func (c *Controller) Backup() error {
 			err.Error(),
 		)
 		return err
+	}
+
+	// create service-account and role-binding
+	if c.opt.EnableRBAC {
+		ref, err := reference.GetReference(scheme.Scheme, job)
+		if err != nil {
+			return err
+		}
+		if err = c.ensureCheckRBAC(ref); err != nil {
+			return fmt.Errorf("error ensuring rbac for check job %s, reason: %s\n", job.Name, err)
+		}
 	}
 
 	log.Infoln("Created check job:", job.Name)
@@ -282,14 +291,16 @@ func (c *Controller) measure(f func(*api.Restic, api.FileGroup) error, resource 
 	return
 }
 
-// use Sidecar Cluster Role
-func (c *Controller) ensureCheckRBAC(resourceName string, namespace string) error {
+// use sidecar-cluster-role, service-account and role-binding name same as job name
+// set job as owner of service-account and role-binding
+func (c *Controller) ensureCheckRBAC(resource *core.ObjectReference) error {
 	// ensure service account
 	meta := metav1.ObjectMeta{
-		Name:      resourceName,
-		Namespace: namespace,
+		Name:      resource.Name,
+		Namespace: resource.Namespace,
 	}
 	_, _, err := core_util.CreateOrPatchServiceAccount(c.k8sClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
+		in.ObjectMeta = util.EnsureOwnerReference(in.ObjectMeta, resource)
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
@@ -302,6 +313,8 @@ func (c *Controller) ensureCheckRBAC(resourceName string, namespace string) erro
 
 	// ensure role binding
 	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+		in.ObjectMeta = util.EnsureOwnerReference(in.ObjectMeta, resource)
+
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}

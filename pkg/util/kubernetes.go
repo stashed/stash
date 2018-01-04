@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/appscode/go/types"
 	core_util "github.com/appscode/kutil/core/v1"
 	"github.com/appscode/kutil/meta"
 	"github.com/appscode/kutil/tools/analytics"
@@ -572,4 +573,24 @@ func NewCheckJob(restic *api.Restic, hostName string, smartPrefix string, tag st
 	}
 
 	return job
+}
+
+func EnsureOwnerReference(meta metav1.ObjectMeta, owner *core.ObjectReference) metav1.ObjectMeta {
+	fi := -1
+	for i, ref := range meta.OwnerReferences {
+		if ref.Kind == owner.Kind && ref.Name == owner.Name {
+			fi = i
+			break
+		}
+	}
+	if fi == -1 {
+		meta.OwnerReferences = append(meta.OwnerReferences, metav1.OwnerReference{})
+		fi = len(meta.OwnerReferences) - 1
+	}
+	meta.OwnerReferences[fi].APIVersion = owner.APIVersion
+	meta.OwnerReferences[fi].Kind = owner.Kind
+	meta.OwnerReferences[fi].Name = owner.Name
+	meta.OwnerReferences[fi].UID = owner.UID
+	meta.OwnerReferences[fi].BlockOwnerDeletion = types.TrueP()
+	return meta
 }
