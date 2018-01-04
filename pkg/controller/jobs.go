@@ -1,11 +1,14 @@
 package controller
 
 import (
+	"fmt"
+
 	"github.com/appscode/go/log"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	rt "k8s.io/apimachinery/pkg/runtime"
@@ -107,10 +110,16 @@ func (c *StashController) runJobInjector(key string) error {
 
 		if job.Status.Succeeded > 0 {
 			glog.Infof("Deleting succeeded job %s\n", job.GetName())
-			if err = util.DeleteStashJob(c.k8sClient, *job); err != nil {
-				glog.Errorf("Failed to delete stash job: %s, reason: %s\n", job.GetName(), err)
-				return err
+
+			deletePolicy := metav1.DeletePropagationBackground
+			err := c.k8sClient.BatchV1().Jobs(job.Namespace).Delete(job.Name, &metav1.DeleteOptions{
+				PropagationPolicy: &deletePolicy,
+			})
+
+			if err != nil && !kerr.IsNotFound(err) {
+				return fmt.Errorf("failed to delete job: %s, reason: %s", job.Name, err)
 			}
+
 			glog.Infof("Deleted stash job: %s\n", job.GetName())
 		}
 	}

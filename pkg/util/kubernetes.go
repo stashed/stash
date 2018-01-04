@@ -488,20 +488,6 @@ func DeleteConfigmapLock(k8sClient kubernetes.Interface, namespace string, workl
 	return k8sClient.CoreV1().ConfigMaps(namespace).Delete(GetConfigmapLockName(workload), &metav1.DeleteOptions{})
 }
 
-func DeleteStashJob(client kubernetes.Interface, job batch.Job) error {
-	if err := client.BatchV1().Jobs(job.Namespace).Delete(job.Name, nil); err != nil && !kerr.IsNotFound(err) {
-		return fmt.Errorf("failed to delete job: %s, reason: %s", job.Name, err)
-	}
-	r, err := metav1.LabelSelectorAsSelector(job.Spec.Selector)
-	if err != nil {
-		return fmt.Errorf("failed to select pods for job: %s, reason: %s", job.Name, err)
-	}
-	if err = client.CoreV1().Pods(job.Namespace).DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{LabelSelector: r.String()}); err != nil {
-		return fmt.Errorf("failed to delete pods for job: %s, reason: %s", job.Name, err)
-	}
-	return nil
-}
-
 func NewCheckJob(restic *api.Restic, hostName string, smartPrefix string, tag string) *batch.Job {
 	job := &batch.Job{
 		ObjectMeta: metav1.ObjectMeta{
