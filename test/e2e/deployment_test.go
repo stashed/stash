@@ -187,6 +187,7 @@ var _ = Describe("Deployment", func() {
 
 		shouldRestoreDeployment = func() {
 			shouldBackupNewDeployment()
+
 			recovery.Spec.Workload = api.LocalTypedReference{
 				Kind: api.KindDeployment,
 				Name: deployment.Name,
@@ -254,6 +255,35 @@ var _ = Describe("Deployment", func() {
 
 			By("Waiting for backup event")
 			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+		}
+
+		shouldDeleteJobAndDependents = func(jobName, namespace string) {
+			By("Checking Job deleted")
+			Eventually(func() bool {
+				_, err := f.KubeClient.BatchV1().Jobs(recovery.Namespace).Get(jobName, metav1.GetOptions{})
+				return kerr.IsNotFound(err) || kerr.IsGone(err)
+			}, time.Minute*3, time.Second*2).Should(BeTrue())
+
+			By("Checking pods deleted")
+			Eventually(func() bool {
+				pods, err := f.KubeClient.CoreV1().Pods(recovery.Namespace).List(metav1.ListOptions{
+					LabelSelector: "job-name=" + jobName, // pods created by job has a job-name label
+				})
+				Expect(err).NotTo(HaveOccurred())
+				return len(pods.Items) == 0
+			}, time.Minute*3, time.Second*2).Should(BeTrue())
+
+			By("Checking service-account deleted")
+			Eventually(func() bool {
+				_, err := f.KubeClient.CoreV1().ServiceAccounts(recovery.Namespace).Get(jobName, metav1.GetOptions{})
+				return kerr.IsNotFound(err) || kerr.IsGone(err)
+			}, time.Minute*3, time.Second*2).Should(BeTrue())
+
+			By("Checking role-binding deleted")
+			Eventually(func() bool {
+				_, err := f.KubeClient.RbacV1().RoleBindings(recovery.Namespace).Get(jobName, metav1.GetOptions{})
+				return kerr.IsNotFound(err) || kerr.IsGone(err)
+			}, time.Minute*3, time.Second*2).Should(BeTrue())
 		}
 	)
 
@@ -432,7 +462,12 @@ var _ = Describe("Deployment", func() {
 				restic = f.ResticForHostPathLocalBackend()
 				recovery = f.RecoveryForRestic(restic)
 			})
-			It(`should restore local deployment backup`, shouldRestoreDeployment)
+			It(`should restore local deployment backup and cleanup dependents`, func() {
+				By("Checking recovery successful")
+				shouldRestoreDeployment()
+				By("Checking cleanup")
+				shouldDeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, recovery.Namespace)
+			})
 		})
 
 		Context(`"S3" backend`, func() {
@@ -461,29 +496,29 @@ var _ = Describe("Deployment", func() {
 				recovery = f.RecoveryForRestic(restic)
 			})
 			It(`should delete job after recovery deleted`, func() {
-				By("Creating restic " + restic.Name)
-				err = f.CreateRestic(restic)
-				Expect(err).NotTo(HaveOccurred())
+				recovery.Spec.Workload = api.LocalTypedReference{
+					Kind: api.KindDeployment,
+					Name: deployment.Name,
+				}
 
 				By("Creating recovery " + recovery.Name)
 				err = f.CreateRecovery(recovery)
 				Expect(err).NotTo(HaveOccurred())
 
+				jobName := util.RecoveryJobPrefix + recovery.Name
+
 				By("Checking Job exists")
 				Eventually(func() bool {
-					_, err := f.KubeClient.BatchV1().Jobs(recovery.Namespace).Get("stash-"+recovery.Name, metav1.GetOptions{})
-					return err != nil
+					_, err := f.KubeClient.BatchV1().Jobs(recovery.Namespace).Get(jobName, metav1.GetOptions{})
+					return err == nil
 				}, time.Minute*3, time.Second*2).Should(BeTrue())
 
 				By("Deleting recovery " + recovery.Name)
 				err = f.DeleteRecovery(recovery.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Checking Job deleted")
-				Eventually(func() bool {
-					_, err := f.KubeClient.BatchV1().Jobs(recovery.Namespace).Get("stash-"+recovery.Name, metav1.GetOptions{})
-					return kerr.IsNotFound(err) || kerr.IsGone(err)
-				}, time.Minute*3, time.Second*2).Should(BeTrue())
+				By("Checking cleanup")
+				shouldDeleteJobAndDependents(jobName, recovery.Namespace)
 			})
 		})
 	})
