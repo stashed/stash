@@ -47,7 +47,7 @@ initializers:
 
 This is helpful when you create `Restic` before creating workload objects. This allows stash operator to initialize the target workloads by adding sidecar or, init-container before workload-pods are created. Thus stash operator does not need to delete workload pods for applying changes.
 
-This is particularly helpful for workload kind `StatefulSet` since kubernetes does not support updating StatefulSet after they are created.
+This is particularly helpful for workload kind `StatefulSet`, since kubernetes does not adding sidecar / init containers to StatefulSets after they are created.
 
 ## Next Steps
 
