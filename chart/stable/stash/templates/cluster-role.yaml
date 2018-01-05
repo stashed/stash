@@ -29,12 +29,14 @@ rules:
   - apps
   resources:
   - deployments
+  - statefulsets
   verbs: ["get", "list", "watch", "patch"]
 - apiGroups:
   - batch
   resources:
   - jobs
-  verbs: ["get", "create", "delete"]
+  - cronjobs
+  verbs: ["get", "list", "watch", "create", "delete", "patch"]
 - apiGroups:
   - extensions
   resources:
@@ -65,11 +67,16 @@ rules:
 - apiGroups: [""]
   resources:
   - pods
-  verbs: ["list", "delete", "deletecollection"]
+  verbs: ["get", "create", "list", "delete", "deletecollection"]
+- apiGroups: [""]
+  resources:
+  - serviceaccounts
+  verbs: ["get", "create", "patch", "delete"]
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
   - clusterroles
+  - roles
   - rolebindings
   verbs: ["get", "create", "delete", "patch"]
 {{ end }}
