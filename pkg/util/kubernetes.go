@@ -193,6 +193,11 @@ func GetString(m map[string]string, key string) string {
 	return m[key]
 }
 
+func PushgatewayURL() string {
+	// called by operator, returning its own namespace. Since pushgateway runs as a side-car with operator, this works!
+	return fmt.Sprintf("http://stash-operator.%s.svc:56789", meta.Namespace())
+}
+
 func NewInitContainer(r *api.Restic, tag string, workload api.LocalTypedReference, enableRBAC bool) core.Container {
 	container := NewSidecarContainer(r, tag, workload)
 	container.Args = []string{
@@ -201,6 +206,7 @@ func NewInitContainer(r *api.Restic, tag string, workload api.LocalTypedReferenc
 		"--workload-kind=" + workload.Kind,
 		"--workload-name=" + workload.Name,
 		"--image-tag=" + tag,
+		"--pushgateway-url=" + PushgatewayURL(),
 	}
 	if enableRBAC {
 		container.Args = append(container.Args, "--enable-rbac=true")
@@ -224,6 +230,7 @@ func NewSidecarContainer(r *api.Restic, tag string, workload api.LocalTypedRefer
 			"--workload-kind=" + workload.Kind,
 			"--workload-name=" + workload.Name,
 			"--run-via-cron=true",
+			"--pushgateway-url=" + PushgatewayURL(),
 		},
 		Env: []core.EnvVar{
 			{
