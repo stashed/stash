@@ -1,7 +1,6 @@
 package cmds
 
 import (
-	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -28,7 +27,6 @@ func NewCmdBackup() *cobra.Command {
 			MaxNumRequeues: 5,
 		}
 	)
-	opt.PushgatewayURL = fmt.Sprintf("http://stash-operator.%s.svc:56789", opt.Namespace)
 
 	cmd := &cobra.Command{
 		Use:               "backup",
