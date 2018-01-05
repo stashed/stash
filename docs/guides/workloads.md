@@ -2,13 +2,13 @@
 title: Workloads | Stash
 description: workloads of Stash
 menu:
-  product_stash_0.6.1:
+  product_stash_0.6.2:
     identifier: workloads-stash
     name: Workloads
     parent: guides
     weight: 20
 product_name: stash
-menu_name: product_stash_0.6.1
+menu_name: product_stash_0.6.2
 section_menu_id: guides
 ---
 
@@ -82,7 +82,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.name
-        image: appscode/stash:0.6.1
+        image: appscode/stash:0.6.2
         imagePullPolicy: IfNotPresent
         name: stash
         resources: {}

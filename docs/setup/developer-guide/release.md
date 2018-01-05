@@ -2,13 +2,13 @@
 title: Release | Stash
 description: Stash Release
 menu:
-  product_stash_0.6.1:
+  product_stash_0.6.2:
     identifier: release
     name: Release
     parent: developer-guide
     weight: 15
 product_name: stash
-menu_name: product_stash_0.6.1
+menu_name: product_stash_0.6.2
 section_menu_id: setup
 ---
 # Release Process
