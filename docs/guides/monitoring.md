@@ -29,6 +29,12 @@ Since backup operations are run as cron jobs, Stash can use [Prometheus Pushgate
  - `restic_session_duration_seconds_total{job="<restic.namespace>-<restic.name>", app="<workload>"}`: Total seconds taken to complete restic session
  - `restic_session_duration_seconds{job="<restic.namespace>-<restic.name>", app="<workload>", filegroup="dir1", op="backup|forget"}`: Total seconds taken to complete restic session
 
+## Grafana Dashboard
+The dashboard can be downloaded directly [from the repo](/contrib/monitoring/Grafana%20-%20Stash%20-%20Backup%20Overview.json) or from [Grafana.com](https://grafana.com/dashboards/4198).
+You can import the dashboard JSON file or through Grafana.com import by ID `4198`.
+
+A demo on what the dashboard shows, can be found here: [Stash - Backup Overview - Raintank.io Snapshot](https://snapshot.raintank.io/dashboard/snapshot/qbdKO3SvzlP3RVoD2589esTLu48e5TC1?orgId=2).
+
 ## Next Steps
 
 - Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/backup.md).
