@@ -1,12 +1,12 @@
 ---
 title: Stash Check
 menu:
-  product_stash_0.6.1:
+  product_stash_0.6.2:
     identifier: stash-check
     name: Stash Check
     parent: reference
 product_name: stash
-left_menu: product_stash_0.6.1
+left_menu: product_stash_0.6.2
 section_menu_id: reference
 ---
 ## stash check
