@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/appscode/go/log/golog"
 	"github.com/appscode/go/types"
 	core_util "github.com/appscode/kutil/core/v1"
 	"github.com/appscode/kutil/meta"
@@ -48,6 +49,8 @@ const (
 
 var (
 	AnalyticsClientID string
+	EnableAnalytics   = true
+	LoggerOptions     golog.Options
 )
 
 func GetAppliedRestic(m map[string]string) (*api.Restic, error) {
@@ -207,10 +210,13 @@ func NewInitContainer(r *api.Restic, tag string, workload api.LocalTypedReferenc
 		"--workload-name=" + workload.Name,
 		"--image-tag=" + tag,
 		"--pushgateway-url=" + PushgatewayURL(),
+		fmt.Sprintf("--analytics=%v", EnableAnalytics),
 	}
+	container.Args = append(container.Args, LoggerOptions.ToFlags()...)
 	if enableRBAC {
 		container.Args = append(container.Args, "--enable-rbac=true")
 	}
+
 	return container
 }
 
@@ -224,14 +230,15 @@ func NewSidecarContainer(r *api.Restic, tag string, workload api.LocalTypedRefer
 		Name:            StashContainer,
 		Image:           docker.ImageOperator + ":" + tag,
 		ImagePullPolicy: core.PullIfNotPresent,
-		Args: []string{
+		Args: append([]string{
 			"backup",
 			"--restic-name=" + r.Name,
 			"--workload-kind=" + workload.Kind,
 			"--workload-name=" + workload.Name,
 			"--run-via-cron=true",
 			"--pushgateway-url=" + PushgatewayURL(),
-		},
+			fmt.Sprintf("--analytics=%v", EnableAnalytics),
+		}, LoggerOptions.ToFlags()...),
 		Env: []core.EnvVar{
 			{
 				Name: "NODE_NAME",
@@ -405,11 +412,11 @@ func NewRecoveryJob(recovery *api.Recovery, tag string) *batch.Job {
 						{
 							Name:  StashContainer,
 							Image: docker.ImageOperator + ":" + tag,
-							Args: []string{
+							Args: append([]string{
 								"recover",
 								"--recovery-name=" + recovery.Name,
-								"--v=10",
-							},
+								fmt.Sprintf("--analytics=%v", EnableAnalytics),
+							}, LoggerOptions.ToFlags()...),
 							Env: []core.EnvVar{
 								{
 									Name:  analytics.Key,
@@ -521,13 +528,13 @@ func NewCheckJob(restic *api.Restic, hostName string, smartPrefix string, tag st
 						{
 							Name:  StashContainer,
 							Image: docker.ImageOperator + ":" + tag,
-							Args: []string{
+							Args: append([]string{
 								"check",
 								"--restic-name=" + restic.Name,
 								"--host-name=" + hostName,
 								"--smart-prefix=" + smartPrefix,
-								"--v=10",
-							},
+								fmt.Sprintf("--analytics=%v", EnableAnalytics),
+							}, LoggerOptions.ToFlags()...),
 							Env: []core.EnvVar{
 								{
 									Name:  analytics.Key,
