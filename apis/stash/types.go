@@ -19,7 +19,7 @@ const (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 type Restic struct {
-	metav1.TypeMeta   `json:",inline,omitempty"`
+	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 	Spec              ResticSpec   `json:"spec,omitempty"`
 	Status            ResticStatus `json:"status,omitempty"`
@@ -77,9 +77,9 @@ type Backend struct {
 }
 
 type LocalSpec struct {
-	VolumeSource core.VolumeSource `json:",inline"`
-	MountPath    string            `json:"mountPath,omitempty"`
-	SubPath      string            `json:"subPath,omitempty"`
+	core.VolumeSource `json:",inline"`
+	MountPath         string `json:"mountPath,omitempty"`
+	SubPath           string `json:"subPath,omitempty"`
 }
 
 type S3Spec struct {
