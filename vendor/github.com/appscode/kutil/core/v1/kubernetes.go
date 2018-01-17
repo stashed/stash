@@ -149,13 +149,6 @@ func UpsertContainer(containers []core.Container, upsert core.Container) []core.
 	return append(containers, upsert)
 }
 
-func GetString(m map[string]string, key string) string {
-	if m == nil {
-		return ""
-	}
-	return m[key]
-}
-
 func UpsertVolume(volumes []core.Volume, nv core.Volume) []core.Volume {
 	for i, vol := range volumes {
 		if vol.Name == nv.Name {

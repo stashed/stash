@@ -2,139 +2,94 @@ package log
 
 import (
 	gtx "context"
+	"fmt"
+
 	"github.com/appscode/go/context"
 	"github.com/golang/glog"
 )
 
 // Type logger enables logging with context with glog
 type Logger struct {
-	c gtx.Context
+	ctx string
 }
 
 // New creates an context logger instance which opens access to logging
 // methods. It accepts interface context to format the values as defined
 func New(c gtx.Context) *Logger {
-	if c == nil {
-		c = gtx.TODO()
+	ctx := context.ID(c)
+	if ctx != "" {
+		ctx = fmt.Sprintf("[%s] ", ctx)
 	}
-	return &Logger{
-		c: c,
-	}
+	return &Logger{ctx}
 }
 
 func (l *Logger) Fatal(args ...interface{}) {
-	formatArgs(l.c, &args)
-	doPrint(logLevelFatal, args)
+	glog.FatalDepth(1, l.ctx, args)
 }
 
 func (l *Logger) Fatalln(args ...interface{}) {
-	formatArgs(l.c, &args)
-	doPrintln(logLevelFatal, args)
+	glog.FatalDepth(1, l.ctx, args)
 }
 
 func (l *Logger) Fatalf(format string, args ...interface{}) {
-	formatArgs(l.c, &args)
-	doPrintf(logLevelFatal, formatString(l.c, format), args)
+	glog.FatalDepth(1, l.ctx, fmt.Sprintf(format, args...))
 }
 
 func (l *Logger) Error(args ...interface{}) {
-	formatArgs(l.c, &args)
-	doPrint(logLevelError, args)
+	glog.ErrorDepth(1, l.ctx, args)
 }
 
 func (l *Logger) Errorln(args ...interface{}) {
-	formatArgs(l.c, &args)
-	doPrintln(logLevelError, args)
+	glog.ErrorDepth(1, l.ctx, args)
 }
 
 func (l *Logger) Errorf(format string, args ...interface{}) {
-	formatArgs(l.c, &args)
-	doPrintf(logLevelError, formatString(l.c, format), args)
+	glog.ErrorDepth(1, l.ctx, fmt.Sprintf(format, args...))
 }
 
 func (l *Logger) Warning(args ...interface{}) {
-	formatArgs(l.c, &args)
-	doPrint(logLevelWarning, args)
+	glog.WarningDepth(1, l.ctx, args)
 }
 
 func (l *Logger) Warningln(args ...interface{}) {
-	formatArgs(l.c, &args)
-	doPrintln(logLevelWarning, args)
+	glog.WarningDepth(1, l.ctx, args)
 }
 
 func (l *Logger) Warningf(format string, args ...interface{}) {
-	formatArgs(l.c, &args)
-	doPrintf(logLevelWarning, formatString(l.c, format), args)
+	glog.WarningDepth(1, l.ctx, fmt.Sprintf(format, args...))
 }
 
 func (l *Logger) Info(args ...interface{}) {
-	formatArgs(l.c, &args)
-	doPrint(logLevelInfo, args)
+	glog.InfoDepth(1, l.ctx, args)
 }
 
 func (l *Logger) Infoln(args ...interface{}) {
-	formatArgs(l.c, &args)
-	doPrintln(logLevelInfo, args)
+	glog.InfoDepth(1, l.ctx, args)
 }
 
 func (l *Logger) Infof(format string, args ...interface{}) {
-	formatArgs(l.c, &args)
-	doPrintf(logLevelInfo, formatString(l.c, format), args)
+	glog.InfoDepth(1, l.ctx, fmt.Sprintf(format, args...))
 }
 
 func (l *Logger) Debug(args ...interface{}) {
-	formatArgs(l.c, &args)
-	doPrint(logLevelDebug, args)
+	if glog.V(logLevelDebug) {
+		glog.InfoDepth(1, l.ctx, args)
+	}
 }
 
 func (l *Logger) Debugln(args ...interface{}) {
-	formatArgs(l.c, &args)
-	doPrintln(logLevelDebug, args)
+	if glog.V(logLevelDebug) {
+		glog.InfoDepth(1, l.ctx, args)
+	}
 }
 
 func (l *Logger) Debugf(format string, args ...interface{}) {
-	formatArgs(l.c, &args)
-	doPrintf(logLevelDebug, formatString(l.c, format), args)
+	if glog.V(logLevelDebug) {
+		glog.InfoDepth(1, l.ctx, fmt.Sprintf(format, args...))
+	}
 }
 
 // Flush flushes all pending log I/O.
 func (l *Logger) Flush() {
 	glog.Flush()
-}
-
-// V reports whether verbosity at the call site is at least the requested level.
-// And ensures the verbosity higher than the 'debug' Level. If the requested level
-// do not satisfy the higher verbosity than debug level the verbosity returns default
-// gets sets as debug level.
-// The returned value is a boolean of type glog.Verbose, which implements Info, Infoln
-// and Infof. These methods will write to the Info log if called.
-//
-// Whether an individual call to V generates a log record depends on the setting of
-// the -v and --vmodule flags; both are off by default. If the level in the call to
-// V is at least the value of -v and higher than the debug level, the V call will log.
-func (l *Logger) V(level glog.Level) glog.Verbose {
-	if level > logLevelDebug {
-		return glog.V(level)
-	}
-	return glog.V(logLevelDebug)
-}
-
-func formatArgs(c gtx.Context, args *[]interface{}) {
-	if c != nil {
-		if val := context.ID(c); val != "" {
-			// appending the context to the argument list as first argument.
-			*args = append((*args)[:0], append([]interface{}{val}, (*args)[0:]...)...)
-		}
-	}
-}
-
-func formatString(c gtx.Context, format string) string {
-	if c == nil {
-		return format
-	}
-	if val := context.ID(c); val != "" {
-		// if context is not nil, adding context values as formatted by the provider.
-		format = "[%s] " + format
-	}
-	return format
 }
