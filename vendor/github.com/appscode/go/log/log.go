@@ -18,124 +18,72 @@ const (
 )
 
 func Fatal(args ...interface{}) {
-	doPrint(logLevelFatal, args)
+	glog.FatalDepth(1, args)
 }
 
 func Fatalln(args ...interface{}) {
-	doPrintln(logLevelFatal, args)
+	glog.FatalDepth(1, args)
 }
 
 func Fatalf(format string, args ...interface{}) {
-	doPrintf(logLevelFatal, format, args)
+	glog.FatalDepth(1, fmt.Sprintf(format, args...))
 }
 
 func Error(args ...interface{}) {
-	doPrint(logLevelError, args)
+	glog.ErrorDepth(1, args)
 }
 
 func Errorln(args ...interface{}) {
-	doPrintln(logLevelError, args)
+	glog.ErrorDepth(1, args)
 }
 
 func Errorf(format string, args ...interface{}) {
-	doPrintf(logLevelError, format, args)
+	glog.ErrorDepth(1, fmt.Sprintf(format, args...))
 }
 
 func Warning(args ...interface{}) {
-	doPrint(logLevelWarning, args)
+	glog.WarningDepth(1, args)
 }
 
 func Warningln(args ...interface{}) {
-	doPrintln(logLevelWarning, args)
+	glog.WarningDepth(1, args)
 }
 
 func Warningf(format string, args ...interface{}) {
-	doPrintf(logLevelWarning, format, args)
+	glog.WarningDepth(1, fmt.Sprintf(format, args...))
 }
 
 func Info(args ...interface{}) {
-	doPrint(logLevelInfo, args)
+	glog.InfoDepth(1, args)
 }
 
 func Infoln(args ...interface{}) {
-	doPrintln(logLevelInfo, args)
+	glog.InfoDepth(1, args)
 }
 
 func Infof(format string, args ...interface{}) {
-	doPrintf(logLevelInfo, format, args)
+	glog.InfoDepth(1, fmt.Sprintf(format, args...))
 }
 
 func Debug(args ...interface{}) {
-	doPrint(logLevelDebug, args)
+	if glog.V(logLevelDebug) {
+		glog.InfoDepth(1, args)
+	}
 }
 
 func Debugln(args ...interface{}) {
-	doPrintln(logLevelDebug, args)
+	if glog.V(logLevelDebug) {
+		glog.InfoDepth(1, args)
+	}
 }
 
 func Debugf(format string, args ...interface{}) {
-	doPrintf(logLevelDebug, format, args)
+	if glog.V(logLevelDebug) {
+		glog.InfoDepth(1, fmt.Sprintf(format, args...))
+	}
 }
 
 // Flush flushes all pending log I/O.
 func Flush() {
 	glog.Flush()
-}
-
-// V reports whether verbosity at the call site is at least the requested level.
-// And ensures the verbosity higher than the 'debug' Level. If the requested level
-// do not satisfy the higher verbosity than debug level the verbosity returns bydefault
-// gets sets as debug level.
-// The returned value is a boolean of type glog.Verbose, which implements Info, Infoln
-// and Infof. These methods will write to the Info log if called.
-//
-// Whether an individual call to V generates a log record depends on the setting of
-// the -v and --vmodule flags; both are off by default. If the level in the call to
-// V is at least the value of -v and higher than the debug level, the V call will log.
-func V(level glog.Level) glog.Verbose {
-	if level > logLevelDebug {
-		return glog.V(level)
-	}
-	return glog.V(logLevelDebug)
-}
-
-func doPrint(l glog.Level, args []interface{}) {
-	if glog.V(l) {
-		if l == logLevelFatal {
-			glog.FatalDepth(2, args...)
-		} else {
-			glog.InfoDepth(2, args...)
-		}
-	}
-}
-
-func doPrintln(l glog.Level, args []interface{}) {
-	if glog.V(l) {
-		n := len(args)
-		if n > 1 {
-			roomy := make([]interface{}, n<<1-1)
-			roomy[0] = args[0]
-			for i, j := 1, 1; i < n; i, j = i+1, j+1 {
-				roomy[j] = " "
-				j++
-				roomy[j] = args[i]
-			}
-			args = roomy
-		}
-		if l == logLevelFatal {
-			glog.FatalDepth(2, args...)
-		} else {
-			glog.InfoDepth(2, args...)
-		}
-	}
-}
-
-func doPrintf(l glog.Level, format string, args []interface{}) {
-	if glog.V(l) {
-		if l == logLevelFatal {
-			glog.FatalDepth(2, fmt.Sprintf(format, args...))
-		} else {
-			glog.InfoDepth(2, fmt.Sprintf(format, args...))
-		}
-	}
 }

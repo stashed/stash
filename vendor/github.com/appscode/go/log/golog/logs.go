@@ -4,11 +4,11 @@ import (
 	"flag"
 	"log"
 
-	. "github.com/appscode/go/log"
+	"github.com/golang/glog"
 )
 
 func init() {
-	flag.Set("logtostderr", "true")
+	flag.Set("stderrthreshold", "INFO")
 }
 
 // LogWriter serves as a bridge between the standard log package and the appscode/log package.
@@ -16,7 +16,7 @@ type LogWriter struct{}
 
 // Write implements the io.Writer interface.
 func (writer LogWriter) Write(data []byte) (n int, err error) {
-	Info(string(data))
+	glog.Info(string(data))
 	return len(data), nil
 }
 
@@ -28,5 +28,5 @@ func InitLogs() {
 
 // FlushLogs flushes logs immediately.
 func FlushLogs() {
-	Flush()
+	glog.Flush()
 }

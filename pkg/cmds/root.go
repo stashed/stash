@@ -5,6 +5,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/appscode/go/log/golog"
 	v "github.com/appscode/go/version"
 	"github.com/appscode/kutil/tools/analytics"
 	"github.com/appscode/stash/client/scheme"
@@ -20,9 +21,6 @@ const (
 )
 
 func NewRootCmd() *cobra.Command {
-	var (
-		enableAnalytics = true
-	)
 	var rootCmd = &cobra.Command{
 		Use:               "stash",
 		Short:             `Stash by AppsCode - Backup your Kubernetes Volumes`,
@@ -32,7 +30,7 @@ func NewRootCmd() *cobra.Command {
 			c.Flags().VisitAll(func(flag *pflag.Flag) {
 				log.Printf("FLAG: --%s=%q", flag.Name, flag.Value)
 			})
-			if enableAnalytics && gaTrackingCode != "" {
+			if util.EnableAnalytics && gaTrackingCode != "" {
 				if client, err := ga.NewClient(gaTrackingCode); err == nil {
 					util.AnalyticsClientID = analytics.ClientID()
 					client.ClientID(util.AnalyticsClientID)
@@ -41,12 +39,13 @@ func NewRootCmd() *cobra.Command {
 				}
 			}
 			scheme.AddToScheme(clientsetscheme.Scheme)
+			util.LoggerOptions = golog.ParseFlags(c.Flags())
 		},
 	}
 	rootCmd.PersistentFlags().AddGoFlagSet(flag.CommandLine)
 	// ref: https://github.com/kubernetes/kubernetes/issues/17162#issuecomment-225596212
 	flag.CommandLine.Parse([]string{})
-	rootCmd.PersistentFlags().BoolVar(&enableAnalytics, "analytics", enableAnalytics, "Send analytical events to Google Analytics")
+	rootCmd.PersistentFlags().BoolVar(&util.EnableAnalytics, "analytics", util.EnableAnalytics, "Send analytical events to Google Analytics")
 
 	rootCmd.AddCommand(v.NewCmdVersion())
 	rootCmd.AddCommand(NewCmdRun())
