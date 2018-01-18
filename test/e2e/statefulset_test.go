@@ -418,6 +418,7 @@ var _ = Describe("StatefulSet", func() {
 			f.DeleteStatefulSet(ss.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
+			f.DeleteService(svc.ObjectMeta)
 			f.DeleteRecovery(recovery.ObjectMeta)
 			framework.CleanupMinikubeHostPath()
 		})
@@ -445,6 +446,7 @@ var _ = Describe("StatefulSet", func() {
 		AfterEach(func() {
 			f.DeleteStatefulSet(ss.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteService(svc.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 		})
 
@@ -462,6 +464,7 @@ var _ = Describe("StatefulSet", func() {
 			f.DeleteStatefulSet(ss.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
+			f.DeleteService(svc.ObjectMeta)
 			framework.CleanupMinikubeHostPath()
 		})
 
