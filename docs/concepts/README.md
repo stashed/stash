@@ -1,17 +1,17 @@
 ---
 title: Concepts | Stash
 menu:
-  product_stash_0.6.2:
+  product_stash_0.6.3:
     identifier: concepts-readme
     name: Readme
     parent: concepts
     weight: -1
 product_name: stash
-menu_name: product_stash_0.6.2
+menu_name: product_stash_0.6.3
 section_menu_id: concepts
-url: /products/stash/0.6.2/concepts/
+url: /products/stash/0.6.3/concepts/
 aliases:
-  - /products/stash/0.6.2/concepts/README/
+  - /products/stash/0.6.3/concepts/README/
 ---
 # Concepts
 

@@ -2,17 +2,17 @@
 title: Acknowledgement | Stash
 description: Acknowledgement
 menu:
-  product_stash_0.6.2:
+  product_stash_0.6.3:
     identifier: acknowledgement-stash
     name: Acknowledgement
     parent: welcome
     weight: 20
 product_name: stash
-menu_name: product_stash_0.6.2
+menu_name: product_stash_0.6.3
 section_menu_id: welcome
-url: /products/stash/0.6.2/welcome/acknowledgement/
+url: /products/stash/0.6.3/welcome/acknowledgement/
 aliases:
-  - /products/stash/0.6.2/acknowledgement/
+  - /products/stash/0.6.3/acknowledgement/
 ---
 
 # Acknowledgement
