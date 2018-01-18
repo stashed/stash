@@ -13,6 +13,7 @@ import (
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/docker"
+	"github.com/appscode/stash/pkg/util"
 	"github.com/appscode/stash/test/e2e/framework"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
@@ -63,6 +64,8 @@ var _ = BeforeSuite(func() {
 	err = root.CreateNamespace()
 	Expect(err).NotTo(HaveOccurred())
 	By("Using test namespace " + root.Namespace())
+
+	util.LoggerOptions.Verbosity = "5"
 
 	opts := controller.Options{
 		SidecarImageTag: TestSidecarImageTag,
