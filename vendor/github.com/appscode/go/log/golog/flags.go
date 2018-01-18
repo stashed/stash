@@ -29,10 +29,15 @@ func ParseFlags(fs *pflag.FlagSet) Options {
 }
 
 func (opt Options) ToFlags() []string {
-	return []string{
+	fs := []string{
 		fmt.Sprintf("--logtostderr=%v", opt.ToStderr),
 		fmt.Sprintf("--alsologtostderr=%v", opt.AlsoToStderr),
-		fmt.Sprintf("--v=%v", opt.Verbosity),
-		fmt.Sprintf("--stderrthreshold=%v", opt.StderrThreshold),
 	}
+	if opt.Verbosity != "" {
+		fs = append(fs, fmt.Sprintf("--v=%v", opt.Verbosity))
+	}
+	if opt.StderrThreshold != "" {
+		fs = append(fs, fmt.Sprintf("--stderrthreshold=%v", opt.StderrThreshold))
+	}
+	return fs
 }

@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/appscode/go/log/golog"
 	logs "github.com/appscode/go/log/golog"
 	api "github.com/appscode/stash/apis/stash"
 	"github.com/appscode/stash/client/scheme"
@@ -66,12 +65,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	By("Using test namespace " + root.Namespace())
 
-	util.LoggerOptions = golog.Options{
-		ToStderr:        true,
-		AlsoToStderr:    true,
-		StderrThreshold: "3",
-		Verbosity:       "5",
-	}
+	util.LoggerOptions.Verbosity = "5"
 
 	opts := controller.Options{
 		SidecarImageTag: TestSidecarImageTag,
