@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/appscode/go/log/golog"
 	logs "github.com/appscode/go/log/golog"
 	api "github.com/appscode/stash/apis/stash"
 	"github.com/appscode/stash/client/scheme"
@@ -13,6 +14,7 @@ import (
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/docker"
+	"github.com/appscode/stash/pkg/util"
 	"github.com/appscode/stash/test/e2e/framework"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
@@ -63,6 +65,13 @@ var _ = BeforeSuite(func() {
 	err = root.CreateNamespace()
 	Expect(err).NotTo(HaveOccurred())
 	By("Using test namespace " + root.Namespace())
+
+	util.LoggerOptions = golog.Options{
+		ToStderr:        true,
+		AlsoToStderr:    true,
+		StderrThreshold: "3",
+		Verbosity:       "5",
+	}
 
 	opts := controller.Options{
 		SidecarImageTag: TestSidecarImageTag,

@@ -275,9 +275,6 @@ func NewSidecarContainer(r *api.Restic, tag string, workload api.LocalTypedRefer
 	}
 	if tag == "canary" {
 		sidecar.ImagePullPolicy = core.PullAlways
-		sidecar.Args = append(sidecar.Args, "--v=5")
-	} else {
-		sidecar.Args = append(sidecar.Args, "--v=3")
 	}
 	for _, srcVol := range r.Spec.VolumeMounts {
 		sidecar.VolumeMounts = append(sidecar.VolumeMounts, core.VolumeMount{
