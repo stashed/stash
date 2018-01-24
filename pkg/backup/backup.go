@@ -91,14 +91,6 @@ func (c *Controller) Backup() error {
 	}
 
 	if err := c.runResticBackup(resource); err != nil {
-		eventer.CreateEventWithLog(
-			c.k8sClient,
-			BackupEventComponent,
-			resource.ObjectReference(),
-			core.EventTypeWarning,
-			eventer.EventReasonFailedCronJob,
-			fmt.Sprintf("Failed to run backup, reason: %s", err),
-		)
 		return fmt.Errorf("failed to run backup, reason: %s", err)
 	}
 
