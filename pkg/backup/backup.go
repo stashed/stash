@@ -226,16 +226,17 @@ func (c *Controller) runResticBackup(resource *api.Restic) (err error) {
 				restic_session_duration_seconds_total,
 				restic_session_duration_seconds)
 		}
-
-		stash_util.PatchRestic(c.stashClient, resource, func(in *api.Restic) *api.Restic {
-			in.Status.BackupCount++
-			in.Status.LastBackupTime = &startTime
-			if in.Status.FirstBackupTime == nil {
-				in.Status.FirstBackupTime = &startTime
-			}
-			in.Status.LastBackupDuration = endTime.Sub(startTime.Time).String()
-			return in
-		})
+		if err == nil {
+			stash_util.PatchRestic(c.stashClient, resource, func(in *api.Restic) *api.Restic {
+				in.Status.BackupCount++
+				in.Status.LastBackupTime = &startTime
+				if in.Status.FirstBackupTime == nil {
+					in.Status.FirstBackupTime = &startTime
+				}
+				in.Status.LastBackupDuration = endTime.Sub(startTime.Time).String()
+				return in
+			})
+		}
 	}()
 
 	for _, fg := range resource.Spec.FileGroups {
