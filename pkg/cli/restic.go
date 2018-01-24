@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -52,9 +53,9 @@ func (w *ResticWrapper) ListSnapshots() ([]Snapshot, error) {
 
 func (w *ResticWrapper) InitRepositoryIfAbsent() error {
 	args := w.appendCacheDirFlag([]interface{}{"snapshots", "--json"})
-	if err := w.sh.Command(Exe, args...).Run(); err != nil {
+	if err := w.run(Exe, args); err != nil {
 		args = w.appendCacheDirFlag([]interface{}{"init"})
-		return w.sh.Command(Exe, args...).Run()
+		return w.run(Exe, args)
 	}
 	return nil
 }
@@ -71,7 +72,7 @@ func (w *ResticWrapper) Backup(resource *api.Restic, fg api.FileGroup) error {
 		args = append(args, tag)
 	}
 	args = w.appendCacheDirFlag(args)
-	return w.sh.Command(Exe, args...).Run()
+	return w.run(Exe, args)
 }
 
 func (w *ResticWrapper) Forget(resource *api.Restic, fg api.FileGroup) error {
@@ -121,7 +122,7 @@ func (w *ResticWrapper) Forget(resource *api.Restic, fg api.FileGroup) error {
 	}
 	if len(args) > 1 {
 		args = w.appendCacheDirFlag(args)
-		return w.sh.Command(Exe, args...).Run()
+		return w.run(Exe, args)
 	}
 	return nil
 }
@@ -136,12 +137,12 @@ func (w *ResticWrapper) Restore(path, host string) error {
 	args = append(args, "--target")
 	args = append(args, path) // restore in same path as source-path
 	args = w.appendCacheDirFlag(args)
-	return w.sh.Command(Exe, args...).Run()
+	return w.run(Exe, args)
 }
 
 func (w *ResticWrapper) Check() error {
 	args := w.appendCacheDirFlag([]interface{}{"check"})
-	return w.sh.Command(Exe, args...).Run()
+	return w.run(Exe, args)
 }
 
 func (w *ResticWrapper) appendCacheDirFlag(args []interface{}) []interface{} {
@@ -150,4 +151,11 @@ func (w *ResticWrapper) appendCacheDirFlag(args []interface{}) []interface{} {
 		return append(args, "--cache-dir", cacheDir)
 	}
 	return append(args, "--no-cache")
+}
+
+func (w *ResticWrapper) run(cmd string, args []interface{}) error {
+	if out, err := w.sh.Command(cmd, args...).CombinedOutput(); err != nil {
+		return errors.New(string(out))
+	}
+	return nil
 }
