@@ -42,7 +42,7 @@ func (r Recovery) IsValid() error {
 		return fmt.Errorf("missing filegroup paths")
 	}
 	if len(r.Spec.RecoveredVolumes) == 0 {
-		return fmt.Errorf("missing recovery vollume")
+		return fmt.Errorf("missing recovery volume")
 	}
 
 	if err := r.Spec.Workload.Canonicalize(); err != nil {

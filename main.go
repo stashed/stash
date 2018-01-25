@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"runtime"
 
 	"github.com/appscode/go/log"
 	logs "github.com/appscode/go/log/golog"
@@ -15,6 +16,10 @@ import (
 func main() {
 	logs.InitLogs()
 	defer logs.FlushLogs()
+
+	if len(os.Getenv("GOMAXPROCS")) == 0 {
+		runtime.GOMAXPROCS(runtime.NumCPU())
+	}
 
 	if err := cmds.NewRootCmd().Execute(); err != nil {
 		log.Fatalln("Error in Stash Main:", err)
