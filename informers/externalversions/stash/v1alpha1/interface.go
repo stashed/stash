@@ -31,20 +31,22 @@ type Interface interface {
 }
 
 type version struct {
-	internalinterfaces.SharedInformerFactory
+	factory          internalinterfaces.SharedInformerFactory
+	namespace        string
+	tweakListOptions internalinterfaces.TweakListOptionsFunc
 }
 
 // New returns a new Interface.
-func New(f internalinterfaces.SharedInformerFactory) Interface {
-	return &version{f}
+func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakListOptions internalinterfaces.TweakListOptionsFunc) Interface {
+	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
 // Recoveries returns a RecoveryInformer.
 func (v *version) Recoveries() RecoveryInformer {
-	return &recoveryInformer{factory: v.SharedInformerFactory}
+	return &recoveryInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Restics returns a ResticInformer.
 func (v *version) Restics() ResticInformer {
-	return &resticInformer{factory: v.SharedInformerFactory}
+	return &resticInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

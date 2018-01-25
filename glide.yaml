@@ -2,7 +2,7 @@ package: github.com/appscode/stash
 import:
 - package: github.com/appscode/go
 - package: github.com/appscode/kutil
-  version: release-5.0
+  version: release-6.0
 - package: github.com/appscode/pat
 - package: github.com/cenkalti/backoff
   version: v1.1.0
@@ -33,17 +33,20 @@ import:
   vcs: git
   version: v2
 - package: k8s.io/api
-  version: release-1.8
+  version: kubernetes-1.9.0
+- package: k8s.io/apiserver
+  version: kubernetes-1.9.0
 - package: k8s.io/apimachinery
-  version: release-1.8
+  version: kubernetes-1.9.0
 - package: k8s.io/client-go
-  version: kubernetes-1.8.3-beta.0
+  version: v6.0.0
 - package: k8s.io/apiextensions-apiserver
-  version: release-1.8
+  version: kubernetes-1.9.0
 - package: k8s.io/kubernetes
-  repo: https://github.com/appscode/kubernetes.git
-  version: v1.8.3
-  vcs: git
+  version: v1.9.0
+- package: github.com/openshift/generic-admission-server
+  repo: https://github.com/appscode/generic-admission-server.git
+  branch: master
 - package: github.com/prometheus/client_golang
   version: v0.8.0
 - package: github.com/prometheus/common
