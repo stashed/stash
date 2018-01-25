@@ -180,7 +180,7 @@ def go_build(name, goos, goarch, main):
     if goos == 'alpine':
         repo_dir = REPO_ROOT[len(GOPATH):]
         uid = check_output('id -u').strip()
-        cmd = "docker run --rm -ti -u {uid} -v {repo_root}:/go{repo_dir} -w /go{repo_dir} -e {cgo_env} golang:1.9.1-alpine {goc} build -o {bindir}/{name}-{goos}-{goarch}{ext} {cgo} {ldflags} {main}".format(
+        cmd = "docker run --rm -u {uid} -v {repo_root}:/go{repo_dir} -w /go{repo_dir} -e {cgo_env} kiteci/golang:1.9.3-alpine {goc} build -o {bindir}/{name}-{goos}-{goarch}{ext} {cgo} {ldflags} {main}".format(
             repo_root=REPO_ROOT,
             repo_dir=repo_dir,
             uid=uid,
