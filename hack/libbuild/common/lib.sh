@@ -115,7 +115,7 @@ attic_up() {
 	local cmd="docker tag $DOCKER_REGISTRY/$IMG:$TAG docker.appscode.com/$IMG:$TAG"
 	echo $cmd; $cmd
 	cmd="docker push docker.appscode.com/$IMG:$TAG"
-	echo $cmd 
+	echo $cmd
 	until $cmd; do echo "Try again"; done
 }
 
@@ -127,10 +127,13 @@ hub_up() {
 hub_canary() {
 	hub_up
 
-	local cmd="docker tag $DOCKER_REGISTRY/$IMG:$TAG $DOCKER_REGISTRY/$IMG:canary"
-	echo $cmd; $cmd
-	cmd="docker push $DOCKER_REGISTRY/$IMG:canary"
-	echo $cmd; $cmd
+	# ref: https://www.gnu.org/software/bash/manual/html_node/Conditional-Constructs.html#Conditional-Constructs
+	if [[ "$TAG_STRATEGY" == "commit_hash" && "$git_branch" == "master" ]] ; then
+		local cmd="docker tag $DOCKER_REGISTRY/$IMG:$TAG $DOCKER_REGISTRY/$IMG:canary"
+		echo $cmd; $cmd
+		cmd="docker push $DOCKER_REGISTRY/$IMG:canary"
+		echo $cmd; $cmd
+	fi
 }
 
 attic_pull() {
