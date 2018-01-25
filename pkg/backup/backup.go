@@ -15,6 +15,7 @@ import (
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/cli"
 	"github.com/appscode/stash/pkg/controller"
+	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/prometheus/client_golang/prometheus"
@@ -45,6 +46,7 @@ type Options struct {
 	ResyncPeriod     time.Duration
 	MaxNumRequeues   int
 	RunViaCron       bool
+	DockerRegistry   string // image registry for check job
 	ImageTag         string // image tag for check job
 	EnableRBAC       bool   // rbac for check job
 }
@@ -101,7 +103,16 @@ func (c *Controller) Backup() error {
 	}
 
 	// create check job
-	job := util.NewCheckJob(resource, c.opt.SnapshotHostname, c.opt.SmartPrefix, c.opt.ImageTag)
+	image := docker.Docker{
+		Registry: c.opt.DockerRegistry,
+		Image:    docker.ImageStash,
+		Tag:      c.opt.ImageTag,
+	}
+	if err := image.Verify(resource.Spec.ImagePullSecrets); err != nil {
+		return err
+	}
+
+	job := util.NewCheckJob(resource, c.opt.SnapshotHostname, c.opt.SmartPrefix, image)
 	if c.opt.EnableRBAC {
 		job.Spec.Template.Spec.ServiceAccountName = job.Name
 	}

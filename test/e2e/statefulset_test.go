@@ -34,7 +34,7 @@ var _ = Describe("StatefulSet", func() {
 		restic.Spec.Backend.StorageSecretName = cred.Name
 		recovery.Spec.Backend.StorageSecretName = cred.Name
 		svc = f.HeadlessService()
-		ss = f.StatefulSet(restic, TestSidecarImageTag)
+		ss = f.StatefulSet(restic, TestStashImageTag)
 	})
 
 	var (
@@ -496,7 +496,7 @@ var _ = Describe("StatefulSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating StatefulSet " + ss.Name)
-				ss = f.StatefulSetWitInitContainer(restic, TestSidecarImageTag)
+				ss = f.StatefulSetWitInitContainer(restic, TestStashImageTag)
 				_, err = f.CreateStatefulSet(ss)
 				Expect(err).NotTo(HaveOccurred())
 

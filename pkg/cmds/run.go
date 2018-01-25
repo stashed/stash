@@ -27,9 +27,10 @@ func NewCmdRun() *cobra.Command {
 		kubeconfigPath string
 		address        string = ":56790"
 		opts                  = controller.Options{
-			SidecarImageTag: stringz.Val(v.Version.Version, "canary"),
-			ResyncPeriod:    5 * time.Minute,
-			MaxNumRequeues:  5,
+			DockerRegistry: docker.ACRegistry,
+			StashImageTag:  stringz.Val(v.Version.Version, "canary"),
+			ResyncPeriod:   5 * time.Minute,
+			MaxNumRequeues: 5,
 		}
 		scratchDir = "/tmp"
 	)
@@ -39,10 +40,6 @@ func NewCmdRun() *cobra.Command {
 		Short:             "Run Stash operator",
 		DisableAutoGenTag: true,
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := docker.CheckDockerImageVersion(docker.ImageOperator, opts.SidecarImageTag); err != nil {
-				log.Fatalf(`Image %v:%v not found.`, docker.ImageOperator, opts.SidecarImageTag)
-			}
-
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
 			if err != nil {
 				log.Fatalln(err)
@@ -60,11 +57,7 @@ func NewCmdRun() *cobra.Command {
 			if err != nil {
 				log.Fatalf("Failed to parse server version, reason: %s\n", err)
 			}
-			// check kubectl image
 			opts.KubectlImageTag = gv.ToMutator().ResetMetadata().ResetPrerelease().ResetPatch().String()
-			if err := docker.CheckDockerImageVersion(docker.ImageKubectl, opts.KubectlImageTag); err != nil {
-				log.Fatalf(`Image %v:%v not found.`, docker.ImageKubectl, opts.KubectlImageTag)
-			}
 
 			ctrl := controller.New(kubeClient, crdClient, stashClient, opts)
 			err = ctrl.Setup()
@@ -101,6 +94,8 @@ func NewCmdRun() *cobra.Command {
 	cmd.Flags().BoolVar(&opts.EnableRBAC, "rbac", opts.EnableRBAC, "Enable RBAC for operator")
 	cmd.Flags().StringVar(&scratchDir, "scratch-dir", scratchDir, "Directory used to store temporary files. Use an `emptyDir` in Kubernetes.")
 	cmd.Flags().DurationVar(&opts.ResyncPeriod, "resync-period", opts.ResyncPeriod, "If non-zero, will re-list this often. Otherwise, re-list will be delayed aslong as possible (until the upstream source closes the watch or times out.")
+	cmd.Flags().StringVar(&opts.StashImageTag, "image-tag", opts.StashImageTag, "Image tag for sidecar, init-container, check-job and recovery-job")
+	cmd.Flags().StringVar(&opts.DockerRegistry, "docker-registry", opts.DockerRegistry, "Docker image registry for sidecar, init-container, check-job, recovery-job and kubectl-job")
 
 	return cmd
 }

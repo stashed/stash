@@ -6,8 +6,9 @@ import (
 
 type Options struct {
 	EnableRBAC      bool
-	SidecarImageTag string
+	StashImageTag   string
 	KubectlImageTag string
+	DockerRegistry  string
 	ResyncPeriod    time.Duration
 	MaxNumRequeues  int
 }

@@ -18,6 +18,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
+	core "k8s.io/api/core/v1"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	"k8s.io/client-go/kubernetes"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
@@ -26,8 +27,8 @@ import (
 )
 
 const (
-	TIMEOUT             = 20 * time.Minute
-	TestSidecarImageTag = "canary"
+	TIMEOUT           = 20 * time.Minute
+	TestStashImageTag = "canary"
 )
 
 var (
@@ -68,20 +69,33 @@ var _ = BeforeSuite(func() {
 	util.LoggerOptions.Verbosity = "5"
 
 	opts := controller.Options{
-		SidecarImageTag: TestSidecarImageTag,
-		ResyncPeriod:    5 * time.Minute,
+		StashImageTag: TestStashImageTag,
+		ResyncPeriod:  5 * time.Minute,
+		EnableRBAC:    true,
 	}
 
 	// get kube api server version
 	version, err := kubeClient.Discovery().ServerVersion()
 	Expect(err).NotTo(HaveOccurred())
-
-	// check kubectl image
 	opts.KubectlImageTag = version.Major + "." + version.Minor + ".0"
-	err = docker.CheckDockerImageVersion(docker.ImageKubectl, opts.KubectlImageTag)
+
+	// verify stash image
+	image := docker.Docker{
+		Registry: docker.ACRegistry,
+		Image:    docker.ImageStash,
+		Tag:      opts.StashImageTag,
+	}
+	err = image.Verify([]core.LocalObjectReference{})
 	Expect(err).NotTo(HaveOccurred())
 
-	opts.EnableRBAC = true
+	// verify kubectl image
+	image = docker.Docker{
+		Registry: docker.ACRegistry,
+		Image:    docker.ImageKubectl,
+		Tag:      opts.KubectlImageTag,
+	}
+	err = image.Verify([]core.LocalObjectReference{})
+	Expect(err).NotTo(HaveOccurred())
 
 	ctrl = controller.New(kubeClient, crdClient, stashClient, opts)
 	By("Registering CRD group " + api.GroupName)

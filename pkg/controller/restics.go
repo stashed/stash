@@ -170,81 +170,95 @@ func (c *StashController) runResticInjector(key string) error {
 		glog.Infof("Sync/Add/Update for Restic %s\n", restic.GetName())
 
 		if restic.Spec.Type == api.BackupOffline {
-			meta := metav1.ObjectMeta{
-				Name:      util.KubectlCronPrefix + restic.Name,
-				Namespace: restic.Namespace,
-			}
-
-			selector, err := metav1.LabelSelectorAsSelector(&restic.Spec.Selector)
-			if err != nil {
-				return err
-			}
-
-			cronJob, _, err := batch_util.CreateOrPatchCronJob(c.k8sClient, meta, func(in *batch.CronJob) *batch.CronJob {
-				// set restic as cron-job owner
-				in.OwnerReferences = []metav1.OwnerReference{
-					{
-						APIVersion: api.SchemeGroupVersion.String(),
-						Kind:       api.ResourceKindRestic,
-						Name:       restic.Name,
-						UID:        restic.UID,
-					},
-				}
-
-				if in.Labels == nil {
-					in.Labels = map[string]string{}
-				}
-				in.Labels["app"] = util.AppLabelStash
-				in.Labels[util.AnnotationRestic] = restic.Name
-				in.Labels[util.AnnotationOperation] = util.OperationDeletePods
-
-				// spec
-				in.Spec.Schedule = restic.Spec.Schedule
-				if in.Spec.JobTemplate.Labels == nil {
-					in.Spec.JobTemplate.Labels = map[string]string{}
-				}
-				in.Spec.JobTemplate.Labels["app"] = util.AppLabelStash
-				in.Spec.JobTemplate.Labels[util.AnnotationRestic] = restic.Name
-				in.Spec.JobTemplate.Labels[util.AnnotationOperation] = util.OperationDeletePods
-
-				in.Spec.JobTemplate.Spec.Template.Spec.Containers = core_util.UpsertContainer(
-					in.Spec.JobTemplate.Spec.Template.Spec.Containers,
-					core.Container{
-						Name:  util.KubectlContainer,
-						Image: docker.ImageKubectl + ":" + c.options.KubectlImageTag,
-						Args: []string{
-							"kubectl",
-							"delete",
-							"pods",
-							"-l " + selector.String(),
-						},
-					})
-
-				in.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
-				if c.options.EnableRBAC {
-					in.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = in.Name
-				}
-				return in
-			})
-			if err != nil {
-				return err
-			}
-
-			if c.options.EnableRBAC {
-				ref, err := reference.GetReference(scheme.Scheme, cronJob)
-				if err != nil {
-					return err
-				}
-				if err = c.ensureKubectlRBAC(ref); err != nil {
-					return fmt.Errorf("error ensuring rbac for kubectl cron job %s, reason: %s\n", meta.Name, err)
-				}
-			}
+			c.EnsureKubectlCronJob(restic)
 		}
-
-		// for online backup
 		c.EnsureSidecar(restic)
 		c.EnsureSidecarDeleted(restic.Namespace, restic.Name)
 	}
+	return nil
+}
+
+func (c *StashController) EnsureKubectlCronJob(restic *api.Restic) error {
+	image := docker.Docker{
+		Registry: c.options.DockerRegistry,
+		Image:    docker.ImageKubectl,
+		Tag:      c.options.KubectlImageTag,
+	}
+	if err := image.Verify(restic.Spec.ImagePullSecrets); err != nil {
+		return err
+	}
+
+	meta := metav1.ObjectMeta{
+		Name:      util.KubectlCronPrefix + restic.Name,
+		Namespace: restic.Namespace,
+	}
+
+	selector, err := metav1.LabelSelectorAsSelector(&restic.Spec.Selector)
+	if err != nil {
+		return err
+	}
+
+	cronJob, _, err := batch_util.CreateOrPatchCronJob(c.k8sClient, meta, func(in *batch.CronJob) *batch.CronJob {
+		// set restic as cron-job owner
+		in.OwnerReferences = []metav1.OwnerReference{
+			{
+				APIVersion: api.SchemeGroupVersion.String(),
+				Kind:       api.ResourceKindRestic,
+				Name:       restic.Name,
+				UID:        restic.UID,
+			},
+		}
+
+		if in.Labels == nil {
+			in.Labels = map[string]string{}
+		}
+		in.Labels["app"] = util.AppLabelStash
+		in.Labels[util.AnnotationRestic] = restic.Name
+		in.Labels[util.AnnotationOperation] = util.OperationDeletePods
+
+		// spec
+		in.Spec.Schedule = restic.Spec.Schedule
+		if in.Spec.JobTemplate.Labels == nil {
+			in.Spec.JobTemplate.Labels = map[string]string{}
+		}
+		in.Spec.JobTemplate.Labels["app"] = util.AppLabelStash
+		in.Spec.JobTemplate.Labels[util.AnnotationRestic] = restic.Name
+		in.Spec.JobTemplate.Labels[util.AnnotationOperation] = util.OperationDeletePods
+
+		in.Spec.JobTemplate.Spec.Template.Spec.Containers = core_util.UpsertContainer(
+			in.Spec.JobTemplate.Spec.Template.Spec.Containers,
+			core.Container{
+				Name:  util.KubectlContainer,
+				Image: image.ToContainerImage(),
+				Args: []string{
+					"kubectl",
+					"delete",
+					"pods",
+					"-l " + selector.String(),
+				},
+			})
+		in.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = restic.Spec.ImagePullSecrets
+
+		in.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
+		if c.options.EnableRBAC {
+			in.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = in.Name
+		}
+		return in
+	})
+	if err != nil {
+		return err
+	}
+
+	if c.options.EnableRBAC {
+		ref, err := reference.GetReference(scheme.Scheme, cronJob)
+		if err != nil {
+			return err
+		}
+		if err = c.ensureKubectlRBAC(ref); err != nil {
+			return fmt.Errorf("error ensuring rbac for kubectl cron job %s, reason: %s\n", meta.Name, err)
+		}
+	}
+
 	return nil
 }
 

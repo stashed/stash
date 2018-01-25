@@ -1,21 +1,35 @@
 package docker
 
 import (
-	docker "github.com/heroku/docker-registry-client/registry"
+	"github.com/heroku/docker-registry-client/registry"
+	core "k8s.io/api/core/v1"
 )
 
 const (
-	registryUrl   = "https://registry-1.docker.io/"
-	ImageOperator = "appscode/stash"
-	ImageKubectl  = "appscode/kubectl"
+	registryUrl  = "https://registry-1.docker.io/"
+	ACRegistry   = "appscode"
+	ImageStash   = "stash"
+	ImageKubectl = "kubectl"
 )
 
-func CheckDockerImageVersion(repository, reference string) error {
-	hub, err := docker.New(registryUrl, "", "")
-	if err != nil {
-		return err
-	}
+type Docker struct {
+	Registry, Image, Tag string
+}
 
-	_, err = hub.Manifest(repository, reference)
-	return err
+func (docker Docker) Verify(secrets []core.LocalObjectReference) error {
+	if docker.Registry == ACRegistry {
+		repository := docker.Registry + "/" + docker.Image
+		if hub, err := registry.New(registryUrl, "", ""); err != nil {
+			return err
+		} else {
+			_, err = hub.Manifest(repository, docker.Tag)
+			return err
+		}
+	} else { // TODO @ Dipta: verify private repository
+		return nil
+	}
+}
+
+func (docker Docker) ToContainerImage() string {
+	return docker.Registry + "/" + docker.Image + ":" + docker.Tag
 }

@@ -22,6 +22,7 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -201,14 +202,15 @@ func PushgatewayURL() string {
 	return fmt.Sprintf("http://stash-operator.%s.svc:56789", meta.Namespace())
 }
 
-func NewInitContainer(r *api.Restic, tag string, workload api.LocalTypedReference, enableRBAC bool) core.Container {
-	container := NewSidecarContainer(r, tag, workload)
+func NewInitContainer(r *api.Restic, workload api.LocalTypedReference, image docker.Docker, enableRBAC bool) core.Container {
+	container := NewSidecarContainer(r, workload, image)
 	container.Args = []string{
 		"backup",
 		"--restic-name=" + r.Name,
 		"--workload-kind=" + workload.Kind,
 		"--workload-name=" + workload.Name,
-		"--image-tag=" + tag,
+		"--docker-registry=" + image.Registry,
+		"--image-tag=" + image.Tag,
 		"--pushgateway-url=" + PushgatewayURL(),
 		fmt.Sprintf("--analytics=%v", EnableAnalytics),
 	}
@@ -220,21 +222,23 @@ func NewInitContainer(r *api.Restic, tag string, workload api.LocalTypedReferenc
 	return container
 }
 
-func NewSidecarContainer(r *api.Restic, tag string, workload api.LocalTypedReference) core.Container {
+func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image docker.Docker) core.Container {
 	if r.Annotations != nil {
 		if v, ok := r.Annotations[api.VersionTag]; ok {
-			tag = v
+			image.Tag = v
 		}
 	}
 	sidecar := core.Container{
 		Name:            StashContainer,
-		Image:           docker.ImageOperator + ":" + tag,
+		Image:           image.ToContainerImage(),
 		ImagePullPolicy: core.PullIfNotPresent,
 		Args: append([]string{
 			"backup",
 			"--restic-name=" + r.Name,
 			"--workload-kind=" + workload.Kind,
 			"--workload-name=" + workload.Name,
+			"--docker-registry=" + image.Registry,
+			"--image-tag=" + image.Tag,
 			"--run-via-cron=true",
 			"--pushgateway-url=" + PushgatewayURL(),
 			fmt.Sprintf("--analytics=%v", EnableAnalytics),
@@ -273,7 +277,7 @@ func NewSidecarContainer(r *api.Restic, tag string, workload api.LocalTypedRefer
 			},
 		},
 	}
-	if tag == "canary" {
+	if image.Tag == "canary" {
 		sidecar.ImagePullPolicy = core.PullAlways
 	}
 	for _, srcVol := range r.Spec.VolumeMounts {
@@ -375,7 +379,7 @@ func RecoveryEqual(old, new *api.Recovery) bool {
 	return reflect.DeepEqual(oldSpec, newSpec)
 }
 
-func NewRecoveryJob(recovery *api.Recovery, tag string) *batch.Job {
+func NewRecoveryJob(recovery *api.Recovery, image docker.Docker) *batch.Job {
 	volumes := make([]core.Volume, 0)
 	volumeMounts := make([]core.VolumeMount, 0)
 	for i, recVol := range recovery.Spec.RecoveredVolumes {
@@ -408,7 +412,7 @@ func NewRecoveryJob(recovery *api.Recovery, tag string) *batch.Job {
 					Containers: []core.Container{
 						{
 							Name:  StashContainer,
-							Image: docker.ImageOperator + ":" + tag,
+							Image: image.ToContainerImage(),
 							Args: append([]string{
 								"recover",
 								"--recovery-name=" + recovery.Name,
@@ -426,7 +430,8 @@ func NewRecoveryJob(recovery *api.Recovery, tag string) *batch.Job {
 							}),
 						},
 					},
-					RestartPolicy: core.RestartPolicyOnFailure,
+					ImagePullSecrets: recovery.Spec.ImagePullSecrets,
+					RestartPolicy:    core.RestartPolicyOnFailure,
 					Volumes: append(volumes, core.Volume{
 						Name: ScratchDirVolumeName,
 						VolumeSource: core.VolumeSource{
@@ -499,7 +504,7 @@ func DeleteConfigmapLock(k8sClient kubernetes.Interface, namespace string, workl
 	return k8sClient.CoreV1().ConfigMaps(namespace).Delete(GetConfigmapLockName(workload), &metav1.DeleteOptions{})
 }
 
-func NewCheckJob(restic *api.Restic, hostName string, smartPrefix string, tag string) *batch.Job {
+func NewCheckJob(restic *api.Restic, hostName, smartPrefix string, image docker.Docker) *batch.Job {
 	job := &batch.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      CheckJobPrefix + restic.Name,
@@ -524,7 +529,7 @@ func NewCheckJob(restic *api.Restic, hostName string, smartPrefix string, tag st
 					Containers: []core.Container{
 						{
 							Name:  StashContainer,
-							Image: docker.ImageOperator + ":" + tag,
+							Image: image.ToContainerImage(),
 							Args: append([]string{
 								"check",
 								"--restic-name=" + restic.Name,
@@ -546,7 +551,8 @@ func NewCheckJob(restic *api.Restic, hostName string, smartPrefix string, tag st
 							},
 						},
 					},
-					RestartPolicy: core.RestartPolicyOnFailure,
+					ImagePullSecrets: restic.Spec.ImagePullSecrets,
+					RestartPolicy:    core.RestartPolicyOnFailure,
 					Volumes: []core.Volume{
 						{
 							Name: ScratchDirVolumeName,
@@ -590,4 +596,18 @@ func EnsureOwnerReference(meta metav1.ObjectMeta, owner *core.ObjectReference) m
 	meta.OwnerReferences[fi].UID = owner.UID
 	meta.OwnerReferences[fi].BlockOwnerDeletion = types.TrueP()
 	return meta
+}
+
+func AppendNewImagePullSecrets(old, new []core.LocalObjectReference) []core.LocalObjectReference {
+	names := sets.NewString()
+	for _, item := range old {
+		names.Insert(item.Name)
+	}
+	for _, item := range new {
+		if !names.Has(item.Name) {
+			names.Insert(item.Name)
+			old = append(old, item)
+		}
+	}
+	return old
 }

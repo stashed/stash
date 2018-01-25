@@ -7,6 +7,7 @@ import (
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	stash_util "github.com/appscode/stash/client/typed/stash/v1alpha1/util"
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
+	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
@@ -168,7 +169,16 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 		return nil
 	}
 
-	job := util.NewRecoveryJob(rec, c.options.SidecarImageTag)
+	image := docker.Docker{
+		Registry: c.options.DockerRegistry,
+		Image:    docker.ImageStash,
+		Tag:      c.options.StashImageTag,
+	}
+	if err := image.Verify(rec.Spec.ImagePullSecrets); err != nil {
+		return err
+	}
+
+	job := util.NewRecoveryJob(rec, image)
 	if c.options.EnableRBAC {
 		job.Spec.Template.Spec.ServiceAccountName = job.Name
 	}
