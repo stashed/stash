@@ -38,19 +38,34 @@ type RecoveryInformer interface {
 }
 
 type recoveryInformer struct {
-	factory internalinterfaces.SharedInformerFactory
+	factory          internalinterfaces.SharedInformerFactory
+	tweakListOptions internalinterfaces.TweakListOptionsFunc
+	namespace        string
 }
 
 // NewRecoveryInformer constructs a new informer for Recovery type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
 func NewRecoveryInformer(client client.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredRecoveryInformer(client, namespace, resyncPeriod, indexers, nil)
+}
+
+// NewFilteredRecoveryInformer constructs a new informer for Recovery type.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewFilteredRecoveryInformer(client client.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
 				return client.StashV1alpha1().Recoveries(namespace).List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
 				return client.StashV1alpha1().Recoveries(namespace).Watch(options)
 			},
 		},
@@ -60,12 +75,12 @@ func NewRecoveryInformer(client client.Interface, namespace string, resyncPeriod
 	)
 }
 
-func defaultRecoveryInformer(client client.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewRecoveryInformer(client, v1.NamespaceAll, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
+func (f *recoveryInformer) defaultInformer(client client.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewFilteredRecoveryInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
 func (f *recoveryInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&stash_v1alpha1.Recovery{}, defaultRecoveryInformer)
+	return f.factory.InformerFor(&stash_v1alpha1.Recovery{}, f.defaultInformer)
 }
 
 func (f *recoveryInformer) Lister() v1alpha1.RecoveryLister {

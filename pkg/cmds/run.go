@@ -13,7 +13,6 @@ import (
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/docker"
-	"github.com/appscode/stash/pkg/migrator"
 	"github.com/hashicorp/go-version"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
@@ -70,10 +69,6 @@ func NewCmdRun() *cobra.Command {
 			ctrl := controller.New(kubeClient, crdClient, stashClient, opts)
 			err = ctrl.Setup()
 			if err != nil {
-				log.Fatalln(err)
-			}
-
-			if err = migrator.NewMigrator(kubeClient, crdClient).RunMigration(); err != nil {
 				log.Fatalln(err)
 			}
 

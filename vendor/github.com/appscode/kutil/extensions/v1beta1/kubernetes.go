@@ -36,10 +36,6 @@ func AssignTypeKind(v interface{}) error {
 		u.APIVersion = extensions.SchemeGroupVersion.String()
 		u.Kind = meta.GetKind(v)
 		return nil
-	case *extensions.ThirdPartyResource:
-		u.APIVersion = extensions.SchemeGroupVersion.String()
-		u.Kind = meta.GetKind(v)
-		return nil
 	}
 	return errors.New("unknown api object type")
 }
