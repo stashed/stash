@@ -26,7 +26,7 @@ spec:
         - run
         - --v=3
         - --rbac=$STASH_ENABLE_RBAC
-        image: appscode/stash:0.6.3
+        image: appscode/stash:0.7.0-alpha.0
         ports:
         - containerPort: 56790
           name: http

@@ -1,12 +1,12 @@
 ---
 title: Stash Version
 menu:
-  product_stash_0.6.3:
+  product_stash_0.7.0-alpha.0:
     identifier: stash-version
     name: Stash Version
     parent: reference
 product_name: stash
-menu_name: product_stash_0.6.3
+menu_name: product_stash_0.7.0-alpha.0
 section_menu_id: reference
 ---
 ## stash version
