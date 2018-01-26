@@ -1,21 +1,15 @@
 package docker
 
-import (
-	docker "github.com/heroku/docker-registry-client/registry"
-)
-
 const (
-	registryUrl   = "https://registry-1.docker.io/"
-	ImageOperator = "appscode/stash"
-	ImageKubectl  = "appscode/kubectl"
+	ACRegistry   = "appscode"
+	ImageStash   = "stash"
+	ImageKubectl = "kubectl"
 )
 
-func CheckDockerImageVersion(repository, reference string) error {
-	hub, err := docker.New(registryUrl, "", "")
-	if err != nil {
-		return err
-	}
+type Docker struct {
+	Registry, Image, Tag string
+}
 
-	_, err = hub.Manifest(repository, reference)
-	return err
+func (docker Docker) ToContainerImage() string {
+	return docker.Registry + "/" + docker.Image + ":" + docker.Tag
 }

@@ -316,6 +316,7 @@ func autoConvert_v1alpha1_RecoverySpec_To_stash_RecoverySpec(in *RecoverySpec, o
 	out.PodOrdinal = in.PodOrdinal
 	out.NodeName = in.NodeName
 	out.RecoveredVolumes = *(*[]stash.LocalSpec)(unsafe.Pointer(&in.RecoveredVolumes))
+	out.ImagePullSecrets = *(*[]v1.LocalObjectReference)(unsafe.Pointer(&in.ImagePullSecrets))
 	return nil
 }
 
@@ -335,6 +336,7 @@ func autoConvert_stash_RecoverySpec_To_v1alpha1_RecoverySpec(in *stash.RecoveryS
 	out.PodOrdinal = in.PodOrdinal
 	out.NodeName = in.NodeName
 	out.RecoveredVolumes = *(*[]LocalSpec)(unsafe.Pointer(&in.RecoveredVolumes))
+	out.ImagePullSecrets = *(*[]v1.LocalObjectReference)(unsafe.Pointer(&in.ImagePullSecrets))
 	return nil
 }
 
@@ -450,6 +452,7 @@ func autoConvert_v1alpha1_ResticSpec_To_stash_ResticSpec(in *ResticSpec, out *st
 	out.Resources = in.Resources
 	out.RetentionPolicies = *(*[]stash.RetentionPolicy)(unsafe.Pointer(&in.RetentionPolicies))
 	out.Type = stash.BackupType(in.Type)
+	out.ImagePullSecrets = *(*[]v1.LocalObjectReference)(unsafe.Pointer(&in.ImagePullSecrets))
 	return nil
 }
 
@@ -469,6 +472,7 @@ func autoConvert_stash_ResticSpec_To_v1alpha1_ResticSpec(in *stash.ResticSpec, o
 	out.Resources = in.Resources
 	out.RetentionPolicies = *(*[]RetentionPolicy)(unsafe.Pointer(&in.RetentionPolicies))
 	out.Type = BackupType(in.Type)
+	out.ImagePullSecrets = *(*[]v1.LocalObjectReference)(unsafe.Pointer(&in.ImagePullSecrets))
 	return nil
 }
 

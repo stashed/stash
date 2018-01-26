@@ -157,6 +157,19 @@ func (fi *Invocation) SecretForB2Backend() core.Secret {
 	}
 }
 
+func (fi *Invocation) SecretForRegistry(dockerCfgJson []byte) core.Secret {
+	return core.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rand.WithUniqSuffix(fi.app + "-docker"),
+			Namespace: fi.namespace,
+		},
+		Type: core.SecretTypeDockerConfigJson,
+		Data: map[string][]byte{
+			core.DockerConfigJsonKey: dockerCfgJson,
+		},
+	}
+}
+
 // TODO: Add more methods for Swift, Backblaze B2, Rest server backend.
 
 func (f *Framework) CreateSecret(obj core.Secret) error {

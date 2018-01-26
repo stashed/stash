@@ -1,5 +1,5 @@
-hash: f1b8ce9892c42a3d18b09ea41f84bf476c5e6d83922447688be94246df7dcce3
-updated: 2018-01-24T18:50:32.050620511-08:00
+hash: 12eb0ca314a0ab05e0511f43cf5f161728dbc84dd36de9444c5b6dad7a69a875
+updated: 2018-01-26T14:24:46.119954785-08:00
 imports:
 - name: github.com/appscode/go
   version: 99dbf420807d9459b63d1d0bf702537bb7aa976f
@@ -15,7 +15,7 @@ imports:
   - types
   - version
 - name: github.com/appscode/kutil
-  version: ace10068d6334865247d59cdc3fc70d51ab8b8e5
+  version: 60ced7f055b34d512a84f65ca0a7d412ec3d6ef2
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
@@ -40,7 +40,7 @@ imports:
 - name: github.com/codeskyblue/go-sh
   version: cf804ac79dffabb6b16342e24362cc744afc144f
 - name: github.com/cpuguy83/go-md2man
-  version: 20f5889cbdc3c73dbd2862796665e7c465ade7d1
+  version: 71acacd42f85e5e82f70a55327789582a5200a90
   subpackages:
   - md2man
 - name: github.com/davecgh/go-spew
@@ -49,16 +49,6 @@ imports:
   - spew
 - name: github.com/docker/distribution
   version: edc3ab29cdff8694dd6feb85cfeb4b5f1b38ed9c
-  subpackages:
-  - context
-  - digestset
-  - manifest
-  - manifest/schema1
-  - manifest/schema2
-  - reference
-  - uuid
-- name: github.com/docker/libtrust
-  version: aabc10ec26b754e797f9028f4589c5b7bd90dc20
 - name: github.com/emicklei/go-restful
   version: ff4f55a206334ef123e4f79bbf348980da81ca46
   subpackages:
@@ -113,10 +103,6 @@ imports:
   - OpenAPIv2
   - compiler
   - extensions
-- name: github.com/gorilla/context
-  version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
-- name: github.com/gorilla/mux
-  version: 0a192a193177452756c362c20087ddafcf6829c4
 - name: github.com/gregjones/httpcache
   version: 787624de3eb7bd915c329cba748687a3b22666a6
   subpackages:
@@ -131,8 +117,6 @@ imports:
   - simplelru
 - name: github.com/heroku/docker-registry-client
   version: fd2fe803496897db70c236ee244f41487ea92ec2
-  subpackages:
-  - registry
 - name: github.com/howeyc/gopass
   version: bf9dde6d0d2c004a008c27aaee91170c786f6db8
 - name: github.com/imdario/mergo
@@ -189,15 +173,12 @@ imports:
   - matchers/support/goraph/node
   - matchers/support/goraph/util
   - types
-- name: github.com/opencontainers/go-digest
-  version: 279bed98673dd5bef374d3b6e4b09e2af76183bf
 - name: github.com/openshift/generic-admission-server
-  version: bf5da91aa43e04c3dfcbfeae427fdc56d9c1e53f
-  repo: https://github.com/appscode/generic-admission-server.git
+  version: fee7efcb54503879f889c25d091d0e5758757c85
 - name: github.com/peterbourgon/diskv
   version: 5f041e8faa004a95c88a202771f4cc3e991971e6
 - name: github.com/pkg/errors
-  version: e881fd58d78e04cf6d0de1217f8707c8cc2249bc
+  version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/prometheus/client_golang
   version: c5b7fccd204277076155f10851dad72b76a49317
   subpackages:

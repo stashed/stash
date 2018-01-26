@@ -9,6 +9,7 @@ import (
 	ext_util "github.com/appscode/kutil/extensions/v1beta1"
 	"github.com/appscode/kutil/meta"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
@@ -173,6 +174,12 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 }
 
 func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, old, new *api.Restic) (err error) {
+	image := docker.Docker{
+		Registry: c.options.DockerRegistry,
+		Image:    docker.ImageStash,
+		Tag:      c.options.StashImageTag,
+	}
+
 	if new.Spec.Backend.StorageSecretName == "" {
 		err = fmt.Errorf("missing repository secret name for Restic %s/%s", new.Namespace, new.Name)
 		return
@@ -208,11 +215,25 @@ func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet,
 			Kind: api.KindDaemonSet,
 			Name: obj.Name,
 		}
+
 		if new.Spec.Type == api.BackupOffline {
-			obj.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(obj.Spec.Template.Spec.InitContainers, util.NewInitContainer(new, c.options.SidecarImageTag, workload, c.options.EnableRBAC))
+			obj.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(
+				obj.Spec.Template.Spec.InitContainers,
+				util.NewInitContainer(new, workload, image, c.options.EnableRBAC),
+			)
 		} else {
-			obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(obj.Spec.Template.Spec.Containers, util.NewSidecarContainer(new, c.options.SidecarImageTag, workload))
+			obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(
+				obj.Spec.Template.Spec.Containers,
+				util.NewSidecarContainer(new, workload, image),
+			)
 		}
+
+		// keep existing image pull secrets
+		obj.Spec.Template.Spec.ImagePullSecrets = core_util.MergeLocalObjectReferences(
+			obj.Spec.Template.Spec.ImagePullSecrets,
+			new.Spec.ImagePullSecrets,
+		)
+
 		obj.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(obj.Spec.Template.Spec.Volumes)
 		obj.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(obj.Spec.Template.Spec.Volumes)
 		obj.Spec.Template.Spec.Volumes = util.MergeLocalVolume(obj.Spec.Template.Spec.Volumes, old, new)
@@ -231,7 +252,7 @@ func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet,
 		}
 		data, _ := meta.MarshalToJson(r, api.SchemeGroupVersion)
 		obj.Annotations[api.LastAppliedConfiguration] = string(data)
-		obj.Annotations[api.VersionTag] = c.options.SidecarImageTag
+		obj.Annotations[api.VersionTag] = c.options.StashImageTag
 		return obj
 	})
 	if err != nil {

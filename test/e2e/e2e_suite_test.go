@@ -26,8 +26,8 @@ import (
 )
 
 const (
-	TIMEOUT             = 20 * time.Minute
-	TestSidecarImageTag = "canary"
+	TIMEOUT           = 20 * time.Minute
+	TestStashImageTag = "canary"
 )
 
 var (
@@ -68,20 +68,16 @@ var _ = BeforeSuite(func() {
 	util.LoggerOptions.Verbosity = "5"
 
 	opts := controller.Options{
-		SidecarImageTag: TestSidecarImageTag,
-		ResyncPeriod:    5 * time.Minute,
+		DockerRegistry: docker.ACRegistry,
+		StashImageTag:  TestStashImageTag,
+		ResyncPeriod:   5 * time.Minute,
+		EnableRBAC:     true,
 	}
 
 	// get kube api server version
 	version, err := kubeClient.Discovery().ServerVersion()
 	Expect(err).NotTo(HaveOccurred())
-
-	// check kubectl image
 	opts.KubectlImageTag = version.Major + "." + version.Minor + ".0"
-	err = docker.CheckDockerImageVersion(docker.ImageKubectl, opts.KubectlImageTag)
-	Expect(err).NotTo(HaveOccurred())
-
-	opts.EnableRBAC = true
 
 	ctrl = controller.New(kubeClient, crdClient, stashClient, opts)
 	By("Registering CRD group " + api.GroupName)

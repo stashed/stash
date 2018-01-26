@@ -15,6 +15,7 @@ import (
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/cli"
 	"github.com/appscode/stash/pkg/controller"
+	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/prometheus/client_golang/prometheus"
@@ -45,6 +46,7 @@ type Options struct {
 	ResyncPeriod     time.Duration
 	MaxNumRequeues   int
 	RunViaCron       bool
+	DockerRegistry   string // image registry for check job
 	ImageTag         string // image tag for check job
 	EnableRBAC       bool   // rbac for check job
 }
@@ -101,7 +103,13 @@ func (c *Controller) Backup() error {
 	}
 
 	// create check job
-	job := util.NewCheckJob(resource, c.opt.SnapshotHostname, c.opt.SmartPrefix, c.opt.ImageTag)
+	image := docker.Docker{
+		Registry: c.opt.DockerRegistry,
+		Image:    docker.ImageStash,
+		Tag:      c.opt.ImageTag,
+	}
+
+	job := util.NewCheckJob(resource, c.opt.SnapshotHostname, c.opt.SmartPrefix, image)
 	if c.opt.EnableRBAC {
 		job.Spec.Template.Spec.ServiceAccountName = job.Name
 	}
@@ -300,7 +308,7 @@ func (c *Controller) ensureCheckRBAC(resource *core.ObjectReference) error {
 		Namespace: resource.Namespace,
 	}
 	_, _, err := core_util.CreateOrPatchServiceAccount(c.k8sClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
-		in.ObjectMeta = util.EnsureOwnerReference(in.ObjectMeta, resource)
+		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
@@ -313,7 +321,7 @@ func (c *Controller) ensureCheckRBAC(resource *core.ObjectReference) error {
 
 	// ensure role binding
 	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		in.ObjectMeta = util.EnsureOwnerReference(in.ObjectMeta, resource)
+		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
 
 		if in.Labels == nil {
 			in.Labels = map[string]string{}

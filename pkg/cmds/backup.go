@@ -9,6 +9,7 @@ import (
 	"github.com/appscode/kutil/meta"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/backup"
+	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
@@ -23,6 +24,7 @@ func NewCmdBackup() *cobra.Command {
 			Namespace:      meta.Namespace(),
 			ScratchDir:     "/tmp",
 			PodLabelsPath:  "/etc/stash/labels",
+			DockerRegistry: docker.ACRegistry,
 			ResyncPeriod:   5 * time.Minute,
 			MaxNumRequeues: 5,
 		}
@@ -85,6 +87,7 @@ func NewCmdBackup() *cobra.Command {
 	cmd.Flags().StringVar(&opt.PushgatewayURL, "pushgateway-url", opt.PushgatewayURL, "URL of Prometheus pushgateway used to cache backup metrics")
 	cmd.Flags().DurationVar(&opt.ResyncPeriod, "resync-period", opt.ResyncPeriod, "If non-zero, will re-list this often. Otherwise, re-list will be delayed aslong as possible (until the upstream source closes the watch or times out.")
 	cmd.Flags().BoolVar(&opt.RunViaCron, "run-via-cron", opt.RunViaCron, "Run backup periodically via cron.")
+	cmd.Flags().StringVar(&opt.DockerRegistry, "docker-registry", opt.DockerRegistry, "Check job image registry.")
 	cmd.Flags().StringVar(&opt.ImageTag, "image-tag", opt.ImageTag, "Check job image tag.")
 	cmd.Flags().BoolVar(&opt.EnableRBAC, "enable-rbac", opt.EnableRBAC, "Enable RBAC")
 

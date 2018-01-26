@@ -4,6 +4,7 @@ import (
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/util"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1beta1"
@@ -11,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (fi *Invocation) StatefulSet(r api.Restic, sidecarImageTag string) apps.StatefulSet {
+func (fi *Invocation) StatefulSet(r api.Restic, stashImageTag string) apps.StatefulSet {
 	resource := apps.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
@@ -34,7 +35,18 @@ func (fi *Invocation) StatefulSet(r api.Restic, sidecarImageTag string) apps.Sta
 		Kind: api.KindStatefulSet,
 		Name: resource.Name,
 	}
-	resource.Spec.Template.Spec.Containers = append(resource.Spec.Template.Spec.Containers, util.NewSidecarContainer(&r, sidecarImageTag, workload))
+
+	image := docker.Docker{
+		Registry: docker.ACRegistry,
+		Image:    docker.ImageStash,
+		Tag:      stashImageTag,
+	}
+
+	resource.Spec.Template.Spec.Containers = append(
+		resource.Spec.Template.Spec.InitContainers,
+		util.NewSidecarContainer(&r, workload, image),
+	)
+
 	resource.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(resource.Spec.Template.Spec.Volumes)
 	resource.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(resource.Spec.Template.Spec.Volumes)
 	if r.Spec.Backend.Local != nil {
@@ -43,7 +55,7 @@ func (fi *Invocation) StatefulSet(r api.Restic, sidecarImageTag string) apps.Sta
 	return resource
 }
 
-func (fi *Invocation) StatefulSetWitInitContainer(r api.Restic, sidecarImageTag string) apps.StatefulSet {
+func (fi *Invocation) StatefulSetWitInitContainer(r api.Restic, stashImageTag string) apps.StatefulSet {
 	resource := apps.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
@@ -66,7 +78,18 @@ func (fi *Invocation) StatefulSetWitInitContainer(r api.Restic, sidecarImageTag 
 		Kind: api.KindStatefulSet,
 		Name: resource.Name,
 	}
-	resource.Spec.Template.Spec.InitContainers = append(resource.Spec.Template.Spec.InitContainers, util.NewInitContainer(&r, sidecarImageTag, workload, false))
+
+	image := docker.Docker{
+		Registry: docker.ACRegistry,
+		Image:    docker.ImageStash,
+		Tag:      stashImageTag,
+	}
+
+	resource.Spec.Template.Spec.InitContainers = append(
+		resource.Spec.Template.Spec.InitContainers,
+		util.NewInitContainer(&r, workload, image, false),
+	)
+
 	resource.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(resource.Spec.Template.Spec.Volumes)
 	resource.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(resource.Spec.Template.Spec.Volumes)
 	if r.Spec.Backend.Local != nil {
