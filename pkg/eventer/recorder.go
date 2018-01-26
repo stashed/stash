@@ -31,6 +31,7 @@ const (
 	EventReasonFailedToDelete                = "FailedDelete"
 	EventReasonJobCreated                    = "RecoveryJobCreated"
 	EventReasonCheckJobCreated               = "CheckJobCreated"
+	EventReasonFailedSetup                   = "SetupFailed"
 )
 
 func NewEventRecorder(client kubernetes.Interface, component string) record.EventRecorder {

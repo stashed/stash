@@ -13,7 +13,6 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/record"
 )
 
 type Controller struct {
@@ -21,7 +20,6 @@ type Controller struct {
 	stashClient  cs.StashV1alpha1Interface
 	namespace    string
 	recoveryName string
-	recorder     record.EventRecorder
 }
 
 const (
@@ -34,7 +32,6 @@ func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, 
 		stashClient:  stashClient,
 		namespace:    namespace,
 		recoveryName: name,
-		recorder:     eventer.NewEventRecorder(k8sClient, RecoveryEventComponent),
 	}
 }
 
