@@ -53,6 +53,13 @@ $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack
     | bash -s -- --namespace=stash [--run-on-master] [--rbac]
 ```
 
+Stash operator can be used as a workload [initializer](https://kubernetes.io/docs/admin/extensible-admission-controllers/#initializers). For this, pass the `--initializer` flag. _Please note that, this uses an alpha feature of Kubernetes_.
+
+```console
+$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/stash.sh \
+    | bash -s -- --initializer [--rbac]
+```
+
 
 ## Using Helm
 Stash can be installed via [Helm](https://helm.sh/) using the [chart](https://github.com/appscode/stash/tree/master/chart/stable/stash) included in this repository or from official charts repository. To install the chart with the release name `my-release`:

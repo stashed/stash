@@ -9,6 +9,7 @@ export STASH_SERVICE_ACCOUNT=default
 export STASH_ENABLE_RBAC=false
 export STASH_RUN_ON_MASTER=0
 export STASH_ROLE_TYPE=ClusterRole
+export STASH_AS_INITIALIZER=false
 
 show_help() {
     echo "stash.sh - install stash operator"
@@ -20,6 +21,7 @@ show_help() {
     echo "-n, --namespace=NAMESPACE          specify namespace (default: kube-system)"
     echo "    --rbac                         create RBAC roles and bindings"
     echo "    --run-on-master                run stash operator on master"
+    echo "    --initializer                  configure stash operator as workload initializer"
 }
 
 while test $# -gt 0; do
@@ -40,6 +42,10 @@ while test $# -gt 0; do
             ;;
         --namespace*)
             export STASH_NAMESPACE=`echo $1 | sed -e 's/^[^=]*=//g'`
+            shift
+            ;;
+        --initializer)
+            export STASH_AS_INITIALIZER=true
             shift
             ;;
         --rbac)
@@ -70,4 +76,8 @@ fi
 if [ "$STASH_RUN_ON_MASTER" -eq 1 ]; then
     kubectl patch deploy stash-operator -n $STASH_NAMESPACE \
       --patch="$(curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/run-on-master.yaml)"
+fi
+
+if [ "$STASH_AS_INITIALIZER" = true ]; then
+    kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/initializer.yaml
 fi

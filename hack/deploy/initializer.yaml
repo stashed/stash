@@ -1,9 +1,9 @@
 apiVersion: admissionregistration.k8s.io/v1alpha1
 kind: InitializerConfiguration
 metadata:
+  name: stash-initializer
   labels:
     app: stash
-  name: stash-initializer
 initializers:
 - name: stash.appscode.com
   rules:
