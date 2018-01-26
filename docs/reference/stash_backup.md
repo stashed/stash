@@ -24,6 +24,7 @@ stash backup [flags]
 ### Options
 
 ```
+      --docker-registry string   Check job image registry. (default "appscode")
       --enable-rbac              Enable RBAC
   -h, --help                     help for backup
       --image-tag string         Check job image tag.

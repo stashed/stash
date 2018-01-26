@@ -25,7 +25,9 @@ stash run [flags]
 
 ```
       --address string           Address to listen on for web interface and telemetry. (default ":56790")
+      --docker-registry string   Docker image registry for sidecar, init-container, check-job, recovery-job and kubectl-job (default "appscode")
   -h, --help                     help for run
+      --image-tag string         Image tag for sidecar, init-container, check-job and recovery-job (default "canary")
       --kubeconfig string        Path to kubeconfig file with authorization information (the master location is set by the master flag).
       --master string            The address of the Kubernetes API server (overrides any value in kubeconfig)
       --rbac                     Enable RBAC for operator
