@@ -1,15 +1,15 @@
 ---
-title: Stash Admission-Server
+title: Stash Admission-Webhook
 menu:
   product_stash_0.7.0-alpha.0:
-    identifier: stash-admission-server
-    name: Stash Admission-Server
+    identifier: stash-admission-webhook
+    name: Stash Admission-Webhook
     parent: reference
 product_name: stash
 menu_name: product_stash_0.7.0-alpha.0
 section_menu_id: reference
 ---
-## stash admission-server
+## stash admission-webhook
 
 Launch a namespace reservation API server
 
@@ -18,7 +18,7 @@ Launch a namespace reservation API server
 Launch a namespace reservation API server
 
 ```
-stash admission-server [flags]
+stash admission-webhook [flags]
 ```
 
 ### Options
@@ -49,7 +49,7 @@ stash admission-server [flags]
       --client-ca-file string                                   If set, any request presenting a client certificate signed by one of the authorities in the client-ca-file is authenticated with an identity corresponding to the CommonName of the client certificate.
       --contention-profiling                                    Enable lock contention profiling, if profiling is enabled
       --enable-swagger-ui                                       Enables swagger ui on the apiserver at /swagger-ui
-  -h, --help                                                    help for admission-server
+  -h, --help                                                    help for admission-webhook
       --kubeconfig string                                       kubeconfig file pointing at the 'core' kubernetes server.
       --profiling                                               Enable profiling via web interface host:port/debug/pprof/ (default true)
       --requestheader-allowed-names strings                     List of client certificate common names to allow to provide usernames in headers specified by --requestheader-username-headers. If empty, any client certificate validated by the authorities in --requestheader-client-ca-file is allowed.

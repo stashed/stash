@@ -41,15 +41,15 @@ spec:
           name: pushgateway
           protocol: TCP
         volumeMounts:
-          - mountPath: /var/pv
-            name: data-volume
-          - mountPath: /tmp
-            name: stash-scratchdir
-      volumes:
-        - emptyDir: {}
+        - mountPath: /var/pv
           name: data-volume
-        - emptyDir: {}
+        - mountPath: /tmp
           name: stash-scratchdir
+      volumes:
+      - emptyDir: {}
+        name: data-volume
+      - emptyDir: {}
+        name: stash-scratchdir
       tolerations:
       - key: CriticalAddonsOnly
         operator: Exists
