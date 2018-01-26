@@ -2,7 +2,6 @@ package docker
 
 import (
 	"github.com/heroku/docker-registry-client/registry"
-	core "k8s.io/api/core/v1"
 )
 
 const (
@@ -16,7 +15,7 @@ type Docker struct {
 	Registry, Image, Tag string
 }
 
-func (docker Docker) Verify(secrets []core.LocalObjectReference) error {
+func (docker Docker) Verify() error {
 	if docker.Registry == ACRegistry {
 		repository := docker.Registry + "/" + docker.Image
 		if hub, err := registry.New(registryUrl, "", ""); err != nil {

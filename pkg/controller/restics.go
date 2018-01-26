@@ -184,9 +184,6 @@ func (c *StashController) EnsureKubectlCronJob(restic *api.Restic) error {
 		Image:    docker.ImageKubectl,
 		Tag:      c.options.KubectlImageTag,
 	}
-	if err := image.Verify(restic.Spec.ImagePullSecrets); err != nil {
-		return err
-	}
 
 	meta := metav1.ObjectMeta{
 		Name:      util.KubectlCronPrefix + restic.Name,

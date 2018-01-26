@@ -190,9 +190,6 @@ func (c *StashController) EnsureReplicaSetSidecar(resource *extensions.ReplicaSe
 		Image:    docker.ImageStash,
 		Tag:      c.options.StashImageTag,
 	}
-	if err := image.Verify(new.Spec.ImagePullSecrets); err != nil {
-		return err
-	}
 
 	if new.Spec.Backend.StorageSecretName == "" {
 		err = fmt.Errorf("missing repository secret name for Restic %s/%s", new.Namespace, new.Name)

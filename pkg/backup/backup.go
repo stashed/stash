@@ -108,9 +108,6 @@ func (c *Controller) Backup() error {
 		Image:    docker.ImageStash,
 		Tag:      c.opt.ImageTag,
 	}
-	if err := image.Verify(resource.Spec.ImagePullSecrets); err != nil {
-		return err
-	}
 
 	job := util.NewCheckJob(resource, c.opt.SnapshotHostname, c.opt.SmartPrefix, image)
 	if c.opt.EnableRBAC {

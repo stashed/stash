@@ -229,9 +229,8 @@ func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image 
 		}
 	}
 	sidecar := core.Container{
-		Name:            StashContainer,
-		Image:           image.ToContainerImage(),
-		ImagePullPolicy: core.PullIfNotPresent,
+		Name:  StashContainer,
+		Image: image.ToContainerImage(),
 		Args: append([]string{
 			"backup",
 			"--restic-name=" + r.Name,
@@ -276,9 +275,6 @@ func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image 
 				MountPath: "/etc/stash",
 			},
 		},
-	}
-	if image.Tag == "canary" {
-		sidecar.ImagePullPolicy = core.PullAlways
 	}
 	for _, srcVol := range r.Spec.VolumeMounts {
 		sidecar.VolumeMounts = append(sidecar.VolumeMounts, core.VolumeMount{

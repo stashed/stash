@@ -174,9 +174,6 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 		Image:    docker.ImageStash,
 		Tag:      c.options.StashImageTag,
 	}
-	if err := image.Verify(rec.Spec.ImagePullSecrets); err != nil {
-		return err
-	}
 
 	job := util.NewRecoveryJob(rec, image)
 	if c.options.EnableRBAC {
