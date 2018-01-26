@@ -43,8 +43,19 @@ func (c *Controller) BackupScheduler() error {
 }
 
 func (c *Controller) setupAndRunScheduler(stopBackup chan struct{}) error {
-	if _, err := c.setup(); err != nil {
-		return fmt.Errorf("failed to setup backup: %s", err)
+	if resource, err := c.setup(); err != nil {
+		if err != nil {
+			err = fmt.Errorf("failed to setup backup: %s", err)
+			eventer.CreateEventWithLog(
+				c.k8sClient,
+				BackupEventComponent,
+				resource.ObjectReference(),
+				core.EventTypeWarning,
+				eventer.EventReasonFailedSetup,
+				err.Error(),
+			)
+			return err
+		}
 	}
 	c.initResticWatcher() // setup restic watcher, not required for offline backup
 	go c.runScheduler(1, stopBackup)
