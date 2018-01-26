@@ -9,7 +9,6 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/record"
 )
 
 const (
@@ -27,7 +26,6 @@ type Controller struct {
 	k8sClient   kubernetes.Interface
 	stashClient cs.StashV1alpha1Interface
 	opt         Options
-	recorder    record.EventRecorder
 }
 
 func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, opt Options) *Controller {
@@ -35,7 +33,6 @@ func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, 
 		k8sClient:   k8sClient,
 		stashClient: stashClient,
 		opt:         opt,
-		recorder:    eventer.NewEventRecorder(k8sClient, CheckEventComponent),
 	}
 }
 
@@ -55,7 +52,6 @@ func (c *Controller) Run() (err error) {
 				eventer.EventReasonFailedToCheck,
 				fmt.Sprintf("Check failed for pod %s, reason: %s\n", c.opt.HostName, err),
 			)
-
 		} else {
 			eventer.CreateEventWithLog(
 				c.k8sClient,
