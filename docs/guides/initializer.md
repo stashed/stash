@@ -2,13 +2,13 @@
 title: Workload Initializer | Stash
 description: Workload Initializer
 menu:
-  product_stash_0.6.3:
+  product_stash_0.7.0-alpha.0:
     identifier: initializer-stash
     name: Workload Initializer
     parent: guides
     weight: 35
 product_name: stash
-menu_name: product_stash_0.6.3
+menu_name: product_stash_0.7.0-alpha.0
 section_menu_id: guides
 ---
 

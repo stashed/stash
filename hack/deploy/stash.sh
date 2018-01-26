@@ -61,13 +61,13 @@ done
 env | sort | grep STASH*
 echo ""
 
-curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.6.3/hack/deploy/operator.yaml | envsubst | kubectl apply -f -
+curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/operator.yaml | envsubst | kubectl apply -f -
 
 if [ "$STASH_ENABLE_RBAC" = true ]; then
-    curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.6.3/hack/deploy/rbac.yaml | envsubst | kubectl apply -f -
+    curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/rbac.yaml | envsubst | kubectl apply -f -
 fi
 
 if [ "$STASH_RUN_ON_MASTER" -eq 1 ]; then
     kubectl patch deploy stash-operator -n $STASH_NAMESPACE \
-      --patch="$(curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.6.3/hack/deploy/run-on-master.yaml)"
+      --patch="$(curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/run-on-master.yaml)"
 fi
