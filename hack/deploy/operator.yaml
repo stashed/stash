@@ -2,7 +2,7 @@ apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
   name: stash-operator
-  namespace: kube-system
+  namespace: $STASH_OPERATOR
   labels:
     app: stash
   initializers:
@@ -19,11 +19,13 @@ spec:
       annotations:
         scheduler.alpha.kubernetes.io/critical-pod: ''
     spec:
+      serviceAccountName: $STASH_SERVICE_ACCOUNT
       containers:
       - name: operator
         args:
         - run
         - --v=3
+        - --rbac=$STASH_ENABLE_RBAC
         image: appscode/stash:0.6.3
         ports:
         - containerPort: 56790
@@ -49,16 +51,16 @@ spec:
         - emptyDir: {}
           name: stash-scratchdir
       tolerations:
-      - key: "CriticalAddonsOnly"
-        operator: "Exists"
+      - key: CriticalAddonsOnly
+        operator: Exists
 ---
 apiVersion: v1
 kind: Service
 metadata:
+  name: stash-operator
+  namespace: $STASH_OPERATOR
   labels:
     app: stash
-  name: stash-operator
-  namespace: kube-system
 spec:
   ports:
   - name: pushgateway

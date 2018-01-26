@@ -15,16 +15,44 @@ section_menu_id: setup
 # Installation Guide
 
 ## Using YAML
-Stash can be installed using YAML files includes in the [/hack/deploy](https://github.com/appscode/stash/tree/master/hack/deploy) folder.
+Stash can be installed via installer script included in the [/hack/deploy](https://github.com/appscode/stash/tree/0.6.3/hack/deploy) folder.
 
 ```console
-# Install without RBAC roles
-$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.6.3/hack/deploy/without-rbac.yaml
+$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.6.3/hack/deploy/stash.sh | bash -s -- -h
+stash.sh - install stash operator
 
+stash.sh [options]
+
+options:
+-h, --help                         show brief help
+-n, --namespace=NAMESPACE          specify namespace (default: kube-system)
+    --rbac                         create RBAC roles and bindings
+    --run-on-master                run stash operator on master
+
+# install without RBAC roles
+$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.6.3/hack/deploy/stash.sh \
+    | bash
 
 # Install with RBAC roles
-$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.6.3/hack/deploy/with-rbac.yaml
+$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.6.3/hack/deploy/stash.sh \
+    | bash -s -- --rbac
 ```
+
+If you would like to run Stash operator pod in `master` instances, pass the `--run-on-master` flag:
+
+```console
+$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.6.3/hack/deploy/stash.sh \
+    | bash -s -- --run-on-master [--rbac]
+```
+
+Stash operator will be installed in a `kube-system` namespace by default. If you would like to run Stash operator pod in `stash` namespace, pass the `--namespace=stash` flag:
+
+```console
+$ kubectl create namespace stash
+$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.6.3/hack/deploy/stash.sh \
+    | bash -s -- --namespace=stash [--run-on-master] [--rbac]
+```
+
 
 ## Using Helm
 Stash can be installed via [Helm](https://helm.sh/) using the [chart](https://github.com/appscode/stash/tree/master/chart/stable/stash) included in this repository or from official charts repository. To install the chart with the release name `my-release`:
