@@ -3,6 +3,7 @@ package v1
 import (
 	"errors"
 
+	"github.com/appscode/go/types"
 	"github.com/appscode/kutil/meta"
 	"github.com/appscode/mergo"
 	core "k8s.io/api/core/v1"
@@ -231,4 +232,40 @@ func UpsertMap(maps, upsert map[string]string) map[string]string {
 		maps[k] = v
 	}
 	return maps
+}
+
+func MergeLocalObjectReferences(old, new []core.LocalObjectReference) []core.LocalObjectReference {
+	m := make(map[string]core.LocalObjectReference)
+	for _, ref := range old {
+		m[ref.Name] = ref
+	}
+	for _, ref := range new {
+		m[ref.Name] = ref
+	}
+
+	result := make([]core.LocalObjectReference, 0, len(m))
+	for _, ref := range m {
+		result = append(result, ref)
+	}
+	return result
+}
+
+func EnsureOwnerReference(meta metav1.ObjectMeta, owner *core.ObjectReference) metav1.ObjectMeta {
+	fi := -1
+	for i, ref := range meta.OwnerReferences {
+		if ref.Kind == owner.Kind && ref.Name == owner.Name {
+			fi = i
+			break
+		}
+	}
+	if fi == -1 {
+		meta.OwnerReferences = append(meta.OwnerReferences, metav1.OwnerReference{})
+		fi = len(meta.OwnerReferences) - 1
+	}
+	meta.OwnerReferences[fi].APIVersion = owner.APIVersion
+	meta.OwnerReferences[fi].Kind = owner.Kind
+	meta.OwnerReferences[fi].Name = owner.Name
+	meta.OwnerReferences[fi].UID = owner.UID
+	meta.OwnerReferences[fi].BlockOwnerDeletion = types.TrueP()
+	return meta
 }

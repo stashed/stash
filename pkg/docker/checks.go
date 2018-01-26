@@ -1,11 +1,6 @@
 package docker
 
-import (
-	"github.com/heroku/docker-registry-client/registry"
-)
-
 const (
-	registryUrl  = "https://registry-1.docker.io/"
 	ACRegistry   = "appscode"
 	ImageStash   = "stash"
 	ImageKubectl = "kubectl"
@@ -13,20 +8,6 @@ const (
 
 type Docker struct {
 	Registry, Image, Tag string
-}
-
-func (docker Docker) Verify() error {
-	if docker.Registry == ACRegistry {
-		repository := docker.Registry + "/" + docker.Image
-		if hub, err := registry.New(registryUrl, "", ""); err != nil {
-			return err
-		} else {
-			_, err = hub.Manifest(repository, docker.Tag)
-			return err
-		}
-	} else { // TODO @ Dipta: verify private repository
-		return nil
-	}
 }
 
 func (docker Docker) ToContainerImage() string {

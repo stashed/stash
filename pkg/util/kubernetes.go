@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/appscode/go/log/golog"
-	"github.com/appscode/go/types"
 	core_util "github.com/appscode/kutil/core/v1"
 	"github.com/appscode/kutil/meta"
 	"github.com/appscode/kutil/tools/analytics"
@@ -22,7 +21,6 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -572,38 +570,4 @@ func NewCheckJob(restic *api.Restic, hostName, smartPrefix string, image docker.
 	}
 
 	return job
-}
-
-func EnsureOwnerReference(meta metav1.ObjectMeta, owner *core.ObjectReference) metav1.ObjectMeta {
-	fi := -1
-	for i, ref := range meta.OwnerReferences {
-		if ref.Kind == owner.Kind && ref.Name == owner.Name {
-			fi = i
-			break
-		}
-	}
-	if fi == -1 {
-		meta.OwnerReferences = append(meta.OwnerReferences, metav1.OwnerReference{})
-		fi = len(meta.OwnerReferences) - 1
-	}
-	meta.OwnerReferences[fi].APIVersion = owner.APIVersion
-	meta.OwnerReferences[fi].Kind = owner.Kind
-	meta.OwnerReferences[fi].Name = owner.Name
-	meta.OwnerReferences[fi].UID = owner.UID
-	meta.OwnerReferences[fi].BlockOwnerDeletion = types.TrueP()
-	return meta
-}
-
-func AppendNewImagePullSecrets(old, new []core.LocalObjectReference) []core.LocalObjectReference {
-	names := sets.NewString()
-	for _, item := range old {
-		names.Insert(item.Name)
-	}
-	for _, item := range new {
-		if !names.Has(item.Name) {
-			names.Insert(item.Name)
-			old = append(old, item)
-		}
-	}
-	return old
 }

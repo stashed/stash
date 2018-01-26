@@ -5,7 +5,6 @@ import (
 	core_util "github.com/appscode/kutil/core/v1"
 	rbac_util "github.com/appscode/kutil/rbac/v1beta1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
-	"github.com/appscode/stash/pkg/util"
 	apps "k8s.io/api/apps/v1beta1"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
@@ -30,7 +29,7 @@ func (c *StashController) ensureSidecarRoleBinding(resource *core.ObjectReferenc
 		Name:      c.getSidecarRoleBindingName(resource.Name),
 	}
 	_, _, err := rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		in.ObjectMeta = util.EnsureOwnerReference(in.ObjectMeta, resource)
+		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
 
 		if in.Annotations == nil {
 			in.Annotations = map[string]string{}
@@ -129,7 +128,7 @@ func (c *StashController) ensureKubectlRBAC(resource *core.ObjectReference) erro
 		Namespace: resource.Namespace,
 	}
 	_, _, err := rbac_util.CreateOrPatchRole(c.k8sClient, meta, func(in *rbac.Role) *rbac.Role {
-		in.ObjectMeta = util.EnsureOwnerReference(in.ObjectMeta, resource)
+		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
 
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
@@ -155,7 +154,7 @@ func (c *StashController) ensureKubectlRBAC(resource *core.ObjectReference) erro
 		Namespace: resource.Namespace,
 	}
 	_, _, err = core_util.CreateOrPatchServiceAccount(c.k8sClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
-		in.ObjectMeta = util.EnsureOwnerReference(in.ObjectMeta, resource)
+		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
@@ -168,7 +167,7 @@ func (c *StashController) ensureKubectlRBAC(resource *core.ObjectReference) erro
 
 	// ensure role binding
 	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		in.ObjectMeta = util.EnsureOwnerReference(in.ObjectMeta, resource)
+		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
 
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
@@ -201,7 +200,7 @@ func (c *StashController) ensureRecoveryRBAC(resource *core.ObjectReference) err
 		Namespace: resource.Namespace,
 	}
 	_, _, err := core_util.CreateOrPatchServiceAccount(c.k8sClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
-		in.ObjectMeta = util.EnsureOwnerReference(in.ObjectMeta, resource)
+		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
@@ -214,7 +213,7 @@ func (c *StashController) ensureRecoveryRBAC(resource *core.ObjectReference) err
 
 	// ensure role binding
 	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		in.ObjectMeta = util.EnsureOwnerReference(in.ObjectMeta, resource)
+		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
 
 		if in.Labels == nil {
 			in.Labels = map[string]string{}

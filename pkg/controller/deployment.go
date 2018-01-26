@@ -238,7 +238,7 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 		}
 
 		// keep existing image pull secrets
-		obj.Spec.Template.Spec.ImagePullSecrets = util.AppendNewImagePullSecrets(
+		obj.Spec.Template.Spec.ImagePullSecrets = core_util.MergeLocalObjectReferences(
 			obj.Spec.Template.Spec.ImagePullSecrets,
 			new.Spec.ImagePullSecrets,
 		)

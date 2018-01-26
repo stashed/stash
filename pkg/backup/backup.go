@@ -308,7 +308,7 @@ func (c *Controller) ensureCheckRBAC(resource *core.ObjectReference) error {
 		Namespace: resource.Namespace,
 	}
 	_, _, err := core_util.CreateOrPatchServiceAccount(c.k8sClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
-		in.ObjectMeta = util.EnsureOwnerReference(in.ObjectMeta, resource)
+		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
@@ -321,7 +321,7 @@ func (c *Controller) ensureCheckRBAC(resource *core.ObjectReference) error {
 
 	// ensure role binding
 	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		in.ObjectMeta = util.EnsureOwnerReference(in.ObjectMeta, resource)
+		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
 
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
