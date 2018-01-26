@@ -1,6 +1,9 @@
 package e2e_test
 
 import (
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/appscode/go/types"
@@ -625,5 +628,34 @@ var _ = Describe("Deployment", func() {
 			})
 			It(`should backup new Deployment`, shouldBackupNewDeployment)
 		})
+	})
+
+	Describe("Private docker registry", func() {
+		var registryCred core.Secret
+		AfterEach(func() {
+			f.DeleteDeployment(deployment.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+			f.DeleteSecret(registryCred.ObjectMeta)
+		})
+		BeforeEach(func() {
+			By("Reading docker config json file")
+			dockerCfgJson, err := ioutil.ReadFile(filepath.Join(os.Getenv("HOME"), ".docker/config.json"))
+			Expect(err).NotTo(HaveOccurred())
+
+			registryCred = f.SecretForRegistry(dockerCfgJson)
+			By("Creating registry Secret " + registryCred.Name)
+			err = f.CreateSecret(registryCred)
+			Expect(err).NotTo(HaveOccurred())
+
+			cred = f.SecretForLocalBackend()
+			restic = f.ResticForLocalBackend()
+			restic.Spec.ImagePullSecrets = []core.LocalObjectReference{
+				{
+					Name: registryCred.Name,
+				},
+			}
+		})
+		It(`should backup new Deployment`, shouldBackupNewDeployment)
 	})
 })
