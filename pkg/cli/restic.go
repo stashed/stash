@@ -157,10 +157,12 @@ func (w *ResticWrapper) appendCacheDirFlag(args []interface{}) []interface{} {
 
 func (w *ResticWrapper) run(cmd string, args []interface{}) error {
 	out, err := w.sh.Command(cmd, args...).CombinedOutput()
-	log.Infoln(string(out))
 	if err != nil {
 		parts := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
-		return errors.New(parts[len(parts)-1])
+		if len(parts) > 1 {
+			parts = parts[len(parts)-1:]
+		}
+		return errors.New(parts[0])
 	}
 	return nil
 }
