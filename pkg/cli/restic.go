@@ -4,8 +4,10 @@ import (
 	"errors"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/appscode/go/log"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	shell "github.com/codeskyblue/go-sh"
 )
@@ -154,8 +156,11 @@ func (w *ResticWrapper) appendCacheDirFlag(args []interface{}) []interface{} {
 }
 
 func (w *ResticWrapper) run(cmd string, args []interface{}) error {
-	if out, err := w.sh.Command(cmd, args...).CombinedOutput(); err != nil {
-		return errors.New(string(out))
+	out, err := w.sh.Command(cmd, args...).CombinedOutput()
+	log.Infoln(string(out))
+	if err != nil {
+		parts := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
+		return errors.New(parts[len(parts)-1])
 	}
 	return nil
 }

@@ -242,14 +242,14 @@ func (c *Controller) runResticBackup(resource *api.Restic) (err error) {
 		backupOpMetric := restic_session_duration_seconds.WithLabelValues(sanitizeLabelValue(fg.Path), "backup")
 		err = c.measure(c.resticCLI.Backup, resource, fg, backupOpMetric)
 		if err != nil {
-			log.Errorf("Backup operation failed for Restic %s/%s due to %s\n", resource.Namespace, resource.Name, err)
+			log.Errorf("Backup failed for Restic %s/%s, reason: %s\n", resource.Namespace, resource.Name, err)
 			eventer.CreateEventWithLog(
 				c.k8sClient,
 				BackupEventComponent,
 				resource.ObjectReference(),
 				core.EventTypeWarning,
 				eventer.EventReasonFailedToBackup,
-				fmt.Sprintf("Backup operation failed for Restic %s/%s due to %s", resource.Namespace, resource.Name, err),
+				fmt.Sprintf("Backup failed, reason: %s", err),
 			)
 			return
 		} else {
@@ -267,14 +267,14 @@ func (c *Controller) runResticBackup(resource *api.Restic) (err error) {
 		forgetOpMetric := restic_session_duration_seconds.WithLabelValues(sanitizeLabelValue(fg.Path), "forget")
 		err = c.measure(c.resticCLI.Forget, resource, fg, forgetOpMetric)
 		if err != nil {
-			log.Errorf("Failed to forget old snapshots for Restic %s/%s due to %s\n", resource.Namespace, resource.Name, err)
+			log.Errorf("Failed to forget old snapshots for Restic %s/%s, reason: %s\n", resource.Namespace, resource.Name, err)
 			eventer.CreateEventWithLog(
 				c.k8sClient,
 				BackupEventComponent,
 				resource.ObjectReference(),
 				core.EventTypeWarning,
 				eventer.EventReasonFailedToRetention,
-				fmt.Sprintf("Failed to forget old snapshots for Restic %s/%s due to %s", resource.Namespace, resource.Name, err),
+				fmt.Sprintf("Failed to forget old snapshots, reason: %s", err),
 			)
 			return
 		}
