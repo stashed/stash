@@ -131,7 +131,7 @@ spec:
     namespace: $STASH_NAMESPACE
   version: v1alpha1
 ---
-# register to intercept namespace creates
+# register to intercept stash CRD creates / updates
 apiVersion: admissionregistration.k8s.io/v1beta1
 kind: ValidatingWebhookConfiguration
 metadata:
@@ -139,37 +139,21 @@ metadata:
   labels:
     app: stash
 webhooks:
-- name: resticreviews.admission.stash.appscode.com
+- name: admission.stash.appscode.com
   clientConfig:
     service:
       namespace: default
       name: kubernetes
-      path: /apis/admission.stash.appscode.com/v1alpha1/resticreviews
+      path: /apis/admission.stash.appscode.com/v1alpha1/reviews
     caBundle: $KUBE_CA
   rules:
   - operations:
     - CREATE
+    - UPDATE
     apiGroups:
     - stash.appscode.com
     apiVersions:
     - "*"
     resources:
-    - restics
-  failurePolicy: Fail
-- name: recoveryreviews.admission.stash.appscode.com
-  clientConfig:
-    service:
-      namespace: default
-      name: kubernetes
-      path: /apis/admission.stash.appscode.com/v1alpha1/recoveryreviews
-    caBundle: $KUBE_CA
-  rules:
-  - operations:
-    - CREATE
-    apiGroups:
-    - stash.appscode.com
-    apiVersions:
     - "*"
-    resources:
-    - recoveries
   failurePolicy: Fail
