@@ -8,7 +8,6 @@ export STASH_NAMESPACE=kube-system
 export STASH_SERVICE_ACCOUNT=default
 export STASH_ENABLE_RBAC=false
 export STASH_RUN_ON_MASTER=0
-export STASH_ROLE_TYPE=ClusterRole
 export STASH_AS_INITIALIZER=false
 
 show_help() {
@@ -72,7 +71,7 @@ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/d
 if [ "$STASH_ENABLE_RBAC" = true ]; then
     kubectl create serviceaccount $STASH_SERVICE_ACCOUNT --namespace $STASH_NAMESPACE
     kubectl label serviceaccount $STASH_SERVICE_ACCOUNT app=stash --namespace $STASH_NAMESPACE
-    curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/rbac.yaml | envsubst | kubectl auth reconcile -f -
+    curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/rbac-list.yaml | envsubst | kubectl auth reconcile -f -
 fi
 
 if [ "$STASH_RUN_ON_MASTER" -eq 1 ]; then
