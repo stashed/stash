@@ -10,8 +10,7 @@ import (
 	v "github.com/appscode/go/version"
 	"github.com/appscode/kutil/tools/analytics"
 	"github.com/appscode/stash/client/scheme"
-	"github.com/appscode/stash/pkg/admission/plugin/recovery"
-	"github.com/appscode/stash/pkg/admission/plugin/restic"
+	"github.com/appscode/stash/pkg/admission/plugin"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/jpillora/go-ogle-analytics"
 	"github.com/openshift/generic-admission-server/pkg/cmd/server"
@@ -59,7 +58,7 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.AddCommand(NewCmdCheck())
 
 	stopCh := genericapiserver.SetupSignalHandler()
-	cmd := server.NewCommandStartAdmissionServer(os.Stdout, os.Stderr, stopCh, &restic.AdmissionHook{}, &recovery.AdmissionHook{})
+	cmd := server.NewCommandStartAdmissionServer(os.Stdout, os.Stderr, stopCh, &plugin.AdmissionHook{})
 	cmd.Use = "admission-webhook"
 	rootCmd.AddCommand(cmd)
 
