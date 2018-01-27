@@ -1,8 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ${STASH_ROLE_TYPE}
+kind: ClusterRole
 metadata:
   name: stash-operator
-  namespace: $STASH_NAMESPACE
   labels:
     app: stash
 rules:
@@ -78,15 +77,14 @@ rules:
   verbs: ["get", "create", "delete", "patch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ${STASH_ROLE_TYPE}Binding
+kind: ClusterRoleBinding
 metadata:
   name: stash-operator
-  namespace: $STASH_NAMESPACE
   labels:
     app: stash
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ${STASH_ROLE_TYPE}
+  kind: ClusterRole
   name: stash-operator
 subjects:
 - kind: ServiceAccount
