@@ -28,6 +28,7 @@ options:
 -n, --namespace=NAMESPACE          specify namespace (default: kube-system)
     --rbac                         create RBAC roles and bindings
     --run-on-master                run stash operator on master
+    --enable-initializer           configure stash operator as workload initializer
 
 # install without RBAC roles
 $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/stash.sh \
@@ -53,11 +54,11 @@ $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack
     | bash -s -- --namespace=stash [--run-on-master] [--rbac]
 ```
 
-Stash operator can be used as a workload [initializer](https://kubernetes.io/docs/admin/extensible-admission-controllers/#initializers). For this, pass the `--initializer` flag. _Please note that, this uses an alpha feature of Kubernetes_.
+Stash operator can be used as a workload [initializer](https://kubernetes.io/docs/admin/extensible-admission-controllers/#initializers). For this, pass the `--enable-initializer` flag. _Please note that, this uses an alpha feature of Kubernetes_.
 
 ```console
 $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/stash.sh \
-    | bash -s -- --initializer [--rbac]
+    | bash -s -- --enable-initializer [--rbac]
 ```
 
 
