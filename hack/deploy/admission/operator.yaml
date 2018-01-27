@@ -1,0 +1,173 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: stash-operator
+  namespace: $STASH_OPERATOR
+  labels:
+    app: stash
+  initializers:
+    pending: []
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stash
+  template:
+    metadata:
+      labels:
+        app: stash
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+    spec:
+      serviceAccountName: $STASH_SERVICE_ACCOUNT
+      containers:
+      - name: operator
+        args:
+        - run
+        - --v=3
+        - --rbac=$STASH_ENABLE_RBAC
+        image: appscode/stash:0.7.0-alpha.0
+        ports:
+        - containerPort: 56790
+          name: http
+          protocol: TCP
+      - name: pushgateway
+        args:
+        - -web.listen-address=:56789
+        - -persistence.file=/var/pv/pushgateway.dat
+        image: prom/pushgateway:v0.4.0
+        ports:
+        - containerPort: 56789
+          name: pushgateway
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /var/pv
+          name: data-volume
+        - mountPath: /tmp
+          name: stash-scratchdir
+      - name: webhook
+        args:
+        - admission-webhook
+        - --secure-port=8443
+        - --audit-log-path=-
+        - --tls-cert-file=/var/serving-cert/tls.crt
+        - --tls-private-key-file=/var/serving-cert/tls.key
+        - --v=8
+        image: appscode/stash:admit
+        ports:
+        - containerPort: 8443
+        volumeMounts:
+        - mountPath: /var/serving-cert
+          name: serving-cert
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8443
+            scheme: HTTPS
+      volumes:
+      - emptyDir: {}
+        name: data-volume
+      - emptyDir: {}
+        name: stash-scratchdir
+      - name: serving-cert
+        secret:
+          defaultMode: 420
+          secretName: stash-admission-webhook-cert
+      tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
+---
+# kube lacks the service serving cert signer, so provide a manual secret for it
+apiVersion: v1
+kind: Secret
+metadata:
+  name: stash-admission-webhook-cert
+  namespace: $STASH_OPERATOR
+  labels:
+    app: stash
+type: kubernetes.io/tls
+data:
+  tls.crt: $TLS_SERVING_CERT
+  tls.key: $TLS_SERVING_KEY
+---
+# to be able to expose TSB inside the cluster
+apiVersion: v1
+kind: Service
+metadata:
+  name: stash-operator
+  namespace: $STASH_OPERATOR
+  labels:
+    app: stash
+spec:
+  ports:
+  - name: admission
+    port: 443
+    targetPort: 8443
+  - name: pushgateway
+    port: 56789
+    targetPort: pushgateway
+  - name: http
+    port: 56790
+    targetPort: http
+  selector:
+    app: stash
+---
+# register as aggregated apiserver
+apiVersion: apiregistration.k8s.io/v1beta1
+kind: APIService
+metadata:
+  name: v1beta1.admission.stash.appscode.com
+  labels:
+    app: stash
+spec:
+  caBundle: $SERVICE_SERVING_CERT_CA
+  group: admission.stash.appscode.com
+  groupPriorityMinimum: 1000
+  versionPriority: 15
+  service:
+    name: stash-operator
+    namespace: $STASH_OPERATOR
+  version: v1alpha1
+---
+# register to intercept namespace creates
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: admission.stash.appscode.com
+  labels:
+    app: stash
+webhooks:
+- name: resticreviews.admission.stash.appscode.com
+  clientConfig:
+    service:
+      namespace: default
+      name: kubernetes
+      path: /apis/admission.stash.appscode.com/v1alpha1/resticreviews
+    caBundle: $KUBE_CA
+  rules:
+  - operations:
+    - CREATE
+    apiGroups:
+    - stash.appscode.com
+    apiVersions:
+    - "*"
+    resources:
+    - restics
+  failurePolicy: Fail
+- name: recoveryreviews.admission.stash.appscode.com
+  clientConfig:
+    service:
+      namespace: default
+      name: kubernetes
+      path: /apis/admission.stash.appscode.com/v1alpha1/recoveryreviews
+    caBundle: $KUBE_CA
+  rules:
+  - operations:
+    - CREATE
+    apiGroups:
+    - stash.appscode.com
+    apiVersions:
+    - "*"
+    resources:
+    - recoveries
+  failurePolicy: Fail

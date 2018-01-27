@@ -28,6 +28,7 @@ options:
 -n, --namespace=NAMESPACE          specify namespace (default: kube-system)
     --rbac                         create RBAC roles and bindings
     --run-on-master                run stash operator on master
+    --enable-admission-webhook     configure admission webhook for stash CRDs
     --enable-initializer           configure stash operator as workload initializer
 
 # install without RBAC roles
@@ -52,6 +53,13 @@ Stash operator will be installed in a `kube-system` namespace by default. If you
 $ kubectl create namespace stash
 $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/stash.sh \
     | bash -s -- --namespace=stash [--run-on-master] [--rbac]
+```
+
+Stash implements a [validating admission webhook](https://kubernetes.io/docs/admin/admission-controllers/#validatingadmissionwebhook-alpha-in-18-beta-in-19) to validate Stash CRDs. To enable this feature, pass the `--enable-admission-webhook` flag. _Please note that, this works with Kubernetes 1.9 or following versions_.
+
+```console
+$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/stash.sh \
+    | bash -s -- --enable-admission-webhook [--rbac]
 ```
 
 Stash operator can be used as a workload [initializer](https://kubernetes.io/docs/admin/extensible-admission-controllers/#initializers). For this, pass the `--enable-initializer` flag. _Please note that, this uses an alpha feature of Kubernetes_.

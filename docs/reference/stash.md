@@ -38,6 +38,7 @@ Stash is a Kubernetes operator for restic. For more information, visit here: htt
 
 ### SEE ALSO
 
+* [stash admission-webhook](/docs/reference/stash_admission-webhook.md)	 - Launch a namespace reservation API server
 * [stash backup](/docs/reference/stash_backup.md)	 - Run Stash Backup
 * [stash check](/docs/reference/stash_check.md)	 - Check restic backup
 * [stash recover](/docs/reference/stash_recover.md)	 - Recover restic backup

@@ -1,0 +1,42 @@
+# to read the config for terminating authentication
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: stash-admission-webhook-extension-server-authentication-reader
+  namespace: kube-system
+roleRef:
+  kind: Role
+  apiGroup: rbac.authorization.k8s.io
+  name: extension-apiserver-authentication-reader
+subjects:
+- kind: ServiceAccount
+  name: $STASH_SERVICE_ACCOUNT
+  namespace: $STASH_NAMESPACE
+---
+# to delegate authentication and authorization
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: stash-admission-webhook-auth-delegator
+  labels:
+    app: stash
+roleRef:
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+  name: system:auth-delegator
+subjects:
+- kind: ServiceAccount
+  name: $STASH_SERVICE_ACCOUNT
+  namespace: $STASH_NAMESPACE
+---
+# to let aggregated apiservers create admission reviews
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: system:appscode:stash:admission-webhook-requester
+  labels:
+    app: stash
+rules:
+- apiGroups: ['admission.stash.appscode.com']
+  resources: ['*']
+  verbs: ['create']
