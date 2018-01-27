@@ -27,6 +27,8 @@ options:
 -h, --help                         show brief help
 -n, --namespace=NAMESPACE          specify namespace (default: kube-system)
     --rbac                         create RBAC roles and bindings
+    --docker-registry              docker registry used to pull stash images (default: appscode)
+    --image-pull-secret            name of secret used to pull stash operator images
     --run-on-master                run stash operator on master
     --enable-admission-webhook     configure admission webhook for stash CRDs
     --enable-initializer           configure stash operator as workload initializer
@@ -53,6 +55,19 @@ Stash operator will be installed in a `kube-system` namespace by default. If you
 $ kubectl create namespace stash
 $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/stash.sh \
     | bash -s -- --namespace=stash [--run-on-master] [--rbac]
+```
+
+If you are using a private Docker registry, you need to pull the following 2 docker images:
+
+ - [appscode/stash](https://hub.docker.com/r/appscode/stash)
+ - [appscode/kubectl](https://hub.docker.com/r/appscode/kubectl)
+
+To pass the address of your private registry and optionally a image pull secret use flags `--docker-registry` and `--image-pull-secret` respectively.
+
+```console
+$ kubectl create namespace stash
+$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/stash.sh \
+    | bash -s -- --docker-registry=MY_REGISTRY [--image-pull-secret=SECRET_NAME] [--rbac]
 ```
 
 Stash implements a [validating admission webhook](https://kubernetes.io/docs/admin/admission-controllers/#validatingadmissionwebhook-alpha-in-18-beta-in-19) to validate Stash CRDs. To enable this feature, pass the `--enable-admission-webhook` flag. _Please note that, this works with Kubernetes 1.9 or following versions_.
