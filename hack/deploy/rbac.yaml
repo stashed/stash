@@ -1,4 +1,4 @@
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ${STASH_ROLE_TYPE}
 metadata:
   name: stash-operator
@@ -77,7 +77,7 @@ rules:
   - rolebindings
   verbs: ["get", "create", "delete", "patch"]
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ${STASH_ROLE_TYPE}Binding
 metadata:
   name: stash-operator

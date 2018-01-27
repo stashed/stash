@@ -1,5 +1,5 @@
 hash: 12eb0ca314a0ab05e0511f43cf5f161728dbc84dd36de9444c5b6dad7a69a875
-updated: 2018-01-26T14:24:46.119954785-08:00
+updated: 2018-01-26T17:35:47.119164235-08:00
 imports:
 - name: github.com/appscode/go
   version: 99dbf420807d9459b63d1d0bf702537bb7aa976f
@@ -23,7 +23,7 @@ imports:
   - core/v1
   - extensions/v1beta1
   - meta
-  - rbac/v1beta1
+  - rbac/v1
   - tools/analytics
 - name: github.com/appscode/mergo
   version: e3000cb3d28c72b837601cac94debd91032d19fe
