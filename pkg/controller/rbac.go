@@ -3,20 +3,19 @@ package controller
 import (
 	"github.com/appscode/go/log"
 	core_util "github.com/appscode/kutil/core/v1"
-	rbac_util "github.com/appscode/kutil/rbac/v1beta1"
+	rbac_util "github.com/appscode/kutil/rbac/v1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	apps "k8s.io/api/apps/v1beta1"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	extensions "k8s.io/api/extensions/v1beta1"
-	rbac "k8s.io/api/rbac/v1beta1"
+	rbac "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
 	SidecarClusterRole = "stash-sidecar"
 	KubectlRole        = "stash-kubectl"
-	RecoveryRole       = "stash-recovery"
 )
 
 func (c *StashController) getSidecarRoleBindingName(name string) string {
@@ -54,7 +53,7 @@ func (c *StashController) ensureSidecarRoleBinding(resource *core.ObjectReferenc
 
 func (c *StashController) ensureSidecarRoleBindingDeleted(resource metav1.ObjectMeta) error {
 	log.Infof("Deleting RoleBinding %s/%s", resource.Namespace, c.getSidecarRoleBindingName(resource.Name))
-	return c.k8sClient.RbacV1beta1().
+	return c.k8sClient.RbacV1().
 		RoleBindings(resource.Namespace).
 		Delete(c.getSidecarRoleBindingName(resource.Name), &metav1.DeleteOptions{})
 }

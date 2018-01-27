@@ -1,10 +1,10 @@
-package v1beta1
+package v1
 
 import (
 	"errors"
 
 	"github.com/appscode/kutil/meta"
-	rbac "k8s.io/api/rbac/v1beta1"
+	rbac "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
