@@ -10,6 +10,8 @@ export STASH_ENABLE_RBAC=false
 export STASH_RUN_ON_MASTER=0
 export STASH_ENABLE_INITIALIZER=false
 export STASH_ENABLE_ADMISSION_WEBHOOK=false
+export STASH_DOCKER_REGISTRY=appscode
+export STASH_IMAGE_PULL_SECRET=
 
 show_help() {
     echo "stash.sh - install stash operator"
@@ -20,6 +22,8 @@ show_help() {
     echo "-h, --help                         show brief help"
     echo "-n, --namespace=NAMESPACE          specify namespace (default: kube-system)"
     echo "    --rbac                         create RBAC roles and bindings"
+    echo "    --docker-registry              docker registry used to pull stash images (default: appscode)"
+    echo "    --image-pull-secret            name of secret used to pull stash operator images"
     echo "    --run-on-master                run stash operator on master"
     echo "    --enable-admission-webhook     configure admission webhook for stash CRDs"
     echo "    --enable-initializer           configure stash operator as workload initializer"
@@ -43,6 +47,15 @@ while test $# -gt 0; do
             ;;
         --namespace*)
             export STASH_NAMESPACE=`echo $1 | sed -e 's/^[^=]*=//g'`
+            shift
+            ;;
+        --docker-registry*)
+            export STASH_DOCKER_REGISTRY=`echo $1 | sed -e 's/^[^=]*=//g'`
+            shift
+            ;;
+        --image-pull-secret*)
+            secret=`echo $1 | sed -e 's/^[^=]*=//g'`
+            export STASH_IMAGE_PULL_SECRET="name: secret"
             shift
             ;;
         --enable-admission-webhook)

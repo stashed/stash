@@ -20,13 +20,15 @@ spec:
         scheduler.alpha.kubernetes.io/critical-pod: ''
     spec:
       serviceAccountName: $STASH_SERVICE_ACCOUNT
+      imagePullSecrets: ["$STASH_IMAGE_PULL_SECRET"]
       containers:
       - name: operator
         args:
         - run
         - --v=3
         - --rbac=$STASH_ENABLE_RBAC
-        image: appscode/stash:0.7.0-alpha.0
+        - --docker-registry=$STASH_DOCKER_REGISTRY
+        image: $STASH_DOCKER_REGISTRY/stash:0.7.0-alpha.0
         ports:
         - containerPort: 56790
           name: http
