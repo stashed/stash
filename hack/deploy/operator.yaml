@@ -2,7 +2,7 @@ apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
   name: stash-operator
-  namespace: $STASH_OPERATOR
+  namespace: $STASH_NAMESPACE
   labels:
     app: stash
   initializers:
@@ -20,7 +20,7 @@ spec:
         scheduler.alpha.kubernetes.io/critical-pod: ''
     spec:
       serviceAccountName: $STASH_SERVICE_ACCOUNT
-      imagePullSecrets: ["$STASH_IMAGE_PULL_SECRET"]
+      imagePullSecrets: [$STASH_IMAGE_PULL_SECRET]
       containers:
       - name: operator
         args:
@@ -60,7 +60,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: stash-operator
-  namespace: $STASH_OPERATOR
+  namespace: $STASH_NAMESPACE
   labels:
     app: stash
 spec:

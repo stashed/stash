@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eou pipefail
 
 # ref: https://stackoverflow.com/a/7069755/244009
 # ref: https://jonalmeida.com/posts/2013/05/26/different-ways-to-implement-flags-in-bash/
@@ -55,7 +56,7 @@ while test $# -gt 0; do
             ;;
         --image-pull-secret*)
             secret=`echo $1 | sed -e 's/^[^=]*=//g'`
-            export STASH_IMAGE_PULL_SECRET="name: secret"
+            export STASH_IMAGE_PULL_SECRET="name: '$secret'"
             shift
             ;;
         --enable-admission-webhook)
@@ -85,7 +86,9 @@ done
 env | sort | grep STASH*
 echo ""
 
+echo "checking kubeconfig context"
 kubectl config current-context || { echo "Set a context (kubectl use-context <context>) out of the following:"; echo; kubectl config get-contexts; exit 1; }
+echo ""
 
 if [ "$STASH_ENABLE_ADMISSION_WEBHOOK" = true ]; then
     # ref: https://stackoverflow.com/a/27776822/244009
@@ -107,7 +110,6 @@ if [ "$STASH_ENABLE_ADMISSION_WEBHOOK" = true ]; then
             chmod +x onessl.exe
             export ONESSL=./onessl.exe
             ;;
-            ;;
         *)
             echo 'other OS'
             ;;
@@ -122,7 +124,7 @@ if [ "$STASH_ENABLE_ADMISSION_WEBHOOK" = true ]; then
     export TLS_SERVING_CERT=$(cat server.crt | $ONESSL base64)
     export TLS_SERVING_KEY=$(cat server.key | $ONESSL base64)
     export KUBE_CA=$($ONESSL get kube-ca | $ONESSL base64)
-    rm -rf ca.crt ca.key server.crt server.key
+    rm -rf $ONESSL ca.crt ca.key server.crt server.key
 
     curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/admission/operator.yaml | envsubst | kubectl apply -f -
 else
