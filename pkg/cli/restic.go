@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/appscode/go/log"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	shell "github.com/codeskyblue/go-sh"
 )

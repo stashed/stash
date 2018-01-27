@@ -92,11 +92,3 @@ subjects:
 - kind: ServiceAccount
   name: $STASH_SERVICE_ACCOUNT
   namespace: $STASH_NAMESPACE
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: $STASH_SERVICE_ACCOUNT
-  namespace: $STASH_NAMESPACE
-  labels:
-    app: stash
