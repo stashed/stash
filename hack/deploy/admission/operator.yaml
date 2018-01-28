@@ -54,7 +54,7 @@ spec:
         - --audit-log-path=-
         - --tls-cert-file=/var/serving-cert/tls.crt
         - --tls-private-key-file=/var/serving-cert/tls.key
-        - --v=8
+        - --v=3
         image: $STASH_DOCKER_REGISTRY/stash:0.7.0-alpha.0
         ports:
         - containerPort: 8443
