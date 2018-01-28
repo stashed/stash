@@ -1,4 +1,4 @@
-package v1
+package v1beta1
 
 import (
 	"encoding/json"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/appscode/kutil"
 	"github.com/golang/glog"
-	rbac "k8s.io/api/rbac/v1"
+	rbac "k8s.io/api/rbac/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -16,10 +16,10 @@ import (
 )
 
 func CreateOrPatchRoleBinding(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*rbac.RoleBinding) *rbac.RoleBinding) (*rbac.RoleBinding, kutil.VerbType, error) {
-	cur, err := c.RbacV1().RoleBindings(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	cur, err := c.RbacV1beta1().RoleBindings(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating RoleBinding %s/%s.", meta.Namespace, meta.Name)
-		out, err := c.RbacV1().RoleBindings(meta.Namespace).Create(transform(&rbac.RoleBinding{
+		out, err := c.RbacV1beta1().RoleBindings(meta.Namespace).Create(transform(&rbac.RoleBinding{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "RoleBinding",
 				APIVersion: rbac.SchemeGroupVersion.String(),
@@ -52,7 +52,7 @@ func PatchRoleBinding(c kubernetes.Interface, cur *rbac.RoleBinding, transform f
 		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching RoleBinding %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
-	out, err := c.RbacV1().RoleBindings(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
+	out, err := c.RbacV1beta1().RoleBindings(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
 	return out, kutil.VerbPatched, err
 }
 
@@ -60,11 +60,11 @@ func TryUpdateRoleBinding(c kubernetes.Interface, meta metav1.ObjectMeta, transf
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.RbacV1().RoleBindings(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		cur, e2 := c.RbacV1beta1().RoleBindings(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.RbacV1().RoleBindings(cur.Namespace).Update(transform(cur.DeepCopy()))
+			result, e2 = c.RbacV1beta1().RoleBindings(cur.Namespace).Update(transform(cur.DeepCopy()))
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to update RoleBinding %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)

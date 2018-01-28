@@ -1,5 +1,5 @@
 # to read the config for terminating authentication
-apiVersion: rbac.authorization.k8s.io/v1
+apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
   name: stash-admission-webhook-extension-server-authentication-reader
@@ -14,7 +14,7 @@ subjects:
   namespace: $STASH_NAMESPACE
 ---
 # to delegate authentication and authorization
-apiVersion: rbac.authorization.k8s.io/v1
+apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
   name: stash-admission-webhook-auth-delegator
@@ -30,7 +30,7 @@ subjects:
   namespace: $STASH_NAMESPACE
 ---
 # to let aggregated apiservers create admission reviews
-apiVersion: rbac.authorization.k8s.io/v1
+apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
   name: system:appscode:stash:admission-webhook-requester
