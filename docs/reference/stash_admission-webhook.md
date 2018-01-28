@@ -11,11 +11,11 @@ section_menu_id: reference
 ---
 ## stash admission-webhook
 
-Launch a namespace reservation API server
+Launch Stash admission webhook server
 
 ### Synopsis
 
-Launch a namespace reservation API server
+Launch Stash admission webhook server
 
 ```
 stash admission-webhook [flags]
