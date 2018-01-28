@@ -28,7 +28,7 @@ func (a *AdmissionHook) Validate(req *admission.AdmissionRequest) *admission.Adm
 	status := &admission.AdmissionResponse{}
 	supportedKinds := sets.NewString(api.ResourceKindRestic, api.ResourceKindRecovery)
 
-	if req.Operation != admission.Create ||
+	if (req.Operation != admission.Create && req.Operation != admission.Update) ||
 		len(req.SubResource) != 0 ||
 		req.Kind.Group != api.SchemeGroupVersion.Group ||
 		!supportedKinds.Has(req.Kind.Kind) {
