@@ -1,4 +1,4 @@
-apiVersion: rbac.authorization.k8s.io/v1
+apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
   name: stash-operator
@@ -76,7 +76,7 @@ rules:
   - rolebindings
   verbs: ["get", "create", "delete", "patch"]
 ---
-apiVersion: rbac.authorization.k8s.io/v1
+apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
   name: stash-operator
