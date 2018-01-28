@@ -60,6 +60,8 @@ func NewRootCmd() *cobra.Command {
 	stopCh := genericapiserver.SetupSignalHandler()
 	cmd := server.NewCommandStartAdmissionServer(os.Stdout, os.Stderr, stopCh, &plugin.AdmissionHook{})
 	cmd.Use = "admission-webhook"
+	cmd.Long = "Launch Stash admission webhook server"
+	cmd.Short = cmd.Long
 	rootCmd.AddCommand(cmd)
 
 	return rootCmd
