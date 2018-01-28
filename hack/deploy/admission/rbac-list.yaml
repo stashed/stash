@@ -33,7 +33,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
-  name: system:appscode:stash:admission-webhook-requester
+  name: appscode:stash:admission-webhook-requester
   labels:
     app: stash
 rules:
