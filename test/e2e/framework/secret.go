@@ -156,7 +156,42 @@ func (fi *Invocation) SecretForB2Backend() core.Secret {
 		},
 	}
 }
-
+func (fi *Invocation) SecretForMinioBackend(includeCacert bool) core.Secret {
+	if os.Getenv(cli.AWS_ACCESS_KEY_ID) == "" ||
+		os.Getenv(cli.AWS_SECRET_ACCESS_KEY) == "" {
+		return core.Secret{}
+	}
+	if includeCacert {
+		crtData, err := ioutil.ReadFile(os.Getenv(MINIO_CA_CRT))
+		if err != nil {
+			return core.Secret{}
+		}
+		return core.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      rand.WithUniqSuffix(fi.app + "-minio"),
+				Namespace: fi.namespace,
+			},
+			Data: map[string][]byte{
+				cli.RESTIC_PASSWORD:       []byte(TEST_RESTIC_PASSWORD),
+				cli.AWS_ACCESS_KEY_ID:     []byte(os.Getenv(cli.AWS_ACCESS_KEY_ID)),
+				cli.AWS_SECRET_ACCESS_KEY: []byte(os.Getenv(cli.AWS_SECRET_ACCESS_KEY)),
+				cli.CA_CERT_DATA:          crtData,
+			},
+		}
+	} else {
+		return core.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      rand.WithUniqSuffix(fi.app + "-minio"),
+				Namespace: fi.namespace,
+			},
+			Data: map[string][]byte{
+				cli.RESTIC_PASSWORD:       []byte(TEST_RESTIC_PASSWORD),
+				cli.AWS_ACCESS_KEY_ID:     []byte(os.Getenv(cli.AWS_ACCESS_KEY_ID)),
+				cli.AWS_SECRET_ACCESS_KEY: []byte(os.Getenv(cli.AWS_SECRET_ACCESS_KEY)),
+			},
+		}
+	}
+}
 func (fi *Invocation) SecretForRegistry(dockerCfgJson []byte) core.Secret {
 	return core.Secret{
 		ObjectMeta: metav1.ObjectMeta{

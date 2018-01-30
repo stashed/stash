@@ -47,7 +47,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic tpr using this secret. Following parameters are available for `Local` backend.
+Now, you can create a Restic crd using this secret. Following parameters are available for `Local` backend.
 
 | Parameter            | Description                                                                                   |
 |----------------------|-----------------------------------------------------------------------------------------------|
@@ -129,7 +129,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic tpr using this secret. Following parameters are available for `S3` backend.
+Now, you can create a Restic crd using this secret. Following parameters are available for `S3` backend.
 
 | Parameter     | Description                                                                     |
 |---------------|---------------------------------------------------------------------------------|
@@ -211,7 +211,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic tpr using this secret. Following parameters are available for `gcs` backend.
+Now, you can create a Restic crd using this secret. Following parameters are available for `gcs` backend.
 
 | Parameter      | Description                                                                     |
 |----------------|---------------------------------------------------------------------------------|
@@ -291,7 +291,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic tpr using this secret. Following parameters are available for `Azure` backend.
+Now, you can create a Restic crd using this secret. Following parameters are available for `Azure` backend.
 
 | Parameter     | Description                                                                     |
 |---------------|---------------------------------------------------------------------------------|
@@ -399,7 +399,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic tpr using this secret. Following parameters are available for `Swift` backend.
+Now, you can create a Restic crd using this secret. Following parameters are available for `Swift` backend.
 
 | Parameter         | Description                                                                 |
 |-------------------|-----------------------------------------------------------------------------|
@@ -479,7 +479,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic tpr using this secret. Following parameters are available for `B2` backend.
+Now, you can create a Restic crd using this secret. Following parameters are available for `B2` backend.
 
 | Parameter     | Description                                                               |
 |---------------|---------------------------------------------------------------------------|

@@ -2,6 +2,7 @@ package cli
 
 import (
 	"errors"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -16,18 +17,20 @@ const (
 )
 
 type ResticWrapper struct {
-	sh          *shell.Session
-	scratchDir  string
-	enableCache bool
-	hostname    string
+	sh            *shell.Session
+	scratchDir    string
+	enableCache   bool
+	hostname      string
+	cacertEnabled bool
 }
 
 func New(scratchDir string, enableCache bool, hostname string) *ResticWrapper {
 	ctrl := &ResticWrapper{
-		sh:          shell.NewSession(),
-		scratchDir:  scratchDir,
-		enableCache: enableCache,
-		hostname:    hostname,
+		sh:            shell.NewSession(),
+		scratchDir:    scratchDir,
+		enableCache:   enableCache,
+		hostname:      hostname,
+		cacertEnabled: false,
 	}
 	ctrl.sh.SetDir(scratchDir)
 	ctrl.sh.ShowCMD = true
@@ -48,14 +51,27 @@ type Snapshot struct {
 func (w *ResticWrapper) ListSnapshots() ([]Snapshot, error) {
 	result := make([]Snapshot, 0)
 	args := w.appendCacheDirFlag([]interface{}{"snapshots", "--json"})
+	args, cert_err := w.appendCertIfEnabled(args)
+	if cert_err != nil {
+		return nil, cert_err
+	}
 	err := w.sh.Command(Exe, args...).UnmarshalJSON(&result)
 	return result, err
 }
 
 func (w *ResticWrapper) InitRepositoryIfAbsent() error {
 	args := w.appendCacheDirFlag([]interface{}{"snapshots", "--json"})
+	args, cert_err := w.appendCertIfEnabled(args)
+	if cert_err != nil {
+		return cert_err
+	}
 	if err := w.run(Exe, args); err != nil {
 		args = w.appendCacheDirFlag([]interface{}{"init"})
+		args, cert_err := w.appendCertIfEnabled(args)
+		if cert_err != nil {
+			return cert_err
+		}
+
 		return w.run(Exe, args)
 	}
 	return nil
@@ -73,6 +89,10 @@ func (w *ResticWrapper) Backup(resource *api.Restic, fg api.FileGroup) error {
 		args = append(args, tag)
 	}
 	args = w.appendCacheDirFlag(args)
+	args, cert_err := w.appendCertIfEnabled(args)
+	if cert_err != nil {
+		return cert_err
+	}
 	return w.run(Exe, args)
 }
 
@@ -123,6 +143,10 @@ func (w *ResticWrapper) Forget(resource *api.Restic, fg api.FileGroup) error {
 	}
 	if len(args) > 1 {
 		args = w.appendCacheDirFlag(args)
+		args, cert_err := w.appendCertIfEnabled(args)
+		if cert_err != nil {
+			return cert_err
+		}
 		return w.run(Exe, args)
 	}
 	return nil
@@ -138,11 +162,20 @@ func (w *ResticWrapper) Restore(path, host string) error {
 	args = append(args, "--target")
 	args = append(args, path) // restore in same path as source-path
 	args = w.appendCacheDirFlag(args)
+
+	args, cert_err := w.appendCertIfEnabled(args)
+	if cert_err != nil {
+		return cert_err
+	}
 	return w.run(Exe, args)
 }
 
 func (w *ResticWrapper) Check() error {
 	args := w.appendCacheDirFlag([]interface{}{"check"})
+	args, cert_err := w.appendCertIfEnabled(args)
+	if cert_err != nil {
+		return cert_err
+	}
 	return w.run(Exe, args)
 }
 
@@ -152,6 +185,17 @@ func (w *ResticWrapper) appendCacheDirFlag(args []interface{}) []interface{} {
 		return append(args, "--cache-dir", cacheDir)
 	}
 	return append(args, "--no-cache")
+}
+
+func (w *ResticWrapper) appendCertIfEnabled(args []interface{}) ([]interface{}, error) {
+	if w.cacertEnabled {
+		certFilePath := w.scratchDir + "/cacerts/ca.crt"
+		if _, err := os.Stat(certFilePath); os.IsNotExist(err) {
+			return args, err
+		}
+		args = append(args, "--cacert", certFilePath)
+	}
+	return args, nil
 }
 
 func (w *ResticWrapper) run(cmd string, args []interface{}) error {

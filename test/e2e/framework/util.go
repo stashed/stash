@@ -54,6 +54,16 @@ func (f *Framework) CountSuccessfulBackups(events []core.Event) int {
 	return count
 }
 
+func (f *Framework) CountFailedSetup(events []core.Event) int {
+	count := 0
+	for _, e := range events {
+		if e.Reason == eventer.EventReasonFailedSetup {
+			count++
+		}
+	}
+	return count
+}
+
 func deleteInBackground() *metav1.DeleteOptions {
 	policy := metav1.DeletePropagationBackground
 	return &metav1.DeleteOptions{PropagationPolicy: &policy}
