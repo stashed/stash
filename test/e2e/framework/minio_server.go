@@ -2,11 +2,9 @@ package framework
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/appscode/go/crypto/rand"
-	"github.com/appscode/stash/pkg/cli"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1beta1"
 	core "k8s.io/api/core/v1"
@@ -20,6 +18,9 @@ const (
 	MINIO_PUBLIC_CRT_NAME  = "public.crt"
 	MINIO_PRIVSTE_KEY_NAME = "private.key"
 	MINIO_CA_CRT           = "MINIO_CA_CRT"
+
+	MINIO_ACCESS_KEY_ID ="not@id"
+	MINIO_SECRET_ACCESS_KEY="not@secret"
 )
 
 var (
@@ -156,11 +157,11 @@ func (fi *Invocation) DeploymentForMinioServer() apps.Deployment {
 							Env: []core.EnvVar{
 								{
 									Name:  "MINIO_ACCESS_KEY",
-									Value: os.Getenv(cli.AWS_ACCESS_KEY_ID),
+									Value: MINIO_ACCESS_KEY_ID,
 								},
 								{
 									Name:  "MINIO_SECRET_KEY",
-									Value: os.Getenv(cli.AWS_SECRET_ACCESS_KEY),
+									Value: MINIO_SECRET_ACCESS_KEY,
 								},
 							},
 							Ports: []core.ContainerPort{

@@ -164,8 +164,8 @@ func (fi *Invocation) SecretForMinioBackend(includeCacert bool) core.Secret {
 		},
 		Data: map[string][]byte{
 			cli.RESTIC_PASSWORD:       []byte(TEST_RESTIC_PASSWORD),
-			cli.AWS_ACCESS_KEY_ID:     []byte(os.Getenv(cli.AWS_ACCESS_KEY_ID)),
-			cli.AWS_SECRET_ACCESS_KEY: []byte(os.Getenv(cli.AWS_SECRET_ACCESS_KEY)),
+			cli.AWS_ACCESS_KEY_ID:     []byte(MINIO_ACCESS_KEY_ID),
+			cli.AWS_SECRET_ACCESS_KEY: []byte(MINIO_SECRET_ACCESS_KEY),
 		},
 	}
 	if includeCacert {
