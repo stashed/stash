@@ -2,7 +2,7 @@
 
 Minio is an open source object storage server compatible with Amazon S3 cloud storage service. You can deploy Minio server in docker container locally, in a kubernetes cluster, Microsoft Azure, GCP etc. You can find a guide for Minio server [here](https://docs.minio.io/).
 
-This tutorial will show you how to deploy Minio Server in kubernetes cluster with a self-signed certificate.
+This tutorial will show you how to deploy Minio Server in Kubernetes cluster with a self-signed certificate.
 
 ## Prerequisites
 
@@ -12,7 +12,12 @@ To begin with this tutorial we will need some tools and concepts. This section w
 
 At first, you need to have a Kubernetes cluster, and the kubectl command-line tool must be configured to communicate with your cluster. If you do not already have a cluster, you can create one by using Minikube. You can create a cluster in minikube by following [this guide](https://kubernetes.io/docs/getting-started-guides/minikube/).
 
-You must be familer with these kubernetes resources: [Secret](https://kubernetes.io/docs/concepts/configuration/secret/), [Persistent Volume](https://kubernetes.io/docs/concepts/storage/persistent-volumes/), [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) and [Service](https://kubernetes.io/docs/concepts/services-networking/service/).
+You must be familer with these kubernetes resources:
+
+- [Secret](https://kubernetes.io/docs/concepts/configuration/secret/)
+- [Persistent Volume](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)
+- [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)
+- [Service](https://kubernetes.io/docs/concepts/services-networking/service/)
 
 ### Self-signed Certificate
 
@@ -25,9 +30,9 @@ Here is an example how we can generate a self-signed certificate using `onessl` 
 First install onessl by,
 
 ```console
-$ curl -fsSL -o onessl https://github.com/appscode/onessl/releases/download/0.1.0/onessl-linux-amd64
-$ chmod +x onessl
-$ sudo mv onessl /usr/local/bin/
+$ curl -fsSL -o onessl https://github.com/appscode/onessl/releases/download/0.1.0/onessl-linux-amd64 \
+  && chmod +x onessl \
+  && sudo mv onessl /usr/local/bin/
 ```
 
 Now generate CA's root certificate,
@@ -41,10 +46,10 @@ This will create two files `ca.crt` and `ca.key`.
 Now, generate  certificate for server,
 
 ```console
-$ onessl create server-cert --ips <your cluster ip>
+$ onessl create server-cert --domains minio-service.default.svc
 ```
 
-This will generate two files `server.crt` and `server.key`. Use your own cluster IP address in `<your cluster ip>` field. For minikube, it is typically `198.168.99.100`.
+This will generate two files `server.crt` and `server.key`.
 
 Minio server will start TLS secure service if it find `public.crt` and `private.key` files in `/root/.minio/certs/` directory of the docker container. The `public.crt` file is concatenation of `server.crt` and `ca.crt` where `private.key` file is only the `server.key` file.
 
@@ -68,6 +73,8 @@ $ kubectl create secret generic minio-server-secret \
                               --from-file=./public.crt \
                               --from-file=./private.key
 secret "minio-server-secret" created
+
+$ kubectl label secret minio-server-secret app=minio -n default
 ```
 
 Now, verify that the secret is created successfully
@@ -91,6 +98,8 @@ metadata:
   resourceVersion: "40701"
   selfLink: /api/v1/namespaces/default/secrets/minio-server-secret
   uid: bc57add7-0290-11e8-9a26-080027b344c9
+  labels:
+    app: minio
 type: Opaque
 ```
 
@@ -112,7 +121,7 @@ metadata:
   # This name uniquely identifies the PVC. Will be used in minio deployment.
   name: minio-pv-claim
   labels:
-    app: minio-storage-claim
+    app: minio
 spec:
   accessModes:
     - ReadWriteOnce
@@ -139,6 +148,8 @@ kind: Deployment
 metadata:
   # This name uniquely identifies the Deployment
   name: minio-deployment
+  labels:
+    app: minio
 spec:
   strategy:
     type: Recreate # If pod fail, we want to recreate pod rather than restarting it.
@@ -187,7 +198,7 @@ spec:
 
 ## Create Service
 
-Now, the final touch. Minio server is running on the cluster but we won't be able to access it from other pods or outside of the cluster. We need a service for that. Let's create a service for it,
+Now, the final touch. Minio server is running on the cluster. Let's create a service so that other pods can access the server.
 
 ```console
 $ kubectl apply -f ./serviceForMinioServer.yaml
@@ -201,6 +212,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: minio-service
+  labels:
+    app: minio
 spec:
   type: LoadBalancer
   ports:

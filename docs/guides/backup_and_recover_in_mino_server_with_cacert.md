@@ -1,15 +1,18 @@
 # Backup and Recovery in TLS secure Minio Server Using Stash
 
-This tutorial will show you how to use [Stash](./../concepts/what-is-stash/overview.md) to backup a Kubernetes `Deployment` in a TLS secure [Minio](https://docs.minio.io/) Server. It will also show you how to recover this backed up data.
+This tutorial will show you how to use [Stash](/docs/concepts/what-is-stash/overview.md) to backup a Kubernetes `Deployment` in a TLS secure [Minio](https://docs.minio.io/) Server. It will also show you how to recover this backed up data.
 
 ## Prerequisites
 
 At first, you need to have a Kubernetes cluster, and the kubectl command-line tool must be configured to communicate with your cluster. If you do not already have a cluster,
 you can create one by using [Minikube](https://github.com/kubernetes/minikube). Now, install `Stash` in your cluster following the steps [here](/docs/setup/install.md).
 
-Then, you will need a TLS secure [Minio](https://docs.minio.io/) server to store backed up data. You can deploy a TLS secure Minio server in your cluster by following this [guide](./minio_server.md).
+Then, you will need a TLS secure [Minio](https://docs.minio.io/) server to store backed up data. You can deploy a TLS secure Minio server in your cluster by following this [guide](/docs/guides/minio_server.md).
 
-You must have understanding the following Stash terms: [Restic](./../concepts/crds/restic.md) and [Recovery](./../concepts/crds/recovery.md).
+You must have understanding the following Stash terms:
+
+- [Restic](/docs/concepts/crds/restic.md)
+- [Recovery](/docs/concepts/crds/recovery.md)
 
 ## Overview
 
@@ -154,7 +157,7 @@ spec:
     retentionPolicyName: 'keep-last-5'
   backend:
     s3:
-      endpoint: 'https://192.168.99.100:32321' # Use your own Minio server address.
+      endpoint: 'https://minio-service.default.svc' # Use your own Minio server address.
       bucket: stash-qa  # Give a name of the bucket where you want to backup.
       prefix: demo  # . Path prefix into bucket where repository will be created.(optional).
     storageSecretName: minio-restic-secret
@@ -182,7 +185,7 @@ kind: Restic
 metadata:
   annotations:
     kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"stash.appscode.com/v1alpha1","kind":"Restic","metadata":{"annotations":{},"name":"minio-restic","namespace":"default"},"spec":{"backend":{"s3":{"bucket":"stash-qa","endpoint":"https://192.168.99.100:32321","prefix":"demo"},"storageSecretName":"minio-restic-secret"},"fileGroups":[{"path":"/source/data","retentionPolicyName":"keep-last-5"}],"retentionPolicies":[{"keepLast":5,"name":"keep-last-5","prune":true}],"schedule":"@every 1m","selector":{"matchLabels":{"app":"stash-demo"}},"volumeMounts":[{"mountPath":"/source/data","name":"source-data"}]}}
+      {"apiVersion":"stash.appscode.com/v1alpha1","kind":"Restic","metadata":{"annotations":{},"name":"minio-restic","namespace":"default"},"spec":{"backend":{"s3":{"bucket":"stash-qa","endpoint":"https://minio-service.default.svc","prefix":"demo"},"storageSecretName":"minio-restic-secret"},"fileGroups":[{"path":"/source/data","retentionPolicyName":"keep-last-5"}],"retentionPolicies":[{"keepLast":5,"name":"keep-last-5","prune":true}],"schedule":"@every 1m","selector":{"matchLabels":{"app":"stash-demo"}},"volumeMounts":[{"mountPath":"/source/data","name":"source-data"}]}}
   clusterName: ""
   creationTimestamp: 2018-01-30T04:45:09Z
   generation: 0
@@ -195,7 +198,7 @@ spec:
   backend:
     s3:
       bucket: stash-qa
-      endpoint: https://192.168.99.100:32321
+      endpoint: https://minio-service.default.svc
       prefix: demo
     storageSecretName: minio-restic-secret
   fileGroups:
@@ -244,7 +247,7 @@ spec:
     name: stash-demo # Must match with the label of busybox pod we are recoverying.
   backend:
     s3:
-      endpoint: 'https://192.168.99.100:32321' # use your own Minio server address
+      endpoint: 'https://minio-service.default.svc' # use your own Minio server address
       bucket: stash-qa
       prefix: demo
     storageSecretName: minio-restic-secret # we will use same secret created for Restic crd. You can create new secret for Recovery with same credentials.
@@ -269,7 +272,7 @@ kind: Recovery
 metadata:
   annotations:
     kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"stash.appscode.com/v1alpha1","kind":"Recovery","metadata":{"annotations":{},"name":"minio-recovery","namespace":"default"},"spec":{"backend":{"s3":{"bucket":"stash-qa","endpoint":"https://192.168.99.100:32321","prefix":"demo"},"storageSecretName":"minio-restic-secret"},"paths":["/source/data"],"recoveredVolumes":[{"hostPath":{"path":"/data/stash-recovered/"},"mountPath":"/source/data","name":"stash-recovered-volume"}],"workload":{"kind":"Deployment","name":"stash-demo"}}}
+      {"apiVersion":"stash.appscode.com/v1alpha1","kind":"Recovery","metadata":{"annotations":{},"name":"minio-recovery","namespace":"default"},"spec":{"backend":{"s3":{"bucket":"stash-qa","endpoint":"https://minio-service.default.svc","prefix":"demo"},"storageSecretName":"minio-restic-secret"},"paths":["/source/data"],"recoveredVolumes":[{"hostPath":{"path":"/data/stash-recovered/"},"mountPath":"/source/data","name":"stash-recovered-volume"}],"workload":{"kind":"Deployment","name":"stash-demo"}}}
   clusterName: ""
   creationTimestamp: 2018-01-30T06:54:18Z
   generation: 0
@@ -282,7 +285,7 @@ spec:
   backend:
     s3:
       bucket: stash-qa
-      endpoint: https://192.168.99.100:32321
+      endpoint: https://minio-service.default.svc
       prefix: demo
     storageSecretName: minio-restic-secret
   paths:

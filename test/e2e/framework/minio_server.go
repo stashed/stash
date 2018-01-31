@@ -1,19 +1,18 @@
 package framework
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/stash/pkg/cli"
-	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/util/intstr"
-
 	apps "k8s.io/api/apps/v1beta1"
 	core "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const (
@@ -56,13 +55,12 @@ func (fi *Invocation) CreateMinioServer() (string, error) {
 
 	//creating service for minio server
 	msrvc = fi.ServiceForMinioServer()
-	srvc, err := fi.CreateServiceForMinioServer(msrvc)
+	svc, err := fi.CreateServiceForMinioServer(msrvc)
 	if err != nil {
 		return "", err
 	}
 
-	addr := fi.getMinioServerAddress(srvc)
-
+	addr := fmt.Sprintf("https://%s.%s.svc", svc.Name, svc.Namespace)
 	return addr, nil
 }
 func (fi *Invocation) SecretForMinioServer() core.Secret {
@@ -231,11 +229,6 @@ func (fi *Invocation) ServiceForMinioServer() core.Service {
 
 func (fi *Invocation) CreateServiceForMinioServer(obj core.Service) (*core.Service, error) {
 	return fi.KubeClient.CoreV1().Services(obj.Namespace).Create(&obj)
-}
-
-func (fi *Invocation) getMinioServerAddress(svc *core.Service) string {
-	// Assuming that test is running on minikube
-	return "192.168.99.100:" + strconv.Itoa(int(svc.Spec.Ports[0].NodePort))
 }
 
 func (fi *Invocation) DeleteMinioServer() {
