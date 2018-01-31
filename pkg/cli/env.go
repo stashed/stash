@@ -67,15 +67,14 @@ func (w *ResticWrapper) SetupEnv(backend api.Backend, secret *core.Secret, autoP
 		w.cacertEnabled = false
 	} else {
 		w.cacertEnabled = true
-		tmpDir := filepath.Join(w.scratchDir, "cacerts")
 
-		if err := os.MkdirAll(tmpDir, 0755); err != nil {
+		certDir := filepath.Join(w.scratchDir, "cacerts")
+		if err := os.MkdirAll(certDir, 0755); err != nil {
 			return err
 		}
-		certFileName := tmpDir + "/ca.crt"
-		err := ioutil.WriteFile(certFileName, v, 0755)
 
-		if err != nil {
+		caFile := filepath.Join(certDir, "ca.crt")
+		if err := ioutil.WriteFile(caFile, v, 0755); err != nil {
 			return err
 		}
 	}
