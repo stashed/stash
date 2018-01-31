@@ -192,7 +192,7 @@ spec:
 
 ### Create Service
 
-Now, the final touch. Minio server is running on the cluster. Let's create a service so that other pods can access the server.
+Now, the final touch. Minio server is running in the cluster. Let's create a service so that other pods can access the server.
 
 ```console
 $ kubectl apply -f ./minio-service.yaml

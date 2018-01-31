@@ -49,7 +49,7 @@ type Snapshot struct {
 func (w *ResticWrapper) ListSnapshots() ([]Snapshot, error) {
 	result := make([]Snapshot, 0)
 	args := w.appendCacheDirFlag([]interface{}{"snapshots", "--json"})
-	args = w.appendCaCert(args)
+	args = w.appendCaCertFlag(args)
 
 	err := w.sh.Command(Exe, args...).UnmarshalJSON(&result)
 	return result, err
@@ -57,10 +57,10 @@ func (w *ResticWrapper) ListSnapshots() ([]Snapshot, error) {
 
 func (w *ResticWrapper) InitRepositoryIfAbsent() error {
 	args := w.appendCacheDirFlag([]interface{}{"snapshots", "--json"})
-	args = w.appendCaCert(args)
+	args = w.appendCaCertFlag(args)
 	if err := w.run(Exe, args); err != nil {
 		args = w.appendCacheDirFlag([]interface{}{"init"})
-		args = w.appendCaCert(args)
+		args = w.appendCaCertFlag(args)
 
 		return w.run(Exe, args)
 	}
@@ -79,7 +79,7 @@ func (w *ResticWrapper) Backup(resource *api.Restic, fg api.FileGroup) error {
 		args = append(args, tag)
 	}
 	args = w.appendCacheDirFlag(args)
-	args = w.appendCaCert(args)
+	args = w.appendCaCertFlag(args)
 
 	return w.run(Exe, args)
 }
@@ -131,7 +131,7 @@ func (w *ResticWrapper) Forget(resource *api.Restic, fg api.FileGroup) error {
 	}
 	if len(args) > 1 {
 		args = w.appendCacheDirFlag(args)
-		args = w.appendCaCert(args)
+		args = w.appendCaCertFlag(args)
 
 		return w.run(Exe, args)
 	}
@@ -148,14 +148,14 @@ func (w *ResticWrapper) Restore(path, host string) error {
 	args = append(args, "--target")
 	args = append(args, path) // restore in same path as source-path
 	args = w.appendCacheDirFlag(args)
-	args = w.appendCaCert(args)
+	args = w.appendCaCertFlag(args)
 
 	return w.run(Exe, args)
 }
 
 func (w *ResticWrapper) Check() error {
 	args := w.appendCacheDirFlag([]interface{}{"check"})
-	args = w.appendCaCert(args)
+	args = w.appendCaCertFlag(args)
 
 	return w.run(Exe, args)
 }
@@ -168,7 +168,7 @@ func (w *ResticWrapper) appendCacheDirFlag(args []interface{}) []interface{} {
 	return append(args, "--no-cache")
 }
 
-func (w *ResticWrapper) appendCaCert(args []interface{}) []interface{} {
+func (w *ResticWrapper) appendCaCertFlag(args []interface{}) []interface{} {
 	if w.cacertFile != "" {
 		return append(args, "--cacert", w.cacertFile)
 	}
