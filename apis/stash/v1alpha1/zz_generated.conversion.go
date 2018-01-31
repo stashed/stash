@@ -21,13 +21,12 @@ limitations under the License.
 package v1alpha1
 
 import (
-	unsafe "unsafe"
-
 	stash "github.com/appscode/stash/apis/stash"
 	v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
+	unsafe "unsafe"
 )
 
 func init() {
@@ -452,6 +451,7 @@ func autoConvert_v1alpha1_ResticSpec_To_stash_ResticSpec(in *ResticSpec, out *st
 	out.Resources = in.Resources
 	out.RetentionPolicies = *(*[]stash.RetentionPolicy)(unsafe.Pointer(&in.RetentionPolicies))
 	out.Type = stash.BackupType(in.Type)
+	out.Paused = in.Paused
 	out.ImagePullSecrets = *(*[]v1.LocalObjectReference)(unsafe.Pointer(&in.ImagePullSecrets))
 	return nil
 }
@@ -472,6 +472,7 @@ func autoConvert_stash_ResticSpec_To_v1alpha1_ResticSpec(in *stash.ResticSpec, o
 	out.Resources = in.Resources
 	out.RetentionPolicies = *(*[]RetentionPolicy)(unsafe.Pointer(&in.RetentionPolicies))
 	out.Type = BackupType(in.Type)
+	out.Paused = in.Paused
 	out.ImagePullSecrets = *(*[]v1.LocalObjectReference)(unsafe.Pointer(&in.ImagePullSecrets))
 	return nil
 }
