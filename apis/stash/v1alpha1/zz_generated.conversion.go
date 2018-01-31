@@ -21,12 +21,13 @@ limitations under the License.
 package v1alpha1
 
 import (
+	unsafe "unsafe"
+
 	stash "github.com/appscode/stash/apis/stash"
 	v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
-	unsafe "unsafe"
 )
 
 func init() {
