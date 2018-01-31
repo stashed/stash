@@ -218,16 +218,13 @@ spec:
     app: minio-server # must match with the label used in the deployment
 ```
 
-Now we need NodePort of the service. Let's find out the NodePort,
+Verify that the service is created successfully,
 
 ```console
 $ kubectl get service minio-service
 NAME            TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)         AGE
 minio-service   LoadBalancer   10.106.121.137   <pending>     443:30722/TCP   49s
 ```
-
-Look at the `PORT(S)` column. Here `30722` of `443:30722/TCP` is the NodePort. Now, we can access the Minio Server using the following address: `https://<cluster-ip>:30772`. For minikube, the address is `https://192.168.99.100:30722`.
-
 
 ## Overview
 

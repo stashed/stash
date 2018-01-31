@@ -2,24 +2,21 @@ package framework
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"time"
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/stash/pkg/cli"
-	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/util/intstr"
-
+	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1beta1"
 	core "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/util/cert"
 )
 
 const (
-	MINIO_PUBLIC_CRT  = "MINIO_PUBLIC_CRT"
-	MINIO_PRIVATE_KEY = "MINIO_PRIVATE_KEY"
-
 	MINIO_PUBLIC_CRT_NAME  = "public.crt"
 	MINIO_PRIVSTE_KEY_NAME = "private.key"
 	MINIO_CA_CRT           = "MINIO_CA_CRT"
@@ -61,19 +58,12 @@ func (fi *Invocation) CreateMinioServer() (string, error) {
 		return "", err
 	}
 
-	addr := fmt.Sprintf("https://%s.%s.svc", svc.Name, svc.Namespace)
-	return addr, nil
+	return fi.MinioServiceAddres(), nil
 }
-func (fi *Invocation) SecretForMinioServer() core.Secret {
-	if os.Getenv(MINIO_PUBLIC_CRT) == "" || os.Getenv(MINIO_PRIVATE_KEY) == "" {
-		return core.Secret{}
-	}
-	crtData, crt_err := ioutil.ReadFile(os.Getenv(MINIO_PUBLIC_CRT))
-	keyData, key_err := ioutil.ReadFile(os.Getenv(MINIO_PRIVATE_KEY))
 
-	if crt_err != nil && key_err != nil {
-		return core.Secret{}
-	}
+func (fi *Invocation) SecretForMinioServer() core.Secret {
+	crt, key, err := fi.CertStore.NewServerCertPair("server", fi.MinioServerSANs())
+	Expect(err).NotTo(HaveOccurred())
 
 	return core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -81,8 +71,8 @@ func (fi *Invocation) SecretForMinioServer() core.Secret {
 			Namespace: fi.namespace,
 		},
 		Data: map[string][]byte{
-			MINIO_PUBLIC_CRT_NAME:  crtData,
-			MINIO_PRIVSTE_KEY_NAME: keyData,
+			MINIO_PUBLIC_CRT_NAME:  []byte(string(crt) + "\n" + string(fi.CertStore.CACert())),
+			MINIO_PRIVSTE_KEY_NAME: key,
 		},
 	}
 }
@@ -252,4 +242,15 @@ func (f *Framework) DeleteDeploymentForMinioServer(meta metav1.ObjectMeta) error
 
 func (f *Framework) DeleteServiceForMinioServer(meta metav1.ObjectMeta) error {
 	return f.KubeClient.CoreV1().Services(meta.Namespace).Delete(meta.Name, deleteInForeground())
+}
+
+func (fi *Invocation) MinioServerSANs() cert.AltNames {
+	return cert.AltNames{
+		DNSNames: []string{fi.MinioServiceAddres()},
+	}
+}
+
+func (fi *Invocation) MinioServiceAddres() string {
+	return fmt.Sprintf("minio-service.%s.svc", fi.namespace)
+
 }
