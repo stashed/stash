@@ -181,8 +181,10 @@ func (w *ResticWrapper) run(cmd string, args []interface{}) error {
 		parts := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
 		if len(parts) > 1 {
 			parts = parts[len(parts)-1:]
+			return errors.New(parts[0])
+		} else {
+			return err
 		}
-		return errors.New(parts[0])
 	}
 	return nil
 }

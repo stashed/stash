@@ -87,15 +87,17 @@ func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, 
 func (c *Controller) Backup() error {
 	resource, err := c.setup()
 	if err != nil {
-		err = fmt.Errorf("failed to setup backup: %s", err)
-		eventer.CreateEventWithLog(
-			c.k8sClient,
-			BackupEventComponent,
-			resource.ObjectReference(),
-			core.EventTypeWarning,
-			eventer.EventReasonFailedSetup,
-			err.Error(),
-		)
+		err = fmt.Errorf("Failed to setup backup. Error: %v", err)
+		if resource != nil {
+			eventer.CreateEventWithLog(
+				c.k8sClient,
+				BackupEventComponent,
+				resource.ObjectReference(),
+				core.EventTypeWarning,
+				eventer.EventReasonFailedSetup,
+				err.Error(),
+			)
+		}
 		return err
 	}
 
@@ -167,20 +169,20 @@ func (c *Controller) setup() (*api.Restic, error) {
 	}
 	log.Infof("Found restic %s\n", resource.Name)
 	if err := resource.IsValid(); err != nil {
-		return nil, err
+		return resource, err
 	}
 	secret, err := c.k8sClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
-		return nil, err
+		return resource, err
 	}
 	log.Infof("Found repository secret %s\n", secret.Name)
 
 	// setup restic-cli
 	if err = c.resticCLI.SetupEnv(resource.Spec.Backend, secret, c.opt.SmartPrefix); err != nil {
-		return nil, err
+		return resource, err
 	}
 	if err = c.resticCLI.InitRepositoryIfAbsent(); err != nil {
-		return nil, err
+		return resource, err
 	}
 
 	return resource, nil

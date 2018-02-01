@@ -17,10 +17,9 @@ import (
 const (
 	MINIO_PUBLIC_CRT_NAME  = "public.crt"
 	MINIO_PRIVSTE_KEY_NAME = "private.key"
-	MINIO_CA_CRT           = "MINIO_CA_CRT"
 
-	MINIO_ACCESS_KEY_ID ="not@id"
-	MINIO_SECRET_ACCESS_KEY="not@secret"
+	MINIO_ACCESS_KEY_ID     = "not@id"
+	MINIO_SECRET_ACCESS_KEY = "not@secret"
 )
 
 var (
@@ -54,7 +53,7 @@ func (fi *Invocation) CreateMinioServer() (string, error) {
 
 	//creating service for minio server
 	msrvc = fi.ServiceForMinioServer()
-	svc, err := fi.CreateServiceForMinioServer(msrvc)
+	_, err = fi.CreateServiceForMinioServer(msrvc)
 	if err != nil {
 		return "", err
 	}
