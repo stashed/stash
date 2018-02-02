@@ -182,9 +182,7 @@ func (w *ResticWrapper) run(cmd string, args []interface{}) error {
 		if len(parts) > 1 {
 			parts = parts[len(parts)-1:]
 			return errors.New(parts[0])
-		} else {
-			return err
 		}
 	}
-	return nil
+	return err
 }

@@ -87,7 +87,7 @@ func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, 
 func (c *Controller) Backup() error {
 	resource, err := c.setup()
 	if err != nil {
-		err = fmt.Errorf("Failed to setup backup. Error: %v", err)
+		err = fmt.Errorf("failed to setup backup. Error: %v", err)
 		if resource != nil {
 			eventer.CreateEventWithLog(
 				c.k8sClient,
