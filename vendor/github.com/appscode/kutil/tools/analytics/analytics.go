@@ -47,9 +47,7 @@ func ClientID() string {
 		return "$k8s$newforconfig"
 	}
 	nodes, err := client.CoreV1().Nodes().List(metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(map[string]string{
-			"node-role.kubernetes.io/master": "",
-		}).String(),
+		LabelSelector: "node-role.kubernetes.io/master",
 	})
 	if err != nil {
 		return reasonForError(err)

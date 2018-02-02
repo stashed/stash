@@ -8,12 +8,12 @@ import (
 	"github.com/appscode/go/log"
 	stringz "github.com/appscode/go/strings"
 	v "github.com/appscode/go/version"
+	"github.com/appscode/kutil/discovery"
 	"github.com/appscode/pat"
 	api "github.com/appscode/stash/apis/stash"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/docker"
-	"github.com/hashicorp/go-version"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
@@ -49,15 +49,10 @@ func NewCmdRun() *cobra.Command {
 			crdClient := crd_cs.NewForConfigOrDie(config)
 
 			// get kube api server version
-			info, err := kubeClient.Discovery().ServerVersion()
+			opts.KubectlImageTag, err = discovery.GetBaseVersion(kubeClient.Discovery())
 			if err != nil {
-				log.Fatalf("Error getting server version, reason: %s\n", err)
+				log.Fatalf("Failed to detect server version, reason: %s\n", err)
 			}
-			gv, err := version.NewVersion(info.GitVersion)
-			if err != nil {
-				log.Fatalf("Failed to parse server version, reason: %s\n", err)
-			}
-			opts.KubectlImageTag = gv.ToMutator().ResetMetadata().ResetPrerelease().ResetPatch().String()
 
 			ctrl := controller.New(kubeClient, crdClient, stashClient, opts)
 			err = ctrl.Setup()
