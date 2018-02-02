@@ -6,7 +6,7 @@ import (
 
 	"github.com/appscode/kutil"
 	core_util "github.com/appscode/kutil/core/v1"
-	"github.com/appscode/kutil/meta"
+	"github.com/appscode/kutil/discovery"
 	"github.com/golang/glog"
 	extensions "k8s.io/api/extensions/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -55,7 +55,7 @@ func PatchDaemonSet(c kubernetes.Interface, cur *extensions.DaemonSet, transform
 	}
 	glog.V(3).Infof("Patching DaemonSet %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
 	out, err := c.ExtensionsV1beta1().DaemonSets(cur.Namespace).Patch(cur.Name, types.StrategicMergePatchType, patch)
-	if ok, err := meta.CheckAPIVersion(c, "<= 1.5"); err == nil && ok {
+	if ok, err := discovery.CheckAPIVersion(c.Discovery(), "<= 1.5"); err == nil && ok {
 		// https://kubernetes.io/docs/tasks/manage-daemon/update-daemon-set/
 		core_util.RestartPods(c, cur.Namespace, cur.Spec.Selector)
 	}

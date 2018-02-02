@@ -1,10 +1,10 @@
 hash: 12eb0ca314a0ab05e0511f43cf5f161728dbc84dd36de9444c5b6dad7a69a875
-updated: 2018-01-27T17:03:15.298116924-08:00
+updated: 2018-02-01T19:34:04.220080951-08:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
 - name: github.com/appscode/go
-  version: 99dbf420807d9459b63d1d0bf702537bb7aa976f
+  version: 437df2b94ce2ea60464ff580c10462fbeb3e8f52
   subpackages:
   - analytics
   - context
@@ -17,12 +17,13 @@ imports:
   - types
   - version
 - name: github.com/appscode/kutil
-  version: 60ced7f055b34d512a84f65ca0a7d412ec3d6ef2
+  version: b90152fd507d9e2f25e7eeb62bb93d93cbff3455
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
   - batch/v1beta1
   - core/v1
+  - discovery
   - extensions/v1beta1
   - meta
   - rbac/v1beta1
@@ -103,7 +104,7 @@ imports:
   - proto
   - sortkeys
 - name: github.com/golang/glog
-  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
+  version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/groupcache
   version: 02826c3e79038b59d737d3b1c0a1d937f71a4433
   subpackages:
@@ -222,7 +223,7 @@ imports:
   - matchers/support/goraph/util
   - types
 - name: github.com/openshift/generic-admission-server
-  version: fee7efcb54503879f889c25d091d0e5758757c85
+  version: 6cbd9584810e7be9ec4263c5d010a48be6231e60
   subpackages:
   - pkg/apiserver
   - pkg/cmd/server
@@ -259,6 +260,10 @@ imports:
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/russross/blackfriday
   version: 300106c228d52c8941d4b3de6054a6062a86dda3
+- name: github.com/sergi/go-diff
+  version: 97b2266dfe4bd4ea1b81a463322f04f8b724801e
+  subpackages:
+  - diffmatchpatch
 - name: github.com/shurcooL/sanitized_anchor_name
   version: 10ef21a441db47d8b13ebcc5fd2310f636973c77
 - name: github.com/sirupsen/logrus
@@ -275,6 +280,12 @@ imports:
   version: ded73eae5db7e7a0ef6f55aace87a2873c5d2b74
   subpackages:
   - codec
+- name: github.com/yudai/gojsondiff
+  version: 7b1b7adf999dab73a6eb02669c3d82dbb27a3dd6
+  subpackages:
+  - formatter
+- name: github.com/yudai/golcs
+  version: d1c525dea8ce39ea9a783d33cf08932305373f2c
 - name: golang.org/x/crypto
   version: 81e90905daefcd6fd217b62423c0908922eadb30
   subpackages:

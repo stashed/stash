@@ -7,6 +7,7 @@ import (
 	"time"
 
 	logs "github.com/appscode/go/log/golog"
+	"github.com/appscode/kutil/discovery"
 	api "github.com/appscode/stash/apis/stash"
 	"github.com/appscode/stash/client/scheme"
 	_ "github.com/appscode/stash/client/scheme"
@@ -75,9 +76,8 @@ var _ = BeforeSuite(func() {
 	}
 
 	// get kube api server version
-	version, err := kubeClient.Discovery().ServerVersion()
+	opts.KubectlImageTag, err = discovery.GetBaseVersion(kubeClient.Discovery())
 	Expect(err).NotTo(HaveOccurred())
-	opts.KubectlImageTag = version.Major + "." + version.Minor + ".0"
 
 	ctrl = controller.New(kubeClient, crdClient, stashClient, opts)
 	By("Registering CRD group " + api.GroupName)
