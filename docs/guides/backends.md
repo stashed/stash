@@ -47,7 +47,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic tpr using this secret. Following parameters are available for `Local` backend.
+Now, you can create a Restic crd using this secret. Following parameters are available for `Local` backend.
 
 | Parameter            | Description                                                                                   |
 |----------------------|-----------------------------------------------------------------------------------------------|
@@ -98,6 +98,7 @@ Stash supports AWS S3 service or [Minio](https://minio.io/) servers as backend. 
 | `RESTIC_PASSWORD`       | `Required`. Password used to encrypt snapshots by `restic`      |
 | `AWS_ACCESS_KEY_ID`     | `Required`. AWS / Minio / DigitalOcean Spaces access key ID     |
 | `AWS_SECRET_ACCESS_KEY` | `Required`. AWS / Minio / DigitalOcean Spaces secret access key |
+| `CA_CERT_DATA`          | `optional`. CA certificate used by storage backend. This can be used to pass a self-signed ca used with Minio server. |
 
 ```console
 $ echo -n 'changeit' > RESTIC_PASSWORD
@@ -129,7 +130,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic tpr using this secret. Following parameters are available for `S3` backend.
+Now, you can create a Restic crd using this secret. Following parameters are available for `S3` backend.
 
 | Parameter     | Description                                                                     |
 |---------------|---------------------------------------------------------------------------------|
@@ -211,7 +212,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic tpr using this secret. Following parameters are available for `gcs` backend.
+Now, you can create a Restic crd using this secret. Following parameters are available for `gcs` backend.
 
 | Parameter      | Description                                                                     |
 |----------------|---------------------------------------------------------------------------------|
@@ -291,7 +292,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic tpr using this secret. Following parameters are available for `Azure` backend.
+Now, you can create a Restic crd using this secret. Following parameters are available for `Azure` backend.
 
 | Parameter     | Description                                                                     |
 |---------------|---------------------------------------------------------------------------------|
@@ -399,7 +400,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic tpr using this secret. Following parameters are available for `Swift` backend.
+Now, you can create a Restic crd using this secret. Following parameters are available for `Swift` backend.
 
 | Parameter         | Description                                                                 |
 |-------------------|-----------------------------------------------------------------------------|
@@ -479,7 +480,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic tpr using this secret. Following parameters are available for `B2` backend.
+Now, you can create a Restic crd using this secret. Following parameters are available for `B2` backend.
 
 | Parameter     | Description                                                               |
 |---------------|---------------------------------------------------------------------------|

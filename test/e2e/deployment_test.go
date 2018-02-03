@@ -33,6 +33,9 @@ var _ = Describe("Deployment", func() {
 	BeforeEach(func() {
 		f = root.Invoke()
 	})
+	AfterEach(func() {
+		time.Sleep(60 * time.Second)
+	})
 	JustBeforeEach(func() {
 		if missing, _ := BeZero().Match(cred); missing {
 			Skip("Missing repository credential")
@@ -627,6 +630,86 @@ var _ = Describe("Deployment", func() {
 				restic.Spec.RetentionPolicies = []api.RetentionPolicy{}
 			})
 			It(`should backup new Deployment`, shouldBackupNewDeployment)
+		})
+	})
+	Describe("Minio server", func() {
+		AfterEach(func() {
+			f.DeleteDeployment(deployment.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+			f.DeleteMinioServer()
+		})
+		Context("With cacert", func() {
+			BeforeEach(func() {
+				By("Creating Minio server with cacert")
+				addrs, err := f.CreateMinioServer()
+				Expect(err).NotTo(HaveOccurred())
+
+				restic = f.ResticForMinioBackend("https://" + addrs)
+				cred = f.SecretForMinioBackend(true)
+
+			})
+
+			It("Should backup new Deployment", func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic")
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating Deployment " + deployment.Name)
+				_, err = f.CreateDeployment(deployment)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for sidecar")
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Waiting for backup to complete")
+				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+					return r.Status.BackupCount
+				}, BeNumerically(">=", 1)))
+
+				By("Waiting for backup event")
+				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+
+			})
+		})
+		Context("Without cacert", func() {
+			BeforeEach(func() {
+				By("Creating Minio server with cacert")
+				addrs, err := f.CreateMinioServer()
+				Expect(err).NotTo(HaveOccurred())
+
+				restic = f.ResticForMinioBackend("https://" + addrs)
+				cred = f.SecretForMinioBackend(false)
+
+			})
+
+			It("Should fail to backup new Deployment", func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic without cacert")
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating Deployment " + deployment.Name)
+				_, err = f.CreateDeployment(deployment)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for sidecar")
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Waiting to count failed setup event")
+				f.EventualWarning(restic.ObjectMeta).Should(WithTransform(f.CountFailedSetup, BeNumerically(">=", 1)))
+
+				By("Waiting to count successful backup event")
+				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically("==", 0)))
+
+			})
 		})
 	})
 

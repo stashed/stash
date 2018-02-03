@@ -10,6 +10,9 @@ func (f *Framework) InitializerForWorkloads() v1alpha1.InitializerConfiguration 
 	return v1alpha1.InitializerConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "stash-initializer",
+			Labels: map[string]string{
+				"app": "stash",
+			},
 		},
 		Initializers: []v1alpha1.Initializer{
 			{

@@ -151,15 +151,12 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 				log.Errorf("Error while searching Restic for ReplicaSet %s/%s.", rs.Name, rs.Namespace)
 				return err
 			}
-			if util.ResticEqual(oldRestic, newRestic) {
-				return nil
-			}
-			if newRestic != nil {
+			if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
 				if newRestic.Spec.Type == api.BackupOffline && *rs.Spec.Replicas > 1 {
 					return fmt.Errorf("cannot perform offline backup for rs with replicas > 1")
 				}
 				return c.EnsureReplicaSetSidecar(rs, oldRestic, newRestic)
-			} else if oldRestic != nil {
+			} else if oldRestic != nil && newRestic == nil {
 				return c.EnsureReplicaSetSidecarDeleted(rs, oldRestic)
 			}
 		}

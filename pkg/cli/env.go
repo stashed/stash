@@ -52,6 +52,8 @@ const (
 	// For authentication based on tokens
 	OS_STORAGE_URL = "OS_STORAGE_URL"
 	OS_AUTH_TOKEN  = "OS_AUTH_TOKEN"
+	//For using certs in Minio server or REST server
+	CA_CERT_DATA = "CA_CERT_DATA"
 )
 
 func (w *ResticWrapper) SetupEnv(backend api.Backend, secret *core.Secret, autoPrefix string) error {
@@ -59,6 +61,18 @@ func (w *ResticWrapper) SetupEnv(backend api.Backend, secret *core.Secret, autoP
 		return errors.New("missing repository password")
 	} else {
 		w.sh.SetEnv(RESTIC_PASSWORD, string(v))
+	}
+
+	if v, ok := secret.Data[CA_CERT_DATA]; ok {
+		certDir := filepath.Join(w.scratchDir, "cacerts")
+		if err := os.MkdirAll(certDir, 0755); err != nil {
+			return err
+		}
+
+		w.cacertFile = filepath.Join(certDir, "ca.crt")
+		if err := ioutil.WriteFile(w.cacertFile, v, 0755); err != nil {
+			return err
+		}
 	}
 
 	tmpDir := filepath.Join(w.scratchDir, "restic-tmp")

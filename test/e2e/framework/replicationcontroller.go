@@ -30,7 +30,7 @@ func (f *Framework) CreateReplicationController(obj core.ReplicationController) 
 }
 
 func (f *Framework) DeleteReplicationController(meta metav1.ObjectMeta) error {
-	return f.KubeClient.CoreV1().ReplicationControllers(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	return f.KubeClient.CoreV1().ReplicationControllers(meta.Namespace).Delete(meta.Name, deleteInBackground())
 }
 
 func (f *Framework) EventuallyReplicationController(meta metav1.ObjectMeta) GomegaAsyncAssertion {
