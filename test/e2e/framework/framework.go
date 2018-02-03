@@ -5,8 +5,8 @@ import (
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/kutil/tools/certstore"
-	. "github.com/onsi/gomega"
 	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
+	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
 	"k8s.io/client-go/kubernetes"
 )
@@ -15,11 +15,11 @@ type Framework struct {
 	KubeClient  kubernetes.Interface
 	StashClient cs.StashV1alpha1Interface
 	namespace   string
-	CertStore *certstore.CertStore
+	CertStore   *certstore.CertStore
 }
 
 func New(kubeClient kubernetes.Interface, extClient cs.StashV1alpha1Interface) *Framework {
-	store, err := certstore.NewCertStore(afero.NewMemMapFs(),filepath.Join("","pki"))
+	store, err := certstore.NewCertStore(afero.NewMemMapFs(), filepath.Join("", "pki"))
 	Expect(err).NotTo(HaveOccurred())
 
 	err = store.InitCA()
@@ -29,7 +29,7 @@ func New(kubeClient kubernetes.Interface, extClient cs.StashV1alpha1Interface) *
 		KubeClient:  kubeClient,
 		StashClient: extClient,
 		namespace:   rand.WithUniqSuffix("test-stash"),
-		CertStore:store,
+		CertStore:   store,
 	}
 }
 
