@@ -7,115 +7,30 @@ import (
 	stringz "github.com/appscode/go/strings"
 	core_util "github.com/appscode/kutil/core/v1"
 	"github.com/appscode/kutil/meta"
+	"github.com/appscode/kutil/tools/queue"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	rt "k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes/scheme"
-	core_listers "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/reference"
-	"k8s.io/client-go/util/workqueue"
 )
 
 func (c *StashController) initRCWatcher() {
-	lw := &cache.ListWatch{
-		ListFunc: func(options metav1.ListOptions) (rt.Object, error) {
-			options.IncludeUninitialized = true
-			return c.k8sClient.CoreV1().ReplicationControllers(core.NamespaceAll).List(options)
-		},
-		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			options.IncludeUninitialized = true
-			return c.k8sClient.CoreV1().ReplicationControllers(core.NamespaceAll).Watch(options)
-		},
-	}
-
-	// create the workqueue
-	c.rcQueue = workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rc")
-
-	// Bind the workqueue to a cache with the help of an informer. This way we make sure that
-	// whenever the cache is updated, the pod key is added to the workqueue.
-	// Note that when we finally process the item from the workqueue, we might see a newer version
-	// of the ReplicationController than the version which was responsible for triggering the update.
-	c.rcIndexer, c.rcInformer = cache.NewIndexerInformer(lw, &core.ReplicationController{}, c.options.ResyncPeriod, cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			key, err := cache.MetaNamespaceKeyFunc(obj)
-			if err == nil {
-				c.rcQueue.Add(key)
-			}
-		},
-		UpdateFunc: func(old interface{}, new interface{}) {
-			key, err := cache.MetaNamespaceKeyFunc(new)
-			if err == nil {
-				c.rcQueue.Add(key)
-			}
-		},
-		DeleteFunc: func(obj interface{}) {
-			// IndexerInformer uses a delta queue, therefore for deletes we have to use this
-			// key function.
-			key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
-			if err == nil {
-				c.rcQueue.Add(key)
-			}
-		},
-	}, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
-	c.rcLister = core_listers.NewReplicationControllerLister(c.rcIndexer)
-}
-
-func (c *StashController) runRCWatcher() {
-	for c.processNextRC() {
-	}
-}
-
-func (c *StashController) processNextRC() bool {
-	// Wait until there is a new item in the working queue
-	key, quit := c.rcQueue.Get()
-	if quit {
-		return false
-	}
-	// Tell the queue that we are done with processing this key. This unblocks the key for other workers
-	// This allows safe parallel processing because two deployments with the same key are never processed in
-	// parallel.
-	defer c.rcQueue.Done(key)
-
-	// Invoke the method containing the business logic
-	err := c.runRCInjector(key.(string))
-	if err == nil {
-		// Forget about the #AddRateLimited history of the key on every successful synchronization.
-		// This ensures that future processing of updates for this key is not delayed because of
-		// an outdated error history.
-		c.rcQueue.Forget(key)
-		return true
-	}
-	log.Errorf("Failed to process ReplicationController %v. Reason: %s", key, err)
-
-	// This controller retries 5 times if something goes wrong. After that, it stops trying.
-	if c.rcQueue.NumRequeues(key) < c.options.MaxNumRequeues {
-		glog.Infof("Error syncing deployment %v: %v", key, err)
-
-		// Re-enqueue the key rate limited. Based on the rate limiter on the
-		// queue and the re-enqueue history, the key will be processed later again.
-		c.rcQueue.AddRateLimited(key)
-		return true
-	}
-
-	c.rcQueue.Forget(key)
-	// Report to an external entity that, even after several retries, we could not successfully process this key
-	runtime.HandleError(err)
-	glog.Infof("Dropping deployment %q out of the queue: %v", key, err)
-	return true
+	c.rcInformer = c.kubeInformerFactory.Core().V1().ReplicationControllers().Informer()
+	c.rcQueue = queue.New("ReplicationController", c.options.MaxNumRequeues, c.options.NumThreads, c.runRCInjector)
+	c.rcInformer.AddEventHandler(queue.DefaultEventHandler(c.rcQueue.GetQueue()))
+	c.rcLister = c.kubeInformerFactory.Core().V1().ReplicationControllers().Lister()
 }
 
 // syncToStdout is the business logic of the controller. In this controller it simply prints
 // information about the deployment to stdout. In case an error happened, it has to simply return the error.
 // The retry logic should not be part of the business logic.
 func (c *StashController) runRCInjector(key string) error {
-	obj, exists, err := c.rcIndexer.GetByKey(key)
+	obj, exists, err := c.rcInformer.GetIndexer().GetByKey(key)
 	if err != nil {
 		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)
 		return err
