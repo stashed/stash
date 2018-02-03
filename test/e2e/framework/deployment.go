@@ -29,7 +29,7 @@ func (f *Framework) CreateDeployment(obj apps.Deployment) (*apps.Deployment, err
 }
 
 func (f *Framework) DeleteDeployment(meta metav1.ObjectMeta) error {
-	return f.KubeClient.AppsV1beta1().Deployments(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	return f.KubeClient.AppsV1beta1().Deployments(meta.Namespace).Delete(meta.Name, deleteInBackground())
 }
 
 func (f *Framework) EventuallyDeployment(meta metav1.ObjectMeta) GomegaAsyncAssertion {

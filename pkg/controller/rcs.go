@@ -148,15 +148,13 @@ func (c *StashController) runRCInjector(key string) error {
 			log.Errorf("Error while searching Restic for ReplicationController %s/%s.", rc.Name, rc.Namespace)
 			return err
 		}
-		if util.ResticEqual(oldRestic, newRestic) {
-			return nil
-		}
-		if newRestic != nil {
+
+		if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
 			if newRestic.Spec.Type == api.BackupOffline && *rc.Spec.Replicas > 1 {
 				return fmt.Errorf("cannot perform offline backup for rc with replicas > 1")
 			}
 			return c.EnsureReplicationControllerSidecar(rc, oldRestic, newRestic)
-		} else if oldRestic != nil {
+		} else if oldRestic != nil && newRestic == nil {
 			return c.EnsureReplicationControllerSidecarDeleted(rc, oldRestic)
 		}
 

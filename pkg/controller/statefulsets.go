@@ -146,12 +146,10 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 				log.Errorf("Error while searching Restic for StatefulSet %s/%s.", ss.Name, ss.Namespace)
 				return err
 			}
-			if util.ResticEqual(oldRestic, newRestic) {
-				return nil
-			}
-			if newRestic != nil {
+
+			if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
 				return c.EnsureStatefulSetSidecar(ss, oldRestic, newRestic)
-			} else if oldRestic != nil {
+			} else if oldRestic != nil && newRestic == nil {
 				return c.EnsureStatefulSetSidecarDeleted(ss, oldRestic)
 			}
 

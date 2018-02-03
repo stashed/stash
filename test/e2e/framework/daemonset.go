@@ -39,7 +39,7 @@ func (f *Framework) CreateDaemonSet(obj extensions.DaemonSet) (*extensions.Daemo
 }
 
 func (f *Framework) DeleteDaemonSet(meta metav1.ObjectMeta) error {
-	return f.KubeClient.ExtensionsV1beta1().DaemonSets(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	return f.KubeClient.ExtensionsV1beta1().DaemonSets(meta.Namespace).Delete(meta.Name, deleteInBackground())
 }
 
 func (f *Framework) EventuallyDaemonSet(meta metav1.ObjectMeta) GomegaAsyncAssertion {

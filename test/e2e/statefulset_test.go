@@ -1,6 +1,8 @@
 package e2e_test
 
 import (
+	"time"
+
 	apps_util "github.com/appscode/kutil/apps/v1beta1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
@@ -26,6 +28,9 @@ var _ = Describe("StatefulSet", func() {
 
 	BeforeEach(func() {
 		f = root.Invoke()
+	})
+	AfterEach(func() {
+		time.Sleep(60 * time.Second)
 	})
 	JustBeforeEach(func() {
 		if missing, _ := BeZero().Match(cred); missing {

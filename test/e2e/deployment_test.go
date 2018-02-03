@@ -33,6 +33,9 @@ var _ = Describe("Deployment", func() {
 	BeforeEach(func() {
 		f = root.Invoke()
 	})
+	AfterEach(func() {
+		time.Sleep(60 * time.Second)
+	})
 	JustBeforeEach(func() {
 		if missing, _ := BeZero().Match(cred); missing {
 			Skip("Missing repository credential")

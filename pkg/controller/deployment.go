@@ -150,15 +150,12 @@ func (c *StashController) runDeploymentInjector(key string) error {
 			log.Errorf("Error while searching Restic for Deployment %s/%s.", dp.Name, dp.Namespace)
 			return err
 		}
-		if util.ResticEqual(oldRestic, newRestic) {
-			return nil
-		}
-		if newRestic != nil {
+		if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
 			if newRestic.Spec.Type == api.BackupOffline && *dp.Spec.Replicas > 1 {
 				return fmt.Errorf("cannot perform offline backup for deployment with replicas > 1")
 			}
 			return c.EnsureDeploymentSidecar(dp, oldRestic, newRestic)
-		} else if oldRestic != nil {
+		} else if oldRestic != nil && newRestic == nil {
 			return c.EnsureDeploymentSidecarDeleted(dp, oldRestic)
 		}
 
