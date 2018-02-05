@@ -95,7 +95,7 @@ var _ = BeforeSuite(func() {
 	// Now let's start the controller
 	// stop := make(chan struct{})
 	// defer close(stop)
-	go ctrl.Run(1, nil)
+	go ctrl.Run(nil)
 })
 
 var _ = AfterSuite(func() {
