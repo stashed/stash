@@ -157,6 +157,24 @@ func (fi *Invocation) SecretForB2Backend() core.Secret {
 	}
 }
 
+func (fi *Invocation) SecretForMinioBackend(includeCacert bool) core.Secret {
+	secret := core.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rand.WithUniqSuffix(fi.app + "-minio"),
+			Namespace: fi.namespace,
+		},
+		Data: map[string][]byte{
+			cli.RESTIC_PASSWORD:       []byte(TEST_RESTIC_PASSWORD),
+			cli.AWS_ACCESS_KEY_ID:     []byte(MINIO_ACCESS_KEY_ID),
+			cli.AWS_SECRET_ACCESS_KEY: []byte(MINIO_SECRET_ACCESS_KEY),
+		},
+	}
+	if includeCacert {
+		secret.Data[cli.CA_CERT_DATA] = fi.CertStore.CACert()
+	}
+	return secret
+}
+
 func (fi *Invocation) SecretForRegistry(dockerCfgJson []byte) core.Secret {
 	return core.Secret{
 		ObjectMeta: metav1.ObjectMeta{

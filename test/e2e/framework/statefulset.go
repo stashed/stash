@@ -103,7 +103,7 @@ func (f *Framework) CreateStatefulSet(obj apps.StatefulSet) (*apps.StatefulSet, 
 }
 
 func (f *Framework) DeleteStatefulSet(meta metav1.ObjectMeta) error {
-	return f.KubeClient.AppsV1beta1().StatefulSets(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	return f.KubeClient.AppsV1beta1().StatefulSets(meta.Namespace).Delete(meta.Name, deleteInBackground())
 }
 
 func (f *Framework) EventuallyStatefulSet(meta metav1.ObjectMeta) GomegaAsyncAssertion {

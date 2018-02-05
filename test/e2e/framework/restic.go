@@ -91,6 +91,19 @@ func (fi *Invocation) ResticForS3Backend() api.Restic {
 	return r
 }
 
+func (fi *Invocation) ResticForMinioBackend(address string) api.Restic {
+	r := fi._restic()
+	r.Spec.Backend = api.Backend{
+		StorageSecretName: "",
+		S3: &api.S3Spec{
+			Endpoint: address,
+			Bucket:   "stash-qa",
+			Prefix:   fi.app,
+		},
+	}
+	return r
+}
+
 func (fi *Invocation) ResticForDOBackend() api.Restic {
 	r := fi._restic()
 	r.Spec.Backend = api.Backend{

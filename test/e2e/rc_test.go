@@ -1,6 +1,8 @@
 package e2e_test
 
 import (
+	"time"
+
 	"github.com/appscode/go/types"
 	core_util "github.com/appscode/kutil/core/v1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -25,6 +27,9 @@ var _ = Describe("ReplicationController", func() {
 
 	BeforeEach(func() {
 		f = root.Invoke()
+	})
+	AfterEach(func() {
+		time.Sleep(60 * time.Second)
 	})
 	JustBeforeEach(func() {
 		if missing, _ := BeZero().Match(cred); missing {

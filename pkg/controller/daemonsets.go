@@ -144,12 +144,10 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 			log.Errorf("Error while searching Restic for DaemonSet %s/%s.", ds.Name, ds.Namespace)
 			return err
 		}
-		if util.ResticEqual(oldRestic, newRestic) {
-			return nil
-		}
-		if newRestic != nil {
+
+		if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
 			return c.EnsureDaemonSetSidecar(ds, oldRestic, newRestic)
-		} else if oldRestic != nil {
+		} else if oldRestic != nil && newRestic == nil {
 			return c.EnsureDaemonSetSidecarDeleted(ds, oldRestic)
 		}
 
