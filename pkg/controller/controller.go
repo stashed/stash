@@ -153,6 +153,7 @@ func (c *StashController) Run(stopCh chan struct{}) {
 	c.ssQueue.Run(stopCh)
 	c.rcQueue.Run(stopCh)
 	c.rsQueue.Run(stopCh)
+	c.jobQueue.Run(stopCh)
 
 	<-stopCh
 	glog.Info("Stopping Stash controller")
