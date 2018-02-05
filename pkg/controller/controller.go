@@ -125,7 +125,7 @@ func (c *StashController) ensureCustomResourceDefinitions() error {
 	return apiext_util.RegisterCRDs(c.crdClient, crds)
 }
 
-func (c *StashController) Run(threadiness int, stopCh chan struct{}) {
+func (c *StashController) Run(stopCh chan struct{}) {
 	defer runtime.HandleCrash()
 
 	glog.Info("Starting Stash controller")

@@ -65,7 +65,7 @@ func NewCmdRun() *cobra.Command {
 			// Now let's start the controller
 			stop := make(chan struct{})
 			defer close(stop)
-			go ctrl.Run(1, stop)
+			go ctrl.Run(stop)
 
 			m := pat.New()
 			m.Get("/metrics", promhttp.Handler())
