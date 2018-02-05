@@ -23,13 +23,12 @@ import (
 
 var _ = Describe("Deployment", func() {
 	var (
-		err                 error
-		f                   *framework.Invocation
-		restic              api.Restic
-		cred                core.Secret
-		deployment          apps.Deployment
-		recovery            api.Recovery
-		previousBackupCount int64
+		err        error
+		f          *framework.Invocation
+		restic     api.Restic
+		cred       core.Secret
+		deployment apps.Deployment
+		recovery   api.Recovery
 	)
 
 	BeforeEach(func() {
@@ -743,12 +742,11 @@ var _ = Describe("Deployment", func() {
 		})
 		It(`should backup new Deployment`, shouldBackupNewDeployment)
 	})
-	FDescribe("Pause Restic to stop backup", func() {
+	Describe("Pause Restic to stop backup", func() {
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
-				previousBackupCount = 0
 			})
 			It(`should able to Pause and Resume backup`, func() {
 				By("Creating repository Secret " + cred.Name)
@@ -784,18 +782,17 @@ var _ = Describe("Deployment", func() {
 				By("Waiting to remove sidecar")
 				f.EventuallyDeployment(deployment.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 
-				resticObj, err := f.StashClient.Restics(restic.Namespace).Get(restic.Name, metav1.GetOptions{})
+				resticObj, err := f.StashClient.StashV1alpha1().Restics(restic.Namespace).Get(restic.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 
-				previousBackupCount = resticObj.Status.BackupCount
+				previousBackupCount := resticObj.Status.BackupCount
 
 				By("Wating 2 minutes")
 				time.Sleep(2 * time.Minute)
 
 				By("Checking that Backup count has not changed")
-				resticObj, err = f.StashClient.Restics(restic.Namespace).Get(restic.Name, metav1.GetOptions{})
+				resticObj, err = f.StashClient.StashV1alpha1().Restics(restic.Namespace).Get(restic.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				fmt.Println("Backup count after 2 minutes: ", resticObj.Status.BackupCount)
 				Expect(resticObj.Status.BackupCount).Should(BeNumerically("==", previousBackupCount))
 
 				By(`Patching Restic with "paused: false"`)

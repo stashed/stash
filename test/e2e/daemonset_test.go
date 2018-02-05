@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"fmt"
 	"time"
 
 	ext_util "github.com/appscode/kutil/extensions/v1beta1"
@@ -483,6 +484,82 @@ var _ = Describe("DaemonSet", func() {
 				By("Waiting for backup event")
 				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", 1)))
 			})
+		})
+	})
+
+	FDescribe("Pause Restic to stop backup", func() {
+		Context(`"Local" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForLocalBackend()
+			})
+			It(`should able to Pause and Resume backup`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic")
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating Daemonset " + daemon.Name)
+				_, err = f.CreateDaemonSet(daemon)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for sidecar")
+				f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Waiting for backup to complete")
+				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+					return r.Status.BackupCount
+				}, BeNumerically(">=", 1)))
+
+				By("Waiting for backup event")
+				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+
+				By(`Patching Restic with "paused: true"`)
+				err = f.CreateOrPatchRestic(restic.ObjectMeta, func(in *api.Restic) *api.Restic {
+					in.Spec.Paused = true
+					return in
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting to remove sidecar")
+				f.EventuallyDaemonSet(daemon.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
+
+				resticObj, err := f.StashClient.StashV1alpha1().Restics(restic.Namespace).Get(restic.Name, metav1.GetOptions{})
+				Expect(err).NotTo(HaveOccurred())
+
+				previousBackupCount := resticObj.Status.BackupCount
+
+				By("Wating 2 minutes")
+				time.Sleep(2 * time.Minute)
+
+				By("Checking that Backup count has not changed")
+				resticObj, err = f.StashClient.StashV1alpha1().Restics(restic.Namespace).Get(restic.Name, metav1.GetOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resticObj.Status.BackupCount).Should(BeNumerically("==", previousBackupCount))
+
+				By(`Patching Restic with "paused: false"`)
+				err = f.CreateOrPatchRestic(restic.ObjectMeta, func(in *api.Restic) *api.Restic {
+					in.Spec.Paused = false
+					return in
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for sidecar")
+				f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Waiting for backup to complete")
+				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+					return r.Status.BackupCount
+				}, BeNumerically(">=", previousBackupCount)))
+
+				By("Waiting for backup event")
+				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", previousBackupCount)))
+
+			})
+
 		})
 	})
 })

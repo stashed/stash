@@ -180,7 +180,7 @@ func (f *Framework) UpdateRestic(meta metav1.ObjectMeta, transformer func(*api.R
 }
 
 func (f *Framework) CreateOrPatchRestic(meta metav1.ObjectMeta, transformer func(*api.Restic) *api.Restic) error {
-	_, _, err := stash_util.CreateOrPatchRestic(f.StashClient, meta, transformer)
+	_, _, err := stash_util.CreateOrPatchRestic(f.StashClient.StashV1alpha1(), meta, transformer)
 	return err
 
 }
