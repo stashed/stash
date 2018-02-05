@@ -11,4 +11,5 @@ type Options struct {
 	DockerRegistry  string
 	ResyncPeriod    time.Duration
 	MaxNumRequeues  int
+	NumThreads      int
 }

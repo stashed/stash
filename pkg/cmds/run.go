@@ -11,7 +11,7 @@ import (
 	"github.com/appscode/kutil/discovery"
 	"github.com/appscode/pat"
 	api "github.com/appscode/stash/apis/stash"
-	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
+	cs "github.com/appscode/stash/client"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -25,12 +25,13 @@ func NewCmdRun() *cobra.Command {
 	var (
 		masterURL      string
 		kubeconfigPath string
-		address        string = ":56790"
-		opts                  = controller.Options{
+		address        = ":56790"
+		opts           = controller.Options{
 			DockerRegistry: docker.ACRegistry,
 			StashImageTag:  stringz.Val(v.Version.Version, "canary"),
-			ResyncPeriod:   5 * time.Minute,
+			ResyncPeriod:   10 * time.Minute,
 			MaxNumRequeues: 5,
+			NumThreads:     2,
 		}
 		scratchDir = "/tmp"
 	)
@@ -64,7 +65,7 @@ func NewCmdRun() *cobra.Command {
 			// Now let's start the controller
 			stop := make(chan struct{})
 			defer close(stop)
-			go ctrl.Run(1, stop)
+			go ctrl.Run(stop)
 
 			m := pat.New()
 			m.Get("/metrics", promhttp.Handler())
@@ -73,7 +74,7 @@ func NewCmdRun() *cobra.Command {
 			log.Infof("URL pattern: %s", pattern)
 			exporter := &PrometheusExporter{
 				kubeClient:  kubeClient,
-				stashClient: stashClient,
+				stashClient: stashClient.StashV1alpha1(),
 				scratchDir:  scratchDir,
 			}
 			m.Get(pattern, exporter)

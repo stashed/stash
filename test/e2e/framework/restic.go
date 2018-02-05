@@ -166,16 +166,16 @@ func (fi *Invocation) ResticForB2Backend() api.Restic {
 }
 
 func (f *Framework) CreateRestic(obj api.Restic) error {
-	_, err := f.StashClient.Restics(obj.Namespace).Create(&obj)
+	_, err := f.StashClient.StashV1alpha1().Restics(obj.Namespace).Create(&obj)
 	return err
 }
 
 func (f *Framework) DeleteRestic(meta metav1.ObjectMeta) error {
-	return f.StashClient.Restics(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	return f.StashClient.StashV1alpha1().Restics(meta.Namespace).Delete(meta.Name, deleteInForeground())
 }
 
 func (f *Framework) UpdateRestic(meta metav1.ObjectMeta, transformer func(*api.Restic) *api.Restic) error {
-	_, err := stash_util.TryUpdateRestic(f.StashClient, meta, transformer)
+	_, err := stash_util.TryUpdateRestic(f.StashClient.StashV1alpha1(), meta, transformer)
 	return err
 }
 
@@ -187,7 +187,7 @@ func (f *Framework) CreateOrPatchRestic(meta metav1.ObjectMeta, transformer func
 
 func (f *Framework) EventuallyRestic(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() *api.Restic {
-		obj, err := f.StashClient.Restics(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		obj, err := f.StashClient.StashV1alpha1().Restics(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		return obj
 	})

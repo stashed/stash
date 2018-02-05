@@ -42,17 +42,17 @@ func (fi *Invocation) RecoveryForRestic(restic api.Restic) api.Recovery {
 }
 
 func (f *Framework) CreateRecovery(obj api.Recovery) error {
-	_, err := f.StashClient.Recoveries(obj.Namespace).Create(&obj)
+	_, err := f.StashClient.StashV1alpha1().Recoveries(obj.Namespace).Create(&obj)
 	return err
 }
 
 func (f *Framework) DeleteRecovery(meta metav1.ObjectMeta) error {
-	return f.StashClient.Recoveries(meta.Namespace).Delete(meta.Name, deleteInBackground())
+	return f.StashClient.StashV1alpha1().Recoveries(meta.Namespace).Delete(meta.Name, deleteInBackground())
 }
 
 func (f *Framework) EventuallyRecoverySucceed(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() bool {
-		obj, err := f.StashClient.Recoveries(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		obj, err := f.StashClient.StashV1alpha1().Recoveries(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		return obj.Status.Phase == api.RecoverySucceeded
 	}, time.Minute*5, time.Second*5)

@@ -5,7 +5,7 @@ import (
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/kutil/tools/certstore"
-	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
+	cs "github.com/appscode/stash/client"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
 	"k8s.io/client-go/kubernetes"
@@ -13,12 +13,12 @@ import (
 
 type Framework struct {
 	KubeClient  kubernetes.Interface
-	StashClient cs.StashV1alpha1Interface
+	StashClient cs.Interface
 	namespace   string
 	CertStore   *certstore.CertStore
 }
 
-func New(kubeClient kubernetes.Interface, extClient cs.StashV1alpha1Interface) *Framework {
+func New(kubeClient kubernetes.Interface, extClient cs.Interface) *Framework {
 	store, err := certstore.NewCertStore(afero.NewMemMapFs(), filepath.Join("", "pki"))
 	Expect(err).NotTo(HaveOccurred())
 
