@@ -49,7 +49,7 @@ spec:
           name: stash-scratchdir
       - name: webhook
         args:
-        - admission-webhook
+        - apiserver
         - --secure-port=8443
         - --audit-log-path=-
         - --tls-cert-file=/var/serving-cert/tls.crt
@@ -74,7 +74,7 @@ spec:
       - name: serving-cert
         secret:
           defaultMode: 420
-          secretName: stash-admission-webhook-cert
+          secretName: stash-apiserver-cert
       tolerations:
       - key: CriticalAddonsOnly
         operator: Exists
@@ -83,7 +83,7 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: stash-admission-webhook-cert
+  name: stash-apiserver-cert
   namespace: $STASH_NAMESPACE
   labels:
     app: stash
@@ -144,7 +144,7 @@ webhooks:
     service:
       namespace: default
       name: kubernetes
-      path: /apis/admission.stash.appscode.com/v1alpha1/reviews
+      path: /apis/admission.stash.appscode.com/v1alpha1/admissionreviews
     caBundle: $KUBE_CA
   rules:
   - operations:

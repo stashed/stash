@@ -1,20 +1,19 @@
-package server
+package cmds
 
 import (
 	"fmt"
 	"io"
 	"net"
 
+	"github.com/appscode/stash/pkg/admission/plugin"
+	"github.com/appscode/stash/pkg/apiserver"
 	"github.com/spf13/cobra"
-
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
-
-	"github.com/openshift/generic-admission-server/pkg/apiserver"
 )
 
-const defaultEtcdPathPrefix = "/registry/online.openshift.io"
+const defaultEtcdPathPrefix = "/registry/stash.appscode.com"
 
 type AdmissionServerOptions struct {
 	RecommendedOptions *genericoptions.RecommendedOptions
@@ -41,20 +40,25 @@ func NewAdmissionServerOptions(out, errOut io.Writer, admissionHooks ...apiserve
 }
 
 // NewCommandStartMaster provides a CLI handler for 'start master' command
-func NewCommandStartAdmissionServer(out, errOut io.Writer, stopCh <-chan struct{}, admissionHooks ...apiserver.AdmissionHook) *cobra.Command {
-	o := NewAdmissionServerOptions(out, errOut, admissionHooks...)
+func NewCommandStartAPIServer(out, errOut io.Writer, stopCh <-chan struct{}) *cobra.Command {
+	o := NewAdmissionServerOptions(out, errOut)
 
 	cmd := &cobra.Command{
-		Short: "Launch a namespace reservation API server",
-		Long:  "Launch a namespace reservation API server",
+		Use:   "apiserver",
+		Short: "Launch Stash API server",
+		Long:  "Launch Stash API server",
 		RunE: func(c *cobra.Command, args []string) error {
+			o.AdmissionHooks = []apiserver.AdmissionHook{
+				&plugin.AdmissionHook{},
+			}
+
 			if err := o.Complete(); err != nil {
 				return err
 			}
 			if err := o.Validate(args); err != nil {
 				return err
 			}
-			if err := o.RunAdmissionServer(stopCh); err != nil {
+			if err := o.RunServer(stopCh); err != nil {
 				return err
 			}
 			return nil
@@ -95,7 +99,7 @@ func (o AdmissionServerOptions) Config() (*apiserver.Config, error) {
 	return config, nil
 }
 
-func (o AdmissionServerOptions) RunAdmissionServer(stopCh <-chan struct{}) error {
+func (o AdmissionServerOptions) RunServer(stopCh <-chan struct{}) error {
 	config, err := o.Config()
 	if err != nil {
 		return err

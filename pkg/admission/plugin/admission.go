@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	"github.com/appscode/stash/pkg/apiserver"
 	admission "k8s.io/api/admission/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -15,16 +16,18 @@ import (
 type AdmissionHook struct {
 }
 
-func (a *AdmissionHook) ValidatingResource() (plural schema.GroupVersionResource, singular string) {
+var _ apiserver.AdmissionHook = &AdmissionHook{}
+
+func (a *AdmissionHook) Resource() (plural schema.GroupVersionResource, singular string) {
 	return schema.GroupVersionResource{
 			Group:    "admission.stash.appscode.com",
 			Version:  "v1alpha1",
-			Resource: "reviews",
+			Resource: "admissionreviews",
 		},
-		"review"
+		"admissionreview"
 }
 
-func (a *AdmissionHook) Validate(req *admission.AdmissionRequest) *admission.AdmissionResponse {
+func (a *AdmissionHook) Admit(req *admission.AdmissionRequest) *admission.AdmissionResponse {
 	status := &admission.AdmissionResponse{}
 	supportedKinds := sets.NewString(api.ResourceKindRestic, api.ResourceKindRecovery)
 
