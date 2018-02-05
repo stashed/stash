@@ -1,5 +1,5 @@
 hash: 12eb0ca314a0ab05e0511f43cf5f161728dbc84dd36de9444c5b6dad7a69a875
-updated: 2018-02-02T21:16:11.874637364-08:00
+updated: 2018-02-03T01:30:43.319233315-08:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -19,7 +19,7 @@ imports:
   - types
   - version
 - name: github.com/appscode/kutil
-  version: 492a4823cc469b94a6c7f9316387f793b59be6b7
+  version: d50ab5fc6b34c4faa51cc1788c2bf64267ff45b6
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
@@ -31,6 +31,7 @@ imports:
   - rbac/v1beta1
   - tools/analytics
   - tools/certstore
+  - tools/queue
 - name: github.com/appscode/mergo
   version: e3000cb3d28c72b837601cac94debd91032d19fe
 - name: github.com/appscode/pat

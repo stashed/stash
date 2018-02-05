@@ -9,9 +9,9 @@ import (
 	logs "github.com/appscode/go/log/golog"
 	"github.com/appscode/kutil/discovery"
 	api "github.com/appscode/stash/apis/stash"
+	cs "github.com/appscode/stash/client"
 	"github.com/appscode/stash/client/scheme"
 	_ "github.com/appscode/stash/client/scheme"
-	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/util"
@@ -71,7 +71,9 @@ var _ = BeforeSuite(func() {
 	opts := controller.Options{
 		DockerRegistry: docker.ACRegistry,
 		StashImageTag:  TestStashImageTag,
-		ResyncPeriod:   5 * time.Minute,
+		ResyncPeriod:   10 * time.Minute,
+		MaxNumRequeues: 5,
+		NumThreads:     1,
 		EnableRBAC:     true,
 	}
 
@@ -93,7 +95,7 @@ var _ = BeforeSuite(func() {
 	// Now let's start the controller
 	// stop := make(chan struct{})
 	// defer close(stop)
-	go ctrl.Run(1, nil)
+	go ctrl.Run(nil)
 })
 
 var _ = AfterSuite(func() {
