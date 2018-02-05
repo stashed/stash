@@ -156,8 +156,8 @@ func (c *StashController) runDeploymentInjector(key string) error {
 					return fmt.Errorf("cannot perform offline backup for deployment with replicas > 1")
 				}
 				return c.EnsureDeploymentSidecar(dp, oldRestic, newRestic)
-			} else{
-				return c.EnsureDeploymentSidecarDeleted(dp,newRestic)
+			} else {
+				return c.EnsureDeploymentSidecarDeleted(dp, newRestic)
 			}
 		} else if oldRestic != nil && newRestic == nil {
 			return c.EnsureDeploymentSidecarDeleted(dp, oldRestic)

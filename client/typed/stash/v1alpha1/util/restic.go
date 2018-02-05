@@ -45,6 +45,7 @@ func PatchRestic(c cs.StashV1alpha1Interface, cur *api.Restic, transform func(*a
 	}
 
 	patch, err := jsonmergepatch.CreateThreeWayJSONMergePatch(curJson, modJson, curJson)
+	fmt.Println("patch: ",string(patch))
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}

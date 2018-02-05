@@ -179,6 +179,12 @@ func (f *Framework) UpdateRestic(meta metav1.ObjectMeta, transformer func(*api.R
 	return err
 }
 
+func (f *Framework)PatchRestic(cur *api.Restic, transformer func(*api.Restic) *api.Restic)  error{
+	_,_,err:=stash_util.PatchRestic(f.StashClient,cur,transformer)
+	return err
+
+}
+
 func (f *Framework) EventuallyRestic(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() *api.Restic {
 		obj, err := f.StashClient.Restics(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
