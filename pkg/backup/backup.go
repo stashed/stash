@@ -189,6 +189,9 @@ func (c *Controller) setup() (*api.Restic, error) {
 }
 
 func (c *Controller) runResticBackup(resource *api.Restic) (err error) {
+	if resource.Spec.Paused == true {
+		return nil
+	}
 	startTime := metav1.Now()
 	var (
 		restic_session_success = prometheus.NewGauge(prometheus.GaugeOpts{

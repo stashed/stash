@@ -23,12 +23,12 @@ import (
 
 var _ = Describe("Deployment", func() {
 	var (
-		err        error
-		f          *framework.Invocation
-		restic     api.Restic
-		cred       core.Secret
-		deployment apps.Deployment
-		recovery   api.Recovery
+		err                 error
+		f                   *framework.Invocation
+		restic              api.Restic
+		cred                core.Secret
+		deployment          apps.Deployment
+		recovery            api.Recovery
 		previousBackupCount int64
 	)
 
@@ -775,8 +775,8 @@ var _ = Describe("Deployment", func() {
 				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
 				By(`Patching Restic with "paused: true"`)
-				err = f.PatchRestic(&restic, func(in *api.Restic) *api.Restic {
-					in.Spec.Paused=true
+				err = f.CreateOrPatchRestic(restic.ObjectMeta, func(in *api.Restic) *api.Restic {
+					in.Spec.Paused = true
 					return in
 				})
 				Expect(err).NotTo(HaveOccurred())
@@ -784,26 +784,23 @@ var _ = Describe("Deployment", func() {
 				By("Waiting to remove sidecar")
 				f.EventuallyDeployment(deployment.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 
-				By("Wating 2 minutes to be confirmed that pod terminated.")
-				time.Sleep(2*time.Minute)
-				resticObj,err:=f.StashClient.Restics(restic.Namespace).Get(restic.Name,metav1.GetOptions{})
+				resticObj, err := f.StashClient.Restics(restic.Namespace).Get(restic.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 
-				previousBackupCount=resticObj.Status.BackupCount
-				fmt.Println("Backup Count: ",previousBackupCount)
+				previousBackupCount = resticObj.Status.BackupCount
 
 				By("Wating 2 minutes")
-				time.Sleep(2*time.Minute)
+				time.Sleep(2 * time.Minute)
 
 				By("Checking that Backup count has not changed")
-				resticObj,err=f.StashClient.Restics(restic.Namespace).Get(restic.Name,metav1.GetOptions{})
+				resticObj, err = f.StashClient.Restics(restic.Namespace).Get(restic.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				fmt.Println("Backup count after 2 minutes: ",resticObj.Status.BackupCount)
-				Expect(resticObj.Status.BackupCount).Should(BeNumerically("==",previousBackupCount))
+				fmt.Println("Backup count after 2 minutes: ", resticObj.Status.BackupCount)
+				Expect(resticObj.Status.BackupCount).Should(BeNumerically("==", previousBackupCount))
 
 				By(`Patching Restic with "paused: false"`)
-				err = f.PatchRestic(&restic, func(in *api.Restic) *api.Restic {
-					in.Spec.Paused=false
+				err = f.CreateOrPatchRestic(restic.ObjectMeta, func(in *api.Restic) *api.Restic {
+					in.Spec.Paused = false
 					return in
 				})
 				Expect(err).NotTo(HaveOccurred())

@@ -179,8 +179,8 @@ func (f *Framework) UpdateRestic(meta metav1.ObjectMeta, transformer func(*api.R
 	return err
 }
 
-func (f *Framework)PatchRestic(cur *api.Restic, transformer func(*api.Restic) *api.Restic)  error{
-	_,_,err:=stash_util.PatchRestic(f.StashClient,cur,transformer)
+func (f *Framework) CreateOrPatchRestic(meta metav1.ObjectMeta, transformer func(*api.Restic) *api.Restic) error {
+	_, _, err := stash_util.CreateOrPatchRestic(f.StashClient, meta, transformer)
 	return err
 
 }

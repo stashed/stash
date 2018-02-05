@@ -1,7 +1,6 @@
 package framework
 
 import (
-	"fmt"
 	"os/exec"
 	"time"
 
@@ -52,7 +51,6 @@ func (f *Framework) CountSuccessfulBackups(events []core.Event) int {
 			count++
 		}
 	}
-	fmt.Println("SuccessfulBackup count: ",count)
 	return count
 }
 
