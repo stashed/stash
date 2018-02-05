@@ -45,8 +45,6 @@ import:
   version: kubernetes-1.9.0
 - package: k8s.io/kubernetes
   version: v1.9.0
-- package: github.com/openshift/generic-admission-server
-  branch: master
 - package: github.com/prometheus/client_golang
   version: v0.8.0
 - package: github.com/prometheus/common

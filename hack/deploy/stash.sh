@@ -26,7 +26,7 @@ show_help() {
     echo "    --docker-registry              docker registry used to pull stash images (default: appscode)"
     echo "    --image-pull-secret            name of secret used to pull stash operator images"
     echo "    --run-on-master                run stash operator on master"
-    echo "    --enable-admission-webhook     configure admission webhook for stash CRDs"
+    echo "    --enable-apiserver     configure admission webhook for stash CRDs"
     echo "    --enable-initializer           configure stash operator as workload initializer"
 }
 
@@ -59,7 +59,7 @@ while test $# -gt 0; do
             export STASH_IMAGE_PULL_SECRET="name: '$secret'"
             shift
             ;;
-        --enable-admission-webhook)
+        --enable-apiserver)
             export STASH_ENABLE_ADMISSION_WEBHOOK=true
             shift
             ;;

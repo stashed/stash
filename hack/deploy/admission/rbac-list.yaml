@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
-  name: stash-admission-webhook-extension-server-authentication-reader
+  name: stash-apiserver-extension-server-authentication-reader
   namespace: kube-system
 roleRef:
   kind: Role
@@ -17,7 +17,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
-  name: stash-admission-webhook-auth-delegator
+  name: stash-apiserver-auth-delegator
   labels:
     app: stash
 roleRef:
@@ -33,7 +33,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
-  name: appscode:stash:admission-webhook-requester
+  name: appscode:stash:apiserver-requester
   labels:
     app: stash
 rules:
