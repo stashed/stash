@@ -345,16 +345,62 @@ ID        Date                 Host        Tags        Directory
 ```
 
 ## Disable Backup
-To stop taking backup of `/source/data` folder, delete the `stash-demo` Restic CRD. As a result, Stash operator will remove the sidecar container from `busybox` Deployment.
-```console
+To stop Restic from taking backup, you can do following things:
+
+* Set `spec.paused: true` in Restic `yaml` and then apply the update. This means:
+
+  - Paused Restic CRDs will not applied to newly created wrokloads.
+  - Stash sidecar containers will not be removed from existing workloads but the sidecar will stop taking backup.
+
+```command
+$ kubectl patch restic stash-demo --type="merge" --patch='{"spec": {"paused": true}}'
+restic "stash-demo" patched
+```
+
+```yaml
+apiVersion: stash.appscode.com/v1alpha1
+kind: Restic
+metadata:
+  name: stash-demo
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: stash-demo
+  fileGroups:
+  - path: /source/data
+    retentionPolicyName: 'keep-last-5'
+  backend:
+    local:
+      mountPath: /safe/data
+      hostPath:
+        path: /data/stash-test/restic-repo
+    storageSecretName: stash-demo
+  schedule: '@every 1m'
+  paused: true
+  volumeMounts:
+  - mountPath: /source/data
+    name: source-data
+  retentionPolicies:
+  - name: 'keep-last-5'
+    keepLast: 5
+    prune: true
+```
+
+* Delete the Restic CRD. Stash operator will remove the sidecar container from all matching workloads.
+
+```commands
 $ kubectl delete restic stash-demo
 restic "stash-demo" deleted
-
-$ kubectl get pods -l app=stash-demo
-NAME                          READY     STATUS        RESTARTS   AGE
-stash-demo-79554ff97b-wsdx2   2/2       Terminating   0          3m
-stash-demo-788ffcf9c6-p47p7   1/1       Running       0          5s
 ```
+* Change the labels of a workload. Stash operator will remove sidecar container from that workload. This way you can selectively stop backup of a Deployment, ReplicaSet etc.
+
+### Resume Backup
+You can resume Restic to backup by setting `spec.paused: false` in Restic `yaml` and applying the update or you can patch Restic using,
+```command
+$ kubectl patch restic stash-demo --type="merge" --patch='{"spec": {"paused": false}}'
+```
+
 
 ## Cleaning up
 

@@ -61,7 +61,9 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 			}
 
 			if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
-				return c.EnsureStatefulSetSidecar(ss, oldRestic, newRestic)
+				if !newRestic.Spec.Paused {
+					return c.EnsureStatefulSetSidecar(ss, oldRestic, newRestic)
+				}
 			} else if oldRestic != nil && newRestic == nil {
 				return c.EnsureStatefulSetSidecarDeleted(ss, oldRestic)
 			}

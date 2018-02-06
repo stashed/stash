@@ -92,6 +92,9 @@ To learn how to configure various backends for Restic, please visit [here](/docs
 `spec.schedule` is a [cron expression](https://github.com/robfig/cron/blob/v2/doc.go#L26) that indicates how often `restic` commands are invoked for file groups.
 At each tick, `restic backup` and `restic forget` commands are run for each of the configured file groups.
 
+### spec.paused
+`spec.paused` can be used as `enable/disable` switch for Restic. The default value is `false`. To stop restic from taking backup set `spec.paused: true`. For more details see [here](/docs/guides/backup.md#disable-backup).
+
 ### spec.resources
 `spec.resources` refers to compute resources required by the `stash` sidecar container. To learn more, visit [here](http://kubernetes.io/docs/user-guide/compute-resources/).
 
@@ -105,7 +108,7 @@ At each tick, `restic backup` and `restic forget` commands are run for each of t
  - For workload kind `Daemonset` restic repository is created in the sub-directory `<WORKLOAD_KIND>/<WORKLOAD_NAME>/<NODE_NAME>`. For multiple replicas, multiple repositories are created and sidecar is added to all pods.
 
 ## Restic Status
-Stash operator updates `.status` of a Restic CRD every time a backup operation is completed. 
+Stash operator updates `.status` of a Restic CRD every time a backup operation is completed.
 
  - `status.backupCount` indicated the total number of backup operation completed for this Restic CRD.
  - `status.firstBackupTime` indicates the timestamp of first backup operation.
@@ -122,11 +125,19 @@ For each workload where a sidecar container is added by Stash operator, the foll
 ## Updating Restic
 The sidecar container watches for changes in the Restic fileGroups, backend and schedule. These changes are automatically applied on the next run of `restic` commands. If the selector of a Restic CRD is changed, Stash operator will update workload accordingly by adding/removing sidecars as required.
 
-## Disable Backup
-To stop taking backup, you can do 2 things:
+## Disable Restic
+To stop Restic from taking backup, you can do following things:
 
-- Delete the Restic CRD. Stash operator will remove the sidecar container from all matching workloads.
-- Change the labels of a workload. Stash operator will remove sidecar container from that workload. This way you can selectively stop backup of a Deployment, ReplicaSet, etc.
+* Set `spec.paused: true` in Restic `yaml` and then update the Restic object. This means:
+
+  - Paused Restic CRDs will not applied to newly created wrokloads.
+  - Stash sidecar containers will not be removed from existing workloads but the sidecar will stop taking backup.
+
+* Delete the Restic CRD. Stash operator will remove the sidecar container from all matching workloads.
+
+* Change the labels of a workload. Stash operator will remove sidecar container from that workload. This way you can selectively stop backup of a Deployment, ReplicaSet etc.
+
+For more details about how to disable and resume Restic see [here](/docs/guides/backup.md#disable-backup). 
 
 ## Next Steps
 
