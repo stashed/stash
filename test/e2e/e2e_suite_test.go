@@ -28,7 +28,7 @@ import (
 
 const (
 	TIMEOUT           = 20 * time.Minute
-	TestStashImageTag = "pauseRestic"
+	TestStashImageTag = "canary"
 )
 
 var (

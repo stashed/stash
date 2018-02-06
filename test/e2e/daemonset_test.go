@@ -1,7 +1,6 @@
 package e2e_test
 
 import (
-	"fmt"
 	"time"
 
 	ext_util "github.com/appscode/kutil/extensions/v1beta1"
@@ -487,13 +486,18 @@ var _ = Describe("DaemonSet", func() {
 		})
 	})
 
-	FDescribe("Pause Restic to stop backup", func() {
+	Describe("Pause Restic to stop backup", func() {
 		Context(`"Local" backend`, func() {
+			AfterEach(func() {
+				f.DeleteDaemonSet(daemon.ObjectMeta)
+				f.DeleteRestic(restic.ObjectMeta)
+				f.DeleteSecret(cred.ObjectMeta)
+			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 			})
-			It(`should able to Pause and Resume backup`, func() {
+			It(`should be able to Pause and Resume backup`, func() {
 				By("Creating repository Secret " + cred.Name)
 				err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
@@ -524,9 +528,6 @@ var _ = Describe("DaemonSet", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Waiting to remove sidecar")
-				f.EventuallyDaemonSet(daemon.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
-
 				resticObj, err := f.StashClient.StashV1alpha1().Restics(restic.Namespace).Get(restic.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 
@@ -547,16 +548,13 @@ var _ = Describe("DaemonSet", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Waiting for sidecar")
-				f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
-
 				By("Waiting for backup to complete")
 				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
 					return r.Status.BackupCount
-				}, BeNumerically(">=", previousBackupCount)))
+				}, BeNumerically(">", previousBackupCount)))
 
 				By("Waiting for backup event")
-				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", previousBackupCount)))
+				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", previousBackupCount)))
 
 			})
 

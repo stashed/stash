@@ -66,10 +66,12 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 				return err
 			}
 			if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
-				if newRestic.Spec.Type == api.BackupOffline && *rs.Spec.Replicas > 1 {
-					return fmt.Errorf("cannot perform offline backup for rs with replicas > 1")
+				if newRestic.Spec.Paused == false {
+					if newRestic.Spec.Type == api.BackupOffline && *rs.Spec.Replicas > 1 {
+						return fmt.Errorf("cannot perform offline backup for rs with replicas > 1")
+					}
+					return c.EnsureReplicaSetSidecar(rs, oldRestic, newRestic)
 				}
-				return c.EnsureReplicaSetSidecar(rs, oldRestic, newRestic)
 			} else if oldRestic != nil && newRestic == nil {
 				return c.EnsureReplicaSetSidecarDeleted(rs, oldRestic)
 			}

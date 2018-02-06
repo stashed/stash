@@ -1,7 +1,6 @@
 package e2e_test
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -742,13 +741,19 @@ var _ = Describe("Deployment", func() {
 		})
 		It(`should backup new Deployment`, shouldBackupNewDeployment)
 	})
+
 	Describe("Pause Restic to stop backup", func() {
 		Context(`"Local" backend`, func() {
+			AfterEach(func() {
+				f.DeleteDeployment(deployment.ObjectMeta)
+				f.DeleteRestic(restic.ObjectMeta)
+				f.DeleteSecret(cred.ObjectMeta)
+			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 			})
-			It(`should able to Pause and Resume backup`, func() {
+			It(`should be able to Pause and Resume backup`, func() {
 				By("Creating repository Secret " + cred.Name)
 				err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
@@ -779,9 +784,6 @@ var _ = Describe("Deployment", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Waiting to remove sidecar")
-				f.EventuallyDeployment(deployment.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
-
 				resticObj, err := f.StashClient.StashV1alpha1().Restics(restic.Namespace).Get(restic.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 
@@ -802,16 +804,13 @@ var _ = Describe("Deployment", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Waiting for sidecar")
-				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
-
 				By("Waiting for backup to complete")
 				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
 					return r.Status.BackupCount
-				}, BeNumerically(">=", previousBackupCount)))
+				}, BeNumerically(">", previousBackupCount)))
 
 				By("Waiting for backup event")
-				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", previousBackupCount)))
+				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", previousBackupCount)))
 
 			})
 
