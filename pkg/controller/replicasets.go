@@ -66,7 +66,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 				return err
 			}
 			if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
-				if !newRestic.Spec.Paused{
+				if !newRestic.Spec.Paused {
 					if newRestic.Spec.Type == api.BackupOffline && *rs.Spec.Replicas > 1 {
 						return fmt.Errorf("cannot perform offline backup for rs with replicas > 1")
 					}
