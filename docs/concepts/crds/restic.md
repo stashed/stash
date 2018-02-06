@@ -128,9 +128,13 @@ The sidecar container watches for changes in the Restic fileGroups, backend and 
 ## Disable Restic
 To stop Restic from taking backup, you can do following things:
 
-* Set `spec.paused: true` in Restic `yaml` and then apply the update. Stash operator will not remove the sidecar container from all matching workloads.
-* Patch Restic with `spec.paused: true`
+* Set `spec.paused: true` in Restic `yaml` and then update the Restic object. This means:
+
+  - Paused Restic CRDs will not applied to newly created wrokloads.
+  - Stash sidecar containers will not be removed from existing workloads but the sidecar will stop taking backup.
+
 * Delete the Restic CRD. Stash operator will remove the sidecar container from all matching workloads.
+
 * Change the labels of a workload. Stash operator will remove sidecar container from that workload. This way you can selectively stop backup of a Deployment, ReplicaSet etc.
 
 For more details about how to disable and resume Restic see [here](/docs/guides/backup.md#disable-backup). 
