@@ -59,7 +59,7 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 		}
 
 		if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
-			if newRestic.Spec.Paused == false {
+			if !newRestic.Spec.Paused{
 				return c.EnsureDaemonSetSidecar(ds, oldRestic, newRestic)
 			}
 		} else if oldRestic != nil && newRestic == nil {
