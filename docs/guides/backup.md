@@ -347,12 +347,16 @@ ID        Date                 Host        Tags        Directory
 ## Disable Backup
 To stop Restic from taking backup, you can do following things:
 
-* Set `spec.paused: true` in Restic `yaml` and then apply the update. Stash operator will not remove the sidecar container from all matching workloads.
+* Set `spec.paused: true` in Restic `yaml` and then apply the update. This means:
+
+  - Paused Restic CRDs will not applied to newly created wrokloads.
+  - Stash sidecar containers will not be removed from existing workloads but the sidecar will stop taking backup.
 
 ```command
-$ kubectl apply -f ./docs/examples/tutorial/restic.yaml
-restic "stash-demo" configured
+$ kubectl patch restic stash-demo --type="merge" --patch='{"spec": {"paused": true}}'
+restic "stash-demo" patched
 ```
+
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
 kind: Restic
@@ -382,12 +386,7 @@ spec:
     keepLast: 5
     prune: true
 ```
-* Patch Restic with `spec.paused: true`
 
-```command
-$ kubectl patch restic stash-demo --type="merge" --patch='{"spec": {"paused": true}}'
-restic "stash-demo" patched
-```
 * Delete the Restic CRD. Stash operator will remove the sidecar container from all matching workloads.
 
 ```commands
