@@ -34,6 +34,15 @@ func NewEventHandler(queue workqueue.RateLimitingInterface, enqueueUpdate func(o
 	}
 }
 
+func NewUpsertHandler(queue workqueue.RateLimitingInterface) *QueueingEventHandler {
+	return &QueueingEventHandler{
+		queue:         queue,
+		enqueueAdd:    true,
+		enqueueUpdate: nil,
+		enqueueDelete: false,
+	}
+}
+
 func NewDeleteHandler(queue workqueue.RateLimitingInterface) *QueueingEventHandler {
 	return &QueueingEventHandler{
 		queue:         queue,

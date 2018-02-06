@@ -1,10 +1,10 @@
-hash: 12eb0ca314a0ab05e0511f43cf5f161728dbc84dd36de9444c5b6dad7a69a875
-updated: 2018-02-03T01:30:43.319233315-08:00
+hash: 8aa9776b596eb3a338b9caf03cbf3364c6919d5653d207bc53049c7281177e8f
+updated: 2018-02-05T12:50:23.973424598-08:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
 - name: github.com/appscode/go
-  version: 437df2b94ce2ea60464ff580c10462fbeb3e8f52
+  version: fe2dd84a755c383d0516595f4537c2298be9fce5
   subpackages:
   - analytics
   - context
@@ -19,7 +19,7 @@ imports:
   - types
   - version
 - name: github.com/appscode/kutil
-  version: d50ab5fc6b34c4faa51cc1788c2bf64267ff45b6
+  version: 3037bd8a4c122f37b93108e0ef1f7b874079b93a
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
@@ -226,12 +226,6 @@ imports:
   - matchers/support/goraph/node
   - matchers/support/goraph/util
   - types
-- name: github.com/openshift/generic-admission-server
-  version: 6cbd9584810e7be9ec4263c5d010a48be6231e60
-  subpackages:
-  - pkg/apiserver
-  - pkg/cmd/server
-  - pkg/registry/admissionreview
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/peterbourgon/diskv
@@ -277,7 +271,7 @@ imports:
   subpackages:
   - mem
 - name: github.com/spf13/cobra
-  version: 3a7eb146bae5ebf9be598570234cde56c82d16cc
+  version: c2bbfaa12d512a2ebaa34009ce3cab65e153bbc1
   subpackages:
   - doc
 - name: github.com/spf13/pflag
@@ -552,6 +546,7 @@ imports:
   - pkg/util/feature
   - pkg/util/flag
   - pkg/util/flushwriter
+  - pkg/util/logs
   - pkg/util/trace
   - pkg/util/webhook
   - pkg/util/wsstream
