@@ -39,10 +39,10 @@ type StashController struct {
 	// Namespace
 	nsInformer cache.SharedIndexInformer
 
-	// Restic
+	// Backup
 	rstQueue    *queue.Worker
 	rstInformer cache.SharedIndexInformer
-	rstLister   stash_listers.ResticLister
+	rstLister   stash_listers.BackupLister
 
 	// Recovery
 	recQueue    *queue.Worker
@@ -106,7 +106,7 @@ func (c *StashController) Setup() error {
 	}
 
 	c.initNamespaceWatcher()
-	c.initResticWatcher()
+	c.initBackupWatcher()
 	c.initRecoveryWatcher()
 	c.initDeploymentWatcher()
 	c.initDaemonSetWatcher()
@@ -119,7 +119,7 @@ func (c *StashController) Setup() error {
 
 func (c *StashController) ensureCustomResourceDefinitions() error {
 	crds := []*crd_api.CustomResourceDefinition{
-		api.Restic{}.CustomResourceDefinition(),
+		api.Backup{}.CustomResourceDefinition(),
 		api.Recovery{}.CustomResourceDefinition(),
 	}
 	return apiext_util.RegisterCRDs(c.crdClient, crds)

@@ -47,7 +47,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic crd using this secret. Following parameters are available for `Local` backend.
+Now, you can create a Backup crd using this secret. Following parameters are available for `Local` backend.
 
 | Parameter            | Description                                                                                   |
 |----------------------|-----------------------------------------------------------------------------------------------|
@@ -62,7 +62,7 @@ restic "local-restic" created
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
   name: local-restic
   namespace: default
@@ -130,7 +130,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic crd using this secret. Following parameters are available for `S3` backend.
+Now, you can create a Backup crd using this secret. Following parameters are available for `S3` backend.
 
 | Parameter     | Description                                                                     |
 |---------------|---------------------------------------------------------------------------------|
@@ -145,7 +145,7 @@ restic "s3-restic" created
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
   name: s3-restic
   namespace: default
@@ -212,7 +212,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic crd using this secret. Following parameters are available for `gcs` backend.
+Now, you can create a Backup crd using this secret. Following parameters are available for `gcs` backend.
 
 | Parameter      | Description                                                                     |
 |----------------|---------------------------------------------------------------------------------|
@@ -226,7 +226,7 @@ restic "gcs-restic" created
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
   name: gcs-restic
   namespace: default
@@ -292,7 +292,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic crd using this secret. Following parameters are available for `Azure` backend.
+Now, you can create a Backup crd using this secret. Following parameters are available for `Azure` backend.
 
 | Parameter     | Description                                                                     |
 |---------------|---------------------------------------------------------------------------------|
@@ -306,7 +306,7 @@ restic "azure-restic" created
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
   name: azure-restic
   namespace: default
@@ -400,7 +400,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic crd using this secret. Following parameters are available for `Swift` backend.
+Now, you can create a Backup crd using this secret. Following parameters are available for `Swift` backend.
 
 | Parameter         | Description                                                                 |
 |-------------------|-----------------------------------------------------------------------------|
@@ -414,7 +414,7 @@ restic "swift-restic" created
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
   name: swift-restic
   namespace: default
@@ -480,7 +480,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic crd using this secret. Following parameters are available for `B2` backend.
+Now, you can create a Backup crd using this secret. Following parameters are available for `B2` backend.
 
 | Parameter     | Description                                                               |
 |---------------|---------------------------------------------------------------------------|
@@ -494,7 +494,7 @@ restic "b2-restic" created
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
   name: b2-restic
   namespace: default
@@ -524,7 +524,7 @@ spec:
 ## Next Steps
 
 - Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/backup.md).
-- Learn about the details of Restic CRD [here](/docs/concepts/crds/restic.md).
+- Learn about the details of Backup CRD [here](/docs/concepts/crds/restic.md).
 - To restore a backup see [here](/docs/guides/restore.md).
 - Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
 - To run backup in offline mode see [here](/docs/guides/offline_backup.md)

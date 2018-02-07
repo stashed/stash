@@ -26,7 +26,7 @@ metadata:
 type: Opaque
 ---
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
   name: statefulset-restic
   namespace: default

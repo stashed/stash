@@ -35,7 +35,7 @@ import (
 type Options struct {
 	Workload         api.LocalTypedReference
 	Namespace        string
-	ResticName       string
+	BackupName       string
 	ScratchDir       string
 	PushgatewayURL   string
 	NodeName         string
@@ -56,15 +56,15 @@ type Controller struct {
 	stashClient cs.StashV1alpha1Interface
 	opt         Options
 	locked      chan struct{}
-	resticCLI   *cli.ResticWrapper
+	resticCLI   *cli.BackupWrapper
 	cron        *cron.Cron
 	recorder    record.EventRecorder
 
-	// Restic
+	// Backup
 	rQueue    workqueue.RateLimitingInterface
 	rIndexer  cache.Indexer
 	rInformer cache.Controller
-	rLister   stash_listers.ResticLister
+	rLister   stash_listers.BackupLister
 }
 
 const (
@@ -101,7 +101,7 @@ func (c *Controller) Backup() error {
 		return err
 	}
 
-	if err := c.runResticBackup(resource); err != nil {
+	if err := c.runBackupBackup(resource); err != nil {
 		return fmt.Errorf("failed to run backup, reason: %s", err)
 	}
 
@@ -153,7 +153,7 @@ func (c *Controller) Backup() error {
 }
 
 // Init and/or connect to repo
-func (c *Controller) setup() (*api.Restic, error) {
+func (c *Controller) setup() (*api.Backup, error) {
 	// setup scratch-dir
 	if err := os.MkdirAll(c.opt.ScratchDir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create scratch dir: %s", err)
@@ -163,7 +163,7 @@ func (c *Controller) setup() (*api.Restic, error) {
 	}
 
 	// check resource
-	resource, err := c.stashClient.Restics(c.opt.Namespace).Get(c.opt.ResticName, metav1.GetOptions{})
+	resource, err := c.stashClient.Backups(c.opt.Namespace).Get(c.opt.BackupName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +188,7 @@ func (c *Controller) setup() (*api.Restic, error) {
 	return resource, nil
 }
 
-func (c *Controller) runResticBackup(resource *api.Restic) (err error) {
+func (c *Controller) runBackupBackup(resource *api.Backup) (err error) {
 	if resource.Spec.Paused == true {
 		log.Infoln("skipped logging since restic is paused.")
 		return nil
@@ -242,7 +242,7 @@ func (c *Controller) runResticBackup(resource *api.Restic) (err error) {
 				restic_session_duration_seconds)
 		}
 		if err == nil {
-			stash_util.PatchRestic(c.stashClient, resource, func(in *api.Restic) *api.Restic {
+			stash_util.PatchBackup(c.stashClient, resource, func(in *api.Backup) *api.Backup {
 				in.Status.BackupCount++
 				in.Status.LastBackupTime = &startTime
 				if in.Status.FirstBackupTime == nil {
@@ -258,7 +258,7 @@ func (c *Controller) runResticBackup(resource *api.Restic) (err error) {
 		backupOpMetric := restic_session_duration_seconds.WithLabelValues(sanitizeLabelValue(fg.Path), "backup")
 		err = c.measure(c.resticCLI.Backup, resource, fg, backupOpMetric)
 		if err != nil {
-			log.Errorf("Backup failed for Restic %s/%s, reason: %s\n", resource.Namespace, resource.Name, err)
+			log.Errorf("Backup failed for Backup %s/%s, reason: %s\n", resource.Namespace, resource.Name, err)
 			eventer.CreateEventWithLog(
 				c.k8sClient,
 				BackupEventComponent,
@@ -283,7 +283,7 @@ func (c *Controller) runResticBackup(resource *api.Restic) (err error) {
 		forgetOpMetric := restic_session_duration_seconds.WithLabelValues(sanitizeLabelValue(fg.Path), "forget")
 		err = c.measure(c.resticCLI.Forget, resource, fg, forgetOpMetric)
 		if err != nil {
-			log.Errorf("Failed to forget old snapshots for Restic %s/%s, reason: %s\n", resource.Namespace, resource.Name, err)
+			log.Errorf("Failed to forget old snapshots for Backup %s/%s, reason: %s\n", resource.Namespace, resource.Name, err)
 			eventer.CreateEventWithLog(
 				c.k8sClient,
 				BackupEventComponent,
@@ -298,7 +298,7 @@ func (c *Controller) runResticBackup(resource *api.Restic) (err error) {
 	return
 }
 
-func (c *Controller) measure(f func(*api.Restic, api.FileGroup) error, resource *api.Restic, fg api.FileGroup, g prometheus.Gauge) (err error) {
+func (c *Controller) measure(f func(*api.Backup, api.FileGroup) error, resource *api.Backup, fg api.FileGroup, g prometheus.Gauge) (err error) {
 	startTime := time.Now()
 	defer func() {
 		g.Set(time.Now().Sub(startTime).Seconds())

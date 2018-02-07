@@ -48,7 +48,7 @@
       }
     ]
   },
-  "description": "Show status of Restic backups done through Stash.",
+  "description": "Show status of Backup backups done through Stash.",
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
@@ -400,7 +400,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Restic Success & Fail",
+      "title": "Backup Success & Fail",
       "titleSize": "h6"
     },
     {

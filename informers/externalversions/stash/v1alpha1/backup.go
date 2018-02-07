@@ -30,59 +30,59 @@ import (
 	time "time"
 )
 
-// ResticInformer provides access to a shared informer and lister for
-// Restics.
-type ResticInformer interface {
+// BackupInformer provides access to a shared informer and lister for
+// Backups.
+type BackupInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.ResticLister
+	Lister() v1alpha1.BackupLister
 }
 
-type resticInformer struct {
+type backupInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 	namespace        string
 }
 
-// NewResticInformer constructs a new informer for Restic type.
+// NewBackupInformer constructs a new informer for Backup type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewResticInformer(client client.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredResticInformer(client, namespace, resyncPeriod, indexers, nil)
+func NewBackupInformer(client client.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredBackupInformer(client, namespace, resyncPeriod, indexers, nil)
 }
 
-// NewFilteredResticInformer constructs a new informer for Restic type.
+// NewFilteredBackupInformer constructs a new informer for Backup type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredResticInformer(client client.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredBackupInformer(client client.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.StashV1alpha1().Restics(namespace).List(options)
+				return client.StashV1alpha1().Backups(namespace).List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.StashV1alpha1().Restics(namespace).Watch(options)
+				return client.StashV1alpha1().Backups(namespace).Watch(options)
 			},
 		},
-		&stash_v1alpha1.Restic{},
+		&stash_v1alpha1.Backup{},
 		resyncPeriod,
 		indexers,
 	)
 }
 
-func (f *resticInformer) defaultInformer(client client.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredResticInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+func (f *backupInformer) defaultInformer(client client.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewFilteredBackupInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
-func (f *resticInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&stash_v1alpha1.Restic{}, f.defaultInformer)
+func (f *backupInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&stash_v1alpha1.Backup{}, f.defaultInformer)
 }
 
-func (f *resticInformer) Lister() v1alpha1.ResticLister {
-	return v1alpha1.NewResticLister(f.Informer().GetIndexer())
+func (f *backupInformer) Lister() v1alpha1.BackupLister {
+	return v1alpha1.NewBackupLister(f.Informer().GetIndexer())
 }

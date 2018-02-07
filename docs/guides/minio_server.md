@@ -8,7 +8,7 @@ At first, you need to have a Kubernetes cluster, and the kubectl command-line to
 
 You should have understanding the following Stash terms:
 
-- [Restic](/docs/concepts/crds/restic.md)
+- [Backup](/docs/concepts/crds/restic.md)
 - [Recovery](/docs/concepts/crds/recovery.md)
 
 Then, you will need a TLS secure [Minio](https://docs.minio.io/) server to store backed up data. You can deploy a TLS secure Minio server in your cluster by following the steps below:
@@ -297,7 +297,7 @@ README.md
 
 Now, let's backup the directory into a Minio server.
 
-At first, we need to create a secret for `Restic` crd. To configure this backend, following secret keys are needed:
+At first, we need to create a secret for `Backup` crd. To configure this backend, following secret keys are needed:
 
 | Key                     | Description                                                             |
 |-------------------------|-------------------------------------------------------------------------|
@@ -306,7 +306,7 @@ At first, we need to create a secret for `Restic` crd. To configure this backend
 | `AWS_SECRET_ACCESS_KEY` | `Required`. Minio secret access key                                     |
 | `CA_CERT_DATA`          |`Required`. Root certificate by which Minio server certificate is signed |
 
-Create secret for `Restic` crd,
+Create secret for `Backup` crd,
 
 ```console
 $ echo -n 'changeit' > RESTIC_PASSWORD
@@ -345,18 +345,18 @@ metadata:
 type: Opaque
 ```
 
-Now, we can create `Restic` crd. This will create a repository in Minio server and start taking periodic backup of `/source/data/` folder.
+Now, we can create `Backup` crd. This will create a repository in Minio server and start taking periodic backup of `/source/data/` folder.
 
 ```console
 $ kubectl apply -f ./minio-restic.yaml
 restic "minio-restic" created
 ```
 
-YAML of `Restic` crd for Minio backend,
+YAML of `Backup` crd for Minio backend,
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
   name: minio-restic
   namespace: default
@@ -383,7 +383,7 @@ spec:
     prune: true
 ```
 
-If everything goes well, `Restic` will take backup of the volume periodically with 1 minute interval. You can see if the backup working correctly using this command
+If everything goes well, `Backup` will take backup of the volume periodically with 1 minute interval. You can see if the backup working correctly using this command
 ,
 ```console
 $ kubectl get restic minio-restic -o yaml
@@ -393,11 +393,11 @@ Output will be something similar to,
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
   annotations:
     kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"stash.appscode.com/v1alpha1","kind":"Restic","metadata":{"annotations":{},"name":"minio-restic","namespace":"default"},"spec":{"backend":{"s3":{"bucket":"stash-qa","endpoint":"https://minio-service.default.svc","prefix":"demo"},"storageSecretName":"minio-restic-secret"},"fileGroups":[{"path":"/source/data","retentionPolicyName":"keep-last-5"}],"retentionPolicies":[{"keepLast":5,"name":"keep-last-5","prune":true}],"schedule":"@every 1m","selector":{"matchLabels":{"app":"stash-demo"}},"volumeMounts":[{"mountPath":"/source/data","name":"source-data"}]}}
+      {"apiVersion":"stash.appscode.com/v1alpha1","kind":"Backup","metadata":{"annotations":{},"name":"minio-restic","namespace":"default"},"spec":{"backend":{"s3":{"bucket":"stash-qa","endpoint":"https://minio-service.default.svc","prefix":"demo"},"storageSecretName":"minio-restic-secret"},"fileGroups":[{"path":"/source/data","retentionPolicyName":"keep-last-5"}],"retentionPolicies":[{"keepLast":5,"name":"keep-last-5","prune":true}],"schedule":"@every 1m","selector":{"matchLabels":{"app":"stash-demo"}},"volumeMounts":[{"mountPath":"/source/data","name":"source-data"}]}}
   clusterName: ""
   creationTimestamp: 2018-01-30T04:45:09Z
   generation: 0
@@ -434,7 +434,7 @@ status:
   lastBackupTime: 2018-01-30T04:58:41Z
 ```
 
-Look at the `status` field. `backupCount` show number of successful backup done by the `Restic`.
+Look at the `status` field. `backupCount` show number of successful backup done by the `Backup`.
 
 ## Recovery
 
@@ -462,7 +462,7 @@ spec:
       endpoint: 'https://minio-service.default.svc' # use your own Minio server address
       bucket: stash-qa
       prefix: demo
-    storageSecretName: minio-restic-secret # we will use same secret created for Restic crd. You can create new secret for Recovery with same credentials.
+    storageSecretName: minio-restic-secret # we will use same secret created for Backup crd. You can create new secret for Recovery with same credentials.
   paths:
   - /source/data
   recoveredVolumes:

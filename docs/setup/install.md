@@ -117,18 +117,18 @@ restics.stash.appscode.com      5s
 Now, you are ready to [take your first backup](/docs/guides/README.md) using Stash.
 
 
-## Using kubectl for Restic
+## Using kubectl for Backup
 ```console
-# List all Restic objects
+# List all Backup objects
 $ kubectl get restic --all-namespaces
 
-# List Restic objects for a namespace
+# List Backup objects for a namespace
 $ kubectl get restic -n <namespace>
 
-# Get Restic YAML
+# Get Backup YAML
 $ kubectl get restic -n <namespace> <name> -o yaml
 
-# Describe Restic. Very useful to debug problems.
+# Describe Backup. Very useful to debug problems.
 $ kubectl describe restic -n <namespace> <name>
 ```
 

@@ -1,9 +1,9 @@
 ---
-title: Restic Overview
+title: Backup Overview
 menu:
   product_stash_0.7.0-alpha.0:
     identifier: restic-overview
-    name: Restic
+    name: Backup
     parent: crds
     weight: 10
 product_name: stash
@@ -13,17 +13,17 @@ section_menu_id: concepts
 
 > New to Stash? Please start [here](/docs/concepts/README.md).
 
-# Restics
+# Backups
 
-## What is Restic
-A `Restic` is a Kubernetes `CustomResourceDefinition` (CRD). It provides declarative configuration for [restic](https://restic.net) in a Kubernetes native way. You only need to describe the desired backup operations in a Restic object, and the Stash operator will reconfigure the matching workloads to the desired state for you.
+## What is Backup
+A `Backup` is a Kubernetes `CustomResourceDefinition` (CRD). It provides declarative configuration for [restic](https://restic.net) in a Kubernetes native way. You only need to describe the desired backup operations in a Backup object, and the Stash operator will reconfigure the matching workloads to the desired state for you.
 
-## Restic Spec
-As with all other Kubernetes objects, a Restic needs `apiVersion`, `kind`, and `metadata` fields. It also needs a `.spec` section. Below is an example Restic object.
+## Backup Spec
+As with all other Kubernetes objects, a Backup needs `apiVersion`, `kind`, and `metadata` fields. It also needs a `.spec` section. Below is an example Backup object.
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
   name: stash-demo
   namespace: default
@@ -53,7 +53,7 @@ spec:
 The `.spec` section has following parts:
 
 ### spec.selector
-`spec.selector` is a required field that specifies a [label selector](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) for the Deployments, ReplicaSets, ReplicationControllers, DaemonSets and StatefulSets targeted by this Restic. Selectors are always matched against the labels of Deployments, ReplicaSets, ReplicationControllers, DaemonSets and StatefulSets in the same namespace as Restic object itself. You can create Deployment, etc and its matching Restic is any order. As long as the labels match, Stash operator will add sidecar container to the workload.  If multiple `Restic` objects are matched to a given workload, Stash operator will error out and avoid adding sidecar container.
+`spec.selector` is a required field that specifies a [label selector](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) for the Deployments, ReplicaSets, ReplicationControllers, DaemonSets and StatefulSets targeted by this Backup. Selectors are always matched against the labels of Deployments, ReplicaSets, ReplicationControllers, DaemonSets and StatefulSets in the same namespace as Backup object itself. You can create Deployment, etc and its matching Backup is any order. As long as the labels match, Stash operator will add sidecar container to the workload.  If multiple `Backup` objects are matched to a given workload, Stash operator will error out and avoid adding sidecar container.
 
 ### spec.type
 The default value for `spec.type` is `online`. For offline backup you need to specify `spec.type=offline`. For more details see [here](/docs/guides/offline_backup.md).
@@ -86,14 +86,14 @@ You can set one or more of these retention policy options together. To learn mor
 https://restic.readthedocs.io/en/latest/manual.html#removing-snapshots-according-to-a-policy).
 
 ### spec.backend
-To learn how to configure various backends for Restic, please visit [here](/docs/guides/backends.md).
+To learn how to configure various backends for Backup, please visit [here](/docs/guides/backends.md).
 
 ### spec.schedule
 `spec.schedule` is a [cron expression](https://github.com/robfig/cron/blob/v2/doc.go#L26) that indicates how often `restic` commands are invoked for file groups.
 At each tick, `restic backup` and `restic forget` commands are run for each of the configured file groups.
 
 ### spec.paused
-`spec.paused` can be used as `enable/disable` switch for Restic. The default value is `false`. To stop restic from taking backup set `spec.paused: true`. For more details see [here](/docs/guides/backup.md#disable-backup).
+`spec.paused` can be used as `enable/disable` switch for Backup. The default value is `false`. To stop restic from taking backup set `spec.paused: true`. For more details see [here](/docs/guides/backup.md#disable-backup).
 
 ### spec.resources
 `spec.resources` refers to compute resources required by the `stash` sidecar container. To learn more, visit [here](http://kubernetes.io/docs/user-guide/compute-resources/).
@@ -107,10 +107,10 @@ At each tick, `restic backup` and `restic forget` commands are run for each of t
  - For workload kind `Statefulset` restic repository is created in the sub-directory `<WORKLOAD_KIND>/<POD_NAME>`. For multiple replicas, multiple repositories are created and sidecar is added to all pods.
  - For workload kind `Daemonset` restic repository is created in the sub-directory `<WORKLOAD_KIND>/<WORKLOAD_NAME>/<NODE_NAME>`. For multiple replicas, multiple repositories are created and sidecar is added to all pods.
 
-## Restic Status
-Stash operator updates `.status` of a Restic CRD every time a backup operation is completed.
+## Backup Status
+Stash operator updates `.status` of a Backup CRD every time a backup operation is completed.
 
- - `status.backupCount` indicated the total number of backup operation completed for this Restic CRD.
+ - `status.backupCount` indicated the total number of backup operation completed for this Backup CRD.
  - `status.firstBackupTime` indicates the timestamp of first backup operation.
  - `status.lastBackupTime` indicates the timestamp of last backup operation.
  - `status.lastSuccessfulBackupTime` indicates the timestamp of last successful backup operation. If `status.lastBackupTime` and `status.lastSuccessfulBackupTime` are same, it means that last backup operation was successful.
@@ -119,25 +119,25 @@ Stash operator updates `.status` of a Restic CRD every time a backup operation i
 ## Workload Annotations
 For each workload where a sidecar container is added by Stash operator, the following annotations are added:
 
- - `restic.appscode.com/last-applied-configuration` indicates the configuration of applied Restic CRD.
+ - `restic.appscode.com/last-applied-configuration` indicates the configuration of applied Backup CRD.
  - `restic.appscode.com/tag` indicates the tag of `appscode/stash` Docker image that was added as sidecar.
 
-## Updating Restic
-The sidecar container watches for changes in the Restic fileGroups, backend and schedule. These changes are automatically applied on the next run of `restic` commands. If the selector of a Restic CRD is changed, Stash operator will update workload accordingly by adding/removing sidecars as required.
+## Updating Backup
+The sidecar container watches for changes in the Backup fileGroups, backend and schedule. These changes are automatically applied on the next run of `restic` commands. If the selector of a Backup CRD is changed, Stash operator will update workload accordingly by adding/removing sidecars as required.
 
-## Disable Restic
-To stop Restic from taking backup, you can do following things:
+## Disable Backup
+To stop Backup from taking backup, you can do following things:
 
-* Set `spec.paused: true` in Restic `yaml` and then update the Restic object. This means:
+* Set `spec.paused: true` in Backup `yaml` and then update the Backup object. This means:
 
-  - Paused Restic CRDs will not applied to newly created wrokloads.
+  - Paused Backup CRDs will not applied to newly created wrokloads.
   - Stash sidecar containers will not be removed from existing workloads but the sidecar will stop taking backup.
 
-* Delete the Restic CRD. Stash operator will remove the sidecar container from all matching workloads.
+* Delete the Backup CRD. Stash operator will remove the sidecar container from all matching workloads.
 
 * Change the labels of a workload. Stash operator will remove sidecar container from that workload. This way you can selectively stop backup of a Deployment, ReplicaSet etc.
 
-For more details about how to disable and resume Restic see [here](/docs/guides/backup.md#disable-backup). 
+For more details about how to disable and resume Backup see [here](/docs/guides/backup.md#disable-backup). 
 
 ## Next Steps
 

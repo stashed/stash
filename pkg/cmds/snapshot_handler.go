@@ -47,8 +47,8 @@ func (e PrometheusExporter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	resticCLI := cli.New(e.scratchDir, true, "")
 
-	var resource *api.Restic
-	resource, err := e.stashClient.Restics(namespace).Get(name, metav1.GetOptions{})
+	var resource *api.Backup
+	resource, err := e.stashClient.Backups(namespace).Get(name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return

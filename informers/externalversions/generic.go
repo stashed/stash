@@ -52,10 +52,10 @@ func (f *genericInformer) Lister() cache.GenericLister {
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
 	// Group=stash.appscode.com, Version=v1alpha1
+	case v1alpha1.SchemeGroupVersion.WithResource("backups"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Stash().V1alpha1().Backups().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("recoveries"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Stash().V1alpha1().Recoveries().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("restics"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Stash().V1alpha1().Restics().Informer()}, nil
 
 	}
 

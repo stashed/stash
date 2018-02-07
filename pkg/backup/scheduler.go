@@ -57,7 +57,7 @@ func (c *Controller) setupAndRunScheduler(stopBackup chan struct{}) error {
 		}
 		return err
 	}
-	c.initResticWatcher() // setup restic watcher, not required for offline backup
+	c.initBackupWatcher() // setup restic watcher, not required for offline backup
 	go c.runScheduler(1, stopBackup)
 	return nil
 }
@@ -111,14 +111,14 @@ func (c *Controller) runScheduler(threadiness int, stopCh chan struct{}) {
 	}
 
 	for i := 0; i < threadiness; i++ {
-		go wait.Until(c.runResticWatcher, time.Second, stopCh)
+		go wait.Until(c.runBackupWatcher, time.Second, stopCh)
 	}
 
 	<-stopCh
 	glog.Info("Stopping Stash backup")
 }
 
-func (c *Controller) configureScheduler(r *api.Restic) error {
+func (c *Controller) configureScheduler(r *api.Backup) error {
 	// Remove previous jobs
 	for _, v := range c.cron.Entries() {
 		c.cron.Remove(v.ID)
@@ -139,17 +139,17 @@ func (c *Controller) configureScheduler(r *api.Restic) error {
 func (c *Controller) runOnceForScheduler() error {
 	select {
 	case <-c.locked:
-		log.Infof("Acquired lock for Restic %s/%s", c.opt.Namespace, c.opt.ResticName)
+		log.Infof("Acquired lock for Backup %s/%s", c.opt.Namespace, c.opt.BackupName)
 		defer func() {
 			c.locked <- struct{}{}
 		}()
 	default:
-		log.Warningf("Skipping backup schedule for Restic %s/%s", c.opt.Namespace, c.opt.ResticName)
+		log.Warningf("Skipping backup schedule for Backup %s/%s", c.opt.Namespace, c.opt.BackupName)
 		return nil
 	}
 
 	// check resource again, previously done in setup()
-	resource, err := c.rLister.Restics(c.opt.Namespace).Get(c.opt.ResticName)
+	resource, err := c.rLister.Backups(c.opt.Namespace).Get(c.opt.BackupName)
 	if kerr.IsNotFound(err) {
 		return nil
 	} else if err != nil {
@@ -172,23 +172,23 @@ func (c *Controller) runOnceForScheduler() error {
 	}
 
 	// run final restic backup command
-	return c.runResticBackup(resource)
+	return c.runBackupBackup(resource)
 }
 
 func (c *Controller) checkOnceForScheduler() (err error) {
 	select {
 	case <-c.locked:
-		log.Infof("Acquired lock for Restic %s/%s", c.opt.Namespace, c.opt.ResticName)
+		log.Infof("Acquired lock for Backup %s/%s", c.opt.Namespace, c.opt.BackupName)
 		defer func() {
 			c.locked <- struct{}{}
 		}()
 	default:
-		log.Warningf("Skipping checkup schedule for Restic %s/%s", c.opt.Namespace, c.opt.ResticName)
+		log.Warningf("Skipping checkup schedule for Backup %s/%s", c.opt.Namespace, c.opt.BackupName)
 		return
 	}
 
-	var resource *api.Restic
-	resource, err = c.rLister.Restics(c.opt.Namespace).Get(c.opt.ResticName)
+	var resource *api.Backup
+	resource, err = c.rLister.Backups(c.opt.Namespace).Get(c.opt.BackupName)
 	if kerr.IsNotFound(err) {
 		err = nil
 		return

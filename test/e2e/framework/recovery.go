@@ -10,7 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (fi *Invocation) RecoveryForRestic(restic api.Restic) api.Recovery {
+func (fi *Invocation) RecoveryForBackup(restic api.Backup) api.Recovery {
 	paths := make([]string, 0)
 	for _, fg := range restic.Spec.FileGroups {
 		paths = append(paths, fg.Path)

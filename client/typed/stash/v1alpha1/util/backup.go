@@ -15,13 +15,13 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-func CreateOrPatchRestic(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(alert *api.Restic) *api.Restic) (*api.Restic, kutil.VerbType, error) {
-	cur, err := c.Restics(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+func CreateOrPatchBackup(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(alert *api.Backup) *api.Backup) (*api.Backup, kutil.VerbType, error) {
+	cur, err := c.Backups(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
-		glog.V(3).Infof("Creating Restic %s/%s.", meta.Namespace, meta.Name)
-		out, err := c.Restics(meta.Namespace).Create(transform(&api.Restic{
+		glog.V(3).Infof("Creating Backup %s/%s.", meta.Namespace, meta.Name)
+		out, err := c.Backups(meta.Namespace).Create(transform(&api.Backup{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       "Restic",
+				Kind:       "Backup",
 				APIVersion: api.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
@@ -30,10 +30,10 @@ func CreateOrPatchRestic(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, tr
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return PatchRestic(c, cur, transform)
+	return PatchBackup(c, cur, transform)
 }
 
-func PatchRestic(c cs.StashV1alpha1Interface, cur *api.Restic, transform func(*api.Restic) *api.Restic) (*api.Restic, kutil.VerbType, error) {
+func PatchBackup(c cs.StashV1alpha1Interface, cur *api.Backup, transform func(*api.Backup) *api.Backup) (*api.Backup, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -51,28 +51,28 @@ func PatchRestic(c cs.StashV1alpha1Interface, cur *api.Restic, transform func(*a
 	if len(patch) == 0 || string(patch) == "{}" {
 		return cur, kutil.VerbUnchanged, nil
 	}
-	glog.V(3).Infof("Patching Restic %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
-	out, err := c.Restics(cur.Namespace).Patch(cur.Name, types.MergePatchType, patch)
+	glog.V(3).Infof("Patching Backup %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
+	out, err := c.Backups(cur.Namespace).Patch(cur.Name, types.MergePatchType, patch)
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateRestic(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(*api.Restic) *api.Restic) (result *api.Restic, err error) {
+func TryUpdateBackup(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(*api.Backup) *api.Backup) (result *api.Backup, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.Restics(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		cur, e2 := c.Backups(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.Restics(cur.Namespace).Update(transform(cur.DeepCopy()))
+			result, e2 = c.Backups(cur.Namespace).Update(transform(cur.DeepCopy()))
 			return e2 == nil, nil
 		}
-		glog.Errorf("Attempt %d failed to update Restic %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
+		glog.Errorf("Attempt %d failed to update Backup %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
 		return false, nil
 	})
 
 	if err != nil {
-		err = fmt.Errorf("failed to update Restic %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
+		err = fmt.Errorf("failed to update Backup %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}
 	return
 }

@@ -54,25 +54,25 @@ func (c *StashController) runRCInjector(key string) error {
 			return nil
 		}
 
-		oldRestic, err := util.GetAppliedRestic(rc.Annotations)
+		oldBackup, err := util.GetAppliedBackup(rc.Annotations)
 		if err != nil {
 			return err
 		}
-		newRestic, err := util.FindRestic(c.rstLister, rc.ObjectMeta)
+		newBackup, err := util.FindBackup(c.rstLister, rc.ObjectMeta)
 		if err != nil {
-			log.Errorf("Error while searching Restic for ReplicationController %s/%s.", rc.Name, rc.Namespace)
+			log.Errorf("Error while searching Backup for ReplicationController %s/%s.", rc.Name, rc.Namespace)
 			return err
 		}
 
-		if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
-			if !newRestic.Spec.Paused {
-				if newRestic.Spec.Type == api.BackupOffline && *rc.Spec.Replicas > 1 {
+		if newBackup != nil && !util.BackupEqual(oldBackup, newBackup) {
+			if !newBackup.Spec.Paused {
+				if newBackup.Spec.Type == api.BackupOffline && *rc.Spec.Replicas > 1 {
 					return fmt.Errorf("cannot perform offline backup for rc with replicas > 1")
 				}
-				return c.EnsureReplicationControllerSidecar(rc, oldRestic, newRestic)
+				return c.EnsureReplicationControllerSidecar(rc, oldBackup, newBackup)
 			}
-		} else if oldRestic != nil && newRestic == nil {
-			return c.EnsureReplicationControllerSidecarDeleted(rc, oldRestic)
+		} else if oldBackup != nil && newBackup == nil {
+			return c.EnsureReplicationControllerSidecarDeleted(rc, oldBackup)
 		}
 
 		// not restic workload, just remove the pending stash initializer
@@ -95,7 +95,7 @@ func (c *StashController) runRCInjector(key string) error {
 	return nil
 }
 
-func (c *StashController) EnsureReplicationControllerSidecar(resource *core.ReplicationController, old, new *api.Restic) (err error) {
+func (c *StashController) EnsureReplicationControllerSidecar(resource *core.ReplicationController, old, new *api.Backup) (err error) {
 	image := docker.Docker{
 		Registry: c.options.DockerRegistry,
 		Image:    docker.ImageStash,
@@ -103,7 +103,7 @@ func (c *StashController) EnsureReplicationControllerSidecar(resource *core.Repl
 	}
 
 	if new.Spec.Backend.StorageSecretName == "" {
-		err = fmt.Errorf("missing repository secret name for Restic %s/%s", new.Namespace, new.Name)
+		err = fmt.Errorf("missing repository secret name for Backup %s/%s", new.Namespace, new.Name)
 		return
 	}
 	_, err = c.k8sClient.CoreV1().Secrets(resource.Namespace).Get(new.Spec.Backend.StorageSecretName, metav1.GetOptions{})
@@ -163,10 +163,10 @@ func (c *StashController) EnsureReplicationControllerSidecar(resource *core.Repl
 		if obj.Annotations == nil {
 			obj.Annotations = make(map[string]string)
 		}
-		r := &api.Restic{
+		r := &api.Backup{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: api.SchemeGroupVersion.String(),
-				Kind:       api.ResourceKindRestic,
+				Kind:       api.ResourceKindBackup,
 			},
 			ObjectMeta: new.ObjectMeta,
 			Spec:       new.Spec,
@@ -189,7 +189,7 @@ func (c *StashController) EnsureReplicationControllerSidecar(resource *core.Repl
 	return err
 }
 
-func (c *StashController) EnsureReplicationControllerSidecarDeleted(resource *core.ReplicationController, restic *api.Restic) (err error) {
+func (c *StashController) EnsureReplicationControllerSidecarDeleted(resource *core.ReplicationController, restic *api.Backup) (err error) {
 	if c.options.EnableRBAC {
 		err := c.ensureSidecarRoleBindingDeleted(resource.ObjectMeta)
 		if err != nil {

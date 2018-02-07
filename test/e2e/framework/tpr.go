@@ -16,13 +16,13 @@ func (f *Framework) EventuallyCRD(name string) GomegaAsyncAssertion {
 			[]*apiext.CustomResourceDefinition{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: api.ResourceTypeRestic + "." + api.SchemeGroupVersion.Group,
+						Name: api.ResourceTypeBackup + "." + api.SchemeGroupVersion.Group,
 					},
 					Spec: apiext.CustomResourceDefinitionSpec{
 						Group:   sapi.GroupName,
 						Version: api.SchemeGroupVersion.Version,
 						Names: apiext.CustomResourceDefinitionNames{
-							Plural: api.ResourceTypeRestic,
+							Plural: api.ResourceTypeBackup,
 						},
 					},
 				},

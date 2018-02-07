@@ -6,10 +6,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (c Restic) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+func (c Backup) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return &apiextensions.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   sapi.ResourceTypeRestic + "." + SchemeGroupVersion.Group,
+			Name:   sapi.ResourceTypeBackup + "." + SchemeGroupVersion.Group,
 			Labels: map[string]string{"app": "stash"},
 		},
 		Spec: apiextensions.CustomResourceDefinitionSpec{
@@ -17,9 +17,9 @@ func (c Restic) CustomResourceDefinition() *apiextensions.CustomResourceDefiniti
 			Version: SchemeGroupVersion.Version,
 			Scope:   apiextensions.NamespaceScoped,
 			Names: apiextensions.CustomResourceDefinitionNames{
-				Singular:   sapi.ResourceNameRestic,
-				Plural:     sapi.ResourceTypeRestic,
-				Kind:       sapi.ResourceKindRestic,
+				Singular:   sapi.ResourceNameBackup,
+				Plural:     sapi.ResourceTypeBackup,
+				Kind:       sapi.ResourceKindBackup,
 				ShortNames: []string{"rst"},
 			},
 		},

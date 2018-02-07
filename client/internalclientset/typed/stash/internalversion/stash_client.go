@@ -23,8 +23,8 @@ import (
 
 type StashInterface interface {
 	RESTClient() rest.Interface
+	BackupsGetter
 	RecoveriesGetter
-	ResticsGetter
 }
 
 // StashClient is used to interact with features provided by the stash.appscode.com group.
@@ -32,12 +32,12 @@ type StashClient struct {
 	restClient rest.Interface
 }
 
-func (c *StashClient) Recoveries(namespace string) RecoveryInterface {
-	return newRecoveries(c, namespace)
+func (c *StashClient) Backups(namespace string) BackupInterface {
+	return newBackups(c, namespace)
 }
 
-func (c *StashClient) Restics(namespace string) ResticInterface {
-	return newRestics(c, namespace)
+func (c *StashClient) Recoveries(namespace string) RecoveryInterface {
+	return newRecoveries(c, namespace)
 }
 
 // NewForConfig creates a new StashClient for the given config.

@@ -9,17 +9,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (fi *Invocation) _restic() api.Restic {
-	return api.Restic{
+func (fi *Invocation) _restic() api.Backup {
+	return api.Backup{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: api.SchemeGroupVersion.String(),
-			Kind:       api.ResourceKindRestic,
+			Kind:       api.ResourceKindBackup,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
 			Namespace: fi.namespace,
 		},
-		Spec: api.ResticSpec{
+		Spec: api.BackupSpec{
 			Selector: metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app": fi.app,
@@ -48,7 +48,7 @@ func (fi *Invocation) _restic() api.Restic {
 	}
 }
 
-func (fi *Invocation) ResticForLocalBackend() api.Restic {
+func (fi *Invocation) BackupForLocalBackend() api.Backup {
 	r := fi._restic()
 	r.Spec.Backend = api.Backend{
 		StorageSecretName: "",
@@ -62,7 +62,7 @@ func (fi *Invocation) ResticForLocalBackend() api.Restic {
 	return r
 }
 
-func (fi *Invocation) ResticForHostPathLocalBackend() api.Restic {
+func (fi *Invocation) BackupForHostPathLocalBackend() api.Backup {
 	r := fi._restic()
 	r.Spec.Backend = api.Backend{
 		StorageSecretName: "",
@@ -78,7 +78,7 @@ func (fi *Invocation) ResticForHostPathLocalBackend() api.Restic {
 	return r
 }
 
-func (fi *Invocation) ResticForS3Backend() api.Restic {
+func (fi *Invocation) BackupForS3Backend() api.Backup {
 	r := fi._restic()
 	r.Spec.Backend = api.Backend{
 		StorageSecretName: "",
@@ -91,7 +91,7 @@ func (fi *Invocation) ResticForS3Backend() api.Restic {
 	return r
 }
 
-func (fi *Invocation) ResticForMinioBackend(address string) api.Restic {
+func (fi *Invocation) BackupForMinioBackend(address string) api.Backup {
 	r := fi._restic()
 	r.Spec.Backend = api.Backend{
 		StorageSecretName: "",
@@ -104,7 +104,7 @@ func (fi *Invocation) ResticForMinioBackend(address string) api.Restic {
 	return r
 }
 
-func (fi *Invocation) ResticForDOBackend() api.Restic {
+func (fi *Invocation) BackupForDOBackend() api.Backup {
 	r := fi._restic()
 	r.Spec.Backend = api.Backend{
 		StorageSecretName: "",
@@ -117,7 +117,7 @@ func (fi *Invocation) ResticForDOBackend() api.Restic {
 	return r
 }
 
-func (fi *Invocation) ResticForGCSBackend() api.Restic {
+func (fi *Invocation) BackupForGCSBackend() api.Backup {
 	r := fi._restic()
 	r.Spec.Backend = api.Backend{
 		StorageSecretName: "",
@@ -129,7 +129,7 @@ func (fi *Invocation) ResticForGCSBackend() api.Restic {
 	return r
 }
 
-func (fi *Invocation) ResticForAzureBackend() api.Restic {
+func (fi *Invocation) BackupForAzureBackend() api.Backup {
 	r := fi._restic()
 	r.Spec.Backend = api.Backend{
 		StorageSecretName: "",
@@ -141,7 +141,7 @@ func (fi *Invocation) ResticForAzureBackend() api.Restic {
 	return r
 }
 
-func (fi *Invocation) ResticForSwiftBackend() api.Restic {
+func (fi *Invocation) BackupForSwiftBackend() api.Backup {
 	r := fi._restic()
 	r.Spec.Backend = api.Backend{
 		StorageSecretName: "",
@@ -153,7 +153,7 @@ func (fi *Invocation) ResticForSwiftBackend() api.Restic {
 	return r
 }
 
-func (fi *Invocation) ResticForB2Backend() api.Restic {
+func (fi *Invocation) BackupForB2Backend() api.Backup {
 	r := fi._restic()
 	r.Spec.Backend = api.Backend{
 		StorageSecretName: "",
@@ -165,29 +165,29 @@ func (fi *Invocation) ResticForB2Backend() api.Restic {
 	return r
 }
 
-func (f *Framework) CreateRestic(obj api.Restic) error {
-	_, err := f.StashClient.StashV1alpha1().Restics(obj.Namespace).Create(&obj)
+func (f *Framework) CreateBackup(obj api.Backup) error {
+	_, err := f.StashClient.StashV1alpha1().Backups(obj.Namespace).Create(&obj)
 	return err
 }
 
-func (f *Framework) DeleteRestic(meta metav1.ObjectMeta) error {
-	return f.StashClient.StashV1alpha1().Restics(meta.Namespace).Delete(meta.Name, deleteInForeground())
+func (f *Framework) DeleteBackup(meta metav1.ObjectMeta) error {
+	return f.StashClient.StashV1alpha1().Backups(meta.Namespace).Delete(meta.Name, deleteInForeground())
 }
 
-func (f *Framework) UpdateRestic(meta metav1.ObjectMeta, transformer func(*api.Restic) *api.Restic) error {
-	_, err := stash_util.TryUpdateRestic(f.StashClient.StashV1alpha1(), meta, transformer)
+func (f *Framework) UpdateBackup(meta metav1.ObjectMeta, transformer func(*api.Backup) *api.Backup) error {
+	_, err := stash_util.TryUpdateBackup(f.StashClient.StashV1alpha1(), meta, transformer)
 	return err
 }
 
-func (f *Framework) CreateOrPatchRestic(meta metav1.ObjectMeta, transformer func(*api.Restic) *api.Restic) error {
-	_, _, err := stash_util.CreateOrPatchRestic(f.StashClient.StashV1alpha1(), meta, transformer)
+func (f *Framework) CreateOrPatchBackup(meta metav1.ObjectMeta, transformer func(*api.Backup) *api.Backup) error {
+	_, _, err := stash_util.CreateOrPatchBackup(f.StashClient.StashV1alpha1(), meta, transformer)
 	return err
 
 }
 
-func (f *Framework) EventuallyRestic(meta metav1.ObjectMeta) GomegaAsyncAssertion {
-	return Eventually(func() *api.Restic {
-		obj, err := f.StashClient.StashV1alpha1().Restics(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+func (f *Framework) EventuallyBackup(meta metav1.ObjectMeta) GomegaAsyncAssertion {
+	return Eventually(func() *api.Backup {
+		obj, err := f.StashClient.StashV1alpha1().Backups(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		return obj
 	})

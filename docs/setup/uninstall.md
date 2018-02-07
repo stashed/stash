@@ -42,13 +42,13 @@ initializerconfiguration "stash-initializer" deleted
 $ kubectl get pods --all-namespaces -l app=stash
 ```
 
-- To keep a copy of your existing `Restic` objects, run:
+- To keep a copy of your existing `Backup` objects, run:
 
 ```console
 kubectl get restic.stash.appscode.com --all-namespaces -o yaml > data.yaml
 ```
 
-- To delete existing `Restic` objects from all namespaces, run the following command in each namespace one by one.
+- To delete existing `Backup` objects from all namespaces, run the following command in each namespace one by one.
 
 ```
 kubectl delete restic.stash.appscode.com --all --cascade=false

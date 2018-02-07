@@ -36,7 +36,7 @@ const (
 	KubectlCronPrefix = "stash-kubectl-cron-"
 	CheckJobPrefix    = "stash-check-"
 
-	AnnotationRestic    = "restic"
+	AnnotationBackup    = "restic"
 	AnnotationRecovery  = "recovery"
 	AnnotationOperation = "operation"
 
@@ -52,7 +52,7 @@ var (
 	LoggerOptions     golog.Options
 )
 
-func GetAppliedRestic(m map[string]string) (*api.Restic, error) {
+func GetAppliedBackup(m map[string]string) (*api.Backup, error) {
 	data := GetString(m, api.LastAppliedConfiguration)
 	if data == "" {
 		return nil, nil
@@ -61,22 +61,22 @@ func GetAppliedRestic(m map[string]string) (*api.Restic, error) {
 	if err != nil {
 		return nil, err
 	}
-	restic, ok := obj.(*api.Restic)
+	restic, ok := obj.(*api.Backup)
 	if !ok {
 		return nil, fmt.Errorf("%s annotations has invalid Rectic object", api.LastAppliedConfiguration)
 	}
 	return restic, nil
 }
 
-func FindRestic(lister stash_listers.ResticLister, obj metav1.ObjectMeta) (*api.Restic, error) {
-	restics, err := lister.Restics(obj.Namespace).List(labels.Everything())
+func FindBackup(lister stash_listers.BackupLister, obj metav1.ObjectMeta) (*api.Backup, error) {
+	restics, err := lister.Backups(obj.Namespace).List(labels.Everything())
 	if kerr.IsNotFound(err) {
 		return nil, nil
 	} else if err != nil {
 		return nil, err
 	}
 
-	result := make([]*api.Restic, 0)
+	result := make([]*api.Backup, 0)
 	for _, restic := range restics {
 		selector, err := metav1.LabelSelectorAsSelector(&restic.Spec.Selector)
 		if err != nil {
@@ -88,7 +88,7 @@ func FindRestic(lister stash_listers.ResticLister, obj metav1.ObjectMeta) (*api.
 	}
 	if len(result) > 1 {
 		var msg bytes.Buffer
-		msg.WriteString(fmt.Sprintf("Workload %s/%s matches multiple Restics:", obj.Namespace, obj.Name))
+		msg.WriteString(fmt.Sprintf("Workload %s/%s matches multiple Backups:", obj.Namespace, obj.Name))
 		for i, restic := range result {
 			if i > 0 {
 				msg.WriteString(", ")
@@ -200,7 +200,7 @@ func PushgatewayURL() string {
 	return fmt.Sprintf("http://stash-operator.%s.svc:56789", meta.Namespace())
 }
 
-func NewInitContainer(r *api.Restic, workload api.LocalTypedReference, image docker.Docker, enableRBAC bool) core.Container {
+func NewInitContainer(r *api.Backup, workload api.LocalTypedReference, image docker.Docker, enableRBAC bool) core.Container {
 	container := NewSidecarContainer(r, workload, image)
 	container.Args = []string{
 		"backup",
@@ -220,7 +220,7 @@ func NewInitContainer(r *api.Restic, workload api.LocalTypedReference, image doc
 	return container
 }
 
-func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image docker.Docker) core.Container {
+func NewSidecarContainer(r *api.Backup, workload api.LocalTypedReference, image docker.Docker) core.Container {
 	if r.Annotations != nil {
 		if v, ok := r.Annotations[api.VersionTag]; ok {
 			image.Tag = v
@@ -317,7 +317,7 @@ func UpsertDownwardVolume(volumes []core.Volume) []core.Volume {
 	})
 }
 
-func MergeLocalVolume(volumes []core.Volume, old, new *api.Restic) []core.Volume {
+func MergeLocalVolume(volumes []core.Volume, old, new *api.Backup) []core.Volume {
 	oldPos := -1
 	if old != nil && old.Spec.Backend.Local != nil {
 		for i, vol := range volumes {
@@ -351,8 +351,8 @@ func EnsureVolumeDeleted(volumes []core.Volume, name string) []core.Volume {
 	return volumes
 }
 
-func ResticEqual(old, new *api.Restic) bool {
-	var oldSpec, newSpec *api.ResticSpec
+func BackupEqual(old, new *api.Backup) bool {
+	var oldSpec, newSpec *api.BackupSpec
 	if old != nil {
 		oldSpec = &old.Spec
 	}
@@ -498,7 +498,7 @@ func DeleteConfigmapLock(k8sClient kubernetes.Interface, namespace string, workl
 	return k8sClient.CoreV1().ConfigMaps(namespace).Delete(GetConfigmapLockName(workload), &metav1.DeleteOptions{})
 }
 
-func NewCheckJob(restic *api.Restic, hostName, smartPrefix string, image docker.Docker) *batch.Job {
+func NewCheckJob(restic *api.Backup, hostName, smartPrefix string, image docker.Docker) *batch.Job {
 	job := &batch.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      CheckJobPrefix + restic.Name,
@@ -506,14 +506,14 @@ func NewCheckJob(restic *api.Restic, hostName, smartPrefix string, image docker.
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: api.SchemeGroupVersion.String(),
-					Kind:       api.ResourceKindRestic,
+					Kind:       api.ResourceKindBackup,
 					Name:       restic.Name,
 					UID:        restic.UID,
 				},
 			},
 			Labels: map[string]string{
 				"app":               AppLabelStash,
-				AnnotationRestic:    restic.Name,
+				AnnotationBackup:    restic.Name,
 				AnnotationOperation: OperationCheck,
 			},
 		},

@@ -16,7 +16,7 @@ section_menu_id: guides
 
 # Offline Backup
 
-This tutorial will show you how to backup a Kubernetes deployment using Stash in offline mode. By default, stash takes backup in [online](/docs/guides/backup.md) mode where sidecar container is added to take periodic backups and check backups. But sometimes you need to ensure that source data is not being modified while taking backup, that means running backup while keeping workload pod stopped. In such case you can run backup in offline mode. To do this you need to specify `spec.type=offline` in `Restic` CRD.
+This tutorial will show you how to backup a Kubernetes deployment using Stash in offline mode. By default, stash takes backup in [online](/docs/guides/backup.md) mode where sidecar container is added to take periodic backups and check backups. But sometimes you need to ensure that source data is not being modified while taking backup, that means running backup while keeping workload pod stopped. In such case you can run backup in offline mode. To do this you need to specify `spec.type=offline` in `Backup` CRD.
 
 At first, you need to have a Kubernetes cluster, and the kubectl command-line tool must be configured to communicate with your cluster. If you do not already have a cluster, you can create one by using [Minikube](https://github.com/kubernetes/minikube). Now, install Stash in your cluster following the steps [here](/docs/setup/install.md).
 
@@ -94,7 +94,7 @@ metadata:
 type: Opaque
 ```
 
-Now, create a `Restic` CRD with selectors matching the labels of the `busybox` Deployment and `spec.type=offline`.
+Now, create a `Backup` CRD with selectors matching the labels of the `busybox` Deployment and `spec.type=offline`.
 
 ```console
 $ kubectl apply -f ./docs/examples/tutorial/restic_offline.yaml
@@ -103,7 +103,7 @@ restic "stash-demo" created
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
   name: stash-demo
   namespace: default
@@ -131,7 +131,7 @@ spec:
     prune: true
 ```
 
-When a `Restic` is created with `spec.type=offline`, stash operator add a [init-container](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) instead of sidecar container to target workload pods. The init-container takes backup once. If backup is successfully completed, then it creates a job to perform `restic check` and exits. The app container starts only after the init-container exits without any error. This ensures that the app container is not running while taking backup.
+When a `Backup` is created with `spec.type=offline`, stash operator add a [init-container](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) instead of sidecar container to target workload pods. The init-container takes backup once. If backup is successfully completed, then it creates a job to perform `restic check` and exits. The app container starts only after the init-container exits without any error. This ensures that the app container is not running while taking backup.
 Stash operator also creates a cron-job that deletes the workload pods according to the `spec.schedule`. Thus the workload pods get restarted periodically and allows the init-container to take backup.
 
 ```console
@@ -151,7 +151,7 @@ metadata:
   annotations:
     deployment.kubernetes.io/revision: "2"
     restic.appscode.com/last-applied-configuration: |
-      {"kind":"Restic","apiVersion":"stash.appscode.com/v1alpha1","metadata":{"name":"stash-demo","namespace":"default","selfLink":"/apis/stash.appscode.com/v1alpha1/namespaces/default/restics/stash-demo","uid":"c55d5918-d8da-11e7-be92-0800277f19c0","resourceVersion":"57719","creationTimestamp":"2017-12-04T10:06:18Z"},"spec":{"selector":{"matchLabels":{"app":"stash-demo"}},"fileGroups":[{"path":"/source/data","retentionPolicyName":"keep-last-5"}],"backend":{"storageSecretName":"stash-demo","local":{"volumeSource":{"hostPath":{"path":"/data/stash-test/restic-repo"}},"path":"/safe/data"}},"schedule":"@every 5m","volumeMounts":[{"name":"source-data","mountPath":"/source/data"}],"resources":{},"retentionPolicies":[{"name":"keep-last-5","keepLast":5,"prune":true}],"type":"offline"},"status":{}}
+      {"kind":"Backup","apiVersion":"stash.appscode.com/v1alpha1","metadata":{"name":"stash-demo","namespace":"default","selfLink":"/apis/stash.appscode.com/v1alpha1/namespaces/default/restics/stash-demo","uid":"c55d5918-d8da-11e7-be92-0800277f19c0","resourceVersion":"57719","creationTimestamp":"2017-12-04T10:06:18Z"},"spec":{"selector":{"matchLabels":{"app":"stash-demo"}},"fileGroups":[{"path":"/source/data","retentionPolicyName":"keep-last-5"}],"backend":{"storageSecretName":"stash-demo","local":{"volumeSource":{"hostPath":{"path":"/data/stash-test/restic-repo"}},"path":"/safe/data"}},"schedule":"@every 5m","volumeMounts":[{"name":"source-data","mountPath":"/source/data"}],"resources":{},"retentionPolicies":[{"name":"keep-last-5","keepLast":5,"prune":true}],"type":"offline"},"status":{}}
     restic.appscode.com/tag: canary
   creationTimestamp: 2017-12-04T10:04:11Z
   generation: 2
@@ -273,13 +273,13 @@ status:
   updatedReplicas: 1
 ```
 
-Now, wait a few minutes so that restic can take a backup of the `/source/data` folder. To confirm, check the `status.backupCount` of `stash-demo` Restic CRD.
+Now, wait a few minutes so that restic can take a backup of the `/source/data` folder. To confirm, check the `status.backupCount` of `stash-demo` Backup CRD.
 
 ```yaml
 $ kubectl get restic stash-demo -o yaml
 
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
   clusterName: ""
   creationTimestamp: 2017-12-04T10:06:18Z
@@ -346,7 +346,7 @@ If you would like to uninstall Stash operator, please follow the steps [here](/d
 ## Next Steps
 
 - Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/backup.md).
-- Learn about the details of Restic CRD [here](/docs/concepts/crds/restic.md).
+- Learn about the details of Backup CRD [here](/docs/concepts/crds/restic.md).
 - To restore a backup see [here](/docs/guides/restore.md).
 - Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
 - See the list of supported backends and how to configure them [here](/docs/guides/backends.md).

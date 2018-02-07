@@ -6,9 +6,9 @@ import (
 )
 
 const (
-	ResourceKindRestic   = "Restic"
-	ResourceNameRestic   = "restic"
-	ResourceTypeRestic   = "restics"
+	ResourceKindBackup   = "Backup"
+	ResourceNameBackup   = "restic"
+	ResourceTypeBackup   = "restics"
 	ResourceKindRecovery = "Recovery"
 	ResourceNameRecovery = "recovery"
 	ResourceTypeRecovery = "recoveries"
@@ -18,14 +18,14 @@ const (
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-type Restic struct {
+type Backup struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              ResticSpec   `json:"spec,omitempty"`
-	Status            ResticStatus `json:"status,omitempty"`
+	Spec              BackupSpec   `json:"spec,omitempty"`
+	Status            BackupStatus `json:"status,omitempty"`
 }
 
-type ResticSpec struct {
+type BackupSpec struct {
 	Selector   metav1.LabelSelector `json:"selector,omitempty"`
 	FileGroups []FileGroup          `json:"fileGroups,omitempty"`
 	Backend    Backend              `json:"backend,omitempty"`
@@ -37,7 +37,7 @@ type ResticSpec struct {
 	RetentionPolicies []RetentionPolicy         `json:"retentionPolicies,omitempty"`
 	// https://github.com/appscode/stash/issues/225
 	Type BackupType `json:"type,omitempty"`
-	//Indicates that the Restic is paused from taking backup. Default value is 'false'
+	//Indicates that the Backup is paused from taking backup. Default value is 'false'
 	// +optional
 	Paused bool `json:"paused,omitempty"`
 	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
@@ -48,7 +48,7 @@ type ResticSpec struct {
 	ImagePullSecrets []core.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 }
 
-type ResticStatus struct {
+type BackupStatus struct {
 	FirstBackupTime          *metav1.Time `json:"firstBackupTime,omitempty"`
 	LastBackupTime           *metav1.Time `json:"lastBackupTime,omitempty"`
 	LastSuccessfulBackupTime *metav1.Time `json:"lastSuccessfulBackupTime,omitempty"`
@@ -58,10 +58,10 @@ type ResticStatus struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-type ResticList struct {
+type BackupList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Restic `json:"items,omitempty"`
+	Items           []Backup `json:"items,omitempty"`
 }
 
 type FileGroup struct {

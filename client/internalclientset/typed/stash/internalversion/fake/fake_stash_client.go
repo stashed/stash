@@ -26,12 +26,12 @@ type FakeStash struct {
 	*testing.Fake
 }
 
-func (c *FakeStash) Recoveries(namespace string) internalversion.RecoveryInterface {
-	return &FakeRecoveries{c, namespace}
+func (c *FakeStash) Backups(namespace string) internalversion.BackupInterface {
+	return &FakeBackups{c, namespace}
 }
 
-func (c *FakeStash) Restics(namespace string) internalversion.ResticInterface {
-	return &FakeRestics{c, namespace}
+func (c *FakeStash) Recoveries(namespace string) internalversion.RecoveryInterface {
+	return &FakeRecoveries{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

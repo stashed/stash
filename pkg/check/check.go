@@ -17,7 +17,7 @@ const (
 
 type Options struct {
 	Namespace   string
-	ResticName  string
+	BackupName  string
 	HostName    string
 	SmartPrefix string
 }
@@ -37,7 +37,7 @@ func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, 
 }
 
 func (c *Controller) Run() (err error) {
-	restic, err := c.stashClient.Restics(c.opt.Namespace).Get(c.opt.ResticName, metav1.GetOptions{})
+	restic, err := c.stashClient.Backups(c.opt.Namespace).Get(c.opt.BackupName, metav1.GetOptions{})
 	if err != nil {
 		return
 	}

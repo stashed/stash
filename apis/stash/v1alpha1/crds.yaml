@@ -7,8 +7,8 @@ metadata:
 spec:
   group: stash.appscode.com
   names:
-    kind: Restic
-    listKind: ResticList
+    kind: Backup
+    listKind: BackupList
     plural: restics
     shortNames:
     - rst

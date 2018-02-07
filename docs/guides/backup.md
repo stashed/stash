@@ -94,7 +94,7 @@ metadata:
 type: Opaque
 ```
 
-Now, create a `Restic` CRD with selectors matching the labels of the `busybox` Deployment.
+Now, create a `Backup` CRD with selectors matching the labels of the `busybox` Deployment.
 
 ```console
 $ kubectl apply -f ./docs/examples/tutorial/restic.yaml
@@ -103,7 +103,7 @@ restic "stash-demo" created
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
   name: stash-demo
   namespace: default
@@ -132,16 +132,16 @@ spec:
 
 Here,
 
- - `spec.selector` is used to select workloads upon which this `Restic` configuration will be applied. `Restic` always selects workloads in the same Kubernetes namespace. In this tutorial, labels of `busybox` Deployment match this `Restic`'s selectors. If multiple `Restic` objects are matched to a given workload, Stash operator will error out and avoid adding sidecar container.
+ - `spec.selector` is used to select workloads upon which this `Backup` configuration will be applied. `Backup` always selects workloads in the same Kubernetes namespace. In this tutorial, labels of `busybox` Deployment match this `Backup`'s selectors. If multiple `Backup` objects are matched to a given workload, Stash operator will error out and avoid adding sidecar container.
  - `spec.retentionPolicies` defines an array of retention policies, which can be used in `fileGroups` using `retentionPolicyName`.
  - `spec.fileGroups` indicates an array of local paths that will be backed up using restic. For each path, users can also specify the retention policy for old snapshots using `retentionPolicyName`, which must be defined in `spec.retentionPolicies`. Here, we are backing up the `/source/data` folder and only keeping the last 5 snapshots.
  - `spec.backend.local` indicates that restic will store the snapshots in a local path `/safe/data`. For the purpose of this tutorial, we are using an `hostPath` to store the snapshots. But any Kubernetes volume that can be mounted locally can be used as a backend (example, NFS, Ceph, etc). Stash can also store snapshots in cloud storage solutions like S3, GCS, Azure, etc. To use a remote backend, you need to configure the storage secret to include your cloud provider credentials and set one of `spec.backend.(s3|gcs|azure|swift|b2)`. Please visit [here](/docs/guides/backends.md) for more detailed examples.
 
-  - `spec.backend.storageSecretName` points to the Kubernetes secret created earlier in this tutorial. `Restic` always points to secrets in its own namespace. This secret is used to pass restic repository password and other cloud provider secrets to `restic` binary.
+  - `spec.backend.storageSecretName` points to the Kubernetes secret created earlier in this tutorial. `Backup` always points to secrets in its own namespace. This secret is used to pass restic repository password and other cloud provider secrets to `restic` binary.
   - `spec.schedule` is a [cron expression](https://github.com/robfig/cron/blob/v2/doc.go#L26) that indicates that file groups will be backed up every 1 minute.
   - `spec.volumeMounts` refers to volumes to be mounted in `stash` sidecar to get access to fileGroup path `/source/data`.
 
-Stash operator watches for `Restic` objects using Kubernetes api. Stash operator will notice that the `busybox` Deployment matches the selector for `stash-demo` Restic object. So, it will add a sidecar container named `stash` to `busybox` Deployment and restart the running `busybox` pods. Since a local backend is used in `stash-demo` Restic, sidecar container will mount the corresponding persistent volume.
+Stash operator watches for `Backup` objects using Kubernetes api. Stash operator will notice that the `busybox` Deployment matches the selector for `stash-demo` Backup object. So, it will add a sidecar container named `stash` to `busybox` Deployment and restart the running `busybox` pods. Since a local backend is used in `stash-demo` Backup, sidecar container will mount the corresponding persistent volume.
 
 ```console
 $ kubectl get pods -l app=stash-demo
@@ -159,7 +159,7 @@ metadata:
   annotations:
     deployment.kubernetes.io/revision: "2"
     restic.appscode.com/last-applied-configuration: |
-      {"kind":"Restic","apiVersion":"stash.appscode.com/v1alpha1","metadata":{"name":"stash-demo","namespace":"default","selfLink":"/apis/stash.appscode.com/v1alpha1/namespaces/default/restics/stash-demo","uid":"d8768901-d8b9-11e7-be92-0800277f19c0","resourceVersion":"27379","creationTimestamp":"2017-12-04T06:10:37Z"},"spec":{"selector":{"matchLabels":{"app":"stash-demo"}},"fileGroups":[{"path":"/source/data","retentionPolicyName":"keep-last-5"}],"backend":{"storageSecretName":"stash-demo","local":{"volumeSource":{"hostPath":{"path":"/data/stash-test/restic-repo"}},"path":"/safe/data"}},"schedule":"@every 1m","volumeMounts":[{"name":"source-data","mountPath":"/source/data"}],"resources":{},"retentionPolicies":[{"name":"keep-last-5","keepLast":5,"prune":true}]},"status":{}}
+      {"kind":"Backup","apiVersion":"stash.appscode.com/v1alpha1","metadata":{"name":"stash-demo","namespace":"default","selfLink":"/apis/stash.appscode.com/v1alpha1/namespaces/default/restics/stash-demo","uid":"d8768901-d8b9-11e7-be92-0800277f19c0","resourceVersion":"27379","creationTimestamp":"2017-12-04T06:10:37Z"},"spec":{"selector":{"matchLabels":{"app":"stash-demo"}},"fileGroups":[{"path":"/source/data","retentionPolicyName":"keep-last-5"}],"backend":{"storageSecretName":"stash-demo","local":{"volumeSource":{"hostPath":{"path":"/data/stash-test/restic-repo"}},"path":"/safe/data"}},"schedule":"@every 1m","volumeMounts":[{"name":"source-data","mountPath":"/source/data"}],"resources":{},"retentionPolicies":[{"name":"keep-last-5","keepLast":5,"prune":true}]},"status":{}}
     restic.appscode.com/tag: canary
   creationTimestamp: 2017-12-04T06:08:55Z
   generation: 2
@@ -279,13 +279,13 @@ status:
   updatedReplicas: 1
 ```
 
-Now, wait a few minutes so that restic can take a backup of the `/source/data` folder. To confirm, check the `status.backupCount` of `stash-demo` Restic CRD.
+Now, wait a few minutes so that restic can take a backup of the `/source/data` folder. To confirm, check the `status.backupCount` of `stash-demo` Backup CRD.
 
 ```yaml
 $ kubectl get restic stash-demo -o yaml
 
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
   clusterName: ""
   creationTimestamp: 2017-12-04T06:10:37Z
@@ -345,11 +345,11 @@ ID        Date                 Host        Tags        Directory
 ```
 
 ## Disable Backup
-To stop Restic from taking backup, you can do following things:
+To stop Backup from taking backup, you can do following things:
 
-* Set `spec.paused: true` in Restic `yaml` and then apply the update. This means:
+* Set `spec.paused: true` in Backup `yaml` and then apply the update. This means:
 
-  - Paused Restic CRDs will not applied to newly created wrokloads.
+  - Paused Backup CRDs will not applied to newly created wrokloads.
   - Stash sidecar containers will not be removed from existing workloads but the sidecar will stop taking backup.
 
 ```command
@@ -359,7 +359,7 @@ restic "stash-demo" patched
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
   name: stash-demo
   namespace: default
@@ -387,7 +387,7 @@ spec:
     prune: true
 ```
 
-* Delete the Restic CRD. Stash operator will remove the sidecar container from all matching workloads.
+* Delete the Backup CRD. Stash operator will remove the sidecar container from all matching workloads.
 
 ```commands
 $ kubectl delete restic stash-demo
@@ -396,7 +396,7 @@ restic "stash-demo" deleted
 * Change the labels of a workload. Stash operator will remove sidecar container from that workload. This way you can selectively stop backup of a Deployment, ReplicaSet etc.
 
 ### Resume Backup
-You can resume Restic to backup by setting `spec.paused: false` in Restic `yaml` and applying the update or you can patch Restic using,
+You can resume Backup to backup by setting `spec.paused: false` in Backup `yaml` and applying the update or you can patch Backup using,
 ```command
 $ kubectl patch restic stash-demo --type="merge" --patch='{"spec": {"paused": false}}'
 ```
@@ -415,7 +415,7 @@ If you would like to uninstall Stash operator, please follow the steps [here](/d
 
 ## Next Steps
 
-- Learn about the details of Restic CRD [here](/docs/concepts/crds/restic.md).
+- Learn about the details of Backup CRD [here](/docs/concepts/crds/restic.md).
 - To restore a backup see [here](/docs/guides/restore.md).
 - Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
 - To run backup in offline mode see [here](/docs/guides/offline_backup.md)

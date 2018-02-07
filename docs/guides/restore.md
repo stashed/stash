@@ -17,7 +17,7 @@ section_menu_id: guides
 # Restore Backup
 This tutorial will show you how to restore a Stash backup. At first, backup a kubernetes workload volume by following the steps [here](/docs/guides/backup.md).
 
-To restore a backup, you need to create a `Recovery` CRD by specifying `Restic`, target workload and volume where backup will be restored.
+To restore a backup, you need to create a `Recovery` CRD by specifying `Backup`, target workload and volume where backup will be restored.
 
 ```console
 $ kubectl apply -f ./docs/examples/tutorial/recovery.yaml
@@ -50,15 +50,15 @@ spec:
 
 Here,
 
- - `spec.workload` specifies a target workload that was backed up using `Restic`. A single `Restic` backups all types of workloads that matches the label-selector, but you can only restore a specific workload using a `Recovery`.
+ - `spec.workload` specifies a target workload that was backed up using `Backup`. A single `Backup` backups all types of workloads that matches the label-selector, but you can only restore a specific workload using a `Recovery`.
     - For workload kind `Statefulset`, you need to specify pod [index](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#ordinal-index) using `spec.podOrdinal`.
     - For workload kind `Daemonset`, you need to specify node name using `spec.nodeName`.
- - `spec.backend` specifies the backend that was used in `Restic` to take backups.
- - `spec.paths` specifies the file-group paths that was backed up using `Restic`.
+ - `spec.backend` specifies the backend that was used in `Backup` to take backups.
+ - `spec.paths` specifies the file-group paths that was backed up using `Backup`.
  - `spec.recoveredVolumes` indicates an array of volumes where snapshots will be recovered. Here, `mountPath` specifies where the volume will be mounted.
  Note that, `Recovery` recovers data in the same paths from where backup was taken (specified in `spec.paths`). So, volumes must be mounted on those paths or their parent paths.
 
-Stash operator watches for `Recovery` objects using Kubernetes api. It collects required snapshot information from the specified `Restic` object. Then it creates a recovery job that performs the recovery guides. On completion, job and associated pods are deleted by stash operator. To verify recovery, we can check the `Recovery` status.
+Stash operator watches for `Recovery` objects using Kubernetes api. It collects required snapshot information from the specified `Backup` object. Then it creates a recovery job that performs the recovery guides. On completion, job and associated pods are deleted by stash operator. To verify recovery, we can check the `Recovery` status.
 
 ```yaml
 $ kubectl get recovery stash-demo -o yaml
@@ -112,7 +112,7 @@ If you would like to uninstall Stash operator, please follow the steps [here](/d
 
 ## Next Steps
 
-- Learn about the details of Restic CRD [here](/docs/concepts/crds/restic.md).
+- Learn about the details of Backup CRD [here](/docs/concepts/crds/restic.md).
 - Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
 - To run backup in offline mode see [here](/docs/guides/offline_backup.md)
 - See the list of supported backends and how to configure them [here](/docs/guides/backends.md).
