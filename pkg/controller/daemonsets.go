@@ -166,18 +166,15 @@ func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet,
 		data, _ := meta.MarshalToJson(r, api.SchemeGroupVersion)
 		obj.Annotations[api.LastAppliedConfiguration] = string(data)
 		obj.Annotations[api.VersionTag] = c.options.StashImageTag
+
+		obj.Spec.UpdateStrategy.Type = extensions.RollingUpdateDaemonSetStrategyType
 		return obj
 	})
 	if err != nil {
 		return
 	}
 
-	err = ext_util.WaitUntilDaemonSetReady(c.k8sClient, resource.ObjectMeta)
-	if err != nil {
-		return
-	}
-	err = util.WaitUntilSidecarAdded(c.k8sClient, resource.Namespace, resource.Spec.Selector, new.Spec.Type)
-	return
+	return ext_util.WaitUntilDaemonSetReady(c.k8sClient, resource.ObjectMeta)
 }
 
 func (c *StashController) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSet, restic *api.Restic) (err error) {
@@ -209,10 +206,5 @@ func (c *StashController) EnsureDaemonSetSidecarDeleted(resource *extensions.Dae
 		return
 	}
 
-	err = ext_util.WaitUntilDaemonSetReady(c.k8sClient, resource.ObjectMeta)
-	if err != nil {
-		return
-	}
-	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, resource.Spec.Selector, restic.Spec.Type)
-	return
+	return ext_util.WaitUntilDaemonSetReady(c.k8sClient, resource.ObjectMeta)
 }

@@ -115,6 +115,7 @@ var _ = Describe("ReplicationController", func() {
 			By("Deleting restic " + restic.Name)
 			f.DeleteRestic(restic.ObjectMeta)
 
+			By("Wating to remove sidecar")
 			f.EventuallyReplicationController(rc.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		}
 

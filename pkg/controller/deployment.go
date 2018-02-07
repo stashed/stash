@@ -182,18 +182,14 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 	}
 
 	err = apps_util.WaitUntilDeploymentReady(c.k8sClient, resource.ObjectMeta)
-	if err != nil {
-		return
-	}
-	err = util.WaitUntilSidecarAdded(c.k8sClient, resource.Namespace, resource.Spec.Selector, new.Spec.Type)
 	return err
 }
 
 func (c *StashController) EnsureDeploymentSidecarDeleted(resource *apps.Deployment, restic *api.Restic) (err error) {
 	if c.options.EnableRBAC {
-		err := c.ensureSidecarRoleBindingDeleted(resource.ObjectMeta)
+		err = c.ensureSidecarRoleBindingDeleted(resource.ObjectMeta)
 		if err != nil {
-			return err
+			return
 		}
 	}
 
@@ -217,12 +213,7 @@ func (c *StashController) EnsureDeploymentSidecarDeleted(resource *apps.Deployme
 	if err != nil {
 		return
 	}
-
 	err = apps_util.WaitUntilDeploymentReady(c.k8sClient, resource.ObjectMeta)
-	if err != nil {
-		return
-	}
-	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, resource.Spec.Selector, restic.Spec.Type)
 	if err != nil {
 		return
 	}

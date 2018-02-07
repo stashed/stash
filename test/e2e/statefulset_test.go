@@ -39,7 +39,7 @@ var _ = Describe("StatefulSet", func() {
 		restic.Spec.Backend.StorageSecretName = cred.Name
 		recovery.Spec.Backend.StorageSecretName = cred.Name
 		svc = f.HeadlessService()
-		ss = f.StatefulSet(restic, TestStashImageTag)
+		ss = f.StatefulSet()
 	})
 
 	var (
@@ -129,6 +129,7 @@ var _ = Describe("StatefulSet", func() {
 			By("Deleting restic " + restic.Name)
 			f.DeleteRestic(restic.ObjectMeta)
 
+			By("Wating to remove sidecar")
 			f.EventuallyStatefulSet(ss.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		}
 
@@ -166,6 +167,7 @@ var _ = Describe("StatefulSet", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
+			By("Waiting to remove sidecar")
 			f.EventuallyStatefulSet(ss.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		}
 
@@ -267,8 +269,8 @@ var _ = Describe("StatefulSet", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 			})
-			XIt(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
-			XIt(`should backup existing StatefulSet`, shouldBackupExistingStatefulSet)
+			It(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
+			It(`should backup existing StatefulSet`, shouldBackupExistingStatefulSet)
 		})
 
 		Context(`"S3" backend`, func() {
@@ -276,8 +278,8 @@ var _ = Describe("StatefulSet", func() {
 				cred = f.SecretForS3Backend()
 				restic = f.ResticForS3Backend()
 			})
-			XIt(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
-			XIt(`should backup existing StatefulSet`, shouldBackupExistingStatefulSet)
+			It(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
+			It(`should backup existing StatefulSet`, shouldBackupExistingStatefulSet)
 		})
 
 		Context(`"DO" backend`, func() {
@@ -285,8 +287,8 @@ var _ = Describe("StatefulSet", func() {
 				cred = f.SecretForDOBackend()
 				restic = f.ResticForDOBackend()
 			})
-			XIt(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
-			XIt(`should backup existing StatefulSet`, shouldBackupExistingStatefulSet)
+			It(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
+			It(`should backup existing StatefulSet`, shouldBackupExistingStatefulSet)
 		})
 
 		Context(`"GCS" backend`, func() {
@@ -294,8 +296,8 @@ var _ = Describe("StatefulSet", func() {
 				cred = f.SecretForGCSBackend()
 				restic = f.ResticForGCSBackend()
 			})
-			XIt(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
-			XIt(`should backup existing StatefulSet`, shouldBackupExistingStatefulSet)
+			It(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
+			It(`should backup existing StatefulSet`, shouldBackupExistingStatefulSet)
 		})
 
 		Context(`"Azure" backend`, func() {
@@ -303,8 +305,8 @@ var _ = Describe("StatefulSet", func() {
 				cred = f.SecretForAzureBackend()
 				restic = f.ResticForAzureBackend()
 			})
-			XIt(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
-			XIt(`should backup existing StatefulSet`, shouldBackupExistingStatefulSet)
+			It(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
+			It(`should backup existing StatefulSet`, shouldBackupExistingStatefulSet)
 		})
 
 		Context(`"Swift" backend`, func() {
@@ -312,8 +314,8 @@ var _ = Describe("StatefulSet", func() {
 				cred = f.SecretForSwiftBackend()
 				restic = f.ResticForSwiftBackend()
 			})
-			XIt(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
-			XIt(`should backup existing StatefulSet`, shouldBackupExistingStatefulSet)
+			It(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
+			It(`should backup existing StatefulSet`, shouldBackupExistingStatefulSet)
 		})
 
 		Context(`"B2" backend`, func() {
@@ -321,8 +323,8 @@ var _ = Describe("StatefulSet", func() {
 				cred = f.SecretForB2Backend()
 				restic = f.ResticForB2Backend()
 			})
-			XIt(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
-			XIt(`should backup existing StatefulSet`, shouldBackupExistingStatefulSet)
+			It(`should backup new StatefulSet`, shouldBackupNewStatefulSet)
+			It(`should backup existing StatefulSet`, shouldBackupExistingStatefulSet)
 		})
 	})
 
@@ -337,7 +339,7 @@ var _ = Describe("StatefulSet", func() {
 			cred = f.SecretForLocalBackend()
 			restic = f.ResticForLocalBackend()
 		})
-		XIt(`should stop backup`, shouldStopBackupIfLabelChanged)
+		It(`should stop backup`, shouldStopBackupIfLabelChanged)
 	})
 
 	Describe("Changing Restic selector", func() {
@@ -351,7 +353,7 @@ var _ = Describe("StatefulSet", func() {
 			cred = f.SecretForLocalBackend()
 			restic = f.ResticForLocalBackend()
 		})
-		XIt(`should stop backup`, shouldStopBackupIfSelectorChanged)
+		It(`should stop backup`, shouldStopBackupIfSelectorChanged)
 	})
 
 	Describe("Deleting restic for", func() {
@@ -366,7 +368,7 @@ var _ = Describe("StatefulSet", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 			})
-			XIt(`should stop backup`, shouldStopBackup)
+			It(`should stop backup`, shouldStopBackup)
 		})
 
 		Context(`"S3" backend`, func() {
@@ -374,7 +376,7 @@ var _ = Describe("StatefulSet", func() {
 				cred = f.SecretForS3Backend()
 				restic = f.ResticForS3Backend()
 			})
-			XIt(`should stop backup`, shouldStopBackup)
+			It(`should stop backup`, shouldStopBackup)
 		})
 
 		Context(`"DO" backend`, func() {
@@ -382,7 +384,7 @@ var _ = Describe("StatefulSet", func() {
 				cred = f.SecretForDOBackend()
 				restic = f.ResticForDOBackend()
 			})
-			XIt(`should stop backup`, shouldStopBackup)
+			It(`should stop backup`, shouldStopBackup)
 		})
 
 		Context(`"GCS" backend`, func() {
@@ -390,7 +392,7 @@ var _ = Describe("StatefulSet", func() {
 				cred = f.SecretForGCSBackend()
 				restic = f.ResticForGCSBackend()
 			})
-			XIt(`should stop backup`, shouldStopBackup)
+			It(`should stop backup`, shouldStopBackup)
 		})
 
 		Context(`"Azure" backend`, func() {
@@ -398,7 +400,7 @@ var _ = Describe("StatefulSet", func() {
 				cred = f.SecretForAzureBackend()
 				restic = f.ResticForAzureBackend()
 			})
-			XIt(`should stop backup`, shouldStopBackup)
+			It(`should stop backup`, shouldStopBackup)
 		})
 
 		Context(`"Swift" backend`, func() {
@@ -406,7 +408,7 @@ var _ = Describe("StatefulSet", func() {
 				cred = f.SecretForSwiftBackend()
 				restic = f.ResticForSwiftBackend()
 			})
-			XIt(`should stop backup`, shouldStopBackup)
+			It(`should stop backup`, shouldStopBackup)
 		})
 
 		Context(`"B2" backend`, func() {
@@ -414,7 +416,7 @@ var _ = Describe("StatefulSet", func() {
 				cred = f.SecretForB2Backend()
 				restic = f.ResticForB2Backend()
 			})
-			XIt(`should stop backup`, shouldStopBackup)
+			It(`should stop backup`, shouldStopBackup)
 		})
 	})
 
@@ -501,7 +503,6 @@ var _ = Describe("StatefulSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating StatefulSet " + ss.Name)
-				ss = f.StatefulSetWitInitContainer(restic, TestStashImageTag)
 				_, err = f.CreateStatefulSet(ss)
 				Expect(err).NotTo(HaveOccurred())
 
