@@ -1,8 +1,6 @@
 package framework
 
 import (
-	"time"
-
 	"github.com/appscode/stash/pkg/util"
 	"k8s.io/api/admissionregistration/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,7 +37,6 @@ func (f *Framework) InitializerForWorkloads() v1alpha1.InitializerConfiguration 
 
 func (f *Framework) CreateInitializerConfiguration(config v1alpha1.InitializerConfiguration) error {
 	_, err := f.KubeClient.AdmissionregistrationV1alpha1().InitializerConfigurations().Create(&config)
-	time.Sleep(10*time.Second)
 	return err
 }
 

@@ -172,13 +172,10 @@ func (c *StashController) EnsureStatefulSetSidecar(resource *apps.StatefulSet, o
 		return obj
 	})
 	if err != nil {
-		return err
+		return
 	}
 
 	err = apps_util.WaitUntilStatefulSetReady(c.k8sClient, resource.ObjectMeta)
-	if err != nil {
-		return err
-	}
 	return err
 }
 
@@ -209,12 +206,9 @@ func (c *StashController) EnsureStatefulSetSidecarDeleted(resource *apps.Statefu
 		return obj
 	})
 	if err != nil {
-		return err
+		return
 	}
 
 	err = apps_util.WaitUntilStatefulSetReady(c.k8sClient, resource.ObjectMeta)
-	if err != nil {
-		return err
-	}
 	return err
 }

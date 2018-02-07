@@ -178,22 +178,18 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 		return obj
 	})
 	if err != nil {
-		return err
+		return
 	}
 
 	err = apps_util.WaitUntilDeploymentReady(c.k8sClient, resource.ObjectMeta)
-	if err != nil {
-		return err
-	}
-
 	return err
 }
 
 func (c *StashController) EnsureDeploymentSidecarDeleted(resource *apps.Deployment, restic *api.Restic) (err error) {
 	if c.options.EnableRBAC {
-		err := c.ensureSidecarRoleBindingDeleted(resource.ObjectMeta)
+		err = c.ensureSidecarRoleBindingDeleted(resource.ObjectMeta)
 		if err != nil {
-			return err
+			return
 		}
 	}
 
@@ -215,11 +211,11 @@ func (c *StashController) EnsureDeploymentSidecarDeleted(resource *apps.Deployme
 		return obj
 	})
 	if err != nil {
-		return err
+		return
 	}
 	err = apps_util.WaitUntilDeploymentReady(c.k8sClient, resource.ObjectMeta)
 	if err != nil {
-		return err
+		return
 	}
 	util.DeleteConfigmapLock(c.k8sClient, resource.Namespace, api.LocalTypedReference{Kind: api.KindDeployment, Name: resource.Name})
 	return err

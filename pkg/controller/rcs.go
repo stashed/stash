@@ -178,12 +178,12 @@ func (c *StashController) EnsureReplicationControllerSidecar(resource *core.Repl
 		return obj
 	})
 	if err != nil {
-		return err
+		return
 	}
 
 	err = core_util.WaitUntilRCReady(c.k8sClient, resource.ObjectMeta)
 	if err != nil {
-		return err
+		return
 	}
 	err = util.WaitUntilSidecarAdded(c.k8sClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector}, new.Spec.Type)
 	return err
@@ -220,11 +220,11 @@ func (c *StashController) EnsureReplicationControllerSidecarDeleted(resource *co
 
 	err = core_util.WaitUntilRCReady(c.k8sClient, resource.ObjectMeta)
 	if err != nil {
-		return err
+		return
 	}
 	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector}, restic.Spec.Type)
 	if err != nil {
-		return err
+		return
 	}
 	util.DeleteConfigmapLock(c.k8sClient, resource.Namespace, api.LocalTypedReference{Kind: api.KindReplicationController, Name: resource.Name})
 	return err
