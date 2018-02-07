@@ -85,7 +85,7 @@ var _ = BeforeSuite(func() {
 	By("Registering CRD group " + api.GroupName)
 	err = ctrl.Setup()
 	Expect(err).NotTo(HaveOccurred())
-	root.EventuallyCRD("restic." + api.GroupName).Should(Succeed())
+	root.EventuallyCRD("backup." + api.GroupName).Should(Succeed())
 
 	if createInitConfig {
 		By("Creating workload initializer")

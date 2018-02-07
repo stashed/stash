@@ -1,12 +1,12 @@
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
-  name: gcs-restic
+  name: gcs-backup
   namespace: default
 spec:
   selector:
     matchLabels:
-      app: gcs-restic
+      app: gcs-backup
   fileGroups:
   - path: /source/data
     retentionPolicyName: 'keep-last-5'

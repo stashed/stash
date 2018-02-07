@@ -24,7 +24,7 @@ var _ = Describe("Deployment", func() {
 	var (
 		err        error
 		f          *framework.Invocation
-		restic     api.Restic
+		backup     api.Backup
 		cred       core.Secret
 		deployment apps.Deployment
 		recovery   api.Recovery
@@ -40,7 +40,7 @@ var _ = Describe("Deployment", func() {
 		if missing, _ := BeZero().Match(cred); missing {
 			Skip("Missing repository credential")
 		}
-		restic.Spec.Backend.StorageSecretName = cred.Name
+		backup.Spec.Backend.StorageSecretName = cred.Name
 		recovery.Spec.Backend.StorageSecretName = cred.Name
 		deployment = f.Deployment()
 	})
@@ -51,8 +51,8 @@ var _ = Describe("Deployment", func() {
 			err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Creating restic " + restic.Name)
-			err = f.CreateRestic(restic)
+			By("Creating backup " + backup.Name)
+			err = f.CreateBackup(backup)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating Deployment " + deployment.Name)
@@ -63,12 +63,12 @@ var _ = Describe("Deployment", func() {
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+			f.EventuallyBackup(backup.ObjectMeta).Should(WithTransform(func(r *api.Backup) int64 {
 				return r.Status.BackupCount
 			}, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
-			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+			f.EventualEvent(backup.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
 
 		shouldBackupExistingDeployment = func() {
@@ -80,20 +80,20 @@ var _ = Describe("Deployment", func() {
 			_, err = f.CreateDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Creating restic " + restic.Name)
-			err = f.CreateRestic(restic)
+			By("Creating backup " + backup.Name)
+			err = f.CreateBackup(backup)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+			f.EventuallyBackup(backup.ObjectMeta).Should(WithTransform(func(r *api.Backup) int64 {
 				return r.Status.BackupCount
 			}, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
-			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+			f.EventualEvent(backup.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
 
 		shouldStopBackup = func() {
@@ -101,8 +101,8 @@ var _ = Describe("Deployment", func() {
 			err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Creating restic " + restic.Name)
-			err = f.CreateRestic(restic)
+			By("Creating backup " + backup.Name)
+			err = f.CreateBackup(backup)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating Deployment " + deployment.Name)
@@ -113,12 +113,12 @@ var _ = Describe("Deployment", func() {
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+			f.EventuallyBackup(backup.ObjectMeta).Should(WithTransform(func(r *api.Backup) int64 {
 				return r.Status.BackupCount
 			}, BeNumerically(">=", 1)))
 
-			By("Deleting restic " + restic.Name)
-			f.DeleteRestic(restic.ObjectMeta)
+			By("Deleting backup " + backup.Name)
+			f.DeleteBackup(backup.ObjectMeta)
 
 			By("Waiting to remove sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
@@ -129,8 +129,8 @@ var _ = Describe("Deployment", func() {
 			err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Creating restic " + restic.Name)
-			err = f.CreateRestic(restic)
+			By("Creating backup " + backup.Name)
+			err = f.CreateBackup(backup)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating Deployment " + deployment.Name)
@@ -141,7 +141,7 @@ var _ = Describe("Deployment", func() {
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+			f.EventuallyBackup(backup.ObjectMeta).Should(WithTransform(func(r *api.Backup) int64 {
 				return r.Status.BackupCount
 			}, BeNumerically(">=", 1)))
 
@@ -162,8 +162,8 @@ var _ = Describe("Deployment", func() {
 			err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Creating restic " + restic.Name)
-			err = f.CreateRestic(restic)
+			By("Creating backup " + backup.Name)
+			err = f.CreateBackup(backup)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating Deployment " + deployment.Name)
@@ -174,12 +174,12 @@ var _ = Describe("Deployment", func() {
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+			f.EventuallyBackup(backup.ObjectMeta).Should(WithTransform(func(r *api.Backup) int64 {
 				return r.Status.BackupCount
 			}, BeNumerically(">=", 1)))
 
-			By("Change selector of Restic " + restic.Name)
-			err = f.UpdateRestic(restic.ObjectMeta, func(in *api.Restic) *api.Restic {
+			By("Change selector of Backup " + backup.Name)
+			err = f.UpdateBackup(backup.ObjectMeta, func(in *api.Backup) *api.Backup {
 				in.Spec.Selector = metav1.LabelSelector{
 					MatchLabels: map[string]string{
 						"app": "unmatched",
@@ -212,8 +212,8 @@ var _ = Describe("Deployment", func() {
 			err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Creating restic " + restic.Name)
-			err = f.CreateRestic(restic)
+			By("Creating backup " + backup.Name)
+			err = f.CreateBackup(backup)
 			Expect(err).NotTo(HaveOccurred())
 
 			deployment.Spec.Replicas = types.Int32P(2) // two replicas
@@ -227,12 +227,12 @@ var _ = Describe("Deployment", func() {
 			f.CheckLeaderElection(deployment.ObjectMeta, api.KindDeployment)
 
 			By("Waiting for backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+			f.EventuallyBackup(backup.ObjectMeta).Should(WithTransform(func(r *api.Backup) int64 {
 				return r.Status.BackupCount
 			}, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
-			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+			f.EventualEvent(backup.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
 
 		shouldInitializeAndBackupDeployment = func() {
@@ -240,8 +240,8 @@ var _ = Describe("Deployment", func() {
 			err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Creating restic " + restic.Name)
-			err = f.CreateRestic(restic)
+			By("Creating backup " + backup.Name)
+			err = f.CreateBackup(backup)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating Deployment " + deployment.Name)
@@ -256,12 +256,12 @@ var _ = Describe("Deployment", func() {
 			Expect(obj).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+			f.EventuallyBackup(backup.ObjectMeta).Should(WithTransform(func(r *api.Backup) int64 {
 				return r.Status.BackupCount
 			}, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
-			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+			f.EventualEvent(backup.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
 
 		shouldDeleteJobAndDependents = func(jobName, namespace string) {
@@ -294,17 +294,17 @@ var _ = Describe("Deployment", func() {
 		}
 	)
 
-	Describe("Creating restic for", func() {
+	Describe("Creating backup for", func() {
 		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteBackup(backup.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 		})
 
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
-				restic = f.ResticForLocalBackend()
+				backup = f.BackupForLocalBackend()
 			})
 			It(`should backup new Deployment`, shouldBackupNewDeployment)
 			It(`should backup existing Deployment`, shouldBackupExistingDeployment)
@@ -313,7 +313,7 @@ var _ = Describe("Deployment", func() {
 		Context(`"S3" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForS3Backend()
-				restic = f.ResticForS3Backend()
+				backup = f.BackupForS3Backend()
 			})
 			It(`should backup new Deployment`, shouldBackupNewDeployment)
 			It(`should backup existing Deployment`, shouldBackupExistingDeployment)
@@ -322,7 +322,7 @@ var _ = Describe("Deployment", func() {
 		Context(`"DO" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForDOBackend()
-				restic = f.ResticForDOBackend()
+				backup = f.BackupForDOBackend()
 			})
 			It(`should backup new Deployment`, shouldBackupNewDeployment)
 			It(`should backup existing Deployment`, shouldBackupExistingDeployment)
@@ -331,7 +331,7 @@ var _ = Describe("Deployment", func() {
 		Context(`"GCS" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForGCSBackend()
-				restic = f.ResticForGCSBackend()
+				backup = f.BackupForGCSBackend()
 			})
 			It(`should backup new Deployment`, shouldBackupNewDeployment)
 			It(`should backup existing Deployment`, shouldBackupExistingDeployment)
@@ -340,7 +340,7 @@ var _ = Describe("Deployment", func() {
 		Context(`"Azure" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForAzureBackend()
-				restic = f.ResticForAzureBackend()
+				backup = f.BackupForAzureBackend()
 			})
 			It(`should backup new Deployment`, shouldBackupNewDeployment)
 			It(`should backup existing Deployment`, shouldBackupExistingDeployment)
@@ -349,7 +349,7 @@ var _ = Describe("Deployment", func() {
 		Context(`"Swift" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForSwiftBackend()
-				restic = f.ResticForSwiftBackend()
+				backup = f.BackupForSwiftBackend()
 			})
 			It(`should backup new Deployment`, shouldBackupNewDeployment)
 			It(`should backup existing Deployment`, shouldBackupExistingDeployment)
@@ -358,7 +358,7 @@ var _ = Describe("Deployment", func() {
 		Context(`"B2" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForB2Backend()
-				restic = f.ResticForB2Backend()
+				backup = f.BackupForB2Backend()
 			})
 			It(`should backup new Deployment`, shouldBackupNewDeployment)
 			It(`should backup existing Deployment`, shouldBackupExistingDeployment)
@@ -368,30 +368,30 @@ var _ = Describe("Deployment", func() {
 	Describe("Changing Deployment labels", func() {
 		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteBackup(backup.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 		})
 		BeforeEach(func() {
 			cred = f.SecretForLocalBackend()
-			restic = f.ResticForLocalBackend()
+			backup = f.BackupForLocalBackend()
 		})
 		It(`should stop backup`, shouldStopBackupIfLabelChanged)
 	})
 
-	Describe("Changing Restic selector", func() {
+	Describe("Changing Backup selector", func() {
 		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteBackup(backup.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 		})
 		BeforeEach(func() {
 			cred = f.SecretForLocalBackend()
-			restic = f.ResticForLocalBackend()
+			backup = f.BackupForLocalBackend()
 		})
 		It(`should stop backup`, shouldStopBackupIfSelectorChanged)
 	})
 
-	Describe("Deleting restic for", func() {
+	Describe("Deleting backup for", func() {
 		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
@@ -400,7 +400,7 @@ var _ = Describe("Deployment", func() {
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
-				restic = f.ResticForLocalBackend()
+				backup = f.BackupForLocalBackend()
 			})
 			It(`should stop backup`, shouldStopBackup)
 		})
@@ -408,7 +408,7 @@ var _ = Describe("Deployment", func() {
 		Context(`"S3" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForS3Backend()
-				restic = f.ResticForS3Backend()
+				backup = f.BackupForS3Backend()
 			})
 			It(`should stop backup`, shouldStopBackup)
 		})
@@ -416,7 +416,7 @@ var _ = Describe("Deployment", func() {
 		Context(`"DO" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForDOBackend()
-				restic = f.ResticForDOBackend()
+				backup = f.BackupForDOBackend()
 			})
 			It(`should stop backup`, shouldStopBackup)
 		})
@@ -424,7 +424,7 @@ var _ = Describe("Deployment", func() {
 		Context(`"GCS" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForGCSBackend()
-				restic = f.ResticForGCSBackend()
+				backup = f.BackupForGCSBackend()
 			})
 			It(`should stop backup`, shouldStopBackup)
 		})
@@ -432,7 +432,7 @@ var _ = Describe("Deployment", func() {
 		Context(`"Azure" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForAzureBackend()
-				restic = f.ResticForAzureBackend()
+				backup = f.BackupForAzureBackend()
 			})
 			It(`should stop backup`, shouldStopBackup)
 		})
@@ -440,7 +440,7 @@ var _ = Describe("Deployment", func() {
 		Context(`"Swift" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForSwiftBackend()
-				restic = f.ResticForSwiftBackend()
+				backup = f.BackupForSwiftBackend()
 			})
 			It(`should stop backup`, shouldStopBackup)
 		})
@@ -448,7 +448,7 @@ var _ = Describe("Deployment", func() {
 		Context(`"B2" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForB2Backend()
-				restic = f.ResticForB2Backend()
+				backup = f.BackupForB2Backend()
 			})
 			It(`should stop backup`, shouldStopBackup)
 		})
@@ -457,7 +457,7 @@ var _ = Describe("Deployment", func() {
 	Describe("Creating recovery for", func() {
 		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteBackup(backup.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 			f.DeleteRecovery(recovery.ObjectMeta)
 			framework.CleanupMinikubeHostPath()
@@ -466,8 +466,8 @@ var _ = Describe("Deployment", func() {
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
-				restic = f.ResticForHostPathLocalBackend()
-				recovery = f.RecoveryForRestic(restic)
+				backup = f.BackupForHostPathLocalBackend()
+				recovery = f.RecoveryForBackup(backup)
 			})
 			It(`should restore local deployment backup and cleanup dependents`, func() {
 				By("Checking recovery successful")
@@ -480,8 +480,8 @@ var _ = Describe("Deployment", func() {
 		Context(`"S3" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForS3Backend()
-				restic = f.ResticForS3Backend()
-				recovery = f.RecoveryForRestic(restic)
+				backup = f.BackupForS3Backend()
+				recovery = f.RecoveryForBackup(backup)
 			})
 			It(`should restore s3 deployment backup`, shouldRestoreDeployment)
 		})
@@ -490,7 +490,7 @@ var _ = Describe("Deployment", func() {
 	Describe("Recovery as job's owner-ref", func() {
 		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteBackup(backup.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 			f.DeleteRecovery(recovery.ObjectMeta)
 			framework.CleanupMinikubeHostPath()
@@ -499,8 +499,8 @@ var _ = Describe("Deployment", func() {
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
-				restic = f.ResticForHostPathLocalBackend()
-				recovery = f.RecoveryForRestic(restic)
+				backup = f.BackupForHostPathLocalBackend()
+				recovery = f.RecoveryForBackup(backup)
 			})
 			It(`should delete job after recovery deleted`, func() {
 				recovery.Spec.Workload = api.LocalTypedReference{
@@ -533,14 +533,14 @@ var _ = Describe("Deployment", func() {
 	Describe("Leader election for", func() {
 		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteBackup(backup.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 		})
 
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
-				restic = f.ResticForLocalBackend()
+				backup = f.BackupForLocalBackend()
 			})
 			It(`should elect leader and backup new Deployment`, shouldElectLeaderAndBackupDeployment)
 		})
@@ -549,14 +549,14 @@ var _ = Describe("Deployment", func() {
 	Describe("Stash initializer for", func() {
 		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteBackup(backup.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 		})
 
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
-				restic = f.ResticForLocalBackend()
+				backup = f.BackupForLocalBackend()
 			})
 			It("should initialize and backup new Deployment", shouldInitializeAndBackupDeployment)
 		})
@@ -565,7 +565,7 @@ var _ = Describe("Deployment", func() {
 	Describe("Offline backup for", func() {
 		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteBackup(backup.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 			framework.CleanupMinikubeHostPath()
 		})
@@ -573,23 +573,23 @@ var _ = Describe("Deployment", func() {
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
-				restic = f.ResticForHostPathLocalBackend()
-				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "*/5 * * * *"
+				backup = f.BackupForHostPathLocalBackend()
+				backup.Spec.Type = api.BackupOffline
+				backup.Spec.Schedule = "*/5 * * * *"
 			})
 			It(`should backup new Deployment`, func() {
 				By("Creating repository Secret " + cred.Name)
 				err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Creating restic " + restic.Name)
-				err = f.CreateRestic(restic)
+				By("Creating backup " + backup.Name)
+				err = f.CreateBackup(backup)
 				Expect(err).NotTo(HaveOccurred())
 
-				cronJobName := util.KubectlCronPrefix + restic.Name
+				cronJobName := util.KubectlCronPrefix + backup.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
-					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
+					_, err := f.KubeClient.BatchV1beta1().CronJobs(backup.Namespace).Get(cronJobName, metav1.GetOptions{})
 					return err
 				}).Should(BeNil())
 
@@ -601,17 +601,17 @@ var _ = Describe("Deployment", func() {
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
 
 				By("Waiting for initial backup to complete")
-				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+				f.EventuallyBackup(backup.ObjectMeta).Should(WithTransform(func(r *api.Backup) int64 {
 					return r.Status.BackupCount
 				}, BeNumerically(">=", 1)))
 
 				By("Waiting for next backup to complete")
-				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+				f.EventuallyBackup(backup.ObjectMeta).Should(WithTransform(func(r *api.Backup) int64 {
 					return r.Status.BackupCount
 				}, BeNumerically(">=", 2)))
 
 				By("Waiting for backup event")
-				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", 1)))
+				f.EventualEvent(backup.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", 1)))
 			})
 		})
 	})
@@ -619,16 +619,16 @@ var _ = Describe("Deployment", func() {
 	Describe("No retention policy", func() {
 		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteBackup(backup.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 		})
 
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
-				restic = f.ResticForLocalBackend()
-				restic.Spec.FileGroups[0].RetentionPolicyName = ""
-				restic.Spec.RetentionPolicies = []api.RetentionPolicy{}
+				backup = f.BackupForLocalBackend()
+				backup.Spec.FileGroups[0].RetentionPolicyName = ""
+				backup.Spec.RetentionPolicies = []api.RetentionPolicy{}
 			})
 			It(`should backup new Deployment`, shouldBackupNewDeployment)
 		})
@@ -636,7 +636,7 @@ var _ = Describe("Deployment", func() {
 	Describe("Minio server", func() {
 		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteBackup(backup.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 			f.DeleteMinioServer()
 		})
@@ -646,7 +646,7 @@ var _ = Describe("Deployment", func() {
 				addrs, err := f.CreateMinioServer()
 				Expect(err).NotTo(HaveOccurred())
 
-				restic = f.ResticForMinioBackend("https://" + addrs)
+				backup = f.BackupForMinioBackend("https://" + addrs)
 				cred = f.SecretForMinioBackend(true)
 
 			})
@@ -656,8 +656,8 @@ var _ = Describe("Deployment", func() {
 				err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Creating restic")
-				err = f.CreateRestic(restic)
+				By("Creating backup")
+				err = f.CreateBackup(backup)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating Deployment " + deployment.Name)
@@ -668,12 +668,12 @@ var _ = Describe("Deployment", func() {
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 				By("Waiting for backup to complete")
-				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+				f.EventuallyBackup(backup.ObjectMeta).Should(WithTransform(func(r *api.Backup) int64 {
 					return r.Status.BackupCount
 				}, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+				f.EventualEvent(backup.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
 			})
 		})
@@ -683,7 +683,7 @@ var _ = Describe("Deployment", func() {
 				addrs, err := f.CreateMinioServer()
 				Expect(err).NotTo(HaveOccurred())
 
-				restic = f.ResticForMinioBackend("https://" + addrs)
+				backup = f.BackupForMinioBackend("https://" + addrs)
 				cred = f.SecretForMinioBackend(false)
 
 			})
@@ -693,8 +693,8 @@ var _ = Describe("Deployment", func() {
 				err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Creating restic without cacert")
-				err = f.CreateRestic(restic)
+				By("Creating backup without cacert")
+				err = f.CreateBackup(backup)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating Deployment " + deployment.Name)
@@ -705,10 +705,10 @@ var _ = Describe("Deployment", func() {
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 				By("Waiting to count failed setup event")
-				f.EventualWarning(restic.ObjectMeta).Should(WithTransform(f.CountFailedSetup, BeNumerically(">=", 1)))
+				f.EventualWarning(backup.ObjectMeta).Should(WithTransform(f.CountFailedSetup, BeNumerically(">=", 1)))
 
 				By("Waiting to count successful backup event")
-				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically("==", 0)))
+				f.EventualEvent(backup.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically("==", 0)))
 
 			})
 		})
@@ -718,7 +718,7 @@ var _ = Describe("Deployment", func() {
 		var registryCred core.Secret
 		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteBackup(backup.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 			f.DeleteSecret(registryCred.ObjectMeta)
 		})
@@ -733,8 +733,8 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			cred = f.SecretForLocalBackend()
-			restic = f.ResticForLocalBackend()
-			restic.Spec.ImagePullSecrets = []core.LocalObjectReference{
+			backup = f.BackupForLocalBackend()
+			backup.Spec.ImagePullSecrets = []core.LocalObjectReference{
 				{
 					Name: registryCred.Name,
 				},
@@ -743,24 +743,24 @@ var _ = Describe("Deployment", func() {
 		It(`should backup new Deployment`, shouldBackupNewDeployment)
 	})
 
-	Describe("Pause Restic to stop backup", func() {
+	Describe("Pause Backup to stop backup", func() {
 		Context(`"Local" backend`, func() {
 			AfterEach(func() {
 				f.DeleteDeployment(deployment.ObjectMeta)
-				f.DeleteRestic(restic.ObjectMeta)
+				f.DeleteBackup(backup.ObjectMeta)
 				f.DeleteSecret(cred.ObjectMeta)
 			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
-				restic = f.ResticForLocalBackend()
+				backup = f.BackupForLocalBackend()
 			})
 			It(`should be able to Pause and Resume backup`, func() {
 				By("Creating repository Secret " + cred.Name)
 				err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Creating restic")
-				err = f.CreateRestic(restic)
+				By("Creating backup")
+				err = f.CreateBackup(backup)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating Deployment " + deployment.Name)
@@ -771,47 +771,47 @@ var _ = Describe("Deployment", func() {
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 				By("Waiting for backup to complete")
-				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+				f.EventuallyBackup(backup.ObjectMeta).Should(WithTransform(func(r *api.Backup) int64 {
 					return r.Status.BackupCount
 				}, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+				f.EventualEvent(backup.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
-				By(`Patching Restic with "paused: true"`)
-				err = f.CreateOrPatchRestic(restic.ObjectMeta, func(in *api.Restic) *api.Restic {
+				By(`Patching Backup with "paused: true"`)
+				err = f.CreateOrPatchBackup(backup.ObjectMeta, func(in *api.Backup) *api.Backup {
 					in.Spec.Paused = true
 					return in
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				resticObj, err := f.StashClient.StashV1alpha1().Restics(restic.Namespace).Get(restic.Name, metav1.GetOptions{})
+				backupObj, err := f.StashClient.StashV1alpha1().Backups(backup.Namespace).Get(backup.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 
-				previousBackupCount := resticObj.Status.BackupCount
+				previousBackupCount := backupObj.Status.BackupCount
 
 				By("Wating 2 minutes")
 				time.Sleep(2 * time.Minute)
 
 				By("Checking that Backup count has not changed")
-				resticObj, err = f.StashClient.StashV1alpha1().Restics(restic.Namespace).Get(restic.Name, metav1.GetOptions{})
+				backupObj, err = f.StashClient.StashV1alpha1().Backups(backup.Namespace).Get(backup.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(resticObj.Status.BackupCount).Should(BeNumerically("==", previousBackupCount))
+				Expect(backupObj.Status.BackupCount).Should(BeNumerically("==", previousBackupCount))
 
-				By(`Patching Restic with "paused: false"`)
-				err = f.CreateOrPatchRestic(restic.ObjectMeta, func(in *api.Restic) *api.Restic {
+				By(`Patching Backup with "paused: false"`)
+				err = f.CreateOrPatchBackup(backup.ObjectMeta, func(in *api.Backup) *api.Backup {
 					in.Spec.Paused = false
 					return in
 				})
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for backup to complete")
-				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+				f.EventuallyBackup(backup.ObjectMeta).Should(WithTransform(func(r *api.Backup) int64 {
 					return r.Status.BackupCount
 				}, BeNumerically(">", previousBackupCount)))
 
 				By("Waiting for backup event")
-				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", previousBackupCount)))
+				f.EventualEvent(backup.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", previousBackupCount)))
 
 			})
 

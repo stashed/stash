@@ -19,7 +19,7 @@ func NewCmdRecover() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:               "recover",
-		Short:             "Recover restic backup",
+		Short:             "Recover backup",
 		DisableAutoGenTag: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)

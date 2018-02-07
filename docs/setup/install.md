@@ -111,25 +111,25 @@ $ kubectl get crd -l app=stash
 
 NAME                            AGE
 recoveries.stash.appscode.com   5s
-restics.stash.appscode.com      5s
+backups.stash.appscode.com      5s
 ```
 
 Now, you are ready to [take your first backup](/docs/guides/README.md) using Stash.
 
 
-## Using kubectl for Restic
+## Using kubectl for Backup
 ```console
-# List all Restic objects
-$ kubectl get restic --all-namespaces
+# List all Backup objects
+$ kubectl get backup --all-namespaces
 
-# List Restic objects for a namespace
-$ kubectl get restic -n <namespace>
+# List Backup objects for a namespace
+$ kubectl get backup -n <namespace>
 
-# Get Restic YAML
-$ kubectl get restic -n <namespace> <name> -o yaml
+# Get Backup YAML
+$ kubectl get backup -n <namespace> <name> -o yaml
 
-# Describe Restic. Very useful to debug problems.
-$ kubectl describe restic -n <namespace> <name>
+# Describe Backup. Very useful to debug problems.
+$ kubectl describe backup -n <namespace> <name>
 ```
 
 ## Using kubectl for Recovery
@@ -165,7 +165,7 @@ GitBranch = release-0.5
 GitTag = 0.7.0-alpha.0
 CommitTimestamp = 2017-10-10T05:24:23
 
-$ kubectl exec -it $POD_NAME -c operator -n $POD_NAMESPACE restic version
-restic 0.8.1
+$ kubectl exec -it $POD_NAME -c operator -n $POD_NAMESPACE backup version
+backup 0.8.1
 compiled with go1.9 on linux/amd64
 ```

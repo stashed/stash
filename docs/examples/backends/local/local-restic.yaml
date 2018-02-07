@@ -1,12 +1,12 @@
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
-  name: local-restic
+  name: local-backup
   namespace: default
 spec:
   selector:
     matchLabels:
-      app: local-restic
+      app: local-backup
   fileGroups:
   - path: /source/data
     retentionPolicyName: 'keep-last-5'
@@ -14,7 +14,7 @@ spec:
     local:
       mountPath: /repo
       hostPath:
-        path: /data/stash-test/restic-repo
+        path: /data/stash-test/backup-repo
     storageSecretName: local-secret
   schedule: '@every 1m'
   volumeMounts:

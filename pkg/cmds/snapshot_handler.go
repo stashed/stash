@@ -45,10 +45,10 @@ func (e PrometheusExporter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Missing parameter:"+PathParamName, http.StatusBadRequest)
 		return
 	}
-	resticCLI := cli.New(e.scratchDir, true, "")
+	backupCLI := cli.New(e.scratchDir, true, "")
 
-	var resource *api.Restic
-	resource, err := e.stashClient.Restics(namespace).Get(name, metav1.GetOptions{})
+	var resource *api.Backup
+	resource, err := e.stashClient.Backups(namespace).Get(name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -70,13 +70,13 @@ func (e PrometheusExporter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = resticCLI.SetupEnv(resource.Spec.Backend, secret, r.URL.Query().Get(QueryParamAutoPrefix))
+	err = backupCLI.SetupEnv(resource.Spec.Backend, secret, r.URL.Query().Get(QueryParamAutoPrefix))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	snapshots, err := resticCLI.ListSnapshots()
+	snapshots, err := backupCLI.ListSnapshots()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

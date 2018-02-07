@@ -29,7 +29,7 @@ func (a *AdmissionHook) Resource() (plural schema.GroupVersionResource, singular
 
 func (a *AdmissionHook) Admit(req *admission.AdmissionRequest) *admission.AdmissionResponse {
 	status := &admission.AdmissionResponse{}
-	supportedKinds := sets.NewString(api.ResourceKindRestic, api.ResourceKindRecovery)
+	supportedKinds := sets.NewString(api.ResourceKindBackup, api.ResourceKindRecovery)
 
 	if (req.Operation != admission.Create && req.Operation != admission.Update) ||
 		len(req.SubResource) != 0 ||
@@ -40,8 +40,8 @@ func (a *AdmissionHook) Admit(req *admission.AdmissionRequest) *admission.Admiss
 	}
 
 	switch req.Kind.Kind {
-	case api.ResourceKindRestic:
-		obj := &api.Restic{}
+	case api.ResourceKindBackup:
+		obj := &api.Backup{}
 		err := json.Unmarshal(req.Object.Raw, obj)
 		if err != nil {
 			status.Allowed = false

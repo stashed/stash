@@ -19,16 +19,16 @@ section_menu_id: guides
 Stash supports the following types of Kubernetes workloads.
 
 ## Deployments
-To backup a Deployment, create a Restic with matching selectors. You can find a full working demo in [examples folder](/docs/examples/workloads/deployment.yaml).
+To backup a Deployment, create a Backup with matching selectors. You can find a full working demo in [examples folder](/docs/examples/workloads/deployment.yaml).
 
 ## ReplicaSets
-To backup a ReplicaSet, create a Restic with matching selectors. You can find a full working demo in [examples folder](/docs/examples/workloads/replicaset.yaml).
+To backup a ReplicaSet, create a Backup with matching selectors. You can find a full working demo in [examples folder](/docs/examples/workloads/replicaset.yaml).
 
 ## ReplicationControllers
-To backup a ReplicationController, create a Restic with matching selectors. You can find a full working demo in [examples folder](/docs/examples/workloads/rc.yaml).
+To backup a ReplicationController, create a Backup with matching selectors. You can find a full working demo in [examples folder](/docs/examples/workloads/rc.yaml).
 
 ## DaemonSets
-To backup a DaemonSet, create a Restic with matching selectors. You can find a full working demo in [examples folder](/docs/examples/workloads/daemonset.yaml). This example shows how Stash can be used to backup host paths on all nodes of a cluster. First run a DaemonSet without nodeSelectors. This DaemonSet acts as a vector for Restic sidecar and mounts host paths that are to be backed up. In this example, we use a `busybox` container for this. Now, create a Restic that has a matching selector. This Restic also `spec.volumeMounts` the said host path and points to the host path in `spec.fileGroups`.
+To backup a DaemonSet, create a Backup with matching selectors. You can find a full working demo in [examples folder](/docs/examples/workloads/daemonset.yaml). This example shows how Stash can be used to backup host paths on all nodes of a cluster. First run a DaemonSet without nodeSelectors. This DaemonSet acts as a vector for Backup sidecar and mounts host paths that are to be backed up. In this example, we use a `busybox` container for this. Now, create a Backup that has a matching selector. This Backup also `spec.volumeMounts` the said host path and points to the host path in `spec.fileGroups`.
 
 ## StatefulSets
 Kubernetes does not support updating StatefulSet after they are created. It is recomanded to use initializer for StatefulSets. For details see [here](/docs/initializer.md).
@@ -66,7 +66,7 @@ spec:
           name: source-data
       - args:
         - backup
-        - --restic-name=stash-demo
+        - --backup-name=stash-demo
         - --workload-kind=Statefulset
         - --workload-name=stash-demo
         - --run-via-cron=true
@@ -115,14 +115,14 @@ spec:
             path: labels
         name: stash-podinfo
       - hostPath:
-          path: /data/stash-test/restic-repo
+          path: /data/stash-test/backup-repo
           type: ""
         name: stash-local
 ```
 
 You can find the full working demo in [examples folder](/docs/examples/workloads/statefulset.yaml). The section you should change for your own StatefulSet are:
 
- - `--restic-name` flag should be set to the name of the Restic used as configuration.
+ - `--backup-name` flag should be set to the name of the Backup used as configuration.
  - `--workload-kind` flag specifies the kind of workload (Deployment/Replicaset/RepliationController/DaemonSet/StatefulSet).
  - `--workload-name` flag specifies the name of workload where sidecar pod is added.
 
@@ -131,7 +131,7 @@ To learn about the meaning of various flags, please visit [here](/docs/reference
 ## Next Steps
 
 - Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/backup.md).
-- Learn about the details of Restic CRD [here](/docs/concepts/crds/restic.md).
+- Learn about the details of Backup CRD [here](/docs/concepts/crds/backup.md).
 - To restore a backup see [here](/docs/guides/restore.md).
 - Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
 - To run backup in offline mode see [here](/docs/guides/offline_backup.md)

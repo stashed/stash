@@ -4,10 +4,10 @@ import (
 	core "k8s.io/api/core/v1"
 )
 
-func (r Restic) ObjectReference() *core.ObjectReference {
+func (r Backup) ObjectReference() *core.ObjectReference {
 	return &core.ObjectReference{
 		APIVersion:      SchemeGroupVersion.String(),
-		Kind:            ResourceKindRestic,
+		Kind:            ResourceKindBackup,
 		Namespace:       r.Namespace,
 		Name:            r.Name,
 		UID:             r.UID,

@@ -11,11 +11,11 @@ section_menu_id: reference
 ---
 ## stash check
 
-Check restic backup
+Check backup backup
 
 ### Synopsis
 
-Check restic backup
+Check backup backup
 
 ```
 stash check [flags]
@@ -28,7 +28,7 @@ stash check [flags]
       --host-name string      Host name for workload.
       --kubeconfig string     Path to kubeconfig file with authorization information (the master location is set by the master flag).
       --master string         The address of the Kubernetes API server (overrides any value in kubeconfig)
-      --restic-name string    Name of the Restic CRD.
+      --backup-name string    Name of the Backup CRD.
       --smart-prefix string   Smart prefix for workload
 ```
 

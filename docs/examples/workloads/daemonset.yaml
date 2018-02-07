@@ -57,9 +57,9 @@ metadata:
 type: Opaque
 ---
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
-  name: daemonset-restic
+  name: daemonset-backup
   namespace: default
 spec:
   selector:
@@ -72,7 +72,7 @@ spec:
     local:
       mountPath: /repo
       hostPath:
-        path: /data/stash-test/restic-repo
+        path: /data/stash-test/backup-repo
     storageSecretName: daemonset-secret
   schedule: '@every 1m'
   volumeMounts:

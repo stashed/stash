@@ -1,12 +1,12 @@
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
-  name: b2-restic
+  name: b2-backup
   namespace: default
 spec:
   selector:
     matchLabels:
-      app: b2-restic
+      app: b2-backup
   fileGroups:
   - path: /source/data
     retentionPolicyName: 'keep-last-5'

@@ -18,17 +18,17 @@ If you are upgrading Stash to a patch release, please reapply the [installation 
 
 ## Upgrading from 0.5.x to 0.6.x
 
-The format for `Restic` object has changed in backward incompatiable manner between 0.5.x and 0.7.0-alpha.0 . The steps involved in upgrading Stash operator to 0.7.0-alpha.0 from prior version involves the following steps:
+The format for `Backup` object has changed in backward incompatiable manner between 0.5.x and 0.7.0-alpha.0 . The steps involved in upgrading Stash operator to 0.7.0-alpha.0 from prior version involves the following steps:
 
-1. Backup all your old `Restic` CRDs.
-2. Delete your old `Restic` objects. It will stop taking backups and remove sidecars from pods.
+1. Backup all your old `Backup` CRDs.
+2. Delete your old `Backup` objects. It will stop taking backups and remove sidecars from pods.
 3. Uninstall old `Stash` operator.
 4. Move repositories to new location if you want to keep your old backups. We have changed repository location in new version of `Stash` to remove conflicts between  repositories for different target workloads.
 
 **Old Version**
 
 ```
-Location depending on restic.spec.useAutoPrefix:
+Location depending on backup.spec.useAutoPrefix:
 
 Not Specified or, Smart:
 
@@ -54,9 +54,9 @@ Daemon Set:             {BackendPrefix}/daemonset/{WorkloadName}/{NodeName}/
 ```
 
 5. Install new `Stash` operator.
-6. Update your backed up `Restic` CRDs in the following ways:
-- `restic.spec.useAutoPrefix` is removed in new version of `Stash`. If you specify it in your old `Restic` CRD, you should remove it.
-- `restic.spec.fileGroups[].retentionPolicy` is moved to `restic.spec.retentionPolicies[]` and referenced using `restic.spec.fileGroups[].retentionPolicyName`.
+6. Update your backed up `Backup` CRDs in the following ways:
+- `backup.spec.useAutoPrefix` is removed in new version of `Stash`. If you specify it in your old `Backup` CRD, you should remove it.
+- `backup.spec.fileGroups[].retentionPolicy` is moved to `backup.spec.retentionPolicies[]` and referenced using `backup.spec.fileGroups[].retentionPolicyName`.
 
 Consider following example:
 
@@ -95,7 +95,7 @@ retentionPolicies:
   keepLast: 10
 ```
 
-7. Now, re-deploy restic CRDs. It will add sidecar to pods again and continue backup.
+7. Now, re-deploy backup CRDs. It will add sidecar to pods again and continue backup.
 
 
 ### Example: Upgrading S3 backed volume
@@ -154,13 +154,13 @@ spec:
         name: source-data
 ```
 
-Let say you are using following old `Restic` CRD to backup the `busybox` deployment:
+Let say you are using following old `Backup` CRD to backup the `busybox` deployment:
 
 ```yaml
-$ kubectl get restic s3-restic -o yaml
+$ kubectl get backup s3-backup -o yaml
 
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
   clusterName: ""
   creationTimestamp: 2017-12-11T08:29:16Z
@@ -168,10 +168,10 @@ metadata:
   deletionTimestamp: null
   generation: 0
   initializers: null
-  name: s3-restic
+  name: s3-backup
   namespace: default
   resourceVersion: "39256"
-  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/s3-restic
+  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/backups/s3-backup
   uid: 5ffb03c7-de4d-11e7-af32-0800274b5eab
 spec:
   backend:
@@ -199,23 +199,23 @@ status:
   lastBackupTime: 2017-12-11T08:32:40Z
 ```
 
-A restic-repository is initialized in `demo` folder of your `stash-qa` bucket and so far 3 backups are created and stored there. Now, the following steps will upgrade version of `Stash` without loosing those 3 backups.
+A backup-repository is initialized in `demo` folder of your `stash-qa` bucket and so far 3 backups are created and stored there. Now, the following steps will upgrade version of `Stash` without loosing those 3 backups.
 
 #### Step 1
 
-Dump your old `Restic` CRD in a file.
+Dump your old `Backup` CRD in a file.
 
 ```
-$ kubectl get restic s3-restic -o yaml --export > s3-restic-dump.yaml
+$ kubectl get backup s3-backup -o yaml --export > s3-backup-dump.yaml
 ```
 
 #### Step 2
 
-Delete the old `Restic` object.
+Delete the old `Backup` object.
 
 ```
-$ kubectl delete restic s3-restic
-restic "s3-restic" deleted
+$ kubectl delete backup s3-backup
+backup "s3-backup" deleted
 ```
 
 Now wait for sidecar to be removed by `Stash` operator.
@@ -252,11 +252,11 @@ Install new `Stash` operator by following the instructions [here](/docs/setup/in
 
 #### Step 6
 
-Now update your backed up `Restic` CRD as follows:
+Now update your backed up `Backup` CRD as follows:
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
   clusterName: ""
   creationTimestamp: 2017-12-11T08:29:16Z
@@ -264,10 +264,10 @@ metadata:
   deletionTimestamp: null
   generation: 0
   initializers: null
-  name: s3-restic
+  name: s3-backup
   namespace: default
   resourceVersion: "39256"
-  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/s3-restic
+  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/backups/s3-backup
   uid: 5ffb03c7-de4d-11e7-af32-0800274b5eab
 spec:
   backend:
@@ -297,19 +297,19 @@ status:
   lastBackupTime: 2017-12-11T08:32:40Z
 ```
 
-Re-deploy the updated `Restic` CRD.
+Re-deploy the updated `Backup` CRD.
 
 ```
-$ kubectl apply -f s3-restic.yaml
+$ kubectl apply -f s3-backup.yaml
 ```
 
-It will add sidecar to the `busybox` pods again and continue backup from where it stopped. You can check status of the `Restic` CRD to verify that new backups are creating.
+It will add sidecar to the `busybox` pods again and continue backup from where it stopped. You can check status of the `Backup` CRD to verify that new backups are creating.
 
 ```yaml
-$ kubectl get restic s3-restic -o yaml
+$ kubectl get backup s3-backup -o yaml
 
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
   clusterName: ""
   creationTimestamp: 2017-12-11T09:36:08Z
@@ -317,10 +317,10 @@ metadata:
   deletionTimestamp: null
   generation: 0
   initializers: null
-  name: s3-restic
+  name: s3-backup
   namespace: default
   resourceVersion: "44000"
-  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/s3-restic
+  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/backups/s3-backup
   uid: b7511b7a-de56-11e7-af32-0800274b5eab
 spec:
   backend:

@@ -15,14 +15,14 @@ section_menu_id: guides
 > New to Stash? Please start [here](/docs/concepts/README.md).
 
 # Stash Backends
-Backend is where `restic` stores snapshots. For any backend, a Kubernetes Secret in the same namespace is needed to provide restic repository credentials. This Secret can be configured by setting `spec.backend.storageSecretName` field. This document lists the various supported backends for Stash and how to configure those.
+Backend is where `backup` stores snapshots. For any backend, a Kubernetes Secret in the same namespace is needed to provide backup repository credentials. This Secret can be configured by setting `spec.backend.storageSecretName` field. This document lists the various supported backends for Stash and how to configure those.
 
 ### Local
 `Local` backend refers to a local path inside `stash` sidecar container. Any Kubernetes supported [persistent volume](https://kubernetes.io/docs/concepts/storage/volumes/) can be used here. Some examples are: `emptyDir` for testing, NFS, Ceph, GlusterFS, etc. To configure this backend, following secret keys are needed:
 
 | Key               | Description                                                |
 |-------------------|------------------------------------------------------------|
-| `RESTIC_PASSWORD` | `Required`. Password used to encrypt snapshots by `restic` |
+| `RESTIC_PASSWORD` | `Required`. Password used to encrypt snapshots by `backup` |
 
 ```console
 $ echo -n 'changeit' > RESTIC_PASSWORD
@@ -47,7 +47,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic crd using this secret. Following parameters are available for `Local` backend.
+Now, you can create a Backup crd using this secret. Following parameters are available for `Local` backend.
 
 | Parameter            | Description                                                                                   |
 |----------------------|-----------------------------------------------------------------------------------------------|
@@ -56,20 +56,20 @@ Now, you can create a Restic crd using this secret. Following parameters are ava
 | `local.VolumeSource` | `Required`. Any Kubernetes volume. Can be specified inlined. Example: `hostPath`              |
 
 ```console
-$ kubectl apply -f ./docs/examples/backends/local/local-restic.yaml
-restic "local-restic" created
+$ kubectl apply -f ./docs/examples/backends/local/local-backup.yaml
+backup "local-backup" created
 ```
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
-  name: local-restic
+  name: local-backup
   namespace: default
 spec:
   selector:
     matchLabels:
-      app: local-restic
+      app: local-backup
   fileGroups:
   - path: /source/data
     retentionPolicyName: 'keep-last-5'
@@ -77,7 +77,7 @@ spec:
     local:
       mountPath: /repo
       hostPath:
-        path: /data/stash-test/restic-repo
+        path: /data/stash-test/backup-repo
     storageSecretName: local-secret
   schedule: '@every 1m'
   volumeMounts:
@@ -95,7 +95,7 @@ Stash supports AWS S3 service or [Minio](https://minio.io/) servers as backend. 
 
 | Key                     | Description                                                     |
 |-------------------------|-----------------------------------------------------------------|
-| `RESTIC_PASSWORD`       | `Required`. Password used to encrypt snapshots by `restic`      |
+| `RESTIC_PASSWORD`       | `Required`. Password used to encrypt snapshots by `backup`      |
 | `AWS_ACCESS_KEY_ID`     | `Required`. AWS / Minio / DigitalOcean Spaces access key ID     |
 | `AWS_SECRET_ACCESS_KEY` | `Required`. AWS / Minio / DigitalOcean Spaces secret access key |
 | `CA_CERT_DATA`          | `optional`. CA certificate used by storage backend. This can be used to pass a self-signed ca used with Minio server. |
@@ -130,29 +130,29 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic crd using this secret. Following parameters are available for `S3` backend.
+Now, you can create a Backup crd using this secret. Following parameters are available for `S3` backend.
 
 | Parameter     | Description                                                                     |
 |---------------|---------------------------------------------------------------------------------|
-| `s3.endpoint` | `Required`. For S3, use `s3.amazonaws.com`. If your bucket is in a different location, S3 server (s3.amazonaws.com) will redirect restic to the correct endpoint. For DigitalOCean, use `nyc3.digitaloceanspaces.com` etc. depending on your bucket region. For an S3-compatible server that is not Amazon (like Minio), or is only available via HTTP, you can specify the endpoint like this: `http://server:port`. |
-| `s3.bucket`   | `Required`. Name of Bucket. If the bucket does not exist yet it will be created in the default location (`us-east-1` for S3). It is not possible at the moment to have restic create a new bucket in a different location, so you need to create it using a different program.        |
+| `s3.endpoint` | `Required`. For S3, use `s3.amazonaws.com`. If your bucket is in a different location, S3 server (s3.amazonaws.com) will redirect backup to the correct endpoint. For DigitalOCean, use `nyc3.digitaloceanspaces.com` etc. depending on your bucket region. For an S3-compatible server that is not Amazon (like Minio), or is only available via HTTP, you can specify the endpoint like this: `http://server:port`. |
+| `s3.bucket`   | `Required`. Name of Bucket. If the bucket does not exist yet it will be created in the default location (`us-east-1` for S3). It is not possible at the moment to have backup create a new bucket in a different location, so you need to create it using a different program.        |
 | `s3.prefix`   | `Optional`. Path prefix into bucket where repository will be created.           |
 
 ```console
-$ kubectl apply -f ./docs/examples/backends/s3/s3-restic.yaml
-restic "s3-restic" created
+$ kubectl apply -f ./docs/examples/backends/s3/s3-backup.yaml
+backup "s3-backup" created
 ```
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
-  name: s3-restic
+  name: s3-backup
   namespace: default
 spec:
   selector:
     matchLabels:
-      app: s3-restic
+      app: s3-backup
   fileGroups:
   - path: /source/data
     retentionPolicyName: 'keep-last-5'
@@ -178,7 +178,7 @@ Stash supports Google Cloud Storage(GCS) as backend. To configure this backend, 
 
 | Key                               | Description                                                |
 |-----------------------------------|------------------------------------------------------------|
-| `RESTIC_PASSWORD`                 | `Required`. Password used to encrypt snapshots by `restic` |
+| `RESTIC_PASSWORD`                 | `Required`. Password used to encrypt snapshots by `backup` |
 | `GOOGLE_PROJECT_ID`               | `Required`. Google Cloud project ID                        |
 | `GOOGLE_SERVICE_ACCOUNT_JSON_KEY` | `Required`. Google Cloud service account json key          |
 
@@ -212,28 +212,28 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic crd using this secret. Following parameters are available for `gcs` backend.
+Now, you can create a Backup crd using this secret. Following parameters are available for `gcs` backend.
 
 | Parameter      | Description                                                                     |
 |----------------|---------------------------------------------------------------------------------|
-| `gcs.bucket`   | `Required`. Name of Bucket. If the bucket does not exist yet, it will be created in the default location (US). It is not possible at the moment to have restic create a new bucket in a different location, so you need to create it using a different program.        |
+| `gcs.bucket`   | `Required`. Name of Bucket. If the bucket does not exist yet, it will be created in the default location (US). It is not possible at the moment to have backup create a new bucket in a different location, so you need to create it using a different program.        |
 | `gcs.prefix`   | `Optional`. Path prefix into bucket where repository will be created.           |
 
 ```console
-$ kubectl apply -f ./docs/examples/backends/gcs/gcs-restic.yaml
-restic "gcs-restic" created
+$ kubectl apply -f ./docs/examples/backends/gcs/gcs-backup.yaml
+backup "gcs-backup" created
 ```
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
-  name: gcs-restic
+  name: gcs-backup
   namespace: default
 spec:
   selector:
     matchLabels:
-      app: gcs-restic
+      app: gcs-backup
   fileGroups:
   - path: /source/data
     retentionPolicyName: 'keep-last-5'
@@ -258,7 +258,7 @@ Stash supports Microsoft Azure Storage as backend. To configure this backend, fo
 
 | Key                     | Description                                                |
 |-------------------------|------------------------------------------------------------|
-| `RESTIC_PASSWORD`       | `Required`. Password used to encrypt snapshots by `restic` |
+| `RESTIC_PASSWORD`       | `Required`. Password used to encrypt snapshots by `backup` |
 | `AZURE_ACCOUNT_NAME`    | `Required`. Azure Storage account name                     |
 | `AZURE_ACCOUNT_KEY`     | `Required`. Azure Storage account key                      |
 
@@ -292,7 +292,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic crd using this secret. Following parameters are available for `Azure` backend.
+Now, you can create a Backup crd using this secret. Following parameters are available for `Azure` backend.
 
 | Parameter     | Description                                                                     |
 |---------------|---------------------------------------------------------------------------------|
@@ -300,20 +300,20 @@ Now, you can create a Restic crd using this secret. Following parameters are ava
 | `azure.prefix`    | `Optional`. Path prefix into bucket where repository will be created.       |
 
 ```console
-$ kubectl apply -f ./docs/examples/backends/azure/azure-restic.yaml
-restic "azure-restic" created
+$ kubectl apply -f ./docs/examples/backends/azure/azure-backup.yaml
+backup "azure-backup" created
 ```
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
-  name: azure-restic
+  name: azure-backup
   namespace: default
 spec:
   selector:
     matchLabels:
-      app: azure-restic
+      app: azure-backup
   fileGroups:
   - path: /source/data
     retentionPolicyName: 'keep-last-5'
@@ -334,11 +334,11 @@ spec:
 
 
 ### OpenStack Swift
-Stash supports [OpenStack Swift as backend](https://restic.readthedocs.io/en/stable/030_preparing_a_new_repo.html#openstack-swift). To configure this backend, following secret keys are needed:
+Stash supports [OpenStack Swift as backend](https://backup.readthedocs.io/en/stable/030_preparing_a_new_repo.html#openstack-swift). To configure this backend, following secret keys are needed:
 
 | Key                      | Description                                                |
 |--------------------------|------------------------------------------------------------|
-| `RESTIC_PASSWORD`        | `Required`. Password used to encrypt snapshots by `restic` |
+| `RESTIC_PASSWORD`        | `Required`. Password used to encrypt snapshots by `backup` |
 | `ST_AUTH`                | For keystone v1 authentication                             |
 | `ST_USER`                | For keystone v1 authentication                             |
 | `ST_KEY`                 | For keystone v1 authentication                             |
@@ -400,7 +400,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic crd using this secret. Following parameters are available for `Swift` backend.
+Now, you can create a Backup crd using this secret. Following parameters are available for `Swift` backend.
 
 | Parameter         | Description                                                                 |
 |-------------------|-----------------------------------------------------------------------------|
@@ -408,20 +408,20 @@ Now, you can create a Restic crd using this secret. Following parameters are ava
 | `swift.prefix`    | `Optional`. Path prefix into bucket where repository will be created.       |
 
 ```console
-$ kubectl apply -f ./docs/examples/backends/swift/swift-restic.yaml
-restic "swift-restic" created
+$ kubectl apply -f ./docs/examples/backends/swift/swift-backup.yaml
+backup "swift-backup" created
 ```
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
-  name: swift-restic
+  name: swift-backup
   namespace: default
 spec:
   selector:
     matchLabels:
-      app: swift-restic
+      app: swift-backup
   fileGroups:
   - path: /source/data
     retentionPolicyName: 'keep-last-5'
@@ -446,7 +446,7 @@ Stash supports Backblaze B2 as backend. To configure this backend, following sec
 
 | Key                     | Description                                                |
 |-------------------------|------------------------------------------------------------|
-| `RESTIC_PASSWORD`       | `Required`. Password used to encrypt snapshots by `restic` |
+| `RESTIC_PASSWORD`       | `Required`. Password used to encrypt snapshots by `backup` |
 | `B2_ACCOUNT_ID`         | `Required`. Backblaze B2 account id                        |
 | `B2_ACCOUNT_KEY`        | `Required`. Backblaze B2 account key                       |
 
@@ -480,7 +480,7 @@ metadata:
 type: Opaque
 ```
 
-Now, you can create a Restic crd using this secret. Following parameters are available for `B2` backend.
+Now, you can create a Backup crd using this secret. Following parameters are available for `B2` backend.
 
 | Parameter     | Description                                                               |
 |---------------|---------------------------------------------------------------------------|
@@ -488,20 +488,20 @@ Now, you can create a Restic crd using this secret. Following parameters are ava
 | `b2.prefix`   | `Optional`. Path prefix into bucket where repository will be created.     |
 
 ```console
-$ kubectl apply -f ./docs/examples/backends/b2/b2-restic.yaml
-restic "b2-restic" created
+$ kubectl apply -f ./docs/examples/backends/b2/b2-backup.yaml
+backup "b2-backup" created
 ```
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Backup
 metadata:
-  name: b2-restic
+  name: b2-backup
   namespace: default
 spec:
   selector:
     matchLabels:
-      app: b2-restic
+      app: b2-backup
   fileGroups:
   - path: /source/data
     retentionPolicyName: 'keep-last-5'
@@ -524,7 +524,7 @@ spec:
 ## Next Steps
 
 - Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/backup.md).
-- Learn about the details of Restic CRD [here](/docs/concepts/crds/restic.md).
+- Learn about the details of Backup CRD [here](/docs/concepts/crds/backup.md).
 - To restore a backup see [here](/docs/guides/restore.md).
 - Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
 - To run backup in offline mode see [here](/docs/guides/offline_backup.md)

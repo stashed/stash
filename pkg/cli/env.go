@@ -56,7 +56,7 @@ const (
 	CA_CERT_DATA = "CA_CERT_DATA"
 )
 
-func (w *ResticWrapper) SetupEnv(backend api.Backend, secret *core.Secret, autoPrefix string) error {
+func (w *BackupWrapper) SetupEnv(backend api.Backend, secret *core.Secret, autoPrefix string) error {
 	if v, ok := secret.Data[RESTIC_PASSWORD]; !ok {
 		return errors.New("missing repository password")
 	} else {
@@ -166,7 +166,7 @@ func (w *ResticWrapper) SetupEnv(backend api.Backend, secret *core.Secret, autoP
 	return nil
 }
 
-func (w *ResticWrapper) DumpEnv() error {
+func (w *BackupWrapper) DumpEnv() error {
 	out, err := w.sh.Command("env").Output()
 	if err != nil {
 		return err

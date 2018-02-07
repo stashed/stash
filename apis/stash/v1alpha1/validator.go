@@ -6,7 +6,7 @@ import (
 	"gopkg.in/robfig/cron.v2"
 )
 
-func (r Restic) IsValid() error {
+func (r Backup) IsValid() error {
 	for i, fg := range r.Spec.FileGroups {
 		if fg.RetentionPolicyName == "" {
 			continue

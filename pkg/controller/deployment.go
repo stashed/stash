@@ -55,27 +55,27 @@ func (c *StashController) runDeploymentInjector(key string) error {
 			return nil
 		}
 
-		oldRestic, err := util.GetAppliedRestic(dp.Annotations)
+		oldBackup, err := util.GetAppliedBackup(dp.Annotations)
 		if err != nil {
 			return err
 		}
-		newRestic, err := util.FindRestic(c.rstLister, dp.ObjectMeta)
+		newBackup, err := util.FindBackup(c.rstLister, dp.ObjectMeta)
 		if err != nil {
-			log.Errorf("Error while searching Restic for Deployment %s/%s.", dp.Name, dp.Namespace)
+			log.Errorf("Error while searching Backup for Deployment %s/%s.", dp.Name, dp.Namespace)
 			return err
 		}
-		if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
-			if !newRestic.Spec.Paused {
-				if newRestic.Spec.Type == api.BackupOffline && *dp.Spec.Replicas > 1 {
+		if newBackup != nil && !util.BackupEqual(oldBackup, newBackup) {
+			if !newBackup.Spec.Paused {
+				if newBackup.Spec.Type == api.BackupOffline && *dp.Spec.Replicas > 1 {
 					return fmt.Errorf("cannot perform offline backup for deployment with replicas > 1")
 				}
-				return c.EnsureDeploymentSidecar(dp, oldRestic, newRestic)
+				return c.EnsureDeploymentSidecar(dp, oldBackup, newBackup)
 			}
-		} else if oldRestic != nil && newRestic == nil {
-			return c.EnsureDeploymentSidecarDeleted(dp, oldRestic)
+		} else if oldBackup != nil && newBackup == nil {
+			return c.EnsureDeploymentSidecarDeleted(dp, oldBackup)
 		}
 
-		// not restic workload, just remove the pending stash initializer
+		// not backup workload, just remove the pending stash initializer
 		if util.ToBeInitializedBySelf(dp.Initializers) {
 			_, _, err = apps_util.PatchDeployment(c.k8sClient, dp, func(obj *apps.Deployment) *apps.Deployment {
 				fmt.Println("Removing pending stash initializer for", obj.Name)
@@ -95,7 +95,7 @@ func (c *StashController) runDeploymentInjector(key string) error {
 	return nil
 }
 
-func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old, new *api.Restic) (err error) {
+func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old, new *api.Backup) (err error) {
 	image := docker.Docker{
 		Registry: c.options.DockerRegistry,
 		Image:    docker.ImageStash,
@@ -103,7 +103,7 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 	}
 
 	if new.Spec.Backend.StorageSecretName == "" {
-		err = fmt.Errorf("missing repository secret name for Restic %s/%s", new.Namespace, new.Name)
+		err = fmt.Errorf("missing repository secret name for Backup %s/%s", new.Namespace, new.Name)
 		return
 	}
 	_, err = c.k8sClient.CoreV1().Secrets(resource.Namespace).Get(new.Spec.Backend.StorageSecretName, metav1.GetOptions{})
@@ -163,10 +163,10 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 		if obj.Annotations == nil {
 			obj.Annotations = make(map[string]string)
 		}
-		r := &api.Restic{
+		r := &api.Backup{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: api.SchemeGroupVersion.String(),
-				Kind:       api.ResourceKindRestic,
+				Kind:       api.ResourceKindBackup,
 			},
 			ObjectMeta: new.ObjectMeta,
 			Spec:       new.Spec,
@@ -185,7 +185,7 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 	return err
 }
 
-func (c *StashController) EnsureDeploymentSidecarDeleted(resource *apps.Deployment, restic *api.Restic) (err error) {
+func (c *StashController) EnsureDeploymentSidecarDeleted(resource *apps.Deployment, backup *api.Backup) (err error) {
 	if c.options.EnableRBAC {
 		err = c.ensureSidecarRoleBindingDeleted(resource.ObjectMeta)
 		if err != nil {
@@ -194,14 +194,14 @@ func (c *StashController) EnsureDeploymentSidecarDeleted(resource *apps.Deployme
 	}
 
 	resource, _, err = apps_util.PatchDeployment(c.k8sClient, resource, func(obj *apps.Deployment) *apps.Deployment {
-		if restic.Spec.Type == api.BackupOffline {
+		if backup.Spec.Type == api.BackupOffline {
 			obj.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.InitContainers, util.StashContainer)
 		} else {
 			obj.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
 		}
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
-		if restic.Spec.Backend.Local != nil {
+		if backup.Spec.Backend.Local != nil {
 			obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.LocalVolumeName)
 		}
 		if obj.Annotations != nil {

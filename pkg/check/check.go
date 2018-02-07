@@ -17,7 +17,7 @@ const (
 
 type Options struct {
 	Namespace   string
-	ResticName  string
+	BackupName  string
 	HostName    string
 	SmartPrefix string
 }
@@ -37,7 +37,7 @@ func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, 
 }
 
 func (c *Controller) Run() (err error) {
-	restic, err := c.stashClient.Restics(c.opt.Namespace).Get(c.opt.ResticName, metav1.GetOptions{})
+	backup, err := c.stashClient.Backups(c.opt.Namespace).Get(c.opt.BackupName, metav1.GetOptions{})
 	if err != nil {
 		return
 	}
@@ -47,7 +47,7 @@ func (c *Controller) Run() (err error) {
 			eventer.CreateEventWithLog(
 				c.k8sClient,
 				CheckEventComponent,
-				restic.ObjectReference(),
+				backup.ObjectReference(),
 				core.EventTypeWarning,
 				eventer.EventReasonFailedToCheck,
 				fmt.Sprintf("Check failed for pod %s, reason: %s\n", c.opt.HostName, err),
@@ -56,7 +56,7 @@ func (c *Controller) Run() (err error) {
 			eventer.CreateEventWithLog(
 				c.k8sClient,
 				CheckEventComponent,
-				restic.ObjectReference(),
+				backup.ObjectReference(),
 				core.EventTypeNormal,
 				eventer.EventReasonSuccessfulCheck,
 				fmt.Sprintf("Check successful for pod: %s\n", c.opt.HostName),
@@ -64,13 +64,13 @@ func (c *Controller) Run() (err error) {
 		}
 	}()
 
-	secret, err := c.k8sClient.CoreV1().Secrets(c.opt.Namespace).Get(restic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	secret, err := c.k8sClient.CoreV1().Secrets(c.opt.Namespace).Get(backup.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return
 	}
 
 	cli := cli.New("/tmp", false, c.opt.HostName)
-	if err = cli.SetupEnv(restic.Spec.Backend, secret, c.opt.SmartPrefix); err != nil {
+	if err = cli.SetupEnv(backup.Spec.Backend, secret, c.opt.SmartPrefix); err != nil {
 		return
 	}
 

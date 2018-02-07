@@ -15,7 +15,7 @@ const (
 	Exe = "/bin/restic"
 )
 
-type ResticWrapper struct {
+type BackupWrapper struct {
 	sh          *shell.Session
 	scratchDir  string
 	enableCache bool
@@ -23,8 +23,8 @@ type ResticWrapper struct {
 	cacertFile  string
 }
 
-func New(scratchDir string, enableCache bool, hostname string) *ResticWrapper {
-	ctrl := &ResticWrapper{
+func New(scratchDir string, enableCache bool, hostname string) *BackupWrapper {
+	ctrl := &BackupWrapper{
 		sh:          shell.NewSession(),
 		scratchDir:  scratchDir,
 		enableCache: enableCache,
@@ -46,7 +46,7 @@ type Snapshot struct {
 	Gid      int       `json:"gid"`
 }
 
-func (w *ResticWrapper) ListSnapshots() ([]Snapshot, error) {
+func (w *BackupWrapper) ListSnapshots() ([]Snapshot, error) {
 	result := make([]Snapshot, 0)
 	args := w.appendCacheDirFlag([]interface{}{"snapshots", "--json"})
 	args = w.appendCaCertFlag(args)
@@ -55,7 +55,7 @@ func (w *ResticWrapper) ListSnapshots() ([]Snapshot, error) {
 	return result, err
 }
 
-func (w *ResticWrapper) InitRepositoryIfAbsent() error {
+func (w *BackupWrapper) InitRepositoryIfAbsent() error {
 	args := w.appendCacheDirFlag([]interface{}{"snapshots", "--json"})
 	args = w.appendCaCertFlag(args)
 	if err := w.run(Exe, args); err != nil {
@@ -67,7 +67,7 @@ func (w *ResticWrapper) InitRepositoryIfAbsent() error {
 	return nil
 }
 
-func (w *ResticWrapper) Backup(resource *api.Restic, fg api.FileGroup) error {
+func (w *BackupWrapper) Backup(resource *api.Backup, fg api.FileGroup) error {
 	args := []interface{}{"backup", fg.Path, "--force"}
 	if w.hostname != "" {
 		args = append(args, "--hostname")
@@ -84,7 +84,7 @@ func (w *ResticWrapper) Backup(resource *api.Restic, fg api.FileGroup) error {
 	return w.run(Exe, args)
 }
 
-func (w *ResticWrapper) Forget(resource *api.Restic, fg api.FileGroup) error {
+func (w *BackupWrapper) Forget(resource *api.Backup, fg api.FileGroup) error {
 	// Get retentionPolicy for fileGroup, ignore if not found
 	retentionPolicy := api.RetentionPolicy{}
 	for _, policy := range resource.Spec.RetentionPolicies {
@@ -138,7 +138,7 @@ func (w *ResticWrapper) Forget(resource *api.Restic, fg api.FileGroup) error {
 	return nil
 }
 
-func (w *ResticWrapper) Restore(path, host string) error {
+func (w *BackupWrapper) Restore(path, host string) error {
 	args := []interface{}{"restore"}
 	args = append(args, "latest") // TODO @ Dipta: Add support for specific snapshotID
 	args = append(args, "--path")
@@ -153,14 +153,14 @@ func (w *ResticWrapper) Restore(path, host string) error {
 	return w.run(Exe, args)
 }
 
-func (w *ResticWrapper) Check() error {
+func (w *BackupWrapper) Check() error {
 	args := w.appendCacheDirFlag([]interface{}{"check"})
 	args = w.appendCaCertFlag(args)
 
 	return w.run(Exe, args)
 }
 
-func (w *ResticWrapper) appendCacheDirFlag(args []interface{}) []interface{} {
+func (w *BackupWrapper) appendCacheDirFlag(args []interface{}) []interface{} {
 	if w.enableCache {
 		cacheDir := filepath.Join(w.scratchDir, "restic-cache")
 		return append(args, "--cache-dir", cacheDir)
@@ -168,14 +168,14 @@ func (w *ResticWrapper) appendCacheDirFlag(args []interface{}) []interface{} {
 	return append(args, "--no-cache")
 }
 
-func (w *ResticWrapper) appendCaCertFlag(args []interface{}) []interface{} {
+func (w *BackupWrapper) appendCaCertFlag(args []interface{}) []interface{} {
 	if w.cacertFile != "" {
 		return append(args, "--cacert", w.cacertFile)
 	}
 	return args
 }
 
-func (w *ResticWrapper) run(cmd string, args []interface{}) error {
+func (w *BackupWrapper) run(cmd string, args []interface{}) error {
 	out, err := w.sh.Command(cmd, args...).CombinedOutput()
 	if err != nil {
 		parts := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")

@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	EventReasonInvalidRestic                 = "InvalidRestic"
+	EventReasonInvalidBackup                 = "InvalidBackup"
 	EventReasonInvalidRecovery               = "InvalidRecovery"
 	EventReasonInvalidCronExpression         = "InvalidCronExpression"
 	EventReasonSuccessfulCronExpressionReset = "SuccessfulCronExpressionReset"

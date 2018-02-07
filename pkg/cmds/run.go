@@ -70,7 +70,7 @@ func NewCmdRun() *cobra.Command {
 			m := pat.New()
 			m.Get("/metrics", promhttp.Handler())
 
-			pattern := fmt.Sprintf("/%s/v1beta1/namespaces/%s/restics/%s/metrics", api.GroupName, PathParamNamespace, PathParamName)
+			pattern := fmt.Sprintf("/%s/v1beta1/namespaces/%s/backups/%s/metrics", api.GroupName, PathParamNamespace, PathParamName)
 			log.Infof("URL pattern: %s", pattern)
 			exporter := &PrometheusExporter{
 				kubeClient:  kubeClient,

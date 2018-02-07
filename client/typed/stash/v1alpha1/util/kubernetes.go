@@ -20,7 +20,7 @@ func AssignTypeKind(v interface{}) error {
 	}
 
 	switch u := v.(type) {
-	case *api.Restic:
+	case *api.Backup:
 		u.APIVersion = api.SchemeGroupVersion.String()
 		u.Kind = meta.GetKind(v)
 		return nil

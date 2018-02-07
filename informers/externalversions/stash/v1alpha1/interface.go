@@ -24,10 +24,10 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
+	// Backups returns a BackupInformer.
+	Backups() BackupInformer
 	// Recoveries returns a RecoveryInformer.
 	Recoveries() RecoveryInformer
-	// Restics returns a ResticInformer.
-	Restics() ResticInformer
 }
 
 type version struct {
@@ -41,12 +41,12 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
+// Backups returns a BackupInformer.
+func (v *version) Backups() BackupInformer {
+	return &backupInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
 // Recoveries returns a RecoveryInformer.
 func (v *version) Recoveries() RecoveryInformer {
 	return &recoveryInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// Restics returns a ResticInformer.
-func (v *version) Restics() ResticInformer {
-	return &resticInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

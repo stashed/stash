@@ -48,7 +48,7 @@
       }
     ]
   },
-  "description": "Show status of Restic backups done through Stash.",
+  "description": "Show status of Backup backups done through Stash.",
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
@@ -117,7 +117,7 @@
           "tableColumn": "",
           "targets": [
             {
-              "expr": "sum(restic_session_fail)",
+              "expr": "sum(backup_session_fail)",
               "format": "time_series",
               "intervalFactor": 2,
               "refId": "A"
@@ -193,7 +193,7 @@
           "tableColumn": "",
           "targets": [
             {
-              "expr": "sum(restic_session_success)",
+              "expr": "sum(backup_session_success)",
               "format": "time_series",
               "intervalFactor": 2,
               "refId": "A"
@@ -257,7 +257,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "restic_session_success{app=~\"$app\"}",
+              "expr": "backup_session_success{app=~\"$app\"}",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{app}}",
@@ -343,7 +343,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "restic_session_fail{app=~\"$app\"}",
+              "expr": "backup_session_fail{app=~\"$app\"}",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{app}}",
@@ -400,7 +400,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Restic Success & Fail",
+      "title": "Backup Success & Fail",
       "titleSize": "h6"
     },
     {
@@ -441,7 +441,7 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(restic_session_duration_seconds{app=~\"$app\"}) by (app, op)",
+              "expr": "sum(backup_session_duration_seconds{app=~\"$app\"}) by (app, op)",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
@@ -512,7 +512,7 @@
         "multi": true,
         "name": "app",
         "options": [],
-        "query": "label_values(restic_session_success, app)",
+        "query": "label_values(backup_session_success, app)",
         "refresh": 2,
         "regex": "",
         "sort": 0,
