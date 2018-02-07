@@ -75,7 +75,7 @@ func (c *StashController) runRCInjector(key string) error {
 			return c.EnsureReplicationControllerSidecarDeleted(rc, oldBackup)
 		}
 
-		// not restic workload, just remove the pending stash initializer
+		// not backup workload, just remove the pending stash initializer
 		if util.ToBeInitializedBySelf(rc.Initializers) {
 			_, _, err = core_util.PatchRC(c.k8sClient, rc, func(obj *core.ReplicationController) *core.ReplicationController {
 				fmt.Println("Removing pending stash initializer for", obj.Name)
@@ -189,7 +189,7 @@ func (c *StashController) EnsureReplicationControllerSidecar(resource *core.Repl
 	return err
 }
 
-func (c *StashController) EnsureReplicationControllerSidecarDeleted(resource *core.ReplicationController, restic *api.Backup) (err error) {
+func (c *StashController) EnsureReplicationControllerSidecarDeleted(resource *core.ReplicationController, backup *api.Backup) (err error) {
 	if c.options.EnableRBAC {
 		err := c.ensureSidecarRoleBindingDeleted(resource.ObjectMeta)
 		if err != nil {
@@ -198,14 +198,14 @@ func (c *StashController) EnsureReplicationControllerSidecarDeleted(resource *co
 	}
 
 	resource, _, err = core_util.PatchRC(c.k8sClient, resource, func(obj *core.ReplicationController) *core.ReplicationController {
-		if restic.Spec.Type == api.BackupOffline {
+		if backup.Spec.Type == api.BackupOffline {
 			obj.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.InitContainers, util.StashContainer)
 		} else {
 			obj.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
 		}
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
-		if restic.Spec.Backend.Local != nil {
+		if backup.Spec.Backend.Local != nil {
 			obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.LocalVolumeName)
 		}
 		if obj.Annotations != nil {
@@ -222,7 +222,7 @@ func (c *StashController) EnsureReplicationControllerSidecarDeleted(resource *co
 	if err != nil {
 		return
 	}
-	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector}, restic.Spec.Type)
+	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector}, backup.Spec.Type)
 	if err != nil {
 		return
 	}

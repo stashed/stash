@@ -10,9 +10,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (fi *Invocation) RecoveryForBackup(restic api.Backup) api.Recovery {
+func (fi *Invocation) RecoveryForBackup(backup api.Backup) api.Recovery {
 	paths := make([]string, 0)
-	for _, fg := range restic.Spec.FileGroups {
+	for _, fg := range backup.Spec.FileGroups {
 		paths = append(paths, fg.Path)
 	}
 	return api.Recovery{
@@ -26,13 +26,13 @@ func (fi *Invocation) RecoveryForBackup(restic api.Backup) api.Recovery {
 		},
 		Spec: api.RecoverySpec{
 			Paths:   paths,
-			Backend: restic.Spec.Backend,
+			Backend: backup.Spec.Backend,
 			RecoveredVolumes: []api.LocalSpec{
 				{
-					MountPath: restic.Spec.VolumeMounts[0].MountPath,
+					MountPath: backup.Spec.VolumeMounts[0].MountPath,
 					VolumeSource: core.VolumeSource{
 						HostPath: &core.HostPathVolumeSource{
-							Path: "/data/stash-test/restic-restored",
+							Path: "/data/stash-test/backup-restored",
 						},
 					},
 				},

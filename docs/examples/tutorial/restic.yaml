@@ -14,7 +14,7 @@ spec:
     local:
       mountPath: /safe/data
       hostPath:
-        path: /data/stash-test/restic-repo
+        path: /data/stash-test/backup-repo
     storageSecretName: stash-demo
   schedule: '@every 1m'
   volumeMounts:

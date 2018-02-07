@@ -2,7 +2,7 @@
 title: Backup Overview
 menu:
   product_stash_0.7.0-alpha.0:
-    identifier: restic-overview
+    identifier: backup-overview
     name: Backup
     parent: crds
     weight: 10
@@ -16,7 +16,7 @@ section_menu_id: concepts
 # Backups
 
 ## What is Backup
-A `Backup` is a Kubernetes `CustomResourceDefinition` (CRD). It provides declarative configuration for [restic](https://restic.net) in a Kubernetes native way. You only need to describe the desired backup operations in a Backup object, and the Stash operator will reconfigure the matching workloads to the desired state for you.
+A `Backup` is a Kubernetes `CustomResourceDefinition` (CRD). It provides declarative configuration for [backup](https://backup.net) in a Kubernetes native way. You only need to describe the desired backup operations in a Backup object, and the Stash operator will reconfigure the matching workloads to the desired state for you.
 
 ## Backup Spec
 As with all other Kubernetes objects, a Backup needs `apiVersion`, `kind`, and `metadata` fields. It also needs a `.spec` section. Below is an example Backup object.
@@ -38,7 +38,7 @@ spec:
     local:
       mountPath: /safe/data
       hostPath:
-        path: /data/stash-test/restic-repo
+        path: /data/stash-test/backup-repo
     storageSecretName: stash-demo
   schedule: '@every 1m'
   volumeMounts:
@@ -59,17 +59,17 @@ The `.spec` section has following parts:
 The default value for `spec.type` is `online`. For offline backup you need to specify `spec.type=offline`. For more details see [here](/docs/guides/offline_backup.md).
 
 ### spec.fileGroups
-`spec.fileGroups` is a required field that specifies one or more directories that are backed up by [restic](https://restic.net). For each directory, you can specify custom tags and retention policy for snapshots.
+`spec.fileGroups` is a required field that specifies one or more directories that are backed up by [backup](https://backup.net). For each directory, you can specify custom tags and retention policy for snapshots.
 
- - `spec.fileGroups[].path` represents a local directory that backed up by `restic`.
+ - `spec.fileGroups[].path` represents a local directory that backed up by `backup`.
  - `spec.fileGroups[].tags` is an optional field. This can be used to apply one or more custom tag to snapshots taken from this path.
- - `spec.fileGroups[].retentionPolicyName` is an optional field that is used to specify a retention policy defined in `spec.retentionPolicies`. This defines how old snapshots are forgot by `restic`. If set, these options directly translate into flags for `restic forget` command.
+ - `spec.fileGroups[].retentionPolicyName` is an optional field that is used to specify a retention policy defined in `spec.retentionPolicies`. This defines how old snapshots are forgot by `backup`. If set, these options directly translate into flags for `backup forget` command.
 
 ### spec.retentionPolicies
 
 `spec.retentionPolicies` defines a array of retention policies for old snapshots. Retention policy options are below.
 
-| Policy        | Value   | restic forget flag | Description                                                                                        |
+| Policy        | Value   | backup forget flag | Description                                                                                        |
 |---------------|---------|--------------------|----------------------------------------------------------------------------------------------------|
 | `name`        | string  |                    | Name of retention policy provided by user. This is used in file groups to refer to a policy.       |
 | `keepLast`    | integer | --keep-last n      | Never delete the n last (most recent) snapshots                                                    |
@@ -78,22 +78,22 @@ The default value for `spec.type` is `online`. For offline backup you need to sp
 | `keepWeekly`  | integer | --keep-weekly n    | For the last n weeks which have one or more snapshots, only keep the last one for that week.       |
 | `keepMonthly` | integer | --keep-monthly n   | For the last n months which have one or more snapshots, only keep the last one for that month.     |
 | `keepYearly`  | integer | --keep-yearly n    | For the last n years which have one or more snapshots, only keep the last one for that year.       |
-| `keepTags`    | array   | --keep-tag <tag>   | Keep all snapshots which have all tags specified by this option (can be specified multiple times). [`--tag foo,tag bar`](https://github.com/restic/restic/blob/master/doc/060_forget.rst) style tagging is not supported. |
+| `keepTags`    | array   | --keep-tag <tag>   | Keep all snapshots which have all tags specified by this option (can be specified multiple times). [`--tag foo,tag bar`](https://github.com/backup/backup/blob/master/doc/060_forget.rst) style tagging is not supported. |
 | `prune`       | bool    | --prune            | If set, actually removes the data that was referenced by the snapshot from the repository.         |
-| `dryRun`      | bool    | --dry-run          | Instructs `restic` to not remove anything but print which snapshots would be removed.              |
+| `dryRun`      | bool    | --dry-run          | Instructs `backup` to not remove anything but print which snapshots would be removed.              |
 
 You can set one or more of these retention policy options together. To learn more, read [here](
-https://restic.readthedocs.io/en/latest/manual.html#removing-snapshots-according-to-a-policy).
+https://backup.readthedocs.io/en/latest/manual.html#removing-snapshots-according-to-a-policy).
 
 ### spec.backend
 To learn how to configure various backends for Backup, please visit [here](/docs/guides/backends.md).
 
 ### spec.schedule
-`spec.schedule` is a [cron expression](https://github.com/robfig/cron/blob/v2/doc.go#L26) that indicates how often `restic` commands are invoked for file groups.
-At each tick, `restic backup` and `restic forget` commands are run for each of the configured file groups.
+`spec.schedule` is a [cron expression](https://github.com/robfig/cron/blob/v2/doc.go#L26) that indicates how often `backup` commands are invoked for file groups.
+At each tick, `backup backup` and `backup forget` commands are run for each of the configured file groups.
 
 ### spec.paused
-`spec.paused` can be used as `enable/disable` switch for Backup. The default value is `false`. To stop restic from taking backup set `spec.paused: true`. For more details see [here](/docs/guides/backup.md#disable-backup).
+`spec.paused` can be used as `enable/disable` switch for Backup. The default value is `false`. To stop backup from taking backup set `spec.paused: true`. For more details see [here](/docs/guides/backup.md#disable-backup).
 
 ### spec.resources
 `spec.resources` refers to compute resources required by the `stash` sidecar container. To learn more, visit [here](http://kubernetes.io/docs/user-guide/compute-resources/).
@@ -103,9 +103,9 @@ At each tick, `restic backup` and `restic forget` commands are run for each of t
 
 ## Backup Repository Structure
 
- - For workload kind `Deployment`, `Replicaset` and `ReplicationController` restic repo is created in the sub-directory `<WORKLOAD_KIND>/<WORKLOAD_NAME>`. For multiple replicas, only one repository is created and sidecar is added to only one pod selected by leader-election.
- - For workload kind `Statefulset` restic repository is created in the sub-directory `<WORKLOAD_KIND>/<POD_NAME>`. For multiple replicas, multiple repositories are created and sidecar is added to all pods.
- - For workload kind `Daemonset` restic repository is created in the sub-directory `<WORKLOAD_KIND>/<WORKLOAD_NAME>/<NODE_NAME>`. For multiple replicas, multiple repositories are created and sidecar is added to all pods.
+ - For workload kind `Deployment`, `Replicaset` and `ReplicationController` backup repo is created in the sub-directory `<WORKLOAD_KIND>/<WORKLOAD_NAME>`. For multiple replicas, only one repository is created and sidecar is added to only one pod selected by leader-election.
+ - For workload kind `Statefulset` backup repository is created in the sub-directory `<WORKLOAD_KIND>/<POD_NAME>`. For multiple replicas, multiple repositories are created and sidecar is added to all pods.
+ - For workload kind `Daemonset` backup repository is created in the sub-directory `<WORKLOAD_KIND>/<WORKLOAD_NAME>/<NODE_NAME>`. For multiple replicas, multiple repositories are created and sidecar is added to all pods.
 
 ## Backup Status
 Stash operator updates `.status` of a Backup CRD every time a backup operation is completed.
@@ -119,11 +119,11 @@ Stash operator updates `.status` of a Backup CRD every time a backup operation i
 ## Workload Annotations
 For each workload where a sidecar container is added by Stash operator, the following annotations are added:
 
- - `restic.appscode.com/last-applied-configuration` indicates the configuration of applied Backup CRD.
- - `restic.appscode.com/tag` indicates the tag of `appscode/stash` Docker image that was added as sidecar.
+ - `backup.appscode.com/last-applied-configuration` indicates the configuration of applied Backup CRD.
+ - `backup.appscode.com/tag` indicates the tag of `appscode/stash` Docker image that was added as sidecar.
 
 ## Updating Backup
-The sidecar container watches for changes in the Backup fileGroups, backend and schedule. These changes are automatically applied on the next run of `restic` commands. If the selector of a Backup CRD is changed, Stash operator will update workload accordingly by adding/removing sidecars as required.
+The sidecar container watches for changes in the Backup fileGroups, backend and schedule. These changes are automatically applied on the next run of `backup` commands. If the selector of a Backup CRD is changed, Stash operator will update workload accordingly by adding/removing sidecars as required.
 
 ## Disable Backup
 To stop Backup from taking backup, you can do following things:

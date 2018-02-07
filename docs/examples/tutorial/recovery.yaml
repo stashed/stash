@@ -11,12 +11,12 @@ spec:
     local:
       mountPath: /safe/data
       hostPath:
-        path: /data/stash-test/restic-repo
+        path: /data/stash-test/backup-repo
     storageSecretName: stash-demo
   paths:
   - /source/data
   recoveredVolumes:
   - mountPath: /source/data
     hostPath:
-      path: /data/stash-test/restic-restored
+      path: /data/stash-test/backup-restored
 

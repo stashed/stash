@@ -28,7 +28,7 @@ type: Opaque
 apiVersion: stash.appscode.com/v1alpha1
 kind: Backup
 metadata:
-  name: statefulset-restic
+  name: statefulset-backup
   namespace: default
 spec:
   selector:
@@ -41,7 +41,7 @@ spec:
     local:
       mountPath: /repo
       hostPath:
-        path: /data/stash-test/restic-repo
+        path: /data/stash-test/backup-repo
     storageSecretName: statefulset-secret
   schedule: '@every 1m'
   volumeMounts:
@@ -99,7 +99,7 @@ spec:
           name: source-data
       - args:
         - backup
-        - --restic-name=stash-demo
+        - --backup-name=stash-demo
         - --workload-kind=Statefulset
         - --workload-name=stash-demo
         - --run-via-cron=true
@@ -148,6 +148,6 @@ spec:
             path: labels
         name: stash-podinfo
       - hostPath:
-          path: /data/stash-test/restic-repo
+          path: /data/stash-test/backup-repo
           type: ""
         name: stash-local

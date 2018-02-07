@@ -92,19 +92,19 @@ func (c *StashController) runBackupInjector(key string) error {
 		}
 		c.EnsureSidecarDeleted(namespace, name)
 	} else {
-		restic := obj.(*api.Backup)
-		glog.Infof("Sync/Add/Update for Backup %s\n", restic.GetName())
+		backup := obj.(*api.Backup)
+		glog.Infof("Sync/Add/Update for Backup %s\n", backup.GetName())
 
-		if restic.Spec.Type == api.BackupOffline {
-			c.EnsureKubectlCronJob(restic)
+		if backup.Spec.Type == api.BackupOffline {
+			c.EnsureKubectlCronJob(backup)
 		}
-		c.EnsureSidecar(restic)
-		c.EnsureSidecarDeleted(restic.Namespace, restic.Name)
+		c.EnsureSidecar(backup)
+		c.EnsureSidecarDeleted(backup.Namespace, backup.Name)
 	}
 	return nil
 }
 
-func (c *StashController) EnsureKubectlCronJob(restic *api.Backup) error {
+func (c *StashController) EnsureKubectlCronJob(backup *api.Backup) error {
 	image := docker.Docker{
 		Registry: c.options.DockerRegistry,
 		Image:    docker.ImageKubectl,
@@ -112,23 +112,23 @@ func (c *StashController) EnsureKubectlCronJob(restic *api.Backup) error {
 	}
 
 	meta := metav1.ObjectMeta{
-		Name:      util.KubectlCronPrefix + restic.Name,
-		Namespace: restic.Namespace,
+		Name:      util.KubectlCronPrefix + backup.Name,
+		Namespace: backup.Namespace,
 	}
 
-	selector, err := metav1.LabelSelectorAsSelector(&restic.Spec.Selector)
+	selector, err := metav1.LabelSelectorAsSelector(&backup.Spec.Selector)
 	if err != nil {
 		return err
 	}
 
 	cronJob, _, err := batch_util.CreateOrPatchCronJob(c.k8sClient, meta, func(in *batch.CronJob) *batch.CronJob {
-		// set restic as cron-job owner
+		// set backup as cron-job owner
 		in.OwnerReferences = []metav1.OwnerReference{
 			{
 				APIVersion: api.SchemeGroupVersion.String(),
 				Kind:       api.ResourceKindBackup,
-				Name:       restic.Name,
-				UID:        restic.UID,
+				Name:       backup.Name,
+				UID:        backup.UID,
 			},
 		}
 
@@ -136,16 +136,16 @@ func (c *StashController) EnsureKubectlCronJob(restic *api.Backup) error {
 			in.Labels = map[string]string{}
 		}
 		in.Labels["app"] = util.AppLabelStash
-		in.Labels[util.AnnotationBackup] = restic.Name
+		in.Labels[util.AnnotationBackup] = backup.Name
 		in.Labels[util.AnnotationOperation] = util.OperationDeletePods
 
 		// spec
-		in.Spec.Schedule = restic.Spec.Schedule
+		in.Spec.Schedule = backup.Spec.Schedule
 		if in.Spec.JobTemplate.Labels == nil {
 			in.Spec.JobTemplate.Labels = map[string]string{}
 		}
 		in.Spec.JobTemplate.Labels["app"] = util.AppLabelStash
-		in.Spec.JobTemplate.Labels[util.AnnotationBackup] = restic.Name
+		in.Spec.JobTemplate.Labels[util.AnnotationBackup] = backup.Name
 		in.Spec.JobTemplate.Labels[util.AnnotationOperation] = util.OperationDeletePods
 
 		in.Spec.JobTemplate.Spec.Template.Spec.Containers = core_util.UpsertContainer(
@@ -160,7 +160,7 @@ func (c *StashController) EnsureKubectlCronJob(restic *api.Backup) error {
 					"-l " + selector.String(),
 				},
 			})
-		in.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = restic.Spec.ImagePullSecrets
+		in.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = backup.Spec.ImagePullSecrets
 
 		in.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
 		if c.options.EnableRBAC {
@@ -185,11 +185,11 @@ func (c *StashController) EnsureKubectlCronJob(restic *api.Backup) error {
 	return nil
 }
 
-func (c *StashController) EnsureSidecar(restic *api.Backup) {
-	sel, err := metav1.LabelSelectorAsSelector(&restic.Spec.Selector)
+func (c *StashController) EnsureSidecar(backup *api.Backup) {
+	sel, err := metav1.LabelSelectorAsSelector(&backup.Spec.Selector)
 	if err != nil {
 		c.recorder.Eventf(
-			restic.ObjectReference(),
+			backup.ObjectReference(),
 			core.EventTypeWarning,
 			eventer.EventReasonInvalidBackup,
 			"Reason: %s",
@@ -198,7 +198,7 @@ func (c *StashController) EnsureSidecar(restic *api.Backup) {
 		return
 	}
 	{
-		if resources, err := c.dpLister.Deployments(restic.Namespace).List(sel); err == nil {
+		if resources, err := c.dpLister.Deployments(backup.Namespace).List(sel); err == nil {
 			for _, resource := range resources {
 				key, err := cache.MetaNamespaceKeyFunc(resource)
 				if err == nil {
@@ -208,7 +208,7 @@ func (c *StashController) EnsureSidecar(restic *api.Backup) {
 		}
 	}
 	{
-		if resources, err := c.dsLister.DaemonSets(restic.Namespace).List(sel); err == nil {
+		if resources, err := c.dsLister.DaemonSets(backup.Namespace).List(sel); err == nil {
 			for _, resource := range resources {
 				key, err := cache.MetaNamespaceKeyFunc(resource)
 				if err == nil {
@@ -218,7 +218,7 @@ func (c *StashController) EnsureSidecar(restic *api.Backup) {
 		}
 	}
 	//{
-	//	if resources, err := c.ssLister.StatefulSets(restic.Namespace).List(sel); err == nil {
+	//	if resources, err := c.ssLister.StatefulSets(backup.Namespace).List(sel); err == nil {
 	//		for _, resource := range resources {
 	//			key, err := cache.MetaNamespaceKeyFunc(resource)
 	//			if err == nil {
@@ -228,7 +228,7 @@ func (c *StashController) EnsureSidecar(restic *api.Backup) {
 	//	}
 	//}
 	{
-		if resources, err := c.rcLister.ReplicationControllers(restic.Namespace).List(sel); err == nil {
+		if resources, err := c.rcLister.ReplicationControllers(backup.Namespace).List(sel); err == nil {
 			for _, resource := range resources {
 				key, err := cache.MetaNamespaceKeyFunc(resource)
 				if err == nil {
@@ -238,7 +238,7 @@ func (c *StashController) EnsureSidecar(restic *api.Backup) {
 		}
 	}
 	{
-		if resources, err := c.rsLister.ReplicaSets(restic.Namespace).List(sel); err == nil {
+		if resources, err := c.rsLister.ReplicaSets(backup.Namespace).List(sel); err == nil {
 			for _, resource := range resources {
 				// If owned by a Deployment, skip it.
 				if ext_util.IsOwnedByDeployment(resource) {
@@ -256,7 +256,7 @@ func (c *StashController) EnsureSidecar(restic *api.Backup) {
 func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
 	if resources, err := c.dpLister.Deployments(namespace).List(labels.Everything()); err == nil {
 		for _, resource := range resources {
-			restic, err := util.GetAppliedBackup(resource.Annotations)
+			backup, err := util.GetAppliedBackup(resource.Annotations)
 			if err != nil {
 				if ref, e2 := reference.GetReference(scheme.Scheme, resource); e2 == nil {
 					c.recorder.Eventf(
@@ -267,7 +267,7 @@ func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
 						err.Error(),
 					)
 				}
-			} else if restic != nil && restic.Namespace == namespace && restic.Name == name {
+			} else if backup != nil && backup.Namespace == namespace && backup.Name == name {
 				key, err := cache.MetaNamespaceKeyFunc(resource)
 				if err == nil {
 					c.dpQueue.GetQueue().Add(key)
@@ -277,7 +277,7 @@ func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
 	}
 	if resources, err := c.dsLister.DaemonSets(namespace).List(labels.Everything()); err == nil {
 		for _, resource := range resources {
-			restic, err := util.GetAppliedBackup(resource.Annotations)
+			backup, err := util.GetAppliedBackup(resource.Annotations)
 			if err != nil {
 				if ref, e2 := reference.GetReference(scheme.Scheme, resource); e2 == nil {
 					c.recorder.Eventf(
@@ -288,7 +288,7 @@ func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
 						err.Error(),
 					)
 				}
-			} else if restic != nil && restic.Namespace == namespace && restic.Name == name {
+			} else if backup != nil && backup.Namespace == namespace && backup.Name == name {
 				key, err := cache.MetaNamespaceKeyFunc(resource)
 				if err == nil {
 					c.dsQueue.GetQueue().Add(key)
@@ -298,7 +298,7 @@ func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
 	}
 	//if resources, err := c.ssLister.StatefulSets(namespace).List(labels.Everything()); err == nil {
 	//	for _, resource := range resources {
-	//		restic, err := util.GetAppliedBackup(resource.Annotations)
+	//		backup, err := util.GetAppliedBackup(resource.Annotations)
 	//		if err != nil {
 	//			c.recorder.Eventf(
 	//				kutil.GetObjectReference(resource, apps.SchemeGroupVersion),
@@ -307,7 +307,7 @@ func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
 	//				"Reason: %s",
 	//				err.Error(),
 	//			)
-	//		} else if restic != nil && restic.Namespace == namespace && restic.Name == name {
+	//		} else if backup != nil && backup.Namespace == namespace && backup.Name == name {
 	//			key, err := cache.MetaNamespaceKeyFunc(resource)
 	//			if err == nil {
 	//				c.ssQueue.GetQueue().Add(key)
@@ -317,7 +317,7 @@ func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
 	//}
 	if resources, err := c.rcLister.ReplicationControllers(namespace).List(labels.Everything()); err == nil {
 		for _, resource := range resources {
-			restic, err := util.GetAppliedBackup(resource.Annotations)
+			backup, err := util.GetAppliedBackup(resource.Annotations)
 			if err != nil {
 				if ref, e2 := reference.GetReference(scheme.Scheme, resource); e2 == nil {
 					c.recorder.Eventf(
@@ -328,7 +328,7 @@ func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
 						err.Error(),
 					)
 				}
-			} else if restic != nil && restic.Namespace == namespace && restic.Name == name {
+			} else if backup != nil && backup.Namespace == namespace && backup.Name == name {
 				key, err := cache.MetaNamespaceKeyFunc(resource)
 				if err == nil {
 					c.rcQueue.GetQueue().Add(key)
@@ -338,7 +338,7 @@ func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
 	}
 	if resources, err := c.rsLister.ReplicaSets(namespace).List(labels.Everything()); err == nil {
 		for _, resource := range resources {
-			restic, err := util.GetAppliedBackup(resource.Annotations)
+			backup, err := util.GetAppliedBackup(resource.Annotations)
 			if err != nil {
 				if ref, e2 := reference.GetReference(scheme.Scheme, resource); e2 == nil {
 					c.recorder.Eventf(
@@ -349,7 +349,7 @@ func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
 						err.Error(),
 					)
 				}
-			} else if restic != nil && restic.Namespace == namespace && restic.Name == name {
+			} else if backup != nil && backup.Namespace == namespace && backup.Name == name {
 				key, err := cache.MetaNamespaceKeyFunc(resource)
 				if err == nil {
 					c.rsQueue.GetQueue().Add(key)

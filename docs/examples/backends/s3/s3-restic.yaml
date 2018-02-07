@@ -1,12 +1,12 @@
 apiVersion: stash.appscode.com/v1alpha1
 kind: Backup
 metadata:
-  name: s3-restic
+  name: s3-backup
   namespace: default
 spec:
   selector:
     matchLabels:
-      app: s3-restic
+      app: s3-backup
   fileGroups:
   - path: /source/data
     retentionPolicyName: 'keep-last-5'

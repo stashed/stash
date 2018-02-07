@@ -66,7 +66,7 @@ spec:
           name: source-data
       - args:
         - backup
-        - --restic-name=stash-demo
+        - --backup-name=stash-demo
         - --workload-kind=Statefulset
         - --workload-name=stash-demo
         - --run-via-cron=true
@@ -115,14 +115,14 @@ spec:
             path: labels
         name: stash-podinfo
       - hostPath:
-          path: /data/stash-test/restic-repo
+          path: /data/stash-test/backup-repo
           type: ""
         name: stash-local
 ```
 
 You can find the full working demo in [examples folder](/docs/examples/workloads/statefulset.yaml). The section you should change for your own StatefulSet are:
 
- - `--restic-name` flag should be set to the name of the Backup used as configuration.
+ - `--backup-name` flag should be set to the name of the Backup used as configuration.
  - `--workload-kind` flag specifies the kind of workload (Deployment/Replicaset/RepliationController/DaemonSet/StatefulSet).
  - `--workload-name` flag specifies the name of workload where sidecar pod is added.
 
@@ -131,7 +131,7 @@ To learn about the meaning of various flags, please visit [here](/docs/reference
 ## Next Steps
 
 - Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/backup.md).
-- Learn about the details of Backup CRD [here](/docs/concepts/crds/restic.md).
+- Learn about the details of Backup CRD [here](/docs/concepts/crds/backup.md).
 - To restore a backup see [here](/docs/guides/restore.md).
 - Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
 - To run backup in offline mode see [here](/docs/guides/offline_backup.md)

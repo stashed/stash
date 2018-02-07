@@ -24,10 +24,10 @@ Stash operator exposes Prometheus native monitoring data via `/metrics` endpoint
 ## Monitoring Backup Operation
 Since backup operations are run as cron jobs, Stash can use [Prometheus Pushgateway](https://github.com/prometheus/pushgateway) cache metrics for backup operation. The installation scripts for Stash operator deploys a Prometheus Pushgateway as a sidecar container. You can configure a Prometheus server to scrape this Pushgateway via `stash-operator` service on port `:56789`. Backup operations send the following metrics to this Pushgateway:
 
- - `restic_session_success{job="<restic.namespace>-<restic.name>", app="<workload>"}`: Indicates if session was successfully completed
- - `restic_session_fail{job="<restic.namespace>-<restic.name>", app="<workload>"}`: Indicates if session failed
- - `restic_session_duration_seconds_total{job="<restic.namespace>-<restic.name>", app="<workload>"}`: Total seconds taken to complete restic session
- - `restic_session_duration_seconds{job="<restic.namespace>-<restic.name>", app="<workload>", filegroup="dir1", op="backup|forget"}`: Total seconds taken to complete restic session
+ - `backup_session_success{job="<backup.namespace>-<backup.name>", app="<workload>"}`: Indicates if session was successfully completed
+ - `backup_session_fail{job="<backup.namespace>-<backup.name>", app="<workload>"}`: Indicates if session failed
+ - `backup_session_duration_seconds_total{job="<backup.namespace>-<backup.name>", app="<workload>"}`: Total seconds taken to complete backup session
+ - `backup_session_duration_seconds{job="<backup.namespace>-<backup.name>", app="<workload>", filegroup="dir1", op="backup|forget"}`: Total seconds taken to complete backup session
 
 ## Grafana Dashboard
 The dashboard can be downloaded directly [from the repo](/contrib/monitoring/Grafana%20-%20Stash%20-%20Backup%20Overview.json) or from [Grafana.com](https://grafana.com/dashboards/4198).
@@ -38,7 +38,7 @@ A demo on what the dashboard shows, can be found here: [Stash - Backup Overview 
 ## Next Steps
 
 - Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/backup.md).
-- Learn about the details of Backup CRD [here](/docs/concepts/crds/restic.md).
+- Learn about the details of Backup CRD [here](/docs/concepts/crds/backup.md).
 - To restore a backup see [here](/docs/guides/restore.md).
 - Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
 - To run backup in offline mode see [here](/docs/guides/offline_backup.md)

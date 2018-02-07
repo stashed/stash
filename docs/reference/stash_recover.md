@@ -11,11 +11,11 @@ section_menu_id: reference
 ---
 ## stash recover
 
-Recover restic backup
+Recover backup backup
 
 ### Synopsis
 
-Recover restic backup
+Recover backup backup
 
 ```
 stash recover [flags]

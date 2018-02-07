@@ -60,7 +60,7 @@ type: Opaque
 apiVersion: stash.appscode.com/v1alpha1
 kind: Backup
 metadata:
-  name: replicaset-restic
+  name: replicaset-backup
   namespace: default
 spec:
   selector:
@@ -73,7 +73,7 @@ spec:
     local:
       mountPath: /repo
       hostPath:
-        path: /data/stash-test/restic-repo
+        path: /data/stash-test/backup-repo
     storageSecretName: replicaset-secret
   schedule: '@every 1m'
   volumeMounts:

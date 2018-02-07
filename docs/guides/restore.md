@@ -38,14 +38,14 @@ spec:
     local:
       mountPath: /safe/data
       hostPath:
-        path: /data/stash-test/restic-repo
+        path: /data/stash-test/backup-repo
     storageSecretName: stash-demo
   paths:
   - /source/data
   recoveredVolumes:
   - mountPath: /source/data
     hostPath:
-      path: /data/stash-test/restic-restored
+      path: /data/stash-test/backup-restored
 ```
 
 Here,
@@ -85,14 +85,14 @@ spec:
     local:
       mountPath: /safe/data
       hostPath:
-        path: /data/stash-test/restic-repo
+        path: /data/stash-test/backup-repo
     storageSecretName: stash-demo
   paths:
   - /source/data
   recoveredVolumes:
   - mountPath: /source/data
     hostPath:
-      path: /data/stash-test/restic-restored
+      path: /data/stash-test/backup-restored
 status:
   phase: Succeeded
 ```
@@ -104,7 +104,7 @@ To cleanup the Kubernetes resources created by this tutorial, run:
 ```console
 $ kubectl delete deployment stash-demo
 $ kubectl delete secret stash-demo
-$ kubectl delete restic stash-demo
+$ kubectl delete backup stash-demo
 $ kubectl delete recovery stash-demo
 ```
 
@@ -112,7 +112,7 @@ If you would like to uninstall Stash operator, please follow the steps [here](/d
 
 ## Next Steps
 
-- Learn about the details of Backup CRD [here](/docs/concepts/crds/restic.md).
+- Learn about the details of Backup CRD [here](/docs/concepts/crds/backup.md).
 - Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
 - To run backup in offline mode see [here](/docs/guides/offline_backup.md)
 - See the list of supported backends and how to configure them [here](/docs/guides/backends.md).

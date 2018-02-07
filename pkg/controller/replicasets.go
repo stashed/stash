@@ -77,7 +77,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 			}
 		}
 
-		// not restic workload or owned by a deployment, just remove the pending stash initializer
+		// not backup workload or owned by a deployment, just remove the pending stash initializer
 		if util.ToBeInitializedBySelf(rs.Initializers) {
 			_, _, err = ext_util.PatchReplicaSet(c.k8sClient, rs, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
 				fmt.Println("Removing pending stash initializer for", obj.Name)
@@ -191,7 +191,7 @@ func (c *StashController) EnsureReplicaSetSidecar(resource *extensions.ReplicaSe
 	return err
 }
 
-func (c *StashController) EnsureReplicaSetSidecarDeleted(resource *extensions.ReplicaSet, restic *api.Backup) (err error) {
+func (c *StashController) EnsureReplicaSetSidecarDeleted(resource *extensions.ReplicaSet, backup *api.Backup) (err error) {
 	if c.options.EnableRBAC {
 		err := c.ensureSidecarRoleBindingDeleted(resource.ObjectMeta)
 		if err != nil {
@@ -200,14 +200,14 @@ func (c *StashController) EnsureReplicaSetSidecarDeleted(resource *extensions.Re
 	}
 
 	resource, _, err = ext_util.PatchReplicaSet(c.k8sClient, resource, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
-		if restic.Spec.Type == api.BackupOffline {
+		if backup.Spec.Type == api.BackupOffline {
 			obj.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.InitContainers, util.StashContainer)
 		} else {
 			obj.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
 		}
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
-		if restic.Spec.Backend.Local != nil {
+		if backup.Spec.Backend.Local != nil {
 			obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.LocalVolumeName)
 		}
 		if obj.Annotations != nil {
@@ -224,7 +224,7 @@ func (c *StashController) EnsureReplicaSetSidecarDeleted(resource *extensions.Re
 	if err != nil {
 		return
 	}
-	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, resource.Spec.Selector, restic.Spec.Type)
+	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, resource.Spec.Selector, backup.Spec.Type)
 	if err != nil {
 		return
 	}

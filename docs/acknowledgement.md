@@ -16,4 +16,4 @@ aliases:
 ---
 
 # Acknowledgement
- - Many thanks to [Alexander Neumann](https://github.com/fd0) for [Backup](https://restic.net) project.
+ - Many thanks to [Alexander Neumann](https://github.com/fd0) for [Backup](https://backup.net) project.

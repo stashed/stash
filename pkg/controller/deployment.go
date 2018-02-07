@@ -75,7 +75,7 @@ func (c *StashController) runDeploymentInjector(key string) error {
 			return c.EnsureDeploymentSidecarDeleted(dp, oldBackup)
 		}
 
-		// not restic workload, just remove the pending stash initializer
+		// not backup workload, just remove the pending stash initializer
 		if util.ToBeInitializedBySelf(dp.Initializers) {
 			_, _, err = apps_util.PatchDeployment(c.k8sClient, dp, func(obj *apps.Deployment) *apps.Deployment {
 				fmt.Println("Removing pending stash initializer for", obj.Name)
@@ -185,7 +185,7 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 	return err
 }
 
-func (c *StashController) EnsureDeploymentSidecarDeleted(resource *apps.Deployment, restic *api.Backup) (err error) {
+func (c *StashController) EnsureDeploymentSidecarDeleted(resource *apps.Deployment, backup *api.Backup) (err error) {
 	if c.options.EnableRBAC {
 		err = c.ensureSidecarRoleBindingDeleted(resource.ObjectMeta)
 		if err != nil {
@@ -194,14 +194,14 @@ func (c *StashController) EnsureDeploymentSidecarDeleted(resource *apps.Deployme
 	}
 
 	resource, _, err = apps_util.PatchDeployment(c.k8sClient, resource, func(obj *apps.Deployment) *apps.Deployment {
-		if restic.Spec.Type == api.BackupOffline {
+		if backup.Spec.Type == api.BackupOffline {
 			obj.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.InitContainers, util.StashContainer)
 		} else {
 			obj.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
 		}
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
-		if restic.Spec.Backend.Local != nil {
+		if backup.Spec.Backend.Local != nil {
 			obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.LocalVolumeName)
 		}
 		if obj.Annotations != nil {

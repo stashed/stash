@@ -57,7 +57,7 @@ func (c *Controller) setupAndRunScheduler(stopBackup chan struct{}) error {
 		}
 		return err
 	}
-	c.initBackupWatcher() // setup restic watcher, not required for offline backup
+	c.initBackupWatcher() // setup backup watcher, not required for offline backup
 	go c.runScheduler(1, stopBackup)
 	return nil
 }
@@ -163,15 +163,15 @@ func (c *Controller) runOnceForScheduler() error {
 		return err
 	}
 
-	// setup restic again, previously done in setup()
-	if err = c.resticCLI.SetupEnv(resource.Spec.Backend, secret, c.opt.SmartPrefix); err != nil {
+	// setup backup again, previously done in setup()
+	if err = c.backupCLI.SetupEnv(resource.Spec.Backend, secret, c.opt.SmartPrefix); err != nil {
 		return err
 	}
-	if err = c.resticCLI.InitRepositoryIfAbsent(); err != nil {
+	if err = c.backupCLI.InitRepositoryIfAbsent(); err != nil {
 		return err
 	}
 
-	// run final restic backup command
+	// run final backup backup command
 	return c.runBackupBackup(resource)
 }
 
@@ -196,7 +196,7 @@ func (c *Controller) checkOnceForScheduler() (err error) {
 		return
 	}
 
-	err = c.resticCLI.Check()
+	err = c.backupCLI.Check()
 	if err != nil {
 		c.recorder.Eventf(resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToCheck, "Repository check failed for workload %s %s/%s. Reason: %v", c.opt.Workload.Kind, c.opt.Namespace, c.opt.Workload.Name, err)
 	}

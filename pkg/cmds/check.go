@@ -21,7 +21,7 @@ func NewCmdCheck() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:               "check",
-		Short:             "Check restic backup",
+		Short:             "Check backup",
 		DisableAutoGenTag: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
@@ -40,7 +40,7 @@ func NewCmdCheck() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&opt.BackupName, "restic-name", opt.BackupName, "Name of the Backup CRD.")
+	cmd.Flags().StringVar(&opt.BackupName, "backup-name", opt.BackupName, "Name of the Backup CRD.")
 	cmd.Flags().StringVar(&opt.HostName, "host-name", opt.HostName, "Host name for workload.")
 	cmd.Flags().StringVar(&opt.SmartPrefix, "smart-prefix", opt.SmartPrefix, "Smart prefix for workload")
 

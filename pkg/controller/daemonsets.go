@@ -66,7 +66,7 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 			return c.EnsureDaemonSetSidecarDeleted(ds, oldBackup)
 		}
 
-		// not restic workload, just remove the pending stash initializer
+		// not backup workload, just remove the pending stash initializer
 		if util.ToBeInitializedBySelf(ds.Initializers) {
 			_, _, err = ext_util.PatchDaemonSet(c.k8sClient, ds, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
 				fmt.Println("Removing pending stash initializer for", obj.Name)
@@ -177,7 +177,7 @@ func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet,
 	return ext_util.WaitUntilDaemonSetReady(c.k8sClient, resource.ObjectMeta)
 }
 
-func (c *StashController) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSet, restic *api.Backup) (err error) {
+func (c *StashController) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSet, backup *api.Backup) (err error) {
 	if c.options.EnableRBAC {
 		err := c.ensureSidecarRoleBindingDeleted(resource.ObjectMeta)
 		if err != nil {
@@ -186,14 +186,14 @@ func (c *StashController) EnsureDaemonSetSidecarDeleted(resource *extensions.Dae
 	}
 
 	resource, _, err = ext_util.PatchDaemonSet(c.k8sClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
-		if restic.Spec.Type == api.BackupOffline {
+		if backup.Spec.Type == api.BackupOffline {
 			obj.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.InitContainers, util.StashContainer)
 		} else {
 			obj.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
 		}
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
-		if restic.Spec.Backend.Local != nil {
+		if backup.Spec.Backend.Local != nil {
 			obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.LocalVolumeName)
 		}
 		if obj.Annotations != nil {

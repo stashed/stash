@@ -1,12 +1,12 @@
 apiVersion: stash.appscode.com/v1alpha1
 kind: Backup
 metadata:
-  name: swift-restic
+  name: swift-backup
   namespace: default
 spec:
   selector:
     matchLabels:
-      app: swift-restic
+      app: swift-backup
   fileGroups:
   - path: /source/data
     retentionPolicyName: 'keep-last-5'

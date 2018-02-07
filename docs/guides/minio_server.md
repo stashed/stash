@@ -8,7 +8,7 @@ At first, you need to have a Kubernetes cluster, and the kubectl command-line to
 
 You should have understanding the following Stash terms:
 
-- [Backup](/docs/concepts/crds/restic.md)
+- [Backup](/docs/concepts/crds/backup.md)
 - [Recovery](/docs/concepts/crds/recovery.md)
 
 Then, you will need a TLS secure [Minio](https://docs.minio.io/) server to store backed up data. You can deploy a TLS secure Minio server in your cluster by following the steps below:
@@ -301,7 +301,7 @@ At first, we need to create a secret for `Backup` crd. To configure this backend
 
 | Key                     | Description                                                             |
 |-------------------------|-------------------------------------------------------------------------|
-| `RESTIC_PASSWORD`       | `Required`. Password used to encrypt snapshots by `restic`              |
+| `RESTIC_PASSWORD`       | `Required`. Password used to encrypt snapshots by `backup`              |
 | `AWS_ACCESS_KEY_ID`     | `Required`. Minio access key ID                                         |
 | `AWS_SECRET_ACCESS_KEY` | `Required`. Minio secret access key                                     |
 | `CA_CERT_DATA`          |`Required`. Root certificate by which Minio server certificate is signed |
@@ -313,18 +313,18 @@ $ echo -n 'changeit' > RESTIC_PASSWORD
 $ echo -n '<your-minio-access-key-id-here>' > AWS_ACCESS_KEY_ID
 $ echo -n '<your-minio-secret-access-key-here>' > AWS_SECRET_ACCESS_KEY
 $ cat ./directory/of/root/certificate/ca.crt > CA_CERT_DATA
-$ kubectl create secret generic minio-restic-secret \
+$ kubectl create secret generic minio-backup-secret \
     --from-file=./RESTIC_PASSWORD \
     --from-file=./AWS_ACCESS_KEY_ID \
     --from-file=./AWS_SECRET_ACCESS_KEY \
     --from-file=./CA_CERT_DATA
-secret "minio-restic-secret" created
+secret "minio-backup-secret" created
 ```
 
 Verify that the secret has been created successfully,
 
 ```console
-$ kubectl get secret minio-restic-secret -o yaml
+$ kubectl get secret minio-backup-secret -o yaml
 ```
 
 ```yaml
@@ -337,10 +337,10 @@ data:
 kind: Secret
 metadata:
   creationTimestamp: 2018-01-29T11:20:35Z
-  name: minio-restic-secret
+  name: minio-backup-secret
   namespace: default
   resourceVersion: "7773"
-  selfLink: /api/v1/namespaces/default/secrets/minio-restic-secret
+  selfLink: /api/v1/namespaces/default/secrets/minio-backup-secret
   uid: 6d70a2c1-04e6-11e8-b4cd-0800279de528
 type: Opaque
 ```
@@ -348,8 +348,8 @@ type: Opaque
 Now, we can create `Backup` crd. This will create a repository in Minio server and start taking periodic backup of `/source/data/` folder.
 
 ```console
-$ kubectl apply -f ./minio-restic.yaml
-restic "minio-restic" created
+$ kubectl apply -f ./minio-backup.yaml
+backup "minio-backup" created
 ```
 
 YAML of `Backup` crd for Minio backend,
@@ -358,7 +358,7 @@ YAML of `Backup` crd for Minio backend,
 apiVersion: stash.appscode.com/v1alpha1
 kind: Backup
 metadata:
-  name: minio-restic
+  name: minio-backup
   namespace: default
 spec:
   selector:
@@ -372,7 +372,7 @@ spec:
       endpoint: 'https://minio-service.default.svc' # Use your own Minio server address.
       bucket: stash-qa  # Give a name of the bucket where you want to backup.
       prefix: demo  # . Path prefix into bucket where repository will be created.(optional).
-    storageSecretName: minio-restic-secret
+    storageSecretName: minio-backup-secret
   schedule: '@every 1m'
   volumeMounts:
   - mountPath: /source/data
@@ -386,7 +386,7 @@ spec:
 If everything goes well, `Backup` will take backup of the volume periodically with 1 minute interval. You can see if the backup working correctly using this command
 ,
 ```console
-$ kubectl get restic minio-restic -o yaml
+$ kubectl get backup minio-backup -o yaml
 ```
 
 Output will be something similar to,
@@ -397,14 +397,14 @@ kind: Backup
 metadata:
   annotations:
     kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"stash.appscode.com/v1alpha1","kind":"Backup","metadata":{"annotations":{},"name":"minio-restic","namespace":"default"},"spec":{"backend":{"s3":{"bucket":"stash-qa","endpoint":"https://minio-service.default.svc","prefix":"demo"},"storageSecretName":"minio-restic-secret"},"fileGroups":[{"path":"/source/data","retentionPolicyName":"keep-last-5"}],"retentionPolicies":[{"keepLast":5,"name":"keep-last-5","prune":true}],"schedule":"@every 1m","selector":{"matchLabels":{"app":"stash-demo"}},"volumeMounts":[{"mountPath":"/source/data","name":"source-data"}]}}
+      {"apiVersion":"stash.appscode.com/v1alpha1","kind":"Backup","metadata":{"annotations":{},"name":"minio-backup","namespace":"default"},"spec":{"backend":{"s3":{"bucket":"stash-qa","endpoint":"https://minio-service.default.svc","prefix":"demo"},"storageSecretName":"minio-backup-secret"},"fileGroups":[{"path":"/source/data","retentionPolicyName":"keep-last-5"}],"retentionPolicies":[{"keepLast":5,"name":"keep-last-5","prune":true}],"schedule":"@every 1m","selector":{"matchLabels":{"app":"stash-demo"}},"volumeMounts":[{"mountPath":"/source/data","name":"source-data"}]}}
   clusterName: ""
   creationTimestamp: 2018-01-30T04:45:09Z
   generation: 0
-  name: minio-restic
+  name: minio-backup
   namespace: default
   resourceVersion: "4385"
-  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/minio-restic
+  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/backups/minio-backup
   uid: 5a0651c3-0578-11e8-9976-08002750604b
 spec:
   backend:
@@ -412,7 +412,7 @@ spec:
       bucket: stash-qa
       endpoint: https://minio-service.default.svc
       prefix: demo
-    storageSecretName: minio-restic-secret
+    storageSecretName: minio-backup-secret
   fileGroups:
   - path: /source/data
     retentionPolicyName: keep-last-5
@@ -462,7 +462,7 @@ spec:
       endpoint: 'https://minio-service.default.svc' # use your own Minio server address
       bucket: stash-qa
       prefix: demo
-    storageSecretName: minio-restic-secret # we will use same secret created for Backup crd. You can create new secret for Recovery with same credentials.
+    storageSecretName: minio-backup-secret # we will use same secret created for Backup crd. You can create new secret for Recovery with same credentials.
   paths:
   - /source/data
   recoveredVolumes:
@@ -484,7 +484,7 @@ kind: Recovery
 metadata:
   annotations:
     kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"stash.appscode.com/v1alpha1","kind":"Recovery","metadata":{"annotations":{},"name":"minio-recovery","namespace":"default"},"spec":{"backend":{"s3":{"bucket":"stash-qa","endpoint":"https://minio-service.default.svc","prefix":"demo"},"storageSecretName":"minio-restic-secret"},"paths":["/source/data"],"recoveredVolumes":[{"hostPath":{"path":"/data/stash-recovered/"},"mountPath":"/source/data","name":"stash-recovered-volume"}],"workload":{"kind":"Deployment","name":"stash-demo"}}}
+      {"apiVersion":"stash.appscode.com/v1alpha1","kind":"Recovery","metadata":{"annotations":{},"name":"minio-recovery","namespace":"default"},"spec":{"backend":{"s3":{"bucket":"stash-qa","endpoint":"https://minio-service.default.svc","prefix":"demo"},"storageSecretName":"minio-backup-secret"},"paths":["/source/data"],"recoveredVolumes":[{"hostPath":{"path":"/data/stash-recovered/"},"mountPath":"/source/data","name":"stash-recovered-volume"}],"workload":{"kind":"Deployment","name":"stash-demo"}}}
   clusterName: ""
   creationTimestamp: 2018-01-30T06:54:18Z
   generation: 0
@@ -499,7 +499,7 @@ spec:
       bucket: stash-qa
       endpoint: https://minio-service.default.svc
       prefix: demo
-    storageSecretName: minio-restic-secret
+    storageSecretName: minio-backup-secret
   paths:
   - /source/data
   recoveredVolumes:
@@ -546,9 +546,9 @@ To cleanup the Kubernetes resources created by this tutorial, run:
 
 ```console
 $ kubectl delete deployment stash-demo
-$ kubectl delete restic minio-restic
+$ kubectl delete backup minio-backup
 $ kubectl delete recovery minio-recovery
-$ kubectl delete secret minio-restic-secret
+$ kubectl delete secret minio-backup-secret
 ```
 
 To cleanup the minio server, run:

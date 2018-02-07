@@ -1,7 +1,7 @@
 package v1alpha1
 
 const (
-	BackupKey                = "restic.appscode.com"
+	BackupKey                = "backup.appscode.com"
 	LastAppliedConfiguration = BackupKey + "/last-applied-configuration"
 	VersionTag               = BackupKey + "/tag"
 )

@@ -16,7 +16,7 @@ aliases:
   - /products/stash/0.7.0-alpha.0/README/
 ---
 # Stash
- Stash by AppsCode is a Kubernetes operator for [restic](https://restic.net). If you are running production workloads in Kubernetes, you might want to take backup of your disks. Using Stash, you can backup Kubernetes volumes mounted in following types of workloads:
+ Stash by AppsCode is a Kubernetes operator for [backup](https://backup.net). If you are running production workloads in Kubernetes, you might want to take backup of your disks. Using Stash, you can backup Kubernetes volumes mounted in following types of workloads:
 
 - Deployment
 - DaemonSet

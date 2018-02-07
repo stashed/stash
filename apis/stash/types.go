@@ -7,8 +7,8 @@ import (
 
 const (
 	ResourceKindBackup   = "Backup"
-	ResourceNameBackup   = "restic"
-	ResourceTypeBackup   = "restics"
+	ResourceNameBackup   = "backup"
+	ResourceTypeBackup   = "backups"
 	ResourceKindRecovery = "Recovery"
 	ResourceNameRecovery = "recovery"
 	ResourceTypeRecovery = "recoveries"

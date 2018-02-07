@@ -9,7 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (fi *Invocation) _restic() api.Backup {
+func (fi *Invocation) _backup() api.Backup {
 	return api.Backup{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: api.SchemeGroupVersion.String(),
@@ -49,7 +49,7 @@ func (fi *Invocation) _restic() api.Backup {
 }
 
 func (fi *Invocation) BackupForLocalBackend() api.Backup {
-	r := fi._restic()
+	r := fi._backup()
 	r.Spec.Backend = api.Backend{
 		StorageSecretName: "",
 		Local: &api.LocalSpec{
@@ -63,14 +63,14 @@ func (fi *Invocation) BackupForLocalBackend() api.Backup {
 }
 
 func (fi *Invocation) BackupForHostPathLocalBackend() api.Backup {
-	r := fi._restic()
+	r := fi._backup()
 	r.Spec.Backend = api.Backend{
 		StorageSecretName: "",
 		Local: &api.LocalSpec{
 			MountPath: "/safe/data",
 			VolumeSource: core.VolumeSource{
 				HostPath: &core.HostPathVolumeSource{
-					Path: "/data/stash-test/restic-repo",
+					Path: "/data/stash-test/backup-repo",
 				},
 			},
 		},
@@ -79,7 +79,7 @@ func (fi *Invocation) BackupForHostPathLocalBackend() api.Backup {
 }
 
 func (fi *Invocation) BackupForS3Backend() api.Backup {
-	r := fi._restic()
+	r := fi._backup()
 	r.Spec.Backend = api.Backend{
 		StorageSecretName: "",
 		S3: &api.S3Spec{
@@ -92,7 +92,7 @@ func (fi *Invocation) BackupForS3Backend() api.Backup {
 }
 
 func (fi *Invocation) BackupForMinioBackend(address string) api.Backup {
-	r := fi._restic()
+	r := fi._backup()
 	r.Spec.Backend = api.Backend{
 		StorageSecretName: "",
 		S3: &api.S3Spec{
@@ -105,7 +105,7 @@ func (fi *Invocation) BackupForMinioBackend(address string) api.Backup {
 }
 
 func (fi *Invocation) BackupForDOBackend() api.Backup {
-	r := fi._restic()
+	r := fi._backup()
 	r.Spec.Backend = api.Backend{
 		StorageSecretName: "",
 		S3: &api.S3Spec{
@@ -118,7 +118,7 @@ func (fi *Invocation) BackupForDOBackend() api.Backup {
 }
 
 func (fi *Invocation) BackupForGCSBackend() api.Backup {
-	r := fi._restic()
+	r := fi._backup()
 	r.Spec.Backend = api.Backend{
 		StorageSecretName: "",
 		GCS: &api.GCSSpec{
@@ -130,7 +130,7 @@ func (fi *Invocation) BackupForGCSBackend() api.Backup {
 }
 
 func (fi *Invocation) BackupForAzureBackend() api.Backup {
-	r := fi._restic()
+	r := fi._backup()
 	r.Spec.Backend = api.Backend{
 		StorageSecretName: "",
 		Azure: &api.AzureSpec{
@@ -142,7 +142,7 @@ func (fi *Invocation) BackupForAzureBackend() api.Backup {
 }
 
 func (fi *Invocation) BackupForSwiftBackend() api.Backup {
-	r := fi._restic()
+	r := fi._backup()
 	r.Spec.Backend = api.Backend{
 		StorageSecretName: "",
 		Swift: &api.SwiftSpec{
@@ -154,7 +154,7 @@ func (fi *Invocation) BackupForSwiftBackend() api.Backup {
 }
 
 func (fi *Invocation) BackupForB2Backend() api.Backup {
-	r := fi._restic()
+	r := fi._backup()
 	r.Spec.Backend = api.Backend{
 		StorageSecretName: "",
 		B2: &api.B2Spec{

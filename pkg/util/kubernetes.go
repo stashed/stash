@@ -36,7 +36,7 @@ const (
 	KubectlCronPrefix = "stash-kubectl-cron-"
 	CheckJobPrefix    = "stash-check-"
 
-	AnnotationBackup    = "restic"
+	AnnotationBackup    = "backup"
 	AnnotationRecovery  = "recovery"
 	AnnotationOperation = "operation"
 
@@ -61,15 +61,15 @@ func GetAppliedBackup(m map[string]string) (*api.Backup, error) {
 	if err != nil {
 		return nil, err
 	}
-	restic, ok := obj.(*api.Backup)
+	backup, ok := obj.(*api.Backup)
 	if !ok {
 		return nil, fmt.Errorf("%s annotations has invalid Rectic object", api.LastAppliedConfiguration)
 	}
-	return restic, nil
+	return backup, nil
 }
 
 func FindBackup(lister stash_listers.BackupLister, obj metav1.ObjectMeta) (*api.Backup, error) {
-	restics, err := lister.Backups(obj.Namespace).List(labels.Everything())
+	backups, err := lister.Backups(obj.Namespace).List(labels.Everything())
 	if kerr.IsNotFound(err) {
 		return nil, nil
 	} else if err != nil {
@@ -77,23 +77,23 @@ func FindBackup(lister stash_listers.BackupLister, obj metav1.ObjectMeta) (*api.
 	}
 
 	result := make([]*api.Backup, 0)
-	for _, restic := range restics {
-		selector, err := metav1.LabelSelectorAsSelector(&restic.Spec.Selector)
+	for _, backup := range backups {
+		selector, err := metav1.LabelSelectorAsSelector(&backup.Spec.Selector)
 		if err != nil {
 			return nil, err
 		}
 		if selector.Matches(labels.Set(obj.Labels)) {
-			result = append(result, restic)
+			result = append(result, backup)
 		}
 	}
 	if len(result) > 1 {
 		var msg bytes.Buffer
 		msg.WriteString(fmt.Sprintf("Workload %s/%s matches multiple Backups:", obj.Namespace, obj.Name))
-		for i, restic := range result {
+		for i, backup := range result {
 			if i > 0 {
 				msg.WriteString(", ")
 			}
-			msg.WriteString(restic.Name)
+			msg.WriteString(backup.Name)
 		}
 		return nil, errors.New(msg.String())
 	} else if len(result) == 1 {
@@ -204,7 +204,7 @@ func NewInitContainer(r *api.Backup, workload api.LocalTypedReference, image doc
 	container := NewSidecarContainer(r, workload, image)
 	container.Args = []string{
 		"backup",
-		"--restic-name=" + r.Name,
+		"--backup-name=" + r.Name,
 		"--workload-kind=" + workload.Kind,
 		"--workload-name=" + workload.Name,
 		"--docker-registry=" + image.Registry,
@@ -231,7 +231,7 @@ func NewSidecarContainer(r *api.Backup, workload api.LocalTypedReference, image 
 		Image: image.ToContainerImage(),
 		Args: append([]string{
 			"backup",
-			"--restic-name=" + r.Name,
+			"--backup-name=" + r.Name,
 			"--workload-kind=" + workload.Kind,
 			"--workload-name=" + workload.Name,
 			"--docker-registry=" + image.Registry,
@@ -498,22 +498,22 @@ func DeleteConfigmapLock(k8sClient kubernetes.Interface, namespace string, workl
 	return k8sClient.CoreV1().ConfigMaps(namespace).Delete(GetConfigmapLockName(workload), &metav1.DeleteOptions{})
 }
 
-func NewCheckJob(restic *api.Backup, hostName, smartPrefix string, image docker.Docker) *batch.Job {
+func NewCheckJob(backup *api.Backup, hostName, smartPrefix string, image docker.Docker) *batch.Job {
 	job := &batch.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      CheckJobPrefix + restic.Name,
-			Namespace: restic.Namespace,
+			Name:      CheckJobPrefix + backup.Name,
+			Namespace: backup.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: api.SchemeGroupVersion.String(),
 					Kind:       api.ResourceKindBackup,
-					Name:       restic.Name,
-					UID:        restic.UID,
+					Name:       backup.Name,
+					UID:        backup.UID,
 				},
 			},
 			Labels: map[string]string{
 				"app":               AppLabelStash,
-				AnnotationBackup:    restic.Name,
+				AnnotationBackup:    backup.Name,
 				AnnotationOperation: OperationCheck,
 			},
 		},
@@ -526,7 +526,7 @@ func NewCheckJob(restic *api.Backup, hostName, smartPrefix string, image docker.
 							Image: image.ToContainerImage(),
 							Args: append([]string{
 								"check",
-								"--restic-name=" + restic.Name,
+								"--backup-name=" + backup.Name,
 								"--host-name=" + hostName,
 								"--smart-prefix=" + smartPrefix,
 								fmt.Sprintf("--analytics=%v", EnableAnalytics),
@@ -545,7 +545,7 @@ func NewCheckJob(restic *api.Backup, hostName, smartPrefix string, image docker.
 							},
 						},
 					},
-					ImagePullSecrets: restic.Spec.ImagePullSecrets,
+					ImagePullSecrets: backup.Spec.ImagePullSecrets,
 					RestartPolicy:    core.RestartPolicyOnFailure,
 					Volumes: []core.Volume{
 						{
@@ -561,9 +561,9 @@ func NewCheckJob(restic *api.Backup, hostName, smartPrefix string, image docker.
 	}
 
 	// local backend
-	// user don't need to specify "stash-local" volume, we collect it from restic-spec
-	if restic.Spec.Backend.Local != nil {
-		vol, mnt := restic.Spec.Backend.Local.ToVolumeAndMount(LocalVolumeName)
+	// user don't need to specify "stash-local" volume, we collect it from backup-spec
+	if backup.Spec.Backend.Local != nil {
+		vol, mnt := backup.Spec.Backend.Local.ToVolumeAndMount(LocalVolumeName)
 		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(
 			job.Spec.Template.Spec.Containers[0].VolumeMounts, mnt)
 		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, vol)

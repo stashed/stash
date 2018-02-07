@@ -28,7 +28,7 @@ The format for `Backup` object has changed in backward incompatiable manner betw
 **Old Version**
 
 ```
-Location depending on restic.spec.useAutoPrefix:
+Location depending on backup.spec.useAutoPrefix:
 
 Not Specified or, Smart:
 
@@ -55,8 +55,8 @@ Daemon Set:             {BackendPrefix}/daemonset/{WorkloadName}/{NodeName}/
 
 5. Install new `Stash` operator.
 6. Update your backed up `Backup` CRDs in the following ways:
-- `restic.spec.useAutoPrefix` is removed in new version of `Stash`. If you specify it in your old `Backup` CRD, you should remove it.
-- `restic.spec.fileGroups[].retentionPolicy` is moved to `restic.spec.retentionPolicies[]` and referenced using `restic.spec.fileGroups[].retentionPolicyName`.
+- `backup.spec.useAutoPrefix` is removed in new version of `Stash`. If you specify it in your old `Backup` CRD, you should remove it.
+- `backup.spec.fileGroups[].retentionPolicy` is moved to `backup.spec.retentionPolicies[]` and referenced using `backup.spec.fileGroups[].retentionPolicyName`.
 
 Consider following example:
 
@@ -95,7 +95,7 @@ retentionPolicies:
   keepLast: 10
 ```
 
-7. Now, re-deploy restic CRDs. It will add sidecar to pods again and continue backup.
+7. Now, re-deploy backup CRDs. It will add sidecar to pods again and continue backup.
 
 
 ### Example: Upgrading S3 backed volume
@@ -157,7 +157,7 @@ spec:
 Let say you are using following old `Backup` CRD to backup the `busybox` deployment:
 
 ```yaml
-$ kubectl get restic s3-restic -o yaml
+$ kubectl get backup s3-backup -o yaml
 
 apiVersion: stash.appscode.com/v1alpha1
 kind: Backup
@@ -168,10 +168,10 @@ metadata:
   deletionTimestamp: null
   generation: 0
   initializers: null
-  name: s3-restic
+  name: s3-backup
   namespace: default
   resourceVersion: "39256"
-  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/s3-restic
+  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/backups/s3-backup
   uid: 5ffb03c7-de4d-11e7-af32-0800274b5eab
 spec:
   backend:
@@ -199,14 +199,14 @@ status:
   lastBackupTime: 2017-12-11T08:32:40Z
 ```
 
-A restic-repository is initialized in `demo` folder of your `stash-qa` bucket and so far 3 backups are created and stored there. Now, the following steps will upgrade version of `Stash` without loosing those 3 backups.
+A backup-repository is initialized in `demo` folder of your `stash-qa` bucket and so far 3 backups are created and stored there. Now, the following steps will upgrade version of `Stash` without loosing those 3 backups.
 
 #### Step 1
 
 Dump your old `Backup` CRD in a file.
 
 ```
-$ kubectl get restic s3-restic -o yaml --export > s3-restic-dump.yaml
+$ kubectl get backup s3-backup -o yaml --export > s3-backup-dump.yaml
 ```
 
 #### Step 2
@@ -214,8 +214,8 @@ $ kubectl get restic s3-restic -o yaml --export > s3-restic-dump.yaml
 Delete the old `Backup` object.
 
 ```
-$ kubectl delete restic s3-restic
-restic "s3-restic" deleted
+$ kubectl delete backup s3-backup
+backup "s3-backup" deleted
 ```
 
 Now wait for sidecar to be removed by `Stash` operator.
@@ -264,10 +264,10 @@ metadata:
   deletionTimestamp: null
   generation: 0
   initializers: null
-  name: s3-restic
+  name: s3-backup
   namespace: default
   resourceVersion: "39256"
-  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/s3-restic
+  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/backups/s3-backup
   uid: 5ffb03c7-de4d-11e7-af32-0800274b5eab
 spec:
   backend:
@@ -300,13 +300,13 @@ status:
 Re-deploy the updated `Backup` CRD.
 
 ```
-$ kubectl apply -f s3-restic.yaml
+$ kubectl apply -f s3-backup.yaml
 ```
 
 It will add sidecar to the `busybox` pods again and continue backup from where it stopped. You can check status of the `Backup` CRD to verify that new backups are creating.
 
 ```yaml
-$ kubectl get restic s3-restic -o yaml
+$ kubectl get backup s3-backup -o yaml
 
 apiVersion: stash.appscode.com/v1alpha1
 kind: Backup
@@ -317,10 +317,10 @@ metadata:
   deletionTimestamp: null
   generation: 0
   initializers: null
-  name: s3-restic
+  name: s3-backup
   namespace: default
   resourceVersion: "44000"
-  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/s3-restic
+  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/backups/s3-backup
   uid: b7511b7a-de56-11e7-af32-0800274b5eab
 spec:
   backend:

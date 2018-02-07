@@ -35,14 +35,14 @@ spec:
     local:
       mountPath: /safe/data
       hostPath:
-        path: /data/stash-test/restic-repo
+        path: /data/stash-test/backup-repo
     storageSecretName: stash-demo
   paths:
   - /source/data
   recoveredVolumes:
   - mountPath: /source/data
     hostPath:
-      path: /data/stash-test/restic-restored
+      path: /data/stash-test/backup-restored
 ```
 
 The `.spec` section has following parts:
@@ -68,14 +68,14 @@ spec:
     local:
       mountPath: /safe/data
       hostPath:
-        path: /data/stash-test/restic-repo
+        path: /data/stash-test/backup-repo
     storageSecretName: stash-demo
   paths:
   - /source/data
   recoveredVolumes:
   - mountPath: /source/data
     hostPath:
-      path: /data/stash-test/restic-restored
+      path: /data/stash-test/backup-restored
 ```
 
 ### spec.nodeName
@@ -88,7 +88,7 @@ metadata:
   name: daemonset-demo
   namespace: default
 spec:
-  restic: daemonset-demo
+  backup: daemonset-demo
   workload:
     kind: Daemonset
     name: daemonset-demo
@@ -97,14 +97,14 @@ spec:
     local:
       mountPath: /safe/data
       hostPath:
-        path: /data/stash-test/restic-repo
+        path: /data/stash-test/backup-repo
     storageSecretName: stash-demo
   paths:
   - /source/data
   recoveredVolumes:
   - mountPath: /source/data
     hostPath:
-      path: /data/stash-test/restic-restored
+      path: /data/stash-test/backup-restored
 ```
 
 ### spec.backend
@@ -138,7 +138,7 @@ Stash operator updates `.status` of a Recovery CRD when recovery operation is co
 ## Next Steps
 
 - Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/backup.md).
-- Learn about the details of Backup CRD [here](/docs/concepts/crds/restic.md).
+- Learn about the details of Backup CRD [here](/docs/concepts/crds/backup.md).
 - To restore a backup see [here](/docs/guides/restore.md).
 - To run backup in offline mode see [here](/docs/guides/offline_backup.md)
 - See the list of supported backends and how to configure them [here](/docs/guides/backends.md).
