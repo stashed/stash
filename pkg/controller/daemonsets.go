@@ -15,6 +15,7 @@ import (
 	"github.com/golang/glog"
 	extensions "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
 )
@@ -166,18 +167,20 @@ func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet,
 		data, _ := meta.MarshalToJson(r, api.SchemeGroupVersion)
 		obj.Annotations[api.LastAppliedConfiguration] = string(data)
 		obj.Annotations[api.VersionTag] = c.options.StashImageTag
+
+		obj.Spec.UpdateStrategy.Type = "RollingUpdate"
+		obj.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable = &intstr.IntOrString{IntVal: 1}
 		return obj
 	})
 	if err != nil {
-		return
+		return err
 	}
 
 	err = ext_util.WaitUntilDaemonSetReady(c.k8sClient, resource.ObjectMeta)
 	if err != nil {
-		return
+		return err
 	}
-	err = util.WaitUntilSidecarAdded(c.k8sClient, resource.Namespace, resource.Spec.Selector, new.Spec.Type)
-	return
+	return err
 }
 
 func (c *StashController) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSet, restic *api.Restic) (err error) {
@@ -203,16 +206,17 @@ func (c *StashController) EnsureDaemonSetSidecarDeleted(resource *extensions.Dae
 			delete(obj.Annotations, api.LastAppliedConfiguration)
 			delete(obj.Annotations, api.VersionTag)
 		}
+		obj.Spec.UpdateStrategy.Type = "RollingUpdate"
+		obj.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable = &intstr.IntOrString{IntVal: 1}
 		return obj
 	})
 	if err != nil {
-		return
+		return err
 	}
 
 	err = ext_util.WaitUntilDaemonSetReady(c.k8sClient, resource.ObjectMeta)
 	if err != nil {
-		return
+		return err
 	}
-	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, resource.Spec.Selector, restic.Spec.Type)
-	return
+	return err
 }

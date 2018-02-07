@@ -167,17 +167,18 @@ func (c *StashController) EnsureStatefulSetSidecar(resource *apps.StatefulSet, o
 		obj.Annotations[api.LastAppliedConfiguration] = string(data)
 		obj.Annotations[api.VersionTag] = c.options.StashImageTag
 
+		obj.Spec.UpdateStrategy.Type = apps.RollingUpdateStatefulSetStrategyType
+
 		return obj
 	})
 	if err != nil {
-		return
+		return err
 	}
 
 	err = apps_util.WaitUntilStatefulSetReady(c.k8sClient, resource.ObjectMeta)
 	if err != nil {
-		return
+		return err
 	}
-	err = util.WaitUntilSidecarAdded(c.k8sClient, resource.Namespace, resource.Spec.Selector, new.Spec.Type)
 	return err
 }
 
@@ -204,16 +205,16 @@ func (c *StashController) EnsureStatefulSetSidecarDeleted(resource *apps.Statefu
 			delete(obj.Annotations, api.LastAppliedConfiguration)
 			delete(obj.Annotations, api.VersionTag)
 		}
+		obj.Spec.UpdateStrategy.Type = apps.RollingUpdateStatefulSetStrategyType
 		return obj
 	})
 	if err != nil {
-		return
+		return err
 	}
 
 	err = apps_util.WaitUntilStatefulSetReady(c.k8sClient, resource.ObjectMeta)
 	if err != nil {
-		return
+		return err
 	}
-	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, resource.Spec.Selector, restic.Spec.Type)
 	return err
 }

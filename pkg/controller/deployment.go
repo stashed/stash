@@ -178,14 +178,14 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 		return obj
 	})
 	if err != nil {
-		return
+		return err
 	}
 
 	err = apps_util.WaitUntilDeploymentReady(c.k8sClient, resource.ObjectMeta)
 	if err != nil {
-		return
+		return err
 	}
-	err = util.WaitUntilSidecarAdded(c.k8sClient, resource.Namespace, resource.Spec.Selector, new.Spec.Type)
+
 	return err
 }
 
@@ -215,16 +215,11 @@ func (c *StashController) EnsureDeploymentSidecarDeleted(resource *apps.Deployme
 		return obj
 	})
 	if err != nil {
-		return
+		return err
 	}
-
 	err = apps_util.WaitUntilDeploymentReady(c.k8sClient, resource.ObjectMeta)
 	if err != nil {
-		return
-	}
-	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, resource.Spec.Selector, restic.Spec.Type)
-	if err != nil {
-		return
+		return err
 	}
 	util.DeleteConfigmapLock(c.k8sClient, resource.Namespace, api.LocalTypedReference{Kind: api.KindDeployment, Name: resource.Name})
 	return err

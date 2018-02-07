@@ -120,6 +120,7 @@ var _ = Describe("Deployment", func() {
 			By("Deleting restic " + restic.Name)
 			f.DeleteRestic(restic.ObjectMeta)
 
+			By("Waiting to remove sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		}
 

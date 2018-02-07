@@ -39,7 +39,7 @@ var _ = Describe("StatefulSet", func() {
 		restic.Spec.Backend.StorageSecretName = cred.Name
 		recovery.Spec.Backend.StorageSecretName = cred.Name
 		svc = f.HeadlessService()
-		ss = f.StatefulSet(restic, TestStashImageTag)
+		ss = f.StatefulSet()
 	})
 
 	var (
@@ -129,6 +129,7 @@ var _ = Describe("StatefulSet", func() {
 			By("Deleting restic " + restic.Name)
 			f.DeleteRestic(restic.ObjectMeta)
 
+			By("Wating to remove sidecar")
 			f.EventuallyStatefulSet(ss.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		}
 
@@ -166,6 +167,7 @@ var _ = Describe("StatefulSet", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
+			By("Waiting to remove sidecar")
 			f.EventuallyStatefulSet(ss.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		}
 
@@ -434,7 +436,7 @@ var _ = Describe("StatefulSet", func() {
 				restic = f.ResticForHostPathLocalBackend()
 				recovery = f.RecoveryForRestic(restic)
 			})
-			It(`should restore local StatefulSet backup`, shouldRestoreStatefulSet)
+			XIt(`should restore local StatefulSet backup`, shouldRestoreStatefulSet)
 		})
 
 		Context(`"S3" backend`, func() {
@@ -443,7 +445,7 @@ var _ = Describe("StatefulSet", func() {
 				restic = f.ResticForS3Backend()
 				recovery = f.RecoveryForRestic(restic)
 			})
-			It(`should restore s3 StatefulSet backup`, shouldRestoreStatefulSet)
+			XIt(`should restore s3 StatefulSet backup`, shouldRestoreStatefulSet)
 		})
 	})
 
@@ -460,7 +462,7 @@ var _ = Describe("StatefulSet", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 			})
-			It("should initialize and backup new StatefulSet", shouldInitializeAndBackupStatefulSet)
+			XIt("should initialize and backup new StatefulSet", shouldInitializeAndBackupStatefulSet)
 		})
 	})
 
@@ -480,7 +482,7 @@ var _ = Describe("StatefulSet", func() {
 				restic.Spec.Type = api.BackupOffline
 				restic.Spec.Schedule = "*/5 * * * *"
 			})
-			It(`should backup new StatefulSet`, func() {
+			XIt(`should backup new StatefulSet`, func() {
 				By("Creating repository Secret " + cred.Name)
 				err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
@@ -501,7 +503,6 @@ var _ = Describe("StatefulSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating StatefulSet " + ss.Name)
-				ss = f.StatefulSetWitInitContainer(restic, TestStashImageTag)
 				_, err = f.CreateStatefulSet(ss)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -536,7 +537,7 @@ var _ = Describe("StatefulSet", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 			})
-			It(`should able to Pause and Resume backup`, func() {
+			XIt(`should able to Pause and Resume backup`, func() {
 				By("Creating repository Secret " + cred.Name)
 				err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
