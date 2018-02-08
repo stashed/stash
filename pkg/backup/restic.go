@@ -18,10 +18,6 @@ func (c *Controller) initResticWatcher() {
 	c.rQueue = queue.New("Restic", c.opt.MaxNumRequeues, c.opt.NumThreads, c.runResticScheduler)
 	c.rInformer.AddEventHandler(queue.NewEventHandler(c.rQueue.GetQueue(), func(oldObj, newObj interface{}) bool {
 		oldRestic, ok := oldObj.(*api.Restic)
-		if !ok {
-			log.Errorln("Invalid Restic object")
-			return false
-		}
 		newRestic, ok := newObj.(*api.Restic)
 		if !ok {
 			log.Errorln("Invalid Restic Object")
