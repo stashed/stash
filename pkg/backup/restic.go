@@ -8,7 +8,6 @@ import (
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
-	"k8s.io/client-go/tools/cache"
 )
 
 func (c *Controller) initResticWatcher() {
@@ -17,31 +16,23 @@ func (c *Controller) initResticWatcher() {
 
 	c.rInformer = c.stashInformerFactory.Stash().V1alpha1().Restics().Informer()
 	c.rQueue = queue.New("Restic", c.opt.MaxNumRequeues, c.opt.NumThreads, c.runResticScheduler)
-	c.rInformer.AddEventHandler(&cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			if r, ok := obj.(*api.Restic); ok && r.Name == c.opt.ResticName && r.IsValid() == nil {
-				queue.Enqueue(c.rQueue.GetQueue(), obj)
-			}
-		},
-		UpdateFunc: func(old interface{}, new interface{}) {
-			oldObj, ok := old.(*api.Restic)
-			if !ok {
-				log.Errorln("Invalid Restic object")
-				return
-			}
-			newObj, ok := new.(*api.Restic)
-			if !ok {
-				log.Errorln("Invalid Restic object")
-				return
-			}
-			if !util.ResticEqual(oldObj, newObj) && newObj.Name == c.opt.ResticName && newObj.IsValid() == nil {
-				queue.Enqueue(c.rQueue.GetQueue(), newObj)
-			}
-		},
-		DeleteFunc: func(obj interface{}) {
-			queue.Enqueue(c.rQueue.GetQueue(), obj)
-		},
-	})
+	c.rInformer.AddEventHandler(queue.NewEventHandler(c.rQueue.GetQueue(), func(oldObj, newObj interface{}) bool {
+		oldRestic, ok := oldObj.(*api.Restic)
+		if !ok {
+			log.Errorln("Invalid Restic object")
+			return false
+		}
+		newRestic, ok := newObj.(*api.Restic)
+		if !ok {
+			log.Errorln("Invalid Restic Object")
+			return false
+		}
+
+		if !util.ResticEqual(oldRestic, newRestic) && newRestic.Name == c.opt.ResticName && newRestic.IsValid() == nil {
+			return true
+		}
+		return false
+	}))
 	c.rLister = c.stashInformerFactory.Stash().V1alpha1().Restics().Lister()
 }
 
