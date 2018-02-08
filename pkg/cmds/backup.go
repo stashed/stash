@@ -7,7 +7,7 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/kutil/meta"
-	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
+	cs "github.com/appscode/stash/client"
 	"github.com/appscode/stash/pkg/backup"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/util"
@@ -27,6 +27,7 @@ func NewCmdBackup() *cobra.Command {
 			DockerRegistry: docker.ACRegistry,
 			ResyncPeriod:   5 * time.Minute,
 			MaxNumRequeues: 5,
+			NumThreads:     1,
 		}
 	)
 
