@@ -14,8 +14,6 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 )
@@ -58,7 +56,7 @@ func (c *Controller) setupAndRunScheduler(stopBackup chan struct{}) error {
 		return err
 	}
 	c.initResticWatcher() // setup restic watcher, not required for offline backup
-	go c.runScheduler(1, stopBackup)
+	go c.runScheduler(stopBackup)
 	return nil
 }
 
@@ -92,27 +90,20 @@ func (c *Controller) electLeader(stopBackup chan struct{}) error {
 	return nil
 }
 
-func (c *Controller) runScheduler(threadiness int, stopCh chan struct{}) {
+func (c *Controller) runScheduler(stopCh chan struct{}) {
 	c.cron.Start()
 	c.locked <- struct{}{}
 
-	defer runtime.HandleCrash()
+	c.stashInformerFactory.Start(stopCh)
 
-	// Let the workers stop when we are done
-	defer c.rQueue.ShutDown()
-	glog.Info("Starting Stash backup")
-
-	go c.rInformer.Run(stopCh)
-
-	// Wait for all involved caches to be synced, before processing items from the queue is started
-	if !cache.WaitForCacheSync(stopCh, c.rInformer.HasSynced) {
-		runtime.HandleError(fmt.Errorf("timed out waiting for caches to sync"))
-		return
+	for _, v := range c.stashInformerFactory.WaitForCacheSync(stopCh) {
+		if !v {
+			runtime.HandleError(fmt.Errorf("timed out waiting for caches to sync"))
+			return
+		}
 	}
 
-	for i := 0; i < threadiness; i++ {
-		go wait.Until(c.runResticWatcher, time.Second, stopCh)
-	}
+	c.rQueue.Run(stopCh)
 
 	<-stopCh
 	glog.Info("Stopping Stash backup")

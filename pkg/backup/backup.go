@@ -9,9 +9,11 @@ import (
 	"github.com/appscode/go/log"
 	core_util "github.com/appscode/kutil/core/v1"
 	rbac_util "github.com/appscode/kutil/rbac/v1beta1"
+	"github.com/appscode/kutil/tools/queue"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
-	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
+	cs "github.com/appscode/stash/client"
 	stash_util "github.com/appscode/stash/client/typed/stash/v1alpha1/util"
+	stashinformers "github.com/appscode/stash/informers/externalversions"
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/cli"
 	"github.com/appscode/stash/pkg/controller"
@@ -24,12 +26,12 @@ import (
 	core "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/tools/reference"
-	"k8s.io/client-go/util/workqueue"
 )
 
 type Options struct {
@@ -49,21 +51,23 @@ type Options struct {
 	DockerRegistry   string // image registry for check job
 	ImageTag         string // image tag for check job
 	EnableRBAC       bool   // rbac for check job
+	NumThreads       int
 }
 
 type Controller struct {
 	k8sClient   kubernetes.Interface
-	stashClient cs.StashV1alpha1Interface
+	stashClient cs.Interface
 	opt         Options
 	locked      chan struct{}
 	resticCLI   *cli.ResticWrapper
 	cron        *cron.Cron
 	recorder    record.EventRecorder
 
+	stashInformerFactory stashinformers.SharedInformerFactory
+
 	// Restic
-	rQueue    workqueue.RateLimitingInterface
-	rIndexer  cache.Indexer
-	rInformer cache.Controller
+	rQueue    *queue.Worker
+	rInformer cache.SharedIndexInformer
 	rLister   stash_listers.ResticLister
 }
 
@@ -72,7 +76,7 @@ const (
 	BackupEventComponent = "stash-backup"
 )
 
-func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, opt Options) *Controller {
+func New(k8sClient kubernetes.Interface, stashClient cs.Interface, opt Options) *Controller {
 	return &Controller{
 		k8sClient:   k8sClient,
 		stashClient: stashClient,
@@ -81,6 +85,14 @@ func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, 
 		locked:      make(chan struct{}, 1),
 		resticCLI:   cli.New(opt.ScratchDir, true, opt.SnapshotHostname),
 		recorder:    eventer.NewEventRecorder(k8sClient, BackupEventComponent),
+		stashInformerFactory: stashinformers.NewFilteredSharedInformerFactory(
+			stashClient,
+			opt.ResyncPeriod,
+			opt.Namespace,
+			func(options *metav1.ListOptions) {
+				options.FieldSelector = fields.OneTermEqualSelector("metadata.name", opt.ResticName).String()
+			},
+		),
 	}
 }
 
@@ -163,7 +175,7 @@ func (c *Controller) setup() (*api.Restic, error) {
 	}
 
 	// check resource
-	resource, err := c.stashClient.Restics(c.opt.Namespace).Get(c.opt.ResticName, metav1.GetOptions{})
+	resource, err := c.stashClient.StashV1alpha1().Restics(c.opt.Namespace).Get(c.opt.ResticName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +254,7 @@ func (c *Controller) runResticBackup(resource *api.Restic) (err error) {
 				restic_session_duration_seconds)
 		}
 		if err == nil {
-			stash_util.PatchRestic(c.stashClient, resource, func(in *api.Restic) *api.Restic {
+			stash_util.PatchRestic(c.stashClient.StashV1alpha1(), resource, func(in *api.Restic) *api.Restic {
 				in.Status.BackupCount++
 				in.Status.LastBackupTime = &startTime
 				if in.Status.FirstBackupTime == nil {
