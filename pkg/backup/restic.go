@@ -17,14 +17,9 @@ func (c *Controller) initResticWatcher() {
 	c.rInformer = c.stashInformerFactory.Stash().V1alpha1().Restics().Informer()
 	c.rQueue = queue.New("Restic", c.opt.MaxNumRequeues, c.opt.NumThreads, c.runResticScheduler)
 	c.rInformer.AddEventHandler(queue.NewEventHandler(c.rQueue.GetQueue(), func(oldObj, newObj interface{}) bool {
-		oldRestic, ok := oldObj.(*api.Restic)
-		newRestic, ok := newObj.(*api.Restic)
-		if !ok {
-			log.Errorln("Invalid Restic Object")
-			return false
-		}
-
-		if !util.ResticEqual(oldRestic, newRestic) && newRestic.Name == c.opt.ResticName && newRestic.IsValid() == nil {
+		old := oldObj.(*api.Restic)
+		nu := newObj.(*api.Restic)
+		if !util.ResticEqual(old, nu) && nu.Name == c.opt.ResticName && nu.IsValid() == nil {
 			return true
 		}
 		return false

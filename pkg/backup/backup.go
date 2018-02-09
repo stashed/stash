@@ -26,6 +26,7 @@ import (
 	core "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
@@ -84,8 +85,14 @@ func New(k8sClient kubernetes.Interface, stashClient cs.Interface, opt Options) 
 		locked:      make(chan struct{}, 1),
 		resticCLI:   cli.New(opt.ScratchDir, true, opt.SnapshotHostname),
 		recorder:    eventer.NewEventRecorder(k8sClient, BackupEventComponent),
-
-		stashInformerFactory: stashinformers.NewSharedInformerFactory(stashClient, opt.ResyncPeriod),
+		stashInformerFactory: stashinformers.NewFilteredSharedInformerFactory(
+			stashClient,
+			opt.ResyncPeriod,
+			opt.Namespace,
+			func(options *metav1.ListOptions) {
+				options.FieldSelector = fields.OneTermEqualSelector("metadata.name", opt.ResticName).String()
+			},
+		),
 	}
 }
 
