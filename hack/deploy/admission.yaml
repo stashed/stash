@@ -1,0 +1,26 @@
+# register to intercept stash CRD creates / updates
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: admission.stash.appscode.com
+  labels:
+    app: stash
+webhooks:
+- name: admission.stash.appscode.com
+  clientConfig:
+    service:
+      namespace: default
+      name: kubernetes
+      path: /apis/admission.stash.appscode.com/v1alpha1/admissionreviews
+    caBundle: $KUBE_CA
+  rules:
+  - operations:
+    - CREATE
+    - UPDATE
+    apiGroups:
+    - stash.appscode.com
+    apiVersions:
+    - "*"
+    resources:
+    - "*"
+  failurePolicy: Fail
