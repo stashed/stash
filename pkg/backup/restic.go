@@ -8,6 +8,7 @@ import (
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
+	"k8s.io/client-go/tools/cache"
 )
 
 func (c *Controller) initResticWatcher() {
@@ -16,14 +17,27 @@ func (c *Controller) initResticWatcher() {
 
 	c.rInformer = c.stashInformerFactory.Stash().V1alpha1().Restics().Informer()
 	c.rQueue = queue.New("Restic", c.opt.MaxNumRequeues, c.opt.NumThreads, c.runResticScheduler)
-	c.rInformer.AddEventHandler(queue.NewEventHandler(c.rQueue.GetQueue(), func(oldObj, newObj interface{}) bool {
-		old := oldObj.(*api.Restic)
-		nu := newObj.(*api.Restic)
-		if !util.ResticEqual(old, nu) && nu.Name == c.opt.ResticName && nu.IsValid() == nil {
-			return true
-		}
-		return false
-	}))
+	c.rInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			if r, ok := obj.(*api.Restic); ok && r.Name == c.opt.ResticName && r.IsValid() == nil {
+				queue.Enqueue(c.rQueue.GetQueue(), r)
+			}
+		},
+		UpdateFunc: func(oldObj interface{}, newObj interface{}) {
+			old := oldObj.(*api.Restic)
+			nu := newObj.(*api.Restic)
+			if !util.ResticEqual(old, nu) && nu.Name == c.opt.ResticName && nu.IsValid() == nil {
+				queue.Enqueue(c.rQueue.GetQueue(), nu)
+			}
+		},
+		DeleteFunc: func(obj interface{}) {
+			// IndexerInformer uses a delta queue, therefore for deletes we have to use this
+			// key function.
+			if r, ok := obj.(*api.Restic); ok && r.Name == c.opt.ResticName {
+				queue.Enqueue(c.rQueue.GetQueue(), obj)
+			}
+		},
+	})
 	c.rLister = c.stashInformerFactory.Stash().V1alpha1().Restics().Lister()
 }
 
