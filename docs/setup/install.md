@@ -30,8 +30,9 @@ options:
     --docker-registry              docker registry used to pull stash images (default: appscode)
     --image-pull-secret            name of secret used to pull stash operator images
     --run-on-master                run stash operator on master
-    --enable-apiserver     configure admission webhook for stash CRDs
+    --enable-admission-webhook     configure admission webhook for stash CRDs
     --enable-initializer           configure stash operator as workload initializer
+    --uninstall                    uninstall stash
 
 # install without RBAC roles
 $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/stash.sh \
@@ -70,11 +71,11 @@ $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack
     | bash -s -- --docker-registry=MY_REGISTRY [--image-pull-secret=SECRET_NAME] [--rbac]
 ```
 
-Stash implements a [validating admission webhook](https://kubernetes.io/docs/admin/admission-controllers/#validatingadmissionwebhook-alpha-in-18-beta-in-19) to validate Stash CRDs. To enable this feature, pass the `--enable-apiserver` flag. _Please note that, this works with Kubernetes 1.9.0 or later releases_.
+Stash implements a [validating admission webhook](https://kubernetes.io/docs/admin/admission-controllers/#validatingadmissionwebhook-alpha-in-18-beta-in-19) to validate Stash CRDs. To enable this feature, pass the `--enable-admission-webhook` flag. _Please note that, this works with Kubernetes 1.9.0 or later releases_.
 
 ```console
 $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/stash.sh \
-    | bash -s -- --enable-apiserver [--rbac]
+    | bash -s -- --enable-admission-webhook [--rbac]
 ```
 
 Stash operator can be used as a workload [initializer](https://kubernetes.io/docs/admin/extensible-admission-controllers/#initializers). For this, pass the `--enable-initializer` flag. _Please note that, this uses an alpha feature of Kubernetes_.
