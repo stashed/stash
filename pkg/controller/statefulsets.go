@@ -21,7 +21,7 @@ import (
 
 func (c *StashController) initStatefulSetWatcher() {
 	c.ssInformer = c.kubeInformerFactory.Apps().V1beta1().StatefulSets().Informer()
-	c.ssQueue = queue.New("StatefulSet", c.options.MaxNumRequeues, c.options.NumThreads, c.runStatefulSetInjector)
+	c.ssQueue = queue.New("StatefulSet", c.MaxNumRequeues, c.NumThreads, c.runStatefulSetInjector)
 	c.ssInformer.AddEventHandler(queue.DefaultEventHandler(c.ssQueue.GetQueue()))
 	c.ssLister = c.kubeInformerFactory.Apps().V1beta1().StatefulSets().Lister()
 }
@@ -69,7 +69,7 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 			}
 
 			// not restic workload, just remove the pending stash initializer
-			_, _, err = apps_util.PatchStatefulSet(c.k8sClient, ss, func(obj *apps.StatefulSet) *apps.StatefulSet {
+			_, _, err = apps_util.PatchStatefulSet(c.kubeClient, ss, func(obj *apps.StatefulSet) *apps.StatefulSet {
 				fmt.Println("Removing pending stash initializer for", obj.Name)
 				if len(obj.Initializers.Pending) == 1 {
 					obj.Initializers = nil
@@ -89,21 +89,21 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 
 func (c *StashController) EnsureStatefulSetSidecar(resource *apps.StatefulSet, old, new *api.Restic) (err error) {
 	image := docker.Docker{
-		Registry: c.options.DockerRegistry,
+		Registry: c.DockerRegistry,
 		Image:    docker.ImageStash,
-		Tag:      c.options.StashImageTag,
+		Tag:      c.StashImageTag,
 	}
 
 	if new.Spec.Backend.StorageSecretName == "" {
 		err = fmt.Errorf("missing repository secret name for Restic %s/%s", new.Namespace, new.Name)
 		return
 	}
-	_, err = c.k8sClient.CoreV1().Secrets(resource.Namespace).Get(new.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	_, err = c.kubeClient.CoreV1().Secrets(resource.Namespace).Get(new.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return
 	}
 
-	if c.options.EnableRBAC {
+	if c.EnableRBAC {
 		sa := stringz.Val(resource.Spec.Template.Spec.ServiceAccountName, "default")
 		ref, err := reference.GetReference(scheme.Scheme, resource)
 		if err != nil {
@@ -115,7 +115,7 @@ func (c *StashController) EnsureStatefulSetSidecar(resource *apps.StatefulSet, o
 		}
 	}
 
-	resource, _, err = apps_util.PatchStatefulSet(c.k8sClient, resource, func(obj *apps.StatefulSet) *apps.StatefulSet {
+	resource, _, err = apps_util.PatchStatefulSet(c.kubeClient, resource, func(obj *apps.StatefulSet) *apps.StatefulSet {
 		if util.ToBeInitializedBySelf(obj.Initializers) {
 			fmt.Println("Removing pending stash initializer for", obj.Name)
 			if len(obj.Initializers.Pending) == 1 {
@@ -133,7 +133,7 @@ func (c *StashController) EnsureStatefulSetSidecar(resource *apps.StatefulSet, o
 		if new.Spec.Type == api.BackupOffline {
 			obj.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(
 				obj.Spec.Template.Spec.InitContainers,
-				util.NewInitContainer(new, workload, image, c.options.EnableRBAC),
+				util.NewInitContainer(new, workload, image, c.EnableRBAC),
 			)
 		} else {
 			obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(
@@ -165,7 +165,7 @@ func (c *StashController) EnsureStatefulSetSidecar(resource *apps.StatefulSet, o
 		}
 		data, _ := meta.MarshalToJson(r, api.SchemeGroupVersion)
 		obj.Annotations[api.LastAppliedConfiguration] = string(data)
-		obj.Annotations[api.VersionTag] = c.options.StashImageTag
+		obj.Annotations[api.VersionTag] = c.StashImageTag
 
 		obj.Spec.UpdateStrategy.Type = apps.RollingUpdateStatefulSetStrategyType
 
@@ -175,19 +175,19 @@ func (c *StashController) EnsureStatefulSetSidecar(resource *apps.StatefulSet, o
 		return
 	}
 
-	err = apps_util.WaitUntilStatefulSetReady(c.k8sClient, resource.ObjectMeta)
+	err = apps_util.WaitUntilStatefulSetReady(c.kubeClient, resource.ObjectMeta)
 	return err
 }
 
 func (c *StashController) EnsureStatefulSetSidecarDeleted(resource *apps.StatefulSet, restic *api.Restic) (err error) {
-	if c.options.EnableRBAC {
+	if c.EnableRBAC {
 		err := c.ensureSidecarRoleBindingDeleted(resource.ObjectMeta)
 		if err != nil {
 			return err
 		}
 	}
 
-	resource, _, err = apps_util.PatchStatefulSet(c.k8sClient, resource, func(obj *apps.StatefulSet) *apps.StatefulSet {
+	resource, _, err = apps_util.PatchStatefulSet(c.kubeClient, resource, func(obj *apps.StatefulSet) *apps.StatefulSet {
 		if restic.Spec.Type == api.BackupOffline {
 			obj.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.InitContainers, util.StashContainer)
 		} else {
@@ -209,6 +209,6 @@ func (c *StashController) EnsureStatefulSetSidecarDeleted(resource *apps.Statefu
 		return
 	}
 
-	err = apps_util.WaitUntilStatefulSetReady(c.k8sClient, resource.ObjectMeta)
+	err = apps_util.WaitUntilStatefulSetReady(c.kubeClient, resource.ObjectMeta)
 	return err
 }

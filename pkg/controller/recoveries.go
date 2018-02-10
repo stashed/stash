@@ -20,7 +20,7 @@ import (
 
 func (c *StashController) initRecoveryWatcher() {
 	c.recInformer = c.stashInformerFactory.Stash().V1alpha1().Recoveries().Informer()
-	c.recQueue = queue.New("Recovery", c.options.MaxNumRequeues, c.options.NumThreads, c.runRecoveryInjector)
+	c.recQueue = queue.New("Recovery", c.MaxNumRequeues, c.NumThreads, c.runRecoveryInjector)
 	c.recInformer.AddEventHandler(&cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			if r, ok := obj.(*api.Recovery); ok {
@@ -95,17 +95,17 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 	}
 
 	image := docker.Docker{
-		Registry: c.options.DockerRegistry,
+		Registry: c.DockerRegistry,
 		Image:    docker.ImageStash,
-		Tag:      c.options.StashImageTag,
+		Tag:      c.StashImageTag,
 	}
 
 	job := util.NewRecoveryJob(rec, image)
-	if c.options.EnableRBAC {
+	if c.EnableRBAC {
 		job.Spec.Template.Spec.ServiceAccountName = job.Name
 	}
 
-	job, err := c.k8sClient.BatchV1().Jobs(rec.Namespace).Create(job)
+	job, err := c.kubeClient.BatchV1().Jobs(rec.Namespace).Create(job)
 	if err != nil {
 		if kerr.IsAlreadyExists(err) {
 			return nil
@@ -116,7 +116,7 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 		return err
 	}
 
-	if c.options.EnableRBAC {
+	if c.EnableRBAC {
 		ref, err := reference.GetReference(scheme.Scheme, job)
 		if err != nil {
 			return err

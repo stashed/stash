@@ -28,11 +28,22 @@ spec:
         - --v=3
         - --rbac=$STASH_ENABLE_RBAC
         - --docker-registry=$STASH_DOCKER_REGISTRY
+        - --secure-port=8443
+        - --audit-log-path=-
+        - --tls-cert-file=/var/serving-cert/tls.crt
+        - --tls-private-key-file=/var/serving-cert/tls.key
         image: $STASH_DOCKER_REGISTRY/stash:0.7.0-alpha.0
         ports:
+        - containerPort: 8443
         - containerPort: 56790
-          name: http
-          protocol: TCP
+        volumeMounts:
+        - mountPath: /var/serving-cert
+          name: serving-cert
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8443
+            scheme: HTTPS
       - name: pushgateway
         args:
         - -web.listen-address=:56789
@@ -47,25 +58,6 @@ spec:
           name: data-volume
         - mountPath: /tmp
           name: stash-scratchdir
-      - name: webhook
-        args:
-        - apiserver
-        - --secure-port=8443
-        - --audit-log-path=-
-        - --tls-cert-file=/var/serving-cert/tls.crt
-        - --tls-private-key-file=/var/serving-cert/tls.key
-        - --v=3
-        image: $STASH_DOCKER_REGISTRY/stash:0.7.0-alpha.0
-        ports:
-        - containerPort: 8443
-        volumeMounts:
-        - mountPath: /var/serving-cert
-          name: serving-cert
-        readinessProbe:
-          httpGet:
-            path: /healthz
-            port: 8443
-            scheme: HTTPS
       volumes:
       - emptyDir: {}
         name: data-volume
@@ -107,10 +99,10 @@ spec:
     targetPort: 8443
   - name: pushgateway
     port: 56789
-    targetPort: pushgateway
-  - name: http
+    targetPort: 56789
+  - name: ops
     port: 56790
-    targetPort: http
+    targetPort: 56790
   selector:
     app: stash
 ---

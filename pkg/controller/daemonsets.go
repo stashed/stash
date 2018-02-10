@@ -21,7 +21,7 @@ import (
 
 func (c *StashController) initDaemonSetWatcher() {
 	c.dsInformer = c.kubeInformerFactory.Extensions().V1beta1().DaemonSets().Informer()
-	c.dsQueue = queue.New("DaemonSet", c.options.MaxNumRequeues, c.options.NumThreads, c.runDaemonSetInjector)
+	c.dsQueue = queue.New("DaemonSet", c.MaxNumRequeues, c.NumThreads, c.runDaemonSetInjector)
 	c.dsInformer.AddEventHandler(queue.DefaultEventHandler(c.dsQueue.GetQueue()))
 	c.dsLister = c.kubeInformerFactory.Extensions().V1beta1().DaemonSets().Lister()
 }
@@ -68,7 +68,7 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 
 		// not restic workload, just remove the pending stash initializer
 		if util.ToBeInitializedBySelf(ds.Initializers) {
-			_, _, err = ext_util.PatchDaemonSet(c.k8sClient, ds, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
+			_, _, err = ext_util.PatchDaemonSet(c.kubeClient, ds, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
 				fmt.Println("Removing pending stash initializer for", obj.Name)
 				if len(obj.Initializers.Pending) == 1 {
 					obj.Initializers = nil
@@ -88,21 +88,21 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 
 func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, old, new *api.Restic) (err error) {
 	image := docker.Docker{
-		Registry: c.options.DockerRegistry,
+		Registry: c.DockerRegistry,
 		Image:    docker.ImageStash,
-		Tag:      c.options.StashImageTag,
+		Tag:      c.StashImageTag,
 	}
 
 	if new.Spec.Backend.StorageSecretName == "" {
 		err = fmt.Errorf("missing repository secret name for Restic %s/%s", new.Namespace, new.Name)
 		return
 	}
-	_, err = c.k8sClient.CoreV1().Secrets(resource.Namespace).Get(new.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	_, err = c.kubeClient.CoreV1().Secrets(resource.Namespace).Get(new.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
-	if c.options.EnableRBAC {
+	if c.EnableRBAC {
 		sa := stringz.Val(resource.Spec.Template.Spec.ServiceAccountName, "default")
 		ref, err := reference.GetReference(scheme.Scheme, resource)
 		if err != nil {
@@ -114,7 +114,7 @@ func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet,
 		}
 	}
 
-	resource, _, err = ext_util.PatchDaemonSet(c.k8sClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
+	resource, _, err = ext_util.PatchDaemonSet(c.kubeClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
 		if util.ToBeInitializedBySelf(obj.Initializers) {
 			fmt.Println("Removing pending stash initializer for", obj.Name)
 			if len(obj.Initializers.Pending) == 1 {
@@ -132,7 +132,7 @@ func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet,
 		if new.Spec.Type == api.BackupOffline {
 			obj.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(
 				obj.Spec.Template.Spec.InitContainers,
-				util.NewInitContainer(new, workload, image, c.options.EnableRBAC),
+				util.NewInitContainer(new, workload, image, c.EnableRBAC),
 			)
 		} else {
 			obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(
@@ -165,7 +165,7 @@ func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet,
 		}
 		data, _ := meta.MarshalToJson(r, api.SchemeGroupVersion)
 		obj.Annotations[api.LastAppliedConfiguration] = string(data)
-		obj.Annotations[api.VersionTag] = c.options.StashImageTag
+		obj.Annotations[api.VersionTag] = c.StashImageTag
 
 		obj.Spec.UpdateStrategy.Type = extensions.RollingUpdateDaemonSetStrategyType
 		return obj
@@ -174,18 +174,18 @@ func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet,
 		return
 	}
 
-	return ext_util.WaitUntilDaemonSetReady(c.k8sClient, resource.ObjectMeta)
+	return ext_util.WaitUntilDaemonSetReady(c.kubeClient, resource.ObjectMeta)
 }
 
 func (c *StashController) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSet, restic *api.Restic) (err error) {
-	if c.options.EnableRBAC {
+	if c.EnableRBAC {
 		err := c.ensureSidecarRoleBindingDeleted(resource.ObjectMeta)
 		if err != nil {
 			return err
 		}
 	}
 
-	resource, _, err = ext_util.PatchDaemonSet(c.k8sClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
+	resource, _, err = ext_util.PatchDaemonSet(c.kubeClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
 		if restic.Spec.Type == api.BackupOffline {
 			obj.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.InitContainers, util.StashContainer)
 		} else {
@@ -206,5 +206,5 @@ func (c *StashController) EnsureDaemonSetSidecarDeleted(resource *extensions.Dae
 		return
 	}
 
-	return ext_util.WaitUntilDaemonSetReady(c.k8sClient, resource.ObjectMeta)
+	return ext_util.WaitUntilDaemonSetReady(c.kubeClient, resource.ObjectMeta)
 }

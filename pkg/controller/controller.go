@@ -2,19 +2,20 @@ package controller
 
 import (
 	"fmt"
+	"net/http"
 
+	"github.com/appscode/go/log"
 	apiext_util "github.com/appscode/kutil/apiextensions/v1beta1"
 	"github.com/appscode/kutil/tools/queue"
+	"github.com/appscode/pat"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client"
 	stashinformers "github.com/appscode/stash/informers/externalversions"
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
-	"github.com/appscode/stash/pkg/eventer"
 	"github.com/golang/glog"
-	core "k8s.io/api/core/v1"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	crd_api "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -27,10 +28,11 @@ import (
 )
 
 type StashController struct {
-	k8sClient   kubernetes.Interface
+	Config
+
+	kubeClient  kubernetes.Interface
 	stashClient cs.Interface
 	crdClient   crd_cs.ApiextensionsV1beta1Interface
-	options     Options
 	recorder    record.EventRecorder
 
 	kubeInformerFactory  informers.SharedInformerFactory
@@ -80,43 +82,6 @@ type StashController struct {
 	jobLister   batch_listers.JobLister
 }
 
-func New(kubeClient kubernetes.Interface, crdClient crd_cs.ApiextensionsV1beta1Interface, stashClient cs.Interface, options Options) *StashController {
-	tweakListOptions := func(opt *metav1.ListOptions) {
-		opt.IncludeUninitialized = true
-	}
-	return &StashController{
-		k8sClient:            kubeClient,
-		stashClient:          stashClient,
-		crdClient:            crdClient,
-		kubeInformerFactory:  informers.NewFilteredSharedInformerFactory(kubeClient, options.ResyncPeriod, core.NamespaceAll, tweakListOptions),
-		stashInformerFactory: stashinformers.NewSharedInformerFactory(stashClient, options.ResyncPeriod),
-		options:              options,
-		recorder:             eventer.NewEventRecorder(kubeClient, "stash-controller"),
-	}
-}
-
-func (c *StashController) Setup() error {
-	if err := c.ensureCustomResourceDefinitions(); err != nil {
-		return err
-	}
-	if c.options.EnableRBAC {
-		if err := c.ensureSidecarClusterRole(); err != nil {
-			return err
-		}
-	}
-
-	c.initNamespaceWatcher()
-	c.initResticWatcher()
-	c.initRecoveryWatcher()
-	c.initDeploymentWatcher()
-	c.initDaemonSetWatcher()
-	c.initStatefulSetWatcher()
-	c.initRCWatcher()
-	c.initReplicaSetWatcher()
-	c.initJobWatcher()
-	return nil
-}
-
 func (c *StashController) ensureCustomResourceDefinitions() error {
 	crds := []*crd_api.CustomResourceDefinition{
 		api.Restic{}.CustomResourceDefinition(),
@@ -125,7 +90,7 @@ func (c *StashController) ensureCustomResourceDefinitions() error {
 	return apiext_util.RegisterCRDs(c.crdClient, crds)
 }
 
-func (c *StashController) Run(stopCh chan struct{}) {
+func (c *StashController) RunInformers(stopCh <-chan struct{}) {
 	defer runtime.HandleCrash()
 
 	glog.Info("Starting Stash controller")
@@ -157,4 +122,14 @@ func (c *StashController) Run(stopCh chan struct{}) {
 
 	<-stopCh
 	glog.Info("Stopping Stash controller")
+}
+
+func (c *StashController) Run(stopCh <-chan struct{}) error {
+	go c.RunInformers(stopCh)
+
+	m := pat.New()
+	m.Get("/metrics", promhttp.Handler())
+	http.Handle("/", m)
+	log.Infoln("Listening on", c.OpsAddress)
+	return http.ListenAndServe(c.OpsAddress, nil)
 }

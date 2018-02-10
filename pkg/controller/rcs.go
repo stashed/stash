@@ -21,7 +21,7 @@ import (
 
 func (c *StashController) initRCWatcher() {
 	c.rcInformer = c.kubeInformerFactory.Core().V1().ReplicationControllers().Informer()
-	c.rcQueue = queue.New("ReplicationController", c.options.MaxNumRequeues, c.options.NumThreads, c.runRCInjector)
+	c.rcQueue = queue.New("ReplicationController", c.MaxNumRequeues, c.NumThreads, c.runRCInjector)
 	c.rcInformer.AddEventHandler(queue.DefaultEventHandler(c.rcQueue.GetQueue()))
 	c.rcLister = c.kubeInformerFactory.Core().V1().ReplicationControllers().Lister()
 }
@@ -44,7 +44,7 @@ func (c *StashController) runRCInjector(key string) error {
 		if err != nil {
 			return err
 		}
-		util.DeleteConfigmapLock(c.k8sClient, ns, api.LocalTypedReference{Kind: api.KindReplicationController, Name: name})
+		util.DeleteConfigmapLock(c.kubeClient, ns, api.LocalTypedReference{Kind: api.KindReplicationController, Name: name})
 	} else {
 		rc := obj.(*core.ReplicationController)
 		glog.Infof("Sync/Add/Update for ReplicationController %s\n", rc.GetName())
@@ -77,7 +77,7 @@ func (c *StashController) runRCInjector(key string) error {
 
 		// not restic workload, just remove the pending stash initializer
 		if util.ToBeInitializedBySelf(rc.Initializers) {
-			_, _, err = core_util.PatchRC(c.k8sClient, rc, func(obj *core.ReplicationController) *core.ReplicationController {
+			_, _, err = core_util.PatchRC(c.kubeClient, rc, func(obj *core.ReplicationController) *core.ReplicationController {
 				fmt.Println("Removing pending stash initializer for", obj.Name)
 				if len(obj.Initializers.Pending) == 1 {
 					obj.Initializers = nil
@@ -97,21 +97,21 @@ func (c *StashController) runRCInjector(key string) error {
 
 func (c *StashController) EnsureReplicationControllerSidecar(resource *core.ReplicationController, old, new *api.Restic) (err error) {
 	image := docker.Docker{
-		Registry: c.options.DockerRegistry,
+		Registry: c.DockerRegistry,
 		Image:    docker.ImageStash,
-		Tag:      c.options.StashImageTag,
+		Tag:      c.StashImageTag,
 	}
 
 	if new.Spec.Backend.StorageSecretName == "" {
 		err = fmt.Errorf("missing repository secret name for Restic %s/%s", new.Namespace, new.Name)
 		return
 	}
-	_, err = c.k8sClient.CoreV1().Secrets(resource.Namespace).Get(new.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	_, err = c.kubeClient.CoreV1().Secrets(resource.Namespace).Get(new.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
-	if c.options.EnableRBAC {
+	if c.EnableRBAC {
 		sa := stringz.Val(resource.Spec.Template.Spec.ServiceAccountName, "default")
 		ref, err := reference.GetReference(scheme.Scheme, resource)
 		if err != nil {
@@ -123,7 +123,7 @@ func (c *StashController) EnsureReplicationControllerSidecar(resource *core.Repl
 		}
 	}
 
-	resource, _, err = core_util.PatchRC(c.k8sClient, resource, func(obj *core.ReplicationController) *core.ReplicationController {
+	resource, _, err = core_util.PatchRC(c.kubeClient, resource, func(obj *core.ReplicationController) *core.ReplicationController {
 		if util.ToBeInitializedBySelf(obj.Initializers) {
 			fmt.Println("Removing pending stash initializer for", obj.Name)
 			if len(obj.Initializers.Pending) == 1 {
@@ -141,7 +141,7 @@ func (c *StashController) EnsureReplicationControllerSidecar(resource *core.Repl
 		if new.Spec.Type == api.BackupOffline {
 			obj.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(
 				obj.Spec.Template.Spec.InitContainers,
-				util.NewInitContainer(new, workload, image, c.options.EnableRBAC),
+				util.NewInitContainer(new, workload, image, c.EnableRBAC),
 			)
 		} else {
 			obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(
@@ -173,7 +173,7 @@ func (c *StashController) EnsureReplicationControllerSidecar(resource *core.Repl
 		}
 		data, _ := meta.MarshalToJson(r, api.SchemeGroupVersion)
 		obj.Annotations[api.LastAppliedConfiguration] = string(data)
-		obj.Annotations[api.VersionTag] = c.options.StashImageTag
+		obj.Annotations[api.VersionTag] = c.StashImageTag
 
 		return obj
 	})
@@ -181,23 +181,23 @@ func (c *StashController) EnsureReplicationControllerSidecar(resource *core.Repl
 		return
 	}
 
-	err = core_util.WaitUntilRCReady(c.k8sClient, resource.ObjectMeta)
+	err = core_util.WaitUntilRCReady(c.kubeClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}
-	err = util.WaitUntilSidecarAdded(c.k8sClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector}, new.Spec.Type)
+	err = util.WaitUntilSidecarAdded(c.kubeClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector}, new.Spec.Type)
 	return err
 }
 
 func (c *StashController) EnsureReplicationControllerSidecarDeleted(resource *core.ReplicationController, restic *api.Restic) (err error) {
-	if c.options.EnableRBAC {
+	if c.EnableRBAC {
 		err := c.ensureSidecarRoleBindingDeleted(resource.ObjectMeta)
 		if err != nil {
 			return err
 		}
 	}
 
-	resource, _, err = core_util.PatchRC(c.k8sClient, resource, func(obj *core.ReplicationController) *core.ReplicationController {
+	resource, _, err = core_util.PatchRC(c.kubeClient, resource, func(obj *core.ReplicationController) *core.ReplicationController {
 		if restic.Spec.Type == api.BackupOffline {
 			obj.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.InitContainers, util.StashContainer)
 		} else {
@@ -218,14 +218,14 @@ func (c *StashController) EnsureReplicationControllerSidecarDeleted(resource *co
 		return
 	}
 
-	err = core_util.WaitUntilRCReady(c.k8sClient, resource.ObjectMeta)
+	err = core_util.WaitUntilRCReady(c.kubeClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}
-	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector}, restic.Spec.Type)
+	err = util.WaitUntilSidecarRemoved(c.kubeClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector}, restic.Spec.Type)
 	if err != nil {
 		return
 	}
-	util.DeleteConfigmapLock(c.k8sClient, resource.Namespace, api.LocalTypedReference{Kind: api.KindReplicationController, Name: resource.Name})
+	util.DeleteConfigmapLock(c.kubeClient, resource.Namespace, api.LocalTypedReference{Kind: api.KindReplicationController, Name: resource.Name})
 	return err
 }

@@ -27,7 +27,7 @@ func (c *StashController) ensureSidecarRoleBinding(resource *core.ObjectReferenc
 		Namespace: resource.Namespace,
 		Name:      c.getSidecarRoleBindingName(resource.Name),
 	}
-	_, _, err := rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
 
 		if in.Annotations == nil {
@@ -53,14 +53,14 @@ func (c *StashController) ensureSidecarRoleBinding(resource *core.ObjectReferenc
 
 func (c *StashController) ensureSidecarRoleBindingDeleted(resource metav1.ObjectMeta) error {
 	log.Infof("Deleting RoleBinding %s/%s", resource.Namespace, c.getSidecarRoleBindingName(resource.Name))
-	return c.k8sClient.RbacV1().
+	return c.kubeClient.RbacV1().
 		RoleBindings(resource.Namespace).
 		Delete(c.getSidecarRoleBindingName(resource.Name), &metav1.DeleteOptions{})
 }
 
 func (c *StashController) ensureSidecarClusterRole() error {
 	meta := metav1.ObjectMeta{Name: SidecarClusterRole}
-	_, _, err := rbac_util.CreateOrPatchClusterRole(c.k8sClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+	_, _, err := rbac_util.CreateOrPatchClusterRole(c.kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
@@ -126,7 +126,7 @@ func (c *StashController) ensureKubectlRBAC(resource *core.ObjectReference) erro
 		Name:      KubectlRole,
 		Namespace: resource.Namespace,
 	}
-	_, _, err := rbac_util.CreateOrPatchRole(c.k8sClient, meta, func(in *rbac.Role) *rbac.Role {
+	_, _, err := rbac_util.CreateOrPatchRole(c.kubeClient, meta, func(in *rbac.Role) *rbac.Role {
 		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
 
 		if in.Labels == nil {
@@ -152,7 +152,7 @@ func (c *StashController) ensureKubectlRBAC(resource *core.ObjectReference) erro
 		Name:      resource.Name,
 		Namespace: resource.Namespace,
 	}
-	_, _, err = core_util.CreateOrPatchServiceAccount(c.k8sClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
+	_, _, err = core_util.CreateOrPatchServiceAccount(c.kubeClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
 		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
@@ -165,7 +165,7 @@ func (c *StashController) ensureKubectlRBAC(resource *core.ObjectReference) erro
 	}
 
 	// ensure role binding
-	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
 
 		if in.Labels == nil {
@@ -198,7 +198,7 @@ func (c *StashController) ensureRecoveryRBAC(resource *core.ObjectReference) err
 		Name:      resource.Name,
 		Namespace: resource.Namespace,
 	}
-	_, _, err := core_util.CreateOrPatchServiceAccount(c.k8sClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
+	_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
 		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
@@ -211,7 +211,7 @@ func (c *StashController) ensureRecoveryRBAC(resource *core.ObjectReference) err
 	}
 
 	// ensure role binding
-	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
 
 		if in.Labels == nil {

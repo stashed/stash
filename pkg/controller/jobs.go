@@ -31,7 +31,7 @@ func (c *StashController) initJobWatcher() {
 			},
 		)
 	})
-	c.jobQueue = queue.New("Job", c.options.MaxNumRequeues, c.options.NumThreads, c.runJobInjector)
+	c.jobQueue = queue.New("Job", c.MaxNumRequeues, c.NumThreads, c.runJobInjector)
 	c.jobInformer.AddEventHandler(queue.DefaultEventHandler(c.jobQueue.GetQueue()))
 	c.jobLister = c.kubeInformerFactory.Batch().V1().Jobs().Lister()
 }
@@ -53,7 +53,7 @@ func (c *StashController) runJobInjector(key string) error {
 			glog.Infof("Deleting succeeded job %s\n", job.GetName())
 
 			deletePolicy := metav1.DeletePropagationBackground
-			err := c.k8sClient.BatchV1().Jobs(job.Namespace).Delete(job.Name, &metav1.DeleteOptions{
+			err := c.kubeClient.BatchV1().Jobs(job.Namespace).Delete(job.Name, &metav1.DeleteOptions{
 				PropagationPolicy: &deletePolicy,
 			})
 
