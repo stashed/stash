@@ -24,7 +24,7 @@ import (
 
 func (c *StashController) initResticWatcher() {
 	c.rstInformer = c.stashInformerFactory.Stash().V1alpha1().Restics().Informer()
-	c.rstQueue = queue.New("Restic", c.options.MaxNumRequeues, c.options.NumThreads, c.runResticInjector)
+	c.rstQueue = queue.New("Restic", c.MaxNumRequeues, c.NumThreads, c.runResticInjector)
 	c.rstInformer.AddEventHandler(&cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			if r, ok := obj.(*api.Restic); ok {
@@ -106,9 +106,9 @@ func (c *StashController) runResticInjector(key string) error {
 
 func (c *StashController) EnsureKubectlCronJob(restic *api.Restic) error {
 	image := docker.Docker{
-		Registry: c.options.DockerRegistry,
+		Registry: c.DockerRegistry,
 		Image:    docker.ImageKubectl,
-		Tag:      c.options.KubectlImageTag,
+		Tag:      c.KubectlImageTag,
 	}
 
 	meta := metav1.ObjectMeta{
@@ -121,7 +121,7 @@ func (c *StashController) EnsureKubectlCronJob(restic *api.Restic) error {
 		return err
 	}
 
-	cronJob, _, err := batch_util.CreateOrPatchCronJob(c.k8sClient, meta, func(in *batch.CronJob) *batch.CronJob {
+	cronJob, _, err := batch_util.CreateOrPatchCronJob(c.kubeClient, meta, func(in *batch.CronJob) *batch.CronJob {
 		// set restic as cron-job owner
 		in.OwnerReferences = []metav1.OwnerReference{
 			{
@@ -163,7 +163,7 @@ func (c *StashController) EnsureKubectlCronJob(restic *api.Restic) error {
 		in.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = restic.Spec.ImagePullSecrets
 
 		in.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
-		if c.options.EnableRBAC {
+		if c.EnableRBAC {
 			in.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = in.Name
 		}
 		return in
@@ -172,7 +172,7 @@ func (c *StashController) EnsureKubectlCronJob(restic *api.Restic) error {
 		return err
 	}
 
-	if c.options.EnableRBAC {
+	if c.EnableRBAC {
 		ref, err := reference.GetReference(scheme.Scheme, cronJob)
 		if err != nil {
 			return err

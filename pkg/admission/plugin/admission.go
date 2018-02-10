@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
-	"github.com/appscode/stash/pkg/apiserver"
+	hookapi "github.com/appscode/stash/pkg/admission/api"
 	admission "k8s.io/api/admission/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -13,12 +13,12 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-type AdmissionHook struct {
+type CRDValidator struct {
 }
 
-var _ apiserver.AdmissionHook = &AdmissionHook{}
+var _ hookapi.AdmissionHook = &CRDValidator{}
 
-func (a *AdmissionHook) Resource() (plural schema.GroupVersionResource, singular string) {
+func (a *CRDValidator) Resource() (plural schema.GroupVersionResource, singular string) {
 	return schema.GroupVersionResource{
 			Group:    "admission.stash.appscode.com",
 			Version:  "v1alpha1",
@@ -27,7 +27,7 @@ func (a *AdmissionHook) Resource() (plural schema.GroupVersionResource, singular
 		"admissionreview"
 }
 
-func (a *AdmissionHook) Admit(req *admission.AdmissionRequest) *admission.AdmissionResponse {
+func (a *CRDValidator) Admit(req *admission.AdmissionRequest) *admission.AdmissionResponse {
 	status := &admission.AdmissionResponse{}
 	supportedKinds := sets.NewString(api.ResourceKindRestic, api.ResourceKindRecovery)
 
@@ -86,6 +86,6 @@ func (a *AdmissionHook) Admit(req *admission.AdmissionRequest) *admission.Admiss
 	return status
 }
 
-func (a *AdmissionHook) Initialize(kubeClientConfig *rest.Config, stopCh <-chan struct{}) error {
+func (a *CRDValidator) Initialize(kubeClientConfig *rest.Config, stopCh <-chan struct{}) error {
 	return nil
 }

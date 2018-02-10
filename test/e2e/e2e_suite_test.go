@@ -68,7 +68,7 @@ var _ = BeforeSuite(func() {
 
 	util.LoggerOptions.Verbosity = "5"
 
-	opts := controller.Options{
+	opts := controller.Config{
 		DockerRegistry: docker.ACRegistry,
 		StashImageTag:  TestStashImageTag,
 		ResyncPeriod:   10 * time.Minute,
@@ -95,7 +95,7 @@ var _ = BeforeSuite(func() {
 	// Now let's start the controller
 	// stop := make(chan struct{})
 	// defer close(stop)
-	go ctrl.Run(nil)
+	go ctrl.RunInformers(nil)
 })
 
 var _ = AfterSuite(func() {

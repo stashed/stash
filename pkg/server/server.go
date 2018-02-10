@@ -1,9 +1,11 @@
-package apiserver
+package server
 
 import (
 	"fmt"
 	"strings"
 
+	hookapi "github.com/appscode/stash/pkg/admission/api"
+	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/registry/admissionreview"
 	admission "k8s.io/api/admission/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -23,20 +25,6 @@ var (
 	Codecs = serializer.NewCodecFactory(Scheme)
 )
 
-type AdmissionHook interface {
-	// Initialize is called as a post-start hook
-	Initialize(kubeClientConfig *restclient.Config, stopCh <-chan struct{}) error
-
-	// Resource is the resource to use for hosting your admission webhook. If the hook implements
-	// MutatingAdmissionHook as well, the two resources for validating and mutating admission must be different.
-	// Note: this is (usually) not the same as the payload resource!
-	Resource() (plural schema.GroupVersionResource, singular string)
-
-	// Validate is called to decide whether to accept the admission request. The returned AdmissionResponse may
-	// use the Patch field to mutate the object from the passed AdmissionRequest.
-	Admit(admissionSpec *admission.AdmissionRequest) *admission.AdmissionResponse
-}
-
 func init() {
 	admission.AddToScheme(Scheme)
 
@@ -55,23 +43,25 @@ func init() {
 	)
 }
 
-type Config struct {
-	GenericConfig *genericapiserver.RecommendedConfig
-	ExtraConfig   ExtraConfig
+type StashConfig struct {
+	GenericConfig    *genericapiserver.RecommendedConfig
+	ControllerConfig *controller.ControllerConfig
 }
 
-type ExtraConfig struct {
-	AdmissionHooks []AdmissionHook
-}
-
-// AdmissionServer contains state for a Kubernetes cluster master/api server.
-type AdmissionServer struct {
+// StashServer contains state for a Kubernetes cluster master/api server.
+type StashServer struct {
 	GenericAPIServer *genericapiserver.GenericAPIServer
+	Controller       *controller.StashController
+}
+
+func (op *StashServer) Run(stopCh <-chan struct{}) error {
+	go op.Controller.Run(stopCh)
+	return op.GenericAPIServer.PrepareRun().Run(stopCh)
 }
 
 type completedConfig struct {
-	GenericConfig genericapiserver.CompletedConfig
-	ExtraConfig   *ExtraConfig
+	GenericConfig    genericapiserver.CompletedConfig
+	ControllerConfig *controller.ControllerConfig
 }
 
 type CompletedConfig struct {
@@ -80,10 +70,10 @@ type CompletedConfig struct {
 }
 
 // Complete fills in any fields not set that are required to have valid data. It's mutating the receiver.
-func (c *Config) Complete() CompletedConfig {
+func (c *StashConfig) Complete() CompletedConfig {
 	completedCfg := completedConfig{
 		c.GenericConfig.Complete(),
-		&c.ExtraConfig,
+		c.ControllerConfig,
 	}
 
 	completedCfg.GenericConfig.Version = &version.Info{
@@ -94,15 +84,20 @@ func (c *Config) Complete() CompletedConfig {
 	return CompletedConfig{&completedCfg}
 }
 
-// New returns a new instance of AdmissionServer from the given config.
-func (c completedConfig) New() (*AdmissionServer, error) {
+// New returns a new instance of StashServer from the given config.
+func (c completedConfig) New() (*StashServer, error) {
 	genericServer, err := c.GenericConfig.New("stash-apiserver", genericapiserver.EmptyDelegate) // completion is done in Complete, no need for a second time
 	if err != nil {
 		return nil, err
 	}
+	ctrl, err := c.ControllerConfig.New()
+	if err != nil {
+		return nil, err
+	}
 
-	s := &AdmissionServer{
+	s := &StashServer{
 		GenericAPIServer: genericServer,
+		Controller:       ctrl,
 	}
 
 	inClusterConfig, err := restclient.InClusterConfig()
@@ -110,7 +105,7 @@ func (c completedConfig) New() (*AdmissionServer, error) {
 		return nil, err
 	}
 
-	for _, versionMap := range admissionHooksByGroupThenVersion(c.ExtraConfig.AdmissionHooks...) {
+	for _, versionMap := range admissionHooksByGroupThenVersion(c.ControllerConfig.AdmissionHooks...) {
 		accessor := meta.NewAccessor()
 		versionInterfaces := &meta.VersionInterfaces{
 			ObjectConvertor:  Scheme,
@@ -177,7 +172,7 @@ func (c completedConfig) New() (*AdmissionServer, error) {
 		}
 	}
 
-	for _, hook := range c.ExtraConfig.AdmissionHooks {
+	for _, hook := range c.ControllerConfig.AdmissionHooks {
 		postStartName := postStartHookName(hook)
 		if len(postStartName) == 0 {
 			continue
@@ -192,7 +187,7 @@ func (c completedConfig) New() (*AdmissionServer, error) {
 	return s, nil
 }
 
-func postStartHookName(hook AdmissionHook) string {
+func postStartHookName(hook hookapi.AdmissionHook) string {
 	var ns []string
 	gvr, _ := hook.Resource()
 	ns = append(ns, fmt.Sprintf("admit-%s.%s.%s", gvr.Resource, gvr.Version, gvr.Group))
@@ -202,15 +197,15 @@ func postStartHookName(hook AdmissionHook) string {
 	return strings.Join(append(ns, "init"), "-")
 }
 
-func admissionHooksByGroupThenVersion(admissionHooks ...AdmissionHook) map[string]map[string][]AdmissionHook {
-	ret := map[string]map[string][]AdmissionHook{}
+func admissionHooksByGroupThenVersion(admissionHooks ...hookapi.AdmissionHook) map[string]map[string][]hookapi.AdmissionHook {
+	ret := map[string]map[string][]hookapi.AdmissionHook{}
 
 	for i := range admissionHooks {
 		hook := admissionHooks[i]
 		gvr, _ := hook.Resource()
 		group, ok := ret[gvr.Group]
 		if !ok {
-			group = map[string][]AdmissionHook{}
+			group = map[string][]hookapi.AdmissionHook{}
 			ret[gvr.Group] = group
 		}
 		group[gvr.Version] = append(group[gvr.Version], hook)

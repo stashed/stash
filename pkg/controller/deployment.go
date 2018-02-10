@@ -22,7 +22,7 @@ import (
 
 func (c *StashController) initDeploymentWatcher() {
 	c.dpInformer = c.kubeInformerFactory.Apps().V1beta1().Deployments().Informer()
-	c.dpQueue = queue.New("Deployment", c.options.MaxNumRequeues, c.options.NumThreads, c.runDeploymentInjector)
+	c.dpQueue = queue.New("Deployment", c.MaxNumRequeues, c.NumThreads, c.runDeploymentInjector)
 	c.dpInformer.AddEventHandler(queue.DefaultEventHandler(c.dpQueue.GetQueue()))
 	c.dpLister = c.kubeInformerFactory.Apps().V1beta1().Deployments().Lister()
 }
@@ -45,7 +45,7 @@ func (c *StashController) runDeploymentInjector(key string) error {
 		if err != nil {
 			return err
 		}
-		util.DeleteConfigmapLock(c.k8sClient, ns, api.LocalTypedReference{Kind: api.KindDeployment, Name: name})
+		util.DeleteConfigmapLock(c.kubeClient, ns, api.LocalTypedReference{Kind: api.KindDeployment, Name: name})
 	} else {
 		dp := obj.(*apps.Deployment)
 		glog.Infof("Sync/Add/Update for Deployment %s\n", dp.GetName())
@@ -77,7 +77,7 @@ func (c *StashController) runDeploymentInjector(key string) error {
 
 		// not restic workload, just remove the pending stash initializer
 		if util.ToBeInitializedBySelf(dp.Initializers) {
-			_, _, err = apps_util.PatchDeployment(c.k8sClient, dp, func(obj *apps.Deployment) *apps.Deployment {
+			_, _, err = apps_util.PatchDeployment(c.kubeClient, dp, func(obj *apps.Deployment) *apps.Deployment {
 				fmt.Println("Removing pending stash initializer for", obj.Name)
 				if len(obj.Initializers.Pending) == 1 {
 					obj.Initializers = nil
@@ -97,21 +97,21 @@ func (c *StashController) runDeploymentInjector(key string) error {
 
 func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old, new *api.Restic) (err error) {
 	image := docker.Docker{
-		Registry: c.options.DockerRegistry,
+		Registry: c.DockerRegistry,
 		Image:    docker.ImageStash,
-		Tag:      c.options.StashImageTag,
+		Tag:      c.StashImageTag,
 	}
 
 	if new.Spec.Backend.StorageSecretName == "" {
 		err = fmt.Errorf("missing repository secret name for Restic %s/%s", new.Namespace, new.Name)
 		return
 	}
-	_, err = c.k8sClient.CoreV1().Secrets(resource.Namespace).Get(new.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	_, err = c.kubeClient.CoreV1().Secrets(resource.Namespace).Get(new.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
-	if c.options.EnableRBAC {
+	if c.EnableRBAC {
 		sa := stringz.Val(resource.Spec.Template.Spec.ServiceAccountName, "default")
 		ref, err := reference.GetReference(scheme.Scheme, resource)
 		if err != nil {
@@ -123,7 +123,7 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 		}
 	}
 
-	resource, _, err = apps_util.PatchDeployment(c.k8sClient, resource, func(obj *apps.Deployment) *apps.Deployment {
+	resource, _, err = apps_util.PatchDeployment(c.kubeClient, resource, func(obj *apps.Deployment) *apps.Deployment {
 		if util.ToBeInitializedBySelf(obj.Initializers) {
 			fmt.Println("Removing pending stash initializer for", obj.Name)
 			if len(obj.Initializers.Pending) == 1 {
@@ -141,7 +141,7 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 		if new.Spec.Type == api.BackupOffline {
 			obj.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(
 				obj.Spec.Template.Spec.InitContainers,
-				util.NewInitContainer(new, workload, image, c.options.EnableRBAC),
+				util.NewInitContainer(new, workload, image, c.EnableRBAC),
 			)
 		} else {
 			obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(
@@ -173,7 +173,7 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 		}
 		data, _ := meta.MarshalToJson(r, api.SchemeGroupVersion)
 		obj.Annotations[api.LastAppliedConfiguration] = string(data)
-		obj.Annotations[api.VersionTag] = c.options.StashImageTag
+		obj.Annotations[api.VersionTag] = c.StashImageTag
 
 		return obj
 	})
@@ -181,19 +181,19 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 		return
 	}
 
-	err = apps_util.WaitUntilDeploymentReady(c.k8sClient, resource.ObjectMeta)
+	err = apps_util.WaitUntilDeploymentReady(c.kubeClient, resource.ObjectMeta)
 	return err
 }
 
 func (c *StashController) EnsureDeploymentSidecarDeleted(resource *apps.Deployment, restic *api.Restic) (err error) {
-	if c.options.EnableRBAC {
+	if c.EnableRBAC {
 		err = c.ensureSidecarRoleBindingDeleted(resource.ObjectMeta)
 		if err != nil {
 			return
 		}
 	}
 
-	resource, _, err = apps_util.PatchDeployment(c.k8sClient, resource, func(obj *apps.Deployment) *apps.Deployment {
+	resource, _, err = apps_util.PatchDeployment(c.kubeClient, resource, func(obj *apps.Deployment) *apps.Deployment {
 		if restic.Spec.Type == api.BackupOffline {
 			obj.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.InitContainers, util.StashContainer)
 		} else {
@@ -213,10 +213,10 @@ func (c *StashController) EnsureDeploymentSidecarDeleted(resource *apps.Deployme
 	if err != nil {
 		return
 	}
-	err = apps_util.WaitUntilDeploymentReady(c.k8sClient, resource.ObjectMeta)
+	err = apps_util.WaitUntilDeploymentReady(c.kubeClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}
-	util.DeleteConfigmapLock(c.k8sClient, resource.Namespace, api.LocalTypedReference{Kind: api.KindDeployment, Name: resource.Name})
+	util.DeleteConfigmapLock(c.kubeClient, resource.Namespace, api.LocalTypedReference{Kind: api.KindDeployment, Name: resource.Name})
 	return err
 }

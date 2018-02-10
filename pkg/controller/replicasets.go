@@ -22,7 +22,7 @@ import (
 
 func (c *StashController) initReplicaSetWatcher() {
 	c.rsInformer = c.kubeInformerFactory.Extensions().V1beta1().ReplicaSets().Informer()
-	c.rsQueue = queue.New("ReplicaSet", c.options.MaxNumRequeues, c.options.NumThreads, c.runReplicaSetInjector)
+	c.rsQueue = queue.New("ReplicaSet", c.MaxNumRequeues, c.NumThreads, c.runReplicaSetInjector)
 	c.rsInformer.AddEventHandler(queue.DefaultEventHandler(c.rsQueue.GetQueue()))
 	c.rsLister = c.kubeInformerFactory.Extensions().V1beta1().ReplicaSets().Lister()
 }
@@ -45,7 +45,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 		if err != nil {
 			return err
 		}
-		util.DeleteConfigmapLock(c.k8sClient, ns, api.LocalTypedReference{Kind: api.KindReplicaSet, Name: name})
+		util.DeleteConfigmapLock(c.kubeClient, ns, api.LocalTypedReference{Kind: api.KindReplicaSet, Name: name})
 	} else {
 		rs := obj.(*extensions.ReplicaSet)
 		glog.Infof("Sync/Add/Update for ReplicaSet %s\n", rs.GetName())
@@ -79,7 +79,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 
 		// not restic workload or owned by a deployment, just remove the pending stash initializer
 		if util.ToBeInitializedBySelf(rs.Initializers) {
-			_, _, err = ext_util.PatchReplicaSet(c.k8sClient, rs, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
+			_, _, err = ext_util.PatchReplicaSet(c.kubeClient, rs, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
 				fmt.Println("Removing pending stash initializer for", obj.Name)
 				if len(obj.Initializers.Pending) == 1 {
 					obj.Initializers = nil
@@ -99,21 +99,21 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 
 func (c *StashController) EnsureReplicaSetSidecar(resource *extensions.ReplicaSet, old, new *api.Restic) (err error) {
 	image := docker.Docker{
-		Registry: c.options.DockerRegistry,
+		Registry: c.DockerRegistry,
 		Image:    docker.ImageStash,
-		Tag:      c.options.StashImageTag,
+		Tag:      c.StashImageTag,
 	}
 
 	if new.Spec.Backend.StorageSecretName == "" {
 		err = fmt.Errorf("missing repository secret name for Restic %s/%s", new.Namespace, new.Name)
 		return
 	}
-	_, err = c.k8sClient.CoreV1().Secrets(resource.Namespace).Get(new.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	_, err = c.kubeClient.CoreV1().Secrets(resource.Namespace).Get(new.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
-	if c.options.EnableRBAC {
+	if c.EnableRBAC {
 		sa := stringz.Val(resource.Spec.Template.Spec.ServiceAccountName, "default")
 		ref, err := reference.GetReference(scheme.Scheme, resource)
 		if err != nil {
@@ -125,7 +125,7 @@ func (c *StashController) EnsureReplicaSetSidecar(resource *extensions.ReplicaSe
 		}
 	}
 
-	resource, _, err = ext_util.PatchReplicaSet(c.k8sClient, resource, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
+	resource, _, err = ext_util.PatchReplicaSet(c.kubeClient, resource, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
 		if util.ToBeInitializedBySelf(obj.Initializers) {
 			fmt.Println("Removing pending stash initializer for", obj.Name)
 			if len(obj.Initializers.Pending) == 1 {
@@ -143,7 +143,7 @@ func (c *StashController) EnsureReplicaSetSidecar(resource *extensions.ReplicaSe
 		if new.Spec.Type == api.BackupOffline {
 			obj.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(
 				obj.Spec.Template.Spec.InitContainers,
-				util.NewInitContainer(new, workload, image, c.options.EnableRBAC),
+				util.NewInitContainer(new, workload, image, c.EnableRBAC),
 			)
 		} else {
 			obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(
@@ -175,7 +175,7 @@ func (c *StashController) EnsureReplicaSetSidecar(resource *extensions.ReplicaSe
 		}
 		data, _ := meta.MarshalToJson(r, api.SchemeGroupVersion)
 		obj.Annotations[api.LastAppliedConfiguration] = string(data)
-		obj.Annotations[api.VersionTag] = c.options.StashImageTag
+		obj.Annotations[api.VersionTag] = c.StashImageTag
 
 		return obj
 	})
@@ -183,23 +183,23 @@ func (c *StashController) EnsureReplicaSetSidecar(resource *extensions.ReplicaSe
 		return
 	}
 
-	err = ext_util.WaitUntilReplicaSetReady(c.k8sClient, resource.ObjectMeta)
+	err = ext_util.WaitUntilReplicaSetReady(c.kubeClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}
-	err = util.WaitUntilSidecarAdded(c.k8sClient, resource.Namespace, resource.Spec.Selector, new.Spec.Type)
+	err = util.WaitUntilSidecarAdded(c.kubeClient, resource.Namespace, resource.Spec.Selector, new.Spec.Type)
 	return err
 }
 
 func (c *StashController) EnsureReplicaSetSidecarDeleted(resource *extensions.ReplicaSet, restic *api.Restic) (err error) {
-	if c.options.EnableRBAC {
+	if c.EnableRBAC {
 		err := c.ensureSidecarRoleBindingDeleted(resource.ObjectMeta)
 		if err != nil {
 			return err
 		}
 	}
 
-	resource, _, err = ext_util.PatchReplicaSet(c.k8sClient, resource, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
+	resource, _, err = ext_util.PatchReplicaSet(c.kubeClient, resource, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
 		if restic.Spec.Type == api.BackupOffline {
 			obj.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.InitContainers, util.StashContainer)
 		} else {
@@ -220,14 +220,14 @@ func (c *StashController) EnsureReplicaSetSidecarDeleted(resource *extensions.Re
 		return
 	}
 
-	err = ext_util.WaitUntilReplicaSetReady(c.k8sClient, resource.ObjectMeta)
+	err = ext_util.WaitUntilReplicaSetReady(c.kubeClient, resource.ObjectMeta)
 	if err != nil {
 		return
 	}
-	err = util.WaitUntilSidecarRemoved(c.k8sClient, resource.Namespace, resource.Spec.Selector, restic.Spec.Type)
+	err = util.WaitUntilSidecarRemoved(c.kubeClient, resource.Namespace, resource.Spec.Selector, restic.Spec.Type)
 	if err != nil {
 		return
 	}
-	util.DeleteConfigmapLock(c.k8sClient, resource.Namespace, api.LocalTypedReference{Kind: api.KindReplicaSet, Name: resource.Name})
+	util.DeleteConfigmapLock(c.kubeClient, resource.Namespace, api.LocalTypedReference{Kind: api.KindReplicaSet, Name: resource.Name})
 	return
 }
