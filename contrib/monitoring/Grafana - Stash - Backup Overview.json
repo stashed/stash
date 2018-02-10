@@ -65,9 +65,9 @@
           "colorBackground": true,
           "colorValue": false,
           "colors": [
-            "#d44a3a",
+            "#299c46",
             "rgba(237, 129, 40, 0.89)",
-            "#299c46"
+            "#d44a3a"
           ],
           "datasource": "${DS_PROMETHEUS-INFRA}",
           "format": "none",
@@ -123,7 +123,7 @@
               "refId": "A"
             }
           ],
-          "thresholds": "0,0",
+          "thresholds": "0.1,0.1",
           "title": "Failed",
           "type": "singlestat",
           "valueFontSize": "80%",
@@ -555,5 +555,5 @@
   },
   "timezone": "",
   "title": "Stash - Backup Overview",
-  "version": 5
+  "version": 4
 }
