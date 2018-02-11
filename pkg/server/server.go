@@ -154,7 +154,7 @@ func (c completedConfig) New() (*StashServer, error) {
 					meta.RESTScopeRoot)
 
 				// just overwrite the groupversion with a random one.  We don't really care or know.
-				apiGroupInfo.GroupMeta.GroupVersions = append(apiGroupInfo.GroupMeta.GroupVersions, admissionVersion)
+				apiGroupInfo.GroupMeta.GroupVersions = appendGroupVersion(apiGroupInfo.GroupMeta.GroupVersions, admissionVersion)
 
 				admissionReview := admissionreview.NewREST(admissionHook.Admit)
 				v1alpha1storage := map[string]rest.Storage{
@@ -185,6 +185,21 @@ func (c completedConfig) New() (*StashServer, error) {
 	}
 
 	return s, nil
+}
+
+func appendGroupVersion(slice []schema.GroupVersion, elems ...schema.GroupVersion) []schema.GroupVersion {
+	m := map[schema.GroupVersion]bool{}
+	for _, gv := range slice {
+		m[gv] = true
+	}
+	for _, e := range elems {
+		m[e] = true
+	}
+	out := make([]schema.GroupVersion, 0, len(m))
+	for gv := range m {
+		out = append(out, gv)
+	}
+	return out
 }
 
 func postStartHookName(hook hookapi.AdmissionHook) string {
