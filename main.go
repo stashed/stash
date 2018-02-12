@@ -11,6 +11,7 @@ import (
 	_ "github.com/appscode/stash/client/scheme"
 	"github.com/appscode/stash/pkg/cmds"
 	_ "k8s.io/client-go/kubernetes/fake"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
 func main() {
