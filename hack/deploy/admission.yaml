@@ -12,7 +12,7 @@ webhooks:
       namespace: default
       name: kubernetes
       path: /apis/admission.stash.appscode.com/v1alpha1/admissionreviews
-    caBundle: $KUBE_CA
+    caBundle: ${KUBE_CA}
   rules:
   - operations:
     - CREATE

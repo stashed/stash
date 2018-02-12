@@ -88,8 +88,8 @@ roleRef:
   name: stash-operator
 subjects:
 - kind: ServiceAccount
-  name: $STASH_SERVICE_ACCOUNT
-  namespace: $STASH_NAMESPACE
+  name: ${STASH_SERVICE_ACCOUNT}
+  namespace: ${STASH_NAMESPACE}
 # to read the config for terminating authentication
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
@@ -102,8 +102,8 @@ roleRef:
   name: extension-apiserver-authentication-reader
 subjects:
 - kind: ServiceAccount
-  name: $STASH_SERVICE_ACCOUNT
-  namespace: $STASH_NAMESPACE
+  name: ${STASH_SERVICE_ACCOUNT}
+  namespace: ${STASH_NAMESPACE}
 ---
 # to delegate authentication and authorization
 apiVersion: rbac.authorization.k8s.io/v1beta1
@@ -118,5 +118,5 @@ roleRef:
   name: system:auth-delegator
 subjects:
 - kind: ServiceAccount
-  name: $STASH_SERVICE_ACCOUNT
-  namespace: $STASH_NAMESPACE
+  name: ${STASH_SERVICE_ACCOUNT}
+  namespace: ${STASH_NAMESPACE}
