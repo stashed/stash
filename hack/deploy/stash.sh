@@ -133,11 +133,15 @@ if [ "$STASH_UNINSTALL" -eq 1 ]; then
     kubectl delete deployment -l app=stash --namespace $STASH_NAMESPACE
     kubectl delete service -l app=stash --namespace $STASH_NAMESPACE
     kubectl delete secret -l app=stash --namespace $STASH_NAMESPACE
+    kubectl delete validatingwebhookconfiguration -l app=stash --namespace $STASH_NAMESPACE
+    kubectl delete mutatingwebhookconfiguration -l app=stash --namespace $STASH_NAMESPACE
     kubectl delete apiservice -l app=stash --namespace $STASH_NAMESPACE
     # Delete RBAC objects, if --rbac flag was used.
     kubectl delete serviceaccount -l app=stash --namespace $STASH_NAMESPACE
     kubectl delete clusterrolebindings -l app=stash --namespace $STASH_NAMESPACE
     kubectl delete clusterrole -l app=stash --namespace $STASH_NAMESPACE
+    kubectl delete rolebindings -l app=stash --namespace $STASH_NAMESPACE
+    kubectl delete role -l app=stash --namespace $STASH_NAMESPACE
 
     exit 0
 fi
