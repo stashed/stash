@@ -121,6 +121,7 @@ func (c *StashController) EnsureKubectlCronJob(restic *api.Restic) error {
 		return err
 	}
 
+	fmt.Println("Creating cronJob")
 	cronJob, _, err := batch_util.CreateOrPatchCronJob(c.kubeClient, meta, func(in *batch.CronJob) *batch.CronJob {
 		// set restic as cron-job owner
 		in.OwnerReferences = []metav1.OwnerReference{
@@ -151,7 +152,7 @@ func (c *StashController) EnsureKubectlCronJob(restic *api.Restic) error {
 		in.Spec.JobTemplate.Spec.Template.Spec.Containers = core_util.UpsertContainer(
 			in.Spec.JobTemplate.Spec.Template.Spec.Containers,
 			core.Container{
-				Name: util.StashContainer,
+				Name:  util.StashContainer,
 				Image: image.ToContainerImage(),
 				Args: []string{
 					"scale",
@@ -167,6 +168,7 @@ func (c *StashController) EnsureKubectlCronJob(restic *api.Restic) error {
 		return in
 	})
 	if err != nil {
+		fmt.Println("Error in creating cron job")
 		return err
 	}
 

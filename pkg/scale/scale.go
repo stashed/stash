@@ -10,7 +10,6 @@ import (
 	apps "k8s.io/api/apps/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"github.com/appscode/go/types"
 )
 
 type Options struct {
@@ -39,9 +38,9 @@ func New(k8sClient kubernetes.Interface, opt Options) *Controller {
 }
 
 func (c *Controller) ScaleDownWorkload() error {
-	fmt.Println("ScaleDownWorkload called. LabelSelector:",c.opt.Label)
+	fmt.Println("ScaleDownWorkload called. LabelSelector:", c.opt.Label)
 	dpList, err := c.k8sClient.AppsV1beta1().Deployments(c.opt.Namespace).List(metav1.ListOptions{LabelSelector: c.opt.Label})
-	fmt.Println("dpList Length:",len(dpList.Items))
+	fmt.Println("dpList Length:", len(dpList.Items))
 	if err == nil {
 		for _, dp := range dpList.Items {
 			_, _, err := apps_util.PatchDeployment(c.k8sClient, &dp, func(obj *apps.Deployment) *apps.Deployment {
@@ -59,7 +58,7 @@ func (c *Controller) ScaleDownWorkload() error {
 	}
 	time.Sleep(time.Second * 30)
 
-	if len(dpList.Items) > 0{
+	if len(dpList.Items) > 0 {
 		for _, dp := range dpList.Items {
 			_, _, err := apps_util.PatchDeployment(c.k8sClient, &dp, func(obj *apps.Deployment) *apps.Deployment {
 				obj.Spec.Replicas = &OneReplica
@@ -70,7 +69,6 @@ func (c *Controller) ScaleDownWorkload() error {
 			}
 		}
 	}
-
 
 	return nil
 }

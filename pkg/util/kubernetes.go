@@ -36,9 +36,9 @@ const (
 	KubectlCronPrefix = "stash-kubectl-cron-"
 	CheckJobPrefix    = "stash-check-"
 
-	AnnotationRestic    = "restic"
-	AnnotationRecovery  = "recovery"
-	AnnotationOperation = "operation"
+	AnnotationRestic     = "restic"
+	AnnotationRecovery   = "recovery"
+	AnnotationOperation  = "operation"
 	AnnotationOldReplica = "old-replica"
 
 	OperationRecovery   = "recovery"
@@ -46,7 +46,6 @@ const (
 	OperationDeletePods = "delete-pods"
 	AppLabelStash       = "stash"
 	OperationScaleDown  = "scale-down"
-
 )
 
 var (

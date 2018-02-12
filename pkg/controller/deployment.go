@@ -66,6 +66,7 @@ func (c *StashController) runDeploymentInjector(key string) error {
 		}
 		if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
 			if !newRestic.Spec.Paused {
+				fmt.Println("Ensuring deployment sidecar")
 				return c.EnsureDeploymentSidecar(dp, oldRestic, newRestic)
 			}
 		} else if oldRestic != nil && newRestic == nil {
@@ -136,6 +137,7 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 		}
 
 		if new.Spec.Type == api.BackupOffline {
+			fmt.Println("Adding init container")
 			obj.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(
 				obj.Spec.Template.Spec.InitContainers,
 				util.NewInitContainer(new, workload, image, c.EnableRBAC),
