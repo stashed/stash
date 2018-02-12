@@ -48,6 +48,16 @@ $ ./hack/make.py
 $ stash version
 ```
 
+#### Run Binary Locally
+```console
+$ stash run \
+  --secure-port=8443 \
+  --kubeconfig="$HOME/.kube/config" \
+  --authorization-kubeconfig="$HOME/.kube/config" \
+  --authentication-kubeconfig="$HOME/.kube/config" \
+  --authentication-skip-lookup
+```
+
 #### Dependency management
 Stash uses [Glide](https://github.com/Masterminds/glide) to manage dependencies. Dependencies are already checked in the `vendor` folder.
 If you want to update/add dependencies, run:
