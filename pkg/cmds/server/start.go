@@ -32,7 +32,6 @@ func NewStashOptions(out, errOut io.Writer) *StashOptions {
 		StdErr:             errOut,
 	}
 	o.RecommendedOptions.Etcd = nil
-	o.RecommendedOptions.SecureServing.BindPort = 8443
 
 	return o
 }
