@@ -39,11 +39,14 @@ const (
 	AnnotationRestic    = "restic"
 	AnnotationRecovery  = "recovery"
 	AnnotationOperation = "operation"
+	AnnotationOldReplica = "old-replica"
 
 	OperationRecovery   = "recovery"
 	OperationCheck      = "check"
 	OperationDeletePods = "delete-pods"
 	AppLabelStash       = "stash"
+	OperationScaleDown  = "scale-down"
+
 )
 
 var (

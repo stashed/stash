@@ -107,8 +107,8 @@ func (c *StashController) runResticInjector(key string) error {
 func (c *StashController) EnsureKubectlCronJob(restic *api.Restic) error {
 	image := docker.Docker{
 		Registry: c.DockerRegistry,
-		Image:    docker.ImageKubectl,
-		Tag:      c.KubectlImageTag,
+		Image:    docker.ImageStash,
+		Tag:      c.StashImageTag,
 	}
 
 	meta := metav1.ObjectMeta{
@@ -137,7 +137,7 @@ func (c *StashController) EnsureKubectlCronJob(restic *api.Restic) error {
 		}
 		in.Labels["app"] = util.AppLabelStash
 		in.Labels[util.AnnotationRestic] = restic.Name
-		in.Labels[util.AnnotationOperation] = util.OperationDeletePods
+		in.Labels[util.AnnotationOperation] = util.OperationScaleDown
 
 		// spec
 		in.Spec.Schedule = restic.Spec.Schedule
@@ -146,18 +146,16 @@ func (c *StashController) EnsureKubectlCronJob(restic *api.Restic) error {
 		}
 		in.Spec.JobTemplate.Labels["app"] = util.AppLabelStash
 		in.Spec.JobTemplate.Labels[util.AnnotationRestic] = restic.Name
-		in.Spec.JobTemplate.Labels[util.AnnotationOperation] = util.OperationDeletePods
+		in.Spec.JobTemplate.Labels[util.AnnotationOperation] = util.OperationScaleDown
 
 		in.Spec.JobTemplate.Spec.Template.Spec.Containers = core_util.UpsertContainer(
 			in.Spec.JobTemplate.Spec.Template.Spec.Containers,
 			core.Container{
-				Name:  util.KubectlContainer,
+				Name: util.StashContainer,
 				Image: image.ToContainerImage(),
 				Args: []string{
-					"kubectl",
-					"delete",
-					"pods",
-					"-l " + selector.String(),
+					"scale",
+					"-label " + selector.String(),
 				},
 			})
 		in.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = restic.Spec.ImagePullSecrets

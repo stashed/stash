@@ -577,7 +577,7 @@ var _ = Describe("Deployment", func() {
 				restic.Spec.Type = api.BackupOffline
 				restic.Spec.Schedule = "*/5 * * * *"
 			})
-			It(`should backup new Deployment`, func() {
+			FIt(`should backup new Deployment`, func() {
 				By("Creating repository Secret " + cred.Name)
 				err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
@@ -594,6 +594,7 @@ var _ = Describe("Deployment", func() {
 				}).Should(BeNil())
 
 				By("Creating Deployment " + deployment.Name)
+				deployment.Spec.Replicas = types.Int32P(3)
 				_, err = f.CreateDeployment(deployment)
 				Expect(err).NotTo(HaveOccurred())
 
