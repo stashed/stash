@@ -2,6 +2,8 @@ package queue
 
 import (
 	"github.com/golang/glog"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 )
@@ -80,4 +82,37 @@ func (h *QueueingEventHandler) OnDelete(obj interface{}) {
 	if h.enqueueDelete {
 		Enqueue(h.queue, obj)
 	}
+}
+
+func NewVersionedHandler(inner cache.ResourceEventHandler, gvk schema.GroupVersionKind) cache.ResourceEventHandler {
+	return versionedEventHandler{inner: inner, gvk: gvk}
+}
+
+// versionedEventHandler is an adaptor to let you easily specify as many or
+// as few of the notification functions as you want while still implementing
+// ResourceEventHandler.
+type versionedEventHandler struct {
+	inner cache.ResourceEventHandler
+	gvk   schema.GroupVersionKind
+}
+
+func (w versionedEventHandler) setGroupVersionKind(obj interface{}) interface{} {
+	if r, ok := obj.(runtime.Object); ok {
+		r = r.DeepCopyObject()
+		r.GetObjectKind().SetGroupVersionKind(w.gvk)
+		return r
+	}
+	return obj
+}
+
+func (w versionedEventHandler) OnAdd(obj interface{}) {
+	w.inner.OnAdd(w.setGroupVersionKind(obj))
+}
+
+func (w versionedEventHandler) OnUpdate(oldObj, newObj interface{}) {
+	w.inner.OnUpdate(w.setGroupVersionKind(oldObj), w.setGroupVersionKind(newObj))
+}
+
+func (w versionedEventHandler) OnDelete(obj interface{}) {
+	w.inner.OnDelete(w.setGroupVersionKind(obj))
 }
