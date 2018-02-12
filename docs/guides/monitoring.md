@@ -33,7 +33,8 @@ Since backup operations are run as cron jobs, Stash can use [Prometheus Pushgate
 The dashboard can be downloaded directly [from the repo](/contrib/monitoring/Grafana%20-%20Stash%20-%20Backup%20Overview.json) or from [Grafana.com](https://grafana.com/dashboards/4198).
 You can import the dashboard JSON file or through Grafana.com import by ID `4198`.
 
-A demo on what the dashboard shows, can be found here: [Stash - Backup Overview - Raintank.io Snapshot](https://snapshot.raintank.io/dashboard/snapshot/qbdKO3SvzlP3RVoD2589esTLu48e5TC1?orgId=2).
+The dashboard looks like this:
+![Stash - Backup Overview - Grafana Dashboard](/docs/images/grafana/dashboard-stash-backup-overview.png)
 
 ## Next Steps
 
