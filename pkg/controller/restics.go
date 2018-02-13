@@ -121,7 +121,6 @@ func (c *StashController) EnsureKubectlCronJob(restic *api.Restic) error {
 		return err
 	}
 
-	fmt.Println("Creating cronJob")
 	cronJob, _, err := batch_util.CreateOrPatchCronJob(c.kubeClient, meta, func(in *batch.CronJob) *batch.CronJob {
 		// set restic as cron-job owner
 		in.OwnerReferences = []metav1.OwnerReference{
@@ -155,8 +154,8 @@ func (c *StashController) EnsureKubectlCronJob(restic *api.Restic) error {
 				Name:  util.StashContainer,
 				Image: image.ToContainerImage(),
 				Args: []string{
-					"scale",
-					"-label " + selector.String(),
+					"scaledown",
+					"--selector=" + selector.String(),
 				},
 			})
 		in.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = restic.Spec.ImagePullSecrets

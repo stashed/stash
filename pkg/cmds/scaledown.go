@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func NewCmdScale() *cobra.Command {
+func NewCmdScaleDown() *cobra.Command {
 	var (
 		masterURL      string
 		kubeconfigPath string
@@ -21,8 +21,8 @@ func NewCmdScale() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:               "scale",
-		Short:             "Run Stash Backup",
+		Use:               "scaledown",
+		Short:             "Scale down workload",
 		DisableAutoGenTag: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
@@ -41,7 +41,7 @@ func NewCmdScale() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&opt.Label, "label", opt.Label, "Label used to select Restic's workload")
+	cmd.Flags().StringVar(&opt.Selector, "selector", opt.Selector, "Label used to select Restic's workload")
 
 	return cmd
 }

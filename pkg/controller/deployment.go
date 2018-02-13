@@ -137,7 +137,6 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 		}
 
 		if new.Spec.Type == api.BackupOffline {
-			fmt.Println("Adding init container")
 			obj.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(
 				obj.Spec.Template.Spec.InitContainers,
 				util.NewInitContainer(new, workload, image, c.EnableRBAC),

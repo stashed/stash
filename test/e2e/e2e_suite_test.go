@@ -3,6 +3,7 @@ package e2e_test
 import (
 	"testing"
 	"time"
+
 	logs "github.com/appscode/go/log/golog"
 	"github.com/appscode/kutil/tools/clientcmd"
 	api "github.com/appscode/stash/apis/stash"
@@ -19,7 +20,7 @@ import (
 
 const (
 	TIMEOUT           = 20 * time.Minute
-	TestStashImageTag = "canary"
+	TestStashImageTag = "offlineBackupMR"
 )
 
 var (

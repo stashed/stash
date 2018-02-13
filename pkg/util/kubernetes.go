@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/cenkalti/backoff"
+	apps_v1beta1 "k8s.io/api/apps/v1beta1"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -46,6 +48,7 @@ const (
 	OperationDeletePods = "delete-pods"
 	AppLabelStash       = "stash"
 	OperationScaleDown  = "scale-down"
+	OperationScaleUp    = "scale-up"
 )
 
 var (
@@ -572,4 +575,43 @@ func NewCheckJob(restic *api.Restic, hostName, smartPrefix string, image docker.
 	}
 
 	return job
+}
+
+func GetOriginalReplicaFromAnnotation(kind string, obj interface{}) (int32, error) {
+	switch kind {
+	case api.KindDeployment:
+		dp := obj.(*apps_v1beta1.Deployment)
+		if dp.Annotations == nil {
+			return 0, fmt.Errorf("Original replica number not annotated")
+		}
+		replica, err := strconv.Atoi(dp.Annotations[AnnotationOldReplica])
+		if err != nil {
+			return 0, nil
+		}
+		return int32(replica), nil
+	case api.KindReplicationController:
+		//todo
+	case api.KindReplicaSet:
+		//todo
+
+	}
+	return 0, nil
+}
+
+func WorkloadReplicas(kubeClient *kubernetes.Clientset, namespace string, workloadKind string, workloadName string) (int32, error) {
+	switch workloadKind {
+	case api.KindDeployment:
+		obj, err := kubeClient.AppsV1beta1().Deployments(namespace).Get(workloadName, metav1.GetOptions{})
+		if err != nil {
+			return 0, err
+		} else {
+			return *obj.Spec.Replicas, nil
+		}
+	case api.KindReplicationController:
+		//todo
+	case api.KindReplicaSet:
+		//todo
+
+	}
+	return 0, nil
 }

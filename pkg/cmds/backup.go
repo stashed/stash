@@ -10,6 +10,7 @@ import (
 	cs "github.com/appscode/stash/client"
 	"github.com/appscode/stash/pkg/backup"
 	"github.com/appscode/stash/pkg/docker"
+	"github.com/appscode/stash/pkg/scale"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
@@ -70,11 +71,29 @@ func NewCmdBackup() *cobra.Command {
 				if err = ctrl.BackupScheduler(); err != nil {
 					log.Fatal(err)
 				}
-			} else {
-				log.Infoln("Running backup once")
-				if err = ctrl.Backup(); err != nil {
+			} else { // for offline backup
+
+				//if replica > 1 we should not take backup
+				replica, err := util.WorkloadReplicas(kubeClient, opt.Namespace, opt.Workload.Kind, opt.Workload.Name)
+				if err != nil {
 					log.Fatal(err)
 				}
+
+				if replica > 1 {
+					log.Infof("Skipping backup. Reason: Backup type offline and replica > 1")
+				} else {
+					log.Infoln("Running backup once")
+					if err = ctrl.Backup(); err != nil {
+						log.Fatal(err)
+						}
+
+					// offline backup done. now scale up replica to original replica number
+					err = scale.ScaleUpWorkload(kubeClient, opt)
+					if err != nil {
+						log.Fatal(err)
+					}
+				}
+
 			}
 			log.Infoln("Exiting Stash Backup")
 		},
