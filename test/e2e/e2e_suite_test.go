@@ -1,9 +1,6 @@
 package e2e_test
 
 import (
-	"testing"
-	"time"
-
 	logs "github.com/appscode/go/log/golog"
 	"github.com/appscode/kutil/tools/clientcmd"
 	api "github.com/appscode/stash/apis/stash"
@@ -16,11 +13,13 @@ import (
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
+	"testing"
+	"time"
 )
 
 const (
 	TIMEOUT           = 20 * time.Minute
-	TestStashImageTag = "offlineBackupMR"
+	TestStashImageTag = "canary"
 )
 
 var (

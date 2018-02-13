@@ -582,6 +582,10 @@ var _ = Describe("Deployment", func() {
 				err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
+				By("Creating Deployment " + deployment.Name)
+				_, err = f.CreateDeployment(deployment)
+				Expect(err).NotTo(HaveOccurred())
+
 				By("Creating restic " + restic.Name)
 				err = f.CreateRestic(restic)
 				Expect(err).NotTo(HaveOccurred())
@@ -593,25 +597,25 @@ var _ = Describe("Deployment", func() {
 					return err
 				}).Should(BeNil())
 
-				By("Creating Deployment " + deployment.Name)
-				_, err = f.CreateDeployment(deployment)
-				Expect(err).NotTo(HaveOccurred())
+				By("Waiting for scale down deployment to 0 replica")
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(0))
+
+				By("Wating for scale up deployment to 1 replica")
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(1))
 
 				By("Waiting for init-container")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
 
-				By("Waiting for initial backup to complete")
+				By("Waiting for backup to complete")
 				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
 					return r.Status.BackupCount
 				}, BeNumerically(">=", 1)))
 
-				By("Waiting for next backup to complete")
-				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
-					return r.Status.BackupCount
-				}, BeNumerically(">=", 2)))
-
 				By("Waiting for backup event")
 				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", 1)))
+
+				By("Waiting for scale up deployment to original replica")
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(int(*deployment.Spec.Replicas)))
 			})
 		})
 
@@ -622,7 +626,7 @@ var _ = Describe("Deployment", func() {
 				restic.Spec.Type = api.BackupOffline
 				restic.Spec.Schedule = "*/5 * * * *"
 			})
-			FIt(`should backup new Deployment`, func() {
+			It(`should backup new Deployment`, func() {
 				By("Creating repository Secret " + cred.Name)
 				err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())

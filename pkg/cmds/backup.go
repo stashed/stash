@@ -85,7 +85,7 @@ func NewCmdBackup() *cobra.Command {
 					log.Infoln("Running backup once")
 					if err = ctrl.Backup(); err != nil {
 						log.Fatal(err)
-						}
+					}
 
 					// offline backup done. now scale up replica to original replica number
 					err = scale.ScaleUpWorkload(kubeClient, opt)

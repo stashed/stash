@@ -66,7 +66,6 @@ func (c *StashController) runDeploymentInjector(key string) error {
 		}
 		if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
 			if !newRestic.Spec.Paused {
-				fmt.Println("Ensuring deployment sidecar")
 				return c.EnsureDeploymentSidecar(dp, oldRestic, newRestic)
 			}
 		} else if oldRestic != nil && newRestic == nil {

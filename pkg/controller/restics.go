@@ -167,7 +167,6 @@ func (c *StashController) EnsureKubectlCronJob(restic *api.Restic) error {
 		return in
 	})
 	if err != nil {
-		fmt.Println("Error in creating cron job")
 		return err
 	}
 

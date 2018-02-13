@@ -1,7 +1,7 @@
 package docker
 
 const (
-	ACRegistry   = "emruzhossain"
+	ACRegistry   = "appscode"
 	ImageStash   = "stash"
 	ImageKubectl = "kubectl"
 )
