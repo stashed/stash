@@ -1,5 +1,5 @@
 hash: 8aa9776b596eb3a338b9caf03cbf3364c6919d5653d207bc53049c7281177e8f
-updated: 2018-02-11T20:21:20.825092702-08:00
+updated: 2018-02-12T21:52:25.826122966-08:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -14,6 +14,7 @@ imports:
   - analytics
   - context
   - crypto/rand
+  - flags
   - homedir
   - log
   - log/golog
@@ -36,6 +37,7 @@ imports:
   - rbac/v1beta1
   - tools/analytics
   - tools/certstore
+  - tools/clientcmd
   - tools/queue
 - name: github.com/appscode/mergo
   version: e3000cb3d28c72b837601cac94debd91032d19fe

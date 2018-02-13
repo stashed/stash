@@ -47,7 +47,7 @@ func (c *ControllerConfig) New() (*StashController, error) {
 		opt.IncludeUninitialized = true
 	}
 	ctrl := &StashController{
-		// Config :
+		Config:               c.Config,
 		kubeClient:           c.KubeClient,
 		stashClient:          c.StashClient,
 		crdClient:            c.CRDClient,
