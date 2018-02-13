@@ -88,10 +88,34 @@ $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack
 
 ## Using Helm
 Stash can be installed via [Helm](https://helm.sh/) using the [chart](https://github.com/appscode/stash/tree/master/chart/stable/stash) included in this repository or from official charts repository. To install the chart with the release name `my-release`:
-```bash
+
+```console
+# Mac OSX amd64:
+curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.1.0/onessl-darwin-amd64 \
+  && chmod +x onessl \
+  && sudo mv onessl /usr/local/bin/
+
+# Linux amd64:
+curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.1.0/onessl-linux-amd64 \
+  && chmod +x onessl \
+  && sudo mv onessl /usr/local/bin/
+
+# Linux arm64:
+curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.1.0/onessl-linux-arm64 \
+  && chmod +x onessl \
+  && sudo mv onessl /usr/local/bin/
+
+# Kubernetes 1.8.x
 $ helm repo update
 $ helm install stable/stash --name my-release
+
+# Kubernetes 1.9.0 or later
+$ helm repo update
+$ helm install stable/stash --name my-release \
+  --set apiserver.ca="$(onessl get kube-ca)" \
+  --set apiserver.enableAdmissionWebhook=true
 ```
+
 To see the detailed configuration options, visit [here](https://github.com/appscode/stash/tree/master/chart/stable/stash).
 
 
