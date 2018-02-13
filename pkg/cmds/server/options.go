@@ -1,6 +1,7 @@
 package server
 
 import (
+	"flag"
 	"fmt"
 	"time"
 
@@ -40,13 +41,19 @@ func NewControllerOptions() *ControllerOptions {
 	}
 }
 
-func (s *ControllerOptions) AddFlags(fs *pflag.FlagSet) {
+func (s *ControllerOptions) AddGoFlags(fs *flag.FlagSet) {
 	fs.StringVar(&s.OpsAddress, "ops-address", s.OpsAddress, "Address to listen on for web interface and telemetry.")
 	fs.BoolVar(&s.EnableRBAC, "rbac", s.EnableRBAC, "Enable RBAC for operator")
 	fs.StringVar(&s.ScratchDir, "scratch-dir", s.ScratchDir, "Directory used to store temporary files. Use an `emptyDir` in Kubernetes.")
 	fs.StringVar(&s.StashImageTag, "image-tag", s.StashImageTag, "Image tag for sidecar, init-container, check-job and recovery-job")
 	fs.StringVar(&s.DockerRegistry, "docker-registry", s.DockerRegistry, "Docker image registry for sidecar, init-container, check-job, recovery-job and kubectl-job")
 	fs.DurationVar(&s.ResyncPeriod, "resync-period", s.ResyncPeriod, "If non-zero, will re-list this often. Otherwise, re-list will be delayed aslong as possible (until the upstream source closes the watch or times out.")
+}
+
+func (s *ControllerOptions) AddFlags(fs *pflag.FlagSet) {
+	pfs := flag.NewFlagSet("stash", flag.ExitOnError)
+	s.AddGoFlags(pfs)
+	fs.AddGoFlagSet(pfs)
 }
 
 func (s *ControllerOptions) ApplyTo(cfg *controller.ControllerConfig) error {
