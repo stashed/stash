@@ -17,7 +17,6 @@ import (
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/apiserver/pkg/registry/rest"
 	genericapiserver "k8s.io/apiserver/pkg/server"
-	restclient "k8s.io/client-go/rest"
 )
 
 var (
@@ -100,11 +99,6 @@ func (c completedConfig) New() (*StashServer, error) {
 		Controller:       ctrl,
 	}
 
-	inClusterConfig, err := restclient.InClusterConfig()
-	if err != nil {
-		return nil, err
-	}
-
 	for _, versionMap := range admissionHooksByGroupThenVersion(c.ControllerConfig.AdmissionHooks...) {
 		accessor := meta.NewAccessor()
 		versionInterfaces := &meta.VersionInterfaces{
@@ -179,7 +173,7 @@ func (c completedConfig) New() (*StashServer, error) {
 		}
 		s.GenericAPIServer.AddPostStartHookOrDie(postStartName,
 			func(context genericapiserver.PostStartHookContext) error {
-				return hook.Initialize(inClusterConfig, context.StopCh)
+				return hook.Initialize(c.ControllerConfig.ClientConfig, context.StopCh)
 			},
 		)
 	}

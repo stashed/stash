@@ -33,6 +33,12 @@
       "id": "singlestat",
       "name": "Singlestat",
       "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "table",
+      "name": "Table",
+      "version": ""
     }
   ],
   "annotations": {
@@ -52,7 +58,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "hideControls": true,
+  "hideControls": false,
   "id": null,
   "links": [],
   "rows": [
@@ -65,9 +71,9 @@
           "colorBackground": true,
           "colorValue": false,
           "colors": [
-            "#d44a3a",
+            "#299c46",
             "rgba(237, 129, 40, 0.89)",
-            "#299c46"
+            "#d44a3a"
           ],
           "datasource": "${DS_PROMETHEUS-INFRA}",
           "format": "none",
@@ -117,13 +123,13 @@
           "tableColumn": "",
           "targets": [
             {
-              "expr": "sum(restic_session_fail)",
+              "expr": "sum(restic_session_fail{exported_namespace=~\"$namespace\",app=~\"$app\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "refId": "A"
             }
           ],
-          "thresholds": "0,0",
+          "thresholds": "0.1,0.1",
           "title": "Failed",
           "type": "singlestat",
           "valueFontSize": "80%",
@@ -193,9 +199,10 @@
           "tableColumn": "",
           "targets": [
             {
-              "expr": "sum(restic_session_success)",
+              "expr": "sum(restic_session_success{exported_namespace=~\"$namespace\",app=~\"$app\"})",
               "format": "time_series",
               "intervalFactor": 2,
+              "legendFormat": "",
               "refId": "A"
             }
           ],
@@ -257,20 +264,20 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "restic_session_success{app=~\"$app\"}",
+              "expr": "restic_session_success{exported_namespace=~\"$namespace\",app=~\"$app\"}",
               "format": "time_series",
               "intervalFactor": 2,
-              "legendFormat": "{{app}}",
+              "legendFormat": "{{exported_namespace}} - {{app}}",
               "refId": "A"
             }
           ],
           "thresholds": [
             {
-              "colorMode": "warning",
-              "fill": false,
+              "colorMode": "critical",
+              "fill": true,
               "line": true,
-              "op": "gt",
-              "value": 0
+              "op": "lt",
+              "value": 1
             }
           ],
           "timeFrom": null,
@@ -343,20 +350,20 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "restic_session_fail{app=~\"$app\"}",
+              "expr": "restic_session_fail{exported_namespace=~\"$namespace\",app=~\"$app\"}",
               "format": "time_series",
               "intervalFactor": 2,
-              "legendFormat": "{{app}}",
+              "legendFormat": "{{exported_namespace}} - {{app}}",
               "refId": "A"
             }
           ],
           "thresholds": [
             {
-              "colorMode": "warning",
+              "colorMode": "critical",
               "fill": false,
               "line": true,
               "op": "lt",
-              "value": 1
+              "value": 0
             }
           ],
           "timeFrom": null,
@@ -400,7 +407,7 @@
       "repeatIteration": null,
       "repeatRowId": null,
       "showTitle": true,
-      "title": "Restic Success & Fail",
+      "title": "Success & Fail",
       "titleSize": "h6"
     },
     {
@@ -441,11 +448,11 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(restic_session_duration_seconds{app=~\"$app\"}) by (app, op)",
+              "expr": "sum(restic_session_duration_seconds{exported_namespace=~\"$namespace\",app=~\"$app\"}) by (app, op, exported_namespace)",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
-              "legendFormat": "{{app}} - {{op}}",
+              "legendFormat": "{{exported_namespace}} - {{app}} - {{op}}",
               "refId": "A"
             }
           ],
@@ -492,6 +499,290 @@
       "showTitle": false,
       "title": "Dashboard Row",
       "titleSize": "h6"
+    },
+    {
+      "collapse": true,
+      "height": "400px",
+      "panels": [
+        {
+          "columns": [],
+          "datasource": "${DS_PROMETHEUS-INFRA}",
+          "fontSize": "90%",
+          "id": 7,
+          "links": [],
+          "pageSize": null,
+          "scroll": true,
+          "showHeader": true,
+          "sort": {
+            "col": 0,
+            "desc": true
+          },
+          "span": 6,
+          "styles": [
+            {
+              "alias": "",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "Value",
+              "thresholds": [],
+              "type": "hidden",
+              "unit": "short"
+            },
+            {
+              "alias": "",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "Time",
+              "thresholds": [],
+              "type": "hidden",
+              "unit": "short"
+            },
+            {
+              "alias": "App",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "app",
+              "thresholds": [],
+              "type": "string",
+              "unit": "short"
+            },
+            {
+              "alias": "",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "exported_namespace",
+              "thresholds": [],
+              "type": "string",
+              "unit": "short"
+            },
+            {
+              "alias": "Object Kind",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "kind",
+              "thresholds": [],
+              "type": "string",
+              "unit": "short"
+            },
+            {
+              "alias": "",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "stash_config",
+              "thresholds": [],
+              "type": "string",
+              "unit": "short"
+            },
+            {
+              "alias": "",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "/.*/",
+              "thresholds": [],
+              "type": "hidden",
+              "unit": "short"
+            }
+          ],
+          "targets": [
+            {
+              "expr": "restic_session_success{exported_namespace=~\"$namespace\",app=~\"$app\"} == 1",
+              "format": "table",
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": "30m",
+          "title": "Fail List",
+          "transform": "table",
+          "type": "table"
+        },
+        {
+          "columns": [],
+          "datasource": "${DS_PROMETHEUS-INFRA}",
+          "fontSize": "90%",
+          "id": 8,
+          "links": [],
+          "pageSize": null,
+          "scroll": true,
+          "showHeader": true,
+          "sort": {
+            "col": 0,
+            "desc": true
+          },
+          "span": 6,
+          "styles": [
+            {
+              "alias": "",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "Value",
+              "thresholds": [],
+              "type": "hidden",
+              "unit": "short"
+            },
+            {
+              "alias": "",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "Time",
+              "thresholds": [],
+              "type": "hidden",
+              "unit": "short"
+            },
+            {
+              "alias": "App",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "app",
+              "thresholds": [],
+              "type": "string",
+              "unit": "short"
+            },
+            {
+              "alias": "",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "exported_namespace",
+              "thresholds": [],
+              "type": "string",
+              "unit": "short"
+            },
+            {
+              "alias": "Object Kind",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "kind",
+              "thresholds": [],
+              "type": "string",
+              "unit": "short"
+            },
+            {
+              "alias": "",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "stash_config",
+              "thresholds": [],
+              "type": "string",
+              "unit": "short"
+            },
+            {
+              "alias": "",
+              "colorMode": null,
+              "colors": [
+                "rgba(245, 54, 54, 0.9)",
+                "rgba(237, 129, 40, 0.89)",
+                "rgba(50, 172, 45, 0.97)"
+              ],
+              "dateFormat": "YYYY-MM-DD HH:mm:ss",
+              "decimals": 2,
+              "pattern": "/.*/",
+              "thresholds": [],
+              "type": "hidden",
+              "unit": "short"
+            }
+          ],
+          "targets": [
+            {
+              "expr": "restic_session_fail{exported_namespace=~\"$namespace\",app=~\"$app\"} == 1",
+              "format": "table",
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "timeFrom": "30m",
+          "title": "Fail List",
+          "transform": "table",
+          "type": "table"
+        }
+      ],
+      "repeat": null,
+      "repeatIteration": null,
+      "repeatRowId": null,
+      "showTitle": true,
+      "title": "Success & Fail List",
+      "titleSize": "h6"
     }
   ],
   "schemaVersion": 14,
@@ -502,6 +793,26 @@
   ],
   "templating": {
     "list": [
+      {
+        "allValue": null,
+        "current": {},
+        "datasource": "${DS_PROMETHEUS-INFRA}",
+        "hide": 0,
+        "includeAll": true,
+        "label": null,
+        "multi": true,
+        "name": "namespace",
+        "options": [],
+        "query": "label_values(restic_session_success, exported_namespace)",
+        "refresh": 1,
+        "regex": "",
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
       {
         "allValue": null,
         "current": {},
@@ -555,5 +866,5 @@
   },
   "timezone": "",
   "title": "Stash - Backup Overview",
-  "version": 5
+  "version": 8
 }

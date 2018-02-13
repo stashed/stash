@@ -96,6 +96,8 @@ kind: RoleBinding
 metadata:
   name: stash-apiserver-extension-server-authentication-reader
   namespace: kube-system
+  labels:
+    app: stash
 roleRef:
   kind: Role
   apiGroup: rbac.authorization.k8s.io
