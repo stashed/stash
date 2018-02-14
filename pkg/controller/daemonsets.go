@@ -15,6 +15,7 @@ import (
 	"github.com/golang/glog"
 	extensions "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
 )
@@ -167,7 +168,10 @@ func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet,
 		obj.Annotations[api.LastAppliedConfiguration] = string(data)
 		obj.Annotations[api.VersionTag] = c.StashImageTag
 
-		obj.Spec.UpdateStrategy.Type = extensions.RollingUpdateDaemonSetStrategyType
+		if obj.Spec.UpdateStrategy.Type == extensions.OnDeleteDaemonSetStrategyType {
+			obj.Spec.UpdateStrategy.Type = extensions.RollingUpdateDaemonSetStrategyType
+			obj.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable = &intstr.IntOrString{Type: intstr.Int, IntVal: 1}
+		}
 		return obj
 	})
 	if err != nil {

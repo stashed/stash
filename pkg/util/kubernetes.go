@@ -597,6 +597,7 @@ func WorkloadReplicas(kubeClient *kubernetes.Clientset, namespace string, worklo
 		} else {
 			return *obj.Spec.Replicas, nil
 		}
+
 	default:
 		return 0, fmt.Errorf("Unkonwnworkload type")
 	}

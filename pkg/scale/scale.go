@@ -1,9 +1,11 @@
 package scale
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
+	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
 	apps_util "github.com/appscode/kutil/apps/v1beta1"
 	core_util "github.com/appscode/kutil/core/v1"
@@ -100,6 +102,18 @@ func (c *Controller) ScaleDownWorkload() error {
 			}
 		}
 	}
+
+	// delete all pods of daemonset and statefulset so that they restart with init container
+	podList, err := c.k8sClient.CoreV1().Pods(c.opt.Namespace).List(metav1.ListOptions{LabelSelector: c.opt.Selector})
+	if err == nil {
+		for _, pod := range podList.Items {
+			err = c.k8sClient.CoreV1().Pods(c.opt.Namespace).Delete(pod.Name, kutil.DeleteInBackground())
+			if err != nil {
+				log.Infof("Error in deleting pod %v. Reason: %v", pod.Name, err.Error())
+			}
+		}
+	}
+
 	// wait until pods terminated
 	time.Sleep(time.Second * 30)
 
@@ -203,6 +217,13 @@ func ScaleUpWorkload(k8sClient *kubernetes.Clientset, opt backup.Options) error 
 		if err != nil {
 			return err
 		}
+	case api.KindStatefulSet:
+		// do nothing. we didn't scale down.
+	case api.KindDaemonSet:
+		// do nothing.
+	default:
+		return fmt.Errorf("Unknown workload type")
+
 	}
 
 	return nil
