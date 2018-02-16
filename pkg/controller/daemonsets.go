@@ -168,8 +168,8 @@ func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet,
 		obj.Annotations[api.LastAppliedConfiguration] = string(data)
 		obj.Annotations[api.VersionTag] = c.StashImageTag
 
-		if obj.Spec.UpdateStrategy.Type == extensions.OnDeleteDaemonSetStrategyType {
-			obj.Spec.UpdateStrategy.Type = extensions.RollingUpdateDaemonSetStrategyType
+		obj.Spec.UpdateStrategy.Type = extensions.RollingUpdateDaemonSetStrategyType
+		if obj.Spec.UpdateStrategy.RollingUpdate == nil {
 			obj.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable = &intstr.IntOrString{Type: intstr.Int, IntVal: 1}
 		}
 		return obj
