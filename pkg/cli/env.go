@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/appscode/go/log"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
 )
 

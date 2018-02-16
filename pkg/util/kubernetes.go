@@ -2,7 +2,6 @@ package util
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -16,6 +15,7 @@ import (
 	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/cenkalti/backoff"
+	"github.com/pkg/errors"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"

@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"errors"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -9,6 +8,7 @@ import (
 
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	shell "github.com/codeskyblue/go-sh"
+	"github.com/pkg/errors"
 )
 
 const (
