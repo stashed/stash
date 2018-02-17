@@ -6,7 +6,7 @@ import (
 	"github.com/appscode/go/log"
 	"github.com/appscode/kutil/tools/queue"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
-	stash_util "github.com/appscode/stash/client/typed/stash/v1alpha1/util"
+	stash_util "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/util"

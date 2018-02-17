@@ -7,7 +7,7 @@ import (
 
 	"github.com/appscode/pat"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
-	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
+	cs "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/cli"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"

@@ -3,11 +3,12 @@ package e2e_test
 import (
 	"testing"
 	"time"
+
 	logs "github.com/appscode/go/log/golog"
 	"github.com/appscode/kutil/tools/clientcmd"
 	api "github.com/appscode/stash/apis/stash"
-	"github.com/appscode/stash/client/scheme"
-	_ "github.com/appscode/stash/client/scheme"
+	"github.com/appscode/stash/client/clientset/versioned/scheme"
+	_ "github.com/appscode/stash/client/clientset/versioned/scheme"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/appscode/stash/test/e2e/framework"
