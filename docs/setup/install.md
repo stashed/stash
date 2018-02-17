@@ -191,6 +191,6 @@ GitTag = 0.7.0-alpha.0
 CommitTimestamp = 2017-10-10T05:24:23
 
 $ kubectl exec -it $POD_NAME -c operator -n $POD_NAMESPACE restic version
-restic 0.8.1
+restic 0.8.2
 compiled with go1.9 on linux/amd64
 ```
