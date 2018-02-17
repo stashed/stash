@@ -9,7 +9,7 @@ import (
 	"github.com/appscode/go/log/golog"
 	v "github.com/appscode/go/version"
 	"github.com/appscode/kutil/tools/analytics"
-	"github.com/appscode/stash/client/scheme"
+	"github.com/appscode/stash/client/clientset/versioned/scheme"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/jpillora/go-ogle-analytics"
 	"github.com/spf13/cobra"

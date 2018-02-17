@@ -7,7 +7,7 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/kutil/meta"
-	cs "github.com/appscode/stash/client"
+	cs "github.com/appscode/stash/client/clientset/versioned"
 	"github.com/appscode/stash/pkg/backup"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/util"

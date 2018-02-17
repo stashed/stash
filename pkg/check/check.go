@@ -3,7 +3,7 @@ package check
 import (
 	"fmt"
 
-	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
+	cs "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/cli"
 	"github.com/appscode/stash/pkg/eventer"
 	core "k8s.io/api/core/v1"
