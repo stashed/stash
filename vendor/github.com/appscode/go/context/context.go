@@ -25,7 +25,3 @@ func WithID(ctx gtx.Context, id string) gtx.Context {
 func NewID(ctx gtx.Context) gtx.Context {
 	return WithID(ctx, uuid.New().String())
 }
-
-func Background() gtx.Context {
-	return NewID(gtx.Background())
-}

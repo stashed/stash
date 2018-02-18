@@ -165,6 +165,7 @@ if [ "$STASH_ENABLE_RBAC" = true ]; then
     kubectl create serviceaccount $STASH_SERVICE_ACCOUNT --namespace $STASH_NAMESPACE
     kubectl label serviceaccount $STASH_SERVICE_ACCOUNT app=stash --namespace $STASH_NAMESPACE
     curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/rbac-list.yaml | $ONESSL envsubst | kubectl auth reconcile -f -
+    curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/user-roles.yaml | $ONESSL envsubst | kubectl auth reconcile -f -
 
 fi
 

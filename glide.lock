@@ -1,5 +1,5 @@
 hash: 8aa9776b596eb3a338b9caf03cbf3364c6919d5653d207bc53049c7281177e8f
-updated: 2018-02-12T21:52:25.826122966-08:00
+updated: 2018-02-17T19:05:28.202489434-08:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -9,7 +9,7 @@ imports:
   - compute/metadata
   - internal
 - name: github.com/appscode/go
-  version: 1be9b0441d73831aaa93df76e42a751caa5dba88
+  version: 8367769380cf93a12b381d957941ddf2a19d0356
   subpackages:
   - analytics
   - context
@@ -34,7 +34,7 @@ imports:
   - discovery
   - extensions/v1beta1
   - meta
-  - rbac/v1beta1
+  - rbac/v1
   - tools/analytics
   - tools/certstore
   - tools/clientcmd
@@ -292,7 +292,7 @@ imports:
 - name: github.com/sirupsen/logrus
   version: f006c2ac4710855cf0f916dd6b77acf6b048dc6e
 - name: github.com/spf13/afero
-  version: bbf41cb36dffe15dff5bf7e18c447801e7ffe163
+  version: bb8f1927f2a9d3ab41c9340aa034f6b803f4359c
   subpackages:
   - mem
 - name: github.com/spf13/cobra
