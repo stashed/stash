@@ -10,7 +10,7 @@ rules:
   - stash.appscode.com
   resources:
   - restics
-  - backups
+  - recoveries
   verbs:
   - create
   - delete
@@ -32,7 +32,7 @@ rules:
   - stash.appscode.com
   resources:
   - restics
-  - backups
+  - recoveries
   verbs:
   - get
   - list
