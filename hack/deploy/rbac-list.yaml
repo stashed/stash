@@ -1,4 +1,4 @@
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: stash-operator
@@ -76,7 +76,7 @@ rules:
   - rolebindings
   verbs: ["get", "create", "delete", "patch"]
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: stash-operator
@@ -92,7 +92,7 @@ subjects:
   namespace: ${STASH_NAMESPACE}
 ---
 # to read the config for terminating authentication
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: stash-apiserver-extension-server-authentication-reader
@@ -109,7 +109,7 @@ subjects:
   namespace: ${STASH_NAMESPACE}
 ---
 # to delegate authentication and authorization
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: stash-apiserver-auth-delegator

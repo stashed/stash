@@ -39,7 +39,7 @@ data:
 ---
 {{ if .Values.rbac.create }}
 # to read the config for terminating authentication
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: {{ template "stash.fullname" . }}-apiserver-extension-server-authentication-reader
@@ -59,7 +59,7 @@ subjects:
   namespace: {{ .Release.Namespace }}
 ---
 # to delegate authentication and authorization
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: {{ template "stash.fullname" . }}-apiserver-auth-delegator
