@@ -98,18 +98,6 @@ func (c *FakeRestics) Update(restic *v1alpha1.Restic) (result *v1alpha1.Restic, 
 	return obj.(*v1alpha1.Restic), err
 }
 
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeRestics) UpdateStatus(restic *v1alpha1.Restic) (*v1alpha1.Restic, error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(resticsResource, "status", c.ns, restic), &v1alpha1.Restic{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.Restic), err
-}
-
 // Delete takes name of the restic and deletes it. Returns an error if one occurs.
 func (c *FakeRestics) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.

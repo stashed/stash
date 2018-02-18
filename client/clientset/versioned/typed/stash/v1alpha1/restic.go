@@ -35,7 +35,6 @@ type ResticsGetter interface {
 type ResticInterface interface {
 	Create(*v1alpha1.Restic) (*v1alpha1.Restic, error)
 	Update(*v1alpha1.Restic) (*v1alpha1.Restic, error)
-	UpdateStatus(*v1alpha1.Restic) (*v1alpha1.Restic, error)
 	Delete(name string, options *v1.DeleteOptions) error
 	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
 	Get(name string, options v1.GetOptions) (*v1alpha1.Restic, error)
@@ -113,22 +112,6 @@ func (c *restics) Update(restic *v1alpha1.Restic) (result *v1alpha1.Restic, err 
 		Namespace(c.ns).
 		Resource("restics").
 		Name(restic.Name).
-		Body(restic).
-		Do().
-		Into(result)
-	return
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-
-func (c *restics) UpdateStatus(restic *v1alpha1.Restic) (result *v1alpha1.Restic, err error) {
-	result = &v1alpha1.Restic{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("restics").
-		Name(restic.Name).
-		SubResource("status").
 		Body(restic).
 		Do().
 		Into(result)
