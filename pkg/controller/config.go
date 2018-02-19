@@ -3,8 +3,8 @@ package controller
 import (
 	"time"
 
-	cs "github.com/appscode/stash/client"
-	stashinformers "github.com/appscode/stash/informers/externalversions"
+	cs "github.com/appscode/stash/client/clientset/versioned"
+	stashinformers "github.com/appscode/stash/client/informers/externalversions"
 	hookapi "github.com/appscode/stash/pkg/admission/api"
 	"github.com/appscode/stash/pkg/eventer"
 	core "k8s.io/api/core/v1"

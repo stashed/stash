@@ -27,3 +27,17 @@ rbac:
   create: false
   ## Ignored if rbac.create is true
   serviceAccountName: default
+
+apiserver:
+  # groupPriorityMinimum is the minimum priority the group should have. Please see
+  # https://github.com/kubernetes/kube-aggregator/blob/release-1.9/pkg/apis/apiregistration/v1beta1/types.go#L58-L64
+  # for more information on proper values of this field.
+  groupPriorityMinimum: 10000
+  # versionPriority is the ordering of this API inside of the group. Please see
+  # https://github.com/kubernetes/kube-aggregator/blob/release-1.9/pkg/apis/apiregistration/v1beta1/types.go#L66-L70
+  # for more information on proper values of this field
+  versionPriority: 15
+  # enableAdmissionWebhook is used to configure apiserver as ValidationWebhook for Voyager CRDs
+  enableAdmissionWebhook: false
+  # CA certificate used by main Kubernetes api server
+  ca:

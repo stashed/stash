@@ -6,9 +6,7 @@ import (
 
 	"github.com/appscode/go/log"
 	logs "github.com/appscode/go/log/golog"
-	_ "github.com/appscode/stash/client/fake"
-	_ "github.com/appscode/stash/client/internalclientset/scheme"
-	_ "github.com/appscode/stash/client/scheme"
+	_ "github.com/appscode/stash/client/clientset/versioned/fake"
 	"github.com/appscode/stash/pkg/cmds"
 	_ "k8s.io/client-go/kubernetes/fake"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"

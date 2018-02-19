@@ -3,7 +3,7 @@ package cmds
 import (
 	"github.com/appscode/go/log"
 	"github.com/appscode/kutil/meta"
-	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
+	cs "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/check"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"

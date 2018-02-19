@@ -6,8 +6,8 @@ import (
 
 	"github.com/appscode/go/log"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
-	cs "github.com/appscode/stash/client/typed/stash/v1alpha1"
-	stash_util "github.com/appscode/stash/client/typed/stash/v1alpha1/util"
+	cs "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1"
+	stash_util "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
 	"github.com/appscode/stash/pkg/cli"
 	"github.com/appscode/stash/pkg/eventer"
 	core "k8s.io/api/core/v1"

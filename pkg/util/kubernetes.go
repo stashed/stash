@@ -12,7 +12,7 @@ import (
 	"github.com/appscode/kutil/meta"
 	"github.com/appscode/kutil/tools/analytics"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
-	stash_listers "github.com/appscode/stash/listers/stash/v1alpha1"
+	stash_listers "github.com/appscode/stash/client/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/cenkalti/backoff"
 	"github.com/pkg/errors"
