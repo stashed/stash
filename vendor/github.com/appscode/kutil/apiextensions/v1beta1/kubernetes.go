@@ -48,7 +48,7 @@ func WaitForCRDReady(restClient rest.Interface, crds []*crd_api.CustomResourceDe
 			var statusCode int
 			res.StatusCode(&statusCode)
 			if statusCode != http.StatusOK {
-				return false, fmt.Errorf("invalid status code: %d", statusCode)
+				return false, errors.Errorf("invalid status code: %d", statusCode)
 			}
 		}
 

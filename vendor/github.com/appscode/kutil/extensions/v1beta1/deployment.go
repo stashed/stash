@@ -2,11 +2,11 @@ package v1beta1
 
 import (
 	"encoding/json"
-	"fmt"
 
 	. "github.com/appscode/go/types"
 	"github.com/appscode/kutil"
 	"github.com/golang/glog"
+	"github.com/pkg/errors"
 	extensions "k8s.io/api/extensions/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -73,7 +73,7 @@ func TryUpdateDeployment(c kubernetes.Interface, meta metav1.ObjectMeta, transfo
 	})
 
 	if err != nil {
-		err = fmt.Errorf("failed to update Deployment %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
+		err = errors.Errorf("failed to update Deployment %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}
 	return
 }

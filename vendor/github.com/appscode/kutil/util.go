@@ -1,8 +1,9 @@
 package kutil
 
 import (
-	"errors"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 const (
