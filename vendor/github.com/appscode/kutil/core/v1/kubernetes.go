@@ -1,11 +1,10 @@
 package v1
 
 import (
-	"errors"
-
 	"github.com/appscode/go/types"
 	"github.com/appscode/kutil/meta"
 	"github.com/appscode/mergo"
+	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/conversion"
@@ -266,6 +265,8 @@ func EnsureOwnerReference(meta metav1.ObjectMeta, owner *core.ObjectReference) m
 	meta.OwnerReferences[fi].Kind = owner.Kind
 	meta.OwnerReferences[fi].Name = owner.Name
 	meta.OwnerReferences[fi].UID = owner.UID
-	meta.OwnerReferences[fi].BlockOwnerDeletion = types.TrueP()
+	if meta.OwnerReferences[fi].BlockOwnerDeletion == nil {
+		meta.OwnerReferences[fi].BlockOwnerDeletion = types.FalseP()
+	}
 	return meta
 }

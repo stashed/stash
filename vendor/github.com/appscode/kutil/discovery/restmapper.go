@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -63,7 +64,7 @@ func guessGVK(obj interface{}) (schema.GroupVersionKind, error) {
 	pp := pkgPath(val)
 	parts := strings.Split(pp, "/")
 	if len(parts) < 2 {
-		return schema.GroupVersionKind{}, fmt.Errorf("failed to guess GroupVersion from package path %s", pp)
+		return schema.GroupVersionKind{}, errors.Errorf("failed to guess GroupVersion from package path %s", pp)
 	}
 	group := parts[len(parts)-2]
 	if strings.HasPrefix(pp, "k8s.io/api") && group == "core" {
@@ -127,7 +128,7 @@ func (m *DefaultRESTMapper) ResourcesForKind(input schema.GroupVersionKind) ([]s
 	hasVersion := len(gvk.Version) > 0
 
 	if !hasResource {
-		return nil, fmt.Errorf("a resource must be present, got: %v", gvk)
+		return nil, errors.Errorf("a resource must be present, got: %v", gvk)
 	}
 
 	var ret []schema.GroupVersionResource
@@ -188,7 +189,7 @@ func (m *DefaultRESTMapper) ResourcesForKind(input schema.GroupVersionKind) ([]s
 	}
 
 	if len(ret) == 0 {
-		return nil, fmt.Errorf("no matches for %v", gvk)
+		return nil, errors.Errorf("no matches for %v", gvk)
 	}
 
 	sort.Sort(resourceByPreferredGroupVersion{ret, m.defaultGroupVersions})
@@ -233,7 +234,7 @@ func (m *DefaultRESTMapper) ResourcesFor(input schema.GroupVersionResource) ([]s
 	hasVersion := len(resource.Version) > 0
 
 	if !hasResource {
-		return nil, fmt.Errorf("a resource must be present, got: %v", resource)
+		return nil, errors.Errorf("a resource must be present, got: %v", resource)
 	}
 
 	var ret []schema.GroupVersionResource
@@ -305,7 +306,7 @@ func (m *DefaultRESTMapper) ResourcesFor(input schema.GroupVersionResource) ([]s
 	}
 
 	if len(ret) == 0 {
-		return nil, fmt.Errorf("no matches for %v", resource)
+		return nil, errors.Errorf("no matches for %v", resource)
 	}
 
 	sort.Sort(resourceByPreferredGroupVersion{ret, m.defaultGroupVersions})
@@ -332,7 +333,7 @@ func (m *DefaultRESTMapper) KindsFor(input schema.GroupVersionResource) ([]schem
 	hasVersion := len(resource.Version) > 0
 
 	if !hasResource {
-		return nil, fmt.Errorf("a resource must be present, got: %v", resource)
+		return nil, errors.Errorf("a resource must be present, got: %v", resource)
 	}
 
 	var ret []schema.GroupVersionKind
@@ -384,7 +385,7 @@ func (m *DefaultRESTMapper) KindsFor(input schema.GroupVersionResource) ([]schem
 	}
 
 	if len(ret) == 0 {
-		return nil, fmt.Errorf("no matches for %v", input)
+		return nil, errors.Errorf("no matches for %v", input)
 	}
 
 	sort.Sort(kindByPreferredGroupVersion{ret, m.defaultGroupVersions})

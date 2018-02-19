@@ -1,8 +1,7 @@
 package clientcmd
 
 import (
-	"fmt"
-
+	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
@@ -40,7 +39,7 @@ func NamespaceFromContext(kubeconfigPath, contextName string) (string, error) {
 	}
 	ctx, found := kConfig.Contexts[contextName]
 	if !found {
-		return "", fmt.Errorf("context %s not found in kubeconfig file %s", contextName, kubeconfigPath)
+		return "", errors.Errorf("context %s not found in kubeconfig file %s", contextName, kubeconfigPath)
 	}
 	return ctx.Namespace, nil
 }

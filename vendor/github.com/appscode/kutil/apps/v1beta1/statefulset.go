@@ -2,13 +2,13 @@ package v1beta1
 
 import (
 	"encoding/json"
-	"fmt"
 
 	. "github.com/appscode/go/types"
 	atypes "github.com/appscode/go/types"
 	"github.com/appscode/kutil"
 	core_util "github.com/appscode/kutil/core/v1"
 	"github.com/golang/glog"
+	"github.com/pkg/errors"
 	apps "k8s.io/api/apps/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -75,7 +75,7 @@ func TryUpdateStatefulSet(c kubernetes.Interface, meta metav1.ObjectMeta, transf
 	})
 
 	if err != nil {
-		err = fmt.Errorf("failed to update StatefulSet %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
+		err = errors.Errorf("failed to update StatefulSet %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}
 	return
 }

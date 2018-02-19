@@ -3,13 +3,13 @@ package certstore
 import (
 	"crypto/rsa"
 	"crypto/x509"
-	"fmt"
 	"net"
 	"os"
 	"path/filepath"
 	"strings"
 
 	netz "github.com/appscode/go/net"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"k8s.io/client-go/util/cert"
 )
@@ -26,7 +26,7 @@ type CertStore struct {
 func NewCertStore(fs afero.Fs, dir string, organization ...string) (*CertStore, error) {
 	err := fs.MkdirAll(dir, 0755)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create dir `%s`. Reason: %v", dir, err)
+		return nil, errors.Wrapf(err, "failed to create dir `%s`", dir)
 	}
 	return &CertStore{fs: fs, dir: dir, organization: append([]string(nil), organization...)}, nil
 }
@@ -53,7 +53,7 @@ func (cs *CertStore) NewCA() error {
 
 	key, err := cert.NewPrivateKey()
 	if err != nil {
-		return fmt.Errorf("failed to generate private key. Reason: %v", err)
+		return errors.Wrap(err, "failed to generate private key")
 	}
 	cfg := cert.Config{
 		CommonName:   "ca",
@@ -64,7 +64,7 @@ func (cs *CertStore) NewCA() error {
 	}
 	crt, err := cert.NewSelfSignedCACert(cfg, key)
 	if err != nil {
-		return fmt.Errorf("failed to generate self-signed certificate. Reason: %v", err)
+		return errors.Wrap(err, "failed to generate self-signed certificate")
 	}
 	err = cs.Write("ca", crt, key)
 	if err != nil {
@@ -109,11 +109,11 @@ func (cs *CertStore) NewServerCertPair(cn string, sans cert.AltNames) ([]byte, [
 	}
 	key, err := cert.NewPrivateKey()
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to generate private key. Reason: %v", err)
+		return nil, nil, errors.Wrap(err, "failed to generate private key")
 	}
 	crt, err := cert.NewSignedCert(cfg, key, cs.caCert, cs.caKey)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to generate server certificate. Reason: %v", err)
+		return nil, nil, errors.Wrap(err, "failed to generate server certificate")
 	}
 	return cert.EncodeCertPEM(crt), cert.EncodePrivateKeyPEM(key), nil
 }
@@ -126,11 +126,11 @@ func (cs *CertStore) NewClientCertPair(cn string, organization ...string) ([]byt
 	}
 	key, err := cert.NewPrivateKey()
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to generate private key. Reason: %v", err)
+		return nil, nil, errors.Wrap(err, "failed to generate private key")
 	}
 	crt, err := cert.NewSignedCert(cfg, key, cs.caCert, cs.caKey)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to generate server certificate. Reason: %v", err)
+		return nil, nil, errors.Wrap(err, "failed to generate server certificate")
 	}
 	return cert.EncodeCertPEM(crt), cert.EncodePrivateKeyPEM(key), nil
 }
@@ -164,20 +164,20 @@ func (cs *CertStore) KeyFile(name string) string {
 
 func (cs *CertStore) Write(name string, crt *x509.Certificate, key *rsa.PrivateKey) error {
 	if err := afero.WriteFile(cs.fs, cs.CertFile(name), cert.EncodeCertPEM(crt), 0644); err != nil {
-		return fmt.Errorf("failed to write `%cm`. Reason: %v", cs.CertFile(name), err)
+		return errors.Wrapf(err, "failed to write `%s`", cs.CertFile(name))
 	}
 	if err := afero.WriteFile(cs.fs, cs.KeyFile(name), cert.EncodePrivateKeyPEM(key), 0600); err != nil {
-		return fmt.Errorf("failed to write `%cm`. Reason: %v", cs.KeyFile(name), err)
+		return errors.Wrapf(err, "failed to write `%s`", cs.KeyFile(name))
 	}
 	return nil
 }
 
 func (cs *CertStore) WriteBytes(name string, crt, key []byte) error {
 	if err := afero.WriteFile(cs.fs, cs.CertFile(name), crt, 0644); err != nil {
-		return fmt.Errorf("failed to write `%cm`. Reason: %v", cs.CertFile(name), err)
+		return errors.Wrapf(err, "failed to write `%s`", cs.CertFile(name))
 	}
 	if err := afero.WriteFile(cs.fs, cs.KeyFile(name), key, 0600); err != nil {
-		return fmt.Errorf("failed to write `%cm`. Reason: %v", cs.KeyFile(name), err)
+		return errors.Wrapf(err, "failed to write `%s`", cs.KeyFile(name))
 	}
 	return nil
 }
@@ -185,20 +185,20 @@ func (cs *CertStore) WriteBytes(name string, crt, key []byte) error {
 func (cs *CertStore) Read(name string) (*x509.Certificate, *rsa.PrivateKey, error) {
 	crtBytes, err := afero.ReadFile(cs.fs, cs.CertFile(name))
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to read certificate `%cm`. Reason: %v", cs.CertFile(name), err)
+		return nil, nil, errors.Wrapf(err, "failed to read certificate `%s`", cs.CertFile(name))
 	}
 	crt, err := cert.ParseCertsPEM(crtBytes)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to parse certificate `%cm`. Reason: %v", cs.CertFile(name), err)
+		return nil, nil, errors.Wrapf(err, "failed to parse certificate `%s`", cs.CertFile(name))
 	}
 
 	keyBytes, err := afero.ReadFile(cs.fs, cs.KeyFile(name))
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to read private key `%cm`. Reason: %v", cs.KeyFile(name), err)
+		return nil, nil, errors.Wrapf(err, "failed to read private key `%s`", cs.KeyFile(name))
 	}
 	key, err := cert.ParsePrivateKeyPEM(keyBytes)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to parse private key `%cm`. Reason: %v", cs.KeyFile(name), err)
+		return nil, nil, errors.Wrapf(err, "failed to parse private key `%s`", cs.KeyFile(name))
 	}
 	return crt[0], key.(*rsa.PrivateKey), nil
 }
@@ -206,12 +206,12 @@ func (cs *CertStore) Read(name string) (*x509.Certificate, *rsa.PrivateKey, erro
 func (cs *CertStore) ReadBytes(name string) ([]byte, []byte, error) {
 	crtBytes, err := afero.ReadFile(cs.fs, cs.CertFile(name))
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to read certificate `%cm`. Reason: %v", cs.CertFile(name), err)
+		return nil, nil, errors.Wrapf(err, "failed to read certificate `%s`", cs.CertFile(name))
 	}
 
 	keyBytes, err := afero.ReadFile(cs.fs, cs.KeyFile(name))
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to read private key `%cm`. Reason: %v", cs.KeyFile(name), err)
+		return nil, nil, errors.Wrapf(err, "failed to read private key `%s`", cs.KeyFile(name))
 	}
 	return crtBytes, keyBytes, nil
 }

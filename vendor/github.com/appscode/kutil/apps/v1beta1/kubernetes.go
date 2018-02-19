@@ -1,9 +1,8 @@
 package v1beta1
 
 import (
-	"errors"
-
 	"github.com/appscode/kutil/meta"
+	"github.com/pkg/errors"
 	apps "k8s.io/api/apps/v1beta1"
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime/schema"
