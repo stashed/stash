@@ -7,7 +7,6 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/kutil/meta"
-
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client/clientset/versioned"
 	"github.com/appscode/stash/pkg/backup"

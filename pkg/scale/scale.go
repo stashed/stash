@@ -22,11 +22,9 @@ import (
 )
 
 type Options struct {
-	Workload       api.LocalTypedReference
-	Namespace      string
-	Selector       string
-	DockerRegistry string // image registry for check job
-	ImageTag       string // image tag for check job
+	Workload  api.LocalTypedReference
+	Namespace string
+	Selector  string
 }
 
 type Controller struct {
@@ -102,20 +100,22 @@ func (c *Controller) ScaleDownWorkload() error {
 			}
 		}
 	}
+	// wait until pods terminated
+	time.Sleep(time.Second * 30)
 
 	// delete all pods of daemonset and statefulset so that they restart with init container
 	podList, err := c.k8sClient.CoreV1().Pods(c.opt.Namespace).List(metav1.ListOptions{LabelSelector: c.opt.Selector})
-	if err == nil {
+	if err == nil && len(podList.Items) > 0 {
 		for _, pod := range podList.Items {
 			err = c.k8sClient.CoreV1().Pods(c.opt.Namespace).Delete(pod.Name, kutil.DeleteInBackground())
 			if err != nil {
 				log.Infof("Error in deleting pod %v. Reason: %v", pod.Name, err.Error())
 			}
 		}
-	}
 
-	// wait until pods terminated
-	time.Sleep(time.Second * 30)
+		// wait until pods terminated
+		time.Sleep(time.Second * 30)
+	}
 
 	//scale up deployment to 1 replica
 	if len(dpList.Items) > 0 {

@@ -504,7 +504,7 @@ var _ = Describe("ReplicaSet", func() {
 				err = f.CreateRestic(restic)
 				Expect(err).NotTo(HaveOccurred())
 
-				cronJobName := util.KubectlCronPrefix + restic.Name
+				cronJobName := util.ScaledownCronPrefix + restic.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
 					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
@@ -554,7 +554,7 @@ var _ = Describe("ReplicaSet", func() {
 				err = f.CreateRestic(restic)
 				Expect(err).NotTo(HaveOccurred())
 
-				cronJobName := util.KubectlCronPrefix + restic.Name
+				cronJobName := util.ScaledownCronPrefix + restic.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
 					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})

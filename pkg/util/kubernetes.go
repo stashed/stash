@@ -32,9 +32,9 @@ const (
 	PodinfoVolumeName    = "stash-podinfo"
 	StashInitializerName = "stash.appscode.com"
 
-	RecoveryJobPrefix = "stash-recovery-"
-	KubectlCronPrefix = "stash-kubectl-cron-"
-	CheckJobPrefix    = "stash-check-"
+	RecoveryJobPrefix   = "stash-recovery-"
+	ScaledownCronPrefix = "stash-scaledown-cron-"
+	CheckJobPrefix      = "stash-check-"
 
 	AnnotationRestic     = "restic"
 	AnnotationRecovery   = "recovery"
@@ -599,7 +599,7 @@ func WorkloadReplicas(kubeClient *kubernetes.Clientset, namespace string, worklo
 		}
 
 	default:
-		return 0, fmt.Errorf("Unkonwnworkload type")
+		return 0, fmt.Errorf("unknown workload type")
 	}
 	return 0, nil
 }

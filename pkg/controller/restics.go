@@ -96,7 +96,7 @@ func (c *StashController) runResticInjector(key string) error {
 		glog.Infof("Sync/Add/Update for Restic %s\n", restic.GetName())
 
 		if restic.Spec.Type == api.BackupOffline {
-			c.EnsureKubectlCronJob(restic)
+			c.EnsureScaledownCronJob(restic)
 		}
 		c.EnsureSidecar(restic)
 		c.EnsureSidecarDeleted(restic.Namespace, restic.Name)
@@ -104,7 +104,7 @@ func (c *StashController) runResticInjector(key string) error {
 	return nil
 }
 
-func (c *StashController) EnsureKubectlCronJob(restic *api.Restic) error {
+func (c *StashController) EnsureScaledownCronJob(restic *api.Restic) error {
 	image := docker.Docker{
 		Registry: c.DockerRegistry,
 		Image:    docker.ImageStash,
@@ -112,7 +112,7 @@ func (c *StashController) EnsureKubectlCronJob(restic *api.Restic) error {
 	}
 
 	meta := metav1.ObjectMeta{
-		Name:      util.KubectlCronPrefix + restic.Name,
+		Name:      util.ScaledownCronPrefix + restic.Name,
 		Namespace: restic.Namespace,
 	}
 
@@ -175,7 +175,7 @@ func (c *StashController) EnsureKubectlCronJob(restic *api.Restic) error {
 		if err != nil {
 			return err
 		}
-		if err = c.ensureKubectlRBAC(ref); err != nil {
+		if err = c.ensureScaledownJoblRBAC(ref); err != nil {
 			return fmt.Errorf("error ensuring rbac for kubectl cron job %s, reason: %s\n", meta.Name, err)
 		}
 	}

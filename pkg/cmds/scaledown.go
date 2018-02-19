@@ -3,7 +3,6 @@ package cmds
 import (
 	"github.com/appscode/go/log"
 	"github.com/appscode/kutil/meta"
-	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/scale"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
@@ -15,8 +14,7 @@ func NewCmdScaleDown() *cobra.Command {
 		masterURL      string
 		kubeconfigPath string
 		opt            = scale.Options{
-			Namespace:      meta.Namespace(),
-			DockerRegistry: docker.ACRegistry,
+			Namespace: meta.Namespace(),
 		}
 	)
 

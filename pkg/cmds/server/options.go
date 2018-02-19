@@ -6,7 +6,6 @@ import (
 
 	stringz "github.com/appscode/go/strings"
 	v "github.com/appscode/go/version"
-
 	cs "github.com/appscode/stash/client/clientset/versioned"
 	hookapi "github.com/appscode/stash/pkg/admission/api"
 	"github.com/appscode/stash/pkg/admission/plugin"
