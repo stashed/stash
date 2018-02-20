@@ -16,6 +16,10 @@ section_menu_id: setup
 
 If you are upgrading Stash to a patch release, please reapply the [installation instructions](/docs/setup/install.md). That will upgrade the operator pod to the new version and fix any RBAC issues.
 
+## Upgrading from 0.6.x to 0.7.x
+
+There are no backward incompatiable changes in this release.
+
 ## Upgrading from 0.5.x to 0.6.x
 
 The format for `Restic` object has changed in backward incompatiable manner between 0.5.x and 0.7.0-rc.0 . The steps involved in upgrading Stash operator to 0.7.0-rc.0 from prior version involves the following steps:
