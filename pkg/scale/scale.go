@@ -3,7 +3,6 @@ package scale
 import (
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
@@ -100,8 +99,8 @@ func (c *Controller) ScaleDownWorkload() error {
 			}
 		}
 	}
-	// wait until pods terminated
-	time.Sleep(time.Second * 30)
+	// wait until pods are terminated
+	util.WaitUntillPodTerminated(c.k8sClient, c.opt.Namespace, c.opt.Selector)
 
 	// delete all pods of daemonset and statefulset so that they restart with init container
 	podList, err := c.k8sClient.CoreV1().Pods(c.opt.Namespace).List(metav1.ListOptions{LabelSelector: c.opt.Selector})
@@ -113,8 +112,8 @@ func (c *Controller) ScaleDownWorkload() error {
 			}
 		}
 
-		// wait until pods terminated
-		time.Sleep(time.Second * 30)
+		// wait until pods are terminated
+		util.WaitUntillPodTerminated(c.k8sClient, c.opt.Namespace, c.opt.Selector)
 	}
 
 	//scale up deployment to 1 replica

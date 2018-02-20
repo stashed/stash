@@ -582,12 +582,12 @@ var _ = Describe("Deployment", func() {
 				err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Creating Deployment " + deployment.Name)
-				_, err = f.CreateDeployment(deployment)
-				Expect(err).NotTo(HaveOccurred())
-
 				By("Creating restic " + restic.Name)
 				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating Deployment " + deployment.Name)
+				_, err = f.CreateDeployment(deployment)
 				Expect(err).NotTo(HaveOccurred())
 
 				cronJobName := util.ScaledownCronPrefix + restic.Name
@@ -612,7 +612,7 @@ var _ = Describe("Deployment", func() {
 				}, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", 1)))
+				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
 				By("Waiting for scale up deployment to original replica")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(int(*deployment.Spec.Replicas)))
@@ -631,13 +631,13 @@ var _ = Describe("Deployment", func() {
 				err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
+				By("Creating restic " + restic.Name)
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
 				By("Creating Deployment " + deployment.Name)
 				deployment.Spec.Replicas = types.Int32P(3)
 				_, err = f.CreateDeployment(deployment)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Creating restic " + restic.Name)
-				err = f.CreateRestic(restic)
 				Expect(err).NotTo(HaveOccurred())
 
 				cronJobName := util.ScaledownCronPrefix + restic.Name
@@ -662,7 +662,7 @@ var _ = Describe("Deployment", func() {
 				}, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", 1)))
+				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
 				By("Waiting for scale up deployment to original replica")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(int(*deployment.Spec.Replicas)))

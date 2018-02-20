@@ -496,12 +496,12 @@ var _ = Describe("ReplicaSet", func() {
 				err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Creating ReplicaSet " + rs.Name)
-				_, err = f.CreateReplicaSet(rs)
-				Expect(err).NotTo(HaveOccurred())
-
 				By("Creating restic " + restic.Name)
 				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating ReplicaSet " + rs.Name)
+				_, err = f.CreateReplicaSet(rs)
 				Expect(err).NotTo(HaveOccurred())
 
 				cronJobName := util.ScaledownCronPrefix + restic.Name
@@ -526,7 +526,7 @@ var _ = Describe("ReplicaSet", func() {
 				}, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", 1)))
+				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
 				By("Waiting for scale up rs to original replica")
 				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveReplica(int(*rs.Spec.Replicas)))
@@ -545,13 +545,13 @@ var _ = Describe("ReplicaSet", func() {
 				err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
+				By("Creating restic " + restic.Name)
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
 				By("Creating ReplicaSet " + rs.Name)
 				rs.Spec.Replicas = types.Int32P(3)
 				_, err = f.CreateReplicaSet(rs)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Creating restic " + restic.Name)
-				err = f.CreateRestic(restic)
 				Expect(err).NotTo(HaveOccurred())
 
 				cronJobName := util.ScaledownCronPrefix + restic.Name
@@ -576,7 +576,7 @@ var _ = Describe("ReplicaSet", func() {
 				}, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", 1)))
+				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
 				By("Waiting for scale up rs to original replica")
 				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveReplica(int(*rs.Spec.Replicas)))
