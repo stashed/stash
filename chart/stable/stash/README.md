@@ -50,6 +50,7 @@ The following tables lists the configurable parameters of the Stash chart and th
 | `criticalAddon`           | If true, installs Stash operator as critical addon                | `false`            |
 | `rbac.create`             | install required rbac service account, roles and rolebindings     | `false`            |
 | `rbac.serviceAccountName` | ServiceAccount Stash will use (ignored if rbac.create=true)       | `default`          |
+| `initializers`            | Use Initializers (disable this if on Kubernetes 1.7)              | `false`            |
 
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example:
