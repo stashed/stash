@@ -23,18 +23,18 @@ Please pick a version of Stash that matches your Kubernetes installation.
 
 | Stash Version                                                            | Docs                                                            | Kubernetes Version |
 |--------------------------------------------------------------------------|-----------------------------------------------------------------|--------------------|
-| [0.6.3](https://github.com/appscode/stash/releases/tag/0.6.3) (uses CRD) | [User Guide](https://appscode.com/products/stash/0.6.3)         | 1.7.x+             |
+| [0.6.4](https://github.com/appscode/stash/releases/tag/0.6.4) (uses CRD) | [User Guide](https://appscode.com/products/stash/0.6.4)         | 1.7.x+             |
 | [0.4.2](https://github.com/appscode/stash/releases/tag/0.4.2) (uses TPR) | [User Guide](https://github.com/appscode/stash/tree/0.4.2/docs) | 1.5.x - 1.7.x      |
 
 ## Installation
 
-To install Stash, please follow the guide [here](https://appscode.com/products/stash/0.6.3/setup/install).
+To install Stash, please follow the guide [here](https://appscode.com/products/stash/0.6.4/setup/install).
 
 ## Using Stash
-Want to learn how to use Stash? Please start [here](https://appscode.com/products/stash/0.6.3).
+Want to learn how to use Stash? Please start [here](https://appscode.com/products/stash/0.6.4).
 
 ## Contribution guidelines
-Want to help improve Stash? Please start [here](https://appscode.com/products/stash/0.6.3/welcome/contributing).
+Want to help improve Stash? Please start [here](https://appscode.com/products/stash/0.6.4/welcome/contributing).
 
 ---
 
