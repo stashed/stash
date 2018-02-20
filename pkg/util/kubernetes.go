@@ -190,25 +190,6 @@ func WaitUntilSidecarRemoved(kubeClient kubernetes.Interface, namespace string, 
 	}, backoff.NewConstantBackOff(3*time.Second))
 }
 
-func WaitUntillPodTerminated(kubeClient kubernetes.Interface, namespace string, label string) error {
-
-	retrycount := 0
-	return backoff.Retry(func() error {
-		retrycount++
-		if retrycount > 20 {
-			return nil
-		}
-		podList, err := kubeClient.CoreV1().Pods(namespace).List(metav1.ListOptions{LabelSelector: label})
-		if err != nil {
-			return err
-		}
-
-		if len(podList.Items) == 0 {
-			return nil
-		}
-		return errors.New("check again")
-	}, backoff.NewConstantBackOff(3*time.Second))
-}
 func GetString(m map[string]string, key string) string {
 	if m == nil {
 		return ""

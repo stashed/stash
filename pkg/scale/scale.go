@@ -9,7 +9,7 @@ import (
 	apps_util "github.com/appscode/kutil/apps/v1beta1"
 	core_util "github.com/appscode/kutil/core/v1"
 	ext_util "github.com/appscode/kutil/extensions/v1beta1"
-	kutil "github.com/appscode/kutil/meta"
+	meta_util "github.com/appscode/kutil/meta"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/backup"
 	"github.com/appscode/stash/pkg/util"
@@ -100,20 +100,26 @@ func (c *Controller) ScaleDownWorkload() error {
 		}
 	}
 	// wait until pods are terminated
-	util.WaitUntillPodTerminated(c.k8sClient, c.opt.Namespace, c.opt.Selector)
+	err = core_util.WaitUntillPodTerminatedByLabel(c.k8sClient, c.opt.Namespace, c.opt.Selector)
+	if err != nil {
+		log.Infof(err.Error())
+	}
 
 	// delete all pods of daemonset and statefulset so that they restart with init container
 	podList, err := c.k8sClient.CoreV1().Pods(c.opt.Namespace).List(metav1.ListOptions{LabelSelector: c.opt.Selector})
 	if err == nil && len(podList.Items) > 0 {
 		for _, pod := range podList.Items {
-			err = c.k8sClient.CoreV1().Pods(c.opt.Namespace).Delete(pod.Name, kutil.DeleteInBackground())
+			err = c.k8sClient.CoreV1().Pods(c.opt.Namespace).Delete(pod.Name, meta_util.DeleteInBackground())
 			if err != nil {
 				log.Infof("Error in deleting pod %v. Reason: %v", pod.Name, err.Error())
 			}
 		}
 
 		// wait until pods are terminated
-		util.WaitUntillPodTerminated(c.k8sClient, c.opt.Namespace, c.opt.Selector)
+		err = core_util.WaitUntillPodTerminatedByLabel(c.k8sClient, c.opt.Namespace, c.opt.Selector)
+		if err != nil {
+			log.Infof(err.Error())
+		}
 	}
 
 	//scale up deployment to 1 replica
@@ -165,7 +171,7 @@ func ScaleUpWorkload(k8sClient *kubernetes.Clientset, opt backup.Options) error 
 			return err
 		}
 
-		replica, err := kutil.GetIntValue(obj.Annotations, util.AnnotationOldReplica)
+		replica, err := meta_util.GetIntValue(obj.Annotations, util.AnnotationOldReplica)
 		if err != nil {
 			return err
 		}
@@ -184,7 +190,7 @@ func ScaleUpWorkload(k8sClient *kubernetes.Clientset, opt backup.Options) error 
 			return err
 		}
 
-		replica, err := kutil.GetIntValue(obj.Annotations, util.AnnotationOldReplica)
+		replica, err := meta_util.GetIntValue(obj.Annotations, util.AnnotationOldReplica)
 		if err != nil {
 			return err
 		}
@@ -203,7 +209,7 @@ func ScaleUpWorkload(k8sClient *kubernetes.Clientset, opt backup.Options) error 
 			return err
 		}
 
-		replica, err := kutil.GetIntValue(obj.Annotations, util.AnnotationOldReplica)
+		replica, err := meta_util.GetIntValue(obj.Annotations, util.AnnotationOldReplica)
 		if err != nil {
 			return err
 		}
