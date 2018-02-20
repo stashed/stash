@@ -1,12 +1,12 @@
 ---
 title: Stash Recover
 menu:
-  product_stash_0.6.3:
+  product_stash_0.6.4:
     identifier: stash-recover
     name: Stash Recover
     parent: reference
 product_name: stash
-menu_name: product_stash_0.6.3
+menu_name: product_stash_0.6.4
 section_menu_id: reference
 ---
 ## stash recover
