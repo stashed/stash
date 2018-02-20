@@ -484,7 +484,7 @@ var _ = Describe("ReplicationController", func() {
 			framework.CleanupMinikubeHostPath()
 		})
 
-		Context(`"Local" backend`, func() {
+		Context(`Single Replica`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
@@ -500,32 +500,86 @@ var _ = Describe("ReplicationController", func() {
 				err = f.CreateRestic(restic)
 				Expect(err).NotTo(HaveOccurred())
 
-				cronJobName := util.KubectlCronPrefix + restic.Name
+				By("Creating ReplicationController " + rc.Name)
+				_, err = f.CreateReplicationController(rc)
+				Expect(err).NotTo(HaveOccurred())
+
+				cronJobName := util.ScaledownCronPrefix + restic.Name
 				By("Checking cron job created: " + cronJobName)
 				Eventually(func() error {
 					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
 					return err
 				}).Should(BeNil())
 
-				By("Creating rc " + rc.Name)
-				_, err = f.CreateReplicationController(rc)
-				Expect(err).NotTo(HaveOccurred())
+				By("Waiting for scale down replication controller to 0 replica")
+				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveReplica(0))
+
+				By("Wating for scale up replication controller to 1 replica")
+				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveReplica(1))
 
 				By("Waiting for init-container")
 				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
 
-				By("Waiting for initial backup to complete")
+				By("Waiting for backup to complete")
 				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
 					return r.Status.BackupCount
 				}, BeNumerically(">=", 1)))
 
-				By("Waiting for next backup to complete")
+				By("Waiting for backup event")
+				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+
+				By("Waiting for scale up replication controller to original replica")
+				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveReplica(int(*rc.Spec.Replicas)))
+			})
+		})
+
+		Context("Multiple Replica", func() {
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForHostPathLocalBackend()
+				restic.Spec.Type = api.BackupOffline
+				restic.Spec.Schedule = "*/5 * * * *"
+			})
+			It(`should backup new Replication Controller`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic " + restic.Name)
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating replication controller " + rc.Name)
+				rc.Spec.Replicas = types.Int32P(3)
+				_, err = f.CreateReplicationController(rc)
+				Expect(err).NotTo(HaveOccurred())
+
+				cronJobName := util.ScaledownCronPrefix + restic.Name
+				By("Checking cron job created: " + cronJobName)
+				Eventually(func() error {
+					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
+					return err
+				}).Should(BeNil())
+
+				By("Waiting for scale replication controller to 0 replica")
+				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveReplica(0))
+
+				By("Wating for scale up replication controller to 1 replica")
+				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveReplica(1))
+
+				By("Waiting for init-container")
+				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
+
+				By("Waiting for backup to complete")
 				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
 					return r.Status.BackupCount
-				}, BeNumerically(">=", 2)))
+				}, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", 1)))
+				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+
+				By("Waiting for scale up replication controller to original replica")
+				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveReplica(int(*rc.Spec.Replicas)))
 			})
 		})
 	})

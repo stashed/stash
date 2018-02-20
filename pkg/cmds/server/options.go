@@ -2,12 +2,10 @@ package server
 
 import (
 	"flag"
-	"fmt"
 	"time"
 
 	stringz "github.com/appscode/go/strings"
 	v "github.com/appscode/go/version"
-	"github.com/appscode/kutil/discovery"
 	cs "github.com/appscode/stash/client/clientset/versioned"
 	hookapi "github.com/appscode/stash/pkg/admission/api"
 	"github.com/appscode/stash/pkg/admission/plugin"
@@ -77,12 +75,6 @@ func (s *ControllerOptions) ApplyTo(cfg *controller.ControllerConfig) error {
 		return err
 	}
 	cfg.AdmissionHooks = []hookapi.AdmissionHook{&plugin.CRDValidator{}}
-
-	// get kube api server version
-	cfg.KubectlImageTag, err = discovery.GetBaseVersion(cfg.KubeClient.Discovery())
-	if err != nil {
-		return fmt.Errorf("failed to detect server version, reason: %s", err)
-	}
 
 	return nil
 }

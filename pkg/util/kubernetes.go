@@ -2,7 +2,6 @@ package util
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -16,6 +15,7 @@ import (
 	stash_listers "github.com/appscode/stash/client/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/cenkalti/backoff"
+	"github.com/pkg/errors"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -32,18 +32,20 @@ const (
 	PodinfoVolumeName    = "stash-podinfo"
 	StashInitializerName = "stash.appscode.com"
 
-	RecoveryJobPrefix = "stash-recovery-"
-	KubectlCronPrefix = "stash-kubectl-cron-"
-	CheckJobPrefix    = "stash-check-"
+	RecoveryJobPrefix   = "stash-recovery-"
+	ScaledownCronPrefix = "stash-scaledown-cron-"
+	CheckJobPrefix      = "stash-check-"
 
-	AnnotationRestic    = "restic"
-	AnnotationRecovery  = "recovery"
-	AnnotationOperation = "operation"
+	AnnotationRestic     = "restic"
+	AnnotationRecovery   = "recovery"
+	AnnotationOperation  = "operation"
+	AnnotationOldReplica = "old-replica"
 
 	OperationRecovery   = "recovery"
 	OperationCheck      = "check"
 	OperationDeletePods = "delete-pods"
 	AppLabelStash       = "stash"
+	OperationScaleDown  = "scale-down"
 )
 
 var (
@@ -570,4 +572,34 @@ func NewCheckJob(restic *api.Restic, hostName, smartPrefix string, image docker.
 	}
 
 	return job
+}
+
+func WorkloadReplicas(kubeClient *kubernetes.Clientset, namespace string, workloadKind string, workloadName string) (int32, error) {
+	switch workloadKind {
+	case api.KindDeployment:
+		obj, err := kubeClient.AppsV1beta1().Deployments(namespace).Get(workloadName, metav1.GetOptions{})
+		if err != nil {
+			return 0, err
+		} else {
+			return *obj.Spec.Replicas, nil
+		}
+	case api.KindReplicationController:
+		obj, err := kubeClient.CoreV1().ReplicationControllers(namespace).Get(workloadName, metav1.GetOptions{})
+		if err != nil {
+			return 0, err
+		} else {
+			return *obj.Spec.Replicas, nil
+		}
+	case api.KindReplicaSet:
+		obj, err := kubeClient.ExtensionsV1beta1().ReplicaSets(namespace).Get(workloadName, metav1.GetOptions{})
+		if err != nil {
+			return 0, err
+		} else {
+			return *obj.Spec.Replicas, nil
+		}
+
+	default:
+		return 0, fmt.Errorf("unknown workload type")
+	}
+	return 0, nil
 }

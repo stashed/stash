@@ -1,12 +1,12 @@
 package util
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 
 	"github.com/appscode/kutil/meta"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 

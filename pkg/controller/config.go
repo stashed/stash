@@ -16,14 +16,13 @@ import (
 )
 
 type Config struct {
-	EnableRBAC      bool
-	StashImageTag   string
-	KubectlImageTag string
-	DockerRegistry  string
-	MaxNumRequeues  int
-	NumThreads      int
-	OpsAddress      string
-	ResyncPeriod    time.Duration
+	EnableRBAC     bool
+	StashImageTag  string
+	DockerRegistry string
+	MaxNumRequeues int
+	NumThreads     int
+	OpsAddress     string
+	ResyncPeriod   time.Duration
 }
 
 type ControllerConfig struct {

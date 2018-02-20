@@ -15,7 +15,7 @@ import (
 
 const (
 	SidecarClusterRole = "stash-sidecar"
-	KubectlRole        = "stash-kubectl"
+	ScaledownJobRole   = "stash-scaledownjob"
 )
 
 func (c *StashController) getSidecarRoleBindingName(name string) string {
@@ -118,12 +118,12 @@ func (c *StashController) ensureSidecarClusterRole() error {
 	return err
 }
 
-// use kubectl-role, service-account and role-binding name same as job name
+// use scaledownjob-role, service-account and role-binding name same as job name
 // set job as owner of role, service-account and role-binding
-func (c *StashController) ensureKubectlRBAC(resource *core.ObjectReference) error {
+func (c *StashController) ensureScaledownJoblRBAC(resource *core.ObjectReference) error {
 	// ensure roles
 	meta := metav1.ObjectMeta{
-		Name:      KubectlRole,
+		Name:      ScaledownJobRole,
 		Namespace: resource.Namespace,
 	}
 	_, _, err := rbac_util.CreateOrPatchRole(c.kubeClient, meta, func(in *rbac.Role) *rbac.Role {
@@ -176,7 +176,7 @@ func (c *StashController) ensureKubectlRBAC(resource *core.ObjectReference) erro
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
 			Kind:     "Role",
-			Name:     KubectlRole,
+			Name:     ScaledownJobRole,
 		}
 		in.Subjects = []rbac.Subject{
 			{

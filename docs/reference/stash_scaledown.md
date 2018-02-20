@@ -1,33 +1,40 @@
 ---
-title: Stash
+title: Stash Scaledown
 menu:
   product_stash_0.7.0-alpha.0:
-    identifier: stash
-    name: Stash
+    identifier: stash-scaledown
+    name: Stash Scaledown
     parent: reference
-    weight: 0
-
 product_name: stash
 menu_name: product_stash_0.7.0-alpha.0
 section_menu_id: reference
-aliases:
-  - products/stash/0.7.0-alpha.0/reference/
-
 ---
-## stash
+## stash scaledown
 
-Stash by AppsCode - Backup your Kubernetes Volumes
+Scale down workload
 
 ### Synopsis
 
-Stash is a Kubernetes operator for restic. For more information, visit here: https://appscode.com/products/stash
+Scale down workload
+
+```
+stash scaledown [flags]
+```
 
 ### Options
 
 ```
+  -h, --help                help for scaledown
+      --kubeconfig string   Path to kubeconfig file with authorization information (the master location is set by the master flag).
+      --master string       The address of the Kubernetes API server (overrides any value in kubeconfig)
+      --selector string     Label used to select Restic's workload
+```
+
+### Options inherited from parent commands
+
+```
       --alsologtostderr                  log to standard error as well as files
       --analytics                        Send analytical events to Google Analytics (default true)
-  -h, --help                             help for stash
       --log_backtrace_at traceLocation   when logging hits line file:N, emit a stack trace (default :0)
       --log_dir string                   If non-empty, write log files in this directory
       --logtostderr                      log to standard error instead of files
@@ -38,10 +45,5 @@ Stash is a Kubernetes operator for restic. For more information, visit here: htt
 
 ### SEE ALSO
 
-* [stash backup](/docs/reference/stash_backup.md)	 - Run Stash Backup
-* [stash check](/docs/reference/stash_check.md)	 - Check restic backup
-* [stash recover](/docs/reference/stash_recover.md)	 - Recover restic backup
-* [stash run](/docs/reference/stash_run.md)	 - Launch Stash Controller
-* [stash scaledown](/docs/reference/stash_scaledown.md)	 - Scale down workload
-* [stash version](/docs/reference/stash_version.md)	 - Prints binary version number.
+* [stash](/docs/reference/stash.md)	 - Stash by AppsCode - Backup your Kubernetes Volumes
 

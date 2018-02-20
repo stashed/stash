@@ -96,7 +96,7 @@ func (c *StashController) runResticInjector(key string) error {
 		glog.Infof("Sync/Add/Update for Restic %s\n", restic.GetName())
 
 		if restic.Spec.Type == api.BackupOffline {
-			c.EnsureKubectlCronJob(restic)
+			c.EnsureScaledownCronJob(restic)
 		}
 		c.EnsureSidecar(restic)
 		c.EnsureSidecarDeleted(restic.Namespace, restic.Name)
@@ -104,15 +104,15 @@ func (c *StashController) runResticInjector(key string) error {
 	return nil
 }
 
-func (c *StashController) EnsureKubectlCronJob(restic *api.Restic) error {
+func (c *StashController) EnsureScaledownCronJob(restic *api.Restic) error {
 	image := docker.Docker{
 		Registry: c.DockerRegistry,
-		Image:    docker.ImageKubectl,
-		Tag:      c.KubectlImageTag,
+		Image:    docker.ImageStash,
+		Tag:      c.StashImageTag,
 	}
 
 	meta := metav1.ObjectMeta{
-		Name:      util.KubectlCronPrefix + restic.Name,
+		Name:      util.ScaledownCronPrefix + restic.Name,
 		Namespace: restic.Namespace,
 	}
 
@@ -137,7 +137,7 @@ func (c *StashController) EnsureKubectlCronJob(restic *api.Restic) error {
 		}
 		in.Labels["app"] = util.AppLabelStash
 		in.Labels[util.AnnotationRestic] = restic.Name
-		in.Labels[util.AnnotationOperation] = util.OperationDeletePods
+		in.Labels[util.AnnotationOperation] = util.OperationScaleDown
 
 		// spec
 		in.Spec.Schedule = restic.Spec.Schedule
@@ -146,18 +146,16 @@ func (c *StashController) EnsureKubectlCronJob(restic *api.Restic) error {
 		}
 		in.Spec.JobTemplate.Labels["app"] = util.AppLabelStash
 		in.Spec.JobTemplate.Labels[util.AnnotationRestic] = restic.Name
-		in.Spec.JobTemplate.Labels[util.AnnotationOperation] = util.OperationDeletePods
+		in.Spec.JobTemplate.Labels[util.AnnotationOperation] = util.OperationScaleDown
 
 		in.Spec.JobTemplate.Spec.Template.Spec.Containers = core_util.UpsertContainer(
 			in.Spec.JobTemplate.Spec.Template.Spec.Containers,
 			core.Container{
-				Name:  util.KubectlContainer,
+				Name:  util.StashContainer,
 				Image: image.ToContainerImage(),
 				Args: []string{
-					"kubectl",
-					"delete",
-					"pods",
-					"-l " + selector.String(),
+					"scaledown",
+					"--selector=" + selector.String(),
 				},
 			})
 		in.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = restic.Spec.ImagePullSecrets
@@ -177,7 +175,7 @@ func (c *StashController) EnsureKubectlCronJob(restic *api.Restic) error {
 		if err != nil {
 			return err
 		}
-		if err = c.ensureKubectlRBAC(ref); err != nil {
+		if err = c.ensureScaledownJoblRBAC(ref); err != nil {
 			return fmt.Errorf("error ensuring rbac for kubectl cron job %s, reason: %s\n", meta.Name, err)
 		}
 	}

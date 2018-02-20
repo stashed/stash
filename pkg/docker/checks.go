@@ -1,9 +1,8 @@
 package docker
 
 const (
-	ACRegistry   = "appscode"
-	ImageStash   = "stash"
-	ImageKubectl = "kubectl"
+	ACRegistry = "appscode"
+	ImageStash = "stash"
 )
 
 type Docker struct {
