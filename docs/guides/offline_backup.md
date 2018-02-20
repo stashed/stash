@@ -2,13 +2,13 @@
 title: Offline Backup | Stash
 description: Offline Backup using Stash
 menu:
-  product_stash_0.7.0-alpha.0:
+  product_stash_0.7.0-rc.0:
     identifier: offline-stash
     name: Offline Backup
     parent: guides
     weight: 15
 product_name: stash
-menu_name: product_stash_0.7.0-alpha.0
+menu_name: product_stash_0.7.0-rc.0
 section_menu_id: guides
 ---
 
@@ -214,7 +214,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.name
-        image: appscode/stash:0.7.0-alpha.0
+        image: appscode/stash:0.7.0-rc.0
         imagePullPolicy: IfNotPresent
         name: stash
         resources: {}

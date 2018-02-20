@@ -2,23 +2,23 @@
 title: Install
 description: Stash Install
 menu:
-  product_stash_0.7.0-alpha.0:
+  product_stash_0.7.0-rc.0:
     identifier: install-stash
     name: Install
     parent: setup
     weight: 10
 product_name: stash
-menu_name: product_stash_0.7.0-alpha.0
+menu_name: product_stash_0.7.0-rc.0
 section_menu_id: setup
 ---
 
 # Installation Guide
 
 ## Using YAML
-Stash can be installed via installer script included in the [/hack/deploy](https://github.com/appscode/stash/tree/0.7.0-alpha.0/hack/deploy) folder.
+Stash can be installed via installer script included in the [/hack/deploy](https://github.com/appscode/stash/tree/0.7.0-rc.0/hack/deploy) folder.
 
 ```console
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/stash.sh | bash -s -- -h
+$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/stash.sh | bash -s -- -h
 stash.sh - install stash operator
 
 stash.sh [options]
@@ -35,18 +35,18 @@ options:
     --uninstall                    uninstall stash
 
 # install without RBAC roles
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/stash.sh \
+$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/stash.sh \
     | bash
 
 # Install with RBAC roles
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/stash.sh \
+$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/stash.sh \
     | bash -s -- --rbac
 ```
 
 If you would like to run Stash operator pod in `master` instances, pass the `--run-on-master` flag:
 
 ```console
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/stash.sh \
+$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/stash.sh \
     | bash -s -- --run-on-master [--rbac]
 ```
 
@@ -54,7 +54,7 @@ Stash operator will be installed in a `kube-system` namespace by default. If you
 
 ```console
 $ kubectl create namespace stash
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/stash.sh \
+$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/stash.sh \
     | bash -s -- --namespace=stash [--run-on-master] [--rbac]
 ```
 
@@ -67,21 +67,21 @@ To pass the address of your private registry and optionally a image pull secret 
 
 ```console
 $ kubectl create namespace stash
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/stash.sh \
+$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/stash.sh \
     | bash -s -- --docker-registry=MY_REGISTRY [--image-pull-secret=SECRET_NAME] [--rbac]
 ```
 
 Stash implements a [validating admission webhook](https://kubernetes.io/docs/admin/admission-controllers/#validatingadmissionwebhook-alpha-in-18-beta-in-19) to validate Stash CRDs. To enable this feature, pass the `--enable-admission-webhook` flag. _Please note that, this works with Kubernetes 1.9.0 or later releases_.
 
 ```console
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/stash.sh \
+$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/stash.sh \
     | bash -s -- --enable-admission-webhook [--rbac]
 ```
 
 Stash operator can be used as a workload [initializer](https://kubernetes.io/docs/admin/extensible-admission-controllers/#initializers). For this, pass the `--enable-initializer` flag. _Please note that, this uses an alpha feature of Kubernetes_.
 
 ```console
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/stash.sh \
+$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/stash.sh \
     | bash -s -- --enable-initializer [--rbac]
 ```
 
@@ -181,13 +181,13 @@ $ POD_NAMESPACE=kube-system
 $ POD_NAME=$(kubectl get pods -n $POD_NAMESPACE -l app=stash -o jsonpath={.items[0].metadata.name})
 $ kubectl exec -it $POD_NAME -c operator -n $POD_NAMESPACE stash version
 
-Version = 0.7.0-alpha.0
+Version = 0.7.0-rc.0
 VersionStrategy = tag
 Os = alpine
 Arch = amd64
 CommitHash = 85b0f16ab1b915633e968aac0ee23f877808ef49
 GitBranch = release-0.5
-GitTag = 0.7.0-alpha.0
+GitTag = 0.7.0-rc.0
 CommitTimestamp = 2017-10-10T05:24:23
 
 $ kubectl exec -it $POD_NAME -c operator -n $POD_NAMESPACE restic version

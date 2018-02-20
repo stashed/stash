@@ -2,13 +2,13 @@
 title: Uninstall
 description: Stash Uninstall
 menu:
-  product_stash_0.7.0-alpha.0:
+  product_stash_0.7.0-rc.0:
     identifier: uninstall-stash
     name: Uninstall
     parent: setup
     weight: 20
 product_name: stash
-menu_name: product_stash_0.7.0-alpha.0
+menu_name: product_stash_0.7.0-rc.0
 section_menu_id: setup
 ---
 # Uninstall Stash
@@ -18,7 +18,7 @@ Please follow the steps below to uninstall Stash:
 - Delete the deployment and service used for Stash operator.
 
 ```console
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-alpha.0/hack/deploy/stash.sh \
+$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/stash.sh \
     | bash -s -- --uninstall [--namespace=NAMESPACE]
 
 + kubectl delete deployment -l app=stash -n kube-system

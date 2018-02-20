@@ -2,17 +2,17 @@
 title: Table of Contents | Setup
 description: Table of Contents | Setup
 menu:
-  product_stash_0.7.0-alpha.0:
+  product_stash_0.7.0-rc.0:
     identifier: setup-readme
     name: Readme
     parent: setup
     weight: -1
 product_name: stash
-menu_name: product_stash_0.7.0-alpha.0
+menu_name: product_stash_0.7.0-rc.0
 section_menu_id: setup
-url: /products/stash/0.7.0-alpha.0/setup/
+url: /products/stash/0.7.0-rc.0/setup/
 aliases:
-  - /products/stash/0.7.0-alpha.0/setup/README/
+  - /products/stash/0.7.0-rc.0/setup/README/
 ---
 # Setup
 
