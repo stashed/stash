@@ -2,9 +2,9 @@
 title: Reference
 description: Stash CLI Reference
 menu:
-  product_stash_0.7.0-alpha.0:
+  product_stash_0.7.0-rc.0:
     identifier: reference
     name: Reference
     weight: 1000
-menu_name: product_stash_0.7.0-alpha.0
+menu_name: product_stash_0.7.0-rc.0
 ---
