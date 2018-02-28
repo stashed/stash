@@ -101,8 +101,13 @@ while test $# -gt 0; do
             export STASH_IMAGE_PULL_SECRET="name: '$secret'"
             shift
             ;;
-        --enable-admission-webhook)
-            export STASH_ENABLE_ADMISSION_WEBHOOK=true
+        --enable-admission-webhook*)
+            val=`echo $1 | sed -e 's/^[^=]*=//g'`
+            if [ "$val" = "false" ]; then
+                export VOYAGER_ENABLE_ADMISSION_WEBHOOK=false
+            else
+                export VOYAGER_ENABLE_ADMISSION_WEBHOOK=true
+            fi
             shift
             ;;
         --enable-initializer)
