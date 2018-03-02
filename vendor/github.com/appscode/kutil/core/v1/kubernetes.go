@@ -4,12 +4,15 @@ import (
 	"github.com/appscode/go/types"
 	"github.com/appscode/kutil/meta"
 	"github.com/appscode/mergo"
+	"github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func GetGroupVersionKind(v interface{}) schema.GroupVersionKind {
 	return core.SchemeGroupVersion.WithKind(meta.GetKind(v))

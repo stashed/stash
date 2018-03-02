@@ -1,5 +1,5 @@
 hash: 8aa9776b596eb3a338b9caf03cbf3364c6919d5653d207bc53049c7281177e8f
-updated: 2018-02-20T00:29:11.257960382-08:00
+updated: 2018-03-02T13:13:49.731509643-08:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -9,7 +9,7 @@ imports:
   - compute/metadata
   - internal
 - name: github.com/appscode/go
-  version: 8367769380cf93a12b381d957941ddf2a19d0356
+  version: c312c0a1fe0d4988480073287b8633fc5a244647
   subpackages:
   - analytics
   - context
@@ -24,9 +24,12 @@ imports:
   - strings
   - types
   - version
+- name: github.com/appscode/jsonpatch
+  version: d554673fce2c0bef30d385e7946996a27f6be827
 - name: github.com/appscode/kutil
-  version: 20ffc2be6a1d88387bc6f6babe7bfe312c58b509
+  version: 00a04e324e089e575b007bfa9927c2c3724d6286
   subpackages:
+  - admission/api
   - apiextensions/v1beta1
   - apps/v1beta1
   - batch/v1beta1
@@ -35,6 +38,7 @@ imports:
   - extensions/v1beta1
   - meta
   - rbac/v1
+  - registry/admissionreview/v1beta1
   - tools/analytics
   - tools/certstore
   - tools/clientcmd
@@ -142,7 +146,7 @@ imports:
 - name: github.com/google/btree
   version: 7d79101e329e5a3adf994758c578dab82b90c017
 - name: github.com/google/go-cmp
-  version: 3af367b6b30c263d47e8895973edcca9a49cf029
+  version: 0c93777250bd58222171888d1651979319d8b381
   subpackages:
   - cmp
   - cmp/internal/diff
@@ -256,7 +260,7 @@ imports:
 - name: github.com/peterbourgon/diskv
   version: 5f041e8faa004a95c88a202771f4cc3e991971e6
 - name: github.com/pkg/errors
-  version: 645ef00459ed84a119197bfb8d8205042c6df63d
+  version: 30136e27e2ac8d167177e8a583aa4c3fea5be833
 - name: github.com/prometheus/client_golang
   version: c5b7fccd204277076155f10851dad72b76a49317
   subpackages:
@@ -296,7 +300,7 @@ imports:
   subpackages:
   - mem
 - name: github.com/spf13/cobra
-  version: be77323fc05148ef091e83b3866c0d47c8e74a8b
+  version: c6c44e6fdcc30161c7f4480754da7230d01c06e3
   subpackages:
   - doc
 - name: github.com/spf13/pflag

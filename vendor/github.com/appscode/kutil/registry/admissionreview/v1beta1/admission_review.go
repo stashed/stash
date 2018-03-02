@@ -1,4 +1,4 @@
-package admissionreview
+package v1beta1
 
 import (
 	admission "k8s.io/api/admission/v1beta1"
@@ -7,6 +7,8 @@ import (
 	apirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
 )
+
+// Adapted from https://github.com/openshift/generic-admission-server/blob/master/pkg/registry/admissionreview/admission_review.go
 
 type AdmissionHookFunc func(admissionSpec *admission.AdmissionRequest) *admission.AdmissionResponse
 

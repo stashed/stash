@@ -1,8 +1,6 @@
 package v1
 
 import (
-	"encoding/json"
-
 	. "github.com/appscode/go/types"
 	"github.com/appscode/kutil"
 	"github.com/golang/glog"

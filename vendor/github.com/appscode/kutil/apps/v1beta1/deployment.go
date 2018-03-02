@@ -1,8 +1,6 @@
 package v1beta1
 
 import (
-	"encoding/json"
-
 	. "github.com/appscode/go/types"
 	"github.com/appscode/kutil"
 	core_util "github.com/appscode/kutil/core/v1"

@@ -2,6 +2,7 @@ package version
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -49,13 +50,19 @@ func (v *version) Print() {
 var Version version
 
 func NewCmdVersion() *cobra.Command {
-	versionCmd := &cobra.Command{
+	var short bool
+	cmd := &cobra.Command{
 		Use:               "version",
 		Short:             "Prints binary version number.",
 		DisableAutoGenTag: true,
 		Run: func(cmd *cobra.Command, args []string) {
+			if short {
+				fmt.Print(Version.Version)
+				os.Exit(0)
+			}
 			Version.Print()
 		},
 	}
-	return versionCmd
+	cmd.Flags().BoolVar(&short, "short", false, "Print just the version number.")
+	return cmd
 }

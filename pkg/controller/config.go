@@ -3,9 +3,9 @@ package controller
 import (
 	"time"
 
+	hookapi "github.com/appscode/kutil/admission/api"
 	cs "github.com/appscode/stash/client/clientset/versioned"
 	stashinformers "github.com/appscode/stash/client/informers/externalversions"
-	hookapi "github.com/appscode/stash/pkg/admission/api"
 	"github.com/appscode/stash/pkg/eventer"
 	core "k8s.io/api/core/v1"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"

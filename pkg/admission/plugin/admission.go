@@ -2,12 +2,10 @@ package plugin
 
 import (
 	"encoding/json"
-	"net/http"
 
+	hookapi "github.com/appscode/kutil/admission/api"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
-	hookapi "github.com/appscode/stash/pkg/admission/api"
 	admission "k8s.io/api/admission/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/rest"
@@ -44,41 +42,21 @@ func (a *CRDValidator) Admit(req *admission.AdmissionRequest) *admission.Admissi
 		obj := &api.Restic{}
 		err := json.Unmarshal(req.Object.Raw, obj)
 		if err != nil {
-			status.Allowed = false
-			status.Result = &metav1.Status{
-				Status: metav1.StatusFailure, Code: http.StatusBadRequest, Reason: metav1.StatusReasonBadRequest,
-				Message: err.Error(),
-			}
-			return status
+			return hookapi.StatusBadRequest(err)
 		}
 		err = obj.IsValid()
 		if err != nil {
-			status.Allowed = false
-			status.Result = &metav1.Status{
-				Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
-				Message: err.Error(),
-			}
-			return status
+			return hookapi.StatusForbidden(err)
 		}
 	case api.ResourceKindRecovery:
 		obj := &api.Recovery{}
 		err := json.Unmarshal(req.Object.Raw, obj)
 		if err != nil {
-			status.Allowed = false
-			status.Result = &metav1.Status{
-				Status: metav1.StatusFailure, Code: http.StatusBadRequest, Reason: metav1.StatusReasonBadRequest,
-				Message: err.Error(),
-			}
-			return status
+			return hookapi.StatusBadRequest(err)
 		}
 		err = obj.IsValid()
 		if err != nil {
-			status.Allowed = false
-			status.Result = &metav1.Status{
-				Status: metav1.StatusFailure, Code: http.StatusForbidden, Reason: metav1.StatusReasonForbidden,
-				Message: err.Error(),
-			}
-			return status
+			return hookapi.StatusForbidden(err)
 		}
 	}
 
