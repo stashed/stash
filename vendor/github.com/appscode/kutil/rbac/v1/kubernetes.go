@@ -2,11 +2,14 @@ package v1
 
 import (
 	"github.com/appscode/kutil/meta"
+	"github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	rbac "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func GetGroupVersionKind(v interface{}) schema.GroupVersionKind {
 	return rbac.SchemeGroupVersion.WithKind(meta.GetKind(v))

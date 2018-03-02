@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	hookapi "github.com/appscode/stash/pkg/admission/api"
+	hookapi "github.com/appscode/kutil/admission/api"
+	admissionreview "github.com/appscode/kutil/registry/admissionreview/v1beta1"
 	"github.com/appscode/stash/pkg/controller"
-	"github.com/appscode/stash/pkg/registry/admissionreview"
 	admission "k8s.io/api/admission/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apimachinery"

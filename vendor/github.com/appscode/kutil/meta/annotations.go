@@ -1,7 +1,6 @@
 package meta
 
 import (
-	"encoding/json"
 	"strconv"
 
 	"github.com/appscode/kutil"
