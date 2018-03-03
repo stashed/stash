@@ -5,29 +5,35 @@ echo "checking kubeconfig context"
 kubectl config current-context || { echo "Set a context (kubectl use-context <context>) out of the following:"; echo; kubectl config get-contexts; exit 1; }
 echo ""
 
-# ref: https://stackoverflow.com/a/27776822/244009
-case "$(uname -s)" in
-    Darwin)
-        curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.1.0/onessl-darwin-amd64
-        chmod +x onessl
-        export ONESSL=./onessl
-        ;;
+# https://stackoverflow.com/a/677212/244009
+if ! [ -x "$(command -v onessl >/dev/null 2>&1)" ]; then
+    echo "using onessl found in the machine"
+    export ONESSL=onessl
+else
+    # ref: https://stackoverflow.com/a/27776822/244009
+    case "$(uname -s)" in
+        Darwin)
+            curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.1.0/onessl-darwin-amd64
+            chmod +x onessl
+            export ONESSL=./onessl
+            ;;
 
-    Linux)
-        curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.1.0/onessl-linux-amd64
-        chmod +x onessl
-        export ONESSL=./onessl
-        ;;
+        Linux)
+            curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.1.0/onessl-linux-amd64
+            chmod +x onessl
+            export ONESSL=./onessl
+            ;;
 
-    CYGWIN*|MINGW32*|MSYS*)
-        curl -fsSL -o onessl.exe https://github.com/kubepack/onessl/releases/download/0.1.0/onessl-windows-amd64.exe
-        chmod +x onessl.exe
-        export ONESSL=./onessl.exe
-        ;;
-    *)
-        echo 'other OS'
-        ;;
-esac
+        CYGWIN*|MINGW32*|MSYS*)
+            curl -fsSL -o onessl.exe https://github.com/kubepack/onessl/releases/download/0.1.0/onessl-windows-amd64.exe
+            chmod +x onessl.exe
+            export ONESSL=./onessl.exe
+            ;;
+        *)
+            echo 'other OS'
+            ;;
+    esac
+fi
 
 # http://redsymbol.net/articles/bash-exit-traps/
 function cleanup {
@@ -151,6 +157,10 @@ if [ "$STASH_UNINSTALL" -eq 1 ]; then
     exit 0
 fi
 
+echo "checking whether extended apiserver feature is enabled"
+$ONESSL has-keys configmap --namespace=kube-system --keys=requestheader-client-ca-file extension-apiserver-authentication || { echo "Set --requestheader-client-ca-file flag on Kubernetes apiserver"; exit 1; }
+echo ""
+
 env | sort | grep STASH*
 echo ""
 
@@ -186,3 +196,13 @@ fi
 if [ "$STASH_ENABLE_ADMISSION_WEBHOOK" = true ]; then
     curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/admission.yaml | $ONESSL envsubst | kubectl apply -f -
 fi
+
+echo "waiting until stash operator deployment is ready"
+$ONESSL wait-until-ready deployment stash-operator --namespace $STASH_NAMESPACE || { echo "Stash operator deployment failed to be ready"; exit 1; }
+
+echo "waiting until stash apiservice is available"
+$ONESSL wait-until-ready apiservice v1alpha1.admission.stash.appscode.com || { echo "Stash apiservice failed to be ready"; exit 1; }
+
+echo "waiting until stash crds are ready"
+$ONESSL wait-until-ready crd restics.stash.appscode.com || { echo "Restic CRD failed to be ready"; exit 1; }
+$ONESSL wait-until-ready crd recoveries.stash.appscode.com || { echo "Recovery CRD failed to be ready"; exit 1; }
