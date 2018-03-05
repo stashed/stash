@@ -26,7 +26,7 @@ stash.sh [options]
 options:
 -h, --help                         show brief help
 -n, --namespace=NAMESPACE          specify namespace (default: kube-system)
-    --rbac                         create RBAC roles and bindings
+    --rbac                         create RBAC roles and bindings (default: true)
     --docker-registry              docker registry used to pull stash images (default: appscode)
     --image-pull-secret            name of secret used to pull stash operator images
     --run-on-master                run stash operator on master
@@ -34,14 +34,11 @@ options:
     --enable-initializer           configure stash operator as workload initializer
     --uninstall                    uninstall stash
 
-# install without RBAC roles
 $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/stash.sh \
     | bash
-
-# Install with RBAC roles
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/stash.sh \
-    | bash -s -- --rbac
 ```
+
+### Customizing Installer
 
 If you would like to run Stash operator pod in `master` instances, pass the `--run-on-master` flag:
 
