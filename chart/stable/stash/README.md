@@ -48,8 +48,9 @@ The following tables lists the configurable parameters of the Stash chart and th
 | `pushgateway.tag`                  | Prometheus pushgateway container image tag                        | `v0.4.0`           |
 | `pushgateway.pullPolicy`           | Prometheus pushgateway container image pull policy                | `IfNotPresent`     |
 | `criticalAddon`                    | If true, installs Stash operator as critical addon                | `false`            |
-| `rbac.create`                      | install required rbac service account, roles and rolebindings     | `false`            |
-| `rbac.serviceAccountName`          | ServiceAccount Stash will use (ignored if rbac.create=true)       | `default`          |
+| `rbac.create`                      | If `true`, create and use RBAC resources                          | `true`             |
+| `serviceAccount.create`            | If `true`, create a new service account                           | `true`             |
+| `serviceAccount.name`              | Service account to be used. If not set and `serviceAccount.create` is `true`, a name is generated using the fullname template | `` |
 | `apiserver.groupPriorityMinimum`   | The minimum priority the group should have.                       | 10000              |
 | `apiserver.versionPriority`        | The ordering of this API inside of the group.                     | 15                 |
 | `apiserver.enableAdmissionWebhook` | Configure apiserver as admission webhooks for Stash CRDs          | false              |
