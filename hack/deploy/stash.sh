@@ -6,8 +6,7 @@ kubectl config current-context || { echo "Set a context (kubectl use-context <co
 echo ""
 
 # https://stackoverflow.com/a/677212/244009
-if ! [ -x "$(command -v onessl >/dev/null 2>&1)" ]; then
-    echo "using onessl found in the machine"
+if [ -x "$(command -v onessl >/dev/null 2>&1)" ]; then
     export ONESSL=onessl
 else
     # ref: https://stackoverflow.com/a/27776822/244009
@@ -46,8 +45,8 @@ trap cleanup EXIT
 # ref: http://tldp.org/LDP/abs/html/comparison-ops.html
 
 export STASH_NAMESPACE=kube-system
-export STASH_SERVICE_ACCOUNT=default
-export STASH_ENABLE_RBAC=false
+export STASH_SERVICE_ACCOUNT=stash-operator
+export STASH_ENABLE_RBAC=true
 export STASH_RUN_ON_MASTER=0
 export STASH_ENABLE_INITIALIZER=false
 export STASH_ENABLE_ADMISSION_WEBHOOK=false
@@ -69,7 +68,7 @@ show_help() {
     echo "options:"
     echo "-h, --help                         show brief help"
     echo "-n, --namespace=NAMESPACE          specify namespace (default: kube-system)"
-    echo "    --rbac                         create RBAC roles and bindings"
+    echo "    --rbac                         create RBAC roles and bindings (default: true)"
     echo "    --docker-registry              docker registry used to pull stash images (default: appscode)"
     echo "    --image-pull-secret            name of secret used to pull stash operator images"
     echo "    --run-on-master                run stash operator on master"
@@ -120,9 +119,12 @@ while test $# -gt 0; do
             export STASH_ENABLE_INITIALIZER=true
             shift
             ;;
-        --rbac)
-            export STASH_SERVICE_ACCOUNT=stash-operator
-            export STASH_ENABLE_RBAC=true
+        --rbac*)
+            val=`echo $1 | sed -e 's/^[^=]*=//g'`
+            if [ "$val" = "false" ]; then
+                export STASH_SERVICE_ACCOUNT=default
+                export STASH_ENABLE_RBAC=false
+            fi
             shift
             ;;
         --run-on-master)
@@ -206,3 +208,6 @@ $ONESSL wait-until-ready apiservice v1alpha1.admission.stash.appscode.com || { e
 echo "waiting until stash crds are ready"
 $ONESSL wait-until-ready crd restics.stash.appscode.com || { echo "Restic CRD failed to be ready"; exit 1; }
 $ONESSL wait-until-ready crd recoveries.stash.appscode.com || { echo "Recovery CRD failed to be ready"; exit 1; }
+
+echo
+echo "Successfully installed Stash!"
