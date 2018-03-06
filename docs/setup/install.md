@@ -18,6 +18,15 @@ section_menu_id: setup
 Stash can be installed via installer script included in the [/hack/deploy](https://github.com/appscode/stash/tree/0.7.0-rc.0/hack/deploy) folder.
 
 ```console
+$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/stash.sh \
+    | bash
+```
+
+#### Customizing Installer
+
+You can see the full list of flags available to installer using `-h` flag.
+
+```console
 $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/stash.sh | bash -s -- -h
 stash.sh - install stash operator
 
@@ -33,12 +42,7 @@ options:
     --enable-admission-webhook     configure admission webhook for stash CRDs
     --enable-initializer           configure stash operator as workload initializer
     --uninstall                    uninstall stash
-
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/stash.sh \
-    | bash
 ```
-
-### Customizing Installer
 
 If you would like to run Stash operator pod in `master` instances, pass the `--run-on-master` flag:
 
