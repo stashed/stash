@@ -46,10 +46,10 @@ trap cleanup EXIT
 
 export STASH_NAMESPACE=kube-system
 export STASH_SERVICE_ACCOUNT=stash-operator
-export STASH_ENABLE_RBAC=true
+export STASH_ENABLE_RBAC=false
 export STASH_RUN_ON_MASTER=0
 export STASH_ENABLE_INITIALIZER=false
-export STASH_ENABLE_ADMISSION_WEBHOOK=false
+export STASH_ENABLE_ADMISSION_WEBHOOK=true
 export STASH_DOCKER_REGISTRY=appscode
 export STASH_IMAGE_PULL_SECRET=
 export STASH_UNINSTALL=0
@@ -176,15 +176,23 @@ export TLS_SERVING_CERT=$(cat server.crt | $ONESSL base64)
 export TLS_SERVING_KEY=$(cat server.key | $ONESSL base64)
 export KUBE_CA=$($ONESSL get kube-ca | $ONESSL base64)
 
-curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/operator.yaml | $ONESSL envsubst | kubectl apply -f -
+kubectl create serviceaccount $STASH_SERVICE_ACCOUNT --namespace $STASH_NAMESPACE
+echo "service account created"
+kubectl label serviceaccount $STASH_SERVICE_ACCOUNT app=stash --namespace $STASH_NAMESPACE
 
 if [ "$STASH_ENABLE_RBAC" = true ]; then
-    kubectl create serviceaccount $STASH_SERVICE_ACCOUNT --namespace $STASH_NAMESPACE
-    kubectl label serviceaccount $STASH_SERVICE_ACCOUNT app=stash --namespace $STASH_NAMESPACE
-    curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/rbac-list.yaml | $ONESSL envsubst | kubectl auth reconcile -f -
-    curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/user-roles.yaml | $ONESSL envsubst | kubectl auth reconcile -f -
-
+    echo "RBAC rules creating"
+    echo "service account labeled"
+    cat ./hack/deploy/rbac-list.yaml | $ONESSL envsubst | kubectl auth reconcile -f -
+    echo "rbac list created"
+    cat ./hack/deploy/user-roles.yaml | $ONESSL envsubst | kubectl auth reconcile -f -
+    echo "user roles created"
 fi
+
+cat ./hack/deploy/operator.yaml | $ONESSL envsubst | kubectl apply -f -
+echo "waiting until stash operator deployment is ready"
+$ONESSL wait-until-ready deployment stash-operator --namespace $STASH_NAMESPACE || { echo "Stash operator deployment failed to be ready"; exit 1; }
+
 
 if [ "$STASH_RUN_ON_MASTER" -eq 1 ]; then
     kubectl patch deploy stash-operator -n $STASH_NAMESPACE \
@@ -196,11 +204,10 @@ if [ "$STASH_ENABLE_INITIALIZER" = true ]; then
 fi
 
 if [ "$STASH_ENABLE_ADMISSION_WEBHOOK" = true ]; then
-    curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/admission.yaml | $ONESSL envsubst | kubectl apply -f -
+    echo "creating admission"
+    cat ./hack/deploy/admission.yaml | $ONESSL envsubst | kubectl apply -f -
 fi
 
-echo "waiting until stash operator deployment is ready"
-$ONESSL wait-until-ready deployment stash-operator --namespace $STASH_NAMESPACE || { echo "Stash operator deployment failed to be ready"; exit 1; }
 
 echo "waiting until stash apiservice is available"
 $ONESSL wait-until-ready apiservice v1alpha1.admission.stash.appscode.com || { echo "Stash apiservice failed to be ready"; exit 1; }

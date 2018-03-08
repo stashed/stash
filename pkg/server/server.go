@@ -100,11 +100,13 @@ func (c completedConfig) New() (*StashServer, error) {
 	}
 
 	for _, versionMap := range admissionHooksByGroupThenVersion(c.ControllerConfig.AdmissionHooks...) {
+
 		accessor := meta.NewAccessor()
 		versionInterfaces := &meta.VersionInterfaces{
 			ObjectConvertor:  Scheme,
 			MetadataAccessor: accessor,
 		}
+
 		interfacesFor := func(version schema.GroupVersion) (*meta.VersionInterfaces, error) {
 			if version != admission.SchemeGroupVersion {
 				return nil, fmt.Errorf("unexpected version %v", version)
@@ -162,7 +164,6 @@ func (c completedConfig) New() (*StashServer, error) {
 
 		// just prefer the first one in the list for consistency
 		apiGroupInfo.GroupMeta.GroupVersion = apiGroupInfo.GroupMeta.GroupVersions[0]
-
 		if err := s.GenericAPIServer.InstallAPIGroup(&apiGroupInfo); err != nil {
 			return nil, err
 		}
@@ -211,7 +212,6 @@ func postStartHookName(hook hookapi.AdmissionHook) string {
 
 func admissionHooksByGroupThenVersion(admissionHooks ...hookapi.AdmissionHook) map[string]map[string][]hookapi.AdmissionHook {
 	ret := map[string]map[string][]hookapi.AdmissionHook{}
-
 	for i := range admissionHooks {
 		hook := admissionHooks[i]
 		gvr, _ := hook.Resource()

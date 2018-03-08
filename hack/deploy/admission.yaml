@@ -24,3 +24,33 @@ webhooks:
     resources:
     - "*"
   failurePolicy: Fail
+
+---
+# mutating webhook for deployment
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: admission.stash.appscode.com
+webhooks:
+- name: admission.stash.appscode.com
+  clientConfig:
+    service:
+      namespace: default
+      name: kubernetes
+      path: /apis/admission.stash.appscode.com/v1alpha1/deployments
+    caBundle: ${KUBE_CA}
+  rules:
+  - operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    apiGroups:
+    - "apps"
+    - "extensions"
+    - "batch"
+    - "core"
+    apiVersions:
+    - "*"
+    resources:
+    - "deployments"
+  failurePolicy: Fail

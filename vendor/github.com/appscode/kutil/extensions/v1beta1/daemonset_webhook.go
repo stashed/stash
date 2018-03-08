@@ -3,9 +3,9 @@ package v1beta1
 import (
 	"sync"
 
+	"github.com/appscode/kutil"
 	"github.com/appscode/kutil/admission/api"
 	"github.com/appscode/kutil/meta"
-	"github.com/pkg/errors"
 	admission "k8s.io/api/admission/v1beta1"
 	"k8s.io/api/apps/v1"
 	"k8s.io/api/apps/v1beta2"
@@ -17,6 +17,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"k8s.io/kubernetes/pkg/api/legacyscheme"
 )
 
 type DaemonSetWebhook struct {
@@ -39,8 +40,8 @@ func NewDaemonSetWebhook(plural schema.GroupVersionResource, singular string, ha
 	}
 }
 
-func (a *DaemonSetWebhook) Resource() (plural schema.GroupVersionResource, singular string) {
-	return plural, singular
+func (a *DaemonSetWebhook) Resource() (schema.GroupVersionResource, string) {
+	return a.plural, a.singular
 }
 
 func (a *DaemonSetWebhook) Initialize(config *rest.Config, stopCh <-chan struct{}) error {
@@ -134,7 +135,8 @@ func (a *DaemonSetWebhook) Admit(req *admission.AdmissionRequest) *admission.Adm
 func convert_to_extensions_daemonset(gv schema.GroupVersion, raw []byte) (*extensions.DaemonSet, runtime.Object, error) {
 	switch gv {
 	case v1.SchemeGroupVersion:
-		v1Obj, err := meta.UnmarshalToJSON(raw, v1.SchemeGroupVersion)
+		v1Obj := &v1.DaemonSet{}
+		err := json.Unmarshal(raw, v1Obj)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -147,7 +149,8 @@ func convert_to_extensions_daemonset(gv schema.GroupVersion, raw []byte) (*exten
 		return extObj, v1Obj, nil
 
 	case v1beta2.SchemeGroupVersion:
-		v1beta2Obj, err := meta.UnmarshalToJSON(raw, v1beta2.SchemeGroupVersion)
+		v1beta2Obj := &v1beta2.DaemonSet{}
+		err := json.Unmarshal(raw, v1beta2Obj)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -160,13 +163,14 @@ func convert_to_extensions_daemonset(gv schema.GroupVersion, raw []byte) (*exten
 		return extObj, v1beta2Obj, nil
 
 	case extensions.SchemeGroupVersion:
-		extObj, err := meta.UnmarshalToJSON(raw, extensions.SchemeGroupVersion)
+		extObj := &extensions.DaemonSet{}
+		err := json.Unmarshal(raw, extObj)
 		if err != nil {
 			return nil, nil, err
 		}
-		return extObj.(*extensions.DaemonSet), extObj, nil
+		return extObj, extObj, nil
 	}
-	return nil, nil, errors.New("unknown")
+	return nil, nil, kutil.ErrUnknown
 }
 
 func create_daemonset_patch(gv schema.GroupVersion, originalObj, extMod interface{}) ([]byte, error) {
@@ -177,6 +181,7 @@ func create_daemonset_patch(gv schema.GroupVersion, originalObj, extMod interfac
 		if err != nil {
 			return nil, err
 		}
+		legacyscheme.Scheme.Default(v1Mod)
 		return meta.CreateJSONPatch(originalObj.(runtime.Object), v1Mod)
 
 	case v1beta2.SchemeGroupVersion:
@@ -185,10 +190,13 @@ func create_daemonset_patch(gv schema.GroupVersion, originalObj, extMod interfac
 		if err != nil {
 			return nil, err
 		}
+		legacyscheme.Scheme.Default(v1beta2Mod)
 		return meta.CreateJSONPatch(originalObj.(runtime.Object), v1beta2Mod)
 
 	case extensions.SchemeGroupVersion:
-		return meta.CreateJSONPatch(originalObj.(runtime.Object), extMod.(runtime.Object))
+		extObj := extMod.(runtime.Object)
+		legacyscheme.Scheme.Default(extObj)
+		return meta.CreateJSONPatch(originalObj.(runtime.Object), extObj)
 	}
-	return nil, errors.New("unknown")
+	return nil, kutil.ErrUnknown
 }

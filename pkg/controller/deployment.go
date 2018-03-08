@@ -50,11 +50,6 @@ func (c *StashController) runDeploymentInjector(key string) error {
 		dp := obj.(*apps.Deployment)
 		glog.Infof("Sync/Add/Update for Deployment %s\n", dp.GetName())
 
-		if util.ToBeInitializedByPeer(dp.Initializers) {
-			glog.Warningf("Not stash's turn to initialize %s\n", dp.GetName())
-			return nil
-		}
-
 		oldRestic, err := util.GetAppliedRestic(dp.Annotations)
 		if err != nil {
 			return err
@@ -70,23 +65,6 @@ func (c *StashController) runDeploymentInjector(key string) error {
 			}
 		} else if oldRestic != nil && newRestic == nil {
 			return c.EnsureDeploymentSidecarDeleted(dp, oldRestic)
-		}
-
-		// not restic workload, just remove the pending stash initializer
-		if util.ToBeInitializedBySelf(dp.Initializers) {
-			_, _, err = apps_util.PatchDeployment(c.kubeClient, dp, func(obj *apps.Deployment) *apps.Deployment {
-				fmt.Println("Removing pending stash initializer for", obj.Name)
-				if len(obj.Initializers.Pending) == 1 {
-					obj.Initializers = nil
-				} else {
-					obj.Initializers.Pending = obj.Initializers.Pending[1:]
-				}
-				return obj
-			})
-			if err != nil {
-				log.Errorf("Error while removing pending stash initializer for %s/%s. Reason: %s", dp.Name, dp.Namespace, err)
-				return err
-			}
 		}
 	}
 	return nil
@@ -121,15 +99,6 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 	}
 
 	resource, _, err = apps_util.PatchDeployment(c.kubeClient, resource, func(obj *apps.Deployment) *apps.Deployment {
-		if util.ToBeInitializedBySelf(obj.Initializers) {
-			fmt.Println("Removing pending stash initializer for", obj.Name)
-			if len(obj.Initializers.Pending) == 1 {
-				obj.Initializers = nil
-			} else {
-				obj.Initializers.Pending = obj.Initializers.Pending[1:]
-			}
-		}
-
 		workload := api.LocalTypedReference{
 			Kind: api.KindDeployment,
 			Name: obj.Name,
@@ -171,7 +140,6 @@ func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old
 		data, _ := meta.MarshalToJson(r, api.SchemeGroupVersion)
 		obj.Annotations[api.LastAppliedConfiguration] = string(data)
 		obj.Annotations[api.VersionTag] = c.StashImageTag
-
 		return obj
 	})
 	if err != nil {
@@ -201,6 +169,7 @@ func (c *StashController) EnsureDeploymentSidecarDeleted(resource *apps.Deployme
 		if restic.Spec.Backend.Local != nil {
 			obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.LocalVolumeName)
 		}
+
 		if obj.Annotations != nil {
 			delete(obj.Annotations, api.LastAppliedConfiguration)
 			delete(obj.Annotations, api.VersionTag)

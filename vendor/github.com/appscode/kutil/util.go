@@ -1,9 +1,8 @@
 package kutil
 
 import (
+	"errors"
 	"time"
-
-	"github.com/pkg/errors"
 )
 
 const (
@@ -25,4 +24,5 @@ const (
 
 var (
 	ErrNotFound = errors.New("not found")
+	ErrUnknown  = errors.New("unknown")
 )
