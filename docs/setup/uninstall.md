@@ -13,9 +13,7 @@ section_menu_id: setup
 ---
 # Uninstall Stash
 
-Please follow the steps below to uninstall Stash:
-
-- Delete the deployment and service used for Stash operator.
+To uninstall Stash operator, run the following command:
 
 ```console
 $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/stash.sh \
@@ -37,26 +35,4 @@ No resources found
 initializerconfiguration "stash-initializer" deleted
 ```
 
-- Now, wait several seconds for Stash to stop running. To confirm that Stash operator pod(s) have stopped running, run:
-
-```console
-$ kubectl get pods --all-namespaces -l app=stash
-```
-
-- To keep a copy of your existing `Restic` objects, run:
-
-```console
-kubectl get restic.stash.appscode.com --all-namespaces -o yaml > data.yaml
-```
-
-- To delete existing `Restic` objects from all namespaces, run the following command in each namespace one by one.
-
-```
-kubectl delete restic.stash.appscode.com --all --cascade=false
-```
-
-- Delete the old CRD-registration.
-
-```console
-kubectl delete crd -l app=stash
-```
+The above command will leave the Stash crd objects as-is. If you wish to **nuke** all Stash crd objects, also pass the `--purge` flag. This will keep a copy of Stash crd objects in your current directory.
