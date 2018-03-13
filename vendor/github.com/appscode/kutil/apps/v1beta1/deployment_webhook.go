@@ -3,9 +3,9 @@ package v1beta1
 import (
 	"sync"
 
+	"github.com/appscode/kutil"
 	"github.com/appscode/kutil/admission/api"
 	"github.com/appscode/kutil/meta"
-	"github.com/pkg/errors"
 	admission "k8s.io/api/admission/v1beta1"
 	"k8s.io/api/apps/v1"
 	"k8s.io/api/apps/v1beta1"
@@ -18,6 +18,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"k8s.io/kubernetes/pkg/api/legacyscheme"
 )
 
 type DeploymentWebhook struct {
@@ -40,8 +41,8 @@ func NewDeploymentWebhook(plural schema.GroupVersionResource, singular string, h
 	}
 }
 
-func (a *DeploymentWebhook) Resource() (plural schema.GroupVersionResource, singular string) {
-	return plural, singular
+func (a *DeploymentWebhook) Resource() (schema.GroupVersionResource, string) {
+	return a.plural, a.singular
 }
 
 func (a *DeploymentWebhook) Initialize(config *rest.Config, stopCh <-chan struct{}) error {
@@ -135,7 +136,8 @@ func (a *DeploymentWebhook) Admit(req *admission.AdmissionRequest) *admission.Ad
 func convert_to_v1beta1_deployment(gv schema.GroupVersion, raw []byte) (*v1beta1.Deployment, runtime.Object, error) {
 	switch gv {
 	case v1.SchemeGroupVersion:
-		v1Obj, err := meta.UnmarshalToJSON(raw, v1.SchemeGroupVersion)
+		v1Obj := &v1.Deployment{}
+		err := json.Unmarshal(raw, v1Obj)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -148,14 +150,16 @@ func convert_to_v1beta1_deployment(gv schema.GroupVersion, raw []byte) (*v1beta1
 		return v1beta1Obj, v1Obj, nil
 
 	case v1beta1.SchemeGroupVersion:
-		v1beta1Obj, err := meta.UnmarshalToJSON(raw, v1beta1.SchemeGroupVersion)
+		v1beta1Obj := &v1beta1.Deployment{}
+		err := json.Unmarshal(raw, v1beta1Obj)
 		if err != nil {
 			return nil, nil, err
 		}
-		return v1beta1Obj.(*v1beta1.Deployment), v1beta1Obj, nil
+		return v1beta1Obj, v1beta1Obj, nil
 
 	case v1beta2.SchemeGroupVersion:
-		v1beta2Obj, err := meta.UnmarshalToJSON(raw, v1beta2.SchemeGroupVersion)
+		v1beta2Obj := &v1beta2.Deployment{}
+		err := json.Unmarshal(raw, v1beta2Obj)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -168,7 +172,8 @@ func convert_to_v1beta1_deployment(gv schema.GroupVersion, raw []byte) (*v1beta1
 		return v1beta1Obj, v1beta2Obj, nil
 
 	case extensions.SchemeGroupVersion:
-		extObj, err := meta.UnmarshalToJSON(raw, extensions.SchemeGroupVersion)
+		extObj := &extensions.Deployment{}
+		err := json.Unmarshal(raw, extObj)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -180,7 +185,7 @@ func convert_to_v1beta1_deployment(gv schema.GroupVersion, raw []byte) (*v1beta1
 		}
 		return v1beta1Obj, extObj, nil
 	}
-	return nil, nil, errors.New("unknown")
+	return nil, nil, kutil.ErrUnknown
 }
 
 func create_deployment_patch(gv schema.GroupVersion, originalObj, v1beta1Mod interface{}) ([]byte, error) {
@@ -191,6 +196,7 @@ func create_deployment_patch(gv schema.GroupVersion, originalObj, v1beta1Mod int
 		if err != nil {
 			return nil, err
 		}
+		legacyscheme.Scheme.Default(v1Mod)
 		return meta.CreateJSONPatch(originalObj.(runtime.Object), v1Mod)
 
 	case v1beta2.SchemeGroupVersion:
@@ -199,10 +205,13 @@ func create_deployment_patch(gv schema.GroupVersion, originalObj, v1beta1Mod int
 		if err != nil {
 			return nil, err
 		}
+		legacyscheme.Scheme.Default(v1beta2Mod)
 		return meta.CreateJSONPatch(originalObj.(runtime.Object), v1beta2Mod)
 
 	case v1beta1.SchemeGroupVersion:
-		return meta.CreateJSONPatch(originalObj.(runtime.Object), v1beta1Mod.(runtime.Object))
+		v1beta1Obj := v1beta1Mod.(runtime.Object)
+		legacyscheme.Scheme.Default(v1beta1Obj)
+		return meta.CreateJSONPatch(originalObj.(runtime.Object), v1beta1Obj)
 
 	case extensions.SchemeGroupVersion:
 		extMod := &extensions.Deployment{}
@@ -210,7 +219,8 @@ func create_deployment_patch(gv schema.GroupVersion, originalObj, v1beta1Mod int
 		if err != nil {
 			return nil, err
 		}
+		legacyscheme.Scheme.Default(extMod)
 		return meta.CreateJSONPatch(originalObj.(runtime.Object), extMod)
 	}
-	return nil, errors.New("unknown")
+	return nil, kutil.ErrUnknown
 }

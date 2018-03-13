@@ -3,9 +3,9 @@ package v1beta1
 import (
 	"sync"
 
+	"github.com/appscode/kutil"
 	"github.com/appscode/kutil/admission/api"
 	"github.com/appscode/kutil/meta"
-	"github.com/pkg/errors"
 	admission "k8s.io/api/admission/v1beta1"
 	"k8s.io/api/batch/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/kubernetes/pkg/api/legacyscheme"
 )
 
 type CronJobWebhook struct {
@@ -36,8 +37,8 @@ func NewCronJobWebhook(plural schema.GroupVersionResource, singular string, hand
 	}
 }
 
-func (a *CronJobWebhook) Resource() (plural schema.GroupVersionResource, singular string) {
-	return plural, singular
+func (a *CronJobWebhook) Resource() (schema.GroupVersionResource, string) {
+	return a.plural, a.singular
 }
 
 func (a *CronJobWebhook) Initialize(config *rest.Config, stopCh <-chan struct{}) error {
@@ -131,19 +132,22 @@ func (a *CronJobWebhook) Admit(req *admission.AdmissionRequest) *admission.Admis
 func convert_to_v1beta1_cronjob(gv schema.GroupVersion, raw []byte) (*v1beta1.CronJob, runtime.Object, error) {
 	switch gv {
 	case v1beta1.SchemeGroupVersion:
-		v1Obj, err := meta.UnmarshalToJSON(raw, v1beta1.SchemeGroupVersion)
+		v1beta1Obj := &v1beta1.CronJob{}
+		err := json.Unmarshal(raw, v1beta1Obj)
 		if err != nil {
 			return nil, nil, err
 		}
-		return v1Obj.(*v1beta1.CronJob), v1Obj, nil
+		return v1beta1Obj, v1beta1Obj, nil
 	}
-	return nil, nil, errors.New("unknown")
+	return nil, nil, kutil.ErrUnknown
 }
 
-func create_cronjob_patch(gv schema.GroupVersion, originalObj, v1Mod interface{}) ([]byte, error) {
+func create_cronjob_patch(gv schema.GroupVersion, originalObj, v1beta1Mod interface{}) ([]byte, error) {
 	switch gv {
 	case v1beta1.SchemeGroupVersion:
-		return meta.CreateJSONPatch(originalObj.(runtime.Object), v1Mod.(runtime.Object))
+		v1beta1Obj := v1beta1Mod.(runtime.Object)
+		legacyscheme.Scheme.Default(v1beta1Obj)
+		return meta.CreateJSONPatch(originalObj.(runtime.Object), v1beta1Obj)
 	}
-	return nil, errors.New("unknown")
+	return nil, kutil.ErrUnknown
 }

@@ -8,6 +8,6 @@
 pushd $GOPATH/src/github.com/appscode/stash
 
 glide up -v
-glide vc --only-code --no-tests
+glide vc --use-lock-file --only-code --no-tests
 
 popd
