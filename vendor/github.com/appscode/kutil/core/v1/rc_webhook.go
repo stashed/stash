@@ -3,9 +3,9 @@ package v1
 import (
 	"sync"
 
+	"github.com/appscode/kutil"
 	"github.com/appscode/kutil/admission/api"
 	"github.com/appscode/kutil/meta"
-	"github.com/pkg/errors"
 	admission "k8s.io/api/admission/v1beta1"
 	"k8s.io/api/core/v1"
 	extensions "k8s.io/api/extensions/v1beta1"
@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/kubernetes/pkg/api/legacyscheme"
 )
 
 type ReplicationControllerWebhook struct {
@@ -37,8 +38,8 @@ func NewReplicationControllerWebhook(plural schema.GroupVersionResource, singula
 	}
 }
 
-func (a *ReplicationControllerWebhook) Resource() (plural schema.GroupVersionResource, singular string) {
-	return plural, singular
+func (a *ReplicationControllerWebhook) Resource() (schema.GroupVersionResource, string) {
+	return a.plural, a.singular
 }
 
 func (a *ReplicationControllerWebhook) Initialize(config *rest.Config, stopCh <-chan struct{}) error {
@@ -132,19 +133,22 @@ func (a *ReplicationControllerWebhook) Admit(req *admission.AdmissionRequest) *a
 func convert_to_v1_rc(gv schema.GroupVersion, raw []byte) (*v1.ReplicationController, runtime.Object, error) {
 	switch gv {
 	case v1.SchemeGroupVersion:
-		v1Obj, err := meta.UnmarshalToJSON(raw, v1.SchemeGroupVersion)
+		v1Obj := &v1.ReplicationController{}
+		err := json.Unmarshal(raw, v1Obj)
 		if err != nil {
 			return nil, nil, err
 		}
-		return v1Obj.(*v1.ReplicationController), v1Obj, nil
+		return v1Obj, v1Obj, nil
 	}
-	return nil, nil, errors.New("unknown")
+	return nil, nil, kutil.ErrUnknown
 }
 
 func create_rc_patch(gv schema.GroupVersion, originalObj, v1Mod interface{}) ([]byte, error) {
 	switch gv {
 	case v1.SchemeGroupVersion:
-		return meta.CreateJSONPatch(originalObj.(runtime.Object), v1Mod.(runtime.Object))
+		v1Obj := v1Mod.(runtime.Object)
+		legacyscheme.Scheme.Default(v1Obj)
+		return meta.CreateJSONPatch(originalObj.(runtime.Object), v1Obj)
 	}
-	return nil, errors.New("unknown")
+	return nil, kutil.ErrUnknown
 }
