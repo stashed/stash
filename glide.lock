@@ -1,5 +1,5 @@
-hash: ecfa991fd41c9d34f81826fa58d4f5e2976be781ccf158cd50f45a785c6ba5de
-updated: 2018-03-13T15:34:38.203307303-07:00
+hash: e2204ccb3c5119a0c0f3cdcc436e8b6014c52fbfde50148aebd33687fb995fc5
+updated: 2018-03-13T15:40:57.360840917-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -187,7 +187,9 @@ imports:
   - runtime/internal
   - utilities
 - name: github.com/hashicorp/go-version
-  version: 4fe82ae3040f80a03d04d2cccb5606a626b8e1ee
+  version: 53932f80ddea12bea96be074f9fb2dc545806aba
+  repo: https://github.com/appscode/go-version.git
+  vcs: git
 - name: github.com/hashicorp/golang-lru
   version: a0d98a5f288019575c6d1f4bb1573fef2d1fcdc4
   subpackages:

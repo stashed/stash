@@ -10,6 +10,10 @@ import:
 - package: github.com/codeskyblue/go-sh
   version: master
 - package: github.com/golang/glog
+- package: github.com/hashicorp/go-version
+  repo: https://github.com/appscode/go-version.git
+  vcs: git
+  version: master
 - package: github.com/jpillora/go-ogle-analytics
 - package: github.com/onsi/ginkgo
   version: v1.4.0
