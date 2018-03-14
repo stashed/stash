@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	Exe = "/bin/restic"
+	Exe = "restic"
 )
 
 type ResticWrapper struct {
