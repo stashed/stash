@@ -20,6 +20,7 @@ var _ = Describe("StatefulSet", func() {
 		err      error
 		f        *framework.Invocation
 		restic   api.Restic
+		restic2  api.Restic
 		cred     core.Secret
 		svc      core.Service
 		ss       apps.StatefulSet
@@ -37,6 +38,7 @@ var _ = Describe("StatefulSet", func() {
 			Skip("Missing repository credential")
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
+		restic2.Spec.Backend.StorageSecretName = cred.Name
 		recovery.Spec.Backend.StorageSecretName = cred.Name
 		svc = f.HeadlessService()
 		ss = f.StatefulSet()
@@ -225,7 +227,7 @@ var _ = Describe("StatefulSet", func() {
 			f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
 		}
 
-		shouldInitializeAndBackupStatefulSet = func() {
+		shouldMutateAndBackupNewStatefulSet = func() {
 			By("Creating repository Secret " + cred.Name)
 			err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
@@ -242,7 +244,7 @@ var _ = Describe("StatefulSet", func() {
 			obj, err := f.CreateStatefulSet(ss)
 			Expect(err).NotTo(HaveOccurred())
 
-			// sidecar should be added as soon as workload created, we don't need to wait for it
+			// sidecar should be added as soon as ss created, we don't need to wait for it
 			By("Checking sidecar created")
 			Expect(obj).Should(HaveSidecar(util.StashContainer))
 
@@ -253,6 +255,123 @@ var _ = Describe("StatefulSet", func() {
 
 			By("Waiting for backup event")
 			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+		}
+
+		shouldNotMutateNewStatefulSet = func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating service " + svc.Name)
+			err = f.CreateService(svc)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating StatefulSet " + ss.Name)
+			obj, err := f.CreateStatefulSet(ss)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Checking sidecar not added")
+			Expect(obj).ShouldNot(HaveSidecar(util.StashContainer))
+		}
+
+		shouldRejectToCreateNewStatefulSet = func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating first restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating second restic " + restic2.Name)
+			err = f.CreateRestic(restic2)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating service " + svc.Name)
+			err = f.CreateService(svc)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating StatefulSet " + ss.Name)
+			_, err := f.CreateStatefulSet(ss)
+			Expect(err).To(HaveOccurred())
+		}
+
+		shouldRemoveSidecarInstantly = func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating service " + svc.Name)
+			err = f.CreateService(svc)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating StatefulSet " + ss.Name)
+			obj, err := f.CreateStatefulSet(ss)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Checking sidecar added")
+			Expect(obj).Should(HaveSidecar(util.StashContainer))
+
+			By("Waiting for backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 1)))
+
+			By("Removing labels of StatefulSet " + ss.Name)
+			obj, _, err = apps_util.PatchStatefulSet(f.KubeClient, &ss, func(in *apps.StatefulSet) *apps.StatefulSet {
+				in.Labels = map[string]string{
+					"app": "unmatched",
+				}
+				return in
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Checking sidecar has removed")
+			Expect(obj).ShouldNot(HaveSidecar(util.StashContainer))
+		}
+
+		shouldAddSidecarInstantly = func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating service " + svc.Name)
+			err = f.CreateService(svc)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating StatefulSet " + ss.Name)
+			previousLabel := ss.Labels
+			ss.Labels = map[string]string{
+				"app": "unmatched",
+			}
+			obj, err := f.CreateStatefulSet(ss)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Checking sidecar not added")
+			Expect(obj).ShouldNot(HaveSidecar(util.StashContainer))
+
+			By("Adding label to match restic" + ss.Name)
+			obj, _, err = apps_util.PatchStatefulSet(f.KubeClient, &ss, func(in *apps.StatefulSet) *apps.StatefulSet {
+				in.Labels = previousLabel
+				return in
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Checking sidecar added")
+			Expect(obj).Should(HaveSidecar(util.StashContainer))
+
+			By("Waiting for backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 1)))
 		}
 	)
 
@@ -449,10 +568,16 @@ var _ = Describe("StatefulSet", func() {
 		})
 	})
 
-	Describe("Stash initializer for", func() {
+	Describe("Stash Webhook for", func() {
+		BeforeEach(func() {
+			if !f.WebhookEnabled {
+				Skip("Webhook is disabled")
+			}
+		})
 		AfterEach(func() {
 			f.DeleteStatefulSet(ss.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteRestic(restic2.ObjectMeta)
 			f.DeleteService(svc.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 		})
@@ -461,8 +586,14 @@ var _ = Describe("StatefulSet", func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
+				restic2 = restic
+				restic2.Name = "restic2"
 			})
-			It("should initialize and backup new StatefulSet", shouldInitializeAndBackupStatefulSet)
+			It("should mutate and backup new StatefulSet", shouldMutateAndBackupNewStatefulSet)
+			It("should not mutate new StatefulSet if no restic select it", shouldNotMutateNewStatefulSet)
+			It("should reject to create new StatefulSet if multiple restic select it", shouldRejectToCreateNewStatefulSet)
+			It("should remove sidecar instantly if label change to match no restic", shouldRemoveSidecarInstantly)
+			It("should add sidecar instantly if label change to match single restic", shouldAddSidecarInstantly)
 		})
 	})
 

@@ -25,6 +25,7 @@ var _ = Describe("Deployment", func() {
 		err        error
 		f          *framework.Invocation
 		restic     api.Restic
+		restic2    api.Restic
 		cred       core.Secret
 		deployment apps.Deployment
 		recovery   api.Recovery
@@ -41,6 +42,7 @@ var _ = Describe("Deployment", func() {
 			Skip("Missing repository credential")
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
+		restic2.Spec.Backend.StorageSecretName = cred.Name
 		recovery.Spec.Backend.StorageSecretName = cred.Name
 		deployment = f.Deployment()
 	})
@@ -235,7 +237,7 @@ var _ = Describe("Deployment", func() {
 			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
 
-		shouldInitializeAndBackupDeployment = func() {
+		shouldMutateAndBackupNewDeployment = func() {
 			By("Creating repository Secret " + cred.Name)
 			err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
@@ -248,9 +250,6 @@ var _ = Describe("Deployment", func() {
 			obj, err := f.CreateDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
 
-			// By("Waiting for sidecar")
-			// f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
-
 			// sidecar should be added as soon as deployment created, we don't need to wait for it
 			By("Checking sidecar created")
 			Expect(obj).Should(HaveSidecar(util.StashContainer))
@@ -262,6 +261,107 @@ var _ = Describe("Deployment", func() {
 
 			By("Waiting for backup event")
 			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+		}
+
+		shouldNotMutateNewDeployment = func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating Deployment " + deployment.Name)
+			obj, err := f.CreateDeployment(deployment)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Checking sidecar not added")
+			Expect(obj).ShouldNot(HaveSidecar(util.StashContainer))
+		}
+
+		shouldRejectToCreateNewDeployment = func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating first restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating second restic " + restic2.Name)
+			err = f.CreateRestic(restic2)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating Deployment " + deployment.Name)
+			_, err := f.CreateDeployment(deployment)
+			Expect(err).To(HaveOccurred())
+		}
+
+		shouldRemoveSidecarInstantly = func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating Deployment " + deployment.Name)
+			obj, err := f.CreateDeployment(deployment)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Checking sidecar added")
+			Expect(obj).Should(HaveSidecar(util.StashContainer))
+
+			By("Waiting for backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 1)))
+
+			By("Removing labels of Deployment " + deployment.Name)
+			obj, _, err = apps_util.PatchDeployment(f.KubeClient, &deployment, func(in *apps.Deployment) *apps.Deployment {
+				in.Labels = map[string]string{
+					"app": "unmatched",
+				}
+				return in
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Checking sidecar has removed")
+			Expect(obj).ShouldNot(HaveSidecar(util.StashContainer))
+		}
+
+		shouldAddSidecarInstantly = func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating Deployment " + deployment.Name)
+			previousLabel := deployment.Labels
+			deployment.Labels = map[string]string{
+				"app": "unmatched",
+			}
+			obj, err := f.CreateDeployment(deployment)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Checking sidecar not added")
+			Expect(obj).ShouldNot(HaveSidecar(util.StashContainer))
+
+			By("Adding label to match restic" + deployment.Name)
+			obj, _, err = apps_util.PatchDeployment(f.KubeClient, &deployment, func(in *apps.Deployment) *apps.Deployment {
+				in.Labels = previousLabel
+				return in
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Checking sidecar added")
+			Expect(obj).Should(HaveSidecar(util.StashContainer))
+
+			By("Waiting for backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 1)))
 		}
 
 		shouldDeleteJobAndDependents = func(jobName, namespace string) {
@@ -546,10 +646,16 @@ var _ = Describe("Deployment", func() {
 		})
 	})
 
-	Describe("Stash initializer for", func() {
+	Describe("Stash Webhook for", func() {
+		BeforeEach(func() {
+			if !f.WebhookEnabled {
+				Skip("Webhook is disabled")
+			}
+		})
 		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteRestic(restic2.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 		})
 
@@ -557,8 +663,14 @@ var _ = Describe("Deployment", func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
+				restic2 = restic
+				restic2.Name = "restic2"
 			})
-			It("should initialize and backup new Deployment", shouldInitializeAndBackupDeployment)
+			It("should mutate and backup new Deployment", shouldMutateAndBackupNewDeployment)
+			It("should not mutate new Deployment if no restic select it", shouldNotMutateNewDeployment)
+			It("should reject to create new Deployment if multiple restic select it", shouldRejectToCreateNewDeployment)
+			It("should remove sidecar instantly if label change to match no restic", shouldRemoveSidecarInstantly)
+			It("should add sidecar instantly if label change to match single restic", shouldAddSidecarInstantly)
 		})
 	})
 

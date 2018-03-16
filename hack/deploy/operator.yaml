@@ -5,8 +5,6 @@ metadata:
   namespace: ${STASH_NAMESPACE}
   labels:
     app: stash
-  initializers:
-    pending: []
 spec:
   replicas: 1
   selector:

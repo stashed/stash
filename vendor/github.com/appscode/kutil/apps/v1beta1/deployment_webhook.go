@@ -10,15 +10,15 @@ import (
 	"k8s.io/api/apps/v1"
 	"k8s.io/api/apps/v1beta1"
 	"k8s.io/api/apps/v1beta2"
-	extensions "k8s.io/api/extensions/v1beta1"
+	ext "k8s.io/api/extensions/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
+	"k8s.io/kubernetes/pkg/apis/extensions"
 )
 
 type DeploymentWebhook struct {
@@ -62,7 +62,7 @@ func (a *DeploymentWebhook) Admit(req *admission.AdmissionRequest) *admission.Ad
 	if a.handler == nil ||
 		(req.Operation != admission.Create && req.Operation != admission.Update && req.Operation != admission.Delete) ||
 		len(req.SubResource) != 0 ||
-		(req.Kind.Group != v1.GroupName && req.Kind.Group != extensions.GroupName) ||
+		(req.Kind.Group != v1.GroupName && req.Kind.Group != ext.GroupName) ||
 		req.Kind.Kind != "Deployment" {
 		status.Allowed = true
 		return status
@@ -142,8 +142,14 @@ func convert_to_v1beta1_deployment(gv schema.GroupVersion, raw []byte) (*v1beta1
 			return nil, nil, err
 		}
 
+		internalObj := &extensions.Deployment{}
+		err = legacyscheme.Scheme.Convert(v1Obj, internalObj, nil)
+		if err != nil {
+			return nil, nil, err
+		}
+
 		v1beta1Obj := &v1beta1.Deployment{}
-		err = scheme.Scheme.Convert(v1Obj, v1beta1Obj, nil)
+		err = legacyscheme.Scheme.Convert(internalObj, v1beta1Obj, nil)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -164,22 +170,34 @@ func convert_to_v1beta1_deployment(gv schema.GroupVersion, raw []byte) (*v1beta1
 			return nil, nil, err
 		}
 
+		internalObj := &extensions.Deployment{}
+		err = legacyscheme.Scheme.Convert(v1beta2Obj, internalObj, nil)
+		if err != nil {
+			return nil, nil, err
+		}
+
 		v1beta1Obj := &v1beta1.Deployment{}
-		err = scheme.Scheme.Convert(v1beta2Obj, v1beta1Obj, nil)
+		err = legacyscheme.Scheme.Convert(internalObj, v1beta1Obj, nil)
 		if err != nil {
 			return nil, nil, err
 		}
 		return v1beta1Obj, v1beta2Obj, nil
 
-	case extensions.SchemeGroupVersion:
-		extObj := &extensions.Deployment{}
+	case ext.SchemeGroupVersion:
+		extObj := &ext.Deployment{}
 		err := json.Unmarshal(raw, extObj)
 		if err != nil {
 			return nil, nil, err
 		}
 
+		internalObj := &extensions.Deployment{}
+		err = legacyscheme.Scheme.Convert(extObj, internalObj, nil)
+		if err != nil {
+			return nil, nil, err
+		}
+
 		v1beta1Obj := &v1beta1.Deployment{}
-		err = scheme.Scheme.Convert(extObj, v1beta1Obj, nil)
+		err = legacyscheme.Scheme.Convert(internalObj, v1beta1Obj, nil)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -189,10 +207,16 @@ func convert_to_v1beta1_deployment(gv schema.GroupVersion, raw []byte) (*v1beta1
 }
 
 func create_deployment_patch(gv schema.GroupVersion, originalObj, v1beta1Mod interface{}) ([]byte, error) {
+	internalObj := &extensions.Deployment{}
+	err := legacyscheme.Scheme.Convert(v1beta1Mod, internalObj, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	switch gv {
 	case v1.SchemeGroupVersion:
 		v1Mod := &v1.Deployment{}
-		err := scheme.Scheme.Convert(v1beta1Mod, v1Mod, nil)
+		err := legacyscheme.Scheme.Convert(internalObj, v1Mod, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -201,7 +225,7 @@ func create_deployment_patch(gv schema.GroupVersion, originalObj, v1beta1Mod int
 
 	case v1beta2.SchemeGroupVersion:
 		v1beta2Mod := &v1beta2.Deployment{}
-		err := scheme.Scheme.Convert(v1beta1Mod, v1beta2Mod, nil)
+		err := legacyscheme.Scheme.Convert(internalObj, v1beta2Mod, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -213,9 +237,9 @@ func create_deployment_patch(gv schema.GroupVersion, originalObj, v1beta1Mod int
 		legacyscheme.Scheme.Default(v1beta1Obj)
 		return meta.CreateJSONPatch(originalObj.(runtime.Object), v1beta1Obj)
 
-	case extensions.SchemeGroupVersion:
-		extMod := &extensions.Deployment{}
-		err := scheme.Scheme.Convert(v1beta1Mod, extMod, nil)
+	case ext.SchemeGroupVersion:
+		extMod := &ext.Deployment{}
+		err := legacyscheme.Scheme.Convert(internalObj, extMod, nil)
 		if err != nil {
 			return nil, err
 		}

@@ -13,6 +13,7 @@ import (
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 )
 
 type Config struct {
@@ -31,6 +32,7 @@ type ControllerConfig struct {
 	ClientConfig   *rest.Config
 	KubeClient     kubernetes.Interface
 	StashClient    cs.Interface
+	KAClient       ka.Interface
 	CRDClient      crd_cs.ApiextensionsV1beta1Interface
 	AdmissionHooks []hookapi.AdmissionHook
 }
@@ -47,7 +49,7 @@ func (c *ControllerConfig) New() (*StashController, error) {
 	}
 	ctrl := &StashController{
 		Config:               c.Config,
-		kubeClient:           c.KubeClient,
+		KubeClient:           c.KubeClient,
 		stashClient:          c.StashClient,
 		crdClient:            c.CRDClient,
 		kubeInformerFactory:  informers.NewFilteredSharedInformerFactory(c.KubeClient, c.ResyncPeriod, core.NamespaceAll, tweakListOptions),

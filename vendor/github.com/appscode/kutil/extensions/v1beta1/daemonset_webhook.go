@@ -9,7 +9,7 @@ import (
 	admission "k8s.io/api/admission/v1beta1"
 	"k8s.io/api/apps/v1"
 	"k8s.io/api/apps/v1beta2"
-	extensions "k8s.io/api/extensions/v1beta1"
+	extensions_v1beta1 "k8s.io/api/extensions/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -18,6 +18,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
+	"k8s.io/kubernetes/pkg/apis/extensions"
 )
 
 type DaemonSetWebhook struct {
@@ -61,7 +62,7 @@ func (a *DaemonSetWebhook) Admit(req *admission.AdmissionRequest) *admission.Adm
 	if a.handler == nil ||
 		(req.Operation != admission.Create && req.Operation != admission.Update && req.Operation != admission.Delete) ||
 		len(req.SubResource) != 0 ||
-		(req.Kind.Group != v1.GroupName && req.Kind.Group != extensions.GroupName) ||
+		(req.Kind.Group != v1.GroupName && req.Kind.Group != extensions_v1beta1.GroupName) ||
 		req.Kind.Kind != "DaemonSet" {
 		status.Allowed = true
 		return status
@@ -132,7 +133,7 @@ func (a *DaemonSetWebhook) Admit(req *admission.AdmissionRequest) *admission.Adm
 	return status
 }
 
-func convert_to_extensions_daemonset(gv schema.GroupVersion, raw []byte) (*extensions.DaemonSet, runtime.Object, error) {
+func convert_to_extensions_daemonset(gv schema.GroupVersion, raw []byte) (*extensions_v1beta1.DaemonSet, runtime.Object, error) {
 	switch gv {
 	case v1.SchemeGroupVersion:
 		v1Obj := &v1.DaemonSet{}
@@ -141,8 +142,14 @@ func convert_to_extensions_daemonset(gv schema.GroupVersion, raw []byte) (*exten
 			return nil, nil, err
 		}
 
-		extObj := &extensions.DaemonSet{}
-		err = scheme.Scheme.Convert(v1Obj, extObj, nil)
+		internalObj := &extensions.DaemonSet{}
+		err = legacyscheme.Scheme.Convert(v1Obj, internalObj, nil)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		extObj := &extensions_v1beta1.DaemonSet{}
+		err = scheme.Scheme.Convert(internalObj, extObj, nil)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -155,15 +162,21 @@ func convert_to_extensions_daemonset(gv schema.GroupVersion, raw []byte) (*exten
 			return nil, nil, err
 		}
 
-		extObj := &extensions.DaemonSet{}
-		err = scheme.Scheme.Convert(v1beta2Obj, extObj, nil)
+		internalObj := &extensions.DaemonSet{}
+		err = legacyscheme.Scheme.Convert(v1beta2Obj, internalObj, nil)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		extObj := &extensions_v1beta1.DaemonSet{}
+		err = scheme.Scheme.Convert(internalObj, extObj, nil)
 		if err != nil {
 			return nil, nil, err
 		}
 		return extObj, v1beta2Obj, nil
 
-	case extensions.SchemeGroupVersion:
-		extObj := &extensions.DaemonSet{}
+	case extensions_v1beta1.SchemeGroupVersion:
+		extObj := &extensions_v1beta1.DaemonSet{}
 		err := json.Unmarshal(raw, extObj)
 		if err != nil {
 			return nil, nil, err
@@ -174,10 +187,16 @@ func convert_to_extensions_daemonset(gv schema.GroupVersion, raw []byte) (*exten
 }
 
 func create_daemonset_patch(gv schema.GroupVersion, originalObj, extMod interface{}) ([]byte, error) {
+	internalObj := &extensions.DaemonSet{}
+	err := legacyscheme.Scheme.Convert(extMod, internalObj, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	switch gv {
 	case v1.SchemeGroupVersion:
 		v1Mod := &v1.DaemonSet{}
-		err := scheme.Scheme.Convert(extMod, v1Mod, nil)
+		err := scheme.Scheme.Convert(internalObj, v1Mod, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -186,14 +205,14 @@ func create_daemonset_patch(gv schema.GroupVersion, originalObj, extMod interfac
 
 	case v1beta2.SchemeGroupVersion:
 		v1beta2Mod := &v1beta2.DaemonSet{}
-		err := scheme.Scheme.Convert(extMod, v1beta2Mod, nil)
+		err := scheme.Scheme.Convert(internalObj, v1beta2Mod, nil)
 		if err != nil {
 			return nil, err
 		}
 		legacyscheme.Scheme.Default(v1beta2Mod)
 		return meta.CreateJSONPatch(originalObj.(runtime.Object), v1beta2Mod)
 
-	case extensions.SchemeGroupVersion:
+	case extensions_v1beta1.SchemeGroupVersion:
 		extObj := extMod.(runtime.Object)
 		legacyscheme.Scheme.Default(extObj)
 		return meta.CreateJSONPatch(originalObj.(runtime.Object), extObj)

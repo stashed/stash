@@ -6,16 +6,13 @@ import (
 
 	stringz "github.com/appscode/go/strings"
 	v "github.com/appscode/go/version"
-	hookapi "github.com/appscode/kutil/admission/api"
-	kutil_apps_v1beta1 "github.com/appscode/kutil/apps/v1beta1"
 	cs "github.com/appscode/stash/client/clientset/versioned"
-	"github.com/appscode/stash/pkg/admission/plugin"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/spf13/pflag"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
+	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 )
 
 type ControllerOptions struct {
@@ -76,24 +73,8 @@ func (s *ControllerOptions) ApplyTo(cfg *controller.ControllerConfig) error {
 	if cfg.CRDClient, err = crd_cs.NewForConfig(cfg.ClientConfig); err != nil {
 		return err
 	}
-	cfg.AdmissionHooks = []hookapi.AdmissionHook{
-		&plugin.CRDValidator{},
-		kutil_apps_v1beta1.NewDeploymentWebhook(
-			schema.GroupVersionResource{
-				Group:    "admission.stash.appscode.com",
-				Version:  "v1alpha1",
-				Resource: "deployments",
-			},
-			"deployment",
-			&plugin.DeploymentMutator{
-				KubeClient:     cfg.KubeClient,
-				StashClient:    cfg.StashClient,
-				DockerRegistry: cfg.DockerRegistry,
-				StashImageTag:  cfg.StashImageTag,
-				EnableRBAC:     cfg.EnableRBAC,
-			},
-		),
+	if cfg.KAClient, err = ka.NewForConfig(cfg.ClientConfig); err != nil {
+		return err
 	}
-
 	return nil
 }

@@ -53,7 +53,7 @@ func (c *StashController) runJobInjector(key string) error {
 			glog.Infof("Deleting succeeded job %s\n", job.GetName())
 
 			deletePolicy := metav1.DeletePropagationBackground
-			err := c.kubeClient.BatchV1().Jobs(job.Namespace).Delete(job.Name, &metav1.DeleteOptions{
+			err := c.KubeClient.BatchV1().Jobs(job.Namespace).Delete(job.Name, &metav1.DeleteOptions{
 				PropagationPolicy: &deletePolicy,
 			})
 

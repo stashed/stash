@@ -28,3 +28,4 @@ dist/
 **/.env
 .vscode/
 apiserver.local.config/
+coverage.txt

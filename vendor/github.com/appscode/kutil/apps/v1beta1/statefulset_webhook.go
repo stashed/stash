@@ -19,6 +19,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
+	"k8s.io/kubernetes/pkg/apis/apps"
 )
 
 type StatefulSetWebhook struct {
@@ -142,8 +143,14 @@ func convert_to_v1beta1_statefulset(gv schema.GroupVersion, raw []byte) (*v1beta
 			return nil, nil, err
 		}
 
+		internalObj := &apps.StatefulSet{}
+		err = legacyscheme.Scheme.Convert(v1Obj, internalObj, nil)
+		if err != nil {
+			return nil, nil, err
+		}
+
 		v1beta1Obj := &v1beta1.StatefulSet{}
-		err = scheme.Scheme.Convert(v1Obj, v1beta1Obj, nil)
+		err = scheme.Scheme.Convert(internalObj, v1beta1Obj, nil)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -164,8 +171,14 @@ func convert_to_v1beta1_statefulset(gv schema.GroupVersion, raw []byte) (*v1beta
 			return nil, nil, err
 		}
 
+		internalObj := &apps.StatefulSet{}
+		err = legacyscheme.Scheme.Convert(v1beta2Obj, internalObj, nil)
+		if err != nil {
+			return nil, nil, err
+		}
+
 		v1beta1Obj := &v1beta1.StatefulSet{}
-		err = scheme.Scheme.Convert(v1beta2Obj, v1beta1Obj, nil)
+		err = scheme.Scheme.Convert(internalObj, v1beta1Obj, nil)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -175,10 +188,15 @@ func convert_to_v1beta1_statefulset(gv schema.GroupVersion, raw []byte) (*v1beta
 }
 
 func create_statefulset_patch(gv schema.GroupVersion, originalObj, v1beta1Mod interface{}) ([]byte, error) {
+	internalObj := &apps.StatefulSet{}
+	err := legacyscheme.Scheme.Convert(v1beta1Mod, internalObj, nil)
+	if err != nil {
+		return nil, err
+	}
 	switch gv {
 	case v1.SchemeGroupVersion:
 		v1Mod := &v1.StatefulSet{}
-		err := scheme.Scheme.Convert(v1beta1Mod, v1Mod, nil)
+		err := scheme.Scheme.Convert(internalObj, v1Mod, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -187,7 +205,7 @@ func create_statefulset_patch(gv schema.GroupVersion, originalObj, v1beta1Mod in
 
 	case v1beta2.SchemeGroupVersion:
 		v1beta2Mod := &v1beta2.StatefulSet{}
-		err := scheme.Scheme.Convert(v1beta1Mod, v1beta2Mod, nil)
+		err := scheme.Scheme.Convert(internalObj, v1beta2Mod, nil)
 		if err != nil {
 			return nil, err
 		}

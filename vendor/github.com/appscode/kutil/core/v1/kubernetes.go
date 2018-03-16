@@ -273,3 +273,13 @@ func EnsureOwnerReference(meta metav1.ObjectMeta, owner *core.ObjectReference) m
 	}
 	return meta
 }
+
+func RemoveOwnerReference(meta metav1.ObjectMeta, owner *core.ObjectReference) metav1.ObjectMeta {
+	for i, ref := range meta.OwnerReferences {
+		if ref.Kind == owner.Kind && ref.Name == owner.Name {
+			meta.OwnerReferences = append(meta.OwnerReferences[:i], meta.OwnerReferences[i+1:]...)
+			break
+		}
+	}
+	return meta
+}

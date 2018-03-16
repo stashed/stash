@@ -5,7 +5,11 @@ import (
 	"strings"
 
 	hookapi "github.com/appscode/kutil/admission/api"
+	apps_util "github.com/appscode/kutil/apps/v1beta1"
+	core_util "github.com/appscode/kutil/core/v1"
+	ext_util "github.com/appscode/kutil/extensions/v1beta1"
 	admissionreview "github.com/appscode/kutil/registry/admissionreview/v1beta1"
+	"github.com/appscode/stash/pkg/admission/plugin"
 	"github.com/appscode/stash/pkg/controller"
 	admission "k8s.io/api/admission/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -93,6 +97,8 @@ func (c completedConfig) New() (*StashServer, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	c.AddAdmissionHooks(ctrl)
 
 	s := &StashServer{
 		GenericAPIServer: genericServer,
@@ -223,4 +229,65 @@ func admissionHooksByGroupThenVersion(admissionHooks ...hookapi.AdmissionHook) m
 		group[gvr.Version] = append(group[gvr.Version], hook)
 	}
 	return ret
+}
+func (c *completedConfig) AddAdmissionHooks(ctrl *controller.StashController) error {
+	c.ControllerConfig.AdmissionHooks = []hookapi.AdmissionHook{
+		&plugin.CRDValidator{},
+		apps_util.NewDeploymentWebhook(
+			schema.GroupVersionResource{
+				Group:    "admission.stash.appscode.com",
+				Version:  "v1alpha1",
+				Resource: "deployments",
+			},
+			"deployment",
+			&plugin.DeploymentMutator{
+				ctrl,
+			},
+		),
+		ext_util.NewDaemonSetWebhook(
+			schema.GroupVersionResource{
+				Group:    "admission.stash.appscode.com",
+				Version:  "v1alpha1",
+				Resource: "daemonsets",
+			},
+			"daemonset",
+			&plugin.DaemonSetMutator{
+				ctrl,
+			},
+		),
+		apps_util.NewStatefulSetWebhook(
+			schema.GroupVersionResource{
+				Group:    "admission.stash.appscode.com",
+				Version:  "v1alpha1",
+				Resource: "statefulsets",
+			},
+			"statefulset",
+			&plugin.StatefulSetMutator{
+				ctrl,
+			},
+		),
+		core_util.NewReplicationControllerWebhook(
+			schema.GroupVersionResource{
+				Group:    "admission.stash.appscode.com",
+				Version:  "v1alpha1",
+				Resource: "replicationcontrollers",
+			},
+			"replicationcontroller",
+			&plugin.ReplicationControllerMutator{
+				ctrl,
+			},
+		),
+		ext_util.NewReplicaSetWebhook(
+			schema.GroupVersionResource{
+				Group:    "admission.stash.appscode.com",
+				Version:  "v1alpha1",
+				Resource: "replicasets",
+			},
+			"replicaset",
+			&plugin.ReplicaSetMutator{
+				ctrl,
+			},
+		),
+	}
+	return nil
 }

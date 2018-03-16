@@ -10,7 +10,16 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/kubernetes"
 )
+
+type MutatorOptions struct {
+	KubeClient     kubernetes.Interface
+	StashClient    cs.Interface
+	DockerRegistry string
+	StashImageTag  string
+	EnableRBAC     bool
+}
 
 func FindNewRestic(client cs.Interface, obj metav1.ObjectMeta) (*api.Restic, error) {
 	restics, err := client.StashV1alpha1().Restics(obj.Namespace).List(metav1.ListOptions{})

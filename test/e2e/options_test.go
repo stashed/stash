@@ -13,16 +13,16 @@ import (
 type E2EOptions struct {
 	*server.ControllerOptions
 
-	KubeContext      string
-	KubeConfig       string
-	CreateInitConfig bool
+	KubeContext    string
+	KubeConfig     string
+	StartAPIServer bool
 }
 
 var (
 	options = &E2EOptions{
 		ControllerOptions: server.NewControllerOptions(),
 		KubeConfig:        filepath.Join(homedir.HomeDir(), ".kube", "config"),
-		CreateInitConfig:  false,
+		StartAPIServer:    false,
 	}
 )
 
@@ -31,7 +31,7 @@ func init() {
 	options.AddGoFlags(flag.CommandLine)
 	flag.StringVar(&options.KubeConfig, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	flag.StringVar(&options.KubeContext, "kube-context", "", "Name of kube context")
-	flag.BoolVar(&options.CreateInitConfig, "init-config", options.CreateInitConfig, "create initializer config")
+	flag.BoolVar(&options.StartAPIServer, "webhook", options.StartAPIServer, "Start API server for webhook")
 	enableLogging()
 }
 

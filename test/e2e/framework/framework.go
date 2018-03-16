@@ -9,16 +9,19 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
 	"k8s.io/client-go/kubernetes"
+	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 )
 
 type Framework struct {
-	KubeClient  kubernetes.Interface
-	StashClient cs.Interface
-	namespace   string
-	CertStore   *certstore.CertStore
+	KubeClient     kubernetes.Interface
+	StashClient    cs.Interface
+	KAClient       ka.Interface
+	namespace      string
+	CertStore      *certstore.CertStore
+	WebhookEnabled bool
 }
 
-func New(kubeClient kubernetes.Interface, extClient cs.Interface) *Framework {
+func New(kubeClient kubernetes.Interface, extClient cs.Interface, kaClient ka.Interface, webhookEnabled bool) *Framework {
 	store, err := certstore.NewCertStore(afero.NewMemMapFs(), filepath.Join("", "pki"))
 	Expect(err).NotTo(HaveOccurred())
 
@@ -26,10 +29,12 @@ func New(kubeClient kubernetes.Interface, extClient cs.Interface) *Framework {
 	Expect(err).NotTo(HaveOccurred())
 
 	return &Framework{
-		KubeClient:  kubeClient,
-		StashClient: extClient,
-		namespace:   rand.WithUniqSuffix("test-stash"),
-		CertStore:   store,
+		KubeClient:     kubeClient,
+		StashClient:    extClient,
+		KAClient:       kaClient,
+		namespace:      rand.WithUniqSuffix("test-stash"),
+		CertStore:      store,
+		WebhookEnabled: webhookEnabled,
 	}
 }
 

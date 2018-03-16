@@ -12,11 +12,11 @@ const (
 	SidecarClusterRole = "stash-sidecar"
 )
 
-func (c *DeploymentMutator) getSidecarRoleBindingName(name string) string {
+func (c *MutatorOptions) getSidecarRoleBindingName(name string) string {
 	return name + "-" + SidecarClusterRole
 }
 
-func (c *DeploymentMutator) ensureSidecarRoleBinding(resource *core.ObjectReference, sa string) error {
+func (c MutatorOptions) ensureSidecarRoleBinding(resource *core.ObjectReference, sa string) error {
 	meta := metav1.ObjectMeta{
 		Namespace: resource.Namespace,
 		Name:      c.getSidecarRoleBindingName(resource.Name),
@@ -45,7 +45,7 @@ func (c *DeploymentMutator) ensureSidecarRoleBinding(resource *core.ObjectRefere
 	return err
 }
 
-func (c *DeploymentMutator) ensureSidecarRoleBindingDeleted(resource metav1.ObjectMeta) error {
+func (c *MutatorOptions) ensureSidecarRoleBindingDeleted(resource metav1.ObjectMeta) error {
 	log.Infof("Deleting RoleBinding %s/%s", resource.Namespace, c.getSidecarRoleBindingName(resource.Name))
 	return c.KubeClient.RbacV1().
 		RoleBindings(resource.Namespace).

@@ -30,7 +30,6 @@ const (
 	LocalVolumeName      = "stash-local"
 	ScratchDirVolumeName = "stash-scratchdir"
 	PodinfoVolumeName    = "stash-podinfo"
-	StashInitializerName = "stash.appscode.com"
 
 	RecoveryJobPrefix   = "stash-recovery-"
 	ScaledownCronPrefix = "stash-scaledown-cron-"
@@ -46,6 +45,10 @@ const (
 	OperationDeletePods = "delete-pods"
 	AppLabelStash       = "stash"
 	OperationScaleDown  = "scale-down"
+	ForceRestartType    = "force-restart"
+	SideCarAdded        = "sidecar-added"
+	SideCarRemoved      = "sidecar-removed"
+	BackupType          = "backup-type"
 )
 
 var (
@@ -59,7 +62,7 @@ func GetAppliedRestic(m map[string]string) (*api.Restic, error) {
 	if data == "" {
 		return nil, nil
 	}
-	obj, err := meta.UnmarshalToJSON([]byte(data), api.SchemeGroupVersion)
+	obj, err := meta.UnmarshalFromJSON([]byte(data), api.SchemeGroupVersion)
 	if err != nil {
 		return nil, err
 	}
@@ -476,20 +479,6 @@ func WorkloadExists(k8sClient kubernetes.Interface, namespace string, workload a
 		fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
 	}
 	return nil
-}
-
-func ToBeInitializedByPeer(initializers *metav1.Initializers) bool {
-	if initializers != nil && len(initializers.Pending) > 0 && initializers.Pending[0].Name != StashInitializerName {
-		return true
-	}
-	return false
-}
-
-func ToBeInitializedBySelf(initializers *metav1.Initializers) bool {
-	if initializers != nil && len(initializers.Pending) > 0 && initializers.Pending[0].Name == StashInitializerName {
-		return true
-	}
-	return false
 }
 
 func GetConfigmapLockName(workload api.LocalTypedReference) string {

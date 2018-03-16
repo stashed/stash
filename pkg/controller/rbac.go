@@ -22,12 +22,12 @@ func (c *StashController) getSidecarRoleBindingName(name string) string {
 	return name + "-" + SidecarClusterRole
 }
 
-func (c *StashController) ensureSidecarRoleBinding(resource *core.ObjectReference, sa string) error {
+func (c *StashController) EnsureSidecarRoleBinding(resource *core.ObjectReference, sa string) error {
 	meta := metav1.ObjectMeta{
 		Namespace: resource.Namespace,
 		Name:      c.getSidecarRoleBindingName(resource.Name),
 	}
-	_, _, err := rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(c.KubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
 
 		if in.Annotations == nil {
@@ -53,14 +53,14 @@ func (c *StashController) ensureSidecarRoleBinding(resource *core.ObjectReferenc
 
 func (c *StashController) ensureSidecarRoleBindingDeleted(resource metav1.ObjectMeta) error {
 	log.Infof("Deleting RoleBinding %s/%s", resource.Namespace, c.getSidecarRoleBindingName(resource.Name))
-	return c.kubeClient.RbacV1().
+	return c.KubeClient.RbacV1().
 		RoleBindings(resource.Namespace).
 		Delete(c.getSidecarRoleBindingName(resource.Name), &metav1.DeleteOptions{})
 }
 
 func (c *StashController) ensureSidecarClusterRole() error {
 	meta := metav1.ObjectMeta{Name: SidecarClusterRole}
-	_, _, err := rbac_util.CreateOrPatchClusterRole(c.kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+	_, _, err := rbac_util.CreateOrPatchClusterRole(c.KubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
@@ -126,7 +126,7 @@ func (c *StashController) ensureScaledownJoblRBAC(resource *core.ObjectReference
 		Name:      ScaledownJobRole,
 		Namespace: resource.Namespace,
 	}
-	_, _, err := rbac_util.CreateOrPatchRole(c.kubeClient, meta, func(in *rbac.Role) *rbac.Role {
+	_, _, err := rbac_util.CreateOrPatchRole(c.KubeClient, meta, func(in *rbac.Role) *rbac.Role {
 		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
 
 		if in.Labels == nil {
@@ -152,7 +152,7 @@ func (c *StashController) ensureScaledownJoblRBAC(resource *core.ObjectReference
 		Name:      resource.Name,
 		Namespace: resource.Namespace,
 	}
-	_, _, err = core_util.CreateOrPatchServiceAccount(c.kubeClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
+	_, _, err = core_util.CreateOrPatchServiceAccount(c.KubeClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
 		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
@@ -165,7 +165,7 @@ func (c *StashController) ensureScaledownJoblRBAC(resource *core.ObjectReference
 	}
 
 	// ensure role binding
-	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.KubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
 
 		if in.Labels == nil {
@@ -198,7 +198,7 @@ func (c *StashController) ensureRecoveryRBAC(resource *core.ObjectReference) err
 		Name:      resource.Name,
 		Namespace: resource.Namespace,
 	}
-	_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
+	_, _, err := core_util.CreateOrPatchServiceAccount(c.KubeClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
 		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
@@ -211,7 +211,7 @@ func (c *StashController) ensureRecoveryRBAC(resource *core.ObjectReference) err
 	}
 
 	// ensure role binding
-	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.KubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
 
 		if in.Labels == nil {

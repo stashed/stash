@@ -14,17 +14,26 @@ section_menu_id: setup
 
 # Installation Guide
 
-## Using YAML
-Stash can be installed via installer script included in the [/hack/deploy](https://github.com/appscode/stash/tree/0.7.0-rc.0/hack/deploy) folder.
+Stash operator can be installed via a script or as a Helm chart.
+
+## Using Script
+
+To install Stash in your Kubernetes cluster, run the following command:
 
 ```console
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/stash.sh \
-    | bash
+$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/stash.sh | bash
+```
+
+After successful installation, you should have a `stash-operator-***` pod running in the `kube-system` namespace.
+
+```console
+$ kubectl get pods -n kube-system | grep stash-operator
+stash-operator-846d47f489-jrb58       1/1       Running   0          48s
 ```
 
 #### Customizing Installer
 
-You can see the full list of flags available to installer using `-h` flag.
+The installer script and associated yaml files can be found in the [/hack/deploy](https://github.com/appscode/stash/tree/0.7.0-rc.0/hack/deploy) folder. You can see the full list of flags available to installer using `-h` flag.
 
 ```console
 $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/stash.sh | bash -s -- -h
@@ -42,6 +51,7 @@ options:
     --enable-admission-webhook     configure admission webhook for stash CRDs
     --enable-initializer           configure stash operator as workload initializer
     --uninstall                    uninstall stash
+    --purge                        purges stash crd objects and crds
 ```
 
 If you would like to run Stash operator pod in `master` instances, pass the `--run-on-master` flag:
