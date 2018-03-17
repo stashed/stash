@@ -2,12 +2,12 @@ package v1beta1
 
 import (
 	"bytes"
-	"encoding/json"
 	"sync"
 
 	jp "github.com/appscode/jsonpatch"
 	"github.com/appscode/kutil/admission"
 	"github.com/appscode/kutil/runtime/serializer/versioning"
+	"github.com/json-iterator/go"
 	"k8s.io/api/admission/v1beta1"
 	"k8s.io/api/apps/v1"
 	ext "k8s.io/api/extensions/v1beta1"
@@ -17,6 +17,8 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
 )
+
+var json = jsoniter.ConfigFastest
 
 type GetFunc func(namespace, name string) (runtime.Object, error)
 

@@ -9,7 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
+var json = jsoniter.ConfigFastest
 
 func GetGroupVersionKind(v interface{}) schema.GroupVersionKind {
 	return extensions.SchemeGroupVersion.WithKind(meta.GetKind(v))

@@ -9,7 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
+var json = jsoniter.ConfigFastest
 
 func GetGroupVersionKind(v interface{}) schema.GroupVersionKind {
 	return rbac.SchemeGroupVersion.WithKind(meta.GetKind(v))
