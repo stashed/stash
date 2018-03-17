@@ -1,4 +1,6 @@
-package api
+package admission
+
+import "k8s.io/apimachinery/pkg/runtime"
 
 // ResourceHandler can handle admission requests that happen to a
 // resource.
@@ -13,22 +15,22 @@ package api
 //  * OnDelete will gets the current state of object when delete request
 //      is received.
 type ResourceHandler interface {
-	OnCreate(obj interface{}) (interface{}, error)
-	OnUpdate(oldObj, newObj interface{}) (interface{}, error)
-	OnDelete(obj interface{}) error
+	OnCreate(obj runtime.Object) (runtime.Object, error)
+	OnUpdate(oldObj, newObj runtime.Object) (runtime.Object, error)
+	OnDelete(obj runtime.Object) error
 }
 
 // ResourceHandlerFuncs is an adaptor to let you easily specify as many or
 // as few of the notification functions as you want while still implementing
 // ResourceHandler.
 type ResourceHandlerFuncs struct {
-	CreateFunc func(obj interface{}) (interface{}, error)
-	UpdateFunc func(oldObj, newObj interface{}) (interface{}, error)
-	DeleteFunc func(obj interface{}) error
+	CreateFunc func(obj runtime.Object) (runtime.Object, error)
+	UpdateFunc func(oldObj, newObj runtime.Object) (runtime.Object, error)
+	DeleteFunc func(obj runtime.Object) error
 }
 
 // OnCreate calls CreateFunc if it's not nil.
-func (r ResourceHandlerFuncs) OnCreate(obj interface{}) (interface{}, error) {
+func (r ResourceHandlerFuncs) OnCreate(obj runtime.Object) (runtime.Object, error) {
 	if r.CreateFunc != nil {
 		return r.CreateFunc(obj)
 	}
@@ -36,7 +38,7 @@ func (r ResourceHandlerFuncs) OnCreate(obj interface{}) (interface{}, error) {
 }
 
 // OnUpdate calls UpdateFunc if it's not nil.
-func (r ResourceHandlerFuncs) OnUpdate(oldObj, newObj interface{}) (interface{}, error) {
+func (r ResourceHandlerFuncs) OnUpdate(oldObj, newObj runtime.Object) (runtime.Object, error) {
 	if r.UpdateFunc != nil {
 		return r.UpdateFunc(oldObj, newObj)
 	}
@@ -44,7 +46,7 @@ func (r ResourceHandlerFuncs) OnUpdate(oldObj, newObj interface{}) (interface{},
 }
 
 // OnDelete calls DeleteFunc if it's not nil.
-func (r ResourceHandlerFuncs) OnDelete(obj interface{}) error {
+func (r ResourceHandlerFuncs) OnDelete(obj runtime.Object) error {
 	if r.DeleteFunc != nil {
 		return r.DeleteFunc(obj)
 	}

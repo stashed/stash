@@ -39,7 +39,7 @@ func AssignTypeKind(v interface{}) error {
 		u.Kind = meta.GetKind(v)
 		return nil
 	}
-	return errors.New("unknown api object type")
+	return errors.New("unknown v1beta1 object type")
 }
 
 func IsOwnedByDeployment(rs *extensions.ReplicaSet) bool {

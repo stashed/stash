@@ -5,33 +5,36 @@ import (
 
 	"github.com/appscode/go/log"
 	stringz "github.com/appscode/go/strings"
+	"github.com/appscode/kutil/admission"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/util"
-	//oneliner "github.com/the-redback/go-oneliners"
 	apps "k8s.io/api/apps/v1beta1"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 type StatefulSetMutator struct {
 	Ctrl *controller.StashController
 }
 
-func (handler *StatefulSetMutator) OnCreate(obj interface{}) (interface{}, error) {
-	return handler.MutateStatefulSet(obj)
+var _ admission.ResourceHandler = &StatefulSetMutator{}
+
+func (handler *StatefulSetMutator) OnCreate(obj runtime.Object) (runtime.Object, error) {
+	return handler.mutate(obj)
 }
 
-func (handler *StatefulSetMutator) OnUpdate(oldObj, newObj interface{}) (interface{}, error) {
-	return handler.MutateStatefulSet(newObj)
+func (handler *StatefulSetMutator) OnUpdate(oldObj, newObj runtime.Object) (runtime.Object, error) {
+	return handler.mutate(newObj)
 }
 
-func (handler *StatefulSetMutator) OnDelete(obj interface{}) error {
+func (handler *StatefulSetMutator) OnDelete(obj runtime.Object) error {
 	// nothing to do
 	fmt.Println("================== OnDelete() called")
 	return nil
 }
 
-func (handler *StatefulSetMutator) MutateStatefulSet(obj interface{}) (interface{}, error) {
+func (handler *StatefulSetMutator) mutate(obj runtime.Object) (runtime.Object, error) {
 	ss := obj.(*apps.StatefulSet).DeepCopy()
 	oldRestic, err := util.GetAppliedRestic(ss.Annotations)
 	if err != nil {

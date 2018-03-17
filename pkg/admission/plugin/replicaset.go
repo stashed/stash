@@ -5,32 +5,36 @@ import (
 
 	"github.com/appscode/go/log"
 	stringz "github.com/appscode/go/strings"
+	"github.com/appscode/kutil/admission"
 	ext_util "github.com/appscode/kutil/extensions/v1beta1"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/util"
 	"k8s.io/api/core/v1"
 	extensions "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 type ReplicaSetMutator struct {
 	Ctrl *controller.StashController
 }
 
-func (handler *ReplicaSetMutator) OnCreate(obj interface{}) (interface{}, error) {
-	return handler.MutateReplicaSet(obj)
+var _ admission.ResourceHandler = &ReplicaSetMutator{}
+
+func (handler *ReplicaSetMutator) OnCreate(obj runtime.Object) (runtime.Object, error) {
+	return handler.mutate(obj)
 }
 
-func (handler *ReplicaSetMutator) OnUpdate(oldObj, newObj interface{}) (interface{}, error) {
-	return handler.MutateReplicaSet(newObj)
+func (handler *ReplicaSetMutator) OnUpdate(oldObj, newObj runtime.Object) (runtime.Object, error) {
+	return handler.mutate(newObj)
 }
 
-func (handler *ReplicaSetMutator) OnDelete(obj interface{}) error {
+func (handler *ReplicaSetMutator) OnDelete(obj runtime.Object) error {
 	// nothing to do
 	return nil
 }
 
-func (handler *ReplicaSetMutator) MutateReplicaSet(obj interface{}) (interface{}, error) {
+func (handler *ReplicaSetMutator) mutate(obj runtime.Object) (runtime.Object, error) {
 	rs := obj.(*extensions.ReplicaSet).DeepCopy()
 
 	if !ext_util.IsOwnedByDeployment(rs) {

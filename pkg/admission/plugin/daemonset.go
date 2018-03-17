@@ -4,33 +4,36 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/log"
+	stringz "github.com/appscode/go/strings"
+	"github.com/appscode/kutil/admission"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/util"
 	"k8s.io/api/core/v1"
-	//oneliner "github.com/the-redback/go-oneliners"
-	stringz "github.com/appscode/go/strings"
 	extensions "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 type DaemonSetMutator struct {
 	Ctrl *controller.StashController
 }
 
-func (handler *DaemonSetMutator) OnCreate(obj interface{}) (interface{}, error) {
-	return handler.MutateDaemonSet(obj)
+var _ admission.ResourceHandler = &DaemonSetMutator{}
+
+func (handler *DaemonSetMutator) OnCreate(obj runtime.Object) (runtime.Object, error) {
+	return handler.mutate(obj)
 }
 
-func (handler *DaemonSetMutator) OnUpdate(oldObj, newObj interface{}) (interface{}, error) {
-	return handler.MutateDaemonSet(newObj)
+func (handler *DaemonSetMutator) OnUpdate(oldObj, newObj runtime.Object) (runtime.Object, error) {
+	return handler.mutate(newObj)
 }
 
-func (handler *DaemonSetMutator) OnDelete(obj interface{}) error {
+func (handler *DaemonSetMutator) OnDelete(obj runtime.Object) error {
 	// nothing to do
 	return nil
 }
 
-func (handler *DaemonSetMutator) MutateDaemonSet(obj interface{}) (interface{}, error) {
+func (handler *DaemonSetMutator) mutate(obj runtime.Object) (runtime.Object, error) {
 	ds := obj.(*extensions.DaemonSet).DeepCopy()
 
 	oldRestic, err := util.GetAppliedRestic(ds.Annotations)

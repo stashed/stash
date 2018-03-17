@@ -5,31 +5,35 @@ import (
 
 	"github.com/appscode/go/log"
 	stringz "github.com/appscode/go/strings"
+	"github.com/appscode/kutil/admission"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/util"
 	apps "k8s.io/api/apps/v1beta1"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 type DeploymentMutator struct {
 	Ctrl *controller.StashController
 }
 
-func (handler *DeploymentMutator) OnCreate(obj interface{}) (interface{}, error) {
-	return handler.MutateDeployment(obj)
+var _ admission.ResourceHandler = &DeploymentMutator{}
+
+func (handler *DeploymentMutator) OnCreate(obj runtime.Object) (runtime.Object, error) {
+	return handler.mutate(obj)
 }
 
-func (handler *DeploymentMutator) OnUpdate(oldObj, newObj interface{}) (interface{}, error) {
-	return handler.MutateDeployment(newObj)
+func (handler *DeploymentMutator) OnUpdate(oldObj, newObj runtime.Object) (runtime.Object, error) {
+	return handler.mutate(newObj)
 }
 
-func (handler *DeploymentMutator) OnDelete(obj interface{}) error {
+func (handler *DeploymentMutator) OnDelete(obj runtime.Object) error {
 	// nothing to do
 	return nil
 }
 
-func (handler *DeploymentMutator) MutateDeployment(obj interface{}) (interface{}, error) {
+func (handler *DeploymentMutator) mutate(obj runtime.Object) (runtime.Object, error) {
 	dp := obj.(*apps.Deployment).DeepCopy()
 
 	oldRestic, err := util.GetAppliedRestic(dp.Annotations)
