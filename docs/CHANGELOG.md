@@ -1,3 +1,20 @@
+---
+title: Changelog | Stash
+description: Changelog
+menu:
+  product_stash_0.7.0-rc.0:
+    identifier: changelog-stash
+    name: Changelog
+    parent: welcome
+    weight: 10
+product_name: stash
+menu_name: product_stash_0.7.0-rc.0
+section_menu_id: welcome
+url: /products/stash/0.7.0-rc.0/welcome/changelog/
+aliases:
+  - /products/stash/0.7.0-rc.0/CHANGELOG/
+---
+
 # Change Log
 
 ## [0.7.0-rc.0](https://github.com/appscode/stash/tree/0.7.0-rc.0) (2018-02-20)
