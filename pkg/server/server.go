@@ -9,7 +9,9 @@ import (
 	"github.com/appscode/stash/pkg/admission/plugin"
 	"github.com/appscode/stash/pkg/controller"
 	admission "k8s.io/api/admission/v1beta1"
-	"k8s.io/api/apps/v1beta1"
+	apps "k8s.io/api/apps/v1beta1"
+	core "k8s.io/api/core/v1"
+	extensions "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apimachinery"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -238,7 +240,8 @@ func (c *completedConfig) AddAdmissionHooks(ctrl *controller.StashController) er
 				Resource: "deployments",
 			},
 			"deployment",
-			v1beta1.SchemeGroupVersion.WithKind("Deployment"),
+			[]string{apps.GroupName, extensions.GroupName},
+			apps.SchemeGroupVersion.WithKind("Deployment"),
 			nil,
 			&plugin.DeploymentMutator{ctrl},
 		),
@@ -249,7 +252,8 @@ func (c *completedConfig) AddAdmissionHooks(ctrl *controller.StashController) er
 				Resource: "daemonsets",
 			},
 			"daemonset",
-			v1beta1.SchemeGroupVersion.WithKind("DaemonSet"),
+			[]string{apps.GroupName, extensions.GroupName},
+			apps.SchemeGroupVersion.WithKind("DaemonSet"),
 			nil,
 			&plugin.DaemonSetMutator{ctrl},
 		),
@@ -260,7 +264,8 @@ func (c *completedConfig) AddAdmissionHooks(ctrl *controller.StashController) er
 				Resource: "statefulsets",
 			},
 			"statefulset",
-			v1beta1.SchemeGroupVersion.WithKind("StatefulSet"),
+			[]string{apps.GroupName},
+			apps.SchemeGroupVersion.WithKind("StatefulSet"),
 			nil,
 			&plugin.StatefulSetMutator{ctrl},
 		),
@@ -271,7 +276,8 @@ func (c *completedConfig) AddAdmissionHooks(ctrl *controller.StashController) er
 				Resource: "replicationcontrollers",
 			},
 			"replicationcontroller",
-			v1beta1.SchemeGroupVersion.WithKind("ReplicationController"),
+			[]string{core.GroupName},
+			apps.SchemeGroupVersion.WithKind("ReplicationController"),
 			nil,
 			&plugin.ReplicationControllerMutator{ctrl},
 		),
@@ -282,7 +288,8 @@ func (c *completedConfig) AddAdmissionHooks(ctrl *controller.StashController) er
 				Resource: "replicasets",
 			},
 			"replicaset",
-			v1beta1.SchemeGroupVersion.WithKind("ReplicaSet"),
+			[]string{apps.GroupName, extensions.GroupName},
+			apps.SchemeGroupVersion.WithKind("ReplicaSet"),
 			nil,
 			&plugin.ReplicaSetMutator{ctrl},
 		),

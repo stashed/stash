@@ -32,7 +32,6 @@ type codec struct {
 
 // NewDefaultingCodecForScheme is a convenience method for callers that are using a scheme.
 func NewDefaultingCodecForScheme(
-// TODO: I should be a scheme interface?
 	scheme *runtime.Scheme,
 	encodeVersion schema.GroupVersion,
 	decodeVersion schema.GroupVersion,

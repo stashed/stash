@@ -9,11 +9,10 @@ import (
 	"github.com/appscode/kutil/runtime/serializer/versioning"
 	"github.com/json-iterator/go"
 	"k8s.io/api/admission/v1beta1"
-	"k8s.io/api/apps/v1"
-	ext "k8s.io/api/extensions/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/rest"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
 )
@@ -30,10 +29,11 @@ type GenericWebhook struct {
 	plural   schema.GroupVersionResource
 	singular string
 
-	target  schema.GroupVersionKind
-	factory GetterFactory
-	get     GetFunc
-	handler admission.ResourceHandler
+	srcGroups sets.String
+	target    schema.GroupVersionKind
+	factory   GetterFactory
+	get       GetFunc
+	handler   admission.ResourceHandler
 
 	initialized bool
 	lock        sync.RWMutex
@@ -44,15 +44,17 @@ var _ AdmissionHook = &GenericWebhook{}
 func NewGenericWebhook(
 	plural schema.GroupVersionResource,
 	singular string,
+	srcGroups []string,
 	target schema.GroupVersionKind,
 	factory GetterFactory,
 	handler admission.ResourceHandler) *GenericWebhook {
 	return &GenericWebhook{
-		plural:   plural,
-		singular: singular,
-		target:   target,
-		factory:  factory,
-		handler:  handler,
+		plural:    plural,
+		singular:  singular,
+		srcGroups: sets.NewString(srcGroups...),
+		target:    target,
+		factory:   factory,
+		handler:   handler,
 	}
 }
 
@@ -79,7 +81,7 @@ func (h *GenericWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admission
 	if h.handler == nil ||
 		(req.Operation != v1beta1.Create && req.Operation != v1beta1.Update && req.Operation != v1beta1.Delete) ||
 		len(req.SubResource) != 0 ||
-		(req.Kind.Group != v1.GroupName && req.Kind.Group != ext.GroupName) ||
+		!h.srcGroups.Has(req.Kind.Group) ||
 		req.Kind.Kind != h.target.Kind {
 		status.Allowed = true
 		return status
