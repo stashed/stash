@@ -5,30 +5,34 @@ import (
 
 	"github.com/appscode/go/log"
 	stringz "github.com/appscode/go/strings"
+	"github.com/appscode/kutil/admission"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/util"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 type ReplicationControllerMutator struct {
 	Ctrl *controller.StashController
 }
 
-func (handler *ReplicationControllerMutator) OnCreate(obj interface{}) (interface{}, error) {
-	return handler.MutateReplicationController(obj)
+var _ admission.ResourceHandler = &ReplicationControllerMutator{}
+
+func (handler *ReplicationControllerMutator) OnCreate(obj runtime.Object) (runtime.Object, error) {
+	return handler.mutate(obj)
 }
 
-func (handler *ReplicationControllerMutator) OnUpdate(oldObj, newObj interface{}) (interface{}, error) {
-	return handler.MutateReplicationController(newObj)
+func (handler *ReplicationControllerMutator) OnUpdate(oldObj, newObj runtime.Object) (runtime.Object, error) {
+	return handler.mutate(newObj)
 }
 
-func (handler *ReplicationControllerMutator) OnDelete(obj interface{}) error {
+func (handler *ReplicationControllerMutator) OnDelete(obj runtime.Object) error {
 	// nothing to do
 	return nil
 }
 
-func (handler *ReplicationControllerMutator) MutateReplicationController(obj interface{}) (interface{}, error) {
+func (handler *ReplicationControllerMutator) mutate(obj runtime.Object) (runtime.Object, error) {
 	rc := obj.(*core.ReplicationController).DeepCopy()
 	oldRestic, err := util.GetAppliedRestic(rc.Annotations)
 	if err != nil {

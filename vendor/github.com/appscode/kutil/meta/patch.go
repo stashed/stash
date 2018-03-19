@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 )
 
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
+var json = jsoniter.ConfigFastest
 
 func CreateStrategicPatch(cur runtime.Object, mod runtime.Object, fns ...mergepatch.PreconditionFunc) ([]byte, error) {
 	curJson, err := json.Marshal(cur)

@@ -3,7 +3,7 @@ package plugin
 import (
 	"encoding/json"
 
-	hookapi "github.com/appscode/kutil/admission/api"
+	hooks "github.com/appscode/kutil/admission/v1beta1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	admission "k8s.io/api/admission/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -14,7 +14,7 @@ import (
 type CRDValidator struct {
 }
 
-var _ hookapi.AdmissionHook = &CRDValidator{}
+var _ hooks.AdmissionHook = &CRDValidator{}
 
 func (a *CRDValidator) Resource() (plural schema.GroupVersionResource, singular string) {
 	return schema.GroupVersionResource{
@@ -42,21 +42,21 @@ func (a *CRDValidator) Admit(req *admission.AdmissionRequest) *admission.Admissi
 		obj := &api.Restic{}
 		err := json.Unmarshal(req.Object.Raw, obj)
 		if err != nil {
-			return hookapi.StatusBadRequest(err)
+			return hooks.StatusBadRequest(err)
 		}
 		err = obj.IsValid()
 		if err != nil {
-			return hookapi.StatusForbidden(err)
+			return hooks.StatusForbidden(err)
 		}
 	case api.ResourceKindRecovery:
 		obj := &api.Recovery{}
 		err := json.Unmarshal(req.Object.Raw, obj)
 		if err != nil {
-			return hookapi.StatusBadRequest(err)
+			return hooks.StatusBadRequest(err)
 		}
 		err = obj.IsValid()
 		if err != nil {
-			return hookapi.StatusForbidden(err)
+			return hooks.StatusForbidden(err)
 		}
 	}
 

@@ -3,7 +3,7 @@ package controller
 import (
 	"time"
 
-	hookapi "github.com/appscode/kutil/admission/api"
+	hooks "github.com/appscode/kutil/admission/v1beta1"
 	cs "github.com/appscode/stash/client/clientset/versioned"
 	stashinformers "github.com/appscode/stash/client/informers/externalversions"
 	"github.com/appscode/stash/pkg/eventer"
@@ -34,7 +34,7 @@ type ControllerConfig struct {
 	StashClient    cs.Interface
 	KAClient       ka.Interface
 	CRDClient      crd_cs.ApiextensionsV1beta1Interface
-	AdmissionHooks []hookapi.AdmissionHook
+	AdmissionHooks []hooks.AdmissionHook
 }
 
 func NewControllerConfig(clientConfig *rest.Config) *ControllerConfig {

@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"strings"
 
-	hookapi "github.com/appscode/kutil/admission/api"
-	apps_util "github.com/appscode/kutil/apps/v1beta1"
-	core_util "github.com/appscode/kutil/core/v1"
-	ext_util "github.com/appscode/kutil/extensions/v1beta1"
+	hooks "github.com/appscode/kutil/admission/v1beta1"
 	admissionreview "github.com/appscode/kutil/registry/admissionreview/v1beta1"
 	"github.com/appscode/stash/pkg/admission/plugin"
 	"github.com/appscode/stash/pkg/controller"
 	admission "k8s.io/api/admission/v1beta1"
+	apps "k8s.io/api/apps/v1beta1"
+	core "k8s.io/api/core/v1"
+	extensions "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apimachinery"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -206,7 +206,7 @@ func appendUniqueGroupVersion(slice []schema.GroupVersion, elems ...schema.Group
 	return out
 }
 
-func postStartHookName(hook hookapi.AdmissionHook) string {
+func postStartHookName(hook hooks.AdmissionHook) string {
 	var ns []string
 	gvr, _ := hook.Resource()
 	ns = append(ns, fmt.Sprintf("admit-%s.%s.%s", gvr.Resource, gvr.Version, gvr.Group))
@@ -216,14 +216,14 @@ func postStartHookName(hook hookapi.AdmissionHook) string {
 	return strings.Join(append(ns, "init"), "-")
 }
 
-func admissionHooksByGroupThenVersion(admissionHooks ...hookapi.AdmissionHook) map[string]map[string][]hookapi.AdmissionHook {
-	ret := map[string]map[string][]hookapi.AdmissionHook{}
+func admissionHooksByGroupThenVersion(admissionHooks ...hooks.AdmissionHook) map[string]map[string][]hooks.AdmissionHook {
+	ret := map[string]map[string][]hooks.AdmissionHook{}
 	for i := range admissionHooks {
 		hook := admissionHooks[i]
 		gvr, _ := hook.Resource()
 		group, ok := ret[gvr.Group]
 		if !ok {
-			group = map[string][]hookapi.AdmissionHook{}
+			group = map[string][]hooks.AdmissionHook{}
 			ret[gvr.Group] = group
 		}
 		group[gvr.Version] = append(group[gvr.Version], hook)
@@ -231,62 +231,67 @@ func admissionHooksByGroupThenVersion(admissionHooks ...hookapi.AdmissionHook) m
 	return ret
 }
 func (c *completedConfig) AddAdmissionHooks(ctrl *controller.StashController) error {
-	c.ControllerConfig.AdmissionHooks = []hookapi.AdmissionHook{
+	c.ControllerConfig.AdmissionHooks = []hooks.AdmissionHook{
 		&plugin.CRDValidator{},
-		apps_util.NewDeploymentWebhook(
+		hooks.NewGenericWebhook(
 			schema.GroupVersionResource{
 				Group:    "admission.stash.appscode.com",
 				Version:  "v1alpha1",
 				Resource: "deployments",
 			},
 			"deployment",
-			&plugin.DeploymentMutator{
-				ctrl,
-			},
+			[]string{apps.GroupName, extensions.GroupName},
+			apps.SchemeGroupVersion.WithKind("Deployment"),
+			nil,
+			&plugin.DeploymentMutator{ctrl},
 		),
-		ext_util.NewDaemonSetWebhook(
+		hooks.NewGenericWebhook(
 			schema.GroupVersionResource{
 				Group:    "admission.stash.appscode.com",
 				Version:  "v1alpha1",
 				Resource: "daemonsets",
 			},
 			"daemonset",
-			&plugin.DaemonSetMutator{
-				ctrl,
-			},
+			[]string{apps.GroupName, extensions.GroupName},
+			apps.SchemeGroupVersion.WithKind("DaemonSet"),
+			nil,
+			&plugin.DaemonSetMutator{ctrl},
 		),
-		apps_util.NewStatefulSetWebhook(
+		hooks.NewGenericWebhook(
 			schema.GroupVersionResource{
 				Group:    "admission.stash.appscode.com",
 				Version:  "v1alpha1",
 				Resource: "statefulsets",
 			},
 			"statefulset",
-			&plugin.StatefulSetMutator{
-				ctrl,
-			},
+			[]string{apps.GroupName},
+			apps.SchemeGroupVersion.WithKind("StatefulSet"),
+			nil,
+			&plugin.StatefulSetMutator{ctrl},
 		),
-		core_util.NewReplicationControllerWebhook(
+		hooks.NewGenericWebhook(
 			schema.GroupVersionResource{
 				Group:    "admission.stash.appscode.com",
 				Version:  "v1alpha1",
 				Resource: "replicationcontrollers",
 			},
 			"replicationcontroller",
-			&plugin.ReplicationControllerMutator{
-				ctrl,
-			},
+			[]string{core.GroupName},
+			apps.SchemeGroupVersion.WithKind("ReplicationController"),
+			nil,
+			&plugin.ReplicationControllerMutator{ctrl},
 		),
-		ext_util.NewReplicaSetWebhook(
+		hooks.NewGenericWebhook(
 			schema.GroupVersionResource{
 				Group:    "admission.stash.appscode.com",
 				Version:  "v1alpha1",
 				Resource: "replicasets",
 			},
 			"replicaset",
-			&plugin.ReplicaSetMutator{
-				ctrl,
-			},
+			[]string{apps.GroupName, extensions.GroupName},
+			apps.SchemeGroupVersion.WithKind("ReplicaSet"),
+			nil,
+			&plugin.ReplicaSetMutator{ctrl},
 		),
 	}
 	return nil
