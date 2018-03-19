@@ -237,18 +237,7 @@ func (c *completedConfig) AddAdmissionHooks(ctrl *controller.StashController) er
 		ctrl.NewDaemonSetWebhook(),
 		ctrl.NewStatefulSetWebhook(),
 		ctrl.NewReplicationControllerWebhook(),
-		//hooks.NewGenericWebhook(
-		//	schema.GroupVersionResource{
-		//		Group:    "admission.stash.appscode.com",
-		//		Version:  "v1alpha1",
-		//		Resource: "replicasets",
-		//	},
-		//	"replicaset",
-		//	[]string{apps.GroupName, extensions.GroupName},
-		//	extensions.SchemeGroupVersion.WithKind("ReplicaSet"),
-		//	nil,
-		//	&plugin.ReplicaSetMutator{ctrl},
-		//),
+		ctrl.NewReplicaSetWebhook(),
 	}
 	return nil
 }
