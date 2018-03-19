@@ -1,3 +1,19 @@
+---
+title: Minio | Stash
+description: Using Stash with TLS secured Minio Server
+menu:
+  product_stash_0.7.0-rc.0:
+    identifier: minio-stash
+    name: Backup to Minio
+    parent: guides
+    weight: 45
+product_name: stash
+menu_name: product_stash_0.7.0-rc.0
+section_menu_id: guides
+---
+
+> New to Stash? Please start [here](/docs/concepts/README.md).
+
 # Using Stash with TLS secured Minio Server
 
 Minio is an open source object storage server compatible with Amazon S3 cloud storage service. You can deploy Minio server in docker container locally, in a kubernetes cluster, Microsoft Azure, GCP etc. You can find a guide for Minio server [here](https://docs.minio.io/). This tutorial will show you how to use [Stash](/docs/concepts/what-is-stash/overview.md) to backup a Kubernetes `Deployment` in a TLS secure [Minio](https://docs.minio.io/) Server. It will also show you how to recover this backed up data.
