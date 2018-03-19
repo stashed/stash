@@ -16,6 +16,7 @@ import (
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	apps "k8s.io/api/apps/v1beta1"
+	"k8s.io/api/core/v1"
 	extensions "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -28,7 +29,7 @@ import (
 func (c *StashController) NewDeploymentWebhook() hooks.AdmissionHook {
 	return hooks.NewGenericWebhook(
 		schema.GroupVersionResource{
-			Group:    "admission.stash.appscode.com",
+			Group:    "deployment.admission.stash.appscode.com",
 			Version:  "v1alpha1",
 			Resource: "deployments",
 		},
@@ -38,11 +39,13 @@ func (c *StashController) NewDeploymentWebhook() hooks.AdmissionHook {
 		nil,
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
-				return nil, nil
+				modObj,_,err:=c.MutateDeployment(obj.(*apps.Deployment))
+				return modObj, err
 
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
-				return nil, nil
+				modObj,_,err:=c.MutateDeployment(newObj.(*apps.Deployment))
+				return modObj, err
 			},
 		},
 	)
@@ -78,86 +81,84 @@ func (c *StashController) runDeploymentInjector(key string) error {
 		dp := obj.(*apps.Deployment)
 		glog.Infof("Sync/Add/Update for Deployment %s\n", dp.GetName())
 
-		oldRestic, err := util.GetAppliedRestic(dp.Annotations)
+		// MutateDeployment add or remove sidecar to Deployment when necessary
+		ModObj, modified, err := c.MutateDeployment(dp)
 		if err != nil {
 			return err
 		}
-		newRestic, err := util.FindRestic(c.RstLister, dp.ObjectMeta)
-		if err != nil {
-			log.Errorf("Error while searching Restic for Deployment %s/%s.", dp.Name, dp.Namespace)
+
+		if modified {
+			patchedObj, _, err := apps_util.PatchDeployment(c.KubeClient, dp, func(obj *apps.Deployment) *apps.Deployment {
+				return ModObj
+			})
+			if err != nil {
+				return err
+			}
+
+			err = apps_util.WaitUntilDeploymentReady(c.KubeClient, patchedObj.ObjectMeta)
 			return err
-		}
-
-		if newRestic != nil && c.EnableRBAC {
-			sa := stringz.Val(dp.Spec.Template.Spec.ServiceAccountName, "default")
-			ref, err := reference.GetReference(scheme.Scheme, dp)
-			if err != nil {
-				return err
-			}
-			err = c.EnsureSidecarRoleBinding(ref, sa)
-			if err != nil {
-				return err
-			}
-		}
-
-		if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
-			if !newRestic.Spec.Paused {
-				return c.EnsureDeploymentSidecar(dp, oldRestic, newRestic)
-			}
-		} else if oldRestic != nil && newRestic == nil {
-			return c.EnsureDeploymentSidecarDeleted(dp, oldRestic)
 		}
 	}
 	return nil
 }
 
-func (c *StashController) EnsureDeploymentSidecar(resource *apps.Deployment, old, new *api.Restic) (err error) {
-
-	if new.Spec.Backend.StorageSecretName == "" {
-		err = fmt.Errorf("missing repository secret name for Restic %s/%s", new.Namespace, new.Name)
-		return
-	}
-	_, err = c.KubeClient.CoreV1().Secrets(resource.Namespace).Get(new.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+func (c *StashController) MutateDeployment(dp *apps.Deployment) (*apps.Deployment, bool, error) {
+	oldRestic, err := util.GetAppliedRestic(dp.Annotations)
 	if err != nil {
-		return err
+		return nil, false, err
 	}
 
-	resource, _, err = apps_util.PatchDeployment(c.KubeClient, resource, func(obj *apps.Deployment) *apps.Deployment {
-		return c.DeploymentSidecarInjectionTransformerFunc(obj, old, new)
-	})
+	newRestic, err := util.FindRestic(c.RstLister, dp.ObjectMeta)
 	if err != nil {
-		return
+		log.Errorf("Error while searching Restic for Deployment %s/%s.", dp.Name, dp.Namespace)
+		return nil, false, err
 	}
 
-	err = apps_util.WaitUntilDeploymentReady(c.KubeClient, resource.ObjectMeta)
-	return err
+	if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
+		if !newRestic.Spec.Paused {
+			modObj, err := c.EnsureDeploymentSidecar(dp, oldRestic, newRestic)
+			if err != nil {
+				return nil, false, err
+			}
+			return modObj, true, nil
+		}
+	} else if oldRestic != nil && newRestic == nil {
+		modObj, err := c.EnsureDeploymentSidecarDeleted(dp, oldRestic)
+		if err != nil {
+			return nil, false, err
+		}
+		return modObj, true, nil
+	}
+
+	return dp, false, nil
 }
 
-func (c *StashController) EnsureDeploymentSidecarDeleted(resource *apps.Deployment, restic *api.Restic) (err error) {
+func (c *StashController) EnsureDeploymentSidecar(dp *apps.Deployment, oldRestic, newRestic *api.Restic) (*apps.Deployment, error) {
 	if c.EnableRBAC {
-		err = c.ensureSidecarRoleBindingDeleted(resource.ObjectMeta)
+		sa := stringz.Val(dp.Spec.Template.Spec.ServiceAccountName, "default")
+		ref, err := reference.GetReference(scheme.Scheme, dp)
 		if err != nil {
-			return
+			ref = &v1.ObjectReference{
+				Name:      dp.Name,
+				Namespace: dp.Namespace,
+			}
+		}
+		err = c.EnsureSidecarRoleBinding(ref, sa)
+		if err != nil {
+			return nil, err
 		}
 	}
 
-	resource, _, err = apps_util.PatchDeployment(c.KubeClient, resource, func(obj *apps.Deployment) *apps.Deployment {
-		objMod := c.DeploymentSidecarDeletionTransformerFunc(obj, restic)
-		return objMod
-	})
-	if err != nil {
-		return
+	if newRestic.Spec.Backend.StorageSecretName == "" {
+		err := fmt.Errorf("missing repository secret name for Restic %s/%s", newRestic.Namespace, newRestic.Name)
+		return nil, err
 	}
 
-	err = apps_util.WaitUntilDeploymentReady(c.KubeClient, resource.ObjectMeta)
+	_, err := c.KubeClient.CoreV1().Secrets(dp.Namespace).Get(newRestic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
-		return
+		return nil, err
 	}
-	util.DeleteConfigmapLock(c.KubeClient, resource.Namespace, api.LocalTypedReference{Kind: api.KindDeployment, Name: resource.Name})
-	return err
-}
 
-func (c *StashController) DeploymentSidecarInjectionTransformerFunc(obj *apps.Deployment, oldRestic, newRestic *api.Restic) *apps.Deployment {
 	image := docker.Docker{
 		Registry: c.DockerRegistry,
 		Image:    docker.ImageStash,
@@ -166,33 +167,33 @@ func (c *StashController) DeploymentSidecarInjectionTransformerFunc(obj *apps.De
 
 	workload := api.LocalTypedReference{
 		Kind: api.KindDeployment,
-		Name: obj.Name,
+		Name: dp.Name,
 	}
 
 	if newRestic.Spec.Type == api.BackupOffline {
-		obj.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(
-			obj.Spec.Template.Spec.InitContainers,
+		dp.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(
+			dp.Spec.Template.Spec.InitContainers,
 			util.NewInitContainer(newRestic, workload, image, c.EnableRBAC),
 		)
 	} else {
-		obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(
-			obj.Spec.Template.Spec.Containers,
+		dp.Spec.Template.Spec.Containers = core_util.UpsertContainer(
+			dp.Spec.Template.Spec.Containers,
 			util.NewSidecarContainer(newRestic, workload, image),
 		)
 	}
 
 	// keep existing image pull secrets
-	obj.Spec.Template.Spec.ImagePullSecrets = core_util.MergeLocalObjectReferences(
-		obj.Spec.Template.Spec.ImagePullSecrets,
+	dp.Spec.Template.Spec.ImagePullSecrets = core_util.MergeLocalObjectReferences(
+		dp.Spec.Template.Spec.ImagePullSecrets,
 		newRestic.Spec.ImagePullSecrets,
 	)
 
-	obj.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(obj.Spec.Template.Spec.Volumes)
-	obj.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(obj.Spec.Template.Spec.Volumes)
-	obj.Spec.Template.Spec.Volumes = util.MergeLocalVolume(obj.Spec.Template.Spec.Volumes, oldRestic, newRestic)
+	dp.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(dp.Spec.Template.Spec.Volumes)
+	dp.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(dp.Spec.Template.Spec.Volumes)
+	dp.Spec.Template.Spec.Volumes = util.MergeLocalVolume(dp.Spec.Template.Spec.Volumes, oldRestic, newRestic)
 
-	if obj.Annotations == nil {
-		obj.Annotations = make(map[string]string)
+	if dp.Annotations == nil {
+		dp.Annotations = make(map[string]string)
 	}
 	r := &api.Restic{
 		TypeMeta: metav1.TypeMeta{
@@ -203,13 +204,20 @@ func (c *StashController) DeploymentSidecarInjectionTransformerFunc(obj *apps.De
 		Spec:       newRestic.Spec,
 	}
 	data, _ := meta.MarshalToJson(r, api.SchemeGroupVersion)
-	obj.Annotations[api.LastAppliedConfiguration] = string(data)
-	obj.Annotations[api.VersionTag] = c.StashImageTag
+	dp.Annotations[api.LastAppliedConfiguration] = string(data)
+	dp.Annotations[api.VersionTag] = c.StashImageTag
 
-	return obj
+	return dp, nil
 }
 
-func (c *StashController) DeploymentSidecarDeletionTransformerFunc(obj *apps.Deployment, restic *api.Restic) *apps.Deployment {
+func (c *StashController) EnsureDeploymentSidecarDeleted(obj *apps.Deployment, restic *api.Restic) (*apps.Deployment, error) {
+	if c.EnableRBAC {
+		err := c.ensureSidecarRoleBindingDeleted(obj.ObjectMeta)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	if restic.Spec.Type == api.BackupOffline {
 		obj.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.InitContainers, util.StashContainer)
 	} else {
@@ -227,6 +235,9 @@ func (c *StashController) DeploymentSidecarDeletionTransformerFunc(obj *apps.Dep
 		delete(obj.Annotations, api.LastAppliedConfiguration)
 		delete(obj.Annotations, api.VersionTag)
 	}
-
-	return obj
+	err := util.DeleteConfigmapLock(c.KubeClient, obj.Namespace, api.LocalTypedReference{Kind: api.KindDeployment, Name: obj.Name})
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
 }

@@ -30,7 +30,6 @@ func (handler *StatefulSetMutator) OnUpdate(oldObj, newObj runtime.Object) (runt
 
 func (handler *StatefulSetMutator) OnDelete(obj runtime.Object) error {
 	// nothing to do
-	fmt.Println("================== OnDelete() called")
 	return nil
 }
 
