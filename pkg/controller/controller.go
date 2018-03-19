@@ -119,14 +119,9 @@ func (c *StashController) RunInformers(stopCh <-chan struct{}) {
 	c.rcQueue.Run(stopCh)
 	c.rsQueue.Run(stopCh)
 	c.jobQueue.Run(stopCh)
-
-	<-stopCh
-	glog.Info("Stopping Stash controller")
 }
 
-func (c *StashController) Run(stopCh <-chan struct{}) error {
-	go c.RunInformers(stopCh)
-
+func (c *StashController) RunOpsServer(stopCh <-chan struct{}) error {
 	m := pat.New()
 	m.Get("/metrics", promhttp.Handler())
 	http.Handle("/", m)

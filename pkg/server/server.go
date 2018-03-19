@@ -58,7 +58,10 @@ type StashServer struct {
 }
 
 func (op *StashServer) Run(stopCh <-chan struct{}) error {
-	go op.Controller.Run(stopCh)
+	// sync cache
+	op.Controller.RunInformers(stopCh)
+
+	go op.Controller.RunOpsServer(stopCh)
 	return op.GenericAPIServer.PrepareRun().Run(stopCh)
 }
 
@@ -233,18 +236,7 @@ func admissionHooksByGroupThenVersion(admissionHooks ...hooks.AdmissionHook) map
 func (c *completedConfig) AddAdmissionHooks(ctrl *controller.StashController) error {
 	c.ControllerConfig.AdmissionHooks = []hooks.AdmissionHook{
 		&plugin.CRDValidator{},
-		hooks.NewGenericWebhook(
-			schema.GroupVersionResource{
-				Group:    "admission.stash.appscode.com",
-				Version:  "v1alpha1",
-				Resource: "deployments",
-			},
-			"deployment",
-			[]string{apps.GroupName, extensions.GroupName},
-			apps.SchemeGroupVersion.WithKind("Deployment"),
-			nil,
-			&plugin.DeploymentMutator{ctrl},
-		),
+		ctrl.NewDeploymentWebhook(),
 		hooks.NewGenericWebhook(
 			schema.GroupVersionResource{
 				Group:    "admission.stash.appscode.com",

@@ -5,6 +5,8 @@ import (
 
 	"github.com/appscode/go/log"
 	stringz "github.com/appscode/go/strings"
+	"github.com/appscode/kutil/admission"
+	hooks "github.com/appscode/kutil/admission/v1beta1"
 	apps_util "github.com/appscode/kutil/apps/v1beta1"
 	core_util "github.com/appscode/kutil/core/v1"
 	"github.com/appscode/kutil/meta"
@@ -14,11 +16,37 @@ import (
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	apps "k8s.io/api/apps/v1beta1"
+	extensions "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/reference"
 )
+
+func (c *StashController) NewDeploymentWebhook() hooks.AdmissionHook {
+	return hooks.NewGenericWebhook(
+		schema.GroupVersionResource{
+			Group:    "admission.stash.appscode.com",
+			Version:  "v1alpha1",
+			Resource: "deployments",
+		},
+		"deployment",
+		[]string{apps.GroupName, extensions.GroupName},
+		apps.SchemeGroupVersion.WithKind("Deployment"),
+		nil,
+		&admission.ResourceHandlerFuncs{
+			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
+				return nil, nil
+
+			},
+			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
+				return nil, nil
+			},
+		},
+	)
+}
 
 func (c *StashController) initDeploymentWatcher() {
 	c.dpInformer = c.kubeInformerFactory.Apps().V1beta1().Deployments().Informer()
