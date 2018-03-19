@@ -7,23 +7,13 @@ import (
 	jp "github.com/appscode/jsonpatch"
 	"github.com/appscode/kutil/admission"
 	"github.com/appscode/kutil/runtime/serializer/versioning"
-	"github.com/json-iterator/go"
 	"k8s.io/api/admission/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/rest"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
 )
-
-var json = jsoniter.ConfigFastest
-
-type GetFunc func(namespace, name string) (runtime.Object, error)
-
-type GetterFactory interface {
-	New(config *rest.Config) (GetFunc, error)
-}
 
 type GenericWebhook struct {
 	plural   schema.GroupVersionResource
