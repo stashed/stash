@@ -2,7 +2,6 @@ package v1beta1
 
 import (
 	"bytes"
-	"fmt"
 	"sync"
 
 	jp "github.com/appscode/jsonpatch"
@@ -11,14 +10,10 @@ import (
 	workload "github.com/appscode/kutil/workload/v1"
 	"k8s.io/api/admission/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
-	appsv1beta1 "k8s.io/api/apps/v1beta1"
-	appsv1beta2 "k8s.io/api/apps/v1beta2"
 	batchv1 "k8s.io/api/batch/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	core "k8s.io/api/core/v1"
 	extensions "k8s.io/api/extensions/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/rest"
@@ -118,7 +113,7 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 		}
 		obj.GetObjectKind().SetGroupVersionKind(*kind)
 		legacyscheme.Scheme.Default(obj)
-		w, err := h.convertToWorkload(obj)
+		w, err := workload.ConvertToWorkload(obj)
 		if err != nil {
 			return StatusBadRequest(err)
 		}
@@ -127,9 +122,13 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 		if err != nil {
 			return StatusForbidden(err)
 		} else if mod != nil {
-			err = h.applyWorkload(obj, mod.(*workload.Workload))
-			if err != nil {
-				return StatusForbidden(err)
+			if w := mod.(*workload.Workload); w.Object == nil {
+				err = workload.ApplyWorkload(obj, w)
+				if err != nil {
+					return StatusForbidden(err)
+				}
+			} else {
+				obj = w.Object
 			}
 
 			var buf bytes.Buffer
@@ -156,7 +155,7 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 		}
 		obj.GetObjectKind().SetGroupVersionKind(*kind)
 		legacyscheme.Scheme.Default(obj)
-		w, err := h.convertToWorkload(obj)
+		w, err := workload.ConvertToWorkload(obj)
 		if err != nil {
 			return StatusBadRequest(err)
 		}
@@ -167,7 +166,7 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 		}
 		oldObj.GetObjectKind().SetGroupVersionKind(*kind)
 		legacyscheme.Scheme.Default(oldObj)
-		ow, err := h.convertToWorkload(oldObj)
+		ow, err := workload.ConvertToWorkload(oldObj)
 		if err != nil {
 			return StatusBadRequest(err)
 		}
@@ -176,9 +175,13 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 		if err != nil {
 			return StatusForbidden(err)
 		} else if mod != nil {
-			err = h.applyWorkload(obj, mod.(*workload.Workload))
-			if err != nil {
-				return StatusForbidden(err)
+			if w := mod.(*workload.Workload); w.Object == nil {
+				err = workload.ApplyWorkload(obj, w)
+				if err != nil {
+					return StatusForbidden(err)
+				}
+			} else {
+				obj = w.Object
 			}
 
 			var buf bytes.Buffer
@@ -202,125 +205,4 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 
 	status.Allowed = true
 	return status
-}
-
-// ref: https://github.com/kubernetes/kubernetes/blob/4f083dee54539b0ca24ddc55d53921f5c2efc0b9/pkg/kubectl/cmd/util/factory_client_access.go#L221
-func (h *WorkloadWebhook) convertToWorkload(obj runtime.Object) (*workload.Workload, error) {
-	switch t := obj.(type) {
-	case *core.Pod:
-		return workload.New(t.TypeMeta, t.ObjectMeta, t.Spec), nil
-		// ReplicationController
-	case *core.ReplicationController:
-		if t.Spec.Template == nil {
-			t.Spec.Template = &core.PodTemplateSpec{}
-		}
-		return workload.New(t.TypeMeta, t.ObjectMeta, t.Spec.Template.Spec), nil
-		// Deployment
-	case *extensions.Deployment:
-		return workload.New(t.TypeMeta, t.ObjectMeta, t.Spec.Template.Spec), nil
-	case *appsv1beta1.Deployment:
-		return workload.New(t.TypeMeta, t.ObjectMeta, t.Spec.Template.Spec), nil
-	case *appsv1beta2.Deployment:
-		return workload.New(t.TypeMeta, t.ObjectMeta, t.Spec.Template.Spec), nil
-	case *appsv1.Deployment:
-		return workload.New(t.TypeMeta, t.ObjectMeta, t.Spec.Template.Spec), nil
-		// DaemonSet
-	case *extensions.DaemonSet:
-		return workload.New(t.TypeMeta, t.ObjectMeta, t.Spec.Template.Spec), nil
-	case *appsv1beta2.DaemonSet:
-		return workload.New(t.TypeMeta, t.ObjectMeta, t.Spec.Template.Spec), nil
-	case *appsv1.DaemonSet:
-		return workload.New(t.TypeMeta, t.ObjectMeta, t.Spec.Template.Spec), nil
-		// ReplicaSet
-	case *extensions.ReplicaSet:
-		return workload.New(t.TypeMeta, t.ObjectMeta, t.Spec.Template.Spec), nil
-	case *appsv1beta2.ReplicaSet:
-		return workload.New(t.TypeMeta, t.ObjectMeta, t.Spec.Template.Spec), nil
-	case *appsv1.ReplicaSet:
-		return workload.New(t.TypeMeta, t.ObjectMeta, t.Spec.Template.Spec), nil
-		// StatefulSet
-	case *appsv1beta1.StatefulSet:
-		return workload.New(t.TypeMeta, t.ObjectMeta, t.Spec.Template.Spec), nil
-	case *appsv1beta2.StatefulSet:
-		return workload.New(t.TypeMeta, t.ObjectMeta, t.Spec.Template.Spec), nil
-	case *appsv1.StatefulSet:
-		return workload.New(t.TypeMeta, t.ObjectMeta, t.Spec.Template.Spec), nil
-		// Job
-	case *batchv1.Job:
-		return workload.New(t.TypeMeta, t.ObjectMeta, t.Spec.Template.Spec), nil
-		// CronJob
-	case *batchv1beta1.CronJob:
-		return workload.New(t.TypeMeta, t.ObjectMeta, t.Spec.JobTemplate.Spec.Template.Spec), nil
-	default:
-		return nil, fmt.Errorf("the object is not a pod or does not have a pod template")
-	}
-}
-
-func (h *WorkloadWebhook) applyWorkload(obj runtime.Object, w *workload.Workload) error {
-	switch t := obj.(type) {
-	case *core.Pod:
-		t.ObjectMeta = w.ObjectMeta
-		t.Spec = w.Spec
-		// ReplicationController
-	case *core.ReplicationController:
-		if t.Spec.Template == nil {
-			t.Spec.Template = &core.PodTemplateSpec{}
-		}
-		t.ObjectMeta = w.ObjectMeta
-		t.Spec.Template.Spec = w.Spec
-		// Deployment
-	case *extensions.Deployment:
-		t.ObjectMeta = w.ObjectMeta
-		t.Spec.Template.Spec = w.Spec
-	case *appsv1beta1.Deployment:
-		t.ObjectMeta = w.ObjectMeta
-		t.Spec.Template.Spec = w.Spec
-	case *appsv1beta2.Deployment:
-		t.ObjectMeta = w.ObjectMeta
-		t.Spec.Template.Spec = w.Spec
-	case *appsv1.Deployment:
-		t.ObjectMeta = w.ObjectMeta
-		t.Spec.Template.Spec = w.Spec
-		// DaemonSet
-	case *extensions.DaemonSet:
-		t.ObjectMeta = w.ObjectMeta
-		t.Spec.Template.Spec = w.Spec
-	case *appsv1beta2.DaemonSet:
-		t.ObjectMeta = w.ObjectMeta
-		t.Spec.Template.Spec = w.Spec
-	case *appsv1.DaemonSet:
-		t.ObjectMeta = w.ObjectMeta
-		t.Spec.Template.Spec = w.Spec
-		// ReplicaSet
-	case *extensions.ReplicaSet:
-		t.ObjectMeta = w.ObjectMeta
-		t.Spec.Template.Spec = w.Spec
-	case *appsv1beta2.ReplicaSet:
-		t.ObjectMeta = w.ObjectMeta
-		t.Spec.Template.Spec = w.Spec
-	case *appsv1.ReplicaSet:
-		t.ObjectMeta = w.ObjectMeta
-		t.Spec.Template.Spec = w.Spec
-		// StatefulSet
-	case *appsv1beta1.StatefulSet:
-		t.ObjectMeta = w.ObjectMeta
-		t.Spec.Template.Spec = w.Spec
-	case *appsv1beta2.StatefulSet:
-		t.ObjectMeta = w.ObjectMeta
-		t.Spec.Template.Spec = w.Spec
-	case *appsv1.StatefulSet:
-		t.ObjectMeta = w.ObjectMeta
-		t.Spec.Template.Spec = w.Spec
-		// Job
-	case *batchv1.Job:
-		t.ObjectMeta = w.ObjectMeta
-		t.Spec.Template.Spec = w.Spec
-		// CronJob
-	case *batchv1beta1.CronJob:
-		t.ObjectMeta = w.ObjectMeta
-		t.Spec.JobTemplate.Spec.Template.Spec = w.Spec
-	default:
-		return fmt.Errorf("the object is not a pod or does not have a pod template")
-	}
-	return nil
 }

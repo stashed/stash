@@ -30,6 +30,11 @@ func (in *Workload) DeepCopyInto(out *Workload) {
 	out.TypeMeta = in.TypeMeta
 	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
 	in.Spec.DeepCopyInto(&out.Spec)
+	if in.Object == nil {
+		out.Object = nil
+	} else {
+		out.Object = in.Object.DeepCopyObject()
+	}
 	return
 }
 
