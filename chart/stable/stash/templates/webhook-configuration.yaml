@@ -1,18 +1,21 @@
-# register to intercept stash CRD creates / updates
+{{- if .Values.apiserver.enableAdmissionWebhook }}
 apiVersion: admissionregistration.k8s.io/v1beta1
 kind: ValidatingWebhookConfiguration
 metadata:
   name: admission.stash.appscode.com
   labels:
-    app: test-stash
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    app: "{{ template "stash.name" . }}"
+    heritage: "{{ .Release.Service }}"
+    release: "{{ .Release.Name }}"
 webhooks:
-- name: admission.stash.appscode.com
+- name: restic.admission.stash.appscode.com
   clientConfig:
     service:
       namespace: default
       name: kubernetes
-      path: /apis/admission.stash.appscode.com/v1alpha1/admissionreviews
-    caBundle: ${KUBE_CA}
+      path: /apis/admission.stash.appscode.com/v1alpha1/restics
+    caBundle: {{ b64enc .Values.apiserver.ca }}
   rules:
   - operations:
     - CREATE
@@ -22,81 +25,100 @@ webhooks:
     apiVersions:
     - "*"
     resources:
-    - "*"
+    - restics
   failurePolicy: Fail
-
+- name: recovery.admission.stash.appscode.com
+  clientConfig:
+    service:
+      namespace: default
+      name: kubernetes
+      path: /apis/admission.stash.appscode.com/v1alpha1/recoveries
+    caBundle: {{ b64enc .Values.apiserver.ca }}
+  rules:
+  - operations:
+    - CREATE
+    - UPDATE
+    apiGroups:
+    - stash.appscode.com
+    apiVersions:
+    - "*"
+    resources:
+    - recoveries
+  failurePolicy: Fail
 ---
-# mutating webhook for deployment
 apiVersion: admissionregistration.k8s.io/v1beta1
 kind: MutatingWebhookConfiguration
 metadata:
   name: admission.stash.appscode.com
   labels:
-    app: test-stash
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    app: "{{ template "stash.name" . }}"
+    heritage: "{{ .Release.Service }}"
+    release: "{{ .Release.Name }}"
 webhooks:
-- name: admission.stash.appscode.com
+- name: deployment.admission.stash.appscode.com
   clientConfig:
     service:
       namespace: default
       name: kubernetes
       path: /apis/admission.stash.appscode.com/v1alpha1/deployments
-    caBundle: ${KUBE_CA}
+    caBundle: {{ b64enc .Values.apiserver.ca }}
   rules:
   - operations:
     - CREATE
     - UPDATE
     apiGroups:
-    - "apps"
-    - "extensions"
+    - apps
+    - extensions
     apiVersions:
     - "*"
     resources:
-    - "deployments"
+    - deployments
   failurePolicy: Fail
-- name: admission.stash.appscode.com
+- name: daemonset.admission.stash.appscode.com
   clientConfig:
     service:
       namespace: default
       name: kubernetes
       path: /apis/admission.stash.appscode.com/v1alpha1/daemonsets
-    caBundle: ${KUBE_CA}
+    caBundle: {{ b64enc .Values.apiserver.ca }}
   rules:
   - operations:
     - CREATE
     - UPDATE
     apiGroups:
-    - "apps"
-    - "extensions"
+    - apps
+    - extensions
     apiVersions:
     - "*"
     resources:
-    - "daemonsets"
+    - daemonsets
   failurePolicy: Fail
-- name: admission.stash.appscode.com
+- name: statefulset.admission.stash.appscode.com
   clientConfig:
     service:
       namespace: default
       name: kubernetes
       path: /apis/admission.stash.appscode.com/v1alpha1/statefulsets
-    caBundle: ${KUBE_CA}
+    caBundle: {{ b64enc .Values.apiserver.ca }}
   rules:
   - operations:
     - CREATE
     - UPDATE
     apiGroups:
-    - "apps"
+    - apps
     apiVersions:
     - "*"
     resources:
-    - "statefulsets"
+    - statefulsets
   failurePolicy: Fail
-- name: admission.stash.appscode.com
+- name: replicationcontroller.admission.stash.appscode.com
   clientConfig:
     service:
       namespace: default
       name: kubernetes
       path: /apis/admission.stash.appscode.com/v1alpha1/replicationcontrollers
-    caBundle: ${KUBE_CA}
+    caBundle: {{ b64enc .Values.apiserver.ca }}
   rules:
   - operations:
     - CREATE
@@ -106,72 +128,25 @@ webhooks:
     apiVersions:
     - "*"
     resources:
-    - "replicationcontrollers"
+    - replicationcontrollers
   failurePolicy: Fail
-- name: admission.stash.appscode.com
+- name: replicaset.admission.stash.appscode.com
   clientConfig:
     service:
       namespace: default
       name: kubernetes
       path: /apis/admission.stash.appscode.com/v1alpha1/replicasets
-    caBundle: ${KUBE_CA}
+    caBundle: {{ b64enc .Values.apiserver.ca }}
   rules:
   - operations:
     - CREATE
     - UPDATE
     apiGroups:
-    - "apps"
-    - "extensions"
+    - apps
+    - extensions
     apiVersions:
     - "*"
     resources:
-    - "replicasets"
+    - replicasets
   failurePolicy: Fail
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: stash-local-apiserver
-  namespace: ${STASH_NAMESPACE}
-spec:
-  ports:
-  - name: api
-    port: 443
-    protocol: TCP
-    targetPort: 8443
-  type: ClusterIP
----
-# To get to the host machine from the VM,
-# the IP is 10.0.2.2 (by convention)
-# ref: https://stackoverflow.com/questions/9537751/virtualbox-port-forward-from-guest-to-host
-apiVersion: v1
-kind: Endpoints
-metadata:
-  name: stash-local-apiserver
-  namespace: ${STASH_NAMESPACE}
-subsets:
-- addresses:
-  # list all external ips for this service
-  - ip: 10.0.2.2
-  ports:
-  - name: api
-    port: 8443
-    protocol: TCP
----
-# register as aggregated apiserver
-apiVersion: apiregistration.k8s.io/v1beta1
-kind: APIService
-metadata:
-  name: v1alpha1.admission.stash.appscode.com
-  labels:
-    app: test-stash
-spec:
-  insecureSkipTLSVerify: true
-  group: admission.stash.appscode.com
-  groupPriorityMinimum: 1000
-  versionPriority: 15
-  service:
-    name: stash-local-apiserver
-    namespace: ${STASH_NAMESPACE}
-
-  version: v1alpha1
+{{ end }}

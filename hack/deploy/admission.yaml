@@ -6,12 +6,12 @@ metadata:
   labels:
     app: stash
 webhooks:
-- name: admission.stash.appscode.com
+- name: restic.admission.stash.appscode.com
   clientConfig:
     service:
       namespace: default
       name: kubernetes
-      path: /apis/admission.stash.appscode.com/v1alpha1/admissionreviews
+      path: /apis/admission.stash.appscode.com/v1alpha1/restics
     caBundle: ${KUBE_CA}
   rules:
   - operations:
@@ -22,9 +22,26 @@ webhooks:
     apiVersions:
     - "*"
     resources:
-    - "*"
+    - restics
   failurePolicy: Fail
-
+- name: recovery.admission.stash.appscode.com
+  clientConfig:
+    service:
+      namespace: default
+      name: kubernetes
+      path: /apis/admission.stash.appscode.com/v1alpha1/recoveries
+    caBundle: ${KUBE_CA}
+  rules:
+  - operations:
+    - CREATE
+    - UPDATE
+    apiGroups:
+    - stash.appscode.com
+    apiVersions:
+    - "*"
+    resources:
+    - recoveries
+  failurePolicy: Fail
 ---
 # mutating webhook for deployment
 apiVersion: admissionregistration.k8s.io/v1beta1
@@ -34,7 +51,7 @@ metadata:
   labels:
     app: stash
 webhooks:
-- name: admission.stash.appscode.com
+- name: deployment.admission.stash.appscode.com
   clientConfig:
     service:
       namespace: default
@@ -46,14 +63,14 @@ webhooks:
     - CREATE
     - UPDATE
     apiGroups:
-    - "apps"
-    - "extensions"
+    - apps
+    - extensions
     apiVersions:
     - "*"
     resources:
-    - "deployments"
+    - deployments
   failurePolicy: Fail
-- name: admission.stash.appscode.com
+- name: daemonset.admission.stash.appscode.com
   clientConfig:
     service:
       namespace: default
@@ -65,14 +82,14 @@ webhooks:
     - CREATE
     - UPDATE
     apiGroups:
-    - "apps"
-    - "extensions"
+    - apps
+    - extensions
     apiVersions:
     - "*"
     resources:
-    - "daemonsets"
+    - daemonsets
   failurePolicy: Fail
-- name: admission.stash.appscode.com
+- name: statefulset.admission.stash.appscode.com
   clientConfig:
     service:
       namespace: default
@@ -84,13 +101,13 @@ webhooks:
     - CREATE
     - UPDATE
     apiGroups:
-    - "apps"
+    - apps
     apiVersions:
     - "*"
     resources:
-    - "statefulsets"
+    - statefulsets
   failurePolicy: Fail
-- name: admission.stash.appscode.com
+- name: replicationcontroller.admission.stash.appscode.com
   clientConfig:
     service:
       namespace: default
@@ -106,9 +123,9 @@ webhooks:
     apiVersions:
     - "*"
     resources:
-    - "replicationcontrollers"
+    - replicationcontrollers
   failurePolicy: Fail
-- name: admission.stash.appscode.com
+- name: replicaset.admission.stash.appscode.com
   clientConfig:
     service:
       namespace: default
@@ -120,10 +137,10 @@ webhooks:
     - CREATE
     - UPDATE
     apiGroups:
-    - "apps"
-    - "extensions"
+    - apps
+    - extensions
     apiVersions:
     - "*"
     resources:
-    - "replicasets"
+    - replicasets
   failurePolicy: Fail
