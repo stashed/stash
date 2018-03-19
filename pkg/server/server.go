@@ -236,18 +236,7 @@ func (c *completedConfig) AddAdmissionHooks(ctrl *controller.StashController) er
 		ctrl.NewDeploymentWebhook(),
 		ctrl.NewDaemonSetWebhook(),
 		ctrl.NewStatefulSetWebhook(),
-		//hooks.NewGenericWebhook(
-		//	schema.GroupVersionResource{
-		//		Group:    "admission.stash.appscode.com",
-		//		Version:  "v1alpha1",
-		//		Resource: "replicationcontrollers",
-		//	},
-		//	"replicationcontroller",
-		//	[]string{core.GroupName},
-		//	core.SchemeGroupVersion.WithKind("ReplicationController"),
-		//	nil,
-		//	&plugin.ReplicationControllerMutator{ctrl},
-		//),
+		ctrl.NewReplicationControllerWebhook(),
 		//hooks.NewGenericWebhook(
 		//	schema.GroupVersionResource{
 		//		Group:    "admission.stash.appscode.com",

@@ -29,7 +29,7 @@ import (
 func (c *StashController) NewDeploymentWebhook() hooks.AdmissionHook {
 	return hooks.NewGenericWebhook(
 		schema.GroupVersionResource{
-			Group:    "deployment.admission.stash.appscode.com",
+			Group:    "admission.stash.appscode.com",
 			Version:  "v1alpha1",
 			Resource: "deployments",
 		},
@@ -95,8 +95,7 @@ func (c *StashController) runDeploymentInjector(key string) error {
 				return err
 			}
 
-			err = apps_util.WaitUntilDeploymentReady(c.KubeClient, patchedObj.ObjectMeta)
-			return err
+			return apps_util.WaitUntilDeploymentReady(c.KubeClient, patchedObj.ObjectMeta)
 		}
 	}
 	return nil

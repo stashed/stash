@@ -5,6 +5,8 @@ import (
 
 	"github.com/appscode/go/log"
 	stringz "github.com/appscode/go/strings"
+	"github.com/appscode/kutil/admission"
+	hooks "github.com/appscode/kutil/admission/v1beta1"
 	core_util "github.com/appscode/kutil/core/v1"
 	"github.com/appscode/kutil/meta"
 	"github.com/appscode/kutil/tools/queue"
@@ -14,10 +16,37 @@ import (
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/reference"
 )
+
+func (c *StashController) NewReplicationControllerWebhook() hooks.AdmissionHook {
+	return hooks.NewGenericWebhook(
+		schema.GroupVersionResource{
+			Group:    "admission.stash.appscode.com",
+			Version:  "v1alpha1",
+			Resource: "replicationcontrollers",
+		},
+		"replicationcontroller",
+		[]string{core.GroupName},
+		core.SchemeGroupVersion.WithKind("ReplicationController"),
+		nil,
+		&admission.ResourceHandlerFuncs{
+			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
+				modObj, _, err := c.mutateReplicationController(obj.(*core.ReplicationController))
+				return modObj, err
+
+			},
+			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
+				modObj, _, err := c.mutateReplicationController(newObj.(*core.ReplicationController))
+				return modObj, err
+			},
+		},
+	)
+}
 
 func (c *StashController) initRCWatcher() {
 	c.rcInformer = c.kubeInformerFactory.Core().V1().ReplicationControllers().Informer()
@@ -49,102 +78,86 @@ func (c *StashController) runRCInjector(key string) error {
 		rc := obj.(*core.ReplicationController)
 		glog.Infof("Sync/Add/Update for ReplicationController %s\n", rc.GetName())
 
-		oldRestic, err := util.GetAppliedRestic(rc.Annotations)
+		modObj, modified, err := c.mutateReplicationController(rc.DeepCopy())
 		if err != nil {
 			return err
 		}
-		newRestic, err := util.FindRestic(c.RstLister, rc.ObjectMeta)
-		if err != nil {
-			log.Errorf("Error while searching Restic for ReplicationController %s/%s.", rc.Name, rc.Namespace)
-			return err
-		}
 
-		if newRestic != nil && c.EnableRBAC {
-			sa := stringz.Val(rc.Spec.Template.Spec.ServiceAccountName, "default")
-			ref, err := reference.GetReference(scheme.Scheme, rc)
-			if err != nil {
-				return err
-			}
-			err = c.ensureSidecarRoleBinding(ref, sa)
+		patchedObj := &core.ReplicationController{}
+		if modified {
+			patchedObj, _, err = core_util.PatchRC(c.KubeClient, rc, func(obj *core.ReplicationController) *core.ReplicationController {
+				return modObj
+			})
 			if err != nil {
 				return err
 			}
 		}
 
-		// If mutated by webhook we may need to force restart
-		if restartType := util.GetString(rc.Annotations, util.ForceRestartType); restartType != "" {
-			err := c.ForceRestartRCPods(rc, restartType, api.BackupType(util.GetString(rc.Annotations, util.BackupType)))
+		// ReplicationController does not have RollingUpdate strategy. We must delete old pods manually to get patched state.
+		if restartType := util.GetString(patchedObj.Annotations, util.ForceRestartType); restartType != "" {
+			err := c.forceRestartRCPods(patchedObj, restartType, api.BackupType(util.GetString(patchedObj.Annotations, util.BackupType)))
 			if err != nil {
 				return err
 			}
-		}
-
-		if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
-			if !newRestic.Spec.Paused {
-				return c.EnsureReplicationControllerSidecar(rc, oldRestic, newRestic)
-			}
-		} else if oldRestic != nil && newRestic == nil {
-			return c.EnsureReplicationControllerSidecarDeleted(rc, oldRestic)
+			return core_util.WaitUntilRCReady(c.KubeClient, patchedObj.ObjectMeta)
 		}
 	}
 	return nil
 }
 
-func (c *StashController) EnsureReplicationControllerSidecar(resource *core.ReplicationController, old, new *api.Restic) (err error) {
-
-	if new.Spec.Backend.StorageSecretName == "" {
-		err = fmt.Errorf("missing repository secret name for Restic %s/%s", new.Namespace, new.Name)
-		return
-	}
-	_, err = c.KubeClient.CoreV1().Secrets(resource.Namespace).Get(new.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+func (c *StashController) mutateReplicationController(rc *core.ReplicationController) (*core.ReplicationController, bool, error) {
+	oldRestic, err := util.GetAppliedRestic(rc.Annotations)
 	if err != nil {
-		return err
+		return nil, false, err
 	}
-
-	resource, _, err = core_util.PatchRC(c.KubeClient, resource, func(obj *core.ReplicationController) *core.ReplicationController {
-		return c.ReplicationControllerSidecarInjectionTransformerFunc(obj, old, new)
-	})
+	newRestic, err := util.FindRestic(c.RstLister, rc.ObjectMeta)
 	if err != nil {
-		return
+		log.Errorf("Error while searching Restic for ReplicationController %s/%s.", rc.Name, rc.Namespace)
+		return nil, false, err
 	}
 
-	err = util.WaitUntilSidecarAdded(c.KubeClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector}, new.Spec.Type)
-	if err != nil {
-		return
+	if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
+		if !newRestic.Spec.Paused {
+			modObj, err := c.ensureReplicationControllerSidecar(rc, oldRestic, newRestic)
+			if err != nil {
+				return nil, false, err
+			}
+			return modObj, true, nil
+		}
+	} else if oldRestic != nil && newRestic == nil {
+		modObj, err := c.ensureReplicationControllerSidecarDeleted(rc, oldRestic)
+		if err != nil {
+			return nil, false, err
+		}
+		return modObj, true, nil
 	}
-	err = core_util.WaitUntilRCReady(c.KubeClient, resource.ObjectMeta)
-	return err
+	return rc, false, nil
 }
 
-func (c *StashController) EnsureReplicationControllerSidecarDeleted(resource *core.ReplicationController, restic *api.Restic) (err error) {
+func (c *StashController) ensureReplicationControllerSidecar(obj *core.ReplicationController, oldRestic, newRestic *api.Restic) (*core.ReplicationController, error) {
 	if c.EnableRBAC {
-		err := c.ensureSidecarRoleBindingDeleted(resource.ObjectMeta)
+		sa := stringz.Val(obj.Spec.Template.Spec.ServiceAccountName, "default")
+		ref, err := reference.GetReference(scheme.Scheme, obj)
 		if err != nil {
-			return err
+			ref = &core.ObjectReference{
+				Name:      obj.Name,
+				Namespace: obj.Namespace,
+			}
+		}
+		err = c.ensureSidecarRoleBinding(ref, sa)
+		if err != nil {
+			return nil, err
 		}
 	}
 
-	resource, _, err = core_util.PatchRC(c.KubeClient, resource, func(obj *core.ReplicationController) *core.ReplicationController {
-		return c.ReplicationControllerSidecarDeletionTransformerFunc(obj, restic)
-	})
+	if newRestic.Spec.Backend.StorageSecretName == "" {
+		return nil, fmt.Errorf("missing repository secret name for Restic %s/%s", newRestic.Namespace, newRestic.Name)
+	}
+	_, err := c.KubeClient.CoreV1().Secrets(obj.Namespace).Get(newRestic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	err = util.WaitUntilSidecarRemoved(c.KubeClient, resource.Namespace, &metav1.LabelSelector{MatchLabels: resource.Spec.Selector}, restic.Spec.Type)
-	if err != nil {
-		return
-	}
-
-	err = core_util.WaitUntilRCReady(c.KubeClient, resource.ObjectMeta)
-	if err != nil {
-		return
-	}
-	util.DeleteConfigmapLock(c.KubeClient, resource.Namespace, api.LocalTypedReference{Kind: api.KindReplicationController, Name: resource.Name})
-	return err
-}
-
-func (c *StashController) ReplicationControllerSidecarInjectionTransformerFunc(obj *core.ReplicationController, oldRestic, newRestic *api.Restic) *core.ReplicationController {
 	image := docker.Docker{
 		Registry: c.DockerRegistry,
 		Image:    docker.ImageStash,
@@ -193,10 +206,20 @@ func (c *StashController) ReplicationControllerSidecarInjectionTransformerFunc(o
 	obj.Annotations[api.LastAppliedConfiguration] = string(data)
 	obj.Annotations[api.VersionTag] = c.StashImageTag
 
-	return obj
+	obj.Annotations[util.ForceRestartType] = util.SideCarAdded
+	obj.Annotations[util.BackupType] = string(newRestic.Spec.Type)
+
+	return obj, nil
 }
 
-func (c *StashController) ReplicationControllerSidecarDeletionTransformerFunc(obj *core.ReplicationController, restic *api.Restic) *core.ReplicationController {
+func (c *StashController) ensureReplicationControllerSidecarDeleted(obj *core.ReplicationController, restic *api.Restic) (*core.ReplicationController, error) {
+	if c.EnableRBAC {
+		err := c.ensureSidecarRoleBindingDeleted(obj.ObjectMeta)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	if restic.Spec.Type == api.BackupOffline {
 		obj.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.InitContainers, util.StashContainer)
 	} else {
@@ -215,10 +238,20 @@ func (c *StashController) ReplicationControllerSidecarDeletionTransformerFunc(ob
 		delete(obj.Annotations, api.VersionTag)
 	}
 
-	return obj
+	if obj.Annotations == nil {
+		obj.Annotations = make(map[string]string)
+	}
+	obj.Annotations[util.ForceRestartType] = util.SideCarRemoved
+	obj.Annotations[util.BackupType] = string(restic.Spec.Type)
+
+	err := util.DeleteConfigmapLock(c.KubeClient, obj.Namespace, api.LocalTypedReference{Kind: api.KindReplicationController, Name: obj.Name})
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
 }
 
-func (c *StashController) ForceRestartRCPods(rc *core.ReplicationController, restartType string, backupType api.BackupType) error {
+func (c *StashController) forceRestartRCPods(rc *core.ReplicationController, restartType string, backupType api.BackupType) error {
 	rc, _, err := core_util.PatchRC(c.KubeClient, rc, func(obj *core.ReplicationController) *core.ReplicationController {
 		delete(obj.Annotations, util.ForceRestartType)
 		delete(obj.Annotations, util.BackupType)

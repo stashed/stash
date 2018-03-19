@@ -28,7 +28,7 @@ import (
 func (c *StashController) NewStatefulSetWebhook() hooks.AdmissionHook {
 	return hooks.NewGenericWebhook(
 		schema.GroupVersionResource{
-			Group:    "statefulset.admission.stash.appscode.com",
+			Group:    "admission.stash.appscode.com",
 			Version:  "v1alpha1",
 			Resource: "statefulsets",
 		},
