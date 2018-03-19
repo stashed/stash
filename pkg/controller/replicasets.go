@@ -68,7 +68,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 				if err != nil {
 					return err
 				}
-				err = c.EnsureSidecarRoleBinding(ref, sa)
+				err = c.ensureSidecarRoleBinding(ref, sa)
 				if err != nil {
 					return err
 				}

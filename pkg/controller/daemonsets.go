@@ -5,6 +5,8 @@ import (
 
 	"github.com/appscode/go/log"
 	stringz "github.com/appscode/go/strings"
+	"github.com/appscode/kutil/admission"
+	hooks "github.com/appscode/kutil/admission/v1beta1"
 	core_util "github.com/appscode/kutil/core/v1"
 	ext_util "github.com/appscode/kutil/extensions/v1beta1"
 	"github.com/appscode/kutil/meta"
@@ -13,12 +15,41 @@ import (
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
+	apps "k8s.io/api/apps/v1beta1"
+	"k8s.io/api/core/v1"
 	extensions "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
 )
+
+func (c *StashController) NewDaemonSetWebhook() hooks.AdmissionHook {
+	return hooks.NewGenericWebhook(
+		schema.GroupVersionResource{
+			Group:    "daemonset.admission.stash.appscode.com",
+			Version:  "v1alpha1",
+			Resource: "daemonsets",
+		},
+		"daemonset",
+		[]string{apps.GroupName, extensions.GroupName},
+		extensions.SchemeGroupVersion.WithKind("DaemonSet"),
+		nil,
+		&admission.ResourceHandlerFuncs{
+			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
+				modObj, _, err := c.mutateDaemonSet(obj.(*extensions.DaemonSet))
+				return modObj, err
+
+			},
+			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
+				modObj, _, err := c.mutateDaemonSet(newObj.(*extensions.DaemonSet))
+				return modObj, err
+			},
+		},
+	)
+}
 
 func (c *StashController) initDaemonSetWatcher() {
 	c.dsInformer = c.kubeInformerFactory.Extensions().V1beta1().DaemonSets().Informer()
@@ -43,80 +74,79 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 	} else {
 		ds := obj.(*extensions.DaemonSet)
 		glog.Infof("Sync/Add/Update for DaemonSet %s\n", ds.GetName())
-
-		oldRestic, err := util.GetAppliedRestic(ds.Annotations)
+		modObj, modified, err := c.mutateDaemonSet(ds.DeepCopy())
 		if err != nil {
 			return err
 		}
 
-		newRestic, err := util.FindRestic(c.RstLister, ds.ObjectMeta)
-		if err != nil {
-			log.Errorf("Error while searching Restic for DaemonSet %s/%s.", ds.Name, ds.Namespace)
-			return err
-		}
-
-		if newRestic != nil && c.EnableRBAC {
-			sa := stringz.Val(ds.Spec.Template.Spec.ServiceAccountName, "default")
-			ref, err := reference.GetReference(scheme.Scheme, ds)
+		if modified {
+			patchedObj, _, err := ext_util.PatchDaemonSet(c.KubeClient, ds, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
+				return modObj
+			})
 			if err != nil {
 				return err
 			}
-			err = c.EnsureSidecarRoleBinding(ref, sa)
-			if err != nil {
-				return err
-			}
+			return ext_util.WaitUntilDaemonSetReady(c.KubeClient, patchedObj.ObjectMeta)
 		}
 
-		if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
-			if !newRestic.Spec.Paused {
-				return c.EnsureDaemonSetSidecar(ds, oldRestic, newRestic)
-			}
-		} else if oldRestic != nil && newRestic == nil {
-			return c.EnsureDaemonSetSidecarDeleted(ds, oldRestic)
-		}
 	}
 	return nil
 }
 
-func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, old, new *api.Restic) (err error) {
-	if new.Spec.Backend.StorageSecretName == "" {
-		err = fmt.Errorf("missing repository secret name for Restic %s/%s", new.Namespace, new.Name)
-		return
-	}
-	_, err = c.KubeClient.CoreV1().Secrets(resource.Namespace).Get(new.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+func (c *StashController) mutateDaemonSet(ds *extensions.DaemonSet) (*extensions.DaemonSet, bool, error) {
+	oldRestic, err := util.GetAppliedRestic(ds.Annotations)
 	if err != nil {
-		return err
+		return nil, false, err
 	}
 
-	resource, _, err = ext_util.PatchDaemonSet(c.KubeClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
-		return c.DaemonSetSidecarInjectionTransformerFunc(obj, old, new)
-	})
+	newRestic, err := util.FindRestic(c.RstLister, ds.ObjectMeta)
 	if err != nil {
-		return
+		log.Errorf("Error while searching Restic for DaemonSet %s/%s.", ds.Name, ds.Namespace)
+		return nil, false, err
 	}
 
-	return ext_util.WaitUntilDaemonSetReady(c.KubeClient, resource.ObjectMeta)
-}
-
-func (c *StashController) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSet, restic *api.Restic) (err error) {
-	if c.EnableRBAC {
-		err := c.ensureSidecarRoleBindingDeleted(resource.ObjectMeta)
+	if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
+		if !newRestic.Spec.Paused {
+			modObj, err := c.ensureDaemonSetSidecar(ds, oldRestic, newRestic)
+			if err != nil {
+				return nil, false, err
+			}
+			return modObj, true, nil
+		}
+	} else if oldRestic != nil && newRestic == nil {
+		modObj, err := c.ensureDaemonSetSidecarDeleted(ds, oldRestic)
 		if err != nil {
-			return err
+			return nil, false, err
+		}
+		return modObj, true, nil
+	}
+	return ds, false, nil
+}
+func (c *StashController) ensureDaemonSetSidecar(obj *extensions.DaemonSet, oldRestic, newRestic *api.Restic) (*extensions.DaemonSet, error) {
+	if c.EnableRBAC {
+		sa := stringz.Val(obj.Spec.Template.Spec.ServiceAccountName, "default")
+		ref, err := reference.GetReference(scheme.Scheme, obj)
+		if err != nil {
+			ref = &v1.ObjectReference{
+				Name:      obj.Name,
+				Namespace: obj.Namespace,
+			}
+		}
+		err = c.ensureSidecarRoleBinding(ref, sa)
+		if err != nil {
+			return nil, err
 		}
 	}
 
-	resource, _, err = ext_util.PatchDaemonSet(c.KubeClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
-		return c.DaemonSetSidecarDeletionTransformerFunc(obj, restic)
-	})
+	if newRestic.Spec.Backend.StorageSecretName == "" {
+		err := fmt.Errorf("missing repository secret name for Restic %s/%s", newRestic.Namespace, newRestic.Name)
+		return nil, err
+	}
+	_, err := c.KubeClient.CoreV1().Secrets(obj.Namespace).Get(newRestic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	return ext_util.WaitUntilDaemonSetReady(c.KubeClient, resource.ObjectMeta)
-}
-
-func (c *StashController) DaemonSetSidecarInjectionTransformerFunc(obj *extensions.DaemonSet, oldRestic, newRestic *api.Restic) *extensions.DaemonSet {
 	image := docker.Docker{
 		Registry: c.DockerRegistry,
 		Image:    docker.ImageStash,
@@ -175,10 +205,17 @@ func (c *StashController) DaemonSetSidecarInjectionTransformerFunc(obj *extensio
 		}
 	}
 
-	return obj
+	return obj, nil
 }
 
-func (c *StashController) DaemonSetSidecarDeletionTransformerFunc(obj *extensions.DaemonSet, restic *api.Restic) *extensions.DaemonSet {
+func (c *StashController) ensureDaemonSetSidecarDeleted(obj *extensions.DaemonSet, restic *api.Restic) (*extensions.DaemonSet, error) {
+	if c.EnableRBAC {
+		err := c.ensureSidecarRoleBindingDeleted(obj.ObjectMeta)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	if restic.Spec.Type == api.BackupOffline {
 		obj.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.InitContainers, util.StashContainer)
 	} else {
@@ -196,6 +233,5 @@ func (c *StashController) DaemonSetSidecarDeletionTransformerFunc(obj *extension
 		delete(obj.Annotations, api.LastAppliedConfiguration)
 		delete(obj.Annotations, api.VersionTag)
 	}
-
-	return obj
+	return obj, nil
 }

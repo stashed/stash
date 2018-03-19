@@ -22,7 +22,7 @@ func (c *StashController) getSidecarRoleBindingName(name string) string {
 	return name + "-" + SidecarClusterRole
 }
 
-func (c *StashController) EnsureSidecarRoleBinding(resource *core.ObjectReference, sa string) error {
+func (c *StashController) ensureSidecarRoleBinding(resource *core.ObjectReference, sa string) error {
 	meta := metav1.ObjectMeta{
 		Namespace: resource.Namespace,
 		Name:      c.getSidecarRoleBindingName(resource.Name),

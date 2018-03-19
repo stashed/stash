@@ -6,12 +6,8 @@ import (
 
 	hooks "github.com/appscode/kutil/admission/v1beta1"
 	admissionreview "github.com/appscode/kutil/registry/admissionreview/v1beta1"
-	"github.com/appscode/stash/pkg/admission/plugin"
 	"github.com/appscode/stash/pkg/controller"
 	admission "k8s.io/api/admission/v1beta1"
-	apps "k8s.io/api/apps/v1beta1"
-	core "k8s.io/api/core/v1"
-	extensions "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apimachinery"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -238,54 +234,43 @@ func (c *completedConfig) AddAdmissionHooks(ctrl *controller.StashController) er
 		ctrl.NewResticWebhook(),
 		ctrl.NewRecoveryWebhook(),
 		ctrl.NewDeploymentWebhook(),
-		hooks.NewGenericWebhook(
-			schema.GroupVersionResource{
-				Group:    "admission.stash.appscode.com",
-				Version:  "v1alpha1",
-				Resource: "daemonsets",
-			},
-			"daemonset",
-			[]string{apps.GroupName, extensions.GroupName},
-			extensions.SchemeGroupVersion.WithKind("DaemonSet"),
-			nil,
-			&plugin.DaemonSetMutator{ctrl},
-		),
-		hooks.NewGenericWebhook(
-			schema.GroupVersionResource{
-				Group:    "admission.stash.appscode.com",
-				Version:  "v1alpha1",
-				Resource: "statefulsets",
-			},
-			"statefulset",
-			[]string{apps.GroupName},
-			apps.SchemeGroupVersion.WithKind("StatefulSet"),
-			nil,
-			&plugin.StatefulSetMutator{ctrl},
-		),
-		hooks.NewGenericWebhook(
-			schema.GroupVersionResource{
-				Group:    "admission.stash.appscode.com",
-				Version:  "v1alpha1",
-				Resource: "replicationcontrollers",
-			},
-			"replicationcontroller",
-			[]string{core.GroupName},
-			core.SchemeGroupVersion.WithKind("ReplicationController"),
-			nil,
-			&plugin.ReplicationControllerMutator{ctrl},
-		),
-		hooks.NewGenericWebhook(
-			schema.GroupVersionResource{
-				Group:    "admission.stash.appscode.com",
-				Version:  "v1alpha1",
-				Resource: "replicasets",
-			},
-			"replicaset",
-			[]string{apps.GroupName, extensions.GroupName},
-			extensions.SchemeGroupVersion.WithKind("ReplicaSet"),
-			nil,
-			&plugin.ReplicaSetMutator{ctrl},
-		),
+		ctrl.NewDaemonSetWebhook(),
+		//hooks.NewGenericWebhook(
+		//	schema.GroupVersionResource{
+		//		Group:    "admission.stash.appscode.com",
+		//		Version:  "v1alpha1",
+		//		Resource: "statefulsets",
+		//	},
+		//	"statefulset",
+		//	[]string{apps.GroupName},
+		//	apps.SchemeGroupVersion.WithKind("StatefulSet"),
+		//	nil,
+		//	&plugin.StatefulSetMutator{ctrl},
+		//),
+		//hooks.NewGenericWebhook(
+		//	schema.GroupVersionResource{
+		//		Group:    "admission.stash.appscode.com",
+		//		Version:  "v1alpha1",
+		//		Resource: "replicationcontrollers",
+		//	},
+		//	"replicationcontroller",
+		//	[]string{core.GroupName},
+		//	core.SchemeGroupVersion.WithKind("ReplicationController"),
+		//	nil,
+		//	&plugin.ReplicationControllerMutator{ctrl},
+		//),
+		//hooks.NewGenericWebhook(
+		//	schema.GroupVersionResource{
+		//		Group:    "admission.stash.appscode.com",
+		//		Version:  "v1alpha1",
+		//		Resource: "replicasets",
+		//	},
+		//	"replicaset",
+		//	[]string{apps.GroupName, extensions.GroupName},
+		//	extensions.SchemeGroupVersion.WithKind("ReplicaSet"),
+		//	nil,
+		//	&plugin.ReplicaSetMutator{ctrl},
+		//),
 	}
 	return nil
 }

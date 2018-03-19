@@ -39,12 +39,12 @@ func (c *StashController) NewDeploymentWebhook() hooks.AdmissionHook {
 		nil,
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
-				modObj, _, err := c.MutateDeployment(obj.(*apps.Deployment))
+				modObj, _, err := c.mutateDeployment(obj.(*apps.Deployment))
 				return modObj, err
 
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
-				modObj, _, err := c.MutateDeployment(newObj.(*apps.Deployment))
+				modObj, _, err := c.mutateDeployment(newObj.(*apps.Deployment))
 				return modObj, err
 			},
 		},
@@ -81,15 +81,15 @@ func (c *StashController) runDeploymentInjector(key string) error {
 		dp := obj.(*apps.Deployment)
 		glog.Infof("Sync/Add/Update for Deployment %s\n", dp.GetName())
 
-		// MutateDeployment add or remove sidecar to Deployment when necessary
-		ModObj, modified, err := c.MutateDeployment(dp)
+		// mutateDeployment add or remove sidecar to Deployment when necessary
+		modObj, modified, err := c.mutateDeployment(dp.DeepCopy())
 		if err != nil {
 			return err
 		}
 
 		if modified {
 			patchedObj, _, err := apps_util.PatchDeployment(c.KubeClient, dp, func(obj *apps.Deployment) *apps.Deployment {
-				return ModObj
+				return modObj
 			})
 			if err != nil {
 				return err
@@ -102,7 +102,7 @@ func (c *StashController) runDeploymentInjector(key string) error {
 	return nil
 }
 
-func (c *StashController) MutateDeployment(dp *apps.Deployment) (*apps.Deployment, bool, error) {
+func (c *StashController) mutateDeployment(dp *apps.Deployment) (*apps.Deployment, bool, error) {
 	oldRestic, err := util.GetAppliedRestic(dp.Annotations)
 	if err != nil {
 		return nil, false, err
@@ -116,14 +116,14 @@ func (c *StashController) MutateDeployment(dp *apps.Deployment) (*apps.Deploymen
 
 	if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
 		if !newRestic.Spec.Paused {
-			modObj, err := c.EnsureDeploymentSidecar(dp, oldRestic, newRestic)
+			modObj, err := c.ensureDeploymentSidecar(dp, oldRestic, newRestic)
 			if err != nil {
 				return nil, false, err
 			}
 			return modObj, true, nil
 		}
 	} else if oldRestic != nil && newRestic == nil {
-		modObj, err := c.EnsureDeploymentSidecarDeleted(dp, oldRestic)
+		modObj, err := c.ensureDeploymentSidecarDeleted(dp, oldRestic)
 		if err != nil {
 			return nil, false, err
 		}
@@ -133,7 +133,7 @@ func (c *StashController) MutateDeployment(dp *apps.Deployment) (*apps.Deploymen
 	return dp, false, nil
 }
 
-func (c *StashController) EnsureDeploymentSidecar(dp *apps.Deployment, oldRestic, newRestic *api.Restic) (*apps.Deployment, error) {
+func (c *StashController) ensureDeploymentSidecar(dp *apps.Deployment, oldRestic, newRestic *api.Restic) (*apps.Deployment, error) {
 	if c.EnableRBAC {
 		sa := stringz.Val(dp.Spec.Template.Spec.ServiceAccountName, "default")
 		ref, err := reference.GetReference(scheme.Scheme, dp)
@@ -143,7 +143,7 @@ func (c *StashController) EnsureDeploymentSidecar(dp *apps.Deployment, oldRestic
 				Namespace: dp.Namespace,
 			}
 		}
-		err = c.EnsureSidecarRoleBinding(ref, sa)
+		err = c.ensureSidecarRoleBinding(ref, sa)
 		if err != nil {
 			return nil, err
 		}
@@ -210,7 +210,7 @@ func (c *StashController) EnsureDeploymentSidecar(dp *apps.Deployment, oldRestic
 	return dp, nil
 }
 
-func (c *StashController) EnsureDeploymentSidecarDeleted(obj *apps.Deployment, restic *api.Restic) (*apps.Deployment, error) {
+func (c *StashController) ensureDeploymentSidecarDeleted(obj *apps.Deployment, restic *api.Restic) (*apps.Deployment, error) {
 	if c.EnableRBAC {
 		err := c.ensureSidecarRoleBindingDeleted(obj.ObjectMeta)
 		if err != nil {
