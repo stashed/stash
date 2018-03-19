@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/appscode/go/log"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	shell "github.com/codeskyblue/go-sh"
 	"github.com/pkg/errors"
@@ -178,6 +179,7 @@ func (w *ResticWrapper) appendCaCertFlag(args []interface{}) []interface{} {
 func (w *ResticWrapper) run(cmd string, args []interface{}) error {
 	out, err := w.sh.Command(cmd, args...).CombinedOutput()
 	if err != nil {
+		log.Errorf("Error running command '%s %s' output:\n%s\n", cmd, args, string(out))
 		parts := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
 		if len(parts) > 1 {
 			parts = parts[len(parts)-1:]

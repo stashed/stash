@@ -25,6 +25,7 @@ import (
 	"gopkg.in/robfig/cron.v2"
 	core "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
@@ -113,7 +114,7 @@ func (c *Controller) Backup() error {
 		return err
 	}
 
-	if err := c.runResticBackup(resource); err != nil {
+	if err = c.runResticBackup(resource); err != nil {
 		return fmt.Errorf("failed to run backup, reason: %s", err)
 	}
 
@@ -125,11 +126,9 @@ func (c *Controller) Backup() error {
 	}
 
 	job := util.NewCheckJob(resource, c.opt.SnapshotHostname, c.opt.SmartPrefix, image)
-	if c.opt.EnableRBAC {
-		job.Spec.Template.Spec.ServiceAccountName = job.Name
-	}
-	if job, err = c.k8sClient.BatchV1().Jobs(resource.Namespace).Create(job); err != nil {
-		err = fmt.Errorf("failed to create check job, reason: %s", err)
+
+	// check if check job exists
+	if _, err = c.k8sClient.BatchV1().Jobs(resource.Namespace).Get(job.Name, metav1.GetOptions{}); err != nil && !errors.IsNotFound(err) {
 		eventer.CreateEventWithLog(
 			c.k8sClient,
 			BackupEventComponent,
@@ -140,27 +139,54 @@ func (c *Controller) Backup() error {
 		)
 		return err
 	}
-
-	// create service-account and role-binding
-	if c.opt.EnableRBAC {
-		ref, err := reference.GetReference(scheme.Scheme, job)
-		if err != nil {
+	if errors.IsNotFound(err) {
+		if c.opt.EnableRBAC {
+			job.Spec.Template.Spec.ServiceAccountName = job.Name
+		}
+		if job, err = c.k8sClient.BatchV1().Jobs(resource.Namespace).Create(job); err != nil {
+			err = fmt.Errorf("failed to get check job, reason: %s", err)
+			eventer.CreateEventWithLog(
+				c.k8sClient,
+				BackupEventComponent,
+				resource.ObjectReference(),
+				core.EventTypeWarning,
+				eventer.EventReasonFailedCronJob,
+				err.Error(),
+			)
 			return err
 		}
-		if err = c.ensureCheckRBAC(ref); err != nil {
-			return fmt.Errorf("error ensuring rbac for check job %s, reason: %s\n", job.Name, err)
-		}
-	}
 
-	log.Infoln("Created check job:", job.Name)
-	eventer.CreateEventWithLog(
-		c.k8sClient,
-		BackupEventComponent,
-		resource.ObjectReference(),
-		core.EventTypeNormal,
-		eventer.EventReasonCheckJobCreated,
-		fmt.Sprintf("Created check job: %s", job.Name),
-	)
+		// create service-account and role-binding
+		if c.opt.EnableRBAC {
+			ref, err := reference.GetReference(scheme.Scheme, job)
+			if err != nil {
+				return err
+			}
+			if err = c.ensureCheckRBAC(ref); err != nil {
+				return fmt.Errorf("error ensuring rbac for check job %s, reason: %s\n", job.Name, err)
+			}
+		}
+
+		log.Infoln("Created check job:", job.Name)
+		eventer.CreateEventWithLog(
+			c.k8sClient,
+			BackupEventComponent,
+			resource.ObjectReference(),
+			core.EventTypeNormal,
+			eventer.EventReasonCheckJobCreated,
+			fmt.Sprintf("Created check job: %s", job.Name),
+		)
+	} else {
+		log.Infoln("Check job already exists, skipping creation:", job.Name)
+		eventer.CreateEventWithLog(
+			c.k8sClient,
+			BackupEventComponent,
+			resource.ObjectReference(),
+			core.EventTypeNormal,
+			eventer.EventReasonCheckJobCreated,
+			fmt.Sprintf("Check job already exists, skipping creation: %s", job.Name),
+		)
+	}
 	return nil
 }
 
