@@ -4,23 +4,51 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/log"
+	"github.com/appscode/kutil/admission"
+	hooks "github.com/appscode/kutil/admission/v1beta1"
 	batch_util "github.com/appscode/kutil/batch/v1beta1"
 	core_util "github.com/appscode/kutil/core/v1"
 	ext_util "github.com/appscode/kutil/extensions/v1beta1"
 	"github.com/appscode/kutil/tools/queue"
+	"github.com/appscode/stash/apis/stash"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
+	apps "k8s.io/api/apps/v1beta1"
 	batch "k8s.io/api/batch/v1beta1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/reference"
 )
+
+func (c *StashController) NewResticWebhook() hooks.AdmissionHook {
+	return hooks.NewGenericWebhook(
+		schema.GroupVersionResource{
+			Group:    "admission.stash.appscode.com",
+			Version:  "v1alpha1",
+			Resource: "restics",
+		},
+		"restic",
+		[]string{stash.GroupName},
+		apps.SchemeGroupVersion.WithKind("Restic"),
+		nil,
+		&admission.ResourceHandlerFuncs{
+			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
+				return nil, obj.(*api.Restic).IsValid()
+			},
+			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
+				return nil, newObj.(*api.Restic).IsValid()
+			},
+		},
+	)
+}
 
 func (c *StashController) initResticWatcher() {
 	c.rstInformer = c.stashInformerFactory.Stash().V1alpha1().Restics().Informer()

@@ -235,7 +235,8 @@ func admissionHooksByGroupThenVersion(admissionHooks ...hooks.AdmissionHook) map
 }
 func (c *completedConfig) AddAdmissionHooks(ctrl *controller.StashController) error {
 	c.ControllerConfig.AdmissionHooks = []hooks.AdmissionHook{
-		&plugin.CRDValidator{},
+		ctrl.NewResticWebhook(),
+		ctrl.NewRecoveryWebhook(),
 		ctrl.NewDeploymentWebhook(),
 		hooks.NewGenericWebhook(
 			schema.GroupVersionResource{
