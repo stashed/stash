@@ -63,8 +63,8 @@ func (c codec) Encode(obj runtime.Object, w io.Writer) error {
 	return serializer.Encode(out, w)
 }
 
-func (c codec) Decode(data []byte, _ *schema.GroupVersionKind, _ runtime.Object) (runtime.Object, *schema.GroupVersionKind, error) {
-	in, gvk, err := serializer.Decode(data, nil, nil)
+func (c codec) Decode(data []byte, gvk *schema.GroupVersionKind, _ runtime.Object) (runtime.Object, *schema.GroupVersionKind, error) {
+	in, gvk, err := serializer.Decode(data, gvk, nil)
 	if err != nil {
 		return nil, gvk, err
 	}

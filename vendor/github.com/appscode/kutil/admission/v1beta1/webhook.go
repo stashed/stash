@@ -98,6 +98,7 @@ func (h *GenericWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admission
 		schema.GroupVersion{Group: req.Kind.Group, Version: req.Kind.Version},
 		h.target.GroupVersion(),
 	)
+	gvk := schema.GroupVersionKind{Group: req.Kind.Group, Version: req.Kind.Version, Kind: req.Kind.Kind}
 
 	switch req.Operation {
 	case v1beta1.Delete:
@@ -115,7 +116,7 @@ func (h *GenericWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admission
 			}
 		}
 	case v1beta1.Create:
-		obj, _, err := codec.Decode(req.Object.Raw, nil, nil)
+		obj, _, err := codec.Decode(req.Object.Raw, &gvk, nil)
 		if err != nil {
 			return StatusBadRequest(err)
 		}
@@ -142,11 +143,11 @@ func (h *GenericWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admission
 			status.PatchType = &patchType
 		}
 	case v1beta1.Update:
-		obj, _, err := codec.Decode(req.Object.Raw, nil, nil)
+		obj, _, err := codec.Decode(req.Object.Raw, &gvk, nil)
 		if err != nil {
 			return StatusBadRequest(err)
 		}
-		oldObj, _, err := codec.Decode(req.OldObject.Raw, nil, nil)
+		oldObj, _, err := codec.Decode(req.OldObject.Raw, &gvk, nil)
 		if err != nil {
 			return StatusBadRequest(err)
 		}
