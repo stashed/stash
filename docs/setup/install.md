@@ -48,8 +48,8 @@ options:
     --docker-registry              docker registry used to pull stash images (default: appscode)
     --image-pull-secret            name of secret used to pull stash operator images
     --run-on-master                run stash operator on master
-    --enable-admission-webhook     configure admission webhook for stash CRDs
-    --enable-initializer           configure stash operator as workload initializer
+    --enable-validating-webhook    enable/disable validating webhooks for Stash CRDs
+    --enable-mutating-webhook      enable/disable mutating webhooks for Kubernetes workloads
     --uninstall                    uninstall stash
     --purge                        purges stash crd objects and crds
 ```
@@ -82,18 +82,11 @@ $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/de
     | bash -s -- --docker-registry=MY_REGISTRY [--image-pull-secret=SECRET_NAME] [--rbac]
 ```
 
-Stash implements a [validating admission webhook](https://kubernetes.io/docs/admin/admission-controllers/#validatingadmissionwebhook-alpha-in-18-beta-in-19) to validate Stash CRDs. This is enabled by default for Kubernetes 1.9.0 or later releases. To disable this feature, pass the `--enable-admission-webhook=false` flag.
+Stash implements [validating admission webhooks](https://kubernetes.io/docs/admin/admission-controllers/#validatingadmissionwebhook-alpha-in-18-beta-in-19) to validate Stash CRDs and mutating webhooks Kubernetes workload types. This is enabled by default for Kubernetes 1.9.0 or later releases. To disable this feature, pass the `--enable-validating-webhook=false` and `--enable-mutating-webhook=false` flag respectively.
 
 ```console
 $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/stash.sh \
-    | bash -s -- --enable-admission-webhook [--rbac]
-```
-
-Stash operator can be used as a workload [initializer](https://kubernetes.io/docs/admin/extensible-admission-controllers/#initializers). For this, pass the `--enable-initializer` flag. _Please note that, this uses an alpha feature of Kubernetes_.
-
-```console
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/stash.sh \
-    | bash -s -- --enable-initializer [--rbac]
+    | bash -s -- --enable-validating-webhook=false --enable-mutating-webhook=false [--rbac]
 ```
 
 
@@ -124,7 +117,8 @@ $ helm install stable/stash --name my-release
 $ helm repo update
 $ helm install stable/stash --name my-release \
   --set apiserver.ca="$(onessl get kube-ca)" \
-  --set apiserver.enableAdmissionWebhook=true
+  --set apiserver.enableValidatingWebhook=true \
+  --set apiserver.enableMutatingWebhook=true
 ```
 
 To see the detailed configuration options, visit [here](https://github.com/appscode/stash/tree/master/chart/stable/stash).
