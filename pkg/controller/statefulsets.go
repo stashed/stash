@@ -5,6 +5,7 @@ import (
 
 	"github.com/appscode/go/log"
 	stringz "github.com/appscode/go/strings"
+	hooks "github.com/appscode/kutil/admission/v1beta1"
 	apps_util "github.com/appscode/kutil/apps/v1beta1"
 	core_util "github.com/appscode/kutil/core/v1"
 	"github.com/appscode/kutil/meta"
@@ -13,12 +14,41 @@ import (
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	//oneliner "github.com/the-redback/go-oneliners"
+	"github.com/appscode/kutil/admission"
 	apps "k8s.io/api/apps/v1beta1"
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
 )
+
+func (c *StashController) NewStatefulSetWebhook() hooks.AdmissionHook {
+	return hooks.NewGenericWebhook(
+		schema.GroupVersionResource{
+			Group:    "statefulset.admission.stash.appscode.com",
+			Version:  "v1alpha1",
+			Resource: "statefulsets",
+		},
+		"statefulset",
+		[]string{apps.GroupName},
+		apps.SchemeGroupVersion.WithKind("StatefulSet"),
+		nil,
+		&admission.ResourceHandlerFuncs{
+			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
+				modObj, _, err := c.mutateStatefulSet(obj.(*apps.StatefulSet))
+				return modObj, err
+
+			},
+			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
+				modObj, _, err := c.mutateStatefulSet(newObj.(*apps.StatefulSet))
+				return modObj, err
+			},
+		},
+	)
+}
 
 func (c *StashController) initStatefulSetWatcher() {
 	c.ssInformer = c.kubeInformerFactory.Apps().V1beta1().StatefulSets().Informer()
@@ -44,82 +74,78 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 		ss := obj.(*apps.StatefulSet)
 		glog.Infof("Sync/Add/Update for StatefulSet %s\n", ss.GetName())
 
-		oldRestic, err := util.GetAppliedRestic(ss.Annotations)
+		modObj, modified, err := c.mutateStatefulSet(ss.DeepCopy())
 		if err != nil {
-			return err
-		}
-		newRestic, err := util.FindRestic(c.RstLister, ss.ObjectMeta)
-		if err != nil {
-			log.Errorf("Error while searching Restic for StatefulSet %s/%s.", ss.Name, ss.Namespace)
-			return err
+			return nil
 		}
 
-		if newRestic != nil && c.EnableRBAC {
-			sa := stringz.Val(ss.Spec.Template.Spec.ServiceAccountName, "default")
-			ref, err := reference.GetReference(scheme.Scheme, ss)
+		if modified {
+			patchedObj, _, err := apps_util.PatchStatefulSet(c.KubeClient, ss, func(obj *apps.StatefulSet) *apps.StatefulSet {
+				return modObj
+			})
 			if err != nil {
 				return err
 			}
-			err = c.ensureSidecarRoleBinding(ref, sa)
-			if err != nil {
-				return err
-			}
-		}
 
-		if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
-			if !newRestic.Spec.Paused {
-				return c.EnsureStatefulSetSidecar(ss, oldRestic, newRestic)
-			}
-		} else if oldRestic != nil && newRestic == nil {
-			return c.EnsureStatefulSetSidecarDeleted(ss, oldRestic)
+			return apps_util.WaitUntilStatefulSetReady(c.KubeClient, patchedObj.ObjectMeta)
 		}
-
 	}
 	return nil
 }
 
-func (c *StashController) EnsureStatefulSetSidecar(resource *apps.StatefulSet, old, new *api.Restic) (err error) {
-
-	if new.Spec.Backend.StorageSecretName == "" {
-		err = fmt.Errorf("missing repository secret name for Restic %s/%s", new.Namespace, new.Name)
-		return
-	}
-	_, err = c.KubeClient.CoreV1().Secrets(resource.Namespace).Get(new.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+func (c *StashController) mutateStatefulSet(ss *apps.StatefulSet) (*apps.StatefulSet, bool, error) {
+	oldRestic, err := util.GetAppliedRestic(ss.Annotations)
 	if err != nil {
-		return
+		return nil, false, err
 	}
 
-	resource, _, err = apps_util.PatchStatefulSet(c.KubeClient, resource, func(obj *apps.StatefulSet) *apps.StatefulSet {
-		return c.StatefulSetSidecarInjectionTransformerFunc(obj, old, new)
-	})
+	newRestic, err := util.FindRestic(c.RstLister, ss.ObjectMeta)
 	if err != nil {
-		return
+		log.Errorf("Error while searching Restic for StatefulSet %s/%s.", ss.Name, ss.Namespace)
+		return nil, false, err
 	}
 
-	err = apps_util.WaitUntilStatefulSetReady(c.KubeClient, resource.ObjectMeta)
-	return err
-}
-
-func (c *StashController) EnsureStatefulSetSidecarDeleted(resource *apps.StatefulSet, restic *api.Restic) (err error) {
-	if c.EnableRBAC {
-		err := c.ensureSidecarRoleBindingDeleted(resource.ObjectMeta)
+	if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
+		if !newRestic.Spec.Paused {
+			modObj, err := c.ensureStatefulSetSidecar(ss, oldRestic, newRestic)
+			if err != nil {
+				return nil, false, err
+			}
+			return modObj, true, nil
+		}
+	} else if oldRestic != nil && newRestic == nil {
+		modObj, err := c.ensureStatefulSetSidecarDeleted(ss, oldRestic)
 		if err != nil {
-			return err
+			return nil, false, err
+		}
+		return modObj, true, nil
+	}
+	return ss, false, nil
+}
+func (c *StashController) ensureStatefulSetSidecar(obj *apps.StatefulSet, oldRestic, newRestic *api.Restic) (*apps.StatefulSet, error) {
+	if c.EnableRBAC {
+		sa := stringz.Val(obj.Spec.Template.Spec.ServiceAccountName, "default")
+		ref, err := reference.GetReference(scheme.Scheme, obj)
+		if err != nil {
+			ref = &v1.ObjectReference{
+				Name:      obj.Name,
+				Namespace: obj.Namespace,
+			}
+		}
+		err = c.ensureSidecarRoleBinding(ref, sa)
+		if err != nil {
+			return nil, err
 		}
 	}
-
-	resource, _, err = apps_util.PatchStatefulSet(c.KubeClient, resource, func(obj *apps.StatefulSet) *apps.StatefulSet {
-		return c.StatefulSetSidecarDeletionTransformerFunc(obj, restic)
-	})
+	if newRestic.Spec.Backend.StorageSecretName == "" {
+		err := fmt.Errorf("missing repository secret name for Restic %s/%s", newRestic.Namespace, newRestic.Name)
+		return nil, err
+	}
+	_, err := c.KubeClient.CoreV1().Secrets(obj.Namespace).Get(newRestic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	err = apps_util.WaitUntilStatefulSetReady(c.KubeClient, resource.ObjectMeta)
-	return err
-}
-
-func (c *StashController) StatefulSetSidecarInjectionTransformerFunc(obj *apps.StatefulSet, oldRestic, newRestic *api.Restic) *apps.StatefulSet {
 	image := docker.Docker{
 		Registry: c.DockerRegistry,
 		Image:    docker.ImageStash,
@@ -170,10 +196,16 @@ func (c *StashController) StatefulSetSidecarInjectionTransformerFunc(obj *apps.S
 
 	obj.Spec.UpdateStrategy.Type = apps.RollingUpdateStatefulSetStrategyType
 
-	return obj
+	return obj, nil
 }
 
-func (c *StashController) StatefulSetSidecarDeletionTransformerFunc(obj *apps.StatefulSet, restic *api.Restic) *apps.StatefulSet {
+func (c *StashController) ensureStatefulSetSidecarDeleted(obj *apps.StatefulSet, restic *api.Restic) (*apps.StatefulSet, error) {
+	if c.EnableRBAC {
+		err := c.ensureSidecarRoleBindingDeleted(obj.ObjectMeta)
+		if err != nil {
+			return nil, err
+		}
+	}
 	if restic.Spec.Type == api.BackupOffline {
 		obj.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.InitContainers, util.StashContainer)
 	} else {
@@ -193,5 +225,5 @@ func (c *StashController) StatefulSetSidecarDeletionTransformerFunc(obj *apps.St
 
 	obj.Spec.UpdateStrategy.Type = apps.RollingUpdateStatefulSetStrategyType
 
-	return obj
+	return obj, nil
 }

@@ -235,18 +235,7 @@ func (c *completedConfig) AddAdmissionHooks(ctrl *controller.StashController) er
 		ctrl.NewRecoveryWebhook(),
 		ctrl.NewDeploymentWebhook(),
 		ctrl.NewDaemonSetWebhook(),
-		//hooks.NewGenericWebhook(
-		//	schema.GroupVersionResource{
-		//		Group:    "admission.stash.appscode.com",
-		//		Version:  "v1alpha1",
-		//		Resource: "statefulsets",
-		//	},
-		//	"statefulset",
-		//	[]string{apps.GroupName},
-		//	apps.SchemeGroupVersion.WithKind("StatefulSet"),
-		//	nil,
-		//	&plugin.StatefulSetMutator{ctrl},
-		//),
+		ctrl.NewStatefulSetWebhook(),
 		//hooks.NewGenericWebhook(
 		//	schema.GroupVersionResource{
 		//		Group:    "admission.stash.appscode.com",
