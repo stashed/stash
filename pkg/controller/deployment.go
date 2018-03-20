@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
+	//oneliner "github.com/the-redback/go-oneliners"
 )
 
 func (c *StashController) NewDeploymentWebhook() hooks.AdmissionHook {
@@ -74,7 +75,7 @@ func (c *StashController) runDeploymentInjector(key string) error {
 		if err != nil {
 			return nil
 		}
-
+		
 		// mutateDeployment add or remove sidecar to Deployment when necessary
 		modObj, modified, err := c.mutateDeployment(w)
 		if err != nil {
@@ -109,7 +110,7 @@ func (c *StashController) mutateDeployment(w *workload.Workload) (*workload.Work
 
 	if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
 		if !newRestic.Spec.Paused {
-			err := c.ensureWorkloadSidecar(w, oldRestic, newRestic)
+			err := c.ensureWorkloadSidecar(w, api.KindDeployment,oldRestic, newRestic)
 			if err != nil {
 				return nil, false, err
 			}

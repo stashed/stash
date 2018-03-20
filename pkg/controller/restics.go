@@ -16,7 +16,7 @@ import (
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
-	apps "k8s.io/api/apps/v1beta1"
+	//apps "k8s.io/api/apps/v1beta1"
 	batch "k8s.io/api/batch/v1beta1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,7 +37,7 @@ func (c *StashController) NewResticWebhook() hooks.AdmissionHook {
 		},
 		"restic",
 		[]string{stash.GroupName},
-		apps.SchemeGroupVersion.WithKind("Restic"),
+		api.SchemeGroupVersion.WithKind("Restic"),
 		nil,
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {

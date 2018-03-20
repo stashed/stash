@@ -119,7 +119,7 @@ func (c *StashController) mutateReplicaSet(w *workload.Workload) (*workload.Work
 
 	if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
 		if !newRestic.Spec.Paused {
-			err := c.ensureWorkloadSidecar(w, oldRestic, newRestic)
+			err := c.ensureWorkloadSidecar(w, api.KindReplicaSet,oldRestic, newRestic)
 			if err != nil {
 				return nil, false, err
 			}

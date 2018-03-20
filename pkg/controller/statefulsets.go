@@ -14,6 +14,7 @@ import (
 	appsv1beta2 "k8s.io/api/apps/v1beta2"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	api "github.com/appscode/stash/apis/stash/v1alpha1"
 )
 
 func (c *StashController) NewStatefulSetWebhook() hooks.AdmissionHook {
@@ -102,7 +103,7 @@ func (c *StashController) mutateStatefulSet(w *workload.Workload) (*workload.Wor
 
 	if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
 		if !newRestic.Spec.Paused {
-			err := c.ensureWorkloadSidecar(w, oldRestic, newRestic)
+			err := c.ensureWorkloadSidecar(w,api.KindStatefulSet,oldRestic, newRestic)
 			if err != nil {
 				return nil, false, err
 			}

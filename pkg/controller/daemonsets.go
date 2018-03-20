@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	api "github.com/appscode/stash/apis/stash/v1alpha1"
 )
 
 func (c *StashController) NewDaemonSetWebhook() hooks.AdmissionHook {
@@ -103,7 +104,7 @@ func (c *StashController) mutateDaemonSet(w *workload.Workload) (*workload.Workl
 
 	if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
 		if !newRestic.Spec.Paused {
-			err := c.ensureWorkloadSidecar(w, oldRestic, newRestic)
+			err := c.ensureWorkloadSidecar(w,api.KindDaemonSet ,oldRestic, newRestic)
 			if err != nil {
 				return nil, false, err
 			}
