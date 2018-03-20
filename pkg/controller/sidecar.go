@@ -16,7 +16,7 @@ import (
 	"k8s.io/client-go/tools/reference"
 )
 
-func (c *StashController) ensureWorkloadSidecar(w *workload.Workload, workloadKind string, oldRestic, newRestic *api.Restic) error {
+func (c *StashController) ensureWorkloadSidecar(w *workload.Workload, oldRestic, newRestic *api.Restic) error {
 	if c.EnableRBAC {
 		sa := stringz.Val(w.Spec.ServiceAccountName, "default")
 		ref, err := reference.GetReference(scheme.Scheme, w)
@@ -37,7 +37,7 @@ func (c *StashController) ensureWorkloadSidecar(w *workload.Workload, workloadKi
 		return err
 	}
 
-	_, err := c.KubeClient.CoreV1().Secrets(w.Namespace).Get(newRestic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	_, err := c.kubeClient.CoreV1().Secrets(w.Namespace).Get(newRestic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -47,10 +47,9 @@ func (c *StashController) ensureWorkloadSidecar(w *workload.Workload, workloadKi
 		Image:    docker.ImageStash,
 		Tag:      c.StashImageTag,
 	}
-	//fmt.Println("========================================\nName:",w.Name,"\nKind:",workloadKind,"\n=================================================")
 
 	workload := api.LocalTypedReference{
-		Kind: workloadKind,
+		Kind: w.Kind,
 		Name: w.Name,
 	}
 

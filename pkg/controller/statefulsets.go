@@ -14,7 +14,6 @@ import (
 	appsv1beta2 "k8s.io/api/apps/v1beta2"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	api "github.com/appscode/stash/apis/stash/v1alpha1"
 )
 
 func (c *StashController) NewStatefulSetWebhook() hooks.AdmissionHook {
@@ -76,14 +75,14 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 		}
 
 		if modified {
-			patchedObj, _, err := apps_util.PatchStatefulSet(c.KubeClient, ss, func(obj *appsv1beta1.StatefulSet) *appsv1beta1.StatefulSet {
+			patchedObj, _, err := apps_util.PatchStatefulSet(c.kubeClient, ss, func(obj *appsv1beta1.StatefulSet) *appsv1beta1.StatefulSet {
 				return mw.Object.(*appsv1beta1.StatefulSet)
 			})
 			if err != nil {
 				return err
 			}
 
-			return apps_util.WaitUntilStatefulSetReady(c.KubeClient, patchedObj.ObjectMeta)
+			return apps_util.WaitUntilStatefulSetReady(c.kubeClient, patchedObj.ObjectMeta)
 		}
 	}
 	return nil
@@ -95,7 +94,7 @@ func (c *StashController) mutateStatefulSet(w *workload.Workload) (*workload.Wor
 		return nil, false, err
 	}
 
-	newRestic, err := util.FindRestic(c.RstLister, w.ObjectMeta)
+	newRestic, err := util.FindRestic(c.rstLister, w.ObjectMeta)
 	if err != nil {
 		log.Errorf("Error while searching Restic for StatefulSet %s/%s.", w.Name, w.Namespace)
 		return nil, false, err
@@ -103,7 +102,7 @@ func (c *StashController) mutateStatefulSet(w *workload.Workload) (*workload.Wor
 
 	if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
 		if !newRestic.Spec.Paused {
-			err := c.ensureWorkloadSidecar(w,api.KindStatefulSet,oldRestic, newRestic)
+			err := c.ensureWorkloadSidecar(w, oldRestic, newRestic)
 			if err != nil {
 				return nil, false, err
 			}

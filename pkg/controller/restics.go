@@ -97,7 +97,7 @@ func (c *StashController) initResticWatcher() {
 			queue.Enqueue(c.rstQueue.GetQueue(), obj)
 		},
 	})
-	c.RstLister = c.stashInformerFactory.Stash().V1alpha1().Restics().Lister()
+	c.rstLister = c.stashInformerFactory.Stash().V1alpha1().Restics().Lister()
 }
 
 // syncToStdout is the business logic of the controller. In this controller it simply prints
@@ -149,7 +149,7 @@ func (c *StashController) EnsureScaledownCronJob(restic *api.Restic) error {
 		return err
 	}
 
-	cronJob, _, err := batch_util.CreateOrPatchCronJob(c.KubeClient, meta, func(in *batch.CronJob) *batch.CronJob {
+	cronJob, _, err := batch_util.CreateOrPatchCronJob(c.kubeClient, meta, func(in *batch.CronJob) *batch.CronJob {
 		// set restic as cron-job owner
 		in.OwnerReferences = []metav1.OwnerReference{
 			{

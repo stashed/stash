@@ -65,7 +65,7 @@ func (c *StashController) runDeploymentInjector(key string) error {
 		if err != nil {
 			return err
 		}
-		util.DeleteConfigmapLock(c.KubeClient, ns, api.LocalTypedReference{Kind: api.KindDeployment, Name: name})
+		util.DeleteConfigmapLock(c.kubeClient, ns, api.LocalTypedReference{Kind: api.KindDeployment, Name: name})
 	} else {
 		dp := obj.(*appsv1beta1.Deployment)
 		glog.Infof("Sync/Add/Update for Deployment %s\n", key)
@@ -82,14 +82,14 @@ func (c *StashController) runDeploymentInjector(key string) error {
 		}
 
 		if modified {
-			patchedObj, _, err := apps_util.PatchDeployment(c.KubeClient, dp, func(obj *appsv1beta1.Deployment) *appsv1beta1.Deployment {
+			patchedObj, _, err := apps_util.PatchDeployment(c.kubeClient, dp, func(obj *appsv1beta1.Deployment) *appsv1beta1.Deployment {
 				return modObj.Object.(*appsv1beta1.Deployment)
 			})
 			if err != nil {
 				return err
 			}
 
-			return apps_util.WaitUntilDeploymentReady(c.KubeClient, patchedObj.ObjectMeta)
+			return apps_util.WaitUntilDeploymentReady(c.kubeClient, patchedObj.ObjectMeta)
 		}
 	}
 	return nil
@@ -101,7 +101,7 @@ func (c *StashController) mutateDeployment(w *workload.Workload) (*workload.Work
 		return nil, false, err
 	}
 
-	newRestic, err := util.FindRestic(c.RstLister, w.ObjectMeta)
+	newRestic, err := util.FindRestic(c.rstLister, w.ObjectMeta)
 	if err != nil {
 		log.Errorf("Error while searching Restic for Deployment %s/%s.", w.Name, w.Namespace)
 		return nil, false, err
@@ -109,7 +109,7 @@ func (c *StashController) mutateDeployment(w *workload.Workload) (*workload.Work
 
 	if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
 		if !newRestic.Spec.Paused {
-			err := c.ensureWorkloadSidecar(w, api.KindDeployment,oldRestic, newRestic)
+			err := c.ensureWorkloadSidecar(w, oldRestic, newRestic)
 			if err != nil {
 				return nil, false, err
 			}
@@ -122,7 +122,7 @@ func (c *StashController) mutateDeployment(w *workload.Workload) (*workload.Work
 			return nil, false, err
 		}
 		workload.ApplyWorkload(w.Object, w)
-		err = util.DeleteConfigmapLock(c.KubeClient, w.Namespace, api.LocalTypedReference{Kind: api.KindDeployment, Name: w.Name})
+		err = util.DeleteConfigmapLock(c.kubeClient, w.Namespace, api.LocalTypedReference{Kind: api.KindDeployment, Name: w.Name})
 		if err != nil {
 			return nil, false, err
 		}

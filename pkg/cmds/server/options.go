@@ -12,7 +12,6 @@ import (
 	"github.com/spf13/pflag"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	"k8s.io/client-go/kubernetes"
-	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 )
 
 type ControllerOptions struct {

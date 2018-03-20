@@ -133,7 +133,7 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 		job.Spec.Template.Spec.ServiceAccountName = job.Name
 	}
 
-	job, err := c.KubeClient.BatchV1().Jobs(rec.Namespace).Create(job)
+	job, err := c.kubeClient.BatchV1().Jobs(rec.Namespace).Create(job)
 	if err != nil {
 		if kerr.IsAlreadyExists(err) {
 			return nil

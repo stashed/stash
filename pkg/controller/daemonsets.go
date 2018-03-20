@@ -15,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	api "github.com/appscode/stash/apis/stash/v1alpha1"
 )
 
 func (c *StashController) NewDaemonSetWebhook() hooks.AdmissionHook {
@@ -77,13 +76,13 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 		}
 
 		if modified {
-			patchedObj, _, err := ext_util.PatchDaemonSet(c.KubeClient, ds, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
+			patchedObj, _, err := ext_util.PatchDaemonSet(c.kubeClient, ds, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
 				return mw.Object.(*extensions.DaemonSet)
 			})
 			if err != nil {
 				return err
 			}
-			return ext_util.WaitUntilDaemonSetReady(c.KubeClient, patchedObj.ObjectMeta)
+			return ext_util.WaitUntilDaemonSetReady(c.kubeClient, patchedObj.ObjectMeta)
 		}
 
 	}
@@ -96,7 +95,7 @@ func (c *StashController) mutateDaemonSet(w *workload.Workload) (*workload.Workl
 		return nil, false, err
 	}
 
-	newRestic, err := util.FindRestic(c.RstLister, w.ObjectMeta)
+	newRestic, err := util.FindRestic(c.rstLister, w.ObjectMeta)
 	if err != nil {
 		log.Errorf("Error while searching Restic for DaemonSet %s/%s.", w.Name, w.Namespace)
 		return nil, false, err
@@ -104,7 +103,7 @@ func (c *StashController) mutateDaemonSet(w *workload.Workload) (*workload.Workl
 
 	if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
 		if !newRestic.Spec.Paused {
-			err := c.ensureWorkloadSidecar(w,api.KindDaemonSet ,oldRestic, newRestic)
+			err := c.ensureWorkloadSidecar(w, oldRestic, newRestic)
 			if err != nil {
 				return nil, false, err
 			}
