@@ -66,10 +66,10 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 	} else {
 		glog.Infof("Sync/Add/Update for DaemonSet %s\n", key)
 
-		ds := obj.(*extensions.DaemonSet).DeepCopy()
-		ds.GetObjectKind().SetGroupVersionKind(extensions.SchemeGroupVersion.WithKind("DaemonSet"))
+		ds := obj.(*extensions.DaemonSet)
+		ds.GetObjectKind().SetGroupVersionKind(extensions.SchemeGroupVersion.WithKind(api.KindDaemonSet))
 
-		w, err := workload.ConvertToWorkload(ds)
+		w, err := workload.ConvertToWorkload(ds.DeepCopy())
 		if err != nil {
 			return nil
 		}

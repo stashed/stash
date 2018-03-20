@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"fmt"
+
 	"github.com/appscode/go/log"
 	"github.com/appscode/kutil/admission"
 	hooks "github.com/appscode/kutil/admission/v1beta1"
@@ -69,8 +71,10 @@ func (c *StashController) runDeploymentInjector(key string) error {
 		}
 		util.DeleteConfigmapLock(c.kubeClient, ns, api.LocalTypedReference{Kind: api.KindDeployment, Name: name})
 	} else {
-		dp := obj.(*appsv1beta1.Deployment)
 		glog.Infof("Sync/Add/Update for Deployment %s\n", key)
+
+		dp := obj.(*appsv1beta1.Deployment)
+		dp.GetObjectKind().SetGroupVersionKind(appsv1beta1.SchemeGroupVersion.WithKind(api.KindDeployment))
 
 		w, err := workload.ConvertToWorkload(dp.DeepCopy())
 		if err != nil {

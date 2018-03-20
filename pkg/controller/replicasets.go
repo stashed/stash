@@ -70,8 +70,10 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 		}
 		util.DeleteConfigmapLock(c.kubeClient, ns, api.LocalTypedReference{Kind: api.KindReplicaSet, Name: name})
 	} else {
-		rs := obj.(*extensions.ReplicaSet)
 		glog.Infof("Sync/Add/Update for ReplicaSet %s\n", key)
+
+		rs := obj.(*extensions.ReplicaSet)
+		rs.GetObjectKind().SetGroupVersionKind(extensions.SchemeGroupVersion.WithKind(api.KindReplicaSet))
 
 		if !ext_util.IsOwnedByDeployment(rs) {
 			w, err := workload.ConvertToWorkload(rs.DeepCopy())

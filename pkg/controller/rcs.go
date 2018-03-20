@@ -69,8 +69,10 @@ func (c *StashController) runRCInjector(key string) error {
 		}
 		util.DeleteConfigmapLock(c.kubeClient, ns, api.LocalTypedReference{Kind: api.KindReplicationController, Name: name})
 	} else {
-		rc := obj.(*core.ReplicationController)
 		glog.Infof("Sync/Add/Update for ReplicationController %s\n", key)
+
+		rc := obj.(*core.ReplicationController)
+		rc.GetObjectKind().SetGroupVersionKind(core.SchemeGroupVersion.WithKind(api.KindReplicationController))
 
 		w, err := workload.ConvertToWorkload(rc.DeepCopy())
 		if err != nil {
