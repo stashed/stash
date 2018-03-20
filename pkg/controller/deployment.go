@@ -74,25 +74,21 @@ func (c *StashController) runDeploymentInjector(key string) error {
 		dp := obj.(*appsv1beta1.Deployment).DeepCopy()
 		dp.GetObjectKind().SetGroupVersionKind(appsv1beta1.SchemeGroupVersion.WithKind(api.KindDeployment))
 
-		w, err := workload.ConvertToWorkload(dp)
+		w, err := workload.ConvertToWorkload(dp.DeepCopy())
 		if err != nil {
 			return nil
 		}
-
 		// mutateDeployment add or remove sidecar to Deployment when necessary
 		_, modified, err := c.mutateDeployment(w)
 		if err != nil {
 			return err
 		}
 		if modified {
-			patchedObj, _, err := apps_util.PatchDeployment(c.kubeClient, dp, func(obj *appsv1beta1.Deployment) *appsv1beta1.Deployment {
-				return w.Object.(*appsv1beta1.Deployment)
-			})
+			_, _, err := apps_util.PatchDeploymentObject(c.kubeClient, dp, w.Object.(*appsv1beta1.Deployment))
 			if err != nil {
 				return err
 			}
-
-			return apps_util.WaitUntilDeploymentReady(c.kubeClient, patchedObj.ObjectMeta)
+			return apps_util.WaitUntilDeploymentReady(c.kubeClient, dp.ObjectMeta)
 		}
 	}
 	return nil

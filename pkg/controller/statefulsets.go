@@ -69,25 +69,21 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 		ss := obj.(*appsv1beta1.StatefulSet).DeepCopy()
 		ss.GetObjectKind().SetGroupVersionKind(appsv1beta1.SchemeGroupVersion.WithKind(api.KindStatefulSet))
 
-		w, err := workload.ConvertToWorkload(ss)
+		w, err := workload.ConvertToWorkload(ss.DeepCopy())
 		if err != nil {
 			return nil
 		}
-
 		_, modified, err := c.mutateStatefulSet(w)
 		if err != nil {
 			return nil
 		}
-
 		if modified {
-			patchedObj, _, err := apps_util.PatchStatefulSet(c.kubeClient, ss, func(obj *appsv1beta1.StatefulSet) *appsv1beta1.StatefulSet {
-				return w.Object.(*appsv1beta1.StatefulSet)
-			})
+			_, _, err := apps_util.PatchStatefulSetObject(c.kubeClient, ss, w.Object.(*appsv1beta1.StatefulSet))
 			if err != nil {
 				return err
 			}
 
-			return apps_util.WaitUntilStatefulSetReady(c.kubeClient, patchedObj.ObjectMeta)
+			return apps_util.WaitUntilStatefulSetReady(c.kubeClient, ss.ObjectMeta)
 		}
 	}
 	return nil

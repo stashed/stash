@@ -32,12 +32,16 @@ func CreateOrPatchRoleBinding(c kubernetes.Interface, meta metav1.ObjectMeta, tr
 }
 
 func PatchRoleBinding(c kubernetes.Interface, cur *rbac.RoleBinding, transform func(*rbac.RoleBinding) *rbac.RoleBinding) (*rbac.RoleBinding, kutil.VerbType, error) {
+	return PatchRoleBindingObject(c, cur, transform(cur.DeepCopy()))
+}
+
+func PatchRoleBindingObject(c kubernetes.Interface, cur, mod *rbac.RoleBinding) (*rbac.RoleBinding, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
 
-	modJson, err := json.Marshal(transform(cur.DeepCopy()))
+	modJson, err := json.Marshal(mod)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}

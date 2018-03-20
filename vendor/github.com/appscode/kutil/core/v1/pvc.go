@@ -32,12 +32,16 @@ func CreateOrPatchPVC(c kubernetes.Interface, meta metav1.ObjectMeta, transform 
 }
 
 func PatchPVC(c kubernetes.Interface, cur *core.PersistentVolumeClaim, transform func(*core.PersistentVolumeClaim) *core.PersistentVolumeClaim) (*core.PersistentVolumeClaim, kutil.VerbType, error) {
+	return PatchPVCObject(c, cur, transform(cur.DeepCopy()))
+}
+
+func PatchPVCObject(c kubernetes.Interface, cur, mod *core.PersistentVolumeClaim) (*core.PersistentVolumeClaim, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
 
-	modJson, err := json.Marshal(transform(cur.DeepCopy()))
+	modJson, err := json.Marshal(mod)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}

@@ -32,12 +32,16 @@ func CreateOrPatchSecret(c kubernetes.Interface, meta metav1.ObjectMeta, transfo
 }
 
 func PatchSecret(c kubernetes.Interface, cur *core.Secret, transform func(*core.Secret) *core.Secret) (*core.Secret, kutil.VerbType, error) {
+	return PatchSecretObject(c, cur, transform(cur.DeepCopy()))
+}
+
+func PatchSecretObject(c kubernetes.Interface, cur, mod *core.Secret) (*core.Secret, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
 
-	modJson, err := json.Marshal(transform(cur.DeepCopy()))
+	modJson, err := json.Marshal(mod)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}

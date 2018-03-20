@@ -74,20 +74,16 @@ func (c *StashController) runRCInjector(key string) error {
 		rc := obj.(*core.ReplicationController).DeepCopy()
 		rc.GetObjectKind().SetGroupVersionKind(core.SchemeGroupVersion.WithKind(api.KindReplicationController))
 
-		w, err := workload.ConvertToWorkload(rc)
+		w, err := workload.ConvertToWorkload(rc.DeepCopy())
 		if err != nil {
 			return nil
 		}
-
 		restic, modified, err := c.mutateReplicationController(w)
 		if err != nil {
 			return err
 		}
-
 		if modified {
-			_, _, err = core_util.PatchRC(c.kubeClient, rc, func(obj *core.ReplicationController) *core.ReplicationController {
-				return w.Object.(*core.ReplicationController)
-			})
+			_, _, err = core_util.PatchRCObject(c.kubeClient, rc, w.Object.(*core.ReplicationController))
 			if err != nil {
 				return err
 			}

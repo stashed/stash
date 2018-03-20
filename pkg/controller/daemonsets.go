@@ -69,25 +69,21 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 		ds := obj.(*extensions.DaemonSet).DeepCopy()
 		ds.GetObjectKind().SetGroupVersionKind(extensions.SchemeGroupVersion.WithKind(api.KindDaemonSet))
 
-		w, err := workload.ConvertToWorkload(ds)
+		w, err := workload.ConvertToWorkload(ds.DeepCopy())
 		if err != nil {
 			return nil
 		}
-
 		_, modified, err := c.mutateDaemonSet(w)
 		if err != nil {
 			return err
 		}
 		if modified {
-			patchedObj, _, err := ext_util.PatchDaemonSet(c.kubeClient, ds, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
-				return w.Object.(*extensions.DaemonSet)
-			})
+			_, _, err := ext_util.PatchDaemonSetObject(c.kubeClient, ds, w.Object.(*extensions.DaemonSet))
 			if err != nil {
 				return err
 			}
-			return ext_util.WaitUntilDaemonSetReady(c.kubeClient, patchedObj.ObjectMeta)
+			return ext_util.WaitUntilDaemonSetReady(c.kubeClient, ds.ObjectMeta)
 		}
-
 	}
 	return nil
 }

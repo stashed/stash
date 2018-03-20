@@ -32,12 +32,16 @@ func CreateOrPatchCronJob(c kubernetes.Interface, meta metav1.ObjectMeta, transf
 }
 
 func PatchCronJob(c kubernetes.Interface, cur *batch.CronJob, transform func(*batch.CronJob) *batch.CronJob) (*batch.CronJob, kutil.VerbType, error) {
+	return PatchCronJobObject(c, cur, transform(cur.DeepCopy()))
+}
+
+func PatchCronJobObject(c kubernetes.Interface, cur, mod *batch.CronJob) (*batch.CronJob, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
 
-	modJson, err := json.Marshal(transform(cur.DeepCopy()))
+	modJson, err := json.Marshal(mod)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
