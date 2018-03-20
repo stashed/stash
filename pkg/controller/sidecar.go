@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"time"
 
 	stringz "github.com/appscode/go/strings"
 	core_util "github.com/appscode/kutil/core/v1"
@@ -11,14 +12,17 @@ import (
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/util"
 	"k8s.io/api/core/v1"
+	core "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
 )
 
 func (c *StashController) ensureWorkloadSidecar(w *workload.Workload, oldRestic, newRestic *api.Restic) error {
 	if c.EnableRBAC {
-		sa := stringz.Val(w.Spec.ServiceAccountName, "default")
+		sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
 		ref, err := reference.GetReference(scheme.Scheme, w)
 		if err != nil {
 			ref = &v1.ObjectReference{
@@ -42,38 +46,44 @@ func (c *StashController) ensureWorkloadSidecar(w *workload.Workload, oldRestic,
 		return err
 	}
 
+	if w.Spec.Template.Annotations == nil {
+		w.Spec.Template.Annotations = map[string]string{}
+	}
+	// mark pods with restic resource version, used to force restart pods for rc/rs
+	w.Spec.Template.Annotations[api.ResourceVersion] = newRestic.ResourceVersion
+
 	image := docker.Docker{
 		Registry: c.DockerRegistry,
 		Image:    docker.ImageStash,
 		Tag:      c.StashImageTag,
 	}
 
-	workload := api.LocalTypedReference{
+	ref := api.LocalTypedReference{
 		Kind: w.Kind,
 		Name: w.Name,
 	}
 
 	if newRestic.Spec.Type == api.BackupOffline {
-		w.Spec.InitContainers = core_util.UpsertContainer(
-			w.Spec.InitContainers,
-			util.NewInitContainer(newRestic, workload, image, c.EnableRBAC),
+		w.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(
+			w.Spec.Template.Spec.InitContainers,
+			util.NewInitContainer(newRestic, ref, image, c.EnableRBAC),
 		)
 	} else {
-		w.Spec.Containers = core_util.UpsertContainer(
-			w.Spec.Containers,
-			util.NewSidecarContainer(newRestic, workload, image),
+		w.Spec.Template.Spec.Containers = core_util.UpsertContainer(
+			w.Spec.Template.Spec.Containers,
+			util.NewSidecarContainer(newRestic, ref, image),
 		)
 	}
 
 	// keep existing image pull secrets
-	w.Spec.ImagePullSecrets = core_util.MergeLocalObjectReferences(
-		w.Spec.ImagePullSecrets,
+	w.Spec.Template.Spec.ImagePullSecrets = core_util.MergeLocalObjectReferences(
+		w.Spec.Template.Spec.ImagePullSecrets,
 		newRestic.Spec.ImagePullSecrets,
 	)
 
-	w.Spec.Volumes = util.UpsertScratchVolume(w.Spec.Volumes)
-	w.Spec.Volumes = util.UpsertDownwardVolume(w.Spec.Volumes)
-	w.Spec.Volumes = util.MergeLocalVolume(w.Spec.Volumes, oldRestic, newRestic)
+	w.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(w.Spec.Template.Spec.Volumes)
+	w.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(w.Spec.Template.Spec.Volumes)
+	w.Spec.Template.Spec.Volumes = util.MergeLocalVolume(w.Spec.Template.Spec.Volumes, oldRestic, newRestic)
 
 	if w.Annotations == nil {
 		w.Annotations = make(map[string]string)
@@ -101,23 +111,88 @@ func (c *StashController) ensureWorkloadSidecarDeleted(w *workload.Workload, res
 		}
 	}
 
-	if restic.Spec.Type == api.BackupOffline {
-		w.Spec.InitContainers = core_util.EnsureContainerDeleted(w.Spec.InitContainers, util.StashContainer)
-	} else {
-		w.Spec.Containers = core_util.EnsureContainerDeleted(w.Spec.Containers, util.StashContainer)
+	if w.Spec.Template.Annotations != nil {
+		// mark pods with restic resource version, used to force restart pods for rc/rs
+		delete(w.Spec.Template.Annotations, api.ResourceVersion)
 	}
 
-	w.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Volumes, util.ScratchDirVolumeName)
-	w.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Volumes, util.PodinfoVolumeName)
+	if restic.Spec.Type == api.BackupOffline {
+		w.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(w.Spec.Template.Spec.InitContainers, util.StashContainer)
+	} else {
+		w.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(w.Spec.Template.Spec.Containers, util.StashContainer)
+	}
+
+	w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
+	w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
 
 	if restic.Spec.Backend.Local != nil {
-		w.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Volumes, util.LocalVolumeName)
+		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, util.LocalVolumeName)
 	}
-	if w.Annotations == nil {
-		w.Annotations = make(map[string]string)
+	if w.Annotations != nil {
+		delete(w.Annotations, api.LastAppliedConfiguration)
+		delete(w.Annotations, api.VersionTag)
 	}
-	delete(w.Annotations, api.LastAppliedConfiguration)
-	delete(w.Annotations, api.VersionTag)
-
 	return nil
+}
+
+// true, nil
+// false, err
+func (c *StashController) forceRestartPods(w *workload.Workload, restic *api.Restic) error {
+	var sidecarAdded bool
+	if w.Annotations != nil {
+		_, sidecarAdded = w.Annotations[api.LastAppliedConfiguration]
+	}
+
+	return wait.PollImmediateInfinite(3*time.Second, func() (done bool, err error) {
+		r, err := metav1.LabelSelectorAsSelector(w.Spec.Selector)
+		if err != nil {
+			return false, err
+		}
+		pods, err := c.kubeClient.CoreV1().Pods(w.Namespace).List(metav1.ListOptions{LabelSelector: r.String()})
+		if err != nil {
+			if errors.IsUnauthorized(err) || errors.IsForbidden(err) {
+				return false, err
+			}
+			return false, nil // ignore temporary server errors
+		}
+
+		var podsToRestart []core.Pod
+		for _, pod := range pods.Items {
+			containers := pod.Spec.Containers
+			if restic.Spec.Type == api.BackupOffline {
+				containers = pod.Spec.InitContainers
+			}
+
+			if sidecarAdded {
+				found := false
+				for _, c := range containers {
+					if c.Name == util.StashContainer && util.GetString(pod.Annotations, api.ResourceVersion) == restic.ResourceVersion {
+						found = true
+						break
+					}
+				}
+				if !found {
+					podsToRestart = append(podsToRestart, pod)
+				}
+			} else {
+				found := false
+				for _, c := range containers {
+					if c.Name == util.StashContainer {
+						found = true
+						break
+					}
+				}
+				if found {
+					podsToRestart = append(podsToRestart, pod)
+				}
+			}
+		}
+		if len(podsToRestart) == 0 {
+			return true, nil // done
+		}
+		for _, pod := range podsToRestart {
+			c.kubeClient.CoreV1().Pods(w.Namespace).Delete(pod.Name, &metav1.DeleteOptions{})
+		}
+		return false, nil // try again
+	})
 }

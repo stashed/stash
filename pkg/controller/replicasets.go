@@ -77,15 +77,13 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 				return nil
 			}
 
-			mw, modified, err := c.mutateReplicaSet(w)
+			restic, modified, err := c.mutateReplicaSet(w)
 			if err != nil {
 				return err
 			}
-
-			patchedObj := &extensions.ReplicaSet{}
 			if modified {
-				patchedObj, _, err = ext_util.PatchReplicaSet(c.kubeClient, rs, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
-					return mw.Object.(*extensions.ReplicaSet)
+				_, _, err = ext_util.PatchReplicaSet(c.kubeClient, rs, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
+					return w.Object.(*extensions.ReplicaSet)
 				})
 				if err != nil {
 					return err
@@ -93,19 +91,17 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 			}
 
 			// ReplicaSet does not have RollingUpdate strategy. We must delete old pods manually to get patched state.
-			if restartType := util.GetString(patchedObj.Annotations, util.ForceRestartType); restartType != "" {
-				err := c.forceRestartRSPods(patchedObj, restartType, api.BackupType(util.GetString(patchedObj.Annotations, util.BackupType)))
-				if err != nil {
-					return err
-				}
-				return ext_util.WaitUntilReplicaSetReady(c.kubeClient, patchedObj.ObjectMeta)
+			err = c.forceRestartPods(w, restic)
+			if err != nil {
+				return err
 			}
+			return ext_util.WaitUntilReplicaSetReady(c.kubeClient, rs.ObjectMeta)
 		}
 	}
 	return nil
 }
 
-func (c *StashController) mutateReplicaSet(w *workload.Workload) (*workload.Workload, bool, error) {
+func (c *StashController) mutateReplicaSet(w *workload.Workload) (*api.Restic, bool, error) {
 	oldRestic, err := util.GetAppliedRestic(w.Annotations)
 	if err != nil {
 		return nil, false, err
@@ -123,50 +119,21 @@ func (c *StashController) mutateReplicaSet(w *workload.Workload) (*workload.Work
 			if err != nil {
 				return nil, false, err
 			}
-			w.Annotations[util.ForceRestartType] = util.SideCarRemoved
-			w.Annotations[util.BackupType] = string(oldRestic.Spec.Type)
 			workload.ApplyWorkload(w.Object, w)
-
-			return w, true, nil
+			return newRestic, true, nil
 		}
 	} else if oldRestic != nil && newRestic == nil {
 		err := c.ensureWorkloadSidecarDeleted(w, oldRestic)
 		if err != nil {
 			return nil, false, err
 		}
-		w.Annotations[util.ForceRestartType] = util.SideCarRemoved
-		w.Annotations[util.BackupType] = string(oldRestic.Spec.Type)
 		workload.ApplyWorkload(w.Object, w)
 
 		err = util.DeleteConfigmapLock(c.kubeClient, w.Namespace, api.LocalTypedReference{Kind: api.KindReplicaSet, Name: w.Name})
 		if err != nil {
 			return nil, false, err
 		}
-		return w, true, nil
+		return oldRestic, true, nil
 	}
-	return w, false, nil
-}
-
-func (c *StashController) forceRestartRSPods(rs *extensions.ReplicaSet, restartType string, backupType api.BackupType) error {
-	rs, _, err := ext_util.PatchReplicaSet(c.kubeClient, rs, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
-		delete(obj.Annotations, util.ForceRestartType)
-		delete(obj.Annotations, util.BackupType)
-		return obj
-	})
-	if err != nil {
-		return err
-	}
-
-	if restartType == util.SideCarAdded {
-		err := util.WaitUntilSidecarAdded(c.kubeClient, rs.Namespace, rs.Spec.Selector, backupType)
-		if err != nil {
-			return err
-		}
-	} else if restartType == util.SideCarRemoved {
-		err := util.WaitUntilSidecarRemoved(c.kubeClient, rs.Namespace, rs.Spec.Selector, backupType)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return oldRestic, false, nil
 }
