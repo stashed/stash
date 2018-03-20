@@ -1,8 +1,6 @@
 package controller
 
 import (
-	"fmt"
-
 	"github.com/appscode/go/log"
 	"github.com/appscode/kutil/admission"
 	hooks "github.com/appscode/kutil/admission/v1beta1"
