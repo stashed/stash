@@ -29,15 +29,15 @@ func (c *StashController) NewReplicaSetWebhook() hooks.AdmissionHook {
 		nil,
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
-				modObj := obj.(*workload.Workload)
-				_, _, err := c.mutateReplicaSet(modObj)
-				return modObj, err
+				w := obj.(*workload.Workload)
+				_, _, err := c.mutateReplicaSet(w)
+				return w, err
 
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
-				modObj := newObj.(*workload.Workload).DeepCopy()
-				_, _, err := c.mutateReplicaSet(modObj)
-				return modObj, err
+				w := newObj.(*workload.Workload)
+				_, _, err := c.mutateReplicaSet(w)
+				return w, err
 			},
 		},
 	)
