@@ -116,7 +116,7 @@ func (c *StashController) mutateReplicationController(w *workload.Workload) (*wo
 
 	if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
 		if !newRestic.Spec.Paused {
-			err := c.ensureWorkloadSidecar(w,api.KindReplicationController ,oldRestic, newRestic)
+			err := c.ensureWorkloadSidecar(w, oldRestic, newRestic)
 			if err != nil {
 				return nil, false, err
 			}

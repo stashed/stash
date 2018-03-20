@@ -130,6 +130,7 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 			} else {
 				obj = w.Object
 			}
+			legacyscheme.Scheme.Default(obj)
 
 			var buf bytes.Buffer
 			err = codec.Encode(obj, &buf)
@@ -183,6 +184,7 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 			} else {
 				obj = w.Object
 			}
+			legacyscheme.Scheme.Default(obj)
 
 			var buf bytes.Buffer
 			err = codec.Encode(obj, &buf)

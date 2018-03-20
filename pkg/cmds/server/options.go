@@ -12,7 +12,6 @@ import (
 	"github.com/spf13/pflag"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	"k8s.io/client-go/kubernetes"
-	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 )
 
 type ControllerOptions struct {
@@ -71,9 +70,6 @@ func (s *ControllerOptions) ApplyTo(cfg *controller.ControllerConfig) error {
 		return err
 	}
 	if cfg.CRDClient, err = crd_cs.NewForConfig(cfg.ClientConfig); err != nil {
-		return err
-	}
-	if cfg.KAClient, err = ka.NewForConfig(cfg.ClientConfig); err != nil {
 		return err
 	}
 	return nil
