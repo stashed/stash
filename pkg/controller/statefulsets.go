@@ -66,10 +66,10 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 	} else {
 		glog.Infof("Sync/Add/Update for StatefulSet %s\n", key)
 
-		ss := obj.(*appsv1beta1.StatefulSet)
+		ss := obj.(*appsv1beta1.StatefulSet).DeepCopy()
 		ss.GetObjectKind().SetGroupVersionKind(appsv1beta1.SchemeGroupVersion.WithKind(api.KindStatefulSet))
 
-		w, err := workload.ConvertToWorkload(ss.DeepCopy())
+		w, err := workload.ConvertToWorkload(ss)
 		if err != nil {
 			return nil
 		}

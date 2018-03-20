@@ -72,11 +72,11 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 	} else {
 		glog.Infof("Sync/Add/Update for ReplicaSet %s\n", key)
 
-		rs := obj.(*extensions.ReplicaSet)
+		rs := obj.(*extensions.ReplicaSet).DeepCopy()
 		rs.GetObjectKind().SetGroupVersionKind(extensions.SchemeGroupVersion.WithKind(api.KindReplicaSet))
 
 		if !ext_util.IsOwnedByDeployment(rs) {
-			w, err := workload.ConvertToWorkload(rs.DeepCopy())
+			w, err := workload.ConvertToWorkload(rs)
 			if err != nil {
 				return nil
 			}

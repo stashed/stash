@@ -71,10 +71,10 @@ func (c *StashController) runRCInjector(key string) error {
 	} else {
 		glog.Infof("Sync/Add/Update for ReplicationController %s\n", key)
 
-		rc := obj.(*core.ReplicationController)
+		rc := obj.(*core.ReplicationController).DeepCopy()
 		rc.GetObjectKind().SetGroupVersionKind(core.SchemeGroupVersion.WithKind(api.KindReplicationController))
 
-		w, err := workload.ConvertToWorkload(rc.DeepCopy())
+		w, err := workload.ConvertToWorkload(rc)
 		if err != nil {
 			return nil
 		}

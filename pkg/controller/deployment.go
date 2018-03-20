@@ -71,10 +71,10 @@ func (c *StashController) runDeploymentInjector(key string) error {
 	} else {
 		glog.Infof("Sync/Add/Update for Deployment %s\n", key)
 
-		dp := obj.(*appsv1beta1.Deployment)
+		dp := obj.(*appsv1beta1.Deployment).DeepCopy()
 		dp.GetObjectKind().SetGroupVersionKind(appsv1beta1.SchemeGroupVersion.WithKind(api.KindDeployment))
 
-		w, err := workload.ConvertToWorkload(dp.DeepCopy())
+		w, err := workload.ConvertToWorkload(dp)
 		if err != nil {
 			return nil
 		}
