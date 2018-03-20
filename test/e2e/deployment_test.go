@@ -22,13 +22,13 @@ import (
 
 var _ = Describe("Deployment", func() {
 	var (
-		err        error
-		f          *framework.Invocation
-		restic     api.Restic
-		restic2    api.Restic
-		cred       core.Secret
-		deployment apps.Deployment
-		recovery   api.Recovery
+		err          error
+		f            *framework.Invocation
+		restic       api.Restic
+		secondRestic api.Restic
+		cred         core.Secret
+		deployment   apps.Deployment
+		recovery     api.Recovery
 	)
 
 	BeforeEach(func() {
@@ -42,7 +42,7 @@ var _ = Describe("Deployment", func() {
 			Skip("Missing repository credential")
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
-		restic2.Spec.Backend.StorageSecretName = cred.Name
+		secondRestic.Spec.Backend.StorageSecretName = cred.Name
 		recovery.Spec.Backend.StorageSecretName = cred.Name
 		deployment = f.Deployment()
 	})
@@ -285,8 +285,8 @@ var _ = Describe("Deployment", func() {
 			err = f.CreateRestic(restic)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Creating second restic " + restic2.Name)
-			err = f.CreateRestic(restic2)
+			By("Creating second restic " + secondRestic.Name)
+			err = f.CreateRestic(secondRestic)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating Deployment " + deployment.Name)
@@ -655,7 +655,7 @@ var _ = Describe("Deployment", func() {
 		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteRestic(restic2.ObjectMeta)
+			f.DeleteRestic(secondRestic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 		})
 
@@ -663,8 +663,8 @@ var _ = Describe("Deployment", func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
-				restic2 = restic
-				restic2.Name = "restic2"
+				secondRestic = restic
+				secondRestic.Name = "secondRestic"
 			})
 			It("should mutate and backup new Deployment", shouldMutateAndBackupNewDeployment)
 			It("should not mutate new Deployment if no restic select it", shouldNotMutateNewDeployment)

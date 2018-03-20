@@ -16,9 +16,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
-
-	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
+	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
 )
 
@@ -56,9 +55,9 @@ var _ = BeforeSuite(func() {
 	ctrl, err := ctrlConfig.New()
 	Expect(err).NotTo(HaveOccurred())
 
-	kaClient:= ka.NewForConfigOrDie(clientConfig)
+	kaClient := ka.NewForConfigOrDie(clientConfig)
 
-	root = framework.New(ctrlConfig.KubeClient, ctrlConfig.StashClient, kaClient,options.StartAPIServer)
+	root = framework.New(ctrlConfig.KubeClient, ctrlConfig.StashClient, kaClient, options.StartAPIServer)
 	err = root.CreateNamespace()
 	Expect(err).NotTo(HaveOccurred())
 	By("Using test namespace " + root.Namespace())

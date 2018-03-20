@@ -17,13 +17,13 @@ import (
 
 var _ = Describe("ReplicationController", func() {
 	var (
-		err      error
-		f        *framework.Invocation
-		restic   api.Restic
-		restic2  api.Restic
-		cred     core.Secret
-		rc       core.ReplicationController
-		recovery api.Recovery
+		err          error
+		f            *framework.Invocation
+		restic       api.Restic
+		secondRestic api.Restic
+		cred         core.Secret
+		rc           core.ReplicationController
+		recovery     api.Recovery
 	)
 
 	BeforeEach(func() {
@@ -37,7 +37,7 @@ var _ = Describe("ReplicationController", func() {
 			Skip("Missing repository credential")
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
-		restic2.Spec.Backend.StorageSecretName = cred.Name
+		secondRestic.Spec.Backend.StorageSecretName = cred.Name
 		recovery.Spec.Backend.StorageSecretName = cred.Name
 		rc = f.ReplicationController()
 	})
@@ -279,8 +279,8 @@ var _ = Describe("ReplicationController", func() {
 			err = f.CreateRestic(restic)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Creating second restic " + restic2.Name)
-			err = f.CreateRestic(restic2)
+			By("Creating second restic " + secondRestic.Name)
+			err = f.CreateRestic(secondRestic)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating ReplicationController " + rc.Name)
@@ -573,15 +573,15 @@ var _ = Describe("ReplicationController", func() {
 			f.DeleteReplicationController(rc.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
-			f.DeleteRestic(restic2.ObjectMeta)
+			f.DeleteRestic(secondRestic.ObjectMeta)
 		})
 
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
-				restic2 = restic
-				restic2.Name = "restic2"
+				secondRestic = restic
+				secondRestic.Name = "secondRestic"
 			})
 			It("should mutate and backup new ReplicationController", shouldMutateAndBackupNewReplicationController)
 			It("should not mutate new ReplicationController if no restic select it", shouldNotMutateNewReplicationController)

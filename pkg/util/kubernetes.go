@@ -37,11 +37,11 @@ const (
 	AnnotationOperation  = "operation"
 	AnnotationOldReplica = "old-replica"
 
-	OperationRecovery   = "recovery"
-	OperationCheck      = "check"
+	OperationRecovery = "recovery"
+	OperationCheck    = "check"
 
-	AppLabelStash       = "stash"
-	OperationScaleDown  = "scale-down"
+	AppLabelStash      = "stash"
+	OperationScaleDown = "scale-down"
 )
 
 var (

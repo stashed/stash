@@ -18,13 +18,13 @@ import (
 
 var _ = Describe("ReplicaSet", func() {
 	var (
-		err      error
-		f        *framework.Invocation
-		restic   api.Restic
-		restic2  api.Restic
-		cred     core.Secret
-		rs       extensions.ReplicaSet
-		recovery api.Recovery
+		err          error
+		f            *framework.Invocation
+		restic       api.Restic
+		secondRestic api.Restic
+		cred         core.Secret
+		rs           extensions.ReplicaSet
+		recovery     api.Recovery
 	)
 
 	BeforeEach(func() {
@@ -38,7 +38,7 @@ var _ = Describe("ReplicaSet", func() {
 			Skip("Missing repository credential")
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
-		restic2.Spec.Backend.StorageSecretName = cred.Name
+		secondRestic.Spec.Backend.StorageSecretName = cred.Name
 		recovery.Spec.Backend.StorageSecretName = cred.Name
 		rs = f.ReplicaSet()
 	})
@@ -279,8 +279,8 @@ var _ = Describe("ReplicaSet", func() {
 			err = f.CreateRestic(restic)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Creating second restic " + restic2.Name)
-			err = f.CreateRestic(restic2)
+			By("Creating second restic " + secondRestic.Name)
+			err = f.CreateRestic(secondRestic)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating ReplicaSet " + rs.Name)
@@ -572,7 +572,7 @@ var _ = Describe("ReplicaSet", func() {
 		AfterEach(func() {
 			f.DeleteReplicaSet(rs.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteRestic(restic2.ObjectMeta)
+			f.DeleteRestic(secondRestic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 		})
 
@@ -580,8 +580,8 @@ var _ = Describe("ReplicaSet", func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
-				restic2 = restic
-				restic2.Name = "restic2"
+				secondRestic = restic
+				secondRestic.Name = "secondRestic"
 			})
 			It("should mutate and backup new ReplicaSet", shouldMutateAndBackupNewReplicaSet)
 			It("should not mutate new ReplicaSet if no restic select it", shouldNotMutateNewReplicaSet)
