@@ -47,7 +47,7 @@ func (c *StashController) ensureWorkloadSidecar(w *workload.Workload, workloadKi
 		Image:    docker.ImageStash,
 		Tag:      c.StashImageTag,
 	}
-	fmt.Println("========================================\nName:",w.Name,"\nKind:",workloadKind,"\n=================================================")
+	//fmt.Println("========================================\nName:",w.Name,"\nKind:",workloadKind,"\n=================================================")
 
 	workload := api.LocalTypedReference{
 		Kind: workloadKind,

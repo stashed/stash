@@ -17,6 +17,7 @@ import (
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/kubernetes/pkg/api/legacyscheme"
 )
 
 const (
@@ -39,6 +40,7 @@ func TestE2e(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	scheme.AddToScheme(clientsetscheme.Scheme)
+	scheme.AddToScheme(legacyscheme.Scheme)
 	util.LoggerOptions.Verbosity = "5"
 
 	clientConfig, err := clientcmd.BuildConfigFromContext(options.KubeConfig, options.KubeContext)

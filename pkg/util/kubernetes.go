@@ -26,7 +26,6 @@ import (
 
 const (
 	StashContainer       = "stash"
-	KubectlContainer     = "stash-kubectl"
 	LocalVolumeName      = "stash-local"
 	ScratchDirVolumeName = "stash-scratchdir"
 	PodinfoVolumeName    = "stash-podinfo"
@@ -42,7 +41,7 @@ const (
 
 	OperationRecovery   = "recovery"
 	OperationCheck      = "check"
-	OperationDeletePods = "delete-pods"
+
 	AppLabelStash       = "stash"
 	OperationScaleDown  = "scale-down"
 	ForceRestartType    = "force-restart"

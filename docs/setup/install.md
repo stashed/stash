@@ -69,10 +69,9 @@ $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/de
     | bash -s -- --namespace=stash [--run-on-master] [--rbac]
 ```
 
-If you are using a private Docker registry, you need to pull the following 2 docker images:
+If you are using a private Docker registry, you need to pull the following image:
 
  - [appscode/stash](https://hub.docker.com/r/appscode/stash)
- - [appscode/kubectl](https://hub.docker.com/r/appscode/kubectl)
 
 To pass the address of your private registry and optionally a image pull secret use flags `--docker-registry` and `--image-pull-secret` respectively.
 
@@ -88,7 +87,7 @@ Stash implements [validating admission webhooks](https://kubernetes.io/docs/admi
 $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/stash.sh \
     | bash -s -- --enable-validating-webhook=false --enable-mutating-webhook=false [--rbac]
 ```
-
+To know more about webhook in stash please visit [here]().
 
 ## Using Helm
 Stash can be installed via [Helm](https://helm.sh/) using the [chart](https://github.com/appscode/stash/tree/master/chart/stable/stash) included in this repository or from official charts repository. To install the chart with the release name `my-release`:

@@ -73,8 +73,5 @@ func (s *ControllerOptions) ApplyTo(cfg *controller.ControllerConfig) error {
 	if cfg.CRDClient, err = crd_cs.NewForConfig(cfg.ClientConfig); err != nil {
 		return err
 	}
-	if cfg.KAClient, err = ka.NewForConfig(cfg.ClientConfig); err != nil {
-		return err
-	}
 	return nil
 }
