@@ -29,12 +29,14 @@ func (c *StashController) NewStatefulSetWebhook() hooks.AdmissionHook {
 		nil,
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
-				modObj, _, err := c.mutateStatefulSet(obj.(*workload.Workload))
+				modObj:=obj.(*workload.Workload).DeepCopy()
+				_, _, err := c.mutateStatefulSet(modObj)
 				return modObj, err
 
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
-				modObj, _, err := c.mutateStatefulSet(newObj.(*workload.Workload))
+				modObj:=newObj.(*workload.Workload).DeepCopy()
+				_, _, err := c.mutateStatefulSet(modObj)
 				return modObj, err
 			},
 		},

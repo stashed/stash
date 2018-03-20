@@ -16,7 +16,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
-	//"k8s.io/client-go/kubernetes"
+
+	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
 )
@@ -54,9 +55,10 @@ var _ = BeforeSuite(func() {
 
 	ctrl, err := ctrlConfig.New()
 	Expect(err).NotTo(HaveOccurred())
-	//kaClient:=kubernetes.NewForConfigOrDie(clientConfig)
 
-	root = framework.New(ctrlConfig.KubeClient, ctrlConfig.StashClient, options.StartAPIServer)
+	kaClient:= ka.NewForConfigOrDie(clientConfig)
+
+	root = framework.New(ctrlConfig.KubeClient, ctrlConfig.StashClient, kaClient,options.StartAPIServer)
 	err = root.CreateNamespace()
 	Expect(err).NotTo(HaveOccurred())
 	By("Using test namespace " + root.Namespace())
@@ -83,7 +85,7 @@ var _ = AfterSuite(func() {
 		root.KubeClient.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Delete("admission.stash.appscode.com", meta.DeleteInBackground())
 		root.KubeClient.CoreV1().Endpoints(root.Namespace()).Delete("stash-local-apiserver", meta.DeleteInBackground())
 		root.KubeClient.CoreV1().Services(root.Namespace()).Delete("stash-local-apiserver", meta.DeleteInBackground())
-		//root.KAClient.ApiregistrationV1beta1().APIServices().Delete("v1alpha1.admission.stash.appscode.com", meta.DeleteInBackground())
+		root.KAClient.ApiregistrationV1beta1().APIServices().Delete("v1alpha1.admission.stash.appscode.com", meta.DeleteInBackground())
 	}
 	root.DeleteNamespace()
 })

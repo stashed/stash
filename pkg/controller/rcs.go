@@ -28,12 +28,14 @@ func (c *StashController) NewReplicationControllerWebhook() hooks.AdmissionHook 
 		nil,
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
-				modObj, _, err := c.mutateReplicationController(obj.(*workload.Workload))
+				modObj:=obj.(*workload.Workload).DeepCopy()
+				_, _, err := c.mutateReplicationController(modObj)
 				return modObj, err
 
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
-				modObj, _, err := c.mutateReplicationController(newObj.(*workload.Workload))
+				modObj:=newObj.(*workload.Workload).DeepCopy()
+				_, _, err := c.mutateReplicationController(modObj)
 				return modObj, err
 			},
 		},

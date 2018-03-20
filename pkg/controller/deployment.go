@@ -28,12 +28,14 @@ func (c *StashController) NewDeploymentWebhook() hooks.AdmissionHook {
 		nil,
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
-				modObj, _, err := c.mutateDeployment(obj.(*workload.Workload))
+				modObj:=obj.(*workload.Workload).DeepCopy()
+				_, _, err := c.mutateDeployment(modObj)
 				return modObj, err
 
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
-				modObj, _, err := c.mutateDeployment(newObj.(*workload.Workload))
+				modObj:=newObj.(*workload.Workload).DeepCopy()
+				_, _, err := c.mutateDeployment(modObj)
 				return modObj, err
 			},
 		},
