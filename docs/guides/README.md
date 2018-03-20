@@ -26,4 +26,3 @@ Guides show you how to perform tasks with Stash.
 - See working examples for supported workload types [here](/docs/guides/workloads.md).
 - Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/monitoring.md).
 - Learn about how to configure [RBAC roles](/docs/guides/rbac.md).
-- Learn about how to configure Stash operator as workload initializer [here](/docs/guides/initializer.md).
