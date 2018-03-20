@@ -135,8 +135,6 @@ func (c *StashController) ensureWorkloadSidecarDeleted(w *workload.Workload, res
 	return nil
 }
 
-// true, nil
-// false, err
 func (c *StashController) forceRestartPods(w *workload.Workload, restic *api.Restic) error {
 	var sidecarAdded bool
 	if w.Annotations != nil {
