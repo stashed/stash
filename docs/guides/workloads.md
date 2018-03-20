@@ -138,6 +138,5 @@ To learn about the meaning of various flags, please visit [here](/docs/reference
 - See the list of supported backends and how to configure them [here](/docs/guides/backends.md).
 - Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/monitoring.md).
 - Learn about how to configure [RBAC roles](/docs/guides/rbac.md).
-- Learn about how to configure Stash operator as workload initializer [here](/docs/guides/initializer.md).
 - Wondering what features are coming next? Please visit [here](/docs/roadmap.md).
 - Want to hack on Stash? Check our [contribution guidelines](/docs/CONTRIBUTING.md).

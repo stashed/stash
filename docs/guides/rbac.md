@@ -47,5 +47,4 @@ You can find full working examples [here](/docs/guides/workloads.md).
 - See the list of supported backends and how to configure them [here](/docs/guides/backends.md).
 - See working examples for supported workload types [here](/docs/guides/workloads.md).
 - Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/monitoring.md).
-- Learn about how to configure Stash operator as workload initializer [here](/docs/guides/initializer.md).
 - Want to hack on Stash? Check our [contribution guidelines](/docs/CONTRIBUTING.md).
