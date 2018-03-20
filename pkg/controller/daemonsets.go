@@ -76,13 +76,13 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 		}
 
 		if modified {
-			patchedObj, _, err := ext_util.PatchDaemonSet(c.KubeClient, ds, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
+			patchedObj, _, err := ext_util.PatchDaemonSet(c.kubeClient, ds, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
 				return mw.Object.(*extensions.DaemonSet)
 			})
 			if err != nil {
 				return err
 			}
-			return ext_util.WaitUntilDaemonSetReady(c.KubeClient, patchedObj.ObjectMeta)
+			return ext_util.WaitUntilDaemonSetReady(c.kubeClient, patchedObj.ObjectMeta)
 		}
 
 	}
@@ -95,7 +95,7 @@ func (c *StashController) mutateDaemonSet(w *workload.Workload) (*workload.Workl
 		return nil, false, err
 	}
 
-	newRestic, err := util.FindRestic(c.RstLister, w.ObjectMeta)
+	newRestic, err := util.FindRestic(c.rstLister, w.ObjectMeta)
 	if err != nil {
 		log.Errorf("Error while searching Restic for DaemonSet %s/%s.", w.Name, w.Namespace)
 		return nil, false, err

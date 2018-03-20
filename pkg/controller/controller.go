@@ -30,7 +30,7 @@ import (
 type StashController struct {
 	Config
 
-	KubeClient  kubernetes.Interface
+	kubeClient  kubernetes.Interface
 	stashClient cs.Interface
 	crdClient   crd_cs.ApiextensionsV1beta1Interface
 	recorder    record.EventRecorder
@@ -44,7 +44,7 @@ type StashController struct {
 	// Restic
 	rstQueue    *queue.Worker
 	rstInformer cache.SharedIndexInformer
-	RstLister   stash_listers.ResticLister
+	rstLister   stash_listers.ResticLister
 
 	// Recovery
 	recQueue    *queue.Worker

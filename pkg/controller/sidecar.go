@@ -37,7 +37,7 @@ func (c *StashController) ensureWorkloadSidecar(w *workload.Workload, oldRestic,
 		return err
 	}
 
-	_, err := c.KubeClient.CoreV1().Secrets(w.Namespace).Get(newRestic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	_, err := c.kubeClient.CoreV1().Secrets(w.Namespace).Get(newRestic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}

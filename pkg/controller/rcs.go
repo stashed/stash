@@ -66,7 +66,7 @@ func (c *StashController) runRCInjector(key string) error {
 		if err != nil {
 			return err
 		}
-		util.DeleteConfigmapLock(c.KubeClient, ns, api.LocalTypedReference{Kind: api.KindReplicationController, Name: name})
+		util.DeleteConfigmapLock(c.kubeClient, ns, api.LocalTypedReference{Kind: api.KindReplicationController, Name: name})
 	} else {
 		rc := obj.(*core.ReplicationController)
 		glog.Infof("Sync/Add/Update for ReplicationController %s\n", key)
@@ -83,7 +83,7 @@ func (c *StashController) runRCInjector(key string) error {
 
 		patchedObj := &core.ReplicationController{}
 		if modified {
-			patchedObj, _, err = core_util.PatchRC(c.KubeClient, rc, func(obj *core.ReplicationController) *core.ReplicationController {
+			patchedObj, _, err = core_util.PatchRC(c.kubeClient, rc, func(obj *core.ReplicationController) *core.ReplicationController {
 				return modObj.Object.(*core.ReplicationController)
 			})
 			if err != nil {
@@ -97,7 +97,7 @@ func (c *StashController) runRCInjector(key string) error {
 			if err != nil {
 				return err
 			}
-			return core_util.WaitUntilRCReady(c.KubeClient, patchedObj.ObjectMeta)
+			return core_util.WaitUntilRCReady(c.kubeClient, patchedObj.ObjectMeta)
 		}
 	}
 	return nil
@@ -108,7 +108,7 @@ func (c *StashController) mutateReplicationController(w *workload.Workload) (*wo
 	if err != nil {
 		return nil, false, err
 	}
-	newRestic, err := util.FindRestic(c.RstLister, w.ObjectMeta)
+	newRestic, err := util.FindRestic(c.rstLister, w.ObjectMeta)
 	if err != nil {
 		log.Errorf("Error while searching Restic for ReplicationController %s/%s.", w.Name, w.Namespace)
 		return nil, false, err
@@ -135,7 +135,7 @@ func (c *StashController) mutateReplicationController(w *workload.Workload) (*wo
 		w.Annotations[util.BackupType] = string(oldRestic.Spec.Type)
 		workload.ApplyWorkload(w.Object, w)
 
-		err = util.DeleteConfigmapLock(c.KubeClient, w.Namespace, api.LocalTypedReference{Kind: api.KindReplicationController, Name: w.Name})
+		err = util.DeleteConfigmapLock(c.kubeClient, w.Namespace, api.LocalTypedReference{Kind: api.KindReplicationController, Name: w.Name})
 		if err != nil {
 			return nil, false, err
 		}
@@ -145,7 +145,7 @@ func (c *StashController) mutateReplicationController(w *workload.Workload) (*wo
 }
 
 func (c *StashController) forceRestartRCPods(rc *core.ReplicationController, restartType string, backupType api.BackupType) error {
-	rc, _, err := core_util.PatchRC(c.KubeClient, rc, func(obj *core.ReplicationController) *core.ReplicationController {
+	rc, _, err := core_util.PatchRC(c.kubeClient, rc, func(obj *core.ReplicationController) *core.ReplicationController {
 		delete(obj.Annotations, util.ForceRestartType)
 		delete(obj.Annotations, util.BackupType)
 		return obj
@@ -155,12 +155,12 @@ func (c *StashController) forceRestartRCPods(rc *core.ReplicationController, res
 	}
 
 	if restartType == util.SideCarAdded {
-		err := util.WaitUntilSidecarAdded(c.KubeClient, rc.Namespace, &metav1.LabelSelector{MatchLabels: rc.Spec.Selector}, backupType)
+		err := util.WaitUntilSidecarAdded(c.kubeClient, rc.Namespace, &metav1.LabelSelector{MatchLabels: rc.Spec.Selector}, backupType)
 		if err != nil {
 			return err
 		}
 	} else if restartType == util.SideCarRemoved {
-		err := util.WaitUntilSidecarRemoved(c.KubeClient, rc.Namespace, &metav1.LabelSelector{MatchLabels: rc.Spec.Selector}, backupType)
+		err := util.WaitUntilSidecarRemoved(c.kubeClient, rc.Namespace, &metav1.LabelSelector{MatchLabels: rc.Spec.Selector}, backupType)
 		if err != nil {
 			return err
 		}

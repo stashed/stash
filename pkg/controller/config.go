@@ -47,7 +47,7 @@ func (c *ControllerConfig) New() (*StashController, error) {
 	}
 	ctrl := &StashController{
 		Config:               c.Config,
-		KubeClient:           c.KubeClient,
+		kubeClient:           c.KubeClient,
 		stashClient:          c.StashClient,
 		crdClient:            c.CRDClient,
 		kubeInformerFactory:  informers.NewFilteredSharedInformerFactory(c.KubeClient, c.ResyncPeriod, core.NamespaceAll, tweakListOptions),

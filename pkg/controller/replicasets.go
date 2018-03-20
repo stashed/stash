@@ -66,7 +66,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 		if err != nil {
 			return err
 		}
-		util.DeleteConfigmapLock(c.KubeClient, ns, api.LocalTypedReference{Kind: api.KindReplicaSet, Name: name})
+		util.DeleteConfigmapLock(c.kubeClient, ns, api.LocalTypedReference{Kind: api.KindReplicaSet, Name: name})
 	} else {
 		rs := obj.(*extensions.ReplicaSet)
 		glog.Infof("Sync/Add/Update for ReplicaSet %s\n", key)
@@ -84,7 +84,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 
 			patchedObj := &extensions.ReplicaSet{}
 			if modified {
-				patchedObj, _, err = ext_util.PatchReplicaSet(c.KubeClient, rs, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
+				patchedObj, _, err = ext_util.PatchReplicaSet(c.kubeClient, rs, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
 					return mw.Object.(*extensions.ReplicaSet)
 				})
 				if err != nil {
@@ -98,7 +98,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 				if err != nil {
 					return err
 				}
-				return ext_util.WaitUntilReplicaSetReady(c.KubeClient, patchedObj.ObjectMeta)
+				return ext_util.WaitUntilReplicaSetReady(c.kubeClient, patchedObj.ObjectMeta)
 			}
 		}
 	}
@@ -111,7 +111,7 @@ func (c *StashController) mutateReplicaSet(w *workload.Workload) (*workload.Work
 		return nil, false, err
 	}
 
-	newRestic, err := util.FindRestic(c.RstLister, w.ObjectMeta)
+	newRestic, err := util.FindRestic(c.rstLister, w.ObjectMeta)
 	if err != nil {
 		log.Errorf("Error while searching Restic for ReplicaSet %s/%s.", w.Name, w.Namespace)
 		return nil, false, err
@@ -138,7 +138,7 @@ func (c *StashController) mutateReplicaSet(w *workload.Workload) (*workload.Work
 		w.Annotations[util.BackupType] = string(oldRestic.Spec.Type)
 		workload.ApplyWorkload(w.Object, w)
 
-		err = util.DeleteConfigmapLock(c.KubeClient, w.Namespace, api.LocalTypedReference{Kind: api.KindReplicaSet, Name: w.Name})
+		err = util.DeleteConfigmapLock(c.kubeClient, w.Namespace, api.LocalTypedReference{Kind: api.KindReplicaSet, Name: w.Name})
 		if err != nil {
 			return nil, false, err
 		}
@@ -148,7 +148,7 @@ func (c *StashController) mutateReplicaSet(w *workload.Workload) (*workload.Work
 }
 
 func (c *StashController) forceRestartRSPods(rs *extensions.ReplicaSet, restartType string, backupType api.BackupType) error {
-	rs, _, err := ext_util.PatchReplicaSet(c.KubeClient, rs, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
+	rs, _, err := ext_util.PatchReplicaSet(c.kubeClient, rs, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
 		delete(obj.Annotations, util.ForceRestartType)
 		delete(obj.Annotations, util.BackupType)
 		return obj
@@ -158,12 +158,12 @@ func (c *StashController) forceRestartRSPods(rs *extensions.ReplicaSet, restartT
 	}
 
 	if restartType == util.SideCarAdded {
-		err := util.WaitUntilSidecarAdded(c.KubeClient, rs.Namespace, rs.Spec.Selector, backupType)
+		err := util.WaitUntilSidecarAdded(c.kubeClient, rs.Namespace, rs.Spec.Selector, backupType)
 		if err != nil {
 			return err
 		}
 	} else if restartType == util.SideCarRemoved {
-		err := util.WaitUntilSidecarRemoved(c.KubeClient, rs.Namespace, rs.Spec.Selector, backupType)
+		err := util.WaitUntilSidecarRemoved(c.kubeClient, rs.Namespace, rs.Spec.Selector, backupType)
 		if err != nil {
 			return err
 		}
