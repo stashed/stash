@@ -111,8 +111,8 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 		if err != nil {
 			return StatusBadRequest(err)
 		}
-		obj.GetObjectKind().SetGroupVersionKind(*kind)
 		legacyscheme.Scheme.Default(obj)
+		obj.GetObjectKind().SetGroupVersionKind(*kind)
 		w, err := workload.ConvertToWorkload(obj)
 		if err != nil {
 			return StatusBadRequest(err)
@@ -154,8 +154,8 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 		if err != nil {
 			return StatusBadRequest(err)
 		}
-		obj.GetObjectKind().SetGroupVersionKind(*kind)
 		legacyscheme.Scheme.Default(obj)
+		obj.GetObjectKind().SetGroupVersionKind(*kind)
 		w, err := workload.ConvertToWorkload(obj)
 		if err != nil {
 			return StatusBadRequest(err)
