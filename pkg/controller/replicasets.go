@@ -123,10 +123,7 @@ func (c *StashController) mutateReplicaSet(w *workload.Workload) (*workload.Work
 			if err != nil {
 				return nil, false, err
 			}
-			w.Annotations[util.ForceRestartType] = util.SideCarRemoved
-			w.Annotations[util.BackupType] = string(oldRestic.Spec.Type)
 			workload.ApplyWorkload(w.Object, w)
-
 			return w, true, nil
 		}
 	} else if oldRestic != nil && newRestic == nil {
@@ -134,8 +131,6 @@ func (c *StashController) mutateReplicaSet(w *workload.Workload) (*workload.Work
 		if err != nil {
 			return nil, false, err
 		}
-		w.Annotations[util.ForceRestartType] = util.SideCarRemoved
-		w.Annotations[util.BackupType] = string(oldRestic.Spec.Type)
 		workload.ApplyWorkload(w.Object, w)
 
 		err = util.DeleteConfigmapLock(c.kubeClient, w.Namespace, api.LocalTypedReference{Kind: api.KindReplicaSet, Name: w.Name})

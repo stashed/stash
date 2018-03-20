@@ -47,8 +47,6 @@ func (c *StashController) ensureWorkloadSidecar(w *workload.Workload, oldRestic,
 		Image:    docker.ImageStash,
 		Tag:      c.StashImageTag,
 	}
-	fmt.Println("========================================\nName:", w.Name, "\nKind:", w.Kind, "\n=================================================")
-
 	workload := api.LocalTypedReference{
 		Kind: w.Kind,
 		Name: w.Name,
@@ -90,6 +88,7 @@ func (c *StashController) ensureWorkloadSidecar(w *workload.Workload, oldRestic,
 	data, _ := meta.MarshalToJson(r, api.SchemeGroupVersion)
 	w.Annotations[api.LastAppliedConfiguration] = string(data)
 	w.Annotations[api.VersionTag] = c.StashImageTag
+	w.Annotations[api.ResourceVersion] = newRestic.ResourceVersion
 
 	return nil
 }
@@ -119,6 +118,7 @@ func (c *StashController) ensureWorkloadSidecarDeleted(w *workload.Workload, res
 	}
 	delete(w.Annotations, api.LastAppliedConfiguration)
 	delete(w.Annotations, api.VersionTag)
+	delete(w.Annotations, api.ResourceVersion)
 
 	return nil
 }

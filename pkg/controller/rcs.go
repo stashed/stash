@@ -120,8 +120,6 @@ func (c *StashController) mutateReplicationController(w *workload.Workload) (*wo
 			if err != nil {
 				return nil, false, err
 			}
-			w.Annotations[util.ForceRestartType] = util.SideCarAdded
-			w.Annotations[util.BackupType] = string(newRestic.Spec.Type)
 			workload.ApplyWorkload(w.Object, w)
 
 			return w, true, nil
@@ -131,8 +129,6 @@ func (c *StashController) mutateReplicationController(w *workload.Workload) (*wo
 		if err != nil {
 			return nil, false, err
 		}
-		w.Annotations[util.ForceRestartType] = util.SideCarRemoved
-		w.Annotations[util.BackupType] = string(oldRestic.Spec.Type)
 		workload.ApplyWorkload(w.Object, w)
 
 		err = util.DeleteConfigmapLock(c.kubeClient, w.Namespace, api.LocalTypedReference{Kind: api.KindReplicationController, Name: w.Name})

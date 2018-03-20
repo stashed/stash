@@ -45,10 +45,6 @@ const (
 	OperationDeletePods = "delete-pods"
 	AppLabelStash       = "stash"
 	OperationScaleDown  = "scale-down"
-	ForceRestartType    = "force-restart"
-	SideCarAdded        = "sidecar-added"
-	SideCarRemoved      = "sidecar-removed"
-	BackupType          = "backup-type"
 )
 
 var (

@@ -31,7 +31,6 @@ func (c *StashController) NewDaemonSetWebhook() hooks.AdmissionHook {
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
 				modObj, _, err := c.mutateDaemonSet(obj.(*workload.Workload))
 				return modObj, err
-
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
 				modObj, _, err := c.mutateDaemonSet(newObj.(*workload.Workload))
