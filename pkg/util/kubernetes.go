@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	"time"
 
 	"github.com/appscode/go/log/golog"
 	core_util "github.com/appscode/kutil/core/v1"
@@ -14,7 +13,6 @@ import (
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	stash_listers "github.com/appscode/stash/client/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/docker"
-	"github.com/cenkalti/backoff"
 	"github.com/pkg/errors"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
@@ -101,92 +99,6 @@ func FindRestic(lister stash_listers.ResticLister, obj metav1.ObjectMeta) (*api.
 		return result[0], nil
 	}
 	return nil, nil
-}
-
-func WaitUntilSidecarAdded(kubeClient kubernetes.Interface, namespace string, selector *metav1.LabelSelector, backupType api.BackupType) error {
-	return backoff.Retry(func() error {
-		r, err := metav1.LabelSelectorAsSelector(selector)
-		if err != nil {
-			return err
-		}
-		pods, err := kubeClient.CoreV1().Pods(namespace).List(metav1.ListOptions{LabelSelector: r.String()})
-		if err != nil {
-			return err
-		}
-
-		var podsToRestart []core.Pod
-		for _, pod := range pods.Items {
-			found := false
-			if backupType == api.BackupOffline {
-				for _, c := range pod.Spec.InitContainers {
-					if c.Name == StashContainer {
-						found = true
-						break
-					}
-				}
-			} else {
-				for _, c := range pod.Spec.Containers {
-					if c.Name == StashContainer {
-						found = true
-						break
-					}
-				}
-			}
-			if !found {
-				podsToRestart = append(podsToRestart, pod)
-			}
-		}
-		if len(podsToRestart) == 0 {
-			return nil
-		}
-		for _, pod := range podsToRestart {
-			kubeClient.CoreV1().Pods(namespace).Delete(pod.Name, &metav1.DeleteOptions{})
-		}
-		return errors.New("check again")
-	}, backoff.NewConstantBackOff(3*time.Second))
-}
-
-func WaitUntilSidecarRemoved(kubeClient kubernetes.Interface, namespace string, selector *metav1.LabelSelector, backupType api.BackupType) error {
-	return backoff.Retry(func() error {
-		r, err := metav1.LabelSelectorAsSelector(selector)
-		if err != nil {
-			return err
-		}
-		pods, err := kubeClient.CoreV1().Pods(namespace).List(metav1.ListOptions{LabelSelector: r.String()})
-		if err != nil {
-			return err
-		}
-
-		var podsToRestart []core.Pod
-		for _, pod := range pods.Items {
-			found := false
-			if backupType == api.BackupOffline {
-				for _, c := range pod.Spec.InitContainers {
-					if c.Name == StashContainer {
-						found = true
-						break
-					}
-				}
-			} else {
-				for _, c := range pod.Spec.Containers {
-					if c.Name == StashContainer {
-						found = true
-						break
-					}
-				}
-			}
-			if found {
-				podsToRestart = append(podsToRestart, pod)
-			}
-		}
-		if len(podsToRestart) == 0 {
-			return nil
-		}
-		for _, pod := range podsToRestart {
-			kubeClient.CoreV1().Pods(namespace).Delete(pod.Name, &metav1.DeleteOptions{})
-		}
-		return errors.New("check again")
-	}, backoff.NewConstantBackOff(3*time.Second))
 }
 
 func GetString(m map[string]string, key string) string {

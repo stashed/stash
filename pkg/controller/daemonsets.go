@@ -7,6 +7,7 @@ import (
 	ext_util "github.com/appscode/kutil/extensions/v1beta1"
 	"github.com/appscode/kutil/tools/queue"
 	workload "github.com/appscode/kutil/workload/v1"
+	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	appsv1 "k8s.io/api/apps/v1"
@@ -69,14 +70,13 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 			return nil
 		}
 
-		mw, modified, err := c.mutateDaemonSet(w)
+		_, modified, err := c.mutateDaemonSet(w)
 		if err != nil {
 			return err
 		}
-
 		if modified {
 			patchedObj, _, err := ext_util.PatchDaemonSet(c.kubeClient, ds, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
-				return mw.Object.(*extensions.DaemonSet)
+				return w.Object.(*extensions.DaemonSet)
 			})
 			if err != nil {
 				return err
@@ -88,7 +88,7 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 	return nil
 }
 
-func (c *StashController) mutateDaemonSet(w *workload.Workload) (*workload.Workload, bool, error) {
+func (c *StashController) mutateDaemonSet(w *workload.Workload) (*api.Restic, bool, error) {
 	oldRestic, err := util.GetAppliedRestic(w.Annotations)
 	if err != nil {
 		return nil, false, err
@@ -140,7 +140,7 @@ func (c *StashController) mutateDaemonSet(w *workload.Workload) (*workload.Workl
 				}
 			}
 
-			return w, true, nil
+			return newRestic, true, nil
 		}
 	} else if oldRestic != nil && newRestic == nil {
 		err := c.ensureWorkloadSidecarDeleted(w, oldRestic)
@@ -148,7 +148,7 @@ func (c *StashController) mutateDaemonSet(w *workload.Workload) (*workload.Workl
 			return nil, false, err
 		}
 		workload.ApplyWorkload(w.Object, w)
-		return w, true, nil
+		return oldRestic, true, nil
 	}
-	return w, false, nil
+	return oldRestic, false, nil
 }

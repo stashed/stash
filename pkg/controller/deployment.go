@@ -14,7 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
-	//oneliner "github.com/the-redback/go-oneliners"
 )
 
 func (c *StashController) NewDeploymentWebhook() hooks.AdmissionHook {
@@ -77,14 +76,13 @@ func (c *StashController) runDeploymentInjector(key string) error {
 		}
 
 		// mutateDeployment add or remove sidecar to Deployment when necessary
-		modObj, modified, err := c.mutateDeployment(w)
+		_, modified, err := c.mutateDeployment(w)
 		if err != nil {
 			return err
 		}
-
 		if modified {
 			patchedObj, _, err := apps_util.PatchDeployment(c.kubeClient, dp, func(obj *appsv1beta1.Deployment) *appsv1beta1.Deployment {
-				return modObj.Object.(*appsv1beta1.Deployment)
+				return w.Object.(*appsv1beta1.Deployment)
 			})
 			if err != nil {
 				return err
@@ -96,7 +94,7 @@ func (c *StashController) runDeploymentInjector(key string) error {
 	return nil
 }
 
-func (c *StashController) mutateDeployment(w *workload.Workload) (*workload.Workload, bool, error) {
+func (c *StashController) mutateDeployment(w *workload.Workload) (*api.Restic, bool, error) {
 	oldRestic, err := util.GetAppliedRestic(w.Annotations)
 	if err != nil {
 		return nil, false, err
@@ -115,7 +113,7 @@ func (c *StashController) mutateDeployment(w *workload.Workload) (*workload.Work
 				return nil, false, err
 			}
 			workload.ApplyWorkload(w.Object, w)
-			return w, true, nil
+			return newRestic, true, nil
 		}
 	} else if oldRestic != nil && newRestic == nil {
 		err := c.ensureWorkloadSidecarDeleted(w, oldRestic)
@@ -127,8 +125,8 @@ func (c *StashController) mutateDeployment(w *workload.Workload) (*workload.Work
 		if err != nil {
 			return nil, false, err
 		}
-		return w, true, nil
+		return oldRestic, true, nil
 	}
 
-	return w, false, nil
+	return oldRestic, false, nil
 }

@@ -7,6 +7,7 @@ import (
 	apps_util "github.com/appscode/kutil/apps/v1beta1"
 	"github.com/appscode/kutil/tools/queue"
 	workload "github.com/appscode/kutil/workload/v1"
+	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	appsv1 "k8s.io/api/apps/v1"
@@ -69,14 +70,14 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 			return nil
 		}
 
-		mw, modified, err := c.mutateStatefulSet(w)
+		_, modified, err := c.mutateStatefulSet(w)
 		if err != nil {
 			return nil
 		}
 
 		if modified {
 			patchedObj, _, err := apps_util.PatchStatefulSet(c.kubeClient, ss, func(obj *appsv1beta1.StatefulSet) *appsv1beta1.StatefulSet {
-				return mw.Object.(*appsv1beta1.StatefulSet)
+				return w.Object.(*appsv1beta1.StatefulSet)
 			})
 			if err != nil {
 				return err
@@ -88,7 +89,7 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 	return nil
 }
 
-func (c *StashController) mutateStatefulSet(w *workload.Workload) (*workload.Workload, bool, error) {
+func (c *StashController) mutateStatefulSet(w *workload.Workload) (*api.Restic, bool, error) {
 	oldRestic, err := util.GetAppliedRestic(w.Annotations)
 	if err != nil {
 		return nil, false, err
@@ -115,7 +116,7 @@ func (c *StashController) mutateStatefulSet(w *workload.Workload) (*workload.Wor
 			case *appsv1.StatefulSet:
 				t.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 			}
-			return w, true, nil
+			return newRestic, true, nil
 		}
 	} else if oldRestic != nil && newRestic == nil {
 		err := c.ensureWorkloadSidecarDeleted(w, oldRestic)
@@ -131,7 +132,7 @@ func (c *StashController) mutateStatefulSet(w *workload.Workload) (*workload.Wor
 		case *appsv1.StatefulSet:
 			t.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 		}
-		return w, true, nil
+		return oldRestic, true, nil
 	}
-	return w, false, nil
+	return oldRestic, false, nil
 }

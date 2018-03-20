@@ -11,7 +11,6 @@ import (
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
@@ -76,15 +75,14 @@ func (c *StashController) runRCInjector(key string) error {
 			return nil
 		}
 
-		modObj, modified, err := c.mutateReplicationController(w)
+		restic, modified, err := c.mutateReplicationController(w)
 		if err != nil {
 			return err
 		}
 
-		patchedObj := &core.ReplicationController{}
 		if modified {
-			patchedObj, _, err = core_util.PatchRC(c.kubeClient, rc, func(obj *core.ReplicationController) *core.ReplicationController {
-				return modObj.Object.(*core.ReplicationController)
+			_, _, err = core_util.PatchRC(c.kubeClient, rc, func(obj *core.ReplicationController) *core.ReplicationController {
+				return w.Object.(*core.ReplicationController)
 			})
 			if err != nil {
 				return err
@@ -92,18 +90,16 @@ func (c *StashController) runRCInjector(key string) error {
 		}
 
 		// ReplicationController does not have RollingUpdate strategy. We must delete old pods manually to get patched state.
-		if restartType := util.GetString(patchedObj.Annotations, util.ForceRestartType); restartType != "" {
-			err := c.forceRestartRCPods(patchedObj, restartType, api.BackupType(util.GetString(patchedObj.Annotations, util.BackupType)))
-			if err != nil {
-				return err
-			}
-			return core_util.WaitUntilRCReady(c.kubeClient, patchedObj.ObjectMeta)
+		err = c.forceRestartPods(w, restic)
+		if err != nil {
+			return err
 		}
+		return core_util.WaitUntilRCReady(c.kubeClient, rc.ObjectMeta)
 	}
 	return nil
 }
 
-func (c *StashController) mutateReplicationController(w *workload.Workload) (*workload.Workload, bool, error) {
+func (c *StashController) mutateReplicationController(w *workload.Workload) (*api.Restic, bool, error) {
 	oldRestic, err := util.GetAppliedRestic(w.Annotations)
 	if err != nil {
 		return nil, false, err
@@ -122,7 +118,7 @@ func (c *StashController) mutateReplicationController(w *workload.Workload) (*wo
 			}
 			workload.ApplyWorkload(w.Object, w)
 
-			return w, true, nil
+			return newRestic, true, nil
 		}
 	} else if oldRestic != nil && newRestic == nil {
 		err := c.ensureWorkloadSidecarDeleted(w, oldRestic)
@@ -135,31 +131,7 @@ func (c *StashController) mutateReplicationController(w *workload.Workload) (*wo
 		if err != nil {
 			return nil, false, err
 		}
-		return w, true, nil
+		return oldRestic, true, nil
 	}
-	return w, false, nil
-}
-
-func (c *StashController) forceRestartRCPods(rc *core.ReplicationController, restartType string, backupType api.BackupType) error {
-	rc, _, err := core_util.PatchRC(c.kubeClient, rc, func(obj *core.ReplicationController) *core.ReplicationController {
-		delete(obj.Annotations, util.ForceRestartType)
-		delete(obj.Annotations, util.BackupType)
-		return obj
-	})
-	if err != nil {
-		return err
-	}
-
-	if restartType == util.SideCarAdded {
-		err := util.WaitUntilSidecarAdded(c.kubeClient, rc.Namespace, &metav1.LabelSelector{MatchLabels: rc.Spec.Selector}, backupType)
-		if err != nil {
-			return err
-		}
-	} else if restartType == util.SideCarRemoved {
-		err := util.WaitUntilSidecarRemoved(c.kubeClient, rc.Namespace, &metav1.LabelSelector{MatchLabels: rc.Spec.Selector}, backupType)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return oldRestic, false, nil
 }
