@@ -27,7 +27,6 @@ import (
 	rbac "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
@@ -90,9 +89,12 @@ func New(k8sClient kubernetes.Interface, stashClient cs.Interface, opt Options) 
 			stashClient,
 			opt.ResyncPeriod,
 			opt.Namespace,
-			func(options *metav1.ListOptions) {
-				options.FieldSelector = fields.OneTermEqualSelector("metadata.name", opt.ResticName).String()
-			},
+			// BUG!!! In 1.8.x, field selectors can't be used with CRDs
+			// ref: https://github.com/appscode/voyager/issues/889
+			//func(options *metav1.ListOptions) {
+			//	options.FieldSelector = fields.OneTermEqualSelector("metadata.name", opt.ResticName).String()
+			//},
+			nil,
 		),
 	}
 }
