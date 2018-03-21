@@ -2,8 +2,6 @@ package: github.com/appscode/stash
 import:
 - package: github.com/appscode/go
   version: master
-- package: github.com/appscode/kutil
-  version: release-6.0
 - package: github.com/appscode/pat
 - package: github.com/cenkalti/backoff
   version: v1.1.0
@@ -55,3 +53,7 @@ import:
   version: v1.0.3
 - package: github.com/cpuguy83/go-md2man
   version: v1.0.4
+- package: github.com/appscode/kutil
+  version: rm-webhook
+- package: github.com/appscode/kubernetes-webhook-util
+  version: release-6.0

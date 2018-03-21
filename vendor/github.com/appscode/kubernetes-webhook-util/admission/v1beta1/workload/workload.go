@@ -1,13 +1,15 @@
-package v1beta1
+package workload
 
 import (
 	"bytes"
 	"sync"
 
 	jp "github.com/appscode/jsonpatch"
-	"github.com/appscode/kutil/admission"
-	"github.com/appscode/kutil/runtime/serializer/versioning"
-	workload "github.com/appscode/kutil/workload/v1"
+	"github.com/appscode/kubernetes-webhook-util/admission"
+	api "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
+	"github.com/appscode/kubernetes-webhook-util/runtime/serializer/versioning"
+	workload "github.com/appscode/kubernetes-webhook-util/workload/v1"
+	"github.com/json-iterator/go"
 	"k8s.io/api/admission/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -20,6 +22,8 @@ import (
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
 )
 
+var json = jsoniter.ConfigFastest
+
 // WorkloadWebhook avoids the bidirectional conversion needed for GenericWebhooks. Only supports workload types.
 type WorkloadWebhook struct {
 	plural   schema.GroupVersionResource
@@ -27,21 +31,21 @@ type WorkloadWebhook struct {
 
 	srcGroups sets.String
 	target    schema.GroupVersionKind
-	factory   GetterFactory
-	get       GetFunc
+	factory   api.GetterFactory
+	get       api.GetFunc
 	handler   admission.ResourceHandler
 
 	initialized bool
 	lock        sync.RWMutex
 }
 
-var _ AdmissionHook = &WorkloadWebhook{}
+var _ api.AdmissionHook = &WorkloadWebhook{}
 
 func NewWorkloadWebhook(
 	plural schema.GroupVersionResource,
 	singular string,
 	target schema.GroupVersionKind,
-	factory GetterFactory,
+	factory api.GetterFactory,
 	handler admission.ResourceHandler) *WorkloadWebhook {
 	return &WorkloadWebhook{
 		plural:    plural,
@@ -85,7 +89,7 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 	h.lock.RLock()
 	defer h.lock.RUnlock()
 	if !h.initialized {
-		return StatusUninitialized()
+		return api.StatusUninitialized()
 	}
 
 	codec := versioning.JSONSerializer
@@ -99,33 +103,33 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 		// req.Object.Raw = nil, so read from kubernetes
 		obj, err := h.get(req.Namespace, req.Name)
 		if err != nil && !kerr.IsNotFound(err) {
-			return StatusInternalServerError(err)
+			return api.StatusInternalServerError(err)
 		} else if err == nil {
 			err2 := h.handler.OnDelete(obj)
 			if err2 != nil {
-				return StatusBadRequest(err)
+				return api.StatusBadRequest(err)
 			}
 		}
 	case v1beta1.Create:
 		obj, kind, err := codec.Decode(req.Object.Raw, &gvk, nil)
 		if err != nil {
-			return StatusBadRequest(err)
+			return api.StatusBadRequest(err)
 		}
 		legacyscheme.Scheme.Default(obj)
 		obj.GetObjectKind().SetGroupVersionKind(*kind)
 		w, err := workload.ConvertToWorkload(obj)
 		if err != nil {
-			return StatusBadRequest(err)
+			return api.StatusBadRequest(err)
 		}
 
 		mod, err := h.handler.OnCreate(w)
 		if err != nil {
-			return StatusForbidden(err)
+			return api.StatusForbidden(err)
 		} else if mod != nil {
 			if w := mod.(*workload.Workload); w.Object == nil {
 				err = workload.ApplyWorkload(obj, w)
 				if err != nil {
-					return StatusForbidden(err)
+					return api.StatusForbidden(err)
 				}
 			} else {
 				obj = w.Object
@@ -135,15 +139,15 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 			var buf bytes.Buffer
 			err = codec.Encode(obj, &buf)
 			if err != nil {
-				return StatusBadRequest(err)
+				return api.StatusBadRequest(err)
 			}
 			ops, err := jp.CreatePatch(req.Object.Raw, buf.Bytes())
 			if err != nil {
-				return StatusBadRequest(err)
+				return api.StatusBadRequest(err)
 			}
 			patch, err := json.Marshal(ops)
 			if err != nil {
-				return StatusInternalServerError(err)
+				return api.StatusInternalServerError(err)
 			}
 			status.Patch = patch
 			patchType := v1beta1.PatchTypeJSONPatch
@@ -152,34 +156,34 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 	case v1beta1.Update:
 		obj, kind, err := codec.Decode(req.Object.Raw, &gvk, nil)
 		if err != nil {
-			return StatusBadRequest(err)
+			return api.StatusBadRequest(err)
 		}
 		legacyscheme.Scheme.Default(obj)
 		obj.GetObjectKind().SetGroupVersionKind(*kind)
 		w, err := workload.ConvertToWorkload(obj)
 		if err != nil {
-			return StatusBadRequest(err)
+			return api.StatusBadRequest(err)
 		}
 
 		oldObj, kind, err := codec.Decode(req.OldObject.Raw, &gvk, nil)
 		if err != nil {
-			return StatusBadRequest(err)
+			return api.StatusBadRequest(err)
 		}
 		oldObj.GetObjectKind().SetGroupVersionKind(*kind)
 		legacyscheme.Scheme.Default(oldObj)
 		ow, err := workload.ConvertToWorkload(oldObj)
 		if err != nil {
-			return StatusBadRequest(err)
+			return api.StatusBadRequest(err)
 		}
 
 		mod, err := h.handler.OnUpdate(ow, w)
 		if err != nil {
-			return StatusForbidden(err)
+			return api.StatusForbidden(err)
 		} else if mod != nil {
 			if w := mod.(*workload.Workload); w.Object == nil {
 				err = workload.ApplyWorkload(obj, w)
 				if err != nil {
-					return StatusForbidden(err)
+					return api.StatusForbidden(err)
 				}
 			} else {
 				obj = w.Object
@@ -189,15 +193,15 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 			var buf bytes.Buffer
 			err = codec.Encode(obj, &buf)
 			if err != nil {
-				return StatusBadRequest(err)
+				return api.StatusBadRequest(err)
 			}
 			ops, err := jp.CreatePatch(req.Object.Raw, buf.Bytes())
 			if err != nil {
-				return StatusBadRequest(err)
+				return api.StatusBadRequest(err)
 			}
 			patch, err := json.Marshal(ops)
 			if err != nil {
-				return StatusInternalServerError(err)
+				return api.StatusInternalServerError(err)
 			}
 			status.Patch = patch
 			patchType := v1beta1.PatchTypeJSONPatch

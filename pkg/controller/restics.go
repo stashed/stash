@@ -4,8 +4,9 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/log"
-	"github.com/appscode/kutil/admission"
-	hooks "github.com/appscode/kutil/admission/v1beta1"
+	"github.com/appscode/kubernetes-webhook-util/admission"
+	hooks "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
+	webhook "github.com/appscode/kubernetes-webhook-util/admission/v1beta1/generic"
 	batch_util "github.com/appscode/kutil/batch/v1beta1"
 	core_util "github.com/appscode/kutil/core/v1"
 	ext_util "github.com/appscode/kutil/extensions/v1beta1"
@@ -29,7 +30,7 @@ import (
 )
 
 func (c *StashController) NewResticWebhook() hooks.AdmissionHook {
-	return hooks.NewGenericWebhook(
+	return webhook.NewGenericWebhook(
 		schema.GroupVersionResource{
 			Group:    "admission.stash.appscode.com",
 			Version:  "v1alpha1",
@@ -267,6 +268,7 @@ func (c *StashController) EnsureSidecar(restic *api.Restic) {
 		if resources, err := c.rsLister.ReplicaSets(restic.Namespace).List(sel); err == nil {
 			for _, resource := range resources {
 				// If owned by a Deployment, skip it.
+				// OCFIX
 				if ext_util.IsOwnedByDeployment(resource) {
 					continue
 				}

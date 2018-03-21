@@ -4,8 +4,9 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/log"
-	"github.com/appscode/kutil/admission"
-	hooks "github.com/appscode/kutil/admission/v1beta1"
+	"github.com/appscode/kubernetes-webhook-util/admission"
+	hooks "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
+	webhook "github.com/appscode/kubernetes-webhook-util/admission/v1beta1/generic"
 	"github.com/appscode/kutil/tools/queue"
 	"github.com/appscode/stash/apis/stash"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -24,7 +25,7 @@ import (
 )
 
 func (c *StashController) NewRecoveryWebhook() hooks.AdmissionHook {
-	return hooks.NewGenericWebhook(
+	return webhook.NewGenericWebhook(
 		schema.GroupVersionResource{
 			Group:    "admission.stash.appscode.com",
 			Version:  "v1alpha1",

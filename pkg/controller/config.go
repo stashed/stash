@@ -3,7 +3,7 @@ package controller
 import (
 	"time"
 
-	hooks "github.com/appscode/kutil/admission/v1beta1"
+	hooks "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
 	cs "github.com/appscode/stash/client/clientset/versioned"
 	stashinformers "github.com/appscode/stash/client/informers/externalversions"
 	"github.com/appscode/stash/pkg/eventer"
