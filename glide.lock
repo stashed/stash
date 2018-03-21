@@ -1,5 +1,5 @@
-hash: 1af4cbeeb26718d8513ee0a15fbd74666095a0d96a46e014f5a904d0dad9ca4d
-updated: 2018-03-21T02:15:56.291985468-07:00
+hash: 8eb709976094bb7ca23de1140481fae73dcd6d7d2cfb5f4167b3cc4c35879460
+updated: 2018-03-21T11:02:33.375977036-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -26,11 +26,19 @@ imports:
   - version
 - name: github.com/appscode/jsonpatch
   version: ee757872f6aca6d412d0d80543725bd4cf48f793
-- name: github.com/appscode/kutil
-  version: 436b54978ae275a61a06baa3f0a119864691cf12
+- name: github.com/appscode/kubernetes-webhook-util
+  version: 9d399622f03d590cb55fd549131de7393a2b38cc
   subpackages:
   - admission
   - admission/v1beta1
+  - admission/v1beta1/generic
+  - admission/v1beta1/workload
+  - registry/admissionreview/v1beta1
+  - runtime/serializer/versioning
+  - workload/v1
+- name: github.com/appscode/kutil
+  version: 8d5e00578069caa4cfb88e5a06fef6d07281686b
+  subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
   - batch/v1beta1
@@ -39,13 +47,10 @@ imports:
   - extensions/v1beta1
   - meta
   - rbac/v1
-  - registry/admissionreview/v1beta1
-  - runtime/serializer/versioning
   - tools/analytics
   - tools/certstore
   - tools/clientcmd
   - tools/queue
-  - workload/v1
 - name: github.com/appscode/mergo
   version: e3000cb3d28c72b837601cac94debd91032d19fe
 - name: github.com/appscode/pat
@@ -261,6 +266,10 @@ imports:
   - types
 - name: github.com/opencontainers/go-digest
   version: a6d0ee40d4207ea02364bd3b9e8e77b9159ba1eb
+- name: github.com/openshift/api
+  version: 0d921e363e951d89f583292c60d013c318df64dc
+  subpackages:
+  - apps/v1
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/peterbourgon/diskv
@@ -306,7 +315,7 @@ imports:
   subpackages:
   - mem
 - name: github.com/spf13/cobra
-  version: c439c4fa093711d42e1b01acb1235b52004753c1
+  version: a1f051bc3eba734da4772d60e2d677f47cf93ef4
   subpackages:
   - doc
 - name: github.com/spf13/pflag

@@ -34,8 +34,8 @@ var YAMLSerializer = func() runtime.Codec {
 }()
 
 type codec struct {
-	encoder runtime.Encoder
-	decoder runtime.Decoder
+	encoder       runtime.Encoder
+	decoder       runtime.Decoder
 	scheme        *runtime.Scheme
 	defaulter     runtime.ObjectDefaulter
 	encodeVersion schema.GroupVersion
@@ -52,8 +52,8 @@ func NewDefaultingCodecForScheme(
 	decodeVersion schema.GroupVersion,
 ) runtime.Codec {
 	return codec{
-		encoder:   encoder,
-		decoder:   decoder,
+		encoder:       encoder,
+		decoder:       decoder,
 		scheme:        scheme,
 		defaulter:     defaulter,
 		encodeVersion: encodeVersion,

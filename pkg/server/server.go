@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	hooks "github.com/appscode/kutil/admission/v1beta1"
-	admissionreview "github.com/appscode/kutil/registry/admissionreview/v1beta1"
+	hooks "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
+	admissionreview "github.com/appscode/kubernetes-webhook-util/registry/admissionreview/v1beta1"
 	"github.com/appscode/stash/pkg/controller"
 	admission "k8s.io/api/admission/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"

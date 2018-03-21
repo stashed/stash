@@ -2,11 +2,12 @@ package controller
 
 import (
 	"github.com/appscode/go/log"
-	"github.com/appscode/kutil/admission"
-	hooks "github.com/appscode/kutil/admission/v1beta1"
+	"github.com/appscode/kubernetes-webhook-util/admission"
+	hooks "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
+	webhook "github.com/appscode/kubernetes-webhook-util/admission/v1beta1/workload"
+	workload "github.com/appscode/kubernetes-webhook-util/workload/v1"
 	apps_util "github.com/appscode/kutil/apps/v1beta1"
 	"github.com/appscode/kutil/tools/queue"
-	workload "github.com/appscode/kutil/workload/v1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
@@ -17,7 +18,7 @@ import (
 )
 
 func (c *StashController) NewDeploymentWebhook() hooks.AdmissionHook {
-	return hooks.NewWorkloadWebhook(
+	return webhook.NewWorkloadWebhook(
 		schema.GroupVersionResource{
 			Group:    "admission.stash.appscode.com",
 			Version:  "v1alpha1",

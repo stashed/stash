@@ -5,9 +5,9 @@ import (
 	"time"
 
 	stringz "github.com/appscode/go/strings"
+	workload "github.com/appscode/kubernetes-webhook-util/workload/v1"
 	core_util "github.com/appscode/kutil/core/v1"
 	"github.com/appscode/kutil/meta"
-	workload "github.com/appscode/kutil/workload/v1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/util"

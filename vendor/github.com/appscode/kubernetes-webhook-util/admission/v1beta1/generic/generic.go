@@ -1,12 +1,14 @@
-package v1beta1
+package generic
 
 import (
 	"bytes"
 	"sync"
 
 	jp "github.com/appscode/jsonpatch"
-	"github.com/appscode/kutil/admission"
-	"github.com/appscode/kutil/runtime/serializer/versioning"
+	"github.com/appscode/kubernetes-webhook-util/admission"
+	api "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
+	"github.com/appscode/kubernetes-webhook-util/runtime/serializer/versioning"
+	"github.com/json-iterator/go"
 	"k8s.io/api/admission/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -15,28 +17,30 @@ import (
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
 )
 
+var json = jsoniter.ConfigFastest
+
 type GenericWebhook struct {
 	plural   schema.GroupVersionResource
 	singular string
 
 	srcGroups sets.String
 	target    schema.GroupVersionKind
-	factory   GetterFactory
-	get       GetFunc
+	factory   api.GetterFactory
+	get       api.GetFunc
 	handler   admission.ResourceHandler
 
 	initialized bool
 	lock        sync.RWMutex
 }
 
-var _ AdmissionHook = &GenericWebhook{}
+var _ api.AdmissionHook = &GenericWebhook{}
 
 func NewGenericWebhook(
 	plural schema.GroupVersionResource,
 	singular string,
 	srcGroups []string,
 	target schema.GroupVersionKind,
-	factory GetterFactory,
+	factory api.GetterFactory,
 	handler admission.ResourceHandler) *GenericWebhook {
 	return &GenericWebhook{
 		plural:    plural,
@@ -80,7 +84,7 @@ func (h *GenericWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admission
 	h.lock.RLock()
 	defer h.lock.RUnlock()
 	if !h.initialized {
-		return StatusUninitialized()
+		return api.StatusUninitialized()
 	}
 
 	codec := versioning.NewDefaultingCodecForScheme(
@@ -101,35 +105,35 @@ func (h *GenericWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admission
 		// req.Object.Raw = nil, so read from kubernetes
 		obj, err := h.get(req.Namespace, req.Name)
 		if err != nil && !kerr.IsNotFound(err) {
-			return StatusInternalServerError(err)
+			return api.StatusInternalServerError(err)
 		} else if err == nil {
 			err2 := h.handler.OnDelete(obj)
 			if err2 != nil {
-				return StatusBadRequest(err)
+				return api.StatusBadRequest(err)
 			}
 		}
 	case v1beta1.Create:
 		obj, _, err := codec.Decode(req.Object.Raw, &gvk, nil)
 		if err != nil {
-			return StatusBadRequest(err)
+			return api.StatusBadRequest(err)
 		}
 
 		mod, err := h.handler.OnCreate(obj)
 		if err != nil {
-			return StatusForbidden(err)
+			return api.StatusForbidden(err)
 		} else if mod != nil {
 			var buf bytes.Buffer
 			err = codec.Encode(mod, &buf)
 			if err != nil {
-				return StatusBadRequest(err)
+				return api.StatusBadRequest(err)
 			}
 			ops, err := jp.CreatePatch(req.Object.Raw, buf.Bytes())
 			if err != nil {
-				return StatusBadRequest(err)
+				return api.StatusBadRequest(err)
 			}
 			patch, err := json.Marshal(ops)
 			if err != nil {
-				return StatusInternalServerError(err)
+				return api.StatusInternalServerError(err)
 			}
 			status.Patch = patch
 			patchType := v1beta1.PatchTypeJSONPatch
@@ -138,29 +142,29 @@ func (h *GenericWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admission
 	case v1beta1.Update:
 		obj, _, err := codec.Decode(req.Object.Raw, &gvk, nil)
 		if err != nil {
-			return StatusBadRequest(err)
+			return api.StatusBadRequest(err)
 		}
 		oldObj, _, err := codec.Decode(req.OldObject.Raw, &gvk, nil)
 		if err != nil {
-			return StatusBadRequest(err)
+			return api.StatusBadRequest(err)
 		}
 
 		mod, err := h.handler.OnUpdate(oldObj, obj)
 		if err != nil {
-			return StatusForbidden(err)
+			return api.StatusForbidden(err)
 		} else if mod != nil {
 			var buf bytes.Buffer
 			err = codec.Encode(mod, &buf)
 			if err != nil {
-				return StatusBadRequest(err)
+				return api.StatusBadRequest(err)
 			}
 			ops, err := jp.CreatePatch(req.Object.Raw, buf.Bytes())
 			if err != nil {
-				return StatusBadRequest(err)
+				return api.StatusBadRequest(err)
 			}
 			patch, err := json.Marshal(ops)
 			if err != nil {
-				return StatusInternalServerError(err)
+				return api.StatusInternalServerError(err)
 			}
 			status.Patch = patch
 			patchType := v1beta1.PatchTypeJSONPatch
