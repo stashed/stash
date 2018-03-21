@@ -2,13 +2,13 @@
 title: Supported Backends | Stash
 description: Supported Backends for Stash
 menu:
-  product_stash_0.7.0-rc.0:
+  product_stash_0.7.0-rc.1:
     identifier: backends-stash
     name: Backends
     parent: guides
     weight: 30
 product_name: stash
-menu_name: product_stash_0.7.0-rc.0
+menu_name: product_stash_0.7.0-rc.1
 section_menu_id: guides
 ---
 
