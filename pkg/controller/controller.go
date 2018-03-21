@@ -13,6 +13,9 @@ import (
 	stashinformers "github.com/appscode/stash/client/informers/externalversions"
 	stash_listers "github.com/appscode/stash/client/listers/stash/v1alpha1"
 	"github.com/golang/glog"
+	oc "github.com/openshift/client-go/apps/clientset/versioned"
+	ocapps_informer "github.com/openshift/client-go/apps/informers/externalversions"
+	ocapps_listers "github.com/openshift/client-go/apps/listers/apps/v1"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	crd_api "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
@@ -31,12 +34,14 @@ type StashController struct {
 	Config
 
 	kubeClient  kubernetes.Interface
+	ocClient    oc.Interface
 	stashClient cs.Interface
 	crdClient   crd_cs.ApiextensionsV1beta1Interface
 	recorder    record.EventRecorder
 
 	kubeInformerFactory  informers.SharedInformerFactory
 	stashInformerFactory stashinformers.SharedInformerFactory
+	ocInformerFactory    ocapps_informer.SharedInformerFactory
 
 	// Namespace
 	nsInformer cache.SharedIndexInformer
@@ -80,6 +85,11 @@ type StashController struct {
 	rsQueue    *queue.Worker
 	rsInformer cache.SharedIndexInformer
 	rsLister   ext_listers.ReplicaSetLister
+
+	// DeploymentConfig
+	dcQueue    *queue.Worker
+	dcInformer cache.SharedIndexInformer
+	dcLister   ocapps_listers.DeploymentConfigLister
 
 	// Job
 	jobQueue    *queue.Worker

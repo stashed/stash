@@ -260,6 +260,7 @@ func (c *completedConfig) AddAdmissionHooks(ctrl *controller.StashController) er
 		ctrl.NewStatefulSetWebhook(),
 		ctrl.NewReplicationControllerWebhook(),
 		ctrl.NewReplicaSetWebhook(),
+		ctrl.NewDeploymentConfigWebhook(),
 	}
 	return nil
 }

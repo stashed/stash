@@ -11,6 +11,8 @@ const (
 	KindReplicationController = "ReplicationController"
 	KindStatefulSet           = "StatefulSet"
 	KindDaemonSet             = "DaemonSet"
+	// openshift
+	KindDeploymentConfig = "DeploymentConfig"
 )
 
 func (workload *LocalTypedReference) Canonicalize() error {
@@ -28,6 +30,8 @@ func (workload *LocalTypedReference) Canonicalize() error {
 		workload.Kind = KindStatefulSet
 	case "daemonsets", "daemonset", "ds":
 		workload.Kind = KindDaemonSet
+	case "deploymentconfig":
+		workload.Kind = KindDeploymentConfig
 	default:
 		return fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
 	}
@@ -56,7 +60,7 @@ func (workload LocalTypedReference) HostnamePrefix(podName, nodeName string) (ho
 		return "", "", fmt.Errorf("missing workload name or kind")
 	}
 	switch workload.Kind {
-	case KindDeployment, KindReplicaSet, KindReplicationController:
+	case KindDeployment, KindReplicaSet, KindReplicationController, KindDeploymentConfig:
 		return workload.Name, strings.ToLower(workload.Kind) + "/" + workload.Name, nil
 	case KindStatefulSet:
 		if podName == "" {

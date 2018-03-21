@@ -5,6 +5,7 @@ import (
 	core_util "github.com/appscode/kutil/core/v1"
 	rbac_util "github.com/appscode/kutil/rbac/v1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	ocapps "github.com/openshift/api/apps/v1"
 	apps "k8s.io/api/apps/v1beta1"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
@@ -111,6 +112,11 @@ func (c *StashController) ensureSidecarClusterRole() error {
 				APIGroups: []string{core.GroupName},
 				Resources: []string{"serviceaccounts"},
 				Verbs:     []string{"get", "create"},
+			},
+			{
+				APIGroups: []string{ocapps.GroupName},
+				Resources: []string{"deploymentconfigs"},
+				Verbs:     []string{"get"},
 			},
 		}
 		return in

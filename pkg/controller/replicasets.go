@@ -83,6 +83,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 			return nil
 		}
 
+		// OCFIX
 		restic, modified, err := c.mutateReplicaSet(w)
 		if err != nil {
 			return err

@@ -1,5 +1,5 @@
-hash: 976ca086c0c7b97350e4fa2fa618c3dd21797e1bea526864ecf61ae4064f7519
-updated: 2018-04-21T09:15:31.514715056-07:00
+hash: e9003f73b4659490b814b6c9c5c42417c311e4cb10f6bb820289caa33f6288a3
+updated: 2018-04-21T10:31:44.012524932-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -55,6 +55,10 @@ imports:
   - tools/queue
 - name: github.com/appscode/mergo
   version: e3000cb3d28c72b837601cac94debd91032d19fe
+- name: github.com/appscode/ocutil
+  version: c19400b3339c44efdfe4aa5682cbc7f84694273c
+  subpackages:
+  - apps/v1
 - name: github.com/appscode/osm
   version: 2a2ce2bb676e83a8f8340b628de870d41cba1e3a
   subpackages:
@@ -329,6 +333,19 @@ imports:
   version: 0d921e363e951d89f583292c60d013c318df64dc
   subpackages:
   - apps/v1
+- name: github.com/openshift/client-go
+  version: 42d4abb856ce41c204a6e24342f12be5b5cd9ab8
+  subpackages:
+  - apps/clientset/versioned
+  - apps/clientset/versioned/scheme
+  - apps/clientset/versioned/typed/apps/v1
+  - apps/informers/externalversions
+  - apps/informers/externalversions/apps
+  - apps/informers/externalversions/apps/v1
+  - apps/informers/externalversions/internalinterfaces
+  - apps/listers/apps/v1
+- name: github.com/openshift/origin
+  version: 191fece9305a76f262baacc9de72c2c8cb4d5601
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/peterbourgon/diskv
@@ -450,7 +467,7 @@ imports:
   - unicode/norm
   - width
 - name: google.golang.org/api
-  version: 9c79deebf7496e355d7e95d82d4af1fe4e769b2f
+  version: b08f8989af4899034b9816f5291a5bbb1bd576bb
   subpackages:
   - gensupport
   - googleapi

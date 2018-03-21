@@ -288,6 +288,16 @@ func (c *StashController) EnsureSidecar(restic *api.Restic) {
 			}
 		}
 	}
+	{
+		if resources, err := c.dcLister.DeploymentConfigs(restic.Namespace).List(sel); err == nil {
+			for _, resource := range resources {
+				key, err := cache.MetaNamespaceKeyFunc(resource)
+				if err == nil {
+					c.dcQueue.GetQueue().Add(key)
+				}
+			}
+		}
+	}
 }
 
 func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
@@ -390,6 +400,27 @@ func (c *StashController) EnsureSidecarDeleted(namespace, name string) {
 				key, err := cache.MetaNamespaceKeyFunc(resource)
 				if err == nil {
 					c.rsQueue.GetQueue().Add(key)
+				}
+			}
+		}
+	}
+	if resources, err := c.dcLister.DeploymentConfigs(namespace).List(labels.Everything()); err == nil {
+		for _, resource := range resources {
+			restic, err := util.GetAppliedRestic(resource.Annotations)
+			if err != nil {
+				if ref, e2 := reference.GetReference(scheme.Scheme, resource); e2 == nil {
+					c.recorder.Eventf(
+						ref,
+						core.EventTypeWarning,
+						eventer.EventReasonInvalidRestic,
+						"Reason: %s",
+						err.Error(),
+					)
+				}
+			} else if restic != nil && restic.Namespace == namespace && restic.Name == name {
+				key, err := cache.MetaNamespaceKeyFunc(resource)
+				if err == nil {
+					c.dcQueue.GetQueue().Add(key)
 				}
 			}
 		}

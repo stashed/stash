@@ -30,7 +30,7 @@ func (c *Controller) BackupScheduler() error {
 
 	// split code from here for leader election
 	switch c.opt.Workload.Kind {
-	case api.KindDeployment, api.KindReplicaSet, api.KindReplicationController:
+	case api.KindDeployment, api.KindReplicaSet, api.KindReplicationController, api.KindDeploymentConfig:
 		if err := c.electLeader(stopBackup); err != nil {
 			return err
 		}

@@ -13,6 +13,7 @@ import (
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/scale"
 	"github.com/appscode/stash/pkg/util"
+	oc "github.com/openshift/client-go/apps/clientset/versioned"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -44,7 +45,8 @@ func NewCmdBackup() *cobra.Command {
 			if err != nil {
 				log.Fatalf("Could not get Kubernetes config: %s", err)
 			}
-			kubeClient := kubernetes.NewForConfigOrDie(config)
+			kc := kubernetes.NewForConfigOrDie(config)
+			occ := oc.NewForConfigOrDie(config)
 			stashClient := cs.NewForConfigOrDie(config)
 
 			opt.NodeName = os.Getenv("NODE_NAME")
@@ -62,12 +64,12 @@ func NewCmdBackup() *cobra.Command {
 			if opt.SnapshotHostname, opt.SmartPrefix, err = opt.Workload.HostnamePrefix(opt.PodName, opt.NodeName); err != nil {
 				log.Fatalf(err.Error())
 			}
-			if err = util.WorkloadExists(kubeClient, opt.Namespace, opt.Workload); err != nil {
+			if err = util.WorkloadExists(kc, occ, opt.Namespace, opt.Workload); err != nil {
 				log.Fatalf(err.Error())
 			}
 			opt.ScratchDir = strings.TrimSuffix(opt.ScratchDir, "/") // make ScratchDir in setup()
 
-			ctrl := backup.New(kubeClient, stashClient, opt)
+			ctrl := backup.New(kc, stashClient, opt)
 
 			if opt.RunViaCron {
 				log.Infoln("Running backup periodically via cron")
@@ -82,7 +84,7 @@ func NewCmdBackup() *cobra.Command {
 					}
 				} else {
 					//if replica > 1 we should not take backup
-					replica, err := util.WorkloadReplicas(kubeClient, opt.Namespace, opt.Workload.Kind, opt.Workload.Name)
+					replica, err := util.WorkloadReplicas(kc, occ, opt.Namespace, opt.Workload.Kind, opt.Workload.Name)
 					if err != nil {
 						log.Fatal(err)
 					}
@@ -96,7 +98,7 @@ func NewCmdBackup() *cobra.Command {
 						}
 
 						// offline backup done. now scale up replica to original replica number
-						err = scale.ScaleUpWorkload(kubeClient, opt)
+						err = scale.ScaleUpWorkload(kc, occ, opt)
 						if err != nil {
 							log.Fatal(err)
 						}

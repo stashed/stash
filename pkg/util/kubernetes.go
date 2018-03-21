@@ -14,6 +14,7 @@ import (
 	cs "github.com/appscode/stash/client/clientset/versioned"
 	stash_listers "github.com/appscode/stash/client/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/docker"
+	oc "github.com/openshift/client-go/apps/clientset/versioned"
 	"github.com/pkg/errors"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
@@ -390,26 +391,29 @@ func NewRecoveryJob(stashClient cs.Interface, recovery *api.Recovery, image dock
 	return job, nil
 }
 
-func WorkloadExists(k8sClient kubernetes.Interface, namespace string, workload api.LocalTypedReference) error {
+func WorkloadExists(kc kubernetes.Interface, occ oc.Interface, namespace string, workload api.LocalTypedReference) error {
 	if err := workload.Canonicalize(); err != nil {
 		return err
 	}
 
 	switch workload.Kind {
 	case api.KindDeployment:
-		_, err := k8sClient.AppsV1beta1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
+		_, err := kc.AppsV1beta1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
 		return err
 	case api.KindReplicaSet:
-		_, err := k8sClient.ExtensionsV1beta1().ReplicaSets(namespace).Get(workload.Name, metav1.GetOptions{})
+		_, err := kc.ExtensionsV1beta1().ReplicaSets(namespace).Get(workload.Name, metav1.GetOptions{})
 		return err
 	case api.KindReplicationController:
-		_, err := k8sClient.CoreV1().ReplicationControllers(namespace).Get(workload.Name, metav1.GetOptions{})
+		_, err := kc.CoreV1().ReplicationControllers(namespace).Get(workload.Name, metav1.GetOptions{})
 		return err
 	case api.KindStatefulSet:
-		_, err := k8sClient.AppsV1beta1().StatefulSets(namespace).Get(workload.Name, metav1.GetOptions{})
+		_, err := kc.AppsV1beta1().StatefulSets(namespace).Get(workload.Name, metav1.GetOptions{})
 		return err
 	case api.KindDaemonSet:
-		_, err := k8sClient.ExtensionsV1beta1().DaemonSets(namespace).Get(workload.Name, metav1.GetOptions{})
+		_, err := kc.ExtensionsV1beta1().DaemonSets(namespace).Get(workload.Name, metav1.GetOptions{})
+		return err
+	case api.KindDeploymentConfig:
+		_, err := occ.AppsV1().DeploymentConfigs(namespace).Get(workload.Name, metav1.GetOptions{})
 		return err
 	default:
 		return fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
@@ -498,30 +502,36 @@ func NewCheckJob(restic *api.Restic, hostName, smartPrefix string, image docker.
 	return job
 }
 
-func WorkloadReplicas(kubeClient *kubernetes.Clientset, namespace string, workloadKind string, workloadName string) (int32, error) {
+func WorkloadReplicas(kc *kubernetes.Clientset, occ oc.Interface, namespace string, workloadKind string, workloadName string) (int32, error) {
 	switch workloadKind {
 	case api.KindDeployment:
-		obj, err := kubeClient.AppsV1beta1().Deployments(namespace).Get(workloadName, metav1.GetOptions{})
+		obj, err := kc.AppsV1beta1().Deployments(namespace).Get(workloadName, metav1.GetOptions{})
 		if err != nil {
 			return 0, err
 		} else {
 			return *obj.Spec.Replicas, nil
 		}
 	case api.KindReplicationController:
-		obj, err := kubeClient.CoreV1().ReplicationControllers(namespace).Get(workloadName, metav1.GetOptions{})
+		obj, err := kc.CoreV1().ReplicationControllers(namespace).Get(workloadName, metav1.GetOptions{})
 		if err != nil {
 			return 0, err
 		} else {
 			return *obj.Spec.Replicas, nil
 		}
 	case api.KindReplicaSet:
-		obj, err := kubeClient.ExtensionsV1beta1().ReplicaSets(namespace).Get(workloadName, metav1.GetOptions{})
+		obj, err := kc.ExtensionsV1beta1().ReplicaSets(namespace).Get(workloadName, metav1.GetOptions{})
 		if err != nil {
 			return 0, err
 		} else {
 			return *obj.Spec.Replicas, nil
 		}
-
+	case api.KindDeploymentConfig:
+		obj, err := occ.AppsV1().DeploymentConfigs(namespace).Get(workloadName, metav1.GetOptions{})
+		if err != nil {
+			return 0, err
+		} else {
+			return obj.Spec.Replicas, nil
+		}
 	default:
 		return 0, fmt.Errorf("unknown workload type")
 	}
