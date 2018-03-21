@@ -14,10 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+// +k8s:defaulter-gen=TypeMeta
+// +k8s:deepcopy-gen=package
 
-type RecoveryExpansion interface{}
-
-type RepositoryExpansion interface{}
-
-type ResticExpansion interface{}
+// Package api is the internal version of the API.
+// +groupName=repositories.stash.appscode.com
+package repositories

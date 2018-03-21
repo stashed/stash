@@ -26,6 +26,14 @@ type RecoveryListerExpansion interface{}
 // RecoveryNamespaceLister.
 type RecoveryNamespaceListerExpansion interface{}
 
+// RepositoryListerExpansion allows custom methods to be added to
+// RepositoryLister.
+type RepositoryListerExpansion interface{}
+
+// RepositoryNamespaceListerExpansion allows custom methods to be added to
+// RepositoryNamespaceLister.
+type RepositoryNamespaceListerExpansion interface{}
+
 // ResticListerExpansion allows custom methods to be added to
 // ResticLister.
 type ResticListerExpansion interface{}

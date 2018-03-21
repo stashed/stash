@@ -17,38 +17,28 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
+	v1alpha1 "github.com/appscode/stash/apis/repositories/v1alpha1"
 	"github.com/appscode/stash/client/clientset/versioned/scheme"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	rest "k8s.io/client-go/rest"
 )
 
-type StashV1alpha1Interface interface {
+type RepositoriesV1alpha1Interface interface {
 	RESTClient() rest.Interface
-	RecoveriesGetter
-	RepositoriesGetter
-	ResticsGetter
+	SnapshotsGetter
 }
 
-// StashV1alpha1Client is used to interact with features provided by the stash.appscode.com group.
-type StashV1alpha1Client struct {
+// RepositoriesV1alpha1Client is used to interact with features provided by the repositories.stash.appscode.com group.
+type RepositoriesV1alpha1Client struct {
 	restClient rest.Interface
 }
 
-func (c *StashV1alpha1Client) Recoveries(namespace string) RecoveryInterface {
-	return newRecoveries(c, namespace)
+func (c *RepositoriesV1alpha1Client) Snapshots(namespace string) SnapshotInterface {
+	return newSnapshots(c, namespace)
 }
 
-func (c *StashV1alpha1Client) Repositories(namespace string) RepositoryInterface {
-	return newRepositories(c, namespace)
-}
-
-func (c *StashV1alpha1Client) Restics(namespace string) ResticInterface {
-	return newRestics(c, namespace)
-}
-
-// NewForConfig creates a new StashV1alpha1Client for the given config.
-func NewForConfig(c *rest.Config) (*StashV1alpha1Client, error) {
+// NewForConfig creates a new RepositoriesV1alpha1Client for the given config.
+func NewForConfig(c *rest.Config) (*RepositoriesV1alpha1Client, error) {
 	config := *c
 	if err := setConfigDefaults(&config); err != nil {
 		return nil, err
@@ -57,12 +47,12 @@ func NewForConfig(c *rest.Config) (*StashV1alpha1Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &StashV1alpha1Client{client}, nil
+	return &RepositoriesV1alpha1Client{client}, nil
 }
 
-// NewForConfigOrDie creates a new StashV1alpha1Client for the given config and
+// NewForConfigOrDie creates a new RepositoriesV1alpha1Client for the given config and
 // panics if there is an error in the config.
-func NewForConfigOrDie(c *rest.Config) *StashV1alpha1Client {
+func NewForConfigOrDie(c *rest.Config) *RepositoriesV1alpha1Client {
 	client, err := NewForConfig(c)
 	if err != nil {
 		panic(err)
@@ -70,9 +60,9 @@ func NewForConfigOrDie(c *rest.Config) *StashV1alpha1Client {
 	return client
 }
 
-// New creates a new StashV1alpha1Client for the given RESTClient.
-func New(c rest.Interface) *StashV1alpha1Client {
-	return &StashV1alpha1Client{c}
+// New creates a new RepositoriesV1alpha1Client for the given RESTClient.
+func New(c rest.Interface) *RepositoriesV1alpha1Client {
+	return &RepositoriesV1alpha1Client{c}
 }
 
 func setConfigDefaults(config *rest.Config) error {
@@ -90,7 +80,7 @@ func setConfigDefaults(config *rest.Config) error {
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *StashV1alpha1Client) RESTClient() rest.Interface {
+func (c *RepositoriesV1alpha1Client) RESTClient() rest.Interface {
 	if c == nil {
 		return nil
 	}

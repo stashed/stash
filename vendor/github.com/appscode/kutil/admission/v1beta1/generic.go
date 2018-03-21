@@ -84,6 +84,9 @@ func (h *GenericWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admission
 	}
 
 	codec := versioning.NewDefaultingCodecForScheme(
+		versioning.JSONSerializer,
+		versioning.JSONSerializer,
+		legacyscheme.Scheme,
 		legacyscheme.Scheme,
 		schema.GroupVersion{Group: req.Kind.Group, Version: req.Kind.Version},
 		h.target.GroupVersion(),

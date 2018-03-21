@@ -88,7 +88,7 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 		return StatusUninitialized()
 	}
 
-	codec := versioning.Serializer
+	codec := versioning.JSONSerializer
 	gvk := schema.GroupVersionKind{Group: req.Kind.Group, Version: req.Kind.Version, Kind: req.Kind.Kind}
 
 	switch req.Operation {

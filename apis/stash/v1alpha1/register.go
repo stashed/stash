@@ -36,6 +36,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ResticList{},
 		&Recovery{},
 		&RecoveryList{},
+		&Repository{},
+		&RepositoryList{},
 	)
 
 	scheme.AddKnownTypes(SchemeGroupVersion,
