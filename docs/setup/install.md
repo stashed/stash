@@ -50,6 +50,7 @@ options:
     --run-on-master                run stash operator on master
     --enable-validating-webhook    enable/disable validating webhooks for Stash CRDs
     --enable-mutating-webhook      enable/disable mutating webhooks for Kubernetes workloads
+    --enable-analytics             send usage events to Google Analytics (default: true)
     --uninstall                    uninstall stash
     --purge                        purges stash crd objects and crds
 ```

@@ -54,6 +54,7 @@ export STASH_ENABLE_VALIDATING_WEBHOOK=false
 export STASH_ENABLE_MUTATING_WEBHOOK=false
 export STASH_DOCKER_REGISTRY=appscode
 export STASH_IMAGE_PULL_SECRET=
+export STASH_ENABLE_ANALYTICS=true
 export STASH_UNINSTALL=0
 export STASH_PURGE=0
 
@@ -78,6 +79,7 @@ show_help() {
     echo "    --run-on-master                run stash operator on master"
     echo "    --enable-validating-webhook    enable/disable validating webhooks for Stash CRDs"
     echo "    --enable-mutating-webhook      enable/disable mutating webhooks for Kubernetes workloads"
+    echo "    --enable-analytics             send usage events to Google Analytics (default: true)"
     echo "    --uninstall                    uninstall stash"
     echo "    --purge                        purges stash crd objects and crds"
 }
@@ -115,8 +117,6 @@ while test $# -gt 0; do
             val=`echo $1 | sed -e 's/^[^=]*=//g'`
             if [ "$val" = "false" ]; then
                 export STASH_ENABLE_VALIDATING_WEBHOOK=false
-            else
-                export STASH_ENABLE_VALIDATING_WEBHOOK=true
             fi
             shift
             ;;
@@ -124,8 +124,13 @@ while test $# -gt 0; do
             val=`echo $1 | sed -e 's/^[^=]*=//g'`
             if [ "$val" = "false" ]; then
                 export STASH_ENABLE_MUTATING_WEBHOOK=false
-            else
-                export STASH_ENABLE_MUTATING_WEBHOOK=true
+            fi
+            shift
+            ;;
+        --enable-analytics*)
+            val=`echo $1 | sed -e 's/^[^=]*=//g'`
+            if [ "$val" = "false" ]; then
+                export STASH_ENABLE_ANALYTICS=false
             fi
             shift
             ;;
