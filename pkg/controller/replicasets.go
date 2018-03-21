@@ -93,9 +93,11 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 			}
 
 			// ReplicaSet does not have RollingUpdate strategy. We must delete old pods manually to get patched state.
-			err = c.forceRestartPods(w, restic)
-			if err != nil {
-				return err
+			if restic != nil {
+				err = c.forceRestartPods(w, restic)
+				if err != nil {
+					return err
+				}
 			}
 			return ext_util.WaitUntilReplicaSetReady(c.kubeClient, rs.ObjectMeta)
 		}

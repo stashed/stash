@@ -581,7 +581,7 @@ var _ = Describe("ReplicaSet", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 				secondRestic = restic
-				secondRestic.Name = "secondRestic"
+				secondRestic.Name = "second-restic"
 			})
 			It("should mutate and backup new ReplicaSet", shouldMutateAndBackupNewReplicaSet)
 			It("should not mutate new ReplicaSet if no restic select it", shouldNotMutateNewReplicaSet)

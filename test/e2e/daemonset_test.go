@@ -536,7 +536,7 @@ var _ = Describe("DaemonSet", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 				secondRestic = restic
-				secondRestic.Name = "secondRestic"
+				secondRestic.Name = "second-restic"
 			})
 			It("should mutate and backup new DaemonSet", shouldMutateAndBackupNewDaemonSet)
 			It("should not mutate new DaemonSet if no restic select it", shouldNotMutateNewDaemonSet)

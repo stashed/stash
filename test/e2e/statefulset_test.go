@@ -587,7 +587,7 @@ var _ = Describe("StatefulSet", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 				secondRestic = restic
-				secondRestic.Name = "secondRestic"
+				secondRestic.Name = "second-restic"
 			})
 			It("should mutate and backup new StatefulSet", shouldMutateAndBackupNewStatefulSet)
 			It("should not mutate new StatefulSet if no restic select it", shouldNotMutateNewStatefulSet)

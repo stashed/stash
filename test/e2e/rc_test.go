@@ -581,7 +581,7 @@ var _ = Describe("ReplicationController", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 				secondRestic = restic
-				secondRestic.Name = "secondRestic"
+				secondRestic.Name = "second-restic"
 			})
 			It("should mutate and backup new ReplicationController", shouldMutateAndBackupNewReplicationController)
 			It("should not mutate new ReplicationController if no restic select it", shouldNotMutateNewReplicationController)

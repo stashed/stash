@@ -90,9 +90,11 @@ func (c *StashController) runRCInjector(key string) error {
 		}
 
 		// ReplicationController does not have RollingUpdate strategy. We must delete old pods manually to get patched state.
-		err = c.forceRestartPods(w, restic)
-		if err != nil {
-			return err
+		if restic != nil {
+			err = c.forceRestartPods(w, restic)
+			if err != nil {
+				return err
+			}
 		}
 		return core_util.WaitUntilRCReady(c.kubeClient, rc.ObjectMeta)
 	}
