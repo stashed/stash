@@ -32,12 +32,16 @@ func CreateOrPatchService(c kubernetes.Interface, meta metav1.ObjectMeta, transf
 }
 
 func PatchService(c kubernetes.Interface, cur *core.Service, transform func(*core.Service) *core.Service) (*core.Service, kutil.VerbType, error) {
+	return PatchServiceObject(c, cur, transform(cur.DeepCopy()))
+}
+
+func PatchServiceObject(c kubernetes.Interface, cur, mod *core.Service) (*core.Service, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
 
-	modJson, err := json.Marshal(transform(cur.DeepCopy()))
+	modJson, err := json.Marshal(mod)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}

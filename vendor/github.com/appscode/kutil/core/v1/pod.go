@@ -32,12 +32,16 @@ func CreateOrPatchPod(c kubernetes.Interface, meta metav1.ObjectMeta, transform 
 }
 
 func PatchPod(c kubernetes.Interface, cur *core.Pod, transform func(*core.Pod) *core.Pod) (*core.Pod, kutil.VerbType, error) {
+	return PatchPodObject(c, cur, transform(cur.DeepCopy()))
+}
+
+func PatchPodObject(c kubernetes.Interface, cur, mod *core.Pod) (*core.Pod, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
 
-	modJson, err := json.Marshal(transform(cur.DeepCopy()))
+	modJson, err := json.Marshal(mod)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}

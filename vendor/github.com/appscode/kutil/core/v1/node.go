@@ -32,12 +32,16 @@ func CreateOrPatchNode(c kubernetes.Interface, meta metav1.ObjectMeta, transform
 }
 
 func PatchNode(c kubernetes.Interface, cur *core.Node, transform func(*core.Node) *core.Node) (*core.Node, kutil.VerbType, error) {
+	return PatchNodeObject(c, cur, transform(cur.DeepCopy()))
+}
+
+func PatchNodeObject(c kubernetes.Interface, cur, mod *core.Node) (*core.Node, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
 
-	modJson, err := json.Marshal(transform(cur.DeepCopy()))
+	modJson, err := json.Marshal(mod)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}

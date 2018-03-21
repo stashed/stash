@@ -32,12 +32,16 @@ func CreateOrPatchIngress(c kubernetes.Interface, meta metav1.ObjectMeta, transf
 }
 
 func PatchIngress(c kubernetes.Interface, cur *extensions.Ingress, transform func(*extensions.Ingress) *extensions.Ingress) (*extensions.Ingress, kutil.VerbType, error) {
+	return PatchIngressObject(c, cur, transform(cur.DeepCopy()))
+}
+
+func PatchIngressObject(c kubernetes.Interface, cur, mod *extensions.Ingress) (*extensions.Ingress, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
 
-	modJson, err := json.Marshal(transform(cur.DeepCopy()))
+	modJson, err := json.Marshal(mod)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}

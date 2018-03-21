@@ -1,23 +1,47 @@
 package controller
 
 import (
-	"fmt"
-
 	"github.com/appscode/go/log"
-	stringz "github.com/appscode/go/strings"
+	"github.com/appscode/kutil/admission"
+	hooks "github.com/appscode/kutil/admission/v1beta1"
 	apps_util "github.com/appscode/kutil/apps/v1beta1"
-	core_util "github.com/appscode/kutil/core/v1"
-	"github.com/appscode/kutil/meta"
 	"github.com/appscode/kutil/tools/queue"
+	workload "github.com/appscode/kutil/workload/v1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
-	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
-	apps "k8s.io/api/apps/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/tools/reference"
+	appsv1 "k8s.io/api/apps/v1"
+	appsv1beta1 "k8s.io/api/apps/v1beta1"
+	appsv1beta2 "k8s.io/api/apps/v1beta2"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
+
+func (c *StashController) NewStatefulSetWebhook() hooks.AdmissionHook {
+	return hooks.NewWorkloadWebhook(
+		schema.GroupVersionResource{
+			Group:    "admission.stash.appscode.com",
+			Version:  "v1alpha1",
+			Resource: "statefulsets",
+		},
+		"statefulset",
+		appsv1beta1.SchemeGroupVersion.WithKind("StatefulSet"),
+		nil,
+		&admission.ResourceHandlerFuncs{
+			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
+				w := obj.(*workload.Workload)
+				_, _, err := c.mutateStatefulSet(w)
+				return w, err
+
+			},
+			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
+				w := newObj.(*workload.Workload)
+				_, _, err := c.mutateStatefulSet(w)
+				return w, err
+			},
+		},
+	)
+}
 
 func (c *StashController) initStatefulSetWatcher() {
 	c.ssInformer = c.kubeInformerFactory.Apps().V1beta1().StatefulSets().Informer()
@@ -40,175 +64,75 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 		// Below we will warm up our cache with a StatefulSet, so that we will see a delete for one d
 		glog.Warningf("StatefulSet %s does not exist anymore\n", key)
 	} else {
-		ss := obj.(*apps.StatefulSet)
-		glog.Infof("Sync/Add/Update for StatefulSet %s\n", ss.GetName())
+		glog.Infof("Sync/Add/Update for StatefulSet %s\n", key)
 
-		if util.ToBeInitializedByPeer(ss.Initializers) {
-			glog.Warningf("Not stash's turn to initialize %s\n", ss.GetName())
+		ss := obj.(*appsv1beta1.StatefulSet).DeepCopy()
+		ss.GetObjectKind().SetGroupVersionKind(appsv1beta1.SchemeGroupVersion.WithKind(api.KindStatefulSet))
+
+		w, err := workload.ConvertToWorkload(ss.DeepCopy())
+		if err != nil {
 			return nil
 		}
-
-		if util.ToBeInitializedBySelf(ss.Initializers) {
-			// StatefulSets are supported during initializer phase
-			oldRestic, err := util.GetAppliedRestic(ss.Annotations)
+		_, modified, err := c.mutateStatefulSet(w)
+		if err != nil {
+			return nil
+		}
+		if modified {
+			_, _, err := apps_util.PatchStatefulSetObject(c.kubeClient, ss, w.Object.(*appsv1beta1.StatefulSet))
 			if err != nil {
 				return err
 			}
-			newRestic, err := util.FindRestic(c.rstLister, ss.ObjectMeta)
-			if err != nil {
-				log.Errorf("Error while searching Restic for StatefulSet %s/%s.", ss.Name, ss.Namespace)
-				return err
-			}
 
-			if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
-				if !newRestic.Spec.Paused {
-					return c.EnsureStatefulSetSidecar(ss, oldRestic, newRestic)
-				}
-			} else if oldRestic != nil && newRestic == nil {
-				return c.EnsureStatefulSetSidecarDeleted(ss, oldRestic)
-			}
-
-			// not restic workload, just remove the pending stash initializer
-			_, _, err = apps_util.PatchStatefulSet(c.kubeClient, ss, func(obj *apps.StatefulSet) *apps.StatefulSet {
-				fmt.Println("Removing pending stash initializer for", obj.Name)
-				if len(obj.Initializers.Pending) == 1 {
-					obj.Initializers = nil
-				} else {
-					obj.Initializers.Pending = obj.Initializers.Pending[1:]
-				}
-				return obj
-			})
-			if err != nil {
-				log.Errorf("Error while removing pending stash initializer for %s/%s. Reason: %s", ss.Name, ss.Namespace, err)
-				return err
-			}
+			return apps_util.WaitUntilStatefulSetReady(c.kubeClient, ss.ObjectMeta)
 		}
 	}
 	return nil
 }
 
-func (c *StashController) EnsureStatefulSetSidecar(resource *apps.StatefulSet, old, new *api.Restic) (err error) {
-	image := docker.Docker{
-		Registry: c.DockerRegistry,
-		Image:    docker.ImageStash,
-		Tag:      c.StashImageTag,
-	}
-
-	if new.Spec.Backend.StorageSecretName == "" {
-		err = fmt.Errorf("missing repository secret name for Restic %s/%s", new.Namespace, new.Name)
-		return
-	}
-	_, err = c.kubeClient.CoreV1().Secrets(resource.Namespace).Get(new.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+func (c *StashController) mutateStatefulSet(w *workload.Workload) (*api.Restic, bool, error) {
+	oldRestic, err := util.GetAppliedRestic(w.Annotations)
 	if err != nil {
-		return
+		return nil, false, err
 	}
 
-	if c.EnableRBAC {
-		sa := stringz.Val(resource.Spec.Template.Spec.ServiceAccountName, "default")
-		ref, err := reference.GetReference(scheme.Scheme, resource)
-		if err != nil {
-			return err
-		}
-		err = c.ensureSidecarRoleBinding(ref, sa)
-		if err != nil {
-			return err
-		}
+	newRestic, err := util.FindRestic(c.rstLister, w.ObjectMeta)
+	if err != nil {
+		log.Errorf("Error while searching Restic for StatefulSet %s/%s.", w.Name, w.Namespace)
+		return nil, false, err
 	}
 
-	resource, _, err = apps_util.PatchStatefulSet(c.kubeClient, resource, func(obj *apps.StatefulSet) *apps.StatefulSet {
-		if util.ToBeInitializedBySelf(obj.Initializers) {
-			fmt.Println("Removing pending stash initializer for", obj.Name)
-			if len(obj.Initializers.Pending) == 1 {
-				obj.Initializers = nil
-			} else {
-				obj.Initializers.Pending = obj.Initializers.Pending[1:]
+	if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
+		if !newRestic.Spec.Paused {
+			err := c.ensureWorkloadSidecar(w, oldRestic, newRestic)
+			if err != nil {
+				return nil, false, err
 			}
+			workload.ApplyWorkload(w.Object, w)
+			switch t := w.Object.(type) {
+			case *appsv1beta1.StatefulSet:
+				t.Spec.UpdateStrategy.Type = appsv1beta1.RollingUpdateStatefulSetStrategyType
+			case *appsv1beta2.StatefulSet:
+				t.Spec.UpdateStrategy.Type = appsv1beta2.RollingUpdateStatefulSetStrategyType
+			case *appsv1.StatefulSet:
+				t.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
+			}
+			return newRestic, true, nil
 		}
-
-		workload := api.LocalTypedReference{
-			Kind: api.KindStatefulSet,
-			Name: obj.Name,
-		}
-
-		if new.Spec.Type == api.BackupOffline {
-			obj.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(
-				obj.Spec.Template.Spec.InitContainers,
-				util.NewInitContainer(new, workload, image, c.EnableRBAC),
-			)
-		} else {
-			obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(
-				obj.Spec.Template.Spec.Containers,
-				util.NewSidecarContainer(new, workload, image),
-			)
-		}
-
-		// keep existing image pull secrets
-		obj.Spec.Template.Spec.ImagePullSecrets = core_util.MergeLocalObjectReferences(
-			obj.Spec.Template.Spec.ImagePullSecrets,
-			new.Spec.ImagePullSecrets,
-		)
-
-		obj.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(obj.Spec.Template.Spec.Volumes)
-		obj.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(obj.Spec.Template.Spec.Volumes)
-		obj.Spec.Template.Spec.Volumes = util.MergeLocalVolume(obj.Spec.Template.Spec.Volumes, old, new)
-
-		if obj.Annotations == nil {
-			obj.Annotations = make(map[string]string)
-		}
-		r := &api.Restic{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: api.SchemeGroupVersion.String(),
-				Kind:       api.ResourceKindRestic,
-			},
-			ObjectMeta: new.ObjectMeta,
-			Spec:       new.Spec,
-		}
-		data, _ := meta.MarshalToJson(r, api.SchemeGroupVersion)
-		obj.Annotations[api.LastAppliedConfiguration] = string(data)
-		obj.Annotations[api.VersionTag] = c.StashImageTag
-
-		obj.Spec.UpdateStrategy.Type = apps.RollingUpdateStatefulSetStrategyType
-
-		return obj
-	})
-	if err != nil {
-		return
-	}
-
-	err = apps_util.WaitUntilStatefulSetReady(c.kubeClient, resource.ObjectMeta)
-	return err
-}
-
-func (c *StashController) EnsureStatefulSetSidecarDeleted(resource *apps.StatefulSet, restic *api.Restic) (err error) {
-	if c.EnableRBAC {
-		err := c.ensureSidecarRoleBindingDeleted(resource.ObjectMeta)
+	} else if oldRestic != nil && newRestic == nil {
+		err := c.ensureWorkloadSidecarDeleted(w, oldRestic)
 		if err != nil {
-			return err
+			return nil, false, err
 		}
+		workload.ApplyWorkload(w.Object, w)
+		switch t := w.Object.(type) {
+		case *appsv1beta1.StatefulSet:
+			t.Spec.UpdateStrategy.Type = appsv1beta1.RollingUpdateStatefulSetStrategyType
+		case *appsv1beta2.StatefulSet:
+			t.Spec.UpdateStrategy.Type = appsv1beta2.RollingUpdateStatefulSetStrategyType
+		case *appsv1.StatefulSet:
+			t.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
+		}
+		return oldRestic, true, nil
 	}
-
-	resource, _, err = apps_util.PatchStatefulSet(c.kubeClient, resource, func(obj *apps.StatefulSet) *apps.StatefulSet {
-		if restic.Spec.Type == api.BackupOffline {
-			obj.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.InitContainers, util.StashContainer)
-		} else {
-			obj.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
-		}
-		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
-		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
-		if restic.Spec.Backend.Local != nil {
-			obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.LocalVolumeName)
-		}
-		if obj.Annotations != nil {
-			delete(obj.Annotations, api.LastAppliedConfiguration)
-			delete(obj.Annotations, api.VersionTag)
-		}
-		obj.Spec.UpdateStrategy.Type = apps.RollingUpdateStatefulSetStrategyType
-		return obj
-	})
-	if err != nil {
-		return
-	}
-
-	err = apps_util.WaitUntilStatefulSetReady(c.kubeClient, resource.ObjectMeta)
-	return err
+	return oldRestic, false, nil
 }

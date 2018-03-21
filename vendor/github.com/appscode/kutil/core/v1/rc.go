@@ -33,12 +33,16 @@ func CreateOrPatchRC(c kubernetes.Interface, meta metav1.ObjectMeta, transform f
 }
 
 func PatchRC(c kubernetes.Interface, cur *core.ReplicationController, transform func(*core.ReplicationController) *core.ReplicationController) (*core.ReplicationController, kutil.VerbType, error) {
+	return PatchRCObject(c, cur, transform(cur.DeepCopy()))
+}
+
+func PatchRCObject(c kubernetes.Interface, cur, mod *core.ReplicationController) (*core.ReplicationController, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
 
-	modJson, err := json.Marshal(transform(cur.DeepCopy()))
+	modJson, err := json.Marshal(mod)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	hookapi "github.com/appscode/kutil/admission/api"
+	hooks "github.com/appscode/kutil/admission/v1beta1"
 	admissionreview "github.com/appscode/kutil/registry/admissionreview/v1beta1"
 	"github.com/appscode/stash/pkg/controller"
 	admission "k8s.io/api/admission/v1beta1"
@@ -54,7 +54,10 @@ type StashServer struct {
 }
 
 func (op *StashServer) Run(stopCh <-chan struct{}) error {
-	go op.Controller.Run(stopCh)
+	// sync cache
+	op.Controller.RunInformers(stopCh)
+
+	go op.Controller.RunOpsServer(stopCh)
 	return op.GenericAPIServer.PrepareRun().Run(stopCh)
 }
 
@@ -94,17 +97,21 @@ func (c completedConfig) New() (*StashServer, error) {
 		return nil, err
 	}
 
+	c.AddAdmissionHooks(ctrl)
+
 	s := &StashServer{
 		GenericAPIServer: genericServer,
 		Controller:       ctrl,
 	}
 
 	for _, versionMap := range admissionHooksByGroupThenVersion(c.ControllerConfig.AdmissionHooks...) {
+
 		accessor := meta.NewAccessor()
 		versionInterfaces := &meta.VersionInterfaces{
 			ObjectConvertor:  Scheme,
 			MetadataAccessor: accessor,
 		}
+
 		interfacesFor := func(version schema.GroupVersion) (*meta.VersionInterfaces, error) {
 			if version != admission.SchemeGroupVersion {
 				return nil, fmt.Errorf("unexpected version %v", version)
@@ -162,7 +169,6 @@ func (c completedConfig) New() (*StashServer, error) {
 
 		// just prefer the first one in the list for consistency
 		apiGroupInfo.GroupMeta.GroupVersion = apiGroupInfo.GroupMeta.GroupVersions[0]
-
 		if err := s.GenericAPIServer.InstallAPIGroup(&apiGroupInfo); err != nil {
 			return nil, err
 		}
@@ -199,7 +205,7 @@ func appendUniqueGroupVersion(slice []schema.GroupVersion, elems ...schema.Group
 	return out
 }
 
-func postStartHookName(hook hookapi.AdmissionHook) string {
+func postStartHookName(hook hooks.AdmissionHook) string {
 	var ns []string
 	gvr, _ := hook.Resource()
 	ns = append(ns, fmt.Sprintf("admit-%s.%s.%s", gvr.Resource, gvr.Version, gvr.Group))
@@ -209,18 +215,29 @@ func postStartHookName(hook hookapi.AdmissionHook) string {
 	return strings.Join(append(ns, "init"), "-")
 }
 
-func admissionHooksByGroupThenVersion(admissionHooks ...hookapi.AdmissionHook) map[string]map[string][]hookapi.AdmissionHook {
-	ret := map[string]map[string][]hookapi.AdmissionHook{}
-
+func admissionHooksByGroupThenVersion(admissionHooks ...hooks.AdmissionHook) map[string]map[string][]hooks.AdmissionHook {
+	ret := map[string]map[string][]hooks.AdmissionHook{}
 	for i := range admissionHooks {
 		hook := admissionHooks[i]
 		gvr, _ := hook.Resource()
 		group, ok := ret[gvr.Group]
 		if !ok {
-			group = map[string][]hookapi.AdmissionHook{}
+			group = map[string][]hooks.AdmissionHook{}
 			ret[gvr.Group] = group
 		}
 		group[gvr.Version] = append(group[gvr.Version], hook)
 	}
 	return ret
+}
+func (c *completedConfig) AddAdmissionHooks(ctrl *controller.StashController) error {
+	c.ControllerConfig.AdmissionHooks = []hooks.AdmissionHook{
+		ctrl.NewResticWebhook(),
+		ctrl.NewRecoveryWebhook(),
+		ctrl.NewDeploymentWebhook(),
+		ctrl.NewDaemonSetWebhook(),
+		ctrl.NewStatefulSetWebhook(),
+		ctrl.NewReplicationControllerWebhook(),
+		ctrl.NewReplicaSetWebhook(),
+	}
+	return nil
 }

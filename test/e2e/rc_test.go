@@ -17,12 +17,13 @@ import (
 
 var _ = Describe("ReplicationController", func() {
 	var (
-		err      error
-		f        *framework.Invocation
-		restic   api.Restic
-		cred     core.Secret
-		rc       core.ReplicationController
-		recovery api.Recovery
+		err          error
+		f            *framework.Invocation
+		restic       api.Restic
+		secondRestic api.Restic
+		cred         core.Secret
+		rc           core.ReplicationController
+		recovery     api.Recovery
 	)
 
 	BeforeEach(func() {
@@ -36,6 +37,7 @@ var _ = Describe("ReplicationController", func() {
 			Skip("Missing repository credential")
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
+		secondRestic.Spec.Backend.StorageSecretName = cred.Name
 		recovery.Spec.Backend.StorageSecretName = cred.Name
 		rc = f.ReplicationController()
 	})
@@ -229,7 +231,7 @@ var _ = Describe("ReplicationController", func() {
 			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
 
-		shouldInitializeAndBackupRC = func() {
+		shouldMutateAndBackupNewReplicationController = func() {
 			By("Creating repository Secret " + cred.Name)
 			err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
@@ -242,7 +244,7 @@ var _ = Describe("ReplicationController", func() {
 			obj, err := f.CreateReplicationController(rc)
 			Expect(err).NotTo(HaveOccurred())
 
-			// sidecar should be added as soon as workload created, we don't need to wait for it
+			// sidecar should be added as soon as rc created, we don't need to wait for it
 			By("Checking sidecar created")
 			Expect(obj).Should(HaveSidecar(util.StashContainer))
 
@@ -253,6 +255,107 @@ var _ = Describe("ReplicationController", func() {
 
 			By("Waiting for backup event")
 			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+		}
+
+		shouldNotMutateNewReplicationController = func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating ReplicationController " + rc.Name)
+			obj, err := f.CreateReplicationController(rc)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Checking sidecar not added")
+			Expect(obj).ShouldNot(HaveSidecar(util.StashContainer))
+		}
+
+		shouldRejectToCreateNewReplicationController = func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating first restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating second restic " + secondRestic.Name)
+			err = f.CreateRestic(secondRestic)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating ReplicationController " + rc.Name)
+			_, err := f.CreateReplicationController(rc)
+			Expect(err).To(HaveOccurred())
+		}
+
+		shouldRemoveSidecarInstantly = func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating ReplicationController " + rc.Name)
+			obj, err := f.CreateReplicationController(rc)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Checking sidecar added")
+			Expect(obj).Should(HaveSidecar(util.StashContainer))
+
+			By("Waiting for backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 1)))
+
+			By("Removing labels of ReplicationController " + rc.Name)
+			obj, _, err = core_util.PatchRC(f.KubeClient, &rc, func(in *core.ReplicationController) *core.ReplicationController {
+				in.Labels = map[string]string{
+					"app": "unmatched",
+				}
+				return in
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Checking sidecar has removed")
+			Expect(obj).ShouldNot(HaveSidecar(util.StashContainer))
+		}
+
+		shouldAddSidecarInstantly = func() {
+			By("Creating repository Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating restic " + restic.Name)
+			err = f.CreateRestic(restic)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating ReplicationController " + rc.Name)
+			previousLabel := rc.Labels
+			rc.Labels = map[string]string{
+				"app": "unmatched",
+			}
+			obj, err := f.CreateReplicationController(rc)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Checking sidecar not added")
+			Expect(obj).ShouldNot(HaveSidecar(util.StashContainer))
+
+			By("Adding label to match restic" + rc.Name)
+			obj, _, err = core_util.PatchRC(f.KubeClient, &rc, func(in *core.ReplicationController) *core.ReplicationController {
+				in.Labels = previousLabel
+				return in
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Checking sidecar added")
+			Expect(obj).Should(HaveSidecar(util.StashContainer))
+
+			By("Waiting for backup to complete")
+			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+				return r.Status.BackupCount
+			}, BeNumerically(">=", 1)))
 		}
 	)
 
@@ -460,19 +563,31 @@ var _ = Describe("ReplicationController", func() {
 		})
 	})
 
-	Describe("Stash initializer for", func() {
+	Describe("Stash Webhook for", func() {
+		BeforeEach(func() {
+			if !f.WebhookEnabled {
+				Skip("Webhook is disabled")
+			}
+		})
 		AfterEach(func() {
 			f.DeleteReplicationController(rc.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
+			f.DeleteRestic(secondRestic.ObjectMeta)
 		})
 
 		Context(`"Local" backend`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
+				secondRestic = restic
+				secondRestic.Name = "second-restic"
 			})
-			It("should initialize and backup new RC", shouldInitializeAndBackupRC)
+			It("should mutate and backup new ReplicationController", shouldMutateAndBackupNewReplicationController)
+			It("should not mutate new ReplicationController if no restic select it", shouldNotMutateNewReplicationController)
+			It("should reject to create new ReplicationController if multiple restic select it", shouldRejectToCreateNewReplicationController)
+			It("should remove sidecar instantly if label change to match no restic", shouldRemoveSidecarInstantly)
+			It("should add sidecar instantly if label change to match single restic", shouldAddSidecarInstantly)
 		})
 	})
 

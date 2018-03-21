@@ -1,5 +1,5 @@
-hash: e2204ccb3c5119a0c0f3cdcc436e8b6014c52fbfde50148aebd33687fb995fc5
-updated: 2018-03-13T15:40:57.360840917-07:00
+hash: 1af4cbeeb26718d8513ee0a15fbd74666095a0d96a46e014f5a904d0dad9ca4d
+updated: 2018-03-20T09:59:17.327058757-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -27,9 +27,10 @@ imports:
 - name: github.com/appscode/jsonpatch
   version: ee757872f6aca6d412d0d80543725bd4cf48f793
 - name: github.com/appscode/kutil
-  version: 12b13fb456a4d1ac4a0a3d160b4251557e8723c2
+  version: 04b6d38e01f397bdbe993263ef32fc64d8571aee
   subpackages:
-  - admission/api
+  - admission
+  - admission/v1beta1
   - apiextensions/v1beta1
   - apps/v1beta1
   - batch/v1beta1
@@ -39,10 +40,12 @@ imports:
   - meta
   - rbac/v1
   - registry/admissionreview/v1beta1
+  - runtime/serializer/versioning
   - tools/analytics
   - tools/certstore
   - tools/clientcmd
   - tools/queue
+  - workload/v1
 - name: github.com/appscode/mergo
   version: e3000cb3d28c72b837601cac94debd91032d19fe
 - name: github.com/appscode/pat
@@ -303,7 +306,7 @@ imports:
   subpackages:
   - mem
 - name: github.com/spf13/cobra
-  version: c6c44e6fdcc30161c7f4480754da7230d01c06e3
+  version: c439c4fa093711d42e1b01acb1235b52004753c1
   subpackages:
   - doc
 - name: github.com/spf13/pflag
@@ -763,6 +766,14 @@ imports:
   - util/integer
   - util/jsonpath
   - util/workqueue
+- name: k8s.io/kube-aggregator
+  version: 23f9f59d663ea22b680310831a1b7297914b4ed3
+  subpackages:
+  - pkg/apis/apiregistration
+  - pkg/apis/apiregistration/v1beta1
+  - pkg/client/clientset_generated/clientset
+  - pkg/client/clientset_generated/clientset/scheme
+  - pkg/client/clientset_generated/clientset/typed/apiregistration/v1beta1
 - name: k8s.io/kube-openapi
   version: 39a7bf85c140f972372c2a0d1ee40adbf0c8bfe1
   subpackages:

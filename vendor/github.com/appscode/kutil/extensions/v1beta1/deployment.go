@@ -33,12 +33,16 @@ func CreateOrPatchDeployment(c kubernetes.Interface, meta metav1.ObjectMeta, tra
 }
 
 func PatchDeployment(c kubernetes.Interface, cur *extensions.Deployment, transform func(*extensions.Deployment) *extensions.Deployment) (*extensions.Deployment, kutil.VerbType, error) {
+	return PatchDeploymentObject(c, cur, transform(cur.DeepCopy()))
+}
+
+func PatchDeploymentObject(c kubernetes.Interface, cur, mod *extensions.Deployment) (*extensions.Deployment, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
 
-	modJson, err := json.Marshal(transform(cur.DeepCopy()))
+	modJson, err := json.Marshal(mod)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}

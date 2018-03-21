@@ -53,3 +53,5 @@ import:
   version: 3233b24a36715a2fe36d162260457857a56d672d
 - package: github.com/sirupsen/logrus
   version: v1.0.3
+- package: github.com/cpuguy83/go-md2man
+  version: v1.0.4

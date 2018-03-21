@@ -35,7 +35,7 @@ func Equal(x, y interface{}) bool {
 }
 
 func JsonDiff(old, new interface{}) (string, error) {
-	var json = jsoniter.ConfigCompatibleWithStandardLibrary
+	var json = jsoniter.ConfigFastest
 	oldBytes, err := json.Marshal(old)
 	if err != nil {
 		return "", err

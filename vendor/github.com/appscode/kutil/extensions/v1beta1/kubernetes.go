@@ -9,7 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
+var json = jsoniter.ConfigFastest
 
 func GetGroupVersionKind(v interface{}) schema.GroupVersionKind {
 	return extensions.SchemeGroupVersion.WithKind(meta.GetKind(v))
@@ -39,7 +39,7 @@ func AssignTypeKind(v interface{}) error {
 		u.Kind = meta.GetKind(v)
 		return nil
 	}
-	return errors.New("unknown api object type")
+	return errors.New("unknown v1beta1 object type")
 }
 
 func IsOwnedByDeployment(rs *extensions.ReplicaSet) bool {

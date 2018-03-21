@@ -32,12 +32,16 @@ func CreateOrPatchClusterRoleBinding(c kubernetes.Interface, meta metav1.ObjectM
 }
 
 func PatchClusterRoleBinding(c kubernetes.Interface, cur *rbac.ClusterRoleBinding, transform func(*rbac.ClusterRoleBinding) *rbac.ClusterRoleBinding) (*rbac.ClusterRoleBinding, kutil.VerbType, error) {
+	return PatchClusterRoleBindingObject(c, cur, transform(cur.DeepCopy()))
+}
+
+func PatchClusterRoleBindingObject(c kubernetes.Interface, cur, mod *rbac.ClusterRoleBinding) (*rbac.ClusterRoleBinding, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
 
-	modJson, err := json.Marshal(transform(cur.DeepCopy()))
+	modJson, err := json.Marshal(mod)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}

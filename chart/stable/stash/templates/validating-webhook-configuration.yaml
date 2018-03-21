@@ -1,4 +1,4 @@
-{{- if .Values.apiserver.enableAdmissionWebhook }}
+{{- if .Values.apiserver.enableValidatingWebhook }}
 apiVersion: admissionregistration.k8s.io/v1beta1
 kind: ValidatingWebhookConfiguration
 metadata:
@@ -9,12 +9,12 @@ metadata:
     heritage: "{{ .Release.Service }}"
     release: "{{ .Release.Name }}"
 webhooks:
-- name: admission.stash.appscode.com
+- name: restic.admission.stash.appscode.com
   clientConfig:
     service:
       namespace: default
       name: kubernetes
-      path: /apis/admission.stash.appscode.com/v1alpha1/admissionreviews
+      path: /apis/admission.stash.appscode.com/v1alpha1/restics
     caBundle: {{ b64enc .Values.apiserver.ca }}
   rules:
   - operations:
@@ -25,6 +25,24 @@ webhooks:
     apiVersions:
     - "*"
     resources:
+    - restics
+  failurePolicy: Fail
+- name: recovery.admission.stash.appscode.com
+  clientConfig:
+    service:
+      namespace: default
+      name: kubernetes
+      path: /apis/admission.stash.appscode.com/v1alpha1/recoveries
+    caBundle: {{ b64enc .Values.apiserver.ca }}
+  rules:
+  - operations:
+    - CREATE
+    - UPDATE
+    apiGroups:
+    - stash.appscode.com
+    apiVersions:
     - "*"
+    resources:
+    - recoveries
   failurePolicy: Fail
 {{ end }}

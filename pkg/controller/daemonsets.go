@@ -1,24 +1,47 @@
 package controller
 
 import (
-	"fmt"
-
 	"github.com/appscode/go/log"
-	stringz "github.com/appscode/go/strings"
-	core_util "github.com/appscode/kutil/core/v1"
+	"github.com/appscode/kutil/admission"
+	hooks "github.com/appscode/kutil/admission/v1beta1"
 	ext_util "github.com/appscode/kutil/extensions/v1beta1"
-	"github.com/appscode/kutil/meta"
 	"github.com/appscode/kutil/tools/queue"
+	workload "github.com/appscode/kutil/workload/v1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
-	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
+	appsv1 "k8s.io/api/apps/v1"
+	appsv1beta2 "k8s.io/api/apps/v1beta2"
 	extensions "k8s.io/api/extensions/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/tools/reference"
 )
+
+func (c *StashController) NewDaemonSetWebhook() hooks.AdmissionHook {
+	return hooks.NewWorkloadWebhook(
+		schema.GroupVersionResource{
+			Group:    "admission.stash.appscode.com",
+			Version:  "v1alpha1",
+			Resource: "daemonsets",
+		},
+		"daemonset",
+		extensions.SchemeGroupVersion.WithKind("DaemonSet"),
+		nil,
+		&admission.ResourceHandlerFuncs{
+			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
+				w := obj.(*workload.Workload)
+				_, _, err := c.mutateDaemonSet(w)
+				return w, err
+			},
+			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
+				w := newObj.(*workload.Workload)
+				_, _, err := c.mutateDaemonSet(w)
+				return w, err
+			},
+		},
+	)
+}
 
 func (c *StashController) initDaemonSetWatcher() {
 	c.dsInformer = c.kubeInformerFactory.Extensions().V1beta1().DaemonSets().Informer()
@@ -28,7 +51,7 @@ func (c *StashController) initDaemonSetWatcher() {
 }
 
 // syncToStdout is the business logic of the controller. In this controller it simply prints
-// information about the deployment to stdout. In case an error happened, it has to simply return the error.
+// information about the daemonset to stdout. In case an error happened, it has to simply return the error.
 // The retry logic should not be part of the business logic.
 func (c *StashController) runDaemonSetInjector(key string) error {
 	obj, exists, err := c.dsInformer.GetIndexer().GetByKey(key)
@@ -41,179 +64,91 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 		// Below we will warm up our cache with a DaemonSet, so that we will see a delete for one d
 		glog.Warningf("DaemonSet %s does not exist anymore\n", key)
 	} else {
-		ds := obj.(*extensions.DaemonSet)
-		glog.Infof("Sync/Add/Update for DaemonSet %s\n", ds.GetName())
+		glog.Infof("Sync/Add/Update for DaemonSet %s\n", key)
 
-		if util.ToBeInitializedByPeer(ds.Initializers) {
-			glog.Warningf("Not stash's turn to initialize %s\n", ds.GetName())
+		ds := obj.(*extensions.DaemonSet).DeepCopy()
+		ds.GetObjectKind().SetGroupVersionKind(extensions.SchemeGroupVersion.WithKind(api.KindDaemonSet))
+
+		w, err := workload.ConvertToWorkload(ds.DeepCopy())
+		if err != nil {
 			return nil
 		}
-
-		oldRestic, err := util.GetAppliedRestic(ds.Annotations)
+		_, modified, err := c.mutateDaemonSet(w)
 		if err != nil {
 			return err
 		}
-		newRestic, err := util.FindRestic(c.rstLister, ds.ObjectMeta)
-		if err != nil {
-			log.Errorf("Error while searching Restic for DaemonSet %s/%s.", ds.Name, ds.Namespace)
-			return err
-		}
-
-		if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
-			if !newRestic.Spec.Paused {
-				return c.EnsureDaemonSetSidecar(ds, oldRestic, newRestic)
-			}
-		} else if oldRestic != nil && newRestic == nil {
-			return c.EnsureDaemonSetSidecarDeleted(ds, oldRestic)
-		}
-
-		// not restic workload, just remove the pending stash initializer
-		if util.ToBeInitializedBySelf(ds.Initializers) {
-			_, _, err = ext_util.PatchDaemonSet(c.kubeClient, ds, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
-				fmt.Println("Removing pending stash initializer for", obj.Name)
-				if len(obj.Initializers.Pending) == 1 {
-					obj.Initializers = nil
-				} else {
-					obj.Initializers.Pending = obj.Initializers.Pending[1:]
-				}
-				return obj
-			})
+		if modified {
+			_, _, err := ext_util.PatchDaemonSetObject(c.kubeClient, ds, w.Object.(*extensions.DaemonSet))
 			if err != nil {
-				log.Errorf("Error while removing pending stash initializer for %s/%s. Reason: %s", ds.Name, ds.Namespace, err)
 				return err
 			}
+			return ext_util.WaitUntilDaemonSetReady(c.kubeClient, ds.ObjectMeta)
 		}
 	}
 	return nil
 }
 
-func (c *StashController) EnsureDaemonSetSidecar(resource *extensions.DaemonSet, old, new *api.Restic) (err error) {
-	image := docker.Docker{
-		Registry: c.DockerRegistry,
-		Image:    docker.ImageStash,
-		Tag:      c.StashImageTag,
-	}
-
-	if new.Spec.Backend.StorageSecretName == "" {
-		err = fmt.Errorf("missing repository secret name for Restic %s/%s", new.Namespace, new.Name)
-		return
-	}
-	_, err = c.kubeClient.CoreV1().Secrets(resource.Namespace).Get(new.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+func (c *StashController) mutateDaemonSet(w *workload.Workload) (*api.Restic, bool, error) {
+	oldRestic, err := util.GetAppliedRestic(w.Annotations)
 	if err != nil {
-		return err
+		return nil, false, err
 	}
 
-	if c.EnableRBAC {
-		sa := stringz.Val(resource.Spec.Template.Spec.ServiceAccountName, "default")
-		ref, err := reference.GetReference(scheme.Scheme, resource)
-		if err != nil {
-			return err
-		}
-		err = c.ensureSidecarRoleBinding(ref, sa)
-		if err != nil {
-			return err
-		}
+	newRestic, err := util.FindRestic(c.rstLister, w.ObjectMeta)
+	if err != nil {
+		log.Errorf("Error while searching Restic for DaemonSet %s/%s.", w.Name, w.Namespace)
+		return nil, false, err
 	}
 
-	resource, _, err = ext_util.PatchDaemonSet(c.kubeClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
-		if util.ToBeInitializedBySelf(obj.Initializers) {
-			fmt.Println("Removing pending stash initializer for", obj.Name)
-			if len(obj.Initializers.Pending) == 1 {
-				obj.Initializers = nil
-			} else {
-				obj.Initializers.Pending = obj.Initializers.Pending[1:]
+	if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
+		if !newRestic.Spec.Paused {
+			err := c.ensureWorkloadSidecar(w, oldRestic, newRestic)
+			if err != nil {
+				return nil, false, err
 			}
-		}
-
-		workload := api.LocalTypedReference{
-			Kind: api.KindDaemonSet,
-			Name: obj.Name,
-		}
-
-		if new.Spec.Type == api.BackupOffline {
-			obj.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(
-				obj.Spec.Template.Spec.InitContainers,
-				util.NewInitContainer(new, workload, image, c.EnableRBAC),
-			)
-		} else {
-			obj.Spec.Template.Spec.Containers = core_util.UpsertContainer(
-				obj.Spec.Template.Spec.Containers,
-				util.NewSidecarContainer(new, workload, image),
-			)
-		}
-
-		// keep existing image pull secrets
-		obj.Spec.Template.Spec.ImagePullSecrets = core_util.MergeLocalObjectReferences(
-			obj.Spec.Template.Spec.ImagePullSecrets,
-			new.Spec.ImagePullSecrets,
-		)
-
-		obj.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(obj.Spec.Template.Spec.Volumes)
-		obj.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(obj.Spec.Template.Spec.Volumes)
-		obj.Spec.Template.Spec.Volumes = util.MergeLocalVolume(obj.Spec.Template.Spec.Volumes, old, new)
-
-		if obj.Annotations == nil {
-			obj.Annotations = make(map[string]string)
-		}
-
-		r := &api.Restic{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: api.SchemeGroupVersion.String(),
-				Kind:       api.ResourceKindRestic,
-			},
-			ObjectMeta: new.ObjectMeta,
-			Spec:       new.Spec,
-		}
-		data, _ := meta.MarshalToJson(r, api.SchemeGroupVersion)
-		obj.Annotations[api.LastAppliedConfiguration] = string(data)
-		obj.Annotations[api.VersionTag] = c.StashImageTag
-
-		obj.Spec.UpdateStrategy.Type = extensions.RollingUpdateDaemonSetStrategyType
-		if obj.Spec.UpdateStrategy.RollingUpdate == nil ||
-			obj.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable == nil ||
-			obj.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable.IntValue() == 0 {
-			count := intstr.FromInt(1)
-			obj.Spec.UpdateStrategy.RollingUpdate = &extensions.RollingUpdateDaemonSet{
-				MaxUnavailable: &count,
+			workload.ApplyWorkload(w.Object, w)
+			switch t := w.Object.(type) {
+			case *extensions.DaemonSet:
+				t.Spec.UpdateStrategy.Type = extensions.RollingUpdateDaemonSetStrategyType
+				if t.Spec.UpdateStrategy.RollingUpdate == nil ||
+					t.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable == nil ||
+					t.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable.IntValue() == 0 {
+					count := intstr.FromInt(1)
+					t.Spec.UpdateStrategy.RollingUpdate = &extensions.RollingUpdateDaemonSet{
+						MaxUnavailable: &count,
+					}
+				}
+			case *appsv1beta2.DaemonSet:
+				t.Spec.UpdateStrategy.Type = appsv1beta2.RollingUpdateDaemonSetStrategyType
+				if t.Spec.UpdateStrategy.RollingUpdate == nil ||
+					t.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable == nil ||
+					t.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable.IntValue() == 0 {
+					count := intstr.FromInt(1)
+					t.Spec.UpdateStrategy.RollingUpdate = &appsv1beta2.RollingUpdateDaemonSet{
+						MaxUnavailable: &count,
+					}
+				}
+			case *appsv1.DaemonSet:
+				t.Spec.UpdateStrategy.Type = appsv1.RollingUpdateDaemonSetStrategyType
+				if t.Spec.UpdateStrategy.RollingUpdate == nil ||
+					t.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable == nil ||
+					t.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable.IntValue() == 0 {
+					count := intstr.FromInt(1)
+					t.Spec.UpdateStrategy.RollingUpdate = &appsv1.RollingUpdateDaemonSet{
+						MaxUnavailable: &count,
+					}
+				}
 			}
+
+			return newRestic, true, nil
 		}
-		return obj
-	})
-	if err != nil {
-		return
-	}
-
-	return ext_util.WaitUntilDaemonSetReady(c.kubeClient, resource.ObjectMeta)
-}
-
-func (c *StashController) EnsureDaemonSetSidecarDeleted(resource *extensions.DaemonSet, restic *api.Restic) (err error) {
-	if c.EnableRBAC {
-		err := c.ensureSidecarRoleBindingDeleted(resource.ObjectMeta)
+	} else if oldRestic != nil && newRestic == nil {
+		err := c.ensureWorkloadSidecarDeleted(w, oldRestic)
 		if err != nil {
-			return err
+			return nil, false, err
 		}
+		workload.ApplyWorkload(w.Object, w)
+		return oldRestic, true, nil
 	}
-
-	resource, _, err = ext_util.PatchDaemonSet(c.kubeClient, resource, func(obj *extensions.DaemonSet) *extensions.DaemonSet {
-		if restic.Spec.Type == api.BackupOffline {
-			obj.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.InitContainers, util.StashContainer)
-		} else {
-			obj.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(obj.Spec.Template.Spec.Containers, util.StashContainer)
-		}
-		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
-		obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
-		if restic.Spec.Backend.Local != nil {
-			obj.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(obj.Spec.Template.Spec.Volumes, util.LocalVolumeName)
-		}
-		if obj.Annotations != nil {
-			delete(obj.Annotations, api.LastAppliedConfiguration)
-			delete(obj.Annotations, api.VersionTag)
-		}
-		return obj
-	})
-	if err != nil {
-		return
-	}
-
-	return ext_util.WaitUntilDaemonSetReady(c.kubeClient, resource.ObjectMeta)
+	return oldRestic, false, nil
 }

@@ -19,8 +19,8 @@ func MarshalToYAML(obj runtime.Object, gv schema.GroupVersion) ([]byte, error) {
 	return runtime.Encode(encoder, obj)
 }
 
-// UnmarshalToYAML unmarshals an object into yaml.
-func UnmarshalToYAML(data []byte, gv schema.GroupVersion) (runtime.Object, error) {
+// UnmarshalFromYAML unmarshals an object into yaml.
+func UnmarshalFromYAML(data []byte, gv schema.GroupVersion) (runtime.Object, error) {
 	mediaType := "application/yaml"
 	info, ok := runtime.SerializerInfoForMediaType(clientsetscheme.Codecs.SupportedMediaTypes(), mediaType)
 	if !ok {
@@ -43,8 +43,8 @@ func MarshalToJson(obj runtime.Object, gv schema.GroupVersion) ([]byte, error) {
 	return runtime.Encode(encoder, obj)
 }
 
-// UnmarshalToJSON unmarshals an object into json.
-func UnmarshalToJSON(data []byte, gv schema.GroupVersion) (runtime.Object, error) {
+// UnmarshalFromJSON unmarshals an object into json.
+func UnmarshalFromJSON(data []byte, gv schema.GroupVersion) (runtime.Object, error) {
 	mediaType := "application/json"
 	info, ok := runtime.SerializerInfoForMediaType(clientsetscheme.Codecs.SupportedMediaTypes(), mediaType)
 	if !ok {

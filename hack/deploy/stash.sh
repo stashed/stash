@@ -50,8 +50,8 @@ export STASH_NAMESPACE=kube-system
 export STASH_SERVICE_ACCOUNT=stash-operator
 export STASH_ENABLE_RBAC=true
 export STASH_RUN_ON_MASTER=0
-export STASH_ENABLE_INITIALIZER=false
-export STASH_ENABLE_ADMISSION_WEBHOOK=false
+export STASH_ENABLE_VALIDATING_WEBHOOK=false
+export STASH_ENABLE_MUTATING_WEBHOOK=false
 export STASH_DOCKER_REGISTRY=appscode
 export STASH_IMAGE_PULL_SECRET=
 export STASH_UNINSTALL=0
@@ -60,7 +60,8 @@ export STASH_PURGE=0
 KUBE_APISERVER_VERSION=$(kubectl version -o=json | $ONESSL jsonpath '{.serverVersion.gitVersion}')
 $ONESSL semver --check='>=1.9.0' $KUBE_APISERVER_VERSION
 if [ $? -eq 0 ]; then
-    export STASH_ENABLE_ADMISSION_WEBHOOK=true
+    export STASH_ENABLE_VALIDATING_WEBHOOK=true
+    export STASH_ENABLE_MUTATING_WEBHOOK=true
 fi
 
 show_help() {
@@ -75,8 +76,8 @@ show_help() {
     echo "    --docker-registry              docker registry used to pull stash images (default: appscode)"
     echo "    --image-pull-secret            name of secret used to pull stash operator images"
     echo "    --run-on-master                run stash operator on master"
-    echo "    --enable-admission-webhook     configure admission webhook for stash CRDs"
-    echo "    --enable-initializer           configure stash operator as workload initializer"
+    echo "    --enable-validating-webhook    enable/disable validating webhooks for Stash CRDs"
+    echo "    --enable-mutating-webhook      enable/disable mutating webhooks for Kubernetes workloads"
     echo "    --uninstall                    uninstall stash"
     echo "    --purge                        purges stash crd objects and crds"
 }
@@ -110,17 +111,22 @@ while test $# -gt 0; do
             export STASH_IMAGE_PULL_SECRET="name: '$secret'"
             shift
             ;;
-        --enable-admission-webhook*)
+        --enable-validating-webhook*)
             val=`echo $1 | sed -e 's/^[^=]*=//g'`
             if [ "$val" = "false" ]; then
-                export STASH_ENABLE_ADMISSION_WEBHOOK=false
+                export STASH_ENABLE_VALIDATING_WEBHOOK=false
             else
-                export STASH_ENABLE_ADMISSION_WEBHOOK=true
+                export STASH_ENABLE_VALIDATING_WEBHOOK=true
             fi
             shift
             ;;
-        --enable-initializer)
-            export STASH_ENABLE_INITIALIZER=true
+        --enable-mutating-webhook*)
+            val=`echo $1 | sed -e 's/^[^=]*=//g'`
+            if [ "$val" = "false" ]; then
+                export STASH_ENABLE_MUTATING_WEBHOOK=false
+            else
+                export STASH_ENABLE_MUTATING_WEBHOOK=true
+            fi
             shift
             ;;
         --rbac*)
@@ -236,12 +242,12 @@ if [ "$STASH_RUN_ON_MASTER" -eq 1 ]; then
       --patch="$(curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/run-on-master.yaml)"
 fi
 
-if [ "$STASH_ENABLE_INITIALIZER" = true ]; then
-    kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/initializer.yaml
+if [ "$STASH_ENABLE_VALIDATING_WEBHOOK" = true ]; then
+    curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/validating-webhook.yaml | $ONESSL envsubst | kubectl apply -f -
 fi
 
-if [ "$STASH_ENABLE_ADMISSION_WEBHOOK" = true ]; then
-    curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/admission.yaml | $ONESSL envsubst | kubectl apply -f -
+if [ "$STASH_ENABLE_MUTATING_WEBHOOK" = true ]; then
+    curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/mutating-webhook.yaml | $ONESSL envsubst | kubectl apply -f -
 fi
 
 echo

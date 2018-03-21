@@ -48,8 +48,8 @@ options:
     --docker-registry              docker registry used to pull stash images (default: appscode)
     --image-pull-secret            name of secret used to pull stash operator images
     --run-on-master                run stash operator on master
-    --enable-admission-webhook     configure admission webhook for stash CRDs
-    --enable-initializer           configure stash operator as workload initializer
+    --enable-validating-webhook    enable/disable validating webhooks for Stash CRDs
+    --enable-mutating-webhook      enable/disable mutating webhooks for Kubernetes workloads
     --uninstall                    uninstall stash
     --purge                        purges stash crd objects and crds
 ```
@@ -69,10 +69,9 @@ $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/de
     | bash -s -- --namespace=stash [--run-on-master] [--rbac]
 ```
 
-If you are using a private Docker registry, you need to pull the following 2 docker images:
+If you are using a private Docker registry, you need to pull the following image:
 
  - [appscode/stash](https://hub.docker.com/r/appscode/stash)
- - [appscode/kubectl](https://hub.docker.com/r/appscode/kubectl)
 
 To pass the address of your private registry and optionally a image pull secret use flags `--docker-registry` and `--image-pull-secret` respectively.
 
@@ -82,20 +81,13 @@ $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/de
     | bash -s -- --docker-registry=MY_REGISTRY [--image-pull-secret=SECRET_NAME] [--rbac]
 ```
 
-Stash implements a [validating admission webhook](https://kubernetes.io/docs/admin/admission-controllers/#validatingadmissionwebhook-alpha-in-18-beta-in-19) to validate Stash CRDs. This is enabled by default for Kubernetes 1.9.0 or later releases. To disable this feature, pass the `--enable-admission-webhook=false` flag.
+Stash implements [validating admission webhooks](https://kubernetes.io/docs/admin/admission-controllers/#validatingadmissionwebhook-alpha-in-18-beta-in-19) to validate Stash CRDs and mutating webhooks for Kubernetes workload types. This is helpful when you create `Restic` before creating workload objects. This allows stash operator to initialize the target workloads by adding sidecar or, init-container before workload-pods are created. Thus stash operator does not need to delete workload pods for applying changes. This is particularly helpful for workload kind `StatefulSet`, since Kubernetes does not adding sidecar / init containers to StatefulSets after they are created. This is enabled by default for Kubernetes 1.9.0 or later releases. To disable this feature, pass the `--enable-validating-webhook=false` and `--enable-mutating-webhook=false` flag respectively.
 
 ```console
 $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/stash.sh \
-    | bash -s -- --enable-admission-webhook [--rbac]
+    | bash -s -- --enable-validating-webhook=false --enable-mutating-webhook=false [--rbac]
 ```
-
-Stash operator can be used as a workload [initializer](https://kubernetes.io/docs/admin/extensible-admission-controllers/#initializers). For this, pass the `--enable-initializer` flag. _Please note that, this uses an alpha feature of Kubernetes_.
-
-```console
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.0/hack/deploy/stash.sh \
-    | bash -s -- --enable-initializer [--rbac]
-```
-
+To know more about webhook in stash please visit [here]().
 
 ## Using Helm
 Stash can be installed via [Helm](https://helm.sh/) using the [chart](https://github.com/appscode/stash/tree/master/chart/stable/stash) included in this repository or from official charts repository. To install the chart with the release name `my-release`:
@@ -124,7 +116,8 @@ $ helm install stable/stash --name my-release
 $ helm repo update
 $ helm install stable/stash --name my-release \
   --set apiserver.ca="$(onessl get kube-ca)" \
-  --set apiserver.enableAdmissionWebhook=true
+  --set apiserver.enableValidatingWebhook=true \
+  --set apiserver.enableMutatingWebhook=true
 ```
 
 To see the detailed configuration options, visit [here](https://github.com/appscode/stash/tree/master/chart/stable/stash).

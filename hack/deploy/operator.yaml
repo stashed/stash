@@ -5,8 +5,6 @@ metadata:
   namespace: ${STASH_NAMESPACE}
   labels:
     app: stash
-  initializers:
-    pending: []
 spec:
   replicas: 1
   selector:
@@ -32,7 +30,7 @@ spec:
         - --audit-log-path=-
         - --tls-cert-file=/var/serving-cert/tls.crt
         - --tls-private-key-file=/var/serving-cert/tls.key
-        image: ${STASH_DOCKER_REGISTRY}/stash:0.7.0-rc.0
+        image: ${STASH_DOCKER_REGISTRY}/stash:webhookOR
         ports:
         - containerPort: 8443
         - containerPort: 56790

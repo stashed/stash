@@ -6,9 +6,7 @@ import (
 
 	stringz "github.com/appscode/go/strings"
 	v "github.com/appscode/go/version"
-	hookapi "github.com/appscode/kutil/admission/api"
 	cs "github.com/appscode/stash/client/clientset/versioned"
-	"github.com/appscode/stash/pkg/admission/plugin"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/spf13/pflag"
@@ -74,7 +72,5 @@ func (s *ControllerOptions) ApplyTo(cfg *controller.ControllerConfig) error {
 	if cfg.CRDClient, err = crd_cs.NewForConfig(cfg.ClientConfig); err != nil {
 		return err
 	}
-	cfg.AdmissionHooks = []hookapi.AdmissionHook{&plugin.CRDValidator{}}
-
 	return nil
 }

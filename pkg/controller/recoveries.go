@@ -4,7 +4,10 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/log"
+	"github.com/appscode/kutil/admission"
+	hooks "github.com/appscode/kutil/admission/v1beta1"
 	"github.com/appscode/kutil/tools/queue"
+	"github.com/appscode/stash/apis/stash"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	stash_util "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
 	"github.com/appscode/stash/pkg/docker"
@@ -13,10 +16,34 @@ import (
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/reference"
 )
+
+func (c *StashController) NewRecoveryWebhook() hooks.AdmissionHook {
+	return hooks.NewGenericWebhook(
+		schema.GroupVersionResource{
+			Group:    "admission.stash.appscode.com",
+			Version:  "v1alpha1",
+			Resource: "recoveries",
+		},
+		"recovery",
+		[]string{stash.GroupName},
+		api.SchemeGroupVersion.WithKind("Recovery"),
+		nil,
+		&admission.ResourceHandlerFuncs{
+			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
+				return nil, obj.(*api.Recovery).IsValid()
+			},
+			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
+				return nil, newObj.(*api.Recovery).IsValid()
+			},
+		},
+	)
+}
 
 func (c *StashController) initRecoveryWatcher() {
 	c.recInformer = c.stashInformerFactory.Stash().V1alpha1().Recoveries().Informer()

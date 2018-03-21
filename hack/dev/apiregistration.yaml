@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: stash-local-apiserver
+  namespace: ${STASH_NAMESPACE}
+spec:
+  ports:
+  - name: api
+    port: 443
+    protocol: TCP
+    targetPort: 8443
+  type: ClusterIP
+---
+# To get to the host machine from the VM,
+# the IP is 10.0.2.2 (by convention)
+# ref: https://stackoverflow.com/questions/9537751/virtualbox-port-forward-from-guest-to-host
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: stash-local-apiserver
+  namespace: ${STASH_NAMESPACE}
+subsets:
+- addresses:
+  # list all external ips for this service
+  - ip: 10.0.2.2
+  ports:
+  - name: api
+    port: 8443
+    protocol: TCP
+---
+# register as aggregated apiserver
+apiVersion: apiregistration.k8s.io/v1beta1
+kind: APIService
+metadata:
+  name: v1alpha1.admission.stash.appscode.com
+  labels:
+    app: test-stash
+spec:
+  insecureSkipTLSVerify: true
+  group: admission.stash.appscode.com
+  groupPriorityMinimum: 1000
+  versionPriority: 15
+  service:
+    name: stash-local-apiserver
+    namespace: ${STASH_NAMESPACE}
+  version: v1alpha1

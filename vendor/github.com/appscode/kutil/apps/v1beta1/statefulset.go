@@ -35,12 +35,16 @@ func CreateOrPatchStatefulSet(c kubernetes.Interface, meta metav1.ObjectMeta, tr
 }
 
 func PatchStatefulSet(c kubernetes.Interface, cur *apps.StatefulSet, transform func(*apps.StatefulSet) *apps.StatefulSet) (*apps.StatefulSet, kutil.VerbType, error) {
+	return PatchStatefulSetObject(c, cur, transform(cur.DeepCopy()))
+}
+
+func PatchStatefulSetObject(c kubernetes.Interface, cur, mod *apps.StatefulSet) (*apps.StatefulSet, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
 
-	modJson, err := json.Marshal(transform(cur.DeepCopy()))
+	modJson, err := json.Marshal(mod)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
