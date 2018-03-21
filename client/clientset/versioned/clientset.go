@@ -17,6 +17,7 @@ limitations under the License.
 package versioned
 
 import (
+	repositoriesv1alpha1 "github.com/appscode/stash/client/clientset/versioned/typed/repositories/v1alpha1"
 	stashv1alpha1 "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1"
 	glog "github.com/golang/glog"
 	discovery "k8s.io/client-go/discovery"
@@ -26,6 +27,9 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
+	RepositoriesV1alpha1() repositoriesv1alpha1.RepositoriesV1alpha1Interface
+	// Deprecated: please explicitly pick a version if possible.
+	Repositories() repositoriesv1alpha1.RepositoriesV1alpha1Interface
 	StashV1alpha1() stashv1alpha1.StashV1alpha1Interface
 	// Deprecated: please explicitly pick a version if possible.
 	Stash() stashv1alpha1.StashV1alpha1Interface
@@ -35,7 +39,19 @@ type Interface interface {
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	stashV1alpha1 *stashv1alpha1.StashV1alpha1Client
+	repositoriesV1alpha1 *repositoriesv1alpha1.RepositoriesV1alpha1Client
+	stashV1alpha1        *stashv1alpha1.StashV1alpha1Client
+}
+
+// RepositoriesV1alpha1 retrieves the RepositoriesV1alpha1Client
+func (c *Clientset) RepositoriesV1alpha1() repositoriesv1alpha1.RepositoriesV1alpha1Interface {
+	return c.repositoriesV1alpha1
+}
+
+// Deprecated: Repositories retrieves the default version of RepositoriesClient.
+// Please explicitly pick a version.
+func (c *Clientset) Repositories() repositoriesv1alpha1.RepositoriesV1alpha1Interface {
+	return c.repositoriesV1alpha1
 }
 
 // StashV1alpha1 retrieves the StashV1alpha1Client
@@ -65,6 +81,10 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	}
 	var cs Clientset
 	var err error
+	cs.repositoriesV1alpha1, err = repositoriesv1alpha1.NewForConfig(&configShallowCopy)
+	if err != nil {
+		return nil, err
+	}
 	cs.stashV1alpha1, err = stashv1alpha1.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
@@ -82,6 +102,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 // panics if there is an error in the config.
 func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
+	cs.repositoriesV1alpha1 = repositoriesv1alpha1.NewForConfigOrDie(c)
 	cs.stashV1alpha1 = stashv1alpha1.NewForConfigOrDie(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
@@ -91,6 +112,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
+	cs.repositoriesV1alpha1 = repositoriesv1alpha1.New(c)
 	cs.stashV1alpha1 = stashv1alpha1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)

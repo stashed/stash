@@ -219,3 +219,36 @@ type RestoreStats struct {
 	Phase    RecoveryPhase `json:"phase,omitempty"`
 	Duration string        `json:"duration,omitempty"`
 }
+
+const (
+	ResourceKindRepository = "Repository"
+	ResourceTypeRepository = "repositories"
+	ResourceNameRepository = "repository"
+)
+
+// +genclient
+// +genclient:skipVerbs=updateStatus
+// +k8s:openapi-gen=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+type Repository struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Spec              RepositorySpec   `json:"spec,omitempty"`
+	Status            RepositoryStatus `json:"status,omitempty"`
+}
+
+type RepositorySpec struct {
+	Backend Backend `json:"backend,omitempty"`
+}
+
+type RepositoryStatus struct {
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+type RepositoryList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []Repository `json:"items,omitempty"`
+}

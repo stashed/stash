@@ -17,30 +17,22 @@ limitations under the License.
 package fake
 
 import (
-	v1alpha1 "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1"
+	v1alpha1 "github.com/appscode/stash/client/clientset/versioned/typed/repositories/v1alpha1"
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
 )
 
-type FakeStashV1alpha1 struct {
+type FakeRepositoriesV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeStashV1alpha1) Recoveries(namespace string) v1alpha1.RecoveryInterface {
-	return &FakeRecoveries{c, namespace}
-}
-
-func (c *FakeStashV1alpha1) Repositories(namespace string) v1alpha1.RepositoryInterface {
-	return &FakeRepositories{c, namespace}
-}
-
-func (c *FakeStashV1alpha1) Restics(namespace string) v1alpha1.ResticInterface {
-	return &FakeRestics{c, namespace}
+func (c *FakeRepositoriesV1alpha1) Snapshots(namespace string) v1alpha1.SnapshotInterface {
+	return &FakeSnapshots{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *FakeStashV1alpha1) RESTClient() rest.Interface {
+func (c *FakeRepositoriesV1alpha1) RESTClient() rest.Interface {
 	var ret *rest.RESTClient
 	return ret
 }

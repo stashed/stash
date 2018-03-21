@@ -16,8 +16,4 @@ limitations under the License.
 
 package v1alpha1
 
-type RecoveryExpansion interface{}
-
-type RepositoryExpansion interface{}
-
-type ResticExpansion interface{}
+type SnapshotExpansion interface{}

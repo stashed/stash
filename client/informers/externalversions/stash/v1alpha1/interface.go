@@ -26,6 +26,8 @@ import (
 type Interface interface {
 	// Recoveries returns a RecoveryInformer.
 	Recoveries() RecoveryInformer
+	// Repositories returns a RepositoryInformer.
+	Repositories() RepositoryInformer
 	// Restics returns a ResticInformer.
 	Restics() ResticInformer
 }
@@ -44,6 +46,11 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 // Recoveries returns a RecoveryInformer.
 func (v *version) Recoveries() RecoveryInformer {
 	return &recoveryInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// Repositories returns a RepositoryInformer.
+func (v *version) Repositories() RepositoryInformer {
+	return &repositoryInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Restics returns a ResticInformer.

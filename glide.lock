@@ -1,5 +1,5 @@
 hash: 1af4cbeeb26718d8513ee0a15fbd74666095a0d96a46e014f5a904d0dad9ca4d
-updated: 2018-03-20T09:59:17.327058757-07:00
+updated: 2018-03-21T02:15:56.291985468-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -27,7 +27,7 @@ imports:
 - name: github.com/appscode/jsonpatch
   version: ee757872f6aca6d412d0d80543725bd4cf48f793
 - name: github.com/appscode/kutil
-  version: 04b6d38e01f397bdbe993263ef32fc64d8571aee
+  version: 436b54978ae275a61a06baa3f0a119864691cf12
   subpackages:
   - admission
   - admission/v1beta1
@@ -470,11 +470,15 @@ imports:
   - pkg/api/errors
   - pkg/api/meta
   - pkg/api/resource
+  - pkg/api/testing
+  - pkg/api/testing/fuzzer
+  - pkg/api/testing/roundtrip
   - pkg/api/validation
   - pkg/api/validation/path
   - pkg/apimachinery
   - pkg/apimachinery/announced
   - pkg/apimachinery/registered
+  - pkg/apis/meta/fuzzer
   - pkg/apis/meta/internalversion
   - pkg/apis/meta/v1
   - pkg/apis/meta/v1/unstructured
@@ -502,7 +506,6 @@ imports:
   - pkg/util/httpstream
   - pkg/util/intstr
   - pkg/util/json
-  - pkg/util/jsonmergepatch
   - pkg/util/mergepatch
   - pkg/util/net
   - pkg/util/proxy

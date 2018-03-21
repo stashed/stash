@@ -14,10 +14,5 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// This package has the automatically generated typed clients.
 package v1alpha1
-
-type RecoveryExpansion interface{}
-
-type RepositoryExpansion interface{}
-
-type ResticExpansion interface{}

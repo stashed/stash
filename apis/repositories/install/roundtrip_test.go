@@ -14,10 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package install
 
-type RecoveryExpansion interface{}
+import (
+	"testing"
 
-type RepositoryExpansion interface{}
+	roundtrip "k8s.io/apimachinery/pkg/api/testing/roundtrip"
+)
 
-type ResticExpansion interface{}
+func TestRoundTripTypes(t *testing.T) {
+	roundtrip.RoundTripTestForAPIGroup(t, Install, nil)
+}

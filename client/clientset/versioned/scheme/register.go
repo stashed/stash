@@ -17,6 +17,7 @@ limitations under the License.
 package scheme
 
 import (
+	repositoriesv1alpha1 "github.com/appscode/stash/apis/repositories/v1alpha1"
 	stashv1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
@@ -48,6 +49,7 @@ func init() {
 // After this, RawExtensions in Kubernetes types will serialize kube-aggregator types
 // correctly.
 func AddToScheme(scheme *runtime.Scheme) {
+	repositoriesv1alpha1.AddToScheme(scheme)
 	stashv1alpha1.AddToScheme(scheme)
 
 }

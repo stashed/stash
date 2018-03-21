@@ -45,3 +45,23 @@ func (c Recovery) CustomResourceDefinition() *apiextensions.CustomResourceDefini
 		},
 	}
 }
+
+func (c Repository) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+	return &apiextensions.CustomResourceDefinition{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   ResourceTypeRepository + "." + SchemeGroupVersion.Group,
+			Labels: map[string]string{"app": "stash"},
+		},
+		Spec: apiextensions.CustomResourceDefinitionSpec{
+			Group:   stash.GroupName,
+			Version: SchemeGroupVersion.Version,
+			Scope:   apiextensions.NamespaceScoped,
+			Names: apiextensions.CustomResourceDefinitionNames{
+				Singular:   ResourceNameRepository,
+				Plural:     ResourceTypeRepository,
+				Kind:       ResourceKindRepository,
+				ShortNames: []string{"rec"},
+			},
+		},
+	}
+}
