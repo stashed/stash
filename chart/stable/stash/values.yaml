@@ -47,3 +47,6 @@ apiserver:
   enableAdmissionWebhook: false
   # CA certificate used by main Kubernetes api server
   ca:
+
+# Send usage events to Google Analytics
+enableAnalytics: true

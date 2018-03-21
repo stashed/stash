@@ -122,7 +122,7 @@ func NewInitContainer(r *api.Restic, workload api.LocalTypedReference, image doc
 		"--docker-registry=" + image.Registry,
 		"--image-tag=" + image.Tag,
 		"--pushgateway-url=" + PushgatewayURL(),
-		fmt.Sprintf("--analytics=%v", EnableAnalytics),
+		fmt.Sprintf("--enable-analytics=%v", EnableAnalytics),
 	}
 	container.Args = append(container.Args, LoggerOptions.ToFlags()...)
 	if enableRBAC {
@@ -150,7 +150,7 @@ func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image 
 			"--image-tag=" + image.Tag,
 			"--run-via-cron=true",
 			"--pushgateway-url=" + PushgatewayURL(),
-			fmt.Sprintf("--analytics=%v", EnableAnalytics),
+			fmt.Sprintf("--enable-analytics=%v", EnableAnalytics),
 		}, LoggerOptions.ToFlags()...),
 		Env: []core.EnvVar{
 			{
@@ -322,7 +322,7 @@ func NewRecoveryJob(recovery *api.Recovery, image docker.Docker) *batch.Job {
 							Args: append([]string{
 								"recover",
 								"--recovery-name=" + recovery.Name,
-								fmt.Sprintf("--analytics=%v", EnableAnalytics),
+								fmt.Sprintf("--enable-analytics=%v", EnableAnalytics),
 							}, LoggerOptions.ToFlags()...),
 							Env: []core.EnvVar{
 								{
@@ -427,7 +427,7 @@ func NewCheckJob(restic *api.Restic, hostName, smartPrefix string, image docker.
 								"--restic-name=" + restic.Name,
 								"--host-name=" + hostName,
 								"--smart-prefix=" + smartPrefix,
-								fmt.Sprintf("--analytics=%v", EnableAnalytics),
+								fmt.Sprintf("--enable-analytics=%v", EnableAnalytics),
 							}, LoggerOptions.ToFlags()...),
 							Env: []core.EnvVar{
 								{
