@@ -7,7 +7,7 @@ REPO_ROOT="$GOPATH/src/github.com/appscode/stash"
 pushd $REPO_ROOT
 
 # https://stackoverflow.com/a/677212/244009
-if [ -x "$(command -v onessl >/dev/null 2>&1)" ]; then
+if  [[ ! -z "$(command -v onessl)" ]]; then
     export ONESSL=onessl
 else
     # ref: https://stackoverflow.com/a/27776822/244009

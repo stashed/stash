@@ -14,7 +14,6 @@ import (
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
-	apps "k8s.io/api/apps/v1beta1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -33,7 +32,7 @@ func (c *StashController) NewRecoveryWebhook() hooks.AdmissionHook {
 		},
 		"recovery",
 		[]string{stash.GroupName},
-		apps.SchemeGroupVersion.WithKind("Recovery"),
+		api.SchemeGroupVersion.WithKind("Recovery"),
 		nil,
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
