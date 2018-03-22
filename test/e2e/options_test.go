@@ -33,6 +33,7 @@ func init() {
 	flag.StringVar(&options.KubeContext, "kube-context", "", "Name of kube context")
 	flag.BoolVar(&options.StartAPIServer, "webhook", options.StartAPIServer, "Start API server for webhook")
 	enableLogging()
+	flag.Parse()
 }
 
 func enableLogging() {
