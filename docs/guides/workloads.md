@@ -51,6 +51,7 @@ spec:
         app: statefulset-demo
       name: busybox
     spec:
+      serviceAccountName: statefulset-demo
       containers:
       - command:
         - sleep
@@ -66,9 +67,9 @@ spec:
           name: source-data
       - args:
         - backup
-        - --restic-name=stash-demo
+        - --restic-name=statefulset-restic
         - --workload-kind=Statefulset
-        - --workload-name=stash-demo
+        - --workload-name=workload
         - --run-via-cron=true
         - --v=3
         env:
