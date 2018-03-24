@@ -25,7 +25,7 @@ func (c *StashController) NewDeploymentWebhook() hooks.AdmissionHook {
 			Resource: "deployments",
 		},
 		"deployment",
-		appsv1beta1.SchemeGroupVersion.WithKind("Deployment"),
+		"Deployment",
 		nil,
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {

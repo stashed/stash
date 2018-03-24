@@ -25,7 +25,7 @@ func (c *StashController) NewReplicationControllerWebhook() hooks.AdmissionHook 
 			Resource: "replicationcontrollers",
 		},
 		"replicationcontroller",
-		core.SchemeGroupVersion.WithKind("ReplicationController"),
+		"ReplicationController",
 		nil,
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {

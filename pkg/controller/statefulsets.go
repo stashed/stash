@@ -26,7 +26,7 @@ func (c *StashController) NewStatefulSetWebhook() hooks.AdmissionHook {
 			Resource: "statefulsets",
 		},
 		"statefulset",
-		appsv1beta1.SchemeGroupVersion.WithKind("StatefulSet"),
+		"StatefulSet",
 		nil,
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
