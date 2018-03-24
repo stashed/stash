@@ -1,13 +1,13 @@
 ---
 title: Restic Overview
 menu:
-  product_stash_0.7.0-rc.1:
+  product_stash_0.7.0-rc.2:
     identifier: restic-overview
     name: Restic
     parent: crds
     weight: 10
 product_name: stash
-menu_name: product_stash_0.7.0-rc.1
+menu_name: product_stash_0.7.0-rc.2
 section_menu_id: concepts
 ---
 

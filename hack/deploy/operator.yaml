@@ -31,7 +31,7 @@ spec:
         - --tls-cert-file=/var/serving-cert/tls.crt
         - --tls-private-key-file=/var/serving-cert/tls.key
         - --enable-analytics=${STASH_ENABLE_ANALYTICS}
-        image: ${STASH_DOCKER_REGISTRY}/stash:0.7.0-rc.1
+        image: ${STASH_DOCKER_REGISTRY}/stash:0.7.0-rc.2
         ports:
         - containerPort: 8443
         - containerPort: 56790

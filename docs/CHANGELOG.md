@@ -2,17 +2,17 @@
 title: Changelog | Stash
 description: Changelog
 menu:
-  product_stash_0.7.0-rc.1:
+  product_stash_0.7.0-rc.2:
     identifier: changelog-stash
     name: Changelog
     parent: welcome
     weight: 10
 product_name: stash
-menu_name: product_stash_0.7.0-rc.1
+menu_name: product_stash_0.7.0-rc.2
 section_menu_id: welcome
-url: /products/stash/0.7.0-rc.1/welcome/changelog/
+url: /products/stash/0.7.0-rc.2/welcome/changelog/
 aliases:
-  - /products/stash/0.7.0-rc.1/CHANGELOG/
+  - /products/stash/0.7.0-rc.2/CHANGELOG/
 ---
 
 # Change Log
