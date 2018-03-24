@@ -17,16 +17,35 @@ aliases:
 
 # Change Log
 
-## [Unreleased](https://github.com/appscode/stash/tree/HEAD)
+## [0.7.0-rc.2](https://github.com/appscode/stash/tree/0.7.0-rc.2) (2018-03-24)
+[Full Changelog](https://github.com/appscode/stash/compare/0.7.0-rc.1...0.7.0-rc.2)
 
-[Full Changelog](https://github.com/appscode/stash/compare/0.7.0-rc.0...HEAD)
+**Fixed bugs:**
+
+- Fix --enable-analytics flag [\#387](https://github.com/appscode/stash/pull/387) ([tamalsaha](https://github.com/tamalsaha))
+- Fix flag parsing in tests [\#386](https://github.com/appscode/stash/pull/386) ([tamalsaha](https://github.com/tamalsaha))
+
+**Merged pull requests:**
+
+- Prepare docs for 0.7.0-rc.2 [\#391](https://github.com/appscode/stash/pull/391) ([tamalsaha](https://github.com/tamalsaha))
+- Add variable for dockerRegistry [\#390](https://github.com/appscode/stash/pull/390) ([tamalsaha](https://github.com/tamalsaha))
+- Reorg objects deleted in uninstall command [\#389](https://github.com/appscode/stash/pull/389) ([tamalsaha](https://github.com/tamalsaha))
+- Fix Statefulset Example [\#385](https://github.com/appscode/stash/pull/385) ([rodrigozc](https://github.com/rodrigozc))
+- Rename --analytics to --enable-analytics [\#384](https://github.com/appscode/stash/pull/384) ([tamalsaha](https://github.com/tamalsaha))
+- Use separated appscode/kubernetes-webhook-util package [\#383](https://github.com/appscode/stash/pull/383) ([tamalsaha](https://github.com/tamalsaha))
+
+## [0.7.0-rc.1](https://github.com/appscode/stash/tree/0.7.0-rc.1) (2018-03-21)
+[Full Changelog](https://github.com/appscode/stash/compare/0.7.0-rc.0...0.7.0-rc.1)
 
 **Fixed bugs:**
 
 - Forget panics in 0.7.0-rc.0 [\#373](https://github.com/appscode/stash/issues/373)
+- Don't enable mutator for StatefulSet updates [\#381](https://github.com/appscode/stash/pull/381) ([tamalsaha](https://github.com/tamalsaha))
+- Stop using field selectors for CRDs [\#379](https://github.com/appscode/stash/pull/379) ([tamalsaha](https://github.com/tamalsaha))
 
 **Closed issues:**
 
+- "DeprecatedServiceAccount not present in src" while converting unversioned StatefulSet to v1beta1.StatefulSet  [\#371](https://github.com/appscode/stash/issues/371)
 - \[0.6.x\] Helm chart broken due to undocumented '--docker-registry' and other arguments [\#354](https://github.com/appscode/stash/issues/354)
 - \[0.7.0-rc.0\] Fails on start-up with 'cluster doesn't provide requestheader-client-ca-file' [\#353](https://github.com/appscode/stash/issues/353)
 - Ability to backup volumes with ReadWriteOnce access mode [\#350](https://github.com/appscode/stash/issues/350)
@@ -35,7 +54,8 @@ aliases:
 
 **Merged pull requests:**
 
-- Stop using field selectors for CRDs [\#379](https://github.com/appscode/stash/pull/379) ([tamalsaha](https://github.com/tamalsaha))
+- Update the image tag in operator.yaml [\#382](https://github.com/appscode/stash/pull/382) ([tamalsaha](https://github.com/tamalsaha))
+- Update docs to 0.7.0-rc.1 [\#380](https://github.com/appscode/stash/pull/380) ([tamalsaha](https://github.com/tamalsaha))
 -  Add types for Repository apigroup [\#377](https://github.com/appscode/stash/pull/377) ([tamalsaha](https://github.com/tamalsaha))
 - Add missing front matter [\#376](https://github.com/appscode/stash/pull/376) ([tamalsaha](https://github.com/tamalsaha))
 - Check for check job before creating it [\#375](https://github.com/appscode/stash/pull/375) ([galexrt](https://github.com/galexrt))
