@@ -15,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/kubernetes/pkg/apis/apps"
 )
 
 func (c *StashController) NewReplicaSetWebhook() hooks.AdmissionHook {
@@ -26,7 +25,7 @@ func (c *StashController) NewReplicaSetWebhook() hooks.AdmissionHook {
 			Resource: "replicasets",
 		},
 		"replicaset",
-		apps.SchemeGroupVersion.WithKind("ReplicaSet"),
+		"ReplicaSet",
 		nil,
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {

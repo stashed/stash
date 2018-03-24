@@ -28,9 +28,9 @@ var json = jsoniter.ConfigFastest
 type WorkloadWebhook struct {
 	plural   schema.GroupVersionResource
 	singular string
+	kind     string
 
 	srcGroups sets.String
-	target    schema.GroupVersionKind
 	factory   api.GetterFactory
 	get       api.GetFunc
 	handler   admission.ResourceHandler
@@ -44,14 +44,14 @@ var _ api.AdmissionHook = &WorkloadWebhook{}
 func NewWorkloadWebhook(
 	plural schema.GroupVersionResource,
 	singular string,
-	target schema.GroupVersionKind,
+	kind string,
 	factory api.GetterFactory,
 	handler admission.ResourceHandler) *WorkloadWebhook {
 	return &WorkloadWebhook{
 		plural:    plural,
 		singular:  singular,
+		kind:      kind,
 		srcGroups: sets.NewString(core.GroupName, appsv1.GroupName, extensions.GroupName, batchv1.GroupName),
-		target:    target,
 		factory:   factory,
 		handler:   handler,
 	}
@@ -81,7 +81,7 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 		(req.Operation != v1beta1.Create && req.Operation != v1beta1.Update && req.Operation != v1beta1.Delete) ||
 		len(req.SubResource) != 0 ||
 		!h.srcGroups.Has(req.Kind.Group) ||
-		req.Kind.Kind != h.target.Kind {
+		req.Kind.Kind != h.kind {
 		status.Allowed = true
 		return status
 	}

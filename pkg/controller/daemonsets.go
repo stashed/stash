@@ -27,7 +27,7 @@ func (c *StashController) NewDaemonSetWebhook() hooks.AdmissionHook {
 			Resource: "daemonsets",
 		},
 		"daemonset",
-		extensions.SchemeGroupVersion.WithKind("DaemonSet"),
+		"DaemonSet",
 		nil,
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {

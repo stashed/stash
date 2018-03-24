@@ -54,6 +54,6 @@ import:
 - package: github.com/cpuguy83/go-md2man
   version: v1.0.4
 - package: github.com/appscode/kutil
-  version: rm-webhook
+  version: release-6.0
 - package: github.com/appscode/kubernetes-webhook-util
   version: release-6.0

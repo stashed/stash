@@ -1,5 +1,5 @@
-hash: 8eb709976094bb7ca23de1140481fae73dcd6d7d2cfb5f4167b3cc4c35879460
-updated: 2018-03-21T11:02:33.375977036-07:00
+hash: 39b9784006e2fdde6ce6820baacfc8afceab5316e268a079ea05abbf307d23f1
+updated: 2018-03-24T14:46:23.274016113-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -27,7 +27,7 @@ imports:
 - name: github.com/appscode/jsonpatch
   version: ee757872f6aca6d412d0d80543725bd4cf48f793
 - name: github.com/appscode/kubernetes-webhook-util
-  version: 9d399622f03d590cb55fd549131de7393a2b38cc
+  version: 4b735465cee79f76eb8a498fa01e54dfb1fc4ec4
   subpackages:
   - admission
   - admission/v1beta1
@@ -37,7 +37,7 @@ imports:
   - runtime/serializer/versioning
   - workload/v1
 - name: github.com/appscode/kutil
-  version: 8d5e00578069caa4cfb88e5a06fef6d07281686b
+  version: e1b81090692390fbeeaff130582847b6f7fe3355
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1

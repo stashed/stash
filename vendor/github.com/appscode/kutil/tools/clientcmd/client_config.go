@@ -1,6 +1,7 @@
 package clientcmd
 
 import (
+	"github.com/appscode/kutil/meta"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -11,6 +12,9 @@ import (
 func BuildConfigFromContext(kubeconfigPath, contextName string) (*rest.Config, error) {
 	var loader clientcmd.ClientConfigLoader
 	if kubeconfigPath == "" {
+		if meta.PossiblyInCluster() {
+			return rest.InClusterConfig()
+		}
 		rules := clientcmd.NewDefaultClientConfigLoadingRules()
 		rules.DefaultClientConfig = &clientcmd.DefaultClientConfig
 		loader = rules
