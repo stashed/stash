@@ -773,4 +773,48 @@ var _ = Describe("ReplicationController", func() {
 
 		})
 	})
+
+	Describe("Create Repository CRD", func() {
+		Context(`"Local" backend`, func() {
+			AfterEach(func() {
+				f.DeleteReplicationController(rc.ObjectMeta)
+				f.DeleteRestic(restic.ObjectMeta)
+				f.DeleteSecret(cred.ObjectMeta)
+				f.DeleteRepositories()
+			})
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForLocalBackend()
+			})
+			It(`should create Repository CRD`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic " + restic.Name)
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating ReplicationController " + rc.Name)
+				_, err = f.CreateReplicationController(rc)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for sidecar")
+				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Waiting for Repository CRD")
+				f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, 1).ShouldNot(BeEmpty())
+
+				By("Waiting for backup to complete")
+				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+					return r.Status.BackupCount
+				}, BeNumerically(">=", 1)))
+
+				By("Waiting for backup event")
+				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+
+			})
+
+		})
+	})
 })

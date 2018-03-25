@@ -3,6 +3,7 @@ package e2e_test
 import (
 	"time"
 
+	"github.com/appscode/go/types"
 	apps_util "github.com/appscode/kutil/apps/v1beta1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
@@ -730,6 +731,101 @@ var _ = Describe("StatefulSet", func() {
 
 				By("Waiting for backup event")
 				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", previousBackupCount)))
+			})
+
+		})
+	})
+	Describe("Create Repository CRD", func() {
+		Context(`"Local" backend, single replica`, func() {
+			AfterEach(func() {
+				f.DeleteStatefulSet(ss.ObjectMeta)
+				f.DeleteService(svc.ObjectMeta)
+				f.DeleteRestic(restic.ObjectMeta)
+				f.DeleteSecret(cred.ObjectMeta)
+				f.DeleteRepositories()
+			})
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForLocalBackend()
+			})
+			It(`create`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic")
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating service " + svc.Name)
+				err = f.CreateService(svc)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating StatefulSet " + ss.Name)
+				_, err = f.CreateStatefulSet(ss)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for sidecar")
+				f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Waiting for Repository CRD")
+				f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, 1).ShouldNot(BeEmpty())
+
+				By("Waiting for backup to complete")
+				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+					return r.Status.BackupCount
+				}, BeNumerically(">=", 1)))
+
+				By("Waiting for backup event")
+				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+			})
+
+		})
+		Context(`"Local" backend, multiple replica`, func() {
+			AfterEach(func() {
+				f.DeleteStatefulSet(ss.ObjectMeta)
+				f.DeleteService(svc.ObjectMeta)
+				f.DeleteRestic(restic.ObjectMeta)
+				f.DeleteSecret(cred.ObjectMeta)
+				f.DeleteRepositories()
+			})
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForLocalBackend()
+			})
+			It(`create`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic")
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating service " + svc.Name)
+				err = f.CreateService(svc)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating StatefulSet with 3 replica" + ss.Name)
+				ss.Spec.Replicas = types.Int32P(3)
+				_, err = f.CreateStatefulSet(ss)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for sidecar")
+				f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Waiting for Repository CRD")
+				f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(func(repoList []*api.Repository) int {
+					return len(repoList)
+				}, BeNumerically("==", int(*ss.Spec.Replicas))))
+
+				By("Waiting for backup to complete")
+				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
+					return r.Status.BackupCount
+				}, BeNumerically(">=", 1)))
+
+				By("Waiting for backup event")
+				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 			})
 
 		})

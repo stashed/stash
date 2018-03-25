@@ -30,9 +30,10 @@ func (f *Framework) EventuallyRepository(kind string, objMeta metav1.ObjectMeta,
 		}
 		repositories := make([]*api.Repository, 0)
 		for _, repoName := range repoNames {
-			obj, _ := f.StashClient.StashV1alpha1().Repositories(objMeta.Namespace).Get(repoName, metav1.GetOptions{})
-
-			repositories = append(repositories, obj)
+			obj, err := f.StashClient.StashV1alpha1().Repositories(objMeta.Namespace).Get(repoName, metav1.GetOptions{})
+			if err == nil {
+				repositories = append(repositories, obj)
+			}
 		}
 		return repositories
 	})

@@ -703,7 +703,7 @@ var _ = Describe("DaemonSet", func() {
 				f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 				By("Waiting for Repository CRD")
-				f.EventuallyRepository(api.KindDaemonSet,daemon.ObjectMeta,1).ShouldNot(BeEmpty())
+				f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).ShouldNot(BeEmpty())
 
 				By("Waiting for backup to complete")
 				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
