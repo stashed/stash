@@ -224,6 +224,9 @@ func (c *Controller) setup() (*api.Restic, error) {
 	if err = c.resticCLI.InitRepositoryIfAbsent(); err != nil {
 		return resource, err
 	}
+	if err = c.createRepositoryCrdIfNotExist(resource); err != nil {
+		return resource, err
+	}
 
 	return resource, nil
 }
