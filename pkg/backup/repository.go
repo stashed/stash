@@ -27,14 +27,23 @@ func (c *Controller) createRepositoryCrdIfNotExist(restic *api.Restic) error {
 			"restic":        restic.Name,
 			"workload-kind": c.opt.Workload.Kind,
 			"workload-name": c.opt.Workload.Name,
-			"node-name":     c.opt.NodeName,
-			"pod-name":      c.opt.PodName,
+		}
+
+		switch c.opt.Workload.Kind {
+		case api.KindStatefulSet:
+			repository.Labels = map[string]string{
+				"pod-name": c.opt.PodName,
+			}
+		case api.KindDaemonSet:
+			repository.Labels = map[string]string{
+				"node-name": c.opt.NodeName,
+			}
 		}
 
 		repository.Spec.Backend = restic.Spec.Backend
 		_, err = c.stashClient.StashV1alpha1().Repositories(repository.Namespace).Create(repository)
-		if err==nil{
-			log.Infof("Repository %v created",repository.Name)
+		if err == nil {
+			log.Infof("Repository %v created", repository.Name)
 		}
 		return err
 	}
