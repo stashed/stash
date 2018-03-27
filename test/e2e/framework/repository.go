@@ -49,3 +49,15 @@ func (f *Framework) DeleteRepositories() {
 		f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Delete(repo.Name, deleteInBackground())
 	}
 }
+
+func (f *Framework) BackupCountInRepositoriesStatus(repos []*api.Repository) int64 {
+	backupCount := int64(99999)
+
+	//use minimum backupCount among all repos
+	for _, repo := range repos {
+		if backupCount > repo.Status.BackupCount {
+			backupCount = repo.Status.BackupCount
+		}
+	}
+	return backupCount
+}

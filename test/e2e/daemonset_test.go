@@ -30,8 +30,8 @@ var _ = Describe("DaemonSet", func() {
 		f = root.Invoke()
 	})
 	AfterEach(func() {
-		time.Sleep(60 * time.Second)
 		f.DeleteRepositories()
+		time.Sleep(60 * time.Second)
 	})
 	JustBeforeEach(func() {
 		if missing, _ := BeZero().Match(cred); missing {
