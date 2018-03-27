@@ -827,6 +827,7 @@ imports:
   - pkg/apis/storage/v1alpha1
   - pkg/apis/storage/v1beta1
   - pkg/features
+  - pkg/util/hash
   - pkg/util/parsers
   - pkg/util/pointer
 testImports: []

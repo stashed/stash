@@ -5,5 +5,5 @@ const (
 	LastAppliedConfiguration = ResticKey + "/last-applied-configuration"
 	VersionTag               = ResticKey + "/tag"
 	// ResourceVersion will be used to trigger restarts for ReplicaSet and RC pods
-	ResourceVersion = ResticKey + "/resource-version"
+	ResourceHash = ResticKey + "/resource-hash"
 )
