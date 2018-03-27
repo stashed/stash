@@ -19,10 +19,6 @@ limitations under the License.
 package externalversions
 
 import (
-	reflect "reflect"
-	sync "sync"
-	time "time"
-
 	versioned "github.com/appscode/stash/client/clientset/versioned"
 	internalinterfaces "github.com/appscode/stash/client/informers/externalversions/internalinterfaces"
 	stash "github.com/appscode/stash/client/informers/externalversions/stash"
@@ -30,6 +26,9 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
+	reflect "reflect"
+	sync "sync"
+	time "time"
 )
 
 type sharedInformerFactory struct {
