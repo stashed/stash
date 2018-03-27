@@ -22,7 +22,7 @@ const (
 type Restic struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              ResticSpec   `json:"spec,omitempty"`
+	Spec              ResticSpec `json:"spec,omitempty"`
 }
 
 type ResticSpec struct {

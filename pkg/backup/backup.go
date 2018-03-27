@@ -227,7 +227,6 @@ func (c *Controller) setup() (*api.Restic, error) {
 	if err = c.createRepositoryCrdIfNotExist(resource); err != nil {
 		return resource, err
 	}
-
 	return resource, nil
 }
 
@@ -285,7 +284,11 @@ func (c *Controller) runResticBackup(resource *api.Restic) (err error) {
 				restic_session_duration_seconds)
 		}
 		if err == nil {
-			stash_util.PatchRestic(c.stashClient.StashV1alpha1(), resource, func(in *api.Restic) *api.Restic {
+			repo, err := c.stashClient.StashV1alpha1().Repositories(resource.Namespace).Get(c.getRepositoryCrdName(resource), metav1.GetOptions{})
+			if err != nil {
+				return
+			}
+			stash_util.PatchRepository(c.stashClient.StashV1alpha1(), repo, func(in *api.Repository) *api.Repository {
 				in.Status.BackupCount++
 				in.Status.LastBackupTime = &startTime
 				if in.Status.FirstBackupTime == nil {

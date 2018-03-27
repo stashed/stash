@@ -11,16 +11,9 @@ import (
 
 func (c *Controller) createRepositoryCrdIfNotExist(restic *api.Restic) error {
 	repository := &api.Repository{}
-	switch c.opt.Workload.Kind {
-	case api.KindDeployment, api.KindReplicaSet, api.KindReplicationController:
-		repository.Name = strings.ToLower(c.opt.Workload.Kind) + "." + c.opt.Workload.Name
-	case api.KindStatefulSet:
-		repository.Name = strings.ToLower(c.opt.Workload.Kind) + "." + c.opt.PodName
-	case api.KindDaemonSet:
-		repository.Name = strings.ToLower(c.opt.Workload.Kind) + "." + c.opt.Workload.Name + "." + c.opt.NodeName
-	}
-
 	repository.Namespace = restic.Namespace
+	repository.Name = c.getRepositoryCrdName(restic)
+
 	_, err := c.stashClient.StashV1alpha1().Repositories(repository.Namespace).Get(repository.Name, metav1.GetOptions{})
 	if err != nil && kerr.IsNotFound(err) {
 		repository.Labels = map[string]string{
@@ -48,4 +41,17 @@ func (c *Controller) createRepositoryCrdIfNotExist(restic *api.Restic) error {
 		return err
 	}
 	return err
+}
+
+func (c *Controller) getRepositoryCrdName(restic *api.Restic) string {
+	name := ""
+	switch c.opt.Workload.Kind {
+	case api.KindDeployment, api.KindReplicaSet, api.KindReplicationController:
+		name = strings.ToLower(c.opt.Workload.Kind) + "." + c.opt.Workload.Name
+	case api.KindStatefulSet:
+		name = strings.ToLower(c.opt.Workload.Kind) + "." + c.opt.PodName
+	case api.KindDaemonSet:
+		name = strings.ToLower(c.opt.Workload.Kind) + "." + c.opt.Workload.Name + "." + c.opt.NodeName
+	}
+	return name
 }
