@@ -64,7 +64,7 @@ var _ = Describe("ReplicationController", func() {
 			f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
-			f.EventuallyRepository(api.KindReplicationController,rc.ObjectMeta,int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
 			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
@@ -90,7 +90,7 @@ var _ = Describe("ReplicationController", func() {
 			f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
-			f.EventuallyRepository(api.KindReplicationController,rc.ObjectMeta,int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
 			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
@@ -116,7 +116,7 @@ var _ = Describe("ReplicationController", func() {
 			f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
-			f.EventuallyRepository(api.KindReplicationController,rc.ObjectMeta,int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Deleting restic " + restic.Name)
 			f.DeleteRestic(restic.ObjectMeta)
@@ -145,7 +145,7 @@ var _ = Describe("ReplicationController", func() {
 			f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
-			f.EventuallyRepository(api.KindReplicationController,rc.ObjectMeta,int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Removing labels of ReplicationController " + rc.Name)
 			_, _, err = core_util.PatchRC(f.KubeClient, &rc, func(in *core.ReplicationController) *core.ReplicationController {
@@ -179,7 +179,7 @@ var _ = Describe("ReplicationController", func() {
 			f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
-			f.EventuallyRepository(api.KindReplicationController,rc.ObjectMeta,int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Change selector of Restic " + restic.Name)
 			err = f.UpdateRestic(restic.ObjectMeta, func(in *api.Restic) *api.Restic {
@@ -232,7 +232,7 @@ var _ = Describe("ReplicationController", func() {
 			f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
-			f.EventuallyRepository(api.KindReplicationController,rc.ObjectMeta,int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
 			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
@@ -259,7 +259,7 @@ var _ = Describe("ReplicationController", func() {
 			f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
-			f.EventuallyRepository(api.KindReplicationController,rc.ObjectMeta,int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
 			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
@@ -316,7 +316,7 @@ var _ = Describe("ReplicationController", func() {
 			f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
-			f.EventuallyRepository(api.KindReplicationController,rc.ObjectMeta,int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Removing labels of ReplicationController " + rc.Name)
 			obj, _, err = core_util.PatchRC(f.KubeClient, &rc, func(in *core.ReplicationController) *core.ReplicationController {
@@ -365,7 +365,7 @@ var _ = Describe("ReplicationController", func() {
 			f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
-			f.EventuallyRepository(api.KindReplicationController,rc.ObjectMeta,int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 		}
 	)
 
@@ -649,7 +649,7 @@ var _ = Describe("ReplicationController", func() {
 				f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).ShouldNot(BeEmpty())
 
 				By("Waiting for backup to complete")
-				f.EventuallyRepository(api.KindReplicationController,rc.ObjectMeta,int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+				f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
 				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
@@ -700,7 +700,7 @@ var _ = Describe("ReplicationController", func() {
 				f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).ShouldNot(BeEmpty())
 
 				By("Waiting for backup to complete")
-				f.EventuallyRepository(api.KindReplicationController,rc.ObjectMeta,int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+				f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
 				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
@@ -742,7 +742,7 @@ var _ = Describe("ReplicationController", func() {
 				f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).ShouldNot(BeEmpty())
 
 				By("Waiting for backup to complete")
-				f.EventuallyRepository(api.KindReplicationController,rc.ObjectMeta,int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+				f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
 				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
@@ -777,7 +777,7 @@ var _ = Describe("ReplicationController", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for backup to complete")
-				f.EventuallyRepository(api.KindReplicationController,rc.ObjectMeta,int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">", previousBackupCount)))
+				f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">", previousBackupCount)))
 
 				By("Waiting for backup event")
 				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", previousBackupCount)))
@@ -818,7 +818,7 @@ var _ = Describe("ReplicationController", func() {
 				f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).ShouldNot(BeEmpty())
 
 				By("Waiting for backup to complete")
-				f.EventuallyRepository(api.KindReplicationController,rc.ObjectMeta,int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+				f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
 				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
