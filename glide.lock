@@ -1,5 +1,5 @@
 hash: 39b9784006e2fdde6ce6820baacfc8afceab5316e268a079ea05abbf307d23f1
-updated: 2018-03-25T07:29:00.199107815-07:00
+updated: 2018-03-27T16:02:13.045693865-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -25,9 +25,9 @@ imports:
   - types
   - version
 - name: github.com/appscode/jsonpatch
-  version: ee757872f6aca6d412d0d80543725bd4cf48f793
+  version: d1ada3d25b084ae42746377df856bbc74a901503
 - name: github.com/appscode/kubernetes-webhook-util
-  version: 4b735465cee79f76eb8a498fa01e54dfb1fc4ec4
+  version: 52939d4c06ccf60997cdc8f0fa1fecb27b383a0d
   subpackages:
   - admission
   - admission/v1beta1
@@ -157,7 +157,7 @@ imports:
 - name: github.com/google/btree
   version: 7d79101e329e5a3adf994758c578dab82b90c017
 - name: github.com/google/go-cmp
-  version: 0c93777250bd58222171888d1651979319d8b381
+  version: ab810a8a5d6524ae4659463790261878fe6a0718
   subpackages:
   - cmp
   - cmp/internal/diff
@@ -816,6 +816,16 @@ imports:
   - pkg/apis/extensions/install
   - pkg/apis/extensions/v1beta1
   - pkg/apis/networking
+  - pkg/apis/rbac
+  - pkg/apis/rbac/install
+  - pkg/apis/rbac/v1
+  - pkg/apis/rbac/v1alpha1
+  - pkg/apis/rbac/v1beta1
+  - pkg/apis/storage
+  - pkg/apis/storage/install
+  - pkg/apis/storage/v1
+  - pkg/apis/storage/v1alpha1
+  - pkg/apis/storage/v1beta1
   - pkg/features
   - pkg/util/parsers
   - pkg/util/pointer
