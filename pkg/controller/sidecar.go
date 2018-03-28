@@ -50,7 +50,7 @@ func (c *StashController) ensureWorkloadSidecar(w *workload.Workload, oldRestic,
 		w.Spec.Template.Annotations = map[string]string{}
 	}
 	// mark pods with restic resource version, used to force restart pods for rc/rs
-	w.Spec.Template.Annotations[api.ResourceVersion] = newRestic.ResourceVersion
+	w.Spec.Template.Annotations[api.ResourceHash] = newRestic.GetSpecHash()
 
 	image := docker.Docker{
 		Registry: c.DockerRegistry,
@@ -112,7 +112,7 @@ func (c *StashController) ensureWorkloadSidecarDeleted(w *workload.Workload, res
 
 	if w.Spec.Template.Annotations != nil {
 		// mark pods with restic resource version, used to force restart pods for rc/rs
-		delete(w.Spec.Template.Annotations, api.ResourceVersion)
+		delete(w.Spec.Template.Annotations, api.ResourceHash)
 	}
 
 	if restic.Spec.Type == api.BackupOffline {
@@ -163,7 +163,7 @@ func (c *StashController) forceRestartPods(w *workload.Workload, restic *api.Res
 			if sidecarAdded {
 				found := false
 				for _, c := range containers {
-					if c.Name == util.StashContainer && util.GetString(pod.Annotations, api.ResourceVersion) == restic.ResourceVersion {
+					if c.Name == util.StashContainer && util.GetString(pod.Annotations, api.ResourceHash) == restic.GetSpecHash() {
 						found = true
 						break
 					}

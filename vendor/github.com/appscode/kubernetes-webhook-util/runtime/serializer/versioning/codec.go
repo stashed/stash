@@ -1,7 +1,6 @@
 package versioning
 
 import (
-	"fmt"
 	"io"
 
 	_ "k8s.io/api/extensions/v1beta1"
@@ -13,6 +12,8 @@ import (
 	_ "k8s.io/kubernetes/pkg/apis/batch/install"
 	_ "k8s.io/kubernetes/pkg/apis/core/install"
 	_ "k8s.io/kubernetes/pkg/apis/extensions/install"
+	_ "k8s.io/kubernetes/pkg/apis/rbac/install"
+	_ "k8s.io/kubernetes/pkg/apis/storage/install"
 )
 
 var JSONSerializer = func() runtime.Codec {
@@ -38,8 +39,8 @@ type codec struct {
 	decoder       runtime.Decoder
 	scheme        *runtime.Scheme
 	defaulter     runtime.ObjectDefaulter
-	encodeVersion schema.GroupVersion
-	decodeVersion schema.GroupVersion
+	encodeVersion runtime.GroupVersioner
+	decodeVersion runtime.GroupVersioner
 }
 
 // NewDefaultingCodecForScheme is a convenience method for callers that are using a scheme.
@@ -48,8 +49,8 @@ func NewDefaultingCodecForScheme(
 	decoder runtime.Decoder,
 	scheme *runtime.Scheme,
 	defaulter runtime.ObjectDefaulter,
-	encodeVersion schema.GroupVersion,
-	decodeVersion schema.GroupVersion,
+	encodeVersion runtime.GroupVersioner,
+	decodeVersion runtime.GroupVersioner,
 ) runtime.Codec {
 	return codec{
 		encoder:       encoder,
@@ -63,19 +64,41 @@ func NewDefaultingCodecForScheme(
 
 func (c codec) Encode(obj runtime.Object, w io.Writer) error {
 	var out runtime.Object
-	if c.encodeVersion == c.decodeVersion {
+
+	kinds, isUnversioned, err := c.scheme.ObjectKinds(obj)
+	if err != nil {
+		return err
+	}
+
+	if isUnversioned {
 		out = obj
 	} else {
-		internal, err := c.scheme.UnsafeConvertToVersion(obj, runtime.InternalGroupVersioner)
-		if err != nil {
-			return err
+		// ref: k8s.io/apimachinery/pkg/runtime/scheme.go
+		target, ok := c.encodeVersion.KindForGroupVersionKinds(kinds)
+		if ok {
+			// target wants to use the existing type, set kind and return (no conversion necessary)
+			for _, kind := range kinds {
+				if target == kind {
+					obj.GetObjectKind().SetGroupVersionKind(kind)
+					out = obj
+					break
+				}
+			}
 		}
 
-		out, err = c.scheme.UnsafeConvertToVersion(internal, c.encodeVersion)
-		if err != nil {
-			return err
+		if out == nil {
+			internal, err := c.scheme.UnsafeConvertToVersion(obj, runtime.InternalGroupVersioner)
+			if err != nil {
+				return err
+			}
+
+			out, err = c.scheme.UnsafeConvertToVersion(internal, c.encodeVersion)
+			if err != nil {
+				return err
+			}
 		}
 	}
+
 	if c.defaulter != nil {
 		c.defaulter.Default(out)
 	}
@@ -88,16 +111,13 @@ func (c codec) Decode(data []byte, gvk *schema.GroupVersionKind, _ runtime.Objec
 	if err != nil {
 		return nil, gvk, err
 	}
-	if gvk.GroupVersion() != c.encodeVersion {
-		return nil, gvk, fmt.Errorf("data expected to be of version %s, found %s", c.encodeVersion, gvk)
-	}
 
 	if c.defaulter != nil {
 		c.defaulter.Default(in)
 	}
 	in.GetObjectKind().SetGroupVersionKind(*gvk)
 
-	if c.encodeVersion == c.decodeVersion {
+	if target, ok := c.decodeVersion.KindForGroupVersionKinds([]schema.GroupVersionKind{*gvk}); ok && target == *gvk {
 		return in, gvk, err
 	}
 
