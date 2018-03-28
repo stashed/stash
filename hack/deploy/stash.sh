@@ -7,8 +7,14 @@ echo "checking kubeconfig context"
 kubectl config current-context || { echo "Set a context (kubectl use-context <context>) out of the following:"; echo; kubectl config get-contexts; exit 1; }
 echo ""
 
+# http://redsymbol.net/articles/bash-exit-traps/
+function cleanup {
+    rm -rf $ONESSL ca.crt ca.key server.crt server.key
+}
+trap cleanup EXIT
+
 # https://stackoverflow.com/a/677212/244009
-if [ -x "$(command -v onessl >/dev/null 2>&1)" ]; then
+if [ -x "$(command -v onessl)" ]; then
     export ONESSL=onessl
 else
     # ref: https://stackoverflow.com/a/27776822/244009
@@ -35,12 +41,6 @@ else
             ;;
     esac
 fi
-
-# http://redsymbol.net/articles/bash-exit-traps/
-function cleanup {
-    rm -rf $ONESSL ca.crt ca.key server.crt server.key
-}
-trap cleanup EXIT
 
 # ref: https://stackoverflow.com/a/7069755/244009
 # ref: https://jonalmeida.com/posts/2013/05/26/different-ways-to-implement-flags-in-bash/
