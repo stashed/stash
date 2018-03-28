@@ -4,7 +4,6 @@ import (
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/runtime/serializer/versioning"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -16,13 +15,7 @@ func MarshalToYAML(obj runtime.Object, gv schema.GroupVersion) ([]byte, error) {
 		return []byte{}, errors.Errorf("unsupported media type %q", mediaType)
 	}
 
-	encoder := versioning.NewCodecForScheme(
-		clientsetscheme.Scheme,
-		info.Serializer,
-		nil,
-		gv,
-		nil,
-	)
+	encoder := clientsetscheme.Codecs.EncoderForVersion(info.Serializer, gv)
 	return runtime.Encode(encoder, obj)
 }
 
@@ -34,13 +27,7 @@ func UnmarshalFromYAML(data []byte, gv schema.GroupVersion) (runtime.Object, err
 		return nil, errors.Errorf("unsupported media type %q", mediaType)
 	}
 
-	decoder := versioning.NewCodecForScheme(
-		clientsetscheme.Scheme,
-		nil,
-		info.Serializer,
-		nil,
-		gv,
-	)
+	decoder := clientsetscheme.Codecs.DecoderToVersion(info.Serializer, gv)
 	return runtime.Decode(decoder, data)
 }
 
@@ -52,13 +39,7 @@ func MarshalToJson(obj runtime.Object, gv schema.GroupVersion) ([]byte, error) {
 		return []byte{}, errors.Errorf("unsupported media type %q", mediaType)
 	}
 
-	encoder := versioning.NewCodecForScheme(
-		clientsetscheme.Scheme,
-		info.Serializer,
-		nil,
-		gv,
-		nil,
-	)
+	encoder := clientsetscheme.Codecs.EncoderForVersion(info.Serializer, gv)
 	return runtime.Encode(encoder, obj)
 }
 
@@ -70,12 +51,6 @@ func UnmarshalFromJSON(data []byte, gv schema.GroupVersion) (runtime.Object, err
 		return nil, errors.Errorf("unsupported media type %q", mediaType)
 	}
 
-	decoder := versioning.NewCodecForScheme(
-		clientsetscheme.Scheme,
-		nil,
-		info.Serializer,
-		nil,
-		gv,
-	)
+	decoder := clientsetscheme.Codecs.DecoderToVersion(info.Serializer, gv)
 	return runtime.Decode(decoder, data)
 }
