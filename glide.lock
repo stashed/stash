@@ -1,5 +1,5 @@
-hash: 39b9784006e2fdde6ce6820baacfc8afceab5316e268a079ea05abbf307d23f1
-updated: 2018-03-28T12:51:23.88623275+06:00
+hash: 82f4edc4f53bbf7f0b84c24546b200720101d2047ad1b209346e528e95ef5a82
+updated: 2018-03-28T04:05:36.096927788-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -25,7 +25,7 @@ imports:
   - types
   - version
 - name: github.com/appscode/jsonpatch
-  version: a52c315298afb0ffd92e12a120d2b1e8882a2767
+  version: d1ada3d25b084ae42746377df856bbc74a901503
 - name: github.com/appscode/kubernetes-webhook-util
   version: 52939d4c06ccf60997cdc8f0fa1fecb27b383a0d
   subpackages:
@@ -37,7 +37,7 @@ imports:
   - runtime/serializer/versioning
   - workload/v1
 - name: github.com/appscode/kutil
-  version: 00554f1c2d960a2d192c23c0527681e899c3bdd5
+  version: cf34781e1a07db22975269aeac593793ff4abf3d
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
@@ -139,7 +139,7 @@ imports:
   - proto
   - sortkeys
 - name: github.com/golang/glog
-  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
+  version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/groupcache
   version: 02826c3e79038b59d737d3b1c0a1d937f71a4433
   subpackages:
@@ -267,7 +267,7 @@ imports:
 - name: github.com/opencontainers/go-digest
   version: a6d0ee40d4207ea02364bd3b9e8e77b9159ba1eb
 - name: github.com/openshift/api
-  version: dca24d1902afee9d2be02425a2d7c9f910063631
+  version: 0d921e363e951d89f583292c60d013c318df64dc
   subpackages:
   - apps/v1
 - name: github.com/pborman/uuid
@@ -303,8 +303,7 @@ imports:
 - name: github.com/russross/blackfriday
   version: 300106c228d52c8941d4b3de6054a6062a86dda3
 - name: github.com/sergi/go-diff
-  version: 24e2351369ec4949b2ed0dc5c477afdd4c4034e8
-  repo: https://github.com/sergi/go-diff
+  version: 97b2266dfe4bd4ea1b81a463322f04f8b724801e
   subpackages:
   - diffmatchpatch
 - name: github.com/shurcooL/sanitized_anchor_name
@@ -328,12 +327,11 @@ imports:
   subpackages:
   - codec
 - name: github.com/yudai/gojsondiff
-  version: e21612694bdd50975f93cd5eaccb457477128e28
+  version: 7b1b7adf999dab73a6eb02669c3d82dbb27a3dd6
   subpackages:
   - formatter
 - name: github.com/yudai/golcs
   version: d1c525dea8ce39ea9a783d33cf08932305373f2c
-  repo: https://github.com/yudai/golcs
 - name: golang.org/x/crypto
   version: 81e90905daefcd6fd217b62423c0908922eadb30
   subpackages:
@@ -391,7 +389,7 @@ imports:
   - unicode/norm
   - width
 - name: google.golang.org/appengine
-  version: 540132eeda33c2b26cca331a6adfd50519cd29f7
+  version: 4f7eeb5305a4ba1966344836ba4af9996b7b4e05
   subpackages:
   - internal
   - internal/app_identity
@@ -781,14 +779,12 @@ imports:
   - util/jsonpath
   - util/workqueue
 - name: k8s.io/kube-aggregator
-  version: b57e43ceee4d98855e21e586a201790b699fdfdc
+  version: 23f9f59d663ea22b680310831a1b7297914b4ed3
   subpackages:
   - pkg/apis/apiregistration
-  - pkg/apis/apiregistration/v1
   - pkg/apis/apiregistration/v1beta1
   - pkg/client/clientset_generated/clientset
   - pkg/client/clientset_generated/clientset/scheme
-  - pkg/client/clientset_generated/clientset/typed/apiregistration/v1
   - pkg/client/clientset_generated/clientset/typed/apiregistration/v1beta1
 - name: k8s.io/kube-openapi
   version: 39a7bf85c140f972372c2a0d1ee40adbf0c8bfe1
