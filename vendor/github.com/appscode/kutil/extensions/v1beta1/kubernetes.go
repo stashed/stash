@@ -5,6 +5,7 @@ import (
 	"github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	extensions "k8s.io/api/extensions/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -42,8 +43,8 @@ func AssignTypeKind(v interface{}) error {
 	return errors.New("unknown v1beta1 object type")
 }
 
-func IsOwnedByDeployment(rs *extensions.ReplicaSet) bool {
-	for _, ref := range rs.OwnerReferences {
+func IsOwnedByDeployment(references []metav1.OwnerReference) bool {
+	for _, ref := range references {
 		if ref.Kind == "Deployment" && ref.Name != "" {
 			return true
 		}
