@@ -86,6 +86,7 @@ func (c *StashController) ensureCustomResourceDefinitions() error {
 	crds := []*crd_api.CustomResourceDefinition{
 		api.Restic{}.CustomResourceDefinition(),
 		api.Recovery{}.CustomResourceDefinition(),
+		api.Repository{}.CustomResourceDefinition(),
 	}
 	return apiext_util.RegisterCRDs(c.crdClient, crds)
 }

@@ -60,7 +60,7 @@ func (c Repository) CustomResourceDefinition() *apiextensions.CustomResourceDefi
 				Singular:   ResourceNameRepository,
 				Plural:     ResourceTypeRepository,
 				Kind:       ResourceKindRepository,
-				ShortNames: []string{"rec"},
+				ShortNames: []string{"repo"},
 			},
 		},
 	}

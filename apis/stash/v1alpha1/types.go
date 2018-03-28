@@ -22,8 +22,7 @@ const (
 type Restic struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              ResticSpec   `json:"spec,omitempty"`
-	Status            ResticStatus `json:"status,omitempty"`
+	Spec              ResticSpec `json:"spec,omitempty"`
 }
 
 type ResticSpec struct {
@@ -47,14 +46,6 @@ type ResticSpec struct {
 	// More info: https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod
 	// +optional
 	ImagePullSecrets []core.LocalObjectReference `json:"imagePullSecrets,omitempty"`
-}
-
-type ResticStatus struct {
-	FirstBackupTime          *metav1.Time `json:"firstBackupTime,omitempty"`
-	LastBackupTime           *metav1.Time `json:"lastBackupTime,omitempty"`
-	LastSuccessfulBackupTime *metav1.Time `json:"lastSuccessfulBackupTime,omitempty"`
-	LastBackupDuration       string       `json:"lastBackupDuration,omitempty"`
-	BackupCount              int64        `json:"backupCount,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -243,6 +234,11 @@ type RepositorySpec struct {
 }
 
 type RepositoryStatus struct {
+	FirstBackupTime          *metav1.Time `json:"firstBackupTime,omitempty"`
+	LastBackupTime           *metav1.Time `json:"lastBackupTime,omitempty"`
+	LastSuccessfulBackupTime *metav1.Time `json:"lastSuccessfulBackupTime,omitempty"`
+	LastBackupDuration       string       `json:"lastBackupDuration,omitempty"`
+	BackupCount              int64        `json:"backupCount,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
