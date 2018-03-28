@@ -74,7 +74,6 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 
 		rs := obj.(*extensions.ReplicaSet).DeepCopy()
 		rs.GetObjectKind().SetGroupVersionKind(extensions.SchemeGroupVersion.WithKind(api.KindReplicaSet))
-
 		w, err := workload.ConvertToWorkload(rs.DeepCopy())
 		if err != nil {
 			return nil
@@ -99,13 +98,13 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 			}
 		}
 		return ext_util.WaitUntilReplicaSetReady(c.kubeClient, rs.ObjectMeta)
+
 	}
 	return nil
 }
 
 func (c *StashController) mutateReplicaSet(w *workload.Workload) (*api.Restic, bool, error) {
 	if !ext_util.IsOwnedByDeployment(w.OwnerReferences) {
-
 		oldRestic, err := util.GetAppliedRestic(w.Annotations)
 		if err != nil {
 			return nil, false, err
