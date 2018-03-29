@@ -24,13 +24,9 @@ func (c *Controller) createRepositoryCrdIfNotExist(restic *api.Restic, backupDir
 
 		switch c.opt.Workload.Kind {
 		case api.KindStatefulSet:
-			repository.Labels = map[string]string{
-				"pod-name": c.opt.PodName,
-			}
+			repository.Labels["pod-name"] = c.opt.PodName
 		case api.KindDaemonSet:
-			repository.Labels = map[string]string{
-				"node-name": c.opt.NodeName,
-			}
+			repository.Labels["node-name"] = c.opt.NodeName
 		}
 
 		repository.Spec.Backend = restic.Spec.Backend
