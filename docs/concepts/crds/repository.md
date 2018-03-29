@@ -44,9 +44,10 @@ Here, we are going describe some important sections of `Repository` CRD.
 ## Repository Labels
 
 `Repository` maintain some important information in label. These labels enable user to filter `Repository` according to `restic`, `workload-kind`, `workload-name`, `node-name` etc. Details of these labels are given below.
+
 | Label name      | Description                                                                                                                                                   |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `restic`        | Name of the `Restic` which is responsible for this `Repository`.                                                                                        |
+| `restic`        | Name of the `Restic` which is responsible for this `Repository`.                                                                                              |
 | `workload-kind` | `Kind` of the workload for which the `Repository` has been created.                                                                                           |
 | `workload-name` | `Name` of the workload for which the `Repository` has been created.                                                                                           |
 | `pod-name`      | This `label` present when the respective workload is  `StatefulSet`. It represent the pod name of the `StatefulSet` who is responsible for this `Repository`. |
