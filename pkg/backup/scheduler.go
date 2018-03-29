@@ -193,7 +193,12 @@ func (c *Controller) checkOnceForScheduler() (err error) {
 
 	err = c.resticCLI.Check()
 	if err != nil {
-		c.recorder.Eventf(resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToCheck, "Repository check failed for workload %s %s/%s. Reason: %v", c.opt.Workload.Kind, c.opt.Namespace, c.opt.Workload.Name, err)
+		c.recorder.Eventf(
+			resource.ObjectReference(),
+			core.EventTypeWarning,
+			eventer.EventReasonFailedToCheck,
+			"Repository check failed for workload %s %s/%s. Reason: %v",
+			c.opt.Workload.Kind, c.opt.Namespace, c.opt.Workload.Name, err)
 	}
 	return
 }
