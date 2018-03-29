@@ -128,7 +128,7 @@ To stop Restic from taking backup, you can do following things:
 
 * Change the labels of a workload. Stash operator will remove sidecar container from that workload. This way you can selectively stop backup of a Deployment, ReplicaSet etc.
 
-For more details about how to disable and resume Restic see [here](/docs/guides/backup.md#disable-backup). 
+For more details about how to disable and resume Restic see [here](/docs/guides/backup.md#disable-backup).
 
 ## Next Steps
 

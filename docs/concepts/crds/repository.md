@@ -77,11 +77,11 @@ Stash operator updates `.status` of a Repository CRD every time a backup operati
 
 ## Creation of Repository CRD
 
-Whenever a `restic` repository is created according to [this](/docs/concepts/crds/restic.md#backup-repository-structure) rules, it also create respective `Repository` CRD object. Name of this `Repository` CRD object follow this rules.
+Whenever a `restic` repository is created according to [these](/docs/concepts/crds/restic.md#backup-repository-structure) rules, it also create respective `Repository` CRD object. Name of this `Repository` CRD object is generated based on rules below:
 
-- For workload kind `Deployment`, `Replicaset` and `ReplicationController` `Repository` is created with name `<WORKLOAD_KIND>.<WORKLOAD_NAME>`. For multiple replicas, only one `Repository` is created as sidecar is added to only one pod selected by leader-election.
-- For workload kind `Statefulset` `Repository` is created with name`<WORKLOAD_KIND>.<POD_NAME>`. For multiple replicas, multiple `Repositories` are created as sidecar is added to all pods.
-- For workload kind `Daemonset` Repository is created with name `<WORKLOAD_KIND>.<WORKLOAD_NAME>.<NODE_NAME>`. For multiple replicas, multiple repositories are created and sidecar as added to all pods.
+- For workload kind `Deployment`, `Replicaset` and `ReplicationController` `Repository` is created with name `<WORKLOAD_KIND>.<WORKLOAD_NAME>`. For multiple replicas, only one `Repository` is created as backup is taken by sidecar of replica determined by leader-election.
+- For workload kind `Statefulset` `Repository` is created with name`<WORKLOAD_KIND>.<POD_NAME>`. A separate `Repository` is created for each replica of a StatefulSet..
+- For workload kind `Daemonset` Repository is created with name `<WORKLOAD_KIND>.<WORKLOAD_NAME>.<NODE_NAME>`. One repository is created for each node where pods of a DaemonSet are running.
 
 ## Working with Repository CRD
 
