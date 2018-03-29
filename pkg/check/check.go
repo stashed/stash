@@ -70,7 +70,7 @@ func (c *Controller) Run() (err error) {
 	}
 
 	cli := cli.New("/tmp", false, c.opt.HostName)
-	if err = cli.SetupEnv(restic.Spec.Backend, secret, c.opt.SmartPrefix); err != nil {
+	if _, err = cli.SetupEnv(restic.Spec.Backend, secret, c.opt.SmartPrefix); err != nil {
 		return
 	}
 

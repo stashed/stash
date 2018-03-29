@@ -70,7 +70,7 @@ func (e PrometheusExporter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = resticCLI.SetupEnv(resource.Spec.Backend, secret, r.URL.Query().Get(QueryParamAutoPrefix))
+	_, err = resticCLI.SetupEnv(resource.Spec.Backend, secret, r.URL.Query().Get(QueryParamAutoPrefix))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

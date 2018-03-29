@@ -618,8 +618,8 @@ var _ = Describe("StatefulSet", func() {
 			It("should mutate and backup new StatefulSet", shouldMutateAndBackupNewStatefulSet)
 			It("should not mutate new StatefulSet if no restic select it", shouldNotMutateNewStatefulSet)
 			It("should reject to create new StatefulSet if multiple restic select it", shouldRejectToCreateNewStatefulSet)
-			It("should remove sidecar instantly if label change to match no restic", shouldRemoveSidecarInstantly)
-			It("should add sidecar instantly if label change to match single restic", shouldAddSidecarInstantly)
+			XIt("should remove sidecar instantly if label change to match no restic", shouldRemoveSidecarInstantly)
+			XIt("should add sidecar instantly if label change to match single restic", shouldAddSidecarInstantly)
 		})
 	})
 

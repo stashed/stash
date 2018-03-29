@@ -9,7 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (c *Controller) createRepositoryCrdIfNotExist(restic *api.Restic) error {
+func (c *Controller) createRepositoryCrdIfNotExist(restic *api.Restic, backupDir string) error {
 	repository := &api.Repository{}
 	repository.Namespace = restic.Namespace
 	repository.Name = c.getRepositoryCrdName(restic)
@@ -34,6 +34,7 @@ func (c *Controller) createRepositoryCrdIfNotExist(restic *api.Restic) error {
 		}
 
 		repository.Spec.Backend = restic.Spec.Backend
+		repository.Spec.BackupPath = backupDir
 		_, err = c.stashClient.StashV1alpha1().Repositories(repository.Namespace).Create(repository)
 		if err == nil {
 			log.Infof("Repository %v created", repository.Name)

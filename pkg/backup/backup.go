@@ -218,13 +218,14 @@ func (c *Controller) setup() (*api.Restic, error) {
 	log.Infof("Found repository secret %s\n", secret.Name)
 
 	// setup restic-cli
-	if err = c.resticCLI.SetupEnv(resource.Spec.Backend, secret, c.opt.SmartPrefix); err != nil {
+	prefix := ""
+	if prefix, err = c.resticCLI.SetupEnv(resource.Spec.Backend, secret, c.opt.SmartPrefix); err != nil {
 		return resource, err
 	}
 	if err = c.resticCLI.InitRepositoryIfAbsent(); err != nil {
 		return resource, err
 	}
-	if err = c.createRepositoryCrdIfNotExist(resource); err != nil {
+	if err = c.createRepositoryCrdIfNotExist(resource, prefix); err != nil {
 		return resource, err
 	}
 	return resource, nil
