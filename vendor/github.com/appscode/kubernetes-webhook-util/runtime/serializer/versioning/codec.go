@@ -7,7 +7,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"k8s.io/kubernetes/pkg/api/legacyscheme"
 	_ "k8s.io/kubernetes/pkg/apis/apps/install"
 	_ "k8s.io/kubernetes/pkg/apis/batch/install"
 	_ "k8s.io/kubernetes/pkg/apis/core/install"
@@ -15,24 +14,6 @@ import (
 	_ "k8s.io/kubernetes/pkg/apis/rbac/install"
 	_ "k8s.io/kubernetes/pkg/apis/storage/install"
 )
-
-var JSONSerializer = func() runtime.Codec {
-	mediaType := "application/json"
-	info, ok := runtime.SerializerInfoForMediaType(legacyscheme.Codecs.SupportedMediaTypes(), mediaType)
-	if !ok {
-		panic("unsupported media type " + mediaType)
-	}
-	return info.Serializer
-}()
-
-var YAMLSerializer = func() runtime.Codec {
-	mediaType := "application/yaml"
-	info, ok := runtime.SerializerInfoForMediaType(legacyscheme.Codecs.SupportedMediaTypes(), mediaType)
-	if !ok {
-		panic("unsupported media type " + mediaType)
-	}
-	return info.Serializer
-}()
 
 type codec struct {
 	encoder       runtime.Encoder

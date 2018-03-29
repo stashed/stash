@@ -7,8 +7,8 @@ import (
 	jp "github.com/appscode/jsonpatch"
 	"github.com/appscode/kubernetes-webhook-util/admission"
 	api "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
-	"github.com/appscode/kubernetes-webhook-util/runtime/serializer/versioning"
 	workload "github.com/appscode/kubernetes-webhook-util/workload/v1"
+	"github.com/appscode/kutil/meta"
 	"github.com/json-iterator/go"
 	"k8s.io/api/admission/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -92,7 +92,7 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 		return api.StatusUninitialized()
 	}
 
-	codec := versioning.JSONSerializer
+	codec := meta.JSONSerializer
 	gvk := schema.GroupVersionKind{Group: req.Kind.Group, Version: req.Kind.Version, Kind: req.Kind.Kind}
 
 	switch req.Operation {

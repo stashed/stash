@@ -20,10 +20,7 @@ import (
 	"k8s.io/client-go/tools/reference"
 )
 
-func (c *StashController) ensureWorkloadSidecar(w *workload.Workload, old, new *api.Restic) error {
-	oldRestic := old.DeepCopy()
-	newRestic := new.DeepCopy()
-
+func (c *StashController) ensureWorkloadSidecar(w *workload.Workload, oldRestic, newRestic *api.Restic) error {
 	if c.EnableRBAC {
 		sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
 		ref, err := reference.GetReference(scheme.Scheme, w)
