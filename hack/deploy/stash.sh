@@ -59,11 +59,7 @@ export STASH_UNINSTALL=0
 export STASH_PURGE=0
 
 KUBE_APISERVER_VERSION=$(kubectl version -o=json | $ONESSL jsonpath '{.serverVersion.gitVersion}')
-$ONESSL semver --check='>=1.9.0' $KUBE_APISERVER_VERSION
-if [ $? -eq 0 ]; then
-    export STASH_ENABLE_VALIDATING_WEBHOOK=true
-    export STASH_ENABLE_MUTATING_WEBHOOK=true
-fi
+$ONESSL semver --check='<1.9.0' $KUBE_APISERVER_VERSION || { export STASH_ENABLE_VALIDATING_WEBHOOK=true; export STASH_ENABLE_MUTATING_WEBHOOK=true; }
 
 show_help() {
     echo "stash.sh - install stash operator"
@@ -163,8 +159,8 @@ done
 
 if [ "$STASH_UNINSTALL" -eq 1 ]; then
     # delete webhooks and apiservices
-    kubectl delete validatingwebhookconfiguration -l app=stash
-    kubectl delete mutatingwebhookconfiguration -l app=stash
+    kubectl delete validatingwebhookconfiguration -l app=stash || true
+    kubectl delete mutatingwebhookconfiguration -l app=stash || true
     kubectl delete apiservice -l app=stash
     # delete stash operator
     kubectl delete deployment -l app=stash --namespace $STASH_NAMESPACE
