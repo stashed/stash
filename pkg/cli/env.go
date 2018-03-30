@@ -83,7 +83,7 @@ func (w *ResticWrapper) SetupEnv(backend api.Backend, secret *core.Secret, autoP
 	prefix := ""
 	if backend.Local != nil {
 		r := filepath.Join(backend.Local.MountPath, autoPrefix)
-		prefix = autoPrefix
+		prefix = filepath.Join(backend.Local.SubPath, autoPrefix)
 		if err := os.MkdirAll(r, 0755); err != nil {
 			return "", err
 		}

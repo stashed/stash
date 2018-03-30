@@ -230,8 +230,7 @@ type Repository struct {
 }
 
 type RepositorySpec struct {
-	Backend    Backend `json:"backend,omitempty"`
-	BackupPath string  `json:"backupPath,omitempty"`
+	Backend Backend `json:"backend,omitempty"`
 }
 
 type RepositoryStatus struct {

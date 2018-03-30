@@ -25,3 +25,14 @@ func (r Recovery) ObjectReference() *core.ObjectReference {
 		ResourceVersion: r.ResourceVersion,
 	}
 }
+
+func (r Repository) ObjectReference() *core.ObjectReference {
+	return &core.ObjectReference{
+		APIVersion:      SchemeGroupVersion.String(),
+		Kind:            ResourceKindRepository,
+		Namespace:       r.Namespace,
+		Name:            r.Name,
+		UID:             r.UID,
+		ResourceVersion: r.ResourceVersion,
+	}
+}

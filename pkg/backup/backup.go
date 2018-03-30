@@ -100,14 +100,14 @@ func New(k8sClient kubernetes.Interface, stashClient cs.Interface, opt Options) 
 }
 
 func (c *Controller) Backup() error {
-	resource, err := c.setup()
+	restic, repository, err := c.setup()
 	if err != nil {
 		err = fmt.Errorf("failed to setup backup. Error: %v", err)
-		if resource != nil {
+		if restic != nil {
 			eventer.CreateEventWithLog(
 				c.k8sClient,
 				BackupEventComponent,
-				resource.ObjectReference(),
+				repository.ObjectReference(),
 				core.EventTypeWarning,
 				eventer.EventReasonFailedSetup,
 				err.Error(),
@@ -116,7 +116,7 @@ func (c *Controller) Backup() error {
 		return err
 	}
 
-	if err = c.runResticBackup(resource); err != nil {
+	if err = c.runResticBackup(restic, repository); err != nil {
 		return fmt.Errorf("failed to run backup, reason: %s", err)
 	}
 
@@ -127,14 +127,14 @@ func (c *Controller) Backup() error {
 		Tag:      c.opt.ImageTag,
 	}
 
-	job := util.NewCheckJob(resource, c.opt.SnapshotHostname, c.opt.SmartPrefix, image)
+	job := util.NewCheckJob(restic, c.opt.SnapshotHostname, c.opt.SmartPrefix, image)
 
 	// check if check job exists
-	if _, err = c.k8sClient.BatchV1().Jobs(resource.Namespace).Get(job.Name, metav1.GetOptions{}); err != nil && !errors.IsNotFound(err) {
+	if _, err = c.k8sClient.BatchV1().Jobs(restic.Namespace).Get(job.Name, metav1.GetOptions{}); err != nil && !errors.IsNotFound(err) {
 		eventer.CreateEventWithLog(
 			c.k8sClient,
 			BackupEventComponent,
-			resource.ObjectReference(),
+			repository.ObjectReference(),
 			core.EventTypeWarning,
 			eventer.EventReasonFailedCronJob,
 			err.Error(),
@@ -145,12 +145,12 @@ func (c *Controller) Backup() error {
 		if c.opt.EnableRBAC {
 			job.Spec.Template.Spec.ServiceAccountName = job.Name
 		}
-		if job, err = c.k8sClient.BatchV1().Jobs(resource.Namespace).Create(job); err != nil {
+		if job, err = c.k8sClient.BatchV1().Jobs(restic.Namespace).Create(job); err != nil {
 			err = fmt.Errorf("failed to get check job, reason: %s", err)
 			eventer.CreateEventWithLog(
 				c.k8sClient,
 				BackupEventComponent,
-				resource.ObjectReference(),
+				repository.ObjectReference(),
 				core.EventTypeWarning,
 				eventer.EventReasonFailedCronJob,
 				err.Error(),
@@ -173,7 +173,7 @@ func (c *Controller) Backup() error {
 		eventer.CreateEventWithLog(
 			c.k8sClient,
 			BackupEventComponent,
-			resource.ObjectReference(),
+			repository.ObjectReference(),
 			core.EventTypeNormal,
 			eventer.EventReasonCheckJobCreated,
 			fmt.Sprintf("Created check job: %s", job.Name),
@@ -183,7 +183,7 @@ func (c *Controller) Backup() error {
 		eventer.CreateEventWithLog(
 			c.k8sClient,
 			BackupEventComponent,
-			resource.ObjectReference(),
+			repository.ObjectReference(),
 			core.EventTypeNormal,
 			eventer.EventReasonCheckJobCreated,
 			fmt.Sprintf("Check job already exists, skipping creation: %s", job.Name),
@@ -193,46 +193,47 @@ func (c *Controller) Backup() error {
 }
 
 // Init and/or connect to repo
-func (c *Controller) setup() (*api.Restic, error) {
+func (c *Controller) setup() (*api.Restic, *api.Repository, error) {
 	// setup scratch-dir
 	if err := os.MkdirAll(c.opt.ScratchDir, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create scratch dir: %s", err)
+		return nil, nil, fmt.Errorf("failed to create scratch dir: %s", err)
 	}
 	if err := ioutil.WriteFile(c.opt.ScratchDir+"/.stash", []byte("test"), 644); err != nil {
-		return nil, fmt.Errorf("no write access in scratch dir: %s", err)
+		return nil, nil, fmt.Errorf("no write access in scratch dir: %s", err)
 	}
 
-	// check resource
-	resource, err := c.stashClient.StashV1alpha1().Restics(c.opt.Namespace).Get(c.opt.ResticName, metav1.GetOptions{})
+	// check restic
+	restic, err := c.stashClient.StashV1alpha1().Restics(c.opt.Namespace).Get(c.opt.ResticName, metav1.GetOptions{})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	log.Infof("Found restic %s\n", resource.Name)
-	if err := resource.IsValid(); err != nil {
-		return resource, err
+	log.Infof("Found restic %s\n", restic.Name)
+	if err := restic.IsValid(); err != nil {
+		return restic, nil, err
 	}
-	secret, err := c.k8sClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	secret, err := c.k8sClient.CoreV1().Secrets(restic.Namespace).Get(restic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
-		return resource, err
+		return restic, nil, err
 	}
 	log.Infof("Found repository secret %s\n", secret.Name)
 
 	// setup restic-cli
 	prefix := ""
-	if prefix, err = c.resticCLI.SetupEnv(resource.Spec.Backend, secret, c.opt.SmartPrefix); err != nil {
-		return resource, err
+	if prefix, err = c.resticCLI.SetupEnv(restic.Spec.Backend, secret, c.opt.SmartPrefix); err != nil {
+		return restic, nil, err
 	}
 	if err = c.resticCLI.InitRepositoryIfAbsent(); err != nil {
-		return resource, err
+		return restic, nil, err
 	}
-	if err = c.createRepositoryCrdIfNotExist(resource, prefix); err != nil {
-		return resource, err
+	repository, err := c.createRepositoryCrdIfNotExist(restic, prefix)
+	if err != nil {
+		return restic, nil, err
 	}
-	return resource, nil
+	return restic, repository, nil
 }
 
-func (c *Controller) runResticBackup(resource *api.Restic) (err error) {
-	if resource.Spec.Paused == true {
+func (c *Controller) runResticBackup(restic *api.Restic, repository *api.Repository) (err error) {
+	if restic.Spec.Paused == true {
 		log.Infoln("skipped logging since restic is paused.")
 		return nil
 	}
@@ -276,8 +277,8 @@ func (c *Controller) runResticBackup(resource *api.Restic) (err error) {
 			}
 			restic_session_duration_seconds_total.Set(endTime.Sub(startTime.Time).Seconds())
 
-			push.Collectors(c.JobName(resource),
-				c.GroupingKeys(resource),
+			push.Collectors(c.JobName(restic),
+				c.GroupingKeys(restic),
 				c.opt.PushgatewayURL,
 				restic_session_success,
 				restic_session_fail,
@@ -285,11 +286,7 @@ func (c *Controller) runResticBackup(resource *api.Restic) (err error) {
 				restic_session_duration_seconds)
 		}
 		if err == nil {
-			repo, err := c.stashClient.StashV1alpha1().Repositories(resource.Namespace).Get(c.getRepositoryCrdName(resource), metav1.GetOptions{})
-			if err != nil {
-				return
-			}
-			stash_util.PatchRepository(c.stashClient.StashV1alpha1(), repo, func(in *api.Repository) *api.Repository {
+			stash_util.PatchRepository(c.stashClient.StashV1alpha1(), repository, func(in *api.Repository) *api.Repository {
 				in.Status.BackupCount++
 				in.Status.LastBackupTime = &startTime
 				if in.Status.FirstBackupTime == nil {
@@ -301,15 +298,15 @@ func (c *Controller) runResticBackup(resource *api.Restic) (err error) {
 		}
 	}()
 
-	for _, fg := range resource.Spec.FileGroups {
+	for _, fg := range restic.Spec.FileGroups {
 		backupOpMetric := restic_session_duration_seconds.WithLabelValues(sanitizeLabelValue(fg.Path), "backup")
-		err = c.measure(c.resticCLI.Backup, resource, fg, backupOpMetric)
+		err = c.measure(c.resticCLI.Backup, restic, fg, backupOpMetric)
 		if err != nil {
-			log.Errorf("Backup failed for Restic %s/%s, reason: %s\n", resource.Namespace, resource.Name, err)
+			log.Errorf("Backup failed for Repository %s/%s, reason: %s\n", repository.Namespace, repository.Name, err)
 			eventer.CreateEventWithLog(
 				c.k8sClient,
 				BackupEventComponent,
-				resource.ObjectReference(),
+				repository.ObjectReference(),
 				core.EventTypeWarning,
 				eventer.EventReasonFailedToBackup,
 				fmt.Sprintf("Backup failed, reason: %s", err),
@@ -320,7 +317,7 @@ func (c *Controller) runResticBackup(resource *api.Restic) (err error) {
 			eventer.CreateEventWithLog(
 				c.k8sClient,
 				BackupEventComponent,
-				resource.ObjectReference(),
+				repository.ObjectReference(),
 				core.EventTypeNormal,
 				eventer.EventReasonSuccessfulBackup,
 				fmt.Sprintf("Backed up pod: %s, path: %s", hostname, fg.Path),
@@ -328,13 +325,13 @@ func (c *Controller) runResticBackup(resource *api.Restic) (err error) {
 		}
 
 		forgetOpMetric := restic_session_duration_seconds.WithLabelValues(sanitizeLabelValue(fg.Path), "forget")
-		err = c.measure(c.resticCLI.Forget, resource, fg, forgetOpMetric)
+		err = c.measure(c.resticCLI.Forget, restic, fg, forgetOpMetric)
 		if err != nil {
-			log.Errorf("Failed to forget old snapshots for Restic %s/%s, reason: %s\n", resource.Namespace, resource.Name, err)
+			log.Errorf("Failed to forget old snapshots for Repository %s/%s, reason: %s\n", repository.Namespace, repository.Name, err)
 			eventer.CreateEventWithLog(
 				c.k8sClient,
 				BackupEventComponent,
-				resource.ObjectReference(),
+				repository.ObjectReference(),
 				core.EventTypeWarning,
 				eventer.EventReasonFailedToRetention,
 				fmt.Sprintf("Failed to forget old snapshots, reason: %s", err),
@@ -345,25 +342,25 @@ func (c *Controller) runResticBackup(resource *api.Restic) (err error) {
 	return
 }
 
-func (c *Controller) measure(f func(*api.Restic, api.FileGroup) error, resource *api.Restic, fg api.FileGroup, g prometheus.Gauge) (err error) {
+func (c *Controller) measure(f func(*api.Restic, api.FileGroup) error, restic *api.Restic, fg api.FileGroup, g prometheus.Gauge) (err error) {
 	startTime := time.Now()
 	defer func() {
 		g.Set(time.Now().Sub(startTime).Seconds())
 	}()
-	err = f(resource, fg)
+	err = f(restic, fg)
 	return
 }
 
 // use sidecar-cluster-role, service-account and role-binding name same as job name
 // set job as owner of service-account and role-binding
-func (c *Controller) ensureCheckRBAC(resource *core.ObjectReference) error {
+func (c *Controller) ensureCheckRBAC(restic *core.ObjectReference) error {
 	// ensure service account
 	meta := metav1.ObjectMeta{
-		Name:      resource.Name,
-		Namespace: resource.Namespace,
+		Name:      restic.Name,
+		Namespace: restic.Namespace,
 	}
 	_, _, err := core_util.CreateOrPatchServiceAccount(c.k8sClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
-		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
+		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, restic)
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
@@ -376,7 +373,7 @@ func (c *Controller) ensureCheckRBAC(resource *core.ObjectReference) error {
 
 	// ensure role binding
 	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
+		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, restic)
 
 		if in.Labels == nil {
 			in.Labels = map[string]string{}

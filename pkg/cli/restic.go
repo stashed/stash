@@ -149,13 +149,9 @@ func (w *ResticWrapper) Restore(path, host string) error {
 
 	// Remove last part from the path.
 	// https://github.com/appscode/stash/issues/392
-	parts := strings.Split(path, "/")
-	targetPath := "/"
-	for i := 0; i < len(parts)-1; i++ {
-		targetPath = filepath.Join(targetPath, parts[i])
-	}
 	args = append(args, "--target")
-	args = append(args, targetPath)
+	args = append(args, filepath.Dir(path))
+
 	args = w.appendCacheDirFlag(args)
 	args = w.appendCaCertFlag(args)
 
