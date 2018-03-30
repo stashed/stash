@@ -19,7 +19,7 @@ const (
 func (f *Framework) EventualEvent(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() []core.Event {
 		fieldSelector := fields.SelectorFromSet(fields.Set{
-			"involvedObject.kind":      "Restic",
+			"involvedObject.kind":      "Repository",
 			"involvedObject.name":      meta.Name,
 			"involvedObject.namespace": meta.Namespace,
 			"type": core.EventTypeNormal,
@@ -33,7 +33,7 @@ func (f *Framework) EventualEvent(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 func (f *Framework) EventualWarning(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() []core.Event {
 		fieldSelector := fields.SelectorFromSet(fields.Set{
-			"involvedObject.kind":      "Restic",
+			"involvedObject.kind":      "Repository",
 			"involvedObject.name":      meta.Name,
 			"involvedObject.namespace": meta.Namespace,
 			"type": core.EventTypeWarning,
