@@ -139,16 +139,17 @@ Now, to confirm CRD groups have been registered by the operator, run the followi
 ```console
 $ kubectl get crd -l app=stash
 
-NAME                            AGE
-recoveries.stash.appscode.com   5s
-restics.stash.appscode.com      5s
+NAME                                 AGE
+recoveries.stash.appscode.com        5s
+repositories.stash.appscode.com      5s
+restics.stash.appscode.com           5s
 ```
 
 Now, you are ready to [take your first backup](/docs/guides/README.md) using Stash.
 
 
 ## Configuring RBAC
-Stash creates two CRDs: `Restic` and `Recovery`. Stash installer will create 2 user facing cluster roles:
+Stash creates multiple CRDs: `Restic`, `Repository` and `Recovery`. Stash installer will create 2 user facing cluster roles:
 
 | ClusterRole         | Aggregates To | Desription                            |
 |---------------------|---------------|---------------------------------------|

@@ -74,70 +74,71 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 
 		rs := obj.(*extensions.ReplicaSet).DeepCopy()
 		rs.GetObjectKind().SetGroupVersionKind(extensions.SchemeGroupVersion.WithKind(api.KindReplicaSet))
+		w, err := workload.ConvertToWorkload(rs.DeepCopy())
+		if err != nil {
+			return nil
+		}
 
-		if !ext_util.IsOwnedByDeployment(rs) {
-			w, err := workload.ConvertToWorkload(rs.DeepCopy())
-			if err != nil {
-				return nil
-			}
-
-			restic, modified, err := c.mutateReplicaSet(w)
+		restic, modified, err := c.mutateReplicaSet(w)
+		if err != nil {
+			return err
+		}
+		if modified {
+			_, _, err = ext_util.PatchReplicaSetObject(c.kubeClient, rs, w.Object.(*extensions.ReplicaSet))
 			if err != nil {
 				return err
 			}
-			if modified {
-				_, _, err = ext_util.PatchReplicaSetObject(c.kubeClient, rs, w.Object.(*extensions.ReplicaSet))
-				if err != nil {
-					return err
-				}
-			}
-
-			// ReplicaSet does not have RollingUpdate strategy. We must delete old pods manually to get patched state.
-			if restic != nil {
-				err = c.forceRestartPods(w, restic)
-				if err != nil {
-					return err
-				}
-			}
-			return ext_util.WaitUntilReplicaSetReady(c.kubeClient, rs.ObjectMeta)
 		}
+
+		// ReplicaSet does not have RollingUpdate strategy. We must delete old pods manually to get patched state.
+		if restic != nil {
+			err = c.forceRestartPods(w, restic)
+			if err != nil {
+				return err
+			}
+		}
+		return ext_util.WaitUntilReplicaSetReady(c.kubeClient, rs.ObjectMeta)
+
 	}
 	return nil
 }
 
 func (c *StashController) mutateReplicaSet(w *workload.Workload) (*api.Restic, bool, error) {
-	oldRestic, err := util.GetAppliedRestic(w.Annotations)
-	if err != nil {
-		return nil, false, err
-	}
+	if !ext_util.IsOwnedByDeployment(w.OwnerReferences) {
+		oldRestic, err := util.GetAppliedRestic(w.Annotations)
+		if err != nil {
+			return nil, false, err
+		}
 
-	newRestic, err := util.FindRestic(c.rstLister, w.ObjectMeta)
-	if err != nil {
-		log.Errorf("Error while searching Restic for ReplicaSet %s/%s.", w.Name, w.Namespace)
-		return nil, false, err
-	}
+		newRestic, err := util.FindRestic(c.rstLister, w.ObjectMeta)
+		if err != nil {
+			log.Errorf("Error while searching Restic for ReplicaSet %s/%s.", w.Name, w.Namespace)
+			return nil, false, err
+		}
 
-	if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
-		if !newRestic.Spec.Paused {
-			err := c.ensureWorkloadSidecar(w, oldRestic, newRestic)
+		if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
+			if !newRestic.Spec.Paused {
+				err := c.ensureWorkloadSidecar(w, oldRestic, newRestic)
+				if err != nil {
+					return nil, false, err
+				}
+				workload.ApplyWorkload(w.Object, w)
+				return newRestic, true, nil
+			}
+		} else if oldRestic != nil && newRestic == nil {
+			err := c.ensureWorkloadSidecarDeleted(w, oldRestic)
 			if err != nil {
 				return nil, false, err
 			}
 			workload.ApplyWorkload(w.Object, w)
-			return newRestic, true, nil
-		}
-	} else if oldRestic != nil && newRestic == nil {
-		err := c.ensureWorkloadSidecarDeleted(w, oldRestic)
-		if err != nil {
-			return nil, false, err
-		}
-		workload.ApplyWorkload(w.Object, w)
 
-		err = util.DeleteConfigmapLock(c.kubeClient, w.Namespace, api.LocalTypedReference{Kind: api.KindReplicaSet, Name: w.Name})
-		if err != nil {
-			return nil, false, err
+			err = util.DeleteConfigmapLock(c.kubeClient, w.Namespace, api.LocalTypedReference{Kind: api.KindReplicaSet, Name: w.Name})
+			if err != nil {
+				return nil, false, err
+			}
+			return oldRestic, true, nil
 		}
-		return oldRestic, true, nil
+		return oldRestic, false, nil
 	}
-	return oldRestic, false, nil
+	return nil, false, nil
 }

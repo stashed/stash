@@ -15,21 +15,39 @@ spec:
     singular: restic
   scope: Namespaced
   version: v1alpha1
-  ---
-  apiVersion: apiextensions.k8s.io/v1beta1
-  kind: CustomResourceDefinition
-  metadata:
-    name: recoveries.stash.appscode.com
-    labels:
-      app: stash
-  spec:
-    group: stash.appscode.com
-    names:
-      kind: Recovery
-      listKind: RecoveryList
-      plural: recoveries
-      shortNames:
-      - rec
-      singular: recovery
-    scope: Namespaced
-    version: v1alpha1
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: recoveries.stash.appscode.com
+  labels:
+    app: stash
+spec:
+  group: stash.appscode.com
+  names:
+    kind: Recovery
+    listKind: RecoveryList
+    plural: recoveries
+    shortNames:
+    - rec
+    singular: recovery
+  scope: Namespaced
+  version: v1alpha1
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: repositories.stash.appscode.com
+  labels:
+    app: stash
+spec:
+  group: stash.appscode.com
+  names:
+    kind: Repository
+    listKind: RepositoryList
+    plural: repositories
+    shortNames:
+    - repo
+    singular: repository
+  scope: Namespaced
+  version: v1alpha1

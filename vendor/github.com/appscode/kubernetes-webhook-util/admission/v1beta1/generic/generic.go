@@ -8,6 +8,7 @@ import (
 	"github.com/appscode/kubernetes-webhook-util/admission"
 	api "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
 	"github.com/appscode/kubernetes-webhook-util/runtime/serializer/versioning"
+	"github.com/appscode/kutil/meta"
 	"github.com/json-iterator/go"
 	"k8s.io/api/admission/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -88,8 +89,8 @@ func (h *GenericWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admission
 	}
 
 	codec := versioning.NewDefaultingCodecForScheme(
-		versioning.JSONSerializer,
-		versioning.JSONSerializer,
+		meta.JSONSerializer,
+		meta.JSONSerializer,
 		legacyscheme.Scheme,
 		legacyscheme.Scheme,
 		schema.GroupVersion{Group: req.Kind.Group, Version: req.Kind.Version},

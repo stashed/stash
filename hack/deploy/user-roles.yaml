@@ -11,6 +11,7 @@ rules:
   resources:
   - restics
   - recoveries
+  - repositories
   verbs:
   - create
   - delete
@@ -33,6 +34,7 @@ rules:
   resources:
   - restics
   - recoveries
+  - repositories
   verbs:
   - get
   - list

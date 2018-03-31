@@ -11,7 +11,7 @@ import (
 func (l LocalSpec) ToVolumeAndMount(volName string) (core.Volume, core.VolumeMount) {
 	vol := core.Volume{
 		Name:         volName,
-		VolumeSource: l.VolumeSource,
+		VolumeSource: *l.VolumeSource.DeepCopy(), // avoid defaulting in MutatingWebhook
 	}
 	mnt := core.VolumeMount{
 		Name:      volName,

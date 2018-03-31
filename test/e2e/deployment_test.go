@@ -35,6 +35,7 @@ var _ = Describe("Deployment", func() {
 		f = root.Invoke()
 	})
 	AfterEach(func() {
+		f.DeleteRepositories()
 		time.Sleep(60 * time.Second)
 	})
 	JustBeforeEach(func() {
@@ -64,13 +65,17 @@ var _ = Describe("Deployment", func() {
 			By("Waiting for sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
+			By("Wating for Repository CRD")
+			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
+
 			By("Waiting for backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
-				return r.Status.BackupCount
-			}, BeNumerically(">=", 1)))
+			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
-			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+			repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(repos.Items).NotTo(BeEmpty())
+			f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
 
 		shouldBackupExistingDeployment = func() {
@@ -89,13 +94,17 @@ var _ = Describe("Deployment", func() {
 			By("Waiting for sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
+			By("Wating for Repository CRD")
+			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
+
 			By("Waiting for backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
-				return r.Status.BackupCount
-			}, BeNumerically(">=", 1)))
+			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
-			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+			repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(repos.Items).NotTo(BeEmpty())
+			f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
 
 		shouldStopBackup = func() {
@@ -114,10 +123,11 @@ var _ = Describe("Deployment", func() {
 			By("Waiting for sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
+			By("Wating for Repository CRD")
+			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
+
 			By("Waiting for backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
-				return r.Status.BackupCount
-			}, BeNumerically(">=", 1)))
+			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Deleting restic " + restic.Name)
 			f.DeleteRestic(restic.ObjectMeta)
@@ -142,10 +152,11 @@ var _ = Describe("Deployment", func() {
 			By("Waiting for sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
+			By("Wating for Repository CRD")
+			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
+
 			By("Waiting for backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
-				return r.Status.BackupCount
-			}, BeNumerically(">=", 1)))
+			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Removing labels of Deployment " + deployment.Name)
 			_, _, err = apps_util.PatchDeployment(f.KubeClient, &deployment, func(in *apps.Deployment) *apps.Deployment {
@@ -175,10 +186,11 @@ var _ = Describe("Deployment", func() {
 			By("Waiting for sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
+			By("Wating for Repository CRD")
+			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
+
 			By("Waiting for backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
-				return r.Status.BackupCount
-			}, BeNumerically(">=", 1)))
+			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Change selector of Restic " + restic.Name)
 			err = f.UpdateRestic(restic.ObjectMeta, func(in *api.Restic) *api.Restic {
@@ -226,15 +238,20 @@ var _ = Describe("Deployment", func() {
 			By("Waiting for sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
+			By("Waiting for leader election")
 			f.CheckLeaderElection(deployment.ObjectMeta, api.KindDeployment)
 
+			By("Wating for Repository CRD")
+			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
+
 			By("Waiting for backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
-				return r.Status.BackupCount
-			}, BeNumerically(">=", 1)))
+			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
-			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+			repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(repos.Items).NotTo(BeEmpty())
+			f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
 
 		shouldMutateAndBackupNewDeployment = func() {
@@ -254,13 +271,17 @@ var _ = Describe("Deployment", func() {
 			By("Checking sidecar created")
 			Expect(obj).Should(HaveSidecar(util.StashContainer))
 
+			By("Wating for Repository CRD")
+			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
+
 			By("Waiting for backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
-				return r.Status.BackupCount
-			}, BeNumerically(">=", 1)))
+			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
-			f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+			repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(repos.Items).NotTo(BeEmpty())
+			f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
 
 		shouldNotMutateNewDeployment = func() {
@@ -310,10 +331,11 @@ var _ = Describe("Deployment", func() {
 			By("Checking sidecar added")
 			Expect(obj).Should(HaveSidecar(util.StashContainer))
 
+			By("Wating for Repository CRD")
+			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
+
 			By("Waiting for backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
-				return r.Status.BackupCount
-			}, BeNumerically(">=", 1)))
+			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Removing labels of Deployment " + deployment.Name)
 			obj, _, err = apps_util.PatchDeployment(f.KubeClient, &deployment, func(in *apps.Deployment) *apps.Deployment {
@@ -358,10 +380,11 @@ var _ = Describe("Deployment", func() {
 			By("Checking sidecar added")
 			Expect(obj).Should(HaveSidecar(util.StashContainer))
 
+			By("Wating for Repository CRD")
+			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
+
 			By("Waiting for backup to complete")
-			f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
-				return r.Status.BackupCount
-			}, BeNumerically(">=", 1)))
+			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 		}
 
 		shouldDeleteJobAndDependents = func(jobName, namespace string) {
@@ -718,13 +741,17 @@ var _ = Describe("Deployment", func() {
 				By("Waiting for init-container")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
 
+				By("Wating for Repository CRD")
+				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
+
 				By("Waiting for backup to complete")
-				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
-					return r.Status.BackupCount
-				}, BeNumerically(">=", 1)))
+				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(repos.Items).NotTo(BeEmpty())
+				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
 				By("Waiting for scale up deployment to original replica")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(int(*deployment.Spec.Replicas)))
@@ -768,13 +795,17 @@ var _ = Describe("Deployment", func() {
 				By("Waiting for init-container")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
 
+				By("Wating for Repository CRD")
+				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
+
 				By("Waiting for backup to complete")
-				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
-					return r.Status.BackupCount
-				}, BeNumerically(">=", 1)))
+				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(repos.Items).NotTo(BeEmpty())
+				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
 				By("Waiting for scale up deployment to original replica")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(int(*deployment.Spec.Replicas)))
@@ -833,13 +864,17 @@ var _ = Describe("Deployment", func() {
 				By("Waiting for sidecar")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
+				By("Wating for Repository CRD")
+				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
+
 				By("Waiting for backup to complete")
-				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
-					return r.Status.BackupCount
-				}, BeNumerically(">=", 1)))
+				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(repos.Items).NotTo(BeEmpty())
+				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
 			})
 		})
@@ -874,7 +909,10 @@ var _ = Describe("Deployment", func() {
 				f.EventualWarning(restic.ObjectMeta).Should(WithTransform(f.CountFailedSetup, BeNumerically(">=", 1)))
 
 				By("Waiting to count successful backup event")
-				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically("==", 0)))
+				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(repos.Items).NotTo(BeEmpty())
+				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically("==", 0)))
 
 			})
 		})
@@ -936,13 +974,17 @@ var _ = Describe("Deployment", func() {
 				By("Waiting for sidecar")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
+				By("Wating for Repository CRD")
+				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
+
 				By("Waiting for backup to complete")
-				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
-					return r.Status.BackupCount
-				}, BeNumerically(">=", 1)))
+				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(repos.Items).NotTo(BeEmpty())
+				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
 				By(`Patching Restic with "paused: true"`)
 				err = f.CreateOrPatchRestic(restic.ObjectMeta, func(in *api.Restic) *api.Restic {
@@ -951,18 +993,20 @@ var _ = Describe("Deployment", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				resticObj, err := f.StashClient.StashV1alpha1().Restics(restic.Namespace).Get(restic.Name, metav1.GetOptions{})
+				repos, err = f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
 				Expect(err).NotTo(HaveOccurred())
+				Expect(repos.Items).NotTo(BeEmpty())
 
-				previousBackupCount := resticObj.Status.BackupCount
+				previousBackupCount := repos.Items[0].Status.BackupCount
 
 				By("Wating 2 minutes")
 				time.Sleep(2 * time.Minute)
 
 				By("Checking that Backup count has not changed")
-				resticObj, err = f.StashClient.StashV1alpha1().Restics(restic.Namespace).Get(restic.Name, metav1.GetOptions{})
+				repos, err = f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(resticObj.Status.BackupCount).Should(BeNumerically("==", previousBackupCount))
+				Expect(repos.Items).NotTo(BeEmpty())
+				Expect(repos.Items[0].Status.BackupCount).Should(BeNumerically("==", previousBackupCount))
 
 				By(`Patching Restic with "paused: false"`)
 				err = f.CreateOrPatchRestic(restic.ObjectMeta, func(in *api.Restic) *api.Restic {
@@ -972,12 +1016,57 @@ var _ = Describe("Deployment", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for backup to complete")
-				f.EventuallyRestic(restic.ObjectMeta).Should(WithTransform(func(r *api.Restic) int64 {
-					return r.Status.BackupCount
-				}, BeNumerically(">", previousBackupCount)))
+				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">", previousBackupCount)))
 
 				By("Waiting for backup event")
-				f.EventualEvent(restic.ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", previousBackupCount)))
+				repos, err = f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(repos.Items).NotTo(BeEmpty())
+				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", previousBackupCount)))
+
+			})
+
+		})
+	})
+
+	Describe("Repository CRD", func() {
+		Context(`"Local" backend`, func() {
+			AfterEach(func() {
+				f.DeleteDeployment(deployment.ObjectMeta)
+				f.DeleteRestic(restic.ObjectMeta)
+				f.DeleteSecret(cred.ObjectMeta)
+			})
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForLocalBackend()
+			})
+			It(`should create Repository CRD`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic")
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating Deployment " + deployment.Name)
+				_, err = f.CreateDeployment(deployment)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for sidecar")
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Wating for Repository CRD")
+				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
+
+				By("Waiting for backup to complete")
+				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+
+				By("Waiting for backup event")
+				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(repos.Items).NotTo(BeEmpty())
+				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
 			})
 

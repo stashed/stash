@@ -107,15 +107,6 @@ At each tick, `restic backup` and `restic forget` commands are run for each of t
  - For workload kind `Statefulset` restic repository is created in the sub-directory `<WORKLOAD_KIND>/<POD_NAME>`. For multiple replicas, multiple repositories are created and sidecar is added to all pods.
  - For workload kind `Daemonset` restic repository is created in the sub-directory `<WORKLOAD_KIND>/<WORKLOAD_NAME>/<NODE_NAME>`. For multiple replicas, multiple repositories are created and sidecar is added to all pods.
 
-## Restic Status
-Stash operator updates `.status` of a Restic CRD every time a backup operation is completed.
-
- - `status.backupCount` indicated the total number of backup operation completed for this Restic CRD.
- - `status.firstBackupTime` indicates the timestamp of first backup operation.
- - `status.lastBackupTime` indicates the timestamp of last backup operation.
- - `status.lastSuccessfulBackupTime` indicates the timestamp of last successful backup operation. If `status.lastBackupTime` and `status.lastSuccessfulBackupTime` are same, it means that last backup operation was successful.
- - `status.lastBackupDuration` indicates the duration of last backup operation.
-
 ## Workload Annotations
 For each workload where a sidecar container is added by Stash operator, the following annotations are added:
 
@@ -137,10 +128,11 @@ To stop Restic from taking backup, you can do following things:
 
 * Change the labels of a workload. Stash operator will remove sidecar container from that workload. This way you can selectively stop backup of a Deployment, ReplicaSet etc.
 
-For more details about how to disable and resume Restic see [here](/docs/guides/backup.md#disable-backup). 
+For more details about how to disable and resume Restic see [here](/docs/guides/backup.md#disable-backup).
 
 ## Next Steps
 
+- Learn about Repository CRD [here](/docs/concepts/crds/repository.md)
 - Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/backup.md).
 - To restore a backup see [here](/docs/guides/restore.md).
 - Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).

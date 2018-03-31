@@ -41,13 +41,13 @@ func (c *Controller) BackupScheduler() error {
 }
 
 func (c *Controller) setupAndRunScheduler(stopBackup chan struct{}) error {
-	if resource, err := c.setup(); err != nil {
+	if _, repository, err := c.setup(); err != nil {
 		err = fmt.Errorf("failed to setup backup. Error: %v", err)
-		if resource != nil {
+		if repository != nil {
 			eventer.CreateEventWithLog(
 				c.k8sClient,
 				BackupEventComponent,
-				resource.ObjectReference(),
+				repository.ObjectReference(),
 				core.EventTypeWarning,
 				eventer.EventReasonFailedSetup,
 				err.Error(),
@@ -139,47 +139,41 @@ func (c *Controller) runOnceForScheduler() error {
 		return nil
 	}
 
-	// check resource again, previously done in setup()
-	resource, err := c.rLister.Restics(c.opt.Namespace).Get(c.opt.ResticName)
+	// check restic again, previously done in setup()
+	restic, err := c.rLister.Restics(c.opt.Namespace).Get(c.opt.ResticName)
 	if kerr.IsNotFound(err) {
 		return nil
 	} else if err != nil {
 		return err
 	}
-	if resource.Spec.Backend.StorageSecretName == "" {
+	if restic.Spec.Backend.StorageSecretName == "" {
 		return errors.New("missing repository secret name")
 	}
-	secret, err := c.k8sClient.CoreV1().Secrets(resource.Namespace).Get(resource.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	secret, err := c.k8sClient.CoreV1().Secrets(restic.Namespace).Get(restic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
 	// setup restic again, previously done in setup()
-	if err = c.resticCLI.SetupEnv(resource.Spec.Backend, secret, c.opt.SmartPrefix); err != nil {
+	prefix := ""
+	if prefix, err = c.resticCLI.SetupEnv(restic.Spec.Backend, secret, c.opt.SmartPrefix); err != nil {
 		return err
 	}
 	if err = c.resticCLI.InitRepositoryIfAbsent(); err != nil {
 		return err
 	}
+	repository, err := c.createRepositoryCrdIfNotExist(restic, prefix)
+	if err != nil {
+		return err
+	}
 
 	// run final restic backup command
-	return c.runResticBackup(resource)
+	return c.runResticBackup(restic, repository)
 }
 
 func (c *Controller) checkOnceForScheduler() (err error) {
-	select {
-	case <-c.locked:
-		log.Infof("Acquired lock for Restic %s/%s", c.opt.Namespace, c.opt.ResticName)
-		defer func() {
-			c.locked <- struct{}{}
-		}()
-	default:
-		log.Warningf("Skipping checkup schedule for Restic %s/%s", c.opt.Namespace, c.opt.ResticName)
-		return
-	}
-
-	var resource *api.Restic
-	resource, err = c.rLister.Restics(c.opt.Namespace).Get(c.opt.ResticName)
+	var restic *api.Restic
+	restic, err = c.rLister.Restics(c.opt.Namespace).Get(c.opt.ResticName)
 	if kerr.IsNotFound(err) {
 		err = nil
 		return
@@ -187,9 +181,34 @@ func (c *Controller) checkOnceForScheduler() (err error) {
 		return
 	}
 
+	var repository *api.Repository
+	repository, err = c.stashClient.StashV1alpha1().Repositories(c.opt.Namespace).Get(c.getRepositoryCrdName(restic), metav1.GetOptions{})
+	if kerr.IsNotFound(err) {
+		err = nil
+		return
+	} else if err != nil {
+		return
+	}
+
+	select {
+	case <-c.locked:
+		log.Infof("Acquired lock for Repository %s/%s", repository.Namespace, repository.Name)
+		defer func() {
+			c.locked <- struct{}{}
+		}()
+	default:
+		log.Warningf("Skipping checkup schedule for Repository %s/%s", repository.Namespace, repository.Name)
+		return
+	}
+
 	err = c.resticCLI.Check()
 	if err != nil {
-		c.recorder.Eventf(resource.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToCheck, "Repository check failed for workload %s %s/%s. Reason: %v", c.opt.Workload.Kind, c.opt.Namespace, c.opt.Workload.Name, err)
+		c.recorder.Eventf(
+			repository.ObjectReference(),
+			core.EventTypeWarning,
+			eventer.EventReasonFailedToCheck,
+			"Repository check failed for workload %s %s/%s. Reason: %v",
+			c.opt.Workload.Kind, c.opt.Namespace, c.opt.Workload.Name, err)
 	}
 	return
 }

@@ -279,51 +279,49 @@ status:
   updatedReplicas: 1
 ```
 
-Now, wait a few minutes so that restic can take a backup of the `/source/data` folder. To confirm, check the `status.backupCount` of `stash-demo` Restic CRD.
+Now, wait until the deployment is in running state. Once the pod with sidecar is in running state, it will create a `Repository` CRD for this deployment with name `deployment.stash-demo`. Check the `Repository` CRD object has been created successfully by,
+
+```console
+$ kubectl get repository -l workload-name=stash-demo
+NAME                    AGE
+deployment.stash-demo   3m
+```
+
+Now, wait a few minutes so that restic can take a backup of the `/source/data` folder. To confirm, check the `status.backupCount` of `deployment.stash-demo` Repository CRD.
+
+```console
+$ kubectl get repository deployment.stash-demo -o yaml
+```
 
 ```yaml
-$ kubectl get restic stash-demo -o yaml
-
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Repository
 metadata:
   clusterName: ""
-  creationTimestamp: 2017-12-04T06:10:37Z
-  deletionGracePeriodSeconds: null
-  deletionTimestamp: null
+  creationTimestamp: 2018-03-29T08:28:10Z
   generation: 0
-  initializers: null
-  name: stash-demo
+  labels:
+    restic: stash-demo
+    workload-kind: Deployment
+    workload-name: stash-demo
+  name: deployment.stash-demo
   namespace: default
-  resourceVersion: "27592"
-  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/stash-demo
-  uid: d8768901-d8b9-11e7-be92-0800277f19c0
+  resourceVersion: "999"
+  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/repositories/deployment.stash-demo
+  uid: 1d814fdb-332b-11e8-94e6-08002792cb23
 spec:
   backend:
     local:
-      mountPath: /safe/data
       hostPath:
         path: /data/stash-test/restic-repo
-    storageSecretName: stash-demo
-  fileGroups:
-  - path: /source/data
-    retentionPolicyName: keep-last-5
-  retentionPolicies:
-  - keepLast: 5
-    name: keep-last-5
-    prune: true
-  schedule: '@every 1m'
-  selector:
-    matchLabels:
-      app: stash-demo
-  volumeMounts:
-  - mountPath: /source/data
-    name: source-data
+      mountPath: /safe/data
+    storageSecretName: local-secret
+  backupPath: deployment/stash-demo
 status:
   backupCount: 1
-  firstBackupTime: 2017-12-04T06:11:41Z
-  lastBackupDuration: 1.45596698s
-  lastBackupTime: 2017-12-04T06:11:41Z
+  firstBackupTime: 2018-03-29T08:29:10Z
+  lastBackupDuration: 2.105757874s
+  lastBackupTime: 2018-03-29T08:29:10Z
 ```
 
 You can also exec into the `busybox` Deployment to check list of snapshots.
@@ -340,7 +338,7 @@ $ kubectl exec -it stash-demo-79554ff97b-wsdx2 -c stash sh
 password is correct
 ID        Date                 Host        Tags        Directory
 ----------------------------------------------------------------------
-139fa21e  2017-12-04 06:14:42  stash-demo              /source/data
+139fa21e  2018-03-29 08:29:42  stash-demo              /source/data
 ----------------------------------------------------------------------
 ```
 
@@ -409,6 +407,7 @@ To cleanup the Kubernetes resources created by this tutorial, run:
 $ kubectl delete deployment stash-demo
 $ kubectl delete secret stash-demo
 $ kubectl delete restic stash-demo
+$ kubectl delete repository deployment.stash-demo
 ```
 
 If you would like to uninstall Stash operator, please follow the steps [here](/docs/setup/uninstall.md).

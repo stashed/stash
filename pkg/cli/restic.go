@@ -146,8 +146,12 @@ func (w *ResticWrapper) Restore(path, host string) error {
 	args = append(args, path) // source-path specified in restic fileGroup
 	args = append(args, "--host")
 	args = append(args, host)
+
+	// Remove last part from the path.
+	// https://github.com/appscode/stash/issues/392
 	args = append(args, "--target")
-	args = append(args, path) // restore in same path as source-path
+	args = append(args, filepath.Dir(path))
+
 	args = w.appendCacheDirFlag(args)
 	args = w.appendCaCertFlag(args)
 

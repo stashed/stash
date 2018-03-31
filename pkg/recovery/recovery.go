@@ -96,7 +96,7 @@ func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
 	}
 
 	cli := cli.New("/tmp", false, hostname)
-	if err = cli.SetupEnv(recovery.Spec.Backend, secret, smartPrefix); err != nil {
+	if _, err = cli.SetupEnv(recovery.Spec.Backend, secret, smartPrefix); err != nil {
 		return err
 	}
 

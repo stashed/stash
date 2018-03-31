@@ -269,7 +269,7 @@ func (c *StashController) EnsureSidecar(restic *api.Restic) {
 			for _, resource := range resources {
 				// If owned by a Deployment, skip it.
 				// OCFIX
-				if ext_util.IsOwnedByDeployment(resource) {
+				if ext_util.IsOwnedByDeployment(resource.OwnerReferences) {
 					continue
 				}
 				key, err := cache.MetaNamespaceKeyFunc(resource)
