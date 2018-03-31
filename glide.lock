@@ -1,5 +1,5 @@
 hash: 39b9784006e2fdde6ce6820baacfc8afceab5316e268a079ea05abbf307d23f1
-updated: 2018-03-28T16:53:49.356525537-07:00
+updated: 2018-03-31T14:04:36.370020336-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -25,7 +25,7 @@ imports:
   - types
   - version
 - name: github.com/appscode/jsonpatch
-  version: d1ada3d25b084ae42746377df856bbc74a901503
+  version: 58a38a46ddb591a543c6b1003213353e29331c5a
 - name: github.com/appscode/kubernetes-webhook-util
   version: bc38cfdad2cba8a14a06b1919347ff810286a46d
   subpackages:
@@ -37,7 +37,7 @@ imports:
   - runtime/serializer/versioning
   - workload/v1
 - name: github.com/appscode/kutil
-  version: 9618833b480d6b78f02121dc4d231a933e30a8cc
+  version: d05ce0e9bbbec24d6f6f1fdce4a0a7c65ff221e5
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
@@ -315,11 +315,11 @@ imports:
   subpackages:
   - mem
 - name: github.com/spf13/cobra
-  version: a1f051bc3eba734da4772d60e2d677f47cf93ef4
+  version: 4dab30cb33e6633c33c787106bafbfbfdde7842d
   subpackages:
   - doc
 - name: github.com/spf13/pflag
-  version: f4aa504bb62057ca90e8defc26e169353fd772d4
+  version: 749bb7a3c5f1eec9dd082d85f3e07fd4f6f3f8a9
   repo: https://github.com/appscode/pflag.git
   vcs: git
 - name: github.com/ugorji/go

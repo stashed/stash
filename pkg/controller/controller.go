@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/appscode/go/log"
-	apiext_util "github.com/appscode/kutil/apiextensions/v1beta1"
+	crdutils "github.com/appscode/kutil/apiextensions/v1beta1"
 	"github.com/appscode/kutil/tools/queue"
 	"github.com/appscode/pat"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -88,7 +88,7 @@ func (c *StashController) ensureCustomResourceDefinitions() error {
 		api.Recovery{}.CustomResourceDefinition(),
 		api.Repository{}.CustomResourceDefinition(),
 	}
-	return apiext_util.RegisterCRDs(c.crdClient, crds)
+	return crdutils.RegisterCRDs(c.crdClient, crds)
 }
 
 func (c *StashController) RunInformers(stopCh <-chan struct{}) {
