@@ -5,9 +5,10 @@ import (
 	"time"
 
 	logs "github.com/appscode/go/log/golog"
+	crdutils "github.com/appscode/kutil/apiextensions/v1beta1"
 	"github.com/appscode/kutil/meta"
 	"github.com/appscode/kutil/tools/clientcmd"
-	api "github.com/appscode/stash/apis/stash"
+	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/client/clientset/versioned/scheme"
 	_ "github.com/appscode/stash/client/clientset/versioned/scheme"
 	"github.com/appscode/stash/pkg/controller"
@@ -16,6 +17,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
+	crd_api "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
@@ -62,7 +64,13 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	By("Using test namespace " + root.Namespace())
 
-	root.EventuallyCRD("restic." + api.GroupName).Should(Succeed())
+	crds := []*crd_api.CustomResourceDefinition{
+		api.Restic{}.CustomResourceDefinition(),
+		api.Recovery{}.CustomResourceDefinition(),
+		api.Repository{}.CustomResourceDefinition(),
+	}
+	err = crdutils.WaitForCRDReady(ctrlConfig.CRDClient.RESTClient(), crds)
+	Expect(err).NotTo(HaveOccurred())
 
 	if options.StartAPIServer {
 		go root.StartAPIServerAndOperator(options.KubeConfig, options.ControllerOptions)

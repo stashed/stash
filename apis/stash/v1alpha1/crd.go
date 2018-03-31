@@ -1,67 +1,63 @@
 package v1alpha1
 
 import (
-	"github.com/appscode/stash/apis/stash"
+	crdutils "github.com/appscode/kutil/apiextensions/v1beta1"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (c Restic) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
-	return &apiextensions.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   ResourceTypeRestic + "." + SchemeGroupVersion.Group,
-			Labels: map[string]string{"app": "stash"},
+	return crdutils.NewCustomResourceDefinition(crdutils.Config{
+		Group:         SchemeGroupVersion.Group,
+		Version:       SchemeGroupVersion.Version,
+		Plural:        ResourcePluralRestic,
+		Singular:      ResourceSingularRestic,
+		Kind:          ResourceKindRestic,
+		ListKind:      ResourceKindRestic + "List",
+		ShortNames:    []string{"rst"},
+		ResourceScope: string(apiextensions.NamespaceScoped),
+		Labels: crdutils.Labels{
+			LabelsMap: map[string]string{"app": "stash"},
 		},
-		Spec: apiextensions.CustomResourceDefinitionSpec{
-			Group:   stash.GroupName,
-			Version: SchemeGroupVersion.Version,
-			Scope:   apiextensions.NamespaceScoped,
-			Names: apiextensions.CustomResourceDefinitionNames{
-				Singular:   ResourceNameRestic,
-				Plural:     ResourceTypeRestic,
-				Kind:       ResourceKindRestic,
-				ShortNames: []string{"rst"},
-			},
-		},
-	}
+		SpecDefinitionName:    "github.com/appscode/stash/apis/stash/v1alpha1.Restic",
+		EnableValidation:      true,
+		GetOpenAPIDefinitions: GetOpenAPIDefinitions,
+	})
 }
 
 func (c Recovery) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
-	return &apiextensions.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   ResourceTypeRecovery + "." + SchemeGroupVersion.Group,
-			Labels: map[string]string{"app": "stash"},
+	return crdutils.NewCustomResourceDefinition(crdutils.Config{
+		Group:         SchemeGroupVersion.Group,
+		Version:       SchemeGroupVersion.Version,
+		Plural:        ResourcePluralRecovery,
+		Singular:      ResourceSingularRecovery,
+		Kind:          ResourceKindRecovery,
+		ListKind:      ResourceKindRecovery + "List",
+		ShortNames:    []string{"rec"},
+		ResourceScope: string(apiextensions.NamespaceScoped),
+		Labels: crdutils.Labels{
+			LabelsMap: map[string]string{"app": "stash"},
 		},
-		Spec: apiextensions.CustomResourceDefinitionSpec{
-			Group:   stash.GroupName,
-			Version: SchemeGroupVersion.Version,
-			Scope:   apiextensions.NamespaceScoped,
-			Names: apiextensions.CustomResourceDefinitionNames{
-				Singular:   ResourceNameRecovery,
-				Plural:     ResourceTypeRecovery,
-				Kind:       ResourceKindRecovery,
-				ShortNames: []string{"rec"},
-			},
-		},
-	}
+		SpecDefinitionName:    "github.com/appscode/stash/apis/stash/v1alpha1.Recovery",
+		EnableValidation:      true,
+		GetOpenAPIDefinitions: GetOpenAPIDefinitions,
+	})
 }
 
 func (c Repository) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
-	return &apiextensions.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   ResourceTypeRepository + "." + SchemeGroupVersion.Group,
-			Labels: map[string]string{"app": "stash"},
+	return crdutils.NewCustomResourceDefinition(crdutils.Config{
+		Group:         SchemeGroupVersion.Group,
+		Version:       SchemeGroupVersion.Version,
+		Plural:        ResourcePluralRepository,
+		Singular:      ResourceSingularRepository,
+		Kind:          ResourceKindRepository,
+		ListKind:      ResourceKindRepository + "List",
+		ShortNames:    []string{"repo"},
+		ResourceScope: string(apiextensions.NamespaceScoped),
+		Labels: crdutils.Labels{
+			LabelsMap: map[string]string{"app": "stash"},
 		},
-		Spec: apiextensions.CustomResourceDefinitionSpec{
-			Group:   stash.GroupName,
-			Version: SchemeGroupVersion.Version,
-			Scope:   apiextensions.NamespaceScoped,
-			Names: apiextensions.CustomResourceDefinitionNames{
-				Singular:   ResourceNameRepository,
-				Plural:     ResourceTypeRepository,
-				Kind:       ResourceKindRepository,
-				ShortNames: []string{"repo"},
-			},
-		},
-	}
+		SpecDefinitionName:    "github.com/appscode/stash/apis/stash/v1alpha1.Repository",
+		EnableValidation:      true,
+		GetOpenAPIDefinitions: GetOpenAPIDefinitions,
+	})
 }

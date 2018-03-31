@@ -6,12 +6,12 @@ import (
 )
 
 const (
-	ResourceKindRestic   = "Restic"
-	ResourceNameRestic   = "restic"
-	ResourceTypeRestic   = "restics"
-	ResourceKindRecovery = "Recovery"
-	ResourceNameRecovery = "recovery"
-	ResourceTypeRecovery = "recoveries"
+	ResourceKindRestic       = "Restic"
+	ResourceSingularRestic   = "restic"
+	ResourcePluralRestic     = "restics"
+	ResourceKindRecovery     = "Recovery"
+	ResourceSingularRecovery = "recovery"
+	ResourcePluralRecovery   = "recoveries"
 )
 
 // +genclient
@@ -212,9 +212,9 @@ type RestoreStats struct {
 }
 
 const (
-	ResourceKindRepository = "Repository"
-	ResourceTypeRepository = "repositories"
-	ResourceNameRepository = "repository"
+	ResourceKindRepository     = "Repository"
+	ResourcePluralRepository   = "repositories"
+	ResourceSingularRepository = "repository"
 )
 
 // +genclient

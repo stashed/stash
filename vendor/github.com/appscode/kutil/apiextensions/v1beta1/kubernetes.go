@@ -24,6 +24,11 @@ func RegisterCRDs(client crd_cs.ApiextensionsV1beta1Interface, crds []*crd_api.C
 			}
 		} else if err != nil {
 			return err
+		} else {
+			_, err = client.CustomResourceDefinitions().Update(crd)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return WaitForCRDReady(client.RESTClient(), crds)
