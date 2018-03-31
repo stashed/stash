@@ -4,5 +4,6 @@
 // +k8s:conversion-gen=github.com/appscode/stash/apis/stash
 // +k8s:openapi-gen=true
 // +k8s:defaulter-gen=TypeMeta
+
 // +groupName=stash.appscode.com
 package v1alpha1
