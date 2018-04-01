@@ -10,7 +10,6 @@ spec:
   group: stash.appscode.com
   names:
     kind: Restic
-    listKind: ResticList
     plural: restics
     shortNames:
     - rst
@@ -517,7 +516,6 @@ spec:
   group: stash.appscode.com
   names:
     kind: Recovery
-    listKind: RecoveryList
     plural: recoveries
     shortNames:
     - rec
@@ -969,7 +967,6 @@ spec:
   group: stash.appscode.com
   names:
     kind: Repository
-    listKind: RepositoryList
     plural: repositories
     shortNames:
     - repo

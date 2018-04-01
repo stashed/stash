@@ -12,7 +12,6 @@ func (c Restic) CustomResourceDefinition() *apiextensions.CustomResourceDefiniti
 		Plural:        ResourcePluralRestic,
 		Singular:      ResourceSingularRestic,
 		Kind:          ResourceKindRestic,
-		ListKind:      ResourceKindRestic + "List",
 		ShortNames:    []string{"rst"},
 		ResourceScope: string(apiextensions.NamespaceScoped),
 		Labels: crdutils.Labels{
@@ -31,7 +30,6 @@ func (c Recovery) CustomResourceDefinition() *apiextensions.CustomResourceDefini
 		Plural:        ResourcePluralRecovery,
 		Singular:      ResourceSingularRecovery,
 		Kind:          ResourceKindRecovery,
-		ListKind:      ResourceKindRecovery + "List",
 		ShortNames:    []string{"rec"},
 		ResourceScope: string(apiextensions.NamespaceScoped),
 		Labels: crdutils.Labels{
@@ -50,7 +48,6 @@ func (c Repository) CustomResourceDefinition() *apiextensions.CustomResourceDefi
 		Plural:        ResourcePluralRepository,
 		Singular:      ResourceSingularRepository,
 		Kind:          ResourceKindRepository,
-		ListKind:      ResourceKindRepository + "List",
 		ShortNames:    []string{"repo"},
 		ResourceScope: string(apiextensions.NamespaceScoped),
 		Labels: crdutils.Labels{
