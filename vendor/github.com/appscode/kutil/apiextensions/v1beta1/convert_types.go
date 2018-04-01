@@ -118,7 +118,7 @@ func SchemaPropsToJSONProps(schema *spec.Schema, openapiSpec map[string]common.O
 		AnyOf:            SchemaPropsToJSONPropsArray(schemaProps.AnyOf, openapiSpec, nested),
 		Not:              SchemaPropsToJSONProps(schemaProps.Not, openapiSpec, nested),
 		Properties:       SchemPropsMapToJSONMap(schemaProps.Properties, openapiSpec, nested),
-		// @TODO(01-25-2018) Field not accepted by the current CRD Validation Spec
+		// BUG: https://github.com/kubernetes/kubernetes/pull/61991
 		// AdditionalProperties: SchemaOrBoolToJSONProps(schemaProps.AdditionalProperties, openapiSpec, nested),
 		PatternProperties: SchemPropsMapToJSONMap(schemaProps.PatternProperties, openapiSpec, nested),
 		AdditionalItems:   SchemaOrBoolToJSONProps(schemaProps.AdditionalItems, openapiSpec, nested),
