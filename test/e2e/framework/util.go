@@ -4,9 +4,12 @@ import (
 	"os/exec"
 	"time"
 
+	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/eventer"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 )
@@ -78,4 +81,33 @@ func CleanupMinikubeHostPath() error {
 	cmd := "minikube"
 	args := []string{"ssh", "sudo rm -rf /data/stash-test"}
 	return exec.Command(cmd, args...).Run()
+}
+
+func (f *Framework) DeleteJobAndDependents(jobName string, recovery *api.Recovery) {
+	By("Checking Job deleted")
+	Eventually(func() bool {
+		_, err := f.KubeClient.BatchV1().Jobs(recovery.Namespace).Get(jobName, metav1.GetOptions{})
+		return kerr.IsNotFound(err) || kerr.IsGone(err)
+	}, time.Minute*3, time.Second*2).Should(BeTrue())
+
+	By("Checking pods deleted")
+	Eventually(func() bool {
+		pods, err := f.KubeClient.CoreV1().Pods(recovery.Namespace).List(metav1.ListOptions{
+			LabelSelector: "job-name=" + jobName, // pods created by job has a job-name label
+		})
+		Expect(err).NotTo(HaveOccurred())
+		return len(pods.Items) == 0
+	}, time.Minute*3, time.Second*2).Should(BeTrue())
+
+	By("Checking service-account deleted")
+	Eventually(func() bool {
+		_, err := f.KubeClient.CoreV1().ServiceAccounts(recovery.Namespace).Get(jobName, metav1.GetOptions{})
+		return kerr.IsNotFound(err) || kerr.IsGone(err)
+	}, time.Minute*3, time.Second*2).Should(BeTrue())
+
+	By("Checking role-binding deleted")
+	Eventually(func() bool {
+		_, err := f.KubeClient.RbacV1().RoleBindings(recovery.Namespace).Get(jobName, metav1.GetOptions{})
+		return kerr.IsNotFound(err) || kerr.IsGone(err)
+	}, time.Minute*3, time.Second*2).Should(BeTrue())
 }
