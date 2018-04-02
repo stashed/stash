@@ -201,20 +201,6 @@ var _ = Describe("ReplicaSet", func() {
 			f.EventuallyReplicaSet(rs.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		}
 
-		shouldRestoreReplicaSet = func() {
-			shouldBackupNewReplicaSet()
-			recovery.Spec.Workload = api.LocalTypedReference{
-				Kind: api.KindReplicaSet,
-				Name: rs.Name,
-			}
-
-			By("Creating recovery " + recovery.Name)
-			err = f.CreateRecovery(recovery)
-			Expect(err).NotTo(HaveOccurred())
-
-			f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
-		}
-
 		shouldElectLeaderAndBackupRS = func() {
 			By("Creating repository Secret " + cred.Name)
 			err = f.CreateSecret(cred)
@@ -542,34 +528,6 @@ var _ = Describe("ReplicaSet", func() {
 		})
 	})
 
-	Describe("Creating recovery for", func() {
-		AfterEach(func() {
-			f.DeleteReplicaSet(rs.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
-			f.DeleteRecovery(recovery.ObjectMeta)
-			framework.CleanupMinikubeHostPath()
-		})
-
-		Context(`"Local" backend`, func() {
-			BeforeEach(func() {
-				cred = f.SecretForLocalBackend()
-				restic = f.ResticForHostPathLocalBackend()
-				recovery = f.RecoveryForRestic(restic)
-			})
-			It(`should restore local replicaset backup`, shouldRestoreReplicaSet)
-		})
-
-		Context(`"S3" backend`, func() {
-			BeforeEach(func() {
-				cred = f.SecretForS3Backend()
-				restic = f.ResticForS3Backend()
-				recovery = f.RecoveryForRestic(restic)
-			})
-			It(`should restore s3 replicaset backup`, shouldRestoreReplicaSet)
-		})
-	})
-
 	Describe("Leader election for", func() {
 		AfterEach(func() {
 			f.DeleteReplicaSet(rs.ObjectMeta)
@@ -845,6 +803,111 @@ var _ = Describe("ReplicaSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(repos.Items).NotTo(BeEmpty())
 				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+			})
+
+		})
+	})
+
+	Describe("Complete Recovery", func() {
+		Context(`"Local" backend`, func() {
+			AfterEach(func() {
+				f.DeleteReplicaSet(rs.ObjectMeta)
+				f.DeleteRestic(restic.ObjectMeta)
+				f.DeleteSecret(cred.ObjectMeta)
+				f.DeleteRecovery(recovery.ObjectMeta)
+				framework.CleanupMinikubeHostPath()
+			})
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForHostPathLocalBackend()
+				recovery = f.RecoveryForRestic(restic)
+			})
+			It(`recovered volume should have same data`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic")
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating ReplicaSet " + rs.Name)
+				_, err = f.CreateReplicaSet(rs)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for sidecar")
+				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Wating for Repository CRD")
+				f.EventuallyRepository(api.KindReplicaSet, rs.ObjectMeta, int(*rs.Spec.Replicas)).ShouldNot(BeEmpty())
+
+				By("Waiting for backup to complete")
+				f.EventuallyRepository(api.KindReplicaSet, rs.ObjectMeta, int(*rs.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+
+				By("Waiting for backup event")
+				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(repos.Items).NotTo(BeEmpty())
+				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+
+				pod := &core.Pod{}
+				By("Identifying pod of rs: " + rs.Name)
+				f.EventuallyPod(rs.ObjectMeta).ShouldNot(WithTransform(func(obj *core.Pod) *core.Pod {
+					pod = obj
+					return pod
+				}, BeNil()))
+
+				By("Reading data from /source/data mountPath")
+				previousData, err := f.ExecOnPod(pod, "ls", "/source/data/stash-data")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(previousData).NotTo(BeEmpty())
+
+				By("Deleting rs")
+				f.DeleteReplicaSet(rs.ObjectMeta)
+
+				By("Deleting restic")
+				f.DeleteRestic(restic.ObjectMeta)
+
+				// give some time for rs to terminate
+				time.Sleep(time.Second * 30)
+
+				recovery.Spec.Workload = api.LocalTypedReference{
+					Kind: api.KindReplicaSet,
+					Name: rs.Name,
+				}
+
+				By("Creating recovery " + recovery.Name)
+				err = f.CreateRecovery(recovery)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Wating for recovery succeed")
+				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
+
+				By("Checking cleanup")
+				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
+
+				By("Re-deploying rs with recovered volume")
+				rs.Spec.Template.Spec.Volumes = []core.Volume{
+					{
+						Name: framework.TestSourceDataVolumeName,
+						VolumeSource: core.VolumeSource{
+							HostPath: &core.HostPathVolumeSource{
+								Path: "/data/stash-test/restic-restored",
+							},
+						},
+					},
+				}
+				_, err = f.CreateReplicaSet(rs)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Identifying pod of new rs: " + rs.Name)
+				f.EventuallyPod(rs.ObjectMeta).ShouldNot(WithTransform(func(obj *core.Pod) *core.Pod {
+					pod = obj
+					return pod
+				}, BeNil()))
+
+				By("Reading data from /source/data mountPath")
+				f.EventuallyRecoveredData(pod).Should(BeEquivalentTo(previousData))
 			})
 
 		})
