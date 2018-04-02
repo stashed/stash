@@ -1072,4 +1072,106 @@ var _ = Describe("Deployment", func() {
 
 		})
 	})
+
+	Describe("Complete Recovery", func() {
+		Context(`"Local" backend`, func() {
+			AfterEach(func() {
+				f.DeleteDeployment(deployment.ObjectMeta)
+				f.DeleteRestic(restic.ObjectMeta)
+				f.DeleteSecret(cred.ObjectMeta)
+				f.DeleteRecovery(recovery.ObjectMeta)
+				framework.CleanupMinikubeHostPath()
+			})
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForHostPathLocalBackend()
+				recovery = f.RecoveryForRestic(restic)
+			})
+			It(`recovered volume should have same data`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic")
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating Deployment " + deployment.Name)
+				_, err = f.CreateDeployment(deployment)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for sidecar")
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Wating for Repository CRD")
+				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
+
+				By("Waiting for backup to complete")
+				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+
+				By("Waiting for backup event")
+				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(repos.Items).NotTo(BeEmpty())
+				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+
+				pod := &core.Pod{}
+				By("Identifying pod of deployment: " + deployment.Name)
+				f.EventuallyPod(deployment.ObjectMeta).ShouldNot(WithTransform(func(obj *core.Pod) *core.Pod {
+					pod = obj
+					return pod
+				}, BeNil()))
+
+				By("Reading data from /source/data mountPath")
+				previousData, err := f.ExecOnPod(pod, "ls", "/source/data/stash-data")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(previousData).NotTo(BeEmpty())
+
+				By("Deleting deployment")
+				f.DeleteDeployment(deployment.ObjectMeta)
+
+				By("Deleting restic")
+				f.DeleteRestic(restic.ObjectMeta)
+
+				recovery.Spec.Workload = api.LocalTypedReference{
+					Kind: api.KindDeployment,
+					Name: deployment.Name,
+				}
+
+				By("Creating recovery " + recovery.Name)
+				err = f.CreateRecovery(recovery)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Wating for recovery succeed")
+				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
+
+				By("Checking cleanup")
+				shouldDeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, recovery.Namespace)
+
+				By("Re-deploying deployment with recovered volume")
+				deployment.Spec.Template.Spec.Volumes = []core.Volume{
+					{
+						Name: framework.TestSourceDataVolumeName,
+						VolumeSource: core.VolumeSource{
+							HostPath: &core.HostPathVolumeSource{
+								Path: "/data/stash-test/restic-restored",
+							},
+						},
+					},
+				}
+				_, err = f.CreateDeployment(deployment)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Identifying pod of new deployment: " + deployment.Name)
+				f.EventuallyPod(deployment.ObjectMeta).ShouldNot(WithTransform(func(obj *core.Pod) *core.Pod {
+					pod = obj
+					return pod
+				}, BeNil()))
+
+				By("Reading data from /source/data mountPath")
+				f.EventuallyRecoveredData(pod).Should(BeEquivalentTo(previousData))
+			})
+
+		})
+	})
 })

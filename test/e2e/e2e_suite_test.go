@@ -59,7 +59,7 @@ var _ = BeforeSuite(func() {
 
 	kaClient := ka.NewForConfigOrDie(clientConfig)
 
-	root = framework.New(ctrlConfig.KubeClient, ctrlConfig.StashClient, kaClient, options.StartAPIServer)
+	root = framework.New(ctrlConfig.KubeClient, ctrlConfig.StashClient, kaClient, options.StartAPIServer, clientConfig)
 	err = root.CreateNamespace()
 	Expect(err).NotTo(HaveOccurred())
 	By("Using test namespace " + root.Namespace())
@@ -69,7 +69,10 @@ var _ = BeforeSuite(func() {
 		api.Recovery{}.CustomResourceDefinition(),
 		api.Repository{}.CustomResourceDefinition(),
 	}
-	err = crdutils.WaitForCRDReady(ctrlConfig.CRDClient.RESTClient(), crds)
+
+	By("Registering CRDs")
+	err = crdutils.RegisterCRDs(ctrlConfig.CRDClient, crds)
+	//err = crdutils.WaitForCRDReady(ctrlConfig.CRDClient.RESTClient(), crds)
 	Expect(err).NotTo(HaveOccurred())
 
 	if options.StartAPIServer {

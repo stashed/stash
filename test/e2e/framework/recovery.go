@@ -57,3 +57,13 @@ func (f *Framework) EventuallyRecoverySucceed(meta metav1.ObjectMeta) GomegaAsyn
 		return obj.Status.Phase == api.RecoverySucceeded
 	}, time.Minute*5, time.Second*5)
 }
+
+func (f *Framework) EventuallyRecoveredData(pod *core.Pod) GomegaAsyncAssertion {
+	return Eventually(func() string {
+		recoveredData, err := f.ExecOnPod(pod, "ls", "/source/data/stash-data")
+		if err != nil {
+			return ""
+		}
+		return recoveredData
+	}, time.Minute*5, time.Second*5)
+}
