@@ -17,8 +17,37 @@ aliases:
 
 # Change Log
 
-## [0.7.0-rc.3](https://github.com/appscode/stash/tree/0.7.0-rc.3) (2018-03-24)
-[Full Changelog](https://github.com/appscode/stash/compare/0.7.0-rc.1...0.7.0-rc.3)
+## [Unreleased](https://github.com/appscode/stash/tree/HEAD)
+
+[Full Changelog](https://github.com/appscode/stash/compare/0.7.0-rc.2...HEAD)
+
+**Fixed bugs:**
+
+- Pod restart after each backup when Mutating Webhook enabled [\#396](https://github.com/appscode/stash/issues/396)
+- Sidecar RoleBinding is not being created when Mutating Webhook is enabled  [\#395](https://github.com/appscode/stash/issues/395)
+- Recovery to PVC restores data in subdirectory instead of root directory [\#392](https://github.com/appscode/stash/issues/392)
+- Revendor webhook util and jsonpatch fixes [\#400](https://github.com/appscode/stash/pull/400) ([tamalsaha](https://github.com/tamalsaha))
+
+**Closed issues:**
+
+- hack/deploy/stash.sh: $? check does not work with set -e [\#403](https://github.com/appscode/stash/issues/403)
+
+**Merged pull requests:**
+
+- Prepare docs for 0.7.0-rc.3 [\#411](https://github.com/appscode/stash/pull/411) ([tamalsaha](https://github.com/tamalsaha))
+- Add test for recovery [\#409](https://github.com/appscode/stash/pull/409) ([emruz-hossain](https://github.com/emruz-hossain))
+- Skip setting ListKind [\#407](https://github.com/appscode/stash/pull/407) ([tamalsaha](https://github.com/tamalsaha))
+- Add CRD Validation [\#406](https://github.com/appscode/stash/pull/406) ([tamalsaha](https://github.com/tamalsaha))
+- Generate openapi spec for stash api [\#405](https://github.com/appscode/stash/pull/405) ([tamalsaha](https://github.com/tamalsaha))
+- Fix install script for minikube 0.24.x \(Kube 1.8.0\) [\#404](https://github.com/appscode/stash/pull/404) ([tamalsaha](https://github.com/tamalsaha))
+- Skip downloading onessl if already installed [\#401](https://github.com/appscode/stash/pull/401) ([tamalsaha](https://github.com/tamalsaha))
+- Use Restic spec hash instead of resource version to restart pods [\#399](https://github.com/appscode/stash/pull/399) ([tamalsaha](https://github.com/tamalsaha))
+- Check for valid owner object [\#397](https://github.com/appscode/stash/pull/397) ([tamalsaha](https://github.com/tamalsaha))
+- Create repository crd for each Restic repository [\#394](https://github.com/appscode/stash/pull/394) ([emruz-hossain](https://github.com/emruz-hossain))
+- Revendor webhook library [\#393](https://github.com/appscode/stash/pull/393) ([tamalsaha](https://github.com/tamalsaha))
+
+## [0.7.0-rc.2](https://github.com/appscode/stash/tree/0.7.0-rc.2) (2018-03-24)
+[Full Changelog](https://github.com/appscode/stash/compare/0.7.0-rc.1...0.7.0-rc.2)
 
 **Fixed bugs:**
 
@@ -27,7 +56,7 @@ aliases:
 
 **Merged pull requests:**
 
-- Prepare docs for 0.7.0-rc.3 [\#391](https://github.com/appscode/stash/pull/391) ([tamalsaha](https://github.com/tamalsaha))
+- Prepare docs for 0.7.0-rc.2 [\#391](https://github.com/appscode/stash/pull/391) ([tamalsaha](https://github.com/tamalsaha))
 - Add variable for dockerRegistry [\#390](https://github.com/appscode/stash/pull/390) ([tamalsaha](https://github.com/tamalsaha))
 - Reorg objects deleted in uninstall command [\#389](https://github.com/appscode/stash/pull/389) ([tamalsaha](https://github.com/tamalsaha))
 - Fix Statefulset Example [\#385](https://github.com/appscode/stash/pull/385) ([rodrigozc](https://github.com/rodrigozc))
