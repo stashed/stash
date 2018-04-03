@@ -1,3 +1,16 @@
+---
+title: Repository Overview
+menu:
+  product_stash_0.7.0-rc.3:
+    identifier: repository-overview
+    name: Repository
+    parent: crds
+    weight: 15
+product_name: stash
+menu_name: product_stash_0.7.0-rc.3
+section_menu_id: concepts
+---
+
 > New to Stash? Please start [here](/docs/concepts/README.md).
 
 # Repository

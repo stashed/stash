@@ -5,7 +5,7 @@ menu:
     identifier: recovery-overview
     name: Recovery
     parent: crds
-    weight: 15
+    weight: 20
 product_name: stash
 menu_name: product_stash_0.7.0-rc.3
 section_menu_id: concepts
