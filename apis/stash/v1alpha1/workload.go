@@ -34,6 +34,19 @@ func (workload *LocalTypedReference) Canonicalize() error {
 	return nil
 }
 
+func (workload LocalTypedReference) GetRepositoryCRDName(podName, nodeName string) string {
+	name := ""
+	switch workload.Kind {
+	case KindDeployment, KindReplicaSet, KindReplicationController:
+		name = strings.ToLower(workload.Kind) + "." + workload.Name
+	case KindStatefulSet:
+		name = strings.ToLower(workload.Kind) + "." + podName
+	case KindDaemonSet:
+		name = strings.ToLower(workload.Kind) + "." + workload.Name + "." + nodeName
+	}
+	return name
+}
+
 func (workload LocalTypedReference) HostnamePrefix(podName, nodeName string) (hostname, prefix string, err error) {
 	if err := workload.Canonicalize(); err != nil {
 		return "", "", err

@@ -499,16 +499,3 @@ func WorkloadReplicas(kubeClient *kubernetes.Clientset, namespace string, worklo
 	}
 	return 0, nil
 }
-
-func GetRepositoryCrdName(workloadKind, workloadName, podName, nodeName string) string {
-	name := ""
-	switch workloadKind {
-	case api.KindDeployment, api.KindReplicaSet, api.KindReplicationController:
-		name = strings.ToLower(workloadKind) + "." + workloadName
-	case api.KindStatefulSet:
-		name = strings.ToLower(workloadKind) + "." + podName
-	case api.KindDaemonSet:
-		name = strings.ToLower(workloadKind) + "." + workloadName + "." + nodeName
-	}
-	return name
-}

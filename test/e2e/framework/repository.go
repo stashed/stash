@@ -7,7 +7,6 @@ import (
 
 	"github.com/appscode/go/log"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
-	"github.com/appscode/stash/pkg/util"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -24,12 +23,14 @@ func (f *Framework) GetRepositories(kind string, objMeta metav1.ObjectMeta, repl
 	if nodeName == "" {
 		nodeName = "minikube"
 	}
+
+	workload := api.LocalTypedReference{Name: objMeta.Name, Kind: kind}
 	switch kind {
 	case api.KindDeployment, api.KindReplicationController, api.KindReplicaSet, api.KindDaemonSet:
-		repoNames = append(repoNames, util.GetRepositoryCrdName(kind, objMeta.Name, "", nodeName))
+		repoNames = append(repoNames, workload.GetRepositoryCRDName("", nodeName))
 	case api.KindStatefulSet:
 		for i := 0; i < replicas; i++ {
-			repoNames = append(repoNames, util.GetRepositoryCrdName(kind, objMeta.Name, objMeta.Name+"-"+strconv.Itoa(i), nodeName))
+			repoNames = append(repoNames, workload.GetRepositoryCRDName(objMeta.Name+"-"+strconv.Itoa(i), nodeName))
 		}
 	}
 	repositories := make([]*api.Repository, 0)

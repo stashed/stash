@@ -174,7 +174,7 @@ func (c *Controller) runOnceForScheduler() error {
 func (c *Controller) checkOnceForScheduler() (err error) {
 
 	var repository *api.Repository
-	repository, err = c.stashClient.StashV1alpha1().Repositories(c.opt.Namespace).Get(util.GetRepositoryCrdName(c.opt.Workload.Kind, c.opt.Workload.Name, c.opt.PodName, c.opt.NodeName), metav1.GetOptions{})
+	repository, err = c.stashClient.StashV1alpha1().Repositories(c.opt.Namespace).Get(c.opt.Workload.GetRepositoryCRDName(c.opt.PodName, c.opt.NodeName), metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		err = nil
 		return

@@ -4,13 +4,12 @@ import (
 	"github.com/appscode/go/log"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
-	stash_util "github.com/appscode/stash/pkg/util"
 )
 
 func (c *Controller) createRepositoryCrdIfNotExist(restic *api.Restic, prefix string) (*api.Repository, error) {
 	repository := &api.Repository{}
 	repository.Namespace = restic.Namespace
-	repository.Name = stash_util.GetRepositoryCrdName(c.opt.Workload.Kind, c.opt.Workload.Name, c.opt.PodName, c.opt.NodeName)
+	repository.Name = c.opt.Workload.GetRepositoryCRDName(c.opt.PodName, c.opt.NodeName)
 
 	repository.Labels = map[string]string{
 		"restic":        restic.Name,
