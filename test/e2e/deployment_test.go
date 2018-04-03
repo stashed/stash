@@ -996,7 +996,7 @@ var _ = Describe("Deployment", func() {
 	})
 
 	Describe("Complete Recovery", func() {
-		Context(`"Local" backend`, func() {
+		Context(`"Local" backend,single fileGroup`, func() {
 			AfterEach(func() {
 				f.DeleteDeployment(deployment.ObjectMeta)
 				f.DeleteRestic(restic.ObjectMeta)
@@ -1036,11 +1036,8 @@ var _ = Describe("Deployment", func() {
 				Expect(repos).NotTo(BeEmpty())
 				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
-				pod, err := f.GetPod(deployment.ObjectMeta)
-				Expect(err).NotTo(HaveOccurred())
-
 				By("Reading data from /source/data mountPath")
-				previousData, err := f.ExecOnPod(pod, "ls", "/source/data/stash-data")
+				previousData, err := f.ReadDataFromMountedDir(deployment.ObjectMeta, &restic)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(previousData).NotTo(BeEmpty())
 
@@ -1083,7 +1080,102 @@ var _ = Describe("Deployment", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Reading data from /source/data mountPath")
-				f.EventuallyRecoveredData(deployment.ObjectMeta).Should(BeEquivalentTo(previousData))
+				f.EventuallyRecoveredData(deployment.ObjectMeta, &restic).Should(BeEquivalentTo(previousData))
+			})
+
+		})
+
+		Context(`"Local" backend, multiple fileGroup`, func() {
+			AfterEach(func() {
+				f.DeleteDeployment(deployment.ObjectMeta)
+				f.DeleteRestic(restic.ObjectMeta)
+				f.DeleteSecret(cred.ObjectMeta)
+				f.DeleteRecovery(recovery.ObjectMeta)
+				framework.CleanupMinikubeHostPath()
+			})
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForHostPathLocalBackend()
+				restic.Spec.FileGroups = framework.FileGroupsForHostPathVolumeWithMultipleDirectory()
+				recovery = f.RecoveryForRestic(restic)
+			})
+			It(`recovered volume should have same data`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating demo data in hostPath")
+				err = framework.CreateDemoDataInHostPath()
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic")
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				deployment.Spec.Template.Spec.Volumes = framework.HostPathVolumeWithMultipleDirectory()
+				By("Creating Deployment " + deployment.Name)
+				_, err = f.CreateDeployment(deployment)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for sidecar")
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Waiting for Repository CRD")
+				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
+
+				By("Waiting for backup to complete")
+				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+
+				By("Waiting for backup event")
+				repos := f.GetRepositories(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas))
+				Expect(repos).NotTo(BeEmpty())
+				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+
+				By("Reading data from /source/data mountPath")
+				previousData, err := f.ReadDataFromMountedDir(deployment.ObjectMeta, &restic)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(previousData).NotTo(BeEmpty())
+
+				By("Deleting deployment")
+				f.DeleteDeployment(deployment.ObjectMeta)
+
+				By("Deleting restic")
+				f.DeleteRestic(restic.ObjectMeta)
+
+				// give some time for deployment to terminate
+				time.Sleep(time.Second * 30)
+
+				recovery.Spec.Workload = api.LocalTypedReference{
+					Kind: api.KindDeployment,
+					Name: deployment.Name,
+				}
+
+				By("Creating recovery " + recovery.Name)
+				err = f.CreateRecovery(recovery)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for recovery succeed")
+				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
+
+				By("Checking cleanup")
+				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
+
+				By("Re-deploying deployment with recovered volume")
+				deployment.Spec.Template.Spec.Volumes = []core.Volume{
+					{
+						Name: framework.TestSourceDataVolumeName,
+						VolumeSource: core.VolumeSource{
+							HostPath: &core.HostPathVolumeSource{
+								Path: framework.TestRecoveredVolumePath,
+							},
+						},
+					},
+				}
+				_, err = f.CreateDeployment(deployment)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Reading data from /source/data mountPath")
+				f.EventuallyRecoveredData(deployment.ObjectMeta, &restic).Should(BeEquivalentTo(previousData))
 			})
 
 		})

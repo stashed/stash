@@ -62,16 +62,28 @@ func (f *Framework) EventuallyRecoverySucceed(meta metav1.ObjectMeta) GomegaAsyn
 	}, time.Minute*5, time.Second*5)
 }
 
-func (f *Framework) EventuallyRecoveredData(meta metav1.ObjectMeta) GomegaAsyncAssertion {
-	return Eventually(func() string {
-		pod, err := f.GetPod(meta)
+func (f *Framework) EventuallyRecoveredData(meta metav1.ObjectMeta, restic *api.Restic) GomegaAsyncAssertion {
+	return Eventually(func() []string {
+		recoveredData, err := f.ReadDataFromMountedDir(meta, restic)
 		if err != nil {
-			return ""
-		}
-		recoveredData, err := f.ExecOnPod(pod, "ls", "/source/data/stash-data")
-		if err != nil {
-			return ""
+			return nil
 		}
 		return recoveredData
 	}, time.Minute*5, time.Second*5)
+}
+
+func (f *Framework) ReadDataFromMountedDir(meta metav1.ObjectMeta, restic *api.Restic) ([]string, error) {
+	pod, err := f.GetPod(meta)
+	if err != nil {
+		return nil, err
+	}
+	datas := make([]string, 0)
+	for _, fg := range restic.Spec.FileGroups {
+		data, err := f.ExecOnPod(pod, "ls", fg.Path)
+		if err != nil {
+			return nil, err
+		}
+		datas = append(datas, data)
+	}
+	return datas, nil
 }
