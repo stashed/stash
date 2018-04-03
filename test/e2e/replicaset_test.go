@@ -201,20 +201,6 @@ var _ = Describe("ReplicaSet", func() {
 			f.EventuallyReplicaSet(rs.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		}
 
-		shouldRestoreReplicaSet = func() {
-			shouldBackupNewReplicaSet()
-			recovery.Spec.Workload = api.LocalTypedReference{
-				Kind: api.KindReplicaSet,
-				Name: rs.Name,
-			}
-
-			By("Creating recovery " + recovery.Name)
-			err = f.CreateRecovery(recovery)
-			Expect(err).NotTo(HaveOccurred())
-
-			f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
-		}
-
 		shouldElectLeaderAndBackupRS = func() {
 			By("Creating repository Secret " + cred.Name)
 			err = f.CreateSecret(cred)
@@ -542,34 +528,6 @@ var _ = Describe("ReplicaSet", func() {
 		})
 	})
 
-	Describe("Creating recovery for", func() {
-		AfterEach(func() {
-			f.DeleteReplicaSet(rs.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
-			f.DeleteRecovery(recovery.ObjectMeta)
-			framework.CleanupMinikubeHostPath()
-		})
-
-		Context(`"Local" backend`, func() {
-			BeforeEach(func() {
-				cred = f.SecretForLocalBackend()
-				restic = f.ResticForHostPathLocalBackend()
-				recovery = f.RecoveryForRestic(restic)
-			})
-			It(`should restore local replicaset backup`, shouldRestoreReplicaSet)
-		})
-
-		Context(`"S3" backend`, func() {
-			BeforeEach(func() {
-				cred = f.SecretForS3Backend()
-				restic = f.ResticForS3Backend()
-				recovery = f.RecoveryForRestic(restic)
-			})
-			It(`should restore s3 replicaset backup`, shouldRestoreReplicaSet)
-		})
-	})
-
 	Describe("Leader election for", func() {
 		AfterEach(func() {
 			f.DeleteReplicaSet(rs.ObjectMeta)
@@ -651,7 +609,7 @@ var _ = Describe("ReplicaSet", func() {
 				By("Waiting for scale down rs to 0 replica")
 				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveReplica(0))
 
-				By("Wating for scale up rs to 1 replica")
+				By("Waiting for scale up rs to 1 replica")
 				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveReplica(1))
 
 				By("Waiting for init-container")
@@ -705,7 +663,7 @@ var _ = Describe("ReplicaSet", func() {
 				By("Waiting for scale down rs to 0 replica")
 				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveReplica(0))
 
-				By("Wating for scale up rs to 1 replica")
+				By("Waiting for scale up rs to 1 replica")
 				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveReplica(1))
 
 				By("Waiting for init-container")
@@ -781,7 +739,7 @@ var _ = Describe("ReplicaSet", func() {
 
 				previousBackupCount := repos.Items[0].Status.BackupCount
 
-				By("Wating 2 minutes")
+				By("Waiting 2 minutes")
 				time.Sleep(2 * time.Minute)
 
 				By("Checking that Backup count has not changed")
@@ -845,6 +803,192 @@ var _ = Describe("ReplicaSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(repos.Items).NotTo(BeEmpty())
 				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+			})
+
+		})
+	})
+
+	Describe("Complete Recovery", func() {
+		Context(`"Local" backend, single fileGroup`, func() {
+			AfterEach(func() {
+				f.DeleteReplicaSet(rs.ObjectMeta)
+				f.DeleteRestic(restic.ObjectMeta)
+				f.DeleteSecret(cred.ObjectMeta)
+				f.DeleteRecovery(recovery.ObjectMeta)
+				framework.CleanupMinikubeHostPath()
+			})
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForHostPathLocalBackend()
+				recovery = f.RecoveryForRestic(restic)
+			})
+			It(`recovered volume should have same data`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic")
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating ReplicaSet " + rs.Name)
+				_, err = f.CreateReplicaSet(rs)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for sidecar")
+				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Waiting for Repository CRD")
+				f.EventuallyRepository(api.KindReplicaSet, rs.ObjectMeta, int(*rs.Spec.Replicas)).ShouldNot(BeEmpty())
+
+				By("Waiting for backup to complete")
+				f.EventuallyRepository(api.KindReplicaSet, rs.ObjectMeta, int(*rs.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+
+				By("Waiting for backup event")
+				repos := f.GetRepositories(api.KindReplicaSet, rs.ObjectMeta, int(*rs.Spec.Replicas))
+				Expect(repos).NotTo(BeEmpty())
+				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+
+				By("Reading data from /source/data mountPath")
+				previousData, err := f.ReadDataFromMountedDir(rs.ObjectMeta, &restic)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(previousData).NotTo(BeEmpty())
+
+				By("Deleting rs")
+				f.DeleteReplicaSet(rs.ObjectMeta)
+
+				By("Deleting restic")
+				f.DeleteRestic(restic.ObjectMeta)
+
+				// give some time for rs to terminate
+				time.Sleep(time.Second * 30)
+
+				recovery.Spec.Workload = api.LocalTypedReference{
+					Kind: api.KindReplicaSet,
+					Name: rs.Name,
+				}
+
+				By("Creating recovery " + recovery.Name)
+				err = f.CreateRecovery(recovery)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for recovery succeed")
+				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
+
+				By("Checking cleanup")
+				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
+
+				By("Re-deploying rs with recovered volume")
+				rs.Spec.Template.Spec.Volumes = []core.Volume{
+					{
+						Name: framework.TestSourceDataVolumeName,
+						VolumeSource: core.VolumeSource{
+							HostPath: &core.HostPathVolumeSource{
+								Path: framework.TestRecoveredVolumePath,
+							},
+						},
+					},
+				}
+				_, err = f.CreateReplicaSet(rs)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Reading data from /source/data mountPath")
+				f.EventuallyRecoveredData(rs.ObjectMeta, &restic).Should(BeEquivalentTo(previousData))
+			})
+
+		})
+
+		Context(`"Local" backend, multiple fileGroup`, func() {
+			AfterEach(func() {
+				f.DeleteReplicaSet(rs.ObjectMeta)
+				f.DeleteRestic(restic.ObjectMeta)
+				f.DeleteSecret(cred.ObjectMeta)
+				f.DeleteRecovery(recovery.ObjectMeta)
+				framework.CleanupMinikubeHostPath()
+			})
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForHostPathLocalBackend()
+				restic.Spec.FileGroups = framework.FileGroupsForHostPathVolumeWithMultipleDirectory()
+				recovery = f.RecoveryForRestic(restic)
+			})
+			It(`recovered volume should have same data`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating demo data in hostPath")
+				err = framework.CreateDemoDataInHostPath()
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic")
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				rs.Spec.Template.Spec.Volumes = framework.HostPathVolumeWithMultipleDirectory()
+				By("Creating ReplicaSet " + rs.Name)
+				_, err = f.CreateReplicaSet(rs)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for sidecar")
+				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Waiting for Repository CRD")
+				f.EventuallyRepository(api.KindReplicaSet, rs.ObjectMeta, int(*rs.Spec.Replicas)).ShouldNot(BeEmpty())
+
+				By("Waiting for backup to complete")
+				f.EventuallyRepository(api.KindReplicaSet, rs.ObjectMeta, int(*rs.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+
+				By("Waiting for backup event")
+				repos := f.GetRepositories(api.KindReplicaSet, rs.ObjectMeta, int(*rs.Spec.Replicas))
+				Expect(repos).NotTo(BeEmpty())
+				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+
+				By("Reading data from /source/data mountPath")
+				previousData, err := f.ReadDataFromMountedDir(rs.ObjectMeta, &restic)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(previousData).NotTo(BeEmpty())
+
+				By("Deleting rs")
+				f.DeleteReplicaSet(rs.ObjectMeta)
+
+				By("Deleting restic")
+				f.DeleteRestic(restic.ObjectMeta)
+
+				// give some time for rs to terminate
+				time.Sleep(time.Second * 30)
+
+				recovery.Spec.Workload = api.LocalTypedReference{
+					Kind: api.KindReplicaSet,
+					Name: rs.Name,
+				}
+
+				By("Creating recovery " + recovery.Name)
+				err = f.CreateRecovery(recovery)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for recovery succeed")
+				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
+
+				By("Checking cleanup")
+				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
+
+				By("Re-deploying rs with recovered volume")
+				rs.Spec.Template.Spec.Volumes = []core.Volume{
+					{
+						Name: framework.TestSourceDataVolumeName,
+						VolumeSource: core.VolumeSource{
+							HostPath: &core.HostPathVolumeSource{
+								Path: framework.TestRecoveredVolumePath,
+							},
+						},
+					},
+				}
+				_, err = f.CreateReplicaSet(rs)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Reading data from /source/data mountPath")
+				f.EventuallyRecoveredData(rs.ObjectMeta, &restic).Should(BeEquivalentTo(previousData))
 			})
 
 		})

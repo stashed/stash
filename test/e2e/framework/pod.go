@@ -1,6 +1,9 @@
 package framework
 
 import (
+	"bytes"
+	"fmt"
+
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -47,4 +50,17 @@ func (fi *Invocation) PodTemplate() core.PodTemplateSpec {
 			},
 		},
 	}
+}
+
+func (f *Framework) GetPod(meta metav1.ObjectMeta) (*core.Pod, error) {
+	podList, err := f.KubeClient.CoreV1().Pods(meta.Namespace).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, pod := range podList.Items {
+		if bytes.HasPrefix([]byte(pod.Name), []byte(meta.Name)) {
+			return &pod, nil
+		}
+	}
+	return nil, fmt.Errorf("no pod found for workload %v", meta.Name)
 }

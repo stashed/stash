@@ -16,7 +16,6 @@ import (
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1beta1"
 	core "k8s.io/api/core/v1"
-	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -65,7 +64,7 @@ var _ = Describe("Deployment", func() {
 			By("Waiting for sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
-			By("Wating for Repository CRD")
+			By("Waiting for Repository CRD")
 			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
@@ -94,7 +93,7 @@ var _ = Describe("Deployment", func() {
 			By("Waiting for sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
-			By("Wating for Repository CRD")
+			By("Waiting for Repository CRD")
 			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
@@ -123,7 +122,7 @@ var _ = Describe("Deployment", func() {
 			By("Waiting for sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
-			By("Wating for Repository CRD")
+			By("Waiting for Repository CRD")
 			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
@@ -152,7 +151,7 @@ var _ = Describe("Deployment", func() {
 			By("Waiting for sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
-			By("Wating for Repository CRD")
+			By("Waiting for Repository CRD")
 			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
@@ -186,7 +185,7 @@ var _ = Describe("Deployment", func() {
 			By("Waiting for sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
-			By("Wating for Repository CRD")
+			By("Waiting for Repository CRD")
 			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
@@ -204,21 +203,6 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			f.EventuallyDeployment(deployment.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
-		}
-
-		shouldRestoreDeployment = func() {
-			shouldBackupNewDeployment()
-
-			recovery.Spec.Workload = api.LocalTypedReference{
-				Kind: api.KindDeployment,
-				Name: deployment.Name,
-			}
-
-			By("Creating recovery " + recovery.Name)
-			err = f.CreateRecovery(recovery)
-			Expect(err).NotTo(HaveOccurred())
-
-			f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
 		}
 
 		shouldElectLeaderAndBackupDeployment = func() {
@@ -241,7 +225,7 @@ var _ = Describe("Deployment", func() {
 			By("Waiting for leader election")
 			f.CheckLeaderElection(deployment.ObjectMeta, api.KindDeployment)
 
-			By("Wating for Repository CRD")
+			By("Waiting for Repository CRD")
 			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
@@ -271,7 +255,7 @@ var _ = Describe("Deployment", func() {
 			By("Checking sidecar created")
 			Expect(obj).Should(HaveSidecar(util.StashContainer))
 
-			By("Wating for Repository CRD")
+			By("Waiting for Repository CRD")
 			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
@@ -331,7 +315,7 @@ var _ = Describe("Deployment", func() {
 			By("Checking sidecar added")
 			Expect(obj).Should(HaveSidecar(util.StashContainer))
 
-			By("Wating for Repository CRD")
+			By("Waiting for Repository CRD")
 			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
@@ -380,40 +364,11 @@ var _ = Describe("Deployment", func() {
 			By("Checking sidecar added")
 			Expect(obj).Should(HaveSidecar(util.StashContainer))
 
-			By("Wating for Repository CRD")
+			By("Waiting for Repository CRD")
 			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
 			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
-		}
-
-		shouldDeleteJobAndDependents = func(jobName, namespace string) {
-			By("Checking Job deleted")
-			Eventually(func() bool {
-				_, err := f.KubeClient.BatchV1().Jobs(recovery.Namespace).Get(jobName, metav1.GetOptions{})
-				return kerr.IsNotFound(err) || kerr.IsGone(err)
-			}, time.Minute*3, time.Second*2).Should(BeTrue())
-
-			By("Checking pods deleted")
-			Eventually(func() bool {
-				pods, err := f.KubeClient.CoreV1().Pods(recovery.Namespace).List(metav1.ListOptions{
-					LabelSelector: "job-name=" + jobName, // pods created by job has a job-name label
-				})
-				Expect(err).NotTo(HaveOccurred())
-				return len(pods.Items) == 0
-			}, time.Minute*3, time.Second*2).Should(BeTrue())
-
-			By("Checking service-account deleted")
-			Eventually(func() bool {
-				_, err := f.KubeClient.CoreV1().ServiceAccounts(recovery.Namespace).Get(jobName, metav1.GetOptions{})
-				return kerr.IsNotFound(err) || kerr.IsGone(err)
-			}, time.Minute*3, time.Second*2).Should(BeTrue())
-
-			By("Checking role-binding deleted")
-			Eventually(func() bool {
-				_, err := f.KubeClient.RbacV1().RoleBindings(recovery.Namespace).Get(jobName, metav1.GetOptions{})
-				return kerr.IsNotFound(err) || kerr.IsGone(err)
-			}, time.Minute*3, time.Second*2).Should(BeTrue())
 		}
 	)
 
@@ -577,39 +532,6 @@ var _ = Describe("Deployment", func() {
 		})
 	})
 
-	Describe("Creating recovery for", func() {
-		AfterEach(func() {
-			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
-			f.DeleteRecovery(recovery.ObjectMeta)
-			framework.CleanupMinikubeHostPath()
-		})
-
-		Context(`"Local" backend`, func() {
-			BeforeEach(func() {
-				cred = f.SecretForLocalBackend()
-				restic = f.ResticForHostPathLocalBackend()
-				recovery = f.RecoveryForRestic(restic)
-			})
-			It(`should restore local deployment backup and cleanup dependents`, func() {
-				By("Checking recovery successful")
-				shouldRestoreDeployment()
-				By("Checking cleanup")
-				shouldDeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, recovery.Namespace)
-			})
-		})
-
-		Context(`"S3" backend`, func() {
-			BeforeEach(func() {
-				cred = f.SecretForS3Backend()
-				restic = f.ResticForS3Backend()
-				recovery = f.RecoveryForRestic(restic)
-			})
-			It(`should restore s3 deployment backup`, shouldRestoreDeployment)
-		})
-	})
-
 	Describe("Recovery as job's owner-ref", func() {
 		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
@@ -648,7 +570,7 @@ var _ = Describe("Deployment", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Checking cleanup")
-				shouldDeleteJobAndDependents(jobName, recovery.Namespace)
+				f.DeleteJobAndDependents(jobName, &recovery)
 			})
 		})
 	})
@@ -735,13 +657,13 @@ var _ = Describe("Deployment", func() {
 				By("Waiting for scale down deployment to 0 replica")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(0))
 
-				By("Wating for scale up deployment to 1 replica")
+				By("Waiting for scale up deployment to 1 replica")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(1))
 
 				By("Waiting for init-container")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
 
-				By("Wating for Repository CRD")
+				By("Waiting for Repository CRD")
 				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 				By("Waiting for backup to complete")
@@ -789,13 +711,13 @@ var _ = Describe("Deployment", func() {
 				By("Waiting for scale down deployment to 0 replica")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(0))
 
-				By("Wating for scale up deployment to 1 replica")
+				By("Waiting for scale up deployment to 1 replica")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(1))
 
 				By("Waiting for init-container")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
 
-				By("Wating for Repository CRD")
+				By("Waiting for Repository CRD")
 				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 				By("Waiting for backup to complete")
@@ -864,7 +786,7 @@ var _ = Describe("Deployment", func() {
 				By("Waiting for sidecar")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
-				By("Wating for Repository CRD")
+				By("Waiting for Repository CRD")
 				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 				By("Waiting for backup to complete")
@@ -974,7 +896,7 @@ var _ = Describe("Deployment", func() {
 				By("Waiting for sidecar")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
-				By("Wating for Repository CRD")
+				By("Waiting for Repository CRD")
 				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 				By("Waiting for backup to complete")
@@ -999,7 +921,7 @@ var _ = Describe("Deployment", func() {
 
 				previousBackupCount := repos.Items[0].Status.BackupCount
 
-				By("Wating 2 minutes")
+				By("Waiting 2 minutes")
 				time.Sleep(2 * time.Minute)
 
 				By("Checking that Backup count has not changed")
@@ -1056,7 +978,7 @@ var _ = Describe("Deployment", func() {
 				By("Waiting for sidecar")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
-				By("Wating for Repository CRD")
+				By("Waiting for Repository CRD")
 				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 				By("Waiting for backup to complete")
@@ -1068,6 +990,192 @@ var _ = Describe("Deployment", func() {
 				Expect(repos.Items).NotTo(BeEmpty())
 				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
+			})
+
+		})
+	})
+
+	Describe("Complete Recovery", func() {
+		Context(`"Local" backend,single fileGroup`, func() {
+			AfterEach(func() {
+				f.DeleteDeployment(deployment.ObjectMeta)
+				f.DeleteRestic(restic.ObjectMeta)
+				f.DeleteSecret(cred.ObjectMeta)
+				f.DeleteRecovery(recovery.ObjectMeta)
+				framework.CleanupMinikubeHostPath()
+			})
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForHostPathLocalBackend()
+				recovery = f.RecoveryForRestic(restic)
+			})
+			It(`recovered volume should have same data`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic")
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating Deployment " + deployment.Name)
+				_, err = f.CreateDeployment(deployment)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for sidecar")
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Waiting for Repository CRD")
+				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
+
+				By("Waiting for backup to complete")
+				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+
+				By("Waiting for backup event")
+				repos := f.GetRepositories(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas))
+				Expect(repos).NotTo(BeEmpty())
+				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+
+				By("Reading data from /source/data mountPath")
+				previousData, err := f.ReadDataFromMountedDir(deployment.ObjectMeta, &restic)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(previousData).NotTo(BeEmpty())
+
+				By("Deleting deployment")
+				f.DeleteDeployment(deployment.ObjectMeta)
+
+				By("Deleting restic")
+				f.DeleteRestic(restic.ObjectMeta)
+
+				// give some time for deployment to terminate
+				time.Sleep(time.Second * 30)
+
+				recovery.Spec.Workload = api.LocalTypedReference{
+					Kind: api.KindDeployment,
+					Name: deployment.Name,
+				}
+
+				By("Creating recovery " + recovery.Name)
+				err = f.CreateRecovery(recovery)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for recovery succeed")
+				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
+
+				By("Checking cleanup")
+				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
+
+				By("Re-deploying deployment with recovered volume")
+				deployment.Spec.Template.Spec.Volumes = []core.Volume{
+					{
+						Name: framework.TestSourceDataVolumeName,
+						VolumeSource: core.VolumeSource{
+							HostPath: &core.HostPathVolumeSource{
+								Path: framework.TestRecoveredVolumePath,
+							},
+						},
+					},
+				}
+				_, err = f.CreateDeployment(deployment)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Reading data from /source/data mountPath")
+				f.EventuallyRecoveredData(deployment.ObjectMeta, &restic).Should(BeEquivalentTo(previousData))
+			})
+
+		})
+
+		Context(`"Local" backend, multiple fileGroup`, func() {
+			AfterEach(func() {
+				f.DeleteDeployment(deployment.ObjectMeta)
+				f.DeleteRestic(restic.ObjectMeta)
+				f.DeleteSecret(cred.ObjectMeta)
+				f.DeleteRecovery(recovery.ObjectMeta)
+				framework.CleanupMinikubeHostPath()
+			})
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForHostPathLocalBackend()
+				restic.Spec.FileGroups = framework.FileGroupsForHostPathVolumeWithMultipleDirectory()
+				recovery = f.RecoveryForRestic(restic)
+			})
+			It(`recovered volume should have same data`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating demo data in hostPath")
+				err = framework.CreateDemoDataInHostPath()
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic")
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				deployment.Spec.Template.Spec.Volumes = framework.HostPathVolumeWithMultipleDirectory()
+				By("Creating Deployment " + deployment.Name)
+				_, err = f.CreateDeployment(deployment)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for sidecar")
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Waiting for Repository CRD")
+				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
+
+				By("Waiting for backup to complete")
+				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+
+				By("Waiting for backup event")
+				repos := f.GetRepositories(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas))
+				Expect(repos).NotTo(BeEmpty())
+				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+
+				By("Reading data from /source/data mountPath")
+				previousData, err := f.ReadDataFromMountedDir(deployment.ObjectMeta, &restic)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(previousData).NotTo(BeEmpty())
+
+				By("Deleting deployment")
+				f.DeleteDeployment(deployment.ObjectMeta)
+
+				By("Deleting restic")
+				f.DeleteRestic(restic.ObjectMeta)
+
+				// give some time for deployment to terminate
+				time.Sleep(time.Second * 30)
+
+				recovery.Spec.Workload = api.LocalTypedReference{
+					Kind: api.KindDeployment,
+					Name: deployment.Name,
+				}
+
+				By("Creating recovery " + recovery.Name)
+				err = f.CreateRecovery(recovery)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for recovery succeed")
+				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
+
+				By("Checking cleanup")
+				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
+
+				By("Re-deploying deployment with recovered volume")
+				deployment.Spec.Template.Spec.Volumes = []core.Volume{
+					{
+						Name: framework.TestSourceDataVolumeName,
+						VolumeSource: core.VolumeSource{
+							HostPath: &core.HostPathVolumeSource{
+								Path: framework.TestRecoveredVolumePath,
+							},
+						},
+					},
+				}
+				_, err = f.CreateDeployment(deployment)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Reading data from /source/data mountPath")
+				f.EventuallyRecoveredData(deployment.ObjectMeta, &restic).Should(BeEquivalentTo(previousData))
 			})
 
 		})

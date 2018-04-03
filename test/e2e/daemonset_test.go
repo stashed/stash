@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"os"
 	"time"
 
 	ext_util "github.com/appscode/kutil/extensions/v1beta1"
@@ -200,22 +201,6 @@ var _ = Describe("DaemonSet", func() {
 
 			By("Waiting for sidecar to be removed")
 			f.EventuallyDaemonSet(daemon.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
-		}
-
-		shouldRestoreDemonset = func() {
-			shouldBackupNewDaemonSet()
-			recovery.Spec.Workload = api.LocalTypedReference{
-				Kind: api.KindDaemonSet,
-				Name: daemon.Name,
-			}
-			recovery.Spec.NodeName = "minikube"
-
-			By("Creating recovery " + recovery.Name)
-			err = f.CreateRecovery(recovery)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Waiting for Recovery to be succeed")
-			f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
 		}
 
 		shouldMutateAndBackupNewDaemonSet = func() {
@@ -512,33 +497,6 @@ var _ = Describe("DaemonSet", func() {
 		})
 	})
 
-	Describe("Creating recovery for", func() {
-		AfterEach(func() {
-			f.DeleteDaemonSet(daemon.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
-			f.DeleteRecovery(recovery.ObjectMeta)
-			framework.CleanupMinikubeHostPath()
-		})
-
-		Context(`"Local" backend`, func() {
-			BeforeEach(func() {
-				cred = f.SecretForLocalBackend()
-				restic = f.ResticForHostPathLocalBackend()
-				recovery = f.RecoveryForRestic(restic)
-			})
-			It(`should restore local daemonset backup`, shouldRestoreDemonset)
-		})
-
-		Context(`"S3" backend`, func() {
-			BeforeEach(func() {
-				cred = f.SecretForS3Backend()
-				restic = f.ResticForS3Backend()
-				recovery = f.RecoveryForRestic(restic)
-			})
-			It(`should restore s3 daemonset backup`, shouldRestoreDemonset)
-		})
-	})
 	Describe("Stash Webhook for", func() {
 		BeforeEach(func() {
 			if !f.WebhookEnabled {
@@ -675,7 +633,7 @@ var _ = Describe("DaemonSet", func() {
 
 				previousBackupCount := repos.Items[0].Status.BackupCount
 
-				By("Wating 2 minutes")
+				By("Waiting 2 minutes")
 				time.Sleep(2 * time.Minute)
 
 				By("Checking that Backup count has not changed")
@@ -742,6 +700,195 @@ var _ = Describe("DaemonSet", func() {
 
 			})
 
+		})
+	})
+	Describe("Complete Recovery", func() {
+		Context(`"Local" backend, single fileGroup`, func() {
+			AfterEach(func() {
+				f.DeleteDaemonSet(daemon.ObjectMeta)
+				f.DeleteRestic(restic.ObjectMeta)
+				f.DeleteSecret(cred.ObjectMeta)
+				f.DeleteRecovery(recovery.ObjectMeta)
+				framework.CleanupMinikubeHostPath()
+			})
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForHostPathLocalBackend()
+				recovery = f.RecoveryForRestic(restic)
+			})
+			It(`recovered volume should have same data`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic")
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating DaemonSet " + daemon.Name)
+				_, err = f.CreateDaemonSet(daemon)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for sidecar")
+				f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Waiting for Repository CRD")
+				f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).ShouldNot(BeEmpty())
+
+				By("Waiting for backup to complete")
+				f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+
+				By("Waiting for backup event")
+				repos := f.GetRepositories(api.KindDaemonSet, daemon.ObjectMeta, 1)
+				Expect(repos).NotTo(BeEmpty())
+				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+
+				By("Reading data from /source/data mountPath")
+				previousData, err := f.ReadDataFromMountedDir(daemon.ObjectMeta, &restic)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(previousData).NotTo(BeEmpty())
+
+				By("Deleting daemon")
+				f.DeleteDaemonSet(daemon.ObjectMeta)
+
+				By("Deleting restic")
+				f.DeleteRestic(restic.ObjectMeta)
+
+				// give some time for daemonset to terminate
+				time.Sleep(time.Second * 30)
+
+				recovery.Spec.Workload = api.LocalTypedReference{
+					Kind: api.KindDaemonSet,
+					Name: daemon.Name,
+				}
+				recovery.Spec.NodeName = os.Getenv("NODE_NAME")
+				if recovery.Spec.NodeName == "" {
+					recovery.Spec.NodeName = "minikube"
+				}
+				By("Creating recovery " + recovery.Name)
+				err = f.CreateRecovery(recovery)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for recovery succeed")
+				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
+
+				By("Checking cleanup")
+				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
+
+				By("Re-deploying daemon with recovered volume")
+				daemon.Spec.Template.Spec.Volumes = []core.Volume{
+					{
+						Name: framework.TestSourceDataVolumeName,
+						VolumeSource: core.VolumeSource{
+							HostPath: &core.HostPathVolumeSource{
+								Path: framework.TestRecoveredVolumePath,
+							},
+						},
+					},
+				}
+				_, err = f.CreateDaemonSet(daemon)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Reading data from /source/data mountPath")
+				f.EventuallyRecoveredData(daemon.ObjectMeta, &restic).Should(BeEquivalentTo(previousData))
+			})
+		})
+
+		Context(`"Local" backend, multiple fileGroup`, func() {
+			AfterEach(func() {
+				f.DeleteDaemonSet(daemon.ObjectMeta)
+				f.DeleteRestic(restic.ObjectMeta)
+				f.DeleteSecret(cred.ObjectMeta)
+				f.DeleteRecovery(recovery.ObjectMeta)
+				framework.CleanupMinikubeHostPath()
+			})
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForHostPathLocalBackend()
+				restic.Spec.FileGroups = framework.FileGroupsForHostPathVolumeWithMultipleDirectory()
+				recovery = f.RecoveryForRestic(restic)
+			})
+			It(`recovered volume should have same data`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating demo data in hostPath")
+				err = framework.CreateDemoDataInHostPath()
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic")
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				daemon.Spec.Template.Spec.Volumes = framework.HostPathVolumeWithMultipleDirectory()
+				By("Creating DaemonSet " + daemon.Name)
+				_, err = f.CreateDaemonSet(daemon)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for sidecar")
+				f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Waiting for Repository CRD")
+				f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).ShouldNot(BeEmpty())
+
+				By("Waiting for backup to complete")
+				f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+
+				By("Waiting for backup event")
+				repos := f.GetRepositories(api.KindDaemonSet, daemon.ObjectMeta, 1)
+				Expect(repos).NotTo(BeEmpty())
+				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+
+				By("Reading data from /source/data mountPath")
+				previousData, err := f.ReadDataFromMountedDir(daemon.ObjectMeta, &restic)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(previousData).NotTo(BeEmpty())
+
+				By("Deleting daemon")
+				f.DeleteDaemonSet(daemon.ObjectMeta)
+
+				By("Deleting restic")
+				f.DeleteRestic(restic.ObjectMeta)
+
+				// give some time for daemonset to terminate
+				time.Sleep(time.Second * 30)
+
+				recovery.Spec.Workload = api.LocalTypedReference{
+					Kind: api.KindDaemonSet,
+					Name: daemon.Name,
+				}
+				recovery.Spec.NodeName = os.Getenv("NODE_NAME")
+				if recovery.Spec.NodeName == "" {
+					recovery.Spec.NodeName = "minikube"
+				}
+				By("Creating recovery " + recovery.Name)
+				err = f.CreateRecovery(recovery)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for recovery succeed")
+				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
+
+				By("Checking cleanup")
+				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
+
+				By("Re-deploying daemon with recovered volume")
+				daemon.Spec.Template.Spec.Volumes = []core.Volume{
+					{
+						Name: framework.TestSourceDataVolumeName,
+						VolumeSource: core.VolumeSource{
+							HostPath: &core.HostPathVolumeSource{
+								Path: framework.TestRecoveredVolumePath,
+							},
+						},
+					},
+				}
+				_, err = f.CreateDaemonSet(daemon)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Reading data from /source/data mountPath")
+				f.EventuallyRecoveredData(daemon.ObjectMeta, &restic).Should(BeEquivalentTo(previousData))
+			})
 		})
 	})
 })

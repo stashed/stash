@@ -148,7 +148,7 @@ var _ = Describe("StatefulSet", func() {
 			By("Deleting restic " + restic.Name)
 			f.DeleteRestic(restic.ObjectMeta)
 
-			By("Wating to remove sidecar")
+			By("Waiting to remove sidecar")
 			f.EventuallyStatefulSet(ss.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		}
 
@@ -233,21 +233,6 @@ var _ = Describe("StatefulSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			f.EventuallyStatefulSet(ss.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
-		}
-
-		shouldRestoreStatefulSet = func() {
-			shouldBackupNewStatefulSet()
-			recovery.Spec.Workload = api.LocalTypedReference{
-				Kind: api.KindStatefulSet,
-				Name: ss.Name,
-			}
-			recovery.Spec.PodOrdinal = "0"
-
-			By("Creating recovery " + recovery.Name)
-			err = f.CreateRecovery(recovery)
-			Expect(err).NotTo(HaveOccurred())
-
-			f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
 		}
 
 		shouldMutateAndBackupNewStatefulSet = func() {
@@ -574,35 +559,6 @@ var _ = Describe("StatefulSet", func() {
 		})
 	})
 
-	Describe("Creating recovery for", func() {
-		AfterEach(func() {
-			f.DeleteStatefulSet(ss.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
-			f.DeleteService(svc.ObjectMeta)
-			f.DeleteRecovery(recovery.ObjectMeta)
-			framework.CleanupMinikubeHostPath()
-		})
-
-		Context(`"Local" backend`, func() {
-			BeforeEach(func() {
-				cred = f.SecretForLocalBackend()
-				restic = f.ResticForHostPathLocalBackend()
-				recovery = f.RecoveryForRestic(restic)
-			})
-			It(`should restore local StatefulSet backup`, shouldRestoreStatefulSet)
-		})
-
-		Context(`"S3" backend`, func() {
-			BeforeEach(func() {
-				cred = f.SecretForS3Backend()
-				restic = f.ResticForS3Backend()
-				recovery = f.RecoveryForRestic(restic)
-			})
-			It(`should restore s3 StatefulSet backup`, shouldRestoreStatefulSet)
-		})
-	})
-
 	Describe("Stash Webhook for", func() {
 		BeforeEach(func() {
 			if !f.WebhookEnabled {
@@ -754,7 +710,7 @@ var _ = Describe("StatefulSet", func() {
 
 				previousBackupCount := repos.Items[0].Status.BackupCount
 
-				By("Wating 2 minutes")
+				By("Waiting 2 minutes")
 				time.Sleep(2 * time.Minute)
 
 				By("Checking that Backup count has not changed")
@@ -873,6 +829,194 @@ var _ = Describe("StatefulSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(repos.Items).NotTo(BeEmpty())
 				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+			})
+
+		})
+	})
+
+	Describe("Complete Recovery", func() {
+		Context(`"Local" backend, single fileGroup`, func() {
+			AfterEach(func() {
+				f.DeleteStatefulSet(ss.ObjectMeta)
+				f.DeleteRestic(restic.ObjectMeta)
+				f.DeleteSecret(cred.ObjectMeta)
+				f.DeleteRecovery(recovery.ObjectMeta)
+				framework.CleanupMinikubeHostPath()
+			})
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForHostPathLocalBackend()
+				recovery = f.RecoveryForRestic(restic)
+			})
+			It(`recovered volume should have same data`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic")
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating StatefulSet " + ss.Name)
+				_, err = f.CreateStatefulSet(ss)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for sidecar")
+				f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Waiting for Repository CRD")
+				f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).ShouldNot(BeEmpty())
+
+				By("Waiting for backup to complete")
+				f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+
+				By("Waiting for backup event")
+				repos := f.GetRepositories(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas))
+				Expect(repos).NotTo(BeEmpty())
+				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+
+				By("Reading data from /source/data mountPath")
+				previousData, err := f.ReadDataFromMountedDir(ss.ObjectMeta, &restic)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(previousData).NotTo(BeEmpty())
+
+				By("Deleting ss")
+				f.DeleteStatefulSet(ss.ObjectMeta)
+
+				By("Deleting restic")
+				f.DeleteRestic(restic.ObjectMeta)
+
+				// give some time for ss to terminate
+				time.Sleep(time.Second * 30)
+
+				recovery.Spec.Workload = api.LocalTypedReference{
+					Kind: api.KindStatefulSet,
+					Name: ss.Name,
+				}
+
+				recovery.Spec.PodOrdinal = "0"
+				By("Creating recovery " + recovery.Name)
+				err = f.CreateRecovery(recovery)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for recovery succeed")
+				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
+
+				By("Checking cleanup")
+				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
+
+				By("Re-deploying ss with recovered volume")
+				ss.Spec.Template.Spec.Volumes = []core.Volume{
+					{
+						Name: framework.TestSourceDataVolumeName,
+						VolumeSource: core.VolumeSource{
+							HostPath: &core.HostPathVolumeSource{
+								Path: framework.TestRecoveredVolumePath,
+							},
+						},
+					},
+				}
+				_, err = f.CreateStatefulSet(ss)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Reading data from /source/data mountPath")
+				f.EventuallyRecoveredData(ss.ObjectMeta, &restic).Should(BeEquivalentTo(previousData))
+			})
+
+		})
+
+		Context(`"Local" backend, multiple fileGroup`, func() {
+			AfterEach(func() {
+				f.DeleteStatefulSet(ss.ObjectMeta)
+				f.DeleteRestic(restic.ObjectMeta)
+				f.DeleteSecret(cred.ObjectMeta)
+				f.DeleteRecovery(recovery.ObjectMeta)
+				framework.CleanupMinikubeHostPath()
+			})
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForHostPathLocalBackend()
+				restic.Spec.FileGroups = framework.FileGroupsForHostPathVolumeWithMultipleDirectory()
+				recovery = f.RecoveryForRestic(restic)
+			})
+			It(`recovered volume should have same data`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating demo data in hostPath")
+				err = framework.CreateDemoDataInHostPath()
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic")
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				ss.Spec.Template.Spec.Volumes = framework.HostPathVolumeWithMultipleDirectory()
+				By("Creating StatefulSet " + ss.Name)
+				_, err = f.CreateStatefulSet(ss)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for sidecar")
+				f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Waiting for Repository CRD")
+				f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).ShouldNot(BeEmpty())
+
+				By("Waiting for backup to complete")
+				f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+
+				By("Waiting for backup event")
+				repos := f.GetRepositories(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas))
+				Expect(repos).NotTo(BeEmpty())
+				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+
+				By("Reading data from /source/data mountPath")
+				previousData, err := f.ReadDataFromMountedDir(ss.ObjectMeta, &restic)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(previousData).NotTo(BeEmpty())
+
+				By("Deleting ss")
+				f.DeleteStatefulSet(ss.ObjectMeta)
+
+				By("Deleting restic")
+				f.DeleteRestic(restic.ObjectMeta)
+
+				// give some time for ss to terminate
+				time.Sleep(time.Second * 30)
+
+				recovery.Spec.Workload = api.LocalTypedReference{
+					Kind: api.KindStatefulSet,
+					Name: ss.Name,
+				}
+
+				recovery.Spec.PodOrdinal = "0"
+				By("Creating recovery " + recovery.Name)
+				err = f.CreateRecovery(recovery)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for recovery succeed")
+				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
+
+				By("Checking cleanup")
+				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
+
+				By("Re-deploying ss with recovered volume")
+				ss.Spec.Template.Spec.Volumes = []core.Volume{
+					{
+						Name: framework.TestSourceDataVolumeName,
+						VolumeSource: core.VolumeSource{
+							HostPath: &core.HostPathVolumeSource{
+								Path: framework.TestRecoveredVolumePath,
+							},
+						},
+					},
+				}
+				_, err = f.CreateStatefulSet(ss)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Reading data from /source/data mountPath")
+				f.EventuallyRecoveredData(ss.ObjectMeta, &restic).Should(BeEquivalentTo(previousData))
 			})
 
 		})

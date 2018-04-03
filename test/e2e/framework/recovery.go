@@ -10,6 +10,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	TestRecoveredVolumePath = "/data/stash-test/restic-restored"
+)
+
 func (fi *Invocation) RecoveryForRestic(restic api.Restic) api.Recovery {
 	paths := make([]string, 0)
 	for _, fg := range restic.Spec.FileGroups {
@@ -32,7 +36,7 @@ func (fi *Invocation) RecoveryForRestic(restic api.Restic) api.Recovery {
 					MountPath: restic.Spec.VolumeMounts[0].MountPath,
 					VolumeSource: core.VolumeSource{
 						HostPath: &core.HostPathVolumeSource{
-							Path: "/data/stash-test/restic-restored",
+							Path: TestRecoveredVolumePath,
 						},
 					},
 				},
@@ -56,4 +60,30 @@ func (f *Framework) EventuallyRecoverySucceed(meta metav1.ObjectMeta) GomegaAsyn
 		Expect(err).NotTo(HaveOccurred())
 		return obj.Status.Phase == api.RecoverySucceeded
 	}, time.Minute*5, time.Second*5)
+}
+
+func (f *Framework) EventuallyRecoveredData(meta metav1.ObjectMeta, restic *api.Restic) GomegaAsyncAssertion {
+	return Eventually(func() []string {
+		recoveredData, err := f.ReadDataFromMountedDir(meta, restic)
+		if err != nil {
+			return nil
+		}
+		return recoveredData
+	}, time.Minute*5, time.Second*5)
+}
+
+func (f *Framework) ReadDataFromMountedDir(meta metav1.ObjectMeta, restic *api.Restic) ([]string, error) {
+	pod, err := f.GetPod(meta)
+	if err != nil {
+		return nil, err
+	}
+	datas := make([]string, 0)
+	for _, fg := range restic.Spec.FileGroups {
+		data, err := f.ExecOnPod(pod, "ls", fg.Path)
+		if err != nil {
+			return nil, err
+		}
+		datas = append(datas, data)
+	}
+	return datas, nil
 }

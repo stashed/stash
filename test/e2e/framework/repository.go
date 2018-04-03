@@ -1,9 +1,9 @@
 package framework
 
 import (
+	"math"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/appscode/go/log"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -13,30 +13,34 @@ import (
 
 func (f *Framework) EventuallyRepository(kind string, objMeta metav1.ObjectMeta, replicas int) GomegaAsyncAssertion {
 	return Eventually(func() []*api.Repository {
-		repoNames := make([]string, 0)
-		switch kind {
-		case api.KindDeployment, api.KindReplicationController, api.KindReplicaSet:
-			repoNames = append(repoNames, strings.ToLower(kind)+"."+objMeta.Name)
-		case api.KindStatefulSet:
-			for i := 0; i < replicas; i++ {
-				repoNames = append(repoNames, strings.ToLower(kind)+"."+objMeta.Name+"-"+strconv.Itoa(i))
-			}
-		case api.KindDaemonSet:
-			nodeName := os.Getenv("NODE_NAME")
-			if nodeName == "" {
-				nodeName = "minikube"
-			}
-			repoNames = append(repoNames, strings.ToLower(kind)+"."+objMeta.Name+"."+nodeName)
-		}
-		repositories := make([]*api.Repository, 0)
-		for _, repoName := range repoNames {
-			obj, err := f.StashClient.StashV1alpha1().Repositories(objMeta.Namespace).Get(repoName, metav1.GetOptions{})
-			if err == nil {
-				repositories = append(repositories, obj)
-			}
-		}
-		return repositories
+		return f.GetRepositories(kind, objMeta, replicas)
 	})
+}
+
+func (f *Framework) GetRepositories(kind string, objMeta metav1.ObjectMeta, replicas int) []*api.Repository {
+	repoNames := make([]string, 0)
+	nodeName := os.Getenv("NODE_NAME")
+	if nodeName == "" {
+		nodeName = "minikube"
+	}
+
+	workload := api.LocalTypedReference{Name: objMeta.Name, Kind: kind}
+	switch kind {
+	case api.KindDeployment, api.KindReplicationController, api.KindReplicaSet, api.KindDaemonSet:
+		repoNames = append(repoNames, workload.GetRepositoryCRDName("", nodeName))
+	case api.KindStatefulSet:
+		for i := 0; i < replicas; i++ {
+			repoNames = append(repoNames, workload.GetRepositoryCRDName(objMeta.Name+"-"+strconv.Itoa(i), nodeName))
+		}
+	}
+	repositories := make([]*api.Repository, 0)
+	for _, repoName := range repoNames {
+		obj, err := f.StashClient.StashV1alpha1().Repositories(objMeta.Namespace).Get(repoName, metav1.GetOptions{})
+		if err == nil {
+			repositories = append(repositories, obj)
+		}
+	}
+	return repositories
 }
 
 func (f *Framework) DeleteRepositories() {
@@ -51,11 +55,11 @@ func (f *Framework) DeleteRepositories() {
 }
 
 func (f *Framework) BackupCountInRepositoriesStatus(repos []*api.Repository) int64 {
-	backupCount := int64(99999)
+	var backupCount int64 = math.MaxInt64
 
-	//use minimum backupCount among all repos
+	// use minimum backupCount among all repos
 	for _, repo := range repos {
-		if backupCount > repo.Status.BackupCount {
+		if repo.Status.BackupCount < backupCount {
 			backupCount = repo.Status.BackupCount
 		}
 	}

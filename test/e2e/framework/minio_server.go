@@ -190,7 +190,7 @@ func (fi *Invocation) DeploymentForMinioServer() apps.Deployment {
 func (fi *Invocation) CreateDeploymentForMinioServer(obj apps.Deployment) error {
 	_, err := fi.KubeClient.AppsV1beta1().Deployments(obj.Namespace).Create(&obj)
 	if err == nil {
-		//wating 30 second to minio server to be ready
+		//Waiting 30 second to minio server to be ready
 		time.Sleep(time.Second * 30)
 	}
 	return err

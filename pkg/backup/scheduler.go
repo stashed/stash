@@ -172,17 +172,9 @@ func (c *Controller) runOnceForScheduler() error {
 }
 
 func (c *Controller) checkOnceForScheduler() (err error) {
-	var restic *api.Restic
-	restic, err = c.rLister.Restics(c.opt.Namespace).Get(c.opt.ResticName)
-	if kerr.IsNotFound(err) {
-		err = nil
-		return
-	} else if err != nil {
-		return
-	}
 
 	var repository *api.Repository
-	repository, err = c.stashClient.StashV1alpha1().Repositories(c.opt.Namespace).Get(c.getRepositoryCrdName(restic), metav1.GetOptions{})
+	repository, err = c.stashClient.StashV1alpha1().Repositories(c.opt.Namespace).Get(c.opt.Workload.GetRepositoryCRDName(c.opt.PodName, c.opt.NodeName), metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		err = nil
 		return

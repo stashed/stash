@@ -1,5 +1,5 @@
 hash: 39b9784006e2fdde6ce6820baacfc8afceab5316e268a079ea05abbf307d23f1
-updated: 2018-04-01T02:12:22.441786546-07:00
+updated: 2018-04-02T18:01:31.628470895-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -37,7 +37,7 @@ imports:
   - runtime/serializer/versioning
   - workload/v1
 - name: github.com/appscode/kutil
-  version: c5d28c86658474b8138b099d4a210ca249ec131f
+  version: 83f1a2ee558a663702929a15ff7cfdfbfef331f1
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
@@ -113,6 +113,10 @@ imports:
   subpackages:
   - digestset
   - reference
+- name: github.com/docker/spdystream
+  version: 449fdfce4d962303d702fec724ef0ad181c92528
+  subpackages:
+  - spdy
 - name: github.com/elazarl/go-bindata-assetfs
   version: 3dcc96556217539f50599357fb481ac0dc7439b9
 - name: github.com/emicklei/go-restful
@@ -513,12 +517,14 @@ imports:
   - pkg/util/errors
   - pkg/util/framer
   - pkg/util/httpstream
+  - pkg/util/httpstream/spdy
   - pkg/util/intstr
   - pkg/util/json
   - pkg/util/mergepatch
   - pkg/util/net
   - pkg/util/proxy
   - pkg/util/rand
+  - pkg/util/remotecommand
   - pkg/util/runtime
   - pkg/util/sets
   - pkg/util/strategicpatch
@@ -770,9 +776,12 @@ imports:
   - tools/pager
   - tools/record
   - tools/reference
+  - tools/remotecommand
   - transport
+  - transport/spdy
   - util/buffer
   - util/cert
+  - util/exec
   - util/flowcontrol
   - util/homedir
   - util/integer

@@ -61,9 +61,9 @@ Here, we are going describe some important sections of `Repository` CRD.
 
 `spec.backend` holds the backend information where the backup snapshots are being stored. To learn how to configure various backends for Restic, please visit [here](/docs/guides/backends.md).
 
-### spec.backupPath
+### backend prefix/subPath
 
-`spec.backupPath` denotes the directory inside the backend where the snapshots are being stored.
+`prefix` of any backend denotes the directory inside the backend where the snapshots are being stored. If the backend is a **Local** backend then `subPath` is used for this purpose.
 
 ## Repository Status
 

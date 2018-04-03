@@ -1,8 +1,6 @@
 package backup
 
 import (
-	"strings"
-
 	"github.com/appscode/go/log"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
@@ -11,7 +9,7 @@ import (
 func (c *Controller) createRepositoryCrdIfNotExist(restic *api.Restic, prefix string) (*api.Repository, error) {
 	repository := &api.Repository{}
 	repository.Namespace = restic.Namespace
-	repository.Name = c.getRepositoryCrdName(restic)
+	repository.Name = c.opt.Workload.GetRepositoryCRDName(c.opt.PodName, c.opt.NodeName)
 
 	repository.Labels = map[string]string{
 		"restic":        restic.Name,
@@ -49,17 +47,4 @@ func (c *Controller) createRepositoryCrdIfNotExist(restic *api.Restic, prefix st
 		log.Infof("Repository %v created", repository.Name)
 	}
 	return repo, err
-}
-
-func (c *Controller) getRepositoryCrdName(restic *api.Restic) string {
-	name := ""
-	switch c.opt.Workload.Kind {
-	case api.KindDeployment, api.KindReplicaSet, api.KindReplicationController:
-		name = strings.ToLower(c.opt.Workload.Kind) + "." + c.opt.Workload.Name
-	case api.KindStatefulSet:
-		name = strings.ToLower(c.opt.Workload.Kind) + "." + c.opt.PodName
-	case api.KindDaemonSet:
-		name = strings.ToLower(c.opt.Workload.Kind) + "." + c.opt.Workload.Name + "." + c.opt.NodeName
-	}
-	return name
 }
