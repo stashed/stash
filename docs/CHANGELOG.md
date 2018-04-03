@@ -2,23 +2,23 @@
 title: Changelog | Stash
 description: Changelog
 menu:
-  product_stash_0.7.0-rc.2:
+  product_stash_0.7.0-rc.3:
     identifier: changelog-stash
     name: Changelog
     parent: welcome
     weight: 10
 product_name: stash
-menu_name: product_stash_0.7.0-rc.2
+menu_name: product_stash_0.7.0-rc.3
 section_menu_id: welcome
-url: /products/stash/0.7.0-rc.2/welcome/changelog/
+url: /products/stash/0.7.0-rc.3/welcome/changelog/
 aliases:
-  - /products/stash/0.7.0-rc.2/CHANGELOG/
+  - /products/stash/0.7.0-rc.3/CHANGELOG/
 ---
 
 # Change Log
 
-## [0.7.0-rc.2](https://github.com/appscode/stash/tree/0.7.0-rc.2) (2018-03-24)
-[Full Changelog](https://github.com/appscode/stash/compare/0.7.0-rc.1...0.7.0-rc.2)
+## [0.7.0-rc.3](https://github.com/appscode/stash/tree/0.7.0-rc.3) (2018-03-24)
+[Full Changelog](https://github.com/appscode/stash/compare/0.7.0-rc.1...0.7.0-rc.3)
 
 **Fixed bugs:**
 
@@ -27,7 +27,7 @@ aliases:
 
 **Merged pull requests:**
 
-- Prepare docs for 0.7.0-rc.2 [\#391](https://github.com/appscode/stash/pull/391) ([tamalsaha](https://github.com/tamalsaha))
+- Prepare docs for 0.7.0-rc.3 [\#391](https://github.com/appscode/stash/pull/391) ([tamalsaha](https://github.com/tamalsaha))
 - Add variable for dockerRegistry [\#390](https://github.com/appscode/stash/pull/390) ([tamalsaha](https://github.com/tamalsaha))
 - Reorg objects deleted in uninstall command [\#389](https://github.com/appscode/stash/pull/389) ([tamalsaha](https://github.com/tamalsaha))
 - Fix Statefulset Example [\#385](https://github.com/appscode/stash/pull/385) ([rodrigozc](https://github.com/rodrigozc))
