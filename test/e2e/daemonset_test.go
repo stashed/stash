@@ -779,7 +779,7 @@ var _ = Describe("DaemonSet", func() {
 				err = f.CreateRecovery(recovery)
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Wating for recovery succeed")
+				By("Waiting for recovery succeed")
 				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
 
 				By("Checking cleanup")

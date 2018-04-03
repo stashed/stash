@@ -1,6 +1,7 @@
 package framework
 
 import (
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -51,11 +52,11 @@ func (f *Framework) DeleteRepositories() {
 }
 
 func (f *Framework) BackupCountInRepositoriesStatus(repos []*api.Repository) int64 {
-	backupCount := int64(99999)
+	var backupCount int64 = math.MaxInt64
 
-	//use minimum backupCount among all repos
+	// use minimum backupCount among all repos
 	for _, repo := range repos {
-		if backupCount > repo.Status.BackupCount {
+		if repo.Status.BackupCount < backupCount {
 			backupCount = repo.Status.BackupCount
 		}
 	}
