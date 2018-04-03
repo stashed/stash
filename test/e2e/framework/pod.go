@@ -2,8 +2,8 @@ package framework
 
 import (
 	"bytes"
+	"fmt"
 
-	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -52,17 +52,15 @@ func (fi *Invocation) PodTemplate() core.PodTemplateSpec {
 	}
 }
 
-func (f *Framework) EventuallyPod(meta metav1.ObjectMeta) GomegaAsyncAssertion {
-	return Eventually(func() *core.Pod {
-		podList, err := f.KubeClient.CoreV1().Pods(meta.Namespace).List(metav1.ListOptions{})
-		if err != nil {
-			return nil
+func (f *Framework) GetPod(meta metav1.ObjectMeta) (*core.Pod, error) {
+	podList, err := f.KubeClient.CoreV1().Pods(meta.Namespace).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, pod := range podList.Items {
+		if bytes.HasPrefix([]byte(pod.Name), []byte(meta.Name)) {
+			return &pod, nil
 		}
-		for _, pod := range podList.Items {
-			if bytes.HasPrefix([]byte(pod.Name), []byte(meta.Name)) {
-				return &pod
-			}
-		}
-		return nil
-	})
+	}
+	return nil, fmt.Errorf("no pod found for workload %v", meta.Name)
 }

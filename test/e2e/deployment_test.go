@@ -64,7 +64,7 @@ var _ = Describe("Deployment", func() {
 			By("Waiting for sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
-			By("Wating for Repository CRD")
+			By("Waiting for Repository CRD")
 			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
@@ -93,7 +93,7 @@ var _ = Describe("Deployment", func() {
 			By("Waiting for sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
-			By("Wating for Repository CRD")
+			By("Waiting for Repository CRD")
 			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
@@ -122,7 +122,7 @@ var _ = Describe("Deployment", func() {
 			By("Waiting for sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
-			By("Wating for Repository CRD")
+			By("Waiting for Repository CRD")
 			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
@@ -151,7 +151,7 @@ var _ = Describe("Deployment", func() {
 			By("Waiting for sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
-			By("Wating for Repository CRD")
+			By("Waiting for Repository CRD")
 			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
@@ -185,7 +185,7 @@ var _ = Describe("Deployment", func() {
 			By("Waiting for sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
-			By("Wating for Repository CRD")
+			By("Waiting for Repository CRD")
 			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
@@ -225,7 +225,7 @@ var _ = Describe("Deployment", func() {
 			By("Waiting for leader election")
 			f.CheckLeaderElection(deployment.ObjectMeta, api.KindDeployment)
 
-			By("Wating for Repository CRD")
+			By("Waiting for Repository CRD")
 			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
@@ -255,7 +255,7 @@ var _ = Describe("Deployment", func() {
 			By("Checking sidecar created")
 			Expect(obj).Should(HaveSidecar(util.StashContainer))
 
-			By("Wating for Repository CRD")
+			By("Waiting for Repository CRD")
 			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
@@ -315,7 +315,7 @@ var _ = Describe("Deployment", func() {
 			By("Checking sidecar added")
 			Expect(obj).Should(HaveSidecar(util.StashContainer))
 
-			By("Wating for Repository CRD")
+			By("Waiting for Repository CRD")
 			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
@@ -364,7 +364,7 @@ var _ = Describe("Deployment", func() {
 			By("Checking sidecar added")
 			Expect(obj).Should(HaveSidecar(util.StashContainer))
 
-			By("Wating for Repository CRD")
+			By("Waiting for Repository CRD")
 			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
@@ -657,13 +657,13 @@ var _ = Describe("Deployment", func() {
 				By("Waiting for scale down deployment to 0 replica")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(0))
 
-				By("Wating for scale up deployment to 1 replica")
+				By("Waiting for scale up deployment to 1 replica")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(1))
 
 				By("Waiting for init-container")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
 
-				By("Wating for Repository CRD")
+				By("Waiting for Repository CRD")
 				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 				By("Waiting for backup to complete")
@@ -711,13 +711,13 @@ var _ = Describe("Deployment", func() {
 				By("Waiting for scale down deployment to 0 replica")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(0))
 
-				By("Wating for scale up deployment to 1 replica")
+				By("Waiting for scale up deployment to 1 replica")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(1))
 
 				By("Waiting for init-container")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
 
-				By("Wating for Repository CRD")
+				By("Waiting for Repository CRD")
 				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 				By("Waiting for backup to complete")
@@ -786,7 +786,7 @@ var _ = Describe("Deployment", func() {
 				By("Waiting for sidecar")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
-				By("Wating for Repository CRD")
+				By("Waiting for Repository CRD")
 				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 				By("Waiting for backup to complete")
@@ -896,7 +896,7 @@ var _ = Describe("Deployment", func() {
 				By("Waiting for sidecar")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
-				By("Wating for Repository CRD")
+				By("Waiting for Repository CRD")
 				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 				By("Waiting for backup to complete")
@@ -921,7 +921,7 @@ var _ = Describe("Deployment", func() {
 
 				previousBackupCount := repos.Items[0].Status.BackupCount
 
-				By("Wating 2 minutes")
+				By("Waiting 2 minutes")
 				time.Sleep(2 * time.Minute)
 
 				By("Checking that Backup count has not changed")
@@ -978,7 +978,7 @@ var _ = Describe("Deployment", func() {
 				By("Waiting for sidecar")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
-				By("Wating for Repository CRD")
+				By("Waiting for Repository CRD")
 				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 				By("Waiting for backup to complete")
@@ -1025,24 +1025,19 @@ var _ = Describe("Deployment", func() {
 				By("Waiting for sidecar")
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
-				By("Wating for Repository CRD")
+				By("Waiting for Repository CRD")
 				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
 
 				By("Waiting for backup to complete")
 				f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(repos.Items).NotTo(BeEmpty())
-				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+				repos := f.GetRepositories(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas))
+				Expect(repos).NotTo(BeEmpty())
+				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
-				pod := &core.Pod{}
-				By("Identifying pod of deployment: " + deployment.Name)
-				f.EventuallyPod(deployment.ObjectMeta).ShouldNot(WithTransform(func(obj *core.Pod) *core.Pod {
-					pod = obj
-					return pod
-				}, BeNil()))
+				pod, err := f.GetPod(deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				By("Reading data from /source/data mountPath")
 				previousData, err := f.ExecOnPod(pod, "ls", "/source/data/stash-data")
@@ -1067,7 +1062,7 @@ var _ = Describe("Deployment", func() {
 				err = f.CreateRecovery(recovery)
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Wating for recovery succeed")
+				By("Waiting for recovery succeed")
 				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
 
 				By("Checking cleanup")
@@ -1079,7 +1074,7 @@ var _ = Describe("Deployment", func() {
 						Name: framework.TestSourceDataVolumeName,
 						VolumeSource: core.VolumeSource{
 							HostPath: &core.HostPathVolumeSource{
-								Path: "/data/stash-test/restic-restored",
+								Path: framework.TestRecoveredVolumePath,
 							},
 						},
 					},
@@ -1087,14 +1082,8 @@ var _ = Describe("Deployment", func() {
 				_, err = f.CreateDeployment(deployment)
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Identifying pod of new deployment: " + deployment.Name)
-				f.EventuallyPod(deployment.ObjectMeta).ShouldNot(WithTransform(func(obj *core.Pod) *core.Pod {
-					pod = obj
-					return pod
-				}, BeNil()))
-
 				By("Reading data from /source/data mountPath")
-				f.EventuallyRecoveredData(pod).Should(BeEquivalentTo(previousData))
+				f.EventuallyRecoveredData(deployment.ObjectMeta).Should(BeEquivalentTo(previousData))
 			})
 
 		})

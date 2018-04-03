@@ -609,7 +609,7 @@ var _ = Describe("ReplicaSet", func() {
 				By("Waiting for scale down rs to 0 replica")
 				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveReplica(0))
 
-				By("Wating for scale up rs to 1 replica")
+				By("Waiting for scale up rs to 1 replica")
 				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveReplica(1))
 
 				By("Waiting for init-container")
@@ -663,7 +663,7 @@ var _ = Describe("ReplicaSet", func() {
 				By("Waiting for scale down rs to 0 replica")
 				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveReplica(0))
 
-				By("Wating for scale up rs to 1 replica")
+				By("Waiting for scale up rs to 1 replica")
 				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveReplica(1))
 
 				By("Waiting for init-container")
@@ -739,7 +739,7 @@ var _ = Describe("ReplicaSet", func() {
 
 				previousBackupCount := repos.Items[0].Status.BackupCount
 
-				By("Wating 2 minutes")
+				By("Waiting 2 minutes")
 				time.Sleep(2 * time.Minute)
 
 				By("Checking that Backup count has not changed")
@@ -838,24 +838,19 @@ var _ = Describe("ReplicaSet", func() {
 				By("Waiting for sidecar")
 				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
-				By("Wating for Repository CRD")
+				By("Waiting for Repository CRD")
 				f.EventuallyRepository(api.KindReplicaSet, rs.ObjectMeta, int(*rs.Spec.Replicas)).ShouldNot(BeEmpty())
 
 				By("Waiting for backup to complete")
 				f.EventuallyRepository(api.KindReplicaSet, rs.ObjectMeta, int(*rs.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(repos.Items).NotTo(BeEmpty())
-				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+				repos := f.GetRepositories(api.KindReplicaSet, rs.ObjectMeta, int(*rs.Spec.Replicas))
+				Expect(repos).NotTo(BeEmpty())
+				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
-				pod := &core.Pod{}
-				By("Identifying pod of rs: " + rs.Name)
-				f.EventuallyPod(rs.ObjectMeta).ShouldNot(WithTransform(func(obj *core.Pod) *core.Pod {
-					pod = obj
-					return pod
-				}, BeNil()))
+				pod, err := f.GetPod(rs.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				By("Reading data from /source/data mountPath")
 				previousData, err := f.ExecOnPod(pod, "ls", "/source/data/stash-data")
@@ -880,7 +875,7 @@ var _ = Describe("ReplicaSet", func() {
 				err = f.CreateRecovery(recovery)
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Wating for recovery succeed")
+				By("Waiting for recovery succeed")
 				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
 
 				By("Checking cleanup")
@@ -892,7 +887,7 @@ var _ = Describe("ReplicaSet", func() {
 						Name: framework.TestSourceDataVolumeName,
 						VolumeSource: core.VolumeSource{
 							HostPath: &core.HostPathVolumeSource{
-								Path: "/data/stash-test/restic-restored",
+								Path: framework.TestRecoveredVolumePath,
 							},
 						},
 					},
@@ -900,14 +895,8 @@ var _ = Describe("ReplicaSet", func() {
 				_, err = f.CreateReplicaSet(rs)
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Identifying pod of new rs: " + rs.Name)
-				f.EventuallyPod(rs.ObjectMeta).ShouldNot(WithTransform(func(obj *core.Pod) *core.Pod {
-					pod = obj
-					return pod
-				}, BeNil()))
-
 				By("Reading data from /source/data mountPath")
-				f.EventuallyRecoveredData(pod).Should(BeEquivalentTo(previousData))
+				f.EventuallyRecoveredData(rs.ObjectMeta).Should(BeEquivalentTo(previousData))
 			})
 
 		})

@@ -633,7 +633,7 @@ var _ = Describe("DaemonSet", func() {
 
 				previousBackupCount := repos.Items[0].Status.BackupCount
 
-				By("Wating 2 minutes")
+				By("Waiting 2 minutes")
 				time.Sleep(2 * time.Minute)
 
 				By("Checking that Backup count has not changed")
@@ -702,7 +702,7 @@ var _ = Describe("DaemonSet", func() {
 
 		})
 	})
-	Describe("Complete Recovery", func() {
+	FDescribe("Complete Recovery", func() {
 		Context(`"Local" backend`, func() {
 			AfterEach(func() {
 				f.DeleteDaemonSet(daemon.ObjectMeta)
@@ -732,24 +732,19 @@ var _ = Describe("DaemonSet", func() {
 				By("Waiting for sidecar")
 				f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
-				By("Wating for Repository CRD")
+				By("Waiting for Repository CRD")
 				f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).ShouldNot(BeEmpty())
 
 				By("Waiting for backup to complete")
 				f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(repos.Items).NotTo(BeEmpty())
-				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+				repos := f.GetRepositories(api.KindDaemonSet, daemon.ObjectMeta, 1)
+				Expect(repos).NotTo(BeEmpty())
+				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
-				pod := &core.Pod{}
-				By("Identifying pod of daemon: " + daemon.Name)
-				f.EventuallyPod(daemon.ObjectMeta).ShouldNot(WithTransform(func(obj *core.Pod) *core.Pod {
-					pod = obj
-					return pod
-				}, BeNil()))
+				pod, err := f.GetPod(daemon.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				By("Reading data from /source/data mountPath")
 				previousData, err := f.ExecOnPod(pod, "ls", "/source/data/stash-data")
@@ -769,11 +764,9 @@ var _ = Describe("DaemonSet", func() {
 					Kind: api.KindDaemonSet,
 					Name: daemon.Name,
 				}
-
-				if os.Getenv("NODE_NAME") == "" {
+				recovery.Spec.NodeName = os.Getenv("NODE_NAME")
+				if recovery.Spec.NodeName == "" {
 					recovery.Spec.NodeName = "minikube"
-				} else {
-					recovery.Spec.NodeName = os.Getenv("NODE_NAME")
 				}
 				By("Creating recovery " + recovery.Name)
 				err = f.CreateRecovery(recovery)
@@ -791,7 +784,7 @@ var _ = Describe("DaemonSet", func() {
 						Name: framework.TestSourceDataVolumeName,
 						VolumeSource: core.VolumeSource{
 							HostPath: &core.HostPathVolumeSource{
-								Path: "/data/stash-test/restic-restored",
+								Path: framework.TestRecoveredVolumePath,
 							},
 						},
 					},
@@ -799,14 +792,8 @@ var _ = Describe("DaemonSet", func() {
 				_, err = f.CreateDaemonSet(daemon)
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Identifying pod of new daemon: " + daemon.Name)
-				f.EventuallyPod(daemon.ObjectMeta).ShouldNot(WithTransform(func(obj *core.Pod) *core.Pod {
-					pod = obj
-					return pod
-				}, BeNil()))
-
 				By("Reading data from /source/data mountPath")
-				f.EventuallyRecoveredData(pod).Should(BeEquivalentTo(previousData))
+				f.EventuallyRecoveredData(daemon.ObjectMeta).Should(BeEquivalentTo(previousData))
 			})
 		})
 	})
