@@ -2,13 +2,13 @@
 title: Stash Overview
 description: Stash Overview
 menu:
-  product_stash_0.7.0-rc.2:
+  product_stash_0.7.0-rc.3:
     identifier: overview-concepts
     name: Overview
     parent: what-is-stash
     weight: 10
 product_name: stash
-menu_name: product_stash_0.7.0-rc.2
+menu_name: product_stash_0.7.0-rc.3
 section_menu_id: concepts
 ---
 # Stash

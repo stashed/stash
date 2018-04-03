@@ -2,13 +2,13 @@
 title: Monitoring | Stash
 description: monitoring of Stash
 menu:
-  product_stash_0.7.0-rc.2:
+  product_stash_0.7.0-rc.3:
     identifier: monitoring-stash
     name: Monitoring
     parent: guides
     weight: 45
 product_name: stash
-menu_name: product_stash_0.7.0-rc.2
+menu_name: product_stash_0.7.0-rc.3
 section_menu_id: guides
 ---
 
