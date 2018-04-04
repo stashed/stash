@@ -20,6 +20,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	ResourceKindSnapshot     = "Snapshot"
+	ResourcePluralSnapshot   = "snapshots"
+	ResourceSingularSnapshot = "snapshot"
+)
+
 // +genclient
 // +genclient:skipVerbs=create,update,patch,deleteCollection,watch
 // +k8s:openapi-gen=true
