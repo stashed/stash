@@ -6,10 +6,16 @@ import (
 
 	hooks "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
 	admissionreview "github.com/appscode/kubernetes-webhook-util/registry/admissionreview/v1beta1"
+	"github.com/appscode/stash/apis/repositories"
+	"github.com/appscode/stash/apis/repositories/install"
+	"github.com/appscode/stash/apis/repositories/v1alpha1"
 	"github.com/appscode/stash/pkg/controller"
+	snapregistry "github.com/appscode/stash/pkg/registry/snapshot"
 	admission "k8s.io/api/admission/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apimachinery"
+	"k8s.io/apimachinery/pkg/apimachinery/announced"
+	"k8s.io/apimachinery/pkg/apimachinery/registered"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -20,11 +26,14 @@ import (
 )
 
 var (
-	Scheme = runtime.NewScheme()
-	Codecs = serializer.NewCodecFactory(Scheme)
+	groupFactoryRegistry = make(announced.APIGroupFactoryRegistry)
+	registry             = registered.NewOrDie("")
+	Scheme               = runtime.NewScheme()
+	Codecs               = serializer.NewCodecFactory(Scheme)
 )
 
 func init() {
+	install.Install(groupFactoryRegistry, registry, Scheme)
 	admission.AddToScheme(Scheme)
 
 	// we need to add the options to empty v1
@@ -185,6 +194,18 @@ func (c completedConfig) New() (*StashServer, error) {
 				return admissionHook.Initialize(c.ControllerConfig.ClientConfig, context.StopCh)
 			},
 		)
+	}
+
+	{
+		apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(repositories.GroupName, registry, Scheme, metav1.ParameterCodec, Codecs)
+		apiGroupInfo.GroupMeta.GroupVersion = v1alpha1.SchemeGroupVersion
+		v1alpha1storage := map[string]rest.Storage{}
+		v1alpha1storage[v1alpha1.ResourcePluralSnapshot] = snapregistry.NewREST(c.ControllerConfig.ClientConfig)
+		apiGroupInfo.VersionedResourcesStorageMap["v1alpha1"] = v1alpha1storage
+
+		if err := s.GenericAPIServer.InstallAPIGroup(&apiGroupInfo); err != nil {
+			return nil, err
+		}
 	}
 
 	return s, nil
