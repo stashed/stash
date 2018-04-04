@@ -44,11 +44,10 @@ The following table lists the configurable parameters of the Stash chart and the
 | `operator.registry`                 | Docker registry used to pull operator image                       | `appscode`         |
 | `operator.repository`               | operator container image                                          | `stash`            |
 | `operator.tag`                      | operator container image tag                                      | `0.7.0-rc.3`       |
-| `operator.pullPolicy`               | operator container image pull policy                              | `IfNotPresent`     |
 | `pushgateway.registry`              | Docker registry used to pull Prometheus pushgateway image         | `prom`             |
 | `pushgateway.repository`            | Prometheus pushgateway container image                            | `pushgateway`      |
 | `pushgateway.tag`                   | Prometheus pushgateway container image tag                        | `v0.4.0`           |
-| `pushgateway.pullPolicy`            | Prometheus pushgateway container image pull policy                | `IfNotPresent`     |
+| `imagePullPolicy`                   | container image pull policy                                       | `IfNotPresent`     |
 | `criticalAddon`                     | If true, installs Stash operator as critical addon                | `false`            |
 | `rbac.create`                       | If `true`, create and use RBAC resources                          | `true`             |
 | `serviceAccount.create`             | If `true`, create a new service account                           | `true`             |
