@@ -32,6 +32,8 @@ func (f *Framework) NewTestStashOptions(kubeConfigPath string, controllerOptions
 }
 
 func (f *Framework) StartAPIServerAndOperator(kubeConfigPath string, controllerOptions *srvr.ControllerOptions) {
+	defer GinkgoRecover()
+
 	sh := shell.NewSession()
 	args := []interface{}{"--namespace", f.Namespace()}
 	SetupServer := filepath.Join("..", "..", "hack", "dev", "setup-server.sh")

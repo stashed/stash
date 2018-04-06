@@ -76,7 +76,7 @@ func (e PrometheusExporter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	snapshots, err := resticCLI.ListSnapshots()
+	snapshots, err := resticCLI.ListSnapshots(nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

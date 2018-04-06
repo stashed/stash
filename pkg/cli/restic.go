@@ -47,13 +47,30 @@ type Snapshot struct {
 	Gid      int       `json:"gid"`
 }
 
-func (w *ResticWrapper) ListSnapshots() ([]Snapshot, error) {
+func (w *ResticWrapper) ListSnapshots(snapshotIDs []string) ([]Snapshot, error) {
 	result := make([]Snapshot, 0)
-	args := w.appendCacheDirFlag([]interface{}{"snapshots", "--json"})
+	args := w.appendCacheDirFlag([]interface{}{"snapshots", "--json", "--quiet"})
 	args = w.appendCaCertFlag(args)
 
+	if snapshotIDs != nil {
+		for _, id := range snapshotIDs {
+			args = append(args, id)
+		}
+	}
 	err := w.sh.Command(Exe, args...).UnmarshalJSON(&result)
 	return result, err
+}
+
+func (w *ResticWrapper) DeleteSnapshots(snapshotIDs []string) error {
+	args := w.appendCacheDirFlag([]interface{}{"forget", "--quiet", "--prune"})
+	args = w.appendCaCertFlag(args)
+
+	if snapshotIDs != nil {
+		for _, id := range snapshotIDs {
+			args = append(args, id)
+		}
+	}
+	return w.run(Exe, args)
 }
 
 func (w *ResticWrapper) InitRepositoryIfAbsent() error {
