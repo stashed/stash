@@ -29,7 +29,7 @@ var (
 	msrvc   core.Service
 )
 
-func (fi *Invocation) CreateMinioServer() (string, error) {
+func (fi *Invocation) CreateMinioServer(tls bool) (string, error) {
 	//creating secret for minio server
 	mcred = fi.SecretForMinioServer()
 	err := fi.CreateSecret(mcred)
@@ -46,6 +46,9 @@ func (fi *Invocation) CreateMinioServer() (string, error) {
 
 	//creating deployment for minio server
 	mdeploy = fi.DeploymentForMinioServer()
+	if !tls{ // if tls not enabled then don't mount secret for cacerts
+		mdeploy.Spec.Template.Spec.Containers[0].VolumeMounts = mdeploy.Spec.Template.Spec.Containers[0].VolumeMounts[0:1]
+	}
 	err = fi.CreateDeploymentForMinioServer(mdeploy)
 	if err != nil {
 		return "", err

@@ -76,9 +76,9 @@ func (r *REST) Get(ctx apirequest.Context, name string, options *metav1.GetOptio
 		return nil, errors.New("no resource found")
 	}
 
-	snapshotList := &api.SnapshotList{}
-	snapshotList.Items = snapshots
-	return snapshotList, nil
+	snapshot := &api.Snapshot{}
+	snapshot = &snapshots[0]
+	return snapshot, nil
 }
 
 func (r *REST) NewList() runtime.Object {
@@ -91,8 +91,10 @@ func (r *REST) List(ctx apirequest.Context, options *metainternalversion.ListOpt
 	if !ok {
 		return nil, errors.New("missing namespace")
 	}
-
-	labelSelector := options.LabelSelector.String()
+	var labelSelector string
+	if options.LabelSelector != nil {
+		labelSelector = options.LabelSelector.String()
+	}
 	repos := make([]v1alpha1.Repository, 0)
 
 	// if the request is for snapshots of specific repositories then use Get method to get those repositories
@@ -114,7 +116,7 @@ func (r *REST) List(ctx apirequest.Context, options *metainternalversion.ListOpt
 			repos = append(repos, *repo)
 		}
 	} else {
-		repoList, err := r.stashClient.StashV1alpha1().Repositories(ns).List(metav1.ListOptions{LabelSelector: options.LabelSelector.String()})
+		repoList, err := r.stashClient.StashV1alpha1().Repositories(ns).List(metav1.ListOptions{LabelSelector: labelSelector})
 		if err != nil {
 			return nil, err
 		}

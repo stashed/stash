@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 
+	"github.com/appscode/stash/apis/repositories/v1alpha1"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/server"
 	"github.com/spf13/pflag"
@@ -58,6 +59,19 @@ func (o StashOptions) Config() (*server.StashConfig, error) {
 	serverConfig := genericapiserver.NewRecommendedConfig(server.Codecs)
 	if err := o.RecommendedOptions.ApplyTo(serverConfig); err != nil {
 		return nil, err
+	}
+	serverConfig.OpenAPIConfig = genericapiserver.DefaultOpenAPIConfig(v1alpha1.GetOpenAPIDefinitions, server.Scheme)
+	serverConfig.OpenAPIConfig.Info.Title = "stash-server"
+	serverConfig.OpenAPIConfig.Info.Version = v1alpha1.SchemeGroupVersion.Version
+	serverConfig.OpenAPIConfig.IgnorePrefixes = []string{
+		"/swaggerapi",
+		"/apis/admission.stash.appscode.com/v1alpha1/restics",
+		"/apis/admission.stash.appscode.com/v1alpha1/recoveries",
+		"/apis/admission.stash.appscode.com/v1alpha1/deployments",
+		"/apis/admission.stash.appscode.com/v1alpha1/daemonsets",
+		"/apis/admission.stash.appscode.com/v1alpha1/statefulsets",
+		"/apis/admission.stash.appscode.com/v1alpha1/replicationcontrollers",
+		"/apis/admission.stash.appscode.com/v1alpha1/replicasets",
 	}
 
 	controllerConfig := controller.NewControllerConfig(serverConfig.ClientConfig)

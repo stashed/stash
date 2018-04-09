@@ -41,13 +41,13 @@ func (c *Controller) BackupScheduler() error {
 }
 
 func (c *Controller) setupAndRunScheduler(stopBackup chan struct{}) error {
-	if _, repository, err := c.setup(); err != nil {
+	if restic, _, err := c.setup(); err != nil {
 		err = fmt.Errorf("failed to setup backup. Error: %v", err)
-		if repository != nil {
+		if restic != nil {
 			eventer.CreateEventWithLog(
 				c.k8sClient,
 				BackupEventComponent,
-				repository.ObjectReference(),
+				restic.ObjectReference(),
 				core.EventTypeWarning,
 				eventer.EventReasonFailedSetup,
 				err.Error(),

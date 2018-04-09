@@ -188,6 +188,8 @@ func fixBackendPrefix(backend *v1alpha1.Backend, autoPrefix string) *v1alpha1.Ba
 	} else if backend.S3 != nil {
 		backend.S3.Prefix = strings.TrimSuffix(backend.S3.Prefix, autoPrefix)
 		backend.S3.Prefix = strings.TrimSuffix(backend.S3.Prefix, "/")
+		backend.S3.Prefix = strings.TrimPrefix(backend.S3.Prefix, backend.S3.Bucket)
+		backend.S3.Prefix = strings.TrimPrefix(backend.S3.Prefix, "/")
 	} else if backend.GCS != nil {
 		backend.GCS.Prefix = strings.TrimSuffix(backend.GCS.Prefix, autoPrefix)
 		backend.GCS.Prefix = strings.TrimSuffix(backend.GCS.Prefix, "/")

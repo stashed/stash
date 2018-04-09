@@ -107,7 +107,7 @@ func (c *Controller) Backup() error {
 			eventer.CreateEventWithLog(
 				c.k8sClient,
 				BackupEventComponent,
-				repository.ObjectReference(),
+				restic.ObjectReference(),
 				core.EventTypeWarning,
 				eventer.EventReasonFailedSetup,
 				err.Error(),
