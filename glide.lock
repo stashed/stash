@@ -1,5 +1,5 @@
 hash: 39b9784006e2fdde6ce6820baacfc8afceab5316e268a079ea05abbf307d23f1
-updated: 2018-04-02T18:01:31.628470895-07:00
+updated: 2018-04-09T05:16:06.821932-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -9,7 +9,7 @@ imports:
   - compute/metadata
   - internal
 - name: github.com/appscode/go
-  version: f8f2e1c7d2d10789cdd0540468b487d14421dbf9
+  version: 0eb2cabe3897bfd0fe615e9849583a88bcc82df4
   subpackages:
   - analytics
   - context
@@ -37,7 +37,7 @@ imports:
   - runtime/serializer/versioning
   - workload/v1
 - name: github.com/appscode/kutil
-  version: 83f1a2ee558a663702929a15ff7cfdfbfef331f1
+  version: 334a64bbc5518e51633cc0bb902d613a8fb87037
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
@@ -46,6 +46,7 @@ imports:
   - discovery
   - extensions/v1beta1
   - meta
+  - openapi
   - rbac/v1
   - tools/analytics
   - tools/certstore
@@ -319,7 +320,7 @@ imports:
   subpackages:
   - mem
 - name: github.com/spf13/cobra
-  version: 4dab30cb33e6633c33c787106bafbfbfdde7842d
+  version: cd30c2a7e91a1d63fd9a0027accf18a681e9d50b
   subpackages:
   - doc
 - name: github.com/spf13/pflag
