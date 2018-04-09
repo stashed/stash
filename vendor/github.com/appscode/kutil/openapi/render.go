@@ -27,6 +27,10 @@ type Config struct {
 	Info               spec.InfoProps
 	OpenAPIDefinitions []common.GetOpenAPIDefinitions
 	Resources          []schema.GroupVersionResource
+	GetterResources    []schema.GroupVersionResource
+	ListerResources    []schema.GroupVersionResource
+	CDResources        []schema.GroupVersionResource
+	RDResources        []schema.GroupVersionResource
 }
 
 func (c *Config) GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
@@ -78,16 +82,16 @@ func RenderOpenAPISpec(cfg Config) (string, error) {
 		return "", err
 	}
 
-	{
-		mapper := cfg.Registry.RESTMapper()
+	mapper := cfg.Registry.RESTMapper()
 
-		table := map[schema.GroupVersion]map[string]ResourceInfo{}
+	table := map[schema.GroupVersion]map[string]rest.Storage{}
+	{
 		for _, gvr := range cfg.Resources {
-			var resmap map[string]ResourceInfo
+			var resmap map[string]rest.Storage
 			if m, found := table[gvr.GroupVersion()]; found {
 				resmap = m
 			} else {
-				resmap = map[string]ResourceInfo{}
+				resmap = map[string]rest.Storage{}
 				table[gvr.GroupVersion()] = resmap
 			}
 
@@ -104,25 +108,135 @@ func RenderOpenAPISpec(cfg Config) (string, error) {
 				return "", err
 			}
 
-			resmap[gvr.Resource] = ResourceInfo{
+			resmap[gvr.Resource] = NewStandardStorage(ResourceInfo{
 				gvk:  gvk,
 				obj:  obj,
 				list: list,
-			}
+			})
 		}
-
-		for gv, resmap := range table {
-			apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(gv.Group, cfg.Registry, cfg.Scheme, metav1.ParameterCodec, cfg.Codecs)
-			apiGroupInfo.GroupMeta.GroupVersion = gv
-			storage := map[string]rest.Storage{}
-			for r, stuff := range resmap {
-				storage[r] = NewREST(stuff)
+	}
+	{
+		for _, gvr := range cfg.GetterResources {
+			var resmap map[string]rest.Storage
+			if m, found := table[gvr.GroupVersion()]; found {
+				resmap = m
+			} else {
+				resmap = map[string]rest.Storage{}
+				table[gvr.GroupVersion()] = resmap
 			}
-			apiGroupInfo.VersionedResourcesStorageMap[gv.Version] = storage
 
-			if err := genericServer.InstallAPIGroup(&apiGroupInfo); err != nil {
+			gvk, err := mapper.KindFor(gvr)
+			if err != nil {
 				return "", err
 			}
+			obj, err := cfg.Scheme.New(gvk)
+			if err != nil {
+				return "", err
+			}
+
+			resmap[gvr.Resource] = NewGetterStorage(ResourceInfo{
+				gvk: gvk,
+				obj: obj,
+			})
+		}
+	}
+	{
+		for _, gvr := range cfg.ListerResources {
+			var resmap map[string]rest.Storage
+			if m, found := table[gvr.GroupVersion()]; found {
+				resmap = m
+			} else {
+				resmap = map[string]rest.Storage{}
+				table[gvr.GroupVersion()] = resmap
+			}
+
+			gvk, err := mapper.KindFor(gvr)
+			if err != nil {
+				return "", err
+			}
+			obj, err := cfg.Scheme.New(gvk)
+			if err != nil {
+				return "", err
+			}
+			list, err := cfg.Scheme.New(gvk.GroupVersion().WithKind(gvk.Kind + "List"))
+			if err != nil {
+				return "", err
+			}
+
+			resmap[gvr.Resource] = NewListerStorage(ResourceInfo{
+				gvk:  gvk,
+				obj:  obj,
+				list: list,
+			})
+		}
+	}
+	{
+		for _, gvr := range cfg.CDResources {
+			var resmap map[string]rest.Storage
+			if m, found := table[gvr.GroupVersion()]; found {
+				resmap = m
+			} else {
+				resmap = map[string]rest.Storage{}
+				table[gvr.GroupVersion()] = resmap
+			}
+
+			gvk, err := mapper.KindFor(gvr)
+			if err != nil {
+				return "", err
+			}
+			obj, err := cfg.Scheme.New(gvk)
+			if err != nil {
+				return "", err
+			}
+
+			resmap[gvr.Resource] = NewCDStorage(ResourceInfo{
+				gvk: gvk,
+				obj: obj,
+			})
+		}
+	}
+	{
+		for _, gvr := range cfg.RDResources {
+			var resmap map[string]rest.Storage
+			if m, found := table[gvr.GroupVersion()]; found {
+				resmap = m
+			} else {
+				resmap = map[string]rest.Storage{}
+				table[gvr.GroupVersion()] = resmap
+			}
+
+			gvk, err := mapper.KindFor(gvr)
+			if err != nil {
+				return "", err
+			}
+			obj, err := cfg.Scheme.New(gvk)
+			if err != nil {
+				return "", err
+			}
+			list, err := cfg.Scheme.New(gvk.GroupVersion().WithKind(gvk.Kind + "List"))
+			if err != nil {
+				return "", err
+			}
+
+			resmap[gvr.Resource] = NewRDStorage(ResourceInfo{
+				gvk:  gvk,
+				obj:  obj,
+				list: list,
+			})
+		}
+	}
+
+	for gv, resmap := range table {
+		apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(gv.Group, cfg.Registry, cfg.Scheme, metav1.ParameterCodec, cfg.Codecs)
+		apiGroupInfo.GroupMeta.GroupVersion = gv
+		storage := map[string]rest.Storage{}
+		for r, s := range resmap {
+			storage[r] = s
+		}
+		apiGroupInfo.VersionedResourcesStorageMap[gv.Version] = storage
+
+		if err := genericServer.InstallAPIGroup(&apiGroupInfo); err != nil {
+			return "", err
 		}
 	}
 
