@@ -22,19 +22,26 @@ const (
 	ExecStash = "/bin/stash"
 )
 
+type labelsInfo struct {
+	workloadKind string
+	workloadName string
+	podName      string
+	nodeName     string
+}
+
 func (r *REST) GetSnapshots(repository *v1alpha1.Repository, snapshotIDs []string) ([]api.Snapshot, error) {
 	backend := repository.Spec.Backend.DeepCopy()
 
-	workloadKind, workloadName, podName, nodeName, err := extractDataFromRepositoryLabel(repository.Labels)
+	info, err := extractDataFromRepositoryLabel(repository.Labels)
 	if err != nil {
 		return nil, err
 	}
 
 	workload := &v1alpha1.LocalTypedReference{
-		Kind: workloadKind,
-		Name: workloadName,
+		Kind: info.workloadKind,
+		Name: info.workloadName,
 	}
-	hostName, smartPrefix, err := workload.HostnamePrefix(podName, nodeName)
+	hostName, smartPrefix, err := workload.HostnamePrefix(info.podName, info.nodeName)
 
 	secret, err := r.kubeClient.CoreV1().Secrets(repository.Namespace).Get(backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
@@ -79,16 +86,16 @@ func (r *REST) GetSnapshots(repository *v1alpha1.Repository, snapshotIDs []strin
 func (r *REST) ForgetSnapshots(repository *v1alpha1.Repository, snapshotIDs []string) error {
 	backend := repository.Spec.Backend.DeepCopy()
 
-	workloadKind, workloadName, podName, nodeName, err := extractDataFromRepositoryLabel(repository.Labels)
+	info, err := extractDataFromRepositoryLabel(repository.Labels)
 	if err != nil {
 		return err
 	}
 
 	workload := &v1alpha1.LocalTypedReference{
-		Kind: workloadKind,
-		Name: workloadName,
+		Kind: info.workloadKind,
+		Name: info.workloadName,
 	}
-	hostName, smartPrefix, err := workload.HostnamePrefix(podName, nodeName)
+	hostName, smartPrefix, err := workload.HostnamePrefix(info.podName, info.nodeName)
 
 	secret, err := r.kubeClient.CoreV1().Secrets(repository.Namespace).Get(backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
@@ -134,12 +141,12 @@ func (r *REST) forgetSnapshotsFromSidecar(repository *v1alpha1.Repository, snaps
 	return nil
 }
 func (r *REST) execOnSidecar(repository *v1alpha1.Repository, cmd string, snapshotIDs []string) ([]byte, error) {
-	_, workloadName, _, _, err := extractDataFromRepositoryLabel(repository.Labels)
+	info, err := extractDataFromRepositoryLabel(repository.Labels)
 	if err != nil {
 		return nil, err
 	}
 
-	pod, err := r.getPodWithStashSidecar(repository.Namespace, workloadName)
+	pod, err := r.getPodWithStashSidecar(repository.Namespace, info.workloadName)
 	if err != nil {
 		return nil, err
 	}
@@ -156,29 +163,28 @@ func (r *REST) execOnSidecar(repository *v1alpha1.Repository, cmd string, snapsh
 
 	return response, nil
 }
-func extractDataFromRepositoryLabel(labels map[string]string) (string, string, string, string, error) {
-	var kind, name, podname, nodename string
-
-	kind, ok := labels["workload-kind"]
+func extractDataFromRepositoryLabel(labels map[string]string) (info labelsInfo, err error) {
+	var ok bool
+	info.workloadKind, ok = labels["workload-kind"]
 	if !ok {
-		return "", "", "", "", errors.New("workload-kind not found in repository labels")
+		return info, errors.New("workload-kind not found in repository labels")
 	}
 
-	name, ok = labels["workload-name"]
+	info.workloadName, ok = labels["workload-name"]
 	if !ok {
-		return "", "", "", "", errors.New("workload-name not found in repository labels")
+		return info, errors.New("workload-name not found in repository labels")
 	}
 
-	podname, ok = labels["pod-name"]
+	info.podName, ok = labels["pod-name"]
 	if !ok {
-		podname = ""
+		info.podName = ""
 	}
 
-	nodename, ok = labels["node-name"]
+	info.nodeName, ok = labels["node-name"]
 	if !ok {
-		nodename = ""
+		info.nodeName = ""
 	}
-	return kind, name, podname, nodename, nil
+	return info, nil
 }
 
 func fixBackendPrefix(backend *v1alpha1.Backend, autoPrefix string) *v1alpha1.Backend {

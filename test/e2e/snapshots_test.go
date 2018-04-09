@@ -265,7 +265,7 @@ var _ = Describe("Snapshots", func() {
 				restic = f.ResticForMinioBackend("http://" + minikubeIP + ":" + minioServiceNodePort)
 				cred = f.SecretForMinioBackend(false)
 			})
-			FIt(`should success to perform Snapshot's operations`, performOperationOnSnapshot)
+			It(`should success to perform Snapshot's operations`, performOperationOnSnapshot)
 
 		})
 	})
