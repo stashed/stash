@@ -40,7 +40,7 @@ for gv in "${apiGroups[@]}"; do
     appscode/gengo:release-1.9 openapi-gen \
     --v 1 --logtostderr \
     --go-header-file "hack/gengo/boilerplate.go.txt" \
-    --input-dirs "$PACKAGE_NAME/apis/${gv},k8s.io/apimachinery/pkg/apis/meta/v1,k8s.io/apimachinery/pkg/api/resource,k8s.io/apimachinery/pkg/runtime,k8s.io/apimachinery/pkg/version" \
+    --input-dirs "$PACKAGE_NAME/apis/${gv},k8s.io/apimachinery/pkg/apis/meta/v1,k8s.io/apimachinery/pkg/api/resource,k8s.io/apimachinery/pkg/runtime,k8s.io/apimachinery/pkg/version,k8s.io/api/core/v1" \
     --output-package "$PACKAGE_NAME/apis/${gv}"
 done
 
