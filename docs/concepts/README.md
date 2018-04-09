@@ -22,3 +22,5 @@ Concepts help you learn about the different parts of the Stash and the abstracti
 - Custom Resource Definitions
   - [Restic](/docs/concepts/crds/restic.md). Introduces the concept of `Restic` for configuring [restic](https://restic.net) in a Kubernetes native way.
   - [Recovery](/docs/concepts/crds/recovery.md). Introduces the concept of `Recovery` to restore a backup taken using Stash.
+  - [Repository](/docs/concepts/crds/repository.md) Introduce concept of `Repository` that represents restic repository in a Kubernetes native way.
+  - [Snapshot](/docs/concepts/crds/snapshot.md) Introduce concept of `Snapshot` that represents backed up snapshots in a Kubernetes native way.

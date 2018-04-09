@@ -247,9 +247,9 @@ var _ = Describe("Snapshots", func() {
 			})
 			BeforeEach(func() {
 				By("Checking if Restic installed in /bin directory")
-				cmd:=exec.Command("restic")
-				err:= cmd.Run()
-				if err!=nil{
+				cmd := exec.Command("restic")
+				err := cmd.Run()
+				if err != nil {
 					Skip("restic executable not found in /bin directory. Please install in /bin directory from: https://github.com/restic/restic/releases")
 				}
 
