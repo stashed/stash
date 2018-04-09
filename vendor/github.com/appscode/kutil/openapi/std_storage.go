@@ -10,12 +10,6 @@ import (
 	"k8s.io/apiserver/pkg/registry/rest"
 )
 
-type ResourceInfo struct {
-	gvk  schema.GroupVersionKind
-	obj  runtime.Object
-	list runtime.Object
-}
-
 type StandardStorage struct {
 	cfg ResourceInfo
 }
@@ -23,7 +17,7 @@ type StandardStorage struct {
 var _ rest.GroupVersionKindProvider = &StandardStorage{}
 var _ rest.StandardStorage = &StandardStorage{}
 
-func NewREST(cfg ResourceInfo) *StandardStorage {
+func NewStandardStorage(cfg ResourceInfo) *StandardStorage {
 	return &StandardStorage{cfg}
 }
 

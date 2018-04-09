@@ -77,6 +77,8 @@ func generateSwaggerJson() {
 			stashv1alpha1.SchemeGroupVersion.WithResource(stashv1alpha1.ResourcePluralRestic),
 			stashv1alpha1.SchemeGroupVersion.WithResource(stashv1alpha1.ResourcePluralRepository),
 			stashv1alpha1.SchemeGroupVersion.WithResource(stashv1alpha1.ResourcePluralRecovery),
+		},
+		RDResources: []schema.GroupVersionResource{
 			repov1alpha1.SchemeGroupVersion.WithResource(repov1alpha1.ResourcePluralSnapshot),
 		},
 	})
@@ -84,7 +86,7 @@ func generateSwaggerJson() {
 		glog.Fatal(err)
 	}
 
-	filename := gort.GOPath() + "/src/github.com/appscode/stash/apis/stash/v1alpha1/swagger.json"
+	filename := gort.GOPath() + "/src/github.com/appscode/stash/apis/swagger.json"
 	err = ioutil.WriteFile(filename, []byte(apispec), 0644)
 	if err != nil {
 		glog.Fatal(err)
