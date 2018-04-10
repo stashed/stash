@@ -57,6 +57,12 @@ export STASH_IMAGE_PULL_SECRET=
 export STASH_ENABLE_ANALYTICS=true
 export STASH_UNINSTALL=0
 export STASH_PURGE=0
+export APPSCODE_ENV=${APPSCODE_ENV:-prod}
+
+export SCRIPT_LOCATION="curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.3/"
+if [ "$APPSCODE_ENV" = "dev" ]; then
+    export SCRIPT_LOCATION="cat "
+fi
 
 KUBE_APISERVER_VERSION=$(kubectl version -o=json | $ONESSL jsonpath '{.serverVersion.gitVersion}')
 $ONESSL semver --check='<1.9.0' $KUBE_APISERVER_VERSION || { export STASH_ENABLE_VALIDATING_WEBHOOK=true; export STASH_ENABLE_MUTATING_WEBHOOK=true; }
@@ -230,27 +236,27 @@ export TLS_SERVING_CERT=$(cat server.crt | $ONESSL base64)
 export TLS_SERVING_KEY=$(cat server.key | $ONESSL base64)
 export KUBE_CA=$($ONESSL get kube-ca | $ONESSL base64)
 
-curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.3/hack/deploy/operator.yaml | $ONESSL envsubst | kubectl apply -f -
+${SCRIPT_LOCATION}hack/deploy/operator.yaml | $ONESSL envsubst | kubectl apply -f -
 
 if [ "$STASH_ENABLE_RBAC" = true ]; then
     kubectl create serviceaccount $STASH_SERVICE_ACCOUNT --namespace $STASH_NAMESPACE
     kubectl label serviceaccount $STASH_SERVICE_ACCOUNT app=stash --namespace $STASH_NAMESPACE
-    curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.3/hack/deploy/rbac-list.yaml | $ONESSL envsubst | kubectl auth reconcile -f -
-    curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.3/hack/deploy/user-roles.yaml | $ONESSL envsubst | kubectl auth reconcile -f -
+    ${SCRIPT_LOCATION}hack/deploy/rbac-list.yaml | $ONESSL envsubst | kubectl auth reconcile -f -
+    ${SCRIPT_LOCATION}hack/deploy/user-roles.yaml | $ONESSL envsubst | kubectl auth reconcile -f -
 
 fi
 
 if [ "$STASH_RUN_ON_MASTER" -eq 1 ]; then
     kubectl patch deploy stash-operator -n $STASH_NAMESPACE \
-      --patch="$(curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.3/hack/deploy/run-on-master.yaml)"
+      --patch="$(${SCRIPT_LOCATION}hack/deploy/run-on-master.yaml)"
 fi
 
 if [ "$STASH_ENABLE_VALIDATING_WEBHOOK" = true ]; then
-    curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.3/hack/deploy/validating-webhook.yaml | $ONESSL envsubst | kubectl apply -f -
+    ${SCRIPT_LOCATION}hack/deploy/validating-webhook.yaml | $ONESSL envsubst | kubectl apply -f -
 fi
 
 if [ "$STASH_ENABLE_MUTATING_WEBHOOK" = true ]; then
-    curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.3/hack/deploy/mutating-webhook.yaml | $ONESSL envsubst | kubectl apply -f -
+    ${SCRIPT_LOCATION}hack/deploy/mutating-webhook.yaml | $ONESSL envsubst | kubectl apply -f -
 fi
 
 echo
