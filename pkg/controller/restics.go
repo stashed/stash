@@ -58,13 +58,16 @@ func (c *StashController) initResticWatcher() {
 		AddFunc: func(obj interface{}) {
 			if r, ok := obj.(*api.Restic); ok {
 				if err := r.IsValid(); err != nil {
-					c.recorder.Eventf(
-						r.ObjectReference(),
-						core.EventTypeWarning,
-						eventer.EventReasonInvalidRestic,
-						"Reason %v",
-						err,
-					)
+					ref, rerr := reference.GetReference(scheme.Scheme, r)
+					if rerr == nil {
+						c.recorder.Eventf(
+							ref,
+							core.EventTypeWarning,
+							eventer.EventReasonInvalidRestic,
+							"Reason %v",
+							err,
+						)
+					}
 					return
 				}
 				queue.Enqueue(c.rstQueue.GetQueue(), obj)
@@ -82,13 +85,16 @@ func (c *StashController) initResticWatcher() {
 				return
 			}
 			if err := newRes.IsValid(); err != nil {
-				c.recorder.Eventf(
-					newRes.ObjectReference(),
-					core.EventTypeWarning,
-					eventer.EventReasonInvalidRestic,
-					"Reason %v",
-					err,
-				)
+				ref, rerr := reference.GetReference(scheme.Scheme, newRes)
+				if rerr == nil {
+					c.recorder.Eventf(
+						ref,
+						core.EventTypeWarning,
+						eventer.EventReasonInvalidRestic,
+						"Reason %v",
+						err,
+					)
+				}
 				return
 			} else if !util.ResticEqual(oldRes, newRes) {
 				queue.Enqueue(c.rstQueue.GetQueue(), newObj)
@@ -215,13 +221,16 @@ func (c *StashController) EnsureScaledownCronJob(restic *api.Restic) error {
 func (c *StashController) EnsureSidecar(restic *api.Restic) {
 	sel, err := metav1.LabelSelectorAsSelector(&restic.Spec.Selector)
 	if err != nil {
-		c.recorder.Eventf(
-			restic.ObjectReference(),
-			core.EventTypeWarning,
-			eventer.EventReasonInvalidRestic,
-			"Reason: %s",
-			err.Error(),
-		)
+		ref, rerr := reference.GetReference(scheme.Scheme, restic)
+		if rerr == nil {
+			c.recorder.Eventf(
+				ref,
+				core.EventTypeWarning,
+				eventer.EventReasonInvalidRestic,
+				"Reason: %s",
+				err.Error(),
+			)
+		}
 		return
 	}
 	{

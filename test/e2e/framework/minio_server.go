@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/appscode/go/crypto/rand"
+	core_util "github.com/appscode/kutil/core/v1"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1beta1"
 	core "k8s.io/api/core/v1"
@@ -47,7 +48,7 @@ func (fi *Invocation) CreateMinioServer(tls bool) (string, error) {
 	//creating deployment for minio server
 	mdeploy = fi.DeploymentForMinioServer()
 	if !tls { // if tls not enabled then don't mount secret for cacerts
-		mdeploy.Spec.Template.Spec.Containers[0].VolumeMounts = mdeploy.Spec.Template.Spec.Containers[0].VolumeMounts[0:1]
+		mdeploy.Spec.Template.Spec.Containers = fi.RemoveSecretVolumeMount(mdeploy.Spec.Template.Spec.Containers)
 	}
 	err = fi.CreateDeploymentForMinioServer(mdeploy)
 	if err != nil {
@@ -188,6 +189,17 @@ func (fi *Invocation) DeploymentForMinioServer() apps.Deployment {
 			},
 		},
 	}
+}
+
+func (fi *Invocation) RemoveSecretVolumeMount(containers []core.Container) []core.Container {
+	resp := make([]core.Container, 0)
+	for _, c := range containers {
+		if c.Name == "minio-server" {
+			c.VolumeMounts = core_util.EnsureVolumeMountDeleted(c.VolumeMounts, "minio-secret")
+		}
+		resp = append(resp, c)
+	}
+	return resp
 }
 
 func (fi *Invocation) CreateDeploymentForMinioServer(obj apps.Deployment) error {

@@ -828,7 +828,7 @@ var _ = Describe("Deployment", func() {
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 				By("Waiting to count failed setup event")
-				f.EventualWarning(restic.ObjectMeta,framework.KindRestic).Should(WithTransform(f.CountFailedSetup, BeNumerically(">=", 1)))
+				f.EventualWarning(restic.ObjectMeta, framework.KindRestic).Should(WithTransform(f.CountFailedSetup, BeNumerically(">=", 1)))
 
 				By("Checking Repository CRD not created")
 				_, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})

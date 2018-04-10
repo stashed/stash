@@ -44,6 +44,7 @@ type SnapshotStatus struct {
 	Username string   `json:"username"`
 	UID      int      `json:"uid"`
 	Gid      int      `json:"gid"`
+	Tags     []string `json:",omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

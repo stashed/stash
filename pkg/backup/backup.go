@@ -104,14 +104,17 @@ func (c *Controller) Backup() error {
 	if err != nil {
 		err = fmt.Errorf("failed to setup backup. Error: %v", err)
 		if restic != nil {
-			eventer.CreateEventWithLog(
-				c.k8sClient,
-				BackupEventComponent,
-				restic.ObjectReference(),
-				core.EventTypeWarning,
-				eventer.EventReasonFailedSetup,
-				err.Error(),
-			)
+			ref, rerr := reference.GetReference(scheme.Scheme, restic)
+			if rerr == nil {
+				eventer.CreateEventWithLog(
+					c.k8sClient,
+					BackupEventComponent,
+					ref,
+					core.EventTypeWarning,
+					eventer.EventReasonFailedSetup,
+					err.Error(),
+				)
+			}
 		}
 		return err
 	}
@@ -131,14 +134,17 @@ func (c *Controller) Backup() error {
 
 	// check if check job exists
 	if _, err = c.k8sClient.BatchV1().Jobs(restic.Namespace).Get(job.Name, metav1.GetOptions{}); err != nil && !errors.IsNotFound(err) {
-		eventer.CreateEventWithLog(
-			c.k8sClient,
-			BackupEventComponent,
-			repository.ObjectReference(),
-			core.EventTypeWarning,
-			eventer.EventReasonFailedCronJob,
-			err.Error(),
-		)
+		ref, rerr := reference.GetReference(scheme.Scheme, repository)
+		if rerr == nil {
+			eventer.CreateEventWithLog(
+				c.k8sClient,
+				BackupEventComponent,
+				ref,
+				core.EventTypeWarning,
+				eventer.EventReasonFailedCronJob,
+				err.Error(),
+			)
+		}
 		return err
 	}
 	if errors.IsNotFound(err) {
@@ -147,14 +153,17 @@ func (c *Controller) Backup() error {
 		}
 		if job, err = c.k8sClient.BatchV1().Jobs(restic.Namespace).Create(job); err != nil {
 			err = fmt.Errorf("failed to get check job, reason: %s", err)
-			eventer.CreateEventWithLog(
-				c.k8sClient,
-				BackupEventComponent,
-				repository.ObjectReference(),
-				core.EventTypeWarning,
-				eventer.EventReasonFailedCronJob,
-				err.Error(),
-			)
+			ref, rerr := reference.GetReference(scheme.Scheme, repository)
+			if rerr == nil {
+				eventer.CreateEventWithLog(
+					c.k8sClient,
+					BackupEventComponent,
+					ref,
+					core.EventTypeWarning,
+					eventer.EventReasonFailedCronJob,
+					err.Error(),
+				)
+			}
 			return err
 		}
 
@@ -170,24 +179,30 @@ func (c *Controller) Backup() error {
 		}
 
 		log.Infoln("Created check job:", job.Name)
-		eventer.CreateEventWithLog(
-			c.k8sClient,
-			BackupEventComponent,
-			repository.ObjectReference(),
-			core.EventTypeNormal,
-			eventer.EventReasonCheckJobCreated,
-			fmt.Sprintf("Created check job: %s", job.Name),
-		)
+		ref, rerr := reference.GetReference(scheme.Scheme, repository)
+		if rerr == nil {
+			eventer.CreateEventWithLog(
+				c.k8sClient,
+				BackupEventComponent,
+				ref,
+				core.EventTypeNormal,
+				eventer.EventReasonCheckJobCreated,
+				fmt.Sprintf("Created check job: %s", job.Name),
+			)
+		}
 	} else {
 		log.Infoln("Check job already exists, skipping creation:", job.Name)
-		eventer.CreateEventWithLog(
-			c.k8sClient,
-			BackupEventComponent,
-			repository.ObjectReference(),
-			core.EventTypeNormal,
-			eventer.EventReasonCheckJobCreated,
-			fmt.Sprintf("Check job already exists, skipping creation: %s", job.Name),
-		)
+		ref, rerr := reference.GetReference(scheme.Scheme, repository)
+		if rerr == nil {
+			eventer.CreateEventWithLog(
+				c.k8sClient,
+				BackupEventComponent,
+				ref,
+				core.EventTypeNormal,
+				eventer.EventReasonCheckJobCreated,
+				fmt.Sprintf("Check job already exists, skipping creation: %s", job.Name),
+			)
+		}
 	}
 	return nil
 }
@@ -303,39 +318,48 @@ func (c *Controller) runResticBackup(restic *api.Restic, repository *api.Reposit
 		err = c.measure(c.resticCLI.Backup, restic, fg, backupOpMetric)
 		if err != nil {
 			log.Errorf("Backup failed for Repository %s/%s, reason: %s\n", repository.Namespace, repository.Name, err)
-			eventer.CreateEventWithLog(
-				c.k8sClient,
-				BackupEventComponent,
-				repository.ObjectReference(),
-				core.EventTypeWarning,
-				eventer.EventReasonFailedToBackup,
-				fmt.Sprintf("Backup failed, reason: %s", err),
-			)
+			ref, rerr := reference.GetReference(scheme.Scheme, repository)
+			if rerr == nil {
+				eventer.CreateEventWithLog(
+					c.k8sClient,
+					BackupEventComponent,
+					ref,
+					core.EventTypeWarning,
+					eventer.EventReasonFailedToBackup,
+					fmt.Sprintf("Backup failed, reason: %s", err),
+				)
+			}
 			return
 		} else {
 			hostname, _ := os.Hostname()
-			eventer.CreateEventWithLog(
-				c.k8sClient,
-				BackupEventComponent,
-				repository.ObjectReference(),
-				core.EventTypeNormal,
-				eventer.EventReasonSuccessfulBackup,
-				fmt.Sprintf("Backed up pod: %s, path: %s", hostname, fg.Path),
-			)
+			ref, rerr := reference.GetReference(scheme.Scheme, repository)
+			if rerr == nil {
+				eventer.CreateEventWithLog(
+					c.k8sClient,
+					BackupEventComponent,
+					ref,
+					core.EventTypeNormal,
+					eventer.EventReasonSuccessfulBackup,
+					fmt.Sprintf("Backed up pod: %s, path: %s", hostname, fg.Path),
+				)
+			}
 		}
 
 		forgetOpMetric := restic_session_duration_seconds.WithLabelValues(sanitizeLabelValue(fg.Path), "forget")
 		err = c.measure(c.resticCLI.Forget, restic, fg, forgetOpMetric)
 		if err != nil {
 			log.Errorf("Failed to forget old snapshots for Repository %s/%s, reason: %s\n", repository.Namespace, repository.Name, err)
-			eventer.CreateEventWithLog(
-				c.k8sClient,
-				BackupEventComponent,
-				repository.ObjectReference(),
-				core.EventTypeWarning,
-				eventer.EventReasonFailedToRetention,
-				fmt.Sprintf("Failed to forget old snapshots, reason: %s", err),
-			)
+			ref, rerr := reference.GetReference(scheme.Scheme, repository)
+			if rerr == nil {
+				eventer.CreateEventWithLog(
+					c.k8sClient,
+					BackupEventComponent,
+					ref,
+					core.EventTypeWarning,
+					eventer.EventReasonFailedToRetention,
+					fmt.Sprintf("Failed to forget old snapshots, reason: %s", err),
+				)
+			}
 			return
 		}
 	}

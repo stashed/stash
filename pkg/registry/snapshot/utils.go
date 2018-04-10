@@ -19,7 +19,9 @@ import (
 )
 
 const (
-	ExecStash = "/bin/stash"
+	ExecStash                      = "/bin/stash"
+	SnapshotIDLength               = 8
+	SnapshotIDLengthWithDashPrefix = 9
 )
 
 type labelsInfo struct {
@@ -77,6 +79,7 @@ func (r *REST) GetSnapshots(repository *v1alpha1.Repository, snapshotIDs []strin
 		snapshot.Status.Paths = result.Paths
 		snapshot.Status.Tree = result.Tree
 		snapshot.Status.Username = result.Username
+		snapshot.Status.Tags = result.Tags
 
 		snapshots = append(snapshots, *snapshot)
 	}
@@ -275,4 +278,15 @@ func (r *REST) execCommandOnPod(pod *core.Pod, command []string) ([]byte, error)
 	}
 
 	return execOut.Bytes(), nil
+}
+
+func GetRepoNameAndSnapshotID(snapshotName string) (repoName, snapshotId string, err error) {
+	if len(snapshotName) < 9 {
+		err = errors.New("invalid snapshot name")
+		return
+	}
+	snapshotId = snapshotName[len(snapshotName)-SnapshotIDLength:]
+
+	repoName = strings.TrimSuffix(snapshotName, snapshotName[len(snapshotName)-SnapshotIDLengthWithDashPrefix:])
+	return
 }

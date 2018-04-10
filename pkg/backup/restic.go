@@ -8,7 +8,9 @@ import (
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
+	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/reference"
 )
 
 func (c *Controller) initResticWatcher() {
@@ -62,13 +64,16 @@ func (c *Controller) runResticScheduler(key string) error {
 
 		err := c.configureScheduler(r)
 		if err != nil {
-			c.recorder.Eventf(
-				r.ObjectReference(),
-				core.EventTypeWarning,
-				eventer.EventReasonFailedToBackup,
-				"Failed to start Stash scheduler reason %v",
-				err,
-			)
+			ref, rerr := reference.GetReference(clientsetscheme.Scheme, r)
+			if rerr == nil {
+				c.recorder.Eventf(
+					ref,
+					core.EventTypeWarning,
+					eventer.EventReasonFailedToBackup,
+					"Failed to start Stash scheduler reason %v",
+					err,
+				)
+			}
 			log.Errorln(err)
 		}
 	}

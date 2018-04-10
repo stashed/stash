@@ -45,6 +45,7 @@ type Snapshot struct {
 	Username string    `json:"username"`
 	UID      int       `json:"uid"`
 	Gid      int       `json:"gid"`
+	Tags     []string  `json:"tags"`
 }
 
 func (w *ResticWrapper) ListSnapshots(snapshotIDs []string) ([]Snapshot, error) {

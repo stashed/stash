@@ -9,6 +9,8 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/reference"
 )
 
 const (
@@ -44,23 +46,29 @@ func (c *Controller) Run() (err error) {
 
 	defer func() {
 		if err != nil {
-			eventer.CreateEventWithLog(
-				c.k8sClient,
-				CheckEventComponent,
-				restic.ObjectReference(),
-				core.EventTypeWarning,
-				eventer.EventReasonFailedToCheck,
-				fmt.Sprintf("Check failed for pod %s, reason: %s\n", c.opt.HostName, err),
-			)
+			ref, rerr := reference.GetReference(scheme.Scheme, restic)
+			if rerr == nil {
+				eventer.CreateEventWithLog(
+					c.k8sClient,
+					CheckEventComponent,
+					ref,
+					core.EventTypeWarning,
+					eventer.EventReasonFailedToCheck,
+					fmt.Sprintf("Check failed for pod %s, reason: %s\n", c.opt.HostName, err),
+				)
+			}
 		} else {
-			eventer.CreateEventWithLog(
-				c.k8sClient,
-				CheckEventComponent,
-				restic.ObjectReference(),
-				core.EventTypeNormal,
-				eventer.EventReasonSuccessfulCheck,
-				fmt.Sprintf("Check successful for pod: %s\n", c.opt.HostName),
-			)
+			ref, rerr := reference.GetReference(scheme.Scheme, restic)
+			if rerr == nil {
+				eventer.CreateEventWithLog(
+					c.k8sClient,
+					CheckEventComponent,
+					ref,
+					core.EventTypeNormal,
+					eventer.EventReasonSuccessfulCheck,
+					fmt.Sprintf("Check successful for pod: %s\n", c.opt.HostName),
+				)
+			}
 		}
 	}()
 

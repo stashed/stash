@@ -70,6 +70,7 @@ A `Snapshot` object maintains some important information using labels. These lab
 * `status.tree` indicates `tree` of the restic snapshot. For more details see [here](https://restic.readthedocs.io/en/stable/100_references.html#trees-and-data).
 * `status.uid` indicates id of the user who took this backup. For `root` user it is 0.
 * `status.username` indicates the name of the user.
+* `status.tags` indicates tags of the snapshot.
 
 ## Working with Snapshot
 
@@ -96,6 +97,9 @@ $ kubectl get snapshot -l pod-name=stash-demo-0
 
 # List Snapshots of a particular node(only for DaemonSet)
 kubectl get snapshot -l node-name=minikube
+
+# List Snapshot of specific repositories
+$ kubectl get snapshot -l 'repository in (deployment.stash-demo,statefulset.stash-demo-0)'
 ```
 
 **Viewing information of a particular Snapshot:**

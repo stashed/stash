@@ -1,14 +1,13 @@
 package snapshot
 
 import (
-	"strings"
-
 	api "github.com/appscode/stash/apis/repositories/v1alpha1"
 	"github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/client/clientset/versioned"
 	"github.com/pkg/errors"
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	apirequest "k8s.io/apiserver/pkg/endpoints/request"
@@ -52,10 +51,11 @@ func (r *REST) Get(ctx apirequest.Context, name string, options *metav1.GetOptio
 	if len(name) < 9 {
 		return nil, errors.New("invalid snapshot name")
 	}
-	snapshotIDs := make([]string, 0)
-	snapshotIDs = append(snapshotIDs, name[len(name)-8:])
 
-	repoName := strings.TrimSuffix(name, name[len(name)-9:])
+	repoName, snapshotId, err := GetRepoNameAndSnapshotID(name)
+	if err != nil {
+		return nil, err
+	}
 
 	repo, err := r.stashClient.StashV1alpha1().Repositories(ns).Get(repoName, metav1.GetOptions{})
 	if err != nil {
@@ -64,9 +64,9 @@ func (r *REST) Get(ctx apirequest.Context, name string, options *metav1.GetOptio
 
 	snapshots := make([]api.Snapshot, 0)
 	if repo.Spec.Backend.Local != nil {
-		snapshots, err = r.getSnapshotsFromSidecar(repo, snapshotIDs)
+		snapshots, err = r.getSnapshotsFromSidecar(repo, []string{snapshotId})
 	} else {
-		snapshots, err = r.GetSnapshots(repo, snapshotIDs)
+		snapshots, err = r.GetSnapshots(repo, []string{snapshotId})
 	}
 	if err != nil {
 		return nil, err
@@ -91,50 +91,42 @@ func (r *REST) List(ctx apirequest.Context, options *metainternalversion.ListOpt
 	if !ok {
 		return nil, errors.New("missing namespace")
 	}
-	var labelSelector string
-	if options.LabelSelector != nil {
-		labelSelector = options.LabelSelector.String()
+
+	repositories, err := r.stashClient.StashV1alpha1().Repositories(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
 	}
-	repos := make([]v1alpha1.Repository, 0)
 
-	// if the request is for snapshots of specific repositories then use Get method to get those repositories
-	// otherwise use labelSelector to list all repositories that match the selectors.
-	if strings.Contains(labelSelector, "repository=") {
-		repoNames := make([]string, 0)
-		labels := strings.Split(labelSelector, ",")
-		for _, label := range labels {
-			if strings.Contains(label, "repository=") {
-				repoNames = append(repoNames, strings.TrimPrefix(label, "repository="))
-			}
+	var requirements labels.Requirements
+	var selectable bool
+	if options.LabelSelector != nil {
+		requirements, selectable = options.LabelSelector.Requirements()
+		if !selectable {
+			return nil, errors.New("resources are not selectable using provided selectors")
 		}
+	}
 
-		for _, reponame := range repoNames {
-			repo, err := r.stashClient.StashV1alpha1().Repositories(ns).Get(reponame, metav1.GetOptions{})
-			if err != nil {
-				return nil, err
-			}
-			repos = append(repos, *repo)
+	repoSelector := labels.Everything().Add(requirements...)
+	var selectedRepos []v1alpha1.Repository
+	for _, r := range repositories.Items {
+		repoLabels := make(map[string]string)
+		repoLabels = r.Labels
+		repoLabels["repository"] = r.Name
+		if repoSelector.Matches(labels.Set(repoLabels)) {
+			selectedRepos = append(selectedRepos, r)
 		}
-	} else {
-		repoList, err := r.stashClient.StashV1alpha1().Repositories(ns).List(metav1.ListOptions{LabelSelector: labelSelector})
-		if err != nil {
-			return nil, err
-		}
-		repos = repoList.Items
 	}
 
 	snapshotList := &api.SnapshotList{}
 	snapshots := make([]api.Snapshot, 0)
-	snapshotIDs := make([]string, 0)
-	var err error
-	for _, repo := range repos {
+	for _, repo := range selectedRepos {
 		if repo.Spec.Backend.Local != nil {
-			snapshots, err = r.getSnapshotsFromSidecar(&repo, snapshotIDs)
+			snapshots, err = r.getSnapshotsFromSidecar(&repo, nil)
 			if err != nil {
 				return nil, err
 			}
 		} else {
-			snapshots, err = r.GetSnapshots(&repo, snapshotIDs)
+			snapshots, err = r.GetSnapshots(&repo, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -153,23 +145,19 @@ func (r *REST) Delete(ctx apirequest.Context, name string) (runtime.Object, erro
 	if !ok {
 		return nil, errors.New("missing namespace")
 	}
-	if len(name) < 9 {
-		return nil, errors.New("invalid snapshot name")
+	repoName, snapshotId, err := GetRepoNameAndSnapshotID(name)
+	if err != nil {
+		return nil, err
 	}
-	snapshotIDs := make([]string, 0)
-	snapshotIDs = append(snapshotIDs, name[len(name)-8:])
-
-	repoName := strings.TrimSuffix(name, name[len(name)-9:])
-
 	repo, err := r.stashClient.StashV1alpha1().Repositories(ns).Get(repoName, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.New("respective repository not found. error:" + err.Error())
 	}
 
 	if repo.Spec.Backend.Local != nil {
-		err = r.forgetSnapshotsFromSidecar(repo, snapshotIDs)
+		err = r.forgetSnapshotsFromSidecar(repo, []string{snapshotId})
 	} else {
-		err = r.ForgetSnapshots(repo, snapshotIDs)
+		err = r.ForgetSnapshots(repo, []string{snapshotId})
 	}
 	if err != nil {
 		return nil, err

@@ -53,13 +53,16 @@ func (c *StashController) initRecoveryWatcher() {
 		AddFunc: func(obj interface{}) {
 			if r, ok := obj.(*api.Recovery); ok {
 				if err := r.IsValid(); err != nil {
-					c.recorder.Eventf(
-						r.ObjectReference(),
-						core.EventTypeWarning,
-						eventer.EventReasonInvalidRecovery,
-						"Reason %v",
-						err,
-					)
+					ref, rerr := reference.GetReference(scheme.Scheme, r)
+					if rerr == nil {
+						c.recorder.Eventf(
+							ref,
+							core.EventTypeWarning,
+							eventer.EventReasonInvalidRecovery,
+							"Reason %v",
+							err,
+						)
+					}
 					return
 				}
 				queue.Enqueue(c.recQueue.GetQueue(), obj)
@@ -77,13 +80,16 @@ func (c *StashController) initRecoveryWatcher() {
 				return
 			}
 			if err := newRes.IsValid(); err != nil {
-				c.recorder.Eventf(
-					newRes.ObjectReference(),
-					core.EventTypeWarning,
-					eventer.EventReasonInvalidRecovery,
-					"Reason %v",
-					err,
-				)
+				ref, rerr := reference.GetReference(scheme.Scheme, newRes)
+				if rerr == nil {
+					c.recorder.Eventf(
+						ref,
+						core.EventTypeWarning,
+						eventer.EventReasonInvalidRecovery,
+						"Reason %v",
+						err,
+					)
+				}
 				return
 			} else if !util.RecoveryEqual(oldRes, newRes) {
 				queue.Enqueue(c.recQueue.GetQueue(), newObj)
@@ -140,7 +146,10 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 		}
 		log.Errorln(err)
 		stash_util.SetRecoveryStatusPhase(c.stashClient.StashV1alpha1(), rec, api.RecoveryFailed)
-		c.recorder.Event(rec.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToRecover, err.Error())
+		ref, rerr := reference.GetReference(scheme.Scheme, rec)
+		if rerr == nil {
+			c.recorder.Event(ref, core.EventTypeWarning, eventer.EventReasonFailedToRecover, err.Error())
+		}
 		return err
 	}
 
@@ -155,7 +164,10 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 	}
 
 	log.Infoln("Recovery job created:", job.Name)
-	c.recorder.Eventf(rec.ObjectReference(), core.EventTypeNormal, eventer.EventReasonJobCreated, "Recovery job created: %s", job.Name)
+	ref, rerr := reference.GetReference(scheme.Scheme, rec)
+	if rerr == nil {
+		c.recorder.Eventf(ref, core.EventTypeNormal, eventer.EventReasonJobCreated, "Recovery job created: %s", job.Name)
+	}
 	stash_util.SetRecoveryStatusPhase(c.stashClient.StashV1alpha1(), rec, api.RecoveryRunning)
 
 	return nil

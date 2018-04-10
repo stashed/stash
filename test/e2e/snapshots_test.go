@@ -168,14 +168,11 @@ var _ = Describe("Snapshots", func() {
 			shouldBackupComplete()
 
 			By("Listing all snapshots")
-			snapshots, err := f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(metav1.ListOptions{})
+			_, err := f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(metav1.ListOptions{})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(snapshots.Items).NotTo(BeEmpty())
-
-			By("Checking snapshots listed from all repositories")
-			Expect(snapshots).Should(CameFromAllTestRepositories(f.StashClient, f.Namespace()))
 
 			By("Get a particular snapshot")
+			snapshots, err := f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(metav1.ListOptions{LabelSelector: "workload-kind=Deployment"})
 			singleSnapshot, err := f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).Get(snapshots.Items[len(snapshots.Items)-1].Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(singleSnapshot.Name).To(BeEquivalentTo(snapshots.Items[len(snapshots.Items)-1].Name))
@@ -213,8 +210,19 @@ var _ = Describe("Snapshots", func() {
 			workload.Kind = api.KindDeployment
 			workload.Name = deployment.Name
 			reponame := workload.GetRepositoryCRDName("", "")
+
 			By("Filter by repository name")
 			snapshots, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(metav1.ListOptions{LabelSelector: "repository=" + reponame})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(snapshots).Should(HavePrefixInName(reponame))
+
+			By("Filter by negated selector")
+			snapshots, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(metav1.ListOptions{LabelSelector: "repository!=" + reponame})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(snapshots).ShouldNot(HavePrefixInName(reponame))
+
+			By("Filter by set based selector")
+			snapshots, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(metav1.ListOptions{LabelSelector: "repository in(" + reponame + ")"})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(snapshots).Should(HavePrefixInName(reponame))
 

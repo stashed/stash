@@ -37,6 +37,7 @@ type SnapshotStatus struct {
 	Username string
 	UID      int
 	Gid      int
+	Tags     []string
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

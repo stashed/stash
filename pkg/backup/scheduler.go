@@ -6,6 +6,7 @@ import (
 
 	"github.com/appscode/go/log"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	"github.com/appscode/stash/client/clientset/versioned/scheme"
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
@@ -16,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
+	"k8s.io/client-go/tools/reference"
 )
 
 const (
@@ -44,14 +46,17 @@ func (c *Controller) setupAndRunScheduler(stopBackup chan struct{}) error {
 	if restic, _, err := c.setup(); err != nil {
 		err = fmt.Errorf("failed to setup backup. Error: %v", err)
 		if restic != nil {
-			eventer.CreateEventWithLog(
-				c.k8sClient,
-				BackupEventComponent,
-				restic.ObjectReference(),
-				core.EventTypeWarning,
-				eventer.EventReasonFailedSetup,
-				err.Error(),
-			)
+			ref, rerr := reference.GetReference(scheme.Scheme, restic)
+			if rerr == nil {
+				eventer.CreateEventWithLog(
+					c.k8sClient,
+					BackupEventComponent,
+					ref,
+					core.EventTypeWarning,
+					eventer.EventReasonFailedSetup,
+					err.Error(),
+				)
+			}
 		}
 		return err
 	}
@@ -116,7 +121,10 @@ func (c *Controller) configureScheduler(r *api.Restic) error {
 	}
 	_, err := c.cron.AddFunc(r.Spec.Schedule, func() {
 		if err := c.runOnceForScheduler(); err != nil {
-			c.recorder.Event(r.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
+			ref, rerr := reference.GetReference(scheme.Scheme, r)
+			if rerr == nil {
+				c.recorder.Event(ref, core.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
+			}
 			log.Errorln(err)
 		}
 	})
@@ -195,12 +203,15 @@ func (c *Controller) checkOnceForScheduler() (err error) {
 
 	err = c.resticCLI.Check()
 	if err != nil {
-		c.recorder.Eventf(
-			repository.ObjectReference(),
-			core.EventTypeWarning,
-			eventer.EventReasonFailedToCheck,
-			"Repository check failed for workload %s %s/%s. Reason: %v",
-			c.opt.Workload.Kind, c.opt.Namespace, c.opt.Workload.Name, err)
+		ref, rerr := reference.GetReference(scheme.Scheme, repository)
+		if rerr == nil {
+			c.recorder.Eventf(
+				ref,
+				core.EventTypeWarning,
+				eventer.EventReasonFailedToCheck,
+				"Repository check failed for workload %s %s/%s. Reason: %v",
+				c.opt.Workload.Kind, c.opt.Namespace, c.opt.Workload.Name, err)
+		}
 	}
 	return
 }
