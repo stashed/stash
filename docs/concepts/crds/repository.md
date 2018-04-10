@@ -23,33 +23,33 @@ A sample `Repository` CRD object for backup a `Deployment` in local backend is s
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
-kind: Repository
-metadata:
-  clusterName: ""
-  creationTimestamp: 2018-03-29T05:39:04Z
-  generation: 0
-  labels:
-    restic: stash-demo
-    workload-kind: Deployment
-    workload-name: stash-demo
-  name: deployment.stash-demo
-  namespace: default
-  resourceVersion: "10389"
-  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/repositories/deployment.stash-demo
-  uid: 7db206b0-3313-11e8-ad40-0800277f165c
-spec:
-  backend:
-    local:
-      hostPath:
-        path: /data/stash-test/restic-repo
-      mountPath: /safe/data
-    storageSecretName: local-secret
-  backupPath: deployment/stash-demo
-status:
-  backupCount: 3
-  firstBackupTime: 2018-03-29T05:40:05Z
-  lastBackupDuration: 2.724088654s
-  lastBackupTime: 2018-03-29T05:42:04Z
+  kind: Repository
+  metadata:
+    clusterName: ""
+    creationTimestamp: 2018-04-10T05:09:10Z
+    generation: 0
+    labels:
+      restic: stash-demo
+      workload-kind: Deployment
+      workload-name: stash-demo
+    name: deployment.stash-demo
+    namespace: default
+    resourceVersion: "7515"
+    selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/repositories/deployment.stash-demo
+    uid: 4dccffa8-3c7d-11e8-9f4d-0800270b3cc5
+  spec:
+    backend:
+      local:
+        hostPath:
+          path: /data/stash-test/restic-repo
+        mountPath: /safe/data
+        subPath: deployment/stash-demo
+      storageSecretName: local-secret
+  status:
+    backupCount: 7
+    firstBackupTime: 2018-04-10T05:10:11Z
+    lastBackupDuration: 3.026137088s
+    lastBackupTime: 2018-04-10T05:16:12Z
 ```
 
 Here, we are going describe some important sections of `Repository` CRD.
