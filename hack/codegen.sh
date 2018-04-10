@@ -44,4 +44,7 @@ for gv in "${apiGroups[@]}"; do
     --output-package "$PACKAGE_NAME/apis/${gv}"
 done
 
+# Generate crds.yaml and swagger.json
+go run ./hack/gencrd/main.go
+
 popd

@@ -28,14 +28,14 @@ const (
 )
 
 func ClientID() string {
+	if id, found := os.LookupEnv(Key); found {
+		return id
+	}
+
 	defer runtime.HandleCrash()
 
 	if !meta.PossiblyInCluster() {
 		return analytics.ClientID()
-	}
-
-	if id := os.Getenv(Key); id != "" {
-		return id
 	}
 
 	cfg, err := rest.InClusterConfig()
