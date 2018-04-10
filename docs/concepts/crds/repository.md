@@ -56,7 +56,7 @@ Here, we are going describe some important sections of `Repository` CRD.
 
 ## Repository Labels
 
-`Repository` maintain some important information on the label. These labels enable a user to filter `Repository` according to `restic`, `workload-kind`, `workload-name`, `node-name` etc. Details of these labels are given below.
+A `Repository` object maintains some important information using labels. These labels enable a user to filter `Repository` according to `restic`, `workload-kind`, `workload-name`, `node-name` etc. Details of these labels are given below.
 
 | Label name      | Description                                                                                                                                                   |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -82,7 +82,7 @@ Here, we are going describe some important sections of `Repository` CRD.
 
 Stash operator updates `.status` of a Repository CRD every time a backup operation is completed.
 
-- `status.backupCount` indicated the total number of backup operation completed for this Repository.
+- `status.backupCount` indicates the total number of backup operation completed for this Repository.
 - `status.firstBackupTime` indicates the timestamp of first backup operation.
 - `status.lastBackupTime` indicates the timestamp of last backup operation.
 - `status.lastSuccessfulBackupTime` indicates the timestamp of last successful backup operation. If `status.lastBackupTime` and `status.lastSuccessfulBackupTime` are same, it means that last backup operation was successful.

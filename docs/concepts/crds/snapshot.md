@@ -35,22 +35,6 @@ status:
 
 Here, we are going to describe some important sections of `Snapshot` object.
 
-### Snapshot creationTimestamp
-`creationTimestamp` in `metadata` field of a `Snapshot` object represents the time when the snapshot was created.
-
-### Snapshot Labels
-
-`Snapshot` maintain some important information on the label. These labels enable a user to filter `Snapshot` according to `repository`, `restic`, `workload-kind`, `workload-name`, `node-name` etc. Details of these labels are given below.
-
-| Label name      | Description                                                                                                                                                   |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `repository`        | Name of the `Repository`  where this `Snapshot` is stored.                                                                                              |
-| `restic`        | Name of the `Restic` which is responsible for this `Snapshot`.                                                                                              |
-| `workload-kind` | `Kind` of the workload for which the `Snapshot` has been created.                                                                                           |
-| `workload-name` | `Name` of the workload for which the `Snapshot` has been created.                                                                                           |
-| `pod-name`      | This `label` present when the respective workload is  `StatefulSet`. It represents the pod name of the `StatefulSet` who is responsible for this `Snapshot`. |
-| `node-name`     | This `label` present when the respective workload is  `DaemonSet`. It represents the node name where the  `DaemonSet` is running.                              |
-
 ### Snapshot Name
 
 `name` filed in `metadata` of a `Snapshot` object represent its name. It follows this pattern,
@@ -60,16 +44,32 @@ Here, we are going to describe some important sections of `Snapshot` object.
 
 `uid` field in `metadata` of `Snapshot` object represents complete restic snapshot id.
 
+### CreationTimestamp
+`creationTimestamp` in `metadata` field of a `Snapshot` object represents the time when the snapshot was created.
+
+### Snapshot Labels
+
+A `Snapshot` object maintains some important information using labels. These labels enable a user to filter `Snapshot` according to `repository`, `restic`, `workload-kind`, `workload-name`, `node-name` etc. Details of these labels are given below.
+
+| Label name      | Description                                                                                                                                                 |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `repository`    | Name of the `Repository`  where this `Snapshot` is stored.                                                                                                  |
+| `restic`        | Name of the `Restic` which is responsible for this `Snapshot`.                                                                                              |
+| `workload-kind` | `Kind` of the workload for which the `Snapshot` has been created.                                                                                           |
+| `workload-name` | `Name` of the workload for which the `Snapshot` has been created.                                                                                           |
+| `pod-name`      | This `label` present when the respective workload is `StatefulSet`. It represents the pod name of the `StatefulSet` who is responsible for this `Snapshot`. |
+| `node-name`     | This `label` present when the respective workload is `DaemonSet`. It represents the node name where the `DaemonSet` is running.                             |
+
 ### Snapshot Status
 
 `Snapshot` object has following status fields,
 
-* `status.gid` group identifier of the user who took this backup.
-* `status.hostname` indicate the name of the host object whose data is backed up in this snapshot. For `Deployment`,`ReplicaSet` and `ReplicationController` it is workload name. For `DaemonSet` hostname is node name and for `StatefulSet` hostname is pod name.
-* `status.path` indicate the path that is backed up in this snapshot.
-* `status.tree` indicate `tree` of the restic snapshot. For more details see [here](https://restic.readthedocs.io/en/stable/100_references.html#trees-and-data).
-* `status.uid` indicate id of the user who took this backup. For `root` user it is 0.
-* `status.username` indicate the name of the user.
+* `status.gid` indicates the group identifier of the user who took this backup.
+* `status.hostname` indicates the name of the host object whose data is backed up in this snapshot. For `Deployment`,`ReplicaSet` and `ReplicationController` it is workload name. For `DaemonSet` hostname is node name and for `StatefulSet` hostname is pod name.
+* `status.path` indicates the path that is backed up in this snapshot.
+* `status.tree` indicates `tree` of the restic snapshot. For more details see [here](https://restic.readthedocs.io/en/stable/100_references.html#trees-and-data).
+* `status.uid` indicates id of the user who took this backup. For `root` user it is 0.
+* `status.username` indicates the name of the user.
 
 ## Working with Snapshot
 
