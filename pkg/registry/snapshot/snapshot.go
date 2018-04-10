@@ -97,24 +97,18 @@ func (r *REST) List(ctx apirequest.Context, options *metainternalversion.ListOpt
 		return nil, err
 	}
 
-	var requirements labels.Requirements
-	var selectable bool
-	if options.LabelSelector != nil {
-		requirements, selectable = options.LabelSelector.Requirements()
-		if !selectable {
-			return nil, errors.New("resources are not selectable using provided selectors")
-		}
-	}
-
-	repoSelector := labels.Everything().Add(requirements...)
 	var selectedRepos []v1alpha1.Repository
-	for _, r := range repositories.Items {
-		repoLabels := make(map[string]string)
-		repoLabels = r.Labels
-		repoLabels["repository"] = r.Name
-		if repoSelector.Matches(labels.Set(repoLabels)) {
-			selectedRepos = append(selectedRepos, r)
+	if options.LabelSelector != nil {
+		for _, r := range repositories.Items {
+			repoLabels := make(map[string]string)
+			repoLabels = r.Labels
+			repoLabels["repository"] = r.Name
+			if options.LabelSelector.Matches(labels.Set(repoLabels)) {
+				selectedRepos = append(selectedRepos, r)
+			}
 		}
+	} else {
+		selectedRepos = repositories.Items
 	}
 
 	snapshotList := &api.SnapshotList{}
