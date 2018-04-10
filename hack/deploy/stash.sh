@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eou pipefail
 
-crds=(restics recoveries)
+crds=(restics repositories recoveries)
 
 echo "checking kubeconfig context"
 kubectl config current-context || { echo "Set a context (kubectl use-context <context>) out of the following:"; echo; kubectl config get-contexts; exit 1; }
@@ -57,8 +57,8 @@ export STASH_IMAGE_PULL_SECRET=
 export STASH_ENABLE_ANALYTICS=true
 export STASH_UNINSTALL=0
 export STASH_PURGE=0
-export APPSCODE_ENV=${APPSCODE_ENV:-prod}
 
+export APPSCODE_ENV=${APPSCODE_ENV:-prod}
 export SCRIPT_LOCATION="curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.3/"
 if [ "$APPSCODE_ENV" = "dev" ]; then
     export SCRIPT_LOCATION="cat "
