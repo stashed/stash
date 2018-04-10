@@ -6,6 +6,7 @@ import (
 
 	"github.com/appscode/go/log"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	"github.com/appscode/stash/client/clientset/versioned/scheme"
 	cs "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1"
 	stash_util "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
 	"github.com/appscode/stash/pkg/cli"
@@ -13,6 +14,7 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/reference"
 )
 
 type Controller struct {
@@ -45,41 +47,50 @@ func (c *Controller) Run() {
 	if err = recovery.IsValid(); err != nil {
 		log.Errorf("Failed to validate recovery %s, reason: %s\n", recovery.Name, err)
 		stash_util.SetRecoveryStatusPhase(c.stashClient, recovery, api.RecoveryFailed)
-		eventer.CreateEventWithLog(
-			c.k8sClient,
-			RecoveryEventComponent,
-			recovery.ObjectReference(),
-			core.EventTypeWarning,
-			eventer.EventReasonFailedToRecover,
-			fmt.Sprintf("Failed to validate recovery %s, reason: %s", recovery.Name, err),
-		)
+		ref, rerr := reference.GetReference(scheme.Scheme, recovery)
+		if rerr == nil {
+			eventer.CreateEventWithLog(
+				c.k8sClient,
+				RecoveryEventComponent,
+				ref,
+				core.EventTypeWarning,
+				eventer.EventReasonFailedToRecover,
+				fmt.Sprintf("Failed to validate recovery %s, reason: %s", recovery.Name, err),
+			)
+		}
 		return
 	}
 
 	if err = c.RecoverOrErr(recovery); err != nil {
 		log.Errorf("Failed to complete recovery %s, reason: %s\n", recovery.Name, err)
 		stash_util.SetRecoveryStatusPhase(c.stashClient, recovery, api.RecoveryFailed)
-		eventer.CreateEventWithLog(
-			c.k8sClient,
-			RecoveryEventComponent,
-			recovery.ObjectReference(),
-			core.EventTypeWarning,
-			eventer.EventReasonFailedToRecover,
-			fmt.Sprintf("Failed to complete recovery %s, reason: %s", recovery.Name, err),
-		)
+		ref, rerr := reference.GetReference(scheme.Scheme, recovery)
+		if rerr == nil {
+			eventer.CreateEventWithLog(
+				c.k8sClient,
+				RecoveryEventComponent,
+				ref,
+				core.EventTypeWarning,
+				eventer.EventReasonFailedToRecover,
+				fmt.Sprintf("Failed to complete recovery %s, reason: %s", recovery.Name, err),
+			)
+		}
 		return
 	}
 
 	log.Infof("Recovery %s succeeded\n", recovery.Name)
 	stash_util.SetRecoveryStatusPhase(c.stashClient, recovery, api.RecoverySucceeded) // TODO: status.Stats
-	eventer.CreateEventWithLog(
-		c.k8sClient,
-		RecoveryEventComponent,
-		recovery.ObjectReference(),
-		core.EventTypeNormal,
-		eventer.EventReasonSuccessfulRecovery,
-		fmt.Sprintf("Recovery %s succeeded", recovery.Name),
-	)
+	ref, rerr := reference.GetReference(scheme.Scheme, recovery)
+	if rerr == nil {
+		eventer.CreateEventWithLog(
+			c.k8sClient,
+			RecoveryEventComponent,
+			ref,
+			core.EventTypeNormal,
+			eventer.EventReasonSuccessfulRecovery,
+			fmt.Sprintf("Recovery %s succeeded", recovery.Name),
+		)
+	}
 }
 
 func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
@@ -105,14 +116,17 @@ func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
 		d, err := c.measure(cli.Restore, path, hostname)
 		if err != nil {
 			errRec = err
-			eventer.CreateEventWithLog(
-				c.k8sClient,
-				RecoveryEventComponent,
-				recovery.ObjectReference(),
-				core.EventTypeWarning,
-				eventer.EventReasonFailedToRecover,
-				fmt.Sprintf("failed to recover FileGroup %s, reason: %v", path, err),
-			)
+			ref, rerr := reference.GetReference(scheme.Scheme, recovery)
+			if rerr == nil {
+				eventer.CreateEventWithLog(
+					c.k8sClient,
+					RecoveryEventComponent,
+					ref,
+					core.EventTypeWarning,
+					eventer.EventReasonFailedToRecover,
+					fmt.Sprintf("failed to recover FileGroup %s, reason: %v", path, err),
+				)
+			}
 			stash_util.SetRecoveryStats(c.stashClient, recovery, path, d, api.RecoveryFailed)
 		} else {
 			stash_util.SetRecoveryStats(c.stashClient, recovery, path, d, api.RecoverySucceeded)

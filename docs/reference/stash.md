@@ -40,8 +40,10 @@ Stash is a Kubernetes operator for restic. For more information, visit here: htt
 
 * [stash backup](/docs/reference/stash_backup.md)	 - Run Stash Backup
 * [stash check](/docs/reference/stash_check.md)	 - Check restic backup
+* [stash forget](/docs/reference/stash_forget.md)	 - Delete snapshots from a restic repository
 * [stash recover](/docs/reference/stash_recover.md)	 - Recover restic backup
 * [stash run](/docs/reference/stash_run.md)	 - Launch Stash Controller
 * [stash scaledown](/docs/reference/stash_scaledown.md)	 - Scale down workload
+* [stash snapshots](/docs/reference/stash_snapshots.md)	 - Get snapshots of restic repo
 * [stash version](/docs/reference/stash_version.md)	 - Prints binary version number.
 

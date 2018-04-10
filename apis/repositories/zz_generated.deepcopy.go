@@ -94,6 +94,11 @@ func (in *SnapshotStatus) DeepCopyInto(out *SnapshotStatus) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.Tags != nil {
+		in, out := &in.Tags, &out.Tags
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	return
 }
 

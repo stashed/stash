@@ -1,0 +1,37 @@
+package matcher
+
+import (
+	"fmt"
+	"strings"
+
+	snap_api "github.com/appscode/stash/apis/repositories/v1alpha1"
+	"github.com/onsi/gomega/types"
+)
+
+func HavePrefixInName(prefix string) types.GomegaMatcher {
+	return &namePrefixMatcher{
+		prefix: prefix,
+	}
+}
+
+type namePrefixMatcher struct {
+	prefix string
+}
+
+func (matcher *namePrefixMatcher) Match(actual interface{}) (success bool, err error) {
+	snapshotList := actual.(*snap_api.SnapshotList)
+	for _, snap := range snapshotList.Items {
+		if !strings.HasPrefix(snap.Name, matcher.prefix) {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func (matcher *namePrefixMatcher) FailureMessage(actual interface{}) (message string) {
+	return fmt.Sprintf("Expected\n\tSnapshots name\nto  have prefix %v\n\t", matcher.prefix)
+}
+
+func (matcher *namePrefixMatcher) NegatedFailureMessage(actual interface{}) (message string) {
+	return fmt.Sprintf("Expected\n\tSnapshots name\nnot to have prefix %v\n\t", &matcher)
+}

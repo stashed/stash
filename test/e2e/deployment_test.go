@@ -762,7 +762,7 @@ var _ = Describe("Deployment", func() {
 		Context("With cacert", func() {
 			BeforeEach(func() {
 				By("Creating Minio server with cacert")
-				addrs, err := f.CreateMinioServer()
+				addrs, err := f.CreateMinioServer(true)
 				Expect(err).NotTo(HaveOccurred())
 
 				restic = f.ResticForMinioBackend("https://" + addrs)
@@ -803,7 +803,7 @@ var _ = Describe("Deployment", func() {
 		Context("Without cacert", func() {
 			BeforeEach(func() {
 				By("Creating Minio server with cacert")
-				addrs, err := f.CreateMinioServer()
+				addrs, err := f.CreateMinioServer(true)
 				Expect(err).NotTo(HaveOccurred())
 
 				restic = f.ResticForMinioBackend("https://" + addrs)
@@ -828,14 +828,11 @@ var _ = Describe("Deployment", func() {
 				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 				By("Waiting to count failed setup event")
-				f.EventualWarning(restic.ObjectMeta).Should(WithTransform(f.CountFailedSetup, BeNumerically(">=", 1)))
+				f.EventualWarning(restic.ObjectMeta, framework.KindRestic).Should(WithTransform(f.CountFailedSetup, BeNumerically(">=", 1)))
 
-				By("Waiting to count successful backup event")
-				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
+				By("Checking Repository CRD not created")
+				_, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(repos.Items).NotTo(BeEmpty())
-				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically("==", 0)))
-
 			})
 		})
 	})

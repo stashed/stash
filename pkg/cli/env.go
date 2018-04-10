@@ -57,6 +57,7 @@ const (
 )
 
 func (w *ResticWrapper) SetupEnv(backend api.Backend, secret *core.Secret, autoPrefix string) (string, error) {
+
 	if v, ok := secret.Data[RESTIC_PASSWORD]; !ok {
 		return "", errors.New("missing repository password")
 	} else {
@@ -164,6 +165,7 @@ func (w *ResticWrapper) SetupEnv(backend api.Backend, secret *core.Secret, autoP
 				w.sh.SetEnv(B2_ACCOUNT_KEY, string(secret.Data[B2_ACCOUNT_KEY]))
 		*/
 	}
+
 	return prefix, nil
 }
 

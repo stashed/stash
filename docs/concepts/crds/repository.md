@@ -16,7 +16,7 @@ section_menu_id: concepts
 # Repository
 
 ## What is Repository
-A `Repository` is a Kubernetes `CustomResourceDefinition (CRD)`. It provides information of a [restic](https://restic.net/) repository in Kubernetes native way. When [stash](/docs/concepts/what-is-stash/overview.md) sidecar create a restic repository for backup in desired backend, it also create a `Repository` CRD object with relevant information of the repository. This enable user to view backup status of the workloads very easily.
+A `Repository` is a Kubernetes `CustomResourceDefinition (CRD)`. It provides information of a [restic](https://restic.net/) repository in Kubernetes native way. When [stash](/docs/concepts/what-is-stash/overview.md) sidecar creates a restic repository for backup in the desired backend, it also creates a `Repository` CRD object with relevant information of the repository. This enables a user to view backup status of the workloads very easily.
 
 ## Repository CRD structure
 A sample `Repository` CRD object for backup a `Deployment` in local backend is shown below,
@@ -56,15 +56,15 @@ Here, we are going describe some important sections of `Repository` CRD.
 
 ## Repository Labels
 
-`Repository` maintain some important information in label. These labels enable user to filter `Repository` according to `restic`, `workload-kind`, `workload-name`, `node-name` etc. Details of these labels are given below.
+A `Repository` object maintains some important information using labels. These labels enable a user to filter `Repository` according to `restic`, `workload-kind`, `workload-name`, `node-name` etc. Details of these labels are given below.
 
 | Label name      | Description                                                                                                                                                   |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `restic`        | Name of the `Restic` which is responsible for this `Repository`.                                                                                              |
 | `workload-kind` | `Kind` of the workload for which the `Repository` has been created.                                                                                           |
 | `workload-name` | `Name` of the workload for which the `Repository` has been created.                                                                                           |
-| `pod-name`      | This `label` present when the respective workload is  `StatefulSet`. It represent the pod name of the `StatefulSet` who is responsible for this `Repository`. |
-| `node-name`     | This `label` present when the respective workload is  `DaemonSet`. It represent the node name where the  `DaemonSet` is running.                              |
+| `pod-name`      | This `label` present when the respective workload is  `StatefulSet`. It represents the pod name of the `StatefulSet` who is responsible for this `Repository`. |
+| `node-name`     | This `label` present when the respective workload is  `DaemonSet`. It represents the node name where the  `DaemonSet` is running.                              |
 
 ## Repository Spec
 
@@ -82,7 +82,7 @@ Here, we are going describe some important sections of `Repository` CRD.
 
 Stash operator updates `.status` of a Repository CRD every time a backup operation is completed.
 
-- `status.backupCount` indicated the total number of backup operation completed for this Repository.
+- `status.backupCount` indicates the total number of backup operation completed for this Repository.
 - `status.firstBackupTime` indicates the timestamp of first backup operation.
 - `status.lastBackupTime` indicates the timestamp of last backup operation.
 - `status.lastSuccessfulBackupTime` indicates the timestamp of last successful backup operation. If `status.lastBackupTime` and `status.lastSuccessfulBackupTime` are same, it means that last backup operation was successful.
@@ -92,9 +92,9 @@ Stash operator updates `.status` of a Repository CRD every time a backup operati
 
 Whenever a `restic` repository is created according to [these](/docs/concepts/crds/restic.md#backup-repository-structure) rules, it also create respective `Repository` CRD object. Name of this `Repository` CRD object is generated based on rules below:
 
-- For workload kind `Deployment`, `Replicaset` and `ReplicationController` `Repository` is created with name `<WORKLOAD_KIND>.<WORKLOAD_NAME>`. For multiple replicas, only one `Repository` is created as backup is taken by sidecar of replica determined by leader-election.
-- For workload kind `Statefulset` `Repository` is created with name`<WORKLOAD_KIND>.<POD_NAME>`. A separate `Repository` is created for each replica of a StatefulSet..
-- For workload kind `Daemonset` Repository is created with name `<WORKLOAD_KIND>.<WORKLOAD_NAME>.<NODE_NAME>`. One repository is created for each node where pods of a DaemonSet are running.
+- For workload kind `Deployment`, `Replicaset` and `ReplicationController` `Repository` is created with name `<WORKLOAD_KIND>.<WORKLOAD_NAME>`. For multiple replicas, only one `Repository` is created as the backup is taken by sidecar of the replica determined by leader-election.
+- For workload kind `Statefulset`, `Repository` is created with name`<WORKLOAD_KIND>.<POD_NAME>`. A separate `Repository` is created for each replica of a StatefulSet.
+- For workload kind `DaemonSet`, Repository is created with name `<WORKLOAD_KIND>.<WORKLOAD_NAME>.<NODE_NAME>`. One repository is created for each node where pods of a DaemonSet are running.
 
 ## Working with Repository CRD
 
@@ -121,6 +121,7 @@ $ kubectl get repository -l node-name=minikube
 
 - Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/backup.md).
 - To restore a backup see [here](/docs/guides/restore.md).
+- Learn about the details of Snapshot [here](/docs/concepts/crds/snapshot.md).
 - Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
 - To run backup in offline mode see [here](/docs/guides/offline_backup.md)
 - See the list of supported backends and how to configure them [here](/docs/guides/backends.md).
