@@ -18,6 +18,9 @@ const (
 	TestSoucreDemoDataPath = "/data/stash-test/demo-data"
 	TestSourceDataDir1     = "/source/data/dir-1"
 	TestSourceDataDir2     = "/source/data/dir-2"
+	KindRestic             = "Restic"
+	KindRepository         = "Repository"
+	KindRecovery           = "Recovery"
 )
 
 func (f *Framework) EventualEvent(meta metav1.ObjectMeta) GomegaAsyncAssertion {
@@ -34,10 +37,10 @@ func (f *Framework) EventualEvent(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	})
 }
 
-func (f *Framework) EventualWarning(meta metav1.ObjectMeta) GomegaAsyncAssertion {
+func (f *Framework) EventualWarning(meta metav1.ObjectMeta, involvedObjectKind string) GomegaAsyncAssertion {
 	return Eventually(func() []core.Event {
 		fieldSelector := fields.SelectorFromSet(fields.Set{
-			"involvedObject.kind":      "Restic",
+			"involvedObject.kind":      involvedObjectKind,
 			"involvedObject.name":      meta.Name,
 			"involvedObject.namespace": meta.Namespace,
 			"type": core.EventTypeWarning,
