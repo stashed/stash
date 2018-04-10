@@ -66,7 +66,7 @@ func (r *REST) GetSnapshots(repository *v1alpha1.Repository, snapshotIDs []strin
 	snapshot := &api.Snapshot{}
 	for _, result := range results {
 		snapshot.Namespace = repository.Namespace
-		snapshot.Name = repository.Name + "-" + result.ID[0:8] // snapshotName = repositoryName-first8CharacterOfSnapshotId
+		snapshot.Name = repository.Name + "-" + result.ID[0:SnapshotIDLength] // snapshotName = repositoryName-first8CharacterOfSnapshotId
 		snapshot.UID = types.UID(result.ID)
 
 		snapshot.Labels = repository.Labels
