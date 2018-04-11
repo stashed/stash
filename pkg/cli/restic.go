@@ -50,7 +50,7 @@ type Snapshot struct {
 
 func (w *ResticWrapper) ListSnapshots(snapshotIDs []string) ([]Snapshot, error) {
 	result := make([]Snapshot, 0)
-	args := w.appendCacheDirFlag([]interface{}{"snapshots", "--json", "--quiet"})
+	args := w.appendCacheDirFlag([]interface{}{"snapshots", "--json", "--quiet", "--no-lock"})
 	args = w.appendCaCertFlag(args)
 	for _, id := range snapshotIDs {
 		args = append(args, id)

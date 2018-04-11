@@ -31,7 +31,7 @@ var _ = Describe("DaemonSet", func() {
 		f = root.Invoke()
 	})
 	AfterEach(func() {
-		f.DeleteRepositories()
+		f.DeleteRepositories(f.DaemonSetRepos(&daemon))
 		time.Sleep(60 * time.Second)
 	})
 	JustBeforeEach(func() {
@@ -62,10 +62,10 @@ var _ = Describe("DaemonSet", func() {
 			f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for Repository CRD")
-			f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).ShouldNot(BeEmpty())
+			f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
-			f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
 			repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
@@ -91,10 +91,10 @@ var _ = Describe("DaemonSet", func() {
 			f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for Repository CRD")
-			f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).ShouldNot(BeEmpty())
+			f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
-			f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
 			repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
@@ -120,10 +120,10 @@ var _ = Describe("DaemonSet", func() {
 			f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for Repository CRD")
-			f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).ShouldNot(BeEmpty())
+			f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
-			f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Deleting restic " + restic.Name)
 			f.DeleteRestic(restic.ObjectMeta)
@@ -148,10 +148,10 @@ var _ = Describe("DaemonSet", func() {
 			f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for Repository CRD")
-			f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).ShouldNot(BeEmpty())
+			f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
-			f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Removing labels of DaemonSet " + daemon.Name)
 			_, _, err = ext_util.PatchDaemonSet(f.KubeClient, &daemon, func(in *extensions.DaemonSet) *extensions.DaemonSet {
@@ -183,10 +183,10 @@ var _ = Describe("DaemonSet", func() {
 			f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for Repository CRD")
-			f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).ShouldNot(BeEmpty())
+			f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
-			f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Change selector of Restic " + restic.Name)
 			err = f.UpdateRestic(restic.ObjectMeta, func(in *api.Restic) *api.Restic {
@@ -221,10 +221,10 @@ var _ = Describe("DaemonSet", func() {
 			Expect(obj).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for Repository CRD")
-			f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).ShouldNot(BeEmpty())
+			f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
-			f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
 			repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
@@ -281,10 +281,10 @@ var _ = Describe("DaemonSet", func() {
 			Expect(obj).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for Repository CRD")
-			f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).ShouldNot(BeEmpty())
+			f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
-			f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Removing labels of DaemonSet " + daemon.Name)
 			obj, _, err = ext_util.PatchDaemonSet(f.KubeClient, &daemon, func(in *extensions.DaemonSet) *extensions.DaemonSet {
@@ -330,10 +330,10 @@ var _ = Describe("DaemonSet", func() {
 			Expect(obj).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for Repository CRD")
-			f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).ShouldNot(BeEmpty())
+			f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
 
 			By("Waiting for backup to complete")
-			f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 		}
 	)
 
@@ -564,13 +564,13 @@ var _ = Describe("DaemonSet", func() {
 				f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
 
 				By("Waiting for Repository CRD")
-				f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).ShouldNot(BeEmpty())
+				f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
 
 				By("Waiting for initial backup to complete")
-				f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+				f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for next backup to complete")
-				f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 2)))
+				f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 2)))
 
 				By("Waiting for backup event")
 				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
@@ -609,10 +609,10 @@ var _ = Describe("DaemonSet", func() {
 				f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 				By("Waiting for Repository CRD")
-				f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).ShouldNot(BeEmpty())
+				f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
 
 				By("Waiting for backup to complete")
-				f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+				f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
 				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
@@ -650,7 +650,7 @@ var _ = Describe("DaemonSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for backup to complete")
-				f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">", previousBackupCount)))
+				f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">", previousBackupCount)))
 
 				By("Waiting for backup event")
 				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", previousBackupCount)))
@@ -687,10 +687,10 @@ var _ = Describe("DaemonSet", func() {
 				f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 				By("Waiting for Repository CRD")
-				f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).ShouldNot(BeEmpty())
+				f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
 
 				By("Waiting for backup to complete")
-				f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">", 1)))
+				f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">", 1)))
 
 				By("Waiting for backup event")
 				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
@@ -733,13 +733,13 @@ var _ = Describe("DaemonSet", func() {
 				f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 				By("Waiting for Repository CRD")
-				f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).ShouldNot(BeEmpty())
+				f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
 
 				By("Waiting for backup to complete")
-				f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+				f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				repos := f.GetRepositories(api.KindDaemonSet, daemon.ObjectMeta, 1)
+				repos := f.DaemonSetRepos(&daemon)
 				Expect(repos).NotTo(BeEmpty())
 				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
@@ -830,13 +830,13 @@ var _ = Describe("DaemonSet", func() {
 				f.EventuallyDaemonSet(daemon.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 				By("Waiting for Repository CRD")
-				f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).ShouldNot(BeEmpty())
+				f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
 
 				By("Waiting for backup to complete")
-				f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+				f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				repos := f.GetRepositories(api.KindDaemonSet, daemon.ObjectMeta, 1)
+				repos := f.DaemonSetRepos(&daemon)
 				Expect(repos).NotTo(BeEmpty())
 				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 

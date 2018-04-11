@@ -32,7 +32,7 @@ var _ = Describe("StatefulSet", func() {
 		f = root.Invoke()
 	})
 	AfterEach(func() {
-		f.DeleteRepositories()
+		f.DeleteRepositories(f.StatefulSetRepos(&ss))
 		time.Sleep(60 * time.Second)
 	})
 	JustBeforeEach(func() {
@@ -68,12 +68,12 @@ var _ = Describe("StatefulSet", func() {
 			f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for Repository CRD")
-			f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(func(repoList []*api.Repository) int {
+			f.EventuallyRepository(&ss).Should(WithTransform(func(repoList []*api.Repository) int {
 				return len(repoList)
 			}, BeNumerically("==", int(*ss.Spec.Replicas))))
 
 			By("Waiting for backup to complete")
-			f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
 			repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
@@ -103,12 +103,12 @@ var _ = Describe("StatefulSet", func() {
 			f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for Repository CRD")
-			f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(func(repoList []*api.Repository) int {
+			f.EventuallyRepository(&ss).Should(WithTransform(func(repoList []*api.Repository) int {
 				return len(repoList)
 			}, BeNumerically("==", int(*ss.Spec.Replicas))))
 
 			By("Waiting for backup to complete")
-			f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
 			repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
@@ -138,12 +138,12 @@ var _ = Describe("StatefulSet", func() {
 			f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for Repository CRD")
-			f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(func(repoList []*api.Repository) int {
+			f.EventuallyRepository(&ss).Should(WithTransform(func(repoList []*api.Repository) int {
 				return len(repoList)
 			}, BeNumerically("==", int(*ss.Spec.Replicas))))
 
 			By("Waiting for backup to complete")
-			f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Deleting restic " + restic.Name)
 			f.DeleteRestic(restic.ObjectMeta)
@@ -173,12 +173,12 @@ var _ = Describe("StatefulSet", func() {
 			f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for Repository CRD")
-			f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(func(repoList []*api.Repository) int {
+			f.EventuallyRepository(&ss).Should(WithTransform(func(repoList []*api.Repository) int {
 				return len(repoList)
 			}, BeNumerically("==", int(*ss.Spec.Replicas))))
 
 			By("Waiting for backup to complete")
-			f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Removing labels of StatefulSet " + ss.Name)
 			_, _, err = apps_util.PatchStatefulSet(f.KubeClient, &ss, func(in *apps.StatefulSet) *apps.StatefulSet {
@@ -214,12 +214,12 @@ var _ = Describe("StatefulSet", func() {
 			f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for Repository CRD")
-			f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(func(repoList []*api.Repository) int {
+			f.EventuallyRepository(&ss).Should(WithTransform(func(repoList []*api.Repository) int {
 				return len(repoList)
 			}, BeNumerically("==", int(*ss.Spec.Replicas))))
 
 			By("Waiting for backup to complete")
-			f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Change selector of Restic " + restic.Name)
 			err = f.UpdateRestic(restic.ObjectMeta, func(in *api.Restic) *api.Restic {
@@ -257,12 +257,12 @@ var _ = Describe("StatefulSet", func() {
 			Expect(obj).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for Repository CRD")
-			f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(func(repoList []*api.Repository) int {
+			f.EventuallyRepository(&ss).Should(WithTransform(func(repoList []*api.Repository) int {
 				return len(repoList)
 			}, BeNumerically("==", int(*ss.Spec.Replicas))))
 
 			By("Waiting for backup to complete")
-			f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
 			repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
@@ -331,12 +331,12 @@ var _ = Describe("StatefulSet", func() {
 			Expect(obj).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for Repository CRD")
-			f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(func(repoList []*api.Repository) int {
+			f.EventuallyRepository(&ss).Should(WithTransform(func(repoList []*api.Repository) int {
 				return len(repoList)
 			}, BeNumerically("==", int(*ss.Spec.Replicas))))
 
 			By("Waiting for backup to complete")
-			f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Removing labels of StatefulSet " + ss.Name)
 			obj, _, err = apps_util.PatchStatefulSet(f.KubeClient, &ss, func(in *apps.StatefulSet) *apps.StatefulSet {
@@ -386,12 +386,12 @@ var _ = Describe("StatefulSet", func() {
 			Expect(obj).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for Repository CRD")
-			f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(func(repoList []*api.Repository) int {
+			f.EventuallyRepository(&ss).Should(WithTransform(func(repoList []*api.Repository) int {
 				return len(repoList)
 			}, BeNumerically("==", int(*ss.Spec.Replicas))))
 
 			By("Waiting for backup to complete")
-			f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 		}
 	)
 
@@ -632,15 +632,15 @@ var _ = Describe("StatefulSet", func() {
 				f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
 
 				By("Waiting for Repository CRD")
-				f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(func(repoList []*api.Repository) int {
+				f.EventuallyRepository(&ss).Should(WithTransform(func(repoList []*api.Repository) int {
 					return len(repoList)
 				}, BeNumerically("==", int(*ss.Spec.Replicas))))
 
 				By("Waiting for initial backup to complete")
-				f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+				f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for next backup to complete")
-				f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 2)))
+				f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 2)))
 
 				By("Waiting for backup event")
 				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
@@ -684,12 +684,12 @@ var _ = Describe("StatefulSet", func() {
 				f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 				By("Waiting for Repository CRD")
-				f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(func(repoList []*api.Repository) int {
+				f.EventuallyRepository(&ss).Should(WithTransform(func(repoList []*api.Repository) int {
 					return len(repoList)
 				}, BeNumerically("==", int(*ss.Spec.Replicas))))
 
 				By("Waiting for backup to complete")
-				f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+				f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
 				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
@@ -727,7 +727,7 @@ var _ = Describe("StatefulSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for backup to complete")
-				f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">", previousBackupCount)))
+				f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">", previousBackupCount)))
 
 				By("Waiting for backup event")
 				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", previousBackupCount)))
@@ -742,7 +742,7 @@ var _ = Describe("StatefulSet", func() {
 				f.DeleteService(svc.ObjectMeta)
 				f.DeleteRestic(restic.ObjectMeta)
 				f.DeleteSecret(cred.ObjectMeta)
-				f.DeleteRepositories()
+				f.DeleteRepositories(f.StatefulSetRepos(&ss))
 			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
@@ -769,12 +769,12 @@ var _ = Describe("StatefulSet", func() {
 				f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 				By("Waiting for Repository CRD")
-				f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(func(repoList []*api.Repository) int {
+				f.EventuallyRepository(&ss).Should(WithTransform(func(repoList []*api.Repository) int {
 					return len(repoList)
 				}, BeNumerically("==", int(*ss.Spec.Replicas))))
 
 				By("Waiting for backup to complete")
-				f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+				f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
 				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
@@ -817,12 +817,12 @@ var _ = Describe("StatefulSet", func() {
 				f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 				By("Waiting for Repository CRD")
-				f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(func(repoList []*api.Repository) int {
+				f.EventuallyRepository(&ss).Should(WithTransform(func(repoList []*api.Repository) int {
 					return len(repoList)
 				}, BeNumerically("==", int(*ss.Spec.Replicas))))
 
 				By("Waiting for backup to complete")
-				f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+				f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
 				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
@@ -865,13 +865,13 @@ var _ = Describe("StatefulSet", func() {
 				f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 				By("Waiting for Repository CRD")
-				f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).ShouldNot(BeEmpty())
+				f.EventuallyRepository(&ss).ShouldNot(BeEmpty())
 
 				By("Waiting for backup to complete")
-				f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+				f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				repos := f.GetRepositories(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas))
+				repos := f.StatefulSetRepos(&ss)
 				Expect(repos).NotTo(BeEmpty())
 				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
@@ -961,13 +961,13 @@ var _ = Describe("StatefulSet", func() {
 				f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 				By("Waiting for Repository CRD")
-				f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).ShouldNot(BeEmpty())
+				f.EventuallyRepository(&ss).ShouldNot(BeEmpty())
 
 				By("Waiting for backup to complete")
-				f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+				f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				repos := f.GetRepositories(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas))
+				repos := f.StatefulSetRepos(&ss)
 				Expect(repos).NotTo(BeEmpty())
 				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
