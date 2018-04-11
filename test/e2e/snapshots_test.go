@@ -45,12 +45,11 @@ var _ = Describe("Snapshots", func() {
 		f.DeleteStatefulSet(ss.ObjectMeta)
 		f.DeleteRestic(restic.ObjectMeta)
 		f.DeleteSecret(cred.ObjectMeta)
-		f.DeleteRepositories([]framework.KindMetaReplicas{
-			{Kind: api.KindDaemonSet, Meta: daemon.ObjectMeta, Replicas: 1},
-			{Kind: api.KindDeployment, Meta: deployment.ObjectMeta, Replicas: int(*deployment.Spec.Replicas)},
-			{Kind: api.KindReplicationController, Meta: rc.ObjectMeta, Replicas: int(*rc.Spec.Replicas)},
-			{Kind: api.KindReplicaSet, Meta: rs.ObjectMeta, Replicas: int(*rs.Spec.Replicas)},
-			{Kind: api.KindStatefulSet, Meta: ss.ObjectMeta, Replicas: int(*ss.Spec.Replicas)}})
+		f.DeleteRepositories(f.DaemonSetRepos(&daemon))
+		f.DeleteRepositories(f.DeploymentRepos(&deployment))
+		f.DeleteRepositories(f.ReplicationControllerRepos(&rc))
+		f.DeleteRepositories(f.ReplicaSetRepos(&rs))
+		f.DeleteRepositories(f.StatefulSetRepos(&ss))
 		time.Sleep(60 * time.Second)
 	})
 	JustBeforeEach(func() {
@@ -117,38 +116,38 @@ var _ = Describe("Snapshots", func() {
 
 		shouldHaveRepositoryCRD = func() {
 			By("Waiting for Repository CRD for DaemonSet")
-			f.EventuallyRepository(framework.KindMetaReplicas{Kind: api.KindDaemonSet, Meta: daemon.ObjectMeta, Replicas: 1}).ShouldNot(BeEmpty())
+			f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
 
 			By("Waiting for Repository CRD for Deployment")
-			f.EventuallyRepository(framework.KindMetaReplicas{Kind: api.KindDeployment, Meta: deployment.ObjectMeta, Replicas: int(*deployment.Spec.Replicas)}).ShouldNot(BeEmpty())
+			f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
 
 			By("Waiting for Repository CRD for ReplicationController")
-			f.EventuallyRepository(framework.KindMetaReplicas{Kind: api.KindReplicationController, Meta: rc.ObjectMeta, Replicas: int(*rc.Spec.Replicas)}).ShouldNot(BeEmpty())
+			f.EventuallyRepository(&rc).ShouldNot(BeEmpty())
 
 			By("Waiting for Repository CRD for ReplicaSet")
-			f.EventuallyRepository(framework.KindMetaReplicas{Kind: api.KindReplicaSet, Meta: rs.ObjectMeta, Replicas: int(*rs.Spec.Replicas)}).ShouldNot(BeEmpty())
+			f.EventuallyRepository(&rs).ShouldNot(BeEmpty())
 
 			By("Waiting for Repository CRD for StatefulSet")
-			f.EventuallyRepository(framework.KindMetaReplicas{Kind: api.KindStatefulSet, Meta: ss.ObjectMeta, Replicas: int(*ss.Spec.Replicas)}).Should(WithTransform(func(repoList []*api.Repository) int {
+			f.EventuallyRepository(&ss).Should(WithTransform(func(repoList []*api.Repository) int {
 				return len(repoList)
 			}, BeNumerically("==", int(*ss.Spec.Replicas))))
 		}
 
 		shouldBackupComplete = func() {
 			By("Waiting for backup to complete for DaemonsSet")
-			f.EventuallyRepository(framework.KindMetaReplicas{Kind: api.KindDaemonSet, Meta: daemon.ObjectMeta, Replicas: 1}).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 2)))
+			f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 2)))
 
 			By("Waiting for backup to complete for Deployment")
-			f.EventuallyRepository(framework.KindMetaReplicas{Kind: api.KindDeployment, Meta: deployment.ObjectMeta, Replicas: int(*deployment.Spec.Replicas)}).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 2)))
+			f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 2)))
 
 			By("Waiting for backup to complete for ReplicationController")
-			f.EventuallyRepository(framework.KindMetaReplicas{Kind: api.KindReplicationController, Meta: rc.ObjectMeta, Replicas: int(*rc.Spec.Replicas)}).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 2)))
+			f.EventuallyRepository(&rc).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 2)))
 
 			By("Waiting for backup to complete for ReplicaSet")
-			f.EventuallyRepository(framework.KindMetaReplicas{Kind: api.KindReplicaSet, Meta: rs.ObjectMeta, Replicas: int(*rs.Spec.Replicas)}).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 2)))
+			f.EventuallyRepository(&rs).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 2)))
 
 			By("Waiting for backup to complete for StatefulSet")
-			f.EventuallyRepository(framework.KindMetaReplicas{Kind: api.KindStatefulSet, Meta: ss.ObjectMeta, Replicas: int(*ss.Spec.Replicas)}).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 2)))
+			f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 2)))
 		}
 
 		performOperationOnSnapshot = func() {

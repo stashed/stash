@@ -8,7 +8,9 @@ import (
 	"github.com/appscode/stash/pkg/eventer"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	apps "k8s.io/api/apps/v1beta1"
 	core "k8s.io/api/core/v1"
+	extensions "k8s.io/api/extensions/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -159,4 +161,24 @@ func FileGroupsForHostPathVolumeWithMultipleDirectory() []api.FileGroup {
 			RetentionPolicyName: "keep-last-5",
 		},
 	}
+}
+
+func (f *Framework) DaemonSetRepos(daemon *extensions.DaemonSet) []*api.Repository {
+	return f.GetRepositories(KindMetaReplicas{Kind: api.KindDaemonSet, Meta: daemon.ObjectMeta, Replicas: 1})
+}
+
+func (f *Framework) DeploymentRepos(deployment *apps.Deployment) []*api.Repository {
+	return f.GetRepositories(KindMetaReplicas{Kind: api.KindDeployment, Meta: deployment.ObjectMeta, Replicas: int(*deployment.Spec.Replicas)})
+}
+
+func (f *Framework) ReplicationControllerRepos(rc *core.ReplicationController) []*api.Repository {
+	return f.GetRepositories(KindMetaReplicas{Kind: api.KindReplicationController, Meta: rc.ObjectMeta, Replicas: int(*rc.Spec.Replicas)})
+}
+
+func (f *Framework) ReplicaSetRepos(rs *extensions.ReplicaSet) []*api.Repository {
+	return f.GetRepositories(KindMetaReplicas{Kind: api.KindReplicaSet, Meta: rs.ObjectMeta, Replicas: int(*rs.Spec.Replicas)})
+}
+
+func (f *Framework) StatefulSetRepos(ss *apps.StatefulSet) []*api.Repository {
+	return f.GetRepositories(KindMetaReplicas{Kind: api.KindStatefulSet, Meta: ss.ObjectMeta, Replicas: int(*ss.Spec.Replicas)})
 }

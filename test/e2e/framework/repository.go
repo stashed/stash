@@ -7,6 +7,9 @@ import (
 
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	. "github.com/onsi/gomega"
+	apps "k8s.io/api/apps/v1beta1"
+	core "k8s.io/api/core/v1"
+	extensions "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -16,9 +19,22 @@ type KindMetaReplicas struct {
 	Replicas int
 }
 
-func (f *Framework) EventuallyRepository(kmr KindMetaReplicas) GomegaAsyncAssertion {
+func (f *Framework) EventuallyRepository(workload interface{}) GomegaAsyncAssertion {
 	return Eventually(func() []*api.Repository {
-		return f.GetRepositories(kmr)
+		switch workload.(type) {
+		case *extensions.DaemonSet:
+			return f.DaemonSetRepos(workload.(*extensions.DaemonSet))
+		case *apps.Deployment:
+			return f.DeploymentRepos(workload.(*apps.Deployment))
+		case *core.ReplicationController:
+			return f.ReplicationControllerRepos(workload.(*core.ReplicationController))
+		case *extensions.ReplicaSet:
+			return f.ReplicaSetRepos(workload.(*extensions.ReplicaSet))
+		case *apps.StatefulSet:
+			return f.StatefulSetRepos(workload.(*apps.StatefulSet))
+		default:
+			return nil
+		}
 	})
 }
 
@@ -48,14 +64,9 @@ func (f *Framework) GetRepositories(kmr KindMetaReplicas) []*api.Repository {
 	return repositories
 }
 
-func (f *Framework) DeleteRepositories(kmrs []KindMetaReplicas) {
-	repositories := make([]*api.Repository, 0)
-	for _, kmr := range kmrs {
-		repos := f.GetRepositories(kmr)
-		repositories = append(repositories, repos...)
-	}
+func (f *Framework) DeleteRepositories(repositories []*api.Repository) {
 	for _, repo := range repositories {
-		err:=f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Delete(repo.Name, deleteInForeground())
+		err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Delete(repo.Name, deleteInForeground())
 		Expect(err).NotTo(HaveOccurred())
 	}
 }
