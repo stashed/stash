@@ -37,15 +37,20 @@ var _ = Describe("Snapshots", func() {
 		f = root.Invoke()
 	})
 	AfterEach(func() {
-		f.DeleteRepositories()
 		f.DeleteDaemonSet(daemon.ObjectMeta)
 		f.DeleteDeployment(deployment.ObjectMeta)
 		f.DeleteReplicationController(rc.ObjectMeta)
 		f.DeleteReplicaSet(rs.ObjectMeta)
-		f.DeleteStatefulSet(rs.ObjectMeta)
+		f.DeleteService(svc.ObjectMeta)
+		f.DeleteStatefulSet(ss.ObjectMeta)
 		f.DeleteRestic(restic.ObjectMeta)
 		f.DeleteSecret(cred.ObjectMeta)
-		f.DeleteService(svc.ObjectMeta)
+		f.DeleteRepositories([]framework.KindMetaReplicas{
+			{Kind: api.KindDaemonSet, Meta: daemon.ObjectMeta, Replicas: 1},
+			{Kind: api.KindDeployment, Meta: deployment.ObjectMeta, Replicas: int(*deployment.Spec.Replicas)},
+			{Kind: api.KindReplicationController, Meta: rc.ObjectMeta, Replicas: int(*rc.Spec.Replicas)},
+			{Kind: api.KindReplicaSet, Meta: rs.ObjectMeta, Replicas: int(*rs.Spec.Replicas)},
+			{Kind: api.KindStatefulSet, Meta: ss.ObjectMeta, Replicas: int(*ss.Spec.Replicas)}})
 		time.Sleep(60 * time.Second)
 	})
 	JustBeforeEach(func() {
@@ -112,38 +117,38 @@ var _ = Describe("Snapshots", func() {
 
 		shouldHaveRepositoryCRD = func() {
 			By("Waiting for Repository CRD for DaemonSet")
-			f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).ShouldNot(BeEmpty())
+			f.EventuallyRepository(framework.KindMetaReplicas{Kind: api.KindDaemonSet, Meta: daemon.ObjectMeta, Replicas: 1}).ShouldNot(BeEmpty())
 
 			By("Waiting for Repository CRD for Deployment")
-			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).ShouldNot(BeEmpty())
+			f.EventuallyRepository(framework.KindMetaReplicas{Kind: api.KindDeployment, Meta: deployment.ObjectMeta, Replicas: int(*deployment.Spec.Replicas)}).ShouldNot(BeEmpty())
 
 			By("Waiting for Repository CRD for ReplicationController")
-			f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).ShouldNot(BeEmpty())
+			f.EventuallyRepository(framework.KindMetaReplicas{Kind: api.KindReplicationController, Meta: rc.ObjectMeta, Replicas: int(*rc.Spec.Replicas)}).ShouldNot(BeEmpty())
 
 			By("Waiting for Repository CRD for ReplicaSet")
-			f.EventuallyRepository(api.KindReplicaSet, rs.ObjectMeta, int(*rs.Spec.Replicas)).ShouldNot(BeEmpty())
+			f.EventuallyRepository(framework.KindMetaReplicas{Kind: api.KindReplicaSet, Meta: rs.ObjectMeta, Replicas: int(*rs.Spec.Replicas)}).ShouldNot(BeEmpty())
 
 			By("Waiting for Repository CRD for StatefulSet")
-			f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(func(repoList []*api.Repository) int {
+			f.EventuallyRepository(framework.KindMetaReplicas{Kind: api.KindStatefulSet, Meta: ss.ObjectMeta, Replicas: int(*ss.Spec.Replicas)}).Should(WithTransform(func(repoList []*api.Repository) int {
 				return len(repoList)
 			}, BeNumerically("==", int(*ss.Spec.Replicas))))
 		}
 
 		shouldBackupComplete = func() {
 			By("Waiting for backup to complete for DaemonsSet")
-			f.EventuallyRepository(api.KindDaemonSet, daemon.ObjectMeta, 1).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 2)))
+			f.EventuallyRepository(framework.KindMetaReplicas{Kind: api.KindDaemonSet, Meta: daemon.ObjectMeta, Replicas: 1}).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 2)))
 
 			By("Waiting for backup to complete for Deployment")
-			f.EventuallyRepository(api.KindDeployment, deployment.ObjectMeta, int(*deployment.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 2)))
+			f.EventuallyRepository(framework.KindMetaReplicas{Kind: api.KindDeployment, Meta: deployment.ObjectMeta, Replicas: int(*deployment.Spec.Replicas)}).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 2)))
 
 			By("Waiting for backup to complete for ReplicationController")
-			f.EventuallyRepository(api.KindReplicationController, rc.ObjectMeta, int(*rc.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 2)))
+			f.EventuallyRepository(framework.KindMetaReplicas{Kind: api.KindReplicationController, Meta: rc.ObjectMeta, Replicas: int(*rc.Spec.Replicas)}).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 2)))
 
 			By("Waiting for backup to complete for ReplicaSet")
-			f.EventuallyRepository(api.KindReplicaSet, rs.ObjectMeta, int(*rs.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 2)))
+			f.EventuallyRepository(framework.KindMetaReplicas{Kind: api.KindReplicaSet, Meta: rs.ObjectMeta, Replicas: int(*rs.Spec.Replicas)}).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 2)))
 
 			By("Waiting for backup to complete for StatefulSet")
-			f.EventuallyRepository(api.KindStatefulSet, ss.ObjectMeta, int(*ss.Spec.Replicas)).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 2)))
+			f.EventuallyRepository(framework.KindMetaReplicas{Kind: api.KindStatefulSet, Meta: ss.ObjectMeta, Replicas: int(*ss.Spec.Replicas)}).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 2)))
 		}
 
 		performOperationOnSnapshot = func() {
@@ -227,12 +232,15 @@ var _ = Describe("Snapshots", func() {
 			Expect(snapshots).Should(HavePrefixInName(reponame))
 
 			By("Deleting snapshot " + snapshots.Items[len(snapshots.Items)-1].Name)
-			policy := metav1.DeletePropagationBackground
-			err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).Delete(snapshots.Items[len(snapshots.Items)-1].Name, &metav1.DeleteOptions{PropagationPolicy: &policy})
+			snapshots, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(metav1.ListOptions{LabelSelector: "workload-kind=Deployment"})
+			Expect(err).NotTo(HaveOccurred())
+			snapshotToDelete := snapshots.Items[len(snapshots.Items)-1].Name
+			policy := metav1.DeletePropagationForeground
+			err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).Delete(snapshotToDelete, &metav1.DeleteOptions{PropagationPolicy: &policy})
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking deleted snapshot not exist")
-			singleSnapshot, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).Get(snapshots.Items[len(snapshots.Items)-1].Name, metav1.GetOptions{})
+			singleSnapshot, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).Get(snapshotToDelete, metav1.GetOptions{})
 			Expect(err).To(HaveOccurred())
 		}
 	)

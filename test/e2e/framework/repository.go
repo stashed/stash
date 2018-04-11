@@ -5,37 +5,42 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/appscode/go/log"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (f *Framework) EventuallyRepository(kind string, objMeta metav1.ObjectMeta, replicas int) GomegaAsyncAssertion {
+type KindMetaReplicas struct {
+	Kind     string
+	Meta     metav1.ObjectMeta
+	Replicas int
+}
+
+func (f *Framework) EventuallyRepository(kmr KindMetaReplicas) GomegaAsyncAssertion {
 	return Eventually(func() []*api.Repository {
-		return f.GetRepositories(kind, objMeta, replicas)
+		return f.GetRepositories(kmr)
 	})
 }
 
-func (f *Framework) GetRepositories(kind string, objMeta metav1.ObjectMeta, replicas int) []*api.Repository {
+func (f *Framework) GetRepositories(kmr KindMetaReplicas) []*api.Repository {
 	repoNames := make([]string, 0)
 	nodeName := os.Getenv("NODE_NAME")
 	if nodeName == "" {
 		nodeName = "minikube"
 	}
 
-	workload := api.LocalTypedReference{Name: objMeta.Name, Kind: kind}
-	switch kind {
+	workload := api.LocalTypedReference{Name: kmr.Meta.Name, Kind: kmr.Kind}
+	switch kmr.Kind {
 	case api.KindDeployment, api.KindReplicationController, api.KindReplicaSet, api.KindDaemonSet:
 		repoNames = append(repoNames, workload.GetRepositoryCRDName("", nodeName))
 	case api.KindStatefulSet:
-		for i := 0; i < replicas; i++ {
-			repoNames = append(repoNames, workload.GetRepositoryCRDName(objMeta.Name+"-"+strconv.Itoa(i), nodeName))
+		for i := 0; i < kmr.Replicas; i++ {
+			repoNames = append(repoNames, workload.GetRepositoryCRDName(kmr.Meta.Name+"-"+strconv.Itoa(i), nodeName))
 		}
 	}
 	repositories := make([]*api.Repository, 0)
 	for _, repoName := range repoNames {
-		obj, err := f.StashClient.StashV1alpha1().Repositories(objMeta.Namespace).Get(repoName, metav1.GetOptions{})
+		obj, err := f.StashClient.StashV1alpha1().Repositories(kmr.Meta.Namespace).Get(repoName, metav1.GetOptions{})
 		if err == nil {
 			repositories = append(repositories, obj)
 		}
@@ -43,14 +48,15 @@ func (f *Framework) GetRepositories(kind string, objMeta metav1.ObjectMeta, repl
 	return repositories
 }
 
-func (f *Framework) DeleteRepositories() {
-	repoList, err := f.StashClient.StashV1alpha1().Repositories(f.namespace).List(metav1.ListOptions{})
-	if err != nil {
-		log.Infof(err.Error())
-		return
+func (f *Framework) DeleteRepositories(kmrs []KindMetaReplicas) {
+	repositories := make([]*api.Repository, 0)
+	for _, kmr := range kmrs {
+		repos := f.GetRepositories(kmr)
+		repositories = append(repositories, repos...)
 	}
-	for _, repo := range repoList.Items {
-		f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Delete(repo.Name, deleteInBackground())
+	for _, repo := range repositories {
+		err:=f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Delete(repo.Name, deleteInForeground())
+		Expect(err).NotTo(HaveOccurred())
 	}
 }
 
