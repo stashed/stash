@@ -1,0 +1,109 @@
+resource_types:
+- name: pull-request
+  type: docker-image
+  source:
+    repository: tahsin/git-pull-resource
+    tag: show-stderr
+
+resources:
+- name: stash
+  type: git
+  source:
+    uri: https://github.com/appscode/stash
+    branch: tahsin
+
+- name: pull-request
+  type: pull-request
+  source:
+    owner: appscode
+    repo: stash
+    label: ok-to-test
+    org: appscode
+    access_token: ((access_token))
+
+jobs:
+- name: unit-test-stash
+  plan:
+  - get: stash
+    trigger: true
+  - task: run-unit-test
+    file: stash/hack/concourse/task_unit_test.yml
+
+- name: unit-test-pr
+  plan:
+  - get: pull-request
+    version: every
+    trigger: true
+  - put: pull-request
+    params:
+      path: pull-request
+      status: pending
+  - task: run-unit-test
+    file: pull-request/hack/concourse/task_unit_test_pr.yml
+    on_success:
+      put: pull-request
+      params:
+        path: pull-request
+        status: success
+    on_failure:
+      put: pull-request
+      params:
+        path: pull-request
+        status: failure
+
+- name: e2e-test-stash
+  plan:
+  - get: stash
+    trigger: true
+    passed: [unit-test-stash]
+  - task: run-e2e-test
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: tahsin/voyager-e2e
+          tag: latest
+      inputs:
+      - name: stash
+      run:
+        path: stash/hack/concourse/e2e_test.sh
+      params:
+        TOKEN: ((digitaloceanToken))
+
+- name: e2e-test-pr
+  plan:
+  - get: pull-request
+    trigger: true
+    version: every
+    passed: [unit-test-pr]
+  - put: pull-request
+    params:
+      path: pull-request
+      status: pending
+  - task: run-e2e-test
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: tahsin/voyager-e2e
+          tag: latest
+      inputs:
+      - name: pull-request
+        path: stash
+      run:
+        path: stash/hack/concourse/e2e_test.sh
+      params:
+        TOKEN: ((digitaloceanToken))
+    on_success:
+      put: pull-request
+      params:
+        path: pull-request
+        status: success
+    on_failure:
+      put: pull-request
+      params:
+        path: pull-request
+        status: failure
+
