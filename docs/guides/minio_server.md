@@ -25,6 +25,7 @@ At first, you need to have a Kubernetes cluster, and the kubectl command-line to
 You should have understanding the following Stash terms:
 
 - [Restic](/docs/concepts/crds/restic.md)
+- [Repository](/docs/concepts/crds/repository.md)
 - [Recovery](/docs/concepts/crds/recovery.md)
 
 Then, you will need a TLS secure [Minio](https://docs.minio.io/) server to store backed up data. You can deploy a TLS secure Minio server in your cluster by following the steps below:
@@ -399,29 +400,36 @@ spec:
     prune: true
 ```
 
-If everything goes well, `Restic` will take backup of the volume periodically with 1 minute interval. You can see if the backup working correctly using this command
-,
+If everything goes well, A `Repository` crd with name `deployment.stash-demo` will be created for the respective repository in Minio backend. Verify that, `Repository` is created successfully using this command,
+
 ```console
-$ kubectl get restic minio-restic -o yaml
+$ kubectl get repository deployment.stash-demo
+NAME                    AGE
+deployment.stash-demo   1m
 ```
 
-Output will be something similar to,
+`Restic` will take backup of the volume periodically with a 1-minute interval. You can verify that backup is taking successfully by,
+
+```console 
+$ kubectl get repository deployment.stash-demo -o yaml
+```
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Repository
 metadata:
-  annotations:
-    kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"stash.appscode.com/v1alpha1","kind":"Restic","metadata":{"annotations":{},"name":"minio-restic","namespace":"default"},"spec":{"backend":{"s3":{"bucket":"stash-qa","endpoint":"https://minio-service.default.svc","prefix":"demo"},"storageSecretName":"minio-restic-secret"},"fileGroups":[{"path":"/source/data","retentionPolicyName":"keep-last-5"}],"retentionPolicies":[{"keepLast":5,"name":"keep-last-5","prune":true}],"schedule":"@every 1m","selector":{"matchLabels":{"app":"stash-demo"}},"volumeMounts":[{"mountPath":"/source/data","name":"source-data"}]}}
   clusterName: ""
-  creationTimestamp: 2018-01-30T04:45:09Z
+  creationTimestamp: 2018-04-12T04:40:02Z
   generation: 0
-  name: minio-restic
+  labels:
+    restic: minio-restic
+    workload-kind: Deployment
+    workload-name: stash-demo
+  name: deployment.stash-demo
   namespace: default
-  resourceVersion: "4385"
-  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/minio-restic
-  uid: 5a0651c3-0578-11e8-9976-08002750604b
+  resourceVersion: "5163"
+  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/repositories/deployment.stash-demo
+  uid: 90482512-3e0b-11e8-951b-42010a80002e
 spec:
   backend:
     s3:
@@ -429,28 +437,14 @@ spec:
       endpoint: https://minio-service.default.svc
       prefix: demo
     storageSecretName: minio-restic-secret
-  fileGroups:
-  - path: /source/data
-    retentionPolicyName: keep-last-5
-  retentionPolicies:
-  - keepLast: 5
-    name: keep-last-5
-    prune: true
-  schedule: '@every 1m'
-  selector:
-    matchLabels:
-      app: stash-demo
-  volumeMounts:
-  - mountPath: /source/data
-    name: source-data
 status:
-  backupCount: 13
-  firstBackupTime: 2018-01-30T04:46:41Z
-  lastBackupDuration: 2.727698782s
-  lastBackupTime: 2018-01-30T04:58:41Z
+  backupCount: 2
+  firstBackupTime: 2018-04-12T04:41:03Z
+  lastBackupDuration: 4.245593432s
+  lastBackupTime: 2018-04-12T04:42:03Z
 ```
 
-Look at the `status` field. `backupCount` show number of successful backup done by the `Restic`.
+Look at the `status` field. `backupCount` show number of successful backup taken in this `Repository`.
 
 ## Recovery
 
@@ -488,7 +482,7 @@ spec:
       path: /data/stash-recovered/ # directory in volume source where recovered data will be stored
 ```
 
-Check whether the recovery was successful,
+Wait until `Recovery` job completed its task. To verify that recovery completed successfully run,
 
 ```console
 $ kubectl get recovery minio-recovery -o yaml
