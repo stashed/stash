@@ -520,6 +520,83 @@ spec:
     prune: true
 ```
 
+### Restic Rest Server
+Stash supports Restic Rest server as backend. To configure this backend, following secret keys are needed:
+
+| Key                     | Description                                                |
+|-------------------------|------------------------------------------------------------|
+| `RESTIC_PASSWORD`       | `Required`. Password used to encrypt snapshots by `restic` |
+| `REST_SERVER_USERNAME`  | `Required`. Rest Server username                           |
+| `REST_SERVER_PASSWORD`  | `Required`. Rest Server password                           |
+| `CA_CERT_DATA`          | `optional`. CA certificate used by storage backend. This can be used to pass a self-signed ca used with Rest Server |
+
+```console
+$ echo -n 'changeit' > RESTIC_PASSWORD
+$ echo -n '<your-rest-username>' > REST_SERVER_USERNAME
+$ echo -n '<your-rest-password>' > REST_SERVER_PASSWORD
+$ kubectl create secret generic rest-secret \
+    --from-file=./RESTIC_PASSWORD \
+    --from-file=./REST_SERVER_USERNAME \
+    --from-file=./REST_SERVER_PASSWORD
+secret "rest-secret" created
+```
+
+```yaml
+$ kubectl get secret rest-secret -o yaml
+
+apiVersion: v1
+data:
+  REST_SERVER_USERNAME: PHlvdXItdXNlcm5hbWU+
+  REST_SERVER_PASSWORD: PHlvdXItcGFzc3dvcmQ+
+  RESTIC_PASSWORD: Y2hhbmdlaXQ=
+kind: Secret
+metadata:
+  creationTimestamp: 2017-06-28T13:27:16Z
+  name: rest-secret
+  namespace: default
+  resourceVersion: "6809"
+  selfLink: /api/v1/namespaces/default/secrets/rest-secret
+  uid: 80f658d1-5c05-11e7-bb52-08002711f4aa
+type: Opaque
+```
+
+Now, you can create a Restic crd using this secret. Following parameters are available for `rest` backend.
+
+| Parameter       | Description                               |
+|-----------------|-------------------------------------------|
+| `rest.url`      | `Required`. URL to the Restic rest server |
+
+```console
+$ kubectl apply -f ./docs/examples/backends/rest-server/rest-restic.yaml
+restic "rest-restic" created
+```
+
+```yaml
+apiVersion: stash.appscode.com/v1alpha1
+kind: Restic
+metadata:
+  name: rest-restic
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: reset-restic
+  fileGroups:
+  - path: /source/data
+    retentionPolicyName: 'keep-last-5'
+  backend:
+    rest:
+      bucket: stash-qa
+    storageSecretName: rest-secret
+  schedule: '@every 1m'
+  volumeMounts:
+  - mountPath: /source/data
+    name: source-data
+  retentionPolicies:
+  - name: 'keep-last-5'
+    keepLast: 5
+    prune: true
+```
 
 ## Next Steps
 
