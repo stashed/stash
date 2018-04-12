@@ -63,6 +63,7 @@ rules:
 - apiGroups: [""]
   resources:
   - pods
+  - pods/exec
   verbs: ["get", "create", "list", "delete", "deletecollection"]
 - apiGroups: [""]
   resources:
