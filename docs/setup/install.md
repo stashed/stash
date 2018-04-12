@@ -125,6 +125,18 @@ $ helm install appscode/stash --name my-release \
 
 To see the detailed configuration options, visit [here](https://github.com/appscode/stash/tree/master/chart/stash).
 
+### Installing in GKE Cluster
+
+If you are installing Stash on a GKE cluster, you will need cluster admin permissions to install Stash operator. Run the following command to grant admin permision to the cluster.
+
+```console
+# get current google identity
+$ gcloud info | grep Account
+Account: [user@example.org]
+
+$ kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=user@example.org
+```
+
 
 ## Verify installation
 To check if Stash operator pods have started, run the following command:
