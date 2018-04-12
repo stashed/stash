@@ -360,10 +360,17 @@ README.md
 
 ## Recover to `PersistentVolumeClaim`
 
-First, create a `PersistentVolumeClaim`,
+At first, delete `Restic` crd so that it does not lock the restic repository while we are trying to recover from it.
 
 ```console
-$ kubectl apply -f ./gcs-pvc.yaml 
+$ kubectl delete restic rook-restic
+restic "rook-restic" deleted
+```
+
+Now, create a `PersistentVolumeClaim`,
+
+```console
+$ kubectl apply -f ./gcs-pvc.yaml
 persistentvolumeclaim "stash-recovered" created
 ```
 
@@ -384,7 +391,7 @@ spec:
       storage: 2Gi
 ```
 
-Check cluster has provisioned us the requested claim,
+Check cluster has provisioned the requested claim,
 
 ```console
 $ kubectl get pvc -l app=stash-demo
@@ -511,7 +518,7 @@ spec:
           name: source-data
       restartPolicy: Always
       volumes:
-      - name: source-data 
+      - name: source-data
         persistentVolumeClaim:
           claimName: stash-recovered
 ```
@@ -521,7 +528,7 @@ Get the pod of new deployment,
 ```console
 $ kubectl get pods -l app=stash-demo
 NAME                          READY     STATUS    RESTARTS   AGE
-stash-demo-5bc57fbcfb-mfrfp   1/1       Running   0          1m
+stash-demo-559845c5db-8cd4w   1/1       Running   0          33s
 ```
 
 Check the backed up data is restored in `/source/data/` directory of `busybox` pod.
@@ -546,6 +553,7 @@ README.md
 ```console
 $ kubectl delete pvc stash-recovered
 $ kubectl delete deployment stash-demo
+$ kubectl delete repository deployment.stash-demo
 ```
 
 Uninstall Stash following the instructions [here](/docs/setup/uninstall.md).

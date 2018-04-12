@@ -448,7 +448,14 @@ Look at the `status` field. `backupCount` show number of successful backup taken
 
 ## Recovery
 
-Now, it is time to recover the backed up data. First, create a  `Recovery` crd.
+Now, it is time to recover the backed up data. At first, delete `Restic` crd so that it does not lock the restic repository while we are trying to recover from it.
+
+```console
+$ kubectl delete restic rook-restic
+restic "rook-restic" deleted
+```
+
+Now, create a  `Recovery` crd.
 
 ```console
 $ kubectl apply -f ./minio-recovery.yaml
@@ -559,6 +566,7 @@ $ kubectl delete deployment stash-demo
 $ kubectl delete restic minio-restic
 $ kubectl delete recovery minio-recovery
 $ kubectl delete secret minio-restic-secret
+$ kubectl delete repository deployment.stash-demo
 ```
 
 To cleanup the minio server, run:
