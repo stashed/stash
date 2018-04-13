@@ -5321,6 +5321,9 @@ spec:
                       type: string
                     prefix:
                       type: string
+            wipeOut:
+              description: If true, delete respective restic repository
+              type: boolean
         status:
           properties:
             backupCount:

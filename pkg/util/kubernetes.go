@@ -42,6 +42,8 @@ const (
 
 	AppLabelStash      = "stash"
 	OperationScaleDown = "scale-down"
+
+	RepositoryFinalizer = "wipeOut-repository"
 )
 
 var (

@@ -67,6 +67,7 @@ func (c *ControllerConfig) New() (*StashController, error) {
 	ctrl.initNamespaceWatcher()
 	ctrl.initResticWatcher()
 	ctrl.initRecoveryWatcher()
+	ctrl.initRepositoryWatcher()
 	ctrl.initDeploymentWatcher()
 	ctrl.initDaemonSetWatcher()
 	ctrl.initStatefulSetWatcher()

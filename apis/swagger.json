@@ -3618,6 +3618,10 @@
       "properties": {
         "backend": {
           "$ref": "#/definitions/com.github.appscode.stash.apis.stash.v1alpha1.Backend"
+        },
+        "wipeOut": {
+          "description": "If true, delete respective restic repository",
+          "type": "boolean"
         }
       }
     },
