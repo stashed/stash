@@ -45,6 +45,8 @@ type Options struct {
 	SmartPrefix      string
 	SnapshotHostname string
 	PodLabelsPath    string
+	QPS              float64
+	Burst            int
 	ResyncPeriod     time.Duration
 	MaxNumRequeues   int
 	RunViaCron       bool

@@ -45,6 +45,7 @@ stash run [flags]
       --authorization-webhook-cache-authorized-ttl duration     The duration to cache 'authorized' responses from the webhook authorizer. (default 10s)
       --authorization-webhook-cache-unauthorized-ttl duration   The duration to cache 'unauthorized' responses from the webhook authorizer. (default 10s)
       --bind-address ip                                         The IP address on which to listen for the --secure-port port. The associated interface(s) must be reachable by the rest of the cluster, and by CLI/web clients. If blank, all interfaces will be used (0.0.0.0). (default 0.0.0.0)
+      --burst int                                               The maximum burst for throttle (default 100)
       --cert-dir string                                         The directory where the TLS certs are located. If --tls-cert-file and --tls-private-key-file are provided, this flag will be ignored. (default "apiserver.local.config/certificates")
       --client-ca-file string                                   If set, any request presenting a client certificate signed by one of the authorities in the client-ca-file is authenticated with an identity corresponding to the CommonName of the client certificate.
       --contention-profiling                                    Enable lock contention profiling, if profiling is enabled
@@ -55,6 +56,7 @@ stash run [flags]
       --kubeconfig string                                       kubeconfig file pointing at the 'core' kubernetes server.
       --ops-address string                                      Address to listen on for web interface and telemetry. (default ":56790")
       --profiling                                               Enable profiling via web interface host:port/debug/pprof/ (default true)
+      --qps float                                               The maximum QPS to the master from this client (default 100)
       --rbac                                                    Enable RBAC for operator
       --requestheader-allowed-names strings                     List of client certificate common names to allow to provide usernames in headers specified by --requestheader-username-headers. If empty, any client certificate validated by the authorities in --requestheader-client-ca-file is allowed.
       --requestheader-client-ca-file string                     Root certificate bundle to use to verify client certificates on incoming requests before trusting usernames in headers specified by --requestheader-username-headers
