@@ -122,9 +122,17 @@ func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
 		return err
 	}
 
+	snapshotID := ""
+	if recovery.Spec.Snapshot != "" {
+		_, snapshotID, err = util.GetRepoNameAndSnapshotID(recovery.Spec.Snapshot)
+		if err != nil {
+			return err
+		}
+	}
+
 	var errRec error
 	for _, path := range recovery.Spec.Paths {
-		d, err := c.measure(cli.Restore, path, hostname)
+		d, err := c.measure(cli.Restore, path, hostname, snapshotID)
 		if err != nil {
 			errRec = err
 			ref, rerr := reference.GetReference(scheme.Scheme, recovery)
@@ -147,8 +155,8 @@ func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
 	return errRec
 }
 
-func (c *Controller) measure(f func(string, string) error, path, host string) (time.Duration, error) {
+func (c *Controller) measure(f func(string, string, string) error, path, host, snapshotID string) (time.Duration, error) {
 	startTime := time.Now()
-	err := f(path, host)
+	err := f(path, host, snapshotID)
 	return time.Now().Sub(startTime), err
 }
