@@ -11,6 +11,7 @@ import (
 	stash_util "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
 	"github.com/appscode/stash/pkg/cli"
 	"github.com/appscode/stash/pkg/eventer"
+	"github.com/appscode/stash/pkg/util"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -94,20 +95,30 @@ func (c *Controller) Run() {
 }
 
 func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
-	secret, err := c.k8sClient.CoreV1().Secrets(c.namespace).Get(recovery.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	repository, err := c.stashClient.Repositories(recovery.Namespace).Get(recovery.Spec.Repository, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
-
-	nodeName := recovery.Spec.NodeName
-	podName, _ := api.StatefulSetPodName(recovery.Spec.Workload.Name, recovery.Spec.PodOrdinal) // ignore error for other kinds
-	hostname, smartPrefix, err := recovery.Spec.Workload.HostnamePrefix(podName, nodeName)
+	repoLabelData, err := util.ExtractDataFromRepositoryLabel(repository.Labels)
 	if err != nil {
 		return err
 	}
+	secret, err := c.k8sClient.CoreV1().Secrets(c.namespace).Get(repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	workload := &api.LocalTypedReference{
+		Name: repoLabelData.WorkloadName,
+		Kind: repoLabelData.WorkloadKind,
+	}
+	hostname, smartPrefix, err := workload.HostnamePrefix(repoLabelData.PodName, repoLabelData.NodeName)
+	if err != nil {
+		return err
+	}
+	backend := util.FixBackendPrefix(&repository.Spec.Backend, smartPrefix)
 
 	cli := cli.New("/tmp", false, hostname)
-	if _, err = cli.SetupEnv(recovery.Spec.Backend, secret, smartPrefix); err != nil {
+	if _, err = cli.SetupEnv(*backend, secret, smartPrefix); err != nil {
 		return err
 	}
 

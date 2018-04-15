@@ -2,6 +2,8 @@ package v1alpha1
 
 import (
 	"fmt"
+	"os"
+	"strings"
 
 	"gopkg.in/robfig/cron.v2"
 )
@@ -35,9 +37,6 @@ func (r Restic) IsValid() error {
 }
 
 func (r Recovery) IsValid() error {
-	if r.Spec.Backend.StorageSecretName == "" {
-		return fmt.Errorf("missing repository secret name")
-	}
 	if len(r.Spec.Paths) == 0 {
 		return fmt.Errorf("missing filegroup paths")
 	}
@@ -45,28 +44,25 @@ func (r Recovery) IsValid() error {
 		return fmt.Errorf("missing recovery volume")
 	}
 
-	if err := r.Spec.Workload.Canonicalize(); err != nil {
-		return err
+	nodeName := os.Getenv("NODE_NAME")
+	if nodeName == "" {
+		nodeName = "minikube"
 	}
 
-	switch r.Spec.Workload.Kind {
-	case KindDeployment, KindReplicaSet, KindReplicationController:
-		if r.Spec.PodOrdinal != "" || r.Spec.NodeName != "" {
-			return fmt.Errorf("should not specify podOrdinal/nodeSelector for workload kind %s", r.Spec.Workload.Kind)
+	if r.Spec.Repository == "" {
+		return fmt.Errorf("missing repository name")
+	} else {
+		if !(strings.HasPrefix(r.Spec.Repository, "deployment.") ||
+			strings.HasPrefix(r.Spec.Repository, "replicationcontroller.") ||
+			strings.HasPrefix(r.Spec.Repository, "replicaset.") ||
+			strings.HasPrefix(r.Spec.Repository, "statefulset.") ||
+			(strings.HasPrefix(r.Spec.Repository, "daemonset.") && strings.HasSuffix(r.Spec.Repository, nodeName))) {
+			return fmt.Errorf("invalid repository name")
 		}
-	case KindStatefulSet:
-		if r.Spec.PodOrdinal == "" {
-			return fmt.Errorf("must specify podOrdinal for workload kind %s", r.Spec.Workload.Kind)
-		}
-		if r.Spec.NodeName != "" {
-			return fmt.Errorf("should not specify nodeSelector for workload kind %s", r.Spec.Workload.Kind)
-		}
-	case KindDaemonSet:
-		if r.Spec.NodeName == "" {
-			return fmt.Errorf("must specify nodeSelector for workload kind %s", r.Spec.Workload.Kind)
-		}
-		if r.Spec.PodOrdinal != "" {
-			return fmt.Errorf("should not specify podOrdinal for workload kind %s", r.Spec.Workload.Kind)
+	}
+	if r.Spec.Snapshot != "" {
+		if !strings.HasPrefix(r.Spec.Snapshot, r.Spec.Repository+"-") {
+			return fmt.Errorf("invalid snapshot name")
 		}
 	}
 	return nil

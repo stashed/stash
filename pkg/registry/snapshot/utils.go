@@ -4,13 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	api "github.com/appscode/stash/apis/repositories/v1alpha1"
 	"github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/cli"
 	"github.com/appscode/stash/pkg/util"
-	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -19,38 +17,29 @@ import (
 )
 
 const (
-	ExecStash                      = "/bin/stash"
-	SnapshotIDLength               = 8
-	SnapshotIDLengthWithDashPrefix = 9
+	ExecStash = "/bin/stash"
 )
-
-type labelsInfo struct {
-	workloadKind string
-	workloadName string
-	podName      string
-	nodeName     string
-}
 
 func (r *REST) GetSnapshots(repository *v1alpha1.Repository, snapshotIDs []string) ([]api.Snapshot, error) {
 	backend := repository.Spec.Backend.DeepCopy()
 
-	info, err := extractDataFromRepositoryLabel(repository.Labels)
+	info, err := util.ExtractDataFromRepositoryLabel(repository.Labels)
 	if err != nil {
 		return nil, err
 	}
 
 	workload := &v1alpha1.LocalTypedReference{
-		Kind: info.workloadKind,
-		Name: info.workloadName,
+		Kind: info.WorkloadKind,
+		Name: info.WorkloadName,
 	}
-	hostName, smartPrefix, err := workload.HostnamePrefix(info.podName, info.nodeName)
+	hostName, smartPrefix, err := workload.HostnamePrefix(info.PodName, info.PodName)
 
 	secret, err := r.kubeClient.CoreV1().Secrets(repository.Namespace).Get(backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	backend = fixBackendPrefix(backend, smartPrefix)
+	backend = util.FixBackendPrefix(backend, smartPrefix)
 
 	cli := cli.New("/tmp", false, hostName)
 	if _, err = cli.SetupEnv(*backend, secret, smartPrefix); err != nil {
@@ -66,7 +55,7 @@ func (r *REST) GetSnapshots(repository *v1alpha1.Repository, snapshotIDs []strin
 	snapshot := &api.Snapshot{}
 	for _, result := range results {
 		snapshot.Namespace = repository.Namespace
-		snapshot.Name = repository.Name + "-" + result.ID[0:SnapshotIDLength] // snapshotName = repositoryName-first8CharacterOfSnapshotId
+		snapshot.Name = repository.Name + "-" + result.ID[0:util.SnapshotIDLength] // snapshotName = repositoryName-first8CharacterOfSnapshotId
 		snapshot.UID = types.UID(result.ID)
 
 		snapshot.Labels = repository.Labels
@@ -89,23 +78,23 @@ func (r *REST) GetSnapshots(repository *v1alpha1.Repository, snapshotIDs []strin
 func (r *REST) ForgetSnapshots(repository *v1alpha1.Repository, snapshotIDs []string) error {
 	backend := repository.Spec.Backend.DeepCopy()
 
-	info, err := extractDataFromRepositoryLabel(repository.Labels)
+	info, err := util.ExtractDataFromRepositoryLabel(repository.Labels)
 	if err != nil {
 		return err
 	}
 
 	workload := &v1alpha1.LocalTypedReference{
-		Kind: info.workloadKind,
-		Name: info.workloadName,
+		Kind: info.WorkloadKind,
+		Name: info.WorkloadName,
 	}
-	hostName, smartPrefix, err := workload.HostnamePrefix(info.podName, info.nodeName)
+	hostName, smartPrefix, err := workload.HostnamePrefix(info.PodName, info.NodeName)
 
 	secret, err := r.kubeClient.CoreV1().Secrets(repository.Namespace).Get(backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
-	backend = fixBackendPrefix(backend, smartPrefix)
+	backend = util.FixBackendPrefix(backend, smartPrefix)
 
 	cli := cli.New("/tmp", false, hostName)
 	if _, err = cli.SetupEnv(*backend, secret, smartPrefix); err != nil {
@@ -144,12 +133,12 @@ func (r *REST) forgetSnapshotsFromSidecar(repository *v1alpha1.Repository, snaps
 	return nil
 }
 func (r *REST) execOnSidecar(repository *v1alpha1.Repository, cmd string, snapshotIDs []string) ([]byte, error) {
-	info, err := extractDataFromRepositoryLabel(repository.Labels)
+	info, err := util.ExtractDataFromRepositoryLabel(repository.Labels)
 	if err != nil {
 		return nil, err
 	}
 
-	pod, err := r.getPodWithStashSidecar(repository.Namespace, info.workloadName)
+	pod, err := r.getPodWithStashSidecar(repository.Namespace, info.WorkloadName)
 	if err != nil {
 		return nil, err
 	}
@@ -165,55 +154,6 @@ func (r *REST) execOnSidecar(repository *v1alpha1.Repository, cmd string, snapsh
 	}
 
 	return response, nil
-}
-func extractDataFromRepositoryLabel(labels map[string]string) (info labelsInfo, err error) {
-	var ok bool
-	info.workloadKind, ok = labels["workload-kind"]
-	if !ok {
-		return info, errors.New("workload-kind not found in repository labels")
-	}
-
-	info.workloadName, ok = labels["workload-name"]
-	if !ok {
-		return info, errors.New("workload-name not found in repository labels")
-	}
-
-	info.podName, ok = labels["pod-name"]
-	if !ok {
-		info.podName = ""
-	}
-
-	info.nodeName, ok = labels["node-name"]
-	if !ok {
-		info.nodeName = ""
-	}
-	return info, nil
-}
-
-func fixBackendPrefix(backend *v1alpha1.Backend, autoPrefix string) *v1alpha1.Backend {
-	if backend.Local != nil {
-		backend.Local.SubPath = strings.TrimSuffix(backend.Local.SubPath, autoPrefix)
-		backend.Local.SubPath = strings.TrimSuffix(backend.Local.SubPath, "/")
-	} else if backend.S3 != nil {
-		backend.S3.Prefix = strings.TrimSuffix(backend.S3.Prefix, autoPrefix)
-		backend.S3.Prefix = strings.TrimSuffix(backend.S3.Prefix, "/")
-		backend.S3.Prefix = strings.TrimPrefix(backend.S3.Prefix, backend.S3.Bucket)
-		backend.S3.Prefix = strings.TrimPrefix(backend.S3.Prefix, "/")
-	} else if backend.GCS != nil {
-		backend.GCS.Prefix = strings.TrimSuffix(backend.GCS.Prefix, autoPrefix)
-		backend.GCS.Prefix = strings.TrimSuffix(backend.GCS.Prefix, "/")
-	} else if backend.Azure != nil {
-		backend.Azure.Prefix = strings.TrimSuffix(backend.Azure.Prefix, autoPrefix)
-		backend.Azure.Prefix = strings.TrimSuffix(backend.Azure.Prefix, "/")
-	} else if backend.Swift != nil {
-		backend.Swift.Prefix = strings.TrimSuffix(backend.Swift.Prefix, autoPrefix)
-		backend.Swift.Prefix = strings.TrimSuffix(backend.Swift.Prefix, "/")
-	} else if backend.B2 != nil {
-		backend.B2.Prefix = strings.TrimSuffix(backend.B2.Prefix, autoPrefix)
-		backend.B2.Prefix = strings.TrimSuffix(backend.B2.Prefix, "/")
-	}
-
-	return backend
 }
 
 func (r *REST) getPodWithStashSidecar(namespace, workloadname string) (*core.Pod, error) {
@@ -278,15 +218,4 @@ func (r *REST) execCommandOnPod(pod *core.Pod, command []string) ([]byte, error)
 	}
 
 	return execOut.Bytes(), nil
-}
-
-func GetRepoNameAndSnapshotID(snapshotName string) (repoName, snapshotId string, err error) {
-	if len(snapshotName) < 9 {
-		err = errors.New("invalid snapshot name")
-		return
-	}
-	snapshotId = snapshotName[len(snapshotName)-SnapshotIDLength:]
-
-	repoName = strings.TrimSuffix(snapshotName, snapshotName[len(snapshotName)-SnapshotIDLengthWithDashPrefix:])
-	return
 }

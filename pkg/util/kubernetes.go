@@ -11,6 +11,7 @@ import (
 	"github.com/appscode/kutil/meta"
 	"github.com/appscode/kutil/tools/analytics"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	cs "github.com/appscode/stash/client/clientset/versioned"
 	stash_listers "github.com/appscode/stash/client/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/pkg/errors"
@@ -42,6 +43,9 @@ const (
 
 	AppLabelStash      = "stash"
 	OperationScaleDown = "scale-down"
+
+	SnapshotIDLength               = 8
+	SnapshotIDLengthWithDashPrefix = 9
 )
 
 var (
@@ -49,6 +53,13 @@ var (
 	EnableAnalytics   = true
 	LoggerOptions     golog.Options
 )
+
+type RepoLabelData struct {
+	WorkloadKind string
+	WorkloadName string
+	PodName      string
+	NodeName     string
+}
 
 func GetAppliedRestic(m map[string]string) (*api.Restic, error) {
 	data := GetString(m, api.LastAppliedConfiguration)
@@ -285,7 +296,15 @@ func RecoveryEqual(old, new *api.Recovery) bool {
 	return reflect.DeepEqual(oldSpec, newSpec)
 }
 
-func NewRecoveryJob(recovery *api.Recovery, image docker.Docker) *batch.Job {
+func NewRecoveryJob(stashClient cs.Interface, recovery *api.Recovery, image docker.Docker) (*batch.Job, error) {
+	repository, err := stashClient.StashV1alpha1().Repositories(recovery.Namespace).Get(recovery.Spec.Repository, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	repoLabelData, err := ExtractDataFromRepositoryLabel(repository.Labels)
+	if err != nil {
+		return nil, err
+	}
 	volumes := make([]core.Volume, 0)
 	volumeMounts := make([]core.VolumeMount, 0)
 	for i, recVol := range recovery.Spec.RecoveredVolumes {
@@ -344,21 +363,21 @@ func NewRecoveryJob(recovery *api.Recovery, image docker.Docker) *batch.Job {
 							EmptyDir: &core.EmptyDirVolumeSource{},
 						},
 					}),
-					NodeName: recovery.Spec.NodeName,
+					NodeName: repoLabelData.NodeName,
 				},
 			},
 		},
 	}
 
 	// local backend
-	if recovery.Spec.Backend.Local != nil {
-		vol, mnt := recovery.Spec.Backend.Local.ToVolumeAndMount(LocalVolumeName)
+	if repository.Spec.Backend.Local != nil {
+		vol, mnt := repository.Spec.Backend.Local.ToVolumeAndMount(LocalVolumeName)
 		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(
 			job.Spec.Template.Spec.Containers[0].VolumeMounts, mnt)
 		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, vol)
 	}
 
-	return job
+	return job, nil
 }
 
 func WorkloadExists(k8sClient kubernetes.Interface, namespace string, workload api.LocalTypedReference) error {
@@ -498,4 +517,65 @@ func WorkloadReplicas(kubeClient *kubernetes.Clientset, namespace string, worklo
 		return 0, fmt.Errorf("unknown workload type")
 	}
 	return 0, nil
+}
+
+func ExtractDataFromRepositoryLabel(labels map[string]string) (data RepoLabelData, err error) {
+	var ok bool
+	data.WorkloadKind, ok = labels["workload-kind"]
+	if !ok {
+		return data, errors.New("workload-kind not found in repository labels")
+	}
+
+	data.WorkloadName, ok = labels["workload-name"]
+	if !ok {
+		return data, errors.New("workload-name not found in repository labels")
+	}
+
+	data.PodName, ok = labels["pod-name"]
+	if !ok {
+		data.PodName = ""
+	}
+
+	data.PodName, ok = labels["node-name"]
+	if !ok {
+		data.NodeName = ""
+	}
+	return data, nil
+}
+
+func GetRepoNameAndSnapshotID(snapshotName string) (repoName, snapshotId string, err error) {
+	if len(snapshotName) < 9 {
+		err = errors.New("invalid snapshot name")
+		return
+	}
+	snapshotId = snapshotName[len(snapshotName)-SnapshotIDLength:]
+
+	repoName = strings.TrimSuffix(snapshotName, snapshotName[len(snapshotName)-SnapshotIDLengthWithDashPrefix:])
+	return
+}
+
+func FixBackendPrefix(backend *api.Backend, autoPrefix string) *api.Backend {
+	if backend.Local != nil {
+		backend.Local.SubPath = strings.TrimSuffix(backend.Local.SubPath, autoPrefix)
+		backend.Local.SubPath = strings.TrimSuffix(backend.Local.SubPath, "/")
+	} else if backend.S3 != nil {
+		backend.S3.Prefix = strings.TrimSuffix(backend.S3.Prefix, autoPrefix)
+		backend.S3.Prefix = strings.TrimSuffix(backend.S3.Prefix, "/")
+		backend.S3.Prefix = strings.TrimPrefix(backend.S3.Prefix, backend.S3.Bucket)
+		backend.S3.Prefix = strings.TrimPrefix(backend.S3.Prefix, "/")
+	} else if backend.GCS != nil {
+		backend.GCS.Prefix = strings.TrimSuffix(backend.GCS.Prefix, autoPrefix)
+		backend.GCS.Prefix = strings.TrimSuffix(backend.GCS.Prefix, "/")
+	} else if backend.Azure != nil {
+		backend.Azure.Prefix = strings.TrimSuffix(backend.Azure.Prefix, autoPrefix)
+		backend.Azure.Prefix = strings.TrimSuffix(backend.Azure.Prefix, "/")
+	} else if backend.Swift != nil {
+		backend.Swift.Prefix = strings.TrimSuffix(backend.Swift.Prefix, autoPrefix)
+		backend.Swift.Prefix = strings.TrimSuffix(backend.Swift.Prefix, "/")
+	} else if backend.B2 != nil {
+		backend.B2.Prefix = strings.TrimSuffix(backend.B2.Prefix, autoPrefix)
+		backend.B2.Prefix = strings.TrimSuffix(backend.B2.Prefix, "/")
+	}
+
+	return backend
 }

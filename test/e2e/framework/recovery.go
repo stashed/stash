@@ -29,8 +29,7 @@ func (fi *Invocation) RecoveryForRestic(restic api.Restic) api.Recovery {
 			Namespace: fi.namespace,
 		},
 		Spec: api.RecoverySpec{
-			Paths:   paths,
-			Backend: restic.Spec.Backend,
+			Paths: paths,
 			RecoveredVolumes: []api.LocalSpec{
 				{
 					MountPath: restic.Spec.VolumeMounts[0].MountPath,
