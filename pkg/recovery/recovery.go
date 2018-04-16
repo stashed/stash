@@ -108,14 +108,15 @@ func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
 		return err
 	}
 	workload := &api.LocalTypedReference{
-		Name: repoLabelData.WorkloadName,
 		Kind: repoLabelData.WorkloadKind,
+		Name: repoLabelData.WorkloadName,
 	}
 	hostname, smartPrefix, err := workload.HostnamePrefix(repoLabelData.PodName, repoLabelData.NodeName)
 	if err != nil {
 		return err
 	}
-	backend := util.FixBackendPrefix(&repository.Spec.Backend, smartPrefix)
+
+	backend := util.FixBackendPrefix(repository.Spec.Backend.DeepCopy(), smartPrefix)
 
 	cli := cli.New("/tmp", false, hostname)
 	if _, err = cli.SetupEnv(*backend, secret, smartPrefix); err != nil {

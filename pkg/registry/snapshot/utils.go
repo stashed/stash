@@ -32,7 +32,7 @@ func (r *REST) GetSnapshots(repository *v1alpha1.Repository, snapshotIDs []strin
 		Kind: info.WorkloadKind,
 		Name: info.WorkloadName,
 	}
-	hostName, smartPrefix, err := workload.HostnamePrefix(info.PodName, info.PodName)
+	hostName, smartPrefix, err := workload.HostnamePrefix(info.PodName, info.NodeName)
 
 	secret, err := r.kubeClient.CoreV1().Secrets(repository.Namespace).Get(backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
