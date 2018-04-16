@@ -158,11 +158,11 @@ type Recovery struct {
 }
 
 type RecoverySpec struct {
-	Backend          Backend                     `json:"backend,omitempty"`
+	Repository string `json:"repository"`
+	// Snapshot to recover. Default is latest snapshot.
+	// +optional
+	Snapshot         string                      `json:"snapshot,omitempty"`
 	Paths            []string                    `json:"paths,omitempty"`
-	Workload         LocalTypedReference         `json:"workload,omitempty"`
-	PodOrdinal       string                      `json:"podOrdinal,omitempty"`
-	NodeName         string                      `json:"nodeName,omitempty"`
 	RecoveredVolumes []LocalSpec                 `json:"recoveredVolumes,omitempty"`
 	ImagePullSecrets []core.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 }

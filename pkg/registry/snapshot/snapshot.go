@@ -4,6 +4,7 @@ import (
 	api "github.com/appscode/stash/apis/repositories/v1alpha1"
 	"github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/client/clientset/versioned"
+	"github.com/appscode/stash/pkg/util"
 	"github.com/pkg/errors"
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -52,7 +53,7 @@ func (r *REST) Get(ctx apirequest.Context, name string, options *metav1.GetOptio
 		return nil, errors.New("invalid snapshot name")
 	}
 
-	repoName, snapshotId, err := GetRepoNameAndSnapshotID(name)
+	repoName, snapshotId, err := util.GetRepoNameAndSnapshotID(name)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +140,7 @@ func (r *REST) Delete(ctx apirequest.Context, name string) (runtime.Object, erro
 	if !ok {
 		return nil, errors.New("missing namespace")
 	}
-	repoName, snapshotId, err := GetRepoNameAndSnapshotID(name)
+	repoName, snapshotId, err := util.GetRepoNameAndSnapshotID(name)
 	if err != nil {
 		return nil, err
 	}

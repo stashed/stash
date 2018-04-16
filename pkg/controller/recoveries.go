@@ -134,12 +134,15 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 		Tag:      c.StashImageTag,
 	}
 
-	job := util.NewRecoveryJob(rec, image)
+	job, err := util.NewRecoveryJob(c.stashClient, rec, image)
+	if err != nil {
+		return err
+	}
 	if c.EnableRBAC {
 		job.Spec.Template.Spec.ServiceAccountName = job.Name
 	}
 
-	job, err := c.kubeClient.BatchV1().Jobs(rec.Namespace).Create(job)
+	job, err = c.kubeClient.BatchV1().Jobs(rec.Namespace).Create(job)
 	if err != nil {
 		if kerr.IsAlreadyExists(err) {
 			return nil

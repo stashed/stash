@@ -24,6 +24,7 @@ stash backup [flags]
 ### Options
 
 ```
+      --burst int                The maximum burst for throttle (default 100)
       --docker-registry string   Check job image registry. (default "appscode")
       --enable-rbac              Enable RBAC
   -h, --help                     help for backup
@@ -31,6 +32,7 @@ stash backup [flags]
       --kubeconfig string        Path to kubeconfig file with authorization information (the master location is set by the master flag).
       --master string            The address of the Kubernetes API server (overrides any value in kubeconfig)
       --pushgateway-url string   URL of Prometheus pushgateway used to cache backup metrics
+      --qps float                The maximum QPS to the master from this client (default 100)
       --restic-name string       Name of the Restic used as configuration.
       --resync-period duration   If non-zero, will re-list this often. Otherwise, re-list will be delayed aslong as possible (until the upstream source closes the watch or times out. (default 5m0s)
       --run-via-cron             Run backup periodically via cron.

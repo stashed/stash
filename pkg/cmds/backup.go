@@ -27,6 +27,8 @@ func NewCmdBackup() *cobra.Command {
 			ScratchDir:     "/tmp",
 			PodLabelsPath:  "/etc/stash/labels",
 			DockerRegistry: docker.ACRegistry,
+			QPS:            100,
+			Burst:          100,
 			ResyncPeriod:   5 * time.Minute,
 			MaxNumRequeues: 5,
 			NumThreads:     1,
@@ -111,6 +113,8 @@ func NewCmdBackup() *cobra.Command {
 	cmd.Flags().StringVar(&opt.ResticName, "restic-name", opt.ResticName, "Name of the Restic used as configuration.")
 	cmd.Flags().StringVar(&opt.ScratchDir, "scratch-dir", opt.ScratchDir, "Directory used to store temporary files. Use an `emptyDir` in Kubernetes.")
 	cmd.Flags().StringVar(&opt.PushgatewayURL, "pushgateway-url", opt.PushgatewayURL, "URL of Prometheus pushgateway used to cache backup metrics")
+	cmd.Flags().Float64Var(&opt.QPS, "qps", opt.QPS, "The maximum QPS to the master from this client")
+	cmd.Flags().IntVar(&opt.Burst, "burst", opt.Burst, "The maximum burst for throttle")
 	cmd.Flags().DurationVar(&opt.ResyncPeriod, "resync-period", opt.ResyncPeriod, "If non-zero, will re-list this often. Otherwise, re-list will be delayed aslong as possible (until the upstream source closes the watch or times out.")
 	cmd.Flags().BoolVar(&opt.RunViaCron, "run-via-cron", opt.RunViaCron, "Run backup periodically via cron.")
 	cmd.Flags().StringVar(&opt.DockerRegistry, "docker-registry", opt.DockerRegistry, "Check job image registry.")

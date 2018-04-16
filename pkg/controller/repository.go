@@ -69,7 +69,7 @@ func (c *StashController) deleteResticRepository(repository *api.Repository) err
 		return err
 	}
 
-	
+
 	bucket,err:= util.GetBucket(&repository.Spec.Backend)
 	if err!=nil{
 		return err

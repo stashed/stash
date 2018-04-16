@@ -22,6 +22,8 @@ type ControllerOptions struct {
 	NumThreads     int
 	ScratchDir     string
 	OpsAddress     string
+	QPS            float64
+	Burst          int
 	ResyncPeriod   time.Duration
 }
 
@@ -33,6 +35,8 @@ func NewControllerOptions() *ControllerOptions {
 		NumThreads:     2,
 		ScratchDir:     "/tmp",
 		OpsAddress:     ":56790",
+		QPS:            100,
+		Burst:          100,
 		ResyncPeriod:   10 * time.Minute,
 	}
 }
@@ -43,6 +47,9 @@ func (s *ControllerOptions) AddGoFlags(fs *flag.FlagSet) {
 	fs.StringVar(&s.ScratchDir, "scratch-dir", s.ScratchDir, "Directory used to store temporary files. Use an `emptyDir` in Kubernetes.")
 	fs.StringVar(&s.StashImageTag, "image-tag", s.StashImageTag, "Image tag for sidecar, init-container, check-job and recovery-job")
 	fs.StringVar(&s.DockerRegistry, "docker-registry", s.DockerRegistry, "Docker image registry for sidecar, init-container, check-job, recovery-job and kubectl-job")
+
+	fs.Float64Var(&s.QPS, "qps", s.QPS, "The maximum QPS to the master from this client")
+	fs.IntVar(&s.Burst, "burst", s.Burst, "The maximum burst for throttle")
 	fs.DurationVar(&s.ResyncPeriod, "resync-period", s.ResyncPeriod, "If non-zero, will re-list this often. Otherwise, re-list will be delayed aslong as possible (until the upstream source closes the watch or times out.")
 }
 
@@ -62,6 +69,9 @@ func (s *ControllerOptions) ApplyTo(cfg *controller.ControllerConfig) error {
 	cfg.NumThreads = s.NumThreads
 	cfg.OpsAddress = s.OpsAddress
 	cfg.ResyncPeriod = s.ResyncPeriod
+
+	cfg.ClientConfig.QPS = float32(s.QPS)
+	cfg.ClientConfig.Burst = s.Burst
 
 	if cfg.KubeClient, err = kubernetes.NewForConfig(cfg.ClientConfig); err != nil {
 		return err
