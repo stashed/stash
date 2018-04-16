@@ -60,7 +60,7 @@ func (i *item) Size() (int64, error) {
 // that every S3 asset is given.
 func (i *item) URL() *url.URL {
 	if i.container.customEndpoint == "" {
-		genericURL := fmt.Sprintf("https://s3-%s.amazonaws.com/%s/%s", i.container.Region(), i.container.Name(), i.Name())
+		genericURL := fmt.Sprintf("https://s3.dualstack.%s.amazonaws.com/%s/%s", i.container.Region(), i.container.Name(), i.Name())
 
 		return &url.URL{
 			Scheme: "s3",

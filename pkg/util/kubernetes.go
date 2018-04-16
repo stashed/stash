@@ -501,3 +501,16 @@ func WorkloadReplicas(kubeClient *kubernetes.Clientset, namespace string, worklo
 	}
 	return 0, nil
 }
+
+func GetBucket(backend *api.Backend) (string, error) {
+	if backend.S3 != nil {
+		return backend.S3.Bucket, nil
+	} else if backend.GCS != nil {
+		return backend.GCS.Bucket, nil
+	} else if backend.Azure != nil {
+		return backend.Azure.Container, nil
+	} else if backend.Swift != nil {
+		return backend.Swift.Container, nil
+	}
+	return "", errors.New("unknown backend type.")
+}

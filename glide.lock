@@ -1,5 +1,5 @@
 hash: 39b9784006e2fdde6ce6820baacfc8afceab5316e268a079ea05abbf307d23f1
-updated: 2018-04-13T17:57:42.784713955+06:00
+updated: 2018-04-16T13:01:55.910051627+06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -38,7 +38,7 @@ imports:
   - runtime/serializer/versioning
   - workload/v1
 - name: github.com/appscode/kutil
-  version: c299ac799e9bf6554ee91c5e2863c6f8392b7f83
+  version: de65cd67acea703c2dece78ed32eb490d2f47644
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
@@ -97,6 +97,8 @@ imports:
   - service/elbv2
   - service/kms
   - service/s3
+  - service/s3/s3iface
+  - service/s3/s3manager
   - service/sts
 - name: github.com/Azure/azure-sdk-for-go
   version: 509eea43b93cec2f3f17acbe2578ef58703923f8
@@ -241,11 +243,12 @@ imports:
   - openstack/utils
   - pagination
 - name: github.com/graymeta/stow
-  version: f6e869b724724309ae2b2081cc48671d1a658dd0
+  version: fc45e0eadc4cb7bd449dfe5c953ca191268e46f1
+  repo: https://github.com/appscode/stow.git
+  vcs: git
   subpackages:
   - azure
   - google
-  - local
   - s3
   - swift
 - name: github.com/gregjones/httpcache
@@ -873,7 +876,7 @@ imports:
   - util/jsonpath
   - util/workqueue
 - name: k8s.io/kube-aggregator
-  version: 0391fd2e1ef7d03c0a95659cfa70b56d775fef4a
+  version: 9f098a673af26c478de89a2a64c7e3c545c944a3
   subpackages:
   - pkg/apis/apiregistration
   - pkg/apis/apiregistration/v1

@@ -1,14 +1,14 @@
 package controller
 
 import (
-	"fmt"
-
 	core_util "github.com/appscode/kutil/core/v1"
 	"github.com/appscode/kutil/tools/queue"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	stash_util "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
+	"github.com/appscode/stash/pkg/osm"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
+	"github.com/graymeta/stow"
 )
 
 func (c *StashController) initRepositoryWatcher() {
@@ -59,8 +59,27 @@ func (c *StashController) runRepositoryInjector(key string) error {
 }
 
 func (c *StashController) deleteResticRepository(repository *api.Repository) error {
-	fmt.Println("====================Delete Restic Repository Start==========================")
-	fmt.Println("Sucessfully deleted")
-	fmt.Println("====================Delete Restic Repository End============================")
+	cfg,err:=osm.NewOSMContext(c.kubeClient,repository)
+	if err!=nil{
+		return err
+	}
+
+	loc,err :=stow.Dial(cfg.Provider,cfg.Config)
+	if err!=nil{
+		return err
+	}
+
+	
+	bucket,err:= util.GetBucket(&repository.Spec.Backend)
+	if err!=nil{
+		return err
+	}
+
+	container,err:=loc.Container(bucket)
+	if err!=nil{
+		return err
+	}
+
+
 	return nil
 }
