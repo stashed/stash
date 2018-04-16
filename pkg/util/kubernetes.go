@@ -371,7 +371,16 @@ func NewRecoveryJob(stashClient cs.Interface, recovery *api.Recovery, image dock
 
 	// local backend
 	if repository.Spec.Backend.Local != nil {
-		vol, mnt := repository.Spec.Backend.Local.ToVolumeAndMount(LocalVolumeName)
+		w := &api.LocalTypedReference{
+			Kind: repoLabelData.WorkloadKind,
+			Name: repoLabelData.WorkloadName,
+		}
+		_, smartPrefix, err := w.HostnamePrefix(repoLabelData.PodName, repoLabelData.NodeName)
+		if err != nil {
+			return nil, err
+		}
+		backend := FixBackendPrefix(repository.Spec.Backend.DeepCopy(), smartPrefix)
+		vol, mnt := backend.Local.ToVolumeAndMount(LocalVolumeName)
 		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(
 			job.Spec.Template.Spec.Containers[0].VolumeMounts, mnt)
 		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, vol)
