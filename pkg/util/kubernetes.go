@@ -589,15 +589,15 @@ func FixBackendPrefix(backend *api.Backend, autoPrefix string) *api.Backend {
 
 	return backend
 }
-func GetBucket(backend *api.Backend) (string, error) {
+func GetBucketAndPrefix(backend *api.Backend) (string, string, error) {
 	if backend.S3 != nil {
-		return backend.S3.Bucket, nil
+		return backend.S3.Bucket, backend.S3.Prefix, nil
 	} else if backend.GCS != nil {
-		return backend.GCS.Bucket, nil
+		return backend.GCS.Bucket, backend.GCS.Prefix, nil
 	} else if backend.Azure != nil {
-		return backend.Azure.Container, nil
+		return backend.Azure.Container, backend.Azure.Prefix, nil
 	} else if backend.Swift != nil {
-		return backend.Swift.Container, nil
+		return backend.Swift.Container, backend.Swift.Prefix, nil
 	}
-	return "", errors.New("unknown backend type.")
+	return "", "", errors.New("unknown backend type.")
 }

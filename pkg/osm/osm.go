@@ -1,6 +1,6 @@
 package osm
+
 import (
-	"bytes"
 	"net/url"
 	"strconv"
 	"strings"
@@ -8,80 +8,22 @@ import (
 	stringz "github.com/appscode/go/strings"
 	"github.com/appscode/go/types"
 	otx "github.com/appscode/osm/context"
+	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	"github.com/appscode/stash/pkg/cli"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	_s3 "github.com/aws/aws-sdk-go/service/s3"
-	"github.com/ghodss/yaml"
 	"github.com/graymeta/stow"
 	"github.com/graymeta/stow/azure"
 	gcs "github.com/graymeta/stow/google"
 	"github.com/graymeta/stow/s3"
 	"github.com/graymeta/stow/swift"
 	"github.com/pkg/errors"
-	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	api "github.com/appscode/stash/apis/stash/v1alpha1"
-	cli "github.com/appscode/stash/pkg/cli"
 )
-
-const (
-	SecretMountPath = "/etc/osm"
-)
-
-func NewOSMSecret(client kubernetes.Interface, backend api.Backend) (*core.Secret, error) {
-	osmCtx, err := NewOSMContext(client, snapshot.Spec.SnapshotStorageSpec, snapshot.Namespace)
-	if err != nil {
-		return nil, err
-	}
-	osmCfg := &otx.OSMConfig{
-		CurrentContext: osmCtx.Name,
-		Contexts:       []*otx.Context{osmCtx},
-	}
-	osmBytes, err := yaml.Marshal(osmCfg)
-	if err != nil {
-		return nil, err
-	}
-	return &core.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      snapshot.OSMSecretName(),
-			Namespace: snapshot.Namespace,
-		},
-		Data: map[string][]byte{
-			"config": osmBytes,
-		},
-	}, nil
-}
-
-func CheckBucketAccess(client kubernetes.Interface, repository *api.Repository, namespace string) error {
-	cfg, err := NewOSMContext(client, repository.Spec.Backend, namespace)
-	if err != nil {
-		return err
-	}
-	loc, err := stow.Dial(cfg.Provider, cfg.Config)
-	if err != nil {
-		return err
-	}
-	c, err := repository.Spec.Backend
-	if err != nil {
-		return err
-	}
-	container, err := loc.Container(c)
-	if err != nil {
-		return err
-	}
-	r := bytes.NewReader([]byte("CheckBucketAccess"))
-	item, err := container.Put(".kubedb", r, r.Size(), nil)
-	if err != nil {
-		return err
-	}
-	if err := container.RemoveItem(item.ID()); err != nil {
-		return err
-	}
-	return nil
-}
 
 func NewOSMContext(client kubernetes.Interface, repository *api.Repository) (*otx.Context, error) {
 	config := make(map[string][]byte)

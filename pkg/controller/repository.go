@@ -59,27 +59,43 @@ func (c *StashController) runRepositoryInjector(key string) error {
 }
 
 func (c *StashController) deleteResticRepository(repository *api.Repository) error {
-	cfg,err:=osm.NewOSMContext(c.kubeClient,repository)
-	if err!=nil{
+	cfg, err := osm.NewOSMContext(c.kubeClient, repository)
+	if err != nil {
 		return err
 	}
 
-	loc,err :=stow.Dial(cfg.Provider,cfg.Config)
-	if err!=nil{
+	loc, err := stow.Dial(cfg.Provider, cfg.Config)
+	if err != nil {
 		return err
 	}
 
+	bucket, prefix, err := util.GetBucketAndPrefix(&repository.Spec.Backend)
+	if err != nil {
+		return err
+	}
+	prefix = prefix + "/"
 
-	bucket,err:= util.GetBucket(&repository.Spec.Backend)
-	if err!=nil{
+	container, err := loc.Container(bucket)
+	if err != nil {
 		return err
 	}
 
-	container,err:=loc.Container(bucket)
-	if err!=nil{
-		return err
+	cursor := stow.CursorStart
+	for {
+		items, next, err := container.Items(prefix, cursor, 50)
+		if err != nil {
+			return err
+		}
+		for _, item := range items {
+			if err := container.RemoveItem(item.ID()); err != nil {
+				return err
+			}
+		}
+		cursor = next
+		if stow.IsCursorEnd(cursor) {
+			break
+		}
 	}
-
 
 	return nil
 }
