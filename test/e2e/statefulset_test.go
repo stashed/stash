@@ -26,6 +26,7 @@ var _ = Describe("StatefulSet", func() {
 		svc          core.Service
 		ss           apps.StatefulSet
 		recovery     api.Recovery
+		localRef     api.LocalTypedReference
 	)
 
 	BeforeEach(func() {
@@ -41,9 +42,12 @@ var _ = Describe("StatefulSet", func() {
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
 		secondRestic.Spec.Backend.StorageSecretName = cred.Name
-		recovery.Spec.Backend.StorageSecretName = cred.Name
 		svc = f.HeadlessService()
 		ss = f.StatefulSet()
+		localRef = api.LocalTypedReference{
+			Kind: api.KindStatefulSet,
+			Name: ss.Name,
+		}
 	})
 
 	var (
@@ -735,6 +739,7 @@ var _ = Describe("StatefulSet", func() {
 
 		})
 	})
+
 	Describe("Create Repository CRD", func() {
 		Context(`"Local" backend, single replica`, func() {
 			AfterEach(func() {
@@ -889,12 +894,12 @@ var _ = Describe("StatefulSet", func() {
 				// give some time for ss to terminate
 				time.Sleep(time.Second * 30)
 
-				recovery.Spec.Workload = api.LocalTypedReference{
-					Kind: api.KindStatefulSet,
-					Name: ss.Name,
-				}
+				repos = f.StatefulSetRepos(&ss)
+				Expect(repos).NotTo(BeEmpty())
+				repoLabeData, err := util.ExtractDataFromRepositoryLabel(repos[0].Labels)
+				Expect(err).ShouldNot(HaveOccurred())
+				recovery.Spec.Repository = localRef.GetRepositoryCRDName(repoLabeData.PodName, repoLabeData.NodeName)
 
-				recovery.Spec.PodOrdinal = "0"
 				By("Creating recovery " + recovery.Name)
 				err = f.CreateRecovery(recovery)
 				Expect(err).NotTo(HaveOccurred())
@@ -985,12 +990,12 @@ var _ = Describe("StatefulSet", func() {
 				// give some time for ss to terminate
 				time.Sleep(time.Second * 30)
 
-				recovery.Spec.Workload = api.LocalTypedReference{
-					Kind: api.KindStatefulSet,
-					Name: ss.Name,
-				}
+				repos = f.StatefulSetRepos(&ss)
+				Expect(repos).NotTo(BeEmpty())
+				repoLabeData, err := util.ExtractDataFromRepositoryLabel(repos[0].Labels)
+				Expect(err).ShouldNot(HaveOccurred())
+				recovery.Spec.Repository = localRef.GetRepositoryCRDName(repoLabeData.PodName, repoLabeData.NodeName)
 
-				recovery.Spec.PodOrdinal = "0"
 				By("Creating recovery " + recovery.Name)
 				err = f.CreateRecovery(recovery)
 				Expect(err).NotTo(HaveOccurred())

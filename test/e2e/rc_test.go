@@ -24,6 +24,7 @@ var _ = Describe("ReplicationController", func() {
 		cred         core.Secret
 		rc           core.ReplicationController
 		recovery     api.Recovery
+		localRef     api.LocalTypedReference
 	)
 
 	BeforeEach(func() {
@@ -39,8 +40,11 @@ var _ = Describe("ReplicationController", func() {
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
 		secondRestic.Spec.Backend.StorageSecretName = cred.Name
-		recovery.Spec.Backend.StorageSecretName = cred.Name
 		rc = f.ReplicationController()
+		localRef = api.LocalTypedReference{
+			Kind: api.KindReplicationController,
+			Name: rc.Name,
+		}
 	})
 
 	var (
@@ -865,10 +869,7 @@ var _ = Describe("ReplicationController", func() {
 				// give some time for rc to terminate
 				time.Sleep(time.Second * 30)
 
-				recovery.Spec.Workload = api.LocalTypedReference{
-					Kind: api.KindReplicationController,
-					Name: rc.Name,
-				}
+				recovery.Spec.Repository = localRef.GetRepositoryCRDName("", "")
 
 				By("Creating recovery " + recovery.Name)
 				err = f.CreateRecovery(recovery)
@@ -960,10 +961,7 @@ var _ = Describe("ReplicationController", func() {
 				// give some time for rc to terminate
 				time.Sleep(time.Second * 30)
 
-				recovery.Spec.Workload = api.LocalTypedReference{
-					Kind: api.KindReplicationController,
-					Name: rc.Name,
-				}
+				recovery.Spec.Repository = localRef.GetRepositoryCRDName("", "")
 
 				By("Creating recovery " + recovery.Name)
 				err = f.CreateRecovery(recovery)
