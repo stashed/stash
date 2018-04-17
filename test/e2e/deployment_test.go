@@ -28,6 +28,7 @@ var _ = Describe("Deployment", func() {
 		cred         core.Secret
 		deployment   apps.Deployment
 		recovery     api.Recovery
+		localRef     api.LocalTypedReference
 	)
 
 	BeforeEach(func() {
@@ -43,8 +44,12 @@ var _ = Describe("Deployment", func() {
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
 		secondRestic.Spec.Backend.StorageSecretName = cred.Name
-		recovery.Spec.Backend.StorageSecretName = cred.Name
 		deployment = f.Deployment()
+		localRef = api.LocalTypedReference{
+			Kind: api.KindDeployment,
+			Name: deployment.Name,
+		}
+
 	})
 
 	var (
@@ -548,10 +553,6 @@ var _ = Describe("Deployment", func() {
 				recovery = f.RecoveryForRestic(restic)
 			})
 			It(`should delete job after recovery deleted`, func() {
-				recovery.Spec.Workload = api.LocalTypedReference{
-					Kind: api.KindDeployment,
-					Name: deployment.Name,
-				}
 
 				By("Creating recovery " + recovery.Name)
 				err = f.CreateRecovery(recovery)
@@ -752,6 +753,7 @@ var _ = Describe("Deployment", func() {
 			It(`should backup new Deployment`, shouldBackupNewDeployment)
 		})
 	})
+
 	Describe("Minio server", func() {
 		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
@@ -1047,10 +1049,7 @@ var _ = Describe("Deployment", func() {
 				// give some time for deployment to terminate
 				time.Sleep(time.Second * 30)
 
-				recovery.Spec.Workload = api.LocalTypedReference{
-					Kind: api.KindDeployment,
-					Name: deployment.Name,
-				}
+				recovery.Spec.Repository = localRef.GetRepositoryCRDName("", "")
 
 				By("Creating recovery " + recovery.Name)
 				err = f.CreateRecovery(recovery)
@@ -1142,10 +1141,7 @@ var _ = Describe("Deployment", func() {
 				// give some time for deployment to terminate
 				time.Sleep(time.Second * 30)
 
-				recovery.Spec.Workload = api.LocalTypedReference{
-					Kind: api.KindDeployment,
-					Name: deployment.Name,
-				}
+				recovery.Spec.Repository = localRef.GetRepositoryCRDName("", "")
 
 				By("Creating recovery " + recovery.Name)
 				err = f.CreateRecovery(recovery)

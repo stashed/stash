@@ -25,6 +25,7 @@ var _ = Describe("ReplicaSet", func() {
 		cred         core.Secret
 		rs           extensions.ReplicaSet
 		recovery     api.Recovery
+		localRef     api.LocalTypedReference
 	)
 
 	BeforeEach(func() {
@@ -40,8 +41,11 @@ var _ = Describe("ReplicaSet", func() {
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
 		secondRestic.Spec.Backend.StorageSecretName = cred.Name
-		recovery.Spec.Backend.StorageSecretName = cred.Name
 		rs = f.ReplicaSet()
+		localRef = api.LocalTypedReference{
+			Kind: api.KindReplicaSet,
+			Name: rs.Name,
+		}
 	})
 
 	var (
@@ -571,6 +575,7 @@ var _ = Describe("ReplicaSet", func() {
 			It("should add sidecar instantly if label change to match single restic", shouldAddSidecarInstantly)
 		})
 	})
+
 	Describe("Offline backup for", func() {
 		AfterEach(func() {
 			f.DeleteReplicaSet(rs.ObjectMeta)
@@ -765,6 +770,7 @@ var _ = Describe("ReplicaSet", func() {
 
 		})
 	})
+
 	Describe("Create Repository CRD", func() {
 		Context(`"Local" backend`, func() {
 			AfterEach(func() {
@@ -863,10 +869,7 @@ var _ = Describe("ReplicaSet", func() {
 				// give some time for rs to terminate
 				time.Sleep(time.Second * 30)
 
-				recovery.Spec.Workload = api.LocalTypedReference{
-					Kind: api.KindReplicaSet,
-					Name: rs.Name,
-				}
+				recovery.Spec.Repository = localRef.GetRepositoryCRDName("", "")
 
 				By("Creating recovery " + recovery.Name)
 				err = f.CreateRecovery(recovery)
@@ -958,10 +961,7 @@ var _ = Describe("ReplicaSet", func() {
 				// give some time for rs to terminate
 				time.Sleep(time.Second * 30)
 
-				recovery.Spec.Workload = api.LocalTypedReference{
-					Kind: api.KindReplicaSet,
-					Name: rs.Name,
-				}
+				recovery.Spec.Repository = localRef.GetRepositoryCRDName("", "")
 
 				By("Creating recovery " + recovery.Name)
 				err = f.CreateRecovery(recovery)

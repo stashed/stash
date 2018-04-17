@@ -25,6 +25,7 @@ var _ = Describe("DaemonSet", func() {
 		cred         core.Secret
 		daemon       extensions.DaemonSet
 		recovery     api.Recovery
+		localRef     api.LocalTypedReference
 	)
 
 	BeforeEach(func() {
@@ -40,8 +41,11 @@ var _ = Describe("DaemonSet", func() {
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
 		secondRestic.Spec.Backend.StorageSecretName = cred.Name
-		recovery.Spec.Backend.StorageSecretName = cred.Name
 		daemon = f.DaemonSet()
+		localRef = api.LocalTypedReference{
+			Kind: api.KindDaemonSet,
+			Name: daemon.Name,
+		}
 	})
 
 	var (
@@ -659,6 +663,7 @@ var _ = Describe("DaemonSet", func() {
 
 		})
 	})
+
 	Describe("Repository CRD", func() {
 		Context(`"Local" backend`, func() {
 			AfterEach(func() {
@@ -702,6 +707,7 @@ var _ = Describe("DaemonSet", func() {
 
 		})
 	})
+
 	Describe("Complete Recovery", func() {
 		Context(`"Local" backend, single fileGroup`, func() {
 			AfterEach(func() {
@@ -757,14 +763,12 @@ var _ = Describe("DaemonSet", func() {
 				// give some time for daemonset to terminate
 				time.Sleep(time.Second * 30)
 
-				recovery.Spec.Workload = api.LocalTypedReference{
-					Kind: api.KindDaemonSet,
-					Name: daemon.Name,
+				nodeName := os.Getenv("NODE_NAME")
+				if nodeName == "" {
+					nodeName = "minikube"
 				}
-				recovery.Spec.NodeName = os.Getenv("NODE_NAME")
-				if recovery.Spec.NodeName == "" {
-					recovery.Spec.NodeName = "minikube"
-				}
+				recovery.Spec.Repository = localRef.GetRepositoryCRDName("", nodeName)
+
 				By("Creating recovery " + recovery.Name)
 				err = f.CreateRecovery(recovery)
 				Expect(err).NotTo(HaveOccurred())
@@ -854,14 +858,12 @@ var _ = Describe("DaemonSet", func() {
 				// give some time for daemonset to terminate
 				time.Sleep(time.Second * 30)
 
-				recovery.Spec.Workload = api.LocalTypedReference{
-					Kind: api.KindDaemonSet,
-					Name: daemon.Name,
+				nodeName := os.Getenv("NODE_NAME")
+				if nodeName == "" {
+					nodeName = "minikube"
 				}
-				recovery.Spec.NodeName = os.Getenv("NODE_NAME")
-				if recovery.Spec.NodeName == "" {
-					recovery.Spec.NodeName = "minikube"
-				}
+				recovery.Spec.Repository = localRef.GetRepositoryCRDName("", nodeName)
+
 				By("Creating recovery " + recovery.Name)
 				err = f.CreateRecovery(recovery)
 				Expect(err).NotTo(HaveOccurred())
