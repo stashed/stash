@@ -67,3 +67,14 @@ func (r Recovery) IsValid() error {
 	}
 	return nil
 }
+
+func (r Repository) IsValid() error {
+	if r.Spec.WipeOut {
+		if r.Spec.Backend.Local != nil {
+			return fmt.Errorf("wipeOut restic repository does not support local backend.")
+		} else if r.Spec.Backend.B2 != nil {
+			return fmt.Errorf("wipeOut restic repository does not support B2 backend.")
+		}
+	}
+	return nil
+}

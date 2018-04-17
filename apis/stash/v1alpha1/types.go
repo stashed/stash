@@ -158,7 +158,7 @@ type Recovery struct {
 }
 
 type RecoverySpec struct {
-	Repository string `json:"repository"`
+	Repository string `json:"repository,omitempty"`
 	// Snapshot to recover. Default is latest snapshot.
 	// +optional
 	Snapshot         string                      `json:"snapshot,omitempty"`

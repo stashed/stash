@@ -525,7 +525,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 							},
 						},
 					},
-					Required: []string{"repository"},
 				},
 			},
 			Dependencies: []string{
@@ -650,9 +649,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"wipeOut": {
 							SchemaProps: spec.SchemaProps{
-								Description: "If true, delete respective restic repository",
-								Type:        []string{"boolean"},
-								Format:      "",
+								Type:   []string{"boolean"},
+								Format: "",
 							},
 						},
 					},
