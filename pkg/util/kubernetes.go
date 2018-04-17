@@ -545,7 +545,7 @@ func ExtractDataFromRepositoryLabel(labels map[string]string) (data RepoLabelDat
 		data.PodName = ""
 	}
 
-	data.PodName, ok = labels["node-name"]
+	data.NodeName, ok = labels["node-name"]
 	if !ok {
 		data.NodeName = ""
 	}
