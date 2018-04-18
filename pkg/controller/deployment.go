@@ -12,6 +12,7 @@ import (
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
@@ -68,7 +69,10 @@ func (c *StashController) runDeploymentInjector(key string) error {
 		if err != nil {
 			return err
 		}
-		util.DeleteConfigmapLock(c.kubeClient, ns, api.LocalTypedReference{Kind: api.KindDeployment, Name: name})
+		err = util.DeleteConfigmapLock(c.kubeClient, ns, api.LocalTypedReference{Kind: api.KindDeployment, Name: name})
+		if err != nil && !kerr.IsNotFound(err) {
+			return err
+		}
 	} else {
 		glog.Infof("Sync/Add/Update for Deployment %s\n", key)
 
@@ -123,7 +127,7 @@ func (c *StashController) mutateDeployment(w *workload.Workload) (*api.Restic, b
 		}
 		workload.ApplyWorkload(w.Object, w)
 		err = util.DeleteConfigmapLock(c.kubeClient, w.Namespace, api.LocalTypedReference{Kind: api.KindDeployment, Name: w.Name})
-		if err != nil {
+		if err != nil && !kerr.IsNotFound(err) {
 			return nil, false, err
 		}
 		return oldRestic, true, nil

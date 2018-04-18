@@ -52,9 +52,9 @@ func (matcher *initContainerMatcher) find(containers []core.Container) (success 
 }
 
 func (matcher *initContainerMatcher) FailureMessage(actual interface{}) (message string) {
-	return fmt.Sprintf("Expected\n\t%#v\nto contain sidecar container \n\t%#v", actual, matcher.expected)
+	return fmt.Sprintf("Expected\n\t%#v\n to contain sidecar container \n\t%#v", actual, matcher.expected)
 }
 
 func (matcher *initContainerMatcher) NegatedFailureMessage(actual interface{}) (message string) {
-	return fmt.Sprintf("Expected\n\t%#v\nnot to contain the sidecar container\n\t%#v", actual, matcher.expected)
+	return fmt.Sprintf("Expected\n\t%#v\n not to contain the sidecar container\n\t%#v", actual, matcher.expected)
 }
