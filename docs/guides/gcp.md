@@ -215,14 +215,7 @@ metadata:
   name: gcs-recovery
   namespace: default
 spec:
-  workload:
-    kind: Deployment
-    name: stash-demo # Must match with the label of busybox pod we are recoverying.
-  backend:
-    gcs:
-      bucket: stash-backup-repo
-      prefix: demo
-    storageSecretName: gcs-secret
+  repository: deployment.stash-demo
   paths:
   - /source/data
   recoveredVolumes:
@@ -246,7 +239,7 @@ items:
   metadata:
     annotations:
       kubectl.kubernetes.io/last-applied-configuration: |
-        {"apiVersion":"stash.appscode.com/v1alpha1","kind":"Recovery","metadata":{"annotations":{},"name":"gcs-recovery","namespace":"default"},"spec":{"backend":{"gcs":{"bucket":"stash-backup-repo","prefix":"demo"},"storageSecretName":"gcs-secret"},"paths":["/source/data"],"recoveredVolumes":[{"gcePersistentDisk":{"fsType":"ext4","pdName":"stash-recovered"},"mountPath":"/source/data"}],"workload":{"kind":"Deployment","name":"stash-demo"}}}
+        {"apiVersion":"stash.appscode.com/v1alpha1","kind":"Recovery","metadata":{"name":"gcs-recovery","namespace":"default"},"spec":{"repository":"deployment.stash-demo","paths":["/source/data"],"recoveredVolumes":[{"mountPath":"/source/data","gcePersistentDisk":{"pdName":"stash-recovered","fsType":"ext4"}}]}}
     clusterName: ""
     creationTimestamp: 2018-04-12T04:54:46Z
     generation: 0
@@ -256,11 +249,7 @@ items:
     selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/recoveries/gcs-recovery
     uid: 9f886069-3e0d-11e8-951b-42010a80002e
   spec:
-    backend:
-      gcs:
-        bucket: stash-backup-repo
-        prefix: demo
-      storageSecretName: gcs-secret
+    repository: deployment.stash-demo
     paths:
     - /source/data
     recoveredVolumes:
@@ -268,9 +257,6 @@ items:
         fsType: ext4
         pdName: stash-recovered
       mountPath: /source/data
-    workload:
-      kind: Deployment
-      name: stash-demo
   status:
     phase: Succeeded
 kind: List
@@ -417,14 +403,7 @@ metadata:
   name: gcs-recovery
   namespace: default
 spec:
-  workload:
-    kind: Deployment
-    name: stash-demo
-  backend:
-    gcs:
-      bucket: stash-backup-repo
-      prefix: demo
-    storageSecretName: gcs-secret
+  repository: deployment.stash-demo
   paths:
   - /source/data
   recoveredVolumes:
@@ -445,7 +424,7 @@ kind: Recovery
 metadata:
   annotations:
     kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"stash.appscode.com/v1alpha1","kind":"Recovery","metadata":{"annotations":{},"name":"gcs-recovery","namespace":"default"},"spec":{"backend":{"gcs":{"bucket":"stash-backup-repo","prefix":"demo"},"storageSecretName":"gcs-secret"},"paths":["/source/data"],"recoveredVolumes":[{"mountPath":"/source/data","persistentVolumeClaim":{"claimName":"stash-recovered"}}],"workload":{"kind":"Deployment","name":"stash-demo"}}}
+     {"apiVersion":"stash.appscode.com/v1alpha1","kind":"Recovery","metadata":{"name":"gcs-recovery","namespace":"default"},"spec":{"repository":"deployment.stash-demo","paths":["/source/data"],"recoveredVolumes":[{"mountPath":"/source/data","persistentVolumeClaim":{"claimName":"stash-recovered"}}]}}
   clusterName: ""
   creationTimestamp: 2018-04-12T05:26:03Z
   generation: 0
@@ -455,20 +434,13 @@ metadata:
   selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/recoveries/gcs-recovery
   uid: fe0eb3b9-3e11-11e8-951b-42010a80002e
 spec:
-  backend:
-    gcs:
-      bucket: stash-backup-repo
-      prefix: demo
-    storageSecretName: gcs-secret
+  repository: deployment.stash-demo
   paths:
   - /source/data
   recoveredVolumes:
   - mountPath: /source/data
     persistentVolumeClaim:
       claimName: stash-recovered
-  workload:
-    kind: Deployment
-    name: stash-demo
 status:
   phase: Succeeded
 ```

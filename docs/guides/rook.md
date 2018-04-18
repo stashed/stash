@@ -262,15 +262,7 @@ metadata:
   name: rook-recovery
   namespace: default
 spec:
-  workload:
-    kind: Deployment
-    name: stash-demo
-  backend:
-    s3:
-      endpoint: 'http://rook-ceph-rgw-my-store.rook'
-      bucket: stash-backup
-      prefix: demo
-    storageSecretName: rook-restic-secret
+  repository: deployment.stash-demo
   paths:
   - /source/data
   recoveredVolumes:
@@ -291,7 +283,7 @@ kind: Recovery
 metadata:
   annotations:
     kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"stash.appscode.com/v1alpha1","kind":"Recovery","metadata":{"annotations":{},"name":"rook-recovery","namespace":"default"},"spec":{"backend":{"s3":{"bucket":"stash-backup","endpoint":"http://rook-ceph-rgw-my-store.rook","prefix":"demo"},"storageSecretName":"rook-restic-secret"},"paths":["/source/data"],"recoveredVolumes":[{"mountPath":"/source/data","persistentVolumeClaim":{"claimName":"stash-recovered"}}],"workload":{"kind":"Deployment","name":"stash-demo"}}}
+     {"apiVersion":"stash.appscode.com/v1alpha1","kind":"Recovery","metadata":{"name":"rook-recovery","namespace":"default"},"spec":{"repository":"deployment.stash-demo","paths":["/source/data"],"recoveredVolumes":[{"mountPath":"/source/data","persistentVolumeClaim":{"claimName":"stash-recovered"}}]}}
   clusterName: ""
   creationTimestamp: 2018-04-12T12:57:54Z
   generation: 0
@@ -301,21 +293,13 @@ metadata:
   selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/recoveries/rook-recovery
   uid: 1dbad356-3e51-11e8-b2bd-080027dbef96
 spec:
-  backend:
-    s3:
-      bucket: stash-backup
-      endpoint: http://rook-ceph-rgw-my-store.rook
-      prefix: demo
-    storageSecretName: rook-restic-secret
+  repository: deployment.stash-demo
   paths:
   - /source/data
   recoveredVolumes:
   - mountPath: /source/data
     persistentVolumeClaim:
       claimName: stash-recovered
-  workload:
-    kind: Deployment
-    name: stash-demo
 status:
   phase: Succeeded
 ```

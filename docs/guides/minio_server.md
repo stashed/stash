@@ -451,8 +451,8 @@ Look at the `status` field. `backupCount` show number of successful backup taken
 Now, it is time to recover the backed up data. At first, delete `Restic` crd so that it does not lock the restic repository while we are trying to recover from it.
 
 ```console
-$ kubectl delete restic rook-restic
-restic "rook-restic" deleted
+$ kubectl delete restic minio-restic
+restic "minio-restic" deleted
 ```
 
 Now, create a  `Recovery` crd.
@@ -471,15 +471,7 @@ metadata:
   name: minio-recovery
   namespace: default
 spec:
-  workload:
-    kind: Deployment
-    name: stash-demo # Must match with the label of busybox pod we are recoverying.
-  backend:
-    s3:
-      endpoint: 'https://minio-service.default.svc' # use your own Minio server address
-      bucket: stash-qa
-      prefix: demo
-    storageSecretName: minio-restic-secret # we will use same secret created for Restic crd. You can create new secret for Recovery with same credentials.
+  repository: deployment.stash-demo
   paths:
   - /source/data
   recoveredVolumes:
@@ -501,7 +493,7 @@ kind: Recovery
 metadata:
   annotations:
     kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"stash.appscode.com/v1alpha1","kind":"Recovery","metadata":{"annotations":{},"name":"minio-recovery","namespace":"default"},"spec":{"backend":{"s3":{"bucket":"stash-qa","endpoint":"https://minio-service.default.svc","prefix":"demo"},"storageSecretName":"minio-restic-secret"},"paths":["/source/data"],"recoveredVolumes":[{"hostPath":{"path":"/data/stash-recovered/"},"mountPath":"/source/data","name":"stash-recovered-volume"}],"workload":{"kind":"Deployment","name":"stash-demo"}}}
+      {"apiVersion":"stash.appscode.com/v1alpha1","kind":"Recovery","metadata":{"name":"minio-recovery","namespace":"default"},"spec":{"repository":"deployment.stash-demo","paths":["/source/data"],"recoveredVolumes":[{"mountPath":"/source/data","name":"stash-recovered-volume","hostPath":{"path":"/data/stash-recovered/"}}]}}
   clusterName: ""
   creationTimestamp: 2018-01-30T06:54:18Z
   generation: 0
@@ -511,12 +503,7 @@ metadata:
   selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/recoveries/minio-recovery
   uid: 64c12ff7-058a-11e8-9976-08002750604b
 spec:
-  backend:
-    s3:
-      bucket: stash-qa
-      endpoint: https://minio-service.default.svc
-      prefix: demo
-    storageSecretName: minio-restic-secret
+  repository: deployment.stash-demo
   paths:
   - /source/data
   recoveredVolumes:
@@ -524,9 +511,6 @@ spec:
       path: /data/stash-recovered/
     mountPath: /source/data
     name: stash-recovered-volume
-  workload:
-    kind: Deployment
-    name: stash-demo
 status:
   phase: Succeeded
 ```
