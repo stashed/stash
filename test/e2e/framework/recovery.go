@@ -57,13 +57,14 @@ func (f *Framework) EventuallyRecoverySucceed(meta metav1.ObjectMeta) GomegaAsyn
 	return Eventually(func() bool {
 		obj, err := f.StashClient.StashV1alpha1().Recoveries(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
+
 		return obj.Status.Phase == api.RecoverySucceeded
 	}, time.Minute*5, time.Second*5)
 }
 
-func (f *Framework) EventuallyRecoveredData(meta metav1.ObjectMeta, restic *api.Restic) GomegaAsyncAssertion {
+func (f *Framework) EventuallyRecoveredData(meta metav1.ObjectMeta, paths []string) GomegaAsyncAssertion {
 	return Eventually(func() []string {
-		recoveredData, err := f.ReadDataFromMountedDir(meta, restic)
+		recoveredData, err := f.ReadDataFromMountedDir(meta, paths)
 		if err != nil {
 			return nil
 		}
@@ -71,18 +72,34 @@ func (f *Framework) EventuallyRecoveredData(meta metav1.ObjectMeta, restic *api.
 	}, time.Minute*5, time.Second*5)
 }
 
-func (f *Framework) ReadDataFromMountedDir(meta metav1.ObjectMeta, restic *api.Restic) ([]string, error) {
+func (f *Framework) ReadDataFromMountedDir(meta metav1.ObjectMeta, paths []string) ([]string, error) {
 	pod, err := f.GetPod(meta)
 	if err != nil {
 		return nil, err
 	}
+
 	datas := make([]string, 0)
-	for _, fg := range restic.Spec.FileGroups {
-		data, err := f.ExecOnPod(pod, "ls", fg.Path)
+	for _, path := range paths {
+		data, err := f.ExecOnPod(pod, "ls", path)
 		if err != nil {
 			return nil, err
 		}
 		datas = append(datas, data)
 	}
 	return datas, nil
+}
+
+func (f *Framework) CreateDataOnMountedDir(meta metav1.ObjectMeta, paths []string) ([]string, error) {
+	pod, err := f.GetPod(meta)
+	if err != nil {
+		return nil, err
+	}
+	for _, path := range paths {
+		_, err := f.ExecOnPod(pod, "touch", path+"/test-data.txt")
+		if err != nil {
+			return nil, err
+		}
+
+	}
+	return nil, nil
 }

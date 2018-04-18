@@ -750,7 +750,7 @@ var _ = Describe("DaemonSet", func() {
 				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
 				By("Reading data from /source/data mountPath")
-				previousData, err := f.ReadDataFromMountedDir(daemon.ObjectMeta, &restic)
+				previousData, err := f.ReadDataFromMountedDir(daemon.ObjectMeta, framework.GetPathsFromResticFileGroups(&restic))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(previousData).NotTo(BeEmpty())
 
@@ -794,7 +794,7 @@ var _ = Describe("DaemonSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Reading data from /source/data mountPath")
-				f.EventuallyRecoveredData(daemon.ObjectMeta, &restic).Should(BeEquivalentTo(previousData))
+				f.EventuallyRecoveredData(daemon.ObjectMeta, framework.GetPathsFromResticFileGroups(&restic)).Should(BeEquivalentTo(previousData))
 			})
 		})
 
@@ -845,7 +845,7 @@ var _ = Describe("DaemonSet", func() {
 				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
 				By("Reading data from /source/data mountPath")
-				previousData, err := f.ReadDataFromMountedDir(daemon.ObjectMeta, &restic)
+				previousData, err := f.ReadDataFromMountedDir(daemon.ObjectMeta, framework.GetPathsFromResticFileGroups(&restic))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(previousData).NotTo(BeEmpty())
 
@@ -889,7 +889,7 @@ var _ = Describe("DaemonSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Reading data from /source/data mountPath")
-				f.EventuallyRecoveredData(daemon.ObjectMeta, &restic).Should(BeEquivalentTo(previousData))
+				f.EventuallyRecoveredData(daemon.ObjectMeta, framework.GetPathsFromResticFileGroups(&restic)).Should(BeEquivalentTo(previousData))
 			})
 		})
 	})

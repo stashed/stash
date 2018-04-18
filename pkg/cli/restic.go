@@ -172,7 +172,7 @@ func (w *ResticWrapper) Restore(path, host, snapshotID string) error {
 
 	args = w.appendCacheDirFlag(args)
 	args = w.appendCaCertFlag(args)
-
+	
 	return w.run(Exe, args)
 }
 
