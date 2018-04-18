@@ -69,7 +69,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 			return err
 		}
 		err = util.DeleteConfigmapLock(c.kubeClient, ns, api.LocalTypedReference{Kind: api.KindReplicaSet, Name: name})
-		if err!=nil{
+		if err != nil {
 			return err
 		}
 	} else {

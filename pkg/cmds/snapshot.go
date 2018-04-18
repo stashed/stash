@@ -32,7 +32,7 @@ func NewCmdSnapshots() *cobra.Command {
 			stashClient := cs.NewForConfigOrDie(config)
 
 			if repositoryName == "" {
-				return  fmt.Errorf("repository name not found")
+				return fmt.Errorf("repository name not found")
 			}
 			repo, err := stashClient.Repositories(meta.Namespace()).Get(repositoryName, metav1.GetOptions{})
 			if err != nil {

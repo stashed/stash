@@ -69,7 +69,7 @@ func (c *StashController) runRCInjector(key string) error {
 			return err
 		}
 		err = util.DeleteConfigmapLock(c.kubeClient, ns, api.LocalTypedReference{Kind: api.KindReplicationController, Name: name})
-		if err!=nil{
+		if err != nil {
 			return err
 		}
 	} else {

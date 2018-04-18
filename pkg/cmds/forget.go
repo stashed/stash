@@ -31,7 +31,7 @@ func NewCmdForget() *cobra.Command {
 			stashClient := cs.NewForConfigOrDie(config)
 
 			if repositoryName == "" {
-				return  fmt.Errorf("repository name not found")
+				return fmt.Errorf("repository name not found")
 			}
 			repo, err := stashClient.Repositories(meta.Namespace()).Get(repositoryName, metav1.GetOptions{})
 			if err != nil {
@@ -41,7 +41,7 @@ func NewCmdForget() *cobra.Command {
 			r := snapshot.NewREST(config)
 			err = r.ForgetSnapshots(repo, args)
 			if err != nil {
-				return  err
+				return err
 			}
 			return nil
 		},
