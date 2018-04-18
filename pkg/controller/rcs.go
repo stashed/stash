@@ -12,6 +12,7 @@ import (
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
@@ -69,7 +70,7 @@ func (c *StashController) runRCInjector(key string) error {
 			return err
 		}
 		err = util.DeleteConfigmapLock(c.kubeClient, ns, api.LocalTypedReference{Kind: api.KindReplicationController, Name: name})
-		if err != nil {
+		if err != nil && !kerr.IsNotFound(err) {
 			return err
 		}
 	} else {
@@ -134,7 +135,7 @@ func (c *StashController) mutateReplicationController(w *workload.Workload) (*ap
 		workload.ApplyWorkload(w.Object, w)
 
 		err = util.DeleteConfigmapLock(c.kubeClient, w.Namespace, api.LocalTypedReference{Kind: api.KindReplicationController, Name: w.Name})
-		if err != nil {
+		if err != nil && !kerr.IsNotFound(err) {
 			return nil, false, err
 		}
 		return oldRestic, true, nil
