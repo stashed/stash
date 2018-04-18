@@ -68,7 +68,10 @@ func (c *StashController) runRCInjector(key string) error {
 		if err != nil {
 			return err
 		}
-		util.DeleteConfigmapLock(c.kubeClient, ns, api.LocalTypedReference{Kind: api.KindReplicationController, Name: name})
+		err = util.DeleteConfigmapLock(c.kubeClient, ns, api.LocalTypedReference{Kind: api.KindReplicationController, Name: name})
+		if err!=nil{
+			return err
+		}
 	} else {
 		glog.Infof("Sync/Add/Update for ReplicationController %s\n", key)
 

@@ -44,5 +44,5 @@ func (matcher *replicaMatcher) FailureMessage(actual interface{}) (message strin
 }
 
 func (matcher *replicaMatcher) NegatedFailureMessage(actual interface{}) (message string) {
-	return fmt.Sprintf("Expected\n\t%#v\nnot to have\n\t%#v replica", actual, matcher.expected)
+	return fmt.Sprintf("Expected\n\t%#v\n not to have\n\t%#v replica", actual, matcher.expected)
 }

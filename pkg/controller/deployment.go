@@ -68,7 +68,10 @@ func (c *StashController) runDeploymentInjector(key string) error {
 		if err != nil {
 			return err
 		}
-		util.DeleteConfigmapLock(c.kubeClient, ns, api.LocalTypedReference{Kind: api.KindDeployment, Name: name})
+		err = util.DeleteConfigmapLock(c.kubeClient, ns, api.LocalTypedReference{Kind: api.KindDeployment, Name: name})
+		if err!=nil{
+			return err
+		}
 	} else {
 		glog.Infof("Sync/Add/Update for Deployment %s\n", key)
 
