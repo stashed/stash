@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/appscode/go/types"
@@ -1172,5 +1173,52 @@ var _ = Describe("Deployment", func() {
 			})
 
 		})
+	})
+
+	Describe("Repository WipeOut", func() {
+		Context(`"Minio" backend`, func() {
+			AfterEach(func() {
+				f.DeleteMinioServer()
+			})
+			BeforeEach(func() {
+
+				By("Creating Minio server without cacert")
+				_, err = f.CreateMinioServer(false)
+				Expect(err).NotTo(HaveOccurred())
+
+				minikubeIP := "192.168.99.100"
+				msvc, err := f.KubeClient.CoreV1().Services(f.Namespace()).Get("minio-service", metav1.GetOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				minioServiceNodePort := strconv.Itoa(int(msvc.Spec.Ports[0].NodePort))
+
+				restic = f.ResticForMinioBackend("http://" + minikubeIP + ":" + minioServiceNodePort)
+				cred = f.SecretForMinioBackend(false)
+			})
+			It(`should delete repository from minio backend`, func() {
+				shouldBackupNewDeployment()
+
+				repos := f.DeploymentRepos(&deployment)
+				Expect(repos).NotTo(BeEmpty())
+
+				By(`Patching Repository with "wipeOut: true"`)
+				err = f.CreateOrPatchRepository(repos[0].ObjectMeta, func(in *api.Repository) *api.Repository {
+					in.Spec.WipeOut = true
+					return in
+				})
+
+				By("Deleting Repository CRD")
+				f.DeleteRepositories(repos)
+
+				By("Waiting for repository to delete")
+				f.EventuallyRepository(&deployment).Should(BeEmpty())
+
+				By("Checking restic repository is deleted")
+				items,err := f.BrowseResticRepository(repos[0])
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(items).Should(BeEmpty())
+			})
+
+		})
+		
 	})
 })

@@ -67,6 +67,7 @@ func (o StashOptions) Config() (*server.StashConfig, error) {
 		"/swaggerapi",
 		"/apis/admission.stash.appscode.com/v1alpha1/restics",
 		"/apis/admission.stash.appscode.com/v1alpha1/recoveries",
+		"/apis/admission.stash.appscode.com/v1alpha1/repositories",
 		"/apis/admission.stash.appscode.com/v1alpha1/deployments",
 		"/apis/admission.stash.appscode.com/v1alpha1/daemonsets",
 		"/apis/admission.stash.appscode.com/v1alpha1/statefulsets",
