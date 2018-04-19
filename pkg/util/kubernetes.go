@@ -383,7 +383,7 @@ func WorkloadExists(k8sClient kubernetes.Interface, namespace string, workload a
 		_, err := k8sClient.ExtensionsV1beta1().DaemonSets(namespace).Get(workload.Name, metav1.GetOptions{})
 		return err
 	default:
-		fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
+		return fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
 	}
 	return nil
 }
