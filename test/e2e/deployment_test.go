@@ -996,12 +996,14 @@ var _ = Describe("Deployment", func() {
 	})
 
 	Describe("Complete Recovery", func() {
+		AfterEach(func() {
+			f.DeleteDeployment(deployment.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+			f.DeleteRecovery(recovery.ObjectMeta)
+		})
 		Context(`"Local" backend,single fileGroup`, func() {
 			AfterEach(func() {
-				f.DeleteDeployment(deployment.ObjectMeta)
-				f.DeleteRestic(restic.ObjectMeta)
-				f.DeleteSecret(cred.ObjectMeta)
-				f.DeleteRecovery(recovery.ObjectMeta)
 				framework.CleanupMinikubeHostPath()
 			})
 			BeforeEach(func() {
@@ -1084,10 +1086,6 @@ var _ = Describe("Deployment", func() {
 
 		Context(`"Local" backend, multiple fileGroup`, func() {
 			AfterEach(func() {
-				f.DeleteDeployment(deployment.ObjectMeta)
-				f.DeleteRestic(restic.ObjectMeta)
-				f.DeleteSecret(cred.ObjectMeta)
-				f.DeleteRecovery(recovery.ObjectMeta)
 				framework.CleanupMinikubeHostPath()
 			})
 			BeforeEach(func() {
@@ -1176,6 +1174,12 @@ var _ = Describe("Deployment", func() {
 	})
 
 	Describe("Repository WipeOut", func() {
+		AfterEach(func() {
+			f.DeleteDeployment(deployment.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+		})
+
 		Context(`"Minio" backend`, func() {
 			AfterEach(func() {
 				f.DeleteMinioServer()
@@ -1213,12 +1217,32 @@ var _ = Describe("Deployment", func() {
 				f.EventuallyRepository(&deployment).Should(BeEmpty())
 
 				By("Checking restic repository is deleted")
-				items,err := f.BrowseResticRepository(repos[0])
+				items, err := f.BrowseResticRepository(repos[0])
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(items).Should(BeEmpty())
 			})
 
 		})
-		
+
+		Context(`"Local" backend`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForLocalBackend()
+			})
+			It(`should reject to to patch repository with wipeOut: true`, func() {
+				shouldBackupNewDeployment()
+
+				repos := f.DeploymentRepos(&deployment)
+				Expect(repos).NotTo(BeEmpty())
+
+				By(`Patching Repository with "wipeOut: true"`)
+				err = f.CreateOrPatchRepository(repos[0].ObjectMeta, func(in *api.Repository) *api.Repository {
+					in.Spec.WipeOut = true
+					return in
+				})
+				Expect(err).Should(HaveOccurred())
+			})
+		})
+
 	})
 })

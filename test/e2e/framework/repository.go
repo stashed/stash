@@ -73,34 +73,34 @@ func (f *Framework) DeleteRepositories(repositories []*api.Repository) {
 		Expect(err).NotTo(HaveOccurred())
 	}
 }
-func (f *Framework) BrowseResticRepository(repository *api.Repository) ([]stow.Item,error) {
+func (f *Framework) BrowseResticRepository(repository *api.Repository) ([]stow.Item, error) {
 	cfg, err := osm.NewOSMContext(f.KubeClient, repository)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 
 	loc, err := stow.Dial(cfg.Provider, cfg.Config)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 
 	bucket, prefix, err := util.GetBucketAndPrefix(&repository.Spec.Backend)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	prefix = prefix + "/"
 
 	container, err := loc.Container(bucket)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 
 	cursor := stow.CursorStart
 	items, _, err := container.Items(prefix, cursor, 50)
-	if err!=nil{
-		return nil,err
+	if err != nil {
+		return nil, err
 	}
-	return items,nil
+	return items, nil
 }
 
 func (f *Framework) BackupCountInRepositoriesStatus(repos []*api.Repository) int64 {
