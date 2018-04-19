@@ -71,7 +71,6 @@ func (workload LocalTypedReference) HostnamePrefix(podName, nodeName string) (ho
 	default:
 		return "", "", fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
 	}
-	return
 }
 
 func StatefulSetPodName(appName, podOrdinal string) (string, error) {
