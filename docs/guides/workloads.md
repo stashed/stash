@@ -31,7 +31,7 @@ To backup a ReplicationController, create a Restic with matching selectors. You 
 To backup a DaemonSet, create a Restic with matching selectors. You can find a full working demo in [examples folder](/docs/examples/workloads/daemonset.yaml). This example shows how Stash can be used to backup host paths on all nodes of a cluster. First run a DaemonSet without nodeSelectors. This DaemonSet acts as a vector for Restic sidecar and mounts host paths that are to be backed up. In this example, we use a `busybox` container for this. Now, create a Restic that has a matching selector. This Restic also `spec.volumeMounts` the said host path and points to the host path in `spec.fileGroups`.
 
 ## StatefulSets
-Kubernetes does not support updating StatefulSet after they are created. It is recommended to enable **mutating webhook** by providing `--enable-mutating-webhook` flag while installing stash. To know more about how to provide various flag while installing stash see [here](/docs/setup/install.md#customizing-installer).
+Kubernetes does not support adding sidecar to a StatefulSet after it is created. It is recommended to enable **mutating webhook** by providing `--enable-mutating-webhook` flag while installing stash. To know more about how to provide various flag while installing stash see [here](/docs/setup/install.md#customizing-installer).
 
 If you don't want to enable **mutating webhook** then you have to add Stash sidecar container to your StatefulSet manually. You can see the relevant portions of a working example below:
 
