@@ -131,7 +131,7 @@ spec:
     prune: true
 ```
 
-When a `Restic` is created with `spec.type: offline`, stash operator add an [init-container](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) instead of sidecar container to target workload pods. The init-container takes backup once. If the backup is successfully completed, then it creates a job to perform `restic check` and exits. The app container starts only after the init-container exits without any error. This ensures that the app container is not running while taking backup.
+When a `Restic` is created with `spec.type: offline`, stash operator adds an [init-container](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) instead of sidecar container to target workload pods. The init-container takes backup once. If the backup is successfully completed, then it creates a job to perform `restic check` and exits. The app container starts only after the init-container exits without any error. This ensures that the app container is not running while taking backup.
 Stash operator also creates a cron-job that deletes the workload pods according to the `spec.schedule`. Thus the workload pods get restarted periodically and allow the init-container to take backup.
 
 ```console

@@ -5,7 +5,7 @@ metadata:
   namespace: default
 spec:
   repository: deployment.stash-demo
-  snapshot: deployment.stash-demo-e0e9c272 # ignore this field to recover latest snapshot
+  snapshot: deployment.stash-demo-e0e9c272 # skip this field to recover latest snapshot
   paths:
   - /source/data
   recoveredVolumes:
