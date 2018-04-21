@@ -1,17 +1,18 @@
-# Using Stash with Rook Storage System
+# Using Stash with Rook Storage Service
 
-This tutorial will show you how to use Stash to **backup** and **restore** a Kubernetes volume in [Rook](https://rook.io/) storage system. Here, we are going to backup the `/source/data` folder of a busybox pod into  [AWS S3](/docs/guides/backends.md#aws-s3) compatible [Rook Object Storage](https://rook.io/docs/rook/master/object.html). Then, we will show how to recover this data into a `PersistentVolumeClaim` of [Rook Block Storage](https://rook.io/docs/rook/master/block.html). We will also re-deploy deployment using this recovered volume.
+This tutorial will show you how to use Stash to **backup** and **restore** a Kubernetes volume in [Rook](https://rook.io/) storage service. Here, we are going to backup the `/source/data` folder of a busybox pod into [AWS S3](/docs/guides/backends.md#aws-s3) compatible [Rook Object Storage](https://rook.io/docs/rook/master/object.html). Then, we will show how to recover this data into a `PersistentVolumeClaim` of [Rook Block Storage](https://rook.io/docs/rook/master/block.html). We will also re-deploy deployment using this recovered volume.
 
-## Prerequisites
+## Before You Begin
+
 At first, you need to have a Kubernetes cluster, and the kubectl command-line tool must be configured to communicate with your cluster. If you do not already have a cluster, you can create one by using [Minikube](https://github.com/kubernetes/minikube). Now, install `Stash` in your cluster following the steps [here](/docs/setup/install.md).
 
-You should have understanding the following Stash terms:
+You should have understanding the following Stash concepts:
 
 - [Restic](/docs/concepts/crds/restic.md)
 - [Repository](/docs/concepts/crds/repository.md)
 - [Recovery](/docs/concepts/crds/recovery.md)
 
-Then, you will need to have a [Rook Storage System](https://rook.io) with [Object Storage](https://rook.io/docs/rook/master/object.html) and [Block Storage](https://rook.io/docs/rook/master/block.html) configured. If you do not already have a **Rook Storage System** configured, you can create one by following this [Quickstart Guide](https://rook.io/docs/rook/master/quickstart.html).
+Then, you will need to have a [Rook Storage Service](https://rook.io) with [Object Storage](https://rook.io/docs/rook/master/object.html) and [Block Storage](https://rook.io/docs/rook/master/block.html) configured. If you do not already have a **Rook Storage Service** configured, you can create one by following this [quickstart guide](https://rook.io/docs/rook/master/quickstart.html).
 
 ## Backup
 
@@ -22,7 +23,7 @@ $ kubectl apply -f ./busybox.yaml
 deployment "stash-demo" created
 ```
 
-Yaml for `busybox` deployment,
+Definition of `busybox` deployment:
 
 ```yaml
 apiVersion: apps/v1beta1
@@ -80,7 +81,7 @@ README.md
 
 Now, let’s backup the directory into a [AWS S3](/docs/guides/backends.md#aws-s3) compatible Rook Object Storage.
 
-At first, we need to create a secret for `Restic` crd. Create secret for `Restic`using following command,
+At first, we need to create a secret for `Restic` crd. Create secret for `Restic` using following command,
 
 ```console
 $ echo -n 'changeit' > RESTIC_PASSWORD
@@ -119,11 +120,11 @@ type: Opaque
 Now, we can create `Restic` crd. This will create a repository `stash-backup-repo` in **Rook Object Storage** bucket and start taking periodic backup of `/source/data/` folder.
 
 ```console
-$ kubectl apply -f ./rook-restic.yaml 
+$ kubectl apply -f ./rook-restic.yaml
 restic "rook-restic" created
 ```
 
-Yaml for `Restic` crd for Rook Object Storage backend,
+Definition of `Restic` crd for Rook Object Storage backend,
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
@@ -164,7 +165,7 @@ deployment.stash-demo   1m
 
 `Restic` will take backup of the volume periodically with a 1-minute interval. You can verify that backup is taking successfully by,
 
-```console 
+```console
 $ kubectl get repository deployment.stash-demo -o yaml
 ```
 
@@ -218,7 +219,7 @@ $ kubectl apply -f ./rook-pvc.yaml
 persistentvolumeclaim "stash-recovered" created
 ```
 
-Yaml for `PersistentVolumeClaim`,
+Definition of `PersistentVolumeClaim`:
 
 ```yaml
 apiVersion: v1
@@ -253,7 +254,7 @@ $ kubectl apply -f ./rook-recovery.yaml
 recovery "rook-recovery" created
 ```
 
-Yaml for `Recovery` to recover in `PersistentVolumeClaim`,
+Definition of `Recovery` should look like below:
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
