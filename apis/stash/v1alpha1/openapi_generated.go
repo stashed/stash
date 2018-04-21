@@ -474,9 +474,17 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
 					Properties: map[string]spec.Schema{
-						"backend": {
+						"repository": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("github.com/appscode/stash/apis/stash/v1alpha1.Backend"),
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
+						"snapshot": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Snapshot to recover. Default is latest snapshot.",
+								Type:        []string{"string"},
+								Format:      "",
 							},
 						},
 						"paths": {
@@ -490,23 +498,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 										},
 									},
 								},
-							},
-						},
-						"workload": {
-							SchemaProps: spec.SchemaProps{
-								Ref: ref("github.com/appscode/stash/apis/stash/v1alpha1.LocalTypedReference"),
-							},
-						},
-						"podOrdinal": {
-							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
-							},
-						},
-						"nodeName": {
-							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
 							},
 						},
 						"recoveredVolumes": {
@@ -534,10 +525,11 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 							},
 						},
 					},
+					Required: []string{"repository"},
 				},
 			},
 			Dependencies: []string{
-				"github.com/appscode/stash/apis/stash/v1alpha1.Backend", "github.com/appscode/stash/apis/stash/v1alpha1.LocalSpec", "github.com/appscode/stash/apis/stash/v1alpha1.LocalTypedReference", "k8s.io/api/core/v1.LocalObjectReference"},
+				"github.com/appscode/stash/apis/stash/v1alpha1.LocalSpec", "k8s.io/api/core/v1.LocalObjectReference"},
 		},
 		"github.com/appscode/stash/apis/stash/v1alpha1.RecoveryStatus": {
 			Schema: spec.Schema{

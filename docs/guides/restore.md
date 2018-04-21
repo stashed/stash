@@ -17,7 +17,7 @@ section_menu_id: guides
 # Restore Backup
 This tutorial will show you how to restore a Stash backup. At first, backup a kubernetes workload volume by following the steps [here](/docs/guides/backup.md).
 
-To restore a backup, you need to create a `Recovery` CRD by specifying `Restic`, target workload and volume where backup will be restored.
+To restore a backup, you need to create a `Recovery` CRD by specifying `Repository`, `path` and volume where the backup will be restored. Here, is a sample `Recovery` to recover the latest snapshot.
 
 ```console
 $ kubectl apply -f ./docs/examples/tutorial/recovery.yaml
@@ -31,15 +31,7 @@ metadata:
   name: stash-demo
   namespace: default
 spec:
-  workload:
-    kind: Deployment
-    name: stash-demo
-  backend:
-    local:
-      mountPath: /safe/data
-      hostPath:
-        path: /data/stash-test/restic-repo
-    storageSecretName: stash-demo
+  repository: deployment.stash-demo
   paths:
   - /source/data
   recoveredVolumes:
@@ -50,13 +42,9 @@ spec:
 
 Here,
 
- - `spec.workload` specifies a target workload that was backed up using `Restic`. A single `Restic` backups all types of workloads that matches the label-selector, but you can only restore a specific workload using a `Recovery`.
-    - For workload kind `Statefulset`, you need to specify pod [index](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#ordinal-index) using `spec.podOrdinal`.
-    - For workload kind `Daemonset`, you need to specify node name using `spec.nodeName`.
- - `spec.backend` specifies the backend that was used in `Restic` to take backups.
- - `spec.paths` specifies the file-group paths that was backed up using `Restic`.
- - `spec.recoveredVolumes` indicates an array of volumes where snapshots will be recovered. Here, `mountPath` specifies where the volume will be mounted.
- Note that, `Recovery` recovers data in the same paths from where backup was taken (specified in `spec.paths`). So, volumes must be mounted on those paths or their parent paths.
+- `spec.repository` specifies the name of the `Repository` CRD that represents respective **restic** repository.
+- `spec.paths` specifies the file-group paths that were backed up using `Restic`.
+- `spec.recoveredVolumes` indicates an array of volumes where snapshots will be recovered. Here, `mountPath` specifies where the volume will be mounted. Note that, `Recovery` recovers data in the same paths from where the backup was taken (specified in `spec.paths`). So, volumes must be mounted on those paths or their parent paths.
 
 Stash operator watches for `Recovery` objects using Kubernetes api. It collects required snapshot information from the specified `Restic` object. Then it creates a recovery job that performs the recovery guides. On completion, job and associated pods are deleted by stash operator. To verify recovery, we can check the `Recovery` status.
 
@@ -78,15 +66,7 @@ metadata:
   selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/recoveries/stash-demo
   uid: 2bf74432-d8bc-11e7-be92-0800277f19c0
 spec:
-  workload:
-    kind: Deployment
-    name: stash-demo
-  backend:
-    local:
-      mountPath: /safe/data
-      hostPath:
-        path: /data/stash-test/restic-repo
-    storageSecretName: stash-demo
+  repository: deployment.stash-demo
   paths:
   - /source/data
   recoveredVolumes:
@@ -97,6 +77,45 @@ status:
   phase: Succeeded
 ```
 
+## Recover a specific snapshot
+
+With the help of [Snapshot](/docs/concepts/crds/snapshot.md) object, stash allows the users to recover a particular snapshot. Now, the users can specify which snapshot to recover. Here, is an example of how to recover a specific snapshot.
+
+First, list the available snapshots,
+
+```console
+$ kubectl get snapshots --all-namespaces
+NAME                             AGE
+deployment.stash-demo-d3050010   4m
+deployment.stash-demo-300d7c13   3m
+deployment.stash-demo-c24f6d96   2m
+deployment.stash-demo-80bcc7e3   1m
+deployment.stash-demo-3e79020e   35s
+``` 
+
+Now, create a `Recovery` with specifying `Snapshot` name,
+
+```console
+$ kubectl apply -f ./docs/examples/tutorial/recovery.yaml
+recovery "stash-demo" created
+```
+
+```yaml
+apiVersion: stash.appscode.com/v1alpha1
+kind: Recovery
+metadata:
+  name: stash-demo
+  namespace: default
+spec:
+  repository: deployment.stash-demo
+  snapshot: deployment.stash-demo-d3050010
+  paths:
+  - /source/data
+  recoveredVolumes:
+  - mountPath: /source/data
+    hostPath:
+      path: /data/stash-test/restic-restored
+```
 ## Cleaning up
 
 To cleanup the Kubernetes resources created by this tutorial, run:
@@ -106,6 +125,7 @@ $ kubectl delete deployment stash-demo
 $ kubectl delete secret stash-demo
 $ kubectl delete restic stash-demo
 $ kubectl delete recovery stash-demo
+$ kubectl delete repository deployment.stash-demo
 ```
 
 If you would like to uninstall Stash operator, please follow the steps [here](/docs/setup/uninstall.md).
