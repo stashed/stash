@@ -185,6 +185,12 @@ func (f *Framework) CreateOrPatchRestic(meta metav1.ObjectMeta, transformer func
 
 }
 
+func (f *Framework) CreateOrPatchRepository(meta metav1.ObjectMeta, transformer func(repository *api.Repository) *api.Repository) error {
+	_, _, err := stash_util.CreateOrPatchRepository(f.StashClient.StashV1alpha1(), meta, transformer)
+	return err
+
+}
+
 func (f *Framework) EventuallyRestic(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() *api.Restic {
 		obj, err := f.StashClient.StashV1alpha1().Restics(meta.Namespace).Get(meta.Name, metav1.GetOptions{})

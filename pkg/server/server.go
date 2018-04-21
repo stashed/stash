@@ -254,6 +254,7 @@ func (c *completedConfig) AddAdmissionHooks(ctrl *controller.StashController) er
 	c.ControllerConfig.AdmissionHooks = []hooks.AdmissionHook{
 		ctrl.NewResticWebhook(),
 		ctrl.NewRecoveryWebhook(),
+		ctrl.NewRepositoryWebhook(),
 		ctrl.NewDeploymentWebhook(),
 		ctrl.NewDaemonSetWebhook(),
 		ctrl.NewStatefulSetWebhook(),

@@ -51,6 +51,11 @@ type StashController struct {
 	recInformer cache.SharedIndexInformer
 	recLister   stash_listers.RecoveryLister
 
+	// Repository
+	repoQueue    *queue.Worker
+	repoInformer cache.SharedIndexInformer
+	repoLister   stash_listers.RepositoryLister
+
 	// Deployment
 	dpQueue    *queue.Worker
 	dpInformer cache.SharedIndexInformer
@@ -114,6 +119,7 @@ func (c *StashController) RunInformers(stopCh <-chan struct{}) {
 
 	c.rstQueue.Run(stopCh)
 	c.recQueue.Run(stopCh)
+	c.repoQueue.Run(stopCh)
 	c.dpQueue.Run(stopCh)
 	c.dsQueue.Run(stopCh)
 	c.ssQueue.Run(stopCh)

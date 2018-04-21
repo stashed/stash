@@ -1,5 +1,5 @@
-hash: 39b9784006e2fdde6ce6820baacfc8afceab5316e268a079ea05abbf307d23f1
-updated: 2018-04-09T07:18:55.25885292-07:00
+hash: 976ca086c0c7b97350e4fa2fa618c3dd21797e1bea526864ecf61ae4064f7519
+updated: 2018-04-21T09:15:31.514715056-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -14,6 +14,7 @@ imports:
   - analytics
   - context
   - crypto/rand
+  - encoding/yaml
   - flags
   - homedir
   - log
@@ -27,7 +28,7 @@ imports:
 - name: github.com/appscode/jsonpatch
   version: 58a38a46ddb591a543c6b1003213353e29331c5a
 - name: github.com/appscode/kubernetes-webhook-util
-  version: bc38cfdad2cba8a14a06b1919347ff810286a46d
+  version: ddc919f31cdf677c9ca8a4697cc5163694d5e1a3
   subpackages:
   - admission
   - admission/v1beta1
@@ -37,7 +38,7 @@ imports:
   - runtime/serializer/versioning
   - workload/v1
 - name: github.com/appscode/kutil
-  version: 97071957a4aa713c2245bb675a53939de3f3ef1a
+  version: c3aa54aedcceb925ba15c7bf4a6c2e456138755e
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
@@ -54,10 +55,48 @@ imports:
   - tools/queue
 - name: github.com/appscode/mergo
   version: e3000cb3d28c72b837601cac94debd91032d19fe
+- name: github.com/appscode/osm
+  version: 2a2ce2bb676e83a8f8340b628de870d41cba1e3a
+  subpackages:
+  - context
 - name: github.com/appscode/pat
   version: 48ff78925b7955367d8a048fc2b5cec8efadf8d3
+- name: github.com/aws/aws-sdk-go
+  version: 819b71cf8430e434c1eee7e7e8b0f2b8870be899
+  subpackages:
+  - aws
+  - aws/awserr
+  - aws/awsutil
+  - aws/client
+  - aws/client/metadata
+  - aws/corehandlers
+  - aws/credentials
+  - aws/credentials/ec2rolecreds
+  - aws/credentials/endpointcreds
+  - aws/credentials/stscreds
+  - aws/defaults
+  - aws/ec2metadata
+  - aws/endpoints
+  - aws/request
+  - aws/session
+  - aws/signer/v4
+  - private/protocol
+  - private/protocol/query
+  - private/protocol/query/queryutil
+  - private/protocol/rest
+  - private/protocol/restxml
+  - private/protocol/xml/xmlutil
+  - private/waiter
+  - service/s3
+  - service/s3/s3iface
+  - service/s3/s3manager
+  - service/sts
+- name: github.com/Azure/azure-sdk-for-go
+  version: 2d49bb8f2cee530cc16f1f1a9f0aae763dee257d
+  subpackages:
+  - storage
 - name: github.com/Azure/go-autorest
-  version: e14a70c556c8e0db173358d1a903dca345a8e75e
+  version: f6e08fe5e4d45c9a66e40196d3fed5f37331d224
   subpackages:
   - autorest
   - autorest/adal
@@ -130,6 +169,8 @@ imports:
   version: 944e07253867aacae43c04b2e6a239005443f33a
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
+- name: github.com/go-ini/ini
+  version: 300e940a926eb277d3901b20bdfcc54928ad3642
 - name: github.com/go-openapi/jsonpointer
   version: 46af16f9f7b149af66e5d1bd010e3574dc06de98
 - name: github.com/go-openapi/jsonreference
@@ -187,6 +228,15 @@ imports:
   - openstack/identity/v3/tokens
   - openstack/utils
   - pagination
+- name: github.com/graymeta/stow
+  version: 1df3851b8fc06f775b3daed2f19442b3c5b26a37
+  repo: https://github.com/appscode/stow.git
+  vcs: git
+  subpackages:
+  - azure
+  - google
+  - s3
+  - swift
 - name: github.com/gregjones/httpcache
   version: 787624de3eb7bd915c329cba748687a3b22666a6
   subpackages:
@@ -213,6 +263,8 @@ imports:
   version: 6633656539c1639d9d78127b7d47c622b5d7b6dc
 - name: github.com/inconshreveable/mousetrap
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
+- name: github.com/jmespath/go-jmespath
+  version: 0b12d6b521d83fc7f755e7cfc1b1fbdd35a01a74
 - name: github.com/jpillora/go-ogle-analytics
   version: 14b04e0594ef6a9fd943363b135656f0ec8c9d0e
 - name: github.com/json-iterator/go
@@ -233,6 +285,8 @@ imports:
   version: cca7078d478f8520f85629ad7c68962d31ed7682
   subpackages:
   - flowrate
+- name: github.com/ncw/swift
+  version: b2a7479cf26fa841ff90dd932d0221cb5c50782d
 - name: github.com/NYTimes/gziphandler
   version: 56545f4a5d46df9a6648819d1664c3a03a13ffdb
 - name: github.com/onsi/ginkgo
@@ -307,6 +361,8 @@ imports:
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/russross/blackfriday
   version: 300106c228d52c8941d4b3de6054a6062a86dda3
+- name: github.com/satori/uuid
+  version: 5bf94b69c6b68ee1b541973bb8e1144db23a194b
 - name: github.com/sergi/go-diff
   version: 97b2266dfe4bd4ea1b81a463322f04f8b724801e
   subpackages:
@@ -320,11 +376,11 @@ imports:
   subpackages:
   - mem
 - name: github.com/spf13/cobra
-  version: cd30c2a7e91a1d63fd9a0027accf18a681e9d50b
+  version: 615425954c3b0d9485a7027d4d451fdcdfdee84e
   subpackages:
   - doc
 - name: github.com/spf13/pflag
-  version: 749bb7a3c5f1eec9dd082d85f3e07fd4f6f3f8a9
+  version: 053854db78bf52e52733c395a5315647ad1e110e
   repo: https://github.com/appscode/pflag.git
   vcs: git
 - name: github.com/ugorji/go
@@ -393,6 +449,13 @@ imports:
   - unicode/bidi
   - unicode/norm
   - width
+- name: google.golang.org/api
+  version: 9c79deebf7496e355d7e95d82d4af1fe4e769b2f
+  subpackages:
+  - gensupport
+  - googleapi
+  - googleapi/internal/uritemplates
+  - storage/v1
 - name: google.golang.org/appengine
   version: 4f7eeb5305a4ba1966344836ba4af9996b7b4e05
   subpackages:

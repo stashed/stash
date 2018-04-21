@@ -78,6 +78,10 @@ A `Repository` object maintains some important information using labels. These l
 
 `prefix` of any backend denotes the directory inside the backend where the snapshots are being stored. If the backend is a **Local** backend then `subPath` is used for this purpose.
 
+### spec.wipeOut
+
+`spec.wipeOut` field indicates whether stash will delete respective **restic** repository from the backend or only delete `Repository` crd when `Repository` crd is deleted. The default value of this field is `false` which indicates that only `Repository` crd will be deleted from Kubernetes. To know how to use this field to delete restic repository see [here](/docs/concepts/crds/repository.md#delete-respective-restic-repository).
+
 ## Repository Status
 
 Stash operator updates `.status` of a Repository CRD every time a backup operation is completed.
@@ -116,6 +120,91 @@ $ kubectl get repository -l workload-kind=StatefulSet,workload-name=stash-demo
 # List all Repositories of a particular node (DaemonSet only)
 $ kubectl get repository -l node-name=minikube
 ```
+
+## Deleting Repository
+
+Stash allows the users to delete **only `Repository` crd** or **`Repository` crd with respective restic repository**. Here, we will show how to perform these delete operations.
+
+### Delete only Repository crd
+
+ You can delete only `Repository` crd by,
+
+```console
+$ kubectl delete repository <repository-name>
+
+# Example
+$ kubectl delete repository deployment.stash-demo
+repository "deployment.stash-demo" deleted
+```
+
+This will delete only `Repository` crd. It won't delete any backed up data from respective restic repository.
+
+>If you delete `Repository` crd while stash-sidecar still exist on the workload, Stash will re-create the `Repository` crd and continue to take backup. In this case, `status` field of `Repository` crd will be reset.
+
+> If you don't want stash to re-create `Repository` crd, you have to stop Stash from taking backup. To see how to stop stash from taking backup see [here](/docs/guides/backup.md#disable-backup).
+
+### Delete respective restic repository
+
+In order to prevent the users from accidentally deleting **restic** repository, stash uses a special `wipeOut` flag in `spec` of `Repository` crd. By default, this flag is set to `wipeOut: false`. If you want to delete respective restic repository while deleting `Repository` crd, you must set this flag to `wipeOut: true`.
+
+> Currently stash supports deleting restic repository only for AWS S3, GCS, Azure and OpenStack Swift backend. S3 compatible other backends such as Minio and Rook also support repository deletion.
+
+Here, is an example of deleting restic repository from Minio backend.
+
+First, set `wipeOut: true` by patching `Repository` crd.
+
+```console
+$ kubectl patch repository deployment.stash-demo --type="merge" --patch='{"spec": {"wipeOut": true}}'
+repository "deployment.stash-demo" patched
+```
+
+Check the repository has been successfully patched correctly.
+
+```console
+$ kubectl get repository deployment.stash-demo -o yaml
+```
+
+```yaml
+apiVersion: stash.appscode.com/v1alpha1
+kind: Repository
+metadata:
+  clusterName: ""
+  creationTimestamp: 2018-04-19T06:47:13Z
+  finalizers:
+  - wipeOut-repository
+  generation: 0
+  labels:
+    restic: minio-restic
+    workload-kind: Deployment
+    workload-name: stash-demo
+  name: deployment.stash-demo
+  namespace: default
+  resourceVersion: "7721"
+  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/repositories/deployment.stash-demo
+  uid: 7dd5065e-439d-11e8-8994-080027a9112c
+spec:
+  backend:
+    s3:
+      bucket: stash-qa
+      endpoint: http://minio-service.default.svc
+      prefix: stash-qa/demo/deployment/stash-demo
+    storageSecretName: minio-restic-secret
+  wipeOut: true
+status:
+  backupCount: 1
+  firstBackupTime: 2018-04-19T06:47:13Z
+  lastBackupDuration: 3.888107169s
+  lastBackupTime: 2018-04-19T06:47:13Z
+```
+
+Notice that `spec.wipeOut` field is `true`. So, you are ready to delete restic repository. Now, delete `Repository` crd.
+
+```console
+$ kubectl delete repository deployment.stash-demo
+repository "deployment.stash-demo" deleted
+```
+
+If everything goes well, respective restic repository will be deleted from the backend.
 
 ## Next Steps
 

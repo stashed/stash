@@ -648,6 +648,13 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Ref: ref("github.com/appscode/stash/apis/stash/v1alpha1.Backend"),
 							},
 						},
+						"wipeOut": {
+							SchemaProps: spec.SchemaProps{
+								Description: "If true, delete respective restic repository",
+								Type:        []string{"boolean"},
+								Format:      "",
+							},
+						},
 					},
 				},
 			},

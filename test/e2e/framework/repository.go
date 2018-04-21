@@ -6,6 +6,9 @@ import (
 	"strconv"
 
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	"github.com/appscode/stash/pkg/osm"
+	"github.com/appscode/stash/pkg/util"
+	"github.com/graymeta/stow"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1beta1"
 	core "k8s.io/api/core/v1"
@@ -69,6 +72,35 @@ func (f *Framework) DeleteRepositories(repositories []*api.Repository) {
 		err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Delete(repo.Name, deleteInForeground())
 		Expect(err).NotTo(HaveOccurred())
 	}
+}
+func (f *Framework) BrowseResticRepository(repository *api.Repository) ([]stow.Item, error) {
+	cfg, err := osm.NewOSMContext(f.KubeClient, repository)
+	if err != nil {
+		return nil, err
+	}
+
+	loc, err := stow.Dial(cfg.Provider, cfg.Config)
+	if err != nil {
+		return nil, err
+	}
+
+	bucket, prefix, err := util.GetBucketAndPrefix(&repository.Spec.Backend)
+	if err != nil {
+		return nil, err
+	}
+	prefix = prefix + "/"
+
+	container, err := loc.Container(bucket)
+	if err != nil {
+		return nil, err
+	}
+
+	cursor := stow.CursorStart
+	items, _, err := container.Items(prefix, cursor, 50)
+	if err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 func (f *Framework) BackupCountInRepositoriesStatus(repos []*api.Repository) int64 {

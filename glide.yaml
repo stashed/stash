@@ -57,3 +57,19 @@ import:
   version: release-6.0
 - package: github.com/appscode/kubernetes-webhook-util
   version: release-6.0
+- package: github.com/appscode/osm
+  version: v0.6.3
+- package: github.com/graymeta/stow
+  repo: https://github.com/appscode/stow.git
+  version: master
+  vcs: git
+- package: github.com/aws/aws-sdk-go
+  version: v1.7.8
+- package: google.golang.org/api/storage/v1
+  version: master
+- package: github.com/Azure/azure-sdk-for-go
+  version: v10.2.1-beta
+- package: github.com/Azure/go-autorest
+  version: ~8.1.1
+- package: github.com/ncw/swift
+  version: master

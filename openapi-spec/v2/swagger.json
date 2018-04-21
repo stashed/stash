@@ -3438,23 +3438,6 @@
         }
       }
     },
-    "com.github.appscode.stash.apis.stash.v1alpha1.LocalTypedReference": {
-      "description": "LocalTypedReference contains enough information to let you inspect or modify the referred object.",
-      "properties": {
-        "apiVersion": {
-          "description": "API version of the referent.",
-          "type": "string"
-        },
-        "kind": {
-          "description": "Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
-          "type": "string"
-        },
-        "name": {
-          "description": "Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names",
-          "type": "string"
-        }
-      }
-    },
     "com.github.appscode.stash.apis.stash.v1alpha1.Recovery": {
       "properties": {
         "apiVersion": {
@@ -3512,18 +3495,15 @@
       ]
     },
     "com.github.appscode.stash.apis.stash.v1alpha1.RecoverySpec": {
+      "required": [
+        "repository"
+      ],
       "properties": {
-        "backend": {
-          "$ref": "#/definitions/com.github.appscode.stash.apis.stash.v1alpha1.Backend"
-        },
         "imagePullSecrets": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/io.k8s.api.core.v1.LocalObjectReference"
           }
-        },
-        "nodeName": {
-          "type": "string"
         },
         "paths": {
           "type": "array",
@@ -3531,17 +3511,18 @@
             "type": "string"
           }
         },
-        "podOrdinal": {
-          "type": "string"
-        },
         "recoveredVolumes": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/com.github.appscode.stash.apis.stash.v1alpha1.LocalSpec"
           }
         },
-        "workload": {
-          "$ref": "#/definitions/com.github.appscode.stash.apis.stash.v1alpha1.LocalTypedReference"
+        "repository": {
+          "type": "string"
+        },
+        "snapshot": {
+          "description": "Snapshot to recover. Default is latest snapshot.",
+          "type": "string"
         }
       }
     },
@@ -3618,6 +3599,10 @@
       "properties": {
         "backend": {
           "$ref": "#/definitions/com.github.appscode.stash.apis.stash.v1alpha1.Backend"
+        },
+        "wipeOut": {
+          "description": "If true, delete respective restic repository",
+          "type": "boolean"
         }
       }
     },

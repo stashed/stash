@@ -2,6 +2,8 @@ package queue
 
 import (
 	"github.com/golang/glog"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
@@ -88,9 +90,8 @@ func NewVersionedHandler(inner cache.ResourceEventHandler, gvk schema.GroupVersi
 	return versionedEventHandler{inner: inner, gvk: gvk}
 }
 
-// versionedEventHandler is an adaptor to let you easily specify as many or
-// as few of the notification functions as you want while still implementing
-// ResourceEventHandler.
+// versionedEventHandler is an adaptor to let you set GroupVersionKind of objects
+// while still implementing ResourceEventHandler.
 type versionedEventHandler struct {
 	inner cache.ResourceEventHandler
 	gvk   schema.GroupVersionKind
@@ -115,4 +116,38 @@ func (w versionedEventHandler) OnUpdate(oldObj, newObj interface{}) {
 
 func (w versionedEventHandler) OnDelete(obj interface{}) {
 	w.inner.OnDelete(w.setGroupVersionKind(obj))
+}
+
+func NewFilteredHandler(inner cache.ResourceEventHandler, sel labels.Selector) cache.ResourceEventHandler {
+	return filteredEventHandler{inner: inner, sel: sel}
+}
+
+// filteredEventHandler is an adaptor to let you handle event for objects with
+// matching label.
+type filteredEventHandler struct {
+	inner cache.ResourceEventHandler
+	sel   labels.Selector
+}
+
+func (w filteredEventHandler) matches(obj interface{}) bool {
+	accessor, err := meta.Accessor(obj)
+	return err == nil && w.sel.Matches(labels.Set(accessor.GetLabels()))
+}
+
+func (w filteredEventHandler) OnAdd(obj interface{}) {
+	if w.matches(obj) {
+		w.inner.OnAdd(obj)
+	}
+}
+
+func (w filteredEventHandler) OnUpdate(oldObj, newObj interface{}) {
+	if w.matches(oldObj) && w.matches(newObj) {
+		w.inner.OnUpdate(oldObj, newObj)
+	}
+}
+
+func (w filteredEventHandler) OnDelete(obj interface{}) {
+	if w.matches(obj) {
+		w.inner.OnDelete(obj)
+	}
 }

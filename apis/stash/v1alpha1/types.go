@@ -231,6 +231,9 @@ type Repository struct {
 
 type RepositorySpec struct {
 	Backend Backend `json:"backend,omitempty"`
+	// If true, delete respective restic repository
+	// +optional
+	WipeOut bool `json:"wipeOut,omitempty"`
 }
 
 type RepositoryStatus struct {

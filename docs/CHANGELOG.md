@@ -19,13 +19,51 @@ aliases:
 
 ## [Unreleased](https://github.com/appscode/stash/tree/HEAD)
 
-[Full Changelog](https://github.com/appscode/stash/compare/0.7.0-rc.2...HEAD)
+[Full Changelog](https://github.com/appscode/stash/compare/0.7.0-rc.3...HEAD)
+
+**Fixed bugs:**
+
+- Permit stash operator to perform pods/exec [\#433](https://github.com/appscode/stash/pull/433) ([tamalsaha](https://github.com/tamalsaha))
+- Add missing batch jobs get RBAC permission [\#419](https://github.com/appscode/stash/pull/419) ([galexrt](https://github.com/galexrt))
+
+**Closed issues:**
+
+- Show repository snapshot list [\#319](https://github.com/appscode/stash/issues/319)
+- Recover specific snapshot ID [\#215](https://github.com/appscode/stash/issues/215)
+
+**Merged pull requests:**
+
+- Update StatefulSet doc [\#445](https://github.com/appscode/stash/pull/445) ([emruz-hossain](https://github.com/emruz-hossain))
+- pkg/util: fix error found by vet [\#442](https://github.com/appscode/stash/pull/442) ([functionary](https://github.com/functionary))
+- Move Stash swagger.json to top level folder [\#441](https://github.com/appscode/stash/pull/441) ([tamalsaha](https://github.com/tamalsaha))
+- Fix go\_vet error [\#440](https://github.com/appscode/stash/pull/440) ([emruz-hossain](https://github.com/emruz-hossain))
+- Recover specific snapshot [\#437](https://github.com/appscode/stash/pull/437) ([emruz-hossain](https://github.com/emruz-hossain))
+- Use Repository data in Recovery CRD [\#436](https://github.com/appscode/stash/pull/436) ([emruz-hossain](https://github.com/emruz-hossain))
+- Increase qps and burst limits [\#435](https://github.com/appscode/stash/pull/435) ([tamalsaha](https://github.com/tamalsaha))
+- Add RBAC instructions for GKE cluster [\#432](https://github.com/appscode/stash/pull/432) ([tamalsaha](https://github.com/tamalsaha))
+- Update charts location [\#431](https://github.com/appscode/stash/pull/431) ([tamalsaha](https://github.com/tamalsaha))
+- Skip lock while listing snapshots [\#428](https://github.com/appscode/stash/pull/428) ([emruz-hossain](https://github.com/emruz-hossain))
+- Purge repository objects in installer [\#427](https://github.com/appscode/stash/pull/427) ([tamalsaha](https://github.com/tamalsaha))
+- Support installing from local installer scripts [\#426](https://github.com/appscode/stash/pull/426) ([tamalsaha](https://github.com/tamalsaha))
+- Fixed Repository yaml in doc [\#425](https://github.com/appscode/stash/pull/425) ([emruz-hossain](https://github.com/emruz-hossain))
+- Add delete method for snapshots to swagger.json [\#424](https://github.com/appscode/stash/pull/424) ([tamalsaha](https://github.com/tamalsaha))
+- Generate swagger.json [\#423](https://github.com/appscode/stash/pull/423) ([tamalsaha](https://github.com/tamalsaha))
+- Add install pkg for stash crds [\#422](https://github.com/appscode/stash/pull/422) ([tamalsaha](https://github.com/tamalsaha))
+- Fix openapi spec for stash crds [\#421](https://github.com/appscode/stash/pull/421) ([tamalsaha](https://github.com/tamalsaha))
+- Expose swagger.json [\#420](https://github.com/appscode/stash/pull/420) ([tamalsaha](https://github.com/tamalsaha))
+- Show repository snapshot list [\#417](https://github.com/appscode/stash/pull/417) ([emruz-hossain](https://github.com/emruz-hossain))
+- Add registry skeleton for snapshots [\#415](https://github.com/appscode/stash/pull/415) ([tamalsaha](https://github.com/tamalsaha))
+- Update chart readme [\#413](https://github.com/appscode/stash/pull/413) ([tamalsaha](https://github.com/tamalsaha))
+
+## [0.7.0-rc.3](https://github.com/appscode/stash/tree/0.7.0-rc.3) (2018-04-03)
+[Full Changelog](https://github.com/appscode/stash/compare/0.7.0-rc.2...0.7.0-rc.3)
 
 **Fixed bugs:**
 
 - Pod restart after each backup when Mutating Webhook enabled [\#396](https://github.com/appscode/stash/issues/396)
 - Sidecar RoleBinding is not being created when Mutating Webhook is enabled  [\#395](https://github.com/appscode/stash/issues/395)
 - Recovery to PVC restores data in subdirectory instead of root directory [\#392](https://github.com/appscode/stash/issues/392)
+- Use separate registry key for docker images [\#410](https://github.com/appscode/stash/pull/410) ([tamalsaha](https://github.com/tamalsaha))
 - Revendor webhook util and jsonpatch fixes [\#400](https://github.com/appscode/stash/pull/400) ([tamalsaha](https://github.com/tamalsaha))
 
 **Closed issues:**
@@ -34,6 +72,7 @@ aliases:
 
 **Merged pull requests:**
 
+- Add frontmatter for repository crd [\#412](https://github.com/appscode/stash/pull/412) ([tamalsaha](https://github.com/tamalsaha))
 - Prepare docs for 0.7.0-rc.3 [\#411](https://github.com/appscode/stash/pull/411) ([tamalsaha](https://github.com/tamalsaha))
 - Add test for recovery [\#409](https://github.com/appscode/stash/pull/409) ([emruz-hossain](https://github.com/emruz-hossain))
 - Skip setting ListKind [\#407](https://github.com/appscode/stash/pull/407) ([tamalsaha](https://github.com/tamalsaha))

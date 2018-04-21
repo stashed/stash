@@ -45,6 +45,9 @@ func NewCmdSnapshots() *cobra.Command {
 				return err
 			}
 			jsonSnaps, err := json.MarshalIndent(snapshots, "", "    ")
+			if err != nil {
+				return err
+			}
 			fmt.Println(string(jsonSnaps))
 			return nil
 		},
