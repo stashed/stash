@@ -16,7 +16,7 @@ section_menu_id: concepts
 # Recoveries
 
 ## What is Recovery
-A `Recovery` is a Kubernetes `CustomResourceDefinition` (CRD). It provides configuration for restoring a backup taken using Stash. You only need to specify the `Restic` that was used for taking backup, the target workload and volume where backup will be restored.
+A `Recovery` is a Kubernetes `CustomResourceDefinition` (CRD). It provides configuration for restoring a backup taken using Stash. You only need to specify the `Repository`, `Snapshot` and `path` you want to recover and volume where the backup will be restored.
 
 ## Recovery Spec
 As with all other Kubernetes objects, a Recovery needs `apiVersion`, `kind`, and `metadata` fields. It also needs a `.spec` section. Below is an example Recovery object.
@@ -28,15 +28,8 @@ metadata:
   name: stash-demo
   namespace: default
 spec:
-  workload:
-    kind: Deployment
-    name: stash-demo
-  backend:
-    local:
-      mountPath: /safe/data
-      hostPath:
-        path: /data/stash-test/restic-repo
-    storageSecretName: stash-demo
+  repository: deployment.stash-demo
+  snapshot: deployment.stash-demo-e0e9c272 # skip this field to recover latest snapshot
   paths:
   - /source/data
   recoveredVolumes:
@@ -47,92 +40,35 @@ spec:
 
 The `.spec` section has following parts:
 
-### spec.workload
-`spec.workload` specifies a target workload that was backed up using `Restic`. A single `Restic` backups all types of workloads that matches the label-selector, but you can only restore a specific workload using a `Recovery`.
+### spec.repository
 
-### spec.podOrdinal
-For workload kind `Statefulset`, you need to specify pod [index](https://kubernetes.io/docs/guides/stateful-application/basic-stateful-set/#pods-in-a-statefulset) using `spec.podOrdinal`. You must not specify it for other workload kinds. For example:
+Indicates the name of the `Repository` CRD that represents respective **restic** repository where the backed up snapshots are stored. To know more about `Repository` CRD, visit [here](/docs/concepts/crds/repository.md).
 
-```yaml
-apiVersion: stash.appscode.com/v1alpha1
-kind: Recovery
-metadata:
-  name: statefulset-demo
-  namespace: default
-spec:
-  workload:
-    kind: Statefulset
-    name: statefulset-demo
-  podOrdinal: 0
-  backend:
-    local:
-      mountPath: /safe/data
-      hostPath:
-        path: /data/stash-test/restic-repo
-    storageSecretName: stash-demo
-  paths:
-  - /source/data
-  recoveredVolumes:
-  - mountPath: /source/data
-    hostPath:
-      path: /data/stash-test/restic-restored
-```
+### spec.snapshot
 
-### spec.nodeName
-For workload kind `Daemonset`, you need to specify node name using `spec.nodeName`. You must not specify it for other workload kinds. For example:
-
-```yaml
-apiVersion: stash.appscode.com/v1alpha1
-kind: Recovery
-metadata:
-  name: daemonset-demo
-  namespace: default
-spec:
-  restic: daemonset-demo
-  workload:
-    kind: Daemonset
-    name: daemonset-demo
-  nodeName: minikube
-  backend:
-    local:
-      mountPath: /safe/data
-      hostPath:
-        path: /data/stash-test/restic-repo
-    storageSecretName: stash-demo
-  paths:
-  - /source/data
-  recoveredVolumes:
-  - mountPath: /source/data
-    hostPath:
-      path: /data/stash-test/restic-restored
-```
-
-### spec.backend
-Specifies the backend that was used in `Restic` to take backups.
-To learn how to configure various backends for Restic, please visit [here](/docs/guides/backends.md).
+Indicates the name of the `Snapshot` object that represents **restic** backup snapshot. This field allows users to recover specific snapshot. To recover the latest snapshot, skip this field. To know more about `Snapshot`s, visit [here](/docs/concepts/crds/snapshot.md).
 
 ### spec.paths
-Array of strings specifying the file-group paths that was backed up using `Restic`.
+
+An array of strings specifying the file-group paths that were backed up using `Restic`.
 
 ### spec.recoveredVolumes
-Indicates an array of volumes where snapshots will be recovered. Here, `path` specifies where the volume will be mounted.
-Note that, `Recovery` recovers data in the same paths from where backup was taken (specified in `spec.paths`). So, volumes must be mounted on those paths or their parent paths.
-Following parameters are available for `recoveredVolumes`.
+Indicates an array of volumes where recovered snapshot data will be stored. Here, `mountPath` specifies where the volume will be mounted in the restore `Job`. Note that, `Recovery` recovers data in the same paths from where the backup was taken (specified in `spec.paths`). So, volumes must be mounted on those paths or their parent paths. Following parameters are available for `recoveredVolumes`.
 
-| Parameter                       | Description                                                                                   |
-|---------------------------------|-----------------------------------------------------------------------------------------------|
-| `recoveredVolumes.mountPath`    | `Required`. Path where this volume will be mounted in the sidecar container. Example: `/repo` |
-| `recoveredVolumes.subPath`      | `Optional`. Sub-path inside the referenced volume instead of its root.                        |
-| `recoveredVolumes.VolumeSource` | `Required`. Any Kubernetes volume. Can be specified inlined. Example: `hostPath`
+| Parameter                       | Description                                                                                       |
+|---------------------------------|---------------------------------------------------------------------------------------------------|
+| `recoveredVolumes.mountPath`    | `Required`. The path where this volume will be mounted in the sidecar container. Example: `/repo` |
+| `recoveredVolumes.subPath`      | `Optional`. Sub-path inside the referenced volume instead of its root.                            |
+| `recoveredVolumes.VolumeSource` | `Required`. Any Kubernetes volume. Can be specified inlined. Example: `hostPath`                  |
 
 ## Recovery Status
 
-Stash operator updates `.status` of a Recovery CRD when recovery operation is completed.
+Stash operator updates `.status` of a Recovery CRD when the recovery operation is completed.
 
- - `status.phase` indicates the current phase of overall recovery process. Possible values are `Pending`, `Running`, `Succeeded`, `Failed` and `Unknown`.
- - `status.stats` is a array status, each of which indicates the status for individual paths. Each element of the array has following fields:
+ - `status.phase` indicates the current phase of the overall recovery process. Possible values are `Pending`, `Running`, `Succeeded`, `Failed` and `Unknown`.
+ - `status.stats` is an array status, each of which indicates the status for individual paths. Each element of the array has following fields:
    - `status.stats[].path` indicates a path that was backed up using `Restic` and is selected for recovery.
-   - `status.stats[].phase` indicates the current phase of recovery process for the particular path. Possible values are `Pending`, `Running`, `Succeeded`, `Failed` and `Unknown`.
+   - `status.stats[].phase` indicates the current phase of the recovery process for the particular path. Possible values are `Pending`, `Running`, `Succeeded`, `Failed` and `Unknown`.
    - `status.stats[].duration` indicates the elapsed time to successfully restore backup for the particular path.
 
 ## Next Steps

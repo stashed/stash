@@ -2,7 +2,6 @@ package v1alpha1
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"gopkg.in/robfig/cron.v2"
@@ -44,11 +43,6 @@ func (r Recovery) IsValid() error {
 		return fmt.Errorf("missing recovery volume")
 	}
 
-	nodeName := os.Getenv("NODE_NAME")
-	if nodeName == "" {
-		nodeName = "minikube"
-	}
-
 	if r.Spec.Repository == "" {
 		return fmt.Errorf("missing repository name")
 	} else {
@@ -56,7 +50,7 @@ func (r Recovery) IsValid() error {
 			strings.HasPrefix(r.Spec.Repository, "replicationcontroller.") ||
 			strings.HasPrefix(r.Spec.Repository, "replicaset.") ||
 			strings.HasPrefix(r.Spec.Repository, "statefulset.") ||
-			(strings.HasPrefix(r.Spec.Repository, "daemonset.") && strings.HasSuffix(r.Spec.Repository, nodeName))) {
+			strings.HasPrefix(r.Spec.Repository, "daemonset.")) {
 			return fmt.Errorf("invalid repository name")
 		}
 	}

@@ -12,6 +12,7 @@ import (
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	extensions "k8s.io/api/extensions/v1beta1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
@@ -68,7 +69,10 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 		if err != nil {
 			return err
 		}
-		util.DeleteConfigmapLock(c.kubeClient, ns, api.LocalTypedReference{Kind: api.KindReplicaSet, Name: name})
+		err = util.DeleteConfigmapLock(c.kubeClient, ns, api.LocalTypedReference{Kind: api.KindReplicaSet, Name: name})
+		if err != nil && !kerr.IsNotFound(err) {
+			return err
+		}
 	} else {
 		glog.Infof("Sync/Add/Update for ReplicaSet %s\n", key)
 
@@ -133,7 +137,7 @@ func (c *StashController) mutateReplicaSet(w *workload.Workload) (*api.Restic, b
 			workload.ApplyWorkload(w.Object, w)
 
 			err = util.DeleteConfigmapLock(c.kubeClient, w.Namespace, api.LocalTypedReference{Kind: api.KindReplicaSet, Name: w.Name})
-			if err != nil {
+			if err != nil && !kerr.IsNotFound(err) {
 				return nil, false, err
 			}
 			return oldRestic, true, nil

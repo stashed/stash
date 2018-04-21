@@ -57,8 +57,8 @@ func generateSwaggerJson() {
 		Scheme:   Scheme,
 		Codecs:   Codecs,
 		Info: spec.InfoProps{
-			Title:   "stash-server",
-			Version: "v0",
+			Title:   "Stash",
+			Version: "v0.7.0-rc.3",
 			Contact: &spec.ContactInfo{
 				Name:  "AppsCode Inc.",
 				URL:   "https://appscode.com",
@@ -86,7 +86,7 @@ func generateSwaggerJson() {
 		glog.Fatal(err)
 	}
 
-	filename := gort.GOPath() + "/src/github.com/appscode/stash/apis/swagger.json"
+	filename := gort.GOPath() + "/src/github.com/appscode/stash/openapi-spec/v2/swagger.json"
 	err = ioutil.WriteFile(filename, []byte(apispec), 0644)
 	if err != nil {
 		glog.Fatal(err)

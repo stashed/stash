@@ -29,9 +29,9 @@ func (matcher *namePrefixMatcher) Match(actual interface{}) (success bool, err e
 }
 
 func (matcher *namePrefixMatcher) FailureMessage(actual interface{}) (message string) {
-	return fmt.Sprintf("Expected\n\tSnapshots name\nto  have prefix %v\n\t", matcher.prefix)
+	return fmt.Sprintf("Expected\n\tSnapshots name\n to  have prefix %v\n\t", matcher.prefix)
 }
 
 func (matcher *namePrefixMatcher) NegatedFailureMessage(actual interface{}) (message string) {
-	return fmt.Sprintf("Expected\n\tSnapshots name\nnot to have prefix %v\n\t", &matcher)
+	return fmt.Sprintf("Expected\n\tSnapshots name\n not to have prefix %v\n\t", &matcher)
 }

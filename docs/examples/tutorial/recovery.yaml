@@ -4,19 +4,11 @@ metadata:
   name: stash-demo
   namespace: default
 spec:
-  workload:
-    kind: Deployment
-    name: stash-demo
-  backend:
-    local:
-      mountPath: /safe/data
-      hostPath:
-        path: /data/stash-test/restic-repo
-    storageSecretName: stash-demo
+  repository: deployment.stash-demo
+  snapshot: deployment.stash-demo-e0e9c272 # skip this field to recover latest snapshot
   paths:
   - /source/data
   recoveredVolumes:
   - mountPath: /source/data
     hostPath:
       path: /data/stash-test/restic-restored
-

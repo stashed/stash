@@ -22,29 +22,28 @@ func NewCmdForget() *cobra.Command {
 		Use:               "forget [snapshotID ...]",
 		Short:             "Delete snapshots from a restic repository",
 		DisableAutoGenTag: true,
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
 			if err != nil {
-				fmt.Errorf(err.Error())
+				return err
 			}
 
 			stashClient := cs.NewForConfigOrDie(config)
 
 			if repositoryName == "" {
-				fmt.Errorf("repository name not found")
-				return
+				return fmt.Errorf("repository name not found")
 			}
 			repo, err := stashClient.Repositories(meta.Namespace()).Get(repositoryName, metav1.GetOptions{})
 			if err != nil {
-				fmt.Errorf(err.Error())
-				return
+				return err
 			}
 
 			r := snapshot.NewREST(config)
 			err = r.ForgetSnapshots(repo, args)
 			if err != nil {
-				fmt.Errorf(err.Error())
+				return err
 			}
+			return nil
 		},
 	}
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")

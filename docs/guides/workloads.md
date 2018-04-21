@@ -31,8 +31,9 @@ To backup a ReplicationController, create a Restic with matching selectors. You 
 To backup a DaemonSet, create a Restic with matching selectors. You can find a full working demo in [examples folder](/docs/examples/workloads/daemonset.yaml). This example shows how Stash can be used to backup host paths on all nodes of a cluster. First run a DaemonSet without nodeSelectors. This DaemonSet acts as a vector for Restic sidecar and mounts host paths that are to be backed up. In this example, we use a `busybox` container for this. Now, create a Restic that has a matching selector. This Restic also `spec.volumeMounts` the said host path and points to the host path in `spec.fileGroups`.
 
 ## StatefulSets
-Kubernetes does not support updating StatefulSet after they are created. It is recomanded to use initializer for StatefulSets. For details see [here](/docs/initializer.md).
-Otherwise you need to add Stash sidecar container to your StatefulSet manually. You can see the relevant portions of a working example below:
+Kubernetes does not support adding sidecar to a StatefulSet after it is created. It is recommended to enable **mutating webhook** by providing `--enable-mutating-webhook` flag while installing stash. To know more about how to provide various flag while installing stash see [here](/docs/setup/install.md#customizing-installer).
+
+If you don't want to enable **mutating webhook** then you have to add Stash sidecar container to your StatefulSet manually. You can see the relevant portions of a working example below:
 
 ```yaml
 apiVersion: apps/v1beta1
@@ -53,19 +54,20 @@ spec:
     spec:
       serviceAccountName: statefulset-demo
       containers:
-      - command:
+      - image: busybox
+        name: busybox
+        imagePullPolicy: IfNotPresent
+        command:
         - sleep
         - "3600"
-        image: busybox
-        imagePullPolicy: IfNotPresent
-        name: busybox
         resources: {}
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /source/data
           name: source-data
-      - args:
+      - image: appscode/stash:0.7.0-rc.3
+        name: stash
+        imagePullPolicy: IfNotPresent
+        args:
         - backup
         - --restic-name=statefulset-restic
         - --workload-kind=Statefulset
@@ -83,12 +85,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.name
-        image: appscode/stash:0.7.0-rc.3
-        imagePullPolicy: IfNotPresent
-        name: stash
         resources: {}
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /tmp
           name: stash-scratchdir
@@ -99,12 +96,14 @@ spec:
           readOnly: true
         - mountPath: /safe/data
           name: stash-local
-      restartPolicy: Always
-      volumes:
       volumes:
       - gitRepo:
           repository: https://github.com/appscode/stash-data.git
         name: source-data
+      - hostPath:
+          path: /data/stash-test/restic-repo
+          type: ""
+        name: stash-local
       - emptyDir: {}
         name: stash-scratchdir
       - downwardAPI:
@@ -115,10 +114,6 @@ spec:
               fieldPath: metadata.labels
             path: labels
         name: stash-podinfo
-      - hostPath:
-          path: /data/stash-test/restic-repo
-          type: ""
-        name: stash-local
 ```
 
 You can find the full working demo in [examples folder](/docs/examples/workloads/statefulset.yaml). The section you should change for your own StatefulSet are:
