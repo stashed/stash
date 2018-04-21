@@ -14,7 +14,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-type ControllerOptions struct {
+type ExtraOptions struct {
 	EnableRBAC     bool
 	StashImageTag  string
 	DockerRegistry string
@@ -27,8 +27,8 @@ type ControllerOptions struct {
 	ResyncPeriod   time.Duration
 }
 
-func NewControllerOptions() *ControllerOptions {
-	return &ControllerOptions{
+func NewExtraOptions() *ExtraOptions {
+	return &ExtraOptions{
 		DockerRegistry: docker.ACRegistry,
 		StashImageTag:  stringz.Val(v.Version.Version, "canary"),
 		MaxNumRequeues: 5,
@@ -41,7 +41,7 @@ func NewControllerOptions() *ControllerOptions {
 	}
 }
 
-func (s *ControllerOptions) AddGoFlags(fs *flag.FlagSet) {
+func (s *ExtraOptions) AddGoFlags(fs *flag.FlagSet) {
 	fs.StringVar(&s.OpsAddress, "ops-address", s.OpsAddress, "Address to listen on for web interface and telemetry.")
 	fs.BoolVar(&s.EnableRBAC, "rbac", s.EnableRBAC, "Enable RBAC for operator")
 	fs.StringVar(&s.ScratchDir, "scratch-dir", s.ScratchDir, "Directory used to store temporary files. Use an `emptyDir` in Kubernetes.")
@@ -53,13 +53,13 @@ func (s *ControllerOptions) AddGoFlags(fs *flag.FlagSet) {
 	fs.DurationVar(&s.ResyncPeriod, "resync-period", s.ResyncPeriod, "If non-zero, will re-list this often. Otherwise, re-list will be delayed aslong as possible (until the upstream source closes the watch or times out.")
 }
 
-func (s *ControllerOptions) AddFlags(fs *pflag.FlagSet) {
+func (s *ExtraOptions) AddFlags(fs *pflag.FlagSet) {
 	pfs := flag.NewFlagSet("stash", flag.ExitOnError)
 	s.AddGoFlags(pfs)
 	fs.AddGoFlagSet(pfs)
 }
 
-func (s *ControllerOptions) ApplyTo(cfg *controller.ControllerConfig) error {
+func (s *ExtraOptions) ApplyTo(cfg *controller.Config) error {
 	var err error
 
 	cfg.EnableRBAC = s.EnableRBAC

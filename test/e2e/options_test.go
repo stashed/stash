@@ -11,7 +11,7 @@ import (
 )
 
 type E2EOptions struct {
-	*server.ControllerOptions
+	*server.ExtraOptions
 
 	KubeContext    string
 	KubeConfig     string
@@ -20,9 +20,9 @@ type E2EOptions struct {
 
 var (
 	options = &E2EOptions{
-		ControllerOptions: server.NewControllerOptions(),
-		KubeConfig:        filepath.Join(homedir.HomeDir(), ".kube", "config"),
-		StartAPIServer:    false,
+		ExtraOptions:   server.NewExtraOptions(),
+		KubeConfig:     filepath.Join(homedir.HomeDir(), ".kube", "config"),
+		StartAPIServer: false,
 	}
 )
 

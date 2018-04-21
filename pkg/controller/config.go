@@ -3,7 +3,6 @@ package controller
 import (
 	"time"
 
-	hooks "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
 	cs "github.com/appscode/stash/client/clientset/versioned"
 	stashinformers "github.com/appscode/stash/client/informers/externalversions"
 	"github.com/appscode/stash/pkg/eventer"
@@ -15,7 +14,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-type Config struct {
+type config struct {
 	EnableRBAC     bool
 	StashImageTag  string
 	DockerRegistry string
@@ -25,28 +24,27 @@ type Config struct {
 	ResyncPeriod   time.Duration
 }
 
-type ControllerConfig struct {
-	Config
+type Config struct {
+	config
 
-	ClientConfig   *rest.Config
-	KubeClient     kubernetes.Interface
-	StashClient    cs.Interface
-	CRDClient      crd_cs.ApiextensionsV1beta1Interface
-	AdmissionHooks []hooks.AdmissionHook
+	ClientConfig *rest.Config
+	KubeClient   kubernetes.Interface
+	StashClient  cs.Interface
+	CRDClient    crd_cs.ApiextensionsV1beta1Interface
 }
 
-func NewControllerConfig(clientConfig *rest.Config) *ControllerConfig {
-	return &ControllerConfig{
+func NewConfig(clientConfig *rest.Config) *Config {
+	return &Config{
 		ClientConfig: clientConfig,
 	}
 }
 
-func (c *ControllerConfig) New() (*StashController, error) {
+func (c *Config) New() (*StashController, error) {
 	tweakListOptions := func(opt *metav1.ListOptions) {
 		opt.IncludeUninitialized = true
 	}
 	ctrl := &StashController{
-		Config:               c.Config,
+		config:               c.config,
 		kubeClient:           c.KubeClient,
 		stashClient:          c.StashClient,
 		crdClient:            c.CRDClient,

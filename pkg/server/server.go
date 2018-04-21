@@ -52,8 +52,8 @@ func init() {
 }
 
 type StashConfig struct {
-	GenericConfig    *genericapiserver.RecommendedConfig
-	ControllerConfig *controller.ControllerConfig
+	GenericConfig *genericapiserver.RecommendedConfig
+	ExtraConfig   *controller.Config
 }
 
 // StashServer contains state for a Kubernetes cluster master/api server.
@@ -71,8 +71,8 @@ func (op *StashServer) Run(stopCh <-chan struct{}) error {
 }
 
 type completedConfig struct {
-	GenericConfig    genericapiserver.CompletedConfig
-	ControllerConfig *controller.ControllerConfig
+	GenericConfig genericapiserver.CompletedConfig
+	ExtraConfig   *controller.Config
 }
 
 type CompletedConfig struct {
@@ -84,7 +84,7 @@ type CompletedConfig struct {
 func (c *StashConfig) Complete() CompletedConfig {
 	completedCfg := completedConfig{
 		c.GenericConfig.Complete(),
-		c.ControllerConfig,
+		c.ExtraConfig,
 	}
 
 	completedCfg.GenericConfig.Version = &version.Info{
@@ -101,19 +101,27 @@ func (c completedConfig) New() (*StashServer, error) {
 	if err != nil {
 		return nil, err
 	}
-	ctrl, err := c.ControllerConfig.New()
+	ctrl, err := c.ExtraConfig.New()
 	if err != nil {
 		return nil, err
 	}
-
-	c.AddAdmissionHooks(ctrl)
+	admissionHooks := []hooks.AdmissionHook{
+		ctrl.NewResticWebhook(),
+		ctrl.NewRecoveryWebhook(),
+		ctrl.NewRepositoryWebhook(),
+		ctrl.NewDeploymentWebhook(),
+		ctrl.NewDaemonSetWebhook(),
+		ctrl.NewStatefulSetWebhook(),
+		ctrl.NewReplicationControllerWebhook(),
+		ctrl.NewReplicaSetWebhook(),
+	}
 
 	s := &StashServer{
 		GenericAPIServer: genericServer,
 		Controller:       ctrl,
 	}
 
-	for _, versionMap := range admissionHooksByGroupThenVersion(c.ControllerConfig.AdmissionHooks...) {
+	for _, versionMap := range admissionHooksByGroupThenVersion(admissionHooks...) {
 
 		accessor := meta.NewAccessor()
 		versionInterfaces := &meta.VersionInterfaces{
@@ -183,15 +191,15 @@ func (c completedConfig) New() (*StashServer, error) {
 		}
 	}
 
-	for i := range c.ControllerConfig.AdmissionHooks {
-		admissionHook := c.ControllerConfig.AdmissionHooks[i]
+	for i := range admissionHooks {
+		admissionHook := admissionHooks[i]
 		postStartName := postStartHookName(admissionHook)
 		if len(postStartName) == 0 {
 			continue
 		}
 		s.GenericAPIServer.AddPostStartHookOrDie(postStartName,
 			func(context genericapiserver.PostStartHookContext) error {
-				return admissionHook.Initialize(c.ControllerConfig.ClientConfig, context.StopCh)
+				return admissionHook.Initialize(c.ExtraConfig.ClientConfig, context.StopCh)
 			},
 		)
 	}
@@ -200,7 +208,7 @@ func (c completedConfig) New() (*StashServer, error) {
 		apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(repositories.GroupName, registry, Scheme, metav1.ParameterCodec, Codecs)
 		apiGroupInfo.GroupMeta.GroupVersion = v1alpha1.SchemeGroupVersion
 		v1alpha1storage := map[string]rest.Storage{}
-		v1alpha1storage[v1alpha1.ResourcePluralSnapshot] = snapregistry.NewREST(c.ControllerConfig.ClientConfig)
+		v1alpha1storage[v1alpha1.ResourcePluralSnapshot] = snapregistry.NewREST(c.ExtraConfig.ClientConfig)
 		apiGroupInfo.VersionedResourcesStorageMap["v1alpha1"] = v1alpha1storage
 
 		if err := s.GenericAPIServer.InstallAPIGroup(&apiGroupInfo); err != nil {
@@ -249,17 +257,4 @@ func admissionHooksByGroupThenVersion(admissionHooks ...hooks.AdmissionHook) map
 		group[gvr.Version] = append(group[gvr.Version], hook)
 	}
 	return ret
-}
-func (c *completedConfig) AddAdmissionHooks(ctrl *controller.StashController) error {
-	c.ControllerConfig.AdmissionHooks = []hooks.AdmissionHook{
-		ctrl.NewResticWebhook(),
-		ctrl.NewRecoveryWebhook(),
-		ctrl.NewRepositoryWebhook(),
-		ctrl.NewDeploymentWebhook(),
-		ctrl.NewDaemonSetWebhook(),
-		ctrl.NewStatefulSetWebhook(),
-		ctrl.NewReplicationControllerWebhook(),
-		ctrl.NewReplicaSetWebhook(),
-	}
-	return nil
 }

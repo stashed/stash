@@ -28,7 +28,7 @@ import (
 )
 
 type StashController struct {
-	Config
+	config
 
 	kubeClient  kubernetes.Interface
 	stashClient cs.Interface

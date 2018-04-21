@@ -16,7 +16,7 @@ import (
 	kapi "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 )
 
-func (f *Framework) NewTestStashOptions(kubeConfigPath string, controllerOptions *srvr.ControllerOptions) *srvr.StashOptions {
+func (f *Framework) NewTestStashOptions(kubeConfigPath string, controllerOptions *srvr.ExtraOptions) *srvr.StashOptions {
 	opt := srvr.NewStashOptions(os.Stdout, os.Stderr)
 	opt.RecommendedOptions.Authentication.RemoteKubeConfigFile = kubeConfigPath
 	opt.RecommendedOptions.Authentication.SkipInClusterLookup = true
@@ -24,14 +24,14 @@ func (f *Framework) NewTestStashOptions(kubeConfigPath string, controllerOptions
 	opt.RecommendedOptions.CoreAPI.CoreAPIKubeconfigPath = kubeConfigPath
 	opt.RecommendedOptions.SecureServing.BindPort = 8443
 	opt.RecommendedOptions.SecureServing.BindAddress = net.ParseIP("127.0.0.1")
-	opt.ControllerOptions = controllerOptions
+	opt.ExtraOptions = controllerOptions
 	opt.StdErr = os.Stderr
 	opt.StdOut = os.Stdout
 
 	return opt
 }
 
-func (f *Framework) StartAPIServerAndOperator(kubeConfigPath string, controllerOptions *srvr.ControllerOptions) {
+func (f *Framework) StartAPIServerAndOperator(kubeConfigPath string, extraOptions *srvr.ExtraOptions) {
 	defer GinkgoRecover()
 
 	sh := shell.NewSession()
@@ -45,7 +45,7 @@ func (f *Framework) StartAPIServerAndOperator(kubeConfigPath string, controllerO
 
 	By("Starting Server and Operator")
 	stopCh := genericapiserver.SetupSignalHandler()
-	stashOptions := f.NewTestStashOptions(kubeConfigPath, controllerOptions)
+	stashOptions := f.NewTestStashOptions(kubeConfigPath, extraOptions)
 	err = stashOptions.Run(stopCh)
 	Expect(err).ShouldNot(HaveOccurred())
 }
