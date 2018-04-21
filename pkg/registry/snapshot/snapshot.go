@@ -129,9 +129,6 @@ func (r *REST) List(ctx apirequest.Context, options *metainternalversion.ListOpt
 		snapshotList.Items = append(snapshotList.Items, snapshots...)
 
 	}
-	if len(snapshotList.Items) == 0 {
-		return nil, errors.New("no resource found")
-	}
 	return snapshotList, nil
 }
 
