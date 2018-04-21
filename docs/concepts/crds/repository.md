@@ -80,7 +80,7 @@ A `Repository` object maintains some important information using labels. These l
 
 ### spec.wipeOut
 
-`spec.wipeOut` filed is used to indicate that whether stash will delete respective **restic** repository from the backend or only delete `Repository` crd when `Repository` crd is deleted. The default value of this field is `false` which indicates that only `Repository` crd will be deleted. To know how to use this field to delete restic repository see [here](/docs/concepts/crds/repository.md#delete-respective-restic-repository).
+`spec.wipeOut` field indicates whether stash will delete respective **restic** repository from the backend or only delete `Repository` crd when `Repository` crd is deleted. The default value of this field is `false` which indicates that only `Repository` crd will be deleted from Kubernetes. To know how to use this field to delete restic repository see [here](/docs/concepts/crds/repository.md#delete-respective-restic-repository).
 
 ## Repository Status
 
@@ -141,13 +141,13 @@ This will delete only `Repository` crd. It won't delete any backed up data from 
 
 >If you delete `Repository` crd while stash-sidecar still exist on the workload, Stash will re-create the `Repository` crd and continue to take backup. In this case, `status` field of `Repository` crd will be reset.
 
-> If you don't want stash to re-create `Repository` crd, you have to stop stash from taking backup. To see how to stop stash from taking backup see [here](/docs/guides/backup.md#disable-backup).
+> If you don't want stash to re-create `Repository` crd, you have to stop Stash from taking backup. To see how to stop stash from taking backup see [here](/docs/guides/backup.md#disable-backup).
 
 ### Delete respective restic repository
 
 In order to prevent the users from accidentally deleting **restic** repository, stash uses a special `wipeOut` flag in `spec` of `Repository` crd. By default, this flag is set to `wipeOut: false`. If you want to delete respective restic repository while deleting `Repository` crd, you must set this flag to `wipeOut: true`.
 
-> Currently stash supports deleting restic repository only for **AWS S3, GCS, Azure** and **Swift** backend. **S3** compatible other backends such as **Minio** and **Rook** backend also support repository deletion.
+> Currently stash supports deleting restic repository only for AWS S3, GCS, Azure and OpenStack Swift backend. S3 compatible other backends such as Minio and Rook also support repository deletion.
 
 Here, is an example of deleting restic repository from Minio backend.
 
@@ -158,7 +158,7 @@ $ kubectl patch repository deployment.stash-demo --type="merge" --patch='{"spec"
 repository "deployment.stash-demo" patched
 ```
 
-Check the repository has been successfully patched,
+Check the repository has been successfully patched correctly.
 
 ```console
 $ kubectl get repository deployment.stash-demo -o yaml
@@ -197,7 +197,7 @@ status:
   lastBackupTime: 2018-04-19T06:47:13Z
 ```
 
-Look at `spec.wipeOut` filed if it is `true`, then you are ready to delete restic repository. Now, delete `Repository` crd.
+Notice that `spec.wipeOut` field is `true`. So, you are ready to delete restic repository. Now, delete `Repository` crd.
 
 ```console
 $ kubectl delete repository deployment.stash-demo
