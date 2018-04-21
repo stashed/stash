@@ -1,5 +1,5 @@
 hash: 39b9784006e2fdde6ce6820baacfc8afceab5316e268a079ea05abbf307d23f1
-updated: 2018-04-16T13:01:55.910051627+06:00
+updated: 2018-04-21T08:53:11.63489913-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -26,7 +26,7 @@ imports:
   - types
   - version
 - name: github.com/appscode/jsonpatch
-  version: 1359b374de83fa14fd58ab10aa8ea4935f84d249
+  version: 58a38a46ddb591a543c6b1003213353e29331c5a
 - name: github.com/appscode/kubernetes-webhook-util
   version: ddc919f31cdf677c9ca8a4697cc5163694d5e1a3
   subpackages:
@@ -38,7 +38,7 @@ imports:
   - runtime/serializer/versioning
   - workload/v1
 - name: github.com/appscode/kutil
-  version: de65cd67acea703c2dece78ed32eb490d2f47644
+  version: c3aa54aedcceb925ba15c7bf4a6c2e456138755e
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
@@ -97,8 +97,6 @@ imports:
   - service/elbv2
   - service/kms
   - service/s3
-  - service/s3/s3iface
-  - service/s3/s3manager
   - service/sts
 - name: github.com/Azure/azure-sdk-for-go
   version: 509eea43b93cec2f3f17acbe2578ef58703923f8
@@ -199,7 +197,7 @@ imports:
   - proto
   - sortkeys
 - name: github.com/golang/glog
-  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
+  version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/groupcache
   version: 02826c3e79038b59d737d3b1c0a1d937f71a4433
   subpackages:
@@ -243,9 +241,7 @@ imports:
   - openstack/utils
   - pagination
 - name: github.com/graymeta/stow
-  version: fc45e0eadc4cb7bd449dfe5c953ca191268e46f1
-  repo: https://github.com/appscode/stow.git
-  vcs: git
+  version: f6e869b724724309ae2b2081cc48671d1a658dd0
   subpackages:
   - azure
   - google
@@ -340,7 +336,7 @@ imports:
 - name: github.com/opencontainers/go-digest
   version: a6d0ee40d4207ea02364bd3b9e8e77b9159ba1eb
 - name: github.com/openshift/api
-  version: 80a1e2bf16952088360b492c175703755deea8d2
+  version: 0d921e363e951d89f583292c60d013c318df64dc
   subpackages:
   - apps/v1
 - name: github.com/pborman/uuid
@@ -378,8 +374,7 @@ imports:
 - name: github.com/satori/uuid
   version: 5bf94b69c6b68ee1b541973bb8e1144db23a194b
 - name: github.com/sergi/go-diff
-  version: 24e2351369ec4949b2ed0dc5c477afdd4c4034e8
-  repo: https://github.com/sergi/go-diff
+  version: 97b2266dfe4bd4ea1b81a463322f04f8b724801e
   subpackages:
   - diffmatchpatch
 - name: github.com/shurcooL/sanitized_anchor_name
@@ -395,7 +390,7 @@ imports:
   subpackages:
   - doc
 - name: github.com/spf13/pflag
-  version: 7c9362bf02e40f7ee00c71b08b9b97dcae55b0c2
+  version: 053854db78bf52e52733c395a5315647ad1e110e
   repo: https://github.com/appscode/pflag.git
   vcs: git
 - name: github.com/ugorji/go
@@ -403,12 +398,11 @@ imports:
   subpackages:
   - codec
 - name: github.com/yudai/gojsondiff
-  version: e21612694bdd50975f93cd5eaccb457477128e28
+  version: 7b1b7adf999dab73a6eb02669c3d82dbb27a3dd6
   subpackages:
   - formatter
 - name: github.com/yudai/golcs
   version: d1c525dea8ce39ea9a783d33cf08932305373f2c
-  repo: https://github.com/yudai/golcs
 - name: golang.org/x/crypto
   version: 81e90905daefcd6fd217b62423c0908922eadb30
   subpackages:
@@ -481,7 +475,7 @@ imports:
   - pubsub/v1
   - storage/v1
 - name: google.golang.org/appengine
-  version: 0a24098c0ec68416ec050f567f75df563d6b231e
+  version: 4f7eeb5305a4ba1966344836ba4af9996b7b4e05
   subpackages:
   - internal
   - internal/app_identity
@@ -876,14 +870,12 @@ imports:
   - util/jsonpath
   - util/workqueue
 - name: k8s.io/kube-aggregator
-  version: 9f098a673af26c478de89a2a64c7e3c545c944a3
+  version: 23f9f59d663ea22b680310831a1b7297914b4ed3
   subpackages:
   - pkg/apis/apiregistration
-  - pkg/apis/apiregistration/v1
   - pkg/apis/apiregistration/v1beta1
   - pkg/client/clientset_generated/clientset
   - pkg/client/clientset_generated/clientset/scheme
-  - pkg/client/clientset_generated/clientset/typed/apiregistration/v1
   - pkg/client/clientset_generated/clientset/typed/apiregistration/v1beta1
 - name: k8s.io/kube-openapi
   version: 39a7bf85c140f972372c2a0d1ee40adbf0c8bfe1

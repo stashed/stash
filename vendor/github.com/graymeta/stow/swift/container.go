@@ -1,14 +1,13 @@
 package swift
 
 import (
-	"fmt"
 	"io"
 	"strings"
-	"unicode/utf8"
+
+	"github.com/pkg/errors"
 
 	"github.com/graymeta/stow"
 	"github.com/ncw/swift"
-	"github.com/pkg/errors"
 )
 
 type container struct {
@@ -30,59 +29,33 @@ func (c *container) Item(id string) (stow.Item, error) {
 	return c.getItem(id)
 }
 
-func (c *container) Browse(prefix, delimiter, cursor string, count int) (*stow.ItemPage, error) {
+func (c *container) Items(prefix, cursor string, count int) ([]stow.Item, string, error) {
 	params := &swift.ObjectsOpts{
 		Limit:  count,
 		Marker: cursor,
 		Prefix: prefix,
 	}
-	r, sz := utf8.DecodeRuneInString(delimiter)
-	if r == utf8.RuneError {
-		if sz > 0 {
-			return nil, fmt.Errorf("Bad delimiter %v", delimiter)
-		}
-	} else {
-		params.Delimiter = r
-	}
 	objects, err := c.client.Objects(c.id, params)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
+	items := make([]stow.Item, len(objects))
+	for i, obj := range objects {
 
-	var prefixes []string
-	for _, obj := range objects {
-		if obj.PseudoDirectory {
-			prefixes = append(prefixes, obj.Name)
-		}
-	}
-
-	var items []stow.Item
-	for _, obj := range objects {
-		if obj.PseudoDirectory {
-			continue
-		}
-		items = append(items, &item{
+		items[i] = &item{
 			id:           obj.Name,
 			container:    c,
 			client:       c.client,
 			hash:         obj.Hash,
 			size:         obj.Bytes,
 			lastModified: obj.LastModified,
-		})
+		}
 	}
 	marker := ""
 	if len(objects) == count {
 		marker = objects[len(objects)-1].Name
 	}
-	return &stow.ItemPage{Prefixes: prefixes, Items: items, Cursor: marker}, nil
-}
-
-func (c *container) Items(prefix, cursor string, count int) ([]stow.Item, string, error) {
-	page, err := c.Browse(prefix, "", cursor, count)
-	if err != nil {
-		return nil, "", err
-	}
-	return page.Items, cursor, err
+	return items, marker, nil
 }
 
 func (c *container) Put(name string, r io.Reader, size int64, metadata map[string]interface{}) (stow.Item, error) {

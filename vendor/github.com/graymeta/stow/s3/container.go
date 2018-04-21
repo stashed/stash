@@ -4,14 +4,10 @@ import (
 	"bytes"
 	"io"
 	"io/ioutil"
-	"os"
 	"strings"
-
-	"net/http"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/graymeta/stow"
 	"github.com/pkg/errors"
 )
@@ -40,28 +36,25 @@ func (c *container) Item(id string) (stow.Item, error) {
 	return c.getItem(id)
 }
 
-func (c *container) Browse(prefix, delimiter, cursor string, count int) (*stow.ItemPage, error) {
+// Items sends a request to retrieve a list of items that are prepended with
+// the prefix argument. The 'cursor' variable facilitates pagination.
+func (c *container) Items(prefix, cursor string, count int) ([]stow.Item, string, error) {
 	itemLimit := int64(count)
 
 	params := &s3.ListObjectsInput{
-		Bucket:    aws.String(c.Name()),
-		Delimiter: aws.String(delimiter),
-		Marker:    &cursor,
-		MaxKeys:   &itemLimit,
-		Prefix:    &prefix,
+		Bucket:  aws.String(c.Name()),
+		Marker:  &cursor,
+		MaxKeys: &itemLimit,
+		Prefix:  &prefix,
 	}
 
 	response, err := c.client.ListObjects(params)
 	if err != nil {
-		return nil, errors.Wrap(err, "Items, listing objects")
-	}
-
-	prefixes := make([]string, len(response.CommonPrefixes))
-	for i, prefix := range response.CommonPrefixes {
-		prefixes[i] = *prefix.Prefix
+		return nil, "", errors.Wrap(err, "Items, listing objects")
 	}
 
 	containerItems := make([]stow.Item, len(response.Contents)) // Allocate space for the Item slice.
+
 	for i, object := range response.Contents {
 		etag := cleanEtag(*object.ETag) // Copy etag value and remove the strings.
 		object.ETag = &etag             // Assign the value to the object field representing the item.
@@ -89,17 +82,7 @@ func (c *container) Browse(prefix, delimiter, cursor string, count int) (*stow.I
 		marker = containerItems[len(containerItems)-1].Name()
 	}
 
-	return &stow.ItemPage{Prefixes: prefixes, Items: containerItems, Cursor: marker}, nil
-}
-
-// Items sends a request to retrieve a list of items that are prepended with
-// the prefix argument. The 'cursor' variable facilitates pagination.
-func (c *container) Items(prefix, cursor string, count int) ([]stow.Item, string, error) {
-	page, err := c.Browse(prefix, "", cursor, count)
-	if err != nil {
-		return nil, "", err
-	}
-	return page.Items, cursor, err
+	return containerItems, marker, nil
 }
 
 func (c *container) RemoveItem(id string) error {
@@ -120,42 +103,6 @@ func (c *container) RemoveItem(id string) error {
 // content, and the size of the file. Many more attributes can be given to the
 // file, including metadata. Keeping it simple for now.
 func (c *container) Put(name string, r io.Reader, size int64, metadata map[string]interface{}) (stow.Item, error) {
-	switch file := r.(type) {
-	case *os.File:
-		uploader := s3manager.NewUploaderWithClient(c.client)
-
-		// Convert map[string]interface{} to map[string]*string
-		mdPrepped, err := prepMetadata(metadata)
-
-		// Perform an upload.
-		result, err := uploader.Upload(&s3manager.UploadInput{
-			Bucket:   aws.String(c.name),
-			Key:      aws.String(name),
-			Body:     file,
-			Metadata: mdPrepped,
-		})
-
-		if err != nil {
-			return nil, errors.Wrap(err, "Put, uploading object")
-		}
-
-		newItem := &item{
-			container: c,
-			client:    c.client,
-			properties: properties{
-				ETag: &result.UploadID,
-				Key:  &name,
-				// Owner        *s3.Owner
-				// StorageClass *string
-			},
-		}
-		if st, err := file.Stat(); err == nil && !st.IsDir() {
-			newItem.properties.Size = aws.Int64(st.Size())
-			newItem.properties.LastModified = aws.Time(st.ModTime())
-		}
-		return newItem, nil
-	}
-
 	content, err := ioutil.ReadAll(r)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create or update item, reading content")
@@ -167,15 +114,10 @@ func (c *container) Put(name string, r io.Reader, size int64, metadata map[strin
 		return nil, errors.Wrap(err, "unable to create or update item, preparing metadata")
 	}
 
-	// Get Content Type as string
-	// https://golang.org/pkg/net/http/#DetectContentType
-	contentType := http.DetectContentType(content)
-
 	params := &s3.PutObjectInput{
 		Bucket:        aws.String(c.name), // Required
 		Key:           aws.String(name),   // Required
 		ContentLength: aws.Int64(size),
-		ContentType:   &contentType,
 		Body:          bytes.NewReader(content),
 		Metadata:      mdPrepped, // map[string]*string
 	}

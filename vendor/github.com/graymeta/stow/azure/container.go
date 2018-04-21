@@ -54,10 +54,9 @@ func (c *container) Item(id string) (stow.Item, error) {
 	return item, nil
 }
 
-func (c *container) Browse(prefix, delimiter, cursor string, count int) (*stow.ItemPage, error) {
+func (c *container) Items(prefix, cursor string, count int) ([]stow.Item, string, error) {
 	params := az.ListBlobsParameters{
 		Prefix:     prefix,
-		Delimiter:  delimiter,
 		MaxResults: uint(count),
 	}
 	if cursor != "" {
@@ -65,14 +64,8 @@ func (c *container) Browse(prefix, delimiter, cursor string, count int) (*stow.I
 	}
 	listblobs, err := c.client.GetContainerReference(c.id).ListBlobs(params)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-
-	prefixes := make([]string, len(listblobs.BlobPrefixes))
-	for i, prefix := range listblobs.BlobPrefixes {
-		prefixes[i] = prefix
-	}
-
 	items := make([]stow.Item, len(listblobs.Blobs))
 	for i, blob := range listblobs.Blobs {
 
@@ -86,15 +79,7 @@ func (c *container) Browse(prefix, delimiter, cursor string, count int) (*stow.I
 			properties: blob.Properties,
 		}
 	}
-	return &stow.ItemPage{Prefixes: prefixes, Items: items, Cursor: listblobs.NextMarker}, nil
-}
-
-func (c *container) Items(prefix, cursor string, count int) ([]stow.Item, string, error) {
-	page, err := c.Browse(prefix, "", cursor, count)
-	if err != nil {
-		return nil, "", err
-	}
-	return page.Items, cursor, err
+	return items, listblobs.NextMarker, nil
 }
 
 func (c *container) Put(name string, r io.Reader, size int64, metadata map[string]interface{}) (stow.Item, error) {
