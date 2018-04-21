@@ -18,7 +18,7 @@ const defaultEtcdPathPrefix = "/registry/stash.appscode.com"
 
 type StashOptions struct {
 	RecommendedOptions *genericoptions.RecommendedOptions
-	ControllerOptions  *ControllerOptions
+	ExtraOptions       *ExtraOptions
 
 	StdOut io.Writer
 	StdErr io.Writer
@@ -28,7 +28,7 @@ func NewStashOptions(out, errOut io.Writer) *StashOptions {
 	o := &StashOptions{
 		// TODO we will nil out the etcd storage options.  This requires a later level of k8s.io/apiserver
 		RecommendedOptions: genericoptions.NewRecommendedOptions(defaultEtcdPathPrefix, server.Codecs.LegacyCodec(admissionv1beta1.SchemeGroupVersion)),
-		ControllerOptions:  NewControllerOptions(),
+		ExtraOptions:       NewExtraOptions(),
 		StdOut:             out,
 		StdErr:             errOut,
 	}
@@ -39,7 +39,7 @@ func NewStashOptions(out, errOut io.Writer) *StashOptions {
 
 func (o StashOptions) AddFlags(fs *pflag.FlagSet) {
 	o.RecommendedOptions.AddFlags(fs)
-	o.ControllerOptions.AddFlags(fs)
+	o.ExtraOptions.AddFlags(fs)
 }
 
 func (o StashOptions) Validate(args []string) error {
@@ -75,14 +75,14 @@ func (o StashOptions) Config() (*server.StashConfig, error) {
 		"/apis/admission.stash.appscode.com/v1alpha1/replicasets",
 	}
 
-	controllerConfig := controller.NewControllerConfig(serverConfig.ClientConfig)
-	if err := o.ControllerOptions.ApplyTo(controllerConfig); err != nil {
+	extraConfig := controller.NewConfig(serverConfig.ClientConfig)
+	if err := o.ExtraOptions.ApplyTo(extraConfig); err != nil {
 		return nil, err
 	}
 
 	config := &server.StashConfig{
-		GenericConfig:    serverConfig,
-		ControllerConfig: controllerConfig,
+		GenericConfig: serverConfig,
+		ExtraConfig:   extraConfig,
 	}
 	return config, nil
 }

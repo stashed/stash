@@ -49,7 +49,7 @@ var _ = BeforeSuite(func() {
 	clientConfig, err := clientcmd.BuildConfigFromContext(options.KubeConfig, options.KubeContext)
 	Expect(err).NotTo(HaveOccurred())
 
-	ctrlConfig := controller.NewControllerConfig(clientConfig)
+	ctrlConfig := controller.NewConfig(clientConfig)
 
 	err = options.ApplyTo(ctrlConfig)
 	Expect(err).NotTo(HaveOccurred())
@@ -76,7 +76,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	if options.StartAPIServer {
-		go root.StartAPIServerAndOperator(options.KubeConfig, options.ControllerOptions)
+		go root.StartAPIServerAndOperator(options.KubeConfig, options.ExtraOptions)
 		root.EventuallyAPIServerReady().Should(Succeed())
 		// let's API server be warmed up
 		time.Sleep(time.Second * 5)
