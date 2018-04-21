@@ -4,6 +4,7 @@ import (
 	"os/exec"
 	"time"
 
+	rep "github.com/appscode/stash/apis/repositories/v1alpha1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/eventer"
 	. "github.com/onsi/ginkgo"
@@ -181,4 +182,22 @@ func (f *Framework) ReplicaSetRepos(rs *extensions.ReplicaSet) []*api.Repository
 
 func (f *Framework) StatefulSetRepos(ss *apps.StatefulSet) []*api.Repository {
 	return f.GetRepositories(KindMetaReplicas{Kind: api.KindStatefulSet, Meta: ss.ObjectMeta, Replicas: int(*ss.Spec.Replicas)})
+}
+
+func (f *Framework) LatestSnapshot(snapshots []rep.Snapshot) rep.Snapshot {
+	latestSnapshot := snapshots[0]
+	for _, snap := range snapshots {
+		if snap.CreationTimestamp.After(latestSnapshot.CreationTimestamp.Time) {
+			latestSnapshot = snap
+		}
+	}
+	return latestSnapshot
+}
+
+func GetPathsFromResticFileGroups(restic *api.Restic) []string {
+	paths := make([]string, 0)
+	for _, fg := range restic.Spec.FileGroups {
+		paths = append(paths, fg.Path)
+	}
+	return paths
 }

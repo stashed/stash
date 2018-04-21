@@ -2862,6 +2862,8 @@ spec:
             snapshot:
               description: Snapshot to recover. Default is latest snapshot.
               type: string
+          required:
+          - repository
         status:
           properties:
             phase:
@@ -4248,6 +4250,7 @@ spec:
                     prefix:
                       type: string
             wipeOut:
+              description: If true, delete respective restic repository
               type: boolean
         status:
           properties:

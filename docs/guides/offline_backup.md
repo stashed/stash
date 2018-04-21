@@ -16,11 +16,11 @@ section_menu_id: guides
 
 # Offline Backup
 
-This tutorial will show you how to backup a Kubernetes deployment using Stash in offline mode. By default, stash takes backup in [online](/docs/guides/backup.md) mode where sidecar container is added to take periodic backups and check backups. But sometimes you need to ensure that source data is not being modified while taking backup, that means running backup while keeping workload pod stopped. In such case you can run backup in offline mode. To do this you need to specify `spec.type=offline` in `Restic` CRD.
+This tutorial will show you how to backup a Kubernetes deployment using Stash in offline mode. By default, stash takes backup in [online](/docs/guides/backup.md) mode where sidecar container is added to take periodic backups and check backups. But sometimes you need to ensure that source data is not being modified while taking the backup, that means running backup while keeping workload pod stopped. In such case, you can run the backup in offline mode. To do this you need to specify `spec.type: offline` in `Restic` CRD.
 
 At first, you need to have a Kubernetes cluster, and the kubectl command-line tool must be configured to communicate with your cluster. If you do not already have a cluster, you can create one by using [Minikube](https://github.com/kubernetes/minikube). Now, install Stash in your cluster following the steps [here](/docs/setup/install.md).
 
-In this tutorial, we are going to backup the `/source/data` folder of a `busybox` pod into a local backend. First deploy the following `busybox` Deployment in your cluster. Here we are using a git repository as source volume for demonstration purpose.
+In this tutorial, we are going to backup the `/source/data` folder of a `busybox` pod into a local backend. First, deploy the following `busybox` Deployment in your cluster. Here we are using a git repository as a source volume for demonstration purpose.
 
 ```yaml
 apiVersion: apps/v1beta1
@@ -94,7 +94,7 @@ metadata:
 type: Opaque
 ```
 
-Now, create a `Restic` CRD with selectors matching the labels of the `busybox` Deployment and `spec.type=offline`.
+Now, create a `Restic` CRD with selectors matching the labels of the `busybox` Deployment and `spec.type: offline`.
 
 ```console
 $ kubectl apply -f ./docs/examples/tutorial/restic_offline.yaml
@@ -131,8 +131,8 @@ spec:
     prune: true
 ```
 
-When a `Restic` is created with `spec.type=offline`, stash operator add a [init-container](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) instead of sidecar container to target workload pods. The init-container takes backup once. If backup is successfully completed, then it creates a job to perform `restic check` and exits. The app container starts only after the init-container exits without any error. This ensures that the app container is not running while taking backup.
-Stash operator also creates a cron-job that deletes the workload pods according to the `spec.schedule`. Thus the workload pods get restarted periodically and allows the init-container to take backup.
+When a `Restic` is created with `spec.type: offline`, stash operator adds an [init-container](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) instead of sidecar container to target workload pods. The init-container takes backup once. If the backup is successfully completed, then it creates a job to perform `restic check` and exits. The app container starts only after the init-container exits without any error. This ensures that the app container is not running while taking backup.
+Stash operator also creates a cron-job that deletes the workload pods according to the `spec.schedule`. Thus the workload pods get restarted periodically and allow the init-container to take backup.
 
 ```console
 $ kubectl get pods -l app=stash-demo -w
@@ -273,25 +273,36 @@ status:
   updatedReplicas: 1
 ```
 
-Now, wait a few minutes so that restic can take a backup of the `/source/data` folder. To confirm, check the `status.backupCount` of `stash-demo` Restic CRD.
+If everything goes well, A `Repository` crd with name `deployment.stash-demo` will be created for the respective repository in the specified backend. Verify that, `Repository` is created successfully using this command,
+
+```console
+$ kubectl get repository deployment.stash-demo
+NAME                    AGE
+deployment.stash-demo   1m
+```
+
+`Restic` will take backup of the volume periodically with a 1-minute interval. You can verify that backup is taking successfully by,
+
+```console 
+$ kubectl get repository deployment.stash-demo -o yaml
+```
 
 ```yaml
-$ kubectl get restic stash-demo -o yaml
-
 apiVersion: stash.appscode.com/v1alpha1
-kind: Restic
+kind: Repository
 metadata:
   clusterName: ""
   creationTimestamp: 2017-12-04T10:06:18Z
-  deletionGracePeriodSeconds: null
-  deletionTimestamp: null
   generation: 0
-  initializers: null
-  name: stash-demo
+  labels:
+    restic: stash-demo
+    workload-kind: Deployment
+    workload-name: stash-demo
+  name: deployment.stash-demo
   namespace: default
-  resourceVersion: "57790"
-  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/restics/stash-demo
-  uid: c55d5918-d8da-11e7-be92-0800277f19c0
+  resourceVersion: "5163"
+  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/repositories/deployment.stash-demo
+  uid: 90482512-3e0b-11e8-951b-42010a80002e
 spec:
   backend:
     local:
@@ -300,27 +311,14 @@ spec:
         hostPath:
           path: /data/stash-test/restic-repo
     storageSecretName: stash-demo
-  fileGroups:
-  - path: /source/data
-    retentionPolicyName: keep-last-5
-  retentionPolicies:
-  - keepLast: 5
-    name: keep-last-5
-    prune: true
-  schedule: '@every 5m'
-  selector:
-    matchLabels:
-      app: stash-demo
-  type: offline
-  volumeMounts:
-  - mountPath: /source/data
-    name: source-data
 status:
-  backupCount: 1
+  backupCount: 2
   firstBackupTime: 2017-12-04T10:06:23Z
-  lastBackupDuration: 1.5347814s
+  lastBackupDuration: 4.245593432s
   lastBackupTime: 2017-12-04T10:06:23Z
 ```
+
+Look at the `status` field. `backupCount` show number of successful backup taken in this `Repository`.
 
 Stash operator also creates a cron job to periodically delete workload pods according to `spec.schedule`. Please note that Kubernetes cron jobs [do not support timezone](https://github.com/kubernetes/kubernetes/issues/47202).
 
@@ -339,6 +337,7 @@ To cleanup the Kubernetes resources created by this tutorial, run:
 $ kubectl delete deployment stash-demo
 $ kubectl delete secret stash-demo
 $ kubectl delete restic stash-demo
+$ kubectl delete repository deployment.stash-demo
 ```
 
 If you would like to uninstall Stash operator, please follow the steps [here](/docs/setup/uninstall.md).
