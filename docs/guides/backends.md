@@ -91,7 +91,7 @@ spec:
 
 
 ### AWS S3
-Stash supports AWS S3 service or [Minio](https://minio.io/) servers as backend. To configure this backend, following secret keys are needed:
+Stash supports AWS S3 service or S3 compatible services like [Minio](https://minio.io/) servers, [Rook Object store](https://rook.io/docs/rook/master/object.html) as backend. To configure this backend, following secret keys are needed:
 
 | Key                     | Description                                                     |
 |-------------------------|-----------------------------------------------------------------|
