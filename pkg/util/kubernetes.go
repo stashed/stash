@@ -44,7 +44,7 @@ const (
 	AppLabelStash      = "stash"
 	OperationScaleDown = "scale-down"
 
-	RepositoryFinalizer            = "wipeOut-repository"
+	RepositoryFinalizer            = "stash"
 	SnapshotIDLength               = 8
 	SnapshotIDLengthWithDashPrefix = 9
 )
@@ -584,9 +584,9 @@ func FixBackendPrefix(backend *api.Backend, autoPrefix string) *api.Backend {
 		backend.B2.Prefix = strings.TrimSuffix(backend.B2.Prefix, autoPrefix)
 		backend.B2.Prefix = strings.TrimSuffix(backend.B2.Prefix, "/")
 	}
-
 	return backend
 }
+
 func GetBucketAndPrefix(backend *api.Backend) (string, string, error) {
 	if backend.S3 != nil {
 		return backend.S3.Bucket, strings.TrimPrefix(backend.S3.Prefix, backend.S3.Bucket+"/"), nil

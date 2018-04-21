@@ -69,17 +69,14 @@ func (c *StashController) runRepositoryInjector(key string) error {
 					in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, util.RepositoryFinalizer)
 					return in
 				})
-				if err != nil {
-					return err
-				}
+				return err
 			}
 		} else {
-			if repo.Spec.WipeOut {
-				_, _, err = stash_util.PatchRepository(c.stashClient.StashV1alpha1(), repo, func(in *api.Repository) *api.Repository {
-					in.ObjectMeta = core_util.AddFinalizer(in.ObjectMeta, util.RepositoryFinalizer)
-					return in
-				})
-			}
+			_, _, err = stash_util.PatchRepository(c.stashClient.StashV1alpha1(), repo, func(in *api.Repository) *api.Repository {
+				in.ObjectMeta = core_util.AddFinalizer(in.ObjectMeta, util.RepositoryFinalizer)
+				return in
+			})
+			return err
 		}
 	}
 	return nil
