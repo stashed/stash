@@ -220,7 +220,7 @@ type ErrParamMinLen struct {
 func NewErrParamMinLen(field string, min int) *ErrParamMinLen {
 	return &ErrParamMinLen{
 		errInvalidParam: errInvalidParam{
-			code:  ParamMinLenErrCode,
+			code:  ParamMinValueErrCode,
 			field: field,
 			msg:   fmt.Sprintf("minimum field size of %v", min),
 		},

@@ -4,7 +4,6 @@ package rest
 import (
 	"bytes"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -83,12 +82,8 @@ func buildLocationElements(r *request.Request, v reflect.Value, buildGETQuery bo
 			if name == "" {
 				name = field.Name
 			}
-			if kind := m.Kind(); kind == reflect.Ptr {
+			if m.Kind() == reflect.Ptr {
 				m = m.Elem()
-			} else if kind == reflect.Interface {
-				if !m.Elem().IsValid() {
-					continue
-				}
 			}
 			if !m.IsValid() {
 				continue
@@ -100,16 +95,16 @@ func buildLocationElements(r *request.Request, v reflect.Value, buildGETQuery bo
 			var err error
 			switch field.Tag.Get("location") {
 			case "headers": // header maps
-				err = buildHeaderMap(&r.HTTPRequest.Header, m, field.Tag)
+				err = buildHeaderMap(&r.HTTPRequest.Header, m, field.Tag.Get("locationName"))
 			case "header":
-				err = buildHeader(&r.HTTPRequest.Header, m, name, field.Tag)
+				err = buildHeader(&r.HTTPRequest.Header, m, name)
 			case "uri":
-				err = buildURI(r.HTTPRequest.URL, m, name, field.Tag)
+				err = buildURI(r.HTTPRequest.URL, m, name)
 			case "querystring":
-				err = buildQueryString(query, m, name, field.Tag)
+				err = buildQueryString(query, m, name)
 			default:
 				if buildGETQuery {
-					err = buildQueryString(query, m, name, field.Tag)
+					err = buildQueryString(query, m, name)
 				}
 			}
 			r.Error = err
@@ -150,8 +145,8 @@ func buildBody(r *request.Request, v reflect.Value) {
 	}
 }
 
-func buildHeader(header *http.Header, v reflect.Value, name string, tag reflect.StructTag) error {
-	str, err := convertType(v, tag)
+func buildHeader(header *http.Header, v reflect.Value, name string) error {
+	str, err := convertType(v)
 	if err == errValueNotSet {
 		return nil
 	} else if err != nil {
@@ -163,10 +158,9 @@ func buildHeader(header *http.Header, v reflect.Value, name string, tag reflect.
 	return nil
 }
 
-func buildHeaderMap(header *http.Header, v reflect.Value, tag reflect.StructTag) error {
-	prefix := tag.Get("locationName")
+func buildHeaderMap(header *http.Header, v reflect.Value, prefix string) error {
 	for _, key := range v.MapKeys() {
-		str, err := convertType(v.MapIndex(key), tag)
+		str, err := convertType(v.MapIndex(key))
 		if err == errValueNotSet {
 			continue
 		} else if err != nil {
@@ -179,8 +173,8 @@ func buildHeaderMap(header *http.Header, v reflect.Value, tag reflect.StructTag)
 	return nil
 }
 
-func buildURI(u *url.URL, v reflect.Value, name string, tag reflect.StructTag) error {
-	value, err := convertType(v, tag)
+func buildURI(u *url.URL, v reflect.Value, name string) error {
+	value, err := convertType(v)
 	if err == errValueNotSet {
 		return nil
 	} else if err != nil {
@@ -196,7 +190,7 @@ func buildURI(u *url.URL, v reflect.Value, name string, tag reflect.StructTag) e
 	return nil
 }
 
-func buildQueryString(query url.Values, v reflect.Value, name string, tag reflect.StructTag) error {
+func buildQueryString(query url.Values, v reflect.Value, name string) error {
 	switch value := v.Interface().(type) {
 	case []*string:
 		for _, item := range value {
@@ -213,7 +207,7 @@ func buildQueryString(query url.Values, v reflect.Value, name string, tag reflec
 			}
 		}
 	default:
-		str, err := convertType(v, tag)
+		str, err := convertType(v)
 		if err == errValueNotSet {
 			return nil
 		} else if err != nil {
@@ -252,7 +246,7 @@ func EscapePath(path string, encodeSep bool) string {
 	return buf.String()
 }
 
-func convertType(v reflect.Value, tag reflect.StructTag) (string, error) {
+func convertType(v reflect.Value) (string, error) {
 	v = reflect.Indirect(v)
 	if !v.IsValid() {
 		return "", errValueNotSet
@@ -272,16 +266,6 @@ func convertType(v reflect.Value, tag reflect.StructTag) (string, error) {
 		str = strconv.FormatFloat(value, 'f', -1, 64)
 	case time.Time:
 		str = value.UTC().Format(RFC822)
-	case aws.JSONValue:
-		b, err := json.Marshal(value)
-		if err != nil {
-			return "", err
-		}
-		if tag.Get("location") == "header" {
-			str = base64.StdEncoding.EncodeToString(b)
-		} else {
-			str = string(b)
-		}
 	default:
 		err := fmt.Errorf("Unsupported value for param %v (%s)", v.Interface(), v.Type())
 		return "", err

@@ -1,23 +1,7 @@
 package storage
 
-// Copyright 2017 Microsoft Corporation
-//
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
-
 import (
 	"bytes"
-	"crypto/md5"
-	"encoding/base64"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -47,7 +31,8 @@ func (b *Blob) PutAppendBlob(options *PutBlobOptions) error {
 	if err != nil {
 		return err
 	}
-	return b.respondCreation(resp, BlobTypeAppend)
+	readAndCloseBody(resp.body)
+	return checkRespCode(resp.statusCode, []int{http.StatusCreated})
 }
 
 // AppendBlockOptions includes the options for an append block operation
@@ -61,7 +46,6 @@ type AppendBlockOptions struct {
 	IfMatch           string     `header:"If-Match"`
 	IfNoneMatch       string     `header:"If-None-Match"`
 	RequestID         string     `header:"x-ms-client-request-id"`
-	ContentMD5        bool
 }
 
 // AppendBlock appends a block to an append blob.
@@ -76,10 +60,6 @@ func (b *Blob) AppendBlock(chunk []byte, options *AppendBlockOptions) error {
 	if options != nil {
 		params = addTimeout(params, options.Timeout)
 		headers = mergeHeaders(headers, headersFromStruct(*options))
-		if options.ContentMD5 {
-			md5sum := md5.Sum(chunk)
-			headers[headerContentMD5] = base64.StdEncoding.EncodeToString(md5sum[:])
-		}
 	}
 	uri := b.Container.bsc.client.getEndpoint(blobServiceName, b.buildPath(), params)
 
@@ -87,5 +67,6 @@ func (b *Blob) AppendBlock(chunk []byte, options *AppendBlockOptions) error {
 	if err != nil {
 		return err
 	}
-	return b.respondCreation(resp, BlobTypeAppend)
+	readAndCloseBody(resp.body)
+	return checkRespCode(resp.statusCode, []int{http.StatusCreated})
 }

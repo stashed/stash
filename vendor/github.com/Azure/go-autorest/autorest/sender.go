@@ -1,25 +1,10 @@
 package autorest
 
-// Copyright 2017 Microsoft Corporation
-//
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License.
-
 import (
 	"fmt"
 	"log"
 	"math"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -224,29 +209,11 @@ func DoRetryForStatusCodes(attempts int, backoff time.Duration, codes ...int) Se
 				if err != nil || !ResponseHasStatusCode(resp, codes...) {
 					return resp, err
 				}
-				delayed := DelayWithRetryAfter(resp, r.Cancel)
-				if !delayed {
-					DelayForBackoff(backoff, attempt, r.Cancel)
-				}
+				DelayForBackoff(backoff, attempt, r.Cancel)
 			}
 			return resp, err
 		})
 	}
-}
-
-// DelayWithRetryAfter invokes time.After for the duration specified in the "Retry-After" header in
-// responses with status code 429
-func DelayWithRetryAfter(resp *http.Response, cancel <-chan struct{}) bool {
-	retryAfter, _ := strconv.Atoi(resp.Header.Get("Retry-After"))
-	if resp.StatusCode == http.StatusTooManyRequests && retryAfter > 0 {
-		select {
-		case <-time.After(time.Duration(retryAfter) * time.Second):
-			return true
-		case <-cancel:
-			return false
-		}
-	}
-	return false
 }
 
 // DoRetryForDuration returns a SendDecorator that retries the request until the total time is equal

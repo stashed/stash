@@ -1,13 +1,7 @@
 package session
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -98,10 +92,9 @@ func New(cfgs ...*aws.Config) *Session {
 // control through code how the Session will be created. Such as specifying the
 // config profile, and controlling if shared config is enabled or not.
 func NewSession(cfgs ...*aws.Config) (*Session, error) {
-	opts := Options{}
-	opts.Config.MergeIn(cfgs...)
+	envCfg := loadEnvConfig()
 
-	return NewSessionWithOptions(opts)
+	return newSession(Options{}, envCfg, cfgs...)
 }
 
 // SharedConfigState provides the ability to optionally override the state
@@ -155,10 +148,6 @@ type Options struct {
 	// and enable or disable the shared config functionality.
 	SharedConfigState SharedConfigState
 
-	// Ordered list of files the session will load configuration from.
-	// It will override environment variable AWS_SHARED_CREDENTIALS_FILE, AWS_CONFIG_FILE.
-	SharedConfigFiles []string
-
 	// When the SDK's shared config is configured to assume a role with MFA
 	// this option is required in order to provide the mechanism that will
 	// retrieve the MFA token. There is no default value for this field. If
@@ -178,21 +167,6 @@ type Options struct {
 	// This field is only used if the shared configuration is enabled, and
 	// the config enables assume role wit MFA via the mfa_serial field.
 	AssumeRoleTokenProvider func() (string, error)
-
-	// Reader for a custom Credentials Authority (CA) bundle in PEM format that
-	// the SDK will use instead of the default system's root CA bundle. Use this
-	// only if you want to replace the CA bundle the SDK uses for TLS requests.
-	//
-	// Enabling this option will attempt to merge the Transport into the SDK's HTTP
-	// client. If the client's Transport is not a http.Transport an error will be
-	// returned. If the Transport's TLS config is set this option will cause the SDK
-	// to overwrite the Transport's TLS config's  RootCAs value. If the CA
-	// bundle reader contains multiple certificates all of them will be loaded.
-	//
-	// The Session option CustomCABundle is also available when creating sessions
-	// to also enable this feature. CustomCABundle session option field has priority
-	// over the AWS_CA_BUNDLE environment variable, and will be used if both are set.
-	CustomCABundle io.Reader
 }
 
 // NewSessionWithOptions returns a new Session created from SDK defaults, config files,
@@ -222,7 +196,7 @@ type Options struct {
 //
 //     // Force enable Shared Config support
 //     sess := session.Must(session.NewSessionWithOptions(session.Options{
-//         SharedConfigState: session.SharedConfigEnable,
+//         SharedConfigState: SharedConfigEnable,
 //     }))
 func NewSessionWithOptions(opts Options) (*Session, error) {
 	var envCfg envConfig
@@ -241,24 +215,6 @@ func NewSessionWithOptions(opts Options) (*Session, error) {
 		envCfg.EnableSharedConfig = false
 	case SharedConfigEnable:
 		envCfg.EnableSharedConfig = true
-	}
-
-	if len(envCfg.SharedCredentialsFile) == 0 {
-		envCfg.SharedCredentialsFile = defaults.SharedCredentialsFilename()
-	}
-	if len(envCfg.SharedConfigFile) == 0 {
-		envCfg.SharedConfigFile = defaults.SharedConfigFilename()
-	}
-
-	// Only use AWS_CA_BUNDLE if session option is not provided.
-	if len(envCfg.CustomCABundle) != 0 && opts.CustomCABundle == nil {
-		f, err := os.Open(envCfg.CustomCABundle)
-		if err != nil {
-			return nil, awserr.New("LoadCustomCABundleError",
-				"failed to open custom CA bundle PEM file", err)
-		}
-		defer f.Close()
-		opts.CustomCABundle = f
 	}
 
 	return newSession(opts, envCfg, &opts.Config)
@@ -315,18 +271,13 @@ func newSession(opts Options, envCfg envConfig, cfgs ...*aws.Config) (*Session, 
 	userCfg := &aws.Config{}
 	userCfg.MergeIn(cfgs...)
 
-	// Ordered config files will be loaded in with later files overwriting
+	// Order config files will be loaded in with later files overwriting
 	// previous config file values.
-	var cfgFiles []string
-	if opts.SharedConfigFiles != nil {
-		cfgFiles = opts.SharedConfigFiles
-	} else {
-		cfgFiles = []string{envCfg.SharedConfigFile, envCfg.SharedCredentialsFile}
-		if !envCfg.EnableSharedConfig {
-			// The shared config file (~/.aws/config) is only loaded if instructed
-			// to load via the envConfig.EnableSharedConfig (AWS_SDK_LOAD_CONFIG).
-			cfgFiles = cfgFiles[1:]
-		}
+	cfgFiles := []string{envCfg.SharedConfigFile, envCfg.SharedCredentialsFile}
+	if !envCfg.EnableSharedConfig {
+		// The shared config file (~/.aws/config) is only loaded if instructed
+		// to load via the envConfig.EnableSharedConfig (AWS_SDK_LOAD_CONFIG).
+		cfgFiles = cfgFiles[1:]
 	}
 
 	// Load additional config from file(s)
@@ -346,59 +297,7 @@ func newSession(opts Options, envCfg envConfig, cfgs ...*aws.Config) (*Session, 
 
 	initHandlers(s)
 
-	// Setup HTTP client with custom cert bundle if enabled
-	if opts.CustomCABundle != nil {
-		if err := loadCustomCABundle(s, opts.CustomCABundle); err != nil {
-			return nil, err
-		}
-	}
-
 	return s, nil
-}
-
-func loadCustomCABundle(s *Session, bundle io.Reader) error {
-	var t *http.Transport
-	switch v := s.Config.HTTPClient.Transport.(type) {
-	case *http.Transport:
-		t = v
-	default:
-		if s.Config.HTTPClient.Transport != nil {
-			return awserr.New("LoadCustomCABundleError",
-				"unable to load custom CA bundle, HTTPClient's transport unsupported type", nil)
-		}
-	}
-	if t == nil {
-		t = &http.Transport{}
-	}
-
-	p, err := loadCertPool(bundle)
-	if err != nil {
-		return err
-	}
-	if t.TLSClientConfig == nil {
-		t.TLSClientConfig = &tls.Config{}
-	}
-	t.TLSClientConfig.RootCAs = p
-
-	s.Config.HTTPClient.Transport = t
-
-	return nil
-}
-
-func loadCertPool(r io.Reader) (*x509.CertPool, error) {
-	b, err := ioutil.ReadAll(r)
-	if err != nil {
-		return nil, awserr.New("LoadCustomCABundleError",
-			"failed to read custom CA bundle PEM file", err)
-	}
-
-	p := x509.NewCertPool()
-	if !p.AppendCertsFromPEM(b) {
-		return nil, awserr.New("LoadCustomCABundleError",
-			"failed to load custom CA bundle PEM file", err)
-	}
-
-	return p, nil
 }
 
 func mergeConfigSrcs(cfg, userCfg *aws.Config, envCfg envConfig, sharedCfg sharedConfig, handlers request.Handlers, sessOpts Options) error {

@@ -45,7 +45,7 @@
 // If signing a request intended for HTTP2 server, and you're using Go 1.6.2
 // through 1.7.4 you should use the URL.RawPath as the pre-escaped form of the
 // request URL. https://github.com/golang/go/issues/16847 points to a bug in
-// Go pre 1.8 that fails to make HTTP2 requests using absolute URL in the HTTP
+// Go pre 1.8 that failes to make HTTP2 requests using absolute URL in the HTTP
 // message. URL.Opaque generally will force Go to make requests with absolute URL.
 // URL.RawPath does not do this, but RawPath must be a valid escaping of Path
 // or url.EscapedPath will ignore the RawPath escaping.
@@ -55,6 +55,7 @@
 package v4
 
 import (
+	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -193,10 +194,6 @@ type Signer struct {
 	// This value should only be used for testing. If it is nil the default
 	// time.Now will be used.
 	currentTimeFn func() time.Time
-
-	// UnsignedPayload will prevent signing of the payload. This will only
-	// work for services that have support for this.
-	UnsignedPayload bool
 }
 
 // NewSigner returns a Signer pointer configured with the credentials and optional
@@ -230,7 +227,6 @@ type signingCtx struct {
 	isPresign          bool
 	formattedTime      string
 	formattedShortTime string
-	unsignedPayload    bool
 
 	bodyDigest       string
 	signedHeaders    string
@@ -321,7 +317,6 @@ func (v4 Signer) signWithBody(r *http.Request, body io.ReadSeeker, service, regi
 		ServiceName:            service,
 		Region:                 region,
 		DisableURIPathEscaping: v4.DisableURIPathEscaping,
-		unsignedPayload:        v4.UnsignedPayload,
 	}
 
 	for key := range ctx.Query {
@@ -401,7 +396,7 @@ var SignRequestHandler = request.NamedHandler{
 }
 
 // SignSDKRequest signs an AWS request with the V4 signature. This
-// request handler should only be used with the SDK's built in service client's
+// request handler is bested used only with the SDK's built in service client's
 // API operation requests.
 //
 // This function should not be used on its on its own, but in conjunction with
@@ -414,18 +409,7 @@ var SignRequestHandler = request.NamedHandler{
 func SignSDKRequest(req *request.Request) {
 	signSDKRequestWithCurrTime(req, time.Now)
 }
-
-// BuildNamedHandler will build a generic handler for signing.
-func BuildNamedHandler(name string, opts ...func(*Signer)) request.NamedHandler {
-	return request.NamedHandler{
-		Name: name,
-		Fn: func(req *request.Request) {
-			signSDKRequestWithCurrTime(req, time.Now, opts...)
-		},
-	}
-}
-
-func signSDKRequestWithCurrTime(req *request.Request, curTimeFn func() time.Time, opts ...func(*Signer)) {
+func signSDKRequestWithCurrTime(req *request.Request, curTimeFn func() time.Time) {
 	// If the request does not need to be signed ignore the signing of the
 	// request if the AnonymousCredentials object is used.
 	if req.Config.Credentials == credentials.AnonymousCredentials {
@@ -456,10 +440,6 @@ func signSDKRequestWithCurrTime(req *request.Request, curTimeFn func() time.Time
 		// on top of by the signer.
 		v4.DisableRequestBodyOverwrite = true
 	})
-
-	for _, opt := range opts {
-		opt(v4)
-	}
 
 	signingTime := req.Time
 	if !req.LastSignedAt.IsZero() {
@@ -502,8 +482,6 @@ func (ctx *signingCtx) build(disableHeaderHoisting bool) {
 	ctx.buildTime()             // no depends
 	ctx.buildCredentialString() // no depends
 
-	ctx.buildBodyDigest()
-
 	unsignedHeaders := ctx.Request.Header
 	if ctx.isPresign {
 		if !disableHeaderHoisting {
@@ -515,6 +493,7 @@ func (ctx *signingCtx) build(disableHeaderHoisting bool) {
 		}
 	}
 
+	ctx.buildBodyDigest()
 	ctx.buildCanonicalHeaders(ignoredHeaders, unsignedHeaders)
 	ctx.buildCanonicalString() // depends on canon headers / signed headers
 	ctx.buildStringToSign()    // depends on canon string
@@ -604,18 +583,14 @@ func (ctx *signingCtx) buildCanonicalHeaders(r rule, header http.Header) {
 	headerValues := make([]string, len(headers))
 	for i, k := range headers {
 		if k == "host" {
-			if ctx.Request.Host != "" {
-				headerValues[i] = "host:" + ctx.Request.Host
-			} else {
-				headerValues[i] = "host:" + ctx.Request.URL.Host
-			}
+			headerValues[i] = "host:" + ctx.Request.URL.Host
 		} else {
 			headerValues[i] = k + ":" +
 				strings.Join(ctx.SignedHeaderVals[k], ",")
 		}
 	}
-	stripExcessSpaces(headerValues)
-	ctx.canonicalHeaders = strings.Join(headerValues, "\n")
+
+	ctx.canonicalHeaders = strings.Join(stripExcessSpaces(headerValues), "\n")
 }
 
 func (ctx *signingCtx) buildCanonicalString() {
@@ -659,14 +634,14 @@ func (ctx *signingCtx) buildSignature() {
 func (ctx *signingCtx) buildBodyDigest() {
 	hash := ctx.Request.Header.Get("X-Amz-Content-Sha256")
 	if hash == "" {
-		if ctx.unsignedPayload || (ctx.isPresign && ctx.ServiceName == "s3") {
+		if ctx.isPresign && ctx.ServiceName == "s3" {
 			hash = "UNSIGNED-PAYLOAD"
 		} else if ctx.Body == nil {
 			hash = emptyStringSHA256
 		} else {
 			hash = hex.EncodeToString(makeSha256Reader(ctx.Body))
 		}
-		if ctx.unsignedPayload || ctx.ServiceName == "s3" || ctx.ServiceName == "glacier" {
+		if ctx.ServiceName == "s3" || ctx.ServiceName == "glacier" {
 			ctx.Request.Header.Set("X-Amz-Content-Sha256", hash)
 		}
 	}
@@ -717,46 +692,49 @@ func makeSha256Reader(reader io.ReadSeeker) []byte {
 	return hash.Sum(nil)
 }
 
-const doubleSpace = "  "
+const doubleSpaces = "  "
 
-// stripExcessSpaces will rewrite the passed in slice's string values to not
-// contain muliple side-by-side spaces.
-func stripExcessSpaces(vals []string) {
-	var j, k, l, m, spaces int
-	for i, str := range vals {
-		// Trim trailing spaces
-		for j = len(str) - 1; j >= 0 && str[j] == ' '; j-- {
-		}
+var doubleSpaceBytes = []byte(doubleSpaces)
 
-		// Trim leading spaces
-		for k = 0; k < j && str[k] == ' '; k++ {
-		}
-		str = str[k : j+1]
+func stripExcessSpaces(headerVals []string) []string {
+	vals := make([]string, len(headerVals))
+	for i, str := range headerVals {
+		// Trim leading and trailing spaces
+		trimmed := strings.TrimSpace(str)
 
-		// Strip multiple spaces.
-		j = strings.Index(str, doubleSpace)
-		if j < 0 {
-			vals[i] = str
-			continue
-		}
+		idx := strings.Index(trimmed, doubleSpaces)
+		var buf []byte
+		for idx > -1 {
+			// Multiple adjacent spaces found
+			if buf == nil {
+				// first time create the buffer
+				buf = []byte(trimmed)
+			}
 
-		buf := []byte(str)
-		for k, m, l = j, j, len(buf); k < l; k++ {
-			if buf[k] == ' ' {
-				if spaces == 0 {
-					// First space.
-					buf[m] = buf[k]
-					m++
+			stripToIdx := -1
+			for j := idx + 1; j < len(buf); j++ {
+				if buf[j] != ' ' {
+					buf = append(buf[:idx+1], buf[j:]...)
+					stripToIdx = j
+					break
 				}
-				spaces++
+			}
+
+			if stripToIdx >= 0 {
+				idx = bytes.Index(buf[stripToIdx:], doubleSpaceBytes)
+				if idx >= 0 {
+					idx += stripToIdx
+				}
 			} else {
-				// End of multiple spaces.
-				spaces = 0
-				buf[m] = buf[k]
-				m++
+				idx = -1
 			}
 		}
 
-		vals[i] = string(buf[:m])
+		if buf != nil {
+			vals[i] = string(buf)
+		} else {
+			vals[i] = trimmed
+		}
 	}
+	return vals
 }

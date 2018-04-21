@@ -15,6 +15,13 @@ const (
 	ConfigKey           = "key"
 	ConfigTenantName    = "tenant_name"
 	ConfigTenantAuthURL = "tenant_auth_url"
+	ConfigDomain        = "domain"
+	ConfigRegion        = "region"
+	ConfigTenantId      = "tenant_id"
+	ConfigTenantDomain  = "tenant_domain"
+	ConfigTrustId       = "trust_id"
+	ConfigStorageURL    = "storage_url"
+	ConfigAuthToken     = "auth_token"
 )
 
 // Kind is the kind of Location this package provides.
@@ -78,12 +85,25 @@ func newSwiftClient(cfg stow.Config) (*swift.Connection, error) {
 	key, _ := cfg.Config(ConfigKey)
 	tenantName, _ := cfg.Config(ConfigTenantName)
 	tenantAuthURL, _ := cfg.Config(ConfigTenantAuthURL)
+	domain, _ := cfg.Config(ConfigDomain)
+	region, _ := cfg.Config(ConfigRegion)
+	tenantId, _ := cfg.Config(ConfigTenantId)
+	tenantDomain, _ := cfg.Config(ConfigTenantDomain)
+	trustId, _ := cfg.Config(ConfigTrustId)
+	storageURL, _ := cfg.Config(ConfigStorageURL)
+	authToken, _ := cfg.Config(ConfigAuthToken)
 	client := swift.Connection{
-		UserName: username,
-		ApiKey:   key,
-		AuthUrl:  tenantAuthURL,
-		//Domain:   "domain", // Name of the domain (v3 auth only)
-		Tenant: tenantName, // Name of the tenant (v2 auth only)
+		UserName:     username,
+		ApiKey:       key,
+		AuthUrl:      tenantAuthURL,
+		Tenant:       tenantName, // Name of the tenant (v2 auth only)
+		Domain:       domain,
+		Region:       region,
+		TenantId:     tenantId,
+		TenantDomain: tenantDomain,
+		TrustId:      trustId,
+		StorageUrl:   storageURL,
+		AuthToken:    authToken,
 		// Add Default transport
 		Transport: http.DefaultTransport,
 	}
