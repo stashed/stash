@@ -18,7 +18,7 @@ section_menu_id: guides
 
 Minio is an open source object storage server compatible with Amazon S3 cloud storage service. You can deploy Minio server in docker container locally, in a kubernetes cluster, Microsoft Azure, GCP etc. You can find a guide for Minio server [here](https://docs.minio.io/). This tutorial will show you how to use [Stash](/docs/concepts/what-is-stash/overview.md) to backup a Kubernetes `Deployment` in a TLS secure [Minio](https://docs.minio.io/) Server. It will also show you how to recover this backed up data.
 
-## Prerequisites
+## Before You Begin
 
 At first, you need to have a Kubernetes cluster, and the kubectl command-line tool must be configured to communicate with your cluster. If you do not already have a cluster, you can create one by using [Minikube](https://github.com/kubernetes/minikube). Now, install `Stash` in your cluster following the steps [here](/docs/setup/install.md).
 
@@ -400,7 +400,7 @@ spec:
     prune: true
 ```
 
-If everything goes well, A `Repository` crd with name `deployment.stash-demo` will be created for the respective repository in Minio backend. Verify that, `Repository` is created successfully using this command,
+If everything goes well, a `Repository` crd with name `deployment.stash-demo` will be created for the respective repository in Minio backend. Verify that, `Repository` is created successfully using this command,
 
 ```console
 $ kubectl get repository deployment.stash-demo
