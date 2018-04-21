@@ -22,7 +22,7 @@ Guides show you how to perform tasks with Stash.
 - To restore a backup see [here](/docs/guides/restore.md).
 - To run backup in offline mode see [here](/docs/guides/offline_backup.md)
 - See the list of supported backends and how to configure them [here](/docs/guides/backends.md).
-- Learn to use Stash in Google Cloud Platform [here](/docs/guides/gcp.md)
+- Learn to use Stash in Google Kubernetes Engine [here](/docs/guides/gke.md)
 - Learn to use Stash with self-hosted TLS secured Minio Server [here](/docs/guides/minio_server.md).
 - Learn to use Stash in Rook Storage System [here](/docs/guides/rook.md)
 - See working examples for supported workload types [here](/docs/guides/workloads.md).
