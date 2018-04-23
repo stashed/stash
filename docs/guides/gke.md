@@ -164,40 +164,13 @@ deployment.stash-demo   1m
 
 `Restic` will take backup of the volume periodically with a 1-minute interval. You can verify that backup is taking successfully by,
 
-```console
-$ kubectl get repository deployment.stash-demo -o yaml
+```console 
+$ kubectl get snapshots -l repository=deployment.stash-demo
+NAME                             AGE
+deployment.stash-demo-c1014ca6   10s
 ```
 
-```yaml
-apiVersion: stash.appscode.com/v1alpha1
-kind: Repository
-metadata:
-  clusterName: ""
-  creationTimestamp: 2018-04-12T04:40:02Z
-  generation: 0
-  labels:
-    restic: gcs-restic
-    workload-kind: Deployment
-    workload-name: stash-demo
-  name: deployment.stash-demo
-  namespace: default
-  resourceVersion: "5163"
-  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/repositories/deployment.stash-demo
-  uid: 90482512-3e0b-11e8-951b-42010a80002e
-spec:
-  backend:
-    gcs:
-      bucket: stash-backup-repo
-      prefix: demo/deployment/stash-demo
-    storageSecretName: gcs-secret
-status:
-  backupCount: 2
-  firstBackupTime: 2018-04-12T04:41:03Z
-  lastBackupDuration: 4.245593432s
-  lastBackupTime: 2018-04-12T04:42:03Z
-```
-
-Look at the `status` field. `backupCount` show number of successful backup taken in this `Repository`.
+Here, `deployment.stash-demo-c1014ca6` represents the name of the successful backup [Snapshot](/docs/concepts/crds/snapshot.md) taken by Stash in `deployment.stash-demo` repository.
 
 ## Recover to GCE Persistent Disk
 Now, we will recover the backed up data into GCE persistent disk. First create a GCE disk named `stash-recovered` from [Google cloud console](https://console.cloud.google.com/compute/disks). Then create `Recovery` crd,
