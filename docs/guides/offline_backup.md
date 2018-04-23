@@ -284,41 +284,12 @@ deployment.stash-demo   1m
 `Restic` will take backup of the volume periodically with a 1-minute interval. You can verify that backup is taking successfully by,
 
 ```console 
-$ kubectl get repository deployment.stash-demo -o yaml
+$ kubectl get snapshots -l repository=deployment.stash-demo
+NAME                             AGE
+deployment.stash-demo-c1014ca6   10s
 ```
 
-```yaml
-apiVersion: stash.appscode.com/v1alpha1
-kind: Repository
-metadata:
-  clusterName: ""
-  creationTimestamp: 2017-12-04T10:06:18Z
-  generation: 0
-  labels:
-    restic: stash-demo
-    workload-kind: Deployment
-    workload-name: stash-demo
-  name: deployment.stash-demo
-  namespace: default
-  resourceVersion: "5163"
-  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/repositories/deployment.stash-demo
-  uid: 90482512-3e0b-11e8-951b-42010a80002e
-spec:
-  backend:
-    local:
-      mountPath: /safe/data
-      volumeSource:
-        hostPath:
-          path: /data/stash-test/restic-repo
-    storageSecretName: stash-demo
-status:
-  backupCount: 2
-  firstBackupTime: 2017-12-04T10:06:23Z
-  lastBackupDuration: 4.245593432s
-  lastBackupTime: 2017-12-04T10:06:23Z
-```
-
-Look at the `status` field. `backupCount` show number of successful backup taken in this `Repository`.
+Here, `deployment.stash-demo-c1014ca6` represents the name of the successful backup [Snapshot](/docs/concepts/crds/snapshot.md) taken by Stash in `deployment.stash-demo` repository.
 
 Stash operator also creates a cron job to periodically delete workload pods according to `spec.schedule`. Please note that Kubernetes cron jobs [do not support timezone](https://github.com/kubernetes/kubernetes/issues/47202).
 

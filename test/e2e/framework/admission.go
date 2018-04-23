@@ -19,7 +19,7 @@ import (
 func (f *Framework) NewTestStashOptions(kubeConfigPath string, controllerOptions *srvr.ExtraOptions) *srvr.StashOptions {
 	opt := srvr.NewStashOptions(os.Stdout, os.Stderr)
 	opt.RecommendedOptions.Authentication.RemoteKubeConfigFile = kubeConfigPath
-	opt.RecommendedOptions.Authentication.SkipInClusterLookup = true
+	//opt.RecommendedOptions.Authentication.SkipInClusterLookup = true
 	opt.RecommendedOptions.Authorization.RemoteKubeConfigFile = kubeConfigPath
 	opt.RecommendedOptions.CoreAPI.CoreAPIKubeconfigPath = kubeConfigPath
 	opt.RecommendedOptions.SecureServing.BindPort = 8443

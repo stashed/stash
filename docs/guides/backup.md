@@ -286,8 +286,17 @@ $ kubectl get repository -l workload-name=stash-demo
 NAME                    AGE
 deployment.stash-demo   3m
 ```
+`Restic` will take backup of the volume periodically with a 1-minute interval. You can verify that backup is taking successfully by,
 
-Now, wait a few minutes so that restic can take a backup of the `/source/data` folder. To confirm, check the `status.backupCount` of `deployment.stash-demo` Repository CRD.
+```console 
+$ kubectl get snapshots -l repository=deployment.stash-demo
+NAME                             AGE
+deployment.stash-demo-c1014ca6   10s
+```
+
+Here, `deployment.stash-demo-c1014ca6` represents the name of the successful backup [Snapshot](/docs/concepts/crds/snapshot.md) taken by Stash in `deployment.stash-demo` repository.
+
+ You can also check the `status.backupCount` of `deployment.stash-demo` Repository CRD to see number of successful backup taken in this repository.
 
 ```console
 $ kubectl get repository deployment.stash-demo -o yaml
@@ -322,24 +331,6 @@ status:
   firstBackupTime: 2018-03-29T08:29:10Z
   lastBackupDuration: 2.105757874s
   lastBackupTime: 2018-03-29T08:29:10Z
-```
-
-You can also exec into the `busybox` Deployment to check list of snapshots.
-
-```console
-$ kubectl get pods -l app=stash-demo
-NAME                          READY     STATUS    RESTARTS   AGE
-stash-demo-79554ff97b-wsdx2   2/2       Running   0          3m
-
-$ kubectl exec -it stash-demo-79554ff97b-wsdx2 -c stash sh
-/ # export RESTIC_REPOSITORY=/safe/data/Deployment/stash-demo
-/ # export RESTIC_PASSWORD=changeit
-/ # restic snapshots
-password is correct
-ID        Date                 Host        Tags        Directory
-----------------------------------------------------------------------
-139fa21e  2018-03-29 08:29:42  stash-demo              /source/data
-----------------------------------------------------------------------
 ```
 
 ## Disable Backup

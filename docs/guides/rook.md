@@ -165,41 +165,13 @@ deployment.stash-demo   1m
 
 `Restic` will take backup of the volume periodically with a 1-minute interval. You can verify that backup is taking successfully by,
 
-```console
-$ kubectl get repository deployment.stash-demo -o yaml
+```console 
+$ kubectl get snapshots -l repository=deployment.stash-demo
+NAME                             AGE
+deployment.stash-demo-c1014ca6   10s
 ```
 
-```yaml
-apiVersion: stash.appscode.com/v1alpha1
-kind: Repository
-metadata:
-  clusterName: ""
-  creationTimestamp: 2018-04-12T10:44:38Z
-  generation: 0
-  labels:
-    restic: rook-restic
-    workload-kind: Deployment
-    workload-name: stash-demo
-  name: deployment.stash-demo
-  namespace: default
-  resourceVersion: "3436"
-  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/repositories/deployment.stash-demo
-  uid: 7fec8b2d-3e3e-11e8-a7b6-080027672508
-spec:
-  backend:
-    s3:
-      bucket: stash-backup
-      endpoint: http://rook-ceph-rgw-my-store.rook
-      prefix: stash-backup/demo/deployment/stash-demo
-    storageSecretName: rook-restic-secret
-status:
-  backupCount: 2
-  firstBackupTime: 2018-04-12T10:45:44Z
-  lastBackupDuration: 7.766740386s
-  lastBackupTime: 2018-04-12T10:46:41Z
-```
-
-Look at the `status` field. `backupCount` show number of successful backup taken in this `Repository`.
+Here, `deployment.stash-demo-c1014ca6` represents the name of the successful backup [Snapshot](/docs/concepts/crds/snapshot.md) taken by Stash in `deployment.stash-demo` repository.
 
 ## Recover to `PersistentVolumeClaim`
 
