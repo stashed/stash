@@ -588,7 +588,7 @@ var _ = Describe("ReplicationController", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
 				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "*/5 * * * *"
+				restic.Spec.Schedule = "*/3 * * * *"
 			})
 			It(`should backup new RC`, func() {
 				By("Creating repository Secret " + cred.Name)
@@ -641,7 +641,7 @@ var _ = Describe("ReplicationController", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
 				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "*/5 * * * *"
+				restic.Spec.Schedule = "*/3 * * * *"
 			})
 			It(`should backup new Replication Controller`, func() {
 				By("Creating repository Secret " + cred.Name)

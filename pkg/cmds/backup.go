@@ -87,7 +87,7 @@ func NewCmdBackup() *cobra.Command {
 						log.Fatal(err)
 					}
 
-					if replica > 1 {
+					if replica > 1 || !util.HasOldReplicaAnnotation(kubeClient, opt.Namespace, opt.Workload) {
 						log.Infof("Skipping backup. Reason: Backup type offline and replica > 1")
 					} else {
 						log.Infoln("Running backup once")

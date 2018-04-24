@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/appscode/go/log"
 	"github.com/appscode/go/log/golog"
 	core_util "github.com/appscode/kutil/core/v1"
 	"github.com/appscode/kutil/meta"
@@ -598,4 +599,38 @@ func GetBucketAndPrefix(backend *api.Backend) (string, string, error) {
 		return backend.Swift.Container, backend.Swift.Prefix, nil
 	}
 	return "", "", errors.New("unknown backend type.")
+}
+
+func HasOldReplicaAnnotation(k8sClient *kubernetes.Clientset, namespace string, workload api.LocalTypedReference) bool {
+	var workloadAnnotation map[string]string
+
+	switch workload.Kind {
+	case api.KindDeployment:
+		obj, err := k8sClient.AppsV1beta1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
+		if err != nil {
+			log.Fatalln(err)
+		}
+		workloadAnnotation = obj.Annotations
+	case api.KindReplicationController:
+		obj, err := k8sClient.CoreV1().ReplicationControllers(namespace).Get(workload.Name, metav1.GetOptions{})
+		if err != nil {
+			log.Fatalln(err)
+		}
+		workloadAnnotation = obj.Annotations
+	case api.KindReplicaSet:
+		obj, err := k8sClient.ExtensionsV1beta1().ReplicaSets(namespace).Get(workload.Name, metav1.GetOptions{})
+		if err != nil {
+			log.Fatalln(err)
+		}
+		workloadAnnotation = obj.Annotations
+	case api.KindStatefulSet:
+		// do nothing. we didn't scale down.
+	case api.KindDaemonSet:
+		// do nothing.
+	default:
+		return false
+
+	}
+
+	return meta.HasKey(workloadAnnotation, AnnotationOldReplica)
 }
