@@ -78,3 +78,13 @@ func TryUpdateRoleBinding(c kubernetes.Interface, meta metav1.ObjectMeta, transf
 	}
 	return
 }
+
+func WaitUntillRoleBindingDeleted(kubeClient kubernetes.Interface, meta metav1.ObjectMeta) error {
+	return wait.PollImmediate(kutil.RetryInterval, kutil.GCTimeout, func() (bool, error) {
+		_, err := kubeClient.RbacV1().RoleBindings(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		if err != nil && kerr.IsNotFound(err) {
+			return true, nil
+		}
+		return false, nil
+	})
+}

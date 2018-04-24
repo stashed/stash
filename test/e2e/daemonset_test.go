@@ -542,7 +542,7 @@ var _ = Describe("DaemonSet", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
 				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "*/5 * * * *"
+				restic.Spec.Schedule = "*/3 * * * *"
 			})
 			It(`should backup new DaemonSet`, func() {
 				By("Creating repository Secret " + cred.Name)

@@ -10,11 +10,7 @@ import (
 // and should be modified only through the flag.Value interface.
 // These constants identify the log levels in order.
 const (
-	logLevelFatal   glog.Level = 0
-	logLevelError   glog.Level = 1
-	logLevelWarning glog.Level = 2
-	logLevelInfo    glog.Level = 3
-	logLevelDebug   glog.Level = 4
+	LevelDebug glog.Level = 4
 )
 
 func Fatal(args ...interface{}) {
@@ -66,19 +62,19 @@ func Infof(format string, args ...interface{}) {
 }
 
 func Debug(args ...interface{}) {
-	if glog.V(logLevelDebug) {
+	if glog.V(LevelDebug) {
 		glog.InfoDepth(1, args)
 	}
 }
 
 func Debugln(args ...interface{}) {
-	if glog.V(logLevelDebug) {
+	if glog.V(LevelDebug) {
 		glog.InfoDepth(1, args)
 	}
 }
 
 func Debugf(format string, args ...interface{}) {
-	if glog.V(logLevelDebug) {
+	if glog.V(LevelDebug) {
 		glog.InfoDepth(1, fmt.Sprintf(format, args...))
 	}
 }

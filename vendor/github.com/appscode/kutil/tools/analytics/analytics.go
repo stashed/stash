@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
+	"errors"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/appscode/go/analytics"
@@ -36,6 +38,10 @@ func ClientID() string {
 
 	if !meta.PossiblyInCluster() {
 		return analytics.ClientID()
+	}
+
+	if uid, err := tryGKE(); err == nil {
+		return uid
 	}
 
 	cfg, err := rest.InClusterConfig()
@@ -69,9 +75,6 @@ func ClientID() string {
 		if ip != nil {
 			ips = append(ips, ip)
 		}
-	}
-	if len(ips) == 0 {
-		return tryGKE()
 	}
 	sort.Slice(ips, func(i, j int) bool { return bytes.Compare(ips[i], ips[j]) < 0 })
 	hasher := md5.New()
@@ -118,35 +121,49 @@ func reasonForError(err error) string {
 	return "$k8s$err$" + trim(err.Error(), 32) // 32 = length of uuid
 }
 
+// Product file path that contains the cloud service name.
+// This is a variable instead of a const to enable testing.
+var gceProductNameFile = "/sys/class/dmi/id/product_name"
+
 // ref: https://cloud.google.com/compute/docs/storing-retrieving-metadata
-func tryGKE() string {
+func tryGKE() (string, error) {
+	// ref: https://github.com/kubernetes/kubernetes/blob/a0f94123616c275f94e7a5b680d60d6f34e92f37/pkg/credentialprovider/gcp/metadata.go#L115
+	data, err := ioutil.ReadFile(gceProductNameFile)
+	if err != nil {
+		return "", err
+	}
+	name := strings.TrimSpace(string(data))
+	if name != "Google" && name != "Google Compute Engine" {
+		return "", errors.New("not GKE")
+	}
+
 	client := &http.Client{Timeout: time.Millisecond * 100}
 	req, err := http.NewRequest(http.MethodGet, "http://metadata.google.internal/computeMetadata/v1/instance/attributes/kube-env", nil)
 	if err != nil {
-		return "$gke$err$" + trim(err.Error(), 32) // 32 = length of uuid
+		return "", err
 	}
 	req.Header.Set("Metadata-Flavor", "Google")
 	resp, err := client.Do(req)
 	if err != nil {
-		return "$gke$err$" + trim(err.Error(), 32) // 32 = length of uuid
+		return "", err
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "$gke$ReadAll(resp.Body)"
+		return "", err
 	}
-	data := make(map[string]interface{})
-	err = yaml.Unmarshal(body, &data)
+	content := make(map[string]interface{})
+	err = yaml.Unmarshal(body, &content)
 	if err != nil {
-		return "$gke$Unmarshal(body)"
+		return "", err
 	}
-	v, ok := data["KUBERNETES_MASTER_NAME"]
+	v, ok := content["KUBERNETES_MASTER_NAME"]
 	if !ok {
-		return "$gke$KUBERNETES_MASTER_NAME"
+		return "", errors.New("missing  KUBERNETES_MASTER_NAME")
 	}
 	masterIP := v.(string)
 	hashed := md5.Sum([]byte(masterIP))
-	return hex.EncodeToString(hashed[:])
+	return hex.EncodeToString(hashed[:]), nil
 }
 
 func trim(s string, length int) string {

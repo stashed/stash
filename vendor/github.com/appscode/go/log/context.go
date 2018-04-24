@@ -72,19 +72,19 @@ func (l *Logger) Infof(format string, args ...interface{}) {
 }
 
 func (l *Logger) Debug(args ...interface{}) {
-	if glog.V(logLevelDebug) {
+	if glog.V(LevelDebug) {
 		glog.InfoDepth(1, l.ctx, args)
 	}
 }
 
 func (l *Logger) Debugln(args ...interface{}) {
-	if glog.V(logLevelDebug) {
+	if glog.V(LevelDebug) {
 		glog.InfoDepth(1, l.ctx, args)
 	}
 }
 
 func (l *Logger) Debugf(format string, args ...interface{}) {
-	if glog.V(logLevelDebug) {
+	if glog.V(LevelDebug) {
 		glog.InfoDepth(1, l.ctx, fmt.Sprintf(format, args...))
 	}
 }
