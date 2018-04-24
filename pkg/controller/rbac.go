@@ -75,17 +75,17 @@ func (c *StashController) ensureSidecarClusterRole() error {
 			{
 				APIGroups: []string{apps.GroupName},
 				Resources: []string{"deployments", "statefulsets"},
-				Verbs:     []string{"get"},
+				Verbs:     []string{"get", "list", "patch"},
 			},
 			{
 				APIGroups: []string{extensions.GroupName},
 				Resources: []string{"daemonsets", "replicasets"},
-				Verbs:     []string{"get"},
+				Verbs:     []string{"get", "list", "patch"},
 			},
 			{
 				APIGroups: []string{core.GroupName},
 				Resources: []string{"replicationcontrollers", "secrets"},
-				Verbs:     []string{"get"},
+				Verbs:     []string{"get", "list", "patch"},
 			},
 			{
 				APIGroups: []string{core.GroupName},
@@ -139,6 +139,21 @@ func (c *StashController) ensureScaledownJoblRBAC(resource *core.ObjectReference
 				APIGroups: []string{core.GroupName},
 				Resources: []string{"pods"},
 				Verbs:     []string{"get", "list", "delete", "deletecollection"},
+			},
+			{
+				APIGroups: []string{apps.GroupName},
+				Resources: []string{"deployments", "statefulsets"},
+				Verbs:     []string{"get", "list", "patch"},
+			},
+			{
+				APIGroups: []string{extensions.GroupName},
+				Resources: []string{"daemonsets", "replicasets"},
+				Verbs:     []string{"get", "list", "patch"},
+			},
+			{
+				APIGroups: []string{core.GroupName},
+				Resources: []string{"replicationcontrollers"},
+				Verbs:     []string{"get", "list", "patch"},
 			},
 		}
 		return in
