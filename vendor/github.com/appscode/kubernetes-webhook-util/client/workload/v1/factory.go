@@ -12,8 +12,25 @@ import (
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	core "k8s.io/api/core/v1"
 	extensions "k8s.io/api/extensions/v1beta1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/kubernetes/pkg/api/legacyscheme"
+)
+
+type WorkloadKind string
+
+const (
+	KindPod                   WorkloadKind = "Pod"
+	KindDeployment            WorkloadKind = "Deployment"
+	KindReplicaSet            WorkloadKind = "ReplicaSet"
+	KindReplicationController WorkloadKind = "ReplicationController"
+	KindStatefulSet           WorkloadKind = "StatefulSet"
+	KindDaemonSet             WorkloadKind = "DaemonSet"
+	KindJob                   WorkloadKind = "Job"
+	KindCronJob               WorkloadKind = "CronJob"
+	KindDeploymentConfig      WorkloadKind = "DeploymentConfig"
 )
 
 func NewWorkload(t metav1.TypeMeta, o metav1.ObjectMeta, tpl core.PodTemplateSpec) *v1.Workload {
@@ -23,6 +40,45 @@ func NewWorkload(t metav1.TypeMeta, o metav1.ObjectMeta, tpl core.PodTemplateSpe
 		Spec: v1.WorkloadSpec{
 			Template: tpl,
 		},
+	}
+}
+
+func NewObjectForGVK(gvk schema.GroupVersionKind, name, ns string) (runtime.Object, error) {
+	obj, err := legacyscheme.Scheme.New(gvk)
+	if err != nil {
+		return nil, err
+	}
+	out, err := meta.Accessor(obj)
+	if err != nil {
+		return nil, err
+	}
+	out.SetName(name)
+	out.SetNamespace(ns)
+	return obj, nil
+}
+
+func NewObjectForKind(kind WorkloadKind, name, ns string) (runtime.Object, error) {
+	switch kind {
+	case KindPod:
+		return &core.Pod{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}}, nil
+	case KindReplicationController:
+		return &core.ReplicationController{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}}, nil
+	case KindDeployment:
+		return &appsv1beta1.Deployment{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}}, nil
+	case KindDaemonSet:
+		return &extensions.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}}, nil
+	case KindReplicaSet:
+		return &extensions.ReplicaSet{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}}, nil
+	case KindStatefulSet:
+		return &appsv1beta1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}}, nil
+	case KindJob:
+		return &batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}}, nil
+	case KindCronJob:
+		return &batchv1beta1.CronJob{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}}, nil
+	case KindDeploymentConfig:
+		return &ocapps.DeploymentConfig{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}}, nil
+	default:
+		return nil, fmt.Errorf("unknown kind %s", kind)
 	}
 }
 
