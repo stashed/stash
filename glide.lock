@@ -1,5 +1,5 @@
 hash: 976ca086c0c7b97350e4fa2fa618c3dd21797e1bea526864ecf61ae4064f7519
-updated: 2018-04-24T23:28:52.226400845-07:00
+updated: 2018-04-25T00:50:18.802128861-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -28,7 +28,7 @@ imports:
 - name: github.com/appscode/jsonpatch
   version: 58a38a46ddb591a543c6b1003213353e29331c5a
 - name: github.com/appscode/kubernetes-webhook-util
-  version: 74e0e73f4f2c09fa26557f2dea3338a48120b1f7
+  version: 1e50bc30506306fd91a09e9fb7bc6e2b2b0d4e8f
   subpackages:
   - admission
   - admission/v1beta1
@@ -107,6 +107,8 @@ imports:
   version: 3ac7bf7a47d159a033b107610db8a1b6575507a4
   subpackages:
   - quantile
+- name: github.com/blang/semver
+  version: b38d23b8782a487059e8fc8773e9a5b228a77cb6
 - name: github.com/cenkalti/backoff
   version: 61153c768f31ee5f130071d08fc82b85208528de
 - name: github.com/codegangsta/inject
@@ -330,12 +332,60 @@ imports:
   version: 0d921e363e951d89f583292c60d013c318df64dc
   subpackages:
   - apps/v1
+  - authorization/v1
+  - build/v1
+  - image/docker10
+  - image/dockerpre012
+  - image/v1
+  - network/v1
+  - oauth/v1
+  - pkg/serialization
+  - project/v1
+  - quota/v1
+  - route/v1
+  - security/v1
+  - template/v1
+  - user/v1
 - name: github.com/openshift/client-go
   version: 42d4abb856ce41c204a6e24342f12be5b5cd9ab8
   subpackages:
   - apps/clientset/versioned
   - apps/clientset/versioned/scheme
   - apps/clientset/versioned/typed/apps/v1
+- name: github.com/openshift/origin
+  version: 191fece9305a76f262baacc9de72c2c8cb4d5601
+  subpackages:
+  - pkg/api/apihelpers
+  - pkg/api/legacy
+  - pkg/apps/apis/apps
+  - pkg/apps/apis/apps/install
+  - pkg/apps/apis/apps/v1
+  - pkg/authorization/apis/authorization
+  - pkg/authorization/apis/authorization/internal/serviceaccount
+  - pkg/authorization/apis/authorization/v1
+  - pkg/build/apis/build
+  - pkg/build/apis/build/v1
+  - pkg/image/apis/image
+  - pkg/image/apis/image/internal/digest
+  - pkg/image/apis/image/internal/reference
+  - pkg/image/apis/image/v1
+  - pkg/network/apis/network
+  - pkg/network/apis/network/v1
+  - pkg/oauth/apis/oauth
+  - pkg/oauth/apis/oauth/v1
+  - pkg/project/apis/project
+  - pkg/project/apis/project/v1
+  - pkg/quota/apis/quota
+  - pkg/quota/apis/quota/v1
+  - pkg/route/apis/route
+  - pkg/route/apis/route/v1
+  - pkg/security/apis/security
+  - pkg/security/apis/security/v1
+  - pkg/security/securitycontextconstraints/util
+  - pkg/template/apis/template
+  - pkg/template/apis/template/v1
+  - pkg/user/apis/user
+  - pkg/user/apis/user/v1
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/peterbourgon/diskv
@@ -464,7 +514,7 @@ imports:
   - googleapi/internal/uritemplates
   - storage/v1
 - name: google.golang.org/appengine
-  version: 4f7eeb5305a4ba1966344836ba4af9996b7b4e05
+  version: 12d5545dc1cfa6047a286d5e853841b6471f4c19
   subpackages:
   - internal
   - internal/app_identity
