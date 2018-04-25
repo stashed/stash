@@ -5,7 +5,8 @@ import (
 	"github.com/appscode/kubernetes-webhook-util/admission"
 	hooks "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
 	webhook "github.com/appscode/kubernetes-webhook-util/admission/v1beta1/workload"
-	workload "github.com/appscode/kubernetes-webhook-util/workload/v1"
+	wapi "github.com/appscode/kubernetes-webhook-util/apis/workload/v1"
+	wcs "github.com/appscode/kubernetes-webhook-util/client/workload/v1"
 	ext_util "github.com/appscode/kutil/extensions/v1beta1"
 	"github.com/appscode/kutil/tools/queue"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -30,13 +31,13 @@ func (c *StashController) NewReplicaSetWebhook() hooks.AdmissionHook {
 		nil,
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
-				w := obj.(*workload.Workload)
+				w := obj.(*wapi.Workload)
 				_, _, err := c.mutateReplicaSet(w)
 				return w, err
 
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
-				w := newObj.(*workload.Workload)
+				w := newObj.(*wapi.Workload)
 				_, _, err := c.mutateReplicaSet(w)
 				return w, err
 			},
@@ -78,7 +79,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 
 		rs := obj.(*extensions.ReplicaSet).DeepCopy()
 		rs.GetObjectKind().SetGroupVersionKind(extensions.SchemeGroupVersion.WithKind(api.KindReplicaSet))
-		w, err := workload.ConvertToWorkload(rs.DeepCopy())
+		w, err := wcs.ConvertToWorkload(rs.DeepCopy())
 		if err != nil {
 			return nil
 		}
@@ -107,7 +108,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 	return nil
 }
 
-func (c *StashController) mutateReplicaSet(w *workload.Workload) (*api.Restic, bool, error) {
+func (c *StashController) mutateReplicaSet(w *wapi.Workload) (*api.Restic, bool, error) {
 	if !ext_util.IsOwnedByDeployment(w.OwnerReferences) {
 		oldRestic, err := util.GetAppliedRestic(w.Annotations)
 		if err != nil {
@@ -126,7 +127,7 @@ func (c *StashController) mutateReplicaSet(w *workload.Workload) (*api.Restic, b
 				if err != nil {
 					return nil, false, err
 				}
-				workload.ApplyWorkload(w.Object, w)
+				wcs.ApplyWorkload(w.Object, w)
 				return newRestic, true, nil
 			}
 		} else if oldRestic != nil && newRestic == nil {
@@ -134,7 +135,7 @@ func (c *StashController) mutateReplicaSet(w *workload.Workload) (*api.Restic, b
 			if err != nil {
 				return nil, false, err
 			}
-			workload.ApplyWorkload(w.Object, w)
+			wcs.ApplyWorkload(w.Object, w)
 
 			err = util.DeleteConfigmapLock(c.kubeClient, w.Namespace, api.LocalTypedReference{Kind: api.KindReplicaSet, Name: w.Name})
 			if err != nil && !kerr.IsNotFound(err) {
