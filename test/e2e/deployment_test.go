@@ -555,6 +555,28 @@ var _ = Describe("Deployment", func() {
 			})
 			It(`should delete job after recovery deleted`, func() {
 
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic")
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating Deployment " + deployment.Name)
+				_, err = f.CreateDeployment(deployment)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for sidecar")
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Waiting for Repository CRD")
+				f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
+
+				repos := f.DeploymentRepos(&deployment)
+				Expect(repos).NotTo(BeEmpty())
+
+				recovery.Spec.Repository = repos[0].Name
 				By("Creating recovery " + recovery.Name)
 				err = f.CreateRecovery(recovery)
 				Expect(err).NotTo(HaveOccurred())
@@ -634,7 +656,7 @@ var _ = Describe("Deployment", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
 				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "*/5 * * * *"
+				restic.Spec.Schedule = "*/3 * * * *"
 			})
 			It(`should backup new Deployment`, func() {
 				By("Creating repository Secret " + cred.Name)
@@ -687,7 +709,7 @@ var _ = Describe("Deployment", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
 				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "*/5 * * * *"
+				restic.Spec.Schedule = "*/3 * * * *"
 			})
 			It(`should backup new Deployment`, func() {
 				By("Creating repository Secret " + cred.Name)
