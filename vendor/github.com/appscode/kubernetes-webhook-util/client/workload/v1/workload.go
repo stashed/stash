@@ -27,6 +27,8 @@ import (
 
 var json = jsoniter.ConfigFastest
 
+type WorkloadTransformerFunc func(*v1.Workload) *v1.Workload
+
 // WorkloadsGetter has a method to return a WorkloadInterface.
 // A group's client should implement this interface.
 type WorkloadsGetter interface {
@@ -39,8 +41,9 @@ type WorkloadInterface interface {
 	Update(*v1.Workload) (*v1.Workload, error)
 	Delete(obj runtime.Object, options *metav1.DeleteOptions) error
 	Get(obj runtime.Object, options metav1.GetOptions) (*v1.Workload, error)
-	Patch(cur *v1.Workload, transform func(*v1.Workload) *v1.Workload) (*v1.Workload, kutil.VerbType, error)
+	Patch(cur *v1.Workload, transform WorkloadTransformerFunc) (*v1.Workload, kutil.VerbType, error)
 	PatchObject(cur, mod *v1.Workload) (*v1.Workload, kutil.VerbType, error)
+	CreateOrPatchWorkload(obj runtime.Object, transform WorkloadTransformerFunc) (*v1.Workload, kutil.VerbType, error)
 }
 
 // workloads implements WorkloadInterface
@@ -279,7 +282,7 @@ func (c *workloads) Get(obj runtime.Object, options metav1.GetOptions) (*v1.Work
 	return ConvertToWorkload(out)
 }
 
-func (c *workloads) Patch(cur *v1.Workload, transform func(*v1.Workload) *v1.Workload) (*v1.Workload, kutil.VerbType, error) {
+func (c *workloads) Patch(cur *v1.Workload, transform WorkloadTransformerFunc) (*v1.Workload, kutil.VerbType, error) {
 	return c.PatchObject(cur, transform(cur.DeepCopy()))
 }
 
@@ -358,7 +361,7 @@ func (c *workloads) PatchObject(cur, mod *v1.Workload) (*v1.Workload, kutil.Verb
 	return result, kutil.VerbPatched, err
 }
 
-func (c *workloads) CreateOrPatchWorkload(obj runtime.Object, transform func(*v1.Workload) *v1.Workload) (*v1.Workload, kutil.VerbType, error) {
+func (c *workloads) CreateOrPatchWorkload(obj runtime.Object, transform WorkloadTransformerFunc) (*v1.Workload, kutil.VerbType, error) {
 	cur, err := c.Get(obj, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		name, err := meta.NewAccessor().Name(obj)
