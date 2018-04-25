@@ -5,7 +5,7 @@ import (
 	"time"
 
 	stringz "github.com/appscode/go/strings"
-	workload "github.com/appscode/kubernetes-webhook-util/workload/v1"
+	wapi "github.com/appscode/kubernetes-webhook-util/apis/workload/v1"
 	core_util "github.com/appscode/kutil/core/v1"
 	"github.com/appscode/kutil/meta"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -20,7 +20,7 @@ import (
 	"k8s.io/client-go/tools/reference"
 )
 
-func (c *StashController) ensureWorkloadSidecar(w *workload.Workload, oldRestic, newRestic *api.Restic) error {
+func (c *StashController) ensureWorkloadSidecar(w *wapi.Workload, oldRestic, newRestic *api.Restic) error {
 	if c.EnableRBAC {
 		sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
 		ref, err := reference.GetReference(scheme.Scheme, w)
@@ -102,7 +102,7 @@ func (c *StashController) ensureWorkloadSidecar(w *workload.Workload, oldRestic,
 	return nil
 }
 
-func (c *StashController) ensureWorkloadSidecarDeleted(w *workload.Workload, restic *api.Restic) error {
+func (c *StashController) ensureWorkloadSidecarDeleted(w *wapi.Workload, restic *api.Restic) error {
 	if c.EnableRBAC {
 		err := c.ensureSidecarRoleBindingDeleted(w.ObjectMeta)
 		if err != nil {
@@ -134,7 +134,7 @@ func (c *StashController) ensureWorkloadSidecarDeleted(w *workload.Workload, res
 	return nil
 }
 
-func (c *StashController) forceRestartPods(w *workload.Workload, restic *api.Restic) error {
+func (c *StashController) forceRestartPods(w *wapi.Workload, restic *api.Restic) error {
 	var sidecarAdded bool
 	if w.Annotations != nil {
 		_, sidecarAdded = w.Annotations[api.LastAppliedConfiguration]

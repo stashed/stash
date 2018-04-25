@@ -5,7 +5,8 @@ import (
 	"github.com/appscode/kubernetes-webhook-util/admission"
 	hooks "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
 	webhook "github.com/appscode/kubernetes-webhook-util/admission/v1beta1/workload"
-	workload "github.com/appscode/kubernetes-webhook-util/workload/v1"
+	wapi "github.com/appscode/kubernetes-webhook-util/apis/workload/v1"
+	wcs "github.com/appscode/kubernetes-webhook-util/client/workload/v1"
 	core_util "github.com/appscode/kutil/core/v1"
 	"github.com/appscode/kutil/tools/queue"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -30,13 +31,13 @@ func (c *StashController) NewReplicationControllerWebhook() hooks.AdmissionHook 
 		nil,
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
-				w := obj.(*workload.Workload)
+				w := obj.(*wapi.Workload)
 				_, _, err := c.mutateReplicationController(w)
 				return w, err
 
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
-				w := newObj.(*workload.Workload)
+				w := newObj.(*wapi.Workload)
 				_, _, err := c.mutateReplicationController(w)
 				return w, err
 			},
@@ -79,7 +80,7 @@ func (c *StashController) runRCInjector(key string) error {
 		rc := obj.(*core.ReplicationController).DeepCopy()
 		rc.GetObjectKind().SetGroupVersionKind(core.SchemeGroupVersion.WithKind(api.KindReplicationController))
 
-		w, err := workload.ConvertToWorkload(rc.DeepCopy())
+		w, err := wcs.ConvertToWorkload(rc.DeepCopy())
 		if err != nil {
 			return nil
 		}
@@ -106,7 +107,7 @@ func (c *StashController) runRCInjector(key string) error {
 	return nil
 }
 
-func (c *StashController) mutateReplicationController(w *workload.Workload) (*api.Restic, bool, error) {
+func (c *StashController) mutateReplicationController(w *wapi.Workload) (*api.Restic, bool, error) {
 	oldRestic, err := util.GetAppliedRestic(w.Annotations)
 	if err != nil {
 		return nil, false, err
@@ -123,7 +124,7 @@ func (c *StashController) mutateReplicationController(w *workload.Workload) (*ap
 			if err != nil {
 				return nil, false, err
 			}
-			workload.ApplyWorkload(w.Object, w)
+			wcs.ApplyWorkload(w.Object, w)
 
 			return newRestic, true, nil
 		}
@@ -132,7 +133,7 @@ func (c *StashController) mutateReplicationController(w *workload.Workload) (*ap
 		if err != nil {
 			return nil, false, err
 		}
-		workload.ApplyWorkload(w.Object, w)
+		wcs.ApplyWorkload(w.Object, w)
 
 		err = util.DeleteConfigmapLock(c.kubeClient, w.Namespace, api.LocalTypedReference{Kind: api.KindReplicationController, Name: w.Name})
 		if err != nil && !kerr.IsNotFound(err) {

@@ -7,7 +7,8 @@ import (
 	jp "github.com/appscode/jsonpatch"
 	"github.com/appscode/kubernetes-webhook-util/admission"
 	api "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
-	workload "github.com/appscode/kubernetes-webhook-util/workload/v1"
+	"github.com/appscode/kubernetes-webhook-util/apis/workload/v1"
+	cs "github.com/appscode/kubernetes-webhook-util/client/workload/v1"
 	"github.com/appscode/kutil/meta"
 	"github.com/json-iterator/go"
 	"k8s.io/api/admission/v1beta1"
@@ -117,7 +118,7 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 		}
 		legacyscheme.Scheme.Default(obj)
 		obj.GetObjectKind().SetGroupVersionKind(*kind)
-		w, err := workload.ConvertToWorkload(obj)
+		w, err := cs.ConvertToWorkload(obj)
 		if err != nil {
 			return api.StatusBadRequest(err)
 		}
@@ -126,8 +127,8 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 		if err != nil {
 			return api.StatusForbidden(err)
 		} else if mod != nil {
-			if w := mod.(*workload.Workload); w.Object == nil {
-				err = workload.ApplyWorkload(obj, w)
+			if w := mod.(*v1.Workload); w.Object == nil {
+				err = cs.ApplyWorkload(obj, w)
 				if err != nil {
 					return api.StatusForbidden(err)
 				}
@@ -160,7 +161,7 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 		}
 		legacyscheme.Scheme.Default(obj)
 		obj.GetObjectKind().SetGroupVersionKind(*kind)
-		w, err := workload.ConvertToWorkload(obj)
+		w, err := cs.ConvertToWorkload(obj)
 		if err != nil {
 			return api.StatusBadRequest(err)
 		}
@@ -171,7 +172,7 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 		}
 		oldObj.GetObjectKind().SetGroupVersionKind(*kind)
 		legacyscheme.Scheme.Default(oldObj)
-		ow, err := workload.ConvertToWorkload(oldObj)
+		ow, err := cs.ConvertToWorkload(oldObj)
 		if err != nil {
 			return api.StatusBadRequest(err)
 		}
@@ -180,8 +181,8 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 		if err != nil {
 			return api.StatusForbidden(err)
 		} else if mod != nil {
-			if w := mod.(*workload.Workload); w.Object == nil {
-				err = workload.ApplyWorkload(obj, w)
+			if w := mod.(*v1.Workload); w.Object == nil {
+				err = cs.ApplyWorkload(obj, w)
 				if err != nil {
 					return api.StatusForbidden(err)
 				}

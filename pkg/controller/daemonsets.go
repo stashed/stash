@@ -5,7 +5,8 @@ import (
 	"github.com/appscode/kubernetes-webhook-util/admission"
 	hooks "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
 	webhook "github.com/appscode/kubernetes-webhook-util/admission/v1beta1/workload"
-	workload "github.com/appscode/kubernetes-webhook-util/workload/v1"
+	wapi "github.com/appscode/kubernetes-webhook-util/apis/workload/v1"
+	wcs "github.com/appscode/kubernetes-webhook-util/client/workload/v1"
 	ext_util "github.com/appscode/kutil/extensions/v1beta1"
 	"github.com/appscode/kutil/tools/queue"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -31,12 +32,12 @@ func (c *StashController) NewDaemonSetWebhook() hooks.AdmissionHook {
 		nil,
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
-				w := obj.(*workload.Workload)
+				w := obj.(*wapi.Workload)
 				_, _, err := c.mutateDaemonSet(w)
 				return w, err
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
-				w := newObj.(*workload.Workload)
+				w := newObj.(*wapi.Workload)
 				_, _, err := c.mutateDaemonSet(w)
 				return w, err
 			},
@@ -70,7 +71,7 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 		ds := obj.(*extensions.DaemonSet).DeepCopy()
 		ds.GetObjectKind().SetGroupVersionKind(extensions.SchemeGroupVersion.WithKind(api.KindDaemonSet))
 
-		w, err := workload.ConvertToWorkload(ds.DeepCopy())
+		w, err := wcs.ConvertToWorkload(ds.DeepCopy())
 		if err != nil {
 			return nil
 		}
@@ -89,7 +90,7 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 	return nil
 }
 
-func (c *StashController) mutateDaemonSet(w *workload.Workload) (*api.Restic, bool, error) {
+func (c *StashController) mutateDaemonSet(w *wapi.Workload) (*api.Restic, bool, error) {
 	oldRestic, err := util.GetAppliedRestic(w.Annotations)
 	if err != nil {
 		return nil, false, err
@@ -107,7 +108,7 @@ func (c *StashController) mutateDaemonSet(w *workload.Workload) (*api.Restic, bo
 			if err != nil {
 				return nil, false, err
 			}
-			workload.ApplyWorkload(w.Object, w)
+			wcs.ApplyWorkload(w.Object, w)
 			switch t := w.Object.(type) {
 			case *extensions.DaemonSet:
 				t.Spec.UpdateStrategy.Type = extensions.RollingUpdateDaemonSetStrategyType
@@ -148,7 +149,7 @@ func (c *StashController) mutateDaemonSet(w *workload.Workload) (*api.Restic, bo
 		if err != nil {
 			return nil, false, err
 		}
-		workload.ApplyWorkload(w.Object, w)
+		wcs.ApplyWorkload(w.Object, w)
 		return oldRestic, true, nil
 	}
 	return oldRestic, false, nil

@@ -5,7 +5,8 @@ import (
 	"github.com/appscode/kubernetes-webhook-util/admission"
 	hooks "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
 	webhook "github.com/appscode/kubernetes-webhook-util/admission/v1beta1/workload"
-	workload "github.com/appscode/kubernetes-webhook-util/workload/v1"
+	wapi "github.com/appscode/kubernetes-webhook-util/apis/workload/v1"
+	wcs "github.com/appscode/kubernetes-webhook-util/client/workload/v1"
 	apps_util "github.com/appscode/kutil/apps/v1beta1"
 	"github.com/appscode/kutil/tools/queue"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -30,13 +31,13 @@ func (c *StashController) NewDeploymentWebhook() hooks.AdmissionHook {
 		nil,
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
-				w := obj.(*workload.Workload)
+				w := obj.(*wapi.Workload)
 				_, _, err := c.mutateDeployment(w)
 				return w, err
 
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
-				w := newObj.(*workload.Workload)
+				w := newObj.(*wapi.Workload)
 				_, _, err := c.mutateDeployment(w)
 				return w, err
 			},
@@ -79,7 +80,7 @@ func (c *StashController) runDeploymentInjector(key string) error {
 		dp := obj.(*appsv1beta1.Deployment).DeepCopy()
 		dp.GetObjectKind().SetGroupVersionKind(appsv1beta1.SchemeGroupVersion.WithKind(api.KindDeployment))
 
-		w, err := workload.ConvertToWorkload(dp.DeepCopy())
+		w, err := wcs.ConvertToWorkload(dp.DeepCopy())
 		if err != nil {
 			return nil
 		}
@@ -99,7 +100,7 @@ func (c *StashController) runDeploymentInjector(key string) error {
 	return nil
 }
 
-func (c *StashController) mutateDeployment(w *workload.Workload) (*api.Restic, bool, error) {
+func (c *StashController) mutateDeployment(w *wapi.Workload) (*api.Restic, bool, error) {
 	oldRestic, err := util.GetAppliedRestic(w.Annotations)
 	if err != nil {
 		return nil, false, err
@@ -117,7 +118,7 @@ func (c *StashController) mutateDeployment(w *workload.Workload) (*api.Restic, b
 			if err != nil {
 				return nil, false, err
 			}
-			workload.ApplyWorkload(w.Object, w)
+			wcs.ApplyWorkload(w.Object, w)
 			return newRestic, true, nil
 		}
 	} else if oldRestic != nil && newRestic == nil {
@@ -125,7 +126,7 @@ func (c *StashController) mutateDeployment(w *workload.Workload) (*api.Restic, b
 		if err != nil {
 			return nil, false, err
 		}
-		workload.ApplyWorkload(w.Object, w)
+		wcs.ApplyWorkload(w.Object, w)
 		err = util.DeleteConfigmapLock(c.kubeClient, w.Namespace, api.LocalTypedReference{Kind: api.KindDeployment, Name: w.Name})
 		if err != nil && !kerr.IsNotFound(err) {
 			return nil, false, err

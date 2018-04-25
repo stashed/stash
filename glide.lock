@@ -1,5 +1,5 @@
 hash: 976ca086c0c7b97350e4fa2fa618c3dd21797e1bea526864ecf61ae4064f7519
-updated: 2018-04-24T10:00:30.810615742+06:00
+updated: 2018-04-24T21:44:34.892742276-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -26,19 +26,20 @@ imports:
   - types
   - version
 - name: github.com/appscode/jsonpatch
-  version: 1359b374de83fa14fd58ab10aa8ea4935f84d249
+  version: 58a38a46ddb591a543c6b1003213353e29331c5a
 - name: github.com/appscode/kubernetes-webhook-util
-  version: ddc919f31cdf677c9ca8a4697cc5163694d5e1a3
+  version: 2ffc62818750e25957fae95b38838332f7d1cbbf
   subpackages:
   - admission
   - admission/v1beta1
   - admission/v1beta1/generic
   - admission/v1beta1/workload
+  - apis/workload/v1
+  - client/workload/v1
   - registry/admissionreview/v1beta1
   - runtime/serializer/versioning
-  - workload/v1
 - name: github.com/appscode/kutil
-  version: 79e0b55a4f51d46d9d9837dac442623bd1c9ae27
+  version: dae5ee61fe5885d26902c35ec195b2bd9b9d14c8
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
@@ -185,7 +186,7 @@ imports:
   - proto
   - sortkeys
 - name: github.com/golang/glog
-  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
+  version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/groupcache
   version: 02826c3e79038b59d737d3b1c0a1d937f71a4433
   subpackages:
@@ -229,7 +230,7 @@ imports:
   - openstack/utils
   - pagination
 - name: github.com/graymeta/stow
-  version: fc45e0eadc4cb7bd449dfe5c953ca191268e46f1
+  version: 1df3851b8fc06f775b3daed2f19442b3c5b26a37
   repo: https://github.com/appscode/stow.git
   vcs: git
   subpackages:
@@ -326,9 +327,15 @@ imports:
 - name: github.com/opencontainers/go-digest
   version: a6d0ee40d4207ea02364bd3b9e8e77b9159ba1eb
 - name: github.com/openshift/api
-  version: 80a1e2bf16952088360b492c175703755deea8d2
+  version: 0d921e363e951d89f583292c60d013c318df64dc
   subpackages:
   - apps/v1
+- name: github.com/openshift/client-go
+  version: 42d4abb856ce41c204a6e24342f12be5b5cd9ab8
+  subpackages:
+  - apps/clientset/versioned
+  - apps/clientset/versioned/scheme
+  - apps/clientset/versioned/typed/apps/v1
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/peterbourgon/diskv
@@ -364,8 +371,7 @@ imports:
 - name: github.com/satori/uuid
   version: 5bf94b69c6b68ee1b541973bb8e1144db23a194b
 - name: github.com/sergi/go-diff
-  version: 24e2351369ec4949b2ed0dc5c477afdd4c4034e8
-  repo: https://github.com/sergi/go-diff
+  version: 97b2266dfe4bd4ea1b81a463322f04f8b724801e
   subpackages:
   - diffmatchpatch
 - name: github.com/shurcooL/sanitized_anchor_name
@@ -377,11 +383,11 @@ imports:
   subpackages:
   - mem
 - name: github.com/spf13/cobra
-  version: 7ee208b09f12c42bb7f5b0e14cd071706ee17993
+  version: 0ab5b6bcfcde193577634059f6f211c850a456ec
   subpackages:
   - doc
 - name: github.com/spf13/pflag
-  version: 7c9362bf02e40f7ee00c71b08b9b97dcae55b0c2
+  version: 053854db78bf52e52733c395a5315647ad1e110e
   repo: https://github.com/appscode/pflag.git
   vcs: git
 - name: github.com/ugorji/go
@@ -389,12 +395,11 @@ imports:
   subpackages:
   - codec
 - name: github.com/yudai/gojsondiff
-  version: e21612694bdd50975f93cd5eaccb457477128e28
+  version: 7b1b7adf999dab73a6eb02669c3d82dbb27a3dd6
   subpackages:
   - formatter
 - name: github.com/yudai/golcs
   version: d1c525dea8ce39ea9a783d33cf08932305373f2c
-  repo: https://github.com/yudai/golcs
 - name: golang.org/x/crypto
   version: 81e90905daefcd6fd217b62423c0908922eadb30
   subpackages:
@@ -459,7 +464,7 @@ imports:
   - googleapi/internal/uritemplates
   - storage/v1
 - name: google.golang.org/appengine
-  version: 0a24098c0ec68416ec050f567f75df563d6b231e
+  version: 4f7eeb5305a4ba1966344836ba4af9996b7b4e05
   subpackages:
   - internal
   - internal/app_identity
@@ -854,14 +859,12 @@ imports:
   - util/jsonpath
   - util/workqueue
 - name: k8s.io/kube-aggregator
-  version: 17b8138a9188fa4d1a2665fb7785ba39e3f00c91
+  version: 23f9f59d663ea22b680310831a1b7297914b4ed3
   subpackages:
   - pkg/apis/apiregistration
-  - pkg/apis/apiregistration/v1
   - pkg/apis/apiregistration/v1beta1
   - pkg/client/clientset_generated/clientset
   - pkg/client/clientset_generated/clientset/scheme
-  - pkg/client/clientset_generated/clientset/typed/apiregistration/v1
   - pkg/client/clientset_generated/clientset/typed/apiregistration/v1beta1
 - name: k8s.io/kube-openapi
   version: 39a7bf85c140f972372c2a0d1ee40adbf0c8bfe1
