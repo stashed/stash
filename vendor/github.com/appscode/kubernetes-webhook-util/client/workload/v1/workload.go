@@ -43,7 +43,7 @@ type WorkloadInterface interface {
 	Get(obj runtime.Object, options metav1.GetOptions) (*v1.Workload, error)
 	Patch(cur *v1.Workload, transform WorkloadTransformerFunc) (*v1.Workload, kutil.VerbType, error)
 	PatchObject(cur, mod *v1.Workload) (*v1.Workload, kutil.VerbType, error)
-	CreateOrPatchWorkload(obj runtime.Object, transform WorkloadTransformerFunc) (*v1.Workload, kutil.VerbType, error)
+	CreateOrPatch(obj runtime.Object, transform WorkloadTransformerFunc) (*v1.Workload, kutil.VerbType, error)
 }
 
 // workloads implements WorkloadInterface
@@ -361,7 +361,7 @@ func (c *workloads) PatchObject(cur, mod *v1.Workload) (*v1.Workload, kutil.Verb
 	return result, kutil.VerbPatched, err
 }
 
-func (c *workloads) CreateOrPatchWorkload(obj runtime.Object, transform WorkloadTransformerFunc) (*v1.Workload, kutil.VerbType, error) {
+func (c *workloads) CreateOrPatch(obj runtime.Object, transform WorkloadTransformerFunc) (*v1.Workload, kutil.VerbType, error) {
 	cur, err := c.Get(obj, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		name, err := meta.NewAccessor().Name(obj)
