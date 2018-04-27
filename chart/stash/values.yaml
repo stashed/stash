@@ -46,8 +46,10 @@ apiserver:
   # https://github.com/kubernetes/kube-aggregator/blob/release-1.9/pkg/apis/apiregistration/v1beta1/types.go#L66-L70
   # for more information on proper values of this field
   versionPriority: 15
-  # enableAdmissionWebhook is used to configure apiserver as ValidationWebhook for Voyager CRDs
-  enableAdmissionWebhook: false
+  # enableMutatingWebhook is used to configure mutating webhook for Kubernetes workloads
+  enableMutatingWebhook: false
+  # enableValidatingWebhook is used to configure validating webhook for Stash CRDss
+  enableValidatingWebhook: false
   # CA certificate used by main Kubernetes api server
   ca:
 

@@ -54,6 +54,7 @@ export STASH_ENABLE_VALIDATING_WEBHOOK=false
 export STASH_ENABLE_MUTATING_WEBHOOK=false
 export STASH_DOCKER_REGISTRY=appscode
 export STASH_IMAGE_PULL_SECRET=
+export STASH_IMAGE_PULL_POLICY=IfNotPresent
 export STASH_ENABLE_ANALYTICS=true
 export STASH_UNINSTALL=0
 export STASH_PURGE=0
@@ -62,6 +63,7 @@ export APPSCODE_ENV=${APPSCODE_ENV:-prod}
 export SCRIPT_LOCATION="curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.3/"
 if [ "$APPSCODE_ENV" = "dev" ]; then
     export SCRIPT_LOCATION="cat "
+    export STASH_IMAGE_PULL_POLICY=Always
 fi
 
 KUBE_APISERVER_VERSION=$(kubectl version -o=json | $ONESSL jsonpath '{.serverVersion.gitVersion}')
