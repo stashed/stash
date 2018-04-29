@@ -23,25 +23,40 @@ aliases:
 
 **Fixed bugs:**
 
+- Restic sidecar not properly working because of image tag error [\#443](https://github.com/appscode/stash/issues/443)
 - Permit stash operator to perform pods/exec [\#433](https://github.com/appscode/stash/pull/433) ([tamalsaha](https://github.com/tamalsaha))
 - Add missing batch jobs get RBAC permission [\#419](https://github.com/appscode/stash/pull/419) ([galexrt](https://github.com/galexrt))
 
 **Closed issues:**
 
+- Fix docs for StatefulSet [\#444](https://github.com/appscode/stash/issues/444)
+- Support Repository deletion [\#416](https://github.com/appscode/stash/issues/416)
+- Docs TODO [\#414](https://github.com/appscode/stash/issues/414)
 - Show repository snapshot list [\#319](https://github.com/appscode/stash/issues/319)
 - Recover specific snapshot ID [\#215](https://github.com/appscode/stash/issues/215)
 
 **Merged pull requests:**
 
+- Various installer fixes [\#454](https://github.com/appscode/stash/pull/454) ([tamalsaha](https://github.com/tamalsaha))
+- Update workload client [\#453](https://github.com/appscode/stash/pull/453) ([tamalsaha](https://github.com/tamalsaha))
+- Update workload client [\#452](https://github.com/appscode/stash/pull/452) ([tamalsaha](https://github.com/tamalsaha))
+- Revendor workload client [\#451](https://github.com/appscode/stash/pull/451) ([tamalsaha](https://github.com/tamalsaha))
+- Update workload api [\#450](https://github.com/appscode/stash/pull/450) ([tamalsaha](https://github.com/tamalsaha))
+- Fixes RBAC permission for scaledownCronJob [\#449](https://github.com/appscode/stash/pull/449) ([emruz-hossain](https://github.com/emruz-hossain))
+- Used Snapshot  to verify successful backup [\#447](https://github.com/appscode/stash/pull/447) ([emruz-hossain](https://github.com/emruz-hossain))
+- Some cleanup [\#446](https://github.com/appscode/stash/pull/446) ([tamalsaha](https://github.com/tamalsaha))
 - Update StatefulSet doc [\#445](https://github.com/appscode/stash/pull/445) ([emruz-hossain](https://github.com/emruz-hossain))
 - pkg/util: fix error found by vet [\#442](https://github.com/appscode/stash/pull/442) ([functionary](https://github.com/functionary))
 - Move Stash swagger.json to top level folder [\#441](https://github.com/appscode/stash/pull/441) ([tamalsaha](https://github.com/tamalsaha))
 - Fix go\_vet error [\#440](https://github.com/appscode/stash/pull/440) ([emruz-hossain](https://github.com/emruz-hossain))
+- Delete restic repository from backend if Repository CRD is deleted [\#438](https://github.com/appscode/stash/pull/438) ([emruz-hossain](https://github.com/emruz-hossain))
 - Recover specific snapshot [\#437](https://github.com/appscode/stash/pull/437) ([emruz-hossain](https://github.com/emruz-hossain))
 - Use Repository data in Recovery CRD [\#436](https://github.com/appscode/stash/pull/436) ([emruz-hossain](https://github.com/emruz-hossain))
 - Increase qps and burst limits [\#435](https://github.com/appscode/stash/pull/435) ([tamalsaha](https://github.com/tamalsaha))
 - Add RBAC instructions for GKE cluster [\#432](https://github.com/appscode/stash/pull/432) ([tamalsaha](https://github.com/tamalsaha))
 - Update charts location [\#431](https://github.com/appscode/stash/pull/431) ([tamalsaha](https://github.com/tamalsaha))
+- Add docs for GKE and Rook [\#430](https://github.com/appscode/stash/pull/430) ([emruz-hossain](https://github.com/emruz-hossain))
+- concourse configs [\#429](https://github.com/appscode/stash/pull/429) ([tahsinrahman](https://github.com/tahsinrahman))
 - Skip lock while listing snapshots [\#428](https://github.com/appscode/stash/pull/428) ([emruz-hossain](https://github.com/emruz-hossain))
 - Purge repository objects in installer [\#427](https://github.com/appscode/stash/pull/427) ([tamalsaha](https://github.com/tamalsaha))
 - Support installing from local installer scripts [\#426](https://github.com/appscode/stash/pull/426) ([tamalsaha](https://github.com/tamalsaha))
