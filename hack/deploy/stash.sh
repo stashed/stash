@@ -268,8 +268,10 @@ echo "checking whether extended apiserver feature is enabled"
 $ONESSL has-keys configmap --namespace=kube-system --keys=requestheader-client-ca-file extension-apiserver-authentication || { echo "Set --requestheader-client-ca-file flag on Kubernetes apiserver"; exit 1; }
 echo ""
 
+export KUBE_CA=
 if [ "$STASH_ENABLE_VALIDATING_WEBHOOK" = true ] || [ "$STASH_ENABLE_MUTATING_WEBHOOK" = true ]; then
     $ONESSL get kube-ca >/dev/null 2>&1 || { echo "Admission webhooks can't be used when kube apiserver is accesible without verifying its TLS certificate (insecure-skip-tls-verify : true)."; echo; exit 1; }
+    export KUBE_CA=$($ONESSL get kube-ca | $ONESSL base64)
 fi
 
 env | sort | grep STASH*
@@ -283,7 +285,6 @@ $ONESSL create server-cert server --domains=stash-operator.$STASH_NAMESPACE.svc
 export SERVICE_SERVING_CERT_CA=$(cat ca.crt | $ONESSL base64)
 export TLS_SERVING_CERT=$(cat server.crt | $ONESSL base64)
 export TLS_SERVING_KEY=$(cat server.key | $ONESSL base64)
-export KUBE_CA=$($ONESSL get kube-ca | $ONESSL base64)
 
 ${SCRIPT_LOCATION}hack/deploy/operator.yaml | $ONESSL envsubst | kubectl apply -f -
 
