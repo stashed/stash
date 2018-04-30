@@ -35,7 +35,7 @@ import subprocess
 import sys
 from os.path import expandvars, join, dirname
 
-libbuild.REPO_ROOT = expandvars('$GOPATH') + '/src/github.com/appscode/stash'
+libbuild.REPO_ROOT = libbuild.GOPATH + '/src/github.com/appscode/stash'
 BUILD_METADATA = libbuild.metadata(libbuild.REPO_ROOT)
 libbuild.BIN_MATRIX = {
     'stash': {

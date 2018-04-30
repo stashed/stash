@@ -13,6 +13,46 @@ function cleanup {
 }
 trap cleanup EXIT
 
+# ref: https://github.com/appscodelabs/libbuild/blob/master/common/lib.sh#L55
+inside_git_repo() {
+    git rev-parse --is-inside-work-tree > /dev/null 2>&1
+    inside_git=$?
+    if [ "$inside_git" -ne 0 ]; then
+        echo "Not inside a git repository"
+        exit 1
+    fi
+}
+
+detect_tag() {
+    inside_git_repo
+
+    # http://stackoverflow.com/a/1404862/3476121
+    git_tag=$(git describe --exact-match --abbrev=0 2>/dev/null || echo '')
+
+    commit_hash=$(git rev-parse --verify HEAD)
+    git_branch=$(git rev-parse --abbrev-ref HEAD)
+    commit_timestamp=$(git show -s --format=%ct)
+
+    if [ "$git_tag" != '' ]; then
+        TAG=$git_tag
+        TAG_STRATEGY='git_tag'
+    elif [ "$git_branch" != 'master' ] && [ "$git_branch" != 'HEAD' ] && [[ "$git_branch" != release-* ]]; then
+        TAG=$git_branch
+        TAG_STRATEGY='git_branch'
+    else
+        hash_ver=$(git describe --tags --always --dirty)
+        TAG="${hash_ver}"
+        TAG_STRATEGY='commit_hash'
+    fi
+
+    export TAG
+    export TAG_STRATEGY
+    export git_tag
+    export git_branch
+    export commit_hash
+    export commit_timestamp
+}
+
 # https://stackoverflow.com/a/677212/244009
 if [ -x "$(command -v onessl)" ]; then
     export ONESSL=onessl
@@ -20,19 +60,19 @@ else
     # ref: https://stackoverflow.com/a/27776822/244009
     case "$(uname -s)" in
         Darwin)
-            curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.1.0/onessl-darwin-amd64
+            curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.3.0/onessl-darwin-amd64
             chmod +x onessl
             export ONESSL=./onessl
             ;;
 
         Linux)
-            curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.1.0/onessl-linux-amd64
+            curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.3.0/onessl-linux-amd64
             chmod +x onessl
             export ONESSL=./onessl
             ;;
 
         CYGWIN*|MINGW32*|MSYS*)
-            curl -fsSL -o onessl.exe https://github.com/kubepack/onessl/releases/download/0.1.0/onessl-windows-amd64.exe
+            curl -fsSL -o onessl.exe https://github.com/kubepack/onessl/releases/download/0.3.0/onessl-windows-amd64.exe
             chmod +x onessl.exe
             export ONESSL=./onessl.exe
             ;;
@@ -53,6 +93,7 @@ export STASH_RUN_ON_MASTER=0
 export STASH_ENABLE_VALIDATING_WEBHOOK=false
 export STASH_ENABLE_MUTATING_WEBHOOK=false
 export STASH_DOCKER_REGISTRY=appscode
+export STASH_IMAGE_TAG=0.7.0-rc.3
 export STASH_IMAGE_PULL_SECRET=
 export STASH_IMAGE_PULL_POLICY=IfNotPresent
 export STASH_ENABLE_ANALYTICS=true
@@ -62,7 +103,9 @@ export STASH_PURGE=0
 export APPSCODE_ENV=${APPSCODE_ENV:-prod}
 export SCRIPT_LOCATION="curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0-rc.3/"
 if [ "$APPSCODE_ENV" = "dev" ]; then
+    detect_tag
     export SCRIPT_LOCATION="cat "
+    export STASH_IMAGE_TAG=$TAG
     export STASH_IMAGE_PULL_POLICY=Always
 fi
 
@@ -225,6 +268,10 @@ echo "checking whether extended apiserver feature is enabled"
 $ONESSL has-keys configmap --namespace=kube-system --keys=requestheader-client-ca-file extension-apiserver-authentication || { echo "Set --requestheader-client-ca-file flag on Kubernetes apiserver"; exit 1; }
 echo ""
 
+if [ "$STASH_ENABLE_VALIDATING_WEBHOOK" = true ] || [ "$STASH_ENABLE_MUTATING_WEBHOOK" = true ]; then
+    $ONESSL get kube-ca >/dev/null 2>&1 || { echo "Admission webhooks can't be used when kube apiserver is accesible without verifying its TLS certificate (insecure-skip-tls-verify : true)."; echo; exit 1; }
+fi
+
 env | sort | grep STASH*
 echo ""
 
@@ -274,4 +321,4 @@ for crd in "${crds[@]}"; do
 done
 
 echo
-echo "Successfully installed Stash!"
+echo "Successfully installed Stash in $STASH_NAMESPACE namespace!"
