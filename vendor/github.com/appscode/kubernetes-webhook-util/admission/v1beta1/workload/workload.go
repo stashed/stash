@@ -10,6 +10,7 @@ import (
 	"github.com/appscode/kubernetes-webhook-util/apis/workload/v1"
 	cs "github.com/appscode/kubernetes-webhook-util/client/workload/v1"
 	"github.com/appscode/kutil/meta"
+	"github.com/golang/glog"
 	"github.com/json-iterator/go"
 	"k8s.io/api/admission/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -150,6 +151,9 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 			if err != nil {
 				return api.StatusInternalServerError(err)
 			}
+			if glog.V(8) {
+				glog.V(8).Infoln("patch:", string(patch))
+			}
 			status.Patch = patch
 			patchType := v1beta1.PatchTypeJSONPatch
 			status.PatchType = &patchType
@@ -203,6 +207,9 @@ func (h *WorkloadWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admissio
 			patch, err := json.Marshal(ops)
 			if err != nil {
 				return api.StatusInternalServerError(err)
+			}
+			if glog.V(8) {
+				glog.V(8).Infoln("patch:", string(patch))
 			}
 			status.Patch = patch
 			patchType := v1beta1.PatchTypeJSONPatch
