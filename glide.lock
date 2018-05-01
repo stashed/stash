@@ -1,5 +1,5 @@
 hash: 976ca086c0c7b97350e4fa2fa618c3dd21797e1bea526864ecf61ae4064f7519
-updated: 2018-04-25T01:07:09.927233709-07:00
+updated: 2018-05-01T05:57:58.907426543-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -9,7 +9,7 @@ imports:
   - compute/metadata
   - internal
 - name: github.com/appscode/go
-  version: 9ff183cbae833dbc9bd2da81eebfc71289e86605
+  version: 230e0e4622c682b5d117db8c28a66404ed874ed5
   subpackages:
   - analytics
   - context
@@ -28,7 +28,7 @@ imports:
 - name: github.com/appscode/jsonpatch
   version: 58a38a46ddb591a543c6b1003213353e29331c5a
 - name: github.com/appscode/kubernetes-webhook-util
-  version: aac3a41f2d085be78d3ad821eba6051a32e72ccf
+  version: d5f5497d85773ad6e4c0d0364702ad7fb155c03c
   subpackages:
   - admission
   - admission/v1beta1
@@ -39,7 +39,7 @@ imports:
   - registry/admissionreview/v1beta1
   - runtime/serializer/versioning
 - name: github.com/appscode/kutil
-  version: dae5ee61fe5885d26902c35ec195b2bd9b9d14c8
+  version: 2211bbe2c455d75d3b4e92d8389f3ba36eff6083
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
@@ -215,7 +215,7 @@ imports:
 - name: github.com/google/gofuzz
   version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
 - name: github.com/google/uuid
-  version: dec09d789f3dba190787f8b4454c7d3c936fed9e
+  version: 064e2069ce9c359c118179501254f67d7d37ba24
 - name: github.com/googleapis/gnostic
   version: 0c5108395e2debce0d731cf0287ddf7242066aba
   subpackages:
@@ -232,7 +232,7 @@ imports:
   - openstack/utils
   - pagination
 - name: github.com/graymeta/stow
-  version: 1df3851b8fc06f775b3daed2f19442b3c5b26a37
+  version: a2bb5ac932dfea981d79ab395a0ab4ea09365d52
   repo: https://github.com/appscode/stow.git
   vcs: git
   subpackages:
@@ -433,7 +433,7 @@ imports:
   subpackages:
   - mem
 - name: github.com/spf13/cobra
-  version: 0ab5b6bcfcde193577634059f6f211c850a456ec
+  version: ef82de70bb3f60c65fb8eebacbb2d122ef517385
   subpackages:
   - doc
 - name: github.com/spf13/pflag
@@ -507,7 +507,7 @@ imports:
   - unicode/norm
   - width
 - name: google.golang.org/api
-  version: 8b8c1d4168b3aa7d5fbdb9eb159a1a7ac0cc146d
+  version: 2b26f0d5dbe6eea8c0924349bb024673f8105fd9
   subpackages:
   - gensupport
   - googleapi

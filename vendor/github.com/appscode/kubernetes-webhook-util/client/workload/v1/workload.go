@@ -41,6 +41,7 @@ type WorkloadInterface interface {
 	Update(*v1.Workload) (*v1.Workload, error)
 	Delete(obj runtime.Object, options *metav1.DeleteOptions) error
 	Get(obj runtime.Object, options metav1.GetOptions) (*v1.Workload, error)
+	List(opts metav1.ListOptions) (*v1.WorkloadList, error)
 	Patch(cur *v1.Workload, transform WorkloadTransformerFunc) (*v1.Workload, kutil.VerbType, error)
 	PatchObject(cur, mod *v1.Workload) (*v1.Workload, kutil.VerbType, error)
 	CreateOrPatch(obj runtime.Object, transform WorkloadTransformerFunc) (*v1.Workload, kutil.VerbType, error)
@@ -67,50 +68,86 @@ func newWorkloads(kc kubernetes.Interface, oc occ.Interface, namespace string) *
 func (c *workloads) Create(w *v1.Workload) (*v1.Workload, error) {
 	var out runtime.Object
 	var err error
-	switch t := w.Object.(type) {
-	case *core.Pod:
-		out, err = c.kc.CoreV1().Pods(c.ns).Create(t)
+	switch w.GroupVersionKind() {
+	case core.SchemeGroupVersion.WithKind("Pod"):
+		obj := &core.Pod{}
+		ApplyWorkload(obj, w)
+		out, err = c.kc.CoreV1().Pods(c.ns).Create(obj)
 		// ReplicationController
-	case *core.ReplicationController:
-		out, err = c.kc.CoreV1().ReplicationControllers(c.ns).Create(t)
+	case core.SchemeGroupVersion.WithKind("ReplicationController"):
+		obj := &core.ReplicationController{}
+		ApplyWorkload(obj, w)
+		out, err = c.kc.CoreV1().ReplicationControllers(c.ns).Create(obj)
 		// Deployment
-	case *extensions.Deployment:
-		out, err = c.kc.ExtensionsV1beta1().Deployments(c.ns).Create(t)
-	case *appsv1beta1.Deployment:
-		out, err = c.kc.AppsV1beta1().Deployments(c.ns).Create(t)
-	case *appsv1beta2.Deployment:
-		out, err = c.kc.AppsV1beta2().Deployments(c.ns).Create(t)
-	case *appsv1.Deployment:
-		out, err = c.kc.AppsV1().Deployments(c.ns).Create(t)
+	case extensions.SchemeGroupVersion.WithKind("Deployment"):
+		obj := &extensions.Deployment{}
+		ApplyWorkload(obj, w)
+		out, err = c.kc.ExtensionsV1beta1().Deployments(c.ns).Create(obj)
+	case appsv1beta1.SchemeGroupVersion.WithKind("Deployment"):
+		obj := &appsv1beta1.Deployment{}
+		ApplyWorkload(obj, w)
+		out, err = c.kc.AppsV1beta1().Deployments(c.ns).Create(obj)
+	case appsv1beta2.SchemeGroupVersion.WithKind("Deployment"):
+		obj := &appsv1beta2.Deployment{}
+		ApplyWorkload(obj, w)
+		out, err = c.kc.AppsV1beta2().Deployments(c.ns).Create(obj)
+	case appsv1.SchemeGroupVersion.WithKind("Deployment"):
+		obj := &appsv1.Deployment{}
+		ApplyWorkload(obj, w)
+		out, err = c.kc.AppsV1().Deployments(c.ns).Create(obj)
 		// DaemonSet
-	case *extensions.DaemonSet:
-		out, err = c.kc.ExtensionsV1beta1().DaemonSets(c.ns).Create(t)
-	case *appsv1beta2.DaemonSet:
-		out, err = c.kc.AppsV1beta2().DaemonSets(c.ns).Create(t)
-	case *appsv1.DaemonSet:
-		out, err = c.kc.AppsV1().DaemonSets(c.ns).Create(t)
+	case extensions.SchemeGroupVersion.WithKind("DaemonSet"):
+		obj := &extensions.DaemonSet{}
+		ApplyWorkload(obj, w)
+		out, err = c.kc.ExtensionsV1beta1().DaemonSets(c.ns).Create(obj)
+	case appsv1beta2.SchemeGroupVersion.WithKind("DaemonSet"):
+		obj := &appsv1beta2.DaemonSet{}
+		ApplyWorkload(obj, w)
+		out, err = c.kc.AppsV1beta2().DaemonSets(c.ns).Create(obj)
+	case appsv1.SchemeGroupVersion.WithKind("DaemonSet"):
+		obj := &appsv1.DaemonSet{}
+		ApplyWorkload(obj, w)
+		out, err = c.kc.AppsV1().DaemonSets(c.ns).Create(obj)
 		// ReplicaSet
-	case *extensions.ReplicaSet:
-		out, err = c.kc.ExtensionsV1beta1().ReplicaSets(c.ns).Create(t)
-	case *appsv1beta2.ReplicaSet:
-		out, err = c.kc.AppsV1beta2().ReplicaSets(c.ns).Create(t)
-	case *appsv1.ReplicaSet:
-		out, err = c.kc.AppsV1().ReplicaSets(c.ns).Create(t)
+	case extensions.SchemeGroupVersion.WithKind("ReplicaSet"):
+		obj := &extensions.ReplicaSet{}
+		ApplyWorkload(obj, w)
+		out, err = c.kc.ExtensionsV1beta1().ReplicaSets(c.ns).Create(obj)
+	case appsv1beta2.SchemeGroupVersion.WithKind("ReplicaSet"):
+		obj := &appsv1beta2.ReplicaSet{}
+		ApplyWorkload(obj, w)
+		out, err = c.kc.AppsV1beta2().ReplicaSets(c.ns).Create(obj)
+	case appsv1.SchemeGroupVersion.WithKind("ReplicaSet"):
+		obj := &appsv1.ReplicaSet{}
+		ApplyWorkload(obj, w)
+		out, err = c.kc.AppsV1().ReplicaSets(c.ns).Create(obj)
 		// StatefulSet
-	case *appsv1beta1.StatefulSet:
-		out, err = c.kc.AppsV1beta1().StatefulSets(c.ns).Create(t)
-	case *appsv1beta2.StatefulSet:
-		out, err = c.kc.AppsV1beta2().StatefulSets(c.ns).Create(t)
-	case *appsv1.StatefulSet:
-		out, err = c.kc.AppsV1().StatefulSets(c.ns).Create(t)
+	case appsv1beta1.SchemeGroupVersion.WithKind("StatefulSet"):
+		obj := &appsv1beta1.StatefulSet{}
+		ApplyWorkload(obj, w)
+		out, err = c.kc.AppsV1beta1().StatefulSets(c.ns).Create(obj)
+	case appsv1beta2.SchemeGroupVersion.WithKind("StatefulSet"):
+		obj := &appsv1beta2.StatefulSet{}
+		ApplyWorkload(obj, w)
+		out, err = c.kc.AppsV1beta2().StatefulSets(c.ns).Create(obj)
+	case appsv1.SchemeGroupVersion.WithKind("StatefulSet"):
+		obj := &appsv1.StatefulSet{}
+		ApplyWorkload(obj, w)
+		out, err = c.kc.AppsV1().StatefulSets(c.ns).Create(obj)
 		// Job
-	case *batchv1.Job:
-		out, err = c.kc.BatchV1().Jobs(c.ns).Create(t)
+	case batchv1.SchemeGroupVersion.WithKind("Job"):
+		obj := &batchv1.Job{}
+		ApplyWorkload(obj, w)
+		out, err = c.kc.BatchV1().Jobs(c.ns).Create(obj)
 		// CronJob
-	case *batchv1beta1.CronJob:
-		out, err = c.kc.BatchV1beta1().CronJobs(c.ns).Create(t)
-	case *ocapps.DeploymentConfig:
-		out, err = c.oc.AppsV1().DeploymentConfigs(c.ns).Create(t)
+	case batchv1beta1.SchemeGroupVersion.WithKind("CronJob"):
+		obj := &batchv1beta1.CronJob{}
+		ApplyWorkload(obj, w)
+		out, err = c.kc.BatchV1beta1().CronJobs(c.ns).Create(obj)
+	case ocapps.SchemeGroupVersion.WithKind("DeploymentConfig"):
+		obj := &ocapps.DeploymentConfig{}
+		ApplyWorkload(obj, w)
+		out, err = c.oc.AppsV1().DeploymentConfigs(c.ns).Create(obj)
 	default:
 		err = fmt.Errorf("the object is not a pod or does not have a pod template")
 	}
@@ -282,8 +319,169 @@ func (c *workloads) Get(obj runtime.Object, options metav1.GetOptions) (*v1.Work
 	return ConvertToWorkload(out)
 }
 
+func (c *workloads) List(opts metav1.ListOptions) (*v1.WorkloadList, error) {
+	options := metav1.ListOptions{
+		LabelSelector:        opts.LabelSelector,
+		FieldSelector:        opts.FieldSelector,
+		IncludeUninitialized: opts.IncludeUninitialized,
+		ResourceVersion:      opts.ResourceVersion,
+		TimeoutSeconds:       opts.TimeoutSeconds,
+	}
+	list := v1.WorkloadList{Items: make([]v1.Workload, 0)}
+
+	if c.kc != nil {
+		{
+			objects, err := c.kc.AppsV1beta1().Deployments(c.ns).List(options)
+			if err != nil {
+				return nil, err
+			}
+			err = meta.EachListItem(objects, func(obj runtime.Object) error {
+				w, err := ConvertToWorkload(obj)
+				if err != nil {
+					return err
+				}
+				list.Items = append(list.Items, *w)
+				return nil
+			})
+			if err != nil {
+				return nil, err
+			}
+		}
+		{
+			objects, err := c.kc.ExtensionsV1beta1().ReplicaSets(c.ns).List(options)
+			if err != nil {
+				return nil, err
+			}
+			err = meta.EachListItem(objects, func(obj runtime.Object) error {
+				w, err := ConvertToWorkload(obj)
+				if err != nil {
+					return err
+				}
+				list.Items = append(list.Items, *w)
+				return nil
+			})
+			if err != nil {
+				return nil, err
+			}
+		}
+		{
+			if c.kc != nil {
+				objects, err := c.kc.AppsV1beta1().StatefulSets(c.ns).List(options)
+				if err != nil {
+					return nil, err
+				}
+				err = meta.EachListItem(objects, func(obj runtime.Object) error {
+					w, err := ConvertToWorkload(obj)
+					if err != nil {
+						return err
+					}
+					list.Items = append(list.Items, *w)
+					return nil
+				})
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+		{
+			objects, err := c.kc.ExtensionsV1beta1().DaemonSets(c.ns).List(options)
+			if err != nil {
+				return nil, err
+			}
+			err = meta.EachListItem(objects, func(obj runtime.Object) error {
+				w, err := ConvertToWorkload(obj)
+				if err != nil {
+					return err
+				}
+				list.Items = append(list.Items, *w)
+				return nil
+			})
+			if err != nil {
+				return nil, err
+			}
+		}
+		{
+			objects, err := c.kc.CoreV1().ReplicationControllers(c.ns).List(options)
+			if err != nil {
+				return nil, err
+			}
+			err = meta.EachListItem(objects, func(obj runtime.Object) error {
+				w, err := ConvertToWorkload(obj)
+				if err != nil {
+					return err
+				}
+				list.Items = append(list.Items, *w)
+				return nil
+			})
+			if err != nil {
+				return nil, err
+			}
+		}
+		{
+			objects, err := c.kc.BatchV1().Jobs(c.ns).List(options)
+			if err != nil {
+				return nil, err
+			}
+			err = meta.EachListItem(objects, func(obj runtime.Object) error {
+				w, err := ConvertToWorkload(obj)
+				if err != nil {
+					return err
+				}
+				list.Items = append(list.Items, *w)
+				return nil
+			})
+			if err != nil {
+				return nil, err
+			}
+		}
+		{
+			objects, err := c.kc.BatchV1beta1().CronJobs(c.ns).List(options)
+			if err != nil {
+				return nil, err
+			}
+			err = meta.EachListItem(objects, func(obj runtime.Object) error {
+				w, err := ConvertToWorkload(obj)
+				if err != nil {
+					return err
+				}
+				list.Items = append(list.Items, *w)
+				return nil
+			})
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	{
+		if c.oc != nil {
+			objects, err := c.oc.AppsV1().DeploymentConfigs(c.ns).List(options)
+			if err != nil {
+				return nil, err
+			}
+			err = meta.EachListItem(objects, func(obj runtime.Object) error {
+				w, err := ConvertToWorkload(obj)
+				if err != nil {
+					return err
+				}
+				list.Items = append(list.Items, *w)
+				return nil
+			})
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return &list, nil
+}
+
 func (c *workloads) Patch(cur *v1.Workload, transform WorkloadTransformerFunc) (*v1.Workload, kutil.VerbType, error) {
-	return c.PatchObject(cur, transform(cur.DeepCopy()))
+	mod := transform(cur.DeepCopy())
+	err := ApplyWorkload(mod.Object, mod)
+	if err != nil {
+		return nil, kutil.VerbUnchanged, err
+	}
+	return c.PatchObject(cur, mod)
 }
 
 func (c *workloads) PatchObject(cur, mod *v1.Workload) (*v1.Workload, kutil.VerbType, error) {
@@ -362,13 +560,17 @@ func (c *workloads) PatchObject(cur, mod *v1.Workload) (*v1.Workload, kutil.Verb
 }
 
 func (c *workloads) CreateOrPatch(obj runtime.Object, transform WorkloadTransformerFunc) (*v1.Workload, kutil.VerbType, error) {
+	gvk := obj.GetObjectKind().GroupVersionKind()
+	if gvk.String() == "" {
+		return nil, kutil.VerbUnchanged, fmt.Errorf("obj missing GroupVersionKind")
+	}
+
 	cur, err := c.Get(obj, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		name, err := meta.NewAccessor().Name(obj)
 		if err != nil {
 			return nil, kutil.VerbUnchanged, err
 		}
-		gvk := obj.GetObjectKind().GroupVersionKind()
 		glog.V(3).Infof("Creating %s %s/%s.", gvk, c.ns, name)
 		out, err := c.Create(transform(&v1.Workload{
 			TypeMeta: metav1.TypeMeta{

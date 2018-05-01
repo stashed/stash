@@ -9,6 +9,7 @@ import (
 	api "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
 	"github.com/appscode/kubernetes-webhook-util/runtime/serializer/versioning"
 	"github.com/appscode/kutil/meta"
+	"github.com/golang/glog"
 	"github.com/json-iterator/go"
 	"k8s.io/api/admission/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -136,6 +137,9 @@ func (h *GenericWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admission
 			if err != nil {
 				return api.StatusInternalServerError(err)
 			}
+			if glog.V(8) {
+				glog.V(8).Infoln("patch:", string(patch))
+			}
 			status.Patch = patch
 			patchType := v1beta1.PatchTypeJSONPatch
 			status.PatchType = &patchType
@@ -166,6 +170,9 @@ func (h *GenericWebhook) Admit(req *v1beta1.AdmissionRequest) *v1beta1.Admission
 			patch, err := json.Marshal(ops)
 			if err != nil {
 				return api.StatusInternalServerError(err)
+			}
+			if glog.V(8) {
+				glog.V(8).Infoln("patch:", string(patch))
 			}
 			status.Patch = patch
 			patchType := v1beta1.PatchTypeJSONPatch
