@@ -3,11 +3,15 @@ package versioning
 import (
 	"io"
 
-	_ "github.com/openshift/origin/pkg/apps/apis/apps/install"
+	appsapi "github.com/openshift/origin/pkg/apps/apis/apps"
+	appsapiv1 "github.com/openshift/origin/pkg/apps/apis/apps/v1"
 	_ "k8s.io/api/extensions/v1beta1"
+	"k8s.io/apimachinery/pkg/apimachinery/announced"
+	"k8s.io/apimachinery/pkg/apimachinery/registered"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/kubernetes/pkg/api/legacyscheme"
 	_ "k8s.io/kubernetes/pkg/apis/apps/install"
 	_ "k8s.io/kubernetes/pkg/apis/batch/install"
 	_ "k8s.io/kubernetes/pkg/apis/core/install"
@@ -15,6 +19,26 @@ import (
 	_ "k8s.io/kubernetes/pkg/apis/rbac/install"
 	_ "k8s.io/kubernetes/pkg/apis/storage/install"
 )
+
+func init() {
+	Install(legacyscheme.GroupFactoryRegistry, legacyscheme.Registry, legacyscheme.Scheme)
+}
+
+// Install registers the API group and adds types to a scheme
+func Install(groupFactoryRegistry announced.APIGroupFactoryRegistry, registry *registered.APIRegistrationManager, scheme *runtime.Scheme) {
+	if err := announced.NewGroupMetaFactory(
+		&announced.GroupMetaFactoryArgs{
+			GroupName:                  appsapi.GroupName,
+			VersionPreferenceOrder:     []string{appsapiv1.SchemeGroupVersion.Version},
+			AddInternalObjectsToScheme: appsapi.AddToScheme,
+		},
+		announced.VersionToSchemeFunc{
+			appsapiv1.SchemeGroupVersion.Version: appsapiv1.AddToScheme,
+		},
+	).Announce(groupFactoryRegistry).RegisterAndEnable(registry, scheme); err != nil {
+		panic(err)
+	}
+}
 
 type codec struct {
 	encoder       runtime.Encoder

@@ -1,6 +1,7 @@
 package openapi
 
 import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	apirequest "k8s.io/apiserver/pkg/endpoints/request"
@@ -13,7 +14,7 @@ type CDStorage struct {
 
 var _ rest.GroupVersionKindProvider = &CDStorage{}
 var _ rest.Creater = &CDStorage{}
-var _ rest.Deleter = &CDStorage{}
+var _ rest.GracefulDeleter = &CDStorage{}
 
 func NewCDStorage(cfg ResourceInfo) *CDStorage {
 	return &CDStorage{cfg}
@@ -33,6 +34,6 @@ func (r *CDStorage) Create(ctx apirequest.Context, obj runtime.Object, createVal
 }
 
 // Deleter
-func (r *CDStorage) Delete(ctx apirequest.Context, name string) (runtime.Object, error) {
-	return r.New(), nil
+func (r *CDStorage) Delete(ctx apirequest.Context, name string, options *metav1.DeleteOptions) (runtime.Object, bool, error) {
+	return r.New(), true, nil
 }

@@ -52,7 +52,7 @@ func IsPreferredAPIResource(client discovery.DiscoveryInterface, groupVersion, k
 				continue
 			}
 			for _, resource := range resources.APIResources {
-				if resources.GroupVersion == groupVersion && resource.Kind == kind {
+				if resource.Kind == kind {
 					return true
 				}
 			}

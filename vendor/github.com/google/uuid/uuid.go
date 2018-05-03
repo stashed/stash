@@ -97,6 +97,13 @@ func ParseBytes(b []byte) (UUID, error) {
 	return uuid, nil
 }
 
+// FromBytes creates a new UUID from a byte slice. Returns an error if the slice
+// does not have a length of 16. The bytes are copied from the slice.
+func FromBytes(b []byte) (uuid UUID, err error) {
+	err = uuid.UnmarshalBinary(b)
+	return uuid, err
+}
+
 // Must returns uuid if err is nil and panics otherwise.
 func Must(uuid UUID, err error) UUID {
 	if err != nil {
@@ -176,7 +183,7 @@ func (v Variant) String() string {
 	return fmt.Sprintf("BadVariant%d", int(v))
 }
 
-// SetRand sets the random number generator to r, which implents io.Reader.
+// SetRand sets the random number generator to r, which implements io.Reader.
 // If r.Read returns an error when the package requests random data then
 // a panic will be issued.
 //

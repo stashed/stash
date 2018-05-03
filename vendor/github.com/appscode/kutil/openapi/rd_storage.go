@@ -16,7 +16,7 @@ type RDStorage struct {
 var _ rest.GroupVersionKindProvider = &RDStorage{}
 var _ rest.Lister = &RDStorage{}
 var _ rest.Getter = &RDStorage{}
-var _ rest.Deleter = &RDStorage{}
+var _ rest.GracefulDeleter = &RDStorage{}
 
 func NewRDStorage(cfg ResourceInfo) *RDStorage {
 	return &RDStorage{cfg}
@@ -45,6 +45,6 @@ func (r *RDStorage) List(ctx apirequest.Context, options *metainternalversion.Li
 }
 
 // Deleter
-func (r *RDStorage) Delete(ctx apirequest.Context, name string) (runtime.Object, error) {
-	return r.New(), nil
+func (r *RDStorage) Delete(ctx apirequest.Context, name string, options *metav1.DeleteOptions) (runtime.Object, bool, error) {
+	return r.New(), true, nil
 }
