@@ -69,82 +69,82 @@ func (c *workloads) Create(w *v1.Workload) (*v1.Workload, error) {
 	var out runtime.Object
 	var err error
 	switch w.GroupVersionKind() {
-	case core.SchemeGroupVersion.WithKind("Pod"):
+	case core.SchemeGroupVersion.WithKind(v1.KindPod):
 		obj := &core.Pod{}
 		ApplyWorkload(obj, w)
 		out, err = c.kc.CoreV1().Pods(c.ns).Create(obj)
 		// ReplicationController
-	case core.SchemeGroupVersion.WithKind("ReplicationController"):
+	case core.SchemeGroupVersion.WithKind(v1.KindReplicationController):
 		obj := &core.ReplicationController{}
 		ApplyWorkload(obj, w)
 		out, err = c.kc.CoreV1().ReplicationControllers(c.ns).Create(obj)
 		// Deployment
-	case extensions.SchemeGroupVersion.WithKind("Deployment"):
+	case extensions.SchemeGroupVersion.WithKind(v1.KindDeployment):
 		obj := &extensions.Deployment{}
 		ApplyWorkload(obj, w)
 		out, err = c.kc.ExtensionsV1beta1().Deployments(c.ns).Create(obj)
-	case appsv1beta1.SchemeGroupVersion.WithKind("Deployment"):
+	case appsv1beta1.SchemeGroupVersion.WithKind(v1.KindDeployment):
 		obj := &appsv1beta1.Deployment{}
 		ApplyWorkload(obj, w)
 		out, err = c.kc.AppsV1beta1().Deployments(c.ns).Create(obj)
-	case appsv1beta2.SchemeGroupVersion.WithKind("Deployment"):
+	case appsv1beta2.SchemeGroupVersion.WithKind(v1.KindDeployment):
 		obj := &appsv1beta2.Deployment{}
 		ApplyWorkload(obj, w)
 		out, err = c.kc.AppsV1beta2().Deployments(c.ns).Create(obj)
-	case appsv1.SchemeGroupVersion.WithKind("Deployment"):
+	case appsv1.SchemeGroupVersion.WithKind(v1.KindDeployment):
 		obj := &appsv1.Deployment{}
 		ApplyWorkload(obj, w)
 		out, err = c.kc.AppsV1().Deployments(c.ns).Create(obj)
 		// DaemonSet
-	case extensions.SchemeGroupVersion.WithKind("DaemonSet"):
+	case extensions.SchemeGroupVersion.WithKind(v1.KindDaemonSet):
 		obj := &extensions.DaemonSet{}
 		ApplyWorkload(obj, w)
 		out, err = c.kc.ExtensionsV1beta1().DaemonSets(c.ns).Create(obj)
-	case appsv1beta2.SchemeGroupVersion.WithKind("DaemonSet"):
+	case appsv1beta2.SchemeGroupVersion.WithKind(v1.KindDaemonSet):
 		obj := &appsv1beta2.DaemonSet{}
 		ApplyWorkload(obj, w)
 		out, err = c.kc.AppsV1beta2().DaemonSets(c.ns).Create(obj)
-	case appsv1.SchemeGroupVersion.WithKind("DaemonSet"):
+	case appsv1.SchemeGroupVersion.WithKind(v1.KindDaemonSet):
 		obj := &appsv1.DaemonSet{}
 		ApplyWorkload(obj, w)
 		out, err = c.kc.AppsV1().DaemonSets(c.ns).Create(obj)
 		// ReplicaSet
-	case extensions.SchemeGroupVersion.WithKind("ReplicaSet"):
+	case extensions.SchemeGroupVersion.WithKind(v1.KindReplicaSet):
 		obj := &extensions.ReplicaSet{}
 		ApplyWorkload(obj, w)
 		out, err = c.kc.ExtensionsV1beta1().ReplicaSets(c.ns).Create(obj)
-	case appsv1beta2.SchemeGroupVersion.WithKind("ReplicaSet"):
+	case appsv1beta2.SchemeGroupVersion.WithKind(v1.KindReplicaSet):
 		obj := &appsv1beta2.ReplicaSet{}
 		ApplyWorkload(obj, w)
 		out, err = c.kc.AppsV1beta2().ReplicaSets(c.ns).Create(obj)
-	case appsv1.SchemeGroupVersion.WithKind("ReplicaSet"):
+	case appsv1.SchemeGroupVersion.WithKind(v1.KindReplicaSet):
 		obj := &appsv1.ReplicaSet{}
 		ApplyWorkload(obj, w)
 		out, err = c.kc.AppsV1().ReplicaSets(c.ns).Create(obj)
 		// StatefulSet
-	case appsv1beta1.SchemeGroupVersion.WithKind("StatefulSet"):
+	case appsv1beta1.SchemeGroupVersion.WithKind(v1.KindStatefulSet):
 		obj := &appsv1beta1.StatefulSet{}
 		ApplyWorkload(obj, w)
 		out, err = c.kc.AppsV1beta1().StatefulSets(c.ns).Create(obj)
-	case appsv1beta2.SchemeGroupVersion.WithKind("StatefulSet"):
+	case appsv1beta2.SchemeGroupVersion.WithKind(v1.KindStatefulSet):
 		obj := &appsv1beta2.StatefulSet{}
 		ApplyWorkload(obj, w)
 		out, err = c.kc.AppsV1beta2().StatefulSets(c.ns).Create(obj)
-	case appsv1.SchemeGroupVersion.WithKind("StatefulSet"):
+	case appsv1.SchemeGroupVersion.WithKind(v1.KindStatefulSet):
 		obj := &appsv1.StatefulSet{}
 		ApplyWorkload(obj, w)
 		out, err = c.kc.AppsV1().StatefulSets(c.ns).Create(obj)
 		// Job
-	case batchv1.SchemeGroupVersion.WithKind("Job"):
+	case batchv1.SchemeGroupVersion.WithKind(v1.KindJob):
 		obj := &batchv1.Job{}
 		ApplyWorkload(obj, w)
 		out, err = c.kc.BatchV1().Jobs(c.ns).Create(obj)
 		// CronJob
-	case batchv1beta1.SchemeGroupVersion.WithKind("CronJob"):
+	case batchv1beta1.SchemeGroupVersion.WithKind(v1.KindCronJob):
 		obj := &batchv1beta1.CronJob{}
 		ApplyWorkload(obj, w)
 		out, err = c.kc.BatchV1beta1().CronJobs(c.ns).Create(obj)
-	case ocapps.SchemeGroupVersion.WithKind("DeploymentConfig"):
+	case ocapps.SchemeGroupVersion.WithKind(v1.KindDeploymentConfig):
 		obj := &ocapps.DeploymentConfig{}
 		ApplyWorkload(obj, w)
 		out, err = c.oc.AppsV1().DeploymentConfigs(c.ns).Create(obj)

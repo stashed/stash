@@ -36,17 +36,29 @@ import:
   vcs: git
   version: v2
 - package: k8s.io/api
-  version: kubernetes-1.9.0
+  version: kubernetes-1.10.0
 - package: k8s.io/apiextensions-apiserver
-  version: kubernetes-1.9.0
+  version: kubernetes-1.10.0
 - package: k8s.io/apimachinery
-  version: kubernetes-1.9.0
+  version: kubernetes-1.10.0
 - package: k8s.io/apiserver
-  version: kubernetes-1.9.0
+  version: kubernetes-1.10.0
 - package: k8s.io/client-go
-  version: v6.0.0
+  version: v7.0.0
 - package: k8s.io/kubernetes
-  version: v1.9.0
+  version: v1.10.0
+- package: k8s.io/kube-openapi
+  version: master
+- package: github.com/openshift/api
+  version: 09a4e3d50f1aae6613b1b86941ffb8bded21e674
+- package: github.com/openshift/client-go
+  version: b3f4c8b4682c151defdd33ce75acfbf5fb30bccc
+- package: github.com/openshift/origin
+  version: 93f12e580ece30e0055f030dcd6d239116ff5cb4
+- package: github.com/appscode/ocutil
+  version: release-3.10
+- package: github.com/mailru/easyjson
+  version: 2f5df55504ebc322e4d52d34df6a1f5b503bf26d
 - package: github.com/prometheus/common
   version: 3233b24a36715a2fe36d162260457857a56d672d
 - package: github.com/sirupsen/logrus
@@ -54,11 +66,11 @@ import:
 - package: github.com/cpuguy83/go-md2man
   version: v1.0.4
 - package: github.com/appscode/kutil
-  version: release-6.0
+  version: release-7.0
 - package: github.com/appscode/kubernetes-webhook-util
-  version: release-6.0
+  version: release-7.0
 - package: github.com/appscode/osm
-  version: v0.6.3
+  version: v0.7.0
 - package: github.com/graymeta/stow
   repo: https://github.com/appscode/stow.git
   version: master

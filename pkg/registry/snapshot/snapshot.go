@@ -25,7 +25,7 @@ type REST struct {
 
 var _ rest.Getter = &REST{}
 var _ rest.Lister = &REST{}
-var _ rest.Deleter = &REST{}
+var _ rest.GracefulDeleter = &REST{}
 var _ rest.GroupVersionKindProvider = &REST{}
 
 func NewREST(config *restconfig.Config) *REST {
@@ -132,18 +132,18 @@ func (r *REST) List(ctx apirequest.Context, options *metainternalversion.ListOpt
 	return snapshotList, nil
 }
 
-func (r *REST) Delete(ctx apirequest.Context, name string) (runtime.Object, error) {
+func (r *REST) Delete(ctx apirequest.Context, name string, options *metav1.DeleteOptions) (runtime.Object, bool, error) {
 	ns, ok := apirequest.NamespaceFrom(ctx)
 	if !ok {
-		return nil, errors.New("missing namespace")
+		return nil, false, errors.New("missing namespace")
 	}
 	repoName, snapshotId, err := util.GetRepoNameAndSnapshotID(name)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	repo, err := r.stashClient.StashV1alpha1().Repositories(ns).Get(repoName, metav1.GetOptions{})
 	if err != nil {
-		return nil, errors.New("respective repository not found. error:" + err.Error())
+		return nil, false, errors.New("respective repository not found. error:" + err.Error())
 	}
 
 	if repo.Spec.Backend.Local != nil {
@@ -152,8 +152,8 @@ func (r *REST) Delete(ctx apirequest.Context, name string) (runtime.Object, erro
 		err = r.ForgetSnapshots(repo, []string{snapshotId})
 	}
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	return nil, nil
+	return nil, true, nil
 }
