@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strconv"
 	"time"
 
 	"github.com/appscode/go/types"
@@ -18,6 +17,8 @@ import (
 	apps "k8s.io/api/apps/v1beta1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"net"
+	"strconv"
 )
 
 var _ = Describe("Deployment", func() {
@@ -787,7 +788,7 @@ var _ = Describe("Deployment", func() {
 		Context("With cacert", func() {
 			BeforeEach(func() {
 				By("Creating Minio server with cacert")
-				addrs, err := f.CreateMinioServer(true)
+				addrs, err := f.CreateMinioServer(true,nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				restic = f.ResticForMinioBackend("https://" + addrs)
@@ -828,7 +829,7 @@ var _ = Describe("Deployment", func() {
 		Context("Without cacert", func() {
 			BeforeEach(func() {
 				By("Creating Minio server with cacert")
-				addrs, err := f.CreateMinioServer(true)
+				addrs, err := f.CreateMinioServer(true,nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				restic = f.ResticForMinioBackend("https://" + addrs)
@@ -1326,20 +1327,20 @@ var _ = Describe("Deployment", func() {
 				f.DeleteMinioServer()
 			})
 			BeforeEach(func() {
+				minikubeIP := []byte{192,168,99,100}
 
-				By("Creating Minio server without cacert")
-				_, err = f.CreateMinioServer(false)
+				By("Creating Minio server with cacert")
+				_, err = f.CreateMinioServer(true,[]net.IP{minikubeIP})
 				Expect(err).NotTo(HaveOccurred())
 
-				minikubeIP := "192.168.99.100"
 				msvc, err := f.KubeClient.CoreV1().Services(f.Namespace()).Get("minio-service", metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				minioServiceNodePort := strconv.Itoa(int(msvc.Spec.Ports[0].NodePort))
 
-				restic = f.ResticForMinioBackend("http://" + minikubeIP + ":" + minioServiceNodePort)
-				cred = f.SecretForMinioBackend(false)
+				restic = f.ResticForMinioBackend("https://" + f.ConvIpToString(minikubeIP) + ":" + minioServiceNodePort)
+				cred = f.SecretForMinioBackend(true)
 			})
-			It(`should delete repository from minio backend`, func() {
+			FIt(`should delete repository from minio backend`, func() {
 				shouldBackupNewDeployment()
 
 				repos := f.DeploymentRepos(&deployment)

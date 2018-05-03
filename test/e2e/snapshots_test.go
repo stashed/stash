@@ -16,6 +16,7 @@ import (
 	core "k8s.io/api/core/v1"
 	extensions "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"net"
 )
 
 var _ = Describe("Snapshots", func() {
@@ -268,17 +269,18 @@ var _ = Describe("Snapshots", func() {
 					Skip("restic executable not found in /bin directory. Please install in /bin directory from: https://github.com/restic/restic/releases")
 				}
 
+				minikubeIP := []byte{192,168,99,100}
+
 				By("Creating Minio server without cacert")
-				_, err = f.CreateMinioServer(false)
+				_, err = f.CreateMinioServer(true,[]net.IP{minikubeIP})
 				Expect(err).NotTo(HaveOccurred())
 
-				minikubeIP := "192.168.99.100"
 				msvc, err := f.KubeClient.CoreV1().Services(f.Namespace()).Get("minio-service", metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				minioServiceNodePort := strconv.Itoa(int(msvc.Spec.Ports[0].NodePort))
 
-				restic = f.ResticForMinioBackend("http://" + minikubeIP + ":" + minioServiceNodePort)
-				cred = f.SecretForMinioBackend(false)
+				restic = f.ResticForMinioBackend("https://" + f.ConvIpToString(minikubeIP) + ":" + minioServiceNodePort)
+				cred = f.SecretForMinioBackend(true)
 			})
 			It(`should success to perform Snapshot's operations`, performOperationOnSnapshot)
 

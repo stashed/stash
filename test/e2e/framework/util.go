@@ -15,6 +15,7 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"strings"
 )
 
 const (
@@ -200,4 +201,13 @@ func GetPathsFromResticFileGroups(restic *api.Restic) []string {
 		paths = append(paths, fg.Path)
 	}
 	return paths
+}
+
+func (f *Framework)ConvIpToString(ip []byte) string {
+	addrs:=""
+	for n:= range ip{
+		addrs+=string(n)
+		addrs+="."
+	}
+	return strings.TrimSuffix(addrs,".")
 }
