@@ -37,6 +37,7 @@ type RepositoriesGetter interface {
 type RepositoryInterface interface {
 	Create(*v1alpha1.Repository) (*v1alpha1.Repository, error)
 	Update(*v1alpha1.Repository) (*v1alpha1.Repository, error)
+	UpdateStatus(*v1alpha1.Repository) (*v1alpha1.Repository, error)
 	Delete(name string, options *v1.DeleteOptions) error
 	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
 	Get(name string, options v1.GetOptions) (*v1alpha1.Repository, error)
@@ -114,6 +115,22 @@ func (c *repositories) Update(repository *v1alpha1.Repository) (result *v1alpha1
 		Namespace(c.ns).
 		Resource("repositories").
 		Name(repository.Name).
+		Body(repository).
+		Do().
+		Into(result)
+	return
+}
+
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+
+func (c *repositories) UpdateStatus(repository *v1alpha1.Repository) (result *v1alpha1.Repository, err error) {
+	result = &v1alpha1.Repository{}
+	err = c.client.Put().
+		Namespace(c.ns).
+		Resource("repositories").
+		Name(repository.Name).
+		SubResource("status").
 		Body(repository).
 		Do().
 		Into(result)
