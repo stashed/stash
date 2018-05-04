@@ -84,8 +84,13 @@ func (c *StashController) ensureSidecarClusterRole() error {
 			},
 			{
 				APIGroups: []string{core.GroupName},
-				Resources: []string{"replicationcontrollers", "secrets"},
+				Resources: []string{"replicationcontrollers"},
 				Verbs:     []string{"get", "list", "patch"},
+			},
+			{
+				APIGroups: []string{core.GroupName},
+				Resources: []string{"secrets"},
+				Verbs:     []string{"get"},
 			},
 			{
 				APIGroups: []string{core.GroupName},

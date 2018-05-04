@@ -22,8 +22,7 @@ func BuildConfigFromContext(kubeconfigPath, contextName string) (*rest.Config, e
 		loader = &clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeconfigPath}
 	}
 	overrides := &clientcmd.ConfigOverrides{
-		CurrentContext:  contextName,
-		ClusterDefaults: clientcmd.ClusterDefaults,
+		CurrentContext: contextName,
 	}
 	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loader, overrides).ClientConfig()
 }

@@ -2,8 +2,10 @@ package e2e_test
 
 import (
 	"io/ioutil"
+	"net"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/appscode/go/types"
@@ -17,8 +19,6 @@ import (
 	apps "k8s.io/api/apps/v1beta1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"net"
-	"strconv"
 )
 
 var _ = Describe("Deployment", func() {
@@ -788,7 +788,7 @@ var _ = Describe("Deployment", func() {
 		Context("With cacert", func() {
 			BeforeEach(func() {
 				By("Creating Minio server with cacert")
-				addrs, err := f.CreateMinioServer(true,nil)
+				addrs, err := f.CreateMinioServer(true, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				restic = f.ResticForMinioBackend("https://" + addrs)
@@ -829,7 +829,7 @@ var _ = Describe("Deployment", func() {
 		Context("Without cacert", func() {
 			BeforeEach(func() {
 				By("Creating Minio server with cacert")
-				addrs, err := f.CreateMinioServer(true,nil)
+				addrs, err := f.CreateMinioServer(true, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				restic = f.ResticForMinioBackend("https://" + addrs)
@@ -1327,20 +1327,20 @@ var _ = Describe("Deployment", func() {
 				f.DeleteMinioServer()
 			})
 			BeforeEach(func() {
-				minikubeIP := []byte{192,168,99,100}
+				minikubeIP := net.IP{192, 168, 99, 100}
 
 				By("Creating Minio server with cacert")
-				_, err = f.CreateMinioServer(true,[]net.IP{minikubeIP})
+				_, err = f.CreateMinioServer(true, []net.IP{minikubeIP})
 				Expect(err).NotTo(HaveOccurred())
 
 				msvc, err := f.KubeClient.CoreV1().Services(f.Namespace()).Get("minio-service", metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				minioServiceNodePort := strconv.Itoa(int(msvc.Spec.Ports[0].NodePort))
 
-				restic = f.ResticForMinioBackend("https://" + f.ConvIpToString(minikubeIP) + ":" + minioServiceNodePort)
+				restic = f.ResticForMinioBackend("https://" + minikubeIP.String() + ":" + minioServiceNodePort)
 				cred = f.SecretForMinioBackend(true)
 			})
-			FIt(`should delete repository from minio backend`, func() {
+			It(`should delete repository from minio backend`, func() {
 				shouldBackupNewDeployment()
 
 				repos := f.DeploymentRepos(&deployment)

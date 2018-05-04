@@ -20,6 +20,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/appscode/go/types"
 	"github.com/ghodss/yaml"
 	"github.com/spf13/pflag"
 	extensionsobj "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -28,19 +29,21 @@ import (
 
 // Config stores the user configuration input
 type Config struct {
-	SpecDefinitionName    string
-	EnableValidation      bool
-	OutputFormat          string
-	Labels                Labels
-	Annotations           Labels
-	ResourceScope         string
-	Group                 string
-	Kind                  string
-	Version               string
-	Plural                string
-	Singular              string
-	ShortNames            []string
-	GetOpenAPIDefinitions GetAPIDefinitions
+	SpecDefinitionName      string
+	EnableValidation        bool
+	OutputFormat            string
+	Labels                  Labels
+	Annotations             Labels
+	ResourceScope           string
+	Group                   string
+	Kind                    string
+	Version                 string
+	Plural                  string
+	Singular                string
+	ShortNames              []string
+	GetOpenAPIDefinitions   GetAPIDefinitions
+	EnableStatusSubresource bool
+	EnableScaleSubresource  bool
 }
 
 type Labels struct {
@@ -102,13 +105,27 @@ func NewCustomResourceDefinition(config Config) *extensionsobj.CustomResourceDef
 				Kind:       config.Kind,
 				ShortNames: config.ShortNames,
 			},
+			Subresources: &extensionsobj.CustomResourceSubresources{
+				Status: &extensionsobj.CustomResourceSubresourceStatus{},
+			},
 		},
 	}
-
 	if config.SpecDefinitionName != "" && config.EnableValidation == true {
 		crd.Spec.Validation = GetCustomResourceValidation(config.SpecDefinitionName, config.GetOpenAPIDefinitions)
 	}
-
+	if config.EnableStatusSubresource || config.EnableScaleSubresource {
+		crd.Spec.Subresources = &extensionsobj.CustomResourceSubresources{}
+		if config.EnableStatusSubresource {
+			crd.Spec.Subresources.Status = &extensionsobj.CustomResourceSubresourceStatus{}
+		}
+		if config.EnableScaleSubresource {
+			crd.Spec.Subresources.Scale = &extensionsobj.CustomResourceSubresourceScale{
+				SpecReplicasPath:   ".spec.replicas",
+				StatusReplicasPath: ".status.replicas",
+				LabelSelectorPath:  types.StringP(".status.labelSelector"),
+			}
+		}
+	}
 	return crd
 }
 
