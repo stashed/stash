@@ -2,9 +2,12 @@ package framework
 
 import (
 	"fmt"
+	"net"
+	"path/filepath"
 	"time"
 
 	"github.com/appscode/go/crypto/rand"
+	"github.com/appscode/go/types"
 	core_util "github.com/appscode/kutil/core/v1"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1beta1"
@@ -17,10 +20,13 @@ import (
 
 const (
 	MINIO_PUBLIC_CRT_NAME  = "public.crt"
-	MINIO_PRIVSTE_KEY_NAME = "private.key"
+	MINIO_PRIVATE_KEY_NAME = "private.key"
 
 	MINIO_ACCESS_KEY_ID     = "not@id"
 	MINIO_SECRET_ACCESS_KEY = "not@secret"
+
+	MINIO_CERTS_MOUNTPATH = "/root/.minio/certs"
+	StandardStorageClass  = "standard"
 )
 
 var (
@@ -30,9 +36,9 @@ var (
 	msrvc   core.Service
 )
 
-func (fi *Invocation) CreateMinioServer(tls bool) (string, error) {
+func (fi *Invocation) CreateMinioServer(tls bool, ips []net.IP) (string, error) {
 	//creating secret for minio server
-	mcred = fi.SecretForMinioServer()
+	mcred = fi.SecretForMinioServer(ips)
 	err := fi.CreateSecret(mcred)
 	if err != nil {
 		return "", err
@@ -65,8 +71,8 @@ func (fi *Invocation) CreateMinioServer(tls bool) (string, error) {
 	return fi.MinioServiceAddres(), nil
 }
 
-func (fi *Invocation) SecretForMinioServer() core.Secret {
-	crt, key, err := fi.CertStore.NewServerCertPair("server", fi.MinioServerSANs())
+func (fi *Invocation) SecretForMinioServer(ips []net.IP) core.Secret {
+	crt, key, err := fi.CertStore.NewServerCertPair("server", fi.MinioServerSANs(ips))
 	Expect(err).NotTo(HaveOccurred())
 
 	return core.Secret{
@@ -76,7 +82,7 @@ func (fi *Invocation) SecretForMinioServer() core.Secret {
 		},
 		Data: map[string][]byte{
 			MINIO_PUBLIC_CRT_NAME:  []byte(string(crt) + "\n" + string(fi.CertStore.CACert())),
-			MINIO_PRIVSTE_KEY_NAME: key,
+			MINIO_PRIVATE_KEY_NAME: key,
 		},
 	}
 }
@@ -100,6 +106,7 @@ func (fi *Invocation) PVCForMinioServer() core.PersistentVolumeClaim {
 					core.ResourceName(core.ResourceStorage): resource.MustParse("2Gi"),
 				},
 			},
+			StorageClassName: types.StringP(StandardStorageClass),
 		},
 	}
 }
@@ -138,10 +145,44 @@ func (fi *Invocation) DeploymentForMinioServer() apps.Deployment {
 							},
 						},
 						{
-							Name: "minio-secret",
+							Name: "minio-public-crt",
 							VolumeSource: core.VolumeSource{
 								Secret: &core.SecretVolumeSource{
 									SecretName: "minio-server-secret",
+									Items: []core.KeyToPath{
+										{
+											Key:  MINIO_PUBLIC_CRT_NAME,
+											Path: MINIO_PUBLIC_CRT_NAME,
+										},
+									},
+								},
+							},
+						},
+						{
+							Name: "minio-private-key",
+							VolumeSource: core.VolumeSource{
+								Secret: &core.SecretVolumeSource{
+									SecretName: "minio-server-secret",
+									Items: []core.KeyToPath{
+										{
+											Key:  MINIO_PRIVATE_KEY_NAME,
+											Path: MINIO_PRIVATE_KEY_NAME,
+										},
+									},
+								},
+							},
+						},
+						{
+							Name: "minio-ca-crt",
+							VolumeSource: core.VolumeSource{
+								Secret: &core.SecretVolumeSource{
+									SecretName: "minio-server-secret",
+									Items: []core.KeyToPath{
+										{
+											Key:  MINIO_PUBLIC_CRT_NAME,
+											Path: MINIO_PUBLIC_CRT_NAME,
+										},
+									},
 								},
 							},
 						},
@@ -179,8 +220,19 @@ func (fi *Invocation) DeploymentForMinioServer() apps.Deployment {
 									MountPath: "/storage",
 								},
 								{
-									Name:      "minio-secret",
-									MountPath: "/root/.minio/certs/",
+									Name:      "minio-public-crt",
+									MountPath: filepath.Join(MINIO_CERTS_MOUNTPATH, MINIO_PUBLIC_CRT_NAME),
+									SubPath:   MINIO_PUBLIC_CRT_NAME,
+								},
+								{
+									Name:      "minio-private-key",
+									MountPath: filepath.Join(MINIO_CERTS_MOUNTPATH, MINIO_PRIVATE_KEY_NAME),
+									SubPath:   MINIO_PRIVATE_KEY_NAME,
+								},
+								{
+									Name:      "minio-ca-crt",
+									MountPath: filepath.Join(MINIO_CERTS_MOUNTPATH, "CAs", MINIO_PUBLIC_CRT_NAME),
+									SubPath:   MINIO_PUBLIC_CRT_NAME,
 								},
 							},
 						},
@@ -259,10 +311,14 @@ func (f *Framework) DeleteServiceForMinioServer(meta metav1.ObjectMeta) error {
 	return f.KubeClient.CoreV1().Services(meta.Namespace).Delete(meta.Name, deleteInForeground())
 }
 
-func (fi *Invocation) MinioServerSANs() cert.AltNames {
-	return cert.AltNames{
+func (fi *Invocation) MinioServerSANs(ips []net.IP) cert.AltNames {
+	altNames := cert.AltNames{
 		DNSNames: []string{fi.MinioServiceAddres()},
 	}
+	if ips != nil {
+		altNames.IPs = ips
+	}
+	return altNames
 }
 
 func (fi *Invocation) MinioServiceAddres() string {

@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"net"
 	"os"
 	"os/exec"
 	"strconv"
@@ -268,17 +269,18 @@ var _ = Describe("Snapshots", func() {
 					Skip("restic executable not found in /bin directory. Please install in /bin directory from: https://github.com/restic/restic/releases")
 				}
 
+				minikubeIP := net.IP{192, 168, 99, 100}
+
 				By("Creating Minio server without cacert")
-				_, err = f.CreateMinioServer(false)
+				_, err = f.CreateMinioServer(true, []net.IP{minikubeIP})
 				Expect(err).NotTo(HaveOccurred())
 
-				minikubeIP := "192.168.99.100"
 				msvc, err := f.KubeClient.CoreV1().Services(f.Namespace()).Get("minio-service", metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				minioServiceNodePort := strconv.Itoa(int(msvc.Spec.Ports[0].NodePort))
 
-				restic = f.ResticForMinioBackend("http://" + minikubeIP + ":" + minioServiceNodePort)
-				cred = f.SecretForMinioBackend(false)
+				restic = f.ResticForMinioBackend("https://" + minikubeIP.String() + ":" + minioServiceNodePort)
+				cred = f.SecretForMinioBackend(true)
 			})
 			It(`should success to perform Snapshot's operations`, performOperationOnSnapshot)
 

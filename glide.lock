@@ -1,5 +1,5 @@
 hash: 76961cf12e15d9a4b1be62eb1549aadc6d68adddf6950e7c664a0dee5f383d25
-updated: 2018-05-03T10:51:10.620098012-07:00
+updated: 2018-05-04T13:11:18.351030192+06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -26,7 +26,7 @@ imports:
   - types
   - version
 - name: github.com/appscode/jsonpatch
-  version: 58a38a46ddb591a543c6b1003213353e29331c5a
+  version: 1359b374de83fa14fd58ab10aa8ea4935f84d249
 - name: github.com/appscode/kubernetes-webhook-util
   version: 5a1b68c81878cdb4e07a7b5dbdbb6c88e7f5fa04
   subpackages:
@@ -39,7 +39,7 @@ imports:
   - registry/admissionreview/v1beta1
   - runtime/serializer/versioning
 - name: github.com/appscode/kutil
-  version: e362752b53a0372091e56d086aded5d7315c0861
+  version: 8ca4fc5af50635c6a604ab905dda87c3e4033fa2
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
@@ -249,7 +249,7 @@ imports:
   - proto
   - sortkeys
 - name: github.com/golang/glog
-  version: 44145f04b68cf362d9c4df2182967c2275eaefed
+  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
 - name: github.com/golang/groupcache
   version: 02826c3e79038b59d737d3b1c0a1d937f71a4433
   subpackages:
@@ -435,7 +435,7 @@ imports:
   subpackages:
   - doc
 - name: github.com/spf13/pflag
-  version: 053854db78bf52e52733c395a5315647ad1e110e
+  version: aca488055805e43a8c7755c10af3f6cbf753d2b4
   repo: https://github.com/appscode/pflag.git
   vcs: git
 - name: github.com/ugorji/go
@@ -509,7 +509,7 @@ imports:
   subpackages:
   - rate
 - name: google.golang.org/api
-  version: ce90db2c36a2cb8c9c06779ed8bb96f92ea6e3b8
+  version: db8ef494b6bdaf472489f97ad9c556e18c963444
   subpackages:
   - gensupport
   - googleapi
@@ -921,15 +921,17 @@ imports:
   - util/retry
   - util/workqueue
 - name: k8s.io/kube-aggregator
-  version: 23f9f59d663ea22b680310831a1b7297914b4ed3
+  version: ""
   subpackages:
   - pkg/apis/apiregistration
+  - pkg/apis/apiregistration/v1
   - pkg/apis/apiregistration/v1beta1
   - pkg/client/clientset_generated/clientset
   - pkg/client/clientset_generated/clientset/scheme
+  - pkg/client/clientset_generated/clientset/typed/apiregistration/v1
   - pkg/client/clientset_generated/clientset/typed/apiregistration/v1beta1
 - name: k8s.io/kube-openapi
-  version: f08db293d3ef80052d6513ece19792642a289fea
+  version: 3a0c53868c9444e4224c3dd5dc2caa9b5107ff7b
   subpackages:
   - pkg/builder
   - pkg/common

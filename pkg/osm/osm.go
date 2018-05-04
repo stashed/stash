@@ -1,7 +1,10 @@
 package osm
 
 import (
+	"io/ioutil"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -23,6 +26,12 @@ import (
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+)
+
+const (
+	CA_CERT_DATA    = "CA_CERT_DATA"
+	CaCertMountPath = "/tmp/osm"
+	CaCertFileName  = "ca.crt"
 )
 
 func NewOSMContext(client kubernetes.Interface, repository *api.Repository) (*otx.Context, error) {
@@ -86,8 +95,24 @@ func NewOSMContext(client kubernetes.Interface, repository *api.Repository) (*ot
 			nc.Config[s3.ConfigRegion] = stringz.Val(types.String(out.LocationConstraint), "us-east-1")
 		} else {
 			nc.Config[s3.ConfigEndpoint] = repository.Spec.Backend.S3.Endpoint
-			if u, err := url.Parse(repository.Spec.Backend.S3.Endpoint); err == nil {
-				nc.Config[s3.ConfigDisableSSL] = strconv.FormatBool(u.Scheme == "http")
+			u, err := url.Parse(repository.Spec.Backend.S3.Endpoint)
+			if err != nil {
+				return nil, err
+			}
+			nc.Config[s3.ConfigDisableSSL] = strconv.FormatBool(u.Scheme == "http")
+
+			cacertData, ok := config[CA_CERT_DATA]
+			if ok && u.Scheme == "https" {
+				certFileName := filepath.Join(CaCertMountPath, CaCertFileName)
+				err = os.MkdirAll(filepath.Dir(certFileName), 0755)
+				if err != nil {
+					return nil, err
+				}
+				err = ioutil.WriteFile(certFileName, cacertData, 0755)
+				if err != nil {
+					return nil, err
+				}
+				nc.Config[s3.ConfigCACertFile] = certFileName
 			}
 		}
 		return nc, nil
