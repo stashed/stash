@@ -8,6 +8,7 @@ import (
 	cs "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1"
 	"github.com/evanphx/json-patch"
 	"github.com/golang/glog"
+	"github.com/pkg/errors"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -78,4 +79,24 @@ func TryUpdateRepository(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, tr
 		err = fmt.Errorf("failed to update Repository %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}
 	return
+}
+
+func UpdateRepositoryStatus(c cs.StashV1alpha1Interface, cur *api.Repository, transform func(*api.RepositoryStatus) *api.RepositoryStatus, useSubresource ...bool) (*api.Repository, error) {
+	if len(useSubresource) > 1 {
+		return nil, errors.Errorf("invalid value passed for useSubresource: %v", useSubresource)
+	}
+
+	mod := &api.Repository{
+		TypeMeta:   cur.TypeMeta,
+		ObjectMeta: cur.ObjectMeta,
+		Spec:       cur.Spec,
+		Status:     *transform(cur.Status.DeepCopy()),
+	}
+
+	if len(useSubresource) == 1 && useSubresource[0] {
+		return c.Repositories(cur.Namespace).UpdateStatus(mod)
+	}
+
+	out, _, err := PatchRepositoryObject(c, cur, mod)
+	return out, err
 }

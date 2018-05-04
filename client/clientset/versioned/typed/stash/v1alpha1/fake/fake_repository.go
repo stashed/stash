@@ -100,6 +100,18 @@ func (c *FakeRepositories) Update(repository *v1alpha1.Repository) (result *v1al
 	return obj.(*v1alpha1.Repository), err
 }
 
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+func (c *FakeRepositories) UpdateStatus(repository *v1alpha1.Repository) (*v1alpha1.Repository, error) {
+	obj, err := c.Fake.
+		Invokes(testing.NewUpdateSubresourceAction(repositoriesResource, "status", c.ns, repository), &v1alpha1.Repository{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.Repository), err
+}
+
 // Delete takes name of the repository and deletes it. Returns an error if one occurs.
 func (c *FakeRepositories) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.

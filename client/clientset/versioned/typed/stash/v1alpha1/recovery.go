@@ -37,6 +37,7 @@ type RecoveriesGetter interface {
 type RecoveryInterface interface {
 	Create(*v1alpha1.Recovery) (*v1alpha1.Recovery, error)
 	Update(*v1alpha1.Recovery) (*v1alpha1.Recovery, error)
+	UpdateStatus(*v1alpha1.Recovery) (*v1alpha1.Recovery, error)
 	Delete(name string, options *v1.DeleteOptions) error
 	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
 	Get(name string, options v1.GetOptions) (*v1alpha1.Recovery, error)
@@ -114,6 +115,22 @@ func (c *recoveries) Update(recovery *v1alpha1.Recovery) (result *v1alpha1.Recov
 		Namespace(c.ns).
 		Resource("recoveries").
 		Name(recovery.Name).
+		Body(recovery).
+		Do().
+		Into(result)
+	return
+}
+
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+
+func (c *recoveries) UpdateStatus(recovery *v1alpha1.Recovery) (result *v1alpha1.Recovery, err error) {
+	result = &v1alpha1.Recovery{}
+	err = c.client.Put().
+		Namespace(c.ns).
+		Resource("recoveries").
+		Name(recovery.Name).
+		SubResource("status").
 		Body(recovery).
 		Do().
 		Into(result)
