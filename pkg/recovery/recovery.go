@@ -47,7 +47,10 @@ func (c *Controller) Run() {
 
 	if err = recovery.IsValid(); err != nil {
 		log.Errorf("Failed to validate recovery %s, reason: %s\n", recovery.Name, err)
-		stash_util.SetRecoveryStatusPhase(c.stashClient, recovery, api.RecoveryFailed)
+		stash_util.UpdateRecoveryStatus(c.stashClient, recovery, func(in *api.RecoveryStatus) *api.RecoveryStatus {
+			in.Phase = api.RecoveryFailed
+			return in
+		})
 		ref, rerr := reference.GetReference(scheme.Scheme, recovery)
 		if rerr == nil {
 			eventer.CreateEventWithLog(
@@ -64,7 +67,10 @@ func (c *Controller) Run() {
 
 	if err = c.RecoverOrErr(recovery); err != nil {
 		log.Errorf("Failed to complete recovery %s, reason: %s\n", recovery.Name, err)
-		stash_util.SetRecoveryStatusPhase(c.stashClient, recovery, api.RecoveryFailed)
+		stash_util.UpdateRecoveryStatus(c.stashClient, recovery, func(in *api.RecoveryStatus) *api.RecoveryStatus {
+			in.Phase = api.RecoveryFailed
+			return in
+		})
 		ref, rerr := reference.GetReference(scheme.Scheme, recovery)
 		if rerr == nil {
 			eventer.CreateEventWithLog(
@@ -80,7 +86,11 @@ func (c *Controller) Run() {
 	}
 
 	log.Infof("Recovery %s succeeded\n", recovery.Name)
-	stash_util.SetRecoveryStatusPhase(c.stashClient, recovery, api.RecoverySucceeded) // TODO: status.Stats
+	stash_util.UpdateRecoveryStatus(c.stashClient, recovery, func(in *api.RecoveryStatus) *api.RecoveryStatus {
+		in.Phase = api.RecoverySucceeded
+		// TODO: status.Stats
+		return in
+	})
 	ref, rerr := reference.GetReference(scheme.Scheme, recovery)
 	if rerr == nil {
 		eventer.CreateEventWithLog(

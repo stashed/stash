@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/appscode/go/log"
 	"github.com/appscode/kutil"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1"
@@ -81,22 +80,6 @@ func TryUpdateRecovery(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, tran
 		err = fmt.Errorf("failed to update Recovery %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}
 	return
-}
-
-func SetRecoveryStatus(c cs.StashV1alpha1Interface, rec *api.Recovery, status api.RecoveryStatus) {
-	_, _, err := PatchRecovery(c, rec, func(in *api.Recovery) *api.Recovery {
-		in.Status = status
-		return in
-	})
-	if err != nil {
-		log.Errorln("Error updating recovery status:", rec.Status, "reason:", err)
-	} else {
-		log.Infoln("Updated recovery status:", rec.Status)
-	}
-}
-
-func SetRecoveryStatusPhase(c cs.StashV1alpha1Interface, rec *api.Recovery, phase api.RecoveryPhase) {
-	SetRecoveryStatus(c, rec, api.RecoveryStatus{Phase: phase})
 }
 
 func SetRecoveryStats(c cs.StashV1alpha1Interface, recovery *api.Recovery, path string, d time.Duration, phase api.RecoveryPhase) (*api.Recovery, error) {
