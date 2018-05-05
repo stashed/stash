@@ -42,7 +42,8 @@ import:
 - package: k8s.io/apimachinery
   version: kubernetes-1.10.0
 - package: k8s.io/apiserver
-  version: kubernetes-1.10.0
+  repo: https://github.com/tamalsaha/apiserver.git
+  version: k-1.10
 - package: k8s.io/client-go
   version: v7.0.0
 - package: k8s.io/kubernetes

@@ -105,9 +105,6 @@ func NewCustomResourceDefinition(config Config) *extensionsobj.CustomResourceDef
 				Kind:       config.Kind,
 				ShortNames: config.ShortNames,
 			},
-			Subresources: &extensionsobj.CustomResourceSubresources{
-				Status: &extensionsobj.CustomResourceSubresourceStatus{},
-			},
 		},
 	}
 	if config.SpecDefinitionName != "" && config.EnableValidation == true {
