@@ -27,21 +27,22 @@ You should have understanding the following Stash terms:
 - [Restic](/docs/concepts/crds/restic.md)
 - [Repository](/docs/concepts/crds/repository.md)
 - [Recovery](/docs/concepts/crds/recovery.md)
+- [Snapshot](/docs/concepts/crds/snapshot.md)
 
-Then, you will need a TLS secure [Minio](https://docs.minio.io/) server to store backed up data. You can deploy a TLS secure Minio server in your cluster by following the steps below:
+Then, you will need a TLS secure [Minio](https://docs.minio.io/) server to store backed up data. You can deploy a TLS secure Minio server in your cluster by following this [official guide](https://github.com/minio/minio/tree/master/docs/tls/kubernetes) or these steps below:
 
 ### Create self-signed SSl certificate
 
 A Certificate is used to verify the identity of server or client. Usually, a certificate issued by trusted third party is used to verify identity. We can also use a self-signed certificate. In this tutorial, we will use a self-signed certificate to verify the identity of Minio server.
 
-You can generate self-signed certificate easily with our [onessl](https://github.com/appscode/onessl) tool.
+You can generate self-signed certificate easily with our [onessl](https://github.com/kubepack/onessl) tool.
 
 Here is an example how we can generate a self-signed certificate using `onessl` tool.
 
 First install onessl by,
 
 ```console
-$ curl -fsSL -o onessl https://github.com/appscode/onessl/releases/download/0.1.0/onessl-linux-amd64 \
+$ curl -fsSL -o onessl curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.3.0/onessl-linux-amd64 \
   && chmod +x onessl \
   && sudo mv onessl /usr/local/bin/
 ```
@@ -74,6 +75,8 @@ $ cat server.key > private.key
 Be sure about the order of `server.crt`  and `ca.crt`. The order will be `server's certificate`, any `intermediate certificates` and finally the `CA's root certificate`. The intermediate certificates are required if the server certificate is created using a certificate which is not the root certificate but signed by the root certificate. [onessl](https://github.com/appscode/onessl) use root certificate by default to generate server certificate if no certificate path is specified by `--cert-dir` flag. Hence, the intermediate certificates are not required here.
 
 We will create a kubernetes secret with this `public.crt` and `private.key` files and mount the secret to `/root/.minio/certs/` directory of minio container.
+
+> Minio server will not trust a self-signed certificate by default. We can mark the self-signed certificate as a trusted certificate by adding `public.crt` file in `/root/.minio/certs/CAs` directory.
 
 ### Create Secret
 
@@ -134,6 +137,7 @@ metadata:
   labels:
     app: minio
 spec:
+  storageClassName: standard
   accessModes:
     - ReadWriteOnce
   resources:
@@ -176,10 +180,16 @@ spec:
         persistentVolumeClaim:
           # Name of the PVC created earlier
           claimName: minio-pvc
-      # Refer to minio-server-secret we have created earlier
-      - name: minio-server-secret
+      - name: minio-certs
         secret:
           secretName: minio-server-secret
+          items:
+          - key: public.crt
+            path: public.crt
+          - key: private.key
+            path: private.key
+          - key: public.crt
+            path: CAs/public.crt # mark self signed certificate as trusted
       containers:
       - name: minio
         # Pulls the default Minio image from Docker Hub
@@ -203,8 +213,8 @@ spec:
         volumeMounts:
         - name: storage # must match the volume name, above
           mountPath: "/storage"
-        - name: minio-server-secret
-          mountPath: "/root/.minio/certs/" # directory where the certificates will be mounted
+        - name: minio-certs
+          mountPath: "/root/.minio/certs"
 ```
 
 ### Create Service
