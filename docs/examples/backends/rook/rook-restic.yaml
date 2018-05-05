@@ -1,7 +1,7 @@
 apiVersion: stash.appscode.com/v1alpha1
 kind: Restic
 metadata:
-  name: minio-restic
+  name: rook-restic
   namespace: default
 spec:
   selector:
@@ -12,10 +12,10 @@ spec:
     retentionPolicyName: 'keep-last-5'
   backend:
     s3:
-      endpoint: 'https://minio-service.default.svc' # Use your own Minio server address.
-      bucket: stash-qa  # Give a name of the bucket where you want to backup.
+      endpoint: 'http://rook-ceph-rgw-my-store.rook' # Use your own rook object storage end point.
+      bucket: stash-backup  # Give a name of the bucket where you want to backup.
       prefix: demo  # . Path prefix into bucket where repository will be created.(optional).
-    storageSecretName: minio-restic-secret
+    storageSecretName: rook-restic-secret
   schedule: '@every 1m'
   volumeMounts:
   - mountPath: /source/data

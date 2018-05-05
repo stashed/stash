@@ -1,0 +1,57 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  # This name uniquely identifies the Deployment
+  name: minio-deployment
+  labels:
+    app: minio
+spec:
+  strategy:
+    type: Recreate # If pod fail, we want to recreate pod rather than restarting it.
+  template:
+    metadata:
+      labels:
+        # Label is used as a selector in the service.
+        app: minio-server
+    spec:
+      volumes:
+      # Refer to the PVC have created earlier
+      - name: storage
+        persistentVolumeClaim:
+          # Name of the PVC created earlier
+          claimName: minio-pvc
+      - name: minio-certs
+        secret:
+          secretName: minio-server-secret
+          items:
+          - key: public.crt
+            path: public.crt
+          - key: private.key
+            path: private.key
+          - key: public.crt
+            path: CAs/public.crt # mark self signed certificate as trusted
+      containers:
+      - name: minio
+        # Pulls the default Minio image from Docker Hub
+        image: minio/minio
+        args:
+        - server
+        - --address
+        - ":443"
+        - /storage
+        env:
+        # Minio access key and secret key
+        - name: MINIO_ACCESS_KEY
+          value: "<your minio access key(any string)>"
+        - name: MINIO_SECRET_KEY
+          value: "<your minio secret key(any string)>"
+        ports:
+        - containerPort: 443
+          # This ensures containers are allocated on separate hosts. Remove hostPort to allow multiple Minio containers on one host
+          hostPort: 443
+        # Mount the volumes into the pod
+        volumeMounts:
+        - name: storage # must match the volume name, above
+          mountPath: "/storage"
+        - name: minio-certs
+          mountPath: "/root/.minio/certs"

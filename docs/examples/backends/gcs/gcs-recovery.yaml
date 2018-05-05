@@ -1,7 +1,7 @@
 apiVersion: stash.appscode.com/v1alpha1
 kind: Recovery
 metadata:
-  name: stash-demo
+  name: gcs-recovery
   namespace: default
 spec:
   repository: deployment.stash-demo
@@ -9,5 +9,6 @@ spec:
   - /source/data
   recoveredVolumes:
   - mountPath: /source/data
-    hostPath:
-      path: /data/stash-test/restic-restored
+    gcePersistentDisk:
+        pdName: stash-recovered
+        fsType: ext4

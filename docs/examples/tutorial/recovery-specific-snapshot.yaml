@@ -5,6 +5,7 @@ metadata:
   namespace: default
 spec:
   repository: deployment.stash-demo
+  snapshot: deployment.stash-demo-d3050010
   paths:
   - /source/data
   recoveredVolumes:

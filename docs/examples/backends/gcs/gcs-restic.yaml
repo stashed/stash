@@ -6,13 +6,13 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: gcs-restic
+      app: stash-demo
   fileGroups:
   - path: /source/data
     retentionPolicyName: 'keep-last-5'
   backend:
     gcs:
-      bucket: stash-qa
+      bucket: stash-backup-repo
       prefix: demo
     storageSecretName: gcs-secret
   schedule: '@every 1m'

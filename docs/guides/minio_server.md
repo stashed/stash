@@ -122,7 +122,7 @@ type: Opaque
 Minio server needs a Persistent Volume to store data. Let's create a `Persistent Volume Claim` to request Persistent Volume from the cluster.
 
 ```console
-$ kubectl apply -f ./minio-pvc.yaml
+$ kubectl apply -f ./docs/examples/backends/minio/minio-pvc.yaml
 persistentvolumeclaim "minio-pvc" created
 ```
 
@@ -151,7 +151,7 @@ spec:
 Minio deployment creates pod where the Minio server will run. Let's create a deployment for minio server by,
 
 ```console
-$ kubectl apply -f ./minio-deployment.yaml
+$ kubectl apply -f ./docs/examples/backends/minio/minio-deployment.yaml
 deployment "minio-deployment" created
 ```
 
@@ -222,7 +222,7 @@ spec:
 Now, the final touch. Minio server is running in the cluster. Let's create a service so that other pods can access the server.
 
 ```console
-$ kubectl apply -f ./minio-service.yaml
+$ kubectl apply -f ./docs/examples/backends/minio/minio-service.yaml
 service "minio-service" created
 ```
 
@@ -262,7 +262,7 @@ In this tutorial, we are going to backup the `/source/data` folder of a `busybox
 First, deploy the following `busybox` Deployment in your cluster. Here we are using a git repository as a source volume for demonstration purpose.
 
 ```console
-$  kubectl apply -f ./busybox.yaml
+$  kubectl apply -f ./docs/examples/tutorial/busybox.yaml
 deployment "stash-demo" created
 ```
 
@@ -375,7 +375,7 @@ type: Opaque
 Now, we can create `Restic` crd. This will create a repository in Minio server and start taking periodic backup of `/source/data/` folder.
 
 ```console
-$ kubectl apply -f ./minio-restic.yaml
+$ kubectl apply -f ./docs/examples/backends/minio/minio-restic.yaml
 restic "minio-restic" created
 ```
 
@@ -440,7 +440,7 @@ restic "minio-restic" deleted
 Now, create a  `Recovery` crd.
 
 ```console
-$ kubectl apply -f ./minio-recovery.yaml
+$ kubectl apply -f ./docs/examples/backends/minio/minio-recovery.yaml
 recovery "minio-recovery" created
 ```
 
