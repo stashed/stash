@@ -338,7 +338,7 @@ To stop Restic from taking backup, you can do following things:
 
 * Set `spec.paused: true` in Restic `yaml` and then apply the update. This means:
 
-  - Paused Restic CRDs will not applied to newly created wrokloads.
+  - Paused Restic CRDs will not applied to newly created workloads.
   - Stash sidecar containers will not be removed from existing workloads but the sidecar will stop taking backup.
 
 ```command
