@@ -96,7 +96,7 @@ deployment.stash-demo-3e79020e   35s
 Now, create a `Recovery` with specifying `Snapshot` name,
 
 ```console
-$ kubectl apply -f ./docs/examples/tutorial/recovery.yaml
+$ kubectl apply -f ./docs/examples/tutorial/recovery-specific-snapshot.yaml
 recovery "stash-demo" created
 ```
 

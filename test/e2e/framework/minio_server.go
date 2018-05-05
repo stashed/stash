@@ -145,7 +145,7 @@ func (fi *Invocation) DeploymentForMinioServer() apps.Deployment {
 							},
 						},
 						{
-							Name: "minio-public-crt",
+							Name: "minio-certs",
 							VolumeSource: core.VolumeSource{
 								Secret: &core.SecretVolumeSource{
 									SecretName: "minio-server-secret",
@@ -154,33 +154,13 @@ func (fi *Invocation) DeploymentForMinioServer() apps.Deployment {
 											Key:  MINIO_PUBLIC_CRT_NAME,
 											Path: MINIO_PUBLIC_CRT_NAME,
 										},
-									},
-								},
-							},
-						},
-						{
-							Name: "minio-private-key",
-							VolumeSource: core.VolumeSource{
-								Secret: &core.SecretVolumeSource{
-									SecretName: "minio-server-secret",
-									Items: []core.KeyToPath{
 										{
 											Key:  MINIO_PRIVATE_KEY_NAME,
 											Path: MINIO_PRIVATE_KEY_NAME,
 										},
-									},
-								},
-							},
-						},
-						{
-							Name: "minio-ca-crt",
-							VolumeSource: core.VolumeSource{
-								Secret: &core.SecretVolumeSource{
-									SecretName: "minio-server-secret",
-									Items: []core.KeyToPath{
 										{
 											Key:  MINIO_PUBLIC_CRT_NAME,
-											Path: MINIO_PUBLIC_CRT_NAME,
+											Path: filepath.Join("CAs", MINIO_PUBLIC_CRT_NAME),
 										},
 									},
 								},
@@ -220,19 +200,8 @@ func (fi *Invocation) DeploymentForMinioServer() apps.Deployment {
 									MountPath: "/storage",
 								},
 								{
-									Name:      "minio-public-crt",
-									MountPath: filepath.Join(MINIO_CERTS_MOUNTPATH, MINIO_PUBLIC_CRT_NAME),
-									SubPath:   MINIO_PUBLIC_CRT_NAME,
-								},
-								{
-									Name:      "minio-private-key",
-									MountPath: filepath.Join(MINIO_CERTS_MOUNTPATH, MINIO_PRIVATE_KEY_NAME),
-									SubPath:   MINIO_PRIVATE_KEY_NAME,
-								},
-								{
-									Name:      "minio-ca-crt",
-									MountPath: filepath.Join(MINIO_CERTS_MOUNTPATH, "CAs", MINIO_PUBLIC_CRT_NAME),
-									SubPath:   MINIO_PUBLIC_CRT_NAME,
+									Name:      "minio-certs",
+									MountPath: MINIO_CERTS_MOUNTPATH,
 								},
 							},
 						},

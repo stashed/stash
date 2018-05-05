@@ -11,6 +11,7 @@ You should have understanding the following Stash concepts:
 - [Restic](/docs/concepts/crds/restic.md)
 - [Repository](/docs/concepts/crds/repository.md)
 - [Recovery](/docs/concepts/crds/recovery.md)
+- [Snapshot](/docs/concepts/crds/snapshot.md)
 
 Then, you will need to have a [GCS Bucket](https://console.cloud.google.com/storage) and [GCE persistent disk](https://console.cloud.google.com/compute/disks). GCE persistent disk must be in the same GCE project and zone as the cluster.
 
@@ -19,7 +20,7 @@ Then, you will need to have a [GCS Bucket](https://console.cloud.google.com/stor
 First, deploy the following `busybox` Deployment in your cluster. Here we are using a git repository as a source volume for demonstration purpose.
 
 ```console
-$ kubectl apply -f ./busybox.yaml
+$ kubectl apply -f ./docs/examples/tutorial/busybox.yaml
 deployment "stash-demo" created
 ```
 
@@ -120,7 +121,7 @@ type: Opaque
 Now, we can create `Restic` crd. This will create a repository `stash-backup-repo` in GCS bucket and start taking periodic backup of `/source/data/` folder.
 
 ```console
-$ kubectl apply -f ./gcs-restic.yaml
+$ kubectl apply -f ./docs/examples/backends/gcs/gcs-restic.yaml
 restic "gcs-restic" created
 ```
 
@@ -176,7 +177,7 @@ Here, `deployment.stash-demo-c1014ca6` represents the name of the successful bac
 Now, we will recover the backed up data into GCE persistent disk. First create a GCE disk named `stash-recovered` from [Google cloud console](https://console.cloud.google.com/compute/disks). Then create `Recovery` crd,
 
 ```console
-$ kubectl apply -f ./gcs-recovery.yaml
+$ kubectl apply -f ./docs/examples/backends/gcs/gcs-recovery.yaml
 recovery "gcs-recovery" created
 ```
 
@@ -255,7 +256,7 @@ recovery "gcs-recovery" deleted
 Now, mount the recovered volume in `busybox` deployment instead of `gitRepo` we had mounted before then re-deploy it.
 
 ```console
-$ kubectl apply -f ./busybox.yaml
+$ kubectl apply -f ./docs/examples/backends/gcs/restored-deployment-1.yaml
 deployment "stash-demo" created
 ```
 
@@ -330,7 +331,7 @@ restic "rook-restic" deleted
 Now, create a `PersistentVolumeClaim`,
 
 ```console
-$ kubectl apply -f ./gcs-pvc.yaml
+$ kubectl apply -f ./docs/examples/backends/gcs/gcs-pvc.yaml
 persistentvolumeclaim "stash-recovered" created
 ```
 
@@ -364,7 +365,7 @@ Look at the `STATUS` filed. `stash-recovered` PVC is bounded to volume `pvc-57be
 Now, create a `Recovery` to recover backed up data in this PVC.
 
 ```console
-$ kubectl apply -f ./gcs-recovery-pvc.yaml
+$ kubectl apply -f ./docs/examples/backends/gcs/gcs-recovery-to-pvc.yaml
 recovery "gcs-recovery" created
 ```
 
@@ -432,7 +433,7 @@ recovery "gcs-recovery" deleted
 Now, mount the recovered `PersistentVolumeClaim` in `busybox` deployment instead of `gitRepo` we had mounted before then re-deploy it,
 
 ```console
-$ kubectl apply -f ./busybox.yaml
+$ kubectl apply -f ./docs/examples/backends/gcs/restored-deployment-2.yaml
 deployment "stash-demo" created
 ```
 

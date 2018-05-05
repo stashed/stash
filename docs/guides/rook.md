@@ -11,6 +11,7 @@ You should have understanding the following Stash concepts:
 - [Restic](/docs/concepts/crds/restic.md)
 - [Repository](/docs/concepts/crds/repository.md)
 - [Recovery](/docs/concepts/crds/recovery.md)
+- [Snapshot](/docs/concepts/crds/snapshot.md)
 
 Then, you will need to have a [Rook Storage Service](https://rook.io) with [Object Storage](https://rook.io/docs/rook/master/object.html) and [Block Storage](https://rook.io/docs/rook/master/block.html) configured. If you do not already have a **Rook Storage Service** configured, you can create one by following this [quickstart guide](https://rook.io/docs/rook/master/quickstart.html).
 
@@ -19,7 +20,7 @@ Then, you will need to have a [Rook Storage Service](https://rook.io) with [Obje
 First, deploy the following `busybox` Deployment in your cluster. Here we are using a git repository as a source volume for demonstration purpose.
 
 ```console
-$ kubectl apply -f ./busybox.yaml
+$ kubectl apply -f ./docs/examples/tutorial/busybox.yaml
 deployment "stash-demo" created
 ```
 
@@ -120,7 +121,7 @@ type: Opaque
 Now, we can create `Restic` crd. This will create a repository `stash-backup-repo` in **Rook Object Storage** bucket and start taking periodic backup of `/source/data/` folder.
 
 ```console
-$ kubectl apply -f ./rook-restic.yaml
+$ kubectl apply -f ./docs/examples/backends/rook/rook-restic.yaml
 restic "rook-restic" created
 ```
 
@@ -187,7 +188,7 @@ restic "rook-restic" deleted
 Now, create a `PersistentVolumeClaim` for Rook Block Storage,
 
 ```console
-$ kubectl apply -f ./rook-pvc.yaml
+$ kubectl apply -f ./docs/examples/backends/rook/rook-pvc.yaml
 persistentvolumeclaim "stash-recovered" created
 ```
 
@@ -222,7 +223,7 @@ Look at the `STATUS` filed. `stash-recovered` PVC is bounded to volume `pvc-a7aa
 Now, create a `Recovery` to recover backed up data in this PVC.
 
 ```console
-$ kubectl apply -f ./rook-recovery.yaml
+$ kubectl apply -f ./docs/examples/backends/rook/rook-recovery.yaml
 recovery "rook-recovery" created
 ```
 
@@ -290,7 +291,7 @@ recovery "rook-recovery" deleted
 Now, mount the recovered `PersistentVolumeClaim` in `busybox` deployment instead of `gitRepo` we had mounted before then re-deploy it,
 
 ```console
-$ kubectl apply -f ./busybox.yaml
+$ kubectl apply -f ./docs/examples/backends/rook/restored-deployment.yaml
 deployment "stash-demo" created
 ```
 
