@@ -478,8 +478,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 					Properties: map[string]spec.Schema{
 						"repository": {
 							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
+								Ref: ref("k8s.io/api/core/v1.ObjectReference"),
 							},
 						},
 						"snapshot": {
@@ -531,7 +530,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{
-				"github.com/appscode/stash/apis/stash/v1alpha1.LocalSpec", "k8s.io/api/core/v1.LocalObjectReference"},
+				"github.com/appscode/stash/apis/stash/v1alpha1.LocalSpec", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.ObjectReference"},
 		},
 		"github.com/appscode/stash/apis/stash/v1alpha1.RecoveryStatus": {
 			Schema: spec.Schema{

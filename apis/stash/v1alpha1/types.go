@@ -156,7 +156,7 @@ type Recovery struct {
 }
 
 type RecoverySpec struct {
-	Repository string `json:"repository"`
+	Repository core.ObjectReference `json:"repository"`
 	// Snapshot to recover. Default is latest snapshot.
 	// +optional
 	Snapshot         string                      `json:"snapshot,omitempty"`
@@ -171,21 +171,6 @@ type RecoveryList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Recovery `json:"items,omitempty"`
-}
-
-// LocalTypedReference contains enough information to let you inspect or modify the referred object.
-type LocalTypedReference struct {
-	// Kind of the referent.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
-	// +optional
-	Kind string `json:"kind,omitempty"`
-	// Name of the referent.
-	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-	// +optional
-	Name string `json:"name,omitempty"`
-	// API version of the referent.
-	// +optional
-	APIVersion string `json:"apiVersion,omitempty"`
 }
 
 type RecoveryPhase string

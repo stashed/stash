@@ -299,7 +299,7 @@ func RecoveryEqual(old, new *api.Recovery) bool {
 }
 
 func NewRecoveryJob(stashClient cs.Interface, recovery *api.Recovery, image docker.Docker) (*batch.Job, error) {
-	repository, err := stashClient.StashV1alpha1().Repositories(recovery.Namespace).Get(recovery.Spec.Repository, metav1.GetOptions{})
+	repository, err := stashClient.StashV1alpha1().Repositories(recovery.Spec.Repository.Namespace).Get(recovery.Spec.Repository.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
