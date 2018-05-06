@@ -21,6 +21,11 @@ rules:
   - stash.appscode.com
   resources: ["*"]
   verbs: ["*"]
+- apiGroups: ['policy']
+  resources: ['podsecuritypolicies']
+  verbs:     ['use']
+  resourceNames:
+  - stash-operator
 - apiGroups:
   - apps
   resources:
