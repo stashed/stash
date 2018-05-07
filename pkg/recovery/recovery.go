@@ -12,6 +12,7 @@ import (
 	"github.com/appscode/stash/pkg/cli"
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/util"
+	"github.com/cenkalti/backoff"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -19,27 +20,40 @@ import (
 )
 
 type Controller struct {
-	k8sClient    kubernetes.Interface
-	stashClient  cs.StashV1alpha1Interface
-	namespace    string
-	recoveryName string
+	k8sClient      kubernetes.Interface
+	stashClient    cs.StashV1alpha1Interface
+	namespace      string
+	recoveryName   string
+	backoffMaxWait time.Duration
 }
 
 const (
 	RecoveryEventComponent = "stash-recovery"
 )
 
-func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, namespace, name string) *Controller {
+func New(k8sClient kubernetes.Interface, stashClient cs.StashV1alpha1Interface, namespace, name string, backoffMaxWait time.Duration) *Controller {
 	return &Controller{
-		k8sClient:    k8sClient,
-		stashClient:  stashClient,
-		namespace:    namespace,
-		recoveryName: name,
+		k8sClient:      k8sClient,
+		stashClient:    stashClient,
+		namespace:      namespace,
+		recoveryName:   name,
+		backoffMaxWait: backoffMaxWait,
 	}
 }
 
 func (c *Controller) Run() {
-	recovery, err := c.stashClient.Recoveries(c.namespace).Get(c.recoveryName, metav1.GetOptions{})
+	var recovery *api.Recovery
+	var err error
+
+	operation := func() error {
+		recovery, err = c.stashClient.Recoveries(c.namespace).Get(c.recoveryName, metav1.GetOptions{})
+		return err
+	}
+
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = c.backoffMaxWait
+	err = backoff.Retry(operation, b)
+
 	if err != nil {
 		log.Errorln(err)
 		return
