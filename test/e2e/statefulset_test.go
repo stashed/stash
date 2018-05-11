@@ -1113,7 +1113,7 @@ var _ = Describe("StatefulSet", func() {
 				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying ss with recovered volume")
-				ss.Namespace = recoveryNamespace.Namespace
+				ss.Namespace = recoveryNamespace.Name
 				ss.Spec.Template.Spec.Volumes = []core.Volume{
 					{
 						Name: framework.TestSourceDataVolumeName,
