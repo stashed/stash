@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
 	apps_util "github.com/appscode/kutil/apps/v1beta1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -577,7 +578,8 @@ var _ = Describe("Deployment", func() {
 				repos := f.DeploymentRepos(&deployment)
 				Expect(repos).NotTo(BeEmpty())
 
-				recovery.Spec.Repository = repos[0].Name
+				recovery.Spec.Repository.Name = repos[0].Name
+				recovery.Spec.Repository.Namespace = f.Namespace()
 				By("Creating recovery " + recovery.Name)
 				err = f.CreateRecovery(recovery)
 				Expect(err).NotTo(HaveOccurred())
@@ -1075,7 +1077,8 @@ var _ = Describe("Deployment", func() {
 				// give some time for deployment to terminate
 				time.Sleep(time.Second * 30)
 
-				recovery.Spec.Repository = localRef.GetRepositoryCRDName("", "")
+				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", "")
+				recovery.Spec.Repository.Namespace = f.Namespace()
 
 				By("Creating recovery " + recovery.Name)
 				err = f.CreateRecovery(recovery)
@@ -1163,9 +1166,112 @@ var _ = Describe("Deployment", func() {
 				// give some time for deployment to terminate
 				time.Sleep(time.Second * 30)
 
-				recovery.Spec.Repository = localRef.GetRepositoryCRDName("", "")
+				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", "")
+				recovery.Spec.Repository.Namespace = f.Namespace()
 
 				By("Creating recovery " + recovery.Name)
+				err = f.CreateRecovery(recovery)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for recovery succeed")
+				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
+
+				By("Checking cleanup")
+				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
+
+				By("Re-deploying deployment with recovered volume")
+				deployment.Spec.Template.Spec.Volumes = []core.Volume{
+					{
+						Name: framework.TestSourceDataVolumeName,
+						VolumeSource: core.VolumeSource{
+							HostPath: &core.HostPathVolumeSource{
+								Path: framework.TestRecoveredVolumePath,
+							},
+						},
+					},
+				}
+				_, err = f.CreateDeployment(deployment)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Reading data from /source/data mountPath")
+				f.EventuallyRecoveredData(deployment.ObjectMeta, framework.GetPathsFromResticFileGroups(&restic)).Should(BeEquivalentTo(previousData))
+			})
+
+		})
+	})
+
+	Describe("Recover from different namespace", func() {
+		var (
+			recoveryNamespace *core.Namespace
+		)
+		AfterEach(func() {
+			f.DeleteDeployment(deployment.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+			f.DeleteRecovery(recovery.ObjectMeta)
+		})
+
+		Context(`"Local" backend,single fileGroup`, func() {
+			AfterEach(func() {
+				framework.CleanupMinikubeHostPath()
+				f.DeleteNamespace(recoveryNamespace.Name)
+			})
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForHostPathLocalBackend()
+				recovery = f.RecoveryForRestic(restic)
+				recoveryNamespace = f.NewNamespace(rand.WithUniqSuffix("recovery"))
+			})
+			It(`recovered volume should have same data`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic")
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating Deployment " + deployment.Name)
+				_, err = f.CreateDeployment(deployment)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for sidecar")
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Waiting for Repository CRD")
+				f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
+
+				By("Waiting for backup to complete")
+				f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+
+				By("Waiting for backup event")
+				repos := f.DeploymentRepos(&deployment)
+				Expect(repos).NotTo(BeEmpty())
+				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+
+				By("Reading data from /source/data mountPath")
+				previousData, err := f.ReadDataFromMountedDir(deployment.ObjectMeta, framework.GetPathsFromResticFileGroups(&restic))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(previousData).NotTo(BeEmpty())
+
+				By("Deleting deployment")
+				f.DeleteDeployment(deployment.ObjectMeta)
+
+				By("Deleting restic")
+				f.DeleteRestic(restic.ObjectMeta)
+
+				// give some time for deployment to terminate
+				time.Sleep(time.Second * 30)
+
+				By("Creating new namespace: " + recoveryNamespace.Name)
+				_, err = f.KubeClient.CoreV1().Namespaces().Create(recoveryNamespace)
+				Expect(err).NotTo(HaveOccurred())
+
+				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", "")
+				recovery.Spec.Repository.Namespace = f.Namespace()
+
+				By("Creating recovery " + recovery.Name)
+				recovery.Namespace = recoveryNamespace.Name
 				err = f.CreateRecovery(recovery)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -1279,7 +1385,8 @@ var _ = Describe("Deployment", func() {
 				// give some time for deployment to terminate
 				time.Sleep(time.Second * 30)
 
-				recovery.Spec.Repository = localRef.GetRepositoryCRDName("", "")
+				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", "")
+				recovery.Spec.Repository.Namespace = f.Namespace()
 
 				By("Creating recovery " + recovery.Name)
 				recovery.Spec.Snapshot = latestOldSnapashot.Name

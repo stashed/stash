@@ -231,7 +231,7 @@ func (c *StashController) ensureRecoveryRBAC(resource *core.ObjectReference) err
 	}
 
 	// ensure role binding
-	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+	_, _, err = rbac_util.CreateOrPatchClusterRoleBinding(c.kubeClient, meta, func(in *rbac.ClusterRoleBinding) *rbac.ClusterRoleBinding {
 		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
 
 		if in.Labels == nil {

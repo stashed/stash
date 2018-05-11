@@ -22,6 +22,14 @@ func (f *Framework) CreateNamespace() error {
 	return nil
 }
 
-func (f *Framework) DeleteNamespace() error {
-	return f.KubeClient.CoreV1().Namespaces().Delete(f.namespace, deleteInBackground())
+func (f *Framework) DeleteNamespace(name string) error {
+	return f.KubeClient.CoreV1().Namespaces().Delete(name, deleteInBackground())
+}
+
+func (f *Framework) NewNamespace(name string) *core.Namespace {
+	return &core.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+	}
 }

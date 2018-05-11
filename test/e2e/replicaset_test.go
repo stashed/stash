@@ -3,6 +3,7 @@ package e2e_test
 import (
 	"time"
 
+	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
 	ext_util "github.com/appscode/kutil/extensions/v1beta1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -869,7 +870,8 @@ var _ = Describe("ReplicaSet", func() {
 				// give some time for rs to terminate
 				time.Sleep(time.Second * 30)
 
-				recovery.Spec.Repository = localRef.GetRepositoryCRDName("", "")
+				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", "")
+				recovery.Spec.Repository.Namespace = f.Namespace()
 
 				By("Creating recovery " + recovery.Name)
 				err = f.CreateRecovery(recovery)
@@ -961,9 +963,110 @@ var _ = Describe("ReplicaSet", func() {
 				// give some time for rs to terminate
 				time.Sleep(time.Second * 30)
 
-				recovery.Spec.Repository = localRef.GetRepositoryCRDName("", "")
+				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", "")
+				recovery.Spec.Repository.Namespace = f.Namespace()
 
 				By("Creating recovery " + recovery.Name)
+				err = f.CreateRecovery(recovery)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for recovery succeed")
+				f.EventuallyRecoverySucceed(recovery.ObjectMeta).Should(BeTrue())
+
+				By("Checking cleanup")
+				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
+
+				By("Re-deploying rs with recovered volume")
+				rs.Spec.Template.Spec.Volumes = []core.Volume{
+					{
+						Name: framework.TestSourceDataVolumeName,
+						VolumeSource: core.VolumeSource{
+							HostPath: &core.HostPathVolumeSource{
+								Path: framework.TestRecoveredVolumePath,
+							},
+						},
+					},
+				}
+				_, err = f.CreateReplicaSet(rs)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Reading data from /source/data mountPath")
+				f.EventuallyRecoveredData(rs.ObjectMeta, framework.GetPathsFromResticFileGroups(&restic)).Should(BeEquivalentTo(previousData))
+			})
+
+		})
+	})
+
+	Describe("Recover from different namespace", func() {
+		var (
+			recoveryNamespace *core.Namespace
+		)
+		Context(`"Local" backend, single fileGroup`, func() {
+			AfterEach(func() {
+				f.DeleteReplicaSet(rs.ObjectMeta)
+				f.DeleteRestic(restic.ObjectMeta)
+				f.DeleteSecret(cred.ObjectMeta)
+				f.DeleteRecovery(recovery.ObjectMeta)
+				framework.CleanupMinikubeHostPath()
+				f.DeleteNamespace(recoveryNamespace.Name)
+
+			})
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForHostPathLocalBackend()
+				recovery = f.RecoveryForRestic(restic)
+				recoveryNamespace = f.NewNamespace(rand.WithUniqSuffix("recovery"))
+			})
+			It(`recovered volume should have same data`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic")
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating ReplicaSet " + rs.Name)
+				_, err = f.CreateReplicaSet(rs)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for sidecar")
+				f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
+
+				By("Waiting for Repository CRD")
+				f.EventuallyRepository(&rs).ShouldNot(BeEmpty())
+
+				By("Waiting for backup to complete")
+				f.EventuallyRepository(&rs).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+
+				By("Waiting for backup event")
+				repos := f.ReplicaSetRepos(&rs)
+				Expect(repos).NotTo(BeEmpty())
+				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+
+				By("Reading data from /source/data mountPath")
+				previousData, err := f.ReadDataFromMountedDir(rs.ObjectMeta, framework.GetPathsFromResticFileGroups(&restic))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(previousData).NotTo(BeEmpty())
+
+				By("Deleting rs")
+				f.DeleteReplicaSet(rs.ObjectMeta)
+
+				By("Deleting restic")
+				f.DeleteRestic(restic.ObjectMeta)
+
+				// give some time for rs to terminate
+				time.Sleep(time.Second * 30)
+
+				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", "")
+				recovery.Spec.Repository.Namespace = f.Namespace()
+
+				By("Creating new namespace: " + recoveryNamespace.Name)
+				_, err = f.KubeClient.CoreV1().Namespaces().Create(recoveryNamespace)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating recovery " + recovery.Name)
+				recovery.Namespace = recoveryNamespace.Name
 				err = f.CreateRecovery(recovery)
 				Expect(err).NotTo(HaveOccurred())
 
