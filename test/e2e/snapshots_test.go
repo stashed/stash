@@ -231,10 +231,10 @@ var _ = Describe("Snapshots", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(snapshots).Should(HavePrefixInName(reponame))
 
-			By("Deleting snapshot " + snapshots.Items[len(snapshots.Items)-1].Name)
 			snapshots, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(metav1.ListOptions{LabelSelector: "workload-kind=Deployment"})
 			Expect(err).NotTo(HaveOccurred())
 			snapshotToDelete := snapshots.Items[len(snapshots.Items)-1].Name
+			By("Deleting snapshot " + snapshotToDelete)
 			policy := metav1.DeletePropagationForeground
 			err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).Delete(snapshotToDelete, &metav1.DeleteOptions{PropagationPolicy: &policy})
 			Expect(err).NotTo(HaveOccurred())
