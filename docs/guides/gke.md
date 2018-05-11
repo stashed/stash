@@ -190,7 +190,9 @@ metadata:
   name: gcs-recovery
   namespace: default
 spec:
-  repository: deployment.stash-demo
+  repository:
+    name: deployment.stash-demo
+    namespace: default
   paths:
   - /source/data
   recoveredVolumes:
@@ -224,7 +226,9 @@ items:
     selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/recoveries/gcs-recovery
     uid: 9f886069-3e0d-11e8-951b-42010a80002e
   spec:
-    repository: deployment.stash-demo
+    repository:
+      name: deployment.stash-demo
+      namespace: default
     paths:
     - /source/data
     recoveredVolumes:
@@ -378,7 +382,9 @@ metadata:
   name: gcs-recovery
   namespace: default
 spec:
-  repository: deployment.stash-demo
+  repository:
+    name: deployment.stash-demo
+    namespace: default
   paths:
   - /source/data
   recoveredVolumes:
@@ -409,7 +415,9 @@ metadata:
   selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/recoveries/gcs-recovery
   uid: fe0eb3b9-3e11-11e8-951b-42010a80002e
 spec:
-  repository: deployment.stash-demo
+  repository:
+    name: deployment.stash-demo
+    namespace: default
   paths:
   - /source/data
   recoveredVolumes:

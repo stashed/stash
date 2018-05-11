@@ -1076,6 +1076,7 @@ var _ = Describe("ReplicationController", func() {
 				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying rc with recovered volume")
+				rc.Namespace = recoveryNamespace.Name
 				rc.Spec.Template.Spec.Volumes = []core.Volume{
 					{
 						Name: framework.TestSourceDataVolumeName,

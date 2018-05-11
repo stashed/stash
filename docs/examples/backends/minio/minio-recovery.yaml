@@ -4,7 +4,9 @@ metadata:
   name: minio-recovery
   namespace: default
 spec:
-  repository: deployment.stash-demo
+  repository:
+    name: deployment.stash-demo
+    namespace: default
   paths:
   - /source/data
   recoveredVolumes:

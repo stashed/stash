@@ -4,7 +4,9 @@ metadata:
   name: stash-demo
   namespace: default
 spec:
-  repository: deployment.stash-demo
+  repository:
+    name: deployment.stash-demo
+    namespace: default
   snapshot: deployment.stash-demo-d3050010
   paths:
   - /source/data

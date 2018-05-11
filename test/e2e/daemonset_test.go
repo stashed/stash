@@ -980,6 +980,7 @@ var _ = Describe("DaemonSet", func() {
 				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying daemon with recovered volume")
+				daemon.Namespace = recoveryNamespace.Name
 				daemon.Spec.Template.Spec.Volumes = []core.Volume{
 					{
 						Name: framework.TestSourceDataVolumeName,

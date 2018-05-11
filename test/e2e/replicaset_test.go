@@ -1077,6 +1077,7 @@ var _ = Describe("ReplicaSet", func() {
 				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying rs with recovered volume")
+				rs.Name = recoveryNamespace.Name
 				rs.Spec.Template.Spec.Volumes = []core.Volume{
 					{
 						Name: framework.TestSourceDataVolumeName,

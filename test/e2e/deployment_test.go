@@ -1282,6 +1282,7 @@ var _ = Describe("Deployment", func() {
 				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying deployment with recovered volume")
+				deployment.Namespace = recoveryNamespace.Name
 				deployment.Spec.Template.Spec.Volumes = []core.Volume{
 					{
 						Name: framework.TestSourceDataVolumeName,
