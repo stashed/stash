@@ -70,7 +70,7 @@ func (c *StashController) ensureWorkloadSidecar(w *wapi.Workload, oldRestic, new
 	} else {
 		w.Spec.Template.Spec.Containers = core_util.UpsertContainer(
 			w.Spec.Template.Spec.Containers,
-			util.NewSidecarContainer(newRestic, ref, image),
+			util.NewSidecarContainer(newRestic, ref, image, c.EnableRBAC),
 		)
 	}
 

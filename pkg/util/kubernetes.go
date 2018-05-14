@@ -126,7 +126,7 @@ func PushgatewayURL() string {
 }
 
 func NewInitContainer(r *api.Restic, workload api.LocalTypedReference, image docker.Docker, enableRBAC bool) core.Container {
-	container := NewSidecarContainer(r, workload, image)
+	container := NewSidecarContainer(r, workload, image, enableRBAC)
 	container.Args = []string{
 		"backup",
 		"--restic-name=" + r.Name,
@@ -145,7 +145,7 @@ func NewInitContainer(r *api.Restic, workload api.LocalTypedReference, image doc
 	return container
 }
 
-func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image docker.Docker) core.Container {
+func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image docker.Docker, enableRBAC bool) core.Container {
 	if r.Annotations != nil {
 		if v, ok := r.Annotations[api.VersionTag]; ok {
 			image.Tag = v
@@ -164,6 +164,7 @@ func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image 
 			"--run-via-cron=true",
 			"--pushgateway-url=" + PushgatewayURL(),
 			fmt.Sprintf("--enable-analytics=%v", EnableAnalytics),
+			fmt.Sprintf("--enable-rbac=%v", enableRBAC),
 		}, LoggerOptions.ToFlags()...),
 		Env: []core.EnvVar{
 			{
