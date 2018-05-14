@@ -97,5 +97,5 @@ var _ = AfterSuite(func() {
 		root.KubeClient.CoreV1().Services(root.Namespace()).Delete("stash-local-apiserver", meta.DeleteInBackground())
 		root.KAClient.ApiregistrationV1beta1().APIServices().Delete("v1alpha1.admission.stash.appscode.com", meta.DeleteInBackground())
 	}
-	root.DeleteNamespace()
+	root.DeleteNamespace(root.Namespace())
 })
