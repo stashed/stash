@@ -1,5 +1,5 @@
 ---
-title: Weclome | Stash
+title: Welcome | Stash
 description: Welcome to Stash
 menu:
   product_stash_0.7.0-rc.3:
