@@ -201,3 +201,20 @@ func GetPathsFromResticFileGroups(restic *api.Restic) []string {
 	}
 	return paths
 }
+
+func (f *Framework) EventuallyJobSucceed(name string) GomegaAsyncAssertion {
+	jobCreated := false
+	return Eventually(func() bool {
+		obj, err := f.KubeClient.BatchV1().Jobs(f.namespace).Get(name, metav1.GetOptions{})
+		if !kerr.IsNotFound(err) {
+			Expect(err).NotTo(HaveOccurred())
+		}
+
+		if kerr.IsNotFound(err) && jobCreated {
+			return true
+		}
+
+		jobCreated = true
+		return obj.Status.Succeeded > 0
+	}, time.Minute*5, time.Second*5)
+}

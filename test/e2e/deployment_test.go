@@ -1387,4 +1387,72 @@ var _ = Describe("Deployment", func() {
 		})
 
 	})
+
+	Describe("CheckJob", func() {
+		AfterEach(func() {
+			f.DeleteDeployment(deployment.ObjectMeta)
+			f.DeleteRestic(restic.ObjectMeta)
+			f.DeleteSecret(cred.ObjectMeta)
+			framework.CleanupMinikubeHostPath()
+		})
+
+		Context("Multiple Replica", func() {
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForHostPathLocalBackend()
+				restic.Spec.Type = api.BackupOffline
+				restic.Spec.Schedule = "*/3 * * * *"
+			})
+			It(`should create checkJob`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic " + restic.Name)
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating Deployment " + deployment.Name)
+				deployment.Spec.Replicas = types.Int32P(3)
+				_, err = f.CreateDeployment(deployment)
+				Expect(err).NotTo(HaveOccurred())
+
+				cronJobName := util.ScaledownCronPrefix + restic.Name
+				By("Checking cron job created: " + cronJobName)
+				Eventually(func() error {
+					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
+					return err
+				}).Should(BeNil())
+
+				By("Waiting for scale down deployment to 0 replica")
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(0))
+
+				By("Waiting for scale up deployment to 1 replica")
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(1))
+
+				By("Waiting for init-container")
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
+
+				By("Waiting for Repository CRD")
+				f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
+
+				By("Waiting for backup to complete")
+				f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+
+				By("Waiting for backup event")
+				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(repos.Items).NotTo(BeEmpty())
+				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+
+				By("Waiting for scale up deployment to original replica")
+				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(int(*deployment.Spec.Replicas)))
+
+				By("Checking checkjob created")
+				checkJobName := util.CheckJobPrefix + restic.Name
+				f.EventuallyJobSucceed(checkJobName).Should(BeTrue())
+
+			})
+		})
+	})
 })
