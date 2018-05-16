@@ -4,7 +4,7 @@ import:
   version: master
 - package: github.com/appscode/pat
 - package: github.com/cenkalti/backoff
-  version: v1.1.0
+  version: v2.0.0
 - package: github.com/codeskyblue/go-sh
   version: master
 - package: github.com/golang/glog

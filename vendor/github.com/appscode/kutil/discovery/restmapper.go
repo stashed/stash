@@ -67,7 +67,7 @@ func guessGVK(obj interface{}) (schema.GroupVersionKind, error) {
 		return schema.GroupVersionKind{}, errors.Errorf("failed to guess GroupVersion from package path %s", pp)
 	}
 	group := parts[len(parts)-2]
-	if strings.HasPrefix(pp, "k8s.io/v1beta1") && group == "core" {
+	if strings.HasPrefix(pp, "k8s.io/api") && group == "core" {
 		group = ""
 	}
 	version := parts[len(parts)-1]

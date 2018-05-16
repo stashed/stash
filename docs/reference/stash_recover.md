@@ -24,10 +24,11 @@ stash recover [flags]
 ### Options
 
 ```
-  -h, --help                   help for recover
-      --kubeconfig string      Path to kubeconfig file with authorization information (the master location is set by the master flag).
-      --master string          The address of the Kubernetes API server (overrides any value in kubeconfig)
-      --recovery-name string   Name of the Recovery CRD.
+      --backoff-max-wait duration   Maximum wait for initial response from kube apiserver; 0 disables the timeout
+  -h, --help                        help for recover
+      --kubeconfig string           Path to kubeconfig file with authorization information (the master location is set by the master flag).
+      --master string               The address of the Kubernetes API server (overrides any value in kubeconfig)
+      --recovery-name string        Name of the Recovery CRD.
 ```
 
 ### Options inherited from parent commands
