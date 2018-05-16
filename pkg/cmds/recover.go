@@ -17,7 +17,7 @@ func NewCmdRecover() *cobra.Command {
 		masterURL      string
 		kubeconfigPath string
 		recoveryName   string
-		backoffMaxWait int
+		backoffMaxWait time.Duration
 	)
 
 	cmd := &cobra.Command{
@@ -32,14 +32,14 @@ func NewCmdRecover() *cobra.Command {
 			kubeClient := kubernetes.NewForConfigOrDie(config)
 			stashClient := cs.NewForConfigOrDie(config)
 
-			c := recovery.New(kubeClient, stashClient, meta.Namespace(), recoveryName, time.Duration(backoffMaxWait)*time.Second)
+			c := recovery.New(kubeClient, stashClient, meta.Namespace(), recoveryName, backoffMaxWait)
 			c.Run()
 		},
 	}
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&recoveryName, "recovery-name", recoveryName, "Name of the Recovery CRD.")
-	cmd.Flags().IntVar(&backoffMaxWait, "backoff-max-wait", 0, "Maximum wait in seconds for initial response from apiserver; 0 disables the timeout")
+	cmd.Flags().DurationVar(&backoffMaxWait, "backoff-max-wait", 0, "Maximum wait for initial response from kube apiserver; 0 disables the timeout")
 
 	return cmd
 }

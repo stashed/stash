@@ -1,5 +1,5 @@
-hash: 2642afa5e9ad2683b7cafc3530162db7134e0d11c36e1e451d6dda2b7f01ea37
-updated: 2018-05-05T12:08:12.368959344-07:00
+hash: 34cb79f018183b9dd19b4ab6f07ec4f03ff1299b72671bbd6182a6e663ff70ef
+updated: 2018-05-16T14:23:55.846658679-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -39,7 +39,7 @@ imports:
   - registry/admissionreview/v1beta1
   - runtime/serializer/versioning
 - name: github.com/appscode/kutil
-  version: ed8d181d523ddd37e5cb7a23fa457b4c370a5140
+  version: c397449684de5caf2de0309e6453eab905901cf8
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
@@ -112,7 +112,7 @@ imports:
 - name: github.com/blang/semver
   version: b38d23b8782a487059e8fc8773e9a5b228a77cb6
 - name: github.com/cenkalti/backoff
-  version: 61153c768f31ee5f130071d08fc82b85208528de
+  version: 2ea60e5f094469f9e65adb9cd103795b73ae743e
 - name: github.com/codegangsta/inject
   version: 33e0aa1cb7c019ccc3fbe049a8262a6403d30504
 - name: github.com/codeskyblue/go-sh
@@ -509,7 +509,7 @@ imports:
   subpackages:
   - rate
 - name: google.golang.org/api
-  version: db8ef494b6bdaf472489f97ad9c556e18c963444
+  version: d7aa31fbd7da4467a8056610e654315a4c1f068e
   subpackages:
   - gensupport
   - googleapi
@@ -932,7 +932,7 @@ imports:
   - pkg/client/clientset_generated/clientset/typed/apiregistration/v1
   - pkg/client/clientset_generated/clientset/typed/apiregistration/v1beta1
 - name: k8s.io/kube-openapi
-  version: f08db293d3ef80052d6513ece19792642a289fea
+  version: b3f03f55328800731ce03a164b80973014ecd455
   subpackages:
   - pkg/builder
   - pkg/common
