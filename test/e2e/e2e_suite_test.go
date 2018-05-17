@@ -60,7 +60,7 @@ var _ = BeforeSuite(func() {
 	kaClient := ka.NewForConfigOrDie(clientConfig)
 
 	root = framework.New(ctrlConfig.KubeClient, ctrlConfig.StashClient, kaClient, options.StartAPIServer, clientConfig)
-	err = root.CreateNamespace()
+	err = root.CreateTestNamespace()
 	Expect(err).NotTo(HaveOccurred())
 	By("Using test namespace " + root.Namespace())
 

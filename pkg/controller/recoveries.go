@@ -168,6 +168,10 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 		if err := c.ensureRecoveryRBAC(ref); err != nil {
 			return fmt.Errorf("error ensuring rbac for recovery job %s, reason: %s\n", job.Name, err)
 		}
+
+		if err := c.ensureRepoReaderRBAC(ref, rec); err != nil {
+			return fmt.Errorf("error ensuring repository-reader rbac for recovery job %s, reason: %s\n", job.Name, err)
+		}
 	}
 
 	log.Infoln("Recovery job created:", job.Name)

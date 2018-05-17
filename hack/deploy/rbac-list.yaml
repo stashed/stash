@@ -137,3 +137,9 @@ rules:
   - repositories
   verbs:
   - get
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get

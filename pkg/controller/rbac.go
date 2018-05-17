@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	SidecarClusterRole = "stash-sidecar"
-	ScaledownJobRole   = "stash-scaledownjob"
+	SidecarClusterRole          = "stash-sidecar"
+	ScaledownJobRole            = "stash-scaledownjob"
+	RepositoryReaderClusterRole = "appscode:stash:repository-reader"
 )
 
 func (c *StashController) getSidecarRoleBindingName(name string) string {
@@ -231,7 +232,7 @@ func (c *StashController) ensureRecoveryRBAC(resource *core.ObjectReference) err
 	}
 
 	// ensure role binding
-	_, _, err = rbac_util.CreateOrPatchClusterRoleBinding(c.kubeClient, meta, func(in *rbac.ClusterRoleBinding) *rbac.ClusterRoleBinding {
+	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
 
 		if in.Labels == nil {
@@ -249,6 +250,38 @@ func (c *StashController) ensureRecoveryRBAC(resource *core.ObjectReference) err
 				Kind:      "ServiceAccount",
 				Name:      meta.Name,
 				Namespace: meta.Namespace,
+			},
+		}
+		return in
+	})
+	return err
+}
+
+func (c *StashController) ensureRepoReaderRBAC(resource *core.ObjectReference, rec *api.Recovery) error {
+	meta := metav1.ObjectMeta{
+		Name:      resource.Name + ":repo-reader",
+		Namespace: rec.Spec.Repository.Namespace,
+	}
+
+	// ensure repo-reader role binding
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
+
+		if in.Labels == nil {
+			in.Labels = map[string]string{}
+		}
+		in.Labels["app"] = "stash"
+
+		in.RoleRef = rbac.RoleRef{
+			APIGroup: rbac.GroupName,
+			Kind:     "ClusterRole",
+			Name:     RepositoryReaderClusterRole,
+		}
+		in.Subjects = []rbac.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      resource.Name,
+				Namespace: resource.Namespace,
 			},
 		}
 		return in

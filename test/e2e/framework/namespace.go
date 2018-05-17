@@ -10,7 +10,7 @@ func (f *Framework) Namespace() string {
 	return f.namespace
 }
 
-func (f *Framework) CreateNamespace() error {
+func (f *Framework) CreateTestNamespace() error {
 	obj := core.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: f.namespace,
@@ -20,6 +20,11 @@ func (f *Framework) CreateNamespace() error {
 		return err
 	}
 	return nil
+}
+
+func (f *Framework) CreateNamespace(ns *core.Namespace) error {
+	_, err := f.KubeClient.CoreV1().Namespaces().Create(ns)
+	return err
 }
 
 func (f *Framework) DeleteNamespace(name string) error {

@@ -965,7 +965,7 @@ var _ = Describe("DaemonSet", func() {
 				recovery.Spec.Repository.Namespace = f.Namespace()
 
 				By("Creating new namespace: " + recoveryNamespace.Name)
-				_, err = f.KubeClient.CoreV1().Namespaces().Create(recoveryNamespace)
+				err = f.CreateNamespace(recoveryNamespace)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating recovery " + recovery.Name)

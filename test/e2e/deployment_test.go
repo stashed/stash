@@ -1264,7 +1264,7 @@ var _ = Describe("Deployment", func() {
 				time.Sleep(time.Second * 30)
 
 				By("Creating new namespace: " + recoveryNamespace.Name)
-				_, err = f.KubeClient.CoreV1().Namespaces().Create(recoveryNamespace)
+				err = f.CreateNamespace(recoveryNamespace)
 				Expect(err).NotTo(HaveOccurred())
 
 				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", "")
