@@ -48,7 +48,7 @@ Indicates the name of the `Repository` CRD that represents respective **restic**
 
 ### spec.repository.namespace
 
-Indicates the `Namespace` of `Repository` CRD. This field allow the users to recover backed up volume to/from any namespace.
+Indicates the `Namespace` of `Repository` CRD. This field allow the users to recover backed up volume from a different namespace.
 
 ### spec.snapshot
 
