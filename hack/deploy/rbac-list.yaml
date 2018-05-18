@@ -75,7 +75,6 @@ rules:
   - clusterroles
   - roles
   - rolebindings
-  - clusterrolebindings
   verbs: ["get", "create", "delete", "patch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
