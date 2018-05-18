@@ -37,6 +37,8 @@ fi
 
 export STASH_NAMESPACE=stash-dev
 export KUBE_CA=$($ONESSL get kube-ca | $ONESSL base64)
+export STASH_ENABLE_WEBHOOK = true
+
 while test $# -gt 0; do
     case "$1" in
         -n)
@@ -59,6 +61,13 @@ while test $# -gt 0; do
             fi
             shift
             ;;
+        --enable-webhook*)
+            val=`echo $1 | sed -e 's/^[^=]*=//g'`
+            if [ "$val" = "false" ]; then
+                export STASH_ENABLE_WEBHOOK=false
+            fi
+            shift
+            ;;
          *)
             echo $1
             exit 1
@@ -67,7 +76,11 @@ while test $# -gt 0; do
 done
 
 cat $REPO_ROOT/hack/dev/apiregistration.yaml | envsubst | kubectl apply -f -
-cat $REPO_ROOT/hack/deploy/mutating-webhook.yaml | envsubst | kubectl apply -f -
-cat $REPO_ROOT/hack/deploy/validating-webhook.yaml | envsubst | kubectl apply -f -
+
+if [ "$STASH_ENABLE_WEBHOOK" = true ]; then
+    cat $REPO_ROOT/hack/deploy/mutating-webhook.yaml | envsubst | kubectl apply -f -
+    cat $REPO_ROOT/hack/deploy/validating-webhook.yaml | envsubst | kubectl apply -f -
+fi
+
 rm -f ./onessl
 popd

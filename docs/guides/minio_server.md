@@ -453,7 +453,9 @@ metadata:
   name: minio-recovery
   namespace: default
 spec:
-  repository: deployment.stash-demo
+  repository:
+    name: deployment.stash-demo
+    namespace: default
   paths:
   - /source/data
   recoveredVolumes:
@@ -485,7 +487,9 @@ metadata:
   selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/recoveries/minio-recovery
   uid: 64c12ff7-058a-11e8-9976-08002750604b
 spec:
-  repository: deployment.stash-demo
+  repository:
+    name: deployment.stash-demo
+    namespace: default
   paths:
   - /source/data
   recoveredVolumes:

@@ -24,6 +24,10 @@ import (
 	"k8s.io/client-go/tools/reference"
 )
 
+const (
+	RecoveryEventComponent = "stash-recovery"
+)
+
 func (c *StashController) NewRecoveryWebhook() hooks.AdmissionHook {
 	return webhook.NewGenericWebhook(
 		schema.GroupVersionResource{
@@ -136,6 +140,7 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 
 	job, err := util.NewRecoveryJob(c.stashClient, rec, image)
 	if err != nil {
+		eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, rec, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
 		return err
 	}
 	if c.EnableRBAC {
@@ -155,7 +160,7 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 		})
 		ref, rerr := reference.GetReference(scheme.Scheme, rec)
 		if rerr == nil {
-			c.recorder.Event(ref, core.EventTypeWarning, eventer.EventReasonFailedToRecover, err.Error())
+			eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, ref, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
 		}
 		return err
 	}
@@ -166,7 +171,15 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 			return err
 		}
 		if err := c.ensureRecoveryRBAC(ref); err != nil {
-			return fmt.Errorf("error ensuring rbac for recovery job %s, reason: %s\n", job.Name, err)
+			err = fmt.Errorf("error ensuring rbac for recovery job %s, reason: %s\n", job.Name, err)
+			eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, rec, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
+			return err
+		}
+
+		if err := c.ensureRepoReaderRBAC(ref, rec); err != nil {
+			err = fmt.Errorf("error ensuring repository-reader rbac for recovery job %s, reason: %s\n", job.Name, err)
+			eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, rec, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
+			return err
 		}
 	}
 

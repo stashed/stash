@@ -236,7 +236,9 @@ metadata:
   name: rook-recovery
   namespace: default
 spec:
-  repository: deployment.stash-demo
+  repository:
+    name: deployment.stash-demo
+    namespace: default
   paths:
   - /source/data
   recoveredVolumes:
@@ -267,7 +269,9 @@ metadata:
   selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/recoveries/rook-recovery
   uid: 1dbad356-3e51-11e8-b2bd-080027dbef96
 spec:
-  repository: deployment.stash-demo
+  repository:
+    name: deployment.stash-demo
+    namespace: default
   paths:
   - /source/data
   recoveredVolumes:

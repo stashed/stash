@@ -5,12 +5,14 @@ import (
 	core_util "github.com/appscode/kutil/core/v1"
 	rbac_util "github.com/appscode/kutil/rbac/v1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	"github.com/appscode/stash/client/clientset/versioned/scheme"
 	apps "k8s.io/api/apps/v1beta1"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	extensions "k8s.io/api/extensions/v1beta1"
 	rbac "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/reference"
 )
 
 const (
@@ -125,7 +127,7 @@ func (c *StashController) ensureSidecarClusterRole() error {
 
 // use scaledownjob-role, service-account and role-binding name same as job name
 // set job as owner of role, service-account and role-binding
-func (c *StashController) ensureScaledownJoblRBAC(resource *core.ObjectReference) error {
+func (c *StashController) ensureScaledownJobRBAC(resource *core.ObjectReference) error {
 	// ensure roles
 	meta := metav1.ObjectMeta{
 		Name:      ScaledownJobRole,
@@ -249,6 +251,92 @@ func (c *StashController) ensureRecoveryRBAC(resource *core.ObjectReference) err
 				Kind:      "ServiceAccount",
 				Name:      meta.Name,
 				Namespace: meta.Namespace,
+			},
+		}
+		return in
+	})
+	return err
+}
+
+func getRepoReaderRoleName(repoName string) string {
+	return "appscode:stash:repo-reader:" + repoName
+}
+
+func (c *StashController) ensureRepoReaderRole(repo *api.Repository) error {
+	meta := metav1.ObjectMeta{
+		Name:      getRepoReaderRoleName(repo.Name),
+		Namespace: repo.Namespace,
+	}
+
+	ref, err := reference.GetReference(scheme.Scheme, repo)
+	if err != nil {
+		return err
+	}
+	_, _, err = rbac_util.CreateOrPatchRole(c.kubeClient, meta, func(in *rbac.Role) *rbac.Role {
+		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, ref)
+
+		if in.Labels == nil {
+			in.Labels = map[string]string{}
+		}
+		in.Labels["app"] = "stash"
+
+		in.Rules = []rbac.PolicyRule{
+			{
+				APIGroups:     []string{api.SchemeGroupVersion.Group},
+				Resources:     []string{"repositories"},
+				ResourceNames: []string{repo.Name},
+				Verbs:         []string{"get"},
+			},
+			{
+				APIGroups:     []string{core.GroupName},
+				Resources:     []string{"secrets"},
+				ResourceNames: []string{repo.Spec.Backend.StorageSecretName},
+				Verbs:         []string{"get"},
+			},
+		}
+
+		return in
+	})
+	return err
+}
+
+func (c *StashController) ensureRepoReaderRBAC(resource *core.ObjectReference, rec *api.Recovery) error {
+	meta := metav1.ObjectMeta{
+		Name:      resource.Name + ":repo-reader",
+		Namespace: rec.Spec.Repository.Namespace,
+	}
+
+	repo, err := c.stashClient.StashV1alpha1().Repositories(rec.Spec.Repository.Namespace).Get(rec.Spec.Repository.Name, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	// ensure repo-reader role
+	err = c.ensureRepoReaderRole(repo)
+	if err != nil {
+		return err
+	}
+
+	// ensure repo-reader role binding
+	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
+
+		if in.Labels == nil {
+			in.Labels = map[string]string{}
+		}
+		in.Labels["app"] = "stash"
+
+		in.RoleRef = rbac.RoleRef{
+			APIGroup: rbac.GroupName,
+			Kind:     "Role",
+			Name:     getRepoReaderRoleName(rec.Spec.Repository.Name),
+		}
+
+		in.Subjects = []rbac.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      resource.Name,
+				Namespace: resource.Namespace,
 			},
 		}
 		return in

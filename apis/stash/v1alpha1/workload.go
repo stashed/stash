@@ -13,6 +13,21 @@ const (
 	KindDaemonSet             = "DaemonSet"
 )
 
+// LocalTypedReference contains enough information to let you inspect or modify the referred object.
+type LocalTypedReference struct {
+	// Kind of the referent.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	// +optional
+	Kind string `json:"kind,omitempty"`
+	// Name of the referent.
+	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+	// +optional
+	Name string `json:"name,omitempty"`
+	// API version of the referent.
+	// +optional
+	APIVersion string `json:"apiVersion,omitempty"`
+}
+
 func (workload *LocalTypedReference) Canonicalize() error {
 	if workload.Name == "" || workload.Kind == "" {
 		return fmt.Errorf("missing workload name or kind")

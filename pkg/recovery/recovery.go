@@ -119,7 +119,7 @@ func (c *Controller) Run() {
 }
 
 func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
-	repository, err := c.stashClient.Repositories(recovery.Namespace).Get(recovery.Spec.Repository, metav1.GetOptions{})
+	repository, err := c.stashClient.Repositories(recovery.Spec.Repository.Namespace).Get(recovery.Spec.Repository.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -127,7 +127,7 @@ func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
 	if err != nil {
 		return err
 	}
-	secret, err := c.k8sClient.CoreV1().Secrets(c.namespace).Get(repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	secret, err := c.k8sClient.CoreV1().Secrets(repository.Namespace).Get(repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}

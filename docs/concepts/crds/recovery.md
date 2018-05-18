@@ -28,7 +28,9 @@ metadata:
   name: stash-demo
   namespace: default
 spec:
-  repository: deployment.stash-demo
+  repository:
+    name: deployment.stash-demo
+    namespace: default
   snapshot: deployment.stash-demo-e0e9c272 # skip this field to recover latest snapshot
   paths:
   - /source/data
@@ -40,9 +42,13 @@ spec:
 
 The `.spec` section has following parts:
 
-### spec.repository
+### spec.repository.name
 
 Indicates the name of the `Repository` CRD that represents respective **restic** repository where the backed up snapshots are stored. To know more about `Repository` CRD, visit [here](/docs/concepts/crds/repository.md).
+
+### spec.repository.namespace
+
+Indicates the `Namespace` of `Repository` CRD. This field allow the users to recover backed up volume from a different namespace.
 
 ### spec.snapshot
 

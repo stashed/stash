@@ -31,7 +31,9 @@ metadata:
   name: stash-demo
   namespace: default
 spec:
-  repository: deployment.stash-demo
+  repository:
+    name: deployment.stash-demo
+    namespace: default
   paths:
   - /source/data
   recoveredVolumes:
@@ -42,7 +44,8 @@ spec:
 
 Here,
 
-- `spec.repository` specifies the name of the `Repository` CRD that represents respective **restic** repository.
+- `spec.repository.name` specifies the name of the `Repository` crd that represents respective **restic** repository.
+- `spec.repository.namespace` specifies the namespace of `Repository` crd.
 - `spec.paths` specifies the file-group paths that were backed up using `Restic`.
 - `spec.recoveredVolumes` indicates an array of volumes where snapshots will be recovered. Here, `mountPath` specifies where the volume will be mounted. Note that, `Recovery` recovers data in the same paths from where the backup was taken (specified in `spec.paths`). So, volumes must be mounted on those paths or their parent paths.
 
@@ -66,7 +69,9 @@ metadata:
   selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/recoveries/stash-demo
   uid: 2bf74432-d8bc-11e7-be92-0800277f19c0
 spec:
-  repository: deployment.stash-demo
+  repository:
+    name: deployment.stash-demo
+    namespace: default
   paths:
   - /source/data
   recoveredVolumes:
@@ -107,7 +112,9 @@ metadata:
   name: stash-demo
   namespace: default
 spec:
-  repository: deployment.stash-demo
+  repository:
+    name: deployment.stash-demo
+    namespace: default
   snapshot: deployment.stash-demo-d3050010
   paths:
   - /source/data

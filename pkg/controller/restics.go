@@ -210,7 +210,7 @@ func (c *StashController) EnsureScaledownCronJob(restic *api.Restic) error {
 		if err != nil {
 			return err
 		}
-		if err = c.ensureScaledownJoblRBAC(ref); err != nil {
+		if err = c.ensureScaledownJobRBAC(ref); err != nil {
 			return fmt.Errorf("error ensuring rbac for kubectl cron job %s, reason: %s\n", meta.Name, err)
 		}
 	}
