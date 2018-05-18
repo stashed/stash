@@ -262,14 +262,25 @@ func getRepoReaderRoleName(repoName string) string {
 	return "appscode:stash:repo-reader:" + repoName
 }
 
-func getRepoReaderRole(repo *api.Repository) (*rbac.Role, error) {
-	role := &rbac.Role{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      getRepoReaderRoleName(repo.Name),
-			Namespace: repo.Namespace,
-		},
+func (c *StashController) ensureRepoReaderRole(repo *api.Repository) error {
+	meta := metav1.ObjectMeta{
+		Name:      getRepoReaderRoleName(repo.Name),
+		Namespace: repo.Namespace,
+	}
 
-		Rules: []rbac.PolicyRule{
+	ref, err := reference.GetReference(scheme.Scheme, repo)
+	if err != nil {
+		return err
+	}
+	_, _, err = rbac_util.CreateOrPatchRole(c.kubeClient, meta, func(in *rbac.Role) *rbac.Role {
+		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, ref)
+
+		if in.Labels == nil {
+			in.Labels = map[string]string{}
+		}
+		in.Labels["app"] = "stash"
+
+		in.Rules = []rbac.PolicyRule{
 			{
 				APIGroups:     []string{api.SchemeGroupVersion.Group},
 				Resources:     []string{"repositories"},
@@ -282,25 +293,8 @@ func getRepoReaderRole(repo *api.Repository) (*rbac.Role, error) {
 				ResourceNames: []string{repo.Spec.Backend.StorageSecretName},
 				Verbs:         []string{"get"},
 			},
-		},
-	}
+		}
 
-	ref, err := reference.GetReference(scheme.Scheme, repo)
-	if err != nil {
-		return nil, err
-	}
-	role.ObjectMeta = core_util.EnsureOwnerReference(role.ObjectMeta, ref)
-
-	return role, nil
-}
-
-func (c *StashController) ensureRepoReaderRole(repo *api.Repository) error {
-	repoReaderRole, err := getRepoReaderRole(repo)
-	if err != nil {
-		return err
-	}
-	_, _, err = rbac_util.CreateOrPatchRole(c.kubeClient, repoReaderRole.ObjectMeta, func(in *rbac.Role) *rbac.Role {
-		in = repoReaderRole
 		return in
 	})
 	return err
