@@ -13,16 +13,18 @@ import (
 type E2EOptions struct {
 	*server.ExtraOptions
 
-	KubeContext    string
-	KubeConfig     string
-	StartAPIServer bool
+	KubeContext        string
+	KubeConfig         string
+	EnableWebhook      bool
+	SelfHostedOperator bool
 }
 
 var (
 	options = &E2EOptions{
-		ExtraOptions:   server.NewExtraOptions(),
-		KubeConfig:     filepath.Join(homedir.HomeDir(), ".kube", "config"),
-		StartAPIServer: false,
+		ExtraOptions:       server.NewExtraOptions(),
+		KubeConfig:         filepath.Join(homedir.HomeDir(), ".kube", "config"),
+		EnableWebhook:      false,
+		SelfHostedOperator: false,
 	}
 )
 
@@ -31,7 +33,8 @@ func init() {
 	options.AddGoFlags(flag.CommandLine)
 	flag.StringVar(&options.KubeConfig, "kubeconfig", options.KubeConfig, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	flag.StringVar(&options.KubeContext, "kube-context", "", "Name of kube context")
-	flag.BoolVar(&options.StartAPIServer, "webhook", options.StartAPIServer, "Start API server for webhook")
+	flag.BoolVar(&options.EnableWebhook, "webhook", options.EnableWebhook, "Enable Mutating and Validating Webhook")
+	flag.BoolVar(&options.SelfHostedOperator, "selfhosted-operator", options.SelfHostedOperator, "Run test in self hosted operator mode")
 	enableLogging()
 	flag.Parse()
 }

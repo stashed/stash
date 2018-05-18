@@ -14,16 +14,17 @@ import (
 )
 
 type Framework struct {
-	KubeClient     kubernetes.Interface
-	StashClient    cs.Interface
-	KAClient       ka.Interface
-	namespace      string
-	CertStore      *certstore.CertStore
-	WebhookEnabled bool
-	ClientConfig   *rest.Config
+	KubeClient         kubernetes.Interface
+	StashClient        cs.Interface
+	KAClient           ka.Interface
+	namespace          string
+	CertStore          *certstore.CertStore
+	WebhookEnabled     bool
+	SelfHostedOperator bool
+	ClientConfig       *rest.Config
 }
 
-func New(kubeClient kubernetes.Interface, extClient cs.Interface, kaClient ka.Interface, webhookEnabled bool, clientConfig *rest.Config) *Framework {
+func New(kubeClient kubernetes.Interface, extClient cs.Interface, kaClient ka.Interface, webhookEnabled bool, selfHostedOperator bool, clientConfig *rest.Config) *Framework {
 	store, err := certstore.NewCertStore(afero.NewMemMapFs(), filepath.Join("", "pki"))
 	Expect(err).NotTo(HaveOccurred())
 
@@ -31,13 +32,14 @@ func New(kubeClient kubernetes.Interface, extClient cs.Interface, kaClient ka.In
 	Expect(err).NotTo(HaveOccurred())
 
 	return &Framework{
-		KubeClient:     kubeClient,
-		StashClient:    extClient,
-		KAClient:       kaClient,
-		namespace:      rand.WithUniqSuffix("test-stash"),
-		CertStore:      store,
-		WebhookEnabled: webhookEnabled,
-		ClientConfig:   clientConfig,
+		KubeClient:         kubeClient,
+		StashClient:        extClient,
+		KAClient:           kaClient,
+		namespace:          rand.WithUniqSuffix("test-stash"),
+		CertStore:          store,
+		WebhookEnabled:     webhookEnabled,
+		SelfHostedOperator: selfHostedOperator,
+		ClientConfig:       clientConfig,
 	}
 }
 

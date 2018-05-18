@@ -36,6 +36,9 @@ func (f *Framework) StartAPIServerAndOperator(kubeConfigPath string, extraOption
 
 	sh := shell.NewSession()
 	args := []interface{}{"--namespace", f.Namespace()}
+	if !f.WebhookEnabled {
+		args = append(args, "--enable-webhook=false")
+	}
 	SetupServer := filepath.Join("..", "..", "hack", "dev", "setup-server.sh")
 
 	By("Creating API server and webhook stuffs")
