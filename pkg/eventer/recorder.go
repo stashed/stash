@@ -30,6 +30,7 @@ const (
 	EventReasonFailedCronJob                 = "FailedCronJob"
 	EventReasonFailedToDelete                = "FailedDelete"
 	EventReasonJobCreated                    = "RecoveryJobCreated"
+	EventReasonJobFailedToCreate             = "RecoveryJobFailedToCreate"
 	EventReasonCheckJobCreated               = "CheckJobCreated"
 	EventReasonFailedSetup                   = "SetupFailed"
 )

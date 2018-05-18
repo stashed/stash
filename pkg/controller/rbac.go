@@ -258,14 +258,15 @@ func (c *StashController) ensureRecoveryRBAC(resource *core.ObjectReference) err
 	return err
 }
 
-func getRepoReaderClusterRoleName(repoName string) string {
+func getRepoReaderRoleName(repoName string) string {
 	return "appscode:stash:repo-reader:" + repoName
 }
 
-func getRepoReaderClusterRole(repo *api.Repository) *rbac.ClusterRole {
-	return &rbac.ClusterRole{
+func getRepoReaderRole(repo *api.Repository) (*rbac.Role, error) {
+	role := &rbac.Role{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: getRepoReaderClusterRoleName(repo.Name),
+			Name:      getRepoReaderRoleName(repo.Name),
+			Namespace: repo.Namespace,
 		},
 
 		Rules: []rbac.PolicyRule{
@@ -283,18 +284,23 @@ func getRepoReaderClusterRole(repo *api.Repository) *rbac.ClusterRole {
 			},
 		},
 	}
-}
-
-func (c *StashController) ensureRepoReaderClusterRole(repo *api.Repository) error {
-	repoReaderClusterRole := getRepoReaderClusterRole(repo)
 
 	ref, err := reference.GetReference(scheme.Scheme, repo)
 	if err != nil {
+		return nil, err
+	}
+	role.ObjectMeta = core_util.EnsureOwnerReference(role.ObjectMeta, ref)
+
+	return role, nil
+}
+
+func (c *StashController) ensureRepoReaderRole(repo *api.Repository) error {
+	repoReaderRole, err := getRepoReaderRole(repo)
+	if err != nil {
 		return err
 	}
-	_, _, err = rbac_util.CreateOrPatchClusterRole(c.kubeClient, repoReaderClusterRole.ObjectMeta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
-		in = repoReaderClusterRole
-		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, ref)
+	_, _, err = rbac_util.CreateOrPatchRole(c.kubeClient, repoReaderRole.ObjectMeta, func(in *rbac.Role) *rbac.Role {
+		in = repoReaderRole
 		return in
 	})
 	return err
@@ -311,8 +317,8 @@ func (c *StashController) ensureRepoReaderRBAC(resource *core.ObjectReference, r
 		return err
 	}
 
-	// ensure repo-reader cluster-role
-	err = c.ensureRepoReaderClusterRole(repo)
+	// ensure repo-reader role
+	err = c.ensureRepoReaderRole(repo)
 	if err != nil {
 		return err
 	}
@@ -328,8 +334,8 @@ func (c *StashController) ensureRepoReaderRBAC(resource *core.ObjectReference, r
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
-			Kind:     "ClusterRole",
-			Name:     getRepoReaderClusterRoleName(rec.Spec.Repository.Name),
+			Kind:     "Role",
+			Name:     getRepoReaderRoleName(rec.Spec.Repository.Name),
 		}
 
 		in.Subjects = []rbac.Subject{
