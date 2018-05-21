@@ -381,5 +381,5 @@ func (c *StashController) ensureRepoReaderRolebindingDeleted(meta *metav1.Object
 		return err
 	}
 	glog.Infof("Deleted repo-reader rolebinding: " + GetRepoReaderRoleBindingName(meta.Name, meta.Namespace))
-	return err
+	return nil
 }
