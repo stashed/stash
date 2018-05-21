@@ -117,6 +117,13 @@ func (f *Framework) DeleteJobAndDependents(jobName string, recovery *api.Recover
 		_, err := f.KubeClient.RbacV1().RoleBindings(recovery.Namespace).Get(jobName, metav1.GetOptions{})
 		return kerr.IsNotFound(err) || kerr.IsGone(err)
 	}, time.Minute*3, time.Second*2).Should(BeTrue())
+
+	By("Checking repo-reader role-binding deleted")
+	roleName := jobName + ":" + recovery.Namespace + ":" + "repo-reader"
+	Eventually(func() bool {
+		_, err := f.KubeClient.RbacV1().RoleBindings(recovery.Spec.Repository.Namespace).Get(roleName, metav1.GetOptions{})
+		return kerr.IsNotFound(err) || kerr.IsGone(err)
+	}, time.Minute*3, time.Second*2).Should(BeTrue())
 }
 
 func CreateDemoDataInHostPath() error {
