@@ -268,7 +268,7 @@ func getRepoReaderRoleName(repoName string) string {
 	return "appscode:stash:repo-reader:" + repoName
 }
 
-func getRepoReaderRoleBindingName(name, namespace string) string {
+func GetRepoReaderRoleBindingName(name, namespace string) string {
 	return name + ":" + namespace + ":repo-reader"
 }
 
@@ -312,7 +312,7 @@ func (c *StashController) ensureRepoReaderRole(repo *api.Repository) error {
 
 func (c *StashController) ensureRepoReaderRBAC(resource *core.ObjectReference, rec *api.Recovery) error {
 	meta := metav1.ObjectMeta{
-		Name:      getRepoReaderRoleBindingName(resource.Name, resource.Namespace),
+		Name:      GetRepoReaderRoleBindingName(resource.Name, resource.Namespace),
 		Namespace: rec.Spec.Repository.Namespace,
 	}
 
@@ -376,10 +376,10 @@ func (c *StashController) ensureRepoReaderRolebindingDeleted(meta *metav1.Object
 	}
 
 	// delete role binding
-	err = c.kubeClient.RbacV1().RoleBindings(recovery.Spec.Repository.Namespace).Delete(getRepoReaderRoleBindingName(meta.Name, meta.Namespace), meta_util.DeleteInBackground())
+	err = c.kubeClient.RbacV1().RoleBindings(recovery.Spec.Repository.Namespace).Delete(GetRepoReaderRoleBindingName(meta.Name, meta.Namespace), meta_util.DeleteInBackground())
 	if err != nil {
 		return err
 	}
-	glog.Infof("Deleted repo-reader rolebinding: " + getRepoReaderRoleBindingName(meta.Name, meta.Namespace))
+	glog.Infof("Deleted repo-reader rolebinding: " + GetRepoReaderRoleBindingName(meta.Name, meta.Namespace))
 	return err
 }
