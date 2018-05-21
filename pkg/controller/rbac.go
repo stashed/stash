@@ -359,9 +359,9 @@ func (c *StashController) ensureRepoReaderRolebindingDeleted(meta *metav1.Object
 		return nil
 	}
 
-	// read recovery name from annotation
+	// read recovery name from label
 	if !meta_util.HasKey(meta.Labels, util.AnnotationRecovery) {
-		return fmt.Errorf("missing recovery name in job's annotation")
+		return fmt.Errorf("missing recovery name in job's label")
 	}
 
 	recoveryName, err := meta_util.GetStringValue(meta.Labels, util.AnnotationRecovery)
