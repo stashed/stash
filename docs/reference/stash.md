@@ -1,17 +1,17 @@
 ---
 title: Stash
 menu:
-  product_stash_0.7.0-rc.3:
+  product_stash_0.7.0-rc.4:
     identifier: stash
     name: Stash
     parent: reference
     weight: 0
 
 product_name: stash
-menu_name: product_stash_0.7.0-rc.3
+menu_name: product_stash_0.7.0-rc.4
 section_menu_id: reference
 aliases:
-  - products/stash/0.7.0-rc.3/reference/
+  - products/stash/0.7.0-rc.4/reference/
 
 ---
 ## stash

@@ -2,24 +2,24 @@
 title: Changelog | Stash
 description: Changelog
 menu:
-  product_stash_0.7.0-rc.3:
+  product_stash_0.7.0-rc.4:
     identifier: changelog-stash
     name: Changelog
     parent: welcome
     weight: 10
 product_name: stash
-menu_name: product_stash_0.7.0-rc.3
+menu_name: product_stash_0.7.0-rc.4
 section_menu_id: welcome
-url: /products/stash/0.7.0-rc.3/welcome/changelog/
+url: /products/stash/0.7.0-rc.4/welcome/changelog/
 aliases:
-  - /products/stash/0.7.0-rc.3/CHANGELOG/
+  - /products/stash/0.7.0-rc.4/CHANGELOG/
 ---
 
 # Change Log
 
 ## [Unreleased](https://github.com/appscode/stash/tree/HEAD)
 
-[Full Changelog](https://github.com/appscode/stash/compare/0.7.0-rc.3...HEAD)
+[Full Changelog](https://github.com/appscode/stash/compare/0.7.0-rc.4...HEAD)
 
 **Fixed bugs:**
 
@@ -70,8 +70,8 @@ aliases:
 - Add registry skeleton for snapshots [\#415](https://github.com/appscode/stash/pull/415) ([tamalsaha](https://github.com/tamalsaha))
 - Update chart readme [\#413](https://github.com/appscode/stash/pull/413) ([tamalsaha](https://github.com/tamalsaha))
 
-## [0.7.0-rc.3](https://github.com/appscode/stash/tree/0.7.0-rc.3) (2018-04-03)
-[Full Changelog](https://github.com/appscode/stash/compare/0.7.0-rc.2...0.7.0-rc.3)
+## [0.7.0-rc.4](https://github.com/appscode/stash/tree/0.7.0-rc.4) (2018-04-03)
+[Full Changelog](https://github.com/appscode/stash/compare/0.7.0-rc.2...0.7.0-rc.4)
 
 **Fixed bugs:**
 
@@ -88,7 +88,7 @@ aliases:
 **Merged pull requests:**
 
 - Add frontmatter for repository crd [\#412](https://github.com/appscode/stash/pull/412) ([tamalsaha](https://github.com/tamalsaha))
-- Prepare docs for 0.7.0-rc.3 [\#411](https://github.com/appscode/stash/pull/411) ([tamalsaha](https://github.com/tamalsaha))
+- Prepare docs for 0.7.0-rc.4 [\#411](https://github.com/appscode/stash/pull/411) ([tamalsaha](https://github.com/tamalsaha))
 - Add test for recovery [\#409](https://github.com/appscode/stash/pull/409) ([emruz-hossain](https://github.com/emruz-hossain))
 - Skip setting ListKind [\#407](https://github.com/appscode/stash/pull/407) ([tamalsaha](https://github.com/tamalsaha))
 - Add CRD Validation [\#406](https://github.com/appscode/stash/pull/406) ([tamalsaha](https://github.com/tamalsaha))
