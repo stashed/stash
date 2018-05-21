@@ -10,4 +10,4 @@ inputs:
 - name: stash
 
 run:
-  path: stash/hack/concourse/unit_test.sh
+  path: stash/hack/concourse/e2e_test.sh

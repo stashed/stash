@@ -3,14 +3,14 @@ resource_types:
   type: docker-image
   source:
     repository: tahsin/git-pull-resource
-    tag: show-stderr
+    tag: latest
 
 resources:
 - name: stash
   type: git
   source:
     uri: https://github.com/appscode/stash
-    branch: tahsin
+    branch: master
 
 - name: pull-request
   type: pull-request
@@ -18,7 +18,6 @@ resources:
     owner: appscode
     repo: stash
     label: ok-to-test
-    org: appscode
     access_token: ((access_token))
 
 jobs:
@@ -39,17 +38,15 @@ jobs:
       path: pull-request
       status: pending
   - task: run-unit-test
-    file: pull-request/hack/concourse/task_unit_test_pr.yml
+    file: pull-request/hack/concourse/task_unit_test.yml
+    input_mapping:
+      stash: pull-request
     on_success:
       put: pull-request
-      params:
-        path: pull-request
-        status: success
+      params: {path: pull-request, status: success}
     on_failure:
       put: pull-request
-      params:
-        path: pull-request
-        status: failure
+      params: {path: pull-request, status: failure}
 
 - name: e2e-test-stash
   plan:
@@ -57,19 +54,9 @@ jobs:
     trigger: true
     passed: [unit-test-stash]
   - task: run-e2e-test
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: tahsin/voyager-e2e
-          tag: latest
-      inputs:
-      - name: stash
-      run:
-        path: stash/hack/concourse/e2e_test.sh
-      params:
-        TOKEN: ((digitaloceanToken))
+    file: stash/hack/concourse/task_e2e.yml
+    params:
+      TOKEN: ((digitaloceanToken))
 
 - name: e2e-test-pr
   plan:
@@ -82,28 +69,8 @@ jobs:
       path: pull-request
       status: pending
   - task: run-e2e-test
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: tahsin/voyager-e2e
-          tag: latest
-      inputs:
-      - name: pull-request
-        path: stash
-      run:
-        path: stash/hack/concourse/e2e_test.sh
-      params:
-        TOKEN: ((digitaloceanToken))
-    on_success:
-      put: pull-request
-      params:
-        path: pull-request
-        status: success
-    on_failure:
-      put: pull-request
-      params:
-        path: pull-request
-        status: failure
-
+    file: pull-request/hack/concourse/task_e2e.yml
+    input_mapping:
+      stash: pull-request
+    params:
+      TOKEN: ((digitaloceanToken))

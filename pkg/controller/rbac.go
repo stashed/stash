@@ -1,11 +1,17 @@
 package controller
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/appscode/go/log"
 	core_util "github.com/appscode/kutil/core/v1"
+	meta_util "github.com/appscode/kutil/meta"
 	rbac_util "github.com/appscode/kutil/rbac/v1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/client/clientset/versioned/scheme"
+	"github.com/appscode/stash/pkg/util"
+	"github.com/golang/glog"
 	apps "k8s.io/api/apps/v1beta1"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
@@ -262,6 +268,10 @@ func getRepoReaderRoleName(repoName string) string {
 	return "appscode:stash:repo-reader:" + repoName
 }
 
+func GetRepoReaderRoleBindingName(name, namespace string) string {
+	return name + ":" + namespace + ":repo-reader"
+}
+
 func (c *StashController) ensureRepoReaderRole(repo *api.Repository) error {
 	meta := metav1.ObjectMeta{
 		Name:      getRepoReaderRoleName(repo.Name),
@@ -302,7 +312,7 @@ func (c *StashController) ensureRepoReaderRole(repo *api.Repository) error {
 
 func (c *StashController) ensureRepoReaderRBAC(resource *core.ObjectReference, rec *api.Recovery) error {
 	meta := metav1.ObjectMeta{
-		Name:      resource.Name + ":repo-reader",
+		Name:      GetRepoReaderRoleBindingName(resource.Name, resource.Namespace),
 		Namespace: rec.Spec.Repository.Namespace,
 	}
 
@@ -319,7 +329,6 @@ func (c *StashController) ensureRepoReaderRBAC(resource *core.ObjectReference, r
 
 	// ensure repo-reader role binding
 	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
 
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
@@ -342,4 +351,35 @@ func (c *StashController) ensureRepoReaderRBAC(resource *core.ObjectReference, r
 		return in
 	})
 	return err
+}
+
+func (c *StashController) ensureRepoReaderRolebindingDeleted(meta *metav1.ObjectMeta) error {
+	// if the job is not recovery job then don't do anything
+	if !strings.HasPrefix(meta.Name, util.RecoveryJobPrefix) {
+		return nil
+	}
+
+	// read recovery name from label
+	if !meta_util.HasKey(meta.Labels, util.AnnotationRecovery) {
+		return fmt.Errorf("missing recovery name in job's label")
+	}
+
+	recoveryName, err := meta_util.GetStringValue(meta.Labels, util.AnnotationRecovery)
+	if err != nil {
+		return err
+	}
+
+	// read recovery object
+	recovery, err := c.stashClient.StashV1alpha1().Recoveries(meta.Namespace).Get(recoveryName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	// delete role binding
+	err = c.kubeClient.RbacV1().RoleBindings(recovery.Spec.Repository.Namespace).Delete(GetRepoReaderRoleBindingName(meta.Name, meta.Namespace), meta_util.DeleteInBackground())
+	if err != nil {
+		return err
+	}
+	glog.Infof("Deleted repo-reader rolebinding: " + GetRepoReaderRoleBindingName(meta.Name, meta.Namespace))
+	return nil
 }

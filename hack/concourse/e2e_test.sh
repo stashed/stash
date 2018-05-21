@@ -6,7 +6,7 @@ mkdir -p $GOPATH/src/github.com/appscode
 cp -r stash $GOPATH/src/github.com/appscode
 cd $GOPATH/src/github.com/appscode/stash
 
-NAME=stash-$(git rev-parse HEAD) #name of the cluster
+NAME=stash-$(git rev-parse --short HEAD) #name of the cluster
 
 cat > cred.json <<EOF
 {
@@ -31,5 +31,4 @@ pharmer use cluster $NAME
 kubectl get nodes
 
 ./hack/builddeps.sh
-./hack/make.py
-./hack/make.py test e2e --v=3 --rbac=true --webhook=true --kubeconfig=/root/.kube/config
+./hack/make.py test e2e --v=3 --rbac=true --webhook=true --kubeconfig=/root/.kube/config --selfhosted-operator=true
