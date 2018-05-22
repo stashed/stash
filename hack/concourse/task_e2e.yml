@@ -1,0 +1,14 @@
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: 1gtm/kubedb
+    tag: latest
+
+inputs:
+- name: stash
+- name: creds
+
+run:
+  path: stash/hack/concourse/e2e_test.sh

@@ -3,14 +3,14 @@ resource_types:
   type: docker-image
   source:
     repository: tahsin/git-pull-resource
-    tag: show-stderr
+    tag: latest
 
 resources:
 - name: stash
   type: git
   source:
     uri: https://github.com/appscode/stash
-    branch: tahsin
+    branch: master
 
 - name: pull-request
   type: pull-request
@@ -18,92 +18,91 @@ resources:
     owner: appscode
     repo: stash
     label: ok-to-test
-    org: appscode
     access_token: ((access_token))
 
+- name: creds
+  type: s3
+  source:
+    bucket: kubedbci
+    access_key_id: ((s3-access-key))
+    secret_access_key: ((s3-secret))
+    versioned_file: gcs.zip
+
 jobs:
-- name: unit-test-stash
+- name: test-stash
   plan:
   - get: stash
     trigger: true
-  - task: run-unit-test
+  - get: creds
+    params:
+      unpack: true
+  - task: unit-test
     file: stash/hack/concourse/task_unit_test.yml
+  - task: e2e-test
+    file: stash/hack/concourse/task_e2e.yml
+    privileged: true
+    params:
+      TOKEN: ((digitaloceanToken))
+      DOCKER_USER: ((docker_user))
+      DOCKER_PASS: ((docker_pass))
+      AWS_KEY_ID: ((aws_key_id))
+      AWS_SECRET: ((aws_secret))
+      GCE_PROJECT_ID: ((gce_project_id))
+      AZURE_ACCOUNT_NAME: ((azure_account_name))
+      AZURE_ACCOUNT_KEY: ((azure_account_key))
+      OS_AUTH_URL: ((os_auth_url))
+      OS_TENANT_ID: ((os_tenant_id))
+      OS_TENANT_NAME: ((os_tenaant_name))
+      OS_USERNAME: ((os_username))
+      OS_PASSWORD: ((os_password))
+      OS_REGION_NAME: ((os_region_name))
+      DO_ACCESS_KEY_ID: ((do_access_key_id))
+      DO_SECRET_ACCESS: ((do_secret_access))
 
-- name: unit-test-pr
+- name: test-stash-pr
   plan:
   - get: pull-request
     version: every
     trigger: true
+  - get: creds
+    params:
+      unpack: true
   - put: pull-request
     params:
       path: pull-request
       status: pending
-  - task: run-unit-test
-    file: pull-request/hack/concourse/task_unit_test_pr.yml
-    on_success:
-      put: pull-request
-      params:
-        path: pull-request
-        status: success
+  - task: unit-test
+    file: pull-request/hack/concourse/task_unit_test.yml
+    input_mapping:
+      stash: pull-request
     on_failure:
       put: pull-request
-      params:
-        path: pull-request
-        status: failure
-
-- name: e2e-test-stash
-  plan:
-  - get: stash
-    trigger: true
-    passed: [unit-test-stash]
-  - task: run-e2e-test
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: tahsin/voyager-e2e
-          tag: latest
-      inputs:
-      - name: stash
-      run:
-        path: stash/hack/concourse/e2e_test.sh
-      params:
-        TOKEN: ((digitaloceanToken))
-
-- name: e2e-test-pr
-  plan:
-  - get: pull-request
-    trigger: true
-    version: every
-    passed: [unit-test-pr]
-  - put: pull-request
+      params: {path: pull-request, status: failure}
+  - task: e2e-test
+    file: pull-request/hack/concourse/task_e2e.yml
+    privileged: true
+    input_mapping:
+      stash: pull-request
     params:
-      path: pull-request
-      status: pending
-  - task: run-e2e-test
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source:
-          repository: tahsin/voyager-e2e
-          tag: latest
-      inputs:
-      - name: pull-request
-        path: stash
-      run:
-        path: stash/hack/concourse/e2e_test.sh
-      params:
-        TOKEN: ((digitaloceanToken))
+      TOKEN: ((digitaloceanToken))
+      DOCKER_USER: ((docker_user))
+      DOCKER_PASS: ((docker_pass))
+      AWS_KEY_ID: ((aws_key_id))
+      AWS_SECRET: ((aws_secret))
+      GCE_PROJECT_ID: ((gce_project_id))
+      AZURE_ACCOUNT_NAME: ((azure_account_name))
+      AZURE_ACCOUNT_KEY: ((azure_account_key))
+      OS_AUTH_URL: ((os_auth_url))
+      OS_TENANT_ID: ((os_tenant_id))
+      OS_TENANT_NAME: ((os_tenaant_name))
+      OS_USERNAME: ((os_username))
+      OS_PASSWORD: ((os_password))
+      OS_REGION_NAME: ((os_region_name))
+      DO_ACCESS_KEY_ID: ((do_access_key_id))
+      DO_SECRET_ACCESS: ((do_secret_access))
     on_success:
       put: pull-request
-      params:
-        path: pull-request
-        status: success
+      params: { path: pull-request, status: success}
     on_failure:
       put: pull-request
-      params:
-        path: pull-request
-        status: failure
-
+      params: {path: pull-request, status: failure}
