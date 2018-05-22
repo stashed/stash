@@ -10,7 +10,7 @@ metadata:
     release: "{{ .Release.Name }}"
   annotations:
     "helm.sh/hook": post-install,post-upgrade
-    "helm.sh/hook-delete-policy": hook-succeeded
+    "helm.sh/hook-delete-policy": before-hook-creation
 webhooks:
 - name: restic.admission.stash.appscode.com
   clientConfig:
