@@ -69,7 +69,6 @@ var _ = BeforeSuite(func() {
 
 	By("Registering CRDs")
 	err = crdutils.RegisterCRDs(ctrlConfig.CRDClient, crds)
-	//err = crdutils.WaitForCRDReady(ctrlConfig.CRDClient.RESTClient(), crds)
 	Expect(err).NotTo(HaveOccurred())
 
 	if !options.SelfHostedOperator {
@@ -83,7 +82,7 @@ var _ = BeforeSuite(func() {
 var _ = AfterSuite(func() {
 	By("Cleaning API server and Webhook stuff")
 
-	if options.EnableWebhook {
+	if options.EnableWebhook && !options.SelfHostedOperator {
 		root.KubeClient.AdmissionregistrationV1beta1().MutatingWebhookConfigurations().Delete("admission.stash.appscode.com", meta.DeleteInBackground())
 		root.KubeClient.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Delete("admission.stash.appscode.com", meta.DeleteInBackground())
 	}

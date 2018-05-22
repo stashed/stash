@@ -5,8 +5,8 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
-	"time"
 
+	core_util "github.com/appscode/kutil/core/v1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/appscode/stash/test/e2e/framework"
@@ -51,8 +51,44 @@ var _ = Describe("Snapshots", func() {
 		f.DeleteRepositories(f.ReplicationControllerRepos(&rc))
 		f.DeleteRepositories(f.ReplicaSetRepos(&rs))
 		f.DeleteRepositories(f.StatefulSetRepos(&ss))
-		time.Sleep(60 * time.Second)
+
+		err := framework.WaitUntilDaemonSetDeleted(f.KubeClient, daemon.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+		err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.DaemonSetRepos(&daemon))
+		Expect(err).NotTo(HaveOccurred())
+
+		err = framework.WaitUntilDeploymentDeleted(f.KubeClient, deployment.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+		err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.DeploymentRepos(&deployment))
+		Expect(err).NotTo(HaveOccurred())
+
+		err = framework.WaitUntilReplicationControllerDeleted(f.KubeClient, rc.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+		err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.ReplicationControllerRepos(&rc))
+		Expect(err).NotTo(HaveOccurred())
+
+		err = framework.WaitUntilReplicaSetDeleted(f.KubeClient, rs.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+		err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.ReplicaSetRepos(&rs))
+		Expect(err).NotTo(HaveOccurred())
+
+		err = framework.WaitUntilStatefulSetDeleted(f.KubeClient, ss.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+		err = framework.WaitUntilServiceDeleted(f.KubeClient, svc.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+		err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.StatefulSetRepos(&ss))
+		Expect(err).NotTo(HaveOccurred())
+
+		err = framework.WaitUntilSecretDeleted(f.KubeClient, cred.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, ss.Namespace, f.AppLabel())
+		Expect(err).NotTo(HaveOccurred())
 	})
+
 	JustBeforeEach(func() {
 		if missing, _ := BeZero().Match(cred); missing {
 			Skip("Missing repository credential")

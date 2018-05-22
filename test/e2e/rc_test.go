@@ -33,7 +33,21 @@ var _ = Describe("ReplicationController", func() {
 	})
 	AfterEach(func() {
 		f.DeleteRepositories(f.ReplicationControllerRepos(&rc))
-		time.Sleep(60 * time.Second)
+
+		err := framework.WaitUntilReplicationControllerDeleted(f.KubeClient, rc.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = framework.WaitUntilSecretDeleted(f.KubeClient, cred.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.ReplicationControllerRepos(&rc))
+		Expect(err).NotTo(HaveOccurred())
+
+		err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, rc.Namespace, f.AppLabel())
+		Expect(err).NotTo(HaveOccurred())
 	})
 	JustBeforeEach(func() {
 		if missing, _ := BeZero().Match(cred); missing {
@@ -559,6 +573,9 @@ var _ = Describe("ReplicationController", func() {
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 			f.DeleteRestic(secondRestic.ObjectMeta)
+
+			err := framework.WaitUntilResticDeleted(f.StashClient, secondRestic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context(`"Local" backend`, func() {
@@ -823,6 +840,9 @@ var _ = Describe("ReplicationController", func() {
 				f.DeleteSecret(cred.ObjectMeta)
 				f.DeleteRecovery(recovery.ObjectMeta)
 				framework.CleanupMinikubeHostPath()
+
+				err = framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
@@ -867,8 +887,15 @@ var _ = Describe("ReplicationController", func() {
 				By("Deleting restic")
 				f.DeleteRestic(restic.ObjectMeta)
 
-				// give some time for rc to terminate
-				time.Sleep(time.Second * 30)
+				// wait until rc terminated
+				err = framework.WaitUntilReplicationControllerDeleted(f.KubeClient, rc.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, rc.Namespace, f.AppLabel())
+				Expect(err).NotTo(HaveOccurred())
 
 				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", "")
 				recovery.Spec.Repository.Namespace = f.Namespace()
@@ -910,6 +937,9 @@ var _ = Describe("ReplicationController", func() {
 				f.DeleteSecret(cred.ObjectMeta)
 				f.DeleteRecovery(recovery.ObjectMeta)
 				framework.CleanupMinikubeHostPath()
+
+				err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
@@ -960,8 +990,15 @@ var _ = Describe("ReplicationController", func() {
 				By("Deleting restic")
 				f.DeleteRestic(restic.ObjectMeta)
 
-				// give some time for rc to terminate
-				time.Sleep(time.Second * 30)
+				// wait until rc terminated
+				err = framework.WaitUntilReplicationControllerDeleted(f.KubeClient, rc.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, rc.Namespace, f.AppLabel())
+				Expect(err).NotTo(HaveOccurred())
 
 				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", "")
 				recovery.Spec.Repository.Namespace = f.Namespace()
@@ -1009,6 +1046,9 @@ var _ = Describe("ReplicationController", func() {
 				f.DeleteRecovery(recovery.ObjectMeta)
 				framework.CleanupMinikubeHostPath()
 				f.DeleteNamespace(recoveryNamespace.Name)
+
+				err = framework.WaitUntilNamespaceDeleted(f.KubeClient, recoveryNamespace.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
@@ -1054,8 +1094,15 @@ var _ = Describe("ReplicationController", func() {
 				By("Deleting restic")
 				f.DeleteRestic(restic.ObjectMeta)
 
-				// give some time for rc to terminate
-				time.Sleep(time.Second * 30)
+				// wait until rc terminated
+				err = framework.WaitUntilReplicationControllerDeleted(f.KubeClient, rc.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, rc.Namespace, f.AppLabel())
+				Expect(err).NotTo(HaveOccurred())
 
 				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", "")
 				recovery.Spec.Repository.Namespace = f.Namespace()
