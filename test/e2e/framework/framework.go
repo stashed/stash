@@ -50,6 +50,10 @@ func (f *Framework) Invoke() *Invocation {
 	}
 }
 
+func (f *Invocation) AppLabel() string {
+	return "app=" + f.app
+}
+
 type Invocation struct {
 	*Framework
 	app string

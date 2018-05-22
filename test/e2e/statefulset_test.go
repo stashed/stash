@@ -6,6 +6,7 @@ import (
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
 	apps_util "github.com/appscode/kutil/apps/v1beta1"
+	core_util "github.com/appscode/kutil/core/v1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/appscode/stash/test/e2e/framework"
@@ -35,7 +36,24 @@ var _ = Describe("StatefulSet", func() {
 	})
 	AfterEach(func() {
 		f.DeleteRepositories(f.StatefulSetRepos(&ss))
-		time.Sleep(60 * time.Second)
+
+		err := framework.WaitUntilStatefulSetDeleted(f.KubeClient, ss.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = framework.WaitUntilSecretDeleted(f.KubeClient, cred.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = framework.WaitUntilServiceDeleted(f.KubeClient, svc.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.StatefulSetRepos(&ss))
+		Expect(err).NotTo(HaveOccurred())
+
+		err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, ss.Namespace, f.AppLabel())
+		Expect(err).NotTo(HaveOccurred())
 	})
 	JustBeforeEach(func() {
 		if missing, _ := BeZero().Match(cred); missing {
@@ -576,6 +594,9 @@ var _ = Describe("StatefulSet", func() {
 			f.DeleteRestic(secondRestic.ObjectMeta)
 			f.DeleteService(svc.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
+
+			err := framework.WaitUntilResticDeleted(f.StashClient, secondRestic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context(`"Local" backend`, func() {
@@ -748,7 +769,6 @@ var _ = Describe("StatefulSet", func() {
 				f.DeleteService(svc.ObjectMeta)
 				f.DeleteRestic(restic.ObjectMeta)
 				f.DeleteSecret(cred.ObjectMeta)
-				f.DeleteRepositories(f.StatefulSetRepos(&ss))
 			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
@@ -848,6 +868,9 @@ var _ = Describe("StatefulSet", func() {
 				f.DeleteSecret(cred.ObjectMeta)
 				f.DeleteRecovery(recovery.ObjectMeta)
 				framework.CleanupMinikubeHostPath()
+
+				err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
@@ -892,8 +915,15 @@ var _ = Describe("StatefulSet", func() {
 				By("Deleting restic")
 				f.DeleteRestic(restic.ObjectMeta)
 
-				// give some time for ss to terminate
-				time.Sleep(time.Second * 30)
+				// wait until statefulset terminated
+				err = framework.WaitUntilStatefulSetDeleted(f.KubeClient, ss.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, ss.Namespace, f.AppLabel())
+				Expect(err).NotTo(HaveOccurred())
 
 				repos = f.StatefulSetRepos(&ss)
 				Expect(repos).NotTo(BeEmpty())
@@ -989,8 +1019,15 @@ var _ = Describe("StatefulSet", func() {
 				By("Deleting restic")
 				f.DeleteRestic(restic.ObjectMeta)
 
-				// give some time for ss to terminate
-				time.Sleep(time.Second * 30)
+				// wait until statefulset terminated
+				err = framework.WaitUntilStatefulSetDeleted(f.KubeClient, ss.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, ss.Namespace, f.AppLabel())
+				Expect(err).NotTo(HaveOccurred())
 
 				repos = f.StatefulSetRepos(&ss)
 				Expect(repos).NotTo(BeEmpty())
@@ -1042,6 +1079,12 @@ var _ = Describe("StatefulSet", func() {
 				f.DeleteRecovery(recovery.ObjectMeta)
 				framework.CleanupMinikubeHostPath()
 				f.DeleteNamespace(recoveryNamespace.Name)
+
+				err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = framework.WaitUntilNamespaceDeleted(f.KubeClient, recoveryNamespace.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
@@ -1087,8 +1130,15 @@ var _ = Describe("StatefulSet", func() {
 				By("Deleting restic")
 				f.DeleteRestic(restic.ObjectMeta)
 
-				// give some time for ss to terminate
-				time.Sleep(time.Second * 30)
+				// wait until statefulset terminated
+				err = framework.WaitUntilStatefulSetDeleted(f.KubeClient, ss.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, ss.Namespace, f.AppLabel())
+				Expect(err).NotTo(HaveOccurred())
 
 				repos = f.StatefulSetRepos(&ss)
 				Expect(repos).NotTo(BeEmpty())
