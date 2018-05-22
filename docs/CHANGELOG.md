@@ -40,6 +40,10 @@ aliases:
 
 **Merged pull requests:**
 
+- Delete user roles on purge. [\#494](https://github.com/appscode/stash/pull/494) ([tamalsaha](https://github.com/tamalsaha))
+- Add app: stash label to user roles. [\#493](https://github.com/appscode/stash/pull/493) ([tamalsaha](https://github.com/tamalsaha))
+- Use post-install hooks to install admission controller in chart [\#492](https://github.com/appscode/stash/pull/492) ([tamalsaha](https://github.com/tamalsaha))
+- Update changelog [\#491](https://github.com/appscode/stash/pull/491) ([tamalsaha](https://github.com/tamalsaha))
 - Avoid creating apiservice when webhooks are not used. [\#490](https://github.com/appscode/stash/pull/490) ([tamalsaha](https://github.com/tamalsaha))
 - Install correct version of stash chart [\#489](https://github.com/appscode/stash/pull/489) ([tamalsaha](https://github.com/tamalsaha))
 - Use wait-until instead of fixed delay  [\#488](https://github.com/appscode/stash/pull/488) ([emruz-hossain](https://github.com/emruz-hossain))
