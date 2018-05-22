@@ -304,10 +304,12 @@ if [ "$STASH_RUN_ON_MASTER" -eq 1 ]; then
       --patch="$(${SCRIPT_LOCATION}hack/deploy/run-on-master.yaml)"
 fi
 
+if [ "$STASH_ENABLE_VALIDATING_WEBHOOK" = true ] || [ "$STASH_ENABLE_MUTATING_WEBHOOK" = true ]; then
+    ${SCRIPT_LOCATION}hack/deploy/apiservices.yaml | $ONESSL envsubst | kubectl apply -f -
+fi
 if [ "$STASH_ENABLE_VALIDATING_WEBHOOK" = true ]; then
     ${SCRIPT_LOCATION}hack/deploy/validating-webhook.yaml | $ONESSL envsubst | kubectl apply -f -
 fi
-
 if [ "$STASH_ENABLE_MUTATING_WEBHOOK" = true ]; then
     ${SCRIPT_LOCATION}hack/deploy/mutating-webhook.yaml | $ONESSL envsubst | kubectl apply -f -
 fi
