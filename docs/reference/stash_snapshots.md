@@ -1,12 +1,12 @@
 ---
 title: Stash Snapshots
 menu:
-  product_stash_0.7.0-rc.3:
+  product_stash_0.7.0-rc.4:
     identifier: stash-snapshots
     name: Stash Snapshots
     parent: reference
 product_name: stash
-menu_name: product_stash_0.7.0-rc.3
+menu_name: product_stash_0.7.0-rc.4
 section_menu_id: reference
 ---
 ## stash snapshots
