@@ -6,6 +6,7 @@ import (
 
 	rep "github.com/appscode/stash/apis/repositories/v1alpha1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	cs "github.com/appscode/stash/client/clientset/versioned"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/eventer"
 	. "github.com/onsi/ginkgo"
@@ -16,6 +17,8 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -25,6 +28,8 @@ const (
 	KindRestic             = "Restic"
 	KindRepository         = "Repository"
 	KindRecovery           = "Recovery"
+	PullInterval           = time.Second * 2
+	WaitTimeOut            = time.Minute * 3
 )
 
 func (f *Framework) EventualEvent(meta metav1.ObjectMeta) GomegaAsyncAssertion {
@@ -224,4 +229,165 @@ func (f *Framework) EventuallyJobSucceed(name string) GomegaAsyncAssertion {
 		jobCreated = true
 		return obj.Status.Succeeded > 0
 	}, time.Minute*5, time.Second*5)
+}
+
+func WaitUntilNamespaceDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
+
+	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
+		if _, err := kc.CoreV1().Namespaces().Get(meta.Name, metav1.GetOptions{}); err != nil {
+			if kerr.IsNotFound(err) {
+				return true, nil
+			} else {
+				return true, err
+			}
+		}
+		return false, nil
+	})
+}
+
+func WaitUntilDeploymentDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
+
+	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
+		if _, err := kc.AppsV1beta1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+			if kerr.IsNotFound(err) {
+				return true, nil
+			} else {
+				return true, err
+			}
+		}
+		return false, nil
+	})
+}
+
+func WaitUntilDaemonSetDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
+
+	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
+		if _, err := kc.ExtensionsV1beta1().DaemonSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+			if kerr.IsNotFound(err) {
+				return true, nil
+			} else {
+				return true, err
+			}
+		}
+		return false, nil
+	})
+}
+
+func WaitUntilStatefulSetDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
+
+	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
+		if _, err := kc.AppsV1beta1().StatefulSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+			if kerr.IsNotFound(err) {
+				return true, nil
+			} else {
+				return true, err
+			}
+		}
+		return false, nil
+	})
+}
+
+func WaitUntilReplicaSetDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
+
+	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
+		if _, err := kc.ExtensionsV1beta1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+			if kerr.IsNotFound(err) {
+				return true, nil
+			} else {
+				return true, err
+			}
+		}
+		return false, nil
+	})
+}
+
+func WaitUntilReplicationControllerDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
+
+	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
+		if _, err := kc.CoreV1().ReplicationControllers(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+			if kerr.IsNotFound(err) {
+				return true, nil
+			} else {
+				return true, err
+			}
+		}
+		return false, nil
+	})
+}
+
+func WaitUntilSecretDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
+
+	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
+		if _, err := kc.CoreV1().Secrets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+			if kerr.IsNotFound(err) {
+				return true, nil
+			} else {
+				return true, err
+			}
+		}
+		return false, nil
+	})
+}
+
+func WaitUntilServiceDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
+
+	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
+		if _, err := kc.CoreV1().Services(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+			if kerr.IsNotFound(err) {
+				return true, nil
+			} else {
+				return true, err
+			}
+		}
+		return false, nil
+	})
+}
+
+func WaitUntilResticDeleted(sc cs.Interface, meta metav1.ObjectMeta) error {
+
+	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
+		if _, err := sc.StashV1alpha1().Restics(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+			if kerr.IsNotFound(err) {
+				return true, nil
+			} else {
+				return true, err
+			}
+		}
+		return false, nil
+	})
+}
+
+func WaitUntilRecoveryDeleted(sc cs.Interface, meta metav1.ObjectMeta) error {
+
+	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
+		if _, err := sc.StashV1alpha1().Recoveries(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+			if kerr.IsNotFound(err) {
+				return true, nil
+			} else {
+				return true, err
+			}
+		}
+		return false, nil
+	})
+}
+
+func WaitUntilRepositoriesDeleted(sc cs.Interface, repositories []*api.Repository) error {
+
+	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
+		allDeleted := true
+		for _, repo := range repositories {
+			if _, err := sc.StashV1alpha1().Repositories(repo.Namespace).Get(repo.Name, metav1.GetOptions{}); err != nil {
+				if kerr.IsNotFound(err) {
+					continue
+				} else {
+					return true, err
+				}
+			}
+			allDeleted = false
+		}
+		if allDeleted {
+			return true, nil
+		}
+		return false, nil
+	})
 }
