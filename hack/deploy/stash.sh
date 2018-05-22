@@ -257,6 +257,9 @@ if [ "$STASH_UNINSTALL" -eq 1 ]; then
             # delete crd
             kubectl delete crd ${crd}.stash.appscode.com || true
         done
+
+        # delete user roles
+        kubectl delete clusterroles appscode:stash:edit appscode:stash:view
     fi
 
     echo
