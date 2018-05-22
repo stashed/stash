@@ -11,6 +11,7 @@ import (
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
 	apps_util "github.com/appscode/kutil/apps/v1beta1"
+	core_util "github.com/appscode/kutil/core/v1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/appscode/stash/test/e2e/framework"
@@ -39,7 +40,21 @@ var _ = Describe("Deployment", func() {
 	})
 	AfterEach(func() {
 		f.DeleteRepositories(f.DeploymentRepos(&deployment))
-		time.Sleep(60 * time.Second)
+
+		err := framework.WaitUntilDeploymentDeleted(f.KubeClient, deployment.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = framework.WaitUntilSecretDeleted(f.KubeClient, cred.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.DeploymentRepos(&deployment))
+		Expect(err).NotTo(HaveOccurred())
+
+		err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, deployment.Namespace, f.AppLabel())
+		Expect(err).NotTo(HaveOccurred())
 	})
 	JustBeforeEach(func() {
 		if missing, _ := BeZero().Match(cred); missing {
@@ -547,6 +562,9 @@ var _ = Describe("Deployment", func() {
 			f.DeleteSecret(cred.ObjectMeta)
 			f.DeleteRecovery(recovery.ObjectMeta)
 			framework.CleanupMinikubeHostPath()
+
+			err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context(`"Local" backend`, func() {
@@ -592,10 +610,6 @@ var _ = Describe("Deployment", func() {
 					return err == nil
 				}, time.Minute*3, time.Second*2).Should(BeTrue())
 
-				By("Deleting recovery " + recovery.Name)
-				err = f.DeleteRecovery(recovery.ObjectMeta)
-				Expect(err).NotTo(HaveOccurred())
-
 				By("Checking cleanup")
 				f.DeleteJobAndDependents(jobName, &recovery)
 			})
@@ -629,6 +643,9 @@ var _ = Describe("Deployment", func() {
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteRestic(secondRestic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
+
+			err := framework.WaitUntilResticDeleted(f.StashClient, secondRestic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context(`"Local" backend`, func() {
@@ -872,6 +889,9 @@ var _ = Describe("Deployment", func() {
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 			f.DeleteSecret(registryCred.ObjectMeta)
+
+			err := framework.WaitUntilSecretDeleted(f.KubeClient, registryCred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 		})
 		BeforeEach(func() {
 			By("Reading docker config json file")
@@ -1026,6 +1046,9 @@ var _ = Describe("Deployment", func() {
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 			f.DeleteRecovery(recovery.ObjectMeta)
+
+			err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 		})
 		Context(`"Local" backend,single fileGroup`, func() {
 			AfterEach(func() {
@@ -1074,8 +1097,15 @@ var _ = Describe("Deployment", func() {
 				By("Deleting restic")
 				f.DeleteRestic(restic.ObjectMeta)
 
-				// give some time for deployment to terminate
-				time.Sleep(time.Second * 30)
+				// wait until deployment terminated
+				err = framework.WaitUntilDeploymentDeleted(f.KubeClient, deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, deployment.Namespace, f.AppLabel())
+				Expect(err).NotTo(HaveOccurred())
 
 				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", "")
 				recovery.Spec.Repository.Namespace = f.Namespace()
@@ -1163,8 +1193,15 @@ var _ = Describe("Deployment", func() {
 				By("Deleting restic")
 				f.DeleteRestic(restic.ObjectMeta)
 
-				// give some time for deployment to terminate
-				time.Sleep(time.Second * 30)
+				// wait until deployment terminated
+				err = framework.WaitUntilDeploymentDeleted(f.KubeClient, deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, deployment.Namespace, f.AppLabel())
+				Expect(err).NotTo(HaveOccurred())
 
 				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", "")
 				recovery.Spec.Repository.Namespace = f.Namespace()
@@ -1209,12 +1246,18 @@ var _ = Describe("Deployment", func() {
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 			f.DeleteRecovery(recovery.ObjectMeta)
+
+			err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context(`"Local" backend,single fileGroup`, func() {
 			AfterEach(func() {
 				framework.CleanupMinikubeHostPath()
 				f.DeleteNamespace(recoveryNamespace.Name)
+
+				err := framework.WaitUntilNamespaceDeleted(f.KubeClient, recoveryNamespace.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
@@ -1260,8 +1303,15 @@ var _ = Describe("Deployment", func() {
 				By("Deleting restic")
 				f.DeleteRestic(restic.ObjectMeta)
 
-				// give some time for deployment to terminate
-				time.Sleep(time.Second * 30)
+				// wait until deployment terminated
+				err = framework.WaitUntilDeploymentDeleted(f.KubeClient, deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, deployment.Namespace, f.AppLabel())
+				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating new namespace: " + recoveryNamespace.Name)
 				err = f.CreateNamespace(recoveryNamespace)
@@ -1312,6 +1362,9 @@ var _ = Describe("Deployment", func() {
 				f.DeleteSecret(cred.ObjectMeta)
 				f.DeleteRecovery(recovery.ObjectMeta)
 				framework.CleanupMinikubeHostPath()
+
+				err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
@@ -1383,8 +1436,15 @@ var _ = Describe("Deployment", func() {
 				By("Deleting restic")
 				f.DeleteRestic(restic.ObjectMeta)
 
-				// give some time for deployment to terminate
-				time.Sleep(time.Second * 30)
+				// wait until deployment terminated
+				err = framework.WaitUntilDeploymentDeleted(f.KubeClient, deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, deployment.Namespace, f.AppLabel())
+				Expect(err).NotTo(HaveOccurred())
 
 				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", "")
 				recovery.Spec.Repository.Namespace = f.Namespace()

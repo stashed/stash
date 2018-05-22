@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/appscode/go/crypto/rand"
+	core_util "github.com/appscode/kutil/core/v1"
 	ext_util "github.com/appscode/kutil/extensions/v1beta1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
@@ -34,7 +35,21 @@ var _ = Describe("DaemonSet", func() {
 	})
 	AfterEach(func() {
 		f.DeleteRepositories(f.DaemonSetRepos(&daemon))
-		time.Sleep(60 * time.Second)
+
+		err := framework.WaitUntilDaemonSetDeleted(f.KubeClient, daemon.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = framework.WaitUntilSecretDeleted(f.KubeClient, cred.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.DaemonSetRepos(&daemon))
+		Expect(err).NotTo(HaveOccurred())
+
+		err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, daemon.Namespace, f.AppLabel())
+		Expect(err).NotTo(HaveOccurred())
 	})
 	JustBeforeEach(func() {
 		if missing, _ := BeZero().Match(cred); missing {
@@ -513,6 +528,9 @@ var _ = Describe("DaemonSet", func() {
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteRestic(secondRestic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
+
+			err := framework.WaitUntilResticDeleted(f.StashClient, secondRestic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context(`"Local" backend`, func() {
@@ -717,6 +735,9 @@ var _ = Describe("DaemonSet", func() {
 				f.DeleteSecret(cred.ObjectMeta)
 				f.DeleteRecovery(recovery.ObjectMeta)
 				framework.CleanupMinikubeHostPath()
+
+				err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
@@ -761,8 +782,15 @@ var _ = Describe("DaemonSet", func() {
 				By("Deleting restic")
 				f.DeleteRestic(restic.ObjectMeta)
 
-				// give some time for daemonset to terminate
-				time.Sleep(time.Second * 30)
+				// wait until daemonset terminated
+				err = framework.WaitUntilDaemonSetDeleted(f.KubeClient, daemon.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, daemon.Namespace, f.AppLabel())
+				Expect(err).NotTo(HaveOccurred())
 
 				nodeName := os.Getenv("NODE_NAME")
 				if nodeName == "" {
@@ -857,8 +885,15 @@ var _ = Describe("DaemonSet", func() {
 				By("Deleting restic")
 				f.DeleteRestic(restic.ObjectMeta)
 
-				// give some time for daemonset to terminate
-				time.Sleep(time.Second * 30)
+				// wait until daemonset terminated
+				err = framework.WaitUntilDaemonSetDeleted(f.KubeClient, daemon.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, daemon.Namespace, f.AppLabel())
+				Expect(err).NotTo(HaveOccurred())
 
 				nodeName := os.Getenv("NODE_NAME")
 				if nodeName == "" {
@@ -909,6 +944,12 @@ var _ = Describe("DaemonSet", func() {
 				f.DeleteRecovery(recovery.ObjectMeta)
 				framework.CleanupMinikubeHostPath()
 				f.DeleteNamespace(recoveryNamespace.Name)
+
+				err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = framework.WaitUntilNamespaceDeleted(f.KubeClient, recoveryNamespace.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
@@ -954,8 +995,15 @@ var _ = Describe("DaemonSet", func() {
 				By("Deleting restic")
 				f.DeleteRestic(restic.ObjectMeta)
 
-				// give some time for daemonset to terminate
-				time.Sleep(time.Second * 30)
+				// wait until daemonset terminated
+				err = framework.WaitUntilDaemonSetDeleted(f.KubeClient, daemon.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, daemon.Namespace, f.AppLabel())
+				Expect(err).NotTo(HaveOccurred())
 
 				nodeName := os.Getenv("NODE_NAME")
 				if nodeName == "" {
