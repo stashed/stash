@@ -101,6 +101,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 							},
 						},
 					},
+					Required: []string{"items"},
 				},
 			},
 			Dependencies: []string{
