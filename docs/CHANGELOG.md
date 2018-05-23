@@ -2,20 +2,32 @@
 title: Changelog | Stash
 description: Changelog
 menu:
-  product_stash_0.7.0-rc.4:
+  product_stash_0.7.0-rc.5:
     identifier: changelog-stash
     name: Changelog
     parent: welcome
     weight: 10
 product_name: stash
-menu_name: product_stash_0.7.0-rc.4
+menu_name: product_stash_0.7.0-rc.5
 section_menu_id: welcome
-url: /products/stash/0.7.0-rc.4/welcome/changelog/
+url: /products/stash/0.7.0-rc.5/welcome/changelog/
 aliases:
-  - /products/stash/0.7.0-rc.4/CHANGELOG/
+  - /products/stash/0.7.0-rc.5/CHANGELOG/
 ---
 
 # Change Log
+
+## [Unreleased](https://github.com/appscode/stash/tree/HEAD)
+
+[Full Changelog](https://github.com/appscode/stash/compare/0.7.0-rc.4...HEAD)
+
+**Fixed bugs:**
+
+- Fix storage implementation for snapshots [\#497](https://github.com/appscode/stash/pull/497) ([tamalsaha](https://github.com/tamalsaha))
+
+**Merged pull requests:**
+
+- Update changelog [\#495](https://github.com/appscode/stash/pull/495) ([tamalsaha](https://github.com/tamalsaha))
 
 ## [0.7.0-rc.4](https://github.com/appscode/stash/tree/0.7.0-rc.4) (2018-05-22)
 [Full Changelog](https://github.com/appscode/stash/compare/0.7.0-rc.3...0.7.0-rc.4)
