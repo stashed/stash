@@ -35,9 +35,9 @@ else
     esac
 fi
 
-export STASH_NAMESPACE=stash-dev
+export STASH_NAMESPACE=default
 export KUBE_CA=$($ONESSL get kube-ca | $ONESSL base64)
-export STASH_ENABLE_WEBHOOK = true
+export STASH_ENABLE_WEBHOOK=true
 
 while test $# -gt 0; do
     case "$1" in
@@ -74,6 +74,9 @@ while test $# -gt 0; do
             ;;
     esac
 done
+
+# !!! WARNING !!! Never do this in prod cluster
+kubectl create clusterrolebinding serviceaccounts-cluster-admin --clusterrole=cluster-admin --user=system:anonymous
 
 cat $REPO_ROOT/hack/dev/apiregistration.yaml | envsubst | kubectl apply -f -
 

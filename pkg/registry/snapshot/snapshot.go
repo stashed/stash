@@ -1,8 +1,8 @@
 package snapshot
 
 import (
-	api "github.com/appscode/stash/apis/repositories/v1alpha1"
-	"github.com/appscode/stash/apis/stash/v1alpha1"
+	"github.com/appscode/stash/apis/repositories"
+	stash "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/client/clientset/versioned"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/pkg/errors"
@@ -10,7 +10,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	apirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/client-go/kubernetes"
@@ -26,7 +25,6 @@ type REST struct {
 var _ rest.Getter = &REST{}
 var _ rest.Lister = &REST{}
 var _ rest.GracefulDeleter = &REST{}
-var _ rest.GroupVersionKindProvider = &REST{}
 
 func NewREST(config *restconfig.Config) *REST {
 	return &REST{
@@ -37,11 +35,7 @@ func NewREST(config *restconfig.Config) *REST {
 }
 
 func (r *REST) New() runtime.Object {
-	return &api.Snapshot{}
-}
-
-func (r *REST) GroupVersionKind(containingGV schema.GroupVersion) schema.GroupVersionKind {
-	return api.SchemeGroupVersion.WithKind(api.ResourceKindSnapshot)
+	return &repositories.Snapshot{}
 }
 
 func (r *REST) Get(ctx apirequest.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
@@ -63,7 +57,7 @@ func (r *REST) Get(ctx apirequest.Context, name string, options *metav1.GetOptio
 		return nil, errors.New("respective repository not found. error:" + err.Error())
 	}
 
-	snapshots := make([]api.Snapshot, 0)
+	snapshots := make([]repositories.Snapshot, 0)
 	if repo.Spec.Backend.Local != nil {
 		snapshots, err = r.getSnapshotsFromSidecar(repo, []string{snapshotId})
 	} else {
@@ -77,30 +71,29 @@ func (r *REST) Get(ctx apirequest.Context, name string, options *metav1.GetOptio
 		return nil, errors.New("no resource found")
 	}
 
-	snapshot := &api.Snapshot{}
+	snapshot := &repositories.Snapshot{}
 	snapshot = &snapshots[0]
 	return snapshot, nil
 }
 
 func (r *REST) NewList() runtime.Object {
-	return &api.SnapshotList{}
+	return &repositories.SnapshotList{}
 }
 
 func (r *REST) List(ctx apirequest.Context, options *metainternalversion.ListOptions) (runtime.Object, error) {
-
 	ns, ok := apirequest.NamespaceFrom(ctx)
 	if !ok {
 		return nil, errors.New("missing namespace")
 	}
 
-	repositories, err := r.stashClient.StashV1alpha1().Repositories(ns).List(metav1.ListOptions{})
+	repos, err := r.stashClient.StashV1alpha1().Repositories(ns).List(metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	var selectedRepos []v1alpha1.Repository
+	var selectedRepos []stash.Repository
 	if options.LabelSelector != nil {
-		for _, r := range repositories.Items {
+		for _, r := range repos.Items {
 			repoLabels := make(map[string]string)
 			repoLabels = r.Labels
 			repoLabels["repository"] = r.Name
@@ -109,12 +102,14 @@ func (r *REST) List(ctx apirequest.Context, options *metainternalversion.ListOpt
 			}
 		}
 	} else {
-		selectedRepos = repositories.Items
+		selectedRepos = repos.Items
 	}
 
-	snapshotList := &api.SnapshotList{}
-	snapshots := make([]api.Snapshot, 0)
+	snapshotList := &repositories.SnapshotList{
+		Items: make([]repositories.Snapshot, 0),
+	}
 	for _, repo := range selectedRepos {
+		var snapshots []repositories.Snapshot
 		if repo.Spec.Backend.Local != nil {
 			snapshots, err = r.getSnapshotsFromSidecar(&repo, nil)
 			if err != nil {
@@ -127,8 +122,10 @@ func (r *REST) List(ctx apirequest.Context, options *metainternalversion.ListOpt
 			}
 		}
 		snapshotList.Items = append(snapshotList.Items, snapshots...)
-
 	}
+
+	// k8s.io/apimachinery/pkg/apis/meta/v1/unstructured/unstructured_list.go
+	// unstructured.UnstructuredList{}
 	return snapshotList, nil
 }
 

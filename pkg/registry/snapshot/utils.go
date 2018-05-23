@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	api "github.com/appscode/stash/apis/repositories/v1alpha1"
-	"github.com/appscode/stash/apis/stash/v1alpha1"
+	"github.com/appscode/stash/apis/repositories"
+	stash "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/cli"
 	"github.com/appscode/stash/pkg/util"
 	core "k8s.io/api/core/v1"
@@ -20,7 +20,7 @@ const (
 	ExecStash = "/bin/stash"
 )
 
-func (r *REST) GetSnapshots(repository *v1alpha1.Repository, snapshotIDs []string) ([]api.Snapshot, error) {
+func (r *REST) GetSnapshots(repository *stash.Repository, snapshotIDs []string) ([]repositories.Snapshot, error) {
 	backend := repository.Spec.Backend.DeepCopy()
 
 	info, err := util.ExtractDataFromRepositoryLabel(repository.Labels)
@@ -28,7 +28,7 @@ func (r *REST) GetSnapshots(repository *v1alpha1.Repository, snapshotIDs []strin
 		return nil, err
 	}
 
-	workload := &v1alpha1.LocalTypedReference{
+	workload := &stash.LocalTypedReference{
 		Kind: info.WorkloadKind,
 		Name: info.WorkloadName,
 	}
@@ -51,8 +51,8 @@ func (r *REST) GetSnapshots(repository *v1alpha1.Repository, snapshotIDs []strin
 		return nil, err
 	}
 
-	snapshots := make([]api.Snapshot, 0)
-	snapshot := &api.Snapshot{}
+	snapshots := make([]repositories.Snapshot, 0)
+	snapshot := &repositories.Snapshot{}
 	for _, result := range results {
 		snapshot.Namespace = repository.Namespace
 		snapshot.Name = repository.Name + "-" + result.ID[0:util.SnapshotIDLength] // snapshotName = repositoryName-first8CharacterOfSnapshotId
@@ -75,7 +75,7 @@ func (r *REST) GetSnapshots(repository *v1alpha1.Repository, snapshotIDs []strin
 	return snapshots, nil
 }
 
-func (r *REST) ForgetSnapshots(repository *v1alpha1.Repository, snapshotIDs []string) error {
+func (r *REST) ForgetSnapshots(repository *stash.Repository, snapshotIDs []string) error {
 	backend := repository.Spec.Backend.DeepCopy()
 
 	info, err := util.ExtractDataFromRepositoryLabel(repository.Labels)
@@ -83,7 +83,7 @@ func (r *REST) ForgetSnapshots(repository *v1alpha1.Repository, snapshotIDs []st
 		return err
 	}
 
-	workload := &v1alpha1.LocalTypedReference{
+	workload := &stash.LocalTypedReference{
 		Kind: info.WorkloadKind,
 		Name: info.WorkloadName,
 	}
@@ -109,13 +109,13 @@ func (r *REST) ForgetSnapshots(repository *v1alpha1.Repository, snapshotIDs []st
 	return nil
 }
 
-func (r *REST) getSnapshotsFromSidecar(repository *v1alpha1.Repository, snapshotIDs []string) ([]api.Snapshot, error) {
+func (r *REST) getSnapshotsFromSidecar(repository *stash.Repository, snapshotIDs []string) ([]repositories.Snapshot, error) {
 	response, err := r.execOnSidecar(repository, "snapshots", snapshotIDs)
 	if err != nil {
 		return nil, err
 	}
 
-	snapshots := make([]api.Snapshot, 0)
+	snapshots := make([]repositories.Snapshot, 0)
 	err = json.Unmarshal(response, &snapshots)
 	if err != nil {
 		return nil, err
@@ -124,7 +124,7 @@ func (r *REST) getSnapshotsFromSidecar(repository *v1alpha1.Repository, snapshot
 	return snapshots, nil
 }
 
-func (r *REST) forgetSnapshotsFromSidecar(repository *v1alpha1.Repository, snapshotIDs []string) error {
+func (r *REST) forgetSnapshotsFromSidecar(repository *stash.Repository, snapshotIDs []string) error {
 	_, err := r.execOnSidecar(repository, "forget", snapshotIDs)
 	if err != nil {
 		return err
@@ -132,7 +132,7 @@ func (r *REST) forgetSnapshotsFromSidecar(repository *v1alpha1.Repository, snaps
 
 	return nil
 }
-func (r *REST) execOnSidecar(repository *v1alpha1.Repository, cmd string, snapshotIDs []string) ([]byte, error) {
+func (r *REST) execOnSidecar(repository *stash.Repository, cmd string, snapshotIDs []string) ([]byte, error) {
 	info, err := util.ExtractDataFromRepositoryLabel(repository.Labels)
 	if err != nil {
 		return nil, err
