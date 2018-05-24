@@ -54,6 +54,10 @@ func (f *Invocation) AppLabel() string {
 	return "app=" + f.app
 }
 
+func (f *Invocation) App() string {
+	return f.app
+}
+
 type Invocation struct {
 	*Framework
 	app string

@@ -600,7 +600,9 @@ var _ = Describe("ReplicaSet", func() {
 			f.DeleteReplicaSet(rs.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
-			framework.CleanupMinikubeHostPath()
+			if !f.SelfHostedOperator {
+				framework.CleanupMinikubeHostPath()
+			}
 		})
 
 		Context(`Single Replica`, func() {
@@ -757,6 +759,8 @@ var _ = Describe("ReplicaSet", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
+				// wait some time for ongoing backup
+				time.Sleep(time.Second * 30)
 				repos, err = f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(repos.Items).NotTo(BeEmpty())
@@ -836,11 +840,14 @@ var _ = Describe("ReplicaSet", func() {
 	Describe("Complete Recovery", func() {
 		Context(`"Local" backend, single fileGroup`, func() {
 			AfterEach(func() {
+				f.CleanupRecoveredVolume(rs.ObjectMeta)
 				f.DeleteReplicaSet(rs.ObjectMeta)
 				f.DeleteRestic(restic.ObjectMeta)
 				f.DeleteSecret(cred.ObjectMeta)
 				f.DeleteRecovery(recovery.ObjectMeta)
-				framework.CleanupMinikubeHostPath()
+				if !f.SelfHostedOperator {
+					framework.CleanupMinikubeHostPath()
+				}
 
 				err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
@@ -912,16 +919,7 @@ var _ = Describe("ReplicaSet", func() {
 				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying rs with recovered volume")
-				rs.Spec.Template.Spec.Volumes = []core.Volume{
-					{
-						Name: framework.TestSourceDataVolumeName,
-						VolumeSource: core.VolumeSource{
-							HostPath: &core.HostPathVolumeSource{
-								Path: framework.TestRecoveredVolumePath,
-							},
-						},
-					},
-				}
+				rs.Spec.Template.Spec.Volumes = f.RecoveredVolume()
 				_, err = f.CreateReplicaSet(rs)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -933,11 +931,14 @@ var _ = Describe("ReplicaSet", func() {
 
 		Context(`"Local" backend, multiple fileGroup`, func() {
 			AfterEach(func() {
+				f.CleanupRecoveredVolume(rs.ObjectMeta)
 				f.DeleteReplicaSet(rs.ObjectMeta)
 				f.DeleteRestic(restic.ObjectMeta)
 				f.DeleteSecret(cred.ObjectMeta)
 				f.DeleteRecovery(recovery.ObjectMeta)
-				framework.CleanupMinikubeHostPath()
+				if !f.SelfHostedOperator {
+					framework.CleanupMinikubeHostPath()
+				}
 			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
@@ -950,17 +951,18 @@ var _ = Describe("ReplicaSet", func() {
 				err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
+				rs.Spec.Template.Spec.Volumes = f.HostPathVolumeWithMultipleDirectory()
+				By("Creating ReplicaSet " + rs.Name)
+				_, err = f.CreateReplicaSet(rs)
+				Expect(err).NotTo(HaveOccurred())
+				ext_util.WaitUntilReplicaSetReady(f.KubeClient, rs.ObjectMeta)
+
 				By("Creating demo data in hostPath")
-				err = framework.CreateDemoDataInHostPath()
+				err = f.CreateDemoData(rs.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating restic")
 				err = f.CreateRestic(restic)
-				Expect(err).NotTo(HaveOccurred())
-
-				rs.Spec.Template.Spec.Volumes = framework.HostPathVolumeWithMultipleDirectory()
-				By("Creating ReplicaSet " + rs.Name)
-				_, err = f.CreateReplicaSet(rs)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
@@ -1012,16 +1014,7 @@ var _ = Describe("ReplicaSet", func() {
 				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying rs with recovered volume")
-				rs.Spec.Template.Spec.Volumes = []core.Volume{
-					{
-						Name: framework.TestSourceDataVolumeName,
-						VolumeSource: core.VolumeSource{
-							HostPath: &core.HostPathVolumeSource{
-								Path: framework.TestRecoveredVolumePath,
-							},
-						},
-					},
-				}
+				rs.Spec.Template.Spec.Volumes = f.RecoveredVolume()
 				_, err = f.CreateReplicaSet(rs)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -1038,11 +1031,14 @@ var _ = Describe("ReplicaSet", func() {
 		)
 		Context(`"Local" backend, single fileGroup`, func() {
 			AfterEach(func() {
+				f.CleanupRecoveredVolume(rs.ObjectMeta)
 				f.DeleteReplicaSet(rs.ObjectMeta)
 				f.DeleteRestic(restic.ObjectMeta)
 				f.DeleteSecret(cred.ObjectMeta)
 				f.DeleteRecovery(recovery.ObjectMeta)
-				framework.CleanupMinikubeHostPath()
+				if !f.SelfHostedOperator {
+					framework.CleanupMinikubeHostPath()
+				}
 				f.DeleteNamespace(recoveryNamespace.Name)
 
 				err = framework.WaitUntilNamespaceDeleted(f.KubeClient, recoveryNamespace.ObjectMeta)
@@ -1122,16 +1118,7 @@ var _ = Describe("ReplicaSet", func() {
 
 				By("Re-deploying rs with recovered volume")
 				rs.Name = recoveryNamespace.Name
-				rs.Spec.Template.Spec.Volumes = []core.Volume{
-					{
-						Name: framework.TestSourceDataVolumeName,
-						VolumeSource: core.VolumeSource{
-							HostPath: &core.HostPathVolumeSource{
-								Path: framework.TestRecoveredVolumePath,
-							},
-						},
-					},
-				}
+				rs.Spec.Template.Spec.Volumes = f.RecoveredVolume()
 				_, err = f.CreateReplicaSet(rs)
 				Expect(err).NotTo(HaveOccurred())
 

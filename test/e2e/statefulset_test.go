@@ -620,7 +620,9 @@ var _ = Describe("StatefulSet", func() {
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 			f.DeleteService(svc.ObjectMeta)
-			framework.CleanupMinikubeHostPath()
+			if !f.SelfHostedOperator {
+				framework.CleanupMinikubeHostPath()
+			}
 		})
 
 		Context(`"Local" backend`, func() {
@@ -730,6 +732,8 @@ var _ = Describe("StatefulSet", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
+				// wait some time for ongoing backup
+				time.Sleep(time.Second * 30)
 				repos, err = f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(repos.Items).NotTo(BeEmpty())
@@ -863,11 +867,14 @@ var _ = Describe("StatefulSet", func() {
 	Describe("Complete Recovery", func() {
 		Context(`"Local" backend, single fileGroup`, func() {
 			AfterEach(func() {
+				f.CleanupRecoveredVolume(ss.ObjectMeta)
 				f.DeleteStatefulSet(ss.ObjectMeta)
 				f.DeleteRestic(restic.ObjectMeta)
 				f.DeleteSecret(cred.ObjectMeta)
 				f.DeleteRecovery(recovery.ObjectMeta)
-				framework.CleanupMinikubeHostPath()
+				if !f.SelfHostedOperator {
+					framework.CleanupMinikubeHostPath()
+				}
 
 				err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
@@ -943,16 +950,8 @@ var _ = Describe("StatefulSet", func() {
 				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying ss with recovered volume")
-				ss.Spec.Template.Spec.Volumes = []core.Volume{
-					{
-						Name: framework.TestSourceDataVolumeName,
-						VolumeSource: core.VolumeSource{
-							HostPath: &core.HostPathVolumeSource{
-								Path: framework.TestRecoveredVolumePath,
-							},
-						},
-					},
-				}
+				ss.Spec.Template.Spec.Volumes = f.RecoveredVolume()
+
 				_, err = f.CreateStatefulSet(ss)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -964,11 +963,14 @@ var _ = Describe("StatefulSet", func() {
 
 		Context(`"Local" backend, multiple fileGroup`, func() {
 			AfterEach(func() {
+				f.CleanupRecoveredVolume(ss.ObjectMeta)
 				f.DeleteStatefulSet(ss.ObjectMeta)
 				f.DeleteRestic(restic.ObjectMeta)
 				f.DeleteSecret(cred.ObjectMeta)
 				f.DeleteRecovery(recovery.ObjectMeta)
-				framework.CleanupMinikubeHostPath()
+				if !f.SelfHostedOperator {
+					framework.CleanupMinikubeHostPath()
+				}
 			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
@@ -981,20 +983,29 @@ var _ = Describe("StatefulSet", func() {
 				err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
+				ss.Spec.Template.Spec.Volumes = f.HostPathVolumeWithMultipleDirectory()
+				By("Creating StatefulSet " + ss.Name)
+				_, err = f.CreateStatefulSet(ss)
+				Expect(err).NotTo(HaveOccurred())
+				apps_util.WaitUntilStatefulSetReady(f.KubeClient, ss.ObjectMeta)
+
 				By("Creating demo data in hostPath")
-				err = framework.CreateDemoDataInHostPath()
+				err = f.CreateDemoData(ss.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating restic")
 				err = f.CreateRestic(restic)
 				Expect(err).NotTo(HaveOccurred())
 
-				ss.Spec.Template.Spec.Volumes = framework.HostPathVolumeWithMultipleDirectory()
-				By("Creating StatefulSet " + ss.Name)
+				// delete old statefulset create new one so that it start with init container
+				f.DeleteStatefulSet(ss.ObjectMeta)
+				framework.WaitUntilStatefulSetDeleted(f.KubeClient, ss.ObjectMeta)
 				_, err = f.CreateStatefulSet(ss)
-				Expect(err).NotTo(HaveOccurred())
 
-				By("Waiting for sidecar")
+				Expect(err).NotTo(HaveOccurred())
+				apps_util.WaitUntilStatefulSetReady(f.KubeClient, ss.ObjectMeta)
+
+				By("Waiting for init-container")
 				f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 				By("Waiting for Repository CRD")
@@ -1047,16 +1058,8 @@ var _ = Describe("StatefulSet", func() {
 				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying ss with recovered volume")
-				ss.Spec.Template.Spec.Volumes = []core.Volume{
-					{
-						Name: framework.TestSourceDataVolumeName,
-						VolumeSource: core.VolumeSource{
-							HostPath: &core.HostPathVolumeSource{
-								Path: framework.TestRecoveredVolumePath,
-							},
-						},
-					},
-				}
+				ss.Spec.Template.Spec.Volumes = f.RecoveredVolume()
+
 				_, err = f.CreateStatefulSet(ss)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -1073,11 +1076,14 @@ var _ = Describe("StatefulSet", func() {
 		)
 		Context(`"Local" backend, single fileGroup`, func() {
 			AfterEach(func() {
+				f.CleanupRecoveredVolume(ss.ObjectMeta)
 				f.DeleteStatefulSet(ss.ObjectMeta)
 				f.DeleteRestic(restic.ObjectMeta)
 				f.DeleteSecret(cred.ObjectMeta)
 				f.DeleteRecovery(recovery.ObjectMeta)
-				framework.CleanupMinikubeHostPath()
+				if !f.SelfHostedOperator {
+					framework.CleanupMinikubeHostPath()
+				}
 				f.DeleteNamespace(recoveryNamespace.Name)
 
 				err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
@@ -1164,16 +1170,8 @@ var _ = Describe("StatefulSet", func() {
 
 				By("Re-deploying ss with recovered volume")
 				ss.Namespace = recoveryNamespace.Name
-				ss.Spec.Template.Spec.Volumes = []core.Volume{
-					{
-						Name: framework.TestSourceDataVolumeName,
-						VolumeSource: core.VolumeSource{
-							HostPath: &core.HostPathVolumeSource{
-								Path: framework.TestRecoveredVolumePath,
-							},
-						},
-					},
-				}
+				ss.Spec.Template.Spec.Volumes = f.RecoveredVolume()
+
 				_, err = f.CreateStatefulSet(ss)
 				Expect(err).NotTo(HaveOccurred())
 
