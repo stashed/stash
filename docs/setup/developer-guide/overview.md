@@ -2,13 +2,13 @@
 title: Overview | Developer Guide
 description: Developer Guide Overview
 menu:
-  product_stash_0.7.0-rc.4:
+  product_stash_0.7.0-rc.5:
     identifier: developer-guide-readme
     name: Overview
     parent: developer-guide
     weight: 15
 product_name: stash
-menu_name: product_stash_0.7.0-rc.4
+menu_name: product_stash_0.7.0-rc.5
 section_menu_id: setup
 ---
 

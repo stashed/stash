@@ -2,17 +2,17 @@
 title: Roadmap | Stash
 description: Roadmap of stash
 menu:
-  product_stash_0.7.0-rc.4:
+  product_stash_0.7.0-rc.5:
     identifier: roadmap-stash
     name: Roadmap
     parent: welcome
     weight: 15
 product_name: stash
-menu_name: product_stash_0.7.0-rc.4
+menu_name: product_stash_0.7.0-rc.5
 section_menu_id: welcome
-url: /products/stash/0.7.0-rc.4/welcome/roadmap/
+url: /products/stash/0.7.0-rc.5/welcome/roadmap/
 aliases:
-  - /products/stash/0.7.0-rc.4/roadmap/
+  - /products/stash/0.7.0-rc.5/roadmap/
 ---
 
 # Project Status

@@ -2,13 +2,13 @@
 title: Backup Volumes | Stash
 description: Backup Volumes using Stash
 menu:
-  product_stash_0.7.0-rc.4:
+  product_stash_0.7.0-rc.5:
     identifier: backup-stash
     name: Backup Volumes
     parent: guides
     weight: 10
 product_name: stash
-menu_name: product_stash_0.7.0-rc.4
+menu_name: product_stash_0.7.0-rc.5
 section_menu_id: guides
 ---
 
@@ -220,7 +220,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.name
-        image: appscode/stash:0.7.0-rc.4
+        image: appscode/stash:0.7.0-rc.5
         imagePullPolicy: IfNotPresent
         name: stash
         resources: {}

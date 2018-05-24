@@ -52,5 +52,5 @@ type SnapshotStatus struct {
 type SnapshotList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Snapshot `json:"items,omitempty"`
+	Items           []Snapshot `json:"items"`
 }
