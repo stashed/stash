@@ -94,7 +94,7 @@ var _ = Describe("Deployment", func() {
 			f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
-			repos:=f.DeploymentRepos(&deployment)
+			repos := f.DeploymentRepos(&deployment)
 			Expect(repos).NotTo(BeEmpty())
 			f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
@@ -122,7 +122,7 @@ var _ = Describe("Deployment", func() {
 			f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
-			repos:=f.DeploymentRepos(&deployment)
+			repos := f.DeploymentRepos(&deployment)
 			Expect(repos).NotTo(BeEmpty())
 			f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
@@ -255,7 +255,7 @@ var _ = Describe("Deployment", func() {
 			f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
-			repos:=f.DeploymentRepos(&deployment)
+			repos := f.DeploymentRepos(&deployment)
 			Expect(repos).NotTo(BeEmpty())
 			f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
@@ -284,7 +284,7 @@ var _ = Describe("Deployment", func() {
 			f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
-			repos:=f.DeploymentRepos(&deployment)
+			repos := f.DeploymentRepos(&deployment)
 			Expect(repos).NotTo(BeEmpty())
 			f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
@@ -716,7 +716,7 @@ var _ = Describe("Deployment", func() {
 				f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				repos:=f.DeploymentRepos(&deployment)
+				repos := f.DeploymentRepos(&deployment)
 				Expect(repos).NotTo(BeEmpty())
 				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
@@ -769,7 +769,7 @@ var _ = Describe("Deployment", func() {
 				f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				repos:=f.DeploymentRepos(&deployment)
+				repos := f.DeploymentRepos(&deployment)
 				Expect(repos).NotTo(BeEmpty())
 				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
@@ -797,7 +797,7 @@ var _ = Describe("Deployment", func() {
 		})
 	})
 
-	FDescribe("Minio server", func() {
+	Describe("Minio server", func() {
 		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
@@ -838,7 +838,7 @@ var _ = Describe("Deployment", func() {
 				f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				repos:=f.DeploymentRepos(&deployment)
+				repos := f.DeploymentRepos(&deployment)
 				Expect(repos).NotTo(BeEmpty())
 				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
@@ -947,7 +947,7 @@ var _ = Describe("Deployment", func() {
 				f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				repos:=f.DeploymentRepos(&deployment)
+				repos := f.DeploymentRepos(&deployment)
 				Expect(repos).NotTo(BeEmpty())
 				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
@@ -1030,7 +1030,7 @@ var _ = Describe("Deployment", func() {
 				f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				repos:=f.DeploymentRepos(&deployment)
+				repos := f.DeploymentRepos(&deployment)
 				Expect(repos).NotTo(BeEmpty())
 				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
@@ -1459,29 +1459,42 @@ var _ = Describe("Deployment", func() {
 		})
 	})
 
-	FDescribe("Repository WipeOut", func() {
+	Describe("Repository WipeOut", func() {
 		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 		})
 
-		Context(`"Minio" backend`, func() {
+		FContext(`"Minio" backend`, func() {
 			AfterEach(func() {
 				f.DeleteMinioServer()
 			})
 			BeforeEach(func() {
-				minikubeIP := net.IP{192, 168, 99, 100}
+				clusterIP := net.IP{192, 168, 99, 100}
+
+				pod, err := f.GetOperatorPod()
+				if f.SelfHostedOperator && pod.Spec.NodeName != "minikube" {
+					node, err := f.KubeClient.CoreV1().Nodes().Get(pod.Spec.NodeName, metav1.GetOptions{})
+					Expect(err).NotTo(HaveOccurred())
+
+					for _, addr := range node.Status.Addresses {
+						if addr.Type == core.NodeExternalIP {
+							clusterIP = net.ParseIP(addr.Address)
+							break
+						}
+					}
+				}
 
 				By("Creating Minio server with cacert")
-				_, err = f.CreateMinioServer(true, []net.IP{minikubeIP})
+				_, err = f.CreateMinioServer(true, []net.IP{clusterIP})
 				Expect(err).NotTo(HaveOccurred())
 
 				msvc, err := f.KubeClient.CoreV1().Services(f.Namespace()).Get("minio-service", metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				minioServiceNodePort := strconv.Itoa(int(msvc.Spec.Ports[0].NodePort))
 
-				restic = f.ResticForMinioBackend("https://" + minikubeIP.String() + ":" + minioServiceNodePort)
+				restic = f.ResticForMinioBackend("https://" + clusterIP.String() + ":" + minioServiceNodePort)
 				cred = f.SecretForMinioBackend(true)
 			})
 			It(`should delete repository from minio backend`, func() {
@@ -1586,7 +1599,7 @@ var _ = Describe("Deployment", func() {
 				f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				repos:=f.DeploymentRepos(&deployment)
+				repos := f.DeploymentRepos(&deployment)
 				Expect(repos).NotTo(BeEmpty())
 				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
