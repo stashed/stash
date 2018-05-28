@@ -1466,7 +1466,7 @@ var _ = Describe("Deployment", func() {
 			f.DeleteSecret(cred.ObjectMeta)
 		})
 
-		FContext(`"Minio" backend`, func() {
+		Context(`"Minio" backend`, func() {
 			AfterEach(func() {
 				f.DeleteMinioServer()
 			})
