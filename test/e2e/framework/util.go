@@ -1,7 +1,6 @@
 package framework
 
 import (
-	"fmt"
 	"os/exec"
 	"path/filepath"
 	"time"
@@ -221,8 +220,6 @@ func (f *Invocation) CleanupRecoveredVolume(meta metav1.ObjectMeta) error {
 	if err != nil {
 		return err
 	}
-
-	fmt.Println("Found pod:", pod.Name)
 	_, err = f.ExecOnPod(pod, "rm", "-rf", TestSourceDataMountPath)
 	if err != nil {
 		return err

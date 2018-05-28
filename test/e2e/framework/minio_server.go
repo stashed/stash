@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"net"
 	"path/filepath"
-	"time"
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
+	apps_util "github.com/appscode/kutil/apps/v1beta1"
 	core_util "github.com/appscode/kutil/core/v1"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1beta1"
@@ -67,7 +67,7 @@ func (fi *Invocation) CreateMinioServer(tls bool, ips []net.IP) (string, error) 
 	if err != nil {
 		return "", err
 	}
-
+	apps_util.WaitUntilDeploymentReady(fi.KubeClient, mdeploy.ObjectMeta)
 	return fi.MinioServiceAddres(), nil
 }
 
@@ -225,10 +225,6 @@ func (fi *Invocation) RemoveSecretVolumeMount(containers []core.Container) []cor
 
 func (fi *Invocation) CreateDeploymentForMinioServer(obj apps.Deployment) error {
 	_, err := fi.KubeClient.AppsV1beta1().Deployments(obj.Namespace).Create(&obj)
-	if err == nil {
-		//Waiting 30 second to minio server to be ready
-		time.Sleep(time.Second * 30)
-	}
 	return err
 }
 
