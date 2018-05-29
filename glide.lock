@@ -1,5 +1,5 @@
 hash: 34cb79f018183b9dd19b4ab6f07ec4f03ff1299b72671bbd6182a6e663ff70ef
-updated: 2018-05-29T12:04:34.040018369+06:00
+updated: 2018-05-28T23:28:52.810690869-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -26,7 +26,7 @@ imports:
   - types
   - version
 - name: github.com/appscode/jsonpatch
-  version: 1359b374de83fa14fd58ab10aa8ea4935f84d249
+  version: 58a38a46ddb591a543c6b1003213353e29331c5a
 - name: github.com/appscode/kubernetes-webhook-util
   version: 5a1b68c81878cdb4e07a7b5dbdbb6c88e7f5fa04
   subpackages:
@@ -249,7 +249,7 @@ imports:
   - proto
   - sortkeys
 - name: github.com/golang/glog
-  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
+  version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/groupcache
   version: 02826c3e79038b59d737d3b1c0a1d937f71a4433
   subpackages:
@@ -417,7 +417,7 @@ imports:
 - name: github.com/russross/blackfriday
   version: 300106c228d52c8941d4b3de6054a6062a86dda3
 - name: github.com/satori/uuid
-  version: 36e9d2ebbde5e3f13ab2e25625fd453271d6522e
+  version: 5bf94b69c6b68ee1b541973bb8e1144db23a194b
 - name: github.com/sergi/go-diff
   version: 97b2266dfe4bd4ea1b81a463322f04f8b724801e
   subpackages:
@@ -435,7 +435,7 @@ imports:
   subpackages:
   - doc
 - name: github.com/spf13/pflag
-  version: aca488055805e43a8c7755c10af3f6cbf753d2b4
+  version: 053854db78bf52e52733c395a5315647ad1e110e
   repo: https://github.com/appscode/pflag.git
   vcs: git
 - name: github.com/ugorji/go
@@ -922,7 +922,7 @@ imports:
   - util/retry
   - util/workqueue
 - name: k8s.io/kube-aggregator
-  version: adfe041e31889bef412f2105d246e549f824ca92
+  version: ""
   subpackages:
   - pkg/apis/apiregistration
   - pkg/apis/apiregistration/v1
@@ -932,7 +932,7 @@ imports:
   - pkg/client/clientset_generated/clientset/typed/apiregistration/v1
   - pkg/client/clientset_generated/clientset/typed/apiregistration/v1beta1
 - name: k8s.io/kube-openapi
-  version: 67793630244cabba12e91ce1ec8d0d0b40802b56
+  version: 41e43949ca69d04b66104069ed3ffd619b289b3d
   subpackages:
   - pkg/builder
   - pkg/common
