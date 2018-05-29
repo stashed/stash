@@ -2,7 +2,6 @@ package framework
 
 import (
 	"math"
-	"os"
 	"strconv"
 
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -43,11 +42,7 @@ func (f *Framework) EventuallyRepository(workload interface{}) GomegaAsyncAssert
 
 func (f *Framework) GetRepositories(kmr KindMetaReplicas) []*api.Repository {
 	repoNames := make([]string, 0)
-	nodeName := os.Getenv("NODE_NAME")
-	if nodeName == "" {
-		nodeName = "minikube"
-	}
-
+	nodeName := f.GetNodeName(kmr.Meta)
 	workload := api.LocalTypedReference{Name: kmr.Meta.Name, Kind: kmr.Kind}
 	switch kmr.Kind {
 	case api.KindDeployment, api.KindReplicationController, api.KindReplicaSet, api.KindDaemonSet:

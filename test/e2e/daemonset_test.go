@@ -1,7 +1,6 @@
 package e2e_test
 
 import (
-	"os"
 	"time"
 
 	"github.com/appscode/go/crypto/rand"
@@ -792,10 +791,7 @@ var _ = Describe("DaemonSet", func() {
 				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, daemon.Namespace, f.AppLabel())
 				Expect(err).NotTo(HaveOccurred())
 
-				nodeName := os.Getenv("NODE_NAME")
-				if nodeName == "" {
-					nodeName = "minikube"
-				}
+				nodeName := f.GetNodeName(daemon.ObjectMeta)
 				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", nodeName)
 				recovery.Spec.Repository.Namespace = f.Namespace()
 
@@ -890,10 +886,7 @@ var _ = Describe("DaemonSet", func() {
 				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, daemon.Namespace, f.AppLabel())
 				Expect(err).NotTo(HaveOccurred())
 
-				nodeName := os.Getenv("NODE_NAME")
-				if nodeName == "" {
-					nodeName = "minikube"
-				}
+				nodeName := f.GetNodeName(daemon.ObjectMeta)
 				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", nodeName)
 				recovery.Spec.Repository.Namespace = f.Namespace()
 
@@ -994,10 +987,7 @@ var _ = Describe("DaemonSet", func() {
 				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, daemon.Namespace, f.AppLabel())
 				Expect(err).NotTo(HaveOccurred())
 
-				nodeName := os.Getenv("NODE_NAME")
-				if nodeName == "" {
-					nodeName = "minikube"
-				}
+				nodeName := f.GetNodeName(daemon.ObjectMeta)
 				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", nodeName)
 				recovery.Spec.Repository.Namespace = f.Namespace()
 

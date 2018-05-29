@@ -3,6 +3,7 @@ package framework
 import (
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	rep "github.com/appscode/stash/apis/repositories/v1alpha1"
@@ -455,4 +456,23 @@ func (f *Framework) WaitUntilDaemonPodReady(meta metav1.ObjectMeta) error {
 		}
 		return false, nil
 	})
+}
+
+func (f *Framework) GetNodeName(meta metav1.ObjectMeta) string {
+	pod, err := f.GetPod(meta)
+	if err == nil {
+		return pod.Spec.NodeName
+	}
+
+	nodes, err := f.KubeClient.CoreV1().Nodes().List(metav1.ListOptions{})
+	if err == nil {
+		for _, node := range nodes.Items {
+			if !strings.HasSuffix(node.Name, "master") { // for concourse test, master node has "master" suffix in the name.
+				return node.Name
+			}
+		}
+	}
+
+	// if none of above succeed, return default testing node "minikube"
+	return "minikube"
 }
