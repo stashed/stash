@@ -2,24 +2,31 @@
 title: Changelog | Stash
 description: Changelog
 menu:
-  product_stash_0.7.0-rc.5:
+  product_stash_0.7.0:
     identifier: changelog-stash
     name: Changelog
     parent: welcome
     weight: 10
 product_name: stash
-menu_name: product_stash_0.7.0-rc.5
+menu_name: product_stash_0.7.0
 section_menu_id: welcome
-url: /products/stash/0.7.0-rc.5/welcome/changelog/
+url: /products/stash/0.7.0/welcome/changelog/
 aliases:
-  - /products/stash/0.7.0-rc.5/CHANGELOG/
+  - /products/stash/0.7.0/CHANGELOG/
 ---
 
 # Change Log
 
 ## [Unreleased](https://github.com/appscode/stash/tree/HEAD)
 
-[Full Changelog](https://github.com/appscode/stash/compare/0.7.0-rc.4...HEAD)
+[Full Changelog](https://github.com/appscode/stash/compare/0.7.0-rc.5...HEAD)
+
+**Closed issues:**
+
+- Resource type "snapshot" not registered [\#499](https://github.com/appscode/stash/issues/499)
+
+## [0.7.0-rc.5](https://github.com/appscode/stash/tree/0.7.0-rc.5) (2018-05-23)
+[Full Changelog](https://github.com/appscode/stash/compare/0.7.0-rc.4...0.7.0-rc.5)
 
 **Fixed bugs:**
 
@@ -27,6 +34,7 @@ aliases:
 
 **Merged pull requests:**
 
+- Prepare docs for 0.7.0-rc.5 [\#498](https://github.com/appscode/stash/pull/498) ([tamalsaha](https://github.com/tamalsaha))
 - Update changelog [\#495](https://github.com/appscode/stash/pull/495) ([tamalsaha](https://github.com/tamalsaha))
 
 ## [0.7.0-rc.4](https://github.com/appscode/stash/tree/0.7.0-rc.4) (2018-05-22)
