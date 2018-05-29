@@ -2,7 +2,6 @@ package e2e_test
 
 import (
 	"net"
-	"os"
 	"os/exec"
 	"strconv"
 
@@ -237,10 +236,7 @@ var _ = Describe("Snapshots", func() {
 			workload.Name = ss.Name
 			Expect(snapshots).Should(HavePrefixInName(workload.GetRepositoryCRDName(ss.Name+"-0", "")))
 
-			nodename := os.Getenv("NODE_NAME")
-			if nodename == "" {
-				nodename = "minikube"
-			}
+			nodename := f.GetNodeName(daemon.ObjectMeta)
 			By("Filter by node name")
 			snapshots, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(metav1.ListOptions{LabelSelector: "node-name=" + nodename})
 			Expect(err).NotTo(HaveOccurred())
