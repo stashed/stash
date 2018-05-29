@@ -58,7 +58,7 @@ func generateSwaggerJson() {
 		Codecs:   Codecs,
 		Info: spec.InfoProps{
 			Title:   "Stash",
-			Version: "v0.7.0-rc.5",
+			Version: "v0.7.0",
 			Contact: &spec.ContactInfo{
 				Name:  "AppsCode Inc.",
 				URL:   "https://appscode.com",
