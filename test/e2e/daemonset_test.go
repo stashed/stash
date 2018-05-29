@@ -17,7 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var _ = FDescribe("DaemonSet", func() {
+var _ = Describe("DaemonSet", func() {
 	var (
 		err          error
 		f            *framework.Invocation

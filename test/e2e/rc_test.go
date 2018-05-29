@@ -16,7 +16,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var _ = FDescribe("ReplicationController", func() {
+var _ = Describe("ReplicationController", func() {
 	var (
 		err          error
 		f            *framework.Invocation

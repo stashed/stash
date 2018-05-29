@@ -855,7 +855,7 @@ var _ = Describe("StatefulSet", func() {
 		})
 	})
 
-	FDescribe("Complete Recovery", func() {
+	Describe("Complete Recovery", func() {
 		Context(`"Local" backend, single fileGroup`, func() {
 			AfterEach(func() {
 				f.CleanupRecoveredVolume(ss.ObjectMeta)
