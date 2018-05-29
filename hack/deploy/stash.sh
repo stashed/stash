@@ -12,7 +12,7 @@ function cleanup {
     rm -rf $ONESSL ca.crt ca.key server.crt server.key
 }
 
-if [ "$APPSCODE_TEST" != "test-concourse" ]; then
+if [ "$APPSCODE_ENV" != "test-concourse" ]; then
     trap cleanup EXIT
 fi
 
