@@ -28,7 +28,7 @@ chmod +x pharmer-linux-amd64
 mv pharmer-linux-amd64 /bin/pharmer
 popd
 
-function cleanup {
+function cleanup_test_stuff {
     # delete cluster on exit
     pharmer get cluster || true
     pharmer delete cluster $NAME || true
@@ -42,7 +42,7 @@ function cleanup {
     chmod +x docker.py || true
     ./docker.py del_tag appscodeci stash $TAG || true
 }
-trap cleanup EXIT
+trap cleanup_test_stuff EXIT
 
 # copy stash to $GOPATH
 mkdir -p $GOPATH/src/github.com/appscode
@@ -54,7 +54,7 @@ NAME=stash-$(git rev-parse --short HEAD)
 
 # build and push docker image
 ./hack/builddeps.sh
-export APPSCODE_ENV=dev
+export APPSCODE_ENV=test-concourse
 export DOCKER_REGISTRY=appscodeci
 ./hack/docker/setup.sh build
 ./hack/docker/setup.sh push
