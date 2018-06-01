@@ -57,29 +57,35 @@ detect_tag() {
 if [ -x "$(command -v onessl)" ]; then
     export ONESSL=onessl
 else
-    # ref: https://stackoverflow.com/a/27776822/244009
-    case "$(uname -s)" in
-        Darwin)
-            curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.3.0/onessl-darwin-amd64
-            chmod +x onessl
-            export ONESSL=./onessl
-            ;;
+    if [[ "$(uname -m)" == "aarch64" ]]; then
+        curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.3.0/onessl-linux-arm64
+        chmod +x onessl
+        export ONESSL=./onessl
+    else
+        # ref: https://stackoverflow.com/a/27776822/244009
+        case "$(uname -s)" in
+            Darwin)
+                curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.3.0/onessl-darwin-amd64
+                chmod +x onessl
+                export ONESSL=./onessl
+                ;;
 
-        Linux)
-            curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.3.0/onessl-linux-amd64
-            chmod +x onessl
-            export ONESSL=./onessl
-            ;;
+            Linux)
+                curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.3.0/onessl-linux-amd64
+                chmod +x onessl
+                export ONESSL=./onessl
+                ;;
 
-        CYGWIN*|MINGW32*|MSYS*)
-            curl -fsSL -o onessl.exe https://github.com/kubepack/onessl/releases/download/0.3.0/onessl-windows-amd64.exe
-            chmod +x onessl.exe
-            export ONESSL=./onessl.exe
-            ;;
-        *)
-            echo 'other OS'
-            ;;
-    esac
+            CYGWIN*|MINGW32*|MSYS*)
+                curl -fsSL -o onessl.exe https://github.com/kubepack/onessl/releases/download/0.3.0/onessl-windows-amd64.exe
+                chmod +x onessl.exe
+                export ONESSL=./onessl.exe
+                ;;
+            *)
+                echo 'other OS'
+                ;;
+        esac
+    fi
 fi
 
 # ref: https://stackoverflow.com/a/7069755/244009
@@ -93,6 +99,7 @@ export STASH_RUN_ON_MASTER=0
 export STASH_ENABLE_VALIDATING_WEBHOOK=false
 export STASH_ENABLE_MUTATING_WEBHOOK=false
 export STASH_DOCKER_REGISTRY=appscode
+export PUSHGATEWAY_DOCKER_REGISTRY=prom
 export STASH_IMAGE_TAG=0.7.0
 export STASH_IMAGE_PULL_SECRET=
 export STASH_IMAGE_PULL_POLICY=IfNotPresent
@@ -153,6 +160,10 @@ while test $# -gt 0; do
             ;;
         --docker-registry*)
             export STASH_DOCKER_REGISTRY=`echo $1 | sed -e 's/^[^=]*=//g'`
+            shift
+            ;;
+            --pushgateway-registry*)
+            export PUSHGATEWAY_DOCKER_REGISTRY=`echo $1 | sed -e 's/^[^=]*=//g'`
             shift
             ;;
         --image-pull-secret*)
@@ -297,6 +308,7 @@ if [ "$STASH_ENABLE_RBAC" = true ]; then
     ${SCRIPT_LOCATION}hack/deploy/service-account.yaml | $ONESSL envsubst | kubectl apply -f -
     ${SCRIPT_LOCATION}hack/deploy/rbac-list.yaml | $ONESSL envsubst | kubectl auth reconcile -f -
     ${SCRIPT_LOCATION}hack/deploy/user-roles.yaml | $ONESSL envsubst | kubectl auth reconcile -f -
+
 fi
 
 if [ "$STASH_RUN_ON_MASTER" -eq 1 ]; then
