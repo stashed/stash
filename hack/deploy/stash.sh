@@ -272,9 +272,11 @@ $ONESSL has-keys configmap --namespace=kube-system --keys=requestheader-client-c
 echo ""
 
 export KUBE_CA=
+export STASH_ENABLE_APISERVER=false
 if [ "$STASH_ENABLE_VALIDATING_WEBHOOK" = true ] || [ "$STASH_ENABLE_MUTATING_WEBHOOK" = true ]; then
     $ONESSL get kube-ca >/dev/null 2>&1 || { echo "Admission webhooks can't be used when kube apiserver is accesible without verifying its TLS certificate (insecure-skip-tls-verify : true)."; echo; exit 1; }
     export KUBE_CA=$($ONESSL get kube-ca | $ONESSL base64)
+    export STASH_ENABLE_APISERVER=true
 fi
 
 env | sort | grep STASH*
@@ -292,11 +294,9 @@ export TLS_SERVING_KEY=$(cat server.key | $ONESSL base64)
 ${SCRIPT_LOCATION}hack/deploy/operator.yaml | $ONESSL envsubst | kubectl apply -f -
 
 if [ "$STASH_ENABLE_RBAC" = true ]; then
-    kubectl create serviceaccount $STASH_SERVICE_ACCOUNT --namespace $STASH_NAMESPACE
-    kubectl label serviceaccount $STASH_SERVICE_ACCOUNT app=stash --namespace $STASH_NAMESPACE
+    ${SCRIPT_LOCATION}hack/deploy/service-account.yaml | $ONESSL envsubst | kubectl apply -f -
     ${SCRIPT_LOCATION}hack/deploy/rbac-list.yaml | $ONESSL envsubst | kubectl auth reconcile -f -
     ${SCRIPT_LOCATION}hack/deploy/user-roles.yaml | $ONESSL envsubst | kubectl auth reconcile -f -
-
 fi
 
 if [ "$STASH_RUN_ON_MASTER" -eq 1 ]; then
@@ -304,7 +304,7 @@ if [ "$STASH_RUN_ON_MASTER" -eq 1 ]; then
       --patch="$(${SCRIPT_LOCATION}hack/deploy/run-on-master.yaml)"
 fi
 
-if [ "$STASH_ENABLE_VALIDATING_WEBHOOK" = true ] || [ "$STASH_ENABLE_MUTATING_WEBHOOK" = true ]; then
+if [ "$STASH_ENABLE_APISERVER" = true ]; then
     ${SCRIPT_LOCATION}hack/deploy/apiservices.yaml | $ONESSL envsubst | kubectl apply -f -
 fi
 if [ "$STASH_ENABLE_VALIDATING_WEBHOOK" = true ]; then
@@ -318,8 +318,10 @@ echo
 echo "waiting until stash operator deployment is ready"
 $ONESSL wait-until-ready deployment stash-operator --namespace $STASH_NAMESPACE || { echo "Stash operator deployment failed to be ready"; exit 1; }
 
-echo "waiting until stash apiservice is available"
-$ONESSL wait-until-ready apiservice v1alpha1.admission.stash.appscode.com || { echo "Stash apiservice failed to be ready"; exit 1; }
+if [ "$STASH_ENABLE_APISERVER" = true ]; then
+    echo "waiting until stash apiservice is available"
+    $ONESSL wait-until-ready apiservice v1alpha1.admission.stash.appscode.com || { echo "Stash apiservice failed to be ready"; exit 1; }
+fi
 
 echo "waiting until stash crds are ready"
 for crd in "${crds[@]}"; do
