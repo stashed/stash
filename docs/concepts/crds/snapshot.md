@@ -1,3 +1,15 @@
+---
+title: Snapshot Overview
+menu:
+  product_stash_0.7.0:
+    identifier: snapshot-overview
+    name: Snapshot
+    parent: crds
+    weight: 25
+product_name: stash
+menu_name: product_stash_0.7.0
+section_menu_id: concepts
+---
 > New to Stash? Please start [here](/docs/concepts/README.md).
 
 # Snapshot

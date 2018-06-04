@@ -6,7 +6,7 @@ menu:
     identifier: monitoring-stash
     name: Monitoring
     parent: guides
-    weight: 45
+    weight: 60
 product_name: stash
 menu_name: product_stash_0.7.0
 section_menu_id: guides
