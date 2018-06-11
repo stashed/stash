@@ -62,7 +62,8 @@ func NewOSMContext(client kubernetes.Interface, repository *api.Repository) (*ot
 		} else {
 			nc.Config[s3.ConfigAuthType] = "iam"
 		}
-		if strings.HasSuffix(repository.Spec.Backend.S3.Endpoint, ".amazonaws.com") {
+		if repository.Spec.Backend.S3.Endpoint == "" ||
+			strings.HasSuffix(repository.Spec.Backend.S3.Endpoint, ".amazonaws.com") {
 			// find region
 			var sess *session.Session
 			var err error
