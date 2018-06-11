@@ -156,14 +156,67 @@ func UnsafeGuessKindToResource(kind schema.GroupVersionKind) ( /*plural*/ schema
 		}
 	}
 
-	switch string(singularName[len(singularName)-1]) {
-	case "s":
-		return kind.GroupVersion().WithResource(singularName + "es"), singular
-	case "y":
-		return kind.GroupVersion().WithResource(strings.TrimSuffix(singularName, "y") + "ies"), singular
+	var plural string
+	switch rune(singularName[len(singularName)-1]) {
+	case 's', 'x', 'z':
+		plural = esPlural(singularName)
+	case 'y':
+		sl := rune(singularName[len(singularName)-2])
+		if isConsonant(sl) {
+			plural = iesPlural(singularName)
+		} else {
+			plural = sPlural(singularName)
+		}
+	case 'h':
+		sl := rune(singularName[len(singularName)-2])
+		if sl == 'c' || sl == 's' {
+			plural = esPlural(singularName)
+		} else {
+			plural = sPlural(singularName)
+		}
+	case 'e':
+		sl := rune(singularName[len(singularName)-2])
+		if sl == 'f' {
+			plural = vesPlural(singularName[:len(singularName)-1])
+		} else {
+			plural = sPlural(singularName)
+		}
+	case 'f':
+		plural = vesPlural(singularName)
+	default:
+		plural = sPlural(singularName)
 	}
 
-	return kind.GroupVersion().WithResource(singularName + "s"), singular
+	return kind.GroupVersion().WithResource(plural), singular
+}
+
+// ref: https://github.com/kubernetes/gengo/blob/master/namer/plural_namer.go
+// ref: https://github.com/kubernetes/apimachinery/issues/40
+var consonants = "bcdfghjklmnpqrsttvwxyz"
+
+func iesPlural(singular string) string {
+	return singular[:len(singular)-1] + "ies"
+}
+
+func vesPlural(singular string) string {
+	return singular[:len(singular)-1] + "ves"
+}
+
+func esPlural(singular string) string {
+	return singular + "es"
+}
+
+func sPlural(singular string) string {
+	return singular + "s"
+}
+
+func isConsonant(char rune) bool {
+	for _, c := range consonants {
+		if char == c {
+			return true
+		}
+	}
+	return false
 }
 
 // ResourceSingularizer implements RESTMapper

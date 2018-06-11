@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -29,6 +30,9 @@ type item struct {
 	properties properties
 	infoOnce   sync.Once
 	infoErr    error
+	tags       map[string]interface{}
+	tagsOnce   sync.Once
+	tagsErr    error
 }
 
 type properties struct {
@@ -152,4 +156,31 @@ func (i *item) getInfo() (stow.Item, error) {
 		return nil, err
 	}
 	return itemInfo, nil
+}
+
+// Tags returns a map of tags on an Item
+func (i *item) Tags() (map[string]interface{}, error) {
+	i.tagsOnce.Do(func() {
+		params := &s3.GetObjectTaggingInput{
+			Bucket: aws.String(i.container.name),
+			Key:    aws.String(i.ID()),
+		}
+
+		res, err := i.client.GetObjectTagging(params)
+		if err != nil {
+			if strings.Contains(err.Error(), "NoSuchKey") {
+				i.tagsErr = stow.ErrNotFound
+				return
+			}
+			i.tagsErr = errors.Wrap(err, "getObjectTagging")
+			return
+		}
+
+		i.tags = make(map[string]interface{})
+		for _, t := range res.TagSet {
+			i.tags[*t.Key] = *t.Value
+		}
+	})
+
+	return i.tags, i.tagsErr
 }

@@ -25,6 +25,7 @@ import (
 	"github.com/spf13/pflag"
 	extensionsobj "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/kube-openapi/pkg/common"
 )
 
 // Config stores the user configuration input
@@ -87,7 +88,7 @@ func (labels *Labels) Set(value string) error {
 	return nil
 }
 
-func NewCustomResourceDefinition(config Config) *extensionsobj.CustomResourceDefinition {
+func NewCustomResourceDefinition(config Config, options ...func(map[string]common.OpenAPIDefinition)) *extensionsobj.CustomResourceDefinition {
 	crd := &extensionsobj.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        config.Plural + "." + config.Group,
@@ -108,7 +109,7 @@ func NewCustomResourceDefinition(config Config) *extensionsobj.CustomResourceDef
 		},
 	}
 	if config.SpecDefinitionName != "" && config.EnableValidation == true {
-		crd.Spec.Validation = GetCustomResourceValidation(config.SpecDefinitionName, config.GetOpenAPIDefinitions)
+		crd.Spec.Validation = GetCustomResourceValidation(config.SpecDefinitionName, config.GetOpenAPIDefinitions, options)
 	}
 	if config.EnableStatusSubresource || config.EnableScaleSubresource {
 		crd.Spec.Subresources = &extensionsobj.CustomResourceSubresources{}
