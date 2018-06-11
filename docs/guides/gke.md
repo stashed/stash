@@ -1,3 +1,19 @@
+---
+title: GKE | Stash
+description: Using Stash with Google Kubernetes Engine (GKE)
+menu:
+  product_stash_0.7.0:
+    identifier: gke-stash
+    name: Use Stash in GKE
+    parent: guides
+    weight: 50
+product_name: stash
+menu_name: product_stash_0.7.0
+section_menu_id: guides
+---
+
+> New to Stash? Please start [here](/docs/concepts/README.md).
+
 # Using Stash with Google Kubernetes Engine (GKE)
 
 This tutorial will show you how to use Stash to **backup** and **restore** a Kubernetes deployment in [Google Kubernetes Engine](https://cloud.google.com/kubernetes-engine/). Here, we are going to backup the `/source/data` folder of a busybox pod into  [GCS bucket](/docs/guides/backends.md#google-cloud-storage-gcs). Then, we will show how to recover this data into a `gcePersistentDisk` and `PersistentVolumeClaim`. We will also re-deploy deployment using this recovered volume.
