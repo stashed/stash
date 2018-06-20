@@ -103,8 +103,8 @@ At first, we need to create a secret for `Restic` crd. Create secret for `Restic
 
 ```console
 $ echo -n 'changeit' > RESTIC_PASSWORD
-$ echo -n '<your-rook-access-key-id-here>' > AWS_ACCESS_KEY_ID
-$ echo -n '<your-rook-secret-access-key-here>' > AWS_SECRET_ACCESS_KEY
+$ echo -n '<your-aws-access-key-id-here>' > AWS_ACCESS_KEY_ID
+$ echo -n '<your-aws-secret-access-key-here>' > AWS_SECRET_ACCESS_KEY
 $ kubectl create secret generic rook-restic-secret \
       --from-file=./RESTIC_PASSWORD \
       --from-file=./AWS_ACCESS_KEY_ID \
