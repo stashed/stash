@@ -36,6 +36,9 @@ spec:
         ports:
         - containerPort: 8443
         - containerPort: 56790
+        resources:
+          requests:
+            cpu: "100m"
         volumeMounts:
         - mountPath: /var/serving-cert
           name: serving-cert

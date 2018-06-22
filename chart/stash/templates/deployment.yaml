@@ -51,6 +51,9 @@ spec:
             path: /healthz
             port: 8443
             scheme: HTTPS
+        resources:
+          requests:
+            cpu: "100m"
         volumeMounts:
         - mountPath: /var/serving-cert
           name: serving-cert
