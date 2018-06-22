@@ -60,8 +60,8 @@ spec:
         image: '{{ .Values.pushgateway.registry }}/{{ .Values.pushgateway.repository }}:{{ .Values.pushgateway.tag }}'
         imagePullPolicy: {{ .Values.imagePullPolicy }}
         args:
-        - -web.listen-address=:56789
-        - -persistence.file=/var/pv/pushgateway.dat
+        - --web.listen-address=:56789
+        - --persistence.file=/var/pv/pushgateway.dat
         ports:
         - containerPort: 56789
         volumeMounts:
