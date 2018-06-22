@@ -63,7 +63,6 @@ stash run [flags]
       --http2-max-streams-per-connection int                    The limit that the server gives to clients for the maximum number of streams in an HTTP/2 connection. Zero means to use golang's default. (default 1000)
       --image-tag string                                        Image tag for sidecar, init-container, check-job and recovery-job (default "canary")
       --kubeconfig string                                       kubeconfig file pointing at the 'core' kubernetes server.
-      --ops-address string                                      Address to listen on for web interface and telemetry. (default ":56790")
       --profiling                                               Enable profiling via web interface host:port/debug/pprof/ (default true)
       --qps float                                               The maximum QPS to the master from this client (default 100)
       --rbac                                                    Enable RBAC for operator

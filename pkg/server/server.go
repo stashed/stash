@@ -65,8 +65,6 @@ type StashServer struct {
 func (op *StashServer) Run(stopCh <-chan struct{}) error {
 	// sync cache
 	op.Controller.RunInformers(stopCh)
-
-	go op.Controller.RunOpsServer(stopCh)
 	return op.GenericAPIServer.PrepareRun().Run(stopCh)
 }
 
