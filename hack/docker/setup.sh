@@ -81,7 +81,7 @@ COPY restic /bin/restic
 COPY stash /bin/stash
 
 ENTRYPOINT ["/bin/stash"]
-EXPOSE 56789 56790
+EXPOSE 56789
 EOL
     local cmd="docker build -t $DOCKER_REGISTRY/$IMG:$TAG ."
     echo $cmd; $cmd

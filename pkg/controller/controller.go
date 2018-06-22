@@ -2,18 +2,14 @@ package controller
 
 import (
 	"fmt"
-	"net/http"
 
-	"github.com/appscode/go/log"
 	crdutils "github.com/appscode/kutil/apiextensions/v1beta1"
 	"github.com/appscode/kutil/tools/queue"
-	"github.com/appscode/pat"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client/clientset/versioned"
 	stashinformers "github.com/appscode/stash/client/informers/externalversions"
 	stash_listers "github.com/appscode/stash/client/listers/stash/v1alpha1"
 	"github.com/golang/glog"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	crd_api "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -126,12 +122,4 @@ func (c *StashController) RunInformers(stopCh <-chan struct{}) {
 	c.rcQueue.Run(stopCh)
 	c.rsQueue.Run(stopCh)
 	c.jobQueue.Run(stopCh)
-}
-
-func (c *StashController) RunOpsServer(stopCh <-chan struct{}) error {
-	m := pat.New()
-	m.Get("/metrics", promhttp.Handler())
-	http.Handle("/", m)
-	log.Infoln("Listening on", c.OpsAddress)
-	return http.ListenAndServe(c.OpsAddress, nil)
 }

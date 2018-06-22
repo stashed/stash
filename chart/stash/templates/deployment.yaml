@@ -45,7 +45,6 @@ spec:
         - --enable-analytics={{ .Values.enableAnalytics }}
         ports:
         - containerPort: 8443
-        - containerPort: 56790
         readinessProbe:
           httpGet:
             path: /healthz

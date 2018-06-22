@@ -35,7 +35,6 @@ spec:
         - --enable-analytics=${STASH_ENABLE_ANALYTICS}
         ports:
         - containerPort: 8443
-        - containerPort: 56790
         resources:
           requests:
             cpu: "100m"
@@ -103,8 +102,5 @@ spec:
   - name: pushgateway
     port: 56789
     targetPort: 56789
-  - name: ops
-    port: 56790
-    targetPort: 56790
   selector:
     app: stash

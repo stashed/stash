@@ -1,0 +1,20 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: appscode:system:profiler
+rules:
+- nonResourceURLs: ["/debug/pprof/", "/debug/pprof/*"]
+  verbs: ["get", "post"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: appscode:system:profiler
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name:  appscode:system:profiler
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: User
+  name: system:anonymous

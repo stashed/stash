@@ -21,7 +21,6 @@ type ExtraOptions struct {
 	MaxNumRequeues int
 	NumThreads     int
 	ScratchDir     string
-	OpsAddress     string
 	QPS            float64
 	Burst          int
 	ResyncPeriod   time.Duration
@@ -34,7 +33,6 @@ func NewExtraOptions() *ExtraOptions {
 		MaxNumRequeues: 5,
 		NumThreads:     2,
 		ScratchDir:     "/tmp",
-		OpsAddress:     ":56790",
 		QPS:            100,
 		Burst:          100,
 		ResyncPeriod:   10 * time.Minute,
@@ -42,7 +40,6 @@ func NewExtraOptions() *ExtraOptions {
 }
 
 func (s *ExtraOptions) AddGoFlags(fs *flag.FlagSet) {
-	fs.StringVar(&s.OpsAddress, "ops-address", s.OpsAddress, "Address to listen on for web interface and telemetry.")
 	fs.BoolVar(&s.EnableRBAC, "rbac", s.EnableRBAC, "Enable RBAC for operator")
 	fs.StringVar(&s.ScratchDir, "scratch-dir", s.ScratchDir, "Directory used to store temporary files. Use an `emptyDir` in Kubernetes.")
 	fs.StringVar(&s.StashImageTag, "image-tag", s.StashImageTag, "Image tag for sidecar, init-container, check-job and recovery-job")
@@ -67,7 +64,6 @@ func (s *ExtraOptions) ApplyTo(cfg *controller.Config) error {
 	cfg.DockerRegistry = s.DockerRegistry
 	cfg.MaxNumRequeues = s.MaxNumRequeues
 	cfg.NumThreads = s.NumThreads
-	cfg.OpsAddress = s.OpsAddress
 	cfg.ResyncPeriod = s.ResyncPeriod
 
 	cfg.ClientConfig.QPS = float32(s.QPS)
