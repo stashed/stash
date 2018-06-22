@@ -226,7 +226,7 @@ if [ "$STASH_UNINSTALL" -eq 1 ]; then
 
     echo "waiting for stash operator pod to stop running"
     for (( ; ; )); do
-       pods=($(kubectl get pods --all-namespaces -l app=stash -o jsonpath='{range .items[*]}{.metadata.name} {end}'))
+       pods=($(kubectl get pods --namespace $STASH_NAMESPACE -l app=stash -o jsonpath='{range .items[*]}{.metadata.name} {end}'))
        total=${#pods[*]}
         if [ $total -eq 0 ] ; then
             break
