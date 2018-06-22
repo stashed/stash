@@ -337,6 +337,7 @@ func NewRecoveryJob(stashClient cs.Interface, recovery *api.Recovery, image dock
 		Spec: batch.JobSpec{
 			Template: core.PodTemplateSpec{
 				Spec: core.PodSpec{
+					NodeSelector: recovery.Spec.NodeSelector,
 					Containers: []core.Container{
 						{
 							Name:  StashContainer,
