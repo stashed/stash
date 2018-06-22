@@ -163,6 +163,11 @@ type RecoverySpec struct {
 	Paths            []string                    `json:"paths,omitempty"`
 	RecoveredVolumes []LocalSpec                 `json:"recoveredVolumes,omitempty"`
 	ImagePullSecrets []core.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+
+	// NodeSelector is a selector which must be true for the pod to fit on a node.
+	// Selector which must match a node's labels for the pod to be scheduled on that node.
+	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
