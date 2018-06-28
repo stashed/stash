@@ -544,7 +544,7 @@ var _ = Describe("ReplicationController", func() {
 		})
 	})
 
-	Describe("Leader election for", func() {
+	FDescribe("Leader election for", func() {
 		AfterEach(func() {
 			f.DeleteReplicationController(rc.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
