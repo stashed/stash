@@ -13,7 +13,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func CreateOrPatchSecret(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.Secret) *core.Secret) (*core.Secret, kutil.VerbType, error) {
+func CreateOrPatchSecret(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.Secret) *core.Secret, forceSyncType ...bool) (*core.Secret, kutil.VerbType, error) {
+	syncType := len(forceSyncType) == 1 && forceSyncType[0]
+
 	cur, err := c.CoreV1().Secrets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating Secret %s/%s.", meta.Namespace, meta.Name)
@@ -28,7 +30,21 @@ func CreateOrPatchSecret(c kubernetes.Interface, meta metav1.ObjectMeta, transfo
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
-	return PatchSecret(c, cur, transform)
+
+	mod := transform(cur.DeepCopy())
+	if mod.Type != cur.Type && syncType {
+		// secret type can't be modified once created, so we have to delete first, then recreate with correct type
+		glog.Warningf("Secret %s/%s type is modified, deleting first.", meta.Namespace, meta.Name)
+		err = c.CoreV1().Secrets(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+		if err != nil {
+			return nil, kutil.VerbUnchanged, err
+		}
+
+		glog.V(3).Infof("Creating Secret %s/%s.", meta.Namespace, meta.Name)
+		out, err := c.CoreV1().Secrets(meta.Namespace).Create(mod)
+		return out, kutil.VerbCreated, err
+	}
+	return PatchSecretObject(c, cur, mod)
 }
 
 func PatchSecret(c kubernetes.Interface, cur *core.Secret, transform func(*core.Secret) *core.Secret) (*core.Secret, kutil.VerbType, error) {

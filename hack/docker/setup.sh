@@ -14,7 +14,7 @@ source "$REPO_ROOT/hack/libbuild/common/public_image.sh"
 
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
 IMG=stash
-RESTIC_VER=${RESTIC_VER:-0.8.3}
+RESTIC_VER=${RESTIC_VER:-0.9.1}
 RESTIC_BRANCH=${RESTIC_BRANCH:-stash-0.4.2}
 
 DIST=$REPO_ROOT/dist
@@ -81,7 +81,7 @@ COPY restic /bin/restic
 COPY stash /bin/stash
 
 ENTRYPOINT ["/bin/stash"]
-EXPOSE 56789 56790
+EXPOSE 56789
 EOL
     local cmd="docker build -t $DOCKER_REGISTRY/$IMG:$TAG ."
     echo $cmd; $cmd

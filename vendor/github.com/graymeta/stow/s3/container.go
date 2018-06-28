@@ -16,11 +16,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Amazon S3 bucket contains a creationdate and a name.
+// Amazon S3 bucket contains a creation date and a name.
 type container struct {
-	name           string // Name is needed to retrieve items.
-	client         *s3.S3 // Client is responsible for performing the requests.
-	region         string // Describes the AWS Availability Zone of the S3 Bucket.
+	// name is needed to retrieve items.
+	name string
+	// client is responsible for performing the requests.
+	client *s3.S3
+	// region describes the AWS Availability Zone of the S3 Bucket.
+	region         string
 	customEndpoint string
 }
 
@@ -40,18 +43,17 @@ func (c *container) Item(id string) (stow.Item, error) {
 	return c.getItem(id)
 }
 
-func (c *container) Browse(prefix, delimiter, cursor string, count int) (*stow.ItemPage, error) {
+func (c *container) Browse(prefix, delimiter, startAfter string, count int) (*stow.ItemPage, error) {
 	itemLimit := int64(count)
 
-	params := &s3.ListObjectsInput{
-		Bucket:    aws.String(c.Name()),
-		Delimiter: aws.String(delimiter),
-		Marker:    &cursor,
-		MaxKeys:   &itemLimit,
-		Prefix:    &prefix,
+	params := &s3.ListObjectsV2Input{
+		Bucket:     aws.String(c.Name()),
+		StartAfter: &startAfter,
+		MaxKeys:    &itemLimit,
+		Prefix:     &prefix,
 	}
 
-	response, err := c.client.ListObjects(params)
+	response, err := c.client.ListObjectsV2(params)
 	if err != nil {
 		return nil, errors.Wrap(err, "Items, listing objects")
 	}
@@ -81,25 +83,23 @@ func (c *container) Browse(prefix, delimiter, cursor string, count int) (*stow.I
 	}
 
 	// Create a marker and determine if the list of items to retrieve is complete.
-	// If not, provide the file name of the last item as the next marker. S3 lists
-	// its items (S3 Objects) in alphabetical order, so it will receive the item name
-	// and correctly return the next list of items in subsequent requests.
-	marker := ""
+	// If not, the last file is the input to the value of after which item to start
+	startAfter = ""
 	if *response.IsTruncated {
-		marker = containerItems[len(containerItems)-1].Name()
+		startAfter = containerItems[len(containerItems)-1].Name()
 	}
 
-	return &stow.ItemPage{Prefixes: prefixes, Items: containerItems, Cursor: marker}, nil
+	return &stow.ItemPage{Prefixes: prefixes, Items: containerItems, Cursor: startAfter}, nil
 }
 
 // Items sends a request to retrieve a list of items that are prepended with
 // the prefix argument. The 'cursor' variable facilitates pagination.
-func (c *container) Items(prefix, cursor string, count int) ([]stow.Item, string, error) {
-	page, err := c.Browse(prefix, "", cursor, count)
+func (c *container) Items(prefix, startAfter string, count int) ([]stow.Item, string, error) {
+	page, err := c.Browse(prefix, "", startAfter, count)
 	if err != nil {
 		return nil, "", err
 	}
-	return page.Items, cursor, err
+	return page.Items, startAfter, err
 }
 
 func (c *container) RemoveItem(id string) error {

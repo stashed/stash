@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/kube-openapi/pkg/common"
+	"path/filepath"
 )
 
 func generateCRDDefinitions() {
@@ -86,7 +87,11 @@ func generateSwaggerJson() {
 		glog.Fatal(err)
 	}
 
-	filename := gort.GOPath() + "/src/github.com/appscode/stash/openapi-spec/v2/swagger.json"
+	filename := gort.GOPath() + "/src/github.com/appscode/stash/api/openapi-spec/swagger.json"
+	err = os.MkdirAll(filepath.Dir(filename), 0755)
+	if err != nil {
+		glog.Fatal(err)
+	}
 	err = ioutil.WriteFile(filename, []byte(apispec), 0644)
 	if err != nil {
 		glog.Fatal(err)

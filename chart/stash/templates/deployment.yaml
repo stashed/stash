@@ -45,12 +45,14 @@ spec:
         - --enable-analytics={{ .Values.enableAnalytics }}
         ports:
         - containerPort: 8443
-        - containerPort: 56790
         readinessProbe:
           httpGet:
             path: /healthz
             port: 8443
             scheme: HTTPS
+        resources:
+          requests:
+            cpu: "100m"
         volumeMounts:
         - mountPath: /var/serving-cert
           name: serving-cert
@@ -58,8 +60,8 @@ spec:
         image: '{{ .Values.pushgateway.registry }}/{{ .Values.pushgateway.repository }}:{{ .Values.pushgateway.tag }}'
         imagePullPolicy: {{ .Values.imagePullPolicy }}
         args:
-        - -web.listen-address=:56789
-        - -persistence.file=/var/pv/pushgateway.dat
+        - --web.listen-address=:56789
+        - --persistence.file=/var/pv/pushgateway.dat
         ports:
         - containerPort: 56789
         volumeMounts:

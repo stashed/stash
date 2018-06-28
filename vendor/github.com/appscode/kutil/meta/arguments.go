@@ -21,6 +21,8 @@ package meta
 import (
 	"fmt"
 	"strings"
+
+	"github.com/golang/glog"
 )
 
 // BuildArgumentListFromMap takes two string-string maps, one with the base arguments and one with optional override arguments
@@ -48,7 +50,7 @@ func ParseArgumentListToMap(arguments []string) map[string]string {
 		// Warn in all other cases, but don't error out. This can happen only if the user has edited the argument list by hand, so they might know what they are doing
 		if err != nil {
 			if i != 0 {
-				fmt.Printf("[kubeadm] WARNING: The component argument %q could not be parsed correctly. The argument must be of the form %q. Skipping...", arg, "--")
+				glog.Warningf("WARNING: The component argument %q could not be parsed correctly. The argument must be of the form %q. Skipping...", arg, "--")
 			}
 			continue
 		}

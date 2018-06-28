@@ -39,6 +39,12 @@ To install Stash, please follow the guide [here](https://appscode.com/products/s
 ## Using Stash
 Want to learn how to use Stash? Please start [here](https://appscode.com/products/stash/0.7.0).
 
+## Stash API Clients
+You can use Stash api clients to programmatically access its objects. Here are the supported clients:
+
+- Go: [https://github.com/appscode/stash](/client/clientset/versioned)
+- Java: https://github.com/stash-client/java
+
 ## Contribution guidelines
 Want to help improve Stash? Please start [here](https://appscode.com/products/stash/0.7.0/welcome/contributing).
 

@@ -35,7 +35,9 @@ spec:
         - --enable-analytics=${STASH_ENABLE_ANALYTICS}
         ports:
         - containerPort: 8443
-        - containerPort: 56790
+        resources:
+          requests:
+            cpu: "100m"
         volumeMounts:
         - mountPath: /var/serving-cert
           name: serving-cert
@@ -46,9 +48,9 @@ spec:
             scheme: HTTPS
       - name: pushgateway
         args:
-        - -web.listen-address=:56789
-        - -persistence.file=/var/pv/pushgateway.dat
-        image: prom/pushgateway:v0.4.0
+        - --web.listen-address=:56789
+        - --persistence.file=/var/pv/pushgateway.dat
+        image: prom/pushgateway:v0.5.2
         ports:
         - containerPort: 56789
           name: pushgateway
@@ -100,8 +102,5 @@ spec:
   - name: pushgateway
     port: 56789
     targetPort: 56789
-  - name: ops
-    port: 56790
-    targetPort: 56790
   selector:
     app: stash
