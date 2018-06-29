@@ -1,7 +1,6 @@
 package framework
 
 import (
-	"fmt"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -425,8 +424,6 @@ func WaitUntilRecoveryDeleted(sc cs.Interface, meta metav1.ObjectMeta) error {
 }
 
 func WaitUntilRepositoriesDeleted(sc cs.Interface, repositories []*api.Repository) error {
-
-	fmt.Println("Repositories not deleted: ", repositories)
 
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
 		allDeleted := true

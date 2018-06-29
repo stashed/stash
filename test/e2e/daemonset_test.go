@@ -33,9 +33,10 @@ var _ = Describe("DaemonSet", func() {
 		f = root.Invoke()
 	})
 	AfterEach(func() {
-		f.DeleteRepositories(f.DaemonSetRepos(&daemon))
-
 		err := framework.WaitUntilDaemonSetDeleted(f.KubeClient, daemon.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, daemon.Namespace, f.AppLabel())
 		Expect(err).NotTo(HaveOccurred())
 
 		err = framework.WaitUntilSecretDeleted(f.KubeClient, cred.ObjectMeta)
@@ -44,10 +45,9 @@ var _ = Describe("DaemonSet", func() {
 		err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.DaemonSetRepos(&daemon))
-		Expect(err).NotTo(HaveOccurred())
+		f.DeleteRepositories(f.DaemonSetRepos(&daemon))
 
-		err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, daemon.Namespace, f.AppLabel())
+		err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.DaemonSetRepos(&daemon))
 		Expect(err).NotTo(HaveOccurred())
 	})
 	JustBeforeEach(func() {

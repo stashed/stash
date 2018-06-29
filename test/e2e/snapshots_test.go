@@ -278,7 +278,7 @@ var _ = Describe("Snapshots", func() {
 	)
 
 	Describe("Snapshots operations", func() {
-		FContext(`"Local" backend`, func() {
+		Context(`"Local" backend`, func() {
 			AfterEach(func() {
 				framework.CleanupMinikubeHostPath()
 			})

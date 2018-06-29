@@ -39,9 +39,10 @@ var _ = Describe("Deployment", func() {
 		f = root.Invoke()
 	})
 	AfterEach(func() {
-		f.DeleteRepositories(f.DeploymentRepos(&deployment))
-
 		err := framework.WaitUntilDeploymentDeleted(f.KubeClient, deployment.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, deployment.Namespace, f.AppLabel())
 		Expect(err).NotTo(HaveOccurred())
 
 		err = framework.WaitUntilSecretDeleted(f.KubeClient, cred.ObjectMeta)
@@ -50,10 +51,9 @@ var _ = Describe("Deployment", func() {
 		err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.DeploymentRepos(&deployment))
-		Expect(err).NotTo(HaveOccurred())
+		f.DeleteRepositories(f.DeploymentRepos(&deployment))
 
-		err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, deployment.Namespace, f.AppLabel())
+		err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.DeploymentRepos(&deployment))
 		Expect(err).NotTo(HaveOccurred())
 	})
 	JustBeforeEach(func() {

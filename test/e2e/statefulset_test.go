@@ -35,9 +35,10 @@ var _ = Describe("StatefulSet", func() {
 		f = root.Invoke()
 	})
 	AfterEach(func() {
-		f.DeleteRepositories(f.StatefulSetRepos(&ss))
-
 		err := framework.WaitUntilStatefulSetDeleted(f.KubeClient, ss.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, ss.Namespace, f.AppLabel())
 		Expect(err).NotTo(HaveOccurred())
 
 		err = framework.WaitUntilSecretDeleted(f.KubeClient, cred.ObjectMeta)
@@ -49,10 +50,9 @@ var _ = Describe("StatefulSet", func() {
 		err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.StatefulSetRepos(&ss))
-		Expect(err).NotTo(HaveOccurred())
+		f.DeleteRepositories(f.StatefulSetRepos(&ss))
 
-		err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, ss.Namespace, f.AppLabel())
+		err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.StatefulSetRepos(&ss))
 		Expect(err).NotTo(HaveOccurred())
 	})
 	JustBeforeEach(func() {
