@@ -303,15 +303,15 @@ func (c *Controller) runResticBackup(restic *api.Restic, repository *api.Reposit
 				restic_session_duration_seconds)
 		}
 		if err == nil {
-			stash_util.PatchRepository(c.stashClient.StashV1alpha1(), repository, func(in *api.Repository) *api.Repository {
-				in.Status.BackupCount++
-				in.Status.LastBackupTime = &startTime
-				if in.Status.FirstBackupTime == nil {
-					in.Status.FirstBackupTime = &startTime
+			stash_util.UpdateRepositoryStatus(c.stashClient.StashV1alpha1(), repository, func(in *api.RepositoryStatus) *api.RepositoryStatus {
+				in.BackupCount++
+				in.LastBackupTime = &startTime
+				if in.FirstBackupTime == nil {
+					in.FirstBackupTime = &startTime
 				}
-				in.Status.LastBackupDuration = endTime.Sub(startTime.Time).String()
+				in.LastBackupDuration = endTime.Sub(startTime.Time).String()
 				return in
-			})
+			}, api.EnableStatusSubresource)
 		}
 	}()
 

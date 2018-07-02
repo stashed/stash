@@ -135,6 +135,7 @@ func NewInitContainer(r *api.Restic, workload api.LocalTypedReference, image doc
 		"--docker-registry=" + image.Registry,
 		"--image-tag=" + image.Tag,
 		"--pushgateway-url=" + PushgatewayURL(),
+		fmt.Sprintf("--enable-status-subresource=%v", api.EnableStatusSubresource),
 		fmt.Sprintf("--enable-analytics=%v", EnableAnalytics),
 	}
 	container.Args = append(container.Args, LoggerOptions.ToFlags()...)
@@ -163,6 +164,7 @@ func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image 
 			"--image-tag=" + image.Tag,
 			"--run-via-cron=true",
 			"--pushgateway-url=" + PushgatewayURL(),
+			fmt.Sprintf("--enable-status-subresource=%v", api.EnableStatusSubresource),
 			fmt.Sprintf("--enable-analytics=%v", EnableAnalytics),
 			fmt.Sprintf("--enable-rbac=%v", enableRBAC),
 		}, LoggerOptions.ToFlags()...),
@@ -345,6 +347,7 @@ func NewRecoveryJob(stashClient cs.Interface, recovery *api.Recovery, image dock
 							Args: append([]string{
 								"recover",
 								"--recovery-name=" + recovery.Name,
+								fmt.Sprintf("--enable-status-subresource=%v", api.EnableStatusSubresource),
 								fmt.Sprintf("--enable-analytics=%v", EnableAnalytics),
 							}, LoggerOptions.ToFlags()...),
 							Env: []core.EnvVar{
@@ -458,6 +461,7 @@ func NewCheckJob(restic *api.Restic, hostName, smartPrefix string, image docker.
 								"--restic-name=" + restic.Name,
 								"--host-name=" + hostName,
 								"--smart-prefix=" + smartPrefix,
+								fmt.Sprintf("--enable-status-subresource=%v", api.EnableStatusSubresource),
 								fmt.Sprintf("--enable-analytics=%v", EnableAnalytics),
 							}, LoggerOptions.ToFlags()...),
 							Env: []core.EnvVar{

@@ -36,6 +36,7 @@ stash recover [flags]
 ```
       --alsologtostderr                  log to standard error as well as files
       --enable-analytics                 Send analytical events to Google Analytics (default true)
+      --enable-status-subresource        If true, uses sub resource for crds.
       --log_backtrace_at traceLocation   when logging hits line file:N, emit a stack trace (default :0)
       --log_dir string                   If non-empty, write log files in this directory
       --logtostderr                      log to standard error instead of files
