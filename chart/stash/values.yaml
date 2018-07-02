@@ -55,3 +55,6 @@ apiserver:
 
 # Send usage events to Google Analytics
 enableAnalytics: true
+
+# If true, uses status sub resource for crds.
+enableStatusSubresource: false
