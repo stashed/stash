@@ -64,7 +64,7 @@ func (c *Controller) Run() {
 		stash_util.UpdateRecoveryStatus(c.stashClient, recovery, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 			in.Phase = api.RecoveryFailed
 			return in
-		})
+		}, api.EnableStatusSubresource)
 		ref, rerr := reference.GetReference(scheme.Scheme, recovery)
 		if rerr == nil {
 			eventer.CreateEventWithLog(
@@ -84,7 +84,7 @@ func (c *Controller) Run() {
 		stash_util.UpdateRecoveryStatus(c.stashClient, recovery, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 			in.Phase = api.RecoveryFailed
 			return in
-		})
+		}, api.EnableStatusSubresource)
 		ref, rerr := reference.GetReference(scheme.Scheme, recovery)
 		if rerr == nil {
 			eventer.CreateEventWithLog(
@@ -104,7 +104,7 @@ func (c *Controller) Run() {
 		in.Phase = api.RecoverySucceeded
 		// TODO: status.Stats
 		return in
-	})
+	}, api.EnableStatusSubresource)
 	ref, rerr := reference.GetReference(scheme.Scheme, recovery)
 	if rerr == nil {
 		eventer.CreateEventWithLog(

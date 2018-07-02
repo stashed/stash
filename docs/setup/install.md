@@ -59,8 +59,9 @@ options:
     --docker-registry              docker registry used to pull stash images (default: appscode)
     --image-pull-secret            name of secret used to pull stash operator images
     --run-on-master                run stash operator on master
-    --enable-validating-webhook    enable/disable validating webhooks for Stash CRDs
+    --enable-validating-webhook    enable/disable validating webhooks for Stash crds
     --enable-mutating-webhook      enable/disable mutating webhooks for Kubernetes workloads
+    --enable-status-subresource    If enabled, uses status sub resource for crds
     --enable-analytics             send usage events to Google Analytics (default: true)
     --uninstall                    uninstall stash
     --purge                        purges stash crd objects and crds
@@ -99,6 +100,8 @@ Stash implements [validating admission webhooks](https://kubernetes.io/docs/admi
 $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0/hack/deploy/stash.sh \
     | bash -s -- --enable-validating-webhook=false --enable-mutating-webhook=false [--rbac]
 ```
+
+Stash 0.8.0 or later releases can use status sub resource for CustomResourceDefintions. This is enabled by default for Kubernetes 1.11.0 or later releases. To disable this feature, pass the `--enable-status-subresource=false` flag.
 
 </div>
 <div class="tab-pane fade" id="helm" role="tabpanel" aria-labelledby="helm-tab">

@@ -96,6 +96,7 @@ export STASH_DOCKER_REGISTRY=appscode
 export STASH_IMAGE_TAG=0.7.0
 export STASH_IMAGE_PULL_SECRET=
 export STASH_IMAGE_PULL_POLICY=IfNotPresent
+export STASH_ENABLE_STATUS_SUBRESOURCE=false
 export STASH_ENABLE_ANALYTICS=true
 export STASH_UNINSTALL=0
 export STASH_PURGE=0
@@ -111,6 +112,7 @@ fi
 
 KUBE_APISERVER_VERSION=$(kubectl version -o=json | $ONESSL jsonpath '{.serverVersion.gitVersion}')
 $ONESSL semver --check='<1.9.0' $KUBE_APISERVER_VERSION || { export STASH_ENABLE_VALIDATING_WEBHOOK=true; export STASH_ENABLE_MUTATING_WEBHOOK=true; }
+$ONESSL semver --check='<1.11.0' $KUBE_APISERVER_VERSION || { export STASH_ENABLE_STATUS_SUBRESOURCE=true; }
 
 show_help() {
     echo "stash.sh - install stash operator"
@@ -124,8 +126,9 @@ show_help() {
     echo "    --docker-registry              docker registry used to pull stash images (default: appscode)"
     echo "    --image-pull-secret            name of secret used to pull stash operator images"
     echo "    --run-on-master                run stash operator on master"
-    echo "    --enable-validating-webhook    enable/disable validating webhooks for Stash CRDs"
+    echo "    --enable-validating-webhook    enable/disable validating webhooks for Stash crds"
     echo "    --enable-mutating-webhook      enable/disable mutating webhooks for Kubernetes workloads"
+    echo "    --enable-status-subresource    If enabled, uses status sub resource for crds"
     echo "    --enable-analytics             send usage events to Google Analytics (default: true)"
     echo "    --uninstall                    uninstall stash"
     echo "    --purge                        purges stash crd objects and crds"
@@ -171,6 +174,13 @@ while test $# -gt 0; do
             val=`echo $1 | sed -e 's/^[^=]*=//g'`
             if [ "$val" = "false" ]; then
                 export STASH_ENABLE_MUTATING_WEBHOOK=false
+            fi
+            shift
+            ;;
+        --enable-status-subresource*)
+            val=`echo $1 | sed -e 's/^[^=]*=//g'`
+            if [ "$val" = "false" ]; then
+                export STASH_ENABLE_STATUS_SUBRESOURCE=false
             fi
             shift
             ;;
