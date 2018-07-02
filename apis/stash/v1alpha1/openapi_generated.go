@@ -10159,19 +10159,10 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"k8s.io/apimachinery/pkg/apis/meta/v1.Duration": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
-					Description: "Duration is a wrapper around time.Duration which supports correct marshaling to YAML and JSON. In particular, it marshals into strings, which can be used as map keys in json.",
-					Properties: map[string]spec.Schema{
-						"Duration": {
-							SchemaProps: spec.SchemaProps{
-								Type:   []string{"integer"},
-								Format: "int64",
-							},
-						},
-					},
-					Required: []string{"Duration"},
+					Type:   v1.Duration{}.OpenAPISchemaType(),
+					Format: v1.Duration{}.OpenAPISchemaFormat(),
 				},
 			},
-			Dependencies: []string{},
 		},
 		"k8s.io/apimachinery/pkg/apis/meta/v1.ExportOptions": {
 			Schema: spec.Schema{

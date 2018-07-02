@@ -31,6 +31,10 @@ func determineChunkSize(size int64) (int64, error) {
 	var chunkSize = int64(startChunkSize)
 
 	for {
+		if size <= 0 {
+			break
+		}
+
 		parts := size / chunkSize
 		rem := size % chunkSize
 
@@ -62,7 +66,7 @@ func (c *container) multipartUpload(name string, r io.Reader, size int64) error 
 	if err != nil {
 		return err
 	}
-	var buf = make([]byte, chunkSize)
+	var buf= make([]byte, chunkSize)
 
 	var blocks []az.Block
 	var rawID uint64

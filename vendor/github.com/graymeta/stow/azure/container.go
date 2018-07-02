@@ -105,7 +105,7 @@ func (c *container) Put(name string, r io.Reader, size int64, metadata map[strin
 
 	name = strings.Replace(name, " ", "+", -1)
 
-	if size > maxPutSize {
+	if size <= 0 || size > maxPutSize {
 		// Do a multipart upload
 		err := c.multipartUpload(name, r, size)
 		if err != nil {

@@ -33,6 +33,13 @@ func GenerateToken() string {
 	return temp[0:32]
 }
 
+func GenerateTokenWithLength(len int) string {
+	b := make([]byte, len)
+	rand.Read(b)
+	temp := base64.RawURLEncoding.EncodeToString(b)
+	return temp[0:len]
+}
+
 func GeneratePassword() string {
 	b := make([]byte, 128)
 	rand.Read(b)
