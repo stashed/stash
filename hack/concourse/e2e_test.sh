@@ -8,18 +8,18 @@ docker login --username=$DOCKER_USER --password=$DOCKER_PASS
 docker run hello-world
 
 # install python pip
-apt-get update > /dev/null
-apt-get install -y git python python-pip > /dev/null
+apt-get update >/dev/null
+apt-get install -y git python python-pip >/dev/null
 
 # install kubectl
-curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl &> /dev/null
+curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl &>/dev/null
 chmod +x ./kubectl
 mv ./kubectl /bin/kubectl
 
 # install onessl
-curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.3.0/onessl-linux-amd64 \
-  && chmod +x onessl \
-  && mv onessl /usr/local/bin/
+curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.3.0/onessl-linux-amd64 &&
+  chmod +x onessl &&
+  mv onessl /usr/local/bin/
 
 # install pharmer
 pushd /tmp
@@ -28,19 +28,19 @@ chmod +x pharmer-linux-amd64
 mv pharmer-linux-amd64 /bin/pharmer
 popd
 
-function cleanup {
-    # delete cluster on exit
-    pharmer get cluster || true
-    pharmer delete cluster $NAME || true
-    pharmer get cluster || true
-    sleep 120 || true
-    pharmer apply $NAME || true
-    pharmer get cluster || true
+function cleanup() {
+  # delete cluster on exit
+  pharmer get cluster || true
+  pharmer delete cluster $NAME || true
+  pharmer get cluster || true
+  sleep 120 || true
+  pharmer apply $NAME || true
+  pharmer get cluster || true
 
-    # delete docker image on exit
-    curl -LO https://raw.githubusercontent.com/appscodelabs/libbuild/master/docker.py || true
-    chmod +x docker.py || true
-    ./docker.py del_tag appscodeci stash $TAG || true
+  # delete docker image on exit
+  curl -LO https://raw.githubusercontent.com/appscodelabs/libbuild/master/docker.py || true
+  chmod +x docker.py || true
+  ./docker.py del_tag appscodeci stash $TAG || true
 }
 trap cleanup EXIT
 
@@ -62,7 +62,7 @@ export DOCKER_REGISTRY=appscodeci
 popd
 
 # pharmer credential file
-cat > cred.json <<EOF
+cat >cred.json <<EOF
 {
 	"token" : "$TOKEN"
 }
@@ -77,7 +77,7 @@ sleep 120 # wait for cluster to be ready
 kubectl get nodes
 
 # create storageclass
-cat > sc.yaml <<EOF
+cat >sc.yaml <<EOF
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -96,7 +96,7 @@ export CRED_DIR=$(pwd)/creds/gcs/gcs.json
 
 # create config/.env file that have all necessary creds
 pushd $GOPATH/src/github.com/appscode/stash
-cat > hack/config/.env <<EOF
+cat >hack/config/.env <<EOF
 AWS_ACCESS_KEY_ID=$AWS_KEY_ID
 AWS_SECRET_ACCESS_KEY=$AWS_SECRET
 
