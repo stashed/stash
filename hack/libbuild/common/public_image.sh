@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DOCKER_REGISTRY=${DOCKER_REGISTRY:-appscode}
+export DOCKER_REGISTRY=${DOCKER_REGISTRY:-appscode}
 source $(dirname "${BASH_SOURCE}")/lib.sh
 
 # override this one if you need to change push & pull
@@ -11,7 +11,6 @@ docker_push() {
 docker_pull() {
 	hub_pull
 }
-
 
 source_repo() {
 	RETVAL=0
@@ -62,9 +61,11 @@ source_repo() {
 		rmi)
 			docker_rmi
 			;;
-		*)	(10)
+		*)
+			(10)
 			echo $"Usage: $0 {build|build_binary|build_docker|clean|push|pull|release|check|sh|rm|rmi}"
 			RETVAL=1
+			;;
 	esac
 	exit $RETVAL
 }
@@ -112,9 +113,11 @@ binary_repo() {
 		rmi)
 			docker_rmi
 			;;
-		*)	(10)
+		*)
+			(10)
 			echo $"Usage: $0 {build|clean|push|pull|release|check|sh|rm|rmi}"
 			RETVAL=1
+			;;
 	esac
 	exit $RETVAL
 }
