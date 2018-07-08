@@ -15,7 +15,7 @@ pushd $REPO_ROOT
 docker run --rm -ti -u $(id -u):$(id -g) \
   -v "$REPO_ROOT":"$DOCKER_REPO_ROOT" \
   -w "$DOCKER_REPO_ROOT" \
-  appscode/gengo:release-1.10 "$DOCKER_CODEGEN_PKG"/generate-internal-groups.sh "deepcopy,defaulter,conversion" \
+  appscode/gengo:release-1.11 "$DOCKER_CODEGEN_PKG"/generate-internal-groups.sh "deepcopy,defaulter,conversion" \
   github.com/appscode/stash/client \
   github.com/appscode/stash/apis \
   github.com/appscode/stash/apis \
@@ -26,7 +26,7 @@ docker run --rm -ti -u $(id -u):$(id -g) \
 docker run --rm -ti -u $(id -u):$(id -g) \
   -v "$REPO_ROOT":"$DOCKER_REPO_ROOT" \
   -w "$DOCKER_REPO_ROOT" \
-  appscode/gengo:release-1.10 "$DOCKER_CODEGEN_PKG"/generate-groups.sh all \
+  appscode/gengo:release-1.11 "$DOCKER_CODEGEN_PKG"/generate-groups.sh all \
   github.com/appscode/stash/client \
   github.com/appscode/stash/apis \
   "repositories:v1alpha1 stash:v1alpha1" \

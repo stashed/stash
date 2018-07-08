@@ -460,6 +460,14 @@ spec:
                             ReadOnly here will force the ReadOnly setting in VolumeMounts.
                             More info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md'
                           type: boolean
+                        secretRef:
+                          description: LocalObjectReference contains enough information
+                            to let you locate the referenced object inside the same
+                            namespace.
+                          properties:
+                            name:
+                              description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                              type: string
                         volumeID:
                           description: 'volume id used to identify the volume in cinder
                             More info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md'
@@ -712,9 +720,10 @@ spec:
                       required:
                       - pdName
                     gitRepo:
-                      description: Represents a volume that is populated with the
-                        contents of a git repository. Git repo volumes do not support
-                        ownership management. Git repo volumes support SELinux relabeling.
+                      description: |-
+                        Represents a volume that is populated with the contents of a git repository. Git repo volumes do not support ownership management. Git repo volumes support SELinux relabeling.
+
+                        DEPRECATED: GitRepo is deprecated. To provision a container with a git repo, mount an EmptyDir into an InitContainer that clones the repo using git, then mount the EmptyDir into the Pod's container.
                       properties:
                         directory:
                           description: Target directory name. Must not contain or
@@ -1097,6 +1106,40 @@ spec:
                                     description: Specify whether the Secret or its
                                       key must be defined
                                     type: boolean
+                              serviceAccountToken:
+                                description: ServiceAccountTokenProjection represents
+                                  a projected service account token volume. This projection
+                                  can be used to insert a service account token into
+                                  the pods runtime filesystem for use against APIs
+                                  (Kubernetes API Server or otherwise).
+                                properties:
+                                  audience:
+                                    description: Audience is the intended audience
+                                      of the token. A recipient of a token must identify
+                                      itself with an identifier specified in the audience
+                                      of the token, and otherwise should reject the
+                                      token. The audience defaults to the identifier
+                                      of the apiserver.
+                                    type: string
+                                  expirationSeconds:
+                                    description: ExpirationSeconds is the requested
+                                      duration of validity of the service account
+                                      token. As the token approaches expiration, the
+                                      kubelet volume plugin will proactively rotate
+                                      the service account token. The kubelet will
+                                      start trying to rotate the token if the token
+                                      is older than 80 percent of its time to live
+                                      or if the token is older than 24 hours.Defaults
+                                      to 1 hour and must be at least 10 minutes.
+                                    format: int64
+                                    type: integer
+                                  path:
+                                    description: Path is the path relative to the
+                                      mount point of the file to project the token
+                                      into.
+                                    type: string
+                                required:
+                                - path
                           type: array
                       required:
                       - sources
@@ -1981,6 +2024,14 @@ spec:
                           here will force the ReadOnly setting in VolumeMounts. More
                           info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md'
                         type: boolean
+                      secretRef:
+                        description: LocalObjectReference contains enough information
+                          to let you locate the referenced object inside the same
+                          namespace.
+                        properties:
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                            type: string
                       volumeID:
                         description: 'volume id used to identify the volume in cinder
                           More info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md'
@@ -2231,9 +2282,10 @@ spec:
                     required:
                     - pdName
                   gitRepo:
-                    description: Represents a volume that is populated with the contents
-                      of a git repository. Git repo volumes do not support ownership
-                      management. Git repo volumes support SELinux relabeling.
+                    description: |-
+                      Represents a volume that is populated with the contents of a git repository. Git repo volumes do not support ownership management. Git repo volumes support SELinux relabeling.
+
+                      DEPRECATED: GitRepo is deprecated. To provision a container with a git repo, mount an EmptyDir into an InitContainer that clones the repo using git, then mount the EmptyDir into the Pod's container.
                     properties:
                       directory:
                         description: Target directory name. Must not contain or start
@@ -2609,6 +2661,39 @@ spec:
                                   description: Specify whether the Secret or its key
                                     must be defined
                                   type: boolean
+                            serviceAccountToken:
+                              description: ServiceAccountTokenProjection represents
+                                a projected service account token volume. This projection
+                                can be used to insert a service account token into
+                                the pods runtime filesystem for use against APIs (Kubernetes
+                                API Server or otherwise).
+                              properties:
+                                audience:
+                                  description: Audience is the intended audience of
+                                    the token. A recipient of a token must identify
+                                    itself with an identifier specified in the audience
+                                    of the token, and otherwise should reject the
+                                    token. The audience defaults to the identifier
+                                    of the apiserver.
+                                  type: string
+                                expirationSeconds:
+                                  description: ExpirationSeconds is the requested
+                                    duration of validity of the service account token.
+                                    As the token approaches expiration, the kubelet
+                                    volume plugin will proactively rotate the service
+                                    account token. The kubelet will start trying to
+                                    rotate the token if the token is older than 80
+                                    percent of its time to live or if the token is
+                                    older than 24 hours.Defaults to 1 hour and must
+                                    be at least 10 minutes.
+                                  format: int64
+                                  type: integer
+                                path:
+                                  description: Path is the path relative to the mount
+                                    point of the file to project the token into.
+                                  type: string
+                              required:
+                              - path
                         type: array
                     required:
                     - sources
@@ -3373,6 +3458,14 @@ spec:
                             ReadOnly here will force the ReadOnly setting in VolumeMounts.
                             More info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md'
                           type: boolean
+                        secretRef:
+                          description: LocalObjectReference contains enough information
+                            to let you locate the referenced object inside the same
+                            namespace.
+                          properties:
+                            name:
+                              description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                              type: string
                         volumeID:
                           description: 'volume id used to identify the volume in cinder
                             More info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md'
@@ -3625,9 +3718,10 @@ spec:
                       required:
                       - pdName
                     gitRepo:
-                      description: Represents a volume that is populated with the
-                        contents of a git repository. Git repo volumes do not support
-                        ownership management. Git repo volumes support SELinux relabeling.
+                      description: |-
+                        Represents a volume that is populated with the contents of a git repository. Git repo volumes do not support ownership management. Git repo volumes support SELinux relabeling.
+
+                        DEPRECATED: GitRepo is deprecated. To provision a container with a git repo, mount an EmptyDir into an InitContainer that clones the repo using git, then mount the EmptyDir into the Pod's container.
                       properties:
                         directory:
                           description: Target directory name. Must not contain or
@@ -4010,6 +4104,40 @@ spec:
                                     description: Specify whether the Secret or its
                                       key must be defined
                                     type: boolean
+                              serviceAccountToken:
+                                description: ServiceAccountTokenProjection represents
+                                  a projected service account token volume. This projection
+                                  can be used to insert a service account token into
+                                  the pods runtime filesystem for use against APIs
+                                  (Kubernetes API Server or otherwise).
+                                properties:
+                                  audience:
+                                    description: Audience is the intended audience
+                                      of the token. A recipient of a token must identify
+                                      itself with an identifier specified in the audience
+                                      of the token, and otherwise should reject the
+                                      token. The audience defaults to the identifier
+                                      of the apiserver.
+                                    type: string
+                                  expirationSeconds:
+                                    description: ExpirationSeconds is the requested
+                                      duration of validity of the service account
+                                      token. As the token approaches expiration, the
+                                      kubelet volume plugin will proactively rotate
+                                      the service account token. The kubelet will
+                                      start trying to rotate the token if the token
+                                      is older than 80 percent of its time to live
+                                      or if the token is older than 24 hours.Defaults
+                                      to 1 hour and must be at least 10 minutes.
+                                    format: int64
+                                    type: integer
+                                  path:
+                                    description: Path is the path relative to the
+                                      mount point of the file to project the token
+                                      into.
+                                    type: string
+                                required:
+                                - path
                           type: array
                       required:
                       - sources

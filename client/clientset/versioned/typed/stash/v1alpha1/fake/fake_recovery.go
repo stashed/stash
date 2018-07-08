@@ -62,7 +62,7 @@ func (c *FakeRecoveries) List(opts v1.ListOptions) (result *v1alpha1.RecoveryLis
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &v1alpha1.RecoveryList{}
+	list := &v1alpha1.RecoveryList{ListMeta: obj.(*v1alpha1.RecoveryList).ListMeta}
 	for _, item := range obj.(*v1alpha1.RecoveryList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)

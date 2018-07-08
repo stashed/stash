@@ -28,30 +28,15 @@ import (
 
 // Implements RESTScope interface
 type restScope struct {
-	name             RESTScopeName
-	paramName        string
-	argumentName     string
-	paramDescription string
+	name RESTScopeName
 }
 
 func (r *restScope) Name() RESTScopeName {
 	return r.name
 }
-func (r *restScope) ParamName() string {
-	return r.paramName
-}
-func (r *restScope) ArgumentName() string {
-	return r.argumentName
-}
-func (r *restScope) ParamDescription() string {
-	return r.paramDescription
-}
 
 var RESTScopeNamespace = &restScope{
-	name:             RESTScopeNameNamespace,
-	paramName:        "namespaces",
-	argumentName:     "namespace",
-	paramDescription: "object name and auth scope, such as for teams and projects",
+	name: RESTScopeNameNamespace,
 }
 
 var RESTScopeRoot = &restScope{
@@ -77,8 +62,6 @@ type DefaultRESTMapper struct {
 	kindToScope          map[schema.GroupVersionKind]RESTScope
 	singularToPlural     map[schema.GroupVersionResource]schema.GroupVersionResource
 	pluralToSingular     map[schema.GroupVersionResource]schema.GroupVersionResource
-
-	interfacesFunc VersionInterfacesFunc
 }
 
 func (m *DefaultRESTMapper) String() string {
@@ -87,16 +70,12 @@ func (m *DefaultRESTMapper) String() string {
 
 var _ RESTMapper = &DefaultRESTMapper{}
 
-// VersionInterfacesFunc returns the appropriate typer, and metadata accessor for a
-// given api version, or an error if no such api version exists.
-type VersionInterfacesFunc func(version schema.GroupVersion) (*VersionInterfaces, error)
-
 // NewDefaultRESTMapper initializes a mapping between Kind and APIVersion
 // to a resource name and back based on the objects in a runtime.Scheme
 // and the Kubernetes API conventions. Takes a group name, a priority list of the versions
 // to search when an object has no default version (set empty to return an error),
 // and a function that retrieves the correct metadata for a given version.
-func NewDefaultRESTMapper(defaultGroupVersions []schema.GroupVersion, f VersionInterfacesFunc) *DefaultRESTMapper {
+func NewDefaultRESTMapper(defaultGroupVersions []schema.GroupVersion) *DefaultRESTMapper {
 	resourceToKind := make(map[schema.GroupVersionResource]schema.GroupVersionKind)
 	kindToPluralResource := make(map[schema.GroupVersionKind]schema.GroupVersionResource)
 	kindToScope := make(map[schema.GroupVersionKind]RESTScope)
@@ -111,7 +90,6 @@ func NewDefaultRESTMapper(defaultGroupVersions []schema.GroupVersion, f VersionI
 		defaultGroupVersions: defaultGroupVersions,
 		singularToPlural:     singularToPlural,
 		pluralToSingular:     pluralToSingular,
-		interfacesFunc:       f,
 	}
 }
 
@@ -156,67 +134,14 @@ func UnsafeGuessKindToResource(kind schema.GroupVersionKind) ( /*plural*/ schema
 		}
 	}
 
-	var plural string
-	switch rune(singularName[len(singularName)-1]) {
-	case 's', 'x', 'z':
-		plural = esPlural(singularName)
-	case 'y':
-		sl := rune(singularName[len(singularName)-2])
-		if isConsonant(sl) {
-			plural = iesPlural(singularName)
-		} else {
-			plural = sPlural(singularName)
-		}
-	case 'h':
-		sl := rune(singularName[len(singularName)-2])
-		if sl == 'c' || sl == 's' {
-			plural = esPlural(singularName)
-		} else {
-			plural = sPlural(singularName)
-		}
-	case 'e':
-		sl := rune(singularName[len(singularName)-2])
-		if sl == 'f' {
-			plural = vesPlural(singularName[:len(singularName)-1])
-		} else {
-			plural = sPlural(singularName)
-		}
-	case 'f':
-		plural = vesPlural(singularName)
-	default:
-		plural = sPlural(singularName)
+	switch string(singularName[len(singularName)-1]) {
+	case "s":
+		return kind.GroupVersion().WithResource(singularName + "es"), singular
+	case "y":
+		return kind.GroupVersion().WithResource(strings.TrimSuffix(singularName, "y") + "ies"), singular
 	}
 
-	return kind.GroupVersion().WithResource(plural), singular
-}
-
-// ref: https://github.com/kubernetes/gengo/blob/master/namer/plural_namer.go
-// ref: https://github.com/kubernetes/apimachinery/issues/40
-var consonants = "bcdfghjklmnpqrsttvwxyz"
-
-func iesPlural(singular string) string {
-	return singular[:len(singular)-1] + "ies"
-}
-
-func vesPlural(singular string) string {
-	return singular[:len(singular)-1] + "ves"
-}
-
-func esPlural(singular string) string {
-	return singular + "es"
-}
-
-func sPlural(singular string) string {
-	return singular + "s"
-}
-
-func isConsonant(char rune) bool {
-	for _, c := range consonants {
-		if char == c {
-			return true
-		}
-	}
-	return false
+	return kind.GroupVersion().WithResource(singularName + "s"), singular
 }
 
 // ResourceSingularizer implements RESTMapper
@@ -579,18 +504,10 @@ func (m *DefaultRESTMapper) RESTMappings(gk schema.GroupKind, versions ...string
 			return nil, fmt.Errorf("the provided version %q and kind %q cannot be mapped to a supported scope", gvk.GroupVersion(), gvk.Kind)
 		}
 
-		interfaces, err := m.interfacesFunc(gvk.GroupVersion())
-		if err != nil {
-			return nil, fmt.Errorf("the provided version %q has no relevant versions: %v", gvk.GroupVersion().String(), err)
-		}
-
 		mappings = append(mappings, &RESTMapping{
-			Resource:         res.Resource,
+			Resource:         res,
 			GroupVersionKind: gvk,
 			Scope:            scope,
-
-			ObjectConvertor:  interfaces.ObjectConvertor,
-			MetadataAccessor: interfaces.MetadataAccessor,
 		})
 	}
 
