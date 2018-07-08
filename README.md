@@ -1,7 +1,3 @@
-[![CLA assistant](https://cla-assistant.io/readme/badge/appscode/libbuild)](https://cla-assistant.io/appscode/libbuild)
-
-[Website](https://appscode.com) • [Slack](https://slack.appscode.com) • [Forum](https://discuss.appscode.com) • [Twitter](https://twitter.com/AppsCodeHQ)
-
 Common build scripts used by AppsCode repositories.
 
 ## Installing
@@ -59,6 +55,9 @@ check_antipackage()
 import antipackage
 from github.appscode.libbuild import libbuild
 ```
+
+## Prerequisites
+We use [upx](https://upx.github.io/) to compress Go binaries. You need to install upx 3.92 or later to produce [valid Max OSX binaries](https://github.com/upx/upx/issues/4). Ubuntu 16.04 will install upx 3.91. So, [download and install](https://launchpad.net/ubuntu/+source/upx-ucl) upx deb files from [here](https://launchpad.net/ubuntu/+source/upx-ucl/3.94-4/+build/14175315).
 
 ## Acknowledgement
 - `pydotenv` is a fork of [python-dotenv](https://github.com/theskumar/python-dotenv). This provides support of [antipackage](https://github.com/ellisonbg/antipackage)

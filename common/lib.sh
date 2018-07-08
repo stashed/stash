@@ -7,7 +7,7 @@ clean() {
 }
 
 inside_git_repo() {
-	git rev-parse --is-inside-work-tree > /dev/null 2>&1
+	git rev-parse --is-inside-work-tree >/dev/null 2>&1
 	inside_git=$?
 	if [ "$inside_git" -ne 0 ]; then
 		echo "Not inside a git repository"
@@ -26,7 +26,9 @@ clone() {
 	if [ "$#" -eq 1 ]; then
 		folder="$1"
 	fi
-	local cmd="git clone $url $folder"; echo -e "\n"; echo $cmd; $cmd
+	echo -e "\n"
+	local cmd="git clone $url $folder"
+	echo $cmd; $cmd
 }
 
 # http://stackoverflow.com/a/36979153/244009
@@ -36,10 +38,14 @@ checkout() {
 		exit 1
 	fi
 	inside_git_repo
-	local cmd="git clean -xfd"; echo $cmd; $cmd
-	cmd="git fetch --all --prune"; echo $cmd; $cmd
-	cmd="git fetch --tags"; echo $cmd; $cmd
-	cmd="git checkout -f -B $1 origin/$1"; echo $cmd; $cmd
+	local cmd="git clean -xfd"
+	echo $cmd; $cmd
+	cmd="git fetch --all --prune"
+	echo $cmd; $cmd
+	cmd="git fetch --tags"
+	echo $cmd; $cmd
+	cmd="git checkout -f -B $1 origin/$1"
+	echo $cmd; $cmd
 }
 
 apply_tag() {
@@ -48,42 +54,44 @@ apply_tag() {
 		exit 1
 	fi
 	inside_git_repo
-	local cmd="git tag -fa $1"; echo $cmd; $cmd
-	cmd="git push --tag -f"; echo $cmd; $cmd
+	local cmd="git tag -fa $1"
+	echo $cmd; $cmd
+	cmd="git push --tag -f"
+	echo $cmd; $cmd
 }
 
 # Based on metadata() func in config.py
 detect_tag() {
 	inside_git_repo
 
-    # http://stackoverflow.com/a/1404862/3476121
-    git_tag=$(git describe --exact-match --abbrev=0 2>/dev/null || echo '')
+	# http://stackoverflow.com/a/1404862/3476121
+	git_tag=$(git describe --exact-match --abbrev=0 2>/dev/null || echo '')
 
-    commit_hash=$(git rev-parse --verify HEAD)
-    git_branch=$(git rev-parse --abbrev-ref HEAD)
+	commit_hash=$(git rev-parse --verify HEAD)
+	git_branch=$(git rev-parse --abbrev-ref HEAD)
 	commit_timestamp=$(git show -s --format=%ct)
 
-    if [ "$git_tag" != '' ]; then
-        TAG=$git_tag
-        TAG_STRATEGY='git_tag'
-    elif [ "$git_branch" != 'master' ] && [ "$git_branch" != 'HEAD' ] && [[ "$git_branch" != release-* ]]; then
-        TAG=$git_branch
-        TAG_STRATEGY='git_branch'
-    else
+	if [ "$git_tag" != '' ]; then
+		TAG=$git_tag
+		TAG_STRATEGY='git_tag'
+	elif [ "$git_branch" != 'master' ] && [ "$git_branch" != 'HEAD' ] && [[ "$git_branch" != release-* ]]; then
+		TAG=$git_branch
+		TAG_STRATEGY='git_branch'
+	else
 		hash_ver=$(git describe --tags --always --dirty)
 		TAG="${hash_ver}"
 		TAG_STRATEGY='commit_hash'
-    fi
+	fi
 
-    echo "TAG = $TAG"
-    echo "TAG_STRATEGY = $TAG_STRATEGY"
-    echo "git_tag = $git_tag"
-    echo "git_branch = $git_branch"
-    echo "commit_hash = $commit_hash"
-    echo "commit_timestamp = $commit_timestamp"
+	echo "TAG = $TAG"
+	echo "TAG_STRATEGY = $TAG_STRATEGY"
+	echo "git_tag = $git_tag"
+	echo "git_branch = $git_branch"
+	echo "commit_hash = $commit_hash"
+	echo "commit_timestamp = $commit_timestamp"
 
-    # write TAG info to a file so that it can be loaded by a different command or script
-    if [ "$1" != '' ]; then
+	# write TAG info to a file so that it can be loaded by a different command or script
+	if [ "$1" != '' ]; then
 		cat >"$1" <<EOL
 TAG=$TAG
 TAG_STRATEGY=$TAG_STRATEGY
@@ -93,12 +101,12 @@ commit_hash=$commit_hash
 commit_timestamp=$commit_timestamp
 EOL
 	fi
-    export TAG
-    export TAG_STRATEGY
-    export git_tag
-    export git_branch
-    export commit_hash
-    export commit_timestamp
+	export TAG
+	export TAG_STRATEGY
+	export git_tag
+	export git_branch
+	export commit_hash
+	export commit_timestamp
 }
 
 build() {
@@ -128,7 +136,7 @@ hub_canary() {
 	hub_up
 
 	# ref: https://www.gnu.org/software/bash/manual/html_node/Conditional-Constructs.html#Conditional-Constructs
-	if [[ "$TAG_STRATEGY" == "commit_hash" && "$git_branch" == "master" ]] ; then
+	if [[ "$TAG_STRATEGY" == "commit_hash" && "$git_branch" == "master" ]]; then
 		local cmd="docker tag $DOCKER_REGISTRY/$IMG:$TAG $DOCKER_REGISTRY/$IMG:canary"
 		echo $cmd; $cmd
 		cmd="docker push $DOCKER_REGISTRY/$IMG:canary"
@@ -155,7 +163,7 @@ docker_release() {
 }
 
 docker_check() {
-	name=$IMG-$(date +%s | sha256sum | base64 | head -c 8 ; echo)
+	name=$IMG-$(date +%s | sha256sum | base64 | head -c 8; echo)
 	local cmd="docker run -d -P -it --name=$name $DOCKER_REGISTRY/$IMG:$TAG"
 	echo $cmd; $cmd
 	cmd="docker exec -it $name ps aux"
@@ -173,12 +181,12 @@ docker_run() {
 	if [ $# -eq 1 ]; then
 		img=$1
 	fi
-	name=$img-$(date +%s | sha256sum | base64 | head -c 8 ; echo)
+	name=$img-$(date +%s | sha256sum | base64 | head -c 8; echo)
 	privileged="${PRIVILEGED_CONTAINER:-}"
 	net="--net=host"
 	extra_opts="-v $PWD/pv:/var/pv"
 	docker_cmd="${DOCKER_CMD:-}"
-	echo pv > .gitignore
+	echo pv >.gitignore
 	mkdir -p pv
 	local cmd="docker run -d -P -it $privileged $net $extra_opts --name=$name $DOCKER_REGISTRY/$img:$TAG $docker_cmd"
 	echo $cmd; $cmd
@@ -189,7 +197,7 @@ docker_sh() {
 	if [ $# -eq 1 ]; then
 		img=$1
 	fi
-	name=$img-$(date +%s | sha256sum | base64 | head -c 8 ; echo)
+	name=$img-$(date +%s | sha256sum | base64 | head -c 8; echo)
 	privileged="${PRIVILEGED_CONTAINER:-}"
 	net="${DOCKER_NETWORK:-}"
 	extra_opts="${EXTRA_DOCKER_OPTS:-}"

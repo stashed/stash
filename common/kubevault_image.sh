@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export DOCKER_REGISTRY=${DOCKER_REGISTRY:-kubedb}
+export DOCKER_REGISTRY=${DOCKER_REGISTRY:-kubevault}
 source $(dirname "${BASH_SOURCE}")/lib.sh
 
 # override this one if you need to change push & pull
