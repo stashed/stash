@@ -62,7 +62,7 @@ func (c *FakeRestics) List(opts v1.ListOptions) (result *v1alpha1.ResticList, er
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &v1alpha1.ResticList{}
+	list := &v1alpha1.ResticList{ListMeta: obj.(*v1alpha1.ResticList).ListMeta}
 	for _, item := range obj.(*v1alpha1.ResticList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)

@@ -1,10 +1,11 @@
 package openapi
 
 import (
+	"context"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	apirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
 )
 
@@ -13,6 +14,7 @@ type GetterStorage struct {
 }
 
 var _ rest.GroupVersionKindProvider = &GetterStorage{}
+var _ rest.Scoper = &GetterStorage{}
 var _ rest.Getter = &GetterStorage{}
 
 func NewGetterStorage(cfg ResourceInfo) *GetterStorage {
@@ -23,11 +25,15 @@ func (r *GetterStorage) GroupVersionKind(containingGV schema.GroupVersion) schem
 	return r.cfg.gvk
 }
 
+func (r *GetterStorage) NamespaceScoped() bool {
+	return r.cfg.namespaceScoped
+}
+
 // Getter
 func (r *GetterStorage) New() runtime.Object {
 	return r.cfg.obj
 }
 
-func (r *GetterStorage) Get(ctx apirequest.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
+func (r *GetterStorage) Get(ctx context.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
 	return r.New(), nil
 }

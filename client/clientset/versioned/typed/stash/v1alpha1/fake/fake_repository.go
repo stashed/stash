@@ -62,7 +62,7 @@ func (c *FakeRepositories) List(opts v1.ListOptions) (result *v1alpha1.Repositor
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &v1alpha1.RepositoryList{}
+	list := &v1alpha1.RepositoryList{ListMeta: obj.(*v1alpha1.RepositoryList).ListMeta}
 	for _, item := range obj.(*v1alpha1.RepositoryList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)

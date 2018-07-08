@@ -6,7 +6,8 @@ import (
 )
 
 type ResourceInfo struct {
-	gvk  schema.GroupVersionKind
-	obj  runtime.Object
-	list runtime.Object
+	gvk             schema.GroupVersionKind
+	obj             runtime.Object
+	list            runtime.Object
+	namespaceScoped bool
 }

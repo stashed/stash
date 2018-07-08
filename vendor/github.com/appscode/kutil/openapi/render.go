@@ -7,7 +7,8 @@ import (
 
 	"github.com/go-openapi/spec"
 	"github.com/golang/glog"
-	"k8s.io/apimachinery/pkg/apimachinery/registered"
+	openapinamer "k8s.io/apiserver/pkg/endpoints/openapi"
+	// "k8s.io/apimachinery/pkg/apimachinery/registered"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -19,18 +20,24 @@ import (
 	"k8s.io/kube-openapi/pkg/common"
 )
 
+type TypeInfo struct {
+	GroupVersion    schema.GroupVersion
+	Resource        string
+	Kind            string
+	NamespaceScoped bool
+}
+
 type Config struct {
-	Registry *registered.APIRegistrationManager
-	Scheme   *runtime.Scheme
-	Codecs   serializer.CodecFactory
+	Scheme *runtime.Scheme
+	Codecs serializer.CodecFactory
 
 	Info               spec.InfoProps
 	OpenAPIDefinitions []common.GetOpenAPIDefinitions
-	Resources          []schema.GroupVersionResource
-	GetterResources    []schema.GroupVersionResource
-	ListerResources    []schema.GroupVersionResource
-	CDResources        []schema.GroupVersionResource
-	RDResources        []schema.GroupVersionResource
+	Resources          []TypeInfo
+	GetterResources    []TypeInfo
+	ListerResources    []TypeInfo
+	CDResources        []TypeInfo
+	RDResources        []TypeInfo
 }
 
 func (c *Config) GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
@@ -75,161 +82,148 @@ func RenderOpenAPISpec(cfg Config) (string, error) {
 	if err := recommendedOptions.ApplyTo(serverConfig, cfg.Scheme); err != nil {
 		return "", err
 	}
-	serverConfig.OpenAPIConfig = genericapiserver.DefaultOpenAPIConfig(cfg.GetOpenAPIDefinitions, cfg.Scheme)
+	serverConfig.OpenAPIConfig = genericapiserver.DefaultOpenAPIConfig(cfg.GetOpenAPIDefinitions, openapinamer.NewDefinitionNamer(cfg.Scheme))
 	serverConfig.OpenAPIConfig.Info.InfoProps = cfg.Info
 
-	genericServer, err := serverConfig.Complete().New("stash-server", genericapiserver.EmptyDelegate) // completion is done in Complete, no need for a second time
+	genericServer, err := serverConfig.Complete().New("stash-server", genericapiserver.NewEmptyDelegate()) // completion is done in Complete, no need for a second time
 	if err != nil {
 		return "", err
 	}
 
-	mapper := cfg.Registry.RESTMapper()
-
 	table := map[schema.GroupVersion]map[string]rest.Storage{}
 	{
-		for _, gvr := range cfg.Resources {
+		for _, ti := range cfg.Resources {
 			var resmap map[string]rest.Storage
-			if m, found := table[gvr.GroupVersion()]; found {
+			if m, found := table[ti.GroupVersion]; found {
 				resmap = m
 			} else {
 				resmap = map[string]rest.Storage{}
-				table[gvr.GroupVersion()] = resmap
+				table[ti.GroupVersion] = resmap
 			}
 
-			gvk, err := mapper.KindFor(gvr)
-			if err != nil {
-				return "", err
-			}
+			gvk := ti.GroupVersion.WithKind(ti.Kind)
 			obj, err := cfg.Scheme.New(gvk)
 			if err != nil {
 				return "", err
 			}
-			list, err := cfg.Scheme.New(gvk.GroupVersion().WithKind(gvk.Kind + "List"))
+			list, err := cfg.Scheme.New(ti.GroupVersion.WithKind(ti.Kind + "List"))
 			if err != nil {
 				return "", err
 			}
 
-			resmap[gvr.Resource] = NewStandardStorage(ResourceInfo{
-				gvk:  gvk,
-				obj:  obj,
-				list: list,
+			resmap[ti.Resource] = NewStandardStorage(ResourceInfo{
+				gvk:             gvk,
+				obj:             obj,
+				list:            list,
+				namespaceScoped: ti.NamespaceScoped,
 			})
 		}
 	}
 	{
-		for _, gvr := range cfg.GetterResources {
+		for _, ti := range cfg.GetterResources {
 			var resmap map[string]rest.Storage
-			if m, found := table[gvr.GroupVersion()]; found {
+			if m, found := table[ti.GroupVersion]; found {
 				resmap = m
 			} else {
 				resmap = map[string]rest.Storage{}
-				table[gvr.GroupVersion()] = resmap
+				table[ti.GroupVersion] = resmap
 			}
 
-			gvk, err := mapper.KindFor(gvr)
-			if err != nil {
-				return "", err
-			}
+			gvk := ti.GroupVersion.WithKind(ti.Kind)
 			obj, err := cfg.Scheme.New(gvk)
 			if err != nil {
 				return "", err
 			}
 
-			resmap[gvr.Resource] = NewGetterStorage(ResourceInfo{
-				gvk: gvk,
-				obj: obj,
+			resmap[ti.Resource] = NewGetterStorage(ResourceInfo{
+				gvk:             gvk,
+				obj:             obj,
+				namespaceScoped: ti.NamespaceScoped,
 			})
 		}
 	}
 	{
-		for _, gvr := range cfg.ListerResources {
+		for _, ti := range cfg.ListerResources {
 			var resmap map[string]rest.Storage
-			if m, found := table[gvr.GroupVersion()]; found {
+			if m, found := table[ti.GroupVersion]; found {
 				resmap = m
 			} else {
 				resmap = map[string]rest.Storage{}
-				table[gvr.GroupVersion()] = resmap
+				table[ti.GroupVersion] = resmap
 			}
 
-			gvk, err := mapper.KindFor(gvr)
-			if err != nil {
-				return "", err
-			}
+			gvk := ti.GroupVersion.WithKind(ti.Kind)
 			obj, err := cfg.Scheme.New(gvk)
 			if err != nil {
 				return "", err
 			}
-			list, err := cfg.Scheme.New(gvk.GroupVersion().WithKind(gvk.Kind + "List"))
+			list, err := cfg.Scheme.New(ti.GroupVersion.WithKind(ti.Kind + "List"))
 			if err != nil {
 				return "", err
 			}
 
-			resmap[gvr.Resource] = NewListerStorage(ResourceInfo{
-				gvk:  gvk,
-				obj:  obj,
-				list: list,
+			resmap[ti.Resource] = NewListerStorage(ResourceInfo{
+				gvk:             gvk,
+				obj:             obj,
+				list:            list,
+				namespaceScoped: ti.NamespaceScoped,
 			})
 		}
 	}
 	{
-		for _, gvr := range cfg.CDResources {
+		for _, ti := range cfg.CDResources {
 			var resmap map[string]rest.Storage
-			if m, found := table[gvr.GroupVersion()]; found {
+			if m, found := table[ti.GroupVersion]; found {
 				resmap = m
 			} else {
 				resmap = map[string]rest.Storage{}
-				table[gvr.GroupVersion()] = resmap
+				table[ti.GroupVersion] = resmap
 			}
 
-			gvk, err := mapper.KindFor(gvr)
-			if err != nil {
-				return "", err
-			}
+			gvk := ti.GroupVersion.WithKind(ti.Kind)
 			obj, err := cfg.Scheme.New(gvk)
 			if err != nil {
 				return "", err
 			}
 
-			resmap[gvr.Resource] = NewCDStorage(ResourceInfo{
-				gvk: gvk,
-				obj: obj,
+			resmap[ti.Resource] = NewCDStorage(ResourceInfo{
+				gvk:             gvk,
+				obj:             obj,
+				namespaceScoped: ti.NamespaceScoped,
 			})
 		}
 	}
 	{
-		for _, gvr := range cfg.RDResources {
+		for _, ti := range cfg.RDResources {
 			var resmap map[string]rest.Storage
-			if m, found := table[gvr.GroupVersion()]; found {
+			if m, found := table[ti.GroupVersion]; found {
 				resmap = m
 			} else {
 				resmap = map[string]rest.Storage{}
-				table[gvr.GroupVersion()] = resmap
+				table[ti.GroupVersion] = resmap
 			}
 
-			gvk, err := mapper.KindFor(gvr)
-			if err != nil {
-				return "", err
-			}
+			gvk := ti.GroupVersion.WithKind(ti.Kind)
 			obj, err := cfg.Scheme.New(gvk)
 			if err != nil {
 				return "", err
 			}
-			list, err := cfg.Scheme.New(gvk.GroupVersion().WithKind(gvk.Kind + "List"))
+			list, err := cfg.Scheme.New(ti.GroupVersion.WithKind(ti.Kind + "List"))
 			if err != nil {
 				return "", err
 			}
 
-			resmap[gvr.Resource] = NewRDStorage(ResourceInfo{
-				gvk:  gvk,
-				obj:  obj,
-				list: list,
+			resmap[ti.Resource] = NewRDStorage(ResourceInfo{
+				gvk:             gvk,
+				obj:             obj,
+				list:            list,
+				namespaceScoped: ti.NamespaceScoped,
 			})
 		}
 	}
 
 	for gv, resmap := range table {
-		apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(gv.Group, cfg.Registry, cfg.Scheme, metav1.ParameterCodec, cfg.Codecs)
-		apiGroupInfo.GroupMeta.GroupVersion = gv
+		apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(gv.Group, cfg.Scheme, metav1.ParameterCodec, cfg.Codecs)
 		storage := map[string]rest.Storage{}
 		for r, s := range resmap {
 			storage[r] = s

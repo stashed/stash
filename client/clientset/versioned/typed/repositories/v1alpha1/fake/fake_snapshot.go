@@ -60,7 +60,7 @@ func (c *FakeSnapshots) List(opts v1.ListOptions) (result *v1alpha1.SnapshotList
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &v1alpha1.SnapshotList{}
+	list := &v1alpha1.SnapshotList{ListMeta: obj.(*v1alpha1.SnapshotList).ListMeta}
 	for _, item := range obj.(*v1alpha1.SnapshotList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)
