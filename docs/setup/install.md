@@ -119,12 +119,20 @@ appscode/stash  0.7.0    0.7.0  Stash by AppsCode - Backup your Kubernetes Volum
 # Kubernetes 1.8.x
 $ helm install appscode/stash --name stash-operator --version 0.7.0 --namespace kube-system
 
-# Kubernetes 1.9.0 or later
+# Kubernetes 1.9.x - 1.10.x
 $ helm install appscode/stash --name stash-operator --version 0.7.0 \
   --namespace kube-system \
   --set apiserver.ca="$(onessl get kube-ca)" \
   --set apiserver.enableValidatingWebhook=true \
   --set apiserver.enableMutatingWebhook=true
+
+# Kubernetes 1.11.0 or later
+$ helm install appscode/stash --name stash-operator --version 0.7.0 \
+  --namespace kube-system \
+  --set apiserver.ca="$(onessl get kube-ca)" \
+  --set apiserver.enableValidatingWebhook=true \
+  --set apiserver.enableMutatingWebhook=true \
+  --set apiserver.enableStatusSubresource=true
 ```
 
 To install `onessl`, run the following commands:
