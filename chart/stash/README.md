@@ -59,7 +59,7 @@ The following table lists the configurable parameters of the Stash chart and the
 | `apiserver.enableValidatingWebhook` | Enable validating webhooks for Stash CRDs                         | false              |
 | `apiserver.enableMutatingWebhook`   | Enable mutating webhooks for Kubernetes workloads                 | false              |
 | `apiserver.ca`                      | CA certificate used by main Kubernetes api server                 | ``                 |
-| `enableStatusSubresource`           | If true, uses status sub resource for crds                        | `false`            |
+| `apiserver.enableStatusSubresource` | If true, uses status sub resource for crds                        | `false`            |
 | `enableAnalytics`                   | Send usage events to Google Analytics                             | `true`             |
 
 

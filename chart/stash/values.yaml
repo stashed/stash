@@ -52,9 +52,8 @@ apiserver:
   enableValidatingWebhook: false
   # CA certificate used by main Kubernetes api server
   ca:
+  # If true, uses status sub resource for crds.
+  enableStatusSubresource: false
 
 # Send usage events to Google Analytics
 enableAnalytics: true
-
-# If true, uses status sub resource for crds.
-enableStatusSubresource: false
