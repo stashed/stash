@@ -117,7 +117,6 @@ func (c completedConfig) New() (*StashServer, error) {
 		// TODO we're going to need a later k8s.io/apiserver so that we can get discovery to list a different group version for
 		// our endpoint which we'll use to back some custom storage which will consume the AdmissionReview type and give back the correct response
 		apiGroupInfo := genericapiserver.APIGroupInfo{
-			PrioritizedVersions:          []schema.GroupVersion{admission.SchemeGroupVersion},
 			VersionedResourcesStorageMap: map[string]map[string]rest.Storage{},
 			// TODO unhardcode this.  It was hardcoded before, but we need to re-evaluate
 			OptionsExternalVersion: &schema.GroupVersion{Version: "v1"},
