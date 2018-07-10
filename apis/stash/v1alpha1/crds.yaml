@@ -7,6 +7,23 @@ metadata:
     app: stash
   name: restics.stash.appscode.com
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.selector
+    name: Selector
+    type: string
+  - JSONPath: .spec.schedule
+    name: Schedule
+    type: string
+  - JSONPath: .spec.type
+    name: BackupType
+    priority: 10
+    type: string
+  - JSONPath: .spec.paused
+    name: Paused
+    type: boolean
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
   group: stash.appscode.com
   names:
     kind: Restic
@@ -1564,6 +1581,10 @@ spec:
                 - mountPath
               type: array
   version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
 ---
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
@@ -1573,6 +1594,22 @@ metadata:
     app: stash
   name: recoveries.stash.appscode.com
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.repository.namespace
+    name: RepositoryNamespace
+    type: string
+  - JSONPath: .spec.repository.name
+    name: RepositoryName
+    type: string
+  - JSONPath: .spec.snapshot
+    name: Snapshot
+    type: string
+  - JSONPath: .status.phase
+    name: Phase
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
   group: stash.appscode.com
   names:
     kind: Recovery
@@ -2996,6 +3033,10 @@ spec:
                     type: string
               type: array
   version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
 ---
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
@@ -3005,6 +3046,17 @@ metadata:
     app: stash
   name: repositories.stash.appscode.com
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.backupCount
+    name: BackupCount
+    type: integer
+  - JSONPath: .status.lastSuccessfulBackupTime
+    format: date-time
+    name: LastSuccessfulBackup
+    type: date
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
   group: stash.appscode.com
   names:
     kind: Repository
@@ -4424,3 +4476,7 @@ spec:
               format: date-time
               type: string
   version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true

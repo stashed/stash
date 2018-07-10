@@ -16,12 +16,12 @@ package v1beta1
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"strings"
 
 	"github.com/appscode/go/types"
 	"github.com/ghodss/yaml"
-	"github.com/spf13/pflag"
 	extensionsobj "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -30,21 +30,22 @@ import (
 
 // Config stores the user configuration input
 type Config struct {
-	SpecDefinitionName      string
-	EnableValidation        bool
-	OutputFormat            string
-	Labels                  Labels
-	Annotations             Labels
-	ResourceScope           string
-	Group                   string
-	Kind                    string
-	Version                 string
-	Plural                  string
-	Singular                string
-	ShortNames              []string
-	GetOpenAPIDefinitions   GetAPIDefinitions
-	EnableStatusSubresource bool
-	EnableScaleSubresource  bool
+	SpecDefinitionName       string
+	EnableValidation         bool
+	OutputFormat             string
+	Labels                   Labels
+	Annotations              Labels
+	ResourceScope            string
+	Group                    string
+	Kind                     string
+	Plural                   string
+	Singular                 string
+	ShortNames               []string
+	GetOpenAPIDefinitions    GetAPIDefinitions
+	EnableStatusSubresource  bool
+	EnableScaleSubresource   bool
+	Versions                 []extensionsobj.CustomResourceDefinitionVersion
+	AdditionalPrinterColumns []extensionsobj.CustomResourceColumnDefinition
 }
 
 type Labels struct {
@@ -89,6 +90,10 @@ func (labels *Labels) Set(value string) error {
 }
 
 func NewCustomResourceDefinition(config Config, options ...func(map[string]common.OpenAPIDefinition)) *extensionsobj.CustomResourceDefinition {
+	if len(config.Versions) == 0 {
+		panic(fmt.Sprintf("at least one version must be defined for CRD %s:%s", config.Group, config.Kind))
+	}
+
 	crd := &extensionsobj.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        config.Plural + "." + config.Group,
@@ -97,15 +102,17 @@ func NewCustomResourceDefinition(config Config, options ...func(map[string]commo
 		},
 		TypeMeta: CustomResourceDefinitionTypeMeta,
 		Spec: extensionsobj.CustomResourceDefinitionSpec{
-			Group:   config.Group,
-			Version: config.Version,
-			Scope:   extensionsobj.ResourceScope(config.ResourceScope),
+			Group: config.Group,
+			Scope: extensionsobj.ResourceScope(config.ResourceScope),
 			Names: extensionsobj.CustomResourceDefinitionNames{
 				Plural:     config.Plural,
 				Singular:   config.Singular,
 				Kind:       config.Kind,
 				ShortNames: config.ShortNames,
 			},
+			Versions:                 config.Versions,
+			Version:                  config.Versions[0].Name,
+			AdditionalPrinterColumns: config.AdditionalPrinterColumns,
 		},
 	}
 	if config.SpecDefinitionName != "" && config.EnableValidation == true {
@@ -168,21 +175,4 @@ func MarshallCrd(w io.Writer, crd *extensionsobj.CustomResourceDefinition, outpu
 	}
 
 	return nil
-}
-
-// InitFlags prepares command line flags parser
-func InitFlags(cfg *Config, fs *pflag.FlagSet) *pflag.FlagSet {
-	fs.Var(&cfg.Labels, "labels", "Labels")
-	fs.Var(&cfg.Annotations, "annotations", "Annotations")
-	fs.BoolVar(&cfg.EnableValidation, "with-validation", true, "Add CRD validation field, default: true")
-	fs.StringVar(&cfg.Group, "apigroup", "custom.example.com", "CRD api group")
-	fs.StringVar(&cfg.SpecDefinitionName, "spec-name", "", "CRD spec definition name")
-	fs.StringVar(&cfg.OutputFormat, "output", "yaml", "output format: json|yaml")
-	fs.StringVar(&cfg.Kind, "kind", "", "CRD Kind")
-	fs.StringVar(&cfg.ResourceScope, "scope", string(extensionsobj.NamespaceScoped), "CRD scope: 'Namespaced' | 'Cluster'.  Default: Namespaced")
-	fs.StringVar(&cfg.Version, "version", "v1", "CRD version, default: 'v1'")
-	fs.StringVar(&cfg.Plural, "plural", "", "CRD plural name")
-	fs.StringVar(&cfg.Singular, "singular", "", "CRD singular name")
-	fs.StringSliceVar(&cfg.ShortNames, "short-names", nil, "CRD short names")
-	return fs
 }
