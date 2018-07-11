@@ -12,12 +12,18 @@ var (
 func (c Restic) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crdutils.NewCustomResourceDefinition(crdutils.Config{
 		Group:         SchemeGroupVersion.Group,
-		Version:       SchemeGroupVersion.Version,
 		Plural:        ResourcePluralRestic,
 		Singular:      ResourceSingularRestic,
 		Kind:          ResourceKindRestic,
 		ShortNames:    []string{"rst"},
 		ResourceScope: string(apiextensions.NamespaceScoped),
+		Versions: []apiextensions.CustomResourceDefinitionVersion{
+			{
+				Name:    SchemeGroupVersion.Version,
+				Served:  true,
+				Storage: true,
+			},
+		},
 		Labels: crdutils.Labels{
 			LabelsMap: map[string]string{"app": "stash"},
 		},
@@ -25,18 +31,52 @@ func (c Restic) CustomResourceDefinition() *apiextensions.CustomResourceDefiniti
 		EnableValidation:        true,
 		GetOpenAPIDefinitions:   GetOpenAPIDefinitions,
 		EnableStatusSubresource: EnableStatusSubresource,
+		AdditionalPrinterColumns: []apiextensions.CustomResourceColumnDefinition{
+			{
+				Name:     "Selector",
+				Type:     "string",
+				JSONPath: ".spec.selector",
+			},
+			{
+				Name:     "Schedule",
+				Type:     "string",
+				JSONPath: ".spec.schedule",
+			},
+			{
+				Name:     "BackupType",
+				Type:     "string",
+				JSONPath: ".spec.type",
+				Priority: 10,
+			},
+			{
+				Name:     "Paused",
+				Type:     "boolean",
+				JSONPath: ".spec.paused",
+			},
+			{
+				Name:     "Age",
+				Type:     "date",
+				JSONPath: ".metadata.creationTimestamp",
+			},
+		},
 	})
 }
 
 func (c Recovery) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crdutils.NewCustomResourceDefinition(crdutils.Config{
 		Group:         SchemeGroupVersion.Group,
-		Version:       SchemeGroupVersion.Version,
 		Plural:        ResourcePluralRecovery,
 		Singular:      ResourceSingularRecovery,
 		Kind:          ResourceKindRecovery,
 		ShortNames:    []string{"rec"},
 		ResourceScope: string(apiextensions.NamespaceScoped),
+		Versions: []apiextensions.CustomResourceDefinitionVersion{
+			{
+				Name:    SchemeGroupVersion.Version,
+				Served:  true,
+				Storage: true,
+			},
+		},
 		Labels: crdutils.Labels{
 			LabelsMap: map[string]string{"app": "stash"},
 		},
@@ -44,18 +84,51 @@ func (c Recovery) CustomResourceDefinition() *apiextensions.CustomResourceDefini
 		EnableValidation:        true,
 		GetOpenAPIDefinitions:   GetOpenAPIDefinitions,
 		EnableStatusSubresource: EnableStatusSubresource,
+		AdditionalPrinterColumns: []apiextensions.CustomResourceColumnDefinition{
+			{
+				Name:     "RepositoryNamespace",
+				Type:     "string",
+				JSONPath: ".spec.repository.namespace",
+			},
+			{
+				Name:     "RepositoryName",
+				Type:     "string",
+				JSONPath: ".spec.repository.name",
+			},
+			{
+				Name:     "Snapshot",
+				Type:     "string",
+				JSONPath: ".spec.snapshot",
+			},
+			{
+				Name:     "Phase",
+				Type:     "string",
+				JSONPath: ".status.phase",
+			},
+			{
+				Name:     "Age",
+				Type:     "date",
+				JSONPath: ".metadata.creationTimestamp",
+			},
+		},
 	})
 }
 
 func (c Repository) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crdutils.NewCustomResourceDefinition(crdutils.Config{
 		Group:         SchemeGroupVersion.Group,
-		Version:       SchemeGroupVersion.Version,
 		Plural:        ResourcePluralRepository,
 		Singular:      ResourceSingularRepository,
 		Kind:          ResourceKindRepository,
 		ShortNames:    []string{"repo"},
 		ResourceScope: string(apiextensions.NamespaceScoped),
+		Versions: []apiextensions.CustomResourceDefinitionVersion{
+			{
+				Name:    SchemeGroupVersion.Version,
+				Served:  true,
+				Storage: true,
+			},
+		},
 		Labels: crdutils.Labels{
 			LabelsMap: map[string]string{"app": "stash"},
 		},
@@ -63,5 +136,23 @@ func (c Repository) CustomResourceDefinition() *apiextensions.CustomResourceDefi
 		EnableValidation:        true,
 		GetOpenAPIDefinitions:   GetOpenAPIDefinitions,
 		EnableStatusSubresource: EnableStatusSubresource,
+		AdditionalPrinterColumns: []apiextensions.CustomResourceColumnDefinition{
+			{
+				Name:     "BackupCount",
+				Type:     "integer",
+				JSONPath: ".status.backupCount",
+			},
+			{
+				Name:     "LastSuccessfulBackup",
+				Type:     "date",
+				JSONPath: ".status.lastSuccessfulBackupTime",
+				Format:   "date-time",
+			},
+			{
+				Name:     "Age",
+				Type:     "date",
+				JSONPath: ".metadata.creationTimestamp",
+			},
+		},
 	})
 }
