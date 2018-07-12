@@ -21,6 +21,15 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - repositories.stash.appscode.com
+  resources:
+  - snapshots
+  verbs:
+  - delete
+  - deletecollection
+  - get
+  - list
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
@@ -39,3 +48,10 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - repositories.stash.appscode.com
+  resources:
+  - snapshots
+  verbs:
+  - get
+  - list
