@@ -1,8 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: stash-local-apiserver
+  name: stash-dev
   namespace: ${STASH_NAMESPACE}
+  labels:
+    app: stash-dev
 spec:
   ports:
   - name: api
@@ -17,8 +19,10 @@ spec:
 apiVersion: v1
 kind: Endpoints
 metadata:
-  name: stash-local-apiserver
+  name: stash-dev
   namespace: ${STASH_NAMESPACE}
+  labels:
+    app: stash-dev
 subsets:
 - addresses:
   # list all external ips for this service
@@ -34,14 +38,14 @@ kind: APIService
 metadata:
   name: v1alpha1.admission.stash.appscode.com
   labels:
-    app: test-stash
+    app: stash-dev
 spec:
   insecureSkipTLSVerify: true
   group: admission.stash.appscode.com
   groupPriorityMinimum: 1000
   versionPriority: 15
   service:
-    name: stash-local-apiserver
+    name: stash-dev
     namespace: ${STASH_NAMESPACE}
   version: v1alpha1
 ---
@@ -51,13 +55,13 @@ kind: APIService
 metadata:
   name: v1alpha1.repositories.stash.appscode.com
   labels:
-    app: test-stash
+    app: stash-dev
 spec:
   insecureSkipTLSVerify: true
   group: repositories.stash.appscode.com
   groupPriorityMinimum: 1000
   versionPriority: 15
   service:
-    name: stash-local-apiserver
+    name: stash-dev
     namespace: ${STASH_NAMESPACE}
   version: v1alpha1
