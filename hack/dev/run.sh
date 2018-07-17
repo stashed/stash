@@ -6,6 +6,12 @@ REPO_ROOT="$GOPATH/src/github.com/appscode/stash"
 
 pushd $REPO_ROOT
 
+# http://redsymbol.net/articles/bash-exit-traps/
+function cleanup() {
+  rm -rf $ONESSL ca.crt ca.key server.crt server.key
+}
+trap cleanup EXIT
+
 # https://stackoverflow.com/a/677212/244009
 if [[ ! -z "$(command -v onessl)" ]]; then
   export ONESSL=onessl
@@ -13,19 +19,19 @@ else
   # ref: https://stackoverflow.com/a/27776822/244009
   case "$(uname -s)" in
     Darwin)
-      curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.1.0/onessl-darwin-amd64
+      curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.6.0/onessl-darwin-amd64
       chmod +x onessl
       export ONESSL=./onessl
       ;;
 
     Linux)
-      curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.1.0/onessl-linux-amd64
+      curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.6.0/onessl-linux-amd64
       chmod +x onessl
       export ONESSL=./onessl
       ;;
 
     CYGWIN* | MINGW32* | MSYS*)
-      curl -fsSL -o onessl.exe https://github.com/kubepack/onessl/releases/download/0.1.0/onessl-windows-amd64.exe
+      curl -fsSL -o onessl.exe https://github.com/kubepack/onessl/releases/download/0.6.0/onessl-windows-amd64.exe
       chmod +x onessl.exe
       export ONESSL=./onessl.exe
       ;;
@@ -85,5 +91,11 @@ if [ "$STASH_ENABLE_WEBHOOK" = true ]; then
   cat $REPO_ROOT/hack/deploy/validating-webhook.yaml | envsubst | kubectl apply -f -
 fi
 
-rm -f ./onessl
+stash run \
+  --secure-port=8443 \
+  --kubeconfig="$HOME/.kube/config" \
+  --authorization-kubeconfig="$HOME/.kube/config" \
+  --authentication-kubeconfig="$HOME/.kube/config" \
+  --authentication-skip-lookup
+
 popd
