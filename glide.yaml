@@ -62,7 +62,9 @@ import:
   vcs: git
   version: release-1.11
 - package: k8s.io/apiserver
-  version: kubernetes-1.11.0
+  repo: https://github.com/pharmer/apiserver.git
+  vcs: git
+  version: k-1.11
 - package: k8s.io/client-go
   version: v8.0.0
 - package: k8s.io/kube-aggregator

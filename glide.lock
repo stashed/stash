@@ -1,5 +1,5 @@
-hash: 53931f8e016b210d0e81496e92b7dbe80629ab4dc0ef71f9a75b2bf21770f6a0
-updated: 2018-07-10T12:08:43.473175633-07:00
+hash: c0269307caeb08a9c651e050322110a006bdf5989a9700c01cd362d4660c25c1
+updated: 2018-07-18T19:13:45.840451916-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -41,7 +41,7 @@ imports:
   - registry/admissionreview/v1beta1
   - runtime/serializer/versioning
 - name: github.com/appscode/kutil
-  version: 2f50a9a96687d25cddd29f38bf4da10ebe888eca
+  version: d3937b4296055e551cd85c7d3fff52449a2f80a0
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
@@ -519,7 +519,7 @@ imports:
   subpackages:
   - rate
 - name: google.golang.org/api
-  version: ac730e38c5514b49097b1459b3acbe1bf905e930
+  version: efcb5f25ac56eae06c8b5672456c0b7767522685
   subpackages:
   - gensupport
   - googleapi
@@ -677,7 +677,9 @@ imports:
   - third_party/forked/golang/netutil
   - third_party/forked/golang/reflect
 - name: k8s.io/apiserver
-  version: 01459b68eb5fee2dcf5ca0e29df8bcac89ead47b
+  version: f830fbdc07ead94d6dc70f70177603263bfc9d8d
+  repo: https://github.com/pharmer/apiserver.git
+  vcs: git
   subpackages:
   - pkg/admission
   - pkg/admission/configuration
@@ -949,7 +951,7 @@ imports:
   - pkg/client/clientset_generated/clientset/typed/apiregistration/v1
   - pkg/client/clientset_generated/clientset/typed/apiregistration/v1beta1
 - name: k8s.io/kube-openapi
-  version: d83b052f768a50a309c692a9c271da3f3276ff88
+  version: 0cf8f7e6ed1d2e3d47d02e3b6e559369af24d803
   subpackages:
   - pkg/builder
   - pkg/common
