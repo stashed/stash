@@ -110,7 +110,7 @@ if [[ "$APPSCODE_ENV" = "dev" || "$APPSCODE_ENV" = "test-concourse" ]]; then
     detect_tag
     export SCRIPT_LOCATION="cat "
     export STASH_IMAGE_TAG=$TAG
-    export STASH_IMAGE_PULL_POLICY=Always
+    export STASH_IMAGE_PULL_POLICY=IfNotPresent
 fi
 
 KUBE_APISERVER_VERSION=$(kubectl version -o=json | $ONESSL jsonpath '{.serverVersion.gitVersion}')

@@ -1,6 +1,7 @@
 package framework
 
 import (
+	"fmt"
 	"path/filepath"
 	"time"
 
@@ -69,6 +70,7 @@ func (f *Framework) EventuallyRecoveredData(meta metav1.ObjectMeta, paths []stri
 		if err != nil {
 			return nil
 		}
+		fmt.Println("Recovered Data: ", recoveredData)
 		return recoveredData
 	}, time.Minute*5, time.Second*5)
 }
@@ -78,10 +80,10 @@ func (f *Framework) ReadDataFromMountedDir(meta metav1.ObjectMeta, paths []strin
 	if err != nil {
 		return nil, err
 	}
-
+	fmt.Println("Mounted Path: ", paths)
 	datas := make([]string, 0)
 	for _, path := range paths {
-		data, err := f.ExecOnPod(pod, "ls", path)
+		data, err := f.ExecOnPod(pod, "ls", "-R", path)
 		if err != nil {
 			return nil, err
 		}

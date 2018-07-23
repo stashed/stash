@@ -345,6 +345,7 @@ func NewRecoveryJob(stashClient cs.Interface, recovery *api.Recovery, image dock
 							Args: append([]string{
 								"recover",
 								"--recovery-name=" + recovery.Name,
+								"--v=5",
 								fmt.Sprintf("--enable-analytics=%v", EnableAnalytics),
 							}, LoggerOptions.ToFlags()...),
 							Env: []core.EnvVar{

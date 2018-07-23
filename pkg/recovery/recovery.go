@@ -157,6 +157,7 @@ func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
 
 	var errRec error
 	for _, path := range recovery.Spec.Paths {
+		fmt.Println("Restoring path: ", path)
 		d, err := c.measure(cli.Restore, path, hostname, snapshotID)
 		if err != nil {
 			errRec = err

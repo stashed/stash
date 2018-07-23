@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	TIMEOUT           = 10 * time.Minute
+	TIMEOUT           = 3 * time.Minute
 	TestStashImageTag = "canary"
 )
 

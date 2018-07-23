@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net"
 	"os"
@@ -1050,7 +1051,7 @@ var _ = Describe("Deployment", func() {
 			err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 		})
-		Context(`"Local" backend,single fileGroup`, func() {
+		FContext(`"Local" backend,single fileGroup`, func() {
 			AfterEach(func() {
 				if !f.SelfHostedOperator {
 					framework.CleanupMinikubeHostPath()
@@ -1092,6 +1093,8 @@ var _ = Describe("Deployment", func() {
 				previousData, err := f.ReadDataFromMountedDir(deployment.ObjectMeta, framework.GetPathsFromResticFileGroups(&restic))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(previousData).NotTo(BeEmpty())
+
+				fmt.Println("Previous Data: ", previousData)
 
 				By("Deleting deployment")
 				f.DeleteDeployment(deployment.ObjectMeta)
