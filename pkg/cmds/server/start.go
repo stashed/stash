@@ -67,6 +67,7 @@ func (o StashOptions) Config() (*server.StashConfig, error) {
 	serverConfig.OpenAPIConfig.Info.Version = v1alpha1.SchemeGroupVersion.Version
 	serverConfig.OpenAPIConfig.IgnorePrefixes = []string{
 		"/swaggerapi",
+		"/apis/admission.stash.appscode.com/v1alpha1",
 		"/apis/admission.stash.appscode.com/v1alpha1/restics",
 		"/apis/admission.stash.appscode.com/v1alpha1/recoveries",
 		"/apis/admission.stash.appscode.com/v1alpha1/repositories",
