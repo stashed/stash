@@ -389,6 +389,9 @@ func (o *openAPI) toSchema(name string) (_ *spec.Schema, err error) {
 			},
 		}, nil
 	} else {
+		if _, ok := o.definitions[name]; !ok {
+			return nil, nil
+		}
 		ref, err := o.buildDefinitionForType(name)
 		if err != nil {
 			return nil, err

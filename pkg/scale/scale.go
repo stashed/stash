@@ -123,7 +123,8 @@ func (c *Controller) ScaleDownWorkload() error {
 	}
 
 	//scale up deployment to 1 replica
-	if len(dpList.Items) > 0 {
+	dpList, err = c.k8sClient.AppsV1beta1().Deployments(c.opt.Namespace).List(metav1.ListOptions{LabelSelector: c.opt.Selector})
+	if err == nil && len(dpList.Items) > 0 {
 		for _, dp := range dpList.Items {
 			_, _, err := apps_util.PatchDeployment(c.k8sClient, &dp, func(obj *apps.Deployment) *apps.Deployment {
 				obj.Spec.Replicas = &OneReplica
@@ -136,7 +137,8 @@ func (c *Controller) ScaleDownWorkload() error {
 	}
 
 	//scale up replication controller to 1 replica
-	if len(rcList.Items) > 0 {
+	rcList, err = c.k8sClient.CoreV1().ReplicationControllers(c.opt.Namespace).List(metav1.ListOptions{LabelSelector: c.opt.Selector})
+	if err == nil && len(rcList.Items) > 0 {
 		for _, rc := range rcList.Items {
 			_, _, err := core_util.PatchRC(c.k8sClient, &rc, func(obj *core.ReplicationController) *core.ReplicationController {
 				obj.Spec.Replicas = &OneReplica
@@ -149,7 +151,8 @@ func (c *Controller) ScaleDownWorkload() error {
 	}
 
 	//scale up replicaset to 1 replica
-	if len(rsList.Items) > 0 {
+	rsList, err = c.k8sClient.ExtensionsV1beta1().ReplicaSets(c.opt.Namespace).List(metav1.ListOptions{LabelSelector: c.opt.Selector})
+	if err == nil && len(rsList.Items) > 0 {
 		for _, rs := range rsList.Items {
 			_, _, err := ext_util.PatchReplicaSet(c.k8sClient, &rs, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
 				obj.Spec.Replicas = &OneReplica

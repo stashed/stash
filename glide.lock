@@ -1,5 +1,5 @@
-hash: c0269307caeb08a9c651e050322110a006bdf5989a9700c01cd362d4660c25c1
-updated: 2018-07-18T19:13:45.840451916-07:00
+hash: 0f71f56fb40815240ed6c0501c6531f0f0dd6786b5ce79b005dc9fc2f6038335
+updated: 2018-07-24T10:01:38.558810204+06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -41,7 +41,7 @@ imports:
   - registry/admissionreview/v1beta1
   - runtime/serializer/versioning
 - name: github.com/appscode/kutil
-  version: d3937b4296055e551cd85c7d3fff52449a2f80a0
+  version: c9b929cfcab96c233c1b0ab59cd4a5ab6a4ff96a
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
@@ -271,7 +271,7 @@ imports:
 - name: github.com/google/btree
   version: 7d79101e329e5a3adf994758c578dab82b90c017
 - name: github.com/google/go-cmp
-  version: 3af367b6b30c263d47e8895973edcca9a49cf029
+  version: 5411ab924f9ffa6566244a9e504bc347edacffd3
   subpackages:
   - cmp
   - cmp/internal/diff
@@ -519,7 +519,7 @@ imports:
   subpackages:
   - rate
 - name: google.golang.org/api
-  version: efcb5f25ac56eae06c8b5672456c0b7767522685
+  version: 2c45710c7f3fb0ab63506810a1ba84325ab90ab8
   subpackages:
   - gensupport
   - googleapi
@@ -677,7 +677,7 @@ imports:
   - third_party/forked/golang/netutil
   - third_party/forked/golang/reflect
 - name: k8s.io/apiserver
-  version: f830fbdc07ead94d6dc70f70177603263bfc9d8d
+  version: d608db30162676c8df8286ab04c672cf7fd39af9
   repo: https://github.com/pharmer/apiserver.git
   vcs: git
   subpackages:
@@ -951,7 +951,9 @@ imports:
   - pkg/client/clientset_generated/clientset/typed/apiregistration/v1
   - pkg/client/clientset_generated/clientset/typed/apiregistration/v1beta1
 - name: k8s.io/kube-openapi
-  version: 0cf8f7e6ed1d2e3d47d02e3b6e559369af24d803
+  version: 9c705ecbf4e402f27caf10dfb2af71a975d02956
+  repo: https://github.com/pharmer/kube-openapi.git
+  vcs: git
   subpackages:
   - pkg/builder
   - pkg/common
