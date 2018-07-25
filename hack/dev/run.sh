@@ -44,6 +44,7 @@ fi
 export STASH_NAMESPACE=default
 export KUBE_CA=$($ONESSL get kube-ca | $ONESSL base64)
 export STASH_ENABLE_WEBHOOK=true
+export STASH_E2E_TEST=false
 
 while test $# -gt 0; do
   case "$1" in
@@ -74,6 +75,13 @@ while test $# -gt 0; do
       fi
       shift
       ;;
+    --test*)
+      val=$(echo $1 | sed -e 's/^[^=]*=//g')
+      if [ "$val" = "true" ]; then
+        export STASH_E2E_TEST=true
+      fi
+      shift
+      ;;
     *)
       echo $1
       exit 1
@@ -91,11 +99,12 @@ if [ "$STASH_ENABLE_WEBHOOK" = true ]; then
   cat $REPO_ROOT/hack/deploy/validating-webhook.yaml | envsubst | kubectl apply -f -
 fi
 
+if [ "$STASH_E2E_TEST" = false ]; then # don't run operator while run this script from test
 stash run \
   --secure-port=8443 \
   --kubeconfig="$HOME/.kube/config" \
   --authorization-kubeconfig="$HOME/.kube/config" \
   --authentication-kubeconfig="$HOME/.kube/config" \
   --authentication-skip-lookup
-
+fi
 popd

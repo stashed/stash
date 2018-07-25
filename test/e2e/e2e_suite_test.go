@@ -1,11 +1,13 @@
 package e2e_test
 
 import (
+	"strings"
 	"testing"
 	"time"
 
 	logs "github.com/appscode/go/log/golog"
 	crdutils "github.com/appscode/kutil/apiextensions/v1beta1"
+	discovery_util "github.com/appscode/kutil/discovery"
 	"github.com/appscode/kutil/meta"
 	"github.com/appscode/kutil/tools/clientcmd"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -18,6 +20,7 @@ import (
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	crd_api "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"k8s.io/client-go/discovery"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
@@ -48,8 +51,14 @@ var _ = BeforeSuite(func() {
 
 	clientConfig, err := clientcmd.BuildConfigFromContext(options.KubeConfig, options.KubeContext)
 	Expect(err).NotTo(HaveOccurred())
-
 	ctrlConfig := controller.NewConfig(clientConfig)
+
+	discClient, err := discovery.NewDiscoveryClientForConfig(clientConfig)
+	serverVersion, err := discovery_util.GetBaseVersion(discClient)
+	Expect(err).NotTo(HaveOccurred())
+	if strings.Compare(serverVersion, "1.11") >= 0 {
+		api.EnableStatusSubresource = true
+	}
 
 	err = options.ApplyTo(ctrlConfig)
 	Expect(err).NotTo(HaveOccurred())

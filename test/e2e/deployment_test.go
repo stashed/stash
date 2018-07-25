@@ -662,7 +662,6 @@ var _ = Describe("Deployment", func() {
 			It("should add sidecar instantly if label change to match single restic", shouldAddSidecarInstantly)
 		})
 	})
-
 	Describe("Offline backup for", func() {
 		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)

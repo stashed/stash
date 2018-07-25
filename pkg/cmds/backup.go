@@ -87,8 +87,14 @@ func NewCmdBackup() *cobra.Command {
 						log.Fatal(err)
 					}
 
-					if replica > 1 || !util.HasOldReplicaAnnotation(kubeClient, opt.Namespace, opt.Workload) {
-						log.Infof("Skipping backup. Reason: Backup type offline and replica > 1")
+					if replica > 1 {
+						log.Infof("Skipping backup...\n" +
+							"Reason: Backup type offline and replica > 1\n" +
+							"Backup has taken by another replica or scheduled CronJob hasn't run yet.")
+					} else if !util.HasOldReplicaAnnotation(kubeClient, opt.Namespace, opt.Workload) {
+						log.Infof("Skipping backup...\n" +
+							"Reason: Backup type offline and workload does not have 'old-replica' annotation.\n" +
+							"Backup will be taken at next scheduled time.")
 					} else {
 						log.Infoln("Running backup once")
 						if err = ctrl.Backup(); err != nil {
