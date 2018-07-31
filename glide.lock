@@ -1,5 +1,5 @@
-hash: c0269307caeb08a9c651e050322110a006bdf5989a9700c01cd362d4660c25c1
-updated: 2018-07-18T19:13:45.840451916-07:00
+hash: ac3e602a8189ffd5b0887ee3df3b94c99de5012a8028ef36e67576053f62be02
+updated: 2018-07-31T07:10:14.510538622-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -41,7 +41,7 @@ imports:
   - registry/admissionreview/v1beta1
   - runtime/serializer/versioning
 - name: github.com/appscode/kutil
-  version: d3937b4296055e551cd85c7d3fff52449a2f80a0
+  version: c9b929cfcab96c233c1b0ab59cd4a5ab6a4ff96a
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
@@ -303,6 +303,7 @@ imports:
   subpackages:
   - azure
   - google
+  - local
   - s3
   - swift
 - name: github.com/gregjones/httpcache
@@ -519,7 +520,7 @@ imports:
   subpackages:
   - rate
 - name: google.golang.org/api
-  version: efcb5f25ac56eae06c8b5672456c0b7767522685
+  version: 31ca0e01cd791f07750cb23fc99327721f753290
   subpackages:
   - gensupport
   - googleapi
@@ -677,7 +678,7 @@ imports:
   - third_party/forked/golang/netutil
   - third_party/forked/golang/reflect
 - name: k8s.io/apiserver
-  version: f830fbdc07ead94d6dc70f70177603263bfc9d8d
+  version: 79540596e3b2021b528c4c147fb78cebc29a2f75
   repo: https://github.com/pharmer/apiserver.git
   vcs: git
   subpackages:
@@ -951,7 +952,7 @@ imports:
   - pkg/client/clientset_generated/clientset/typed/apiregistration/v1
   - pkg/client/clientset_generated/clientset/typed/apiregistration/v1beta1
 - name: k8s.io/kube-openapi
-  version: 0cf8f7e6ed1d2e3d47d02e3b6e559369af24d803
+  version: d8ea2fe547a448256204cfc68dfee7b26c720acb
   subpackages:
   - pkg/builder
   - pkg/common
@@ -995,4 +996,11 @@ imports:
   - pkg/util/hash
   - pkg/util/parsers
   - pkg/util/pointer
+- name: kmodules.xyz/objectstore-api
+  version: f2d3726e2b0438b0b7264f8bf62edf928e5ca962
+  repo: https://github.com/kmodules/objectstore-api.git
+  vcs: git
+  subpackages:
+  - api
+  - osm
 testImports: []

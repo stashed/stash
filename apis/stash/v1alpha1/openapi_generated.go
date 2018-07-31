@@ -31,94 +31,6 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/appscode/stash/apis/stash/v1alpha1.AzureSpec": {
-			Schema: spec.Schema{
-				SchemaProps: spec.SchemaProps{
-					Properties: map[string]spec.Schema{
-						"container": {
-							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
-							},
-						},
-						"prefix": {
-							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
-							},
-						},
-					},
-				},
-			},
-			Dependencies: []string{},
-		},
-		"github.com/appscode/stash/apis/stash/v1alpha1.B2Spec": {
-			Schema: spec.Schema{
-				SchemaProps: spec.SchemaProps{
-					Properties: map[string]spec.Schema{
-						"bucket": {
-							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
-							},
-						},
-						"prefix": {
-							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
-							},
-						},
-					},
-				},
-			},
-			Dependencies: []string{},
-		},
-		"github.com/appscode/stash/apis/stash/v1alpha1.Backend": {
-			Schema: spec.Schema{
-				SchemaProps: spec.SchemaProps{
-					Properties: map[string]spec.Schema{
-						"storageSecretName": {
-							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
-							},
-						},
-						"local": {
-							SchemaProps: spec.SchemaProps{
-								Ref: ref("github.com/appscode/stash/apis/stash/v1alpha1.LocalSpec"),
-							},
-						},
-						"s3": {
-							SchemaProps: spec.SchemaProps{
-								Ref: ref("github.com/appscode/stash/apis/stash/v1alpha1.S3Spec"),
-							},
-						},
-						"gcs": {
-							SchemaProps: spec.SchemaProps{
-								Ref: ref("github.com/appscode/stash/apis/stash/v1alpha1.GCSSpec"),
-							},
-						},
-						"azure": {
-							SchemaProps: spec.SchemaProps{
-								Ref: ref("github.com/appscode/stash/apis/stash/v1alpha1.AzureSpec"),
-							},
-						},
-						"swift": {
-							SchemaProps: spec.SchemaProps{
-								Ref: ref("github.com/appscode/stash/apis/stash/v1alpha1.SwiftSpec"),
-							},
-						},
-						"b2": {
-							SchemaProps: spec.SchemaProps{
-								Ref: ref("github.com/appscode/stash/apis/stash/v1alpha1.B2Spec"),
-							},
-						},
-					},
-				},
-			},
-			Dependencies: []string{
-				"github.com/appscode/stash/apis/stash/v1alpha1.AzureSpec", "github.com/appscode/stash/apis/stash/v1alpha1.B2Spec", "github.com/appscode/stash/apis/stash/v1alpha1.GCSSpec", "github.com/appscode/stash/apis/stash/v1alpha1.LocalSpec", "github.com/appscode/stash/apis/stash/v1alpha1.S3Spec", "github.com/appscode/stash/apis/stash/v1alpha1.SwiftSpec"},
-		},
 		"github.com/appscode/stash/apis/stash/v1alpha1.FileGroup": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
@@ -155,211 +67,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{},
-		},
-		"github.com/appscode/stash/apis/stash/v1alpha1.GCSSpec": {
-			Schema: spec.Schema{
-				SchemaProps: spec.SchemaProps{
-					Properties: map[string]spec.Schema{
-						"bucket": {
-							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
-							},
-						},
-						"prefix": {
-							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
-							},
-						},
-					},
-				},
-			},
-			Dependencies: []string{},
-		},
-		"github.com/appscode/stash/apis/stash/v1alpha1.LocalSpec": {
-			Schema: spec.Schema{
-				SchemaProps: spec.SchemaProps{
-					Properties: map[string]spec.Schema{
-						"hostPath": {
-							SchemaProps: spec.SchemaProps{
-								Description: "HostPath represents a pre-existing file or directory on the host machine that is directly exposed to the container. This is generally used for system agents or other privileged things that are allowed to see the host machine. Most containers will NOT need this. More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath",
-								Ref:         ref("k8s.io/api/core/v1.HostPathVolumeSource"),
-							},
-						},
-						"emptyDir": {
-							SchemaProps: spec.SchemaProps{
-								Description: "EmptyDir represents a temporary directory that shares a pod's lifetime. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir",
-								Ref:         ref("k8s.io/api/core/v1.EmptyDirVolumeSource"),
-							},
-						},
-						"gcePersistentDisk": {
-							SchemaProps: spec.SchemaProps{
-								Description: "GCEPersistentDisk represents a GCE Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk",
-								Ref:         ref("k8s.io/api/core/v1.GCEPersistentDiskVolumeSource"),
-							},
-						},
-						"awsElasticBlockStore": {
-							SchemaProps: spec.SchemaProps{
-								Description: "AWSElasticBlockStore represents an AWS Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore",
-								Ref:         ref("k8s.io/api/core/v1.AWSElasticBlockStoreVolumeSource"),
-							},
-						},
-						"gitRepo": {
-							SchemaProps: spec.SchemaProps{
-								Description: "GitRepo represents a git repository at a particular revision. DEPRECATED: GitRepo is deprecated. To provision a container with a git repo, mount an EmptyDir into an InitContainer that clones the repo using git, then mount the EmptyDir into the Pod's container.",
-								Ref:         ref("k8s.io/api/core/v1.GitRepoVolumeSource"),
-							},
-						},
-						"secret": {
-							SchemaProps: spec.SchemaProps{
-								Description: "Secret represents a secret that should populate this volume. More info: https://kubernetes.io/docs/concepts/storage/volumes#secret",
-								Ref:         ref("k8s.io/api/core/v1.SecretVolumeSource"),
-							},
-						},
-						"nfs": {
-							SchemaProps: spec.SchemaProps{
-								Description: "NFS represents an NFS mount on the host that shares a pod's lifetime More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs",
-								Ref:         ref("k8s.io/api/core/v1.NFSVolumeSource"),
-							},
-						},
-						"iscsi": {
-							SchemaProps: spec.SchemaProps{
-								Description: "ISCSI represents an ISCSI Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://releases.k8s.io/HEAD/examples/volumes/iscsi/README.md",
-								Ref:         ref("k8s.io/api/core/v1.ISCSIVolumeSource"),
-							},
-						},
-						"glusterfs": {
-							SchemaProps: spec.SchemaProps{
-								Description: "Glusterfs represents a Glusterfs mount on the host that shares a pod's lifetime. More info: https://releases.k8s.io/HEAD/examples/volumes/glusterfs/README.md",
-								Ref:         ref("k8s.io/api/core/v1.GlusterfsVolumeSource"),
-							},
-						},
-						"persistentVolumeClaim": {
-							SchemaProps: spec.SchemaProps{
-								Description: "PersistentVolumeClaimVolumeSource represents a reference to a PersistentVolumeClaim in the same namespace. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims",
-								Ref:         ref("k8s.io/api/core/v1.PersistentVolumeClaimVolumeSource"),
-							},
-						},
-						"rbd": {
-							SchemaProps: spec.SchemaProps{
-								Description: "RBD represents a Rados Block Device mount on the host that shares a pod's lifetime. More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md",
-								Ref:         ref("k8s.io/api/core/v1.RBDVolumeSource"),
-							},
-						},
-						"flexVolume": {
-							SchemaProps: spec.SchemaProps{
-								Description: "FlexVolume represents a generic volume resource that is provisioned/attached using an exec based plugin.",
-								Ref:         ref("k8s.io/api/core/v1.FlexVolumeSource"),
-							},
-						},
-						"cinder": {
-							SchemaProps: spec.SchemaProps{
-								Description: "Cinder represents a cinder volume attached and mounted on kubelets host machine More info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md",
-								Ref:         ref("k8s.io/api/core/v1.CinderVolumeSource"),
-							},
-						},
-						"cephfs": {
-							SchemaProps: spec.SchemaProps{
-								Description: "CephFS represents a Ceph FS mount on the host that shares a pod's lifetime",
-								Ref:         ref("k8s.io/api/core/v1.CephFSVolumeSource"),
-							},
-						},
-						"flocker": {
-							SchemaProps: spec.SchemaProps{
-								Description: "Flocker represents a Flocker volume attached to a kubelet's host machine. This depends on the Flocker control service being running",
-								Ref:         ref("k8s.io/api/core/v1.FlockerVolumeSource"),
-							},
-						},
-						"downwardAPI": {
-							SchemaProps: spec.SchemaProps{
-								Description: "DownwardAPI represents downward API about the pod that should populate this volume",
-								Ref:         ref("k8s.io/api/core/v1.DownwardAPIVolumeSource"),
-							},
-						},
-						"fc": {
-							SchemaProps: spec.SchemaProps{
-								Description: "FC represents a Fibre Channel resource that is attached to a kubelet's host machine and then exposed to the pod.",
-								Ref:         ref("k8s.io/api/core/v1.FCVolumeSource"),
-							},
-						},
-						"azureFile": {
-							SchemaProps: spec.SchemaProps{
-								Description: "AzureFile represents an Azure File Service mount on the host and bind mount to the pod.",
-								Ref:         ref("k8s.io/api/core/v1.AzureFileVolumeSource"),
-							},
-						},
-						"configMap": {
-							SchemaProps: spec.SchemaProps{
-								Description: "ConfigMap represents a configMap that should populate this volume",
-								Ref:         ref("k8s.io/api/core/v1.ConfigMapVolumeSource"),
-							},
-						},
-						"vsphereVolume": {
-							SchemaProps: spec.SchemaProps{
-								Description: "VsphereVolume represents a vSphere volume attached and mounted on kubelets host machine",
-								Ref:         ref("k8s.io/api/core/v1.VsphereVirtualDiskVolumeSource"),
-							},
-						},
-						"quobyte": {
-							SchemaProps: spec.SchemaProps{
-								Description: "Quobyte represents a Quobyte mount on the host that shares a pod's lifetime",
-								Ref:         ref("k8s.io/api/core/v1.QuobyteVolumeSource"),
-							},
-						},
-						"azureDisk": {
-							SchemaProps: spec.SchemaProps{
-								Description: "AzureDisk represents an Azure Data Disk mount on the host and bind mount to the pod.",
-								Ref:         ref("k8s.io/api/core/v1.AzureDiskVolumeSource"),
-							},
-						},
-						"photonPersistentDisk": {
-							SchemaProps: spec.SchemaProps{
-								Description: "PhotonPersistentDisk represents a PhotonController persistent disk attached and mounted on kubelets host machine",
-								Ref:         ref("k8s.io/api/core/v1.PhotonPersistentDiskVolumeSource"),
-							},
-						},
-						"projected": {
-							SchemaProps: spec.SchemaProps{
-								Description: "Items for all in one resources secrets, configmaps, and downward API",
-								Ref:         ref("k8s.io/api/core/v1.ProjectedVolumeSource"),
-							},
-						},
-						"portworxVolume": {
-							SchemaProps: spec.SchemaProps{
-								Description: "PortworxVolume represents a portworx volume attached and mounted on kubelets host machine",
-								Ref:         ref("k8s.io/api/core/v1.PortworxVolumeSource"),
-							},
-						},
-						"scaleIO": {
-							SchemaProps: spec.SchemaProps{
-								Description: "ScaleIO represents a ScaleIO persistent volume attached and mounted on Kubernetes nodes.",
-								Ref:         ref("k8s.io/api/core/v1.ScaleIOVolumeSource"),
-							},
-						},
-						"storageos": {
-							SchemaProps: spec.SchemaProps{
-								Description: "StorageOS represents a StorageOS volume attached and mounted on Kubernetes nodes.",
-								Ref:         ref("k8s.io/api/core/v1.StorageOSVolumeSource"),
-							},
-						},
-						"mountPath": {
-							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
-							},
-						},
-						"subPath": {
-							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
-							},
-						},
-					},
-				},
-			},
-			Dependencies: []string{
-				"k8s.io/api/core/v1.AWSElasticBlockStoreVolumeSource", "k8s.io/api/core/v1.AzureDiskVolumeSource", "k8s.io/api/core/v1.AzureFileVolumeSource", "k8s.io/api/core/v1.CephFSVolumeSource", "k8s.io/api/core/v1.CinderVolumeSource", "k8s.io/api/core/v1.ConfigMapVolumeSource", "k8s.io/api/core/v1.DownwardAPIVolumeSource", "k8s.io/api/core/v1.EmptyDirVolumeSource", "k8s.io/api/core/v1.FCVolumeSource", "k8s.io/api/core/v1.FlexVolumeSource", "k8s.io/api/core/v1.FlockerVolumeSource", "k8s.io/api/core/v1.GCEPersistentDiskVolumeSource", "k8s.io/api/core/v1.GitRepoVolumeSource", "k8s.io/api/core/v1.GlusterfsVolumeSource", "k8s.io/api/core/v1.HostPathVolumeSource", "k8s.io/api/core/v1.ISCSIVolumeSource", "k8s.io/api/core/v1.NFSVolumeSource", "k8s.io/api/core/v1.PersistentVolumeClaimVolumeSource", "k8s.io/api/core/v1.PhotonPersistentDiskVolumeSource", "k8s.io/api/core/v1.PortworxVolumeSource", "k8s.io/api/core/v1.ProjectedVolumeSource", "k8s.io/api/core/v1.QuobyteVolumeSource", "k8s.io/api/core/v1.RBDVolumeSource", "k8s.io/api/core/v1.ScaleIOVolumeSource", "k8s.io/api/core/v1.SecretVolumeSource", "k8s.io/api/core/v1.StorageOSVolumeSource", "k8s.io/api/core/v1.VsphereVirtualDiskVolumeSource"},
 		},
 		"github.com/appscode/stash/apis/stash/v1alpha1.LocalTypedReference": {
 			Schema: spec.Schema{
@@ -507,7 +214,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Items: &spec.SchemaOrArray{
 									Schema: &spec.Schema{
 										SchemaProps: spec.SchemaProps{
-											Ref: ref("github.com/appscode/stash/apis/stash/v1alpha1.LocalSpec"),
+											Ref: ref("kmodules.xyz/objectstore-api/api.LocalSpec"),
 										},
 									},
 								},
@@ -544,7 +251,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{
-				"github.com/appscode/stash/apis/stash/v1alpha1.LocalSpec", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.ObjectReference"},
+				"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.ObjectReference", "kmodules.xyz/objectstore-api/api.LocalSpec"},
 		},
 		"github.com/appscode/stash/apis/stash/v1alpha1.RecoveryStatus": {
 			Schema: spec.Schema{
@@ -660,7 +367,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 					Properties: map[string]spec.Schema{
 						"backend": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("github.com/appscode/stash/apis/stash/v1alpha1.Backend"),
+								Ref: ref("kmodules.xyz/objectstore-api/api.Backend"),
 							},
 						},
 						"wipeOut": {
@@ -674,7 +381,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{
-				"github.com/appscode/stash/apis/stash/v1alpha1.Backend"},
+				"kmodules.xyz/objectstore-api/api.Backend"},
 		},
 		"github.com/appscode/stash/apis/stash/v1alpha1.RepositoryStatus": {
 			Schema: spec.Schema{
@@ -712,21 +419,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			},
 			Dependencies: []string{
 				"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
-		},
-		"github.com/appscode/stash/apis/stash/v1alpha1.RestServerSpec": {
-			Schema: spec.Schema{
-				SchemaProps: spec.SchemaProps{
-					Properties: map[string]spec.Schema{
-						"url": {
-							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
-							},
-						},
-					},
-				},
-			},
-			Dependencies: []string{},
 		},
 		"github.com/appscode/stash/apis/stash/v1alpha1.Restic": {
 			Schema: spec.Schema{
@@ -826,7 +518,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"backend": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("github.com/appscode/stash/apis/stash/v1alpha1.Backend"),
+								Ref: ref("kmodules.xyz/objectstore-api/api.Backend"),
 							},
 						},
 						"schedule": {
@@ -897,7 +589,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{
-				"github.com/appscode/stash/apis/stash/v1alpha1.Backend", "github.com/appscode/stash/apis/stash/v1alpha1.FileGroup", "github.com/appscode/stash/apis/stash/v1alpha1.RetentionPolicy", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.VolumeMount", "k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"},
+				"github.com/appscode/stash/apis/stash/v1alpha1.FileGroup", "github.com/appscode/stash/apis/stash/v1alpha1.RetentionPolicy", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.VolumeMount", "k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector", "kmodules.xyz/objectstore-api/api.Backend"},
 		},
 		"github.com/appscode/stash/apis/stash/v1alpha1.RestoreStats": {
 			Schema: spec.Schema{
@@ -994,54 +686,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						"dryRun": {
 							SchemaProps: spec.SchemaProps{
 								Type:   []string{"boolean"},
-								Format: "",
-							},
-						},
-					},
-				},
-			},
-			Dependencies: []string{},
-		},
-		"github.com/appscode/stash/apis/stash/v1alpha1.S3Spec": {
-			Schema: spec.Schema{
-				SchemaProps: spec.SchemaProps{
-					Properties: map[string]spec.Schema{
-						"endpoint": {
-							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
-							},
-						},
-						"bucket": {
-							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
-							},
-						},
-						"prefix": {
-							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
-							},
-						},
-					},
-				},
-			},
-			Dependencies: []string{},
-		},
-		"github.com/appscode/stash/apis/stash/v1alpha1.SwiftSpec": {
-			Schema: spec.Schema{
-				SchemaProps: spec.SchemaProps{
-					Properties: map[string]spec.Schema{
-						"container": {
-							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
-							},
-						},
-						"prefix": {
-							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
 								Format: "",
 							},
 						},
@@ -11727,6 +11371,362 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 					},
 					Required: []string{"major", "minor", "gitVersion", "gitCommit", "gitTreeState", "buildDate", "goVersion", "compiler", "platform"},
+				},
+			},
+			Dependencies: []string{},
+		},
+		"kmodules.xyz/objectstore-api/api.AzureSpec": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Properties: map[string]spec.Schema{
+						"container": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
+						"prefix": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
+					},
+				},
+			},
+			Dependencies: []string{},
+		},
+		"kmodules.xyz/objectstore-api/api.B2Spec": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Properties: map[string]spec.Schema{
+						"bucket": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
+						"prefix": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
+					},
+				},
+			},
+			Dependencies: []string{},
+		},
+		"kmodules.xyz/objectstore-api/api.Backend": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Properties: map[string]spec.Schema{
+						"storageSecretName": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
+						"local": {
+							SchemaProps: spec.SchemaProps{
+								Ref: ref("kmodules.xyz/objectstore-api/api.LocalSpec"),
+							},
+						},
+						"s3": {
+							SchemaProps: spec.SchemaProps{
+								Ref: ref("kmodules.xyz/objectstore-api/api.S3Spec"),
+							},
+						},
+						"gcs": {
+							SchemaProps: spec.SchemaProps{
+								Ref: ref("kmodules.xyz/objectstore-api/api.GCSSpec"),
+							},
+						},
+						"azure": {
+							SchemaProps: spec.SchemaProps{
+								Ref: ref("kmodules.xyz/objectstore-api/api.AzureSpec"),
+							},
+						},
+						"swift": {
+							SchemaProps: spec.SchemaProps{
+								Ref: ref("kmodules.xyz/objectstore-api/api.SwiftSpec"),
+							},
+						},
+						"b2": {
+							SchemaProps: spec.SchemaProps{
+								Ref: ref("kmodules.xyz/objectstore-api/api.B2Spec"),
+							},
+						},
+					},
+				},
+			},
+			Dependencies: []string{
+				"kmodules.xyz/objectstore-api/api.AzureSpec", "kmodules.xyz/objectstore-api/api.B2Spec", "kmodules.xyz/objectstore-api/api.GCSSpec", "kmodules.xyz/objectstore-api/api.LocalSpec", "kmodules.xyz/objectstore-api/api.S3Spec", "kmodules.xyz/objectstore-api/api.SwiftSpec"},
+		},
+		"kmodules.xyz/objectstore-api/api.GCSSpec": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Properties: map[string]spec.Schema{
+						"bucket": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
+						"prefix": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
+					},
+				},
+			},
+			Dependencies: []string{},
+		},
+		"kmodules.xyz/objectstore-api/api.LocalSpec": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Properties: map[string]spec.Schema{
+						"hostPath": {
+							SchemaProps: spec.SchemaProps{
+								Description: "HostPath represents a pre-existing file or directory on the host machine that is directly exposed to the container. This is generally used for system agents or other privileged things that are allowed to see the host machine. Most containers will NOT need this. More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath",
+								Ref:         ref("k8s.io/api/core/v1.HostPathVolumeSource"),
+							},
+						},
+						"emptyDir": {
+							SchemaProps: spec.SchemaProps{
+								Description: "EmptyDir represents a temporary directory that shares a pod's lifetime. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir",
+								Ref:         ref("k8s.io/api/core/v1.EmptyDirVolumeSource"),
+							},
+						},
+						"gcePersistentDisk": {
+							SchemaProps: spec.SchemaProps{
+								Description: "GCEPersistentDisk represents a GCE Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk",
+								Ref:         ref("k8s.io/api/core/v1.GCEPersistentDiskVolumeSource"),
+							},
+						},
+						"awsElasticBlockStore": {
+							SchemaProps: spec.SchemaProps{
+								Description: "AWSElasticBlockStore represents an AWS Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore",
+								Ref:         ref("k8s.io/api/core/v1.AWSElasticBlockStoreVolumeSource"),
+							},
+						},
+						"gitRepo": {
+							SchemaProps: spec.SchemaProps{
+								Description: "GitRepo represents a git repository at a particular revision. DEPRECATED: GitRepo is deprecated. To provision a container with a git repo, mount an EmptyDir into an InitContainer that clones the repo using git, then mount the EmptyDir into the Pod's container.",
+								Ref:         ref("k8s.io/api/core/v1.GitRepoVolumeSource"),
+							},
+						},
+						"secret": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Secret represents a secret that should populate this volume. More info: https://kubernetes.io/docs/concepts/storage/volumes#secret",
+								Ref:         ref("k8s.io/api/core/v1.SecretVolumeSource"),
+							},
+						},
+						"nfs": {
+							SchemaProps: spec.SchemaProps{
+								Description: "NFS represents an NFS mount on the host that shares a pod's lifetime More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs",
+								Ref:         ref("k8s.io/api/core/v1.NFSVolumeSource"),
+							},
+						},
+						"iscsi": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ISCSI represents an ISCSI Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://releases.k8s.io/HEAD/examples/volumes/iscsi/README.md",
+								Ref:         ref("k8s.io/api/core/v1.ISCSIVolumeSource"),
+							},
+						},
+						"glusterfs": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Glusterfs represents a Glusterfs mount on the host that shares a pod's lifetime. More info: https://releases.k8s.io/HEAD/examples/volumes/glusterfs/README.md",
+								Ref:         ref("k8s.io/api/core/v1.GlusterfsVolumeSource"),
+							},
+						},
+						"persistentVolumeClaim": {
+							SchemaProps: spec.SchemaProps{
+								Description: "PersistentVolumeClaimVolumeSource represents a reference to a PersistentVolumeClaim in the same namespace. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims",
+								Ref:         ref("k8s.io/api/core/v1.PersistentVolumeClaimVolumeSource"),
+							},
+						},
+						"rbd": {
+							SchemaProps: spec.SchemaProps{
+								Description: "RBD represents a Rados Block Device mount on the host that shares a pod's lifetime. More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md",
+								Ref:         ref("k8s.io/api/core/v1.RBDVolumeSource"),
+							},
+						},
+						"flexVolume": {
+							SchemaProps: spec.SchemaProps{
+								Description: "FlexVolume represents a generic volume resource that is provisioned/attached using an exec based plugin.",
+								Ref:         ref("k8s.io/api/core/v1.FlexVolumeSource"),
+							},
+						},
+						"cinder": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Cinder represents a cinder volume attached and mounted on kubelets host machine More info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md",
+								Ref:         ref("k8s.io/api/core/v1.CinderVolumeSource"),
+							},
+						},
+						"cephfs": {
+							SchemaProps: spec.SchemaProps{
+								Description: "CephFS represents a Ceph FS mount on the host that shares a pod's lifetime",
+								Ref:         ref("k8s.io/api/core/v1.CephFSVolumeSource"),
+							},
+						},
+						"flocker": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Flocker represents a Flocker volume attached to a kubelet's host machine. This depends on the Flocker control service being running",
+								Ref:         ref("k8s.io/api/core/v1.FlockerVolumeSource"),
+							},
+						},
+						"downwardAPI": {
+							SchemaProps: spec.SchemaProps{
+								Description: "DownwardAPI represents downward API about the pod that should populate this volume",
+								Ref:         ref("k8s.io/api/core/v1.DownwardAPIVolumeSource"),
+							},
+						},
+						"fc": {
+							SchemaProps: spec.SchemaProps{
+								Description: "FC represents a Fibre Channel resource that is attached to a kubelet's host machine and then exposed to the pod.",
+								Ref:         ref("k8s.io/api/core/v1.FCVolumeSource"),
+							},
+						},
+						"azureFile": {
+							SchemaProps: spec.SchemaProps{
+								Description: "AzureFile represents an Azure File Service mount on the host and bind mount to the pod.",
+								Ref:         ref("k8s.io/api/core/v1.AzureFileVolumeSource"),
+							},
+						},
+						"configMap": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ConfigMap represents a configMap that should populate this volume",
+								Ref:         ref("k8s.io/api/core/v1.ConfigMapVolumeSource"),
+							},
+						},
+						"vsphereVolume": {
+							SchemaProps: spec.SchemaProps{
+								Description: "VsphereVolume represents a vSphere volume attached and mounted on kubelets host machine",
+								Ref:         ref("k8s.io/api/core/v1.VsphereVirtualDiskVolumeSource"),
+							},
+						},
+						"quobyte": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Quobyte represents a Quobyte mount on the host that shares a pod's lifetime",
+								Ref:         ref("k8s.io/api/core/v1.QuobyteVolumeSource"),
+							},
+						},
+						"azureDisk": {
+							SchemaProps: spec.SchemaProps{
+								Description: "AzureDisk represents an Azure Data Disk mount on the host and bind mount to the pod.",
+								Ref:         ref("k8s.io/api/core/v1.AzureDiskVolumeSource"),
+							},
+						},
+						"photonPersistentDisk": {
+							SchemaProps: spec.SchemaProps{
+								Description: "PhotonPersistentDisk represents a PhotonController persistent disk attached and mounted on kubelets host machine",
+								Ref:         ref("k8s.io/api/core/v1.PhotonPersistentDiskVolumeSource"),
+							},
+						},
+						"projected": {
+							SchemaProps: spec.SchemaProps{
+								Description: "Items for all in one resources secrets, configmaps, and downward API",
+								Ref:         ref("k8s.io/api/core/v1.ProjectedVolumeSource"),
+							},
+						},
+						"portworxVolume": {
+							SchemaProps: spec.SchemaProps{
+								Description: "PortworxVolume represents a portworx volume attached and mounted on kubelets host machine",
+								Ref:         ref("k8s.io/api/core/v1.PortworxVolumeSource"),
+							},
+						},
+						"scaleIO": {
+							SchemaProps: spec.SchemaProps{
+								Description: "ScaleIO represents a ScaleIO persistent volume attached and mounted on Kubernetes nodes.",
+								Ref:         ref("k8s.io/api/core/v1.ScaleIOVolumeSource"),
+							},
+						},
+						"storageos": {
+							SchemaProps: spec.SchemaProps{
+								Description: "StorageOS represents a StorageOS volume attached and mounted on Kubernetes nodes.",
+								Ref:         ref("k8s.io/api/core/v1.StorageOSVolumeSource"),
+							},
+						},
+						"mountPath": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
+						"subPath": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
+					},
+				},
+			},
+			Dependencies: []string{
+				"k8s.io/api/core/v1.AWSElasticBlockStoreVolumeSource", "k8s.io/api/core/v1.AzureDiskVolumeSource", "k8s.io/api/core/v1.AzureFileVolumeSource", "k8s.io/api/core/v1.CephFSVolumeSource", "k8s.io/api/core/v1.CinderVolumeSource", "k8s.io/api/core/v1.ConfigMapVolumeSource", "k8s.io/api/core/v1.DownwardAPIVolumeSource", "k8s.io/api/core/v1.EmptyDirVolumeSource", "k8s.io/api/core/v1.FCVolumeSource", "k8s.io/api/core/v1.FlexVolumeSource", "k8s.io/api/core/v1.FlockerVolumeSource", "k8s.io/api/core/v1.GCEPersistentDiskVolumeSource", "k8s.io/api/core/v1.GitRepoVolumeSource", "k8s.io/api/core/v1.GlusterfsVolumeSource", "k8s.io/api/core/v1.HostPathVolumeSource", "k8s.io/api/core/v1.ISCSIVolumeSource", "k8s.io/api/core/v1.NFSVolumeSource", "k8s.io/api/core/v1.PersistentVolumeClaimVolumeSource", "k8s.io/api/core/v1.PhotonPersistentDiskVolumeSource", "k8s.io/api/core/v1.PortworxVolumeSource", "k8s.io/api/core/v1.ProjectedVolumeSource", "k8s.io/api/core/v1.QuobyteVolumeSource", "k8s.io/api/core/v1.RBDVolumeSource", "k8s.io/api/core/v1.ScaleIOVolumeSource", "k8s.io/api/core/v1.SecretVolumeSource", "k8s.io/api/core/v1.StorageOSVolumeSource", "k8s.io/api/core/v1.VsphereVirtualDiskVolumeSource"},
+		},
+		"kmodules.xyz/objectstore-api/api.RestServerSpec": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Properties: map[string]spec.Schema{
+						"url": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
+					},
+				},
+			},
+			Dependencies: []string{},
+		},
+		"kmodules.xyz/objectstore-api/api.S3Spec": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Properties: map[string]spec.Schema{
+						"endpoint": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
+						"bucket": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
+						"prefix": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
+					},
+				},
+			},
+			Dependencies: []string{},
+		},
+		"kmodules.xyz/objectstore-api/api.SwiftSpec": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Properties: map[string]spec.Schema{
+						"container": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
+						"prefix": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
+					},
 				},
 			},
 			Dependencies: []string{},

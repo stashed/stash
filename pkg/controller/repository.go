@@ -9,12 +9,12 @@ import (
 	"github.com/appscode/stash/apis/stash"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	stash_util "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
-	"github.com/appscode/stash/pkg/osm"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	"github.com/graymeta/stow"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"kmodules.xyz/objectstore-api/osm"
 )
 
 func (c *StashController) NewRepositoryWebhook() hooks.AdmissionHook {
@@ -85,7 +85,7 @@ func (c *StashController) runRepositoryInjector(key string) error {
 }
 
 func (c *StashController) deleteResticRepository(repository *api.Repository) error {
-	cfg, err := osm.NewOSMContext(c.kubeClient, repository)
+	cfg, err := osm.NewOSMContext(c.kubeClient, repository.Spec.Backend, repository.Namespace)
 	if err != nil {
 		return err
 	}

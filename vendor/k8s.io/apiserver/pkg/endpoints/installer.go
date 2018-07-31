@@ -499,7 +499,7 @@ func (a *APIInstaller) registerResourceHandlers(path string, storage rest.Storag
 	if a.group.MetaGroupVersion != nil {
 		reqScope.MetaGroupVersion = *a.group.MetaGroupVersion
 	}
-	reqScope.OpenAPISchema, err = a.getOpenAPISchema(ws.RootPath(), fqKindToRegister, defaultVersionedObject)
+	reqScope.OpenAPISchema, err = a.getOpenAPISchema(ws.RootPath(), resource, fqKindToRegister, defaultVersionedObject)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get openapi schema for %v: %v", fqKindToRegister, err)
 	}
@@ -841,12 +841,13 @@ func (a *APIInstaller) registerResourceHandlers(path string, storage rest.Storag
 
 // getOpenAPISchema builds an the openapi schema for a single resource model to be given to each handler. It will
 // return nil if the apiserver doesn't have openapi enabled, or if the specific path should be ignored by openapi.
-func (a *APIInstaller) getOpenAPISchema(rootPath string, kind schema.GroupVersionKind, sampleObject interface{}) (openapiproto.Schema, error) {
+func (a *APIInstaller) getOpenAPISchema(rootPath string, resource string, kind schema.GroupVersionKind, sampleObject interface{}) (openapiproto.Schema, error) {
+	p := gpath.Join(rootPath, resource)
 	if a.group.OpenAPIConfig == nil {
 		return nil, nil
 	}
 	pathsToIgnore := openapiutil.NewTrie(a.group.OpenAPIConfig.IgnorePrefixes)
-	if pathsToIgnore.HasPrefix(rootPath) {
+	if pathsToIgnore.HasPrefix(p) {
 		return nil, nil
 	}
 	openAPIDefinitions, err := openapibuilder.BuildOpenAPIDefinitionsForResource(sampleObject, a.group.OpenAPIConfig)

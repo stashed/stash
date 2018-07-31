@@ -3,6 +3,7 @@ package v1alpha1
 import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"kmodules.xyz/objectstore-api/api"
 )
 
 const (
@@ -27,7 +28,7 @@ type Restic struct {
 type ResticSpec struct {
 	Selector   metav1.LabelSelector `json:"selector,omitempty"`
 	FileGroups []FileGroup          `json:"fileGroups,omitempty"`
-	Backend    Backend              `json:"backend,omitempty"`
+	Backend    api.Backend          `json:"backend,omitempty"`
 	Schedule   string               `json:"schedule,omitempty"`
 	// Pod volumes to mount into the sidecar container's filesystem.
 	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty"`
@@ -62,54 +63,6 @@ type FileGroup struct {
 	Tags []string `json:"tags,omitempty"`
 	// retention policy of snapshots
 	RetentionPolicyName string `json:"retentionPolicyName,omitempty"`
-}
-
-type Backend struct {
-	StorageSecretName string `json:"storageSecretName,omitempty"`
-
-	Local *LocalSpec `json:"local,omitempty"`
-	S3    *S3Spec    `json:"s3,omitempty"`
-	GCS   *GCSSpec   `json:"gcs,omitempty"`
-	Azure *AzureSpec `json:"azure,omitempty"`
-	Swift *SwiftSpec `json:"swift,omitempty"`
-	B2    *B2Spec    `json:"b2,omitempty"`
-	// Rest  *RestServerSpec `json:"rest,omitempty"`
-}
-
-type LocalSpec struct {
-	core.VolumeSource `json:",inline"`
-	MountPath         string `json:"mountPath,omitempty"`
-	SubPath           string `json:"subPath,omitempty"`
-}
-
-type S3Spec struct {
-	Endpoint string `json:"endpoint,omitempty"`
-	Bucket   string `json:"bucket,omitempty"`
-	Prefix   string `json:"prefix,omitempty"`
-}
-
-type GCSSpec struct {
-	Bucket string `json:"bucket,omitempty"`
-	Prefix string `json:"prefix,omitempty"`
-}
-
-type AzureSpec struct {
-	Container string `json:"container,omitempty"`
-	Prefix    string `json:"prefix,omitempty"`
-}
-
-type SwiftSpec struct {
-	Container string `json:"container,omitempty"`
-	Prefix    string `json:"prefix,omitempty"`
-}
-
-type B2Spec struct {
-	Bucket string `json:"bucket,omitempty"`
-	Prefix string `json:"prefix,omitempty"`
-}
-
-type RestServerSpec struct {
-	URL string `json:"url,omitempty"`
 }
 
 type BackupType string
@@ -161,7 +114,7 @@ type RecoverySpec struct {
 	// +optional
 	Snapshot         string                      `json:"snapshot,omitempty"`
 	Paths            []string                    `json:"paths,omitempty"`
-	RecoveredVolumes []LocalSpec                 `json:"recoveredVolumes,omitempty"`
+	RecoveredVolumes []api.LocalSpec             `json:"recoveredVolumes,omitempty"`
 	ImagePullSecrets []core.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 
 	// NodeSelector is a selector which must be true for the pod to fit on a node.
@@ -217,7 +170,7 @@ type Repository struct {
 }
 
 type RepositorySpec struct {
-	Backend Backend `json:"backend,omitempty"`
+	Backend api.Backend `json:"backend,omitempty"`
 	// If true, delete respective restic repository
 	// +optional
 	WipeOut bool `json:"wipeOut,omitempty"`

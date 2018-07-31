@@ -22,6 +22,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
+	store "kmodules.xyz/objectstore-api/api"
 )
 
 const (
@@ -569,7 +570,7 @@ func GetRepoNameAndSnapshotID(snapshotName string) (repoName, snapshotId string,
 	return
 }
 
-func FixBackendPrefix(backend *api.Backend, autoPrefix string) *api.Backend {
+func FixBackendPrefix(backend *store.Backend, autoPrefix string) *store.Backend {
 	if backend.Local != nil {
 		backend.Local.SubPath = strings.TrimSuffix(backend.Local.SubPath, autoPrefix)
 		backend.Local.SubPath = strings.TrimSuffix(backend.Local.SubPath, "/")
@@ -594,7 +595,7 @@ func FixBackendPrefix(backend *api.Backend, autoPrefix string) *api.Backend {
 	return backend
 }
 
-func GetBucketAndPrefix(backend *api.Backend) (string, string, error) {
+func GetBucketAndPrefix(backend *store.Backend) (string, string, error) {
 	if backend.S3 != nil {
 		return backend.S3.Bucket, strings.TrimPrefix(backend.S3.Prefix, backend.S3.Bucket+"/"), nil
 	} else if backend.GCS != nil {
