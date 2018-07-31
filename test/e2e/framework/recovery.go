@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	store "kmodules.xyz/objectstore-api/api"
 )
 
 const (
@@ -30,7 +31,7 @@ func (fi *Invocation) RecoveryForRestic(restic api.Restic) api.Recovery {
 		},
 		Spec: api.RecoverySpec{
 			Paths: paths,
-			RecoveredVolumes: []api.LocalSpec{
+			RecoveredVolumes: []store.LocalSpec{
 				{
 					MountPath: restic.Spec.VolumeMounts[0].MountPath,
 					VolumeSource: core.VolumeSource{

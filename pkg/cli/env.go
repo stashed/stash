@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/appscode/go/log"
-	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
+	"kmodules.xyz/objectstore-api/api"
 )
 
 const (
