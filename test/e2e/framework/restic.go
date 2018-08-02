@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	store "kmodules.xyz/objectstore-api/api/v1"
 )
 
 func (fi *Invocation) _restic() api.Restic {
@@ -50,9 +51,9 @@ func (fi *Invocation) _restic() api.Restic {
 
 func (fi *Invocation) ResticForLocalBackend() api.Restic {
 	r := fi._restic()
-	r.Spec.Backend = api.Backend{
+	r.Spec.Backend = store.Backend{
 		StorageSecretName: "",
-		Local: &api.LocalSpec{
+		Local: &store.LocalSpec{
 			MountPath: "/safe/data",
 			VolumeSource: core.VolumeSource{
 				EmptyDir: &core.EmptyDirVolumeSource{},
@@ -64,9 +65,9 @@ func (fi *Invocation) ResticForLocalBackend() api.Restic {
 
 func (fi *Invocation) ResticForHostPathLocalBackend() api.Restic {
 	r := fi._restic()
-	r.Spec.Backend = api.Backend{
+	r.Spec.Backend = store.Backend{
 		StorageSecretName: "",
-		Local: &api.LocalSpec{
+		Local: &store.LocalSpec{
 			MountPath: "/safe/data",
 			VolumeSource: core.VolumeSource{
 				HostPath: &core.HostPathVolumeSource{
@@ -80,9 +81,9 @@ func (fi *Invocation) ResticForHostPathLocalBackend() api.Restic {
 
 func (fi *Invocation) ResticForS3Backend() api.Restic {
 	r := fi._restic()
-	r.Spec.Backend = api.Backend{
+	r.Spec.Backend = store.Backend{
 		StorageSecretName: "",
-		S3: &api.S3Spec{
+		S3: &store.S3Spec{
 			Endpoint: "s3.amazonaws.com",
 			Bucket:   "stash-qa",
 			Prefix:   fi.app,
@@ -93,9 +94,9 @@ func (fi *Invocation) ResticForS3Backend() api.Restic {
 
 func (fi *Invocation) ResticForMinioBackend(address string) api.Restic {
 	r := fi._restic()
-	r.Spec.Backend = api.Backend{
+	r.Spec.Backend = store.Backend{
 		StorageSecretName: "",
-		S3: &api.S3Spec{
+		S3: &store.S3Spec{
 			Endpoint: address,
 			Bucket:   "stash-qa",
 			Prefix:   fi.app,
@@ -106,9 +107,9 @@ func (fi *Invocation) ResticForMinioBackend(address string) api.Restic {
 
 func (fi *Invocation) ResticForDOBackend() api.Restic {
 	r := fi._restic()
-	r.Spec.Backend = api.Backend{
+	r.Spec.Backend = store.Backend{
 		StorageSecretName: "",
-		S3: &api.S3Spec{
+		S3: &store.S3Spec{
 			Endpoint: "nyc3.digitaloceanspaces.com",
 			Bucket:   "stash-qa",
 			Prefix:   fi.app,
@@ -119,9 +120,9 @@ func (fi *Invocation) ResticForDOBackend() api.Restic {
 
 func (fi *Invocation) ResticForGCSBackend() api.Restic {
 	r := fi._restic()
-	r.Spec.Backend = api.Backend{
+	r.Spec.Backend = store.Backend{
 		StorageSecretName: "",
-		GCS: &api.GCSSpec{
+		GCS: &store.GCSSpec{
 			Bucket: "stash-qa",
 			Prefix: fi.app,
 		},
@@ -131,9 +132,9 @@ func (fi *Invocation) ResticForGCSBackend() api.Restic {
 
 func (fi *Invocation) ResticForAzureBackend() api.Restic {
 	r := fi._restic()
-	r.Spec.Backend = api.Backend{
+	r.Spec.Backend = store.Backend{
 		StorageSecretName: "",
-		Azure: &api.AzureSpec{
+		Azure: &store.AzureSpec{
 			Container: "stashqa",
 			Prefix:    fi.app,
 		},
@@ -143,9 +144,9 @@ func (fi *Invocation) ResticForAzureBackend() api.Restic {
 
 func (fi *Invocation) ResticForSwiftBackend() api.Restic {
 	r := fi._restic()
-	r.Spec.Backend = api.Backend{
+	r.Spec.Backend = store.Backend{
 		StorageSecretName: "",
-		Swift: &api.SwiftSpec{
+		Swift: &store.SwiftSpec{
 			Container: "stash-qa",
 			Prefix:    fi.app,
 		},
@@ -155,9 +156,9 @@ func (fi *Invocation) ResticForSwiftBackend() api.Restic {
 
 func (fi *Invocation) ResticForB2Backend() api.Restic {
 	r := fi._restic()
-	r.Spec.Backend = api.Backend{
+	r.Spec.Backend = store.Backend{
 		StorageSecretName: "",
-		B2: &api.B2Spec{
+		B2: &store.B2Spec{
 			Bucket: "stash-qa",
 			Prefix: fi.app,
 		},

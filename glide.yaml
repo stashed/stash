@@ -77,6 +77,10 @@ import:
   version: release-8.0
 - package: github.com/appscode/kubernetes-webhook-util
   version: release-8.0
+- package: kmodules.xyz/objectstore-api
+  repo: https://github.com/kmodules/objectstore-api.git
+  vcs: git
+  version: release-8.0
 - package: github.com/openshift/api
   version: 31a7bbd2266d178da3c12bb83f5274d387f775e6
 - package: github.com/openshift/client-go

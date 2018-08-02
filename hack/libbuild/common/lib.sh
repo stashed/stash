@@ -91,7 +91,7 @@ detect_tag() {
   echo "commit_timestamp = $commit_timestamp"
 
   # write TAG info to a file so that it can be loaded by a different command or script
-  if [ "$1" != '' ]; then
+  if [ $# -gt 0 ] && [ "$1" != '' ]; then
     cat >"$1" <<EOL
 TAG=$TAG
 TAG_STRATEGY=$TAG_STRATEGY
@@ -136,7 +136,7 @@ hub_canary() {
   hub_up
 
   # ref: https://www.gnu.org/software/bash/manual/html_node/Conditional-Constructs.html#Conditional-Constructs
-  if [[ "$TAG_STRATEGY" == "commit_hash" && "$git_branch" == "master" ]]; then
+  if [[ "${TAG_STRATEGY:-}" == "commit_hash" && "${git_branch:-}" == "master" ]]; then
     local cmd="docker tag $DOCKER_REGISTRY/$IMG:$TAG $DOCKER_REGISTRY/$IMG:canary"
     echo $cmd
     $cmd
