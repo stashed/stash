@@ -1,5 +1,5 @@
 hash: ac3e602a8189ffd5b0887ee3df3b94c99de5012a8028ef36e67576053f62be02
-updated: 2018-07-31T07:10:14.510538622-07:00
+updated: 2018-08-01T22:54:47.144815267-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -952,7 +952,7 @@ imports:
   - pkg/client/clientset_generated/clientset/typed/apiregistration/v1
   - pkg/client/clientset_generated/clientset/typed/apiregistration/v1beta1
 - name: k8s.io/kube-openapi
-  version: d8ea2fe547a448256204cfc68dfee7b26c720acb
+  version: e3762e86a74c878ffed47484592986685639c2cd
   subpackages:
   - pkg/builder
   - pkg/common
@@ -997,10 +997,11 @@ imports:
   - pkg/util/parsers
   - pkg/util/pointer
 - name: kmodules.xyz/objectstore-api
-  version: f2d3726e2b0438b0b7264f8bf62edf928e5ca962
+  version: 5437829d6e1c97de1c3effe5f2dc6cbca2e0bfd4
   repo: https://github.com/kmodules/objectstore-api.git
   vcs: git
   subpackages:
   - api
+  - api/v1
   - osm
 testImports: []

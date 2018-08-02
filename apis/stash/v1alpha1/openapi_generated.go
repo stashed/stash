@@ -214,7 +214,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Items: &spec.SchemaOrArray{
 									Schema: &spec.Schema{
 										SchemaProps: spec.SchemaProps{
-											Ref: ref("kmodules.xyz/objectstore-api/api.LocalSpec"),
+											Ref: ref("kmodules.xyz/objectstore-api/api/v1.LocalSpec"),
 										},
 									},
 								},
@@ -251,7 +251,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{
-				"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.ObjectReference", "kmodules.xyz/objectstore-api/api.LocalSpec"},
+				"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.ObjectReference", "kmodules.xyz/objectstore-api/api/v1.LocalSpec"},
 		},
 		"github.com/appscode/stash/apis/stash/v1alpha1.RecoveryStatus": {
 			Schema: spec.Schema{
@@ -367,7 +367,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 					Properties: map[string]spec.Schema{
 						"backend": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("kmodules.xyz/objectstore-api/api.Backend"),
+								Ref: ref("kmodules.xyz/objectstore-api/api/v1.Backend"),
 							},
 						},
 						"wipeOut": {
@@ -381,7 +381,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{
-				"kmodules.xyz/objectstore-api/api.Backend"},
+				"kmodules.xyz/objectstore-api/api/v1.Backend"},
 		},
 		"github.com/appscode/stash/apis/stash/v1alpha1.RepositoryStatus": {
 			Schema: spec.Schema{
@@ -518,7 +518,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"backend": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("kmodules.xyz/objectstore-api/api.Backend"),
+								Ref: ref("kmodules.xyz/objectstore-api/api/v1.Backend"),
 							},
 						},
 						"schedule": {
@@ -589,7 +589,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{
-				"github.com/appscode/stash/apis/stash/v1alpha1.FileGroup", "github.com/appscode/stash/apis/stash/v1alpha1.RetentionPolicy", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.VolumeMount", "k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector", "kmodules.xyz/objectstore-api/api.Backend"},
+				"github.com/appscode/stash/apis/stash/v1alpha1.FileGroup", "github.com/appscode/stash/apis/stash/v1alpha1.RetentionPolicy", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.VolumeMount", "k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector", "kmodules.xyz/objectstore-api/api/v1.Backend"},
 		},
 		"github.com/appscode/stash/apis/stash/v1alpha1.RestoreStats": {
 			Schema: spec.Schema{
@@ -11375,7 +11375,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			},
 			Dependencies: []string{},
 		},
-		"kmodules.xyz/objectstore-api/api.AzureSpec": {
+		"kmodules.xyz/objectstore-api/api/v1.AzureSpec": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
 					Properties: map[string]spec.Schema{
@@ -11396,7 +11396,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			},
 			Dependencies: []string{},
 		},
-		"kmodules.xyz/objectstore-api/api.B2Spec": {
+		"kmodules.xyz/objectstore-api/api/v1.B2Spec": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
 					Properties: map[string]spec.Schema{
@@ -11417,7 +11417,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			},
 			Dependencies: []string{},
 		},
-		"kmodules.xyz/objectstore-api/api.Backend": {
+		"kmodules.xyz/objectstore-api/api/v1.Backend": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
 					Properties: map[string]spec.Schema{
@@ -11429,41 +11429,41 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						},
 						"local": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("kmodules.xyz/objectstore-api/api.LocalSpec"),
+								Ref: ref("kmodules.xyz/objectstore-api/api/v1.LocalSpec"),
 							},
 						},
 						"s3": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("kmodules.xyz/objectstore-api/api.S3Spec"),
+								Ref: ref("kmodules.xyz/objectstore-api/api/v1.S3Spec"),
 							},
 						},
 						"gcs": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("kmodules.xyz/objectstore-api/api.GCSSpec"),
+								Ref: ref("kmodules.xyz/objectstore-api/api/v1.GCSSpec"),
 							},
 						},
 						"azure": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("kmodules.xyz/objectstore-api/api.AzureSpec"),
+								Ref: ref("kmodules.xyz/objectstore-api/api/v1.AzureSpec"),
 							},
 						},
 						"swift": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("kmodules.xyz/objectstore-api/api.SwiftSpec"),
+								Ref: ref("kmodules.xyz/objectstore-api/api/v1.SwiftSpec"),
 							},
 						},
 						"b2": {
 							SchemaProps: spec.SchemaProps{
-								Ref: ref("kmodules.xyz/objectstore-api/api.B2Spec"),
+								Ref: ref("kmodules.xyz/objectstore-api/api/v1.B2Spec"),
 							},
 						},
 					},
 				},
 			},
 			Dependencies: []string{
-				"kmodules.xyz/objectstore-api/api.AzureSpec", "kmodules.xyz/objectstore-api/api.B2Spec", "kmodules.xyz/objectstore-api/api.GCSSpec", "kmodules.xyz/objectstore-api/api.LocalSpec", "kmodules.xyz/objectstore-api/api.S3Spec", "kmodules.xyz/objectstore-api/api.SwiftSpec"},
+				"kmodules.xyz/objectstore-api/api/v1.AzureSpec", "kmodules.xyz/objectstore-api/api/v1.B2Spec", "kmodules.xyz/objectstore-api/api/v1.GCSSpec", "kmodules.xyz/objectstore-api/api/v1.LocalSpec", "kmodules.xyz/objectstore-api/api/v1.S3Spec", "kmodules.xyz/objectstore-api/api/v1.SwiftSpec"},
 		},
-		"kmodules.xyz/objectstore-api/api.GCSSpec": {
+		"kmodules.xyz/objectstore-api/api/v1.GCSSpec": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
 					Properties: map[string]spec.Schema{
@@ -11484,7 +11484,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			},
 			Dependencies: []string{},
 		},
-		"kmodules.xyz/objectstore-api/api.LocalSpec": {
+		"kmodules.xyz/objectstore-api/api/v1.LocalSpec": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
 					Properties: map[string]spec.Schema{
@@ -11668,7 +11668,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			Dependencies: []string{
 				"k8s.io/api/core/v1.AWSElasticBlockStoreVolumeSource", "k8s.io/api/core/v1.AzureDiskVolumeSource", "k8s.io/api/core/v1.AzureFileVolumeSource", "k8s.io/api/core/v1.CephFSVolumeSource", "k8s.io/api/core/v1.CinderVolumeSource", "k8s.io/api/core/v1.ConfigMapVolumeSource", "k8s.io/api/core/v1.DownwardAPIVolumeSource", "k8s.io/api/core/v1.EmptyDirVolumeSource", "k8s.io/api/core/v1.FCVolumeSource", "k8s.io/api/core/v1.FlexVolumeSource", "k8s.io/api/core/v1.FlockerVolumeSource", "k8s.io/api/core/v1.GCEPersistentDiskVolumeSource", "k8s.io/api/core/v1.GitRepoVolumeSource", "k8s.io/api/core/v1.GlusterfsVolumeSource", "k8s.io/api/core/v1.HostPathVolumeSource", "k8s.io/api/core/v1.ISCSIVolumeSource", "k8s.io/api/core/v1.NFSVolumeSource", "k8s.io/api/core/v1.PersistentVolumeClaimVolumeSource", "k8s.io/api/core/v1.PhotonPersistentDiskVolumeSource", "k8s.io/api/core/v1.PortworxVolumeSource", "k8s.io/api/core/v1.ProjectedVolumeSource", "k8s.io/api/core/v1.QuobyteVolumeSource", "k8s.io/api/core/v1.RBDVolumeSource", "k8s.io/api/core/v1.ScaleIOVolumeSource", "k8s.io/api/core/v1.SecretVolumeSource", "k8s.io/api/core/v1.StorageOSVolumeSource", "k8s.io/api/core/v1.VsphereVirtualDiskVolumeSource"},
 		},
-		"kmodules.xyz/objectstore-api/api.RestServerSpec": {
+		"kmodules.xyz/objectstore-api/api/v1.RestServerSpec": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
 					Properties: map[string]spec.Schema{
@@ -11683,7 +11683,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			},
 			Dependencies: []string{},
 		},
-		"kmodules.xyz/objectstore-api/api.S3Spec": {
+		"kmodules.xyz/objectstore-api/api/v1.S3Spec": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
 					Properties: map[string]spec.Schema{
@@ -11710,7 +11710,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 			},
 			Dependencies: []string{},
 		},
-		"kmodules.xyz/objectstore-api/api.SwiftSpec": {
+		"kmodules.xyz/objectstore-api/api/v1.SwiftSpec": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
 					Properties: map[string]spec.Schema{
