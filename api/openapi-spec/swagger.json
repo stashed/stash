@@ -3382,7 +3382,7 @@
         "recoveredVolumes": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.LocalSpec"
+            "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.v1.LocalSpec"
           }
         },
         "repository": {
@@ -3466,7 +3466,7 @@
     "com.github.appscode.stash.apis.stash.v1alpha1.RepositorySpec": {
       "properties": {
         "backend": {
-          "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.Backend"
+          "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.v1.Backend"
         },
         "wipeOut": {
           "description": "If true, delete respective restic repository",
@@ -3550,7 +3550,7 @@
     "com.github.appscode.stash.apis.stash.v1alpha1.ResticSpec": {
       "properties": {
         "backend": {
-          "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.Backend"
+          "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.v1.Backend"
         },
         "fileGroups": {
           "type": "array",
@@ -5250,7 +5250,7 @@
         }
       }
     },
-    "xyz.kmodules.objectstore-api.api.AzureSpec": {
+    "xyz.kmodules.objectstore-api.api.v1.AzureSpec": {
       "properties": {
         "container": {
           "type": "string"
@@ -5260,7 +5260,7 @@
         }
       }
     },
-    "xyz.kmodules.objectstore-api.api.B2Spec": {
+    "xyz.kmodules.objectstore-api.api.v1.B2Spec": {
       "properties": {
         "bucket": {
           "type": "string"
@@ -5270,32 +5270,32 @@
         }
       }
     },
-    "xyz.kmodules.objectstore-api.api.Backend": {
+    "xyz.kmodules.objectstore-api.api.v1.Backend": {
       "properties": {
         "azure": {
-          "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.AzureSpec"
+          "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.v1.AzureSpec"
         },
         "b2": {
-          "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.B2Spec"
+          "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.v1.B2Spec"
         },
         "gcs": {
-          "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.GCSSpec"
+          "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.v1.GCSSpec"
         },
         "local": {
-          "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.LocalSpec"
+          "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.v1.LocalSpec"
         },
         "s3": {
-          "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.S3Spec"
+          "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.v1.S3Spec"
         },
         "storageSecretName": {
           "type": "string"
         },
         "swift": {
-          "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.SwiftSpec"
+          "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.v1.SwiftSpec"
         }
       }
     },
-    "xyz.kmodules.objectstore-api.api.GCSSpec": {
+    "xyz.kmodules.objectstore-api.api.v1.GCSSpec": {
       "properties": {
         "bucket": {
           "type": "string"
@@ -5305,7 +5305,7 @@
         }
       }
     },
-    "xyz.kmodules.objectstore-api.api.LocalSpec": {
+    "xyz.kmodules.objectstore-api.api.v1.LocalSpec": {
       "properties": {
         "awsElasticBlockStore": {
           "description": "AWSElasticBlockStore represents an AWS Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore",
@@ -5423,7 +5423,7 @@
         }
       }
     },
-    "xyz.kmodules.objectstore-api.api.S3Spec": {
+    "xyz.kmodules.objectstore-api.api.v1.S3Spec": {
       "properties": {
         "bucket": {
           "type": "string"
@@ -5436,7 +5436,7 @@
         }
       }
     },
-    "xyz.kmodules.objectstore-api.api.SwiftSpec": {
+    "xyz.kmodules.objectstore-api.api.v1.SwiftSpec": {
       "properties": {
         "container": {
           "type": "string"

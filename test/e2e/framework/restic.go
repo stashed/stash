@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	store "kmodules.xyz/objectstore-api/api"
+	store "kmodules.xyz/objectstore-api/api/v1"
 )
 
 func (fi *Invocation) _restic() api.Restic {

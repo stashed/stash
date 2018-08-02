@@ -3,7 +3,7 @@ package v1alpha1
 import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"kmodules.xyz/objectstore-api/api"
+	store "kmodules.xyz/objectstore-api/api/v1"
 )
 
 const (
@@ -28,7 +28,7 @@ type Restic struct {
 type ResticSpec struct {
 	Selector   metav1.LabelSelector `json:"selector,omitempty"`
 	FileGroups []FileGroup          `json:"fileGroups,omitempty"`
-	Backend    api.Backend          `json:"backend,omitempty"`
+	Backend    store.Backend        `json:"backend,omitempty"`
 	Schedule   string               `json:"schedule,omitempty"`
 	// Pod volumes to mount into the sidecar container's filesystem.
 	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty"`
@@ -114,7 +114,7 @@ type RecoverySpec struct {
 	// +optional
 	Snapshot         string                      `json:"snapshot,omitempty"`
 	Paths            []string                    `json:"paths,omitempty"`
-	RecoveredVolumes []api.LocalSpec             `json:"recoveredVolumes,omitempty"`
+	RecoveredVolumes []store.LocalSpec           `json:"recoveredVolumes,omitempty"`
 	ImagePullSecrets []core.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 
 	// NodeSelector is a selector which must be true for the pod to fit on a node.
@@ -170,7 +170,7 @@ type Repository struct {
 }
 
 type RepositorySpec struct {
-	Backend api.Backend `json:"backend,omitempty"`
+	Backend store.Backend `json:"backend,omitempty"`
 	// If true, delete respective restic repository
 	// +optional
 	WipeOut bool `json:"wipeOut,omitempty"`

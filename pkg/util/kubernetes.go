@@ -22,7 +22,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
-	store "kmodules.xyz/objectstore-api/api"
+	store "kmodules.xyz/objectstore-api/api/v1"
 )
 
 const (
