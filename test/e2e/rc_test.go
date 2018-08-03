@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/appscode/go/crypto/rand"
@@ -628,20 +629,29 @@ var _ = Describe("ReplicationController", func() {
 					return err
 				}).Should(BeNil())
 
-				By("Waiting for scale down replication controller to 0 replica")
-				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveReplica(0))
+				start := time.Now()
+				for i := 1; i <= 3; i++ {
+					fmt.Printf("=============== Waiting for backup no: %d =============\n", i)
+					By("Waiting for scale down replication controller to 0 replica")
+					f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveReplica(0))
 
-				By("Waiting for scale up replication controller to 1 replica")
-				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveReplica(1))
+					By("Waiting for scale up replication controller to 1 replica")
+					f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveReplica(1))
 
-				By("Waiting for init-container")
-				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
+					By("Waiting for init-container")
+					f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
 
-				By("Waiting for Repository CRD")
-				f.EventuallyRepository(&rc).ShouldNot(BeEmpty())
+					By("Waiting for Repository CRD")
+					f.EventuallyRepository(&rc).ShouldNot(BeEmpty())
 
-				By("Waiting for backup to complete")
-				f.EventuallyRepository(&rc).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+					By("Waiting for backup to complete")
+					f.EventuallyRepository(&rc).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", i)))
+				}
+				elapsedTime := time.Since(start).Minutes()
+
+				// backup is scheduled for every 3 minutes.
+				// so 3 backup by cronJob should not take more than 9 minutes + some overhead.(let 1 minute overhead for each backup)
+				Expect(elapsedTime).Should(BeNumerically("<=", 9+3))
 
 				By("Waiting for backup event")
 				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
