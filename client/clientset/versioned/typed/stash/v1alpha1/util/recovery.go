@@ -104,26 +104,6 @@ func SetRecoveryStats(c cs.StashV1alpha1Interface, recovery *api.Recovery, path 
 	return out, err
 }
 
-func UpdateRecoveryStatus2(c cs.StashV1alpha1Interface, cur *api.Recovery, transform func(*api.RecoveryStatus) *api.RecoveryStatus, useSubresource ...bool) (*api.Recovery, error) {
-	if len(useSubresource) > 1 {
-		return nil, errors.Errorf("invalid value passed for useSubresource: %v", useSubresource)
-	}
-
-	mod := &api.Recovery{
-		TypeMeta:   cur.TypeMeta,
-		ObjectMeta: cur.ObjectMeta,
-		Spec:       cur.Spec,
-		Status:     *transform(cur.Status.DeepCopy()),
-	}
-
-	if len(useSubresource) == 1 && useSubresource[0] {
-		return c.Recoveries(cur.Namespace).UpdateStatus(mod)
-	}
-
-	out, _, err := PatchRecoveryObject(c, cur, mod)
-	return out, err
-}
-
 func UpdateRecoveryStatus(
 	c cs.StashV1alpha1Interface,
 	in *api.Recovery,
