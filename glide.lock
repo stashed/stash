@@ -1,5 +1,5 @@
 hash: ac3e602a8189ffd5b0887ee3df3b94c99de5012a8028ef36e67576053f62be02
-updated: 2018-08-02T18:53:28.657120844+06:00
+updated: 2018-08-02T18:15:54.699766318-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -520,7 +520,7 @@ imports:
   subpackages:
   - rate
 - name: google.golang.org/api
-  version: 31ca0e01cd791f07750cb23fc99327721f753290
+  version: 6c5c3d4ff96110173c63a6ffea8f2ffc8bb541b4
   subpackages:
   - gensupport
   - googleapi
