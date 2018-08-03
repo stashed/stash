@@ -23,12 +23,12 @@ import (
 
 func generateCRDDefinitions() {
 	filename := gort.GOPath() + "/src/github.com/appscode/stash/apis/stash/v1alpha1/crds.yaml"
+	os.Remove(filename)
 
-	f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	err := os.MkdirAll(filepath.Join(gort.GOPath(), "/src/github.com/appscode/stash/api/crds"), 0755)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer f.Close()
 
 	crds := []*crd_api.CustomResourceDefinition{
 		stashv1alpha1.Restic{}.CustomResourceDefinition(),
@@ -36,10 +36,13 @@ func generateCRDDefinitions() {
 		stashv1alpha1.Repository{}.CustomResourceDefinition(),
 	}
 	for _, crd := range crds {
-		err = crdutils.MarshallCrd(f, crd, "yaml")
+		filename := filepath.Join(gort.GOPath(), "/src/github.com/appscode/stash/api/crds", crd.Spec.Names.Singular+".yaml")
+		f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 		if err != nil {
 			log.Fatal(err)
 		}
+		crdutils.MarshallCrd(f, crd, "yaml")
+		f.Close()
 	}
 }
 func generateSwaggerJson() {
