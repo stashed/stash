@@ -1,5 +1,5 @@
 hash: ac3e602a8189ffd5b0887ee3df3b94c99de5012a8028ef36e67576053f62be02
-updated: 2018-08-01T22:54:47.144815267-07:00
+updated: 2018-08-02T18:15:54.699766318-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -41,7 +41,7 @@ imports:
   - registry/admissionreview/v1beta1
   - runtime/serializer/versioning
 - name: github.com/appscode/kutil
-  version: c9b929cfcab96c233c1b0ab59cd4a5ab6a4ff96a
+  version: d31eda1052245a20fb5757fbf12c6c8ace8a12a7
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
@@ -520,7 +520,7 @@ imports:
   subpackages:
   - rate
 - name: google.golang.org/api
-  version: 31ca0e01cd791f07750cb23fc99327721f753290
+  version: 6c5c3d4ff96110173c63a6ffea8f2ffc8bb541b4
   subpackages:
   - gensupport
   - googleapi
@@ -1001,7 +1001,6 @@ imports:
   repo: https://github.com/kmodules/objectstore-api.git
   vcs: git
   subpackages:
-  - api
   - api/v1
   - osm
 testImports: []
