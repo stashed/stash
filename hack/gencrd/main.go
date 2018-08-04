@@ -22,6 +22,8 @@ import (
 )
 
 func generateCRDDefinitions() {
+	stashv1alpha1.EnableStatusSubresource = true
+
 	filename := gort.GOPath() + "/src/github.com/appscode/stash/apis/stash/v1alpha1/crds.yaml"
 	os.Remove(filename)
 
