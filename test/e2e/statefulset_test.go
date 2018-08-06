@@ -624,12 +624,12 @@ var _ = Describe("StatefulSet", func() {
 			framework.CleanupMinikubeHostPath()
 		})
 
-		Context(`"Local" backend`, func() {
+		Context(`Single Replica`, func() {
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
 				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "*/3 * * * *"
+				restic.Spec.Schedule = "@every 3m"
 			})
 			It(`should backup new StatefulSet`, func() {
 				By("Creating repository Secret " + cred.Name)
@@ -664,7 +664,7 @@ var _ = Describe("StatefulSet", func() {
 				}, BeNumerically("==", int(*ss.Spec.Replicas))))
 
 				By("Waiting for initial backup to complete")
-				f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+				f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically("==", 1)))
 
 				By("Ensuring initial backup is not taken by cronJob")
 				backupCron, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
@@ -675,7 +675,75 @@ var _ = Describe("StatefulSet", func() {
 				start := time.Now()
 				for i := 2; i <= 4; i++ {
 					fmt.Printf("=============== Waiting for backup no: %d ============\n", i)
-					f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", i)))
+					f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically("==", i)))
+				}
+				elapsedTime := time.Since(start).Minutes()
+
+				// backup is scheduled for every 3 minutes.
+				// so 3 backup by cronJob should not take more than 9 minutes + some overhead.(let 1 minute overhead for each backup)
+				Expect(elapsedTime).Should(BeNumerically("<=", 9+3))
+
+				By("Waiting for backup event")
+				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(repos.Items).NotTo(BeEmpty())
+				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", 1)))
+			})
+		})
+
+		Context(`Multiple Replica`, func() {
+			BeforeEach(func() {
+				cred = f.SecretForLocalBackend()
+				restic = f.ResticForHostPathLocalBackend()
+				restic.Spec.Type = api.BackupOffline
+				restic.Spec.Schedule = "@every 3m"
+			})
+			It(`should backup new StatefulSet`, func() {
+				By("Creating repository Secret " + cred.Name)
+				err = f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating restic " + restic.Name)
+				err = f.CreateRestic(restic)
+				Expect(err).NotTo(HaveOccurred())
+
+				cronJobName := util.ScaledownCronPrefix + restic.Name
+				By("Checking cron job created: " + cronJobName)
+				Eventually(func() error {
+					_, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
+					return err
+				}).Should(BeNil())
+
+				By("Creating service " + svc.Name)
+				err = f.CreateService(svc)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Creating StatefulSet " + ss.Name)
+				ss.Spec.Replicas = types.Int32P(2)
+				_, err = f.CreateStatefulSet(ss)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for init-container")
+				f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
+
+				By("Waiting for Repository CRD")
+				f.EventuallyRepository(&ss).Should(WithTransform(func(repoList []*api.Repository) int {
+					return len(repoList)
+				}, BeNumerically("==", int(*ss.Spec.Replicas))))
+
+				By("Waiting for initial backup to complete")
+				f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically("==", 1)))
+
+				By("Ensuring initial backup is not taken by cronJob")
+				backupCron, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(backupCron.Status.LastScheduleTime).Should(BeNil())
+
+				By("Waiting for 3 backup by cronJob to complete")
+				start := time.Now()
+				for i := 2; i <= 4; i++ {
+					fmt.Printf("=============== Waiting for backup no: %d ============\n", i)
+					f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically("==", i)))
 				}
 				elapsedTime := time.Since(start).Minutes()
 

@@ -158,6 +158,12 @@ snapshot "statefulset.stash-demo-0-d690726d" deleted
 
 ```
 
+## Precondition for Snaphsot
+
+1. Stash provides `Snapshots` listing facility with the help of aggregated api server. Stash start aggregated api server if any of the `ValidatingWebhook` and `MutatingWebhook` is enabled. If both of the webhooks are disabled or if your cluster does not support aggregated api server or webhooks, you won't able to list `Snapshot`.
+2. If you are using `hostPath` for `Restic` backend, stash takes help of workload pod to provide snapshot list. In this case, workload pod must be running while listing `Snapshot`.
+3. If you are using [offline backup](/docs/guides/offline_backup.md) and `hostPath` as your `Restic` backend, you won't able to list `Snapshot`.
+
 ## Next Steps
 
 - Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/backup.md).

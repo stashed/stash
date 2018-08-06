@@ -609,7 +609,7 @@ var _ = Describe("ReplicaSet", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
 				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "*/3 * * * *"
+				restic.Spec.Schedule = "@every 3m"
 			})
 			It(`should backup new ReplicaSet`, func() {
 				By("Creating repository Secret " + cred.Name)
@@ -647,7 +647,7 @@ var _ = Describe("ReplicaSet", func() {
 					f.EventuallyRepository(&rs).ShouldNot(BeEmpty())
 
 					By("Waiting for backup to complete")
-					f.EventuallyRepository(&rs).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", i)))
+					f.EventuallyRepository(&rs).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically("==", i)))
 				}
 				elapsedTime := time.Since(start).Minutes()
 
@@ -671,7 +671,7 @@ var _ = Describe("ReplicaSet", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
 				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "*/3 * * * *"
+				restic.Spec.Schedule = "@every 3m"
 			})
 			It(`should backup new ReplicaSet`, func() {
 				By("Creating repository Secret " + cred.Name)
@@ -710,7 +710,7 @@ var _ = Describe("ReplicaSet", func() {
 					f.EventuallyRepository(&rs).ShouldNot(BeEmpty())
 
 					By("Waiting for backup to complete")
-					f.EventuallyRepository(&rs).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", i)))
+					f.EventuallyRepository(&rs).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically("==", i)))
 				}
 				elapsedTime := time.Since(start).Minutes()
 

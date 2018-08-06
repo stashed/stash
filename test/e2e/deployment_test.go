@@ -663,6 +663,7 @@ var _ = Describe("Deployment", func() {
 			It("should add sidecar instantly if label change to match single restic", shouldAddSidecarInstantly)
 		})
 	})
+
 	Describe("Offline backup for", func() {
 		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
@@ -676,7 +677,7 @@ var _ = Describe("Deployment", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
 				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "*/3 * * * *"
+				restic.Spec.Schedule = "@every 3m"
 			})
 			It(`should backup new Deployment`, func() {
 				By("Creating repository Secret " + cred.Name)
@@ -714,7 +715,7 @@ var _ = Describe("Deployment", func() {
 					f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
 
 					By("Waiting for backup to complete")
-					f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", i)))
+					f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically("==", i)))
 				}
 				elapsedTime := time.Since(start).Minutes()
 
@@ -738,7 +739,7 @@ var _ = Describe("Deployment", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
 				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "*/3 * * * *"
+				restic.Spec.Schedule = "@every 3m"
 			})
 			It(`should backup new Deployment`, func() {
 				By("Creating repository Secret " + cred.Name)

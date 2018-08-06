@@ -11,7 +11,7 @@ spec:
   - JSONPath: .status.backupCount
     name: BackupCount
     type: integer
-  - JSONPath: .status.lastSuccessfulBackupTime
+  - JSONPath: .status.lastBackupTime
     format: date-time
     name: LastSuccessfulBackup
     type: date
