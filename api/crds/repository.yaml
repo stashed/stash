@@ -26,6 +26,8 @@ spec:
     - repo
     singular: repository
   scope: Namespaced
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       properties:
