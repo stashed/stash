@@ -83,9 +83,9 @@ func TryUpdateRecovery(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, tran
 }
 
 func SetRecoveryStats(c cs.StashV1alpha1Interface, recovery *api.Recovery, path string, d time.Duration, phase api.RecoveryPhase) (*api.Recovery, error) {
-	out, _, err := PatchRecovery(c, recovery, func(in *api.Recovery) *api.Recovery {
+	out, err := UpdateRecoveryStatus(c, recovery, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 		found := false
-		for _, stats := range in.Status.Stats {
+		for _, stats := range in.Stats {
 			if stats.Path == path {
 				found = true
 				stats.Duration = d.String()
@@ -100,7 +100,7 @@ func SetRecoveryStats(c cs.StashV1alpha1Interface, recovery *api.Recovery, path 
 			})
 		}
 		return in
-	})
+	}, api.EnableStatusSubresource)
 	return out, err
 }
 
@@ -114,16 +114,12 @@ func UpdateRecoveryStatus(
 		return nil, errors.Errorf("invalid value passed for useSubresource: %v", useSubresource)
 	}
 
-	apply := func(x *api.Recovery, copy bool) *api.Recovery {
+	apply := func(x *api.Recovery) *api.Recovery {
 		out := &api.Recovery{
 			TypeMeta:   x.TypeMeta,
 			ObjectMeta: x.ObjectMeta,
 			Spec:       x.Spec,
-		}
-		if copy {
-			out.Status = *transform(in.Status.DeepCopy())
-		} else {
-			out.Status = *transform(&in.Status)
+			Status:     *transform(in.Status.DeepCopy()),
 		}
 		return out
 	}
@@ -134,7 +130,7 @@ func UpdateRecoveryStatus(
 		err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 			attempt++
 			var e2 error
-			result, e2 = c.Recoveries(in.Namespace).UpdateStatus(apply(cur, false))
+			result, e2 = c.Recoveries(in.Namespace).UpdateStatus(apply(cur))
 			if kerr.IsConflict(e2) {
 				latest, e3 := c.Recoveries(in.Namespace).Get(in.Name, metav1.GetOptions{})
 				switch {
@@ -158,6 +154,6 @@ func UpdateRecoveryStatus(
 		return
 	}
 
-	result, _, err = PatchRecoveryObject(c, in, apply(in, true))
+	result, _, err = PatchRecoveryObject(c, in, apply(in))
 	return
 }
