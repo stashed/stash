@@ -54,7 +54,7 @@ NAME=stash-$(git rev-parse --short HEAD)
 
 # build and push docker image
 ./hack/builddeps.sh
-export APPSCODE_ENV=test-concourse
+export APPSCODE_ENV=dev
 export DOCKER_REGISTRY=appscodeci
 ./hack/docker/setup.sh build
 ./hack/docker/setup.sh push
