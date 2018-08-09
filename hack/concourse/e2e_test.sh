@@ -42,7 +42,7 @@ function cleanup() {
   chmod +x docker.py || true
   ./docker.py del_tag appscodeci stash $TAG || true
 }
-trap cleanup_test_stuff EXIT
+trap cleanup EXIT
 
 # copy stash to $GOPATH
 mkdir -p $GOPATH/src/github.com/appscode

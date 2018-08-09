@@ -16,11 +16,7 @@ echo ""
 function cleanup() {
   rm -rf $ONESSL ca.crt ca.key server.crt server.key
 }
-
-export APPSCODE_ENV=${APPSCODE_ENV:-prod}
-if [ "$APPSCODE_ENV" != "test-concourse" ]; then
-    trap cleanup EXIT
-fi
+trap cleanup EXIT
 
 # ref: https://github.com/appscodelabs/libbuild/blob/master/common/lib.sh#L55
 inside_git_repo() {
@@ -101,7 +97,7 @@ export STASH_ENABLE_RBAC=true
 export STASH_RUN_ON_MASTER=0
 export STASH_ENABLE_VALIDATING_WEBHOOK=false
 export STASH_ENABLE_MUTATING_WEBHOOK=false
-export STASH_DOCKER_REGISTRY=${DOCKER_REGISTRY:-appscode}
+export STASH_DOCKER_REGISTRY=appscode
 export STASH_IMAGE_TAG=0.7.0
 export STASH_IMAGE_PULL_SECRET=
 export STASH_IMAGE_PULL_POLICY=IfNotPresent
