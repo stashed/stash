@@ -35,14 +35,14 @@ func (f *Framework) StartAPIServerAndOperator(kubeConfigPath string, extraOption
 	defer GinkgoRecover()
 
 	sh := shell.NewSession()
-	args := []interface{}{"--namespace", f.Namespace()}
+	args := []interface{}{"--namespace", f.Namespace(), "--test=true"}
 	if !f.WebhookEnabled {
 		args = append(args, "--enable-webhook=false")
 	}
-	SetupServer := filepath.Join("..", "..", "hack", "dev", "setup-server.sh")
+	runScript := filepath.Join("..", "..", "hack", "dev", "run.sh")
 
 	By("Creating API server and webhook stuffs")
-	cmd := sh.Command(SetupServer, args...)
+	cmd := sh.Command(runScript, args...)
 	err := cmd.Run()
 	Expect(err).ShouldNot(HaveOccurred())
 

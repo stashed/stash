@@ -145,7 +145,7 @@ func (c Repository) CustomResourceDefinition() *apiextensions.CustomResourceDefi
 			{
 				Name:     "LastSuccessfulBackup",
 				Type:     "date",
-				JSONPath: ".status.lastSuccessfulBackupTime",
+				JSONPath: ".status.lastBackupTime",
 				Format:   "date-time",
 			},
 			{

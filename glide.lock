@@ -271,7 +271,7 @@ imports:
 - name: github.com/google/btree
   version: 7d79101e329e5a3adf994758c578dab82b90c017
 - name: github.com/google/go-cmp
-  version: 3af367b6b30c263d47e8895973edcca9a49cf029
+  version: 5411ab924f9ffa6566244a9e504bc347edacffd3
   subpackages:
   - cmp
   - cmp/internal/diff
@@ -678,7 +678,7 @@ imports:
   - third_party/forked/golang/netutil
   - third_party/forked/golang/reflect
 - name: k8s.io/apiserver
-  version: 79540596e3b2021b528c4c147fb78cebc29a2f75
+  version: e3b61b75fc6378abb4af53e15cb9590fc4041b9f
   repo: https://github.com/pharmer/apiserver.git
   vcs: git
   subpackages:
