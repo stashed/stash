@@ -1069,7 +1069,7 @@ var _ = Describe("Deployment", func() {
 			err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 		})
-		FContext(`"Local" backend,single fileGroup`, func() {
+		Context(`"Local" backend,single fileGroup`, func() {
 			AfterEach(func() {
 				if !f.SelfHostedOperator {
 					framework.CleanupMinikubeHostPath()
@@ -1111,8 +1111,6 @@ var _ = Describe("Deployment", func() {
 				previousData, err := f.ReadDataFromMountedDir(deployment.ObjectMeta, framework.GetPathsFromResticFileGroups(&restic))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(previousData).NotTo(BeEmpty())
-
-				fmt.Println("Previous Data: ", previousData)
 
 				By("Deleting deployment")
 				f.DeleteDeployment(deployment.ObjectMeta)
