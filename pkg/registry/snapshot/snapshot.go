@@ -8,7 +8,8 @@ import (
 	stash "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/client/clientset/versioned"
 	"github.com/appscode/stash/pkg/util"
-	"github.com/pkg/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -55,20 +56,21 @@ func (r *REST) GroupVersionKind(containingGV schema.GroupVersion) schema.GroupVe
 func (r *REST) Get(ctx context.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
 	ns, ok := apirequest.NamespaceFrom(ctx)
 	if !ok {
-		return nil, errors.New("missing namespace")
-	}
-	if len(name) < 9 {
-		return nil, errors.New("invalid snapshot name")
+		return nil, apierrors.NewBadRequest("missing namespace")
 	}
 
 	repoName, snapshotId, err := util.GetRepoNameAndSnapshotID(name)
 	if err != nil {
-		return nil, err
+		return nil, apierrors.NewBadRequest(err.Error())
 	}
 
 	repo, err := r.stashClient.StashV1alpha1().Repositories(ns).Get(repoName, metav1.GetOptions{})
 	if err != nil {
-		return nil, errors.New("respective repository not found. error:" + err.Error())
+		if kerr.IsNotFound(err) {
+			return nil, apierrors.NewNotFound(stash.Resource(stash.ResourceSingularRepository), repoName)
+		} else {
+			return nil, apierrors.NewInternalError(err)
+		}
 	}
 
 	snapshots := make([]repositories.Snapshot, 0)
@@ -78,11 +80,11 @@ func (r *REST) Get(ctx context.Context, name string, options *metav1.GetOptions)
 		snapshots, err = r.GetSnapshots(repo, []string{snapshotId})
 	}
 	if err != nil {
-		return nil, err
+		return nil, apierrors.NewInternalError(err)
 	}
 
 	if len(snapshots) == 0 {
-		return nil, errors.New("no resource found")
+		return nil, apierrors.NewNotFound(repositories.Resource(repov1alpha1.ResourceSingularSnapshot), name)
 	}
 
 	snapshot := &repositories.Snapshot{}
@@ -97,12 +99,12 @@ func (r *REST) NewList() runtime.Object {
 func (r *REST) List(ctx context.Context, options *metainternalversion.ListOptions) (runtime.Object, error) {
 	ns, ok := apirequest.NamespaceFrom(ctx)
 	if !ok {
-		return nil, errors.New("missing namespace")
+		return nil, apierrors.NewBadRequest("missing namespace")
 	}
 
 	repos, err := r.stashClient.StashV1alpha1().Repositories(ns).List(metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, apierrors.NewInternalError(err)
 	}
 
 	var selectedRepos []stash.Repository
@@ -127,12 +129,12 @@ func (r *REST) List(ctx context.Context, options *metainternalversion.ListOption
 		if repo.Spec.Backend.Local != nil {
 			snapshots, err = r.getSnapshotsFromSidecar(&repo, nil)
 			if err != nil {
-				return nil, err
+				return nil, apierrors.NewInternalError(err)
 			}
 		} else {
 			snapshots, err = r.GetSnapshots(&repo, nil)
 			if err != nil {
-				return nil, err
+				return nil, apierrors.NewInternalError(err)
 			}
 		}
 		snapshotList.Items = append(snapshotList.Items, snapshots...)
@@ -146,24 +148,43 @@ func (r *REST) List(ctx context.Context, options *metainternalversion.ListOption
 func (r *REST) Delete(ctx context.Context, name string, options *metav1.DeleteOptions) (runtime.Object, bool, error) {
 	ns, ok := apirequest.NamespaceFrom(ctx)
 	if !ok {
-		return nil, false, errors.New("missing namespace")
+		return nil, false, apierrors.NewBadRequest("missing namespace")
 	}
 	repoName, snapshotId, err := util.GetRepoNameAndSnapshotID(name)
 	if err != nil {
-		return nil, false, err
+		return nil, false, apierrors.NewBadRequest(err.Error())
 	}
 	repo, err := r.stashClient.StashV1alpha1().Repositories(ns).Get(repoName, metav1.GetOptions{})
 	if err != nil {
-		return nil, false, errors.New("respective repository not found. error:" + err.Error())
+		if kerr.IsNotFound(err) {
+			return nil, false, apierrors.NewNotFound(stash.Resource(stash.ResourceSingularRepository), repoName)
+		} else {
+			return nil, false, apierrors.NewInternalError(err)
+		}
 	}
 
+	// first, check if the snapshot exist
+	snapshots := make([]repositories.Snapshot, 0)
+	if repo.Spec.Backend.Local != nil {
+		snapshots, err = r.getSnapshotsFromSidecar(repo, []string{snapshotId})
+	} else {
+		snapshots, err = r.GetSnapshots(repo, []string{snapshotId})
+	}
+
+	if err != nil {
+		return nil, false, apierrors.NewInternalError(err)
+	} else if len(snapshots) == 0 {
+		return nil, false, apierrors.NewNotFound(repositories.Resource(repov1alpha1.ResourceSingularSnapshot), name)
+	}
+
+	// delete snapshot
 	if repo.Spec.Backend.Local != nil {
 		err = r.forgetSnapshotsFromSidecar(repo, []string{snapshotId})
 	} else {
 		err = r.ForgetSnapshots(repo, []string{snapshotId})
 	}
 	if err != nil {
-		return nil, false, err
+		return nil, false, apierrors.NewInternalError(err)
 	}
 
 	return nil, true, nil
