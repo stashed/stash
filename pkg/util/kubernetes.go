@@ -22,6 +22,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
+	store "kmodules.xyz/objectstore-api/api/v1"
 )
 
 const (
@@ -135,6 +136,7 @@ func NewInitContainer(r *api.Restic, workload api.LocalTypedReference, image doc
 		"--docker-registry=" + image.Registry,
 		"--image-tag=" + image.Tag,
 		"--pushgateway-url=" + PushgatewayURL(),
+		fmt.Sprintf("--enable-status-subresource=%v", api.EnableStatusSubresource),
 		fmt.Sprintf("--enable-analytics=%v", EnableAnalytics),
 	}
 	container.Args = append(container.Args, LoggerOptions.ToFlags()...)
@@ -163,6 +165,7 @@ func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image 
 			"--image-tag=" + image.Tag,
 			"--run-via-cron=true",
 			"--pushgateway-url=" + PushgatewayURL(),
+			fmt.Sprintf("--enable-status-subresource=%v", api.EnableStatusSubresource),
 			fmt.Sprintf("--enable-analytics=%v", EnableAnalytics),
 			fmt.Sprintf("--enable-rbac=%v", enableRBAC),
 		}, LoggerOptions.ToFlags()...),
@@ -345,7 +348,7 @@ func NewRecoveryJob(stashClient cs.Interface, recovery *api.Recovery, image dock
 							Args: append([]string{
 								"recover",
 								"--recovery-name=" + recovery.Name,
-								"--v=5",
+								fmt.Sprintf("--enable-status-subresource=%v", api.EnableStatusSubresource),
 								fmt.Sprintf("--enable-analytics=%v", EnableAnalytics),
 							}, LoggerOptions.ToFlags()...),
 							Env: []core.EnvVar{
@@ -459,6 +462,7 @@ func NewCheckJob(restic *api.Restic, hostName, smartPrefix string, image docker.
 								"--restic-name=" + restic.Name,
 								"--host-name=" + hostName,
 								"--smart-prefix=" + smartPrefix,
+								fmt.Sprintf("--enable-status-subresource=%v", api.EnableStatusSubresource),
 								fmt.Sprintf("--enable-analytics=%v", EnableAnalytics),
 							}, LoggerOptions.ToFlags()...),
 							Env: []core.EnvVar{
@@ -566,7 +570,7 @@ func GetRepoNameAndSnapshotID(snapshotName string) (repoName, snapshotId string,
 	return
 }
 
-func FixBackendPrefix(backend *api.Backend, autoPrefix string) *api.Backend {
+func FixBackendPrefix(backend *store.Backend, autoPrefix string) *store.Backend {
 	if backend.Local != nil {
 		backend.Local.SubPath = strings.TrimSuffix(backend.Local.SubPath, autoPrefix)
 		backend.Local.SubPath = strings.TrimSuffix(backend.Local.SubPath, "/")
@@ -591,7 +595,7 @@ func FixBackendPrefix(backend *api.Backend, autoPrefix string) *api.Backend {
 	return backend
 }
 
-func GetBucketAndPrefix(backend *api.Backend) (string, string, error) {
+func GetBucketAndPrefix(backend *store.Backend) (string, string, error) {
 	if backend.S3 != nil {
 		return backend.S3.Bucket, strings.TrimPrefix(backend.S3.Prefix, backend.S3.Bucket+"/"), nil
 	} else if backend.GCS != nil {

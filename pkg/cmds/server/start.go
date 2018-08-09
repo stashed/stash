@@ -10,6 +10,7 @@ import (
 	"github.com/appscode/stash/pkg/server"
 	"github.com/spf13/pflag"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
+	openapinamer "k8s.io/apiserver/pkg/endpoints/openapi"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
 )
@@ -61,11 +62,12 @@ func (o StashOptions) Config() (*server.StashConfig, error) {
 	if err := o.RecommendedOptions.ApplyTo(serverConfig, server.Scheme); err != nil {
 		return nil, err
 	}
-	serverConfig.OpenAPIConfig = genericapiserver.DefaultOpenAPIConfig(v1alpha1.GetOpenAPIDefinitions, server.Scheme)
+	serverConfig.OpenAPIConfig = genericapiserver.DefaultOpenAPIConfig(v1alpha1.GetOpenAPIDefinitions, openapinamer.NewDefinitionNamer(server.Scheme))
 	serverConfig.OpenAPIConfig.Info.Title = "stash-server"
 	serverConfig.OpenAPIConfig.Info.Version = v1alpha1.SchemeGroupVersion.Version
 	serverConfig.OpenAPIConfig.IgnorePrefixes = []string{
 		"/swaggerapi",
+		"/apis/admission.stash.appscode.com/v1alpha1",
 		"/apis/admission.stash.appscode.com/v1alpha1/restics",
 		"/apis/admission.stash.appscode.com/v1alpha1/recoveries",
 		"/apis/admission.stash.appscode.com/v1alpha1/repositories",

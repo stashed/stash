@@ -64,7 +64,7 @@ func (l *location) Containers(prefix, cursor string, count int) ([]stow.Containe
 func (l *location) Container(id string) (stow.Container, error) {
 	cursor := stow.CursorStart
 	for {
-		containers, crsr, err := l.Containers(id[:3], cursor, 100)
+		containers, crsr, err := l.Containers(id, cursor, 1)
 		if err != nil {
 			return nil, stow.ErrNotFound
 		}

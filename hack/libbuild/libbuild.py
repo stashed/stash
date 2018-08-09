@@ -150,7 +150,7 @@ def to_upper_camel(lower_snake):
 
 
 # ref: https://golang.org/cmd/go/
-def go_build(name, goos, goarch, main, compress=False):
+def go_build(name, goos, goarch, main, compress=False, upx=False):
     linker_opts = []
     if BIN_MATRIX[name].get('go_version', False):
         md = metadata(REPO_ROOT, goos, goarch)
@@ -174,13 +174,15 @@ def go_build(name, goos, goarch, main, compress=False):
     if linker_opts:
         ldflags = "-ldflags '{}'".format(' '.join(linker_opts))
 
+    tags = "-tags 'osusergo netgo static_build'"
+
     bindir = 'dist/{name}'.format(name=name)
     if not os.path.isdir(bindir):
         os.makedirs(bindir)
     if goos == 'alpine':
         repo_dir = REPO_ROOT[len(GOPATH):]
         uid = check_output('id -u').strip()
-        cmd = "docker run --rm -u {uid} -v {repo_root}:/go{repo_dir} -w /go{repo_dir} -e {cgo_env} kiteci/golang:1.9.3-alpine {goc} build -o {bindir}/{name}-{goos}-{goarch}{ext} {cgo} {ldflags} {main}".format(
+        cmd = "docker run --rm -u {uid} -v /tmp:/.cache -v {repo_root}:/go{repo_dir} -w /go{repo_dir} -e {cgo_env} golang:1.9-alpine {goc} build -o {bindir}/{name}-{goos}-{goarch}{ext} {cgo} {ldflags} {tags} {main}".format(
             repo_root=REPO_ROOT,
             repo_dir=repo_dir,
             uid=uid,
@@ -192,11 +194,12 @@ def go_build(name, goos, goarch, main, compress=False):
             cgo_env=cgo_env,
             cgo=cgo,
             ldflags=ldflags,
+            tags=tags,
             ext='.exe' if goos == 'windows' else '',
             main=main
         )
     else:
-        cmd = "GOOS={goos} GOARCH={goarch} {cgo_env} {goc} build -o {bindir}/{name}-{goos}-{goarch}{ext} {cgo} {ldflags} {main}".format(
+        cmd = "GOOS={goos} GOARCH={goarch} {cgo_env} {goc} build -o {bindir}/{name}-{goos}-{goarch}{ext} {cgo} {ldflags} {tags} {main}".format(
             name=name,
             goc=GOC,
             goos=goos,
@@ -205,34 +208,34 @@ def go_build(name, goos, goarch, main, compress=False):
             cgo_env=cgo_env,
             cgo=cgo,
             ldflags=ldflags,
+            tags=tags,
             ext='.exe' if goos == 'windows' else '',
             main=main
         )
     die(call(cmd, cwd=REPO_ROOT))
 
-    if compress:
-        if goarch in ['amd64', '386']:
-            cmd = "upx --brute {bindir}/{name}-{goos}-{goarch}{ext}".format(
-                    name=name,
-                    goos=goos,
-                    goarch=goarch,
-                    bindir=bindir,
-                    ext='.exe' if goos == 'windows' else ''
-                )
-            die(call(cmd, cwd=REPO_ROOT))
-
-        if goos in ['windows']:
-            cmd = "zip {bindir}/{name}-{goos}-{goarch}.zip {bindir}/{name}-{goos}-{goarch}{ext}"
-        else:
-            cmd = "tar -cjvf {bindir}/{name}-{goos}-{goarch}.tar.bz2 {bindir}/{name}-{goos}-{goarch}{ext}"
-        cmd = cmd.format(
+    if upx and (goos in ['linux', 'darwin']) and (goarch in ['amd64', '386']):
+        cmd = "upx --brute {name}-{goos}-{goarch}{ext}".format(
                 name=name,
                 goos=goos,
                 goarch=goarch,
                 bindir=bindir,
                 ext='.exe' if goos == 'windows' else ''
             )
-        die(call(cmd, cwd=REPO_ROOT))
+        die(call(cmd, cwd=REPO_ROOT + '/' + bindir))
+
+    if compress:
+        if goos in ['windows']:
+            cmd = "zip {name}-{goos}-{goarch}.zip {name}-{goos}-{goarch}{ext}"
+        else:
+            cmd = "bzip2 --keep -vf {name}-{goos}-{goarch}{ext}"
+        cmd = cmd.format(
+                name=name,
+                goos=goos,
+                goarch=goarch,
+                ext='.exe' if goos == 'windows' else ''
+            )
+        die(call(cmd, cwd=REPO_ROOT + '/' + bindir))
     print('')
 
 

@@ -157,7 +157,7 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 		stash_util.UpdateRecoveryStatus(c.stashClient.StashV1alpha1(), rec, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 			in.Phase = api.RecoveryFailed
 			return in
-		})
+		}, api.EnableStatusSubresource)
 		ref, rerr := reference.GetReference(scheme.Scheme, rec)
 		if rerr == nil {
 			eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, ref, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
@@ -191,7 +191,7 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 	stash_util.UpdateRecoveryStatus(c.stashClient.StashV1alpha1(), rec, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 		in.Phase = api.RecoveryRunning
 		return in
-	})
+	}, api.EnableStatusSubresource)
 
 	return nil
 }

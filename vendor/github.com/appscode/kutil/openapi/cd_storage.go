@@ -1,10 +1,11 @@
 package openapi
 
 import (
+	"context"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	apirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
 )
 
@@ -13,6 +14,7 @@ type CDStorage struct {
 }
 
 var _ rest.GroupVersionKindProvider = &CDStorage{}
+var _ rest.Scoper = &CDStorage{}
 var _ rest.Creater = &CDStorage{}
 var _ rest.GracefulDeleter = &CDStorage{}
 
@@ -24,16 +26,20 @@ func (r *CDStorage) GroupVersionKind(containingGV schema.GroupVersion) schema.Gr
 	return r.cfg.gvk
 }
 
+func (r *CDStorage) NamespaceScoped() bool {
+	return r.cfg.namespaceScoped
+}
+
 // Getter
 func (r *CDStorage) New() runtime.Object {
 	return r.cfg.obj
 }
 
-func (r *CDStorage) Create(ctx apirequest.Context, obj runtime.Object, createValidation rest.ValidateObjectFunc, includeUninitialized bool) (runtime.Object, error) {
+func (r *CDStorage) Create(ctx context.Context, obj runtime.Object, createValidation rest.ValidateObjectFunc, includeUninitialized bool) (runtime.Object, error) {
 	return r.New(), nil
 }
 
 // Deleter
-func (r *CDStorage) Delete(ctx apirequest.Context, name string, options *metav1.DeleteOptions) (runtime.Object, bool, error) {
+func (r *CDStorage) Delete(ctx context.Context, name string, options *metav1.DeleteOptions) (runtime.Object, bool, error) {
 	return r.New(), true, nil
 }

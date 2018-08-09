@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/appscode/go/log"
-	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
+	store "kmodules.xyz/objectstore-api/api/v1"
 )
 
 const (
@@ -56,7 +56,7 @@ const (
 	CA_CERT_DATA = "CA_CERT_DATA"
 )
 
-func (w *ResticWrapper) SetupEnv(backend api.Backend, secret *core.Secret, autoPrefix string) (string, error) {
+func (w *ResticWrapper) SetupEnv(backend store.Backend, secret *core.Secret, autoPrefix string) (string, error) {
 
 	if v, ok := secret.Data[RESTIC_PASSWORD]; !ok {
 		return "", errors.New("missing repository password")

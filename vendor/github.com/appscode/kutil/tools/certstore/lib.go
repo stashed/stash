@@ -203,7 +203,11 @@ func (s *CertStore) NewClientCertPair(cn string, organization ...string) ([]byte
 	return cert.EncodeCertPEM(crt), cert.EncodePrivateKeyPEM(key), nil
 }
 
-func (s *CertStore) IsExists(name string) bool {
+func (s *CertStore) IsExists(name string, prefix ...string) bool {
+	if err := s.prep(prefix...); err != nil {
+		panic(err)
+	}
+
 	if _, err := s.fs.Stat(s.CertFile(name)); err == nil {
 		return true
 	}
@@ -213,7 +217,11 @@ func (s *CertStore) IsExists(name string) bool {
 	return false
 }
 
-func (s *CertStore) PairExists(name string) bool {
+func (s *CertStore) PairExists(name string, prefix ...string) bool {
+	if err := s.prep(prefix...); err != nil {
+		panic(err)
+	}
+
 	if _, err := s.fs.Stat(s.CertFile(name)); err == nil {
 		if _, err := s.fs.Stat(s.KeyFile(name)); err == nil {
 			return true

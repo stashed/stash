@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/appscode/go/crypto/rand"
@@ -560,7 +561,7 @@ var _ = Describe("DaemonSet", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
 				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "*/3 * * * *"
+				restic.Spec.Schedule = "@every 3m"
 			})
 			It(`should backup new DaemonSet`, func() {
 				By("Creating repository Secret " + cred.Name)
@@ -589,10 +590,24 @@ var _ = Describe("DaemonSet", func() {
 				f.EventuallyRepository(&daemon).ShouldNot(BeEmpty())
 
 				By("Waiting for initial backup to complete")
-				f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+				f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically("==", 1)))
 
-				By("Waiting for next backup to complete")
-				f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 2)))
+				By("Ensuring initial backup is not taken by cronJob")
+				backupCron, err := f.KubeClient.BatchV1beta1().CronJobs(restic.Namespace).Get(cronJobName, metav1.GetOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(backupCron.Status.LastScheduleTime).Should(BeNil())
+
+				By("Waiting for 3 backup by cronJob to complete")
+				start := time.Now()
+				for i := 2; i <= 4; i++ {
+					fmt.Printf("=============== Waiting for backup no: %d ============\n", i)
+					f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically("==", i)))
+				}
+				elapsedTime := time.Since(start).Minutes()
+
+				// backup is scheduled for every 3 minutes.
+				// so 3 backup by cronJob should not take more than 9 minutes + some overhead.(let 1 minute overhead for each backup)
+				Expect(elapsedTime).Should(BeNumerically("<=", 9+3))
 
 				By("Waiting for backup event")
 				repos := f.DaemonSetRepos(&daemon)

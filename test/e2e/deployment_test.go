@@ -679,7 +679,7 @@ var _ = Describe("Deployment", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
 				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "*/3 * * * *"
+				restic.Spec.Schedule = "@every 3m"
 			})
 			It(`should backup new Deployment`, func() {
 				By("Creating repository Secret " + cred.Name)
@@ -701,20 +701,29 @@ var _ = Describe("Deployment", func() {
 					return err
 				}).Should(BeNil())
 
-				By("Waiting for scale down deployment to 0 replica")
-				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(0))
+				start := time.Now()
+				for i := 1; i <= 3; i++ {
+					fmt.Printf("=============== Waiting for backup no: %d =============\n", i)
+					By("Waiting for scale down deployment to 0 replica")
+					f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(0))
 
-				By("Waiting for scale up deployment to 1 replica")
-				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(1))
+					By("Waiting for scale up deployment to 1 replica")
+					f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(1))
 
-				By("Waiting for init-container")
-				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
+					By("Waiting for init-container")
+					f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
 
-				By("Waiting for Repository CRD")
-				f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
+					By("Waiting for Repository CRD")
+					f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
 
-				By("Waiting for backup to complete")
-				f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+					By("Waiting for backup to complete")
+					f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically("==", i)))
+				}
+				elapsedTime := time.Since(start).Minutes()
+
+				// backup is scheduled for every 3 minutes.
+				// so 3 backup by cronJob should not take more than 9 minutes + some overhead.(let 1 minute overhead for each backup)
+				Expect(elapsedTime).Should(BeNumerically("<=", 9+3))
 
 				By("Waiting for backup event")
 				repos := f.DeploymentRepos(&deployment)
@@ -731,7 +740,7 @@ var _ = Describe("Deployment", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
 				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "*/3 * * * *"
+				restic.Spec.Schedule = "@every 3m"
 			})
 			It(`should backup new Deployment`, func() {
 				By("Creating repository Secret " + cred.Name)
@@ -754,20 +763,29 @@ var _ = Describe("Deployment", func() {
 					return err
 				}).Should(BeNil())
 
-				By("Waiting for scale down deployment to 0 replica")
-				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(0))
+				start := time.Now()
+				for i := 1; i <= 3; i++ {
+					fmt.Printf("=============== Waiting for backup no: %d =============\n", i)
+					By("Waiting for scale down deployment to 0 replica")
+					f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(0))
 
-				By("Waiting for scale up deployment to 1 replica")
-				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(1))
+					By("Waiting for scale up deployment to 1 replica")
+					f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveReplica(1))
 
-				By("Waiting for init-container")
-				f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
+					By("Waiting for init-container")
+					f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveInitContainer(util.StashContainer))
 
-				By("Waiting for Repository CRD")
-				f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
+					By("Waiting for Repository CRD")
+					f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
 
-				By("Waiting for backup to complete")
-				f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+					By("Waiting for backup to complete")
+					f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", i)))
+				}
+				elapsedTime := time.Since(start).Minutes()
+
+				// backup is scheduled for every 3 minutes.
+				// so 3 backup by cronJob should not take more than 9 minutes + some overhead.(let 1 minute overhead for each backup)
+				Expect(elapsedTime).Should(BeNumerically("<=", 9+3))
 
 				By("Waiting for backup event")
 				repos := f.DeploymentRepos(&deployment)

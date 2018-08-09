@@ -59,8 +59,9 @@ options:
     --docker-registry              docker registry used to pull stash images (default: appscode)
     --image-pull-secret            name of secret used to pull stash operator images
     --run-on-master                run stash operator on master
-    --enable-validating-webhook    enable/disable validating webhooks for Stash CRDs
+    --enable-validating-webhook    enable/disable validating webhooks for Stash crds
     --enable-mutating-webhook      enable/disable mutating webhooks for Kubernetes workloads
+    --enable-status-subresource    If enabled, uses status sub resource for crds
     --enable-analytics             send usage events to Google Analytics (default: true)
     --uninstall                    uninstall stash
     --purge                        purges stash crd objects and crds
@@ -100,6 +101,8 @@ $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0/hack/deploy/
     | bash -s -- --enable-validating-webhook=false --enable-mutating-webhook=false [--rbac]
 ```
 
+Stash 0.8.0 or later releases can use status sub resource for CustomResourceDefintions. This is enabled by default for Kubernetes 1.11.0 or later releases. To disable this feature, pass the `--enable-status-subresource=false` flag.
+
 </div>
 <div class="tab-pane fade" id="helm" role="tabpanel" aria-labelledby="helm-tab">
 
@@ -116,12 +119,20 @@ appscode/stash  0.7.0    0.7.0  Stash by AppsCode - Backup your Kubernetes Volum
 # Kubernetes 1.8.x
 $ helm install appscode/stash --name stash-operator --version 0.7.0 --namespace kube-system
 
-# Kubernetes 1.9.0 or later
+# Kubernetes 1.9.x - 1.10.x
 $ helm install appscode/stash --name stash-operator --version 0.7.0 \
   --namespace kube-system \
   --set apiserver.ca="$(onessl get kube-ca)" \
   --set apiserver.enableValidatingWebhook=true \
   --set apiserver.enableMutatingWebhook=true
+
+# Kubernetes 1.11.0 or later
+$ helm install appscode/stash --name stash-operator --version 0.7.0 \
+  --namespace kube-system \
+  --set apiserver.ca="$(onessl get kube-ca)" \
+  --set apiserver.enableValidatingWebhook=true \
+  --set apiserver.enableMutatingWebhook=true \
+  --set apiserver.enableStatusSubresource=true
 ```
 
 To install `onessl`, run the following commands:
@@ -152,11 +163,9 @@ To see the detailed configuration options, visit [here](https://github.com/appsc
 If you are installing Stash on a GKE cluster, you will need cluster admin permissions to install Stash operator. Run the following command to grant admin permision to the cluster.
 
 ```console
-# get current google identity
-$ gcloud info | grep Account
-Account: [user@example.org]
-
-$ kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=user@example.org
+$ kubectl create clusterrolebinding "cluster-admin-$(whoami)" \
+  --clusterrole=cluster-admin \
+  --user="$(gcloud config get-value core/account)"
 ```
 
 
@@ -185,12 +194,12 @@ Now, you are ready to [take your first backup](/docs/guides/README.md) using Sta
 
 
 ## Configuring RBAC
-Stash creates multiple CRDs: `Restic`, `Repository` and `Recovery`. Stash installer will create 2 user facing cluster roles:
+Stash introduces resources, such as, `Restic`, `Repository`, `Recovery` and `Snapshot`. Stash installer will create 2 user facing cluster roles:
 
 | ClusterRole         | Aggregates To | Desription                            |
 |---------------------|---------------|---------------------------------------|
 | appscode:stash:edit | admin, edit   | Allows edit access to Stash CRDs, intended to be granted within a namespace using a RoleBinding. |
-| appscode:stash:view | view           | Allows read-only access to Stash CRDs, intended to be granted within a namespace using a RoleBinding. |
+| appscode:stash:view | view          | Allows read-only access to Stash CRDs, intended to be granted within a namespace using a RoleBinding. |
 
 These user facing roles supports [ClusterRole Aggregation](https://kubernetes.io/docs/admin/authorization/rbac/#aggregated-clusterroles) feature in Kubernetes 1.9 or later clusters.
 

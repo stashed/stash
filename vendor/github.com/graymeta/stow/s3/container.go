@@ -1,13 +1,9 @@
 package s3
 
 import (
-	"bytes"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
-
-	"net/http"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -120,91 +116,42 @@ func (c *container) RemoveItem(id string) error {
 // content, and the size of the file. Many more attributes can be given to the
 // file, including metadata. Keeping it simple for now.
 func (c *container) Put(name string, r io.Reader, size int64, metadata map[string]interface{}) (stow.Item, error) {
-	switch file := r.(type) {
-	case *os.File:
-		uploader := s3manager.NewUploaderWithClient(c.client)
-
-		// Convert map[string]interface{} to map[string]*string
-		mdPrepped, err := prepMetadata(metadata)
-
-		// Perform an upload.
-		result, err := uploader.Upload(&s3manager.UploadInput{
-			Bucket:   aws.String(c.name),
-			Key:      aws.String(name),
-			Body:     file,
-			Metadata: mdPrepped,
-		})
-
-		if err != nil {
-			return nil, errors.Wrap(err, "Put, uploading object")
-		}
-
-		newItem := &item{
-			container: c,
-			client:    c.client,
-			properties: properties{
-				ETag: &result.UploadID,
-				Key:  &name,
-				// Owner        *s3.Owner
-				// StorageClass *string
-			},
-		}
-		if st, err := file.Stat(); err == nil && !st.IsDir() {
-			newItem.properties.Size = aws.Int64(st.Size())
-			newItem.properties.LastModified = aws.Time(st.ModTime())
-		}
-		return newItem, nil
-	}
-
-	content, err := ioutil.ReadAll(r)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to create or update item, reading content")
-	}
+	uploader := s3manager.NewUploaderWithClient(c.client)
 
 	// Convert map[string]interface{} to map[string]*string
 	mdPrepped, err := prepMetadata(metadata)
+
+	// Perform an upload.
+	result, err := uploader.Upload(&s3manager.UploadInput{
+		Bucket:   aws.String(c.name),
+		Key:      aws.String(name),
+		Body:     r,
+		Metadata: mdPrepped,
+	})
+
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to create or update item, preparing metadata")
+		return nil, errors.Wrap(err, "Put, uploading object")
 	}
 
-	// Get Content Type as string
-	// https://golang.org/pkg/net/http/#DetectContentType
-	contentType := http.DetectContentType(content)
-
-	params := &s3.PutObjectInput{
-		Bucket:        aws.String(c.name), // Required
-		Key:           aws.String(name),   // Required
-		ContentLength: aws.Int64(size),
-		ContentType:   &contentType,
-		Body:          bytes.NewReader(content),
-		Metadata:      mdPrepped, // map[string]*string
-	}
-
-	// Only Etag is returned.
-	response, err := c.client.PutObject(params)
-	if err != nil {
-		return nil, errors.Wrap(err, "RemoveItem, deleting object")
-	}
-	etag := cleanEtag(*response.ETag)
-
-	// Some fields are empty because this information isn't included in the response.
-	// May have to involve sending a request if we want more specific information.
-	// Keeping it simple for now.
-	// s3.Object info: https://github.com/aws/aws-sdk-go/blob/master/service/s3/api.go#L7092-L7107
-	// Response: https://github.com/aws/aws-sdk-go/blob/master/service/s3/api.go#L8193-L8227
 	newItem := &item{
 		container: c,
 		client:    c.client,
 		properties: properties{
-			ETag: &etag,
+			ETag: &result.UploadID,
 			Key:  &name,
-			Size: &size,
-			//LastModified *time.Time
-			//Owner        *s3.Owner
-			//StorageClass *string
+			// Owner        *s3.Owner
+			// StorageClass *string
 		},
 	}
-
+	switch file := r.(type) {
+	case *os.File:
+		if st, err := file.Stat(); err == nil && !st.IsDir() {
+			newItem.properties.Size = aws.Int64(st.Size())
+			newItem.properties.LastModified = aws.Time(st.ModTime())
+		}
+	default:
+		newItem.properties.Size = aws.Int64(size)
+	}
 	return newItem, nil
 }
 

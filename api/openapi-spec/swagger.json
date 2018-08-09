@@ -3280,51 +3280,6 @@
         }
       }
     },
-    "com.github.appscode.stash.apis.stash.v1alpha1.AzureSpec": {
-      "properties": {
-        "container": {
-          "type": "string"
-        },
-        "prefix": {
-          "type": "string"
-        }
-      }
-    },
-    "com.github.appscode.stash.apis.stash.v1alpha1.B2Spec": {
-      "properties": {
-        "bucket": {
-          "type": "string"
-        },
-        "prefix": {
-          "type": "string"
-        }
-      }
-    },
-    "com.github.appscode.stash.apis.stash.v1alpha1.Backend": {
-      "properties": {
-        "azure": {
-          "$ref": "#/definitions/com.github.appscode.stash.apis.stash.v1alpha1.AzureSpec"
-        },
-        "b2": {
-          "$ref": "#/definitions/com.github.appscode.stash.apis.stash.v1alpha1.B2Spec"
-        },
-        "gcs": {
-          "$ref": "#/definitions/com.github.appscode.stash.apis.stash.v1alpha1.GCSSpec"
-        },
-        "local": {
-          "$ref": "#/definitions/com.github.appscode.stash.apis.stash.v1alpha1.LocalSpec"
-        },
-        "s3": {
-          "$ref": "#/definitions/com.github.appscode.stash.apis.stash.v1alpha1.S3Spec"
-        },
-        "storageSecretName": {
-          "type": "string"
-        },
-        "swift": {
-          "$ref": "#/definitions/com.github.appscode.stash.apis.stash.v1alpha1.SwiftSpec"
-        }
-      }
-    },
     "com.github.appscode.stash.apis.stash.v1alpha1.FileGroup": {
       "properties": {
         "path": {
@@ -3341,134 +3296,6 @@
           "items": {
             "type": "string"
           }
-        }
-      }
-    },
-    "com.github.appscode.stash.apis.stash.v1alpha1.GCSSpec": {
-      "properties": {
-        "bucket": {
-          "type": "string"
-        },
-        "prefix": {
-          "type": "string"
-        }
-      }
-    },
-    "com.github.appscode.stash.apis.stash.v1alpha1.LocalSpec": {
-      "properties": {
-        "awsElasticBlockStore": {
-          "description": "AWSElasticBlockStore represents an AWS Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore",
-          "$ref": "#/definitions/io.k8s.api.core.v1.AWSElasticBlockStoreVolumeSource"
-        },
-        "azureDisk": {
-          "description": "AzureDisk represents an Azure Data Disk mount on the host and bind mount to the pod.",
-          "$ref": "#/definitions/io.k8s.api.core.v1.AzureDiskVolumeSource"
-        },
-        "azureFile": {
-          "description": "AzureFile represents an Azure File Service mount on the host and bind mount to the pod.",
-          "$ref": "#/definitions/io.k8s.api.core.v1.AzureFileVolumeSource"
-        },
-        "cephfs": {
-          "description": "CephFS represents a Ceph FS mount on the host that shares a pod's lifetime",
-          "$ref": "#/definitions/io.k8s.api.core.v1.CephFSVolumeSource"
-        },
-        "cinder": {
-          "description": "Cinder represents a cinder volume attached and mounted on kubelets host machine More info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md",
-          "$ref": "#/definitions/io.k8s.api.core.v1.CinderVolumeSource"
-        },
-        "configMap": {
-          "description": "ConfigMap represents a configMap that should populate this volume",
-          "$ref": "#/definitions/io.k8s.api.core.v1.ConfigMapVolumeSource"
-        },
-        "downwardAPI": {
-          "description": "DownwardAPI represents downward API about the pod that should populate this volume",
-          "$ref": "#/definitions/io.k8s.api.core.v1.DownwardAPIVolumeSource"
-        },
-        "emptyDir": {
-          "description": "EmptyDir represents a temporary directory that shares a pod's lifetime. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir",
-          "$ref": "#/definitions/io.k8s.api.core.v1.EmptyDirVolumeSource"
-        },
-        "fc": {
-          "description": "FC represents a Fibre Channel resource that is attached to a kubelet's host machine and then exposed to the pod.",
-          "$ref": "#/definitions/io.k8s.api.core.v1.FCVolumeSource"
-        },
-        "flexVolume": {
-          "description": "FlexVolume represents a generic volume resource that is provisioned/attached using an exec based plugin.",
-          "$ref": "#/definitions/io.k8s.api.core.v1.FlexVolumeSource"
-        },
-        "flocker": {
-          "description": "Flocker represents a Flocker volume attached to a kubelet's host machine. This depends on the Flocker control service being running",
-          "$ref": "#/definitions/io.k8s.api.core.v1.FlockerVolumeSource"
-        },
-        "gcePersistentDisk": {
-          "description": "GCEPersistentDisk represents a GCE Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk",
-          "$ref": "#/definitions/io.k8s.api.core.v1.GCEPersistentDiskVolumeSource"
-        },
-        "gitRepo": {
-          "description": "GitRepo represents a git repository at a particular revision.",
-          "$ref": "#/definitions/io.k8s.api.core.v1.GitRepoVolumeSource"
-        },
-        "glusterfs": {
-          "description": "Glusterfs represents a Glusterfs mount on the host that shares a pod's lifetime. More info: https://releases.k8s.io/HEAD/examples/volumes/glusterfs/README.md",
-          "$ref": "#/definitions/io.k8s.api.core.v1.GlusterfsVolumeSource"
-        },
-        "hostPath": {
-          "description": "HostPath represents a pre-existing file or directory on the host machine that is directly exposed to the container. This is generally used for system agents or other privileged things that are allowed to see the host machine. Most containers will NOT need this. More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath",
-          "$ref": "#/definitions/io.k8s.api.core.v1.HostPathVolumeSource"
-        },
-        "iscsi": {
-          "description": "ISCSI represents an ISCSI Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://releases.k8s.io/HEAD/examples/volumes/iscsi/README.md",
-          "$ref": "#/definitions/io.k8s.api.core.v1.ISCSIVolumeSource"
-        },
-        "mountPath": {
-          "type": "string"
-        },
-        "nfs": {
-          "description": "NFS represents an NFS mount on the host that shares a pod's lifetime More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs",
-          "$ref": "#/definitions/io.k8s.api.core.v1.NFSVolumeSource"
-        },
-        "persistentVolumeClaim": {
-          "description": "PersistentVolumeClaimVolumeSource represents a reference to a PersistentVolumeClaim in the same namespace. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims",
-          "$ref": "#/definitions/io.k8s.api.core.v1.PersistentVolumeClaimVolumeSource"
-        },
-        "photonPersistentDisk": {
-          "description": "PhotonPersistentDisk represents a PhotonController persistent disk attached and mounted on kubelets host machine",
-          "$ref": "#/definitions/io.k8s.api.core.v1.PhotonPersistentDiskVolumeSource"
-        },
-        "portworxVolume": {
-          "description": "PortworxVolume represents a portworx volume attached and mounted on kubelets host machine",
-          "$ref": "#/definitions/io.k8s.api.core.v1.PortworxVolumeSource"
-        },
-        "projected": {
-          "description": "Items for all in one resources secrets, configmaps, and downward API",
-          "$ref": "#/definitions/io.k8s.api.core.v1.ProjectedVolumeSource"
-        },
-        "quobyte": {
-          "description": "Quobyte represents a Quobyte mount on the host that shares a pod's lifetime",
-          "$ref": "#/definitions/io.k8s.api.core.v1.QuobyteVolumeSource"
-        },
-        "rbd": {
-          "description": "RBD represents a Rados Block Device mount on the host that shares a pod's lifetime. More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md",
-          "$ref": "#/definitions/io.k8s.api.core.v1.RBDVolumeSource"
-        },
-        "scaleIO": {
-          "description": "ScaleIO represents a ScaleIO persistent volume attached and mounted on Kubernetes nodes.",
-          "$ref": "#/definitions/io.k8s.api.core.v1.ScaleIOVolumeSource"
-        },
-        "secret": {
-          "description": "Secret represents a secret that should populate this volume. More info: https://kubernetes.io/docs/concepts/storage/volumes#secret",
-          "$ref": "#/definitions/io.k8s.api.core.v1.SecretVolumeSource"
-        },
-        "storageos": {
-          "description": "StorageOS represents a StorageOS volume attached and mounted on Kubernetes nodes.",
-          "$ref": "#/definitions/io.k8s.api.core.v1.StorageOSVolumeSource"
-        },
-        "subPath": {
-          "type": "string"
-        },
-        "vsphereVolume": {
-          "description": "VsphereVolume represents a vSphere volume attached and mounted on kubelets host machine",
-          "$ref": "#/definitions/io.k8s.api.core.v1.VsphereVirtualDiskVolumeSource"
         }
       }
     },
@@ -3555,7 +3382,7 @@
         "recoveredVolumes": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/com.github.appscode.stash.apis.stash.v1alpha1.LocalSpec"
+            "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.v1.LocalSpec"
           }
         },
         "repository": {
@@ -3639,7 +3466,7 @@
     "com.github.appscode.stash.apis.stash.v1alpha1.RepositorySpec": {
       "properties": {
         "backend": {
-          "$ref": "#/definitions/com.github.appscode.stash.apis.stash.v1alpha1.Backend"
+          "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.v1.Backend"
         },
         "wipeOut": {
           "description": "If true, delete respective restic repository",
@@ -3723,7 +3550,7 @@
     "com.github.appscode.stash.apis.stash.v1alpha1.ResticSpec": {
       "properties": {
         "backend": {
-          "$ref": "#/definitions/com.github.appscode.stash.apis.stash.v1alpha1.Backend"
+          "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.v1.Backend"
         },
         "fileGroups": {
           "type": "array",
@@ -3824,29 +3651,6 @@
         },
         "prune": {
           "type": "boolean"
-        }
-      }
-    },
-    "com.github.appscode.stash.apis.stash.v1alpha1.S3Spec": {
-      "properties": {
-        "bucket": {
-          "type": "string"
-        },
-        "endpoint": {
-          "type": "string"
-        },
-        "prefix": {
-          "type": "string"
-        }
-      }
-    },
-    "com.github.appscode.stash.apis.stash.v1alpha1.SwiftSpec": {
-      "properties": {
-        "container": {
-          "type": "string"
-        },
-        "prefix": {
-          "type": "string"
         }
       }
     },
@@ -3977,6 +3781,10 @@
         "readOnly": {
           "description": "Optional: Defaults to false (read/write). ReadOnly here will force the ReadOnly setting in VolumeMounts. More info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md",
           "type": "boolean"
+        },
+        "secretRef": {
+          "description": "Optional: points to a secret object containing parameters used to connect to OpenStack.",
+          "$ref": "#/definitions/io.k8s.api.core.v1.LocalObjectReference"
         },
         "volumeID": {
           "description": "volume id used to identify the volume in cinder More info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md",
@@ -4198,7 +4006,7 @@
       }
     },
     "io.k8s.api.core.v1.GitRepoVolumeSource": {
-      "description": "Represents a volume that is populated with the contents of a git repository. Git repo volumes do not support ownership management. Git repo volumes support SELinux relabeling.",
+      "description": "Represents a volume that is populated with the contents of a git repository. Git repo volumes do not support ownership management. Git repo volumes support SELinux relabeling.\n\nDEPRECATED: GitRepo is deprecated. To provision a container with a git repo, mount an EmptyDir into an InitContainer that clones the repo using git, then mount the EmptyDir into the Pod's container.",
       "required": [
         "repository"
       ],
@@ -4692,6 +4500,27 @@
         }
       }
     },
+    "io.k8s.api.core.v1.ServiceAccountTokenProjection": {
+      "description": "ServiceAccountTokenProjection represents a projected service account token volume. This projection can be used to insert a service account token into the pods runtime filesystem for use against APIs (Kubernetes API Server or otherwise).",
+      "required": [
+        "path"
+      ],
+      "properties": {
+        "audience": {
+          "description": "Audience is the intended audience of the token. A recipient of a token must identify itself with an identifier specified in the audience of the token, and otherwise should reject the token. The audience defaults to the identifier of the apiserver.",
+          "type": "string"
+        },
+        "expirationSeconds": {
+          "description": "ExpirationSeconds is the requested duration of validity of the service account token. As the token approaches expiration, the kubelet volume plugin will proactively rotate the service account token. The kubelet will start trying to rotate the token if the token is older than 80 percent of its time to live or if the token is older than 24 hours.Defaults to 1 hour and must be at least 10 minutes.",
+          "type": "integer",
+          "format": "int64"
+        },
+        "path": {
+          "description": "Path is the path relative to the mount point of the file to project the token into.",
+          "type": "string"
+        }
+      }
+    },
     "io.k8s.api.core.v1.StorageOSVolumeSource": {
       "description": "Represents a StorageOS persistent volume resource.",
       "properties": {
@@ -4760,6 +4589,10 @@
         "secret": {
           "description": "information about the secret data to project",
           "$ref": "#/definitions/io.k8s.api.core.v1.SecretProjection"
+        },
+        "serviceAccountToken": {
+          "description": "information about the serviceAccountToken data to project",
+          "$ref": "#/definitions/io.k8s.api.core.v1.ServiceAccountTokenProjection"
         }
       }
     },
@@ -4794,8 +4627,7 @@
       "description": "APIGroup contains the name, the supported versions, and the preferred version of a group.",
       "required": [
         "name",
-        "versions",
-        "serverAddressByClientCIDRs"
+        "versions"
       ],
       "properties": {
         "apiVersion": {
@@ -5415,6 +5247,202 @@
           "description": "Raw is the underlying serialization of this object.",
           "type": "string",
           "format": "byte"
+        }
+      }
+    },
+    "xyz.kmodules.objectstore-api.api.v1.AzureSpec": {
+      "properties": {
+        "container": {
+          "type": "string"
+        },
+        "prefix": {
+          "type": "string"
+        }
+      }
+    },
+    "xyz.kmodules.objectstore-api.api.v1.B2Spec": {
+      "properties": {
+        "bucket": {
+          "type": "string"
+        },
+        "prefix": {
+          "type": "string"
+        }
+      }
+    },
+    "xyz.kmodules.objectstore-api.api.v1.Backend": {
+      "properties": {
+        "azure": {
+          "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.v1.AzureSpec"
+        },
+        "b2": {
+          "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.v1.B2Spec"
+        },
+        "gcs": {
+          "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.v1.GCSSpec"
+        },
+        "local": {
+          "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.v1.LocalSpec"
+        },
+        "s3": {
+          "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.v1.S3Spec"
+        },
+        "storageSecretName": {
+          "type": "string"
+        },
+        "swift": {
+          "$ref": "#/definitions/xyz.kmodules.objectstore-api.api.v1.SwiftSpec"
+        }
+      }
+    },
+    "xyz.kmodules.objectstore-api.api.v1.GCSSpec": {
+      "properties": {
+        "bucket": {
+          "type": "string"
+        },
+        "prefix": {
+          "type": "string"
+        }
+      }
+    },
+    "xyz.kmodules.objectstore-api.api.v1.LocalSpec": {
+      "properties": {
+        "awsElasticBlockStore": {
+          "description": "AWSElasticBlockStore represents an AWS Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore",
+          "$ref": "#/definitions/io.k8s.api.core.v1.AWSElasticBlockStoreVolumeSource"
+        },
+        "azureDisk": {
+          "description": "AzureDisk represents an Azure Data Disk mount on the host and bind mount to the pod.",
+          "$ref": "#/definitions/io.k8s.api.core.v1.AzureDiskVolumeSource"
+        },
+        "azureFile": {
+          "description": "AzureFile represents an Azure File Service mount on the host and bind mount to the pod.",
+          "$ref": "#/definitions/io.k8s.api.core.v1.AzureFileVolumeSource"
+        },
+        "cephfs": {
+          "description": "CephFS represents a Ceph FS mount on the host that shares a pod's lifetime",
+          "$ref": "#/definitions/io.k8s.api.core.v1.CephFSVolumeSource"
+        },
+        "cinder": {
+          "description": "Cinder represents a cinder volume attached and mounted on kubelets host machine More info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md",
+          "$ref": "#/definitions/io.k8s.api.core.v1.CinderVolumeSource"
+        },
+        "configMap": {
+          "description": "ConfigMap represents a configMap that should populate this volume",
+          "$ref": "#/definitions/io.k8s.api.core.v1.ConfigMapVolumeSource"
+        },
+        "downwardAPI": {
+          "description": "DownwardAPI represents downward API about the pod that should populate this volume",
+          "$ref": "#/definitions/io.k8s.api.core.v1.DownwardAPIVolumeSource"
+        },
+        "emptyDir": {
+          "description": "EmptyDir represents a temporary directory that shares a pod's lifetime. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir",
+          "$ref": "#/definitions/io.k8s.api.core.v1.EmptyDirVolumeSource"
+        },
+        "fc": {
+          "description": "FC represents a Fibre Channel resource that is attached to a kubelet's host machine and then exposed to the pod.",
+          "$ref": "#/definitions/io.k8s.api.core.v1.FCVolumeSource"
+        },
+        "flexVolume": {
+          "description": "FlexVolume represents a generic volume resource that is provisioned/attached using an exec based plugin.",
+          "$ref": "#/definitions/io.k8s.api.core.v1.FlexVolumeSource"
+        },
+        "flocker": {
+          "description": "Flocker represents a Flocker volume attached to a kubelet's host machine. This depends on the Flocker control service being running",
+          "$ref": "#/definitions/io.k8s.api.core.v1.FlockerVolumeSource"
+        },
+        "gcePersistentDisk": {
+          "description": "GCEPersistentDisk represents a GCE Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk",
+          "$ref": "#/definitions/io.k8s.api.core.v1.GCEPersistentDiskVolumeSource"
+        },
+        "gitRepo": {
+          "description": "GitRepo represents a git repository at a particular revision. DEPRECATED: GitRepo is deprecated. To provision a container with a git repo, mount an EmptyDir into an InitContainer that clones the repo using git, then mount the EmptyDir into the Pod's container.",
+          "$ref": "#/definitions/io.k8s.api.core.v1.GitRepoVolumeSource"
+        },
+        "glusterfs": {
+          "description": "Glusterfs represents a Glusterfs mount on the host that shares a pod's lifetime. More info: https://releases.k8s.io/HEAD/examples/volumes/glusterfs/README.md",
+          "$ref": "#/definitions/io.k8s.api.core.v1.GlusterfsVolumeSource"
+        },
+        "hostPath": {
+          "description": "HostPath represents a pre-existing file or directory on the host machine that is directly exposed to the container. This is generally used for system agents or other privileged things that are allowed to see the host machine. Most containers will NOT need this. More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath",
+          "$ref": "#/definitions/io.k8s.api.core.v1.HostPathVolumeSource"
+        },
+        "iscsi": {
+          "description": "ISCSI represents an ISCSI Disk resource that is attached to a kubelet's host machine and then exposed to the pod. More info: https://releases.k8s.io/HEAD/examples/volumes/iscsi/README.md",
+          "$ref": "#/definitions/io.k8s.api.core.v1.ISCSIVolumeSource"
+        },
+        "mountPath": {
+          "type": "string"
+        },
+        "nfs": {
+          "description": "NFS represents an NFS mount on the host that shares a pod's lifetime More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs",
+          "$ref": "#/definitions/io.k8s.api.core.v1.NFSVolumeSource"
+        },
+        "persistentVolumeClaim": {
+          "description": "PersistentVolumeClaimVolumeSource represents a reference to a PersistentVolumeClaim in the same namespace. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims",
+          "$ref": "#/definitions/io.k8s.api.core.v1.PersistentVolumeClaimVolumeSource"
+        },
+        "photonPersistentDisk": {
+          "description": "PhotonPersistentDisk represents a PhotonController persistent disk attached and mounted on kubelets host machine",
+          "$ref": "#/definitions/io.k8s.api.core.v1.PhotonPersistentDiskVolumeSource"
+        },
+        "portworxVolume": {
+          "description": "PortworxVolume represents a portworx volume attached and mounted on kubelets host machine",
+          "$ref": "#/definitions/io.k8s.api.core.v1.PortworxVolumeSource"
+        },
+        "projected": {
+          "description": "Items for all in one resources secrets, configmaps, and downward API",
+          "$ref": "#/definitions/io.k8s.api.core.v1.ProjectedVolumeSource"
+        },
+        "quobyte": {
+          "description": "Quobyte represents a Quobyte mount on the host that shares a pod's lifetime",
+          "$ref": "#/definitions/io.k8s.api.core.v1.QuobyteVolumeSource"
+        },
+        "rbd": {
+          "description": "RBD represents a Rados Block Device mount on the host that shares a pod's lifetime. More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md",
+          "$ref": "#/definitions/io.k8s.api.core.v1.RBDVolumeSource"
+        },
+        "scaleIO": {
+          "description": "ScaleIO represents a ScaleIO persistent volume attached and mounted on Kubernetes nodes.",
+          "$ref": "#/definitions/io.k8s.api.core.v1.ScaleIOVolumeSource"
+        },
+        "secret": {
+          "description": "Secret represents a secret that should populate this volume. More info: https://kubernetes.io/docs/concepts/storage/volumes#secret",
+          "$ref": "#/definitions/io.k8s.api.core.v1.SecretVolumeSource"
+        },
+        "storageos": {
+          "description": "StorageOS represents a StorageOS volume attached and mounted on Kubernetes nodes.",
+          "$ref": "#/definitions/io.k8s.api.core.v1.StorageOSVolumeSource"
+        },
+        "subPath": {
+          "type": "string"
+        },
+        "vsphereVolume": {
+          "description": "VsphereVolume represents a vSphere volume attached and mounted on kubelets host machine",
+          "$ref": "#/definitions/io.k8s.api.core.v1.VsphereVirtualDiskVolumeSource"
+        }
+      }
+    },
+    "xyz.kmodules.objectstore-api.api.v1.S3Spec": {
+      "properties": {
+        "bucket": {
+          "type": "string"
+        },
+        "endpoint": {
+          "type": "string"
+        },
+        "prefix": {
+          "type": "string"
+        }
+      }
+    },
+    "xyz.kmodules.objectstore-api.api.v1.SwiftSpec": {
+      "properties": {
+        "container": {
+          "type": "string"
+        },
+        "prefix": {
+          "type": "string"
         }
       }
     }

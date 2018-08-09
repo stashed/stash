@@ -1,7 +1,10 @@
 package snapshot
 
 import (
+	"context"
+
 	"github.com/appscode/stash/apis/repositories"
+	repov1alpha1 "github.com/appscode/stash/apis/repositories/v1alpha1"
 	stash "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/client/clientset/versioned"
 	"github.com/appscode/stash/pkg/util"
@@ -10,6 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	apirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/client-go/kubernetes"
@@ -22,9 +26,11 @@ type REST struct {
 	config      *restconfig.Config
 }
 
+var _ rest.Scoper = &REST{}
 var _ rest.Getter = &REST{}
 var _ rest.Lister = &REST{}
 var _ rest.GracefulDeleter = &REST{}
+var _ rest.GroupVersionKindProvider = &REST{}
 
 func NewREST(config *restconfig.Config) *REST {
 	return &REST{
@@ -34,11 +40,19 @@ func NewREST(config *restconfig.Config) *REST {
 	}
 }
 
+func (r *REST) NamespaceScoped() bool {
+	return true
+}
+
 func (r *REST) New() runtime.Object {
 	return &repositories.Snapshot{}
 }
 
-func (r *REST) Get(ctx apirequest.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
+func (r *REST) GroupVersionKind(containingGV schema.GroupVersion) schema.GroupVersionKind {
+	return repov1alpha1.SchemeGroupVersion.WithKind(repov1alpha1.ResourceKindSnapshot)
+}
+
+func (r *REST) Get(ctx context.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
 	ns, ok := apirequest.NamespaceFrom(ctx)
 	if !ok {
 		return nil, errors.New("missing namespace")
@@ -80,7 +94,7 @@ func (r *REST) NewList() runtime.Object {
 	return &repositories.SnapshotList{}
 }
 
-func (r *REST) List(ctx apirequest.Context, options *metainternalversion.ListOptions) (runtime.Object, error) {
+func (r *REST) List(ctx context.Context, options *metainternalversion.ListOptions) (runtime.Object, error) {
 	ns, ok := apirequest.NamespaceFrom(ctx)
 	if !ok {
 		return nil, errors.New("missing namespace")
@@ -129,7 +143,7 @@ func (r *REST) List(ctx apirequest.Context, options *metainternalversion.ListOpt
 	return snapshotList, nil
 }
 
-func (r *REST) Delete(ctx apirequest.Context, name string, options *metav1.DeleteOptions) (runtime.Object, bool, error) {
+func (r *REST) Delete(ctx context.Context, name string, options *metav1.DeleteOptions) (runtime.Object, bool, error) {
 	ns, ok := apirequest.NamespaceFrom(ctx)
 	if !ok {
 		return nil, false, errors.New("missing namespace")

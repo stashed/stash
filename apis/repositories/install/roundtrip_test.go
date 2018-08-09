@@ -19,7 +19,7 @@ package install
 import (
 	"testing"
 
-	roundtrip "k8s.io/apimachinery/pkg/api/testing/roundtrip"
+	"k8s.io/apimachinery/pkg/api/testing/roundtrip"
 )
 
 func TestRoundTripTypes(t *testing.T) {
