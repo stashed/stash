@@ -51,7 +51,7 @@ Here,
 
 >Note that, here we have used `hostPath` as `recoveredVolumes` only for demonstration purpose. You can use `PVC`, `gcePersistentDisk` and other Kubernetes volumes to recover your data. Here are some examples,
 > 1. [Recover to gcePersistentDisk](/docs/guides/gke.md#recover-to-gce-persistent-disk)
-> 2. [Recover to PersistentVolumeClaim](/docs/guides/gke.md##recover-to-persistentvolumeclaim)
+> 2. [Recover to PersistentVolumeClaim](/docs/guides/gke.md#recover-to-persistentvolumeclaim)
 > 3. [Recover to Rook PVC](/docs/guides/rook.md#recover-to-persistentvolumeclaim)
 
 Stash operator watches for `Recovery` objects using Kubernetes api. It collects required snapshot information from the specified `Restic` object. Then it creates a recovery job that performs the recovery guides. On completion, job and associated pods are deleted by stash operator. To verify recovery, we can check the `Recovery` status.

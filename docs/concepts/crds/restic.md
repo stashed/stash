@@ -122,7 +122,7 @@ This prefix is particularly helpful when you are using a single bucket to backup
 1. You have two or more workload with the same name but in different namespaces.
 2. You have two or more cluster in different regions with the exact set-up. i.e. workload names are same in all cluster.
 
-In these scenarios, `Restic` crd without a prefix will cause conflict in the repository directory of the backend. You can overcome it using a different prefix for each workload.
+In these scenarios, `Restic` crd without a prefix will cause conflict in the repository directory in the bucket. You can overcome it using a different prefix for each workload.
 
 ## Workload Annotations
 For each workload where a sidecar container is added by Stash operator, the following annotations are added:
