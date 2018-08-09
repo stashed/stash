@@ -344,8 +344,8 @@ README.md
 At first, delete `Restic` crd so that it does not lock the restic repository while we are trying to recover from it.
 
 ```console
-$ kubectl delete restic rook-restic
-restic "rook-restic" deleted
+$ kubectl delete restic gcs-restic
+restic "gcs-restic" deleted
 ```
 
 Now, create a `PersistentVolumeClaim`,
