@@ -116,6 +116,8 @@ func (c *Controller) Backup() error {
 					eventer.EventReasonFailedSetup,
 					err.Error(),
 				)
+			} else {
+				log.Errorf("Failed to write event on %s %s. Reason: %s\n ", restic.Kind, restic.Name, rerr.Error())
 			}
 		}
 		return err
@@ -146,6 +148,8 @@ func (c *Controller) Backup() error {
 				eventer.EventReasonFailedCronJob,
 				err.Error(),
 			)
+		} else {
+			log.Errorf("Failed to write event on %s %s. Reason: %s\n ", repository.Kind, repository.Name, rerr.Error())
 		}
 		return err
 	}
@@ -165,6 +169,8 @@ func (c *Controller) Backup() error {
 					eventer.EventReasonFailedCronJob,
 					err.Error(),
 				)
+			} else {
+				log.Errorf("Failed to write event on %s %s. Reason: %s\n ", repository.Kind, repository.Name, rerr.Error())
 			}
 			return err
 		}
@@ -191,6 +197,8 @@ func (c *Controller) Backup() error {
 				eventer.EventReasonCheckJobCreated,
 				fmt.Sprintf("Created check job: %s", job.Name),
 			)
+		} else {
+			log.Errorf("Failed to write event on %s %s. Reason: %s\n ", repository.Kind, repository.Name, rerr.Error())
 		}
 	} else {
 		log.Infoln("Check job already exists, skipping creation:", job.Name)
@@ -204,6 +212,8 @@ func (c *Controller) Backup() error {
 				eventer.EventReasonCheckJobCreated,
 				fmt.Sprintf("Check job already exists, skipping creation: %s", job.Name),
 			)
+		} else {
+			log.Errorf("Failed to write event on %s %s. Reason: %s\n ", repository.Kind, repository.Name, rerr.Error())
 		}
 	}
 	return nil
@@ -330,6 +340,8 @@ func (c *Controller) runResticBackup(restic *api.Restic, repository *api.Reposit
 					eventer.EventReasonFailedToBackup,
 					fmt.Sprintf("Backup failed, reason: %s", err),
 				)
+			} else {
+				log.Errorf("Failed to write event on %s %s. Reason: %s\n ", repository.Kind, repository.Name, rerr.Error())
 			}
 			return
 		} else {
@@ -344,6 +356,8 @@ func (c *Controller) runResticBackup(restic *api.Restic, repository *api.Reposit
 					eventer.EventReasonSuccessfulBackup,
 					fmt.Sprintf("Backed up pod: %s, path: %s", hostname, fg.Path),
 				)
+			} else {
+				log.Errorf("Failed to write event on %s %s. Reason: %s\n ", repository.Kind, repository.Name, rerr.Error())
 			}
 		}
 
@@ -361,6 +375,8 @@ func (c *Controller) runResticBackup(restic *api.Restic, repository *api.Reposit
 					eventer.EventReasonFailedToRetention,
 					fmt.Sprintf("Failed to forget old snapshots, reason: %s", err),
 				)
+			} else {
+				log.Errorf("Failed to write event on %s %s. Reason: %s\n ", repository.Kind, repository.Name, rerr.Error())
 			}
 			return
 		}

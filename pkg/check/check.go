@@ -3,6 +3,7 @@ package check
 import (
 	"fmt"
 
+	"github.com/appscode/go/log"
 	cs "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/cli"
 	"github.com/appscode/stash/pkg/eventer"
@@ -56,6 +57,8 @@ func (c *Controller) Run() (err error) {
 					eventer.EventReasonFailedToCheck,
 					fmt.Sprintf("Check failed for pod %s, reason: %s\n", c.opt.HostName, err),
 				)
+			} else {
+				log.Errorf("Failed to write event on %s %s. Reason: %s\n ", restic.Kind, restic.Name, rerr.Error())
 			}
 		} else {
 			ref, rerr := reference.GetReference(scheme.Scheme, restic)
@@ -68,6 +71,8 @@ func (c *Controller) Run() (err error) {
 					eventer.EventReasonSuccessfulCheck,
 					fmt.Sprintf("Check successful for pod: %s\n", c.opt.HostName),
 				)
+			} else {
+				log.Errorf("Failed to write event on %s %s. Reason: %s\n ", restic.Kind, restic.Name, rerr.Error())
 			}
 		}
 	}()

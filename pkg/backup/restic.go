@@ -73,6 +73,8 @@ func (c *Controller) runResticScheduler(key string) error {
 					"Failed to start Stash scheduler reason %v",
 					err,
 				)
+			} else {
+				log.Errorf("Failed to write event on %s %s. Reason: %s\n ", r.Kind, r.Name, rerr.Error())
 			}
 			log.Errorln(err)
 		}

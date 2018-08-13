@@ -150,6 +150,7 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 	job, err = c.kubeClient.BatchV1().Jobs(rec.Namespace).Create(job)
 	if err != nil {
 		if kerr.IsAlreadyExists(err) {
+			log.Infoln("Skipping to create recovery job. Reason: job already exist")
 			return nil
 		}
 		log.Errorln(err)
