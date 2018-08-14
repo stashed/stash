@@ -76,7 +76,7 @@ func (c *Controller) Run() {
 				fmt.Sprintf("Failed to validate recovery %s, reason: %s", recovery.Name, err),
 			)
 		} else {
-			log.Errorf("Failed to write event on %s %s. Reason: %s\n ", recovery.Kind, recovery.Name, rerr.Error())
+			log.Errorf("Failed to write event on %s %s. Reason: %s\n ", recovery.Kind, recovery.Name, rerr)
 		}
 		return
 	}
@@ -98,7 +98,7 @@ func (c *Controller) Run() {
 				fmt.Sprintf("Failed to complete recovery %s, reason: %s", recovery.Name, err),
 			)
 		} else {
-			log.Errorf("Failed to write event on %s %s. Reason: %s\n ", recovery.Kind, recovery.Name, rerr.Error())
+			log.Errorf("Failed to write event on %s %s. Reason: %s\n ", recovery.Kind, recovery.Name, rerr)
 		}
 		return
 	}
@@ -120,7 +120,7 @@ func (c *Controller) Run() {
 			fmt.Sprintf("Recovery %s succeeded", recovery.Name),
 		)
 	} else {
-		log.Errorf("Failed to write event on %s %s. Reason: %s\n ", recovery.Kind, recovery.Name, rerr.Error())
+		log.Errorf("Failed to write event on %s %s. Reason: %s\n ", recovery.Kind, recovery.Name, rerr)
 	}
 }
 
@@ -177,7 +177,7 @@ func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
 					fmt.Sprintf("failed to recover FileGroup %s, reason: %v", path, err),
 				)
 			} else {
-				log.Errorf("Failed to write event on %s %s. Reason: %s\n ", recovery.Kind, recovery.Name, rerr.Error())
+				log.Errorf("Failed to write event on %s %s. Reason: %s\n ", recovery.Kind, recovery.Name, rerr)
 			}
 			stash_util.SetRecoveryStats(c.stashClient, recovery, path, d, api.RecoveryFailed)
 		} else {

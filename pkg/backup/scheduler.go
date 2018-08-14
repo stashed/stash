@@ -57,7 +57,7 @@ func (c *Controller) setupAndRunScheduler(stopBackup chan struct{}) error {
 					err.Error(),
 				)
 			} else {
-				log.Errorf("Failed to write event on %s %s. Reason: %s\n ", restic.Kind, restic.Name, rerr.Error())
+				log.Errorf("Failed to write event on %s %s. Reason: %s\n ", restic.Kind, restic.Name, rerr)
 			}
 		}
 		return err
@@ -127,7 +127,7 @@ func (c *Controller) configureScheduler(r *api.Restic) error {
 			if rerr == nil {
 				c.recorder.Event(ref, core.EventTypeWarning, eventer.EventReasonFailedCronJob, err.Error())
 			} else {
-				log.Errorf("Failed to write event on %s %s. Reason: %s\n ", r.Kind, r.Name, rerr.Error())
+				log.Errorf("Failed to write event on %s %s. Reason: %s\n ", r.Kind, r.Name, rerr)
 			}
 			log.Errorln(err)
 		}
@@ -216,7 +216,7 @@ func (c *Controller) checkOnceForScheduler() (err error) {
 				"Repository check failed for workload %s %s/%s. Reason: %v",
 				c.opt.Workload.Kind, c.opt.Namespace, c.opt.Workload.Name, err)
 		} else {
-			log.Errorf("Failed to write event on %s %s. Reason: %s\n ", repository.Kind, repository.Name, rerr.Error())
+			log.Errorf("Failed to write event on %s %s. Reason: %s\n ", repository.Kind, repository.Name, rerr)
 		}
 	}
 	return
