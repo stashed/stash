@@ -564,9 +564,18 @@ func GetRepoNameAndSnapshotID(snapshotName string) (repoName, snapshotId string,
 		err = errors.New("invalid snapshot name")
 		return
 	}
-	snapshotId = snapshotName[len(snapshotName)-SnapshotIDLength:]
+	tokens := strings.SplitN(snapshotName, "-", 2)
+	if len(tokens) < 2 {
+		err = errors.New("invalid snapshot name")
+		return
+	}
+	snapshotId = tokens[len(tokens)-1]
+	if len(snapshotId) != SnapshotIDLength {
+		err = errors.New("invalid snapshot name")
+		return
+	}
 
-	repoName = strings.TrimSuffix(snapshotName, snapshotName[len(snapshotName)-SnapshotIDLengthWithDashPrefix:])
+	repoName = strings.TrimSuffix(snapshotName, "-"+snapshotId)
 	return
 }
 
