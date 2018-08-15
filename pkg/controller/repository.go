@@ -55,7 +55,7 @@ func (c *StashController) runRepositoryInjector(key string) error {
 	if !exist {
 		glog.Warningf("Repository %s does not exist anymore\n", key)
 	} else {
-		glog.Infof("Sync/Add/Update for Repository %s\n", key)
+		glog.Infof("Sync/Add/Update for Repository %s", key)
 
 		repo := obj.(*api.Repository)
 

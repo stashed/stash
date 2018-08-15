@@ -75,7 +75,7 @@ func (c *StashController) runDeploymentInjector(key string) error {
 			return err
 		}
 	} else {
-		glog.Infof("Sync/Add/Update for Deployment %s\n", key)
+		glog.Infof("Sync/Add/Update for Deployment %s", key)
 
 		dp := obj.(*appsv1beta1.Deployment).DeepCopy()
 		dp.GetObjectKind().SetGroupVersionKind(appsv1beta1.SchemeGroupVersion.WithKind(api.KindDeployment))

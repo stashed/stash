@@ -60,7 +60,7 @@ func (c *Controller) runResticScheduler(key string) error {
 		c.cron.Stop()
 	} else {
 		r := obj.(*api.Restic)
-		glog.Infof("Sync/Add/Update for Restic %s\n", r.GetName())
+		glog.Infof("Sync/Add/Update for Restic %s", r.GetName())
 
 		err := c.configureScheduler(r)
 		if err != nil {
@@ -74,7 +74,7 @@ func (c *Controller) runResticScheduler(key string) error {
 					err,
 				)
 			} else {
-				log.Errorf("Failed to write event on %s %s. Reason: %s\n ", r.Kind, r.Name, rerr)
+				log.Errorf("Failed to write event on %s %s. Reason: %s", r.Kind, r.Name, rerr)
 			}
 			log.Errorln(err)
 		}

@@ -123,7 +123,7 @@ func (c *StashController) runRecoveryInjector(key string) error {
 	}
 
 	d := obj.(*api.Recovery)
-	glog.Infof("Sync/Add/Update for Recovery %s\n", d.GetName())
+	glog.Infof("Sync/Add/Update for Recovery %s", d.GetName())
 	return c.runRecoveryJob(d)
 }
 
@@ -172,13 +172,13 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 			return err
 		}
 		if err := c.ensureRecoveryRBAC(ref); err != nil {
-			err = fmt.Errorf("error ensuring rbac for recovery job %s, reason: %s\n", job.Name, err)
+			err = fmt.Errorf("error ensuring rbac for recovery job %s, reason: %s", job.Name, err)
 			eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, rec, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
 			return err
 		}
 
 		if err := c.ensureRepoReaderRBAC(ref, rec); err != nil {
-			err = fmt.Errorf("error ensuring repository-reader rbac for recovery job %s, reason: %s\n", job.Name, err)
+			err = fmt.Errorf("error ensuring repository-reader rbac for recovery job %s, reason: %s", job.Name, err)
 			eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, rec, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
 			return err
 		}
