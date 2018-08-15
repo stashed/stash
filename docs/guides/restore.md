@@ -49,6 +49,11 @@ Here,
 - `spec.paths` specifies the file-group paths that were backed up using `Restic`.
 - `spec.recoveredVolumes` indicates an array of volumes where snapshots will be recovered. Here, `mountPath` specifies where the volume will be mounted. Note that, `Recovery` recovers data in the same paths from where the backup was taken (specified in `spec.paths`). So, volumes must be mounted on those paths or their parent paths.
 
+>Note that, here we have used `hostPath` as `recoveredVolumes` only for demonstration purpose. You can use `PVC`, `gcePersistentDisk` and other Kubernetes volumes to recover your data. Here are some examples,
+> 1. [Recover to gcePersistentDisk](/docs/guides/gke.md#recover-to-gce-persistent-disk)
+> 2. [Recover to PersistentVolumeClaim](/docs/guides/gke.md#recover-to-persistentvolumeclaim)
+> 3. [Recover to Rook PVC](/docs/guides/rook.md#recover-to-persistentvolumeclaim)
+
 Stash operator watches for `Recovery` objects using Kubernetes api. It collects required snapshot information from the specified `Restic` object. Then it creates a recovery job that performs the recovery guides. On completion, job and associated pods are deleted by stash operator. To verify recovery, we can check the `Recovery` status.
 
 ```yaml

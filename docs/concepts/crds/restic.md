@@ -67,11 +67,11 @@ The default value for `spec.type` is `online`. For offline backup you need to sp
 
 ### spec.retentionPolicies
 
-`spec.retentionPolicies` defines a array of retention policies for old snapshots. Retention policy options are below.
+`spec.retentionPolicies` defines an array of retention policies for old snapshots. Retention policy options are below.
 
 | Policy        | Value   | restic forget flag | Description                                                                                        |
 |---------------|---------|--------------------|----------------------------------------------------------------------------------------------------|
-| `name`        | string  |                    | Name of retention policy provided by user. This is used in file groups to refer to a policy.       |
+| `name`        | string  |                    | Name of retention policy provided by users. This is used in file groups to refer to a policy.       |
 | `keepLast`    | integer | --keep-last n      | Never delete the n last (most recent) snapshots                                                    |
 | `keepHourly`  | integer | --keep-hourly n    | For the last n hours in which a snapshot was made, keep only the last snapshot for each hour.      |
 | `keepDaily`   | integer | --keep-daily n     | For the last n days which have one or more snapshots, only keep the last one for that day.         |
@@ -103,30 +103,47 @@ At each tick, `restic backup` and `restic forget` commands are run for each of t
 
 ## Backup Repository Structure
 
- - For workload kind `Deployment`, `Replicaset` and `ReplicationController` restic repo is created in the sub-directory `<WORKLOAD_KIND>/<WORKLOAD_NAME>`. For multiple replicas, only one repository is created and sidecar is added to only one pod selected by leader-election.
+ - For workload kind `Deployment`, `ReplicaSet` and `ReplicationController` restic repo is created in the sub-directory `<WORKLOAD_KIND>/<WORKLOAD_NAME>`. For multiple replicas, only one repository is created and sidecar is added to only one pod selected by leader-election.
  - For workload kind `Statefulset` restic repository is created in the sub-directory `<WORKLOAD_KIND>/<POD_NAME>`. For multiple replicas, multiple repositories are created and sidecar is added to all pods.
- - For workload kind `Daemonset` restic repository is created in the sub-directory `<WORKLOAD_KIND>/<WORKLOAD_NAME>/<NODE_NAME>`. For multiple replicas, multiple repositories are created and sidecar is added to all pods.
+ - For workload kind `DaemonSet` restic repository is created in the sub-directory `<WORKLOAD_KIND>/<WORKLOAD_NAME>/<NODE_NAME>`. Separate repositories are created for each node and sidecar is added to all pods.
+
+## Prefix for Repository Directory
+
+Stash allow the users to provide a prefix for the backup repository directory. You can provide the prefix using  `local.subPath` for [local bckend](/docs/guides/backends.md#local) and `<backend-type>.prefix` for [other backends](/docs/guides/backends.md#aws-s3) in `spec.backend` field of `Restic` crd.
+
+If you provide the prefix then the repository will be created in the following directory,
+
+1. `<PREFIX>/<WORKLOAD_KIND>/<WORKLOAD_NAME>` for Deployment, ReplicaSet, ReplicationController.
+2. `<PREFIX>/<WORKLOAD_KIND>/<POD_NAME>` for StatefulSets.
+3. `<PREFIX>/<WORKLOAD_KIND>/<WORKLOAD_NAME>/<NODE_NAME>` for DaemonSets.
+
+This prefix is particularly helpful when you are using a single bucket to backup your workload in the following scenario,
+
+1. You have two or more workload with the same name but in different namespaces.
+2. You have two or more cluster in different regions with the exact set-up. i.e. workload names are same in all cluster.
+
+In these scenarios, `Restic` crd without a prefix will cause conflict in the repository directory in the bucket. You can overcome it using a different prefix for each workload.
 
 ## Workload Annotations
 For each workload where a sidecar container is added by Stash operator, the following annotations are added:
 
  - `restic.appscode.com/last-applied-configuration` indicates the configuration of applied Restic CRD.
- - `restic.appscode.com/tag` indicates the tag of `appscode/stash` Docker image that was added as sidecar.
+ - `restic.appscode.com/tag` indicates the tag of `appscode/stash` Docker image that was added as a sidecar.
 
 ## Updating Restic
 The sidecar container watches for changes in the Restic fileGroups, backend and schedule. These changes are automatically applied on the next run of `restic` commands. If the selector of a Restic CRD is changed, Stash operator will update workload accordingly by adding/removing sidecars as required.
 
 ## Disable Restic
-To stop Restic from taking backup, you can do following things:
+To stop Restic from taking backup, you can do the following things:
 
 * Set `spec.paused: true` in Restic `yaml` and then update the Restic object. This means:
 
-  - Paused Restic CRDs will not applied to newly created wrokloads.
+  - Paused Restic CRDs will not be applied to newly created workloads.
   - Stash sidecar containers will not be removed from existing workloads but the sidecar will stop taking backup.
 
 * Delete the Restic CRD. Stash operator will remove the sidecar container from all matching workloads.
 
-* Change the labels of a workload. Stash operator will remove sidecar container from that workload. This way you can selectively stop backup of a Deployment, ReplicaSet etc.
+* Change the labels of a workload. Stash operator will remove the sidecar container from that workload. This way you can selectively stop backup of a Deployment, ReplicaSet etc.
 
 For more details about how to disable and resume Restic see [here](/docs/guides/backup.md#disable-backup).
 
