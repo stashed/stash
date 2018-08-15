@@ -71,7 +71,7 @@ The default value for `spec.type` is `online`. For offline backup you need to sp
 
 | Policy        | Value   | restic forget flag | Description                                                                                        |
 |---------------|---------|--------------------|----------------------------------------------------------------------------------------------------|
-| `name`        | string  |                    | Name of retention policy provided by the user. This is used in file groups to refer to a policy.       |
+| `name`        | string  |                    | Name of retention policy provided by users. This is used in file groups to refer to a policy.       |
 | `keepLast`    | integer | --keep-last n      | Never delete the n last (most recent) snapshots                                                    |
 | `keepHourly`  | integer | --keep-hourly n    | For the last n hours in which a snapshot was made, keep only the last snapshot for each hour.      |
 | `keepDaily`   | integer | --keep-daily n     | For the last n days which have one or more snapshots, only keep the last one for that day.         |
@@ -105,7 +105,7 @@ At each tick, `restic backup` and `restic forget` commands are run for each of t
 
  - For workload kind `Deployment`, `ReplicaSet` and `ReplicationController` restic repo is created in the sub-directory `<WORKLOAD_KIND>/<WORKLOAD_NAME>`. For multiple replicas, only one repository is created and sidecar is added to only one pod selected by leader-election.
  - For workload kind `Statefulset` restic repository is created in the sub-directory `<WORKLOAD_KIND>/<POD_NAME>`. For multiple replicas, multiple repositories are created and sidecar is added to all pods.
- - For workload kind `DaemonSet` restic repository is created in the sub-directory `<WORKLOAD_KIND>/<WORKLOAD_NAME>/<NODE_NAME>`. For multiple replicas, multiple repositories are created and sidecar is added to all pods.
+ - For workload kind `DaemonSet` restic repository is created in the sub-directory `<WORKLOAD_KIND>/<WORKLOAD_NAME>/<NODE_NAME>`. Separate repositories are created for each node and sidecar is added to all pods.
 
 ## Prefix for Repository Directory
 
