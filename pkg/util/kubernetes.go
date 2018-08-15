@@ -564,7 +564,7 @@ func GetRepoNameAndSnapshotID(snapshotName string) (repoName, snapshotId string,
 		err = errors.New("invalid snapshot name")
 		return
 	}
-	tokens := strings.Split(snapshotName, "-")
+	tokens := strings.SplitN(snapshotName, "-", 2)
 	if len(tokens) < 2 {
 		err = errors.New("invalid snapshot name")
 		return
