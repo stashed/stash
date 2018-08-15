@@ -66,7 +66,7 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 		// Below we will warm up our cache with a StatefulSet, so that we will see a delete for one d
 		glog.Warningf("StatefulSet %s does not exist anymore\n", key)
 	} else {
-		glog.Infof("Sync/Add/Update for StatefulSet %s\n", key)
+		glog.Infof("Sync/Add/Update for StatefulSet %s", key)
 
 		ss := obj.(*appsv1beta1.StatefulSet).DeepCopy()
 		ss.GetObjectKind().SetGroupVersionKind(appsv1beta1.SchemeGroupVersion.WithKind(api.KindStatefulSet))

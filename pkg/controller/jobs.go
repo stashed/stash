@@ -47,10 +47,10 @@ func (c *StashController) runJobInjector(key string) error {
 		return nil
 	} else {
 		job := obj.(*batch.Job)
-		glog.Infof("Sync/Add/Update for Job %s\n", job.GetName())
+		glog.Infof("Sync/Add/Update for Job %s", job.GetName())
 
 		if job.Status.Succeeded > 0 {
-			glog.Infof("Deleting succeeded job %s\n", job.GetName())
+			glog.Infof("Deleting succeeded job %s", job.GetName())
 
 			deletePolicy := metav1.DeletePropagationBackground
 			err := c.kubeClient.BatchV1().Jobs(job.Namespace).Delete(job.Name, &metav1.DeleteOptions{
@@ -61,7 +61,7 @@ func (c *StashController) runJobInjector(key string) error {
 				return fmt.Errorf("failed to delete job: %s, reason: %s", job.Name, err)
 			}
 
-			glog.Infof("Deleted stash job: %s\n", job.GetName())
+			glog.Infof("Deleted stash job: %s", job.GetName())
 
 			if c.EnableRBAC {
 				err = c.ensureRepoReaderRolebindingDeleted(&job.ObjectMeta)

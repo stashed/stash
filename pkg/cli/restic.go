@@ -204,7 +204,7 @@ func (w *ResticWrapper) run(cmd string, args []interface{}) error {
 	out, err := w.sh.Command(cmd, args...).CombinedOutput()
 	fmt.Println("Output: ", string(out))
 	if err != nil {
-		log.Errorf("Error running command '%s %s' output:\n%s\n", cmd, args, string(out))
+		log.Errorf("Error running command '%s %s' output:\n%s", cmd, args, string(out))
 		parts := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
 		if len(parts) > 1 {
 			parts = parts[len(parts)-1:]

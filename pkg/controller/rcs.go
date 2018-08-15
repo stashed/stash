@@ -75,7 +75,7 @@ func (c *StashController) runRCInjector(key string) error {
 			return err
 		}
 	} else {
-		glog.Infof("Sync/Add/Update for ReplicationController %s\n", key)
+		glog.Infof("Sync/Add/Update for ReplicationController %s", key)
 
 		rc := obj.(*core.ReplicationController).DeepCopy()
 		rc.GetObjectKind().SetGroupVersionKind(core.SchemeGroupVersion.WithKind(api.KindReplicationController))
