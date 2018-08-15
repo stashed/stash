@@ -2,6 +2,8 @@ package framework
 
 import (
 	"os/exec"
+	"path/filepath"
+	"strings"
 	"time"
 
 	rep "github.com/appscode/stash/apis/repositories/v1alpha1"
@@ -131,32 +133,58 @@ func (f *Framework) DeleteJobAndDependents(jobName string, recovery *api.Recover
 	}, time.Minute*3, time.Second*2).Should(BeTrue())
 }
 
-func CreateDemoDataInHostPath() error {
-	cmd := "minikube"
-
-	//create directories
-	args := []string{"ssh", "sudo mkdir -p /data/stash-test/demo-data/{dir-1,dir-2}"}
-	err := exec.Command(cmd, args...).Run()
+func (f *Framework) CreateDemoData(meta metav1.ObjectMeta) error {
+	err := f.CreateDirectory(meta, []string{TestSourceDataDir1, TestSourceDataDir2})
 	if err != nil {
 		return err
 	}
-
-	//create files in the directories
-	args = []string{"ssh", "sudo touch /data/stash-test/demo-data/{dir-1/file1.txt,dir-2/file2.txt}"}
-	err = exec.Command(cmd, args...).Run()
+	err = f.CreateDataOnMountedDir(meta, []string{TestSourceDataDir1}, "file1.txt")
+	if err != nil {
+		return err
+	}
+	err = f.CreateDataOnMountedDir(meta, []string{TestSourceDataDir2}, "file2.txt")
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func HostPathVolumeWithMultipleDirectory() []core.Volume {
+func (f *Framework) CreateDirectory(meta metav1.ObjectMeta, directories []string) error {
+	pod, err := f.GetPod(meta)
+	if err != nil {
+		return err
+	}
+
+	for _, dir := range directories {
+		_, err := f.ExecOnPod(pod, "mkdir", "-p", dir)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+func (f *Framework) CreateDataOnMountedDir(meta metav1.ObjectMeta, paths []string, fileName string) error {
+	pod, err := f.GetPod(meta)
+	if err != nil {
+		return err
+	}
+	for _, path := range paths {
+		_, err := f.ExecOnPod(pod, "touch", filepath.Join(path, fileName))
+		if err != nil {
+			return err
+		}
+
+	}
+	return nil
+}
+
+func (f *Invocation) HostPathVolumeWithMultipleDirectory() []core.Volume {
 	return []core.Volume{
 		{
 			Name: TestSourceDataVolumeName,
 			VolumeSource: core.VolumeSource{
 				HostPath: &core.HostPathVolumeSource{
-					Path: TestSoucreDemoDataPath,
+					Path: filepath.Join(TestSoucreDemoDataPath, f.app),
 				},
 			},
 		},
@@ -174,6 +202,30 @@ func FileGroupsForHostPathVolumeWithMultipleDirectory() []api.FileGroup {
 			RetentionPolicyName: "keep-last-5",
 		},
 	}
+}
+
+func (f *Invocation) RecoveredVolume() []core.Volume {
+	return []core.Volume{
+		{
+			Name: TestSourceDataVolumeName,
+			VolumeSource: core.VolumeSource{
+				HostPath: &core.HostPathVolumeSource{
+					Path: filepath.Join(TestRecoveredVolumePath, f.App()),
+				},
+			},
+		},
+	}
+}
+func (f *Invocation) CleanupRecoveredVolume(meta metav1.ObjectMeta) error {
+	pod, err := f.GetPod(meta)
+	if err != nil {
+		return err
+	}
+	_, err = f.ExecOnPod(pod, "rm", "-rf", TestSourceDataMountPath)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (f *Framework) DaemonSetRepos(daemon *extensions.DaemonSet) []*api.Repository {
@@ -390,4 +442,37 @@ func WaitUntilRepositoriesDeleted(sc cs.Interface, repositories []*api.Repositor
 		}
 		return false, nil
 	})
+}
+
+func (f *Framework) WaitUntilDaemonPodReady(meta metav1.ObjectMeta) error {
+
+	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
+		pod, err := f.GetPod(meta)
+		if err != nil {
+			return false, nil
+		}
+		if pod.Status.Phase == core.PodPhase(core.PodReady) {
+			return true, nil
+		}
+		return false, nil
+	})
+}
+
+func (f *Framework) GetNodeName(meta metav1.ObjectMeta) string {
+	pod, err := f.GetPod(meta)
+	if err == nil {
+		return pod.Spec.NodeName
+	}
+
+	nodes, err := f.KubeClient.CoreV1().Nodes().List(metav1.ListOptions{})
+	if err == nil {
+		for _, node := range nodes.Items {
+			if !strings.HasSuffix(node.Name, "master") { // for concourse test, master node has "master" suffix in the name.
+				return node.Name
+			}
+		}
+	}
+
+	// if none of above succeed, return default testing node "minikube"
+	return "minikube"
 }

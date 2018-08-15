@@ -3,6 +3,7 @@ package framework
 import (
 	"bytes"
 	"fmt"
+	"strings"
 
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -11,6 +12,8 @@ import (
 const (
 	TestSourceDataVolumeName = "source-data"
 	TestSourceDataMountPath  = "/source/data"
+	OperatorNamespace        = "kube-system"
+	OperatorName             = "stash-operator"
 )
 
 func (fi *Invocation) PodTemplate() core.PodTemplateSpec {
@@ -63,4 +66,17 @@ func (f *Framework) GetPod(meta metav1.ObjectMeta) (*core.Pod, error) {
 		}
 	}
 	return nil, fmt.Errorf("no pod found for workload %v", meta.Name)
+}
+
+func (f *Framework) GetOperatorPod() (*core.Pod, error) {
+	podList, err := f.KubeClient.CoreV1().Pods(OperatorNamespace).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, pod := range podList.Items {
+		if strings.HasPrefix(pod.Name, OperatorName) {
+			return &pod, nil
+		}
+	}
+	return nil, fmt.Errorf("operator pod not found")
 }

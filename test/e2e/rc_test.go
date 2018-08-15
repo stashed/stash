@@ -33,9 +33,10 @@ var _ = Describe("ReplicationController", func() {
 		f = root.Invoke()
 	})
 	AfterEach(func() {
-		f.DeleteRepositories(f.ReplicationControllerRepos(&rc))
-
 		err := framework.WaitUntilReplicationControllerDeleted(f.KubeClient, rc.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, rc.Namespace, f.AppLabel())
 		Expect(err).NotTo(HaveOccurred())
 
 		err = framework.WaitUntilSecretDeleted(f.KubeClient, cred.ObjectMeta)
@@ -44,11 +45,11 @@ var _ = Describe("ReplicationController", func() {
 		err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
 		Expect(err).NotTo(HaveOccurred())
 
+		f.DeleteRepositories(f.ReplicationControllerRepos(&rc))
+
 		err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.ReplicationControllerRepos(&rc))
 		Expect(err).NotTo(HaveOccurred())
 
-		err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, rc.Namespace, f.AppLabel())
-		Expect(err).NotTo(HaveOccurred())
 	})
 	JustBeforeEach(func() {
 		if missing, _ := BeZero().Match(cred); missing {
@@ -87,10 +88,9 @@ var _ = Describe("ReplicationController", func() {
 			f.EventuallyRepository(&rc).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
-			repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(repos.Items).NotTo(BeEmpty())
-			f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+			repos := f.ReplicationControllerRepos(&rc)
+			Expect(repos).NotTo(BeEmpty())
+			f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
 
 		shouldBackupExistingReplicationController = func() {
@@ -116,10 +116,9 @@ var _ = Describe("ReplicationController", func() {
 			f.EventuallyRepository(&rc).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
-			repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(repos.Items).NotTo(BeEmpty())
-			f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+			repos := f.ReplicationControllerRepos(&rc)
+			Expect(repos).NotTo(BeEmpty())
+			f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
 
 		shouldStopBackup = func() {
@@ -182,6 +181,7 @@ var _ = Describe("ReplicationController", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
+			By("Waiting to remove sidecar")
 			f.EventuallyReplicationController(rc.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		}
 
@@ -218,6 +218,7 @@ var _ = Describe("ReplicationController", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
+			By("Waiting to remove sidecar")
 			f.EventuallyReplicationController(rc.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		}
 
@@ -247,10 +248,9 @@ var _ = Describe("ReplicationController", func() {
 			f.EventuallyRepository(&rc).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
-			repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(repos.Items).NotTo(BeEmpty())
-			f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+			repos := f.ReplicationControllerRepos(&rc)
+			Expect(repos).NotTo(BeEmpty())
+			f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
 
 		shouldMutateAndBackupNewReplicationController = func() {
@@ -277,10 +277,9 @@ var _ = Describe("ReplicationController", func() {
 			f.EventuallyRepository(&rc).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
-			repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(repos.Items).NotTo(BeEmpty())
-			f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+			repos := f.ReplicationControllerRepos(&rc)
+			Expect(repos).NotTo(BeEmpty())
+			f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
 
 		shouldNotMutateNewReplicationController = func() {
@@ -599,7 +598,9 @@ var _ = Describe("ReplicationController", func() {
 			f.DeleteReplicationController(rc.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
-			framework.CleanupMinikubeHostPath()
+			if !f.SelfHostedOperator {
+				framework.CleanupMinikubeHostPath()
+			}
 		})
 
 		Context(`Single Replica`, func() {
@@ -654,10 +655,9 @@ var _ = Describe("ReplicationController", func() {
 				Expect(elapsedTime).Should(BeNumerically("<=", 9+3))
 
 				By("Waiting for backup event")
-				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(repos.Items).NotTo(BeEmpty())
-				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+				repos := f.ReplicationControllerRepos(&rc)
+				Expect(repos).NotTo(BeEmpty())
+				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
 				By("Waiting for scale up replication controller to original replica")
 				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveReplica(int(*rc.Spec.Replicas)))
@@ -717,10 +717,9 @@ var _ = Describe("ReplicationController", func() {
 				Expect(elapsedTime).Should(BeNumerically("<=", 9+3))
 
 				By("Waiting for backup event")
-				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(repos.Items).NotTo(BeEmpty())
-				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+				repos := f.ReplicationControllerRepos(&rc)
+				Expect(repos).NotTo(BeEmpty())
+				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
 				By("Waiting for scale up replication controller to original replica")
 				f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveReplica(int(*rc.Spec.Replicas)))
@@ -762,10 +761,9 @@ var _ = Describe("ReplicationController", func() {
 				f.EventuallyRepository(&rc).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(repos.Items).NotTo(BeEmpty())
-				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+				repos := f.ReplicationControllerRepos(&rc)
+				Expect(repos).NotTo(BeEmpty())
+				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
 				By(`Patching Restic with "paused: true"`)
 				err = f.CreateOrPatchRestic(restic.ObjectMeta, func(in *api.Restic) *api.Restic {
@@ -774,20 +772,20 @@ var _ = Describe("ReplicationController", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				repos, err = f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(repos.Items).NotTo(BeEmpty())
+				// wait some time for ongoing backup
+				time.Sleep(time.Second * 30)
+				repos = f.ReplicationControllerRepos(&rc)
+				Expect(repos).NotTo(BeEmpty())
 
-				previousBackupCount := repos.Items[0].Status.BackupCount
+				previousBackupCount := repos[0].Status.BackupCount
 
 				By("Waiting 2 minutes")
 				time.Sleep(2 * time.Minute)
 
 				By("Checking that Backup count has not changed")
-				repos, err = f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(repos.Items).NotTo(BeEmpty())
-				Expect(repos.Items[0].Status.BackupCount).Should(BeNumerically("==", previousBackupCount))
+				repos = f.ReplicationControllerRepos(&rc)
+				Expect(repos).NotTo(BeEmpty())
+				Expect(repos[0].Status.BackupCount).Should(BeNumerically("==", previousBackupCount))
 
 				By(`Patching Restic with "paused: false"`)
 				err = f.CreateOrPatchRestic(restic.ObjectMeta, func(in *api.Restic) *api.Restic {
@@ -800,7 +798,7 @@ var _ = Describe("ReplicationController", func() {
 				f.EventuallyRepository(&rc).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">", previousBackupCount)))
 
 				By("Waiting for backup event")
-				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", previousBackupCount)))
+				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", previousBackupCount)))
 
 			})
 
@@ -841,10 +839,9 @@ var _ = Describe("ReplicationController", func() {
 				f.EventuallyRepository(&rc).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(repos.Items).NotTo(BeEmpty())
-				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+				repos := f.ReplicationControllerRepos(&rc)
+				Expect(repos).NotTo(BeEmpty())
+				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
 			})
 
@@ -854,11 +851,14 @@ var _ = Describe("ReplicationController", func() {
 	Describe("Complete Recovery", func() {
 		Context(`"Local" backend, single fileGroup`, func() {
 			AfterEach(func() {
+				f.CleanupRecoveredVolume(rc.ObjectMeta)
 				f.DeleteReplicationController(rc.ObjectMeta)
 				f.DeleteRestic(restic.ObjectMeta)
 				f.DeleteSecret(cred.ObjectMeta)
 				f.DeleteRecovery(recovery.ObjectMeta)
-				framework.CleanupMinikubeHostPath()
+				if !f.SelfHostedOperator {
+					framework.CleanupMinikubeHostPath()
+				}
 
 				err = framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
@@ -930,16 +930,7 @@ var _ = Describe("ReplicationController", func() {
 				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying rc with recovered volume")
-				rc.Spec.Template.Spec.Volumes = []core.Volume{
-					{
-						Name: framework.TestSourceDataVolumeName,
-						VolumeSource: core.VolumeSource{
-							HostPath: &core.HostPathVolumeSource{
-								Path: framework.TestRecoveredVolumePath,
-							},
-						},
-					},
-				}
+				rc.Spec.Template.Spec.Volumes = f.RecoveredVolume()
 				_, err = f.CreateReplicationController(rc)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -951,11 +942,14 @@ var _ = Describe("ReplicationController", func() {
 
 		Context(`"Local" backend, multiple fileGroup`, func() {
 			AfterEach(func() {
+				f.CleanupRecoveredVolume(rc.ObjectMeta)
 				f.DeleteReplicationController(rc.ObjectMeta)
 				f.DeleteRestic(restic.ObjectMeta)
 				f.DeleteSecret(cred.ObjectMeta)
 				f.DeleteRecovery(recovery.ObjectMeta)
-				framework.CleanupMinikubeHostPath()
+				if !f.SelfHostedOperator {
+					framework.CleanupMinikubeHostPath()
+				}
 
 				err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
@@ -971,17 +965,18 @@ var _ = Describe("ReplicationController", func() {
 				err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
-				By("Creating demo data in hostPath")
-				err = framework.CreateDemoDataInHostPath()
+				rc.Spec.Template.Spec.Volumes = f.HostPathVolumeWithMultipleDirectory()
+				By("Creating ReplicationController " + rc.Name)
+				_, err = f.CreateReplicationController(rc)
+				Expect(err).NotTo(HaveOccurred())
+				core_util.WaitUntilRCReady(f.KubeClient, rc.ObjectMeta)
+
+				By("Creating demo data")
+				err = f.CreateDemoData(rc.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating restic")
 				err = f.CreateRestic(restic)
-				Expect(err).NotTo(HaveOccurred())
-
-				rc.Spec.Template.Spec.Volumes = framework.HostPathVolumeWithMultipleDirectory()
-				By("Creating ReplicationController " + rc.Name)
-				_, err = f.CreateReplicationController(rc)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
@@ -1033,16 +1028,8 @@ var _ = Describe("ReplicationController", func() {
 				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying rc with recovered volume")
-				rc.Spec.Template.Spec.Volumes = []core.Volume{
-					{
-						Name: framework.TestSourceDataVolumeName,
-						VolumeSource: core.VolumeSource{
-							HostPath: &core.HostPathVolumeSource{
-								Path: framework.TestRecoveredVolumePath,
-							},
-						},
-					},
-				}
+				rc.Spec.Template.Spec.Volumes = f.RecoveredVolume()
+
 				_, err = f.CreateReplicationController(rc)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -1059,11 +1046,14 @@ var _ = Describe("ReplicationController", func() {
 		)
 		Context(`"Local" backend, single fileGroup`, func() {
 			AfterEach(func() {
+				f.CleanupRecoveredVolume(rc.ObjectMeta)
 				f.DeleteReplicationController(rc.ObjectMeta)
 				f.DeleteRestic(restic.ObjectMeta)
 				f.DeleteSecret(cred.ObjectMeta)
 				f.DeleteRecovery(recovery.ObjectMeta)
-				framework.CleanupMinikubeHostPath()
+				if !f.SelfHostedOperator {
+					framework.CleanupMinikubeHostPath()
+				}
 				f.DeleteNamespace(recoveryNamespace.Name)
 
 				err = framework.WaitUntilNamespaceDeleted(f.KubeClient, recoveryNamespace.ObjectMeta)
@@ -1143,16 +1133,8 @@ var _ = Describe("ReplicationController", func() {
 
 				By("Re-deploying rc with recovered volume")
 				rc.Namespace = recoveryNamespace.Name
-				rc.Spec.Template.Spec.Volumes = []core.Volume{
-					{
-						Name: framework.TestSourceDataVolumeName,
-						VolumeSource: core.VolumeSource{
-							HostPath: &core.HostPathVolumeSource{
-								Path: framework.TestRecoveredVolumePath,
-							},
-						},
-					},
-				}
+				rc.Spec.Template.Spec.Volumes = f.RecoveredVolume()
+
 				_, err = f.CreateReplicationController(rc)
 				Expect(err).NotTo(HaveOccurred())
 

@@ -2,7 +2,6 @@ package e2e_test
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/appscode/go/crypto/rand"
@@ -35,9 +34,10 @@ var _ = Describe("DaemonSet", func() {
 		f = root.Invoke()
 	})
 	AfterEach(func() {
-		f.DeleteRepositories(f.DaemonSetRepos(&daemon))
-
 		err := framework.WaitUntilDaemonSetDeleted(f.KubeClient, daemon.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, daemon.Namespace, f.AppLabel())
 		Expect(err).NotTo(HaveOccurred())
 
 		err = framework.WaitUntilSecretDeleted(f.KubeClient, cred.ObjectMeta)
@@ -46,10 +46,9 @@ var _ = Describe("DaemonSet", func() {
 		err = framework.WaitUntilResticDeleted(f.StashClient, restic.ObjectMeta)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.DaemonSetRepos(&daemon))
-		Expect(err).NotTo(HaveOccurred())
+		f.DeleteRepositories(f.DaemonSetRepos(&daemon))
 
-		err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, daemon.Namespace, f.AppLabel())
+		err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.DaemonSetRepos(&daemon))
 		Expect(err).NotTo(HaveOccurred())
 	})
 	JustBeforeEach(func() {
@@ -89,10 +88,9 @@ var _ = Describe("DaemonSet", func() {
 			f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
-			repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(repos.Items).NotTo(BeEmpty())
-			f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+			repos := f.DaemonSetRepos(&daemon)
+			Expect(repos).NotTo(BeEmpty())
+			f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
 
 		shouldBackupExistingDaemonSet = func() {
@@ -118,10 +116,9 @@ var _ = Describe("DaemonSet", func() {
 			f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
-			repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(repos.Items).NotTo(BeEmpty())
-			f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+			repos := f.DaemonSetRepos(&daemon)
+			Expect(repos).NotTo(BeEmpty())
+			f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
 
 		shouldStopBackup = func() {
@@ -149,6 +146,7 @@ var _ = Describe("DaemonSet", func() {
 			By("Deleting restic " + restic.Name)
 			f.DeleteRestic(restic.ObjectMeta)
 
+			By("Waiting to remove sidecar")
 			f.EventuallyDaemonSet(daemon.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
 		}
 
@@ -248,10 +246,9 @@ var _ = Describe("DaemonSet", func() {
 			f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Waiting for backup event")
-			repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(repos.Items).NotTo(BeEmpty())
-			f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+			repos := f.DaemonSetRepos(&daemon)
+			Expect(repos).NotTo(BeEmpty())
+			f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 		}
 
 		shouldNotMutateNewDaemonSet = func() {
@@ -554,7 +551,9 @@ var _ = Describe("DaemonSet", func() {
 			f.DeleteDaemonSet(daemon.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
-			framework.CleanupMinikubeHostPath()
+			if !f.SelfHostedOperator {
+				framework.CleanupMinikubeHostPath()
+			}
 		})
 
 		Context(`"Local" backend`, func() {
@@ -611,10 +610,9 @@ var _ = Describe("DaemonSet", func() {
 				Expect(elapsedTime).Should(BeNumerically("<=", 9+3))
 
 				By("Waiting for backup event")
-				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(repos.Items).NotTo(BeEmpty())
-				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", 1)))
+				repos := f.DaemonSetRepos(&daemon)
+				Expect(repos).NotTo(BeEmpty())
+				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", 1)))
 			})
 		})
 	})
@@ -653,10 +651,9 @@ var _ = Describe("DaemonSet", func() {
 				f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 				By("Waiting for backup event")
-				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(repos.Items).NotTo(BeEmpty())
-				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+				repos := f.DaemonSetRepos(&daemon)
+				Expect(repos).NotTo(BeEmpty())
+				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
 				By(`Patching Restic with "paused: true"`)
 				err = f.CreateOrPatchRestic(restic.ObjectMeta, func(in *api.Restic) *api.Restic {
@@ -665,20 +662,20 @@ var _ = Describe("DaemonSet", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				repos, err = f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(repos.Items).NotTo(BeEmpty())
+				// wait some time for ongoing backup
+				time.Sleep(time.Second * 30)
+				repos = f.DaemonSetRepos(&daemon)
+				Expect(repos).NotTo(BeEmpty())
 
-				previousBackupCount := repos.Items[0].Status.BackupCount
+				previousBackupCount := repos[0].Status.BackupCount
 
 				By("Waiting 2 minutes")
 				time.Sleep(2 * time.Minute)
 
 				By("Checking that Backup count has not changed")
-				repos, err = f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(repos.Items).NotTo(BeEmpty())
-				Expect(repos.Items[0].Status.BackupCount).Should(BeNumerically("==", previousBackupCount))
+				repos = f.DaemonSetRepos(&daemon)
+				Expect(repos).NotTo(BeEmpty())
+				Expect(repos[0].Status.BackupCount).Should(BeNumerically("==", previousBackupCount))
 
 				By(`Patching Restic with "paused: false"`)
 				err = f.CreateOrPatchRestic(restic.ObjectMeta, func(in *api.Restic) *api.Restic {
@@ -691,7 +688,7 @@ var _ = Describe("DaemonSet", func() {
 				f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">", previousBackupCount)))
 
 				By("Waiting for backup event")
-				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", previousBackupCount)))
+				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">", previousBackupCount)))
 
 			})
 
@@ -732,10 +729,9 @@ var _ = Describe("DaemonSet", func() {
 				f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">", 1)))
 
 				By("Waiting for backup event")
-				repos, err := f.StashClient.StashV1alpha1().Repositories(restic.Namespace).List(metav1.ListOptions{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(repos.Items).NotTo(BeEmpty())
-				f.EventualEvent(repos.Items[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
+				repos := f.DaemonSetRepos(&daemon)
+				Expect(repos).NotTo(BeEmpty())
+				f.EventualEvent(repos[0].ObjectMeta).Should(WithTransform(f.CountSuccessfulBackups, BeNumerically(">=", 1)))
 
 			})
 
@@ -745,11 +741,14 @@ var _ = Describe("DaemonSet", func() {
 	Describe("Complete Recovery", func() {
 		Context(`"Local" backend, single fileGroup`, func() {
 			AfterEach(func() {
+				f.CleanupRecoveredVolume(daemon.ObjectMeta)
 				f.DeleteDaemonSet(daemon.ObjectMeta)
 				f.DeleteRestic(restic.ObjectMeta)
 				f.DeleteSecret(cred.ObjectMeta)
 				f.DeleteRecovery(recovery.ObjectMeta)
-				framework.CleanupMinikubeHostPath()
+				if !f.SelfHostedOperator {
+					framework.CleanupMinikubeHostPath()
+				}
 
 				err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
@@ -807,10 +806,7 @@ var _ = Describe("DaemonSet", func() {
 				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, daemon.Namespace, f.AppLabel())
 				Expect(err).NotTo(HaveOccurred())
 
-				nodeName := os.Getenv("NODE_NAME")
-				if nodeName == "" {
-					nodeName = "minikube"
-				}
+				nodeName := f.GetNodeName(daemon.ObjectMeta)
 				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", nodeName)
 				recovery.Spec.Repository.Namespace = f.Namespace()
 
@@ -825,16 +821,7 @@ var _ = Describe("DaemonSet", func() {
 				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying daemon with recovered volume")
-				daemon.Spec.Template.Spec.Volumes = []core.Volume{
-					{
-						Name: framework.TestSourceDataVolumeName,
-						VolumeSource: core.VolumeSource{
-							HostPath: &core.HostPathVolumeSource{
-								Path: framework.TestRecoveredVolumePath,
-							},
-						},
-					},
-				}
+				daemon.Spec.Template.Spec.Volumes = f.RecoveredVolume()
 				_, err = f.CreateDaemonSet(daemon)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -845,11 +832,14 @@ var _ = Describe("DaemonSet", func() {
 
 		Context(`"Local" backend, multiple fileGroup`, func() {
 			AfterEach(func() {
+				f.CleanupRecoveredVolume(daemon.ObjectMeta)
 				f.DeleteDaemonSet(daemon.ObjectMeta)
 				f.DeleteRestic(restic.ObjectMeta)
 				f.DeleteSecret(cred.ObjectMeta)
 				f.DeleteRecovery(recovery.ObjectMeta)
-				framework.CleanupMinikubeHostPath()
+				if !f.SelfHostedOperator {
+					framework.CleanupMinikubeHostPath()
+				}
 			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
@@ -862,17 +852,18 @@ var _ = Describe("DaemonSet", func() {
 				err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
+				daemon.Spec.Template.Spec.Volumes = f.HostPathVolumeWithMultipleDirectory()
+				By("Creating DaemonSet " + daemon.Name)
+				_, err = f.CreateDaemonSet(daemon)
+				Expect(err).NotTo(HaveOccurred())
+				f.WaitUntilDaemonPodReady(daemon.ObjectMeta)
+
 				By("Creating demo data in hostPath")
-				err = framework.CreateDemoDataInHostPath()
+				err = f.CreateDemoData(daemon.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating restic")
 				err = f.CreateRestic(restic)
-				Expect(err).NotTo(HaveOccurred())
-
-				daemon.Spec.Template.Spec.Volumes = framework.HostPathVolumeWithMultipleDirectory()
-				By("Creating DaemonSet " + daemon.Name)
-				_, err = f.CreateDaemonSet(daemon)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for sidecar")
@@ -910,10 +901,7 @@ var _ = Describe("DaemonSet", func() {
 				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, daemon.Namespace, f.AppLabel())
 				Expect(err).NotTo(HaveOccurred())
 
-				nodeName := os.Getenv("NODE_NAME")
-				if nodeName == "" {
-					nodeName = "minikube"
-				}
+				nodeName := f.GetNodeName(daemon.ObjectMeta)
 				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", nodeName)
 				recovery.Spec.Repository.Namespace = f.Namespace()
 
@@ -928,16 +916,7 @@ var _ = Describe("DaemonSet", func() {
 				f.DeleteJobAndDependents(util.RecoveryJobPrefix+recovery.Name, &recovery)
 
 				By("Re-deploying daemon with recovered volume")
-				daemon.Spec.Template.Spec.Volumes = []core.Volume{
-					{
-						Name: framework.TestSourceDataVolumeName,
-						VolumeSource: core.VolumeSource{
-							HostPath: &core.HostPathVolumeSource{
-								Path: framework.TestRecoveredVolumePath,
-							},
-						},
-					},
-				}
+				daemon.Spec.Template.Spec.Volumes = f.RecoveredVolume()
 				_, err = f.CreateDaemonSet(daemon)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -953,11 +932,14 @@ var _ = Describe("DaemonSet", func() {
 		)
 		Context(`"Local" backend, single fileGroup`, func() {
 			AfterEach(func() {
+				f.CleanupRecoveredVolume(daemon.ObjectMeta)
 				f.DeleteDaemonSet(daemon.ObjectMeta)
 				f.DeleteRestic(restic.ObjectMeta)
 				f.DeleteSecret(cred.ObjectMeta)
 				f.DeleteRecovery(recovery.ObjectMeta)
-				framework.CleanupMinikubeHostPath()
+				if !f.SelfHostedOperator {
+					framework.CleanupMinikubeHostPath()
+				}
 				f.DeleteNamespace(recoveryNamespace.Name)
 
 				err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
@@ -1020,10 +1002,7 @@ var _ = Describe("DaemonSet", func() {
 				err = core_util.WaitUntillPodTerminatedByLabel(f.KubeClient, daemon.Namespace, f.AppLabel())
 				Expect(err).NotTo(HaveOccurred())
 
-				nodeName := os.Getenv("NODE_NAME")
-				if nodeName == "" {
-					nodeName = "minikube"
-				}
+				nodeName := f.GetNodeName(daemon.ObjectMeta)
 				recovery.Spec.Repository.Name = localRef.GetRepositoryCRDName("", nodeName)
 				recovery.Spec.Repository.Namespace = f.Namespace()
 
@@ -1044,16 +1023,7 @@ var _ = Describe("DaemonSet", func() {
 
 				By("Re-deploying daemon with recovered volume")
 				daemon.Namespace = recoveryNamespace.Name
-				daemon.Spec.Template.Spec.Volumes = []core.Volume{
-					{
-						Name: framework.TestSourceDataVolumeName,
-						VolumeSource: core.VolumeSource{
-							HostPath: &core.HostPathVolumeSource{
-								Path: framework.TestRecoveredVolumePath,
-							},
-						},
-					},
-				}
+				daemon.Spec.Template.Spec.Volumes = f.RecoveredVolume()
 				_, err = f.CreateDaemonSet(daemon)
 				Expect(err).NotTo(HaveOccurred())
 

@@ -1,6 +1,7 @@
 package framework
 
 import (
+	"path/filepath"
 	"time"
 
 	"github.com/appscode/go/crypto/rand"
@@ -36,7 +37,7 @@ func (fi *Invocation) RecoveryForRestic(restic api.Restic) api.Recovery {
 					MountPath: restic.Spec.VolumeMounts[0].MountPath,
 					VolumeSource: core.VolumeSource{
 						HostPath: &core.HostPathVolumeSource{
-							Path: TestRecoveredVolumePath,
+							Path: filepath.Join(TestRecoveredVolumePath, fi.app),
 						},
 					},
 				},
@@ -81,26 +82,11 @@ func (f *Framework) ReadDataFromMountedDir(meta metav1.ObjectMeta, paths []strin
 
 	datas := make([]string, 0)
 	for _, path := range paths {
-		data, err := f.ExecOnPod(pod, "ls", path)
+		data, err := f.ExecOnPod(pod, "ls", "-R", path)
 		if err != nil {
 			return nil, err
 		}
 		datas = append(datas, data)
 	}
 	return datas, nil
-}
-
-func (f *Framework) CreateDataOnMountedDir(meta metav1.ObjectMeta, paths []string) ([]string, error) {
-	pod, err := f.GetPod(meta)
-	if err != nil {
-		return nil, err
-	}
-	for _, path := range paths {
-		_, err := f.ExecOnPod(pod, "touch", path+"/test-data.txt")
-		if err != nil {
-			return nil, err
-		}
-
-	}
-	return nil, nil
 }
