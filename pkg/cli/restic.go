@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -174,7 +173,6 @@ func (w *ResticWrapper) Restore(path, host, snapshotID string) error {
 	args = w.appendCacheDirFlag(args)
 	args = w.appendCaCertFlag(args)
 
-	fmt.Print("Running command: ", args)
 	return w.run(Exe, args)
 }
 
@@ -202,7 +200,6 @@ func (w *ResticWrapper) appendCaCertFlag(args []interface{}) []interface{} {
 
 func (w *ResticWrapper) run(cmd string, args []interface{}) error {
 	out, err := w.sh.Command(cmd, args...).CombinedOutput()
-	fmt.Println("Output: ", string(out))
 	if err != nil {
 		log.Errorf("Error running command '%s %s' output:\n%s", cmd, args, string(out))
 		parts := strings.Split(strings.TrimSuffix(string(out), "\n"), "\n")
