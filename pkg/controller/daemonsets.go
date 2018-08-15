@@ -66,7 +66,7 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 		// Below we will warm up our cache with a DaemonSet, so that we will see a delete for one d
 		glog.Warningf("DaemonSet %s does not exist anymore\n", key)
 	} else {
-		glog.Infof("Sync/Add/Update for DaemonSet %s\n", key)
+		glog.Infof("Sync/Add/Update for DaemonSet %s", key)
 
 		ds := obj.(*extensions.DaemonSet).DeepCopy()
 		ds.GetObjectKind().SetGroupVersionKind(extensions.SchemeGroupVersion.WithKind(api.KindDaemonSet))

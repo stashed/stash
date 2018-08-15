@@ -129,7 +129,7 @@ func (c *StashController) runResticInjector(key string) error {
 		c.EnsureSidecarDeleted(namespace, name)
 	} else {
 		restic := obj.(*api.Restic)
-		glog.Infof("Sync/Add/Update for Restic %s\n", restic.GetName())
+		glog.Infof("Sync/Add/Update for Restic %s", restic.GetName())
 
 		if restic.Spec.Type == api.BackupOffline {
 			c.EnsureScaledownCronJob(restic)
@@ -212,7 +212,7 @@ func (c *StashController) EnsureScaledownCronJob(restic *api.Restic) error {
 			return err
 		}
 		if err = c.ensureScaledownJobRBAC(ref); err != nil {
-			return fmt.Errorf("error ensuring rbac for kubectl cron job %s, reason: %s\n", meta.Name, err)
+			return fmt.Errorf("error ensuring rbac for kubectl cron job %s, reason: %s", meta.Name, err)
 		}
 	}
 

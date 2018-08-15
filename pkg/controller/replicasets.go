@@ -75,7 +75,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 			return err
 		}
 	} else {
-		glog.Infof("Sync/Add/Update for ReplicaSet %s\n", key)
+		glog.Infof("Sync/Add/Update for ReplicaSet %s", key)
 
 		rs := obj.(*extensions.ReplicaSet).DeepCopy()
 		rs.GetObjectKind().SetGroupVersionKind(extensions.SchemeGroupVersion.WithKind(api.KindReplicaSet))

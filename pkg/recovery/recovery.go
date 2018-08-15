@@ -60,7 +60,7 @@ func (c *Controller) Run() {
 	}
 
 	if err = recovery.IsValid(); err != nil {
-		log.Errorf("Failed to validate recovery %s, reason: %s\n", recovery.Name, err)
+		log.Errorf("Failed to validate recovery %s, reason: %s", recovery.Name, err)
 		stash_util.UpdateRecoveryStatus(c.stashClient, recovery, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 			in.Phase = api.RecoveryFailed
 			return in
@@ -75,12 +75,14 @@ func (c *Controller) Run() {
 				eventer.EventReasonFailedToRecover,
 				fmt.Sprintf("Failed to validate recovery %s, reason: %s", recovery.Name, err),
 			)
+		} else {
+			log.Errorf("Failed to write event on %s %s. Reason: %s", recovery.Kind, recovery.Name, rerr)
 		}
 		return
 	}
 
 	if err = c.RecoverOrErr(recovery); err != nil {
-		log.Errorf("Failed to complete recovery %s, reason: %s\n", recovery.Name, err)
+		log.Errorf("Failed to complete recovery %s, reason: %s", recovery.Name, err)
 		stash_util.UpdateRecoveryStatus(c.stashClient, recovery, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 			in.Phase = api.RecoveryFailed
 			return in
@@ -95,6 +97,8 @@ func (c *Controller) Run() {
 				eventer.EventReasonFailedToRecover,
 				fmt.Sprintf("Failed to complete recovery %s, reason: %s", recovery.Name, err),
 			)
+		} else {
+			log.Errorf("Failed to write event on %s %s. Reason: %s", recovery.Kind, recovery.Name, rerr)
 		}
 		return
 	}
@@ -115,6 +119,8 @@ func (c *Controller) Run() {
 			eventer.EventReasonSuccessfulRecovery,
 			fmt.Sprintf("Recovery %s succeeded", recovery.Name),
 		)
+	} else {
+		log.Errorf("Failed to write event on %s %s. Reason: %s", recovery.Kind, recovery.Name, rerr)
 	}
 }
 
@@ -170,6 +176,8 @@ func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
 					eventer.EventReasonFailedToRecover,
 					fmt.Sprintf("failed to recover FileGroup %s, reason: %v", path, err),
 				)
+			} else {
+				log.Errorf("Failed to write event on %s %s. Reason: %s", recovery.Kind, recovery.Name, rerr)
 			}
 			stash_util.SetRecoveryStats(c.stashClient, recovery, path, d, api.RecoveryFailed)
 		} else {
