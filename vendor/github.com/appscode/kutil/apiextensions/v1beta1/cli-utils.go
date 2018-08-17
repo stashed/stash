@@ -41,6 +41,7 @@ type Config struct {
 	Plural                   string
 	Singular                 string
 	ShortNames               []string
+	Categories               []string
 	GetOpenAPIDefinitions    GetAPIDefinitions
 	EnableStatusSubresource  bool
 	EnableScaleSubresource   bool
@@ -109,6 +110,7 @@ func NewCustomResourceDefinition(config Config, options ...func(map[string]commo
 				Singular:   config.Singular,
 				Kind:       config.Kind,
 				ShortNames: config.ShortNames,
+				Categories: config.Categories,
 			},
 			Versions:                 config.Versions,
 			Version:                  config.Versions[0].Name,

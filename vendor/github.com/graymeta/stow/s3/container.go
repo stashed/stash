@@ -1,6 +1,7 @@
 package s3
 
 import (
+	"bytes"
 	"io"
 	"os"
 	"strings"
@@ -39,12 +40,14 @@ func (c *container) Item(id string) (stow.Item, error) {
 	return c.getItem(id)
 }
 
-func (c *container) Browse(prefix, delimiter, startAfter string, count int) (*stow.ItemPage, error) {
+// Items sends a request to retrieve a list of items that are prepended with
+// the prefix argument. The 'cursor' variable facilitates pagination.
+func (c *container) Browse(prefix, delimiter, cursor string, count int) (*stow.ItemPage, error) {
 	itemLimit := int64(count)
 
 	params := &s3.ListObjectsV2Input{
 		Bucket:     aws.String(c.Name()),
-		StartAfter: &startAfter,
+		StartAfter: &cursor,
 		MaxKeys:    &itemLimit,
 		Prefix:     &prefix,
 	}
@@ -80,7 +83,7 @@ func (c *container) Browse(prefix, delimiter, startAfter string, count int) (*st
 
 	// Create a marker and determine if the list of items to retrieve is complete.
 	// If not, the last file is the input to the value of after which item to start
-	startAfter = ""
+	startAfter := ""
 	if *response.IsTruncated {
 		startAfter = containerItems[len(containerItems)-1].Name()
 	}
@@ -265,4 +268,17 @@ func parseMetadata(md map[string]*string) (map[string]interface{}, error) {
 		m[k] = *value
 	}
 	return m, nil
+}
+
+func (c *container) HasWriteAccess() error {
+	// TODO: Use https://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGETpolicy.html ?
+	r := bytes.NewReader([]byte("CheckBucketAccess"))
+	item, err := c.Put(".objectstore", r, r.Size(), nil)
+	if err != nil {
+		return err
+	}
+	if err := c.RemoveItem(item.ID()); err != nil {
+		return err
+	}
+	return nil
 }

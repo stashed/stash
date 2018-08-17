@@ -79,6 +79,14 @@ func UpsertContainer(containers []core.Container, upsert core.Container) []core.
 	return append(containers, upsert)
 }
 
+func UpsertContainers(containers []core.Container, addons []core.Container) []core.Container {
+	var out = containers
+	for _, c := range addons {
+		out = UpsertContainer(out, c)
+	}
+	return out
+}
+
 func UpsertVolume(volumes []core.Volume, nv ...core.Volume) []core.Volume {
 	upsert := func(v core.Volume) {
 		for i, vol := range volumes {
@@ -197,18 +205,17 @@ func UpsertMap(maps, upsert map[string]string) map[string]string {
 	return maps
 }
 
-func MergeLocalObjectReferences(old, new []core.LocalObjectReference) []core.LocalObjectReference {
+func MergeLocalObjectReferences(l1, l2 []core.LocalObjectReference) []core.LocalObjectReference {
+	result := make([]core.LocalObjectReference, 0, len(l1)+len(l2))
 	m := make(map[string]core.LocalObjectReference)
-	for _, ref := range old {
+	for _, ref := range l1 {
 		m[ref.Name] = ref
-	}
-	for _, ref := range new {
-		m[ref.Name] = ref
-	}
-
-	result := make([]core.LocalObjectReference, 0, len(m))
-	for _, ref := range m {
 		result = append(result, ref)
+	}
+	for _, ref := range l2 {
+		if _, found := m[ref.Name]; !found {
+			result = append(result, ref)
+		}
 	}
 	return result
 }

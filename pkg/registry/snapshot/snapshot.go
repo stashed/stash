@@ -32,6 +32,7 @@ var _ rest.Getter = &REST{}
 var _ rest.Lister = &REST{}
 var _ rest.GracefulDeleter = &REST{}
 var _ rest.GroupVersionKindProvider = &REST{}
+var _ rest.CategoriesProvider = &REST{}
 
 func NewREST(config *restconfig.Config) *REST {
 	return &REST{
@@ -51,6 +52,10 @@ func (r *REST) New() runtime.Object {
 
 func (r *REST) GroupVersionKind(containingGV schema.GroupVersion) schema.GroupVersionKind {
 	return repov1alpha1.SchemeGroupVersion.WithKind(repov1alpha1.ResourceKindSnapshot)
+}
+
+func (r *REST) Categories() []string {
+	return []string{"storage", "appscode", "all"}
 }
 
 func (r *REST) Get(ctx context.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {

@@ -1,7 +1,6 @@
 package osm
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net/url"
@@ -98,23 +97,15 @@ func CheckBucketAccess(client kubernetes.Interface, spec api.Backend, namespace 
 	if err != nil {
 		return err
 	}
-	c, err := spec.Container()
+	bucket, err := spec.Container()
 	if err != nil {
 		return err
 	}
-	container, err := loc.Container(c)
+	c, err := loc.Container(bucket)
 	if err != nil {
 		return err
 	}
-	r := bytes.NewReader([]byte("CheckBucketAccess"))
-	item, err := container.Put(".objectstore", r, r.Size(), nil)
-	if err != nil {
-		return err
-	}
-	if err := container.RemoveItem(item.ID()); err != nil {
-		return err
-	}
-	return nil
+	return c.HasWriteAccess()
 }
 
 func NewOSMContext(client kubernetes.Interface, spec api.Backend, namespace string) (*otx.Context, error) {

@@ -25,6 +25,10 @@ spec:
     type: date
   group: stash.appscode.com
   names:
+    categories:
+    - storage
+    - appscode
+    - all
     kind: Recovery
     plural: recoveries
     shortNames:
