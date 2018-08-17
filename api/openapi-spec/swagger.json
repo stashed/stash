@@ -3396,6 +3396,11 @@
     },
     "com.github.appscode.stash.apis.stash.v1alpha1.RecoveryStatus": {
       "properties": {
+        "observedGeneration": {
+          "description": "observedGeneration is the most recent generation observed for this resource. It corresponds to the resource's generation, which is updated on mutation by the API Server.",
+          "type": "integer",
+          "format": "int64"
+        },
         "phase": {
           "type": "string"
         },
@@ -3491,6 +3496,11 @@
         },
         "lastSuccessfulBackupTime": {
           "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Time"
+        },
+        "observedGeneration": {
+          "description": "observedGeneration is the most recent generation observed for this resource. It corresponds to the resource's generation, which is updated on mutation by the API Server.",
+          "type": "integer",
+          "format": "int64"
         }
       }
     },
