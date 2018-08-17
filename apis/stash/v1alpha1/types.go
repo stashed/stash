@@ -142,6 +142,11 @@ const (
 )
 
 type RecoveryStatus struct {
+	// observedGeneration is the most recent generation observed for this resource. It corresponds to the
+	// resource's generation, which is updated on mutation by the API Server.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+
 	Phase RecoveryPhase  `json:"phase,omitempty"`
 	Stats []RestoreStats `json:"stats,omitempty"`
 }
@@ -177,6 +182,11 @@ type RepositorySpec struct {
 }
 
 type RepositoryStatus struct {
+	// observedGeneration is the most recent generation observed for this resource. It corresponds to the
+	// resource's generation, which is updated on mutation by the API Server.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+
 	FirstBackupTime          *metav1.Time `json:"firstBackupTime,omitempty"`
 	LastBackupTime           *metav1.Time `json:"lastBackupTime,omitempty"`
 	LastSuccessfulBackupTime *metav1.Time `json:"lastSuccessfulBackupTime,omitempty"`
