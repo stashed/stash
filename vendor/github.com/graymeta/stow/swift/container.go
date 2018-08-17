@@ -1,6 +1,7 @@
 package swift
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"strings"
@@ -161,4 +162,16 @@ func prepMetadata(md map[string]interface{}) (map[string]string, error) {
 		m["X-Object-Meta-"+key] = str
 	}
 	return m, nil
+}
+
+func (c *container) HasWriteAccess() error {
+	r := bytes.NewReader([]byte("CheckBucketAccess"))
+	item, err := c.Put(".objectstore", r, r.Size(), nil)
+	if err != nil {
+		return err
+	}
+	if err := c.RemoveItem(item.ID()); err != nil {
+		return err
+	}
+	return nil
 }

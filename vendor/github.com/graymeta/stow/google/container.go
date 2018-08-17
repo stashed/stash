@@ -208,3 +208,13 @@ func prepMetadata(metadataParsed map[string]interface{}) (map[string]string, err
 	}
 	return returnMap, nil
 }
+
+func (c *Container) HasWriteAccess() error {
+	_, err := c.client.Buckets.TestIamPermissions(c.name, []string{
+		"storage.objects.create",
+		"storage.objects.delete",
+		"storage.objects.get",
+		"storage.objects.update",
+	}).Do()
+	return err
+}

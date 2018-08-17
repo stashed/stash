@@ -1,6 +1,7 @@
 package azure
 
 import (
+	"bytes"
 	"io"
 	"strings"
 	"time"
@@ -202,4 +203,16 @@ func cleanEtag(etag string) string {
 	}
 
 	return etag
+}
+
+func (c *container) HasWriteAccess() error {
+	r := bytes.NewReader([]byte("CheckBucketAccess"))
+	item, err := c.Put(".objectstore", r, r.Size(), nil)
+	if err != nil {
+		return err
+	}
+	if err := c.RemoveItem(item.ID()); err != nil {
+		return err
+	}
+	return nil
 }

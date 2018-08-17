@@ -117,6 +117,8 @@ type Container interface {
 	// Put creates a new Item with the specified name, and contents
 	// read from the reader.
 	Put(name string, r io.Reader, size int64, metadata map[string]interface{}) (Item, error)
+	// HasWriteAccess returns null if items cane be created and deleted from this container.
+	HasWriteAccess() error
 }
 
 // Item represents an item inside a Container.

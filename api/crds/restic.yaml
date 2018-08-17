@@ -26,6 +26,10 @@ spec:
     type: date
   group: stash.appscode.com
   names:
+    categories:
+    - storage
+    - appscode
+    - all
     kind: Restic
     plural: restics
     shortNames:

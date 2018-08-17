@@ -113,7 +113,6 @@ func UpdateRecoveryStatus(
 	if len(useSubresource) > 1 {
 		return nil, errors.Errorf("invalid value passed for useSubresource: %v", useSubresource)
 	}
-
 	apply := func(x *api.Recovery) *api.Recovery {
 		out := &api.Recovery{
 			TypeMeta:   x.TypeMeta,

@@ -16,6 +16,7 @@ func (c Restic) CustomResourceDefinition() *apiextensions.CustomResourceDefiniti
 		Singular:      ResourceSingularRestic,
 		Kind:          ResourceKindRestic,
 		ShortNames:    []string{"rst"},
+		Categories:    []string{"storage", "appscode", "all"},
 		ResourceScope: string(apiextensions.NamespaceScoped),
 		Versions: []apiextensions.CustomResourceDefinitionVersion{
 			{
@@ -69,6 +70,7 @@ func (c Recovery) CustomResourceDefinition() *apiextensions.CustomResourceDefini
 		Singular:      ResourceSingularRecovery,
 		Kind:          ResourceKindRecovery,
 		ShortNames:    []string{"rec"},
+		Categories:    []string{"storage", "appscode", "all"},
 		ResourceScope: string(apiextensions.NamespaceScoped),
 		Versions: []apiextensions.CustomResourceDefinitionVersion{
 			{
@@ -121,6 +123,7 @@ func (c Repository) CustomResourceDefinition() *apiextensions.CustomResourceDefi
 		Singular:      ResourceSingularRepository,
 		Kind:          ResourceKindRepository,
 		ShortNames:    []string{"repo"},
+		Categories:    []string{"storage", "appscode", "all"},
 		ResourceScope: string(apiextensions.NamespaceScoped),
 		Versions: []apiextensions.CustomResourceDefinitionVersion{
 			{
