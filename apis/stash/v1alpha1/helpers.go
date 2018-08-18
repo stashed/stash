@@ -2,12 +2,13 @@ package v1alpha1
 
 import (
 	"hash/fnv"
-	"strconv"
-	meta_util "github.com/appscode/kutil/meta"
-	hashutil "k8s.io/kubernetes/pkg/util/hash"
 	"reflect"
-	"github.com/golang/glog"
+	"strconv"
+
 	"github.com/appscode/go/log"
+	meta_util "github.com/appscode/kutil/meta"
+	"github.com/golang/glog"
+	hashutil "k8s.io/kubernetes/pkg/util/hash"
 )
 
 func (r Restic) GetSpecHash() string {
@@ -75,7 +76,6 @@ func (e *Recovery) AlreadyObserved(other *Recovery) bool {
 	}
 	return match
 }
-
 
 func (e *Repository) AlreadyObserved(other *Repository) bool {
 	if e == nil {

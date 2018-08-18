@@ -4,7 +4,7 @@ import (
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
 	. "github.com/onsi/gomega"
-	apps "k8s.io/api/apps/v1beta1"
+	apps "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,16 +29,16 @@ func (fi *Invocation) StatefulSet() apps.StatefulSet {
 }
 
 func (f *Framework) CreateStatefulSet(obj apps.StatefulSet) (*apps.StatefulSet, error) {
-	return f.KubeClient.AppsV1beta1().StatefulSets(obj.Namespace).Create(&obj)
+	return f.KubeClient.AppsV1().StatefulSets(obj.Namespace).Create(&obj)
 }
 
 func (f *Framework) DeleteStatefulSet(meta metav1.ObjectMeta) error {
-	return f.KubeClient.AppsV1beta1().StatefulSets(meta.Namespace).Delete(meta.Name, deleteInBackground())
+	return f.KubeClient.AppsV1().StatefulSets(meta.Namespace).Delete(meta.Name, deleteInBackground())
 }
 
 func (f *Framework) EventuallyStatefulSet(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() *apps.StatefulSet {
-		obj, err := f.KubeClient.AppsV1beta1().StatefulSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		obj, err := f.KubeClient.AppsV1().StatefulSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		return obj
 	})

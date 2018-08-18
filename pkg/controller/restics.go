@@ -7,9 +7,9 @@ import (
 	"github.com/appscode/kubernetes-webhook-util/admission"
 	hooks "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
 	webhook "github.com/appscode/kubernetes-webhook-util/admission/v1beta1/generic"
+	apps_util "github.com/appscode/kutil/apps/v1"
 	batch_util "github.com/appscode/kutil/batch/v1beta1"
 	core_util "github.com/appscode/kutil/core/v1"
-	ext_util "github.com/appscode/kutil/extensions/v1beta1"
 	"github.com/appscode/kutil/tools/queue"
 	"github.com/appscode/stash/apis/stash"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -17,8 +17,6 @@ import (
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
-
-	//apps "k8s.io/api/apps/v1beta1"
 	batch "k8s.io/api/batch/v1beta1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -279,7 +277,7 @@ func (c *StashController) EnsureSidecar(restic *api.Restic) {
 			for _, resource := range resources {
 				// If owned by a Deployment, skip it.
 				// OCFIX
-				if ext_util.IsOwnedByDeployment(resource.OwnerReferences) {
+				if apps_util.IsOwnedByDeployment(resource.OwnerReferences) {
 					continue
 				}
 				key, err := cache.MetaNamespaceKeyFunc(resource)

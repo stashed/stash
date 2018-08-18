@@ -7,16 +7,14 @@ import (
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
 	"github.com/appscode/kutil"
-	apps_util "github.com/appscode/kutil/apps/v1beta1"
+	apps_util "github.com/appscode/kutil/apps/v1"
 	core_util "github.com/appscode/kutil/core/v1"
-	ext_util "github.com/appscode/kutil/extensions/v1beta1"
 	meta_util "github.com/appscode/kutil/meta"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/backup"
 	"github.com/appscode/stash/pkg/util"
-	apps "k8s.io/api/apps/v1beta1"
+	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
-	extensions "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -49,7 +47,7 @@ func New(k8sClient kubernetes.Interface, opt Options) *Controller {
 func (c *Controller) ScaleDownWorkload() error {
 
 	// scale down deployment to 0 replica
-	dpList, err := c.k8sClient.AppsV1beta1().Deployments(c.opt.Namespace).List(metav1.ListOptions{LabelSelector: c.opt.Selector})
+	dpList, err := c.k8sClient.AppsV1().Deployments(c.opt.Namespace).List(metav1.ListOptions{LabelSelector: c.opt.Selector})
 	if err == nil {
 		for _, dp := range dpList.Items {
 			_, _, err := apps_util.PatchDeployment(c.k8sClient, &dp, func(obj *apps.Deployment) *apps.Deployment {
@@ -85,11 +83,11 @@ func (c *Controller) ScaleDownWorkload() error {
 	}
 
 	// scale down replicaset to 0 replica
-	rsList, err := c.k8sClient.ExtensionsV1beta1().ReplicaSets(c.opt.Namespace).List(metav1.ListOptions{LabelSelector: c.opt.Selector})
+	rsList, err := c.k8sClient.AppsV1().ReplicaSets(c.opt.Namespace).List(metav1.ListOptions{LabelSelector: c.opt.Selector})
 	if err == nil {
 		for _, rs := range rsList.Items {
-			if !ext_util.IsOwnedByDeployment(rs.OwnerReferences) {
-				_, _, err := ext_util.PatchReplicaSet(c.k8sClient, &rs, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
+			if !apps_util.IsOwnedByDeployment(rs.OwnerReferences) {
+				_, _, err := apps_util.PatchReplicaSet(c.k8sClient, &rs, func(obj *apps.ReplicaSet) *apps.ReplicaSet {
 					if obj.Annotations == nil {
 						obj.Annotations = make(map[string]string)
 					}
@@ -111,7 +109,7 @@ func (c *Controller) ScaleDownWorkload() error {
 	}
 
 	//scale up deployment to 1 replica
-	dpList, err = c.k8sClient.AppsV1beta1().Deployments(c.opt.Namespace).List(metav1.ListOptions{LabelSelector: c.opt.Selector})
+	dpList, err = c.k8sClient.AppsV1().Deployments(c.opt.Namespace).List(metav1.ListOptions{LabelSelector: c.opt.Selector})
 	if err == nil && len(dpList.Items) > 0 {
 		for _, dp := range dpList.Items {
 			_, _, err := apps_util.PatchDeployment(c.k8sClient, &dp, func(obj *apps.Deployment) *apps.Deployment {
@@ -139,11 +137,11 @@ func (c *Controller) ScaleDownWorkload() error {
 	}
 
 	//scale up replicaset to 1 replica
-	rsList, err = c.k8sClient.ExtensionsV1beta1().ReplicaSets(c.opt.Namespace).List(metav1.ListOptions{LabelSelector: c.opt.Selector})
+	rsList, err = c.k8sClient.AppsV1().ReplicaSets(c.opt.Namespace).List(metav1.ListOptions{LabelSelector: c.opt.Selector})
 	if err == nil && len(rsList.Items) > 0 {
 		for _, rs := range rsList.Items {
-			if !ext_util.IsOwnedByDeployment(rs.OwnerReferences) {
-				_, _, err := ext_util.PatchReplicaSet(c.k8sClient, &rs, func(obj *extensions.ReplicaSet) *extensions.ReplicaSet {
+			if !apps_util.IsOwnedByDeployment(rs.OwnerReferences) {
+				_, _, err := apps_util.PatchReplicaSet(c.k8sClient, &rs, func(obj *apps.ReplicaSet) *apps.ReplicaSet {
 					obj.Spec.Replicas = &OneReplica
 					return obj
 				})
@@ -173,7 +171,7 @@ func (c *Controller) ScaleDownWorkload() error {
 func ScaleUpWorkload(k8sClient *kubernetes.Clientset, opt backup.Options) error {
 	switch opt.Workload.Kind {
 	case api.KindDeployment:
-		obj, err := k8sClient.AppsV1beta1().Deployments(opt.Namespace).Get(opt.Workload.Name, metav1.GetOptions{})
+		obj, err := k8sClient.AppsV1().Deployments(opt.Namespace).Get(opt.Workload.Name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -211,7 +209,7 @@ func ScaleUpWorkload(k8sClient *kubernetes.Clientset, opt backup.Options) error 
 			return err
 		}
 	case api.KindReplicaSet:
-		obj, err := k8sClient.ExtensionsV1beta1().ReplicaSets(opt.Namespace).Get(opt.Workload.Name, metav1.GetOptions{})
+		obj, err := k8sClient.AppsV1().ReplicaSets(opt.Namespace).Get(opt.Workload.Name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -221,7 +219,7 @@ func ScaleUpWorkload(k8sClient *kubernetes.Clientset, opt backup.Options) error 
 			return err
 		}
 
-		_, _, err = ext_util.PatchReplicaSet(k8sClient, obj, func(rs *extensions.ReplicaSet) *extensions.ReplicaSet {
+		_, _, err = apps_util.PatchReplicaSet(k8sClient, obj, func(rs *apps.ReplicaSet) *apps.ReplicaSet {
 			rs.Spec.Replicas = types.Int32P(int32(replica))
 			delete(rs.Annotations, util.AnnotationOldReplica)
 			return rs

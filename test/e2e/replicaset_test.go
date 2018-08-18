@@ -6,16 +6,16 @@ import (
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
+	apps_util "github.com/appscode/kutil/apps/v1"
 	core_util "github.com/appscode/kutil/core/v1"
-	ext_util "github.com/appscode/kutil/extensions/v1beta1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/appscode/stash/test/e2e/framework"
 	. "github.com/appscode/stash/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
-	extensions "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,7 +26,7 @@ var _ = Describe("ReplicaSet", func() {
 		restic       api.Restic
 		secondRestic api.Restic
 		cred         core.Secret
-		rs           extensions.ReplicaSet
+		rs           apps.ReplicaSet
 		recovery     api.Recovery
 		localRef     api.LocalTypedReference
 	)
@@ -174,7 +174,7 @@ var _ = Describe("ReplicaSet", func() {
 			f.EventuallyRepository(&rs).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Removing labels of ReplicaSet " + rs.Name)
-			_, _, err = ext_util.PatchReplicaSet(f.KubeClient, &rs, func(in *extensions.ReplicaSet) *extensions.ReplicaSet {
+			_, _, err = apps_util.PatchReplicaSet(f.KubeClient, &rs, func(in *apps.ReplicaSet) *apps.ReplicaSet {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}
@@ -337,7 +337,7 @@ var _ = Describe("ReplicaSet", func() {
 			f.EventuallyRepository(&rs).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Removing labels of ReplicaSet " + rs.Name)
-			obj, _, err = ext_util.PatchReplicaSet(f.KubeClient, &rs, func(in *extensions.ReplicaSet) *extensions.ReplicaSet {
+			obj, _, err = apps_util.PatchReplicaSet(f.KubeClient, &rs, func(in *apps.ReplicaSet) *apps.ReplicaSet {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}
@@ -370,7 +370,7 @@ var _ = Describe("ReplicaSet", func() {
 			Expect(obj).ShouldNot(HaveSidecar(util.StashContainer))
 
 			By("Adding label to match restic" + rs.Name)
-			obj, _, err = ext_util.PatchReplicaSet(f.KubeClient, &rs, func(in *extensions.ReplicaSet) *extensions.ReplicaSet {
+			obj, _, err = apps_util.PatchReplicaSet(f.KubeClient, &rs, func(in *apps.ReplicaSet) *apps.ReplicaSet {
 				in.Labels = previousLabel
 				return in
 			})
@@ -966,7 +966,7 @@ var _ = Describe("ReplicaSet", func() {
 				By("Creating ReplicaSet " + rs.Name)
 				_, err = f.CreateReplicaSet(rs)
 				Expect(err).NotTo(HaveOccurred())
-				ext_util.WaitUntilReplicaSetReady(f.KubeClient, rs.ObjectMeta)
+				apps_util.WaitUntilReplicaSetReady(f.KubeClient, rs.ObjectMeta)
 
 				By("Creating demo data in hostPath")
 				err = f.CreateDemoData(rs.ObjectMeta)

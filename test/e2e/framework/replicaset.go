@@ -4,12 +4,12 @@ import (
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
 	. "github.com/onsi/gomega"
-	extensions "k8s.io/api/extensions/v1beta1"
+	apps "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (fi *Invocation) ReplicaSet() extensions.ReplicaSet {
-	return extensions.ReplicaSet{
+func (fi *Invocation) ReplicaSet() apps.ReplicaSet {
+	return apps.ReplicaSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
 			Namespace: fi.namespace,
@@ -17,24 +17,24 @@ func (fi *Invocation) ReplicaSet() extensions.ReplicaSet {
 				"app": fi.app,
 			},
 		},
-		Spec: extensions.ReplicaSetSpec{
+		Spec: apps.ReplicaSetSpec{
 			Replicas: types.Int32P(1),
 			Template: fi.PodTemplate(),
 		},
 	}
 }
 
-func (f *Framework) CreateReplicaSet(obj extensions.ReplicaSet) (*extensions.ReplicaSet, error) {
-	return f.KubeClient.ExtensionsV1beta1().ReplicaSets(obj.Namespace).Create(&obj)
+func (f *Framework) CreateReplicaSet(obj apps.ReplicaSet) (*apps.ReplicaSet, error) {
+	return f.KubeClient.AppsV1().ReplicaSets(obj.Namespace).Create(&obj)
 }
 
 func (f *Framework) DeleteReplicaSet(meta metav1.ObjectMeta) error {
-	return f.KubeClient.ExtensionsV1beta1().ReplicaSets(meta.Namespace).Delete(meta.Name, deleteInBackground())
+	return f.KubeClient.AppsV1().ReplicaSets(meta.Namespace).Delete(meta.Name, deleteInBackground())
 }
 
 func (f *Framework) EventuallyReplicaSet(meta metav1.ObjectMeta) GomegaAsyncAssertion {
-	return Eventually(func() *extensions.ReplicaSet {
-		obj, err := f.KubeClient.ExtensionsV1beta1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	return Eventually(func() *apps.ReplicaSet {
+		obj, err := f.KubeClient.AppsV1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		return obj
 	})

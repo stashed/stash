@@ -7,12 +7,12 @@ import (
 	webhook "github.com/appscode/kubernetes-webhook-util/admission/v1beta1/workload"
 	wapi "github.com/appscode/kubernetes-webhook-util/apis/workload/v1"
 	wcs "github.com/appscode/kubernetes-webhook-util/client/workload/v1"
-	ext_util "github.com/appscode/kutil/extensions/v1beta1"
+	apps_util "github.com/appscode/kutil/apps/v1"
 	"github.com/appscode/kutil/tools/queue"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
-	extensions "k8s.io/api/extensions/v1beta1"
+	apps "k8s.io/api/apps/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -46,10 +46,10 @@ func (c *StashController) NewReplicaSetWebhook() hooks.AdmissionHook {
 }
 
 func (c *StashController) initReplicaSetWatcher() {
-	c.rsInformer = c.kubeInformerFactory.Extensions().V1beta1().ReplicaSets().Informer()
+	c.rsInformer = c.kubeInformerFactory.Apps().V1().ReplicaSets().Informer()
 	c.rsQueue = queue.New("ReplicaSet", c.MaxNumRequeues, c.NumThreads, c.runReplicaSetInjector)
 	c.rsInformer.AddEventHandler(queue.DefaultEventHandler(c.rsQueue.GetQueue()))
-	c.rsLister = c.kubeInformerFactory.Extensions().V1beta1().ReplicaSets().Lister()
+	c.rsLister = c.kubeInformerFactory.Apps().V1().ReplicaSets().Lister()
 }
 
 // syncToStdout is the business logic of the controller. In this controller it simply prints
@@ -77,8 +77,8 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 	} else {
 		glog.Infof("Sync/Add/Update for ReplicaSet %s", key)
 
-		rs := obj.(*extensions.ReplicaSet).DeepCopy()
-		rs.GetObjectKind().SetGroupVersionKind(extensions.SchemeGroupVersion.WithKind(api.KindReplicaSet))
+		rs := obj.(*apps.ReplicaSet).DeepCopy()
+		rs.GetObjectKind().SetGroupVersionKind(apps.SchemeGroupVersion.WithKind(api.KindReplicaSet))
 		w, err := wcs.ConvertToWorkload(rs.DeepCopy())
 		if err != nil {
 			return nil
@@ -89,7 +89,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 			return err
 		}
 		if modified {
-			_, _, err = ext_util.PatchReplicaSetObject(c.kubeClient, rs, w.Object.(*extensions.ReplicaSet))
+			_, _, err = apps_util.PatchReplicaSetObject(c.kubeClient, rs, w.Object.(*apps.ReplicaSet))
 			if err != nil {
 				return err
 			}
@@ -102,14 +102,14 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 				return err
 			}
 		}
-		return ext_util.WaitUntilReplicaSetReady(c.kubeClient, rs.ObjectMeta)
+		return apps_util.WaitUntilReplicaSetReady(c.kubeClient, rs.ObjectMeta)
 
 	}
 	return nil
 }
 
 func (c *StashController) mutateReplicaSet(w *wapi.Workload) (*api.Restic, bool, error) {
-	if !ext_util.IsOwnedByDeployment(w.OwnerReferences) {
+	if !apps_util.IsOwnedByDeployment(w.OwnerReferences) {
 		oldRestic, err := util.GetAppliedRestic(w.Annotations)
 		if err != nil {
 			return nil, false, err

@@ -9,9 +9,8 @@ import (
 	"github.com/appscode/stash/pkg/util"
 	"github.com/graymeta/stow"
 	. "github.com/onsi/gomega"
-	apps "k8s.io/api/apps/v1beta1"
+	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
-	extensions "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -24,14 +23,14 @@ type KindMetaReplicas struct {
 func (f *Framework) EventuallyRepository(workload interface{}) GomegaAsyncAssertion {
 	return Eventually(func() []*api.Repository {
 		switch workload.(type) {
-		case *extensions.DaemonSet:
-			return f.DaemonSetRepos(workload.(*extensions.DaemonSet))
+		case *apps.DaemonSet:
+			return f.DaemonSetRepos(workload.(*apps.DaemonSet))
 		case *apps.Deployment:
 			return f.DeploymentRepos(workload.(*apps.Deployment))
 		case *core.ReplicationController:
 			return f.ReplicationControllerRepos(workload.(*core.ReplicationController))
-		case *extensions.ReplicaSet:
-			return f.ReplicaSetRepos(workload.(*extensions.ReplicaSet))
+		case *apps.ReplicaSet:
+			return f.ReplicaSetRepos(workload.(*apps.ReplicaSet))
 		case *apps.StatefulSet:
 			return f.StatefulSetRepos(workload.(*apps.StatefulSet))
 		default:

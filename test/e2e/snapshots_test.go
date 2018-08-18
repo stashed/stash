@@ -12,9 +12,8 @@ import (
 	. "github.com/appscode/stash/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	apps "k8s.io/api/apps/v1beta1"
+	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
-	extensions "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -25,9 +24,9 @@ var _ = Describe("Snapshots", func() {
 		restic     api.Restic
 		cred       core.Secret
 		deployment apps.Deployment
-		daemon     extensions.DaemonSet
+		daemon     apps.DaemonSet
 		rc         core.ReplicationController
-		rs         extensions.ReplicaSet
+		rs         apps.ReplicaSet
 		ss         apps.StatefulSet
 		svc        core.Service
 		workload   api.LocalTypedReference

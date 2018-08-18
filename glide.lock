@@ -1,5 +1,5 @@
 hash: ac3e602a8189ffd5b0887ee3df3b94c99de5012a8028ef36e67576053f62be02
-updated: 2018-08-16T17:34:13.674525862-07:00
+updated: 2018-08-18T09:24:46.388267124-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -41,14 +41,13 @@ imports:
   - registry/admissionreview/v1beta1
   - runtime/serializer/versioning
 - name: github.com/appscode/kutil
-  version: 1bc8f60f2842bb8754b8834f4da1c2f41042acdd
+  version: 569ee52ec2c8bb3c151daa20a8433cfa6cc1bfce
   subpackages:
   - apiextensions/v1beta1
-  - apps/v1beta1
+  - apps/v1
   - batch/v1beta1
   - core/v1
   - discovery
-  - extensions/v1beta1
   - meta
   - openapi
   - rbac/v1
@@ -252,7 +251,7 @@ imports:
   - proto
   - sortkeys
 - name: github.com/golang/glog
-  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
+  version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/groupcache
   version: 02826c3e79038b59d737d3b1c0a1d937f71a4433
   subpackages:
@@ -271,7 +270,7 @@ imports:
 - name: github.com/google/btree
   version: 7d79101e329e5a3adf994758c578dab82b90c017
 - name: github.com/google/go-cmp
-  version: 5411ab924f9ffa6566244a9e504bc347edacffd3
+  version: 3af367b6b30c263d47e8895973edcca9a49cf029
   subpackages:
   - cmp
   - cmp/internal/diff
@@ -522,7 +521,7 @@ imports:
   subpackages:
   - rate
 - name: google.golang.org/api
-  version: 0e8d13b5c025da6a7cf249bb854e5869921dd459
+  version: e21acd801f91da814261b938941d193bb036441a
   subpackages:
   - gensupport
   - googleapi

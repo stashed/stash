@@ -4,9 +4,8 @@ import (
 	"fmt"
 
 	"github.com/onsi/gomega/types"
-	apps "k8s.io/api/apps/v1beta1"
+	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
-	extensions "k8s.io/api/extensions/v1beta1"
 )
 
 func HaveReplica(expected int) types.GomegaMatcher {
@@ -23,14 +22,12 @@ func (matcher *replicaMatcher) Match(actual interface{}) (success bool, err erro
 	switch obj := actual.(type) {
 	case *core.ReplicationController:
 		return *obj.Spec.Replicas == int32(matcher.expected), nil
-	case *extensions.ReplicaSet:
+	case *apps.ReplicaSet:
 		return *obj.Spec.Replicas == int32(matcher.expected), nil
-	case *extensions.Deployment:
+	case *apps.Deployment:
 		return *obj.Spec.Replicas == int32(matcher.expected), nil
 	//case *extensions.DaemonSet:
 	//	return matcher.find(obj.Spec.Template.Spec.Containers)
-	case *apps.Deployment:
-		return *obj.Spec.Replicas == int32(matcher.expected), nil
 	//case *apps.StatefulSet:
 	//	return matcher.find(obj.Spec.Template.Spec.Containers)
 

@@ -15,10 +15,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
-	apps_listers "k8s.io/client-go/listers/apps/v1beta1"
+	apps_listers "k8s.io/client-go/listers/apps/v1"
 	batch_listers "k8s.io/client-go/listers/batch/v1"
 	core_listers "k8s.io/client-go/listers/core/v1"
-	ext_listers "k8s.io/client-go/listers/extensions/v1beta1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 )
@@ -60,7 +59,7 @@ type StashController struct {
 	// DaemonSet
 	dsQueue    *queue.Worker
 	dsInformer cache.SharedIndexInformer
-	dsLister   ext_listers.DaemonSetLister
+	dsLister   apps_listers.DaemonSetLister
 
 	// StatefulSet
 	ssQueue    *queue.Worker
@@ -75,7 +74,7 @@ type StashController struct {
 	// ReplicaSet
 	rsQueue    *queue.Worker
 	rsInformer cache.SharedIndexInformer
-	rsLister   ext_listers.ReplicaSetLister
+	rsLister   apps_listers.ReplicaSetLister
 
 	// Job
 	jobQueue    *queue.Worker

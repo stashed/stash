@@ -4,9 +4,8 @@ import (
 	"fmt"
 
 	"github.com/onsi/gomega/types"
-	apps "k8s.io/api/apps/v1beta1"
+	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
-	extensions "k8s.io/api/extensions/v1beta1"
 )
 
 func HaveInitContainer(expected string) types.GomegaMatcher {
@@ -25,13 +24,11 @@ func (matcher *initContainerMatcher) Match(actual interface{}) (success bool, er
 		return matcher.find(obj.Spec.InitContainers)
 	case *core.ReplicationController:
 		return matcher.find(obj.Spec.Template.Spec.InitContainers)
-	case *extensions.ReplicaSet:
-		return matcher.find(obj.Spec.Template.Spec.InitContainers)
-	case *extensions.Deployment:
-		return matcher.find(obj.Spec.Template.Spec.InitContainers)
-	case *extensions.DaemonSet:
+	case *apps.ReplicaSet:
 		return matcher.find(obj.Spec.Template.Spec.InitContainers)
 	case *apps.Deployment:
+		return matcher.find(obj.Spec.Template.Spec.InitContainers)
+	case *apps.DaemonSet:
 		return matcher.find(obj.Spec.Template.Spec.InitContainers)
 	case *apps.StatefulSet:
 		return matcher.find(obj.Spec.Template.Spec.InitContainers)
