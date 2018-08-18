@@ -5,16 +5,16 @@ import (
 	"time"
 
 	"github.com/appscode/go/crypto/rand"
+	apps_util "github.com/appscode/kutil/apps/v1"
 	core_util "github.com/appscode/kutil/core/v1"
-	ext_util "github.com/appscode/kutil/extensions/v1beta1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/appscode/stash/test/e2e/framework"
 	. "github.com/appscode/stash/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
-	extensions "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -25,7 +25,7 @@ var _ = Describe("DaemonSet", func() {
 		restic       api.Restic
 		secondRestic api.Restic
 		cred         core.Secret
-		daemon       extensions.DaemonSet
+		daemon       apps.DaemonSet
 		recovery     api.Recovery
 		localRef     api.LocalTypedReference
 	)
@@ -173,7 +173,7 @@ var _ = Describe("DaemonSet", func() {
 			f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Removing labels of DaemonSet " + daemon.Name)
-			_, _, err = ext_util.PatchDaemonSet(f.KubeClient, &daemon, func(in *extensions.DaemonSet) *extensions.DaemonSet {
+			_, _, err = apps_util.PatchDaemonSet(f.KubeClient, &daemon, func(in *apps.DaemonSet) *apps.DaemonSet {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}
@@ -305,7 +305,7 @@ var _ = Describe("DaemonSet", func() {
 			f.EventuallyRepository(&daemon).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Removing labels of DaemonSet " + daemon.Name)
-			obj, _, err = ext_util.PatchDaemonSet(f.KubeClient, &daemon, func(in *extensions.DaemonSet) *extensions.DaemonSet {
+			obj, _, err = apps_util.PatchDaemonSet(f.KubeClient, &daemon, func(in *apps.DaemonSet) *apps.DaemonSet {
 				in.Labels = map[string]string{
 					"app": "unmatched",
 				}
@@ -338,7 +338,7 @@ var _ = Describe("DaemonSet", func() {
 			Expect(obj).ShouldNot(HaveSidecar(util.StashContainer))
 
 			By("Adding label to match restic" + daemon.Name)
-			obj, _, err = ext_util.PatchDaemonSet(f.KubeClient, &daemon, func(in *extensions.DaemonSet) *extensions.DaemonSet {
+			obj, _, err = apps_util.PatchDaemonSet(f.KubeClient, &daemon, func(in *apps.DaemonSet) *apps.DaemonSet {
 				in.Labels = previousLabel
 				return in
 			})

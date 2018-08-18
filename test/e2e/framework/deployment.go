@@ -4,7 +4,7 @@ import (
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
 	. "github.com/onsi/gomega"
-	apps "k8s.io/api/apps/v1beta1"
+	apps "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -25,16 +25,16 @@ func (fi *Invocation) Deployment() apps.Deployment {
 }
 
 func (f *Framework) CreateDeployment(obj apps.Deployment) (*apps.Deployment, error) {
-	return f.KubeClient.AppsV1beta1().Deployments(obj.Namespace).Create(&obj)
+	return f.KubeClient.AppsV1().Deployments(obj.Namespace).Create(&obj)
 }
 
 func (f *Framework) DeleteDeployment(meta metav1.ObjectMeta) error {
-	return f.KubeClient.AppsV1beta1().Deployments(meta.Namespace).Delete(meta.Name, deleteInBackground())
+	return f.KubeClient.AppsV1().Deployments(meta.Namespace).Delete(meta.Name, deleteInBackground())
 }
 
 func (f *Framework) EventuallyDeployment(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(func() *apps.Deployment {
-		obj, err := f.KubeClient.AppsV1beta1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		obj, err := f.KubeClient.AppsV1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		return obj
 	})

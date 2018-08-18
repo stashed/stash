@@ -7,12 +7,12 @@ import (
 	webhook "github.com/appscode/kubernetes-webhook-util/admission/v1beta1/workload"
 	wapi "github.com/appscode/kubernetes-webhook-util/apis/workload/v1"
 	wcs "github.com/appscode/kubernetes-webhook-util/client/workload/v1"
-	apps_util "github.com/appscode/kutil/apps/v1beta1"
+	apps_util "github.com/appscode/kutil/apps/v1"
 	"github.com/appscode/kutil/tools/queue"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
-	appsv1beta1 "k8s.io/api/apps/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -46,10 +46,10 @@ func (c *StashController) NewDeploymentWebhook() hooks.AdmissionHook {
 }
 
 func (c *StashController) initDeploymentWatcher() {
-	c.dpInformer = c.kubeInformerFactory.Apps().V1beta1().Deployments().Informer()
+	c.dpInformer = c.kubeInformerFactory.Apps().V1().Deployments().Informer()
 	c.dpQueue = queue.New("Deployment", c.MaxNumRequeues, c.NumThreads, c.runDeploymentInjector)
 	c.dpInformer.AddEventHandler(queue.DefaultEventHandler(c.dpQueue.GetQueue()))
-	c.dpLister = c.kubeInformerFactory.Apps().V1beta1().Deployments().Lister()
+	c.dpLister = c.kubeInformerFactory.Apps().V1().Deployments().Lister()
 }
 
 // syncToStdout is the business logic of the controller. In this controller it simply prints
@@ -77,8 +77,8 @@ func (c *StashController) runDeploymentInjector(key string) error {
 	} else {
 		glog.Infof("Sync/Add/Update for Deployment %s", key)
 
-		dp := obj.(*appsv1beta1.Deployment).DeepCopy()
-		dp.GetObjectKind().SetGroupVersionKind(appsv1beta1.SchemeGroupVersion.WithKind(api.KindDeployment))
+		dp := obj.(*appsv1.Deployment).DeepCopy()
+		dp.GetObjectKind().SetGroupVersionKind(appsv1.SchemeGroupVersion.WithKind(api.KindDeployment))
 
 		w, err := wcs.ConvertToWorkload(dp.DeepCopy())
 		if err != nil {
@@ -90,7 +90,7 @@ func (c *StashController) runDeploymentInjector(key string) error {
 			return err
 		}
 		if modified {
-			_, _, err := apps_util.PatchDeploymentObject(c.kubeClient, dp, w.Object.(*appsv1beta1.Deployment))
+			_, _, err := apps_util.PatchDeploymentObject(c.kubeClient, dp, w.Object.(*appsv1.Deployment))
 			if err != nil {
 				return err
 			}

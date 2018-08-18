@@ -13,9 +13,8 @@ import (
 	"github.com/appscode/stash/pkg/eventer"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	apps "k8s.io/api/apps/v1beta1"
+	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
-	extensions "k8s.io/api/extensions/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -228,7 +227,7 @@ func (f *Invocation) CleanupRecoveredVolume(meta metav1.ObjectMeta) error {
 	return nil
 }
 
-func (f *Framework) DaemonSetRepos(daemon *extensions.DaemonSet) []*api.Repository {
+func (f *Framework) DaemonSetRepos(daemon *apps.DaemonSet) []*api.Repository {
 	return f.GetRepositories(KindMetaReplicas{Kind: api.KindDaemonSet, Meta: daemon.ObjectMeta, Replicas: 1})
 }
 
@@ -240,7 +239,7 @@ func (f *Framework) ReplicationControllerRepos(rc *core.ReplicationController) [
 	return f.GetRepositories(KindMetaReplicas{Kind: api.KindReplicationController, Meta: rc.ObjectMeta, Replicas: int(*rc.Spec.Replicas)})
 }
 
-func (f *Framework) ReplicaSetRepos(rs *extensions.ReplicaSet) []*api.Repository {
+func (f *Framework) ReplicaSetRepos(rs *apps.ReplicaSet) []*api.Repository {
 	return f.GetRepositories(KindMetaReplicas{Kind: api.KindReplicaSet, Meta: rs.ObjectMeta, Replicas: int(*rs.Spec.Replicas)})
 }
 
@@ -300,7 +299,7 @@ func WaitUntilNamespaceDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) 
 func WaitUntilDeploymentDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
 
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := kc.AppsV1beta1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+		if _, err := kc.AppsV1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
 			if kerr.IsNotFound(err) {
 				return true, nil
 			} else {
@@ -314,7 +313,7 @@ func WaitUntilDeploymentDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta)
 func WaitUntilDaemonSetDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
 
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := kc.ExtensionsV1beta1().DaemonSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+		if _, err := kc.AppsV1().DaemonSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
 			if kerr.IsNotFound(err) {
 				return true, nil
 			} else {
@@ -328,7 +327,7 @@ func WaitUntilDaemonSetDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) 
 func WaitUntilStatefulSetDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
 
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := kc.AppsV1beta1().StatefulSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+		if _, err := kc.AppsV1().StatefulSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
 			if kerr.IsNotFound(err) {
 				return true, nil
 			} else {
@@ -342,7 +341,7 @@ func WaitUntilStatefulSetDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta
 func WaitUntilReplicaSetDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
 
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
-		if _, err := kc.ExtensionsV1beta1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+		if _, err := kc.AppsV1().ReplicaSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
 			if kerr.IsNotFound(err) {
 				return true, nil
 			} else {

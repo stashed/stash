@@ -7,7 +7,7 @@ import (
 	webhook "github.com/appscode/kubernetes-webhook-util/admission/v1beta1/workload"
 	wapi "github.com/appscode/kubernetes-webhook-util/apis/workload/v1"
 	wcs "github.com/appscode/kubernetes-webhook-util/client/workload/v1"
-	apps_util "github.com/appscode/kutil/apps/v1beta1"
+	apps_util "github.com/appscode/kutil/apps/v1"
 	"github.com/appscode/kutil/tools/queue"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
@@ -46,10 +46,10 @@ func (c *StashController) NewStatefulSetWebhook() hooks.AdmissionHook {
 }
 
 func (c *StashController) initStatefulSetWatcher() {
-	c.ssInformer = c.kubeInformerFactory.Apps().V1beta1().StatefulSets().Informer()
+	c.ssInformer = c.kubeInformerFactory.Apps().V1().StatefulSets().Informer()
 	c.ssQueue = queue.New("StatefulSet", c.MaxNumRequeues, c.NumThreads, c.runStatefulSetInjector)
 	c.ssInformer.AddEventHandler(queue.DefaultEventHandler(c.ssQueue.GetQueue()))
-	c.ssLister = c.kubeInformerFactory.Apps().V1beta1().StatefulSets().Lister()
+	c.ssLister = c.kubeInformerFactory.Apps().V1().StatefulSets().Lister()
 }
 
 // syncToStdout is the business logic of the controller. In this controller it simply prints
@@ -68,7 +68,7 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 	} else {
 		glog.Infof("Sync/Add/Update for StatefulSet %s", key)
 
-		ss := obj.(*appsv1beta1.StatefulSet).DeepCopy()
+		ss := obj.(*appsv1.StatefulSet).DeepCopy()
 		ss.GetObjectKind().SetGroupVersionKind(appsv1beta1.SchemeGroupVersion.WithKind(api.KindStatefulSet))
 
 		w, err := wcs.ConvertToWorkload(ss.DeepCopy())
@@ -80,7 +80,7 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 			return nil
 		}
 		if modified {
-			_, _, err := apps_util.PatchStatefulSetObject(c.kubeClient, ss, w.Object.(*appsv1beta1.StatefulSet))
+			_, _, err := apps_util.PatchStatefulSetObject(c.kubeClient, ss, w.Object.(*appsv1.StatefulSet))
 			if err != nil {
 				return err
 			}

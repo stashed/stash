@@ -16,19 +16,15 @@ rules:
   verbs:
   - "*"
 - apiGroups:
-  - extensions
-  resources:
-  - thirdpartyresources
-  verbs:
-  - "*"
-- apiGroups:
   - stash.appscode.com
   resources: ["*"]
   verbs: ["*"]
 - apiGroups:
   - apps
   resources:
+  - daemonsets
   - deployments
+  - replicasets
   - statefulsets
   verbs: ["get", "list", "watch", "patch"]
 - apiGroups:
@@ -37,12 +33,6 @@ rules:
   - jobs
   - cronjobs
   verbs: ["get", "list", "watch", "create", "delete", "patch"]
-- apiGroups:
-  - extensions
-  resources:
-  - replicasets
-  - daemonsets
-  verbs: ["get", "list", "watch", "patch"]
 - apiGroups: [""]
   resources:
   - namespaces

@@ -7,10 +7,10 @@ import (
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
-	apps_util "github.com/appscode/kutil/apps/v1beta1"
+	apps_util "github.com/appscode/kutil/apps/v1"
 	core_util "github.com/appscode/kutil/core/v1"
 	. "github.com/onsi/gomega"
-	apps "k8s.io/api/apps/v1beta1"
+	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -224,7 +224,7 @@ func (fi *Invocation) RemoveSecretVolumeMount(containers []core.Container) []cor
 }
 
 func (fi *Invocation) CreateDeploymentForMinioServer(obj apps.Deployment) error {
-	_, err := fi.KubeClient.AppsV1beta1().Deployments(obj.Namespace).Create(&obj)
+	_, err := fi.KubeClient.AppsV1().Deployments(obj.Namespace).Create(&obj)
 	return err
 }
 
@@ -269,7 +269,7 @@ func (f *Framework) DeletePVCForMinioServer(meta metav1.ObjectMeta) error {
 }
 
 func (f *Framework) DeleteDeploymentForMinioServer(meta metav1.ObjectMeta) error {
-	return f.KubeClient.AppsV1beta1().Deployments(meta.Namespace).Delete(meta.Name, deleteInBackground())
+	return f.KubeClient.AppsV1().Deployments(meta.Namespace).Delete(meta.Name, deleteInBackground())
 }
 
 func (f *Framework) DeleteServiceForMinioServer(meta metav1.ObjectMeta) error {

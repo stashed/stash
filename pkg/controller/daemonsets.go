@@ -7,7 +7,7 @@ import (
 	webhook "github.com/appscode/kubernetes-webhook-util/admission/v1beta1/workload"
 	wapi "github.com/appscode/kubernetes-webhook-util/apis/workload/v1"
 	wcs "github.com/appscode/kubernetes-webhook-util/client/workload/v1"
-	ext_util "github.com/appscode/kutil/extensions/v1beta1"
+	apps_util "github.com/appscode/kutil/apps/v1"
 	"github.com/appscode/kutil/tools/queue"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
@@ -46,10 +46,10 @@ func (c *StashController) NewDaemonSetWebhook() hooks.AdmissionHook {
 }
 
 func (c *StashController) initDaemonSetWatcher() {
-	c.dsInformer = c.kubeInformerFactory.Extensions().V1beta1().DaemonSets().Informer()
+	c.dsInformer = c.kubeInformerFactory.Apps().V1().DaemonSets().Informer()
 	c.dsQueue = queue.New("DaemonSet", c.MaxNumRequeues, c.NumThreads, c.runDaemonSetInjector)
 	c.dsInformer.AddEventHandler(queue.DefaultEventHandler(c.dsQueue.GetQueue()))
-	c.dsLister = c.kubeInformerFactory.Extensions().V1beta1().DaemonSets().Lister()
+	c.dsLister = c.kubeInformerFactory.Apps().V1().DaemonSets().Lister()
 }
 
 // syncToStdout is the business logic of the controller. In this controller it simply prints
@@ -68,8 +68,8 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 	} else {
 		glog.Infof("Sync/Add/Update for DaemonSet %s", key)
 
-		ds := obj.(*extensions.DaemonSet).DeepCopy()
-		ds.GetObjectKind().SetGroupVersionKind(extensions.SchemeGroupVersion.WithKind(api.KindDaemonSet))
+		ds := obj.(*appsv1.DaemonSet).DeepCopy()
+		ds.GetObjectKind().SetGroupVersionKind(appsv1.SchemeGroupVersion.WithKind(api.KindDaemonSet))
 
 		w, err := wcs.ConvertToWorkload(ds.DeepCopy())
 		if err != nil {
@@ -80,11 +80,11 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 			return err
 		}
 		if modified {
-			_, _, err := ext_util.PatchDaemonSetObject(c.kubeClient, ds, w.Object.(*extensions.DaemonSet))
+			_, _, err := apps_util.PatchDaemonSetObject(c.kubeClient, ds, w.Object.(*appsv1.DaemonSet))
 			if err != nil {
 				return err
 			}
-			return ext_util.WaitUntilDaemonSetReady(c.kubeClient, ds.ObjectMeta)
+			return apps_util.WaitUntilDaemonSetReady(c.kubeClient, ds.ObjectMeta)
 		}
 	}
 	return nil

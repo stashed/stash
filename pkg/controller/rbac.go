@@ -12,10 +12,9 @@ import (
 	"github.com/appscode/stash/client/clientset/versioned/scheme"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
-	apps "k8s.io/api/apps/v1beta1"
+	apps "k8s.io/api/apps/v1"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
-	extensions "k8s.io/api/extensions/v1beta1"
 	rbac "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/reference"
@@ -86,7 +85,7 @@ func (c *StashController) ensureSidecarClusterRole() error {
 				Verbs:     []string{"get", "list", "patch"},
 			},
 			{
-				APIGroups: []string{extensions.GroupName},
+				APIGroups: []string{apps.GroupName},
 				Resources: []string{"daemonsets", "replicasets"},
 				Verbs:     []string{"get", "list", "patch"},
 			},
@@ -159,7 +158,7 @@ func (c *StashController) ensureScaledownJobRBAC(resource *core.ObjectReference)
 				Verbs:     []string{"get", "list", "patch"},
 			},
 			{
-				APIGroups: []string{extensions.GroupName},
+				APIGroups: []string{apps.GroupName},
 				Resources: []string{"daemonsets", "replicasets"},
 				Verbs:     []string{"get", "list", "patch"},
 			},

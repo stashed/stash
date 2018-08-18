@@ -404,19 +404,19 @@ func WorkloadExists(k8sClient kubernetes.Interface, namespace string, workload a
 
 	switch workload.Kind {
 	case api.KindDeployment:
-		_, err := k8sClient.AppsV1beta1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
+		_, err := k8sClient.AppsV1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
 		return err
 	case api.KindReplicaSet:
-		_, err := k8sClient.ExtensionsV1beta1().ReplicaSets(namespace).Get(workload.Name, metav1.GetOptions{})
+		_, err := k8sClient.AppsV1().ReplicaSets(namespace).Get(workload.Name, metav1.GetOptions{})
 		return err
 	case api.KindReplicationController:
 		_, err := k8sClient.CoreV1().ReplicationControllers(namespace).Get(workload.Name, metav1.GetOptions{})
 		return err
 	case api.KindStatefulSet:
-		_, err := k8sClient.AppsV1beta1().StatefulSets(namespace).Get(workload.Name, metav1.GetOptions{})
+		_, err := k8sClient.AppsV1().StatefulSets(namespace).Get(workload.Name, metav1.GetOptions{})
 		return err
 	case api.KindDaemonSet:
-		_, err := k8sClient.ExtensionsV1beta1().DaemonSets(namespace).Get(workload.Name, metav1.GetOptions{})
+		_, err := k8sClient.AppsV1().DaemonSets(namespace).Get(workload.Name, metav1.GetOptions{})
 		return err
 	default:
 		return fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
@@ -509,7 +509,7 @@ func NewCheckJob(restic *api.Restic, hostName, smartPrefix string, image docker.
 func WorkloadReplicas(kubeClient *kubernetes.Clientset, namespace string, workloadKind string, workloadName string) (int32, error) {
 	switch workloadKind {
 	case api.KindDeployment:
-		obj, err := kubeClient.AppsV1beta1().Deployments(namespace).Get(workloadName, metav1.GetOptions{})
+		obj, err := kubeClient.AppsV1().Deployments(namespace).Get(workloadName, metav1.GetOptions{})
 		if err != nil {
 			return 0, err
 		} else {
@@ -523,7 +523,7 @@ func WorkloadReplicas(kubeClient *kubernetes.Clientset, namespace string, worklo
 			return *obj.Spec.Replicas, nil
 		}
 	case api.KindReplicaSet:
-		obj, err := kubeClient.ExtensionsV1beta1().ReplicaSets(namespace).Get(workloadName, metav1.GetOptions{})
+		obj, err := kubeClient.AppsV1().ReplicaSets(namespace).Get(workloadName, metav1.GetOptions{})
 		if err != nil {
 			return 0, err
 		} else {
@@ -622,7 +622,7 @@ func HasOldReplicaAnnotation(k8sClient *kubernetes.Clientset, namespace string, 
 
 	switch workload.Kind {
 	case api.KindDeployment:
-		obj, err := k8sClient.AppsV1beta1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
+		obj, err := k8sClient.AppsV1().Deployments(namespace).Get(workload.Name, metav1.GetOptions{})
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -634,7 +634,7 @@ func HasOldReplicaAnnotation(k8sClient *kubernetes.Clientset, namespace string, 
 		}
 		workloadAnnotation = obj.Annotations
 	case api.KindReplicaSet:
-		obj, err := k8sClient.ExtensionsV1beta1().ReplicaSets(namespace).Get(workload.Name, metav1.GetOptions{})
+		obj, err := k8sClient.AppsV1().ReplicaSets(namespace).Get(workload.Name, metav1.GetOptions{})
 		if err != nil {
 			log.Fatalln(err)
 		}
