@@ -73,6 +73,7 @@ spec:
       tolerations:
       - key: CriticalAddonsOnly
         operator: Exists
+      priorityClassName: system-cluster-critical
 ---
 # kube lacks the service serving cert signer, so provide a manual secret for it
 apiVersion: v1

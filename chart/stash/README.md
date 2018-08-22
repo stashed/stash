@@ -51,6 +51,9 @@ The following table lists the configurable parameters of the Stash chart and the
 | `pushgateway.tag`                   | Prometheus pushgateway container image tag                        | `v0.5.2`           |
 | `imagePullPolicy`                   | container image pull policy                                       | `IfNotPresent`     |
 | `criticalAddon`                     | If true, installs Stash operator as critical addon                | `false`            |
+| `affinity`                          | Affinity rules for pod assignment                                 | `{}`               |
+| `nodeSelector`                      | Node labels for pod assignment                                    | `{}`               |
+| `tolerations`                       | Tolerations used pod assignment                                   | `{}`               |
 | `rbac.create`                       | If `true`, create and use RBAC resources                          | `true`             |
 | `serviceAccount.create`             | If `true`, create a new service account                           | `true`             |
 | `serviceAccount.name`               | Service account to be used. If not set and `serviceAccount.create` is `true`, a name is generated using the fullname template | `` |
