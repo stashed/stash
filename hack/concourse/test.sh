@@ -28,6 +28,6 @@ pushd $GOPATH/src/github.com/$ORG_NAME/$REPO_NAME
 ./hack/docker/setup.sh build
 ./hack/docker/setup.sh push
 
-source ./hack/deploy/stash.sh --docker-registry=$DOCKER_REGISTRY
+./hack/deploy/stash.sh --docker-registry=$DOCKER_REGISTRY
 ./hack/make.py test e2e --v=3 --rbac=true --webhook=true --kubeconfig=/root/.kube/config --selfhosted-operator=true
 popd
