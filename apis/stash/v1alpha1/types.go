@@ -146,9 +146,10 @@ type RecoveryStatus struct {
 	// resource's generation, which is updated on mutation by the API Server.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
-
-	Phase RecoveryPhase  `json:"phase,omitempty"`
-	Stats []RestoreStats `json:"stats,omitempty"`
+	// +optional
+	ObservedGenerationHash string         `json:"observedGenerationHash,omitempty"`
+	Phase                  RecoveryPhase  `json:"phase,omitempty"`
+	Stats                  []RestoreStats `json:"stats,omitempty"`
 }
 
 type RestoreStats struct {
@@ -186,7 +187,8 @@ type RepositoryStatus struct {
 	// resource's generation, which is updated on mutation by the API Server.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
-
+	// +optional
+	ObservedGenerationHash   string       `json:"observedGenerationHash,omitempty"`
 	FirstBackupTime          *metav1.Time `json:"firstBackupTime,omitempty"`
 	LastBackupTime           *metav1.Time `json:"lastBackupTime,omitempty"`
 	LastSuccessfulBackupTime *metav1.Time `json:"lastSuccessfulBackupTime,omitempty"`

@@ -21,7 +21,6 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// OperationProps describes an operation
 type OperationProps struct {
 	Description  string                 `json:"description,omitempty"`
 	Consumes     []string               `json:"consumes,omitempty"`
@@ -39,9 +38,9 @@ type OperationProps struct {
 
 // MarshalJSON takes care of serializing operation properties to JSON
 //
-// We use a custom marhaller here to handle a special cases related to
+// We use a custom marhaller here to handle a special cases related
 // the Security field. We need to preserve zero length slice
-// while omitting the field when the value is nil/unset.
+// while omiting the field when the value is nil/unset.
 func (op OperationProps) MarshalJSON() ([]byte, error) {
 	type Alias OperationProps
 	if op.Security == nil {

@@ -1445,6 +1445,8 @@ spec:
                 is updated on mutation by the API Server.
               format: int64
               type: integer
+            observedGenerationHash:
+              type: string
             phase:
               type: string
             stats:

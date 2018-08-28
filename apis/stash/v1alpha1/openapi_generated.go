@@ -264,6 +264,12 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Format:      "int64",
 							},
 						},
+						"observedGenerationHash": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
 						"phase": {
 							SchemaProps: spec.SchemaProps{
 								Type:   []string{"string"},
@@ -399,6 +405,12 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Description: "observedGeneration is the most recent generation observed for this resource. It corresponds to the resource's generation, which is updated on mutation by the API Server.",
 								Type:        []string{"integer"},
 								Format:      "int64",
+							},
+						},
+						"observedGenerationHash": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
 							},
 						},
 						"firstBackupTime": {

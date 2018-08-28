@@ -21,7 +21,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// PathItemProps the path item specific properties
+// pathItemProps the path item specific properties
 type PathItemProps struct {
 	Get        *Operation  `json:"get,omitempty"`
 	Put        *Operation  `json:"put,omitempty"`

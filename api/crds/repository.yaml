@@ -1448,6 +1448,8 @@ spec:
                 is updated on mutation by the API Server.
               format: int64
               type: integer
+            observedGenerationHash:
+              type: string
   version: v1alpha1
   versions:
   - name: v1alpha1
