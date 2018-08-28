@@ -52,14 +52,14 @@ func (e Extensions) GetBool(key string) (bool, bool) {
 // GetStringSlice gets a string value from the extensions
 func (e Extensions) GetStringSlice(key string) ([]string, bool) {
 	if v, ok := e[strings.ToLower(key)]; ok {
-		arr, isSlice := v.([]interface{})
-		if !isSlice {
+		arr, ok := v.([]interface{})
+		if !ok {
 			return nil, false
 		}
 		var strs []string
 		for _, iface := range arr {
-			str, isString := iface.(string)
-			if !isString {
+			str, ok := iface.(string)
+			if !ok {
 				return nil, false
 			}
 			strs = append(strs, str)

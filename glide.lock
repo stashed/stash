@@ -1,5 +1,5 @@
 hash: ac3e602a8189ffd5b0887ee3df3b94c99de5012a8028ef36e67576053f62be02
-updated: 2018-08-18T09:24:46.388267124-07:00
+updated: 2018-08-27T22:02:16.075373417-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -41,7 +41,7 @@ imports:
   - registry/admissionreview/v1beta1
   - runtime/serializer/versioning
 - name: github.com/appscode/kutil
-  version: 569ee52ec2c8bb3c151daa20a8433cfa6cc1bfce
+  version: ab96b8d0056d39ca0c57dc6705864423b50515bc
   subpackages:
   - apiextensions/v1beta1
   - apps/v1
@@ -233,6 +233,8 @@ imports:
   version: dcef7f55730566d41eae5db10e7d6981829720f6
 - name: github.com/evanphx/json-patch
   version: afac545df32f2287a079e2dfb7ba2745a643747e
+- name: github.com/fatih/structs
+  version: ebf56d35bba727c68ac77f56f2fcf90b181851aa
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
 - name: github.com/go-ini/ini
@@ -242,7 +244,7 @@ imports:
 - name: github.com/go-openapi/jsonreference
   version: 13c6e3589ad90f49bd3e3bbe2c2cb3d7a4142272
 - name: github.com/go-openapi/spec
-  version: 384415f06ee238aae1df5caad877de6ceac3a5c4
+  version: 1de3e0542de65ad8d75452a595886fdd0befb363
 - name: github.com/go-openapi/swag
   version: f3f9494671f93fcff853e3c6e9e948b3eb71e590
 - name: github.com/gogo/protobuf
@@ -340,7 +342,7 @@ imports:
 - name: github.com/modern-go/reflect2
   version: 05fbef0ca5da472bbf96c9322b84a53edc03c9fd
 - name: github.com/ncw/swift
-  version: bd8b704d15b2f5357186ac39c863bd74eb837291
+  version: a0320860b16212c2b59b4912bb6508cda1d7cee6
 - name: github.com/NYTimes/gziphandler
   version: 56545f4a5d46df9a6648819d1664c3a03a13ffdb
 - name: github.com/onsi/ginkgo
@@ -521,7 +523,7 @@ imports:
   subpackages:
   - rate
 - name: google.golang.org/api
-  version: e21acd801f91da814261b938941d193bb036441a
+  version: 7954115fcf34e0dcda6981c9ed8a81a293f0489b
   subpackages:
   - gensupport
   - googleapi

@@ -1,8 +1,10 @@
 package queue
 
 import (
+	meta_util "github.com/appscode/kutil/meta"
 	"github.com/golang/glog"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -13,7 +15,7 @@ import (
 // QueueingEventHandler queues the key for the object on add and update events
 type QueueingEventHandler struct {
 	queue         workqueue.RateLimitingInterface
-	enqueueAdd    bool
+	enqueueAdd    func(obj interface{}) bool
 	enqueueUpdate func(oldObj, newObj interface{}) bool
 	enqueueDelete bool
 }
@@ -23,7 +25,7 @@ var _ cache.ResourceEventHandler = &QueueingEventHandler{}
 func DefaultEventHandler(queue workqueue.RateLimitingInterface) *QueueingEventHandler {
 	return &QueueingEventHandler{
 		queue:         queue,
-		enqueueAdd:    true,
+		enqueueAdd:    nil,
 		enqueueUpdate: nil,
 		enqueueDelete: true,
 	}
@@ -32,7 +34,7 @@ func DefaultEventHandler(queue workqueue.RateLimitingInterface) *QueueingEventHa
 func NewEventHandler(queue workqueue.RateLimitingInterface, enqueueUpdate func(oldObj, newObj interface{}) bool) *QueueingEventHandler {
 	return &QueueingEventHandler{
 		queue:         queue,
-		enqueueAdd:    true,
+		enqueueAdd:    nil,
 		enqueueUpdate: enqueueUpdate,
 		enqueueDelete: true,
 	}
@@ -41,7 +43,7 @@ func NewEventHandler(queue workqueue.RateLimitingInterface, enqueueUpdate func(o
 func NewUpsertHandler(queue workqueue.RateLimitingInterface) *QueueingEventHandler {
 	return &QueueingEventHandler{
 		queue:         queue,
-		enqueueAdd:    true,
+		enqueueAdd:    nil,
 		enqueueUpdate: nil,
 		enqueueDelete: false,
 	}
@@ -50,8 +52,22 @@ func NewUpsertHandler(queue workqueue.RateLimitingInterface) *QueueingEventHandl
 func NewDeleteHandler(queue workqueue.RateLimitingInterface) *QueueingEventHandler {
 	return &QueueingEventHandler{
 		queue:         queue,
-		enqueueAdd:    false,
-		enqueueUpdate: func(oldObj, newObj interface{}) bool { return false },
+		enqueueAdd:    func(_ interface{}) bool { return false },
+		enqueueUpdate: func(_, _ interface{}) bool { return false },
+		enqueueDelete: true,
+	}
+}
+
+func NewObservableHandler(queue workqueue.RateLimitingInterface, enableStatusSubresource bool) *QueueingEventHandler {
+	return &QueueingEventHandler{
+		queue: queue,
+		enqueueAdd: func(o interface{}) bool {
+			return !meta_util.AlreadyObserved(o, enableStatusSubresource)
+		},
+		enqueueUpdate: func(old, nu interface{}) bool {
+			return (nu.(metav1.Object)).GetDeletionTimestamp() != nil ||
+				!meta_util.AlreadyObserved2(old, nu, enableStatusSubresource)
+		},
 		enqueueDelete: true,
 	}
 }
@@ -67,7 +83,7 @@ func Enqueue(queue workqueue.RateLimitingInterface, obj interface{}) {
 
 func (h *QueueingEventHandler) OnAdd(obj interface{}) {
 	glog.V(6).Infof("Add event for %+v\n", obj)
-	if h.enqueueAdd {
+	if h.enqueueAdd == nil || h.enqueueAdd(obj) {
 		Enqueue(h.queue, obj)
 	}
 }

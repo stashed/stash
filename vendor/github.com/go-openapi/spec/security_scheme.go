@@ -78,7 +78,6 @@ func OAuth2AccessToken(authorizationURL, tokenURL string) *SecurityScheme {
 	}}
 }
 
-// SecuritySchemeProps describes a swagger security scheme in the securityDefinitions section
 type SecuritySchemeProps struct {
 	Description      string            `json:"description,omitempty"`
 	Type             string            `json:"type"`

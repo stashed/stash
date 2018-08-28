@@ -3401,6 +3401,9 @@
           "type": "integer",
           "format": "int64"
         },
+        "observedGenerationHash": {
+          "type": "string"
+        },
         "phase": {
           "type": "string"
         },
@@ -3501,6 +3504,9 @@
           "description": "observedGeneration is the most recent generation observed for this resource. It corresponds to the resource's generation, which is updated on mutation by the API Server.",
           "type": "integer",
           "format": "int64"
+        },
+        "observedGenerationHash": {
+          "type": "string"
         }
       }
     },
