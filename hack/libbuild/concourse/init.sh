@@ -2,20 +2,20 @@
 
 BASE_DIR=$(pwd)
 GOPATH=$(go env GOPATH)
-REPO_ROOT="$GOPATH/src/github.com/$ORG_NAME/$REPO_NAME"
+REPO_ROOT=${REPO_ROOT:-"$GOPATH/src/github.com/$ORG_NAME/$REPO_NAME"}
 PHARMER_VERSION="0.1.0-rc.5"
 ONESSL_VERSION="0.7.0"
 ClusterProvider=$ClusterProvider
 
 # copy $REPO_ROOT to $GOPATH
-mkdir -p "$GOPATH"/src/github.com/$ORG_NAME
-cp -r $REPO_NAME "$GOPATH"/src/github.com/$ORG_NAME
+mkdir -p $REPO_ROOT
+cp -r $REPO_NAME/. $REPO_ROOT
 
 # install all the dependencies and prepeare cluster
 source "$REPO_ROOT/hack/libbuild/concourse/dependencies.sh"
 source "$REPO_ROOT/hack/libbuild/concourse/cluster.sh"
 
-pushd "$GOPATH"/src/github.com/$ORG_NAME/$REPO_NAME
+pushd $REPO_ROOT
 
 # changed name of branch
 # this is necessary because operator image tag is based on branch name

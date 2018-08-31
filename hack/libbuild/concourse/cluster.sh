@@ -25,10 +25,10 @@ function cleanup_test_stuff() {
   kubectl describe nodes
 
   if [ -d "$BASE_DIR/creds" ]; then
-      rm -rf $BASE_DIR/creds
+    rm -rf $BASE_DIR/creds
   fi
 
-  pushd $GOPATH/src/github.com/$ORG_NAME/$REPO_NAME
+  pushd $REPO_ROOT
   ./hack/concourse/uninstall.sh
   popd
 
