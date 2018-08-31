@@ -23,6 +23,7 @@ resources:
   source:
     repository: appscode/stash
     access_token: ((access_token))
+    context: "concourse-ci"
 
 - name: gke
   type: pull-request
@@ -91,8 +92,7 @@ jobs:
   - put: repo-status
     params:
       state: pending
-      commit: stash
-      context: "concourse-ci"
+      commit: master
   - task: test-e2e
     privileged: true
     file: master/hack/concourse/task.yml
@@ -106,14 +106,12 @@ jobs:
       put: repo-status
       params:
         state: success
-        commit: stash
-        context: "concourse-ci"
+        commit: master
     on_failure:
       put: repo-status
       params:
         state: failure
-        commit: stash
-        context: "concourse-ci"
+        commit: master
 
 - name: test-gke
   plan:
