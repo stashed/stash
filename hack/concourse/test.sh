@@ -8,7 +8,7 @@ OPERATOR_NAME=stash
 APP_LABEL=stash #required for `kubectl describe deploy -n kube-system -l app=$APP_LABEL`
 
 export APPSCODE_ENV=dev
-export DOCKER_REGISTRY=test-concourse
+export DOCKER_REGISTRY=appscodeci
 
 # get concourse-common
 pushd $REPO_NAME
