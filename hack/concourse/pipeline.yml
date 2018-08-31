@@ -5,12 +5,25 @@ resource_types:
     repository: appscodeci/github-pr-resource
     tag: latest
 
+- name: github-status
+  type: docker-image
+  source:
+    repository: dpb587/github-status-resource
+    tag: master
+
 resources:
-- name: stash
+- name: master
   type: git
   source:
     uri: https://github.com/appscode/stash
     branch: master
+
+- name: repo-status
+  type: github-status
+  source:
+    repository: appscode/stash
+    access_token: ((access_token))
+    context: "concourse-ci"
 
 - name: gke
   type: pull-request
@@ -69,22 +82,38 @@ resources:
     versioned_file: appscode/creds.zip
 
 jobs:
-- name: test-stash-master
+- name: test-master
   plan:
-  - get: stash
+  - get: master
     trigger: true
   - get: creds
     params:
       unpack: true
+  - put: repo-status
+    params:
+      state: pending
+      commit: master
   - task: test-e2e
     privileged: true
-    file: stash/hack/concourse/task.yml
+    file: master/hack/concourse/task.yml
+    input_mapping:
+      stash: master
     params:
       ClusterProvider: digitalocean
       DOCKER_USER: ((docker_user))
       DOCKER_PASS: ((docker_pass))
+    on_success:
+      put: repo-status
+      params:
+        state: success
+        commit: master
+    on_failure:
+      put: repo-status
+      params:
+        state: failure
+        commit: master
 
-- name: test-stash-gke
+- name: test-gke
   plan:
   - get: gke
     trigger: true
@@ -110,7 +139,7 @@ jobs:
       put: gke
       params: {path: gke, status: failure}
 
-- name: test-stash-aws
+- name: test-aws
   plan:
   - get: aws
     version: every
@@ -120,7 +149,7 @@ jobs:
   - get: creds
     params:
       unpack: true
-  - task: test-aws-kops
+  - task: test-e2e
     privileged: true
     file: aws/hack/concourse/task.yml
     input_mapping:
@@ -148,7 +177,7 @@ jobs:
   - get: creds
     params:
       unpack: true
-  - task: test-azure-aks
+  - task: test-e2e
     privileged: true
     file: azure-aks/hack/concourse/task.yml
     input_mapping:
@@ -177,7 +206,7 @@ jobs:
   - get: creds
     params:
       unpack: true
-  - task: test-azure-acs
+  - task: test-e2e
     privileged: true
     file: azure-acs/hack/concourse/task.yml
     input_mapping:
@@ -196,7 +225,7 @@ jobs:
       put: azure-acs
       params: {path: azure-acs, status: failure}
 
-- name: test-stash-do
+- name: test-do
   plan:
   - get: do
     version: every
@@ -206,7 +235,7 @@ jobs:
   - get: creds
     params:
       unpack: true
-  - task: test-do
+  - task: test-e2e
     privileged: true
     file: do/hack/concourse/task.yml
     input_mapping:
@@ -222,7 +251,7 @@ jobs:
       put: do
       params: {path: do, status: failure}
 
-- name: test-stash-kubespray
+- name: test-kubespray
   plan:
   - get: kubespray
     version: every
@@ -232,7 +261,7 @@ jobs:
   - get: creds
     params:
       unpack: true
-  - task: test-kubespray
+  - task: test-e2e
     privileged: true
     file: kubespray/hack/concourse/task.yml
     input_mapping:

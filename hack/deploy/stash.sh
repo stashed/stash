@@ -16,9 +16,7 @@ echo ""
 function cleanup() {
   rm -rf $ONESSL ca.crt ca.key server.crt server.key
 }
-if [ "$APPSCODE_ENV" != "test-concourse" ]; then
-  trap cleanup EXIT
-fi
+trap cleanup EXIT
 
 # ref: https://github.com/appscodelabs/libbuild/blob/master/common/lib.sh#L55
 inside_git_repo() {
@@ -110,7 +108,7 @@ export STASH_PURGE=0
 
 export APPSCODE_ENV=${APPSCODE_ENV:-prod}
 export SCRIPT_LOCATION="curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0/"
-if [[ "$APPSCODE_ENV" == "dev" || "$APPSCODE_ENV" == "test-concourse" ]]; then
+if [[ "$APPSCODE_ENV" == "dev" ]]; then
   detect_tag
   export SCRIPT_LOCATION="cat "
   export STASH_IMAGE_TAG=$TAG
