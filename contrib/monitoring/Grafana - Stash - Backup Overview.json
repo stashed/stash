@@ -636,7 +636,7 @@
             }
           ],
           "timeFrom": "30m",
-          "title": "Fail List",
+          "title": "Success List",
           "transform": "table",
           "type": "table"
         },
