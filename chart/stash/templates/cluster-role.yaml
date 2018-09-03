@@ -16,6 +16,13 @@ rules:
   verbs:
   - "*"
 - apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - mutatingwebhookconfigurations
+  - validatingwebhookconfigurations
+  verbs:
+  - delete
+- apiGroups:
   - stash.appscode.com
   resources: ["*"]
   verbs: ["*"]

@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-cleaner
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    app: "{{ template "stash.name" . }}"
+    heritage: "{{ .Release.Service }}"
+    release: "{{ .Release.Name }}"
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-delete-policy": hook-succeeded,hook-failed
+spec:
+  backoffLimit: 3
+  activeDeadlineSeconds: 120
+  template:
+    spec:
+      containers:
+      - name: busybox
+        image: appscode/kubectl:v1.11
+        command:
+          - sh
+          - -c
+          - "sleep 2; kubectl delete validatingwebhookconfigurations admission.stash.appscode.com || true; kubectl delete mutatingwebhookconfiguration admission.stash.appscode.com || true"
+        imagePullPolicy: IfNotPresent
+      restartPolicy: Never
