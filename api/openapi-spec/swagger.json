@@ -3189,6 +3189,9 @@
     }
   },
   "definitions": {
+    "com.github.appscode.go.encoding.json.types.IntHash": {
+      "type": "string"
+    },
     "com.github.appscode.stash.apis.repositories.v1alpha1.Snapshot": {
       "properties": {
         "apiVersion": {
@@ -3398,11 +3401,7 @@
       "properties": {
         "observedGeneration": {
           "description": "observedGeneration is the most recent generation observed for this resource. It corresponds to the resource's generation, which is updated on mutation by the API Server.",
-          "type": "integer",
-          "format": "int64"
-        },
-        "observedGenerationHash": {
-          "type": "string"
+          "$ref": "#/definitions/com.github.appscode.go.encoding.json.types.IntHash"
         },
         "phase": {
           "type": "string"
@@ -3502,11 +3501,7 @@
         },
         "observedGeneration": {
           "description": "observedGeneration is the most recent generation observed for this resource. It corresponds to the resource's generation, which is updated on mutation by the API Server.",
-          "type": "integer",
-          "format": "int64"
-        },
-        "observedGenerationHash": {
-          "type": "string"
+          "$ref": "#/definitions/com.github.appscode.go.encoding.json.types.IntHash"
         }
       }
     },
