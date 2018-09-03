@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"github.com/appscode/go/encoding/json/types"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	store "kmodules.xyz/objectstore-api/api/v1"
@@ -145,11 +146,9 @@ type RecoveryStatus struct {
 	// observedGeneration is the most recent generation observed for this resource. It corresponds to the
 	// resource's generation, which is updated on mutation by the API Server.
 	// +optional
-	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
-	// +optional
-	ObservedGenerationHash string         `json:"observedGenerationHash,omitempty"`
-	Phase                  RecoveryPhase  `json:"phase,omitempty"`
-	Stats                  []RestoreStats `json:"stats,omitempty"`
+	ObservedGeneration *types.IntHash `json:"observedGeneration,omitempty"`
+	Phase              RecoveryPhase  `json:"phase,omitempty"`
+	Stats              []RestoreStats `json:"stats,omitempty"`
 }
 
 type RestoreStats struct {
@@ -186,14 +185,12 @@ type RepositoryStatus struct {
 	// observedGeneration is the most recent generation observed for this resource. It corresponds to the
 	// resource's generation, which is updated on mutation by the API Server.
 	// +optional
-	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
-	// +optional
-	ObservedGenerationHash   string       `json:"observedGenerationHash,omitempty"`
-	FirstBackupTime          *metav1.Time `json:"firstBackupTime,omitempty"`
-	LastBackupTime           *metav1.Time `json:"lastBackupTime,omitempty"`
-	LastSuccessfulBackupTime *metav1.Time `json:"lastSuccessfulBackupTime,omitempty"`
-	LastBackupDuration       string       `json:"lastBackupDuration,omitempty"`
-	BackupCount              int64        `json:"backupCount,omitempty"`
+	ObservedGeneration       *types.IntHash `json:"observedGeneration,omitempty"`
+	FirstBackupTime          *metav1.Time   `json:"firstBackupTime,omitempty"`
+	LastBackupTime           *metav1.Time   `json:"lastBackupTime,omitempty"`
+	LastSuccessfulBackupTime *metav1.Time   `json:"lastSuccessfulBackupTime,omitempty"`
+	LastBackupDuration       string         `json:"lastBackupDuration,omitempty"`
+	BackupCount              int64          `json:"backupCount,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

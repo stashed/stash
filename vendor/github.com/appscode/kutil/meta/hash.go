@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strconv"
 
+	"github.com/appscode/go/encoding/json/types"
 	"github.com/appscode/go/log"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/fatih/structs"
@@ -22,7 +23,7 @@ func GenerationHash(in metav1.Object) string {
 	if len(in.GetAnnotations()) > 0 {
 		data := make(map[string]string, len(in.GetAnnotations()))
 		for k, v := range in.GetAnnotations() {
-			if k != lastAppliedConfiguration {
+			if k != LastAppliedConfigAnnotation {
 				data[k] = v
 			}
 		}
@@ -55,10 +56,12 @@ func AlreadyObserved(o interface{}, enableStatusSubresource bool) bool {
 	obj := o.(metav1.Object)
 	st := structs.New(o)
 
-	if st.Field("Status").Field("ObservedGeneration").Value().(int64) < obj.GetGeneration() {
-		return false
+	cur := types.NewIntHash(obj.GetGeneration(), GenerationHash(obj))
+	observed, err := types.ParseIntHash(st.Field("Status").Field("ObservedGeneration").Value())
+	if err == nil {
+		panic(err)
 	}
-	return GenerationHash(obj) == st.Field("Status").Field("ObservedGenerationHash").Value().(string)
+	return observed.Equal(cur)
 }
 
 func AlreadyObserved2(old, nu interface{}, enableStatusSubresource bool) bool {
@@ -81,10 +84,15 @@ func AlreadyObserved2(old, nu interface{}, enableStatusSubresource bool) bool {
 	var match bool
 
 	if enableStatusSubresource {
-		match = nuStruct.Field("Status").Field("ObservedGeneration").Value().(int64) >= nuObj.GetGeneration()
-		if match {
-			match = GenerationHash(nuObj) == nuStruct.Field("Status").Field("ObservedGenerationHash").Value().(string)
+		oldObserved, err := types.ParseIntHash(oldStruct.Field("Status").Field("ObservedGeneration").Value())
+		if err == nil {
+			panic(err)
 		}
+		nuObserved, err := types.ParseIntHash(nuStruct.Field("Status").Field("ObservedGeneration").Value())
+		if err == nil {
+			panic(err)
+		}
+		match = nuObserved.Equal(oldObserved)
 	} else {
 		match = Equal(oldStruct.Field("Spec").Value(), nuStruct.Field("Spec").Value())
 		if match {

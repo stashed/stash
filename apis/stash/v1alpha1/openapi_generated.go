@@ -23,6 +23,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	types "github.com/appscode/go/encoding/json/types"
 	spec "github.com/go-openapi/spec"
 	resource "k8s.io/apimachinery/pkg/api/resource"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,6 +32,14 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
+		"github.com/appscode/go/encoding/json/types.IntHash": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Type:   types.IntHash{}.OpenAPISchemaType(),
+					Format: types.IntHash{}.OpenAPISchemaFormat(),
+				},
+			},
+		},
 		"github.com/appscode/stash/apis/stash/v1alpha1.FileGroup": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
@@ -260,14 +269,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						"observedGeneration": {
 							SchemaProps: spec.SchemaProps{
 								Description: "observedGeneration is the most recent generation observed for this resource. It corresponds to the resource's generation, which is updated on mutation by the API Server.",
-								Type:        []string{"integer"},
-								Format:      "int64",
-							},
-						},
-						"observedGenerationHash": {
-							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
+								Ref:         ref("github.com/appscode/go/encoding/json/types.IntHash"),
 							},
 						},
 						"phase": {
@@ -292,7 +294,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{
-				"github.com/appscode/stash/apis/stash/v1alpha1.RestoreStats"},
+				"github.com/appscode/go/encoding/json/types.IntHash", "github.com/appscode/stash/apis/stash/v1alpha1.RestoreStats"},
 		},
 		"github.com/appscode/stash/apis/stash/v1alpha1.Repository": {
 			Schema: spec.Schema{
@@ -403,14 +405,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 						"observedGeneration": {
 							SchemaProps: spec.SchemaProps{
 								Description: "observedGeneration is the most recent generation observed for this resource. It corresponds to the resource's generation, which is updated on mutation by the API Server.",
-								Type:        []string{"integer"},
-								Format:      "int64",
-							},
-						},
-						"observedGenerationHash": {
-							SchemaProps: spec.SchemaProps{
-								Type:   []string{"string"},
-								Format: "",
+								Ref:         ref("github.com/appscode/go/encoding/json/types.IntHash"),
 							},
 						},
 						"firstBackupTime": {
@@ -444,7 +439,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{
-				"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+				"github.com/appscode/go/encoding/json/types.IntHash", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 		},
 		"github.com/appscode/stash/apis/stash/v1alpha1.Restic": {
 			Schema: spec.Schema{

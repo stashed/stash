@@ -23,6 +23,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	types "github.com/appscode/go/encoding/json/types"
 	spec "github.com/go-openapi/spec"
 	resource "k8s.io/apimachinery/pkg/api/resource"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,6 +32,14 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
+		"github.com/appscode/go/encoding/json/types.IntHash": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Type:   types.IntHash{}.OpenAPISchemaType(),
+					Format: types.IntHash{}.OpenAPISchemaFormat(),
+				},
+			},
+		},
 		"github.com/appscode/stash/apis/repositories/v1alpha1.Snapshot": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
