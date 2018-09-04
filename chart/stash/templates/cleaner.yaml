@@ -15,6 +15,7 @@ spec:
   activeDeadlineSeconds: 120
   template:
     spec:
+      serviceAccountName: {{ template "stash.serviceAccountName" . }}
       containers:
       - name: busybox
         image: appscode/kubectl:v1.11
