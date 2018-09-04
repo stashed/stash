@@ -8,6 +8,10 @@ metadata:
     app: "{{ template "stash.name" . }}"
     heritage: "{{ .Release.Service }}"
     release: "{{ .Release.Name }}"
+{{- if .Values.annotations }}
+  annotations:
+{{ toYaml .Values.annotations | indent 4 }}
+{{- end }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
