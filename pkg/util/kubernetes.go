@@ -8,6 +8,7 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/log/golog"
+	"github.com/appscode/go/types"
 	core_util "github.com/appscode/kutil/core/v1"
 	"github.com/appscode/kutil/meta"
 	"github.com/appscode/kutil/tools/analytics"
@@ -192,6 +193,10 @@ func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image 
 			},
 		},
 		Resources: r.Spec.Resources,
+		SecurityContext: &core.SecurityContext{
+			RunAsUser:  types.Int64P(0),
+			RunAsGroup: types.Int64P(0),
+		},
 		VolumeMounts: []core.VolumeMount{
 			{
 				Name:      ScratchDirVolumeName,
