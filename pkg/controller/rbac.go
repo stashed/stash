@@ -35,7 +35,7 @@ func (c *StashController) ensureSidecarRoleBinding(resource *core.ObjectReferenc
 		Name:      c.getSidecarRoleBindingName(resource.Name),
 	}
 	_, _, err := rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
 
 		if in.Annotations == nil {
 			in.Annotations = map[string]string{}
@@ -139,7 +139,7 @@ func (c *StashController) ensureScaledownJobRBAC(resource *core.ObjectReference)
 		Namespace: resource.Namespace,
 	}
 	_, _, err := rbac_util.CreateOrPatchRole(c.kubeClient, meta, func(in *rbac.Role) *rbac.Role {
-		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
 
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
@@ -180,7 +180,7 @@ func (c *StashController) ensureScaledownJobRBAC(resource *core.ObjectReference)
 		Namespace: resource.Namespace,
 	}
 	_, _, err = core_util.CreateOrPatchServiceAccount(c.kubeClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
-		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
@@ -193,7 +193,7 @@ func (c *StashController) ensureScaledownJobRBAC(resource *core.ObjectReference)
 
 	// ensure role binding
 	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
 
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
@@ -226,7 +226,7 @@ func (c *StashController) ensureRecoveryRBAC(resource *core.ObjectReference) err
 		Namespace: resource.Namespace,
 	}
 	_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
-		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
@@ -239,7 +239,7 @@ func (c *StashController) ensureRecoveryRBAC(resource *core.ObjectReference) err
 
 	// ensure role binding
 	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, resource)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
 
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
@@ -282,7 +282,7 @@ func (c *StashController) ensureRepoReaderRole(repo *api.Repository) error {
 		return err
 	}
 	_, _, err = rbac_util.CreateOrPatchRole(c.kubeClient, meta, func(in *rbac.Role) *rbac.Role {
-		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, ref)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 
 		if in.Labels == nil {
 			in.Labels = map[string]string{}

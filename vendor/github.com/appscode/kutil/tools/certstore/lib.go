@@ -15,6 +15,25 @@ import (
 	"k8s.io/client-go/util/cert"
 )
 
+func SANsForNames(s string, names ...string) cert.AltNames {
+	return cert.AltNames{
+		DNSNames: append([]string{s}, names...),
+	}
+}
+
+func SANsForIPs(s string, ips ...string) cert.AltNames {
+	addrs := make([]net.IP, 0, len(ips))
+	for _, ip := range ips {
+		if v := net.ParseIP(ip); v != nil {
+			addrs = append(addrs, v)
+		}
+	}
+	return cert.AltNames{
+		DNSNames: []string{s},
+		IPs:      addrs,
+	}
+}
+
 type CertStore struct {
 	fs           afero.Fs
 	dir          string
@@ -39,6 +58,22 @@ func (s *CertStore) InitCA(prefix ...string) error {
 		return nil
 	}
 	return s.NewCA(prefix...)
+}
+
+func (s *CertStore) SetCA(crtBytes, keyBytes []byte) error {
+	crt, err := cert.ParseCertsPEM(crtBytes)
+	if err != nil {
+		return errors.Wrap(err, "failed to parse ca certificate")
+	}
+
+	key, err := cert.ParsePrivateKeyPEM(keyBytes)
+	if err != nil {
+		return errors.Wrap(err, "failed to parse ca private key")
+	}
+
+	s.caCert = crt[0]
+	s.caKey = key.(*rsa.PrivateKey)
+	return s.Write(s.ca, s.caCert, s.caKey)
 }
 
 func (s *CertStore) LoadCA(prefix ...string) error {
@@ -103,7 +138,8 @@ func (s *CertStore) createCAFromKey(key *rsa.PrivateKey) error {
 		CommonName:   s.ca,
 		Organization: s.organization,
 		AltNames: cert.AltNames{
-			IPs: []net.IP{net.ParseIP("127.0.0.1")},
+			DNSNames: []string{s.ca},
+			IPs:      []net.IP{net.ParseIP("127.0.0.1")},
 		},
 	}
 	crt, err := cert.NewSelfSignedCACert(cfg, key)
@@ -128,16 +164,26 @@ func (s *CertStore) CAName() string {
 	return s.ca
 }
 
-func (s *CertStore) CACert() []byte {
+func (s *CertStore) CACert() *x509.Certificate {
+	return s.caCert
+}
+
+func (s *CertStore) CACertBytes() []byte {
 	return cert.EncodeCertPEM(s.caCert)
 }
 
-func (s *CertStore) CAKey() []byte {
+func (s *CertStore) CAKey() *rsa.PrivateKey {
+	return s.caKey
+}
+
+func (s *CertStore) CAKeyBytes() []byte {
 	return cert.EncodePrivateKeyPEM(s.caKey)
 }
 
-func (s *CertStore) NewHostCertPair() ([]byte, []byte, error) {
-	var sans cert.AltNames
+func (s *CertStore) NewHostCertPair() (*x509.Certificate, *rsa.PrivateKey, error) {
+	sans := cert.AltNames{
+		IPs: []net.IP{net.ParseIP("127.0.0.1")},
+	}
 	publicIPs, privateIPs, _ := netz.HostIPs()
 	for _, ip := range publicIPs {
 		sans.IPs = append(sans.IPs, net.ParseIP(ip))
@@ -145,12 +191,26 @@ func (s *CertStore) NewHostCertPair() ([]byte, []byte, error) {
 	for _, ip := range privateIPs {
 		sans.IPs = append(sans.IPs, net.ParseIP(ip))
 	}
-	return s.NewServerCertPair("127.0.0.1", sans)
+	return s.NewServerCertPair(sans)
 }
 
-func (s *CertStore) NewServerCertPair(cn string, sans cert.AltNames) ([]byte, []byte, error) {
+func (s *CertStore) NewHostCertPairBytes() ([]byte, []byte, error) {
+	sans := cert.AltNames{
+		IPs: []net.IP{net.ParseIP("127.0.0.1")},
+	}
+	publicIPs, privateIPs, _ := netz.HostIPs()
+	for _, ip := range publicIPs {
+		sans.IPs = append(sans.IPs, net.ParseIP(ip))
+	}
+	for _, ip := range privateIPs {
+		sans.IPs = append(sans.IPs, net.ParseIP(ip))
+	}
+	return s.NewServerCertPairBytes(sans)
+}
+
+func (s *CertStore) NewServerCertPair(sans cert.AltNames) (*x509.Certificate, *rsa.PrivateKey, error) {
 	cfg := cert.Config{
-		CommonName:   cn,
+		CommonName:   getCN(sans),
 		Organization: s.organization,
 		AltNames:     sans,
 		Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
@@ -163,14 +223,22 @@ func (s *CertStore) NewServerCertPair(cn string, sans cert.AltNames) ([]byte, []
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to generate server certificate")
 	}
+	return crt, key, nil
+}
+
+func (s *CertStore) NewServerCertPairBytes(sans cert.AltNames) ([]byte, []byte, error) {
+	crt, key, err := s.NewServerCertPair(sans)
+	if err != nil {
+		return nil, nil, err
+	}
 	return cert.EncodeCertPEM(crt), cert.EncodePrivateKeyPEM(key), nil
 }
 
 // NewPeerCertPair is used to create cert pair that can serve as both server and client.
 // This is used to issue peer certificates for etcd.
-func (s *CertStore) NewPeerCertPair(cn string, sans cert.AltNames) ([]byte, []byte, error) {
+func (s *CertStore) NewPeerCertPair(sans cert.AltNames) (*x509.Certificate, *rsa.PrivateKey, error) {
 	cfg := cert.Config{
-		CommonName:   cn,
+		CommonName:   getCN(sans),
 		Organization: s.organization,
 		AltNames:     sans,
 		Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
@@ -183,13 +251,22 @@ func (s *CertStore) NewPeerCertPair(cn string, sans cert.AltNames) ([]byte, []by
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to generate peer certificate")
 	}
+	return crt, key, nil
+}
+
+func (s *CertStore) NewPeerCertPairBytes(sans cert.AltNames) ([]byte, []byte, error) {
+	crt, key, err := s.NewPeerCertPair(sans)
+	if err != nil {
+		return nil, nil, err
+	}
 	return cert.EncodeCertPEM(crt), cert.EncodePrivateKeyPEM(key), nil
 }
 
-func (s *CertStore) NewClientCertPair(cn string, organization ...string) ([]byte, []byte, error) {
+func (s *CertStore) NewClientCertPair(sans cert.AltNames, organization ...string) (*x509.Certificate, *rsa.PrivateKey, error) {
 	cfg := cert.Config{
-		CommonName:   cn,
+		CommonName:   getCN(sans),
 		Organization: organization,
+		AltNames:     sans,
 		Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 	}
 	key, err := cert.NewPrivateKey()
@@ -199,6 +276,14 @@ func (s *CertStore) NewClientCertPair(cn string, organization ...string) ([]byte
 	crt, err := cert.NewSignedCert(cfg, key, s.caCert, s.caKey)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to generate client certificate")
+	}
+	return crt, key, nil
+}
+
+func (s *CertStore) NewClientCertPairBytes(sans cert.AltNames, organization ...string) ([]byte, []byte, error) {
+	crt, key, err := s.NewClientCertPair(sans, organization...)
+	if err != nil {
+		return nil, nil, err
 	}
 	return cert.EncodeCertPEM(crt), cert.EncodePrivateKeyPEM(key), nil
 }
@@ -298,4 +383,36 @@ func (s *CertStore) ReadBytes(name string) ([]byte, []byte, error) {
 		return nil, nil, errors.Wrapf(err, "failed to read private key `%s`", s.KeyFile(name))
 	}
 	return crtBytes, keyBytes, nil
+}
+
+// RFC 5280
+// When the subjectAltName extension contains a domain name system
+// label, the domain name MUST be stored in the dNSName (an IA5String).
+// The name MUST be in the "preferred name syntax", as specified by
+// Section 3.5 of RFC1034 and as modified by Section 2.1 of
+// RFC1123. Note that while uppercase and lowercase letters are
+// allowed in domain names, no significance is attached to the case.
+// ref: https://security.stackexchange.com/a/150776/27304
+func merge(cn string, sans []string) []string {
+	var found bool
+	for _, name := range sans {
+		if strings.EqualFold(name, cn) {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return append(sans, cn)
+	}
+	return sans
+}
+
+func getCN(sans cert.AltNames) string {
+	if len(sans.DNSNames) > 0 {
+		return sans.DNSNames[0]
+	}
+	if len(sans.IPs) > 0 {
+		return sans.IPs[0].String()
+	}
+	return ""
 }

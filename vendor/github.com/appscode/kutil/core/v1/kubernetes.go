@@ -220,45 +220,49 @@ func MergeLocalObjectReferences(l1, l2 []core.LocalObjectReference) []core.Local
 	return result
 }
 
-func EnsureOwnerReference(meta metav1.ObjectMeta, owner *core.ObjectReference) metav1.ObjectMeta {
+func EnsureOwnerReference(meta metav1.Object, owner *core.ObjectReference) {
 	if owner == nil ||
 		owner.APIVersion == "" ||
 		owner.Kind == "" ||
 		owner.Name == "" ||
 		owner.UID == "" {
-		return meta
+		return
 	}
-	if meta.Namespace != owner.Namespace {
-		panic(fmt.Errorf("owner %s %s must be from the same namespace as object %s", owner.Kind, owner.Name, meta.Name))
+	if meta.GetNamespace() != owner.Namespace {
+		panic(fmt.Errorf("owner %s %s must be from the same namespace as object %s", owner.Kind, owner.Name, meta.GetName()))
 	}
 
+	ownerRefs := meta.GetOwnerReferences()
+
 	fi := -1
-	for i, ref := range meta.OwnerReferences {
+	for i, ref := range ownerRefs {
 		if ref.Kind == owner.Kind && ref.Name == owner.Name {
 			fi = i
 			break
 		}
 	}
 	if fi == -1 {
-		meta.OwnerReferences = append(meta.OwnerReferences, metav1.OwnerReference{})
-		fi = len(meta.OwnerReferences) - 1
+		ownerRefs = append(ownerRefs, metav1.OwnerReference{})
+		fi = len(ownerRefs) - 1
 	}
-	meta.OwnerReferences[fi].APIVersion = owner.APIVersion
-	meta.OwnerReferences[fi].Kind = owner.Kind
-	meta.OwnerReferences[fi].Name = owner.Name
-	meta.OwnerReferences[fi].UID = owner.UID
-	if meta.OwnerReferences[fi].BlockOwnerDeletion == nil {
-		meta.OwnerReferences[fi].BlockOwnerDeletion = types.FalseP()
+	ownerRefs[fi].APIVersion = owner.APIVersion
+	ownerRefs[fi].Kind = owner.Kind
+	ownerRefs[fi].Name = owner.Name
+	ownerRefs[fi].UID = owner.UID
+	if ownerRefs[fi].BlockOwnerDeletion == nil {
+		ownerRefs[fi].BlockOwnerDeletion = types.FalseP()
 	}
-	return meta
+
+	meta.SetOwnerReferences(ownerRefs)
 }
 
-func RemoveOwnerReference(meta metav1.ObjectMeta, owner *core.ObjectReference) metav1.ObjectMeta {
-	for i, ref := range meta.OwnerReferences {
+func RemoveOwnerReference(meta metav1.Object, owner *core.ObjectReference) {
+	ownerRefs := meta.GetOwnerReferences()
+	for i, ref := range ownerRefs {
 		if ref.Kind == owner.Kind && ref.Name == owner.Name {
-			meta.OwnerReferences = append(meta.OwnerReferences[:i], meta.OwnerReferences[i+1:]...)
+			ownerRefs = append(ownerRefs[:i], ownerRefs[i+1:]...)
 			break
 		}
 	}
-	return meta
+	meta.SetOwnerReferences(ownerRefs)
 }
