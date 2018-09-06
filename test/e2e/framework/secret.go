@@ -170,7 +170,7 @@ func (fi *Invocation) SecretForMinioBackend(includeCacert bool) core.Secret {
 		},
 	}
 	if includeCacert {
-		secret.Data[cli.CA_CERT_DATA] = fi.CertStore.CACert()
+		secret.Data[cli.CA_CERT_DATA] = fi.CertStore.CACertBytes()
 	}
 	return secret
 }

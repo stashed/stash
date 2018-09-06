@@ -402,7 +402,8 @@ func (c *Controller) ensureCheckRBAC(restic *core.ObjectReference) error {
 		Namespace: restic.Namespace,
 	}
 	_, _, err := core_util.CreateOrPatchServiceAccount(c.k8sClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
-		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, restic)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, restic)
+
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
@@ -415,7 +416,7 @@ func (c *Controller) ensureCheckRBAC(restic *core.ObjectReference) error {
 
 	// ensure role binding
 	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, restic)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, restic)
 
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
