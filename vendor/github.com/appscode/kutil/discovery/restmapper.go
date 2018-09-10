@@ -36,6 +36,34 @@ func DetectResource(restmapper *DefaultRESTMapper, obj interface{}) (schema.Grou
 	return schema.GroupVersionResource{}, &AmbiguousResourceError{PartialResource: gvk, MatchingResources: resources}
 }
 
+func ResourceForGVK(client discovery.DiscoveryInterface, input schema.GroupVersionKind) (schema.GroupVersionResource, error) {
+	resourceList, err := client.ServerResourcesForGroupVersion(input.GroupVersion().String())
+	if err != nil {
+		return schema.GroupVersionResource{}, err
+	}
+	var resources []schema.GroupVersionResource
+	for _, resource := range resourceList.APIResources {
+		if resource.Kind == input.Kind { // match kind
+			resources = append(resources, input.GroupVersion().WithResource(resource.Name))
+		}
+	}
+	resources = FilterSubResources(resources) // ignore sub-resources
+	if len(resources) == 1 {
+		return resources[0], nil
+	}
+	return schema.GroupVersionResource{}, &AmbiguousResourceError{PartialResource: input, MatchingResources: resources}
+}
+
+func FilterSubResources(resources []schema.GroupVersionResource) []schema.GroupVersionResource {
+	var resFiltered []schema.GroupVersionResource
+	for _, res := range resources {
+		if !strings.ContainsRune(res.Resource, '/') {
+			resFiltered = append(resFiltered, res)
+		}
+	}
+	return resFiltered
+}
+
 func LoadRestMapper(client discovery.DiscoveryInterface) (*DefaultRESTMapper, error) {
 	restMapper := NewDefaultRESTMapper([]schema.GroupVersion{})
 
