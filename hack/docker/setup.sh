@@ -72,7 +72,7 @@ build_docker() {
   chmod 755 restic
 
   cat >Dockerfile <<EOL
-FROM alpine
+FROM alpine:3.8
 
 RUN set -x \
   && apk add --update --no-cache ca-certificates
@@ -83,7 +83,7 @@ COPY stash /bin/stash
 ENTRYPOINT ["/bin/stash"]
 EXPOSE 56789
 EOL
-  local cmd="docker build -t $DOCKER_REGISTRY/$IMG:$TAG ."
+  local cmd="docker build --pull -t $DOCKER_REGISTRY/$IMG:$TAG ."
   echo $cmd
   $cmd
 
