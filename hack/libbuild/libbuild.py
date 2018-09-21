@@ -10,13 +10,15 @@ import io
 import json
 import os
 import os.path
+import random
 import re
 import socket
+import string
 import subprocess
 import sys
-from collections import OrderedDict
+import yaml
+from collections import Counter, OrderedDict
 from os.path import expandvars
-
 
 REPO_ROOT = ''
 BIN_MATRIX = None
@@ -182,7 +184,7 @@ def go_build(name, goos, goarch, main, compress=False, upx=False):
     if goos == 'alpine':
         repo_dir = REPO_ROOT[len(GOPATH):]
         uid = check_output('id -u').strip()
-        cmd = "docker run --rm -u {uid} -v /tmp:/.cache -v {repo_root}:/go{repo_dir} -w /go{repo_dir} -e {cgo_env} golang:1.9-alpine {goc} build -o {bindir}/{name}-{goos}-{goarch}{ext} {cgo} {ldflags} {tags} {main}".format(
+        cmd = "docker run --rm -u {uid} -v /tmp:/.cache -v {repo_root}:/go{repo_dir} -w /go{repo_dir} -e {cgo_env} golang:1.11-alpine {goc} build -o {bindir}/{name}-{goos}-{goarch}{ext} {cgo} {ldflags} {tags} {main}".format(
             repo_root=REPO_ROOT,
             repo_dir=repo_dir,
             uid=uid,
@@ -338,3 +340,194 @@ def _ungroup_go_imports(fname):
         f.seek(0)
         f.writelines(out)
         f.truncate()
+
+def git_branch_exists(branch):
+    return call('git show-ref --quiet refs/heads/{0}'.format(branch), cwd=REPO_ROOT) == 0
+
+
+def git_checkout(branch):
+    call('git fetch --all --prune', cwd=REPO_ROOT)
+    call('git fetch --tags', cwd=REPO_ROOT)
+    if git_branch_exists(branch):
+        call('git checkout {0}'.format(branch), cwd=REPO_ROOT)
+    else:
+        call('git checkout -b {0}'.format(branch), cwd=REPO_ROOT)
+
+
+def git_requires_commit():
+    changed_files = check_output('git diff --name-only', cwd=REPO_ROOT).strip().split('\n')
+    return Counter(changed_files) != Counter(['glide.lock'])
+
+
+def glide_mod(glide_config):
+    for x in DEP_LIST:
+        for idx, dep in enumerate(glide_config['import']):
+            if dep['package'] == x['package']:
+                glide_config['import'][idx] = x
+                break
+
+
+def glide_write(f, glide_config):
+    f.seek(0)
+    pkg = glide_config.pop('package')
+    out = 'package: ' + pkg + '\n' + yaml.dump(glide_config, default_flow_style=False)
+    f.write(out)
+    f.truncate()
+    glide_config['package'] = pkg
+
+
+DEP_LIST = [
+    {
+        'package': 'github.com/cpuguy83/go-md2man',
+        'version': 'v1.0.8',
+    },
+    {
+        'package': 'github.com/json-iterator/go',
+        'version': '1.1.5',
+    },
+    {
+        'package': 'github.com/coreos/prometheus-operator',
+        'version': 'v0.23.2',
+    },
+    {
+      "package": "k8s.io/api",
+      "version": "kubernetes-1.11.3"
+    },
+    {
+      "package": "k8s.io/apiextensions-apiserver",
+      "version": "kubernetes-1.11.3"
+    },
+    {
+      "package": "k8s.io/apimachinery",
+      "repo": "https://github.com/pharmer/apimachinery.git",
+      "vcs": "git",
+      "version": "release-1.11.3"
+    },
+    {
+      "package": "k8s.io/apiserver",
+      "repo": "https://github.com/pharmer/apiserver.git",
+      "vcs": "git",
+      "version": "release-1.11.3"
+    },
+    {
+      "package": "k8s.io/client-go",
+      "repo": "https://github.com/pharmer/client-go.git",
+      "vcs": "git",
+      "version": "release-1.11.3"
+    },
+    {
+      "package": "k8s.io/kubernetes",
+      "version": "v1.11.3"
+    },
+    {
+      "package": "k8s.io/kube-aggregator",
+      "version": "kubernetes-1.11.3"
+    },
+    {
+      "package": "k8s.io/metrics",
+      "version": "kubernetes-1.11.3"
+    },
+    {
+      "package": "k8s.io/kube-openapi",
+      "version": "master"
+    },
+    {
+      "package": "github.com/appscode/kutil",
+      "version": "release-8.0"
+    },
+    {
+      "package": "github.com/appscode/kubernetes-webhook-util",
+      "version": "release-8.0"
+    },
+    {
+      "package": "kmodules.xyz/monitoring-agent-api",
+      "repo": "https://github.com/kmodules/monitoring-agent-api.git",
+      "vcs": "git",
+      "version": "release-8.0"
+    },
+    {
+      "package": "kmodules.xyz/objectstore-api",
+      "repo": "https://github.com/kmodules/objectstore-api.git",
+      "vcs": "git",
+      "version": "release-8.0"
+    },
+    {
+      "package": "kmodules.xyz/offshoot-api",
+      "repo": "https://github.com/kmodules/offshoot-api.git",
+      "vcs": "git",
+      "version": "release-8.0"
+    },
+    {
+      "package": "github.com/appscode/kubernetes-webhook-util",
+      "version": "release-8.0"
+    },
+    {
+      "package": "github.com/openshift/api",
+      "version": "31a7bbd2266d178da3c12bb83f5274d387f775e6"
+    },
+    {
+      "package": "github.com/openshift/client-go",
+      "version": "4688ad28de2e88110c0ea30179c51b9b205f99be"
+    },
+    {
+      "package": "github.com/openshift/origin",
+      "version": "fecffb2fce100260088a1b9f268c0901a778cf2b"
+    },
+    {
+      "package": "github.com/spf13/cobra",
+      "version": "v0.0.3"
+    },
+    {
+      "package": "github.com/spf13/pflag",
+      "version": "v1.0.1"
+    },
+        {
+      "package": "github.com/graymeta/stow",
+      "repo": "https://github.com/appscode/stow.git",
+      "vcs": "git",
+      "version": "master"
+    },
+    {
+      "package": "github.com/Azure/azure-sdk-for-go",
+      "version": "v14.6.0"
+    },
+    {
+      "package": "github.com/Azure/go-autorest",
+      "version": "v10.6.2"
+    },
+    {
+      "package": "github.com/aws/aws-sdk-go",
+      "version": "v1.12.7"
+    },
+    {
+      "package": "google.golang.org/api/storage/v1",
+      "version": "master"
+    },
+    {
+      "package": "cloud.google.com/go",
+      "version": "v0.2.0"
+    },
+]
+
+
+def revendor():
+    seed = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
+    revendor_branch = 'depfixer-{0}'.format(seed)
+    print(REPO_ROOT)
+
+    call('git reset HEAD --hard', cwd=REPO_ROOT)
+    call('git clean -xfd', cwd=REPO_ROOT)
+    git_checkout('master')
+    call('git pull --rebase origin master', cwd=REPO_ROOT)
+    git_checkout(revendor_branch)
+    with open(REPO_ROOT + '/glide.yaml', 'r+') as glide_file:
+        glide_config = yaml.load(glide_file)
+        glide_mod(glide_config)
+        glide_write(glide_file, glide_config)
+        call('glide slow', cwd=REPO_ROOT)
+        if git_requires_commit():
+            call('git add --all', cwd=REPO_ROOT)
+            call('git commit -s -a -m "Use kubernetes-1.11.3"', cwd=REPO_ROOT)
+            call('git push origin {0}'.format(revendor_branch), cwd=REPO_ROOT)
+        else:
+            call('git reset HEAD --hard', cwd=REPO_ROOT)

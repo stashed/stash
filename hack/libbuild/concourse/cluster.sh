@@ -236,7 +236,7 @@ if [ "${ClusterProvider}" = "gke" ]; then
   CredProvider=GoogleCloud
   ZONE=us-central1-f
   NODE=n1-standard-2
-  K8S_VERSION=${K8S_VERSION:-"1.10.4-gke.2"}
+  K8S_VERSION=${K8S_VERSION:-"1.10.6-gke.2"}
 
   pharmer_common
 elif [ "${ClusterProvider}" = "aws" ]; then
