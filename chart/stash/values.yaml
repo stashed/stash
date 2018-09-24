@@ -69,8 +69,6 @@ apiserver:
   enableMutatingWebhook: false
   # enableValidatingWebhook is used to configure validating webhook for Stash CRDss
   enableValidatingWebhook: false
-  # CA certificate used by main Kubernetes api server
-  ca:
   # If true, uses status sub resource for crds.
   enableStatusSubresource: false
 
