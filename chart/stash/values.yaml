@@ -10,7 +10,11 @@ operator:
 pushgateway:
   registry: prom
   repository: pushgateway
-  tag: v0.4.0
+  tag: v0.5.2
+cleaner:
+  registry: appcode
+  repository: kubectl
+  tag: v1.11
 ## Optionally specify an array of imagePullSecrets.
 ## Secrets must be manually created in the namespace.
 ## ref: https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod
