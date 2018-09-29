@@ -12,7 +12,7 @@ pushgateway:
   repository: pushgateway
   tag: v0.5.2
 cleaner:
-  registry: appcode
+  registry: appscode
   repository: kubectl
   tag: v1.11
 ## Optionally specify an array of imagePullSecrets.
