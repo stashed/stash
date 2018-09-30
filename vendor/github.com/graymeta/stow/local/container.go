@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -36,9 +35,10 @@ func (c *container) URL() *url.URL {
 }
 
 func (c *container) CreateItem(name string) (stow.Item, io.WriteCloser, error) {
-	path := filepath.Join(c.path, name)
+	path := filepath.Join(c.path, filepath.FromSlash(name))
 	item := &item{
-		path: path,
+		path:          path,
+		contPrefixLen: len(c.path) + 1,
 	}
 	f, err := os.Create(path)
 	if err != nil {
@@ -48,13 +48,7 @@ func (c *container) CreateItem(name string) (stow.Item, io.WriteCloser, error) {
 }
 
 func (c *container) RemoveItem(id string) error {
-	var path string
-	if filepath.IsAbs(id) {
-		path = id
-	} else {
-		path = filepath.Join(c.path, id)
-	}
-	return os.Remove(path)
+	return os.Remove(id)
 }
 
 func (c *container) Put(name string, r io.Reader, size int64, metadata map[string]interface{}) (stow.Item, error) {
@@ -62,9 +56,10 @@ func (c *container) Put(name string, r io.Reader, size int64, metadata map[strin
 		return nil, stow.NotSupported("metadata")
 	}
 
-	path := filepath.Join(c.path, name)
+	path := filepath.Join(c.path, filepath.FromSlash(name))
 	item := &item{
-		path: path,
+		path:          path,
+		contPrefixLen: len(c.path) + 1,
 	}
 	err := os.MkdirAll(filepath.Dir(path), 0777)
 	if err != nil {
@@ -86,39 +81,24 @@ func (c *container) Put(name string, r io.Reader, size int64, metadata map[strin
 }
 
 func (c *container) Browse(prefix, delimiter, cursor string, count int) (*stow.ItemPage, error) {
+	conPrefixLen := len(c.path) + 1
+
 	var files []os.FileInfo
 	var err error
 	r, sz := utf8.DecodeRuneInString(delimiter)
 	if r == utf8.RuneError {
 		if sz == 0 {
-			files, err = flatdirs(c.path)
+			prefixDir, _ := filepath.Split(filepath.FromSlash(prefix))
+			dir := filepath.Join(c.path, prefixDir)
+			files, err = flatdirs(dir)
 		} else {
-			return nil, fmt.Errorf("Bad delimiter %v", delimiter)
+			return nil, fmt.Errorf("bad delimiter %v", delimiter)
 		}
-	} else if sz == len(delimiter) && r == os.PathSeparator {
-		var dir string
-		if filepath.IsAbs(prefix) {
-			dir = prefix
-		} else {
-			dir = filepath.Join(c.path, prefix)
-		}
-		if _, err := os.Stat(dir); os.IsNotExist(err) {
-			return &stow.ItemPage{}, nil
-		}
-		var fis []os.FileInfo
-		fis, err = ioutil.ReadDir(dir)
-		for _, fi := range fis {
-			n, err := filepath.Rel(c.path, filepath.Join(dir, fi.Name()))
-			if err != nil {
-				return nil, err
-			}
-			files = append(files, fileinfo{
-				FileInfo: fi,
-				name:     n,
-			})
-		}
+	} else if sz == len(delimiter) && r == '/' {
+		dir := filepath.Join(c.path, filepath.FromSlash(prefix))
+		files, err = readDir(dir)
 	} else {
-		return nil, errors.New("Unknown delimeter " + delimiter)
+		return nil, fmt.Errorf("unknown delimiter %v", delimiter)
 	}
 	if err != nil {
 		return nil, err
@@ -126,8 +106,9 @@ func (c *container) Browse(prefix, delimiter, cursor string, count int) (*stow.I
 	if cursor != stow.CursorStart {
 		// seek to the cursor
 		ok := false
+		c := filepath.Join(c.path, cursor)
 		for i, file := range files {
-			if file.Name() == cursor {
+			if file.Name() == c {
 				files = files[i:]
 				ok = true
 				break
@@ -138,7 +119,7 @@ func (c *container) Browse(prefix, delimiter, cursor string, count int) (*stow.I
 		}
 	}
 	if len(files) > count {
-		cursor = files[count].Name()
+		cursor = files[count].Name()[conPrefixLen:] // next item path as cursor
 		files = files[:count]
 	} else if len(files) <= count {
 		cursor = "" // end
@@ -149,11 +130,10 @@ func (c *container) Browse(prefix, delimiter, cursor string, count int) (*stow.I
 		if !f.IsDir() {
 			continue
 		}
-		path, err := filepath.Abs(filepath.Join(c.path, f.Name()))
-		if err != nil {
-			return nil, err
+		path := filepath.ToSlash(f.Name()[conPrefixLen:])
+		if strings.HasPrefix(path, prefix) {
+			prefixes = append(prefixes, path)
 		}
-		prefixes = append(prefixes, path)
 	}
 
 	var items []stow.Item
@@ -161,17 +141,14 @@ func (c *container) Browse(prefix, delimiter, cursor string, count int) (*stow.I
 		if f.IsDir() {
 			continue
 		}
-		path, err := filepath.Abs(filepath.Join(c.path, f.Name()))
-		if err != nil {
-			return nil, err
+		path := filepath.ToSlash(f.Name()[conPrefixLen:])
+		if strings.HasPrefix(path, prefix) {
+			item := &item{
+				path:          f.Name(),
+				contPrefixLen: conPrefixLen,
+			}
+			items = append(items, item)
 		}
-		if !strings.HasPrefix(f.Name(), prefix) {
-			continue
-		}
-		item := &item{
-			path: path,
-		}
-		items = append(items, item)
 	}
 	return &stow.ItemPage{Prefixes: prefixes, Items: items, Cursor: cursor}, nil
 }
@@ -181,15 +158,13 @@ func (c *container) Items(prefix, cursor string, count int) ([]stow.Item, string
 	if err != nil {
 		return nil, "", err
 	}
-	return page.Items, cursor, err
+	return page.Items, page.Cursor, err
 }
 
 func (c *container) Item(id string) (stow.Item, error) {
-	var path string
-	if filepath.IsAbs(id) {
-		path = id
-	} else {
-		path = filepath.Join(c.path, id)
+	path := id
+	if !filepath.IsAbs(id) {
+		path = filepath.Join(c.path, filepath.FromSlash(id))
 	}
 	info, err := os.Stat(path)
 	if os.IsNotExist(err) {
@@ -198,11 +173,38 @@ func (c *container) Item(id string) (stow.Item, error) {
 	if info.IsDir() {
 		return nil, errors.New("unexpected directory")
 	}
-
+	_, err = filepath.Rel(c.path, path)
+	if err != nil {
+		return nil, err
+	}
 	item := &item{
-		path: path,
+		path:          path,
+		contPrefixLen: len(c.path) + 1,
 	}
 	return item, nil
+}
+
+// readDir reads the directory named by dirname and returns
+// a list of directory entries sorted by filename.
+func readDir(dirname string) ([]os.FileInfo, error) {
+	f, err := os.Open(dirname)
+	if err != nil {
+		return nil, err
+	}
+	list, err := f.Readdir(-1)
+	f.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range list {
+		info := list[i]
+		list[i] = fileinfo{
+			FileInfo: info,
+			path:     filepath.Join(dirname, info.Name()),
+		}
+	}
+	return list, nil
 }
 
 // flatdirs walks the entire tree returning a list of
@@ -213,32 +215,24 @@ func flatdirs(path string) ([]os.FileInfo, error) {
 		if err != nil {
 			return err
 		}
-		if info.IsDir() {
-			return nil
+		if !info.IsDir() {
+			list = append(list, fileinfo{
+				FileInfo: info,
+				path:     p,
+			})
 		}
-		flatname, err := filepath.Rel(path, p)
-		if err != nil {
-			return err
-		}
-		list = append(list, fileinfo{
-			FileInfo: info,
-			name:     flatname,
-		})
 		return nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return list, nil
+	return list, err
 }
 
 type fileinfo struct {
 	os.FileInfo
-	name string
+	path string
 }
 
 func (f fileinfo) Name() string {
-	return f.name
+	return f.path
 }
 
 func (c *container) HasWriteAccess() error {

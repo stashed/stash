@@ -22,6 +22,8 @@ const (
 	VerbPatched   VerbType = "patched"
 	VerbUpdated   VerbType = "updated"
 	VerbDeleted   VerbType = "deleted"
+
+	ObjectNameField = "metadata.name"
 )
 
 var (

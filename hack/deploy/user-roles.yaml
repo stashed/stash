@@ -12,24 +12,12 @@ rules:
   - restics
   - recoveries
   - repositories
-  verbs:
-  - create
-  - delete
-  - deletecollection
-  - get
-  - list
-  - patch
-  - update
-  - watch
+  verbs: ["*"]
 - apiGroups:
   - repositories.stash.appscode.com
   resources:
   - snapshots
-  verbs:
-  - delete
-  - deletecollection
-  - get
-  - list
+  verbs: ["delete", "deletecollection", "get", "list"]
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
@@ -44,14 +32,9 @@ rules:
   - restics
   - recoveries
   - repositories
-  verbs:
-  - get
-  - list
-  - watch
+  verbs: ["get", "list", "watch"]
 - apiGroups:
   - repositories.stash.appscode.com
   resources:
   - snapshots
-  verbs:
-  - get
-  - list
+  verbs: ["get", "list"]

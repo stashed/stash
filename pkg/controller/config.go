@@ -14,6 +14,11 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+const (
+	mutatingWebhook   = "admission.stash.appscode.com"
+	validatingWebhook = "admission.stash.appscode.com"
+)
+
 type config struct {
 	EnableRBAC     bool
 	StashImageTag  string
@@ -44,6 +49,7 @@ func (c *Config) New() (*StashController, error) {
 	}
 	ctrl := &StashController{
 		config:               c.config,
+		clientConfig:         c.ClientConfig,
 		kubeClient:           c.KubeClient,
 		stashClient:          c.StashClient,
 		crdClient:            c.CRDClient,
@@ -53,6 +59,9 @@ func (c *Config) New() (*StashController, error) {
 	}
 
 	if err := ctrl.ensureCustomResourceDefinitions(); err != nil {
+		return nil, err
+	}
+	if err := ctrl.UpdateWebhookCABundle(); err != nil {
 		return nil, err
 	}
 	if ctrl.EnableRBAC {

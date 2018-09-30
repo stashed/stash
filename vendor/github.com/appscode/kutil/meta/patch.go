@@ -7,20 +7,26 @@ import (
 	jp "github.com/appscode/jsonpatch"
 	"github.com/evanphx/json-patch"
 	"github.com/json-iterator/go"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/mergepatch"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 )
 
 var json = jsoniter.ConfigFastest
 
-func CreateStrategicPatch(cur runtime.Object, mod runtime.Object, fns ...mergepatch.PreconditionFunc) ([]byte, error) {
-	curJson, err := json.Marshal(cur)
+func toJson(v interface{}) ([]byte, error) {
+	if u, ok := v.([]byte); ok {
+		return u, nil
+	}
+	return json.Marshal(v)
+}
+
+func CreateStrategicPatch(cur interface{}, mod interface{}, fns ...mergepatch.PreconditionFunc) ([]byte, error) {
+	curJson, err := toJson(cur)
 	if err != nil {
 		return nil, err
 	}
 
-	modJson, err := json.Marshal(mod)
+	modJson, err := toJson(mod)
 	if err != nil {
 		return nil, err
 	}
@@ -28,13 +34,13 @@ func CreateStrategicPatch(cur runtime.Object, mod runtime.Object, fns ...mergepa
 	return strategicpatch.CreateTwoWayMergePatch(curJson, modJson, mod, fns...)
 }
 
-func CreateJSONMergePatch(cur runtime.Object, mod runtime.Object, fns ...mergepatch.PreconditionFunc) ([]byte, error) {
-	curJson, err := json.Marshal(cur)
+func CreateJSONMergePatch(cur interface{}, mod interface{}, fns ...mergepatch.PreconditionFunc) ([]byte, error) {
+	curJson, err := toJson(cur)
 	if err != nil {
 		return nil, err
 	}
 
-	modJson, err := json.Marshal(mod)
+	modJson, err := toJson(mod)
 	if err != nil {
 		return nil, err
 	}
@@ -50,13 +56,13 @@ func CreateJSONMergePatch(cur runtime.Object, mod runtime.Object, fns ...mergepa
 	return patch, nil
 }
 
-func CreateJSONPatch(cur runtime.Object, mod runtime.Object) ([]byte, error) {
-	curJson, err := json.Marshal(cur)
+func CreateJSONPatch(cur interface{}, mod interface{}) ([]byte, error) {
+	curJson, err := toJson(cur)
 	if err != nil {
 		return nil, err
 	}
 
-	modJson, err := json.Marshal(mod)
+	modJson, err := toJson(mod)
 	if err != nil {
 		return nil, err
 	}

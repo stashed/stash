@@ -1,5 +1,5 @@
-hash: a7f202dab632d5a1df58868a2ec5f8dc5e6a90aa7c2b1f1451b2a8dd926bdeb5
-updated: 2018-09-10T14:37:12.275307488-07:00
+hash: fd01c000a9071bc992dc91c3dfca7795a35f23119fc89ed88a1a5b35fba5f627
+updated: 2018-09-30T04:35:04.842739009-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -29,7 +29,7 @@ imports:
 - name: github.com/appscode/go-version
   version: 0dcf3ac121c7c30e035b41ba9f652d1ce5994242
 - name: github.com/appscode/jsonpatch
-  version: 1359b374de83fa14fd58ab10aa8ea4935f84d249
+  version: 5af499cf01c842bfdd7761a433fc90525ccd6836
 - name: github.com/appscode/kubernetes-webhook-util
   version: cb010279d0a6d1885e6316f78cf3ef682fca7a42
   subpackages:
@@ -42,8 +42,9 @@ imports:
   - registry/admissionreview/v1beta1
   - runtime/serializer/versioning
 - name: github.com/appscode/kutil
-  version: 6a61b0d2df81e2d5b4764bee574eb43a9a954a5a
+  version: 8098faaaba7e4781cbaecf630c8583be1b58d36c
   subpackages:
+  - admissionregistration/v1beta1
   - apiextensions/v1beta1
   - apps/v1
   - batch/v1beta1
@@ -56,6 +57,7 @@ imports:
   - tools/certstore
   - tools/clientcmd
   - tools/queue
+  - tools/watch
 - name: github.com/appscode/mergo
   version: 9f23e2d6bd2a77f959b2bf6acdbefd708a83a4a4
 - name: github.com/appscode/ocutil
@@ -206,7 +208,7 @@ imports:
   - daemon
   - journal
 - name: github.com/cpuguy83/go-md2man
-  version: 71acacd42f85e5e82f70a55327789582a5200a90
+  version: 20f5889cbdc3c73dbd2862796665e7c465ade7d1
   subpackages:
   - md2man
 - name: github.com/davecgh/go-spew
@@ -235,7 +237,7 @@ imports:
 - name: github.com/evanphx/json-patch
   version: afac545df32f2287a079e2dfb7ba2745a643747e
 - name: github.com/fatih/structs
-  version: ebf56d35bba727c68ac77f56f2fcf90b181851aa
+  version: 4966fc68f5b7593aafa6cbbba2d65ec6e1416047
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
 - name: github.com/go-ini/ini
@@ -299,7 +301,7 @@ imports:
   - openstack/utils
   - pagination
 - name: github.com/graymeta/stow
-  version: afce6d90444a3ba63c6d6671498c6cdc79375369
+  version: 1849a82ac7fbd3e5cb144bcc711544e90903eac4
   repo: https://github.com/appscode/stow.git
   vcs: git
   subpackages:
@@ -522,7 +524,7 @@ imports:
   subpackages:
   - rate
 - name: google.golang.org/api
-  version: 7ca32eb868bf53ea2fc406698eb98583a8073d19
+  version: 5da02d31af7d15cc65a207f8a46a6e3c50d41178
   subpackages:
   - gensupport
   - googleapi
@@ -680,7 +682,7 @@ imports:
   - third_party/forked/golang/netutil
   - third_party/forked/golang/reflect
 - name: k8s.io/apiserver
-  version: 8573140a007810ee0d5a165647f171b0a77acfe5
+  version: 9970aee1898bc65beb8f3829b2ddf8e191777f78
   repo: https://github.com/pharmer/apiserver.git
   vcs: git
   subpackages:
@@ -773,7 +775,9 @@ imports:
   - plugin/pkg/authenticator/token/webhook
   - plugin/pkg/authorizer/webhook
 - name: k8s.io/client-go
-  version: 2cefa64ff137e128daeddbd1775cd775708a05bf
+  version: 805859b028aa45844e5d3b699d1dfad9eed753ad
+  repo: https://github.com/pharmer/client-go.git
+  vcs: git
   subpackages:
   - discovery
   - discovery/fake
@@ -954,7 +958,7 @@ imports:
   - pkg/client/clientset_generated/clientset/typed/apiregistration/v1
   - pkg/client/clientset_generated/clientset/typed/apiregistration/v1beta1
 - name: k8s.io/kube-openapi
-  version: e3762e86a74c878ffed47484592986685639c2cd
+  version: 91cfa479c814065e420cee7ed227db0f63a5854e
   subpackages:
   - pkg/builder
   - pkg/common

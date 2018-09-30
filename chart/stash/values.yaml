@@ -70,13 +70,14 @@ apiserver:
   # for more information on proper values of this field
   versionPriority: 15
   # enableMutatingWebhook is used to configure mutating webhook for Kubernetes workloads
-  enableMutatingWebhook: false
+  enableMutatingWebhook: true
   # enableValidatingWebhook is used to configure validating webhook for Stash CRDss
-  enableValidatingWebhook: false
+  enableValidatingWebhook: true
   # CA certificate used by main Kubernetes api server
-  ca:
-  # If true, uses status sub resource for crds.
-  enableStatusSubresource: false
+  ca: not-ca-cert
+  # If true, disables status sub resource for crds.
+  # Otherwise, enables status sub resource for Kubernetes version >= 1.11 and disables for other versions.
+  disableStatusSubresource: false
 
 # Send usage events to Google Analytics
 enableAnalytics: true

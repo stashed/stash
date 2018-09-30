@@ -116,42 +116,7 @@ $ helm search appscode/stash
 NAME            CHART VERSION APP VERSION DESCRIPTION
 appscode/stash  0.7.0    0.7.0  Stash by AppsCode - Backup your Kubernetes Volumes
 
-# Kubernetes 1.8.x
 $ helm install appscode/stash --name stash-operator --version 0.7.0 --namespace kube-system
-
-# Kubernetes 1.9.x - 1.10.x
-$ helm install appscode/stash --name stash-operator --version 0.7.0 \
-  --namespace kube-system \
-  --set apiserver.ca="$(onessl get kube-ca)" \
-  --set apiserver.enableValidatingWebhook=true \
-  --set apiserver.enableMutatingWebhook=true
-
-# Kubernetes 1.11.0 or later
-$ helm install appscode/stash --name stash-operator --version 0.7.0 \
-  --namespace kube-system \
-  --set apiserver.ca="$(onessl get kube-ca)" \
-  --set apiserver.enableValidatingWebhook=true \
-  --set apiserver.enableMutatingWebhook=true \
-  --set apiserver.enableStatusSubresource=true
-```
-
-To install `onessl`, run the following commands:
-
-```console
-# Mac OSX amd64:
-curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.3.0/onessl-darwin-amd64 \
-  && chmod +x onessl \
-  && sudo mv onessl /usr/local/bin/
-
-# Linux amd64:
-curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.3.0/onessl-linux-amd64 \
-  && chmod +x onessl \
-  && sudo mv onessl /usr/local/bin/
-
-# Linux arm64:
-curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.3.0/onessl-linux-arm64 \
-  && chmod +x onessl \
-  && sudo mv onessl /usr/local/bin/
 ```
 
 To see the detailed configuration options, visit [here](https://github.com/appscode/stash/tree/master/chart/stash).
