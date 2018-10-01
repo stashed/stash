@@ -19,37 +19,27 @@ func (l *location) Close() error {
 }
 
 func (l *location) ItemByURL(u *url.URL) (stow.Item, error) {
-	i := &item{}
-	i.path = u.Path
-	return i, nil
+	dir, _ := filepath.Split(u.Path)
+	return &item{
+		path:          u.Path,
+		contPrefixLen: len(dir),
+	}, nil
 }
 
 func (l *location) RemoveContainer(id string) error {
-	var path string
-	if filepath.IsAbs(id) {
-		path = id
-	} else {
-		loc, ok := l.config.Config(ConfigKeyPath)
-		if !ok {
-			return errors.New("missing " + ConfigKeyPath + " configuration")
-		}
-		path = filepath.Join(loc, id)
-	}
-	// invariant: path == abs path && path must be a folder
-	return os.RemoveAll(path)
+	return os.RemoveAll(id)
 }
 
 func (l *location) CreateContainer(name string) (stow.Container, error) {
-	loc, ok := l.config.Config(ConfigKeyPath)
+	path, ok := l.config.Config(ConfigKeyPath)
 	if !ok {
 		return nil, errors.New("missing " + ConfigKeyPath + " configuration")
 	}
-	path := filepath.Join(loc, name)
-	if err := os.Mkdir(path, 0777); err != nil {
+	fullpath := filepath.Join(path, name)
+	if err := os.Mkdir(fullpath, 0777); err != nil {
 		return nil, err
 	}
-	// invariant: path == abs path
-	abspath, err := filepath.Abs(path)
+	abspath, err := filepath.Abs(fullpath)
 	if err != nil {
 		return nil, err
 	}
@@ -112,26 +102,28 @@ func (l *location) Containers(prefix string, cursor string, count int) ([]stow.C
 }
 
 func (l *location) Container(id string) (stow.Container, error) {
-	var path string
-	if filepath.IsAbs(id) {
-		path = id
-	} else {
-		loc, ok := l.config.Config(ConfigKeyPath)
-		if !ok {
-			return nil, errors.New("missing " + ConfigKeyPath + " configuration")
-		}
-		path = filepath.Join(loc, id)
+	path, ok := l.config.Config(ConfigKeyPath)
+	if !ok {
+		return nil, errors.New("missing " + ConfigKeyPath + " configuration")
 	}
-	if _, err := os.Stat(path); err != nil {
+	var fullPath string
+	if filepath.IsAbs(id) {
+		fullPath = id
+	} else {
+		fullPath = filepath.Join(path, id)
+	}
+
+	containers, err := l.filesToContainers(path, fullPath)
+	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, stow.ErrNotFound
 		}
 		return nil, err
 	}
-	return &container{
-		name: id,
-		path: path,
-	}, nil
+	if len(containers) == 0 {
+		return nil, stow.ErrNotFound
+	}
+	return containers[0], nil
 }
 
 // filesToContainers takes a list of files and turns it into a

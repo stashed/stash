@@ -27,11 +27,12 @@ const (
 )
 
 type item struct {
-	path     string
-	infoOnce sync.Once // protects info
-	info     os.FileInfo
-	infoErr  error
-	metadata map[string]interface{}
+	path          string
+	contPrefixLen int
+	infoOnce      sync.Once // protects info
+	info          os.FileInfo
+	infoErr       error
+	metadata      map[string]interface{}
 }
 
 func (i *item) ID() string {
@@ -39,7 +40,7 @@ func (i *item) ID() string {
 }
 
 func (i *item) Name() string {
-	return filepath.Base(i.path)
+	return filepath.ToSlash(i.path[i.contPrefixLen:])
 }
 
 func (i *item) Size() (int64, error) {
@@ -92,7 +93,7 @@ func (i *item) ensureInfo() error {
 }
 
 func (i *item) setMetadata(info os.FileInfo) error {
-	fileMetadata := getFileMetadata(i.path, info) // retrieve file metadata
+	fileMetadata := getFileMetadata(i.path, info)
 	i.metadata = fileMetadata
 	return nil
 }

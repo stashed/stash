@@ -3,6 +3,8 @@ package controller
 import (
 	"fmt"
 
+	"github.com/appscode/go/log"
+	reg_util "github.com/appscode/kutil/admissionregistration/v1beta1"
 	crdutils "github.com/appscode/kutil/apiextensions/v1beta1"
 	"github.com/appscode/kutil/tools/queue"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -18,6 +20,7 @@ import (
 	apps_listers "k8s.io/client-go/listers/apps/v1"
 	batch_listers "k8s.io/client-go/listers/batch/v1"
 	core_listers "k8s.io/client-go/listers/core/v1"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 )
@@ -25,10 +28,11 @@ import (
 type StashController struct {
 	config
 
-	kubeClient  kubernetes.Interface
-	stashClient cs.Interface
-	crdClient   crd_cs.ApiextensionsV1beta1Interface
-	recorder    record.EventRecorder
+	clientConfig *rest.Config
+	kubeClient   kubernetes.Interface
+	stashClient  cs.Interface
+	crdClient    crd_cs.ApiextensionsV1beta1Interface
+	recorder     record.EventRecorder
 
 	kubeInformerFactory  informers.SharedInformerFactory
 	stashInformerFactory stashinformers.SharedInformerFactory
@@ -91,6 +95,24 @@ func (c *StashController) ensureCustomResourceDefinitions() error {
 	return crdutils.RegisterCRDs(c.crdClient, crds)
 }
 
+func (c *StashController) UpdateWebhookCABundle() (err error) {
+	err = reg_util.UpdateMutatingWebhookCABundle(c.clientConfig, mutatingWebhook)
+	err = reg_util.UpdateValidatingWebhookCABundle(c.clientConfig, validatingWebhook)
+	return
+}
+
+func (c *StashController) Run(stopCh <-chan struct{}) {
+	go c.RunInformers(stopCh)
+
+	cancel1, _ := reg_util.SyncMutatingWebhookCABundle(c.clientConfig, mutatingWebhook)
+	cancel2, _ := reg_util.SyncValidatingWebhookCABundle(c.clientConfig, validatingWebhook)
+
+	<-stopCh
+
+	cancel1()
+	cancel2()
+}
+
 func (c *StashController) RunInformers(stopCh <-chan struct{}) {
 	defer runtime.HandleCrash()
 
@@ -121,4 +143,7 @@ func (c *StashController) RunInformers(stopCh <-chan struct{}) {
 	c.rcQueue.Run(stopCh)
 	c.rsQueue.Run(stopCh)
 	c.jobQueue.Run(stopCh)
+
+	<-stopCh
+	log.Infoln("Stopping Stash controller")
 }

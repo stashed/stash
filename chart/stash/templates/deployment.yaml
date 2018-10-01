@@ -1,3 +1,6 @@
+# GKE returns Major:"1", Minor:"10+"
+{{- $major := default "0" .Capabilities.KubeVersion.Major | trimSuffix "+" | int64 }}
+{{- $minor := default "0" .Capabilities.KubeVersion.Minor | trimSuffix "+" | int64 }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -46,7 +49,9 @@ spec:
         - --audit-log-path=-
         - --tls-cert-file=/var/serving-cert/tls.crt
         - --tls-private-key-file=/var/serving-cert/tls.key
-        - --enable-status-subresource={{ .Values.apiserver.enableStatusSubresource }}
+{{- if and (not .Values.apiserver.disableStatusSubresource) (ge $major 1) (ge $minor 11) }}
+        - --enable-status-subresource=true
+{{- end }}
         - --enable-analytics={{ .Values.enableAnalytics }}
         ports:
         - containerPort: 8443

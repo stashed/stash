@@ -88,3 +88,23 @@ func WaitUntillServiceAccountDeleted(kubeClient kubernetes.Interface, meta metav
 		return false, nil
 	})
 }
+
+// IsServiceAccountToken returns true if the secret is a valid api token for the service account
+func IsServiceAccountToken(secret *core.Secret, sa *core.ServiceAccount) bool {
+	if secret.Type != core.SecretTypeServiceAccountToken {
+		return false
+	}
+
+	name := secret.Annotations[core.ServiceAccountNameKey]
+	uid := secret.Annotations[core.ServiceAccountUIDKey]
+	if name != sa.Name {
+		// Name must match
+		return false
+	}
+	if len(uid) > 0 && uid != string(sa.UID) {
+		// If UID is specified, it must match
+		return false
+	}
+
+	return true
+}
