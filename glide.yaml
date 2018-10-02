@@ -101,3 +101,5 @@ import:
   version: 1c05540f6879653db88113bc4a2b70aec4bd491f
 - package: golang.org/x/sys
   version: 95c6576299259db960f6c5b9b69ea52422860fce
+- package: github.com/golang/protobuf
+  version: v1.1.0
