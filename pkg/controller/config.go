@@ -3,6 +3,7 @@ package controller
 import (
 	"time"
 
+	"github.com/appscode/kutil/discovery"
 	cs "github.com/appscode/stash/client/clientset/versioned"
 	stashinformers "github.com/appscode/stash/client/informers/externalversions"
 	"github.com/appscode/stash/pkg/eventer"
@@ -44,6 +45,10 @@ func NewConfig(clientConfig *rest.Config) *Config {
 }
 
 func (c *Config) New() (*StashController, error) {
+	if err := discovery.IsDefaultSupportedVersion(c.KubeClient); err != nil {
+		return nil, err
+	}
+
 	tweakListOptions := func(opt *metav1.ListOptions) {
 		opt.IncludeUninitialized = true
 	}
