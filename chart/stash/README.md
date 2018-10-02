@@ -54,6 +54,7 @@ The following table lists the configurable parameters of the Stash chart and the
 | `cleaner.tag`                        | Webhook cleaner container image tag                               | `v1.11`            |
 | `imagePullPolicy`                    | container image pull policy                                       | `IfNotPresent`     |
 | `criticalAddon`                      | If true, installs Stash operator as critical addon                | `false`            |
+| `logLevel`                           | Log level for operator                                            | `3`                |
 | `affinity`                           | Affinity rules for pod assignment                                 | `{}`               |
 | `annotations`                        | Annotations applied to operator pod(s)                            | `{}`               |
 | `nodeSelector`                       | Node labels for pod assignment                                    | `{}`               |

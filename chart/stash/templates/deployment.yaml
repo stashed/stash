@@ -42,7 +42,7 @@ spec:
         imagePullPolicy: {{ .Values.imagePullPolicy }}
         args:
         - run
-        - --v=3
+        - --v={{ .Values.logLevel }}
         - --rbac={{ .Values.rbac.create }}
         - --docker-registry={{ .Values.operator.registry }}
         - --secure-port=8443
