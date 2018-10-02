@@ -1,4 +1,4 @@
-{{- $ca := genCA "svc-cat-ca" 3650 }}
+{{- $ca := genCA "ca" 3650 }}
 {{- $cn := include "stash.fullname" . -}}
 {{- $altName1 := printf "%s.%s" $cn .Release.Namespace }}
 {{- $altName2 := printf "%s.%s.svc" $cn .Release.Namespace }}
