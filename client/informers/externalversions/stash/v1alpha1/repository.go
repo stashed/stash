@@ -21,7 +21,7 @@ package v1alpha1
 import (
 	time "time"
 
-	stash_v1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
+	stashv1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
 	versioned "github.com/appscode/stash/client/clientset/versioned"
 	internalinterfaces "github.com/appscode/stash/client/informers/externalversions/internalinterfaces"
 	v1alpha1 "github.com/appscode/stash/client/listers/stash/v1alpha1"
@@ -70,7 +70,7 @@ func NewFilteredRepositoryInformer(client versioned.Interface, namespace string,
 				return client.StashV1alpha1().Repositories(namespace).Watch(options)
 			},
 		},
-		&stash_v1alpha1.Repository{},
+		&stashv1alpha1.Repository{},
 		resyncPeriod,
 		indexers,
 	)
@@ -81,7 +81,7 @@ func (f *repositoryInformer) defaultInformer(client versioned.Interface, resyncP
 }
 
 func (f *repositoryInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&stash_v1alpha1.Repository{}, f.defaultInformer)
+	return f.factory.InformerFor(&stashv1alpha1.Repository{}, f.defaultInformer)
 }
 
 func (f *repositoryInformer) Lister() v1alpha1.RepositoryLister {

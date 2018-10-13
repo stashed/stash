@@ -21,7 +21,7 @@ package v1alpha1
 import (
 	time "time"
 
-	stash_v1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
+	stashv1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
 	versioned "github.com/appscode/stash/client/clientset/versioned"
 	internalinterfaces "github.com/appscode/stash/client/informers/externalversions/internalinterfaces"
 	v1alpha1 "github.com/appscode/stash/client/listers/stash/v1alpha1"
@@ -70,7 +70,7 @@ func NewFilteredRecoveryInformer(client versioned.Interface, namespace string, r
 				return client.StashV1alpha1().Recoveries(namespace).Watch(options)
 			},
 		},
-		&stash_v1alpha1.Recovery{},
+		&stashv1alpha1.Recovery{},
 		resyncPeriod,
 		indexers,
 	)
@@ -81,7 +81,7 @@ func (f *recoveryInformer) defaultInformer(client versioned.Interface, resyncPer
 }
 
 func (f *recoveryInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&stash_v1alpha1.Recovery{}, f.defaultInformer)
+	return f.factory.InformerFor(&stashv1alpha1.Recovery{}, f.defaultInformer)
 }
 
 func (f *recoveryInformer) Lister() v1alpha1.RecoveryLister {

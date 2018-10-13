@@ -21,7 +21,7 @@ package v1alpha1
 import (
 	time "time"
 
-	stash_v1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
+	stashv1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
 	versioned "github.com/appscode/stash/client/clientset/versioned"
 	internalinterfaces "github.com/appscode/stash/client/informers/externalversions/internalinterfaces"
 	v1alpha1 "github.com/appscode/stash/client/listers/stash/v1alpha1"
@@ -70,7 +70,7 @@ func NewFilteredResticInformer(client versioned.Interface, namespace string, res
 				return client.StashV1alpha1().Restics(namespace).Watch(options)
 			},
 		},
-		&stash_v1alpha1.Restic{},
+		&stashv1alpha1.Restic{},
 		resyncPeriod,
 		indexers,
 	)
@@ -81,7 +81,7 @@ func (f *resticInformer) defaultInformer(client versioned.Interface, resyncPerio
 }
 
 func (f *resticInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&stash_v1alpha1.Restic{}, f.defaultInformer)
+	return f.factory.InformerFor(&stashv1alpha1.Restic{}, f.defaultInformer)
 }
 
 func (f *resticInformer) Lister() v1alpha1.ResticLister {
