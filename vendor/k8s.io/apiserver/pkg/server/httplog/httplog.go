@@ -100,14 +100,11 @@ func NewLogged(req *http.Request, w *http.ResponseWriter) *respLogger {
 // then a passthroughLogger will be created which will log to stdout immediately
 // when Addf is called.
 func LogOf(req *http.Request, w http.ResponseWriter) logger {
-	if _, exists := w.(*respLogger); !exists {
-		pl := &passthroughLogger{}
-		return pl
-	}
 	if rl, ok := w.(*respLogger); ok {
 		return rl
 	}
-	panic("Unable to find or create the logger!")
+
+	return &passthroughLogger{}
 }
 
 // Unlogged returns the original ResponseWriter, or w if it is not our inserted logger.
@@ -146,13 +143,15 @@ func (rl *respLogger) Addf(format string, data ...interface{}) {
 // Log is intended to be called once at the end of your request handler, via defer
 func (rl *respLogger) Log() {
 	latency := time.Since(rl.startTime)
-	if rl.hijacked {
-		if glog.V(3) {
-			glog.InfoDepth(1, fmt.Sprintf("%s %s: (%v) hijacked [%s %s]", rl.req.Method, rl.req.RequestURI, latency, rl.req.Header["User-Agent"], rl.req.RemoteAddr))
-		}
-	} else {
-		if glog.V(8) {
-			glog.InfoDepth(1, fmt.Sprintf("%s %s: (%v) %v%v%v [%s %s]", rl.req.Method, rl.req.RequestURI, latency, rl.status, rl.statusStack, rl.addedInfo, rl.req.Header["User-Agent"], rl.req.RemoteAddr))
+	if glog.V(3) {
+		if !rl.hijacked {
+			if glog.V(8) {
+				glog.InfoDepth(1, fmt.Sprintf("%s %s: (%v) %v%v%v [%s %s]", rl.req.Method, rl.req.RequestURI, latency, rl.status, rl.statusStack, rl.addedInfo, rl.req.UserAgent(), rl.req.RemoteAddr))
+			}
+		} else {
+			if glog.V(3) {
+				glog.InfoDepth(1, fmt.Sprintf("%s %s: (%v) hijacked [%s %s]", rl.req.Method, rl.req.RequestURI, latency, rl.req.UserAgent(), rl.req.RemoteAddr))
+			}
 		}
 	}
 }

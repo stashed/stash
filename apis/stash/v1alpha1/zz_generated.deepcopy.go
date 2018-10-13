@@ -21,7 +21,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	core_v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	v1 "kmodules.xyz/objectstore-api/api/v1"
 )
@@ -142,7 +142,7 @@ func (in *RecoverySpec) DeepCopyInto(out *RecoverySpec) {
 	}
 	if in.ImagePullSecrets != nil {
 		in, out := &in.ImagePullSecrets, &out.ImagePullSecrets
-		*out = make([]core_v1.LocalObjectReference, len(*in))
+		*out = make([]corev1.LocalObjectReference, len(*in))
 		copy(*out, *in)
 	}
 	if in.NodeSelector != nil {
@@ -170,11 +170,7 @@ func (in *RecoveryStatus) DeepCopyInto(out *RecoveryStatus) {
 	*out = *in
 	if in.ObservedGeneration != nil {
 		in, out := &in.ObservedGeneration, &out.ObservedGeneration
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = (*in).DeepCopy()
-		}
+		*out = (*in).DeepCopy()
 	}
 	if in.Stats != nil {
 		in, out := &in.Stats, &out.Stats
@@ -277,35 +273,19 @@ func (in *RepositoryStatus) DeepCopyInto(out *RepositoryStatus) {
 	*out = *in
 	if in.ObservedGeneration != nil {
 		in, out := &in.ObservedGeneration, &out.ObservedGeneration
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = (*in).DeepCopy()
-		}
+		*out = (*in).DeepCopy()
 	}
 	if in.FirstBackupTime != nil {
 		in, out := &in.FirstBackupTime, &out.FirstBackupTime
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = (*in).DeepCopy()
-		}
+		*out = (*in).DeepCopy()
 	}
 	if in.LastBackupTime != nil {
 		in, out := &in.LastBackupTime, &out.LastBackupTime
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = (*in).DeepCopy()
-		}
+		*out = (*in).DeepCopy()
 	}
 	if in.LastSuccessfulBackupTime != nil {
 		in, out := &in.LastSuccessfulBackupTime, &out.LastSuccessfulBackupTime
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = (*in).DeepCopy()
-		}
+		*out = (*in).DeepCopy()
 	}
 	return
 }
@@ -394,7 +374,7 @@ func (in *ResticSpec) DeepCopyInto(out *ResticSpec) {
 	in.Backend.DeepCopyInto(&out.Backend)
 	if in.VolumeMounts != nil {
 		in, out := &in.VolumeMounts, &out.VolumeMounts
-		*out = make([]core_v1.VolumeMount, len(*in))
+		*out = make([]corev1.VolumeMount, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -409,7 +389,7 @@ func (in *ResticSpec) DeepCopyInto(out *ResticSpec) {
 	}
 	if in.ImagePullSecrets != nil {
 		in, out := &in.ImagePullSecrets, &out.ImagePullSecrets
-		*out = make([]core_v1.LocalObjectReference, len(*in))
+		*out = make([]corev1.LocalObjectReference, len(*in))
 		copy(*out, *in)
 	}
 	return

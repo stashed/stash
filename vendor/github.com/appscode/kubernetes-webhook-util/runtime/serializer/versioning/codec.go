@@ -3,7 +3,6 @@ package versioning
 import (
 	"io"
 
-	_ "github.com/openshift/origin/pkg/apps/apis/apps/install"
 	_ "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -14,6 +13,7 @@ import (
 	_ "k8s.io/kubernetes/pkg/apis/extensions/install"
 	_ "k8s.io/kubernetes/pkg/apis/rbac/install"
 	_ "k8s.io/kubernetes/pkg/apis/storage/install"
+	_ "kmodules.xyz/openshift/apis/apps/install"
 )
 
 type codec struct {

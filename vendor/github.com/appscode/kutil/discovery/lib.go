@@ -51,7 +51,7 @@ func CheckAPIVersion(client discovery.DiscoveryInterface, constraint string) (bo
 }
 
 func IsPreferredAPIResource(client discovery.DiscoveryInterface, groupVersion, kind string) bool {
-	if resourceList, err := client.ServerPreferredResources(); err == nil {
+	if resourceList, err := client.ServerPreferredResources(); discovery.IsGroupDiscoveryFailedError(err) || err == nil {
 		for _, resources := range resourceList {
 			if resources.GroupVersion != groupVersion {
 				continue
@@ -79,9 +79,9 @@ var err62649_K1_9 = &KnownBug{URL: "https://github.com/kubernetes/kubernetes/pul
 var err62649_K1_10 = &KnownBug{URL: "https://github.com/kubernetes/kubernetes/pull/62649", Fix: "upgrade to Kubernetes 1.10.2 or later."}
 
 var (
-	defaultConstraint                     = ">= 1.9.0"
-	defaultBlackListedVersions            map[string]error
-	defaultBlackListedMultiMasterVersions = map[string]error{
+	DefaultConstraint                     = ">= 1.9.0"
+	DefaultBlackListedVersions            map[string]error
+	DefaultBlackListedMultiMasterVersions = map[string]error{
 		"1.9.0":  err62649_K1_9,
 		"1.9.1":  err62649_K1_9,
 		"1.9.2":  err62649_K1_9,
@@ -98,9 +98,9 @@ var (
 func IsDefaultSupportedVersion(kc kubernetes.Interface) error {
 	return IsSupportedVersion(
 		kc,
-		defaultConstraint,
-		defaultBlackListedVersions,
-		defaultBlackListedMultiMasterVersions)
+		DefaultConstraint,
+		DefaultBlackListedVersions,
+		DefaultBlackListedMultiMasterVersions)
 }
 
 func IsSupportedVersion(kc kubernetes.Interface, constraint string, blackListedVersions map[string]error, blackListedMultiMasterVersions map[string]error) error {

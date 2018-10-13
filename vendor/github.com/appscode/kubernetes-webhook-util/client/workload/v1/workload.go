@@ -8,8 +8,6 @@ import (
 	"github.com/evanphx/json-patch"
 	"github.com/golang/glog"
 	"github.com/json-iterator/go"
-	ocapps "github.com/openshift/api/apps/v1"
-	occ "github.com/openshift/client-go/apps/clientset/versioned"
 	appsv1 "k8s.io/api/apps/v1"
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	appsv1beta2 "k8s.io/api/apps/v1beta2"
@@ -23,6 +21,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
+	ocapps "kmodules.xyz/openshift/apis/apps/v1"
+	occ "kmodules.xyz/openshift/client/clientset/versioned"
 )
 
 var json = jsoniter.ConfigFastest

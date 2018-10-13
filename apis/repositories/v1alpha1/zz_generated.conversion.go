@@ -34,15 +34,38 @@ func init() {
 
 // RegisterConversions adds conversion functions to the given scheme.
 // Public to allow building arbitrary schemes.
-func RegisterConversions(scheme *runtime.Scheme) error {
-	return scheme.AddGeneratedConversionFuncs(
-		Convert_v1alpha1_Snapshot_To_repositories_Snapshot,
-		Convert_repositories_Snapshot_To_v1alpha1_Snapshot,
-		Convert_v1alpha1_SnapshotList_To_repositories_SnapshotList,
-		Convert_repositories_SnapshotList_To_v1alpha1_SnapshotList,
-		Convert_v1alpha1_SnapshotStatus_To_repositories_SnapshotStatus,
-		Convert_repositories_SnapshotStatus_To_v1alpha1_SnapshotStatus,
-	)
+func RegisterConversions(s *runtime.Scheme) error {
+	if err := s.AddGeneratedConversionFunc((*Snapshot)(nil), (*repositories.Snapshot)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_Snapshot_To_repositories_Snapshot(a.(*Snapshot), b.(*repositories.Snapshot), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*repositories.Snapshot)(nil), (*Snapshot)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_repositories_Snapshot_To_v1alpha1_Snapshot(a.(*repositories.Snapshot), b.(*Snapshot), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*SnapshotList)(nil), (*repositories.SnapshotList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_SnapshotList_To_repositories_SnapshotList(a.(*SnapshotList), b.(*repositories.SnapshotList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*repositories.SnapshotList)(nil), (*SnapshotList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_repositories_SnapshotList_To_v1alpha1_SnapshotList(a.(*repositories.SnapshotList), b.(*SnapshotList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*SnapshotStatus)(nil), (*repositories.SnapshotStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_SnapshotStatus_To_repositories_SnapshotStatus(a.(*SnapshotStatus), b.(*repositories.SnapshotStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*repositories.SnapshotStatus)(nil), (*SnapshotStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_repositories_SnapshotStatus_To_v1alpha1_SnapshotStatus(a.(*repositories.SnapshotStatus), b.(*SnapshotStatus), scope)
+	}); err != nil {
+		return err
+	}
+	return nil
 }
 
 func autoConvert_v1alpha1_Snapshot_To_repositories_Snapshot(in *Snapshot, out *repositories.Snapshot, s conversion.Scope) error {

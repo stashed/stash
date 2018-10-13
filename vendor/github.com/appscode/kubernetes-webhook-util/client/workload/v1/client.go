@@ -3,10 +3,10 @@ package v1
 import (
 	wpi "github.com/appscode/kubernetes-webhook-util/apis/workload/v1"
 	"github.com/appscode/kutil/discovery"
-	ocapps "github.com/openshift/api/apps/v1"
-	occ "github.com/openshift/client-go/apps/clientset/versioned"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	ocapps "kmodules.xyz/openshift/apis/apps/v1"
+	occ "kmodules.xyz/openshift/client/clientset/versioned"
 )
 
 type Interface interface {
