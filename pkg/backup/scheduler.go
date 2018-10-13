@@ -1,6 +1,7 @@
 package backup
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -31,7 +32,7 @@ func (c *Controller) BackupScheduler() error {
 	// split code from here for leader election
 	switch c.opt.Workload.Kind {
 	case api.KindDeployment, api.KindReplicaSet, api.KindReplicationController:
-		if err := c.electLeader(stopBackup); err != nil {
+		if err := c.electLeader(); err != nil {
 			return err
 		}
 	default:
@@ -42,7 +43,7 @@ func (c *Controller) BackupScheduler() error {
 	select {} // no error, wait forever
 }
 
-func (c *Controller) setupAndRunScheduler(stopBackup chan struct{}) error {
+func (c *Controller) setupAndRunScheduler(stopBackup <-chan struct{}) error {
 	if restic, _, err := c.setup(); err != nil {
 		err = fmt.Errorf("failed to setup backup. Error: %v", err)
 		if restic != nil {
@@ -67,7 +68,7 @@ func (c *Controller) setupAndRunScheduler(stopBackup chan struct{}) error {
 	return nil
 }
 
-func (c *Controller) electLeader(stopBackup chan struct{}) error {
+func (c *Controller) electLeader() error {
 	rlc := resourcelock.ResourceLockConfig{
 		Identity:      c.opt.PodName,
 		EventRecorder: c.recorder,
@@ -77,19 +78,18 @@ func (c *Controller) electLeader(stopBackup chan struct{}) error {
 		return fmt.Errorf("error during leader election: %s", err)
 	}
 	go func() {
-		leaderelection.RunOrDie(leaderelection.LeaderElectionConfig{
+		leaderelection.RunOrDie(context.Background(), leaderelection.LeaderElectionConfig{
 			Lock:          resLock,
 			LeaseDuration: LeaderElectionLease,
 			RenewDeadline: LeaderElectionLease * 2 / 3,
 			RetryPeriod:   LeaderElectionLease / 3,
 			Callbacks: leaderelection.LeaderCallbacks{
-				OnStartedLeading: func(stop <-chan struct{}) {
+				OnStartedLeading: func(ctx context.Context) {
 					log.Infoln("Got leadership, preparing backup backup")
-					c.setupAndRunScheduler(stopBackup)
+					c.setupAndRunScheduler(ctx.Done())
 				},
 				OnStoppedLeading: func() {
 					log.Infoln("Lost leadership, stopping backup backup")
-					stopBackup <- struct{}{}
 				},
 			},
 		})
@@ -97,7 +97,7 @@ func (c *Controller) electLeader(stopBackup chan struct{}) error {
 	return nil
 }
 
-func (c *Controller) runScheduler(stopCh chan struct{}) {
+func (c *Controller) runScheduler(stopCh <-chan struct{}) {
 	c.cron.Start()
 	c.locked <- struct{}{}
 
