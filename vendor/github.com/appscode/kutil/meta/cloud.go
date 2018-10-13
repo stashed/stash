@@ -1,0 +1,107 @@
+package meta
+
+import (
+	"crypto/x509"
+	"errors"
+	"io/ioutil"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/ghodss/yaml"
+)
+
+// ref: https://cloud.google.com/compute/docs/storing-retrieving-metadata
+func TestGKE() (string, error) {
+	// ref: https://github.com/kubernetes/kubernetes/blob/a0f94123616c275f94e7a5b680d60d6f34e92f37/pkg/credentialprovider/gcp/metadata.go#L115
+	data, err := ioutil.ReadFile("/sys/class/dmi/id/product_name")
+	if err != nil {
+		return "", err
+	}
+	name := strings.TrimSpace(string(data))
+	if name != "Google" && name != "Google Compute Engine" {
+		return "", errors.New("not GKE")
+	}
+
+	client := &http.Client{Timeout: time.Millisecond * 100}
+	req, err := http.NewRequest(http.MethodGet, "http://metadata.google.internal/computeMetadata/v1/instance/attributes/kube-env", nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Metadata-Flavor", "Google")
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	content := make(map[string]interface{})
+	err = yaml.Unmarshal(body, &content)
+	if err != nil {
+		return "", err
+	}
+	v, ok := content["KUBERNETES_MASTER_NAME"]
+	if !ok {
+		return "", errors.New("missing  KUBERNETES_MASTER_NAME")
+	}
+	return v.(string), nil
+}
+
+const aksDomain = ".azmk8s.io"
+
+func TestAKS(cert *x509.Certificate) (string, error) {
+	for _, host := range cert.DNSNames {
+		if strings.HasSuffix(host, aksDomain) && isAKS() == nil {
+			return host, nil
+		}
+	}
+	return "", errors.New("not AKS")
+}
+
+// ref: https://cloud.google.com/compute/docs/storing-retrieving-metadata
+func isAKS() error {
+	data, err := ioutil.ReadFile("/sys/class/dmi/id/sys_vendor")
+	if err != nil {
+		return err
+	}
+	sysVendor := strings.TrimSpace(string(data))
+
+	data, err = ioutil.ReadFile("/sys/class/dmi/id/product_name")
+	if err != nil {
+		return err
+	}
+	productName := strings.TrimSpace(string(data))
+
+	if sysVendor != "Microsoft Corporation" && productName != "Virtual Machine" {
+		return errors.New("not AKS")
+	}
+	return nil
+}
+
+const eksDomain = ".eks.amazonaws.com"
+
+func TestEKS(cert *x509.Certificate) (string, error) {
+	for _, host := range cert.DNSNames {
+		if strings.HasSuffix(host, eksDomain) && isEKS() == nil {
+			return host, nil
+		}
+	}
+	return "", errors.New("not EKS")
+}
+
+// ref: https://cloud.google.com/compute/docs/storing-retrieving-metadata
+func isEKS() error {
+	data, err := ioutil.ReadFile("/sys/class/dmi/id/sys_vendor")
+	if err != nil {
+		return err
+	}
+	sysVendor := strings.TrimSpace(string(data))
+
+	if sysVendor != "Amazon EC2" {
+		return errors.New("not EKS")
+	}
+	return nil
+}

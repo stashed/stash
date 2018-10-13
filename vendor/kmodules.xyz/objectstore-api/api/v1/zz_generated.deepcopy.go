@@ -57,57 +57,33 @@ func (in *Backend) DeepCopyInto(out *Backend) {
 	*out = *in
 	if in.Local != nil {
 		in, out := &in.Local, &out.Local
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(LocalSpec)
-			(*in).DeepCopyInto(*out)
-		}
+		*out = new(LocalSpec)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.S3 != nil {
 		in, out := &in.S3, &out.S3
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(S3Spec)
-			**out = **in
-		}
+		*out = new(S3Spec)
+		**out = **in
 	}
 	if in.GCS != nil {
 		in, out := &in.GCS, &out.GCS
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(GCSSpec)
-			**out = **in
-		}
+		*out = new(GCSSpec)
+		**out = **in
 	}
 	if in.Azure != nil {
 		in, out := &in.Azure, &out.Azure
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(AzureSpec)
-			**out = **in
-		}
+		*out = new(AzureSpec)
+		**out = **in
 	}
 	if in.Swift != nil {
 		in, out := &in.Swift, &out.Swift
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(SwiftSpec)
-			**out = **in
-		}
+		*out = new(SwiftSpec)
+		**out = **in
 	}
 	if in.B2 != nil {
 		in, out := &in.B2, &out.B2
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(B2Spec)
-			**out = **in
-		}
+		*out = new(B2Spec)
+		**out = **in
 	}
 	return
 }

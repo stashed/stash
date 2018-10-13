@@ -35,7 +35,7 @@ func (r *CDStorage) New() runtime.Object {
 	return r.cfg.obj
 }
 
-func (r *CDStorage) Create(ctx context.Context, obj runtime.Object, createValidation rest.ValidateObjectFunc, includeUninitialized bool) (runtime.Object, error) {
+func (r *CDStorage) Create(ctx context.Context, obj runtime.Object, createValidation rest.ValidateObjectFunc, options *metav1.CreateOptions) (runtime.Object, error) {
 	return r.New(), nil
 }
 
