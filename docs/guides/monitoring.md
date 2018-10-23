@@ -48,6 +48,7 @@ Stash operator runs two containers. The `operator` container runs controller and
 ### Exported Metrics
 
 Currently, stash exports following metrics,
+
 |                Metric                 |                      Uses                       |
 | ------------------------------------- | ----------------------------------------------- |
 | restic_session_success                | Indicates if session was successfully completed |
