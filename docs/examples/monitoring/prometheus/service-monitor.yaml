@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: stash-demo
+  namespace: demo
+  labels:
+    app: stash
+spec:
+  namespaceSelector:
+    any: true
+  selector:
+    matchLabels:
+      app: stash
+  endpoints:
+  - port: pushgateway
