@@ -8,6 +8,20 @@ metadata:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
+  {{- if eq .Values.monitoring.agent "builtin" }}
+  annotations:
+    prometheus.io/scrap: "true"
+    {{- if eq .Values.monitoring.backup true }}
+    prometheus.io/pushgateway_path: "/metrics"
+    prometheus.io/pushgateway_port: "56789"
+    prometheus.io/pushgateway_scheme: "http"
+    {{- end }}
+    {{- if eq .Values.monitoring.operator true }}
+    prometheus.io/operator_path: "/metrics"
+    prometheus.io/operator_port: "8443"
+    prometheus.io/operator_scheme: "https"
+    {{- end }}
+  {{- end }}
 spec:
   ports:
   # Port used to expose admission webhook apiserver

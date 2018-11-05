@@ -84,3 +84,11 @@ apiserver:
 
 # Send usage events to Google Analytics
 enableAnalytics: true
+
+monitoring:
+  # specify monitoring agent (either "builtin" or "coreos-operator")
+  agent: "none"
+  # specify whether to monitor backup and recovery
+  backup: false
+  # specify whether to monitor stash operator
+  operator: false

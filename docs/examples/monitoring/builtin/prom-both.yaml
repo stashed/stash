@@ -1,0 +1,133 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stash-prometheus-server-conf
+  labels:
+    name: stash-prometheus-server-conf
+  namespace: ${STASH_NAMESPACE}
+data:
+  prometheus.yml: |-
+    global:
+      scrape_interval: 30s
+      scrape_timeout: 10s
+      evaluation_interval: 30s
+    scrape_configs:
+    - job_name: stash-pushgateway
+      scrape_interval: 30s
+      scrape_timeout: 10s
+      metrics_path: /metrics
+      scheme: http
+      kubernetes_sd_configs:
+      - role: endpoints
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrap]
+        regex: true
+        action: keep
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_pushgateway_path]
+        regex: (.+)
+        target_label: __metrics_path__
+        action: replace
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_pushgateway_scheme]
+        action: replace
+        target_label: __scheme__
+        regex: (https?)
+      - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_pushgateway_port]
+        action: replace
+        target_label: __address__
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+      - source_labels: [__meta_kubernetes_namespace]
+        separator: ;
+        regex: (.*)
+        target_label: namespace
+        replacement: $1
+        action: replace
+      - source_labels: [__meta_kubernetes_service_name]
+        separator: ;
+        regex: (.*)
+        target_label: service
+        replacement: $1
+        action: replace
+    - job_name: stash-apiserver
+      scrape_interval: 30s
+      scrape_timeout: 10s
+      metrics_path: /metrics
+      scheme: https
+      kubernetes_sd_configs:
+      - role: endpoints
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      tls_config:
+        ca_file: /etc/prometheus/secret/stash-apiserver-cert/tls.crt
+        server_name: stash-operator.${STASH_NAMESPACE}.svc
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrap]
+        regex: true
+        action: keep
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_apiserver_path]
+        regex: (.+)
+        target_label: __metrics_path__
+        action: replace
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_apiserver_scheme]
+        action: replace
+        target_label: __scheme__
+        regex: (https?)
+      - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_apiserver_port]
+        action: replace
+        target_label: __address__
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+      - source_labels: [__meta_kubernetes_namespace]
+        separator: ;
+        regex: (.*)
+        target_label: namespace
+        replacement: $1
+        action: replace
+      - source_labels: [__meta_kubernetes_service_name]
+        separator: ;
+        regex: (.*)
+        target_label: service
+        replacement: $1
+        action: replace
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stash-prometheus-server
+  namespace: ${STASH_NAMESPACE}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stash-prometheus-server
+  template:
+    metadata:
+      labels:
+        app: stash-prometheus-server
+    spec:
+      serviceAccountName: stash-prometheus-server
+      containers:
+      - name: prometheus
+        image: prom/prometheus:v2.4.3
+        args:
+        - "--config.file=/etc/prometheus/prometheus.yml"
+        - "--storage.tsdb.path=/prometheus/"
+        ports:
+        - containerPort: 9090
+        volumeMounts:
+        - name: prometheus-config-volume
+          mountPath: /etc/prometheus/
+        - name: prometheus-storage-volume
+          mountPath: /prometheus/
+        - name: stash-apiserver-cert
+          mountPath: /etc/prometheus/secret/stash-apiserver-cert
+      volumes:
+      - name: prometheus-config-volume
+        configMap:
+          defaultMode: 420
+          name: stash-prometheus-server-conf
+      - name: prometheus-storage-volume
+        emptyDir: {}
+      - name: stash-apiserver-cert
+        secret:
+          defaultMode: 420
+          secretName: stash-apiserver-cert

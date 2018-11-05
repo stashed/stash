@@ -1,0 +1,21 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: stash-servicemonitor
+  namespace: ${STASH_NAMESPACE}
+  labels:
+    app: stash
+spec:
+  namespaceSelector:
+    any: true
+  selector:
+    matchLabels:
+      app: stash
+  endpoints:
+  - port: pushgateway
+  - port: admission
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    scheme: https
+    tlsConfig:
+      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      serverName: "stash-operator.${STASH_NAMESPACE}.svc"

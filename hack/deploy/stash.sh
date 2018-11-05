@@ -122,6 +122,14 @@ $ONESSL semver --check='<1.9.0' $KUBE_APISERVER_VERSION || {
 }
 $ONESSL semver --check='<1.11.0' $KUBE_APISERVER_VERSION || { export STASH_ENABLE_STATUS_SUBRESOURCE=true; }
 
+MONITORING_AGENT_NONE="none"
+MONITORING_AGENT_BUILTIN="builtin"
+MONITORING_AGENT_COREOS_OPERATOR="coreos-operator"
+
+export MONITORING_AGENT=${MONITORING_AGENT:-$MONITORING_AGENT_NONE}
+export MONITORING_BACKUP=${MONITORING_BACKUP:-false}
+export MONITORING_OPERATOR=${MONITORING_OPERATOR:-false}
+
 show_help() {
   echo "stash.sh - install stash operator"
   echo " "
@@ -140,6 +148,9 @@ show_help() {
   echo "    --enable-analytics             send usage events to Google Analytics (default: true)"
   echo "    --uninstall                    uninstall stash"
   echo "    --purge                        purges stash crd objects and crds"
+  echo "    --monitoring-agent             specify which monitoring agent to use (default: none)"
+  echo "    --monitoring-backup            specify whether to monitor stash backup and restore activity (default: false)"
+  echo "    --monitoring-operator      	   specify whether to monitor stash operator (default: false)"
 }
 
 while test $# -gt 0; do
@@ -219,6 +230,30 @@ while test $# -gt 0; do
       export STASH_PURGE=1
       shift
       ;;
+    --monitoring-agent*)
+      val=$(echo $1 | sed -e 's/^[^=]*=//g')
+      if [ "$val" != "$MONITORING_AGENT_BUILTIN" ] && [ "$val" != "$MONITORING_AGENT_COREOS_OPERATOR" ]; then
+        echo 'Invalid monitoring agent. Use "builtin" or "coreos-operator"'
+        exit 1
+      else
+        export MONITORING_AGENT="$val"
+      fi
+      shift
+      ;;
+    --monitoring-backup*)
+      val=$(echo $1 | sed -e 's/^[^=]*=//g')
+      if [ "$val" = "true" ]; then
+        export MONITORING_BACKUP=true
+      fi
+      shift
+      ;;
+    --monitoring-operator*)
+      val=$(echo $1 | sed -e 's/^[^=]*=//g')
+      if [ "$val" = "true" ]; then
+        export MONITORING_OPERATOR="$val"
+      fi
+      shift
+      ;;
     *)
       show_help
       exit 1
@@ -241,6 +276,8 @@ if [ "$STASH_UNINSTALL" -eq 1 ]; then
   kubectl delete clusterrole -l app=stash
   kubectl delete rolebindings -l app=stash --namespace $STASH_NAMESPACE
   kubectl delete role -l app=stash --namespace $STASH_NAMESPACE
+  # delete servicemonitor. ignore error as it might not exist
+  kubectl delete servicemonitor -l app=stash --namespace $STASH_NAMESPACE || true
 
   echo "waiting for stash operator pod to stop running"
   for (( ; ; )); do
@@ -361,6 +398,41 @@ for crd in "${crds[@]}"; do
     exit 1
   }
 done
+
+# configure prometheus monitoring
+if [ "$MONITORING_AGENT" != "$MONITORING_AGENT_NONE" ]; then
+  case "$MONITORING_AGENT" in
+    "$MONITORING_AGENT_BUILTIN")
+      # apply common annotation
+      kubectl annotate service stash-operator -n "$STASH_NAMESPACE" prometheus.io/scrap="true" --overwrite
+
+      # apply pushgateway specific annotation
+      if [ "$MONITORING_BACKUP" = "true" ]; then
+        kubectl annotate service stash-operator -n "$STASH_NAMESPACE" --overwrite \
+          prometheus.io/pushgateway_path="/metrics" \
+          prometheus.io/pushgateway_port="56789" \
+          prometheus.io/pushgateway_scheme="http"
+      fi
+
+      # apply operator specific annotation
+      if [ "$MONITORING_OPERATOR" = "true" ]; then
+        kubectl annotate service stash-operator -n "$STASH_NAMESPACE" --overwrite \
+          prometheus.io/operator_path="/metrics" \
+          prometheus.io/operator_port="8443" \
+          prometheus.io/operator_scheme="https"
+      fi
+      ;;
+    "$MONITORING_AGENT_COREOS_OPERATOR")
+      if [ "$MONITORING_BACKUP" = "true" ] && [ "$MONITORING_OPERATOR" = "true" ]; then
+        ${SCRIPT_LOCATION}hack/deploy/monitor/servicemonitor.yaml | $ONESSL envsubst | kubectl apply -f -
+      elif [ "$MONITORING_BACKUP" = "true" ] && [ "$MONITORING_OPERATOR" = "false" ]; then
+        ${SCRIPT_LOCATION}hack/deploy/monitor/servicemonitor-backup.yaml | $ONESSL envsubst | kubectl apply -f -
+      elif [ "$MONITORING_BACKUP" = "false" ] && [ "$MONITORING_OPERATOR" = "true" ]; then
+        ${SCRIPT_LOCATION}hack/deploy/monitor/servicemonitor-operator.yaml | $ONESSL envsubst | kubectl apply -f -
+      fi
+      ;;
+  esac
+fi
 
 echo
 echo "Successfully installed Stash in $STASH_NAMESPACE namespace!"

@@ -1,0 +1,30 @@
+{{- if eq .Values.monitoring.agent "coreos-operator" }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: stash-servicemonitor
+  namespace: {{ .Release.Namespace }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    app: "{{ template "stash.name" . }}"
+    heritage: "{{ .Release.Service }}"
+    release: "{{ .Release.Name }}"
+spec:
+  namespaceSelector:
+    any: true
+  selector:
+    matchLabels:
+      app: "{{ template "stash.name" . }}"
+  endpoints:
+  {{- if eq .Values.monitoring.backup true }}
+  - port: pushgateway
+  {{- end }}
+  {{- if eq .Values.monitoring.operator true }}
+  - port: admission
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    scheme: https
+    tlsConfig:
+      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      serverName: "{{ template "stash.fullname" . }}.{{ .Release.Namespace }}.svc"
+  {{- end }}
+{{- end }}
