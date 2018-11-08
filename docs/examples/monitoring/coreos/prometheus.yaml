@@ -11,6 +11,8 @@ spec:
   serviceMonitorSelector:
     matchLabels:
       app: stash
+  secrets:
+  - stash-apiserver-cert
   resources:
     requests:
       memory: 400Mi

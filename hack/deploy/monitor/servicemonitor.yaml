@@ -17,5 +17,5 @@ spec:
     bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     scheme: https
     tlsConfig:
-      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      caFile: /etc/prometheus/secrets/stash-apiserver-cert/tls.crt
       serverName: "stash-operator.${STASH_NAMESPACE}.svc"

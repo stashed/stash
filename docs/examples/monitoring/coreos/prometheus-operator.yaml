@@ -1,59 +1,63 @@
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: prometheus-operator
 rules:
 - apiGroups:
-  - extensions
-  resources:
-  - thirdpartyresources
-  verbs:
-  - "*"
-- apiGroups:
   - apiextensions.k8s.io
   resources:
   - customresourcedefinitions
-  verbs:
-  - "*"
+  verbs: ["*"]
 - apiGroups:
   - monitoring.coreos.com
   resources:
   - alertmanagers
   - prometheuses
   - prometheuses/finalizers
+  - alertmanagers/finalizers
   - servicemonitors
-  verbs:
-  - "*"
+  - prometheusrules
+  verbs: ["*"]
 - apiGroups:
   - apps
   resources:
   - statefulsets
   verbs: ["*"]
-- apiGroups: [""]
+- apiGroups:
+  - ""
   resources:
   - configmaps
   - secrets
   verbs: ["*"]
-- apiGroups: [""]
+- apiGroups:
+  - ""
   resources:
   - pods
-  verbs: ["list", "delete"]
-- apiGroups: [""]
+  verbs: ["list","delete"]
+- apiGroups:
+  - ""
   resources:
   - services
   - endpoints
-  verbs: ["get", "create", "update"]
-- apiGroups: [""]
+  verbs: ["get","create","update"]
+- apiGroups:
+  - ""
   resources:
   - nodes
-  verbs: ["list", "watch"]
-- apiGroups: [""]
+  verbs: ["list","watch"]
+- apiGroups:
+  - ""
   resources:
   - namespaces
-  verbs: ["list"]
-
+  verbs: ["get","list","watch"]
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus-operator
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: prometheus-operator
@@ -64,23 +68,20 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: prometheus-operator
-  namespace: demo
+  namespace: default
 ---
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: prometheus-operator
-  namespace: demo
----
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
     k8s-app: prometheus-operator
   name: prometheus-operator
-  namespace: demo
+  namespace: default
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: prometheus-operator
   template:
     metadata:
       labels:
@@ -90,7 +91,7 @@ spec:
       - args:
         - --kubelet-service=kube-system/kubelet
         - --config-reloader-image=quay.io/coreos/configmap-reload:v0.0.1
-        image: quay.io/coreos/prometheus-operator:v0.17.0
+        image: quay.io/coreos/prometheus-operator:v0.25.0
         name: prometheus-operator
         ports:
         - containerPort: 8080

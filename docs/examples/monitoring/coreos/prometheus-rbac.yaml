@@ -17,6 +17,12 @@ rules:
 - nonResourceURLs: ["/metrics"]
   verbs: ["get"]
 ---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  namespace: kube-system
+---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
@@ -28,10 +34,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: prometheus
-  namespace: demo
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: prometheus
-  namespace: demo
+  namespace: kube-system
