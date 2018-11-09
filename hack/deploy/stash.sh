@@ -129,6 +129,7 @@ MONITORING_AGENT_COREOS_OPERATOR="coreos-operator"
 export MONITORING_AGENT=${MONITORING_AGENT:-$MONITORING_AGENT_NONE}
 export MONITORING_BACKUP=${MONITORING_BACKUP:-false}
 export MONITORING_OPERATOR=${MONITORING_OPERATOR:-false}
+export PROMETHEUS_NAMESPACE=${PROMETHEUS_NAMESPACE:-$STASH_NAMESPACE}
 
 show_help() {
   echo "stash.sh - install stash operator"
@@ -150,7 +151,8 @@ show_help() {
   echo "    --purge                        purges stash crd objects and crds"
   echo "    --monitoring-agent             specify which monitoring agent to use (default: none)"
   echo "    --monitoring-backup            specify whether to monitor stash backup and restore activity (default: false)"
-  echo "    --monitoring-operator      	   specify whether to monitor stash operator (default: false)"
+  echo "    --monitoring-operator          specify whether to monitor stash operator (default: false)"
+  echo "    --prometheus-namespace         specify the namespace where Prometheus server is running or will be deployed (default: same namespace as stash-operator)"
 }
 
 while test $# -gt 0; do
@@ -171,6 +173,7 @@ while test $# -gt 0; do
       ;;
     --namespace*)
       export STASH_NAMESPACE=$(echo $1 | sed -e 's/^[^=]*=//g')
+      export PROMETHEUS_NAMESPACE=$STASH_NAMESPACE
       shift
       ;;
     --docker-registry*)
@@ -254,6 +257,10 @@ while test $# -gt 0; do
       fi
       shift
       ;;
+    --prometheus-namespace*)
+      export PROMETHEUS_NAMESPACE=$(echo $1 | sed -e 's/^[^=]*=//g')
+      shift
+      ;;
     *)
       show_help
       exit 1
@@ -276,8 +283,9 @@ if [ "$STASH_UNINSTALL" -eq 1 ]; then
   kubectl delete clusterrole -l app=stash
   kubectl delete rolebindings -l app=stash --namespace $STASH_NAMESPACE
   kubectl delete role -l app=stash --namespace $STASH_NAMESPACE
-  # delete servicemonitor. ignore error as it might not exist
-  kubectl delete servicemonitor -l app=stash --namespace $STASH_NAMESPACE || true
+  # delete servicemonitor and stash-apiserver-cert secret. ignore error as they might not exist
+  kubectl delete servicemonitor -l app=stash --namespace $PROMETHEUS_NAMESPACE || true
+  kubectl delete secret stash-apiserver-cert --namespace $PROMETHEUS_NAMESPACE || true
 
   echo "waiting for stash operator pod to stop running"
   for (( ; ; )); do
@@ -432,6 +440,12 @@ if [ "$MONITORING_AGENT" != "$MONITORING_AGENT_NONE" ]; then
       fi
       ;;
   esac
+
+  # if operator monitoring is enabled and prometheus-namespace is provided,
+  # create stash-apiserver-cert there. this will be mounted on prometheus pod.
+  if [ "$MONITORING_OPERATOR" = "true" ] && [ "$PROMETHEUS_NAMESPACE" != "$STASH_NAMESPACE" ]; then
+    ${SCRIPT_LOCATION}hack/deploy/monitor/apiserver-cert.yaml | $ONESSL envsubst | kubectl apply -f -
+  fi
 fi
 
 echo

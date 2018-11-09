@@ -1,9 +1,10 @@
 {{- if eq .Values.monitoring.agent "coreos-operator" }}
+{{ $promNamespace:= tpl (trimAll "\"'" .Values.monitoring.prometheusNamespace) . }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: stash-servicemonitor
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ $promNamespace }}
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     app: "{{ template "stash.name" . }}"
@@ -11,7 +12,8 @@ metadata:
     release: "{{ .Release.Name }}"
 spec:
   namespaceSelector:
-    any: true
+    matchNames:
+    - {{ .Release.Namespace }}
   selector:
     matchLabels:
       app: "{{ template "stash.name" . }}"

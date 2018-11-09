@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: stash-prometheus-server
-  namespace: kube-system
+  namespace: demo
 spec:
   replicas: 1
   selector:

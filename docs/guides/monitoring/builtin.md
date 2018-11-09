@@ -19,15 +19,22 @@ This tutorial will show you how to configure [official Prometheus](https://githu
 
 At first, you need to have a Kubernetes cluster, and the kubectl command-line tool must be configured to communicate with your cluster. If you do not already have a cluster, you can create one by using [Minikube](https://github.com/kubernetes/minikube).
 
+To keep Prometheus resources isolated, we will use a separate namespace to deploy Prometheus server.
+
+```console
+$ kubectl create ns demo
+namespace/demo created
+```
+
 ## Enable Monitoring in Stash
 
-Enable Prometheus monitoring using `builtin` agent while installing Stash. To know details about how to enable monitoring see [here](/docs/guides/monitoring/overview.md#how-to-enable-monitoring).
+Enable Prometheus monitoring using `builtin` agent while installing Stash. To know details about how to enable monitoring see [here](/docs/guides/monitoring/overview.md#how-to-enable-monitoring). We will
 
 Here, we are going to enable monitoring for both `backup & recovery` and `opeartor` metrics.
 
 ```console
 $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0/hack/deploy/stash.sh \
-    | bash -s -- --monitoring-agent=builtin --monitoring-backup=true --monitoring-operator=true
+    | bash -s -- --monitoring-agent=builtin --monitoring-backup=true --monitoring-operator=true --prometheus-namespace=demo
 ```
 
 This will add some annotation to `stash-operator` service. Prometheus server will scrap metrics using those annotations. Let's check which annotations are added to the service,
@@ -96,9 +103,15 @@ Now, we are ready to configure our Prometheus server to scrap those metrics.
 
 ## Deploy Prometheus Server
 
-We have deployed Stash in `kube-system` namespace. Stash exports operator metrics in TLS secure `admission` endpoint. So, Prometheus server need to provide certificate while scrapping metrics from this endpoint. Stash creates a secret named `stash-apiserver-certs`  with this certificate in the same namespace as Stash operator. We have to mount this secret in Prometheus deployment. So, we have to deploy Prometheus in `kube-system` namespace.
+We have deployed Stash in `kube-system` namespace. Stash exports operator metrics in TLS secure `admission` endpoint. So, Prometheus server need to provide certificate while scrapping metrics from this endpoint. Stash has created a secret named `stash-apiserver-certs`  with this certificate in `demo` namespace as we have specified that we will deploy Prometheus in that namespace through `--prometheus-namespace` flag. We have to mount this secret in Prometheus deployment.
 
->If you want to deploy Prometheus in a different namespace, you have to make a copy of this secret to that namespace.
+Let's check `stash-apiserver-cert` certificate has been created in `demo` namespace.
+
+```console
+$ kubectl get secret -n demo -l=app=stash
+NAME                   TYPE                DATA   AGE
+stash-apiserver-cert   kubernetes.io/tls   2      2m21s
+```
 
 **Create RBAC:**
 
@@ -122,7 +135,7 @@ metadata:
   name: stash-prometheus-server-conf
   labels:
     name: stash-prometheus-server-conf
-  namespace: kube-system
+  namespace: demo
 data:
   prometheus.yml: |-
     global:
@@ -236,7 +249,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: stash-prometheus-server
-  namespace: kube-system
+  namespace: demo
 spec:
   replicas: 1
   selector:
@@ -291,7 +304,7 @@ deployment.apps/stash-prometheus-server created
 Prometheus server is running on port `9090`. We will use [port forwarding](https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/) to access Prometheus dashboard. Run following command on a separate terminal,
 
 ```console
-$ kubectl port-forward -n kube-system stash-prometheus-server-9ddbf79b6-8l6hk 9090
+$ kubectl port-forward -n demo stash-prometheus-server-9ddbf79b6-8l6hk 9090
 Forwarding from 127.0.0.1:9090 -> 9090
 Forwarding from [::1]:9090 -> 9090
 ```
@@ -309,9 +322,13 @@ To cleanup the Kubernetes resources created by this tutorial, run:
 ```console
 kubectl delete clusterrole stash-prometheus-server
 kubectl delete clusterrolebinding stash-prometheus-server
-kubectl delete serviceaccount/stash-prometheus-server -n kube-system
-kubectl delete configmap/stash-prometheus-server-conf -n kube-system
-kubectl delete deployment stash-prometheus-server -n kube-system
+
+kubectl delete serviceaccount/stash-prometheus-server -n demo
+kubectl delete configmap/stash-prometheus-server-conf -n demo
+kubectl delete deployment stash-prometheus-server -n demo
+kubectl delete secret stash-apiserver-cert -n demo
+
+kubectl delete ns demo
 ```
 
 To uninstall Stash follow this [guide](/docs/setup/uninstall.md).

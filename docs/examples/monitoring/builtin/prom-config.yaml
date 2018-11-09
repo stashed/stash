@@ -4,7 +4,7 @@ metadata:
   name: stash-prometheus-server-conf
   labels:
     name: stash-prometheus-server-conf
-  namespace: kube-system
+  namespace: demo
 data:
   prometheus.yml: |-
     global:

@@ -30,6 +30,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: grafana
+  namespace: demo
   labels:
     app: grafana
 spec:
@@ -57,7 +58,7 @@ deployment.apps/grafana created
 Wait for grafana pod to goes in running state,
 
 ```console
-$ kubectl get pod -l=app=grafana
+$ kubectl get pod -n demo -l=app=grafana
 NAME                       READY   STATUS    RESTARTS   AGE
 grafana-7f594dc9c6-xwkf2   1/1     Running   0          3m22s
 ```
@@ -65,7 +66,7 @@ grafana-7f594dc9c6-xwkf2   1/1     Running   0          3m22s
 Grafana is running on port `3000`. We will forward this port to access grafana UI. Run following command on a separate terminal,
 
 ```console
-$kubectl port-forward grafana-7f594dc9c6-xwkf2 3000
+$kubectl port-forward -n demo grafana-7f594dc9c6-xwkf2 3000
 Forwarding from 127.0.0.1:3000 -> 3000
 Forwarding from [::1]:3000 -> 3000
 ```
@@ -88,7 +89,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: prometheus
-  namespace: kube-system
+  namespace: demo
 spec:
   type: ClusterIP
   ports:
@@ -117,7 +118,7 @@ Now, follow these steps to add the Prometheus server as data source of Grafana U
 3. Now, configure `Name`, `Type` and `URL` fields as specified below and keep rest of the configuration to their default value then click `Save&Test` button.
     - *Name: Stash* (you can give any name)
     - *Type: Prometheus*
-    - *URL: http://prometheus.kube-system.svc:9090*
+    - *URL: http://prometheus.demo.svc:9090*
       (url format: http://{prometheus service name}.{namespace}.svc:{port})
 
     <p align="center">
@@ -161,8 +162,9 @@ Once you have imported the dashboard successfully, you will be greeted with Stas
 To cleanup the Kubernetes resources created by this tutorial, run:
 
 ```console
-kubectl delete service -n kube-system prometheus
-kubectl delete deployment grafana
+kubectl delete -n demo service prometheus
+kubectl delete -n demo deployment grafana
+kubectl delete ns demo
 ```
 
 ## Next Steps

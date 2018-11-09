@@ -2,12 +2,13 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: stash-servicemonitor
-  namespace: ${STASH_NAMESPACE}
+  namespace: ${PROMETHEUS_NAMESPACE}
   labels:
     app: stash
 spec:
   namespaceSelector:
-    any: true
+    matchNames:
+    - ${STASH_NAMESPACE}
   selector:
     matchLabels:
       app: stash

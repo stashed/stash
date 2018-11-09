@@ -1,0 +1,12 @@
+# we have to mount this secret to prometheus pod. so, create this on prometheus namespace
+apiVersion: v1
+kind: Secret
+metadata:
+  name: stash-apiserver-cert
+  namespace: ${PROMETHEUS_NAMESPACE}
+  labels:
+    app: stash
+type: kubernetes.io/tls
+data:
+  tls.crt: ${TLS_SERVING_CERT}
+  tls.key: ${TLS_SERVING_KEY}
