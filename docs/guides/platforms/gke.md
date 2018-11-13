@@ -232,7 +232,7 @@ If you navigate to `<bucket name>/demo/deployment/stash-demo` directory in your 
 To view the snapshot files, navigate to `snapshots` directory of the repository,
 
 <p align="center">
-  <img alt="Snapshot in GCS Bucket" src="/images/platforms/gke/gcs-backup-snapshots.png">
+  <img alt="Snapshot in GCS Bucket" src="/docs/images/platforms/gke/gcs-backup-snapshots.png">
 </p>
 
 > Stash keeps all backup data encrypted. So, snapshot files in the bucket will not contain any meaningful data until they are decrypted.
