@@ -30,27 +30,45 @@ You should have understanding the following Stash concepts:
 
 Then, you will need to have a [GCS Bucket](https://console.cloud.google.com/storage) and [GCE persistent disk](https://console.cloud.google.com/compute/disks). GCE persistent disk must be in the same GCE project and zone as the cluster.
 
-## Backup
-
-First, deploy the following `busybox` Deployment in your cluster. Here we are using a git repository as a source volume for demonstration purpose.
+To keep things isolated, we will use a separate namespace called `demo` throughout this tutorial.
 
 ```console
-$ kubectl apply -f ./docs/examples/tutorial/busybox.yaml
-deployment "stash-demo" created
+$ kubectl create ns demo
+namespace/demo created
 ```
 
-Definition of `busybox` deployment,
+## Backup
+
+In order to take backup, we need some sample data. Stash has some sample data in [stash-data](https://github.com/appscode/stash-data) repository. As [gitRepo](https://kubernetes.io/docs/concepts/storage/volumes/#gitrepo) volume has been deprecated, we will not use this repository as volume directly. Instead, we will create a [congigMap](https://kubernetes.io/docs/concepts/storage/volumes/#configmap) from these data and use that ConfigMap as data source.
+
+Let's create a ConfigMap from these sample data,
+
+```console
+$ kubectl create configmap -n demo stash-sample-data \
+	--from-literal=LICENSE="$(curl -fsSL https://raw.githubusercontent.com/appscode/stash-data/master/LICENSE)" \
+	--from-literal=README.md="$(curl -fsSL https://raw.githubusercontent.com/appscode/stash-data/master/README.md)"
+configmap/stash-sample-data created
+```
+
+**Deploy Workload:**
+
+Now, deploy the following Deployment. Here, we have mounted the ConfigMap `stash-sample-data` as data source volume.
+
+Below, the YAML for the Deployment we are going to create.
 
 ```yaml
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
     app: stash-demo
   name: stash-demo
-  namespace: default
+  namespace: demo
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: stash-demo
   template:
     metadata:
       labels:
@@ -69,15 +87,22 @@ spec:
           name: source-data
       restartPolicy: Always
       volumes:
-      - gitRepo:
-          repository: https://github.com/appscode/stash-data.git
-        name: source-data
+      - name: source-data
+        configMap:
+          name: stash-sample-data
 ```
 
-Run the following command to confirm that `busybox` pods are running.
+Let's create the deployment we have shown above,
 
 ```console
-$ kubectl get pods -l app=stash-demo
+$ kubectl apply -f ./docs/examples/platforms/gke/deployment.yaml
+deployment.apps/stash-demo created
+```
+
+Now, wait for deployment's pod to go in `Running` state.
+
+```console
+$ kubectl get pods -n demo -l app=stash-demo
 NAME                         READY     STATUS    RESTARTS   AGE
 stash-demo-b66b9cdfd-8s98d   1/1       Running   0          6m
 ```
@@ -85,25 +110,23 @@ stash-demo-b66b9cdfd-8s98d   1/1       Running   0          6m
 You can check that the `/source/data/` directory of pod is populated with data from the volume source using this command,
 
 ```console
-$ kubectl exec stash-demo-b66b9cdfd-8s98d -- ls -R /source/data/
-/source/data/:
-stash-data
-
-/source/data/stash-data:
-Eureka-by-EdgarAllanPoe.txt
+$ kubectl exec -n demo stash-demo-b66b9cdfd-8s98d -- ls -R /source/data/
+/source/data:
 LICENSE
 README.md
 ```
 
-Now, let’s backup the directory into a [GCS bucket](/docs/guides/backends.md#google-cloud-storage-gcs),
+Now, we are ready backup `/source/data` directory into a [GCS bucket](/docs/guides/backends.md#google-cloud-storage-gcs),
 
-At first, we need to create a secret for `Restic` crd. Create a secret for `Restic` using following command,
+**Create Restic:**
+
+At first, we need to create a secret for `Restic` crd. Create a secret for `Restic` using following commands,
 
 ```console
 $ echo -n 'changeit' > RESTIC_PASSWORD
 $ echo -n '<your-project-id>' > GOOGLE_PROJECT_ID
 $ cat downloaded-sa-json.key > GOOGLE_SERVICE_ACCOUNT_JSON_KEY
-$ kubectl create secret generic gcs-secret \
+$ kubectl create secret generic -n demo gcs-secret \
     --from-file=./RESTIC_PASSWORD \
     --from-file=./GOOGLE_PROJECT_ID \
     --from-file=./GOOGLE_SERVICE_ACCOUNT_JSON_KEY
@@ -113,7 +136,7 @@ secret "gcs-secret" created
 Verify that the secret has been created successfully,
 
 ```console
-$ kubectl get secret gcs-secret -o yaml
+$ kubectl get secret -n demo gcs-secret -o yaml
 ```
 
 ```yaml
@@ -126,28 +149,28 @@ kind: Secret
 metadata:
   creationTimestamp: 2018-04-11T12:57:05Z
   name: gcs-secret
-  namespace: default
+  namespace: demo
   resourceVersion: "7113"
-  selfLink: /api/v1/namespaces/default/secrets/gcs-secret
+  selfLink: /api/v1/namespaces/demo/secrets/gcs-secret
   uid: d5e70521-3d87-11e8-a5b9-42010a800002
 type: Opaque
 ```
 
-Now, we can create `Restic` crd. This will create a repository `stash-backup-repo` in GCS bucket and start taking periodic backup of `/source/data/` folder.
+Now, we can create `Restic` crd. This will create a repository in the GCS bucket specified in `gcs.bucket` field and start taking periodic backup of `/source/data` directory.
 
 ```console
-$ kubectl apply -f ./docs/examples/backends/gcs/gcs-restic.yaml
-restic "gcs-restic" created
+$ kubectl apply -f ./docs/examples/platforms/gke/restic.yaml
+restic.stash.appscode.com/gcs-restic created
 ```
 
-Definition of `Restic` crd for GCS backend,
+Below, the YAML for Restic crd we have created above,
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
 kind: Restic
 metadata:
   name: gcs-restic
-  namespace: default
+  namespace: demo
 spec:
   selector:
     matchLabels:
@@ -170,44 +193,92 @@ spec:
     prune: true
 ```
 
-If everything goes well, a `Repository` crd with name `deployment.stash-demo` will be created for the respective repository in GCS backend. To verify, run the following command,
+If everything goes well, Stash will inject a sidecar container into the `stash-demo` deployment to take periodic backup. Let's check sidecar has been injected successfully,
 
 ```console
-$ kubectl get repository deployment.stash-demo
-NAME                    AGE
-deployment.stash-demo   1m
+$ kubectl get pod -n demo -l app=stash-demo
+NAME                          READY   STATUS    RESTARTS   AGE
+stash-demo-6b8c94cdd7-8jhtn   2/2     Running   1          1h
+```
+
+Look at the pod. It now has 2 containers. If you view the YAML of this pod, you will see there is a container named `stash` which takes backup
+
+**Verify Backup:**
+
+Stash will create a `Repository` crd with name `deployment.stash-demo` for the respective repository in GCS backend. To verify, run the following command,
+
+```console
+$ kubectl get repository deployment.stash-demo -n demo
+NAME                    BACKUPCOUNT   LASTSUCCESSFULBACKUP   AGE
+deployment.stash-demo   1             13s                    1m
 ```
 
 `Restic` will take backup of the volume periodically with a 1-minute interval. You can verify that backup is taking successfully by,
 
-```console 
-$ kubectl get snapshots -l repository=deployment.stash-demo
+```console
+$ kubectl get snapshots -n demo -l repository=deployment.stash-demo
 NAME                             AGE
 deployment.stash-demo-c1014ca6   10s
 ```
 
 Here, `deployment.stash-demo-c1014ca6` represents the name of the successful backup [Snapshot](/docs/concepts/crds/snapshot.md) taken by Stash in `deployment.stash-demo` repository.
 
-## Recover to GCE Persistent Disk
-Now, we will recover the backed up data into GCE persistent disk. First create a GCE disk named `stash-recovered` from [Google cloud console](https://console.cloud.google.com/compute/disks). Then create `Recovery` crd,
+If you navigate to `<bucket name>/demo/deployment/stash-demo` directory in your GCS bucket. You will see, a repository has been created there.
+
+<p align="center">
+  <img alt="Repository in GCS Bucket", src="/docs/images/platforms/gke/gcs-backup-repository.png">
+</p>
+
+To view the snapshot files, navigate to `snapshots` directory of the repository,
+
+<p align="center">
+  <img alt="Snapshot in GCS Bucket" src="/images/platforms/gke/gcs-backup-snapshots.png">
+</p>
+
+> Stash keeps all backup data encrypted. So, snapshot files in the bucket will not contain any meaningful data until they are decrypted.
+
+## Recovery
+
+Now, consider that we have lost our workload as well as data volume. We want to recover the data into a new volume and re-deploy the workload. In this section, we will see how to recover data into a  [gcePersistentDisk](https://kubernetes.io/docs/concepts/storage/volumes/#gcepersistentdisk) and [persistentVolumeClaim](https://kubernetes.io/docs/concepts/storage/volumes/#persistentvolumeclaim).
+
+At first, let's delete `Restic` crd, `stash-demo` deployment and `stash-sample-data` ConfigMap.
 
 ```console
-$ kubectl apply -f ./docs/examples/backends/gcs/gcs-recovery.yaml
-recovery "gcs-recovery" created
+$ kubectl delete deployment -n demo stash-demo
+deployment.extensions "stash-demo" deleted
+
+$ kubectl delete restic -n demo gcs-restic
+restic.stash.appscode.com "gcs-restic" deleted
+
+$ kubectl delete configmap -n demo stash-sample-data
+configmap "stash-sample-data" deleted
 ```
 
-Definition of `Recovery` crd should look like below:
+In order to perform recovery, we need `Repository` crd `deployment.stah-demo` and backend secret `gcs-secret` to exist.
+
+>In case of cluster disaster, you might lose `Repository` crd and backend secret. In this scenario, you have to create the secret again and `Repository` crd manually. Follow the guide to understand `Repository` crd structure from [here](/concepts/crds/repository.md).
+
+### Recover to GCE Persistent Disk
+
+Now, we will recover the backed up data into GCE Persistent Disk. At first, create a GCE disk named `stash-recovered` from [Google cloud console](https://console.cloud.google.com/compute/disks). Then create `Recovery` crd,
+
+```console
+$ kubectl apply -f ./docs/examples/platforms/gke/recovery-gcePD.yaml
+recovery.stash.appscode.com/gcs-recovery created
+```
+
+Below, the YAML for `Recovery` crd we have created above.
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
 kind: Recovery
 metadata:
   name: gcs-recovery
-  namespace: default
+  namespace: demo
 spec:
   repository:
     name: deployment.stash-demo
-    namespace: default
+    namespace: demo
   paths:
   - /source/data
   recoveredVolumes:
@@ -217,78 +288,35 @@ spec:
         fsType: ext4
 ```
 
-Wait until `Recovery` job completed its task. To verify that recovery completed successfully run,
+Wait until `Recovery` job completes its task. To verify that recovery is completed successfully run,
 
 ```console
-$ kubectl get recovery -o yaml
+$ kubectl get recovery -n demo gcs-recovery
+NAME             REPOSITORYNAMESPACE   REPOSITORYNAME          SNAPSHOT   PHASE       AGE
+gcs-recovery     demo                  deployment.stash-demo              Succeeded   3m
 ```
+
+Here, `PHASE` `Succeeded` indicate that our recovery has been completed successfully. Backup data has been restored in `stash-recovered` Persistent Disk. Now, we are ready to use this Persistent Disk to re-deploy workload.
+
+**Re-deploy Workload:**
+
+We have successfully restored backup data into `stash-recovered` gcePersistentDisk. Now, we will re-deploy our previous deployment `stash-demo`. This time, we will mount the `stash-recovered` Persistent Disk as `source-data` volume instead of ConfigMap `stash-sample-data`.
+
+Below, the YAML for `stash-demo` deployment with `stash-recovered` persistent disk as `source-data` volume.
 
 ```yaml
-apiVersion: v1
-items:
-- apiVersion: stash.appscode.com/v1alpha1
-  kind: Recovery
-  metadata:
-    annotations:
-      kubectl.kubernetes.io/last-applied-configuration: |
-        {"apiVersion":"stash.appscode.com/v1alpha1","kind":"Recovery","metadata":{"name":"gcs-recovery","namespace":"default"},"spec":{"repository":"deployment.stash-demo","paths":["/source/data"],"recoveredVolumes":[{"mountPath":"/source/data","gcePersistentDisk":{"pdName":"stash-recovered","fsType":"ext4"}}]}}
-    clusterName: ""
-    creationTimestamp: 2018-04-12T04:54:46Z
-    generation: 0
-    name: gcs-recovery
-    namespace: default
-    resourceVersion: "7388"
-    selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/recoveries/gcs-recovery
-    uid: 9f886069-3e0d-11e8-951b-42010a80002e
-  spec:
-    repository:
-      name: deployment.stash-demo
-      namespace: default
-    paths:
-    - /source/data
-    recoveredVolumes:
-    - gcePersistentDisk:
-        fsType: ext4
-        pdName: stash-recovered
-      mountPath: /source/data
-  status:
-    phase: Succeeded
-kind: List
-metadata:
-  resourceVersion: ""
-  selfLink: ""
-
-```
-
-`status.phase: Succeeded` indicates that the recovery was successful.
-
-Now, let's re-deploy the `busybox` deployment using this recovered volume. First, delete old deployment and recovery job.
-
-```console
-$ kubectl delete deployment stash-demo
-deployment "stash-demo" deleted
-
-$ kubectl delete recovery gcs-recovery
-recovery "gcs-recovery" deleted
-```
-
-Now, mount the recovered volume in `busybox` deployment instead of `gitRepo` we had mounted before then re-deploy it.
-
-```console
-$ kubectl apply -f ./docs/examples/backends/gcs/restored-deployment-1.yaml
-deployment "stash-demo" created
-```
-
-```yaml
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
     app: stash-demo
   name: stash-demo
-  namespace: default
+  namespace: demo
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: stash-demo
   template:
     metadata:
       labels:
@@ -313,57 +341,67 @@ spec:
           fsType: ext4
 ```
 
+Let's create the deployment,
+
+```console
+$  kubectl apply -f ./docs/examples/platforms/gke/restored-deployment-gcePD.yaml
+deployment.apps/stash-demo created
+```
+
+**Verify Recovered Data:**
+
+We have re-deployed `stash-demo` deployment with recovered volume. Now, it is time to verify that the data are present in `/source/data` directory.
+
 Get the pod of new deployment,
 
 ```console
-$ kubectl get pods -l app=stash-demo
+$ kubectl get pods -n demo -l app=stash-demo
 NAME                         READY     STATUS    RESTARTS   AGE
 stash-demo-857995799-gpml9   1/1       Running   0          34s
 ```
 
-Check the backed up data is restored in `/source/data/` directory of `busybox` pod.
+Run following command to view data of `/source/data` directory of this pod,
 
 ```console
-$ kubectl exec stash-demo-857995799-gpml9 -- ls -R /source/data/
-/source/data/:
-lost+found
-stash-data
-
-/source/data/lost+found:
-
-/source/data/stash-data:
-Eureka-by-EdgarAllanPoe.txt
+$ kubectl exec -n demo stash-demo-857995799-gpml9 -- ls -R /source/data
+/source/data:
 LICENSE
 README.md
+lost+found
 
+/source/data/lost+found:
 ```
 
-## Recover to `PersistentVolumeClaim`
+So, we can see that the data we had backed up from original deployment are now present in re-deployed deployment.
 
-At first, delete `Restic` crd so that it does not lock the restic repository while we are trying to recover from it.
+### Recover to `PersistentVolumeClaim`
+
+Here, we will show how to recover the backed up data into a PVC. If you have re-deployed `stash-demo` deployment by following previous tutorial on `gcePersistentDisk`, delete the deployment first,
 
 ```console
-$ kubectl delete restic gcs-restic
-restic "gcs-restic" deleted
+$ kubectl delete deployment -n demo stash-demo
+deployment.apps/stash-demo deleted
 ```
 
-Now, create a `PersistentVolumeClaim`,
+Now, create a `PersistentVolumeClaim` where our recovered data will be stored.
 
 ```console
-$ kubectl apply -f ./docs/examples/backends/gcs/gcs-pvc.yaml
-persistentvolumeclaim "stash-recovered" created
+$ kubectl apply -f ./docs/examples/platforms/gke/pvc.yaml
+persistentvolumeclaim/stash-recovered created
 ```
 
-Definition of `PersistentVolumeClaim` should look like below:
+Below the YAML for `PersistentVolumeClaim` we have created above,
 
 ```yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: stash-recovered
+  namespace: demo
   labels:
     app: stash-demo
 spec:
+  storageClassName: standard
   accessModes:
   - ReadWriteOnce
   resources:
@@ -371,35 +409,37 @@ spec:
       storage: 2Gi
 ```
 
-Check cluster has provisioned the requested claim,
+Check that if cluster has provisioned the requested claim,
 
 ```console
-$ kubectl get pvc -l app=stash-demo
+$ kubectl get pvc -n demo -l app=stash-demo
 NAME              STATUS    VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
 stash-recovered   Bound     pvc-57bec6e5-3e11-11e8-951b-42010a80002e   2Gi        RWO            standard       1m
 ```
 
 Look at the `STATUS` filed. `stash-recovered` PVC is bounded to volume `pvc-57bec6e5-3e11-11e8-951b-42010a80002e`.
 
-Now, create a `Recovery` to recover backed up data in this PVC.
+**Create Recovery:**
+
+Now, we have to create a `Recovery` crd to recover backed up data into this PVC.
 
 ```console
-$ kubectl apply -f ./docs/examples/backends/gcs/gcs-recovery-to-pvc.yaml
-recovery "gcs-recovery" created
+$ kubectl apply -f ./docs/examples/platforms/gke/recovery-pvc.yaml
+recovery.stash.appscode.com/gcs-recovery created
 ```
 
-Definition of `Recovery` to recover in `PersistentVolumeClaim`,
+Below, the YAML for `Recovery` crd we have created above.
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
 kind: Recovery
 metadata:
   name: gcs-recovery
-  namespace: default
+  namespace: demo
 spec:
   repository:
     name: deployment.stash-demo
-    namespace: default
+    namespace: demo
   paths:
   - /source/data
   recoveredVolumes:
@@ -408,68 +448,35 @@ spec:
       claimName: stash-recovered
 ```
 
-Wait until `Recovery` job completed its task. To verify that recovery completed successfully run,
+Wait until `Recovery` job completes its task. To verify that recovery is completed successfully run,
 
 ```console
-$ kubectl get recovery gcs-recovery -o yaml
+$ kubectl get recovery -n demo gcs-recovery
+NAME             REPOSITORYNAMESPACE   REPOSITORYNAME          SNAPSHOT   PHASE       AGE
+gcs-recovery     demo                  deployment.stash-demo              Succeeded   3m
 ```
+
+Here, `PHASE` `Succeeded` indicate that our recovery has been completed successfully. Backup data has been restored in `stash-recovered` PVC. Now, we are ready to use this PVC to re-deploy workload.
+
+**Re-deploy Workload:**
+
+We have successfully restored backup data into `stash-recovered` PVC. Now, we will re-deploy our previous deployment `stash-demo`. This time, we will mount the `stash-recovered` PVC as `source-data` volume instead of ConfigMap `stash-sample-data`.
+
+Below, the YAML for `stash-demo` deployment with `stash-recovered` pvc as `source-data` volume.
 
 ```yaml
-apiVersion: stash.appscode.com/v1alpha1
-kind: Recovery
-metadata:
-  annotations:
-    kubectl.kubernetes.io/last-applied-configuration: |
-     {"apiVersion":"stash.appscode.com/v1alpha1","kind":"Recovery","metadata":{"name":"gcs-recovery","namespace":"default"},"spec":{"repository":"deployment.stash-demo","paths":["/source/data"],"recoveredVolumes":[{"mountPath":"/source/data","persistentVolumeClaim":{"claimName":"stash-recovered"}}]}}
-  clusterName: ""
-  creationTimestamp: 2018-04-12T05:26:03Z
-  generation: 0
-  name: gcs-recovery
-  namespace: default
-  resourceVersion: "9344"
-  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/default/recoveries/gcs-recovery
-  uid: fe0eb3b9-3e11-11e8-951b-42010a80002e
-spec:
-  repository:
-    name: deployment.stash-demo
-    namespace: default
-  paths:
-  - /source/data
-  recoveredVolumes:
-  - mountPath: /source/data
-    persistentVolumeClaim:
-      claimName: stash-recovered
-status:
-  phase: Succeeded
-```
-
-Now, let's re-deploy the `busybox` deployment using this recovered PVC. First, delete old deployment and recovery job.
-
-```console
-$ kubectl delete deployment stash-demo
-deployment "stash-demo" deleted
-
-$ kubectl delete recovery gcs-recovery
-recovery "gcs-recovery" deleted
-```
-
-Now, mount the recovered `PersistentVolumeClaim` in `busybox` deployment instead of `gitRepo` we had mounted before then re-deploy it,
-
-```console
-$ kubectl apply -f ./docs/examples/backends/gcs/restored-deployment-2.yaml
-deployment "stash-demo" created
-```
-
-```yaml
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
     app: stash-demo
   name: stash-demo
-  namespace: default
+  namespace: demo
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: stash-demo
   template:
     metadata:
       labels:
@@ -493,37 +500,50 @@ spec:
           claimName: stash-recovered
 ```
 
+Let's create the deployment,
+
+```console
+$ kubectl apply -f ./docs/examples/platforms/gke/restored-deployment-pvc.yaml
+deployment.apps/stash-demo created
+```
+
+**Verify Recovered Data:**
+
+We have re-deployed `stash-demo` deployment with recovered volume. Now, it is time to verify that the data are present in `/source/data` directory.
+
 Get the pod of new deployment,
 
 ```console
-$ kubectl get pods -l app=stash-demo
+$ kubectl get pods -n demo -l app=stash-demo
 NAME                          READY     STATUS    RESTARTS   AGE
 stash-demo-559845c5db-8cd4w   1/1       Running   0          33s
 ```
 
-Check the backed up data is restored in `/source/data/` directory of `busybox` pod.
+Run following command to view data of `/source/data` directory of this pod,
 
 ```console
-$ kubectl exec stash-demo-5bc57fbcfb-mfrfp -- ls -R /source/data/
-/source/data/:
-lost+found
-stash-data
-
-/source/data/lost+found:
-
-/source/data/stash-data:
-Eureka-by-EdgarAllanPoe.txt
+$ kubectl exec -n demo stash-demo-559845c5db-8cd4w -- ls -R /source/data
+/source/data:
 LICENSE
 README.md
+lost+found
+
+/source/data/lost+found:
 ```
 
+So, we can see that the data we had backed up from original deployment are now present in re-deployed deployment.
 
 ## Cleanup
 
+To cleanup the resources created by this tutorial, run following commands:
+
 ```console
-$ kubectl delete pvc stash-recovered
-$ kubectl delete deployment stash-demo
-$ kubectl delete repository deployment.stash-demo
+$ kubectl delete recovery -n demo gcs-recovery
+$ kubectl delete secret -n demo gcs-secret
+$ kubectl delete deployment -n demo stash-demo
+$ kubectl delete pvc -n demo stash-recovered
+$ kubectl delete repository -n demo deployment.stash-demo
+$ kubectl delete ns demo
 ```
 
-Delete the disk created here from Google Cloud console. Uninstall Stash following the instructions [here](/docs/setup/uninstall.md).
+To uninstall Stash from your cluster, follow the instructions from [here](/docs/setup/uninstall.md).

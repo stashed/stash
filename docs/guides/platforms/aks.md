@@ -54,7 +54,7 @@ configmap/stash-sample-data created
 
 **Deploy Workload:**
 
-Now, deploy the following Deployment. Here we have mounted the ConfigMap `stash-sample-data` as data source volume.
+Now, deploy the following Deployment. Here, we have mounted the ConfigMap `stash-sample-data` as data source volume.
 
 Below, the YAML for the Deployment we are going to create.
 
@@ -118,9 +118,9 @@ LICENSE
 README.md
 ```
 
-**Create Restic:**
+Now, we are ready to backup `/source/data` directory into [Azure Blob Container](https://azure.microsoft.com/en-us/services/storage/blobs/).
 
-Now, let’s backup `/source/data` directory into [Azure Blob Container](https://azure.microsoft.com/en-us/services/storage/blobs/).
+**Create Restic:**
 
 At first, we need to create a secret for `Restic` crd. Create a secret for `Restic` using following commands,
 
@@ -159,7 +159,7 @@ type: Opaque
 
 ```
 
-Now, we will create `Restic` crd to take backup `/source/data` directory of `stash-demo` deployment. This will create a repository in the Azure blob container specified in `azure.container` field and start taking periodic backup of `/source/data` folder.
+Now, we will create `Restic` crd to take backup `/source/data` directory of `stash-demo` deployment. This will create a repository in the Azure blob container specified in `azure.container` field and start taking periodic backup of `/source/data` directory.
 
 ```console
 $ kubectl apply -f ./docs/examples/platforms/aks/restic.yaml
@@ -196,7 +196,7 @@ spec:
     prune: true
 ```
 
-If everything goes well, Stash will insect a sidecar container into the `stash-demo` deployment to take periodic backup. Let's check sidecar has been injected successfully,
+If everything goes well, Stash will inject a sidecar container into the `stash-demo` deployment to take periodic backup. Let's check sidecar has been injected successfully,
 
 ```console
 $ kubectl get pod -n demo -l app=stash-demo
@@ -300,7 +300,7 @@ NAME              STATUS   VOLUME                                     CAPACITY  
 stash-recovered   Bound    pvc-f6bddbf6-e66a-11e8-b68c-a62bf720de95   1Gi        RWO            default        1m
 ```
 
-Look at the `STATUS` filed. `stash-recovered` PVC is bounded to volume `pvc-57bec6e5-3e11-11e8-951b-42010a80002e`.
+Look at the `STATUS` filed. `stash-recovered` PVC is bounded to volume `pvc-f6bddbf6-e66a-11e8-b68c-a62bf720de95`.
 
 **Create Recovery:**
 
@@ -414,7 +414,7 @@ lost+found
 /source/data/lost+found:
 ```
 
-So, we can see that the data we have backed up from original deployment are now present in re-deployed deployment.
+So, we can see that the data we had backed up from original deployment are now present in re-deployed deployment.
 
 ## Cleanup
 
