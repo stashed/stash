@@ -31,4 +31,3 @@ spec:
       - name: source-data
         configMap:
           name: stash-sample-data
-        
