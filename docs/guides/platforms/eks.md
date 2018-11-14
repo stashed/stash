@@ -1,27 +1,27 @@
 ---
-title: AKS | Stash
-description: Using Stash in Azure Kubernetes Service
+title: EKS | Stash
+description: Using Stash in Amazon EKS
 menu:
   product_stash_0.7.0:
-    identifier: platforms-aks
-    name: AKS
+    identifier: platforms-eks
+    name: EKS
     parent: platforms
-    weight: 20
+    weight: 30
 product_name: stash
 menu_name: product_stash_0.7.0
 ---
 
 > New to Stash? Please start [here](/docs/concepts/README.md).
 
-# Using Stash with Azure Kubernetes Service (AKS)
+# Using Stash with Amazon EKS
 
-This tutorial will show you how to use Stash to **backup** and **restore** a volume in [Azure Kubernetes Service](https://azure.microsoft.com/en-us/services/kubernetes-service/). Here, we are going to backup the `/source/data` folder of a busybox pod into  [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/). Then, we will show how to recover this data into a `PersistentVolumeClaim(PVC)`. We will also re-deploy deployment using this recovered volume.
+This tutorial will show you how to use Stash to **backup** and **restore** a volume in [Amazon Elastic Container Service for Kubernetes (EKS)](https://aws.amazon.com/eks/). Here, we are going to backup the `/source/data` folder of a busybox pod into  [AWS S3 bucket](https://aws.amazon.com/s3/). Then, we will show how to recover this data into a `PersistentVolumeClaim(PVC)`. We will also re-deploy deployment using this recovered volume.
 
 ## Before You Begin
 
-At first, you need to have a AKS cluster. If you don't already have a cluster, create one from [here](https://azure.microsoft.com/en-us/services/kubernetes-service/). Now, install Stash in your cluster following the steps [here](/docs/setup/install.md).
+At first, you need to have a EKS cluster. If you don't already have a cluster, create one from [here](https://aws.amazon.com/eks/). You can use [eksctl](https://github.com/weaveworks/eksctl) command line tool to create EKS cluster easily. Now, install Stash in your cluster following the steps [here](/docs/setup/install.md).
 
-Then, you will need to have a [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/) to store the backup snapshots.
+Then, you will need to have a [AWS S3 Bucket](https://aws.amazon.com/s3/) to store the backup snapshots.
 
 You should have understanding the following Stash concepts:
 
@@ -37,7 +37,7 @@ $ kubectl create ns demo
 namespace/demo created
 ```
 
->Note: YAML files used in this tutorial are stored in [/docs/examples/platforms/aks](/docs/examples/platforms/aks) directory of [appscode/stash](https://github.com/appscode/stash) repository.
+>Note: YAML files used in this tutorial are stored in [/docs/examples/platforms/eks](/docs/examples/platforms/eks) directory of [appscode/stash](https://github.com/appscode/stash) repository.
 
 ## Backup
 
@@ -97,7 +97,7 @@ spec:
 Let's create the deployment we have shown above,
 
 ```console
-$ kubectl apply -f ./docs/examples/platforms/aks/deployment.yaml
+$ kubectl apply -f ./docs/examples/platforms/eks/deployment.yaml
 deployment.apps/stash-demo created
 ```
 
@@ -105,65 +105,64 @@ Now, wait for deployment's pod to go in `Running` state.
 
 ```console
 $ kubectl get pod -n demo -l app=stash-demo
-NAME                          READY   STATUS    RESTARTS   AGE
-stash-demo-7584fd7748-nl5n8   1/1     Running   0          3m
+NAME                         READY   STATUS    RESTARTS   AGE
+stash-demo-756bf59b5-7tk6q   1/1     Running   0          1m
 ```
 
 You can check that the `/source/data/` directory of this pod is populated with data from the `stash-sample-data` ConfigMap using this command,
 
 ```console
-$ kubectl exec -n demo stash-demo-7584fd7748-nl5n8 -- ls -R /source/data
+$ kubectl exec -n demo stash-demo-756bf59b5-7tk6q  -- ls -R /source/data
 /source/data:
 LICENSE
 README.md
 ```
 
-Now, we are ready to backup `/source/data` directory into [Azure Blob Container](https://azure.microsoft.com/en-us/services/storage/blobs/).
+Now, we are ready to backup `/source/data` directory into [AWS S3 Bucket](https://aws.amazon.com/s3/).
 
 **Create Restic:**
 
 At first, we need to create a secret for `Restic` crd. Create a secret for `Restic` using following commands,
 
 ```console
-$ echo -n 'changeit' >RESTIC_PASSWORD
-$ echo -n '<your-azure-storage-account-name>' > AZURE_ACCOUNT_NAME
-$ echo -n '<your-azure-storage-account-key>' > AZURE_ACCOUNT_KEY
-$ kubectl create secret generic -n demo azure-secret \
+$ echo -n 'changeit' > RESTIC_PASSWORD
+$ echo -n '<your-aws-access-key-id-here>' > AWS_ACCESS_KEY_ID
+$ echo -n '<your-aws-secret-access-key-here>' > AWS_SECRET_ACCESS_KEY
+$ kubectl create secret generic -n demo s3-secret \
     --from-file=./RESTIC_PASSWORD \
-    --from-file=./AZURE_ACCOUNT_NAME \
-    --from-file=./AZURE_ACCOUNT_KEY
-secret/azure-secret created
+    --from-file=./AWS_ACCESS_KEY_ID \
+    --from-file=./AWS_SECRET_ACCESS_KEY
+secret/s3-secret created
 ```
 
 Verify that the secret has been created successfully,
 
 ```console
-$ kubectl get secret -n demo azure-secret -o yaml
+$ kubectl get secret -n demo s3-secret -o yaml
 ```
 
 ```yaml
 apiVersion: v1
 data:
-  AZURE_ACCOUNT_KEY: <base64 encoded AZURE_ACCOUNT_KEY>
-  AZURE_ACCOUNT_NAME: <base64 encoded AZURE_ACCOUNT_NAME>
-  RESTIC_PASSWORD: Y2hhbmdlaXQ=
+  AWS_ACCESS_KEY_ID: <base64 encoded AWS_ACCESS_KEY_ID>
+  AWS_SECRET_ACCESS_KEY: <base64 encoded AWS_SECRET_ACCESS_KEY>
+  RESTIC_PASSWORD: Y2hhbmdlaXQK
 kind: Secret
 metadata:
-  creationTimestamp: 2018-11-12T07:09:36Z
-  name: azure-secret
+  creationTimestamp: 2018-11-14T10:10:57Z
+  name: s3-secret
   namespace: demo
-  resourceVersion: "15708"
-  selfLink: /api/v1/namespaces/demo/secrets/azure-secret
-  uid: ea0b4275-e649-11e8-b68c-a62bf720de95
+  resourceVersion: "16345"
+  selfLink: /api/v1/namespaces/demo/secrets/s3-secret
+  uid: 94842507-e7f5-11e8-a7b0-029842a88ece
 type: Opaque
-
 ```
 
-Now, we will create `Restic` crd to take backup `/source/data` directory of `stash-demo` deployment. This will create a repository in the Azure blob container specified in `azure.container` field and start taking periodic backup of `/source/data` directory.
+Now, we will create `Restic` crd to take backup `/source/data` directory of `stash-demo` deployment. This will create a repository in the S3 bucket specified in `s3.bucket` field and start taking periodic backup of `/source/data` directory.
 
 ```console
-$ kubectl apply -f ./docs/examples/platforms/aks/restic.yaml
-restic.stash.appscode.com/azure-restic created
+$ kubectl apply -f ./docs/examples/platforms/eks/restic.yaml 
+restic.stash.appscode.com/s3-restic created
 ```
 
 Below, the YAML for Restic crd we have created above,
@@ -172,7 +171,7 @@ Below, the YAML for Restic crd we have created above,
 apiVersion: stash.appscode.com/v1alpha1
 kind: Restic
 metadata:
-  name: azure-restic
+  name: s3-restic
   namespace: demo
 spec:
   selector:
@@ -182,10 +181,11 @@ spec:
   - path: /source/data
     retentionPolicyName: 'keep-last-5'
   backend:
-    azure:
-      container: stashqa
+    s3:
+      endpoint: 's3.amazonaws.com'
+      bucket: stash-qa
       prefix: demo
-    storageSecretName: azure-secret
+    storageSecretName: s3-secret
   schedule: '@every 1m'
   volumeMounts:
   - mountPath: /source/data
@@ -201,19 +201,54 @@ If everything goes well, Stash will inject a sidecar container into the `stash-d
 ```console
 $ kubectl get pod -n demo -l app=stash-demo
 NAME                          READY   STATUS    RESTARTS   AGE
-stash-demo-6b8c94cdd7-8jhtn   2/2     Running   1          1h
+stash-demo-646c854778-t4d72   2/2     Running   0          1m
 ```
 
 Look at the pod. It now has 2 containers. If you view the YAML of this pod, you will see there is a container named `stash` which takes backup.
 
 **Verify Backup:**
 
-Stash will create a `Repository` crd with name `deployment.stash-demo` for the respective repository in Azure backend at first backup schedule. To verify, run the following command,
+Stash will create a `Repository` crd with name `deployment.stash-demo` for the respective repository in S3 backend at first backup schedule. To verify, run the following command,
 
 ```console
-$ kubectl get repository deployment.stash-demo -n demo
-NAME                    BACKUPCOUNT   LASTSUCCESSFULBACKUP   AGE
-deployment.stash-demo   8             13s                    8m
+$  kubectl get repository deployment.stash-demo -n demo
+NAME                    CREATED AT
+deployment.stash-demo   5m
+```
+
+If you view the YAML of this repository, you will see a count of backup snapshots taken in the backend at `status.backupCount` field.
+
+```yaml
+$ kubectl get repository deployment.stash-demo -n demo -o yaml
+apiVersion: stash.appscode.com/v1alpha1
+kind: Repository
+metadata:
+  clusterName: ""
+  creationTimestamp: 2018-11-14T11:41:39Z
+  finalizers:
+  - stash
+  generation: 1
+  labels:
+    restic: s3-restic
+    workload-kind: Deployment
+    workload-name: stash-demo
+  name: deployment.stash-demo
+  namespace: demo
+  resourceVersion: "29810"
+  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/demo/repositories/deployment.stash-demo
+  uid: 3fea14ca-e802-11e8-9c28-06995e414a88
+spec:
+  backend:
+    s3:
+      bucket: stash-qa
+      endpoint: s3.amazonaws.com
+      prefix: stash-qa/demo/deployment/stash-demo
+    storageSecretName: s3-secret
+status:
+  backupCount: 6
+  firstBackupTime: 2018-11-14T11:42:40Z
+  lastBackupDuration: 3.40542734s
+  lastBackupTime: 2018-11-14T11:47:40Z
 ```
 
 `Restic` will take backup of the volume periodically with a 1-minute interval. You can verify that backup snapshots are created successfully by,
@@ -221,24 +256,24 @@ deployment.stash-demo   8             13s                    8m
 ```console
 $ kubectl get snapshots -n demo -l repository=deployment.stash-demo
 NAME                             AGE
-deployment.stash-demo-52ee5eaa   4m36s
-deployment.stash-demo-9a3c5d10   3m36s
-deployment.stash-demo-39df477a   2m36s
-deployment.stash-demo-e315dfb4   96s
-deployment.stash-demo-59633ea3   36s
+deployment.stash-demo-2e9cc755   4m53s
+deployment.stash-demo-72b5ad8a   3m53s
+deployment.stash-demo-e819580d   2m53s
+deployment.stash-demo-57386fe3   113s
+deployment.stash-demo-c8312c62   53s
 ```
 
 Here, we can see 5 last successful backup [Snapshot](/docs/concepts/crds/snapshot.md) taken by Stash in `deployment.stash-demo` repository.
 
-If you navigate to `<bucket name>/demo/deployment/stash-demo` directory in your Azure storage bucket. You will see, a repository has been created there.
+If you navigate to `<bucket name>/demo/deployment/stash-demo` directory in your s3 bucket. You will see, a repository has been created there.
 <p align="center">
-  <img alt="Repository in Azure Backend",  height="350px" src="/docs/images/platforms/aks/azure-backup-repository.png">
+  <img alt="Repository in AWS S3 Backend",  height="350px" src="/docs/images/platforms/eks/s3-backup-repository.png">
 </p>
 
 To view the snapshot files, navigate to `snapshots` directory of the repository,
 
 <p align="center">
-  <img alt="Snapshot in Azure Bucket" height="350px" src="/docs/images/platforms/aks/azure-backup-snapshots.png">
+  <img alt="Snapshot in AWS S3 Bucket" height="350px" src="/docs/images/platforms/eks/s3-backup-snapshots.png">
 </p>
 
 > Stash keeps all backup data encrypted. So, snapshot files in the bucket will not contain any meaningful data until they are decrypted.
@@ -253,23 +288,31 @@ At first, let's delete `Restic` crd, `stash-demo` deployment and `stash-sample-d
 $ kubectl delete deployment -n demo stash-demo
 deployment.extensions "stash-demo" deleted
 
-$ kubectl delete restic -n demo azure-restic
-restic.stash.appscode.com "azure-restic" deleted
+$ kubectl delete restic -n demo s3-restic
+restic.stash.appscode.com "s3-restic" deleted
 
 $ kubectl delete configmap -n demo stash-sample-data
 configmap "stash-sample-data" deleted
 ```
 
-In order to perform recovery, we need `Repository` crd `deployment.stah-demo` and backend secret `azure-secret` to exist.
+In order to perform recovery, we need `Repository` crd `deployment.stah-demo` and backend secret `s3-secret` to exist.
 
 >In case of cluster disaster, you might lose `Repository` crd and backend secret. In this scenario, you have to create the secret again and `Repository` crd manually. Follow the guide to understand `Repository` crd structure from [here](/concepts/crds/repository.md).
 
 **Create PVC:**
 
-Let's create a `PersistentVolumeClaim` where our recovered data will be stored.
+We will recover backed up data into a PVC. At first, we need to know available [StorageClass](https://kubernetes.io/docs/concepts/storage/storage-classes/) in our cluster.
+
+```
+$ kubectl get storageclass
+NAME            PROVISIONER             AGE
+gp2 (default)   kubernetes.io/aws-ebs   6h
+```
+
+Now, let's create a `PersistentVolumeClaim` where our recovered data will be stored.
 
 ```console
-$ kubectl apply -f ./docs/examples/platforms/aks/pvc.yaml
+$ kubectl apply -f ./docs/examples/platforms/eks/pvc.yaml
 persistentvolumeclaim/stash-recovered created
 ```
 
@@ -284,7 +327,7 @@ metadata:
   labels:
     app: stash-demo
 spec:
-  storageClassName: default
+  storageClassName: gp2
   accessModes:
   - ReadWriteOnce
   resources:
@@ -297,18 +340,18 @@ Check that if cluster has provisioned the requested claim,
 ```console
 $ kubectl get pvc -n demo -l app=stash-demo
 NAME              STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-stash-recovered   Bound    pvc-f6bddbf6-e66a-11e8-b68c-a62bf720de95   1Gi        RWO            default        1m
+stash-recovered   Bound    pvc-d86e3909-e80e-11e8-a7b0-029842a88ece   1Gi        RWO            gp2            18s
 ```
 
-Look at the `STATUS` filed. `stash-recovered` PVC is bounded to volume `pvc-f6bddbf6-e66a-11e8-b68c-a62bf720de95`.
+Look at the `STATUS` filed. `stash-recovered` PVC is bounded to volume `pvc-d86e3909-e80e-11e8-a7b0-029842a88ece`.
 
 **Create Recovery:**
 
 Now, we have to create a `Recovery` crd to recover backed up data into this PVC.
 
 ```console
-$ kubectl apply -f ./docs/examples/platforms/aks/recovery.yaml
-recovery.stash.appscode.com/azure-recovery created
+$ kubectl apply -f ./docs/examples/platforms/eks/recovery.yaml 
+recovery.stash.appscode.com/s3-recovery created
 ```
 
 Below, the YAML for `Recovery` crd we have created above.
@@ -317,7 +360,7 @@ Below, the YAML for `Recovery` crd we have created above.
 apiVersion: stash.appscode.com/v1alpha1
 kind: Recovery
 metadata:
-  name: azure-recovery
+  name: s3-recovery
   namespace: demo
 spec:
   repository:
@@ -333,13 +376,38 @@ spec:
 
 Wait until `Recovery` job completes its task. To verify that recovery is completed successfully run,
 
-```console
-$ kubectl get recovery -n demo azure-recovery
-NAME             REPOSITORYNAMESPACE   REPOSITORYNAME          SNAPSHOT   PHASE       AGE
-azure-recovery   demo                  deployment.stash-demo              Succeeded   3m
+```yaml
+$ kubectl get recovery -n demo s3-recovery -o yaml
+apiVersion: stash.appscode.com/v1alpha1
+kind: Recovery
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"stash.appscode.com/v1alpha1","kind":"Recovery","metadata":{"annotations":{},"name":"s3-recovery","namespace":"demo"},"spec":{"paths":["/source/data"],"recoveredVolumes":[{"mountPath":"/source/data","persistentVolumeClaim":{"claimName":"stash-recovered"}}],"repository":{"name":"deployment.stash-demo","namespace":"demo"}}}
+  clusterName: ""
+  creationTimestamp: 2018-11-14T13:13:13Z
+  generation: 1
+  name: s3-recovery
+  namespace: demo
+  resourceVersion: "42086"
+  selfLink: /apis/stash.appscode.com/v1alpha1/namespaces/demo/recoveries/s3-recovery
+  uid: 0a843823-e80f-11e8-9c28-06995e414a88
+spec:
+  paths:
+  - /source/data
+  recoveredVolumes:
+  - mountPath: /source/data
+    persistentVolumeClaim:
+      claimName: stash-recovered
+  repository:
+    name: deployment.stash-demo
+    namespace: demo
+status:
+  phase: Succeeded
+
 ```
 
-Here, `PHASE` `Succeeded` indicate that our recovery has been completed successfully. Backup data has been restored in `stash-recovered` PVC. Now, we are ready to use this PVC to re-deploy workload.
+Here, `status.phase: Succeeded` indicate that our recovery has been completed successfully. Backup data has been restored in `stash-recovered` PVC. Now, we are ready to use this PVC to re-deploy workload.
 
 **Re-deploy Workload:**
 
@@ -386,7 +454,7 @@ spec:
 Let's create the deployment,
 
 ```console
-$  kubectl apply -f ./docs/examples/platforms/aks/recovered-deployment.yaml 
+$  kubectl apply -f ./docs/examples/platforms/eks/recovered-deployment.yaml 
 deployment.apps/stash-demo created
 ```
 
@@ -399,13 +467,13 @@ Get the pod of new deployment,
 ```console
 $ kubectl get pod -n demo -l app=stash-demo
 NAME                          READY   STATUS    RESTARTS   AGE
-stash-demo-69994758c9-v7ntg   1/1     Running   0          3m
+stash-demo-6796866bb8-zkhv5   1/1     Running   0          55s
 ```
 
 Run following command to view data of `/source/data` directory of this pod,
 
 ```console
-$ kubectl exec -n demo stash-demo-69994758c9-v7ntg -- ls -R /source/data
+$ kubectl exec -n demo stash-demo-6796866bb8-zkhv5 -- ls -R /source/data
 /source/data:
 LICENSE
 README.md
@@ -421,8 +489,8 @@ So, we can see that the data we had backed up from original deployment are now p
 To cleanup the resources created by this tutorial, run following commands:
 
 ```console
-$ kubectl delete recovery -n demo azure-recovery
-$ kubectl delete secret -n demo azure-secret
+$ kubectl delete recovery -n demo s3-recovery
+$ kubectl delete secret -n demo s3-secret
 $ kubectl delete deployment -n demo stash-demo
 $ kubectl delete pvc -n demo stash-recovered
 $ kubectl delete repository -n demo deployment.stash-demo
