@@ -319,7 +319,7 @@ If you would like to uninstall Stash operator, please follow the steps [here](/d
 - Learn about the details of Restic CRD [here](/docs/concepts/crds/restic.md).
 - To restore a backup see [here](/docs/guides/restore.md).
 - Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
-- See the list of supported backends and how to configure them [here](/docs/guides/backends.md).
+- See the list of supported backends and how to configure them [here](/docs/guides/backends/overview.md).
 - See working examples for supported workload types [here](/docs/guides/workloads.md).
 - Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/monitoring.md).
 - Learn about how to configure [RBAC roles](/docs/guides/rbac.md).
