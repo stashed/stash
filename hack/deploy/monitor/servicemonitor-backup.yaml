@@ -14,3 +14,4 @@ spec:
       app: stash
   endpoints:
   - port: pushgateway
+    honorLabels: true

@@ -28,13 +28,13 @@ namespace/demo created
 
 ## Enable Monitoring in Stash
 
-Enable Prometheus monitoring using `builtin` agent while installing Stash. To know details about how to enable monitoring see [here](/docs/guides/monitoring/overview.md#how-to-enable-monitoring). We will
+Enable Prometheus monitoring using `prometheus.io/builtin` agent while installing Stash. To know details about how to enable monitoring see [here](/docs/guides/monitoring/overview.md#how-to-enable-monitoring). We will
 
 Here, we are going to enable monitoring for both `backup & recovery` and `opeartor` metrics.
 
 ```console
 $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0/hack/deploy/stash.sh \
-    | bash -s -- --monitoring-agent=builtin --monitoring-backup=true --monitoring-operator=true --prometheus-namespace=demo
+    | bash -s -- --monitoring-agent=prometheus.io/builtin --monitoring-backup=true --monitoring-operator=true --prometheus-namespace=demo
 ```
 
 This will add some annotation to `stash-operator` service. Prometheus server will scrap metrics using those annotations. Let's check which annotations are added to the service,
@@ -118,7 +118,7 @@ stash-apiserver-cert   kubernetes.io/tls   2      2m21s
 If you are using a RBAC enabled cluster, you have to give necessary RBAC permissions for Prometheus. Let's create necessary RBAC stuffs for Prometheus,
 
 ```console
-$ kubectl apply -f ./docs/examples/monitoring/builtin/prom-rbac.yaml
+$ kubectl apply -f curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0/docs/examples/monitoring/builtin/prom-rbac.yaml
 clusterrole.rbac.authorization.k8s.io/stash-prometheus-server created
 serviceaccount/stash-prometheus-server created
 clusterrolebinding.rbac.authorization.k8s.io/stash-prometheus-server created
@@ -148,6 +148,7 @@ data:
       scrape_timeout: 10s
       metrics_path: /metrics
       scheme: http
+      honor_labels: true
       kubernetes_sd_configs:
       - role: endpoints
       relabel_configs:
@@ -254,11 +255,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: stash-prometheus-server
+      app: prometheus
   template:
     metadata:
       labels:
-        app: stash-prometheus-server
+        app: prometheus
     spec:
       serviceAccountName: stash-prometheus-server
       containers:
@@ -297,7 +298,6 @@ Now, let's create the deployment,
 $ kubectl apply -f curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0/docs/examples/monitoring/builtin/prom-deployment.yaml
 deployment.apps/stash-prometheus-server created
 ```
-
 
 ### Verify Monitoring Metrics
 

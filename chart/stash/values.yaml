@@ -86,11 +86,11 @@ apiserver:
 enableAnalytics: true
 
 monitoring:
-  # specify monitoring agent (either "builtin" or "coreos-operator")
+  # specify monitoring agent (either "prometheus.io/builtin" or "prometheus.io/coreos-operator")
   agent: "none"
   # specify whether to monitor backup and recovery
   backup: false
   # specify whether to monitor stash operator
   operator: false
   # specify where ServiceMonitor crd will be created
-  prometheusNamespace: "{{ .Release.Namespace }}"
+  prometheusNamespace: ""

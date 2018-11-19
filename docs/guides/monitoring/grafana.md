@@ -78,7 +78,7 @@ Now, we can access grafana UI in `localhost:3000`. Use `username: admin` and `pa
 We have to add our prometheus server `prometheus-prometheus-0` as data source of grafana. We will use a `ClusterIP` service to connect prometheus server with grafana. Let's create a service to select prometheus server `prometheus-prometheus-0`,
 
 ```console
-$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.7.0//docs/examples/monitoring/coreos/prometheus-service.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.7.0/docs/examples/monitoring/coreos/prometheus-service.yaml
 service/prometheus created
 ```
 
@@ -96,9 +96,9 @@ spec:
   - name: web
     port: 9090
     protocol: TCP
-    targetPort: web
+    targetPort: 9090
   selector:
-    prometheus: prometheus
+    app: prometheus
 ```
 
 Now, follow these steps to add the Prometheus server as data source of Grafana UI.

@@ -4,7 +4,7 @@ metadata:
   name: prometheus
   namespace: demo
   labels:
-    prometheus: prometheus
+    app: prometheus
 spec:
   replicas: 1
   serviceAccountName: prometheus

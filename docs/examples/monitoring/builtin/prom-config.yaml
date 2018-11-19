@@ -17,6 +17,7 @@ data:
       scrape_timeout: 10s
       metrics_path: /metrics
       scheme: http
+      honor_labels: true
       kubernetes_sd_configs:
       - role: endpoints
       relabel_configs:

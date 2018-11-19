@@ -14,6 +14,7 @@ spec:
       app: stash
   endpoints:
   - port: pushgateway
+    honorLabels: true
   - port: admission
     bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     scheme: https

@@ -9,6 +9,6 @@ spec:
   - name: web
     port: 9090
     protocol: TCP
-    targetPort: web
+    targetPort: 9090
   selector:
-    prometheus: prometheus
+    app: prometheus

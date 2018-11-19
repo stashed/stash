@@ -50,13 +50,13 @@ You can also follow the official docs to deploy prometheus operator from [here](
 
 ## Enable Monitoring in Stash
 
-Enable Prometheus monitoring using `coreos-operator` agent while installing Stash. To know details about how to enable monitoring see [here](/docs/guides/monitoring/overview.md#how-to-enable-monitoring).
+Enable Prometheus monitoring using `prometheus.io/coreos-operator` agent while installing Stash. To know details about how to enable monitoring see [here](/docs/guides/monitoring/overview.md#how-to-enable-monitoring).
 
 Here, we are going to enable monitoring for both `backup & recovery` and `opeartor` metrics.
 
 ```console
 $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0/hack/deploy/stash.sh \
-    | bash -s -- --monitoring-agent=coreos-operator --monitoring-backup=true --monitoring-operator=true --prometheus-namespace=demo
+    | bash -s -- --monitoring-agent=prometheus.io/coreos-operator --monitoring-backup=true --monitoring-operator=true --prometheus-namespace=demo
 ```
 
 This will create a `ServiceMonitor` crd with name `stash-servicemonitor` in demo namespace for monitoring endpoints of `stash-operator` service.
@@ -70,19 +70,20 @@ kind: ServiceMonitor
 metadata:
   annotations:
     kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"monitoring.coreos.com/v1","kind":"ServiceMonitor","metadata":{"annotations":{},"labels":{"app":"stash"},"name":"stash-servicemonitor","namespace":"demo"},"spec":{"endpoints":[{"port":"pushgateway"},{"bearerTokenFile":"/var/run/secrets/kubernetes.io/serviceaccount/token","port":"admission","scheme":"https","tlsConfig":{"caFile":"/etc/prometheus/secrets/stash-apiserver-cert/tls.crt","serverName":"stash-operator.kube-system.svc"}}],"namespaceSelector":{"matchNames":["kube-system"]},"selector":{"matchLabels":{"app":"stash"}}}}
-  creationTimestamp: 2018-11-09T15:45:13Z
+      {"apiVersion":"monitoring.coreos.com/v1","kind":"ServiceMonitor","metadata":{"annotations":{},"labels":{"app":"stash"},"name":"stash-servicemonitor","namespace":"demo"},"spec":{"endpoints":[{"honorLabels":true,"port":"pushgateway"},{"bearerTokenFile":"/var/run/secrets/kubernetes.io/serviceaccount/token","port":"admission","scheme":"https","tlsConfig":{"caFile":"/etc/prometheus/secrets/stash-apiserver-cert/tls.crt","serverName":"stash-operator.kube-system.svc"}}],"namespaceSelector":{"matchNames":["kube-system"]},"selector":{"matchLabels":{"app":"stash"}}}}
+  creationTimestamp: 2018-11-19T12:54:24Z
   generation: 1
   labels:
     app: stash
   name: stash-servicemonitor
   namespace: demo
-  resourceVersion: "60655"
+  resourceVersion: "7447"
   selfLink: /apis/monitoring.coreos.com/v1/namespaces/demo/servicemonitors/stash-servicemonitor
-  uid: 72a41740-e436-11e8-ab7d-0800277c8cd7
+  uid: 3df94972-ebfa-11e8-9453-0800271fef1f
 spec:
   endpoints:
-  - port: pushgateway
+  - honorLabels: true
+    port: pushgateway
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     port: admission
     scheme: https
@@ -121,7 +122,7 @@ In order to deploy Prometheus server, we have to create `Prometheus` crd. Promet
 If you are using a RBAC enabled cluster, you have to give necessary permissions to Prometheus. Let's create necessary RBAC stuffs for Prometheus.
 
 ```console
-$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.7.0//docs/examples/monitoring/coreos/prometheus-rbac.yaml 
+$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.7.0/docs/examples/monitoring/coreos/prometheus-rbac.yaml
 clusterrole.rbac.authorization.k8s.io/prometheus created
 serviceaccount/prometheus created
 clusterrolebinding.rbac.authorization.k8s.io/prometheus created
@@ -138,7 +139,7 @@ metadata:
   name: prometheus
   namespace: demo
   labels:
-    prometheus: prometheus
+    app: prometheus
 spec:
   replicas: 1
   serviceAccountName: prometheus
