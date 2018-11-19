@@ -26,10 +26,11 @@ spec:
       labels:
         app: "{{ template "stash.name" . }}"
         release: "{{ .Release.Name }}"
-{{- if and .Values.criticalAddon (eq .Release.Namespace "kube-system") }}
       annotations:
+        deploymentTimestamp: {{ now.Format "2006-01-05T15:04:04Z" | quote }}
+      {{- if and .Values.criticalAddon (eq .Release.Namespace "kube-system") }}
         scheduler.alpha.kubernetes.io/critical-pod: ''
-{{- end }}
+      {{- end }}
     spec:
       serviceAccountName: {{ template "stash.serviceAccountName" . }}
       {{- if .Values.imagePullSecrets }}

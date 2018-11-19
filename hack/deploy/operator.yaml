@@ -16,6 +16,7 @@ spec:
         app: stash
       annotations:
         scheduler.alpha.kubernetes.io/critical-pod: ''
+        deploymentTimestamp: ${DEPLOYMENT_TIMESTAMP}
     spec:
       serviceAccountName: ${STASH_SERVICE_ACCOUNT}
       imagePullSecrets: [${STASH_IMAGE_PULL_SECRET}]
