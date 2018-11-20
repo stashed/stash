@@ -72,7 +72,7 @@ metadata:
     app: "{{ template "stash.name" . }}"
     heritage: "{{ .Release.Service }}"
     release: "{{ .Release.Name }}"
-type: Opaque
+type: kubernetes.io/tls
 data:
   tls.crt: {{ b64enc $cert.Cert }}
   tls.key: {{ b64enc $cert.Key }}
