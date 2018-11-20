@@ -4,7 +4,7 @@ metadata:
   name: stash-servicemonitor
   namespace: ${PROMETHEUS_NAMESPACE}
   labels:
-    app: stash
+    ${SERVICE_MONITOR_LABEL_KEY}: ${SERVICE_MONITOR_LABEL_VALUE}
 spec:
   namespaceSelector:
     matchNames:

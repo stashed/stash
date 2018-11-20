@@ -130,6 +130,8 @@ export MONITORING_AGENT=${MONITORING_AGENT:-$MONITORING_AGENT_NONE}
 export MONITORING_BACKUP=${MONITORING_BACKUP:-false}
 export MONITORING_OPERATOR=${MONITORING_OPERATOR:-false}
 export PROMETHEUS_NAMESPACE=${PROMETHEUS_NAMESPACE:-$STASH_NAMESPACE}
+export SERVICE_MONITOR_LABEL_KEY="app"
+export SERVICE_MONITOR_LABEL_VALUE="stash"
 
 show_help() {
   echo "stash.sh - install stash operator"
@@ -153,6 +155,7 @@ show_help() {
   echo "    --monitoring-backup            specify whether to monitor stash backup and restore activity (default: false)"
   echo "    --monitoring-operator          specify whether to monitor stash operator (default: false)"
   echo "    --prometheus-namespace         specify the namespace where Prometheus server is running or will be deployed (default: same namespace as stash-operator)"
+  echo "    --servicemonitor-label         specify the label for ServiceMonitor crd. Prometheus crd will use this label to select the ServiceMonitor. (default: 'app: stash')"
 }
 
 while test $# -gt 0; do
@@ -259,6 +262,21 @@ while test $# -gt 0; do
       ;;
     --prometheus-namespace*)
       export PROMETHEUS_NAMESPACE=$(echo $1 | sed -e 's/^[^=]*=//g')
+      shift
+      ;;
+    --servicemonitor-label*)
+      label=$(echo $1 | sed -e 's/^[^=]*=//g')
+      # split label into key value pair
+      IFS='='
+      pair=($label)
+      unset IFS
+      # check if the label is valid
+      if [ ! ${#pair[@]} = 2 ]; then
+        echo "Invalid ServiceMonitor label format. Use '--servicemonitor-label=key=value'"
+        exit 1
+      fi
+      export SERVICE_MONITOR_LABEL_KEY="${pair[0]}"
+      export SERVICE_MONITOR_LABEL_VALUE="${pair[1]}"
       shift
       ;;
     *)

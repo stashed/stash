@@ -94,3 +94,5 @@ monitoring:
   operator: false
   # specify where ServiceMonitor crd will be created
   prometheusNamespace: ""
+  serviceMonitor:
+    labels: {}

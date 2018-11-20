@@ -1,14 +1,18 @@
-{{- if and (eq .Values.monitoring.agent "prometheus.io/coreos-operator") (or (eq .Values.monitoring.backup true ) (eq .Values.monitoring.operator true)) }}
+{{- if and (eq .Values.monitoring.agent "prometheus.io/coreos-operator") (or .Values.monitoring.backup .Values.monitoring.operator) }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: stash-servicemonitor
   namespace: {{ default .Release.Namespace  .Values.monitoring.prometheusNamespace }}
   labels:
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    {{- if .Values.monitoring.serviceMonitor.labels }}
+    {{- range $key, $val := .Values.monitoring.serviceMonitor.labels }}
+    {{ $key }}: {{ $val }}
+    {{- end }}
+    {{- else }}
     app: "{{ template "stash.name" . }}"
-    heritage: "{{ .Release.Service }}"
     release: "{{ .Release.Name }}"
+    {{- end }}
 spec:
   namespaceSelector:
     matchNames:
@@ -16,12 +20,13 @@ spec:
   selector:
     matchLabels:
       app: "{{ template "stash.name" . }}"
+      release: "{{ .Release.Name }}"
   endpoints:
-  {{- if eq .Values.monitoring.backup true }}
+  {{- if .Values.monitoring.backup }}
   - port: pushgateway
     honorLabels: true
   {{- end }}
-  {{- if eq .Values.monitoring.operator true }}
+  {{- if .Values.monitoring.operator }}
   - port: admission
     bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     scheme: https
