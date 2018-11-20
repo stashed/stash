@@ -11,12 +11,12 @@ metadata:
   {{- if eq .Values.monitoring.agent "prometheus.io/builtin" }}
   annotations:
     prometheus.io/scrap: "true"
-    {{- if eq .Values.monitoring.backup true }}
+    {{- if .Values.monitoring.backup }}
     prometheus.io/pushgateway_path: "/metrics"
     prometheus.io/pushgateway_port: "56789"
     prometheus.io/pushgateway_scheme: "http"
     {{- end }}
-    {{- if eq .Values.monitoring.operator true }}
+    {{- if .Values.monitoring.operator }}
     prometheus.io/operator_path: "/metrics"
     prometheus.io/operator_port: "8443"
     prometheus.io/operator_scheme: "https"
