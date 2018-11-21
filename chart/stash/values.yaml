@@ -93,6 +93,7 @@ monitoring:
   # specify whether to monitor stash operator
   operator: false
   # specify where ServiceMonitor crd will be created
-  prometheusNamespace: ""
+  prometheus:
+    namespace: ""
   serviceMonitor:
     labels: {}

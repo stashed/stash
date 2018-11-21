@@ -58,10 +58,10 @@ data:
   tls.crt: {{ b64enc $cert.Cert }}
   tls.key: {{ b64enc $cert.Key }}
 ---
-{{ $promNamespace:= default .Release.Namespace .Values.monitoring.prometheusNamespace }}
+{{ $promNamespace:= default .Release.Namespace .Values.monitoring.prometheus.namespace }}
 {{- if (and (ne $promNamespace .Release.Namespace) .Values.monitoring.operator) }}
-# if operator monitoring is enabled and prometheusNamespaces is different that operator
-# create the above secret in prometheusNamespace too.
+# if operator monitoring is enabled and prometheus namespace is different than operator
+# create the above secret in prometheus namespace too.
 apiVersion: v1
 kind: Secret
 metadata:

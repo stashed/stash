@@ -153,7 +153,7 @@ data:
       - role: endpoints
       relabel_configs:
       - source_labels: [__meta_kubernetes_service_label_app]
-        regex: stash
+        regex: stash # default label for stash-operator service is "app: stash". customize this field according to label of stash-operator service of your setup.
         action: keep
       - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrap]
         regex: true
@@ -199,7 +199,7 @@ data:
         server_name: stash-operator.kube-system.svc
       relabel_configs:
       - source_labels: [__meta_kubernetes_service_label_app]
-        regex: stash
+        regex: stash # default label for stash-operator service is "app: stash". customize this field according to label of stash-operator service of your setup.
         action: keep
       - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrap]
         regex: true
