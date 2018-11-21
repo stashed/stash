@@ -54,6 +54,7 @@ const (
 
 var (
 	AnalyticsClientID string
+	ServiceName       string
 	EnableAnalytics   = true
 	LoggerOptions     golog.Options
 )
@@ -124,7 +125,7 @@ func GetString(m map[string]string, key string) string {
 
 func PushgatewayURL() string {
 	// called by operator, returning its own namespace. Since pushgateway runs as a side-car with operator, this works!
-	return fmt.Sprintf("http://stash-operator.%s.svc:56789", meta.Namespace())
+	return fmt.Sprintf("http://%s.%s.svc:56789", ServiceName, meta.Namespace())
 }
 
 func NewInitContainer(r *api.Restic, workload api.LocalTypedReference, image docker.Docker, enableRBAC bool) core.Container {

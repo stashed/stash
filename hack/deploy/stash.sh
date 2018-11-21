@@ -93,6 +93,7 @@ fi
 
 export STASH_NAMESPACE=kube-system
 export STASH_SERVICE_ACCOUNT=stash-operator
+export STASH_SERVICE_NAME=stash-operator
 export STASH_ENABLE_RBAC=true
 export STASH_RUN_ON_MASTER=0
 export STASH_ENABLE_VALIDATING_WEBHOOK=false
