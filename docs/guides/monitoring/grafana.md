@@ -17,63 +17,13 @@ Grafana provides an elegant graphical user interface to visualize data. You can 
 
 ## Before You Begin
 
-At first, you need to have a Kubernetes cluster, and the kubectl command-line tool must be configured to communicate with your cluster. If you do not already have a cluster, you can create one by using [Minikube](https://github.com/kubernetes/minikube).
+- At first, you need to have a Kubernetes cluster, and the kubectl command-line tool must be configured to communicate with your cluster. If you do not already have a cluster, you can create one by using [Minikube](https://github.com/kubernetes/minikube).
 
-You must have a Stash instant running with monitoring enabled. You can enable monitoring by following the guides for [Builtin Prometheus](/docs/guides/monitoring/builtin.md) or [CoreOS Prometheus Operator](/docs/guides/monitoring/coreos.md). For this tutorial, we have enabled Prometheus monitoring using CoreOS Prometheus operator.
+- You must have a Stash instant running with monitoring enabled. You can enable monitoring by following the guides for [Builtin Prometheus](/docs/guides/monitoring/builtin.md) or [CoreOS Prometheus Operator](/docs/guides/monitoring/coreos.md). For this tutorial, we have enabled Prometheus monitoring using CoreOS Prometheus operator.
 
-## Deploy Grafana
+- If you already do not have a grafana instance running, deploy one using  helm chart from [here](https://github.com/helm/charts/tree/master/stable/grafana).
 
-If you already do not have a grafana instance running, let's deploy one in Kubernetes. Below the YAML for deploying grafana using a Deployment.
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: grafana
-  namespace: demo
-  labels:
-    app: grafana
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: grafana
-  template:
-    metadata:
-      labels:
-        app: grafana
-    spec:
-      containers:
-      - name: grafana
-        image: grafana/grafana:5.3.1
-```
-
-Let's create the deployment we have shown above,
-
-```console
-$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.7.0/docs/examples/monitoring/grafana/grafana.yaml
-deployment.apps/grafana created
-```
-
-Wait for grafana pod to goes in running state,
-
-```console
-$ kubectl get pod -n demo -l=app=grafana
-NAME                       READY   STATUS    RESTARTS   AGE
-grafana-7f594dc9c6-xwkf2   1/1     Running   0          3m22s
-```
-
-Grafana is running on port `3000`. We will forward this port to access grafana UI. Run following command on a separate terminal,
-
-```console
-$kubectl port-forward -n demo grafana-7f594dc9c6-xwkf2 3000
-Forwarding from 127.0.0.1:3000 -> 3000
-Forwarding from [::1]:3000 -> 3000
-```
-
-Now, we can access grafana UI in `localhost:3000`. Use `username: admin` and `password:admin` to login to the UI.
-
-### Add Prometheus Data Source
+## Add Prometheus Data Source
 
 We have to add our prometheus server `prometheus-prometheus-0` as data source of grafana. We will use a `ClusterIP` service to connect prometheus server with grafana. Let's create a service to select prometheus server `prometheus-prometheus-0`,
 
@@ -127,7 +77,7 @@ Now, follow these steps to add the Prometheus server as data source of Grafana U
 
 Once you have added prometheus data source successfully, you are ready to create a dashboard to visualize the metrics.
 
-### Import Stash Dashboard
+## Import Stash Dashboard
 
 Stash has a preconfigured dashboard created by [Alexander Trost](https://github.com/galexrt). You can import the dashboard using dashboard id `4198` or you can download json configuration of the dashboard from [here](https://grafana.com/dashboards/4198).
 
@@ -163,8 +113,6 @@ To cleanup the Kubernetes resources created by this tutorial, run:
 
 ```console
 kubectl delete -n demo service prometheus
-kubectl delete -n demo deployment grafana
-kubectl delete ns demo
 ```
 
 ## Next Steps

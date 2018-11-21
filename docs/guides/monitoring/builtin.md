@@ -152,6 +152,9 @@ data:
       kubernetes_sd_configs:
       - role: endpoints
       relabel_configs:
+      - source_labels: [__meta_kubernetes_service_label_app]
+        regex: stash
+        action: keep
       - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrap]
         regex: true
         action: keep
@@ -195,6 +198,9 @@ data:
         ca_file: /etc/prometheus/secret/stash-apiserver-cert/tls.crt
         server_name: stash-operator.kube-system.svc
       relabel_configs:
+      - source_labels: [__meta_kubernetes_service_label_app]
+        regex: stash
+        action: keep
       - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrap]
         regex: true
         action: keep

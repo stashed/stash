@@ -302,7 +302,7 @@ if [ "$STASH_UNINSTALL" -eq 1 ]; then
   kubectl delete rolebindings -l app=stash --namespace $STASH_NAMESPACE
   kubectl delete role -l app=stash --namespace $STASH_NAMESPACE
   # delete servicemonitor and stash-apiserver-cert secret. ignore error as they might not exist
-  kubectl delete servicemonitor -l app=stash --namespace $PROMETHEUS_NAMESPACE || true
+  kubectl delete servicemonitor stash-servicemonitor --namespace $PROMETHEUS_NAMESPACE || true
   kubectl delete secret stash-apiserver-cert --namespace $PROMETHEUS_NAMESPACE || true
 
   echo "waiting for stash operator pod to stop running"

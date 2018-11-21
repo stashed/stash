@@ -17,36 +17,16 @@ CoreOS [prometheus-operator](https://github.com/coreos/prometheus-operator) prov
 
 ## Before You Begin
 
-At first, you need to have a Kubernetes cluster, and the kubectl command-line tool must be configured to communicate with your cluster. If you do not already have a cluster, you can create one by using [Minikube](https://github.com/kubernetes/minikube).
+- At first, you need to have a Kubernetes cluster, and the kubectl command-line tool must be configured to communicate with your cluster. If you do not already have a cluster, you can create one by using [Minikube](https://github.com/kubernetes/minikube).
 
-To keep Prometheus resources isolated, we will use a separate namespace to deploy Prometheus operator and respective resources.
+- To keep Prometheus resources isolated, we will use a separate namespace to deploy Prometheus operator and respective resources.
 
-```console
-$ kubectl create ns demo
-namespace/demo created
-```
+  ```console
+  $ kubectl create ns demo
+  namespace/demo created
+  ```
 
-**Deploy Prometheus Operator:**
-
-If you already don't have a CoreOS Prometheus operator running, create one using following command,
-
-```console
-$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.7.0/docs/examples/monitoring/prometheus/prometheus-operator.yaml
-clusterrole.rbac.authorization.k8s.io/prometheus-operator created
-clusterrolebinding.rbac.authorization.k8s.io/prometheus-operator created
-serviceaccount/prometheus-operator created
-deployment.apps/prometheus-operator created
-```
-
-Now, wait for prometheus operator pod to be ready,
-
-```console
-$ kubectl get pods -n demo -l k8s-app=prometheus-operator
-NAME                                   READY   STATUS    RESTARTS   AGE
-prometheus-operator-6547d55767-vnlld   1/1     Running   0          1m
-```
-
-You can also follow the official docs to deploy prometheus operator from [here](https://github.com/coreos/prometheus-operator/blob/master/Documentation/user-guides/getting-started.md).
+- We need a CoreOS prometheus-operator instance running. If you already don't have a running instance, deploy one following the official docs from [here](https://github.com/coreos/prometheus-operator/blob/master/Documentation/user-guides/getting-started.md).
 
 ## Enable Monitoring in Stash
 
@@ -56,10 +36,10 @@ Here, we are going to enable monitoring for both `backup & recovery` and `opeart
 
 ```console
 $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0/hack/deploy/stash.sh \
-    | bash -s -- --monitoring-agent=prometheus.io/coreos-operator --monitoring-backup=true --monitoring-operator=true --prometheus-namespace=demo
+    | bash -s -- --monitoring-agent=prometheus.io/coreos-operator --monitoring-backup=true --monitoring-operator=true --prometheus-namespace=demo --servicemonitor-label=k8s-app=prometheus
 ```
 
-This will create a `ServiceMonitor` crd with name `stash-servicemonitor` in demo namespace for monitoring endpoints of `stash-operator` service.
+This will create a `ServiceMonitor` crd with name `stash-servicemonitor` in demo namespace for monitoring endpoints of `stash-operator` service. This ServiceMonitor will have label `k8s-app: prometheus` provided by `--servicemonitor-label` flag. This label will be used by Prometheus crd to select this ServiceMonitor.
 
 Let's check the ServiceMonitor crd using following command,
 
@@ -70,16 +50,16 @@ kind: ServiceMonitor
 metadata:
   annotations:
     kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"monitoring.coreos.com/v1","kind":"ServiceMonitor","metadata":{"annotations":{},"labels":{"app":"stash"},"name":"stash-servicemonitor","namespace":"demo"},"spec":{"endpoints":[{"honorLabels":true,"port":"pushgateway"},{"bearerTokenFile":"/var/run/secrets/kubernetes.io/serviceaccount/token","port":"admission","scheme":"https","tlsConfig":{"caFile":"/etc/prometheus/secrets/stash-apiserver-cert/tls.crt","serverName":"stash-operator.kube-system.svc"}}],"namespaceSelector":{"matchNames":["kube-system"]},"selector":{"matchLabels":{"app":"stash"}}}}
-  creationTimestamp: 2018-11-19T12:54:24Z
+      {"apiVersion":"monitoring.coreos.com/v1","kind":"ServiceMonitor","metadata":{"annotations":{},"labels":{"k8s-app":"prometheus"},"name":"stash-servicemonitor","namespace":"demo"},"spec":{"endpoints":[{"honorLabels":true,"port":"pushgateway"},{"bearerTokenFile":"/var/run/secrets/kubernetes.io/serviceaccount/token","port":"admission","scheme":"https","tlsConfig":{"caFile":"/etc/prometheus/secrets/stash-apiserver-cert/tls.crt","serverName":"stash-operator.kube-system.svc"}}],"namespaceSelector":{"matchNames":["kube-system"]},"selector":{"matchLabels":{"app":"stash"}}}}
+  creationTimestamp: 2018-11-21T09:35:37Z
   generation: 1
   labels:
-    app: stash
+    k8s-app: prometheus
   name: stash-servicemonitor
   namespace: demo
-  resourceVersion: "7447"
+  resourceVersion: "6126"
   selfLink: /apis/monitoring.coreos.com/v1/namespaces/demo/servicemonitors/stash-servicemonitor
-  uid: 3df94972-ebfa-11e8-9453-0800271fef1f
+  uid: cd6cca14-ed70-11e8-8838-0800272dd258
 spec:
   endpoints:
   - honorLabels: true
@@ -117,16 +97,7 @@ Now, we are ready to deploy Prometheus server.
 
 In order to deploy Prometheus server, we have to create `Prometheus` crd. Prometheus crd defines a desired Prometheus server setup. For more details about `Prometheus` crd, please visit [here](https://github.com/coreos/prometheus-operator/blob/master/Documentation/design.md#prometheus).
 
-**Create RBAC:**
-
-If you are using a RBAC enabled cluster, you have to give necessary permissions to Prometheus. Let's create necessary RBAC stuffs for Prometheus.
-
-```console
-$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.7.0/docs/examples/monitoring/coreos/prometheus-rbac.yaml
-clusterrole.rbac.authorization.k8s.io/prometheus created
-serviceaccount/prometheus created
-clusterrolebinding.rbac.authorization.k8s.io/prometheus created
-```
+If you are using a RBAC enabled cluster, you have to give necessary permissions to Prometheus. Check official documentation to see required RBAC permission from [here](https://github.com/coreos/prometheus-operator/blob/master/Documentation/user-guides/getting-started.md#enable-rbac-rules-for-prometheus-pods).
 
 **Create Prometheus:**
 
@@ -139,13 +110,13 @@ metadata:
   name: prometheus
   namespace: demo
   labels:
-    app: prometheus
+    k8s-app: prometheus
 spec:
   replicas: 1
   serviceAccountName: prometheus
   serviceMonitorSelector:
     matchLabels:
-      app: stash
+      k8s-app: prometheus
   secrets:
   - stash-apiserver-cert
   resources:
@@ -205,17 +176,7 @@ To cleanup the Kubernetes resources created by this tutorial, run:
 ```console
 # cleanup prometheus resources
 kubectl delete -n demo prometheus prometheus
-kubectl delete -n demo clusterrolebinding prometheus
-kubectl delete -n demo clusterrole prometheus
-kubectl delete -n demo serviceaccount prometheus
-kubectl delete -n demo service prometheus-operated
 kubectl delete -n demo secret stash-apiserver-cert
-
-# cleanup prometheus operator resources
-kubectl delete -n demo deployment prometheus-operator
-kubectl delete -n dmeo serviceaccount prometheus-operator
-kubectl delete clusterrolebinding prometheus-operator
-kubectl delete clusterrole prometheus-operator
 
 # delete namespace
 kubectl delete ns demo

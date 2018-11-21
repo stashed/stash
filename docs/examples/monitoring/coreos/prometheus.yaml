@@ -4,13 +4,13 @@ metadata:
   name: prometheus
   namespace: demo
   labels:
-    app: prometheus
+    k8s-app: prometheus
 spec:
   replicas: 1
   serviceAccountName: prometheus
   serviceMonitorSelector:
     matchLabels:
-      app: stash
+      k8s-app: prometheus
   secrets:
   - stash-apiserver-cert
   resources:

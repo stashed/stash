@@ -74,24 +74,25 @@ Following metrics are available for Stash operator. These metrics are accessible
 
 You can enable monitoring through some flags while installing or upgrading or updating Stash via both [script](/docs/setup/install.md#using-script) and [helm](/docs/setup/install.md#using-helm). You can also chose which monitoring agent to use for monitoring. Stash will configure respective resources accordingly. Here, are the list of available flags and their uses,
 
-|       Script Flag        |           Helm Values            |                     Acceptable Values                      |             Default              |                                     Uses                                     |
-| ------------------------ | -------------------------------- | ---------------------------------------------------------- | -------------------------------- | ---------------------------------------------------------------------------- |
-| `--monitoring-agent`     | `monitoring.agent`               | `prometheus.io/builtin` or `prometheus.io/coreos-operator` | `none`                           | Specify which monitoring agent to use for monitoring Stash.                  |
-| `--monitoring-backup`    | `monitoring.backup`              | `true` or `false`                                          | `false`                          | Specify whether to monitor Stash backup and recovery.                        |
-| `--monitoring-operator`  | `monitoring.operator`            | `true` or `false`                                          | `false`                          | Specify whether to monitor Stash operator.                                   |
-| `--prometheus-namespace` | `monitoring.prometheusNamespace` | any namespace                                              | same namespace as Stash operator | Specify the namespace where Prometheus server is running or will be deployed |
+|       Script Flag        |            Helm Values             |                     Acceptable Values                      |                                                         Default                                                         |                                                                                    Uses                                                                                    |
+| ------------------------ | ---------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--monitoring-agent`     | `monitoring.agent`                 | `prometheus.io/builtin` or `prometheus.io/coreos-operator` | `none`                                                                                                                  | Specify which monitoring agent to use for monitoring Stash.                                                                                                                |
+| `--monitoring-backup`    | `monitoring.backup`                | `true` or `false`                                          | `false`                                                                                                                 | Specify whether to monitor Stash backup and recovery.                                                                                                                      |
+| `--monitoring-operator`  | `monitoring.operator`              | `true` or `false`                                          | `false`                                                                                                                 | Specify whether to monitor Stash operator.                                                                                                                                 |
+| `--prometheus-namespace` | `monitoring.prometheusNamespace`   | any namespace                                              | same namespace as Stash operator                                                                                        | Specify the namespace where Prometheus server is running or will be deployed                                                                                               |
+| `--servicemonitor-label` | `monitoring.serviceMonitor.labels` | any label                                                  | For helm installation, `app: <generated app name>` and `release: <release name>`. For script installation, `app: stash` | Specify the labels for ServiceMonitor. Prometheus crd will select ServiceMonitor using these labels. Only usable when monitoring agent is `prometheus.io/coreos-operator`. |
 
-You have to provides these flags while installing or upgrading or updating Stash. Here, are examples for both script and helm process are given which enable monitoring with builtin Prometheuse server for `backup & recovery` and `operator` metrics.
+You have to provides these flags while installing or upgrading or updating Stash. Here, are examples for both script and helm installation process are given which enable monitoring with `prometheus.io/coreos-operator` Prometheuse server for `backup & recovery` and `operator` metrics.
 
 **Helm:**
 ```console
-$ helm install appscode/stash --name stash-operator --version 0.7.0 --name=stash-operator --set monitoring.agent=prometheus.io/builtin --set monitoring.backup=true --set monitoring.operator=true --set monitoring.prometheusNamespace=demo
+$ helm install appscode/stash --name stash-operator --version 0.7.0 --name=stash-operator --set monitoring.agent=prometheus.io/coreos-operator --set monitoring.backup=true --set monitoring.operator=true --set monitoring.prometheusNamespace=demo --set monitoring.serviceMonitor.labels.k8s-app=prometheus
 ```
 
 **Script:**
 ```console
 $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0/hack/deploy/stash.sh \
-    | bash -s -- --monitoring-agent=prometheus.io/builtin --monitoring-backup=true --monitoring-operator=true --prometheus-namespace=demo
+    | bash -s -- --monitoring-agent=prometheus.io/coreos-operator --monitoring-backup=true --monitoring-operator=true --prometheus-namespace=demo --servicemonitor-label=k8s-app=prometheus
 ```
 
 ## Next Steps
