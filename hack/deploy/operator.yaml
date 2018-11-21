@@ -32,6 +32,7 @@ spec:
         - --audit-log-path=-
         - --tls-cert-file=/var/serving-cert/tls.crt
         - --tls-private-key-file=/var/serving-cert/tls.key
+        - --service-name=${STASH_SERVICE_NAME}
         - --enable-status-subresource=${STASH_ENABLE_STATUS_SUBRESOURCE}
         - --enable-analytics=${STASH_ENABLE_ANALYTICS}
         ports:
@@ -92,7 +93,7 @@ data:
 apiVersion: v1
 kind: Service
 metadata:
-  name: stash-operator
+  name: ${STASH_SERVICE_NAME}
   namespace: ${STASH_NAMESPACE}
   labels:
     app: stash
