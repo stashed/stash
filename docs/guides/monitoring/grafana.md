@@ -21,7 +21,7 @@ Grafana provides an elegant graphical user interface to visualize data. You can 
 
 - You must have a Stash instant running with monitoring enabled. You can enable monitoring by following the guides for builtin [Prometheus](/docs/guides/monitoring/builtin.md) scrapper or [CoreOS Prometheus Operator](/docs/guides/monitoring/coreos.md). For this tutorial, we have enabled Prometheus monitoring using CoreOS Prometheus operator.
 
-- If you already do not have a grafana instance running, deploy one following tutorial from [here](https://github.com/kmodules/third-party-tools/blob/master/monitoring/grafana/README.md).
+- If you already do not have a grafana instance running, deploy one following tutorial from [here](https://github.com/appscode/third-party-tools/blob/master/monitoring/grafana/README.md).
 
 ## Add Prometheus Data Source
 
