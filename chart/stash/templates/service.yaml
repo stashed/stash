@@ -25,7 +25,7 @@ metadata:
 spec:
   ports:
   # Port used to expose admission webhook apiserver
-  - name: admission
+  - name: api
     port: 443
     targetPort: 8443
   # Port used to expose Prometheus pushgateway

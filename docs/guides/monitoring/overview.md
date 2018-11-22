@@ -15,17 +15,17 @@ menu_name: product_stash_0.7.0
 
 # Monitoring Stash
 
-Stash has native support for monitoring via [Prometheus](https://prometheus.io/). You can use [official Prometheus](https://github.com/prometheus/prometheus) or [CoreOS Prometheus Operator](https://github.com/coreos/prometheus-operator) to monitor Stash. This tutorial will show you how this monitoring works with Stash and how to enable them.
+Stash has native support for monitoring via [Prometheus](https://prometheus.io/). You can use builtin [Prometheus](https://github.com/prometheus/prometheus) scrapper or [CoreOS Prometheus Operator](https://github.com/coreos/prometheus-operator) to monitor Stash. This tutorial will show you how this monitoring works with Stash and how to enable them.
 
 ## Overview
 
-Stash uses [Prometheus PushGateway](https://github.com/prometheus/pushgateway) to export the metrics. Following diagram shows the logical structure of stash monitoring flow.
+Stash uses [Prometheus PushGateway](https://github.com/prometheus/pushgateway) to export the metrics for backup & recovery operations. Following diagram shows the logical structure of Stash monitoring flow.
 
 <p align="center">
   <img alt="Monitoring Structure"  src="/docs/images/monitoring/stash-monitoring-structure.png">
 </p>
 
-Stash operator runs two containers. The `operator` container runs controller and other necessary stuffs and the `pushgateway` container runs [prom/pushgateway](https://hub.docker.com/r/prom/pushgateway) image. Stash sidecar from different workloads pushes their metrics to this pushgateway. Then prometheus server scraps these metrics through `stash-operator` service. Stash operator itself also provides some metrics at `/metrics` path of `:8443` port.
+Stash operator runs two containers. The `operator` container runs controller and other necessary stuffs and the `pushgateway` container runs [prom/pushgateway](https://hub.docker.com/r/prom/pushgateway) image. Stash sidecar from different workloads pushes their metrics to this pushgateway. Then Prometheus server scraps these metrics through `stash-operator` service. Stash operator itself also provides some metrics at `/metrics` path of `:8443` port.
 
 ### Backup & Recovery Metrics
 
@@ -35,12 +35,12 @@ Following metrics are available for stash backup and recovery operations. These 
 | --------------------------------------- | ----------------------------------------------- |
 | `restic_session_success`                | Indicates if session was successfully completed |
 | `restic_session_fail`                   | Indicates if session failed                     |
-| `restic_session_duration_seconds_total` | Total seconds taken to complete restic session  |
-| `restic_session_duration_seconds`       | Total seconds taken to complete restic session  |
+| `restic_session_duration_seconds_total` | Seconds taken to complete restic session for all FileGroups |
+| `restic_session_duration_seconds`       | Seconds taken to complete restic session for a FileGroup    |
 
 ### Operator Metrics
 
-Following metrics are available for Stash operator. These metrics are accessible through `admission` endpoint of `stash-operator` service.
+Following metrics are available for Stash operator. These metrics are accessible through `api` endpoint of `stash-operator` service.
 
 - apiserver_audit_event_total
 - apiserver_client_certificate_expiration_seconds_bucket
@@ -72,7 +72,7 @@ Following metrics are available for Stash operator. These metrics are accessible
 
 ## How to Enable Monitoring
 
-You can enable monitoring through some flags while installing or upgrading or updating Stash via both [script](/docs/setup/install.md#using-script) and [helm](/docs/setup/install.md#using-helm). You can also chose which monitoring agent to use for monitoring. Stash will configure respective resources accordingly. Here, are the list of available flags and their uses,
+You can enable monitoring through some flags while installing or upgrading or updating Stash via both [script](/docs/setup/install.md#using-script) and [Helm](/docs/setup/install.md#using-helm). You can also chose which monitoring agent to use for monitoring. Stash will configure respective resources accordingly. Here, are the list of available flags and their uses,
 
 |       Script Flag        |            Helm Values             |                     Acceptable Values                      |                                                         Default                                                         |                                                                                    Uses                                                                                    |
 | ------------------------ | ---------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -80,19 +80,28 @@ You can enable monitoring through some flags while installing or upgrading or up
 | `--monitoring-backup`    | `monitoring.backup`                | `true` or `false`                                          | `false`                                                                                                                 | Specify whether to monitor Stash backup and recovery.                                                                                                                      |
 | `--monitoring-operator`  | `monitoring.operator`              | `true` or `false`                                          | `false`                                                                                                                 | Specify whether to monitor Stash operator.                                                                                                                                 |
 | `--prometheus-namespace` | `monitoring.prometheus.namespace`  | any namespace                                              | same namespace as Stash operator                                                                                        | Specify the namespace where Prometheus server is running or will be deployed                                                                                               |
-| `--servicemonitor-label` | `monitoring.serviceMonitor.labels` | any label                                                  | For helm installation, `app: <generated app name>` and `release: <release name>`. For script installation, `app: stash` | Specify the labels for ServiceMonitor. Prometheus crd will select ServiceMonitor using these labels. Only usable when monitoring agent is `prometheus.io/coreos-operator`. |
+| `--servicemonitor-label` | `monitoring.serviceMonitor.labels` | any label                                                  | For Helm installation, `app: <generated app name>` and `release: <release name>`. For script installation, `app: stash` | Specify the labels for ServiceMonitor. Prometheus crd will select ServiceMonitor using these labels. Only usable when monitoring agent is `prometheus.io/coreos-operator`. |
 
-You have to provides these flags while installing or upgrading or updating Stash. Here, are examples for both script and helm installation process are given which enable monitoring with `prometheus.io/coreos-operator` Prometheuse server for `backup & recovery` and `operator` metrics.
+You have to provides these flags while installing or upgrading or updating Stash. Here, are examples for both script and Helm installation process are given which enable monitoring with `prometheus.io/coreos-operator` Prometheuse server for `backup & recovery` and `operator` metrics.
 
 **Helm:**
 ```console
-$ helm install appscode/stash --name stash-operator --version 0.7.0 --name=stash-operator --set monitoring.agent=prometheus.io/coreos-operator --set monitoring.backup=true --set monitoring.operator=true --set monitoring.prometheus.namespace=demo --set monitoring.serviceMonitor.labels.k8s-app=prometheus
+$ helm install appscode/stash --name stash-operator --version 0.7.0 --namespace kube-system \
+  --set monitoring.agent=prometheus.io/coreos-operator \
+  --set monitoring.backup=true \
+  --set monitoring.operator=true \
+  --set monitoring.prometheus.namespace=demo \
+  --set monitoring.serviceMonitor.labels.k8s-app=prometheus
 ```
 
 **Script:**
 ```console
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0/hack/deploy/stash.sh \
-    | bash -s -- --monitoring-agent=prometheus.io/coreos-operator --monitoring-backup=true --monitoring-operator=true --prometheus-namespace=demo --servicemonitor-label=k8s-app=prometheus
+$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0/hack/deploy/stash.sh  | bash -s -- \
+  --monitoring-agent=prometheus.io/coreos-operator \
+  --monitoring-backup=true \
+  --monitoring-operator=true \
+  --prometheus-namespace=demo \
+  --servicemonitor-label=k8s-app=prometheus
 ```
 
 ## Next Steps

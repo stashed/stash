@@ -13,7 +13,7 @@ menu_name: product_stash_0.7.0
 
 # Monitoring Using CoreOS Prometheus Operator
 
-CoreOS [prometheus-operator](https://github.com/coreos/prometheus-operator) provides simple and kubernetes native way to deploy and configure prometheus server. This tutorial will show you how to use CoreOS Prometheus operator for monitoring Stash.
+CoreOS [prometheus-operator](https://github.com/coreos/prometheus-operator) provides simple and Kubernetes native way to deploy and configure Prometheus server. This tutorial will show you how to use CoreOS Prometheus operator for monitoring Stash.
 
 ## Before You Begin
 
@@ -32,11 +32,15 @@ CoreOS [prometheus-operator](https://github.com/coreos/prometheus-operator) prov
 
 Enable Prometheus monitoring using `prometheus.io/coreos-operator` agent while installing Stash. To know details about how to enable monitoring see [here](/docs/guides/monitoring/overview.md#how-to-enable-monitoring).
 
-Here, we are going to enable monitoring for both `backup & recovery` and `opeartor` metrics.
+Here, we are going to enable monitoring for both `backup & recovery` and `operator` metrics.
 
 ```console
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0/hack/deploy/stash.sh \
-    | bash -s -- --monitoring-agent=prometheus.io/coreos-operator --monitoring-backup=true --monitoring-operator=true --prometheus-namespace=demo --servicemonitor-label=k8s-app=prometheus
+$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0/hack/deploy/stash.sh | bash -s -- \
+  --monitoring-agent=prometheus.io/coreos-operator \
+  --monitoring-backup=true \
+  --monitoring-operator=true \
+  --prometheus-namespace=demo \
+  --servicemonitor-label=k8s-app=prometheus
 ```
 
 This will create a `ServiceMonitor` crd with name `stash-servicemonitor` in demo namespace for monitoring endpoints of `stash-operator` service. This ServiceMonitor will have label `k8s-app: prometheus` provided by `--servicemonitor-label` flag. This label will be used by Prometheus crd to select this ServiceMonitor.
@@ -50,7 +54,7 @@ kind: ServiceMonitor
 metadata:
   annotations:
     kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"monitoring.coreos.com/v1","kind":"ServiceMonitor","metadata":{"annotations":{},"labels":{"k8s-app":"prometheus"},"name":"stash-servicemonitor","namespace":"demo"},"spec":{"endpoints":[{"honorLabels":true,"port":"pushgateway"},{"bearerTokenFile":"/var/run/secrets/kubernetes.io/serviceaccount/token","port":"admission","scheme":"https","tlsConfig":{"caFile":"/etc/prometheus/secrets/stash-apiserver-cert/tls.crt","serverName":"stash-operator.kube-system.svc"}}],"namespaceSelector":{"matchNames":["kube-system"]},"selector":{"matchLabels":{"app":"stash"}}}}
+      {"apiVersion":"monitoring.coreos.com/v1","kind":"ServiceMonitor","metadata":{"annotations":{},"labels":{"k8s-app":"prometheus"},"name":"stash-servicemonitor","namespace":"demo"},"spec":{"endpoints":[{"honorLabels":true,"port":"pushgateway"},{"bearerTokenFile":"/var/run/secrets/kubernetes.io/serviceaccount/token","port":"api","scheme":"https","tlsConfig":{"caFile":"/etc/prometheus/secrets/stash-apiserver-cert/tls.crt","serverName":"stash-operator.kube-system.svc"}}],"namespaceSelector":{"matchNames":["kube-system"]},"selector":{"matchLabels":{"app":"stash"}}}}
   creationTimestamp: 2018-11-21T09:35:37Z
   generation: 1
   labels:
@@ -65,7 +69,7 @@ spec:
   - honorLabels: true
     port: pushgateway
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-    port: admission
+    port: api
     scheme: https
     tlsConfig:
       caFile: /etc/prometheus/secrets/stash-apiserver-cert/tls.crt
@@ -78,9 +82,9 @@ spec:
       app: stash
 ```
 
-Here, we have two endpoints at `spec.endpoints` field. One is `pushgateway` that exports backup and recovery metrics and another is `admission` which exports operator metrics.
+Here, we have two endpoints at `spec.endpoints` field. One is `pushgateway` that exports backup and recovery metrics and another is `api` which exports operator metrics.
 
-Stash exports operator metrics in TLS secure `admission` endpoint. So, Prometheus server need to provide certificate while scrapping metrics from this endpoint. Stash has created a secret named `stash-apiserver-certs` with this certificate in `demo` namespace as we have specified that we will deploy Prometheus in that namespace through `--prometheus-namespace` flag. We have to specify this secret in Prometheus crd through `spec.secrets` field. Prometheus operator will mount this secret at `/etc/prometheus/secrets/stash-apiserver-cert` directory of respective Prometheus pod. So, we need to configure `tlsConfig` field to use that certificate. Here, `caFile` indicates the certificate to use and `serverName` is used to verify hostname. In our case, the certificate is valid for hostname `server` and `stash-operator.kube-system.svc`.
+Stash exports operator metrics via TLS secured `api` endpoint. So, Prometheus server need to provide certificate while scrapping metrics from this endpoint. Stash has created a secret named `stash-apiserver-certs` with this certificate in `demo` namespace as we have specified that we will deploy Prometheus in that namespace through `--prometheus-namespace` flag. We have to specify this secret in Prometheus crd through `spec.secrets` field. Prometheus operator will mount this secret at `/etc/prometheus/secrets/stash-apiserver-cert` directory of respective Prometheus pod. So, we need to configure `tlsConfig` field to use that certificate. Here, `caFile` indicates the certificate to use and `serverName` is used to verify hostname. In our case, the certificate is valid for hostname `server` and `stash-operator.kube-system.svc`.
 
 Let's check secret `stash-apiserver-cert` has been created in demo namespace.
 
@@ -89,7 +93,8 @@ $ kubectl get secret -n demo -l=app=stash
 NAME                   TYPE                DATA   AGE
 stash-apiserver-cert   kubernetes.io/tls   2      31m
 ```
-Also note that, there is a `bearerTokenFile` field. This file is token for the serviceaccount that will be created while creating RBAC stuff for Prometheus crd. This is required for authorizing Prometheus to Stash API Server.
+
+Also note that, there is a `bearerTokenFile` field. This file is token for the serviceaccount that will be created while creating RBAC stuff for Prometheus crd. This is required for authorizing Prometheus to scrape Stash API server.
 
 Now, we are ready to deploy Prometheus server.
 
@@ -163,10 +168,10 @@ Forwarding from 127.0.0.1:9090 -> 9090
 Forwarding from [::1]:9090 -> 9090
 ```
 
-Now, we can access the dashboard at `localhost:9090`. Open `localhost:9090` in your browser. You should see `pushgateway` and `addmision` endpoints of `stash-operator` service as target.
+Now, we can access the dashboard at `localhost:9090`. Open [http://localhost:9090](http://localhost:9090) in your browser. You should see `pushgateway` and `api` endpoints of `stash-operator` service as target.
 
 <p align="center">
-  <img alt="Prometheus Target"  src="/docs/images/monitoring/prom-coreos-target.png", style="padding:10px">
+  <img alt="Prometheus Target" src="/docs/images/monitoring/prom-coreos-target.png" style="padding:10px">
 </p>
 
 ## Cleanup
@@ -174,7 +179,7 @@ Now, we can access the dashboard at `localhost:9090`. Open `localhost:9090` in y
 To cleanup the Kubernetes resources created by this tutorial, run:
 
 ```console
-# cleanup prometheus resources
+# cleanup Prometheus resources
 kubectl delete -n demo prometheus prometheus
 kubectl delete -n demo secret stash-apiserver-cert
 

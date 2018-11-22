@@ -74,7 +74,7 @@ data:
         regex: true
         action: keep
       - source_labels: [__meta_kubernetes_endpoint_port_name]
-        regex: admission
+        regex: api
         action: keep
       - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_operator_path]
         regex: (.+)

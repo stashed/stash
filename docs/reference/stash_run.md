@@ -46,10 +46,10 @@ stash run [flags]
       --audit-webhook-config-file string                        Path to a kubeconfig formatted file that defines the audit webhook configuration. Requires the 'AdvancedAuditing' feature gate.
       --audit-webhook-initial-backoff duration                  The amount of time to wait before retrying the first failed request. (default 10s)
       --audit-webhook-mode string                               Strategy for sending audit events. Blocking indicates sending events should block server responses. Batch causes the backend to buffer and write events asynchronously. Known modes are batch,blocking. (default "batch")
-      --authentication-kubeconfig string                        kubeconfig file pointing at the 'core' kubernetes server with enough rights to create tokenaccessreviews.authentication.k8s.io.
+      --authentication-kubeconfig string                        kubeconfig file pointing at the 'core' Kubernetes server with enough rights to create tokenaccessreviews.authentication.k8s.io.
       --authentication-skip-lookup                              If false, the authentication-kubeconfig will be used to lookup missing authentication configuration from the cluster.
       --authentication-token-webhook-cache-ttl duration         The duration to cache responses from the webhook token authenticator. (default 10s)
-      --authorization-kubeconfig string                         kubeconfig file pointing at the 'core' kubernetes server with enough rights to create  subjectaccessreviews.authorization.k8s.io.
+      --authorization-kubeconfig string                         kubeconfig file pointing at the 'core' Kubernetes server with enough rights to create  subjectaccessreviews.authorization.k8s.io.
       --authorization-webhook-cache-authorized-ttl duration     The duration to cache 'authorized' responses from the webhook authorizer. (default 10s)
       --authorization-webhook-cache-unauthorized-ttl duration   The duration to cache 'unauthorized' responses from the webhook authorizer. (default 10s)
       --bind-address ip                                         The IP address on which to listen for the --secure-port port. The associated interface(s) must be reachable by the rest of the cluster, and by CLI/web clients. If blank, all interfaces will be used (0.0.0.0 for all IPv4 interfaces and :: for all IPv6 interfaces). (default 0.0.0.0)
@@ -62,7 +62,7 @@ stash run [flags]
   -h, --help                                                    help for run
       --http2-max-streams-per-connection int                    The limit that the server gives to clients for the maximum number of streams in an HTTP/2 connection. Zero means to use golang's default. (default 1000)
       --image-tag string                                        Image tag for sidecar, init-container, check-job and recovery-job (default "canary")
-      --kubeconfig string                                       kubeconfig file pointing at the 'core' kubernetes server.
+      --kubeconfig string                                       kubeconfig file pointing at the 'core' Kubernetes server.
       --profiling                                               Enable profiling via web interface host:port/debug/pprof/ (default true)
       --qps float                                               The maximum QPS to the master from this client (default 100)
       --rbac                                                    Enable RBAC for operator

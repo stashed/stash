@@ -19,13 +19,13 @@ Grafana provides an elegant graphical user interface to visualize data. You can 
 
 - At first, you need to have a Kubernetes cluster, and the kubectl command-line tool must be configured to communicate with your cluster. If you do not already have a cluster, you can create one by using [Minikube](https://github.com/kubernetes/minikube).
 
-- You must have a Stash instant running with monitoring enabled. You can enable monitoring by following the guides for [Builtin Prometheus](/docs/guides/monitoring/builtin.md) or [CoreOS Prometheus Operator](/docs/guides/monitoring/coreos.md). For this tutorial, we have enabled Prometheus monitoring using CoreOS Prometheus operator.
+- You must have a Stash instant running with monitoring enabled. You can enable monitoring by following the guides for builtin [Prometheus](/docs/guides/monitoring/builtin.md) scrapper or [CoreOS Prometheus Operator](/docs/guides/monitoring/coreos.md). For this tutorial, we have enabled Prometheus monitoring using CoreOS Prometheus operator.
 
 - If you already do not have a grafana instance running, deploy one using  helm chart from [here](https://github.com/helm/charts/tree/master/stable/grafana).
 
 ## Add Prometheus Data Source
 
-We have to add our prometheus server `prometheus-prometheus-0` as data source of grafana. We will use a `ClusterIP` service to connect prometheus server with grafana. Let's create a service to select prometheus server `prometheus-prometheus-0`,
+We have to add our Prometheus server `prometheus-prometheus-0` as data source of grafana. We will use a `ClusterIP` service to connect Prometheus server with grafana. Let's create a service to select Prometheus server `prometheus-prometheus-0`,
 
 ```console
 $ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.7.0/docs/examples/monitoring/coreos/prometheus-service.yaml
@@ -75,7 +75,7 @@ Now, follow these steps to add the Prometheus server as data source of Grafana U
       <img alt="Grafana: Configure data source"  src="/docs/images/monitoring/grafana/grafana-data-source-3.png" style="padding: 10px;">
     </p>
 
-Once you have added prometheus data source successfully, you are ready to create a dashboard to visualize the metrics.
+Once you have added Prometheus data source successfully, you are ready to create a dashboard to visualize the metrics.
 
 ## Import Stash Dashboard
 
@@ -95,7 +95,7 @@ Follow these steps to import the preconfigured stash dashboard,
       <img alt="Grafana: Provide dashboard ID"  src="/docs/images/monitoring/grafana/grafana-import-2.png" style="padding: 10px;">
     </p>
 
-3. Now on `prometheus-infra` field, select the data source name that we have given to our prometheus data source earlier. Then click on `Import` button.
+3. Now on `prometheus-infra` field, select the data source name that we have given to our Prometheus data source earlier. Then click on `Import` button.
 
     <p align="center">
         <img alt="Grafana: Select data source"  src="/docs/images/monitoring/grafana/grafana-import-3.png" style="padding: 10px;">

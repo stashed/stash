@@ -13,7 +13,7 @@ menu_name: product_stash_0.7.0
 
 # Monitoring Stash with builtin Prometheus
 
-This tutorial will show you how to configure [official Prometheus](https://github.com/prometheus/prometheus) server to monitor Stash backup and recovery operations as well as Stash operator.
+This tutorial will show you how to configure builtin [Prometheus](https://github.com/prometheus/prometheus) scrapper to monitor Stash backup and recovery operations as well as Stash operator.
 
 ## Before You Begin
 
@@ -28,16 +28,17 @@ namespace/demo created
 
 ## Enable Monitoring in Stash
 
-Enable Prometheus monitoring using `prometheus.io/builtin` agent while installing Stash. To know details about how to enable monitoring see [here](/docs/guides/monitoring/overview.md#how-to-enable-monitoring). We will
-
-Here, we are going to enable monitoring for both `backup & recovery` and `opeartor` metrics.
+Enable Prometheus monitoring using `prometheus.io/builtin` agent while installing Stash. To know details about how to enable monitoring see [here](/docs/guides/monitoring/overview.md#how-to-enable-monitoring). Here, we are going to enable monitoring for both `backup & recovery` and `operator` metrics.
 
 ```console
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0/hack/deploy/stash.sh \
-    | bash -s -- --monitoring-agent=prometheus.io/builtin --monitoring-backup=true --monitoring-operator=true --prometheus-namespace=demo
+$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.7.0/hack/deploy/stash.sh | bash -s -- \
+  --monitoring-agent=prometheus.io/builtin \
+  --monitoring-backup=true \
+  --monitoring-operator=true \
+  --prometheus-namespace=demo
 ```
 
-This will add some annotation to `stash-operator` service. Prometheus server will scrap metrics using those annotations. Let's check which annotations are added to the service,
+This will add necessary annotations to `stash-operator` service. Prometheus server will scrap metrics using those annotations. Let's check which annotations are added to the service,
 
 ```yaml
 $ kubectl get service -n kube-system stash-operator -o yaml
@@ -46,7 +47,7 @@ kind: Service
 metadata:
   annotations:
     kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"labels":{"app":"stash"},"name":"stash-operator","namespace":"kube-system"},"spec":{"ports":[{"name":"admission","port":443,"targetPort":8443},{"name":"pushgateway","port":56789,"targetPort":56789}],"selector":{"app":"stash"}}}
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"labels":{"app":"stash"},"name":"stash-operator","namespace":"kube-system"},"spec":{"ports":[{"name":"api","port":443,"targetPort":8443},{"name":"pushgateway","port":56789,"targetPort":56789}],"selector":{"app":"stash"}}}
     prometheus.io/operator_path: /metrics
     prometheus.io/operator_port: "8443"
     prometheus.io/operator_scheme: https
@@ -65,7 +66,7 @@ metadata:
 spec:
   clusterIP: 10.105.200.228
   ports:
-  - name: admission
+  - name: api
     port: 443
     protocol: TCP
     targetPort: 8443
@@ -83,7 +84,7 @@ status:
 
 Here, `prometheus.io/scrap: "true"` annotation indicates that Prometheus should scrap metrics for this service.
 
-These three annotations are backup and recovery metrics specific annotation. They provides information about `pushgateway` endpoints which provides those metrics.
+The following three annotations point to `pushgateway` endpoints which provides backup and recovery metrics.
 
 ```ini
 prometheus.io/pushgateway_path: /metrics
@@ -91,7 +92,7 @@ prometheus.io/pushgateway_port: "56789"
 prometheus.io/pushgateway_scheme: http
 ```
 
-Below, three annotations are operator metrics specific annotation. They provides information about how to collect those metrics from `admission` endpoint.
+The following three annotations point to `api` endpoints which provides operator specific metrics.
 
 ```ini
 prometheus.io/operator_path: /metrics
@@ -103,7 +104,7 @@ Now, we are ready to configure our Prometheus server to scrap those metrics.
 
 ## Deploy Prometheus Server
 
-We have deployed Stash in `kube-system` namespace. Stash exports operator metrics in TLS secure `admission` endpoint. So, Prometheus server need to provide certificate while scrapping metrics from this endpoint. Stash has created a secret named `stash-apiserver-certs`  with this certificate in `demo` namespace as we have specified that we will deploy Prometheus in that namespace through `--prometheus-namespace` flag. We have to mount this secret in Prometheus deployment.
+We have deployed Stash in `kube-system` namespace. Stash exports operator metrics via TLS secured `api` endpoint. So, Prometheus server need to provide certificate while scrapping metrics from this endpoint. Stash has created a secret named `stash-apiserver-certs`  with this certificate in `demo` namespace as we have specified that we will deploy Prometheus in that namespace through `--prometheus-namespace` flag. We have to mount this secret in Prometheus deployment.
 
 Let's check `stash-apiserver-cert` certificate has been created in `demo` namespace.
 
@@ -205,7 +206,7 @@ data:
         regex: true
         action: keep
       - source_labels: [__meta_kubernetes_endpoint_port_name]
-        regex: admission
+        regex: api
         action: keep
       - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_operator_path]
         regex: (.+)
@@ -315,10 +316,10 @@ Forwarding from 127.0.0.1:9090 -> 9090
 Forwarding from [::1]:9090 -> 9090
 ```
 
-Now, we can access the dashboard at `localhost:9090`. Open `localhost:9090` in your browser. You should see `pushgateway` and `admission` endpoints of `stash-operator` service as targets.
+Now, we can access the dashboard at `localhost:9090`. Open [http://localhost:9090](http://localhost:9090) in your browser. You should see `pushgateway` and `api` endpoints of `stash-operator` service as targets.
 
 <p align="center">
-  <img alt="Prometheus Target"  src="/docs/images/monitoring/prom-builtin-target.png", style="padding:10px">
+  <img alt="Prometheus Target" src="/docs/images/monitoring/prom-builtin-target.png" style="padding:10px">
 </p>
 
 ## Cleanup
