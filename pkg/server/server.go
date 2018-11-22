@@ -2,16 +2,22 @@ package server
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	hooks "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
 	admissionreview "github.com/appscode/kubernetes-webhook-util/registry/admissionreview/v1beta1"
+	reg_util "github.com/appscode/kutil/admissionregistration/v1beta1"
+	dynamic_util "github.com/appscode/kutil/dynamic"
 	"github.com/appscode/stash/apis/repositories"
 	"github.com/appscode/stash/apis/repositories/install"
 	"github.com/appscode/stash/apis/repositories/v1alpha1"
+	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/controller"
+	"github.com/appscode/stash/pkg/eventer"
 	snapregistry "github.com/appscode/stash/pkg/registry/snapshot"
 	admission "k8s.io/api/admission/v1beta1"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -19,6 +25,12 @@ import (
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/apiserver/pkg/registry/rest"
 	genericapiserver "k8s.io/apiserver/pkg/server"
+	"k8s.io/client-go/kubernetes"
+	store "kmodules.xyz/objectstore-api/api/v1"
+)
+
+const (
+	apiserviceName = "v1alpha1.admission.stash.appscode.com"
 )
 
 var (
@@ -97,15 +109,23 @@ func (c completedConfig) New() (*StashServer, error) {
 	if err != nil {
 		return nil, err
 	}
-	admissionHooks := []hooks.AdmissionHook{
-		ctrl.NewResticWebhook(),
-		ctrl.NewRecoveryWebhook(),
-		ctrl.NewRepositoryWebhook(),
-		ctrl.NewDeploymentWebhook(),
-		ctrl.NewDaemonSetWebhook(),
-		ctrl.NewStatefulSetWebhook(),
-		ctrl.NewReplicationControllerWebhook(),
-		ctrl.NewReplicaSetWebhook(),
+
+	var admissionHooks []hooks.AdmissionHook
+	if c.ExtraConfig.EnableValidatingWebhook {
+		admissionHooks = append(admissionHooks,
+			ctrl.NewResticWebhook(),
+			ctrl.NewRecoveryWebhook(),
+			ctrl.NewRepositoryWebhook(),
+		)
+	}
+	if c.ExtraConfig.EnableMutatingWebhook {
+		admissionHooks = append(admissionHooks,
+			ctrl.NewDeploymentWebhook(),
+			ctrl.NewDaemonSetWebhook(),
+			ctrl.NewStatefulSetWebhook(),
+			ctrl.NewReplicationControllerWebhook(),
+			ctrl.NewReplicaSetWebhook(),
+		)
 	}
 
 	s := &StashServer{
@@ -158,6 +178,56 @@ func (c completedConfig) New() (*StashServer, error) {
 		s.GenericAPIServer.AddPostStartHookOrDie(postStartName,
 			func(context genericapiserver.PostStartHookContext) error {
 				return admissionHook.Initialize(c.ExtraConfig.ClientConfig, context.StopCh)
+			},
+		)
+	}
+
+	if c.ExtraConfig.EnableValidatingWebhook {
+		s.GenericAPIServer.AddPostStartHookOrDie("validating-webhook-xray",
+			func(context genericapiserver.PostStartHookContext) error {
+				go func() {
+					xray := reg_util.NewCreateValidatingWebhookXray(c.ExtraConfig.ClientConfig, apiserviceName, &api.Repository{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: api.SchemeGroupVersion.String(),
+							Kind:       api.ResourceKindRepository,
+						},
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test-repository-for-webhook-xray",
+							Namespace: "default",
+						},
+						Spec: api.RepositorySpec{
+							WipeOut: true,
+							Backend: store.Backend{
+								Local: &store.LocalSpec{
+									VolumeSource: core.VolumeSource{
+										HostPath: &core.HostPathVolumeSource{
+											Path: "/tmp/test",
+										},
+									},
+									MountPath: "/tmp/test",
+								},
+							},
+						},
+					}, context.StopCh)
+					if err := xray.IsActive(); err != nil {
+						w, _, e2 := dynamic_util.DetectWorkload(
+							c.ExtraConfig.ClientConfig,
+							core.SchemeGroupVersion.WithResource("pods"),
+							os.Getenv("MY_POD_NAMESPACE"),
+							os.Getenv("MY_POD_NAME"))
+						if e2 == nil {
+							eventer.CreateEventWithLog(
+								kubernetes.NewForConfigOrDie(c.ExtraConfig.ClientConfig),
+								"stash-operator",
+								w,
+								core.EventTypeWarning,
+								eventer.EventReasonAdmissionWebhookNotActivated,
+								err.Error())
+						}
+						panic(err)
+					}
+				}()
+				return nil
 			},
 		)
 	}

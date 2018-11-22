@@ -3,6 +3,7 @@ package controller
 import (
 	"time"
 
+	reg_util "github.com/appscode/kutil/admissionregistration/v1beta1"
 	"github.com/appscode/kutil/discovery"
 	cs "github.com/appscode/stash/client/clientset/versioned"
 	stashinformers "github.com/appscode/stash/client/informers/externalversions"
@@ -21,12 +22,14 @@ const (
 )
 
 type config struct {
-	EnableRBAC     bool
-	StashImageTag  string
-	DockerRegistry string
-	MaxNumRequeues int
-	NumThreads     int
-	ResyncPeriod   time.Duration
+	EnableRBAC              bool
+	StashImageTag           string
+	DockerRegistry          string
+	MaxNumRequeues          int
+	NumThreads              int
+	ResyncPeriod            time.Duration
+	EnableValidatingWebhook bool
+	EnableMutatingWebhook   bool
 }
 
 type Config struct {
@@ -53,22 +56,34 @@ func (c *Config) New() (*StashController, error) {
 		opt.IncludeUninitialized = true
 	}
 	ctrl := &StashController{
-		config:               c.config,
-		clientConfig:         c.ClientConfig,
-		kubeClient:           c.KubeClient,
-		stashClient:          c.StashClient,
-		crdClient:            c.CRDClient,
-		kubeInformerFactory:  informers.NewFilteredSharedInformerFactory(c.KubeClient, c.ResyncPeriod, core.NamespaceAll, tweakListOptions),
+		config:       c.config,
+		clientConfig: c.ClientConfig,
+		kubeClient:   c.KubeClient,
+		stashClient:  c.StashClient,
+		crdClient:    c.CRDClient,
+		kubeInformerFactory: informers.NewSharedInformerFactoryWithOptions(
+			c.KubeClient,
+			c.ResyncPeriod,
+			informers.WithNamespace(core.NamespaceAll),
+			informers.WithTweakListOptions(tweakListOptions)),
 		stashInformerFactory: stashinformers.NewSharedInformerFactory(c.StashClient, c.ResyncPeriod),
-		recorder:             eventer.NewEventRecorder(c.KubeClient, "stash-controller"),
+		recorder:             eventer.NewEventRecorder(c.KubeClient, "stash-operator"),
 	}
 
 	if err := ctrl.ensureCustomResourceDefinitions(); err != nil {
 		return nil, err
 	}
-	if err := ctrl.UpdateWebhookCABundle(); err != nil {
-		return nil, err
+	if c.EnableMutatingWebhook {
+		if err := reg_util.UpdateMutatingWebhookCABundle(c.ClientConfig, mutatingWebhook); err != nil {
+			return nil, err
+		}
 	}
+	if c.EnableValidatingWebhook {
+		if err := reg_util.UpdateValidatingWebhookCABundle(c.ClientConfig, validatingWebhook); err != nil {
+			return nil, err
+		}
+	}
+
 	if ctrl.EnableRBAC {
 		if err := ctrl.ensureSidecarClusterRole(); err != nil {
 			return nil, err

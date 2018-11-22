@@ -53,9 +53,20 @@ spec:
 {{- if and (not .Values.apiserver.disableStatusSubresource) (ge $major 1) (ge $minor 11) }}
         - --enable-status-subresource=true
 {{- end }}
+        - --bypass-validating-webhook-xray={{ .Values.apiserver.bypassValidatingWebhookXray }}
+        - --use-kubeapiserver-fqdn-for-aks={{ .Values.apiserver.useKubeapiserverFqdnForAks }}
         - --enable-analytics={{ .Values.enableAnalytics }}
         ports:
         - containerPort: 8443
+        env:
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         readinessProbe:
           httpGet:
             path: /healthz

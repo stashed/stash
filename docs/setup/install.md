@@ -53,18 +53,25 @@ stash.sh - install stash operator
 stash.sh [options]
 
 options:
--h, --help                         show brief help
--n, --namespace=NAMESPACE          specify namespace (default: kube-system)
-    --rbac                         create RBAC roles and bindings (default: true)
-    --docker-registry              docker registry used to pull stash images (default: appscode)
-    --image-pull-secret            name of secret used to pull stash operator images
-    --run-on-master                run stash operator on master
-    --enable-validating-webhook    enable/disable validating webhooks for Stash crds
-    --enable-mutating-webhook      enable/disable mutating webhooks for Kubernetes workloads
-    --enable-status-subresource    If enabled, uses status sub resource for crds
-    --enable-analytics             send usage events to Google Analytics (default: true)
-    --uninstall                    uninstall stash
-    --purge                        purges stash crd objects and crds
+-h, --help                             show brief help
+-n, --namespace=NAMESPACE              specify namespace (default: kube-system)
+    --rbac                             create RBAC roles and bindings (default: true)
+    --docker-registry                  docker registry used to pull stash images (default: appscode)
+    --image-pull-secret                name of secret used to pull stash operator images
+    --run-on-master                    run stash operator on master
+    --enable-mutating-webhook          enable/disable mutating webhooks for Kubernetes workloads
+    --enable-validating-webhook        enable/disable validating webhooks for Stash crds
+    --bypass-validating-webhook-xray   if true, bypasses validating webhook xray checks
+    --enable-status-subresource        if enabled, uses status sub resource for crds
+    --use-kubeapiserver-fqdn-for-aks   if true, uses kube-apiserver FQDN for AKS cluster to workaround https://github.com/Azure/AKS/issues/522 (default true)
+    --enable-analytics                 send usage events to Google Analytics (default: true)
+    --uninstall                        uninstall stash
+    --purge                            purges stash crd objects and crds
+    --monitoring-agent                 specify which monitoring agent to use (default: none)
+    --monitoring-backup                specify whether to monitor stash backup and restore activity (default: false)
+    --monitoring-operator              specify whether to monitor stash operator (default: false)
+    --prometheus-namespace             specify the namespace where Prometheus server is running or will be deployed (default: same namespace as stash-operator)
+    --servicemonitor-label             specify the label for ServiceMonitor crd. Prometheus crd will use this label to select the ServiceMonitor. (default: 'app: stash')
 ```
 
 If you would like to run Stash operator pod in `master` instances, pass the `--run-on-master` flag:

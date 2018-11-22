@@ -1,3 +1,6 @@
+# GKE returns Major:"1", Minor:"10+"
+{{- $major := default "0" .Capabilities.KubeVersion.Major | trimSuffix "+" | int64 }}
+{{- $minor := default "0" .Capabilities.KubeVersion.Minor | trimSuffix "+" | int64 }}
 {{- if .Values.apiserver.enableValidatingWebhook }}
 apiVersion: admissionregistration.k8s.io/v1beta1
 kind: ValidatingWebhookConfiguration
@@ -30,6 +33,9 @@ webhooks:
     resources:
     - restics
   failurePolicy: Fail
+{{- if and (ge $major 1) (ge $minor 12) }}
+  sideEffects: None
+{{- end }}
 - name: recovery.admission.stash.appscode.com
   clientConfig:
     service:
@@ -48,4 +54,7 @@ webhooks:
     resources:
     - recoveries
   failurePolicy: Fail
+{{- if and (ge $major 1) (ge $minor 12) }}
+  sideEffects: None
+{{- end }}
 {{ end }}

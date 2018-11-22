@@ -24,6 +24,7 @@ webhooks:
     resources:
     - deployments
   failurePolicy: Fail
+  ${STASH_WEBHOOK_SIDE_EFFECTS}
 - name: daemonset.admission.stash.appscode.com
   clientConfig:
     service:
@@ -43,6 +44,7 @@ webhooks:
     resources:
     - daemonsets
   failurePolicy: Fail
+  ${STASH_WEBHOOK_SIDE_EFFECTS}
 - name: statefulset.admission.stash.appscode.com
   clientConfig:
     service:
@@ -60,6 +62,7 @@ webhooks:
     resources:
     - statefulsets
   failurePolicy: Fail
+  ${STASH_WEBHOOK_SIDE_EFFECTS}
 - name: replicationcontroller.admission.stash.appscode.com
   clientConfig:
     service:
@@ -78,6 +81,7 @@ webhooks:
     resources:
     - replicationcontrollers
   failurePolicy: Fail
+  ${STASH_WEBHOOK_SIDE_EFFECTS}
 - name: replicaset.admission.stash.appscode.com
   clientConfig:
     service:
@@ -97,3 +101,4 @@ webhooks:
     resources:
     - replicasets
   failurePolicy: Fail
+  ${STASH_WEBHOOK_SIDE_EFFECTS}

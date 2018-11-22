@@ -95,22 +95,19 @@ func (c *StashController) ensureCustomResourceDefinitions() error {
 	return crdutils.RegisterCRDs(c.crdClient, crds)
 }
 
-func (c *StashController) UpdateWebhookCABundle() (err error) {
-	err = reg_util.UpdateMutatingWebhookCABundle(c.clientConfig, mutatingWebhook)
-	err = reg_util.UpdateValidatingWebhookCABundle(c.clientConfig, validatingWebhook)
-	return
-}
-
 func (c *StashController) Run(stopCh <-chan struct{}) {
 	go c.RunInformers(stopCh)
 
-	cancel1, _ := reg_util.SyncMutatingWebhookCABundle(c.clientConfig, mutatingWebhook)
-	cancel2, _ := reg_util.SyncValidatingWebhookCABundle(c.clientConfig, validatingWebhook)
+	if c.EnableMutatingWebhook {
+		cancel1, _ := reg_util.SyncMutatingWebhookCABundle(c.clientConfig, mutatingWebhook)
+		defer cancel1()
+	}
+	if c.EnableValidatingWebhook {
+		cancel2, _ := reg_util.SyncValidatingWebhookCABundle(c.clientConfig, validatingWebhook)
+		defer cancel2()
+	}
 
 	<-stopCh
-
-	cancel1()
-	cancel2()
 }
 
 func (c *StashController) RunInformers(stopCh <-chan struct{}) {
