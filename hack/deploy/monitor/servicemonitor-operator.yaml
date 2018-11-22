@@ -1,0 +1,21 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: stash-servicemonitor
+  namespace: ${PROMETHEUS_NAMESPACE}
+  labels:
+    ${SERVICE_MONITOR_LABEL_KEY}: ${SERVICE_MONITOR_LABEL_VALUE}
+spec:
+  namespaceSelector:
+    matchNames:
+    - ${STASH_NAMESPACE}
+  selector:
+    matchLabels:
+      app: stash
+  endpoints:
+  - port: admission
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    scheme: https
+    tlsConfig:
+      caFile: /etc/prometheus/secrets/stash-apiserver-cert/tls.crt
+      serverName: "stash-operator.${STASH_NAMESPACE}.svc"

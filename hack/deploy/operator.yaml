@@ -99,7 +99,7 @@ metadata:
     app: stash
 spec:
   ports:
-  - name: admission
+  - name: api
     port: 443
     targetPort: 8443
   - name: pushgateway

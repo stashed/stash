@@ -84,3 +84,16 @@ apiserver:
 
 # Send usage events to Google Analytics
 enableAnalytics: true
+
+monitoring:
+  # specify monitoring agent (either "prometheus.io/builtin" or "prometheus.io/coreos-operator")
+  agent: "none"
+  # specify whether to monitor backup and recovery
+  backup: false
+  # specify whether to monitor stash operator
+  operator: false
+  # specify where ServiceMonitor crd will be created
+  prometheus:
+    namespace: ""
+  serviceMonitor:
+    labels: {}

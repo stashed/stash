@@ -1,0 +1,103 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stash-prometheus-server-conf
+  labels:
+    name: stash-prometheus-server-conf
+  namespace: demo
+data:
+  prometheus.yml: |-
+    global:
+      scrape_interval: 30s
+      scrape_timeout: 10s
+      evaluation_interval: 30s
+    scrape_configs:
+    - job_name: stash-pushgateway
+      scrape_interval: 30s
+      scrape_timeout: 10s
+      metrics_path: /metrics
+      scheme: http
+      honor_labels: true
+      kubernetes_sd_configs:
+      - role: endpoints
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_service_label_app]
+        regex: stash # default label for stash-operator service is "app: stash". customize this field according to label of stash-operator service of your setup.
+        action: keep
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrap]
+        regex: true
+        action: keep
+      - source_labels: [__meta_kubernetes_endpoint_port_name]
+        regex: pushgateway
+        action: keep
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_pushgateway_path]
+        regex: (.+)
+        target_label: __metrics_path__
+        action: replace
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_pushgateway_scheme]
+        action: replace
+        target_label: __scheme__
+        regex: (https?)
+      - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_pushgateway_port]
+        action: replace
+        target_label: __address__
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+      - source_labels: [__meta_kubernetes_namespace]
+        separator: ;
+        regex: (.*)
+        target_label: namespace
+        replacement: $1
+        action: replace
+      - source_labels: [__meta_kubernetes_service_name]
+        separator: ;
+        regex: (.*)
+        target_label: service
+        replacement: $1
+        action: replace
+    - job_name: stash-operator
+      scrape_interval: 30s
+      scrape_timeout: 10s
+      metrics_path: /metrics
+      scheme: https
+      kubernetes_sd_configs:
+      - role: endpoints
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      tls_config:
+        ca_file: /etc/prometheus/secret/stash-apiserver-cert/tls.crt
+        server_name: stash-operator.kube-system.svc
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_service_label_app]
+        regex: stash # default label for stash-operator service is "app: stash". customize this field according to label of stash-operator service of your setup.
+        action: keep
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrap]
+        regex: true
+        action: keep
+      - source_labels: [__meta_kubernetes_endpoint_port_name]
+        regex: api
+        action: keep
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_operator_path]
+        regex: (.+)
+        target_label: __metrics_path__
+        action: replace
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_operator_scheme]
+        action: replace
+        target_label: __scheme__
+        regex: (https?)
+      - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_operator_port]
+        action: replace
+        target_label: __address__
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+      - source_labels: [__meta_kubernetes_namespace]
+        separator: ;
+        regex: (.*)
+        target_label: namespace
+        replacement: $1
+        action: replace
+      - source_labels: [__meta_kubernetes_service_name]
+        separator: ;
+        regex: (.*)
+        target_label: service
+        replacement: $1
+        action: replace

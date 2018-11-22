@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: prometheus
+  namespace: demo
+  labels:
+    k8s-app: prometheus
+spec:
+  replicas: 1
+  serviceAccountName: prometheus
+  serviceMonitorSelector:
+    matchLabels:
+      k8s-app: prometheus
+  secrets:
+  - stash-apiserver-cert
+  resources:
+    requests:
+      memory: 400Mi

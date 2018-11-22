@@ -123,6 +123,16 @@ $ONESSL semver --check='<1.9.0' $KUBE_APISERVER_VERSION || {
 }
 $ONESSL semver --check='<1.11.0' $KUBE_APISERVER_VERSION || { export STASH_ENABLE_STATUS_SUBRESOURCE=true; }
 
+MONITORING_AGENT_NONE="none"
+MONITORING_AGENT_BUILTIN="prometheus.io/builtin"
+MONITORING_AGENT_COREOS_OPERATOR="prometheus.io/coreos-operator"
+
+export MONITORING_AGENT=${MONITORING_AGENT:-$MONITORING_AGENT_NONE}
+export MONITORING_BACKUP=${MONITORING_BACKUP:-false}
+export MONITORING_OPERATOR=${MONITORING_OPERATOR:-false}
+export SERVICE_MONITOR_LABEL_KEY="app"
+export SERVICE_MONITOR_LABEL_VALUE="stash"
+
 show_help() {
   echo "stash.sh - install stash operator"
   echo " "
@@ -141,6 +151,11 @@ show_help() {
   echo "    --enable-analytics             send usage events to Google Analytics (default: true)"
   echo "    --uninstall                    uninstall stash"
   echo "    --purge                        purges stash crd objects and crds"
+  echo "    --monitoring-agent             specify which monitoring agent to use (default: none)"
+  echo "    --monitoring-backup            specify whether to monitor stash backup and restore activity (default: false)"
+  echo "    --monitoring-operator          specify whether to monitor stash operator (default: false)"
+  echo "    --prometheus-namespace         specify the namespace where Prometheus server is running or will be deployed (default: same namespace as stash-operator)"
+  echo "    --servicemonitor-label         specify the label for ServiceMonitor crd. Prometheus crd will use this label to select the ServiceMonitor. (default: 'app: stash')"
 }
 
 while test $# -gt 0; do
@@ -220,12 +235,57 @@ while test $# -gt 0; do
       export STASH_PURGE=1
       shift
       ;;
+    --monitoring-agent*)
+      val=$(echo $1 | sed -e 's/^[^=]*=//g')
+      if [ "$val" != "$MONITORING_AGENT_BUILTIN" ] && [ "$val" != "$MONITORING_AGENT_COREOS_OPERATOR" ]; then
+        echo 'Invalid monitoring agent. Use "builtin" or "coreos-operator"'
+        exit 1
+      else
+        export MONITORING_AGENT="$val"
+      fi
+      shift
+      ;;
+    --monitoring-backup*)
+      val=$(echo $1 | sed -e 's/^[^=]*=//g')
+      if [ "$val" = "true" ]; then
+        export MONITORING_BACKUP=true
+      fi
+      shift
+      ;;
+    --monitoring-operator*)
+      val=$(echo $1 | sed -e 's/^[^=]*=//g')
+      if [ "$val" = "true" ]; then
+        export MONITORING_OPERATOR="$val"
+      fi
+      shift
+      ;;
+    --prometheus-namespace*)
+      export PROMETHEUS_NAMESPACE=$(echo $1 | sed -e 's/^[^=]*=//g')
+      shift
+      ;;
+    --servicemonitor-label*)
+      label=$(echo $1 | sed -e 's/^[^=]*=//g')
+      # split label into key value pair
+      IFS='='
+      pair=($label)
+      unset IFS
+      # check if the label is valid
+      if [ ! ${#pair[@]} = 2 ]; then
+        echo "Invalid ServiceMonitor label format. Use '--servicemonitor-label=key=value'"
+        exit 1
+      fi
+      export SERVICE_MONITOR_LABEL_KEY="${pair[0]}"
+      export SERVICE_MONITOR_LABEL_VALUE="${pair[1]}"
+      shift
+      ;;
     *)
       show_help
       exit 1
       ;;
   esac
 done
+
+export PROMETHEUS_NAMESPACE=${PROMETHEUS_NAMESPACE:-$STASH_NAMESPACE}
 
 if [ "$STASH_UNINSTALL" -eq 1 ]; then
   # delete webhooks and apiservices
@@ -242,6 +302,9 @@ if [ "$STASH_UNINSTALL" -eq 1 ]; then
   kubectl delete clusterrole -l app=stash
   kubectl delete rolebindings -l app=stash --namespace $STASH_NAMESPACE
   kubectl delete role -l app=stash --namespace $STASH_NAMESPACE
+  # delete servicemonitor and stash-apiserver-cert secret. ignore error as they might not exist
+  kubectl delete servicemonitor stash-servicemonitor --namespace $PROMETHEUS_NAMESPACE || true
+  kubectl delete secret stash-apiserver-cert --namespace $PROMETHEUS_NAMESPACE || true
 
   echo "waiting for stash operator pod to stop running"
   for (( ; ; )); do
@@ -362,6 +425,47 @@ for crd in "${crds[@]}"; do
     exit 1
   }
 done
+
+# configure prometheus monitoring
+if [ "$MONITORING_AGENT" != "$MONITORING_AGENT_NONE" ]; then
+  case "$MONITORING_AGENT" in
+    "$MONITORING_AGENT_BUILTIN")
+      # apply common annotation
+      kubectl annotate service stash-operator -n "$STASH_NAMESPACE" prometheus.io/scrap="true" --overwrite
+
+      # apply pushgateway specific annotation
+      if [ "$MONITORING_BACKUP" = "true" ]; then
+        kubectl annotate service stash-operator -n "$STASH_NAMESPACE" --overwrite \
+          prometheus.io/pushgateway_path="/metrics" \
+          prometheus.io/pushgateway_port="56789" \
+          prometheus.io/pushgateway_scheme="http"
+      fi
+
+      # apply operator specific annotation
+      if [ "$MONITORING_OPERATOR" = "true" ]; then
+        kubectl annotate service stash-operator -n "$STASH_NAMESPACE" --overwrite \
+          prometheus.io/operator_path="/metrics" \
+          prometheus.io/operator_port="8443" \
+          prometheus.io/operator_scheme="https"
+      fi
+      ;;
+    "$MONITORING_AGENT_COREOS_OPERATOR")
+      if [ "$MONITORING_BACKUP" = "true" ] && [ "$MONITORING_OPERATOR" = "true" ]; then
+        ${SCRIPT_LOCATION}hack/deploy/monitor/servicemonitor.yaml | $ONESSL envsubst | kubectl apply -f -
+      elif [ "$MONITORING_BACKUP" = "true" ] && [ "$MONITORING_OPERATOR" = "false" ]; then
+        ${SCRIPT_LOCATION}hack/deploy/monitor/servicemonitor-backup.yaml | $ONESSL envsubst | kubectl apply -f -
+      elif [ "$MONITORING_BACKUP" = "false" ] && [ "$MONITORING_OPERATOR" = "true" ]; then
+        ${SCRIPT_LOCATION}hack/deploy/monitor/servicemonitor-operator.yaml | $ONESSL envsubst | kubectl apply -f -
+      fi
+      ;;
+  esac
+
+  # if operator monitoring is enabled and prometheus-namespace is provided,
+  # create stash-apiserver-cert there. this will be mounted on prometheus pod.
+  if [ "$MONITORING_OPERATOR" = "true" ] && [ "$PROMETHEUS_NAMESPACE" != "$STASH_NAMESPACE" ]; then
+    ${SCRIPT_LOCATION}hack/deploy/monitor/apiserver-cert.yaml | $ONESSL envsubst | kubectl apply -f -
+  fi
+fi
 
 echo
 echo "Successfully installed Stash in $STASH_NAMESPACE namespace!"

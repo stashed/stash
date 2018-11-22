@@ -100,11 +100,11 @@ if [ "$STASH_ENABLE_WEBHOOK" = true ]; then
 fi
 
 if [ "$STASH_E2E_TEST" = false ]; then # don't run operator while run this script from test
-stash run \
-  --secure-port=8443 \
-  --kubeconfig="$HOME/.kube/config" \
-  --authorization-kubeconfig="$HOME/.kube/config" \
-  --authentication-kubeconfig="$HOME/.kube/config" \
-  --authentication-skip-lookup
+  stash run \
+    --secure-port=8443 \
+    --kubeconfig="$HOME/.kube/config" \
+    --authorization-kubeconfig="$HOME/.kube/config" \
+    --authentication-kubeconfig="$HOME/.kube/config" \
+    --authentication-skip-lookup
 fi
 popd

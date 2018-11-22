@@ -16,7 +16,7 @@ section_menu_id: guides
 
 # Using Stash with TLS secured Minio Server
 
-Minio is an open source object storage server compatible with Amazon S3 cloud storage service. You can deploy Minio server in docker container locally, in a kubernetes cluster, Microsoft Azure, GCP etc. You can find a guide for Minio server [here](https://docs.minio.io/). This tutorial will show you how to use [Stash](/docs/concepts/what-is-stash/overview.md) to backup a Kubernetes `Deployment` in a TLS secure [Minio](https://docs.minio.io/) Server. It will also show you how to recover this backed up data.
+Minio is an open source object storage server compatible with Amazon S3 cloud storage service. You can deploy Minio server in docker container locally, in a Kubernetes cluster, Microsoft Azure, GCP etc. You can find a guide for Minio server [here](https://docs.minio.io/). This tutorial will show you how to use [Stash](/docs/concepts/what-is-stash/overview.md) to backup a Kubernetes `Deployment` in a TLS secure [Minio](https://docs.minio.io/) Server. It will also show you how to recover this backed up data.
 
 ## Before You Begin
 
@@ -74,7 +74,7 @@ $ cat server.key > private.key
 
 Be sure about the order of `server.crt`  and `ca.crt`. The order will be `server's certificate`, any `intermediate certificates` and finally the `CA's root certificate`. The intermediate certificates are required if the server certificate is created using a certificate which is not the root certificate but signed by the root certificate. [onessl](https://github.com/appscode/onessl) use root certificate by default to generate server certificate if no certificate path is specified by `--cert-dir` flag. Hence, the intermediate certificates are not required here.
 
-We will create a kubernetes secret with this `public.crt` and `private.key` files and mount the secret to `/root/.minio/certs/` directory of minio container.
+We will create a Kubernetes secret with this `public.crt` and `private.key` files and mount the secret to `/root/.minio/certs/` directory of minio container.
 
 > Minio server will not trust a self-signed certificate by default. We can mark the self-signed certificate as a trusted certificate by adding `public.crt` file in `/root/.minio/certs/CAs` directory.
 

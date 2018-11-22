@@ -123,7 +123,7 @@
           "tableColumn": "",
           "targets": [
             {
-              "expr": "sum(restic_session_fail{exported_namespace=~\"$namespace\",app=~\"$app\"})",
+              "expr": "sum(restic_session_fail{namespace=~\"$namespace\",app=~\"$app\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "refId": "A"
@@ -199,7 +199,7 @@
           "tableColumn": "",
           "targets": [
             {
-              "expr": "sum(restic_session_success{exported_namespace=~\"$namespace\",app=~\"$app\"})",
+              "expr": "sum(restic_session_success{namespace=~\"$namespace\",app=~\"$app\"})",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "",
@@ -264,10 +264,10 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "restic_session_success{exported_namespace=~\"$namespace\",app=~\"$app\"}",
+              "expr": "restic_session_success{namespace=~\"$namespace\",app=~\"$app\"}",
               "format": "time_series",
               "intervalFactor": 2,
-              "legendFormat": "{{exported_namespace}} - {{app}}",
+              "legendFormat": "{{namespace}} - {{app}}",
               "refId": "A"
             }
           ],
@@ -350,10 +350,10 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "restic_session_fail{exported_namespace=~\"$namespace\",app=~\"$app\"}",
+              "expr": "restic_session_fail{namespace=~\"$namespace\",app=~\"$app\"}",
               "format": "time_series",
               "intervalFactor": 2,
-              "legendFormat": "{{exported_namespace}} - {{app}}",
+              "legendFormat": "{{namespace}} - {{app}}",
               "refId": "A"
             }
           ],
@@ -448,11 +448,11 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(restic_session_duration_seconds{exported_namespace=~\"$namespace\",app=~\"$app\"}) by (app, op, exported_namespace)",
+              "expr": "sum(restic_session_duration_seconds{namespace=~\"$namespace\",app=~\"$app\"}) by (app, op, namespace)",
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
-              "legendFormat": "{{exported_namespace}} - {{app}} - {{op}}",
+              "legendFormat": "{{namespace}} - {{app}} - {{op}}",
               "refId": "A"
             }
           ],
@@ -574,7 +574,7 @@
               ],
               "dateFormat": "YYYY-MM-DD HH:mm:ss",
               "decimals": 2,
-              "pattern": "exported_namespace",
+              "pattern": "namespace",
               "thresholds": [],
               "type": "string",
               "unit": "short"
@@ -627,7 +627,7 @@
           ],
           "targets": [
             {
-              "expr": "restic_session_success{exported_namespace=~\"$namespace\",app=~\"$app\"} == 1",
+              "expr": "restic_session_success{namespace=~\"$namespace\",app=~\"$app\"} == 1",
               "format": "table",
               "interval": "",
               "intervalFactor": 2,
@@ -710,7 +710,7 @@
               ],
               "dateFormat": "YYYY-MM-DD HH:mm:ss",
               "decimals": 2,
-              "pattern": "exported_namespace",
+              "pattern": "namespace",
               "thresholds": [],
               "type": "string",
               "unit": "short"
@@ -763,7 +763,7 @@
           ],
           "targets": [
             {
-              "expr": "restic_session_fail{exported_namespace=~\"$namespace\",app=~\"$app\"} == 1",
+              "expr": "restic_session_fail{namespace=~\"$namespace\",app=~\"$app\"} == 1",
               "format": "table",
               "interval": "",
               "intervalFactor": 2,
@@ -803,7 +803,7 @@
         "multi": true,
         "name": "namespace",
         "options": [],
-        "query": "label_values(restic_session_success, exported_namespace)",
+        "query": "label_values(restic_session_success, namespace)",
         "refresh": 1,
         "regex": "",
         "sort": 0,
