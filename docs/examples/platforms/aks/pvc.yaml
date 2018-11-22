@@ -2,11 +2,13 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: stash-recovered
+  namespace: demo
   labels:
     app: stash-demo
 spec:
+  storageClassName: default
   accessModes:
   - ReadWriteOnce
   resources:
     requests:
-      storage: 2Gi
+      storage: 50Mi

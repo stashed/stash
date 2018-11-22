@@ -1,12 +1,15 @@
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
     app: stash-demo
   name: stash-demo
-  namespace: default
+  namespace: demo
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: stash-demo
   template:
     metadata:
       labels:
@@ -26,5 +29,5 @@ spec:
       restartPolicy: Always
       volumes:
       - name: source-data
-        persistentVolumeClaim:
-          claimName: stash-recovered
+        configMap:
+          name: stash-sample-data

@@ -131,7 +131,7 @@ To learn about the meaning of various flags, please visit [here](/docs/reference
 - To restore a backup see [here](/docs/guides/restore.md).
 - Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
 - To run backup in offline mode see [here](/docs/guides/offline_backup.md)
-- See the list of supported backends and how to configure them [here](/docs/guides/backends.md).
+- See the list of supported backends and how to configure them [here](/docs/guides/backends/overview.md).
 - Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/monitoring.md).
 - Learn about how to configure [RBAC roles](/docs/guides/rbac.md).
 - Wondering what features are coming next? Please visit [here](/docs/roadmap.md).
