@@ -74,5 +74,18 @@ func (config *OSMConfig) Dial(cliCtx string) (stow.Location, error) {
 			return stow.Dial(osmCtx.Provider, osmCtx.Config)
 		}
 	}
-	return nil, errors.New("Failed to determine context.")
+	return nil, errors.New("failed to determine context")
+}
+
+func (config *OSMConfig) Context(cliCtx string) (*Context, error) {
+	ctx := config.CurrentContext
+	if cliCtx != "" {
+		ctx = cliCtx
+	}
+	for _, osmCtx := range config.Contexts {
+		if osmCtx.Name == ctx {
+			return osmCtx, nil
+		}
+	}
+	return nil, errors.New("failed to determine context")
 }

@@ -2,6 +2,7 @@ package kutil
 
 import (
 	"errors"
+	"regexp"
 	"time"
 
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -36,4 +37,12 @@ func IsRequestRetryable(err error) bool {
 		kerr.IsTimeout(err) ||
 		kerr.IsServerTimeout(err) ||
 		kerr.IsTooManyRequests(err)
+}
+
+var reMutator = regexp.MustCompile(`^Internal error occurred: admission webhook "[^"]+" denied the request.*$`)
+var reValidator = regexp.MustCompile(`^admission webhook "[^"]+" denied the request.*$`)
+
+func AdmissionWebhookDeniedRequest(err error) bool {
+	return (kerr.IsInternalError(err) && reMutator.MatchString(err.Error())) ||
+		(kerr.IsForbidden(err) && reValidator.MatchString(err.Error()))
 }

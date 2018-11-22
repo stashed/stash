@@ -426,8 +426,9 @@ func (c *Connection) setDefaults() {
 		c.Transport = &http.Transport{
 			//		TLSClientConfig:    &tls.Config{RootCAs: pool},
 			//		DisableCompression: true,
-			Proxy:               http.ProxyFromEnvironment,
-			MaxIdleConnsPerHost: 2048,
+			Proxy: http.ProxyFromEnvironment,
+			// Half of linux's default open files limit (1024).
+			MaxIdleConnsPerHost: 512,
 		}
 	}
 	if c.client == nil {
