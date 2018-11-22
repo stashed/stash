@@ -41,7 +41,7 @@ namespace/demo created
 
 ## Backup
 
-In order to take backup, we need some sample data. Stash has some sample data in [stash-data](https://github.com/appscode/stash-data) repository. As [gitRepo](https://kubernetes.io/docs/concepts/storage/volumes/#gitrepo) volume has been deprecated, we will not use this repository as volume directly. Instead, we will create a [congigMap](https://kubernetes.io/docs/concepts/storage/volumes/#configmap) from these data and use that ConfigMap as data source.
+In order to take backup, we need some sample data. Stash has some sample data in [stash-data](https://github.com/appscode/stash-data) repository. As [gitRepo](https://kubernetes.io/docs/concepts/storage/volumes/#gitrepo) volume has been deprecated, we will not use this repository as volume directly. Instead, we will create a [configMap](https://kubernetes.io/docs/concepts/storage/volumes/#configmap) from these data and use that ConfigMap as data source.
 
 Let's create a ConfigMap from these sample data,
 
