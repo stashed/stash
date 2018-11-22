@@ -26,7 +26,7 @@ CoreOS [prometheus-operator](https://github.com/coreos/prometheus-operator) prov
   namespace/demo created
   ```
 
-- We need a CoreOS prometheus-operator instance running. If you already don't have a running instance, deploy one following the official docs from [here](https://github.com/coreos/prometheus-operator/blob/master/Documentation/user-guides/getting-started.md).
+- We need a CoreOS prometheus-operator instance running. If you already don't have a running instance, deploy one following the docs from [here](https://github.com/kmodules/third-party-tools/blob/master/monitoring/prometheus/coreos-operator/README.md).
 
 ## Enable Monitoring in Stash
 
@@ -102,7 +102,7 @@ Now, we are ready to deploy Prometheus server.
 
 In order to deploy Prometheus server, we have to create `Prometheus` crd. Prometheus crd defines a desired Prometheus server setup. For more details about `Prometheus` crd, please visit [here](https://github.com/coreos/prometheus-operator/blob/master/Documentation/design.md#prometheus).
 
-If you are using a RBAC enabled cluster, you have to give necessary permissions to Prometheus. Check official documentation to see required RBAC permission from [here](https://github.com/coreos/prometheus-operator/blob/master/Documentation/user-guides/getting-started.md#enable-rbac-rules-for-prometheus-pods).
+If you are using a RBAC enabled cluster, you have to give necessary permissions to Prometheus. Check the documentation to see required RBAC permission from [here](https://github.com/kmodules/third-party-tools/blob/master/monitoring/prometheus/coreos-operator/README.md#deploy-prometheus-server).
 
 **Create Prometheus:**
 

@@ -129,7 +129,6 @@ MONITORING_AGENT_COREOS_OPERATOR="prometheus.io/coreos-operator"
 export MONITORING_AGENT=${MONITORING_AGENT:-$MONITORING_AGENT_NONE}
 export MONITORING_BACKUP=${MONITORING_BACKUP:-false}
 export MONITORING_OPERATOR=${MONITORING_OPERATOR:-false}
-export PROMETHEUS_NAMESPACE=${PROMETHEUS_NAMESPACE:-$STASH_NAMESPACE}
 export SERVICE_MONITOR_LABEL_KEY="app"
 export SERVICE_MONITOR_LABEL_VALUE="stash"
 
@@ -176,7 +175,6 @@ while test $# -gt 0; do
       ;;
     --namespace*)
       export STASH_NAMESPACE=$(echo $1 | sed -e 's/^[^=]*=//g')
-      export PROMETHEUS_NAMESPACE=$STASH_NAMESPACE
       shift
       ;;
     --docker-registry*)
@@ -285,6 +283,8 @@ while test $# -gt 0; do
       ;;
   esac
 done
+
+export PROMETHEUS_NAMESPACE=${PROMETHEUS_NAMESPACE:-$STASH_NAMESPACE}
 
 if [ "$STASH_UNINSTALL" -eq 1 ]; then
   # delete webhooks and apiservices
