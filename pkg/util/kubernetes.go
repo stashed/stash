@@ -349,7 +349,6 @@ func NewRecoveryJob(stashClient cs.Interface, recovery *api.Recovery, image dock
 		Spec: batch.JobSpec{
 			Template: core.PodTemplateSpec{
 				Spec: core.PodSpec{
-					NodeSelector: recovery.Spec.NodeSelector,
 					Containers: []core.Container{
 						{
 							Name:  StashContainer,
@@ -381,10 +380,15 @@ func NewRecoveryJob(stashClient cs.Interface, recovery *api.Recovery, image dock
 							EmptyDir: &core.EmptyDirVolumeSource{},
 						},
 					}),
-					NodeName: repoLabelData.NodeName,
 				},
 			},
 		},
+	}
+
+	if repoLabelData.WorkloadKind == api.KindDaemonSet {
+		job.Spec.Template.Spec.NodeName = repoLabelData.NodeName
+	} else {
+		job.Spec.Template.Spec.NodeSelector = recovery.Spec.NodeSelector
 	}
 
 	// local backend
