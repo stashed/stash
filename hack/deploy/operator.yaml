@@ -33,6 +33,7 @@ spec:
         - --tls-cert-file=/var/serving-cert/tls.crt
         - --tls-private-key-file=/var/serving-cert/tls.key
         - --service-name=${STASH_SERVICE_NAME}
+        - --enable-mutating-webhook=${STASH_ENABLE_MUTATING_WEBHOOK}
         - --enable-validating-webhook=${STASH_ENABLE_VALIDATING_WEBHOOK}
         - --bypass-validating-webhook-xray=${STASH_BYPASS_VALIDATING_WEBHOOK_XRAY}
         - --enable-status-subresource=${STASH_ENABLE_STATUS_SUBRESOURCE}
