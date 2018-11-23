@@ -1,5 +1,5 @@
-hash: 465b66d019af7aee1e041b1b94ae8668d55288db4a1e740c0f795d98b4f949ab
-updated: 2018-10-13T10:28:21.651277908-07:00
+hash: 4f8094db058fef42adf0b07136b9208a6c6d50a6c634cfabc9c42f108429d9b5
+updated: 2018-11-22T10:37:36.23976049-08:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -9,7 +9,7 @@ imports:
   - compute/metadata
   - internal
 - name: github.com/appscode/go
-  version: 0499c350ad263174dc8c1e3006b2d3300ff398e6
+  version: a6d58457b39324ead2ffb1f24be7a0a638c9f112
   subpackages:
   - analytics
   - context
@@ -42,7 +42,7 @@ imports:
   - registry/admissionreview/v1beta1
   - runtime/serializer/versioning
 - name: github.com/appscode/kutil
-  version: 303298aa86dad096fed4c49ba117700e506eca2c
+  version: 5e4dc08e9e6e00fcf397b7186a3918dc4dcb9426
   subpackages:
   - admissionregistration/v1beta1
   - apiextensions/v1beta1
@@ -51,6 +51,7 @@ imports:
   - batch/v1beta1
   - core/v1
   - discovery
+  - dynamic
   - meta
   - openapi
   - rbac/v1
@@ -63,7 +64,7 @@ imports:
 - name: github.com/appscode/ocutil
   version: 9e3ab89e810deaabe1fd353d01913aaf7dbe6e6d
 - name: github.com/appscode/osm
-  version: a5b59095bc83b037afae084523b1411fedffc38f
+  version: 1afd84f09007c717e2a46e9d87e30902d8331b91
   subpackages:
   - context
 - name: github.com/appscode/pat
@@ -360,7 +361,7 @@ imports:
 - name: github.com/modern-go/reflect2
   version: 05fbef0ca5da472bbf96c9322b84a53edc03c9fd
 - name: github.com/ncw/swift
-  version: 6f907bcc698fc1d24fa918255b18c6c5668b8b2b
+  version: 6f342da371d063863f2f354f183e4ab0ef72d287
 - name: github.com/NYTimes/gziphandler
   version: 56545f4a5d46df9a6648819d1664c3a03a13ffdb
 - name: github.com/onsi/ginkgo
@@ -435,15 +436,13 @@ imports:
 - name: github.com/PuerkitoBio/urlesc
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/russross/blackfriday
-  version: 300106c228d52c8941d4b3de6054a6062a86dda3
+  version: 05f3235734ad95d0016f6a23902f06461fcf567a
 - name: github.com/satori/go.uuid
   version: f58768cc1a7a7e77a3bd49e98cdd21419399b6a3
 - name: github.com/sergi/go-diff
   version: 97b2266dfe4bd4ea1b81a463322f04f8b724801e
   subpackages:
   - diffmatchpatch
-- name: github.com/shurcooL/sanitized_anchor_name
-  version: 10ef21a441db47d8b13ebcc5fd2310f636973c77
 - name: github.com/sirupsen/logrus
   version: 89742aefa4b206dcf400792f3bd35b542998eb3b
 - name: github.com/spf13/afero
@@ -455,7 +454,7 @@ imports:
   subpackages:
   - doc
 - name: github.com/spf13/pflag
-  version: 583c0c0531f06d5278b7d917446061adc344b5cd
+  version: 298182f68c66c05229eb03ac171abe6e309ee79a
 - name: github.com/ugorji/go
   version: ded73eae5db7e7a0ef6f55aace87a2873c5d2b74
   subpackages:
@@ -534,7 +533,7 @@ imports:
   - googleapi/internal/uritemplates
   - storage/v1
 - name: google.golang.org/appengine
-  version: ae0ab99deb4dc413a2b4bd6c8bdd0eb67f1e4d06
+  version: 4a4468ece617fc8205e99368fa2200e9d1fad421
   subpackages:
   - internal
   - internal/app_identity
@@ -581,7 +580,7 @@ imports:
   repo: https://github.com/appscode/cron.git
   vcs: git
 - name: gopkg.in/yaml.v2
-  version: 670d4cfef0544295bc27a114dbac37980d83185a
+  version: 5420a8b6744d3b0345ab293f6fcba19c978f1183
 - name: k8s.io/api
   version: fd83cbc87e7632ccd8bbab63d2b673d4e0c631cc
   subpackages:
@@ -626,7 +625,7 @@ imports:
   - pkg/client/clientset/clientset/typed/apiextensions/v1beta1
   - pkg/features
 - name: k8s.io/apimachinery
-  version: 8d7a0c3d7f0948197f384288363dfe20cd1f00e4
+  version: 00edbc532482e56a75224c794deaa1366dd292cb
   repo: https://github.com/kmodules/apimachinery.git
   vcs: git
   subpackages:
@@ -668,6 +667,7 @@ imports:
   - pkg/util/httpstream/spdy
   - pkg/util/intstr
   - pkg/util/json
+  - pkg/util/jsonmergepatch
   - pkg/util/mergepatch
   - pkg/util/naming
   - pkg/util/net

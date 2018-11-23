@@ -34,6 +34,8 @@ func RegisterCRDs(client crd_cs.ApiextensionsV1beta1Interface, crds []*crd_api.C
 				if crd.Spec.Subresources.Scale != nil && existing.Spec.Subresources.Scale == nil {
 					existing.Spec.Subresources.Scale = crd.Spec.Subresources.Scale
 				}
+			} else if crd.Spec.Subresources == nil && existing.Spec.Subresources != nil {
+				existing.Spec.Subresources = nil
 			}
 			_, err = client.CustomResourceDefinitions().Update(existing)
 			if err != nil {

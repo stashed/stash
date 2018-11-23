@@ -33,10 +33,22 @@ spec:
         - --tls-cert-file=/var/serving-cert/tls.crt
         - --tls-private-key-file=/var/serving-cert/tls.key
         - --service-name=${STASH_SERVICE_NAME}
+        - --enable-validating-webhook=${STASH_ENABLE_VALIDATING_WEBHOOK}
+        - --bypass-validating-webhook-xray=${STASH_BYPASS_VALIDATING_WEBHOOK_XRAY}
         - --enable-status-subresource=${STASH_ENABLE_STATUS_SUBRESOURCE}
+        - --use-kubeapiserver-fqdn-for-aks=${STASH_USE_KUBEAPISERVER_FQDN_FOR_AKS}
         - --enable-analytics=${STASH_ENABLE_ANALYTICS}
         ports:
         - containerPort: 8443
+        env:
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         resources:
           requests:
             cpu: "100m"

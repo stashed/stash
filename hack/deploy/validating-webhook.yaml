@@ -23,6 +23,7 @@ webhooks:
     resources:
     - restics
   failurePolicy: Fail
+  ${STASH_WEBHOOK_SIDE_EFFECTS}
 - name: recovery.admission.stash.appscode.com
   clientConfig:
     service:
@@ -41,6 +42,7 @@ webhooks:
     resources:
     - recoveries
   failurePolicy: Fail
+  ${STASH_WEBHOOK_SIDE_EFFECTS}
 - name: repository.admission.stash.appscode.com
   clientConfig:
     service:
@@ -59,3 +61,4 @@ webhooks:
     resources:
     - repositories
   failurePolicy: Fail
+  ${STASH_WEBHOOK_SIDE_EFFECTS}

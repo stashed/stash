@@ -77,6 +77,10 @@ func init() {
 	pflag.BoolVar(&fixAKS, "use-kubeapiserver-fqdn-for-aks", fixAKS, "if true, uses kube-apiserver FQDN for AKS cluster to workaround https://github.com/Azure/AKS/issues/522")
 }
 
+func UseKubeAPIServerFQDNForAKS() bool {
+	return fixAKS
+}
+
 // FixAKS uses kube-apiserver FQDN for AKS cluster to workaround https://github.com/Azure/AKS/issues/522
 func Fix(cfg *rest.Config) *rest.Config {
 	if cfg == nil || !fixAKS {

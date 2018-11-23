@@ -6,6 +6,7 @@ import (
 
 	stringz "github.com/appscode/go/strings"
 	v "github.com/appscode/go/version"
+	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client/clientset/versioned"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/docker"
@@ -15,15 +16,17 @@ import (
 )
 
 type ExtraOptions struct {
-	EnableRBAC     bool
-	StashImageTag  string
-	DockerRegistry string
-	MaxNumRequeues int
-	NumThreads     int
-	ScratchDir     string
-	QPS            float64
-	Burst          int
-	ResyncPeriod   time.Duration
+	EnableRBAC              bool
+	StashImageTag           string
+	DockerRegistry          string
+	MaxNumRequeues          int
+	NumThreads              int
+	ScratchDir              string
+	QPS                     float64
+	Burst                   int
+	ResyncPeriod            time.Duration
+	EnableValidatingWebhook bool
+	EnableMutatingWebhook   bool
 }
 
 func NewExtraOptions() *ExtraOptions {
@@ -48,6 +51,11 @@ func (s *ExtraOptions) AddGoFlags(fs *flag.FlagSet) {
 	fs.Float64Var(&s.QPS, "qps", s.QPS, "The maximum QPS to the master from this client")
 	fs.IntVar(&s.Burst, "burst", s.Burst, "The maximum burst for throttle")
 	fs.DurationVar(&s.ResyncPeriod, "resync-period", s.ResyncPeriod, "If non-zero, will re-list this often. Otherwise, re-list will be delayed aslong as possible (until the upstream source closes the watch or times out.")
+
+	fs.BoolVar(&s.EnableMutatingWebhook, "enable-mutating-webhook", s.EnableMutatingWebhook, "If true, enables mutating webhooks for KubeDB CRDs.")
+	fs.BoolVar(&s.EnableValidatingWebhook, "enable-validating-webhook", s.EnableValidatingWebhook, "If true, enables validating webhooks for KubeDB CRDs.")
+	fs.BoolVar(&api.EnableStatusSubresource, "enable-status-subresource", api.EnableStatusSubresource, "If true, uses sub resource for KubeDB crds.")
+
 }
 
 func (s *ExtraOptions) AddFlags(fs *pflag.FlagSet) {
@@ -65,9 +73,10 @@ func (s *ExtraOptions) ApplyTo(cfg *controller.Config) error {
 	cfg.MaxNumRequeues = s.MaxNumRequeues
 	cfg.NumThreads = s.NumThreads
 	cfg.ResyncPeriod = s.ResyncPeriod
-
 	cfg.ClientConfig.QPS = float32(s.QPS)
 	cfg.ClientConfig.Burst = s.Burst
+	cfg.EnableMutatingWebhook = s.EnableMutatingWebhook
+	cfg.EnableValidatingWebhook = s.EnableValidatingWebhook
 
 	if cfg.KubeClient, err = kubernetes.NewForConfig(cfg.ClientConfig); err != nil {
 		return err

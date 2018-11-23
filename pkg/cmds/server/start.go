@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 
+	"github.com/appscode/kutil/tools/clientcmd"
 	"github.com/appscode/stash/apis/repositories/v1alpha1"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/server"
@@ -62,6 +63,9 @@ func (o StashOptions) Config() (*server.StashConfig, error) {
 	if err := o.RecommendedOptions.ApplyTo(serverConfig, server.Scheme); err != nil {
 		return nil, err
 	}
+	// Fixes https://github.com/Azure/AKS/issues/522
+	clientcmd.Fix(serverConfig.ClientConfig)
+
 	serverConfig.OpenAPIConfig = genericapiserver.DefaultOpenAPIConfig(v1alpha1.GetOpenAPIDefinitions, openapinamer.NewDefinitionNamer(server.Scheme))
 	serverConfig.OpenAPIConfig.Info.Title = "stash-server"
 	serverConfig.OpenAPIConfig.Info.Version = v1alpha1.SchemeGroupVersion.Version

@@ -14,7 +14,7 @@ pushgateway:
 cleaner:
   registry: appscode
   repository: kubectl
-  tag: v1.11
+  tag: v1.12
 ## Optionally specify an array of imagePullSecrets.
 ## Secrets must be manually created in the namespace.
 ## ref: https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod
@@ -39,7 +39,9 @@ annotations: {}
 ## Node labels for pod assignment
 ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
 ##
-nodeSelector: {}
+nodeSelector:
+  beta.kubernetes.io/os: linux
+  beta.kubernetes.io/arch: amd64
 
 ## Tolerations for pod assignment
 ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
@@ -81,6 +83,10 @@ apiserver:
   # If true, disables status sub resource for crds.
   # Otherwise, enables status sub resource for Kubernetes version >= 1.11 and disables for other versions.
   disableStatusSubresource: false
+  # If true, bypasses validating webhook xray checks
+  bypassValidatingWebhookXray: false
+  # If true, uses kube-apiserver FQDN for AKS cluster to workaround https://github.com/Azure/AKS/issues/522 (default true)
+  useKubeapiserverFqdnForAks: true
 
 # Send usage events to Google Analytics
 enableAnalytics: true

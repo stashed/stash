@@ -1,3 +1,6 @@
+# GKE returns Major:"1", Minor:"10+"
+{{- $major := default "0" .Capabilities.KubeVersion.Major | trimSuffix "+" | int64 }}
+{{- $minor := default "0" .Capabilities.KubeVersion.Minor | trimSuffix "+" | int64 }}
 {{- if .Values.apiserver.enableMutatingWebhook }}
 apiVersion: admissionregistration.k8s.io/v1beta1
 kind: MutatingWebhookConfiguration
@@ -31,6 +34,9 @@ webhooks:
     resources:
     - deployments
   failurePolicy: Fail
+{{- if and (ge $major 1) (ge $minor 12) }}
+  sideEffects: None
+{{- end }}
 - name: daemonset.admission.stash.appscode.com
   clientConfig:
     service:
@@ -50,6 +56,9 @@ webhooks:
     resources:
     - daemonsets
   failurePolicy: Fail
+{{- if and (ge $major 1) (ge $minor 12) }}
+  sideEffects: None
+{{- end }}
 - name: statefulset.admission.stash.appscode.com
   clientConfig:
     service:
@@ -67,6 +76,9 @@ webhooks:
     resources:
     - statefulsets
   failurePolicy: Fail
+{{- if and (ge $major 1) (ge $minor 12) }}
+  sideEffects: None
+{{- end }}
 - name: replicationcontroller.admission.stash.appscode.com
   clientConfig:
     service:
@@ -85,6 +97,9 @@ webhooks:
     resources:
     - replicationcontrollers
   failurePolicy: Fail
+{{- if and (ge $major 1) (ge $minor 12) }}
+  sideEffects: None
+{{- end }}
 - name: replicaset.admission.stash.appscode.com
   clientConfig:
     service:
@@ -104,4 +119,7 @@ webhooks:
     resources:
     - replicasets
   failurePolicy: Fail
+{{- if and (ge $major 1) (ge $minor 12) }}
+  sideEffects: None
+{{- end }}
 {{ end }}

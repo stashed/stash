@@ -117,12 +117,12 @@ func AlreadyObserved2(old, nu interface{}, enableStatusSubresource bool) bool {
 	var match bool
 
 	if enableStatusSubresource {
-		oldObserved, err := types.ParseIntHash(oldStruct.Field("Status").Field("ObservedGeneration").Value())
+		observed, err := types.ParseIntHash(nuStruct.Field("Status").Field("ObservedGeneration").Value())
 		if err != nil {
 			panic(err)
 		}
-		nuObserved := types.NewIntHash(nuObj.GetGeneration(), GenerationHash(nuObj))
-		match = nuObserved.Equal(oldObserved)
+		gen := types.NewIntHash(nuObj.GetGeneration(), GenerationHash(nuObj))
+		match = gen.Equal(observed)
 	} else {
 		match = Equal(oldStruct.Field("Spec").Value(), nuStruct.Field("Spec").Value())
 		if match {
