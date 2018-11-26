@@ -16,12 +16,10 @@ const (
 	OperatorName             = "stash-operator"
 )
 
-func (fi *Invocation) PodTemplate() core.PodTemplateSpec {
+func (fi *Invocation) PodTemplate(labels map[string]string) core.PodTemplateSpec {
 	return core.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{
-				"app": fi.app,
-			},
+			Labels: labels,
 		},
 		Spec: core.PodSpec{
 			Containers: []core.Container{

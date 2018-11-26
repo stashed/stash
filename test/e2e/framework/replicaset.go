@@ -9,17 +9,22 @@ import (
 )
 
 func (fi *Invocation) ReplicaSet() apps.ReplicaSet {
+	labels := map[string]string{
+		"app":  fi.app,
+		"kind": "replicaset",
+	}
 	return apps.ReplicaSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
 			Namespace: fi.namespace,
-			Labels: map[string]string{
-				"app": fi.app,
-			},
+			Labels:    labels,
 		},
 		Spec: apps.ReplicaSetSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: labels,
+			},
 			Replicas: types.Int32P(1),
-			Template: fi.PodTemplate(),
+			Template: fi.PodTemplate(labels),
 		},
 	}
 }

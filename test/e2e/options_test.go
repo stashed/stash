@@ -23,7 +23,7 @@ var (
 	options = &E2EOptions{
 		ExtraOptions:       server.NewExtraOptions(),
 		KubeConfig:         filepath.Join(homedir.HomeDir(), ".kube", "config"),
-		EnableWebhook:      false,
+		EnableWebhook:      true,
 		SelfHostedOperator: false,
 	}
 )
@@ -37,6 +37,9 @@ func init() {
 	flag.BoolVar(&options.SelfHostedOperator, "selfhosted-operator", options.SelfHostedOperator, "Run test in self hosted operator mode")
 	enableLogging()
 	flag.Parse()
+
+	options.EnableMutatingWebhook = options.EnableWebhook
+	options.EnableValidatingWebhook = options.EnableWebhook
 }
 
 func enableLogging() {

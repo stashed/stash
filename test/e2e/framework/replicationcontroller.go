@@ -9,7 +9,11 @@ import (
 )
 
 func (fi *Invocation) ReplicationController() core.ReplicationController {
-	podTemplate := fi.PodTemplate()
+	labels := map[string]string{
+		"app":  fi.app,
+		"kind": "replicationcontroller",
+	}
+	podTemplate := fi.PodTemplate(labels)
 	return core.ReplicationController{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),

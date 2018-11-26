@@ -21,10 +21,6 @@ import (
 	"k8s.io/client-go/tools/reference"
 )
 
-const (
-	LeaderElectionLease = 3 * time.Second
-)
-
 func (c *Controller) BackupScheduler() error {
 	stopBackup := make(chan struct{})
 	defer close(stopBackup)
@@ -80,9 +76,9 @@ func (c *Controller) electLeader() error {
 	go func() {
 		leaderelection.RunOrDie(context.Background(), leaderelection.LeaderElectionConfig{
 			Lock:          resLock,
-			LeaseDuration: LeaderElectionLease,
-			RenewDeadline: LeaderElectionLease * 2 / 3,
-			RetryPeriod:   LeaderElectionLease / 3,
+			LeaseDuration: 15 * time.Second,
+			RenewDeadline: 10 * time.Second,
+			RetryPeriod:   2 * time.Second,
 			Callbacks: leaderelection.LeaderCallbacks{
 				OnStartedLeading: func(ctx context.Context) {
 					log.Infoln("Got leadership, preparing backup backup")
