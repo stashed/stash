@@ -9,18 +9,23 @@ import (
 )
 
 func (fi *Invocation) DaemonSet() apps.DaemonSet {
+	labels := map[string]string{
+		"app":  fi.app,
+		"kind": "daemonset",
+	}
 	daemon := apps.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
 			Namespace: fi.namespace,
-			Labels: map[string]string{
-				"app": fi.app,
-			},
+			Labels:    labels,
 		},
 		Spec: apps.DaemonSetSpec{
-			Template: fi.PodTemplate(),
+			Selector: &metav1.LabelSelector{
+				MatchLabels: labels,
+			},
+			Template: fi.PodTemplate(labels),
 			UpdateStrategy: apps.DaemonSetUpdateStrategy{
-				RollingUpdate: &apps.RollingUpdateDaemonSet{MaxUnavailable: &intstr.IntOrString{IntVal: 0}},
+				RollingUpdate: &apps.RollingUpdateDaemonSet{MaxUnavailable: &intstr.IntOrString{IntVal: 1}},
 			},
 		},
 	}

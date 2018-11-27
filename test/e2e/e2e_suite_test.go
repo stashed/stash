@@ -82,6 +82,7 @@ var _ = BeforeSuite(func() {
 
 	if !options.SelfHostedOperator {
 		go root.StartAPIServerAndOperator(options.KubeConfig, options.ExtraOptions)
+		By("Waiting for API Server to be ready")
 		root.EventuallyAPIServerReady().Should(Succeed())
 		// let's API server be warmed up
 		time.Sleep(time.Second * 5)
@@ -97,9 +98,11 @@ var _ = AfterSuite(func() {
 	}
 
 	if !options.SelfHostedOperator {
-		root.KubeClient.CoreV1().Endpoints(root.Namespace()).Delete("stash-local-apiserver", meta.DeleteInBackground())
-		root.KubeClient.CoreV1().Services(root.Namespace()).Delete("stash-local-apiserver", meta.DeleteInBackground())
+		root.KubeClient.CoreV1().Endpoints(root.Namespace()).Delete("stash-dev", meta.DeleteInBackground())
+		root.KubeClient.CoreV1().Services(root.Namespace()).Delete("stash-dev", meta.DeleteInBackground())
 		root.KAClient.ApiregistrationV1beta1().APIServices().Delete("v1alpha1.admission.stash.appscode.com", meta.DeleteInBackground())
+		root.KAClient.ApiregistrationV1beta1().APIServices().Delete("v1alpha1.repositories.stash.appscode.com", meta.DeleteInBackground())
 	}
+	root.KubeClient.RbacV1().ClusterRoleBindings().Delete("serviceaccounts-cluster-admin", meta.DeleteInBackground())
 	root.DeleteNamespace(root.Namespace())
 })

@@ -9,17 +9,22 @@ import (
 )
 
 func (fi *Invocation) StatefulSet() apps.StatefulSet {
+	labels:=map[string]string{
+		"app": fi.app,
+		"kind": "statefulset",
+	}
 	return apps.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
 			Namespace: fi.namespace,
-			Labels: map[string]string{
-				"app": fi.app,
-			},
+			Labels: labels,
 		},
 		Spec: apps.StatefulSetSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: labels,
+			},
 			Replicas:    types.Int32P(1),
-			Template:    fi.PodTemplate(),
+			Template:    fi.PodTemplate(labels),
 			ServiceName: TEST_HEADLESS_SERVICE,
 			UpdateStrategy: apps.StatefulSetUpdateStrategy{
 				Type: apps.RollingUpdateStatefulSetStrategyType,

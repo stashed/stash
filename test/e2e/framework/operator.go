@@ -35,7 +35,7 @@ func (f *Framework) StartAPIServerAndOperator(kubeConfigPath string, extraOption
 	defer GinkgoRecover()
 
 	sh := shell.NewSession()
-	args := []interface{}{"--namespace", f.Namespace(), "--test=true"}
+	args := []interface{}{"--namespace=" + f.Namespace(), "--test=true"}
 	if !f.WebhookEnabled {
 		args = append(args, "--enable-webhook=false")
 	}

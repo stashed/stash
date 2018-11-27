@@ -9,17 +9,22 @@ import (
 )
 
 func (fi *Invocation) Deployment() apps.Deployment {
+	labels := map[string]string{
+		"app":  fi.app,
+		"kind": "deployment",
+	}
 	return apps.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
 			Namespace: fi.namespace,
-			Labels: map[string]string{
-				"app": fi.app,
-			},
+			Labels:    labels,
 		},
 		Spec: apps.DeploymentSpec{
 			Replicas: types.Int32P(1),
-			Template: fi.PodTemplate(),
+			Selector: &metav1.LabelSelector{
+				MatchLabels: labels,
+			},
+			Template: fi.PodTemplate(labels),
 		},
 	}
 }
