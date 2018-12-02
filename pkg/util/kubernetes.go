@@ -7,11 +7,11 @@ import (
 	"strings"
 
 	"github.com/appscode/go/log"
-	"github.com/appscode/go/log/golog"
 	"github.com/appscode/go/types"
 	core_util "github.com/appscode/kutil/core/v1"
 	"github.com/appscode/kutil/meta"
 	"github.com/appscode/kutil/tools/analytics"
+	"github.com/appscode/kutil/tools/cli"
 	"github.com/appscode/kutil/tools/clientcmd"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client/clientset/versioned"
@@ -48,16 +48,12 @@ const (
 	AppLabelStash      = "stash"
 	OperationScaleDown = "scale-down"
 
-	RepositoryFinalizer            = "stash"
-	SnapshotIDLength               = 8
-	SnapshotIDLengthWithDashPrefix = 9
+	RepositoryFinalizer = "stash"
+	SnapshotIDLength    = 8
 )
 
 var (
-	AnalyticsClientID string
-	ServiceName       string
-	EnableAnalytics   = true
-	LoggerOptions     golog.Options
+	ServiceName string
 )
 
 type RepoLabelData struct {
@@ -141,9 +137,9 @@ func NewInitContainer(r *api.Restic, workload api.LocalTypedReference, image doc
 		"--pushgateway-url=" + PushgatewayURL(),
 		fmt.Sprintf("--enable-status-subresource=%v", api.EnableStatusSubresource),
 		fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
-		fmt.Sprintf("--enable-analytics=%v", EnableAnalytics),
+		fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
 	}
-	container.Args = append(container.Args, LoggerOptions.ToFlags()...)
+	container.Args = append(container.Args, cli.LoggerOptions.ToFlags()...)
 	if enableRBAC {
 		container.Args = append(container.Args, "--enable-rbac=true")
 	}
@@ -171,9 +167,9 @@ func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image 
 			"--pushgateway-url=" + PushgatewayURL(),
 			fmt.Sprintf("--enable-status-subresource=%v", api.EnableStatusSubresource),
 			fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
-			fmt.Sprintf("--enable-analytics=%v", EnableAnalytics),
+			fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
 			fmt.Sprintf("--enable-rbac=%v", enableRBAC),
-		}, LoggerOptions.ToFlags()...),
+		}, cli.LoggerOptions.ToFlags()...),
 		Env: []core.EnvVar{
 			{
 				Name: "NODE_NAME",
@@ -193,7 +189,7 @@ func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image 
 			},
 			{
 				Name:  analytics.Key,
-				Value: AnalyticsClientID,
+				Value: cli.AnalyticsClientID,
 			},
 		},
 		Resources: r.Spec.Resources,
@@ -358,12 +354,12 @@ func NewRecoveryJob(stashClient cs.Interface, recovery *api.Recovery, image dock
 								"--recovery-name=" + recovery.Name,
 								fmt.Sprintf("--enable-status-subresource=%v", api.EnableStatusSubresource),
 								fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
-								fmt.Sprintf("--enable-analytics=%v", EnableAnalytics),
-							}, LoggerOptions.ToFlags()...),
+								fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
+							}, cli.LoggerOptions.ToFlags()...),
 							Env: []core.EnvVar{
 								{
 									Name:  analytics.Key,
-									Value: AnalyticsClientID,
+									Value: cli.AnalyticsClientID,
 								},
 							},
 							VolumeMounts: append(volumeMounts, core.VolumeMount{
@@ -478,12 +474,12 @@ func NewCheckJob(restic *api.Restic, hostName, smartPrefix string, image docker.
 								"--smart-prefix=" + smartPrefix,
 								fmt.Sprintf("--enable-status-subresource=%v", api.EnableStatusSubresource),
 								fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
-								fmt.Sprintf("--enable-analytics=%v", EnableAnalytics),
-							}, LoggerOptions.ToFlags()...),
+								fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
+							}, cli.LoggerOptions.ToFlags()...),
 							Env: []core.EnvVar{
 								{
 									Name:  analytics.Key,
-									Value: AnalyticsClientID,
+									Value: cli.AnalyticsClientID,
 								},
 							},
 							VolumeMounts: []core.VolumeMount{

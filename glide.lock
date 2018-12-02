@@ -1,5 +1,5 @@
 hash: 4f8094db058fef42adf0b07136b9208a6c6d50a6c634cfabc9c42f108429d9b5
-updated: 2018-11-22T10:37:36.23976049-08:00
+updated: 2018-12-01T20:09:58.704356789-08:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -42,7 +42,7 @@ imports:
   - registry/admissionreview/v1beta1
   - runtime/serializer/versioning
 - name: github.com/appscode/kutil
-  version: 5e4dc08e9e6e00fcf397b7186a3918dc4dcb9426
+  version: 239838b6231b8a27a66426e25678351ce50c4cfd
   subpackages:
   - admissionregistration/v1beta1
   - apiextensions/v1beta1
@@ -57,6 +57,7 @@ imports:
   - rbac/v1
   - tools/analytics
   - tools/certstore
+  - tools/cli
   - tools/clientcmd
   - tools/queue
 - name: github.com/appscode/mergo
