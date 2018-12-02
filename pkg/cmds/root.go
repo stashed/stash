@@ -4,15 +4,13 @@ import (
 	"flag"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/appscode/go/log/golog"
 	v "github.com/appscode/go/version"
-	"github.com/appscode/kutil/tools/analytics"
+	"github.com/appscode/kutil/tools/cli"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/client/clientset/versioned/scheme"
 	"github.com/appscode/stash/pkg/util"
-	"github.com/jpillora/go-ogle-analytics"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	genericapiserver "k8s.io/apiserver/pkg/server"
@@ -34,24 +32,18 @@ func NewRootCmd() *cobra.Command {
 			c.Flags().VisitAll(func(flag *pflag.Flag) {
 				log.Printf("FLAG: --%s=%q", flag.Name, flag.Value)
 			})
-			if util.EnableAnalytics && gaTrackingCode != "" {
-				if client, err := ga.NewClient(gaTrackingCode); err == nil {
-					util.AnalyticsClientID = analytics.ClientID()
-					client.ClientID(util.AnalyticsClientID)
-					parts := strings.Split(c.CommandPath(), " ")
-					client.Send(ga.NewEvent(parts[0], strings.Join(parts[1:], "/")).Label(v.Version.Version))
-				}
-			}
+			cli.SendAnalytics(c, v.Version.Version)
+
 			scheme.AddToScheme(clientsetscheme.Scheme)
 			scheme.AddToScheme(legacyscheme.Scheme)
-			util.LoggerOptions = golog.ParseFlags(c.Flags())
+			cli.LoggerOptions = golog.ParseFlags(c.Flags())
 		},
 	}
 	rootCmd.PersistentFlags().AddGoFlagSet(flag.CommandLine)
 	// ref: https://github.com/kubernetes/kubernetes/issues/17162#issuecomment-225596212
 	flag.CommandLine.Parse([]string{})
 	rootCmd.PersistentFlags().StringVar(&util.ServiceName, "service-name", "stash-operator", "Stash service name.")
-	rootCmd.PersistentFlags().BoolVar(&util.EnableAnalytics, "enable-analytics", util.EnableAnalytics, "Send analytical events to Google Analytics")
+	rootCmd.PersistentFlags().BoolVar(&cli.EnableAnalytics, "enable-analytics", cli.EnableAnalytics, "Send analytical events to Google Analytics")
 	rootCmd.PersistentFlags().BoolVar(&api.EnableStatusSubresource, "enable-status-subresource", api.EnableStatusSubresource, "If true, uses sub resource for crds.")
 
 	rootCmd.AddCommand(v.NewCmdVersion())

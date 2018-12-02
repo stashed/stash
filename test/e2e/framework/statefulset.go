@@ -9,15 +9,15 @@ import (
 )
 
 func (fi *Invocation) StatefulSet() apps.StatefulSet {
-	labels:=map[string]string{
-		"app": fi.app,
+	labels := map[string]string{
+		"app":  fi.app,
 		"kind": "statefulset",
 	}
 	return apps.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
 			Namespace: fi.namespace,
-			Labels: labels,
+			Labels:    labels,
 		},
 		Spec: apps.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{
