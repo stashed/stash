@@ -6,7 +6,7 @@ import (
 
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/prometheus/client_golang/prometheus/push"
-	"gopkg.in/ini.v1"
+	ini "gopkg.in/ini.v1"
 )
 
 var (

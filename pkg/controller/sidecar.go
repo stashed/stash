@@ -11,7 +11,6 @@ import (
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/util"
-	"k8s.io/api/core/v1"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,7 +24,7 @@ func (c *StashController) ensureWorkloadSidecar(w *wapi.Workload, oldRestic, new
 		sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
 		ref, err := reference.GetReference(scheme.Scheme, w)
 		if err != nil {
-			ref = &v1.ObjectReference{
+			ref = &core.ObjectReference{
 				Name:      w.Name,
 				Namespace: w.Namespace,
 			}
