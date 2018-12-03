@@ -37,32 +37,7 @@ BEGIN_IMPORT_REGEX = ur'import \(\s*'
 END_IMPORT_REGEX = ur'\)\s*'
 
 PKG_MAP = {
-    'k8s.io/kubernetes/pkg/api': ['k8s.io/client-go/pkg/api/v1', 'apiv1'],
-    'k8s.io/kubernetes/pkg/api/errors': ['k8s.io/apimachinery/pkg/api/errors', 'kerr'],
-    'k8s.io/kubernetes/pkg/api/unversioned': ['k8s.io/apimachinery/pkg/apis/meta/v1', 'metav1'],
-    'k8s.io/kubernetes/pkg/apimachinery/announced': ['k8s.io/apimachinery/pkg/apimachinery/announced'],
-    'k8s.io/kubernetes/pkg/apimachinery/registered': ['k8s.io/client-go/pkg/api', 'kapi'],
-    'k8s.io/kubernetes/pkg/apis/apps': ['k8s.io/client-go/pkg/apis/apps/v1beta1', 'apps'],
-    'k8s.io/kubernetes/pkg/apis/batch': ['k8s.io/client-go/pkg/apis/batch/v1', 'batch'],
-    'k8s.io/kubernetes/pkg/apis/extensions': ['k8s.io/client-go/pkg/apis/extensions/v1beta1', 'extensions'],
-    'k8s.io/kubernetes/pkg/apis/storage': ['k8s.io/client-go/pkg/apis/storage/v1', 'storage'],
-    'k8s.io/kubernetes/pkg/client/cache': ['k8s.io/client-go/tools/cache'],
-    'k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset': ['k8s.io/client-go/kubernetes', 'clientset'],
-    'k8s.io/kubernetes/pkg/client/record': ['k8s.io/client-go/tools/record'],
-    'k8s.io/kubernetes/pkg/client/restclient': ['k8s.io/client-go/rest'],
-    'k8s.io/kubernetes/pkg/client/testing/core': ['k8s.io/client-go/testing'],
-    'k8s.io/kubernetes/pkg/client/unversioned/clientcmd': ['k8s.io/client-go/tools/clientcmd'],
-    'k8s.io/kubernetes/pkg/fields': ['k8s.io/apimachinery/pkg/fields'],
-    'k8s.io/kubernetes/pkg/labels': ['k8s.io/apimachinery/pkg/labels'],
-    'k8s.io/kubernetes/pkg/runtime': ['k8s.io/apimachinery/pkg/runtime'],
-    'k8s.io/kubernetes/pkg/selection': ['k8s.io/apimachinery/pkg/selection'],
-    'k8s.io/kubernetes/pkg/types': ['k8s.io/apimachinery/pkg/types'],
-    'k8s.io/kubernetes/pkg/util/intstr':['k8s.io/apimachinery/pkg/util/intstr'],
-    'k8s.io/kubernetes/pkg/util/runtime': ['k8s.io/apimachinery/pkg/util/runtime'],
-    'k8s.io/kubernetes/pkg/util/sets':['k8s.io/apimachinery/pkg/util/sets'],
-    'k8s.io/kubernetes/pkg/util/strategicpatch': ['k8s.io/apimachinery/pkg/util/strategicpatch'],
-    'k8s.io/kubernetes/pkg/util/wait': ['k8s.io/apimachinery/pkg/util/wait'],
-    'k8s.io/kubernetes/pkg/watch': ['k8s.io/apimachinery/pkg/watch'],
+    'k8s.io/apimachinery/pkg/api/testing/roundtrip': ['k8s.io/apimachinery/pkg/api/apitesting/roundtrip']
 }
 
 def _detect_pkg_alias(line):

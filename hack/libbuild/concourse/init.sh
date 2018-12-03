@@ -4,7 +4,7 @@ BASE_DIR=$(pwd)
 GOPATH=$(go env GOPATH)
 REPO_ROOT=${REPO_ROOT:-"$GOPATH/src/github.com/$ORG_NAME/$REPO_NAME"}
 PHARMER_VERSION="0.1.0-rc.5"
-ONESSL_VERSION="0.7.0"
+ONESSL_VERSION="0.8.0"
 ClusterProvider=$ClusterProvider
 
 # copy $REPO_ROOT to $GOPATH
