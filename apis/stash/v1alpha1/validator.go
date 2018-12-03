@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"gopkg.in/robfig/cron.v2"
+	cron "gopkg.in/robfig/cron.v2"
 )
 
 func (r Restic) IsValid() error {

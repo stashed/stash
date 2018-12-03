@@ -6,8 +6,10 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 
+	"github.com/appscode/go/sets"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -70,8 +72,20 @@ func EnsureAlterableFlags(cmd *cobra.Command, name ...string) {
 	}
 }
 
-func DumpAll() {
-	pflag.VisitAll(func(flag *pflag.Flag) {
-		log.Printf("FLAG: --%s=%q", flag.Name, flag.Value)
+func DumpAll(fs *pflag.FlagSet, list ...string) {
+	bl := sets.NewString("secret", "token", "password", "credential")
+	if len(list) > 0 {
+		bl.Insert(list...)
+	}
+	fs.VisitAll(func(flag *pflag.Flag) {
+		name := strings.ToLower(flag.Name)
+		val := flag.Value.String()
+		for _, keyword := range bl.UnsortedList() {
+			if strings.Contains(name, keyword) {
+				val = "***REDACTED***"
+				break
+			}
+		}
+		log.Printf("FLAG: --%s=%q", flag.Name, val)
 	})
 }

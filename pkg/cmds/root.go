@@ -2,9 +2,9 @@ package cmds
 
 import (
 	"flag"
-	"log"
 	"os"
 
+	"github.com/appscode/go/flags"
 	"github.com/appscode/go/log/golog"
 	v "github.com/appscode/go/version"
 	"github.com/appscode/kutil/tools/cli"
@@ -12,14 +12,9 @@ import (
 	"github.com/appscode/stash/client/clientset/versioned/scheme"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
-)
-
-const (
-	gaTrackingCode = "UA-62096468-20"
 )
 
 func NewRootCmd() *cobra.Command {
@@ -29,9 +24,7 @@ func NewRootCmd() *cobra.Command {
 		Long:              `Stash is a Kubernetes operator for restic. For more information, visit here: https://appscode.com/products/stash`,
 		DisableAutoGenTag: true,
 		PersistentPreRun: func(c *cobra.Command, args []string) {
-			c.Flags().VisitAll(func(flag *pflag.Flag) {
-				log.Printf("FLAG: --%s=%q", flag.Name, flag.Value)
-			})
+			flags.DumpAll(c.Flags())
 			cli.SendAnalytics(c, v.Version.Version)
 
 			scheme.AddToScheme(clientsetscheme.Scheme)

@@ -1,5 +1,5 @@
 hash: 4f8094db058fef42adf0b07136b9208a6c6d50a6c634cfabc9c42f108429d9b5
-updated: 2018-12-01T20:09:58.704356789-08:00
+updated: 2018-12-03T14:10:17.769494304-08:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -9,7 +9,7 @@ imports:
   - compute/metadata
   - internal
 - name: github.com/appscode/go
-  version: a6d58457b39324ead2ffb1f24be7a0a638c9f112
+  version: aa0a55d74dac66f9b9bec9c0e7b67944115a3f44
   subpackages:
   - analytics
   - context
@@ -290,7 +290,7 @@ imports:
 - name: github.com/google/btree
   version: 7d79101e329e5a3adf994758c578dab82b90c017
 - name: github.com/google/go-cmp
-  version: 3af367b6b30c263d47e8895973edcca9a49cf029
+  version: 2248b49eaa8e1c8c0963ee77b40841adbc19d4ca
   subpackages:
   - cmp
   - cmp/internal/diff
@@ -534,7 +534,7 @@ imports:
   - googleapi/internal/uritemplates
   - storage/v1
 - name: google.golang.org/appengine
-  version: 4a4468ece617fc8205e99368fa2200e9d1fad421
+  version: 12d5545dc1cfa6047a286d5e853841b6471f4c19
   subpackages:
   - internal
   - internal/app_identity
