@@ -130,7 +130,8 @@ At first, we need to create a secret for `Restic` crd. To configure this backend
 | `RESTIC_PASSWORD`       | `Required`. Password used to encrypt snapshots by `restic` |
 | `AWS_ACCESS_KEY_ID`     | `Required`. Rook access key                                |
 | `AWS_SECRET_ACCESS_KEY` | `Required`. Rook secret key                                |
-Create secret for `Restic` crd,
+
+Create the secret as below,
 
 ```console
 $ echo -n 'changeit' > RESTIC_PASSWORD

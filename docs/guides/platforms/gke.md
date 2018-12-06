@@ -19,16 +19,17 @@ This tutorial will show you how to use Stash to **backup** and **restore** a Kub
 
 ## Before You Begin
 
-At first, you need to have a Kubernetes cluster in Google Cloud Platform. If you don't already have a cluster, you can create one from [here](https://console.cloud.google.com/kubernetes). Now, install Stash in your cluster following the steps [here](/docs/setup/install.md).
+At first, you need to have a Kubernetes cluster in Google Cloud Platform. If you don't already have a cluster, you can create one from [here](https://console.cloud.google.com/kubernetes).
 
-You should have understanding the following Stash concepts:
+- Install Stash in your cluster following the steps [here](/docs/setup/install.md).
+- You should have understanding of following Stash concepts:
 
-- [Restic](/docs/concepts/crds/restic.md)
-- [Repository](/docs/concepts/crds/repository.md)
-- [Recovery](/docs/concepts/crds/recovery.md)
-- [Snapshot](/docs/concepts/crds/snapshot.md)
+  - [Restic](/docs/concepts/crds/restic.md)
+  - [Repository](/docs/concepts/crds/repository.md)
+  - [Recovery](/docs/concepts/crds/recovery.md)
+  - [Snapshot](/docs/concepts/crds/snapshot.md)
 
-Then, you will need to have a [GCS Bucket](https://console.cloud.google.com/storage) and [GCE persistent disk](https://console.cloud.google.com/compute/disks). GCE persistent disk must be in the same GCE project and zone as the cluster.
+- You will need to have a [GCS Bucket](https://console.cloud.google.com/storage) and [GCE persistent disk](https://console.cloud.google.com/compute/disks). GCE persistent disk must be in the same GCE project and zone as the cluster.
 
 To keep things isolated, we will use a separate namespace called `demo` throughout this tutorial.
 
@@ -120,9 +121,17 @@ README.md
 
 Now, we are ready backup `/source/data` directory into a [GCS bucket](/docs/guides/backends.md#google-cloud-storage-gcs),
 
-**Create Restic:**
+**Create Secret:**
 
-At first, we need to create a secret for `Restic` crd. Create a secret for `Restic` using following commands,
+At first, we need to create a storage secret that hold the credentials for the backend. To configure this backend, following secret keys are needed:
+
+|                Key                |                        Description                         |
+| --------------------------------- | ---------------------------------------------------------- |
+| `RESTIC_PASSWORD`                 | `Required`. Password used to encrypt snapshots by `restic` |
+| `GOOGLE_PROJECT_ID`               | `Required`. Google Cloud project ID                        |
+| `GOOGLE_SERVICE_ACCOUNT_JSON_KEY` | `Required`. Google Cloud service account json key          |
+
+Create storage secret as below,
 
 ```console
 $ echo -n 'changeit' > RESTIC_PASSWORD
@@ -157,6 +166,8 @@ metadata:
   uid: d5e70521-3d87-11e8-a5b9-42010a800002
 type: Opaque
 ```
+
+**Create Restic:**
 
 Now, we can create `Restic` crd. This will create a repository in the GCS bucket specified in `gcs.bucket` field and start taking periodic backup of `/source/data` directory.
 
@@ -203,7 +214,7 @@ NAME                          READY   STATUS    RESTARTS   AGE
 stash-demo-6b8c94cdd7-8jhtn   2/2     Running   1          1h
 ```
 
-Look at the pod. It now has 2 containers. If you view the YAML of this pod, you will see there is a container named `stash` which takes backup
+Look at the pod. It now has 2 containers. If you view the YAML of this pod, you will see there is a container named `stash` which running `backup` command.
 
 **Verify Backup:**
 
@@ -214,6 +225,8 @@ $ kubectl get repository deployment.stash-demo -n demo
 NAME                    BACKUPCOUNT   LASTSUCCESSFULBACKUP   AGE
 deployment.stash-demo   1             13s                    1m
 ```
+
+Here, `BACKUPCOUNT` field indicates number of backup snapshot has taken in this repository.
 
 `Restic` will take backup of the volume periodically with a 1-minute interval. You can verify that backup is taking successfully by,
 
@@ -290,7 +303,7 @@ spec:
         fsType: ext4
 ```
 
-Wait until `Recovery` job completes its task. To verify that recovery is completed successfully run,
+Wait until `Recovery` job completes its task. To verify that recovery has completed successfully run,
 
 ```console
 $ kubectl get recovery -n demo gcs-recovery
@@ -299,6 +312,12 @@ gcs-recovery     demo                  deployment.stash-demo              Succee
 ```
 
 Here, `PHASE` `Succeeded` indicate that our recovery has been completed successfully. Backup data has been restored in `stash-recovered` Persistent Disk. Now, we are ready to use this Persistent Disk to re-deploy workload.
+
+If you are using Kubernetes version older than v1.11.0 then run following command and check `status.phase` field to see whether the recovery succeeded or failed.
+
+```console
+$ kubectl get recovery -n demo rook-recovery -o yaml
+```
 
 **Re-deploy Workload:**
 
@@ -450,7 +469,7 @@ spec:
       claimName: stash-recovered
 ```
 
-Wait until `Recovery` job completes its task. To verify that recovery is completed successfully run,
+Wait until `Recovery` job completes its task. To verify that recovery has completed successfully run,
 
 ```console
 $ kubectl get recovery -n demo gcs-recovery
@@ -464,7 +483,7 @@ Here, `PHASE` `Succeeded` indicate that our recovery has been completed successf
 
 We have successfully restored backup data into `stash-recovered` PVC. Now, we will re-deploy our previous deployment `stash-demo`. This time, we will mount the `stash-recovered` PVC as `source-data` volume instead of ConfigMap `stash-sample-data`.
 
-Below, the YAML for `stash-demo` deployment with `stash-recovered` pvc as `source-data` volume.
+Below, the YAML for `stash-demo` deployment with `stash-recovered` PVC as `source-data` volume.
 
 ```yaml
 apiVersion: apps/v1
@@ -548,4 +567,4 @@ $ kubectl delete repository -n demo deployment.stash-demo
 $ kubectl delete ns demo
 ```
 
-To uninstall Stash from your cluster, follow the instructions from [here](/docs/setup/uninstall.md).
+- To uninstall Stash from your cluster, follow the instructions from [here](/docs/setup/uninstall.md).

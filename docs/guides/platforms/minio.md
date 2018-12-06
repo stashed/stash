@@ -23,7 +23,7 @@ At first, you need to have a Kubernetes cluster, and the `kubectl` command-line 
 
 - Install `Stash` in your cluster following the steps [here](/docs/setup/install.md).
 
-- You should have understanding of following Stash terms:
+- You should have understanding of following Stash concepts:
 
   - [Restic](/docs/concepts/crds/restic.md)
   - [Repository](/docs/concepts/crds/repository.md)
@@ -133,7 +133,7 @@ At first, we need to create a secret for `Restic` crd. To configure this backend
 | `AWS_SECRET_ACCESS_KEY` | `Required`. Minio secret access key                                                                   |
 | `CA_CERT_DATA`          | `Required` for TLS secured Minio server. Root certificate by which Minio server certificate is signed |
 
-Create secret for `Restic` crd,
+Create the secret as below,
 
 ```console
 $ echo -n 'changeit' > RESTIC_PASSWORD
