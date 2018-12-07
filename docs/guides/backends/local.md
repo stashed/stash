@@ -145,4 +145,4 @@ restic "local-restic" created
 ## Next Steps
 
 - Learn how to use Stash to backup a Kubernetes deployment from [here](/docs/guides/backup.md).
-- Learn how to recover from backed up snapshot from [here](/docs/guides/restore.md).
+- To learn how to recover from backed up snapshot, visit [here](/docs/guides/restore.md).
