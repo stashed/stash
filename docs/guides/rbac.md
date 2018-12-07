@@ -6,7 +6,7 @@ menu:
     identifier: rbac-stash
     name: RBAC
     parent: guides
-    weight: 40
+    weight: 45
 product_name: stash
 menu_name: product_stash_0.7.0
 section_menu_id: guides

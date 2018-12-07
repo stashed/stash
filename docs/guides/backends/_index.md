@@ -5,6 +5,6 @@ menu:
     identifier: backend
     name: Supported Backends
     parent: guides
-    weight: 10
+    weight: 30
 menu_name: product_stash_0.7.0
 ---

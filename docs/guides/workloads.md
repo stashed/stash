@@ -6,7 +6,7 @@ menu:
     identifier: workloads-stash
     name: Workloads
     parent: guides
-    weight: 20
+    weight: 25
 product_name: stash
 menu_name: product_stash_0.7.0
 section_menu_id: guides

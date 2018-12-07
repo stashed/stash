@@ -6,7 +6,7 @@ menu:
     identifier: restore-stash
     name: Restore Volumes
     parent: guides
-    weight: 25
+    weight: 20
 product_name: stash
 menu_name: product_stash_0.7.0
 section_menu_id: guides
