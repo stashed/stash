@@ -4,11 +4,12 @@ description: Using Grafana dashboard to visualize Stash monitoring data
 menu:
   product_stash_0.8.0:
     identifier: monitoring-grafana
-    name: Use Grafana
+    name: Using Grafana
     parent: monitoring
     weight: 40
 product_name: stash
 menu_name: product_stash_0.8.0
+section_menu_id: guides
 ---
 
 # Use Grafana Dashboard

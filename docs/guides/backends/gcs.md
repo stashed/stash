@@ -6,7 +6,7 @@ menu:
     identifier: backend-gcs
     name: Google Cloud Storage
     parent: backend
-    weight: 40
+    weight: 50
 product_name: stash
 menu_name: product_stash_0.8.0
 section_menu_id: guides

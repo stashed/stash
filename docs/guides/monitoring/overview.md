@@ -9,6 +9,7 @@ menu:
     weight: 10
 product_name: stash
 menu_name: product_stash_0.8.0
+section_menu_id: guides
 ---
 
 > New to Stash? Please start [here](/docs/concepts/README.md).

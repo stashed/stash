@@ -4,11 +4,12 @@ description: Monitor Stash using CoreOS Prometheus operator
 menu:
   product_stash_0.8.0:
     identifier: monitoring-coreos-operator
-    name: CoreOS Prometheus Operator
+    name: Prometheus Operator
     parent: monitoring
     weight: 30
 product_name: stash
 menu_name: product_stash_0.8.0
+section_menu_id: guides
 ---
 
 # Monitoring Using CoreOS Prometheus Operator
