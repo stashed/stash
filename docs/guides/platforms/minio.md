@@ -361,9 +361,9 @@ spec:
 Wait until `Recovery` job completes its task. To verify that recovery has completed successfully run,
 
 ```console
-$ kubectl get recovery -n demo rook-recovery
+$ kubectl get recovery -n demo minio-recovery
 NAME            REPOSITORYNAMESPACE   REPOSITORYNAME          SNAPSHOT   PHASE       AGE
-rook-recovery   demo                  deployment.stash-demo              Succeeded   26s
+minio-recovery   demo                  deployment.stash-demo              Succeeded   26s
 ```
 
 Here, `PHASE` `Succeeded` indicates that our recovery has been completed successfully. Backup data has been restored in `stash-recovered` PVC. Now, we are ready to use this PVC to re-deploy the workload.
@@ -371,7 +371,7 @@ Here, `PHASE` `Succeeded` indicates that our recovery has been completed success
 If you are using Kubernetes version older than v1.11.0 then run following command and check `status.phase` field to see whether the recovery succeeded or failed.
 
 ```console
-$ kubectl get recovery -n demo rook-recovery -o yaml
+$ kubectl get recovery -n demo minio-recovery -o yaml
 ```
 
 **Re-deploy Workload:**

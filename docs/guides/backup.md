@@ -515,6 +515,7 @@ restic.stash.appscode.com/local-restic patched
 ## Cleaning up
 
 To cleanup the Kubernetes resources created by this tutorial, run:
+
 ```console
 $ kubectl delete -n demo deployment stash-demo
 $ kubectl delete -n demo secret local-secret
