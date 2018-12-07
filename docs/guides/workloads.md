@@ -2,13 +2,13 @@
 title: Workloads | Stash
 description: workloads of Stash
 menu:
-  product_stash_0.7.0:
+  product_stash_0.8.0:
     identifier: workloads-stash
     name: Workloads
     parent: guides
     weight: 25
 product_name: stash
-menu_name: product_stash_0.7.0
+menu_name: product_stash_0.8.0
 section_menu_id: guides
 ---
 
@@ -64,7 +64,7 @@ spec:
         volumeMounts:
         - mountPath: /source/data
           name: source-data
-      - image: appscode/stash:0.7.0
+      - image: appscode/stash:0.8.0
         name: stash
         imagePullPolicy: IfNotPresent
         args:

@@ -2,13 +2,13 @@
 title: AKS | Stash
 description: Using Stash in Azure Kubernetes Service
 menu:
-  product_stash_0.7.0:
+  product_stash_0.8.0:
     identifier: platforms-aks
     name: AKS
     parent: platforms
     weight: 20
 product_name: stash
-menu_name: product_stash_0.7.0
+menu_name: product_stash_0.8.0
 ---
 
 > New to Stash? Please start [here](/docs/concepts/README.md).
