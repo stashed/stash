@@ -16,7 +16,7 @@ section_menu_id: guides
 
 # Backup Volumes using Stash
 
-This tutorial will show you how to use Stash to backup a Kubernetes volume. Here, we are going to backup the `/source/data` folder of a busybox pod into a [NFS](https://kubernetes.io/docs/concepts/storage/volumes/#nfs) volume. NFS volume is under [Local](/docs/guides/backends/local.md) bakend of Stash.
+This tutorial will show you how to use Stash to backup a Kubernetes volume. Here, we are going to backup the `/source/data` folder of a busybox pod into a [NFS](https://kubernetes.io/docs/concepts/storage/volumes/#nfs) volume. NFS volume is configured as a [Local](/docs/guides/backends/local.md) bakend of Stash.
 
 ## Before You Begin
 
