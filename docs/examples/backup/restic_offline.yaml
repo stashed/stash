@@ -1,8 +1,8 @@
 apiVersion: stash.appscode.com/v1alpha1
 kind: Restic
 metadata:
-  name: stash-demo
-  namespace: default
+  name: offline-restic
+  namespace: demo
 spec:
   selector:
     matchLabels:
@@ -14,9 +14,10 @@ spec:
   backend:
     local:
       mountPath: /safe/data
-      hostPath:
-        path: /data/stash-test/restic-repo
-    storageSecretName: stash-demo
+      nfs:
+        server: "nfs-service.storage.svc.cluster.local"
+        path: "/"
+    storageSecretName: local-secret
   schedule: '@every 5m'
   volumeMounts:
   - mountPath: /source/data

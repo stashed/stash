@@ -1,16 +1,16 @@
 apiVersion: stash.appscode.com/v1alpha1
 kind: Recovery
 metadata:
-  name: stash-demo
-  namespace: default
+  name: local-recovery-specific-snapshot
+  namespace: demo
 spec:
   repository:
     name: deployment.stash-demo
-    namespace: default
-  snapshot: deployment.stash-demo-d3050010
+    namespace: demo
+  snapshot: deployment.stash-demo-baff6c47
   paths:
   - /source/data
   recoveredVolumes:
   - mountPath: /source/data
-    hostPath:
-      path: /data/stash-test/restic-restored
+    persistentVolumeClaim:
+      claimName: stash-recovered

@@ -6,7 +6,7 @@ menu:
     identifier: rbac-stash
     name: RBAC
     parent: guides
-    weight: 40
+    weight: 45
 product_name: stash
 menu_name: product_stash_0.7.0
 section_menu_id: guides
@@ -46,5 +46,5 @@ You can find full working examples [here](/docs/guides/workloads.md).
 - To run backup in offline mode see [here](/docs/guides/offline_backup.md)
 - See the list of supported backends and how to configure them [here](/docs/guides/backends/overview.md).
 - See working examples for supported workload types [here](/docs/guides/workloads.md).
-- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/monitoring.md).
+- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/monitoring/overview.md).
 - Want to hack on Stash? Check our [contribution guidelines](/docs/CONTRIBUTING.md).

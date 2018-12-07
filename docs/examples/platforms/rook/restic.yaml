@@ -2,20 +2,20 @@ apiVersion: stash.appscode.com/v1alpha1
 kind: Restic
 metadata:
   name: rook-restic
-  namespace: default
+  namespace: demo
 spec:
   selector:
     matchLabels:
-      app: stash-demo # Must match with the label of busybox pod we have created before.
+      app: stash-demo # Must match with the label of pod we want to backup.
   fileGroups:
   - path: /source/data
     retentionPolicyName: 'keep-last-5'
   backend:
     s3:
-      endpoint: 'http://rook-ceph-rgw-my-store.rook' # Use your own rook object storage end point.
+      endpoint: 'http://rook-ceph-rgw-my-store.rook-ceph.svc' # Use your own rook object storage endpoint.
       bucket: stash-backup  # Give a name of the bucket where you want to backup.
-      prefix: demo  # . Path prefix into bucket where repository will be created.(optional).
-    storageSecretName: rook-restic-secret
+      prefix: demo  # A prefix for the directory where repository will be created.(optional).
+    storageSecretName: rook-secret
   schedule: '@every 1m'
   volumeMounts:
   - mountPath: /source/data

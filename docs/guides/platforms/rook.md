@@ -1,27 +1,27 @@
 ---
-title: AKS | Stash
-description: Using Stash in Azure Kubernetes Service
+title: Rook | Stash
+description: Using Stash with Rook Storage Service
 menu:
   product_stash_0.7.0:
-    identifier: platforms-aks
-    name: AKS
+    identifier: platforms-rook
+    name: Rook
     parent: platforms
-    weight: 20
+    weight: 50
 product_name: stash
 menu_name: product_stash_0.7.0
 ---
 
 > New to Stash? Please start [here](/docs/concepts/README.md).
 
-# Using Stash with Azure Kubernetes Service (AKS)
+# Using Stash with Rook Storage Service
 
-This tutorial will show you how to use Stash to **backup** and **restore** a volume in [Azure Kubernetes Service](https://azure.microsoft.com/en-us/services/kubernetes-service/). Here, we are going to backup the `/source/data` folder of a busybox pod into [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/). Then, we are going to show how to recover this data into a `PersistentVolumeClaim(PVC)`. We are going to also re-deploy deployment using this recovered volume.
+This tutorial will show you how to use Stash to **backup** and **restore** a Kubernetes volume in [Rook](https://rook.io/) storage service. Here, we are going to backup the `/source/data` folder of a busybox pod into [AWS S3](/docs/guides/backends.md#aws-s3) compatible [Rook Object Storage](https://rook.io/docs/rook/master/object.html). Then, we are going to show how to recover this data into a `PersistentVolumeClaim` of [Rook Block Storage](https://rook.io/docs/rook/master/block.html). We are going to also re-deploy deployment using this recovered volume.
 
 ## Before You Begin
 
-At first, you need to have a AKS cluster. If you don't already have a cluster, create one from [here](https://azure.microsoft.com/en-us/services/kubernetes-service/).
+At first, you need to have a Kubernetes cluster, and the kubectl command-line tool must be configured to communicate with your cluster. If you do not already have a cluster, you can create one by using [Minikube](https://github.com/kubernetes/minikube).
 
-- Install Stash in your cluster following the steps [here](/docs/setup/install.md).
+- Install `Stash` in your cluster following the steps [here](/docs/setup/install.md).
 
 - You should be familiar with the following Stash concepts:
   - [Restic](/docs/concepts/crds/restic.md)
@@ -29,7 +29,7 @@ At first, you need to have a AKS cluster. If you don't already have a cluster, c
   - [Recovery](/docs/concepts/crds/recovery.md)
   - [Snapshot](/docs/concepts/crds/snapshot.md)
 
-- You will need a [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/) to store the backup snapshots.
+- You will need a [Rook Storage Service](https://rook.io) with [Object Storage](https://rook.io/docs/rook/master/object.html) and [Block Storage](https://rook.io/docs/rook/master/block.html) configured. If you do not already have a **Rook Storage Service** configured, you can create one by following this [quickstart guide](https://rook.io/docs/rook/master/quickstart.html).
 
 To keep things isolated, we are going to use a separate namespace called `demo` throughout this tutorial.
 
@@ -38,7 +38,7 @@ $ kubectl create ns demo
 namespace/demo created
 ```
 
->Note: YAML files used in this tutorial are stored in [/docs/examples/platforms/aks](/docs/examples/platforms/aks) directory of [appscode/stash](https://github.com/appscode/stash) repository.
+>Note: YAML files used in this tutorial are stored in [/docs/examples/platforms/rook](/docs/examples/platforms/rook) directory of [appscode/stash](https://github.com/appscode/stash) repository.
 
 ## Backup
 
@@ -98,7 +98,7 @@ spec:
 Let's create the deployment we have shown above,
 
 ```console
-$ kubectl apply -f ./docs/examples/platforms/aks/deployment.yaml
+$ kubectl apply -f ./docs/examples/platforms/rook/deployment.yaml
 deployment.apps/stash-demo created
 ```
 
@@ -107,74 +107,73 @@ Now, wait for deployment's pod to go in `Running` state.
 ```console
 $ kubectl get pod -n demo -l app=stash-demo
 NAME                          READY   STATUS    RESTARTS   AGE
-stash-demo-7584fd7748-nl5n8   1/1     Running   0          3m
+stash-demo-7ccd56bf5d-fm74f   1/1     Running   0          18s
 ```
 
 You can check that the `/source/data/` directory of this pod is populated with data from the `stash-sample-data` ConfigMap using this command,
 
 ```console
-$ kubectl exec -n demo stash-demo-7584fd7748-nl5n8 -- ls -R /source/data
+$ kubectl exec -n demo stash-demo-7ccd56bf5d-fm74f -- ls -R /source/data
 /source/data:
 LICENSE
 README.md
 ```
 
-Now, we are ready to backup `/source/data` directory into [Azure Blob Container](https://azure.microsoft.com/en-us/services/storage/blobs/).
+Now, we are ready to backup `/source/data` directory into a Rook bucket.
 
 **Create Secret:**
 
-At first, we need to create a storage secret that hold the credentials for the backend. To configure this backend, the following secret keys are needed:
+At first, we need to create a secret for `Restic` crd. To configure this backend, the following secret keys are needed:
 
-| Key                     | Description                                                |
-|-------------------------|------------------------------------------------------------|
+|           Key           |                        Description                         |
+| ----------------------- | ---------------------------------------------------------- |
 | `RESTIC_PASSWORD`       | `Required`. Password used to encrypt snapshots by `restic` |
-| `AZURE_ACCOUNT_NAME`    | `Required`. Azure Storage account name                     |
-| `AZURE_ACCOUNT_KEY`     | `Required`. Azure Storage account key                      |
+| `AWS_ACCESS_KEY_ID`     | `Required`. Rook access key                                |
+| `AWS_SECRET_ACCESS_KEY` | `Required`. Rook secret key                                |
 
-Create the storage secret as below,
+Create the secret as below,
 
 ```console
-$ echo -n 'changeit' >RESTIC_PASSWORD
-$ echo -n '<your-azure-storage-account-name>' > AZURE_ACCOUNT_NAME
-$ echo -n '<your-azure-storage-account-key>' > AZURE_ACCOUNT_KEY
-$ kubectl create secret generic -n demo azure-secret \
+$ echo -n 'changeit' > RESTIC_PASSWORD
+$ echo -n '<your-rook-access-key-here>' > AWS_ACCESS_KEY_ID
+$ echo -n '<your-rook-secret-key-here>' > AWS_SECRET_ACCESS_KEY
+$ kubectl create secret generic -n demo rook-secret \
     --from-file=./RESTIC_PASSWORD \
-    --from-file=./AZURE_ACCOUNT_NAME \
-    --from-file=./AZURE_ACCOUNT_KEY
-secret/azure-secret created
+    --from-file=./AWS_ACCESS_KEY_ID \
+    --from-file=./AWS_SECRET_ACCESS_KEY
+secret/rook-secret created
 ```
 
 Verify that the secret has been created successfully,
 
 ```console
-$ kubectl get secret -n demo azure-secret -o yaml
+$ kubectl get secret -n demo rook-secret -o yaml
 ```
 
 ```yaml
 apiVersion: v1
 data:
-  AZURE_ACCOUNT_KEY: <base64 encoded AZURE_ACCOUNT_KEY>
-  AZURE_ACCOUNT_NAME: <base64 encoded AZURE_ACCOUNT_NAME>
+  AWS_ACCESS_KEY_ID: UlhSQ0oyVjRZNlpFQUlBV0UyTEc=
+  AWS_SECRET_ACCESS_KEY: YWVtZG9IZ1g3UXBUSzF0VXpPZHVJcUNPb01sc1cwZlZES0RRaXM2MA==
   RESTIC_PASSWORD: Y2hhbmdlaXQ=
 kind: Secret
 metadata:
-  creationTimestamp: 2018-11-12T07:09:36Z
-  name: azure-secret
+  creationTimestamp: 2018-12-06T07:24:58Z
+  name: rook-secret
   namespace: demo
-  resourceVersion: "15708"
-  selfLink: /api/v1/namespaces/demo/secrets/azure-secret
-  uid: ea0b4275-e649-11e8-b68c-a62bf720de95
+  resourceVersion: "4680"
+  selfLink: /api/v1/namespaces/demo/secrets/rook-secret
+  uid: 0958c36c-f928-11e8-998e-080027a2d1ee
 type: Opaque
-
 ```
 
 **Create Restic:**
 
-Now, we are going to create `Restic` crd to take backup `/source/data` directory of `stash-demo` deployment. This will create a repository in the Azure blob container specified in `azure.container` field and start taking periodic backup of `/source/data` directory.
+Now, we are going to create `Restic` crd to take backup `/source/data` directory of `stash-demo` deployment. This will create a repository in the Rook bucket specified by `s3.bucket` field and start taking periodic backup of `/source/data` directory.
 
 ```console
-$ kubectl apply -f ./docs/examples/platforms/aks/restic.yaml
-restic.stash.appscode.com/azure-restic created
+$ kubectl apply -f ./docs/examples/platforms/rook/restic.yaml
+restic.stash.appscode.com/rook-restic created
 ```
 
 Below, the YAML for Restic crd we have created above,
@@ -183,20 +182,21 @@ Below, the YAML for Restic crd we have created above,
 apiVersion: stash.appscode.com/v1alpha1
 kind: Restic
 metadata:
-  name: azure-restic
+  name: rook-restic
   namespace: demo
 spec:
   selector:
     matchLabels:
-      app: stash-demo
+      app: stash-demo # Must match with the label of pod we want to backup.
   fileGroups:
   - path: /source/data
     retentionPolicyName: 'keep-last-5'
   backend:
-    azure:
-      container: stashqa
-      prefix: demo
-    storageSecretName: azure-secret
+    s3:
+      endpoint: 'http://rook-ceph-rgw-my-store.rook-ceph.svc' # Use your own rook object storage endpoint.
+      bucket: stash-backup  # Give a name of the bucket where you want to backup.
+      prefix: demo  # A prefix for the directory where repository will be created.(optional).
+    storageSecretName: rook-secret
   schedule: '@every 1m'
   volumeMounts:
   - mountPath: /source/data
@@ -207,54 +207,42 @@ spec:
     prune: true
 ```
 
-If everything goes well, Stash will inject a sidecar container into the `stash-demo` deployment to take periodic backup. Let's check sidecar has been injected successfully,
+If everything goes well, `Stash` will inject a sidecar container into the `stash-demo` deployment to take periodic backup. Let's check that sidecar has been injected successfully,
 
 ```console
 $ kubectl get pod -n demo -l app=stash-demo
 NAME                          READY   STATUS    RESTARTS   AGE
-stash-demo-6b8c94cdd7-8jhtn   2/2     Running   1          1h
+stash-demo-6c9cd4cf4c-bn5wm   2/2     Running   0          53s
 ```
 
-Look at the pod. It now has 2 containers. If you view the resource definition of this pod, you will see there is a container named `stash` which running `backup` command.
+Look at the pod. It now has 2 containers. If you view the resource definition of this pod, you will see that there is a container named `stash` which running `backup` command.
 
 **Verify Backup:**
 
-Stash will create a `Repository` crd with name `deployment.stash-demo` for the respective repository in Azure backend at first backup schedule. To verify, run the following command,
+Stash will create a `Repository` crd with name `deployment.stash-demo` for the respective repository in Rook backend at first backup schedule. To verify, run the following command,
 
 ```console
 $ kubectl get repository deployment.stash-demo -n demo
 NAME                    BACKUPCOUNT   LASTSUCCESSFULBACKUP   AGE
-deployment.stash-demo   8             13s                    8m
+deployment.stash-demo   1             41s                    1m
 ```
 
 Here, `BACKUPCOUNT` field indicates number of backup snapshot has taken in this repository.
 
-`Restic` will take backup of the volume periodically with a 1-minute interval. You can verify that backup snapshots are created successfully by,
+`Restic` will take backup of the volume periodically with a 1-minute interval. You can verify that backup snapshots has been created successfully by,
 
 ```console
 $ kubectl get snapshots -n demo -l repository=deployment.stash-demo
 NAME                             AGE
-deployment.stash-demo-52ee5eaa   4m36s
-deployment.stash-demo-9a3c5d10   3m36s
-deployment.stash-demo-39df477a   2m36s
-deployment.stash-demo-e315dfb4   96s
-deployment.stash-demo-59633ea3   36s
+NAME                             AGE
+deployment.stash-demo-2960b90e   4m3s
+deployment.stash-demo-79626d95   3m3s
+deployment.stash-demo-6c5eb448   2m3s
+deployment.stash-demo-05761ab3   63s
+deployment.stash-demo-f8937bdf   2s
 ```
 
 Here, we can see 5 last successful backup [Snapshot](/docs/concepts/crds/snapshot.md) taken by Stash in `deployment.stash-demo` repository.
-
-If you navigate to `<bucket name>/demo/deployment/stash-demo` directory in your Azure storage bucket. You will see, a repository has been created there.
-<p align="center">
-  <img alt="Repository in Azure Backend",  height="350px" src="/docs/images/platforms/aks/azure-backup-repository.png">
-</p>
-
-To view the snapshot files, navigate to `snapshots` directory of the repository,
-
-<p align="center">
-  <img alt="Snapshot in Azure Bucket" height="350px" src="/docs/images/platforms/aks/azure-backup-snapshots.png">
-</p>
-
-> Stash keeps all backup data encrypted. So, snapshot files in the bucket will not contain any meaningful data until they are decrypted.
 
 ## Recovery
 
@@ -266,23 +254,34 @@ At first, let's delete `Restic` crd, `stash-demo` deployment and `stash-sample-d
 $ kubectl delete deployment -n demo stash-demo
 deployment.extensions "stash-demo" deleted
 
-$ kubectl delete restic -n demo azure-restic
-restic.stash.appscode.com "azure-restic" deleted
+$ kubectl delete restic -n demo rook-restic
+restic.stash.appscode.com "rook-restic" deleted
 
 $ kubectl delete configmap -n demo stash-sample-data
 configmap "stash-sample-data" deleted
 ```
 
-In order to perform recovery, we need `Repository` crd `deployment.stah-demo` and backend secret `azure-secret` to exist.
+In order to perform recovery, we need `Repository` crd `deployment.stah-demo` and backend secret `rook-secret` to exist.
 
 >In case of cluster disaster, you might lose `Repository` crd and backend secret. In this scenario, you have to create the secret again and `Repository` crd manually. Follow the guide to understand `Repository` crd structure from [here](/concepts/crds/repository.md).
 
 **Create PVC:**
 
-Let's create a `PersistentVolumeClaim` where our recovered data will be stored.
+We are going to recover our backed up data into a PVC. [Rook Block Storage](https://rook.io/docs/rook/master/block.html) allows mounting Rook storage into pod using  a `PersistentVolumeClaim`. At first, we need to know respective [StorageClass](https://kubernetes.io/docs/concepts/storage/storage-classes/) for Rook Block Storage.
 
 ```console
-$ kubectl apply -f ./docs/examples/platforms/aks/pvc.yaml
+$ kubectl get storageclass
+NAME                 PROVISIONER                AGE
+rook-ceph-block      ceph.rook.io/block         96m
+standard (default)   k8s.io/minikube-hostpath   124m
+```
+
+Here, `rook-ceph-block` storage class is responsible for provisioning the PVC from Rook Block Storage.
+
+Let's create a `PersistentVolumeClaim` with `rook-ceph-block` storage class where our recovered data will be stored.
+
+```console
+$ kubectl apply -f ./docs/examples/platforms/rook/rook-pvc.yaml
 persistentvolumeclaim/stash-recovered created
 ```
 
@@ -297,7 +296,7 @@ metadata:
   labels:
     app: stash-demo
 spec:
-  storageClassName: default
+  storageClassName: rook-ceph-block
   accessModes:
   - ReadWriteOnce
   resources:
@@ -309,19 +308,20 @@ Check that if cluster has provisioned the requested claim,
 
 ```console
 $ kubectl get pvc -n demo -l app=stash-demo
-NAME              STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-stash-recovered   Bound    pvc-f6bddbf6-e66a-11e8-b68c-a62bf720de95   1Gi        RWO            default        1m
+kubectl get pvc -n demo -l app=stash-demo
+NAME              STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS      AGE
+stash-recovered   Bound    pvc-dd0739b2-f934-11e8-998e-080027a2d1ee   50Mi       RWO            rook-ceph-block   46s
 ```
 
-Look at the `STATUS` filed. `stash-recovered` PVC is bounded to volume `pvc-f6bddbf6-e66a-11e8-b68c-a62bf720de95`.
+Look at the `STATUS` filed. `stash-recovered` PVC is bounded to volume `pvc-dd0739b2-f934-11e8-998e-080027a2d1ee`.
 
 **Create Recovery:**
 
 Now, we have to create a `Recovery` crd to recover backed up data into this PVC.
 
 ```console
-$ kubectl apply -f ./docs/examples/platforms/aks/recovery.yaml
-recovery.stash.appscode.com/azure-recovery created
+$ kubectl apply -f ./docs/examples/platforms/rook/recovery.yaml
+recovery.stash.appscode.com/rook-recovery created
 ```
 
 Below, the YAML for `Recovery` crd we have created above.
@@ -330,7 +330,7 @@ Below, the YAML for `Recovery` crd we have created above.
 apiVersion: stash.appscode.com/v1alpha1
 kind: Recovery
 metadata:
-  name: azure-recovery
+  name: rook-recovery
   namespace: demo
 spec:
   repository:
@@ -347,12 +347,12 @@ spec:
 Wait until `Recovery` job completes its task. To verify that recovery has completed successfully run,
 
 ```console
-$ kubectl get recovery -n demo azure-recovery
-NAME             REPOSITORYNAMESPACE   REPOSITORYNAME          SNAPSHOT   PHASE       AGE
-azure-recovery   demo                  deployment.stash-demo              Succeeded   3m
+$ kubectl get recovery -n demo rook-recovery
+NAME            REPOSITORYNAMESPACE   REPOSITORYNAME          SNAPSHOT   PHASE       AGE
+rook-recovery   demo                  deployment.stash-demo              Succeeded   26s
 ```
 
-Here, `PHASE` `Succeeded` indicate that our recovery has been completed successfully. Backup data has been restored in `stash-recovered` PVC. Now, we are ready to use this PVC to re-deploy workload.
+Here, `PHASE` `Succeeded` indicates that our recovery has been completed successfully. Backup data has been restored in `stash-recovered` PVC. Now, we are ready to use this PVC to re-deploy the workload.
 
 If you are using Kubernetes version older than v1.11.0 then run following command and check `status.phase` field to see whether the recovery succeeded or failed.
 
@@ -362,7 +362,7 @@ $ kubectl get recovery -n demo rook-recovery -o yaml
 
 **Re-deploy Workload:**
 
-We have successfully restored backup data into `stash-recovered` PVC. Now, we are going to re-deploy our previous deployment `stash-demo`. This time, we are going to mount the `stash-recovered` PVC as `source-data` volume instead of ConfigMap `stash-sample-data`.
+We have successfully restored backed up data into `stash-recovered` PVC. Now, we are going to re-deploy our previous deployment `stash-demo`. This time, we are going to mount the `stash-recovered` PVC as `source-data` volume instead of ConfigMap `stash-sample-data`.
 
 Below, the YAML for `stash-demo` deployment with `stash-recovered` PVC as `source-data` volume.
 
@@ -405,27 +405,27 @@ spec:
 Let's create the deployment,
 
 ```console
-$  kubectl apply -f ./docs/examples/platforms/aks/recovered-deployment.yaml
+$ kubectl apply -f ./docs/examples/platforms/rook/recovered-deployment.yaml
 deployment.apps/stash-demo created
 ```
 
 **Verify Recovered Data:**
 
-We have re-deployed `stash-demo` deployment with recovered volume. Now, it is time to verify that the data are present in `/source/data` directory.
+We have re-deployed `stash-demo` deployment with recovered volume. Now, it is time to verify that the recovered data are present in `/source/data` directory.
 
 Get the pod of new deployment,
 
 ```console
 $ kubectl get pod -n demo -l app=stash-demo
 NAME                          READY   STATUS    RESTARTS   AGE
-stash-demo-69994758c9-v7ntg   1/1     Running   0          3m
+stash-demo-69694789df-rsrz6   1/1     Running   0          15s
 ```
 
 Run following command to view data of `/source/data` directory of this pod,
 
 ```console
-$ kubectl exec -n demo stash-demo-69994758c9-v7ntg -- ls -R /source/data
-/source/data:
+$ kubectl exec -n demo stash-demo-69694789df-rsrz6 -- ls -R /source/data
+source/data:
 LICENSE
 README.md
 lost+found
@@ -440,11 +440,12 @@ So, we can see that the data we had backed up from original deployment are now p
 To cleanup the resources created by this tutorial, run following commands:
 
 ```console
-$ kubectl delete recovery -n demo azure-recovery
-$ kubectl delete secret -n demo azure-secret
+$ kubectl delete recovery -n demo rook-recovery
+$ kubectl delete secret -n demo rook-secret
 $ kubectl delete deployment -n demo stash-demo
 $ kubectl delete pvc -n demo stash-recovered
 $ kubectl delete repository -n demo deployment.stash-demo
+
 $ kubectl delete ns demo
 ```
 

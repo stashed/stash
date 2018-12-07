@@ -19,7 +19,7 @@ This tutorial will show you how to configure builtin [Prometheus](https://github
 
 At first, you need to have a Kubernetes cluster, and the kubectl command-line tool must be configured to communicate with your cluster. If you do not already have a cluster, you can create one by using [Minikube](https://github.com/kubernetes/minikube).
 
-To keep Prometheus resources isolated, we will use a separate namespace to deploy Prometheus server.
+To keep Prometheus resources isolated, we are going to use a separate namespace to deploy Prometheus server.
 
 ```console
 $ kubectl create ns demo
@@ -104,7 +104,7 @@ Now, we are ready to configure our Prometheus server to scrap those metrics.
 
 ## Deploy Prometheus Server
 
-We have deployed Stash in `kube-system` namespace. Stash exports operator metrics via TLS secured `api` endpoint. So, Prometheus server need to provide certificate while scrapping metrics from this endpoint. Stash has created a secret named `stash-apiserver-certs`  with this certificate in `demo` namespace as we have specified that we will deploy Prometheus in that namespace through `--prometheus-namespace` flag. We have to mount this secret in Prometheus deployment.
+We have deployed Stash in `kube-system` namespace. Stash exports operator metrics via TLS secured `api` endpoint. So, Prometheus server need to provide certificate while scrapping metrics from this endpoint. Stash has created a secret named `stash-apiserver-certs`  with this certificate in `demo` namespace as we have specified that we are going to deploy Prometheus in that namespace through `--prometheus-namespace` flag. We have to mount this secret in Prometheus deployment.
 
 Let's check `stash-apiserver-cert` certificate has been created in `demo` namespace.
 
@@ -308,7 +308,7 @@ deployment.apps/stash-prometheus-server created
 
 ### Verify Monitoring Metrics
 
-Prometheus server is running on port `9090`. We will use [port forwarding](https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/) to access Prometheus dashboard. Run following command on a separate terminal,
+Prometheus server is running on port `9090`. We are going to use [port forwarding](https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/) to access Prometheus dashboard. Run following command on a separate terminal,
 
 ```console
 $ kubectl port-forward -n demo stash-prometheus-server-9ddbf79b6-8l6hk 9090

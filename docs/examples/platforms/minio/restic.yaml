@@ -1,8 +1,8 @@
 apiVersion: stash.appscode.com/v1alpha1
 kind: Restic
 metadata:
-  name: stash-demo
-  namespace: default
+  name: minio-restic
+  namespace: demo
 spec:
   selector:
     matchLabels:
@@ -11,11 +11,11 @@ spec:
   - path: /source/data
     retentionPolicyName: 'keep-last-5'
   backend:
-    local:
-      mountPath: /safe/data
-      hostPath:
-        path: /data/stash-test/restic-repo
-    storageSecretName: stash-demo
+    s3:
+      endpoint: 'https://minio.storage.svc'
+      bucket: stash-repo
+      prefix: demo
+    storageSecretName: minio-secret
   schedule: '@every 1m'
   volumeMounts:
   - mountPath: /source/data

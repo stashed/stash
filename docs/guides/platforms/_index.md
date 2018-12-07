@@ -5,6 +5,6 @@ menu:
     identifier: platforms
     name: Platforms
     parent: guides
-    weight: 50
+    weight: 35
 menu_name: product_stash_0.7.0
 ---

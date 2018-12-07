@@ -61,7 +61,9 @@ Following parameters are available for `Local` backend.
 | `local.subPath`      | `Optional`. Sub-path inside the referenced volume instead of its root.                        |
 | `local.VolumeSource` | `Required`. Any Kubernetes volume. Can be specified inlined. Example: `hostPath`              |
 
-Below, the YAML for Restic crd configured to use Local backend.
+**Sample Restic for `hostPath` as Backend :**
+
+Below, the YAML for Restic crd configured to use `hostPath` as Local backend.
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
@@ -92,14 +94,55 @@ spec:
     prune: true
 ```
 
-Now, create the Restic we have configured above for `local` backend,
+Now, create the `Restic` we have configured above for `local` backend,
 
 ```console
-$ kubectl apply -f ./docs/examples/backends/local/local-restic.yaml
+$ kubectl apply -f ./docs/examples/backends/local/local-restic-hostPath.yaml
+restic "local-restic" created
+```
+
+**Sample Restic for `NFS` Server as Backend :**
+
+Below, the YAML for Restic crd configured to use a `NFS` server as Local backend.
+
+```yaml
+apiVersion: stash.appscode.com/v1alpha1
+kind: Restic
+metadata:
+  name: local-restic
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: stash-demo
+  fileGroups:
+  - path: /source/data
+    retentionPolicyName: 'keep-last-5'
+  backend:
+    local:
+      mountPath: /safe/data
+      nfs:
+        server: "nfs-service.storage.svc.cluster.local" # use you own NFS server address
+        path: "/" # this path is relative to "/exports" path of NFS server
+    storageSecretName: local-secret
+  schedule: '@every 1m'
+  volumeMounts:
+  - mountPath: /source/data
+    name: source-data
+  retentionPolicies:
+  - name: 'keep-last-5'
+    keepLast: 5
+    prune: true
+```
+
+Now, create the `Restic` we have configured above for `local` backend,
+
+```console
+$ kubectl apply -f ./docs/examples/backends/local/local-restic-nfs.yaml
 restic "local-restic" created
 ```
 
 ## Next Steps
 
 - Learn how to use Stash to backup a Kubernetes deployment from [here](/docs/guides/backup.md).
-- Learn how to recover from backed up snapshot from [here](/docs/guides/restore.md).
+- To learn how to recover from backed up snapshot, visit [here](/docs/guides/restore.md).

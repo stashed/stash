@@ -25,7 +25,7 @@ Grafana provides an elegant graphical user interface to visualize data. You can 
 
 ## Add Prometheus Data Source
 
-We have to add our Prometheus server `prometheus-prometheus-0` as data source of grafana. We will use a `ClusterIP` service to connect Prometheus server with grafana. Let's create a service to select Prometheus server `prometheus-prometheus-0`,
+We have to add our Prometheus server `prometheus-prometheus-0` as data source of grafana. We are going to use a `ClusterIP` service to connect Prometheus server with grafana. Let's create a service to select Prometheus server `prometheus-prometheus-0`,
 
 ```console
 $ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.7.0/docs/examples/monitoring/coreos/prometheus-service.yaml

@@ -44,7 +44,7 @@ func (c Restic) CustomResourceDefinition() *apiextensions.CustomResourceDefiniti
 				JSONPath: ".spec.schedule",
 			},
 			{
-				Name:     "BackupType",
+				Name:     "Backup-Type",
 				Type:     "string",
 				JSONPath: ".spec.type",
 				Priority: 10,
@@ -88,12 +88,12 @@ func (c Recovery) CustomResourceDefinition() *apiextensions.CustomResourceDefini
 		EnableStatusSubresource: EnableStatusSubresource,
 		AdditionalPrinterColumns: []apiextensions.CustomResourceColumnDefinition{
 			{
-				Name:     "RepositoryNamespace",
+				Name:     "Repository-Namespace",
 				Type:     "string",
 				JSONPath: ".spec.repository.namespace",
 			},
 			{
-				Name:     "RepositoryName",
+				Name:     "Repository-Name",
 				Type:     "string",
 				JSONPath: ".spec.repository.name",
 			},
@@ -141,12 +141,12 @@ func (c Repository) CustomResourceDefinition() *apiextensions.CustomResourceDefi
 		EnableStatusSubresource: EnableStatusSubresource,
 		AdditionalPrinterColumns: []apiextensions.CustomResourceColumnDefinition{
 			{
-				Name:     "BackupCount",
+				Name:     "Backup-Count",
 				Type:     "integer",
 				JSONPath: ".status.backupCount",
 			},
 			{
-				Name:     "LastSuccessfulBackup",
+				Name:     "Last-Successful-Backup",
 				Type:     "date",
 				JSONPath: ".status.lastBackupTime",
 				Format:   "date-time",
