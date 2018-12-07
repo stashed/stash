@@ -2,13 +2,14 @@
 title: Rook | Stash
 description: Using Stash with Rook Storage Service
 menu:
-  product_stash_0.7.0:
+  product_stash_0.8.0:
     identifier: platforms-rook
     name: Rook
     parent: platforms
     weight: 50
 product_name: stash
-menu_name: product_stash_0.7.0
+menu_name: product_stash_0.8.0
+section_menu_id: guides
 ---
 
 > New to Stash? Please start [here](/docs/concepts/README.md).
@@ -29,7 +30,7 @@ At first, you need to have a Kubernetes cluster, and the kubectl command-line to
   - [Recovery](/docs/concepts/crds/recovery.md)
   - [Snapshot](/docs/concepts/crds/snapshot.md)
 
-- You will need a [Rook Storage Service](https://rook.io) with [Object Storage](https://rook.io/docs/rook/master/object.html) and [Block Storage](https://rook.io/docs/rook/master/block.html) configured. If you do not already have a **Rook Storage Service** configured, you can create one by following this [quickstart guide](https://rook.io/docs/rook/master/quickstart.html).
+- You will need a [Rook Storage Service](https://rook.io) with [Object Storage](https://rook.io/docs/rook/master/object.html) and [Block Storage](https://rook.io/docs/rook/master/block.html) configured. If you do not already have a **Rook Storage Service** configured, you can create one by following this [quickstart guide](https://rook.io/docs/rook/master/ceph-quickstart.html).
 
 To keep things isolated, we are going to use a separate namespace called `demo` throughout this tutorial.
 
@@ -263,7 +264,7 @@ configmap "stash-sample-data" deleted
 
 In order to perform recovery, we need `Repository` crd `deployment.stah-demo` and backend secret `rook-secret` to exist.
 
->In case of cluster disaster, you might lose `Repository` crd and backend secret. In this scenario, you have to create the secret again and `Repository` crd manually. Follow the guide to understand `Repository` crd structure from [here](/concepts/crds/repository.md).
+>In case of cluster disaster, you might lose `Repository` crd and backend secret. In this scenario, you have to create the secret again and `Repository` crd manually. Follow the guide to understand `Repository` crd structure from [here](/docs/concepts/crds/repository.md).
 
 **Create PVC:**
 

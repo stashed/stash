@@ -2,13 +2,14 @@
 title: EKS | Stash
 description: Using Stash in Amazon EKS
 menu:
-  product_stash_0.7.0:
+  product_stash_0.8.0:
     identifier: platforms-eks
     name: EKS
     parent: platforms
-    weight: 30
+    weight: 10
 product_name: stash
-menu_name: product_stash_0.7.0
+menu_name: product_stash_0.8.0
+section_menu_id: guides
 ---
 
 > New to Stash? Please start [here](/docs/concepts/README.md).
@@ -308,7 +309,7 @@ configmap "stash-sample-data" deleted
 
 In order to perform recovery, we need `Repository` crd `deployment.stah-demo` and backend secret `s3-secret` to exist.
 
->In case of cluster disaster, you might lose `Repository` crd and backend secret. In this scenario, you have to create the secret again and `Repository` crd manually. Follow the guide to understand `Repository` crd structure from [here](/concepts/crds/repository.md).
+> In case of cluster disaster, you might lose `Repository` crd and backend secret. In this scenario, you have to create the secret again and `Repository` crd manually. Follow the guide to understand `Repository` crd structure from [here](/docs/concepts/crds/repository.md).
 
 **Create PVC:**
 

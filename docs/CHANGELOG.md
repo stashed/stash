@@ -2,28 +2,158 @@
 title: Changelog | Stash
 description: Changelog
 menu:
-  product_stash_0.7.0:
+  product_stash_0.8.0:
     identifier: changelog-stash
     name: Changelog
     parent: welcome
     weight: 10
 product_name: stash
-menu_name: product_stash_0.7.0
+menu_name: product_stash_0.8.0
 section_menu_id: welcome
-url: /products/stash/0.7.0/welcome/changelog/
+url: /products/stash/0.8.0/welcome/changelog/
 aliases:
-  - /products/stash/0.7.0/CHANGELOG/
+  - /products/stash/0.8.0/CHANGELOG/
 ---
 
 # Change Log
 
-## [Unreleased](https://github.com/appscode/stash/tree/HEAD)
+## [0.8.0](https://github.com/appscode/stash/tree/0.8.0) (2018-12-07)
+[Full Changelog](https://github.com/appscode/stash/compare/0.7.0...0.8.0)
 
-[Full Changelog](https://github.com/appscode/stash/compare/0.7.0-rc.5...HEAD)
+**Fixed bugs:**
+
+- Delete snapshot command does not check for snapshot's existence [\#549](https://github.com/appscode/stash/issues/549)
+- Backup not triggered  [\#461](https://github.com/appscode/stash/issues/461)
+- Service name hardcoded in func PushgatewayURL, no metrics available [\#596](https://github.com/appscode/stash/issues/596)
+- Fix extended apiserver issues with Kubernetes 1.11 [\#536](https://github.com/appscode/stash/pull/536) ([tamalsaha](https://github.com/tamalsaha))
+- Correctly handle ignored openapi prefixes [\#533](https://github.com/appscode/stash/pull/533) ([tamalsaha](https://github.com/tamalsaha))
+- Add rbac permissions for snapshots [\#531](https://github.com/appscode/stash/pull/531) ([tamalsaha](https://github.com/tamalsaha))
+
+**Closed issues:**
+
+- Problem creating backups [\#588](https://github.com/appscode/stash/issues/588)
+- Issue while installing stash kubernetes 1.11.2 [\#587](https://github.com/appscode/stash/issues/587)
+- Hardcoded cleaner kubectl image in Helm chart [\#583](https://github.com/appscode/stash/issues/583)
+- Deployed latest helm chart and getting error during sidecar creation [\#556](https://github.com/appscode/stash/issues/556)
+- Minio backup fails: 'net/http: invalid header field value "..." for key Authorization' [\#547](https://github.com/appscode/stash/issues/547)
+- Repository overwrite for different workload with same name in different namespace [\#539](https://github.com/appscode/stash/issues/539)
+- Unexpected behavior in offline backup [\#535](https://github.com/appscode/stash/issues/535)
+- Offline backup not working \(permissions\) [\#534](https://github.com/appscode/stash/issues/534)
+- Support node selector for recovery job [\#515](https://github.com/appscode/stash/issues/515)
+- Clarify that hostpaths are just example [\#514](https://github.com/appscode/stash/issues/514)
+- Internal error occurred: failed calling admission webhook "deployment.admission.stash.appscode.com": the server could not find the requested resource [\#510](https://github.com/appscode/stash/issues/510)
+- GKE page missing front matter [\#505](https://github.com/appscode/stash/issues/505)
+- Could not list snapshots on kubernetes 1.8.4 [\#503](https://github.com/appscode/stash/issues/503)
+- Admission webhook denied rquest: Rolebindings not found [\#501](https://github.com/appscode/stash/issues/501)
+- Incorrect image name for sidecar container [\#485](https://github.com/appscode/stash/issues/485)
+- Using Stash with TLS secured Minio Server Can't succeed [\#478](https://github.com/appscode/stash/issues/478)
+- Add cluster name in repo path [\#374](https://github.com/appscode/stash/issues/374)
+- Stash don't pass `nodeSelector` from Recovery crd to recovery Job. [\#617](https://github.com/appscode/stash/issues/617)
+- Add Prometheus config sample for pushgateway [\#582](https://github.com/appscode/stash/issues/582)
+- Handle security context [\#566](https://github.com/appscode/stash/issues/566)
+- \[Request\] Add backup details to "kubectl get" for stash objects on K8s 1.11 [\#525](https://github.com/appscode/stash/issues/525)
+- matchLabels on Restic CRD not working when using hyphens in keys [\#521](https://github.com/appscode/stash/issues/521)
+
+**Merged pull requests:**
+
+- Update docs \(Minio, Rook, NFS\) [\#625](https://github.com/appscode/stash/pull/625) ([hossainemruz](https://github.com/hossainemruz))
+- Use flags.DumpAll to dump flags [\#624](https://github.com/appscode/stash/pull/624) ([tamalsaha](https://github.com/tamalsaha))
+- Set periodic analytics [\#623](https://github.com/appscode/stash/pull/623) ([tamalsaha](https://github.com/tamalsaha))
+- Fix e2e test [\#622](https://github.com/appscode/stash/pull/622) ([hossainemruz](https://github.com/hossainemruz))
+- Recovery Job: Use nodeName for DaemonSet and nodeSelector for other workloads [\#620](https://github.com/appscode/stash/pull/620) ([hossainemruz](https://github.com/hossainemruz))
+- Pass --enable-\*\*\*-webhook flags to operator [\#619](https://github.com/appscode/stash/pull/619) ([tamalsaha](https://github.com/tamalsaha))
+- Add validation webhook xray [\#618](https://github.com/appscode/stash/pull/618) ([tamalsaha](https://github.com/tamalsaha))
+- Use dynamic pushgateway url [\#614](https://github.com/appscode/stash/pull/614) ([hossainemruz](https://github.com/hossainemruz))
+- Add docs for AKS and EKS [\#609](https://github.com/appscode/stash/pull/609) ([hossainemruz](https://github.com/hossainemruz))
+- Improve monitoring facility [\#606](https://github.com/appscode/stash/pull/606) ([hossainemruz](https://github.com/hossainemruz))
+- Pass image pull secrets for cleaner job in chart [\#598](https://github.com/appscode/stash/pull/598) ([tamalsaha](https://github.com/tamalsaha))
+- Update kubernetes client libraries to 1.12.0 [\#597](https://github.com/appscode/stash/pull/597) ([tamalsaha](https://github.com/tamalsaha))
+- Support LogLevel in chart [\#594](https://github.com/appscode/stash/pull/594) ([tamalsaha](https://github.com/tamalsaha))
+- Check if Kubernetes version is supported before running operator [\#593](https://github.com/appscode/stash/pull/593) ([tamalsaha](https://github.com/tamalsaha))
+- Enable webhooks by default in chart [\#591](https://github.com/appscode/stash/pull/591) ([tamalsaha](https://github.com/tamalsaha))
+- Update chart readme for cleaner values [\#590](https://github.com/appscode/stash/pull/590) ([tamalsaha](https://github.com/tamalsaha))
+- Fix \#583 and pushgateway version [\#584](https://github.com/appscode/stash/pull/584) ([sebastien-prudhomme](https://github.com/sebastien-prudhomme))
+- Use --pull flag with docker build [\#581](https://github.com/appscode/stash/pull/581) ([tamalsaha](https://github.com/tamalsaha))
+- Use kubernetes-1.11.3 [\#578](https://github.com/appscode/stash/pull/578) ([tamalsaha](https://github.com/tamalsaha))
+- Update CertStore [\#576](https://github.com/appscode/stash/pull/576) ([tamalsaha](https://github.com/tamalsaha))
+- Use apps/v1 apigroup in installer scripts [\#574](https://github.com/appscode/stash/pull/574) ([tamalsaha](https://github.com/tamalsaha))
+- Support pod annotations in chart [\#573](https://github.com/appscode/stash/pull/573) ([tamalsaha](https://github.com/tamalsaha))
+- Set serviceAccount for clearner job [\#572](https://github.com/appscode/stash/pull/572) ([tamalsaha](https://github.com/tamalsaha))
+- Set SecurityContext for stash sidecar [\#570](https://github.com/appscode/stash/pull/570) ([tamalsaha](https://github.com/tamalsaha))
+- Cleanup webhooks when chart is deleted [\#569](https://github.com/appscode/stash/pull/569) ([tamalsaha](https://github.com/tamalsaha))
+- Use IntHash as status.observedGeneration [\#568](https://github.com/appscode/stash/pull/568) ([tamalsaha](https://github.com/tamalsaha))
+- fix success list in grafana dashboard [\#567](https://github.com/appscode/stash/pull/567) ([unteem](https://github.com/unteem))
+- Update pipeline [\#565](https://github.com/appscode/stash/pull/565) ([tahsinrahman](https://github.com/tahsinrahman))
+- Add observedGenerationHash field [\#564](https://github.com/appscode/stash/pull/564) ([tamalsaha](https://github.com/tamalsaha))
+- fix uninstall for concourse [\#563](https://github.com/appscode/stash/pull/563) ([tahsinrahman](https://github.com/tahsinrahman))
+- Fix chart values file [\#562](https://github.com/appscode/stash/pull/562) ([tamalsaha](https://github.com/tamalsaha))
+- Improve Helm chart options [\#561](https://github.com/appscode/stash/pull/561) ([tamalsaha](https://github.com/tamalsaha))
+- Refactor concourse scripts [\#554](https://github.com/appscode/stash/pull/554) ([tahsinrahman](https://github.com/tahsinrahman))
+- Add AlreadyObserved methods [\#553](https://github.com/appscode/stash/pull/553) ([tamalsaha](https://github.com/tamalsaha))
+- Add categories support to crds [\#552](https://github.com/appscode/stash/pull/552) ([tamalsaha](https://github.com/tamalsaha))
+- Improve logging [\#551](https://github.com/appscode/stash/pull/551) ([hossainemruz](https://github.com/hossainemruz))
+- Improve doc [\#550](https://github.com/appscode/stash/pull/550) ([hossainemruz](https://github.com/hossainemruz))
+- Check for snapshot existence before delete [\#548](https://github.com/appscode/stash/pull/548) ([hossainemruz](https://github.com/hossainemruz))
+- Enable status sub resource for crd yamls [\#546](https://github.com/appscode/stash/pull/546) ([tamalsaha](https://github.com/tamalsaha))
+- Retry UpdateStatus calls [\#544](https://github.com/appscode/stash/pull/544) ([tamalsaha](https://github.com/tamalsaha))
+- Move crds to api folder [\#543](https://github.com/appscode/stash/pull/543) ([tamalsaha](https://github.com/tamalsaha))
+- Revendor objectstore api [\#542](https://github.com/appscode/stash/pull/542) ([tamalsaha](https://github.com/tamalsaha))
+- Use kmodules.xyz/objectstore-api [\#541](https://github.com/appscode/stash/pull/541) ([tamalsaha](https://github.com/tamalsaha))
+- Fix offline backup [\#537](https://github.com/appscode/stash/pull/537) ([hossainemruz](https://github.com/hossainemruz))
+- Rename dev script [\#532](https://github.com/appscode/stash/pull/532) ([tamalsaha](https://github.com/tamalsaha))
+- Use version and additional columns for crds [\#530](https://github.com/appscode/stash/pull/530) ([tamalsaha](https://github.com/tamalsaha))
+- Don't add admission/v1beta1 group as a prioritized version [\#529](https://github.com/appscode/stash/pull/529) ([tamalsaha](https://github.com/tamalsaha))
+- Update client-go to v8.0.0 [\#528](https://github.com/appscode/stash/pull/528) ([tamalsaha](https://github.com/tamalsaha))
+- Format shell scripts [\#526](https://github.com/appscode/stash/pull/526) ([tamalsaha](https://github.com/tamalsaha))
+- Enable status subresource for crds [\#524](https://github.com/appscode/stash/pull/524) ([tamalsaha](https://github.com/tamalsaha))
+- Upgrade to restic 0.9.1 [\#522](https://github.com/appscode/stash/pull/522) ([tamalsaha](https://github.com/tamalsaha))
+- Move openapi-spec to api folder [\#513](https://github.com/appscode/stash/pull/513) ([tamalsaha](https://github.com/tamalsaha))
+- Deploy operator in kube-system namespace via Helm [\#511](https://github.com/appscode/stash/pull/511) ([tamalsaha](https://github.com/tamalsaha))
+- Add togglable tabs for Installation: Script & Helm [\#509](https://github.com/appscode/stash/pull/509) ([sajibcse68](https://github.com/sajibcse68))
+- Revendor dependencies [\#508](https://github.com/appscode/stash/pull/508) ([tamalsaha](https://github.com/tamalsaha))
+- Added front matter [\#507](https://github.com/appscode/stash/pull/507) ([hossainemruz](https://github.com/hossainemruz))
+- Improve installer [\#504](https://github.com/appscode/stash/pull/504) ([tamalsaha](https://github.com/tamalsaha))
+- Use apps/v1 apigroup [\#555](https://github.com/appscode/stash/pull/555) ([tamalsaha](https://github.com/tamalsaha))
+- Update chart installation instruction for Kubernetes 1.11 [\#527](https://github.com/appscode/stash/pull/527) ([tamalsaha](https://github.com/tamalsaha))
+- Remove status from crd.yaml [\#523](https://github.com/appscode/stash/pull/523) ([tamalsaha](https://github.com/tamalsaha))
+- Upgrade to prom/pushgateway:v0.5.2 [\#519](https://github.com/appscode/stash/pull/519) ([tamalsaha](https://github.com/tamalsaha))
+- Remove ops-address port [\#518](https://github.com/appscode/stash/pull/518) ([tamalsaha](https://github.com/tamalsaha))
+- Set cpu limits to 100m [\#517](https://github.com/appscode/stash/pull/517) ([tamalsaha](https://github.com/tamalsaha))
+- Support node selector for recovery job [\#516](https://github.com/appscode/stash/pull/516) ([tamalsaha](https://github.com/tamalsaha))
+- Fix concourse test [\#496](https://github.com/appscode/stash/pull/496) ([hossainemruz](https://github.com/hossainemruz))
+
+## [0.7.0](https://github.com/appscode/stash/tree/0.7.0) (2018-05-29)
+[Full Changelog](https://github.com/appscode/stash/compare/0.7.0-rc.5...0.7.0)
+
+**Implemented enhancements:**
+
+- Support custom CA cert with backend [\#288](https://github.com/appscode/stash/issues/288)
+
+**Fixed bugs:**
+
+- Pod restart after each backup when Mutating Webhook enabled [\#396](https://github.com/appscode/stash/issues/396)
+- Sidecar RoleBinding is not being created when Mutating Webhook is enabled  [\#395](https://github.com/appscode/stash/issues/395)
+- Recovery to PVC restores data in subdirectory instead of root directory [\#392](https://github.com/appscode/stash/issues/392)
+- Forget panics in 0.7.0-rc.0 [\#373](https://github.com/appscode/stash/issues/373)
 
 **Closed issues:**
 
 - Resource type "snapshot" not registered [\#499](https://github.com/appscode/stash/issues/499)
+- Support Repository deletion [\#416](https://github.com/appscode/stash/issues/416)
+- Docs TODO [\#414](https://github.com/appscode/stash/issues/414)
+- Convert Initializer to MutationWebhook [\#326](https://github.com/appscode/stash/issues/326)
+- Use informer factory for backup scheduler [\#321](https://github.com/appscode/stash/issues/321)
+- Show repository snapshot list [\#319](https://github.com/appscode/stash/issues/319)
+- Verbosity \(--v\) flag not inherited to backup sidecars [\#282](https://github.com/appscode/stash/issues/282)
+- Double Deployment patch when deleting a Restic CRD? [\#281](https://github.com/appscode/stash/issues/281)
+- Consider a simple 'enabled' switch for Restic CRD [\#279](https://github.com/appscode/stash/issues/279)
+- offline backup is not supported for workload kind `Deployment`, `Replicaset` and `ReplicationController` with `replicas \> 1` [\#244](https://github.com/appscode/stash/issues/244)
+- Recover specific snapshot ID [\#215](https://github.com/appscode/stash/issues/215)
+
+**Merged pull requests:**
+
+- Prepare docs for 0.7.0 release. [\#502](https://github.com/appscode/stash/pull/502) ([tamalsaha](https://github.com/tamalsaha))
+- Set RollingUpdate for DaemonSet [\#349](https://github.com/appscode/stash/pull/349) ([tamalsaha](https://github.com/tamalsaha))
 
 ## [0.7.0-rc.5](https://github.com/appscode/stash/tree/0.7.0-rc.5) (2018-05-23)
 [Full Changelog](https://github.com/appscode/stash/compare/0.7.0-rc.4...0.7.0-rc.5)
@@ -43,7 +173,7 @@ aliases:
 **Fixed bugs:**
 
 - Restic sidecar not properly working because of image tag error [\#443](https://github.com/appscode/stash/issues/443)
-- Removed owner reference from repo-reader role-binding [\#484](https://github.com/appscode/stash/pull/484) ([emruz-hossain](https://github.com/emruz-hossain))
+- Removed owner reference from repo-reader role-binding [\#484](https://github.com/appscode/stash/pull/484) ([hossainemruz](https://github.com/hossainemruz))
 - Permit stash operator to perform pods/exec [\#433](https://github.com/appscode/stash/pull/433) ([tamalsaha](https://github.com/tamalsaha))
 - Add missing batch jobs get RBAC permission [\#419](https://github.com/appscode/stash/pull/419) ([galexrt](https://github.com/galexrt))
 
@@ -53,10 +183,6 @@ aliases:
 - Stash stores GCS credentials in /tmp with 644 permissions [\#470](https://github.com/appscode/stash/issues/470)
 - Update minio doc for 1.10? [\#467](https://github.com/appscode/stash/issues/467)
 - Fix docs for StatefulSet [\#444](https://github.com/appscode/stash/issues/444)
-- Support Repository deletion [\#416](https://github.com/appscode/stash/issues/416)
-- Docs TODO [\#414](https://github.com/appscode/stash/issues/414)
-- Show repository snapshot list [\#319](https://github.com/appscode/stash/issues/319)
-- Recover specific snapshot ID [\#215](https://github.com/appscode/stash/issues/215)
 
 **Merged pull requests:**
 
@@ -66,22 +192,22 @@ aliases:
 - Update changelog [\#491](https://github.com/appscode/stash/pull/491) ([tamalsaha](https://github.com/tamalsaha))
 - Avoid creating apiservice when webhooks are not used. [\#490](https://github.com/appscode/stash/pull/490) ([tamalsaha](https://github.com/tamalsaha))
 - Install correct version of stash chart [\#489](https://github.com/appscode/stash/pull/489) ([tamalsaha](https://github.com/tamalsaha))
-- Use wait-until instead of fixed delay  [\#488](https://github.com/appscode/stash/pull/488) ([emruz-hossain](https://github.com/emruz-hossain))
+- Use wait-until instead of fixed delay  [\#488](https://github.com/appscode/stash/pull/488) ([hossainemruz](https://github.com/hossainemruz))
 - Concourse [\#486](https://github.com/appscode/stash/pull/486) ([tahsinrahman](https://github.com/tahsinrahman))
 - Prepare docs for 0.7.0-rc.4 [\#483](https://github.com/appscode/stash/pull/483) ([tamalsaha](https://github.com/tamalsaha))
 - Revendor [\#481](https://github.com/appscode/stash/pull/481) ([tamalsaha](https://github.com/tamalsaha))
-- Fix enableRBAC  flag for sidecar [\#480](https://github.com/appscode/stash/pull/480) ([emruz-hossain](https://github.com/emruz-hossain))
+- Fix enableRBAC  flag for sidecar [\#480](https://github.com/appscode/stash/pull/480) ([hossainemruz](https://github.com/hossainemruz))
 - Typo \(`Weclome` → `Welcome`\) in page title [\#479](https://github.com/appscode/stash/pull/479) ([eliasp](https://github.com/eliasp))
 - Add support for initial backoff to the apiserver call on recover [\#476](https://github.com/appscode/stash/pull/476) ([farcaller](https://github.com/farcaller))
 - Support recovering from repository in different namespace [\#474](https://github.com/appscode/stash/pull/474) ([tamalsaha](https://github.com/tamalsaha))
-- Update docs \(run minio in v1.9.4+ cluster and add example yaml files in respective backends\) [\#473](https://github.com/appscode/stash/pull/473) ([emruz-hossain](https://github.com/emruz-hossain))
+- Update docs \(run minio in v1.9.4+ cluster and add example yaml files in respective backends\) [\#473](https://github.com/appscode/stash/pull/473) ([hossainemruz](https://github.com/hossainemruz))
 - Limit the GCS file permissions to owner only [\#472](https://github.com/appscode/stash/pull/472) ([farcaller](https://github.com/farcaller))
 - Fix a typo [\#471](https://github.com/appscode/stash/pull/471) ([farcaller](https://github.com/farcaller))
 - Don't panic if admission options is nil [\#469](https://github.com/appscode/stash/pull/469) ([tamalsaha](https://github.com/tamalsaha))
 - Disable admission controllers for webhook server [\#468](https://github.com/appscode/stash/pull/468) ([tamalsaha](https://github.com/tamalsaha))
 - Use new UpdateRecoveryStatus method [\#466](https://github.com/appscode/stash/pull/466) ([tamalsaha](https://github.com/tamalsaha))
 - Add Update\*\*\*Status helpers [\#465](https://github.com/appscode/stash/pull/465) ([tamalsaha](https://github.com/tamalsaha))
-- Added SSL support for deleting restic repository from Minio backend [\#464](https://github.com/appscode/stash/pull/464) ([emruz-hossain](https://github.com/emruz-hossain))
+- Added SSL support for deleting restic repository from Minio backend [\#464](https://github.com/appscode/stash/pull/464) ([hossainemruz](https://github.com/hossainemruz))
 - Update client-go to 7.0.0 [\#463](https://github.com/appscode/stash/pull/463) ([tamalsaha](https://github.com/tamalsaha))
 - Rename webhook files in chart [\#460](https://github.com/appscode/stash/pull/460) ([tamalsaha](https://github.com/tamalsaha))
 - Update workload api [\#459](https://github.com/appscode/stash/pull/459) ([tamalsaha](https://github.com/tamalsaha))
@@ -94,31 +220,31 @@ aliases:
 - Update workload client [\#452](https://github.com/appscode/stash/pull/452) ([tamalsaha](https://github.com/tamalsaha))
 - Revendor workload client [\#451](https://github.com/appscode/stash/pull/451) ([tamalsaha](https://github.com/tamalsaha))
 - Update workload api [\#450](https://github.com/appscode/stash/pull/450) ([tamalsaha](https://github.com/tamalsaha))
-- Fixes RBAC permission for scaledownCronJob [\#449](https://github.com/appscode/stash/pull/449) ([emruz-hossain](https://github.com/emruz-hossain))
-- Used Snapshot  to verify successful backup [\#447](https://github.com/appscode/stash/pull/447) ([emruz-hossain](https://github.com/emruz-hossain))
+- Fixes RBAC permission for scaledownCronJob [\#449](https://github.com/appscode/stash/pull/449) ([hossainemruz](https://github.com/hossainemruz))
+- Used Snapshot  to verify successful backup [\#447](https://github.com/appscode/stash/pull/447) ([hossainemruz](https://github.com/hossainemruz))
 - Some cleanup [\#446](https://github.com/appscode/stash/pull/446) ([tamalsaha](https://github.com/tamalsaha))
-- Update StatefulSet doc [\#445](https://github.com/appscode/stash/pull/445) ([emruz-hossain](https://github.com/emruz-hossain))
+- Update StatefulSet doc [\#445](https://github.com/appscode/stash/pull/445) ([hossainemruz](https://github.com/hossainemruz))
 - pkg/util: fix error found by vet [\#442](https://github.com/appscode/stash/pull/442) ([functionary](https://github.com/functionary))
 - Move Stash swagger.json to top level folder [\#441](https://github.com/appscode/stash/pull/441) ([tamalsaha](https://github.com/tamalsaha))
-- Fix go\_vet error [\#440](https://github.com/appscode/stash/pull/440) ([emruz-hossain](https://github.com/emruz-hossain))
-- Delete restic repository from backend if Repository CRD is deleted [\#438](https://github.com/appscode/stash/pull/438) ([emruz-hossain](https://github.com/emruz-hossain))
-- Recover specific snapshot [\#437](https://github.com/appscode/stash/pull/437) ([emruz-hossain](https://github.com/emruz-hossain))
-- Use Repository data in Recovery CRD [\#436](https://github.com/appscode/stash/pull/436) ([emruz-hossain](https://github.com/emruz-hossain))
+- Fix go\_vet error [\#440](https://github.com/appscode/stash/pull/440) ([hossainemruz](https://github.com/hossainemruz))
+- Delete restic repository from backend if Repository CRD is deleted [\#438](https://github.com/appscode/stash/pull/438) ([hossainemruz](https://github.com/hossainemruz))
+- Recover specific snapshot [\#437](https://github.com/appscode/stash/pull/437) ([hossainemruz](https://github.com/hossainemruz))
+- Use Repository data in Recovery CRD [\#436](https://github.com/appscode/stash/pull/436) ([hossainemruz](https://github.com/hossainemruz))
 - Increase qps and burst limits [\#435](https://github.com/appscode/stash/pull/435) ([tamalsaha](https://github.com/tamalsaha))
 - Add RBAC instructions for GKE cluster [\#432](https://github.com/appscode/stash/pull/432) ([tamalsaha](https://github.com/tamalsaha))
 - Update charts location [\#431](https://github.com/appscode/stash/pull/431) ([tamalsaha](https://github.com/tamalsaha))
-- Add docs for GKE and Rook [\#430](https://github.com/appscode/stash/pull/430) ([emruz-hossain](https://github.com/emruz-hossain))
+- Add docs for GKE and Rook [\#430](https://github.com/appscode/stash/pull/430) ([hossainemruz](https://github.com/hossainemruz))
 - concourse configs [\#429](https://github.com/appscode/stash/pull/429) ([tahsinrahman](https://github.com/tahsinrahman))
-- Skip lock while listing snapshots [\#428](https://github.com/appscode/stash/pull/428) ([emruz-hossain](https://github.com/emruz-hossain))
+- Skip lock while listing snapshots [\#428](https://github.com/appscode/stash/pull/428) ([hossainemruz](https://github.com/hossainemruz))
 - Purge repository objects in installer [\#427](https://github.com/appscode/stash/pull/427) ([tamalsaha](https://github.com/tamalsaha))
 - Support installing from local installer scripts [\#426](https://github.com/appscode/stash/pull/426) ([tamalsaha](https://github.com/tamalsaha))
-- Fixed Repository yaml in doc [\#425](https://github.com/appscode/stash/pull/425) ([emruz-hossain](https://github.com/emruz-hossain))
+- Fixed Repository yaml in doc [\#425](https://github.com/appscode/stash/pull/425) ([hossainemruz](https://github.com/hossainemruz))
 - Add delete method for snapshots to swagger.json [\#424](https://github.com/appscode/stash/pull/424) ([tamalsaha](https://github.com/tamalsaha))
 - Generate swagger.json [\#423](https://github.com/appscode/stash/pull/423) ([tamalsaha](https://github.com/tamalsaha))
 - Add install pkg for stash crds [\#422](https://github.com/appscode/stash/pull/422) ([tamalsaha](https://github.com/tamalsaha))
 - Fix openapi spec for stash crds [\#421](https://github.com/appscode/stash/pull/421) ([tamalsaha](https://github.com/tamalsaha))
 - Expose swagger.json [\#420](https://github.com/appscode/stash/pull/420) ([tamalsaha](https://github.com/tamalsaha))
-- Show repository snapshot list [\#417](https://github.com/appscode/stash/pull/417) ([emruz-hossain](https://github.com/emruz-hossain))
+- Show repository snapshot list [\#417](https://github.com/appscode/stash/pull/417) ([hossainemruz](https://github.com/hossainemruz))
 - Add registry skeleton for snapshots [\#415](https://github.com/appscode/stash/pull/415) ([tamalsaha](https://github.com/tamalsaha))
 - Update chart readme [\#413](https://github.com/appscode/stash/pull/413) ([tamalsaha](https://github.com/tamalsaha))
 
@@ -127,9 +253,6 @@ aliases:
 
 **Fixed bugs:**
 
-- Pod restart after each backup when Mutating Webhook enabled [\#396](https://github.com/appscode/stash/issues/396)
-- Sidecar RoleBinding is not being created when Mutating Webhook is enabled  [\#395](https://github.com/appscode/stash/issues/395)
-- Recovery to PVC restores data in subdirectory instead of root directory [\#392](https://github.com/appscode/stash/issues/392)
 - Use separate registry key for docker images [\#410](https://github.com/appscode/stash/pull/410) ([tamalsaha](https://github.com/tamalsaha))
 - Revendor webhook util and jsonpatch fixes [\#400](https://github.com/appscode/stash/pull/400) ([tamalsaha](https://github.com/tamalsaha))
 
@@ -141,7 +264,7 @@ aliases:
 
 - Add frontmatter for repository crd [\#412](https://github.com/appscode/stash/pull/412) ([tamalsaha](https://github.com/tamalsaha))
 - Prepare docs for 0.7.0-rc.3 [\#411](https://github.com/appscode/stash/pull/411) ([tamalsaha](https://github.com/tamalsaha))
-- Add test for recovery [\#409](https://github.com/appscode/stash/pull/409) ([emruz-hossain](https://github.com/emruz-hossain))
+- Add test for recovery [\#409](https://github.com/appscode/stash/pull/409) ([hossainemruz](https://github.com/hossainemruz))
 - Skip setting ListKind [\#407](https://github.com/appscode/stash/pull/407) ([tamalsaha](https://github.com/tamalsaha))
 - Add CRD Validation [\#406](https://github.com/appscode/stash/pull/406) ([tamalsaha](https://github.com/tamalsaha))
 - Generate openapi spec for stash api [\#405](https://github.com/appscode/stash/pull/405) ([tamalsaha](https://github.com/tamalsaha))
@@ -149,7 +272,7 @@ aliases:
 - Skip downloading onessl if already installed [\#401](https://github.com/appscode/stash/pull/401) ([tamalsaha](https://github.com/tamalsaha))
 - Use Restic spec hash instead of resource version to restart pods [\#399](https://github.com/appscode/stash/pull/399) ([tamalsaha](https://github.com/tamalsaha))
 - Check for valid owner object [\#397](https://github.com/appscode/stash/pull/397) ([tamalsaha](https://github.com/tamalsaha))
-- Create repository crd for each Restic repository [\#394](https://github.com/appscode/stash/pull/394) ([emruz-hossain](https://github.com/emruz-hossain))
+- Create repository crd for each Restic repository [\#394](https://github.com/appscode/stash/pull/394) ([hossainemruz](https://github.com/hossainemruz))
 - Revendor webhook library [\#393](https://github.com/appscode/stash/pull/393) ([tamalsaha](https://github.com/tamalsaha))
 
 ## [0.7.0-rc.2](https://github.com/appscode/stash/tree/0.7.0-rc.2) (2018-03-24)
@@ -165,7 +288,7 @@ aliases:
 - Prepare docs for 0.7.0-rc.2 [\#391](https://github.com/appscode/stash/pull/391) ([tamalsaha](https://github.com/tamalsaha))
 - Add variable for dockerRegistry [\#390](https://github.com/appscode/stash/pull/390) ([tamalsaha](https://github.com/tamalsaha))
 - Reorg objects deleted in uninstall command [\#389](https://github.com/appscode/stash/pull/389) ([tamalsaha](https://github.com/tamalsaha))
-- Fix Statefulset Example [\#385](https://github.com/appscode/stash/pull/385) ([rodrigozc](https://github.com/rodrigozc))
+- Fix Statefulset Example [\#385](https://github.com/appscode/stash/pull/385) ([rzcastilho](https://github.com/rzcastilho))
 - Rename --analytics to --enable-analytics [\#384](https://github.com/appscode/stash/pull/384) ([tamalsaha](https://github.com/tamalsaha))
 - Use separated appscode/kubernetes-webhook-util package [\#383](https://github.com/appscode/stash/pull/383) ([tamalsaha](https://github.com/tamalsaha))
 
@@ -174,7 +297,6 @@ aliases:
 
 **Fixed bugs:**
 
-- Forget panics in 0.7.0-rc.0 [\#373](https://github.com/appscode/stash/issues/373)
 - Don't enable mutator for StatefulSet updates [\#381](https://github.com/appscode/stash/pull/381) ([tamalsaha](https://github.com/tamalsaha))
 - Stop using field selectors for CRDs [\#379](https://github.com/appscode/stash/pull/379) ([tamalsaha](https://github.com/tamalsaha))
 
@@ -184,7 +306,6 @@ aliases:
 - \[0.6.x\] Helm chart broken due to undocumented '--docker-registry' and other arguments [\#354](https://github.com/appscode/stash/issues/354)
 - \[0.7.0-rc.0\] Fails on start-up with 'cluster doesn't provide requestheader-client-ca-file' [\#353](https://github.com/appscode/stash/issues/353)
 - Ability to backup volumes with ReadWriteOnce access mode [\#350](https://github.com/appscode/stash/issues/350)
-- Convert Initializer to MutationWebhook [\#326](https://github.com/appscode/stash/issues/326)
 - Recovery not working! [\#303](https://github.com/appscode/stash/issues/303)
 
 **Merged pull requests:**
@@ -198,7 +319,7 @@ aliases:
 - Add --purge flag [\#369](https://github.com/appscode/stash/pull/369) ([tamalsaha](https://github.com/tamalsaha))
 - Make it clear that installer is a single command [\#365](https://github.com/appscode/stash/pull/365) ([tamalsaha](https://github.com/tamalsaha))
 - Update installer [\#364](https://github.com/appscode/stash/pull/364) ([tamalsaha](https://github.com/tamalsaha))
-- Replace initializers with mutation webhook for workloads [\#363](https://github.com/appscode/stash/pull/363) ([emruz-hossain](https://github.com/emruz-hossain))
+- Replace initializers with mutation webhook for workloads [\#363](https://github.com/appscode/stash/pull/363) ([hossainemruz](https://github.com/hossainemruz))
 - Update chart to match RBAC best practices for charts [\#362](https://github.com/appscode/stash/pull/362) ([tamalsaha](https://github.com/tamalsaha))
 - Add checks to installer script [\#361](https://github.com/appscode/stash/pull/361) ([tamalsaha](https://github.com/tamalsaha))
 - Use admission hook helpers from kutil [\#360](https://github.com/appscode/stash/pull/360) ([tamalsaha](https://github.com/tamalsaha))
@@ -208,14 +329,9 @@ aliases:
 - Sync chart to stable charts repo [\#356](https://github.com/appscode/stash/pull/356) ([tamalsaha](https://github.com/tamalsaha))
 - Use restic 0.8.3 [\#355](https://github.com/appscode/stash/pull/355) ([tamalsaha](https://github.com/tamalsaha))
 - Update README.md [\#352](https://github.com/appscode/stash/pull/352) ([tamalsaha](https://github.com/tamalsaha))
-- Set RollingUpdate for DaemonSet [\#349](https://github.com/appscode/stash/pull/349) ([tamalsaha](https://github.com/tamalsaha))
 
 ## [0.7.0-rc.0](https://github.com/appscode/stash/tree/0.7.0-rc.0) (2018-02-20)
 [Full Changelog](https://github.com/appscode/stash/compare/0.6.4...0.7.0-rc.0)
-
-**Closed issues:**
-
-- offline backup is not supported for workload kind `Deployment`, `Replicaset` and `ReplicationController` with `replicas \> 1` [\#244](https://github.com/appscode/stash/issues/244)
 
 **Merged pull requests:**
 
@@ -223,14 +339,10 @@ aliases:
 - Add changelog for 0.7.0-rc.0 [\#347](https://github.com/appscode/stash/pull/347) ([tamalsaha](https://github.com/tamalsaha))
 - Add a parameter to allow disabling initializers [\#346](https://github.com/appscode/stash/pull/346) ([mcanevet](https://github.com/mcanevet))
 - Update readme to point to 0.6.4 [\#345](https://github.com/appscode/stash/pull/345) ([tamalsaha](https://github.com/tamalsaha))
-- Implement offline backup for multiple replica [\#335](https://github.com/appscode/stash/pull/335) ([emruz-hossain](https://github.com/emruz-hossain))
+- Implement offline backup for multiple replica [\#335](https://github.com/appscode/stash/pull/335) ([hossainemruz](https://github.com/hossainemruz))
 
 ## [0.6.4](https://github.com/appscode/stash/tree/0.6.4) (2018-02-20)
 [Full Changelog](https://github.com/appscode/stash/compare/0.6.3...0.6.4)
-
-**Implemented enhancements:**
-
-- Support custom CA cert with backend [\#288](https://github.com/appscode/stash/issues/288)
 
 **Fixed bugs:**
 
@@ -238,9 +350,6 @@ aliases:
 
 **Closed issues:**
 
-- Use informer factory for backup scheduler [\#321](https://github.com/appscode/stash/issues/321)
-- Double Deployment patch when deleting a Restic CRD? [\#281](https://github.com/appscode/stash/issues/281)
-- Consider a simple 'enabled' switch for Restic CRD [\#279](https://github.com/appscode/stash/issues/279)
 - Document HTTP endpoints [\#111](https://github.com/appscode/stash/issues/111)
 - Support updating version of resitc side-car [\#72](https://github.com/appscode/stash/issues/72)
 
@@ -262,12 +371,12 @@ aliases:
 - Update Grafana dashboard [\#330](https://github.com/appscode/stash/pull/330) ([galexrt](https://github.com/galexrt))
 - Merge admission webhook and operator into one binary [\#329](https://github.com/appscode/stash/pull/329) ([tamalsaha](https://github.com/tamalsaha))
 - Merge uninstall script into the stash.sh script [\#328](https://github.com/appscode/stash/pull/328) ([tamalsaha](https://github.com/tamalsaha))
-- Implement informer factory for backup scheduler [\#325](https://github.com/appscode/stash/pull/325) ([emruz-hossain](https://github.com/emruz-hossain))
-- Fixed abnormal pod recreation when Restic is deleted [\#322](https://github.com/appscode/stash/pull/322) ([emruz-hossain](https://github.com/emruz-hossain))
+- Implement informer factory for backup scheduler [\#325](https://github.com/appscode/stash/pull/325) ([hossainemruz](https://github.com/hossainemruz))
+- Fixed abnormal pod recreation when Restic is deleted [\#322](https://github.com/appscode/stash/pull/322) ([hossainemruz](https://github.com/hossainemruz))
 - Copy generic-admission-server into pkg [\#318](https://github.com/appscode/stash/pull/318) ([tamalsaha](https://github.com/tamalsaha))
 - Use shared infromer factory [\#317](https://github.com/appscode/stash/pull/317) ([tamalsaha](https://github.com/tamalsaha))
 - Use GetBaseVersion method from kutil [\#316](https://github.com/appscode/stash/pull/316) ([tamalsaha](https://github.com/tamalsaha))
-- Implement Pause Restic [\#315](https://github.com/appscode/stash/pull/315) ([emruz-hossain](https://github.com/emruz-hossain))
+- Implement Pause Restic [\#315](https://github.com/appscode/stash/pull/315) ([hossainemruz](https://github.com/hossainemruz))
 - Fix webhook command description [\#314](https://github.com/appscode/stash/pull/314) ([tamalsaha](https://github.com/tamalsaha))
 - Use rbac/v1beta1 api. [\#313](https://github.com/appscode/stash/pull/313) ([tamalsaha](https://github.com/tamalsaha))
 - Support Create & Update operations in admission webhook [\#312](https://github.com/appscode/stash/pull/312) ([tamalsaha](https://github.com/tamalsaha))
@@ -287,7 +396,7 @@ aliases:
 - Update dependencies to Kubernetes 1.9 [\#297](https://github.com/appscode/stash/pull/297) ([tamalsaha](https://github.com/tamalsaha))
 - Write restic stderror in error events [\#296](https://github.com/appscode/stash/pull/296) ([diptadas](https://github.com/diptadas))
 - Fixed backup count [\#295](https://github.com/appscode/stash/pull/295) ([diptadas](https://github.com/diptadas))
-- Support self-signed ca cert for backends [\#294](https://github.com/appscode/stash/pull/294) ([emruz-hossain](https://github.com/emruz-hossain))
+- Support self-signed ca cert for backends [\#294](https://github.com/appscode/stash/pull/294) ([hossainemruz](https://github.com/hossainemruz))
 
 ## [0.6.3](https://github.com/appscode/stash/tree/0.6.3) (2018-01-18)
 [Full Changelog](https://github.com/appscode/stash/compare/0.6.2...0.6.3)
@@ -305,7 +414,6 @@ aliases:
 **Closed issues:**
 
 - Test Failed: Invalid argument error in sidecar container [\#290](https://github.com/appscode/stash/issues/290)
-- Verbosity \(--v\) flag not inherited to backup sidecars [\#282](https://github.com/appscode/stash/issues/282)
 
 **Merged pull requests:**
 
