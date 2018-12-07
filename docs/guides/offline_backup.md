@@ -24,15 +24,14 @@ At first, you need to have a Kubernetes cluster, and the `kubectl` command-line 
 
 - Install `Stash` in your cluster following the steps [here](/docs/setup/install.md).
 
-- You should have understanding of following Stash concepts:
-
+- You should be familiar with the following Stash concepts:
   - [Restic](/docs/concepts/crds/restic.md)
   - [Repository](/docs/concepts/crds/repository.md)
   - [Snapshot](/docs/concepts/crds/snapshot.md)
 
-- You will need to have a NFS server to store backed up data. If you already do not have a NFS server running, deploy one following the tutorial from [here](https://github.com/appscode/third-party-tools/blob/master/storage/nfs/README.md). For this tutorial, we have deployed NFS server in `storage` namespace and it is accessible through `nfs-service.storage.svc.cluster.local` dns.
+- You will need an NFS server to store backed up data. If you already do not have an NFS server running, deploy one following the tutorial from [here](https://github.com/appscode/third-party-tools/blob/master/storage/nfs/README.md). For this tutorial, we have deployed NFS server in `storage` namespace and it is accessible through `nfs-service.storage.svc.cluster.local` dns.
 
-To keep things isolated, we will use a separate namespace called `demo` throughout this tutorial.
+To keep things isolated, we are going to use a separate namespace called `demo` throughout this tutorial.
 
 ```console
 $ kubectl create ns demo
@@ -43,30 +42,30 @@ namespace/demo created
 
 ## Overview
 
-Following diagram show how Stash takes offline backup of a Kubernetes volume. Open the image in new tab to see enlarged image.
+The following diagram shows how Stash takes offline backup of a Kubernetes volume. Open the image in a new tab to see the enlarged image.
 
 <p align="center">
   <img alt="Stash Offline Backup Flow" src="/docs/images/stash-offline-backup.svg">
 </p>
 
-We can represent the offline backup flow in terms of following steps:
+The offline backup process consists of the following steps:
 
-1. At first, user creates a `Secret`. This secret holds the credentials to access the backend where backed up data will be stored. It also holds a password (`RESTIC_PASSWORD`) that will be used to encrypt the backed up data.
-2. Then, user creates a `Restic` crd which specifies the targeted workload for backup. It also specify the backend information where the backed up data will be stored.
-3. Stash operator watches for `Restic` crd. Once, it found a `Restic` crd, it identify the targeted workloads that match `Restic`'s selector.
-4. Then, Stash operator inject a [init-container](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) named `stash` and mount the target volume in it.
+1. At first, a user creates a `Secret`. This secret holds the credentials to access the backend where backed up data will be stored. It also holds a password (`RESTIC_PASSWORD`) that will be used to encrypt the backed up data.
+2. Then, the user creates a `Restic` crd which specifies the targeted workload for backup. It also specifies the backend information where the backed up data will be stored.
+3. Stash operator watches for `Restic` crd. Once it sees a `Restic` crd, it identifies the targeted workload that matches the selector of this `Restic`.
+4. Then, Stash operator injects an [init-container](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) named `stash` and mounts the target volume in it.
 5. Stash operator creates a [CronJob](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/) with name `stash-scaledown-cron-{restic-name}`.
-6. The `CronJob` restarts workload in each schedule.
-7. Finally, `stash` init-container takes backup of the volume to specified backend while pod restart at each schedule. It also creates a `Repository` crd in first backup which represents the original repository in the backend in Kubernetes native way.
+6. The `CronJob` restarts workload on the scheduled interval.
+7. Finally, `stash` init-container takes backup of the volume to the specified backend when pod restarts. It also creates a `Repository` crd during the first backup which represents the backend in Kubernetes native way.
 
-The `CronJob` restarts workload by following this rules:
+The `CronJob` restarts workloads according to the following rules:
 
 1. If the workload is a [StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/) or a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/), it will delete all pods of the workload. The workload will automatically re-creates the pods and each pod will take backup with their `init-container`.
 2. If the workload is a [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/), [ReplicaSet](https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/) or [ReplicationController](https://kubernetes.io/docs/concepts/workloads/controllers/replicationcontroller/), it will scale down the workload to 0 replica. When all pods are terminated, it will scale up the workload to 1 replica. This single replica will take backup with `init-container`. When backup is complete, the `init-container` will scale up the workload to original replica. The rest of the replicas will not take backup even through they have `init-container`.
 
 ## Backup
 
-In order to take backup, we need some sample data. Stash has some sample data in [stash-data](https://github.com/appscode/stash-data) repository. As [gitRepo](https://kubernetes.io/docs/concepts/storage/volumes/#gitrepo) volume has been deprecated, we will not use this repository as volume directly. Instead, we will create a [configMap](https://kubernetes.io/docs/concepts/storage/volumes/#configmap) from these data and use that ConfigMap as data source.
+In order to take backup, we need some sample data. Stash has some sample data in [appscode/stash-data](https://github.com/appscode/stash-data) repository. As [gitRepo](https://kubernetes.io/docs/concepts/storage/volumes/#gitrepo) volume has been deprecated, we are not going to use this repository as volume directly. Instead, we are going to create a [configMap](https://kubernetes.io/docs/concepts/storage/volumes/#configmap) from the stash-data repository and use that ConfigMap as data source.
 
 Let's create a ConfigMap from these sample data,
 
@@ -77,7 +76,7 @@ $ kubectl create configmap -n demo stash-sample-data \
 configmap/stash-sample-data created
 ```
 
-Here, we are going to backup the `/source/data` folder of a `busybox` pod into a [NFS](https://kubernetes.io/docs/concepts/storage/volumes/#nfs) volume. NFS volume is under [Local](/docs/guides/backends/local.md) bakend of Stash.
+Here, we are going to backup the `/source/data` folder of a `busybox` pod into an [NFS](https://kubernetes.io/docs/concepts/storage/volumes/#nfs) volume. NFS volume is a type of [local](/docs/guides/backends/local.md) backend for Stash.
 
 **Deploy Workload:**
 
@@ -128,7 +127,7 @@ $ kubectl apply -f ./docs/examples/backup/deployment.yaml
 deployment.apps/stash-demo created
 ```
 
-Now, wait for deployment's pod to go in `Running` state.
+Now, wait for deployment's pod to go into `Running` state.
 
 ```console
 $ kubectl get pod -n demo -l app=stash-demo
@@ -145,11 +144,11 @@ LICENSE
 README.md
 ```
 
-Now, we are ready to backup `/source/data` directory into a NFS backend.
+Now, we are ready to backup `/source/data` directory into an NFS backend.
 
 **Create Secret:**
 
-At first, we need to create a storage secret. To configure this backend, following secret keys are needed:
+At first, we need to create a storage secret. To configure this backend, the following secret keys are needed:
 
 |        Key        |                        Description                         |
 | ----------------- | ---------------------------------------------------------- |
@@ -164,7 +163,7 @@ $ kubectl create secret generic -n demo local-secret \
 secret/local-secret created
 ```
 
-Verify that the secret has been created successfully,
+Verify that the secret has been created successfully.
 
 ```console
 $ kubectl get secret -n demo local-secret -o yaml
@@ -187,7 +186,7 @@ type: Opaque
 
 **Create Restic:**
 
-Now, we will create `Restic` crd to take backup `/source/data` directory of `stash-demo` deployment in offline mode.
+Now, we are going to create `Restic` crd to take backup `/source/data` directory of `stash-demo` deployment in offline mode.
 
 Below, the YAML for Restic crd we are going to create for offline backup,
 
@@ -399,15 +398,15 @@ stash-scaledown-cron-offline-restic   @every 5m   False     0        <none>     
 
 **Verify Backup:**
 
-Stash will create a `Repository` crd with name `deployment.stash-demo` for the respective repository in local backend at first backup schedule. To verify, run the following command,
+Stash will create a `Repository` crd with name `deployment.stash-demo` for the respective repository during the first backup run. To verify, run the following command,
 
 ```console
 $  kubectl get repository deployment.stash-demo -n demo
-NAME                    BACKUPCOUNT   LASTSUCCESSFULBACKUP   AGE
-deployment.stash-demo   1             2m                     2m
+NAME                    BACKUP-COUNT  LAST-SUCCESSFUL-BACKUP   AGE
+deployment.stash-demo   1             2m                       2m
 ```
 
-Here, `BACKUPCOUNT` field indicates number of backup snapshot has taken in this repository.
+Here, `BACKUP-COUNT` field indicates number of backup snapshot has taken in this repository.
 
 ## Cleaning up
 

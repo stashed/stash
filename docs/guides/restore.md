@@ -14,9 +14,9 @@ section_menu_id: guides
 
 > New to Stash? Please start [here](/docs/concepts/README.md).
 
-# Restore Backup
+# Restore from Backup
 
-This tutorial will show you how to restore baked up volume using Stash. Here, we will recover backed up data into a PVC. Then, we will re-deploy the workload whose volume was backed up using this recovered volume.
+This tutorial will show you how to restore backed up volume using Stash. Here, we are going to recover backed up data into a PVC. Then, we are going to re-deploy the workload using the recovered volume.
 
 ## Before You Begin
 
@@ -24,17 +24,16 @@ To proceed with this tutorial, you have to meet following requirements:
 
 - At first, you need to have some backup taken by Stash. If you already don't have any backup repository, create one by following this [backup tutorial](/docs/guides/backup.md).
 
-- You need to have the storage `Secret` that was used to take backup. If you don't have the `Secret`, create one with exact same credentials.
+- You need to have the storage `Secret` that was used to take backup. If you don't have the `Secret`, create one with valid credentials.
 
 - You need to have `Repository` crd that was created for the respective backup. If you have lost the `Repository` crd, you have to create it manually with respective backend information. Follow, [this guide](/docs/concepts/crds/repository.md) to understand structure of `Repository` crd.
 
-- You should have understanding of following Stash concepts:
-
+- You should be familiar with the following Stash concepts:
   - [Repository](/docs/concepts/crds/repository.md)
   - [Recovery](/docs/concepts/crds/recovery.md)
   - [Snapshot](/docs/concepts/crds/snapshot.md)
 
-To keep things isolated, we will use a separate namespace called `demo` throughout this tutorial. Create the namespace if you haven't created yet.
+To keep things isolated, we are going to use a separate namespace called `demo` throughout this tutorial. Create the namespace if you haven't created yet.
 
 ```console
 $ kubectl create ns demo
@@ -45,26 +44,26 @@ namespace/demo created
 
 ## Overview
 
-Following diagram show how Stash recover baked up data from the backend. Open the image in new tab to see enlarged image.
+The following diagram shows how Stash recovers backed up data from a backend. Open the image in a new tab to see the enlarged image.
 
 <p align="center">
   <img alt="Stash Backup Flow" src="/docs/images/stash-recovery.svg">
 </p>
 
-We can represent the recovery flow in terms of following steps:
+The volume recovery backup process consists of the following steps:
 
-1. User creates a `Recovery` crd that specifies the target `Repository` from where he/she want to recover. It also specify one or more volumes (`recoveredVolumes`) where the recovered data will be stored.
-2. Stash operator watches for `Recovery` crd. If it find one, it check if respective `Repository` crd exist.
+1. A user creates a `Recovery` crd that specifies the target `Repository` from where he/she want to recover. It also specifies one or more volumes (`recoveredVolumes`) where the recovered data will be stored.
+2. Stash operator watches for new `Recovery` crds. If it sees one, it checks if the referred `Repository` crd exists or not.
 3. Then, Stash operator creates a `Job` to recover the backed up data.
-4. The recovery `Job` read backend information from `Repository` crd and backend credentials from the storage `Secret`.
-5. Then, the recovery `Job` recover data from the backend and store in the target volume.
-6. Finally, the user mount this recovered volume into the original workload and re-deploy it.
+4. The recovery `Job` reads the backend information from `Repository` crd and the backend credentials from the storage `Secret`.
+5. Then, the recovery `Job` recovers data from the backend and stores it in the target volume.
+6. Finally, the user mounts this recovered volume into the original workload and re-deploys it.
 
 ## Recovery
 
-Now, we are going to recover backed up data from `deployment.stash-demo` Repository that was created while taking backup into a PVC named `stash-recoved`.
+Now, we are going to recover backed up data from `deployment.stash-demo` Repository that was created while taking backup into a PVC named `stash-recovered`.
 
-At first, let's delete `Restic` crd so that it does not lock the repository while are recovering from it. Also delete `stash-demo` deployment and `stash-sample-data` ConfigMap if you had followed our backup guide.
+At first, let's delete `Restic` crd so that it does not lock the repository while are recovering from it. Also, delete `stash-demo` deployment and `stash-sample-data` ConfigMap if you followed our backup guide.
 
 ```console
 $ kubectl delete deployment -n demo stash-demo
@@ -77,7 +76,7 @@ $ kubectl delete configmap -n demo stash-sample-data
 configmap "stash-sample-data" deleted
 ```
 
->Note: In order to perform recovery, we need `Repository` crd (in our case `deployment.stah-demo`) and backend secret (in our case `local-secret`) to exist.
+>Note: In order to perform recovery, we need `Repository` crd (in our case `deployment.stash-demo`) and backend secret (in our case `local-secret`).
 
 **Create PVC:**
 
@@ -96,7 +95,7 @@ $ kubectl apply -f ./docs/examples/recovery/pvc.yaml
 persistentvolumeclaim/stash-recovered created
 ```
 
-Below the YAML for `PersistentVolumeClaim` we have created above,
+Here is the definition of the `PersistentVolumeClaim` we have created above,
 
 ```yaml
 apiVersion: v1
@@ -115,7 +114,7 @@ spec:
       storage: 50Mi
 ```
 
-Check that if cluster has provisioned the requested claim,
+Check whether cluster has provisioned the requested claim.
 
 ```console
 $ kubectl get pvc -n demo -l app=stash-demo
@@ -125,11 +124,11 @@ stash-recovered   Bound    pvc-e6ffface-fa01-11e8-8905-0800277ca39d   50Mi      
 
 Look at the `STATUS` filed. `stash-recovered` PVC is bounded to volume `pvc-e6ffface-fa01-11e8-8905-0800277ca39d`.
 
-**Create Recovery:**
+**Create Recovery CRD:**
 
 Now, we have to create a `Recovery` crd to recover backed up data into this PVC.
 
-Below, the YAML for `Recovery` crd we are going to create.
+The resource definition of the `Recovery` crd we are going to create is below:
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
@@ -167,7 +166,7 @@ Wait until `Recovery` job completes its task. To verify that recovery has comple
 
 ```console
 $ kubectl get recovery -n demo local-recovery
-NAME             REPOSITORYNAMESPACE   REPOSITORYNAME          SNAPSHOT   PHASE       AGE
+NAME             REPOSITORY-NAMESPACE  REPOSITORY-NAME         SNAPSHOT   PHASE       AGE
 local-recovery   demo                  deployment.stash-demo              Succeeded   54s
 ```
 
@@ -181,9 +180,9 @@ $ kubectl get recovery -n demo local-recovery -o yaml
 
 **Re-deploy Workload:**
 
-We have successfully restored backed up data into `stash-recovered` PVC. Now, we will re-deploy our previous deployment `stash-demo`. This time, we will mount the `stash-recovered` PVC as `source-data` volume instead of ConfigMap `stash-sample-data`.
+We have successfully restored backed up data into `stash-recovered` PVC. Now, we are going to re-deploy our previous deployment `stash-demo`. This time, we are going to mount the `stash-recovered` PVC as `source-data` volume instead of ConfigMap `stash-sample-data`.
 
-Below, the YAML for `stash-demo` deployment with `stash-recovered` PVC as `source-data` volume.
+Below is the YAML for `stash-demo` deployment with `stash-recovered` PVC as `source-data` volume.
 
 ```yaml
 apiVersion: apps/v1
@@ -253,7 +252,7 @@ So, we can see that the data we had backed up from original deployment are now p
 
 ## Recover a specific snapshot
 
-With the help of [Snapshot](/docs/concepts/crds/snapshot.md) object, stash allows the users to recover a particular snapshot. Now, the users can specify which snapshot to recover. Here, is an example of how to recover a specific snapshot.
+With the help of [Snapshot](/docs/concepts/crds/snapshot.md) object, Stash allows users to recover from a particular snapshot. Here is an example of how to recover from a specific snapshot.
 
 First, list the available snapshots,
 
@@ -269,7 +268,7 @@ deployment.stash-demo-baff6c47   50s
 
 >Note: If you are using [Local](/docs/guides/backends/local.md) backend for storing backup snapshots, your workload must be running to be able to list snapshots.
 
-Below the YAML for `Recovery` crd with to recover specific snapshot.
+Below is the YAML for `Recovery` crd referring to a specific snapshot.
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1

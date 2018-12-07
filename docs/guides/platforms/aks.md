@@ -15,7 +15,7 @@ menu_name: product_stash_0.7.0
 
 # Using Stash with Azure Kubernetes Service (AKS)
 
-This tutorial will show you how to use Stash to **backup** and **restore** a volume in [Azure Kubernetes Service](https://azure.microsoft.com/en-us/services/kubernetes-service/). Here, we are going to backup the `/source/data` folder of a busybox pod into  [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/). Then, we will show how to recover this data into a `PersistentVolumeClaim(PVC)`. We will also re-deploy deployment using this recovered volume.
+This tutorial will show you how to use Stash to **backup** and **restore** a volume in [Azure Kubernetes Service](https://azure.microsoft.com/en-us/services/kubernetes-service/). Here, we are going to backup the `/source/data` folder of a busybox pod into [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/). Then, we are going to show how to recover this data into a `PersistentVolumeClaim(PVC)`. We are going to also re-deploy deployment using this recovered volume.
 
 ## Before You Begin
 
@@ -23,15 +23,15 @@ At first, you need to have a AKS cluster. If you don't already have a cluster, c
 
 - Install Stash in your cluster following the steps [here](/docs/setup/install.md).
 
-- You should have understanding of following Stash concepts:
-
+- You should be familiar with the following Stash concepts:
   - [Restic](/docs/concepts/crds/restic.md)
   - [Repository](/docs/concepts/crds/repository.md)
   - [Recovery](/docs/concepts/crds/recovery.md)
   - [Snapshot](/docs/concepts/crds/snapshot.md)
-- You will need to have a [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/) to store the backup snapshots.
 
-To keep things isolated, we will use a separate namespace called `demo` throughout this tutorial.
+- You will need a [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/) to store the backup snapshots.
+
+To keep things isolated, we are going to use a separate namespace called `demo` throughout this tutorial.
 
 ```console
 $ kubectl create ns demo
@@ -42,7 +42,7 @@ namespace/demo created
 
 ## Backup
 
-In order to take backup, we need some sample data. Stash has some sample data in [stash-data](https://github.com/appscode/stash-data) repository. As [gitRepo](https://kubernetes.io/docs/concepts/storage/volumes/#gitrepo) volume has been deprecated, we will not use this repository as volume directly. Instead, we will create a [configMap](https://kubernetes.io/docs/concepts/storage/volumes/#configmap) from these data and use that ConfigMap as data source.
+In order to take backup, we need some sample data. Stash has some sample data in [stash-data](https://github.com/appscode/stash-data) repository. As [gitRepo](https://kubernetes.io/docs/concepts/storage/volumes/#gitrepo) volume has been deprecated, we are not going to use this repository as volume directly. Instead, we are going to create a [configMap](https://kubernetes.io/docs/concepts/storage/volumes/#configmap) from the stash-data repository and use that ConfigMap as data source.
 
 Let's create a ConfigMap from these sample data,
 
@@ -123,7 +123,7 @@ Now, we are ready to backup `/source/data` directory into [Azure Blob Container]
 
 **Create Secret:**
 
-At first, we need to create a storage secret that hold the credentials for the backend. To configure this backend, following secret keys are needed:
+At first, we need to create a storage secret that hold the credentials for the backend. To configure this backend, the following secret keys are needed:
 
 | Key                     | Description                                                |
 |-------------------------|------------------------------------------------------------|
@@ -170,7 +170,7 @@ type: Opaque
 
 **Create Restic:**
 
-Now, we will create `Restic` crd to take backup `/source/data` directory of `stash-demo` deployment. This will create a repository in the Azure blob container specified in `azure.container` field and start taking periodic backup of `/source/data` directory.
+Now, we are going to create `Restic` crd to take backup `/source/data` directory of `stash-demo` deployment. This will create a repository in the Azure blob container specified in `azure.container` field and start taking periodic backup of `/source/data` directory.
 
 ```console
 $ kubectl apply -f ./docs/examples/platforms/aks/restic.yaml
@@ -215,7 +215,7 @@ NAME                          READY   STATUS    RESTARTS   AGE
 stash-demo-6b8c94cdd7-8jhtn   2/2     Running   1          1h
 ```
 
-Look at the pod. It now has 2 containers. If you view the YAML of this pod, you will see there is a container named `stash` which running `backup` command.
+Look at the pod. It now has 2 containers. If you view the resource definition of this pod, you will see there is a container named `stash` which running `backup` command.
 
 **Verify Backup:**
 
@@ -362,7 +362,7 @@ $ kubectl get recovery -n demo rook-recovery -o yaml
 
 **Re-deploy Workload:**
 
-We have successfully restored backup data into `stash-recovered` PVC. Now, we will re-deploy our previous deployment `stash-demo`. This time, we will mount the `stash-recovered` PVC as `source-data` volume instead of ConfigMap `stash-sample-data`.
+We have successfully restored backup data into `stash-recovered` PVC. Now, we are going to re-deploy our previous deployment `stash-demo`. This time, we are going to mount the `stash-recovered` PVC as `source-data` volume instead of ConfigMap `stash-sample-data`.
 
 Below, the YAML for `stash-demo` deployment with `stash-recovered` PVC as `source-data` volume.
 
@@ -405,7 +405,7 @@ spec:
 Let's create the deployment,
 
 ```console
-$  kubectl apply -f ./docs/examples/platforms/aks/recovered-deployment.yaml 
+$  kubectl apply -f ./docs/examples/platforms/aks/recovered-deployment.yaml
 deployment.apps/stash-demo created
 ```
 

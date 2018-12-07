@@ -123,7 +123,7 @@ $ kubectl get repository -l node-name=minikube
 
 ## Deleting Repository
 
-Stash allows the users to delete **only `Repository` crd** or **`Repository` crd with respective restic repository**. Here, we will show how to perform these delete operations.
+Stash allows the users to delete **only `Repository` crd** or **`Repository` crd with respective restic repository**. Here, we are going to show how to perform these delete operations.
 
 ### Delete only Repository crd
 
@@ -215,6 +215,6 @@ If everything goes well, respective restic repository will be deleted from the b
 - To run backup in offline mode see [here](/docs/guides/offline_backup.md)
 - See the list of supported backends and how to configure them [here](/docs/guides/backends/overview.md).
 - See working examples for supported workload types [here](/docs/guides/workloads.md).
-- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/monitoring.md).
+- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/monitoring/overview.md).
 - Learn about how to configure [RBAC roles](/docs/guides/rbac.md).
 - Want to hack on Stash? Check our [contribution guidelines](/docs/CONTRIBUTING.md).

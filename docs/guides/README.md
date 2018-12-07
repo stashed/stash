@@ -26,5 +26,5 @@ Guides show you how to perform tasks with Stash.
 - Learn to use Stash with self-hosted TLS secured Minio Server [here](/docs/guides/minio_server.md).
 - Learn to use Stash in Rook Storage System [here](/docs/guides/rook.md)
 - See working examples for supported workload types [here](/docs/guides/workloads.md).
-- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/monitoring.md).
+- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/monitoring/overview.md).
 - Learn about how to configure [RBAC roles](/docs/guides/rbac.md).

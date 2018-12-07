@@ -16,7 +16,7 @@ section_menu_id: guides
 
 # Backup Volumes using Stash
 
-This tutorial will show you how to use Stash to backup a Kubernetes volume. Here, we are going to backup the `/source/data` folder of a busybox pod into a [NFS](https://kubernetes.io/docs/concepts/storage/volumes/#nfs) volume. NFS volume is configured as a [Local](/docs/guides/backends/local.md) bakend of Stash.
+This tutorial will show you how to use Stash to back up a Kubernetes volume. Here, we are going to backup the `/source/data` folder of a busybox pod into a [NFS](https://kubernetes.io/docs/concepts/storage/volumes/#nfs) volume. NFS volume is configured as a [Local](/docs/guides/backends/local.md) bakend of Stash.
 
 ## Before You Begin
 
@@ -24,15 +24,15 @@ At first, you need to have a Kubernetes cluster, and the `kubectl` command-line 
 
 - Install `Stash` in your cluster following the steps [here](/docs/setup/install.md).
 
-- You should have understanding of following Stash concepts:
+- You should be familiar with the following Stash concepts:
 
   - [Restic](/docs/concepts/crds/restic.md)
   - [Repository](/docs/concepts/crds/repository.md)
   - [Snapshot](/docs/concepts/crds/snapshot.md)
 
-- You will need to have a NFS server to store backed up data. If you already do not have a NFS server running, deploy one following the tutorial from [here](https://github.com/appscode/third-party-tools/blob/master/storage/nfs/README.md). For this tutorial, we have deployed NFS server in `storage` namespace and it is accessible through `nfs-service.storage.svc.cluster.local` dns.
+- You will need an NFS server to store backed up data. If you already do not have an NFS server running, deploy one following the tutorial from [here](https://github.com/appscode/third-party-tools/blob/master/storage/nfs/README.md). For this tutorial, we have deployed NFS server in `storage` namespace and it is accessible through `nfs-service.storage.svc.cluster.local` dns.
 
-To keep things isolated, we will use a separate namespace called `demo` throughout this tutorial.
+To keep things isolated, we are going to use a separate namespace called `demo` throughout this tutorial.
 
 ```console
 $ kubectl create ns demo
@@ -43,23 +43,23 @@ namespace/demo created
 
 ## Overview
 
-Following diagram show how Stash takes backup of a Kubernetes volume. Open the image in new tab to see enlarged image.
+The following diagram shows how Stash takes backup of a Kubernetes volume. Open the image in a new tab to see the enlarged image.
 
 <p align="center">
   <img alt="Stash Backup Flow" src="/docs/images/stash-backup.svg">
 </p>
 
-We can represent the backup flow in terms of following steps:
+The backup process consists of the following steps:
 
-1. At first, user creates a `Secret`. This secret holds the credentials to access the backend where backed up data will be stored. It also holds a password (`RESTIC_PASSWORD`) that will be used to encrypt the backed up data.
-2. Then, user creates a `Restic` crd which specifies the targeted workload for backup. It also specify the backend information where the backed up data will be stored.
-3. Stash operator watches for `Restic` crd. Once, it found a `Restic` crd, it identify the targeted workloads that match `Restic`'s selector.
-4. Then, Stash operator inject a sidecar container named `stash` and mount the target volume in it.
+1. At first, a user creates a `Secret`. This secret holds the credentials to access the backend where backed up data will be stored. It also holds a password (`RESTIC_PASSWORD`) that will be used to encrypt the backed up data.
+2. Then, the user creates a `Restic` crd which specifies the targeted workload for backup. It also specifies the backend information where the backed up data will be stored.
+3. Stash operator watches for `Restic` crd. Once, it found a `Restic` crd, it identifies the targeted workloads that match `Restic`'s selector.
+4. Then, Stash operator injects a sidecar container named `stash` and mounts the target volume into it.
 5. Finally, `stash` sidecar container takes periodic backup of the volume to specified backend. It also creates a `Repository` crd in first backup which represents the original repository in the backend in Kubernetes native way.
 
 ## Backup
 
-In order to take backup, we need some sample data. Stash has some sample data in [stash-data](https://github.com/appscode/stash-data) repository. As [gitRepo](https://kubernetes.io/docs/concepts/storage/volumes/#gitrepo) volume has been deprecated, we will not use this repository as volume directly. Instead, we will create a [configMap](https://kubernetes.io/docs/concepts/storage/volumes/#configmap) from these data and use that ConfigMap as data source.
+In order to take back up, we need some sample data. Stash has some sample data in [appscode/stash-data](https://github.com/appscode/stash-data) repository. As [gitRepo](https://kubernetes.io/docs/concepts/storage/volumes/#gitrepo) volume has been deprecated, we are not going to use this repository volume directly. Instead, we are going to create a [configMap](https://kubernetes.io/docs/concepts/storage/volumes/#configmap) from these data and use that ConfigMap as the data source.
 
 Let's create a ConfigMap from these sample data,
 
@@ -119,7 +119,7 @@ $ kubectl apply -f ./docs/examples/backup/deployment.yaml
 deployment.apps/stash-demo created
 ```
 
-Now, wait for deployment's pod to go in `Running` state.
+Now, wait for deployment's pod to go into `Running` state.
 
 ```console
 $ kubectl get pod -n demo -l app=stash-demo
@@ -136,11 +136,11 @@ LICENSE
 README.md
 ```
 
-Now, we are ready to backup `/source/data` directory into a NFS backend.
+Now, we are ready to backup `/source/data` directory into an NFS backend.
 
 **Create Secret:**
 
-At first, we need to create a storage secret. To configure this backend, following secret keys are needed:
+At first, we need to create a storage secret. To configure this backend, the following secret keys are needed:
 
 |        Key        |                        Description                         |
 | ----------------- | ---------------------------------------------------------- |
@@ -178,7 +178,7 @@ type: Opaque
 
 **Create Restic:**
 
-Now, we will create `Restic` crd to take backup `/source/data` directory of `stash-demo` deployment. This will create a repository in the directory of NFS server specified by `local.nfs.path` field and start taking periodic backup of `/source/data` directory.
+Now, we are going to create a `Restic` crd to back up `/source/data` directory of `stash-demo` deployment. This will create a repository in the directory of NFS server specified by `local.nfs.path` field and start taking periodic backup of `/source/data` directory.
 
 Below, the YAML for Restic crd we are going to create,
 
@@ -238,7 +238,7 @@ NAME                          READY   STATUS    RESTARTS   AGE
 stash-demo-7ffdb5d7fd-5x8l6   2/2     Running   0          37s
 ```
 
-Look at the pod. It now has 2 containers. If you view the YAML of this pod, you will see that there is a container named `stash` which running `backup` command.
+Look at the pod. It now has 2 containers. If you view the resource definition of this pod, you will see that there is a container named `stash` which running `backup` command.
 
 ```console
 $ kubectl get pod -n demo stash-demo-7ffdb5d7fd-5x8l6 -o yaml
@@ -433,9 +433,9 @@ NAME                    BACKUPCOUNT   LASTSUCCESSFULBACKUP   AGE
 deployment.stash-demo   4             23s                    4m
 ```
 
-Here, `BACKUPCOUNT` field indicates number of backup snapshot has taken in this repository.
+Here, `BACKUPCOUNT` field indicates the number of backup snapshots has taken in this repository.
 
-`Restic` will take backup of the volume periodically with a 1-minute interval. You can verify that backup snapshots has been created successfully by,
+`Restic` will take backup of the volume periodically with a 1-minute interval. You can verify that backup snapshots have been created successfully by running the following command:
 
 ```console
 $ kubectl get snapshots -n demo -l repository=deployment.stash-demo
@@ -452,7 +452,7 @@ Here, we can see 4 last successful backup [Snapshot](/docs/concepts/crds/snapsho
 
 To stop Stash from taking backup, you can do following things:
 
-- Set `spec.paused: true` in Restic `yaml` and then apply the update. 
+- Set `spec.paused: true` in Restic `yaml` and then apply the update.
 This means:
 
   - Paused Restic CRDs will not applied to newly created workloads.

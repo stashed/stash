@@ -9,10 +9,10 @@ metadata:
 spec:
   additionalPrinterColumns:
   - JSONPath: .spec.repository.namespace
-    name: RepositoryNamespace
+    name: Repository-Namespace
     type: string
   - JSONPath: .spec.repository.name
-    name: RepositoryName
+    name: Repository-Name
     type: string
   - JSONPath: .spec.snapshot
     name: Snapshot

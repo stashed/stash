@@ -15,7 +15,7 @@ menu_name: product_stash_0.7.0
 
 # Using Stash with Rook Storage Service
 
-This tutorial will show you how to use Stash to **backup** and **restore** a Kubernetes volume in [Rook](https://rook.io/) storage service. Here, we are going to backup the `/source/data` folder of a busybox pod into [AWS S3](/docs/guides/backends.md#aws-s3) compatible [Rook Object Storage](https://rook.io/docs/rook/master/object.html). Then, we will show how to recover this data into a `PersistentVolumeClaim` of [Rook Block Storage](https://rook.io/docs/rook/master/block.html). We will also re-deploy deployment using this recovered volume.
+This tutorial will show you how to use Stash to **backup** and **restore** a Kubernetes volume in [Rook](https://rook.io/) storage service. Here, we are going to backup the `/source/data` folder of a busybox pod into [AWS S3](/docs/guides/backends.md#aws-s3) compatible [Rook Object Storage](https://rook.io/docs/rook/master/object.html). Then, we are going to show how to recover this data into a `PersistentVolumeClaim` of [Rook Block Storage](https://rook.io/docs/rook/master/block.html). We are going to also re-deploy deployment using this recovered volume.
 
 ## Before You Begin
 
@@ -23,15 +23,15 @@ At first, you need to have a Kubernetes cluster, and the kubectl command-line to
 
 - Install `Stash` in your cluster following the steps [here](/docs/setup/install.md).
 
-- You should have understanding of following Stash concepts:
+- You should be familiar with the following Stash concepts:
   - [Restic](/docs/concepts/crds/restic.md)
   - [Repository](/docs/concepts/crds/repository.md)
   - [Recovery](/docs/concepts/crds/recovery.md)
   - [Snapshot](/docs/concepts/crds/snapshot.md)
 
-- You will need to have a [Rook Storage Service](https://rook.io) with [Object Storage](https://rook.io/docs/rook/master/object.html) and [Block Storage](https://rook.io/docs/rook/master/block.html) configured. If you do not already have a **Rook Storage Service** configured, you can create one by following this [quickstart guide](https://rook.io/docs/rook/master/quickstart.html).
+- You will need a [Rook Storage Service](https://rook.io) with [Object Storage](https://rook.io/docs/rook/master/object.html) and [Block Storage](https://rook.io/docs/rook/master/block.html) configured. If you do not already have a **Rook Storage Service** configured, you can create one by following this [quickstart guide](https://rook.io/docs/rook/master/quickstart.html).
 
-To keep things isolated, we will use a separate namespace called `demo` throughout this tutorial.
+To keep things isolated, we are going to use a separate namespace called `demo` throughout this tutorial.
 
 ```console
 $ kubectl create ns demo
@@ -42,7 +42,7 @@ namespace/demo created
 
 ## Backup
 
-In order to take backup, we need some sample data. Stash has some sample data in [stash-data](https://github.com/appscode/stash-data) repository. As [gitRepo](https://kubernetes.io/docs/concepts/storage/volumes/#gitrepo) volume has been deprecated, we will not use this repository as volume directly. Instead, we will create a [configMap](https://kubernetes.io/docs/concepts/storage/volumes/#configmap) from these data and use that ConfigMap as data source.
+In order to take backup, we need some sample data. Stash has some sample data in [stash-data](https://github.com/appscode/stash-data) repository. As [gitRepo](https://kubernetes.io/docs/concepts/storage/volumes/#gitrepo) volume has been deprecated, we are not going to use this repository as volume directly. Instead, we are going to create a [configMap](https://kubernetes.io/docs/concepts/storage/volumes/#configmap) from the stash-data repository and use that ConfigMap as data source.
 
 Let's create a ConfigMap from these sample data,
 
@@ -123,7 +123,7 @@ Now, we are ready to backup `/source/data` directory into a Rook bucket.
 
 **Create Secret:**
 
-At first, we need to create a secret for `Restic` crd. To configure this backend, following secret keys are needed:
+At first, we need to create a secret for `Restic` crd. To configure this backend, the following secret keys are needed:
 
 |           Key           |                        Description                         |
 | ----------------------- | ---------------------------------------------------------- |
@@ -169,7 +169,7 @@ type: Opaque
 
 **Create Restic:**
 
-Now, we will create `Restic` crd to take backup `/source/data` directory of `stash-demo` deployment. This will create a repository in the Rook bucket specified by `s3.bucket` field and start taking periodic backup of `/source/data` directory.
+Now, we are going to create `Restic` crd to take backup `/source/data` directory of `stash-demo` deployment. This will create a repository in the Rook bucket specified by `s3.bucket` field and start taking periodic backup of `/source/data` directory.
 
 ```console
 $ kubectl apply -f ./docs/examples/platforms/rook/restic.yaml
@@ -215,7 +215,7 @@ NAME                          READY   STATUS    RESTARTS   AGE
 stash-demo-6c9cd4cf4c-bn5wm   2/2     Running   0          53s
 ```
 
-Look at the pod. It now has 2 containers. If you view the YAML of this pod, you will see that there is a container named `stash` which running `backup` command.
+Look at the pod. It now has 2 containers. If you view the resource definition of this pod, you will see that there is a container named `stash` which running `backup` command.
 
 **Verify Backup:**
 
@@ -362,7 +362,7 @@ $ kubectl get recovery -n demo rook-recovery -o yaml
 
 **Re-deploy Workload:**
 
-We have successfully restored backed up data into `stash-recovered` PVC. Now, we will re-deploy our previous deployment `stash-demo`. This time, we will mount the `stash-recovered` PVC as `source-data` volume instead of ConfigMap `stash-sample-data`.
+We have successfully restored backed up data into `stash-recovered` PVC. Now, we are going to re-deploy our previous deployment `stash-demo`. This time, we are going to mount the `stash-recovered` PVC as `source-data` volume instead of ConfigMap `stash-sample-data`.
 
 Below, the YAML for `stash-demo` deployment with `stash-recovered` PVC as `source-data` volume.
 

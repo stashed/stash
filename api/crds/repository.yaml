@@ -9,11 +9,11 @@ metadata:
 spec:
   additionalPrinterColumns:
   - JSONPath: .status.backupCount
-    name: BackupCount
+    name: Backup-Count
     type: integer
   - JSONPath: .status.lastBackupTime
     format: date-time
-    name: LastSuccessfulBackup
+    name: Last-Successful-Backup
     type: date
   - JSONPath: .metadata.creationTimestamp
     name: Age
