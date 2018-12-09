@@ -40,12 +40,12 @@ func (c *StashController) NewRepositoryWebhook() hooks.AdmissionHook {
 }
 func (c *StashController) initRepositoryWatcher() {
 	c.repoInformer = c.stashInformerFactory.Stash().V1alpha1().Repositories().Informer()
-	c.repoQueue = queue.New("Repository", c.MaxNumRequeues, c.NumThreads, c.runRepositoryInjector)
+	c.repoQueue = queue.New("Repository", c.MaxNumRequeues, c.NumThreads, c.runRepositoryReconciler)
 	c.repoInformer.AddEventHandler(queue.DefaultEventHandler(c.repoQueue.GetQueue()))
 	c.repoLister = c.stashInformerFactory.Stash().V1alpha1().Repositories().Lister()
 }
 
-func (c *StashController) runRepositoryInjector(key string) error {
+func (c *StashController) runRepositoryReconciler(key string) error {
 	obj, exist, err := c.repoInformer.GetIndexer().GetByKey(key)
 	if err != nil {
 		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)
@@ -61,7 +61,8 @@ func (c *StashController) runRepositoryInjector(key string) error {
 
 		if repo.DeletionTimestamp != nil {
 			if core_util.HasFinalizer(repo.ObjectMeta, util.RepositoryFinalizer) {
-				if repo.Spec.WipeOut {
+				// ignore invalid repository objects (eg: created by xray).
+				if repo.IsValid() == nil && repo.Spec.WipeOut {
 					err = c.deleteResticRepository(repo)
 					if err != nil {
 						return err

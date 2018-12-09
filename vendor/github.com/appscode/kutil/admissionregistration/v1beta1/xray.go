@@ -1,14 +1,16 @@
 package v1beta1
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/appscode/kutil"
 	apireg_util "github.com/appscode/kutil/apiregistration/v1beta1"
 	core_util "github.com/appscode/kutil/core/v1"
 	"github.com/appscode/kutil/discovery"
+	dynamic_util "github.com/appscode/kutil/dynamic"
 	meta_util "github.com/appscode/kutil/meta"
-	"github.com/evanphx/json-patch"
+	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
@@ -111,6 +113,7 @@ func (d ValidatingWebhookXray) IsActive() error {
 	}
 
 	attempt := 0
+	var failures []string
 	return wait.PollImmediateUntil(kutil.RetryInterval, func() (bool, error) {
 		apisvc, err := apireg.ApiregistrationV1beta1().APIServices().Get(d.apisvc, metav1.GetOptions{})
 		if err != nil {
@@ -144,11 +147,17 @@ func (d ValidatingWebhookXray) IsActive() error {
 				attempt++
 				active, err := d.check()
 				if err != nil {
-					glog.Warningf("Attempt %d to detect ValidatingWebhook activation failed due to %s", attempt, err.Error())
+					failures = append(failures, fmt.Sprintf("Attempt %d to detect ValidatingWebhook activation failed due to %s", attempt, err.Error()))
 				}
 				err = retry(err)
 				if active || err != nil {
 					d.updateAPIService(apireg, apisvc, err)
+				}
+				if err != nil {
+					// log failures only if xray fails, otherwise don't confuse users with intermediate failures.
+					for _, msg := range failures {
+						glog.Warningln(msg)
+					}
 				}
 				return active, err
 			}
@@ -157,7 +166,7 @@ func (d ValidatingWebhookXray) IsActive() error {
 	}, d.stopCh)
 }
 
-func (d ValidatingWebhookXray) updateAPIService(apireg apireg_cs.Interface, apisvc *apiregistration.APIService, err error) {
+func (d ValidatingWebhookXray) updateAPIService(apireg apireg_cs.Interface, apisvc *apiregistration.APIService, err error) error {
 	fn := func(annotations map[string]string) map[string]string {
 		if len(annotations) == 0 {
 			annotations = map[string]string{}
@@ -172,7 +181,7 @@ func (d ValidatingWebhookXray) updateAPIService(apireg apireg_cs.Interface, apis
 		return annotations
 	}
 
-	apireg_util.PatchAPIService(apireg, apisvc, func(in *apiregistration.APIService) *apiregistration.APIService {
+	_, _, e3 := apireg_util.PatchAPIService(apireg, apisvc, func(in *apiregistration.APIService) *apiregistration.APIService {
 		data, ok := in.Annotations[meta_util.LastAppliedConfigAnnotation]
 		if ok {
 			u, e2 := runtime.Decode(unstructured.UnstructuredJSONScheme, []byte(data))
@@ -193,6 +202,7 @@ func (d ValidatingWebhookXray) updateAPIService(apireg apireg_cs.Interface, apis
 		in.Annotations = fn(in.Annotations)
 		return in
 	})
+	return e3
 }
 
 func (d ValidatingWebhookXray) check() (bool, error) {
@@ -246,13 +256,13 @@ func (d ValidatingWebhookXray) check() (bool, error) {
 	if d.op == v1beta1.Create {
 		_, err := ri.Create(&u, metav1.CreateOptions{})
 		if kutil.AdmissionWebhookDeniedRequest(err) {
-			glog.Infof("failed to create invalid test object as expected with error: %s", err)
+			glog.V(10).Infof("failed to create invalid test object as expected with error: %s", err)
 			return true, nil
 		} else if err != nil {
 			return false, err
 		}
 
-		ri.Delete(accessor.GetName(), &metav1.DeleteOptions{})
+		dynamic_util.WaitUntilDeleted(ri, d.stopCh, accessor.GetName())
 		return false, ErrWebhookNotActivated
 	} else if d.op == v1beta1.Update {
 		_, err := ri.Create(&u, metav1.CreateOptions{})
@@ -273,10 +283,10 @@ func (d ValidatingWebhookXray) check() (bool, error) {
 		}
 
 		_, err = ri.Patch(accessor.GetName(), types.MergePatchType, patch, metav1.UpdateOptions{})
-		defer ri.Delete(accessor.GetName(), &metav1.DeleteOptions{})
+		defer dynamic_util.WaitUntilDeleted(ri, d.stopCh, accessor.GetName())
 
 		if kutil.AdmissionWebhookDeniedRequest(err) {
-			glog.Infof("failed to update test object as expected with error: %s", err)
+			glog.V(10).Infof("failed to update test object as expected with error: %s", err)
 			return true, nil
 		} else if err != nil {
 			return false, err
@@ -308,10 +318,10 @@ func (d ValidatingWebhookXray) check() (bool, error) {
 				ri.Patch(accessor.GetName(), types.MergePatchType, patch, metav1.UpdateOptions{})
 
 				// delete
-				ri.Delete(accessor.GetName(), &metav1.DeleteOptions{})
+				dynamic_util.WaitUntilDeleted(ri, d.stopCh, accessor.GetName())
 			}()
 
-			glog.Infof("failed to delete test object as expected with error: %s", err)
+			glog.V(10).Infof("failed to delete test object as expected with error: %s", err)
 			return true, nil
 		} else if err != nil {
 			return false, err

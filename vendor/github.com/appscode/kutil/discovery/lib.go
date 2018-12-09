@@ -3,7 +3,7 @@ package discovery
 import (
 	"fmt"
 
-	"github.com/appscode/go-version"
+	version "github.com/appscode/go-version"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"

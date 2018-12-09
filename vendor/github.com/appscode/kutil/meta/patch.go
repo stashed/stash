@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	jp "github.com/appscode/jsonpatch"
-	"github.com/evanphx/json-patch"
-	"github.com/json-iterator/go"
+	jsonpatch "github.com/evanphx/json-patch"
+	jsoniter "github.com/json-iterator/go"
 	"k8s.io/apimachinery/pkg/util/mergepatch"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 )
