@@ -5,7 +5,7 @@ import (
 
 	"github.com/appscode/go/types"
 	"github.com/appscode/mergo"
-	"github.com/json-iterator/go"
+	jsoniter "github.com/json-iterator/go"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

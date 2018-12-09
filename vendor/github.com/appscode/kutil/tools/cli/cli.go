@@ -7,7 +7,7 @@ import (
 
 	"github.com/appscode/go/log/golog"
 	"github.com/appscode/kutil/tools/analytics"
-	"github.com/jpillora/go-ogle-analytics"
+	ga "github.com/jpillora/go-ogle-analytics"
 	"github.com/spf13/cobra"
 )
 

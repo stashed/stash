@@ -2,7 +2,7 @@ package meta
 
 import (
 	"github.com/google/go-cmp/cmp"
-	"github.com/json-iterator/go"
+	jsoniter "github.com/json-iterator/go"
 	jsondiff "github.com/yudai/gojsondiff"
 	"github.com/yudai/gojsondiff/formatter"
 	"k8s.io/apimachinery/pkg/api/resource"

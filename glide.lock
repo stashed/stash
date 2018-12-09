@@ -1,5 +1,5 @@
 hash: 4f8094db058fef42adf0b07136b9208a6c6d50a6c634cfabc9c42f108429d9b5
-updated: 2018-12-03T14:10:17.769494304-08:00
+updated: 2018-12-08T18:54:40.614166269-08:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -42,7 +42,7 @@ imports:
   - registry/admissionreview/v1beta1
   - runtime/serializer/versioning
 - name: github.com/appscode/kutil
-  version: 239838b6231b8a27a66426e25678351ce50c4cfd
+  version: 51b5bcd8acd29487177991028426f9864c4c3637
   subpackages:
   - admissionregistration/v1beta1
   - apiextensions/v1beta1
@@ -65,7 +65,7 @@ imports:
 - name: github.com/appscode/ocutil
   version: 9e3ab89e810deaabe1fd353d01913aaf7dbe6e6d
 - name: github.com/appscode/osm
-  version: 1afd84f09007c717e2a46e9d87e30902d8331b91
+  version: fb08059eb9264578f9e15dc796f7afdb1bd40294
   subpackages:
   - context
 - name: github.com/appscode/pat

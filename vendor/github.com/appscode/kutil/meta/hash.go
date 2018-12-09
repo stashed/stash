@@ -134,7 +134,7 @@ func AlreadyObserved2(old, nu interface{}, enableStatusSubresource bool) bool {
 	}
 
 	if !match && bool(glog.V(log.LevelDebug)) {
-		diff := Diff(nu, old)
+		diff := Diff(old, nu)
 		glog.V(log.LevelDebug).Infof("%s %s/%s has changed. Diff: %s", GetKind(old), oldObj.GetNamespace(), oldObj.GetName(), diff)
 	}
 	return match

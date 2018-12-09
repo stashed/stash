@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/appscode/kutil"
-	"github.com/appscode/kutil/core/v1"
+	v1 "github.com/appscode/kutil/core/v1"
 	discovery_util "github.com/appscode/kutil/discovery"
 	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
@@ -19,6 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -26,6 +27,25 @@ import (
 	"k8s.io/client-go/tools/cache"
 	watchtools "k8s.io/client-go/tools/watch"
 )
+
+func WaitUntilDeleted(ri dynamic.ResourceInterface, stopCh <-chan struct{}, name string, subresources ...string) error {
+	err := ri.Delete(name, &metav1.DeleteOptions{}, subresources...)
+	if kerr.IsNotFound(err) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+	// delete operation was successful, now wait for obj to be removed(eg: objects with finalizers)
+	return wait.PollImmediateUntil(kutil.RetryInterval, func() (bool, error) {
+		_, e2 := ri.Get(name, metav1.GetOptions{}, subresources...)
+		if kerr.IsNotFound(e2) {
+			return true, nil
+		} else if e2 != nil && !kutil.IsRequestRetryable(e2) {
+			return false, e2
+		}
+		return false, nil
+	}, stopCh)
+}
 
 func UntilHasLabel(config *rest.Config, gvk schema.GroupVersionKind, namespace, name string, key string, value *string, timeout time.Duration) (out string, err error) {
 	return untilHasKey(config, gvk, namespace, name, func(obj metav1.Object) map[string]string { return obj.GetLabels() }, key, value, timeout)

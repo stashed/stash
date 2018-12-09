@@ -25,7 +25,13 @@ func RegisterCRDs(client crd_cs.ApiextensionsV1beta1Interface, crds []*crd_api.C
 		} else if err != nil {
 			return err
 		} else {
+			// Update AdditionalPrinterColumns, Catagories, ShortNames, Validation
+			// and Subresources of existing CRD.
+			existing.Spec.AdditionalPrinterColumns = crd.Spec.AdditionalPrinterColumns
+			existing.Spec.Names.Categories = crd.Spec.Names.Categories
+			existing.Spec.Names.ShortNames = crd.Spec.Names.ShortNames
 			existing.Spec.Validation = crd.Spec.Validation
+
 			if crd.Spec.Subresources != nil && existing.Spec.Subresources == nil {
 				existing.Spec.Subresources = &crd_api.CustomResourceSubresources{}
 				if crd.Spec.Subresources.Status != nil && existing.Spec.Subresources.Status == nil {
