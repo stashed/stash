@@ -2,13 +2,13 @@
 title: Rook | Stash
 description: Using Stash with Rook Storage Service
 menu:
-  product_stash_0.8.0:
+  product_stash_0.8.1:
     identifier: platforms-rook
     name: Rook
     parent: platforms
     weight: 50
 product_name: stash
-menu_name: product_stash_0.8.0
+menu_name: product_stash_0.8.1
 section_menu_id: guides
 ---
 

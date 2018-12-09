@@ -2,13 +2,13 @@
 title: Builtin Prometheus | Stash
 description: Monitor Stash using official Prometheus server
 menu:
-  product_stash_0.8.0:
+  product_stash_0.8.1:
     identifier: monitoring-builtin
     name: Builtin Prometheus
     parent: monitoring
     weight: 20
 product_name: stash
-menu_name: product_stash_0.8.0
+menu_name: product_stash_0.8.1
 section_menu_id: guides
 ---
 
@@ -32,7 +32,7 @@ namespace/demo created
 Enable Prometheus monitoring using `prometheus.io/builtin` agent while installing Stash. To know details about how to enable monitoring see [here](/docs/guides/monitoring/overview.md#how-to-enable-monitoring). Here, we are going to enable monitoring for both `backup & recovery` and `operator` metrics.
 
 ```console
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.0/hack/deploy/stash.sh | bash -s -- \
+$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.1/hack/deploy/stash.sh | bash -s -- \
   --monitoring-agent=prometheus.io/builtin \
   --monitoring-backup=true \
   --monitoring-operator=true \
@@ -120,7 +120,7 @@ stash-apiserver-cert   kubernetes.io/tls   2      2m21s
 If you are using a RBAC enabled cluster, you have to give necessary RBAC permissions for Prometheus. Let's create necessary RBAC stuffs for Prometheus,
 
 ```console
-$ kubectl apply -f curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.0/docs/examples/monitoring/builtin/prom-rbac.yaml
+$ kubectl apply -f curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.1/docs/examples/monitoring/builtin/prom-rbac.yaml
 clusterrole.rbac.authorization.k8s.io/stash-prometheus-server created
 serviceaccount/stash-prometheus-server created
 clusterrolebinding.rbac.authorization.k8s.io/stash-prometheus-server created
@@ -245,7 +245,7 @@ Also note that, we have provided a bearer-token file through `bearer_token_file`
 Let's create the ConfigMap we have shown above,
 
 ```console
-$ kubectl apply -f curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.0/docs/examples/monitoring/builtin/prom-config.yaml
+$ kubectl apply -f curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.1/docs/examples/monitoring/builtin/prom-config.yaml
 configmap/stash-prometheus-server-conf created
 ```
 
@@ -303,7 +303,7 @@ Notice that, we have mounted `stash-apiserver-cert` secret as a volume at `/etc/
 Now, let's create the deployment,
 
 ```console
-$ kubectl apply -f curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.0/docs/examples/monitoring/builtin/prom-deployment.yaml
+$ kubectl apply -f curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.1/docs/examples/monitoring/builtin/prom-deployment.yaml
 deployment.apps/stash-prometheus-server created
 ```
 

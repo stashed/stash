@@ -2,13 +2,13 @@
 title: Swift Backend | Stash
 description: Configure Stash to use OpenStack Swift as Backend.
 menu:
-  product_stash_0.8.0:
+  product_stash_0.8.1:
     identifier: backend-swift
     name: OpenStack Swift
     parent: backend
     weight: 60
 product_name: stash
-menu_name: product_stash_0.8.0
+menu_name: product_stash_0.8.1
 section_menu_id: guides
 ---
 
