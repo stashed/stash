@@ -1,9 +1,9 @@
 ---
 title: Guides | Stash
 menu:
-  product_stash_0.8.0:
+  product_stash_0.8.1:
     identifier: guides
     name: Guides
     weight: 40
-menu_name: product_stash_0.8.0
+menu_name: product_stash_0.8.1
 ---

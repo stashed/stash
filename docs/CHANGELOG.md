@@ -2,22 +2,34 @@
 title: Changelog | Stash
 description: Changelog
 menu:
-  product_stash_0.8.0:
+  product_stash_0.8.1:
     identifier: changelog-stash
     name: Changelog
     parent: welcome
     weight: 10
 product_name: stash
-menu_name: product_stash_0.8.0
+menu_name: product_stash_0.8.1
 section_menu_id: welcome
-url: /products/stash/0.8.0/welcome/changelog/
+url: /products/stash/0.8.1/welcome/changelog/
 aliases:
-  - /products/stash/0.8.0/CHANGELOG/
+  - /products/stash/0.8.1/CHANGELOG/
 ---
 
 # Change Log
 
-## [0.8.0](https://github.com/appscode/stash/tree/0.8.0) (2018-12-07)
+## [Unreleased](https://github.com/appscode/stash/tree/HEAD)
+
+[Full Changelog](https://github.com/appscode/stash/compare/0.8.0...HEAD)
+
+**Closed issues:**
+
+- Stash chart is throwing error [\#627](https://github.com/appscode/stash/issues/627)
+
+**Merged pull requests:**
+
+- Add missing validator for respository resource in chart [\#628](https://github.com/appscode/stash/pull/628) ([tamalsaha](https://github.com/tamalsaha))
+
+## [0.8.0](https://github.com/appscode/stash/tree/0.8.0) (2018-12-08)
 [Full Changelog](https://github.com/appscode/stash/compare/0.7.0...0.8.0)
 
 **Fixed bugs:**
@@ -56,6 +68,7 @@ aliases:
 
 **Merged pull requests:**
 
+- Prepare docs for 0.8.0 release [\#626](https://github.com/appscode/stash/pull/626) ([tamalsaha](https://github.com/tamalsaha))
 - Update docs \(Minio, Rook, NFS\) [\#625](https://github.com/appscode/stash/pull/625) ([hossainemruz](https://github.com/hossainemruz))
 - Use flags.DumpAll to dump flags [\#624](https://github.com/appscode/stash/pull/624) ([tamalsaha](https://github.com/tamalsaha))
 - Set periodic analytics [\#623](https://github.com/appscode/stash/pull/623) ([tamalsaha](https://github.com/tamalsaha))

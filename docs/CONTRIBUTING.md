@@ -2,17 +2,17 @@
 title: Contributing | Stash
 description: Contributing
 menu:
-  product_stash_0.8.0:
+  product_stash_0.8.1:
     identifier: contributing-stash
     name: Contributing
     parent: welcome
     weight: 10
 product_name: stash
-menu_name: product_stash_0.8.0
+menu_name: product_stash_0.8.1
 section_menu_id: welcome
-url: /products/stash/0.8.0/welcome/contributing/
+url: /products/stash/0.8.1/welcome/contributing/
 aliases:
-  - /products/stash/0.8.0/CONTRIBUTING/
+  - /products/stash/0.8.1/CONTRIBUTING/
 ---
 
 # Contribution Guidelines
