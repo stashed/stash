@@ -5,7 +5,7 @@
 ```console
 $ helm repo add appscode https://charts.appscode.com/stable/
 $ helm repo update
-$ helm install appscode/stash
+$ helm install appscode/stash --name stash-operator --namespace kube-system
 ```
 
 ## Introduction
@@ -17,9 +17,9 @@ This chart bootstraps a [Stash controller](https://github.com/appscode/stash) de
 - Kubernetes 1.8+
 
 ## Installing the Chart
-To install the chart with the release name `my-release`:
+To install the chart with the release name `stash-operator`:
 ```console
-$ helm install appscode/stash --name my-release
+$ helm install appscode/stash --name stash-operator
 ```
 The command deploys Stash operator on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
 
@@ -27,10 +27,10 @@ The command deploys Stash operator on the Kubernetes cluster in the default conf
 
 ## Uninstalling the Chart
 
-To uninstall/delete the `my-release`:
+To uninstall/delete the `stash-operator`:
 
 ```console
-$ helm delete my-release
+$ helm delete stash-operator
 ```
 
 The command removes all the Kubernetes components associated with the chart and deletes the release.
@@ -80,14 +80,14 @@ The following table lists the configurable parameters of the Stash chart and the
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example:
 
 ```console
-$ helm install --name my-release --set image.tag=v0.2.1 appscode/stash
+$ helm install --name stash-operator --set image.tag=v0.2.1 appscode/stash
 ```
 
 Alternatively, a YAML file that specifies the values for the parameters can be provided while
 installing the chart. For example:
 
 ```console
-$ helm install --name my-release --values values.yaml appscode/stash
+$ helm install --name stash-operator --values values.yaml appscode/stash
 ```
 
 ## RBAC
@@ -108,5 +108,5 @@ If the output contains "beta", you may install the chart with RBAC enabled (see 
 To enable the creation of RBAC resources (On clusters with RBAC). Do the following:
 
 ```console
-$ helm install --name my-release appscode/stash --set rbac.create=true
+$ helm install --name stash-operator appscode/stash --set rbac.create=true
 ```
