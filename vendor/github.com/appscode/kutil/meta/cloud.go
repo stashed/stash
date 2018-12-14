@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ghodss/yaml"
+	"sigs.k8s.io/yaml"
 )
 
 // ref: https://cloud.google.com/compute/docs/storing-retrieving-metadata

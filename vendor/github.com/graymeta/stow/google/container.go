@@ -133,7 +133,7 @@ func (c *Container) Items(prefix, cursor string, count int) ([]stow.Item, string
 	if err != nil {
 		return nil, "", err
 	}
-	return page.Items, cursor, err
+	return page.Items, page.Cursor, err
 }
 
 func (c *Container) RemoveItem(id string) error {

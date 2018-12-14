@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/graymeta/stow"
@@ -94,12 +95,12 @@ func (c *container) Browse(prefix, delimiter, cursor string, count int) (*stow.I
 
 // Items sends a request to retrieve a list of items that are prepended with
 // the prefix argument. The 'cursor' variable facilitates pagination.
-func (c *container) Items(prefix, startAfter string, count int) ([]stow.Item, string, error) {
-	page, err := c.Browse(prefix, "", startAfter, count)
+func (c *container) Items(prefix, cursor string, count int) ([]stow.Item, string, error) {
+	page, err := c.Browse(prefix, "", cursor, count)
 	if err != nil {
 		return nil, "", err
 	}
-	return page.Items, startAfter, err
+	return page.Items, page.Cursor, err
 }
 
 func (c *container) RemoveItem(id string) error {
@@ -180,7 +181,7 @@ func (c *container) getItem(id string) (*item, error) {
 	res, err := c.client.HeadObject(params)
 	if err != nil {
 		// stow needs ErrNotFound to pass the test but amazon returns an opaque error
-		if strings.Contains(err.Error(), "NoSuchKey") {
+		if aerr, ok := err.(awserr.Error); ok && aerr.Code() == "NotFound" {
 			return nil, stow.ErrNotFound
 		}
 		return nil, errors.Wrap(err, "getItem, getting the object")
