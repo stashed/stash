@@ -1,6 +1,10 @@
 package meta
 
 import (
+	"reflect"
+
+	"github.com/mitchellh/mapstructure"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/versioning"
@@ -96,4 +100,39 @@ func UnmarshalFromJSON(data []byte, gv schema.GroupVersion) (runtime.Object, err
 		scheme.Scheme.Name(),
 	)
 	return runtime.Decode(decoder, data)
+}
+
+// Decode takes an input structure and uses reflection to translate it to
+// the output structure. output must be a pointer to a map or struct.
+func Decode(input interface{}, output interface{}) error {
+	config := &mapstructure.DecoderConfig{
+		DecodeHook: StringToQuantityHookFunc(),
+		Metadata:   nil,
+		Result:     output,
+	}
+
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return err
+	}
+
+	return decoder.Decode(input)
+}
+
+// StringToQuantityHookFunc returns a DecodeHookFunc that converts string to resource.Quantity
+func StringToQuantityHookFunc() mapstructure.DecodeHookFunc {
+	return func(
+		f reflect.Type,
+		t reflect.Type,
+		data interface{}) (interface{}, error) {
+		if f.Kind() != reflect.String {
+			return data, nil
+		}
+		if t != reflect.TypeOf(resource.Quantity{}) {
+			return data, nil
+		}
+
+		// Convert it by parsing
+		return resource.ParseQuantity(data.(string))
+	}
 }

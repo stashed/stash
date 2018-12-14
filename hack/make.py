@@ -150,13 +150,13 @@ def update_registry():
 
 
 def install():
-    die(call('GO15VENDOREXPERIMENT=1 ' + libbuild.GOC + ' install .'))
+    die(call(libbuild.GOC + ' install .'))
 
 
 def default():
     gen()
     fmt()
-    die(call('GO15VENDOREXPERIMENT=1 ' + libbuild.GOC + ' install . ./test/...'))
+    die(call(libbuild.GOC + ' install . ./test/...'))
 
 
 def test(type, *args):

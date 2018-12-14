@@ -90,6 +90,7 @@ func NewDeleteValidatingWebhookXray(config *rest.Config, apisvc string, testObj 
 func retry(err error) error {
 	if err == nil ||
 		strings.HasPrefix(err.Error(), "Internal error occurred: failed calling admission webhook") ||
+		strings.HasPrefix(err.Error(), "Internal error occurred: failed calling webhook") || // https://github.com/kubernetes/kubernetes/pull/70060/files
 		kerr.IsNotFound(err) ||
 		kerr.IsServiceUnavailable(err) ||
 		kerr.IsTimeout(err) ||

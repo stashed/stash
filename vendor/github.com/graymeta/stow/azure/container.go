@@ -34,6 +34,8 @@ func (c *container) Name() string {
 }
 
 func (c *container) Item(id string) (stow.Item, error) {
+	id = strings.Replace(id, " ", "+", -1)
+
 	blob := c.client.GetContainerReference(c.id).GetBlobReference(id)
 	err := blob.GetProperties(nil)
 	if err != nil {
@@ -95,7 +97,7 @@ func (c *container) Items(prefix, cursor string, count int) ([]stow.Item, string
 	if err != nil {
 		return nil, "", err
 	}
-	return page.Items, cursor, err
+	return page.Items, page.Cursor, err
 }
 
 func (c *container) Put(name string, r io.Reader, size int64, metadata map[string]interface{}) (stow.Item, error) {

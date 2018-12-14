@@ -21,11 +21,11 @@ import (
 	"strings"
 
 	"github.com/appscode/go/types"
-	"github.com/ghodss/yaml"
 	extensionsobj "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/kube-openapi/pkg/common"
+	"sigs.k8s.io/yaml"
 )
 
 // Config stores the user configuration input

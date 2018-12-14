@@ -1,5 +1,5 @@
-hash: 4f8094db058fef42adf0b07136b9208a6c6d50a6c634cfabc9c42f108429d9b5
-updated: 2018-12-08T18:54:40.614166269-08:00
+hash: 87fb25c85d3046c49ae25109372cedd8660ed80ecc04a70ef06b451bb9a8aea1
+updated: 2018-12-14T06:01:34.958562485-08:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -9,7 +9,7 @@ imports:
   - compute/metadata
   - internal
 - name: github.com/appscode/go
-  version: aa0a55d74dac66f9b9bec9c0e7b67944115a3f44
+  version: 584aaa73af837f112c0a471be398ea837341c330
   subpackages:
   - analytics
   - context
@@ -42,7 +42,7 @@ imports:
   - registry/admissionreview/v1beta1
   - runtime/serializer/versioning
 - name: github.com/appscode/kutil
-  version: 51b5bcd8acd29487177991028426f9864c4c3637
+  version: d9fb2e606bf2c196a8cd8cff13097f531d686a44
   subpackages:
   - admissionregistration/v1beta1
   - apiextensions/v1beta1
@@ -62,10 +62,8 @@ imports:
   - tools/queue
 - name: github.com/appscode/mergo
   version: 9f23e2d6bd2a77f959b2bf6acdbefd708a83a4a4
-- name: github.com/appscode/ocutil
-  version: 9e3ab89e810deaabe1fd353d01913aaf7dbe6e6d
 - name: github.com/appscode/osm
-  version: fb08059eb9264578f9e15dc796f7afdb1bd40294
+  version: 06ce62d34064847e7c6d4e4cc6c7264774499d47
   subpackages:
   - context
 - name: github.com/appscode/pat
@@ -277,7 +275,7 @@ imports:
   subpackages:
   - lru
 - name: github.com/golang/protobuf
-  version: b4deda0973fb4c70b50d226b1af49f3da59f5265
+  version: 925541529c1fa6821df4e44ce2723319eb2be768
   subpackages:
   - jsonpb
   - proto
@@ -315,8 +313,10 @@ imports:
   - openstack/identity/v3/tokens
   - openstack/utils
   - pagination
+- name: github.com/gorilla/websocket
+  version: 66b9c49e59c6c48f0ffce28c2d8b8a5678502c6d
 - name: github.com/graymeta/stow
-  version: 1849a82ac7fbd3e5cb144bcc711544e90903eac4
+  version: 8020e152292b2cdbdca30274fec24e18905f254d
   repo: https://github.com/appscode/stow.git
   vcs: git
   subpackages:
@@ -357,6 +357,8 @@ imports:
   version: c12348ce28de40eed0136aa2b644d0ee0650e56c
   subpackages:
   - pbutil
+- name: github.com/mitchellh/mapstructure
+  version: 53818660ed4955e899c0bcafa97299a388bd7c8e
 - name: github.com/modern-go/concurrent
   version: bacd9c7ef1dd9b15be4a9909b8ac7a4e313eec94
 - name: github.com/modern-go/reflect2
@@ -401,12 +403,6 @@ imports:
   - types
 - name: github.com/opencontainers/go-digest
   version: a6d0ee40d4207ea02364bd3b9e8e77b9159ba1eb
-- name: github.com/openshift/api
-  version: 31a7bbd2266d178da3c12bb83f5274d387f775e6
-- name: github.com/openshift/client-go
-  version: 4688ad28de2e88110c0ea30179c51b9b205f99be
-- name: github.com/openshift/origin
-  version: fecffb2fce100260088a1b9f268c0901a778cf2b
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/peterbourgon/diskv
@@ -580,6 +576,8 @@ imports:
   version: ca60c6d796d4b1f7bb2a8fd5271d8a59aeffb4bf
   repo: https://github.com/appscode/cron.git
   vcs: git
+- name: gopkg.in/square/go-jose.v2
+  version: 72415094398e2f013bf50b76fd6de36df47938ea
 - name: gopkg.in/yaml.v2
   version: 5420a8b6744d3b0345ab293f6fcba19c978f1183
 - name: k8s.io/api
@@ -1048,4 +1046,6 @@ imports:
   - client/clientset/versioned/scheme
   - client/clientset/versioned/typed/apps/v1
   - client/clientset/versioned/typed/security/v1
+- name: sigs.k8s.io/yaml
+  version: fd68e9863619f6ec2fdd8625fe1f02e7c877e480
 testImports: []

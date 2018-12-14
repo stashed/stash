@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"unicode"
 
-	"github.com/ghodss/yaml"
+	"sigs.k8s.io/yaml"
 )
 
 // ToJSON converts a single YAML document into a JSON document
