@@ -1,13 +1,12 @@
-hash: 87fb25c85d3046c49ae25109372cedd8660ed80ecc04a70ef06b451bb9a8aea1
-updated: 2018-12-14T06:01:34.958562485-08:00
+hash: 46925fa48765032cb67a727d88cffe029a16fe9b9606e75579472b8c9672c077
+updated: 2018-12-14T13:59:39.309631868-08:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
 - name: cloud.google.com/go
-  version: fe3d41e1ecb2ce36ad3a979037c9b9a2b726226f
+  version: 0fd7230b2a7505833d5f69b75cbd6c9582401479
   subpackages:
   - compute/metadata
-  - internal
 - name: github.com/appscode/go
   version: 584aaa73af837f112c0a471be398ea837341c330
   subpackages:

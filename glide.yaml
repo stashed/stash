@@ -1,7 +1,7 @@
 package: github.com/appscode/stash
 import:
 - package: cloud.google.com/go
-  version: v0.2.0
+  version: v0.23.0
 - package: github.com/Azure/azure-sdk-for-go
   version: v19.0.0
 - package: github.com/Azure/go-autorest
