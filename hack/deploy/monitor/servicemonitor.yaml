@@ -15,7 +15,7 @@ spec:
   endpoints:
   - port: pushgateway
     honorLabels: true
-  - port: admission
+  - port: api
     bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     scheme: https
     tlsConfig:

@@ -27,11 +27,11 @@ spec:
     honorLabels: true
   {{- end }}
   {{- if .Values.monitoring.operator }}
-  - port: admission
+  - port: api
     bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     scheme: https
     tlsConfig:
-      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      caFile: /etc/prometheus/secrets/{{ template "stash.fullname" . }}-apiserver-cert/tls.crt
       serverName: "{{ template "stash.fullname" . }}.{{ .Release.Namespace }}.svc"
   {{- end }}
 {{- end }}

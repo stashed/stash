@@ -13,7 +13,7 @@ spec:
     matchLabels:
       app: stash
   endpoints:
-  - port: admission
+  - port: api
     bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     scheme: https
     tlsConfig:

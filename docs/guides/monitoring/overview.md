@@ -91,7 +91,7 @@ $ helm install appscode/stash --name stash-operator --version 0.8.1 --namespace 
   --set monitoring.agent=prometheus.io/coreos-operator \
   --set monitoring.backup=true \
   --set monitoring.operator=true \
-  --set monitoring.prometheus.namespace=demo \
+  --set monitoring.prometheus.namespace=monitoring \
   --set monitoring.serviceMonitor.labels.k8s-app=prometheus
 ```
 
@@ -101,7 +101,7 @@ $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.1/hack/deploy/
   --monitoring-agent=prometheus.io/coreos-operator \
   --monitoring-backup=true \
   --monitoring-operator=true \
-  --prometheus-namespace=demo \
+  --prometheus-namespace=monitoring \
   --servicemonitor-label=k8s-app=prometheus
 ```
 

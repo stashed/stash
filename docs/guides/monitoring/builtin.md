@@ -23,8 +23,8 @@ At first, you need to have a Kubernetes cluster, and the kubectl command-line to
 To keep Prometheus resources isolated, we are going to use a separate namespace to deploy Prometheus server.
 
 ```console
-$ kubectl create ns demo
-namespace/demo created
+$ kubectl create ns monitoring
+namespace/monitoring created
 ```
 
 ## Enable Monitoring in Stash
@@ -36,7 +36,7 @@ $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.1/hack/deploy/
   --monitoring-agent=prometheus.io/builtin \
   --monitoring-backup=true \
   --monitoring-operator=true \
-  --prometheus-namespace=demo
+  --prometheus-namespace=monitoring
 ```
 
 This will add necessary annotations to `stash-operator` service. Prometheus server will scrap metrics using those annotations. Let's check which annotations are added to the service,
@@ -105,12 +105,12 @@ Now, we are ready to configure our Prometheus server to scrap those metrics.
 
 ## Deploy Prometheus Server
 
-We have deployed Stash in `kube-system` namespace. Stash exports operator metrics via TLS secured `api` endpoint. So, Prometheus server need to provide certificate while scrapping metrics from this endpoint. Stash has created a secret named `stash-apiserver-certs`  with this certificate in `demo` namespace as we have specified that we are going to deploy Prometheus in that namespace through `--prometheus-namespace` flag. We have to mount this secret in Prometheus deployment.
+We have deployed Stash in `kube-system` namespace. Stash exports operator metrics via TLS secured `api` endpoint. So, Prometheus server need to provide certificate while scrapping metrics from this endpoint. Stash has created a secret named `stash-apiserver-certs`  with this certificate in `monitoring` namespace as we have specified that we are going to deploy Prometheus in that namespace through `--prometheus-namespace` flag. We have to mount this secret in Prometheus deployment.
 
-Let's check `stash-apiserver-cert` certificate has been created in `demo` namespace.
+Let's check `stash-apiserver-cert` certificate has been created in `monitoring` namespace.
 
 ```console
-$ kubectl get secret -n demo -l=app=stash
+$ kubectl get secret -n monitoring -l=app=stash
 NAME                   TYPE                DATA   AGE
 stash-apiserver-cert   kubernetes.io/tls   2      2m21s
 ```
@@ -137,7 +137,7 @@ metadata:
   name: stash-prometheus-server-conf
   labels:
     name: stash-prometheus-server-conf
-  namespace: demo
+  namespace: monitoring
 data:
   prometheus.yml: |-
     global:
@@ -258,7 +258,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: stash-prometheus-server
-  namespace: demo
+  namespace: monitoring
 spec:
   replicas: 1
   selector:
@@ -312,7 +312,7 @@ deployment.apps/stash-prometheus-server created
 Prometheus server is running on port `9090`. We are going to use [port forwarding](https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/) to access Prometheus dashboard. Run following command on a separate terminal,
 
 ```console
-$ kubectl port-forward -n demo stash-prometheus-server-9ddbf79b6-8l6hk 9090
+$ kubectl port-forward -n monitoring stash-prometheus-server-9ddbf79b6-8l6hk 9090
 Forwarding from 127.0.0.1:9090 -> 9090
 Forwarding from [::1]:9090 -> 9090
 ```
@@ -331,12 +331,12 @@ To cleanup the Kubernetes resources created by this tutorial, run:
 kubectl delete clusterrole stash-prometheus-server
 kubectl delete clusterrolebinding stash-prometheus-server
 
-kubectl delete serviceaccount/stash-prometheus-server -n demo
-kubectl delete configmap/stash-prometheus-server-conf -n demo
-kubectl delete deployment stash-prometheus-server -n demo
-kubectl delete secret stash-apiserver-cert -n demo
+kubectl delete serviceaccount/stash-prometheus-server -n monitoring
+kubectl delete configmap/stash-prometheus-server-conf -n monitoring
+kubectl delete deployment stash-prometheus-server -n monitoring
+kubectl delete secret stash-apiserver-cert -n monitoring
 
-kubectl delete ns demo
+kubectl delete ns monitoring
 ```
 
 To uninstall Stash follow this [guide](/docs/setup/uninstall.md).

@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: stash-prometheus-server
-  namespace: demo
+  namespace: monitoring
 spec:
   replicas: 1
   selector:

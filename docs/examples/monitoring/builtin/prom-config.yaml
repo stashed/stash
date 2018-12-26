@@ -4,7 +4,7 @@ metadata:
   name: stash-prometheus-server-conf
   labels:
     name: stash-prometheus-server-conf
-  namespace: demo
+  namespace: monitoring
 data:
   prometheus.yml: |-
     global:
