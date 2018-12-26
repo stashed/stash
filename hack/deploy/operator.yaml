@@ -61,6 +61,13 @@ spec:
             path: /healthz
             port: 8443
             scheme: HTTPS
+          initialDelaySeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8443
+            scheme: HTTPS
+          initialDelaySeconds: 5
       - name: pushgateway
         args:
         - --web.listen-address=:56789

@@ -207,6 +207,9 @@ type SecureServingInfo struct {
 	// allowed to be in SNICerts.
 	Cert *tls.Certificate
 
+	// CertFile is the file containing the main server cert.
+	CertFile string
+
 	// SNICerts are the TLS certificates by name used for SNI.
 	SNICerts map[string]*tls.Certificate
 
@@ -415,6 +418,10 @@ func (c *Config) Complete(informers informers.SharedInformerFactory) CompletedCo
 
 	if c.RequestInfoResolver == nil {
 		c.RequestInfoResolver = NewRequestInfoResolver(c)
+	}
+
+	if c.SecureServing.CertFile != "" {
+		c.HealthzChecks = append(c.HealthzChecks, healthz.NewCertHealthz(c.SecureServing.CertFile))
 	}
 
 	return CompletedConfig{&completedConfig{c, informers}}

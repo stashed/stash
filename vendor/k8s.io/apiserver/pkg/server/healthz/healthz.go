@@ -18,7 +18,11 @@ package healthz
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"crypto/x509"
+	"encoding/hex"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"sync"
@@ -28,6 +32,7 @@ import (
 	"github.com/golang/glog"
 
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/cert"
 )
 
 // HealthzChecker is a named healthz checker.
@@ -197,4 +202,70 @@ func checkerNames(checks ...HealthzChecker) []string {
 		return checkerNames
 	}
 	return nil
+}
+
+// CertHealthz returns true automatically when checked
+func NewCertHealthz(certFile string) HealthzChecker {
+	var hash string
+	if certFile != "" {
+		var err error
+		hash, err = calculateHash(certFile)
+		if err != nil {
+			panic(err)
+		}
+	}
+	return &certChecker{certFile: certFile, initialHash: hash}
+}
+
+// certChecker fails health check if server certificate changes.
+type certChecker struct {
+	certFile    string
+	initialHash string
+}
+
+func (certChecker) Name() string {
+	return "cert-checker"
+}
+
+// CertHealthz is a health check that returns true.
+func (c certChecker) Check(_ *http.Request) error {
+	if c.certFile == "" {
+		return nil
+	}
+	hash, err := calculateHash(c.certFile)
+	if err != nil {
+		return err
+	}
+	if c.initialHash != hash {
+		return fmt.Errorf("certificate hash changed from %s to %s", c.initialHash, hash)
+	}
+	return nil
+}
+
+func calculateHash(certFile string) (string, error) {
+	crtBytes, err := ioutil.ReadFile(certFile)
+	if err != nil {
+		return "", fmt.Errorf("failed to read certificate `%s`. Reason: %v", certFile, err)
+	}
+	crt, err := cert.ParseCertsPEM(crtBytes)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse certificate `%s`. Reason: %v", certFile, err)
+	}
+	return Hash(crt[0]), nil
+}
+
+// ref: https://github.com/kubernetes/kubernetes/blob/197fc67693c2391dcbc652fc185ba85b5ef82a8e/cmd/kubeadm/app/util/pubkeypin/pubkeypin.go#L77
+
+const (
+	// formatSHA256 is the prefix for pins that are full-length SHA-256 hashes encoded in base 16 (hex)
+	formatSHA256 = "sha256"
+)
+
+// Hash calculates the SHA-256 hash of the Subject Public Key Information (SPKI)
+// object in an x509 certificate (in DER encoding). It returns the full hash as a
+// hex encoded string (suitable for passing to Set.Allow).
+func Hash(certificate *x509.Certificate) string {
+	// ref: https://tools.ietf.org/html/rfc5280#section-4.1.2.7
+	spkiHash := sha256.Sum256(certificate.RawSubjectPublicKeyInfo)
+	return formatSHA256 + ":" + strings.ToLower(hex.EncodeToString(spkiHash[:]))
 }
