@@ -28,6 +28,8 @@ import:
   version: v1.1.1
 - package: github.com/evanphx/json-patch
   version: v3.0.0
+- package: github.com/go-ini/ini
+  version: v1.40.0
 - package: github.com/go-openapi/spec
 - package: github.com/golang/glog
 - package: github.com/golang/protobuf
@@ -45,6 +47,8 @@ import:
   version: 1.1.5
 - package: github.com/mailru/easyjson
   version: 2f5df55504ebc322e4d52d34df6a1f5b503bf26d
+- package: github.com/mitchellh/mapstructure
+  version: v1.1.2
 - package: github.com/ncw/swift
   version: master
 - package: github.com/onsi/ginkgo
@@ -74,7 +78,7 @@ import:
 - package: google.golang.org/api/storage/v1
   version: 3639d6d93f377f39a1de765fa4ef37b3c7ca8bd9
 - package: gopkg.in/ini.v1
-  version: v1.37.0
+  version: v1.40.0
 - package: gopkg.in/robfig/cron.v2
   repo: https://github.com/appscode/cron.git
   vcs: git

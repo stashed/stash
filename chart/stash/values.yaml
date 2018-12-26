@@ -87,6 +87,9 @@ apiserver:
   bypassValidatingWebhookXray: false
   # If true, uses kube-apiserver FQDN for AKS cluster to workaround https://github.com/Azure/AKS/issues/522 (default true)
   useKubeapiserverFqdnForAks: true
+  # healthcheck configures the readiness and liveliness probes for the operator pod.
+  healthcheck:
+    enabled: true
 
 # Send usage events to Google Analytics
 enableAnalytics: true
