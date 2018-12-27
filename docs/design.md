@@ -7,17 +7,17 @@ Discuss about possible design and feature of stash.
 Stash should be able to perform following task:
 
 - **Volume Backup:**
-  - [x] Backup Kubernetes Volumes.
-  - [x] Recover Backed up volumes.
+  - [x] Backup Kubernetes Volumes.  - [x] Recover Backed up volumes.
   - [x] Schedule backup.
   - [ ] Instant backup.
   - [ ] Recover in same volume. Ref: [stash/issues/600](https://github.com/appscode/stash/issues/600)
+  - [ ] Default backup. Ref:[stash/issues/367](https://github.com/appscode/stash/issues/367)
+  - [ ] Auto recover if backup exist. [stash/issues/633](https://github.com/appscode/stash/issues/633)
 - **Database Backup:**
   - [ ] Backup & Restore database deployed with KubeDB
   - [ ] Backup & Restore database deployed with other operators.
   - [ ] Schedule back-up.
   - [ ] Instant back-up.
-
 - **Cluster YAML Backup:**
   - [ ] Backup Cluster resources YAML.
   - [ ] Restore Cluster from backed up YAML (advanced & priority low).
