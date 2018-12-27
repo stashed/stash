@@ -490,10 +490,16 @@ fi
 
 # configure prometheus monitoring
 if [ "$MONITORING_AGENT" != "$MONITORING_AGENT_NONE" ]; then
+  # if operator monitoring is enabled and prometheus-namespace is provided,
+  # create stash-apiserver-cert there. this will be mounted on prometheus pod.
+  if [ "$MONITORING_OPERATOR" = "true" ] && [ "$PROMETHEUS_NAMESPACE" != "$STASH_NAMESPACE" ]; then
+    ${SCRIPT_LOCATION}hack/deploy/monitor/apiserver-cert.yaml | $ONESSL envsubst | kubectl apply -f -
+  fi
+
   case "$MONITORING_AGENT" in
     "$MONITORING_AGENT_BUILTIN")
       # apply common annotation
-      kubectl annotate service stash-operator -n "$STASH_NAMESPACE" prometheus.io/scrap="true" --overwrite
+      kubectl annotate service stash-operator -n "$STASH_NAMESPACE" prometheus.io/scrape="true" --overwrite
 
       # apply pushgateway specific annotation
       if [ "$MONITORING_BACKUP" = "true" ]; then
@@ -521,12 +527,6 @@ if [ "$MONITORING_AGENT" != "$MONITORING_AGENT_NONE" ]; then
       fi
       ;;
   esac
-
-  # if operator monitoring is enabled and prometheus-namespace is provided,
-  # create stash-apiserver-cert there. this will be mounted on prometheus pod.
-  if [ "$MONITORING_OPERATOR" = "true" ] && [ "$PROMETHEUS_NAMESPACE" != "$STASH_NAMESPACE" ]; then
-    ${SCRIPT_LOCATION}hack/deploy/monitor/apiserver-cert.yaml | $ONESSL envsubst | kubectl apply -f -
-  fi
 fi
 
 echo

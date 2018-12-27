@@ -55,7 +55,7 @@ metadata:
     prometheus.io/pushgateway_path: /metrics
     prometheus.io/pushgateway_port: "56789"
     prometheus.io/pushgateway_scheme: http
-    prometheus.io/scrap: "true"
+    prometheus.io/scrape: "true"
   creationTimestamp: 2018-11-07T04:10:26Z
   labels:
     app: stash
@@ -83,7 +83,7 @@ status:
   loadBalancer: {}
 ```
 
-Here, `prometheus.io/scrap: "true"` annotation indicates that Prometheus should scrap metrics for this service.
+Here, `prometheus.io/scrape: "true"` annotation indicates that Prometheus should scrap metrics for this service.
 
 The following three annotations point to `pushgateway` endpoints which provides backup and recovery metrics.
 
