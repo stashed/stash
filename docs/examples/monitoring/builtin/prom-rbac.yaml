@@ -23,7 +23,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: stash-prometheus-server
-  namespace: demo
+  namespace: monitoring
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -36,4 +36,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: stash-prometheus-server
-  namespace: demo
+  namespace: monitoring

@@ -40,7 +40,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: prometheus
-  namespace: demo
+  namespace: monitoring
 spec:
   type: ClusterIP
   ports:
@@ -69,7 +69,7 @@ Now, follow these steps to add the Prometheus server as data source of Grafana U
 3. Now, configure `Name`, `Type` and `URL` fields as specified below and keep rest of the configuration to their default value then click `Save&Test` button.
     - *Name: Stash* (you can give any name)
     - *Type: Prometheus*
-    - *URL: http://prometheus.demo.svc:9090*
+    - *URL: http://prometheus.monitoring.svc:9090*
       (url format: http://{prometheus service name}.{namespace}.svc:{port})
 
     <p align="center">
@@ -113,7 +113,7 @@ Once you have imported the dashboard successfully, you will be greeted with Stas
 To cleanup the Kubernetes resources created by this tutorial, run:
 
 ```console
-kubectl delete -n demo service prometheus
+kubectl delete -n monitoring service prometheus
 ```
 
 ## Next Steps
