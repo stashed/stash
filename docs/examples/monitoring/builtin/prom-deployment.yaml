@@ -40,3 +40,6 @@ spec:
         secret:
           defaultMode: 420
           secretName: stash-apiserver-cert
+          items: # avoid mounting private key
+          - key: tls.crt
+            path: tls.crt

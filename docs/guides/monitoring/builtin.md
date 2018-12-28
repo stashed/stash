@@ -296,6 +296,9 @@ spec:
         secret:
           defaultMode: 420
           secretName: stash-apiserver-cert
+          items: # avoid mounting private key
+          - key: tls.crt
+            path: tls.crt
 ```
 
 Notice that, we have mounted `stash-apiserver-cert` secret as a volume at `/etc/prometheus/secret/stash-apiserver-cert` directory.
