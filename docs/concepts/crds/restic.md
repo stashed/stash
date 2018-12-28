@@ -86,7 +86,7 @@ You can set one or more of these retention policy options together. To learn mor
 https://restic.readthedocs.io/en/latest/manual.html#removing-snapshots-according-to-a-policy).
 
 ### spec.backend
-To learn how to configure various backends for Restic, please visit [here](/docs/guides/backends.md).
+To learn how to configure various backends for Restic, please visit [here](/docs/guides/backends/overview.md).
 
 ### spec.schedule
 `spec.schedule` is a [cron expression](https://github.com/robfig/cron/blob/v2/doc.go#L26) that indicates how often `restic` commands are invoked for file groups.
