@@ -29,3 +29,10 @@ Create the name of the service account to use
     {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}
 {{- end -}}
+
+{{- define "stash.labels" -}}
+chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+app: "{{ template "stash.name" . }}"
+release: {{ .Release.Name | quote}}
+heritage: "{{ .Release.Service }}"
+{{- end -}}

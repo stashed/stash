@@ -2,8 +2,8 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: stash-servicemonitor
-  namespace: {{ default .Release.Namespace  .Values.monitoring.prometheus.namespace }}
+  name: {{ template "stash.fullname" . }}
+  namespace: {{ default .Release.Namespace .Values.monitoring.prometheus.namespace }}
   labels:
     {{- if .Values.monitoring.serviceMonitor.labels }}
     {{- range $key, $val := .Values.monitoring.serviceMonitor.labels }}

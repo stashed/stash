@@ -9,10 +9,7 @@ kind: APIService
 metadata:
   name: v1alpha1.admission.stash.appscode.com
   labels:
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    app: "{{ template "stash.name" . }}"
-    heritage: "{{ .Release.Service }}"
-    release: "{{ .Release.Name }}"
+    {{- include "stash.labels" . | nindent 4 }}
 spec:
   group: admission.stash.appscode.com
   version: v1alpha1
@@ -28,10 +25,7 @@ kind: APIService
 metadata:
   name: v1alpha1.repositories.stash.appscode.com
   labels:
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    app: "{{ template "stash.name" . }}"
-    heritage: "{{ .Release.Service }}"
-    release: "{{ .Release.Name }}"
+    {{- include "stash.labels" . | nindent 4 }}
 spec:
   group: repositories.stash.appscode.com
   version: v1alpha1
@@ -49,10 +43,7 @@ metadata:
   name: {{ template "stash.fullname" . }}-apiserver-cert
   namespace: {{ .Release.Namespace }}
   labels:
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    app: "{{ template "stash.name" . }}"
-    heritage: "{{ .Release.Service }}"
-    release: "{{ .Release.Name }}"
+    {{- include "stash.labels" . | nindent 4 }}
 type: Opaque
 data:
   tls.crt: {{ b64enc $cert.Cert }}
@@ -86,10 +77,7 @@ metadata:
   name: {{ template "stash.fullname" . }}-apiserver-extension-server-authentication-reader
   namespace: kube-system
   labels:
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    app: "{{ template "stash.name" . }}"
-    heritage: "{{ .Release.Service }}"
-    release: "{{ .Release.Name }}"
+    {{- include "stash.labels" . | nindent 4 }}
 roleRef:
   kind: Role
   apiGroup: rbac.authorization.k8s.io
@@ -105,10 +93,7 @@ kind: ClusterRoleBinding
 metadata:
   name: {{ template "stash.fullname" . }}-apiserver-auth-delegator
   labels:
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    app: "{{ template "stash.name" . }}"
-    heritage: "{{ .Release.Service }}"
-    release: "{{ .Release.Name }}"
+    {{- include "stash.labels" . | nindent 4 }}
 roleRef:
   kind: ClusterRole
   apiGroup: rbac.authorization.k8s.io
