@@ -59,10 +59,7 @@ metadata:
   name: {{ template "stash.fullname" . }}-apiserver-cert
   namespace: {{ $promNamespace }}
   labels:
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    app: "{{ template "stash.name" . }}"
-    heritage: "{{ .Release.Service }}"
-    release: "{{ .Release.Name }}"
+    {{- include "stash.labels" . | nindent 4 }}
 type: kubernetes.io/tls
 data:
   tls.crt: {{ b64enc $cert.Cert }}

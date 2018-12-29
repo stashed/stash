@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Release.Name }}-cleaner
+  name: {{ template "stash.fullname" . }}-cleaner
   labels:
     {{- include "stash.labels" . | nindent 4 }}
   annotations:
