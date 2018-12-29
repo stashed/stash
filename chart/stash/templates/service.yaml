@@ -4,10 +4,7 @@ metadata:
   name: {{ template "stash.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app: "{{ template "stash.name" . }}"
-    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
-    release: "{{ .Release.Name }}"
-    heritage: "{{ .Release.Service }}"
+    {{- include "stash.labels" . | nindent 4 }}
   {{- if eq .Values.monitoring.agent "prometheus.io/builtin" }}
   annotations:
     prometheus.io/scrape: "true"
