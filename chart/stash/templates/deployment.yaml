@@ -21,8 +21,7 @@ spec:
   template:
     metadata:
       labels:
-        app: "{{ template "stash.name" . }}"
-        release: "{{ .Release.Name }}"
+        {{- include "stash.labels" . | nindent 8 }}
 {{- if and .Values.criticalAddon (eq .Release.Namespace "kube-system") }}
       annotations:
         scheduler.alpha.kubernetes.io/critical-pod: ''
