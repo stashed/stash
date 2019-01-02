@@ -2,13 +2,13 @@
 title: Local Backend | Stash
 description: Configure Stash to Use Local Backend.
 menu:
-  product_stash_0.8.1:
+  product_stash_0.8.2:
     identifier: backend-local
     name: Persistent Volumes
     parent: backend
     weight: 20
 product_name: stash
-menu_name: product_stash_0.8.1
+menu_name: product_stash_0.8.2
 section_menu_id: guides
 ---
 

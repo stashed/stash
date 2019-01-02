@@ -1,10 +1,10 @@
 ---
 title: Monitoring | Stash
 menu:
-  product_stash_0.8.1:
+  product_stash_0.8.2:
     identifier: monitoring
     name: Monitoring
     parent: guides
     weight: 40
-menu_name: product_stash_0.8.1
+menu_name: product_stash_0.8.2
 ---
