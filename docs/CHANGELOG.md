@@ -17,8 +17,34 @@ aliases:
 
 # Change Log
 
-## [0.8.2](https://github.com/appscode/stash/tree/0.8.2) (2018-12-09)
-[Full Changelog](https://github.com/appscode/stash/compare/0.8.0...0.8.2)
+## [0.8.2](https://github.com/appscode/stash/tree/0.8.2) (2019-01-02)
+[Full Changelog](https://github.com/appscode/stash/compare/0.8.1...0.8.2)
+
+**Fixed bugs:**
+
+- Fix typo in installer [\#638](https://github.com/appscode/stash/pull/638) ([tamalsaha](https://github.com/tamalsaha))
+
+**Closed issues:**
+
+- Backend configuration doc link broken [\#640](https://github.com/appscode/stash/issues/640)
+- Architecture questions [\#635](https://github.com/appscode/stash/issues/635)
+- Restart operator pod on update [\#611](https://github.com/appscode/stash/issues/611)
+
+**Merged pull requests:**
+
+- Prepare docs for 0.8.2 release [\#644](https://github.com/appscode/stash/pull/644) ([tamalsaha](https://github.com/tamalsaha))
+- Update copyright notice for 2019 [\#643](https://github.com/appscode/stash/pull/643) ([tamalsaha](https://github.com/tamalsaha))
+- Use stash.labels template in chart [\#642](https://github.com/appscode/stash/pull/642) ([tamalsaha](https://github.com/tamalsaha))
+- Fixed broken link for bakend [\#641](https://github.com/appscode/stash/pull/641) ([hossainemruz](https://github.com/hossainemruz))
+-  Only mount stash apiserver `tls.crt` into Prometheus [\#639](https://github.com/appscode/stash/pull/639) ([hossainemruz](https://github.com/hossainemruz))
+- Fix monitoring in helm + update doc to match with third-party-tools tutorial [\#637](https://github.com/appscode/stash/pull/637) ([hossainemruz](https://github.com/hossainemruz))
+- Add certificate health checker [\#636](https://github.com/appscode/stash/pull/636) ([tamalsaha](https://github.com/tamalsaha))
+- Update chart readme [\#632](https://github.com/appscode/stash/pull/632) ([tamalsaha](https://github.com/tamalsaha))
+- Update webhook error message format for Kubernetes 1.13+ [\#631](https://github.com/appscode/stash/pull/631) ([tamalsaha](https://github.com/tamalsaha))
+- Fix typos [\#630](https://github.com/appscode/stash/pull/630) ([tamalsaha](https://github.com/tamalsaha))
+
+## [0.8.1](https://github.com/appscode/stash/tree/0.8.1) (2018-12-09)
+[Full Changelog](https://github.com/appscode/stash/compare/0.8.0...0.8.1)
 
 **Fixed bugs:**
 
@@ -26,7 +52,7 @@ aliases:
 
 **Merged pull requests:**
 
-- Prepare docs for 0.8.2 release [\#629](https://github.com/appscode/stash/pull/629) ([tamalsaha](https://github.com/tamalsaha))
+- Prepare docs for 0.8.1 release [\#629](https://github.com/appscode/stash/pull/629) ([tamalsaha](https://github.com/tamalsaha))
 - Add missing validator for respository resource in chart [\#628](https://github.com/appscode/stash/pull/628) ([tamalsaha](https://github.com/tamalsaha))
 
 ## [0.8.0](https://github.com/appscode/stash/tree/0.8.0) (2018-12-08)
@@ -61,6 +87,7 @@ aliases:
 - Using Stash with TLS secured Minio Server Can't succeed [\#478](https://github.com/appscode/stash/issues/478)
 - Add cluster name in repo path [\#374](https://github.com/appscode/stash/issues/374)
 - Stash don't pass `nodeSelector` from Recovery crd to recovery Job. [\#617](https://github.com/appscode/stash/issues/617)
+- Permissions problem with the Helm chart in master branch [\#592](https://github.com/appscode/stash/issues/592)
 - Add Prometheus config sample for pushgateway [\#582](https://github.com/appscode/stash/issues/582)
 - Handle security context [\#566](https://github.com/appscode/stash/issues/566)
 - \[Request\] Add backup details to "kubectl get" for stash objects on K8s 1.11 [\#525](https://github.com/appscode/stash/issues/525)
@@ -515,7 +542,7 @@ aliases:
 - Update docs for unified LocalSpec [\#260](https://github.com/appscode/stash/pull/260) ([diptadas](https://github.com/diptadas))
 - Unify LocalSpec and RecoveredVolume [\#259](https://github.com/appscode/stash/pull/259) ([diptadas](https://github.com/diptadas))
 - Remove restic-dependency from recovery [\#258](https://github.com/appscode/stash/pull/258) ([diptadas](https://github.com/diptadas))
-- Update restic version to 0.8.2 [\#257](https://github.com/appscode/stash/pull/257) ([tamalsaha](https://github.com/tamalsaha))
+- Update restic version to 0.8.1 [\#257](https://github.com/appscode/stash/pull/257) ([tamalsaha](https://github.com/tamalsaha))
 - Use cmp methods from kutil [\#255](https://github.com/appscode/stash/pull/255) ([tamalsaha](https://github.com/tamalsaha))
 - Remove TryPatch methods [\#254](https://github.com/appscode/stash/pull/254) ([tamalsaha](https://github.com/tamalsaha))
 - Log operator version on start [\#253](https://github.com/appscode/stash/pull/253) ([galexrt](https://github.com/galexrt))
