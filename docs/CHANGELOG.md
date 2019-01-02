@@ -2,23 +2,23 @@
 title: Changelog | Stash
 description: Changelog
 menu:
-  product_stash_0.8.1:
+  product_stash_0.8.2:
     identifier: changelog-stash
     name: Changelog
     parent: welcome
     weight: 10
 product_name: stash
-menu_name: product_stash_0.8.1
+menu_name: product_stash_0.8.2
 section_menu_id: welcome
-url: /products/stash/0.8.1/welcome/changelog/
+url: /products/stash/0.8.2/welcome/changelog/
 aliases:
-  - /products/stash/0.8.1/CHANGELOG/
+  - /products/stash/0.8.2/CHANGELOG/
 ---
 
 # Change Log
 
-## [0.8.1](https://github.com/appscode/stash/tree/0.8.1) (2018-12-09)
-[Full Changelog](https://github.com/appscode/stash/compare/0.8.0...0.8.1)
+## [0.8.2](https://github.com/appscode/stash/tree/0.8.2) (2018-12-09)
+[Full Changelog](https://github.com/appscode/stash/compare/0.8.0...0.8.2)
 
 **Fixed bugs:**
 
@@ -26,7 +26,7 @@ aliases:
 
 **Merged pull requests:**
 
-- Prepare docs for 0.8.1 release [\#629](https://github.com/appscode/stash/pull/629) ([tamalsaha](https://github.com/tamalsaha))
+- Prepare docs for 0.8.2 release [\#629](https://github.com/appscode/stash/pull/629) ([tamalsaha](https://github.com/tamalsaha))
 - Add missing validator for respository resource in chart [\#628](https://github.com/appscode/stash/pull/628) ([tamalsaha](https://github.com/tamalsaha))
 
 ## [0.8.0](https://github.com/appscode/stash/tree/0.8.0) (2018-12-08)
@@ -515,7 +515,7 @@ aliases:
 - Update docs for unified LocalSpec [\#260](https://github.com/appscode/stash/pull/260) ([diptadas](https://github.com/diptadas))
 - Unify LocalSpec and RecoveredVolume [\#259](https://github.com/appscode/stash/pull/259) ([diptadas](https://github.com/diptadas))
 - Remove restic-dependency from recovery [\#258](https://github.com/appscode/stash/pull/258) ([diptadas](https://github.com/diptadas))
-- Update restic version to 0.8.1 [\#257](https://github.com/appscode/stash/pull/257) ([tamalsaha](https://github.com/tamalsaha))
+- Update restic version to 0.8.2 [\#257](https://github.com/appscode/stash/pull/257) ([tamalsaha](https://github.com/tamalsaha))
 - Use cmp methods from kutil [\#255](https://github.com/appscode/stash/pull/255) ([tamalsaha](https://github.com/tamalsaha))
 - Remove TryPatch methods [\#254](https://github.com/appscode/stash/pull/254) ([tamalsaha](https://github.com/tamalsaha))
 - Log operator version on start [\#253](https://github.com/appscode/stash/pull/253) ([galexrt](https://github.com/galexrt))

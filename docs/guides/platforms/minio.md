@@ -2,13 +2,13 @@
 title: Minio | Stash
 description: Using Stash with TLS secured Minio Server
 menu:
-  product_stash_0.8.1:
+  product_stash_0.8.2:
     identifier: platforms-minio
     name: Minio
     parent: platforms
     weight: 40
 product_name: stash
-menu_name: product_stash_0.8.1
+menu_name: product_stash_0.8.2
 section_menu_id: guides
 ---
 

@@ -1,13 +1,13 @@
 ---
 title: Repository Overview
 menu:
-  product_stash_0.8.1:
+  product_stash_0.8.2:
     identifier: repository-overview
     name: Repository
     parent: crds
     weight: 15
 product_name: stash
-menu_name: product_stash_0.8.1
+menu_name: product_stash_0.8.2
 section_menu_id: concepts
 ---
 

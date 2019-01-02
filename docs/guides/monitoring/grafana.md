@@ -2,13 +2,13 @@
 title: Use Grafana | Stash
 description: Using Grafana dashboard to visualize Stash monitoring data
 menu:
-  product_stash_0.8.1:
+  product_stash_0.8.2:
     identifier: monitoring-grafana
     name: Using Grafana
     parent: monitoring
     weight: 40
 product_name: stash
-menu_name: product_stash_0.8.1
+menu_name: product_stash_0.8.2
 section_menu_id: guides
 ---
 
@@ -29,7 +29,7 @@ Grafana provides an elegant graphical user interface to visualize data. You can 
 We have to add our Prometheus server `prometheus-prometheus-0` as data source of grafana. We are going to use a `ClusterIP` service to connect Prometheus server with grafana. Let's create a service to select Prometheus server `prometheus-prometheus-0`,
 
 ```console
-$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.8.1/docs/examples/monitoring/coreos/prometheus-service.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.8.2/docs/examples/monitoring/coreos/prometheus-service.yaml
 service/prometheus created
 ```
 
