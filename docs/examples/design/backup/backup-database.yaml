@@ -1,0 +1,35 @@
+apiVersion: stash.appscode.com/v1alpha1
+kind: Backup
+metadata:
+  name: backup-database-demo
+  namespace: default
+spec:
+  backupType: Scheduled
+  schedule: '@every 1m'
+  backupAgent: PgBackup # ContainerTemplate to use for backup this database
+  repository:
+    name: stash-backup-repo
+    namespace: demo
+  backupTarget:
+    targetType: Database
+    appRef:
+      name: quick-postgres
+      namespace: demo
+    databases:
+      - postgres
+      - mypgdb
+    retentionPolicyName: 'keep-last-5'
+  retentionPolicies:
+  - name: 'keep-last-5'
+    keepLast: 5
+    prune: true
+  containerAttributes: # set some attributes to backup job's container
+    annotations:
+      iam.amazonaws.com/role: MyIAMRole
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "250m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"

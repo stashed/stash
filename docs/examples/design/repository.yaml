@@ -1,0 +1,17 @@
+apiVersion: stash.appscode.com/v1alpha1
+kind: Repository
+metadata:
+  name: stash-backup-repo
+  namespace: demo
+spec:
+  backend:
+    gcs:
+      bucket: stash-backup-repo
+      prefix: demo
+    storageSecretName: gcs-secret
+status:
+  repoDir: /demo/deployment/stash-demo # directory inside the bucket where restic repository has been initialized.
+  backupCount: 7
+  firstBackupTime: 2018-04-10T05:10:11Z
+  lastBackupDuration: 3.026137088s
+  lastBackupTime: 2018-04-10T05:16:12Z

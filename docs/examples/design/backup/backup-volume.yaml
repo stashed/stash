@@ -1,0 +1,41 @@
+apiVersion: stash.appscode.com/v1alpha1
+kind: Backup
+metadata:
+  name: backup-volume-demo
+  namespace: default
+spec:
+  backupType: Scheduled
+  schedule: '@every 1m'
+  backupAgent: stashBackup # ContainerTemplate to use for backup this volume
+  repository:
+    name: stash-backup-repo
+    namespace: demo
+  backupTarget:
+    targetType: Volume
+    workloadRef:
+      kind: Deployment
+      name: stash-demo
+      namespace: demo
+    targetVolumes:
+    - name: vol-1
+      directories:
+      - /source/data
+      retentionPolicyName: 'keep-last-5'
+    - name: vol-2
+      directories:
+      - /source/data
+      retentionPolicyName: 'keep-last-5'
+  retentionPolicies:
+  - name: 'keep-last-5'
+    keepLast: 5
+    prune: true
+  containerAttributes: # set some attributes to backup sidecar container
+    annotations:
+      iam.amazonaws.com/role: MyIAMRole
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "250m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
