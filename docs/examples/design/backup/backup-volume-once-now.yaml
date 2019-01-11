@@ -1,0 +1,27 @@
+apiVersion: stash.appscode.com/v1alpha1
+kind: Backup
+metadata:
+  name: backup-volume-demo
+  namespace: default
+spec:
+  # OneTime backup will take instant backup of target workload.
+  backupType: OneTime
+  backupAgent: stashBackup
+  repository:
+    name: stash-backup-repo
+    namespace: demo
+  backupTarget:
+    targetType: Volume
+    workloadRef:
+      kind: Deployment
+      name: stash-demo
+      namespace: demo
+    targetVolumes:
+    - name: vol-1
+      directories:
+      - /source/data
+      retentionPolicyName: 'keep-last-5'
+  retentionPolicies:
+  - name: 'keep-last-5'
+    keepLast: 5
+    prune: true

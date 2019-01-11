@@ -1,0 +1,31 @@
+apiVersion: stash.appscode.com/v1alpha1
+kind: Backup
+metadata:
+  name: backup-volume-demo
+  namespace: default
+  # you have already scheduled a periodic backup.However, you want to trigger backup instantly.
+  # patch your respective backup crd and add this annotation. stash will take instant backup
+  annotations:
+    appscode.com/stash/backup/trigger: "true"
+spec:
+  backupType: Scheduled
+  schedule: '@every 1h'
+  backupAgent: stashBackup
+  repository:
+    name: stash-backup-repo
+    namespace: demo
+  backupTarget:
+    targetType: Volume
+    workloadRef:
+      kind: Deployment
+      name: stash-demo
+      namespace: demo
+    targetVolumes:
+    - name: vol-1
+      directories:
+      - /source/data
+      retentionPolicyName: 'keep-last-5'
+  retentionPolicies:
+  - name: 'keep-last-5'
+    keepLast: 5
+    prune: true

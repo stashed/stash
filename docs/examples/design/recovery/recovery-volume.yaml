@@ -1,0 +1,20 @@
+apiVersion: stash.appscode.com/v1alpha1
+kind: Recovery
+metadata:
+  name: recovery-volume-demo
+  namespace: default
+spec:
+  recoveryAgent: StashRecovery
+  repository:
+    name: stash-backup-repo
+    namespace: demo
+  recoveryTarget:
+    targetType: Volume
+    snapshot: deployment.stash-demo-e0e9c272
+    paths:
+    - /source/data
+    recoverTo:
+      externalVolume:
+      - mountPath: /source/data
+        persistentVolumeClaim:
+          claimName: stash-recovered

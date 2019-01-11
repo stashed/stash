@@ -5,13 +5,16 @@ metadata:
   namespace: default
 spec:
   backupType: Scheduled
-  schedule: '@every 1m'
-  backupAgent: PgBackup # ContainerTemplate to use for backup this database
+  schedule: '@every 1h'
+  backupAgent: PgBackup
   repository:
     name: stash-backup-repo
     namespace: demo
   backupTarget:
     targetType: Database
+    # appRef inidcates the AppBinding crd that holds connection information of respective database
+    # for databases deployed with KubeDB, AppBinding will be created automatically.
+    # for databases deployed without KubeDB, you have to create it manually
     appRef:
       name: quick-postgres
       namespace: demo
@@ -23,7 +26,7 @@ spec:
   - name: 'keep-last-5'
     keepLast: 5
     prune: true
-  containerAttributes: # set some attributes to backup job's container
+  containerAttributes:
     annotations:
       iam.amazonaws.com/role: MyIAMRole
     resources:

@@ -5,13 +5,17 @@ metadata:
   namespace: default
 spec:
   backupType: Scheduled
-  schedule: '@every 1m'
-  backupAgent: stashBackup # ContainerTemplate to use for backup this volume
+  schedule: '@every 1h'
+  # backupAgent indicates ContainerTemplate to use for backup this volume.
+  # stash will create some default ContainerTemplate  while install to backup/recover various resources.
+  # user also crate their own ContainerTemplate to customize backup/recovery
+  backupAgent: stashBackup
   repository:
     name: stash-backup-repo
     namespace: demo
   backupTarget:
     targetType: Volume
+    # workloadRef indicate the target workload that we want to backup
     workloadRef:
       kind: Deployment
       name: stash-demo
@@ -25,11 +29,14 @@ spec:
       directories:
       - /source/data
       retentionPolicyName: 'keep-last-5'
+  # retentionPolicies specify the policy to follow to clean old backup snapshots
   retentionPolicies:
   - name: 'keep-last-5'
     keepLast: 5
     prune: true
-  containerAttributes: # set some attributes to backup sidecar container
+  # containerAttributes is an optional field that can be use to set some attributes 
+  # like resources, annotations, securityContext etc. to backup/recovery job/sidecar container
+  containerAttributes:
     annotations:
       iam.amazonaws.com/role: MyIAMRole
     resources:

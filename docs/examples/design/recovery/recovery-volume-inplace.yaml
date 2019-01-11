@@ -1,0 +1,25 @@
+apiVersion: stash.appscode.com/v1alpha1
+kind: Recovery
+metadata:
+  name: recovery-volume-demo
+  namespace: default
+spec:
+  recoveryAgent: StashRecovery
+  repository:
+    name: stash-backup-repo
+    namespace: demo
+  recoveryTarget:
+    targetType: Volume
+    snapshot: deployment.stash-demo-e0e9c272
+    paths:
+    - /source/data
+    recoverTo:
+      runningWorkload:
+        workloadRef:
+          kind: Deployment
+          name: stash-demo
+          namespace: demo
+        # recoveryPolicy specifies when to recover. it can be "Always" or "IfNotRecovered"
+        # Always: whenever pod restart, it will recover first then start the pod.
+        # IfNotRecovered: recover only if it wasn't recovered before for this Recovery crd.
+        recoveryPolicy: IfNotRecovered
