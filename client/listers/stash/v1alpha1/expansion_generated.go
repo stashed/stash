@@ -18,6 +18,38 @@ limitations under the License.
 
 package v1alpha1
 
+// BackupListerExpansion allows custom methods to be added to
+// BackupLister.
+type BackupListerExpansion interface{}
+
+// BackupNamespaceListerExpansion allows custom methods to be added to
+// BackupNamespaceLister.
+type BackupNamespaceListerExpansion interface{}
+
+// BackupTemplateListerExpansion allows custom methods to be added to
+// BackupTemplateLister.
+type BackupTemplateListerExpansion interface{}
+
+// BackupTemplateNamespaceListerExpansion allows custom methods to be added to
+// BackupTemplateNamespaceLister.
+type BackupTemplateNamespaceListerExpansion interface{}
+
+// BackupTriggerListerExpansion allows custom methods to be added to
+// BackupTriggerLister.
+type BackupTriggerListerExpansion interface{}
+
+// BackupTriggerNamespaceListerExpansion allows custom methods to be added to
+// BackupTriggerNamespaceLister.
+type BackupTriggerNamespaceListerExpansion interface{}
+
+// ContainerTemplateListerExpansion allows custom methods to be added to
+// ContainerTemplateLister.
+type ContainerTemplateListerExpansion interface{}
+
+// ContainerTemplateNamespaceListerExpansion allows custom methods to be added to
+// ContainerTemplateNamespaceLister.
+type ContainerTemplateNamespaceListerExpansion interface{}
+
 // RecoveryListerExpansion allows custom methods to be added to
 // RecoveryLister.
 type RecoveryListerExpansion interface{}
@@ -33,11 +65,3 @@ type RepositoryListerExpansion interface{}
 // RepositoryNamespaceListerExpansion allows custom methods to be added to
 // RepositoryNamespaceLister.
 type RepositoryNamespaceListerExpansion interface{}
-
-// ResticListerExpansion allows custom methods to be added to
-// ResticLister.
-type ResticListerExpansion interface{}
-
-// ResticNamespaceListerExpansion allows custom methods to be added to
-// ResticNamespaceLister.
-type ResticNamespaceListerExpansion interface{}

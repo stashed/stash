@@ -24,12 +24,18 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
+	// Backups returns a BackupInformer.
+	Backups() BackupInformer
+	// BackupTemplates returns a BackupTemplateInformer.
+	BackupTemplates() BackupTemplateInformer
+	// BackupTriggers returns a BackupTriggerInformer.
+	BackupTriggers() BackupTriggerInformer
+	// ContainerTemplates returns a ContainerTemplateInformer.
+	ContainerTemplates() ContainerTemplateInformer
 	// Recoveries returns a RecoveryInformer.
 	Recoveries() RecoveryInformer
 	// Repositories returns a RepositoryInformer.
 	Repositories() RepositoryInformer
-	// Restics returns a ResticInformer.
-	Restics() ResticInformer
 }
 
 type version struct {
@@ -43,6 +49,26 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
+// Backups returns a BackupInformer.
+func (v *version) Backups() BackupInformer {
+	return &backupInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// BackupTemplates returns a BackupTemplateInformer.
+func (v *version) BackupTemplates() BackupTemplateInformer {
+	return &backupTemplateInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// BackupTriggers returns a BackupTriggerInformer.
+func (v *version) BackupTriggers() BackupTriggerInformer {
+	return &backupTriggerInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// ContainerTemplates returns a ContainerTemplateInformer.
+func (v *version) ContainerTemplates() ContainerTemplateInformer {
+	return &containerTemplateInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
 // Recoveries returns a RecoveryInformer.
 func (v *version) Recoveries() RecoveryInformer {
 	return &recoveryInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
@@ -51,9 +77,4 @@ func (v *version) Recoveries() RecoveryInformer {
 // Repositories returns a RepositoryInformer.
 func (v *version) Repositories() RepositoryInformer {
 	return &repositoryInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// Restics returns a ResticInformer.
-func (v *version) Restics() ResticInformer {
-	return &resticInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

@@ -24,6 +24,7 @@ type BackupTrigger struct {
 }
 
 type BackupTriggerSpec struct {
+	// TargetBackup indicates the backup crd that will be triggered
 	TargetBackup core.LocalObjectReference `json:"targetBackup"`
 }
 

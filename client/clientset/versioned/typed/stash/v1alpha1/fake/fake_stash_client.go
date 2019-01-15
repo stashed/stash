@@ -28,16 +28,28 @@ type FakeStashV1alpha1 struct {
 	*testing.Fake
 }
 
+func (c *FakeStashV1alpha1) Backups(namespace string) v1alpha1.BackupInterface {
+	return &FakeBackups{c, namespace}
+}
+
+func (c *FakeStashV1alpha1) BackupTemplates(namespace string) v1alpha1.BackupTemplateInterface {
+	return &FakeBackupTemplates{c, namespace}
+}
+
+func (c *FakeStashV1alpha1) BackupTriggers(namespace string) v1alpha1.BackupTriggerInterface {
+	return &FakeBackupTriggers{c, namespace}
+}
+
+func (c *FakeStashV1alpha1) ContainerTemplates(namespace string) v1alpha1.ContainerTemplateInterface {
+	return &FakeContainerTemplates{c, namespace}
+}
+
 func (c *FakeStashV1alpha1) Recoveries(namespace string) v1alpha1.RecoveryInterface {
 	return &FakeRecoveries{c, namespace}
 }
 
 func (c *FakeStashV1alpha1) Repositories(namespace string) v1alpha1.RepositoryInterface {
 	return &FakeRepositories{c, namespace}
-}
-
-func (c *FakeStashV1alpha1) Restics(namespace string) v1alpha1.ResticInterface {
-	return &FakeRestics{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

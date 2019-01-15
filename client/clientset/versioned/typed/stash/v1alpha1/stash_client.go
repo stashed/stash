@@ -27,14 +27,33 @@ import (
 
 type StashV1alpha1Interface interface {
 	RESTClient() rest.Interface
+	BackupsGetter
+	BackupTemplatesGetter
+	BackupTriggersGetter
+	ContainerTemplatesGetter
 	RecoveriesGetter
 	RepositoriesGetter
-	ResticsGetter
 }
 
 // StashV1alpha1Client is used to interact with features provided by the stash.appscode.com group.
 type StashV1alpha1Client struct {
 	restClient rest.Interface
+}
+
+func (c *StashV1alpha1Client) Backups(namespace string) BackupInterface {
+	return newBackups(c, namespace)
+}
+
+func (c *StashV1alpha1Client) BackupTemplates(namespace string) BackupTemplateInterface {
+	return newBackupTemplates(c, namespace)
+}
+
+func (c *StashV1alpha1Client) BackupTriggers(namespace string) BackupTriggerInterface {
+	return newBackupTriggers(c, namespace)
+}
+
+func (c *StashV1alpha1Client) ContainerTemplates(namespace string) ContainerTemplateInterface {
+	return newContainerTemplates(c, namespace)
 }
 
 func (c *StashV1alpha1Client) Recoveries(namespace string) RecoveryInterface {
@@ -43,10 +62,6 @@ func (c *StashV1alpha1Client) Recoveries(namespace string) RecoveryInterface {
 
 func (c *StashV1alpha1Client) Repositories(namespace string) RepositoryInterface {
 	return newRepositories(c, namespace)
-}
-
-func (c *StashV1alpha1Client) Restics(namespace string) ResticInterface {
-	return newRestics(c, namespace)
 }
 
 // NewForConfig creates a new StashV1alpha1Client for the given config.

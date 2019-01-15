@@ -18,8 +18,14 @@ limitations under the License.
 
 package v1alpha1
 
+type BackupExpansion interface{}
+
+type BackupTemplateExpansion interface{}
+
+type BackupTriggerExpansion interface{}
+
+type ContainerTemplateExpansion interface{}
+
 type RecoveryExpansion interface{}
 
 type RepositoryExpansion interface{}
-
-type ResticExpansion interface{}

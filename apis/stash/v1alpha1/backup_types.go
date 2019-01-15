@@ -22,16 +22,25 @@ type Backup struct {
 }
 
 type BackupSpec struct {
-	Type              BackupType                `json:"type,omitempty"`
-	Schedule          string                    `json:"schedule,omitempty"`
-	BackupAgent       string                    `json:"backupAgent,omitempty"`
-	Repository        core.LocalObjectReference `json:"repository"`
-	TargetRef         core.ObjectReference      `json:"targetRef"`
-	TargetDirectories []string                  `json:"targetDirectories,omitempty"`
-	RetentionPolicy   `json:"retentionPolicy,omitempty"`
+	// Type indicates weather backup is Scheduled or OneTime
+	Type     BackupType `json:"type,omitempty"`
+	Schedule string     `json:"schedule,omitempty"`
+	// BackupAgent specify the ContainerTemplate that will be used for backup sidecar or job
+	BackupAgent string `json:"backupAgent,omitempty"`
+	// Repository refer to the Repository crd that hold backend information
+	Repository core.LocalObjectReference `json:"repository"`
+	// TargetRef specify the backup target
+	TargetRef core.ObjectReference `json:"targetRef"`
+	// TargetDirectories specify the directories to backup when the target is a volume
+	//+optional
+	TargetDirectories []string `json:"targetDirectories,omitempty"`
+	// RetentionPolicy indicates the policy to follow to clean old backup snapshots
+	RetentionPolicy `json:"retentionPolicy,omitempty"`
 	//Indicates that the Backup is paused from taking backup. Default value is 'false'
 	// +optional
-	Paused              bool           `json:"paused,omitempty"`
+	Paused bool `json:"paused,omitempty"`
+	//ContainerAttributes allow to specify Env, Resources, SecurityContext etc. for backup sidecar or job's container
+	//+optional
 	ContainerAttributes *core.Container `json:"containerAttributes,omitempty"`
 	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
 	// If specified, these secrets will be passed to individual puller implementations for them to use. For example,

@@ -25,13 +25,20 @@ type Recovery struct {
 }
 
 type RecoverySpec struct {
+	// Repository refer to the Repository crd that hold backend information
 	Repository core.ObjectReference `json:"repository"`
 	// Snapshot to recover. Default is latest snapshot.
 	// +optional
-	Snapshot            string         `json:"snapshot,omitempty"`
-	Paths               []string       `json:"paths,omitempty"`
-	RecoverTo           RecoveryTarget `json:"recoverTo,omitempty"`
-	RecoveryPolicy      `json:"recoveryPolicy,omitempty"`
+	Snapshot string `json:"snapshot,omitempty"`
+	// Paths can be used to recover only specified directories from the backed up snapshot
+	// +optional
+	Paths []string `json:"paths,omitempty"`
+	// RecoverTo indicates the target where the recovered data will be stored
+	RecoverTo RecoveryTarget `json:"recoverTo,omitempty"`
+	// RecoveryPolicy specifies weather to recover only once or recover always when workload restart for a particular Recovery crd.
+	RecoveryPolicy `json:"recoveryPolicy,omitempty"`
+	//ContainerAttributes allow to specify Env, Resources, SecurityContext etc. for backup sidecar or job's container
+	//+optional
 	ContainerAttributes *core.Container `json:"containerAttributes,omitempty"`
 
 	// NodeSelector is a selector which must be true for the pod to fit on a node.
@@ -42,7 +49,11 @@ type RecoverySpec struct {
 }
 
 type RecoveryTarget struct {
-	Volume    *store.LocalSpec      `json:"volume,omitempty"`
+	// Volume specifies the volume when the recovery target is a volume
+	//+optional
+	Volume *store.LocalSpec `json:"volume,omitempty"`
+	// ObjectRef refers to the workload when the recovery target is a running workload
+	// +optional
 	ObjectRef *core.ObjectReference `json:"objectRef,omitempty"`
 }
 

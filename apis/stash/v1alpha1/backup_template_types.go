@@ -1,8 +1,8 @@
 package v1alpha1
 
 import (
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/kubernetes/pkg/apis/core"
 )
 
 const (
@@ -22,6 +22,7 @@ type BackupTemplate struct {
 }
 
 type BackupTemplateSpec struct {
+	// RepositorySpec is used to create Repository crd for respective workload
 	RepositorySpec      `json:",inline"`
 	Type                BackupType `json:"type,omitempty"`
 	Schedule            string     `json:"schedule,omitempty"`
