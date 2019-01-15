@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/appscode/go/log"
+	"github.com/appscode/stash/apis"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/client/clientset/versioned/scheme"
 	cs "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1"
@@ -64,7 +65,7 @@ func (c *Controller) Run() {
 		stash_util.UpdateRecoveryStatus(c.stashClient, recovery, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 			in.Phase = api.RecoveryFailed
 			return in
-		}, api.EnableStatusSubresource)
+		}, apis.EnableStatusSubresource)
 		ref, rerr := reference.GetReference(scheme.Scheme, recovery)
 		if rerr == nil {
 			eventer.CreateEventWithLog(
@@ -86,7 +87,7 @@ func (c *Controller) Run() {
 		stash_util.UpdateRecoveryStatus(c.stashClient, recovery, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 			in.Phase = api.RecoveryFailed
 			return in
-		}, api.EnableStatusSubresource)
+		}, apis.EnableStatusSubresource)
 		ref, rerr := reference.GetReference(scheme.Scheme, recovery)
 		if rerr == nil {
 			eventer.CreateEventWithLog(
@@ -108,7 +109,7 @@ func (c *Controller) Run() {
 		in.Phase = api.RecoverySucceeded
 		// TODO: status.Stats
 		return in
-	}, api.EnableStatusSubresource)
+	}, apis.EnableStatusSubresource)
 	ref, rerr := reference.GetReference(scheme.Scheme, recovery)
 	if rerr == nil {
 		eventer.CreateEventWithLog(

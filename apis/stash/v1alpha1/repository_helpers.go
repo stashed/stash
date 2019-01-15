@@ -2,6 +2,7 @@ package v1alpha1
 
 import (
 	crdutils "github.com/appscode/kutil/apiextensions/v1beta1"
+	"github.com/appscode/stash/apis"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 )
 
@@ -27,7 +28,7 @@ func (c Repository) CustomResourceDefinition() *apiextensions.CustomResourceDefi
 		SpecDefinitionName:      "github.com/appscode/stash/apis/stash/v1alpha1.Repository",
 		EnableValidation:        true,
 		GetOpenAPIDefinitions:   GetOpenAPIDefinitions,
-		EnableStatusSubresource: EnableStatusSubresource,
+		EnableStatusSubresource: apis.EnableStatusSubresource,
 		AdditionalPrinterColumns: []apiextensions.CustomResourceColumnDefinition{
 			{
 				Name:     "Backup-Count",

@@ -8,7 +8,7 @@ import (
 	"github.com/appscode/go/log/golog"
 	v "github.com/appscode/go/version"
 	"github.com/appscode/kutil/tools/cli"
-	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	"github.com/appscode/stash/apis"
 	"github.com/appscode/stash/client/clientset/versioned/scheme"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
@@ -37,7 +37,7 @@ func NewRootCmd() *cobra.Command {
 	flag.CommandLine.Parse([]string{})
 	rootCmd.PersistentFlags().StringVar(&util.ServiceName, "service-name", "stash-operator", "Stash service name.")
 	rootCmd.PersistentFlags().BoolVar(&cli.EnableAnalytics, "enable-analytics", cli.EnableAnalytics, "Send analytical events to Google Analytics")
-	rootCmd.PersistentFlags().BoolVar(&api.EnableStatusSubresource, "enable-status-subresource", api.EnableStatusSubresource, "If true, uses sub resource for crds.")
+	rootCmd.PersistentFlags().BoolVar(&apis.EnableStatusSubresource, "enable-status-subresource", apis.EnableStatusSubresource, "If true, uses sub resource for crds.")
 
 	rootCmd.AddCommand(v.NewCmdVersion())
 	stopCh := genericapiserver.SetupSignalHandler()

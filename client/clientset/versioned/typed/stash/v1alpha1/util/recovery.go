@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/appscode/kutil"
+	"github.com/appscode/stash/apis"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1"
 	jsonpatch "github.com/evanphx/json-patch"
@@ -100,7 +101,7 @@ func SetRecoveryStats(c cs.StashV1alpha1Interface, recovery *api.Recovery, path 
 			})
 		}
 		return in
-	}, api.EnableStatusSubresource)
+	}, apis.EnableStatusSubresource)
 	return out, err
 }
 

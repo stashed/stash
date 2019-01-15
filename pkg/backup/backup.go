@@ -10,6 +10,7 @@ import (
 	core_util "github.com/appscode/kutil/core/v1"
 	rbac_util "github.com/appscode/kutil/rbac/v1"
 	"github.com/appscode/kutil/tools/queue"
+	"github.com/appscode/stash/apis"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client/clientset/versioned"
 	stash_util "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
@@ -321,7 +322,7 @@ func (c *Controller) runResticBackup(restic *api.Restic, repository *api.Reposit
 				}
 				in.LastBackupDuration = endTime.Sub(startTime.Time).String()
 				return in
-			}, api.EnableStatusSubresource)
+			}, apis.EnableStatusSubresource)
 		}
 	}()
 

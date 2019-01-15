@@ -7,7 +7,3 @@ const (
 	// ResourceVersion will be used to trigger restarts for ReplicaSet and RC pods
 	ResourceHash = ResticKey + "/resource-hash"
 )
-
-var (
-	EnableStatusSubresource bool
-)

@@ -9,12 +9,13 @@ import (
 	crdutils "github.com/appscode/kutil/apiextensions/v1beta1"
 	discovery_util "github.com/appscode/kutil/discovery"
 	"github.com/appscode/kutil/meta"
+	"github.com/appscode/kutil/tools/cli"
 	"github.com/appscode/kutil/tools/clientcmd"
+	"github.com/appscode/stash/apis"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/client/clientset/versioned/scheme"
 	_ "github.com/appscode/stash/client/clientset/versioned/scheme"
 	"github.com/appscode/stash/pkg/controller"
-	"github.com/appscode/stash/pkg/util"
 	"github.com/appscode/stash/test/e2e/framework"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
@@ -47,7 +48,7 @@ func TestE2e(t *testing.T) {
 var _ = BeforeSuite(func() {
 	scheme.AddToScheme(clientsetscheme.Scheme)
 	scheme.AddToScheme(legacyscheme.Scheme)
-	util.LoggerOptions.Verbosity = "5"
+	cli.LoggerOptions.Verbosity = "5"
 
 	clientConfig, err := clientcmd.BuildConfigFromContext(options.KubeConfig, options.KubeContext)
 	Expect(err).NotTo(HaveOccurred())
@@ -57,7 +58,7 @@ var _ = BeforeSuite(func() {
 	serverVersion, err := discovery_util.GetBaseVersion(discClient)
 	Expect(err).NotTo(HaveOccurred())
 	if strings.Compare(serverVersion, "1.11") >= 0 {
-		api.EnableStatusSubresource = true
+		apis.EnableStatusSubresource = true
 	}
 
 	err = options.ApplyTo(ctrlConfig)
