@@ -8,6 +8,7 @@ import (
 	hooks "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
 	webhook "github.com/appscode/kubernetes-webhook-util/admission/v1beta1/generic"
 	"github.com/appscode/kutil/tools/queue"
+	"github.com/appscode/stash/apis"
 	"github.com/appscode/stash/apis/stash"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	stash_util "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
@@ -158,7 +159,7 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 		stash_util.UpdateRecoveryStatus(c.stashClient.StashV1alpha1(), rec, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 			in.Phase = api.RecoveryFailed
 			return in
-		}, api.EnableStatusSubresource)
+		}, apis.EnableStatusSubresource)
 		ref, rerr := reference.GetReference(scheme.Scheme, rec)
 		if rerr == nil {
 			eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, ref, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
@@ -192,7 +193,7 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 	stash_util.UpdateRecoveryStatus(c.stashClient.StashV1alpha1(), rec, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 		in.Phase = api.RecoveryRunning
 		return in
-	}, api.EnableStatusSubresource)
+	}, apis.EnableStatusSubresource)
 
 	return nil
 }

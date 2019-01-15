@@ -4,10 +4,13 @@ import (
 	"io/ioutil"
 	"os"
 
+	"path/filepath"
+
 	"github.com/appscode/go/log"
 	gort "github.com/appscode/go/runtime"
 	crdutils "github.com/appscode/kutil/apiextensions/v1beta1"
 	"github.com/appscode/kutil/openapi"
+	"github.com/appscode/stash/apis"
 	repoinstall "github.com/appscode/stash/apis/repositories/install"
 	repov1alpha1 "github.com/appscode/stash/apis/repositories/v1alpha1"
 	stashinstall "github.com/appscode/stash/apis/stash/install"
@@ -18,11 +21,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/kube-openapi/pkg/common"
-	"path/filepath"
 )
 
 func generateCRDDefinitions() {
-	stashv1alpha1.EnableStatusSubresource = true
+	apis.EnableStatusSubresource = true
 
 	filename := gort.GOPath() + "/src/github.com/appscode/stash/apis/stash/v1alpha1/crds.yaml"
 	os.Remove(filename)
