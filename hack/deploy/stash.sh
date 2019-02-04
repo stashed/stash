@@ -122,6 +122,7 @@ export STASH_UNINSTALL=0
 export STASH_PURGE=0
 export STASH_BYPASS_VALIDATING_WEBHOOK_XRAY=false
 export STASH_USE_KUBEAPISERVER_FQDN_FOR_AKS=true
+export STASH_PRIORITY_CLASS=system-cluster-critical
 
 export SCRIPT_LOCATION="curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.2/"
 if [[ "$APPSCODE_ENV" == "dev" ]]; then
@@ -324,6 +325,10 @@ while test $# -gt 0; do
 done
 
 export PROMETHEUS_NAMESPACE=${PROMETHEUS_NAMESPACE:-$STASH_NAMESPACE}
+
+if [ "$STASH_NAMESPACE" != "kube-system" ]; then
+    export STASH_PRIORITY_CLASS=""
+fi
 
 if [ "$STASH_UNINSTALL" -eq 1 ]; then
   # delete webhooks and apiservices
