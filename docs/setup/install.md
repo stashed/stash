@@ -48,6 +48,7 @@ The installer script and associated yaml files can be found in the [/hack/deploy
 
 ```console
 $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.2/hack/deploy/stash.sh | bash -s -- -h
+
 stash.sh - install stash operator
 
 stash.sh [options]
