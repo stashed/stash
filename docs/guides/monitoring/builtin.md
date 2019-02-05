@@ -120,7 +120,7 @@ stash-apiserver-cert   kubernetes.io/tls   2      2m21s
 If you are using a RBAC enabled cluster, you have to give necessary RBAC permissions for Prometheus. Let's create necessary RBAC stuffs for Prometheus,
 
 ```console
-$ kubectl apply -f curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.2/docs/examples/monitoring/builtin/prom-rbac.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.8.2/docs/examples/monitoring/builtin/prom-rbac.yaml
 clusterrole.rbac.authorization.k8s.io/stash-prometheus-server created
 serviceaccount/stash-prometheus-server created
 clusterrolebinding.rbac.authorization.k8s.io/stash-prometheus-server created
@@ -245,7 +245,7 @@ Also note that, we have provided a bearer-token file through `bearer_token_file`
 Let's create the ConfigMap we have shown above,
 
 ```console
-$ kubectl apply -f curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.2/docs/examples/monitoring/builtin/prom-config.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.8.2/docs/examples/monitoring/builtin/prom-config.yaml
 configmap/stash-prometheus-server-conf created
 ```
 
@@ -306,7 +306,7 @@ Notice that, we have mounted `stash-apiserver-cert` secret as a volume at `/etc/
 Now, let's create the deployment,
 
 ```console
-$ kubectl apply -f curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.2/docs/examples/monitoring/builtin/prom-deployment.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/appscode/stash/0.8.2/docs/examples/monitoring/builtin/prom-deployment.yaml
 deployment.apps/stash-prometheus-server created
 ```
 
