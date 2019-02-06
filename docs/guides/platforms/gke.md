@@ -317,7 +317,7 @@ Here, `PHASE` `Succeeded` indicate that our recovery has been completed successf
 If you are using Kubernetes version older than v1.11.0 then run following command and check `status.phase` field to see whether the recovery succeeded or failed.
 
 ```console
-$ kubectl get recovery -n demo rook-recovery -o yaml
+$ kubectl get recovery -n demo gcs-recovery -o yaml
 ```
 
 **Re-deploy Workload:**
