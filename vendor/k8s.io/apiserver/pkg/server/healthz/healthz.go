@@ -204,17 +204,17 @@ func checkerNames(checks ...HealthzChecker) []string {
 	return nil
 }
 
-// CertHealthz returns true automatically when checked
-func NewCertHealthz(certFile string) HealthzChecker {
+// CertHealthz returns true if tls.crt is unchanged when checked
+func NewCertHealthz(certFile string) (HealthzChecker, error) {
 	var hash string
 	if certFile != "" {
 		var err error
 		hash, err = calculateHash(certFile)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 	}
-	return &certChecker{certFile: certFile, initialHash: hash}
+	return &certChecker{certFile: certFile, initialHash: hash}, nil
 }
 
 // certChecker fails health check if server certificate changes.

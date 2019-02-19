@@ -9,6 +9,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -37,6 +38,37 @@ func DetectResource(restmapper *DefaultRESTMapper, obj interface{}) (schema.Grou
 	return schema.GroupVersionResource{}, &AmbiguousResourceError{PartialResource: gvk, MatchingResources: resources}
 }
 
+func APIResourceForGVK(client discovery.DiscoveryInterface, input schema.GroupVersionKind) (metav1.APIResource, error) {
+	resourceList, err := client.ServerResourcesForGroupVersion(input.GroupVersion().String())
+	if discovery.IsGroupDiscoveryFailedError(err) {
+		glog.Errorf("Skipping failed API Groups: %v", err)
+	} else if err != nil {
+		return metav1.APIResource{}, err
+	}
+	var resources []metav1.APIResource
+	for _, resource := range resourceList.APIResources {
+		if resource.Kind == input.Kind { // match kind
+			resource.Group = input.Group
+			resource.Version = input.Version
+			resources = append(resources, resource)
+		}
+	}
+	resources = FilterAPISubResources(resources) // ignore sub-resources
+	if len(resources) == 1 {
+		return resources[0], nil
+	}
+
+	var matches []schema.GroupVersionResource
+	for _, resource := range resources {
+		matches = append(matches, schema.GroupVersionResource{
+			Group:    resource.Group,
+			Version:  resource.Version,
+			Resource: resource.Name,
+		})
+	}
+	return metav1.APIResource{}, &AmbiguousResourceError{PartialResource: input, MatchingResources: matches}
+}
+
 func ResourceForGVK(client discovery.DiscoveryInterface, input schema.GroupVersionKind) (schema.GroupVersionResource, error) {
 	resourceList, err := client.ServerResourcesForGroupVersion(input.GroupVersion().String())
 	if discovery.IsGroupDiscoveryFailedError(err) {
@@ -57,14 +89,24 @@ func ResourceForGVK(client discovery.DiscoveryInterface, input schema.GroupVersi
 	return schema.GroupVersionResource{}, &AmbiguousResourceError{PartialResource: input, MatchingResources: resources}
 }
 
-func FilterSubResources(resources []schema.GroupVersionResource) []schema.GroupVersionResource {
-	var resFiltered []schema.GroupVersionResource
+func FilterAPISubResources(resources []metav1.APIResource) []metav1.APIResource {
+	var filtered []metav1.APIResource
 	for _, res := range resources {
-		if !strings.ContainsRune(res.Resource, '/') {
-			resFiltered = append(resFiltered, res)
+		if !strings.ContainsRune(res.Name, '/') {
+			filtered = append(filtered, res)
 		}
 	}
-	return resFiltered
+	return filtered
+}
+
+func FilterSubResources(resources []schema.GroupVersionResource) []schema.GroupVersionResource {
+	var filtered []schema.GroupVersionResource
+	for _, res := range resources {
+		if !strings.ContainsRune(res.Resource, '/') {
+			filtered = append(filtered, res)
+		}
+	}
+	return filtered
 }
 
 func LoadRestMapper(client discovery.DiscoveryInterface) (*DefaultRESTMapper, error) {
@@ -89,6 +131,10 @@ func LoadRestMapper(client discovery.DiscoveryInterface) (*DefaultRESTMapper, er
 }
 
 func guessGVK(obj interface{}) (schema.GroupVersionKind, error) {
+	if m, err := meta.TypeAccessor(obj); err == nil {
+		return schema.FromAPIVersionAndKind(m.GetAPIVersion(), m.GetKind()), nil
+	}
+
 	val, err := conversion.EnforcePtr(obj)
 	if err != nil {
 		return schema.GroupVersionKind{}, err

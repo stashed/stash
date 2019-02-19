@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	version "github.com/appscode/go-version"
+	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
@@ -108,6 +109,8 @@ func IsSupportedVersion(kc kubernetes.Interface, constraint string, blackListedV
 	if err != nil {
 		return err
 	}
+	glog.Infof("Kubernetes version: %#v\n", info)
+
 	gv, err := version.NewVersion(info.GitVersion)
 	if err != nil {
 		return err
