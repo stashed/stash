@@ -2,13 +2,13 @@
 title: Restore Volumes | Stash
 description: Restore Volumes using Stash
 menu:
-  product_stash_0.8.2:
+  product_stash_0.8.3:
     identifier: restore-stash
     name: Restore Volumes
     parent: guides
     weight: 20
 product_name: stash
-menu_name: product_stash_0.8.2
+menu_name: product_stash_0.8.3
 section_menu_id: guides
 ---
 

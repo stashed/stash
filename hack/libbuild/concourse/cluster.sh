@@ -209,7 +209,7 @@ EOF
 
   # rook
   git clone https://github.com/rook/rook
-  git checkout -b tags/v0.8.2
+  git checkout -b tags/v0.8.3
   pushd rook/cluster/examples/kubernetes/ceph/
 
   #sed -i '212s/^/        - name: FLEXVOLUME_DIR_PATH\n/' operator.yaml

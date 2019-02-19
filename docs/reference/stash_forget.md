@@ -1,12 +1,12 @@
 ---
 title: Stash Forget
 menu:
-  product_stash_0.8.2:
+  product_stash_0.8.3:
     identifier: stash-forget
     name: Stash Forget
     parent: reference
 product_name: stash
-menu_name: product_stash_0.8.2
+menu_name: product_stash_0.8.3
 section_menu_id: reference
 ---
 ## stash forget

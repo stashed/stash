@@ -2,13 +2,13 @@
 title: Offline Backup | Stash
 description: Offline Backup using Stash
 menu:
-  product_stash_0.8.2:
+  product_stash_0.8.3:
     identifier: offline-stash
     name: Offline Backup
     parent: guides
     weight: 15
 product_name: stash
-menu_name: product_stash_0.8.2
+menu_name: product_stash_0.8.3
 section_menu_id: guides
 ---
 
