@@ -17,6 +17,27 @@ aliases:
 
 # Change Log
 
+## [0.8.3](https://github.com/appscode/stash/tree/0.8.3) (2019-02-19)
+[Full Changelog](https://github.com/appscode/stash/compare/0.8.2...0.8.3)
+
+**Closed issues:**
+
+- Instance label in pushgateway is deprecated - Not use HostnameGroupingKey\(\) [\#670](https://github.com/appscode/stash/issues/670)
+- Design review [\#616](https://github.com/appscode/stash/issues/616)
+- Rename Restic to Backup [\#320](https://github.com/appscode/stash/issues/320)
+
+**Merged pull requests:**
+
+- Update dependencies [\#681](https://github.com/appscode/stash/pull/681) ([tamalsaha](https://github.com/tamalsaha))
+- Don't add hostname label to Prometheus metrics. [\#680](https://github.com/appscode/stash/pull/680) ([tamalsaha](https://github.com/tamalsaha))
+- Pass pod annotation to deployment [\#679](https://github.com/appscode/stash/pull/679) ([tamalsaha](https://github.com/tamalsaha))
+- Fix the case for deploying using MINGW64 for windows [\#678](https://github.com/appscode/stash/pull/678) ([tamalsaha](https://github.com/tamalsaha))
+- Use onessl 0.10.0 [\#677](https://github.com/appscode/stash/pull/677) ([tamalsaha](https://github.com/tamalsaha))
+- s/rook/azure/ in possible copy/paste error. [\#669](https://github.com/appscode/stash/pull/669) ([lastcoolnameleft](https://github.com/lastcoolnameleft))
+- Fix builtin monitoring doc [\#668](https://github.com/appscode/stash/pull/668) ([hossainemruz](https://github.com/hossainemruz))
+- Don't use priority class when operator namespace is not kube-system [\#666](https://github.com/appscode/stash/pull/666) ([hossainemruz](https://github.com/hossainemruz))
+- Separate type definitions into individual files [\#646](https://github.com/appscode/stash/pull/646) ([hossainemruz](https://github.com/hossainemruz))
+
 ## [0.8.2](https://github.com/appscode/stash/tree/0.8.2) (2019-01-02)
 [Full Changelog](https://github.com/appscode/stash/compare/0.8.1...0.8.2)
 
@@ -87,6 +108,7 @@ aliases:
 - Using Stash with TLS secured Minio Server Can't succeed [\#478](https://github.com/appscode/stash/issues/478)
 - Add cluster name in repo path [\#374](https://github.com/appscode/stash/issues/374)
 - Stash don't pass `nodeSelector` from Recovery crd to recovery Job. [\#617](https://github.com/appscode/stash/issues/617)
+- Recovery task is not working [\#613](https://github.com/appscode/stash/issues/613)
 - Permissions problem with the Helm chart in master branch [\#592](https://github.com/appscode/stash/issues/592)
 - Add Prometheus config sample for pushgateway [\#582](https://github.com/appscode/stash/issues/582)
 - Handle security context [\#566](https://github.com/appscode/stash/issues/566)
