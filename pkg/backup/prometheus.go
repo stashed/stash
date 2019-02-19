@@ -5,8 +5,7 @@ import (
 	"strings"
 
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
-	"github.com/prometheus/client_golang/prometheus/push"
-	ini "gopkg.in/ini.v1"
+	"gopkg.in/ini.v1"
 )
 
 var (
@@ -26,7 +25,7 @@ func (c *Controller) JobName(resource *api.Restic) string {
 }
 
 func (c *Controller) GroupingKeys(resource *api.Restic) map[string]string {
-	labels := push.HostnameGroupingKey()
+	labels := make(map[string]string)
 	labels["app"] = sanitizeLabelValue(c.opt.Workload.Name)
 	labels["kind"] = sanitizeLabelValue(c.opt.Workload.Kind)
 	labels["namespace"] = resource.Namespace
