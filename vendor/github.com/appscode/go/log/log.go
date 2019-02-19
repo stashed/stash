@@ -18,7 +18,7 @@ func Fatal(args ...interface{}) {
 }
 
 func Fatalln(args ...interface{}) {
-	glog.FatalDepth(1, args...)
+	glog.FatalDepth(1, fmt.Sprintln(args...))
 }
 
 func Fatalf(format string, args ...interface{}) {
@@ -30,7 +30,7 @@ func Error(args ...interface{}) {
 }
 
 func Errorln(args ...interface{}) {
-	glog.ErrorDepth(1, args...)
+	glog.ErrorDepth(1, fmt.Sprintln(args...))
 }
 
 func Errorf(format string, args ...interface{}) {
@@ -42,7 +42,7 @@ func Warning(args ...interface{}) {
 }
 
 func Warningln(args ...interface{}) {
-	glog.WarningDepth(1, args...)
+	glog.WarningDepth(1, fmt.Sprintln(args...))
 }
 
 func Warningf(format string, args ...interface{}) {
@@ -54,7 +54,7 @@ func Info(args ...interface{}) {
 }
 
 func Infoln(args ...interface{}) {
-	glog.InfoDepth(1, args...)
+	glog.InfoDepth(1, fmt.Sprintln(args...))
 }
 
 func Infof(format string, args ...interface{}) {
@@ -69,7 +69,7 @@ func Debug(args ...interface{}) {
 
 func Debugln(args ...interface{}) {
 	if glog.V(LevelDebug) {
-		glog.InfoDepth(1, args...)
+		glog.InfoDepth(1, fmt.Sprintln(args...))
 	}
 }
 

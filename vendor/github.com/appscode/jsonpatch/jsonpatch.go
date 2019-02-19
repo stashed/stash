@@ -10,6 +10,8 @@ import (
 
 var errBadJSONDoc = fmt.Errorf("invalid JSON Document")
 
+type JsonPatchOperation = Operation
+
 type Operation struct {
 	Operation string      `json:"op"`
 	Path      string      `json:"path"`

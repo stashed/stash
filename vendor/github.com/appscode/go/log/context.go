@@ -28,7 +28,7 @@ func (l *Logger) Fatal(args ...interface{}) {
 }
 
 func (l *Logger) Fatalln(args ...interface{}) {
-	glog.FatalDepth(1, l.ctx, args)
+	glog.FatalDepth(1, fmt.Sprintln(append([]interface{}{l.ctx}, args...)...))
 }
 
 func (l *Logger) Fatalf(format string, args ...interface{}) {
@@ -40,7 +40,7 @@ func (l *Logger) Error(args ...interface{}) {
 }
 
 func (l *Logger) Errorln(args ...interface{}) {
-	glog.ErrorDepth(1, l.ctx, args)
+	glog.ErrorDepth(1, fmt.Sprintln(append([]interface{}{l.ctx}, args...)...))
 }
 
 func (l *Logger) Errorf(format string, args ...interface{}) {
@@ -52,7 +52,7 @@ func (l *Logger) Warning(args ...interface{}) {
 }
 
 func (l *Logger) Warningln(args ...interface{}) {
-	glog.WarningDepth(1, l.ctx, args)
+	glog.WarningDepth(1, fmt.Sprintln(append([]interface{}{l.ctx}, args...)...))
 }
 
 func (l *Logger) Warningf(format string, args ...interface{}) {
@@ -64,7 +64,7 @@ func (l *Logger) Info(args ...interface{}) {
 }
 
 func (l *Logger) Infoln(args ...interface{}) {
-	glog.InfoDepth(1, l.ctx, args)
+	glog.InfoDepth(1, fmt.Sprintln(append([]interface{}{l.ctx}, args...)...))
 }
 
 func (l *Logger) Infof(format string, args ...interface{}) {
@@ -79,7 +79,7 @@ func (l *Logger) Debug(args ...interface{}) {
 
 func (l *Logger) Debugln(args ...interface{}) {
 	if glog.V(LevelDebug) {
-		glog.InfoDepth(1, l.ctx, args)
+		glog.InfoDepth(1, fmt.Sprintln(append([]interface{}{l.ctx}, args...)...))
 	}
 }
 

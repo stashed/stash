@@ -421,7 +421,11 @@ func (c *Config) Complete(informers informers.SharedInformerFactory) CompletedCo
 	}
 
 	if c.SecureServing.CertFile != "" {
-		c.HealthzChecks = append(c.HealthzChecks, healthz.NewCertHealthz(c.SecureServing.CertFile))
+		certChecker, err := healthz.NewCertHealthz(c.SecureServing.CertFile)
+		if err != nil {
+			glog.Fatalf("failed to create certificate checker. Reason: %v", err)
+		}
+		c.HealthzChecks = append(c.HealthzChecks, certChecker)
 	}
 
 	return CompletedConfig{&completedConfig{c, informers}}
