@@ -90,7 +90,7 @@ onessl_found || {
       export ONESSL=./onessl
       ;;
 
-    CYGWIN* | MINGW32* | MSYS*)
+    CYGWIN* | MINGW* | MSYS*)
       curl -fsSL -o onessl.exe https://github.com/kubepack/onessl/releases/download/0.10.0/onessl-windows-amd64.exe
       chmod +x onessl.exe
       export ONESSL=./onessl.exe
