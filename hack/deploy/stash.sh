@@ -113,7 +113,7 @@ export STASH_RUN_ON_MASTER=0
 export STASH_ENABLE_VALIDATING_WEBHOOK=false
 export STASH_ENABLE_MUTATING_WEBHOOK=false
 export STASH_DOCKER_REGISTRY=appscode
-export STASH_IMAGE_TAG=0.8.2
+export STASH_IMAGE_TAG=0.8.3
 export STASH_IMAGE_PULL_SECRET=
 export STASH_IMAGE_PULL_POLICY=IfNotPresent
 export STASH_ENABLE_STATUS_SUBRESOURCE=false
@@ -124,7 +124,7 @@ export STASH_BYPASS_VALIDATING_WEBHOOK_XRAY=false
 export STASH_USE_KUBEAPISERVER_FQDN_FOR_AKS=true
 export STASH_PRIORITY_CLASS=system-cluster-critical
 
-export SCRIPT_LOCATION="curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.2/"
+export SCRIPT_LOCATION="curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.3/"
 if [[ "$APPSCODE_ENV" == "dev" ]]; then
   detect_tag
   export SCRIPT_LOCATION="cat "

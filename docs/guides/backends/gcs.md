@@ -2,13 +2,13 @@
 title: GCS Backend | Stash
 description: Configure Stash to use Google Cloud Storage (GCS) as Backend.
 menu:
-  product_stash_0.8.2:
+  product_stash_0.8.3:
     identifier: backend-gcs
     name: Google Cloud Storage
     parent: backend
     weight: 50
 product_name: stash
-menu_name: product_stash_0.8.2
+menu_name: product_stash_0.8.3
 section_menu_id: guides
 ---
 

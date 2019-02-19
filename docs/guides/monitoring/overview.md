@@ -2,13 +2,13 @@
 title: Monitoring Overview | Stash
 description: A general overview of monitoring Stash
 menu:
-  product_stash_0.8.2:
+  product_stash_0.8.3:
     identifier: monitoring-overview
     name: Overview
     parent: monitoring
     weight: 10
 product_name: stash
-menu_name: product_stash_0.8.2
+menu_name: product_stash_0.8.3
 section_menu_id: guides
 ---
 
@@ -121,7 +121,7 @@ You have to provides these flags while installing or upgrading or updating Stash
 
 **Helm:**
 ```console
-$ helm install appscode/stash --name stash-operator --version 0.8.2 --namespace kube-system \
+$ helm install appscode/stash --name stash-operator --version 0.8.3 --namespace kube-system \
   --set monitoring.agent=prometheus.io/coreos-operator \
   --set monitoring.backup=true \
   --set monitoring.operator=true \
@@ -131,7 +131,7 @@ $ helm install appscode/stash --name stash-operator --version 0.8.2 --namespace 
 
 **Script:**
 ```console
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.2/hack/deploy/stash.sh  | bash -s -- \
+$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.3/hack/deploy/stash.sh  | bash -s -- \
   --monitoring-agent=prometheus.io/coreos-operator \
   --monitoring-backup=true \
   --monitoring-operator=true \
