@@ -1,0 +1,28 @@
+# volumeBackup specifies required functions and their inputs to backup kubernetes volume
+apiVersion: stash.appscode.com/v1beta1
+kind: Task
+metadata:
+  name: volumeBackup
+spec:
+  functions:
+  - name: volumeBackup
+    inputs:
+      targetDirectories: ${targetDirectories}
+      provider: ${provider}
+      hostname: ${hostname}
+      repoDir: ${prefix}
+      outputDir: ${outputDir}
+      policy: ${retentionPolicyName}
+      retentionValue: ${retentionPolicyValue}
+      enableMetric: ${enableMetric}
+      pushgatewayURL: ${pushgatewayURL}
+      workloadKind: ${kind}
+      workloadName: ${name}
+      tempVolumeName: ${tmpVolumeName}
+      storageSecretName: ${secretName}
+  - name: stashPostBackup
+    inputs:
+      repoName: ${repoName}
+      backupSession: ${backupSessionName}
+      outputJsonDir: ${output-dir}
+      outputVolumeName: ${output-volume-name}

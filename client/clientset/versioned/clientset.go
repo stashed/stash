@@ -21,6 +21,7 @@ package versioned
 import (
 	repositoriesv1alpha1 "github.com/appscode/stash/client/clientset/versioned/typed/repositories/v1alpha1"
 	stashv1alpha1 "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1"
+	stashv1beta1 "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1beta1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -32,8 +33,9 @@ type Interface interface {
 	// Deprecated: please explicitly pick a version if possible.
 	Repositories() repositoriesv1alpha1.RepositoriesV1alpha1Interface
 	StashV1alpha1() stashv1alpha1.StashV1alpha1Interface
+	StashV1beta1() stashv1beta1.StashV1beta1Interface
 	// Deprecated: please explicitly pick a version if possible.
-	Stash() stashv1alpha1.StashV1alpha1Interface
+	Stash() stashv1beta1.StashV1beta1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
@@ -42,6 +44,7 @@ type Clientset struct {
 	*discovery.DiscoveryClient
 	repositoriesV1alpha1 *repositoriesv1alpha1.RepositoriesV1alpha1Client
 	stashV1alpha1        *stashv1alpha1.StashV1alpha1Client
+	stashV1beta1         *stashv1beta1.StashV1beta1Client
 }
 
 // RepositoriesV1alpha1 retrieves the RepositoriesV1alpha1Client
@@ -60,10 +63,15 @@ func (c *Clientset) StashV1alpha1() stashv1alpha1.StashV1alpha1Interface {
 	return c.stashV1alpha1
 }
 
+// StashV1beta1 retrieves the StashV1beta1Client
+func (c *Clientset) StashV1beta1() stashv1beta1.StashV1beta1Interface {
+	return c.stashV1beta1
+}
+
 // Deprecated: Stash retrieves the default version of StashClient.
 // Please explicitly pick a version.
-func (c *Clientset) Stash() stashv1alpha1.StashV1alpha1Interface {
-	return c.stashV1alpha1
+func (c *Clientset) Stash() stashv1beta1.StashV1beta1Interface {
+	return c.stashV1beta1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -90,6 +98,10 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	if err != nil {
 		return nil, err
 	}
+	cs.stashV1beta1, err = stashv1beta1.NewForConfig(&configShallowCopy)
+	if err != nil {
+		return nil, err
+	}
 
 	cs.DiscoveryClient, err = discovery.NewDiscoveryClientForConfig(&configShallowCopy)
 	if err != nil {
@@ -104,6 +116,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
 	cs.repositoriesV1alpha1 = repositoriesv1alpha1.NewForConfigOrDie(c)
 	cs.stashV1alpha1 = stashv1alpha1.NewForConfigOrDie(c)
+	cs.stashV1beta1 = stashv1beta1.NewForConfigOrDie(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
 	return &cs
@@ -114,6 +127,7 @@ func New(c rest.Interface) *Clientset {
 	var cs Clientset
 	cs.repositoriesV1alpha1 = repositoriesv1alpha1.New(c)
 	cs.stashV1alpha1 = stashv1alpha1.New(c)
+	cs.stashV1beta1 = stashv1beta1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs

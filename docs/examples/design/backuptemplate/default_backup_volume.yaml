@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: demo-pvc
+  namespace: demo
+  # if stash find bellow annotations, it will take backup of it.
+  annotations:
+    stash.appscode.com/backuptemplate: "volume-backup-template"
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi

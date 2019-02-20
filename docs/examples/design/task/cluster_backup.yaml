@@ -1,0 +1,28 @@
+# clusterBackup specifies required functions and their inputs to backup cluster yaml
+apiVersion: stash.appscode.com/v1beta1
+kind: Task
+metadata:
+  name: clusterBackup
+spec:
+  functions:
+  - name: clusterBackup
+    inputs:
+      sanitize: ${sanitize}
+      provider: ${provider}
+      hostname: ${hostname}
+      repoDir: ${prefix}
+      outputDir: ${outputDir}
+      policy: ${retentionPolicyName}
+      retentionValue: ${retentionPolicyValue}
+      enableMetric: ${enableMetric}
+      pushgatewayURL: ${pushgatewayURL}
+      workloadKind: ${kind}
+      workloadName: ${name}
+      tempVolumeName: ${tmpVolumeName}
+      storageSecretName: ${secretName}
+  - name: stashPostBackup
+    inputs:
+      repoName: ${repoName}
+      backupSession: ${backupSessionName}
+      outputJsonDir: ${output-dir}
+      outputVolumeName: ${output-volume-name}
