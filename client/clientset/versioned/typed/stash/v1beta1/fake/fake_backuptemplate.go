@@ -35,22 +35,22 @@ type FakeBackupTemplates struct {
 
 var backuptemplatesResource = schema.GroupVersionResource{Group: "stash.appscode.com", Version: "v1beta1", Resource: "backuptemplates"}
 
-var backuptemplatesKind = schema.GroupVersionKind{Group: "stash.appscode.com", Version: "v1beta1", Kind: "BackupTemplate"}
+var backuptemplatesKind = schema.GroupVersionKind{Group: "stash.appscode.com", Version: "v1beta1", Kind: "BackupConfigurationTemplate"}
 
 // Get takes name of the backupTemplate, and returns the corresponding backupTemplate object, and an error if there is any.
-func (c *FakeBackupTemplates) Get(name string, options v1.GetOptions) (result *v1beta1.BackupTemplate, err error) {
+func (c *FakeBackupTemplates) Get(name string, options v1.GetOptions) (result *v1beta1.BackupConfigurationTemplate, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootGetAction(backuptemplatesResource, name), &v1beta1.BackupTemplate{})
+		Invokes(testing.NewRootGetAction(backuptemplatesResource, name), &v1beta1.BackupConfigurationTemplate{})
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*v1beta1.BackupTemplate), err
+	return obj.(*v1beta1.BackupConfigurationTemplate), err
 }
 
 // List takes label and field selectors, and returns the list of BackupTemplates that match those selectors.
-func (c *FakeBackupTemplates) List(opts v1.ListOptions) (result *v1beta1.BackupTemplateList, err error) {
+func (c *FakeBackupTemplates) List(opts v1.ListOptions) (result *v1beta1.BackupConfigurationTemplateList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootListAction(backuptemplatesResource, backuptemplatesKind, opts), &v1beta1.BackupTemplateList{})
+		Invokes(testing.NewRootListAction(backuptemplatesResource, backuptemplatesKind, opts), &v1beta1.BackupConfigurationTemplateList{})
 	if obj == nil {
 		return nil, err
 	}
@@ -59,8 +59,8 @@ func (c *FakeBackupTemplates) List(opts v1.ListOptions) (result *v1beta1.BackupT
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &v1beta1.BackupTemplateList{ListMeta: obj.(*v1beta1.BackupTemplateList).ListMeta}
-	for _, item := range obj.(*v1beta1.BackupTemplateList).Items {
+	list := &v1beta1.BackupConfigurationTemplateList{ListMeta: obj.(*v1beta1.BackupConfigurationTemplateList).ListMeta}
+	for _, item := range obj.(*v1beta1.BackupConfigurationTemplateList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)
 		}
@@ -75,29 +75,29 @@ func (c *FakeBackupTemplates) Watch(opts v1.ListOptions) (watch.Interface, error
 }
 
 // Create takes the representation of a backupTemplate and creates it.  Returns the server's representation of the backupTemplate, and an error, if there is any.
-func (c *FakeBackupTemplates) Create(backupTemplate *v1beta1.BackupTemplate) (result *v1beta1.BackupTemplate, err error) {
+func (c *FakeBackupTemplates) Create(backupTemplate *v1beta1.BackupConfigurationTemplate) (result *v1beta1.BackupConfigurationTemplate, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootCreateAction(backuptemplatesResource, backupTemplate), &v1beta1.BackupTemplate{})
+		Invokes(testing.NewRootCreateAction(backuptemplatesResource, backupTemplate), &v1beta1.BackupConfigurationTemplate{})
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*v1beta1.BackupTemplate), err
+	return obj.(*v1beta1.BackupConfigurationTemplate), err
 }
 
 // Update takes the representation of a backupTemplate and updates it. Returns the server's representation of the backupTemplate, and an error, if there is any.
-func (c *FakeBackupTemplates) Update(backupTemplate *v1beta1.BackupTemplate) (result *v1beta1.BackupTemplate, err error) {
+func (c *FakeBackupTemplates) Update(backupTemplate *v1beta1.BackupConfigurationTemplate) (result *v1beta1.BackupConfigurationTemplate, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateAction(backuptemplatesResource, backupTemplate), &v1beta1.BackupTemplate{})
+		Invokes(testing.NewRootUpdateAction(backuptemplatesResource, backupTemplate), &v1beta1.BackupConfigurationTemplate{})
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*v1beta1.BackupTemplate), err
+	return obj.(*v1beta1.BackupConfigurationTemplate), err
 }
 
 // Delete takes name of the backupTemplate and deletes it. Returns an error if one occurs.
 func (c *FakeBackupTemplates) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteAction(backuptemplatesResource, name), &v1beta1.BackupTemplate{})
+		Invokes(testing.NewRootDeleteAction(backuptemplatesResource, name), &v1beta1.BackupConfigurationTemplate{})
 	return err
 }
 
@@ -105,16 +105,16 @@ func (c *FakeBackupTemplates) Delete(name string, options *v1.DeleteOptions) err
 func (c *FakeBackupTemplates) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
 	action := testing.NewRootDeleteCollectionAction(backuptemplatesResource, listOptions)
 
-	_, err := c.Fake.Invokes(action, &v1beta1.BackupTemplateList{})
+	_, err := c.Fake.Invokes(action, &v1beta1.BackupConfigurationTemplateList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched backupTemplate.
-func (c *FakeBackupTemplates) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.BackupTemplate, err error) {
+func (c *FakeBackupTemplates) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.BackupConfigurationTemplate, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(backuptemplatesResource, name, data, subresources...), &v1beta1.BackupTemplate{})
+		Invokes(testing.NewRootPatchSubresourceAction(backuptemplatesResource, name, data, subresources...), &v1beta1.BackupConfigurationTemplate{})
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*v1beta1.BackupTemplate), err
+	return obj.(*v1beta1.BackupConfigurationTemplate), err
 }

@@ -32,12 +32,12 @@ func (c *FakeStashV1beta1) BackupConfigurations(namespace string) v1beta1.Backup
 	return &FakeBackupConfigurations{c, namespace}
 }
 
-func (c *FakeStashV1beta1) BackupSessions(namespace string) v1beta1.BackupSessionInterface {
-	return &FakeBackupSessions{c, namespace}
+func (c *FakeStashV1beta1) BackupConfigurationTemplates() v1beta1.BackupConfigurationTemplateInterface {
+	return &FakeBackupConfigurationTemplates{c}
 }
 
-func (c *FakeStashV1beta1) BackupTemplates() v1beta1.BackupTemplateInterface {
-	return &FakeBackupTemplates{c}
+func (c *FakeStashV1beta1) BackupSessions(namespace string) v1beta1.BackupSessionInterface {
+	return &FakeBackupSessions{c, namespace}
 }
 
 func (c *FakeStashV1beta1) Functions() v1beta1.FunctionInterface {

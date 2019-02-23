@@ -23,7 +23,7 @@ spec:
     - stash
     - appscode
     - backup
-    kind: BackupTemplate
+    kind: BackupConfigurationTemplate
     plural: backuptemplates
     shortNames:
     - btpl

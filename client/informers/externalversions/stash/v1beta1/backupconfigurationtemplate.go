@@ -31,58 +31,58 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 )
 
-// BackupTemplateInformer provides access to a shared informer and lister for
-// BackupTemplates.
-type BackupTemplateInformer interface {
+// BackupConfigurationTemplateInformer provides access to a shared informer and lister for
+// BackupConfigurationTemplates.
+type BackupConfigurationTemplateInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1beta1.BackupTemplateLister
+	Lister() v1beta1.BackupConfigurationTemplateLister
 }
 
-type backupTemplateInformer struct {
+type backupConfigurationTemplateInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 }
 
-// NewBackupTemplateInformer constructs a new informer for BackupTemplate type.
+// NewBackupConfigurationTemplateInformer constructs a new informer for BackupConfigurationTemplate type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewBackupTemplateInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredBackupTemplateInformer(client, resyncPeriod, indexers, nil)
+func NewBackupConfigurationTemplateInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredBackupConfigurationTemplateInformer(client, resyncPeriod, indexers, nil)
 }
 
-// NewFilteredBackupTemplateInformer constructs a new informer for BackupTemplate type.
+// NewFilteredBackupConfigurationTemplateInformer constructs a new informer for BackupConfigurationTemplate type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredBackupTemplateInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredBackupConfigurationTemplateInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.StashV1beta1().BackupTemplates().List(options)
+				return client.StashV1beta1().BackupConfigurationTemplates().List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.StashV1beta1().BackupTemplates().Watch(options)
+				return client.StashV1beta1().BackupConfigurationTemplates().Watch(options)
 			},
 		},
-		&stashv1beta1.BackupTemplate{},
+		&stashv1beta1.BackupConfigurationTemplate{},
 		resyncPeriod,
 		indexers,
 	)
 }
 
-func (f *backupTemplateInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredBackupTemplateInformer(client, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+func (f *backupConfigurationTemplateInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewFilteredBackupConfigurationTemplateInformer(client, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
-func (f *backupTemplateInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&stashv1beta1.BackupTemplate{}, f.defaultInformer)
+func (f *backupConfigurationTemplateInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&stashv1beta1.BackupConfigurationTemplate{}, f.defaultInformer)
 }
 
-func (f *backupTemplateInformer) Lister() v1beta1.BackupTemplateLister {
-	return v1beta1.NewBackupTemplateLister(f.Informer().GetIndexer())
+func (f *backupConfigurationTemplateInformer) Lister() v1beta1.BackupConfigurationTemplateLister {
+	return v1beta1.NewBackupConfigurationTemplateLister(f.Informer().GetIndexer())
 }

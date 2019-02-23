@@ -14,13 +14,13 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-func CreateOrPatchBackupTemplate(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(in *api.BackupTemplate) *api.BackupTemplate) (*api.BackupTemplate, kutil.VerbType, error) {
+func CreateOrPatchBackupTemplate(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(in *api.BackupConfigurationTemplate) *api.BackupConfigurationTemplate) (*api.BackupConfigurationTemplate, kutil.VerbType, error) {
 	cur, err := c.BackupTemplates().Get(meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
-		glog.V(3).Infof("Creating BackupTemplate %s/%s.", meta.Namespace, meta.Name)
-		out, err := c.BackupTemplates().Create(transform(&api.BackupTemplate{
+		glog.V(3).Infof("Creating BackupConfigurationTemplate %s/%s.", meta.Namespace, meta.Name)
+		out, err := c.BackupTemplates().Create(transform(&api.BackupConfigurationTemplate{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       "BackupTemplate",
+				Kind:       "BackupConfigurationTemplate",
 				APIVersion: api.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
@@ -32,11 +32,11 @@ func CreateOrPatchBackupTemplate(c cs.StashV1beta1Interface, meta metav1.ObjectM
 	return PatchBackupTemplate(c, cur, transform)
 }
 
-func PatchBackupTemplate(c cs.StashV1beta1Interface, cur *api.BackupTemplate, transform func(*api.BackupTemplate) *api.BackupTemplate) (*api.BackupTemplate, kutil.VerbType, error) {
+func PatchBackupTemplate(c cs.StashV1beta1Interface, cur *api.BackupConfigurationTemplate, transform func(*api.BackupConfigurationTemplate) *api.BackupConfigurationTemplate) (*api.BackupConfigurationTemplate, kutil.VerbType, error) {
 	return PatchBackupTemplateObject(c, cur, transform(cur.DeepCopy()))
 }
 
-func PatchBackupTemplateObject(c cs.StashV1beta1Interface, cur, mod *api.BackupTemplate) (*api.BackupTemplate, kutil.VerbType, error) {
+func PatchBackupTemplateObject(c cs.StashV1beta1Interface, cur, mod *api.BackupConfigurationTemplate) (*api.BackupConfigurationTemplate, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -54,12 +54,12 @@ func PatchBackupTemplateObject(c cs.StashV1beta1Interface, cur, mod *api.BackupT
 	if len(patch) == 0 || string(patch) == "{}" {
 		return cur, kutil.VerbUnchanged, nil
 	}
-	glog.V(3).Infof("Patching BackupTemplate %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
+	glog.V(3).Infof("Patching BackupConfigurationTemplate %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
 	out, err := c.BackupTemplates().Patch(cur.Name, types.MergePatchType, patch)
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateBackupTemplate(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(*api.BackupTemplate) *api.BackupTemplate) (result *api.BackupTemplate, err error) {
+func TryUpdateBackupTemplate(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(*api.BackupConfigurationTemplate) *api.BackupConfigurationTemplate) (result *api.BackupConfigurationTemplate, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
@@ -70,12 +70,12 @@ func TryUpdateBackupTemplate(c cs.StashV1beta1Interface, meta metav1.ObjectMeta,
 			result, e2 = c.BackupTemplates().Update(transform(cur.DeepCopy()))
 			return e2 == nil, nil
 		}
-		glog.Errorf("Attempt %d failed to update BackupTemplate %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
+		glog.Errorf("Attempt %d failed to update BackupConfigurationTemplate %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
 		return false, nil
 	})
 
 	if err != nil {
-		err = fmt.Errorf("failed to update BackupTemplate %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
+		err = fmt.Errorf("failed to update BackupConfigurationTemplate %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}
 	return
 }

@@ -26,6 +26,10 @@ type BackupConfigurationListerExpansion interface{}
 // BackupConfigurationNamespaceLister.
 type BackupConfigurationNamespaceListerExpansion interface{}
 
+// BackupConfigurationTemplateListerExpansion allows custom methods to be added to
+// BackupConfigurationTemplateLister.
+type BackupConfigurationTemplateListerExpansion interface{}
+
 // BackupSessionListerExpansion allows custom methods to be added to
 // BackupSessionLister.
 type BackupSessionListerExpansion interface{}
@@ -33,10 +37,6 @@ type BackupSessionListerExpansion interface{}
 // BackupSessionNamespaceListerExpansion allows custom methods to be added to
 // BackupSessionNamespaceLister.
 type BackupSessionNamespaceListerExpansion interface{}
-
-// BackupTemplateListerExpansion allows custom methods to be added to
-// BackupTemplateLister.
-type BackupTemplateListerExpansion interface{}
 
 // FunctionListerExpansion allows custom methods to be added to
 // FunctionLister.

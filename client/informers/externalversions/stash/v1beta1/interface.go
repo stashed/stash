@@ -26,10 +26,10 @@ import (
 type Interface interface {
 	// BackupConfigurations returns a BackupConfigurationInformer.
 	BackupConfigurations() BackupConfigurationInformer
+	// BackupConfigurationTemplates returns a BackupConfigurationTemplateInformer.
+	BackupConfigurationTemplates() BackupConfigurationTemplateInformer
 	// BackupSessions returns a BackupSessionInformer.
 	BackupSessions() BackupSessionInformer
-	// BackupTemplates returns a BackupTemplateInformer.
-	BackupTemplates() BackupTemplateInformer
 	// Functions returns a FunctionInformer.
 	Functions() FunctionInformer
 	// RestoreSessions returns a RestoreSessionInformer.
@@ -54,14 +54,14 @@ func (v *version) BackupConfigurations() BackupConfigurationInformer {
 	return &backupConfigurationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
+// BackupConfigurationTemplates returns a BackupConfigurationTemplateInformer.
+func (v *version) BackupConfigurationTemplates() BackupConfigurationTemplateInformer {
+	return &backupConfigurationTemplateInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
 // BackupSessions returns a BackupSessionInformer.
 func (v *version) BackupSessions() BackupSessionInformer {
 	return &backupSessionInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// BackupTemplates returns a BackupTemplateInformer.
-func (v *version) BackupTemplates() BackupTemplateInformer {
-	return &backupTemplateInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
 // Functions returns a FunctionInformer.

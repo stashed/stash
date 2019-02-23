@@ -20,9 +20,9 @@ package v1beta1
 
 type BackupConfigurationExpansion interface{}
 
-type BackupSessionExpansion interface{}
+type BackupConfigurationTemplateExpansion interface{}
 
-type BackupTemplateExpansion interface{}
+type BackupSessionExpansion interface{}
 
 type FunctionExpansion interface{}
 

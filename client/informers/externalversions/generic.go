@@ -64,10 +64,10 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		// Group=stash.appscode.com, Version=v1beta1
 	case v1beta1.SchemeGroupVersion.WithResource("backupconfigurations"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Stash().V1beta1().BackupConfigurations().Informer()}, nil
+	case v1beta1.SchemeGroupVersion.WithResource("backupconfigurationtemplates"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Stash().V1beta1().BackupConfigurationTemplates().Informer()}, nil
 	case v1beta1.SchemeGroupVersion.WithResource("backupsessions"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Stash().V1beta1().BackupSessions().Informer()}, nil
-	case v1beta1.SchemeGroupVersion.WithResource("backuptemplates"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Stash().V1beta1().BackupTemplates().Informer()}, nil
 	case v1beta1.SchemeGroupVersion.WithResource("functions"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Stash().V1beta1().Functions().Informer()}, nil
 	case v1beta1.SchemeGroupVersion.WithResource("restoresessions"):

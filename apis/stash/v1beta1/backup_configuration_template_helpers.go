@@ -9,13 +9,13 @@ import (
 	hashutil "k8s.io/kubernetes/pkg/util/hash"
 )
 
-func (btpl BackupTemplate) GetSpecHash() string {
+func (btpl BackupConfigurationTemplate) GetSpecHash() string {
 	hash := fnv.New64a()
 	hashutil.DeepHashObject(hash, btpl.Spec)
 	return strconv.FormatUint(hash.Sum64(), 10)
 }
 
-func (btpl BackupTemplate) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+func (btpl BackupConfigurationTemplate) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crdutils.NewCustomResourceDefinition(crdutils.Config{
 		Group:         SchemeGroupVersion.Group,
 		Plural:        ResourcePluralBackupTemplate,
@@ -34,7 +34,7 @@ func (btpl BackupTemplate) CustomResourceDefinition() *apiextensions.CustomResou
 		Labels: crdutils.Labels{
 			LabelsMap: map[string]string{"app": "stash"},
 		},
-		SpecDefinitionName:    "github.com/appscode/stash/apis/stash/v1beta1.BackupTemplate",
+		SpecDefinitionName:    "github.com/appscode/stash/apis/stash/v1beta1.BackupConfigurationTemplate",
 		EnableValidation:      true,
 		GetOpenAPIDefinitions: GetOpenAPIDefinitions,
 		AdditionalPrinterColumns: []apiextensions.CustomResourceColumnDefinition{

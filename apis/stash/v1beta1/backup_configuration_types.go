@@ -24,12 +24,12 @@ type BackupConfiguration struct {
 }
 
 type BackupConfigurationSpec struct {
-	Schedule string `json:"schedule,omitempty"`
+	// Repository refer to the Repository crd that holds backend information
+	Repository core.LocalObjectReference `json:"repository"`
+	Schedule   string                    `json:"schedule,omitempty"`
 	// Task specify the Task crd that specifies the steps to take backup
 	// +optional
 	Task TaskRef `json:"task,omitempty"`
-	// Repository refer to the Repository crd that holds backend information
-	Repository core.LocalObjectReference `json:"repository"`
 	// Target specify the backup target
 	// +optional
 	Target *Target `json:"target,omitempty"`

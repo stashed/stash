@@ -48,7 +48,7 @@ func generateCRDDefinitions() {
 		stashv1beta1.Function{}.CustomResourceDefinition(),
 		stashv1beta1.BackupConfiguration{}.CustomResourceDefinition(),
 		stashv1beta1.BackupSession{}.CustomResourceDefinition(),
-		stashv1beta1.BackupTemplate{}.CustomResourceDefinition(),
+		stashv1beta1.BackupConfigurationTemplate{}.CustomResourceDefinition(),
 		stashv1beta1.RestoreSession{}.CustomResourceDefinition(),
 		stashv1beta1.Task{}.CustomResourceDefinition(),
 	}
