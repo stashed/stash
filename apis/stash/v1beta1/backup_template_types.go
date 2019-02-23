@@ -30,7 +30,7 @@ type BackupTemplateSpec struct {
 	// +optional
 	Task TaskRef `json:"task,omitempty"`
 	// RetentionPolicy indicates the policy to follow to clean old backup snapshots
-	RetentionPolicy `json:"retentionPolicy,omitempty"`
+	RetentionPolicy v1alpha1.RetentionPolicy `json:"retentionPolicy,omitempty"`
 	// ExecutionEnvironment allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc.
 	//+optional
 	ExecutionEnvironment ExecutionEnvironment `json:"executionEnvironment,omitempty"`

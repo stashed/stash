@@ -1457,36 +1457,7 @@ spec:
                 name:
                   description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
                   type: string
-            retentionPolicy:
-              properties:
-                dryRun:
-                  type: boolean
-                keepDaily:
-                  format: int32
-                  type: integer
-                keepHourly:
-                  format: int32
-                  type: integer
-                keepLast:
-                  format: int32
-                  type: integer
-                keepMonthly:
-                  format: int32
-                  type: integer
-                keepTags:
-                  items:
-                    type: string
-                  type: array
-                keepWeekly:
-                  format: int32
-                  type: integer
-                keepYearly:
-                  format: int32
-                  type: integer
-                name:
-                  type: string
-                prune:
-                  type: boolean
+            retentionPolicy: {}
             schedule:
               type: string
             target:

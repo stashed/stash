@@ -27,31 +27,6 @@ type TargetRef struct {
 	Name       string `json:"name,omitempty"`
 }
 
-type RetentionStrategy string
-
-const (
-	KeepLast    RetentionStrategy = "--keep-last"
-	KeepHourly  RetentionStrategy = "--keep-hourly"
-	KeepDaily   RetentionStrategy = "--keep-daily"
-	KeepWeekly  RetentionStrategy = "--keep-weekly"
-	KeepMonthly RetentionStrategy = "--keep-monthly"
-	KeepYearly  RetentionStrategy = "--keep-yearly"
-	KeepTag     RetentionStrategy = "--keep-tag"
-)
-
-type RetentionPolicy struct {
-	Name        string   `json:"name,omitempty"`
-	KeepLast    int      `json:"keepLast,omitempty"`
-	KeepHourly  int      `json:"keepHourly,omitempty"`
-	KeepDaily   int      `json:"keepDaily,omitempty"`
-	KeepWeekly  int      `json:"keepWeekly,omitempty"`
-	KeepMonthly int      `json:"keepMonthly,omitempty"`
-	KeepYearly  int      `json:"keepYearly,omitempty"`
-	KeepTags    []string `json:"keepTags,omitempty"`
-	Prune       bool     `json:"prune,omitempty"`
-	DryRun      bool     `json:"dryRun,omitempty"`
-}
-
 type ExecutionEnvironment struct {
 	// Compute Resources required by container.
 	// Cannot be updated.

@@ -2645,36 +2645,7 @@ spec:
                           otherwise just a regular string.
                         type: string
                   type: array
-            retentionPolicy:
-              properties:
-                dryRun:
-                  type: boolean
-                keepDaily:
-                  format: int32
-                  type: integer
-                keepHourly:
-                  format: int32
-                  type: integer
-                keepLast:
-                  format: int32
-                  type: integer
-                keepMonthly:
-                  format: int32
-                  type: integer
-                keepTags:
-                  items:
-                    type: string
-                  type: array
-                keepWeekly:
-                  format: int32
-                  type: integer
-                keepYearly:
-                  format: int32
-                  type: integer
-                name:
-                  type: string
-                prune:
-                  type: boolean
+            retentionPolicy: {}
             schedule:
               type: string
             task:

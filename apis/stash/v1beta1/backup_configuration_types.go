@@ -1,6 +1,7 @@
 package v1beta1
 
 import (
+	"github.com/appscode/stash/apis/stash/v1alpha1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -32,7 +33,7 @@ type BackupConfigurationSpec struct {
 	// +optional
 	Target *Target `json:"target,omitempty"`
 	// RetentionPolicy indicates the policy to follow to clean old backup snapshots
-	RetentionPolicy RetentionPolicy `json:"retentionPolicy,omitempty"`
+	RetentionPolicy v1alpha1.RetentionPolicy `json:"retentionPolicy,omitempty"`
 	// Indicates that the BackupConfiguration is paused from taking backup. Default value is 'false'
 	// +optional
 	Paused bool `json:"paused,omitempty"`

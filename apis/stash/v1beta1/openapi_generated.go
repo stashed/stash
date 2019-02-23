@@ -56,7 +56,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/appscode/stash/apis/stash/v1beta1.RestoreSessionList":      schema_stash_apis_stash_v1beta1_RestoreSessionList(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.RestoreSessionSpec":      schema_stash_apis_stash_v1beta1_RestoreSessionSpec(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.RestoreSessionStatus":    schema_stash_apis_stash_v1beta1_RestoreSessionStatus(ref),
-		"github.com/appscode/stash/apis/stash/v1beta1.RetentionPolicy":         schema_stash_apis_stash_v1beta1_RetentionPolicy(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.Rule":                    schema_stash_apis_stash_v1beta1_Rule(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.Target":                  schema_stash_apis_stash_v1beta1_Target(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.TargetRef":               schema_stash_apis_stash_v1beta1_TargetRef(ref),
@@ -440,7 +439,7 @@ func schema_stash_apis_stash_v1beta1_BackupConfigurationSpec(ref common.Referenc
 					"retentionPolicy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RetentionPolicy indicates the policy to follow to clean old backup snapshots",
-							Ref:         ref("github.com/appscode/stash/apis/stash/v1beta1.RetentionPolicy"),
+							Ref:         ref("github.com/appscode/stash/apis/stash/v1alpha1.RetentionPolicy"),
 						},
 					},
 					"paused": {
@@ -461,7 +460,7 @@ func schema_stash_apis_stash_v1beta1_BackupConfigurationSpec(ref common.Referenc
 			},
 		},
 		Dependencies: []string{
-			"github.com/appscode/stash/apis/stash/v1beta1.ExecutionEnvironment", "github.com/appscode/stash/apis/stash/v1beta1.RetentionPolicy", "github.com/appscode/stash/apis/stash/v1beta1.Target", "github.com/appscode/stash/apis/stash/v1beta1.TaskRef", "k8s.io/api/core/v1.LocalObjectReference"},
+			"github.com/appscode/stash/apis/stash/v1alpha1.RetentionPolicy", "github.com/appscode/stash/apis/stash/v1beta1.ExecutionEnvironment", "github.com/appscode/stash/apis/stash/v1beta1.Target", "github.com/appscode/stash/apis/stash/v1beta1.TaskRef", "k8s.io/api/core/v1.LocalObjectReference"},
 	}
 }
 
@@ -777,7 +776,7 @@ func schema_stash_apis_stash_v1beta1_BackupTemplateSpec(ref common.ReferenceCall
 					"retentionPolicy": {
 						SchemaProps: spec.SchemaProps{
 							Description: "RetentionPolicy indicates the policy to follow to clean old backup snapshots",
-							Ref:         ref("github.com/appscode/stash/apis/stash/v1beta1.RetentionPolicy"),
+							Ref:         ref("github.com/appscode/stash/apis/stash/v1alpha1.RetentionPolicy"),
 						},
 					},
 					"executionEnvironment": {
@@ -790,7 +789,7 @@ func schema_stash_apis_stash_v1beta1_BackupTemplateSpec(ref common.ReferenceCall
 			},
 		},
 		Dependencies: []string{
-			"github.com/appscode/stash/apis/stash/v1beta1.ExecutionEnvironment", "github.com/appscode/stash/apis/stash/v1beta1.RetentionPolicy", "github.com/appscode/stash/apis/stash/v1beta1.TaskRef", "kmodules.xyz/objectstore-api/api/v1.Backend"},
+			"github.com/appscode/stash/apis/stash/v1alpha1.RetentionPolicy", "github.com/appscode/stash/apis/stash/v1beta1.ExecutionEnvironment", "github.com/appscode/stash/apis/stash/v1beta1.TaskRef", "kmodules.xyz/objectstore-api/api/v1.Backend"},
 	}
 }
 
@@ -1248,85 +1247,6 @@ func schema_stash_apis_stash_v1beta1_RestoreSessionStatus(ref common.ReferenceCa
 		},
 		Dependencies: []string{
 			"github.com/appscode/go/encoding/json/types.IntHash"},
-	}
-}
-
-func schema_stash_apis_stash_v1beta1_RetentionPolicy(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Properties: map[string]spec.Schema{
-					"name": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"keepLast": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int32",
-						},
-					},
-					"keepHourly": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int32",
-						},
-					},
-					"keepDaily": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int32",
-						},
-					},
-					"keepWeekly": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int32",
-						},
-					},
-					"keepMonthly": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int32",
-						},
-					},
-					"keepYearly": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int32",
-						},
-					},
-					"keepTags": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
-									},
-								},
-							},
-						},
-					},
-					"prune": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"boolean"},
-							Format: "",
-						},
-					},
-					"dryRun": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"boolean"},
-							Format: "",
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{},
 	}
 }
 
