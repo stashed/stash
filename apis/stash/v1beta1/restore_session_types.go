@@ -4,6 +4,7 @@ import (
 	"github.com/appscode/go/encoding/json/types"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
 const (
@@ -35,9 +36,9 @@ type RestoreSessionSpec struct {
 	// Rules specifies different restore options for different hosts
 	// +optional
 	Rules []Rule `json:"rules,omitempty"`
-	// ExecutionEnvironment allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc.
+	// RuntimeSettings allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc.
 	//+optional
-	ExecutionEnvironment ExecutionEnvironment `json:"executionEnvironment,omitempty"`
+	RuntimeSettings ofst.RuntimeSettings `json:"runtimeSettings,omitempty"`
 }
 
 type Rule struct {

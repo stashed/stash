@@ -108,6 +108,6 @@ import:
 - package: k8s.io/kubernetes
   version: v1.12.0
 - package: kmodules.xyz/objectstore-api
-  repo: https://github.com/kmodules/objectstore-api.git
-  vcs: git
+  version: release-9.0
+- package: kmodules.xyz/offshoot-api
   version: release-9.0

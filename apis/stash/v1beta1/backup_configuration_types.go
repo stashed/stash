@@ -4,6 +4,7 @@ import (
 	"github.com/appscode/stash/apis/stash/v1alpha1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
 const (
@@ -37,9 +38,9 @@ type BackupConfigurationSpec struct {
 	// Indicates that the BackupConfiguration is paused from taking backup. Default value is 'false'
 	// +optional
 	Paused bool `json:"paused,omitempty"`
-	// ExecutionEnvironment allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc.
+	// RuntimeSettings allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc.
 	//+optional
-	ExecutionEnvironment ExecutionEnvironment `json:"executionEnvironment,omitempty"`
+	RuntimeSettings ofst.RuntimeSettings `json:"runtimeSettings,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

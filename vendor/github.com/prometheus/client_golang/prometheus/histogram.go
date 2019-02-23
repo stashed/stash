@@ -165,7 +165,7 @@ func NewHistogram(opts HistogramOpts) Histogram {
 
 func newHistogram(desc *Desc, opts HistogramOpts, labelValues ...string) Histogram {
 	if len(desc.variableLabels) != len(labelValues) {
-		panic(makeInconsistentCardinalityError(desc.fqName, desc.variableLabels, labelValues))
+		panic(errInconsistentCardinality)
 	}
 
 	for _, n := range desc.variableLabels {
@@ -204,8 +204,8 @@ func newHistogram(desc *Desc, opts HistogramOpts, labelValues ...string) Histogr
 			}
 		}
 	}
-	// Finally we know the final length of h.upperBounds and can make buckets
-	// for both counts:
+	// Finally we know the final length of h.upperBounds and can make counts
+	// for both states:
 	h.counts[0].buckets = make([]uint64, len(h.upperBounds))
 	h.counts[1].buckets = make([]uint64, len(h.upperBounds))
 

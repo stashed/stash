@@ -3,6 +3,7 @@ package v1beta1
 import (
 	"github.com/appscode/stash/apis/stash/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
 const (
@@ -31,9 +32,9 @@ type BackupTemplateSpec struct {
 	Task TaskRef `json:"task,omitempty"`
 	// RetentionPolicy indicates the policy to follow to clean old backup snapshots
 	RetentionPolicy v1alpha1.RetentionPolicy `json:"retentionPolicy,omitempty"`
-	// ExecutionEnvironment allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc.
+	// RuntimeSettings allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc.
 	//+optional
-	ExecutionEnvironment ExecutionEnvironment `json:"executionEnvironment,omitempty"`
+	RuntimeSettings ofst.RuntimeSettings `json:"runtimeSettings,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
