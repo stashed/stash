@@ -1,0 +1,1038 @@
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  labels:
+    app: stash
+  name: functions.stash.appscode.com
+spec:
+  additionalPrinterColumns:
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
+  group: stash.appscode.com
+  names:
+    categories:
+    - stash
+    - appscode
+    - kube-ci
+    kind: Function
+    plural: functions
+    shortNames:
+    - fn
+    singular: function
+  scope: Cluster
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          description: ObjectMeta is metadata that all persisted resources must have,
+            which includes all objects users must create.
+          properties:
+            annotations:
+              description: 'Annotations is an unstructured key value map stored with
+                a resource that may be set by external tools to store and retrieve
+                arbitrary metadata. They are not queryable and should be preserved
+                when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+              type: object
+            clusterName:
+              description: The name of the cluster which the object belongs to. This
+                is used to distinguish resources with same name and namespace in different
+                clusters. This field is not set anywhere right now and apiserver is
+                going to ignore it if set in create or update request.
+              type: string
+            creationTimestamp:
+              description: Time is a wrapper around time.Time which supports correct
+                marshaling to YAML and JSON.  Wrappers are provided for many of the
+                factory methods that the time package offers.
+              format: date-time
+              type: string
+            deletionGracePeriodSeconds:
+              description: Number of seconds allowed for this object to gracefully
+                terminate before it will be removed from the system. Only set when
+                deletionTimestamp is also set. May only be shortened. Read-only.
+              format: int64
+              type: integer
+            deletionTimestamp:
+              description: Time is a wrapper around time.Time which supports correct
+                marshaling to YAML and JSON.  Wrappers are provided for many of the
+                factory methods that the time package offers.
+              format: date-time
+              type: string
+            finalizers:
+              description: Must be empty before the object is deleted from the registry.
+                Each entry is an identifier for the responsible component that will
+                remove the entry from the list. If the deletionTimestamp of the object
+                is non-nil, entries in this list can only be removed.
+              items:
+                type: string
+              type: array
+            generateName:
+              description: |-
+                GenerateName is an optional prefix, used by the server, to generate a unique name ONLY IF the Name field has not been provided. If this field is used, the name returned to the client will be different than the name passed. This value will also be combined with a unique suffix. The provided value has the same validation rules as the Name field, and may be truncated by the length of the suffix required to make the value unique on the server.
+
+                If this field is specified and the generated name exists, the server will NOT return a 409 - instead, it will either return 201 Created or 500 with Reason ServerTimeout indicating a unique name could not be found in the time allotted, and the client should retry (optionally after the time indicated in the Retry-After header).
+
+                Applied only if Name is not specified. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#idempotency
+              type: string
+            generation:
+              description: A sequence number representing a specific generation of
+                the desired state. Populated by the system. Read-only.
+              format: int64
+              type: integer
+            initializers:
+              description: Initializers tracks the progress of initialization.
+              properties:
+                pending:
+                  description: Pending is a list of initializers that must execute
+                    in order before this object is visible. When the last pending
+                    initializer is removed, and no failing result is set, the initializers
+                    struct will be set to nil and the object is considered as initialized
+                    and visible to all clients.
+                  items:
+                    description: Initializer is information about an initializer that
+                      has not yet completed.
+                    properties:
+                      name:
+                        description: name of the process that is responsible for initializing
+                          this object.
+                        type: string
+                    required:
+                    - name
+                  type: array
+                result:
+                  description: Status is a return value for calls that don't return
+                    other objects.
+                  properties:
+                    apiVersion:
+                      description: 'APIVersion defines the versioned schema of this
+                        representation of an object. Servers should convert recognized
+                        schemas to the latest internal value, and may reject unrecognized
+                        values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+                      type: string
+                    code:
+                      description: Suggested HTTP return code for this status, 0 if
+                        not set.
+                      format: int32
+                      type: integer
+                    details:
+                      description: StatusDetails is a set of additional properties
+                        that MAY be set by the server to provide additional information
+                        about a response. The Reason field of a Status object defines
+                        what attributes will be set. Clients must ignore fields that
+                        do not match the defined type of each attribute, and should
+                        assume that any attribute may be empty, invalid, or under
+                        defined.
+                      properties:
+                        causes:
+                          description: The Causes array includes more details associated
+                            with the StatusReason failure. Not all StatusReasons may
+                            provide detailed causes.
+                          items:
+                            description: StatusCause provides more information about
+                              an api.Status failure, including cases when multiple
+                              errors are encountered.
+                            properties:
+                              field:
+                                description: |-
+                                  The field of the resource that has caused this error, as named by its JSON serialization. May include dot and postfix notation for nested attributes. Arrays are zero-indexed.  Fields may appear more than once in an array of causes due to fields having multiple errors. Optional.
+
+                                  Examples:
+                                    "name" - the field "name" on the current resource
+                                    "items[0].name" - the field "name" on the first array entry in "items"
+                                type: string
+                              message:
+                                description: A human-readable description of the cause
+                                  of the error.  This field may be presented as-is
+                                  to a reader.
+                                type: string
+                              reason:
+                                description: A machine-readable description of the
+                                  cause of the error. If this value is empty there
+                                  is no information available.
+                                type: string
+                          type: array
+                        group:
+                          description: The group attribute of the resource associated
+                            with the status StatusReason.
+                          type: string
+                        kind:
+                          description: 'The kind attribute of the resource associated
+                            with the status StatusReason. On some operations may differ
+                            from the requested resource Kind. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+                          type: string
+                        name:
+                          description: The name attribute of the resource associated
+                            with the status StatusReason (when there is a single name
+                            which can be described).
+                          type: string
+                        retryAfterSeconds:
+                          description: If specified, the time in seconds before the
+                            operation should be retried. Some errors may indicate
+                            the client must take an alternate action - for those errors
+                            this field may indicate how long to wait before taking
+                            the alternate action.
+                          format: int32
+                          type: integer
+                        uid:
+                          description: 'UID of the resource. (when there is a single
+                            resource which can be described). More info: http://kubernetes.io/docs/user-guide/identifiers#uids'
+                          type: string
+                    kind:
+                      description: 'Kind is a string value representing the REST resource
+                        this object represents. Servers may infer this from the endpoint
+                        the client submits requests to. Cannot be updated. In CamelCase.
+                        More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+                      type: string
+                    message:
+                      description: A human-readable description of the status of this
+                        operation.
+                      type: string
+                    metadata:
+                      description: ListMeta describes metadata that synthetic resources
+                        must have, including lists and various status objects. A resource
+                        may have only one of {ObjectMeta, ListMeta}.
+                      properties:
+                        continue:
+                          description: continue may be set if the user set a limit
+                            on the number of items returned, and indicates that the
+                            server has more data available. The value is opaque and
+                            may be used to issue another request to the endpoint that
+                            served this list to retrieve the next set of available
+                            objects. Continuing a consistent list may not be possible
+                            if the server configuration has changed or more than a
+                            few minutes have passed. The resourceVersion field returned
+                            when using this continue value will be identical to the
+                            value in the first response, unless you have received
+                            this token from an error message.
+                          type: string
+                        resourceVersion:
+                          description: 'String that identifies the server''s internal
+                            version of this object that can be used by clients to
+                            determine when objects have changed. Value must be treated
+                            as opaque by clients and passed unmodified back to the
+                            server. Populated by the system. Read-only. More info:
+                            https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency'
+                          type: string
+                        selfLink:
+                          description: selfLink is a URL representing this object.
+                            Populated by the system. Read-only.
+                          type: string
+                    reason:
+                      description: A machine-readable description of why this operation
+                        is in the "Failure" status. If this value is empty there is
+                        no information available. A Reason clarifies an HTTP status
+                        code but does not override it.
+                      type: string
+                    status:
+                      description: 'Status of the operation. One of: "Success" or
+                        "Failure". More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status'
+                      type: string
+              required:
+              - pending
+            labels:
+              description: 'Map of string keys and values that can be used to organize
+                and categorize (scope and select) objects. May match selectors of
+                replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
+              type: object
+            name:
+              description: 'Name must be unique within a namespace. Is required when
+                creating resources, although some resources may allow a client to
+                request the generation of an appropriate name automatically. Name
+                is primarily intended for creation idempotence and configuration definition.
+                Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+              type: string
+            namespace:
+              description: |-
+                Namespace defines the space within each name must be unique. An empty namespace is equivalent to the "default" namespace, but "default" is the canonical representation. Not all objects are required to be scoped to a namespace - the value of this field for those objects will be empty.
+
+                Must be a DNS_LABEL. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/namespaces
+              type: string
+            ownerReferences:
+              description: List of objects depended by this object. If ALL objects
+                in the list have been deleted, this object will be garbage collected.
+                If this object is managed by a controller, then an entry in this list
+                will point to this controller, with the controller field set to true.
+                There cannot be more than one managing controller.
+              items:
+                description: OwnerReference contains enough information to let you
+                  identify an owning object. Currently, an owning object must be in
+                  the same namespace, so there is no namespace field.
+                properties:
+                  apiVersion:
+                    description: API version of the referent.
+                    type: string
+                  blockOwnerDeletion:
+                    description: If true, AND if the owner has the "foregroundDeletion"
+                      finalizer, then the owner cannot be deleted from the key-value
+                      store until this reference is removed. Defaults to false. To
+                      set this field, a user needs "delete" permission of the owner,
+                      otherwise 422 (Unprocessable Entity) will be returned.
+                    type: boolean
+                  controller:
+                    description: If true, this reference points to the managing controller.
+                    type: boolean
+                  kind:
+                    description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+                    type: string
+                  name:
+                    description: 'Name of the referent. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+                    type: string
+                  uid:
+                    description: 'UID of the referent. More info: http://kubernetes.io/docs/user-guide/identifiers#uids'
+                    type: string
+                required:
+                - apiVersion
+                - kind
+                - name
+                - uid
+              type: array
+            resourceVersion:
+              description: |-
+                An opaque value that represents the internal version of this object that can be used by clients to determine when objects have changed. May be used for optimistic concurrency, change detection, and the watch operation on a resource or set of resources. Clients must treat these values as opaque and passed unmodified back to the server. They may only be valid for a particular resource or set of resources.
+
+                Populated by the system. Read-only. Value must be treated as opaque by clients and . More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency
+              type: string
+            selfLink:
+              description: SelfLink is a URL representing this object. Populated by
+                the system. Read-only.
+              type: string
+            uid:
+              description: |-
+                UID is the unique in time and space value for this object. It is typically generated by the server on successful creation of a resource and is not allowed to change on PUT operations.
+
+                Populated by the system. Read-only. More info: http://kubernetes.io/docs/user-guide/identifiers#uids
+              type: string
+        spec:
+          properties:
+            args:
+              description: 'Arguments to the entrypoint. The docker image''s CMD is
+                used if this is not provided. Variable references $(VAR_NAME) are
+                expanded using the container''s environment. If a variable cannot
+                be resolved, the reference in the input string will be unchanged.
+                The $(VAR_NAME) syntax can be escaped with a double $$, ie: $$(VAR_NAME).
+                Escaped references will never be expanded, regardless of whether the
+                variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell'
+              items:
+                type: string
+              type: array
+            command:
+              description: 'Entrypoint array. Not executed within a shell. The docker
+                image''s ENTRYPOINT is used if this is not provided. Variable references
+                $(VAR_NAME) are expanded using the container''s environment. If a
+                variable cannot be resolved, the reference in the input string will
+                be unchanged. The $(VAR_NAME) syntax can be escaped with a double
+                $$, ie: $$(VAR_NAME). Escaped references will never be expanded, regardless
+                of whether the variable exists or not. Cannot be updated. More info:
+                https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell'
+              items:
+                type: string
+              type: array
+            env:
+              description: List of environment variables to set in the container.
+                Cannot be updated.
+              items:
+                description: EnvVar represents an environment variable present in
+                  a Container.
+                properties:
+                  name:
+                    description: Name of the environment variable. Must be a C_IDENTIFIER.
+                    type: string
+                  value:
+                    description: 'Variable references $(VAR_NAME) are expanded using
+                      the previous defined environment variables in the container
+                      and any service environment variables. If a variable cannot
+                      be resolved, the reference in the input string will be unchanged.
+                      The $(VAR_NAME) syntax can be escaped with a double $$, ie:
+                      $$(VAR_NAME). Escaped references will never be expanded, regardless
+                      of whether the variable exists or not. Defaults to "".'
+                    type: string
+                  valueFrom:
+                    description: EnvVarSource represents a source for the value of
+                      an EnvVar.
+                    properties:
+                      configMapKeyRef:
+                        description: Selects a key from a ConfigMap.
+                        properties:
+                          key:
+                            description: The key to select.
+                            type: string
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                            type: string
+                          optional:
+                            description: Specify whether the ConfigMap or it's key
+                              must be defined
+                            type: boolean
+                        required:
+                        - key
+                      fieldRef:
+                        description: ObjectFieldSelector selects an APIVersioned field
+                          of an object.
+                        properties:
+                          apiVersion:
+                            description: Version of the schema the FieldPath is written
+                              in terms of, defaults to "v1".
+                            type: string
+                          fieldPath:
+                            description: Path of the field to select in the specified
+                              API version.
+                            type: string
+                        required:
+                        - fieldPath
+                      resourceFieldRef:
+                        description: ResourceFieldSelector represents container resources
+                          (cpu, memory) and their output format
+                        properties:
+                          containerName:
+                            description: 'Container name: required for volumes, optional
+                              for env vars'
+                            type: string
+                          divisor:
+                            description: |-
+                              Quantity is a fixed-point representation of a number. It provides convenient marshaling/unmarshaling in JSON and YAML, in addition to String() and Int64() accessors.
+
+                              The serialization format is:
+
+                              <quantity>        ::= <signedNumber><suffix>
+                                (Note that <suffix> may be empty, from the "" case in <decimalSI>.)
+                              <digit>           ::= 0 | 1 | ... | 9 <digits>          ::= <digit> | <digit><digits> <number>          ::= <digits> | <digits>.<digits> | <digits>. | .<digits> <sign>            ::= "+" | "-" <signedNumber>    ::= <number> | <sign><number> <suffix>          ::= <binarySI> | <decimalExponent> | <decimalSI> <binarySI>        ::= Ki | Mi | Gi | Ti | Pi | Ei
+                                (International System of units; See: http://physics.nist.gov/cuu/Units/binary.html)
+                              <decimalSI>       ::= m | "" | k | M | G | T | P | E
+                                (Note that 1024 = 1Ki but 1000 = 1k; I didn't choose the capitalization.)
+                              <decimalExponent> ::= "e" <signedNumber> | "E" <signedNumber>
+
+                              No matter which of the three exponent forms is used, no quantity may represent a number greater than 2^63-1 in magnitude, nor may it have more than 3 decimal places. Numbers larger or more precise will be capped or rounded up. (E.g.: 0.1m will rounded up to 1m.) This may be extended in the future if we require larger or smaller quantities.
+
+                              When a Quantity is parsed from a string, it will remember the type of suffix it had, and will use the same type again when it is serialized.
+
+                              Before serializing, Quantity will be put in "canonical form". This means that Exponent/suffix will be adjusted up or down (with a corresponding increase or decrease in Mantissa) such that:
+                                a. No precision is lost
+                                b. No fractional digits will be emitted
+                                c. The exponent (or suffix) is as large as possible.
+                              The sign will be omitted unless the number is negative.
+
+                              Examples:
+                                1.5 will be serialized as "1500m"
+                                1.5Gi will be serialized as "1536Mi"
+
+                              Note that the quantity will NEVER be internally represented by a floating point number. That is the whole point of this exercise.
+
+                              Non-canonical values will still parse as long as they are well formed, but will be re-emitted in their canonical form. (So always use canonical form, or don't diff.)
+
+                              This format is intended to make it difficult to use these numbers without writing some sort of special handling code in the hopes that that will cause implementors to also use a fixed point implementation.
+                            type: string
+                          resource:
+                            description: 'Required: resource to select'
+                            type: string
+                        required:
+                        - resource
+                      secretKeyRef:
+                        description: SecretKeySelector selects a key of a Secret.
+                        properties:
+                          key:
+                            description: The key of the secret to select from.  Must
+                              be a valid secret key.
+                            type: string
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                            type: string
+                          optional:
+                            description: Specify whether the Secret or it's key must
+                              be defined
+                            type: boolean
+                        required:
+                        - key
+                required:
+                - name
+              type: array
+            envFrom:
+              description: List of sources to populate environment variables in the
+                container. The keys defined within a source must be a C_IDENTIFIER.
+                All invalid keys will be reported as an event when the container is
+                starting. When a key exists in multiple sources, the value associated
+                with the last source will take precedence. Values defined by an Env
+                with a duplicate key will take precedence. Cannot be updated.
+              items:
+                description: EnvFromSource represents the source of a set of ConfigMaps
+                properties:
+                  configMapRef:
+                    description: |-
+                      ConfigMapEnvSource selects a ConfigMap to populate the environment variables with.
+
+                      The contents of the target ConfigMap's Data field will represent the key-value pairs as environment variables.
+                    properties:
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                        type: string
+                      optional:
+                        description: Specify whether the ConfigMap must be defined
+                        type: boolean
+                  prefix:
+                    description: An optional identifier to prepend to each key in
+                      the ConfigMap. Must be a C_IDENTIFIER.
+                    type: string
+                  secretRef:
+                    description: |-
+                      SecretEnvSource selects a Secret to populate the environment variables with.
+
+                      The contents of the target Secret's Data field will represent the key-value pairs as environment variables.
+                    properties:
+                      name:
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                        type: string
+                      optional:
+                        description: Specify whether the Secret must be defined
+                        type: boolean
+              type: array
+            image:
+              description: 'Docker image name. More info: https://kubernetes.io/docs/concepts/containers/images
+                This field is optional to allow higher level config management to
+                default or override container images in workload controllers like
+                Deployments and StatefulSets.'
+              type: string
+            lifecycle:
+              description: Lifecycle describes actions that the management system
+                should take in response to container lifecycle events. For the PostStart
+                and PreStop lifecycle handlers, management of the container blocks
+                until the action is complete, unless the container process fails,
+                in which case the handler is aborted.
+              properties:
+                postStart:
+                  description: Handler defines a specific action that should be taken
+                  properties:
+                    exec:
+                      description: ExecAction describes a "run in container" action.
+                      properties:
+                        command:
+                          description: Command is the command line to execute inside
+                            the container, the working directory for the command  is
+                            root ('/') in the container's filesystem. The command
+                            is simply exec'd, it is not run inside a shell, so traditional
+                            shell instructions ('|', etc) won't work. To use a shell,
+                            you need to explicitly call out to that shell. Exit status
+                            of 0 is treated as live/healthy and non-zero is unhealthy.
+                          items:
+                            type: string
+                          type: array
+                    httpGet:
+                      description: HTTPGetAction describes an action based on HTTP
+                        Get requests.
+                      properties:
+                        host:
+                          description: Host name to connect to, defaults to the pod
+                            IP. You probably want to set "Host" in httpHeaders instead.
+                          type: string
+                        httpHeaders:
+                          description: Custom headers to set in the request. HTTP
+                            allows repeated headers.
+                          items:
+                            description: HTTPHeader describes a custom header to be
+                              used in HTTP probes
+                            properties:
+                              name:
+                                description: The header field name
+                                type: string
+                              value:
+                                description: The header field value
+                                type: string
+                            required:
+                            - name
+                            - value
+                          type: array
+                        path:
+                          description: Path to access on the HTTP server.
+                          type: string
+                        port:
+                          oneOf:
+                          - type: string
+                          - type: integer
+                        scheme:
+                          description: Scheme to use for connecting to the host. Defaults
+                            to HTTP.
+                          type: string
+                      required:
+                      - port
+                    tcpSocket:
+                      description: TCPSocketAction describes an action based on opening
+                        a socket
+                      properties:
+                        host:
+                          description: 'Optional: Host name to connect to, defaults
+                            to the pod IP.'
+                          type: string
+                        port:
+                          oneOf:
+                          - type: string
+                          - type: integer
+                      required:
+                      - port
+                preStop:
+                  description: Handler defines a specific action that should be taken
+                  properties:
+                    exec:
+                      description: ExecAction describes a "run in container" action.
+                      properties:
+                        command:
+                          description: Command is the command line to execute inside
+                            the container, the working directory for the command  is
+                            root ('/') in the container's filesystem. The command
+                            is simply exec'd, it is not run inside a shell, so traditional
+                            shell instructions ('|', etc) won't work. To use a shell,
+                            you need to explicitly call out to that shell. Exit status
+                            of 0 is treated as live/healthy and non-zero is unhealthy.
+                          items:
+                            type: string
+                          type: array
+                    httpGet:
+                      description: HTTPGetAction describes an action based on HTTP
+                        Get requests.
+                      properties:
+                        host:
+                          description: Host name to connect to, defaults to the pod
+                            IP. You probably want to set "Host" in httpHeaders instead.
+                          type: string
+                        httpHeaders:
+                          description: Custom headers to set in the request. HTTP
+                            allows repeated headers.
+                          items:
+                            description: HTTPHeader describes a custom header to be
+                              used in HTTP probes
+                            properties:
+                              name:
+                                description: The header field name
+                                type: string
+                              value:
+                                description: The header field value
+                                type: string
+                            required:
+                            - name
+                            - value
+                          type: array
+                        path:
+                          description: Path to access on the HTTP server.
+                          type: string
+                        port:
+                          oneOf:
+                          - type: string
+                          - type: integer
+                        scheme:
+                          description: Scheme to use for connecting to the host. Defaults
+                            to HTTP.
+                          type: string
+                      required:
+                      - port
+                    tcpSocket:
+                      description: TCPSocketAction describes an action based on opening
+                        a socket
+                      properties:
+                        host:
+                          description: 'Optional: Host name to connect to, defaults
+                            to the pod IP.'
+                          type: string
+                        port:
+                          oneOf:
+                          - type: string
+                          - type: integer
+                      required:
+                      - port
+            livenessProbe:
+              description: Probe describes a health check to be performed against
+                a container to determine whether it is alive or ready to receive traffic.
+              properties:
+                exec:
+                  description: ExecAction describes a "run in container" action.
+                  properties:
+                    command:
+                      description: Command is the command line to execute inside the
+                        container, the working directory for the command  is root
+                        ('/') in the container's filesystem. The command is simply
+                        exec'd, it is not run inside a shell, so traditional shell
+                        instructions ('|', etc) won't work. To use a shell, you need
+                        to explicitly call out to that shell. Exit status of 0 is
+                        treated as live/healthy and non-zero is unhealthy.
+                      items:
+                        type: string
+                      type: array
+                failureThreshold:
+                  description: Minimum consecutive failures for the probe to be considered
+                    failed after having succeeded. Defaults to 3. Minimum value is
+                    1.
+                  format: int32
+                  type: integer
+                httpGet:
+                  description: HTTPGetAction describes an action based on HTTP Get
+                    requests.
+                  properties:
+                    host:
+                      description: Host name to connect to, defaults to the pod IP.
+                        You probably want to set "Host" in httpHeaders instead.
+                      type: string
+                    httpHeaders:
+                      description: Custom headers to set in the request. HTTP allows
+                        repeated headers.
+                      items:
+                        description: HTTPHeader describes a custom header to be used
+                          in HTTP probes
+                        properties:
+                          name:
+                            description: The header field name
+                            type: string
+                          value:
+                            description: The header field value
+                            type: string
+                        required:
+                        - name
+                        - value
+                      type: array
+                    path:
+                      description: Path to access on the HTTP server.
+                      type: string
+                    port:
+                      oneOf:
+                      - type: string
+                      - type: integer
+                    scheme:
+                      description: Scheme to use for connecting to the host. Defaults
+                        to HTTP.
+                      type: string
+                  required:
+                  - port
+                initialDelaySeconds:
+                  description: 'Number of seconds after the container has started
+                    before liveness probes are initiated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                  format: int32
+                  type: integer
+                periodSeconds:
+                  description: How often (in seconds) to perform the probe. Default
+                    to 10 seconds. Minimum value is 1.
+                  format: int32
+                  type: integer
+                successThreshold:
+                  description: Minimum consecutive successes for the probe to be considered
+                    successful after having failed. Defaults to 1. Must be 1 for liveness.
+                    Minimum value is 1.
+                  format: int32
+                  type: integer
+                tcpSocket:
+                  description: TCPSocketAction describes an action based on opening
+                    a socket
+                  properties:
+                    host:
+                      description: 'Optional: Host name to connect to, defaults to
+                        the pod IP.'
+                      type: string
+                    port:
+                      oneOf:
+                      - type: string
+                      - type: integer
+                  required:
+                  - port
+                timeoutSeconds:
+                  description: 'Number of seconds after which the probe times out.
+                    Defaults to 1 second. Minimum value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                  format: int32
+                  type: integer
+            ports:
+              description: List of ports to expose from the container. Exposing a
+                port here gives the system additional information about the network
+                connections a container uses, but is primarily informational. Not
+                specifying a port here DOES NOT prevent that port from being exposed.
+                Any port which is listening on the default "0.0.0.0" address inside
+                a container will be accessible from the network. Cannot be updated.
+              items:
+                description: ContainerPort represents a network port in a single container.
+                properties:
+                  containerPort:
+                    description: Number of port to expose on the pod's IP address.
+                      This must be a valid port number, 0 < x < 65536.
+                    format: int32
+                    type: integer
+                  hostIP:
+                    description: What host IP to bind the external port to.
+                    type: string
+                  hostPort:
+                    description: Number of port to expose on the host. If specified,
+                      this must be a valid port number, 0 < x < 65536. If HostNetwork
+                      is specified, this must match ContainerPort. Most containers
+                      do not need this.
+                    format: int32
+                    type: integer
+                  name:
+                    description: If specified, this must be an IANA_SVC_NAME and unique
+                      within the pod. Each named port in a pod must have a unique
+                      name. Name for the port that can be referred to by services.
+                    type: string
+                  protocol:
+                    description: Protocol for port. Must be UDP, TCP, or SCTP. Defaults
+                      to "TCP".
+                    type: string
+                required:
+                - containerPort
+              type: array
+            readinessProbe:
+              description: Probe describes a health check to be performed against
+                a container to determine whether it is alive or ready to receive traffic.
+              properties:
+                exec:
+                  description: ExecAction describes a "run in container" action.
+                  properties:
+                    command:
+                      description: Command is the command line to execute inside the
+                        container, the working directory for the command  is root
+                        ('/') in the container's filesystem. The command is simply
+                        exec'd, it is not run inside a shell, so traditional shell
+                        instructions ('|', etc) won't work. To use a shell, you need
+                        to explicitly call out to that shell. Exit status of 0 is
+                        treated as live/healthy and non-zero is unhealthy.
+                      items:
+                        type: string
+                      type: array
+                failureThreshold:
+                  description: Minimum consecutive failures for the probe to be considered
+                    failed after having succeeded. Defaults to 3. Minimum value is
+                    1.
+                  format: int32
+                  type: integer
+                httpGet:
+                  description: HTTPGetAction describes an action based on HTTP Get
+                    requests.
+                  properties:
+                    host:
+                      description: Host name to connect to, defaults to the pod IP.
+                        You probably want to set "Host" in httpHeaders instead.
+                      type: string
+                    httpHeaders:
+                      description: Custom headers to set in the request. HTTP allows
+                        repeated headers.
+                      items:
+                        description: HTTPHeader describes a custom header to be used
+                          in HTTP probes
+                        properties:
+                          name:
+                            description: The header field name
+                            type: string
+                          value:
+                            description: The header field value
+                            type: string
+                        required:
+                        - name
+                        - value
+                      type: array
+                    path:
+                      description: Path to access on the HTTP server.
+                      type: string
+                    port:
+                      oneOf:
+                      - type: string
+                      - type: integer
+                    scheme:
+                      description: Scheme to use for connecting to the host. Defaults
+                        to HTTP.
+                      type: string
+                  required:
+                  - port
+                initialDelaySeconds:
+                  description: 'Number of seconds after the container has started
+                    before liveness probes are initiated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                  format: int32
+                  type: integer
+                periodSeconds:
+                  description: How often (in seconds) to perform the probe. Default
+                    to 10 seconds. Minimum value is 1.
+                  format: int32
+                  type: integer
+                successThreshold:
+                  description: Minimum consecutive successes for the probe to be considered
+                    successful after having failed. Defaults to 1. Must be 1 for liveness.
+                    Minimum value is 1.
+                  format: int32
+                  type: integer
+                tcpSocket:
+                  description: TCPSocketAction describes an action based on opening
+                    a socket
+                  properties:
+                    host:
+                      description: 'Optional: Host name to connect to, defaults to
+                        the pod IP.'
+                      type: string
+                    port:
+                      oneOf:
+                      - type: string
+                      - type: integer
+                  required:
+                  - port
+                timeoutSeconds:
+                  description: 'Number of seconds after which the probe times out.
+                    Defaults to 1 second. Minimum value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                  format: int32
+                  type: integer
+            resources:
+              description: ResourceRequirements describes the compute resource requirements.
+              properties:
+                limits:
+                  description: 'Limits describes the maximum amount of compute resources
+                    allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  type: object
+                requests:
+                  description: 'Requests describes the minimum amount of compute resources
+                    required. If Requests is omitted for a container, it defaults
+                    to Limits if that is explicitly specified, otherwise to an implementation-defined
+                    value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  type: object
+            securityContext:
+              description: SecurityContext holds security configuration that will
+                be applied to a container. Some fields are present in both SecurityContext
+                and PodSecurityContext.  When both are set, the values in SecurityContext
+                take precedence.
+              properties:
+                allowPrivilegeEscalation:
+                  description: 'AllowPrivilegeEscalation controls whether a process
+                    can gain more privileges than its parent process. This bool directly
+                    controls if the no_new_privs flag will be set on the container
+                    process. AllowPrivilegeEscalation is true always when the container
+                    is: 1) run as Privileged 2) has CAP_SYS_ADMIN'
+                  type: boolean
+                capabilities:
+                  description: Adds and removes POSIX capabilities from running containers.
+                  properties:
+                    add:
+                      description: Added capabilities
+                      items:
+                        type: string
+                      type: array
+                    drop:
+                      description: Removed capabilities
+                      items:
+                        type: string
+                      type: array
+                privileged:
+                  description: Run container in privileged mode. Processes in privileged
+                    containers are essentially equivalent to root on the host. Defaults
+                    to false.
+                  type: boolean
+                procMount:
+                  description: procMount denotes the type of proc mount to use for
+                    the containers. The default is DefaultProcMount which uses the
+                    container runtime defaults for readonly paths and masked paths.
+                    This requires the ProcMountType feature flag to be enabled.
+                  type: string
+                readOnlyRootFilesystem:
+                  description: Whether this container has a read-only root filesystem.
+                    Default is false.
+                  type: boolean
+                runAsGroup:
+                  description: The GID to run the entrypoint of the container process.
+                    Uses runtime default if unset. May also be set in PodSecurityContext.  If
+                    set in both SecurityContext and PodSecurityContext, the value
+                    specified in SecurityContext takes precedence.
+                  format: int64
+                  type: integer
+                runAsNonRoot:
+                  description: Indicates that the container must run as a non-root
+                    user. If true, the Kubelet will validate the image at runtime
+                    to ensure that it does not run as UID 0 (root) and fail to start
+                    the container if it does. If unset or false, no such validation
+                    will be performed. May also be set in PodSecurityContext.  If
+                    set in both SecurityContext and PodSecurityContext, the value
+                    specified in SecurityContext takes precedence.
+                  type: boolean
+                runAsUser:
+                  description: The UID to run the entrypoint of the container process.
+                    Defaults to user specified in image metadata if unspecified. May
+                    also be set in PodSecurityContext.  If set in both SecurityContext
+                    and PodSecurityContext, the value specified in SecurityContext
+                    takes precedence.
+                  format: int64
+                  type: integer
+                seLinuxOptions:
+                  description: SELinuxOptions are the labels to be applied to the
+                    container
+                  properties:
+                    level:
+                      description: Level is SELinux level label that applies to the
+                        container.
+                      type: string
+                    role:
+                      description: Role is a SELinux role label that applies to the
+                        container.
+                      type: string
+                    type:
+                      description: Type is a SELinux type label that applies to the
+                        container.
+                      type: string
+                    user:
+                      description: User is a SELinux user label that applies to the
+                        container.
+                      type: string
+            volumeDevices:
+              description: volumeDevices is the list of block devices to be used by
+                the container. This is an alpha feature and may change in the future.
+              items:
+                description: volumeDevice describes a mapping of a raw block device
+                  within a container.
+                properties:
+                  devicePath:
+                    description: devicePath is the path inside of the container that
+                      the device will be mapped to.
+                    type: string
+                  name:
+                    description: name must match the name of a persistentVolumeClaim
+                      in the pod
+                    type: string
+                required:
+                - name
+                - devicePath
+              type: array
+            volumeMounts:
+              description: Pod volumes to mount into the container's filesystem. Cannot
+                be updated.
+              items:
+                description: VolumeMount describes a mounting of a Volume within a
+                  container.
+                properties:
+                  mountPath:
+                    description: Path within the container at which the volume should
+                      be mounted.  Must not contain ':'.
+                    type: string
+                  mountPropagation:
+                    description: mountPropagation determines how mounts are propagated
+                      from the host to container and the other way around. When not
+                      set, MountPropagationNone is used. This field is beta in 1.10.
+                    type: string
+                  name:
+                    description: This must match the Name of a Volume.
+                    type: string
+                  readOnly:
+                    description: Mounted read-only if true, read-write otherwise (false
+                      or unspecified). Defaults to false.
+                    type: boolean
+                  subPath:
+                    description: Path within the volume from which the container's
+                      volume should be mounted. Defaults to "" (volume's root).
+                    type: string
+                required:
+                - name
+                - mountPath
+              type: array
+            workingDir:
+              description: Container's working directory. If not specified, the container
+                runtime's default will be used, which might be configured in the container
+                image. Cannot be updated.
+              type: string
+  version: v1beta1
+  versions:
+  - name: v1beta1
+    served: true
+    storage: true

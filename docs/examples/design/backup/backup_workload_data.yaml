@@ -1,0 +1,24 @@
+apiVersion: stash.appscode.com/v1beta1
+kind: BackupConfiguration
+metadata:
+  name: workload-data-backup
+  namespace: demo
+spec:
+  schedule: '@every 1h'
+  # <no backupProcedure required for sidecar model>
+  # repository refers to the Repository crd that hold backend information
+  repository:
+    name: stash-backup-repo
+  # target indicate the target workload that we want to backup
+  target:
+    ref:
+      apiVersion: apps/v1
+      kind: Deployment
+      name: stash-demo
+    # directories indicates the directories inside the workload we want to backup
+    directories:
+    - /source/data
+  # retentionPolicies specify the policy to follow to clean old backup snapshots
+  retentionPolicy:
+    keepLast: 5
+    prune: true

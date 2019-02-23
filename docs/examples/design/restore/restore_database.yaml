@@ -1,0 +1,17 @@
+apiVersion: stash.appscode.com/v1beta1
+kind: RestoreSession
+metadata:
+  name: database-recovery-demo
+  namespace: demo
+spec:
+  repository:
+    name: stash-backup-repo
+  # task indicates Task crd that specifies the steps to recover Postgres database
+  task:
+    name: pgRecovery
+  target: # target indicates where to recover
+    # indicates the respective AppBinding crd for target database that we want to initialize from backup
+    ref:
+      apiVersion: appcatalog.appscode.com/v1alpha1
+      kind: AppBinding
+      name: quick-postgres

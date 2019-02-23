@@ -24,6 +24,7 @@ type Repository struct {
 }
 
 type RepositorySpec struct {
+	// Backend specify the storage where backed up snapshot will be stored
 	Backend store.Backend `json:"backend,omitempty"`
 	// If true, delete respective restic repository
 	// +optional
@@ -34,12 +35,26 @@ type RepositoryStatus struct {
 	// observedGeneration is the most recent generation observed for this resource. It corresponds to the
 	// resource's generation, which is updated on mutation by the API Server.
 	// +optional
-	ObservedGeneration       *types.IntHash `json:"observedGeneration,omitempty"`
-	FirstBackupTime          *metav1.Time   `json:"firstBackupTime,omitempty"`
-	LastBackupTime           *metav1.Time   `json:"lastBackupTime,omitempty"`
-	LastSuccessfulBackupTime *metav1.Time   `json:"lastSuccessfulBackupTime,omitempty"`
-	LastBackupDuration       string         `json:"lastBackupDuration,omitempty"`
-	BackupCount              int64          `json:"backupCount,omitempty"`
+	ObservedGeneration *types.IntHash `json:"observedGeneration,omitempty"`
+	// FirstBackupTime indicates the timestamp when the first backup was taken
+	FirstBackupTime *metav1.Time `json:"firstBackupTime,omitempty"`
+	// LastBackupTime indicates the timestamp when the latest backup was taken
+	LastBackupTime *metav1.Time `json:"lastBackupTime,omitempty"`
+	// Integrity shows result of repository integrity check after last backup
+	Integrity *bool `json:"integrity,omitempty"`
+	// Size show size of repository after last backup
+	Size string `json:"size,omitempty"`
+	// SnapshotCount shows number of snapshots stored in the repository
+	SnapshotCount int `json:"snapshotCount,omitempty"`
+	// SnapshotRemovedOnLastCleanup shows number of old snapshots cleaned up according to retention policy on last backup session
+	SnapshotRemovedOnLastCleanup int `json:"snapshotRemovedOnLastCleanup,omitempty"`
+
+	// Deprecated
+	LastSuccessfulBackupTime *metav1.Time `json:"lastSuccessfulBackupTime,omitempty"`
+	// Deprecated
+	LastBackupDuration string `json:"lastBackupDuration,omitempty"`
+	// Deprecated
+	BackupCount int64 `json:"backupCount,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

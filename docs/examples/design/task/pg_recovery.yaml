@@ -1,0 +1,24 @@
+# pgRecovery specifies required functions and their inputs to recover PostgreSQL database
+apiVersion: stash.appscode.com/v1beta1
+kind: Task
+metadata:
+  name: pgRecovery
+spec:
+  functions:
+  - name: pgRecovery
+    inputs:
+      provider: ${provider}
+      hostname: ${hostname}
+      repoDir: ${prefix}
+      outputDir: ${outputDir}
+      enableMetric: ${enableMetric}
+      pushgatewayURL: ${pushgatewayURL}
+      workloadKind: ${kind}
+      workloadName: ${name}
+      tempVolumeName: ${tmpVolumeName}
+      storageSecretName: ${secretName}
+  - name: stashPostRecovery
+    inputs:
+      recoveryConfigurationName: ${recoveryConfigurationName}
+      outputJsonDir: ${output-dir}
+      outputVolumeName: ${output-volume-name}

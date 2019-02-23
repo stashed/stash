@@ -1,0 +1,21 @@
+apiVersion: appcatalog.appscode.com/v1alpha1
+kind: AppBinding
+metadata:
+  name: quick-postgres
+  namespace: demo
+  labels:
+    kubedb.com/kind: Postgres
+    kubedb.com/name: quick-postgres
+    # if stash find bellow annotations, it will take backup of it.
+    annotations:
+      stash.appscode.com/backuptemplate: "pgdb-backup-template"
+spec:
+  clientConfig:
+    insecureSkipTLSVerify: true
+    service:
+      name: quick-postgres
+      port: 5432
+      scheme: "http"
+  secret:
+    name: quick-postgres-auth
+  type: kubedb.com/postgres

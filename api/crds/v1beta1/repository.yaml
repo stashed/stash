@@ -8,8 +8,14 @@ metadata:
   name: repositories.stash.appscode.com
 spec:
   additionalPrinterColumns:
-  - JSONPath: .status.backupCount
-    name: Backup-Count
+  - JSONPath: .status.integrity
+    name: Integrity
+    type: boolean
+  - JSONPath: .status.size
+    name: Size
+    type: string
+  - JSONPath: .status.snapshotCount
+    name: Snapshot-Count
     type: integer
   - JSONPath: .status.lastBackupTime
     format: date-time
@@ -23,7 +29,7 @@ spec:
     categories:
     - storage
     - appscode
-    - all
+    - stash
     kind: Repository
     plural: repositories
     shortNames:
@@ -1532,24 +1538,17 @@ spec:
               type: boolean
         status:
           properties:
-            backupCount:
-              format: int64
-              type: integer
             firstBackupTime:
               description: Time is a wrapper around time.Time which supports correct
                 marshaling to YAML and JSON.  Wrappers are provided for many of the
                 factory methods that the time package offers.
               format: date-time
               type: string
-            lastBackupDuration:
-              type: string
+            integrity:
+              description: Integrity shows result of repository integrity check after
+                last backup
+              type: boolean
             lastBackupTime:
-              description: Time is a wrapper around time.Time which supports correct
-                marshaling to YAML and JSON.  Wrappers are provided for many of the
-                factory methods that the time package offers.
-              format: date-time
-              type: string
-            lastSuccessfulBackupTime:
               description: Time is a wrapper around time.Time which supports correct
                 marshaling to YAML and JSON.  Wrappers are provided for many of the
                 factory methods that the time package offers.
@@ -1560,8 +1559,20 @@ spec:
               - type: string
               - format: int64
                 type: integer
-  version: v1alpha1
+            size:
+              description: Size show size of repository after last backup
+              type: string
+            snapshotCount:
+              description: SnapshotCount shows number of snapshots stored in the repository
+              format: int32
+              type: integer
+            snapshotRemovedOnLastCleanup:
+              description: SnapshotRemovedOnLastCleanup shows number of old snapshots
+                cleaned up according to retention policy on last backup session
+              format: int32
+              type: integer
+  version: v1beta1
   versions:
-  - name: v1alpha1
+  - name: v1beta1
     served: true
     storage: true

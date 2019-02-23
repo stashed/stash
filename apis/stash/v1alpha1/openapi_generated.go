@@ -28,6 +28,7 @@ import (
 	resource "k8s.io/apimachinery/pkg/api/resource"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
+	intstr "k8s.io/apimachinery/pkg/util/intstr"
 	common "k8s.io/kube-openapi/pkg/common"
 )
 
@@ -287,6 +288,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"k8s.io/apimachinery/pkg/runtime.RawExtension":                      schema_k8sio_apimachinery_pkg_runtime_RawExtension(ref),
 		"k8s.io/apimachinery/pkg/runtime.TypeMeta":                          schema_k8sio_apimachinery_pkg_runtime_TypeMeta(ref),
 		"k8s.io/apimachinery/pkg/runtime.Unknown":                           schema_k8sio_apimachinery_pkg_runtime_Unknown(ref),
+		"k8s.io/apimachinery/pkg/util/intstr.IntOrString":                   schema_apimachinery_pkg_util_intstr_IntOrString(ref),
 		"k8s.io/apimachinery/pkg/version.Info":                              schema_k8sio_apimachinery_pkg_version_Info(ref),
 		"kmodules.xyz/objectstore-api/api/v1.AzureSpec":                     schema_kmodulesxyz_objectstore_api_api_v1_AzureSpec(ref),
 		"kmodules.xyz/objectstore-api/api/v1.B2Spec":                        schema_kmodulesxyz_objectstore_api_api_v1_B2Spec(ref),
@@ -678,7 +680,8 @@ func schema_stash_apis_stash_v1alpha1_RepositorySpec(ref common.ReferenceCallbac
 				Properties: map[string]spec.Schema{
 					"backend": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("kmodules.xyz/objectstore-api/api/v1.Backend"),
+							Description: "Backend specify the storage where backed up snapshot will be stored",
+							Ref:         ref("kmodules.xyz/objectstore-api/api/v1.Backend"),
 						},
 					},
 					"wipeOut": {
@@ -709,29 +712,62 @@ func schema_stash_apis_stash_v1alpha1_RepositoryStatus(ref common.ReferenceCallb
 					},
 					"firstBackupTime": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+							Description: "FirstBackupTime indicates the timestamp when the first backup was taken",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
 					},
 					"lastBackupTime": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+							Description: "LastBackupTime indicates the timestamp when the latest backup was taken",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"integrity": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Integrity shows result of repository integrity check after last backup",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"size": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Size show size of repository after last backup",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"snapshotCount": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SnapshotCount shows number of snapshots stored in the repository",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"snapshotRemovedOnLastCleanup": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SnapshotRemovedOnLastCleanup shows number of old snapshots cleaned up according to retention policy on last backup session",
+							Type:        []string{"integer"},
+							Format:      "int32",
 						},
 					},
 					"lastSuccessfulBackupTime": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+							Description: "Deprecated",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
 					},
 					"lastBackupDuration": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Description: "Deprecated",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 					"backupCount": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int64",
+							Description: "Deprecated",
+							Type:        []string{"integer"},
+							Format:      "int64",
 						},
 					},
 				},
@@ -12509,6 +12545,18 @@ func schema_k8sio_apimachinery_pkg_runtime_Unknown(ref common.ReferenceCallback)
 			},
 		},
 		Dependencies: []string{},
+	}
+}
+
+func schema_apimachinery_pkg_util_intstr_IntOrString(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "IntOrString is a type that can hold an int32 or a string.  When used in JSON or YAML marshalling and unmarshalling, it produces or consumes the inner type.  This allows you to have, for example, a JSON field that can accept a name or number.",
+				Type:        intstr.IntOrString{}.OpenAPISchemaType(),
+				Format:      intstr.IntOrString{}.OpenAPISchemaFormat(),
+			},
+		},
 	}
 }
 

@@ -1,5 +1,5 @@
-hash: 3ff7c7ec4fa4c0584a2cb85748e0d408ff0e3ab1e0a013c1074f9787ceacde9f
-updated: 2019-02-18T18:12:23.462098256-08:00
+hash: 5a73cdb0ab03b1ff379f1c1bf3c1514ba0b2a4db63381c10e73e9c38cb431933
+updated: 2019-02-23T08:31:38.574034819-08:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -41,7 +41,7 @@ imports:
   - registry/admissionreview/v1beta1
   - runtime/serializer/versioning
 - name: github.com/appscode/kutil
-  version: 963f95c3833ac1630834cb574a30fac82234a3bd
+  version: cc179dba2da91f5d52530ead51ae63e2e6ccbfa2
   subpackages:
   - admissionregistration/v1beta1
   - apiextensions/v1beta1
@@ -409,9 +409,10 @@ imports:
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/prometheus/client_golang
-  version: c5b7fccd204277076155f10851dad72b76a49317
+  version: 0a8115f42e037a6e327f9a269a26ff6603fb8472
   subpackages:
   - prometheus
+  - prometheus/internal
   - prometheus/push
 - name: github.com/prometheus/client_model
   version: fa8ad6fec33561be4280a8f0514318c79d7f6cb6
@@ -1028,11 +1029,13 @@ imports:
   - pointer
 - name: kmodules.xyz/objectstore-api
   version: ebe27c957a5bf41e0680776e3626b5507087f4c3
-  repo: https://github.com/kmodules/objectstore-api.git
-  vcs: git
   subpackages:
   - api/v1
   - osm
+- name: kmodules.xyz/offshoot-api
+  version: bfce3a53c777ee56eb43e3314611c001f46a6e87
+  subpackages:
+  - api/v1
 - name: kmodules.xyz/openshift
   version: 9c176a67ebd4b5f69d6420df59589380daba9f37
   repo: https://github.com/kmodules/openshift.git

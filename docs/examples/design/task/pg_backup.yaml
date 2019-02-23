@@ -1,0 +1,28 @@
+# pgBackup specifies required functions and their inputs to backup PostgreSQL database
+apiVersion: stash.appscode.com/v1beta1
+kind: Task
+metadata:
+  name: pgBackup
+spec:
+  functions:
+  - name: pgBackup
+    inputs:
+      database: ${databases}
+      provider: ${provider}
+      hostname: ${hostname}
+      repoDir: ${prefix}
+      outputDir: ${outputDir}
+      policy: ${retentionPolicyName}
+      retentionValue: ${retentionPolicyValue}
+      enableMetric: ${enableMetric}
+      pushgatewayURL: ${pushgatewayURL}
+      workloadKind: ${kind}
+      workloadName: ${name}
+      tempVolumeName: ${tmpVolumeName}
+      storageSecretName: ${secretName}
+  - name: stashPostBackup
+    inputs:
+      repoName: ${repoName}
+      backupSession: ${backupSessionName}
+      outputJsonDir: ${output-dir}
+      outputVolumeName: ${output-volume-name}
