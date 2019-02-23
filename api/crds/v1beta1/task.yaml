@@ -315,15 +315,26 @@ spec:
               type: string
         spec:
           properties:
-            functions:
+            steps:
               items:
                 properties:
-                  inputs:
-                    description: Inputs specifies the inputs of respective Function
-                    type: object
                   name:
                     description: Name indicates the name of Function crd
                     type: string
+                  params:
+                    description: Inputs specifies the inputs of respective Function
+                    items:
+                      description: Param declares a value to use for the Param called
+                        Name.
+                      properties:
+                        name:
+                          type: string
+                        value:
+                          type: string
+                      required:
+                      - name
+                      - value
+                    type: array
               type: array
             volumes:
               description: List of volumes that can be mounted by containers belonging

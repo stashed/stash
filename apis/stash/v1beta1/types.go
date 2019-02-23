@@ -1,8 +1,15 @@
 package v1beta1
 
+// Param declares a value to use for the Param called Name.
+type Param struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
 type TaskRef struct {
-	Name   string            `json:"name,omitempty"`
-	Inputs map[string]string `json:"inputs,omitempty"`
+	Name string `json:"name,omitempty"`
+	// +optional
+	Params []Param `json:"params,omitempty"`
 }
 
 type Target struct {

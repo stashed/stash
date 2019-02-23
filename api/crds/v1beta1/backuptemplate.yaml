@@ -1530,10 +1530,21 @@ spec:
               type: string
             task:
               properties:
-                inputs:
-                  type: object
                 name:
                   type: string
+                params:
+                  items:
+                    description: Param declares a value to use for the Param called
+                      Name.
+                    properties:
+                      name:
+                        type: string
+                      value:
+                        type: string
+                    required:
+                    - name
+                    - value
+                  type: array
             wipeOut:
               description: If true, delete respective restic repository
               type: boolean

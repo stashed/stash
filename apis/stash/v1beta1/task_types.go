@@ -23,7 +23,7 @@ type Task struct {
 }
 
 type TaskSpec struct {
-	Functions []FunctionSequence `json:"functions,omitempty"`
+	Steps []FunctionSequence `json:"steps,omitempty"`
 	// List of volumes that can be mounted by containers belonging to the pod created for this task.
 	// +optional
 	Volumes []core.Volume `json:"volumes,omitempty"`
@@ -34,7 +34,7 @@ type FunctionSequence struct {
 	Name string `json:"name,omitempty"`
 	// Inputs specifies the inputs of respective Function
 	// +optional
-	Inputs map[string]string `json:"inputs,omitempty"`
+	Params []Param `json:"params,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
