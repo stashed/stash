@@ -680,7 +680,8 @@ func schema_stash_apis_stash_v1alpha1_RepositorySpec(ref common.ReferenceCallbac
 				Properties: map[string]spec.Schema{
 					"backend": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("kmodules.xyz/objectstore-api/api/v1.Backend"),
+							Description: "Backend specify the storage where backed up snapshot will be stored",
+							Ref:         ref("kmodules.xyz/objectstore-api/api/v1.Backend"),
 						},
 					},
 					"wipeOut": {
@@ -711,29 +712,62 @@ func schema_stash_apis_stash_v1alpha1_RepositoryStatus(ref common.ReferenceCallb
 					},
 					"firstBackupTime": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+							Description: "FirstBackupTime indicates the timestamp when the first backup was taken",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
 					},
 					"lastBackupTime": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+							Description: "LastBackupTime indicates the timestamp when the latest backup was taken",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+						},
+					},
+					"integrity": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Integrity shows result of repository integrity check after last backup",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"size": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Size show size of repository after last backup",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"snapshotCount": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SnapshotCount shows number of snapshots stored in the repository",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"snapshotRemovedOnLastCleanup": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SnapshotRemovedOnLastCleanup shows number of old snapshots cleaned up according to retention policy on last backup session",
+							Type:        []string{"integer"},
+							Format:      "int32",
 						},
 					},
 					"lastSuccessfulBackupTime": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
+							Description: "Deprecated",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
 					},
 					"lastBackupDuration": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Description: "Deprecated",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 					"backupCount": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int64",
+							Description: "Deprecated",
+							Type:        []string{"integer"},
+							Format:      "int64",
 						},
 					},
 				},

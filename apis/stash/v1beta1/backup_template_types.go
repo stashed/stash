@@ -1,6 +1,7 @@
 package v1beta1
 
 import (
+	"github.com/appscode/stash/apis/stash/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -23,8 +24,8 @@ type BackupTemplate struct {
 
 type BackupTemplateSpec struct {
 	// RepositorySpec is used to create Repository crd for respective workload
-	RepositorySpec `json:",inline"`
-	Schedule       string `json:"schedule,omitempty"`
+	v1alpha1.RepositorySpec `json:",inline"`
+	Schedule                string `json:"schedule,omitempty"`
 	// Task specify the Task crd that specifies steps for backup process
 	// +optional
 	Task TaskRef `json:"task,omitempty"`

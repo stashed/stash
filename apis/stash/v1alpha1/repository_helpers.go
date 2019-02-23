@@ -13,7 +13,7 @@ func (c Repository) CustomResourceDefinition() *apiextensions.CustomResourceDefi
 		Singular:      ResourceSingularRepository,
 		Kind:          ResourceKindRepository,
 		ShortNames:    []string{"repo"},
-		Categories:    []string{"storage", "appscode", "all"},
+		Categories:    []string{"storage", "appscode", "stash"},
 		ResourceScope: string(apiextensions.NamespaceScoped),
 		Versions: []apiextensions.CustomResourceDefinitionVersion{
 			{
@@ -21,19 +21,34 @@ func (c Repository) CustomResourceDefinition() *apiextensions.CustomResourceDefi
 				Served:  true,
 				Storage: true,
 			},
+			{
+				Name:    "v1beta1",
+				Served:  true,
+				Storage: false,
+			},
 		},
 		Labels: crdutils.Labels{
 			LabelsMap: map[string]string{"app": "stash"},
 		},
-		SpecDefinitionName:      "github.com/appscode/stash/apis/stash/v1alpha1.Repository",
+		SpecDefinitionName:      "github.com/appscode/stash/apis/stash/v1beta1.Repository",
 		EnableValidation:        true,
 		GetOpenAPIDefinitions:   GetOpenAPIDefinitions,
 		EnableStatusSubresource: apis.EnableStatusSubresource,
 		AdditionalPrinterColumns: []apiextensions.CustomResourceColumnDefinition{
 			{
-				Name:     "Backup-Count",
+				Name:     "Integrity",
+				Type:     "boolean",
+				JSONPath: ".status.integrity",
+			},
+			{
+				Name:     "Size",
+				Type:     "string",
+				JSONPath: ".status.size",
+			},
+			{
+				Name:     "Snapshot-Count",
 				Type:     "integer",
-				JSONPath: ".status.backupCount",
+				JSONPath: ".status.snapshotCount",
 			},
 			{
 				Name:     "Last-Successful-Backup",

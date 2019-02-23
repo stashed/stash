@@ -26,8 +26,6 @@ type BackupTemplateExpansion interface{}
 
 type FunctionExpansion interface{}
 
-type RepositoryExpansion interface{}
-
 type RestoreSessionExpansion interface{}
 
 type TaskExpansion interface{}

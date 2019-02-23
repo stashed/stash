@@ -42,8 +42,6 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&BackupTemplateList{},
 		&RestoreSession{},
 		&RestoreSessionList{},
-		&Repository{},
-		&RepositoryList{},
 		&Task{},
 		&TaskList{},
 	)

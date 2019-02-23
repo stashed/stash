@@ -42,14 +42,6 @@ type BackupTemplateListerExpansion interface{}
 // FunctionLister.
 type FunctionListerExpansion interface{}
 
-// RepositoryListerExpansion allows custom methods to be added to
-// RepositoryLister.
-type RepositoryListerExpansion interface{}
-
-// RepositoryNamespaceListerExpansion allows custom methods to be added to
-// RepositoryNamespaceLister.
-type RepositoryNamespaceListerExpansion interface{}
-
 // RestoreSessionListerExpansion allows custom methods to be added to
 // RestoreSessionLister.
 type RestoreSessionListerExpansion interface{}

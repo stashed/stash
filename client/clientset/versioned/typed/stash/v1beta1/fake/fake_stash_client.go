@@ -44,10 +44,6 @@ func (c *FakeStashV1beta1) Functions() v1beta1.FunctionInterface {
 	return &FakeFunctions{c}
 }
 
-func (c *FakeStashV1beta1) Repositories(namespace string) v1beta1.RepositoryInterface {
-	return &FakeRepositories{c, namespace}
-}
-
 func (c *FakeStashV1beta1) RestoreSessions(namespace string) v1beta1.RestoreSessionInterface {
 	return &FakeRestoreSessions{c, namespace}
 }

@@ -70,8 +70,6 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Stash().V1beta1().BackupTemplates().Informer()}, nil
 	case v1beta1.SchemeGroupVersion.WithResource("functions"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Stash().V1beta1().Functions().Informer()}, nil
-	case v1beta1.SchemeGroupVersion.WithResource("repositories"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Stash().V1beta1().Repositories().Informer()}, nil
 	case v1beta1.SchemeGroupVersion.WithResource("restoresessions"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Stash().V1beta1().RestoreSessions().Informer()}, nil
 	case v1beta1.SchemeGroupVersion.WithResource("tasks"):

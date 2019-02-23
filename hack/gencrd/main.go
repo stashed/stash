@@ -50,7 +50,6 @@ func generateCRDDefinitions() {
 		stashv1beta1.BackupSession{}.CustomResourceDefinition(),
 		stashv1beta1.BackupTemplate{}.CustomResourceDefinition(),
 		stashv1beta1.RestoreSession{}.CustomResourceDefinition(),
-		stashv1beta1.Repository{}.CustomResourceDefinition(),
 		stashv1beta1.Task{}.CustomResourceDefinition(),
 	}
 	genCRD(stashv1beta1.SchemeGroupVersion.Version, v1beta1CRDs)
@@ -116,7 +115,6 @@ func generateSwaggerJson() {
 			{stashv1beta1.SchemeGroupVersion, stashv1beta1.ResourceKindBackupSession, stashv1beta1.ResourceKindBackupSession, true},
 			{stashv1beta1.SchemeGroupVersion, stashv1beta1.ResourceKindBackupTemplate, stashv1beta1.ResourceKindBackupTemplate, false},
 			{stashv1beta1.SchemeGroupVersion, stashv1beta1.ResourcePluralRestoreSession, stashv1beta1.ResourceKindRestoreSession, true},
-			{stashv1beta1.SchemeGroupVersion, stashv1beta1.ResourcePluralRepository, stashv1beta1.ResourceKindRepository, true},
 			{stashv1beta1.SchemeGroupVersion, stashv1beta1.ResourceKindFunction, stashv1beta1.ResourceKindFunction, false},
 			{stashv1beta1.SchemeGroupVersion, stashv1beta1.ResourcePluralTask, stashv1beta1.ResourceKindTask, false},
 		},
