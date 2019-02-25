@@ -7,9 +7,9 @@ import (
 )
 
 const (
-	ResourceKindBackupTemplate     = "BackupConfigurationTemplate"
-	ResourcePluralBackupTemplate   = "backuptemplates"
-	ResourceSingularBackupTemplate = "backuptemplate"
+	ResourceKindBackupConfigurationTemplate     = "BackupConfigurationTemplate"
+	ResourcePluralBackupConfigurationTemplate   = "backupconfigurationtemplates"
+	ResourceSingularBackupConfigurationTemplate = "backupconfigurationtemplate"
 )
 
 // +genclient

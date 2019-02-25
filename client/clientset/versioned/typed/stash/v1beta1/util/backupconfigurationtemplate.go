@@ -15,10 +15,10 @@ import (
 )
 
 func CreateOrPatchBackupTemplate(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(in *api.BackupConfigurationTemplate) *api.BackupConfigurationTemplate) (*api.BackupConfigurationTemplate, kutil.VerbType, error) {
-	cur, err := c.BackupTemplates().Get(meta.Name, metav1.GetOptions{})
+	cur, err := c.BackupConfigurationTemplates().Get(meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating BackupConfigurationTemplate %s/%s.", meta.Namespace, meta.Name)
-		out, err := c.BackupTemplates().Create(transform(&api.BackupConfigurationTemplate{
+		out, err := c.BackupConfigurationTemplates().Create(transform(&api.BackupConfigurationTemplate{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "BackupConfigurationTemplate",
 				APIVersion: api.SchemeGroupVersion.String(),
@@ -55,7 +55,7 @@ func PatchBackupTemplateObject(c cs.StashV1beta1Interface, cur, mod *api.BackupC
 		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching BackupConfigurationTemplate %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
-	out, err := c.BackupTemplates().Patch(cur.Name, types.MergePatchType, patch)
+	out, err := c.BackupConfigurationTemplates().Patch(cur.Name, types.MergePatchType, patch)
 	return out, kutil.VerbPatched, err
 }
 
@@ -63,11 +63,11 @@ func TryUpdateBackupTemplate(c cs.StashV1beta1Interface, meta metav1.ObjectMeta,
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
-		cur, e2 := c.BackupTemplates().Get(meta.Name, metav1.GetOptions{})
+		cur, e2 := c.BackupConfigurationTemplates().Get(meta.Name, metav1.GetOptions{})
 		if kerr.IsNotFound(e2) {
 			return false, e2
 		} else if e2 == nil {
-			result, e2 = c.BackupTemplates().Update(transform(cur.DeepCopy()))
+			result, e2 = c.BackupConfigurationTemplates().Update(transform(cur.DeepCopy()))
 			return e2 == nil, nil
 		}
 		glog.Errorf("Attempt %d failed to update BackupConfigurationTemplate %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
