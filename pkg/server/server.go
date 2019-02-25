@@ -5,10 +5,6 @@ import (
 	"os"
 	"strings"
 
-	hooks "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
-	admissionreview "github.com/appscode/kubernetes-webhook-util/registry/admissionreview/v1beta1"
-	reg_util "github.com/appscode/kutil/admissionregistration/v1beta1"
-	dynamic_util "github.com/appscode/kutil/dynamic"
 	"github.com/appscode/stash/apis/repositories"
 	"github.com/appscode/stash/apis/repositories/install"
 	"github.com/appscode/stash/apis/repositories/v1alpha1"
@@ -26,7 +22,11 @@ import (
 	"k8s.io/apiserver/pkg/registry/rest"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	"k8s.io/client-go/kubernetes"
+	reg_util "kmodules.xyz/client-go/admissionregistration/v1beta1"
+	dynamic_util "kmodules.xyz/client-go/dynamic"
 	store "kmodules.xyz/objectstore-api/api/v1"
+	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"
+	admissionreview "kmodules.xyz/webhook-runtime/registry/admissionreview/v1beta1"
 )
 
 const (
@@ -101,7 +101,7 @@ func (c *StashConfig) Complete() CompletedConfig {
 
 // New returns a new instance of StashServer from the given config.
 func (c completedConfig) New() (*StashServer, error) {
-	genericServer, err := c.GenericConfig.New("stash-apiserver", genericapiserver.NewEmptyDelegate()) // completion is done in Complete, no need for a second time
+	genericServer, err := c.GenericConfig.New("stash-operator", genericapiserver.NewEmptyDelegate()) // completion is done in Complete, no need for a second time
 	if err != nil {
 		return nil, err
 	}

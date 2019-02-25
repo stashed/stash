@@ -3,6 +3,8 @@
 package v1
 
 import (
+	"time"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -56,10 +58,15 @@ func (c *securityContextConstraints) Get(name string, options metav1.GetOptions)
 
 // List takes label and field selectors, and returns the list of SecurityContextConstraints that match those selectors.
 func (c *securityContextConstraints) List(opts metav1.ListOptions) (result *v1.SecurityContextConstraintsList, err error) {
+	var timeout time.Duration
+	if opts.TimeoutSeconds != nil {
+		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
+	}
 	result = &v1.SecurityContextConstraintsList{}
 	err = c.client.Get().
 		Resource("securitycontextconstraints").
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Timeout(timeout).
 		Do().
 		Into(result)
 	return
@@ -67,10 +74,15 @@ func (c *securityContextConstraints) List(opts metav1.ListOptions) (result *v1.S
 
 // Watch returns a watch.Interface that watches the requested securityContextConstraints.
 func (c *securityContextConstraints) Watch(opts metav1.ListOptions) (watch.Interface, error) {
+	var timeout time.Duration
+	if opts.TimeoutSeconds != nil {
+		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
+	}
 	opts.Watch = true
 	return c.client.Get().
 		Resource("securitycontextconstraints").
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Timeout(timeout).
 		Watch()
 }
 
@@ -109,9 +121,14 @@ func (c *securityContextConstraints) Delete(name string, options *metav1.DeleteO
 
 // DeleteCollection deletes a collection of objects.
 func (c *securityContextConstraints) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
+	var timeout time.Duration
+	if listOptions.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	}
 	return c.client.Delete().
 		Resource("securitycontextconstraints").
 		VersionedParams(&listOptions, scheme.ParameterCodec).
+		Timeout(timeout).
 		Body(options).
 		Do().
 		Error()

@@ -19,6 +19,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"time"
+
 	v1alpha1 "github.com/appscode/stash/apis/repositories/v1alpha1"
 	scheme "github.com/appscode/stash/client/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -69,11 +71,16 @@ func (c *snapshots) Get(name string, options v1.GetOptions) (result *v1alpha1.Sn
 
 // List takes label and field selectors, and returns the list of Snapshots that match those selectors.
 func (c *snapshots) List(opts v1.ListOptions) (result *v1alpha1.SnapshotList, err error) {
+	var timeout time.Duration
+	if opts.TimeoutSeconds != nil {
+		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
+	}
 	result = &v1alpha1.SnapshotList{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("snapshots").
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Timeout(timeout).
 		Do().
 		Into(result)
 	return

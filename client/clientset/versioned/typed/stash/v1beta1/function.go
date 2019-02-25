@@ -19,6 +19,8 @@ limitations under the License.
 package v1beta1
 
 import (
+	"time"
+
 	v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
 	scheme "github.com/appscode/stash/client/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -72,10 +74,15 @@ func (c *functions) Get(name string, options v1.GetOptions) (result *v1beta1.Fun
 
 // List takes label and field selectors, and returns the list of Functions that match those selectors.
 func (c *functions) List(opts v1.ListOptions) (result *v1beta1.FunctionList, err error) {
+	var timeout time.Duration
+	if opts.TimeoutSeconds != nil {
+		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
+	}
 	result = &v1beta1.FunctionList{}
 	err = c.client.Get().
 		Resource("functions").
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Timeout(timeout).
 		Do().
 		Into(result)
 	return
@@ -83,10 +90,15 @@ func (c *functions) List(opts v1.ListOptions) (result *v1beta1.FunctionList, err
 
 // Watch returns a watch.Interface that watches the requested functions.
 func (c *functions) Watch(opts v1.ListOptions) (watch.Interface, error) {
+	var timeout time.Duration
+	if opts.TimeoutSeconds != nil {
+		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
+	}
 	opts.Watch = true
 	return c.client.Get().
 		Resource("functions").
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Timeout(timeout).
 		Watch()
 }
 
@@ -125,9 +137,14 @@ func (c *functions) Delete(name string, options *v1.DeleteOptions) error {
 
 // DeleteCollection deletes a collection of objects.
 func (c *functions) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+	var timeout time.Duration
+	if listOptions.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	}
 	return c.client.Delete().
 		Resource("functions").
 		VersionedParams(&listOptions, scheme.ParameterCodec).
+		Timeout(timeout).
 		Body(options).
 		Do().
 		Error()

@@ -3,8 +3,6 @@ package controller
 import (
 	"time"
 
-	reg_util "github.com/appscode/kutil/admissionregistration/v1beta1"
-	"github.com/appscode/kutil/discovery"
 	cs "github.com/appscode/stash/client/clientset/versioned"
 	stashinformers "github.com/appscode/stash/client/informers/externalversions"
 	"github.com/appscode/stash/pkg/eventer"
@@ -14,6 +12,8 @@ import (
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	reg_util "kmodules.xyz/client-go/admissionregistration/v1beta1"
+	"kmodules.xyz/client-go/discovery"
 )
 
 const (

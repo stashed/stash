@@ -2,13 +2,6 @@ package controller
 
 import (
 	"github.com/appscode/go/log"
-	"github.com/appscode/kubernetes-webhook-util/admission"
-	hooks "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
-	webhook "github.com/appscode/kubernetes-webhook-util/admission/v1beta1/workload"
-	wapi "github.com/appscode/kubernetes-webhook-util/apis/workload/v1"
-	wcs "github.com/appscode/kubernetes-webhook-util/client/workload/v1"
-	core_util "github.com/appscode/kutil/core/v1"
-	"github.com/appscode/kutil/tools/queue"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
@@ -17,6 +10,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
+	core_util "kmodules.xyz/client-go/core/v1"
+	"kmodules.xyz/client-go/tools/queue"
+	"kmodules.xyz/webhook-runtime/admission"
+	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"
+	webhook "kmodules.xyz/webhook-runtime/admission/v1beta1/workload"
+	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
+	wcs "kmodules.xyz/webhook-runtime/client/workload/v1"
 )
 
 func (c *StashController) NewReplicationControllerWebhook() hooks.AdmissionHook {

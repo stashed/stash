@@ -11,7 +11,6 @@ import (
 
 	stringz "github.com/appscode/go/strings"
 	"github.com/appscode/go/types"
-	meta_util "github.com/appscode/kutil/meta"
 	otx "github.com/appscode/osm/context"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -29,6 +28,7 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	meta_util "kmodules.xyz/client-go/meta"
 	api "kmodules.xyz/objectstore-api/api/v1"
 )
 

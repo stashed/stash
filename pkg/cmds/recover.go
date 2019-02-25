@@ -4,12 +4,12 @@ import (
 	"time"
 
 	"github.com/appscode/go/log"
-	"github.com/appscode/kutil/meta"
 	cs "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/recovery"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"kmodules.xyz/client-go/meta"
 )
 
 func NewCmdRecover() *cobra.Command {

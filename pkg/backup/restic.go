@@ -2,7 +2,6 @@ package backup
 
 import (
 	"github.com/appscode/go/log"
-	"github.com/appscode/kutil/tools/queue"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/util"
@@ -11,6 +10,7 @@ import (
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/reference"
+	"kmodules.xyz/client-go/tools/queue"
 )
 
 func (c *Controller) initResticWatcher() {

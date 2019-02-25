@@ -4,10 +4,10 @@ import (
 	"hash/fnv"
 	"strconv"
 
-	crdutils "github.com/appscode/kutil/apiextensions/v1beta1"
 	"github.com/appscode/stash/apis"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	hashutil "k8s.io/kubernetes/pkg/util/hash"
+	crdutils "kmodules.xyz/client-go/apiextensions/v1beta1"
 )
 
 func (bs BackupSession) GetSpecHash() string {

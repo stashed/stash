@@ -102,7 +102,7 @@ func (s *Session) WaitTimeout(timeout time.Duration) (err error) {
 }
 
 func Go(f func() error) chan error {
-	ch := make(chan error, 1)
+	ch := make(chan error)
 	go func() {
 		ch <- f()
 	}()

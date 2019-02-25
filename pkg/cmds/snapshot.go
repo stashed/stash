@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/appscode/kutil/meta"
 	cs "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/registry/snapshot"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
+	"kmodules.xyz/client-go/meta"
 )
 
 func NewCmdSnapshots() *cobra.Command {

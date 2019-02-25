@@ -8,11 +8,6 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
-	core_util "github.com/appscode/kutil/core/v1"
-	"github.com/appscode/kutil/meta"
-	"github.com/appscode/kutil/tools/analytics"
-	"github.com/appscode/kutil/tools/cli"
-	"github.com/appscode/kutil/tools/clientcmd"
 	"github.com/appscode/stash/apis"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client/clientset/versioned"
@@ -25,6 +20,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
+	core_util "kmodules.xyz/client-go/core/v1"
+	"kmodules.xyz/client-go/meta"
+	"kmodules.xyz/client-go/tools/analytics"
+	"kmodules.xyz/client-go/tools/cli"
+	"kmodules.xyz/client-go/tools/clientcmd"
 	store "kmodules.xyz/objectstore-api/api/v1"
 )
 
