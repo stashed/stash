@@ -18,9 +18,9 @@ func (btpl BackupConfigurationTemplate) GetSpecHash() string {
 func (btpl BackupConfigurationTemplate) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crdutils.NewCustomResourceDefinition(crdutils.Config{
 		Group:         SchemeGroupVersion.Group,
-		Plural:        ResourcePluralBackupTemplate,
-		Singular:      ResourceSingularBackupTemplate,
-		Kind:          ResourceKindBackupTemplate,
+		Plural:        ResourcePluralBackupConfigurationTemplate,
+		Singular:      ResourceSingularBackupConfigurationTemplate,
+		Kind:          ResourceKindBackupConfigurationTemplate,
 		ShortNames:    []string{"btpl"},
 		Categories:    []string{"stash", "appscode", "backup"},
 		ResourceScope: string(apiextensions.ClusterScoped),
