@@ -49,7 +49,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/appscode/stash/apis/stash/v1beta1.FileStats":                       schema_stash_apis_stash_v1beta1_FileStats(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.Function":                        schema_stash_apis_stash_v1beta1_Function(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.FunctionList":                    schema_stash_apis_stash_v1beta1_FunctionList(ref),
-		"github.com/appscode/stash/apis/stash/v1beta1.FunctionSequence":                schema_stash_apis_stash_v1beta1_FunctionSequence(ref),
+		"github.com/appscode/stash/apis/stash/v1beta1.FunctionRef":                     schema_stash_apis_stash_v1beta1_FunctionRef(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.FunctionSpec":                    schema_stash_apis_stash_v1beta1_FunctionSpec(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.Param":                           schema_stash_apis_stash_v1beta1_Param(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.RestoreSession":                  schema_stash_apis_stash_v1beta1_RestoreSession(ref),
@@ -915,7 +915,7 @@ func schema_stash_apis_stash_v1beta1_FunctionList(ref common.ReferenceCallback) 
 	}
 }
 
-func schema_stash_apis_stash_v1beta1_FunctionSequence(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_stash_apis_stash_v1beta1_FunctionRef(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -1046,12 +1046,6 @@ func schema_stash_apis_stash_v1beta1_FunctionSpec(ref common.ReferenceCallback) 
 							},
 						},
 					},
-					"resources": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Compute Resources required by this container. Cannot be updated. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/",
-							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
-						},
-					},
 					"volumeMounts": {
 						VendorExtensible: spec.VendorExtensible{
 							Extensions: spec.Extensions{
@@ -1090,35 +1084,17 @@ func schema_stash_apis_stash_v1beta1_FunctionSpec(ref common.ReferenceCallback) 
 							},
 						},
 					},
-					"livenessProbe": {
+					"runtimeSettings": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Periodic probe of container liveness. Container will be restarted if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
-							Ref:         ref("k8s.io/api/core/v1.Probe"),
-						},
-					},
-					"readinessProbe": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Periodic probe of container service readiness. Container will be removed from service endpoints if the probe fails. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes",
-							Ref:         ref("k8s.io/api/core/v1.Probe"),
-						},
-					},
-					"lifecycle": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Actions that the management system should take in response to container lifecycle events. Cannot be updated.",
-							Ref:         ref("k8s.io/api/core/v1.Lifecycle"),
-						},
-					},
-					"securityContext": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Security options the pod should run with. More info: https://kubernetes.io/docs/concepts/policy/security-context/ More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/",
-							Ref:         ref("k8s.io/api/core/v1.SecurityContext"),
+							Description: "RuntimeSettings allow to specify Resources, LivenessProbe, ReadinessProbe, Lifecycle, SecurityContext etc.",
+							Ref:         ref("kmodules.xyz/offshoot-api/api/v1.ContainerRuntimeSettings"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.ContainerPort", "k8s.io/api/core/v1.EnvFromSource", "k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.Lifecycle", "k8s.io/api/core/v1.Probe", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.SecurityContext", "k8s.io/api/core/v1.VolumeDevice", "k8s.io/api/core/v1.VolumeMount"},
+			"k8s.io/api/core/v1.ContainerPort", "k8s.io/api/core/v1.EnvFromSource", "k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.VolumeDevice", "k8s.io/api/core/v1.VolumeMount", "kmodules.xyz/offshoot-api/api/v1.ContainerRuntimeSettings"},
 	}
 }
 
@@ -1562,7 +1538,7 @@ func schema_stash_apis_stash_v1beta1_TaskSpec(ref common.ReferenceCallback) comm
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/appscode/stash/apis/stash/v1beta1.FunctionSequence"),
+										Ref: ref("github.com/appscode/stash/apis/stash/v1beta1.FunctionRef"),
 									},
 								},
 							},
@@ -1585,7 +1561,7 @@ func schema_stash_apis_stash_v1beta1_TaskSpec(ref common.ReferenceCallback) comm
 			},
 		},
 		Dependencies: []string{
-			"github.com/appscode/stash/apis/stash/v1beta1.FunctionSequence", "k8s.io/api/core/v1.Volume"},
+			"github.com/appscode/stash/apis/stash/v1beta1.FunctionRef", "k8s.io/api/core/v1.Volume"},
 	}
 }
 

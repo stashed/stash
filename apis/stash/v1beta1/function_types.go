@@ -3,6 +3,7 @@ package v1beta1
 import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
 const (
@@ -80,11 +81,6 @@ type FunctionSpec struct {
 	// +patchMergeKey=name
 	// +patchStrategy=merge
 	Env []core.EnvVar `json:"env,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
-	// Compute Resources required by this container.
-	// Cannot be updated.
-	// More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/
-	// +optional
-	Resources core.ResourceRequirements `json:"resources,omitempty"`
 	// Pod volumes to mount into the container's filesystem.
 	// Cannot be updated.
 	// +optional
@@ -97,27 +93,9 @@ type FunctionSpec struct {
 	// +patchStrategy=merge
 	// +optional
 	VolumeDevices []core.VolumeDevice `json:"volumeDevices,omitempty" patchStrategy:"merge" patchMergeKey:"devicePath"`
-	// Periodic probe of container liveness.
-	// Container will be restarted if the probe fails.
-	// Cannot be updated.
-	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
-	// +optional
-	LivenessProbe *core.Probe `json:"livenessProbe,omitempty"`
-	// Periodic probe of container service readiness.
-	// Container will be removed from service endpoints if the probe fails.
-	// Cannot be updated.
-	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
-	// +optional
-	ReadinessProbe *core.Probe `json:"readinessProbe,omitempty"`
-	// Actions that the management system should take in response to container lifecycle events.
-	// Cannot be updated.
-	// +optional
-	Lifecycle *core.Lifecycle `json:"lifecycle,omitempty"`
-	// Security options the pod should run with.
-	// More info: https://kubernetes.io/docs/concepts/policy/security-context/
-	// More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
-	// +optional
-	SecurityContext *core.SecurityContext `json:"securityContext,omitempty"`
+	// RuntimeSettings allow to specify Resources, LivenessProbe, ReadinessProbe, Lifecycle, SecurityContext etc.
+	//+optional
+	RuntimeSettings *ofst.ContainerRuntimeSettings `json:"runtimeSettings,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
