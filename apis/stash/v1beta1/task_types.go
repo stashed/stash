@@ -23,13 +23,13 @@ type Task struct {
 }
 
 type TaskSpec struct {
-	Steps []FunctionSequence `json:"steps,omitempty"`
+	Steps []FunctionRef `json:"steps,omitempty"`
 	// List of volumes that can be mounted by containers belonging to the pod created for this task.
 	// +optional
 	Volumes []core.Volume `json:"volumes,omitempty"`
 }
 
-type FunctionSequence struct {
+type FunctionRef struct {
 	// Name indicates the name of Function crd
 	Name string `json:"name,omitempty"`
 	// Inputs specifies the inputs of respective Function
