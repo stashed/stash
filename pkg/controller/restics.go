@@ -4,13 +4,6 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/log"
-	"github.com/appscode/kubernetes-webhook-util/admission"
-	hooks "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
-	webhook "github.com/appscode/kubernetes-webhook-util/admission/v1beta1/generic"
-	apps_util "github.com/appscode/kutil/apps/v1"
-	batch_util "github.com/appscode/kutil/batch/v1beta1"
-	core_util "github.com/appscode/kutil/core/v1"
-	"github.com/appscode/kutil/tools/queue"
 	"github.com/appscode/stash/apis/stash"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/docker"
@@ -26,6 +19,13 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/reference"
+	apps_util "kmodules.xyz/client-go/apps/v1"
+	batch_util "kmodules.xyz/client-go/batch/v1beta1"
+	core_util "kmodules.xyz/client-go/core/v1"
+	"kmodules.xyz/client-go/tools/queue"
+	"kmodules.xyz/webhook-runtime/admission"
+	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"
+	webhook "kmodules.xyz/webhook-runtime/admission/v1beta1/generic"
 )
 
 func (c *StashController) NewResticWebhook() hooks.AdmissionHook {

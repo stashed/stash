@@ -30,8 +30,8 @@ import (
 
 	"github.com/emicklei/go-restful-swagger12"
 	"github.com/go-openapi/spec"
-	"github.com/golang/glog"
 	"github.com/pborman/uuid"
+	"k8s.io/klog"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -59,7 +59,6 @@ import (
 	"k8s.io/apiserver/pkg/server/routes"
 	serverstore "k8s.io/apiserver/pkg/server/storage"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
-	"k8s.io/apiserver/pkg/util/logs"
 	"k8s.io/client-go/informers"
 	restclient "k8s.io/client-go/rest"
 	certutil "k8s.io/client-go/util/cert"
@@ -230,6 +229,9 @@ type SecureServingInfo struct {
 }
 
 type AuthenticationInfo struct {
+	// APIAudiences is a list of identifier that the API identifies as. This is
+	// used by some authenticators to validate audience bound credentials.
+	APIAudiences authenticator.Audiences
 	// Authenticator determines which subject is making the request
 	Authenticator authenticator.Request
 	// SupportsBasicAuth indicates that's at least one Authenticator supports basic auth
@@ -358,11 +360,11 @@ func (c *Config) Complete(informers informers.SharedInformerFactory) CompletedCo
 	// if there is no port, and we listen on one securely, use that one
 	if _, _, err := net.SplitHostPort(c.ExternalAddress); err != nil {
 		if c.SecureServing == nil {
-			glog.Fatalf("cannot derive external address port without listening on a secure port.")
+			klog.Fatalf("cannot derive external address port without listening on a secure port.")
 		}
 		_, port, err := c.SecureServing.HostPort()
 		if err != nil {
-			glog.Fatalf("cannot derive external address from the secure port: %v", err)
+			klog.Fatalf("cannot derive external address from the secure port: %v", err)
 		}
 		c.ExternalAddress = net.JoinHostPort(c.ExternalAddress, strconv.Itoa(port))
 	}
@@ -423,7 +425,7 @@ func (c *Config) Complete(informers informers.SharedInformerFactory) CompletedCo
 	if c.SecureServing.CertFile != "" {
 		certChecker, err := healthz.NewCertHealthz(c.SecureServing.CertFile)
 		if err != nil {
-			glog.Fatalf("failed to create certificate checker. Reason: %v", err)
+			klog.Fatalf("failed to create certificate checker. Reason: %v", err)
 		}
 		c.HealthzChecks = append(c.HealthzChecks, certChecker)
 	}
@@ -545,7 +547,7 @@ func DefaultBuildHandlerChain(apiHandler http.Handler, c *Config) http.Handler {
 	handler = genericapifilters.WithAudit(handler, c.AuditBackend, c.AuditPolicyChecker, c.LongRunningFunc)
 	failedHandler := genericapifilters.Unauthorized(c.Serializer, c.Authentication.SupportsBasicAuth)
 	failedHandler = genericapifilters.WithFailedAuthenticationAudit(failedHandler, c.AuditBackend, c.AuditPolicyChecker)
-	handler = genericapifilters.WithAuthentication(handler, c.Authentication.Authenticator, failedHandler)
+	handler = genericapifilters.WithAuthentication(handler, c.Authentication.Authenticator, failedHandler, c.Authentication.APIAudiences)
 	handler = genericfilters.WithCORS(handler, c.CorsAllowedOriginList, nil, nil, nil, "true")
 	handler = genericfilters.WithTimeoutForNonLongRunningRequests(handler, c.LongRunningFunc, c.RequestTimeout)
 	handler = genericfilters.WithWaitGroup(handler, c.LongRunningFunc, c.HandlerChainWaitGroup)
@@ -567,7 +569,7 @@ func installAPI(s *GenericAPIServer, c *Config) {
 			goruntime.SetBlockProfileRate(1)
 		}
 		// so far, only logging related endpoints are considered valid to add for these debug flags.
-		routes.DebugFlags{}.Install(s.Handler.NonGoRestfulMux, "v", routes.StringFlagPutHandler(logs.GlogSetter))
+		routes.DebugFlags{}.Install(s.Handler.NonGoRestfulMux, "v", routes.StringFlagPutHandler(glogSetter))
 	}
 	if c.EnableMetrics {
 		if c.EnableProfiling {
@@ -635,4 +637,13 @@ func AuthorizeClientBearerToken(loopback *restclient.Config, authn *Authenticati
 
 	tokenAuthorizer := authorizerfactory.NewPrivilegedGroups(user.SystemPrivilegedGroup)
 	authz.Authorizer = authorizerunion.New(tokenAuthorizer, authz.Authorizer)
+}
+
+// glogSetter is a setter to set glog level.
+func glogSetter(val string) (string, error) {
+	var level klog.Level
+	if err := level.Set(val); err != nil {
+		return "", fmt.Errorf("failed set klog.logging.verbosity %s: %v", val, err)
+	}
+	return fmt.Sprintf("successfully set klog.logging.verbosity to %s", val), nil
 }

@@ -5,9 +5,6 @@ import (
 	"time"
 
 	stringz "github.com/appscode/go/strings"
-	wapi "github.com/appscode/kubernetes-webhook-util/apis/workload/v1"
-	core_util "github.com/appscode/kutil/core/v1"
-	"github.com/appscode/kutil/meta"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/util"
@@ -17,6 +14,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
+	core_util "kmodules.xyz/client-go/core/v1"
+	"kmodules.xyz/client-go/meta"
+	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
 
 func (c *StashController) ensureWorkloadSidecar(w *wapi.Workload, oldRestic, newRestic *api.Restic) error {

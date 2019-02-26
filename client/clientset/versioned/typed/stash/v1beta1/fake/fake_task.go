@@ -112,7 +112,7 @@ func (c *FakeTasks) DeleteCollection(options *v1.DeleteOptions, listOptions v1.L
 // Patch applies the patch and returns the patched task.
 func (c *FakeTasks) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.Task, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(tasksResource, name, data, subresources...), &v1beta1.Task{})
+		Invokes(testing.NewRootPatchSubresourceAction(tasksResource, name, pt, data, subresources...), &v1beta1.Task{})
 	if obj == nil {
 		return nil, err
 	}

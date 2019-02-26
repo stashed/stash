@@ -5,9 +5,6 @@ import (
 	"strings"
 
 	"github.com/appscode/go/log"
-	core_util "github.com/appscode/kutil/core/v1"
-	meta_util "github.com/appscode/kutil/meta"
-	rbac_util "github.com/appscode/kutil/rbac/v1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/client/clientset/versioned/scheme"
 	"github.com/appscode/stash/pkg/util"
@@ -18,6 +15,9 @@ import (
 	rbac "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/reference"
+	core_util "kmodules.xyz/client-go/core/v1"
+	meta_util "kmodules.xyz/client-go/meta"
+	rbac_util "kmodules.xyz/client-go/rbac/v1"
 )
 
 const (

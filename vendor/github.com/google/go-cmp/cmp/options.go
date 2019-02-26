@@ -7,7 +7,7 @@ package cmp
 import (
 	"fmt"
 	"reflect"
-	"runtime"
+	"regexp"
 	"strings"
 
 	"github.com/google/go-cmp/cmp/internal/function"
@@ -132,8 +132,7 @@ func (f pathFilter) filter(s *state, vx, vy reflect.Value, t reflect.Type) appli
 }
 
 func (f pathFilter) String() string {
-	fn := getFuncName(reflect.ValueOf(f.fnc).Pointer())
-	return fmt.Sprintf("FilterPath(%s, %v)", fn, f.opt)
+	return fmt.Sprintf("FilterPath(%s, %v)", function.NameOf(reflect.ValueOf(f.fnc)), f.opt)
 }
 
 // FilterValues returns a new Option where opt is only evaluated if filter f,
@@ -182,8 +181,7 @@ func (f valuesFilter) filter(s *state, vx, vy reflect.Value, t reflect.Type) app
 }
 
 func (f valuesFilter) String() string {
-	fn := getFuncName(f.fnc.Pointer())
-	return fmt.Sprintf("FilterValues(%s, %v)", fn, f.opt)
+	return fmt.Sprintf("FilterValues(%s, %v)", function.NameOf(f.fnc), f.opt)
 }
 
 // Ignore is an Option that causes all comparisons to be ignored.
@@ -195,7 +193,7 @@ type ignore struct{ core }
 
 func (ignore) isFiltered() bool                                                     { return false }
 func (ignore) filter(_ *state, _, _ reflect.Value, _ reflect.Type) applicableOption { return ignore{} }
-func (ignore) apply(_ *state, _, _ reflect.Value)                                   { return }
+func (ignore) apply(s *state, _, _ reflect.Value)                                   { s.reportIgnore() }
 func (ignore) String() string                                                       { return "Ignore()" }
 
 // invalid is a sentinel Option type to indicate that some options could not
@@ -207,6 +205,11 @@ func (invalid) apply(s *state, _, _ reflect.Value) {
 	const help = "consider using AllowUnexported or cmpopts.IgnoreUnexported"
 	panic(fmt.Sprintf("cannot handle unexported field: %#v\n%s", s.curPath, help))
 }
+
+// identRx represents a valid identifier according to the Go specification.
+const identRx = `[_\p{L}][_\p{L}\p{N}]*`
+
+var identsRx = regexp.MustCompile(`^` + identRx + `(\.` + identRx + `)*$`)
 
 // Transformer returns an Option that applies a transformation function that
 // converts values of a certain type into that of another.
@@ -220,18 +223,25 @@ func (invalid) apply(s *state, _, _ reflect.Value) {
 // input and output types are the same), an implicit filter is added such that
 // a transformer is applicable only if that exact transformer is not already
 // in the tail of the Path since the last non-Transform step.
+// For situations where the implicit filter is still insufficient,
+// consider using cmpopts.AcyclicTransformer, which adds a filter
+// to prevent the transformer from being recursively applied upon itself.
 //
 // The name is a user provided label that is used as the Transform.Name in the
-// transformation PathStep. If empty, an arbitrary name is used.
+// transformation PathStep (and eventually shown in the Diff output).
+// The name must be a valid identifier or qualified identifier in Go syntax.
+// If empty, an arbitrary name is used.
 func Transformer(name string, f interface{}) Option {
 	v := reflect.ValueOf(f)
 	if !function.IsType(v.Type(), function.Transformer) || v.IsNil() {
 		panic(fmt.Sprintf("invalid transformer function: %T", f))
 	}
 	if name == "" {
-		name = "λ" // Lambda-symbol as place-holder for anonymous transformer
-	}
-	if !isValid(name) {
+		name = function.NameOf(v)
+		if !identsRx.MatchString(name) {
+			name = "λ" // Lambda-symbol as placeholder name
+		}
+	} else if !identsRx.MatchString(name) {
 		panic(fmt.Sprintf("invalid name: %q", name))
 	}
 	tr := &transformer{name: name, fnc: reflect.ValueOf(f)}
@@ -267,16 +277,19 @@ func (tr *transformer) filter(s *state, _, _ reflect.Value, t reflect.Type) appl
 func (tr *transformer) apply(s *state, vx, vy reflect.Value) {
 	// Update path before calling the Transformer so that dynamic checks
 	// will use the updated path.
-	s.curPath.push(&transform{pathStep{tr.fnc.Type().Out(0)}, tr})
-	defer s.curPath.pop()
+	step := &transform{pathStep{tr.fnc.Type().Out(0)}, tr}
+	s.curPath.push(step)
+	vvx := s.callTRFunc(tr.fnc, vx)
+	vvy := s.callTRFunc(tr.fnc, vy)
+	s.curPath.pop()
 
-	vx = s.callTRFunc(tr.fnc, vx)
-	vy = s.callTRFunc(tr.fnc, vy)
-	s.compareAny(vx, vy)
+	s.pushStep(step, vvx, vvy)
+	s.compareAny(vvx, vvy)
+	s.popStep()
 }
 
 func (tr transformer) String() string {
-	return fmt.Sprintf("Transformer(%s, %s)", tr.name, getFuncName(tr.fnc.Pointer()))
+	return fmt.Sprintf("Transformer(%s, %s)", tr.name, function.NameOf(tr.fnc))
 }
 
 // Comparer returns an Option that determines whether two values are equal
@@ -320,11 +333,11 @@ func (cm *comparer) filter(_ *state, _, _ reflect.Value, t reflect.Type) applica
 
 func (cm *comparer) apply(s *state, vx, vy reflect.Value) {
 	eq := s.callTTBFunc(cm.fnc, vx, vy)
-	s.report(eq, vx, vy)
+	s.report(eq)
 }
 
 func (cm comparer) String() string {
-	return fmt.Sprintf("Comparer(%s)", getFuncName(cm.fnc.Pointer()))
+	return fmt.Sprintf("Comparer(%s)", function.NameOf(cm.fnc))
 }
 
 // AllowUnexported returns an Option that forcibly allows operations on
@@ -374,23 +387,61 @@ func (visibleStructs) filter(_ *state, _, _ reflect.Value, _ reflect.Type) appli
 	panic("not implemented")
 }
 
-// reporter is an Option that configures how differences are reported.
-type reporter interface {
-	// TODO: Not exported yet.
+type reportFlags uint64
+
+const (
+	_ reportFlags = (1 << iota) / 2
+
+	// reportEqual reports whether the node is equal.
+	// It may not be issued with reportIgnore or reportUnequal.
+	reportEqual
+	// reportUnequal reports whether the node is not equal.
+	// It may not be issued with reportIgnore or reportEqual.
+	reportUnequal
+	// reportIgnore reports whether the node was ignored.
+	// It may not be issued with reportEqual or reportUnequal.
+	reportIgnore
+)
+
+// reporter is an Option that can be passed to Equal. When Equal traverses
+// the value trees, it calls PushStep as it descends into each node in the
+// tree and PopStep as it ascend out of the node. The leaves of the tree are
+// either compared (determined to be equal or not equal) or ignored and reported
+// as such by calling the Report method.
+func reporter(r interface {
+	// TODO: Export this option.
+
+	// PushStep is called when a tree-traversal operation is performed
+	// and provides the sub-values of x and y after applying the operation.
+	// The PathStep is valid until the step is popped, while the reflect.Values
+	// are valid while the entire tree is still being traversed.
 	//
-	// Perhaps add PushStep and PopStep and change Report to only accept
-	// a PathStep instead of the full-path? Adding a PushStep and PopStep makes
-	// it clear that we are traversing the value tree in a depth-first-search
-	// manner, which has an effect on how values are printed.
+	// Equal and Diff always call PushStep at the start to provide an
+	// operation-less PathStep used to report the root values.
+	PushStep(ps PathStep, x, y reflect.Value)
 
-	Option
+	// Report is called at exactly once on leaf nodes to report whether the
+	// comparison identified the node as equal, unequal, or ignored.
+	// A leaf node is one that is immediately preceded by and followed by
+	// a pair of PushStep and PopStep calls.
+	Report(reportFlags)
 
-	// Report is called for every comparison made and will be provided with
-	// the two values being compared, the equality result, and the
-	// current path in the value tree. It is possible for x or y to be an
-	// invalid reflect.Value if one of the values is non-existent;
-	// which is possible with maps and slices.
-	Report(x, y reflect.Value, eq bool, p Path)
+	// PopStep ascends back up the value tree.
+	// There is always a matching pop call for every push call.
+	PopStep()
+}) Option {
+	return reporterOption{r}
+}
+
+type reporterOption struct{ reporterIface }
+type reporterIface interface {
+	PushStep(PathStep, reflect.Value, reflect.Value)
+	Report(reportFlags)
+	PopStep()
+}
+
+func (reporterOption) filter(_ *state, _, _ reflect.Value, _ reflect.Type) applicableOption {
+	panic("not implemented")
 }
 
 // normalizeOption normalizes the input options such that all Options groups
@@ -423,31 +474,4 @@ func flattenOptions(dst, src Options) Options {
 		}
 	}
 	return dst
-}
-
-// getFuncName returns a short function name from the pointer.
-// The string parsing logic works up until Go1.9.
-func getFuncName(p uintptr) string {
-	fnc := runtime.FuncForPC(p)
-	if fnc == nil {
-		return "<unknown>"
-	}
-	name := fnc.Name() // E.g., "long/path/name/mypkg.(mytype).(long/path/name/mypkg.myfunc)-fm"
-	if strings.HasSuffix(name, ")-fm") || strings.HasSuffix(name, ")·fm") {
-		// Strip the package name from method name.
-		name = strings.TrimSuffix(name, ")-fm")
-		name = strings.TrimSuffix(name, ")·fm")
-		if i := strings.LastIndexByte(name, '('); i >= 0 {
-			methodName := name[i+1:] // E.g., "long/path/name/mypkg.myfunc"
-			if j := strings.LastIndexByte(methodName, '.'); j >= 0 {
-				methodName = methodName[j+1:] // E.g., "myfunc"
-			}
-			name = name[:i] + methodName // E.g., "long/path/name/mypkg.(mytype)." + "myfunc"
-		}
-	}
-	if i := strings.LastIndexByte(name, '/'); i >= 0 {
-		// Strip the package name.
-		name = name[i+1:] // E.g., "mypkg.(mytype).myfunc"
-	}
-	return name
 }

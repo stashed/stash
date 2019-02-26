@@ -497,11 +497,11 @@ DEP_LIST = [
       "version": "kubernetes-1.12.0"
     },
     {
-      "package": "github.com/appscode/kutil",
+      "package": kutil "kmodules.xyz/client-go",
       "version": "release-9.0"
     },
     {
-      "package": "github.com/appscode/kubernetes-webhook-util",
+      "package": "kmodules.xyz/webhook-runtime",
       "version": "release-9.0"
     },
     {

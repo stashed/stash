@@ -3,7 +3,6 @@ package util
 import (
 	"fmt"
 
-	"github.com/appscode/kutil"
 	api "github.com/appscode/stash/apis/stash/v1beta1"
 	cs "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1beta1"
 	jsonpatch "github.com/evanphx/json-patch"
@@ -12,6 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	kutil "kmodules.xyz/client-go"
 )
 
 func CreateOrPatchFunction(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(fn *api.Function) *api.Function) (*api.Function, kutil.VerbType, error) {

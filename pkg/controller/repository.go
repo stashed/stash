@@ -1,11 +1,6 @@
 package controller
 
 import (
-	"github.com/appscode/kubernetes-webhook-util/admission"
-	hooks "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
-	webhook "github.com/appscode/kubernetes-webhook-util/admission/v1beta1/generic"
-	core_util "github.com/appscode/kutil/core/v1"
-	"github.com/appscode/kutil/tools/queue"
 	"github.com/appscode/stash/apis/stash"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	stash_util "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
@@ -14,7 +9,12 @@ import (
 	"github.com/graymeta/stow"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	core_util "kmodules.xyz/client-go/core/v1"
+	"kmodules.xyz/client-go/tools/queue"
 	"kmodules.xyz/objectstore-api/osm"
+	"kmodules.xyz/webhook-runtime/admission"
+	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"
+	webhook "kmodules.xyz/webhook-runtime/admission/v1beta1/generic"
 )
 
 func (c *StashController) NewRepositoryWebhook() hooks.AdmissionHook {

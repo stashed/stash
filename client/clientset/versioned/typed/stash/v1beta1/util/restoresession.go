@@ -3,7 +3,6 @@ package util
 import (
 	"fmt"
 
-	"github.com/appscode/kutil"
 	"github.com/appscode/stash/apis"
 	api "github.com/appscode/stash/apis/stash/v1beta1"
 	cs "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1beta1"
@@ -14,6 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	kutil "kmodules.xyz/client-go"
 )
 
 func CreateOrPatchRestoreSession(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(in *api.RestoreSession) *api.RestoreSession) (*api.RestoreSession, kutil.VerbType, error) {

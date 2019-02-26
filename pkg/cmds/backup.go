@@ -7,8 +7,6 @@ import (
 
 	"github.com/appscode/go/log"
 	v "github.com/appscode/go/version"
-	"github.com/appscode/kutil/meta"
-	"github.com/appscode/kutil/tools/cli"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client/clientset/versioned"
 	"github.com/appscode/stash/pkg/backup"
@@ -18,6 +16,8 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"kmodules.xyz/client-go/meta"
+	"kmodules.xyz/client-go/tools/cli"
 )
 
 func NewCmdBackup() *cobra.Command {

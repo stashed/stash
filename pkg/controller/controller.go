@@ -4,9 +4,6 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/log"
-	reg_util "github.com/appscode/kutil/admissionregistration/v1beta1"
-	crdutils "github.com/appscode/kutil/apiextensions/v1beta1"
-	"github.com/appscode/kutil/tools/queue"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client/clientset/versioned"
 	stashinformers "github.com/appscode/stash/client/informers/externalversions"
@@ -23,6 +20,9 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
+	reg_util "kmodules.xyz/client-go/admissionregistration/v1beta1"
+	crdutils "kmodules.xyz/client-go/apiextensions/v1beta1"
+	"kmodules.xyz/client-go/tools/queue"
 )
 
 type StashController struct {

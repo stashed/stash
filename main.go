@@ -5,11 +5,11 @@ import (
 	"runtime"
 
 	"github.com/appscode/go/log"
-	logs "github.com/appscode/go/log/golog"
 	_ "github.com/appscode/stash/client/clientset/versioned/fake"
 	"github.com/appscode/stash/pkg/cmds"
 	_ "k8s.io/client-go/kubernetes/fake"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"kmodules.xyz/client-go/logs"
 )
 
 func main() {
@@ -24,5 +24,4 @@ func main() {
 		log.Fatalln("Error in Stash Main:", err)
 	}
 	log.Infoln("Exiting Stash Main")
-	os.Exit(0)
 }
