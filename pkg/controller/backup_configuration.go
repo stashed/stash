@@ -12,7 +12,6 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
-	kube_scheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/reference"
 	batch_util "kmodules.xyz/client-go/batch/v1beta1"
@@ -181,7 +180,10 @@ func (c *StashController) EnsureCronJob(backupconfiguration *api_v1beta1.BackupC
 	if err != nil {
 		return err
 	}
-	cronjob, _, err := batch_util.CreateOrPatchCronJob(c.kubeClient, meta, func(in *batch_v1beta1.CronJob) *batch_v1beta1.CronJob {
+	if err := c.ensureCronJobRoleBinding(ref); err != nil {
+		return err
+	}
+	_, _, err = batch_util.CreateOrPatchCronJob(c.kubeClient, meta, func(in *batch_v1beta1.CronJob) *batch_v1beta1.CronJob {
 		//set backup-configuration as cron-job owner
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 
@@ -209,13 +211,6 @@ func (c *StashController) EnsureCronJob(backupconfiguration *api_v1beta1.BackupC
 		return in
 	})
 	if err != nil {
-		return err
-	}
-	ref, err = reference.GetReference(kube_scheme.Scheme, cronjob)
-	if err != nil {
-		return err
-	}
-	if err := c.ensureCronJobRoleBinding(ref); err != nil {
 		return err
 	}
 	return nil

@@ -103,6 +103,7 @@ func (c *StashController) ensureCronJobRoleBinding(resource *core.ObjectReferenc
 	}
 	//ensure service account
 	_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
