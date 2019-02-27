@@ -18,6 +18,9 @@ import (
 
 func CreateOrPatchBackupSession(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(bs *api.BackupSession) *api.BackupSession) (*api.BackupSession, kutil.VerbType, error) {
 	cur, err := c.BackupSessions(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	if err != nil {
+		fmt.Println(err)
+	}
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating BackupSession %s/%s.", meta.Namespace, meta.Name)
 		out, err := c.BackupSessions(meta.Namespace).Create(transform(&api.BackupSession{
@@ -27,6 +30,9 @@ func CreateOrPatchBackupSession(c cs.StashV1beta1Interface, meta metav1.ObjectMe
 			},
 			ObjectMeta: meta,
 		}))
+		if err != nil {
+			fmt.Println(err)
+		}
 		return out, kutil.VerbCreated, err
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err

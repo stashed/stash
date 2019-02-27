@@ -34,6 +34,7 @@ const (
 	EventReasonCheckJobCreated                      = "CheckJobCreated"
 	EventReasonFailedSetup                          = "SetupFailed"
 	EventReasonAdmissionWebhookNotActivated  string = "AdmissionWebhookNotActivated"
+	EventReasonInvalidBackupConfiguration           = "InvalidBackupConfiguration"
 )
 
 func NewEventRecorder(client kubernetes.Interface, component string) record.EventRecorder {

@@ -6,4 +6,5 @@ const (
 	VersionTag               = BackupKey + "/tag"
 	// ResourceVersion will be used to trigger restarts for ReplicaSet and RC pods
 	ResourceHash = BackupKey + "/resource-hash"
+	StashKey     = "stash.appscode.com"
 )

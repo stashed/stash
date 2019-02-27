@@ -104,11 +104,9 @@ func (o StashOptions) Run(stopCh <-chan struct{}) error {
 	if err != nil {
 		return err
 	}
-
 	s, err := config.Complete().New()
 	if err != nil {
 		return err
 	}
-
 	return s.Run(stopCh)
 }
