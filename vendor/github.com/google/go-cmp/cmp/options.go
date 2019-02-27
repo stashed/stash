@@ -29,11 +29,11 @@ type Option interface {
 	// An Options is returned only if multiple comparers or transformers
 	// can apply simultaneously and will only contain values of those types
 	// or sub-Options containing values of those types.
-	filter(s *state, vx, vy reflect.Value, t reflect.Type) applicableOption
+	filter(s *state, t reflect.Type, vx, vy reflect.Value) applicableOption
 }
 
 // applicableOption represents the following types:
-//	Fundamental: ignore | invalid | *comparer | *transformer
+//	Fundamental: ignore | validator | *comparer | *transformer
 //	Grouping:    Options
 type applicableOption interface {
 	Option
@@ -43,7 +43,7 @@ type applicableOption interface {
 }
 
 // coreOption represents the following types:
-//	Fundamental: ignore | invalid | *comparer | *transformer
+//	Fundamental: ignore | validator | *comparer | *transformer
 //	Filters:     *pathFilter | *valuesFilter
 type coreOption interface {
 	Option
@@ -63,19 +63,19 @@ func (core) isCore() {}
 // on all individual options held within.
 type Options []Option
 
-func (opts Options) filter(s *state, vx, vy reflect.Value, t reflect.Type) (out applicableOption) {
+func (opts Options) filter(s *state, t reflect.Type, vx, vy reflect.Value) (out applicableOption) {
 	for _, opt := range opts {
-		switch opt := opt.filter(s, vx, vy, t); opt.(type) {
+		switch opt := opt.filter(s, t, vx, vy); opt.(type) {
 		case ignore:
 			return ignore{} // Only ignore can short-circuit evaluation
-		case invalid:
-			out = invalid{} // Takes precedence over comparer or transformer
+		case validator:
+			out = validator{} // Takes precedence over comparer or transformer
 		case *comparer, *transformer, Options:
 			switch out.(type) {
 			case nil:
 				out = opt
-			case invalid:
-				// Keep invalid
+			case validator:
+				// Keep validator
 			case *comparer, *transformer, Options:
 				out = Options{out, opt} // Conflicting comparers or transformers
 			}
@@ -106,6 +106,11 @@ func (opts Options) String() string {
 // FilterPath returns a new Option where opt is only evaluated if filter f
 // returns true for the current Path in the value tree.
 //
+// This filter is called even if a slice element or map entry is missing and
+// provides an opportunity to ignore such cases. The filter function must be
+// symmetric such that the filter result is identical regardless of whether the
+// missing value is from x or y.
+//
 // The option passed in may be an Ignore, Transformer, Comparer, Options, or
 // a previously filtered Option.
 func FilterPath(f func(Path) bool, opt Option) Option {
@@ -124,9 +129,9 @@ type pathFilter struct {
 	opt Option
 }
 
-func (f pathFilter) filter(s *state, vx, vy reflect.Value, t reflect.Type) applicableOption {
+func (f pathFilter) filter(s *state, t reflect.Type, vx, vy reflect.Value) applicableOption {
 	if f.fnc(s.curPath) {
-		return f.opt.filter(s, vx, vy, t)
+		return f.opt.filter(s, t, vx, vy)
 	}
 	return nil
 }
@@ -138,8 +143,9 @@ func (f pathFilter) String() string {
 
 // FilterValues returns a new Option where opt is only evaluated if filter f,
 // which is a function of the form "func(T, T) bool", returns true for the
-// current pair of values being compared. If the type of the values is not
-// assignable to T, then this filter implicitly returns false.
+// current pair of values being compared. If either value is invalid or
+// the type of the values is not assignable to T, then this filter implicitly
+// returns false.
 //
 // The filter function must be
 // symmetric (i.e., agnostic to the order of the inputs) and
@@ -171,12 +177,12 @@ type valuesFilter struct {
 	opt Option
 }
 
-func (f valuesFilter) filter(s *state, vx, vy reflect.Value, t reflect.Type) applicableOption {
-	if !vx.IsValid() || !vy.IsValid() {
-		return invalid{}
+func (f valuesFilter) filter(s *state, t reflect.Type, vx, vy reflect.Value) applicableOption {
+	if !vx.IsValid() || !vx.CanInterface() || !vy.IsValid() || !vy.CanInterface() {
+		return validator{}
 	}
 	if (f.typ == nil || t.AssignableTo(f.typ)) && s.callTTBFunc(f.fnc, vx, vy) {
-		return f.opt.filter(s, vx, vy, t)
+		return f.opt.filter(s, t, vx, vy)
 	}
 	return nil
 }
@@ -198,14 +204,23 @@ func (ignore) filter(_ *state, _, _ reflect.Value, _ reflect.Type) applicableOpt
 func (ignore) apply(_ *state, _, _ reflect.Value)                                   { return }
 func (ignore) String() string                                                       { return "Ignore()" }
 
-// invalid is a sentinel Option type to indicate that some options could not
-// be evaluated due to unexported fields.
-type invalid struct{ core }
+// validator is a sentinel Option type to indicate that some options could not
+// be evaluated due to unexported fields, missing slice elements, or
+// missing map entries. Both values are validator only for unexported fields.
+type validator struct{ core }
 
-func (invalid) filter(_ *state, _, _ reflect.Value, _ reflect.Type) applicableOption { return invalid{} }
-func (invalid) apply(s *state, _, _ reflect.Value) {
-	const help = "consider using AllowUnexported or cmpopts.IgnoreUnexported"
-	panic(fmt.Sprintf("cannot handle unexported field: %#v\n%s", s.curPath, help))
+func (validator) filter(_ *state, _ reflect.Type, _, _ reflect.Value) applicableOption {
+	return validator{}
+}
+func (validator) apply(s *state, vx, vy reflect.Value) {
+	// Unable to Interface implies unexported field without visibility access.
+	if (vx.IsValid() && !vx.CanInterface()) || (vy.IsValid() && !vy.CanInterface()) {
+		const help = "consider using AllowUnexported or cmpopts.IgnoreUnexported"
+		panic(fmt.Sprintf("cannot handle unexported field: %#v\n%s", s.curPath, help))
+	}
+
+	// Implies missing slice element or map entry.
+	s.report(vx.IsValid() == vy.IsValid(), 0)
 }
 
 // Transformer returns an Option that applies a transformation function that
@@ -250,7 +265,7 @@ type transformer struct {
 
 func (tr *transformer) isFiltered() bool { return tr.typ != nil }
 
-func (tr *transformer) filter(s *state, _, _ reflect.Value, t reflect.Type) applicableOption {
+func (tr *transformer) filter(s *state, t reflect.Type, _, _ reflect.Value) applicableOption {
 	for i := len(s.curPath) - 1; i >= 0; i-- {
 		if t, ok := s.curPath[i].(*transform); !ok {
 			break // Hit most recent non-Transform step
@@ -311,7 +326,7 @@ type comparer struct {
 
 func (cm *comparer) isFiltered() bool { return cm.typ != nil }
 
-func (cm *comparer) filter(_ *state, _, _ reflect.Value, t reflect.Type) applicableOption {
+func (cm *comparer) filter(_ *state, t reflect.Type, _, _ reflect.Value) applicableOption {
 	if cm.typ == nil || t.AssignableTo(cm.typ) {
 		return cm
 	}
@@ -370,7 +385,7 @@ func AllowUnexported(types ...interface{}) Option {
 
 type visibleStructs map[reflect.Type]bool
 
-func (visibleStructs) filter(_ *state, _, _ reflect.Value, _ reflect.Type) applicableOption {
+func (visibleStructs) filter(_ *state, _ reflect.Type, _, _ reflect.Value) applicableOption {
 	panic("not implemented")
 }
 

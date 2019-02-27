@@ -29,6 +29,7 @@ package cmp
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/google/go-cmp/cmp/internal/diff"
 	"github.com/google/go-cmp/cmp/internal/function"
@@ -46,9 +47,6 @@ var nothing = reflect.Value{}
 // Equal reports whether x and y are equal by recursively applying the
 // following rules in the given order to x and y and all of their sub-values:
 //
-// • If two values are not of the same type, then they are never equal
-// and the overall result is false.
-//
 // • Let S be the set of all Ignore, Transformer, and Comparer options that
 // remain after applying all path filters, value filters, and type filters.
 // If at least one Ignore exists in S, then the comparison is ignored.
@@ -61,26 +59,34 @@ var nothing = reflect.Value{}
 //
 // • If the values have an Equal method of the form "(T) Equal(T) bool" or
 // "(T) Equal(I) bool" where T is assignable to I, then use the result of
-// x.Equal(y) even if x or y is nil.
-// Otherwise, no such method exists and evaluation proceeds to the next rule.
+// x.Equal(y) even if x or y is nil. Otherwise, no such method exists and
+// evaluation proceeds to the next rule.
 //
 // • Lastly, try to compare x and y based on their basic kinds.
 // Simple kinds like booleans, integers, floats, complex numbers, strings, and
 // channels are compared using the equivalent of the == operator in Go.
 // Functions are only equal if they are both nil, otherwise they are unequal.
-// Pointers are equal if the underlying values they point to are also equal.
-// Interfaces are equal if their underlying concrete values are also equal.
 //
-// Structs are equal if all of their fields are equal. If a struct contains
-// unexported fields, Equal panics unless the AllowUnexported option is used or
-// an Ignore option (e.g., cmpopts.IgnoreUnexported) ignores that field.
+// Structs are equal if recursively calling Equal on all fields report equal.
+// If a struct contains unexported fields, Equal panics unless an Ignore option
+// (e.g., cmpopts.IgnoreUnexported) ignores that field or the AllowUnexported
+// option explicitly permits comparing the unexported field.
 //
-// Arrays, slices, and maps are equal if they are both nil or both non-nil
-// with the same length and the elements at each index or key are equal.
-// Note that a non-nil empty slice and a nil slice are not equal.
-// To equate empty slices and maps, consider using cmpopts.EquateEmpty.
+// Slices are equal if they are both nil or both non-nil, where recursively
+// calling Equal on all non-ignored slice or array elements report equal.
+// Empty non-nil slices and nil slices are not equal; to equate empty slices,
+// consider using cmpopts.EquateEmpty.
+//
+// Maps are equal if they are both nil or both non-nil, where recursively
+// calling Equal on all non-ignored map entries report equal.
 // Map keys are equal according to the == operator.
 // To use custom comparisons for map keys, consider using cmpopts.SortMaps.
+// Empty non-nil maps and nil maps are not equal; to equate empty maps,
+// consider using cmpopts.EquateEmpty.
+//
+// Pointers and interfaces are equal if they are both nil or both non-nil,
+// where they have the same underlying concrete type and recursively
+// calling Equal on the underlying values reports equal.
 func Equal(x, y interface{}, opts ...Option) bool {
 	s := newState(opts)
 	s.compareAny(reflect.ValueOf(x), reflect.ValueOf(y))
@@ -111,10 +117,6 @@ type state struct {
 	result   diff.Result // The current result of comparison
 	curPath  Path        // The current path in the value tree
 	reporter reporter    // Optional reporter used for difference formatting
-
-	// recChecker checks for infinite cycles applying the same set of
-	// transformers upon the output of itself.
-	recChecker recChecker
 
 	// dynChecker triggers pseudo-random checks for option correctness.
 	// It is safe for statelessCompare to mutate this value.
@@ -168,7 +170,7 @@ func (s *state) processOption(opt Option) {
 // statelessCompare compares two values and returns the result.
 // This function is stateless in that it does not alter the current result,
 // or output to any registered reporters.
-func (s *state) statelessCompare(vx, vy reflect.Value) diff.Result {
+func (s *state) statelessCompare(step PathStep) diff.Result {
 	// We do not save and restore the curPath because all of the compareX
 	// methods should properly push and pop from the path.
 	// It is an implementation bug if the contents of curPath differs from
@@ -183,7 +185,7 @@ func (s *state) statelessCompare(vx, vy reflect.Value) diff.Result {
 	return res
 }
 
-func (s *state) compareAny(vx, vy reflect.Value) {
+func (s *state) compareAny(step PathStep) {
 	// TODO: Support cyclic data structures.
 
 	// Rule 0: Differing types are never equal.
@@ -203,12 +205,12 @@ func (s *state) compareAny(vx, vy reflect.Value) {
 	vx, vy = s.tryExporting(vx, vy)
 
 	// Rule 1: Check whether an option applies on this node in the value tree.
-	if s.tryOptions(vx, vy, t) {
+	if s.tryOptions(t, vx, vy) {
 		return
 	}
 
 	// Rule 2: Check whether the type has a valid Equal method.
-	if s.tryMethod(vx, vy, t) {
+	if s.tryMethod(t, vx, vy) {
 		return
 	}
 
@@ -299,22 +301,22 @@ func (s *state) tryExporting(vx, vy reflect.Value) (reflect.Value, reflect.Value
 
 func (s *state) tryOptions(vx, vy reflect.Value, t reflect.Type) bool {
 	// If there were no FilterValues, we will not detect invalid inputs,
-	// so manually check for them and append invalid if necessary.
+	// so manually check for them and append a validator if necessary.
 	// We still evaluate the options since an ignore can override invalid.
 	opts := s.opts
-	if !vx.IsValid() || !vy.IsValid() {
-		opts = Options{opts, invalid{}}
+	if !vx.IsValid() || !vx.CanInterface() || !vy.IsValid() || !vy.CanInterface() {
+		opts = Options{opts, validator{}}
 	}
 
 	// Evaluate all filters and apply the remaining options.
-	if opt := opts.filter(s, vx, vy, t); opt != nil {
+	if opt := opts.filter(s, t, vx, vy); opt != nil {
 		opt.apply(s, vx, vy)
 		return true
 	}
 	return false
 }
 
-func (s *state) tryMethod(vx, vy reflect.Value, t reflect.Type) bool {
+func (s *state) tryMethod(t reflect.Type, vx, vy reflect.Value) bool {
 	// Check if this type even has an Equal method.
 	m, ok := t.MethodByName("Equal")
 	if !ok || !function.IsType(m.Type, function.EqualAssignable) {
@@ -326,7 +328,7 @@ func (s *state) tryMethod(vx, vy reflect.Value, t reflect.Type) bool {
 	return true
 }
 
-func (s *state) callTRFunc(f, v reflect.Value) reflect.Value {
+func (s *state) callTRFunc(f, v reflect.Value, step *transform) reflect.Value {
 	v = sanitizeValue(v, f.Type().In(0))
 	if !s.dynChecker.Next() {
 		return f.Call([]reflect.Value{v})[0]
@@ -337,11 +339,12 @@ func (s *state) callTRFunc(f, v reflect.Value) reflect.Value {
 	// unsafe mutations to the input.
 	c := make(chan reflect.Value)
 	go detectRaces(c, f, v)
+	got := <-c
 	want := f.Call([]reflect.Value{v})[0]
-	if got := <-c; !s.statelessCompare(got, want).Equal() {
+	if step.vx, step.vy = got, want; !s.statelessCompare(step).Equal() {
 		// To avoid false-positives with non-reflexive equality operations,
 		// we sanity check whether a value is equal to itself.
-		if !s.statelessCompare(want, want).Equal() {
+		if step.vx, step.vy = want, want; !s.statelessCompare(step).Equal() {
 			return want
 		}
 		fn := getFuncName(f.Pointer())
@@ -363,6 +366,7 @@ func (s *state) callTTBFunc(f, x, y reflect.Value) bool {
 	// unsafe mutations to the input.
 	c := make(chan reflect.Value)
 	go detectRaces(c, f, y, x)
+	got := <-c
 	want := f.Call([]reflect.Value{x, y})[0].Bool()
 	if got := <-c; !got.IsValid() || got.Bool() != want {
 		fn := getFuncName(f.Pointer())
@@ -417,9 +421,23 @@ func (s *state) compareArray(vx, vy reflect.Value, t reflect.Type) {
 		return
 	}
 
-	// Replay the edit-script.
+	// Compute an edit-script for slices vx and vy (excluding ignored elements).
+	edits := diff.Difference(len(indexesX), len(indexesY), func(ix, iy int) diff.Result {
+		return s.statelessCompare(withIndexes(indexesX[ix], indexesY[iy]))
+	})
+
+	// Replay the ignore-scripts and the edit-script.
 	var ix, iy int
-	for _, e := range es {
+	for ix < vx.Len() || iy < vy.Len() {
+		var e diff.EditType
+		switch {
+		case ix < len(ignoredX) && ignoredX[ix]:
+			e = diff.UniqueX
+		case iy < len(ignoredY) && ignoredY[iy]:
+			e = diff.UniqueY
+		default:
+			e, edits = edits[0], edits[1:]
+		}
 		switch e {
 		case diff.UniqueX:
 			step.xkey, step.ykey = ix, -1
@@ -444,7 +462,7 @@ func (s *state) compareArray(vx, vy reflect.Value, t reflect.Type) {
 	return
 }
 
-func (s *state) compareMap(vx, vy reflect.Value, t reflect.Type) {
+func (s *state) compareMap(t reflect.Type, vx, vy reflect.Value) {
 	if vx.IsNil() || vy.IsNil() {
 		s.report(vx.IsNil() && vy.IsNil(), vx, vy)
 		return
@@ -456,6 +474,8 @@ func (s *state) compareMap(vx, vy reflect.Value, t reflect.Type) {
 	s.curPath.push(step)
 	defer s.curPath.pop()
 	for _, k := range value.SortKeys(append(vx.MapKeys(), vy.MapKeys()...)) {
+		step.vx = vx.MapIndex(k)
+		step.vy = vy.MapIndex(k)
 		step.key = k
 		vvx := vx.MapIndex(k)
 		vvy := vy.MapIndex(k)
