@@ -37,11 +37,11 @@ func (c *Controller) CreateBackupSession() error {
 		Namespace:       c.Namespace,
 		OwnerReferences: []metav1.OwnerReference{},
 	}
-	backupconfiguration, err := c.stashv1beta1Client.BackupConfigurations(c.Namespace).Get(c.Name, metav1.GetOptions{})
+	backupConfiguration, err := c.stashv1beta1Client.BackupConfigurations(c.Namespace).Get(c.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
-	ref, err := reference.GetReference(scheme.Scheme, backupconfiguration)
+	ref, err := reference.GetReference(scheme.Scheme, backupConfiguration)
 	if err != nil {
 		return err
 	}

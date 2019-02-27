@@ -30,9 +30,6 @@ func CreateOrPatchBackupSession(c cs.StashV1beta1Interface, meta metav1.ObjectMe
 			},
 			ObjectMeta: meta,
 		}))
-		if err != nil {
-			fmt.Println(err)
-		}
 		return out, kutil.VerbCreated, err
 	} else if err != nil {
 		return nil, kutil.VerbUnchanged, err

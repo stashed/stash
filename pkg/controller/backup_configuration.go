@@ -22,7 +22,7 @@ import (
 
 func (c *StashController) initBackupConfigurationWatcher() {
 	c.bcInformer = c.stashInformerFactory.Stash().V1beta1().BackupConfigurations().Informer()
-	c.bcQueue = queue.New(api_v1beta1.ResourceKindBackupConfiguration, c.MaxNumRequeues, c.NumThreads, c.runBackupConfigurationProcessor)
+	c.bcQueue = queue.New(api_v1beta1.ResourceKindBackupConfiguration, c.MaxNumRequeues, c.NumThreads, c.runBackupConfigurationInjector)
 	c.bcInformer.AddEventHandler(queue.DefaultEventHandler(c.bcQueue.GetQueue()))
 	c.bcLister = c.stashInformerFactory.Stash().V1beta1().BackupConfigurations().Lister()
 }
@@ -30,7 +30,7 @@ func (c *StashController) initBackupConfigurationWatcher() {
 // syncToStdout is the business logic of the controller. In this controller it simply prints
 // information about the deployment to stdout. In case an error happened, it has to simply return the error.
 // The retry logic should not be part of the business logic.
-func (c *StashController) runBackupConfigurationProcessor(key string) error {
+func (c *StashController) runBackupConfigurationInjector(key string) error {
 	obj, exists, err := c.bcInformer.GetIndexer().GetByKey(key)
 	if err != nil {
 		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)
@@ -40,21 +40,21 @@ func (c *StashController) runBackupConfigurationProcessor(key string) error {
 		glog.Errorf("BackupConfiguration %s does not exit anymore\n", key)
 
 	} else {
-		backupconfiguration := obj.(*api_v1beta1.BackupConfiguration)
-		glog.Infof("Sync/Add/Update for BackupConfiguration %s", backupconfiguration.GetName())
-		if backupconfiguration.DeletionTimestamp != nil {
-			if core_util.HasFinalizer(backupconfiguration.ObjectMeta, api_v1beta1.StashKey) {
+		backupConfiguration := obj.(*api_v1beta1.BackupConfiguration)
+		glog.Infof("Sync/Add/Update for BackupConfiguration %s", backupConfiguration.GetName())
+		if backupConfiguration.DeletionTimestamp != nil {
+			if core_util.HasFinalizer(backupConfiguration.ObjectMeta, api_v1beta1.StashKey) {
 				if err != nil {
 					return err
 				}
-				if err = c.EnsureV1beta1SidecarDeleted(backupconfiguration); err != nil {
+				if err = c.EnsureV1beta1SidecarDeleted(backupConfiguration); err != nil {
 					return err
 				}
-				if err = c.EnsureCronJobDeleted(backupconfiguration.ObjectMeta); err != nil {
+				if err = c.EnsureCronJobDeleted(backupConfiguration.ObjectMeta); err != nil {
 					return err
 				}
 				// Remove finalizer
-				_, _, err = v1beta1_util.PatchBackupConfiguration(c.stashClient.StashV1beta1(), backupconfiguration, func(in *api_v1beta1.BackupConfiguration) *api_v1beta1.BackupConfiguration {
+				_, _, err = v1beta1_util.PatchBackupConfiguration(c.stashClient.StashV1beta1(), backupConfiguration, func(in *api_v1beta1.BackupConfiguration) *api_v1beta1.BackupConfiguration {
 					in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, api_v1beta1.StashKey)
 					return in
 
@@ -65,7 +65,7 @@ func (c *StashController) runBackupConfigurationProcessor(key string) error {
 			}
 		} else {
 			//Add finalizer
-			_, _, err := v1beta1_util.PatchBackupConfiguration(c.stashClient.StashV1beta1(), backupconfiguration, func(in *api_v1beta1.BackupConfiguration) *api_v1beta1.BackupConfiguration {
+			_, _, err := v1beta1_util.PatchBackupConfiguration(c.stashClient.StashV1beta1(), backupConfiguration, func(in *api_v1beta1.BackupConfiguration) *api_v1beta1.BackupConfiguration {
 				in.ObjectMeta = core_util.AddFinalizer(in.ObjectMeta, api_v1beta1.StashKey)
 
 				return in
@@ -73,14 +73,14 @@ func (c *StashController) runBackupConfigurationProcessor(key string) error {
 			if err != nil {
 				return err
 			}
-			if backupconfiguration.Spec.Target != nil {
-				if util.BackupModel(backupconfiguration.Spec.Target.Ref.Kind) == util.ModelSidecar {
-					if err := c.EnsureV1beta1Sidecar(backupconfiguration); err != nil {
+			if backupConfiguration.Spec.Target != nil {
+				if util.BackupModel(backupConfiguration.Spec.Target.Ref.Kind) == util.ModelSidecar {
+					if err := c.EnsureV1beta1Sidecar(backupConfiguration); err != nil {
 						return err
 					}
 				}
 			}
-			if err := c.EnsureCronJob(backupconfiguration); err != nil {
+			if err := c.EnsureCronJob(backupConfiguration); err != nil {
 				return err
 			}
 		}
@@ -88,39 +88,39 @@ func (c *StashController) runBackupConfigurationProcessor(key string) error {
 	return nil
 }
 
-func (c *StashController) EnsureV1beta1SidecarDeleted(backupconfiguration *api_v1beta1.BackupConfiguration) error {
-	if backupconfiguration == nil {
+func (c *StashController) EnsureV1beta1SidecarDeleted(backupConfiguration *api_v1beta1.BackupConfiguration) error {
+	if backupConfiguration == nil {
 		return fmt.Errorf("BackupConfiguration is nil")
 	}
-	if backupconfiguration.Spec.Target != nil {
-		kind := backupconfiguration.Spec.Target.Ref.Kind
-		namespace := backupconfiguration.Namespace
-		resource_name := backupconfiguration.Spec.Target.Ref.Name
-		if err := c.sendEventToWorkloadQueue(kind, namespace, resource_name); err != nil {
+	if backupConfiguration.Spec.Target != nil {
+		kind := backupConfiguration.Spec.Target.Ref.Kind
+		namespace := backupConfiguration.Namespace
+		resourceName := backupConfiguration.Spec.Target.Ref.Name
+		if err := c.sendEventToWorkloadQueue(kind, namespace, resourceName); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (c *StashController) EnsureV1beta1Sidecar(backupconfiguration *api_v1beta1.BackupConfiguration) error {
-	if backupconfiguration == nil {
+func (c *StashController) EnsureV1beta1Sidecar(backupConfiguration *api_v1beta1.BackupConfiguration) error {
+	if backupConfiguration == nil {
 		return fmt.Errorf("BackupConfiguration is nil")
 	}
-	kind := backupconfiguration.Spec.Target.Ref.Kind
-	namespace := backupconfiguration.Namespace
-	resource_name := backupconfiguration.Spec.Target.Ref.Name
+	kind := backupConfiguration.Spec.Target.Ref.Kind
+	namespace := backupConfiguration.Namespace
+	resourceName := backupConfiguration.Spec.Target.Ref.Name
 
-	if err := c.sendEventToWorkloadQueue(kind, namespace, resource_name); err != nil {
+	if err := c.sendEventToWorkloadQueue(kind, namespace, resourceName); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *StashController) sendEventToWorkloadQueue(kind, namespace, resource_name string) error {
+func (c *StashController) sendEventToWorkloadQueue(kind, namespace, resourceName string) error {
 	switch kind {
 	case workload_api.KindDeployment:
-		if resource, err := c.dpLister.Deployments(namespace).Get(resource_name); err == nil {
+		if resource, err := c.dpLister.Deployments(namespace).Get(resourceName); err == nil {
 			key, err := cache.MetaNamespaceKeyFunc(resource)
 			if err == nil {
 				c.dpQueue.GetQueue().Add(key)
@@ -128,7 +128,7 @@ func (c *StashController) sendEventToWorkloadQueue(kind, namespace, resource_nam
 			return err
 		}
 	case workload_api.KindDaemonSet:
-		if resource, err := c.dsLister.DaemonSets(namespace).Get(resource_name); err == nil {
+		if resource, err := c.dsLister.DaemonSets(namespace).Get(resourceName); err == nil {
 			key, err := cache.MetaNamespaceKeyFunc(resource)
 			if err == nil {
 				c.dsQueue.GetQueue().Add(key)
@@ -136,14 +136,14 @@ func (c *StashController) sendEventToWorkloadQueue(kind, namespace, resource_nam
 			return err
 		}
 	case workload_api.KindStatefulSet:
-		if resource, err := c.ssLister.StatefulSets(namespace).Get(resource_name); err == nil {
+		if resource, err := c.ssLister.StatefulSets(namespace).Get(resourceName); err == nil {
 			key, err := cache.MetaNamespaceKeyFunc(resource)
 			if err == nil {
 				c.ssQueue.GetQueue().Add(key)
 			}
 		}
 	case workload_api.KindReplicationController:
-		if resource, err := c.rcLister.ReplicationControllers(namespace).Get(resource_name); err == nil {
+		if resource, err := c.rcLister.ReplicationControllers(namespace).Get(resourceName); err == nil {
 			key, err := cache.MetaNamespaceKeyFunc(resource)
 			if err == nil {
 				c.rcQueue.GetQueue().Add(key)
@@ -151,7 +151,7 @@ func (c *StashController) sendEventToWorkloadQueue(kind, namespace, resource_nam
 			return err
 		}
 	case workload_api.KindReplicaSet:
-		if resource, err := c.rsLister.ReplicaSets(namespace).Get(resource_name); err == nil {
+		if resource, err := c.rsLister.ReplicaSets(namespace).Get(resourceName); err == nil {
 			key, err := cache.MetaNamespaceKeyFunc(resource)
 			if err == nil {
 				c.rsQueue.GetQueue().Add(key)
@@ -162,8 +162,8 @@ func (c *StashController) sendEventToWorkloadQueue(kind, namespace, resource_nam
 	return nil
 }
 
-func (c *StashController) EnsureCronJob(backupconfiguration *api_v1beta1.BackupConfiguration) error {
-	if backupconfiguration == nil {
+func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupConfiguration) error {
+	if backupConfiguration == nil {
 		return fmt.Errorf("BackupConfiguration is nil")
 	}
 	image := docker.Docker{
@@ -173,10 +173,10 @@ func (c *StashController) EnsureCronJob(backupconfiguration *api_v1beta1.BackupC
 	}
 
 	meta := metav1.ObjectMeta{
-		Name:      backupconfiguration.Name,
-		Namespace: backupconfiguration.Namespace,
+		Name:      backupConfiguration.Name,
+		Namespace: backupConfiguration.Namespace,
 	}
-	ref, err := reference.GetReference(scheme.Scheme, backupconfiguration)
+	ref, err := reference.GetReference(scheme.Scheme, backupConfiguration)
 	if err != nil {
 		return err
 	}
@@ -187,7 +187,7 @@ func (c *StashController) EnsureCronJob(backupconfiguration *api_v1beta1.BackupC
 		//set backup-configuration as cron-job owner
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 
-		in.Spec.Schedule = backupconfiguration.Spec.Schedule
+		in.Spec.Schedule = backupConfiguration.Spec.Schedule
 		if in.Spec.JobTemplate.Labels == nil {
 			in.Spec.JobTemplate.Labels = map[string]string{}
 		}
@@ -195,13 +195,13 @@ func (c *StashController) EnsureCronJob(backupconfiguration *api_v1beta1.BackupC
 		in.Spec.JobTemplate.Spec.Template.Spec.Containers = core_util.UpsertContainer(
 			in.Spec.JobTemplate.Spec.Template.Spec.Containers,
 			core.Container{
-				Name:            backupconfiguration.Name,
+				Name:            backupConfiguration.Name,
 				ImagePullPolicy: core.PullIfNotPresent,
 				Image:           image.ToContainerImage(),
 				Args: []string{
 					"backup-session",
-					fmt.Sprintf("--backupsession.name=%s", backupconfiguration.Name),
-					fmt.Sprintf("--backupsession.namespace=%s", backupconfiguration.Namespace),
+					fmt.Sprintf("--backupsession.name=%s", backupConfiguration.Name),
+					fmt.Sprintf("--backupsession.namespace=%s", backupConfiguration.Namespace),
 				},
 			})
 		in.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
@@ -217,11 +217,11 @@ func (c *StashController) EnsureCronJob(backupconfiguration *api_v1beta1.BackupC
 }
 
 func (c *StashController) EnsureCronJobDeleted(objectMeta metav1.ObjectMeta) error {
-	backupconfiguration, err := c.bcLister.BackupConfigurations(objectMeta.Namespace).Get(objectMeta.Name)
+	backupConfiguration, err := c.bcLister.BackupConfigurations(objectMeta.Namespace).Get(objectMeta.Name)
 	if err != nil {
 		return err
 	}
-	ref, err := reference.GetReference(scheme.Scheme, backupconfiguration)
+	ref, err := reference.GetReference(scheme.Scheme, backupConfiguration)
 	if err != nil {
 		return err
 	}
@@ -230,6 +230,12 @@ func (c *StashController) EnsureCronJobDeleted(objectMeta metav1.ObjectMeta) err
 		Namespace:       objectMeta.Namespace,
 		OwnerReferences: []metav1.OwnerReference{},
 	}
-	core_util.EnsureOwnerReference(&meta, ref)
+	_,_,err = batch_util.CreateOrPatchCronJob(c.kubeClient, meta, func(in *batch_v1beta1.CronJob) *batch_v1beta1.CronJob {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+		return in
+	})
+	if err != nil{
+		return err
+	}
 	return nil
 }
