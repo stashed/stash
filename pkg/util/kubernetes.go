@@ -55,6 +55,7 @@ const (
 	ModelSidecar      = "sidecar"
 	ModelCronJob      = "cronjob"
 	LabelApp          = "app"
+	LabelBackupConfiguration = "backup-configuration"
 )
 
 var (

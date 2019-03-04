@@ -6,6 +6,7 @@ import (
 	"github.com/appscode/stash/client/clientset/versioned/scheme"
 	cs "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1beta1"
 	"github.com/appscode/stash/client/clientset/versioned/typed/stash/v1beta1/util"
+	util2 "github.com/appscode/stash/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/reference"
@@ -49,6 +50,11 @@ func (c *Controller) CreateBackupSession() error {
 		//Set Backupconfiguration  as Backupsession Owner
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 		in.Spec.BackupConfiguration.Name = c.Name
+		if in.Labels == nil{
+			in.Labels = map[string]string{}
+		}
+		in.Labels[util2.LabelApp] = util2.AppLabelStash
+		in.Labels[util2.LabelBackupConfiguration] = backupConfiguration.Name
 		return in
 	})
 	if err != nil {
