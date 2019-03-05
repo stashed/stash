@@ -12,31 +12,18 @@ import (
 	"strings"
 
 	"github.com/appscode/go/types"
+	"github.com/appscode/stash/apis/stash/v1beta1"
 )
 
 type BackupOutput struct {
 	// BackupStats shows statistics of last backup session
-	BackupStats []BackupStats `json:"backup,omitempty"`
+	BackupStats []v1beta1.BackupStats `json:"backup,omitempty"`
 	// SessionDuration  indicates total time taken to complete this backup session
 	SessionDuration string `json:"sessionDuration,omitempty"`
 	// RepositoryStats shows statistics of repository after last backup
 	RepositoryStats RepositoryStats `json:"repository,omitempty"`
 }
 
-type BackupStats struct {
-	// Directory indicates the directory that has been backed up in this session
-	Directory string `json:"directory,omitempty"`
-	// Snapshot indicates the name of the backup snapshot created in this backup session
-	Snapshot string `json:"snapshot,omitempty"`
-	// Size indicates the size of target data to backup
-	Size string `json:"size,omitempty"`
-	// Uploaded indicates size of data uploaded to backend in this backup session
-	Uploaded string `json:"uploaded,omitempty"`
-	// ProcessingTime indicates time taken to process the target data
-	ProcessingTime string `json:"processingTime,omitempty"`
-	// FileStats shows statistics of files of backup session
-	FileStats FileStats `json:"fileStats,omitempty"`
-}
 type RepositoryStats struct {
 	// Integrity shows result of repository integrity check after last backup
 	Integrity *bool `json:"integrity,omitempty"`
@@ -48,17 +35,6 @@ type RepositoryStats struct {
 	SnapshotRemovedOnLastCleanup int `json:"snapshotRemovedOnLastCleanup,omitempty"`
 }
 
-type FileStats struct {
-	// TotalFiles shows total number of files that has been backed up
-	TotalFiles *int `json:"totalFiles,omitempty"`
-	// NewFiles shows total number of new files that has been created since last backup
-	NewFiles *int `json:"newFiles,omitempty"`
-	// ModifiedFiles shows total number of files that has been modified since last backup
-	ModifiedFiles *int `json:"modifiedFiles,omitempty"`
-	// UnmodifiedFiles shows total number of files that has not been changed since last backup
-	UnmodifiedFiles *int `json:"unmodifiedFiles,omitempty"`
-}
-
 type RestoreOutput struct {
 	// SessionDuration show total time taken to complete the restore session
 	SessionDuration string `json:"sessionDuration,omitempty"`
@@ -67,28 +43,28 @@ type RestoreOutput struct {
 // WriteOutput write output of backup process into output.json file in the directory
 // specified by outputDir parameter
 func (out *BackupOutput) WriteOutput(fileName string) error {
-	jsonOuput, err := json.MarshalIndent(out, "", "  ")
+	jsonOutput, err := json.MarshalIndent(out, "", "  ")
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Base(fileName), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(fileName), 0755); err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(fileName, jsonOuput, 0755); err != nil {
+	if err := ioutil.WriteFile(fileName, jsonOutput, 0755); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (out *RestoreOutput) WriteOutput(fileName string) error {
-	jsonOuput, err := json.MarshalIndent(out, "", "  ")
+	jsonOutput, err := json.MarshalIndent(out, "", "  ")
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Base(fileName), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(fileName), 0755); err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(fileName, jsonOuput, 0755); err != nil {
+	if err := ioutil.WriteFile(fileName, jsonOutput, 0755); err != nil {
 		return err
 	}
 	return nil
@@ -132,7 +108,7 @@ func (backupOutput *BackupOutput) extractBackupInfo(output []byte, directory str
 	var line string
 	scanner := bufio.NewScanner(bytes.NewReader(output))
 
-	backupStats := BackupStats{
+	backupStats := v1beta1.BackupStats{
 		Directory: directory,
 	}
 

@@ -2,10 +2,12 @@ package restic
 
 import (
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/appscode/go/log"
+	"github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/pkg/errors"
 )
 
@@ -60,12 +62,12 @@ func (w *ResticWrapper) initRepositoryIfAbsent() ([]byte, error) {
 	return nil, nil
 }
 
-func (w *ResticWrapper) backup(path string, tags []string) ([]byte, error) {
+func (w *ResticWrapper) backup(path, host string, tags []string) ([]byte, error) {
 	log.Infoln("Backing up target data")
 	args := []interface{}{"backup", path}
-	if w.config.Hostname != "" {
+	if host != "" {
 		args = append(args, "--host")
-		args = append(args, w.config.Hostname)
+		args = append(args, host)
 	}
 	// add tags if any
 	for _, tag := range tags {
@@ -78,24 +80,43 @@ func (w *ResticWrapper) backup(path string, tags []string) ([]byte, error) {
 	return w.run(Exe, args)
 }
 
-func (w *ResticWrapper) cleanup(cleanupOptions CleanupOptions) ([]byte, error) {
+func (w *ResticWrapper) cleanup(retentionPolicy v1alpha1.RetentionPolicy) ([]byte, error) {
 	log.Infoln("Cleaning old snapshots according to retention policy")
 
 	args := []interface{}{"forget"}
 
-	policy := cleanupOptions.RetentionPolicyName
-	if !strings.HasPrefix(policy, "--") {
-		policy = "--" + policy
+	if retentionPolicy.KeepLast > 0 {
+		args = append(args, string(v1alpha1.KeepLast))
+		args = append(args, strconv.Itoa(retentionPolicy.KeepLast))
 	}
-
-	args = append(args, policy)
-	args = append(args, cleanupOptions.RetentionValue)
-
-	if cleanupOptions.Prune {
+	if retentionPolicy.KeepHourly > 0 {
+		args = append(args, string(v1alpha1.KeepHourly))
+		args = append(args, strconv.Itoa(retentionPolicy.KeepHourly))
+	}
+	if retentionPolicy.KeepDaily > 0 {
+		args = append(args, string(v1alpha1.KeepDaily))
+		args = append(args, strconv.Itoa(retentionPolicy.KeepDaily))
+	}
+	if retentionPolicy.KeepWeekly > 0 {
+		args = append(args, string(v1alpha1.KeepWeekly))
+		args = append(args, strconv.Itoa(retentionPolicy.KeepWeekly))
+	}
+	if retentionPolicy.KeepMonthly > 0 {
+		args = append(args, string(v1alpha1.KeepMonthly))
+		args = append(args, strconv.Itoa(retentionPolicy.KeepMonthly))
+	}
+	if retentionPolicy.KeepYearly > 0 {
+		args = append(args, string(v1alpha1.KeepYearly))
+		args = append(args, strconv.Itoa(retentionPolicy.KeepYearly))
+	}
+	for _, tag := range retentionPolicy.KeepTags {
+		args = append(args, string(v1alpha1.KeepTag))
+		args = append(args, tag)
+	}
+	if retentionPolicy.Prune {
 		args = append(args, "--prune")
 	}
-
-	if cleanupOptions.DryRun {
+	if retentionPolicy.DryRun {
 		args = append(args, "--dry-run")
 	}
 
@@ -123,8 +144,8 @@ func (w *ResticWrapper) restore(path, host, snapshotID string) ([]byte, error) {
 
 	// Remove last part from the path.
 	// https://github.com/appscode/stash/issues/392
-	args = append(args, "--target")
-	args = append(args, filepath.Dir(path))
+	args = append(args, "--target", "/")
+	// args = append(args, filepath.Dir(path))
 
 	args = w.appendCacheDirFlag(args)
 	args = w.appendCaCertFlag(args)

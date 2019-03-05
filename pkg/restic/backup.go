@@ -16,7 +16,7 @@ func (w *ResticWrapper) RunBackup(backupOption *BackupOptions) (*BackupOutput, e
 
 	// Backup all target directories
 	for _, dir := range backupOption.BackupDirs {
-		out, err := w.backup(dir, nil)
+		out, err := w.backup(dir, backupOption.Host, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -36,7 +36,7 @@ func (w *ResticWrapper) RunBackup(backupOption *BackupOptions) (*BackupOutput, e
 	backupOutput.extractCheckInfo(out)
 
 	// Cleanup old snapshot according to retention policy
-	out, err = w.cleanup(backupOption.Cleanup)
+	out, err = w.cleanup(backupOption.RetentionPolicy)
 	if err != nil {
 		return nil, err
 	}

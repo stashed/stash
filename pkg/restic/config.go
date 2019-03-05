@@ -1,7 +1,7 @@
 package restic
 
 import (
-	v1beta1_api "github.com/appscode/stash/apis/stash/v1beta1"
+	"github.com/appscode/stash/apis/stash/v1alpha1"
 	shell "github.com/codeskyblue/go-sh"
 )
 
@@ -11,12 +11,15 @@ type ResticWrapper struct {
 }
 
 type BackupOptions struct {
-	BackupDirs []string
-	Cleanup    CleanupOptions
+	Host            string
+	BackupDirs      []string
+	RetentionPolicy v1alpha1.RetentionPolicy
 }
 
 type RestoreOptions struct {
-	Rules []v1beta1_api.Rule
+	Host        string
+	RestoreDirs []string
+	Snapshots   []string // when Snapshots are specified Host and RestoreDirs will not be used
 }
 
 type SetupOptions struct {
@@ -28,21 +31,6 @@ type SetupOptions struct {
 	CacertFile  string
 	ScratchDir  string
 	EnableCache bool
-	Hostname    string
-}
-
-type CleanupOptions struct {
-	RetentionPolicyName string
-	RetentionValue      string
-	Prune               bool
-	DryRun              bool
-}
-
-type RetentionPolicy struct {
-	Policy string
-	Value  string
-	Prune  bool
-	DryRun bool
 }
 
 type MetricsOptions struct {
