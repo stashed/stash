@@ -132,13 +132,14 @@ func (c *StashController) executeBackupSession(backupSession *api.BackupSession)
 		return nil, nil
 	}
 
-	implicitInputs, err := c.inputsForBackupConfig(*backupConfig)
-	if err != nil {
-		return nil, fmt.Errorf("cannot resolve implicit inputs for BackupConfiguration %s/%s, reason: %s", backupConfig.Namespace, backupConfig.Name, err)
-	}
 	explicitInputs := make(map[string]string)
 	for _, param := range backupConfig.Spec.Task.Params {
 		explicitInputs[param.Name] = param.Value
+	}
+
+	implicitInputs, err := c.inputsForBackupConfig(*backupConfig)
+	if err != nil {
+		return nil, fmt.Errorf("cannot resolve implicit inputs for BackupConfiguration %s/%s, reason: %s", backupConfig.Namespace, backupConfig.Name, err)
 	}
 
 	taskResolver := resolve.TaskResolver{

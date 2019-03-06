@@ -124,13 +124,15 @@ func (c *StashController) executeRestoreSession(restoreSession *api.RestoreSessi
 		return nil, nil
 	}
 
-	implicitInputs, err := c.inputsForRestoreSession(*restoreSession)
-	if err != nil {
-		return nil, fmt.Errorf("cannot resolve implicit inputs for RestoreSession %s/%s, reason: %s", restoreSession.Namespace, restoreSession.Name, err)
-	}
 	explicitInputs := make(map[string]string)
 	for _, param := range restoreSession.Spec.Task.Params {
 		explicitInputs[param.Name] = param.Value
+	}
+
+	// TODO: hostname from spec?
+	implicitInputs, err := c.inputsForRestoreSession(*restoreSession, explicitInputs[Hostname])
+	if err != nil {
+		return nil, fmt.Errorf("cannot resolve implicit inputs for RestoreSession %s/%s, reason: %s", restoreSession.Namespace, restoreSession.Name, err)
 	}
 
 	taskResolver := resolve.TaskResolver{

@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"strconv"
 	"strings"
 
 	apiAlpha "github.com/appscode/stash/apis/stash/v1alpha1"
@@ -17,11 +18,23 @@ const (
 	RepositoryBucket     = "REPOSITORY_BUCKET"
 	RepositoryPrefix     = "REPOSITORY_PREFIX"
 	RepositoryEndpoint   = "REPOSITORY_ENDPOINT"
-	TargetName           = "TARGET_NAME"
-	TargetDirectories    = "TARGET_DIRECTORIES"
-	TargetMountPath      = "TARGET_MOUNT_PATH"
-	RetentionStrategy    = "RETENTION_STRATEGY"
-	RetentionValue       = "RETENTION_VALUE"
+
+	Hostname = "HOSTNAME"
+
+	TargetName        = "TARGET_NAME"
+	TargetDirectories = "TARGET_DIRECTORIES"
+	TargetMountPath   = "TARGET_MOUNT_PATH"
+
+	RestoreDirectories = "RESTORE_DIRECTORIES"
+	RestoreSnapshots   = "RESTORE_SNAPSHOTS"
+
+	RetentionKeepLast    = "RETENTION_KEEP_LAST"
+	RetentionKeepHourly  = "RETENTION_KEEP_HOURLY"
+	RetentionKeepDaily   = "RETENTION_KEEP_DAILY"
+	RetentionKeepWeekly  = "RETENTION_KEEP_WEEKLY"
+	RetentionKeepMonthly = "RETENTION_KEEP_MONTHLY"
+	RetentionKeepYearly  = "RETENTION_KEEP_YEARLY"
+	RetentionKeepTags    = "RETENTION_KEEP_TAGS"
 	RetentionPrune       = "RETENTION_PRUNE"
 	RetentionDryRun      = "RETENTION_DRY_RUN"
 )
@@ -47,7 +60,7 @@ func (c *StashController) inputsForBackupConfig(backupConfig api.BackupConfigura
 	return inputs, nil
 }
 
-func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSession) (map[string]string, error) {
+func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSession, host string) (map[string]string, error) {
 	// get repository for restoreSession
 	repository, err := c.stashClient.StashV1alpha1().Repositories(restoreSession.Namespace).Get(
 		restoreSession.Spec.Repository.Name,
@@ -63,6 +76,12 @@ func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSess
 	}
 	// append inputs for target
 	inputs = core_util.UpsertMap(inputs, c.inputsForTarget(restoreSession.Spec.Target))
+	// append inputs from RestoreOptions
+	restoreOptions := util.RestoreOptionsForHost(host, restoreSession.Spec.Rules)
+	inputs[Hostname] = restoreOptions.Host
+	inputs[RestoreDirectories] = strings.Join(restoreOptions.RestoreDirs, ",")
+	inputs[RestoreSnapshots] = strings.Join(restoreOptions.Snapshots, ",")
+
 	return inputs, nil
 }
 
@@ -102,12 +121,35 @@ func (c *StashController) inputsForTarget(target *api.Target) map[string]string 
 	return inputs
 }
 
-// TODO
-func (c *StashController) inputsForRetentionPolicy(policy apiAlpha.RetentionPolicy) map[string]string {
+func (c *StashController) inputsForRetentionPolicy(retentionPolicy apiAlpha.RetentionPolicy) map[string]string {
 	inputs := make(map[string]string)
-	inputs[RetentionStrategy] = "keep-last"
-	inputs[RetentionValue] = "5"
-	inputs[RetentionDryRun] = "false"
-	inputs[RetentionPrune] = "false"
+
+	if retentionPolicy.KeepLast > 0 {
+		inputs[RetentionKeepLast] = strconv.Itoa(retentionPolicy.KeepLast)
+	}
+	if retentionPolicy.KeepHourly > 0 {
+		inputs[RetentionKeepHourly] = strconv.Itoa(retentionPolicy.KeepHourly)
+	}
+	if retentionPolicy.KeepDaily > 0 {
+		inputs[RetentionKeepDaily] = strconv.Itoa(retentionPolicy.KeepDaily)
+	}
+	if retentionPolicy.KeepWeekly > 0 {
+		inputs[RetentionKeepWeekly] = strconv.Itoa(retentionPolicy.KeepWeekly)
+	}
+	if retentionPolicy.KeepMonthly > 0 {
+		inputs[RetentionKeepMonthly] = strconv.Itoa(retentionPolicy.KeepMonthly)
+	}
+	if retentionPolicy.KeepYearly > 0 {
+		inputs[RetentionKeepYearly] = strconv.Itoa(retentionPolicy.KeepYearly)
+	}
+	if len(retentionPolicy.KeepTags) > 0 {
+		inputs[RetentionKeepTags] = strings.Join(retentionPolicy.KeepTags, ",")
+	}
+	if retentionPolicy.Prune {
+		inputs[RetentionPrune] = "true"
+	}
+	if retentionPolicy.DryRun {
+		inputs[RetentionDryRun] = "true"
+	}
 	return inputs
 }

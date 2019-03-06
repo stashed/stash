@@ -9,6 +9,7 @@ import (
 	"github.com/drone/envsubst"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_util "kmodules.xyz/client-go/core/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
@@ -44,11 +45,15 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 			return core.PodSpec{}, fmt.Errorf("can't get Function %s for Task %s, reason: %s", fn.Name, task.Name, err)
 		}
 
-		// resolve Function with inputs, modify in place
+		// inputs from params
 		inputs := make(map[string]string)
 		for _, param := range fn.Params {
 			inputs[param.Name] = param.Value
 		}
+		// merge/replace backup config inputs
+		inputs = core_util.UpsertMap(o.Inputs, inputs)
+
+		// resolve Function with inputs, modify in place
 		if err = resolveWithInputs(function, inputs); err != nil {
 			return core.PodSpec{}, fmt.Errorf("can't resolve Function %s for Task %s, reason: %s", fn.Name, task.Name, err)
 		}
