@@ -43,6 +43,8 @@ func NewRootCmd() *cobra.Command {
 	stopCh := genericapiserver.SetupSignalHandler()
 	rootCmd.AddCommand(NewCmdRun(os.Stdout, os.Stderr, stopCh))
 	rootCmd.AddCommand(NewCmdBackup())
+	rootCmd.AddCommand(NewCmdBackupPVC())
+	rootCmd.AddCommand(NewCmdRestorePVC())
 	rootCmd.AddCommand(NewCmdRecover())
 	rootCmd.AddCommand(NewCmdCheck())
 	rootCmd.AddCommand(NewCmdScaleDown())
