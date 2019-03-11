@@ -59,6 +59,9 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.AddCommand(NewCmdBackupPG())
 	rootCmd.AddCommand(NewCmdRestorePG())
 
+	rootCmd.AddCommand(NewCmdBackupMySql())
+	rootCmd.AddCommand(NewCmdRestoreMySql())
+
 	rootCmd.AddCommand(NewCmdUpdateStatus())
 
 	return rootCmd
