@@ -1,0 +1,21 @@
+apiVersion: stash.appscode.com/v1beta1
+kind: RestoreSession
+metadata:
+  name: mongo-restore-01
+  namespace: demo
+spec:
+  runtimeSettings:
+    pod:
+      serviceAccountName: mongo-backup-restore
+  task:
+    name: mongo-restore-task
+  repository:
+    name: hello-repo
+  target:
+    ref:
+      apiVersion: appcatalog.appscode.com/v1alpha1
+      kind: AppBinding
+      name: mgo-quickstart
+  rules:
+  - hosts:
+    - demo-host
