@@ -1,0 +1,30 @@
+apiVersion: stash.appscode.com/v1beta1
+kind: BackupConfiguration
+metadata:
+  name: es-backup-config
+  namespace: demo
+spec:
+  runtimeSettings:
+    pod:
+      serviceAccountName: es-backup-restore
+  task:
+    name: es-backup-task
+  repository:
+    name: hello-repo
+  target:
+    ref:
+      apiVersion: appcatalog.appscode.com/v1alpha1
+      kind: AppBinding
+      name: quick-elasticsearch
+  retentionPolicy:
+    keepLast: 5
+    prune: true
+---
+apiVersion: stash.appscode.com/v1beta1
+kind: BackupSession
+metadata:
+  name: es-backup-01
+  namespace: demo
+spec:
+  backupConfiguration:
+    name: es-backup-config

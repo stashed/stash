@@ -1,0 +1,21 @@
+apiVersion: stash.appscode.com/v1beta1
+kind: RestoreSession
+metadata:
+  name: es-restore-01
+  namespace: demo
+spec:
+  runtimeSettings:
+    pod:
+      serviceAccountName: es-backup-restore
+  task:
+    name: es-restore-task
+  repository:
+    name: hello-repo
+  target:
+    ref:
+      apiVersion: appcatalog.appscode.com/v1alpha1
+      kind: AppBinding
+      name: quick-elasticsearch
+  rules:
+  - hosts:
+    - demo-host
