@@ -1,5 +1,5 @@
 hash: 2c33c212875db32b000a783ea33754050d36cda06569bb901b0c689b9d4decff
-updated: 2019-02-27T15:08:12.756274815+06:00
+updated: 2019-03-18T22:07:45.713307915-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -30,8 +30,6 @@ imports:
   version: 7aba545c679b0f45679eeb406dc662d2c8a04c26
 - name: github.com/appscode/jsonpatch
   version: 7c0e3b262f30165a8ec3d0b4c6059fd92703bfb2
-- name: github.com/appscode/mergo
-  version: 9f23e2d6bd2a77f959b2bf6acdbefd708a83a4a4
 - name: github.com/appscode/osm
   version: 90ec9897e91b750de9fbb939f93f9b6920957dd2
   subpackages:
@@ -225,13 +223,13 @@ imports:
 - name: github.com/go-ini/ini
   version: a9da9309fb4822643ceebb765f80025c35ac19a1
 - name: github.com/go-openapi/jsonpointer
-  version: 46af16f9f7b149af66e5d1bd010e3574dc06de98
+  version: ef5f0afec364d3b9396b7b77b43dbe26bf1f8004
 - name: github.com/go-openapi/jsonreference
   version: 8483a886a90412cd6858df4ea3483dce9c8e35a3
 - name: github.com/go-openapi/spec
   version: 5b6cdde3200976e3ecceb2868706ee39b6aff3e4
 - name: github.com/go-openapi/swag
-  version: 1d0bd113de87027671077d3c71eb3ac5d7dbba72
+  version: 5899d5c5e619fda5fa86e14795a835f473ca284c
 - name: github.com/gogo/protobuf
   version: 342cbe0a04158f6dcb03ca0079991a51a4248c02
   subpackages:
@@ -240,7 +238,7 @@ imports:
   - protoc-gen-gogo/descriptor
   - sortkeys
 - name: github.com/golang/glog
-  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
+  version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/groupcache
   version: 02826c3e79038b59d737d3b1c0a1d937f71a4433
   subpackages:
@@ -258,10 +256,11 @@ imports:
 - name: github.com/google/btree
   version: 7d79101e329e5a3adf994758c578dab82b90c017
 - name: github.com/google/go-cmp
-  version: 2248b49eaa8e1c8c0963ee77b40841adbc19d4ca
+  version: 6f77996f0c42f7b84e5a2b252227263f93432e9b
   subpackages:
   - cmp
   - cmp/internal/diff
+  - cmp/internal/flags
   - cmp/internal/function
   - cmp/internal/value
 - name: github.com/google/gofuzz
@@ -341,7 +340,7 @@ imports:
 - name: github.com/modern-go/reflect2
   version: 94122c33edd36123c84d5368cfb2b69df93a0ec8
 - name: github.com/ncw/swift
-  version: ba19fe35e796969e50f19bd748a770ec5d191ece
+  version: a12c20e04ddb87207d41409a7afda9848aba8df2
 - name: github.com/NYTimes/gziphandler
   version: 56545f4a5d46df9a6648819d1664c3a03a13ffdb
 - name: github.com/onsi/ginkgo
@@ -415,8 +414,7 @@ imports:
 - name: github.com/satori/go.uuid
   version: f58768cc1a7a7e77a3bd49e98cdd21419399b6a3
 - name: github.com/sergi/go-diff
-  version: 24e2351369ec4949b2ed0dc5c477afdd4c4034e8
-  repo: https://github.com/sergi/go-diff
+  version: 97b2266dfe4bd4ea1b81a463322f04f8b724801e
   subpackages:
   - diffmatchpatch
 - name: github.com/sirupsen/logrus
@@ -432,12 +430,11 @@ imports:
 - name: github.com/spf13/pflag
   version: 298182f68c66c05229eb03ac171abe6e309ee79a
 - name: github.com/yudai/gojsondiff
-  version: 0525c875b75ca60b9e67ddc44496aa16f21066b0
+  version: 7b1b7adf999dab73a6eb02669c3d82dbb27a3dd6
   subpackages:
   - formatter
 - name: github.com/yudai/golcs
   version: d1c525dea8ce39ea9a783d33cf08932305373f2c
-  repo: https://github.com/yudai/golcs
 - name: golang.org/x/crypto
   version: de0752318171da717af4ce24d0a2e8626afaeb11
   subpackages:
@@ -514,7 +511,7 @@ imports:
   - storage/v1
   - tpu/v1
 - name: google.golang.org/appengine
-  version: 2d2298565d5a399bdfec98dbc259d6393e3cf8ba
+  version: 12d5545dc1cfa6047a286d5e853841b6471f4c19
   subpackages:
   - internal
   - internal/app_identity
@@ -638,6 +635,7 @@ imports:
   - pkg/apis/meta/internalversion
   - pkg/apis/meta/v1
   - pkg/apis/meta/v1/unstructured
+  - pkg/apis/meta/v1/unstructured/unstructuredscheme
   - pkg/apis/meta/v1/validation
   - pkg/apis/meta/v1beta1
   - pkg/conversion
@@ -784,6 +782,12 @@ imports:
   - plugin/pkg/audit/webhook
   - plugin/pkg/authenticator/token/webhook
   - plugin/pkg/authorizer/webhook
+- name: k8s.io/cli-runtime
+  version: a04da5c88c0796c1dc5ff976a9c91999779ac0e4
+  subpackages:
+  - pkg/genericclioptions
+  - pkg/genericclioptions/printers
+  - pkg/genericclioptions/resource
 - name: k8s.io/client-go
   version: e64494209f554a6723674bd494d69445fb76a1d4
   subpackages:
@@ -943,6 +947,7 @@ imports:
   - plugin/pkg/client/auth/openstack
   - rest
   - rest/watch
+  - restmapper
   - testing
   - third_party/forked/golang/template
   - tools/auth
@@ -1035,7 +1040,7 @@ imports:
   - exec/testing
   - pointer
 - name: kmodules.xyz/client-go
-  version: 8e7590427751a4d2512094be0144780dc7ec860a
+  version: fd7cc05edf46bb8d630fa6a84b875162f321e778
   subpackages:
   - admissionregistration/v1beta1
   - apiextensions/v1beta1

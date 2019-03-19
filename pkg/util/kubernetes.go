@@ -13,6 +13,7 @@ import (
 	cs "github.com/appscode/stash/client/clientset/versioned"
 	stash_listers "github.com/appscode/stash/client/listers/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/docker"
+	"github.com/appscode/stash/pkg/restic"
 	"github.com/pkg/errors"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
@@ -621,6 +622,13 @@ func FixBackendPrefix(backend *store.Backend, autoPrefix string) *store.Backend 
 	return backend
 }
 
+func GetEndpoint(backend *store.Backend) string {
+	if backend.S3 != nil {
+		return backend.S3.Endpoint
+	}
+	return ""
+}
+
 func GetBucketAndPrefix(backend *store.Backend) (string, string, error) {
 	if backend.S3 != nil {
 		return backend.S3.Bucket, strings.TrimPrefix(backend.S3.Prefix, backend.S3.Bucket+"/"), nil
@@ -632,6 +640,24 @@ func GetBucketAndPrefix(backend *store.Backend) (string, string, error) {
 		return backend.Swift.Container, backend.Swift.Prefix, nil
 	}
 	return "", "", errors.New("unknown backend type.")
+}
+
+// TODO: use constant / move to store
+func GetProvider(backend store.Backend) (string, error) {
+	if backend.Local != nil {
+		return restic.ProviderLocal, nil
+	} else if backend.S3 != nil {
+		return restic.ProviderS3, nil
+	} else if backend.GCS != nil {
+		return restic.ProviderGCS, nil
+	} else if backend.Azure != nil {
+		return restic.ProviderAzure, nil
+	} else if backend.Swift != nil {
+		return restic.ProviderSwift, nil
+	} else if backend.B2 != nil {
+		return restic.ProviderB2, nil
+	}
+	return "", errors.New("unknown backend type.")
 }
 
 func HasOldReplicaAnnotation(k8sClient *kubernetes.Clientset, namespace string, workload api.LocalTypedReference) bool {

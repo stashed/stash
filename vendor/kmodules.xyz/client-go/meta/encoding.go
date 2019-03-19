@@ -104,6 +104,9 @@ func UnmarshalFromJSON(data []byte, gv schema.GroupVersion) (runtime.Object, err
 
 // Decode takes an input structure and uses reflection to translate it to
 // the output structure. output must be a pointer to a map or struct.
+//
+// WARNING: Embedded structs are not decoded properly: https://github.com/mitchellh/mapstructure/pull/80
+//
 func Decode(input interface{}, output interface{}) error {
 	config := &mapstructure.DecoderConfig{
 		DecodeHook: StringToQuantityHookFunc(),
