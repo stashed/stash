@@ -134,7 +134,14 @@ func DetectWorkload(config *rest.Config, resource schema.GroupVersionResource, n
 		return nil, resource, err
 	}
 
-	obj, err := dc.Resource(resource).Namespace(namespace).Get(name, metav1.GetOptions{})
+	var ri dynamic.ResourceInterface
+	if namespace != "" {
+		ri = dc.Resource(resource).Namespace(namespace)
+	} else {
+		ri = dc.Resource(resource)
+	}
+
+	obj, err := ri.Get(name, metav1.GetOptions{})
 	if err != nil {
 		return nil, resource, err
 	}
@@ -149,13 +156,24 @@ func findWorkload(kc kubernetes.Interface, dc dynamic.Interface, resource schema
 	for _, ref := range m.GetOwnerReferences() {
 		if ref.Controller != nil && *ref.Controller {
 			gvk := schema.FromAPIVersionAndKind(ref.APIVersion, ref.Kind)
-			gvr, err := discovery_util.ResourceForGVK(kc.Discovery(), gvk)
+			ar, err := discovery_util.APIResourceForGVK(kc.Discovery(), gvk)
 			if err != nil {
-				return nil, gvr, err
+				return nil, schema.GroupVersionResource{}, err
 			}
-			parent, err := dc.Resource(gvr).Namespace(m.GetNamespace()).Get(ref.Name, metav1.GetOptions{})
+			gvr := schema.GroupVersionResource{
+				Group:    ar.Group,
+				Version:  ar.Version,
+				Resource: ar.Name,
+			}
+			var ri dynamic.ResourceInterface
+			if ar.Namespaced {
+				ri = dc.Resource(gvr).Namespace(m.GetNamespace())
+			} else {
+				ri = dc.Resource(gvr)
+			}
+			parent, err := ri.Get(ref.Name, metav1.GetOptions{})
 			if err != nil {
-				return nil, gvr, err
+				return nil, schema.GroupVersionResource{}, err
 			}
 			return findWorkload(kc, dc, gvr, parent)
 		}

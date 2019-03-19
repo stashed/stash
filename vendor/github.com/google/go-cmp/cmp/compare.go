@@ -32,6 +32,7 @@ import (
 	"strings"
 
 	"github.com/google/go-cmp/cmp/internal/diff"
+	"github.com/google/go-cmp/cmp/internal/flags"
 	"github.com/google/go-cmp/cmp/internal/function"
 	"github.com/google/go-cmp/cmp/internal/value"
 )
@@ -109,15 +110,21 @@ func Equal(x, y interface{}, opts ...Option) bool {
 
 // Diff returns a human-readable report of the differences between two values.
 // It returns an empty string if and only if Equal returns true for the same
-// input values and options. The output string will use the "-" symbol to
-// indicate elements removed from x, and the "+" symbol to indicate elements
-// added to y.
+// input values and options.
 //
-// Do not depend on this output being stable.
+// The output is displayed as a literal in pseudo-Go syntax.
+// At the start of each line, a "-" prefix indicates an element removed from x,
+// a "+" prefix to indicates an element added to y, and the lack of a prefix
+// indicates an element common to both x and y. If possible, the output
+// uses fmt.Stringer.String or error.Error methods to produce more humanly
+// readable outputs. In such cases, the string is prefixed with either an
+// 's' or 'e' character, respectively, to indicate that the method was called.
+//
+// Do not depend on this output being stable. If you need the ability to
+// programmatically interpret the difference, consider using a custom Reporter.
 func Diff(x, y interface{}, opts ...Option) string {
 	r := new(defaultReporter)
-	opts = Options{Options(opts), reporter(r)}
-	eq := Equal(x, y, opts...)
+	eq := Equal(x, y, Options(opts), Reporter(r))
 	d := r.String()
 	if (d == "") != eq {
 		panic("inconsistent difference and equality results")
@@ -128,9 +135,9 @@ func Diff(x, y interface{}, opts ...Option) string {
 type state struct {
 	// These fields represent the "comparison state".
 	// Calling statelessCompare must not result in observable changes to these.
-	result    diff.Result      // The current result of comparison
-	curPath   Path             // The current path in the value tree
-	reporters []reporterOption // Optional reporters
+	result    diff.Result // The current result of comparison
+	curPath   Path        // The current path in the value tree
+	reporters []reporter  // Optional reporters
 
 	// recChecker checks for infinite cycles applying the same set of
 	// transformers upon the output of itself.
@@ -146,10 +153,9 @@ type state struct {
 }
 
 func newState(opts []Option) *state {
-	s := new(state)
-	for _, opt := range opts {
-		s.processOption(opt)
-	}
+	// Always ensure a validator option exists to validate the inputs.
+	s := &state{opts: Options{validator{}}}
+	s.processOption(Options(opts))
 	return s
 }
 
@@ -175,7 +181,7 @@ func (s *state) processOption(opt Option) {
 		for t := range opt {
 			s.exporters[t] = true
 		}
-	case reporterOption:
+	case reporter:
 		s.reporters = append(s.reporters, opt)
 	default:
 		panic(fmt.Sprintf("unknown option %T", opt))
@@ -201,8 +207,6 @@ func (s *state) statelessCompare(step PathStep) diff.Result {
 }
 
 func (s *state) compareAny(step PathStep) {
-	// TODO: Support cyclic data structures.
-
 	// Update the path stack.
 	s.curPath.push(step)
 	defer s.curPath.pop()
@@ -226,83 +230,42 @@ func (s *state) compareAny(step PathStep) {
 		return
 	}
 
-	// Rule 3: Recursively descend into each value's underlying kind.
+	// Rule 3: Compare based on the underlying kind.
 	switch t.Kind() {
 	case reflect.Bool:
 		s.report(vx.Bool() == vy.Bool(), 0)
-		return
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		s.report(vx.Int() == vy.Int(), 0)
-		return
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
 		s.report(vx.Uint() == vy.Uint(), 0)
-		return
 	case reflect.Float32, reflect.Float64:
 		s.report(vx.Float() == vy.Float(), 0)
-		return
 	case reflect.Complex64, reflect.Complex128:
 		s.report(vx.Complex() == vy.Complex(), 0)
-		return
 	case reflect.String:
 		s.report(vx.String() == vy.String(), 0)
-		return
 	case reflect.Chan, reflect.UnsafePointer:
 		s.report(vx.Pointer() == vy.Pointer(), 0)
-		return
 	case reflect.Func:
 		s.report(vx.IsNil() && vy.IsNil(), 0)
-		return
 	case reflect.Struct:
 		s.compareStruct(t, vx, vy)
-		return
-	case reflect.Slice:
-		if vx.IsNil() || vy.IsNil() {
-			s.report(vx.IsNil() && vy.IsNil(), 0)
-			return
-		}
-		fallthrough
-	case reflect.Array:
+	case reflect.Slice, reflect.Array:
 		s.compareSlice(t, vx, vy)
-		return
 	case reflect.Map:
 		s.compareMap(t, vx, vy)
-		return
 	case reflect.Ptr:
-		if vx.IsNil() || vy.IsNil() {
-			s.report(vx.IsNil() && vy.IsNil(), 0)
-			return
-		}
-		vx, vy = vx.Elem(), vy.Elem()
-		s.compareAny(&indirect{pathStep{t.Elem(), vx, vy}})
-		return
+		s.comparePtr(t, vx, vy)
 	case reflect.Interface:
-		if vx.IsNil() || vy.IsNil() {
-			s.report(vx.IsNil() && vy.IsNil(), 0)
-			return
-		}
-		vx, vy = vx.Elem(), vy.Elem()
-		if vx.Type() != vy.Type() {
-			s.report(false, 0)
-			return
-		}
-		s.compareAny(&typeAssertion{pathStep{vx.Type(), vx, vy}})
-		return
+		s.compareInterface(t, vx, vy)
 	default:
 		panic(fmt.Sprintf("%v kind not handled", t.Kind()))
 	}
 }
 
 func (s *state) tryOptions(t reflect.Type, vx, vy reflect.Value) bool {
-	// If there were no FilterValues, we will not detect invalid inputs,
-	// so manually check for them and append a validator if necessary.
-	// We still evaluate the options since an ignore can override invalid.
-	opts := s.opts
-	if !vx.IsValid() || !vx.CanInterface() || !vy.IsValid() || !vy.CanInterface() {
-		opts = Options{opts, validator{}}
-	}
-
 	// Evaluate all filters and apply the remaining options.
-	if opt := opts.filter(s, t, vx, vy); opt != nil {
+	if opt := s.opts.filter(s, t, vx, vy); opt != nil {
 		opt.apply(s, vx, vy)
 		return true
 	}
@@ -321,7 +284,7 @@ func (s *state) tryMethod(t reflect.Type, vx, vy reflect.Value) bool {
 	return true
 }
 
-func (s *state) callTRFunc(f, v reflect.Value, step *transform) reflect.Value {
+func (s *state) callTRFunc(f, v reflect.Value, step Transform) reflect.Value {
 	v = sanitizeValue(v, f.Type().In(0))
 	if !s.dynChecker.Next() {
 		return f.Call([]reflect.Value{v})[0]
@@ -380,10 +343,10 @@ func detectRaces(c chan<- reflect.Value, f reflect.Value, vs ...reflect.Value) {
 // Otherwise, it returns the input value as is.
 func sanitizeValue(v reflect.Value, t reflect.Type) reflect.Value {
 	// TODO(dsnet): Workaround for reflect bug (https://golang.org/issue/22143).
-	// The upstream fix landed in Go1.10, so we can remove this when drop support
-	// for Go1.9 and below.
-	if v.Kind() == reflect.Interface && v.IsNil() && v.Type() != t {
-		return reflect.New(t).Elem()
+	if !flags.AtLeastGo110 {
+		if v.Kind() == reflect.Interface && v.IsNil() && v.Type() != t {
+			return reflect.New(t).Elem()
+		}
 	}
 	return v
 }
@@ -391,7 +354,7 @@ func sanitizeValue(v reflect.Value, t reflect.Type) reflect.Value {
 func (s *state) compareStruct(t reflect.Type, vx, vy reflect.Value) {
 	var vax, vay reflect.Value // Addressable versions of vx and vy
 
-	step := &structField{}
+	step := StructField{&structField{}}
 	for i := 0; i < t.NumField(); i++ {
 		step.typ = t.Field(i).Type
 		step.vx = vx.Field(i)
@@ -422,8 +385,16 @@ func (s *state) compareStruct(t reflect.Type, vx, vy reflect.Value) {
 }
 
 func (s *state) compareSlice(t reflect.Type, vx, vy reflect.Value) {
-	step := &sliceIndex{pathStep: pathStep{typ: t.Elem()}}
-	withIndexes := func(ix, iy int) *sliceIndex {
+	isSlice := t.Kind() == reflect.Slice
+	if isSlice && (vx.IsNil() || vy.IsNil()) {
+		s.report(vx.IsNil() && vy.IsNil(), 0)
+		return
+	}
+
+	// TODO: Support cyclic data structures.
+
+	step := SliceIndex{&sliceIndex{pathStep: pathStep{typ: t.Elem()}}}
+	withIndexes := func(ix, iy int) SliceIndex {
 		if ix >= 0 {
 			step.vx, step.xkey = vx.Index(ix), ix
 		} else {
@@ -491,7 +462,6 @@ func (s *state) compareSlice(t reflect.Type, vx, vy reflect.Value) {
 			iy++
 		}
 	}
-	return
 }
 
 func (s *state) compareMap(t reflect.Type, vx, vy reflect.Value) {
@@ -500,9 +470,11 @@ func (s *state) compareMap(t reflect.Type, vx, vy reflect.Value) {
 		return
 	}
 
+	// TODO: Support cyclic data structures.
+
 	// We combine and sort the two map keys so that we can perform the
 	// comparisons in a deterministic order.
-	step := &mapIndex{pathStep: pathStep{typ: t.Elem()}}
+	step := MapIndex{&mapIndex{pathStep: pathStep{typ: t.Elem()}}}
 	for _, k := range value.SortKeys(append(vx.MapKeys(), vy.MapKeys()...)) {
 		step.vx = vx.MapIndex(k)
 		step.vy = vy.MapIndex(k)
@@ -529,8 +501,33 @@ func (s *state) compareMap(t reflect.Type, vx, vy reflect.Value) {
 	}
 }
 
-func (s *state) report(eq bool, rf reportFlags) {
-	if rf&reportIgnored == 0 {
+func (s *state) comparePtr(t reflect.Type, vx, vy reflect.Value) {
+	if vx.IsNil() || vy.IsNil() {
+		s.report(vx.IsNil() && vy.IsNil(), 0)
+		return
+	}
+
+	// TODO: Support cyclic data structures.
+
+	vx, vy = vx.Elem(), vy.Elem()
+	s.compareAny(Indirect{&indirect{pathStep{t.Elem(), vx, vy}}})
+}
+
+func (s *state) compareInterface(t reflect.Type, vx, vy reflect.Value) {
+	if vx.IsNil() || vy.IsNil() {
+		s.report(vx.IsNil() && vy.IsNil(), 0)
+		return
+	}
+	vx, vy = vx.Elem(), vy.Elem()
+	if vx.Type() != vy.Type() {
+		s.report(false, 0)
+		return
+	}
+	s.compareAny(TypeAssertion{&typeAssertion{pathStep{vx.Type(), vx, vy}}})
+}
+
+func (s *state) report(eq bool, rf resultFlags) {
+	if rf&reportByIgnore == 0 {
 		if eq {
 			s.result.NumSame++
 			rf |= reportEqual
@@ -540,7 +537,7 @@ func (s *state) report(eq bool, rf reportFlags) {
 		}
 	}
 	for _, r := range s.reporters {
-		r.Report(rf)
+		r.Report(Result{flags: rf})
 	}
 }
 

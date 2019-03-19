@@ -55,7 +55,7 @@ func RegisterCRDs(client crd_cs.ApiextensionsV1beta1Interface, crds []*crd_api.C
 func WaitForCRDReady(restClient rest.Interface, crds []*crd_api.CustomResourceDefinition) error {
 	err := wait.Poll(3*time.Second, 5*time.Minute, func() (bool, error) {
 		for _, crd := range crds {
-			res := restClient.Get().AbsPath("apis", crd.Spec.Group, crd.Spec.Version, crd.Spec.Names.Plural).Do()
+			res := restClient.Get().AbsPath("apis", crd.Spec.Group, crd.Spec.Versions[0].Name, crd.Spec.Names.Plural).Do()
 			err := res.Error()
 			if err != nil {
 				// RESTClient returns *apierrors.StatusError for any status codes < 200 or > 206

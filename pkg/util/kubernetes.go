@@ -52,6 +52,11 @@ const (
 
 	RepositoryFinalizer = "stash"
 	SnapshotIDLength    = 8
+
+	ModelSidecar             = "sidecar"
+	ModelCronJob             = "cronjob"
+	LabelApp                 = "app"
+	LabelBackupConfiguration = "backup-configuration"
 )
 
 var (
@@ -687,4 +692,12 @@ func HasOldReplicaAnnotation(k8sClient *kubernetes.Clientset, namespace string, 
 	}
 
 	return meta.HasKey(workloadAnnotation, AnnotationOldReplica)
+}
+func BackupModel(kind string) string {
+	switch kind {
+	case api.KindDeployment, api.KindReplicaSet, api.KindReplicationController, api.KindStatefulSet, api.KindDaemonSet:
+		return ModelSidecar
+	default:
+		return ModelCronJob
+	}
 }
