@@ -98,3 +98,6 @@ import:
   version: release-10.0
 - package: kmodules.xyz/webhook-runtime
   version: release-10.0
+- package: github.com/drone/envsubst
+  repo: https://github.com/appscode/envsubst.git
+  vcs: git
