@@ -1,10 +1,10 @@
-package backup_session
+package backupsession
 
 import (
 	"github.com/appscode/go/crypto/rand"
 	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
-	"github.com/appscode/stash/client/clientset/versioned/scheme"
 	cs "github.com/appscode/stash/client/clientset/versioned"
+	"github.com/appscode/stash/client/clientset/versioned/scheme"
 	stash_v1beta1_util "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1beta1/util"
 	"github.com/appscode/stash/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,7 +15,7 @@ import (
 
 type Controller struct {
 	Options
-	k8sClient          kubernetes.Interface
+	k8sClient   kubernetes.Interface
 	stashClient cs.Interface
 }
 
@@ -26,9 +26,9 @@ type Options struct {
 
 func New(k8sClient kubernetes.Interface, stashClient cs.Interface, opt Options) *Controller {
 	return &Controller{
-		k8sClient:          k8sClient,
-		stashClient:        stashClient,
-		Options:            opt,
+		k8sClient:   k8sClient,
+		stashClient: stashClient,
+		Options:     opt,
 	}
 }
 
@@ -50,15 +50,12 @@ func (c *Controller) CreateBackupSession() error {
 		//Set Backupconfiguration  as Backupsession Owner
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 		in.Spec.BackupConfiguration.Name = c.Name
-		if in.Labels == nil{
+		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
 		in.Labels[util.LabelApp] = util.AppLabelStash
 		in.Labels[util.LabelBackupConfiguration] = backupConfiguration.Name
 		return in
 	})
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }

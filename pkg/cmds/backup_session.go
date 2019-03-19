@@ -3,7 +3,7 @@ package cmds
 import (
 	"github.com/appscode/go/log"
 	cs "github.com/appscode/stash/client/clientset/versioned"
-    "github.com/appscode/stash/pkg/backup-session"
+	"github.com/appscode/stash/pkg/backupsession"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -15,7 +15,7 @@ func NewBackupSession() *cobra.Command {
 		masterURL      string
 		kubeconfigPath string
 
-		opt = backup_session.Options{
+		opt = backupsession.Options{
 			Namespace: meta.Namespace(),
 		}
 	)
@@ -32,7 +32,7 @@ func NewBackupSession() *cobra.Command {
 			kubeClient := kubernetes.NewForConfigOrDie(config)
 			stashClient := cs.NewForConfigOrDie(config)
 
-			ctrl := backup_session.New(kubeClient, stashClient, opt)
+			ctrl := backupsession.New(kubeClient, stashClient, opt)
 			err = ctrl.CreateBackupSession()
 			if err != nil {
 				log.Fatal(err)

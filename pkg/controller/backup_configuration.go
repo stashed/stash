@@ -230,11 +230,11 @@ func (c *StashController) EnsureCronJobDeleted(objectMeta metav1.ObjectMeta) err
 		Namespace:       objectMeta.Namespace,
 		OwnerReferences: []metav1.OwnerReference{},
 	}
-	_,_,err = batch_util.CreateOrPatchCronJob(c.kubeClient, meta, func(in *batch_v1beta1.CronJob) *batch_v1beta1.CronJob {
+	_, _, err = batch_util.CreateOrPatchCronJob(c.kubeClient, meta, func(in *batch_v1beta1.CronJob) *batch_v1beta1.CronJob {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 		return in
 	})
-	if err != nil{
+	if err != nil {
 		return err
 	}
 	return nil

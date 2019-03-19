@@ -52,9 +52,9 @@ const (
 	RepositoryFinalizer = "stash"
 	SnapshotIDLength    = 8
 
-	ModelSidecar      = "sidecar"
-	ModelCronJob      = "cronjob"
-	LabelApp          = "app"
+	ModelSidecar             = "sidecar"
+	ModelCronJob             = "cronjob"
+	LabelApp                 = "app"
 	LabelBackupConfiguration = "backup-configuration"
 )
 
