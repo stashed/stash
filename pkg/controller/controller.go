@@ -91,6 +91,15 @@ type StashController struct {
 	bcQueue    *queue.Worker
 	bcInformer cache.SharedIndexInformer
 	bcLister   stash_listers_v1beta1.BackupConfigurationLister
+	// BackupSession
+	backupSessionQueue    *queue.Worker
+	backupSessionInformer cache.SharedIndexInformer
+	backupSessionLister   stash_listers_v1beta1.BackupSessionLister
+
+	// RestoreSession
+	restoreSessionQueue    *queue.Worker
+	restoreSessionInformer cache.SharedIndexInformer
+	restoreSessionLister   stash_listers_v1beta1.RestoreSessionLister
 }
 
 func (c *StashController) ensureCustomResourceDefinitions() error {
@@ -98,8 +107,12 @@ func (c *StashController) ensureCustomResourceDefinitions() error {
 		api.Restic{}.CustomResourceDefinition(),
 		api.Recovery{}.CustomResourceDefinition(),
 		api.Repository{}.CustomResourceDefinition(),
+		api_v1beta1.Task{}.CustomResourceDefinition(),
+		api_v1beta1.Function{}.CustomResourceDefinition(),
+		api_v1beta1.BackupConfigurationTemplate{}.CustomResourceDefinition(),
 		api_v1beta1.BackupConfiguration{}.CustomResourceDefinition(),
 		api_v1beta1.BackupSession{}.CustomResourceDefinition(),
+		api_v1beta1.RestoreSession{}.CustomResourceDefinition(),
 	}
 	return crdutils.RegisterCRDs(c.crdClient, crds)
 }
@@ -150,6 +163,8 @@ func (c *StashController) RunInformers(stopCh <-chan struct{}) {
 	c.rsQueue.Run(stopCh)
 	c.jobQueue.Run(stopCh)
 	c.bcQueue.Run(stopCh)
+	c.backupSessionQueue.Run(stopCh)
+	c.restoreSessionQueue.Run(stopCh)
 
 	<-stopCh
 	log.Infoln("Stopping Stash controller")

@@ -47,8 +47,9 @@ const (
 	OperationRecovery = "recovery"
 	OperationCheck    = "check"
 
-	AppLabelStash      = "stash"
-	OperationScaleDown = "scale-down"
+	AppLabelStash        = "stash"
+	AppLabelStashV1Beta1 = "stash-v1beta1"
+	OperationScaleDown   = "scale-down"
 
 	RepositoryFinalizer = "stash"
 	SnapshotIDLength    = 8
