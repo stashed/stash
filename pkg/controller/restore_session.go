@@ -129,8 +129,7 @@ func (c *StashController) executeRestoreSession(restoreSession *api.RestoreSessi
 		explicitInputs[param.Name] = param.Value
 	}
 
-	// TODO: hostname from spec?
-	implicitInputs, err := c.inputsForRestoreSession(*restoreSession, explicitInputs[Hostname])
+	implicitInputs, err := c.inputsForRestoreSession(*restoreSession)
 	if err != nil {
 		return nil, fmt.Errorf("cannot resolve implicit inputs for RestoreSession %s/%s, reason: %s", restoreSession.Namespace, restoreSession.Name, err)
 	}
@@ -138,7 +137,7 @@ func (c *StashController) executeRestoreSession(restoreSession *api.RestoreSessi
 	taskResolver := resolve.TaskResolver{
 		StashClient:     c.stashClient,
 		TaskName:        restoreSession.Spec.Task.Name,
-		Inputs:          core_util.UpsertMap(explicitInputs, implicitInputs), // TODO: reverse priority ???
+		Inputs:          core_util.UpsertMap(explicitInputs, implicitInputs),
 		RuntimeSettings: restoreSession.Spec.RuntimeSettings,
 	}
 	podSpec, err := taskResolver.GetPodSpec()

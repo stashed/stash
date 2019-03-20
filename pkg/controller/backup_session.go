@@ -145,7 +145,7 @@ func (c *StashController) executeBackupSession(backupSession *api.BackupSession)
 	taskResolver := resolve.TaskResolver{
 		StashClient:     c.stashClient,
 		TaskName:        backupConfig.Spec.Task.Name,
-		Inputs:          core_util.UpsertMap(explicitInputs, implicitInputs), // TODO: reverse priority ???
+		Inputs:          core_util.UpsertMap(explicitInputs, implicitInputs),
 		RuntimeSettings: backupConfig.Spec.RuntimeSettings,
 	}
 	podSpec, err := taskResolver.GetPodSpec()

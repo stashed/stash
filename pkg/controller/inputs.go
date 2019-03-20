@@ -57,10 +57,18 @@ func (c *StashController) inputsForBackupConfig(backupConfig api.BackupConfigura
 	inputs = core_util.UpsertMap(inputs, c.inputsForTarget(backupConfig.Spec.Target))
 	// append inputs for RetentionPolicy
 	inputs = core_util.UpsertMap(inputs, c.inputsForRetentionPolicy(backupConfig.Spec.RetentionPolicy))
+
+	// get host name for target
+	host, err := util.GetHostName(backupConfig.Spec.Target)
+	if err != nil {
+		return nil, err
+	}
+	inputs[Hostname] = host
+
 	return inputs, nil
 }
 
-func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSession, host string) (map[string]string, error) {
+func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSession) (map[string]string, error) {
 	// get repository for restoreSession
 	repository, err := c.stashClient.StashV1alpha1().Repositories(restoreSession.Namespace).Get(
 		restoreSession.Spec.Repository.Name,
@@ -76,6 +84,12 @@ func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSess
 	}
 	// append inputs for target
 	inputs = core_util.UpsertMap(inputs, c.inputsForTarget(restoreSession.Spec.Target))
+
+	// get host name for target
+	host, err := util.GetHostName(restoreSession.Spec.Target)
+	if err != nil {
+		return nil, err
+	}
 	// append inputs from RestoreOptions
 	restoreOptions := util.RestoreOptionsForHost(host, restoreSession.Spec.Rules)
 	inputs[Hostname] = restoreOptions.Host
