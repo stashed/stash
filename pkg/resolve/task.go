@@ -12,12 +12,6 @@ import (
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
-const (
-	FlagPrefix      = "--"
-	FlagPrefixShort = "-"
-	EmptyFlagSuffix = "##"
-)
-
 type TaskResolver struct {
 	StashClient     cs.Interface
 	TaskName        string
