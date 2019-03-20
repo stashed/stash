@@ -6,7 +6,7 @@ spec:
   image: diptadas/stash:status
   args:
     - update-status
-    - --namespace=${NAMESPACE=""}
+    - --namespace=${NAMESPACE="default"}
     - --repository=${REPOSITORY_NAME=""}
     - --backup-session=${BACKUP_SESSION=""}
     - --restore-session=${RESTORE_SESSION=""}
