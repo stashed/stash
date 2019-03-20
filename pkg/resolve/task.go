@@ -3,10 +3,9 @@ package resolve
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	cs "github.com/appscode/stash/client/clientset/versioned"
-	"github.com/drone/envsubst"
+	"gomodules.xyz/envsubst"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
@@ -57,10 +56,6 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 		if err = resolveWithInputs(function, inputs); err != nil {
 			return core.PodSpec{}, fmt.Errorf("can't resolve Function %s for Task %s, reason: %s", fn.Name, task.Name, err)
 		}
-
-		// remove empty flags from function's command and args
-		function.Spec.Command = removeEmptyFlags(function.Spec.Command)
-		function.Spec.Args = removeEmptyFlags(function.Spec.Args)
 
 		// init ContainerRuntimeSettings to avoid nil pointer
 		if function.Spec.RuntimeSettings == nil {
@@ -181,39 +176,15 @@ func applyPodRuntimeSettings(podSpec core.PodSpec, settings ofst.PodRuntimeSetti
 	return podSpec
 }
 
-func removeEmptyFlags(items []string) []string {
-	var newItems []string
-	for _, item := range items {
-		if !isEmptyFlag(item) {
-			newItems = append(newItems, item)
-		}
-	}
-	return newItems
-}
-
-func isEmptyFlag(s string) bool {
-	return (strings.HasPrefix(s, FlagPrefix) || strings.HasPrefix(s, FlagPrefixShort)) && strings.HasSuffix(s, EmptyFlagSuffix)
-}
-
 func resolveWithInputs(obj interface{}, inputs map[string]string) error {
 	// convert to JSON, apply replacements and convert back to struct
 	jsonObj, err := json.Marshal(obj)
 	if err != nil {
 		return err
 	}
-	resolved, err := applyReplacements(string(jsonObj), inputs)
+	resolved, err := envsubst.EvalMap(string(jsonObj), inputs)
 	if err != nil {
 		return err
 	}
 	return json.Unmarshal([]byte(resolved), obj)
-}
-
-func applyReplacements(in string, values map[string]string) (string, error) {
-	if values == nil {
-		values = make(map[string]string)
-	}
-	return envsubst.Eval(in, func(s string) (string, bool) {
-		value, ok := values[s]
-		return value, ok
-	})
 }

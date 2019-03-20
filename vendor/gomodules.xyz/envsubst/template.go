@@ -2,11 +2,30 @@ package envsubst
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 
-	"github.com/drone/envsubst/parse"
+	"gomodules.xyz/envsubst/parse"
 )
+
+type valueNotFoundError struct {
+	key string
+}
+
+var _ error = &valueNotFoundError{}
+
+func (e *valueNotFoundError) Error() string {
+	return fmt.Sprintf("input/default value not found for key %s", e.key)
+}
+
+func IsValueNotFoundError(v interface{}) bool {
+	switch v.(type) {
+	case *valueNotFoundError:
+		return true
+	}
+	return false
+}
 
 // state represents the state of template execution. It is not part of the
 // template so that multiple executions can run in parallel.
@@ -15,8 +34,9 @@ type state struct {
 	writer   io.Writer
 	node     parse.Node // current node
 
-	// maps variable names to values
-	mapper func(string) (string, bool)
+	// maps variable names to values with additional behaviours
+	// returns value, args and error
+	mapper func(node string, key string, args []string) (string, []string, error)
 }
 
 // Template is the representation of a parsed shell format string.
@@ -46,7 +66,7 @@ func ParseFile(path string) (*Template, error) {
 }
 
 // Execute applies a parsed template to the specified data mapping.
-func (t *Template) Execute(mapping func(string) (string, bool)) (str string, err error) {
+func (t *Template) Execute(mapping func(node string, key string, args []string) (string, []string, error)) (str string, err error) {
 	b := new(bytes.Buffer)
 	s := new(state)
 	s.node = t.tree.Root
@@ -106,14 +126,14 @@ func (t *Template) evalFunc(s *state, node *parse.FuncNode) error {
 	s.writer = w
 	s.node = node
 
-	v, ok := s.mapper(node.Param)
-	if ok && isDefault(node.Name) {
-		args = nil
+	v, args, err := s.mapper(node.Name, node.Param, args)
+	if err != nil {
+		return err
 	}
 
 	fn := lookupFunc(node.Name, len(args))
 
-	_, err := io.WriteString(s.writer, fn(v, args...))
+	_, err = io.WriteString(s.writer, fn(v, args...))
 	return err
 }
 
@@ -156,14 +176,5 @@ func lookupFunc(name string, args int) substituteFunc {
 		return toDefault
 	default:
 		return toDefault
-	}
-}
-
-func isDefault(name string) bool {
-	switch name {
-	case "=", ":=", ":-":
-		return true
-	default:
-		return false
 	}
 }

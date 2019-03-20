@@ -6,7 +6,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/drone/envsubst/path"
+	"gomodules.xyz/envsubst/path"
 )
 
 // defines a parameter substitution function.
@@ -90,8 +90,8 @@ func toSubstr(s string, args ...string) string {
 
 	if pos+length >= len(s) {
 		// if the position exceeds the length of the
-		// string an empty string is returned
-		return ""
+		// string just return the rest of it like bash
+		return s[pos:]
 	}
 
 	return s[pos : pos+length]
