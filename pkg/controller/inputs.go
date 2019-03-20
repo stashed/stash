@@ -4,39 +4,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/appscode/stash/apis"
 	apiAlpha "github.com/appscode/stash/apis/stash/v1alpha1"
 	api "github.com/appscode/stash/apis/stash/v1beta1"
 	"github.com/appscode/stash/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
-)
-
-// TODO: complete
-const (
-	RepositoryProvider   = "REPOSITORY_PROVIDER"
-	RepositorySecretName = "REPOSITORY_SECRET_NAME"
-	RepositoryBucket     = "REPOSITORY_BUCKET"
-	RepositoryPrefix     = "REPOSITORY_PREFIX"
-	RepositoryEndpoint   = "REPOSITORY_ENDPOINT"
-
-	Hostname = "HOSTNAME"
-
-	TargetName        = "TARGET_NAME"
-	TargetDirectories = "TARGET_DIRECTORIES"
-	TargetMountPath   = "TARGET_MOUNT_PATH"
-
-	RestoreDirectories = "RESTORE_DIRECTORIES"
-	RestoreSnapshots   = "RESTORE_SNAPSHOTS"
-
-	RetentionKeepLast    = "RETENTION_KEEP_LAST"
-	RetentionKeepHourly  = "RETENTION_KEEP_HOURLY"
-	RetentionKeepDaily   = "RETENTION_KEEP_DAILY"
-	RetentionKeepWeekly  = "RETENTION_KEEP_WEEKLY"
-	RetentionKeepMonthly = "RETENTION_KEEP_MONTHLY"
-	RetentionKeepYearly  = "RETENTION_KEEP_YEARLY"
-	RetentionKeepTags    = "RETENTION_KEEP_TAGS"
-	RetentionPrune       = "RETENTION_PRUNE"
-	RetentionDryRun      = "RETENTION_DRY_RUN"
 )
 
 func (c *StashController) inputsForBackupConfig(backupConfig api.BackupConfiguration) (map[string]string, error) {
@@ -63,7 +36,7 @@ func (c *StashController) inputsForBackupConfig(backupConfig api.BackupConfigura
 	if err != nil {
 		return nil, err
 	}
-	inputs[Hostname] = host
+	inputs[apis.Hostname] = host
 
 	return inputs, nil
 }
@@ -92,9 +65,9 @@ func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSess
 	}
 	// append inputs from RestoreOptions
 	restoreOptions := util.RestoreOptionsForHost(host, restoreSession.Spec.Rules)
-	inputs[Hostname] = restoreOptions.Host
-	inputs[RestoreDirectories] = strings.Join(restoreOptions.RestoreDirs, ",")
-	inputs[RestoreSnapshots] = strings.Join(restoreOptions.Snapshots, ",")
+	inputs[apis.Hostname] = restoreOptions.Host
+	inputs[apis.RestoreDirectories] = strings.Join(restoreOptions.RestoreDirs, ",")
+	inputs[apis.RestoreSnapshots] = strings.Join(restoreOptions.Snapshots, ",")
 
 	return inputs, nil
 }
@@ -104,17 +77,17 @@ func (c *StashController) inputsForRepository(repository *apiAlpha.Repository) (
 	if repository == nil {
 		return
 	}
-	if inputs[RepositoryProvider], err = util.GetProvider(repository.Spec.Backend); err != nil {
+	if inputs[apis.RepositoryProvider], err = util.GetProvider(repository.Spec.Backend); err != nil {
 		return
 	}
-	if inputs[RepositoryBucket], inputs[RepositoryPrefix], err = util.GetBucketAndPrefix(&repository.Spec.Backend); err != nil {
+	if inputs[apis.RepositoryBucket], inputs[apis.RepositoryPrefix], err = util.GetBucketAndPrefix(&repository.Spec.Backend); err != nil {
 		return
 	}
 	if repository.Spec.Backend.StorageSecretName != "" {
-		inputs[RepositorySecretName] = repository.Spec.Backend.StorageSecretName
+		inputs[apis.RepositorySecretName] = repository.Spec.Backend.StorageSecretName
 	}
 	if repository.Spec.Backend.S3 != nil && repository.Spec.Backend.S3.Endpoint != "" {
-		inputs[RepositoryEndpoint] = repository.Spec.Backend.S3.Endpoint
+		inputs[apis.RepositoryEndpoint] = repository.Spec.Backend.S3.Endpoint
 	}
 	return
 }
@@ -123,13 +96,13 @@ func (c *StashController) inputsForTarget(target *api.Target) map[string]string 
 	inputs := make(map[string]string)
 	if target != nil {
 		if target.Ref.Name != "" {
-			inputs[TargetName] = target.Ref.Name
+			inputs[apis.TargetName] = target.Ref.Name
 		}
 		if len(target.Directories) > 0 {
-			inputs[TargetDirectories] = strings.Join(target.Directories, ",")
+			inputs[apis.TargetDirectories] = strings.Join(target.Directories, ",")
 		}
 		if target.MountPath != "" {
-			inputs[TargetMountPath] = target.MountPath
+			inputs[apis.TargetMountPath] = target.MountPath
 		}
 	}
 	return inputs
@@ -139,31 +112,31 @@ func (c *StashController) inputsForRetentionPolicy(retentionPolicy apiAlpha.Rete
 	inputs := make(map[string]string)
 
 	if retentionPolicy.KeepLast > 0 {
-		inputs[RetentionKeepLast] = strconv.Itoa(retentionPolicy.KeepLast)
+		inputs[apis.RetentionKeepLast] = strconv.Itoa(retentionPolicy.KeepLast)
 	}
 	if retentionPolicy.KeepHourly > 0 {
-		inputs[RetentionKeepHourly] = strconv.Itoa(retentionPolicy.KeepHourly)
+		inputs[apis.RetentionKeepHourly] = strconv.Itoa(retentionPolicy.KeepHourly)
 	}
 	if retentionPolicy.KeepDaily > 0 {
-		inputs[RetentionKeepDaily] = strconv.Itoa(retentionPolicy.KeepDaily)
+		inputs[apis.RetentionKeepDaily] = strconv.Itoa(retentionPolicy.KeepDaily)
 	}
 	if retentionPolicy.KeepWeekly > 0 {
-		inputs[RetentionKeepWeekly] = strconv.Itoa(retentionPolicy.KeepWeekly)
+		inputs[apis.RetentionKeepWeekly] = strconv.Itoa(retentionPolicy.KeepWeekly)
 	}
 	if retentionPolicy.KeepMonthly > 0 {
-		inputs[RetentionKeepMonthly] = strconv.Itoa(retentionPolicy.KeepMonthly)
+		inputs[apis.RetentionKeepMonthly] = strconv.Itoa(retentionPolicy.KeepMonthly)
 	}
 	if retentionPolicy.KeepYearly > 0 {
-		inputs[RetentionKeepYearly] = strconv.Itoa(retentionPolicy.KeepYearly)
+		inputs[apis.RetentionKeepYearly] = strconv.Itoa(retentionPolicy.KeepYearly)
 	}
 	if len(retentionPolicy.KeepTags) > 0 {
-		inputs[RetentionKeepTags] = strings.Join(retentionPolicy.KeepTags, ",")
+		inputs[apis.RetentionKeepTags] = strings.Join(retentionPolicy.KeepTags, ",")
 	}
 	if retentionPolicy.Prune {
-		inputs[RetentionPrune] = "true"
+		inputs[apis.RetentionPrune] = "true"
 	}
 	if retentionPolicy.DryRun {
-		inputs[RetentionDryRun] = "true"
+		inputs[apis.RetentionDryRun] = "true"
 	}
 	return inputs
 }

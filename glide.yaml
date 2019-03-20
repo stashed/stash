@@ -99,3 +99,4 @@ import:
 - package: kmodules.xyz/webhook-runtime
   version: release-10.0
 - package: gomodules.xyz/envsubst
+  version: master
