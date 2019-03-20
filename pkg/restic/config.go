@@ -5,6 +5,11 @@ import (
 	shell "github.com/codeskyblue/go-sh"
 )
 
+const (
+	DefaultOutputFileName = "output.json"
+	DefaultScratchDir     = "/tmp/restic/scratch"
+)
+
 type ResticWrapper struct {
 	sh     *shell.Session
 	config SetupOptions

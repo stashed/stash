@@ -1,0 +1,22 @@
+apiVersion: stash.appscode.com/v1beta1
+kind: RestoreSession
+metadata:
+  name: pvc-restore-01
+  namespace: demo
+spec:
+  task:
+    name: pvc-restore-task
+  repository:
+    name: hello-repo
+  target:
+    ref:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      name: test-pvc-dest
+    mountPath: /etc/target
+  rules:
+  - hosts:
+    - host-0
+    paths:
+    - /etc/target/dir-01
+    - /etc/target/dir-02
