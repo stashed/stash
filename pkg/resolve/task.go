@@ -44,7 +44,7 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 			inputs[param.Name] = param.Value
 		}
 		// merge/replace backup config inputs
-		inputs = core_util.UpsertMap(o.Inputs, inputs)
+		inputs = core_util.UpsertMap(inputs, o.Inputs)
 
 		// resolve Function with inputs, modify in place
 		if err = resolveWithInputs(function, inputs); err != nil {
