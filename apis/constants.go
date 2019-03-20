@@ -30,4 +30,6 @@ const (
 	RetentionKeepTags    = "RETENTION_KEEP_TAGS"
 	RetentionPrune       = "RETENTION_PRUNE"
 	RetentionDryRun      = "RETENTION_DRY_RUN"
+
+	StatusSubresourceEnabled = "ENABLE_STATUS_SUBRESOURCE"
 )

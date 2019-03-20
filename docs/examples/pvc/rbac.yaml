@@ -10,6 +10,11 @@ rules:
   resources:
   - "*"
   verbs: ["*"]
+- apiGroups:
+  - ""
+  resources:
+  - "events"
+  verbs: ["create"]
 ---
 apiVersion: v1
 kind: ServiceAccount

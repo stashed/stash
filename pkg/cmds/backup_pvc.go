@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 
 	"github.com/appscode/go/flags"
+	"github.com/appscode/go/log"
 	"github.com/appscode/stash/pkg/restic"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/errors"
@@ -36,7 +37,7 @@ func NewCmdBackupPVC() *cobra.Command {
 			// init restic wrapper
 			resticWrapper, err := restic.NewResticWrapper(setupOpt)
 			if err != nil {
-				return err
+				return handleResticError(outputDir, restic.DefaultOutputFileName, err)
 			}
 			// Run backup
 			backupOutput, backupErr := resticWrapper.RunBackup(&backupOpt)
@@ -44,17 +45,17 @@ func NewCmdBackupPVC() *cobra.Command {
 			if metrics.Enabled {
 				err := backupOutput.HandleMetrics(&metrics, backupErr)
 				if err != nil {
-					return errors.NewAggregate([]error{backupErr, err})
+					return handleResticError(outputDir, restic.DefaultOutputFileName, errors.NewAggregate([]error{backupErr, err}))
 				}
+			}
+			if backupErr != nil {
+				return handleResticError(outputDir, restic.DefaultOutputFileName, backupErr)
 			}
 			// If output directory specified, then write the output in "output.json" file in the specified directory
-			if backupErr == nil && outputDir != "" {
-				err := backupOutput.WriteOutput(filepath.Join(outputDir, restic.DefaultOutputFileName))
-				if err != nil {
-					return err
-				}
+			if outputDir != "" {
+				return backupOutput.WriteOutput(filepath.Join(outputDir, restic.DefaultOutputFileName))
 			}
-			return backupErr
+			return nil
 		},
 	}
 
@@ -87,4 +88,14 @@ func NewCmdBackupPVC() *cobra.Command {
 	cmd.Flags().StringSliceVar(&metrics.Labels, "metrics-labels", metrics.Labels, "Labels to apply in exported metrics")
 
 	return cmd
+}
+
+// works for both backup and restore output
+func handleResticError(outputDir, fileName string, backupErr error) error {
+	if outputDir == "" || fileName == "" {
+		return backupErr
+	}
+	log.Infoln("Writing restic error to output file, error:", backupErr.Error())
+	backupOut := restic.BackupOutput{Error: backupErr.Error()}
+	return backupOut.WriteOutput(filepath.Join(outputDir, fileName))
 }

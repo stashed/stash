@@ -1,6 +1,7 @@
 package status
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"github.com/appscode/stash/apis"
@@ -9,11 +10,17 @@ import (
 	cs "github.com/appscode/stash/client/clientset/versioned"
 	stash_util "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
 	stash_util_v1beta1 "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1beta1/util"
+	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/restic"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/kubernetes/pkg/apis/core"
 )
 
 type UpdateStatusOptions struct {
+	KubeClient  kubernetes.Interface
+	StashClient *cs.Clientset
+
 	Namespace      string
 	Repository     string
 	BackupSession  string
@@ -22,24 +29,40 @@ type UpdateStatusOptions struct {
 	OutputFileName string
 }
 
-func (o UpdateStatusOptions) UpdatePostBackupStatus(client *cs.Clientset) error {
+func (o UpdateStatusOptions) UpdateBackupStatusFromFile() error {
 	// read backup output from file
 	backupOutput, err := restic.ReadBackupOutput(filepath.Join(o.OutputDir, o.OutputFileName))
 	if err != nil {
 		return err
 	}
+	return o.UpdatePostBackupStatus(backupOutput)
+}
 
-	// get backup session and update status
-	backupSession, err := client.StashV1beta1().BackupSessions(o.Namespace).Get(o.BackupSession, metav1.GetOptions{})
+func (o UpdateStatusOptions) UpdateRestoreStatusFromFile() error {
+	// read restore output from file
+	restoreOutput, err := restic.ReadRestoreOutput(filepath.Join(o.OutputDir, o.OutputFileName))
+	if err != nil {
+		return err
+	}
+	return o.UpdatePostRestoreStatus(restoreOutput)
+}
+
+func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupOutput) error {
+	// get backup session, update status and create event
+	backupSession, err := o.StashClient.StashV1beta1().BackupSessions(o.Namespace).Get(o.BackupSession, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 	_, err = stash_util_v1beta1.UpdateBackupSessionStatus(
-		client.StashV1beta1(),
+		o.StashClient.StashV1beta1(),
 		backupSession,
 		func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
-			in.Phase = api_v1beta1.BackupSessionSucceeded
-			in.Stats = backupOutput.BackupStats
+			if backupOutput.Error != "" {
+				in.Phase = api_v1beta1.BackupSessionFailed
+			} else {
+				in.Phase = api_v1beta1.BackupSessionSucceeded
+				in.Stats = backupOutput.BackupStats
+			}
 			return in
 		},
 		apis.EnableStatusSubresource,
@@ -48,13 +71,40 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(client *cs.Clientset) error 
 		return err
 	}
 
+	// create event for backup session
+	var eventType, eventReason, eventMessage string
+	if backupOutput.Error != "" {
+		eventType = core.EventTypeWarning
+		eventReason = eventer.EventReasonBackupSessionFailed
+		eventMessage = fmt.Sprintf("backup session failed, reason: %s", backupOutput.Error)
+	} else {
+		eventType = core.EventTypeNormal
+		eventReason = eventer.EventReasonBackupSessionSucceeded
+		eventMessage = "backup session succeeded"
+	}
+	_, err = eventer.CreateEvent(
+		o.KubeClient,
+		eventer.BackupSessionEventComponent,
+		backupSession,
+		eventType,
+		eventReason,
+		eventMessage,
+	)
+	if err != nil {
+		return err
+	}
+
+	// no need to update repository status for failed backup
+	if backupOutput.Error != "" {
+		return nil
+	}
 	// get repository and update status
-	repository, err := client.StashV1alpha1().Repositories(o.Namespace).Get(o.Repository, metav1.GetOptions{})
+	repository, err := o.StashClient.StashV1alpha1().Repositories(o.Namespace).Get(o.Repository, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 	_, err = stash_util.UpdateRepositoryStatus(
-		client.StashV1alpha1(),
+		o.StashClient.StashV1alpha1(),
 		repository,
 		func(in *api.RepositoryStatus) *api.RepositoryStatus {
 			// TODO: fix API
@@ -66,32 +116,55 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(client *cs.Clientset) error 
 		},
 		apis.EnableStatusSubresource,
 	)
-
 	return err
 }
 
-func (o UpdateStatusOptions) UpdatePostRestoreStatus(client *cs.Clientset) error {
-	// read restore output from file
-	restoreOutput, err := restic.ReadRestoreOutput(filepath.Join(o.OutputDir, o.OutputFileName))
-	if err != nil {
-		return err
-	}
-
-	// get restore session and update status
-	restoreSession, err := client.StashV1beta1().RestoreSessions(o.Namespace).Get(o.RestoreSession, metav1.GetOptions{})
+func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.RestoreOutput) error {
+	// get restore session, update status and create event
+	restoreSession, err := o.StashClient.StashV1beta1().RestoreSessions(o.Namespace).Get(o.RestoreSession, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 	_, err = stash_util_v1beta1.UpdateRestoreSessionStatus(
-		client.StashV1beta1(),
+		o.StashClient.StashV1beta1(),
 		restoreSession,
 		func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
-			in.Phase = api_v1beta1.RestoreSucceeded
+			if restoreOutput.Error != "" {
+				in.Phase = api_v1beta1.RestoreFailed
+			} else {
+				in.Phase = api_v1beta1.RestoreSucceeded
+			}
 			in.Duration = restoreOutput.SessionDuration
 			return in
 		},
 		apis.EnableStatusSubresource,
 	)
+	if err != nil {
+		return err
+	}
+
+	// create event for restore session
+	var eventType, eventReason, eventMessage string
+	if restoreOutput.Error != "" {
+		eventType = core.EventTypeWarning
+		eventReason = eventer.EventReasonRestoreSessionFailed
+		eventMessage = fmt.Sprintf("restore session failed, reason: %s", restoreOutput.Error)
+	} else {
+		eventType = core.EventTypeNormal
+		eventReason = eventer.EventReasonRestoreSessionSucceeded
+		eventMessage = "restore session succeeded"
+	}
+	_, err = eventer.CreateEvent(
+		o.KubeClient,
+		eventer.RestoreSessionEventComponent,
+		restoreSession,
+		eventType,
+		eventReason,
+		eventMessage,
+	)
+	if err != nil {
+		return err
+	}
 
 	return err
 }

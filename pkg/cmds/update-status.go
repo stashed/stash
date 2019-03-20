@@ -8,6 +8,7 @@ import (
 	"github.com/appscode/stash/pkg/restic"
 	"github.com/appscode/stash/pkg/status"
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -31,17 +32,20 @@ func NewCmdUpdateStatus() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			stashClient, err := cs.NewForConfig(config)
+			opt.KubeClient, err = kubernetes.NewForConfig(config)
+			if err != nil {
+				return err
+			}
+			opt.StashClient, err = cs.NewForConfig(config)
 			if err != nil {
 				return err
 			}
 
-			// TODO: fix for failed backup/restore
 			if opt.BackupSession != "" {
-				return opt.UpdatePostBackupStatus(stashClient)
+				return opt.UpdateBackupStatusFromFile()
 			}
 			if opt.RestoreSession != "" {
-				return opt.UpdatePostRestoreStatus(stashClient)
+				return opt.UpdateRestoreStatusFromFile()
 			}
 			return fmt.Errorf("backup-session or, restore-session not specified")
 		},
