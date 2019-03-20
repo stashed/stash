@@ -141,6 +141,8 @@ func (c *StashController) executeBackupSession(backupSession *api.BackupSession)
 	if err != nil {
 		return nil, fmt.Errorf("cannot resolve implicit inputs for BackupConfiguration %s/%s, reason: %s", backupConfig.Namespace, backupConfig.Name, err)
 	}
+	implicitInputs[apis.Namespace] = backupSession.Namespace
+	implicitInputs[apis.BackupSession] = backupSession.Name
 
 	taskResolver := resolve.TaskResolver{
 		StashClient:     c.stashClient,

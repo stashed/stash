@@ -1,6 +1,23 @@
 apiVersion: stash.appscode.com/v1beta1
 kind: Function
 metadata:
+  name: update-status
+spec:
+  image: diptadas/stash:status
+  args:
+    - update-status
+    - --namespace=${NAMESPACE=""}
+    - --repository=${REPOSITORY_NAME=""}
+    - --backup-session=${BACKUP_SESSION=""}
+    - --restore-session=${RESTORE_SESSION=""}
+    - --output-dir=${outputDir}
+  volumeMounts:
+  - name: ${outputVolume}
+    mountPath: ${outputDir}
+---
+apiVersion: stash.appscode.com/v1beta1
+kind: Function
+metadata:
   name: pvc-backup
 spec:
   image: diptadas/stash:pvc
@@ -25,10 +42,6 @@ spec:
   - --retention-prune=${RETENTION_PRUNE=false}
   - --retention-dry-run=${RETENTION_DRY_RUN=false}
   - --output-dir=${outputDir}
-  #- --metrics-enabled
-  #- --metrics-pushgateway-url
-  #- --metrics-dir
-  #- --metrics-labels
   volumeMounts:
   - name: ${scratchDirVolume}
     mountPath: /tmp/restic/scratch
@@ -36,6 +49,8 @@ spec:
     mountPath: ${TARGET_MOUNT_PATH}
   - name: ${secretVolume}
     mountPath: /etc/repository/secret
+  - name: ${outputVolume}
+    mountPath: ${outputDir}
 ---
 apiVersion: stash.appscode.com/v1beta1
 kind: Function
@@ -67,3 +82,5 @@ spec:
     mountPath: ${TARGET_MOUNT_PATH}
   - name: ${secretVolume}
     mountPath: /etc/repository/secret
+  - name: ${outputVolume}
+    mountPath: ${outputDir}

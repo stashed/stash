@@ -1,6 +1,11 @@
 package apis
 
 const (
+	Namespace      = "NAMESPACE"
+	BackupSession  = "BACKUP_SESSION"
+	RestoreSession = "RESTORE_SESSION"
+
+	RepositoryName       = "REPOSITORY_NAME"
 	RepositoryProvider   = "REPOSITORY_PROVIDER"
 	RepositorySecretName = "REPOSITORY_SECRET_NAME"
 	RepositoryBucket     = "REPOSITORY_BUCKET"

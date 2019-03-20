@@ -133,6 +133,8 @@ func (c *StashController) executeRestoreSession(restoreSession *api.RestoreSessi
 	if err != nil {
 		return nil, fmt.Errorf("cannot resolve implicit inputs for RestoreSession %s/%s, reason: %s", restoreSession.Namespace, restoreSession.Name, err)
 	}
+	implicitInputs[apis.Namespace] = restoreSession.Namespace
+	implicitInputs[apis.RestoreSession] = restoreSession.Name
 
 	taskResolver := resolve.TaskResolver{
 		StashClient:     c.stashClient,

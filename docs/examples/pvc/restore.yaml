@@ -4,6 +4,9 @@ metadata:
   name: pvc-restore-01
   namespace: demo
 spec:
+  runtimeSettings:
+    pod:
+      serviceAccountName: pvc-backup-restore
   task:
     name: pvc-restore-task
   repository:

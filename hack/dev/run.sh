@@ -126,5 +126,6 @@ if [ "$STASH_E2E_TEST" = false ]; then # don't run operator while run this scrip
     --docker-registry="$STASH_DOCKER_REGISTRY" \
     --image-tag="$STASH_IMAGE_TAG" \
     --rbac=true
+    --enable-status-subresource=true
 fi
 popd

@@ -77,6 +77,9 @@ func (c *StashController) inputsForRepository(repository *apiAlpha.Repository) (
 	if repository == nil {
 		return
 	}
+	if repository.Name != "" {
+		inputs[apis.RepositoryName] = repository.Name
+	}
 	if inputs[apis.RepositoryProvider], err = util.GetProvider(repository.Spec.Backend); err != nil {
 		return
 	}
