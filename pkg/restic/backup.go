@@ -2,7 +2,7 @@ package restic
 
 import "time"
 
-func (w *ResticWrapper) RunBackup(backupOption *BackupOptions) (*BackupOutput, error) {
+func (w *ResticWrapper) RunBackup(backupOption BackupOptions) (*BackupOutput, error) {
 	// Start clock to measure total session duration
 	startTime := time.Now()
 
