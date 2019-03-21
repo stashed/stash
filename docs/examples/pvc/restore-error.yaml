@@ -9,9 +9,6 @@ spec:
       serviceAccountName: pvc-backup-restore
   task:
     name: pvc-restore-task
-    params:
-    - name: HOSTNAME
-      value: demo-host # TODO: decide
   repository:
     name: hello-repo
   target:

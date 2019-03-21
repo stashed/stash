@@ -13,6 +13,7 @@ import (
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/restic"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/pkg/apis/core"
 )
@@ -35,7 +36,12 @@ func (o UpdateStatusOptions) UpdateBackupStatusFromFile() error {
 	if err != nil {
 		return err
 	}
-	return o.UpdatePostBackupStatus(backupOutput)
+	var backupErr error
+	if backupOutput.Error != "" {
+		backupErr = fmt.Errorf(backupOutput.Error)
+	}
+	updateStatusErr := o.UpdatePostBackupStatus(backupOutput)
+	return errors.NewAggregate([]error{backupErr, updateStatusErr})
 }
 
 func (o UpdateStatusOptions) UpdateRestoreStatusFromFile() error {
@@ -44,7 +50,12 @@ func (o UpdateStatusOptions) UpdateRestoreStatusFromFile() error {
 	if err != nil {
 		return err
 	}
-	return o.UpdatePostRestoreStatus(restoreOutput)
+	var restoreErr error
+	if restoreOutput.Error != "" {
+		restoreErr = fmt.Errorf(restoreOutput.Error)
+	}
+	updateStatusErr := o.UpdatePostRestoreStatus(restoreOutput)
+	return errors.NewAggregate([]error{restoreErr, updateStatusErr})
 }
 
 func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupOutput) error {
