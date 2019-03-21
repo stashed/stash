@@ -13,7 +13,8 @@ func TestResolveWithInputs(t *testing.T) {
 			Args: []string{
 				"arg",
 				"--p1=${p1}",
-				"--p2=${p2=d2}",
+				"--p2=${p2:=d2}",
+				"--p3=${p3:=}",
 			},
 		},
 	}
@@ -24,6 +25,7 @@ func TestResolveWithInputs(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	t.Log(function)
 
 	function = v1beta1.Function{
 		Spec: v1beta1.FunctionSpec{
