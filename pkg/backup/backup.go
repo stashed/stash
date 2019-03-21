@@ -13,10 +13,13 @@ import (
 	stash_util "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
 	stashinformers "github.com/appscode/stash/client/informers/externalversions"
 	stash_listers "github.com/appscode/stash/client/listers/stash/v1alpha1"
+	"github.com/appscode/stash/client/listers/stash/v1beta1"
 	"github.com/appscode/stash/pkg/cli"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/docker"
 	"github.com/appscode/stash/pkg/eventer"
+	"github.com/appscode/stash/pkg/restic"
+	"github.com/appscode/stash/pkg/status"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
@@ -36,31 +39,43 @@ import (
 )
 
 type Options struct {
-	Workload         api.LocalTypedReference
-	Namespace        string
-	ResticName       string
-	ScratchDir       string
-	PushgatewayURL   string
-	NodeName         string
-	PodName          string
-	SmartPrefix      string
-	SnapshotHostname string
-	PodLabelsPath    string
-	QPS              float64
-	Burst            int
-	ResyncPeriod     time.Duration
-	MaxNumRequeues   int
-	RunViaCron       bool
-	DockerRegistry   string // image registry for check job
-	ImageTag         string // image tag for check job
-	EnableRBAC       bool   // rbac for check job
-	NumThreads       int
+	Workload                api.LocalTypedReference
+	ResticName              string
+	ScratchDir              string
+	PushgatewayURL          string
+	NodeName                string
+	PodName                 string
+	SmartPrefix             string
+	SnapshotHostname        string
+	PodLabelsPath           string
+	QPS                     float64
+	Burst                   int
+	ResyncPeriod            time.Duration
+	MaxNumRequeues          int
+	RunViaCron              bool
+	DockerRegistry          string // image registry for check job
+	ImageTag                string // image tag for check job
+	EnableRBAC              bool   // rbac for check job
+	EnableStatusSubresource bool
+	NumThreads              int
+
+	//backupConfiguration
+	Name      string
+	Namespace string
+
+	//Backup Session
+	Setup     restic.SetupOptions
+	ExtraOpt  util.ExtraOptions
+	Backup    restic.BackupOptions
+	OutputDir string
+	Metrics   restic.MetricsOptions
 }
 
 type Controller struct {
 	k8sClient   kubernetes.Interface
 	stashClient cs.Interface
 	opt         Options
+	status      status.UpdateStatusOptions
 	locked      chan struct{}
 	resticCLI   *cli.ResticWrapper
 	cron        *cron.Cron
@@ -72,11 +87,18 @@ type Controller struct {
 	rQueue    *queue.Worker
 	rInformer cache.SharedIndexInformer
 	rLister   stash_listers.ResticLister
+
+	//Backup Session
+	bsQueue    *queue.Worker
+	bsInformer cache.SharedIndexInformer
+	bsLister   v1beta1.BackupSessionLister
 }
 
 const (
 	CheckRole            = "stash-check"
 	BackupEventComponent = "stash-backup"
+	OutputFileName       = "output.json"
+	ScratchDir           = "/tmp/restic/scratch" // mount emptyDir volume in this path in function YAML
 )
 
 func New(k8sClient kubernetes.Interface, stashClient cs.Interface, opt Options) *Controller {

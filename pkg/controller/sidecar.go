@@ -35,7 +35,7 @@ func (c *StashController) ensureWorkloadSidecar(w *wapi.Workload, restic *api_v1
 		}
 		err = c.ensureSidecarRoleBinding(ref, sa)
 		if err != nil {
-			return err
+			return "", err
 		}
 	}
 
@@ -46,7 +46,7 @@ func (c *StashController) ensureWorkloadSidecar(w *wapi.Workload, restic *api_v1
 
 	_, err := c.kubeClient.CoreV1().Secrets(w.Namespace).Get(restic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if w.Spec.Template.Annotations == nil {
@@ -70,11 +70,13 @@ func (c *StashController) ensureWorkloadSidecar(w *wapi.Workload, restic *api_v1
 			w.Spec.Template.Spec.InitContainers,
 			util.NewInitContainer(restic, ref, image, c.EnableRBAC),
 		)
+		modificationType = apis.ModificationTypeInitContainerInjection
 	} else {
 		w.Spec.Template.Spec.Containers = core_util.UpsertContainer(
 			w.Spec.Template.Spec.Containers,
 			util.NewSidecarContainer(restic, ref, image, c.EnableRBAC),
 		)
+		modificationType = apis.ModificationTypeSidecarInjection
 	}
 
 	// keep existing image pull secrets
@@ -103,7 +105,7 @@ func (c *StashController) ensureWorkloadSidecar(w *wapi.Workload, restic *api_v1
 	w.Annotations[api_v1alpha1.LastAppliedConfiguration] = string(data)
 	w.Annotations[apis.VersionTag] = c.StashImageTag
 
-	return nil
+	return modificationType, nil
 }
 
 func (c *StashController) ensureWorkloadSidecarDeleted(w *wapi.Workload, restic *api_v1alpha1.Restic) error {
@@ -115,8 +117,10 @@ func (c *StashController) ensureWorkloadSidecarDeleted(w *wapi.Workload, restic 
 
 	if restic.Spec.Type == api_v1alpha1.BackupOffline {
 		w.Spec.Template.Spec.InitContainers = core_util.EnsureContainerDeleted(w.Spec.Template.Spec.InitContainers, util.StashContainer)
+		modificationType = apis.ModificationTypeInitContainerDeletion
 	} else {
 		w.Spec.Template.Spec.Containers = core_util.EnsureContainerDeleted(w.Spec.Template.Spec.Containers, util.StashContainer)
+		modificationType = apis.ModificationTypeSidecarDeletion
 	}
 	// backup sidecar/init-container has been removed but workload still may have restore init-container
 	// so removed respective volumes that were added to the workload only if the workload does not have restore init-container
@@ -132,6 +136,87 @@ func (c *StashController) ensureWorkloadSidecarDeleted(w *wapi.Workload, restic 
 		delete(w.Annotations, api_v1alpha1.LastAppliedConfiguration)
 		delete(w.Annotations, apis.VersionTag)
 	}
+	return modificationType, nil
+}
+
+func (c *StashController) ensureBackupSidecar(w *wapi.Workload, bc *api_v1beta1.BackupConfiguration) error {
+	if c.EnableRBAC {
+		sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
+		ref, err := reference.GetReference(scheme.Scheme, w)
+		if err != nil {
+			ref = &core.ObjectReference{
+				Name:      w.Name,
+				Namespace: w.Namespace,
+			}
+		}
+		err = c.ensureSidecarRoleBinding(ref, sa)
+		if err != nil {
+			return err
+		}
+	}
+
+	repository, err := c.stashClient.StashV1alpha1().Repositories(bc.Namespace).Get(bc.Spec.Repository.Name, metav1.GetOptions{})
+	if err != nil {
+		log.Errorf("unable to get repository %s/%s: Reason: %v", bc.Namespace, bc.Spec.Repository.Name, err)
+		return err
+	}
+
+	if repository.Spec.Backend.StorageSecretName == "" {
+		err := fmt.Errorf("missing repository secret name  %s/%s", repository.Namespace, repository.Name)
+		return err
+	}
+
+	// check if secret exist
+	_, err = c.kubeClient.CoreV1().Secrets(w.Namespace).Get(repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	if w.Spec.Template.Annotations == nil {
+		w.Spec.Template.Annotations = map[string]string{}
+	}
+	// mark pods with BackupConfiguration spec hash. used to force restart pods for rc/rs
+	w.Spec.Template.Annotations[api_v1beta1.AppliedBackupConfigurationSpecHash] = bc.GetSpecHash()
+
+	image := docker.Docker{
+		Registry: c.DockerRegistry,
+		Image:    docker.ImageStash,
+		Tag:      c.StashImageTag,
+	}
+
+	w.Spec.Template.Spec.Containers = core_util.UpsertContainer(
+		w.Spec.Template.Spec.Containers,
+		util.NewBackupSidecarContainer(bc, &repository.Spec.Backend, image, c.EnableRBAC),
+	)
+
+	// keep existing image pull secrets
+	if bc.Spec.RuntimeSettings.Pod != nil {
+		w.Spec.Template.Spec.ImagePullSecrets = core_util.MergeLocalObjectReferences(
+			w.Spec.Template.Spec.ImagePullSecrets,
+			bc.Spec.RuntimeSettings.Pod.ImagePullSecrets,
+		)
+	}
+
+	w.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(w.Spec.Template.Spec.Volumes)
+	w.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(w.Spec.Template.Spec.Volumes)
+	w.Spec.Template.Spec.Volumes = util.UpsertSecretVolume(w.Spec.Template.Spec.Volumes, repository.Spec.Backend.StorageSecretName)
+	// if Repository uses local volume as backend, append this volume to workload
+	w.Spec.Template.Spec.Volumes = util.MergeLocalVolume(w.Spec.Template.Spec.Volumes, &repository.Spec.Backend)
+
+	if w.Annotations == nil {
+		w.Annotations = make(map[string]string)
+	}
+	r := &api_v1beta1.BackupConfiguration{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: api.SchemeGroupVersion.String(),
+			Kind:       api_v1beta1.ResourceKindBackupConfiguration,
+		},
+		ObjectMeta: bc.ObjectMeta,
+		Spec:       bc.Spec,
+	}
+	data, _ := meta.MarshalToJson(r, api_v1beta1.SchemeGroupVersion)
+	w.Annotations[api_v1beta1.KeyLastAppliedBackupConfiguration] = string(data)
+
 	return nil
 }
 

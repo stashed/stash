@@ -29,34 +29,16 @@ type (
 	// these types as values of this type will be returned by this package.
 	PathStep interface {
 		String() string
-
-		// Type is the resulting type after performing the path step.
-		Type() reflect.Type
-
-		// Values is the resulting values after performing the path step.
-		// The type of each valid value is guaranteed to be identical to Type.
-		//
-		// In some cases, one or both may be invalid or have restrictions:
-		//	• For StructField, both are not interface-able if the current field
-		//	is unexported and the struct type is not explicitly permitted by
-		//	AllowUnexported to traverse unexported fields.
-		//	• For SliceIndex, one may be invalid if an element is missing from
-		//	either the x or y slice.
-		//	• For MapIndex, one may be invalid if an entry is missing from
-		//	either the x or y map.
-		//
-		// The provided values must not be mutated.
-		Values() (vx, vy reflect.Value)
+		Type() reflect.Type // Resulting type after performing the path step
+		isPathStep()
 	}
 
 	// SliceIndex is an index operation on a slice or array at some index Key.
 	SliceIndex interface {
 		PathStep
+		Key() int // May return -1 if in a split state
 
-		// Key is the index key; it may return -1 if in a split state
-		Key() int
-
-		// SplitKeys are the indexes for indexing into slices in the
+		// SplitKeys returns the indexes for indexing into slices in the
 		// x and y values, respectively. These indexes may differ due to the
 		// insertion or removal of an element in one of the slices, causing
 		// all of the indexes to be shifted. If an index is -1, then that
@@ -65,23 +47,19 @@ type (
 		// Key is guaranteed to return -1 if and only if the indexes returned
 		// by SplitKeys are not the same. SplitKeys will never return -1 for
 		// both indexes.
-		SplitKeys() (ix, iy int)
+		SplitKeys() (x int, y int)
 
 		isSliceIndex()
 	}
 	// MapIndex is an index operation on a map at some index Key.
 	MapIndex interface {
 		PathStep
-
-		// Key is the value of the map key.
 		Key() reflect.Value
-
 		isMapIndex()
 	}
 	// TypeAssertion represents a type assertion on an interface.
 	TypeAssertion interface {
 		PathStep
-
 		isTypeAssertion()
 	}
 	// StructField represents a struct field access on a field called Name.
@@ -99,11 +77,7 @@ type (
 	// Transform is a transformation from the parent type to the current type.
 	Transform interface {
 		PathStep
-
-		// Name is the name of the Transformer.
 		Name() string
-
-		// Func is the function pointer to the transformer function.
 		Func() reflect.Value
 
 		// Option returns the originally constructed Transformer option.
@@ -211,8 +185,7 @@ func (pa Path) GoString() string {
 
 type (
 	pathStep struct {
-		typ    reflect.Type
-		vx, vy reflect.Value
+		typ reflect.Type
 	}
 
 	sliceIndex struct {
@@ -234,7 +207,7 @@ type (
 		// These fields are used for forcibly accessing an unexported field.
 		// pvx, pvy, and field are only valid if unexported is true.
 		unexported bool
-		mayForce   bool                // Forcibly allow visibility
+		force      bool                // Forcibly allow visibility
 		pvx, pvy   reflect.Value       // Parent values
 		field      reflect.StructField // Field information
 	}
@@ -247,8 +220,7 @@ type (
 	}
 )
 
-func (ps pathStep) Type() reflect.Type             { return ps.typ }
-func (ps pathStep) Values() (vx, vy reflect.Value) { return ps.vx, ps.vy }
+func (ps pathStep) Type() reflect.Type { return ps.typ }
 func (ps pathStep) String() string {
 	if ps.typ == nil {
 		return "<nil>"

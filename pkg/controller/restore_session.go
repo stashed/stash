@@ -81,12 +81,10 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 
 		// if RestoreSession is being deleted then remove respective init-container
 		if restoreSession.DeletionTimestamp != nil {
-
 			// if RestoreSession has stash finalizer then respective init-container (for workloads) hasn't been removed
 			// remove respective init-container and finally remove finalizer
 			if core_util.HasFinalizer(restoreSession.ObjectMeta, api_v1beta1.StashKey) {
 				if restoreSession.Spec.Target != nil && util.BackupModel(restoreSession.Spec.Target.Ref.Kind) == util.ModelSidecar {
-
 					// send event to workload controller. workload controller will take care of removing restore init-container
 					err := c.sendEventToWorkloadQueue(
 						restoreSession.Spec.Target.Ref.Kind,
@@ -161,7 +159,6 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		Name:      RestoreJobPrefix + restoreSession.Name,
 		Namespace: restoreSession.Namespace,
 	}
-
 	ref, err := reference.GetReference(stash_scheme.Scheme, restoreSession)
 	if err != nil {
 		return err
@@ -196,7 +193,6 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 			return err
 		}
 	}
-
 	// resolve task template
 	explicitInputs := make(map[string]string)
 	for _, param := range restoreSession.Spec.Task.Params {
