@@ -118,7 +118,7 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 		o.StashClient.StashV1alpha1(),
 		repository,
 		func(in *api.RepositoryStatus) *api.RepositoryStatus {
-			// TODO: fix API
+			// TODO: fix Restic Wrapper
 			in.Integrity = backupOutput.RepositoryStats.Integrity
 			in.Size = backupOutput.RepositoryStats.Size
 			in.SnapshotCount = backupOutput.RepositoryStats.SnapshotCount
@@ -173,9 +173,5 @@ func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.Resto
 		eventReason,
 		eventMessage,
 	)
-	if err != nil {
-		return err
-	}
-
 	return err
 }
