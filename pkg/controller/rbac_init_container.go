@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"github.com/appscode/go/log"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
 	"github.com/appscode/stash/pkg/util"
@@ -105,5 +106,6 @@ func (c *StashController) ensureRestoreInitContainerRoleBindingDeleted(w *wapi.W
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
+	log.Infof("RoleBinding %s/%s has been deleted", w.Namespace, c.getRestoreInitContainerRoleBindingName(w.Name))
 	return nil
 }

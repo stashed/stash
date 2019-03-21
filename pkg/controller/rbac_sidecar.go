@@ -127,6 +127,7 @@ func (c *StashController) ensureSidecarRoleBindingDeleted(w *wapi.Workload) erro
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
+	log.Infof("RoleBinding %s/%s has been deleted", w.Namespace, c.getSidecarRoleBindingName(w.Name))
 	return nil
 }
 
@@ -138,9 +139,6 @@ func (c *StashController) ensureUnnecessaryWorkloadRBACDeleted(w *wapi.Workload)
 			if err != nil && !kerr.IsNotFound(err) {
 				return err
 			}
-			if err == nil {
-				log.Infof("RoleBinding %s/%s has been deleted", w.Namespace, c.getSidecarRoleBindingName(w.Name))
-			}
 		}
 
 		// delete restore init-container RoleBinding if workload does not have sash init-container
@@ -148,9 +146,6 @@ func (c *StashController) ensureUnnecessaryWorkloadRBACDeleted(w *wapi.Workload)
 			err := c.ensureRestoreInitContainerRoleBindingDeleted(w)
 			if err != nil && !kerr.IsNotFound(err) {
 				return err
-			}
-			if err == nil {
-				log.Infof("RoleBinding %s/%s has been deleted", w.Namespace, c.getRestoreInitContainerRoleBindingName(w.Name))
 			}
 		}
 	}

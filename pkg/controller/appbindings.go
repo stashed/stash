@@ -36,7 +36,7 @@ func (c *StashController) processAppBindingKey(key string) error {
 	}
 
 	if !exists {
-		// Below we will warm up our cache with a AppBinding, so that we will see a delete for one appbinding.
+		// Below we will warm up our cache with a AppBinding, so that we will see a delete for one databases.
 		glog.Warningf("AppBinding %s does not exist anymore\n", key)
 	} else {
 		glog.Infof("Sync/Add/Update for AppBinding %s", key)

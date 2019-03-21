@@ -224,10 +224,10 @@ func (c *StashController) setBackupSessionFailed(backupSession *api_v1beta1.Back
 	// write failure event
 	_, err = eventer.CreateEvent(
 		c.kubeClient,
-		BackupSessionEventComponent,
+		eventer.BackupSessionEventComponent,
 		backupSession,
 		core.EventTypeWarning,
-		EventReasonBackupSessionFailed,
+		eventer.EventReasonBackupSessionFailed,
 		jobErr.Error(),
 	)
 
@@ -248,10 +248,10 @@ func (c *StashController) setBackupSessionRunning(backupSession *api_v1beta1.Bac
 	// write job creation success event
 	_, err = eventer.CreateEvent(
 		c.kubeClient,
-		BackupSessionEventComponent,
+		eventer.BackupSessionEventComponent,
 		backupSession,
 		core.EventTypeNormal,
-		EventReasonBackupSessionJobCreated,
+		eventer.EventReasonBackupSessionJobCreated,
 		fmt.Sprintf("backup job has been created succesfully for BackupSession %s/%s", backupSession.Namespace, backupSession.Name),
 	)
 

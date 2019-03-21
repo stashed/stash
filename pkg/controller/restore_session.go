@@ -29,11 +29,7 @@ import (
 )
 
 const (
-	RestoreJobPrefix                 = "stash-restore-"
-	RestoreSessionEventComponent     = "stash-restore-session"
-	EventReasonInvalidRestoreSession = "InvalidRestoreSession"
-	EventReasonRestoreSessionFailed  = "RestoreSessionFailedToExecute"
-	EventReasonRestoreJobCreated     = "RestoreJobCreated"
+	RestoreJobPrefix = "stash-restore-"
 )
 
 func (c *StashController) NewRestoreSessionWebhook() hooks.AdmissionHook {
@@ -260,10 +256,10 @@ func (c *StashController) setRestoreSessionFailed(restoreSession *api_v1beta1.Re
 	// write failure event
 	_, err = eventer.CreateEvent(
 		c.kubeClient,
-		RestoreSessionEventComponent,
+		eventer.RestoreSessionEventComponent,
 		restoreSession,
 		core.EventTypeWarning,
-		EventReasonRestoreSessionFailed,
+		eventer.EventReasonRestoreSessionFailed,
 		jobErr.Error(),
 	)
 
@@ -284,10 +280,10 @@ func (c *StashController) setRestoreSessionRunning(restoreSession *api_v1beta1.R
 	// write job creation success event
 	_, err = eventer.CreateEvent(
 		c.kubeClient,
-		RestoreSessionEventComponent,
+		eventer.RestoreSessionEventComponent,
 		restoreSession,
 		core.EventTypeNormal,
-		EventReasonRestoreJobCreated,
+		eventer.EventReasonRestoreJobCreated,
 		fmt.Sprintf("restore job has been created succesfully for RestoreSession %s/%s", restoreSession.Namespace, restoreSession.Name),
 	)
 

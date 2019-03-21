@@ -1,0 +1,19 @@
+apiVersion: stash.appscode.com/v1beta1
+kind: RestoreSession
+metadata:
+  name: deployment-restore
+  namespace: demo
+spec:
+  repository:
+    name: deployment.stash-demo
+  rules:
+  - paths:
+    - /source/data
+  target: # target indicates where the recovered data will be stored
+    ref:
+      apiVersion: apps/v1
+      kind: Deployment
+      name: stash-demo
+    volumeMounts:
+    - name:  source-data
+      mountPath:  /source/data

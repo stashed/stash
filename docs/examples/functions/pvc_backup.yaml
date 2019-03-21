@@ -1,0 +1,39 @@
+apiVersion: stash.appscode.com/v1beta1
+kind: Function
+metadata:
+  name: pvc-backup
+spec:
+  image: diptadas/stash:status
+  args:
+  - backup-pvc
+  - --provider=${REPOSITORY_PROVIDER}
+  - --bucket=${REPOSITORY_BUCKET:=}
+  - --endpoint=${REPOSITORY_ENDPOINT:=}
+  - --path=${REPOSITORY_PREFIX:=}
+  - --secret-dir=/etc/repository/secret # specified
+  - --scratch-dir=/tmp/restic/scratch # specified
+  - --hostname=${HOSTNAME}
+  - --backup-dirs=${TARGET_DIRECTORIES}
+  - --retention-keep-last=${RETENTION_KEEP_LAST:=0}
+  - --retention-keep-hourly=${RETENTION_KEEP_HOURLY:=0}
+  - --retention-keep-daily=${RETENTION_KEEP_DAILY:=0}
+  - --retention-keep-weekly=${RETENTION_KEEP_WEEKLY:=0}
+  - --retention-keep-monthly=${RETENTION_KEEP_MONTHLY:=0}
+  - --retention-keep-yearly=${RETENTION_KEEP_YEARLY:=0}
+  - --retention-keep-tags=${RETENTION_KEEP_TAGS:=}
+  - --retention-prune=${RETENTION_PRUNE:=false}
+  - --retention-dry-run=${RETENTION_DRY_RUN:=false}
+  - --output-dir=${outputDir}
+  #- --metrics-enabled
+  #- --metrics-pushgateway-url
+  #- --metrics-dir
+  #- --metrics-labels
+  volumeMounts:
+  - name: ${scratchDirVolume}
+    mountPath: /tmp/restic/scratch
+  - name: ${targetVolume}
+    mountPath: ${TARGET_MOUNT_PATH}
+  - name: ${secretVolume}
+    mountPath: /etc/repository/secret
+  - name: ${outputVolume}
+    mountPath: ${outputDir}

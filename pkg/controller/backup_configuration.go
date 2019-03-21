@@ -254,16 +254,18 @@ func (c *StashController) EnsureCronJobDeleted(backupConfiguration *api_v1beta1.
 	if err != nil {
 		return err
 	}
-	meta := metav1.ObjectMeta{
-		Name:      backupConfiguration.Name,
-		Namespace: backupConfiguration.Namespace,
+
+	cur, err := c.kubeClient.BatchV1beta1().CronJobs(backupConfiguration.Namespace).Get(backupConfiguration.Name, metav1.GetOptions{})
+	if err != nil {
+		if kerr.IsNotFound(err) {
+			return nil
+		}
+		return err
 	}
-	_, err = batch_util.TryUpdateCronJob(c.kubeClient, meta, func(in *batch_v1beta1.CronJob) *batch_v1beta1.CronJob {
+
+	_, _, err = batch_util.PatchCronJob(c.kubeClient, cur, func(in *batch_v1beta1.CronJob) *batch_v1beta1.CronJob {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 		return in
 	})
-	if err != nil && !kerr.IsNotFound(err) {
-		return err
-	}
-	return nil
+	return err
 }
