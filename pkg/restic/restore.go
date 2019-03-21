@@ -8,7 +8,6 @@ func (w *ResticWrapper) RunRestore(restoreOptions RestoreOptions) (*RestoreOutpu
 	// Start clock to measure total restore duration
 	startTime := time.Now()
 	restoreOutput := &RestoreOutput{}
-
 	if len(restoreOptions.Snapshots) != 0 {
 		for _, snapshot := range restoreOptions.Snapshots {
 			// if snapshot is specified then host and path does not matter.

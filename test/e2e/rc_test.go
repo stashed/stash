@@ -6,6 +6,7 @@ import (
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
+	"github.com/appscode/stash/apis"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/appscode/stash/test/e2e/framework"
@@ -59,7 +60,7 @@ var _ = Describe("ReplicationController", func() {
 		secondRestic.Spec.Backend.StorageSecretName = cred.Name
 		rc = f.ReplicationController()
 		localRef = api.LocalTypedReference{
-			Kind: api.KindReplicationController,
+			Kind: apis.KindReplicationController,
 			Name: rc.Name,
 		}
 	})
@@ -236,7 +237,7 @@ var _ = Describe("ReplicationController", func() {
 			_, err = f.CreateReplicationController(rc)
 			Expect(err).NotTo(HaveOccurred())
 
-			f.CheckLeaderElection(rc.ObjectMeta, api.KindReplicationController)
+			f.CheckLeaderElection(rc.ObjectMeta, apis.KindReplicationController)
 
 			By("Waiting for sidecar")
 			f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(util.StashContainer))

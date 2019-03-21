@@ -14,7 +14,8 @@ source "$REPO_ROOT/hack/libbuild/common/public_image.sh"
 
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
 IMG=stash
-RESTIC_VER=${RESTIC_VER:-0.9.4}
+RESTIC_VER=${RESTIC_VER:-0.8.3}
+NEW_RESTIC_VER=${NEW_RESTIC_VER:-0.9.4} # also update in restic wrapper library
 RESTIC_BRANCH=${RESTIC_BRANCH:-stash-0.4.2}
 
 DIST=$REPO_ROOT/dist
@@ -53,9 +54,14 @@ build_binary() {
     rm -rf $DIST/restic
     mkdir $DIST/restic
     cd $DIST/restic
+    # install restic 0.8.3
     wget https://github.com/restic/restic/releases/download/v${RESTIC_VER}/restic_${RESTIC_VER}_linux_amd64.bz2
     bzip2 -d restic_${RESTIC_VER}_linux_amd64.bz2
     mv restic_${RESTIC_VER}_linux_amd64 restic
+    # install new restic
+    wget https://github.com/restic/restic/releases/download/v${NEW_RESTIC_VER}/restic_${NEW_RESTIC_VER}_linux_amd64.bz2
+    bzip2 -d restic_${NEW_RESTIC_VER}_linux_amd64.bz2
+    mv restic_${NEW_RESTIC_VER}_linux_amd64 restic_${NEW_RESTIC_VER}
   fi
 
   popd
@@ -69,7 +75,9 @@ build_docker() {
   chmod 755 stash
 
   cp $DIST/restic/restic restic
+  cp $DIST/restic/restic_${NEW_RESTIC_VER} restic_${NEW_RESTIC_VER}
   chmod 755 restic
+  chmod 755 restic_${NEW_RESTIC_VER}
 
   cat >Dockerfile <<EOL
 FROM alpine:3.8
@@ -78,6 +86,7 @@ RUN set -x \
   && apk add --update --no-cache ca-certificates
 
 COPY restic /bin/restic
+COPY restic_${NEW_RESTIC_VER} /bin/restic_${NEW_RESTIC_VER}
 COPY stash /bin/stash
 
 ENTRYPOINT ["/bin/stash"]
@@ -87,7 +96,7 @@ EOL
   echo $cmd
   $cmd
 
-  rm stash Dockerfile restic
+  rm stash Dockerfile restic restic_${NEW_RESTIC_VER}
   popd
 }
 

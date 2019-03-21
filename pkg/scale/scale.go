@@ -6,6 +6,7 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
+	"github.com/appscode/stash/apis"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/backup"
 	"github.com/appscode/stash/pkg/util"
@@ -170,7 +171,7 @@ func (c *Controller) ScaleDownWorkload() error {
 
 func ScaleUpWorkload(k8sClient *kubernetes.Clientset, opt backup.Options) error {
 	switch opt.Workload.Kind {
-	case api.KindDeployment:
+	case apis.KindDeployment:
 		obj, err := k8sClient.AppsV1().Deployments(opt.Namespace).Get(opt.Workload.Name, metav1.GetOptions{})
 		if err != nil {
 			return err
@@ -189,7 +190,7 @@ func ScaleUpWorkload(k8sClient *kubernetes.Clientset, opt backup.Options) error 
 		if err != nil {
 			return err
 		}
-	case api.KindReplicationController:
+	case apis.KindReplicationController:
 		obj, err := k8sClient.CoreV1().ReplicationControllers(opt.Namespace).Get(opt.Workload.Name, metav1.GetOptions{})
 		if err != nil {
 			return err
@@ -208,7 +209,7 @@ func ScaleUpWorkload(k8sClient *kubernetes.Clientset, opt backup.Options) error 
 		if err != nil {
 			return err
 		}
-	case api.KindReplicaSet:
+	case apis.KindReplicaSet:
 		obj, err := k8sClient.AppsV1().ReplicaSets(opt.Namespace).Get(opt.Workload.Name, metav1.GetOptions{})
 		if err != nil {
 			return err
@@ -227,9 +228,9 @@ func ScaleUpWorkload(k8sClient *kubernetes.Clientset, opt backup.Options) error 
 		if err != nil {
 			return err
 		}
-	case api.KindStatefulSet:
+	case apis.KindStatefulSet:
 		// do nothing. we didn't scale down.
-	case api.KindDaemonSet:
+	case apis.KindDaemonSet:
 		// do nothing.
 	default:
 		return fmt.Errorf("Unknown workload type")
@@ -256,7 +257,7 @@ func (c *Controller) waitUntilScaledDown() error {
 
 func isDaemonOrStatefulSetPod(ownerRefs []metav1.OwnerReference) bool {
 	for _, ref := range ownerRefs {
-		if ref.Kind == api.KindStatefulSet || ref.Kind == api.KindDaemonSet {
+		if ref.Kind == apis.KindStatefulSet || ref.Kind == apis.KindDaemonSet {
 			return true
 		}
 	}

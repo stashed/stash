@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"strconv"
 
+	"github.com/appscode/stash/apis"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/appscode/stash/test/e2e/framework"
@@ -224,14 +225,14 @@ var _ = Describe("Snapshots", func() {
 			By("Filter by workload name")
 			snapshots, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(metav1.ListOptions{LabelSelector: "workload-name=" + deployment.Name})
 			Expect(err).NotTo(HaveOccurred())
-			workload.Kind = api.KindDeployment
+			workload.Kind = apis.KindDeployment
 			workload.Name = deployment.Name
 			Expect(snapshots).Should(HavePrefixInName(workload.GetRepositoryCRDName("", "")))
 
 			By("Filter by pod name")
 			snapshots, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(metav1.ListOptions{LabelSelector: "pod-name=" + ss.Name + "-0"})
 			Expect(err).NotTo(HaveOccurred())
-			workload.Kind = api.KindStatefulSet
+			workload.Kind = apis.KindStatefulSet
 			workload.Name = ss.Name
 			Expect(snapshots).Should(HavePrefixInName(workload.GetRepositoryCRDName(ss.Name+"-0", "")))
 
@@ -239,11 +240,11 @@ var _ = Describe("Snapshots", func() {
 			By("Filter by node name")
 			snapshots, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(metav1.ListOptions{LabelSelector: "node-name=" + nodename})
 			Expect(err).NotTo(HaveOccurred())
-			workload.Kind = api.KindDaemonSet
+			workload.Kind = apis.KindDaemonSet
 			workload.Name = daemon.Name
 			Expect(snapshots).Should(HavePrefixInName(workload.GetRepositoryCRDName("", nodename)))
 
-			workload.Kind = api.KindDeployment
+			workload.Kind = apis.KindDeployment
 			workload.Name = deployment.Name
 			reponame := workload.GetRepositoryCRDName("", "")
 

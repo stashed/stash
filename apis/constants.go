@@ -15,8 +15,11 @@ const (
 	Hostname = "HOSTNAME"
 
 	TargetName        = "TARGET_NAME"
-	TargetDirectories = "TARGET_DIRECTORIES"
+	TargetAPIVersion  = "TARGET_API_VERSION"
+	TargetKind        = "TARGET_KIND"
+	TargetNamespace   = "TARGET_NAMESPACE"
 	TargetMountPath   = "TARGET_MOUNT_PATH"
+	TargetDirectories = "TARGET_DIRECTORIES"
 
 	RestoreDirectories = "RESTORE_DIRECTORIES"
 	RestoreSnapshots   = "RESTORE_SNAPSHOTS"

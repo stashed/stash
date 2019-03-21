@@ -29,6 +29,7 @@ func (c *StashController) initNamespaceWatcher() {
 						c.stashClient.StashV1alpha1().Restics(item.Namespace).Delete(item.Name, &metav1.DeleteOptions{})
 					}
 				}
+				// TODO: delete other resources that may cause namespace stuck in terminating state
 			}
 		},
 	})

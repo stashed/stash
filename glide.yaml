@@ -100,3 +100,5 @@ import:
   version: release-10.0
 - package: gomodules.xyz/envsubst
   version: master
+- package: kmodules.xyz/custom-resources
+  version: release-10.0

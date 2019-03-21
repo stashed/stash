@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/appscode/stash/apis"
 	rep "github.com/appscode/stash/apis/repositories/v1alpha1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	cs "github.com/appscode/stash/client/clientset/versioned"
@@ -228,23 +229,23 @@ func (f *Invocation) CleanupRecoveredVolume(meta metav1.ObjectMeta) error {
 }
 
 func (f *Framework) DaemonSetRepos(daemon *apps.DaemonSet) []*api.Repository {
-	return f.GetRepositories(KindMetaReplicas{Kind: api.KindDaemonSet, Meta: daemon.ObjectMeta, Replicas: 1})
+	return f.GetRepositories(KindMetaReplicas{Kind: apis.KindDaemonSet, Meta: daemon.ObjectMeta, Replicas: 1})
 }
 
 func (f *Framework) DeploymentRepos(deployment *apps.Deployment) []*api.Repository {
-	return f.GetRepositories(KindMetaReplicas{Kind: api.KindDeployment, Meta: deployment.ObjectMeta, Replicas: int(*deployment.Spec.Replicas)})
+	return f.GetRepositories(KindMetaReplicas{Kind: apis.KindDeployment, Meta: deployment.ObjectMeta, Replicas: int(*deployment.Spec.Replicas)})
 }
 
 func (f *Framework) ReplicationControllerRepos(rc *core.ReplicationController) []*api.Repository {
-	return f.GetRepositories(KindMetaReplicas{Kind: api.KindReplicationController, Meta: rc.ObjectMeta, Replicas: int(*rc.Spec.Replicas)})
+	return f.GetRepositories(KindMetaReplicas{Kind: apis.KindReplicationController, Meta: rc.ObjectMeta, Replicas: int(*rc.Spec.Replicas)})
 }
 
 func (f *Framework) ReplicaSetRepos(rs *apps.ReplicaSet) []*api.Repository {
-	return f.GetRepositories(KindMetaReplicas{Kind: api.KindReplicaSet, Meta: rs.ObjectMeta, Replicas: int(*rs.Spec.Replicas)})
+	return f.GetRepositories(KindMetaReplicas{Kind: apis.KindReplicaSet, Meta: rs.ObjectMeta, Replicas: int(*rs.Spec.Replicas)})
 }
 
 func (f *Framework) StatefulSetRepos(ss *apps.StatefulSet) []*api.Repository {
-	return f.GetRepositories(KindMetaReplicas{Kind: api.KindStatefulSet, Meta: ss.ObjectMeta, Replicas: int(*ss.Spec.Replicas)})
+	return f.GetRepositories(KindMetaReplicas{Kind: apis.KindStatefulSet, Meta: ss.ObjectMeta, Replicas: int(*ss.Spec.Replicas)})
 }
 
 func (f *Framework) LatestSnapshot(snapshots []rep.Snapshot) rep.Snapshot {

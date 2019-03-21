@@ -1,15 +1,9 @@
 package util
 
 import (
-	"fmt"
-	"os"
-	"strings"
-
 	go_str "github.com/appscode/go/strings"
-	"github.com/appscode/stash/apis"
 	api_v1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
 	api "github.com/appscode/stash/apis/stash/v1beta1"
-	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
 	"github.com/appscode/stash/pkg/restic"
 )
 
@@ -41,16 +35,21 @@ func RestoreOptionForRestoreSession(restoreSession api.RestoreSession, extraOpt 
 // if hosts is empty for any rule, it will match any hostname
 func RestoreOptionsForHost(hostname string, rules []api.Rule) restic.RestoreOptions {
 	for _, rule := range rules {
-		if len(rule.Hosts) == 0 {
+		// if host is specified in rule then use it. otherwise use workload itself as host
+		targetHost := hostname
+		if rule.Host != "" {
+			targetHost = rule.Host
+		}
+		if len(rule.Subjects) == 0 {
 			return restic.RestoreOptions{
-				Host:        "",
+				Host:        targetHost,
 				RestoreDirs: rule.Paths,
 				Snapshots:   rule.Snapshots,
 			}
 		}
-		if go_str.Contains(rule.Hosts, hostname) {
+		if go_str.Contains(rule.Subjects, hostname) {
 			return restic.RestoreOptions{
-				Host:        hostname,
+				Host:        targetHost,
 				RestoreDirs: rule.Paths,
 				Snapshots:   rule.Snapshots,
 			}
@@ -78,29 +77,4 @@ func SetupOptionsForRepository(repository api_v1alpha1.Repository, extraOpt Extr
 		ScratchDir:  extraOpt.ScratchDir,
 		EnableCache: extraOpt.EnableCache,
 	}, nil
-}
-
-// TODO: from #675
-func GetHostName(target *api_v1beta1.Target) (string, error) {
-	if target == nil { // target nil for cluster backup
-		return "host-0", nil
-	}
-	switch target.Ref.Kind {
-	case apis.KindStatefulSet:
-		podName := os.Getenv("POD_NAME")
-		if podName == "" {
-			return "", fmt.Errorf("missing podName for %s", apis.KindStatefulSet)
-		}
-		podInfo := strings.Split(podName, "-")
-		podOrdinal := podInfo[len(podInfo)-1]
-		return "host-" + podOrdinal, nil
-	case apis.KindDaemonSet:
-		nodeName := os.Getenv("POD_NAME")
-		if nodeName == "" {
-			return "", fmt.Errorf("missing nodeName for %s", apis.KindDaemonSet)
-		}
-		return nodeName, nil
-	default:
-		return "host-0", nil
-	}
 }

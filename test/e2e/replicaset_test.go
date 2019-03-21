@@ -6,6 +6,7 @@ import (
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
+	"github.com/appscode/stash/apis"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/appscode/stash/test/e2e/framework"
@@ -61,7 +62,7 @@ var _ = Describe("ReplicaSet", func() {
 		secondRestic.Spec.Backend.StorageSecretName = cred.Name
 		rs = f.ReplicaSet()
 		localRef = api.LocalTypedReference{
-			Kind: api.KindReplicaSet,
+			Kind: apis.KindReplicaSet,
 			Name: rs.Name,
 		}
 	})
@@ -240,7 +241,7 @@ var _ = Describe("ReplicaSet", func() {
 			f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for leader election")
-			f.CheckLeaderElection(rs.ObjectMeta, api.KindReplicaSet)
+			f.CheckLeaderElection(rs.ObjectMeta, apis.KindReplicaSet)
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&rs).ShouldNot(BeEmpty())

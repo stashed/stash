@@ -4,6 +4,7 @@ import (
 	"math"
 	"strconv"
 
+	"github.com/appscode/stash/apis"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/osm"
 	"github.com/appscode/stash/pkg/util"
@@ -44,9 +45,9 @@ func (f *Framework) GetRepositories(kmr KindMetaReplicas) []*api.Repository {
 	nodeName := f.GetNodeName(kmr.Meta)
 	workload := api.LocalTypedReference{Name: kmr.Meta.Name, Kind: kmr.Kind}
 	switch kmr.Kind {
-	case api.KindDeployment, api.KindReplicationController, api.KindReplicaSet, api.KindDaemonSet:
+	case apis.KindDeployment, apis.KindReplicationController, apis.KindReplicaSet, apis.KindDaemonSet:
 		repoNames = append(repoNames, workload.GetRepositoryCRDName("", nodeName))
-	case api.KindStatefulSet:
+	case apis.KindStatefulSet:
 		for i := 0; i < kmr.Replicas; i++ {
 			repoNames = append(repoNames, workload.GetRepositoryCRDName(kmr.Meta.Name+"-"+strconv.Itoa(i), nodeName))
 		}

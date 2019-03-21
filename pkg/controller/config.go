@@ -14,6 +14,8 @@ import (
 	"k8s.io/client-go/rest"
 	reg_util "kmodules.xyz/client-go/admissionregistration/v1beta1"
 	"kmodules.xyz/client-go/discovery"
+	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
+	appcatalog_informers "kmodules.xyz/custom-resources/client/informers/externalversions"
 )
 
 const (
@@ -35,10 +37,11 @@ type config struct {
 type Config struct {
 	config
 
-	ClientConfig *rest.Config
-	KubeClient   kubernetes.Interface
-	StashClient  cs.Interface
-	CRDClient    crd_cs.ApiextensionsV1beta1Interface
+	ClientConfig     *rest.Config
+	KubeClient       kubernetes.Interface
+	StashClient      cs.Interface
+	CRDClient        crd_cs.ApiextensionsV1beta1Interface
+	AppCatalogClient appcatalog_cs.Interface
 }
 
 func NewConfig(clientConfig *rest.Config) *Config {
@@ -56,18 +59,20 @@ func (c *Config) New() (*StashController, error) {
 		opt.IncludeUninitialized = true
 	}
 	ctrl := &StashController{
-		config:       c.config,
-		clientConfig: c.ClientConfig,
-		kubeClient:   c.KubeClient,
-		stashClient:  c.StashClient,
-		crdClient:    c.CRDClient,
+		config:           c.config,
+		clientConfig:     c.ClientConfig,
+		kubeClient:       c.KubeClient,
+		stashClient:      c.StashClient,
+		crdClient:        c.CRDClient,
+		appCatalogClient: c.AppCatalogClient,
 		kubeInformerFactory: informers.NewSharedInformerFactoryWithOptions(
 			c.KubeClient,
 			c.ResyncPeriod,
 			informers.WithNamespace(core.NamespaceAll),
 			informers.WithTweakListOptions(tweakListOptions)),
-		stashInformerFactory: stashinformers.NewSharedInformerFactory(c.StashClient, c.ResyncPeriod),
-		recorder:             eventer.NewEventRecorder(c.KubeClient, "stash-operator"),
+		stashInformerFactory:      stashinformers.NewSharedInformerFactory(c.StashClient, c.ResyncPeriod),
+		appCatalogInformerFactory: appcatalog_informers.NewSharedInformerFactory(c.AppCatalogClient, c.ResyncPeriod),
+		recorder:                  eventer.NewEventRecorder(c.KubeClient, "stash-operator"),
 	}
 
 	if err := ctrl.ensureCustomResourceDefinitions(); err != nil {
@@ -89,24 +94,25 @@ func (c *Config) New() (*StashController, error) {
 			return nil, err
 		}
 	}
-	if ctrl.EnableRBAC {
-		if err := ctrl.ensureCronJobClusterRole(); err != nil {
-			return nil, err
-		}
-	}
+
 	ctrl.initNamespaceWatcher()
-	ctrl.initResticWatcher()
-	ctrl.initRecoveryWatcher()
-	ctrl.initRepositoryWatcher()
 	ctrl.initDeploymentWatcher()
 	ctrl.initDaemonSetWatcher()
 	ctrl.initStatefulSetWatcher()
 	ctrl.initRCWatcher()
 	ctrl.initReplicaSetWatcher()
 	ctrl.initJobWatcher()
+	ctrl.initPVCWatcher()
+
+	ctrl.initResticWatcher()
+	ctrl.initRecoveryWatcher()
+	ctrl.initRepositoryWatcher()
+
 	ctrl.initBackupConfigurationWatcher()
 	ctrl.initBackupSessionWatcher()
 	ctrl.initRestoreSessionWatcher()
+
+	ctrl.initAppBindingWatcher()
 
 	return ctrl, nil
 }

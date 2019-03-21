@@ -47,6 +47,10 @@ const (
 	EventReasonRestoreSessionSucceeded  = "RestoreSessionSucceeded"
 	EventReasonRestoreSessionFailed     = "RestoreSessionFailedToExecute"
 	EventReasonRestoreSessionJobCreated = "RestoreSessionJobCreated"
+
+	// RestoreSession events
+	EventReasonRestoreFailed  = "FailedRestoreSession"
+	EventReasonRestoreSuccess = "SuccessfulRestoreSession"
 )
 
 func NewEventRecorder(client kubernetes.Interface, component string) record.EventRecorder {

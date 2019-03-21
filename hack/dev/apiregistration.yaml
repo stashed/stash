@@ -26,7 +26,7 @@ metadata:
 subsets:
 - addresses:
   # list all external ips for this service
-  - ip: 10.0.2.2
+  - ip: 10.0.2.15
   ports:
   - name: api
     port: 8443

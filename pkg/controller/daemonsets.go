@@ -1,16 +1,12 @@
 package controller
 
 import (
-	"github.com/appscode/go/log"
-	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	"github.com/appscode/stash/apis"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	appsv1 "k8s.io/api/apps/v1"
-	appsv1beta2 "k8s.io/api/apps/v1beta2"
-	extensions "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	apps_util "kmodules.xyz/client-go/apps/v1"
 	"kmodules.xyz/client-go/tools/queue"
 	"kmodules.xyz/webhook-runtime/admission"
@@ -33,12 +29,32 @@ func (c *StashController) NewDaemonSetWebhook() hooks.AdmissionHook {
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
 				w := obj.(*wapi.Workload)
-				_, _, err := c.mutateDaemonSet(w)
+				// apply stash backup/restore logic on this workload
+				modified, err := c.applyStashLogic(w)
+				if err != nil {
+					return w, err
+				}
+				if modified {
+					err := setRollingUpdate(w)
+					if err != nil {
+						return w, err
+					}
+				}
 				return w, err
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
 				w := newObj.(*wapi.Workload)
-				_, _, err := c.mutateDaemonSet(w)
+				// apply stash backup/restore logic on this workload
+				modified, err := c.applyStashLogic(w)
+				if err != nil {
+					return w, err
+				}
+				if modified {
+					err := setRollingUpdate(w)
+					if err != nil {
+						return w, err
+					}
+				}
 				return w, err
 			},
 		},
@@ -69,88 +85,49 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 		glog.Infof("Sync/Add/Update for DaemonSet %s", key)
 
 		ds := obj.(*appsv1.DaemonSet).DeepCopy()
-		ds.GetObjectKind().SetGroupVersionKind(appsv1.SchemeGroupVersion.WithKind(api.KindDaemonSet))
+		ds.GetObjectKind().SetGroupVersionKind(appsv1.SchemeGroupVersion.WithKind(apis.KindDaemonSet))
 
+		// convert DaemonSet into a common object (Workload type) so that
+		// we don't need to re-write stash logic for DaemonSet separately
 		w, err := wcs.ConvertToWorkload(ds.DeepCopy())
 		if err != nil {
-			return nil
-		}
-		_, modified, err := c.mutateDaemonSet(w)
-		if err != nil {
+			glog.Errorf("failed to convert DaemonSet %s/%s to workload type. Reason: %v", ds.Namespace, ds.Name, err)
 			return err
 		}
+
+		modified, err := c.applyStashLogic(w)
+		if err != nil {
+			glog.Errorf("failed to apply stash logic on DaemonSet %s/%s. Reason: %v", ds.Namespace, ds.Name, err)
+			return err
+		}
+
 		if modified {
-			_, _, err := apps_util.PatchDaemonSetObject(c.kubeClient, ds, w.Object.(*appsv1.DaemonSet))
+			// set update strategy RollingUpdate so that pods automatically restart after patch
+			err := setRollingUpdate(w)
 			if err != nil {
 				return err
 			}
-			return apps_util.WaitUntilDaemonSetReady(c.kubeClient, ds.ObjectMeta)
+
+			// workload has been modified. patch the workload so that respective pods start with the updated spec
+			_, _, err = apps_util.PatchDaemonSetObject(c.kubeClient, ds, w.Object.(*appsv1.DaemonSet))
+			if err != nil {
+				glog.Errorf("failed to update DaemonSet %s/%s. Reason: %v", ds.Namespace, ds.Name, err)
+				return err
+			}
+
+			// wait until newly patched daemon pods are ready
+			err = util.WaitUntilDaemonSetReady(c.kubeClient, ds.ObjectMeta)
+			if err != nil {
+				return err
+			}
+		}
+
+		// if the workload does not have any stash sidecar/init-container then
+		// delete respective RoleBinding if exist
+		err = c.ensureUnnecessaryWorkloadRBACDeleted(w)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
-}
-
-func (c *StashController) mutateDaemonSet(w *wapi.Workload) (*api.Restic, bool, error) {
-	oldRestic, err := util.GetAppliedRestic(w.Annotations)
-	if err != nil {
-		return nil, false, err
-	}
-
-	newRestic, err := util.FindRestic(c.rstLister, w.ObjectMeta)
-	if err != nil {
-		log.Errorf("Error while searching Restic for DaemonSet %s/%s.", w.Name, w.Namespace)
-		return nil, false, err
-	}
-
-	if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
-		if !newRestic.Spec.Paused {
-			err := c.ensureWorkloadSidecar(w, oldRestic, newRestic)
-			if err != nil {
-				return nil, false, err
-			}
-			wcs.ApplyWorkload(w.Object, w)
-			switch t := w.Object.(type) {
-			case *extensions.DaemonSet:
-				t.Spec.UpdateStrategy.Type = extensions.RollingUpdateDaemonSetStrategyType
-				if t.Spec.UpdateStrategy.RollingUpdate == nil ||
-					t.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable == nil ||
-					t.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable.IntValue() == 0 {
-					count := intstr.FromInt(1)
-					t.Spec.UpdateStrategy.RollingUpdate = &extensions.RollingUpdateDaemonSet{
-						MaxUnavailable: &count,
-					}
-				}
-			case *appsv1beta2.DaemonSet:
-				t.Spec.UpdateStrategy.Type = appsv1beta2.RollingUpdateDaemonSetStrategyType
-				if t.Spec.UpdateStrategy.RollingUpdate == nil ||
-					t.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable == nil ||
-					t.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable.IntValue() == 0 {
-					count := intstr.FromInt(1)
-					t.Spec.UpdateStrategy.RollingUpdate = &appsv1beta2.RollingUpdateDaemonSet{
-						MaxUnavailable: &count,
-					}
-				}
-			case *appsv1.DaemonSet:
-				t.Spec.UpdateStrategy.Type = appsv1.RollingUpdateDaemonSetStrategyType
-				if t.Spec.UpdateStrategy.RollingUpdate == nil ||
-					t.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable == nil ||
-					t.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable.IntValue() == 0 {
-					count := intstr.FromInt(1)
-					t.Spec.UpdateStrategy.RollingUpdate = &appsv1.RollingUpdateDaemonSet{
-						MaxUnavailable: &count,
-					}
-				}
-			}
-
-			return newRestic, true, nil
-		}
-	} else if oldRestic != nil && newRestic == nil {
-		err := c.ensureWorkloadSidecarDeleted(w, oldRestic)
-		if err != nil {
-			return nil, false, err
-		}
-		wcs.ApplyWorkload(w.Object, w)
-		return oldRestic, true, nil
-	}
-	return oldRestic, false, nil
 }

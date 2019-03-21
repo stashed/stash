@@ -11,6 +11,7 @@ import (
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
+	"github.com/appscode/stash/apis"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/appscode/stash/test/e2e/framework"
@@ -65,7 +66,7 @@ var _ = Describe("Deployment", func() {
 		secondRestic.Spec.Backend.StorageSecretName = cred.Name
 		deployment = f.Deployment()
 		localRef = api.LocalTypedReference{
-			Kind: api.KindDeployment,
+			Kind: apis.KindDeployment,
 			Name: deployment.Name,
 		}
 
@@ -247,7 +248,7 @@ var _ = Describe("Deployment", func() {
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for leader election")
-			f.CheckLeaderElection(deployment.ObjectMeta, api.KindDeployment)
+			f.CheckLeaderElection(deployment.ObjectMeta, apis.KindDeployment)
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
