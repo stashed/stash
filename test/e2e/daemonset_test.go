@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/appscode/go/crypto/rand"
+	"github.com/appscode/stash/apis"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/appscode/stash/test/e2e/framework"
@@ -59,7 +60,7 @@ var _ = Describe("DaemonSet", func() {
 		secondRestic.Spec.Backend.StorageSecretName = cred.Name
 		daemon = f.DaemonSet()
 		localRef = api.LocalTypedReference{
-			Kind: api.KindDaemonSet,
+			Kind: apis.KindDaemonSet,
 			Name: daemon.Name,
 		}
 	})

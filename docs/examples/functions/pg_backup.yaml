@@ -1,0 +1,36 @@
+apiVersion: stash.appscode.com/v1beta1
+kind: Function
+metadata:
+  name: pg-backup
+spec:
+  image: diptadas/stash:pg
+  args:
+  - backup-pg
+  - --provider=${REPOSITORY_PROVIDER:=}
+  - --bucket=${REPOSITORY_BUCKET:=}
+  - --endpoint=${REPOSITORY_ENDPOINT:=}
+  - --path=${REPOSITORY_PREFIX:=}
+  - --secret-dir=/etc/repository/secret # specified
+  - --scratch-dir=/tmp/restic/scratch # specified
+  #- --enable-cache
+  - --hostname=${HOSTNAME:=} # TODO: user input or, from operator ?
+  #- --backup-dirs=${TARGET_DIRECTORIES:=}
+  - --pg-args=${pgArgs:=} # user input
+  - --namespace=${NAMESPACE:=}
+  - --app-binding=${TARGET_NAME:=}
+  - --retention-keep-last=${RETENTION_KEEP_LAST:=} # TODO: complete list
+  - --retention-keep-tags=${RETENTION_KEEP_TAGS:=}
+  - --retention-prune=${RETENTION_PRUNE:=}
+  - --retention-dry-run=${RETENTION_DRY_RUN:=}
+  - --output-dir=${outputDir:=}
+  #- --metrics-enabled
+  #- --metrics-pushgateway-url
+  #- --metrics-dir
+  #- --metrics-labels
+  volumeMounts:
+  - name: ${scratchDirVolume}
+    mountPath: /tmp/restic/scratch
+  - name: ${secretVolume}
+    mountPath: /etc/repository/secret
+  - name: ${outputVolume}
+    mountPath: ${outputDir}

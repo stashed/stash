@@ -27,6 +27,11 @@ rules:
   - "*"
   verbs: ["*"]
 - apiGroups:
+    - appcatalog.appscode.com
+  resources:
+    - "*"
+  verbs: ["*"]
+- apiGroups:
   - apps
   resources:
   - daemonsets
@@ -51,6 +56,11 @@ rules:
   resources:
   - configmaps
   verbs: ["create", "update", "get", "delete"]
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs: ["get","list","watch"]
 - apiGroups:
   - ""
   resources:

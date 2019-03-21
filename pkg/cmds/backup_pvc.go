@@ -40,7 +40,7 @@ func NewCmdBackupPVC() *cobra.Command {
 				return handleResticError(outputDir, restic.DefaultOutputFileName, err)
 			}
 			// Run backup
-			backupOutput, backupErr := resticWrapper.RunBackup(&backupOpt)
+			backupOutput, backupErr := resticWrapper.RunBackup(backupOpt)
 			// If metrics are enabled then generate metrics
 			if metrics.Enabled {
 				err := backupOutput.HandleMetrics(&metrics, backupErr)

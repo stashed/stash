@@ -7,7 +7,7 @@ import (
 
 	"github.com/appscode/go/log"
 	v "github.com/appscode/go/version"
-	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	"github.com/appscode/stash/apis"
 	cs "github.com/appscode/stash/client/clientset/versioned"
 	"github.com/appscode/stash/pkg/backup"
 	"github.com/appscode/stash/pkg/docker"
@@ -80,7 +80,7 @@ func NewCmdBackup() *cobra.Command {
 					log.Fatal(err)
 				}
 			} else { // for offline backup
-				if opt.Workload.Kind == api.KindDaemonSet || opt.Workload.Kind == api.KindStatefulSet {
+				if opt.Workload.Kind == apis.KindDaemonSet || opt.Workload.Kind == apis.KindStatefulSet {
 					log.Infoln("Running backup once")
 					if err = ctrl.Backup(); err != nil {
 						log.Fatal(err)

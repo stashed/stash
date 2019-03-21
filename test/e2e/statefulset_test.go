@@ -6,6 +6,7 @@ import (
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
+	"github.com/appscode/stash/apis"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/appscode/stash/test/e2e/framework"
@@ -65,7 +66,7 @@ var _ = Describe("StatefulSet", func() {
 		svc = f.HeadlessService()
 		ss = f.StatefulSet()
 		localRef = api.LocalTypedReference{
-			Kind: api.KindStatefulSet,
+			Kind: apis.KindStatefulSet,
 			Name: ss.Name,
 		}
 	})

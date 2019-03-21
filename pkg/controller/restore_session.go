@@ -6,8 +6,9 @@ import (
 	"github.com/appscode/go/log"
 	"github.com/appscode/stash/apis"
 	"github.com/appscode/stash/apis/stash"
-	api "github.com/appscode/stash/apis/stash/v1beta1"
-	stash_util "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1beta1/util"
+	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
+	stash_scheme "github.com/appscode/stash/client/clientset/versioned/scheme"
+	v1beta1_util "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1beta1/util"
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/resolve"
 	"github.com/appscode/stash/pkg/util"
@@ -17,7 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/reference"
 	batch_util "kmodules.xyz/client-go/batch/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
@@ -36,19 +37,19 @@ func (c *StashController) NewRestoreSessionWebhook() hooks.AdmissionHook {
 		schema.GroupVersionResource{
 			Group:    "admission.stash.appscode.com",
 			Version:  "v1beta1",
-			Resource: api.ResourcePluralRestoreSession,
+			Resource: api_v1beta1.ResourcePluralRestoreSession,
 		},
-		api.ResourceSingularRestoreSession,
+		api_v1beta1.ResourceSingularRestoreSession,
 		[]string{stash.GroupName},
-		api.SchemeGroupVersion.WithKind(api.ResourceKindRestoreSession),
+		api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindRestoreSession),
 		nil,
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
-				return nil, obj.(*api.RestoreSession).IsValid()
+				return nil, obj.(*api_v1beta1.RestoreSession).IsValid()
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
 				// TODO: should not allow spec update ???
-				if !meta.Equal(oldObj.(*api.RestoreSession).Spec, newObj.(*api.RestoreSession).Spec) {
+				if !meta.Equal(oldObj.(*api_v1beta1.RestoreSession).Spec, newObj.(*api_v1beta1.RestoreSession).Spec) {
 					return nil, fmt.Errorf("RestoreSession spec is immutable")
 				}
 				return nil, nil
@@ -60,22 +61,12 @@ func (c *StashController) NewRestoreSessionWebhook() hooks.AdmissionHook {
 // process only add events
 func (c *StashController) initRestoreSessionWatcher() {
 	c.restoreSessionInformer = c.stashInformerFactory.Stash().V1beta1().RestoreSessions().Informer()
-	c.restoreSessionQueue = queue.New("RestoreSession", c.MaxNumRequeues, c.NumThreads, c.runRestoreSessionInjector)
-	c.restoreSessionInformer.AddEventHandler(&cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			if r, ok := obj.(*api.RestoreSession); ok {
-				if err := r.IsValid(); err != nil {
-					eventer.CreateEvent(c.kubeClient, eventer.RestoreSessionEventComponent, r, core.EventTypeWarning, eventer.EventReasonInvalidRestoreSession, err.Error())
-					return
-				}
-				queue.Enqueue(c.restoreSessionQueue.GetQueue(), obj)
-			}
-		},
-	})
+	c.restoreSessionQueue = queue.New(api_v1beta1.ResourceKindRestoreSession, c.MaxNumRequeues, c.NumThreads, c.runRestoreSessionProcessor)
+	c.restoreSessionInformer.AddEventHandler(queue.NewObservableHandler(c.restoreSessionQueue.GetQueue(), apis.EnableStatusSubresource))
 	c.restoreSessionLister = c.stashInformerFactory.Stash().V1beta1().RestoreSessions().Lister()
 }
 
-func (c *StashController) runRestoreSessionInjector(key string) error {
+func (c *StashController) runRestoreSessionProcessor(key string) error {
 	obj, exists, err := c.restoreSessionInformer.GetIndexer().GetByKey(key)
 	if err != nil {
 		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)
@@ -84,42 +75,129 @@ func (c *StashController) runRestoreSessionInjector(key string) error {
 	if !exists {
 		glog.Warningf("RestoreSession %s does not exist anymore\n", key)
 		return nil
-	}
-	restoreSession := obj.(*api.RestoreSession)
-	glog.Infof("Sync/Add/Update for RestoreSession %s", restoreSession.GetName())
+	} else {
+		restoreSession := obj.(*api_v1beta1.RestoreSession)
+		glog.Infof("Sync/Add/Update for RestoreSession %s", restoreSession.GetName())
 
-	// execute restoreSession, update status and write event
-	job, err := c.executeRestoreSession(restoreSession)
-	if err != nil {
-		log.Errorln(err)
-		eventer.CreateEvent(c.kubeClient, eventer.RestoreSessionEventComponent, restoreSession, core.EventTypeWarning, eventer.EventReasonRestoreSessionFailed, err.Error())
-		stash_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession, func(in *api.RestoreSessionStatus) *api.RestoreSessionStatus {
-			in.Phase = api.RestoreFailed
-			return in
-		}, apis.EnableStatusSubresource)
-		return err
+		// if RestoreSession is being deleted then remove respective init-container
+		if restoreSession.DeletionTimestamp != nil {
+
+			// if RestoreSession has stash finalizer then respective init-container (for workloads) hasn't been removed
+			// remove respective init-container and finally remove finalizer
+			if core_util.HasFinalizer(restoreSession.ObjectMeta, api_v1beta1.StashKey) {
+				if restoreSession.Spec.Target != nil && util.BackupModel(restoreSession.Spec.Target.Ref.Kind) == util.ModelSidecar {
+
+					// send event to workload controller. workload controller will take care of removing restore init-container
+					err := c.sendEventToWorkloadQueue(
+						restoreSession.Spec.Target.Ref.Kind,
+						restoreSession.Namespace,
+						restoreSession.Spec.Target.Ref.Name,
+					)
+					if err != nil {
+						log.Errorln(err)
+						return err
+					}
+				}
+
+				// remove finalizer
+				_, _, err = v1beta1_util.PatchRestoreSession(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSession) *api_v1beta1.RestoreSession {
+					in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, api_v1beta1.StashKey)
+					return in
+				})
+				if err != nil {
+					log.Errorln(err)
+					return err
+				}
+			}
+		} else {
+			// add finalizer
+			_, _, err = v1beta1_util.PatchRestoreSession(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSession) *api_v1beta1.RestoreSession {
+				in.ObjectMeta = core_util.AddFinalizer(in.ObjectMeta, api_v1beta1.StashKey)
+				return in
+			})
+			if err != nil {
+				return err
+			}
+
+			// don't process further if RestoreSession has been processed already
+			if !util.RestorePending(restoreSession.Status.Phase) {
+				log.Infoln("No pending RestoreSession. Skipping creating new restore job.")
+				return nil
+			}
+
+			// if target is kubernetes workload i.e. Deployment, StatefulSet etc. then inject restore init-container
+			if restoreSession.Spec.Target != nil && util.BackupModel(restoreSession.Spec.Target.Ref.Kind) == util.ModelSidecar {
+				// send event to workload controller. workload controller will take care of injecting restore init-container
+				err := c.sendEventToWorkloadQueue(
+					restoreSession.Spec.Target.Ref.Kind,
+					restoreSession.Namespace,
+					restoreSession.Spec.Target.Ref.Name,
+				)
+				if err != nil {
+					return err
+				}
+			} else {
+
+				// target is not a workload. we have to restore by a job. create restore job.
+				err := c.ensureRestoreJob(restoreSession)
+				if err != nil {
+					return c.setRestoreSessionFailed(restoreSession, err)
+				}
+
+				// restore job has been created successfully. set RestoreSession phase to "Running"
+				err = c.setRestoreSessionRunning(restoreSession)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
 	}
-	if job != nil { // job successfully created
-		eventer.CreateEvent(c.kubeClient, eventer.RestoreSessionEventComponent, restoreSession, core.EventTypeNormal, eventer.EventReasonRestoreSessionJobCreated, fmt.Sprintf("restore job %s created", job.Name))
-		stash_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession, func(in *api.RestoreSessionStatus) *api.RestoreSessionStatus {
-			in.Phase = api.RestoreRunning
-			return in
-		}, apis.EnableStatusSubresource)
-	} // else it was skipped due to empty/workload target
 	return nil
 }
 
-func (c *StashController) executeRestoreSession(restoreSession *api.RestoreSession) (*batchv1.Job, error) {
-	if restoreSession.Status.Phase == api.RestoreSucceeded || restoreSession.Status.Phase == api.RestoreRunning {
-		return nil, nil
-	}
-	// skip if target is a workload (i.e. deployment/daemonset/replicaset/statefulset)
-	// target is nil for cluster backup
-	if restoreSession.Spec.Target != nil && restoreSession.Spec.Target.Ref.IsWorkload() {
-		log.Infof("Skipping RestoreSession %s/%s, reason: target is a workload", restoreSession.Namespace, restoreSession.Name)
-		return nil, nil
+func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSession) error {
+	objectMeta := metav1.ObjectMeta{
+		Name:      RestoreJobPrefix + restoreSession.Name,
+		Namespace: restoreSession.Namespace,
 	}
 
+	ref, err := reference.GetReference(stash_scheme.Scheme, restoreSession)
+	if err != nil {
+		return err
+	}
+
+	// if RBAC is enabled then ensure respective ClusterRole,RoleBinding,ServiceAccount etc.
+	serviceAccountName := "default"
+	if c.EnableRBAC {
+		if restoreSession.Spec.RuntimeSettings.Pod != nil &&
+			restoreSession.Spec.RuntimeSettings.Pod.ServiceAccountName != "" {
+			// ServiceAccount has been specified, so use it.
+			serviceAccountName = restoreSession.Spec.RuntimeSettings.Pod.ServiceAccountName
+		} else {
+			// ServiceAccount hasn't been specified. so create new one with same name as RestoreSession object.
+			serviceAccountName = objectMeta.Name
+
+			_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, objectMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
+				core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+				if in.Labels == nil {
+					in.Labels = map[string]string{}
+				}
+				in.Labels[util.LabelApp] = util.AppLabelStash
+				return in
+			})
+			if err != nil {
+				return err
+			}
+		}
+
+		err := c.ensureRestoreJobRBAC(ref, serviceAccountName)
+		if err != nil {
+			return err
+		}
+	}
+
+	// resolve task template
 	explicitInputs := make(map[string]string)
 	for _, param := range restoreSession.Spec.Task.Params {
 		explicitInputs[param.Name] = param.Value
@@ -127,7 +205,7 @@ func (c *StashController) executeRestoreSession(restoreSession *api.RestoreSessi
 
 	implicitInputs, err := c.inputsForRestoreSession(*restoreSession)
 	if err != nil {
-		return nil, fmt.Errorf("cannot resolve implicit inputs for RestoreSession %s/%s, reason: %s", restoreSession.Namespace, restoreSession.Name, err)
+		return err
 	}
 	implicitInputs[apis.Namespace] = restoreSession.Namespace
 	implicitInputs[apis.RestoreSession] = restoreSession.Name
@@ -141,36 +219,73 @@ func (c *StashController) executeRestoreSession(restoreSession *api.RestoreSessi
 	}
 	podSpec, err := taskResolver.GetPodSpec()
 	if err != nil {
-		return nil, fmt.Errorf("can't get PodSpec for RestoreSession %s/%s, reason: %s", restoreSession.Namespace, restoreSession.Name, err)
+		return err
 	}
 
-	job := &batchv1.Job{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      RestoreJobPrefix + restoreSession.Name,
-			Namespace: restoreSession.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: api.SchemeGroupVersion.String(),
-					Kind:       api.ResourceKindRestoreSession,
-					Name:       restoreSession.Name,
-					UID:        restoreSession.UID,
-				},
-			},
-			Labels: map[string]string{
-				// job controller should not delete this job on completion
-				// use a different label than v1alpha1 job labels to skip deletion from job controller
-				// TODO: Remove job controller, cleanup backup-session periodically
-				"app": util.AppLabelStashV1Beta1,
-			},
-		},
-		Spec: batchv1.JobSpec{
-			Template: core.PodTemplateSpec{
-				Spec: podSpec,
-			},
-		},
-	}
-	job, _, err = batch_util.CreateOrPatchJob(c.kubeClient, job.ObjectMeta, func(_ *batchv1.Job) *batchv1.Job {
-		return job
+	// create Restore Job
+	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, objectMeta, func(in *batchv1.Job) *batchv1.Job {
+		// set RestoreSession as owner of this Job
+		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+		in.Labels = map[string]string{
+			// job controller should not delete this job on completion
+			// use a different label than v1alpha1 job labels to skip deletion from job controller
+			// TODO: Remove job controller, cleanup backup-session periodically
+			util.LabelApp: util.AppLabelStash,
+		}
+		in.Spec.Template.Spec = podSpec
+		if c.EnableRBAC {
+			in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+		}
+		return in
 	})
-	return job, err
+
+	return err
+}
+
+func (c *StashController) setRestoreSessionFailed(restoreSession *api_v1beta1.RestoreSession, jobErr error) error {
+
+	// set RestoreSession phase to "Failed"
+	_, err := v1beta1_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
+		in.Phase = api_v1beta1.RestoreFailed
+		return in
+	}, apis.EnableStatusSubresource)
+	if err != nil {
+		return err
+	}
+
+	// write failure event
+	_, err = eventer.CreateEvent(
+		c.kubeClient,
+		eventer.RestoreSessionEventComponent,
+		restoreSession,
+		core.EventTypeWarning,
+		eventer.EventReasonRestoreSessionFailed,
+		jobErr.Error(),
+	)
+
+	return err
+}
+
+func (c *StashController) setRestoreSessionRunning(restoreSession *api_v1beta1.RestoreSession) error {
+
+	// set RestoreSession phase to "Running"
+	_, err := v1beta1_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
+		in.Phase = api_v1beta1.RestoreRunning
+		return in
+	}, apis.EnableStatusSubresource)
+	if err != nil {
+		return err
+	}
+
+	// write job creation success event
+	_, err = eventer.CreateEvent(
+		c.kubeClient,
+		eventer.RestoreSessionEventComponent,
+		restoreSession,
+		core.EventTypeNormal,
+		eventer.EventReasonRestoreJobCreated,
+		fmt.Sprintf("restore job has been created succesfully for RestoreSession %s/%s", restoreSession.Namespace, restoreSession.Name),
+	)
+
+	return err
 }

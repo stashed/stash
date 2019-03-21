@@ -1,0 +1,15 @@
+apiVersion: stash.appscode.com/v1alpha1
+kind: Recovery
+metadata:
+  name: stash-demo
+  namespace: demo
+spec:
+  repository:
+    name: daemonset.stash-demo.minikube
+    namespace: demo
+  paths:
+  - /source/data
+  recoveredVolumes:
+  - mountPath: /source/data
+    hostPath:
+      path: /data/stash-test/restic-restored

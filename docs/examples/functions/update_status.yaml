@@ -1,0 +1,17 @@
+apiVersion: stash.appscode.com/v1beta1
+kind: Function
+metadata:
+  name: update-status
+spec:
+  image: diptadas/stash:status
+  args:
+  - update-status
+  - --namespace=${NAMESPACE="default"}
+  - --repository=${REPOSITORY_NAME:=}
+  - --backup-session=${BACKUP_SESSION:=}
+  - --restore-session=${RESTORE_SESSION:=}
+  - --output-dir=${outputDir}
+  - --enable-status-subresource=${ENABLE_STATUS_SUBRESOURCE:=false}
+  volumeMounts:
+  - name: ${outputVolume}
+    mountPath: ${outputDir}

@@ -1,5 +1,9 @@
 package v1beta1
 
+import (
+	core "k8s.io/api/core/v1"
+)
+
 // Param declares a value to use for the Param called Name.
 type Param struct {
 	Name  string `json:"name"`
@@ -18,10 +22,10 @@ type Target struct {
 	// Directories specify the directories to backup
 	// +optional
 	Directories []string `json:"directories,omitempty"`
-	// Path within the container at which the volume should be mounted.  Must
-	// not contain ':'.
+	// VolumeMounts specifies the volumes to mount inside stash sidecar/init container
+	// Specify the volumes that contains the target directories
 	// +optional
-	MountPath string `json:"mountPath,omitempty"`
+	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty"`
 }
 
 type TargetRef struct {

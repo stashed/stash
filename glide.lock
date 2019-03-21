@@ -229,7 +229,7 @@ imports:
 - name: github.com/go-openapi/spec
   version: 5b6cdde3200976e3ecceb2868706ee39b6aff3e4
 - name: github.com/go-openapi/swag
-  version: f3f9494671f93fcff853e3c6e9e948b3eb71e590
+  version: 1d0bd113de87027671077d3c71eb3ac5d7dbba72
 - name: github.com/gogo/protobuf
   version: 342cbe0a04158f6dcb03ca0079991a51a4248c02
   subpackages:
@@ -1064,6 +1064,19 @@ imports:
   - tools/cli
   - tools/clientcmd
   - tools/queue
+- name: kmodules.xyz/custom-resources
+  version: ed1c15a0bbda8ae9e4a75d293b0001e1039bacba
+  subpackages:
+  - apis/appcatalog
+  - apis/appcatalog/v1alpha1
+  - client/clientset/versioned
+  - client/clientset/versioned/scheme
+  - client/clientset/versioned/typed/appcatalog/v1alpha1
+  - client/informers/externalversions
+  - client/informers/externalversions/appcatalog
+  - client/informers/externalversions/appcatalog/v1alpha1
+  - client/informers/externalversions/internalinterfaces
+  - client/listers/appcatalog/v1alpha1
 - name: kmodules.xyz/objectstore-api
   version: 433d1fad089cb639415b182f6067cc5ffd43a2b3
   subpackages:

@@ -104,8 +104,8 @@ func (c *StashController) inputsForTarget(target *api.Target) map[string]string 
 		if len(target.Directories) > 0 {
 			inputs[apis.TargetDirectories] = strings.Join(target.Directories, ",")
 		}
-		if target.MountPath != "" {
-			inputs[apis.TargetMountPath] = target.MountPath
+		if target.VolumeMounts != nil {
+			inputs[apis.TargetMountPath] = target.VolumeMounts[0].MountPath
 		}
 	}
 	return inputs

@@ -1,13 +1,10 @@
 package controller
 
 import (
-	"github.com/appscode/go/log"
-	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	"github.com/appscode/stash/apis"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	appsv1 "k8s.io/api/apps/v1"
-	appsv1beta1 "k8s.io/api/apps/v1beta1"
-	appsv1beta2 "k8s.io/api/apps/v1beta2"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	apps_util "kmodules.xyz/client-go/apps/v1"
@@ -32,13 +29,33 @@ func (c *StashController) NewStatefulSetWebhook() hooks.AdmissionHook {
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
 				w := obj.(*wapi.Workload)
-				_, _, err := c.mutateStatefulSet(w)
+				// apply stash backup/restore logic on this workload
+				modified, err := c.applyStashLogic(w)
+				if err != nil {
+					return w, err
+				}
+				if modified {
+					err := setRollingUpdate(w)
+					if err != nil {
+						return w, err
+					}
+				}
 				return w, err
 
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
 				w := newObj.(*wapi.Workload)
-				_, _, err := c.mutateStatefulSet(w)
+				// apply stash backup/restore logic on this workload
+				modified, err := c.applyStashLogic(w)
+				if err != nil {
+					return w, err
+				}
+				if modified {
+					err := setRollingUpdate(w)
+					if err != nil {
+						return w, err
+					}
+				}
 				return w, err
 			},
 		},
@@ -69,72 +86,49 @@ func (c *StashController) runStatefulSetInjector(key string) error {
 		glog.Infof("Sync/Add/Update for StatefulSet %s", key)
 
 		ss := obj.(*appsv1.StatefulSet).DeepCopy()
-		ss.GetObjectKind().SetGroupVersionKind(appsv1beta1.SchemeGroupVersion.WithKind(api.KindStatefulSet))
+		ss.GetObjectKind().SetGroupVersionKind(appsv1.SchemeGroupVersion.WithKind(apis.KindStatefulSet))
 
+		// convert StatefulSet into a common object (Workload type) so that
+		// we don't need to re-write stash logic for StatefulSet separately
 		w, err := wcs.ConvertToWorkload(ss.DeepCopy())
 		if err != nil {
-			return nil
+			glog.Errorf("failed to convert StatefulSet %s/%s to workload type. Reason: %v", ss.Namespace, ss.Name, err)
+			return err
 		}
-		_, modified, err := c.mutateStatefulSet(w)
+
+		// apply stash backup/restore logic on this workload
+		modified, err := c.applyStashLogic(w)
 		if err != nil {
-			return nil
+			glog.Errorf("failed to apply stash logic on StatefulSet %s/%s. Reason: %v", ss.Namespace, ss.Name, err)
+			return err
 		}
 		if modified {
-			_, _, err := apps_util.PatchStatefulSetObject(c.kubeClient, ss, w.Object.(*appsv1.StatefulSet))
+			// set update strategy RollingUpdate so that pods automatically restart after patch
+			err := setRollingUpdate(w)
 			if err != nil {
 				return err
 			}
 
-			return apps_util.WaitUntilStatefulSetReady(c.kubeClient, ss.ObjectMeta)
+			// workload has been modified. patch the workload so that respective pods start with the updated spec
+			_, _, err = apps_util.PatchStatefulSetObject(c.kubeClient, ss, w.Object.(*appsv1.StatefulSet))
+			if err != nil {
+				glog.Errorf("failed to update statefulset %s/%s. Reason: %v", ss.Namespace, ss.Name, err)
+				return err
+			}
+
+			// wait until newly patched StatefulSet pods are ready
+			err = util.WaitUntilStatefulSetReady(c.kubeClient, ss.ObjectMeta)
+			if err != nil {
+				return err
+			}
+		}
+
+		// if the workload does not have any stash sidecar/init-container then
+		// delete respective RBAC stuffs if exist
+		err = c.ensureUnnecessaryWorkloadRBACDeleted(w)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
-}
-
-func (c *StashController) mutateStatefulSet(w *wapi.Workload) (*api.Restic, bool, error) {
-	oldRestic, err := util.GetAppliedRestic(w.Annotations)
-	if err != nil {
-		return nil, false, err
-	}
-
-	newRestic, err := util.FindRestic(c.rstLister, w.ObjectMeta)
-	if err != nil {
-		log.Errorf("Error while searching Restic for StatefulSet %s/%s.", w.Name, w.Namespace)
-		return nil, false, err
-	}
-
-	if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
-		if !newRestic.Spec.Paused {
-			err := c.ensureWorkloadSidecar(w, oldRestic, newRestic)
-			if err != nil {
-				return nil, false, err
-			}
-			wcs.ApplyWorkload(w.Object, w)
-			switch t := w.Object.(type) {
-			case *appsv1beta1.StatefulSet:
-				t.Spec.UpdateStrategy.Type = appsv1beta1.RollingUpdateStatefulSetStrategyType
-			case *appsv1beta2.StatefulSet:
-				t.Spec.UpdateStrategy.Type = appsv1beta2.RollingUpdateStatefulSetStrategyType
-			case *appsv1.StatefulSet:
-				t.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
-			}
-			return newRestic, true, nil
-		}
-	} else if oldRestic != nil && newRestic == nil {
-		err := c.ensureWorkloadSidecarDeleted(w, oldRestic)
-		if err != nil {
-			return nil, false, err
-		}
-		wcs.ApplyWorkload(w.Object, w)
-		switch t := w.Object.(type) {
-		case *appsv1beta1.StatefulSet:
-			t.Spec.UpdateStrategy.Type = appsv1beta1.RollingUpdateStatefulSetStrategyType
-		case *appsv1beta2.StatefulSet:
-			t.Spec.UpdateStrategy.Type = appsv1beta2.RollingUpdateStatefulSetStrategyType
-		case *appsv1.StatefulSet:
-			t.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
-		}
-		return oldRestic, true, nil
-	}
-	return oldRestic, false, nil
 }

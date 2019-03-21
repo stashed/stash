@@ -1,10 +1,20 @@
 package v1beta1
 
 import (
+	"hash/fnv"
+	"strconv"
+
 	"github.com/appscode/stash/apis"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	hashutil "k8s.io/kubernetes/pkg/util/hash"
 	crdutils "kmodules.xyz/client-go/apiextensions/v1beta1"
 )
+
+func (r RestoreSession) GetSpecHash() string {
+	hash := fnv.New64a()
+	hashutil.DeepHashObject(hash, r.Spec)
+	return strconv.FormatUint(hash.Sum64(), 10)
+}
 
 func (c RestoreSession) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crdutils.NewCustomResourceDefinition(crdutils.Config{

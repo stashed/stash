@@ -1,8 +1,7 @@
 package controller
 
 import (
-	"github.com/appscode/go/log"
-	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	"github.com/appscode/stash/apis"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	apps "k8s.io/api/apps/v1"
@@ -32,14 +31,23 @@ func (c *StashController) NewReplicaSetWebhook() hooks.AdmissionHook {
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
 				w := obj.(*wapi.Workload)
-				_, _, err := c.mutateReplicaSet(w)
-				return w, err
-
+				// if ReplicaSet is owned by a Deployment, don't process it.
+				if !apps_util.IsOwnedByDeployment(w.OwnerReferences) {
+					// apply stash backup/restore logic on this workload
+					_, err := c.applyStashLogic(w)
+					return w, err
+				}
+				return w, nil
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
 				w := newObj.(*wapi.Workload)
-				_, _, err := c.mutateReplicaSet(w)
-				return w, err
+				// if ReplicaSet is owned by a Deployment, don't process it.
+				if !apps_util.IsOwnedByDeployment(w.OwnerReferences) {
+					// apply stash backup/restore logic on this workload
+					_, err := c.applyStashLogic(w)
+					return w, err
+				}
+				return w, nil
 			},
 		},
 	)
@@ -70,7 +78,8 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 		if err != nil {
 			return err
 		}
-		err = util.DeleteConfigmapLock(c.kubeClient, ns, api.LocalTypedReference{Kind: api.KindReplicaSet, Name: name})
+		// workload does not exist anymore. so delete respective ConfigMapLocks if exist
+		err = util.DeleteAllConfigMapLocks(c.kubeClient, ns, name, apis.KindReplicaSet)
 		if err != nil && !kerr.IsNotFound(err) {
 			return err
 		}
@@ -78,72 +87,59 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 		glog.Infof("Sync/Add/Update for ReplicaSet %s", key)
 
 		rs := obj.(*apps.ReplicaSet).DeepCopy()
-		rs.GetObjectKind().SetGroupVersionKind(apps.SchemeGroupVersion.WithKind(api.KindReplicaSet))
+		rs.GetObjectKind().SetGroupVersionKind(apps.SchemeGroupVersion.WithKind(apis.KindReplicaSet))
+
+		// convert ReplicaSet into a common object (Workload type) so that
+		// we don't need to re-write stash logic for ReplicaSet separately
 		w, err := wcs.ConvertToWorkload(rs.DeepCopy())
 		if err != nil {
-			return nil
-		}
-
-		restic, modified, err := c.mutateReplicaSet(w)
-		if err != nil {
+			glog.Errorf("failed to convert ReplicaSet %s/%s to workload type. Reason: %v", rs.Namespace, rs.Name, err)
 			return err
 		}
-		if modified {
-			_, _, err = apps_util.PatchReplicaSetObject(c.kubeClient, rs, w.Object.(*apps.ReplicaSet))
-			if err != nil {
-				return err
-			}
-		}
 
-		// ReplicaSet does not have RollingUpdate strategy. We must delete old pods manually to get patched state.
-		if restic != nil {
-			err = c.forceRestartPods(w, restic)
+		// if ReplicaSet is owned by a Deployment, don't process it.
+		if !apps_util.IsOwnedByDeployment(w.OwnerReferences) {
+			// apply stash backup/restore logic on this workload
+			modified, err := c.applyStashLogic(w)
+			if err != nil {
+				return err
+			}
+
+			if modified {
+				// workload has been modified. patch the workload so that respective pods start with the updated spec
+				_, _, err = apps_util.PatchReplicaSetObject(c.kubeClient, rs, w.Object.(*apps.ReplicaSet))
+				if err != nil {
+					glog.Errorf("failed to update ReplicaSet %s/%s. Reason: %v", rs.Namespace, rs.Name, err)
+					return err
+				}
+			}
+
+			// ReplicaSet does not have RollingUpdate strategy. We must delete old pods manually to get patched state.
+			stateChanged, err := c.ensureWorkloadLatestState(w)
+			if err != nil {
+				return err
+			}
+
+			if stateChanged {
+				// wait until newly patched ReplicaSet pods are ready
+				err = util.WaitUntilReplicaSetReady(c.kubeClient, rs.ObjectMeta)
+				if err != nil {
+					return err
+				}
+			}
+
+			// if the workload does not have any stash sidecar/init-container then
+			// delete respective ConfigMapLock and RBAC stuffs if exist
+			err = c.ensureUnnecessaryConfigMapLockDeleted(w)
+			if err != nil {
+				return err
+			}
+			err = c.ensureUnnecessaryWorkloadRBACDeleted(w)
 			if err != nil {
 				return err
 			}
 		}
-		return apps_util.WaitUntilReplicaSetReady(c.kubeClient, rs.ObjectMeta)
 
 	}
 	return nil
-}
-
-func (c *StashController) mutateReplicaSet(w *wapi.Workload) (*api.Restic, bool, error) {
-	if !apps_util.IsOwnedByDeployment(w.OwnerReferences) {
-		oldRestic, err := util.GetAppliedRestic(w.Annotations)
-		if err != nil {
-			return nil, false, err
-		}
-
-		newRestic, err := util.FindRestic(c.rstLister, w.ObjectMeta)
-		if err != nil {
-			log.Errorf("Error while searching Restic for ReplicaSet %s/%s.", w.Name, w.Namespace)
-			return nil, false, err
-		}
-
-		if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
-			if !newRestic.Spec.Paused {
-				err := c.ensureWorkloadSidecar(w, oldRestic, newRestic)
-				if err != nil {
-					return nil, false, err
-				}
-				wcs.ApplyWorkload(w.Object, w)
-				return newRestic, true, nil
-			}
-		} else if oldRestic != nil && newRestic == nil {
-			err := c.ensureWorkloadSidecarDeleted(w, oldRestic)
-			if err != nil {
-				return nil, false, err
-			}
-			wcs.ApplyWorkload(w.Object, w)
-
-			err = util.DeleteConfigmapLock(c.kubeClient, w.Namespace, api.LocalTypedReference{Kind: api.KindReplicaSet, Name: w.Name})
-			if err != nil && !kerr.IsNotFound(err) {
-				return nil, false, err
-			}
-			return oldRestic, true, nil
-		}
-		return oldRestic, false, nil
-	}
-	return nil, false, nil
 }

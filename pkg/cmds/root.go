@@ -52,6 +52,7 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.AddCommand(NewCmdSnapshots())
 	rootCmd.AddCommand(NewCmdForget())
 	rootCmd.AddCommand(NewBackupSession())
+	rootCmd.AddCommand(NewCmdRestore())
 
 	return rootCmd
 }

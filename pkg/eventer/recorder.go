@@ -42,11 +42,15 @@ const (
 	EventReasonBackupSessionFailed     = "BackupSessionFailedToExecute"
 	EventReasonBackupSessionJobCreated = "BackupSessionJobCreated"
 
-	RestoreSessionEventComponent        = "stash-restore-session"
-	EventReasonInvalidRestoreSession    = "InvalidRestoreSession"
-	EventReasonRestoreSessionSucceeded  = "RestoreSessionSucceeded"
-	EventReasonRestoreSessionFailed     = "RestoreSessionFailedToExecute"
-	EventReasonRestoreSessionJobCreated = "RestoreSessionJobCreated"
+	RestoreSessionEventComponent       = "stash-restore-session"
+	EventReasonInvalidRestoreSession   = "InvalidRestoreSession"
+	EventReasonRestoreSessionSucceeded = "RestoreSessionSucceeded"
+	EventReasonRestoreSessionFailed    = "RestoreSessionFailedToExecute"
+	EventReasonRestoreJobCreated       = "RestoreJobCreated"
+
+	// RestoreSession events
+	EventReasonRestoreFailed  = "FailedRestoreSession"
+	EventReasonRestoreSuccess = "SuccessfulRestoreSession"
 )
 
 func NewEventRecorder(client kubernetes.Interface, component string) record.EventRecorder {

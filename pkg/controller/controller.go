@@ -25,19 +25,25 @@ import (
 	reg_util "kmodules.xyz/client-go/admissionregistration/v1beta1"
 	crdutils "kmodules.xyz/client-go/apiextensions/v1beta1"
 	"kmodules.xyz/client-go/tools/queue"
+	appCatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
+	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
+	appcatalog_informers "kmodules.xyz/custom-resources/client/informers/externalversions"
+	abListers "kmodules.xyz/custom-resources/client/listers/appcatalog/v1alpha1"
 )
 
 type StashController struct {
 	config
 
-	clientConfig *rest.Config
-	kubeClient   kubernetes.Interface
-	stashClient  cs.Interface
-	crdClient    crd_cs.ApiextensionsV1beta1Interface
-	recorder     record.EventRecorder
+	clientConfig     *rest.Config
+	kubeClient       kubernetes.Interface
+	stashClient      cs.Interface
+	crdClient        crd_cs.ApiextensionsV1beta1Interface
+	appCatalogClient appcatalog_cs.Interface
+	recorder         record.EventRecorder
 
-	kubeInformerFactory  informers.SharedInformerFactory
-	stashInformerFactory stashinformers.SharedInformerFactory
+	kubeInformerFactory       informers.SharedInformerFactory
+	stashInformerFactory      stashinformers.SharedInformerFactory
+	appCatalogInformerFactory appcatalog_informers.SharedInformerFactory
 
 	// Namespace
 	nsInformer cache.SharedIndexInformer
@@ -82,12 +88,22 @@ type StashController struct {
 	rsInformer cache.SharedIndexInformer
 	rsLister   apps_listers.ReplicaSetLister
 
+	// PersistentVolumeClaim
+	pvcQueue    *queue.Worker
+	pvcInformer cache.SharedIndexInformer
+	pvcLister   core_listers.PersistentVolumeClaimLister
+
+	// AppBinding
+	abQueue    *queue.Worker
+	abInformer cache.SharedIndexInformer
+	abLister   abListers.AppBindingLister
+
 	// Job
 	jobQueue    *queue.Worker
 	jobInformer cache.SharedIndexInformer
 	jobLister   batch_listers.JobLister
 
-	//BackupConfigurationController
+	// BackupConfiguration
 	bcQueue    *queue.Worker
 	bcInformer cache.SharedIndexInformer
 	bcLister   stash_listers_v1beta1.BackupConfigurationLister
@@ -107,12 +123,16 @@ func (c *StashController) ensureCustomResourceDefinitions() error {
 		api.Restic{}.CustomResourceDefinition(),
 		api.Recovery{}.CustomResourceDefinition(),
 		api.Repository{}.CustomResourceDefinition(),
+		api_v1beta1.BackupConfiguration{}.CustomResourceDefinition(),
+		api_v1beta1.BackupSession{}.CustomResourceDefinition(),
 		api_v1beta1.Task{}.CustomResourceDefinition(),
 		api_v1beta1.Function{}.CustomResourceDefinition(),
 		api_v1beta1.BackupConfigurationTemplate{}.CustomResourceDefinition(),
 		api_v1beta1.BackupConfiguration{}.CustomResourceDefinition(),
 		api_v1beta1.BackupSession{}.CustomResourceDefinition(),
 		api_v1beta1.RestoreSession{}.CustomResourceDefinition(),
+
+		appCatalog.AppBinding{}.CustomResourceDefinition(),
 	}
 	return crdutils.RegisterCRDs(c.crdClient, crds)
 }
@@ -136,8 +156,10 @@ func (c *StashController) RunInformers(stopCh <-chan struct{}) {
 	defer runtime.HandleCrash()
 
 	glog.Info("Starting Stash controller")
+
 	c.kubeInformerFactory.Start(stopCh)
 	c.stashInformerFactory.Start(stopCh)
+	c.appCatalogInformerFactory.Start(stopCh)
 
 	// Wait for all involved caches to be synced, before processing items from the queue is started
 	for _, v := range c.kubeInformerFactory.WaitForCacheSync(stopCh) {
@@ -153,18 +175,31 @@ func (c *StashController) RunInformers(stopCh <-chan struct{}) {
 		}
 	}
 
-	c.rstQueue.Run(stopCh)
-	c.recQueue.Run(stopCh)
-	c.repoQueue.Run(stopCh)
+	for _, v := range c.appCatalogInformerFactory.WaitForCacheSync(stopCh) {
+		if !v {
+			runtime.HandleError(fmt.Errorf("timed out waiting for caches to sync"))
+			return
+		}
+	}
+
 	c.dpQueue.Run(stopCh)
 	c.dsQueue.Run(stopCh)
 	c.ssQueue.Run(stopCh)
 	c.rcQueue.Run(stopCh)
 	c.rsQueue.Run(stopCh)
+	c.pvcQueue.Run(stopCh)
 	c.jobQueue.Run(stopCh)
+	c.backupSessionQueue.Run(stopCh)
+	c.restoreSessionQueue.Run(stopCh)
+
+	c.rstQueue.Run(stopCh)
+	c.recQueue.Run(stopCh)
+	c.repoQueue.Run(stopCh)
+
 	c.bcQueue.Run(stopCh)
 	c.backupSessionQueue.Run(stopCh)
 	c.restoreSessionQueue.Run(stopCh)
+	c.abQueue.Run(stopCh)
 
 	<-stopCh
 	log.Infoln("Stopping Stash controller")

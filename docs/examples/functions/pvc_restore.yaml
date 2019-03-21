@@ -1,0 +1,31 @@
+apiVersion: stash.appscode.com/v1beta1
+kind: Function
+metadata:
+  name: pvc-restore
+spec:
+  image: diptadas/stash:status
+  args:
+  - restore-pvc
+  - --provider=${REPOSITORY_PROVIDER}
+  - --bucket=${REPOSITORY_BUCKET:=}
+  - --endpoint=${REPOSITORY_ENDPOINT:=}
+  - --path=${REPOSITORY_PREFIX:=}
+  - --secret-dir=/etc/repository/secret # specified
+  - --scratch-dir=/tmp/restic/scratch # specified
+  - --hostname=${HOSTNAME}
+  - --restore-dirs=${RESTORE_DIRECTORIES}
+  - --snapshots=${RESTORE_SNAPSHOTS:=}
+  - --output-dir=${outputDir}
+  #- --metrics-enabled
+  #- --metrics-pushgateway-url
+  #- --metrics-dir
+  #- --metrics-labels
+  volumeMounts:
+  - name: ${scratchDirVolume}
+    mountPath: /tmp/restic/scratch
+  - name: ${targetVolume}
+    mountPath: ${TARGET_MOUNT_PATH}
+  - name: ${secretVolume}
+    mountPath: /etc/repository/secret
+  - name: ${outputVolume}
+    mountPath: ${outputDir}

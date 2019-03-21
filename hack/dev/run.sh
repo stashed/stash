@@ -57,8 +57,8 @@ export STASH_NAMESPACE=default
 export KUBE_CA=$($ONESSL get kube-ca | $ONESSL base64)
 export STASH_ENABLE_WEBHOOK=true
 export STASH_E2E_TEST=false
-export STASH_DOCKER_REGISTRY=appscodeci
-export STASH_IMAGE_TAG=canary
+export STASH_DOCKER_REGISTRY=${STASH_DOCKER_REGISTRY:-appscodeci}
+export STASH_IMAGE_TAG=${STASH_IMAGE_TAG:-canary}
 
 while test $# -gt 0; do
   case "$1" in
@@ -108,7 +108,7 @@ done
 # !!! WARNING !!! Never do this in prod cluster
 kubectl create clusterrolebinding serviceaccounts-cluster-admin --clusterrole=cluster-admin --user=system:anonymous
 
-cat $REPO_ROOT/hack/dev/apiregistration.yaml | envsubst | kubectl apply -f -
+#cat $REPO_ROOT/hack/dev/apiregistration.yaml | envsubst | kubectl apply -f -
 
 if [ "$STASH_ENABLE_WEBHOOK" = true ]; then
   cat $REPO_ROOT/hack/deploy/mutating-webhook.yaml | envsubst | kubectl apply -f -
@@ -125,7 +125,8 @@ if [ "$STASH_E2E_TEST" = false ]; then # don't run operator while run this scrip
     --authentication-skip-lookup \
     --docker-registry="$STASH_DOCKER_REGISTRY" \
     --image-tag="$STASH_IMAGE_TAG" \
-    --rbac=true
-    --enable-status-subresource=true
+    --rbac=true \
+    --enable-status-subresource=true \
+    --v=5
 fi
 popd

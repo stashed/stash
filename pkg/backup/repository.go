@@ -2,6 +2,7 @@ package backup
 
 import (
 	"github.com/appscode/go/log"
+	"github.com/appscode/stash/apis"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
 )
@@ -18,9 +19,9 @@ func (c *Controller) createRepositoryCrdIfNotExist(restic *api.Restic, prefix st
 	}
 
 	switch c.opt.Workload.Kind {
-	case api.KindStatefulSet:
+	case apis.KindStatefulSet:
 		repository.Labels["pod-name"] = c.opt.PodName
-	case api.KindDaemonSet:
+	case apis.KindDaemonSet:
 		repository.Labels["node-name"] = c.opt.NodeName
 	}
 

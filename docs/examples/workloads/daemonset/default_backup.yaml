@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stash-sample-data
+  namespace: demo
+data:
+  file1.txt: "This test file 1"
+  file2.txt: "This is file 2"
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: stash-demo
+  name: stash-demo
+  namespace: demo
+  annotations:
+    stash.appscode.com/backup-template: workload-backup-template
+    stash.appscode.com/target-directories: "/source/data"
+    stash.appscode.com/volume-mounts: "source-data:/source/data"
+spec:
+  selector:
+    matchLabels:
+      app: stash-demo
+  template:
+    metadata:
+      labels:
+        app: stash-demo
+      name: busybox
+    spec:
+      containers:
+      - args:
+        - sleep
+        - "3600"
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        name: busybox
+        volumeMounts:
+        - mountPath: /source/data
+          name: source-data
+      restartPolicy: Always
+      volumes:
+      - name: source-data
+        configMap:
+          name: stash-sample-data

@@ -85,6 +85,13 @@ func (o StashOptions) Config() (*server.StashConfig, error) {
 		"/apis/admission.stash.appscode.com/v1alpha1/statefulsets",
 		"/apis/admission.stash.appscode.com/v1alpha1/replicationcontrollers",
 		"/apis/admission.stash.appscode.com/v1alpha1/replicasets",
+		// v1beta1 apis
+		"/apis/admission.stash.appscode.com/v1beta1/backupconfigurationtemplates",
+		"/apis/admission.stash.appscode.com/v1beta1/backupconfigurations",
+		"/apis/admission.stash.appscode.com/v1beta1/backupsessions",
+		"/apis/admission.stash.appscode.com/v1beta1/functions",
+		"/apis/admission.stash.appscode.com/v1beta1/restoresessions",
+		"/apis/admission.stash.appscode.com/v1beta1/tasks",
 	}
 
 	extraConfig := controller.NewConfig(serverConfig.ClientConfig)

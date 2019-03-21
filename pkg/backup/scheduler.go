@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/appscode/go/log"
+	"github.com/appscode/stash/apis"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/client/clientset/versioned/scheme"
 	"github.com/appscode/stash/pkg/eventer"
@@ -27,7 +28,7 @@ func (c *Controller) BackupScheduler() error {
 
 	// split code from here for leader election
 	switch c.opt.Workload.Kind {
-	case api.KindDeployment, api.KindReplicaSet, api.KindReplicationController:
+	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController:
 		if err := c.electLeader(); err != nil {
 			return err
 		}

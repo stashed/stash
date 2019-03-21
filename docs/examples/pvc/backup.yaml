@@ -11,7 +11,7 @@ spec:
     name: pvc-backup-task
   repository:
     name: hello-repo
-  schedule: "0 * * * *"
+  schedule: "* * * * *"
   target:
     ref:
       apiVersion: v1
@@ -24,7 +24,6 @@ spec:
   retentionPolicy:
     keepLast: 5
     prune: true
-
 ---
 apiVersion: stash.appscode.com/v1beta1
 kind: BackupSession

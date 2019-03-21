@@ -1,8 +1,7 @@
 package controller
 
 import (
-	"github.com/appscode/go/log"
-	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	"github.com/appscode/stash/apis"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
@@ -32,13 +31,15 @@ func (c *StashController) NewReplicationControllerWebhook() hooks.AdmissionHook 
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
 				w := obj.(*wapi.Workload)
-				_, _, err := c.mutateReplicationController(w)
+				// apply stash backup/restore logic on this workload
+				_, err := c.applyStashLogic(w)
 				return w, err
 
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
 				w := newObj.(*wapi.Workload)
-				_, _, err := c.mutateReplicationController(w)
+				// apply stash backup/restore logic on this workload
+				_, err := c.applyStashLogic(w)
 				return w, err
 			},
 		},
@@ -70,7 +71,8 @@ func (c *StashController) runRCInjector(key string) error {
 		if err != nil {
 			return err
 		}
-		err = util.DeleteConfigmapLock(c.kubeClient, ns, api.LocalTypedReference{Kind: api.KindReplicationController, Name: name})
+		// workload does not exist anymore. so delete respective ConfigMapLocks if exist
+		err = util.DeleteAllConfigMapLocks(c.kubeClient, ns, name, apis.KindReplicationController)
 		if err != nil && !kerr.IsNotFound(err) {
 			return err
 		}
@@ -78,68 +80,57 @@ func (c *StashController) runRCInjector(key string) error {
 		glog.Infof("Sync/Add/Update for ReplicationController %s", key)
 
 		rc := obj.(*core.ReplicationController).DeepCopy()
-		rc.GetObjectKind().SetGroupVersionKind(core.SchemeGroupVersion.WithKind(api.KindReplicationController))
+		rc.GetObjectKind().SetGroupVersionKind(core.SchemeGroupVersion.WithKind(apis.KindReplicationController))
 
+		// convert ReplicationController into a common object (Workload type) so that
+		// we don't need to re-write stash logic for ReplicationController separately
 		w, err := wcs.ConvertToWorkload(rc.DeepCopy())
 		if err != nil {
-			return nil
-		}
-		restic, modified, err := c.mutateReplicationController(w)
-		if err != nil {
+			glog.Errorf("failed to convert replicationcontroller %s/%s to workload type. Reason: %v", rc.Namespace, rc.Name, err)
 			return err
 		}
+
+		// apply stash backup/restore logic on this workload
+		modified, err := c.applyStashLogic(w)
+		if err != nil {
+			glog.Errorf("failed to apply stash logic on replicationcontroller %s/%s. Reason: %v", rc.Namespace, rc.Name, err)
+			return err
+		}
+
 		if modified {
+			// workload has been modified. patch the workload so that respective pods start with the updated spec
 			_, _, err = core_util.PatchRCObject(c.kubeClient, rc, w.Object.(*core.ReplicationController))
 			if err != nil {
+				glog.Errorf("failed to update replicationcontroller %s/%s. Reason: %v", rc.Namespace, rc.Name, err)
 				return err
 			}
 		}
 
 		// ReplicationController does not have RollingUpdate strategy. We must delete old pods manually to get patched state.
-		if restic != nil {
-			err = c.forceRestartPods(w, restic)
+		stateChanged, err := c.ensureWorkloadLatestState(w)
+		if err != nil {
+			return err
+		}
+
+		if stateChanged {
+			// wait until newly patched RC pods are ready
+			err = util.WaitUntilRCReady(c.kubeClient, rc.ObjectMeta)
 			if err != nil {
 				return err
+
 			}
 		}
-		return core_util.WaitUntilRCReady(c.kubeClient, rc.ObjectMeta)
+
+		// if the workload does not have any stash sidecar/init-container then
+		// delete respective ConfigMapLock and RBAC stuffs if exist
+		err = c.ensureUnnecessaryConfigMapLockDeleted(w)
+		if err != nil {
+			return err
+		}
+		err = c.ensureUnnecessaryWorkloadRBACDeleted(w)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
-}
-
-func (c *StashController) mutateReplicationController(w *wapi.Workload) (*api.Restic, bool, error) {
-	oldRestic, err := util.GetAppliedRestic(w.Annotations)
-	if err != nil {
-		return nil, false, err
-	}
-	newRestic, err := util.FindRestic(c.rstLister, w.ObjectMeta)
-	if err != nil {
-		log.Errorf("Error while searching Restic for ReplicationController %s/%s.", w.Name, w.Namespace)
-		return nil, false, err
-	}
-
-	if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
-		if !newRestic.Spec.Paused {
-			err := c.ensureWorkloadSidecar(w, oldRestic, newRestic)
-			if err != nil {
-				return nil, false, err
-			}
-			wcs.ApplyWorkload(w.Object, w)
-
-			return newRestic, true, nil
-		}
-	} else if oldRestic != nil && newRestic == nil {
-		err := c.ensureWorkloadSidecarDeleted(w, oldRestic)
-		if err != nil {
-			return nil, false, err
-		}
-		wcs.ApplyWorkload(w.Object, w)
-
-		err = util.DeleteConfigmapLock(c.kubeClient, w.Namespace, api.LocalTypedReference{Kind: api.KindReplicationController, Name: w.Name})
-		if err != nil && !kerr.IsNotFound(err) {
-			return nil, false, err
-		}
-		return oldRestic, true, nil
-	}
-	return oldRestic, false, nil
 }
