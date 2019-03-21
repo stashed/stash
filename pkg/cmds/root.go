@@ -45,6 +45,7 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.AddCommand(NewCmdBackup())
 	rootCmd.AddCommand(NewCmdBackupPVC())
 	rootCmd.AddCommand(NewCmdRestorePVC())
+	rootCmd.AddCommand(NewCmdUpdateStatus())
 	rootCmd.AddCommand(NewCmdRecover())
 	rootCmd.AddCommand(NewCmdCheck())
 	rootCmd.AddCommand(NewCmdScaleDown())

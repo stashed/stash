@@ -14,6 +14,14 @@ spec:
       value: target-volume # specified
     - name: secretVolume
       value: secret-volume # specified
+    - name: outputVolume
+      value: output-volume # specified
+  - name: update-status
+    params:
+    - name: outputDir
+      value: /etc/backup # specified
+    - name: outputVolume
+      value: output-volume # specified
   volumes:
   - name: target-volume
     persistentVolumeClaim:
@@ -22,6 +30,8 @@ spec:
     secret:
       secretName: ${REPOSITORY_SECRET_NAME}
   - name: scratch-volume
+    emptyDir: {}
+  - name: output-volume
     emptyDir: {}
 ---
 apiVersion: stash.appscode.com/v1beta1
@@ -40,6 +50,14 @@ spec:
       value: target-volume # specified
     - name: secretVolume
       value: secret-volume # specified
+    - name: outputVolume
+      value: output-volume # specified
+  - name: update-status
+    params:
+    - name: outputDir
+      value: /etc/backup # specified
+    - name: outputVolume
+      value: output-volume # specified
   volumes:
   - name: target-volume
     persistentVolumeClaim:
@@ -48,4 +66,6 @@ spec:
     secret:
       secretName: ${REPOSITORY_SECRET_NAME}
   - name: scratch-volume
+    emptyDir: {}
+  - name: output-volume
     emptyDir: {}

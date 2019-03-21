@@ -35,7 +35,7 @@ func NewCmdRestorePVC() *cobra.Command {
 			// init restic wrapper
 			resticWrapper, err := restic.NewResticWrapper(setupOpt)
 			if err != nil {
-				return err
+				return handleResticError(outputDir, restic.DefaultOutputFileName, err)
 			}
 			// Run restore
 			restoreOutput, restoreErr := resticWrapper.RunRestore(restoreOpt)
@@ -43,17 +43,17 @@ func NewCmdRestorePVC() *cobra.Command {
 			if metrics.Enabled {
 				err := restoreOutput.HandleMetrics(&metrics, restoreErr)
 				if err != nil {
-					return errors.NewAggregate([]error{restoreErr, err})
+					return handleResticError(outputDir, restic.DefaultOutputFileName, errors.NewAggregate([]error{restoreErr, err}))
 				}
+			}
+			if restoreErr != nil {
+				return handleResticError(outputDir, restic.DefaultOutputFileName, restoreErr)
 			}
 			// If output directory specified, then write the output in "output.json" file in the specified directory
-			if restoreErr == nil && outputDir != "" {
-				err := restoreOutput.WriteOutput(filepath.Join(outputDir, restic.DefaultOutputFileName))
-				if err != nil {
-					return err
-				}
+			if outputDir != "" {
+				return restoreOutput.WriteOutput(filepath.Join(outputDir, restic.DefaultOutputFileName))
 			}
-			return restoreErr
+			return nil
 		},
 	}
 

@@ -29,16 +29,19 @@ $ kubectl create ns demo
 namespace/demo created
 ```
 
->Note: YAML files used in this tutorial are stored in [/docs/examples/pvc](/docs/examples/pvc) directory of [appscode/stash](https://github.com/appscode/stash) repository.
+>Note: YAML files used in this tutorial are stored in [./docs/examples/pvc](./docs/examples/pvc) directory of [appscode/stash](https://github.com/appscode/stash) repository.
+
+## Create Service Account
+
+```bash
+$ kubectl apply -f ./docs/examples/pvc/rbac.yaml
+```
 
 ## Create Functions and Tasks
 
 ```bash
-$ kubectl apply -f /docs/examples/pvc/functions.yaml; kubectl apply -f /docs/examples/pvc/tasks.yaml
-function.stash.appscode.com/pvc-backup created
-task.stash.appscode.com/pvc-backup-task created
-function.stash.appscode.com/pvc-restore created
-task.stash.appscode.com/pvc-restore-task created
+$ kubectl apply -f ./docs/examples/pvc/functions.yaml
+$ kubectl apply -f ./docs/examples/pvc/tasks.yaml
 ```
 
 ## Create Repository
@@ -49,7 +52,7 @@ secret/gcs-secret created
 ```
 
 ```bash
-$ kubectl apply -f /docs/examples/pvc/repo.yaml
+$ kubectl apply -f ./docs/examples/pvc/repo.yaml
 repository.stash.appscode.com/hello-repo created
 ```
 
@@ -58,7 +61,7 @@ repository.stash.appscode.com/hello-repo created
 Create Persistent Volume and two separate PVC for source and destination.
 
 ```bash
-$ kubectl apply -f /docs/examples/pvc/pvc.yaml
+$ kubectl apply -f ./docs/examples/pvc/pvc.yaml
 persistentvolume/test-pv-volume created
 persistentvolumeclaim/test-pvc-source created
 persistentvolumeclaim/test-pvc-dest created
@@ -67,34 +70,80 @@ persistentvolumeclaim/test-pvc-dest created
 ## Write to Source PVC
 
 ```bash
-$ kubectl apply -f /docs/examples/pvc/write.yaml
+$ kubectl apply -f ./docs/examples/pvc/write.yaml
 pod/test-write-soruce created
 ```
 
 ## Backup Source PVC
 
 ```bash
-$ kubectl apply -f /docs/examples/pvc/backup.yaml
+$ kubectl apply -f ./docs/examples/pvc/backup.yaml
 backupconfiguration.stash.appscode.com/pvc-backup-config created
 backupsession.stash.appscode.com/pvc-backup-01 created
+```
+
+## Check Backup Session Status
+
+```yaml
+  status:
+    phase: Succeeded
+    stats:
+    - directory: /etc/target/dir-01
+      fileStats:
+        modifiedFiles: 0
+        newFiles: 0
+        totalFiles: 0
+        unmodifiedFiles: 0
+      processingTime: 0m7s
+      size: 0 B
+      snapshot: f5268c39
+      uploaded: 336 B
+    - directory: /etc/target/dir-02
+      fileStats:
+        modifiedFiles: 0
+        newFiles: 0
+        totalFiles: 0
+        unmodifiedFiles: 0
+      processingTime: 0m7s
+      size: 0 B
+      snapshot: e6277c72
+      uploaded: 336 B
+```
+
+## Check Repository Status
+
+```yaml
+  status:
+    integrity: true
+    size: 5.913 KiB
+    snapshotCount: 10
+    snapshotRemovedOnLastCleanup: 2
 ```
 
 ## Restore to Destination PVC
 
 ```bash
-$ kubectl apply -f /docs/examples/pvc/restore.yaml
+$ kubectl apply -f ./docs/examples/pvc/restore.yaml
 restoresession.stash.appscode.com/pvc-restore-01 created
+```
+
+## Check Backup Session Status
+
+```yaml
+  status:
+    duration: 31.229339267s
+    phase: Succeeded
 ```
 
 ## Check Destination PVC
 
 ```bash
-$ kubectl apply -f /docs/examples/pvc/check.yaml
+$ kubectl apply -f ./docs/examples/pvc/check.yaml
 pod/test-check-dest created
 ```
 
 ```bash
-$ kc logs -n demo  -f test-check-dest
+$ kubectl logs -n demo  -f test-check-dest
 + ls /etc/target
 dir-01
 dir-02
@@ -105,6 +154,6 @@ dir-02
 To cleanup the Kubernetes resources created by this tutorial, run:
 
 ```console
-$ kubectl delete -f /docs/examples/pvc
+$ kubectl delete -f ./docs/examples/pvc
 $ kubectl delete namespace demo
 ```

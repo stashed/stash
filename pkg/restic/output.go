@@ -22,6 +22,8 @@ type BackupOutput struct {
 	SessionDuration string `json:"sessionDuration,omitempty"`
 	// RepositoryStats shows statistics of repository after last backup
 	RepositoryStats RepositoryStats `json:"repository,omitempty"`
+	// string value of backup error
+	Error string `json:"error,omitempty"`
 }
 
 type RepositoryStats struct {
@@ -38,6 +40,8 @@ type RepositoryStats struct {
 type RestoreOutput struct {
 	// SessionDuration show total time taken to complete the restore session
 	SessionDuration string `json:"sessionDuration,omitempty"`
+	// string value of restore error
+	Error string `json:"error,omitempty"`
 }
 
 // WriteOutput write output of backup process into output.json file in the directory
@@ -71,7 +75,6 @@ func (out *RestoreOutput) WriteOutput(fileName string) error {
 }
 
 func ReadBackupOutput(filename string) (*BackupOutput, error) {
-
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -87,7 +90,6 @@ func ReadBackupOutput(filename string) (*BackupOutput, error) {
 }
 
 func ReadRestoreOutput(filename string) (*RestoreOutput, error) {
-
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err

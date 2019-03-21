@@ -28,11 +28,7 @@ import (
 )
 
 const (
-	RestoreJobPrefix                    = "stash-restore-"
-	RestoreSessionEventComponent        = "stash-restore-session"
-	EventReasonInvalidRestoreSession    = "InvalidRestoreSession"
-	EventReasonRestoreSessionFailed     = "RestoreSessionFailedToExecute"
-	EventReasonRestoreSessionJobCreated = "RestoreSessionJobCreated"
+	RestoreJobPrefix = "stash-restore-"
 )
 
 func (c *StashController) NewRestoreSessionWebhook() hooks.AdmissionHook {
@@ -69,7 +65,7 @@ func (c *StashController) initRestoreSessionWatcher() {
 		AddFunc: func(obj interface{}) {
 			if r, ok := obj.(*api.RestoreSession); ok {
 				if err := r.IsValid(); err != nil {
-					eventer.CreateEvent(c.kubeClient, RestoreSessionEventComponent, r, core.EventTypeWarning, EventReasonInvalidRestoreSession, err.Error())
+					eventer.CreateEvent(c.kubeClient, eventer.RestoreSessionEventComponent, r, core.EventTypeWarning, eventer.EventReasonInvalidRestoreSession, err.Error())
 					return
 				}
 				queue.Enqueue(c.restoreSessionQueue.GetQueue(), obj)
@@ -96,7 +92,7 @@ func (c *StashController) runRestoreSessionInjector(key string) error {
 	job, err := c.executeRestoreSession(restoreSession)
 	if err != nil {
 		log.Errorln(err)
-		eventer.CreateEvent(c.kubeClient, RestoreSessionEventComponent, restoreSession, core.EventTypeWarning, EventReasonRestoreSessionFailed, err.Error())
+		eventer.CreateEvent(c.kubeClient, eventer.RestoreSessionEventComponent, restoreSession, core.EventTypeWarning, eventer.EventReasonRestoreSessionFailed, err.Error())
 		stash_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession, func(in *api.RestoreSessionStatus) *api.RestoreSessionStatus {
 			in.Phase = api.RestoreFailed
 			return in
@@ -104,7 +100,7 @@ func (c *StashController) runRestoreSessionInjector(key string) error {
 		return err
 	}
 	if job != nil { // job successfully created
-		eventer.CreateEvent(c.kubeClient, RestoreSessionEventComponent, restoreSession, core.EventTypeNormal, EventReasonRestoreSessionJobCreated, fmt.Sprintf("restore job %s created", job.Name))
+		eventer.CreateEvent(c.kubeClient, eventer.RestoreSessionEventComponent, restoreSession, core.EventTypeNormal, eventer.EventReasonRestoreSessionJobCreated, fmt.Sprintf("restore job %s created", job.Name))
 		stash_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession, func(in *api.RestoreSessionStatus) *api.RestoreSessionStatus {
 			in.Phase = api.RestoreRunning
 			return in
@@ -133,6 +129,9 @@ func (c *StashController) executeRestoreSession(restoreSession *api.RestoreSessi
 	if err != nil {
 		return nil, fmt.Errorf("cannot resolve implicit inputs for RestoreSession %s/%s, reason: %s", restoreSession.Namespace, restoreSession.Name, err)
 	}
+	implicitInputs[apis.Namespace] = restoreSession.Namespace
+	implicitInputs[apis.RestoreSession] = restoreSession.Name
+	implicitInputs[apis.StatusSubresourceEnabled] = fmt.Sprint(apis.EnableStatusSubresource)
 
 	taskResolver := resolve.TaskResolver{
 		StashClient:     c.stashClient,

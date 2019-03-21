@@ -19,17 +19,16 @@ spec:
       name: test-pvc-source
     mountPath: /etc/target
     directories:
-    - /etc/target/dir-01
-    - /etc/target/dir-02
+    - /unknown-path/target/dir-01
+    - /unknown-path/target/dir-02
   retentionPolicy:
     keepLast: 5
     prune: true
-
 ---
 apiVersion: stash.appscode.com/v1beta1
 kind: BackupSession
 metadata:
-  name: pvc-backup-01
+  name: pvc-backup-02
   namespace: demo
 spec:
   backupConfiguration:

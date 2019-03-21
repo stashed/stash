@@ -1,5 +1,5 @@
-hash: 134c933c03f7084d90961edc2ccd2c421bbab0f0f72e6ec0003f1d087e75d169
-updated: 2019-03-20T10:55:11.971962007+06:00
+hash: 45e3485dc7cb339382b2522acc137ed71e6c1cf1d4808448cca3e97bce9ca68f
+updated: 2019-03-21T12:02:31.07046905+06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -495,7 +495,7 @@ imports:
   subpackages:
   - rate
 - name: gomodules.xyz/envsubst
-  version: 0c160502a3a0fe54f555c149265e031f4fa2beab
+  version: c745d52104afee8575a85f1ceb419e1abe913657
   subpackages:
   - parse
   - path
@@ -1096,6 +1096,4 @@ imports:
   - runtime/serializer/versioning
 - name: sigs.k8s.io/yaml
   version: fd68e9863619f6ec2fdd8625fe1f02e7c877e480
-testImports:
-- name: github.com/gomodules/envsubst
-  version: 0c160502a3a0fe54f555c149265e031f4fa2beab
+testImports: []

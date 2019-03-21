@@ -28,11 +28,7 @@ import (
 )
 
 const (
-	BackupJobPrefix                    = "stash-backup-"
-	BackupSessionEventComponent        = "stash-backup-session"
-	EventReasonInvalidBackupSession    = "InvalidBackupSession"
-	EventReasonBackupSessionFailed     = "BackupSessionFailedToExecute"
-	EventReasonBackupSessionJobCreated = "BackupSessionJobCreated"
+	BackupJobPrefix = "stash-backup-"
 )
 
 func (c *StashController) NewBackupSessionWebhook() hooks.AdmissionHook {
@@ -69,7 +65,7 @@ func (c *StashController) initBackupSessionWatcher() {
 		AddFunc: func(obj interface{}) {
 			if r, ok := obj.(*api.BackupSession); ok {
 				if err := r.IsValid(); err != nil {
-					eventer.CreateEvent(c.kubeClient, BackupSessionEventComponent, r, core.EventTypeWarning, EventReasonInvalidBackupSession, err.Error())
+					eventer.CreateEvent(c.kubeClient, eventer.BackupSessionEventComponent, r, core.EventTypeWarning, eventer.EventReasonInvalidBackupSession, err.Error())
 					return
 				}
 				queue.Enqueue(c.backupSessionQueue.GetQueue(), obj)
@@ -96,7 +92,7 @@ func (c *StashController) runBackupSessionInjector(key string) error {
 	job, err := c.executeBackupSession(backupSession)
 	if err != nil {
 		log.Errorln(err)
-		eventer.CreateEvent(c.kubeClient, BackupSessionEventComponent, backupSession, core.EventTypeWarning, EventReasonBackupSessionFailed, err.Error())
+		eventer.CreateEvent(c.kubeClient, eventer.BackupSessionEventComponent, backupSession, core.EventTypeWarning, eventer.EventReasonBackupSessionFailed, err.Error())
 		stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api.BackupSessionStatus) *api.BackupSessionStatus {
 			in.Phase = api.BackupSessionFailed
 			return in
@@ -104,7 +100,7 @@ func (c *StashController) runBackupSessionInjector(key string) error {
 		return err
 	}
 	if job != nil { // job successfully created
-		eventer.CreateEvent(c.kubeClient, BackupSessionEventComponent, backupSession, core.EventTypeNormal, EventReasonBackupSessionJobCreated, fmt.Sprintf("backup job %s created", job.Name))
+		eventer.CreateEvent(c.kubeClient, eventer.BackupSessionEventComponent, backupSession, core.EventTypeNormal, eventer.EventReasonBackupSessionJobCreated, fmt.Sprintf("backup job %s created", job.Name))
 		stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api.BackupSessionStatus) *api.BackupSessionStatus {
 			in.Phase = api.BackupSessionRunning
 			return in
@@ -141,6 +137,9 @@ func (c *StashController) executeBackupSession(backupSession *api.BackupSession)
 	if err != nil {
 		return nil, fmt.Errorf("cannot resolve implicit inputs for BackupConfiguration %s/%s, reason: %s", backupConfig.Namespace, backupConfig.Name, err)
 	}
+	implicitInputs[apis.Namespace] = backupSession.Namespace
+	implicitInputs[apis.BackupSession] = backupSession.Name
+	implicitInputs[apis.StatusSubresourceEnabled] = fmt.Sprint(apis.EnableStatusSubresource)
 
 	taskResolver := resolve.TaskResolver{
 		StashClient:     c.stashClient,
