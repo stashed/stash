@@ -91,6 +91,7 @@ func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image 
 }
 
 func NewBackupSidecarContainer(bc *v1beta1_api.BackupConfiguration, backend *store.Backend, image docker.Docker, enableRBAC bool) core.Container {
+
 	sidecar := core.Container{
 		Name:  StashContainer,
 		Image: image.ToContainerImage(),

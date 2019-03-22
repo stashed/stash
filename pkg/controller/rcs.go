@@ -104,6 +104,7 @@ func (c *StashController) runRCInjector(key string) error {
 				glog.Errorf("failed to update replicationcontroller %s/%s. Reason: %v", rc.Namespace, rc.Name, err)
 				return err
 			}
+		}
 
 		// ReplicationController does not have RollingUpdate strategy. We must delete old pods manually to get patched state.
 		stateChanged, err := c.ensureWorkloadLatestState(w)

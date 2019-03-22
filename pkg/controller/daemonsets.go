@@ -86,6 +86,7 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 
 		ds := obj.(*appsv1.DaemonSet).DeepCopy()
 		ds.GetObjectKind().SetGroupVersionKind(appsv1.SchemeGroupVersion.WithKind(apis.KindDaemonSet))
+
 		// convert DaemonSet into a common object (Workload type) so that
 		// we don't need to re-write stash logic for DaemonSet separately
 		w, err := wcs.ConvertToWorkload(ds.DeepCopy())

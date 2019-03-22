@@ -127,7 +127,9 @@ func (c *StashController) ensureSidecarRoleBindingDeleted(w *wapi.Workload) erro
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
-	log.Infof("RoleBinding %s/%s has been deleted", w.Namespace, c.getSidecarRoleBindingName(w.Name))
+	if err == nil {
+		log.Infof("RoleBinding %s/%s has been deleted", w.Namespace, c.getSidecarRoleBindingName(w.Name))
+	}
 	return nil
 }
 

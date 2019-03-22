@@ -24,4 +24,5 @@ const (
 	KindDaemonSet             = "DaemonSet"
 	KindPersistentVolumeClaim = "PersistentVolumeClaim"
 	KindAppBinding            = "AppBinding"
+	ScratchDir                = "/tmp"
 )

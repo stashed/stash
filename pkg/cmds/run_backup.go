@@ -3,6 +3,7 @@ package cmds
 import (
 	"time"
 
+	"github.com/appscode/stash/apis"
 	cs "github.com/appscode/stash/client/clientset/versioned"
 	stashinformers "github.com/appscode/stash/client/informers/externalversions"
 	"github.com/appscode/stash/pkg/backup"
@@ -15,7 +16,7 @@ import (
 	"kmodules.xyz/client-go/meta"
 )
 
-func NewBackupSidecarSessionn() *cobra.Command {
+func NewCmdRunBackup() *cobra.Command {
 	con := backup.Controllers{
 		MasterURL:      "",
 		KubeconfigPath: "",
@@ -24,7 +25,7 @@ func NewBackupSidecarSessionn() *cobra.Command {
 		NumThreads:     1,
 		ResyncPeriod:   5 * time.Minute,
 		SetupOpt: restic.SetupOptions{
-			ScratchDir:  ScratchDir,
+			ScratchDir:  apis.ScratchDir,
 			EnableCache: true,
 		},
 	}
@@ -42,11 +43,11 @@ func NewBackupSidecarSessionn() *cobra.Command {
 
 			con.K8sClient = kubernetes.NewForConfigOrDie(config)
 			con.StashClient = cs.NewForConfigOrDie(config)
-			con.StashInformerFactory = stashinformers.NewFilteredSharedInformerFactory(
+			con.StashInformerFactory = stashinformers.NewSharedInformerFactoryWithOptions(
 				con.StashClient,
 				con.ResyncPeriod,
-				con.Namespace,
-				nil,
+				stashinformers.WithNamespace(con.Namespace),
+				stashinformers.WithTweakListOptions(nil),
 			)
 			con.Recorder = eventer.NewEventRecorder(con.K8sClient, backup.BackupEventComponent)
 			con.Metrics.JobName = con.BackupConfigurationName

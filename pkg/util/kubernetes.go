@@ -2,12 +2,12 @@ package util
 
 import (
 	"fmt"
-	"go/types"
 	"reflect"
 	"strings"
 	"time"
 
 	"github.com/appscode/go/log"
+	"github.com/appscode/go/types"
 	"github.com/appscode/stash/apis"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	v1beta1_api "github.com/appscode/stash/apis/stash/v1beta1"

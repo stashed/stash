@@ -81,6 +81,7 @@ func (c *StashController) runDeploymentInjector(key string) error {
 
 		dp := obj.(*appsv1.Deployment).DeepCopy()
 		dp.GetObjectKind().SetGroupVersionKind(appsv1.SchemeGroupVersion.WithKind(apis.KindDeployment))
+
 		// convert Deployment into a common object (Workload type) so that
 		// we don't need to re-write stash logic for Deployment separately
 		w, err := wcs.ConvertToWorkload(dp.DeepCopy())

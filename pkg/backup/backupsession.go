@@ -15,7 +15,6 @@ import (
 	stash_v1beta1_util "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1beta1/util"
 	stashinformers "github.com/appscode/stash/client/informers/externalversions"
 	"github.com/appscode/stash/client/listers/stash/v1beta1"
-	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/eventer"
 	"github.com/appscode/stash/pkg/restic"
 	"github.com/appscode/stash/pkg/status"
@@ -213,7 +212,7 @@ func (c *Controllers) backup(backupSession *v1beta1_api.BackupSession) error {
 	}
 
 	//get host Name
-	host, err := util.GetHostName(backupConfiguration.Spec.Target.Ref)
+	host, err := util.GetHostName(backupConfiguration.Spec.Target)
 	if err != nil {
 		return err
 	}
@@ -223,7 +222,7 @@ func (c *Controllers) backup(backupSession *v1beta1_api.BackupSession) error {
 		Host:        host,
 		SecretDir:   c.SetupOpt.SecretDir,
 		EnableCache: c.SetupOpt.EnableCache,
-		ScratchDir:  util.ScratchDir,
+		ScratchDir:  c.SetupOpt.ScratchDir,
 	}
 
 	//Configure setupOption
@@ -240,7 +239,7 @@ func (c *Controllers) backup(backupSession *v1beta1_api.BackupSession) error {
 		}
 		//BackupOptions configuration
 		backupOpt := util.BackupOptionsForBackupConfig(*backupConfiguration, extraOpt)
-		backupOutput, err := resticWrapper.RunBackup(&backupOpt)
+		backupOutput, err := resticWrapper.RunBackup(backupOpt)
 		if err != nil {
 			return err
 		}
@@ -255,12 +254,13 @@ func (c *Controllers) backup(backupSession *v1beta1_api.BackupSession) error {
 		//Update Backup Session and Repository status
 		//_, err = stash_v1beta1_util.UpdateRestoreSessionStatus()
 		o := status.UpdateStatusOptions{
-			Namespace:               c.Namespace,
-			BackupSession:           backupSession.Name,
-			Repository:              backupConfiguration.Spec.Repository.Name,
-			EnableStatusSubresource: apis.EnableStatusSubresource,
+			KubeClient:    c.K8sClient,
+			StashClient:   c.StashClient.(*cs.Clientset),
+			Namespace:     c.Namespace,
+			BackupSession: backupSession.Name,
+			Repository:    backupConfiguration.Spec.Repository.Name,
 		}
-		err = o.UpdateBackupStatus(backupOutput, c.StashClient.(*cs.Clientset))
+		err = o.UpdatePostBackupStatus(backupOutput)
 		if err != nil {
 			return err
 		}
@@ -292,6 +292,9 @@ func (c *Controllers) runBackupSessionController(backupConfiguration *v1beta1_ap
 		}
 	}
 	c.bsQueue.Run(stopCh)
+
+	// wait until stop signal is sent.
+	<-stopCh
 	return nil
 }
 
@@ -323,7 +326,7 @@ func (c *Controllers) writeBackupFailureEvent(backupSession *v1beta1_api.BackupS
 	if rerr == nil {
 		eventer.CreateEventWithLog(
 			c.K8sClient,
-			controller.BackupSessionEventComponent,
+			eventer.BackupSessionEventComponent,
 			ref,
 			core.EventTypeWarning,
 			eventer.EventReasonBackupSessionFailed,

@@ -10,7 +10,7 @@ import (
 	"kmodules.xyz/client-go/meta"
 )
 
-func NewBackupSession() *cobra.Command {
+func NewCmdCreateBackupSession() *cobra.Command {
 	var (
 		masterURL      string
 		kubeconfigPath string
@@ -21,7 +21,7 @@ func NewBackupSession() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:               "backup-session",
+		Use:               "create-backupsession",
 		Short:             "create a BackupSession",
 		DisableAutoGenTag: true,
 		Run: func(cmd *cobra.Command, args []string) {
