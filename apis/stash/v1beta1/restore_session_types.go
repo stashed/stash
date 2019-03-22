@@ -77,11 +77,41 @@ const (
 	RestoreUnknown   RestorePhase = "Unknown"
 )
 
+type HostRestorePhase string
+
+const (
+	HostRestoreSucceeded HostRestorePhase = "Succeeded"
+	HostRestoreFailed    HostRestorePhase = "Failed"
+)
+
 type RestoreSessionStatus struct {
 	// observedGeneration is the most recent generation observed for this resource. It corresponds to the
 	// resource's generation, which is updated on mutation by the API Server.
 	// +optional
 	ObservedGeneration *types.IntHash `json:"observedGeneration,omitempty"`
-	Phase              RestorePhase   `json:"phase,omitempty"`
-	Duration           string         `json:"duration,omitempty"`
+	// Phase indicates the overall phase of the restore process for this RestoreSession. Phase will be "Succeeded" only if
+	// phase of all hosts are "Succeeded". If any of the host fail to complete restore, Phase will be "Failed".
+	// +optional
+	Phase RestorePhase `json:"phase,omitempty"`
+	// TotalHosts specifies total number of hosts that will be restored for this RestoreSession
+	// +Optional
+	TotalHosts *int32 `json:"totalHosts,omitempty"`
+	// SessionDuration specify total time taken to complete current restore session (sum of restore duration of all hosts)
+	// +optional
+	SessionDuration string `json:"sessionDuration,omitempty"`
+	// Stats shows statistics of individual hosts for this restore session
+	// +optional
+	Stats []HostRestoreStats `json:"stats,omitempty"`
+}
+
+type HostRestoreStats struct {
+	// Hostname indicate name of the host that has been restored
+	// +optional
+	Hostname string `json:"hostname,omitempty"`
+	// Phase indicates restore phase of this host
+	// +optional
+	Phase HostRestorePhase `json:"phase,omitempty"`
+	// Duration indicates total time taken to complete restore for this hosts
+	// +optional
+	Duration string `json:"duration,omitempty"`
 }
