@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/log"
+	"github.com/appscode/go/types"
 	"github.com/appscode/stash/apis"
 	"github.com/appscode/stash/apis/stash"
 	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
@@ -80,12 +81,19 @@ func (c *StashController) runBackupSessionProcessor(key string) error {
 		backupSession := obj.(*api_v1beta1.BackupSession)
 		glog.Infof("Sync/Add/Update for BackupSession %s", backupSession.GetName())
 
-		// don't process further if the BackupSession already has been processed
-		if !util.BackupPending(backupSession.Status.Phase) {
+		// check weather backup session is completed or running and set it's phase accordingly
+		phase, err := c.getBackupSessionPhase(backupSession)
+
+		if err != nil || phase == api_v1beta1.BackupSessionFailed {
+			return c.setBackupSessionFailed(backupSession, err)
+		} else if phase == api_v1beta1.BackupSessionSucceeded {
+			return c.setBackupSessionSucceeded(backupSession)
+		} else if phase == api_v1beta1.BackupSessionRunning {
 			log.Infof("Skipping processing BackupSession %s/%s. Reason: phase is %s.", backupSession.Namespace, backupSession.Name, backupSession.Status.Phase)
 			return nil
 		}
 
+		// backup process for this BackupSession has not started. so let's start backup process
 		// get BackupConfiguration for BackupSession
 		backupConfig, err := c.stashClient.StashV1beta1().BackupConfigurations(backupSession.Namespace).Get(
 			backupSession.Spec.BackupConfiguration.Name,
@@ -99,7 +107,7 @@ func (c *StashController) runBackupSessionProcessor(key string) error {
 		// for sidecar model controller inside sidecar will take care of it.
 		if backupConfig.Spec.Target != nil && util.BackupModel(backupConfig.Spec.Target.Ref.Kind) == util.ModelSidecar {
 			log.Infof("Skipping processing BackupSession %s/%s. Reason: Backup model is sidecar. Controller inside sidecar will take care of it.", backupSession.Namespace, backupSession.Name)
-			return nil
+			return c.setBackupSessionRunning(backupSession)
 		}
 
 		// create backup job
@@ -236,9 +244,23 @@ func (c *StashController) setBackupSessionFailed(backupSession *api_v1beta1.Back
 
 func (c *StashController) setBackupSessionRunning(backupSession *api_v1beta1.BackupSession) error {
 
+	backupConfig, err := c.stashClient.StashV1beta1().BackupConfigurations(backupSession.Namespace).Get(
+		backupSession.Spec.BackupConfiguration.Name,
+		metav1.GetOptions{},
+	)
+	if err != nil {
+		return err
+	}
+
+	totalHosts, err := c.getTotalHosts(backupConfig.Spec.Target, backupConfig.Namespace)
+	if err != nil {
+		return err
+	}
+
 	// set BackupSession phase to "Running"
-	_, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
+	_, err = stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 		in.Phase = api_v1beta1.BackupSessionRunning
+		in.TotalHosts = totalHosts
 		return in
 	}, apis.EnableStatusSubresource)
 	if err != nil {
@@ -256,4 +278,49 @@ func (c *StashController) setBackupSessionRunning(backupSession *api_v1beta1.Bac
 	)
 
 	return err
+}
+
+func (c *StashController) setBackupSessionSucceeded(backupSession *api_v1beta1.BackupSession) error {
+
+	_, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
+		in.Phase = api_v1beta1.BackupSessionSucceeded
+		return in
+	}, apis.EnableStatusSubresource)
+	if err != nil {
+		return err
+	}
+
+	// write job creation success event
+	_, err = eventer.CreateEvent(
+		c.kubeClient,
+		eventer.BackupSessionEventComponent,
+		backupSession,
+		core.EventTypeNormal,
+		eventer.EventReasonSuccessfulBackup,
+		fmt.Sprintf("backup has been completed succesfully for BackupSession %s/%s", backupSession.Namespace, backupSession.Name),
+	)
+
+	return err
+}
+
+func (c *StashController) getBackupSessionPhase(backupSession *api_v1beta1.BackupSession) (api_v1beta1.BackupSessionPhase, error) {
+	// BackupSession phase is empty or "Pending" then return it. controller will process accordingly
+	if backupSession.Status.Phase == "" || backupSession.Status.Phase == api_v1beta1.BackupSessionPending {
+		return api_v1beta1.BackupSessionPending, nil
+	}
+
+	// all hosts hasn't completed it's backup. BackupSession phase must be "Running". just return it.
+	if backupSession.Status.TotalHosts != types.Int32P(int32(len(backupSession.Status.Stats))) {
+		return backupSession.Status.Phase, nil
+	}
+
+	// check if any of the host has failed to take backup. if any of them has failed, then consider entire backup session as a failure.
+	for _, host := range backupSession.Status.Stats {
+		if host.Phase == api_v1beta1.HostBackupFailed {
+			return api_v1beta1.BackupSessionFailed, fmt.Errorf("backup failed for host: %s. Reason: %s", host.Hostname, host.Error)
+		}
+	}
+
+	// backup has been completed successfully
+	return api_v1beta1.BackupSessionSucceeded, nil
 }

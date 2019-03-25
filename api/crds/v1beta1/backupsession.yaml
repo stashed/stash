@@ -358,6 +358,10 @@ spec:
                     description: Duration indicates total time taken to complete backup
                       for this hosts
                     type: string
+                  error:
+                    description: Error indicates string value of error in case of
+                      backup failure
+                    type: string
                   hostname:
                     description: Hostname indicate name of the host that has been
                       backed up

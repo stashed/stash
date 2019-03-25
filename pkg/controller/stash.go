@@ -3,6 +3,8 @@ package controller
 import (
 	"fmt"
 
+	"github.com/appscode/go/types"
+	"github.com/appscode/stash/apis"
 	api_v1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
 	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
 	"github.com/appscode/stash/pkg/util"
@@ -12,6 +14,7 @@ import (
 	core "k8s.io/api/core/v1"
 	extensions "k8s.io/api/extensions/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 	wcs "kmodules.xyz/webhook-runtime/client/workload/v1"
@@ -194,4 +197,32 @@ func hasStashInitContainer(containers []core.Container) bool {
 		}
 	}
 	return false
+}
+
+func (c *StashController) getTotalHosts(target *api_v1beta1.Target, namespace string) (*int32, error) {
+
+	// for cluster backup/restore, target is nil. in this case, there is only one host
+	if target == nil {
+		return types.Int32P(1), nil
+	}
+
+	switch target.Ref.Kind {
+	// all replicas of StatefulSet will take backup/restore. so total number of hosts will be number of replicas.
+	case apis.KindStatefulSet:
+		ss, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(target.Ref.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		return ss.Spec.Replicas, nil
+	// all Daemon pod will take backup/restore. so total number of hosts will be number of ready replicas
+	case apis.KindDaemonSet:
+		dmn, err := c.kubeClient.AppsV1().DaemonSets(namespace).Get(target.Ref.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		return &dmn.Status.NumberReady, nil
+	// for all other workloads, only one replica will take backup/restore. so number of total host will be 1
+	default:
+		return types.Int32P(1), nil
+	}
 }

@@ -1108,6 +1108,13 @@ func schema_stash_apis_stash_v1beta1_HostBackupStats(ref common.ReferenceCallbac
 							Format:      "",
 						},
 					},
+					"error": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Error indicates string value of error in case of backup failure",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
@@ -1138,6 +1145,13 @@ func schema_stash_apis_stash_v1beta1_HostRestoreStats(ref common.ReferenceCallba
 					"duration": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Duration indicates total time taken to complete restore for this hosts",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"error": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Error indicates string value of error in case of restore failure",
 							Type:        []string{"string"},
 							Format:      "",
 						},

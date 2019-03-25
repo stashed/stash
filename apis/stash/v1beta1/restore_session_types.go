@@ -67,14 +67,14 @@ type RestoreSessionList struct {
 	Items           []RestoreSession `json:"items,omitempty"`
 }
 
-type RestorePhase string
+type RestoreSessionPhase string
 
 const (
-	RestorePending   RestorePhase = "Pending"
-	RestoreRunning   RestorePhase = "Running"
-	RestoreSucceeded RestorePhase = "Succeeded"
-	RestoreFailed    RestorePhase = "Failed"
-	RestoreUnknown   RestorePhase = "Unknown"
+	RestoreSessionPending   RestoreSessionPhase = "Pending"
+	RestoreSessionRunning   RestoreSessionPhase = "Running"
+	RestoreSessionSucceeded RestoreSessionPhase = "Succeeded"
+	RestoreSessionFailed    RestoreSessionPhase = "Failed"
+	RestoreSessionUnknown   RestoreSessionPhase = "Unknown"
 )
 
 type HostRestorePhase string
@@ -92,7 +92,7 @@ type RestoreSessionStatus struct {
 	// Phase indicates the overall phase of the restore process for this RestoreSession. Phase will be "Succeeded" only if
 	// phase of all hosts are "Succeeded". If any of the host fail to complete restore, Phase will be "Failed".
 	// +optional
-	Phase RestorePhase `json:"phase,omitempty"`
+	Phase RestoreSessionPhase `json:"phase,omitempty"`
 	// TotalHosts specifies total number of hosts that will be restored for this RestoreSession
 	// +Optional
 	TotalHosts *int32 `json:"totalHosts,omitempty"`
@@ -114,4 +114,7 @@ type HostRestoreStats struct {
 	// Duration indicates total time taken to complete restore for this hosts
 	// +optional
 	Duration string `json:"duration,omitempty"`
+	// Error indicates string value of error in case of restore failure
+	// +optional
+	Error string `json:"error,omitempty"`
 }

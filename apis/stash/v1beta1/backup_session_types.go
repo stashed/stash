@@ -78,6 +78,9 @@ type HostBackupStats struct {
 	// Duration indicates total time taken to complete backup for this hosts
 	// +optional
 	Duration string `json:"duration,omitempty"`
+	// Error indicates string value of error in case of backup failure
+	// +optional
+	Error string `json:"error,omitempty"`
 }
 
 type SnapshotStats struct {
