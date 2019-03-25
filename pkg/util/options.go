@@ -36,20 +36,22 @@ func RestoreOptionForRestoreSession(restoreSession api.RestoreSession, extraOpt 
 func RestoreOptionsForHost(hostname string, rules []api.Rule) restic.RestoreOptions {
 	for _, rule := range rules {
 		// if host is specified in rule then use it. otherwise use workload itself as host
-		targetHost := hostname
-		if rule.Host != "" {
-			targetHost = rule.Host
+		sourceHost := hostname
+		if rule.SourceHost != "" {
+			sourceHost = rule.SourceHost
 		}
 		if len(rule.Subjects) == 0 {
 			return restic.RestoreOptions{
-				Host:        targetHost,
+				Host:        hostname,
+				SourceHost:  sourceHost,
 				RestoreDirs: rule.Paths,
 				Snapshots:   rule.Snapshots,
 			}
 		}
 		if go_str.Contains(rule.Subjects, hostname) {
 			return restic.RestoreOptions{
-				Host:        targetHost,
+				Host:        hostname,
+				SourceHost:  sourceHost,
 				RestoreDirs: rule.Paths,
 				Snapshots:   rule.Snapshots,
 			}

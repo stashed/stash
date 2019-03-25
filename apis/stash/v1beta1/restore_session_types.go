@@ -45,10 +45,10 @@ type Rule struct {
 	// Subjects specifies the list of hosts that are subject to this rule
 	// +optional
 	Subjects []string `json:"subjects,omitempty"`
-	// Host specifies the name of the host whose backed up state we are trying to restore
+	// SourceHost specifies the name of the host whose backed up state we are trying to restore
 	// By default, it will indicate the workload itself
 	// +optional
-	Host string `json:"host,omitempty"`
+	SourceHost string `json:"sourceHost,omitempty"`
 	// Snapshots specifies the list of snapshots that will be restored for the host under this rule.
 	// Don't specify if you have specified paths field.
 	// +optional

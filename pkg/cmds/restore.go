@@ -46,6 +46,7 @@ func NewCmdRestore() *cobra.Command {
 				if e2 != nil {
 					err = errors.NewAggregate([]error{err, e2})
 				}
+				// fail this container so that it restart and re-try to restore
 				log.Fatalln(err)
 			}
 			return nil

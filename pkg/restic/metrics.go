@@ -296,7 +296,7 @@ func (backupMetrics *BackupMetrics) setValues(backupOutput *BackupOutput) error 
 		totalUnmodifiedFiles int
 	)
 
-	for _, v := range backupOutput.BackupStats {
+	for _, v := range backupOutput.HostBackupStats {
 		dataSizeBytes, err := convertSizeToBytes(v.Size)
 		if err != nil {
 			return err

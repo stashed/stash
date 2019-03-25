@@ -72,7 +72,7 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 				in.Phase = api_v1beta1.BackupSessionFailed
 			} else {
 				in.Phase = api_v1beta1.BackupSessionSucceeded
-				in.Stats = backupOutput.BackupStats
+				in.Stats = backupOutput.HostBackupStats
 			}
 			return in
 		},

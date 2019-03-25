@@ -17,7 +17,7 @@ import (
 )
 
 func NewCmdRunBackup() *cobra.Command {
-	con := backup.Controllers{
+	con := backup.BackupSessionController{
 		MasterURL:      "",
 		KubeconfigPath: "",
 		Namespace:      meta.Namespace(),
