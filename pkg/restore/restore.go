@@ -51,10 +51,12 @@ func Restore(opt *Options) error {
 	if restoreSession.Spec.Target == nil {
 		return fmt.Errorf("invalid RestoreSession. Target is nil")
 	}
+
 	repository, err := opt.StashClient.StashV1alpha1().Repositories(opt.Namespace).Get(restoreSession.Spec.Repository.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
+
 	host, err := util.GetHostName(restoreSession.Spec.Target)
 	if err != nil {
 		return err
@@ -71,10 +73,6 @@ func Restore(opt *Options) error {
 		return err
 	}
 	opt.SetupOpt = setupOptions
-
-	if restoreSession.Spec.Target == nil {
-		return fmt.Errorf("restore target is nil")
-	}
 
 	// only one pod can acquire restic repository lock. so we need leader election to determine who will acquire the lock
 	return opt.electRestoreLeader(restoreSession)
@@ -144,7 +142,7 @@ func (opt *Options) runRestore(restoreSession *api_v1beta1.RestoreSession) error
 		return err
 	}
 
-	// if RestoreSession has been completed for this host then don't proceed further
+	// if already restored for this host then don't process further
 	if opt.isRestoredForThisHost(restoreSession, host) {
 		log.Infof("Skipping restore for RestoreSession %s/%s. Reason: RestoreSession already processed for host %q.", restoreSession.Namespace, restoreSession.Name, host)
 		return nil
@@ -184,7 +182,7 @@ func (opt *Options) runRestore(restoreSession *api_v1beta1.RestoreSession) error
 			RestoreSessionEventComponent,
 			ref,
 			core.EventTypeNormal,
-			eventer.EventReasonRestoreSuccess,
+			eventer.EventReasonHostRestoreSucceeded,
 			fmt.Sprintf("Successfully restored for host %q.", host),
 		)
 	}
@@ -203,26 +201,28 @@ func HandleRestoreFailure(opt *Options, restoreErr error) error {
 		return err
 	}
 
-	hostStas := api_v1beta1.HostRestoreStats{
+	hostStats := api_v1beta1.HostRestoreStats{
 		Hostname: host,
 		Phase:    api_v1beta1.HostRestoreFailed,
 		Error:    err.Error(),
 	}
 	// add or update entry for this host in RestoreSession status
-	_, err = stash_util_v1beta1.UpdateRestoreSessionStatusForHost(opt.StashClient.StashV1beta1(), restoreSession, hostStas)
+	_, err = stash_util_v1beta1.UpdateRestoreSessionStatusForHost(opt.StashClient.StashV1beta1(), restoreSession, hostStats)
 
 	// write failure event
-	opt.writeRestoreFailureEvent(restoreSession, restoreErr)
+	opt.writeRestoreFailureEvent(restoreSession, host, restoreErr)
 
 	// send prometheus metrics
 	if opt.Metrics.Enabled {
-		restoreOutput := &restic.RestoreOutput{}
+		restoreOutput := &restic.RestoreOutput{
+			HostRestoreStats: hostStats,
+		}
 		return restoreOutput.HandleMetrics(&opt.Metrics, restoreErr)
 	}
 	return nil
 }
 
-func (opt *Options) writeRestoreFailureEvent(restoreSession *api_v1beta1.RestoreSession, err error) {
+func (opt *Options) writeRestoreFailureEvent(restoreSession *api_v1beta1.RestoreSession, host string, err error) {
 	// write failure event
 	ref, rerr := reference.GetReference(stash_scheme.Scheme, restoreSession)
 	if rerr == nil {
@@ -231,8 +231,8 @@ func (opt *Options) writeRestoreFailureEvent(restoreSession *api_v1beta1.Restore
 			RestoreSessionEventComponent,
 			ref,
 			core.EventTypeWarning,
-			eventer.EventReasonRestoreFailed,
-			fmt.Sprintf("Failed to restore. Reason: %v", err),
+			eventer.EventReasonHostRestoreFailed,
+			fmt.Sprintf("Failed to restore for host %q. Reason: %v", host, err),
 		)
 	} else {
 		log.Errorf("Failed to write failure event. Reason: %v", rerr)

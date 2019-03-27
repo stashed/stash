@@ -42,7 +42,7 @@ func FindRestoreSession(lister v1beta1_listers.RestoreSessionLister, w *wapi.Wor
 	}
 
 	result := make([]*v1beta1_api.RestoreSession, 0)
-	// keep only those RestoreSession that has this workload as target and restore is not completed
+	// keep only those RestoreSession that has this workload as target
 	for _, restoreSession := range restoreSessions {
 		if restoreSession.DeletionTimestamp == nil && IsTarget(restoreSession.Spec.Target, w) {
 			result = append(result, restoreSession)
@@ -55,53 +55,53 @@ func FindRestoreSession(lister v1beta1_listers.RestoreSessionLister, w *wapi.Wor
 
 	// return currently running RestoreSession
 	for _, r := range result {
-		if r.Status.Phase == v1beta1_api.RestoreRunning {
+		if r.Status.Phase == v1beta1_api.RestoreSessionRunning {
 			return r, nil
 		}
 	}
 	// no running RestoreSession. so return pending one
 	for _, r := range result {
-		if r.Status.Phase == v1beta1_api.RestorePending {
+		if r.Status.Phase == v1beta1_api.RestoreSessionPending {
 			return r, nil
 		}
 	}
 	// no pending or running restore session so return failed one
 	for _, r := range result {
-		if r.Status.Phase == v1beta1_api.RestoreFailed {
+		if r.Status.Phase == v1beta1_api.RestoreSessionFailed {
 			return r, nil
 		}
 	}
-	// by default return first RestoreSession
-	return result[0], nil
+
+	// by default return latest RestoreSession
+	latestRestoreSession := result[0]
+	for _, r := range result {
+		if latestRestoreSession.CreationTimestamp.Before(&r.CreationTimestamp) {
+			latestRestoreSession = r
+		}
+	}
+	return latestRestoreSession, nil
 }
 
 // RestoreSessionEqual check weather two RestoreSessions has same specification.
 func RestoreSessionEqual(old, new *v1beta1_api.RestoreSession) bool {
 
 	var oldSpec, newSpec *v1beta1_api.RestoreSessionSpec
+	var oldName, newName string
+
 	if old != nil {
 		oldSpec = &old.Spec
+		oldName = old.Name
 	}
 	if new != nil {
 		newSpec = &new.Spec
+		newName = new.Name
 	}
+
+	// user may create new RestoreSession with same spec. in this case, spec will be same but name will be different
+	if oldName != newName {
+		return false
+	}
+
+	// user may update existing RestoreSession spec. so, we need to compare new and old specification
 	return reflect.DeepEqual(oldSpec, newSpec)
-}
-
-func RestorePending(phase v1beta1_api.RestorePhase) bool {
-	if phase == "" || phase == v1beta1_api.RestorePending {
-		return true
-	}
-	return false
-}
-
-func RestoreRunning(phase v1beta1_api.RestorePhase) bool {
-	if phase == v1beta1_api.RestoreRunning {
-		return true
-	}
-	return false
-}
-
-func RestoreCompleted(phase v1beta1_api.RestorePhase) bool {
-	return !(RestorePending(phase) || RestoreRunning(phase))
 }

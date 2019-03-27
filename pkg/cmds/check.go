@@ -41,7 +41,7 @@ func NewCmdCheck() *cobra.Command {
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&opt.ResticName, "restic-name", opt.ResticName, "Name of the Restic CRD.")
-	cmd.Flags().StringVar(&opt.HostName, "host-name", opt.HostName, "SourceHost name for workload.")
+	cmd.Flags().StringVar(&opt.HostName, "host-name", opt.HostName, "Host name for workload.")
 	cmd.Flags().StringVar(&opt.SmartPrefix, "smart-prefix", opt.SmartPrefix, "Smart prefix for workload")
 
 	return cmd

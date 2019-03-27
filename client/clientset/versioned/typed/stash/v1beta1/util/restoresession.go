@@ -13,7 +13,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/tools/clientcmd/api"
 	kutil "kmodules.xyz/client-go"
 )
 
@@ -23,8 +22,8 @@ func CreateOrPatchRestoreSession(c cs.StashV1beta1Interface, meta metav1.ObjectM
 		glog.V(3).Infof("Creating RestoreSession %s/%s.", meta.Namespace, meta.Name)
 		out, err := c.RestoreSessions(meta.Namespace).Create(transform(&api_v1beta1.RestoreSession{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       "RestoreSession",
-				APIVersion: api.SchemeGroupVersion.String(),
+				Kind:       api_v1beta1.ResourceKindRestoreSession,
+				APIVersion: api_v1beta1.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
 		}))

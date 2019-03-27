@@ -2,9 +2,9 @@ package controller
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/appscode/go/log"
-	"github.com/appscode/go/types"
 	"github.com/appscode/stash/apis"
 	"github.com/appscode/stash/apis/stash"
 	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
@@ -282,8 +282,20 @@ func (c *StashController) setBackupSessionRunning(backupSession *api_v1beta1.Bac
 
 func (c *StashController) setBackupSessionSucceeded(backupSession *api_v1beta1.BackupSession) error {
 
+	// total backup session duration is sum of individual host backup duration
+	var sessionDuration time.Duration
+	for _, hostStats := range backupSession.Status.Stats {
+		hostBackupDuration, err := time.ParseDuration(hostStats.Duration)
+		if err != nil {
+			return err
+		}
+		sessionDuration = sessionDuration + hostBackupDuration
+	}
+
+	// update BackupSession status
 	_, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 		in.Phase = api_v1beta1.BackupSessionSucceeded
+		in.SessionDuration = sessionDuration.String()
 		return in
 	}, apis.EnableStatusSubresource)
 	if err != nil {
@@ -310,7 +322,7 @@ func (c *StashController) getBackupSessionPhase(backupSession *api_v1beta1.Backu
 	}
 
 	// all hosts hasn't completed it's backup. BackupSession phase must be "Running". just return it.
-	if backupSession.Status.TotalHosts != types.Int32P(int32(len(backupSession.Status.Stats))) {
+	if *backupSession.Status.TotalHosts != int32(len(backupSession.Status.Stats)) {
 		return backupSession.Status.Phase, nil
 	}
 

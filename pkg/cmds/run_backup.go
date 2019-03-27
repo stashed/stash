@@ -3,6 +3,7 @@ package cmds
 import (
 	"time"
 
+	"github.com/appscode/go/log"
 	"github.com/appscode/stash/apis"
 	cs "github.com/appscode/stash/client/clientset/versioned"
 	stashinformers "github.com/appscode/stash/client/informers/externalversions"
@@ -52,7 +53,7 @@ func NewCmdRunBackup() *cobra.Command {
 			con.Recorder = eventer.NewEventRecorder(con.K8sClient, backup.BackupEventComponent)
 			con.Metrics.JobName = con.BackupConfigurationName
 			if err = con.RunBackup(); err != nil {
-				glog.Errorln("Error occurs for %v", err)
+				log.Errorln("failed to complete backup. Reason: %v", err)
 				//set BackupSession status "Failed", write event and prometheus metrics
 				return con.HandleBackupFailure(err)
 			}

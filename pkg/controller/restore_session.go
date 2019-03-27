@@ -2,9 +2,9 @@ package controller
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/appscode/go/log"
-	"github.com/appscode/go/types"
 	"github.com/appscode/stash/apis"
 	"github.com/appscode/stash/apis/stash"
 	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
@@ -304,8 +304,20 @@ func (c *StashController) setRestoreSessionRunning(restoreSession *api_v1beta1.R
 
 func (c *StashController) setRestoreSessionSucceeded(restoreSession *api_v1beta1.RestoreSession) error {
 
+	// total restore session duration is sum of individual host restore duration
+	var sessionDuration time.Duration
+	for _, hostStats := range restoreSession.Status.Stats {
+		hostRestoreDuration, err := time.ParseDuration(hostStats.Duration)
+		if err != nil {
+			return err
+		}
+		sessionDuration = sessionDuration + hostRestoreDuration
+	}
+
+	// update RestoreSession status
 	_, err := stash_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
 		in.Phase = api_v1beta1.RestoreSessionSucceeded
+		in.SessionDuration = sessionDuration.String()
 		return in
 	}, apis.EnableStatusSubresource)
 	if err != nil {
@@ -332,7 +344,7 @@ func (c *StashController) getRestoreSessionPhase(restoreSession *api_v1beta1.Res
 	}
 
 	// all hosts hasn't completed it's restore process. RestoreSession phase must be "Running". just return it.
-	if restoreSession.Status.TotalHosts != types.Int32P(int32(len(restoreSession.Status.Stats))) {
+	if *restoreSession.Status.TotalHosts != int32(len(restoreSession.Status.Stats)) {
 		return restoreSession.Status.Phase, nil
 	}
 

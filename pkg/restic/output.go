@@ -20,8 +20,6 @@ type BackupOutput struct {
 	HostBackupStats api_v1beta1.HostBackupStats `json:"hostBackupStats,omitempty"`
 	// RepositoryStats shows statistics of repository after last backup
 	RepositoryStats RepositoryStats `json:"repository,omitempty"`
-	// string value of backup error
-	Error string `json:"error,omitempty"`
 }
 
 type RepositoryStats struct {
@@ -38,8 +36,6 @@ type RepositoryStats struct {
 type RestoreOutput struct {
 	// HostRestoreStats shows restore statistics of current host
 	HostRestoreStats api_v1beta1.HostRestoreStats `json:"hostRestoreStats,omitempty"`
-	// string value of restore error
-	Error string `json:"error,omitempty"`
 }
 
 // WriteOutput write output of backup process into output.json file in the directory
