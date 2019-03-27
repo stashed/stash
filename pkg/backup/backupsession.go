@@ -207,13 +207,13 @@ func (c *BackupSessionController) backup(backupSession *api_v1beta1.BackupSessio
 	}
 
 	// configure setupOption
-	setupOpt, err := util.SetupOptionsForRepository(*repository, extraOpt)
+	c.SetupOpt, err = util.SetupOptionsForRepository(*repository, extraOpt)
 	if err != nil {
 		return fmt.Errorf("setup option for repository fail")
 	}
 
 	// init restic wrapper
-	resticWrapper, err := restic.NewResticWrapper(setupOpt)
+	resticWrapper, err := restic.NewResticWrapper(c.SetupOpt)
 	if err != nil {
 		return err
 	}
