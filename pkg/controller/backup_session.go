@@ -77,52 +77,48 @@ func (c *StashController) runBackupSessionProcessor(key string) error {
 	if !exists {
 		glog.Warningf("BackupSession %s does not exist anymore\n", key)
 		return nil
-	} else {
-		backupSession := obj.(*api_v1beta1.BackupSession)
-		glog.Infof("Sync/Add/Update for BackupSession %s", backupSession.GetName())
-
-		// check weather backup session is completed or running and set it's phase accordingly
-		phase, err := c.getBackupSessionPhase(backupSession)
-
-		if err != nil || phase == api_v1beta1.BackupSessionFailed {
-			return c.setBackupSessionFailed(backupSession, err)
-		} else if phase == api_v1beta1.BackupSessionSucceeded {
-			return c.setBackupSessionSucceeded(backupSession)
-		} else if phase == api_v1beta1.BackupSessionRunning {
-			log.Infof("Skipping processing BackupSession %s/%s. Reason: phase is %s.", backupSession.Namespace, backupSession.Name, backupSession.Status.Phase)
-			return nil
-		}
-
-		// backup process for this BackupSession has not started. so let's start backup process
-		// get BackupConfiguration for BackupSession
-		backupConfig, err := c.stashClient.StashV1beta1().BackupConfigurations(backupSession.Namespace).Get(
-			backupSession.Spec.BackupConfiguration.Name,
-			metav1.GetOptions{},
-		)
-		if err != nil {
-			return fmt.Errorf("can't get BackupConfiguration for BackupSession %s/%s, Reason: %s", backupSession.Namespace, backupSession.Name, err)
-		}
-
-		// skip if backup model is sidecar.
-		// for sidecar model controller inside sidecar will take care of it.
-		if backupConfig.Spec.Target != nil && util.BackupModel(backupConfig.Spec.Target.Ref.Kind) == util.ModelSidecar {
-			log.Infof("Skipping processing BackupSession %s/%s. Reason: Backup model is sidecar. Controller inside sidecar will take care of it.", backupSession.Namespace, backupSession.Name)
-			return c.setBackupSessionRunning(backupSession)
-		}
-
-		// create backup job
-		err = c.ensureBackupJob(backupSession, backupConfig)
-		if err != nil {
-			return c.setBackupSessionFailed(backupSession, err)
-		}
-
-		// job has been created successfully. set BackupSession phase "Running"
-		err = c.setBackupSessionRunning(backupSession)
-		if err != nil {
-			return err
-		}
 	}
-	return nil
+
+	backupSession := obj.(*api_v1beta1.BackupSession)
+	glog.Infof("Sync/Add/Update for BackupSession %s", backupSession.GetName())
+
+	// check weather backup session is completed or running and set it's phase accordingly
+	phase, err := c.getBackupSessionPhase(backupSession)
+
+	if err != nil || phase == api_v1beta1.BackupSessionFailed {
+		return c.setBackupSessionFailed(backupSession, err)
+	} else if phase == api_v1beta1.BackupSessionSucceeded {
+		return c.setBackupSessionSucceeded(backupSession)
+	} else if phase == api_v1beta1.BackupSessionRunning {
+		log.Infof("Skipping processing BackupSession %s/%s. Reason: phase is %s.", backupSession.Namespace, backupSession.Name, backupSession.Status.Phase)
+		return nil
+	}
+
+	// backup process for this BackupSession has not started. so let's start backup process
+	// get BackupConfiguration for BackupSession
+	backupConfig, err := c.stashClient.StashV1beta1().BackupConfigurations(backupSession.Namespace).Get(
+		backupSession.Spec.BackupConfiguration.Name,
+		metav1.GetOptions{},
+	)
+	if err != nil {
+		return fmt.Errorf("can't get BackupConfiguration for BackupSession %s/%s, Reason: %s", backupSession.Namespace, backupSession.Name, err)
+	}
+
+	// skip if backup model is sidecar.
+	// for sidecar model controller inside sidecar will take care of it.
+	if backupConfig.Spec.Target != nil && util.BackupModel(backupConfig.Spec.Target.Ref.Kind) == util.ModelSidecar {
+		log.Infof("Skipping processing BackupSession %s/%s. Reason: Backup model is sidecar. Controller inside sidecar will take care of it.", backupSession.Namespace, backupSession.Name)
+		return c.setBackupSessionRunning(backupSession)
+	}
+
+	// create backup job
+	err = c.ensureBackupJob(backupSession, backupConfig)
+	if err != nil {
+		return c.setBackupSessionFailed(backupSession, err)
+	}
+
+	// job has been created successfully. set BackupSession phase "Running"
+	return c.setBackupSessionRunning(backupSession)
 }
 
 func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSession, backupConfig *api_v1beta1.BackupConfiguration) error {
@@ -302,7 +298,7 @@ func (c *StashController) setBackupSessionSucceeded(backupSession *api_v1beta1.B
 		return err
 	}
 
-	// write job creation success event
+	// write event for successful backup
 	_, err = eventer.CreateEvent(
 		c.kubeClient,
 		eventer.BackupSessionEventComponent,
