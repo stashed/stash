@@ -29,6 +29,15 @@ var JSONSerializer = func() *Codec {
 	return &Codec{&codec{info.Serializer}}
 }()
 
+var JSONPrettySerializer = func() *Codec {
+	mediaType := "application/json"
+	info, ok := runtime.SerializerInfoForMediaType(scheme.Codecs.SupportedMediaTypes(), mediaType)
+	if !ok {
+		panic("unsupported media type " + mediaType)
+	}
+	return &Codec{&codec{info.PrettySerializer}}
+}()
+
 var YAMLSerializer = func() *Codec {
 	mediaType := "application/yaml"
 	info, ok := runtime.SerializerInfoForMediaType(scheme.Codecs.SupportedMediaTypes(), mediaType)
@@ -74,6 +83,22 @@ func UnmarshalFromYAML(data []byte, gv schema.GroupVersion) (runtime.Object, err
 func MarshalToJson(obj runtime.Object, gv schema.GroupVersion) ([]byte, error) {
 	encoder := versioning.NewCodec(
 		JSONSerializer,
+		nil,
+		runtime.UnsafeObjectConvertor(scheme.Scheme),
+		scheme.Scheme,
+		scheme.Scheme,
+		nil,
+		gv,
+		nil,
+		scheme.Scheme.Name(),
+	)
+	return runtime.Encode(encoder, obj)
+}
+
+// MarshalToPrettyJson marshals an object into pretty json.
+func MarshalToPrettyJson(obj runtime.Object, gv schema.GroupVersion) ([]byte, error) {
+	encoder := versioning.NewCodec(
+		JSONPrettySerializer,
 		nil,
 		runtime.UnsafeObjectConvertor(scheme.Scheme),
 		scheme.Scheme,

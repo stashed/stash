@@ -56,7 +56,11 @@ func (s *Session) Start() (err error) {
 		if index != length {
 			rd, wr = io.Pipe() // create pipe
 			cmd.Stdout = wr
-			cmd.Stderr = os.Stderr
+			if s.PipeStdErrors {
+				cmd.Stderr = s.Stderr
+			} else {
+				cmd.Stderr = os.Stderr
+			}
 		}
 		if index == length-1 {
 			cmd.Stdout = s.Stdout
@@ -72,15 +76,21 @@ func (s *Session) Start() (err error) {
 
 // Should be call after Start()
 // only catch the last command error
-func (s *Session) Wait() (err error) {
+func (s *Session) Wait() error {
+	var pipeErr, lastErr error
 	for _, cmd := range s.cmds {
-		err = cmd.Wait()
+		if lastErr = cmd.Wait(); lastErr != nil {
+			pipeErr = lastErr
+		}
 		wr, ok := cmd.Stdout.(*io.PipeWriter)
 		if ok {
 			wr.Close()
 		}
 	}
-	return err
+	if s.PipeFail {
+		return pipeErr
+	}
+	return lastErr
 }
 
 func (s *Session) Kill(sig os.Signal) {
@@ -102,7 +112,7 @@ func (s *Session) WaitTimeout(timeout time.Duration) (err error) {
 }
 
 func Go(f func() error) chan error {
-	ch := make(chan error)
+	ch := make(chan error, 1)
 	go func() {
 		ch <- f()
 	}()
