@@ -254,14 +254,6 @@ func (w *ResticWrapper) appendCaCertFlag(args []interface{}) []interface{} {
 	return args
 }
 
-func convertToInterface(items []string) []interface{} {
-	var args []interface{}
-	for _, item := range items {
-		args = append(args, item)
-	}
-	return args
-}
-
 func (w *ResticWrapper) run(commands ...Command) ([]byte, error) {
 	// write std errors into os.Stderr and buffer
 	errBuff := bytes.NewBuffer(nil)
