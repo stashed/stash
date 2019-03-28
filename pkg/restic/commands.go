@@ -1,7 +1,6 @@
 package restic
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/stash/apis/stash/v1alpha1"
+	"github.com/armon/circbuf"
 )
 
 const (
@@ -256,7 +256,10 @@ func (w *ResticWrapper) appendCaCertFlag(args []interface{}) []interface{} {
 
 func (w *ResticWrapper) run(commands ...Command) ([]byte, error) {
 	// write std errors into os.Stderr and buffer
-	errBuff := bytes.NewBuffer(nil)
+	errBuff, err := circbuf.NewBuffer(256)
+	if err != nil {
+		return nil, err
+	}
 	w.sh.Stderr = io.MultiWriter(os.Stderr, errBuff)
 
 	for _, cmd := range commands {
