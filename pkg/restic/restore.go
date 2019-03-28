@@ -38,3 +38,20 @@ func (w *ResticWrapper) RunRestore(restoreOptions RestoreOptions) (*RestoreOutpu
 
 	return restoreOutput, nil
 }
+
+func (w *ResticWrapper) Dump(dumpOptions DumpOptions) (*RestoreOutput, error) {
+	// Start clock to measure total restore duration
+	startTime := time.Now()
+	restoreOutput := &RestoreOutput{}
+
+	if _, err := w.dump(dumpOptions); err != nil {
+		return nil, err
+	}
+
+	// Dump successful. Read current time and calculate total session duration.
+	endTime := time.Now()
+	restoreOutput.HostRestoreStats.Duration = endTime.Sub(startTime).String()
+	restoreOutput.HostRestoreStats.Phase = api_v1beta1.HostRestoreSucceeded
+
+	return restoreOutput, nil
+}

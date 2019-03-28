@@ -15,10 +15,18 @@ type ResticWrapper struct {
 	config SetupOptions
 }
 
+type Command struct {
+	Name string
+	Args []interface{}
+}
+
+// if StdinPipeCommand is specified, BackupDirs will not be used
 type BackupOptions struct {
-	Host            string
-	BackupDirs      []string
-	RetentionPolicy v1alpha1.RetentionPolicy
+	Host             string
+	BackupDirs       []string
+	StdinPipeCommand Command
+	StdinFileName    string // default "stdin"
+	RetentionPolicy  v1alpha1.RetentionPolicy
 }
 
 type RestoreOptions struct {
@@ -26,6 +34,14 @@ type RestoreOptions struct {
 	SourceHost  string
 	RestoreDirs []string
 	Snapshots   []string // when Snapshots are specified SourceHost and RestoreDirs will not be used
+}
+
+type DumpOptions struct {
+	Host              string
+	Snapshot          string // default "latest"
+	Path              string
+	FileName          string // default "stdin"
+	StdoutPipeCommand Command
 }
 
 type SetupOptions struct {

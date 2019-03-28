@@ -22,16 +22,27 @@ func (w *ResticWrapper) RunBackup(backupOption BackupOptions) (*BackupOutput, er
 		},
 	}
 
-	// Backup all target directories
-	for _, dir := range backupOption.BackupDirs {
-		out, err := w.backup(dir, backupOption.Host, nil)
+	if backupOption.StdinPipeCommand.Name != "" { // Backup from stdin
+		out, err := w.backupFromStdin(backupOption)
 		if err != nil {
 			return nil, err
 		}
 		// Extract information from the output of backup command
-		err = backupOutput.extractBackupInfo(out, dir, backupOption.Host)
+		err = backupOutput.extractBackupInfo(out, backupOption.StdinFileName, backupOption.Host)
 		if err != nil {
 			return nil, err
+		}
+	} else { // Backup all target directories
+		for _, dir := range backupOption.BackupDirs {
+			out, err := w.backup(dir, backupOption.Host, nil)
+			if err != nil {
+				return nil, err
+			}
+			// Extract information from the output of backup command
+			err = backupOutput.extractBackupInfo(out, dir, backupOption.Host)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
