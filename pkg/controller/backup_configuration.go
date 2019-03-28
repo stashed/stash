@@ -232,7 +232,7 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 				ImagePullPolicy: core.PullIfNotPresent,
 				Image:           image.ToContainerImage(),
 				Args: []string{
-					"backup-session",
+					"create-backupsession",
 					fmt.Sprintf("--backupsession.name=%s", backupConfiguration.Name),
 					fmt.Sprintf("--backupsession.namespace=%s", backupConfiguration.Namespace),
 				},

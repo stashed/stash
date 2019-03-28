@@ -5,6 +5,7 @@ import (
 
 	"github.com/appscode/go/flags"
 	"github.com/appscode/go/log"
+	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
 	"github.com/appscode/stash/pkg/restic"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/errors"
@@ -96,6 +97,9 @@ func handleResticError(outputDir, fileName string, backupErr error) error {
 		return backupErr
 	}
 	log.Infoln("Writing restic error to output file, error:", backupErr.Error())
-	backupOut := restic.BackupOutput{Error: backupErr.Error()}
+	backupOut := restic.BackupOutput{
+		HostBackupStats: api_v1beta1.HostBackupStats{
+			Error: backupErr.Error(),
+		}}
 	return backupOut.WriteOutput(filepath.Join(outputDir, fileName))
 }

@@ -1,6 +1,10 @@
 package restic
 
-import "time"
+import (
+	"time"
+
+	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
+)
 
 func (w *ResticWrapper) RunBackup(backupOption BackupOptions) (*BackupOutput, error) {
 	// Start clock to measure total session duration
@@ -12,7 +16,11 @@ func (w *ResticWrapper) RunBackup(backupOption BackupOptions) (*BackupOutput, er
 		return nil, err
 	}
 
-	backupOutput := &BackupOutput{}
+	backupOutput := &BackupOutput{
+		HostBackupStats: api_v1beta1.HostBackupStats{
+			Hostname: backupOption.Host,
+		},
+	}
 
 	// Backup all target directories
 	for _, dir := range backupOption.BackupDirs {
@@ -21,7 +29,7 @@ func (w *ResticWrapper) RunBackup(backupOption BackupOptions) (*BackupOutput, er
 			return nil, err
 		}
 		// Extract information from the output of backup command
-		err = backupOutput.extractBackupInfo(out, dir)
+		err = backupOutput.extractBackupInfo(out, dir, backupOption.Host)
 		if err != nil {
 			return nil, err
 		}
@@ -51,15 +59,17 @@ func (w *ResticWrapper) RunBackup(backupOption BackupOptions) (*BackupOutput, er
 	if err != nil {
 		return nil, err
 	}
+
 	// Extract information from output of "stats" command
 	err = backupOutput.extractStatsInfo(out)
 	if err != nil {
 		return nil, err
 	}
 
-	// Backup complete. Read current time and calculate total session duration.
+	// Backup complete. Read current time and calculate total backup duration.
 	endTime := time.Now()
-	backupOutput.SessionDuration = endTime.Sub(startTime).String()
+	backupOutput.HostBackupStats.Duration = endTime.Sub(startTime).String()
+	backupOutput.HostBackupStats.Phase = api_v1beta1.HostBackupSucceeded
 
 	return backupOutput, nil
 }

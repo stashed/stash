@@ -45,10 +45,10 @@ type Rule struct {
 	// Subjects specifies the list of hosts that are subject to this rule
 	// +optional
 	Subjects []string `json:"subjects,omitempty"`
-	// Host specifies the name of the host whose backed up state we are trying to restore
+	// SourceHost specifies the name of the host whose backed up state we are trying to restore
 	// By default, it will indicate the workload itself
 	// +optional
-	Host string `json:"host,omitempty"`
+	SourceHost string `json:"sourceHost,omitempty"`
 	// Snapshots specifies the list of snapshots that will be restored for the host under this rule.
 	// Don't specify if you have specified paths field.
 	// +optional
@@ -67,14 +67,21 @@ type RestoreSessionList struct {
 	Items           []RestoreSession `json:"items,omitempty"`
 }
 
-type RestorePhase string
+type RestoreSessionPhase string
 
 const (
-	RestorePending   RestorePhase = "Pending"
-	RestoreRunning   RestorePhase = "Running"
-	RestoreSucceeded RestorePhase = "Succeeded"
-	RestoreFailed    RestorePhase = "Failed"
-	RestoreUnknown   RestorePhase = "Unknown"
+	RestoreSessionPending   RestoreSessionPhase = "Pending"
+	RestoreSessionRunning   RestoreSessionPhase = "Running"
+	RestoreSessionSucceeded RestoreSessionPhase = "Succeeded"
+	RestoreSessionFailed    RestoreSessionPhase = "Failed"
+	RestoreSessionUnknown   RestoreSessionPhase = "Unknown"
+)
+
+type HostRestorePhase string
+
+const (
+	HostRestoreSucceeded HostRestorePhase = "Succeeded"
+	HostRestoreFailed    HostRestorePhase = "Failed"
 )
 
 type RestoreSessionStatus struct {
@@ -82,6 +89,32 @@ type RestoreSessionStatus struct {
 	// resource's generation, which is updated on mutation by the API Server.
 	// +optional
 	ObservedGeneration *types.IntHash `json:"observedGeneration,omitempty"`
-	Phase              RestorePhase   `json:"phase,omitempty"`
-	Duration           string         `json:"duration,omitempty"`
+	// Phase indicates the overall phase of the restore process for this RestoreSession. Phase will be "Succeeded" only if
+	// phase of all hosts are "Succeeded". If any of the host fail to complete restore, Phase will be "Failed".
+	// +optional
+	Phase RestoreSessionPhase `json:"phase,omitempty"`
+	// TotalHosts specifies total number of hosts that will be restored for this RestoreSession
+	// +Optional
+	TotalHosts *int32 `json:"totalHosts,omitempty"`
+	// SessionDuration specify total time taken to complete current restore session (sum of restore duration of all hosts)
+	// +optional
+	SessionDuration string `json:"sessionDuration,omitempty"`
+	// Stats shows statistics of individual hosts for this restore session
+	// +optional
+	Stats []HostRestoreStats `json:"stats,omitempty"`
+}
+
+type HostRestoreStats struct {
+	// Hostname indicate name of the host that has been restored
+	// +optional
+	Hostname string `json:"hostname,omitempty"`
+	// Phase indicates restore phase of this host
+	// +optional
+	Phase HostRestorePhase `json:"phase,omitempty"`
+	// Duration indicates total time taken to complete restore for this hosts
+	// +optional
+	Duration string `json:"duration,omitempty"`
+	// Error indicates string value of error in case of restore failure
+	// +optional
+	Error string `json:"error,omitempty"`
 }

@@ -23,8 +23,9 @@ type BackupOptions struct {
 
 type RestoreOptions struct {
 	Host        string
+	SourceHost  string
 	RestoreDirs []string
-	Snapshots   []string // when Snapshots are specified Host and RestoreDirs will not be used
+	Snapshots   []string // when Snapshots are specified SourceHost and RestoreDirs will not be used
 }
 
 type SetupOptions struct {

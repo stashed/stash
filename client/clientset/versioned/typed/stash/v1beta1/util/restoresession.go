@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/appscode/stash/apis"
-	api "github.com/appscode/stash/apis/stash/v1beta1"
+	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
 	cs "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1beta1"
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/golang/glog"
@@ -16,14 +16,14 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func CreateOrPatchRestoreSession(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(in *api.RestoreSession) *api.RestoreSession) (*api.RestoreSession, kutil.VerbType, error) {
+func CreateOrPatchRestoreSession(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(in *api_v1beta1.RestoreSession) *api_v1beta1.RestoreSession) (*api_v1beta1.RestoreSession, kutil.VerbType, error) {
 	cur, err := c.RestoreSessions(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating RestoreSession %s/%s.", meta.Namespace, meta.Name)
-		out, err := c.RestoreSessions(meta.Namespace).Create(transform(&api.RestoreSession{
+		out, err := c.RestoreSessions(meta.Namespace).Create(transform(&api_v1beta1.RestoreSession{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       "RestoreSession",
-				APIVersion: api.SchemeGroupVersion.String(),
+				Kind:       api_v1beta1.ResourceKindRestoreSession,
+				APIVersion: api_v1beta1.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
 		}))
@@ -34,11 +34,11 @@ func CreateOrPatchRestoreSession(c cs.StashV1beta1Interface, meta metav1.ObjectM
 	return PatchRestoreSession(c, cur, transform)
 }
 
-func PatchRestoreSession(c cs.StashV1beta1Interface, cur *api.RestoreSession, transform func(*api.RestoreSession) *api.RestoreSession) (*api.RestoreSession, kutil.VerbType, error) {
+func PatchRestoreSession(c cs.StashV1beta1Interface, cur *api_v1beta1.RestoreSession, transform func(*api_v1beta1.RestoreSession) *api_v1beta1.RestoreSession) (*api_v1beta1.RestoreSession, kutil.VerbType, error) {
 	return PatchRestoreSessionObject(c, cur, transform(cur.DeepCopy()))
 }
 
-func PatchRestoreSessionObject(c cs.StashV1beta1Interface, cur, mod *api.RestoreSession) (*api.RestoreSession, kutil.VerbType, error) {
+func PatchRestoreSessionObject(c cs.StashV1beta1Interface, cur, mod *api_v1beta1.RestoreSession) (*api_v1beta1.RestoreSession, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -61,7 +61,7 @@ func PatchRestoreSessionObject(c cs.StashV1beta1Interface, cur, mod *api.Restore
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateRestoreSession(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(*api.RestoreSession) *api.RestoreSession) (result *api.RestoreSession, err error) {
+func TryUpdateRestoreSession(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(*api_v1beta1.RestoreSession) *api_v1beta1.RestoreSession) (result *api_v1beta1.RestoreSession, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
@@ -82,10 +82,17 @@ func TryUpdateRestoreSession(c cs.StashV1beta1Interface, meta metav1.ObjectMeta,
 	return
 }
 
-func SetRestoreSessionStats(c cs.StashV1beta1Interface, recovery *api.RestoreSession, d string, phase api.RestorePhase) (*api.RestoreSession, error) {
-	out, err := UpdateRestoreSessionStatus(c, recovery, func(in *api.RestoreSessionStatus) *api.RestoreSessionStatus {
-		in.Phase = phase
-		in.Duration = d
+func UpdateRestoreSessionStatusForHost(c cs.StashV1beta1Interface, restoreSession *api_v1beta1.RestoreSession, hostStats api_v1beta1.HostRestoreStats) (*api_v1beta1.RestoreSession, error) {
+	out, err := UpdateRestoreSessionStatus(c, restoreSession, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
+		// if an entry already exist for this host then update it
+		for i, v := range restoreSession.Status.Stats {
+			if v.Hostname == hostStats.Hostname {
+				in.Stats[i] = hostStats
+				return in
+			}
+		}
+		// no entry for this host. so add a new entry.
+		in.Stats = append(in.Stats, hostStats)
 		return in
 	}, apis.EnableStatusSubresource)
 	return out, err
@@ -93,15 +100,15 @@ func SetRestoreSessionStats(c cs.StashV1beta1Interface, recovery *api.RestoreSes
 
 func UpdateRestoreSessionStatus(
 	c cs.StashV1beta1Interface,
-	in *api.RestoreSession,
-	transform func(*api.RestoreSessionStatus) *api.RestoreSessionStatus,
+	in *api_v1beta1.RestoreSession,
+	transform func(*api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus,
 	useSubresource ...bool,
-) (result *api.RestoreSession, err error) {
+) (result *api_v1beta1.RestoreSession, err error) {
 	if len(useSubresource) > 1 {
 		return nil, errors.Errorf("invalid value passed for useSubresource: %v", useSubresource)
 	}
-	apply := func(x *api.RestoreSession) *api.RestoreSession {
-		out := &api.RestoreSession{
+	apply := func(x *api_v1beta1.RestoreSession) *api_v1beta1.RestoreSession {
+		out := &api_v1beta1.RestoreSession{
 			TypeMeta:   x.TypeMeta,
 			ObjectMeta: x.ObjectMeta,
 			Spec:       x.Spec,

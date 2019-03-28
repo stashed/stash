@@ -340,55 +340,89 @@ spec:
               - format: int64
                 type: integer
             phase:
-              description: Phase indicates the phase of the backup process for this
-                BackupSession
+              description: Phase indicates the overall phase of the backup process
+                for this BackupSession. Phase will be "Succeeded" only if phase of
+                all hosts are "Succeeded". If any of the host fail to complete backup,
+                Phase will be "Failed".
+              type: string
+            sessionDuration:
+              description: SessionDuration specify total time taken to complete current
+                backup session (sum of backup duration of all hosts)
               type: string
             stats:
-              description: Stats shows statistics of this backup session
+              description: Stats shows statistics of individual hosts for this backup
+                session
               items:
                 properties:
-                  directory:
-                    description: Directory indicates the directory that has been backed
-                      up in this session
+                  duration:
+                    description: Duration indicates total time taken to complete backup
+                      for this hosts
                     type: string
-                  fileStats:
-                    properties:
-                      modifiedFiles:
-                        description: ModifiedFiles shows total number of files that
-                          has been modified since last backup
-                        format: int32
-                        type: integer
-                      newFiles:
-                        description: NewFiles shows total number of new files that
-                          has been created since last backup
-                        format: int32
-                        type: integer
-                      totalFiles:
-                        description: TotalFiles shows total number of files that has
-                          been backed up
-                        format: int32
-                        type: integer
-                      unmodifiedFiles:
-                        description: UnmodifiedFiles shows total number of files that
-                          has not been changed since last backup
-                        format: int32
-                        type: integer
-                  processingTime:
-                    description: ProcessingTime indicates time taken to process the
-                      target data
+                  error:
+                    description: Error indicates string value of error in case of
+                      backup failure
                     type: string
-                  size:
-                    description: Size indicates the size of target data to backup
+                  hostname:
+                    description: Hostname indicate name of the host that has been
+                      backed up
                     type: string
-                  snapshot:
-                    description: Snapshot indicates the name of the backup snapshot
-                      created in this backup session
+                  phase:
+                    description: Phase indicates backup phase of this host
                     type: string
-                  uploaded:
-                    description: Uploaded indicates size of data uploaded to backend
-                      in this backup session
-                    type: string
+                  snapshots:
+                    description: Snapshots specifies the stats of individual snapshots
+                      that has been taken for this host in current backup session
+                    items:
+                      properties:
+                        directory:
+                          description: Directory indicates the directory that has
+                            been backed up in this snapshot
+                          type: string
+                        fileStats:
+                          properties:
+                            modifiedFiles:
+                              description: ModifiedFiles shows total number of files
+                                that has been modified since last backup
+                              format: int32
+                              type: integer
+                            newFiles:
+                              description: NewFiles shows total number of new files
+                                that has been created since last backup
+                              format: int32
+                              type: integer
+                            totalFiles:
+                              description: TotalFiles shows total number of files
+                                that has been backed up
+                              format: int32
+                              type: integer
+                            unmodifiedFiles:
+                              description: UnmodifiedFiles shows total number of files
+                                that has not been changed since last backup
+                              format: int32
+                              type: integer
+                        name:
+                          description: Name indicates the name of the backup snapshot
+                            created for this host
+                          type: string
+                        processingTime:
+                          description: ProcessingTime indicates time taken to process
+                            the target data
+                          type: string
+                        size:
+                          description: Size indicates the size of data to backup in
+                            target directory
+                          type: string
+                        uploaded:
+                          description: Uploaded indicates size of data uploaded to
+                            backend for this snapshot
+                          type: string
+                    type: array
               type: array
+            totalHosts:
+              description: TotalHosts specifies total number of hosts that will be
+                backed up for this BackupSession
+              format: int32
+              type: integer
   version: v1beta1
   versions:
   - name: v1beta1

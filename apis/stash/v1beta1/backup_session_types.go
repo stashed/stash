@@ -38,30 +38,63 @@ const (
 	BackupSessionUnknown   BackupSessionPhase = "Unknown"
 )
 
+type HostBackupPhase string
+
+const (
+	HostBackupSucceeded HostBackupPhase = "Succeeded"
+	HostBackupFailed    HostBackupPhase = "Failed"
+)
+
 type BackupSessionStatus struct {
 	// ObservedGeneration is the most recent generation observed for this resource. It corresponds to the
 	// resource's generation, which is updated on mutation by the API Server.
 	// +optional
 	ObservedGeneration *types.IntHash `json:"observedGeneration,omitempty"`
-	// Phase indicates the phase of the backup process for this BackupSession
-	Phase BackupSessionPhase `json:"phase,omitempty"`
-	// Stats shows statistics of this backup session
+	// Phase indicates the overall phase of the backup process for this BackupSession. Phase will be "Succeeded" only if
+	// phase of all hosts are "Succeeded". If any of the host fail to complete backup, Phase will be "Failed".
 	// +optional
-	Stats []BackupStats `json:"stats,omitempty"`
+	Phase BackupSessionPhase `json:"phase,omitempty"`
+	// TotalHosts specifies total number of hosts that will be backed up for this BackupSession
+	// +Optional
+	TotalHosts *int32 `json:"totalHosts,omitempty"`
+	// SessionDuration specify total time taken to complete current backup session (sum of backup duration of all hosts)
+	// +optional
+	SessionDuration string `json:"sessionDuration,omitempty"`
+	// Stats shows statistics of individual hosts for this backup session
+	// +optional
+	Stats []HostBackupStats `json:"stats,omitempty"`
 }
 
-type BackupStats struct {
-	// Directory indicates the directory that has been backed up in this session
+type HostBackupStats struct {
+	// Hostname indicate name of the host that has been backed up
+	// +optional
+	Hostname string `json:"hostname,omitempty"`
+	// Phase indicates backup phase of this host
+	// +optional
+	Phase HostBackupPhase `json:"phase,omitempty"`
+	// Snapshots specifies the stats of individual snapshots that has been taken for this host in current backup session
+	// +optional
+	Snapshots []SnapshotStats `json:"snapshots,omitempty"`
+	// Duration indicates total time taken to complete backup for this hosts
+	// +optional
+	Duration string `json:"duration,omitempty"`
+	// Error indicates string value of error in case of backup failure
+	// +optional
+	Error string `json:"error,omitempty"`
+}
+
+type SnapshotStats struct {
+	// Name indicates the name of the backup snapshot created for this host
+	Name string `json:"name,omitempty"`
+	// Directory indicates the directory that has been backed up in this snapshot
 	Directory string `json:"directory,omitempty"`
-	// Snapshot indicates the name of the backup snapshot created in this backup session
-	Snapshot string `json:"snapshot,omitempty"`
-	// Size indicates the size of target data to backup
+	// Size indicates the size of data to backup in target directory
 	Size string `json:"size,omitempty"`
-	// Uploaded indicates size of data uploaded to backend in this backup session
+	// Uploaded indicates size of data uploaded to backend for this snapshot
 	Uploaded string `json:"uploaded,omitempty"`
 	// ProcessingTime indicates time taken to process the target data
 	ProcessingTime string `json:"processingTime,omitempty"`
-	// FileStats shows statistics of files of backup session
+	// FileStats shows statistics of files of this snapshot
 	FileStats FileStats `json:"fileStats,omitempty"`
 }
 

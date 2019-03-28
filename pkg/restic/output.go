@@ -12,18 +12,14 @@ import (
 	"strings"
 
 	"github.com/appscode/go/types"
-	"github.com/appscode/stash/apis/stash/v1beta1"
+	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
 )
 
 type BackupOutput struct {
-	// BackupStats shows statistics of last backup session
-	BackupStats []v1beta1.BackupStats `json:"backup,omitempty"`
-	// SessionDuration  indicates total time taken to complete this backup session
-	SessionDuration string `json:"sessionDuration,omitempty"`
+	// HostBackupStats shows backup statistics of current host
+	HostBackupStats api_v1beta1.HostBackupStats `json:"hostBackupStats,omitempty"`
 	// RepositoryStats shows statistics of repository after last backup
 	RepositoryStats RepositoryStats `json:"repository,omitempty"`
-	// string value of backup error
-	Error string `json:"error,omitempty"`
 }
 
 type RepositoryStats struct {
@@ -38,10 +34,8 @@ type RepositoryStats struct {
 }
 
 type RestoreOutput struct {
-	// SessionDuration show total time taken to complete the restore session
-	SessionDuration string `json:"sessionDuration,omitempty"`
-	// string value of restore error
-	Error string `json:"error,omitempty"`
+	// HostRestoreStats shows restore statistics of current host
+	HostRestoreStats api_v1beta1.HostRestoreStats `json:"hostRestoreStats,omitempty"`
 }
 
 // WriteOutput write output of backup process into output.json file in the directory
@@ -106,11 +100,11 @@ func ReadRestoreOutput(filename string) (*RestoreOutput, error) {
 
 // ExtractBackupInfo extract information from output of "restic backup" command and
 // save valuable information into backupOutput
-func (backupOutput *BackupOutput) extractBackupInfo(output []byte, directory string) error {
+func (backupOutput *BackupOutput) extractBackupInfo(output []byte, directory string, host string) error {
 	var line string
 	scanner := bufio.NewScanner(bytes.NewReader(output))
 
-	backupStats := v1beta1.BackupStats{
+	snapshotStats := api_v1beta1.SnapshotStats{
 		Directory: directory,
 	}
 
@@ -133,16 +127,16 @@ func (backupOutput *BackupOutput) extractBackupInfo(output []byte, directory str
 			if err != nil {
 				return err
 			}
-			backupStats.FileStats.NewFiles = types.IntP(newFiles)
-			backupStats.FileStats.ModifiedFiles = types.IntP(modifiedFiles)
-			backupStats.FileStats.UnmodifiedFiles = types.IntP(unmodifiedFiles)
+			snapshotStats.FileStats.NewFiles = types.IntP(newFiles)
+			snapshotStats.FileStats.ModifiedFiles = types.IntP(modifiedFiles)
+			snapshotStats.FileStats.UnmodifiedFiles = types.IntP(unmodifiedFiles)
 		} else if strings.HasPrefix(line, "Added to the repo:") {
 			info := strings.FieldsFunc(line, separators)
 			length := len(info)
 			if length < 6 {
 				return fmt.Errorf("failed to parse upload statistics")
 			}
-			backupStats.Uploaded = info[length-2] + " " + info[length-1]
+			snapshotStats.Uploaded = info[length-2] + " " + info[length-1]
 		} else if strings.HasPrefix(line, "processed") {
 			info := strings.FieldsFunc(line, separators)
 			length := len(info)
@@ -153,30 +147,33 @@ func (backupOutput *BackupOutput) extractBackupInfo(output []byte, directory str
 			if err != nil {
 				return err
 			}
-			backupStats.FileStats.TotalFiles = types.IntP(totalFiles)
-			backupStats.Size = info[3] + " " + info[4]
+			snapshotStats.FileStats.TotalFiles = types.IntP(totalFiles)
+			snapshotStats.Size = info[3] + " " + info[4]
 			m, s, err := convertToMinutesSeconds(info[6])
 			if err != nil {
 				return err
 			}
-			backupStats.ProcessingTime = fmt.Sprintf("%dm%ds", m, s)
+			snapshotStats.ProcessingTime = fmt.Sprintf("%dm%ds", m, s)
 		} else if strings.HasPrefix(line, "snapshot") && strings.HasSuffix(line, "saved") {
 			info := strings.FieldsFunc(line, separators)
 			length := len(info)
 			if length < 3 {
 				return fmt.Errorf("failed to parse snapshot statistics")
 			}
-			backupStats.Snapshot = info[1]
+			snapshotStats.Name = info[1]
 		}
 	}
 
-	for i, v := range backupOutput.BackupStats {
-		if v.Directory == directory {
-			backupOutput.BackupStats[i] = backupStats
+	// if there is already an entry for this directory then update that
+	for i, v := range backupOutput.HostBackupStats.Snapshots {
+		if v.Directory == snapshotStats.Directory {
+			backupOutput.HostBackupStats.Snapshots[i] = snapshotStats
 			return nil
 		}
 	}
-	backupOutput.BackupStats = append(backupOutput.BackupStats, backupStats)
+
+	// new entry. so append to backupOutput.
+	backupOutput.HostBackupStats.Snapshots = append(backupOutput.HostBackupStats.Snapshots, snapshotStats)
 
 	return nil
 }

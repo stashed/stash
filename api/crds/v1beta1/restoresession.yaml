@@ -1732,15 +1732,47 @@ spec:
                   type: array
         status:
           properties:
-            duration:
-              type: string
             observedGeneration:
               oneOf:
               - type: string
               - format: int64
                 type: integer
             phase:
+              description: Phase indicates the overall phase of the restore process
+                for this RestoreSession. Phase will be "Succeeded" only if phase of
+                all hosts are "Succeeded". If any of the host fail to complete restore,
+                Phase will be "Failed".
               type: string
+            sessionDuration:
+              description: SessionDuration specify total time taken to complete current
+                restore session (sum of restore duration of all hosts)
+              type: string
+            stats:
+              description: Stats shows statistics of individual hosts for this restore
+                session
+              items:
+                properties:
+                  duration:
+                    description: Duration indicates total time taken to complete restore
+                      for this hosts
+                    type: string
+                  error:
+                    description: Error indicates string value of error in case of
+                      restore failure
+                    type: string
+                  hostname:
+                    description: Hostname indicate name of the host that has been
+                      restored
+                    type: string
+                  phase:
+                    description: Phase indicates restore phase of this host
+                    type: string
+              type: array
+            totalHosts:
+              description: TotalHosts specifies total number of hosts that will be
+                restored for this RestoreSession
+              format: int32
+              type: integer
   version: v1beta1
   versions:
   - name: v1beta1

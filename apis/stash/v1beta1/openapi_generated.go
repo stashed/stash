@@ -45,18 +45,20 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/appscode/stash/apis/stash/v1beta1.BackupSessionList":               schema_stash_apis_stash_v1beta1_BackupSessionList(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.BackupSessionSpec":               schema_stash_apis_stash_v1beta1_BackupSessionSpec(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.BackupSessionStatus":             schema_stash_apis_stash_v1beta1_BackupSessionStatus(ref),
-		"github.com/appscode/stash/apis/stash/v1beta1.BackupStats":                     schema_stash_apis_stash_v1beta1_BackupStats(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.FileStats":                       schema_stash_apis_stash_v1beta1_FileStats(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.Function":                        schema_stash_apis_stash_v1beta1_Function(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.FunctionList":                    schema_stash_apis_stash_v1beta1_FunctionList(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.FunctionRef":                     schema_stash_apis_stash_v1beta1_FunctionRef(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.FunctionSpec":                    schema_stash_apis_stash_v1beta1_FunctionSpec(ref),
+		"github.com/appscode/stash/apis/stash/v1beta1.HostBackupStats":                 schema_stash_apis_stash_v1beta1_HostBackupStats(ref),
+		"github.com/appscode/stash/apis/stash/v1beta1.HostRestoreStats":                schema_stash_apis_stash_v1beta1_HostRestoreStats(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.Param":                           schema_stash_apis_stash_v1beta1_Param(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.RestoreSession":                  schema_stash_apis_stash_v1beta1_RestoreSession(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.RestoreSessionList":              schema_stash_apis_stash_v1beta1_RestoreSessionList(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.RestoreSessionSpec":              schema_stash_apis_stash_v1beta1_RestoreSessionSpec(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.RestoreSessionStatus":            schema_stash_apis_stash_v1beta1_RestoreSessionStatus(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.Rule":                            schema_stash_apis_stash_v1beta1_Rule(ref),
+		"github.com/appscode/stash/apis/stash/v1beta1.SnapshotStats":                   schema_stash_apis_stash_v1beta1_SnapshotStats(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.Target":                          schema_stash_apis_stash_v1beta1_Target(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.TargetRef":                       schema_stash_apis_stash_v1beta1_TargetRef(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.Task":                            schema_stash_apis_stash_v1beta1_Task(ref),
@@ -723,19 +725,33 @@ func schema_stash_apis_stash_v1beta1_BackupSessionStatus(ref common.ReferenceCal
 					},
 					"phase": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Phase indicates the phase of the backup process for this BackupSession",
+							Description: "Phase indicates the overall phase of the backup process for this BackupSession. Phase will be \"Succeeded\" only if phase of all hosts are \"Succeeded\". If any of the host fail to complete backup, Phase will be \"Failed\".",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"totalHosts": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TotalHosts specifies total number of hosts that will be backed up for this BackupSession",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"sessionDuration": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SessionDuration specify total time taken to complete current backup session (sum of backup duration of all hosts)",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 					"stats": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Stats shows statistics of this backup session",
+							Description: "Stats shows statistics of individual hosts for this backup session",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/appscode/stash/apis/stash/v1beta1.BackupStats"),
+										Ref: ref("github.com/appscode/stash/apis/stash/v1beta1.HostBackupStats"),
 									},
 								},
 							},
@@ -745,61 +761,7 @@ func schema_stash_apis_stash_v1beta1_BackupSessionStatus(ref common.ReferenceCal
 			},
 		},
 		Dependencies: []string{
-			"github.com/appscode/go/encoding/json/types.IntHash", "github.com/appscode/stash/apis/stash/v1beta1.BackupStats"},
-	}
-}
-
-func schema_stash_apis_stash_v1beta1_BackupStats(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Properties: map[string]spec.Schema{
-					"directory": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Directory indicates the directory that has been backed up in this session",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"snapshot": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Snapshot indicates the name of the backup snapshot created in this backup session",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"size": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Size indicates the size of target data to backup",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"uploaded": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Uploaded indicates size of data uploaded to backend in this backup session",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"processingTime": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ProcessingTime indicates time taken to process the target data",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"fileStats": {
-						SchemaProps: spec.SchemaProps{
-							Description: "FileStats shows statistics of files of backup session",
-							Ref:         ref("github.com/appscode/stash/apis/stash/v1beta1.FileStats"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/appscode/stash/apis/stash/v1beta1.FileStats"},
+			"github.com/appscode/go/encoding/json/types.IntHash", "github.com/appscode/stash/apis/stash/v1beta1.HostBackupStats"},
 	}
 }
 
@@ -1107,6 +1069,100 @@ func schema_stash_apis_stash_v1beta1_FunctionSpec(ref common.ReferenceCallback) 
 	}
 }
 
+func schema_stash_apis_stash_v1beta1_HostBackupStats(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Properties: map[string]spec.Schema{
+					"hostname": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Hostname indicate name of the host that has been backed up",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"phase": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Phase indicates backup phase of this host",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"snapshots": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Snapshots specifies the stats of individual snapshots that has been taken for this host in current backup session",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/appscode/stash/apis/stash/v1beta1.SnapshotStats"),
+									},
+								},
+							},
+						},
+					},
+					"duration": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Duration indicates total time taken to complete backup for this hosts",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"error": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Error indicates string value of error in case of backup failure",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/appscode/stash/apis/stash/v1beta1.SnapshotStats"},
+	}
+}
+
+func schema_stash_apis_stash_v1beta1_HostRestoreStats(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Properties: map[string]spec.Schema{
+					"hostname": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Hostname indicate name of the host that has been restored",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"phase": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Phase indicates restore phase of this host",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"duration": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Duration indicates total time taken to complete restore for this hosts",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"error": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Error indicates string value of error in case of restore failure",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
 func schema_stash_apis_stash_v1beta1_Param(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1282,21 +1338,43 @@ func schema_stash_apis_stash_v1beta1_RestoreSessionStatus(ref common.ReferenceCa
 					},
 					"phase": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Description: "Phase indicates the overall phase of the restore process for this RestoreSession. Phase will be \"Succeeded\" only if phase of all hosts are \"Succeeded\". If any of the host fail to complete restore, Phase will be \"Failed\".",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
-					"duration": {
+					"totalHosts": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Description: "TotalHosts specifies total number of hosts that will be restored for this RestoreSession",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"sessionDuration": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SessionDuration specify total time taken to complete current restore session (sum of restore duration of all hosts)",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"stats": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Stats shows statistics of individual hosts for this restore session",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/appscode/stash/apis/stash/v1beta1.HostRestoreStats"),
+									},
+								},
+							},
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/appscode/go/encoding/json/types.IntHash"},
+			"github.com/appscode/go/encoding/json/types.IntHash", "github.com/appscode/stash/apis/stash/v1beta1.HostRestoreStats"},
 	}
 }
 
@@ -1321,7 +1399,7 @@ func schema_stash_apis_stash_v1beta1_Rule(ref common.ReferenceCallback) common.O
 					},
 					"host": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Host specifies the name of the host whose backed up state we are trying to restore By default, it will indicate the workload itself",
+							Description: "SourceHost specifies the name of the host whose backed up state we are trying to restore By default, it will indicate the workload itself",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -1358,6 +1436,60 @@ func schema_stash_apis_stash_v1beta1_Rule(ref common.ReferenceCallback) common.O
 			},
 		},
 		Dependencies: []string{},
+	}
+}
+
+func schema_stash_apis_stash_v1beta1_SnapshotStats(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name indicates the name of the backup snapshot created for this host",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"directory": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Directory indicates the directory that has been backed up in this snapshot",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"size": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Size indicates the size of data to backup in target directory",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"uploaded": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Uploaded indicates size of data uploaded to backend for this snapshot",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"processingTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ProcessingTime indicates time taken to process the target data",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"fileStats": {
+						SchemaProps: spec.SchemaProps{
+							Description: "FileStats shows statistics of files of this snapshot",
+							Ref:         ref("github.com/appscode/stash/apis/stash/v1beta1.FileStats"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/appscode/stash/apis/stash/v1beta1.FileStats"},
 	}
 }
 
@@ -1738,7 +1870,7 @@ func schema_k8sio_api_core_v1_AzureDiskVolumeSource(ref common.ReferenceCallback
 					},
 					"cachingMode": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Host Caching mode: None, Read Only, Read Write.",
+							Description: "SourceHost Caching mode: None, Read Only, Read Write.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -4332,7 +4464,7 @@ func schema_k8sio_api_core_v1_HTTPGetAction(ref common.ReferenceCallback) common
 					},
 					"host": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Host name to connect to, defaults to the pod IP. You probably want to set \"Host\" in httpHeaders instead.",
+							Description: "SourceHost name to connect to, defaults to the pod IP. You probably want to set \"SourceHost\" in httpHeaders instead.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -4464,7 +4596,7 @@ func schema_k8sio_api_core_v1_HostPathVolumeSource(ref common.ReferenceCallback)
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "Represents a host path mapped into a pod. Host path volumes do not support ownership management or SELinux relabeling.",
+				Description: "Represents a host path mapped into a pod. SourceHost path volumes do not support ownership management or SELinux relabeling.",
 				Properties: map[string]spec.Schema{
 					"path": {
 						SchemaProps: spec.SchemaProps{
@@ -7843,7 +7975,7 @@ func schema_k8sio_api_core_v1_PodSpec(ref common.ReferenceCallback) common.OpenA
 					},
 					"hostNetwork": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Host networking requested for this pod. Use the host's network namespace. If this option is set, the ports that will be used must be specified. Default to false.",
+							Description: "SourceHost networking requested for this pod. Use the host's network namespace. If this option is set, the ports that will be used must be specified. Default to false.",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
@@ -10581,7 +10713,7 @@ func schema_k8sio_api_core_v1_TCPSocketAction(ref common.ReferenceCallback) comm
 					},
 					"host": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Optional: Host name to connect to, defaults to the pod IP.",
+							Description: "Optional: SourceHost name to connect to, defaults to the pod IP.",
 							Type:        []string{"string"},
 							Format:      "",
 						},

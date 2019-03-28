@@ -5,8 +5,10 @@ import (
 	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	appsv1 "k8s.io/api/apps/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/tools/cache"
 	apps_util "kmodules.xyz/client-go/apps/v1"
 	"kmodules.xyz/client-go/tools/queue"
 	"kmodules.xyz/webhook-runtime/admission"
@@ -81,6 +83,16 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 	if !exists {
 		// Below we will warm up our cache with a DaemonSet, so that we will see a delete for one d
 		glog.Warningf("DaemonSet %s does not exist anymore\n", key)
+
+		ns, name, err := cache.SplitMetaNamespaceKey(key)
+		if err != nil {
+			return err
+		}
+		// workload does not exist anymore. so delete respective ConfigMapLocks if exist
+		err = util.DeleteAllConfigMapLocks(c.kubeClient, ns, name, apis.KindDaemonSet)
+		if err != nil && !kerr.IsNotFound(err) {
+			return err
+		}
 	} else {
 		glog.Infof("Sync/Add/Update for DaemonSet %s", key)
 
@@ -123,7 +135,11 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 		}
 
 		// if the workload does not have any stash sidecar/init-container then
-		// delete respective RoleBinding if exist
+		// delete respective ConfigMapLock and RBAC stuff if exist
+		err = c.ensureUnnecessaryConfigMapLockDeleted(w)
+		if err != nil {
+			return err
+		}
 		err = c.ensureUnnecessaryWorkloadRBACDeleted(w)
 		if err != nil {
 			return err

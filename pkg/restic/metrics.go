@@ -219,6 +219,8 @@ func (backupOutput *BackupOutput) HandleMetrics(metricOpt *MetricsOptions, backu
 		return fmt.Errorf("invalid backup output")
 	}
 
+	// add host name as label
+	metricOpt.Labels = append(metricOpt.Labels, fmt.Sprintf("Host=%s", backupOutput.HostBackupStats.Hostname))
 	labels := metricLabels(metricOpt.Labels)
 	metrics := newBackupMetrics(labels)
 
@@ -259,11 +261,13 @@ func (restoreOutput *RestoreOutput) HandleMetrics(metricOpt *MetricsOptions, res
 	if restoreOutput == nil {
 		return fmt.Errorf("invalid restore output")
 	}
+	// add host name as label
+	metricOpt.Labels = append(metricOpt.Labels, fmt.Sprintf("Host=%s", restoreOutput.HostRestoreStats.Hostname))
 	labels := metricLabels(metricOpt.Labels)
 	metrics := newRestoreMetrics(labels)
 
 	if restoreErr == nil {
-		duration, err := time.ParseDuration(restoreOutput.SessionDuration)
+		duration, err := time.ParseDuration(restoreOutput.HostRestoreStats.Duration)
 		if err != nil {
 			return err
 		}
@@ -296,7 +300,7 @@ func (backupMetrics *BackupMetrics) setValues(backupOutput *BackupOutput) error 
 		totalUnmodifiedFiles int
 	)
 
-	for _, v := range backupOutput.BackupStats {
+	for _, v := range backupOutput.HostBackupStats.Snapshots {
 		dataSizeBytes, err := convertSizeToBytes(v.Size)
 		if err != nil {
 			return err
@@ -329,7 +333,7 @@ func (backupMetrics *BackupMetrics) setValues(backupOutput *BackupOutput) error 
 	backupMetrics.BackupSessionMetrics.FileMetrics.ModifiedFiles.Set(float64(totalModifiedFiles))
 	backupMetrics.BackupSessionMetrics.FileMetrics.UnmodifiedFiles.Set(float64(totalUnmodifiedFiles))
 
-	duration, err := time.ParseDuration(backupOutput.SessionDuration)
+	duration, err := time.ParseDuration(backupOutput.HostBackupStats.Duration)
 	if err != nil {
 		return err
 	}

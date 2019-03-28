@@ -17,3 +17,7 @@ spec:
       mountPath: /source/data
     directories:
     - /source/data
+  retentionPolicy:
+    name: 'keep-last-5'
+    keepLast: 5
+    prune: true

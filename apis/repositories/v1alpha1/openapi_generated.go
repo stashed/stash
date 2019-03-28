@@ -600,7 +600,7 @@ func schema_k8sio_api_core_v1_AzureDiskVolumeSource(ref common.ReferenceCallback
 					},
 					"cachingMode": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Host Caching mode: None, Read Only, Read Write.",
+							Description: "SourceHost Caching mode: None, Read Only, Read Write.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -3194,7 +3194,7 @@ func schema_k8sio_api_core_v1_HTTPGetAction(ref common.ReferenceCallback) common
 					},
 					"host": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Host name to connect to, defaults to the pod IP. You probably want to set \"Host\" in httpHeaders instead.",
+							Description: "SourceHost name to connect to, defaults to the pod IP. You probably want to set \"SourceHost\" in httpHeaders instead.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -3326,7 +3326,7 @@ func schema_k8sio_api_core_v1_HostPathVolumeSource(ref common.ReferenceCallback)
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "Represents a host path mapped into a pod. Host path volumes do not support ownership management or SELinux relabeling.",
+				Description: "Represents a host path mapped into a pod. SourceHost path volumes do not support ownership management or SELinux relabeling.",
 				Properties: map[string]spec.Schema{
 					"path": {
 						SchemaProps: spec.SchemaProps{
@@ -6705,7 +6705,7 @@ func schema_k8sio_api_core_v1_PodSpec(ref common.ReferenceCallback) common.OpenA
 					},
 					"hostNetwork": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Host networking requested for this pod. Use the host's network namespace. If this option is set, the ports that will be used must be specified. Default to false.",
+							Description: "SourceHost networking requested for this pod. Use the host's network namespace. If this option is set, the ports that will be used must be specified. Default to false.",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
@@ -9443,7 +9443,7 @@ func schema_k8sio_api_core_v1_TCPSocketAction(ref common.ReferenceCallback) comm
 					},
 					"host": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Optional: Host name to connect to, defaults to the pod IP.",
+							Description: "Optional: SourceHost name to connect to, defaults to the pod IP.",
 							Type:        []string{"string"},
 							Format:      "",
 						},

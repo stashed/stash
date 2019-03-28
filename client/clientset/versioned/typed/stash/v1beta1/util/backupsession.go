@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/appscode/stash/apis"
-	api "github.com/appscode/stash/apis/stash/v1beta1"
+	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
 	cs "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1beta1"
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/golang/glog"
@@ -16,17 +16,17 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func CreateOrPatchBackupSession(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(bs *api.BackupSession) *api.BackupSession) (*api.BackupSession, kutil.VerbType, error) {
+func CreateOrPatchBackupSession(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(bs *api_v1beta1.BackupSession) *api_v1beta1.BackupSession) (*api_v1beta1.BackupSession, kutil.VerbType, error) {
 	cur, err := c.BackupSessions(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if err != nil {
 		fmt.Println(err)
 	}
 	if kerr.IsNotFound(err) {
 		glog.V(3).Infof("Creating BackupSession %s/%s.", meta.Namespace, meta.Name)
-		out, err := c.BackupSessions(meta.Namespace).Create(transform(&api.BackupSession{
+		out, err := c.BackupSessions(meta.Namespace).Create(transform(&api_v1beta1.BackupSession{
 			TypeMeta: metav1.TypeMeta{
-				Kind:       "BackupSession",
-				APIVersion: api.SchemeGroupVersion.String(),
+				Kind:       api_v1beta1.ResourceKindBackupSession,
+				APIVersion: api_v1beta1.SchemeGroupVersion.String(),
 			},
 			ObjectMeta: meta,
 		}))
@@ -37,11 +37,11 @@ func CreateOrPatchBackupSession(c cs.StashV1beta1Interface, meta metav1.ObjectMe
 	return PatchBackupSession(c, cur, transform)
 }
 
-func PatchBackupSession(c cs.StashV1beta1Interface, cur *api.BackupSession, transform func(*api.BackupSession) *api.BackupSession) (*api.BackupSession, kutil.VerbType, error) {
+func PatchBackupSession(c cs.StashV1beta1Interface, cur *api_v1beta1.BackupSession, transform func(*api_v1beta1.BackupSession) *api_v1beta1.BackupSession) (*api_v1beta1.BackupSession, kutil.VerbType, error) {
 	return PatchBackupSessionObject(c, cur, transform(cur.DeepCopy()))
 }
 
-func PatchBackupSessionObject(c cs.StashV1beta1Interface, cur, mod *api.BackupSession) (*api.BackupSession, kutil.VerbType, error) {
+func PatchBackupSessionObject(c cs.StashV1beta1Interface, cur, mod *api_v1beta1.BackupSession) (*api_v1beta1.BackupSession, kutil.VerbType, error) {
 	curJson, err := json.Marshal(cur)
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
@@ -64,7 +64,7 @@ func PatchBackupSessionObject(c cs.StashV1beta1Interface, cur, mod *api.BackupSe
 	return out, kutil.VerbPatched, err
 }
 
-func TryUpdateBackupSession(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(*api.BackupSession) *api.BackupSession) (result *api.BackupSession, err error) {
+func TryUpdateBackupSession(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(*api_v1beta1.BackupSession) *api_v1beta1.BackupSession) (result *api_v1beta1.BackupSession, err error) {
 	attempt := 0
 	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
 		attempt++
@@ -85,10 +85,18 @@ func TryUpdateBackupSession(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, 
 	return
 }
 
-func SetBackupSessionStats(c cs.StashV1beta1Interface, backupSession *api.BackupSession, backupStats []api.BackupStats, phase api.BackupSessionPhase) (*api.BackupSession, error) {
-	out, err := UpdateBackupSessionStatus(c, backupSession, func(in *api.BackupSessionStatus) *api.BackupSessionStatus {
-		in.Stats = backupStats
-		in.Phase = phase
+func UpdateBackupSessionStatusForHost(c cs.StashV1beta1Interface, backupSession *api_v1beta1.BackupSession, hostStats api_v1beta1.HostBackupStats) (*api_v1beta1.BackupSession, error) {
+
+	out, err := UpdateBackupSessionStatus(c, backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
+		// if an entry already exist for this host then update it
+		for i, v := range backupSession.Status.Stats {
+			if v.Hostname == hostStats.Hostname {
+				in.Stats[i] = hostStats
+				return in
+			}
+		}
+		// no entry for this host. so add a new entry.
+		in.Stats = append(in.Stats, hostStats)
 		return in
 	}, apis.EnableStatusSubresource)
 	return out, err
@@ -96,15 +104,15 @@ func SetBackupSessionStats(c cs.StashV1beta1Interface, backupSession *api.Backup
 
 func UpdateBackupSessionStatus(
 	c cs.StashV1beta1Interface,
-	in *api.BackupSession,
-	transform func(*api.BackupSessionStatus) *api.BackupSessionStatus,
+	in *api_v1beta1.BackupSession,
+	transform func(*api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus,
 	useSubresource ...bool,
-) (result *api.BackupSession, err error) {
+) (result *api_v1beta1.BackupSession, err error) {
 	if len(useSubresource) > 1 {
 		return nil, errors.Errorf("invalid value passed for useSubresource: %v", useSubresource)
 	}
-	apply := func(x *api.BackupSession) *api.BackupSession {
-		out := &api.BackupSession{
+	apply := func(x *api_v1beta1.BackupSession) *api_v1beta1.BackupSession {
+		out := &api_v1beta1.BackupSession{
 			TypeMeta:   x.TypeMeta,
 			ObjectMeta: x.ObjectMeta,
 			Spec:       x.Spec,

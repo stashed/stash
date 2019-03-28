@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/appscode/go/log"
-	"github.com/appscode/stash/apis"
 	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
 	cs "github.com/appscode/stash/client/clientset/versioned"
 	stash_scheme "github.com/appscode/stash/client/clientset/versioned/scheme"
@@ -16,6 +15,7 @@ import (
 	"github.com/appscode/stash/pkg/restic"
 	"github.com/appscode/stash/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
@@ -51,10 +51,12 @@ func Restore(opt *Options) error {
 	if restoreSession.Spec.Target == nil {
 		return fmt.Errorf("invalid RestoreSession. Target is nil")
 	}
+
 	repository, err := opt.StashClient.StashV1alpha1().Repositories(opt.Namespace).Get(restoreSession.Spec.Repository.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
+
 	host, err := util.GetHostName(restoreSession.Spec.Target)
 	if err != nil {
 		return err
@@ -72,26 +74,13 @@ func Restore(opt *Options) error {
 	}
 	opt.SetupOpt = setupOptions
 
-	if restoreSession.Spec.Target == nil {
-		return fmt.Errorf("restore target is nil")
-	}
-
-	// if target is a Deployment, ReplicaSet or ReplicationController then there might be multiple replica
-	// using same volume. so only one replica should run restore process while others should not.
-	// we can achieve that using leader election. only leader pod will restore. others will wait until restore complete.
-	switch restoreSession.Spec.Target.Ref.Kind {
-	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController:
-		return opt.electRestoreLeader(restoreSession)
-	default:
-		if err := opt.runRestore(restoreSession); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	// only one pod can acquire restic repository lock. so we need leader election to determine who will acquire the lock
+	return opt.electRestoreLeader(restoreSession)
 }
 
 func (opt *Options) electRestoreLeader(restoreSession *api_v1beta1.RestoreSession) error {
+
+	log.Infoln("Attempting to elect restore leader")
 
 	rlc := resourcelock.ResourceLockConfig{
 		Identity:      os.Getenv(util.KeyPodName),
@@ -126,15 +115,17 @@ func (opt *Options) electRestoreLeader(restoreSession *api_v1beta1.RestoreSessio
 				// run restore process
 				err := opt.runRestore(restoreSession)
 				if err != nil {
-					log.Errorln("failed to complete restore. Reason: ", err.Error())
-					err = HandleRestoreFailure(opt, err)
-					if err != nil {
-						log.Errorln(err)
+					e2 := HandleRestoreFailure(opt, err)
+					if e2 != nil {
+						err = errors.NewAggregate([]error{err, e2})
 					}
-				} else {
-					// restore process is complete. now, step down from leadership
+					// step down from leadership so that other replicas try to restore
 					cancel()
+					// fail the container so that it restart and re-try to restore
+					log.Fatalln("failed to complete restore. Reason: ", err.Error())
 				}
+				// restore process is complete. now, step down from leadership so that other replicas can start
+				cancel()
 			},
 			OnStoppedLeading: func() {
 				log.Infoln("Lost leadership")
@@ -145,19 +136,16 @@ func (opt *Options) electRestoreLeader(restoreSession *api_v1beta1.RestoreSessio
 }
 
 func (opt *Options) runRestore(restoreSession *api_v1beta1.RestoreSession) error {
-	// if RestoreSession completed don't proceed further
-	if restoreSession.Status.Phase == api_v1beta1.RestoreSucceeded {
-		log.Infoln("Skipping restore. Reason: Successfully restored on my previous session or by another replica.")
-		return nil
-	}
 
-	// set RestoreSession phase "Running"
-	_, err := stash_util_v1beta1.UpdateRestoreSessionStatus(opt.StashClient.StashV1beta1(), restoreSession, func(status *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
-		status.Phase = api_v1beta1.RestoreRunning
-		return status
-	}, apis.EnableStatusSubresource)
+	host, err := util.GetHostName(restoreSession.Spec.Target)
 	if err != nil {
 		return err
+	}
+
+	// if already restored for this host then don't process further
+	if opt.isRestoredForThisHost(restoreSession, host) {
+		log.Infof("Skipping restore for RestoreSession %s/%s. Reason: RestoreSession already processed for host %q.", restoreSession.Namespace, restoreSession.Name, host)
+		return nil
 	}
 
 	// setup restic wrapper
@@ -166,13 +154,8 @@ func (opt *Options) runRestore(restoreSession *api_v1beta1.RestoreSession) error
 		return err
 	}
 
-	hostname, err := util.GetHostName(restoreSession.Spec.Target)
-	if err != nil {
-		return err
-	}
-
 	// run restore process
-	restoreOutput, err := w.RunRestore(util.RestoreOptionsForHost(hostname, restoreSession.Spec.Rules))
+	restoreOutput, err := w.RunRestore(util.RestoreOptionsForHost(host, restoreSession.Spec.Rules))
 	if err != nil {
 		return err
 	}
@@ -185,12 +168,8 @@ func (opt *Options) runRestore(restoreSession *api_v1beta1.RestoreSession) error
 		}
 	}
 
-	// restore is complete. update RestoreSession status
-	_, err = stash_util_v1beta1.UpdateRestoreSessionStatus(opt.StashClient.StashV1beta1(), restoreSession, func(status *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
-		status.Phase = api_v1beta1.RestoreSucceeded
-		status.Duration = restoreOutput.SessionDuration
-		return status
-	}, apis.EnableStatusSubresource)
+	// restore is complete. add/update an entry for this host in RestoreSession status
+	_, err = stash_util_v1beta1.UpdateRestoreSessionStatusForHost(opt.StashClient.StashV1beta1(), restoreSession, restoreOutput.HostRestoreStats)
 	if err != nil {
 		return err
 	}
@@ -203,8 +182,8 @@ func (opt *Options) runRestore(restoreSession *api_v1beta1.RestoreSession) error
 			RestoreSessionEventComponent,
 			ref,
 			core.EventTypeNormal,
-			eventer.EventReasonRestoreSuccess,
-			fmt.Sprintf("Successfully restored."),
+			eventer.EventReasonHostRestoreSucceeded,
+			fmt.Sprintf("Successfully restored for host %q.", host),
 		)
 	}
 
@@ -216,24 +195,34 @@ func HandleRestoreFailure(opt *Options, restoreErr error) error {
 	if err != nil {
 		return err
 	}
-	// set RestoreSession phase "Failed"
-	_, err = stash_util_v1beta1.UpdateRestoreSessionStatus(opt.StashClient.StashV1beta1(), restoreSession, func(status *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
-		status.Phase = api_v1beta1.RestoreFailed
-		return status
-	}, apis.EnableStatusSubresource)
+
+	host, err := util.GetHostName(restoreSession.Spec.Target)
+	if err != nil {
+		return err
+	}
+
+	hostStats := api_v1beta1.HostRestoreStats{
+		Hostname: host,
+		Phase:    api_v1beta1.HostRestoreFailed,
+		Error:    err.Error(),
+	}
+	// add or update entry for this host in RestoreSession status
+	_, err = stash_util_v1beta1.UpdateRestoreSessionStatusForHost(opt.StashClient.StashV1beta1(), restoreSession, hostStats)
 
 	// write failure event
-	opt.writeRestoreFailureEvent(restoreSession, restoreErr)
+	opt.writeRestoreFailureEvent(restoreSession, host, restoreErr)
 
 	// send prometheus metrics
 	if opt.Metrics.Enabled {
-		restoreOutput := &restic.RestoreOutput{}
+		restoreOutput := &restic.RestoreOutput{
+			HostRestoreStats: hostStats,
+		}
 		return restoreOutput.HandleMetrics(&opt.Metrics, restoreErr)
 	}
 	return nil
 }
 
-func (opt *Options) writeRestoreFailureEvent(restoreSession *api_v1beta1.RestoreSession, err error) {
+func (opt *Options) writeRestoreFailureEvent(restoreSession *api_v1beta1.RestoreSession, host string, err error) {
 	// write failure event
 	ref, rerr := reference.GetReference(stash_scheme.Scheme, restoreSession)
 	if rerr == nil {
@@ -242,10 +231,28 @@ func (opt *Options) writeRestoreFailureEvent(restoreSession *api_v1beta1.Restore
 			RestoreSessionEventComponent,
 			ref,
 			core.EventTypeWarning,
-			eventer.EventReasonRestoreFailed,
-			fmt.Sprintf("Failed to restore. Reason: %v", err),
+			eventer.EventReasonHostRestoreFailed,
+			fmt.Sprintf("Failed to restore for host %q. Reason: %v", host, err),
 		)
 	} else {
 		log.Errorf("Failed to write failure event. Reason: %v", rerr)
 	}
+}
+
+func (opt *Options) isRestoredForThisHost(restoreSession *api_v1beta1.RestoreSession, host string) bool {
+
+	// if overall restoreSession phase is "Succeeded" or "Failed" then it has been processed already
+	if restoreSession.Status.Phase == api_v1beta1.RestoreSessionSucceeded ||
+		restoreSession.Status.Phase == api_v1beta1.RestoreSessionFailed {
+		return true
+	}
+
+	// if restoreSession has entry for this host in status field, then it has been already processed for this host
+	for _, hostStats := range restoreSession.Status.Stats {
+		if hostStats.Hostname == host {
+			return true
+		}
+	}
+
+	return false
 }
