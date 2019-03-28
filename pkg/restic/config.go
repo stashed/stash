@@ -78,3 +78,9 @@ func NewResticWrapper(options SetupOptions) (*ResticWrapper, error) {
 	}
 	return wrapper, nil
 }
+
+func (w *ResticWrapper) SetEnv(key, value string) {
+	if w.sh != nil {
+		w.sh.SetEnv(key, value)
+	}
+}
