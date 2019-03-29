@@ -565,11 +565,6 @@ var _ = Describe("ReplicaSet", func() {
 	})
 
 	Describe("Stash Webhook for", func() {
-		BeforeEach(func() {
-			if !f.WebhookEnabled {
-				Skip("Webhook is disabled")
-			}
-		})
 		AfterEach(func() {
 			f.DeleteReplicaSet(rs.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
@@ -600,9 +595,6 @@ var _ = Describe("ReplicaSet", func() {
 			f.DeleteReplicaSet(rs.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
-			if !f.SelfHostedOperator {
-				framework.CleanupMinikubeHostPath()
-			}
 		})
 
 		Context(`Single Replica`, func() {
@@ -857,9 +849,6 @@ var _ = Describe("ReplicaSet", func() {
 				f.DeleteRestic(restic.ObjectMeta)
 				f.DeleteSecret(cred.ObjectMeta)
 				f.DeleteRecovery(recovery.ObjectMeta)
-				if !f.SelfHostedOperator {
-					framework.CleanupMinikubeHostPath()
-				}
 
 				err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
@@ -948,9 +937,6 @@ var _ = Describe("ReplicaSet", func() {
 				f.DeleteRestic(restic.ObjectMeta)
 				f.DeleteSecret(cred.ObjectMeta)
 				f.DeleteRecovery(recovery.ObjectMeta)
-				if !f.SelfHostedOperator {
-					framework.CleanupMinikubeHostPath()
-				}
 			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
@@ -1048,9 +1034,6 @@ var _ = Describe("ReplicaSet", func() {
 				f.DeleteRestic(restic.ObjectMeta)
 				f.DeleteSecret(cred.ObjectMeta)
 				f.DeleteRecovery(recovery.ObjectMeta)
-				if !f.SelfHostedOperator {
-					framework.CleanupMinikubeHostPath()
-				}
 				f.DeleteNamespace(recoveryNamespace.Name)
 
 				err = framework.WaitUntilNamespaceDeleted(f.KubeClient, recoveryNamespace.ObjectMeta)

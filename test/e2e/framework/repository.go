@@ -64,7 +64,7 @@ func (f *Framework) GetRepositories(kmr KindMetaReplicas) []*api.Repository {
 
 func (f *Framework) DeleteRepositories(repositories []*api.Repository) {
 	for _, repo := range repositories {
-		err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Delete(repo.Name, deleteInForeground())
+		err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Delete(repo.Name, deleteInBackground())
 		Expect(err).NotTo(HaveOccurred())
 	}
 }

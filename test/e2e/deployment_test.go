@@ -561,10 +561,6 @@ var _ = Describe("Deployment", func() {
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 			f.DeleteRecovery(recovery.ObjectMeta)
-			if !f.SelfHostedOperator {
-				framework.CleanupMinikubeHostPath()
-			}
-
 			err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -635,11 +631,6 @@ var _ = Describe("Deployment", func() {
 	})
 
 	Describe("Stash Webhook for", func() {
-		BeforeEach(func() {
-			if !f.WebhookEnabled {
-				Skip("Webhook is disabled")
-			}
-		})
 		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
@@ -670,9 +661,6 @@ var _ = Describe("Deployment", func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
-			if !f.SelfHostedOperator {
-				framework.CleanupMinikubeHostPath()
-			}
 		})
 
 		Context(`Single Replica`, func() {
@@ -1071,17 +1059,12 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 		Context(`"Local" backend,single fileGroup`, func() {
-			AfterEach(func() {
-				if !f.SelfHostedOperator {
-					framework.CleanupMinikubeHostPath()
-				}
-			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
 				recovery = f.RecoveryForRestic(restic)
 			})
-			It(`recovered volume should have same data`, func() {
+			FIt(`recovered volume should have same data`, func() {
 				By("Creating repository Secret " + cred.Name)
 				err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
@@ -1154,11 +1137,6 @@ var _ = Describe("Deployment", func() {
 		})
 
 		Context(`"Local" backend, multiple fileGroup`, func() {
-			AfterEach(func() {
-				if !f.SelfHostedOperator {
-					framework.CleanupMinikubeHostPath()
-				}
-			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
@@ -1261,9 +1239,6 @@ var _ = Describe("Deployment", func() {
 
 		Context(`"Local" backend,single fileGroup`, func() {
 			AfterEach(func() {
-				if !f.SelfHostedOperator {
-					framework.CleanupMinikubeHostPath()
-				}
 				f.DeleteNamespace(recoveryNamespace.Name)
 
 				err := framework.WaitUntilNamespaceDeleted(f.KubeClient, recoveryNamespace.ObjectMeta)
@@ -1363,9 +1338,6 @@ var _ = Describe("Deployment", func() {
 				f.DeleteRestic(restic.ObjectMeta)
 				f.DeleteSecret(cred.ObjectMeta)
 				f.DeleteRecovery(recovery.ObjectMeta)
-				if !f.SelfHostedOperator {
-					framework.CleanupMinikubeHostPath()
-				}
 
 				err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
@@ -1494,7 +1466,7 @@ var _ = Describe("Deployment", func() {
 				clusterIP := net.IP{192, 168, 99, 100}
 
 				pod, err := f.GetOperatorPod()
-				if f.SelfHostedOperator && pod.Spec.NodeName != "minikube" {
+				if pod.Spec.NodeName != "minikube" {
 					node, err := f.KubeClient.CoreV1().Nodes().Get(pod.Spec.NodeName, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
@@ -1570,9 +1542,6 @@ var _ = Describe("Deployment", func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
-			if !f.SelfHostedOperator {
-				framework.CleanupMinikubeHostPath()
-			}
 		})
 
 		Context("Multiple Replica", func() {
