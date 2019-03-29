@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
+	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
 	_s3 "github.com/aws/aws-sdk-go/service/s3"
 	"github.com/ghodss/yaml"
@@ -137,12 +138,21 @@ func NewOSMContext(client kubernetes.Interface, spec api.Backend, namespace stri
 			nc.Config[s3.ConfigAuthType] = "iam"
 		}
 		if spec.S3.Endpoint == "" || strings.HasSuffix(spec.S3.Endpoint, ".amazonaws.com") {
-			// find region
+			// Using s3 and not s3-compatible service like minio or rook, etc. Now, find region
 			var sess *session.Session
 			var err error
 			if nc.Config[s3.ConfigAuthType] == "iam" {
+				// The aws sdk does not currently support automatically setting the region based on an instances placement.
+				// This automatically sets region based on ec2 instance metadata when running on EC2.
+				// ref: https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-region.html#setting-region-order-of-precedence
+				var c aws.Config
+				if s, e := session.NewSession(); e == nil {
+					if region, e := ec2metadata.New(s).Region(); e == nil {
+						c.WithRegion(region)
+					}
+				}
 				sess, err = session.NewSessionWithOptions(session.Options{
-					Config: *aws.NewConfig(),
+					Config: c,
 					// Support MFA when authing using assumed roles.
 					SharedConfigState:       session.SharedConfigEnable,
 					AssumeRoleTokenProvider: stscreds.StdinTokenProvider,

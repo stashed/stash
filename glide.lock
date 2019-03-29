@@ -1,5 +1,5 @@
-hash: 7e2edcc06876dd3dc54ce06d14603c214c13df1efce9b814f67aa1412656be52
-updated: 2019-03-21T18:36:41.247467496+06:00
+hash: fe6a549da57bc85221c9e8646419c94bb3c5c63e2f159762b31a225d84d7c418
+updated: 2019-03-29T10:28:29.779821476+06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -34,6 +34,8 @@ imports:
   version: 90ec9897e91b750de9fbb939f93f9b6920957dd2
   subpackages:
   - context
+- name: github.com/armon/circbuf
+  version: bbbad097214e2918d8543d5201d12bfd7bca254d
 - name: github.com/aws/aws-sdk-go
   version: fde4ded7becdeae4d26bf1212916aabba79349b4
   subpackages:
@@ -100,7 +102,7 @@ imports:
 - name: github.com/codegangsta/inject
   version: 33e0aa1cb7c019ccc3fbe049a8262a6403d30504
 - name: github.com/codeskyblue/go-sh
-  version: b097669b1569203c3ce05a6b8717d43140fdb3d5
+  version: f4ce45e7999ee02d582441c916f1b32fb548dba6
 - name: github.com/coreos/etcd
   version: 27fc7e2296f506182f58ce846e48f36b34fe6842
   subpackages:
@@ -229,7 +231,7 @@ imports:
 - name: github.com/go-openapi/spec
   version: 5b6cdde3200976e3ecceb2868706ee39b6aff3e4
 - name: github.com/go-openapi/swag
-  version: 1d0bd113de87027671077d3c71eb3ac5d7dbba72
+  version: f3f9494671f93fcff853e3c6e9e948b3eb71e590
 - name: github.com/gogo/protobuf
   version: 342cbe0a04158f6dcb03ca0079991a51a4248c02
   subpackages:
@@ -1044,7 +1046,7 @@ imports:
   - exec/testing
   - pointer
 - name: kmodules.xyz/client-go
-  version: fd7cc05edf46bb8d630fa6a84b875162f321e778
+  version: 45c57f3f168df1fa926ebd155516cee7ff8d0731
   subpackages:
   - admissionregistration/v1beta1
   - apiextensions/v1beta1
@@ -1078,12 +1080,12 @@ imports:
   - client/informers/externalversions/internalinterfaces
   - client/listers/appcatalog/v1alpha1
 - name: kmodules.xyz/objectstore-api
-  version: 433d1fad089cb639415b182f6067cc5ffd43a2b3
+  version: 1819d12be808d6e39341205515e8ec91c55d4898
   subpackages:
   - api/v1
   - osm
 - name: kmodules.xyz/offshoot-api
-  version: 317e1ed3d6c458ec431ae651b7d61deb831f40ed
+  version: 3386b694ec505dca686fd81f82c3be89e9ca5fda
   subpackages:
   - api/v1
 - name: kmodules.xyz/openshift
@@ -1109,4 +1111,12 @@ imports:
   - runtime/serializer/versioning
 - name: sigs.k8s.io/yaml
   version: fd68e9863619f6ec2fdd8625fe1f02e7c877e480
-testImports: []
+testImports:
+- name: github.com/pmezard/go-difflib
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  subpackages:
+  - difflib
+- name: github.com/stretchr/testify
+  version: f35b8ab0b5a2cef36673838d662e249dd9c94686
+  subpackages:
+  - assert

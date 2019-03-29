@@ -42,10 +42,8 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.AddCommand(v.NewCmdVersion())
 	stopCh := genericapiserver.SetupSignalHandler()
 	rootCmd.AddCommand(NewCmdRun(os.Stdout, os.Stderr, stopCh))
+
 	rootCmd.AddCommand(NewCmdBackup())
-	rootCmd.AddCommand(NewCmdBackupPVC())
-	rootCmd.AddCommand(NewCmdRestorePVC())
-	rootCmd.AddCommand(NewCmdUpdateStatus())
 	rootCmd.AddCommand(NewCmdRecover())
 	rootCmd.AddCommand(NewCmdCheck())
 	rootCmd.AddCommand(NewCmdScaleDown())
@@ -54,6 +52,14 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.AddCommand(NewCmdCreateBackupSession())
 	rootCmd.AddCommand(NewCmdRestore())
 	rootCmd.AddCommand(NewCmdRunBackup())
+
+	rootCmd.AddCommand(NewCmdBackupPVC())
+	rootCmd.AddCommand(NewCmdRestorePVC())
+
+	rootCmd.AddCommand(NewCmdBackupPG())
+	rootCmd.AddCommand(NewCmdRestorePG())
+
+	rootCmd.AddCommand(NewCmdUpdateStatus())
 
 	return rootCmd
 }

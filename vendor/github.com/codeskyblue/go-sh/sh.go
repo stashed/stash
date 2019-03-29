@@ -1,5 +1,5 @@
 /*
-Package go-sh is intented to make shell call with golang more easily.
+Package go-sh is intended to make shell call with golang more easily.
 Some usage is more similar to os/exec, eg: Run(), Output(), Command(name, args...)
 
 But with these similar function, pipe is added in and this package also got shell-session support.
@@ -53,6 +53,10 @@ type Session struct {
 	Stderr  io.Writer
 	ShowCMD bool // enable for debug
 	timeout time.Duration
+
+	// additional pipe options
+	PipeFail      bool // returns error of rightmost no-zero command
+	PipeStdErrors bool // combine std errors of all pipe commands
 }
 
 func (s *Session) writePrompt(args ...interface{}) {

@@ -1,0 +1,83 @@
+apiVersion: stash.appscode.com/v1beta1
+kind: Function
+metadata:
+  name: update-status
+spec:
+  image: diptadas/stash:pg
+  args:
+    - update-status
+    - --namespace=${NAMESPACE:=default}
+    - --repository=${REPOSITORY_NAME:=}
+    - --backup-session=${BACKUP_SESSION:=}
+    - --restore-session=${RESTORE_SESSION:=}
+    - --output-dir=${outputDir:=}
+  volumeMounts:
+  - name: ${outputVolume}
+    mountPath: ${outputDir}
+---
+apiVersion: stash.appscode.com/v1beta1
+kind: Function
+metadata:
+  name: pg-backup
+spec:
+  image: diptadas/stash:pg
+  args:
+  - backup-pg
+  - --provider=${REPOSITORY_PROVIDER:=}
+  - --bucket=${REPOSITORY_BUCKET:=}
+  - --endpoint=${REPOSITORY_ENDPOINT:=}
+  - --path=${REPOSITORY_PREFIX:=}
+  - --secret-dir=/etc/repository/secret # specified
+  - --scratch-dir=/tmp/restic/scratch # specified
+  #- --backup-dirs=${TARGET_DIRECTORIES:=}
+  - --pg-args=${pgArgs:=} # user input
+  - --namespace=${NAMESPACE:=default}
+  - --app-binding=${TARGET_NAME:=}
+  - --retention-keep-last=${RETENTION_KEEP_LAST:=0} # TODO: complete list
+  - --retention-keep-tags=${RETENTION_KEEP_TAGS:=}
+  - --retention-prune=${RETENTION_PRUNE:=false}
+  - --retention-dry-run=${RETENTION_DRY_RUN:=false}
+  - --output-dir=${outputDir:=}
+  #- --metrics-enabled
+  #- --metrics-pushgateway-url
+  #- --metrics-dir
+  #- --metrics-labels
+  volumeMounts:
+  - name: ${scratchDirVolume}
+    mountPath: /tmp/restic/scratch
+  - name: ${secretVolume}
+    mountPath: /etc/repository/secret
+  - name: ${outputVolume}
+    mountPath: ${outputDir}
+---
+apiVersion: stash.appscode.com/v1beta1
+kind: Function
+metadata:
+  name: pg-restore
+spec:
+  image: diptadas/stash:pg
+  args:
+  - restore-pg
+  - --provider=${REPOSITORY_PROVIDER:=}
+  - --bucket=${REPOSITORY_BUCKET:=}
+  - --endpoint=${REPOSITORY_ENDPOINT:=}
+  - --path=${REPOSITORY_PREFIX:=}
+  - --secret-dir=/etc/repository/secret # specified
+  - --scratch-dir=/tmp/restic/scratch # specified
+  #- --restore-dirs=${RESTORE_DIRECTORIES:=}
+  - --pg-args=${pgArgs:=} # user input
+  - --namespace=${NAMESPACE:=}
+  - --app-binding=${TARGET_NAME:=}
+  - --snapshot=${RESTORE_SNAPSHOTS:=} # TODO: sliceVar
+  - --output-dir=${outputDir:=}
+  #- --metrics-enabled
+  #- --metrics-pushgateway-url
+  #- --metrics-dir
+  #- --metrics-labels
+  volumeMounts:
+  - name: ${scratchDirVolume}
+    mountPath: /tmp/restic/scratch
+  - name: ${secretVolume}
+    mountPath: /etc/repository/secret
+  - name: ${outputVolume}
+    mountPath: ${outputDir}
