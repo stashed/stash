@@ -1,21 +1,21 @@
 apiVersion: stash.appscode.com/v1beta1
 kind: BackupConfiguration
 metadata:
-  name: pg-backup-config
+  name: mysql-backup-config
   namespace: demo
 spec:
   runtimeSettings:
     pod:
-      serviceAccountName: pg-backup-restore
+      serviceAccountName: mysql-backup-restore
   task:
-    name: pg-backup-task
+    name: mysql-backup-task
   repository:
     name: hello-repo
   target:
     ref:
       apiVersion: appcatalog.appscode.com/v1alpha1
       kind: AppBinding
-      name: quick-postgres
+      name: mysql-quickstart
   retentionPolicy:
     keepLast: 5
     prune: true
@@ -23,8 +23,8 @@ spec:
 apiVersion: stash.appscode.com/v1beta1
 kind: BackupSession
 metadata:
-  name: pg-backup-01
+  name: mysql-backup-01
   namespace: demo
 spec:
   backupConfiguration:
-    name: pg-backup-config
+    name: mysql-backup-config
