@@ -84,3 +84,9 @@ func (w *ResticWrapper) SetEnv(key, value string) {
 		w.sh.SetEnv(key, value)
 	}
 }
+
+func (w *ResticWrapper) HideCMD() {
+	if w.sh != nil {
+		w.sh.ShowCMD = false
+	}
+}

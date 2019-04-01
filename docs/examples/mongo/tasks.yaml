@@ -1,0 +1,61 @@
+apiVersion: stash.appscode.com/v1beta1
+kind: Task
+metadata:
+  name: mongo-backup-task
+spec:
+  steps:
+  - name: mongo-backup
+    params:
+    - name: outputDir
+      value: /etc/backup # specified
+    - name: scratchDirVolume
+      value: scratch-volume # specified
+    - name: secretVolume
+      value: secret-volume # specified
+    - name: outputVolume
+      value: output-volume # specified
+  - name: update-status
+    params:
+    - name: outputDir
+      value: /etc/backup # specified
+    - name: outputVolume
+      value: output-volume # specified
+  volumes:
+  - name: secret-volume
+    secret:
+      secretName: ${REPOSITORY_SECRET_NAME}
+  - name: scratch-volume
+    emptyDir: {}
+  - name: output-volume
+    emptyDir: {}
+---
+apiVersion: stash.appscode.com/v1beta1
+kind: Task
+metadata:
+  name: mongo-restore-task
+spec:
+  steps:
+  - name: mongo-restore
+    params:
+    - name: outputDir
+      value: /etc/restore # specified
+    - name: scratchDirVolume
+      value: scratch-volume # specified
+    - name: secretVolume
+      value: secret-volume # specified
+    - name: outputVolume
+      value: output-volume # specified
+  - name: update-status
+    params:
+    - name: outputDir
+      value: /etc/backup # specified
+    - name: outputVolume
+      value: output-volume # specified
+  volumes:
+  - name: secret-volume
+    secret:
+      secretName: ${REPOSITORY_SECRET_NAME}
+  - name: scratch-volume
+    emptyDir: {}
+  - name: output-volume
+    emptyDir: {}
