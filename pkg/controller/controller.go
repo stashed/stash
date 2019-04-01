@@ -29,6 +29,9 @@ import (
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
 	appcatalog_informers "kmodules.xyz/custom-resources/client/informers/externalversions"
 	abListers "kmodules.xyz/custom-resources/client/listers/appcatalog/v1alpha1"
+	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"
+	oc_informers "kmodules.xyz/openshift/client/informers/externalversions"
+	oc_listers "kmodules.xyz/openshift/client/listers/apps/v1"
 )
 
 type StashController struct {
@@ -36,12 +39,14 @@ type StashController struct {
 
 	clientConfig     *rest.Config
 	kubeClient       kubernetes.Interface
+	ocClient         oc_cs.Interface
 	stashClient      cs.Interface
 	crdClient        crd_cs.ApiextensionsV1beta1Interface
 	appCatalogClient appcatalog_cs.Interface
 	recorder         record.EventRecorder
 
 	kubeInformerFactory       informers.SharedInformerFactory
+	ocInformerFactory         oc_informers.SharedInformerFactory
 	stashInformerFactory      stashinformers.SharedInformerFactory
 	appCatalogInformerFactory appcatalog_informers.SharedInformerFactory
 
@@ -116,6 +121,11 @@ type StashController struct {
 	restoreSessionQueue    *queue.Worker
 	restoreSessionInformer cache.SharedIndexInformer
 	restoreSessionLister   stash_listers_v1beta1.RestoreSessionLister
+
+	// Openshift DeploymentConfiguration
+	dcQueue    *queue.Worker
+	dcInformer cache.SharedIndexInformer
+	dcLister   oc_listers.DeploymentConfigLister
 }
 
 func (c *StashController) ensureCustomResourceDefinitions() error {
@@ -161,6 +171,11 @@ func (c *StashController) RunInformers(stopCh <-chan struct{}) {
 	c.stashInformerFactory.Start(stopCh)
 	c.appCatalogInformerFactory.Start(stopCh)
 
+	// start ocInformerFactory only if the cluster has DeploymentConfig (for openshift)
+	if c.dcInformer != nil {
+		c.ocInformerFactory.Start(stopCh)
+	}
+
 	// Wait for all involved caches to be synced, before processing items from the queue is started
 	for _, v := range c.kubeInformerFactory.WaitForCacheSync(stopCh) {
 		if !v {
@@ -168,6 +183,16 @@ func (c *StashController) RunInformers(stopCh <-chan struct{}) {
 			return
 		}
 	}
+
+	if c.dcInformer != nil {
+		for _, v := range c.ocInformerFactory.WaitForCacheSync(stopCh) {
+			if !v {
+				runtime.HandleError(fmt.Errorf("timed out waiting for caches to sync"))
+				return
+			}
+		}
+	}
+
 	for _, v := range c.stashInformerFactory.WaitForCacheSync(stopCh) {
 		if !v {
 			runtime.HandleError(fmt.Errorf("timed out waiting for caches to sync"))
@@ -182,24 +207,31 @@ func (c *StashController) RunInformers(stopCh <-chan struct{}) {
 		}
 	}
 
+	// start workload queue
 	c.dpQueue.Run(stopCh)
 	c.dsQueue.Run(stopCh)
 	c.ssQueue.Run(stopCh)
 	c.rcQueue.Run(stopCh)
 	c.rsQueue.Run(stopCh)
-	c.pvcQueue.Run(stopCh)
-	c.jobQueue.Run(stopCh)
-	c.backupSessionQueue.Run(stopCh)
-	c.restoreSessionQueue.Run(stopCh)
 
+	// start DeploymentConfig queue only if the cluster has DeploymentConfiguration resource (for openshift)
+	if c.dcInformer != nil {
+		c.dcQueue.Run(stopCh)
+	}
+
+	c.pvcQueue.Run(stopCh)
+	c.abQueue.Run(stopCh)
+	c.jobQueue.Run(stopCh)
+
+	// start v1alpha1 resources queue
+	c.repoQueue.Run(stopCh)
 	c.rstQueue.Run(stopCh)
 	c.recQueue.Run(stopCh)
-	c.repoQueue.Run(stopCh)
 
+	// start v1beta1 resources queue
 	c.bcQueue.Run(stopCh)
 	c.backupSessionQueue.Run(stopCh)
 	c.restoreSessionQueue.Run(stopCh)
-	c.abQueue.Run(stopCh)
 
 	<-stopCh
 	log.Infoln("Stopping Stash controller")

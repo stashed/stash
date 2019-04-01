@@ -5,13 +5,6 @@ var (
 )
 
 const (
-	ModificationTypeInitContainerInjection = "InitContainerInjection"
-	ModificationTypeInitContainerDeletion  = "InitContainerDeletion"
-	ModificationTypeSidecarInjection       = "SidecarInjection"
-	ModificationTypeSidecarDeletion        = "SidecarDeletion"
-)
-
-const (
 	StashKey   = "stash.appscode.com"
 	VersionTag = StashKey + "/tag"
 )
@@ -24,4 +17,5 @@ const (
 	KindDaemonSet             = "DaemonSet"
 	KindPersistentVolumeClaim = "PersistentVolumeClaim"
 	KindAppBinding            = "AppBinding"
+	KindDeploymentConfig      = "DeploymentConfig"
 )

@@ -82,15 +82,21 @@ func (c *StashController) runBackupSessionProcessor(key string) error {
 	backupSession := obj.(*api_v1beta1.BackupSession)
 	glog.Infof("Sync/Add/Update for BackupSession %s", backupSession.GetName())
 
+	if backupSession.Status.Phase == api_v1beta1.BackupSessionFailed ||
+		backupSession.Status.Phase == api_v1beta1.BackupSessionSucceeded {
+		log.Infof("Skipping processing BackupSession %s/%s. Reason: phase is %q.", backupSession.Namespace, backupSession.Name, backupSession.Status.Phase)
+		return nil
+	}
+
 	// check weather backup session is completed or running and set it's phase accordingly
 	phase, err := c.getBackupSessionPhase(backupSession)
 
-	if err != nil || phase == api_v1beta1.BackupSessionFailed {
+	if phase == api_v1beta1.BackupSessionFailed {
 		return c.setBackupSessionFailed(backupSession, err)
 	} else if phase == api_v1beta1.BackupSessionSucceeded {
 		return c.setBackupSessionSucceeded(backupSession)
 	} else if phase == api_v1beta1.BackupSessionRunning {
-		log.Infof("Skipping processing BackupSession %s/%s. Reason: phase is %s.", backupSession.Namespace, backupSession.Name, backupSession.Status.Phase)
+		log.Infof("Skipping processing BackupSession %s/%s. Reason: phase is %q.", backupSession.Namespace, backupSession.Name, backupSession.Status.Phase)
 		return nil
 	}
 
@@ -313,13 +319,15 @@ func (c *StashController) setBackupSessionSucceeded(backupSession *api_v1beta1.B
 
 func (c *StashController) getBackupSessionPhase(backupSession *api_v1beta1.BackupSession) (api_v1beta1.BackupSessionPhase, error) {
 	// BackupSession phase is empty or "Pending" then return it. controller will process accordingly
-	if backupSession.Status.Phase == "" || backupSession.Status.Phase == api_v1beta1.BackupSessionPending {
+	if backupSession.Status.TotalHosts == nil ||
+		backupSession.Status.Phase == "" ||
+		backupSession.Status.Phase == api_v1beta1.BackupSessionPending {
 		return api_v1beta1.BackupSessionPending, nil
 	}
 
-	// all hosts hasn't completed it's backup. BackupSession phase must be "Running". just return it.
+	// all hosts hasn't completed it's backup. BackupSession phase must be "Running".
 	if *backupSession.Status.TotalHosts != int32(len(backupSession.Status.Stats)) {
-		return backupSession.Status.Phase, nil
+		return api_v1beta1.BackupSessionRunning, nil
 	}
 
 	// check if any of the host has failed to take backup. if any of them has failed, then consider entire backup session as a failure.

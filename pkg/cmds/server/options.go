@@ -13,7 +13,10 @@ import (
 	"github.com/spf13/pflag"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	"k8s.io/client-go/kubernetes"
+	"kmodules.xyz/client-go/discovery"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
+	ocapps "kmodules.xyz/openshift/apis/apps/v1"
+	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"
 )
 
 type ExtraOptions struct {
@@ -91,5 +94,13 @@ func (s *ExtraOptions) ApplyTo(cfg *controller.Config) error {
 	if cfg.AppCatalogClient, err = appcatalog_cs.NewForConfig(cfg.ClientConfig); err != nil {
 		return err
 	}
+
+	// if cluster has OpenShift DeploymentConfig then generate OcClient
+	if discovery.IsPreferredAPIResource(cfg.KubeClient.Discovery(), ocapps.GroupVersion.String(), apis.KindDeploymentConfig) {
+		if cfg.OcClient, err = oc_cs.NewForConfig(cfg.ClientConfig); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }

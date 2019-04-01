@@ -56,7 +56,7 @@ func PushgatewayURL() string {
 
 func BackupModel(kind string) string {
 	switch kind {
-	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController, apis.KindStatefulSet, apis.KindDaemonSet:
+	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController, apis.KindStatefulSet, apis.KindDaemonSet, apis.KindDeploymentConfig:
 		return ModelSidecar
 	default:
 		return ModelCronJob

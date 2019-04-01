@@ -102,3 +102,5 @@ import:
   version: master
 - package: kmodules.xyz/custom-resources
   version: release-10.0
+- package: kmodules.xyz/openshift
+  version: release-10.0

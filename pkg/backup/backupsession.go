@@ -73,7 +73,7 @@ func (c *BackupSessionController) RunBackup() error {
 	// for Deployment, ReplicaSet and ReplicationController run BackupSession watcher only in leader pod.
 	// for others workload i.e. DaemonSet and StatefulSet run BackupSession watcher in all pods.
 	switch backupConfiguration.Spec.Target.Ref.Kind {
-	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController:
+	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController, apis.KindDeploymentConfig:
 		if err := c.electLeaderPod(backupConfiguration, stopCh); err != nil {
 			return err
 		}
@@ -175,7 +175,7 @@ func (c *BackupSessionController) processBackupSession(key string) error {
 		// locked by only one pod. So, we need a leader election to determine who will take backup first. Once backup is complete, the leader pod will
 		// step down from leadership so that another replica can acquire leadership and start taking backup.
 		switch backupConfiguration.Spec.Target.Ref.Kind {
-		case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController:
+		case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController, apis.KindDeploymentConfig:
 			return c.backup(backupSession, backupConfiguration)
 		default:
 			return c.electBackupLeader(backupSession, backupConfiguration)
@@ -275,37 +275,33 @@ func (c *BackupSessionController) electLeaderPod(backupConfiguration *api_v1beta
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	go func() {
-		// start the leader election code loop
-		leaderelection.RunOrDie(ctx, leaderelection.LeaderElectionConfig{
-			Lock:          resLock,
-			LeaseDuration: 15 * time.Second,
-			RenewDeadline: 10 * time.Second,
-			RetryPeriod:   2 * time.Second,
-			Callbacks: leaderelection.LeaderCallbacks{
-				OnStartedLeading: func(ctx context.Context) {
-					log.Infoln("Got leadership, preparing starting BackupSession controller")
-					// this pod is now leader. run BackupSession controller.
-					err := c.runBackupSessionController(backupConfiguration, stopCh)
-					if err != nil {
-						e2 := c.HandleBackupFailure(err)
-						if e2 != nil {
-							err = errors.NewAggregate([]error{err, e2})
-						}
-						// step down from leadership so that other replicas can try to start BackupSession controller
-						cancel()
-						// fail the container so that it restart and re-try this process.
-						log.Fatalln("failed to start BackupSession controller. Reason: ", err.Error())
+	// start the leader election code loop
+	leaderelection.RunOrDie(ctx, leaderelection.LeaderElectionConfig{
+		Lock:          resLock,
+		LeaseDuration: 15 * time.Second,
+		RenewDeadline: 10 * time.Second,
+		RetryPeriod:   2 * time.Second,
+		Callbacks: leaderelection.LeaderCallbacks{
+			OnStartedLeading: func(ctx context.Context) {
+				log.Infoln("Got leadership, preparing starting BackupSession controller")
+				// this pod is now leader. run BackupSession controller.
+				err := c.runBackupSessionController(backupConfiguration, stopCh)
+				if err != nil {
+					e2 := c.HandleBackupFailure(err)
+					if e2 != nil {
+						err = errors.NewAggregate([]error{err, e2})
 					}
-				},
-				OnStoppedLeading: func() {
-					log.Infoln("Lost leadership")
-				},
+					// step down from leadership so that other replicas can try to start BackupSession controller
+					cancel()
+					// fail the container so that it restart and re-try this process.
+					log.Fatalln("failed to start BackupSession controller. Reason: ", err.Error())
+				}
 			},
-		})
-	}()
-	// wait until stop signal is sent.
-	<-stopCh
+			OnStoppedLeading: func() {
+				log.Infoln("Lost leadership")
+			},
+		},
+	})
 	return nil
 }
 

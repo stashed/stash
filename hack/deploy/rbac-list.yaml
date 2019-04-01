@@ -95,6 +95,12 @@ rules:
   - roles
   - rolebindings
   verbs: ["get", "create", "delete", "patch"]
+- apiGroups:
+  - apps.openshift.io
+  resources:
+  - deploymentconfigs
+  verbs: ["get", "list", "watch", "patch"]
+
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

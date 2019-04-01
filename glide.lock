@@ -1,5 +1,5 @@
-hash: fe6a549da57bc85221c9e8646419c94bb3c5c63e2f159762b31a225d84d7c418
-updated: 2019-03-29T10:28:29.779821476+06:00
+hash: f51bad15a238a547dfadd9f6faea7b7c73df751b38f4c857ee4730941f231e7a
+updated: 2019-04-02T13:48:34.681507696+06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -231,7 +231,7 @@ imports:
 - name: github.com/go-openapi/spec
   version: 5b6cdde3200976e3ecceb2868706ee39b6aff3e4
 - name: github.com/go-openapi/swag
-  version: f3f9494671f93fcff853e3c6e9e948b3eb71e590
+  version: 1d0bd113de87027671077d3c71eb3ac5d7dbba72
 - name: github.com/gogo/protobuf
   version: 342cbe0a04158f6dcb03ca0079991a51a4248c02
   subpackages:
@@ -1046,7 +1046,7 @@ imports:
   - exec/testing
   - pointer
 - name: kmodules.xyz/client-go
-  version: 45c57f3f168df1fa926ebd155516cee7ff8d0731
+  version: 5dcc4cecf4c96d58e0624cd41311f3a4663db7d7
   subpackages:
   - admissionregistration/v1beta1
   - apiextensions/v1beta1
@@ -1097,7 +1097,16 @@ imports:
   - client/clientset/versioned
   - client/clientset/versioned/scheme
   - client/clientset/versioned/typed/apps/v1
+  - client/clientset/versioned/typed/apps/v1/util
   - client/clientset/versioned/typed/security/v1
+  - client/informers/externalversions
+  - client/informers/externalversions/apps
+  - client/informers/externalversions/apps/v1
+  - client/informers/externalversions/internalinterfaces
+  - client/informers/externalversions/security
+  - client/informers/externalversions/security/v1
+  - client/listers/apps/v1
+  - client/listers/security/v1
 - name: kmodules.xyz/webhook-runtime
   version: 783bd39d0be1b11510dc6c096b37240a04233e56
   subpackages:
@@ -1117,6 +1126,6 @@ testImports:
   subpackages:
   - difflib
 - name: github.com/stretchr/testify
-  version: f35b8ab0b5a2cef36673838d662e249dd9c94686
+  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
   subpackages:
   - assert

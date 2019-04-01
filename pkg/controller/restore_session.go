@@ -121,6 +121,11 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 				return err
 			}
 
+			if restoreSession.Status.Phase == api_v1beta1.RestoreSessionFailed ||
+				restoreSession.Status.Phase == api_v1beta1.RestoreSessionSucceeded {
+				log.Infof("Skipping processing RestoreSession %s/%s. Reason: phase is %q.", restoreSession.Namespace, restoreSession.Name, restoreSession.Status.Phase)
+				return nil
+			}
 			// check weather restore session is completed or running and set it's phase accordingly
 			phase, err := c.getRestoreSessionPhase(restoreSession)
 
@@ -129,7 +134,7 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 			} else if phase == api_v1beta1.RestoreSessionSucceeded {
 				return c.setRestoreSessionSucceeded(restoreSession)
 			} else if phase == api_v1beta1.RestoreSessionRunning {
-				log.Infof("Skipping processing RestoreSession %s/%s. Reason: phase is %s.", restoreSession.Namespace, restoreSession.Name, restoreSession.Status.Phase)
+				log.Infof("Skipping processing RestoreSession %s/%s. Reason: phase is %q.", restoreSession.Namespace, restoreSession.Name, restoreSession.Status.Phase)
 				return nil
 			}
 
@@ -339,13 +344,15 @@ func (c *StashController) setRestoreSessionSucceeded(restoreSession *api_v1beta1
 
 func (c *StashController) getRestoreSessionPhase(restoreSession *api_v1beta1.RestoreSession) (api_v1beta1.RestoreSessionPhase, error) {
 	// RestoreSession phase is empty or "Pending" then return it. controller will process accordingly
-	if restoreSession.Status.Phase == "" || restoreSession.Status.Phase == api_v1beta1.RestoreSessionPending {
+	if restoreSession.Status.TotalHosts == nil ||
+		restoreSession.Status.Phase == "" ||
+		restoreSession.Status.Phase == api_v1beta1.RestoreSessionPending {
 		return api_v1beta1.RestoreSessionPending, nil
 	}
 
-	// all hosts hasn't completed it's restore process. RestoreSession phase must be "Running". just return it.
+	// all hosts hasn't completed it's restore process. RestoreSession phase must be "Running".
 	if *restoreSession.Status.TotalHosts != int32(len(restoreSession.Status.Stats)) {
-		return restoreSession.Status.Phase, nil
+		return api_v1beta1.RestoreSessionRunning, nil
 	}
 
 	// check if any of the host has failed to restore. if any of them has failed, then consider entire restore session as a failure.

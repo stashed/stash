@@ -1,0 +1,23 @@
+apiVersion: stash.appscode.com/v1beta1
+kind: BackupConfiguration
+metadata:
+  name: deploymentconfig-backup
+  namespace: demo
+spec:
+  repository:
+    name: local-repo
+  schedule: "* * * * *"
+  target:
+    ref:
+      apiVersion: apps.openshift.io/v1
+      kind: DeploymentConfig
+      name: stash-demo
+    volumeMounts:
+    - name: source-data
+      mountPath: /source/data
+    directories:
+    - /source/data
+  retentionPolicy:
+    name: 'keep-last-5'
+    keepLast: 5
+    prune: true
