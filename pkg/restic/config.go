@@ -3,6 +3,7 @@ package restic
 import (
 	"github.com/appscode/stash/apis/stash/v1alpha1"
 	shell "github.com/codeskyblue/go-sh"
+	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
 const (
@@ -54,6 +55,8 @@ type SetupOptions struct {
 	CacertFile  string
 	ScratchDir  string
 	EnableCache bool
+	Nice        *ofst.NiceSettings
+	IONice      *ofst.IONiceSettings
 }
 
 type MetricsOptions struct {

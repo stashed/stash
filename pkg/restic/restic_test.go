@@ -8,7 +8,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/appscode/go/types"
 	"github.com/stretchr/testify/assert"
+	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
 var (
@@ -80,6 +82,46 @@ func cleanup() {
 func TestBackupRestoreDirs(t *testing.T) {
 	w := setupTest()
 	defer cleanup()
+
+	backupOpt := BackupOptions{
+		BackupDirs: []string{targetDir},
+	}
+	backupOut, err := w.RunBackup(backupOpt)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(backupOut)
+
+	// delete target then restore
+	if err = os.RemoveAll(targetDir); err != nil {
+		log.Fatal(err)
+	}
+	restoreOpt := RestoreOptions{
+		RestoreDirs: []string{targetDir},
+	}
+	restoreOut, err := w.RunRestore(restoreOpt)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(restoreOut)
+
+	// check file
+	fileContentByte, err := ioutil.ReadFile(filepath.Join(targetDir, fileName))
+	if err != nil {
+		log.Fatal(err)
+	}
+	assert.Equal(t, fileContent, string(fileContentByte))
+}
+
+func TestBackupRestoreWithScheduling(t *testing.T) {
+	w := setupTest()
+	defer cleanup()
+
+	w.config.ProcessScheduling = &ofst.ProcessSchedulingSettings{
+		Class:      types.Int32P(2),
+		ClassData:  types.Int32P(3),
+		Adjustment: types.Int32P(12),
+	}
 
 	backupOpt := BackupOptions{
 		BackupDirs: []string{targetDir},
