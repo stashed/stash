@@ -186,7 +186,7 @@ func (w *ResticWrapper) Check() error {
 func (w *ResticWrapper) appendCacheDirFlag(args []interface{}) []interface{} {
 	if w.enableCache {
 		cacheDir := filepath.Join(w.scratchDir, "restic-cache")
-		return append(args, "--cache-dir", cacheDir)
+		return append(args, "--cache-dir", cacheDir, "--cleanup-cache")
 	}
 	return append(args, "--no-cache")
 }

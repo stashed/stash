@@ -242,7 +242,7 @@ func (w *ResticWrapper) stats() ([]byte, error) {
 func (w *ResticWrapper) appendCacheDirFlag(args []interface{}) []interface{} {
 	if w.config.EnableCache {
 		cacheDir := filepath.Join(w.config.ScratchDir, "restic-cache")
-		return append(args, "--cache-dir", cacheDir)
+		return append(args, "--cache-dir", cacheDir, "--cleanup-cache")
 	}
 	return append(args, "--no-cache")
 }
