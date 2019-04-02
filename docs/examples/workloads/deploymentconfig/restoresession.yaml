@@ -1,0 +1,19 @@
+apiVersion: stash.appscode.com/v1beta1
+kind: RestoreSession
+metadata:
+  name: deploymentconfig-restore
+  namespace: demo
+spec:
+  repository:
+    name: local-repo
+  rules:
+  - paths:
+    - /source/data
+  target: # target indicates where the recovered data will be stored
+    ref:
+      apiVersion: apps.openshift.io/v1
+      kind: DeploymentConfig
+      name: stash-recovered
+    volumeMounts:
+    - name:  source-data
+      mountPath:  /source/data

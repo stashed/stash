@@ -128,6 +128,9 @@ func (c completedConfig) New() (*StashServer, error) {
 			ctrl.NewReplicationControllerWebhook(),
 			ctrl.NewReplicaSetWebhook(),
 		)
+		if c.ExtraConfig.OcClient != nil {
+			admissionHooks = append(admissionHooks, ctrl.NewDeploymentConfigWebhook())
+		}
 	}
 
 	s := &StashServer{

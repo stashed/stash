@@ -7,6 +7,18 @@ data:
   RESTIC_PASSWORD: bm90QHNlY3JldA==
 type: Opaque
 ---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: repo-pvc
+  namespace: demo
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
 apiVersion: stash.appscode.com/v1alpha1
 kind: Repository
 metadata:
@@ -16,6 +28,6 @@ spec:
   backend:
     local:
       mountPath: /safe/data
-      hostPath:
-        path: /data/stash-test/restic-repo
+      persistentVolumeClaim:
+        claimName: repo-pvc
     storageSecretName: local-secret

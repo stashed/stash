@@ -16,6 +16,8 @@ import (
 	"kmodules.xyz/client-go/discovery"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
 	appcatalog_informers "kmodules.xyz/custom-resources/client/informers/externalversions"
+	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"
+	oc_informers "kmodules.xyz/openshift/client/informers/externalversions"
 )
 
 const (
@@ -39,6 +41,7 @@ type Config struct {
 
 	ClientConfig     *rest.Config
 	KubeClient       kubernetes.Interface
+	OcClient         oc_cs.Interface
 	StashClient      cs.Interface
 	CRDClient        crd_cs.ApiextensionsV1beta1Interface
 	AppCatalogClient appcatalog_cs.Interface
@@ -62,6 +65,7 @@ func (c *Config) New() (*StashController, error) {
 		config:           c.config,
 		clientConfig:     c.ClientConfig,
 		kubeClient:       c.KubeClient,
+		ocClient:         c.OcClient,
 		stashClient:      c.StashClient,
 		crdClient:        c.CRDClient,
 		appCatalogClient: c.AppCatalogClient,
@@ -72,6 +76,7 @@ func (c *Config) New() (*StashController, error) {
 			informers.WithTweakListOptions(tweakListOptions)),
 		stashInformerFactory:      stashinformers.NewSharedInformerFactory(c.StashClient, c.ResyncPeriod),
 		appCatalogInformerFactory: appcatalog_informers.NewSharedInformerFactory(c.AppCatalogClient, c.ResyncPeriod),
+		ocInformerFactory:         oc_informers.NewSharedInformerFactory(c.OcClient, c.ResyncPeriod),
 		recorder:                  eventer.NewEventRecorder(c.KubeClient, "stash-operator"),
 	}
 
@@ -96,23 +101,28 @@ func (c *Config) New() (*StashController, error) {
 	}
 
 	ctrl.initNamespaceWatcher()
+
+	// init workload watchers
 	ctrl.initDeploymentWatcher()
 	ctrl.initDaemonSetWatcher()
 	ctrl.initStatefulSetWatcher()
 	ctrl.initRCWatcher()
 	ctrl.initReplicaSetWatcher()
-	ctrl.initJobWatcher()
-	ctrl.initPVCWatcher()
+	ctrl.initDeploymentConfigWatcher()
 
+	ctrl.initPVCWatcher()
+	ctrl.initJobWatcher()
+	ctrl.initAppBindingWatcher()
+
+	// init v1alpha1 resources watcher
 	ctrl.initResticWatcher()
 	ctrl.initRecoveryWatcher()
 	ctrl.initRepositoryWatcher()
 
+	// init v1beta1 resources watcher
 	ctrl.initBackupConfigurationWatcher()
 	ctrl.initBackupSessionWatcher()
 	ctrl.initRestoreSessionWatcher()
-
-	ctrl.initAppBindingWatcher()
 
 	return ctrl, nil
 }

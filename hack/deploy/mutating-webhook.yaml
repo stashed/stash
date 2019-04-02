@@ -102,3 +102,22 @@ webhooks:
     - replicasets
   failurePolicy: Fail
   ${STASH_WEBHOOK_SIDE_EFFECTS}
+- name: deploymentconfig.admission.stash.appscode.com
+  clientConfig:
+    service:
+      namespace: default
+      name: kubernetes
+      path: /apis/admission.stash.appscode.com/v1alpha1/deploymentconfigs
+    caBundle: ${KUBE_CA}
+  rules:
+  - operations:
+    - CREATE
+    - UPDATE
+    apiGroups:
+    - apps.openshift.io
+    apiVersions:
+    - "*"
+    resources:
+    - deploymentconfigs
+  failurePolicy: Fail
+  ${STASH_WEBHOOK_SIDE_EFFECTS}

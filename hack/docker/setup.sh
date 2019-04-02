@@ -82,12 +82,18 @@ build_docker() {
   cat >Dockerfile <<EOL
 FROM alpine:3.8
 
+# add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added
+RUN addgroup -g 1005 stash \
+    && adduser -u 1005 -G stash -D stash
+
 RUN set -x \
   && apk add --update --no-cache ca-certificates
 
 COPY restic /bin/restic
 COPY restic_${NEW_RESTIC_VER} /bin/restic_${NEW_RESTIC_VER}
 COPY stash /bin/stash
+
+USER stash
 
 ENTRYPOINT ["/bin/stash"]
 EXPOSE 56789
