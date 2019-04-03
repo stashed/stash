@@ -82,6 +82,7 @@ func (w *ResticWrapper) backup(path, host string, tags []string) ([]byte, error)
 		args = append(args, tag)
 	}
 	args = w.appendCacheDirFlag(args)
+	args = w.appendCleanupCacheFlag(args)
 	args = w.appendCaCertFlag(args)
 
 	return w.run(Command{Name: ResticCMD, Args: args})
@@ -106,6 +107,7 @@ func (w *ResticWrapper) backupFromStdin(options BackupOptions) ([]byte, error) {
 		args = append(args, options.Host)
 	}
 	args = w.appendCacheDirFlag(args)
+	args = w.appendCleanupCacheFlag(args)
 	args = w.appendCaCertFlag(args)
 
 	commands = append(commands, Command{Name: ResticCMD, Args: args})
@@ -245,6 +247,13 @@ func (w *ResticWrapper) appendCacheDirFlag(args []interface{}) []interface{} {
 		return append(args, "--cache-dir", cacheDir)
 	}
 	return append(args, "--no-cache")
+}
+
+func (w *ResticWrapper) appendCleanupCacheFlag(args []interface{}) []interface{} {
+	if w.config.EnableCache {
+		return append(args, "--cleanup-cache")
+	}
+	return args
 }
 
 func (w *ResticWrapper) appendCaCertFlag(args []interface{}) []interface{} {

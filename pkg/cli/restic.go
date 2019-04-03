@@ -94,6 +94,7 @@ func (w *ResticWrapper) Backup(resource *api.Restic, fg api.FileGroup) error {
 		args = append(args, tag)
 	}
 	args = w.appendCacheDirFlag(args)
+	args = w.appendCleanupCacheFlag(args)
 	args = w.appendCaCertFlag(args)
 
 	return w.run(Exe, args)
@@ -189,6 +190,13 @@ func (w *ResticWrapper) appendCacheDirFlag(args []interface{}) []interface{} {
 		return append(args, "--cache-dir", cacheDir)
 	}
 	return append(args, "--no-cache")
+}
+
+func (w *ResticWrapper) appendCleanupCacheFlag(args []interface{}) []interface{} {
+	if w.enableCache {
+		return append(args, "--cleanup-cache")
+	}
+	return args
 }
 
 func (w *ResticWrapper) appendCaCertFlag(args []interface{}) []interface{} {
