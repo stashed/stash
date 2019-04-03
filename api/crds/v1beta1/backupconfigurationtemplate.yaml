@@ -1509,6 +1509,10 @@ spec:
                           type: string
                       required:
                       - volumePath
+                rest:
+                  properties:
+                    url:
+                      type: string
                 s3:
                   properties:
                     bucket:

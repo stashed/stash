@@ -7,8 +7,6 @@ import:
   version: v1.14.12
 - package: github.com/cenkalti/backoff
   version: v2.1.1
-- package: github.com/codeskyblue/go-sh
-  version: f4ce45e7999ee02d582441c916f1b32fb548dba6
 - package: github.com/cpuguy83/go-md2man
   version: v1.0.8
 - package: github.com/davecgh/go-spew
@@ -86,6 +84,8 @@ import:
   version: v10.0.0
 - package: k8s.io/kube-aggregator
   version: kubernetes-1.13.0
+- package: k8s.io/cli-runtime
+  version: kubernetes-1.13.0
 - package: k8s.io/kube-openapi
   version: c59034cc13d587f5ef4e85ca0ade0c1866ae8e1d
 - package: k8s.io/kubernetes
@@ -98,7 +98,7 @@ import:
   version: release-10.0
 - package: kmodules.xyz/webhook-runtime
   version: release-10.0
-- package: gomodules.xyz/envsubst
+- package: github.com/codeskyblue/go-sh
   version: master
 - package: kmodules.xyz/custom-resources
   version: release-10.0

@@ -1228,7 +1228,7 @@ func schema_k8sio_api_core_v1_AzureDiskVolumeSource(ref common.ReferenceCallback
 					},
 					"cachingMode": {
 						SchemaProps: spec.SchemaProps{
-							Description: "SourceHost Caching mode: None, Read Only, Read Write.",
+							Description: "Host Caching mode: None, Read Only, Read Write.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -3822,7 +3822,7 @@ func schema_k8sio_api_core_v1_HTTPGetAction(ref common.ReferenceCallback) common
 					},
 					"host": {
 						SchemaProps: spec.SchemaProps{
-							Description: "SourceHost name to connect to, defaults to the pod IP. You probably want to set \"SourceHost\" in httpHeaders instead.",
+							Description: "Host name to connect to, defaults to the pod IP. You probably want to set \"Host\" in httpHeaders instead.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -3954,7 +3954,7 @@ func schema_k8sio_api_core_v1_HostPathVolumeSource(ref common.ReferenceCallback)
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "Represents a host path mapped into a pod. SourceHost path volumes do not support ownership management or SELinux relabeling.",
+				Description: "Represents a host path mapped into a pod. Host path volumes do not support ownership management or SELinux relabeling.",
 				Properties: map[string]spec.Schema{
 					"path": {
 						SchemaProps: spec.SchemaProps{
@@ -7333,7 +7333,7 @@ func schema_k8sio_api_core_v1_PodSpec(ref common.ReferenceCallback) common.OpenA
 					},
 					"hostNetwork": {
 						SchemaProps: spec.SchemaProps{
-							Description: "SourceHost networking requested for this pod. Use the host's network namespace. If this option is set, the ports that will be used must be specified. Default to false.",
+							Description: "Host networking requested for this pod. Use the host's network namespace. If this option is set, the ports that will be used must be specified. Default to false.",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
@@ -10071,7 +10071,7 @@ func schema_k8sio_api_core_v1_TCPSocketAction(ref common.ReferenceCallback) comm
 					},
 					"host": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Optional: SourceHost name to connect to, defaults to the pod IP.",
+							Description: "Optional: Host name to connect to, defaults to the pod IP.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -12781,11 +12781,16 @@ func schema_kmodulesxyz_objectstore_api_api_v1_Backend(ref common.ReferenceCallb
 							Ref: ref("kmodules.xyz/objectstore-api/api/v1.B2Spec"),
 						},
 					},
+					"rest": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("kmodules.xyz/objectstore-api/api/v1.RestServerSpec"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/objectstore-api/api/v1.AzureSpec", "kmodules.xyz/objectstore-api/api/v1.B2Spec", "kmodules.xyz/objectstore-api/api/v1.GCSSpec", "kmodules.xyz/objectstore-api/api/v1.LocalSpec", "kmodules.xyz/objectstore-api/api/v1.S3Spec", "kmodules.xyz/objectstore-api/api/v1.SwiftSpec"},
+			"kmodules.xyz/objectstore-api/api/v1.AzureSpec", "kmodules.xyz/objectstore-api/api/v1.B2Spec", "kmodules.xyz/objectstore-api/api/v1.GCSSpec", "kmodules.xyz/objectstore-api/api/v1.LocalSpec", "kmodules.xyz/objectstore-api/api/v1.RestServerSpec", "kmodules.xyz/objectstore-api/api/v1.S3Spec", "kmodules.xyz/objectstore-api/api/v1.SwiftSpec"},
 	}
 }
 
@@ -13281,6 +13286,13 @@ func schema_kmodulesxyz_offshoot_api_api_v1_PodSpec(ref common.ReferenceCallback
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Properties: map[string]spec.Schema{
+					"serviceAccountName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ServiceAccountName is the name of the ServiceAccount to use to run this pod. More info: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"args": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Arguments to the entrypoint. The docker image's CMD is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. The $(VAR_NAME) syntax can be escaped with a double $$, ie: $$(VAR_NAME). Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",

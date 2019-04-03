@@ -1,5 +1,5 @@
-hash: f51bad15a238a547dfadd9f6faea7b7c73df751b38f4c857ee4730941f231e7a
-updated: 2019-04-02T13:48:34.681507696+06:00
+hash: d89df02a4bb0bc424c816815eb614f43a3b452c74f1f8781c028a89bc7332883
+updated: 2019-04-03T11:27:06.726153873+06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -231,7 +231,7 @@ imports:
 - name: github.com/go-openapi/spec
   version: 5b6cdde3200976e3ecceb2868706ee39b6aff3e4
 - name: github.com/go-openapi/swag
-  version: 1d0bd113de87027671077d3c71eb3ac5d7dbba72
+  version: f3f9494671f93fcff853e3c6e9e948b3eb71e590
 - name: github.com/gogo/protobuf
   version: 342cbe0a04158f6dcb03ca0079991a51a4248c02
   subpackages:
@@ -789,7 +789,7 @@ imports:
   - plugin/pkg/authenticator/token/webhook
   - plugin/pkg/authorizer/webhook
 - name: k8s.io/cli-runtime
-  version: 79bf4e0b64544d8c490247abae089bea572ddae6
+  version: a04da5c88c0796c1dc5ff976a9c91999779ac0e4
   subpackages:
   - pkg/genericclioptions
   - pkg/genericclioptions/printers
@@ -1080,7 +1080,7 @@ imports:
   - client/informers/externalversions/internalinterfaces
   - client/listers/appcatalog/v1alpha1
 - name: kmodules.xyz/objectstore-api
-  version: 1819d12be808d6e39341205515e8ec91c55d4898
+  version: d12275407591957ba398ef505f16873377e9831f
   subpackages:
   - api/v1
   - osm
@@ -1126,6 +1126,6 @@ testImports:
   subpackages:
   - difflib
 - name: github.com/stretchr/testify
-  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
+  version: f35b8ab0b5a2cef36673838d662e249dd9c94686
   subpackages:
   - assert

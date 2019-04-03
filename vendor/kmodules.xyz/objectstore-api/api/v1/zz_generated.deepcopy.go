@@ -85,6 +85,11 @@ func (in *Backend) DeepCopyInto(out *Backend) {
 		*out = new(B2Spec)
 		**out = **in
 	}
+	if in.Rest != nil {
+		in, out := &in.Rest, &out.Rest
+		*out = new(RestServerSpec)
+		**out = **in
+	}
 	return
 }
 

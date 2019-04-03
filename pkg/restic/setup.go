@@ -3,6 +3,7 @@ package restic
 import (
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path/filepath"
 )
@@ -14,6 +15,7 @@ const (
 	ProviderAzure = "azure"
 	ProviderSwift = "swift"
 	ProviderB2    = "b2"
+	ProviderRest  = "rest"
 
 	RESTIC_REPOSITORY = "RESTIC_REPOSITORY"
 	RESTIC_PASSWORD   = "RESTIC_PASSWORD"
@@ -199,6 +201,22 @@ func (w *ResticWrapper) setupEnv() error {
 		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, B2_ACCOUNT_KEY)); err == nil {
 			w.sh.SetEnv(B2_ACCOUNT_KEY, string(v))
 		}
+
+	case ProviderRest:
+		u, err := url.Parse(w.config.URL)
+		if err != nil {
+			return err
+		}
+		if username, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, REST_SERVER_USERNAME)); err == nil {
+			if password, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, REST_SERVER_PASSWORD)); err == nil {
+				u.User = url.UserPassword(string(username), string(password))
+			} else {
+				u.User = url.User(string(username))
+			}
+		}
+		// u.Path = filepath.Join(u.Path, w.config.Path) // path integrated with url
+		r := fmt.Sprintf("rest:%s", u.String())
+		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 	}
 
 	return nil

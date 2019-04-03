@@ -126,6 +126,8 @@ func GetBucketAndPrefix(backend *store.Backend) (string, string, error) {
 		return backend.Azure.Container, backend.Azure.Prefix, nil
 	} else if backend.Swift != nil {
 		return backend.Swift.Container, backend.Swift.Prefix, nil
+	} else if backend.Rest != nil {
+		return "", "", nil
 	}
 	return "", "", errors.New("unknown backend type.")
 }
@@ -144,8 +146,10 @@ func GetProvider(backend store.Backend) (string, error) {
 		return restic.ProviderSwift, nil
 	} else if backend.B2 != nil {
 		return restic.ProviderB2, nil
+	} else if backend.Rest != nil {
+		return restic.ProviderRest, nil
 	}
-	return "", errors.New("unknown backend type.")
+	return "", errors.New("unknown provider.")
 }
 
 func ExtractDataFromRepositoryLabel(labels map[string]string) (data RepoLabelData, err error) {

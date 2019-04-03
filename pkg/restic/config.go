@@ -49,6 +49,7 @@ type SetupOptions struct {
 	Bucket      string
 	Endpoint    string
 	Path        string
+	URL         string
 	SecretDir   string
 	CacertFile  string
 	ScratchDir  string
