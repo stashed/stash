@@ -111,4 +111,25 @@ type ContainerRuntimeSettings struct {
 	// More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
 	// +optional
 	SecurityContext *core.SecurityContext `json:"securityContext,omitempty"`
+	// Settings to configure `nice` to throttle the load on cpu.
+	// More info: http://kennystechtalk.blogspot.com/2015/04/throttling-cpu-usage-with-linux-cgroups.html
+	// More info: https://oakbytes.wordpress.com/2012/06/06/linux-scheduler-cfs-and-nice/
+	// +optional
+	Nice *NiceSettings `json:"nice,omitempty"`
+	// Settings to configure `ionice` to throttle the load on disk.
+	// More info: http://kennystechtalk.blogspot.com/2015/04/throttling-cpu-usage-with-linux-cgroups.html
+	// More info: https://oakbytes.wordpress.com/2012/06/06/linux-scheduler-cfs-and-nice/
+	// +optional
+	IONice *IONiceSettings `json:"ionice,omitempty"`
+}
+
+// https://linux.die.net/man/1/nice
+type NiceSettings struct {
+	Adjustment *int32 `json:"adjustment,omitempty"`
+}
+
+// https://linux.die.net/man/1/ionice
+type IONiceSettings struct {
+	Class     *int32 `json:"class,omitempty"`
+	ClassData *int32 `json:"classData,omitempty"`
 }

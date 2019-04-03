@@ -503,6 +503,9 @@ spec:
                 default or override container images in workload controllers like
                 Deployments and StatefulSets.'
               type: string
+            podSecurityPolicyName:
+              description: Name of PodSecurityPolicy(PSP) required by this function
+              type: string
             ports:
               description: List of ports to expose from the container. Exposing a
                 port here gives the system additional information about the network
@@ -542,6 +545,15 @@ spec:
               type: array
             runtimeSettings:
               properties:
+                ionice:
+                  description: https://linux.die.net/man/1/ionice
+                  properties:
+                    class:
+                      format: int32
+                      type: integer
+                    classData:
+                      format: int32
+                      type: integer
                 lifecycle:
                   description: Lifecycle describes actions that the management system
                     should take in response to container lifecycle events. For the
@@ -792,6 +804,12 @@ spec:
                         https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
                       format: int32
                       type: integer
+                nice:
+                  description: https://linux.die.net/man/1/nice
+                  properties:
+                    adjustment:
+                      format: int32
+                      type: integer
                 readinessProbe:
                   description: Probe describes a health check to be performed against
                     a container to determine whether it is alive or ready to receive
@@ -992,6 +1010,44 @@ spec:
                           description: User is a SELinux user label that applies to
                             the container.
                           type: string
+            tempDir:
+              properties:
+                medium:
+                  type: string
+                sizeLimit:
+                  description: |-
+                    Quantity is a fixed-point representation of a number. It provides convenient marshaling/unmarshaling in JSON and YAML, in addition to String() and Int64() accessors.
+
+                    The serialization format is:
+
+                    <quantity>        ::= <signedNumber><suffix>
+                      (Note that <suffix> may be empty, from the "" case in <decimalSI>.)
+                    <digit>           ::= 0 | 1 | ... | 9 <digits>          ::= <digit> | <digit><digits> <number>          ::= <digits> | <digits>.<digits> | <digits>. | .<digits> <sign>            ::= "+" | "-" <signedNumber>    ::= <number> | <sign><number> <suffix>          ::= <binarySI> | <decimalExponent> | <decimalSI> <binarySI>        ::= Ki | Mi | Gi | Ti | Pi | Ei
+                      (International System of units; See: http://physics.nist.gov/cuu/Units/binary.html)
+                    <decimalSI>       ::= m | "" | k | M | G | T | P | E
+                      (Note that 1024 = 1Ki but 1000 = 1k; I didn't choose the capitalization.)
+                    <decimalExponent> ::= "e" <signedNumber> | "E" <signedNumber>
+
+                    No matter which of the three exponent forms is used, no quantity may represent a number greater than 2^63-1 in magnitude, nor may it have more than 3 decimal places. Numbers larger or more precise will be capped or rounded up. (E.g.: 0.1m will rounded up to 1m.) This may be extended in the future if we require larger or smaller quantities.
+
+                    When a Quantity is parsed from a string, it will remember the type of suffix it had, and will use the same type again when it is serialized.
+
+                    Before serializing, Quantity will be put in "canonical form". This means that Exponent/suffix will be adjusted up or down (with a corresponding increase or decrease in Mantissa) such that:
+                      a. No precision is lost
+                      b. No fractional digits will be emitted
+                      c. The exponent (or suffix) is as large as possible.
+                    The sign will be omitted unless the number is negative.
+
+                    Examples:
+                      1.5 will be serialized as "1500m"
+                      1.5Gi will be serialized as "1536Mi"
+
+                    Note that the quantity will NEVER be internally represented by a floating point number. That is the whole point of this exercise.
+
+                    Non-canonical values will still parse as long as they are well formed, but will be re-emitted in their canonical form. (So always use canonical form, or don't diff.)
+
+                    This format is intended to make it difficult to use these numbers without writing some sort of special handling code in the hopes that that will cause implementors to also use a fixed point implementation.
+                  type: string
             volumeDevices:
               description: volumeDevices is the list of block devices to be used by
                 the container. This is an alpha feature and may change in the future.

@@ -46,3 +46,4 @@ API rule violation: names_match,k8s.io/apimachinery/pkg/runtime,Unknown,Raw
 API rule violation: names_match,k8s.io/apimachinery/pkg/util/intstr,IntOrString,IntVal
 API rule violation: names_match,k8s.io/apimachinery/pkg/util/intstr,IntOrString,StrVal
 API rule violation: names_match,k8s.io/apimachinery/pkg/util/intstr,IntOrString,Type
+API rule violation: names_match,kmodules.xyz/offshoot-api/api/v1,ContainerRuntimeSettings,IONice
