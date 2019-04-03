@@ -337,11 +337,6 @@ spec:
                 hosts
               items:
                 properties:
-                  host:
-                    description: Host specifies the name of the host whose backed
-                      up state we are trying to restore By default, it will indicate
-                      the workload itself
-                    type: string
                   paths:
                     description: Paths specifies the paths to be restored for the
                       hosts under this rule. Don't specify if you have specified snapshots
@@ -356,6 +351,11 @@ spec:
                     items:
                       type: string
                     type: array
+                  sourceHost:
+                    description: SourceHost specifies the name of the host whose backed
+                      up state we are trying to restore By default, it will indicate
+                      the workload itself
+                    type: string
                   subjects:
                     description: Subjects specifies the list of hosts that are subject
                       to this rule
