@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
+	v1beta1_api "github.com/appscode/stash/apis/stash/v1beta1"
 	cs "github.com/appscode/stash/client/clientset/versioned"
+	"github.com/appscode/stash/pkg/util"
 	"gomodules.xyz/envsubst"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,6 +20,7 @@ type TaskResolver struct {
 	TaskName        string
 	Inputs          map[string]string
 	RuntimeSettings ofst.RuntimeSettings
+	TempDir         *v1beta1_api.EmptyDirSettings
 }
 
 func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
@@ -97,6 +100,10 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 	// apply RuntimeSettings to PodSpec
 	if o.RuntimeSettings.Pod != nil {
 		podSpec = applyPodRuntimeSettings(podSpec, *o.RuntimeSettings.Pod)
+	}
+	// only upsert tmp volume if EmptyDirSettings specified in backup configuration
+	if o.TempDir != nil {
+		podSpec.Volumes = util.UpsertTmpVolume(podSpec.Volumes, o.TempDir)
 	}
 	return podSpec, nil
 }

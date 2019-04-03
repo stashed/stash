@@ -211,6 +211,7 @@ func (c *StashController) ensureBackupConfiguration(backupTemplate *api_v1beta1.
 		in.Spec.Task = backupTemplate.Spec.Task
 		in.Spec.RetentionPolicy = backupTemplate.Spec.RetentionPolicy
 		in.Spec.RuntimeSettings = backupTemplate.Spec.RuntimeSettings
+		in.Spec.TempDir = backupTemplate.Spec.TempDir
 		return in
 	})
 

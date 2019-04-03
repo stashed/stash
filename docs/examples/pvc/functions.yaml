@@ -47,8 +47,6 @@ spec:
   #- --metrics-dir
   #- --metrics-labels
   volumeMounts:
-  - name: ${scratchDirVolume}
-    mountPath: /tmp/restic/scratch
   - name: ${targetVolume}
     mountPath: ${TARGET_MOUNT_PATH}
   - name: ${secretVolume}
@@ -79,8 +77,6 @@ spec:
   #- --metrics-dir
   #- --metrics-labels
   volumeMounts:
-  - name: ${scratchDirVolume}
-    mountPath: /tmp/restic/scratch
   - name: ${targetVolume}
     mountPath: ${TARGET_MOUNT_PATH}
   - name: ${secretVolume}

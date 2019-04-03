@@ -70,8 +70,8 @@ func NewRestoreInitContainer(rs *v1beta1_api.RestoreSession, repository *v1alpha
 		},
 		VolumeMounts: []core.VolumeMount{
 			{
-				Name:      ScratchDirVolumeName,
-				MountPath: "/tmp",
+				Name:      TmpDirMountPath,
+				MountPath: TmpDirMountPath,
 			},
 			{
 				Name:      StashSecretVolume,

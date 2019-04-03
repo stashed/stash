@@ -227,6 +227,7 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		TaskName:        restoreSession.Spec.Task.Name,
 		Inputs:          core_util.UpsertMap(explicitInputs, implicitInputs),
 		RuntimeSettings: restoreSession.Spec.RuntimeSettings,
+		TempDir:         restoreSession.Spec.TempDir,
 	}
 	podSpec, err := taskResolver.GetPodSpec()
 	if err != nil {

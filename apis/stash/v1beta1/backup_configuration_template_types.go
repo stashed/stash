@@ -35,6 +35,9 @@ type BackupConfigurationTemplateSpec struct {
 	// RuntimeSettings allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc.
 	//+optional
 	RuntimeSettings ofst.RuntimeSettings `json:"runtimeSettings,omitempty"`
+	// Temp directory configuration for this function. If set, an `EmptyDir` will be mounted at /tmp with this settings.
+	//+optional
+	TempDir *EmptyDirSettings `json:"tempDir,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

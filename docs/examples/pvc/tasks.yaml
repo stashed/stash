@@ -29,8 +29,6 @@ spec:
   - name: secret-volume
     secret:
       secretName: ${REPOSITORY_SECRET_NAME}
-  - name: scratch-volume
-    emptyDir: {}
   - name: output-volume
     emptyDir: {}
 ---
@@ -65,7 +63,5 @@ spec:
   - name: secret-volume
     secret:
       secretName: ${REPOSITORY_SECRET_NAME}
-  - name: scratch-volume
-    emptyDir: {}
   - name: output-volume
     emptyDir: {}

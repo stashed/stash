@@ -962,11 +962,17 @@ func schema_stash_apis_stash_v1alpha1_ResticSpec(ref common.ReferenceCallback) c
 							},
 						},
 					},
+					"runtimeSettings": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RuntimeSettings allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc.",
+							Ref:         ref("kmodules.xyz/offshoot-api/api/v1.RuntimeSettings"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/appscode/stash/apis/stash/v1alpha1.FileGroup", "github.com/appscode/stash/apis/stash/v1alpha1.RetentionPolicy", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.VolumeMount", "k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector", "kmodules.xyz/objectstore-api/api/v1.Backend"},
+			"github.com/appscode/stash/apis/stash/v1alpha1.FileGroup", "github.com/appscode/stash/apis/stash/v1alpha1.RetentionPolicy", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.ResourceRequirements", "k8s.io/api/core/v1.VolumeMount", "k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector", "kmodules.xyz/objectstore-api/api/v1.Backend", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings"},
 	}
 }
 

@@ -126,8 +126,8 @@ func NewBackupSidecarContainer(bc *v1beta1_api.BackupConfiguration, backend *sto
 		},
 		VolumeMounts: []core.VolumeMount{
 			{
-				Name:      ScratchDirVolumeName,
-				MountPath: "/tmp",
+				Name:      TmpDirVolumeName,
+				MountPath: TmpDirMountPath,
 			},
 			{
 				Name:      PodinfoVolumeName,

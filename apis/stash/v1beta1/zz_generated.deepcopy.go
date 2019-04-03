@@ -98,6 +98,11 @@ func (in *BackupConfigurationSpec) DeepCopyInto(out *BackupConfigurationSpec) {
 	}
 	in.RetentionPolicy.DeepCopyInto(&out.RetentionPolicy)
 	in.RuntimeSettings.DeepCopyInto(&out.RuntimeSettings)
+	if in.TempDir != nil {
+		in, out := &in.TempDir, &out.TempDir
+		*out = new(EmptyDirSettings)
+		(*in).DeepCopyInto(*out)
+	}
 	return
 }
 
@@ -178,6 +183,11 @@ func (in *BackupConfigurationTemplateSpec) DeepCopyInto(out *BackupConfiguration
 	in.Task.DeepCopyInto(&out.Task)
 	in.RetentionPolicy.DeepCopyInto(&out.RetentionPolicy)
 	in.RuntimeSettings.DeepCopyInto(&out.RuntimeSettings)
+	if in.TempDir != nil {
+		in, out := &in.TempDir, &out.TempDir
+		*out = new(EmptyDirSettings)
+		(*in).DeepCopyInto(*out)
+	}
 	return
 }
 
@@ -488,11 +498,6 @@ func (in *FunctionSpec) DeepCopyInto(out *FunctionSpec) {
 		*out = new(apiv1.ContainerRuntimeSettings)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.TempDir != nil {
-		in, out := &in.TempDir, &out.TempDir
-		*out = new(EmptyDirSettings)
-		(*in).DeepCopyInto(*out)
-	}
 	return
 }
 
@@ -640,6 +645,11 @@ func (in *RestoreSessionSpec) DeepCopyInto(out *RestoreSessionSpec) {
 		}
 	}
 	in.RuntimeSettings.DeepCopyInto(&out.RuntimeSettings)
+	if in.TempDir != nil {
+		in, out := &in.TempDir, &out.TempDir
+		*out = new(EmptyDirSettings)
+		(*in).DeepCopyInto(*out)
+	}
 	return
 }
 

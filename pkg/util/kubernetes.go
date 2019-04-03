@@ -28,6 +28,8 @@ const (
 	StashInitContainer   = "stash-init"
 	LocalVolumeName      = "stash-local"
 	ScratchDirVolumeName = "stash-scratchdir"
+	TmpDirVolumeName     = "tmp-dir"
+	TmpDirMountPath      = "/tmp"
 	PodinfoVolumeName    = "stash-podinfo"
 
 	RecoveryJobPrefix   = "stash-recovery-"
@@ -85,6 +87,20 @@ func UpsertScratchVolume(volumes []core.Volume) []core.Volume {
 		Name: ScratchDirVolumeName,
 		VolumeSource: core.VolumeSource{
 			EmptyDir: &core.EmptyDirVolumeSource{},
+		},
+	})
+}
+
+func UpsertTmpVolume(volumes []core.Volume, settings *v1beta1_api.EmptyDirSettings) []core.Volume {
+	var emptyDir core.EmptyDirVolumeSource
+	if settings != nil {
+		emptyDir.Medium = settings.Medium
+		emptyDir.SizeLimit = settings.SizeLimit
+	}
+	return core_util.UpsertVolume(volumes, core.Volume{
+		Name: TmpDirMountPath,
+		VolumeSource: core.VolumeSource{
+			EmptyDir: &emptyDir,
 		},
 	})
 }
