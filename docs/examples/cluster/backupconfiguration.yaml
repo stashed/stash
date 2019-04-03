@@ -1,0 +1,20 @@
+apiVersion: stash.appscode.com/v1beta1
+kind: BackupConfiguration
+metadata:
+  name: cluster-backup
+  namespace: demo
+spec:
+  runtimeSettings:
+    pod:
+      serviceAccountName: cluster-backup
+  task:
+    name: cluster-backup
+    params:
+    - name: sanitize
+      value: "true"
+  repository:
+    name: minio-repo
+  schedule: "* * * * *"
+  retentionPolicy:
+    keepLast: 5
+    prune: true
