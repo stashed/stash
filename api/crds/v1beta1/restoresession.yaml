@@ -367,6 +367,15 @@ spec:
               properties:
                 container:
                   properties:
+                    ionice:
+                      description: https://linux.die.net/man/1/ionice
+                      properties:
+                        class:
+                          format: int32
+                          type: integer
+                        classData:
+                          format: int32
+                          type: integer
                     lifecycle:
                       description: Lifecycle describes actions that the management
                         system should take in response to container lifecycle events.
@@ -623,6 +632,12 @@ spec:
                           description: 'Number of seconds after which the probe times
                             out. Defaults to 1 second. Minimum value is 1. More info:
                             https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
+                          format: int32
+                          type: integer
+                    nice:
+                      description: https://linux.die.net/man/1/nice
+                      properties:
+                        adjustment:
                           format: int32
                           type: integer
                     readinessProbe:

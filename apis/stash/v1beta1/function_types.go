@@ -2,6 +2,7 @@ package v1beta1
 
 import (
 	core "k8s.io/api/core/v1"
+	resource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
@@ -96,6 +97,17 @@ type FunctionSpec struct {
 	// RuntimeSettings allow to specify Resources, LivenessProbe, ReadinessProbe, Lifecycle, SecurityContext etc.
 	//+optional
 	RuntimeSettings *ofst.ContainerRuntimeSettings `json:"runtimeSettings,omitempty"`
+	// Name of PodSecurityPolicy(PSP) required by this function
+	//+optional
+	PodSecurityPolicyName string `json:"podSecurityPolicyName,omitempty"`
+	// Temp directory configuration for this function. If set, an `EmptyDir` will be mounted at /tmp with this settings.
+	//+optional
+	TempDir *EmptyDirSettings `json:"tempDir,omitempty"`
+}
+
+type EmptyDirSettings struct {
+	Medium    core.StorageMedium `json:"medium,omitempty"`
+	SizeLimit *resource.Quantity `json:"sizeLimit,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
