@@ -8,7 +8,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/appscode/go/types"
 	"github.com/stretchr/testify/assert"
+	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
 var (
@@ -114,6 +116,81 @@ func TestBackupRestoreDirs(t *testing.T) {
 func TestBackupRestoreStdin(t *testing.T) {
 	w := setupTest()
 	defer cleanup()
+
+	backupOpt := BackupOptions{
+		StdinPipeCommand: stdinPipeCommand,
+		StdinFileName:    fileName,
+	}
+	backupOut, err := w.RunBackup(backupOpt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("backup output:", backupOut)
+
+	dumpOpt := DumpOptions{
+		FileName:          fileName,
+		StdoutPipeCommand: stdoutPipeCommand,
+	}
+	dumpOut, err := w.Dump(dumpOpt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("dump output:", dumpOut)
+}
+
+func TestBackupRestoreWithScheduling(t *testing.T) {
+	w := setupTest()
+	defer cleanup()
+
+	w.config.IONice = &ofst.IONiceSettings{
+		Class:     types.Int32P(2),
+		ClassData: types.Int32P(3),
+	}
+	w.config.Nice = &ofst.NiceSettings{
+		Adjustment: types.Int32P(12),
+	}
+
+	backupOpt := BackupOptions{
+		BackupDirs: []string{targetDir},
+	}
+	backupOut, err := w.RunBackup(backupOpt)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(backupOut)
+
+	// delete target then restore
+	if err = os.RemoveAll(targetDir); err != nil {
+		log.Fatal(err)
+	}
+	restoreOpt := RestoreOptions{
+		RestoreDirs: []string{targetDir},
+	}
+	restoreOut, err := w.RunRestore(restoreOpt)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(restoreOut)
+
+	// check file
+	fileContentByte, err := ioutil.ReadFile(filepath.Join(targetDir, fileName))
+	if err != nil {
+		log.Fatal(err)
+	}
+	assert.Equal(t, fileContent, string(fileContentByte))
+}
+
+func TestBackupRestoreStdinWithScheduling(t *testing.T) {
+	w := setupTest()
+	defer cleanup()
+
+	w.config.IONice = &ofst.IONiceSettings{
+		Class:     types.Int32P(2),
+		ClassData: types.Int32P(3),
+	}
+	w.config.Nice = &ofst.NiceSettings{
+		Adjustment: types.Int32P(12),
+	}
 
 	backupOpt := BackupOptions{
 		StdinPipeCommand: stdinPipeCommand,

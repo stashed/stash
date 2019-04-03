@@ -17,6 +17,8 @@ import (
 
 const (
 	ResticCMD = "/bin/restic_0.9.4"
+	IONiceCMD = "/bin/ionice"
+	NiceCMD   = "/bin/nice"
 )
 
 type Snapshot struct {
@@ -272,6 +274,10 @@ func (w *ResticWrapper) run(commands ...Command) ([]byte, error) {
 	w.sh.Stderr = io.MultiWriter(os.Stderr, errBuff)
 
 	for _, cmd := range commands {
+		if cmd.Name == ResticCMD {
+			// first apply NiceSettings, then apply IONiceSettings
+			cmd = w.applyIONiceSettings(w.applyNiceSettings(cmd))
+		}
 		w.sh.Command(cmd.Name, cmd.Args...)
 	}
 	out, err := w.sh.Output()
@@ -289,4 +295,43 @@ func formatError(err error, stdErr string) error {
 		return fmt.Errorf("%s, reason: %s", err, parts[len(parts)-1:][0])
 	}
 	return err
+}
+
+func (w *ResticWrapper) applyIONiceSettings(oldCommand Command) Command {
+	if w.config.IONice == nil {
+		return oldCommand
+	}
+	newCommand := Command{
+		Name: IONiceCMD,
+	}
+	if w.config.IONice.Class != nil {
+		newCommand.Args = append(newCommand.Args, "-c", fmt.Sprint(*w.config.IONice.Class))
+	}
+	if w.config.IONice.ClassData != nil {
+		newCommand.Args = append(newCommand.Args, "-n", fmt.Sprint(*w.config.IONice.Class))
+	}
+	// TODO: should we use "-t" option with ionice ?
+	// newCommand.Args = append(newCommand.Args, "-t")
+
+	// append oldCommand as args of newCommand
+	newCommand.Args = append(newCommand.Args, oldCommand.Name)
+	newCommand.Args = append(newCommand.Args, oldCommand.Args...)
+	return newCommand
+}
+
+func (w *ResticWrapper) applyNiceSettings(oldCommand Command) Command {
+	if w.config.Nice == nil {
+		return oldCommand
+	}
+	newCommand := Command{
+		Name: NiceCMD,
+	}
+	if w.config.Nice.Adjustment != nil {
+		newCommand.Args = append(newCommand.Args, "-n", fmt.Sprint(*w.config.Nice.Adjustment))
+	}
+
+	// append oldCommand as args of newCommand
+	newCommand.Args = append(newCommand.Args, oldCommand.Name)
+	newCommand.Args = append(newCommand.Args, oldCommand.Args...)
+	return newCommand
 }
