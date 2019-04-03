@@ -113,13 +113,40 @@ func TestBackupRestoreDirs(t *testing.T) {
 	assert.Equal(t, fileContent, string(fileContentByte))
 }
 
+func TestBackupRestoreStdin(t *testing.T) {
+	w := setupTest()
+	defer cleanup()
+
+	backupOpt := BackupOptions{
+		StdinPipeCommand: stdinPipeCommand,
+		StdinFileName:    fileName,
+	}
+	backupOut, err := w.RunBackup(backupOpt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("backup output:", backupOut)
+
+	dumpOpt := DumpOptions{
+		FileName:          fileName,
+		StdoutPipeCommand: stdoutPipeCommand,
+	}
+	dumpOut, err := w.Dump(dumpOpt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("dump output:", dumpOut)
+}
+
 func TestBackupRestoreWithScheduling(t *testing.T) {
 	w := setupTest()
 	defer cleanup()
 
-	w.config.ProcessScheduling = &ofst.ProcessSchedulingSettings{
-		Class:      types.Int32P(2),
-		ClassData:  types.Int32P(3),
+	w.config.IONice = &ofst.IONiceSettings{
+		Class:     types.Int32P(2),
+		ClassData: types.Int32P(3),
+	}
+	w.config.Nice = &ofst.NiceSettings{
 		Adjustment: types.Int32P(12),
 	}
 
@@ -153,9 +180,17 @@ func TestBackupRestoreWithScheduling(t *testing.T) {
 	assert.Equal(t, fileContent, string(fileContentByte))
 }
 
-func TestBackupRestoreStdin(t *testing.T) {
+func TestBackupRestoreStdinWithScheduling(t *testing.T) {
 	w := setupTest()
 	defer cleanup()
+
+	w.config.IONice = &ofst.IONiceSettings{
+		Class:     types.Int32P(2),
+		ClassData: types.Int32P(3),
+	}
+	w.config.Nice = &ofst.NiceSettings{
+		Adjustment: types.Int32P(12),
+	}
 
 	backupOpt := BackupOptions{
 		StdinPipeCommand: stdinPipeCommand,
