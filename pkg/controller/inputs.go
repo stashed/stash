@@ -39,9 +39,7 @@ func (c *StashController) inputsForBackupConfig(backupConfig api.BackupConfigura
 	inputs[apis.Hostname] = host
 
 	// enable cache when tmpDir specified
-	if backupConfig.Spec.TempDir != nil {
-		inputs[apis.EnableCache] = "true"
-	}
+	inputs[apis.EnableCache] = strconv.FormatBool(!backupConfig.Spec.TempDir.DisableCaching)
 
 	return inputs, nil
 }
@@ -75,9 +73,7 @@ func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSess
 	inputs[apis.RestoreSnapshots] = strings.Join(restoreOptions.Snapshots, ",")
 
 	// enable cache when tmpDir specified
-	if restoreSession.Spec.TempDir != nil {
-		inputs[apis.EnableCache] = "true"
-	}
+	inputs[apis.EnableCache] = strconv.FormatBool(!restoreSession.Spec.TempDir.DisableCaching)
 
 	return inputs, nil
 }

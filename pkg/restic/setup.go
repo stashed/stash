@@ -58,6 +58,10 @@ const (
 
 	// For using certs in Minio server or REST server
 	CA_CERT_DATA = "CA_CERT_DATA"
+
+	// ref: https://github.com/restic/restic/blob/master/doc/manual_rest.rst#temporary-files
+	resticTempDir    = "restic-tmp"
+	resticScratchDir = "restic-scratch"
 )
 
 func (w *ResticWrapper) setupEnv() error {
@@ -80,11 +84,16 @@ func (w *ResticWrapper) setupEnv() error {
 		}
 	}
 
-	tmpDir := filepath.Join(w.config.ScratchDir, "restic-tmp")
+	tmpDir := filepath.Join(w.config.ScratchDir, resticTempDir)
 	if err := os.MkdirAll(tmpDir, 0755); err != nil {
 		return err
 	}
 	w.sh.SetEnv(TMPDIR, tmpDir)
+
+	scratchDir := filepath.Join(w.config.ScratchDir, resticScratchDir)
+	if err := os.MkdirAll(scratchDir, 0755); err != nil {
+		return err
+	}
 
 	//path = strings.TrimPrefix(path, "/")
 

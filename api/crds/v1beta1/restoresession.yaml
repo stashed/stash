@@ -1747,6 +1747,9 @@ spec:
                   type: array
             tempDir:
               properties:
+                disableCaching:
+                  description: 'More info: https://github.com/restic/restic/blob/master/doc/manual_rest.rst#caching'
+                  type: boolean
                 medium:
                   type: string
                 sizeLimit:

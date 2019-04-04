@@ -796,6 +796,13 @@ func schema_stash_apis_stash_v1beta1_EmptyDirSettings(ref common.ReferenceCallba
 							Ref: ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
 						},
 					},
+					"disableCaching": {
+						SchemaProps: spec.SchemaProps{
+							Description: "More info: https://github.com/restic/restic/blob/master/doc/manual_rest.rst#caching",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},

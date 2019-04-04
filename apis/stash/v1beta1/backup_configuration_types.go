@@ -44,12 +44,14 @@ type BackupConfigurationSpec struct {
 	RuntimeSettings ofst.RuntimeSettings `json:"runtimeSettings,omitempty"`
 	// Temp directory configuration for this function. If set, an `EmptyDir` will be mounted at /tmp with this settings.
 	//+optional
-	TempDir *EmptyDirSettings `json:"tempDir,omitempty"`
+	TempDir EmptyDirSettings `json:"tempDir,omitempty"`
 }
 
 type EmptyDirSettings struct {
 	Medium    core.StorageMedium `json:"medium,omitempty"`
 	SizeLimit *resource.Quantity `json:"sizeLimit,omitempty"`
+	// More info: https://github.com/restic/restic/blob/master/doc/manual_rest.rst#caching
+	DisableCaching bool `json:"disableCaching,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

@@ -20,7 +20,7 @@ type TaskResolver struct {
 	TaskName        string
 	Inputs          map[string]string
 	RuntimeSettings ofst.RuntimeSettings
-	TempDir         *v1beta1_api.EmptyDirSettings
+	TempDir         v1beta1_api.EmptyDirSettings
 }
 
 func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
@@ -81,9 +81,7 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 		}
 
 		// mount tmp volume
-		if o.TempDir != nil {
-			container.VolumeMounts = util.UpsertTmpVolumeMount(container.VolumeMounts)
-		}
+		container.VolumeMounts = util.UpsertTmpVolumeMount(container.VolumeMounts)
 
 		// apply RuntimeSettings to Container
 		if o.RuntimeSettings.Container != nil {
@@ -107,9 +105,7 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 		podSpec = applyPodRuntimeSettings(podSpec, *o.RuntimeSettings.Pod)
 	}
 	// only upsert tmp volume if EmptyDirSettings specified in backup configuration
-	if o.TempDir != nil {
-		podSpec.Volumes = util.UpsertTmpVolume(podSpec.Volumes, *o.TempDir)
-	}
+	podSpec.Volumes = util.UpsertTmpVolume(podSpec.Volumes, o.TempDir)
 	return podSpec, nil
 }
 
