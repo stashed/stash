@@ -194,7 +194,9 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, bc *api_v1beta1.
 		)
 	}
 
-	w.Spec.Template.Spec.Volumes = util.UpsertTmpVolume(w.Spec.Template.Spec.Volumes, bc.Spec.TempDir)
+	if bc.Spec.TempDir != nil {
+		w.Spec.Template.Spec.Volumes = util.UpsertTmpVolume(w.Spec.Template.Spec.Volumes, *bc.Spec.TempDir)
+	}
 	w.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(w.Spec.Template.Spec.Volumes)
 	w.Spec.Template.Spec.Volumes = util.UpsertSecretVolume(w.Spec.Template.Spec.Volumes, repository.Spec.Backend.StorageSecretName)
 	// if Repository uses local volume as backend, append this volume to workload.

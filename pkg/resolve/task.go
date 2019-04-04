@@ -80,6 +80,11 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 			ImagePullPolicy: core.PullAlways, // TODO
 		}
 
+		// mount tmp volume
+		if o.TempDir != nil {
+			container.VolumeMounts = util.UpsertTmpVolumeMount(container.VolumeMounts)
+		}
+
 		// apply RuntimeSettings to Container
 		if o.RuntimeSettings.Container != nil {
 			container = applyContainerRuntimeSettings(container, *o.RuntimeSettings.Container)
@@ -103,7 +108,7 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 	}
 	// only upsert tmp volume if EmptyDirSettings specified in backup configuration
 	if o.TempDir != nil {
-		podSpec.Volumes = util.UpsertTmpVolume(podSpec.Volumes, o.TempDir)
+		podSpec.Volumes = util.UpsertTmpVolume(podSpec.Volumes, *o.TempDir)
 	}
 	return podSpec, nil
 }

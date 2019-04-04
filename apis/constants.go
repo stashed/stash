@@ -35,5 +35,7 @@ const (
 	RetentionPrune       = "RETENTION_PRUNE"
 	RetentionDryRun      = "RETENTION_DRY_RUN"
 
+	EnableCache = "ENABLE_CACHE" // true when TmpDir specified in backupConfig/restoreSession
+
 	StatusSubresourceEnabled = "ENABLE_STATUS_SUBRESOURCE"
 )

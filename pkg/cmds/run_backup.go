@@ -63,6 +63,7 @@ func NewCmdRunBackup() *cobra.Command {
 	cmd.Flags().StringVar(&con.KubeconfigPath, "kubeconfig", con.KubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&con.BackupConfigurationName, "backup-configuration", con.BackupConfigurationName, "Set BackupConfiguration Name")
 	cmd.Flags().StringVar(&con.SetupOpt.SecretDir, "secret-dir", con.SetupOpt.SecretDir, "Directory where storage secret has been mounted")
+	cmd.Flags().BoolVar(&con.SetupOpt.EnableCache, "enable-cache", con.SetupOpt.EnableCache, "Specify weather to enable caching for restic")
 	cmd.Flags().BoolVar(&con.Metrics.Enabled, "metrics-enabled", con.Metrics.Enabled, "Specify weather to export Prometheus metrics")
 	cmd.Flags().BoolVar(&con.EnableRBAC, "enable-rbac", con.EnableRBAC, "Enable RBAC")
 	cmd.Flags().StringVar(&con.Metrics.PushgatewayURL, "pushgateway-url", con.Metrics.PushgatewayURL, "URL of Prometheus pushgateway used to cache backup metrics")

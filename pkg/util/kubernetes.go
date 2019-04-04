@@ -91,17 +91,22 @@ func UpsertScratchVolume(volumes []core.Volume) []core.Volume {
 	})
 }
 
-func UpsertTmpVolume(volumes []core.Volume, settings *v1beta1_api.EmptyDirSettings) []core.Volume {
-	var emptyDir core.EmptyDirVolumeSource
-	if settings != nil {
-		emptyDir.Medium = settings.Medium
-		emptyDir.SizeLimit = settings.SizeLimit
-	}
+func UpsertTmpVolume(volumes []core.Volume, settings v1beta1_api.EmptyDirSettings) []core.Volume {
 	return core_util.UpsertVolume(volumes, core.Volume{
 		Name: TmpDirVolumeName,
 		VolumeSource: core.VolumeSource{
-			EmptyDir: &emptyDir,
+			EmptyDir: &core.EmptyDirVolumeSource{
+				Medium:    settings.Medium,
+				SizeLimit: settings.SizeLimit,
+			},
 		},
+	})
+}
+
+func UpsertTmpVolumeMount(volumeMounts []core.VolumeMount) []core.VolumeMount {
+	return core_util.UpsertVolumeMountByPath(volumeMounts, core.VolumeMount{
+		Name:      TmpDirVolumeName,
+		MountPath: TmpDirMountPath,
 	})
 }
 

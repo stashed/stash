@@ -42,6 +42,7 @@ spec:
   - --retention-prune=${RETENTION_PRUNE:=false}
   - --retention-dry-run=${RETENTION_DRY_RUN:=false}
   - --output-dir=${outputDir}
+  - --enable-cache=${ENABLE_CACHE:=false}
   #- --metrics-enabled
   #- --metrics-pushgateway-url
   #- --metrics-dir
@@ -72,6 +73,7 @@ spec:
   - --restore-dirs=${RESTORE_DIRECTORIES}
   - --snapshots=${RESTORE_SNAPSHOTS:=}
   - --output-dir=${outputDir}
+  - --enable-cache=${ENABLE_CACHE:=false}
   #- --metrics-enabled
   #- --metrics-pushgateway-url
   #- --metrics-dir
