@@ -17,7 +17,7 @@ webhooks:
     service:
       namespace: default
       name: kubernetes
-      path: /apis/admission.stash.appscode.com/v1alpha1/restics
+      path: /apis/admission.stash.appscode.com/v1alpha1/resticvalidators
     caBundle: {{ b64enc .Values.apiserver.ca }}
   rules:
   - operations:
@@ -38,7 +38,7 @@ webhooks:
     service:
       namespace: default
       name: kubernetes
-      path: /apis/admission.stash.appscode.com/v1alpha1/recoveries
+      path: /apis/admission.stash.appscode.com/v1alpha1/recoveryvalidators
     caBundle: {{ b64enc .Values.apiserver.ca }}
   rules:
   - operations:
@@ -59,7 +59,7 @@ webhooks:
     service:
       namespace: default
       name: kubernetes
-      path: /apis/admission.stash.appscode.com/v1alpha1/repositories
+      path: /apis/admission.stash.appscode.com/v1alpha1/repositoryvalidators
     caBundle: {{ b64enc .Values.apiserver.ca }}
   rules:
   - operations:

@@ -35,9 +35,9 @@ func (c *StashController) NewResticWebhook() hooks.AdmissionHook {
 		schema.GroupVersionResource{
 			Group:    "admission.stash.appscode.com",
 			Version:  "v1alpha1",
-			Resource: "restics",
+			Resource: "resticvalidators",
 		},
-		"restic",
+		"resticvalidator",
 		[]string{stash.GroupName},
 		api.SchemeGroupVersion.WithKind("Restic"),
 		nil,

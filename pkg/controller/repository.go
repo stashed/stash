@@ -22,9 +22,9 @@ func (c *StashController) NewRepositoryWebhook() hooks.AdmissionHook {
 		schema.GroupVersionResource{
 			Group:    "admission.stash.appscode.com",
 			Version:  "v1alpha1",
-			Resource: "repositories",
+			Resource: "repositoryvalidators",
 		},
-		"repository",
+		"repositoryvalidator",
 		[]string{stash.GroupName},
 		api.SchemeGroupVersion.WithKind("Repository"),
 		nil,

@@ -23,10 +23,10 @@ func (c *StashController) NewReplicationControllerWebhook() hooks.AdmissionHook 
 		schema.GroupVersionResource{
 			Group:    "admission.stash.appscode.com",
 			Version:  "v1alpha1",
-			Resource: "replicationcontrollers",
+			Resource: "replicationcontrollermutators",
 		},
-		"replicationcontroller",
-		"ReplicationController",
+		"replicationcontrollermutator",
+		"ReplicationControllerMutator",
 		nil,
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {

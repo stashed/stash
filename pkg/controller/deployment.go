@@ -23,10 +23,10 @@ func (c *StashController) NewDeploymentWebhook() hooks.AdmissionHook {
 		schema.GroupVersionResource{
 			Group:    "admission.stash.appscode.com",
 			Version:  "v1alpha1",
-			Resource: "deployments",
+			Resource: "deploymentmutators",
 		},
-		"deployment",
-		"Deployment",
+		"deploymentmutator",
+		"DeploymentMutator",
 		nil,
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
