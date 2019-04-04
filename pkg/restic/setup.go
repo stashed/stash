@@ -60,8 +60,8 @@ const (
 	CA_CERT_DATA = "CA_CERT_DATA"
 
 	// ref: https://github.com/restic/restic/blob/master/doc/manual_rest.rst#temporary-files
-	resticTempDir    = "restic-tmp"
-	resticScratchDir = "restic-scratch"
+	resticTempDir  = "restic-tmp"
+	resticCacheDir = "restic-cache"
 )
 
 func (w *ResticWrapper) setupEnv() error {
@@ -90,9 +90,11 @@ func (w *ResticWrapper) setupEnv() error {
 	}
 	w.sh.SetEnv(TMPDIR, tmpDir)
 
-	scratchDir := filepath.Join(w.config.ScratchDir, resticScratchDir)
-	if err := os.MkdirAll(scratchDir, 0755); err != nil {
-		return err
+	if w.config.EnableCache {
+		cacheDir := filepath.Join(w.config.ScratchDir, resticCacheDir)
+		if err := os.MkdirAll(cacheDir, 0755); err != nil {
+			return err
+		}
 	}
 
 	//path = strings.TrimPrefix(path, "/")

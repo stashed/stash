@@ -19,7 +19,7 @@ func NewCmdRestore() *cobra.Command {
 		Namespace:      meta.Namespace(),
 		SetupOpt: restic.SetupOptions{
 			ScratchDir:  "/tmp",
-			EnableCache: false,
+			EnableCache: true,
 		},
 	}
 

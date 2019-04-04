@@ -83,7 +83,6 @@ func (c *StashController) ensureWorkloadSidecar(w *wapi.Workload, restic *api_v1
 		restic.Spec.ImagePullSecrets,
 	)
 
-	// TODO: EmptyDirSettings for v1alpha1 api ?
 	w.Spec.Template.Spec.Volumes = util.UpsertScratchVolume(w.Spec.Template.Spec.Volumes)
 	w.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(w.Spec.Template.Spec.Volumes)
 	// if repository backend is local backend, mount this inside sidecar container

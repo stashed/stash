@@ -104,7 +104,7 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 	if o.RuntimeSettings.Pod != nil {
 		podSpec = applyPodRuntimeSettings(podSpec, *o.RuntimeSettings.Pod)
 	}
-	// only upsert tmp volume if EmptyDirSettings specified in backup configuration
+	// always upsert tmp volume
 	podSpec.Volumes = util.UpsertTmpVolume(podSpec.Volumes, o.TempDir)
 	return podSpec, nil
 }
