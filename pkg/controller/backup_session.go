@@ -41,7 +41,7 @@ func (c *StashController) NewBackupSessionWebhook() hooks.AdmissionHook {
 			Version:  "v1beta1",
 			Resource: "backupsessionvalidators",
 		},
-		"backupsessionvalidators",
+		"backupsessionvalidator",
 		[]string{stash.GroupName},
 		api.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindBackupSession),
 		nil,

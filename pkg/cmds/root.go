@@ -16,6 +16,7 @@ import (
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
 	"kmodules.xyz/client-go/logs"
 	"kmodules.xyz/client-go/tools/cli"
+	ocscheme "kmodules.xyz/openshift/client/clientset/versioned/scheme"
 )
 
 func NewRootCmd() *cobra.Command {
@@ -30,6 +31,8 @@ func NewRootCmd() *cobra.Command {
 
 			scheme.AddToScheme(clientsetscheme.Scheme)
 			scheme.AddToScheme(legacyscheme.Scheme)
+			ocscheme.AddToScheme(clientsetscheme.Scheme)
+			ocscheme.AddToScheme(legacyscheme.Scheme)
 			cli.LoggerOptions = golog.ParseFlags(c.Flags())
 		},
 	}
