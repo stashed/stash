@@ -39,9 +39,9 @@ func (c *StashController) NewBackupSessionWebhook() hooks.AdmissionHook {
 		schema.GroupVersionResource{
 			Group:    "admission.stash.appscode.com",
 			Version:  "v1beta1",
-			Resource: api_v1beta1.ResourcePluralBackupSession,
+			Resource: "backupsessionvalidators",
 		},
-		api_v1beta1.ResourceSingularBackupSession,
+		"backupsessionvalidators",
 		[]string{stash.GroupName},
 		api.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindBackupSession),
 		nil,

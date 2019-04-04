@@ -34,9 +34,9 @@ func (c *StashController) NewRecoveryWebhook() hooks.AdmissionHook {
 		schema.GroupVersionResource{
 			Group:    "admission.stash.appscode.com",
 			Version:  "v1alpha1",
-			Resource: "recoveries",
+			Resource: "recoveryvalidators",
 		},
-		"recovery",
+		"recoveryvalidator",
 		[]string{stash.GroupName},
 		api.SchemeGroupVersion.WithKind("Recovery"),
 		nil,
