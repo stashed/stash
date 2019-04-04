@@ -397,7 +397,6 @@ func (in *ResticSpec) DeepCopyInto(out *ResticSpec) {
 		*out = make([]corev1.LocalObjectReference, len(*in))
 		copy(*out, *in)
 	}
-	in.RuntimeSettings.DeepCopyInto(&out.RuntimeSettings)
 	return
 }
 
