@@ -70,7 +70,7 @@ func NewRestoreInitContainer(rs *v1beta1_api.RestoreSession, repository *v1alpha
 		},
 		VolumeMounts: []core.VolumeMount{
 			{
-				Name:      TmpDirMountPath,
+				Name:      TmpDirVolumeName,
 				MountPath: TmpDirMountPath,
 			},
 			{

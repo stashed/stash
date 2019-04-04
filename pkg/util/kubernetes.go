@@ -98,7 +98,7 @@ func UpsertTmpVolume(volumes []core.Volume, settings *v1beta1_api.EmptyDirSettin
 		emptyDir.SizeLimit = settings.SizeLimit
 	}
 	return core_util.UpsertVolume(volumes, core.Volume{
-		Name: TmpDirMountPath,
+		Name: TmpDirVolumeName,
 		VolumeSource: core.VolumeSource{
 			EmptyDir: &emptyDir,
 		},
