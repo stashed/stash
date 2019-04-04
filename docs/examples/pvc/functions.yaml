@@ -42,13 +42,12 @@ spec:
   - --retention-prune=${RETENTION_PRUNE:=false}
   - --retention-dry-run=${RETENTION_DRY_RUN:=false}
   - --output-dir=${outputDir}
+  - --enable-cache=${ENABLE_CACHE:=true}
   #- --metrics-enabled
   #- --metrics-pushgateway-url
   #- --metrics-dir
   #- --metrics-labels
   volumeMounts:
-  - name: ${scratchDirVolume}
-    mountPath: /tmp/restic/scratch
   - name: ${targetVolume}
     mountPath: ${TARGET_MOUNT_PATH}
   - name: ${secretVolume}
@@ -74,13 +73,12 @@ spec:
   - --restore-dirs=${RESTORE_DIRECTORIES}
   - --snapshots=${RESTORE_SNAPSHOTS:=}
   - --output-dir=${outputDir}
+  - --enable-cache=${ENABLE_CACHE:=true}
   #- --metrics-enabled
   #- --metrics-pushgateway-url
   #- --metrics-dir
   #- --metrics-labels
   volumeMounts:
-  - name: ${scratchDirVolume}
-    mountPath: /tmp/restic/scratch
   - name: ${targetVolume}
     mountPath: ${TARGET_MOUNT_PATH}
   - name: ${secretVolume}

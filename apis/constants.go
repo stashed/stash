@@ -35,5 +35,9 @@ const (
 	RetentionPrune       = "RETENTION_PRUNE"
 	RetentionDryRun      = "RETENTION_DRY_RUN"
 
+	// default true
+	// false when TmpDir.DisableCaching is true in backupConfig/restoreSession
+	EnableCache = "ENABLE_CACHE"
+
 	StatusSubresourceEnabled = "ENABLE_STATUS_SUBRESOURCE"
 )

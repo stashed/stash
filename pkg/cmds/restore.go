@@ -19,7 +19,7 @@ func NewCmdRestore() *cobra.Command {
 		Namespace:      meta.Namespace(),
 		SetupOpt: restic.SetupOptions{
 			ScratchDir:  "/tmp",
-			EnableCache: false,
+			EnableCache: true,
 		},
 	}
 
@@ -58,6 +58,7 @@ func NewCmdRestore() *cobra.Command {
 	cmd.Flags().DurationVar(&opt.BackoffMaxWait, "backoff-max-wait", 0, "Maximum wait for initial response from kube apiserver; 0 disables the timeout")
 	cmd.Flags().BoolVar(&opt.SetupOpt.EnableCache, "enable-cache", opt.SetupOpt.EnableCache, "Specify weather to enable caching for restic")
 	cmd.Flags().StringVar(&opt.SetupOpt.SecretDir, "secret-dir", opt.SetupOpt.SecretDir, "Directory where storage secret has been mounted")
+	cmd.Flags().BoolVar(&opt.SetupOpt.EnableCache, "enable-cache", opt.SetupOpt.EnableCache, "Specify weather to enable caching for restic")
 
 	cmd.Flags().BoolVar(&opt.Metrics.Enabled, "metrics-enabled", opt.Metrics.Enabled, "Specify weather to export Prometheus metrics")
 	cmd.Flags().StringVar(&opt.Metrics.PushgatewayURL, "pushgateway-url", opt.Metrics.PushgatewayURL, "Pushgateway URL where the metrics will be pushed")

@@ -44,6 +44,7 @@ func NewRestoreInitContainer(rs *v1beta1_api.RestoreSession, repository *v1alpha
 			"restore",
 			"--restore-session=" + rs.Name,
 			"--secret-dir=" + StashSecretMountDir,
+			fmt.Sprintf("--enable-cache=%v", !rs.Spec.TempDir.DisableCaching),
 			"--metrics-enabled=true",
 			"--pushgateway-url=" + PushgatewayURL(),
 			fmt.Sprintf("--enable-status-subresource=%v", apis.EnableStatusSubresource),
@@ -70,15 +71,14 @@ func NewRestoreInitContainer(rs *v1beta1_api.RestoreSession, repository *v1alpha
 		},
 		VolumeMounts: []core.VolumeMount{
 			{
-				Name:      ScratchDirVolumeName,
-				MountPath: "/tmp",
-			},
-			{
 				Name:      StashSecretVolume,
 				MountPath: StashSecretMountDir,
 			},
 		},
 	}
+
+	// mount tmp volume
+	initContainer.VolumeMounts = UpsertTmpVolumeMount(initContainer.VolumeMounts)
 
 	// mount the volumes specified in RestoreSession inside this init-container
 	for _, srcVol := range rs.Spec.Target.VolumeMounts {

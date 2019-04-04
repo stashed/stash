@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
+	v1beta1_api "github.com/appscode/stash/apis/stash/v1beta1"
 	cs "github.com/appscode/stash/client/clientset/versioned"
+	"github.com/appscode/stash/pkg/util"
 	"gomodules.xyz/envsubst"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,6 +20,7 @@ type TaskResolver struct {
 	TaskName        string
 	Inputs          map[string]string
 	RuntimeSettings ofst.RuntimeSettings
+	TempDir         v1beta1_api.EmptyDirSettings
 }
 
 func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
@@ -77,6 +80,9 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 			ImagePullPolicy: core.PullAlways, // TODO
 		}
 
+		// mount tmp volume
+		container.VolumeMounts = util.UpsertTmpVolumeMount(container.VolumeMounts)
+
 		// apply RuntimeSettings to Container
 		if o.RuntimeSettings.Container != nil {
 			container = applyContainerRuntimeSettings(container, *o.RuntimeSettings.Container)
@@ -98,6 +104,8 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 	if o.RuntimeSettings.Pod != nil {
 		podSpec = applyPodRuntimeSettings(podSpec, *o.RuntimeSettings.Pod)
 	}
+	// always upsert tmp volume
+	podSpec.Volumes = util.UpsertTmpVolume(podSpec.Volumes, o.TempDir)
 	return podSpec, nil
 }
 

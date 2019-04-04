@@ -3,6 +3,7 @@ package v1beta1
 import (
 	"github.com/appscode/stash/apis/stash/v1alpha1"
 	core "k8s.io/api/core/v1"
+	resource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
@@ -41,6 +42,17 @@ type BackupConfigurationSpec struct {
 	// RuntimeSettings allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc.
 	//+optional
 	RuntimeSettings ofst.RuntimeSettings `json:"runtimeSettings,omitempty"`
+	// Temp directory configuration for functions/sidecar
+	// An `EmptyDir` will always be mounted at /tmp with this settings
+	//+optional
+	TempDir EmptyDirSettings `json:"tempDir,omitempty"`
+}
+
+type EmptyDirSettings struct {
+	Medium    core.StorageMedium `json:"medium,omitempty"`
+	SizeLimit *resource.Quantity `json:"sizeLimit,omitempty"`
+	// More info: https://github.com/restic/restic/blob/master/doc/manual_rest.rst#caching
+	DisableCaching bool `json:"disableCaching,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

@@ -39,6 +39,10 @@ type RestoreSessionSpec struct {
 	// RuntimeSettings allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc.
 	//+optional
 	RuntimeSettings ofst.RuntimeSettings `json:"runtimeSettings,omitempty"`
+	// Temp directory configuration for functions/sidecar
+	// An `EmptyDir` will always be mounted at /tmp with this settings
+	//+optional
+	TempDir EmptyDirSettings `json:"tempDir,omitempty"`
 }
 
 type Rule struct {

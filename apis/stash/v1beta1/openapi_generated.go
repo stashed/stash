@@ -470,12 +470,18 @@ func schema_stash_apis_stash_v1beta1_BackupConfigurationSpec(ref common.Referenc
 							Ref:         ref("kmodules.xyz/offshoot-api/api/v1.RuntimeSettings"),
 						},
 					},
+					"tempDir": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Temp directory configuration for this function. If set, an `EmptyDir` will be mounted at /tmp with this settings.",
+							Ref:         ref("github.com/appscode/stash/apis/stash/v1beta1.EmptyDirSettings"),
+						},
+					},
 				},
 				Required: []string{"repository"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/appscode/stash/apis/stash/v1alpha1.RetentionPolicy", "github.com/appscode/stash/apis/stash/v1beta1.Target", "github.com/appscode/stash/apis/stash/v1beta1.TaskRef", "k8s.io/api/core/v1.LocalObjectReference", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings"},
+			"github.com/appscode/stash/apis/stash/v1alpha1.RetentionPolicy", "github.com/appscode/stash/apis/stash/v1beta1.EmptyDirSettings", "github.com/appscode/stash/apis/stash/v1beta1.Target", "github.com/appscode/stash/apis/stash/v1beta1.TaskRef", "k8s.io/api/core/v1.LocalObjectReference", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings"},
 	}
 }
 
@@ -602,11 +608,17 @@ func schema_stash_apis_stash_v1beta1_BackupConfigurationTemplateSpec(ref common.
 							Ref:         ref("kmodules.xyz/offshoot-api/api/v1.RuntimeSettings"),
 						},
 					},
+					"tempDir": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Temp directory configuration for this function. If set, an `EmptyDir` will be mounted at /tmp with this settings.",
+							Ref:         ref("github.com/appscode/stash/apis/stash/v1beta1.EmptyDirSettings"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/appscode/stash/apis/stash/v1alpha1.RetentionPolicy", "github.com/appscode/stash/apis/stash/v1beta1.TaskRef", "kmodules.xyz/objectstore-api/api/v1.Backend", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings"},
+			"github.com/appscode/stash/apis/stash/v1alpha1.RetentionPolicy", "github.com/appscode/stash/apis/stash/v1beta1.EmptyDirSettings", "github.com/appscode/stash/apis/stash/v1beta1.TaskRef", "kmodules.xyz/objectstore-api/api/v1.Backend", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings"},
 	}
 }
 
@@ -782,6 +794,13 @@ func schema_stash_apis_stash_v1beta1_EmptyDirSettings(ref common.ReferenceCallba
 					"sizeLimit": {
 						SchemaProps: spec.SchemaProps{
 							Ref: ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
+						},
+					},
+					"disableCaching": {
+						SchemaProps: spec.SchemaProps{
+							Description: "More info: https://github.com/restic/restic/blob/master/doc/manual_rest.rst#caching",
+							Type:        []string{"boolean"},
+							Format:      "",
 						},
 					},
 				},
@@ -1095,17 +1114,11 @@ func schema_stash_apis_stash_v1beta1_FunctionSpec(ref common.ReferenceCallback) 
 							Format:      "",
 						},
 					},
-					"tempDir": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Temp directory configuration for this function. If set, an `EmptyDir` will be mounted at /tmp with this settings.",
-							Ref:         ref("github.com/appscode/stash/apis/stash/v1beta1.EmptyDirSettings"),
-						},
-					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/appscode/stash/apis/stash/v1beta1.EmptyDirSettings", "k8s.io/api/core/v1.ContainerPort", "k8s.io/api/core/v1.EnvFromSource", "k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.VolumeDevice", "k8s.io/api/core/v1.VolumeMount", "kmodules.xyz/offshoot-api/api/v1.ContainerRuntimeSettings"},
+			"k8s.io/api/core/v1.ContainerPort", "k8s.io/api/core/v1.EnvFromSource", "k8s.io/api/core/v1.EnvVar", "k8s.io/api/core/v1.VolumeDevice", "k8s.io/api/core/v1.VolumeMount", "kmodules.xyz/offshoot-api/api/v1.ContainerRuntimeSettings"},
 	}
 }
 
@@ -1357,11 +1370,17 @@ func schema_stash_apis_stash_v1beta1_RestoreSessionSpec(ref common.ReferenceCall
 							Ref:         ref("kmodules.xyz/offshoot-api/api/v1.RuntimeSettings"),
 						},
 					},
+					"tempDir": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Temp directory configuration for this function. If set, an `EmptyDir` will be mounted at /tmp with this settings.",
+							Ref:         ref("github.com/appscode/stash/apis/stash/v1beta1.EmptyDirSettings"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/appscode/stash/apis/stash/v1beta1.Rule", "github.com/appscode/stash/apis/stash/v1beta1.Target", "github.com/appscode/stash/apis/stash/v1beta1.TaskRef", "k8s.io/api/core/v1.LocalObjectReference", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings"},
+			"github.com/appscode/stash/apis/stash/v1beta1.EmptyDirSettings", "github.com/appscode/stash/apis/stash/v1beta1.Rule", "github.com/appscode/stash/apis/stash/v1beta1.Target", "github.com/appscode/stash/apis/stash/v1beta1.TaskRef", "k8s.io/api/core/v1.LocalObjectReference", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings"},
 	}
 }
 

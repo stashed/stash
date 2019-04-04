@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
-	"gopkg.in/ini.v1"
+	ini "gopkg.in/ini.v1"
 )
 
 var (

@@ -99,6 +99,7 @@ func NewBackupSidecarContainer(bc *v1beta1_api.BackupConfiguration, backend *sto
 			"run-backup",
 			"--backup-configuration=" + bc.Name,
 			"--secret-dir=" + StashSecretMountDir,
+			fmt.Sprintf("--enable-cache=%v", !bc.Spec.TempDir.DisableCaching),
 			"--metrics-enabled=true",
 			"--pushgateway-url=" + PushgatewayURL(),
 			fmt.Sprintf("--enable-status-subresource=%v", apis.EnableStatusSubresource),
@@ -126,10 +127,6 @@ func NewBackupSidecarContainer(bc *v1beta1_api.BackupConfiguration, backend *sto
 		},
 		VolumeMounts: []core.VolumeMount{
 			{
-				Name:      ScratchDirVolumeName,
-				MountPath: "/tmp",
-			},
-			{
 				Name:      PodinfoVolumeName,
 				MountPath: "/etc/stash",
 			},
@@ -139,6 +136,10 @@ func NewBackupSidecarContainer(bc *v1beta1_api.BackupConfiguration, backend *sto
 			},
 		},
 	}
+
+	// mount tmp volume
+	sidecar.VolumeMounts = UpsertTmpVolumeMount(sidecar.VolumeMounts)
+
 	// mount the volumes specified in BackupConfiguration this sidecar
 	for _, srcVol := range bc.Spec.Target.VolumeMounts {
 		sidecar.VolumeMounts = append(sidecar.VolumeMounts, core.VolumeMount{

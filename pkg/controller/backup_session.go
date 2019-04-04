@@ -195,6 +195,7 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 		TaskName:        backupConfig.Spec.Task.Name,
 		Inputs:          core_util.UpsertMap(explicitInputs, implicitInputs), // TODO: reverse priority ???
 		RuntimeSettings: backupConfig.Spec.RuntimeSettings,
+		TempDir:         backupConfig.Spec.TempDir,
 	}
 	podSpec, err := taskResolver.GetPodSpec()
 	if err != nil {
