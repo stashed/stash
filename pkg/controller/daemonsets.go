@@ -23,10 +23,10 @@ func (c *StashController) NewDaemonSetWebhook() hooks.AdmissionHook {
 		schema.GroupVersionResource{
 			Group:    "admission.stash.appscode.com",
 			Version:  "v1alpha1",
-			Resource: "daemonsets",
+			Resource: "daemonsetmutators",
 		},
-		"daemonset",
-		"DaemonSet",
+		"daemonsetmutator",
+		"DaemonSetMutator",
 		nil,
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {

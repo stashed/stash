@@ -23,10 +23,10 @@ func (c *StashController) NewStatefulSetWebhook() hooks.AdmissionHook {
 		schema.GroupVersionResource{
 			Group:    "admission.stash.appscode.com",
 			Version:  "v1alpha1",
-			Resource: "statefulsets",
+			Resource: "statefulsetmutators",
 		},
-		"statefulset",
-		"StatefulSet",
+		"statefulsetmutator",
+		"StatefulSetMutator",
 		nil,
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {

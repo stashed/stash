@@ -10,7 +10,7 @@ webhooks:
     service:
       namespace: default
       name: kubernetes
-      path: /apis/admission.stash.appscode.com/v1alpha1/deployments
+      path: /apis/admission.stash.appscode.com/v1alpha1/deploymentmutators
     caBundle: ${KUBE_CA}
   rules:
   - operations:
@@ -30,7 +30,7 @@ webhooks:
     service:
       namespace: default
       name: kubernetes
-      path: /apis/admission.stash.appscode.com/v1alpha1/daemonsets
+      path: /apis/admission.stash.appscode.com/v1alpha1/daemonsetmutators
     caBundle: ${KUBE_CA}
   rules:
   - operations:
@@ -50,7 +50,7 @@ webhooks:
     service:
       namespace: default
       name: kubernetes
-      path: /apis/admission.stash.appscode.com/v1alpha1/statefulsets
+      path: /apis/admission.stash.appscode.com/v1alpha1/statefulsetmutators
     caBundle: ${KUBE_CA}
   rules:
   - operations:
@@ -68,7 +68,7 @@ webhooks:
     service:
       namespace: default
       name: kubernetes
-      path: /apis/admission.stash.appscode.com/v1alpha1/replicationcontrollers
+      path: /apis/admission.stash.appscode.com/v1alpha1/replicationcontrollermutators
     caBundle: ${KUBE_CA}
   rules:
   - operations:
@@ -87,7 +87,7 @@ webhooks:
     service:
       namespace: default
       name: kubernetes
-      path: /apis/admission.stash.appscode.com/v1alpha1/replicasets
+      path: /apis/admission.stash.appscode.com/v1alpha1/replicasetmutators
     caBundle: ${KUBE_CA}
   rules:
   - operations:
@@ -107,7 +107,7 @@ webhooks:
     service:
       namespace: default
       name: kubernetes
-      path: /apis/admission.stash.appscode.com/v1alpha1/deploymentconfigs
+      path: /apis/admission.stash.appscode.com/v1alpha1/deploymentconfigmutators
     caBundle: ${KUBE_CA}
   rules:
   - operations:
