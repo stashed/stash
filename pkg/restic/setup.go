@@ -68,16 +68,9 @@ func (w *ResticWrapper) setupEnv() error {
 		w.sh.SetEnv(RESTIC_PASSWORD, string(v))
 	}
 
-	if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, CA_CERT_DATA)); err == nil {
-		certDir := filepath.Join(w.config.ScratchDir, "cacerts")
-		if err2 := os.MkdirAll(certDir, 0755); err2 != nil {
-			return err
-		}
-
-		w.config.CacertFile = filepath.Join(certDir, "ca.crt")
-		if err3 := ioutil.WriteFile(w.config.CacertFile, v, 0755); err3 != nil {
-			return err
-		}
+	if _, err := os.Stat(filepath.Join(w.config.SecretDir, CA_CERT_DATA)); err == nil {
+		// ca-cert file exists
+		w.config.CacertFile = filepath.Join(w.config.SecretDir, CA_CERT_DATA)
 	}
 
 	tmpDir := filepath.Join(w.config.ScratchDir, "restic-tmp")
@@ -116,13 +109,9 @@ func (w *ResticWrapper) setupEnv() error {
 			w.sh.SetEnv(GOOGLE_PROJECT_ID, string(v))
 		}
 
-		jsonKeyPath := filepath.Join(w.config.ScratchDir, "gcs_sa.json")
-		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, GOOGLE_SERVICE_ACCOUNT_JSON_KEY)); err == nil {
-			err2 := ioutil.WriteFile(jsonKeyPath, v, 0600)
-			if err != nil {
-				return err2
-			}
-			w.sh.SetEnv(GOOGLE_APPLICATION_CREDENTIALS, jsonKeyPath)
+		if _, err := os.Stat(filepath.Join(w.config.SecretDir, GOOGLE_SERVICE_ACCOUNT_JSON_KEY)); err == nil {
+			// json key file exists
+			w.sh.SetEnv(GOOGLE_APPLICATION_CREDENTIALS, filepath.Join(w.config.SecretDir, GOOGLE_SERVICE_ACCOUNT_JSON_KEY))
 		}
 
 	case ProviderAzure:
