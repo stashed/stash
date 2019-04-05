@@ -115,6 +115,7 @@ func GetEndpoint(backend *store.Backend) string {
 	return ""
 }
 
+// TODO: move to store
 func GetBucketAndPrefix(backend *store.Backend) (string, string, error) {
 	if backend.Local != nil {
 		return "", filepath.Join(backend.Local.MountPath, strings.TrimPrefix(backend.Local.SubPath, "/")), nil
@@ -132,7 +133,7 @@ func GetBucketAndPrefix(backend *store.Backend) (string, string, error) {
 	return "", "", errors.New("unknown backend type.")
 }
 
-// TODO: use constant / move to store
+// TODO: move to store
 func GetProvider(backend store.Backend) (string, error) {
 	if backend.Local != nil {
 		return restic.ProviderLocal, nil
@@ -150,6 +151,19 @@ func GetProvider(backend store.Backend) (string, error) {
 		return restic.ProviderRest, nil
 	}
 	return "", errors.New("unknown provider.")
+}
+
+// TODO: move to store
+// returns 0 if not specified
+func GetMaxConnections(backend store.Backend) int {
+	if backend.GCS != nil {
+		return backend.GCS.MaxConnections
+	} else if backend.Azure != nil {
+		return backend.GCS.MaxConnections
+	} else if backend.B2 != nil {
+		return backend.GCS.MaxConnections
+	}
+	return 0
 }
 
 func ExtractDataFromRepositoryLabel(labels map[string]string) (data RepoLabelData, err error) {

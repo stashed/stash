@@ -40,6 +40,8 @@ spec:
   - --retention-prune=${RETENTION_PRUNE:=}
   - --retention-dry-run=${RETENTION_DRY_RUN:=}
   - --output-dir=${outputDir:=}
+  - --enable-cache=${ENABLE_CACHE:=true}
+  - --max-connections=${MAX_CONNECTIONS:=0}
   #- --metrics-enabled
   #- --metrics-pushgateway-url
   #- --metrics-dir
@@ -74,6 +76,8 @@ spec:
   - --app-binding=${TARGET_NAME:=}
   - --snapshot=${RESTORE_SNAPSHOTS:=} # TODO: sliceVar
   - --output-dir=${outputDir:=}
+  - --enable-cache=${ENABLE_CACHE:=true}
+  - --max-connections=${MAX_CONNECTIONS:=0}
   #- --metrics-enabled
   #- --metrics-pushgateway-url
   #- --metrics-dir

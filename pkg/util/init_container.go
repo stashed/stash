@@ -36,7 +36,6 @@ func NewInitContainer(r *v1alpha1_api.Restic, workload v1alpha1_api.LocalTypedRe
 }
 
 func NewRestoreInitContainer(rs *v1beta1_api.RestoreSession, repository *v1alpha1_api.Repository, image docker.Docker, enableRBAC bool) core.Container {
-
 	initContainer := core.Container{
 		Name:  StashInitContainer,
 		Image: image.ToContainerImage(),
@@ -45,6 +44,7 @@ func NewRestoreInitContainer(rs *v1beta1_api.RestoreSession, repository *v1alpha
 			"--restore-session=" + rs.Name,
 			"--secret-dir=" + StashSecretMountDir,
 			fmt.Sprintf("--enable-cache=%v", !rs.Spec.TempDir.DisableCaching),
+			fmt.Sprintf("--max-connections=%v", GetMaxConnections(repository.Spec.Backend)),
 			"--metrics-enabled=true",
 			"--pushgateway-url=" + PushgatewayURL(),
 			fmt.Sprintf("--enable-status-subresource=%v", apis.EnableStatusSubresource),

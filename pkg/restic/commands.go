@@ -37,6 +37,7 @@ func (w *ResticWrapper) listSnapshots(snapshotIDs []string) ([]Snapshot, error) 
 	result := make([]Snapshot, 0)
 	args := w.appendCacheDirFlag([]interface{}{"snapshots", "--json", "--quiet", "--no-lock"})
 	args = w.appendCaCertFlag(args)
+	args = w.appendMaxConnectionsFlag(args)
 	for _, id := range snapshotIDs {
 		args = append(args, id)
 	}
@@ -51,6 +52,7 @@ func (w *ResticWrapper) listSnapshots(snapshotIDs []string) ([]Snapshot, error) 
 func (w *ResticWrapper) deleteSnapshots(snapshotIDs []string) ([]byte, error) {
 	args := w.appendCacheDirFlag([]interface{}{"forget", "--quiet", "--prune"})
 	args = w.appendCaCertFlag(args)
+	args = w.appendMaxConnectionsFlag(args)
 	for _, id := range snapshotIDs {
 		args = append(args, id)
 	}
@@ -62,9 +64,11 @@ func (w *ResticWrapper) initRepositoryIfAbsent() ([]byte, error) {
 	log.Infoln("Ensuring restic repository in the backend")
 	args := w.appendCacheDirFlag([]interface{}{"snapshots", "--json"})
 	args = w.appendCaCertFlag(args)
+	args = w.appendMaxConnectionsFlag(args)
 	if _, err := w.run(Command{Name: ResticCMD, Args: args}); err != nil {
 		args = w.appendCacheDirFlag([]interface{}{"init"})
 		args = w.appendCaCertFlag(args)
+		args = w.appendMaxConnectionsFlag(args)
 
 		return w.run(Command{Name: ResticCMD, Args: args})
 	}
@@ -86,6 +90,7 @@ func (w *ResticWrapper) backup(path, host string, tags []string) ([]byte, error)
 	args = w.appendCacheDirFlag(args)
 	args = w.appendCleanupCacheFlag(args)
 	args = w.appendCaCertFlag(args)
+	args = w.appendMaxConnectionsFlag(args)
 
 	return w.run(Command{Name: ResticCMD, Args: args})
 }
@@ -111,6 +116,7 @@ func (w *ResticWrapper) backupFromStdin(options BackupOptions) ([]byte, error) {
 	args = w.appendCacheDirFlag(args)
 	args = w.appendCleanupCacheFlag(args)
 	args = w.appendCaCertFlag(args)
+	args = w.appendMaxConnectionsFlag(args)
 
 	commands = append(commands, Command{Name: ResticCMD, Args: args})
 	return w.run(commands...)
@@ -159,6 +165,7 @@ func (w *ResticWrapper) cleanup(retentionPolicy v1alpha1.RetentionPolicy) ([]byt
 	if len(args) > 1 {
 		args = w.appendCacheDirFlag(args)
 		args = w.appendCaCertFlag(args)
+		args = w.appendMaxConnectionsFlag(args)
 
 		return w.run(Command{Name: ResticCMD, Args: args})
 	}
@@ -186,6 +193,7 @@ func (w *ResticWrapper) restore(path, host, snapshotID string) ([]byte, error) {
 	args = append(args, "--target", "/") // restore in absolute path
 	args = w.appendCacheDirFlag(args)
 	args = w.appendCaCertFlag(args)
+	args = w.appendMaxConnectionsFlag(args)
 
 	return w.run(Command{Name: ResticCMD, Args: args})
 }
@@ -215,6 +223,7 @@ func (w *ResticWrapper) dump(dumpOptions DumpOptions) ([]byte, error) {
 
 	args = w.appendCacheDirFlag(args)
 	args = w.appendCaCertFlag(args)
+	args = w.appendMaxConnectionsFlag(args)
 
 	// first add restic command, then add StdoutPipeCommand
 	commands := []Command{
@@ -230,6 +239,7 @@ func (w *ResticWrapper) check() ([]byte, error) {
 	log.Infoln("Checking integrity of repository")
 	args := w.appendCacheDirFlag([]interface{}{"check"})
 	args = w.appendCaCertFlag(args)
+	args = w.appendMaxConnectionsFlag(args)
 
 	return w.run(Command{Name: ResticCMD, Args: args})
 }
@@ -237,6 +247,7 @@ func (w *ResticWrapper) check() ([]byte, error) {
 func (w *ResticWrapper) stats() ([]byte, error) {
 	log.Infoln("Reading repository status")
 	args := w.appendCacheDirFlag([]interface{}{"stats"})
+	args = w.appendMaxConnectionsFlag(args)
 	args = append(args, "--mode=raw-data", "--quiet")
 	args = w.appendCaCertFlag(args)
 
@@ -249,6 +260,24 @@ func (w *ResticWrapper) appendCacheDirFlag(args []interface{}) []interface{} {
 		return append(args, "--cache-dir", cacheDir)
 	}
 	return append(args, "--no-cache")
+}
+
+func (w *ResticWrapper) appendMaxConnectionsFlag(args []interface{}) []interface{} {
+	var maxConOption string
+	if w.config.MaxConnections > 0 {
+		switch w.config.Provider {
+		case ProviderGCS:
+			maxConOption = fmt.Sprintf("gs.connections=%d", w.config.MaxConnections)
+		case ProviderAzure:
+			maxConOption = fmt.Sprintf("azure.connections=%d", w.config.MaxConnections)
+		case ProviderB2:
+			maxConOption = fmt.Sprintf("b2.connections=%d", w.config.MaxConnections)
+		}
+	}
+	if maxConOption != "" {
+		return append(args, "--option", maxConOption)
+	}
+	return args
 }
 
 func (w *ResticWrapper) appendCleanupCacheFlag(args []interface{}) []interface{} {

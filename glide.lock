@@ -1,5 +1,5 @@
-hash: d89df02a4bb0bc424c816815eb614f43a3b452c74f1f8781c028a89bc7332883
-updated: 2019-04-03T12:49:12.164111296+06:00
+hash: 24588789cc4711bff46625411f027480ea86152a3b0ea08b1244e33d1991684b
+updated: 2019-04-05T10:43:05.670530218+06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -1080,7 +1080,7 @@ imports:
   - client/informers/externalversions/internalinterfaces
   - client/listers/appcatalog/v1alpha1
 - name: kmodules.xyz/objectstore-api
-  version: d12275407591957ba398ef505f16873377e9831f
+  version: dd055e7bb3084bd3e5d3d3aaa13f8621893c5820
   subpackages:
   - api/v1
   - osm

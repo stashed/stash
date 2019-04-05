@@ -37,7 +37,8 @@ const (
 
 	// default true
 	// false when TmpDir.DisableCaching is true in backupConfig/restoreSession
-	EnableCache = "ENABLE_CACHE"
+	EnableCache    = "ENABLE_CACHE"
+	MaxConnections = "MAX_CONNECTIONS"
 
 	StatusSubresourceEnabled = "ENABLE_STATUS_SUBRESOURCE"
 )

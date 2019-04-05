@@ -101,6 +101,7 @@ func (c *StashController) inputsForRepository(repository *apiAlpha.Repository) (
 	if repository.Spec.Backend.Rest != nil && repository.Spec.Backend.Rest.URL != "" {
 		inputs[apis.RepositoryURL] = repository.Spec.Backend.Rest.URL
 	}
+	inputs[apis.MaxConnections] = strconv.Itoa(util.GetMaxConnections(repository.Spec.Backend))
 	return
 }
 

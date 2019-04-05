@@ -63,13 +63,14 @@ func SetupOptionsForRepository(repository api_v1alpha1.Repository, extraOpt Extr
 		return restic.SetupOptions{}, err
 	}
 	return restic.SetupOptions{
-		Provider:    provider,
-		Bucket:      bucket,
-		Path:        prefix,
-		Endpoint:    GetEndpoint(&repository.Spec.Backend),
-		CacertFile:  extraOpt.CacertFile,
-		SecretDir:   extraOpt.SecretDir,
-		ScratchDir:  extraOpt.ScratchDir,
-		EnableCache: extraOpt.EnableCache,
+		Provider:       provider,
+		Bucket:         bucket,
+		Path:           prefix,
+		Endpoint:       GetEndpoint(&repository.Spec.Backend),
+		CacertFile:     extraOpt.CacertFile,
+		SecretDir:      extraOpt.SecretDir,
+		ScratchDir:     extraOpt.ScratchDir,
+		EnableCache:    extraOpt.EnableCache,
+		MaxConnections: GetMaxConnections(repository.Spec.Backend),
 	}, nil
 }
