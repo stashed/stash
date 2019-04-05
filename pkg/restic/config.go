@@ -46,17 +46,18 @@ type DumpOptions struct {
 }
 
 type SetupOptions struct {
-	Provider    string
-	Bucket      string
-	Endpoint    string
-	Path        string
-	URL         string
-	SecretDir   string
-	CacertFile  string
-	ScratchDir  string
-	EnableCache bool
-	Nice        *ofst.NiceSettings
-	IONice      *ofst.IONiceSettings
+	Provider       string
+	Bucket         string
+	Endpoint       string
+	Path           string
+	URL            string
+	SecretDir      string
+	CacertFile     string
+	ScratchDir     string
+	EnableCache    bool
+	MaxConnections int
+	Nice           *ofst.NiceSettings
+	IONice         *ofst.IONiceSettings
 }
 
 type MetricsOptions struct {

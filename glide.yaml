@@ -7,12 +7,14 @@ import:
   version: v1.14.12
 - package: github.com/cenkalti/backoff
   version: v2.1.1
+- package: github.com/codeskyblue/go-sh
+  version: master
 - package: github.com/cpuguy83/go-md2man
   version: v1.0.8
 - package: github.com/davecgh/go-spew
   version: v1.1.1
 - package: github.com/evanphx/json-patch
-  version: v4.1.0
+  version: 5858425f75500d40c52783dce87d085a483ce135
 - package: github.com/go-ini/ini
   version: v1.40.0
 - package: github.com/go-openapi/spec
@@ -20,6 +22,8 @@ import:
 - package: github.com/golang/glog
 - package: github.com/golang/protobuf
   version: v1.1.0
+- package: github.com/google/go-cmp
+  version: 6f77996f0c42f7b84e5a2b252227263f93432e9b
 - package: github.com/gorilla/websocket
   version: v1.4.0
 - package: github.com/graymeta/stow
@@ -80,27 +84,29 @@ import:
   repo: https://github.com/kmodules/apiserver.git
   vcs: git
   version: ac-1.13.0
+- package: k8s.io/cli-runtime
+  version: kubernetes-1.13.0
 - package: k8s.io/client-go
   version: v10.0.0
 - package: k8s.io/kube-aggregator
-  version: kubernetes-1.13.0
-- package: k8s.io/cli-runtime
   version: kubernetes-1.13.0
 - package: k8s.io/kube-openapi
   version: c59034cc13d587f5ef4e85ca0ade0c1866ae8e1d
 - package: k8s.io/kubernetes
   version: v1.13.0
+- package: k8s.io/utils
+  version: 66066c83e385e385ccc3c964b44fd7dcd413d0ed
 - package: kmodules.xyz/client-go
+  version: release-10.0
+- package: kmodules.xyz/custom-resources
   version: release-10.0
 - package: kmodules.xyz/objectstore-api
   version: release-10.0
 - package: kmodules.xyz/offshoot-api
   version: release-10.0
-- package: kmodules.xyz/webhook-runtime
-  version: release-10.0
-- package: github.com/codeskyblue/go-sh
-  version: master
-- package: kmodules.xyz/custom-resources
-  version: release-10.0
 - package: kmodules.xyz/openshift
   version: release-10.0
+- package: kmodules.xyz/webhook-runtime
+  version: release-10.0
+- package: sigs.k8s.io/yaml
+  version: v1.1.0

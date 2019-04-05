@@ -91,7 +91,6 @@ func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image 
 }
 
 func NewBackupSidecarContainer(bc *v1beta1_api.BackupConfiguration, backend *store.Backend, image docker.Docker, enableRBAC bool) core.Container {
-
 	sidecar := core.Container{
 		Name:  StashContainer,
 		Image: image.ToContainerImage(),
@@ -100,6 +99,7 @@ func NewBackupSidecarContainer(bc *v1beta1_api.BackupConfiguration, backend *sto
 			"--backup-configuration=" + bc.Name,
 			"--secret-dir=" + StashSecretMountDir,
 			fmt.Sprintf("--enable-cache=%v", !bc.Spec.TempDir.DisableCaching),
+			fmt.Sprintf("--max-connections=%v", GetMaxConnections(*backend)),
 			"--metrics-enabled=true",
 			"--pushgateway-url=" + PushgatewayURL(),
 			fmt.Sprintf("--enable-status-subresource=%v", apis.EnableStatusSubresource),
