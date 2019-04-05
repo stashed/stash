@@ -93,7 +93,7 @@ import:
 - package: kmodules.xyz/client-go
   version: release-10.0
 - package: kmodules.xyz/objectstore-api
-  version: d263
+  version: master
 - package: kmodules.xyz/offshoot-api
   version: release-10.0
 - package: kmodules.xyz/webhook-runtime
