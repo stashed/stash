@@ -46,7 +46,7 @@ func (fi *Invocation) CreateMinioServer(tls bool, ips []net.IP) (string, error) 
 
 	//creating pvc for minio server
 	mpvc = fi.PVCForMinioServer()
-	err = fi.CreatePersistentVolumeClaim(mpvc)
+	err = fi.CreatePersistentVolumeClaimForMinioServer(mpvc)
 	if err != nil {
 		return "", nil
 	}
@@ -111,7 +111,7 @@ func (fi *Invocation) PVCForMinioServer() core.PersistentVolumeClaim {
 	}
 }
 
-func (fi *Invocation) CreatePersistentVolumeClaim(obj core.PersistentVolumeClaim) error {
+func (fi *Invocation) CreatePersistentVolumeClaimForMinioServer(obj core.PersistentVolumeClaim) error {
 	_, err := fi.KubeClient.CoreV1().PersistentVolumeClaims(obj.Namespace).Create(&obj)
 	return err
 }

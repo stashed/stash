@@ -102,7 +102,7 @@ imports:
 - name: github.com/codegangsta/inject
   version: 33e0aa1cb7c019ccc3fbe049a8262a6403d30504
 - name: github.com/codeskyblue/go-sh
-  version: f4ce45e7999ee02d582441c916f1b32fb548dba6
+  version: cf804ac79dffabb6b16342e24362cc744afc144f
 - name: github.com/coreos/etcd
   version: 27fc7e2296f506182f58ce846e48f36b34fe6842
   subpackages:

@@ -58,7 +58,10 @@ var _ = Describe("DaemonSet", func() {
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
 		secondRestic.Spec.Backend.StorageSecretName = cred.Name
-		daemon = f.DaemonSet()
+		pvc := f.GetPersistentVolumeClaim()
+		err := f.CreatePersistentVolumeClaim(pvc)
+		Expect(err).NotTo(HaveOccurred())
+		daemon = f.DaemonSet(pvc.Name)
 		localRef = api.LocalTypedReference{
 			Kind: apis.KindDaemonSet,
 			Name: daemon.Name,

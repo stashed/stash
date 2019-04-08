@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (fi *Invocation) Deployment() apps.Deployment {
+func (fi *Invocation) Deployment(pvcName string) apps.Deployment {
 	labels := map[string]string{
 		"app":  fi.app,
 		"kind": "deployment",
@@ -24,7 +24,7 @@ func (fi *Invocation) Deployment() apps.Deployment {
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
-			Template: fi.PodTemplate(labels),
+			Template: fi.PodTemplate(labels, pvcName),
 		},
 	}
 }

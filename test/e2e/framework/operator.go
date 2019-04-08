@@ -1,11 +1,12 @@
 package framework
 
 import (
+	"path/filepath"
+
 	srvr "github.com/appscode/stash/pkg/cmds/server"
 	shell "github.com/codeskyblue/go-sh"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"path/filepath"
 )
 
 var (
@@ -21,7 +22,7 @@ func (f *Framework) InstallStashOperator(kubeConfigPath string, options *srvr.Ex
 
 	args := []interface{}{"--namespace=" + f.namespace, "--docker-registry=" + options.DockerRegistry}
 
-	runScript := filepath.Join("hack","deploy","stash.sh")
+	runScript := filepath.Join("hack", "deploy", "stash.sh")
 
 	By("Installing Stash")
 	cmd := sh.Command(runScript, args...)

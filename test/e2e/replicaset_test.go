@@ -60,7 +60,10 @@ var _ = Describe("ReplicaSet", func() {
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
 		secondRestic.Spec.Backend.StorageSecretName = cred.Name
-		rs = f.ReplicaSet()
+		pvc := f.GetPersistentVolumeClaim()
+		err := f.CreatePersistentVolumeClaim(pvc)
+		Expect(err).NotTo(HaveOccurred())
+		rs = f.ReplicaSet(pvc.Name)
 		localRef = api.LocalTypedReference{
 			Kind: apis.KindReplicaSet,
 			Name: rs.Name,
@@ -241,7 +244,7 @@ var _ = Describe("ReplicaSet", func() {
 			f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for leader election")
-			f.CheckLeaderElection(rs.ObjectMeta, apis.KindReplicaSet)
+			f.CheckLeaderElection(rs.ObjectMeta, apis.KindReplicaSet, "restic")
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&rs).ShouldNot(BeEmpty())

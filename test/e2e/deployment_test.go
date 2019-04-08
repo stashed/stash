@@ -64,7 +64,10 @@ var _ = Describe("Deployment", func() {
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
 		secondRestic.Spec.Backend.StorageSecretName = cred.Name
-		deployment = f.Deployment()
+		pvc := f.GetPersistentVolumeClaim()
+		err := f.CreatePersistentVolumeClaim(pvc)
+		Expect(err).NotTo(HaveOccurred())
+		deployment = f.Deployment(pvc.Name)
 		localRef = api.LocalTypedReference{
 			Kind: apis.KindDeployment,
 			Name: deployment.Name,
@@ -248,7 +251,7 @@ var _ = Describe("Deployment", func() {
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for leader election")
-			f.CheckLeaderElection(deployment.ObjectMeta, apis.KindDeployment)
+			f.CheckLeaderElection(deployment.ObjectMeta, apis.KindDeployment, "restic")
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
@@ -1064,7 +1067,7 @@ var _ = Describe("Deployment", func() {
 				restic = f.ResticForHostPathLocalBackend()
 				recovery = f.RecoveryForRestic(restic)
 			})
-			FIt(`recovered volume should have same data`, func() {
+			It(`recovered volume should have same data`, func() {
 				By("Creating repository Secret " + cred.Name)
 				err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())

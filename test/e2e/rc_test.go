@@ -58,7 +58,10 @@ var _ = Describe("ReplicationController", func() {
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
 		secondRestic.Spec.Backend.StorageSecretName = cred.Name
-		rc = f.ReplicationController()
+		pvc := f.GetPersistentVolumeClaim()
+		err := f.CreatePersistentVolumeClaim(pvc)
+		Expect(err).NotTo(HaveOccurred())
+		rc = f.ReplicationController(pvc.Name)
 		localRef = api.LocalTypedReference{
 			Kind: apis.KindReplicationController,
 			Name: rc.Name,
@@ -237,7 +240,7 @@ var _ = Describe("ReplicationController", func() {
 			_, err = f.CreateReplicationController(rc)
 			Expect(err).NotTo(HaveOccurred())
 
-			f.CheckLeaderElection(rc.ObjectMeta, apis.KindReplicationController)
+			f.CheckLeaderElection(rc.ObjectMeta, apis.KindReplicationController, "restic")
 
 			By("Waiting for sidecar")
 			f.EventuallyReplicationController(rc.ObjectMeta).Should(HaveSidecar(util.StashContainer))

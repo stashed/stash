@@ -338,18 +338,27 @@ spec:
                   properties:
                     container:
                       type: string
+                    maxConnections:
+                      format: int32
+                      type: integer
                     prefix:
                       type: string
                 b2:
                   properties:
                     bucket:
                       type: string
+                    maxConnections:
+                      format: int32
+                      type: integer
                     prefix:
                       type: string
                 gcs:
                   properties:
                     bucket:
                       type: string
+                    maxConnections:
+                      format: int32
+                      type: integer
                     prefix:
                       type: string
                 local:

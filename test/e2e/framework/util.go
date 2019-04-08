@@ -9,6 +9,7 @@ import (
 	"github.com/appscode/stash/apis"
 	rep "github.com/appscode/stash/apis/repositories/v1alpha1"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
+	"github.com/appscode/stash/apis/stash/v1beta1"
 	cs "github.com/appscode/stash/client/clientset/versioned"
 	"github.com/appscode/stash/pkg/controller"
 	"github.com/appscode/stash/pkg/eventer"
@@ -266,6 +267,14 @@ func GetPathsFromResticFileGroups(restic *api.Restic) []string {
 	return paths
 }
 
+func GetPathsFromRestoreSession(restoreSession *v1beta1.RestoreSession) string {
+	//paths := make([]string, 0)
+	//for _, fg := range restoreSession.Spec.Rules[0].Paths{
+	//	paths = append(paths, fg)
+	//}
+	return restoreSession.Spec.Rules[0].Paths[0]
+}
+
 func (f *Framework) EventuallyJobSucceed(name string) GomegaAsyncAssertion {
 	jobCreated := false
 	return Eventually(func() bool {
@@ -475,4 +484,24 @@ func (f *Framework) GetNodeName(meta metav1.ObjectMeta) string {
 
 	// if none of above succeed, return default testing node "minikube"
 	return "minikube"
+}
+
+func (f *Framework) CreateSampleDataInsideWorkload(meta metav1.ObjectMeta, fileName string) error {
+	pod, err := f.GetPod(meta)
+	Expect(err).NotTo(HaveOccurred())
+	_, err = f.ExecOnPod(pod, "touch", filepath.Join(TestSourceDataMountPath, fileName))
+
+	return err
+}
+
+func (f *Invocation) CleanupSampleDataInsideWorkload(meta metav1.ObjectMeta, fileName string) error {
+	pod, err := f.GetPod(meta)
+	if err != nil {
+		return err
+	}
+	_, err = f.ExecOnPod(pod, "rm", "-rf", filepath.Join(TestSourceDataMountPath, fileName))
+	if err != nil {
+		return err
+	}
+	return nil
 }

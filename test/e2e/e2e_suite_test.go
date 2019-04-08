@@ -30,8 +30,9 @@ const (
 )
 
 var (
-	ctrl *controller.StashController
-	root *framework.Framework
+	ctrl         *controller.StashController
+	root         *framework.Framework
+	storageClass = "standard"
 )
 
 func TestE2e(t *testing.T) {
@@ -63,7 +64,7 @@ var _ = BeforeSuite(func() {
 	kaClient := ka.NewForConfigOrDie(clientConfig)
 	framework.StashProjectRoot = filepath.Join(homedir.HomeDir(), "go", "src", "github.com", "appscode", "stash")
 
-	root = framework.New(ctrlConfig.KubeClient, ctrlConfig.StashClient, kaClient, clientConfig)
+	root = framework.New(ctrlConfig.KubeClient, ctrlConfig.StashClient, kaClient, clientConfig, storageClass)
 	err = root.CreateTestNamespace()
 	Expect(err).NotTo(HaveOccurred())
 	By("Using test namespace " + root.Namespace())
@@ -75,6 +76,7 @@ var _ = BeforeSuite(func() {
 var _ = AfterSuite(func() {
 	By("Deleting Stash Operator")
 	root.UninstallStashOperator()
+	By("Deleting namespace: " + root.Namespace())
 	err := root.DeleteNamespace(root.Namespace())
 	Expect(err).NotTo(HaveOccurred())
 })

@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (fi *Invocation) ReplicaSet() apps.ReplicaSet {
+func (fi *Invocation) ReplicaSet(pvcName string) apps.ReplicaSet {
 	labels := map[string]string{
 		"app":  fi.app,
 		"kind": "replicaset",
@@ -24,7 +24,7 @@ func (fi *Invocation) ReplicaSet() apps.ReplicaSet {
 				MatchLabels: labels,
 			},
 			Replicas: types.Int32P(1),
-			Template: fi.PodTemplate(labels),
+			Template: fi.PodTemplate(labels, pvcName),
 		},
 	}
 }

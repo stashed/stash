@@ -53,10 +53,6 @@ type Session struct {
 	Stderr  io.Writer
 	ShowCMD bool // enable for debug
 	timeout time.Duration
-
-	// additional pipe options
-	PipeFail      bool // returns error of rightmost no-zero command
-	PipeStdErrors bool // combine std errors of all pipe commands
 }
 
 func (s *Session) writePrompt(args ...interface{}) {
