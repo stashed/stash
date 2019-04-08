@@ -77,21 +77,15 @@ func (o StashOptions) Config() (*server.StashConfig, error) {
 	serverConfig.OpenAPIConfig.IgnorePrefixes = []string{
 		"/swaggerapi",
 		"/apis/admission.stash.appscode.com/v1alpha1",
-		"/apis/admission.stash.appscode.com/v1alpha1/restics",
-		"/apis/admission.stash.appscode.com/v1alpha1/recoveries",
-		"/apis/admission.stash.appscode.com/v1alpha1/repositories",
-		"/apis/admission.stash.appscode.com/v1alpha1/deployments",
-		"/apis/admission.stash.appscode.com/v1alpha1/daemonsets",
-		"/apis/admission.stash.appscode.com/v1alpha1/statefulsets",
-		"/apis/admission.stash.appscode.com/v1alpha1/replicationcontrollers",
-		"/apis/admission.stash.appscode.com/v1alpha1/replicasets",
-		// v1beta1 apis
-		"/apis/admission.stash.appscode.com/v1beta1/backupconfigurationtemplates",
-		"/apis/admission.stash.appscode.com/v1beta1/backupconfigurations",
-		"/apis/admission.stash.appscode.com/v1beta1/backupsessions",
-		"/apis/admission.stash.appscode.com/v1beta1/functions",
-		"/apis/admission.stash.appscode.com/v1beta1/restoresessions",
-		"/apis/admission.stash.appscode.com/v1beta1/tasks",
+		"/apis/admission.stash.appscode.com/v1alpha1/resticvalidators",
+		"/apis/admission.stash.appscode.com/v1alpha1/recoveryvalidators",
+		"/apis/admission.stash.appscode.com/v1alpha1/repositoryvalidators",
+		"/apis/admission.stash.appscode.com/v1alpha1/deploymentmutators",
+		"/apis/admission.stash.appscode.com/v1alpha1/daemonsetmutators",
+		"/apis/admission.stash.appscode.com/v1alpha1/statefulsetmutators",
+		"/apis/admission.stash.appscode.com/v1alpha1/replicationcontrollermutators",
+		"/apis/admission.stash.appscode.com/v1alpha1/replicasetmutators",
+		"/apis/admission.stash.appscode.com/v1alpha1/deploymentconfigmutators",
 	}
 
 	extraConfig := controller.NewConfig(serverConfig.ClientConfig)

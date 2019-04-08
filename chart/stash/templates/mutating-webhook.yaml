@@ -124,27 +124,6 @@ webhooks:
     service:
       namespace: default
       name: kubernetes
-      path: /apis/admission.stash.appscode.com/v1alpha1/deploymentconfigs
-    caBundle: {{ b64enc .Values.apiserver.ca }}
-  rules:
-  - operations:
-    - CREATE
-    - UPDATE
-    apiGroups:
-    - apps.openshift.io
-    apiVersions:
-    - "*"
-    resources:
-    - deploymentconfigs
-  failurePolicy: Ignore
-{{- if and (ge $major 1) (ge $minor 12) }}
-  sideEffects: None
-{{- end }}
-- name: deploymentconfig.admission.stash.appscode.com
-  clientConfig:
-    service:
-      namespace: default
-      name: kubernetes
       path: /apis/admission.stash.appscode.com/v1alpha1/deploymentconfigmutators
     caBundle: {{ b64enc .Values.apiserver.ca }}
   rules:
