@@ -244,7 +244,7 @@ var _ = Describe("ReplicaSet", func() {
 			f.EventuallyReplicaSet(rs.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for leader election")
-			f.CheckLeaderElection(rs.ObjectMeta, apis.KindReplicaSet, "restic")
+			f.CheckLeaderElection(rs.ObjectMeta, apis.KindReplicaSet, api.ResourceKindRestic)
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&rs).ShouldNot(BeEmpty())

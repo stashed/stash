@@ -251,7 +251,7 @@ var _ = Describe("Deployment", func() {
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for leader election")
-			f.CheckLeaderElection(deployment.ObjectMeta, apis.KindDeployment, "restic")
+			f.CheckLeaderElection(deployment.ObjectMeta, apis.KindDeployment, api.ResourceKindRestic)
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())

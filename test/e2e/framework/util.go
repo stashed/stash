@@ -3,6 +3,7 @@ package framework
 import (
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -267,12 +268,14 @@ func GetPathsFromResticFileGroups(restic *api.Restic) []string {
 	return paths
 }
 
-func GetPathsFromRestoreSession(restoreSession *v1beta1.RestoreSession) string {
-	//paths := make([]string, 0)
-	//for _, fg := range restoreSession.Spec.Rules[0].Paths{
-	//	paths = append(paths, fg)
-	//}
-	return restoreSession.Spec.Rules[0].Paths[0]
+func GetPathsFromRestoreSession(restoreSession *v1beta1.RestoreSession) []string {
+	paths := make([]string, 0)
+	for i, _ := range restoreSession.Spec.Rules {
+		for _, p := range restoreSession.Spec.Rules[i].Paths {
+			paths = append(paths, p)
+		}
+	}
+	return paths
 }
 
 func (f *Framework) EventuallyJobSucceed(name string) GomegaAsyncAssertion {
@@ -486,22 +489,65 @@ func (f *Framework) GetNodeName(meta metav1.ObjectMeta) string {
 	return "minikube"
 }
 
-func (f *Framework) CreateSampleDataInsideWorkload(meta metav1.ObjectMeta, fileName string) error {
-	pod, err := f.GetPod(meta)
-	Expect(err).NotTo(HaveOccurred())
-	_, err = f.ExecOnPod(pod, "touch", filepath.Join(TestSourceDataMountPath, fileName))
-
-	return err
+func (f *Framework) CreateSampleDataInsideWorkload(meta metav1.ObjectMeta, resourceKind string) error {
+	switch resourceKind {
+	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController:
+		pod, err := f.GetPod(meta)
+		if err != nil {
+			return err
+		}
+		file := "test-data.txt"
+		_, err = f.ExecOnPod(pod, "touch", filepath.Join(TestSourceDataMountPath, file))
+		if err != nil {
+			return err
+		}
+	case apis.KindStatefulSet, apis.KindDaemonSet:
+		pods, err := f.GetAllPod(meta)
+		if err != nil {
+			return err
+		}
+		files := []string{"test-data1.txt", "test-data2.txt", "test-data3.txt", "test-data4.txt", "test-data5.txt"}
+		for i, pod := range pods {
+			_, err := f.ExecOnPod(&pod, "mkdir", "-p", "/source/data/dir-"+strconv.Itoa(i))
+			if err != nil {
+				return err
+			}
+		}
+		for i, pod := range pods {
+			_, err := f.ExecOnPod(&pod, "touch", filepath.Join("/source/data/dir-"+strconv.Itoa(i), files[i]))
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
-func (f *Invocation) CleanupSampleDataInsideWorkload(meta metav1.ObjectMeta, fileName string) error {
-	pod, err := f.GetPod(meta)
-	if err != nil {
-		return err
-	}
-	_, err = f.ExecOnPod(pod, "rm", "-rf", filepath.Join(TestSourceDataMountPath, fileName))
-	if err != nil {
-		return err
+func (f *Invocation) CleanupSampleDataFromWorkload(meta metav1.ObjectMeta, resourceKind string) error {
+
+	switch resourceKind {
+	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController:
+		pod, err := f.GetPod(meta)
+		if err != nil {
+			return err
+		}
+		file := "test-data.txt"
+		_, err = f.ExecOnPod(pod, "rm", "-rf", filepath.Join(TestSourceDataMountPath, file))
+		if err != nil {
+			return err
+		}
+	case apis.KindStatefulSet, apis.KindDaemonSet:
+		pods, err := f.GetAllPod(meta)
+		if err != nil {
+			return err
+		}
+		files := []string{"test-data1.txt", "test-data2.txt", "test-data3.txt", "test-data4.txt", "test-data5.txt"}
+		for i, pod := range pods {
+			_, err = f.ExecOnPod(&pod, "rm", "-rf", filepath.Join("/source/data/dir-"+strconv.Itoa(i), files[i]))
+			if err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }

@@ -69,6 +69,24 @@ func (f *Framework) GetPod(meta metav1.ObjectMeta) (*core.Pod, error) {
 	return nil, fmt.Errorf("no pod found for workload %v", meta.Name)
 }
 
+func (f *Framework) GetAllPod(meta metav1.ObjectMeta) ([]core.Pod, error) {
+	pods := make([]core.Pod,0)
+	labelSelector := fields.SelectorFromSet(meta.Labels)
+	podList, err := f.KubeClient.CoreV1().Pods(meta.Namespace).List(metav1.ListOptions{LabelSelector: labelSelector.String()})
+	if err != nil {
+		return nil, err
+	}
+	for _, pod := range podList.Items {
+		if bytes.HasPrefix([]byte(pod.Name), []byte(meta.Name)) {
+			pods = append(pods,pod)
+		}
+	}
+	if len(pods) > 0{
+		return pods, nil
+	}
+	return nil, fmt.Errorf("no pod found for workload %v", meta.Name)
+}
+
 func (f *Framework) GetOperatorPod() (*core.Pod, error) {
 	podList, err := f.KubeClient.CoreV1().Pods(OperatorNamespace).List(metav1.ListOptions{})
 	if err != nil {

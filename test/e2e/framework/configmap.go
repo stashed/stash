@@ -12,13 +12,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (f *Framework) CheckLeaderElection(meta metav1.ObjectMeta, kind string, check string) {
+func (f *Framework) CheckLeaderElection(meta metav1.ObjectMeta, kind string, modifier string) {
 	var podName string
 
 	By("Waiting for configmap annotation")
 	Eventually(func() bool {
 		var err error
-		if podName, err = f.GetLeaderIdentity(meta, kind, check); err != nil {
+		if podName, err = f.GetLeaderIdentity(meta, kind, modifier); err != nil {
 			return false
 		}
 		return true
@@ -30,28 +30,28 @@ func (f *Framework) CheckLeaderElection(meta metav1.ObjectMeta, kind string, che
 
 	By("Waiting for reconfigure configmap annotation")
 	Eventually(func() bool {
-		if podNameNew, err := f.GetLeaderIdentity(meta, kind, check); err != nil || podNameNew == podName {
+		if podNameNew, err := f.GetLeaderIdentity(meta, kind, modifier); err != nil || podNameNew == podName {
 			return false
 		}
 		return true
 	}).Should(BeTrue())
 }
 
-func (f *Framework) GetLeaderIdentity(meta metav1.ObjectMeta, kind string, check string) (string, error) {
-	var configMapName string
-	switch check {
-	case "restic":
-		configMapName = util.GetConfigmapLockName(api.LocalTypedReference{
+func (f *Framework) GetLeaderIdentity(meta metav1.ObjectMeta, kind string, modifier string) (string, error) {
+	var configMapLockName string
+	switch modifier {
+	case api.ResourceKindRestic:
+		configMapLockName = util.GetConfigmapLockName(api.LocalTypedReference{
 			Kind: kind,
 			Name: meta.Name,
 		})
-	case "backupconfig":
-		configMapName = util.GetBackupConfigmapLockName(v1beta1.TargetRef{
+	case v1beta1.ResourceKindBackupConfiguration:
+		configMapLockName = util.GetBackupConfigmapLockName(v1beta1.TargetRef{
 			Kind: kind,
 			Name: meta.Name,
 		})
 	case "restoreconfig":
-		configMapName = util.GetRestoreConfigmapLockName(v1beta1.TargetRef{
+		configMapLockName = util.GetRestoreConfigmapLockName(v1beta1.TargetRef{
 			Kind: kind,
 			Name: meta.Name,
 		})
@@ -59,7 +59,7 @@ func (f *Framework) GetLeaderIdentity(meta metav1.ObjectMeta, kind string, check
 	annotationKey := "control-plane.alpha.kubernetes.io/leader"
 	idKey := "holderIdentity"
 
-	configMap, err := f.KubeClient.CoreV1().ConfigMaps(meta.Namespace).Get(configMapName, metav1.GetOptions{})
+	configMap, err := f.KubeClient.CoreV1().ConfigMaps(meta.Namespace).Get(configMapLockName, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}

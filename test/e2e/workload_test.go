@@ -20,11 +20,12 @@ var _ = Describe("Deployment", func() {
 		f                *framework.Invocation
 		cred             core.Secret
 		deployment       apps.Deployment
-		secondDeployment apps.Deployment
+		recoveredDeployment apps.Deployment
 		repo             *api.Repository
 		backupCfg        v1beta1.BackupConfiguration
 		restoreSession   v1beta1.RestoreSession
 		pvc              *core.PersistentVolumeClaim
+		targetref		 v1beta1.TargetRef
 	)
 	BeforeEach(func() {
 		f = root.Invoke()
@@ -39,8 +40,8 @@ var _ = Describe("Deployment", func() {
 		Expect(err).NotTo(HaveOccurred())
 		repo = f.Repository(cred, pvc.Name)
 
-		backupCfg = f.BackupConfiguration(repo.Name, deployment.Name)
-		restoreSession = f.RestoreSession(repo.Name, deployment.Name)
+		backupCfg = f.BackupConfiguration(repo.Name, targetref)
+		restoreSession = f.RestoreSession(repo.Name, targetref)
 	})
 	Context("Backup && Restore for Deployment", func() {
 		BeforeEach(func() {
@@ -49,10 +50,11 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 			deployment = f.Deployment(pvc.Name)
 
-			pvc = f.GetPersistentVolumeClaim()
-			err = f.CreatePersistentVolumeClaim(pvc)
-			Expect(err).NotTo(HaveOccurred())
-			secondDeployment = f.Deployment(pvc.Name)
+			targetref = v1beta1.TargetRef{
+				APIVersion: "apps/v1",
+				Kind:       apis.KindDeployment,
+				Name:       deployment.Name,
+			}
 		})
 		AfterEach(func() {
 			err := f.DeleteDeployment(deployment.ObjectMeta)
@@ -60,7 +62,6 @@ var _ = Describe("Deployment", func() {
 			err = f.DeleteSecret(cred.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 		})
-
 		It("General Backup new Deployment", func() {
 			By("Creating Deployment " + deployment.Name)
 			_, err = f.CreateDeployment(deployment)
@@ -69,7 +70,7 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating sample data inside workload")
-			err = f.CreateSampleDataInsideWorkload(deployment.ObjectMeta, "test-data.txt")
+			err = f.CreateSampleDataInsideWorkload(deployment.ObjectMeta, apis.KindDeployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Reading sample data from /source/data mountPath inside workload")
@@ -93,13 +94,14 @@ var _ = Describe("Deployment", func() {
 
 			By("Waiting for BackupSession")
 			f.EventuallyBackupSessionCreated(backupCfg.ObjectMeta).Should(BeTrue())
-			bs := f.GetBackupSession(backupCfg.ObjectMeta)
-
-			By("Check for repository status updated")
-			f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			bs, err := f.GetBackupSession(backupCfg.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 
 			By("Check for succeeded BackupSession")
 			f.EventuallyBackupSessionPhase(bs.ObjectMeta).Should(Equal(v1beta1.BackupSessionSucceeded))
+
+			By("Check for repository status updated")
+			f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Delete BackupConfiguration")
 			err = f.DeleteBackupConfiguration(backupCfg)
@@ -107,8 +109,8 @@ var _ = Describe("Deployment", func() {
 			By("Waiting to remove sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).ShouldNot(matcher.HaveSidecar(util.StashContainer))
 
-			By("Delete sample data inside workload")
-			err = f.CleanupSampleDataInsideWorkload(deployment.ObjectMeta, "test-data.txt")
+			By("Remove sample data from workload")
+			err = f.CleanupSampleDataFromWorkload(deployment.ObjectMeta, apis.KindDeployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating Restore Session")
@@ -125,11 +127,24 @@ var _ = Describe("Deployment", func() {
 			restoredData, err := f.ReadDataFromMountedDirectory(deployment.ObjectMeta, framework.GetPathsFromRestoreSession(&restoreSession))
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Compare between restore data and sample data")
+			By("Verifying restored data is same as original data")
 			Expect(restoredData).To(BeEquivalentTo(sampleData))
 
 		})
+	})
+	Context("Leader election and backup && restore for Deployment", func() {
+		BeforeEach(func() {
+			pvc = f.GetPersistentVolumeClaim()
+			err = f.CreatePersistentVolumeClaim(pvc)
+			Expect(err).NotTo(HaveOccurred())
+			deployment = f.Deployment(pvc.Name)
 
+			targetref = v1beta1.TargetRef{
+				APIVersion: "apps/v1",
+				Kind:       apis.KindDeployment,
+				Name:       deployment.Name,
+			}
+		})
 		It("Should leader elect and Backup new deployment", func() {
 			deployment.Spec.Replicas = types.Int32P(2) // two replicas
 			By("Creating Deployment " + deployment.Name)
@@ -139,7 +154,7 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating sample data inside workload")
-			err = f.CreateSampleDataInsideWorkload(deployment.ObjectMeta, "test-data.txt")
+			err = f.CreateSampleDataInsideWorkload(deployment.ObjectMeta, apis.KindDeployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating storage Secret " + cred.Name)
@@ -158,11 +173,12 @@ var _ = Describe("Deployment", func() {
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(matcher.HaveSidecar(util.StashContainer))
 
 			By("Waiting for leader election")
-			f.CheckLeaderElection(deployment.ObjectMeta, apis.KindDeployment, "backupconfig")
+			f.CheckLeaderElection(deployment.ObjectMeta, apis.KindDeployment, v1beta1.ResourceKindBackupConfiguration)
 
 			By("Waiting for BackupSession")
 			f.EventuallyBackupSessionCreated(backupCfg.ObjectMeta).Should(BeTrue())
-			bs := f.GetBackupSession(backupCfg.ObjectMeta)
+			bs, err := f.GetBackupSession(backupCfg.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 
 			By("Check for repository status updated")
 			f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
@@ -173,11 +189,11 @@ var _ = Describe("Deployment", func() {
 			By("Delete BackupConfiguration")
 			err = f.DeleteBackupConfiguration(backupCfg)
 
-			By("Waiting to remove sidecar")
+			By("Waiting for sidecar to be removed")
 			f.EventuallyDeployment(deployment.ObjectMeta).ShouldNot(matcher.HaveSidecar(util.StashContainer))
 
-			By("Delete sample data inside workload")
-			err = f.CleanupSampleDataInsideWorkload(deployment.ObjectMeta, "test-data.txt")
+			By("Delete sample data from workload")
+			err = f.CleanupSampleDataFromWorkload(deployment.ObjectMeta, "test-data.txt")
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating Restore Session")
@@ -187,14 +203,37 @@ var _ = Describe("Deployment", func() {
 			By("Waiting for initContainer")
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(matcher.HaveInitContainer(util.StashInitContainer))
 
-			By("Waiting for leader election")
-			f.CheckLeaderElection(deployment.ObjectMeta, apis.KindDeployment, "restoreconfig")
-
 			By("Waiting for restore to succeed")
 			f.EventuallyRestoreSessionPhase(restoreSession.ObjectMeta).Should(Equal(v1beta1.RestoreSessionSucceeded))
 
 		})
+	})
+	Context("Backup && Restore data on different Deployment", func() {
+		BeforeEach(func() {
+			pvc = f.GetPersistentVolumeClaim()
+			err = f.CreatePersistentVolumeClaim(pvc)
+			Expect(err).NotTo(HaveOccurred())
+			deployment = f.Deployment(pvc.Name)
 
+			pvc = f.GetPersistentVolumeClaim()
+			err = f.CreatePersistentVolumeClaim(pvc)
+			Expect(err).NotTo(HaveOccurred())
+			recoveredDeployment = f.Deployment(pvc.Name)
+
+			targetref = v1beta1.TargetRef{
+				APIVersion: "apps/v1",
+				Kind:       apis.KindDeployment,
+				Name:       deployment.Name,
+			}
+		})
+		AfterEach(func() {
+			err := f.DeleteDeployment(deployment.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteDeployment(recoveredDeployment.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteSecret(cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+		})
 		It("Restore data on different Deployment", func() {
 			By("Creating Deployment " + deployment.Name)
 			_, err = f.CreateDeployment(deployment)
@@ -203,7 +242,7 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating sample data inside workload")
-			err = f.CreateSampleDataInsideWorkload(deployment.ObjectMeta, "test-data.txt")
+			err = f.CreateSampleDataInsideWorkload(deployment.ObjectMeta, apis.KindDeployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Reading sample data from /source/data mountPath inside workload")
@@ -227,7 +266,8 @@ var _ = Describe("Deployment", func() {
 
 			By("Waiting for BackupSession")
 			f.EventuallyBackupSessionCreated(backupCfg.ObjectMeta).Should(BeTrue())
-			bs := f.GetBackupSession(backupCfg.ObjectMeta)
+			bs, err := f.GetBackupSession(backupCfg.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 
 			By("Check for repository status updated")
 			f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
@@ -241,25 +281,25 @@ var _ = Describe("Deployment", func() {
 			By("Waiting to remove sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).ShouldNot(matcher.HaveSidecar(util.StashContainer))
 
-			By("Creating another Deployment " + secondDeployment.Name)
-			_, err = f.CreateDeployment(secondDeployment)
+			By("Creating another Deployment " + recoveredDeployment.Name)
+			_, err = f.CreateDeployment(recoveredDeployment)
 			Expect(err).NotTo(HaveOccurred())
-			err = util.WaitUntilDeploymentReady(f.KubeClient, secondDeployment.ObjectMeta)
+			err = util.WaitUntilDeploymentReady(f.KubeClient, recoveredDeployment.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			restoreSession.Spec.Target.Ref.Name = secondDeployment.Name
+			restoreSession.Spec.Target.Ref.Name = recoveredDeployment.Name
 			By("Creating Restore Session")
 			err = f.CreateRestoreSession(restoreSession)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for initContainer")
-			f.EventuallyDeployment(secondDeployment.ObjectMeta).Should(matcher.HaveInitContainer(util.StashInitContainer))
+			f.EventuallyDeployment(recoveredDeployment.ObjectMeta).Should(matcher.HaveInitContainer(util.StashInitContainer))
 
 			By("Waiting for restore to succeed")
 			f.EventuallyRestoreSessionPhase(restoreSession.ObjectMeta).Should(Equal(v1beta1.RestoreSessionSucceeded))
 
 			By("checking the workload data has been restored")
-			restoredData, err := f.ReadDataFromMountedDirectory(secondDeployment.ObjectMeta, framework.GetPathsFromRestoreSession(&restoreSession))
+			restoredData, err := f.ReadDataFromMountedDirectory(recoveredDeployment.ObjectMeta, framework.GetPathsFromRestoreSession(&restoreSession))
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Compare between restore data and sample data")

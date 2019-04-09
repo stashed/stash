@@ -4,14 +4,13 @@ import (
 	"time"
 
 	"github.com/appscode/go/crypto/rand"
-	"github.com/appscode/stash/apis"
 	"github.com/appscode/stash/apis/stash/v1beta1"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (f *Invocation) RestoreSession(repoName string, deploymentName string) v1beta1.RestoreSession {
+func (f *Invocation) RestoreSession(repoName string, targetref v1beta1.TargetRef) v1beta1.RestoreSession {
 	return v1beta1.RestoreSession{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(f.app),
@@ -29,11 +28,7 @@ func (f *Invocation) RestoreSession(repoName string, deploymentName string) v1be
 				},
 			},
 			Target: &v1beta1.Target{
-				Ref: v1beta1.TargetRef{
-					APIVersion: "apps/v1",
-					Kind:       apis.KindDeployment,
-					Name:       deploymentName,
-				},
+				Ref: targetref,
 				VolumeMounts: []core.VolumeMount{
 					{
 						Name:      TestSourceDataVolumeName,

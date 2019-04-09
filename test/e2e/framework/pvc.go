@@ -17,7 +17,7 @@ func (f *Invocation) GetPersistentVolumeClaim() *core.PersistentVolumeClaim {
 			AccessModes: []core.PersistentVolumeAccessMode{
 				core.ReadWriteOnce,
 			},
-			//StorageClassName: &f.StorageClass,
+			StorageClassName: &f.StorageClass,
 			Resources: core.ResourceRequirements{
 				Requests: core.ResourceList{
 					core.ResourceName(core.ResourceStorage): resource.MustParse("10Mi"),

@@ -65,6 +65,7 @@ var _ = Describe("StatefulSet", func() {
 		secondRestic.Spec.Backend.StorageSecretName = cred.Name
 		svc = f.HeadlessService()
 		pvc := f.GetPersistentVolumeClaim()
+
 		err := f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
 		ss = f.StatefulSet(pvc.Name)

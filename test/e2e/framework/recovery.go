@@ -91,15 +91,31 @@ func (f *Framework) ReadDataFromMountedDir(meta metav1.ObjectMeta, paths []strin
 	return datas, nil
 }
 
-func (f *Framework) ReadDataFromMountedDirectory(meta metav1.ObjectMeta, path string) (string, error) {
+func (f *Framework) ReadDataFromMountedDirectory(meta metav1.ObjectMeta, paths []string) ([]string, error) {
 	pod, err := f.GetPod(meta)
-	data, err := f.ExecOnPod(pod, "ls", "-R", path)
-	return data, err
+	if err != nil{
+		return nil, err
+	}
+	var data string
+	datas := make([]string, 0)
+	for _, p := range paths{
+		data, err = f.ExecOnPod(pod, "ls", "-R", p)
+		if err != nil{
+			return nil, err
+		}
+		datas = append(datas, data)
+	}
+	return datas, err
 }
 
-func (f *Framework) ReadDataFromFromWorkload(meta metav1.ObjectMeta) (string, error) {
+func (f *Framework) ReadDataFromFromWorkload(meta metav1.ObjectMeta) ([]string, error) {
 	pod, err := f.GetPod(meta)
-	Expect(err).NotTo(HaveOccurred())
-	data, err := f.ExecOnPod(pod, "ls", "-R", TestSourceDataMountPath)
-	return data, nil
+	if err != nil{
+		return nil, err
+	}
+	var data string
+	datas := make([]string, 0)
+	data, err = f.ExecOnPod(pod, "ls", "-R", TestSourceDataMountPath)
+	datas = append(datas, data)
+	return datas, nil
 }

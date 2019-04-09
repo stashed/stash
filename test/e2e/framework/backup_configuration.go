@@ -2,15 +2,14 @@ package framework
 
 import (
 	"github.com/appscode/go/crypto/rand"
-	"github.com/appscode/stash/apis"
 	"github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/apis/stash/v1beta1"
 	core "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (f *Invocation) BackupConfiguration(repoName string, deploymentName string) v1beta1.BackupConfiguration {
+func (f *Invocation) BackupConfiguration(repoName string, targetref v1beta1.TargetRef) v1beta1.BackupConfiguration {
 	return v1beta1.BackupConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(f.app),
@@ -22,11 +21,7 @@ func (f *Invocation) BackupConfiguration(repoName string, deploymentName string)
 			},
 			Schedule: "*/1 * * * *",
 			Target: &v1beta1.Target{
-				Ref: v1beta1.TargetRef{
-					APIVersion: "apps/v1",
-					Kind:       apis.KindDeployment,
-					Name:       deploymentName,
-				},
+				Ref: targetref,
 				Directories: []string{
 					TestSourceDataMountPath,
 				},

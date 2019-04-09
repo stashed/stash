@@ -1,6 +1,7 @@
 package framework
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/appscode/stash/apis/stash/v1beta1"
@@ -20,21 +21,26 @@ func (f *Framework) EventuallyBackupSessionPhase(meta metav1.ObjectMeta) GomegaA
 
 func (f *Framework) EventuallyBackupSessionCreated(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
-		func() (flag bool) {
+		func()  bool {
 			backupsnlist, err := f.StashClient.StashV1beta1().BackupSessions(meta.Namespace).List(metav1.ListOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			if len(backupsnlist.Items) > 0 {
-				flag = true
+				return true
 			}
-			return flag
+			return false
 		},
 		time.Minute*2,
 		time.Second*5,
 	)
 }
 
-func (f *Framework) GetBackupSession(meta metav1.ObjectMeta) v1beta1.BackupSession {
+func (f *Framework) GetBackupSession(meta metav1.ObjectMeta) (*v1beta1.BackupSession, error){
 	backupsnlist, err := f.StashClient.StashV1beta1().BackupSessions(meta.Namespace).List(metav1.ListOptions{})
-	Expect(err).NotTo(HaveOccurred())
-	return backupsnlist.Items[0]
+	if err != nil{
+		return nil,err
+	}
+	if len(backupsnlist.Items)>0{
+		return &backupsnlist.Items[0],nil
+	}
+	return nil,fmt.Errorf("no BackupSession found")
 }

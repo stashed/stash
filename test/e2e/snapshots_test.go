@@ -97,6 +97,7 @@ var _ = Describe("Snapshots", func() {
 		err := f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
 		daemon = f.DaemonSet(pvc.Name)
+
 		deployment = f.Deployment(pvc.Name)
 		rc = f.ReplicationController(pvc.Name)
 		rs = f.ReplicaSet(pvc.Name)
