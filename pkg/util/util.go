@@ -194,7 +194,7 @@ func ExtractDataFromRepositoryLabel(labels map[string]string) (data RepoLabelDat
 
 func AttachLocalBackend(podSpec core.PodSpec, localSpec store.LocalSpec) core.PodSpec {
 	volume, mount := localSpec.ToVolumeAndMount(LocalVolumeName)
-	core_util.UpsertVolume(podSpec.Volumes, volume)
+	podSpec.Volumes = core_util.UpsertVolume(podSpec.Volumes, volume)
 	for i := range podSpec.InitContainers {
 		podSpec.InitContainers[i].VolumeMounts = core_util.UpsertVolumeMount(podSpec.InitContainers[i].VolumeMounts, mount)
 	}

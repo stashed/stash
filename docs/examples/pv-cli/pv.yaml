@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: demo-pv
+spec:
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  hostPath:
+    path: /tmp/hostpath-provisioner/pvc-feec96ca-5c1c-11e9-9a75-08002766ec59
+    type: ""
+  storageClassName: standard
+  volumeMode: Filesystem

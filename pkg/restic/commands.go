@@ -254,6 +254,15 @@ func (w *ResticWrapper) stats() ([]byte, error) {
 	return w.run(Command{Name: ResticCMD, Args: args})
 }
 
+func (w *ResticWrapper) unlock() ([]byte, error) {
+	log.Infoln("Unlocking restic repository")
+	args := w.appendCacheDirFlag([]interface{}{"unlock", "--remove-all"})
+	args = w.appendMaxConnectionsFlag(args)
+	args = w.appendCaCertFlag(args)
+
+	return w.run(Command{Name: ResticCMD, Args: args})
+}
+
 func (w *ResticWrapper) appendCacheDirFlag(args []interface{}) []interface{} {
 	if w.config.EnableCache {
 		cacheDir := filepath.Join(w.config.ScratchDir, resticCacheDir)
