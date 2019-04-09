@@ -1,5 +1,5 @@
 hash: 443011c7ae3038e780b049f35f683fb1a57c1faef94090496f244496b772541c
-updated: 2019-04-04T23:50:49.988628395-07:00
+updated: 2019-04-09T15:43:43.68848732+06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -225,13 +225,13 @@ imports:
 - name: github.com/go-ini/ini
   version: a9da9309fb4822643ceebb765f80025c35ac19a1
 - name: github.com/go-openapi/jsonpointer
-  version: ef5f0afec364d3b9396b7b77b43dbe26bf1f8004
+  version: 46af16f9f7b149af66e5d1bd010e3574dc06de98
 - name: github.com/go-openapi/jsonreference
-  version: 8483a886a90412cd6858df4ea3483dce9c8e35a3
+  version: 13c6e3589ad90f49bd3e3bbe2c2cb3d7a4142272
 - name: github.com/go-openapi/spec
   version: 5b6cdde3200976e3ecceb2868706ee39b6aff3e4
 - name: github.com/go-openapi/swag
-  version: 5899d5c5e619fda5fa86e14795a835f473ca284c
+  version: f3f9494671f93fcff853e3c6e9e948b3eb71e590
 - name: github.com/gogo/protobuf
   version: 342cbe0a04158f6dcb03ca0079991a51a4248c02
   subpackages:
@@ -402,6 +402,7 @@ imports:
   subpackages:
   - expfmt
   - internal/bitbucket.org/ww/goautoneg
+  - log
   - model
 - name: github.com/prometheus/procfs
   version: 65c1f6f8f0fc1e2185eb9863a3bc751496404259
@@ -421,6 +422,8 @@ imports:
   - diffmatchpatch
 - name: github.com/sirupsen/logrus
   version: 89742aefa4b206dcf400792f3bd35b542998eb3b
+- name: github.com/Sirupsen/logrus
+  version: 51fe59aca108dc5680109e7b2051cbdcfa5a253c
 - name: github.com/spf13/afero
   version: d40851caa0d747393da1ffb28f7f9d8b4eeffebd
   subpackages:
@@ -468,6 +471,8 @@ imports:
   subpackages:
   - unix
   - windows
+  - windows/registry
+  - windows/svc/eventlog
 - name: golang.org/x/text
   version: b19bf474d317b857955b12035d2c5acb57ce8b01
   subpackages:
