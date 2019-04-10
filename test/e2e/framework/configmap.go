@@ -50,7 +50,7 @@ func (f *Framework) GetLeaderIdentity(meta metav1.ObjectMeta, kind string, modif
 			Kind: kind,
 			Name: meta.Name,
 		})
-	case "restoreconfig":
+	case v1beta1.ResourceKindRestoreSession:
 		configMapLockName = util.GetRestoreConfigmapLockName(v1beta1.TargetRef{
 			Kind: kind,
 			Name: meta.Name,

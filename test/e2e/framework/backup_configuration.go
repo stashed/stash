@@ -19,7 +19,7 @@ func (f *Invocation) BackupConfiguration(repoName string, targetref v1beta1.Targ
 			Repository: core.LocalObjectReference{
 				Name: repoName,
 			},
-			Schedule: "*/1 * * * *",
+			Schedule: "*/2 * * * *",
 			Target: &v1beta1.Target{
 				Ref: targetref,
 				Directories: []string{

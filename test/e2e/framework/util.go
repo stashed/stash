@@ -3,7 +3,6 @@ package framework
 import (
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -23,6 +22,9 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
+)
+var (
+	files = []string{"test-data1.txt", "test-data2.txt", "test-data3.txt", "test-data4.txt", "test-data5.txt"}
 )
 
 const (
@@ -149,6 +151,74 @@ func (f *Framework) CreateDemoData(meta metav1.ObjectMeta) error {
 		return err
 	}
 	return nil
+}
+
+func (f *Framework) ReadSampleDataFromMountedDirectory(meta metav1.ObjectMeta, paths []string, resourceKind string) ([]string, error) {
+	switch resourceKind {
+	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController:
+		pod, err := f.GetPod(meta)
+		if err != nil {
+			return nil, err
+		}
+		var data string
+		datas := make([]string, 0)
+		for _, p := range paths {
+			data, err = f.ExecOnPod(pod, "ls", "-R", p)
+			if err != nil {
+				return nil, err
+			}
+			datas = append(datas, data)
+		}
+		return datas, err
+	case apis.KindStatefulSet, apis.KindDaemonSet:
+		datas := make([]string, 0)
+		pods, err := f.GetAllPod(meta)
+		if err != nil {
+			return datas, err
+		}
+		for _, path := range paths {
+			for _, pod := range pods {
+				data, err := f.ExecOnPod(&pod, "ls", "-R", path)
+				if err != nil {
+					return datas, err
+				}
+				datas = append(datas, data)
+			}
+		}
+		return datas, err
+	}
+	return []string{}, nil
+}
+
+func (f *Framework) ReadSampleDataFromFromWorkload(meta metav1.ObjectMeta, resourceKind string) ([]string, error) {
+	switch resourceKind {
+	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController:
+		pod, err := f.GetPod(meta)
+		if err != nil {
+			return nil, err
+		}
+		var data string
+		datas := make([]string, 0)
+		data, err = f.ExecOnPod(pod, "ls", "-R", TestSourceDataMountPath)
+		datas = append(datas, data)
+		return datas, nil
+	case apis.KindStatefulSet, apis.KindDaemonSet:
+		datas := make([]string, 0)
+		pods, err := f.GetAllPod(meta)
+		if err != nil {
+			return datas, err
+		}
+		for _, pod := range pods {
+			data, err := f.ExecOnPod(&pod, "ls", "-R", TestSourceDataMountPath)
+			if err != nil {
+				return datas, err
+			}
+			datas = append(datas, data)
+		}
+		return datas, err
+
+	}
+	return []string{}, nil
 }
 
 func (f *Framework) CreateDirectory(meta metav1.ObjectMeta, directories []string) error {
@@ -421,6 +491,19 @@ func WaitUntilResticDeleted(sc cs.Interface, meta metav1.ObjectMeta) error {
 	})
 }
 
+func WaitUntilBackupConfigurationDeleted(sc cs.Interface, meta metav1.ObjectMeta) error {
+	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
+		if _, err := sc.StashV1beta1().BackupConfigurations(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+			if kerr.IsNotFound(err) {
+				return true, nil
+			} else {
+				return true, err
+			}
+		}
+		return false, nil
+	})
+}
+
 func WaitUntilRecoveryDeleted(sc cs.Interface, meta metav1.ObjectMeta) error {
 
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
@@ -496,8 +579,7 @@ func (f *Framework) CreateSampleDataInsideWorkload(meta metav1.ObjectMeta, resou
 		if err != nil {
 			return err
 		}
-		file := "test-data.txt"
-		_, err = f.ExecOnPod(pod, "touch", filepath.Join(TestSourceDataMountPath, file))
+		_, err = f.ExecOnPod(pod, "touch", filepath.Join(TestSourceDataMountPath, files[0]))
 		if err != nil {
 			return err
 		}
@@ -506,15 +588,8 @@ func (f *Framework) CreateSampleDataInsideWorkload(meta metav1.ObjectMeta, resou
 		if err != nil {
 			return err
 		}
-		files := []string{"test-data1.txt", "test-data2.txt", "test-data3.txt", "test-data4.txt", "test-data5.txt"}
 		for i, pod := range pods {
-			_, err := f.ExecOnPod(&pod, "mkdir", "-p", "/source/data/dir-"+strconv.Itoa(i))
-			if err != nil {
-				return err
-			}
-		}
-		for i, pod := range pods {
-			_, err := f.ExecOnPod(&pod, "touch", filepath.Join("/source/data/dir-"+strconv.Itoa(i), files[i]))
+			_, err := f.ExecOnPod(&pod, "touch", filepath.Join(TestSourceDataMountPath, files[i]))
 			if err != nil {
 				return err
 			}
@@ -531,8 +606,7 @@ func (f *Invocation) CleanupSampleDataFromWorkload(meta metav1.ObjectMeta, resou
 		if err != nil {
 			return err
 		}
-		file := "test-data.txt"
-		_, err = f.ExecOnPod(pod, "rm", "-rf", filepath.Join(TestSourceDataMountPath, file))
+		_, err = f.ExecOnPod(pod, "rm", "-rf", filepath.Join(TestSourceDataMountPath, files[0]))
 		if err != nil {
 			return err
 		}
@@ -541,9 +615,8 @@ func (f *Invocation) CleanupSampleDataFromWorkload(meta metav1.ObjectMeta, resou
 		if err != nil {
 			return err
 		}
-		files := []string{"test-data1.txt", "test-data2.txt", "test-data3.txt", "test-data4.txt", "test-data5.txt"}
 		for i, pod := range pods {
-			_, err = f.ExecOnPod(&pod, "rm", "-rf", filepath.Join("/source/data/dir-"+strconv.Itoa(i), files[i]))
+			_, err = f.ExecOnPod(&pod, "rm", "-rf", filepath.Join(TestSourceDataMountPath, files[i]))
 			if err != nil {
 				return err
 			}

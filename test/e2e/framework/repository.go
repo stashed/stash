@@ -119,7 +119,7 @@ func (f *Framework) CreateRepository(repo *api.Repository) error {
 
 }
 
-func (f *Invocation) Repository(sec core.Secret, pvcName string) *api.Repository {
+func (f *Invocation) Repository(secretName string, pvcName string) *api.Repository {
 	return &api.Repository{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(f.app + "-local"),
@@ -135,7 +135,7 @@ func (f *Invocation) Repository(sec core.Secret, pvcName string) *api.Repository
 					},
 					MountPath: TestSafeDataMountPath,
 				},
-				StorageSecretName: sec.Name,
+				StorageSecretName: secretName,
 			},
 		},
 	}
