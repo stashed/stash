@@ -8,12 +8,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (fi *Invocation) ReplicationController() core.ReplicationController {
+func (fi *Invocation) ReplicationController(pvcName string) core.ReplicationController {
 	labels := map[string]string{
 		"app":  fi.app,
 		"kind": "replicationcontroller",
 	}
-	podTemplate := fi.PodTemplate(labels)
+	podTemplate := fi.PodTemplate(labels, pvcName)
 	return core.ReplicationController{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),

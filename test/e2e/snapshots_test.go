@@ -93,11 +93,15 @@ var _ = Describe("Snapshots", func() {
 			Skip("Missing repository credential")
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
-		daemon = f.DaemonSet()
-		deployment = f.Deployment()
-		rc = f.ReplicationController()
-		rs = f.ReplicaSet()
-		ss = f.StatefulSet()
+		pvc := f.GetPersistentVolumeClaim()
+		err := f.CreatePersistentVolumeClaim(pvc)
+		Expect(err).NotTo(HaveOccurred())
+		daemon = f.DaemonSet(pvc.Name)
+
+		deployment = f.Deployment(pvc.Name)
+		rc = f.ReplicationController(pvc.Name)
+		rs = f.ReplicaSet(pvc.Name)
+		ss = f.StatefulSet(pvc.Name)
 		svc = f.HeadlessService()
 
 		// if a deployment's labels match to labels of replicaset, kubernetes make the deployment owner of the replicaset.

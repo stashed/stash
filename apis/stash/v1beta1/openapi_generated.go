@@ -472,7 +472,7 @@ func schema_stash_apis_stash_v1beta1_BackupConfigurationSpec(ref common.Referenc
 					},
 					"tempDir": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Temp directory configuration for this function. If set, an `EmptyDir` will be mounted at /tmp with this settings.",
+							Description: "Temp directory configuration for functions/sidecar An `EmptyDir` will always be mounted at /tmp with this settings",
 							Ref:         ref("github.com/appscode/stash/apis/stash/v1beta1.EmptyDirSettings"),
 						},
 					},
@@ -610,7 +610,7 @@ func schema_stash_apis_stash_v1beta1_BackupConfigurationTemplateSpec(ref common.
 					},
 					"tempDir": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Temp directory configuration for this function. If set, an `EmptyDir` will be mounted at /tmp with this settings.",
+							Description: "Temp directory configuration for functions/sidecar An `EmptyDir` will always be mounted at /tmp with this settings",
 							Ref:         ref("github.com/appscode/stash/apis/stash/v1beta1.EmptyDirSettings"),
 						},
 					},
@@ -1372,7 +1372,7 @@ func schema_stash_apis_stash_v1beta1_RestoreSessionSpec(ref common.ReferenceCall
 					},
 					"tempDir": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Temp directory configuration for this function. If set, an `EmptyDir` will be mounted at /tmp with this settings.",
+							Description: "Temp directory configuration for functions/sidecar An `EmptyDir` will always be mounted at /tmp with this settings",
 							Ref:         ref("github.com/appscode/stash/apis/stash/v1beta1.EmptyDirSettings"),
 						},
 					},
@@ -13410,6 +13410,12 @@ func schema_kmodulesxyz_objectstore_api_api_v1_AzureSpec(ref common.ReferenceCal
 							Format: "",
 						},
 					},
+					"maxConnections": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
 				},
 			},
 		},
@@ -13432,6 +13438,12 @@ func schema_kmodulesxyz_objectstore_api_api_v1_B2Spec(ref common.ReferenceCallba
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
+						},
+					},
+					"maxConnections": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
 						},
 					},
 				},
@@ -13510,6 +13522,12 @@ func schema_kmodulesxyz_objectstore_api_api_v1_GCSSpec(ref common.ReferenceCallb
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
+						},
+					},
+					"maxConnections": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
 						},
 					},
 				},

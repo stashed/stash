@@ -90,6 +90,8 @@ import:
   version: v10.0.0
 - package: k8s.io/kube-aggregator
   version: kubernetes-1.13.0
+- package: k8s.io/cli-runtime
+  version: kubernetes-1.13.0
 - package: k8s.io/kube-openapi
   version: c59034cc13d587f5ef4e85ca0ade0c1866ae8e1d
 - package: k8s.io/kubernetes

@@ -58,7 +58,10 @@ var _ = Describe("DaemonSet", func() {
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
 		secondRestic.Spec.Backend.StorageSecretName = cred.Name
-		daemon = f.DaemonSet()
+		pvc := f.GetPersistentVolumeClaim()
+		err := f.CreatePersistentVolumeClaim(pvc)
+		Expect(err).NotTo(HaveOccurred())
+		daemon = f.DaemonSet(pvc.Name)
 		localRef = api.LocalTypedReference{
 			Kind: apis.KindDaemonSet,
 			Name: daemon.Name,
@@ -517,11 +520,6 @@ var _ = Describe("DaemonSet", func() {
 	})
 
 	Describe("Stash Webhook for", func() {
-		BeforeEach(func() {
-			if !f.WebhookEnabled {
-				Skip("Webhook is disabled")
-			}
-		})
 		AfterEach(func() {
 			f.DeleteDaemonSet(daemon.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
@@ -552,9 +550,6 @@ var _ = Describe("DaemonSet", func() {
 			f.DeleteDaemonSet(daemon.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
-			if !f.SelfHostedOperator {
-				framework.CleanupMinikubeHostPath()
-			}
 		})
 
 		Context(`"Local" backend`, func() {
@@ -747,9 +742,6 @@ var _ = Describe("DaemonSet", func() {
 				f.DeleteRestic(restic.ObjectMeta)
 				f.DeleteSecret(cred.ObjectMeta)
 				f.DeleteRecovery(recovery.ObjectMeta)
-				if !f.SelfHostedOperator {
-					framework.CleanupMinikubeHostPath()
-				}
 
 				err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
@@ -838,9 +830,6 @@ var _ = Describe("DaemonSet", func() {
 				f.DeleteRestic(restic.ObjectMeta)
 				f.DeleteSecret(cred.ObjectMeta)
 				f.DeleteRecovery(recovery.ObjectMeta)
-				if !f.SelfHostedOperator {
-					framework.CleanupMinikubeHostPath()
-				}
 			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
@@ -938,9 +927,6 @@ var _ = Describe("DaemonSet", func() {
 				f.DeleteRestic(restic.ObjectMeta)
 				f.DeleteSecret(cred.ObjectMeta)
 				f.DeleteRecovery(recovery.ObjectMeta)
-				if !f.SelfHostedOperator {
-					framework.CleanupMinikubeHostPath()
-				}
 				f.DeleteNamespace(recoveryNamespace.Name)
 
 				err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)

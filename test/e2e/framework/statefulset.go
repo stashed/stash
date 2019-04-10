@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (fi *Invocation) StatefulSet() apps.StatefulSet {
+func (fi *Invocation) StatefulSet(pvcName string) apps.StatefulSet {
 	labels := map[string]string{
 		"app":  fi.app,
 		"kind": "statefulset",
@@ -24,7 +24,7 @@ func (fi *Invocation) StatefulSet() apps.StatefulSet {
 				MatchLabels: labels,
 			},
 			Replicas:    types.Int32P(1),
-			Template:    fi.PodTemplate(labels),
+			Template:    fi.PodTemplate(labels, pvcName),
 			ServiceName: TEST_HEADLESS_SERVICE,
 			UpdateStrategy: apps.StatefulSetUpdateStrategy{
 				Type: apps.RollingUpdateStatefulSetStrategyType,

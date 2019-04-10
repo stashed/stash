@@ -12,34 +12,24 @@ import (
 
 type E2EOptions struct {
 	*server.ExtraOptions
-
-	KubeContext        string
-	KubeConfig         string
-	EnableWebhook      bool
-	SelfHostedOperator bool
+	KubeContext string
+	KubeConfig  string
 }
 
 var (
 	options = &E2EOptions{
-		ExtraOptions:       server.NewExtraOptions(),
-		KubeConfig:         filepath.Join(homedir.HomeDir(), ".kube", "config"),
-		EnableWebhook:      true,
-		SelfHostedOperator: false,
+		ExtraOptions: server.NewExtraOptions(),
+		KubeConfig:   filepath.Join(homedir.HomeDir(), ".kube", "config"),
 	}
 )
 
 func init() {
-	options.StashImageTag = TestStashImageTag
-	options.AddGoFlags(flag.CommandLine)
+	//options.AddGoFlags(flag.CommandLine)
+	flag.StringVar(&options.DockerRegistry, "docker-registry", "", "Set Docker Registry")
+	flag.StringVar(&options.StashImageTag, "image-tag", "", "Set Stash Image Tag")
 	flag.StringVar(&options.KubeConfig, "kubeconfig", options.KubeConfig, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	flag.StringVar(&options.KubeContext, "kube-context", "", "Name of kube context")
-	flag.BoolVar(&options.EnableWebhook, "webhook", options.EnableWebhook, "Enable Mutating and Validating Webhook")
-	flag.BoolVar(&options.SelfHostedOperator, "selfhosted-operator", options.SelfHostedOperator, "Run test in self hosted operator mode")
 	enableLogging()
-	flag.Parse()
-
-	options.EnableMutatingWebhook = options.EnableWebhook
-	options.EnableValidatingWebhook = options.EnableWebhook
 }
 
 func enableLogging() {

@@ -8,7 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func (fi *Invocation) DaemonSet() apps.DaemonSet {
+func (fi *Invocation) DaemonSet(pvcName string) apps.DaemonSet {
 	labels := map[string]string{
 		"app":  fi.app,
 		"kind": "daemonset",
@@ -23,7 +23,7 @@ func (fi *Invocation) DaemonSet() apps.DaemonSet {
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
-			Template: fi.PodTemplate(labels),
+			Template: fi.PodTemplate(labels, pvcName),
 			UpdateStrategy: apps.DaemonSetUpdateStrategy{
 				RollingUpdate: &apps.RollingUpdateDaemonSet{MaxUnavailable: &intstr.IntOrString{IntVal: 1}},
 			},

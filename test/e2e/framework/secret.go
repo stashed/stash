@@ -23,6 +23,7 @@ func (fi *Invocation) SecretForLocalBackend() core.Secret {
 		Data: map[string][]byte{
 			cli.RESTIC_PASSWORD: []byte(TEST_RESTIC_PASSWORD),
 		},
+		Type: core.SecretTypeOpaque,
 	}
 }
 

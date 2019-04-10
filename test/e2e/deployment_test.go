@@ -64,7 +64,10 @@ var _ = Describe("Deployment", func() {
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
 		secondRestic.Spec.Backend.StorageSecretName = cred.Name
-		deployment = f.Deployment()
+		pvc := f.GetPersistentVolumeClaim()
+		err := f.CreatePersistentVolumeClaim(pvc)
+		Expect(err).NotTo(HaveOccurred())
+		deployment = f.Deployment(pvc.Name)
 		localRef = api.LocalTypedReference{
 			Kind: apis.KindDeployment,
 			Name: deployment.Name,
@@ -248,7 +251,7 @@ var _ = Describe("Deployment", func() {
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for leader election")
-			f.CheckLeaderElection(deployment.ObjectMeta, apis.KindDeployment)
+			f.CheckLeaderElection(deployment.ObjectMeta, apis.KindDeployment, api.ResourceKindRestic)
 
 			By("Waiting for Repository CRD")
 			f.EventuallyRepository(&deployment).ShouldNot(BeEmpty())
@@ -561,10 +564,6 @@ var _ = Describe("Deployment", func() {
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
 			f.DeleteRecovery(recovery.ObjectMeta)
-			if !f.SelfHostedOperator {
-				framework.CleanupMinikubeHostPath()
-			}
-
 			err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -635,11 +634,6 @@ var _ = Describe("Deployment", func() {
 	})
 
 	Describe("Stash Webhook for", func() {
-		BeforeEach(func() {
-			if !f.WebhookEnabled {
-				Skip("Webhook is disabled")
-			}
-		})
 		AfterEach(func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
@@ -670,9 +664,6 @@ var _ = Describe("Deployment", func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
-			if !f.SelfHostedOperator {
-				framework.CleanupMinikubeHostPath()
-			}
 		})
 
 		Context(`Single Replica`, func() {
@@ -1071,11 +1062,6 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 		Context(`"Local" backend,single fileGroup`, func() {
-			AfterEach(func() {
-				if !f.SelfHostedOperator {
-					framework.CleanupMinikubeHostPath()
-				}
-			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
@@ -1154,11 +1140,6 @@ var _ = Describe("Deployment", func() {
 		})
 
 		Context(`"Local" backend, multiple fileGroup`, func() {
-			AfterEach(func() {
-				if !f.SelfHostedOperator {
-					framework.CleanupMinikubeHostPath()
-				}
-			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
@@ -1261,9 +1242,6 @@ var _ = Describe("Deployment", func() {
 
 		Context(`"Local" backend,single fileGroup`, func() {
 			AfterEach(func() {
-				if !f.SelfHostedOperator {
-					framework.CleanupMinikubeHostPath()
-				}
 				f.DeleteNamespace(recoveryNamespace.Name)
 
 				err := framework.WaitUntilNamespaceDeleted(f.KubeClient, recoveryNamespace.ObjectMeta)
@@ -1363,9 +1341,6 @@ var _ = Describe("Deployment", func() {
 				f.DeleteRestic(restic.ObjectMeta)
 				f.DeleteSecret(cred.ObjectMeta)
 				f.DeleteRecovery(recovery.ObjectMeta)
-				if !f.SelfHostedOperator {
-					framework.CleanupMinikubeHostPath()
-				}
 
 				err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
@@ -1494,7 +1469,7 @@ var _ = Describe("Deployment", func() {
 				clusterIP := net.IP{192, 168, 99, 100}
 
 				pod, err := f.GetOperatorPod()
-				if f.SelfHostedOperator && pod.Spec.NodeName != "minikube" {
+				if pod.Spec.NodeName != "minikube" {
 					node, err := f.KubeClient.CoreV1().Nodes().Get(pod.Spec.NodeName, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 
@@ -1570,9 +1545,6 @@ var _ = Describe("Deployment", func() {
 			f.DeleteDeployment(deployment.ObjectMeta)
 			f.DeleteRestic(restic.ObjectMeta)
 			f.DeleteSecret(cred.ObjectMeta)
-			if !f.SelfHostedOperator {
-				framework.CleanupMinikubeHostPath()
-			}
 		})
 
 		Context("Multiple Replica", func() {

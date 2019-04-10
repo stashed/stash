@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eou pipefail
 
-crds=(restics repositories recoveries)
+crds=(restics repositories recoveries backupconfigurations backupsessions)
 
 echo "checking kubeconfig context"
 kubectl config current-context || {
@@ -374,6 +374,10 @@ if [ "$STASH_UNINSTALL" -eq 1 ]; then
       for ((i = 0; i < $total; i += 2)); do
         name=${pairs[$i]}
         namespace=${pairs[$i + 1]}
+
+         # remove finalizers
+        kubectl patch ${crd} $name -n $namespace -p '{"metadata":{"finalizers":[]}}' --type=merge || true
+
         # delete crd object
         echo "deleting ${crd} $namespace/$name"
         kubectl delete ${crd}.stash.appscode.com $name -n $namespace

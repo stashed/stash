@@ -4,6 +4,7 @@ import (
 	"math"
 	"strconv"
 
+	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/stash/apis"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/osm"
@@ -13,6 +14,7 @@ import (
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	store "kmodules.xyz/objectstore-api/api/v1"
 )
 
 type KindMetaReplicas struct {
@@ -64,7 +66,7 @@ func (f *Framework) GetRepositories(kmr KindMetaReplicas) []*api.Repository {
 
 func (f *Framework) DeleteRepositories(repositories []*api.Repository) {
 	for _, repo := range repositories {
-		err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Delete(repo.Name, deleteInForeground())
+		err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Delete(repo.Name, deleteInBackground())
 		Expect(err).NotTo(HaveOccurred())
 	}
 }
@@ -103,9 +105,38 @@ func (f *Framework) BackupCountInRepositoriesStatus(repos []*api.Repository) int
 
 	// use minimum backupCount among all repos
 	for _, repo := range repos {
-		if repo.Status.BackupCount < backupCount {
-			backupCount = repo.Status.BackupCount
+		if int64(repo.Status.BackupCount) < backupCount {
+			backupCount = int64(repo.Status.BackupCount)
 		}
 	}
 	return backupCount
+}
+
+func (f *Framework) CreateRepository(repo *api.Repository) error {
+	_, err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+
+	return err
+
+}
+
+func (f *Invocation) Repository(secretName string, pvcName string) *api.Repository {
+	return &api.Repository{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rand.WithUniqSuffix(f.app + "-local"),
+			Namespace: f.namespace,
+		},
+		Spec: api.RepositorySpec{
+			Backend: store.Backend{
+				Local: &store.LocalSpec{
+					VolumeSource: core.VolumeSource{
+						PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
+							ClaimName: pvcName,
+						},
+					},
+					MountPath: TestSafeDataMountPath,
+				},
+				StorageSecretName: secretName,
+			},
+		},
+	}
 }
