@@ -176,16 +176,32 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 		}
 	}
 
-	// resolve task
+	// get repository for backupConfig
+	repository, err := c.stashClient.StashV1alpha1().Repositories(backupConfig.Namespace).Get(
+		backupConfig.Spec.Repository.Name,
+		metav1.GetOptions{},
+	)
+	if err != nil {
+		return err
+	}
+
+	// resolve task template
+
 	explicitInputs := make(map[string]string)
 	for _, param := range backupConfig.Spec.Task.Params {
 		explicitInputs[param.Name] = param.Value
 	}
 
-	implicitInputs, err := c.inputsForBackupConfig(*backupConfig)
+	repoInputs, err := c.inputsForRepository(repository)
+	if err != nil {
+		return fmt.Errorf("cannot resolve implicit inputs for Repository %s/%s, reason: %s", repository.Namespace, repository.Name, err)
+	}
+	bcInputs, err := c.inputsForBackupConfig(*backupConfig)
 	if err != nil {
 		return fmt.Errorf("cannot resolve implicit inputs for BackupConfiguration %s/%s, reason: %s", backupConfig.Namespace, backupConfig.Name, err)
 	}
+
+	implicitInputs := core_util.UpsertMap(repoInputs, bcInputs)
 	implicitInputs[apis.Namespace] = backupSession.Namespace
 	implicitInputs[apis.BackupSession] = backupSession.Name
 	implicitInputs[apis.StatusSubresourceEnabled] = fmt.Sprint(apis.EnableStatusSubresource)
@@ -200,6 +216,10 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 	podSpec, err := taskResolver.GetPodSpec()
 	if err != nil {
 		return fmt.Errorf("can't get PodSpec for BackupConfiguration %s/%s, reason: %s", backupConfig.Namespace, backupConfig.Name, err)
+	}
+	// for local backend, attach volume to all containers
+	if repository.Spec.Backend.Local != nil {
+		podSpec = util.AttachLocalBackend(podSpec, *repository.Spec.Backend.Local)
 	}
 
 	// create Backup Job

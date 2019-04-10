@@ -208,16 +208,32 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		}
 	}
 
+	// get repository for backupConfig
+	repository, err := c.stashClient.StashV1alpha1().Repositories(restoreSession.Namespace).Get(
+		restoreSession.Spec.Repository.Name,
+		metav1.GetOptions{},
+	)
+	if err != nil {
+		return err
+	}
+
 	// resolve task template
+
 	explicitInputs := make(map[string]string)
 	for _, param := range restoreSession.Spec.Task.Params {
 		explicitInputs[param.Name] = param.Value
 	}
 
-	implicitInputs, err := c.inputsForRestoreSession(*restoreSession)
+	repoInputs, err := c.inputsForRepository(repository)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot resolve implicit inputs for Repository %s/%s, reason: %s", repository.Namespace, repository.Name, err)
 	}
+	rsInputs, err := c.inputsForRestoreSession(*restoreSession)
+	if err != nil {
+		return fmt.Errorf("cannot resolve implicit inputs for RestoreSession %s/%s, reason: %s", restoreSession.Namespace, restoreSession.Name, err)
+	}
+
+	implicitInputs := core_util.UpsertMap(repoInputs, rsInputs)
 	implicitInputs[apis.Namespace] = restoreSession.Namespace
 	implicitInputs[apis.RestoreSession] = restoreSession.Name
 	implicitInputs[apis.StatusSubresourceEnabled] = fmt.Sprint(apis.EnableStatusSubresource)
@@ -232,6 +248,10 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 	podSpec, err := taskResolver.GetPodSpec()
 	if err != nil {
 		return err
+	}
+	// for local backend, attach volume to all containers
+	if repository.Spec.Backend.Local != nil {
+		podSpec = util.AttachLocalBackend(podSpec, *repository.Spec.Backend.Local)
 	}
 
 	// create Restore Job

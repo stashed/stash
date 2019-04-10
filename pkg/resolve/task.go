@@ -191,6 +191,7 @@ func resolveWithInputs(obj interface{}, inputs map[string]string) error {
 	}
 	return json.Unmarshal([]byte(resolved), obj)
 }
+
 func ResolveBackend(backend *store.Backend, input map[string]string) error {
 	return resolveWithInputs(backend, input)
 }
