@@ -10,6 +10,8 @@ import (
 	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
 	"github.com/appscode/stash/pkg/restic"
 	"github.com/pkg/errors"
+	core "k8s.io/api/core/v1"
+	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
 	store "kmodules.xyz/objectstore-api/api/v1"
 )
@@ -188,4 +190,16 @@ func ExtractDataFromRepositoryLabel(labels map[string]string) (data RepoLabelDat
 		data.NodeName = ""
 	}
 	return data, nil
+}
+
+func AttachLocalBackend(podSpec core.PodSpec, localSpec store.LocalSpec) core.PodSpec {
+	volume, mount := localSpec.ToVolumeAndMount(LocalVolumeName)
+	core_util.UpsertVolume(podSpec.Volumes, volume)
+	for i := range podSpec.InitContainers {
+		podSpec.InitContainers[i].VolumeMounts = core_util.UpsertVolumeMount(podSpec.InitContainers[i].VolumeMounts, mount)
+	}
+	for i := range podSpec.Containers {
+		podSpec.Containers[i].VolumeMounts = core_util.UpsertVolumeMount(podSpec.Containers[i].VolumeMounts, mount)
+	}
+	return podSpec
 }

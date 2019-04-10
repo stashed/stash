@@ -8,26 +8,12 @@ import (
 	apiAlpha "github.com/appscode/stash/apis/stash/v1alpha1"
 	api "github.com/appscode/stash/apis/stash/v1beta1"
 	"github.com/appscode/stash/pkg/util"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 )
 
 func (c *StashController) inputsForBackupConfig(backupConfig api.BackupConfiguration) (map[string]string, error) {
-	// get repository for backupConfig
-	repository, err := c.stashClient.StashV1alpha1().Repositories(backupConfig.Namespace).Get(
-		backupConfig.Spec.Repository.Name,
-		metav1.GetOptions{},
-	)
-	if err != nil {
-		return nil, err
-	}
-	// get inputs for repository
-	inputs, err := c.inputsForRepository(repository)
-	if err != nil {
-		return nil, err
-	}
-	// append inputs for target
-	inputs = core_util.UpsertMap(inputs, c.inputsForTarget(backupConfig.Spec.Target))
+	// get inputs for target
+	inputs := c.inputsForTarget(backupConfig.Spec.Target)
 	// append inputs for RetentionPolicy
 	inputs = core_util.UpsertMap(inputs, c.inputsForRetentionPolicy(backupConfig.Spec.RetentionPolicy))
 
@@ -45,21 +31,8 @@ func (c *StashController) inputsForBackupConfig(backupConfig api.BackupConfigura
 }
 
 func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSession) (map[string]string, error) {
-	// get repository for restoreSession
-	repository, err := c.stashClient.StashV1alpha1().Repositories(restoreSession.Namespace).Get(
-		restoreSession.Spec.Repository.Name,
-		metav1.GetOptions{},
-	)
-	if err != nil {
-		return nil, err
-	}
-	// get inputs for repository
-	inputs, err := c.inputsForRepository(repository)
-	if err != nil {
-		return nil, err
-	}
-	// append inputs for target
-	inputs = core_util.UpsertMap(inputs, c.inputsForTarget(restoreSession.Spec.Target))
+	// get inputs for target
+	inputs := c.inputsForTarget(restoreSession.Spec.Target)
 
 	// get host name for target
 	host, err := util.GetHostName(restoreSession.Spec.Target)
