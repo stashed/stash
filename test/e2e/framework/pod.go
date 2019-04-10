@@ -77,7 +77,7 @@ func (f *Framework) GetAllPod(meta metav1.ObjectMeta) ([]core.Pod, error) {
 		return nil, err
 	}
 	for _, pod := range podList.Items {
-		if bytes.HasPrefix([]byte(pod.Name), []byte(meta.Name)) {
+		if strings.HasPrefix(pod.Name, meta.Name) {
 			pods = append(pods,pod)
 		}
 	}

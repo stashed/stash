@@ -54,7 +54,7 @@ var _ = Describe("Deployment", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 	var (
-		shouldBackupNewDeployment = func() {
+		testDeploymentBackup = func() {
 			By("Creating Deployment " + deployment.Name)
 			_, err = f.CreateDeployment(deployment)
 			Expect(err).NotTo(HaveOccurred())
@@ -130,7 +130,9 @@ var _ = Describe("Deployment", func() {
 
 		})
 		It("General Backup new Deployment", func() {
-			shouldBackupNewDeployment()
+			By("Creating New Deployment Backup")
+			testDeploymentBackup()
+
 			By("Remove sample data from workload")
 			err = f.CleanupSampleDataFromWorkload(deployment.ObjectMeta, apis.KindDeployment)
 			Expect(err).NotTo(HaveOccurred())
@@ -270,7 +272,9 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 		It("Restore data on different Deployment", func() {
-            shouldBackupNewDeployment()
+			By("Creating New Deployment Backup")
+			testDeploymentBackup()
+
 			By("Creating another Deployment " + recoveredDeployment.Name)
 			_, err = f.CreateDeployment(recoveredDeployment)
 			Expect(err).NotTo(HaveOccurred())
