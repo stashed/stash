@@ -90,4 +90,3 @@ func (f *Framework) ReadDataFromMountedDir(meta metav1.ObjectMeta, paths []strin
 	}
 	return datas, nil
 }
-
