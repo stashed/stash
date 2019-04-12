@@ -12,6 +12,11 @@ import (
 	"kmodules.xyz/client-go/tools/clientcmd"
 )
 
+const (
+	cliScratchDir = "/tmp/stash-cli/scratch"
+	cliSecretDir  = "/tmp/stash-cli/secret"
+)
+
 type stashCLIController struct {
 	clientConfig *rest.Config
 	kubeClient   kubernetes.Interface
@@ -34,6 +39,7 @@ func NewCLICmd() *cobra.Command {
 	cmd.AddCommand(NewUnlockLocalRepositoryCmd())
 	cmd.AddCommand(NewTriggerBackupCmd())
 	cmd.AddCommand(NewBackupPVCmd())
+	cmd.AddCommand(NewDownloadCmd())
 
 	return cmd
 }

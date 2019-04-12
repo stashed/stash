@@ -9,6 +9,7 @@ import (
 const (
 	DefaultOutputFileName = "output.json"
 	DefaultScratchDir     = "/tmp"
+	DefaultHost           = "host-0"
 )
 
 type ResticWrapper struct {
@@ -35,6 +36,7 @@ type RestoreOptions struct {
 	SourceHost  string
 	RestoreDirs []string
 	Snapshots   []string // when Snapshots are specified SourceHost and RestoreDirs will not be used
+	Destination string   // destination path where snapshot will be restored, used in cli
 }
 
 type DumpOptions struct {
