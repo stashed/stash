@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/appscode/go/flags"
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
 	"github.com/appscode/stash/apis/stash/v1alpha1"
@@ -52,6 +53,8 @@ func NewUnlockRepositoryCmd() *cobra.Command {
 		Long:              `Unlock Restic Repository`,
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			flags.EnsureRequiredFlags(cmd, "repository")
+
 			c, err := newStashCLIController(kubeConfig)
 			if err != nil {
 				return err

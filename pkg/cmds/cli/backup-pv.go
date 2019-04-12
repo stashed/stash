@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/appscode/go/flags"
 	"github.com/appscode/go/log"
 	"github.com/appscode/stash/apis/stash/v1beta1"
 	"github.com/spf13/cobra"
@@ -28,6 +29,8 @@ func NewBackupPVCmd() *cobra.Command {
 		Long:              `Backup persistent volume using BackupConfiguration Template`,
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			flags.EnsureRequiredFlags(cmd, "volume", "template", "directories", "mountpath")
+
 			c, err := newStashCLIController(kubeConfig)
 			if err != nil {
 				return err
