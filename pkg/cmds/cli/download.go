@@ -19,7 +19,6 @@ func NewDownloadCmd() *cobra.Command {
 		kubeConfig     string
 		repositoryName string
 		namespace      string
-		destination    string
 		restoreOpt     = restic.RestoreOptions{
 			SourceHost: restic.DefaultHost,
 		}
@@ -31,7 +30,7 @@ func NewDownloadCmd() *cobra.Command {
 		Long:              `Download contents of snapshots from Repository`,
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			flags.EnsureRequiredFlags(cmd, "repository", "destination")
+			flags.EnsureRequiredFlags(cmd, "repository")
 
 			c, err := newStashCLIController(kubeConfig)
 			if err != nil {
@@ -83,11 +82,18 @@ func NewDownloadCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			// if destination flag not specified, restore in current directory
+			if restoreOpt.Destination == "" {
+				restoreOpt.Destination, err = os.Getwd()
+				if err != nil {
+					return err
+				}
+			}
 			// run restore
 			if _, err = resticWrapper.RunRestore(restoreOpt); err != nil {
 				return err
 			}
-			log.Infof("Repository %s/%s restored in path %s", namespace, repositoryName, destination)
+			log.Infof("Repository %s/%s restored in path %s", namespace, repositoryName, restoreOpt.Destination)
 			return nil
 		},
 	}
