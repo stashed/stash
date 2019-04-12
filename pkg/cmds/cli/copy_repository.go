@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"github.com/appscode/go/flags"
 	"github.com/appscode/go/log"
 	"github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
@@ -24,6 +25,8 @@ func NewCopyRepositoryCmd() *cobra.Command {
 		Long:              `Copy Repository and Secret from one namespace to another namespace`,
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			flags.EnsureRequiredFlags(cmd, "repository", "source-namespace", "destination-namespace")
+
 			c, err := newStashCLIController(kubeConfig)
 			if err != nil {
 				return err

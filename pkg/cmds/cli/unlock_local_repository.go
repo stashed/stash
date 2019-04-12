@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"github.com/appscode/go/flags"
 	"github.com/appscode/go/log"
 	"github.com/appscode/stash/pkg/restic"
 	"github.com/spf13/cobra"
@@ -21,6 +22,8 @@ func NewUnlockLocalRepositoryCmd() *cobra.Command {
 		Long:              `Unlock Restic Repository with Local Backend`,
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			flags.EnsureRequiredFlags(cmd, "path", "secret-dir")
+
 			resticWrapper, err := restic.NewResticWrapper(setupOpt)
 			if err != nil {
 				return err
