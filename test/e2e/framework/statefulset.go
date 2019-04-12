@@ -35,7 +35,7 @@ func (fi *Invocation) StatefulSet(pvcName string) apps.StatefulSet {
 	}
 }
 
-func (fi *Invocation) StatefulSetv1beta1() apps.StatefulSet {
+func (fi *Invocation) StatefulSetForV1beta1API() apps.StatefulSet {
 	labels := map[string]string{
 		"app":  fi.app,
 		"kind": "statefulset",

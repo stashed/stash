@@ -14,24 +14,29 @@ import (
 	core "k8s.io/api/core/v1"
 )
 
+var (
+	err                 error
+	f                   *framework.Invocation
+	cred                core.Secret
+	deployment          apps.Deployment
+	recoveredDeployment apps.Deployment
+	ss                  apps.StatefulSet
+	recoveredss         apps.StatefulSet
+	repo                *api.Repository
+	backupCfg           v1beta1.BackupConfiguration
+	restoreSession      v1beta1.RestoreSession
+	pvc                 *core.PersistentVolumeClaim
+	targetref           v1beta1.TargetRef
+	rules               []v1beta1.Rule
+	svc                 core.Service
+)
+var (
+	sampleData   []string
+	restoredData []string
+)
+
 var _ = Describe("Deployment", func() {
-	var (
-		err                 error
-		f                   *framework.Invocation
-		cred                core.Secret
-		deployment          apps.Deployment
-		recoveredDeployment apps.Deployment
-		repo                *api.Repository
-		backupCfg           v1beta1.BackupConfiguration
-		restoreSession      v1beta1.RestoreSession
-		pvc                 *core.PersistentVolumeClaim
-		targetref           v1beta1.TargetRef
-		rules          []v1beta1.Rule
-	)
-	var (
-		sampleData   []string
-		restoredData []string
-	)
+
 	BeforeEach(func() {
 		f = root.Invoke()
 	})
@@ -322,24 +327,7 @@ var _ = Describe("Deployment", func() {
 })
 
 var _ = Describe("Statefulset", func() {
-	var (
-		err            error
-		f              *framework.Invocation
-		cred           core.Secret
-		ss             apps.StatefulSet
-		recoveredss    apps.StatefulSet
-		repo           *api.Repository
-		backupCfg      v1beta1.BackupConfiguration
-		restoreSession v1beta1.RestoreSession
-		pvc            *core.PersistentVolumeClaim
-		svc            core.Service
-		targetref      v1beta1.TargetRef
-		rules          []v1beta1.Rule
-	)
-	var (
-		sampleData   []string
-		restoredData []string
-	)
+
 	BeforeEach(func() {
 		f = root.Invoke()
 	})
@@ -423,7 +411,7 @@ var _ = Describe("Statefulset", func() {
 			err = f.CreateService(svc)
 			Expect(err).NotTo(HaveOccurred())
 
-			ss = f.StatefulSetv1beta1()
+			ss = f.StatefulSetForV1beta1API()
 			targetref = v1beta1.TargetRef{
 				Name:       ss.Name,
 				Kind:       apis.KindStatefulSet,
@@ -476,11 +464,11 @@ var _ = Describe("Statefulset", func() {
 		})
 	})
 
-	Context("Backup && Restore data on different StatefulSet", func() {
+	Context("Restore data on different StatefulSet", func() {
 		BeforeEach(func() {
 			svc = f.HeadlessService()
-			ss = f.StatefulSetv1beta1()
-			recoveredss = f.StatefulSetv1beta1()
+			ss = f.StatefulSetForV1beta1API()
+			recoveredss = f.StatefulSetForV1beta1API()
 			targetref = v1beta1.TargetRef{
 				Name:       ss.Name,
 				Kind:       apis.KindStatefulSet,
@@ -546,8 +534,8 @@ var _ = Describe("Statefulset", func() {
 	Context("Restore data on Scaled Up StatefulSet", func() {
 		BeforeEach(func() {
 			svc = f.HeadlessService()
-			ss = f.StatefulSetv1beta1()
-			recoveredss = f.StatefulSetv1beta1()
+			ss = f.StatefulSetForV1beta1API()
+			recoveredss = f.StatefulSetForV1beta1API()
 			targetref = v1beta1.TargetRef{
 				Name:       ss.Name,
 				Kind:       apis.KindStatefulSet,
@@ -618,11 +606,11 @@ var _ = Describe("Statefulset", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Comparing between first and second StatefulSet sample data")
-			Expect(sampleData).Should(BeEquivalentTo(restoredData[0:(len(restoredData)-len(sampleData))+1]))
+			Expect(sampleData).Should(BeEquivalentTo(restoredData[0 : (len(restoredData)-len(sampleData))+1]))
 			data := make([]string, 0)
 			data = append(data, sampleData[1])
 			data = append(data, sampleData[1])
-			Expect(data).Should(BeEquivalentTo(restoredData[(len(restoredData)-len(sampleData)+1):]))
+			Expect(data).Should(BeEquivalentTo(restoredData[(len(restoredData) - len(sampleData) + 1):]))
 
 		})
 	})
