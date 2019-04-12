@@ -180,7 +180,7 @@ func (f *Framework) ReadSampleDataFromMountedDirectory(meta metav1.ObjectMeta, p
 			for _, pod := range pods {
 				data, err := f.ExecOnPod(&pod, "ls", "-R", path)
 				if err != nil {
-					return datas, err
+					continue
 				}
 				datas = append(datas, data)
 			}
@@ -345,7 +345,24 @@ func GetPathsFromRestoreSession(restoreSession *v1beta1.RestoreSession) []string
 			paths = append(paths, p)
 		}
 	}
+	paths = removeDuplicates(paths)
 	return paths
+}
+
+func removeDuplicates(elements []string) []string {
+	encountered := map[string]bool{}
+
+	// Create a map of all unique elements.
+	for v:= range elements {
+		encountered[elements[v]] = true
+	}
+
+	// Place all keys from the map into a slice.
+	result := []string{}
+	for key, _ := range encountered {
+		result = append(result, key)
+	}
+	return result
 }
 
 func (f *Framework) EventuallyJobSucceed(name string) GomegaAsyncAssertion {

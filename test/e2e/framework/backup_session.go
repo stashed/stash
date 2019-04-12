@@ -29,7 +29,7 @@ func (f *Framework) EventuallyBackupSessionCreated(meta metav1.ObjectMeta) Gomeg
 			}
 			return false
 		},
-		time.Minute*2,
+		time.Minute*7,
 		time.Second*5,
 	)
 }
@@ -43,4 +43,14 @@ func (f *Framework) GetBackupSession(meta metav1.ObjectMeta) (*v1beta1.BackupSes
 		return &backupsnlist.Items[0],nil
 	}
 	return nil,fmt.Errorf("no BackupSession found")
+}
+
+func (f *Framework) EventuallyBackupSessionTotalHost(meta metav1.ObjectMeta) GomegaAsyncAssertion {
+	return Eventually(
+		func() (totalhost *int32) {
+			bs, err := f.StashClient.StashV1beta1().BackupSessions(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			Expect(err).NotTo(HaveOccurred())
+			return bs.Status.TotalHosts
+		},
+	)
 }
