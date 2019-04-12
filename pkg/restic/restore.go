@@ -19,13 +19,13 @@ func (w *ResticWrapper) RunRestore(restoreOptions RestoreOptions) (*RestoreOutpu
 	if len(restoreOptions.Snapshots) != 0 {
 		for _, snapshot := range restoreOptions.Snapshots {
 			// if snapshot is specified then host and path does not matter.
-			if _, err := w.restore("", "", snapshot); err != nil {
+			if _, err := w.restore("", "", snapshot, restoreOptions.Destination); err != nil {
 				return nil, err
 			}
 		}
 	} else if len(restoreOptions.RestoreDirs) != 0 {
 		for _, path := range restoreOptions.RestoreDirs {
-			if _, err := w.restore(path, restoreOptions.SourceHost, ""); err != nil {
+			if _, err := w.restore(path, restoreOptions.SourceHost, "", restoreOptions.Destination); err != nil {
 				return nil, err
 			}
 		}

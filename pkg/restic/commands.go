@@ -172,7 +172,7 @@ func (w *ResticWrapper) cleanup(retentionPolicy v1alpha1.RetentionPolicy) ([]byt
 	return nil, nil
 }
 
-func (w *ResticWrapper) restore(path, host, snapshotID string) ([]byte, error) {
+func (w *ResticWrapper) restore(path, host, snapshotID, destination string) ([]byte, error) {
 	log.Infoln("Restoring backed up data")
 
 	args := []interface{}{"restore"}
@@ -190,7 +190,11 @@ func (w *ResticWrapper) restore(path, host, snapshotID string) ([]byte, error) {
 		args = append(args, host)
 	}
 
-	args = append(args, "--target", "/") // restore in absolute path
+	if destination == "" {
+		destination = "/" // restore in absolute path
+	}
+	args = append(args, "--target", destination)
+
 	args = w.appendCacheDirFlag(args)
 	args = w.appendCaCertFlag(args)
 	args = w.appendMaxConnectionsFlag(args)

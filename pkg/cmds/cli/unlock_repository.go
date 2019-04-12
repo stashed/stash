@@ -28,8 +28,6 @@ const (
 	unlockJobPrefix       = "unlock-local-repo-"
 	unlockJobSecretDir    = "/etc/secret"
 	unlockJobSecretVolume = "secret-volume"
-	unlockScratchDir      = "/tmp/unlock-repository/scratch"
-	unlockSecretDir       = "/tmp/unlock-repository/secret"
 )
 
 var (
@@ -81,23 +79,23 @@ func NewUnlockRepositoryCmd() *cobra.Command {
 			}
 
 			// cleanup whole scratch/secret dir at the end
-			defer os.RemoveAll(unlockScratchDir)
-			defer os.RemoveAll(unlockSecretDir)
+			defer os.RemoveAll(cliScratchDir)
+			defer os.RemoveAll(cliSecretDir)
 
 			// write repository secrets in a temp dir
-			if err := os.MkdirAll(unlockSecretDir, 0755); err != nil {
+			if err := os.MkdirAll(cliSecretDir, 0755); err != nil {
 				return err
 			}
 			for key, value := range secret.Data {
-				if err := ioutil.WriteFile(filepath.Join(unlockSecretDir, key), value, 0755); err != nil {
+				if err := ioutil.WriteFile(filepath.Join(cliSecretDir, key), value, 0755); err != nil {
 					return err
 				}
 			}
 
 			extraOpt := util.ExtraOptions{
-				SecretDir:   unlockSecretDir,
+				SecretDir:   cliSecretDir,
 				EnableCache: false,
-				ScratchDir:  unlockScratchDir,
+				ScratchDir:  cliScratchDir,
 			}
 			setupOpt, err := util.SetupOptionsForRepository(*repository, extraOpt)
 			if err != nil {
