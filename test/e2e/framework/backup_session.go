@@ -21,7 +21,7 @@ func (f *Framework) EventuallyBackupSessionPhase(meta metav1.ObjectMeta) GomegaA
 
 func (f *Framework) EventuallyBackupSessionCreated(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
-		func()  bool {
+		func() bool {
 			backupsnlist, err := f.StashClient.StashV1beta1().BackupSessions(meta.Namespace).List(metav1.ListOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			if len(backupsnlist.Items) > 0 {
@@ -34,15 +34,15 @@ func (f *Framework) EventuallyBackupSessionCreated(meta metav1.ObjectMeta) Gomeg
 	)
 }
 
-func (f *Framework) GetBackupSession(meta metav1.ObjectMeta) (*v1beta1.BackupSession, error){
+func (f *Framework) GetBackupSession(meta metav1.ObjectMeta) (*v1beta1.BackupSession, error) {
 	backupsnlist, err := f.StashClient.StashV1beta1().BackupSessions(meta.Namespace).List(metav1.ListOptions{})
-	if err != nil{
-		return nil,err
+	if err != nil {
+		return nil, err
 	}
-	if len(backupsnlist.Items)>0{
-		return &backupsnlist.Items[0],nil
+	if len(backupsnlist.Items) > 0 {
+		return &backupsnlist.Items[0], nil
 	}
-	return nil,fmt.Errorf("no BackupSession found")
+	return nil, fmt.Errorf("no BackupSession found")
 }
 
 func (f *Framework) EventuallyBackupSessionTotalHost(meta metav1.ObjectMeta) GomegaAsyncAssertion {
