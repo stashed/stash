@@ -5,7 +5,9 @@ import (
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"time"
 )
 
 func (fi *Invocation) DaemonSet(pvcName string) apps.DaemonSet {
@@ -53,4 +55,24 @@ func (f *Framework) EventuallyDaemonSet(meta metav1.ObjectMeta) GomegaAsyncAsser
 		Expect(err).NotTo(HaveOccurred())
 		return obj
 	})
+}
+
+func (f *Framework) EventuallyPodAccessible(meta metav1.ObjectMeta) GomegaAsyncAssertion{
+	return Eventually(func() bool {
+		labelSelector := fields.SelectorFromSet(meta.Labels)
+		podList, err := f.KubeClient.CoreV1().Pods(meta.Namespace).List(metav1.ListOptions{LabelSelector: labelSelector.String()})
+		Expect(err).NotTo(HaveOccurred())
+
+		for _, pod := range podList.Items{
+			_, err := f.ExecOnPod(&pod, "ls", "-R")
+			if err == nil{
+				return true
+			}
+		}
+		return false
+	},
+		time.Minute*2,
+		time.Second*2,
+	)
+
 }

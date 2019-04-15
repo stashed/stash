@@ -563,10 +563,12 @@ func (f *Framework) WaitUntilDaemonPodReady(meta metav1.ObjectMeta) error {
 		if err != nil {
 			return false, nil
 		}
-		if pod.Status.Phase == core.PodPhase(core.PodReady) {
+		if pod.Status.Phase == core.PodPhase(core.PodRunning) {
 			return true, nil
 		}
 		return false, nil
+
+
 	})
 }
 

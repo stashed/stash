@@ -29,6 +29,8 @@ var (
 	targetref           v1beta1.TargetRef
 	rules               []v1beta1.Rule
 	svc                 core.Service
+	daemonset          apps.DaemonSet
+	recoveredDaemonset apps.DaemonSet
 )
 var (
 	sampleData   []string
@@ -36,7 +38,6 @@ var (
 )
 
 var _ = Describe("Deployment", func() {
-
 	BeforeEach(func() {
 		f = root.Invoke()
 	})
@@ -262,7 +263,7 @@ var _ = Describe("Deployment", func() {
 
 		})
 	})
-	Context("Backup && Restore data on different Deployment", func() {
+	Context("Restore data on different Deployment", func() {
 		BeforeEach(func() {
 			pvc = f.GetPersistentVolumeClaim()
 			err = f.CreatePersistentVolumeClaim(pvc)
@@ -304,6 +305,7 @@ var _ = Describe("Deployment", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			restoreSession.Spec.Target.Ref.Name = recoveredDeployment.Name
+
 			By("Creating Restore Session")
 			err = f.CreateRestoreSession(restoreSession)
 			Expect(err).NotTo(HaveOccurred())
@@ -327,7 +329,6 @@ var _ = Describe("Deployment", func() {
 })
 
 var _ = Describe("Statefulset", func() {
-
 	BeforeEach(func() {
 		f = root.Invoke()
 	})
@@ -336,6 +337,11 @@ var _ = Describe("Statefulset", func() {
 		if missing, _ := BeZero().Match(cred); missing {
 			Skip("Missing repository credential")
 		}
+
+		By("Creating service " + svc.Name)
+		err = f.CreateOrPatchService(svc)
+		Expect(err).NotTo(HaveOccurred())
+
 		pvc = f.GetPersistentVolumeClaim()
 		err = f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
@@ -407,10 +413,6 @@ var _ = Describe("Statefulset", func() {
 	Context("General Backup new StatefulSet", func() {
 		BeforeEach(func() {
 			svc = f.HeadlessService()
-			By("Creating service " + svc.Name)
-			err = f.CreateService(svc)
-			Expect(err).NotTo(HaveOccurred())
-
 			ss = f.StatefulSetForV1beta1API()
 			targetref = v1beta1.TargetRef{
 				Name:       ss.Name,
@@ -496,8 +498,8 @@ var _ = Describe("Statefulset", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("General Backup new Statefulset", func() {
-			By("Creating Statefulset Backup")
+		It("General Backup new StatefulSet", func() {
+			By("Creating StatefulSet Backup")
 			testStatefulsetBackup()
 
 			By("Creating another StatefulSet " + recoveredss.Name)
@@ -575,8 +577,8 @@ var _ = Describe("Statefulset", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("General Backup new Statefulset", func() {
-			By("Creating Statefulset Backup")
+		It("General Backup new StatefulSet", func() {
+			By("Creating StatefulSet Backup")
 			testStatefulsetBackup()
 
 			By("Creating another StatefulSet " + recoveredss.Name)
@@ -611,6 +613,215 @@ var _ = Describe("Statefulset", func() {
 			data = append(data, sampleData[1])
 			data = append(data, sampleData[1])
 			Expect(data).Should(BeEquivalentTo(restoredData[(len(restoredData) - len(sampleData) + 1):]))
+
+		})
+	})
+
+})
+
+var _ = Describe("DaemonSet", func() {
+	BeforeEach(func() {
+		f = root.Invoke()
+	})
+	JustBeforeEach(func() {
+		cred = f.SecretForLocalBackend()
+		if missing, _ := BeZero().Match(cred); missing {
+			Skip("Missing repository credential")
+		}
+		pvc = f.GetPersistentVolumeClaim()
+		err = f.CreatePersistentVolumeClaim(pvc)
+		Expect(err).NotTo(HaveOccurred())
+		repo = f.Repository(cred.Name, pvc.Name)
+
+		backupCfg = f.BackupConfiguration(repo.Name, targetref)
+		rules = []v1beta1.Rule{
+			{
+				Paths: []string{
+					framework.TestSourceDataMountPath,
+				},
+			},
+		}
+		restoreSession = f.RestoreSession(repo.Name, targetref, rules)
+	})
+	AfterEach(func() {
+		err = f.DeleteSecret(cred.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+		err = framework.WaitUntilSecretDeleted(f.KubeClient, cred.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+	})
+	var (
+		testDaemonSetBackup = func() {
+			By("Create DaemonSet" + daemonset.Name)
+			_, err := f.CreateDaemonSet(daemonset)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.WaitUntilDaemonPodReady(daemonset.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			f.EventuallyPodAccessible(daemonset.ObjectMeta).Should(BeTrue())
+
+			By("Creating Sample data in inside pod")
+			err = f.CreateSampleDataInsideWorkload(daemonset.ObjectMeta, apis.KindDaemonSet)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Reading sample data from /source/data mountPath inside workload")
+			sampleData, err = f.ReadSampleDataFromFromWorkload(daemonset.ObjectMeta, apis.KindDaemonSet)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating storage Secret " + cred.Name)
+			err = f.CreateSecret(cred)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating new repository")
+			err = f.CreateRepository(repo)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating BackupConfiguration" + backupCfg.Name)
+			err = f.CreateBackupConfiguration(backupCfg)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Waiting for sidecar")
+			f.EventuallyDaemonSet(daemonset.ObjectMeta).Should(matcher.HaveSidecar(util.StashContainer))
+
+			By("Waiting for BackupSession")
+			f.EventuallyBackupSessionCreated(backupCfg.ObjectMeta).Should(BeTrue())
+			bs, err := f.GetBackupSession(backupCfg.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Check for repository status updated")
+			f.EventuallyRepository(&daemonset).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+
+			By("Check for succeeded BackupSession")
+			f.EventuallyBackupSessionPhase(bs.ObjectMeta).Should(Equal(v1beta1.BackupSessionSucceeded))
+
+			By("Delete BackupConfiguration")
+			err = f.DeleteBackupConfiguration(backupCfg)
+			err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, backupCfg.ObjectMeta)
+			Expect(err).ShouldNot(HaveOccurred())
+
+			By("Waiting for sidecar to be removed")
+			f.EventuallyDaemonSet(daemonset.ObjectMeta).ShouldNot(matcher.HaveSidecar(util.StashContainer))
+			err = f.WaitUntilDaemonPodReady(daemonset.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Deleting sample data from pod")
+			err = f.CleanupSampleDataFromWorkload(daemonset.ObjectMeta, apis.KindDaemonSet)
+			Expect(err).NotTo(HaveOccurred())
+
+		}
+	)
+	Context("General Backup new DaemonSet", func() {
+		BeforeEach(func() {
+			pvc = f.GetPersistentVolumeClaim()
+			err = f.CreatePersistentVolumeClaim(pvc)
+			Expect(err).NotTo(HaveOccurred())
+			daemonset = f.DaemonSet(pvc.Name)
+			targetref = v1beta1.TargetRef{
+				Name:       daemonset.Name,
+				Kind:       apis.KindDaemonSet,
+				APIVersion: "apps/v1",
+			}
+		})
+		AfterEach(func() {
+			err := f.DeleteDaemonSet(daemonset.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = framework.WaitUntilDaemonSetDeleted(f.KubeClient, daemonset.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("General Backup new DaemonSet", func() {
+			By("Creating DaemonSet Backup")
+			testDaemonSetBackup()
+
+			By("Creating Restore Session")
+			err = f.CreateRestoreSession(restoreSession)
+			Expect(err).NotTo(HaveOccurred())
+			err = util.WaitUntilDaemonSetReady(f.KubeClient, daemonset.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Waiting for initContainer")
+			f.EventuallyDaemonSet(daemonset.ObjectMeta).Should(matcher.HaveInitContainer(util.StashInitContainer))
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Waiting for restore to succeed")
+			f.EventuallyRestoreSessionPhase(restoreSession.ObjectMeta).Should(Equal(v1beta1.RestoreSessionSucceeded))
+			err = util.WaitUntilDaemonSetReady(f.KubeClient, daemonset.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("checking the workload data has been restored")
+			restoredData, err = f.ReadSampleDataFromMountedDirectory(daemonset.ObjectMeta, framework.GetPathsFromRestoreSession(&restoreSession), apis.KindDaemonSet)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Compare between restore data and sample data")
+			Expect(restoredData).To(BeEquivalentTo(sampleData))
+
+		})
+	})
+
+	Context("Restore data on different DaemonSet", func() {
+		BeforeEach(func() {
+			pvc = f.GetPersistentVolumeClaim()
+			err = f.CreatePersistentVolumeClaim(pvc)
+			Expect(err).NotTo(HaveOccurred())
+			daemonset = f.DaemonSet(pvc.Name)
+
+			pvc = f.GetPersistentVolumeClaim()
+			err = f.CreatePersistentVolumeClaim(pvc)
+			Expect(err).NotTo(HaveOccurred())
+			recoveredDaemonset = f.DaemonSet(pvc.Name)
+
+			targetref = v1beta1.TargetRef{
+				Name:       daemonset.Name,
+				Kind:       apis.KindDaemonSet,
+				APIVersion: "apps/v1",
+			}
+		})
+		AfterEach(func() {
+			err := f.DeleteDaemonSet(daemonset.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = framework.WaitUntilDaemonSetDeleted(f.KubeClient, daemonset.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteDaemonSet(recoveredDaemonset.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = framework.WaitUntilDaemonSetDeleted(f.KubeClient, recoveredDaemonset.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("General Backup new DaemonSet", func() {
+			By("Creating DaemonSet Backup")
+			testDaemonSetBackup()
+
+			By("Creating another DaemonSet " + recoveredDaemonset.Name)
+			_, err := f.CreateDaemonSet(recoveredDaemonset)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.WaitUntilDaemonPodReady(recoveredDaemonset.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+
+			restoreSession.Spec.Target.Ref.Name = recoveredDaemonset.Name
+
+			By("Creating Restore Session")
+			err = f.CreateRestoreSession(restoreSession)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Waiting for initContainer")
+			f.EventuallyDaemonSet(recoveredDaemonset.ObjectMeta).Should(matcher.HaveInitContainer(util.StashInitContainer))
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Waiting for restore to succeed")
+			f.EventuallyRestoreSessionPhase(restoreSession.ObjectMeta).Should(Equal(v1beta1.RestoreSessionSucceeded))
+
+			f.EventuallyPodAccessible(recoveredDaemonset.ObjectMeta).Should(BeTrue())
+
+			By("checking the workload data has been restored")
+			restoredData, err = f.ReadSampleDataFromMountedDirectory(recoveredDaemonset.ObjectMeta, framework.GetPathsFromRestoreSession(&restoreSession), apis.KindDaemonSet)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Compare between restore data and sample data")
+			Expect(restoredData).To(BeEquivalentTo(sampleData))
 
 		})
 	})
