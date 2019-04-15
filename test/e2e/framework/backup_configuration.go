@@ -5,8 +5,8 @@ import (
 	"github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/apis/stash/v1beta1"
 	core "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (f *Invocation) BackupConfiguration(repoName string, targetref v1beta1.TargetRef) v1beta1.BackupConfiguration {

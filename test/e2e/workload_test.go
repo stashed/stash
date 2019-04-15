@@ -29,8 +29,8 @@ var (
 	targetref           v1beta1.TargetRef
 	rules               []v1beta1.Rule
 	svc                 core.Service
-	daemonset          apps.DaemonSet
-	recoveredDaemonset apps.DaemonSet
+	daemonset           apps.DaemonSet
+	recoveredDaemonset  apps.DaemonSet
 )
 var (
 	sampleData   []string

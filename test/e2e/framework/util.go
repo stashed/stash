@@ -23,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 )
+
 var (
 	files = []string{"test-data1.txt", "test-data2.txt", "test-data3.txt", "test-data4.txt", "test-data5.txt"}
 )
@@ -340,7 +341,7 @@ func GetPathsFromResticFileGroups(restic *api.Restic) []string {
 
 func GetPathsFromRestoreSession(restoreSession *v1beta1.RestoreSession) []string {
 	paths := make([]string, 0)
-	for i, _ := range restoreSession.Spec.Rules {
+	for i := range restoreSession.Spec.Rules {
 		for _, p := range restoreSession.Spec.Rules[i].Paths {
 			paths = append(paths, p)
 		}
@@ -353,13 +354,13 @@ func removeDuplicates(elements []string) []string {
 	encountered := map[string]bool{}
 
 	// Create a map of all unique elements.
-	for v:= range elements {
+	for v := range elements {
 		encountered[elements[v]] = true
 	}
 
 	// Place all keys from the map into a slice.
 	result := []string{}
-	for key, _ := range encountered {
+	for key := range encountered {
 		result = append(result, key)
 	}
 	return result
@@ -567,7 +568,6 @@ func (f *Framework) WaitUntilDaemonPodReady(meta metav1.ObjectMeta) error {
 			return true, nil
 		}
 		return false, nil
-
 
 	})
 }

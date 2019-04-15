@@ -40,8 +40,8 @@ func (f *Framework) DeleteService(meta metav1.ObjectMeta) error {
 	return f.KubeClient.CoreV1().Services(meta.Namespace).Delete(meta.Name, deleteInForeground())
 }
 
-func(f *Framework) CreateOrPatchService(obj core.Service) error{
-	_,_, err := core_util.CreateOrPatchService(f.KubeClient, obj.ObjectMeta, func(in *core.Service) *core.Service {
+func (f *Framework) CreateOrPatchService(obj core.Service) error {
+	_, _, err := core_util.CreateOrPatchService(f.KubeClient, obj.ObjectMeta, func(in *core.Service) *core.Service {
 		in.Spec = obj.Spec
 		return in
 	})

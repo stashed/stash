@@ -39,8 +39,8 @@ func (f *Invocation) CreateRestoreSession(restoreSession v1beta1.RestoreSession)
 	return err
 }
 
-func (f Invocation) DeleteRestoreSession(meta metav1.ObjectMeta) error{
-	_,err := f.StashClient.StashV1beta1().RestoreSessions(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+func (f Invocation) DeleteRestoreSession(meta metav1.ObjectMeta) error {
+	_, err := f.StashClient.StashV1beta1().RestoreSessions(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	return err
 }
 
