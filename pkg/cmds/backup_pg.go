@@ -9,6 +9,7 @@ import (
 	"github.com/appscode/go/flags"
 	"github.com/appscode/go/log"
 	"github.com/appscode/stash/pkg/restic"
+	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
@@ -53,6 +54,17 @@ func NewCmdBackupPG() *cobra.Command {
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			flags.EnsureRequiredFlags(cmd, "app-binding", "provider", "secret-dir")
+
+			// apply nice, ionice settings from env
+			var err error
+			setupOpt.Nice, err = util.NiceSettingsFromEnv()
+			if err != nil {
+				return handleResticError(outputDir, restic.DefaultOutputFileName, err)
+			}
+			setupOpt.IONice, err = util.IONiceSettingsFromEnv()
+			if err != nil {
+				return handleResticError(outputDir, restic.DefaultOutputFileName, err)
+			}
 
 			// prepare client
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)

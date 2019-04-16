@@ -212,6 +212,12 @@ func (c *BackupSessionController) backup(backupSession *api_v1beta1.BackupSessio
 		return fmt.Errorf("setup option for repository fail")
 	}
 
+	// apply nice/ionice settings
+	if backupConfiguration.Spec.RuntimeSettings.Container != nil {
+		c.SetupOpt.Nice = backupConfiguration.Spec.RuntimeSettings.Container.Nice
+		c.SetupOpt.IONice = backupConfiguration.Spec.RuntimeSettings.Container.IONice
+	}
+
 	// init restic wrapper
 	resticWrapper, err := restic.NewResticWrapper(c.SetupOpt)
 	if err != nil {
