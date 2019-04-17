@@ -833,6 +833,7 @@ var _ = Describe("DaemonSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 			err = framework.WaitUntilDaemonSetDeleted(f.KubeClient, daemonset.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
+
 			err = f.DeleteDaemonSet(recoveredDaemonset.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 			err = framework.WaitUntilDaemonSetDeleted(f.KubeClient, recoveredDaemonset.ObjectMeta)
