@@ -337,7 +337,7 @@ func (w *ResticWrapper) applyIONiceSettings(oldCommand Command) Command {
 		newCommand.Args = append(newCommand.Args, "-c", fmt.Sprint(*w.config.IONice.Class))
 	}
 	if w.config.IONice.ClassData != nil {
-		newCommand.Args = append(newCommand.Args, "-n", fmt.Sprint(*w.config.IONice.Class))
+		newCommand.Args = append(newCommand.Args, "-n", fmt.Sprint(*w.config.IONice.ClassData))
 	}
 	// TODO: should we use "-t" option with ionice ?
 	// newCommand.Args = append(newCommand.Args, "-t")

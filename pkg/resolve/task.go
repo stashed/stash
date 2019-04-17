@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/appscode/stash/apis"
 	v1beta1_api "github.com/appscode/stash/apis/stash/v1beta1"
 	cs "github.com/appscode/stash/client/clientset/versioned"
 	"github.com/appscode/stash/pkg/util"
@@ -128,6 +129,27 @@ func applyContainerRuntimeSettings(container core.Container, settings ofst.Conta
 	}
 	if settings.SecurityContext != nil {
 		container.SecurityContext = settings.SecurityContext
+	}
+	// set nice, ionice settings as env
+	if settings.Nice != nil && settings.Nice.Adjustment != nil {
+		container.Env = core_util.UpsertEnvVars(container.Env, core.EnvVar{
+			Name:  apis.NiceAdjustment,
+			Value: fmt.Sprint(*settings.Nice.Adjustment),
+		})
+	}
+	if settings.IONice != nil {
+		if settings.IONice.Class != nil {
+			container.Env = core_util.UpsertEnvVars(container.Env, core.EnvVar{
+				Name:  apis.IONiceClass,
+				Value: fmt.Sprint(*settings.IONice.Class),
+			})
+		}
+		if settings.IONice.ClassData != nil {
+			container.Env = core_util.UpsertEnvVars(container.Env, core.EnvVar{
+				Name:  apis.IONiceClassData,
+				Value: fmt.Sprint(*settings.IONice.ClassData),
+			})
+		}
 	}
 	return container
 }

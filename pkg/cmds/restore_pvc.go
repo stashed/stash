@@ -5,6 +5,7 @@ import (
 
 	"github.com/appscode/go/flags"
 	"github.com/appscode/stash/pkg/restic"
+	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/errors"
 )
@@ -32,6 +33,18 @@ func NewCmdRestorePVC() *cobra.Command {
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			flags.EnsureRequiredFlags(cmd, "restore-dirs", "provider", "secret-dir")
+
+			// apply nice, ionice settings from env
+			var err error
+			setupOpt.Nice, err = util.NiceSettingsFromEnv()
+			if err != nil {
+				return handleResticError(outputDir, restic.DefaultOutputFileName, err)
+			}
+			setupOpt.IONice, err = util.IONiceSettingsFromEnv()
+			if err != nil {
+				return handleResticError(outputDir, restic.DefaultOutputFileName, err)
+			}
+
 			// init restic wrapper
 			resticWrapper, err := restic.NewResticWrapper(setupOpt)
 			if err != nil {

@@ -72,6 +72,11 @@ func Restore(opt *Options) error {
 	if err != nil {
 		return err
 	}
+	// apply nice/ionice settings
+	if restoreSession.Spec.RuntimeSettings.Container != nil {
+		setupOptions.Nice = restoreSession.Spec.RuntimeSettings.Container.Nice
+		setupOptions.IONice = restoreSession.Spec.RuntimeSettings.Container.IONice
+	}
 	opt.SetupOpt = setupOptions
 
 	// only one pod can acquire restic repository lock. so we need leader election to determine who will acquire the lock

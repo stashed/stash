@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
+	"github.com/appscode/go/types"
 	"github.com/appscode/stash/apis"
 	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
 	"github.com/appscode/stash/pkg/restic"
@@ -14,6 +16,7 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
 	store "kmodules.xyz/objectstore-api/api/v1"
+	v1 "kmodules.xyz/offshoot-api/api/v1"
 )
 
 var (
@@ -202,4 +205,50 @@ func AttachLocalBackend(podSpec core.PodSpec, localSpec store.LocalSpec) core.Po
 		podSpec.Containers[i].VolumeMounts = core_util.UpsertVolumeMount(podSpec.Containers[i].VolumeMounts, mount)
 	}
 	return podSpec
+}
+
+func NiceSettingsFromEnv() (*v1.NiceSettings, error) {
+	var settings *v1.NiceSettings
+	if v, ok := os.LookupEnv(apis.NiceAdjustment); ok {
+		vi, err := ParseInt32P(v)
+		if err != nil {
+			return nil, err
+		}
+		settings = &v1.NiceSettings{
+			Adjustment: vi,
+		}
+	}
+	return settings, nil
+}
+
+func IONiceSettingsFromEnv() (*v1.IONiceSettings, error) {
+	var settings *v1.IONiceSettings
+	if v, ok := os.LookupEnv(apis.IONiceClass); ok {
+		vi, err := ParseInt32P(v)
+		if err != nil {
+			return nil, err
+		}
+		settings = &v1.IONiceSettings{
+			Class: vi,
+		}
+	}
+	if v, ok := os.LookupEnv(apis.IONiceClassData); ok {
+		vi, err := ParseInt32P(v)
+		if err != nil {
+			return nil, err
+		}
+		if settings == nil {
+			settings = &v1.IONiceSettings{}
+		}
+		settings.ClassData = vi
+	}
+	return settings, nil
+}
+
+func ParseInt32P(v string) (*int32, error) {
+	vi, err := strconv.Atoi(v)
+	if err != nil {
+		return nil, err
+	}
+	return types.Int32P(int32(vi)), nil
 }

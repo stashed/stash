@@ -40,5 +40,10 @@ const (
 	EnableCache    = "ENABLE_CACHE"
 	MaxConnections = "MAX_CONNECTIONS"
 
+	// from runtime settings
+	NiceAdjustment  = "NICE_ADJUSTMENT"
+	IONiceClass     = "IONICE_CLASS"
+	IONiceClassData = "IONICE_CLASS_DATA"
+
 	StatusSubresourceEnabled = "ENABLE_STATUS_SUBRESOURCE"
 )
