@@ -569,6 +569,19 @@ func WaitUntilRepositoriesDeleted(sc cs.Interface, repositories []*api.Repositor
 		return false, nil
 	})
 }
+func WaitUntilRepositoryDeleted(sc cs.Interface, repository *api.Repository) error {
+
+	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
+		if _, err := sc.StashV1alpha1().Repositories(repository.Namespace).Get(repository.Name, metav1.GetOptions{}); err != nil {
+			if kerr.IsNotFound(err) {
+				return true, nil
+			} else {
+				return true, err
+			}
+		}
+		return false, nil
+	})
+}
 
 func (f *Framework) WaitUntilDaemonPodReady(meta metav1.ObjectMeta) error {
 

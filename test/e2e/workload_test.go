@@ -142,8 +142,9 @@ var _ = Describe("Deployment", func() {
 			err = framework.WaitUntilDeploymentDeleted(f.KubeClient, deployment.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			f.DeleteRepositories(f.DeploymentRepos(&deployment))
-			err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.DeploymentRepos(&deployment))
+			err = f.DeleteRepository(repo)
+			Expect(err).NotTo(HaveOccurred())
+			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)
@@ -201,8 +202,9 @@ var _ = Describe("Deployment", func() {
 			err = framework.WaitUntilDeploymentDeleted(f.KubeClient, deployment.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			f.DeleteRepositories(f.DeploymentRepos(&deployment))
-			err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.DeploymentRepos(&deployment))
+			err = f.DeleteRepository(repo)
+			Expect(err).NotTo(HaveOccurred())
+			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)
@@ -303,8 +305,9 @@ var _ = Describe("Deployment", func() {
 			err = framework.WaitUntilDeploymentDeleted(f.KubeClient, recoveredDeployment.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			f.DeleteRepositories(f.DeploymentRepos(&deployment))
-			err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.DeploymentRepos(&deployment))
+			err = f.DeleteRepository(repo)
+			Expect(err).NotTo(HaveOccurred())
+			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)
@@ -390,6 +393,7 @@ var _ = Describe("StatefulSet", func() {
 			By("Reading sample data from /source/data mountPath inside workload")
 			sampleData, err = f.ReadSampleDataFromFromWorkload(ss.ObjectMeta, apis.KindStatefulSet)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(sampleData).ShouldNot(BeEmpty())
 
 			By("Creating storage Secret " + cred.Name)
 			err = f.CreateSecret(cred)
@@ -451,8 +455,9 @@ var _ = Describe("StatefulSet", func() {
 			err = framework.WaitUntilStatefulSetDeleted(f.KubeClient, ss.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			f.DeleteRepositories(f.StatefulSetRepos(&ss))
-			err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.StatefulSetRepos(&ss))
+			err = f.DeleteRepository(repo)
+			Expect(err).NotTo(HaveOccurred())
+			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)
@@ -518,8 +523,9 @@ var _ = Describe("StatefulSet", func() {
 			err = framework.WaitUntilStatefulSetDeleted(f.KubeClient, recoveredss.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			f.DeleteRepositories(f.StatefulSetRepos(&ss))
-			err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.StatefulSetRepos(&ss))
+			err = f.DeleteRepository(repo)
+			Expect(err).NotTo(HaveOccurred())
+			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)
@@ -603,8 +609,9 @@ var _ = Describe("StatefulSet", func() {
 			err = framework.WaitUntilStatefulSetDeleted(f.KubeClient, recoveredss.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			f.DeleteRepositories(f.StatefulSetRepos(&ss))
-			err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.StatefulSetRepos(&ss))
+			err = f.DeleteRepository(repo)
+			Expect(err).NotTo(HaveOccurred())
+			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)
@@ -701,6 +708,7 @@ var _ = Describe("DaemonSet", func() {
 			By("Reading sample data from /source/data mountPath inside workload")
 			sampleData, err = f.ReadSampleDataFromFromWorkload(daemonset.ObjectMeta, apis.KindDaemonSet)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(sampleData).ShouldNot(BeEmpty())
 
 			By("Creating storage Secret " + cred.Name)
 			err = f.CreateSecret(cred)
@@ -762,8 +770,9 @@ var _ = Describe("DaemonSet", func() {
 			err = framework.WaitUntilDaemonSetDeleted(f.KubeClient, daemonset.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			f.DeleteRepositories(f.DaemonSetRepos(&daemonset))
-			err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.DaemonSetRepos(&daemonset))
+			err = f.DeleteRepository(repo)
+			Expect(err).NotTo(HaveOccurred())
+			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)
@@ -778,8 +787,6 @@ var _ = Describe("DaemonSet", func() {
 
 			By("Creating Restore Session")
 			err = f.CreateRestoreSession(restoreSession)
-			Expect(err).NotTo(HaveOccurred())
-			err = util.WaitUntilDaemonSetReady(f.KubeClient, daemonset.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for initContainer")
@@ -824,13 +831,15 @@ var _ = Describe("DaemonSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 			err = framework.WaitUntilDaemonSetDeleted(f.KubeClient, daemonset.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
+
 			err = f.DeleteDaemonSet(recoveredDaemonset.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 			err = framework.WaitUntilDaemonSetDeleted(f.KubeClient, recoveredDaemonset.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			f.DeleteRepositories(f.DaemonSetRepos(&daemonset))
-			err = framework.WaitUntilRepositoriesDeleted(f.StashClient, f.DaemonSetRepos(&daemonset))
+			err = f.DeleteRepository(repo)
+			Expect(err).NotTo(HaveOccurred())
+			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)
