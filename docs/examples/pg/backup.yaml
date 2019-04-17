@@ -7,6 +7,7 @@ spec:
   runtimeSettings:
     pod:
       serviceAccountName: pg-backup-restore
+  schedule: "* * * * *"
   task:
     name: pg-backup-task
   repository:

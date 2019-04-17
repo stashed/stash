@@ -78,7 +78,7 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 			ReadinessProbe:  function.Spec.RuntimeSettings.ReadinessProbe,
 			Lifecycle:       function.Spec.RuntimeSettings.Lifecycle,
 			SecurityContext: function.Spec.RuntimeSettings.SecurityContext,
-			ImagePullPolicy: core.PullAlways, // TODO
+			ImagePullPolicy: core.PullIfNotPresent,
 		}
 
 		// mount tmp volume

@@ -19,8 +19,10 @@ const (
 func NewCmdBackupPVC() *cobra.Command {
 	var (
 		outputDir string
-		backupOpt restic.BackupOptions
-		setupOpt  = restic.SetupOptions{
+		backupOpt = restic.BackupOptions{
+			Host: restic.DefaultHost,
+		}
+		setupOpt = restic.SetupOptions{
 			ScratchDir:  restic.DefaultScratchDir,
 			EnableCache: false,
 		}

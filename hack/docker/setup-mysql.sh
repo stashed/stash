@@ -14,7 +14,7 @@ source "$REPO_ROOT/hack/libbuild/common/public_image.sh"
 
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
 IMG=stash
-RESTIC_VER=${RESTIC_VER:-0.9.4}
+NEW_RESTIC_VER=${NEW_RESTIC_VER:-0.9.4} # also update in restic wrapper library
 RESTIC_BRANCH=${RESTIC_BRANCH:-stash-0.4.2}
 
 DIST=$REPO_ROOT/dist
@@ -35,28 +35,14 @@ build_binary() {
   ./hack/make.py build stash
   detect_tag $DIST/.tag
 
-  if [ $RESTIC_VER = 'SOURCE' ]; then
-    rm -rf $DIST/restic
-    cd $DIST
-    clone https://github.com/appscode/restic.git
-    cd restic
-    checkout $RESTIC_BRANCH
-    echo "Build binary using golang docker image"
-    docker run --rm -ti \
-      -v $(pwd):/go/src/github.com/restic/restic \
-      -w /go/src/github.com/restic/restic golang:1.8.3-alpine go build ./cmd/restic
-    mv restic $DIST/restic-bin
-    rm -rf *
-    mv $DIST/restic-bin $DIST/restic/restic
-  else
-    # Download restic
-    rm -rf $DIST/restic
-    mkdir $DIST/restic
-    cd $DIST/restic
-    wget https://github.com/restic/restic/releases/download/v${RESTIC_VER}/restic_${RESTIC_VER}_linux_amd64.bz2
-    bzip2 -d restic_${RESTIC_VER}_linux_amd64.bz2
-    mv restic_${RESTIC_VER}_linux_amd64 restic
-  fi
+  # Download restic
+  rm -rf $DIST/restic
+  mkdir $DIST/restic
+  cd $DIST/restic
+  # install new restic
+  wget https://github.com/restic/restic/releases/download/v${NEW_RESTIC_VER}/restic_${NEW_RESTIC_VER}_linux_amd64.bz2
+  bzip2 -d restic_${NEW_RESTIC_VER}_linux_amd64.bz2
+  mv restic_${NEW_RESTIC_VER}_linux_amd64 restic_${NEW_RESTIC_VER}
 
   popd
 }
@@ -68,21 +54,23 @@ build_docker() {
   cp $DIST/stash/stash-alpine-amd64 stash
   chmod 755 stash
 
-  cp $DIST/restic/restic restic
-  chmod 755 restic
+  cp $DIST/restic/restic_${NEW_RESTIC_VER} restic_${NEW_RESTIC_VER}
+  chmod 755 restic_${NEW_RESTIC_VER}
 
   cat >Dockerfile <<EOL
 FROM mysql:8.0.3
 
-RUN set -x \
-  && apt-get update \
-  && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    netcat \
-  && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man /tmp/*
+# add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added
+RUN addgroup -g 1005 stash \
+    && adduser -u 1005 -G stash -D stash
 
-COPY restic /bin/restic
+RUN set -x \
+  && apk add --update --no-cache ca-certificates
+
+COPY restic_${NEW_RESTIC_VER} /bin/restic_${NEW_RESTIC_VER}
 COPY stash /bin/stash
+
+USER stash
 
 ENTRYPOINT ["/bin/stash"]
 EXPOSE 56789
@@ -91,7 +79,7 @@ EOL
   echo $cmd
   $cmd
 
-  rm stash Dockerfile restic
+  rm stash Dockerfile restic_${NEW_RESTIC_VER}
   popd
 }
 

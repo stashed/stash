@@ -18,4 +18,4 @@ spec:
       name: quick-postgres
   rules:
   - hosts:
-    - demo-host
+    - host-0

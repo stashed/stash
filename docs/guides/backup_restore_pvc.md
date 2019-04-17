@@ -127,26 +127,12 @@ $ kubectl apply -f ./docs/examples/pvc/restore.yaml
 restoresession.stash.appscode.com/pvc-restore-01 created
 ```
 
-## Check Backup Session Status
+## Check Restore Session Status
 
 ```yaml
   status:
     duration: 31.229339267s
     phase: Succeeded
-```
-
-## Check Destination PVC
-
-```bash
-$ kubectl apply -f ./docs/examples/pvc/check.yaml
-pod/test-check-dest created
-```
-
-```bash
-$ kubectl logs -n demo  -f test-check-dest
-+ ls /etc/target
-dir-01
-dir-02
 ```
 
 ## Cleanup

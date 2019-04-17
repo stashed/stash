@@ -7,27 +7,17 @@ spec:
   - name: mongo-backup
     params:
     - name: outputDir
-      value: /etc/backup # specified
-    - name: scratchDirVolume
-      value: scratch-volume # specified
+      value: /tmp/output # specified
     - name: secretVolume
       value: secret-volume # specified
-    - name: outputVolume
-      value: output-volume # specified
   - name: update-status
     params:
     - name: outputDir
-      value: /etc/backup # specified
-    - name: outputVolume
-      value: output-volume # specified
+      value: /tmp/output # specified
   volumes:
   - name: secret-volume
     secret:
       secretName: ${REPOSITORY_SECRET_NAME}
-  - name: scratch-volume
-    emptyDir: {}
-  - name: output-volume
-    emptyDir: {}
 ---
 apiVersion: stash.appscode.com/v1beta1
 kind: Task
@@ -38,24 +28,14 @@ spec:
   - name: mongo-restore
     params:
     - name: outputDir
-      value: /etc/restore # specified
-    - name: scratchDirVolume
-      value: scratch-volume # specified
+      value: /tmp/output # specified
     - name: secretVolume
       value: secret-volume # specified
-    - name: outputVolume
-      value: output-volume # specified
   - name: update-status
     params:
     - name: outputDir
-      value: /etc/backup # specified
-    - name: outputVolume
-      value: output-volume # specified
+      value: /tmp/output # specified
   volumes:
   - name: secret-volume
     secret:
       secretName: ${REPOSITORY_SECRET_NAME}
-  - name: scratch-volume
-    emptyDir: {}
-  - name: output-volume
-    emptyDir: {}

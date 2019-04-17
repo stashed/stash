@@ -3,7 +3,7 @@ kind: Function
 metadata:
   name: update-status
 spec:
-  image: diptadas/stash:rest
+  image: appscode/stash:rest
   args:
     - update-status
     - --namespace=${NAMESPACE="default"}
@@ -21,7 +21,7 @@ kind: Function
 metadata:
   name: pvc-backup
 spec:
-  image: diptadas/stash:rest
+  image: appscode/stash:rest
   args:
   - backup-pvc
   - --provider=${REPOSITORY_PROVIDER}
@@ -30,8 +30,8 @@ spec:
   - --rest-server-url=${REPOSITORY_URL:=}
   - --path=${REPOSITORY_PREFIX:=}
   - --secret-dir=/etc/repository/secret # specified
-  - --scratch-dir=/tmp/restic/scratch # specified
-  - --hostname=${HOSTNAME}
+  - --scratch-dir=/tmp # specified
+  - --hostname=${HOSTNAME:=host-0}
   - --backup-dirs=${TARGET_DIRECTORIES}
   - --retention-keep-last=${RETENTION_KEEP_LAST:=0}
   - --retention-keep-hourly=${RETENTION_KEEP_HOURLY:=0}
@@ -42,7 +42,7 @@ spec:
   - --retention-keep-tags=${RETENTION_KEEP_TAGS:=}
   - --retention-prune=${RETENTION_PRUNE:=false}
   - --retention-dry-run=${RETENTION_DRY_RUN:=false}
-  - --output-dir=${outputDir}
+  - --output-dir=${outputDir:=}
   - --enable-cache=${ENABLE_CACHE:=true}
   - --max-connections=${MAX_CONNECTIONS:=0}
   #- --metrics-enabled
@@ -50,21 +50,17 @@ spec:
   #- --metrics-dir
   #- --metrics-labels
   volumeMounts:
-  - name: ${scratchDirVolume}
-    mountPath: /tmp/restic/scratch
   - name: ${targetVolume}
     mountPath: ${TARGET_MOUNT_PATH}
   - name: ${secretVolume}
     mountPath: /etc/repository/secret
-  - name: ${outputVolume}
-    mountPath: ${outputDir}
 ---
 apiVersion: stash.appscode.com/v1beta1
 kind: Function
 metadata:
   name: pvc-restore
 spec:
-  image: diptadas/stash:rest
+  image: appscode/stash:rest
   args:
   - restore-pvc
   - --provider=${REPOSITORY_PROVIDER}
@@ -73,8 +69,8 @@ spec:
   - --rest-server-url=${REPOSITORY_URL:=}
   - --path=${REPOSITORY_PREFIX:=}
   - --secret-dir=/etc/repository/secret # specified
-  - --scratch-dir=/tmp/restic/scratch # specified
-  - --hostname=${HOSTNAME}
+  - --scratch-dir=/tmp # specified
+  - --hostname=${HOSTNAME:=host-0}
   - --restore-dirs=${RESTORE_DIRECTORIES}
   - --snapshots=${RESTORE_SNAPSHOTS:=}
   - --output-dir=${outputDir}
@@ -85,11 +81,7 @@ spec:
   #- --metrics-dir
   #- --metrics-labels
   volumeMounts:
-  - name: ${scratchDirVolume}
-    mountPath: /tmp/restic/scratch
   - name: ${targetVolume}
     mountPath: ${TARGET_MOUNT_PATH}
   - name: ${secretVolume}
     mountPath: /etc/repository/secret
-  - name: ${outputVolume}
-    mountPath: ${outputDir}

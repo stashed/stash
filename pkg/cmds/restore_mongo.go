@@ -28,6 +28,7 @@ func NewCmdRestoreMongo() *cobra.Command {
 			EnableCache: false,
 		}
 		dumpOpt = restic.DumpOptions{
+			Host:     restic.DefaultHost,
 			FileName: MongoDumpFile,
 		}
 		metrics = restic.MetricsOptions{

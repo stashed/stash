@@ -17,8 +17,10 @@ const (
 func NewCmdRestorePVC() *cobra.Command {
 	var (
 		outputDir  string
-		restoreOpt restic.RestoreOptions
-		setupOpt   = restic.SetupOptions{
+		restoreOpt = restic.RestoreOptions{
+			Host: restic.DefaultHost,
+		}
+		setupOpt = restic.SetupOptions{
 			ScratchDir:  restic.DefaultScratchDir,
 			EnableCache: false,
 		}

@@ -9,6 +9,7 @@ import (
 const (
 	DefaultOutputFileName = "output.json"
 	DefaultScratchDir     = "/tmp"
+	DefaultHost           = "host-0"
 )
 
 type ResticWrapper struct {

@@ -3,7 +3,7 @@ kind: Function
 metadata:
   name: update-status
 spec:
-  image: diptadas/stash:status
+  image: appscode/stash:pvc
   args:
     - update-status
     - --namespace=${NAMESPACE="default"}
@@ -12,16 +12,13 @@ spec:
     - --restore-session=${RESTORE_SESSION:=}
     - --output-dir=${outputDir}
     - --enable-status-subresource=${ENABLE_STATUS_SUBRESOURCE:=false}
-  volumeMounts:
-  - name: ${outputVolume}
-    mountPath: ${outputDir}
 ---
 apiVersion: stash.appscode.com/v1beta1
 kind: Function
 metadata:
   name: pvc-backup
 spec:
-  image: diptadas/stash:status
+  image: appscode/stash:pvc
   args:
   - backup-pvc
   - --provider=${REPOSITORY_PROVIDER}
@@ -29,8 +26,8 @@ spec:
   - --endpoint=${REPOSITORY_ENDPOINT:=}
   - --path=${REPOSITORY_PREFIX:=}
   - --secret-dir=/etc/repository/secret # specified
-  - --scratch-dir=/tmp/restic/scratch # specified
-  - --hostname=${HOSTNAME}
+  - --scratch-dir=/tmp # specified
+  - --hostname=${HOSTNAME:=host-0}
   - --backup-dirs=${TARGET_DIRECTORIES}
   - --retention-keep-last=${RETENTION_KEEP_LAST:=0}
   - --retention-keep-hourly=${RETENTION_KEEP_HOURLY:=0}
@@ -53,15 +50,13 @@ spec:
     mountPath: ${TARGET_MOUNT_PATH}
   - name: ${secretVolume}
     mountPath: /etc/repository/secret
-  - name: ${outputVolume}
-    mountPath: ${outputDir}
 ---
 apiVersion: stash.appscode.com/v1beta1
 kind: Function
 metadata:
   name: pvc-restore
 spec:
-  image: diptadas/stash:status
+  image: appscode/stash:pvc
   args:
   - restore-pvc
   - --provider=${REPOSITORY_PROVIDER}
@@ -69,8 +64,8 @@ spec:
   - --endpoint=${REPOSITORY_ENDPOINT:=}
   - --path=${REPOSITORY_PREFIX:=}
   - --secret-dir=/etc/repository/secret # specified
-  - --scratch-dir=/tmp/restic/scratch # specified
-  - --hostname=${HOSTNAME}
+  - --scratch-dir=/tmp # specified
+  - --hostname=${HOSTNAME:=host-0}
   - --restore-dirs=${RESTORE_DIRECTORIES}
   - --snapshots=${RESTORE_SNAPSHOTS:=}
   - --output-dir=${outputDir}
@@ -85,5 +80,3 @@ spec:
     mountPath: ${TARGET_MOUNT_PATH}
   - name: ${secretVolume}
     mountPath: /etc/repository/secret
-  - name: ${outputVolume}
-    mountPath: ${outputDir}

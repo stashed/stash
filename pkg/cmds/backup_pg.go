@@ -41,6 +41,7 @@ func NewCmdBackupPG() *cobra.Command {
 			EnableCache: false,
 		}
 		backupOpt = restic.BackupOptions{
+			Host:          restic.DefaultHost,
 			StdinFileName: PgDumpFile,
 		}
 		metrics = restic.MetricsOptions{

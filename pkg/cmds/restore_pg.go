@@ -27,6 +27,7 @@ func NewCmdRestorePG() *cobra.Command {
 			EnableCache: false,
 		}
 		dumpOpt = restic.DumpOptions{
+			Host:     restic.DefaultHost,
 			FileName: PgDumpFile,
 		}
 		metrics = restic.MetricsOptions{

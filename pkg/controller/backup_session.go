@@ -230,7 +230,7 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 			// job controller should not delete this job on completion
 			// use a different label than v1alpha1 job labels to skip deletion from job controller
 			// TODO: Remove job controller, cleanup backup-session periodically
-			util.LabelApp: util.AppLabelStash,
+			util.LabelApp: util.AppLabelStashV1Beta1,
 		}
 		in.Spec.Template.Spec = podSpec
 		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName

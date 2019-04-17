@@ -3,7 +3,7 @@ kind: Function
 metadata:
   name: update-status
 spec:
-  image: diptadas/stash:pg
+  image: appscode/stash:pg
   args:
     - update-status
     - --namespace=${NAMESPACE:=default}
@@ -11,16 +11,14 @@ spec:
     - --backup-session=${BACKUP_SESSION:=}
     - --restore-session=${RESTORE_SESSION:=}
     - --output-dir=${outputDir:=}
-  volumeMounts:
-  - name: ${outputVolume}
-    mountPath: ${outputDir}
+    - --enable-status-subresource=${ENABLE_STATUS_SUBRESOURCE:=false}
 ---
 apiVersion: stash.appscode.com/v1beta1
 kind: Function
 metadata:
   name: pg-backup
 spec:
-  image: diptadas/stash:pg
+  image: appscode/stash:pg
   args:
   - backup-pg
   - --provider=${REPOSITORY_PROVIDER:=}
@@ -28,8 +26,9 @@ spec:
   - --endpoint=${REPOSITORY_ENDPOINT:=}
   - --path=${REPOSITORY_PREFIX:=}
   - --secret-dir=/etc/repository/secret # specified
-  - --scratch-dir=/tmp/restic/scratch # specified
+  - --scratch-dir=/tmp # specified
   #- --backup-dirs=${TARGET_DIRECTORIES:=}
+  - --hostname=${HOSTNAME:=host-0}
   - --pg-args=${pgArgs:=} # user input
   - --namespace=${NAMESPACE:=default}
   - --app-binding=${TARGET_NAME:=}
@@ -45,19 +44,15 @@ spec:
   #- --metrics-dir
   #- --metrics-labels
   volumeMounts:
-  - name: ${scratchDirVolume}
-    mountPath: /tmp/restic/scratch
   - name: ${secretVolume}
     mountPath: /etc/repository/secret
-  - name: ${outputVolume}
-    mountPath: ${outputDir}
 ---
 apiVersion: stash.appscode.com/v1beta1
 kind: Function
 metadata:
   name: pg-restore
 spec:
-  image: diptadas/stash:pg
+  image: appscode/stash:pg
   args:
   - restore-pg
   - --provider=${REPOSITORY_PROVIDER:=}
@@ -65,8 +60,9 @@ spec:
   - --endpoint=${REPOSITORY_ENDPOINT:=}
   - --path=${REPOSITORY_PREFIX:=}
   - --secret-dir=/etc/repository/secret # specified
-  - --scratch-dir=/tmp/restic/scratch # specified
+  - --scratch-dir=/tmp # specified
   #- --restore-dirs=${RESTORE_DIRECTORIES:=}
+  - --hostname=${HOSTNAME:=host-0}
   - --pg-args=${pgArgs:=} # user input
   - --namespace=${NAMESPACE:=}
   - --app-binding=${TARGET_NAME:=}
@@ -79,9 +75,5 @@ spec:
   #- --metrics-dir
   #- --metrics-labels
   volumeMounts:
-  - name: ${scratchDirVolume}
-    mountPath: /tmp/restic/scratch
   - name: ${secretVolume}
     mountPath: /etc/repository/secret
-  - name: ${outputVolume}
-    mountPath: ${outputDir}
