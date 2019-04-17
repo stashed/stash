@@ -56,8 +56,7 @@ func (fi *Invocation) PodTemplate(labels map[string]string, pvcName string) core
 }
 
 func (f *Framework) GetPod(meta metav1.ObjectMeta) (*core.Pod, error) {
-	labelSelector := fields.SelectorFromSet(meta.Labels)
-	podList, err := f.KubeClient.CoreV1().Pods(meta.Namespace).List(metav1.ListOptions{LabelSelector: labelSelector.String()})
+	podList, err := f.KubeClient.CoreV1().Pods(meta.Namespace).List(metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}

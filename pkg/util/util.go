@@ -44,7 +44,7 @@ func GetHostName(target *api_v1beta1.Target) (string, error) {
 		podOrdinal := podInfo[len(podInfo)-1]
 		return "host-" + podOrdinal, nil
 	case apis.KindDaemonSet:
-		nodeName := os.Getenv("POD_NAME")
+		nodeName := os.Getenv("NODE_NAME")
 		if nodeName == "" {
 			return "", fmt.Errorf("missing nodeName for %s", apis.KindDaemonSet)
 		}

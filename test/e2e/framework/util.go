@@ -23,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 )
+
 var (
 	files = []string{"test-data1.txt", "test-data2.txt", "test-data3.txt", "test-data4.txt", "test-data5.txt"}
 )
@@ -340,7 +341,7 @@ func GetPathsFromResticFileGroups(restic *api.Restic) []string {
 
 func GetPathsFromRestoreSession(restoreSession *v1beta1.RestoreSession) []string {
 	paths := make([]string, 0)
-	for i, _ := range restoreSession.Spec.Rules {
+	for i := range restoreSession.Spec.Rules {
 		for _, p := range restoreSession.Spec.Rules[i].Paths {
 			paths = append(paths, p)
 		}
@@ -353,13 +354,13 @@ func removeDuplicates(elements []string) []string {
 	encountered := map[string]bool{}
 
 	// Create a map of all unique elements.
-	for v:= range elements {
+	for v := range elements {
 		encountered[elements[v]] = true
 	}
 
 	// Place all keys from the map into a slice.
 	result := []string{}
-	for key, _ := range encountered {
+	for key := range encountered {
 		result = append(result, key)
 	}
 	return result
@@ -521,6 +522,19 @@ func WaitUntilBackupConfigurationDeleted(sc cs.Interface, meta metav1.ObjectMeta
 	})
 }
 
+func WaitUntilRestoreSessionDeleted(sc cs.Interface, meta metav1.ObjectMeta) error {
+	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
+		if _, err := sc.StashV1beta1().RestoreSessions(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+			if kerr.IsNotFound(err) {
+				return true, nil
+			} else {
+				return true, err
+			}
+		}
+		return false, nil
+	})
+}
+
 func WaitUntilRecoveryDeleted(sc cs.Interface, meta metav1.ObjectMeta) error {
 
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
@@ -555,6 +569,19 @@ func WaitUntilRepositoriesDeleted(sc cs.Interface, repositories []*api.Repositor
 		return false, nil
 	})
 }
+func WaitUntilRepositoryDeleted(sc cs.Interface, repository *api.Repository) error {
+
+	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
+		if _, err := sc.StashV1alpha1().Repositories(repository.Namespace).Get(repository.Name, metav1.GetOptions{}); err != nil {
+			if kerr.IsNotFound(err) {
+				return true, nil
+			} else {
+				return true, err
+			}
+		}
+		return false, nil
+	})
+}
 
 func (f *Framework) WaitUntilDaemonPodReady(meta metav1.ObjectMeta) error {
 
@@ -563,10 +590,11 @@ func (f *Framework) WaitUntilDaemonPodReady(meta metav1.ObjectMeta) error {
 		if err != nil {
 			return false, nil
 		}
-		if pod.Status.Phase == core.PodPhase(core.PodReady) {
+		if pod.Status.Phase == core.PodPhase(core.PodRunning) {
 			return true, nil
 		}
 		return false, nil
+
 	})
 }
 

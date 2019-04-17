@@ -70,6 +70,11 @@ func (f *Framework) DeleteRepositories(repositories []*api.Repository) {
 		Expect(err).NotTo(HaveOccurred())
 	}
 }
+
+func (f *Framework) DeleteRepository(repository *api.Repository) error {
+	err := f.StashClient.StashV1alpha1().Repositories(repository.Namespace).Delete(repository.Name, deleteInBackground())
+	return err
+}
 func (f *Framework) BrowseResticRepository(repository *api.Repository) ([]stow.Item, error) {
 	cfg, err := osm.NewOSMContext(f.KubeClient, repository)
 	if err != nil {

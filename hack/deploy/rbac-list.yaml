@@ -27,9 +27,9 @@ rules:
   - "*"
   verbs: ["*"]
 - apiGroups:
-    - appcatalog.appscode.com
+  - appcatalog.appscode.com
   resources:
-    - "*"
+  - "*"
   verbs: ["*"]
 - apiGroups:
   - apps

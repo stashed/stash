@@ -5,7 +5,6 @@ import (
 	"github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/apis/stash/v1beta1"
 	core "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -47,5 +46,5 @@ func (f *Invocation) CreateBackupConfiguration(backupCfg v1beta1.BackupConfigura
 }
 
 func (f *Invocation) DeleteBackupConfiguration(backupCfg v1beta1.BackupConfiguration) error {
-	return f.StashClient.StashV1beta1().BackupConfigurations(backupCfg.Namespace).Delete(backupCfg.Name, &v1.DeleteOptions{})
+	return f.StashClient.StashV1beta1().BackupConfigurations(backupCfg.Namespace).Delete(backupCfg.Name, &metav1.DeleteOptions{})
 }
