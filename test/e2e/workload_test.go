@@ -932,7 +932,7 @@ var _ = Describe("ReplicationController", func() {
 			By("Reading sample data from /source/data mountPath inside workload")
 			sampleData, err = f.ReadSampleDataFromFromWorkload(rc.ObjectMeta, apis.KindReplicationController)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(sampleData).To(Not(BeEmpty()))
+			Expect(sampleData).NotTo(BeEmpty())
 
 			By("Creating storage Secret " + cred.Name)
 			err = f.CreateSecret(cred)
@@ -1024,7 +1024,7 @@ var _ = Describe("ReplicationController", func() {
 			By("checking the workload data has been restored")
 			restoredData, err = f.ReadSampleDataFromMountedDirectory(rc.ObjectMeta, framework.GetPathsFromRestoreSession(&restoreSession), apis.KindReplicationController)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(restoredData).To(Not(BeEmpty()))
+			Expect(restoredData).NotTo(BeEmpty())
 
 			By("Verifying restored data is same as original data")
 			Expect(restoredData).To(BeEquivalentTo(sampleData))
