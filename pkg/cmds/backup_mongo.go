@@ -37,6 +37,7 @@ func NewCmdBackupMongo() *cobra.Command {
 			EnableCache: false,
 		}
 		backupOpt = restic.BackupOptions{
+			Host:          restic.DefaultHost,
 			StdinFileName: MongoDumpFile,
 		}
 		metrics = restic.MetricsOptions{

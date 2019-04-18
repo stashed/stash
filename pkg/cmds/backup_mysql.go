@@ -37,6 +37,7 @@ func NewCmdBackupMySql() *cobra.Command {
 			EnableCache: false,
 		}
 		backupOpt = restic.BackupOptions{
+			Host:          restic.DefaultHost,
 			StdinFileName: MySqlDumpFile,
 		}
 		metrics = restic.MetricsOptions{

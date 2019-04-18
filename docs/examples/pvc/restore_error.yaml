@@ -19,6 +19,6 @@ spec:
     mountPath: /etc/target
   rules:
   - hosts:
-    - demo-host
+    - host-0
     paths:
     - /etc/target/unknown-path
