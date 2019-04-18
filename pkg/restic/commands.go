@@ -172,7 +172,7 @@ func (w *ResticWrapper) cleanup(retentionPolicy v1alpha1.RetentionPolicy) ([]byt
 	return nil, nil
 }
 
-func (w *ResticWrapper) restore(path, host, snapshotID string) ([]byte, error) {
+func (w *ResticWrapper) restore(path, host, snapshotID, destination string) ([]byte, error) {
 	log.Infoln("Restoring backed up data")
 
 	args := []interface{}{"restore"}
@@ -190,7 +190,11 @@ func (w *ResticWrapper) restore(path, host, snapshotID string) ([]byte, error) {
 		args = append(args, host)
 	}
 
-	args = append(args, "--target", "/") // restore in absolute path
+	if destination == "" {
+		destination = "/" // restore in absolute path
+	}
+	args = append(args, "--target", destination)
+
 	args = w.appendCacheDirFlag(args)
 	args = w.appendCaCertFlag(args)
 	args = w.appendMaxConnectionsFlag(args)
@@ -249,6 +253,15 @@ func (w *ResticWrapper) stats() ([]byte, error) {
 	args := w.appendCacheDirFlag([]interface{}{"stats"})
 	args = w.appendMaxConnectionsFlag(args)
 	args = append(args, "--mode=raw-data", "--quiet")
+	args = w.appendCaCertFlag(args)
+
+	return w.run(Command{Name: ResticCMD, Args: args})
+}
+
+func (w *ResticWrapper) unlock() ([]byte, error) {
+	log.Infoln("Unlocking restic repository")
+	args := w.appendCacheDirFlag([]interface{}{"unlock", "--remove-all"})
+	args = w.appendMaxConnectionsFlag(args)
 	args = w.appendCaCertFlag(args)
 
 	return w.run(Command{Name: ResticCMD, Args: args})
