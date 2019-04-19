@@ -205,7 +205,7 @@ func (w *ResticWrapper) restore(path, host, snapshotID, destination string) ([]b
 func (w *ResticWrapper) dump(dumpOptions DumpOptions) ([]byte, error) {
 	log.Infoln("Dumping backed up data")
 
-	args := []interface{}{"dump"}
+	args := []interface{}{"dump", "--quiet"}
 	if dumpOptions.Snapshot != "" {
 		args = append(args, dumpOptions.Snapshot)
 	} else {
