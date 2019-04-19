@@ -77,6 +77,8 @@ func NewResticWrapper(options SetupOptions) (*ResticWrapper, error) {
 	}
 	wrapper.sh.SetDir(wrapper.config.ScratchDir)
 	wrapper.sh.ShowCMD = true
+	wrapper.sh.PipeFail = true
+	wrapper.sh.PipeStdErrors = true
 
 	// Setup restic environments
 	err := wrapper.setupEnv()
