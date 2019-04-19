@@ -193,6 +193,65 @@ func IntMap(src map[string]*int) map[string]int {
 	return dst
 }
 
+// UIntP returns a pointer to the uint value passed in.
+func UIntP(v uint) *uint {
+	return &v
+}
+
+// UInt returns the value of the uint pointer passed in or
+// 0 if the pointer is nil.
+func UInt(v *uint) uint {
+	if v != nil {
+		return *v
+	}
+	return 0
+}
+
+// UIntPSlice converts a slice of uint values into a slice of
+// uint pointers
+func UIntPSlice(src []uint) []*uint {
+	dst := make([]*uint, len(src))
+	for i := 0; i < len(src); i++ {
+		dst[i] = &(src[i])
+	}
+	return dst
+}
+
+// UIntSlice converts a slice of uint pointers into a slice of
+// uint values
+func UIntSlice(src []*uint) []uint {
+	dst := make([]uint, len(src))
+	for i := 0; i < len(src); i++ {
+		if src[i] != nil {
+			dst[i] = *(src[i])
+		}
+	}
+	return dst
+}
+
+// UIntPMap converts a string map of uint values into a string
+// map of uint pointers
+func UIntPMap(src map[string]uint) map[string]*uint {
+	dst := make(map[string]*uint)
+	for k, val := range src {
+		v := val
+		dst[k] = &v
+	}
+	return dst
+}
+
+// UIntMap converts a string map of uint pointers into a string
+// map of uint values
+func UIntMap(src map[string]*uint) map[string]uint {
+	dst := make(map[string]uint)
+	for k, val := range src {
+		if val != nil {
+			dst[k] = *val
+		}
+	}
+	return dst
+}
+
 // Int32P returns a pointer to the int32 value passed in.
 func Int32P(v int32) *int32 {
 	return &v
