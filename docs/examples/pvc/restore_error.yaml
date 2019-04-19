@@ -18,7 +18,6 @@ spec:
       name: test-pvc-dest
     mountPath: /etc/target
   rules:
-  - hosts:
-    - host-0
+  - snapshots: [latest]
     paths:
     - /etc/target/unknown-path

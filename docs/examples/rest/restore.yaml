@@ -20,8 +20,7 @@ spec:
     - name: mount-01
       mountPath: /etc/target
   rules:
-  - hosts:
-    - host-0
+  - snapshots: [latest]
     paths:
     - /etc/target/dir-01
     - /etc/target/dir-02
