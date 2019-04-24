@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/appscode/go/log"
 	"github.com/appscode/stash/apis/repositories"
 	stash "github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/appscode/stash/pkg/cli"
@@ -25,7 +26,7 @@ const (
 	ExecStash = "/bin/stash"
 )
 
-func (r *REST) GetSnapshots(repository *stash.Repository, snapshotIDs []string) ([]repositories.Snapshot, error) {
+func (r *REST) getSnapshots(repository *stash.Repository, snapshotIDs []string) ([]repositories.Snapshot, error) {
 	backend := repository.Spec.Backend.DeepCopy()
 
 	info, err := util.ExtractDataFromRepositoryLabel(repository.Labels)
@@ -84,7 +85,7 @@ func (r *REST) GetSnapshots(repository *stash.Repository, snapshotIDs []string) 
 	return snapshots, nil
 }
 
-func (r *REST) ForgetSnapshots(repository *stash.Repository, snapshotIDs []string) error {
+func (r *REST) forgetSnapshots(repository *stash.Repository, snapshotIDs []string) error {
 	backend := repository.Spec.Backend.DeepCopy()
 
 	info, err := util.ExtractDataFromRepositoryLabel(repository.Labels)
@@ -135,19 +136,33 @@ func (r *REST) getSnapshotsFromSidecar(repository *stash.Repository, snapshotIDs
 
 func (r *REST) forgetSnapshotsFromSidecar(repository *stash.Repository, snapshotIDs []string) error {
 	_, err := r.execOnSidecar(repository, "forget", snapshotIDs)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
+
 func (r *REST) execOnSidecar(repository *stash.Repository, cmd string, snapshotIDs []string) ([]byte, error) {
-	info, err := util.ExtractDataFromRepositoryLabel(repository.Labels)
-	if err != nil {
-		return nil, err
+	// get workload name from repository
+	var workloadName string
+	if isV1Alpha1Repository(*repository) {
+		info, err := util.ExtractDataFromRepositoryLabel(repository.Labels)
+		if err != nil {
+			return nil, err
+		}
+		workloadName = info.WorkloadName
+	} else {
+		// get backup config for repository
+		bc, err := util.FindBackupConfigForRepository(r.stashClient, *repository)
+		if err != nil {
+			return nil, err
+		}
+		// only allow sidecar model
+		if bc.Spec.Target == nil || util.BackupModel(bc.Spec.Target.Ref.Kind) == util.ModelCronJob {
+			return nil, fmt.Errorf("can't list snapshots for loacl backend with backup model 'cronjob'")
+		}
+		workloadName = bc.Spec.Target.Ref.Name
 	}
 
-	pod, err := r.getPodWithStashSidecar(repository.Namespace, info.WorkloadName)
+	// get pod for workload
+	pod, err := r.getPodWithStashSidecar(repository.Namespace, workloadName)
 	if err != nil {
 		return nil, err
 	}
@@ -195,6 +210,8 @@ func (r *REST) execCommandOnPod(pod *core.Pod, command []string) ([]byte, error)
 		execErr bytes.Buffer
 	)
 
+	log.Infoln("Executing command %v on pod %v", command, pod.Name)
+
 	req := r.kubeClient.CoreV1().RESTClient().Post().
 		Resource("pods").
 		Name(pod.Name).
@@ -219,26 +236,17 @@ func (r *REST) execCommandOnPod(pod *core.Pod, command []string) ([]byte, error)
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("could not execute: %v", err)
-	}
-
-	if execErr.Len() > 0 {
-		return nil, fmt.Errorf("stderr: %v", execErr.String())
+		return nil, fmt.Errorf("could not execute: %v, reason: %s", err, execErr.String())
 	}
 
 	return execOut.Bytes(), nil
 }
 
-func (r *REST) GetV1Beta1Snapshots(repository *stash.Repository, snapshotIDs []string) ([]repositories.Snapshot, error) {
+func (r *REST) getV1Beta1Snapshots(repository *stash.Repository, snapshotIDs []string) ([]repositories.Snapshot, error) {
 	var (
 		scratchDir = "/tmp/stash-snapshots/scratch"
 		secretDir  = "/tmp/stash-snapshots/secret"
 	)
-
-	// unlock local backend
-	if repository.Spec.Backend.Local != nil {
-		return nil, fmt.Errorf("can't get snapshots from repository with local backend")
-	}
 
 	// get source repository secret
 	secret, err := r.kubeClient.CoreV1().Secrets(repository.Namespace).Get(repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
@@ -310,16 +318,11 @@ func (r *REST) GetV1Beta1Snapshots(repository *stash.Repository, snapshotIDs []s
 	return snapshots, nil
 }
 
-func (r *REST) DeleteV1Beta1Snapshots(repository *stash.Repository, snapshotIDs []string) error {
+func (r *REST) forgetV1Beta1Snapshots(repository *stash.Repository, snapshotIDs []string) error {
 	var (
 		scratchDir = "/tmp/stash-snapshots/scratch"
 		secretDir  = "/tmp/stash-snapshots/secret"
 	)
-
-	// unlock local backend
-	if repository.Spec.Backend.Local != nil {
-		return fmt.Errorf("can't get snapshots from repository with local backend")
-	}
 
 	// get source repository secret
 	secret, err := r.kubeClient.CoreV1().Secrets(repository.Namespace).Get(repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
@@ -362,27 +365,27 @@ func (r *REST) DeleteV1Beta1Snapshots(repository *stash.Repository, snapshotIDs 
 	return err
 }
 
-func (r *REST) getVersionedSnapshots(repository *stash.Repository, snapshotIDs []string) ([]repositories.Snapshot, error) {
-	if isV1Alpha1Repository(*repository) {
-		if repository.Spec.Backend.Local != nil {
-			return r.getSnapshotsFromSidecar(repository, snapshotIDs)
-		} else {
-			return r.GetSnapshots(repository, snapshotIDs)
-		}
+func (r *REST) GetVersionedSnapshots(repository *stash.Repository, snapshotIDs []string, inCluster bool) ([]repositories.Snapshot, error) {
+	if repository.Spec.Backend.Local != nil && !inCluster {
+		return r.getSnapshotsFromSidecar(repository, snapshotIDs)
 	} else {
-		return r.GetV1Beta1Snapshots(repository, snapshotIDs)
+		if isV1Alpha1Repository(*repository) {
+			return r.getSnapshots(repository, snapshotIDs)
+		} else {
+			return r.getV1Beta1Snapshots(repository, snapshotIDs)
+		}
 	}
 }
 
-func (r *REST) deleteVersionedSnapshots(repository *stash.Repository, snapshotIDs []string) error {
-	if isV1Alpha1Repository(*repository) {
-		if repository.Spec.Backend.Local != nil {
-			return r.forgetSnapshotsFromSidecar(repository, snapshotIDs)
-		} else {
-			return r.ForgetSnapshots(repository, snapshotIDs)
-		}
+func (r *REST) ForgetVersionedSnapshots(repository *stash.Repository, snapshotIDs []string, inCluster bool) error {
+	if repository.Spec.Backend.Local != nil && !inCluster {
+		return r.forgetSnapshotsFromSidecar(repository, snapshotIDs)
 	} else {
-		return r.DeleteV1Beta1Snapshots(repository, snapshotIDs)
+		if isV1Alpha1Repository(*repository) {
+			return r.forgetSnapshots(repository, snapshotIDs)
+		} else {
+			return r.forgetV1Beta1Snapshots(repository, snapshotIDs)
+		}
 	}
 }
 
