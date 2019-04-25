@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
+	"os/user"
 	"path/filepath"
 
 	"github.com/appscode/go/flags"
@@ -11,7 +13,7 @@ import (
 	"github.com/appscode/go/types"
 	"github.com/appscode/stash/apis/stash/v1alpha1"
 	stash_scheme "github.com/appscode/stash/client/clientset/versioned/scheme"
-	"github.com/appscode/stash/pkg/docker"
+	"github.com/appscode/stash/pkg/cmds/docker"
 	"github.com/appscode/stash/pkg/restic"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
@@ -28,14 +30,6 @@ const (
 	unlockJobPrefix       = "unlock-local-repo-"
 	unlockJobSecretDir    = "/etc/secret"
 	unlockJobSecretVolume = "secret-volume"
-)
-
-var (
-	image = docker.Docker{
-		Registry: docker.ACRegistry,
-		Image:    docker.ImageStash,
-		Tag:      "latest", // TODO: update default release tag
-	}
 )
 
 func NewUnlockRepositoryCmd() *cobra.Command {
@@ -63,7 +57,6 @@ func NewUnlockRepositoryCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-
 			// unlock local backend
 			if repository.Spec.Backend.Local != nil {
 				if err = unlockLocalRepo(c, repository); err != nil {
@@ -71,41 +64,33 @@ func NewUnlockRepositoryCmd() *cobra.Command {
 				}
 				return nil
 			}
-
 			// get source repository secret
 			secret, err := c.kubeClient.CoreV1().Secrets(namespace).Get(repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 
-			// cleanup whole scratch/secret dir at the end
-			defer os.RemoveAll(cliScratchDir)
-			defer os.RemoveAll(cliSecretDir)
-
-			// write repository secrets in a temp dir
-			if err := os.MkdirAll(cliSecretDir, 0755); err != nil {
-				return err
-			}
-			for key, value := range secret.Data {
-				if err := ioutil.WriteFile(filepath.Join(cliSecretDir, key), value, 0755); err != nil {
-					return err
-				}
-			}
-
+			// configure restic wrapper
 			extraOpt := util.ExtraOptions{
-				SecretDir:   cliSecretDir,
+				SecretDir:   docker.SecretDir,
 				EnableCache: false,
-				ScratchDir:  cliScratchDir,
+				ScratchDir:  docker.ScratchDir,
 			}
 			setupOpt, err := util.SetupOptionsForRepository(*repository, extraOpt)
 			if err != nil {
-				return fmt.Errorf("setup option for repository fail")
+				return fmt.Errorf("setup option for repository failed")
 			}
-			resticWrapper, err := restic.NewResticWrapper(setupOpt)
-			if err != nil {
+
+			// write secret and config
+			// cleanup whole config/secret dir at the end
+			defer os.RemoveAll(cliSecretDir)
+			defer os.RemoveAll(cliConfigDir)
+			if err = prepareDockerVolumeForUnlock(*secret, setupOpt); err != nil {
 				return err
 			}
-			if err = resticWrapper.UnlockRepository(); err != nil {
+
+			// run unlock inside docker
+			if err = runUnlockViaDocker(); err != nil {
 				return err
 			}
 			log.Infof("Repository %s/%s unlocked", namespace, repositoryName)
@@ -121,6 +106,42 @@ func NewUnlockRepositoryCmd() *cobra.Command {
 	cmd.Flags().StringVar(&image.Tag, "image-tag", image.Tag, "Stash image tag for unlock job")
 
 	return cmd
+}
+
+func prepareDockerVolumeForUnlock(secret core.Secret, setupOpt restic.SetupOptions) error {
+	// write repository secrets
+	if err := os.MkdirAll(cliSecretDir, 0755); err != nil {
+		return err
+	}
+	for key, value := range secret.Data {
+		if err := ioutil.WriteFile(filepath.Join(cliSecretDir, key), value, 0755); err != nil {
+			return err
+		}
+	}
+	// write restic setup options
+	return docker.WriteSetupOptionToFile(&setupOpt, filepath.Join(cliConfigDir, docker.SetupOptionsFile))
+}
+
+func runUnlockViaDocker() error {
+	// get current user
+	currentUser, err := user.Current()
+	if err != nil {
+		return err
+	}
+	args := []string{
+		"run",
+		"--rm",
+		"-u", currentUser.Uid,
+		"-v", cliConfigDir + ":" + docker.ConfigDir,
+		"-v", cliSecretDir + ":" + docker.SecretDir,
+		image.ToContainerImage(),
+		"docker",
+		"unlock-repository",
+	}
+	log.Infoln("Running docker with args:", args)
+	out, err := exec.Command("docker", args...).CombinedOutput()
+	log.Infoln("Output:", string(out))
+	return err
 }
 
 func unlockLocalRepo(c *stashCLIController, repo *v1alpha1.Repository) error {

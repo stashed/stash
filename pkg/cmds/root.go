@@ -10,6 +10,7 @@ import (
 	"github.com/appscode/stash/apis"
 	"github.com/appscode/stash/client/clientset/versioned/scheme"
 	stash_cli "github.com/appscode/stash/pkg/cmds/cli"
+	"github.com/appscode/stash/pkg/cmds/docker"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
 	genericapiserver "k8s.io/apiserver/pkg/server"
@@ -72,6 +73,7 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.AddCommand(NewCmdUpdateStatus())
 
 	rootCmd.AddCommand(stash_cli.NewCLICmd())
+	rootCmd.AddCommand(docker.NewDockerCmd())
 
 	return rootCmd
 }
