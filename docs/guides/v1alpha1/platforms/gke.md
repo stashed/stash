@@ -16,7 +16,7 @@ section_menu_id: guides
 
 # Using Stash with Google Kubernetes Engine (GKE)
 
-This tutorial will show you how to use Stash to **backup** and **restore** a Kubernetes deployment in [Google Kubernetes Engine](https://cloud.google.com/kubernetes-engine/). Here, we are going to back up the `/source/data` folder of a busybox pod into [GCS bucket](/docs/guides/backends.md#google-cloud-storage-gcs). Then, we are going to show how to recover this data into a `gcePersistentDisk` and `PersistentVolumeClaim`. We are going to also re-deploy deployment using this recovered volume.
+This tutorial will show you how to use Stash to **backup** and **restore** a Kubernetes deployment in [Google Kubernetes Engine](https://cloud.google.com/kubernetes-engine/). Here, we are going to back up the `/source/data` folder of a busybox pod into [GCS bucket](/docs/guides/v1alpha1/backends/overview.md#google-cloud-storage-gcs). Then, we are going to show how to recover this data into a `gcePersistentDisk` and `PersistentVolumeClaim`. We are going to also re-deploy deployment using this recovered volume.
 
 ## Before You Begin
 
@@ -120,7 +120,7 @@ LICENSE
 README.md
 ```
 
-Now, we are ready backup `/source/data` directory into a [GCS bucket](/docs/guides/backends.md#google-cloud-storage-gcs),
+Now, we are ready backup `/source/data` directory into a [GCS bucket](/docs/guides/v1alpha1/backends/overview.md#google-cloud-storage-gcs),
 
 **Create Secret:**
 
@@ -242,13 +242,13 @@ Here, `deployment.stash-demo-c1014ca6` represents the name of the successful bac
 If you navigate to `<bucket name>/demo/deployment/stash-demo` directory in your GCS bucket. You will see, a repository has been created there.
 
 <p align="center">
-  <img alt="Repository in GCS Bucket", src="/docs/images/platforms/gke/gcs-backup-repository.png">
+  <img alt="Repository in GCS Bucket", src="/docs/images/v1alpha1/platforms/gke/gcs-backup-repository.png">
 </p>
 
 To view the snapshot files, navigate to `snapshots` directory of the repository,
 
 <p align="center">
-  <img alt="Snapshot in GCS Bucket" src="/docs/images/platforms/gke/gcs-backup-snapshots.png">
+  <img alt="Snapshot in GCS Bucket" src="/docs/images/v1alpha1/platforms/gke/gcs-backup-snapshots.png">
 </p>
 
 > Stash keeps all backup data encrypted. So, snapshot files in the bucket will not contain any meaningful data until they are decrypted.

@@ -5,7 +5,7 @@ menu:
   product_stash_0.8.3:
     identifier: offline-stash
     name: Offline Backup
-    parent: guides
+    parent: v1alpha1-guides
     weight: 15
 product_name: stash
 menu_name: product_stash_0.8.3
@@ -16,7 +16,7 @@ section_menu_id: guides
 
 # Offline Backup
 
-This tutorial will show you how to backup a Kubernetes deployment using Stash in offline mode. By default, stash takes backup in [online](/docs/guides/backup.md) mode where sidecar container is added to take periodic backups and check backups. But sometimes you need to ensure that source data is not being modified while taking the backup, that means running backup while keeping workload pod stopped. In such case, you can run the backup in offline mode. To do this you need to specify `spec.type: offline` in `Restic` crd.
+This tutorial will show you how to backup a Kubernetes deployment using Stash in offline mode. By default, stash takes backup in [online](/docs/guides/v1alpha1/backup.md) mode where sidecar container is added to take periodic backups and check backups. But sometimes you need to ensure that source data is not being modified while taking the backup, that means running backup while keeping workload pod stopped. In such case, you can run the backup in offline mode. To do this you need to specify `spec.type: offline` in `Restic` crd.
 
 ## Before You Begin
 
@@ -45,7 +45,7 @@ namespace/demo created
 The following diagram shows how Stash takes offline backup of a Kubernetes volume. Open the image in a new tab to see the enlarged image.
 
 <p align="center">
-  <img alt="Stash Offline Backup Flow" src="/docs/images/stash-offline-backup.svg">
+  <img alt="Stash Offline Backup Flow" src="/docs/images/v1alpha1/stash-offline-backup.svg">
 </p>
 
 The offline backup process consists of the following steps:
@@ -76,7 +76,7 @@ $ kubectl create configmap -n demo stash-sample-data \
 configmap/stash-sample-data created
 ```
 
-Here, we are going to backup the `/source/data` folder of a `busybox` pod into an [NFS](https://kubernetes.io/docs/concepts/storage/volumes/#nfs) volume. NFS volume is a type of [local](/docs/guides/backends/local.md) backend for Stash.
+Here, we are going to backup the `/source/data` folder of a `busybox` pod into an [NFS](https://kubernetes.io/docs/concepts/storage/volumes/#nfs) volume. NFS volume is a type of [local](/docs/guides/v1alpha1/backends/local.md) backend for Stash.
 
 **Deploy Workload:**
 
@@ -425,12 +425,12 @@ If you would like to uninstall Stash operator, please follow the steps [here](/d
 
 ## Next Steps
 
-- Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/backup.md).
+- Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/v1alpha1/backup.md).
 - Learn about the details of Restic CRD [here](/docs/concepts/crds/restic.md).
-- To restore a backup see [here](/docs/guides/restore.md).
+- To restore a backup see [here](/docs/guides/v1alpha1/restore.md).
 - Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
-- See the list of supported backends and how to configure them [here](/docs/guides/backends/overview.md).
-- See working examples for supported workload types [here](/docs/guides/workloads.md).
-- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/monitoring/overview.md).
-- Learn about how to configure [RBAC roles](/docs/guides/rbac.md).
+- See the list of supported backends and how to configure them [here](/docs/guides/v1alpha1/backends/overview.md).
+- See working examples for supported workload types [here](/docs/guides/v1alpha1/workloads.md).
+- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/v1alpha1/monitoring/overview.md).
+- Learn about how to configure [RBAC roles](/docs/guides/v1alpha1/rbac.md).
 - Want to hack on Stash? Check our [contribution guidelines](/docs/CONTRIBUTING.md).

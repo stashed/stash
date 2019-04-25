@@ -56,7 +56,7 @@ The `.spec` section has following parts:
 `spec.selector` is a required field that specifies a [label selector](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) for the Deployments, ReplicaSets, ReplicationControllers, DaemonSets and StatefulSets targeted by this Restic. Selectors are always matched against the labels of Deployments, ReplicaSets, ReplicationControllers, DaemonSets and StatefulSets in the same namespace as Restic object itself. You can create Deployment, etc and its matching Restic is any order. As long as the labels match, Stash operator will add sidecar container to the workload.  If multiple `Restic` objects are matched to a given workload, Stash operator will error out and avoid adding sidecar container.
 
 ### spec.type
-The default value for `spec.type` is `online`. For offline backup you need to specify `spec.type=offline`. For more details see [here](/docs/guides/offline_backup.md).
+The default value for `spec.type` is `online`. For offline backup you need to specify `spec.type=offline`. For more details see [here](/docs/guides/v1alpha1/offline_backup.md).
 
 ### spec.fileGroups
 `spec.fileGroups` is a required field that specifies one or more directories that are backed up by [restic](https://restic.net). For each directory, you can specify custom tags and retention policy for snapshots.
@@ -82,18 +82,17 @@ The default value for `spec.type` is `online`. For offline backup you need to sp
 | `prune`       | bool    | --prune            | If set, actually removes the data that was referenced by the snapshot from the repository.         |
 | `dryRun`      | bool    | --dry-run          | Instructs `restic` to not remove anything but print which snapshots would be removed.              |
 
-You can set one or more of these retention policy options together. To learn more, read [here](
-https://restic.readthedocs.io/en/latest/manual.html#removing-snapshots-according-to-a-policy).
+You can set one or more of these retention policy options together. To learn more, read [here](https://restic.readthedocs.io/en/stable/060_forget.html#removing-snapshots-according-to-a-policy).
 
 ### spec.backend
-To learn how to configure various backends for Restic, please visit [here](/docs/guides/backends/overview.md).
+To learn how to configure various backends for Restic, please visit [here](/docs/guides/v1alpha1/backends/overview.md).
 
 ### spec.schedule
 `spec.schedule` is a [cron expression](https://github.com/robfig/cron/blob/v2/doc.go#L26) that indicates how often `restic` commands are invoked for file groups.
 At each tick, `restic backup` and `restic forget` commands are run for each of the configured file groups.
 
 ### spec.paused
-`spec.paused` can be used as `enable/disable` switch for Restic. The default value is `false`. To stop restic from taking backup set `spec.paused: true`. For more details see [here](/docs/guides/backup.md#disable-backup).
+`spec.paused` can be used as `enable/disable` switch for Restic. The default value is `false`. To stop restic from taking backup set `spec.paused: true`. For more details see [here](/docs/guides/v1alpha1/backup.md#disable-backup).
 
 ### spec.resources
 `spec.resources` refers to compute resources required by the `stash` sidecar container. To learn more, visit [here](http://kubernetes.io/docs/user-guide/compute-resources/).
@@ -109,7 +108,7 @@ At each tick, `restic backup` and `restic forget` commands are run for each of t
 
 ## Prefix for Repository Directory
 
-Stash allow the users to provide a prefix for the backup repository directory. You can provide the prefix using  `local.subPath` for [local bckend](/docs/guides/backends.md#local) and `<backend-type>.prefix` for [other backends](/docs/guides/backends.md#aws-s3) in `spec.backend` field of `Restic` crd.
+Stash allow the users to provide a prefix for the backup repository directory. You can provide the prefix using  `local.subPath` for [local bckend](/docs/guides/v1alpha1/backends/overview.md#local) and `<backend-type>.prefix` for [other backends](/docs/guides/v1alpha1/backends/overview.md#aws-s3) in `spec.backend` field of `Restic` crd.
 
 If you provide the prefix then the repository will be created in the following directory,
 
@@ -145,17 +144,17 @@ To stop Restic from taking backup, you can do the following things:
 
 * Change the labels of a workload. Stash operator will remove the sidecar container from that workload. This way you can selectively stop backup of a Deployment, ReplicaSet etc.
 
-For more details about how to disable and resume Restic see [here](/docs/guides/backup.md#disable-backup).
+For more details about how to disable and resume Restic see [here](/docs/guides/v1alpha1/backup.md#disable-backup).
 
 ## Next Steps
 
 - Learn about Repository CRD [here](/docs/concepts/crds/repository.md)
-- Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/backup.md).
-- To restore a backup see [here](/docs/guides/restore.md).
+- Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/v1alpha1/backup.md).
+- To restore a backup see [here](/docs/guides/v1alpha1/restore.md).
 - Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
-- To run backup in offline mode see [here](/docs/guides/offline_backup.md)
-- See the list of supported backends and how to configure them [here](/docs/guides/backends/overview.md).
-- See working examples for supported workload types [here](/docs/guides/workloads.md).
-- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/monitoring/overview.md).
-- Learn about how to configure [RBAC roles](/docs/guides/rbac.md).
+- To run backup in offline mode see [here](/docs/guides/v1alpha1/offline_backup.md)
+- See the list of supported backends and how to configure them [here](/docs/guides/v1alpha1/backends/overview.md).
+- See working examples for supported workload types [here](/docs/guides/v1alpha1/workloads.md).
+- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/v1alpha1/monitoring/overview.md).
+- Learn about how to configure [RBAC roles](/docs/guides/v1alpha1/rbac.md).
 - Want to hack on Stash? Check our [contribution guidelines](/docs/CONTRIBUTING.md).

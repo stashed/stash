@@ -5,7 +5,7 @@ menu:
   product_stash_0.8.3:
     identifier: restore-stash
     name: Restore Volumes
-    parent: guides
+    parent: v1alpha1-guides
     weight: 20
 product_name: stash
 menu_name: product_stash_0.8.3
@@ -22,7 +22,7 @@ This tutorial will show you how to restore backed up volume using Stash. Here, w
 
 To proceed with this tutorial, you have to meet following requirements:
 
-- At first, you need to have some backup taken by Stash. If you already don't have any backup repository, create one by following this [backup tutorial](/docs/guides/backup.md).
+- At first, you need to have some backup taken by Stash. If you already don't have any backup repository, create one by following this [backup tutorial](/docs/guides/v1alpha1/backup.md).
 
 - You need to have the storage `Secret` that was used to take backup. If you don't have the `Secret`, create one with valid credentials.
 
@@ -47,7 +47,7 @@ namespace/demo created
 The following diagram shows how Stash recovers backed up data from a backend. Open the image in a new tab to see the enlarged image.
 
 <p align="center">
-  <img alt="Stash Backup Flow" src="/docs/images/stash-recovery.svg">
+  <img alt="Stash Backup Flow" src="/docs/images/v1alpha1/stash-recovery.svg">
 </p>
 
 The volume recovery backup process consists of the following steps:
@@ -266,7 +266,7 @@ deployment.stash-demo-1ace430f   110s
 deployment.stash-demo-baff6c47   50s
 ```
 
->Note: If you are using [Local](/docs/guides/backends/local.md) backend for storing backup snapshots, your workload must be running to be able to list snapshots.
+>Note: If you are using [Local](/docs/guides/v1alpha1/backends/local.md) backend for storing backup snapshots, your workload must be running to be able to list snapshots.
 
 Below is the YAML for `Recovery` crd referring to a specific snapshot.
 
@@ -317,9 +317,9 @@ If you would like to uninstall Stash operator, please follow the steps [here](/d
 
 - Learn about the details of Restic CRD [here](/docs/concepts/crds/restic.md).
 - Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
-- To run backup in offline mode see [here](/docs/guides/offline_backup.md)
-- See the list of supported backends and how to configure them [here](/docs/guides/backends/overview.md).
-- See working examples for supported workload types [here](/docs/guides/workloads.md).
-- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/monitoring/overview.md).
-- Learn about how to configure [RBAC roles](/docs/guides/rbac.md).
+- To run backup in offline mode see [here](/docs/guides/v1alpha1/offline_backup.md)
+- See the list of supported backends and how to configure them [here](/docs/guides/v1alpha1/backends/overview.md).
+- See working examples for supported workload types [here](/docs/guides/v1alpha1/workloads.md).
+- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/v1alpha1/monitoring/overview.md).
+- Learn about how to configure [RBAC roles](/docs/guides/v1alpha1/rbac.md).
 - Want to hack on Stash? Check our [contribution guidelines](/docs/CONTRIBUTING.md).

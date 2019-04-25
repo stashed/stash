@@ -5,7 +5,7 @@ menu:
   product_stash_0.8.3:
     identifier: backend-local
     name: Persistent Volumes
-    parent: backend
+    parent: v1alpha1-backend
     weight: 20
 product_name: stash
 menu_name: product_stash_0.8.3
@@ -145,5 +145,5 @@ restic "local-restic" created
 
 ## Next Steps
 
-- Learn how to use Stash to backup a Kubernetes deployment from [here](/docs/guides/backup.md).
-- To learn how to recover from backed up snapshot, visit [here](/docs/guides/restore.md).
+- Learn how to use Stash to backup a Kubernetes deployment from [here](/docs/guides/v1alpha1/backup.md).
+- To learn how to recover from backed up snapshot, visit [here](/docs/guides/v1alpha1/restore.md).

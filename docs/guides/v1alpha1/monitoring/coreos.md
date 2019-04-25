@@ -31,7 +31,7 @@ CoreOS [prometheus-operator](https://github.com/coreos/prometheus-operator) prov
 
 ## Enable Monitoring in Stash
 
-Enable Prometheus monitoring using `prometheus.io/coreos-operator` agent while installing Stash. To know details about how to enable monitoring see [here](/docs/guides/monitoring/overview.md#how-to-enable-monitoring).
+Enable Prometheus monitoring using `prometheus.io/coreos-operator` agent while installing Stash. To know details about how to enable monitoring see [here](/docs/guides/v1alpha1/monitoring/overview.md#how-to-enable-monitoring).
 
 Here, we are going to enable monitoring for both `backup & recovery` and `operator` metrics.
 
@@ -172,7 +172,7 @@ Forwarding from [::1]:9090 -> 9090
 Now, we can access the dashboard at `localhost:9090`. Open [http://localhost:9090](http://localhost:9090) in your browser. You should see `pushgateway` and `api` endpoints of `stash-operator` service as target.
 
 <p align="center">
-  <img alt="Prometheus Target" src="/docs/images/monitoring/prom-coreos-target.png" style="padding:10px">
+  <img alt="Prometheus Target" src="/docs/images/v1alpha1/monitoring/prom-coreos-target.png" style="padding:10px">
 </p>
 
 ## Cleanup
@@ -192,6 +192,6 @@ To uninstall Stash follow this [guide](/docs/setup/uninstall.md).
 
 ## Next Steps
 
-- Learn how monitoring in Stash works from [here](/docs/guides/monitoring/overview.md).
-- Learn how to monitor Stash using builtin Prometheus from [here](/docs/guides/monitoring/builtin.md).
-- Learn how to use Grafana dashboard to visualize monitoring data from [here](/docs/guides/monitoring/grafana.md).
+- Learn how monitoring in Stash works from [here](/docs/guides/v1alpha1/monitoring/overview.md).
+- Learn how to monitor Stash using builtin Prometheus from [here](/docs/guides/v1alpha1/monitoring/builtin.md).
+- Learn how to use Grafana dashboard to visualize monitoring data from [here](/docs/guides/v1alpha1/monitoring/grafana.md).

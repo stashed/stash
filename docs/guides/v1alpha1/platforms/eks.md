@@ -279,13 +279,13 @@ Here, we can see 5 last successful backup [Snapshot](/docs/concepts/crds/snapsho
 
 If you navigate to `<bucket name>/demo/deployment/stash-demo` directory in your s3 bucket. You will see, a repository has been created there.
 <p align="center">
-  <img alt="Repository in AWS S3 Backend",  height="350px" src="/docs/images/platforms/eks/s3-backup-repository.png">
+  <img alt="Repository in AWS S3 Backend",  height="350px" src="/docs/images/v1alpha1/platforms/eks/s3-backup-repository.png">
 </p>
 
 To view the snapshot files, navigate to `snapshots` directory of the repository,
 
 <p align="center">
-  <img alt="Snapshot in AWS S3 Bucket" height="350px" src="/docs/images/platforms/eks/s3-backup-snapshots.png">
+  <img alt="Snapshot in AWS S3 Bucket" height="350px" src="/docs/images/v1alpha1/platforms/eks/s3-backup-snapshots.png">
 </p>
 
 > Stash keeps all backup data encrypted. So, snapshot files in the bucket will not contain any meaningful data until they are decrypted.

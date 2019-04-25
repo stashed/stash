@@ -72,7 +72,7 @@ A `Repository` object maintains some important information using labels. These l
 
 ### spec.backend
 
-`spec.backend` holds the backend information where the backup snapshots are being stored. To learn how to configure various backends for Restic, please visit [here](/docs/guides/backends/overview.md).
+`spec.backend` holds the backend information where the backup snapshots are being stored. To learn how to configure various backends for Restic, please visit [here](/docs/guides/v1alpha1/backends/overview.md).
 
 ### backend prefix/subPath
 
@@ -141,7 +141,7 @@ This will delete only `Repository` crd. It won't delete any backed up data from 
 
 >If you delete `Repository` crd while stash-sidecar still exist on the workload, Stash will re-create the `Repository` crd and continue to take backup. In this case, `status` field of `Repository` crd will be reset.
 
-> If you don't want stash to re-create `Repository` crd, you have to stop Stash from taking backup. To see how to stop stash from taking backup see [here](/docs/guides/backup.md#disable-backup).
+> If you don't want stash to re-create `Repository` crd, you have to stop Stash from taking backup. To see how to stop stash from taking backup see [here](/docs/guides/v1alpha1/backup.md#disable-backup).
 
 ### Delete respective restic repository
 
@@ -208,13 +208,13 @@ If everything goes well, respective restic repository will be deleted from the b
 
 ## Next Steps
 
-- Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/backup.md).
-- To restore a backup see [here](/docs/guides/restore.md).
+- Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/v1alpha1/backup.md).
+- To restore a backup see [here](/docs/guides/v1alpha1/restore.md).
 - Learn about the details of Snapshot [here](/docs/concepts/crds/snapshot.md).
 - Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
-- To run backup in offline mode see [here](/docs/guides/offline_backup.md)
-- See the list of supported backends and how to configure them [here](/docs/guides/backends/overview.md).
-- See working examples for supported workload types [here](/docs/guides/workloads.md).
-- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/monitoring/overview.md).
-- Learn about how to configure [RBAC roles](/docs/guides/rbac.md).
+- To run backup in offline mode see [here](/docs/guides/v1alpha1/offline_backup.md)
+- See the list of supported backends and how to configure them [here](/docs/guides/v1alpha1/backends/overview.md).
+- See working examples for supported workload types [here](/docs/guides/v1alpha1/workloads.md).
+- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/v1alpha1/monitoring/overview.md).
+- Learn about how to configure [RBAC roles](/docs/guides/v1alpha1/rbac.md).
 - Want to hack on Stash? Check our [contribution guidelines](/docs/CONTRIBUTING.md).

@@ -5,7 +5,7 @@ menu:
   product_stash_0.8.3:
     identifier: workloads-stash
     name: Workloads
-    parent: guides
+    parent: v1alpha1-guides
     weight: 25
 product_name: stash
 menu_name: product_stash_0.8.3
@@ -126,13 +126,13 @@ To learn about the meaning of various flags, please visit [here](/docs/reference
 
 ## Next Steps
 
-- Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/backup.md).
+- Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/v1alpha1/backup.md).
 - Learn about the details of Restic CRD [here](/docs/concepts/crds/restic.md).
-- To restore a backup see [here](/docs/guides/restore.md).
+- To restore a backup see [here](/docs/guides/v1alpha1/restore.md).
 - Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
-- To run backup in offline mode see [here](/docs/guides/offline_backup.md)
-- See the list of supported backends and how to configure them [here](/docs/guides/backends/overview.md).
-- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/monitoring/overview.md).
-- Learn about how to configure [RBAC roles](/docs/guides/rbac.md).
+- To run backup in offline mode see [here](/docs/guides/v1alpha1/offline_backup.md)
+- See the list of supported backends and how to configure them [here](/docs/guides/v1alpha1/backends/overview.md).
+- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/v1alpha1/monitoring/overview.md).
+- Learn about how to configure [RBAC roles](/docs/guides/v1alpha1/rbac.md).
 - Wondering what features are coming next? Please visit [here](/docs/roadmap.md).
 - Want to hack on Stash? Check our [contribution guidelines](/docs/CONTRIBUTING.md).
