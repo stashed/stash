@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 
 	cs "github.com/appscode/stash/client/clientset/versioned"
+	docker_image "github.com/appscode/stash/pkg/docker"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -13,8 +14,8 @@ import (
 )
 
 const (
-	cliScratchDir = "/tmp/stash-cli/scratch"
 	cliSecretDir  = "/tmp/stash-cli/secret"
+	cliConfigDir  = "/tmp/stash-cli/config"
 )
 
 type stashCLIController struct {
@@ -22,6 +23,14 @@ type stashCLIController struct {
 	kubeClient   kubernetes.Interface
 	stashClient  cs.Interface
 }
+
+var (
+	image = docker_image.Docker{
+		Registry: docker_image.ACRegistry,
+		Image:    docker_image.ImageStash,
+		Tag:      "latest", // TODO: update default release tag
+	}
+)
 
 func NewCLICmd() *cobra.Command {
 	var cmd = &cobra.Command{
