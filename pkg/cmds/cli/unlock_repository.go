@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
-	"path/filepath"
 
 	"github.com/appscode/go/flags"
 	"github.com/appscode/go/log"
@@ -14,7 +13,6 @@ import (
 	"github.com/appscode/stash/apis/stash/v1alpha1"
 	stash_scheme "github.com/appscode/stash/client/clientset/versioned/scheme"
 	"github.com/appscode/stash/pkg/cmds/docker"
-	"github.com/appscode/stash/pkg/restic"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
 	batch "k8s.io/api/batch/v1"
@@ -37,6 +35,7 @@ func NewUnlockRepositoryCmd() *cobra.Command {
 		kubeConfig     string
 		repositoryName string
 		namespace      string
+		localDirs      = &cliLocalDirectories{}
 	)
 
 	var cmd = &cobra.Command{
@@ -87,20 +86,18 @@ func NewUnlockRepositoryCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			// cleanup whole tempDir dir at the end
 			defer os.RemoveAll(tempDir)
 
 			// prepare local dirs
-			localDirs := cliLocalDirectories{
-				secretDir: filepath.Join(tempDir, secretDirName),
-				configDir: filepath.Join(tempDir, configDirName),
+			if err = localDirs.prepareSecretDir(tempDir, secret); err != nil {
+				return err
 			}
-			if err = prepareDockerVolumeForUnlock(localDirs, *secret, setupOpt); err != nil {
+			if err = localDirs.prepareConfigDir(tempDir, &setupOpt, nil); err != nil {
 				return err
 			}
 
 			// run unlock inside docker
-			if err = runUnlockViaDocker(localDirs); err != nil {
+			if err = runUnlockViaDocker(*localDirs); err != nil {
 				return err
 			}
 			log.Infof("Repository %s/%s unlocked", namespace, repositoryName)
@@ -116,20 +113,6 @@ func NewUnlockRepositoryCmd() *cobra.Command {
 	cmd.Flags().StringVar(&image.Tag, "image-tag", image.Tag, "Stash image tag for unlock job")
 
 	return cmd
-}
-
-func prepareDockerVolumeForUnlock(localDirs cliLocalDirectories, secret core.Secret, setupOpt restic.SetupOptions) error {
-	// write repository secrets
-	if err := os.MkdirAll(localDirs.secretDir, 0755); err != nil {
-		return err
-	}
-	for key, value := range secret.Data {
-		if err := ioutil.WriteFile(filepath.Join(localDirs.secretDir, key), value, 0755); err != nil {
-			return err
-		}
-	}
-	// write restic setup options
-	return docker.WriteSetupOptionToFile(&setupOpt, filepath.Join(localDirs.configDir, docker.SetupOptionsFile))
 }
 
 func runUnlockViaDocker(localDirs cliLocalDirectories) error {

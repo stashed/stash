@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
-	"path/filepath"
 
 	"github.com/appscode/go/flags"
 	"github.com/appscode/go/log"
@@ -14,7 +13,6 @@ import (
 	"github.com/appscode/stash/pkg/restic"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
-	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -23,7 +21,7 @@ func NewDownloadCmd() *cobra.Command {
 		kubeConfig     string
 		repositoryName string
 		namespace      string
-		localDirs      cliLocalDirectories
+		localDirs      = &cliLocalDirectories{}
 		restoreOpt     = restic.RestoreOptions{
 			SourceHost:  restic.DefaultHost,
 			Destination: docker.DestinationDir,
@@ -75,19 +73,21 @@ func NewDownloadCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			// cleanup whole tempDir dir at the end
 			defer os.RemoveAll(tempDir)
 
 			// prepare local dirs
-			localDirs.secretDir = filepath.Join(tempDir, secretDirName)
-			localDirs.configDir = filepath.Join(tempDir, configDirName)
-			localDirs, err = prepareDockerVolumeForRestore(localDirs, *secret, setupOpt, restoreOpt)
-			if err != nil {
+			if err = localDirs.prepareSecretDir(tempDir, secret); err != nil {
+				return err
+			}
+			if err = localDirs.prepareConfigDir(tempDir, &setupOpt, &restoreOpt); err != nil {
+				return err
+			}
+			if err = localDirs.prepareDownloadDir(); err != nil {
 				return err
 			}
 
 			// run restore inside docker
-			if err = runRestoreViaDocker(localDirs); err != nil {
+			if err = runRestoreViaDocker(*localDirs); err != nil {
 				return err
 			}
 			log.Infof("Repository %s/%s restored in path %s", namespace, repositoryName, restoreOpt.Destination)
@@ -108,38 +108,6 @@ func NewDownloadCmd() *cobra.Command {
 	cmd.Flags().StringVar(&image.Tag, "image-tag", image.Tag, "Stash image tag for unlock job")
 
 	return cmd
-}
-
-func prepareDockerVolumeForRestore(localDirs cliLocalDirectories, secret core.Secret, setupOpt restic.SetupOptions, restoreOpt restic.RestoreOptions) (cliLocalDirectories, error) {
-	// write repository secrets
-	if err := os.MkdirAll(localDirs.secretDir, 0755); err != nil {
-		return cliLocalDirectories{}, err
-	}
-	for key, value := range secret.Data {
-		if err := ioutil.WriteFile(filepath.Join(localDirs.secretDir, key), value, 0755); err != nil {
-			return cliLocalDirectories{}, err
-		}
-	}
-	// write restic options
-	err := docker.WriteSetupOptionToFile(&setupOpt, filepath.Join(localDirs.configDir, docker.SetupOptionsFile))
-	if err != nil {
-		return cliLocalDirectories{}, err
-	}
-	err = docker.WriteRestoreOptionToFile(&restoreOpt, filepath.Join(localDirs.configDir, docker.RestoreOptionsFile))
-	if err != nil {
-		return cliLocalDirectories{}, err
-	}
-	// if destination flag is not specified, restore in current directory
-	if localDirs.downloadDir == "" {
-		if localDirs.downloadDir, err = os.Getwd(); err != nil {
-			return cliLocalDirectories{}, err
-		}
-	}
-	// create local download dir
-	if err := os.MkdirAll(localDirs.downloadDir, 0755); err != nil {
-		return cliLocalDirectories{}, err
-	}
-	return localDirs, nil
 }
 
 func runRestoreViaDocker(localDirs cliLocalDirectories) error {
