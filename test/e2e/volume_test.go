@@ -29,6 +29,25 @@ var _ = Describe("Volume", func() {
 	BeforeEach(func() {
 		f = root.Invoke()
 
+		updateStatusFunc = f.UpdateStatusFunction()
+		backupFunc = f.BackupFunction()
+		restoreFunc = f.RestoreFunction()
+
+		err = f.CreateFunction(updateStatusFunc)
+		Expect(err).NotTo(HaveOccurred())
+		err = f.CreateFunction(backupFunc)
+		Expect(err).NotTo(HaveOccurred())
+		err = f.CreateFunction(restoreFunc)
+		Expect(err).NotTo(HaveOccurred())
+
+		backupTask = f.BackupTask()
+		restoreTask = f.RestoreTask()
+
+		err = f.CreateTask(backupTask)
+		Expect(err).NotTo(HaveOccurred())
+		err = f.CreateTask(restoreTask)
+		Expect(err).NotTo(HaveOccurred())
+
 	})
 	JustBeforeEach(func() {
 		pod = f.Pod(bpvc.Name)
@@ -86,6 +105,18 @@ var _ = Describe("Volume", func() {
 
 	})
 	AfterEach(func() {
+		err = f.DeleteFunction(updateStatusFunc.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+		err = f.DeleteFunction(backupFunc.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+		err = f.DeleteFunction(restoreFunc.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = f.DeleteTask(backupTask.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+		err = f.DeleteTask(restoreTask.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+
 		err = f.DeleteSecret(cred.ObjectMeta)
 		Expect(err).NotTo(HaveOccurred())
 		err = framework.WaitUntilSecretDeleted(f.KubeClient, cred.ObjectMeta)
@@ -104,6 +135,10 @@ var _ = Describe("Volume", func() {
 			err = f.CreatePod(pod)
 			Expect(err).NotTo(HaveOccurred())
 			err = util.WaitUntilPodRunning(f.KubeClient, pod.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Creating sample data inside Pod")
+			err = f.CreateSampleDataInsideWorkload(pod.ObjectMeta, apis.KindPersistentVolumeClaim)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Reading sample data from /source/data directory inside pod")
@@ -147,41 +182,8 @@ var _ = Describe("Volume", func() {
 		BeforeEach(func() {
 			bpv = f.GetPersistentVolume()
 			bpvc = f.GetPersistentVolumeClaim()
-			fmt.Println(bpvc.Name)
-
-			updateStatusFunc = f.UpdateStatusFunction()
-			backupFunc = f.BackupFunction()
-			restoreFunc = f.RestoreFunction()
-
-			err = f.CreateFunction(updateStatusFunc)
-			Expect(err).NotTo(HaveOccurred())
-			err = f.CreateFunction(backupFunc)
-			Expect(err).NotTo(HaveOccurred())
-			err = f.CreateFunction(restoreFunc)
-			Expect(err).NotTo(HaveOccurred())
-
-			backupTask = f.BackupTask()
-			restoreTask = f.RestoreTask()
-
-			err = f.CreateTask(backupTask)
-			Expect(err).NotTo(HaveOccurred())
-			err = f.CreateTask(restoreTask)
-			Expect(err).NotTo(HaveOccurred())
-
 		})
 		AfterEach(func() {
-			err = f.DeleteFunction(updateStatusFunc.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-			err = f.DeleteFunction(backupFunc.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-			err = f.DeleteFunction(restoreFunc.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = f.DeleteTask(backupTask.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-			err = f.DeleteTask(restoreTask.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
 			err = f.DeletePersistentVolume(bpv.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -199,7 +201,7 @@ var _ = Describe("Volume", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 		})
-		It("General Backup new PVC", func() {
+		FIt("General Backup new PVC", func() {
 			By("new backup for PVC")
 			testPVCBackup()
 
@@ -227,40 +229,8 @@ var _ = Describe("Volume", func() {
 			bpv = f.GetPersistentVolume()
 			bpvc = f.GetPersistentVolumeClaim()
 			rpvc = f.GetPersistentVolumeClaim()
-
-			updateStatusFunc = f.UpdateStatusFunction()
-			backupFunc = f.BackupFunction()
-			restoreFunc = f.RestoreFunction()
-
-			err = f.CreateFunction(updateStatusFunc)
-			Expect(err).NotTo(HaveOccurred())
-			err = f.CreateFunction(backupFunc)
-			Expect(err).NotTo(HaveOccurred())
-			err = f.CreateFunction(restoreFunc)
-			Expect(err).NotTo(HaveOccurred())
-
-			backupTask = f.BackupTask()
-			restoreTask = f.RestoreTask()
-
-			err = f.CreateTask(backupTask)
-			Expect(err).NotTo(HaveOccurred())
-			err = f.CreateTask(restoreTask)
-			Expect(err).NotTo(HaveOccurred())
-
 		})
 		AfterEach(func() {
-			err = f.DeleteFunction(updateStatusFunc.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-			err = f.DeleteFunction(backupFunc.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-			err = f.DeleteFunction(restoreFunc.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = f.DeleteTask(backupTask.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-			err = f.DeleteTask(restoreTask.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
 			err = f.DeletePersistentVolume(bpv.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -295,12 +265,12 @@ var _ = Describe("Volume", func() {
 			By("Waiting for restore to succeed")
 			f.EventuallyRestoreSessionPhase(restoreSession.ObjectMeta).Should(Equal(v1beta1.RestoreSessionSucceeded))
 
-			By("delete previous Pod")
+			By("Delete previous Pod")
 			err = f.DeletePod(pod.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
-			By("Create Pod and Generate sample Data")
+
+			By("Create another Pod with bounded new PVC")
 			pod.Name = rand.WithUniqSuffix("restore-test")
-			pod.Spec.Containers[0].Args[0] = "set -x; while true; do sleep 30; done;"
 			pod.Spec.Volumes[0].PersistentVolumeClaim.ClaimName = rpvc.Name
 			err = f.CreatePod(pod)
 			Expect(err).NotTo(HaveOccurred())

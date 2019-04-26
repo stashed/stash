@@ -117,11 +117,11 @@ func (f *Invocation) Pod(pvcName string) core.Pod {
 						"-c",
 					},
 					Args: []string{
-						"set -x; rm -r /source/data/*; mkdir /source/data/test-data1.txt; ls /source/data; while true; do sleep 30; done;",
+						"set -x; while true; do sleep 30; done;",
 					},
 					VolumeMounts: []core.VolumeMount{
 						{
-							Name:      "test-pvc-source",
+							Name:      TestSourceDataVolumeName,
 							MountPath: TestSourceDataMountPath,
 						},
 					},
@@ -129,7 +129,7 @@ func (f *Invocation) Pod(pvcName string) core.Pod {
 			},
 			Volumes: []core.Volume{
 				{
-					Name: "test-pvc-source",
+					Name: TestSourceDataVolumeName,
 					VolumeSource: core.VolumeSource{
 						PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
 							ClaimName: pvcName,

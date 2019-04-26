@@ -7,6 +7,7 @@ import (
 	"github.com/appscode/go/flags"
 	logs "github.com/appscode/go/log/golog"
 	"github.com/appscode/stash/pkg/cmds/server"
+	opt "github.com/appscode/stash/test/e2e/framework"
 	"k8s.io/client-go/util/homedir"
 )
 
@@ -30,6 +31,10 @@ func init() {
 	flag.StringVar(&options.KubeConfig, "kubeconfig", options.KubeConfig, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	flag.StringVar(&options.KubeContext, "kube-context", "", "Name of kube context")
 	enableLogging()
+	flag.Parse()
+	opt.DockerRegistry = options.DockerRegistry
+	opt.DockerImageTag = options.StashImageTag
+
 }
 
 func enableLogging() {

@@ -619,7 +619,7 @@ func (f *Framework) GetNodeName(meta metav1.ObjectMeta) string {
 
 func (f *Framework) CreateSampleDataInsideWorkload(meta metav1.ObjectMeta, resourceKind string) error {
 	switch resourceKind {
-	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController:
+	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController, apis.KindPersistentVolumeClaim:
 		pod, err := f.GetPod(meta)
 		if err != nil {
 			return err
