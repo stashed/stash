@@ -13,9 +13,14 @@ import (
 const (
 	outputDir           = "outputDir"
 	tarVol              = "targetVolume"
+	tarVolName          = "target-volume"
 	secVol              = "secretVolume"
+	secVolName          = "secret-volume"
 	RepoSecretMountPath = "/etc/repository/secret"
 	tmpDir              = "/tmp"
+	tmpOutputDir        = "/tmp/output"
+	PVCBackupTaskName      = "pvc-backup-task"
+	PVCRestoreTaskName     = "pvc-restore-task"
 )
 
 var (
@@ -51,7 +56,7 @@ func (f *Invocation) UpdateStatusFunction() v1beta1.Function {
 	}
 }
 
-func (f *Invocation) BackupFunction() v1beta1.Function {
+func (f *Invocation) PvcBackupFunction() v1beta1.Function {
 	return v1beta1.Function{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "pvc-backup",
@@ -69,18 +74,17 @@ func (f *Invocation) BackupFunction() v1beta1.Function {
 				fmt.Sprintf("--hostname=${%s:=host-0}", apis.Hostname),
 				fmt.Sprintf("--backup-dirs=${%s:=}", apis.TargetDirectories),
 				fmt.Sprintf("--retention-keep-last=${%s:=0}", apis.RetentionKeepLast),
-				fmt.Sprintf("--retention-keep-tags=${%s:=}", apis.RetentionKeepTags),
 				fmt.Sprintf("--retention-prune=${%s:=false}", apis.RetentionPrune),
 				fmt.Sprintf("--output-dir=${%s:=}", outputDir),
 				fmt.Sprintf("--enable-cache=${%s:=true}", apis.EnableCache),
 			},
 			VolumeMounts: []core.VolumeMount{
 				{
-					Name:      fmt.Sprintf("${%s}", "targetVolume"),
+					Name:      fmt.Sprintf("${%s}", tarVol),
 					MountPath: fmt.Sprintf("${%s}", apis.TargetMountPath),
 				},
 				{
-					Name:      fmt.Sprintf("${%s}", "secretVolume"),
+					Name:      fmt.Sprintf("${%s}", secVol),
 					MountPath: RepoSecretMountPath,
 				},
 			},
@@ -88,7 +92,7 @@ func (f *Invocation) BackupFunction() v1beta1.Function {
 	}
 }
 
-func (f *Invocation) RestoreFunction() v1beta1.Function {
+func (f *Invocation) PvcRestoreFunction() v1beta1.Function {
 	return v1beta1.Function{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "pvc-restore",
@@ -111,11 +115,11 @@ func (f *Invocation) RestoreFunction() v1beta1.Function {
 			},
 			VolumeMounts: []core.VolumeMount{
 				{
-					Name:      fmt.Sprintf("${%s}", "targetVolume"),
+					Name:      fmt.Sprintf("${%s}", tarVol),
 					MountPath: fmt.Sprintf("${%s}", apis.TargetMountPath),
 				},
 				{
-					Name:      fmt.Sprintf("${%s}", "secretVolume"),
+					Name:      fmt.Sprintf("${%s}", secVol),
 					MountPath: RepoSecretMountPath,
 				},
 			},

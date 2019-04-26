@@ -11,7 +11,6 @@ import (
 	"github.com/appscode/stash/apis"
 	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	v1beta1_api "github.com/appscode/stash/apis/stash/v1beta1"
-	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -373,33 +372,4 @@ func WaitUntilDeploymentConfigReady(c oc_cs.Interface, meta metav1.ObjectMeta) e
 		}
 		return false, nil
 	})
-}
-
-func WaitUntilPodRunning(kubeClient kubernetes.Interface, meta metav1.ObjectMeta) error {
-	return wait.PollImmediate(RetryInterval, ReadinessTimeout, func() (bool, error) {
-		if pod, err := kubeClient.CoreV1().Pods(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
-			runningAndReady, _ := PodRunningAndReady(*pod)
-			return runningAndReady, nil
-		}
-		return false, nil
-	})
-}
-
-// ref: https://github.com/coreos/prometheus-operator/blob/c79166fcff3dae7bb8bc1e6bddc81837c2d97c04/pkg/k8sutil/k8sutil.go#L64
-// PodRunningAndReady returns whether a pod is running and each container has
-// passed it's ready state.
-func PodRunningAndReady(pod core.Pod) (bool, error) {
-	switch pod.Status.Phase {
-	case core.PodFailed, core.PodSucceeded:
-		return false, errors.New("pod completed")
-	case core.PodRunning:
-		for _, cond := range pod.Status.Conditions {
-			if cond.Type != core.PodReady {
-				continue
-			}
-			return cond.Status == core.ConditionTrue, nil
-		}
-		return false, errors.New("pod ready condition not found")
-	}
-	return false, nil
 }

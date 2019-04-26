@@ -1,6 +1,7 @@
 package framework
 
 import (
+	"github.com/appscode/stash/apis"
 	"time"
 
 	"github.com/appscode/go/crypto/rand"
@@ -53,4 +54,20 @@ func (f *Framework) EventuallyRestoreSessionPhase(meta metav1.ObjectMeta) Gomega
 		time.Minute*5,
 		time.Second*5,
 	)
+}
+
+func (f *Invocation) PvcRestoreTarget(pvcName string) *v1beta1.Target{
+	return &v1beta1.Target{
+		Ref: v1beta1.TargetRef{
+			APIVersion: "v1",
+			Kind:       apis.KindPersistentVolumeClaim,
+			Name:       pvcName,
+		},
+		VolumeMounts: []core.VolumeMount{
+			{
+				Name:      TestSourceDataVolumeName,
+				MountPath: TestSourceDataMountPath,
+			},
+		},
+	}
 }

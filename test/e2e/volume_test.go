@@ -1,16 +1,14 @@
 package e2e_test
 
 import (
-	"fmt"
-
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/stash/apis"
 	"github.com/appscode/stash/apis/stash/v1beta1"
-	"github.com/appscode/stash/pkg/util"
 	"github.com/appscode/stash/test/e2e/framework"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
+	"kmodules.xyz/client-go/core/v1"
 )
 
 var (
@@ -30,8 +28,8 @@ var _ = Describe("Volume", func() {
 		f = root.Invoke()
 
 		updateStatusFunc = f.UpdateStatusFunction()
-		backupFunc = f.BackupFunction()
-		restoreFunc = f.RestoreFunction()
+		backupFunc = f.PvcBackupFunction()
+		restoreFunc = f.PvcRestoreFunction()
 
 		err = f.CreateFunction(updateStatusFunc)
 		Expect(err).NotTo(HaveOccurred())
@@ -58,42 +56,15 @@ var _ = Describe("Volume", func() {
 		pvc = f.GetPersistentVolumeClaim()
 		err = f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
+
 		repo = f.Repository(cred.Name, pvc.Name)
-		fmt.Println("pvc for repo", pvc.Name)
-		targetref = v1beta1.TargetRef{}
+
 		backupCfg = f.BackupConfiguration(repo.Name, targetref)
-		backupCfg.Spec.Target = &v1beta1.Target{
-			Ref: v1beta1.TargetRef{
-				APIVersion: "v1",
-				Kind:       apis.KindPersistentVolumeClaim,
-				Name:       bpvc.Name,
-			},
-			VolumeMounts: []core.VolumeMount{
-				{
-					Name:      framework.TestSourceDataVolumeName,
-					MountPath: framework.TestSourceDataMountPath,
-				},
-			},
-			Directories: []string{
-				framework.TestSourceDataMountPath,
-			},
-		}
+		backupCfg.Spec.Target = f.PvcBackupTarget(bpvc.Name)
 		backupCfg.Spec.Task.Name = backupTask.Name
 
 		restoreSession = f.RestoreSession(repo.Name, targetref, rules)
-		restoreSession.Spec.Target = &v1beta1.Target{
-			Ref: v1beta1.TargetRef{
-				APIVersion: "v1",
-				Kind:       apis.KindPersistentVolumeClaim,
-				Name:       bpvc.Name,
-			},
-			VolumeMounts: []core.VolumeMount{
-				{
-					Name:      framework.TestSourceDataVolumeName,
-					MountPath: framework.TestSourceDataMountPath,
-				},
-			},
-		}
+		restoreSession.Spec.Target = f.PvcRestoreTarget(bpvc.Name)
 		restoreSession.Spec.Rules = []v1beta1.Rule{
 			{
 				Paths: []string{
@@ -124,17 +95,14 @@ var _ = Describe("Volume", func() {
 	})
 	var (
 		testPVCBackup = func() {
-			By("Creating New PV and PVC")
-			err = f.CreatePersistentVolume(bpv)
-			Expect(err).NotTo(HaveOccurred())
-
+			By("Creating New PVC")
 			err = f.CreatePersistentVolumeClaim(bpvc)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Create Pod and Generate sample Data")
 			err = f.CreatePod(pod)
 			Expect(err).NotTo(HaveOccurred())
-			err = util.WaitUntilPodRunning(f.KubeClient, pod.ObjectMeta)
+			err = v1.WaitUntilPodRunning(f.KubeClient, pod.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating sample data inside Pod")
@@ -173,20 +141,16 @@ var _ = Describe("Volume", func() {
 			By("Remove sample data from PVC")
 			err = f.CleanupSampleDataFromWorkload(pod.ObjectMeta, apis.KindPersistentVolumeClaim)
 			Expect(err).NotTo(HaveOccurred())
-			err = util.WaitUntilPodRunning(f.KubeClient, pod.ObjectMeta)
+			err = v1.WaitUntilPodRunning(f.KubeClient, pod.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
 		}
 	)
 	Context("General Backup && Restore for PVC Volume", func() {
 		BeforeEach(func() {
-			bpv = f.GetPersistentVolume()
 			bpvc = f.GetPersistentVolumeClaim()
 		})
 		AfterEach(func() {
-			err = f.DeletePersistentVolume(bpv.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
 			err = f.DeletePersistentVolumeClaim(bpvc.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -226,14 +190,10 @@ var _ = Describe("Volume", func() {
 
 	Context("Restore data on different PVC", func() {
 		BeforeEach(func() {
-			bpv = f.GetPersistentVolume()
 			bpvc = f.GetPersistentVolumeClaim()
 			rpvc = f.GetPersistentVolumeClaim()
 		})
 		AfterEach(func() {
-			err = f.DeletePersistentVolume(bpv.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
 			err = f.DeletePersistentVolumeClaim(bpvc.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 			err = f.DeletePersistentVolumeClaim(rpvc.ObjectMeta)
@@ -274,7 +234,7 @@ var _ = Describe("Volume", func() {
 			pod.Spec.Volumes[0].PersistentVolumeClaim.ClaimName = rpvc.Name
 			err = f.CreatePod(pod)
 			Expect(err).NotTo(HaveOccurred())
-			err = util.WaitUntilPodRunning(f.KubeClient, pod.ObjectMeta)
+			err = v1.WaitUntilPodRunning(f.KubeClient, pod.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Reading sample data from /source/data directory inside pod")

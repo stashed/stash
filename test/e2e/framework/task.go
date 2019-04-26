@@ -12,7 +12,7 @@ import (
 func (f *Invocation) BackupTask() v1beta1.Task {
 	return v1beta1.Task{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "pvc-backup-task",
+			Name: PVCBackupTaskName,
 		},
 		Spec: v1beta1.TaskSpec{
 			Steps: []v1beta1.FunctionRef{
@@ -21,15 +21,15 @@ func (f *Invocation) BackupTask() v1beta1.Task {
 					Params: []v1beta1.Param{
 						{
 							Name:  outputDir,
-							Value: "/tmp/output",
+							Value: tmpOutputDir,
 						},
 						{
 							Name:  tarVol,
-							Value: "target-volume",
+							Value: tarVolName,
 						},
 						{
 							Name:  secVol,
-							Value: "secret-volume",
+							Value: secVolName,
 						},
 					},
 				},
@@ -38,14 +38,14 @@ func (f *Invocation) BackupTask() v1beta1.Task {
 					Params: []v1beta1.Param{
 						{
 							Name:  outputDir,
-							Value: "/tmp/output",
+							Value: tmpOutputDir,
 						},
 					},
 				},
 			},
 			Volumes: []core.Volume{
 				{
-					Name: "target-volume",
+					Name: tarVolName,
 					VolumeSource: core.VolumeSource{
 						PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
 							ClaimName: fmt.Sprintf("${%s}", apis.TargetName),
@@ -53,7 +53,7 @@ func (f *Invocation) BackupTask() v1beta1.Task {
 					},
 				},
 				{
-					Name: "secret-volume",
+					Name: secVolName,
 					VolumeSource: core.VolumeSource{
 						Secret: &core.SecretVolumeSource{
 							SecretName: fmt.Sprintf("${%s}", apis.RepositorySecretName),
@@ -68,7 +68,7 @@ func (f *Invocation) BackupTask() v1beta1.Task {
 func (f *Invocation) RestoreTask() v1beta1.Task {
 	return v1beta1.Task{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "pvc-restore-task",
+			Name: PVCRestoreTaskName,
 		},
 		Spec: v1beta1.TaskSpec{
 			Steps: []v1beta1.FunctionRef{
@@ -77,15 +77,15 @@ func (f *Invocation) RestoreTask() v1beta1.Task {
 					Params: []v1beta1.Param{
 						{
 							Name:  outputDir,
-							Value: "/tmp/output",
+							Value: tmpOutputDir,
 						},
 						{
 							Name:  tarVol,
-							Value: "target-volume",
+							Value: tarVolName,
 						},
 						{
 							Name:  secVol,
-							Value: "secret-volume",
+							Value: secVolName,
 						},
 					},
 				},
@@ -94,14 +94,14 @@ func (f *Invocation) RestoreTask() v1beta1.Task {
 					Params: []v1beta1.Param{
 						{
 							Name:  outputDir,
-							Value: "/tmp/output",
+							Value: tmpOutputDir,
 						},
 					},
 				},
 			},
 			Volumes: []core.Volume{
 				{
-					Name: "target-volume",
+					Name: tarVolName,
 					VolumeSource: core.VolumeSource{
 						PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
 							ClaimName: fmt.Sprintf("${%s}", apis.TargetName),
@@ -109,7 +109,7 @@ func (f *Invocation) RestoreTask() v1beta1.Task {
 					},
 				},
 				{
-					Name: "secret-volume",
+					Name: secVolName,
 					VolumeSource: core.VolumeSource{
 						Secret: &core.SecretVolumeSource{
 							SecretName: fmt.Sprintf("${%s}", apis.RepositorySecretName),
