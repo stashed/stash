@@ -60,6 +60,7 @@ func NewCLICmd() *cobra.Command {
 	cmd.AddCommand(NewTriggerBackupCmd())
 	cmd.AddCommand(NewBackupPVCmd())
 	cmd.AddCommand(NewDownloadCmd())
+	cmd.AddCommand(NewDeleteSnapshotCmd())
 
 	return cmd
 }

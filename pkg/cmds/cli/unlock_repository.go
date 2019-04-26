@@ -109,8 +109,8 @@ func NewUnlockRepositoryCmd() *cobra.Command {
 	cmd.Flags().StringVar(&repositoryName, "repository", repositoryName, "Name of the Repository.")
 	cmd.Flags().StringVar(&namespace, "namespace", "default", "Namespace of the Repository.")
 
-	cmd.Flags().StringVar(&image.Registry, "docker-registry", image.Registry, "Docker image registry for unlock job")
-	cmd.Flags().StringVar(&image.Tag, "image-tag", image.Tag, "Stash image tag for unlock job")
+	cmd.Flags().StringVar(&image.Registry, "docker-registry", image.Registry, "Docker image registry")
+	cmd.Flags().StringVar(&image.Tag, "image-tag", image.Tag, "Stash image tag")
 
 	return cmd
 }
