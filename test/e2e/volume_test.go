@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
-	"kmodules.xyz/client-go/core/v1"
+	v1 "kmodules.xyz/client-go/core/v1"
 )
 
 var (
@@ -27,6 +27,7 @@ var _ = Describe("Volume", func() {
 	BeforeEach(func() {
 		f = root.Invoke()
 
+		By("Creating functions")
 		updateStatusFunc = f.UpdateStatusFunction()
 		backupFunc = f.PvcBackupFunction()
 		restoreFunc = f.PvcRestoreFunction()
@@ -38,6 +39,7 @@ var _ = Describe("Volume", func() {
 		err = f.CreateFunction(restoreFunc)
 		Expect(err).NotTo(HaveOccurred())
 
+		By("Creating Tasks")
 		backupTask = f.BackupTask()
 		restoreTask = f.RestoreTask()
 
@@ -165,7 +167,7 @@ var _ = Describe("Volume", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 		})
-		FIt("General Backup new PVC", func() {
+		It("General Backup new PVC", func() {
 			By("new backup for PVC")
 			testPVCBackup()
 
@@ -210,7 +212,7 @@ var _ = Describe("Volume", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 		})
-		FIt("General Backup new PVC", func() {
+		It("General Backup new PVC", func() {
 			By("new backup for PVC")
 			testPVCBackup()
 

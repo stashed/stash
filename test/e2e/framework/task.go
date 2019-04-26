@@ -17,7 +17,7 @@ func (f *Invocation) BackupTask() v1beta1.Task {
 		Spec: v1beta1.TaskSpec{
 			Steps: []v1beta1.FunctionRef{
 				{
-					Name: "pvc-backup",
+					Name: FunctionPvcBackup,
 					Params: []v1beta1.Param{
 						{
 							Name:  outputDir,
@@ -34,7 +34,7 @@ func (f *Invocation) BackupTask() v1beta1.Task {
 					},
 				},
 				{
-					Name: "update-status",
+					Name: FunctionUpdateStatus,
 					Params: []v1beta1.Param{
 						{
 							Name:  outputDir,
@@ -73,7 +73,7 @@ func (f *Invocation) RestoreTask() v1beta1.Task {
 		Spec: v1beta1.TaskSpec{
 			Steps: []v1beta1.FunctionRef{
 				{
-					Name: "pvc-restore",
+					Name: FunctionPvcRestore,
 					Params: []v1beta1.Param{
 						{
 							Name:  outputDir,
@@ -90,7 +90,7 @@ func (f *Invocation) RestoreTask() v1beta1.Task {
 					},
 				},
 				{
-					Name: "update-status",
+					Name: FunctionUpdateStatus,
 					Params: []v1beta1.Param{
 						{
 							Name:  outputDir,

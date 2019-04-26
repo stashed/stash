@@ -50,8 +50,8 @@ func (f *Invocation) DeleteBackupConfiguration(backupCfg v1beta1.BackupConfigura
 	return f.StashClient.StashV1beta1().BackupConfigurations(backupCfg.Namespace).Delete(backupCfg.Name, &metav1.DeleteOptions{})
 }
 
-func (f *Invocation) PvcBackupTarget(pvcName string) *v1beta1.Target{
-	return  &v1beta1.Target{
+func (f *Invocation) PvcBackupTarget(pvcName string) *v1beta1.Target {
+	return &v1beta1.Target{
 		Ref: v1beta1.TargetRef{
 			APIVersion: "v1",
 			Kind:       apis.KindPersistentVolumeClaim,

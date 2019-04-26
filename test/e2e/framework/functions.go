@@ -11,16 +11,19 @@ import (
 )
 
 const (
-	outputDir           = "outputDir"
-	tarVol              = "targetVolume"
-	tarVolName          = "target-volume"
-	secVol              = "secretVolume"
-	secVolName          = "secret-volume"
-	RepoSecretMountPath = "/etc/repository/secret"
-	tmpDir              = "/tmp"
-	tmpOutputDir        = "/tmp/output"
-	PVCBackupTaskName      = "pvc-backup-task"
-	PVCRestoreTaskName     = "pvc-restore-task"
+	outputDir            = "outputDir"
+	tarVol               = "targetVolume"
+	tarVolName           = "target-volume"
+	secVol               = "secretVolume"
+	secVolName           = "secret-volume"
+	RepoSecretMountPath  = "/etc/repository/secret"
+	tmpDir               = "/tmp"
+	tmpOutputDir         = "/tmp/output"
+	PVCBackupTaskName    = "pvc-backup-task"
+	PVCRestoreTaskName   = "pvc-restore-task"
+	FunctionPvcBackup    = "pvc-backup"
+	FunctionPvcRestore   = "pvc-restore"
+	FunctionUpdateStatus = "update-status"
 )
 
 var (
@@ -39,12 +42,12 @@ func getImage() string {
 func (f *Invocation) UpdateStatusFunction() v1beta1.Function {
 	return v1beta1.Function{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "update-status",
+			Name: FunctionUpdateStatus,
 		},
 		Spec: v1beta1.FunctionSpec{
 			Image: getImage(),
 			Args: []string{
-				"update-status",
+				FunctionUpdateStatus,
 				fmt.Sprintf("--namespace=${%s:=default}", apis.Namespace),
 				fmt.Sprintf("--repository=${%s:=}", apis.RepositoryName),
 				fmt.Sprintf("--backup-session=${%s:=}", apis.BackupSession),
@@ -59,12 +62,12 @@ func (f *Invocation) UpdateStatusFunction() v1beta1.Function {
 func (f *Invocation) PvcBackupFunction() v1beta1.Function {
 	return v1beta1.Function{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "pvc-backup",
+			Name: FunctionPvcBackup,
 		},
 		Spec: v1beta1.FunctionSpec{
 			Image: getImage(),
 			Args: []string{
-				"backup-pvc",
+				FunctionPvcBackup,
 				fmt.Sprintf("--provider=${%s:=}", apis.RepositoryProvider),
 				fmt.Sprintf("--bucket=${%s:=}", apis.RepositoryBucket),
 				fmt.Sprintf("--endpoint=${%s:=}", apis.RepositoryEndpoint),
@@ -95,12 +98,12 @@ func (f *Invocation) PvcBackupFunction() v1beta1.Function {
 func (f *Invocation) PvcRestoreFunction() v1beta1.Function {
 	return v1beta1.Function{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "pvc-restore",
+			Name: FunctionPvcRestore,
 		},
 		Spec: v1beta1.FunctionSpec{
 			Image: getImage(),
 			Args: []string{
-				"restore-pvc",
+				FunctionPvcRestore,
 				fmt.Sprintf("--provider=${%s:=}", apis.RepositoryProvider),
 				fmt.Sprintf("--bucket=${%s:=}", apis.RepositoryBucket),
 				fmt.Sprintf("--endpoint=${%s:=}", apis.RepositoryEndpoint),
