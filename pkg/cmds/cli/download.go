@@ -20,11 +20,11 @@ import (
 
 func NewDownloadCmd() *cobra.Command {
 	var (
-		kubeConfig       string
-		repositoryName   string
-		namespace        string
-		localDestination string
-		restoreOpt       = restic.RestoreOptions{
+		kubeConfig     string
+		repositoryName string
+		namespace      string
+		localDirs      cliLocalDirectories
+		restoreOpt     = restic.RestoreOptions{
 			SourceHost:  restic.DefaultHost,
 			Destination: docker.DestinationDir,
 		}
@@ -69,16 +69,25 @@ func NewDownloadCmd() *cobra.Command {
 				return fmt.Errorf("setup option for repository failed")
 			}
 
-			// write secret and config
-			// cleanup whole config/secret dir at the end
-			defer os.RemoveAll(cliSecretDir)
-			defer os.RemoveAll(cliConfigDir)
-			if err = prepareDockerVolumeForRestore(*secret, setupOpt, restoreOpt); err != nil {
+			// write secret and config in a temp dir
+			// cleanup whole tempDir dir at the end
+			tempDir, err := ioutil.TempDir("", "stash-cli")
+			if err != nil {
+				return err
+			}
+			// cleanup whole tempDir dir at the end
+			defer os.RemoveAll(tempDir)
+
+			// prepare local dirs
+			localDirs.secretDir = filepath.Join(tempDir, secretDirName)
+			localDirs.configDir = filepath.Join(tempDir, configDirName)
+			localDirs, err = prepareDockerVolumeForRestore(localDirs, *secret, setupOpt, restoreOpt)
+			if err != nil {
 				return err
 			}
 
 			// run restore inside docker
-			if err = runRestoreViaDocker(localDestination); err != nil {
+			if err = runRestoreViaDocker(localDirs); err != nil {
 				return err
 			}
 			log.Infof("Repository %s/%s restored in path %s", namespace, repositoryName, restoreOpt.Destination)
@@ -89,7 +98,7 @@ func NewDownloadCmd() *cobra.Command {
 	cmd.Flags().StringVar(&kubeConfig, "kubeconfig", kubeConfig, "Path of the Kube config file.")
 	cmd.Flags().StringVar(&repositoryName, "repository", repositoryName, "Name of the Repository.")
 	cmd.Flags().StringVar(&namespace, "namespace", "default", "Namespace of the Repository.")
-	cmd.Flags().StringVar(&localDestination, "destination", localDestination, "Destination path where snapshot will be restored.")
+	cmd.Flags().StringVar(&localDirs.downloadDir, "destination", localDirs.downloadDir, "Destination path where snapshot will be restored.")
 
 	cmd.Flags().StringVar(&restoreOpt.SourceHost, "host", restoreOpt.SourceHost, "Name of the source host machine")
 	cmd.Flags().StringSliceVar(&restoreOpt.RestoreDirs, "directories", restoreOpt.RestoreDirs, "List of directories to be restored")
@@ -101,47 +110,51 @@ func NewDownloadCmd() *cobra.Command {
 	return cmd
 }
 
-func prepareDockerVolumeForRestore(secret core.Secret, setupOpt restic.SetupOptions, restoreOpt restic.RestoreOptions) error {
+func prepareDockerVolumeForRestore(localDirs cliLocalDirectories, secret core.Secret, setupOpt restic.SetupOptions, restoreOpt restic.RestoreOptions) (cliLocalDirectories, error) {
 	// write repository secrets
-	if err := os.MkdirAll(cliSecretDir, 0755); err != nil {
-		return err
+	if err := os.MkdirAll(localDirs.secretDir, 0755); err != nil {
+		return cliLocalDirectories{}, err
 	}
 	for key, value := range secret.Data {
-		if err := ioutil.WriteFile(filepath.Join(cliSecretDir, key), value, 0755); err != nil {
-			return err
+		if err := ioutil.WriteFile(filepath.Join(localDirs.secretDir, key), value, 0755); err != nil {
+			return cliLocalDirectories{}, err
 		}
 	}
 	// write restic options
-	err := docker.WriteSetupOptionToFile(&setupOpt, filepath.Join(cliConfigDir, docker.SetupOptionsFile))
+	err := docker.WriteSetupOptionToFile(&setupOpt, filepath.Join(localDirs.configDir, docker.SetupOptionsFile))
 	if err != nil {
-		return err
+		return cliLocalDirectories{}, err
 	}
-	return docker.WriteRestoreOptionToFile(&restoreOpt, filepath.Join(cliConfigDir, docker.RestoreOptionsFile))
+	err = docker.WriteRestoreOptionToFile(&restoreOpt, filepath.Join(localDirs.configDir, docker.RestoreOptionsFile))
+	if err != nil {
+		return cliLocalDirectories{}, err
+	}
+	// if destination flag is not specified, restore in current directory
+	if localDirs.downloadDir == "" {
+		if localDirs.downloadDir, err = os.Getwd(); err != nil {
+			return cliLocalDirectories{}, err
+		}
+	}
+	// create local download dir
+	if err := os.MkdirAll(localDirs.downloadDir, 0755); err != nil {
+		return cliLocalDirectories{}, err
+	}
+	return localDirs, nil
 }
 
-func runRestoreViaDocker(localDestination string) error {
+func runRestoreViaDocker(localDirs cliLocalDirectories) error {
 	// get current user
 	currentUser, err := user.Current()
 	if err != nil {
-		return err
-	}
-	// if destination flag is not specified, restore in current directory
-	if localDestination == "" {
-		if localDestination, err = os.Getwd(); err != nil {
-			return err
-		}
-	}
-	// create local destination dir
-	if err := os.MkdirAll(localDestination, 0755); err != nil {
 		return err
 	}
 	args := []string{
 		"run",
 		"--rm",
 		"-u", currentUser.Uid,
-		"-v", cliConfigDir + ":" + docker.ConfigDir,
-		"-v", cliSecretDir + ":" + docker.SecretDir,
-		"-v", localDestination + ":" + docker.DestinationDir,
+		"-v", localDirs.configDir + ":" + docker.ConfigDir,
+		"-v", localDirs.secretDir + ":" + docker.SecretDir,
+		"-v", localDirs.downloadDir + ":" + docker.DestinationDir,
 		image.ToContainerImage(),
 		"docker",
 		"download-snapshots",

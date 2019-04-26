@@ -23,7 +23,9 @@ import (
 )
 
 const (
-	ExecStash = "/bin/stash"
+	ExecStash      = "/bin/stash"
+	scratchDirName = "scratch"
+	secretDirName  = "secret"
 )
 
 func (r *REST) getSnapshots(repository *stash.Repository, snapshotIDs []string) ([]repositories.Snapshot, error) {
@@ -243,20 +245,21 @@ func (r *REST) execCommandOnPod(pod *core.Pod, command []string) ([]byte, error)
 }
 
 func (r *REST) getV1Beta1Snapshots(repository *stash.Repository, snapshotIDs []string) ([]repositories.Snapshot, error) {
-	var (
-		scratchDir = "/tmp/stash-snapshots/scratch"
-		secretDir  = "/tmp/stash-snapshots/secret"
-	)
+	tempDir, err := ioutil.TempDir("", "stash")
+	if err != nil {
+		return nil, err
+	}
+	// cleanup whole tempDir dir at the end
+	defer os.RemoveAll(tempDir)
+
+	scratchDir := filepath.Join(tempDir, scratchDirName)
+	secretDir := filepath.Join(tempDir, secretDirName)
 
 	// get source repository secret
 	secret, err := r.kubeClient.CoreV1().Secrets(repository.Namespace).Get(repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
-
-	// cleanup whole scratch/secret dir at the end
-	defer os.RemoveAll(scratchDir)
-	defer os.RemoveAll(secretDir)
 
 	// write repository secrets in a temp dir
 	if err := os.MkdirAll(secretDir, 0755); err != nil {
@@ -319,20 +322,21 @@ func (r *REST) getV1Beta1Snapshots(repository *stash.Repository, snapshotIDs []s
 }
 
 func (r *REST) forgetV1Beta1Snapshots(repository *stash.Repository, snapshotIDs []string) error {
-	var (
-		scratchDir = "/tmp/stash-snapshots/scratch"
-		secretDir  = "/tmp/stash-snapshots/secret"
-	)
+	tempDir, err := ioutil.TempDir("", "stash")
+	if err != nil {
+		return err
+	}
+	// cleanup whole tempDir dir at the end
+	defer os.RemoveAll(tempDir)
+
+	scratchDir := filepath.Join(tempDir, scratchDirName)
+	secretDir := filepath.Join(tempDir, secretDirName)
 
 	// get source repository secret
 	secret, err := r.kubeClient.CoreV1().Secrets(repository.Namespace).Get(repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
-
-	// cleanup whole scratch/secret dir at the end
-	defer os.RemoveAll(scratchDir)
-	defer os.RemoveAll(secretDir)
 
 	// write repository secrets in a temp dir
 	if err := os.MkdirAll(secretDir, 0755); err != nil {

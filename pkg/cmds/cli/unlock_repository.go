@@ -81,16 +81,26 @@ func NewUnlockRepositoryCmd() *cobra.Command {
 				return fmt.Errorf("setup option for repository failed")
 			}
 
-			// write secret and config
-			// cleanup whole config/secret dir at the end
-			defer os.RemoveAll(cliSecretDir)
-			defer os.RemoveAll(cliConfigDir)
-			if err = prepareDockerVolumeForUnlock(*secret, setupOpt); err != nil {
+			// write secret and config in a temp dir
+			// cleanup whole tempDir dir at the end
+			tempDir, err := ioutil.TempDir("", "stash-cli")
+			if err != nil {
+				return err
+			}
+			// cleanup whole tempDir dir at the end
+			defer os.RemoveAll(tempDir)
+
+			// prepare local dirs
+			localDirs := cliLocalDirectories{
+				secretDir: filepath.Join(tempDir, secretDirName),
+				configDir: filepath.Join(tempDir, configDirName),
+			}
+			if err = prepareDockerVolumeForUnlock(localDirs, *secret, setupOpt); err != nil {
 				return err
 			}
 
 			// run unlock inside docker
-			if err = runUnlockViaDocker(); err != nil {
+			if err = runUnlockViaDocker(localDirs); err != nil {
 				return err
 			}
 			log.Infof("Repository %s/%s unlocked", namespace, repositoryName)
@@ -108,21 +118,21 @@ func NewUnlockRepositoryCmd() *cobra.Command {
 	return cmd
 }
 
-func prepareDockerVolumeForUnlock(secret core.Secret, setupOpt restic.SetupOptions) error {
+func prepareDockerVolumeForUnlock(localDirs cliLocalDirectories, secret core.Secret, setupOpt restic.SetupOptions) error {
 	// write repository secrets
-	if err := os.MkdirAll(cliSecretDir, 0755); err != nil {
+	if err := os.MkdirAll(localDirs.secretDir, 0755); err != nil {
 		return err
 	}
 	for key, value := range secret.Data {
-		if err := ioutil.WriteFile(filepath.Join(cliSecretDir, key), value, 0755); err != nil {
+		if err := ioutil.WriteFile(filepath.Join(localDirs.secretDir, key), value, 0755); err != nil {
 			return err
 		}
 	}
 	// write restic setup options
-	return docker.WriteSetupOptionToFile(&setupOpt, filepath.Join(cliConfigDir, docker.SetupOptionsFile))
+	return docker.WriteSetupOptionToFile(&setupOpt, filepath.Join(localDirs.configDir, docker.SetupOptionsFile))
 }
 
-func runUnlockViaDocker() error {
+func runUnlockViaDocker(localDirs cliLocalDirectories) error {
 	// get current user
 	currentUser, err := user.Current()
 	if err != nil {
@@ -132,8 +142,8 @@ func runUnlockViaDocker() error {
 		"run",
 		"--rm",
 		"-u", currentUser.Uid,
-		"-v", cliConfigDir + ":" + docker.ConfigDir,
-		"-v", cliSecretDir + ":" + docker.SecretDir,
+		"-v", localDirs.configDir + ":" + docker.ConfigDir,
+		"-v", localDirs.secretDir + ":" + docker.SecretDir,
 		image.ToContainerImage(),
 		"docker",
 		"unlock-repository",

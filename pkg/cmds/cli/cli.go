@@ -14,14 +14,20 @@ import (
 )
 
 const (
-	cliSecretDir  = "/tmp/stash-cli/secret"
-	cliConfigDir  = "/tmp/stash-cli/config"
+	secretDirName = "secret"
+	configDirName = "config"
 )
 
 type stashCLIController struct {
 	clientConfig *rest.Config
 	kubeClient   kubernetes.Interface
 	stashClient  cs.Interface
+}
+
+type cliLocalDirectories struct {
+	secretDir   string // temp dir
+	configDir   string // temp dir
+	downloadDir string // user provided or, current working dir
 }
 
 var (
