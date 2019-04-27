@@ -1,5 +1,5 @@
 hash: d1029599ea7970228120a899bd16ec0fa308fa6f729fbbdd4e5aa52666009bd7
-updated: 2019-04-23T01:08:47.079911853-07:00
+updated: 2019-04-25T10:47:10.592793788+06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -9,7 +9,7 @@ imports:
   - compute/metadata
   - internal
 - name: github.com/appscode/go
-  version: 50c98d5fbcddac827713a481a7e34a26df5e4b57
+  version: 60025f1135c977fecd189c12dbfa259d837d7a18
   subpackages:
   - analytics
   - context
@@ -240,7 +240,7 @@ imports:
   - protoc-gen-gogo/descriptor
   - sortkeys
 - name: github.com/golang/glog
-  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
+  version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/groupcache
   version: 02826c3e79038b59d737d3b1c0a1d937f71a4433
   subpackages:
@@ -342,7 +342,7 @@ imports:
 - name: github.com/modern-go/reflect2
   version: 94122c33edd36123c84d5368cfb2b69df93a0ec8
 - name: github.com/ncw/swift
-  version: 753d2090bb62619675997bd87a8e3af423a00f2d
+  version: 24e3012fc8a71f004a6455bce2088031d50bf2b6
 - name: github.com/NYTimes/gziphandler
   version: 56545f4a5d46df9a6648819d1664c3a03a13ffdb
 - name: github.com/onsi/ginkgo
@@ -416,8 +416,7 @@ imports:
 - name: github.com/satori/go.uuid
   version: f58768cc1a7a7e77a3bd49e98cdd21419399b6a3
 - name: github.com/sergi/go-diff
-  version: 24e2351369ec4949b2ed0dc5c477afdd4c4034e8
-  repo: https://github.com/sergi/go-diff
+  version: 97b2266dfe4bd4ea1b81a463322f04f8b724801e
   subpackages:
   - diffmatchpatch
 - name: github.com/sirupsen/logrus
@@ -435,12 +434,11 @@ imports:
 - name: github.com/spf13/pflag
   version: 298182f68c66c05229eb03ac171abe6e309ee79a
 - name: github.com/yudai/gojsondiff
-  version: 0525c875b75ca60b9e67ddc44496aa16f21066b0
+  version: 7b1b7adf999dab73a6eb02669c3d82dbb27a3dd6
   subpackages:
   - formatter
 - name: github.com/yudai/golcs
   version: d1c525dea8ce39ea9a783d33cf08932305373f2c
-  repo: https://github.com/yudai/golcs
 - name: golang.org/x/crypto
   version: de0752318171da717af4ce24d0a2e8626afaeb11
   subpackages:
@@ -522,7 +520,7 @@ imports:
   - storage/v1
   - tpu/v1
 - name: google.golang.org/appengine
-  version: 54a98f90d1c46b7731eb8fb305d2a321c30ef610
+  version: 12d5545dc1cfa6047a286d5e853841b6471f4c19
   subpackages:
   - internal
   - internal/app_identity
@@ -1048,7 +1046,7 @@ imports:
   subpackages:
   - pointer
 - name: kmodules.xyz/client-go
-  version: 5dcc4cecf4c96d58e0624cd41311f3a4663db7d7
+  version: 85881479d87957cf3eab9424ec86bcc67dbfbac6
   subpackages:
   - admissionregistration/v1beta1
   - apiextensions/v1beta1
@@ -1128,6 +1126,6 @@ testImports:
   subpackages:
   - difflib
 - name: github.com/stretchr/testify
-  version: f35b8ab0b5a2cef36673838d662e249dd9c94686
+  version: c679ae2cc0cb27ec3293fea7e254e47386f05d69
   subpackages:
   - assert

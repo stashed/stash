@@ -193,7 +193,7 @@ func (f *Framework) ReadSampleDataFromMountedDirectory(meta metav1.ObjectMeta, p
 
 func (f *Framework) ReadSampleDataFromFromWorkload(meta metav1.ObjectMeta, resourceKind string) ([]string, error) {
 	switch resourceKind {
-	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController:
+	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController, apis.KindPersistentVolumeClaim:
 		pod, err := f.GetPod(meta)
 		if err != nil {
 			return nil, err
@@ -619,7 +619,7 @@ func (f *Framework) GetNodeName(meta metav1.ObjectMeta) string {
 
 func (f *Framework) CreateSampleDataInsideWorkload(meta metav1.ObjectMeta, resourceKind string) error {
 	switch resourceKind {
-	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController:
+	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController, apis.KindPersistentVolumeClaim:
 		pod, err := f.GetPod(meta)
 		if err != nil {
 			return err
@@ -646,7 +646,7 @@ func (f *Framework) CreateSampleDataInsideWorkload(meta metav1.ObjectMeta, resou
 func (f *Invocation) CleanupSampleDataFromWorkload(meta metav1.ObjectMeta, resourceKind string) error {
 
 	switch resourceKind {
-	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController:
+	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController, apis.KindPersistentVolumeClaim:
 		pod, err := f.GetPod(meta)
 		if err != nil {
 			return err
@@ -668,4 +668,13 @@ func (f *Invocation) CleanupSampleDataFromWorkload(meta metav1.ObjectMeta, resou
 		}
 	}
 	return nil
+}
+
+func (f *Invocation) ReadDataFromPod(meta metav1.ObjectMeta) (data string, err error) {
+	pod, err := f.GetPod(meta)
+	if err != nil {
+		return "", err
+	}
+	data, err = f.ExecOnPod(pod, "ls", "-R", TestSourceDataMountPath)
+	return data, err
 }

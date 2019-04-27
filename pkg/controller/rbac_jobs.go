@@ -395,8 +395,10 @@ func (c *StashController) ensureRestoreJobClusterRole() error {
 		in.Rules = []rbac.PolicyRule{
 			{
 				APIGroups: []string{api_v1beta1.SchemeGroupVersion.Group},
-				Resources: []string{api_v1beta1.ResourcePluralRestoreSession},
-				Verbs:     []string{"*"},
+				Resources: []string{
+					api_v1beta1.ResourcePluralRestoreSession,
+					fmt.Sprintf("%s/status", api_v1beta1.ResourcePluralRestoreSession)},
+				Verbs: []string{"*"},
 			},
 			{
 				APIGroups: []string{core.GroupName},
