@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/appscode/stash/apis/stash/v1alpha1"
 	v1beta1_api "github.com/appscode/stash/apis/stash/v1beta1"
+	cs "github.com/appscode/stash/client/clientset/versioned"
 	v1beta1_listers "github.com/appscode/stash/client/listers/stash/v1beta1"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"kmodules.xyz/client-go/meta"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
@@ -82,4 +85,18 @@ func BackupPending(phase v1beta1_api.BackupSessionPhase) bool {
 		return true
 	}
 	return false
+}
+
+func FindBackupConfigForRepository(stashClient cs.Interface, repository v1alpha1.Repository) (*v1beta1_api.BackupConfiguration, error) {
+	// list all backup config in the namespace
+	bcList, err := stashClient.StashV1beta1().BackupConfigurations(repository.Namespace).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, bc := range bcList.Items {
+		if bc.Spec.Repository.Name == repository.Name {
+			return &bc, nil
+		}
+	}
+	return nil, nil
 }

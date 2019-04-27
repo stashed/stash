@@ -7,34 +7,34 @@ import (
 	"os/exec"
 	"os/user"
 
-	"github.com/appscode/go/flags"
 	"github.com/appscode/go/log"
 	"github.com/appscode/stash/pkg/cmds/docker"
-	"github.com/appscode/stash/pkg/restic"
+	"github.com/appscode/stash/pkg/registry/snapshot"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func NewDownloadCmd() *cobra.Command {
+func NewDeleteSnapshotCmd() *cobra.Command {
 	var (
-		kubeConfig     string
-		repositoryName string
-		namespace      string
-		localDirs      = &cliLocalDirectories{}
-		restoreOpt     = restic.RestoreOptions{
-			SourceHost:  restic.DefaultHost,
-			Destination: docker.DestinationDir,
-		}
+		kubeConfig string
+		namespace  string
+		localDirs  = &cliLocalDirectories{}
 	)
 
 	var cmd = &cobra.Command{
-		Use:               "download",
-		Short:             `Download snapshots`,
-		Long:              `Download contents of snapshots from Repository`,
+		Use:               "delete-snapshot",
+		Short:             `Delete a snapshot from repository backend`,
+		Long:              `Delete a snapshot from repository backend`,
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			flags.EnsureRequiredFlags(cmd, "repository")
+			if len(args) == 0 {
+				return fmt.Errorf("snapshot name not provided")
+			}
+			repoName, snapshotId, err := util.GetRepoNameAndSnapshotID(args[0])
+			if err != nil {
+				return err
+			}
 
 			c, err := newStashCLIController(kubeConfig)
 			if err != nil {
@@ -42,15 +42,17 @@ func NewDownloadCmd() *cobra.Command {
 			}
 
 			// get source repository
-			repository, err := c.stashClient.StashV1alpha1().Repositories(namespace).Get(repositoryName, metav1.GetOptions{})
+			repository, err := c.stashClient.StashV1alpha1().Repositories(namespace).Get(repoName, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
-			// unlock local backend
+			// delete from local backend
 			if repository.Spec.Backend.Local != nil {
-				return fmt.Errorf("can't restore from repository with local backend")
+				r := snapshot.NewREST(c.clientConfig)
+				return r.ForgetVersionedSnapshots(repository, []string{snapshotId}, false)
 			}
-			// get repository secret
+
+			// get source repository secret
 			secret, err := c.kubeClient.CoreV1().Secrets(namespace).Get(repository.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 			if err != nil {
 				return err
@@ -79,30 +81,21 @@ func NewDownloadCmd() *cobra.Command {
 			if err = localDirs.prepareSecretDir(tempDir, secret); err != nil {
 				return err
 			}
-			if err = localDirs.prepareConfigDir(tempDir, &setupOpt, &restoreOpt); err != nil {
-				return err
-			}
-			if err = localDirs.prepareDownloadDir(); err != nil {
+			if err = localDirs.prepareConfigDir(tempDir, &setupOpt, nil); err != nil {
 				return err
 			}
 
-			// run restore inside docker
-			if err = runRestoreViaDocker(*localDirs); err != nil {
+			// run unlock inside docker
+			if err = runDeleteSnapshotViaDocker(*localDirs, snapshotId); err != nil {
 				return err
 			}
-			log.Infof("Repository %s/%s restored in path %s", namespace, repositoryName, restoreOpt.Destination)
+			log.Infof("Snapshot %s deleted from repository %s/%s", snapshotId, namespace, repoName)
 			return nil
 		},
 	}
 
 	cmd.Flags().StringVar(&kubeConfig, "kubeconfig", kubeConfig, "Path of the Kube config file.")
-	cmd.Flags().StringVar(&repositoryName, "repository", repositoryName, "Name of the Repository.")
 	cmd.Flags().StringVar(&namespace, "namespace", "default", "Namespace of the Repository.")
-	cmd.Flags().StringVar(&localDirs.downloadDir, "destination", localDirs.downloadDir, "Destination path where snapshot will be restored.")
-
-	cmd.Flags().StringVar(&restoreOpt.SourceHost, "host", restoreOpt.SourceHost, "Name of the source host machine")
-	cmd.Flags().StringSliceVar(&restoreOpt.RestoreDirs, "directories", restoreOpt.RestoreDirs, "List of directories to be restored")
-	cmd.Flags().StringSliceVar(&restoreOpt.Snapshots, "snapshots", restoreOpt.Snapshots, "List of snapshots to be restored")
 
 	cmd.Flags().StringVar(&image.Registry, "docker-registry", image.Registry, "Docker image registry")
 	cmd.Flags().StringVar(&image.Tag, "image-tag", image.Tag, "Stash image tag")
@@ -110,7 +103,7 @@ func NewDownloadCmd() *cobra.Command {
 	return cmd
 }
 
-func runRestoreViaDocker(localDirs cliLocalDirectories) error {
+func runDeleteSnapshotViaDocker(localDirs cliLocalDirectories, snapshotId string) error {
 	// get current user
 	currentUser, err := user.Current()
 	if err != nil {
@@ -122,10 +115,10 @@ func runRestoreViaDocker(localDirs cliLocalDirectories) error {
 		"-u", currentUser.Uid,
 		"-v", localDirs.configDir + ":" + docker.ConfigDir,
 		"-v", localDirs.secretDir + ":" + docker.SecretDir,
-		"-v", localDirs.downloadDir + ":" + docker.DestinationDir,
 		image.ToContainerImage(),
 		"docker",
-		"download-snapshots",
+		"delete-snapshot",
+		"--snapshot", snapshotId,
 	}
 	log.Infoln("Running docker with args:", args)
 	out, err := exec.Command("docker", args...).CombinedOutput()

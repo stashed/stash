@@ -19,6 +19,7 @@ import (
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/client-go/kubernetes"
 	restconfig "k8s.io/client-go/rest"
+	core_util "kmodules.xyz/client-go/core/v1"
 )
 
 type REST struct {
@@ -78,20 +79,15 @@ func (r *REST) Get(ctx context.Context, name string, options *metav1.GetOptions)
 		}
 	}
 
-	snapshots := make([]repositories.Snapshot, 0)
-	if repo.Spec.Backend.Local != nil {
-		snapshots, err = r.getSnapshotsFromSidecar(repo, []string{snapshotId})
-	} else {
-		snapshots, err = r.GetSnapshots(repo, []string{snapshotId})
-	}
+	snapshots, err := r.GetVersionedSnapshots(repo, []string{snapshotId}, false)
 	if err != nil {
 		return nil, apierrors.NewInternalError(err)
 	}
-
 	if len(snapshots) == 0 {
 		return nil, apierrors.NewNotFound(repositories.Resource(repov1alpha1.ResourceSingularSnapshot), name)
 	}
 
+	// TODO: return &snapshots[0], nil
 	snapshot := &repositories.Snapshot{}
 	snapshot = &snapshots[0]
 	return snapshot, nil
@@ -115,9 +111,12 @@ func (r *REST) List(ctx context.Context, options *metainternalversion.ListOption
 	var selectedRepos []stash.Repository
 	if options.LabelSelector != nil {
 		for _, r := range repos.Items {
-			repoLabels := make(map[string]string)
-			repoLabels = r.Labels
-			repoLabels["repository"] = r.Name
+			repoLabels := map[string]string{
+				"repository": r.Name,
+			}
+			if r.Labels != nil {
+				repoLabels = core_util.UpsertMap(repoLabels, r.Labels)
+			}
 			if options.LabelSelector.Matches(labels.Set(repoLabels)) {
 				selectedRepos = append(selectedRepos, r)
 			}
@@ -130,17 +129,9 @@ func (r *REST) List(ctx context.Context, options *metainternalversion.ListOption
 		Items: make([]repositories.Snapshot, 0),
 	}
 	for _, repo := range selectedRepos {
-		var snapshots []repositories.Snapshot
-		if repo.Spec.Backend.Local != nil {
-			snapshots, err = r.getSnapshotsFromSidecar(&repo, nil)
-			if err != nil {
-				return nil, apierrors.NewInternalError(err)
-			}
-		} else {
-			snapshots, err = r.GetSnapshots(&repo, nil)
-			if err != nil {
-				return nil, apierrors.NewInternalError(err)
-			}
+		snapshots, err := r.GetVersionedSnapshots(&repo, nil, false)
+		if err != nil {
+			return nil, apierrors.NewInternalError(err)
 		}
 		snapshotList.Items = append(snapshotList.Items, snapshots...)
 	}
@@ -169,26 +160,14 @@ func (r *REST) Delete(ctx context.Context, name string, options *metav1.DeleteOp
 	}
 
 	// first, check if the snapshot exist
-	snapshots := make([]repositories.Snapshot, 0)
-	if repo.Spec.Backend.Local != nil {
-		snapshots, err = r.getSnapshotsFromSidecar(repo, []string{snapshotId})
-	} else {
-		snapshots, err = r.GetSnapshots(repo, []string{snapshotId})
-	}
-
+	snapshots, err := r.GetVersionedSnapshots(repo, []string{snapshotId}, false)
 	if err != nil {
 		return nil, false, apierrors.NewInternalError(err)
 	} else if len(snapshots) == 0 {
 		return nil, false, apierrors.NewNotFound(repositories.Resource(repov1alpha1.ResourceSingularSnapshot), name)
 	}
-
 	// delete snapshot
-	if repo.Spec.Backend.Local != nil {
-		err = r.forgetSnapshotsFromSidecar(repo, []string{snapshotId})
-	} else {
-		err = r.ForgetSnapshots(repo, []string{snapshotId})
-	}
-	if err != nil {
+	if err = r.ForgetVersionedSnapshots(repo, []string{snapshotId}, false); err != nil {
 		return nil, false, apierrors.NewInternalError(err)
 	}
 

@@ -39,11 +39,7 @@ func NewCmdForget() *cobra.Command {
 			}
 
 			r := snapshot.NewREST(config)
-			err = r.ForgetSnapshots(repo, args)
-			if err != nil {
-				return err
-			}
-			return nil
+			return r.ForgetVersionedSnapshots(repo, args, true)
 		},
 	}
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")

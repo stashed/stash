@@ -32,6 +32,7 @@ func NewDockerCmd() *cobra.Command {
 
 	cmd.AddCommand(NewUnlockRepositoryCmd())
 	cmd.AddCommand(NewDownloadCmd())
+	cmd.AddCommand(NewDeleteSnapshotCmd())
 
 	return cmd
 }

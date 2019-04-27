@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
-	"path/filepath"
 
 	"github.com/appscode/go/flags"
 	"github.com/appscode/go/log"
@@ -14,7 +13,6 @@ import (
 	"github.com/appscode/stash/apis/stash/v1alpha1"
 	stash_scheme "github.com/appscode/stash/client/clientset/versioned/scheme"
 	"github.com/appscode/stash/pkg/cmds/docker"
-	"github.com/appscode/stash/pkg/restic"
 	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
 	batch "k8s.io/api/batch/v1"
@@ -37,6 +35,7 @@ func NewUnlockRepositoryCmd() *cobra.Command {
 		kubeConfig     string
 		repositoryName string
 		namespace      string
+		localDirs      = &cliLocalDirectories{}
 	)
 
 	var cmd = &cobra.Command{
@@ -81,16 +80,24 @@ func NewUnlockRepositoryCmd() *cobra.Command {
 				return fmt.Errorf("setup option for repository failed")
 			}
 
-			// write secret and config
-			// cleanup whole config/secret dir at the end
-			defer os.RemoveAll(cliSecretDir)
-			defer os.RemoveAll(cliConfigDir)
-			if err = prepareDockerVolumeForUnlock(*secret, setupOpt); err != nil {
+			// write secret and config in a temp dir
+			// cleanup whole tempDir dir at the end
+			tempDir, err := ioutil.TempDir("", "stash-cli")
+			if err != nil {
+				return err
+			}
+			defer os.RemoveAll(tempDir)
+
+			// prepare local dirs
+			if err = localDirs.prepareSecretDir(tempDir, secret); err != nil {
+				return err
+			}
+			if err = localDirs.prepareConfigDir(tempDir, &setupOpt, nil); err != nil {
 				return err
 			}
 
 			// run unlock inside docker
-			if err = runUnlockViaDocker(); err != nil {
+			if err = runUnlockViaDocker(*localDirs); err != nil {
 				return err
 			}
 			log.Infof("Repository %s/%s unlocked", namespace, repositoryName)
@@ -102,27 +109,13 @@ func NewUnlockRepositoryCmd() *cobra.Command {
 	cmd.Flags().StringVar(&repositoryName, "repository", repositoryName, "Name of the Repository.")
 	cmd.Flags().StringVar(&namespace, "namespace", "default", "Namespace of the Repository.")
 
-	cmd.Flags().StringVar(&image.Registry, "docker-registry", image.Registry, "Docker image registry for unlock job")
-	cmd.Flags().StringVar(&image.Tag, "image-tag", image.Tag, "Stash image tag for unlock job")
+	cmd.Flags().StringVar(&image.Registry, "docker-registry", image.Registry, "Docker image registry")
+	cmd.Flags().StringVar(&image.Tag, "image-tag", image.Tag, "Stash image tag")
 
 	return cmd
 }
 
-func prepareDockerVolumeForUnlock(secret core.Secret, setupOpt restic.SetupOptions) error {
-	// write repository secrets
-	if err := os.MkdirAll(cliSecretDir, 0755); err != nil {
-		return err
-	}
-	for key, value := range secret.Data {
-		if err := ioutil.WriteFile(filepath.Join(cliSecretDir, key), value, 0755); err != nil {
-			return err
-		}
-	}
-	// write restic setup options
-	return docker.WriteSetupOptionToFile(&setupOpt, filepath.Join(cliConfigDir, docker.SetupOptionsFile))
-}
-
-func runUnlockViaDocker() error {
+func runUnlockViaDocker(localDirs cliLocalDirectories) error {
 	// get current user
 	currentUser, err := user.Current()
 	if err != nil {
@@ -132,8 +125,8 @@ func runUnlockViaDocker() error {
 		"run",
 		"--rm",
 		"-u", currentUser.Uid,
-		"-v", cliConfigDir + ":" + docker.ConfigDir,
-		"-v", cliSecretDir + ":" + docker.SecretDir,
+		"-v", localDirs.configDir + ":" + docker.ConfigDir,
+		"-v", localDirs.secretDir + ":" + docker.SecretDir,
 		image.ToContainerImage(),
 		"docker",
 		"unlock-repository",

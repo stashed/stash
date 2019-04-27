@@ -40,7 +40,7 @@ func NewCmdSnapshots() *cobra.Command {
 			}
 
 			r := snapshot.NewREST(config)
-			snapshots, err := r.GetSnapshots(repo, args)
+			snapshots, err := r.GetVersionedSnapshots(repo, args, true)
 			if err != nil {
 				return err
 			}
