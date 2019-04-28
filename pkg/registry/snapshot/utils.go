@@ -212,7 +212,7 @@ func (r *REST) execCommandOnPod(pod *core.Pod, command []string) ([]byte, error)
 		execErr bytes.Buffer
 	)
 
-	log.Infoln("Executing command %v on pod %v", command, pod.Name)
+	log.Infof("Executing command %v on pod %v", command, pod.Name)
 
 	req := r.kubeClient.CoreV1().RESTClient().Post().
 		Resource("pods").
@@ -372,25 +372,19 @@ func (r *REST) forgetV1Beta1Snapshots(repository *stash.Repository, snapshotIDs 
 func (r *REST) GetVersionedSnapshots(repository *stash.Repository, snapshotIDs []string, inCluster bool) ([]repositories.Snapshot, error) {
 	if repository.Spec.Backend.Local != nil && !inCluster {
 		return r.getSnapshotsFromSidecar(repository, snapshotIDs)
-	} else {
-		if isV1Alpha1Repository(*repository) {
-			return r.getSnapshots(repository, snapshotIDs)
-		} else {
-			return r.getV1Beta1Snapshots(repository, snapshotIDs)
-		}
+	} else if isV1Alpha1Repository(*repository) {
+		return r.getSnapshots(repository, snapshotIDs)
 	}
+	return r.getV1Beta1Snapshots(repository, snapshotIDs)
 }
 
 func (r *REST) ForgetVersionedSnapshots(repository *stash.Repository, snapshotIDs []string, inCluster bool) error {
 	if repository.Spec.Backend.Local != nil && !inCluster {
 		return r.forgetSnapshotsFromSidecar(repository, snapshotIDs)
-	} else {
-		if isV1Alpha1Repository(*repository) {
-			return r.forgetSnapshots(repository, snapshotIDs)
-		} else {
-			return r.forgetV1Beta1Snapshots(repository, snapshotIDs)
-		}
+	} else if isV1Alpha1Repository(*repository) {
+		return r.forgetSnapshots(repository, snapshotIDs)
 	}
+	return r.forgetV1Beta1Snapshots(repository, snapshotIDs)
 }
 
 // v1alpha1 repositories should have 'restic' label
