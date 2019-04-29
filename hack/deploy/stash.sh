@@ -108,7 +108,6 @@ onessl_found || {
 export STASH_NAMESPACE=kube-system
 export STASH_SERVICE_ACCOUNT=stash-operator
 export STASH_SERVICE_NAME=stash-operator
-export STASH_ENABLE_RBAC=true
 export STASH_RUN_ON_MASTER=0
 export STASH_ENABLE_VALIDATING_WEBHOOK=false
 export STASH_ENABLE_MUTATING_WEBHOOK=false
@@ -160,7 +159,6 @@ show_help() {
   echo "options:"
   echo "-h, --help                             show brief help"
   echo "-n, --namespace=NAMESPACE              specify namespace (default: kube-system)"
-  echo "    --rbac                             create RBAC roles and bindings (default: true)"
   echo "    --docker-registry                  docker registry used to pull stash images (default: appscode)"
   echo "    --image-pull-secret                name of secret used to pull stash operator images"
   echo "    --run-on-master                    run stash operator on master"
@@ -251,14 +249,6 @@ while test $# -gt 0; do
       val=$(echo $1 | sed -e 's/^[^=]*=//g')
       if [ "$val" = "false" ]; then
         export STASH_ENABLE_ANALYTICS=false
-      fi
-      shift
-      ;;
-    --rbac*)
-      val=$(echo $1 | sed -e 's/^[^=]*=//g')
-      if [ "$val" = "false" ]; then
-        export STASH_SERVICE_ACCOUNT=default
-        export STASH_ENABLE_RBAC=false
       fi
       shift
       ;;
@@ -429,11 +419,9 @@ export TLS_SERVING_KEY=$(cat server.key | $ONESSL base64)
 
 ${SCRIPT_LOCATION}hack/deploy/operator.yaml | $ONESSL envsubst | kubectl apply -f -
 
-if [ "$STASH_ENABLE_RBAC" = true ]; then
-  ${SCRIPT_LOCATION}hack/deploy/service-account.yaml | $ONESSL envsubst | kubectl apply -f -
-  ${SCRIPT_LOCATION}hack/deploy/rbac-list.yaml | $ONESSL envsubst | kubectl auth reconcile -f -
-  ${SCRIPT_LOCATION}hack/deploy/user-roles.yaml | $ONESSL envsubst | kubectl auth reconcile -f -
-fi
+${SCRIPT_LOCATION}hack/deploy/service-account.yaml | $ONESSL envsubst | kubectl apply -f -
+${SCRIPT_LOCATION}hack/deploy/rbac-list.yaml | $ONESSL envsubst | kubectl auth reconcile -f -
+${SCRIPT_LOCATION}hack/deploy/user-roles.yaml | $ONESSL envsubst | kubectl auth reconcile -f -
 
 if [ "$STASH_RUN_ON_MASTER" -eq 1 ]; then
   kubectl patch deploy stash-operator -n $STASH_NAMESPACE \

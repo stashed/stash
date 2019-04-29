@@ -156,33 +156,31 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 	serviceAccountName := "default"
 
 	// if RBAC is enabled then ensure respective RBAC stuffs
-	if c.EnableRBAC {
-		if backupConfig.Spec.RuntimeSettings.Pod != nil && backupConfig.Spec.RuntimeSettings.Pod.ServiceAccountName != "" {
-			serviceAccountName = backupConfig.Spec.RuntimeSettings.Pod.ServiceAccountName
-		} else {
-			// ServiceAccount hasn't been specified. so create new one.
-			serviceAccountName = backupConfig.Name
-			saMeta := metav1.ObjectMeta{
-				Name:      serviceAccountName,
-				Namespace: backupConfig.Namespace,
-			}
-			_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
-				core_util.EnsureOwnerReference(&in.ObjectMeta, backupConfigRef)
-				if in.Labels == nil {
-					in.Labels = map[string]string{}
-				}
-				in.Labels[util.LabelApp] = util.AppLabelStash
-				return in
-			})
-			if err != nil {
-				return err
-			}
+	if backupConfig.Spec.RuntimeSettings.Pod != nil && backupConfig.Spec.RuntimeSettings.Pod.ServiceAccountName != "" {
+		serviceAccountName = backupConfig.Spec.RuntimeSettings.Pod.ServiceAccountName
+	} else {
+		// ServiceAccount hasn't been specified. so create new one.
+		serviceAccountName = backupConfig.Name
+		saMeta := metav1.ObjectMeta{
+			Name:      serviceAccountName,
+			Namespace: backupConfig.Namespace,
 		}
-
-		err := c.ensureBackupJobRBAC(backupConfigRef, serviceAccountName)
+		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
+			core_util.EnsureOwnerReference(&in.ObjectMeta, backupConfigRef)
+			if in.Labels == nil {
+				in.Labels = map[string]string{}
+			}
+			in.Labels[util.LabelApp] = util.AppLabelStash
+			return in
+		})
 		if err != nil {
 			return err
 		}
+	}
+
+	err = c.ensureBackupJobRBAC(backupConfigRef, serviceAccountName)
+	if err != nil {
+		return err
 	}
 
 	// get repository for backupConfig

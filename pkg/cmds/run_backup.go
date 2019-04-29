@@ -28,6 +28,7 @@ func NewCmdRunBackup() *cobra.Command {
 			ScratchDir:  restic.DefaultScratchDir,
 			EnableCache: true,
 		},
+		EnableRBAC: true,
 	}
 
 	cmd := &cobra.Command{

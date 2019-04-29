@@ -94,10 +94,8 @@ func (c *Config) New() (*StashController, error) {
 		}
 	}
 
-	if ctrl.EnableRBAC {
-		if err := ctrl.ensureSidecarClusterRole(); err != nil {
-			return nil, err
-		}
+	if err := ctrl.ensureSidecarClusterRole(); err != nil {
+		return nil, err
 	}
 
 	ctrl.initNamespaceWatcher()

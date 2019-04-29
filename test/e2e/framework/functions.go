@@ -53,7 +53,7 @@ func (f *Invocation) UpdateStatusFunction() v1beta1.Function {
 				fmt.Sprintf("--backup-session=${%s:=}", apis.BackupSession),
 				fmt.Sprintf("--restore-session=${%s:=}", apis.RestoreSession),
 				fmt.Sprintf("--output-dir=${%s:=}", outputDir),
-				fmt.Sprintf("--enable-status-subresource=${%s:=%s}", apis.StatusSubresourceEnabled, apis.StatusSubresourceEnabled),
+				fmt.Sprintf("--enable-status-subresource=${%s:=false}", apis.StatusSubresourceEnabled),
 			},
 		},
 	}
@@ -67,7 +67,7 @@ func (f *Invocation) PvcBackupFunction() v1beta1.Function {
 		Spec: v1beta1.FunctionSpec{
 			Image: getImage(),
 			Args: []string{
-				FunctionPvcBackup,
+				"backup-pvc",
 				fmt.Sprintf("--provider=${%s:=}", apis.RepositoryProvider),
 				fmt.Sprintf("--bucket=${%s:=}", apis.RepositoryBucket),
 				fmt.Sprintf("--endpoint=${%s:=}", apis.RepositoryEndpoint),
@@ -103,7 +103,7 @@ func (f *Invocation) PvcRestoreFunction() v1beta1.Function {
 		Spec: v1beta1.FunctionSpec{
 			Image: getImage(),
 			Args: []string{
-				FunctionPvcRestore,
+				"restore-pvc",
 				fmt.Sprintf("--provider=${%s:=}", apis.RepositoryProvider),
 				fmt.Sprintf("--bucket=${%s:=}", apis.RepositoryBucket),
 				fmt.Sprintf("--endpoint=${%s:=}", apis.RepositoryEndpoint),

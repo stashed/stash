@@ -205,34 +205,33 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 	// if RBAC is enabled then ensure respective ClusterRole,RoleBinding,ServiceAccount etc.
 	serviceAccountName := "default"
 
-	if c.EnableRBAC {
-		if backupConfiguration.Spec.RuntimeSettings.Pod != nil &&
-			backupConfiguration.Spec.RuntimeSettings.Pod.ServiceAccountName != "" {
-			// ServiceAccount has been specified, so use it.
-			serviceAccountName = backupConfiguration.Spec.RuntimeSettings.Pod.ServiceAccountName
-		} else {
-			// ServiceAccount hasn't been specified. so create new one with same name as BackupConfiguration object.
-			serviceAccountName = meta.Name
+	if backupConfiguration.Spec.RuntimeSettings.Pod != nil &&
+		backupConfiguration.Spec.RuntimeSettings.Pod.ServiceAccountName != "" {
+		// ServiceAccount has been specified, so use it.
+		serviceAccountName = backupConfiguration.Spec.RuntimeSettings.Pod.ServiceAccountName
+	} else {
+		// ServiceAccount hasn't been specified. so create new one with same name as BackupConfiguration object.
+		serviceAccountName = meta.Name
 
-			_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
-				core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
-				if in.Labels == nil {
-					in.Labels = map[string]string{}
-				}
-				in.Labels[util.LabelApp] = util.AppLabelStash
-				return in
-			})
-			if err != nil {
-				return err
+		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
+			core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+			if in.Labels == nil {
+				in.Labels = map[string]string{}
 			}
-		}
-
-		// now ensure RBAC stuff for this CronJob
-		err := c.ensureCronJobRBAC(ref, serviceAccountName)
+			in.Labels[util.LabelApp] = util.AppLabelStash
+			return in
+		})
 		if err != nil {
 			return err
 		}
 	}
+
+	// now ensure RBAC stuff for this CronJob
+	err = c.ensureCronJobRBAC(ref, serviceAccountName)
+	if err != nil {
+		return err
+	}
+
 	_, _, err = batch_util.CreateOrPatchCronJob(c.kubeClient, meta, func(in *batch_v1beta1.CronJob) *batch_v1beta1.CronJob {
 		//set backup-configuration as cron-job owner
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
@@ -255,9 +254,7 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 				},
 			})
 		in.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
-		if c.EnableRBAC {
-			in.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-		}
+		in.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 		return in
 	})
 

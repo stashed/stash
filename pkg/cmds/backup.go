@@ -34,6 +34,7 @@ func NewCmdBackup() *cobra.Command {
 			ResyncPeriod:   5 * time.Minute,
 			MaxNumRequeues: 5,
 			NumThreads:     1,
+			EnableRBAC:     true,
 		}
 	)
 

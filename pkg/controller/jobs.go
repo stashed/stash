@@ -63,12 +63,11 @@ func (c *StashController) runJobInjector(key string) error {
 
 			glog.Infof("Deleted stash job: %s", job.GetName())
 
-			if c.EnableRBAC {
-				err = c.ensureRepoReaderRolebindingDeleted(&job.ObjectMeta)
-				if err != nil {
-					return fmt.Errorf("failed to delete repo-reader rolebinding. reason: %s", err)
-				}
+			err = c.ensureRepoReaderRolebindingDeleted(&job.ObjectMeta)
+			if err != nil {
+				return fmt.Errorf("failed to delete repo-reader rolebinding. reason: %s", err)
 			}
+
 		}
 	}
 	return nil

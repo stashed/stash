@@ -43,6 +43,7 @@ func NewExtraOptions() *ExtraOptions {
 		QPS:            100,
 		Burst:          100,
 		ResyncPeriod:   10 * time.Minute,
+		EnableRBAC:     true,
 	}
 }
 
