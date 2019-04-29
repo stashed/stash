@@ -117,6 +117,12 @@ func (c *StashController) runBackupSessionProcessor(key string) error {
 		return c.setBackupSessionRunning(backupSession)
 	}
 
+	// skip if BackupConfiguration paused
+	if backupConfig.Spec.Paused {
+		log.Infof("Skipping processing BackupSession %s/%s. Reason: Backup Configuration is paused.", backupSession.Namespace, backupSession.Name)
+		return nil
+	}
+
 	// create backup job
 	err = c.ensureBackupJob(backupSession, backupConfig)
 	if err != nil {

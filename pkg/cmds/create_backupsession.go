@@ -72,6 +72,11 @@ func (opt *options) createBackupSession() error {
 	if err != nil {
 		return err
 	}
+	// skip if BackupConfiguration paused
+	if backupConfiguration.Spec.Paused {
+		log.Infof("Skipping creating BackupSession. Reason: Backup Configuration %s/%s is paused.", backupConfiguration.Namespace, backupConfiguration.Name)
+		return nil
+	}
 	ref, err := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
 	if err != nil {
 		return err

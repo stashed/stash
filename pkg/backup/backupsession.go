@@ -170,6 +170,12 @@ func (c *BackupSessionController) processBackupSession(key string) error {
 			return nil
 		}
 
+		// skip if BackupConfiguration paused
+		if backupConfiguration.Spec.Paused {
+			log.Infof("Skipping processing BackupSession %s/%s. Reason: Backup Configuration is paused.", backupSession.Namespace, backupSession.Name)
+			return nil
+		}
+
 		// For Deployment, ReplicaSet and ReplicationController only leader pod is running this controller so no problem with restic repo lock.
 		// For StatefulSet and DaemonSet all pods are running this controller and all will try to backup simultaneously. But, restic repository can be
 		// locked by only one pod. So, we need a leader election to determine who will take backup first. Once backup is complete, the leader pod will
