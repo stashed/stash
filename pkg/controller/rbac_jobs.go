@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/appscode/stash/apis"
 	api_v1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
 	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
 	stash_scheme "github.com/appscode/stash/client/clientset/versioned/scheme"
@@ -86,9 +87,18 @@ func (c *StashController) ensureCronJobRoleBinding(resource *core.ObjectReferenc
 		Namespace: resource.Namespace,
 	}
 
+	bcObj, err := c.stashClient.StashV1beta1().BackupConfigurations(resource.Namespace).Get(resource.Name, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	exists, objRef := c.checkAndGetWorrkloadReference(bcObj)
+
 	// ensure role binding
-	_, _, err := rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
+	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+		if exists == true {
+			core_util.EnsureOwnerReference(&in.ObjectMeta, objRef)
+		}
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
@@ -518,4 +528,52 @@ func (c *StashController) ensureBackupJobRoleBinding(resource *core.ObjectRefere
 		return in
 	})
 	return err
+}
+
+func (c *StashController) checkAndGetWorrkloadReference(bcObj *api_v1beta1.BackupConfiguration) (bool bool, ref *core.ObjectReference) {
+	kind := bcObj.Spec.Target.Ref.Kind
+	name := bcObj.Spec.Target.Ref.Name
+	switch kind {
+	case apis.KindDeployment:
+		w, err := c.kubeClient.AppsV1().Deployments(bcObj.Namespace).Get(name, metav1.GetOptions{})
+		if err == nil {
+			objRef, err := reference.GetReference(stash_scheme.Scheme, w)
+			if err == nil {
+				return true, objRef
+			}
+		}
+	case apis.KindReplicaSet:
+		w, err := c.kubeClient.AppsV1().ReplicaSets(bcObj.Namespace).Get(name, metav1.GetOptions{})
+		if err == nil {
+			objRef, err := reference.GetReference(stash_scheme.Scheme, w)
+			if err == nil {
+				return true, objRef
+			}
+		}
+	case apis.KindReplicationController:
+		w, err := c.kubeClient.CoreV1().ReplicationControllers(bcObj.Namespace).Get(name, metav1.GetOptions{})
+		if err == nil {
+			objRef, err := reference.GetReference(stash_scheme.Scheme, w)
+			if err == nil {
+				return true, objRef
+			}
+		}
+	case apis.KindDaemonSet:
+		w, err := c.kubeClient.AppsV1().DaemonSets(bcObj.Namespace).Get(name, metav1.GetOptions{})
+		if err == nil {
+			objRef, err := reference.GetReference(stash_scheme.Scheme, w)
+			if err == nil {
+				return true, objRef
+			}
+		}
+	case apis.KindStatefulSet:
+		w, err := c.kubeClient.AppsV1().StatefulSets(bcObj.Namespace).Get(name, metav1.GetOptions{})
+		if err == nil {
+			objRef, err := reference.GetReference(stash_scheme.Scheme, w)
+			if err == nil {
+				return true, objRef
+			}
+		}
+	}
+	return false, nil
 }
