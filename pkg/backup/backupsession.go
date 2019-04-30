@@ -430,9 +430,10 @@ func (c *BackupSessionController) writeBackupFailureEvent(backupSession *api_v1b
 
 func (c *BackupSessionController) isBackupTakenForThisHost(backupSession *api_v1beta1.BackupSession, host string) bool {
 
-	// if overall backupSession phase is "Succeeded" or "Failed" then it has been processed already
+	// if overall backupSession phase is "Succeeded" or "Failed" or "Skipped" then it has been processed already
 	if backupSession.Status.Phase == api_v1beta1.BackupSessionSucceeded ||
-		backupSession.Status.Phase == api_v1beta1.BackupSessionFailed {
+		backupSession.Status.Phase == api_v1beta1.BackupSessionFailed ||
+		backupSession.Status.Phase == api_v1beta1.BackupSessionSkipped {
 		return true
 	}
 

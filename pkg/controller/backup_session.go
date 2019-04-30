@@ -98,6 +98,9 @@ func (c *StashController) runBackupSessionProcessor(key string) error {
 	} else if phase == api_v1beta1.BackupSessionRunning {
 		log.Infof("Skipping processing BackupSession %s/%s. Reason: phase is %q.", backupSession.Namespace, backupSession.Name, backupSession.Status.Phase)
 		return nil
+	} else if phase == api_v1beta1.BackupSessionSkipped {
+		log.Infof("Skipping processing BackupSession %s/%s. Reason: previously skipped.", backupSession.Namespace, backupSession.Name)
+		return nil
 	}
 
 	// backup process for this BackupSession has not started. so let's start backup process
