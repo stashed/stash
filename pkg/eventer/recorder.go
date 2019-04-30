@@ -40,6 +40,7 @@ const (
 	EventReasonInvalidBackupSession    = "InvalidBackupSession"
 	EventReasonBackupSessionSucceeded  = "BackupSessionSucceeded"
 	EventReasonBackupSessionFailed     = "BackupSessionFailedToExecute"
+	EventReasonBackupSessionSkipped    = "BackupSessionSkipped"
 	EventReasonBackupSessionJobCreated = "BackupSessionJobCreated"
 	EventReasonHostBackupSucceded      = "SuccessfulHostBackup"
 	EventReasonHostBackupFailed        = "FailedHostBackup"

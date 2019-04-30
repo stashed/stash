@@ -159,6 +159,12 @@ func (c *BackupSessionController) processBackupSession(key string) error {
 			return fmt.Errorf("can't get BackupConfiguration for BackupSession %s/%s, reason: %s", backupSession.Namespace, backupSession.Name, err)
 		}
 
+		// skip if BackupConfiguration paused
+		if backupConfiguration.Spec.Paused {
+			log.Infof("Skipping processing BackupSession %s/%s. Reason: Backup Configuration is paused.", backupSession.Namespace, backupSession.Name)
+			return nil
+		}
+
 		host, err := util.GetHostName(backupConfiguration.Spec.Target)
 		if err != nil {
 			return err
@@ -424,9 +430,10 @@ func (c *BackupSessionController) writeBackupFailureEvent(backupSession *api_v1b
 
 func (c *BackupSessionController) isBackupTakenForThisHost(backupSession *api_v1beta1.BackupSession, host string) bool {
 
-	// if overall backupSession phase is "Succeeded" or "Failed" then it has been processed already
+	// if overall backupSession phase is "Succeeded" or "Failed" or "Skipped" then it has been processed already
 	if backupSession.Status.Phase == api_v1beta1.BackupSessionSucceeded ||
-		backupSession.Status.Phase == api_v1beta1.BackupSessionFailed {
+		backupSession.Status.Phase == api_v1beta1.BackupSessionFailed ||
+		backupSession.Status.Phase == api_v1beta1.BackupSessionSkipped {
 		return true
 	}
 

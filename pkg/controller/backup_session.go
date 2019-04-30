@@ -98,6 +98,9 @@ func (c *StashController) runBackupSessionProcessor(key string) error {
 	} else if phase == api_v1beta1.BackupSessionRunning {
 		log.Infof("Skipping processing BackupSession %s/%s. Reason: phase is %q.", backupSession.Namespace, backupSession.Name, backupSession.Status.Phase)
 		return nil
+	} else if phase == api_v1beta1.BackupSessionSkipped {
+		log.Infof("Skipping processing BackupSession %s/%s. Reason: previously skipped.", backupSession.Namespace, backupSession.Name)
+		return nil
 	}
 
 	// backup process for this BackupSession has not started. so let's start backup process
@@ -108,6 +111,12 @@ func (c *StashController) runBackupSessionProcessor(key string) error {
 	)
 	if err != nil {
 		return fmt.Errorf("can't get BackupConfiguration for BackupSession %s/%s, Reason: %s", backupSession.Namespace, backupSession.Name, err)
+	}
+
+	// skip if BackupConfiguration paused
+	if backupConfig.Spec.Paused {
+		log.Infof("Skipping processing BackupSession %s/%s. Reason: Backup Configuration is paused.", backupSession.Namespace, backupSession.Name)
+		return c.setBackupSessionSkipped(backupSession, "Backup Configuration is paused")
 	}
 
 	// skip if backup model is sidecar.
@@ -260,6 +269,29 @@ func (c *StashController) setBackupSessionFailed(backupSession *api_v1beta1.Back
 		core.EventTypeWarning,
 		eventer.EventReasonBackupSessionFailed,
 		jobErr.Error(),
+	)
+
+	return err
+}
+
+func (c *StashController) setBackupSessionSkipped(backupSession *api_v1beta1.BackupSession, reason string) error {
+	// set BackupSession phase to "Skipped"
+	_, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
+		in.Phase = api_v1beta1.BackupSessionSkipped
+		return in
+	}, apis.EnableStatusSubresource)
+	if err != nil {
+		return err
+	}
+
+	// write skip event
+	_, err = eventer.CreateEvent(
+		c.kubeClient,
+		eventer.BackupSessionEventComponent,
+		backupSession,
+		core.EventTypeWarning,
+		eventer.EventReasonBackupSessionSkipped,
+		reason,
 	)
 
 	return err

@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 
+	"github.com/appscode/go/log"
 	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
 	stash_scheme "github.com/appscode/stash/client/clientset/versioned/scheme"
 	v1beta1_util "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1beta1/util"
@@ -72,6 +73,12 @@ func (c *StashController) runBackupConfigurationProcessor(key string) error {
 			})
 			if err != nil {
 				return err
+			}
+
+			// skip if BackupConfiguration paused
+			if backupConfiguration.Spec.Paused {
+				log.Infof("Skipping processing BackupConfiguration %s/%s. Reason: Backup Configuration is paused.", backupConfiguration.Namespace, backupConfiguration.Name)
+				return nil
 			}
 
 			if backupConfiguration.Spec.Target != nil &&
