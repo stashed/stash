@@ -159,6 +159,12 @@ func (c *BackupSessionController) processBackupSession(key string) error {
 			return fmt.Errorf("can't get BackupConfiguration for BackupSession %s/%s, reason: %s", backupSession.Namespace, backupSession.Name, err)
 		}
 
+		// skip if BackupConfiguration paused
+		if backupConfiguration.Spec.Paused {
+			log.Infof("Skipping processing BackupSession %s/%s. Reason: Backup Configuration is paused.", backupSession.Namespace, backupSession.Name)
+			return nil
+		}
+
 		host, err := util.GetHostName(backupConfiguration.Spec.Target)
 		if err != nil {
 			return err
@@ -167,12 +173,6 @@ func (c *BackupSessionController) processBackupSession(key string) error {
 		// if BackupSession already has been processed for this host then skip further processing
 		if c.isBackupTakenForThisHost(backupSession, host) {
 			log.Infof("Skip processing BackupSession %s/%s. Reason: BackupSession has been processed already for host %q\n", backupSession.Namespace, backupSession.Name, host)
-			return nil
-		}
-
-		// skip if BackupConfiguration paused
-		if backupConfiguration.Spec.Paused {
-			log.Infof("Skipping processing BackupSession %s/%s. Reason: Backup Configuration is paused.", backupSession.Namespace, backupSession.Name)
 			return nil
 		}
 
