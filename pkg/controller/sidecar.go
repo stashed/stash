@@ -66,12 +66,12 @@ func (c *StashController) ensureWorkloadSidecar(w *wapi.Workload, restic *api_v1
 	if restic.Spec.Type == api_v1alpha1.BackupOffline {
 		w.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(
 			w.Spec.Template.Spec.InitContainers,
-			util.NewInitContainer(restic, localRef, image, c.EnableRBAC),
+			util.NewInitContainer(restic, localRef, image),
 		)
 	} else {
 		w.Spec.Template.Spec.Containers = core_util.UpsertContainer(
 			w.Spec.Template.Spec.Containers,
-			util.NewSidecarContainer(restic, localRef, image, c.EnableRBAC),
+			util.NewSidecarContainer(restic, localRef, image),
 		)
 	}
 
@@ -178,7 +178,7 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, bc *api_v1beta1.
 
 	w.Spec.Template.Spec.Containers = core_util.UpsertContainer(
 		w.Spec.Template.Spec.Containers,
-		util.NewBackupSidecarContainer(bc, &repository.Spec.Backend, image, c.EnableRBAC),
+		util.NewBackupSidecarContainer(bc, &repository.Spec.Backend, image),
 	)
 
 	// keep existing image pull secrets

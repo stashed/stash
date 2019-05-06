@@ -26,7 +26,6 @@ const (
 )
 
 type config struct {
-	EnableRBAC              bool
 	StashImageTag           string
 	DockerRegistry          string
 	MaxNumRequeues          int

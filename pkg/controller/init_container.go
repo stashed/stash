@@ -65,7 +65,7 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, rs *api_v
 	// insert restore init container
 	w.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(
 		w.Spec.Template.Spec.InitContainers,
-		util.NewRestoreInitContainer(rs, repository, image, c.EnableRBAC),
+		util.NewRestoreInitContainer(rs, repository, image),
 	)
 
 	// keep existing image pull secrets and add new image pull secrets if specified in RestoreSession spec.

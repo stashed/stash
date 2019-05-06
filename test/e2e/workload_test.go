@@ -635,6 +635,8 @@ var _ = Describe("StatefulSet", func() {
 			recoveredss.Spec.Replicas = types.Int32P(5)
 			_, err := f.CreateStatefulSet(recoveredss)
 			Expect(err).NotTo(HaveOccurred())
+			err = util.WaitUntilStatefulSetReady(f.KubeClient, recoveredss.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 
 			restoreSession.Spec.Target.Ref.Name = recoveredss.Name
 

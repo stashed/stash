@@ -53,7 +53,6 @@ type Options struct {
 	RunViaCron       bool
 	DockerRegistry   string // image registry for check job
 	ImageTag         string // image tag for check job
-	EnableRBAC       bool   // rbac for check job
 	NumThreads       int
 }
 

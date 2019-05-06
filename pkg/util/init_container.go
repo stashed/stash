@@ -13,8 +13,8 @@ import (
 	"kmodules.xyz/client-go/tools/clientcmd"
 )
 
-func NewInitContainer(r *v1alpha1_api.Restic, workload v1alpha1_api.LocalTypedReference, image docker.Docker, enableRBAC bool) core.Container {
-	container := NewSidecarContainer(r, workload, image, enableRBAC)
+func NewInitContainer(r *v1alpha1_api.Restic, workload v1alpha1_api.LocalTypedReference, image docker.Docker) core.Container {
+	container := NewSidecarContainer(r, workload, image)
 	container.Args = []string{
 		"backup",
 		"--restic-name=" + r.Name,
@@ -33,7 +33,7 @@ func NewInitContainer(r *v1alpha1_api.Restic, workload v1alpha1_api.LocalTypedRe
 	return container
 }
 
-func NewRestoreInitContainer(rs *v1beta1_api.RestoreSession, repository *v1alpha1_api.Repository, image docker.Docker, enableRBAC bool) core.Container {
+func NewRestoreInitContainer(rs *v1beta1_api.RestoreSession, repository *v1alpha1_api.Repository, image docker.Docker) core.Container {
 	initContainer := core.Container{
 		Name:  StashInitContainer,
 		Image: image.ToContainerImage(),

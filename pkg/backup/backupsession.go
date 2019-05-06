@@ -40,7 +40,6 @@ type BackupSessionController struct {
 	StashInformerFactory stashinformers.SharedInformerFactory
 	MaxNumRequeues       int
 	NumThreads           int
-	EnableRBAC           bool // rbac for check job
 	ResyncPeriod         time.Duration
 	//backupConfiguration
 	BackupConfigurationName string

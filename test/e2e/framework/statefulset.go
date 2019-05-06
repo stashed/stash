@@ -88,7 +88,7 @@ func (fi *Invocation) StatefulSetForV1beta1API() apps.StatefulSet {
 						StorageClassName: types.StringP(fi.StorageClass),
 						Resources: core.ResourceRequirements{
 							Requests: core.ResourceList{
-								core.ResourceName(core.ResourceStorage): resource.MustParse("1Gi"),
+								core.ResourceName(core.ResourceStorage): resource.MustParse("10Gi"),
 							},
 						},
 					},
