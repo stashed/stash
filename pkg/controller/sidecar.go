@@ -23,7 +23,7 @@ import (
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
 
-func (c *StashController) ensureWorkloadSidecar(w *wapi.Workload, restic *api_v1alpha1.Restic) error {
+func (c *StashController) ensureWorkloadSidecar(w *wapi.Workload, restic *api_v1alpha1.Restic, logic string) error {
 	sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
 	ref, err := reference.GetReference(scheme.Scheme, w)
 	if err != nil {
@@ -32,9 +32,11 @@ func (c *StashController) ensureWorkloadSidecar(w *wapi.Workload, restic *api_v1
 			Namespace: w.Namespace,
 		}
 	}
-	err = c.ensureSidecarRoleBinding(ref, sa)
-	if err != nil {
-		return err
+	if logic == util.StashLogicForController {
+		err = c.ensureSidecarRoleBinding(ref, sa)
+		if err != nil {
+			return err
+		}
 	}
 
 	if restic.Spec.Backend.StorageSecretName == "" {
@@ -133,7 +135,7 @@ func (c *StashController) ensureWorkloadSidecarDeleted(w *wapi.Workload, restic 
 	return nil
 }
 
-func (c *StashController) ensureBackupSidecar(w *wapi.Workload, bc *api_v1beta1.BackupConfiguration) error {
+func (c *StashController) ensureBackupSidecar(w *wapi.Workload, bc *api_v1beta1.BackupConfiguration, logic string) error {
 	sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
 	ref, err := reference.GetReference(scheme.Scheme, w)
 	if err != nil {
@@ -143,9 +145,11 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, bc *api_v1beta1.
 			APIVersion: w.APIVersion,
 		}
 	}
-	err = c.ensureSidecarRoleBinding(ref, sa)
-	if err != nil {
-		return err
+	if logic == util.StashLogicForController {
+		err = c.ensureSidecarRoleBinding(ref, sa)
+		if err != nil {
+			return err
+		}
 	}
 
 	repository, err := c.stashClient.StashV1alpha1().Repositories(bc.Namespace).Get(bc.Spec.Repository.Name, metav1.GetOptions{})

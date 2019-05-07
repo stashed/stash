@@ -21,15 +21,15 @@ import (
 )
 
 // applyStashLogic takes an workload and perform some processing on it if any backup or restore is configured for this workload.
-func (c *StashController) applyStashLogic(w *wapi.Workload) (bool, error) {
+func (c *StashController) applyStashLogic(w *wapi.Workload, logic string) (bool, error) {
 	// check if restore is configured for this workload and perform respective operations
-	modifiedByRestoreLogic, err := c.applyRestoreLogic(w)
+	modifiedByRestoreLogic, err := c.applyRestoreLogic(w, logic)
 	if err != nil {
 		return false, err
 	}
 
 	// check if backup is configured for this workload and perform respective operations
-	modifiedByBackupLogic, err := c.applyBackupLogic(w)
+	modifiedByBackupLogic, err := c.applyBackupLogic(w, logic)
 	if err != nil {
 		return false, err
 	}
@@ -44,7 +44,7 @@ func (c *StashController) applyStashLogic(w *wapi.Workload) (bool, error) {
 
 // applyRestoreLogic check if  RestoreSession is configured for this workload
 // and perform operation accordingly
-func (c *StashController) applyRestoreLogic(w *wapi.Workload) (bool, error) {
+func (c *StashController) applyRestoreLogic(w *wapi.Workload, logic string) (bool, error) {
 	// detect old RestoreSession from annotations if it does exist.
 	oldRestore, err := util.GetAppliedRestoreSession(w.Annotations)
 	if err != nil {
@@ -59,7 +59,7 @@ func (c *StashController) applyRestoreLogic(w *wapi.Workload) (bool, error) {
 	// this means RestoreSession has been newly created/updated.
 	// in this case, we have to add/update the init-container accordingly.
 	if newRestore != nil && !util.RestoreSessionEqual(oldRestore, newRestore) {
-		err := c.ensureRestoreInitContainer(w, newRestore)
+		err := c.ensureRestoreInitContainer(w, newRestore, logic)
 		if err != nil {
 			return false, err
 		}
@@ -81,20 +81,22 @@ func (c *StashController) applyRestoreLogic(w *wapi.Workload) (bool, error) {
 
 // applyBackupLogic check if Backup annotations or BackupConfiguration is configured for this workload
 // and perform operation accordingly
-func (c *StashController) applyBackupLogic(w *wapi.Workload) (bool, error) {
-	// check if the workload has backup annotations and perform respective operation accordingly
-	err := c.applyBackupAnnotationLogic(w)
-	if err != nil {
-		return false, err
+func (c *StashController) applyBackupLogic(w *wapi.Workload, logic string) (bool, error) {
+	if logic == util.StashLogicForController {
+		// check if the workload has backup annotations and perform respective operation accordingly
+		err := c.applyBackupAnnotationLogic(w)
+		if err != nil {
+			return false, err
+		}
 	}
 	// check if any BackupConfiguration exist for this workload. if exist then inject sidecar container
-	modified, err := c.applyBackupConfigurationLogic(w)
+	modified, err := c.applyBackupConfigurationLogic(w, logic)
 	if err != nil {
 		return false, err
 	}
 	// if no BackupConfiguration is configured then check if Restic is configured (backward compatibility)
 	if !modified {
-		return c.applyResticLogic(w)
+		return c.applyResticLogic(w, logic)
 	}
 	return modified, nil
 }

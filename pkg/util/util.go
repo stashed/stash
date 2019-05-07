@@ -23,6 +23,11 @@ var (
 	ServiceName string
 )
 
+const (
+	StashLogicForWebhook    = "webhook"
+	StashLogicForController = "controller"
+)
+
 type RepoLabelData struct {
 	WorkloadKind string
 	WorkloadName string
