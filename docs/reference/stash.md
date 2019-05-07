@@ -44,11 +44,25 @@ Stash is a Kubernetes operator for restic. For more information, visit here: htt
 ### SEE ALSO
 
 * [stash backup](/docs/reference/stash_backup.md)	 - Run Stash Backup
+* [stash backup-mongo](/docs/reference/stash_backup-mongo.md)	 - Takes a backup of Mongo DB
+* [stash backup-mysql](/docs/reference/stash_backup-mysql.md)	 - Takes a backup of MySQL DB
+* [stash backup-pg](/docs/reference/stash_backup-pg.md)	 - Takes a backup of Postgres DB
+* [stash backup-pvc](/docs/reference/stash_backup-pvc.md)	 - Takes a backup of Persistent Volume Claim
 * [stash check](/docs/reference/stash_check.md)	 - Check restic backup
+* [stash cli](/docs/reference/stash_cli.md)	 - Stash CLI
+* [stash create-backupsession](/docs/reference/stash_create-backupsession.md)	 - create a BackupSession
+* [stash docker](/docs/reference/stash_docker.md)	 - Run restic commands inside Docker
 * [stash forget](/docs/reference/stash_forget.md)	 - Delete snapshots from a restic repository
 * [stash recover](/docs/reference/stash_recover.md)	 - Recover restic backup
+* [stash restore](/docs/reference/stash_restore.md)	 - Restore from backup
+* [stash restore-mongo](/docs/reference/stash_restore-mongo.md)	 - Restores Mongo DB Backup
+* [stash restore-mysql](/docs/reference/stash_restore-mysql.md)	 - Restores MySQL DB Backup
+* [stash restore-pg](/docs/reference/stash_restore-pg.md)	 - Restores Postgres DB Backup
+* [stash restore-pvc](/docs/reference/stash_restore-pvc.md)	 - Takes a restore of Persistent Volume Claim
 * [stash run](/docs/reference/stash_run.md)	 - Launch Stash Controller
+* [stash run-backup](/docs/reference/stash_run-backup.md)	 - Take backup of workload directories
 * [stash scaledown](/docs/reference/stash_scaledown.md)	 - Scale down workload
 * [stash snapshots](/docs/reference/stash_snapshots.md)	 - Get snapshots of restic repo
+* [stash update-status](/docs/reference/stash_update-status.md)	 - Update status of Repository, Backup/Restore Session
 * [stash version](/docs/reference/stash_version.md)	 - Prints binary version number.
 

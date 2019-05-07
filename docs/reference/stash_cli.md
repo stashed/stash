@@ -1,43 +1,30 @@
 ---
-title: Stash Backup
+title: Stash Cli
 menu:
   product_stash_0.8.3:
-    identifier: stash-backup
-    name: Stash Backup
+    identifier: stash-cli
+    name: Stash Cli
     parent: reference
 product_name: stash
 menu_name: product_stash_0.8.3
 section_menu_id: reference
 ---
-## stash backup
+## stash cli
 
-Run Stash Backup
+Stash CLI
 
 ### Synopsis
 
-Run Stash Backup
+Kubectl plugin for Stash
 
 ```
-stash backup [flags]
+stash cli [flags]
 ```
 
 ### Options
 
 ```
-      --burst int                The maximum burst for throttle (default 100)
-      --docker-registry string   Check job image registry. (default "appscode")
-  -h, --help                     help for backup
-      --image-tag string         Check job image tag.
-      --kubeconfig string        Path to kubeconfig file with authorization information (the master location is set by the master flag).
-      --master string            The address of the Kubernetes API server (overrides any value in kubeconfig)
-      --pushgateway-url string   URL of Prometheus pushgateway used to cache backup metrics
-      --qps float                The maximum QPS to the master from this client (default 100)
-      --restic-name string       Name of the Restic used as configuration.
-      --resync-period duration   If non-zero, will re-list this often. Otherwise, re-list will be delayed aslong as possible (until the upstream source closes the watch or times out. (default 5m0s)
-      --run-via-cron             Run backup periodically via cron.
-      --scratch-dir emptyDir     Directory used to store temporary files. Use an emptyDir in Kubernetes. (default "/tmp")
-      --workload-kind string     Kind of workload where sidecar pod is added.
-      --workload-name string     Name of workload where sidecar pod is added.
+  -h, --help   help for cli
 ```
 
 ### Options inherited from parent commands
@@ -61,4 +48,11 @@ stash backup [flags]
 ### SEE ALSO
 
 * [stash](/docs/reference/stash.md)	 - Stash by AppsCode - Backup your Kubernetes Volumes
+* [stash cli backup-pv](/docs/reference/stash_cli_backup-pv.md)	 - Backup persistent volume
+* [stash cli copy-repository](/docs/reference/stash_cli_copy-repository.md)	 - Copy Repository and Secret
+* [stash cli delete-snapshot](/docs/reference/stash_cli_delete-snapshot.md)	 - Delete a snapshot from repository backend
+* [stash cli download](/docs/reference/stash_cli_download.md)	 - Download snapshots
+* [stash cli trigger-backup](/docs/reference/stash_cli_trigger-backup.md)	 - Trigger a backup
+* [stash cli unlock-local-repository](/docs/reference/stash_cli_unlock-local-repository.md)	 - Unlock Restic Repository with Local Backend
+* [stash cli unlock-repository](/docs/reference/stash_cli_unlock-repository.md)	 - Unlock Restic Repository
 

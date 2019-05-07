@@ -1,43 +1,34 @@
 ---
-title: Stash Backup
+title: Stash Create-Backupsession
 menu:
   product_stash_0.8.3:
-    identifier: stash-backup
-    name: Stash Backup
+    identifier: stash-create-backupsession
+    name: Stash Create-Backupsession
     parent: reference
 product_name: stash
 menu_name: product_stash_0.8.3
 section_menu_id: reference
 ---
-## stash backup
+## stash create-backupsession
 
-Run Stash Backup
+create a BackupSession
 
 ### Synopsis
 
-Run Stash Backup
+create a BackupSession
 
 ```
-stash backup [flags]
+stash create-backupsession [flags]
 ```
 
 ### Options
 
 ```
-      --burst int                The maximum burst for throttle (default 100)
-      --docker-registry string   Check job image registry. (default "appscode")
-  -h, --help                     help for backup
-      --image-tag string         Check job image tag.
-      --kubeconfig string        Path to kubeconfig file with authorization information (the master location is set by the master flag).
-      --master string            The address of the Kubernetes API server (overrides any value in kubeconfig)
-      --pushgateway-url string   URL of Prometheus pushgateway used to cache backup metrics
-      --qps float                The maximum QPS to the master from this client (default 100)
-      --restic-name string       Name of the Restic used as configuration.
-      --resync-period duration   If non-zero, will re-list this often. Otherwise, re-list will be delayed aslong as possible (until the upstream source closes the watch or times out. (default 5m0s)
-      --run-via-cron             Run backup periodically via cron.
-      --scratch-dir emptyDir     Directory used to store temporary files. Use an emptyDir in Kubernetes. (default "/tmp")
-      --workload-kind string     Kind of workload where sidecar pod is added.
-      --workload-name string     Name of workload where sidecar pod is added.
+      --backupsession.name string        Set BackupSession Name
+      --backupsession.namespace string   Set BackupSession Namespace (default "default")
+  -h, --help                             help for create-backupsession
+      --kubeconfig string                Path to kubeconfig file with authorization information (the master location is set by the master flag).
+      --master string                    The address of the Kubernetes API server (overrides any value in kubeconfig)
 ```
 
 ### Options inherited from parent commands

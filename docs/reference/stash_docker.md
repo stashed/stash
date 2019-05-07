@@ -1,43 +1,30 @@
 ---
-title: Stash Backup
+title: Stash Docker
 menu:
   product_stash_0.8.3:
-    identifier: stash-backup
-    name: Stash Backup
+    identifier: stash-docker
+    name: Stash Docker
     parent: reference
 product_name: stash
 menu_name: product_stash_0.8.3
 section_menu_id: reference
 ---
-## stash backup
+## stash docker
 
-Run Stash Backup
+Run restic commands inside Docker
 
 ### Synopsis
 
-Run Stash Backup
+Run restic commands inside Docker
 
 ```
-stash backup [flags]
+stash docker [flags]
 ```
 
 ### Options
 
 ```
-      --burst int                The maximum burst for throttle (default 100)
-      --docker-registry string   Check job image registry. (default "appscode")
-  -h, --help                     help for backup
-      --image-tag string         Check job image tag.
-      --kubeconfig string        Path to kubeconfig file with authorization information (the master location is set by the master flag).
-      --master string            The address of the Kubernetes API server (overrides any value in kubeconfig)
-      --pushgateway-url string   URL of Prometheus pushgateway used to cache backup metrics
-      --qps float                The maximum QPS to the master from this client (default 100)
-      --restic-name string       Name of the Restic used as configuration.
-      --resync-period duration   If non-zero, will re-list this often. Otherwise, re-list will be delayed aslong as possible (until the upstream source closes the watch or times out. (default 5m0s)
-      --run-via-cron             Run backup periodically via cron.
-      --scratch-dir emptyDir     Directory used to store temporary files. Use an emptyDir in Kubernetes. (default "/tmp")
-      --workload-kind string     Kind of workload where sidecar pod is added.
-      --workload-name string     Name of workload where sidecar pod is added.
+  -h, --help   help for docker
 ```
 
 ### Options inherited from parent commands
@@ -61,4 +48,7 @@ stash backup [flags]
 ### SEE ALSO
 
 * [stash](/docs/reference/stash.md)	 - Stash by AppsCode - Backup your Kubernetes Volumes
+* [stash docker delete-snapshot](/docs/reference/stash_docker_delete-snapshot.md)	 - Delete a snapshot from repository backend
+* [stash docker download-snapshots](/docs/reference/stash_docker_download-snapshots.md)	 - Download snapshots
+* [stash docker unlock-repository](/docs/reference/stash_docker_unlock-repository.md)	 - Unlock Restic Repository
 
