@@ -53,7 +53,7 @@ func (f *Invocation) UpdateStatusFunction() v1beta1.Function {
 				fmt.Sprintf("--backup-session=${%s:=}", apis.BackupSession),
 				fmt.Sprintf("--restore-session=${%s:=}", apis.RestoreSession),
 				fmt.Sprintf("--output-dir=${%s:=}", outputDir),
-				fmt.Sprintf("--enable-status-subresource=${%s:=false}", apis.StatusSubresourceEnabled),
+				fmt.Sprintf("--enable-status-subresource=${%s:=true}", apis.StatusSubresourceEnabled),
 			},
 		},
 	}
