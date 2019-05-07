@@ -1,5 +1,5 @@
 hash: d1029599ea7970228120a899bd16ec0fa308fa6f729fbbdd4e5aa52666009bd7
-updated: 2019-04-25T10:47:10.592793788+06:00
+updated: 2019-05-07T00:06:24.92136634-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -225,9 +225,9 @@ imports:
 - name: github.com/go-ini/ini
   version: a9da9309fb4822643ceebb765f80025c35ac19a1
 - name: github.com/go-openapi/jsonpointer
-  version: 46af16f9f7b149af66e5d1bd010e3574dc06de98
+  version: ef5f0afec364d3b9396b7b77b43dbe26bf1f8004
 - name: github.com/go-openapi/jsonreference
-  version: 13c6e3589ad90f49bd3e3bbe2c2cb3d7a4142272
+  version: 8483a886a90412cd6858df4ea3483dce9c8e35a3
 - name: github.com/go-openapi/spec
   version: 5bae59e25b21498baea7f9d46e9c147ec106a42e
 - name: github.com/go-openapi/swag
@@ -240,7 +240,7 @@ imports:
   - protoc-gen-gogo/descriptor
   - sortkeys
 - name: github.com/golang/glog
-  version: 44145f04b68cf362d9c4df2182967c2275eaefed
+  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
 - name: github.com/golang/groupcache
   version: 02826c3e79038b59d737d3b1c0a1d937f71a4433
   subpackages:
@@ -287,7 +287,7 @@ imports:
 - name: github.com/gorilla/websocket
   version: 66b9c49e59c6c48f0ffce28c2d8b8a5678502c6d
 - name: github.com/graymeta/stow
-  version: 8020e152292b2cdbdca30274fec24e18905f254d
+  version: ca5baa008ea321ea84980da11752f2590b485e87
   repo: https://github.com/appscode/stow.git
   vcs: git
   subpackages:
@@ -342,7 +342,7 @@ imports:
 - name: github.com/modern-go/reflect2
   version: 94122c33edd36123c84d5368cfb2b69df93a0ec8
 - name: github.com/ncw/swift
-  version: 24e3012fc8a71f004a6455bce2088031d50bf2b6
+  version: 753d2090bb62619675997bd87a8e3af423a00f2d
 - name: github.com/NYTimes/gziphandler
   version: 56545f4a5d46df9a6648819d1664c3a03a13ffdb
 - name: github.com/onsi/ginkgo
@@ -416,7 +416,8 @@ imports:
 - name: github.com/satori/go.uuid
   version: f58768cc1a7a7e77a3bd49e98cdd21419399b6a3
 - name: github.com/sergi/go-diff
-  version: 97b2266dfe4bd4ea1b81a463322f04f8b724801e
+  version: 24e2351369ec4949b2ed0dc5c477afdd4c4034e8
+  repo: https://github.com/sergi/go-diff
   subpackages:
   - diffmatchpatch
 - name: github.com/sirupsen/logrus
@@ -434,11 +435,12 @@ imports:
 - name: github.com/spf13/pflag
   version: 298182f68c66c05229eb03ac171abe6e309ee79a
 - name: github.com/yudai/gojsondiff
-  version: 7b1b7adf999dab73a6eb02669c3d82dbb27a3dd6
+  version: 0525c875b75ca60b9e67ddc44496aa16f21066b0
   subpackages:
   - formatter
 - name: github.com/yudai/golcs
   version: d1c525dea8ce39ea9a783d33cf08932305373f2c
+  repo: https://github.com/yudai/golcs
 - name: golang.org/x/crypto
   version: de0752318171da717af4ce24d0a2e8626afaeb11
   subpackages:
@@ -520,7 +522,7 @@ imports:
   - storage/v1
   - tpu/v1
 - name: google.golang.org/appengine
-  version: 12d5545dc1cfa6047a286d5e853841b6471f4c19
+  version: 54a98f90d1c46b7731eb8fb305d2a321c30ef610
   subpackages:
   - internal
   - internal/app_identity
@@ -1080,7 +1082,7 @@ imports:
   - client/informers/externalversions/internalinterfaces
   - client/listers/appcatalog/v1alpha1
 - name: kmodules.xyz/objectstore-api
-  version: 2558fb903e3d0756f974ed4e5769ffcf27ffea30
+  version: 94c81c8acca95bee96c5c250925da955ac67be18
   subpackages:
   - api/v1
   - osm
@@ -1126,6 +1128,6 @@ testImports:
   subpackages:
   - difflib
 - name: github.com/stretchr/testify
-  version: c679ae2cc0cb27ec3293fea7e254e47386f05d69
+  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
   subpackages:
   - assert
