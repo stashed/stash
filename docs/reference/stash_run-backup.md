@@ -1,43 +1,38 @@
 ---
-title: Stash Backup
+title: Stash Run-Backup
 menu:
   product_stash_0.8.3:
-    identifier: stash-backup
-    name: Stash Backup
+    identifier: stash-run-backup
+    name: Stash Run-Backup
     parent: reference
 product_name: stash
 menu_name: product_stash_0.8.3
 section_menu_id: reference
 ---
-## stash backup
+## stash run-backup
 
-Run Stash Backup
+Take backup of workload directories
 
 ### Synopsis
 
-Run Stash Backup
+Take backup of workload directories
 
 ```
-stash backup [flags]
+stash run-backup [flags]
 ```
 
 ### Options
 
 ```
-      --burst int                The maximum burst for throttle (default 100)
-      --docker-registry string   Check job image registry. (default "appscode")
-  -h, --help                     help for backup
-      --image-tag string         Check job image tag.
-      --kubeconfig string        Path to kubeconfig file with authorization information (the master location is set by the master flag).
-      --master string            The address of the Kubernetes API server (overrides any value in kubeconfig)
-      --pushgateway-url string   URL of Prometheus pushgateway used to cache backup metrics
-      --qps float                The maximum QPS to the master from this client (default 100)
-      --restic-name string       Name of the Restic used as configuration.
-      --resync-period duration   If non-zero, will re-list this often. Otherwise, re-list will be delayed aslong as possible (until the upstream source closes the watch or times out. (default 5m0s)
-      --run-via-cron             Run backup periodically via cron.
-      --scratch-dir emptyDir     Directory used to store temporary files. Use an emptyDir in Kubernetes. (default "/tmp")
-      --workload-kind string     Kind of workload where sidecar pod is added.
-      --workload-name string     Name of workload where sidecar pod is added.
+      --backup-configuration string   Set BackupConfiguration Name
+      --enable-cache                  Specify weather to enable caching for restic (default true)
+  -h, --help                          help for run-backup
+      --kubeconfig string             Path to kubeconfig file with authorization information (the master location is set by the master flag).
+      --master string                 The address of the Kubernetes API server (overrides any value in kubeconfig)
+      --max-connections int           Specify maximum concurrent connections for GCS, Azure and B2 backend
+      --metrics-enabled               Specify weather to export Prometheus metrics
+      --pushgateway-url string        URL of Prometheus pushgateway used to cache backup metrics
+      --secret-dir string             Directory where storage secret has been mounted
 ```
 
 ### Options inherited from parent commands

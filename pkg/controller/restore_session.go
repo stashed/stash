@@ -180,32 +180,30 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 
 	// if RBAC is enabled then ensure respective ClusterRole,RoleBinding,ServiceAccount etc.
 	serviceAccountName := "default"
-	if c.EnableRBAC {
-		if restoreSession.Spec.RuntimeSettings.Pod != nil &&
-			restoreSession.Spec.RuntimeSettings.Pod.ServiceAccountName != "" {
-			// ServiceAccount has been specified, so use it.
-			serviceAccountName = restoreSession.Spec.RuntimeSettings.Pod.ServiceAccountName
-		} else {
-			// ServiceAccount hasn't been specified. so create new one with same name as RestoreSession object.
-			serviceAccountName = objectMeta.Name
+	if restoreSession.Spec.RuntimeSettings.Pod != nil &&
+		restoreSession.Spec.RuntimeSettings.Pod.ServiceAccountName != "" {
+		// ServiceAccount has been specified, so use it.
+		serviceAccountName = restoreSession.Spec.RuntimeSettings.Pod.ServiceAccountName
+	} else {
+		// ServiceAccount hasn't been specified. so create new one with same name as RestoreSession object.
+		serviceAccountName = objectMeta.Name
 
-			_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, objectMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
-				core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
-				if in.Labels == nil {
-					in.Labels = map[string]string{}
-				}
-				in.Labels[util.LabelApp] = util.AppLabelStash
-				return in
-			})
-			if err != nil {
-				return err
+		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, objectMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
+			core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+			if in.Labels == nil {
+				in.Labels = map[string]string{}
 			}
-		}
-
-		err := c.ensureRestoreJobRBAC(ref, serviceAccountName)
+			in.Labels[util.LabelApp] = util.AppLabelStash
+			return in
+		})
 		if err != nil {
 			return err
 		}
+	}
+
+	err = c.ensureRestoreJobRBAC(ref, serviceAccountName)
+	if err != nil {
+		return err
 	}
 
 	// get repository for backupConfig
@@ -265,9 +263,7 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 			util.LabelApp: util.AppLabelStashV1Beta1,
 		}
 		in.Spec.Template.Spec = podSpec
-		if c.EnableRBAC {
-			in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-		}
+		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 		return in
 	})
 

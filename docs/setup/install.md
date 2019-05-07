@@ -56,7 +56,6 @@ stash.sh [options]
 options:
 -h, --help                             show brief help
 -n, --namespace=NAMESPACE              specify namespace (default: kube-system)
-    --rbac                             create RBAC roles and bindings (default: true)
     --docker-registry                  docker registry used to pull stash images (default: appscode)
     --image-pull-secret                name of secret used to pull stash operator images
     --run-on-master                    run stash operator on master
@@ -79,7 +78,7 @@ If you would like to run Stash operator pod in `master` instances, pass the `--r
 
 ```console
 $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.3/hack/deploy/stash.sh \
-    | bash -s -- --run-on-master [--rbac]
+    | bash -s -- --run-on-master
 ```
 
 Stash operator will be installed in a `kube-system` namespace by default. If you would like to run Stash operator pod in `stash` namespace, pass the `--namespace=stash` flag:
@@ -87,7 +86,7 @@ Stash operator will be installed in a `kube-system` namespace by default. If you
 ```console
 $ kubectl create namespace stash
 $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.3/hack/deploy/stash.sh \
-    | bash -s -- --namespace=stash [--run-on-master] [--rbac]
+    | bash -s -- --namespace=stash [--run-on-master]
 ```
 
 If you are using a private Docker registry, you need to pull the following image:
@@ -99,14 +98,14 @@ To pass the address of your private registry and optionally a image pull secret 
 ```console
 $ kubectl create namespace stash
 $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.3/hack/deploy/stash.sh \
-    | bash -s -- --docker-registry=MY_REGISTRY [--image-pull-secret=SECRET_NAME] [--rbac]
+    | bash -s -- --docker-registry=MY_REGISTRY [--image-pull-secret=SECRET_NAME]
 ```
 
 Stash implements [validating admission webhooks](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#validatingadmissionwebhook) to validate Stash CRDs and **mutating webhooks** for Kubernetes workload types. This is helpful when you create `Restic` before creating workload objects. This allows stash operator to initialize the target workloads by adding sidecar or, init-container before workload-pods are created. Thus stash operator does not need to delete workload pods for applying changes. This is particularly helpful for workload kind `StatefulSet`, since Kubernetes does not support adding sidecar / init containers to StatefulSets after they are created. This is enabled by default for Kubernetes 1.9.0 or later releases. To disable this feature, pass the `--enable-validating-webhook=false` and `--enable-mutating-webhook=false` flag respectively.
 
 ```console
 $ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.3/hack/deploy/stash.sh \
-    | bash -s -- --enable-validating-webhook=false --enable-mutating-webhook=false [--rbac]
+    | bash -s -- --enable-validating-webhook=false --enable-mutating-webhook=false
 ```
 
 Stash 0.8.3 or later releases can use status sub resource for CustomResourceDefintions. This is enabled by default for Kubernetes 1.11.0 or later releases. To disable this feature, pass the `--enable-status-subresource=false` flag.

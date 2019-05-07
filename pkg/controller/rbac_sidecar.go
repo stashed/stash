@@ -134,21 +134,19 @@ func (c *StashController) ensureSidecarRoleBindingDeleted(w *wapi.Workload) erro
 }
 
 func (c *StashController) ensureUnnecessaryWorkloadRBACDeleted(w *wapi.Workload) error {
-	if c.EnableRBAC {
-		// delete backup sidecar RoleBinding if workload does not have stash sidecar
-		if !hasStashSidecar(w.Spec.Template.Spec.Containers) {
-			err := c.ensureSidecarRoleBindingDeleted(w)
-			if err != nil && !kerr.IsNotFound(err) {
-				return err
-			}
+	// delete backup sidecar RoleBinding if workload does not have stash sidecar
+	if !hasStashSidecar(w.Spec.Template.Spec.Containers) {
+		err := c.ensureSidecarRoleBindingDeleted(w)
+		if err != nil && !kerr.IsNotFound(err) {
+			return err
 		}
+	}
 
-		// delete restore init-container RoleBinding if workload does not have sash init-container
-		if !hasStashInitContainer(w.Spec.Template.Spec.InitContainers) {
-			err := c.ensureRestoreInitContainerRoleBindingDeleted(w)
-			if err != nil && !kerr.IsNotFound(err) {
-				return err
-			}
+	// delete restore init-container RoleBinding if workload does not have sash init-container
+	if !hasStashInitContainer(w.Spec.Template.Spec.InitContainers) {
+		err := c.ensureRestoreInitContainerRoleBindingDeleted(w)
+		if err != nil && !kerr.IsNotFound(err) {
+			return err
 		}
 	}
 

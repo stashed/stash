@@ -1,43 +1,37 @@
 ---
-title: Stash Backup
+title: Stash Update-Status
 menu:
   product_stash_0.8.3:
-    identifier: stash-backup
-    name: Stash Backup
+    identifier: stash-update-status
+    name: Stash Update-Status
     parent: reference
 product_name: stash
 menu_name: product_stash_0.8.3
 section_menu_id: reference
 ---
-## stash backup
+## stash update-status
 
-Run Stash Backup
+Update status of Repository, Backup/Restore Session
 
 ### Synopsis
 
-Run Stash Backup
+Update status of Repository, Backup/Restore Session
 
 ```
-stash backup [flags]
+stash update-status [flags]
 ```
 
 ### Options
 
 ```
-      --burst int                The maximum burst for throttle (default 100)
-      --docker-registry string   Check job image registry. (default "appscode")
-  -h, --help                     help for backup
-      --image-tag string         Check job image tag.
+      --backup-session string    Name of the Backup Session
+  -h, --help                     help for update-status
       --kubeconfig string        Path to kubeconfig file with authorization information (the master location is set by the master flag).
       --master string            The address of the Kubernetes API server (overrides any value in kubeconfig)
-      --pushgateway-url string   URL of Prometheus pushgateway used to cache backup metrics
-      --qps float                The maximum QPS to the master from this client (default 100)
-      --restic-name string       Name of the Restic used as configuration.
-      --resync-period duration   If non-zero, will re-list this often. Otherwise, re-list will be delayed aslong as possible (until the upstream source closes the watch or times out. (default 5m0s)
-      --run-via-cron             Run backup periodically via cron.
-      --scratch-dir emptyDir     Directory used to store temporary files. Use an emptyDir in Kubernetes. (default "/tmp")
-      --workload-kind string     Kind of workload where sidecar pod is added.
-      --workload-name string     Name of workload where sidecar pod is added.
+      --namespace string         Namespace of Backup/Restore Session (default "default")
+      --output-dir string        Directory where output.json file will be written (keep empty if you don't need to write output in file)
+      --repository string        Name of the Repository
+      --restore-session string   Name of the Restore Session
 ```
 
 ### Options inherited from parent commands

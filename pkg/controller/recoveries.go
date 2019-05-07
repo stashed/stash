@@ -144,9 +144,7 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 		eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, rec, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
 		return err
 	}
-	if c.EnableRBAC {
-		job.Spec.Template.Spec.ServiceAccountName = job.Name
-	}
+	job.Spec.Template.Spec.ServiceAccountName = job.Name
 
 	job, err = c.kubeClient.BatchV1().Jobs(rec.Namespace).Create(job)
 	if err != nil {
@@ -167,22 +165,20 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 		return err
 	}
 
-	if c.EnableRBAC {
-		ref, err := reference.GetReference(scheme.Scheme, job)
-		if err != nil {
-			return err
-		}
-		if err := c.ensureRecoveryRBAC(ref); err != nil {
-			err = fmt.Errorf("error ensuring rbac for recovery job %s, reason: %s", job.Name, err)
-			eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, rec, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
-			return err
-		}
+	ref, err := reference.GetReference(scheme.Scheme, job)
+	if err != nil {
+		return err
+	}
+	if err := c.ensureRecoveryRBAC(ref); err != nil {
+		err = fmt.Errorf("error ensuring rbac for recovery job %s, reason: %s", job.Name, err)
+		eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, rec, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
+		return err
+	}
 
-		if err := c.ensureRepoReaderRBAC(ref, rec); err != nil {
-			err = fmt.Errorf("error ensuring repository-reader rbac for recovery job %s, reason: %s", job.Name, err)
-			eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, rec, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
-			return err
-		}
+	if err := c.ensureRepoReaderRBAC(ref, rec); err != nil {
+		err = fmt.Errorf("error ensuring repository-reader rbac for recovery job %s, reason: %s", job.Name, err)
+		eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, rec, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
+		return err
 	}
 
 	log.Infoln("Recovery job created:", job.Name)

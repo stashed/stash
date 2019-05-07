@@ -197,23 +197,19 @@ func (c *StashController) EnsureScaledownCronJob(restic *api.Restic) error {
 		in.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = restic.Spec.ImagePullSecrets
 
 		in.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
-		if c.EnableRBAC {
-			in.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = in.Name
-		}
+		in.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = in.Name
 		return in
 	})
 	if err != nil {
 		return err
 	}
 
-	if c.EnableRBAC {
-		ref, err := reference.GetReference(scheme.Scheme, cronJob)
-		if err != nil {
-			return err
-		}
-		if err = c.ensureScaledownJobRBAC(ref); err != nil {
-			return fmt.Errorf("error ensuring rbac for kubectl cron job %s, reason: %s", meta.Name, err)
-		}
+	ref, err := reference.GetReference(scheme.Scheme, cronJob)
+	if err != nil {
+		return err
+	}
+	if err = c.ensureScaledownJobRBAC(ref); err != nil {
+		return fmt.Errorf("error ensuring rbac for kubectl cron job %s, reason: %s", meta.Name, err)
 	}
 
 	return nil

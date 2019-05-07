@@ -53,7 +53,6 @@ type Options struct {
 	RunViaCron       bool
 	DockerRegistry   string // image registry for check job
 	ImageTag         string // image tag for check job
-	EnableRBAC       bool   // rbac for check job
 	NumThreads       int
 }
 
@@ -155,9 +154,8 @@ func (c *Controller) Backup() error {
 		return err
 	}
 	if errors.IsNotFound(err) {
-		if c.opt.EnableRBAC {
-			job.Spec.Template.Spec.ServiceAccountName = job.Name
-		}
+		job.Spec.Template.Spec.ServiceAccountName = job.Name
+
 		if job, err = c.k8sClient.BatchV1().Jobs(restic.Namespace).Create(job); err != nil {
 			err = fmt.Errorf("failed to get check job, reason: %s", err)
 			ref, rerr := reference.GetReference(scheme.Scheme, repository)
@@ -177,14 +175,12 @@ func (c *Controller) Backup() error {
 		}
 
 		// create service-account and role-binding
-		if c.opt.EnableRBAC {
-			ref, err := reference.GetReference(scheme.Scheme, job)
-			if err != nil {
-				return err
-			}
-			if err = c.ensureCheckRBAC(ref); err != nil {
-				return fmt.Errorf("error ensuring rbac for check job %s, reason: %s", job.Name, err)
-			}
+		ref, err := reference.GetReference(scheme.Scheme, job)
+		if err != nil {
+			return err
+		}
+		if err = c.ensureCheckRBAC(ref); err != nil {
+			return fmt.Errorf("error ensuring rbac for check job %s, reason: %s", job.Name, err)
 		}
 
 		log.Infoln("Created check job:", job.Name)

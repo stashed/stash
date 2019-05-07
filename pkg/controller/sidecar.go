@@ -24,19 +24,17 @@ import (
 )
 
 func (c *StashController) ensureWorkloadSidecar(w *wapi.Workload, restic *api_v1alpha1.Restic) error {
-	if c.EnableRBAC {
-		sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
-		ref, err := reference.GetReference(scheme.Scheme, w)
-		if err != nil {
-			ref = &core.ObjectReference{
-				Name:      w.Name,
-				Namespace: w.Namespace,
-			}
+	sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
+	ref, err := reference.GetReference(scheme.Scheme, w)
+	if err != nil {
+		ref = &core.ObjectReference{
+			Name:      w.Name,
+			Namespace: w.Namespace,
 		}
-		err = c.ensureSidecarRoleBinding(ref, sa)
-		if err != nil {
-			return err
-		}
+	}
+	err = c.ensureSidecarRoleBinding(ref, sa)
+	if err != nil {
+		return err
 	}
 
 	if restic.Spec.Backend.StorageSecretName == "" {
@@ -44,7 +42,7 @@ func (c *StashController) ensureWorkloadSidecar(w *wapi.Workload, restic *api_v1
 		return err
 	}
 
-	_, err := c.kubeClient.CoreV1().Secrets(w.Namespace).Get(restic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
+	_, err = c.kubeClient.CoreV1().Secrets(w.Namespace).Get(restic.Spec.Backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -60,7 +58,7 @@ func (c *StashController) ensureWorkloadSidecar(w *wapi.Workload, restic *api_v1
 		Image:    docker.ImageStash,
 		Tag:      c.StashImageTag,
 	}
-	ref := api_v1alpha1.LocalTypedReference{
+	localRef := api_v1alpha1.LocalTypedReference{
 		Kind: w.Kind,
 		Name: w.Name,
 	}
@@ -68,12 +66,12 @@ func (c *StashController) ensureWorkloadSidecar(w *wapi.Workload, restic *api_v1
 	if restic.Spec.Type == api_v1alpha1.BackupOffline {
 		w.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(
 			w.Spec.Template.Spec.InitContainers,
-			util.NewInitContainer(restic, ref, image, c.EnableRBAC),
+			util.NewInitContainer(restic, localRef, image),
 		)
 	} else {
 		w.Spec.Template.Spec.Containers = core_util.UpsertContainer(
 			w.Spec.Template.Spec.Containers,
-			util.NewSidecarContainer(restic, ref, image, c.EnableRBAC),
+			util.NewSidecarContainer(restic, localRef, image),
 		)
 	}
 
@@ -136,20 +134,18 @@ func (c *StashController) ensureWorkloadSidecarDeleted(w *wapi.Workload, restic 
 }
 
 func (c *StashController) ensureBackupSidecar(w *wapi.Workload, bc *api_v1beta1.BackupConfiguration) error {
-	if c.EnableRBAC {
-		sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
-		ref, err := reference.GetReference(scheme.Scheme, w)
-		if err != nil {
-			ref = &core.ObjectReference{
-				Name:       w.Name,
-				Namespace:  w.Namespace,
-				APIVersion: w.APIVersion,
-			}
+	sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
+	ref, err := reference.GetReference(scheme.Scheme, w)
+	if err != nil {
+		ref = &core.ObjectReference{
+			Name:       w.Name,
+			Namespace:  w.Namespace,
+			APIVersion: w.APIVersion,
 		}
-		err = c.ensureSidecarRoleBinding(ref, sa)
-		if err != nil {
-			return err
-		}
+	}
+	err = c.ensureSidecarRoleBinding(ref, sa)
+	if err != nil {
+		return err
 	}
 
 	repository, err := c.stashClient.StashV1alpha1().Repositories(bc.Namespace).Get(bc.Spec.Repository.Name, metav1.GetOptions{})
@@ -182,7 +178,7 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, bc *api_v1beta1.
 
 	w.Spec.Template.Spec.Containers = core_util.UpsertContainer(
 		w.Spec.Template.Spec.Containers,
-		util.NewBackupSidecarContainer(bc, &repository.Spec.Backend, image, c.EnableRBAC),
+		util.NewBackupSidecarContainer(bc, &repository.Spec.Backend, image),
 	)
 
 	// keep existing image pull secrets

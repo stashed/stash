@@ -19,19 +19,17 @@ import (
 
 func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, rs *api_v1beta1.RestoreSession) error {
 	// if RBAC is enabled then ensure ServiceAccount and respective ClusterRole and RoleBinding
-	if c.EnableRBAC {
-		sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
-		ref, err := reference.GetReference(scheme.Scheme, w)
-		if err != nil {
-			ref = &core.ObjectReference{
-				Name:      w.Name,
-				Namespace: w.Namespace,
-			}
+	sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
+	ref, err := reference.GetReference(scheme.Scheme, w)
+	if err != nil {
+		ref = &core.ObjectReference{
+			Name:      w.Name,
+			Namespace: w.Namespace,
 		}
-		err = c.ensureRestoreInitContainerRBAC(ref, sa)
-		if err != nil {
-			return err
-		}
+	}
+	err = c.ensureRestoreInitContainerRBAC(ref, sa)
+	if err != nil {
+		return err
 	}
 
 	repository, err := c.stashClient.StashV1alpha1().Repositories(rs.Namespace).Get(rs.Spec.Repository.Name, metav1.GetOptions{})
@@ -67,7 +65,7 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, rs *api_v
 	// insert restore init container
 	w.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(
 		w.Spec.Template.Spec.InitContainers,
-		util.NewRestoreInitContainer(rs, repository, image, c.EnableRBAC),
+		util.NewRestoreInitContainer(rs, repository, image),
 	)
 
 	// keep existing image pull secrets and add new image pull secrets if specified in RestoreSession spec.

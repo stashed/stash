@@ -25,7 +25,7 @@ func (w *ResticWrapper) RunRestore(restoreOptions RestoreOptions) (*RestoreOutpu
 		}
 	} else if len(restoreOptions.RestoreDirs) != 0 {
 		for _, path := range restoreOptions.RestoreDirs {
-			if _, err := w.restore(path, restoreOptions.Host, "", restoreOptions.Destination); err != nil {
+			if _, err := w.restore(path, restoreOptions.SourceHost, "", restoreOptions.Destination); err != nil {
 				return nil, err
 			}
 		}

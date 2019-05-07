@@ -51,8 +51,8 @@ func (f *Framework) EventuallyRestoreSessionPhase(meta metav1.ObjectMeta) Gomega
 		Expect(err).NotTo(HaveOccurred())
 		return restoreSession.Status.Phase
 	},
-		time.Minute*5,
-		time.Second*5,
+		time.Minute*7,
+		time.Second*7,
 	)
 }
 
