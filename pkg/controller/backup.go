@@ -104,7 +104,7 @@ func (c *StashController) applyBackupAnnotationLogic(w *wapi.Workload) error {
 	return nil
 }
 
-func (c *StashController) applyBackupConfigurationLogic(w *wapi.Workload, logic string) (bool, error) {
+func (c *StashController) applyBackupConfigurationLogic(w *wapi.Workload, caller string) (bool, error) {
 	// detect old BackupConfiguration from annotations if it does exist.
 	oldbc, err := util.GetAppliedBackupConfiguration(w.Annotations)
 	if err != nil {
@@ -119,7 +119,7 @@ func (c *StashController) applyBackupConfigurationLogic(w *wapi.Workload, logic 
 	// this means BackupConfiguration has been newly created/updated.
 	// in this case, we have to add/update sidecar container accordingly.
 	if newbc != nil && !util.BackupConfigurationEqual(oldbc, newbc) {
-		err := c.ensureBackupSidecar(w, newbc, logic)
+		err := c.ensureBackupSidecar(w, newbc, caller)
 		if err != nil {
 			return false, err
 		}
@@ -139,7 +139,7 @@ func (c *StashController) applyBackupConfigurationLogic(w *wapi.Workload, logic 
 	return false, nil
 }
 
-func (c *StashController) applyResticLogic(w *wapi.Workload, logic string) (bool, error) {
+func (c *StashController) applyResticLogic(w *wapi.Workload, caller string) (bool, error) {
 	// detect old Restic from annotations if it does exist
 	oldRestic, err := util.GetAppliedRestic(w.Annotations)
 	if err != nil {
@@ -156,7 +156,7 @@ func (c *StashController) applyResticLogic(w *wapi.Workload, logic string) (bool
 	// this means Restic has been newly created/updated.
 	// in this case, we have to add/update the sidecar container accordingly.
 	if newRestic != nil && !util.ResticEqual(oldRestic, newRestic) {
-		err := c.ensureWorkloadSidecar(w, newRestic, logic)
+		err := c.ensureWorkloadSidecar(w, newRestic, caller)
 		if err != nil {
 			return false, err
 		}

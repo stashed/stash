@@ -24,8 +24,8 @@ var (
 )
 
 const (
-	StashLogicForWebhook    = "webhook"
-	StashLogicForController = "controller"
+	CallerWebhook    = "webhook"
+	CallerController = "controller"
 )
 
 type RepoLabelData struct {

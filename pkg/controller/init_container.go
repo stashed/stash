@@ -17,7 +17,7 @@ import (
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
 
-func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, rs *api_v1beta1.RestoreSession, logic string) error {
+func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, rs *api_v1beta1.RestoreSession, caller string) error {
 	// if RBAC is enabled then ensure ServiceAccount and respective ClusterRole and RoleBinding
 	sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
 	ref, err := reference.GetReference(scheme.Scheme, w)
@@ -27,7 +27,7 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, rs *api_v
 			Namespace: w.Namespace,
 		}
 	}
-	if logic == util.StashLogicForController {
+	if caller == util.CallerController {
 		err = c.ensureRestoreInitContainerRBAC(ref, sa)
 		if err != nil {
 			return err
