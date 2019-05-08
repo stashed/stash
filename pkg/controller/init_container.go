@@ -27,7 +27,8 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, rs *api_v
 			Namespace: w.Namespace,
 		}
 	}
-	if caller == util.CallerController {
+	//Don't create RBAC stuff when the caller is webhook to make the webhooks side effect free.
+	if caller != util.CallerWebhook {
 		err = c.ensureRestoreInitContainerRBAC(ref, sa)
 		if err != nil {
 			return err

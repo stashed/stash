@@ -82,7 +82,8 @@ func (c *StashController) applyRestoreLogic(w *wapi.Workload, caller string) (bo
 // applyBackupLogic check if Backup annotations or BackupConfiguration is configured for this workload
 // and perform operation accordingly
 func (c *StashController) applyBackupLogic(w *wapi.Workload, caller string) (bool, error) {
-	if caller == util.CallerController {
+	//Don't create repository, BackupConfiguration stuff when the caller is webhook to make the webhooks side effect free.
+	if caller != util.CallerWebhook {
 		// check if the workload has backup annotations and perform respective operation accordingly
 		err := c.applyBackupAnnotationLogic(w)
 		if err != nil {
