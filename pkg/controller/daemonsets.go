@@ -32,7 +32,7 @@ func (c *StashController) NewDaemonSetWebhook() hooks.AdmissionHook {
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
 				w := obj.(*wapi.Workload)
 				// apply stash backup/restore logic on this workload
-				modified, err := c.applyStashLogic(w)
+				modified, err := c.applyStashLogic(w, util.CallerWebhook)
 				if err != nil {
 					return w, err
 				}
@@ -47,7 +47,7 @@ func (c *StashController) NewDaemonSetWebhook() hooks.AdmissionHook {
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
 				w := newObj.(*wapi.Workload)
 				// apply stash backup/restore logic on this workload
-				modified, err := c.applyStashLogic(w)
+				modified, err := c.applyStashLogic(w, util.CallerWebhook)
 				if err != nil {
 					return w, err
 				}
@@ -107,7 +107,7 @@ func (c *StashController) runDaemonSetInjector(key string) error {
 			return err
 		}
 
-		modified, err := c.applyStashLogic(w)
+		modified, err := c.applyStashLogic(w, util.CallerController)
 		if err != nil {
 			glog.Errorf("failed to apply stash logic on DaemonSet %s/%s. Reason: %v", ds.Namespace, ds.Name, err)
 			return err

@@ -32,14 +32,14 @@ func (c *StashController) NewDeploymentWebhook() hooks.AdmissionHook {
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
 				w := obj.(*wapi.Workload)
 				// apply stash backup/restore logic on this workload
-				_, err := c.applyStashLogic(w)
+				_, err := c.applyStashLogic(w, util.CallerWebhook)
 				return w, err
 
 			},
 			UpdateFunc: func(oldObj, newObj runtime.Object) (runtime.Object, error) {
 				w := newObj.(*wapi.Workload)
 				// apply stash backup/restore logic on this workload
-				_, err := c.applyStashLogic(w)
+				_, err := c.applyStashLogic(w, util.CallerWebhook)
 				return w, err
 			},
 		},
@@ -91,7 +91,7 @@ func (c *StashController) runDeploymentInjector(key string) error {
 		}
 
 		// apply stash backup/restore logic on this workload
-		modified, err := c.applyStashLogic(w)
+		modified, err := c.applyStashLogic(w, util.CallerController)
 		if err != nil {
 			glog.Errorf("failed to apply stash logic on Deployment %s/%s. Reason: %v", dp.Namespace, dp.Name, err)
 			return err

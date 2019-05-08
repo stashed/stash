@@ -23,6 +23,11 @@ var (
 	ServiceName string
 )
 
+const (
+	CallerWebhook    = "webhook"
+	CallerController = "controller"
+)
+
 type RepoLabelData struct {
 	WorkloadKind string
 	WorkloadName string
