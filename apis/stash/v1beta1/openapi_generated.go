@@ -476,8 +476,21 @@ func schema_stash_apis_stash_v1beta1_BackupConfigurationSpec(ref common.Referenc
 							Ref:         ref("github.com/appscode/stash/apis/stash/v1beta1.EmptyDirSettings"),
 						},
 					},
+					"snapshotter": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Snapshotter indicates the name of the agent to use to backup the target. Supported values are \"restic\", \"volumeSnapshotter\". Default value is \"restic\".",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"snapshotClassName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name of the VolumeSnapshotClass used by the VolumeSnapshot. If not specified, a default snapshot class will be used if it is available. Use this field only if the \"snapshotter\" field is set to \"volumeSnapshotter\".",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
-				Required: []string{"repository"},
 			},
 		},
 		Dependencies: []string{
@@ -1376,11 +1389,24 @@ func schema_stash_apis_stash_v1beta1_RestoreSessionSpec(ref common.ReferenceCall
 							Ref:         ref("github.com/appscode/stash/apis/stash/v1beta1.EmptyDirSettings"),
 						},
 					},
+					"volumeClaimTemplates": {
+						SchemaProps: spec.SchemaProps{
+							Description: "volumeClaimTemplates is a list of claims that will be created while restore from VolumeSnapshot",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.PersistentVolumeClaim"),
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/appscode/stash/apis/stash/v1beta1.EmptyDirSettings", "github.com/appscode/stash/apis/stash/v1beta1.Rule", "github.com/appscode/stash/apis/stash/v1beta1.Target", "github.com/appscode/stash/apis/stash/v1beta1.TaskRef", "k8s.io/api/core/v1.LocalObjectReference", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings"},
+			"github.com/appscode/stash/apis/stash/v1beta1.EmptyDirSettings", "github.com/appscode/stash/apis/stash/v1beta1.Rule", "github.com/appscode/stash/apis/stash/v1beta1.Target", "github.com/appscode/stash/apis/stash/v1beta1.TaskRef", "k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaim", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings"},
 	}
 }
 
@@ -1585,6 +1611,20 @@ func schema_stash_apis_stash_v1beta1_Target(ref common.ReferenceCallback) common
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Ref: ref("k8s.io/api/core/v1.VolumeMount"),
+									},
+								},
+							},
+						},
+					},
+					"pvcNames": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PersistentVolumeClaimNames indicates a list of PersistentVolumeClaim names that are subject to VolumeSnapshot. Stash will create one VolumeSnapshot object for each of the PVCs. If this field is kept empty while using volumeSnapshotter, all PVCs of the target will be used as subject of VolumeSnapshot.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
 									},
 								},
 							},
@@ -8186,7 +8226,7 @@ func schema_k8sio_api_core_v1_PodSpec(ref common.ReferenceCallback) common.OpenA
 					},
 					"enableServiceLinks": {
 						SchemaProps: spec.SchemaProps{
-							Description: "EnableServiceLinks indicates whether information about services should be injected into pod's environment variables, matching the syntax of Docker links.",
+							Description: "EnableServiceLinks indicates whether information about services should be injected into pod's environment variables, matching the syntax of Docker links. Optional: Defaults to true.",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},

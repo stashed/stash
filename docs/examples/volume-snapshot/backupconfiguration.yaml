@@ -1,17 +1,18 @@
 apiVersion: stash.appscode.com/v1beta1
-kind: VolumeBackup
+kind: BackupConfiguration
 metadata:
-  name: workloads-volume-snapshot
+  name: deployments-volume-snapshot
   namespace: demo
 spec:
   schedule: "* * * * *"
-  volumeSnapshotClass: default-snapshot-class
+  snapshotter: volumeSnapshotter
+  snapshotClassName: myVolumeSnapshotClassName
   target:
     ref:
       apiVersion: apps/v1
       kind: Deployment
       name: stash-demo
-    pvcNames: # empty means all pvc of this workload
+    pvcNames:
       - my-first-pvc
       - my-second-pvc
   retentionPolicy:

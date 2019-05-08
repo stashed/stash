@@ -26,6 +26,7 @@ type RestoreSession struct {
 
 type RestoreSessionSpec struct {
 	// Repository refer to the Repository crd that hold backend information
+	// +optional
 	Repository core.LocalObjectReference `json:"repository,omitempty"`
 	// Task specify the Task crd that specifies the steps for recovery process
 	// +optional
@@ -43,6 +44,9 @@ type RestoreSessionSpec struct {
 	// An `EmptyDir` will always be mounted at /tmp with this settings
 	//+optional
 	TempDir EmptyDirSettings `json:"tempDir,omitempty"`
+	// volumeClaimTemplates is a list of claims that will be created while restore from VolumeSnapshot
+	// +optional
+	VolumeClaimTemplates []core.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
 }
 
 type Rule struct {

@@ -26,6 +26,11 @@ type Target struct {
 	// Specify the volumes that contains the target directories
 	// +optional
 	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty"`
+	// PersistentVolumeClaimNames indicates a list of PersistentVolumeClaim names that are subject to VolumeSnapshot.
+	// Stash will create one VolumeSnapshot object for each of the PVCs.
+	// If this field is kept empty while using volumeSnapshotter, all PVCs of the target will be used as subject of VolumeSnapshot.
+	// +optional
+	PersistentVolumeClaimNames []string `json:"pvcNames,omitempty"`
 }
 
 type TargetRef struct {

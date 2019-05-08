@@ -26,6 +26,7 @@ type BackupConfiguration struct {
 
 type BackupConfigurationSpec struct {
 	// Repository refer to the Repository crd that holds backend information
+	// +optional
 	Repository core.LocalObjectReference `json:"repository"`
 	Schedule   string                    `json:"schedule,omitempty"`
 	// Task specify the Task crd that specifies the steps to take backup
@@ -46,6 +47,15 @@ type BackupConfigurationSpec struct {
 	// An `EmptyDir` will always be mounted at /tmp with this settings
 	//+optional
 	TempDir EmptyDirSettings `json:"tempDir,omitempty"`
+	// Snapshotter indicates the name of the agent to use to backup the target.
+	// Supported values are "restic", "volumeSnapshotter".
+	// Default value is "restic".
+	// +optional
+	Snapshotter Snapshotter `json:"snapshotter,omitempty"`
+	// Name of the VolumeSnapshotClass used by the VolumeSnapshot. If not specified, a default snapshot class will be used if it is available.
+	// Use this field only if the "snapshotter" field is set to "volumeSnapshotter".
+	// +optional
+	VolumeSnapshotClassName string `json:"snapshotClassName,omitempty"`
 }
 
 type EmptyDirSettings struct {
@@ -62,3 +72,10 @@ type BackupConfigurationList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []BackupConfiguration `json:"items,omitempty"`
 }
+
+type Snapshotter string
+
+const (
+	ResticSnapshotter Snapshotter = "restic"
+	VolumeSnapshotter Snapshotter = "volumeSnapshotter"
+)

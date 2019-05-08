@@ -1657,10 +1657,29 @@ spec:
                       type: array
             schedule:
               type: string
+            snapshotClassName:
+              description: Name of the VolumeSnapshotClass used by the VolumeSnapshot.
+                If not specified, a default snapshot class will be used if it is available.
+                Use this field only if the "snapshotter" field is set to "volumeSnapshotter".
+              type: string
+            snapshotter:
+              description: Snapshotter indicates the name of the agent to use to backup
+                the target. Supported values are "restic", "volumeSnapshotter". Default
+                value is "restic".
+              type: string
             target:
               properties:
                 directories:
                   description: Directories specify the directories to backup
+                  items:
+                    type: string
+                  type: array
+                pvcNames:
+                  description: PersistentVolumeClaimNames indicates a list of PersistentVolumeClaim
+                    names that are subject to VolumeSnapshot. Stash will create one
+                    VolumeSnapshot object for each of the PVCs. If this field is kept
+                    empty while using volumeSnapshotter, all PVCs of the target will
+                    be used as subject of VolumeSnapshot.
                   items:
                     type: string
                   type: array
@@ -1763,8 +1782,6 @@ spec:
 
                     This format is intended to make it difficult to use these numbers without writing some sort of special handling code in the hopes that that will cause implementors to also use a fixed point implementation.
                   type: string
-          required:
-          - repository
   version: v1beta1
   versions:
   - name: v1beta1

@@ -638,6 +638,13 @@ func (in *RestoreSessionSpec) DeepCopyInto(out *RestoreSessionSpec) {
 	}
 	in.RuntimeSettings.DeepCopyInto(&out.RuntimeSettings)
 	in.TempDir.DeepCopyInto(&out.TempDir)
+	if in.VolumeClaimTemplates != nil {
+		in, out := &in.VolumeClaimTemplates, &out.VolumeClaimTemplates
+		*out = make([]v1.PersistentVolumeClaim, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	return
 }
 
@@ -744,6 +751,11 @@ func (in *Target) DeepCopyInto(out *Target) {
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
+	}
+	if in.PersistentVolumeClaimNames != nil {
+		in, out := &in.PersistentVolumeClaimNames, &out.PersistentVolumeClaimNames
+		*out = make([]string, len(*in))
+		copy(*out, *in)
 	}
 	return
 }
