@@ -82,7 +82,7 @@ func PatchObject(
 		return cur, kutil.VerbUnchanged, nil
 	}
 	glog.V(3).Infof("Patching %s %s/%s with %s.", gvr.String(), cur.GetNamespace(), cur.GetName(), string(patch))
-	out, err := ri.Patch(cur.GetName(), types.MergePatchType, patch, metav1.UpdateOptions{})
+	out, err := ri.Patch(cur.GetName(), types.MergePatchType, patch, metav1.PatchOptions{})
 	return out, kutil.VerbPatched, err
 }
 

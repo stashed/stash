@@ -275,6 +275,7 @@ func (c *BackupSessionController) electLeaderPod(backupConfiguration *api_v1beta
 		backupConfiguration.Namespace,
 		util.GetBackupConfigmapLockName(backupConfiguration.Spec.Target.Ref),
 		c.K8sClient.CoreV1(),
+		c.K8sClient.CoordinationV1(),
 		rlc,
 	)
 	if err != nil {
@@ -329,6 +330,7 @@ func (c *BackupSessionController) electBackupLeader(backupSession *api_v1beta1.B
 		backupConfiguration.Namespace,
 		util.GetBackupConfigmapLockName(backupConfiguration.Spec.Target.Ref),
 		c.K8sClient.CoreV1(),
+		c.K8sClient.CoordinationV1(),
 		rlc,
 	)
 	if err != nil {

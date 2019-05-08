@@ -97,6 +97,7 @@ func (opt *Options) electRestoreLeader(restoreSession *api_v1beta1.RestoreSessio
 		restoreSession.Namespace,
 		util.GetRestoreConfigmapLockName(restoreSession.Spec.Target.Ref),
 		opt.KubeClient.CoreV1(),
+		opt.KubeClient.CoordinationV1(),
 		rlc,
 	)
 	if err != nil {

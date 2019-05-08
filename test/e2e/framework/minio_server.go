@@ -8,12 +8,12 @@ import (
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
 	. "github.com/onsi/gomega"
+	"gomodules.xyz/cert"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/util/cert"
 	apps_util "kmodules.xyz/client-go/apps/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 )

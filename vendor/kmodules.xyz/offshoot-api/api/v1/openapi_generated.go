@@ -47,6 +47,7 @@ func schema_kmodulesxyz_offshoot_api_api_v1_ContainerRuntimeSettings(ref common.
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"resources": {
 						SchemaProps: spec.SchemaProps{
@@ -103,6 +104,7 @@ func schema_kmodulesxyz_offshoot_api_api_v1_IONiceSettings(ref common.ReferenceC
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "https://linux.die.net/man/1/ionice",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"class": {
 						SchemaProps: spec.SchemaProps{
@@ -119,7 +121,6 @@ func schema_kmodulesxyz_offshoot_api_api_v1_IONiceSettings(ref common.ReferenceC
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -128,6 +129,7 @@ func schema_kmodulesxyz_offshoot_api_api_v1_NiceSettings(ref common.ReferenceCal
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "https://linux.die.net/man/1/nice",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"adjustment": {
 						SchemaProps: spec.SchemaProps{
@@ -138,7 +140,6 @@ func schema_kmodulesxyz_offshoot_api_api_v1_NiceSettings(ref common.ReferenceCal
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -147,12 +148,14 @@ func schema_kmodulesxyz_offshoot_api_api_v1_ObjectMeta(ref common.ReferenceCallb
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ObjectMeta is metadata that all persisted resources must have, which includes all objects users must create.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"annotations": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Type:   []string{"string"},
@@ -165,7 +168,6 @@ func schema_kmodulesxyz_offshoot_api_api_v1_ObjectMeta(ref common.ReferenceCallb
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -173,12 +175,14 @@ func schema_kmodulesxyz_offshoot_api_api_v1_PodRuntimeSettings(ref common.Refere
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"nodeSelector": {
 						SchemaProps: spec.SchemaProps{
 							Description: "NodeSelector is a selector which must be true for the pod to fit on a node. Selector which must match a node's labels for the pod to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Type:   []string{"string"},
@@ -307,6 +311,7 @@ func schema_kmodulesxyz_offshoot_api_api_v1_PodSpec(ref common.ReferenceCallback
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"serviceAccountName": {
 						SchemaProps: spec.SchemaProps{
@@ -334,6 +339,7 @@ func schema_kmodulesxyz_offshoot_api_api_v1_PodSpec(ref common.ReferenceCallback
 							Description: "NodeSelector is a selector which must be true for the pod to fit on a node. Selector which must match a node's labels for the pod to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Type:   []string{"string"},
@@ -471,6 +477,7 @@ func schema_kmodulesxyz_offshoot_api_api_v1_PodTemplateSpec(ref common.Reference
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PodTemplateSpec describes the data a pod should have when created from a template",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"metadata": {
 						SchemaProps: spec.SchemaProps{
@@ -502,6 +509,7 @@ func schema_kmodulesxyz_offshoot_api_api_v1_RuntimeSettings(ref common.Reference
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"pod": {
 						SchemaProps: spec.SchemaProps{
@@ -526,6 +534,7 @@ func schema_kmodulesxyz_offshoot_api_api_v1_ServicePort(ref common.ReferenceCall
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServicePort contains information on service's port.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -552,7 +561,6 @@ func schema_kmodulesxyz_offshoot_api_api_v1_ServicePort(ref common.ReferenceCall
 				Required: []string{"port"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -561,6 +569,7 @@ func schema_kmodulesxyz_offshoot_api_api_v1_ServiceSpec(ref common.ReferenceCall
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceSpec describes the attributes that a user creates on a service.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"ports": {
 						VendorExtensible: spec.VendorExtensible{
@@ -657,6 +666,7 @@ func schema_kmodulesxyz_offshoot_api_api_v1_ServiceTemplateSpec(ref common.Refer
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceTemplateSpec describes the data a service should have when created from a template",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"metadata": {
 						SchemaProps: spec.SchemaProps{

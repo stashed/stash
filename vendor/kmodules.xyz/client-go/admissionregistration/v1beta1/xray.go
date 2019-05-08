@@ -283,7 +283,7 @@ func (d ValidatingWebhookXray) check() (bool, error) {
 			return false, err
 		}
 
-		_, err = ri.Patch(accessor.GetName(), types.MergePatchType, patch, metav1.UpdateOptions{})
+		_, err = ri.Patch(accessor.GetName(), types.MergePatchType, patch, metav1.PatchOptions{})
 		defer dynamic_util.WaitUntilDeleted(ri, d.stopCh, accessor.GetName())
 
 		if kutil.AdmissionWebhookDeniedRequest(err) {
@@ -316,7 +316,7 @@ func (d ValidatingWebhookXray) check() (bool, error) {
 					return
 				}
 
-				ri.Patch(accessor.GetName(), types.MergePatchType, patch, metav1.UpdateOptions{})
+				ri.Patch(accessor.GetName(), types.MergePatchType, patch, metav1.PatchOptions{})
 
 				// delete
 				dynamic_util.WaitUntilDeleted(ri, d.stopCh, accessor.GetName())
