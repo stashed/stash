@@ -8,6 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/discovery/cached/disk"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/clientcmd"
@@ -29,7 +30,7 @@ func (r restClientGetter) ToDiscoveryClient() (discovery.CachedDiscoveryInterfac
 	if err != nil {
 		return nil, err
 	}
-	return discovery.NewCachedDiscoveryClientForConfig(config, os.TempDir(), "", 10*time.Minute)
+	return disk.NewCachedDiscoveryClientForConfig(config, os.TempDir(), "", 10*time.Minute)
 }
 
 func (r restClientGetter) ToRESTMapper() (meta.RESTMapper, error) {
@@ -49,7 +50,7 @@ func NewClientGetter(config *clientcmdapi.Config) genericclioptions.RESTClientGe
 }
 
 func NewClientGetterFromFlags(fs *pflag.FlagSet) genericclioptions.RESTClientGetter {
-	client := genericclioptions.NewConfigFlags()
+	client := genericclioptions.NewConfigFlags(true)
 	if fs != nil {
 		client.AddFlags(fs)
 	}

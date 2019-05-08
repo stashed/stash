@@ -58,7 +58,6 @@ func (c *Config) New() (*StashController, error) {
 	}
 
 	tweakListOptions := func(opt *metav1.ListOptions) {
-		opt.IncludeUninitialized = true
 	}
 	ctrl := &StashController{
 		config:           c.config,

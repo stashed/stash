@@ -321,11 +321,10 @@ func (c *workloads) Get(obj runtime.Object, options metav1.GetOptions) (*v1.Work
 
 func (c *workloads) List(opts metav1.ListOptions) (*v1.WorkloadList, error) {
 	options := metav1.ListOptions{
-		LabelSelector:        opts.LabelSelector,
-		FieldSelector:        opts.FieldSelector,
-		IncludeUninitialized: opts.IncludeUninitialized,
-		ResourceVersion:      opts.ResourceVersion,
-		TimeoutSeconds:       opts.TimeoutSeconds,
+		LabelSelector:   opts.LabelSelector,
+		FieldSelector:   opts.FieldSelector,
+		ResourceVersion: opts.ResourceVersion,
+		TimeoutSeconds:  opts.TimeoutSeconds,
 	}
 	list := v1.WorkloadList{Items: make([]v1.Workload, 0)}
 

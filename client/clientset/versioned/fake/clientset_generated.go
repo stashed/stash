@@ -80,11 +80,6 @@ func (c *Clientset) RepositoriesV1alpha1() repositoriesv1alpha1.RepositoriesV1al
 	return &fakerepositoriesv1alpha1.FakeRepositoriesV1alpha1{Fake: &c.Fake}
 }
 
-// Repositories retrieves the RepositoriesV1alpha1Client
-func (c *Clientset) Repositories() repositoriesv1alpha1.RepositoriesV1alpha1Interface {
-	return &fakerepositoriesv1alpha1.FakeRepositoriesV1alpha1{Fake: &c.Fake}
-}
-
 // StashV1alpha1 retrieves the StashV1alpha1Client
 func (c *Clientset) StashV1alpha1() stashv1alpha1.StashV1alpha1Interface {
 	return &fakestashv1alpha1.FakeStashV1alpha1{Fake: &c.Fake}
@@ -92,10 +87,5 @@ func (c *Clientset) StashV1alpha1() stashv1alpha1.StashV1alpha1Interface {
 
 // StashV1beta1 retrieves the StashV1beta1Client
 func (c *Clientset) StashV1beta1() stashv1beta1.StashV1beta1Interface {
-	return &fakestashv1beta1.FakeStashV1beta1{Fake: &c.Fake}
-}
-
-// Stash retrieves the StashV1beta1Client
-func (c *Clientset) Stash() stashv1beta1.StashV1beta1Interface {
 	return &fakestashv1beta1.FakeStashV1beta1{Fake: &c.Fake}
 }

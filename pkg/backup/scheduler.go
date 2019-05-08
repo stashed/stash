@@ -70,7 +70,14 @@ func (c *Controller) electLeader() error {
 		Identity:      c.opt.PodName,
 		EventRecorder: c.recorder,
 	}
-	resLock, err := resourcelock.New(resourcelock.ConfigMapsResourceLock, c.opt.Namespace, util.GetConfigmapLockName(c.opt.Workload), c.k8sClient.CoreV1(), rlc)
+	resLock, err := resourcelock.New(
+		resourcelock.ConfigMapsResourceLock,
+		c.opt.Namespace,
+		util.GetConfigmapLockName(c.opt.Workload),
+		c.k8sClient.CoreV1(),
+		c.k8sClient.CoordinationV1(),
+		rlc,
+	)
 	if err != nil {
 		return fmt.Errorf("error during leader election: %s", err)
 	}

@@ -78,7 +78,7 @@ func RenderOpenAPISpec(cfg Config) (string, error) {
 	}
 
 	serverConfig := genericapiserver.NewRecommendedConfig(cfg.Codecs)
-	if err := recommendedOptions.ApplyTo(serverConfig, cfg.Scheme); err != nil {
+	if err := recommendedOptions.ApplyTo(serverConfig); err != nil {
 		return "", err
 	}
 	serverConfig.OpenAPIConfig = genericapiserver.DefaultOpenAPIConfig(cfg.GetOpenAPIDefinitions, openapinamer.NewDefinitionNamer(cfg.Scheme))
