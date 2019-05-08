@@ -25,6 +25,11 @@ type RestoreSession struct {
 }
 
 type RestoreSessionSpec struct {
+	// Driver indicates the name of the agent to use to backup the target.
+	// Supported values are "Restic", "VolumeSnapshotter".
+	// Default value is "Restic".
+	// +optional
+	Driver Snapshotter `json:"driver,omitempty"`
 	// Repository refer to the Repository crd that hold backend information
 	// +optional
 	Repository core.LocalObjectReference `json:"repository,omitempty"`
@@ -33,7 +38,7 @@ type RestoreSessionSpec struct {
 	Task TaskRef `json:"task,omitempty"`
 	// Target indicates the target where the recovered data will be stored
 	// +optional
-	Target *Target `json:"target,omitempty"`
+	Target *RestoreTarget `json:"target,omitempty"`
 	// Rules specifies different restore options for different hosts
 	// +optional
 	Rules []Rule `json:"rules,omitempty"`
@@ -44,9 +49,6 @@ type RestoreSessionSpec struct {
 	// An `EmptyDir` will always be mounted at /tmp with this settings
 	//+optional
 	TempDir EmptyDirSettings `json:"tempDir,omitempty"`
-	// volumeClaimTemplates is a list of claims that will be created while restore from VolumeSnapshot
-	// +optional
-	VolumeClaimTemplates []core.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
 }
 
 type Rule struct {

@@ -328,8 +328,8 @@ spec:
           properties:
             driver:
               description: Driver indicates the name of the agent to use to backup
-                the target. Supported values are "restic", "volumeSnapshotter". Default
-                value is "restic".
+                the target. Supported values are "Restic", "VolumeSnapshotter". Default
+                value is "Restic".
               type: string
             paused:
               description: Indicates that the BackupConfiguration is paused from taking
@@ -1662,24 +1662,10 @@ spec:
                       type: array
             schedule:
               type: string
-            snapshotClassName:
-              description: Name of the VolumeSnapshotClass used by the VolumeSnapshot.
-                If not specified, a default snapshot class will be used if it is available.
-                Use this field only if the "driver" field is set to "volumeSnapshotter".
-              type: string
             target:
               properties:
                 directories:
                   description: Directories specify the directories to backup
-                  items:
-                    type: string
-                  type: array
-                pvcNames:
-                  description: PersistentVolumeClaimNames indicates a list of PersistentVolumeClaim
-                    names that are subject to VolumeSnapshot. Stash will create one
-                    VolumeSnapshot object for each of the PVCs. If this field is kept
-                    empty while using volumeSnapshotter, all PVCs of the target will
-                    be used as subject of VolumeSnapshot.
                   items:
                     type: string
                   type: array
@@ -1691,6 +1677,12 @@ spec:
                       type: string
                     name:
                       type: string
+                snapshotClassName:
+                  description: Name of the VolumeSnapshotClass used by the VolumeSnapshot.
+                    If not specified, a default snapshot class will be used if it
+                    is available. Use this field only if the "driver" field is set
+                    to "volumeSnapshotter".
+                  type: string
                 volumeMounts:
                   description: VolumeMounts specifies the volumes to mount inside
                     stash sidecar/init container Specify the volumes that contains
