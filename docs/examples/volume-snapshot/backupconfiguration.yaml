@@ -5,7 +5,7 @@ metadata:
   namespace: demo
 spec:
   schedule: "* * * * *"
-  snapshotter: volumeSnapshotter
+  driver: volumeSnapshotter
   snapshotClassName: myVolumeSnapshotClassName
   target:
     ref:

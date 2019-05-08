@@ -476,16 +476,16 @@ func schema_stash_apis_stash_v1beta1_BackupConfigurationSpec(ref common.Referenc
 							Ref:         ref("github.com/appscode/stash/apis/stash/v1beta1.EmptyDirSettings"),
 						},
 					},
-					"snapshotter": {
+					"driver": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Snapshotter indicates the name of the agent to use to backup the target. Supported values are \"restic\", \"volumeSnapshotter\". Default value is \"restic\".",
+							Description: "Driver indicates the name of the agent to use to backup the target. Supported values are \"restic\", \"volumeSnapshotter\". Default value is \"restic\".",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 					"snapshotClassName": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Name of the VolumeSnapshotClass used by the VolumeSnapshot. If not specified, a default snapshot class will be used if it is available. Use this field only if the \"snapshotter\" field is set to \"volumeSnapshotter\".",
+							Description: "Name of the VolumeSnapshotClass used by the VolumeSnapshot. If not specified, a default snapshot class will be used if it is available. Use this field only if the \"driver\" field is set to \"volumeSnapshotter\".",
 							Type:        []string{"string"},
 							Format:      "",
 						},

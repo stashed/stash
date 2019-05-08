@@ -326,6 +326,11 @@ spec:
               type: string
         spec:
           properties:
+            driver:
+              description: Driver indicates the name of the agent to use to backup
+                the target. Supported values are "restic", "volumeSnapshotter". Default
+                value is "restic".
+              type: string
             paused:
               description: Indicates that the BackupConfiguration is paused from taking
                 backup. Default value is 'false'
@@ -1660,12 +1665,7 @@ spec:
             snapshotClassName:
               description: Name of the VolumeSnapshotClass used by the VolumeSnapshot.
                 If not specified, a default snapshot class will be used if it is available.
-                Use this field only if the "snapshotter" field is set to "volumeSnapshotter".
-              type: string
-            snapshotter:
-              description: Snapshotter indicates the name of the agent to use to backup
-                the target. Supported values are "restic", "volumeSnapshotter". Default
-                value is "restic".
+                Use this field only if the "driver" field is set to "volumeSnapshotter".
               type: string
             target:
               properties:

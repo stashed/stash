@@ -47,13 +47,13 @@ type BackupConfigurationSpec struct {
 	// An `EmptyDir` will always be mounted at /tmp with this settings
 	//+optional
 	TempDir EmptyDirSettings `json:"tempDir,omitempty"`
-	// Snapshotter indicates the name of the agent to use to backup the target.
+	// Driver indicates the name of the agent to use to backup the target.
 	// Supported values are "restic", "volumeSnapshotter".
 	// Default value is "restic".
 	// +optional
-	Snapshotter Snapshotter `json:"snapshotter,omitempty"`
+	Driver Snapshotter `json:"driver,omitempty"`
 	// Name of the VolumeSnapshotClass used by the VolumeSnapshot. If not specified, a default snapshot class will be used if it is available.
-	// Use this field only if the "snapshotter" field is set to "volumeSnapshotter".
+	// Use this field only if the "driver" field is set to "volumeSnapshotter".
 	// +optional
 	VolumeSnapshotClassName string `json:"snapshotClassName,omitempty"`
 }
