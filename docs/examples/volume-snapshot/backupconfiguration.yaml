@@ -1,0 +1,21 @@
+apiVersion: stash.appscode.com/v1beta1
+kind: BackupConfiguration
+metadata:
+  name: deployments-volume-snapshot
+  namespace: demo
+spec:
+  schedule: "* * * * *"
+  driver: volumeSnapshotter
+  snapshotClassName: myVolumeSnapshotClassName
+  target:
+    ref:
+      apiVersion: apps/v1
+      kind: Deployment
+      name: stash-demo
+    pvcNames:
+      - my-first-pvc
+      - my-second-pvc
+  retentionPolicy:
+    name: 'keep-last-5'
+    keepLast: 5
+    prune: true

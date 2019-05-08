@@ -7,13 +7,13 @@ spec:
   repository:
     name: local-repo
   rules:
-  - paths:
-    - /source/data
+    - paths:
+        - /source/data
   target: # target indicates where the recovered data will be stored
     ref:
       apiVersion: apps/v1
       kind: Deployment
       name: stash-recovered
     volumeMounts:
-    - name:  source-data
-      mountPath:  /source/data
+      - name:  source-data
+        mountPath:  /source/data

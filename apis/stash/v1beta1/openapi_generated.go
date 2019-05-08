@@ -45,6 +45,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/appscode/stash/apis/stash/v1beta1.BackupSessionList":               schema_stash_apis_stash_v1beta1_BackupSessionList(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.BackupSessionSpec":               schema_stash_apis_stash_v1beta1_BackupSessionSpec(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.BackupSessionStatus":             schema_stash_apis_stash_v1beta1_BackupSessionStatus(ref),
+		"github.com/appscode/stash/apis/stash/v1beta1.BackupTarget":                    schema_stash_apis_stash_v1beta1_BackupTarget(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.EmptyDirSettings":                schema_stash_apis_stash_v1beta1_EmptyDirSettings(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.FileStats":                       schema_stash_apis_stash_v1beta1_FileStats(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.Function":                        schema_stash_apis_stash_v1beta1_Function(ref),
@@ -58,9 +59,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/appscode/stash/apis/stash/v1beta1.RestoreSessionList":              schema_stash_apis_stash_v1beta1_RestoreSessionList(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.RestoreSessionSpec":              schema_stash_apis_stash_v1beta1_RestoreSessionSpec(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.RestoreSessionStatus":            schema_stash_apis_stash_v1beta1_RestoreSessionStatus(ref),
+		"github.com/appscode/stash/apis/stash/v1beta1.RestoreTarget":                   schema_stash_apis_stash_v1beta1_RestoreTarget(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.Rule":                            schema_stash_apis_stash_v1beta1_Rule(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.SnapshotStats":                   schema_stash_apis_stash_v1beta1_SnapshotStats(ref),
-		"github.com/appscode/stash/apis/stash/v1beta1.Target":                          schema_stash_apis_stash_v1beta1_Target(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.TargetRef":                       schema_stash_apis_stash_v1beta1_TargetRef(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.Task":                            schema_stash_apis_stash_v1beta1_Task(ref),
 		"github.com/appscode/stash/apis/stash/v1beta1.TaskList":                        schema_stash_apis_stash_v1beta1_TaskList(ref),
@@ -427,16 +428,23 @@ func schema_stash_apis_stash_v1beta1_BackupConfigurationSpec(ref common.Referenc
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Properties: map[string]spec.Schema{
-					"repository": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Repository refer to the Repository crd that holds backend information",
-							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
-						},
-					},
 					"schedule": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
+						},
+					},
+					"driver": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Driver indicates the name of the agent to use to backup the target. Supported values are \"Restic\", \"VolumeSnapshotter\". Default value is \"Restic\".",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"repository": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Repository refer to the Repository crd that holds backend information",
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
 						},
 					},
 					"task": {
@@ -448,7 +456,7 @@ func schema_stash_apis_stash_v1beta1_BackupConfigurationSpec(ref common.Referenc
 					"target": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Target specify the backup target",
-							Ref:         ref("github.com/appscode/stash/apis/stash/v1beta1.Target"),
+							Ref:         ref("github.com/appscode/stash/apis/stash/v1beta1.BackupTarget"),
 						},
 					},
 					"retentionPolicy": {
@@ -477,11 +485,10 @@ func schema_stash_apis_stash_v1beta1_BackupConfigurationSpec(ref common.Referenc
 						},
 					},
 				},
-				Required: []string{"repository"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/appscode/stash/apis/stash/v1alpha1.RetentionPolicy", "github.com/appscode/stash/apis/stash/v1beta1.EmptyDirSettings", "github.com/appscode/stash/apis/stash/v1beta1.Target", "github.com/appscode/stash/apis/stash/v1beta1.TaskRef", "k8s.io/api/core/v1.LocalObjectReference", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings"},
+			"github.com/appscode/stash/apis/stash/v1alpha1.RetentionPolicy", "github.com/appscode/stash/apis/stash/v1beta1.BackupTarget", "github.com/appscode/stash/apis/stash/v1beta1.EmptyDirSettings", "github.com/appscode/stash/apis/stash/v1beta1.TaskRef", "k8s.io/api/core/v1.LocalObjectReference", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings"},
 	}
 }
 
@@ -777,6 +784,59 @@ func schema_stash_apis_stash_v1beta1_BackupSessionStatus(ref common.ReferenceCal
 		},
 		Dependencies: []string{
 			"github.com/appscode/go/encoding/json/types.IntHash", "github.com/appscode/stash/apis/stash/v1beta1.HostBackupStats"},
+	}
+}
+
+func schema_stash_apis_stash_v1beta1_BackupTarget(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Properties: map[string]spec.Schema{
+					"ref": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Ref refers to the backup target",
+							Ref:         ref("github.com/appscode/stash/apis/stash/v1beta1.TargetRef"),
+						},
+					},
+					"directories": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Directories specify the directories to backup",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"volumeMounts": {
+						SchemaProps: spec.SchemaProps{
+							Description: "VolumeMounts specifies the volumes to mount inside stash sidecar/init container Specify the volumes that contains the target directories",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.VolumeMount"),
+									},
+								},
+							},
+						},
+					},
+					"snapshotClassName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name of the VolumeSnapshotClass used by the VolumeSnapshot. If not specified, a default snapshot class will be used if it is available. Use this field only if the \"driver\" field is set to \"volumeSnapshotter\".",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/appscode/stash/apis/stash/v1beta1.TargetRef", "k8s.io/api/core/v1.VolumeMount"},
 	}
 }
 
@@ -1333,6 +1393,13 @@ func schema_stash_apis_stash_v1beta1_RestoreSessionSpec(ref common.ReferenceCall
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Properties: map[string]spec.Schema{
+					"driver": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Driver indicates the name of the agent to use to restore the target. Supported values are \"Restic\", \"VolumeSnapshotter\". Default value is \"Restic\".",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"repository": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Repository refer to the Repository crd that hold backend information",
@@ -1348,7 +1415,7 @@ func schema_stash_apis_stash_v1beta1_RestoreSessionSpec(ref common.ReferenceCall
 					"target": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Target indicates the target where the recovered data will be stored",
-							Ref:         ref("github.com/appscode/stash/apis/stash/v1beta1.Target"),
+							Ref:         ref("github.com/appscode/stash/apis/stash/v1beta1.RestoreTarget"),
 						},
 					},
 					"rules": {
@@ -1380,7 +1447,7 @@ func schema_stash_apis_stash_v1beta1_RestoreSessionSpec(ref common.ReferenceCall
 			},
 		},
 		Dependencies: []string{
-			"github.com/appscode/stash/apis/stash/v1beta1.EmptyDirSettings", "github.com/appscode/stash/apis/stash/v1beta1.Rule", "github.com/appscode/stash/apis/stash/v1beta1.Target", "github.com/appscode/stash/apis/stash/v1beta1.TaskRef", "k8s.io/api/core/v1.LocalObjectReference", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings"},
+			"github.com/appscode/stash/apis/stash/v1beta1.EmptyDirSettings", "github.com/appscode/stash/apis/stash/v1beta1.RestoreTarget", "github.com/appscode/stash/apis/stash/v1beta1.Rule", "github.com/appscode/stash/apis/stash/v1beta1.TaskRef", "k8s.io/api/core/v1.LocalObjectReference", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings"},
 	}
 }
 
@@ -1434,6 +1501,58 @@ func schema_stash_apis_stash_v1beta1_RestoreSessionStatus(ref common.ReferenceCa
 		},
 		Dependencies: []string{
 			"github.com/appscode/go/encoding/json/types.IntHash", "github.com/appscode/stash/apis/stash/v1beta1.HostRestoreStats"},
+	}
+}
+
+func schema_stash_apis_stash_v1beta1_RestoreTarget(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Properties: map[string]spec.Schema{
+					"ref": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Ref refers to the restore,target",
+							Ref:         ref("github.com/appscode/stash/apis/stash/v1beta1.TargetRef"),
+						},
+					},
+					"volumeMounts": {
+						SchemaProps: spec.SchemaProps{
+							Description: "VolumeMounts specifies the volumes to mount inside stash sidecar/init container Specify the volumes that contains the target directories",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.VolumeMount"),
+									},
+								},
+							},
+						},
+					},
+					"replicas": {
+						SchemaProps: spec.SchemaProps{
+							Description: "replicas is the desired number of replicas of the given Template. These are replicas in the sense that they are instantiations of the same Template, but individual replicas also have a consistent identity. If unspecified, defaults to 1.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"volumeClaimTemplates": {
+						SchemaProps: spec.SchemaProps{
+							Description: "volumeClaimTemplates is a list of claims that will be created while restore from VolumeSnapshot",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.PersistentVolumeClaim"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/appscode/stash/apis/stash/v1beta1.TargetRef", "k8s.io/api/core/v1.PersistentVolumeClaim", "k8s.io/api/core/v1.VolumeMount"},
 	}
 }
 
@@ -1549,52 +1668,6 @@ func schema_stash_apis_stash_v1beta1_SnapshotStats(ref common.ReferenceCallback)
 		},
 		Dependencies: []string{
 			"github.com/appscode/stash/apis/stash/v1beta1.FileStats"},
-	}
-}
-
-func schema_stash_apis_stash_v1beta1_Target(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Properties: map[string]spec.Schema{
-					"ref": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Ref refers to the target of backup/restore",
-							Ref:         ref("github.com/appscode/stash/apis/stash/v1beta1.TargetRef"),
-						},
-					},
-					"directories": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Directories specify the directories to backup",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
-									},
-								},
-							},
-						},
-					},
-					"volumeMounts": {
-						SchemaProps: spec.SchemaProps{
-							Description: "VolumeMounts specifies the volumes to mount inside stash sidecar/init container Specify the volumes that contains the target directories",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Ref: ref("k8s.io/api/core/v1.VolumeMount"),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/appscode/stash/apis/stash/v1beta1.TargetRef", "k8s.io/api/core/v1.VolumeMount"},
 	}
 }
 
@@ -8186,7 +8259,7 @@ func schema_k8sio_api_core_v1_PodSpec(ref common.ReferenceCallback) common.OpenA
 					},
 					"enableServiceLinks": {
 						SchemaProps: spec.SchemaProps{
-							Description: "EnableServiceLinks indicates whether information about services should be injected into pod's environment variables, matching the syntax of Docker links.",
+							Description: "EnableServiceLinks indicates whether information about services should be injected into pod's environment variables, matching the syntax of Docker links. Optional: Defaults to true.",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},

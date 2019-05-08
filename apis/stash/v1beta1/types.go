@@ -16,8 +16,8 @@ type TaskRef struct {
 	Params []Param `json:"params,omitempty"`
 }
 
-type Target struct {
-	// Ref refers to the target of backup/restore
+type BackupTarget struct {
+	// Ref refers to the backup target
 	Ref TargetRef `json:"ref,omitempty"`
 	// Directories specify the directories to backup
 	// +optional
@@ -26,6 +26,28 @@ type Target struct {
 	// Specify the volumes that contains the target directories
 	// +optional
 	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty"`
+	// Name of the VolumeSnapshotClass used by the VolumeSnapshot. If not specified, a default snapshot class will be used if it is available.
+	// Use this field only if the "driver" field is set to "volumeSnapshotter".
+	// +optional
+	VolumeSnapshotClassName string `json:"snapshotClassName,omitempty"`
+}
+
+type RestoreTarget struct {
+	// Ref refers to the restore,target
+	Ref TargetRef `json:"ref,omitempty"`
+	// VolumeMounts specifies the volumes to mount inside stash sidecar/init container
+	// Specify the volumes that contains the target directories
+	// +optional
+	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty"`
+	// replicas is the desired number of replicas of the given Template.
+	// These are replicas in the sense that they are instantiations of the
+	// same Template, but individual replicas also have a consistent identity.
+	// If unspecified, defaults to 1.
+	// +optional
+	Replicas *int32 `json:"replicas,omitempty" protobuf:"varint,1,opt,name=replicas"`
+	// volumeClaimTemplates is a list of claims that will be created while restore from VolumeSnapshot
+	// +optional
+	VolumeClaimTemplates []core.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
 }
 
 type TargetRef struct {

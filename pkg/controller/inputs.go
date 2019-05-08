@@ -13,7 +13,7 @@ import (
 
 func (c *StashController) inputsForBackupConfig(backupConfig api.BackupConfiguration) (map[string]string, error) {
 	// get inputs for target
-	inputs := c.inputsForTarget(backupConfig.Spec.Target)
+	inputs := c.inputsForBackupTarget(backupConfig.Spec.Target)
 	// append inputs for RetentionPolicy
 	inputs = core_util.UpsertMap(inputs, c.inputsForRetentionPolicy(backupConfig.Spec.RetentionPolicy))
 
@@ -32,7 +32,7 @@ func (c *StashController) inputsForBackupConfig(backupConfig api.BackupConfigura
 
 func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSession) (map[string]string, error) {
 	// get inputs for target
-	inputs := c.inputsForTarget(restoreSession.Spec.Target)
+	inputs := c.inputsForRestoreTarget(restoreSession.Spec.Target)
 
 	// get host name for target
 	host, err := util.GetHostName(restoreSession.Spec.Target)
@@ -78,7 +78,7 @@ func (c *StashController) inputsForRepository(repository *apiAlpha.Repository) (
 	return
 }
 
-func (c *StashController) inputsForTarget(target *api.Target) map[string]string {
+func (c *StashController) inputsForBackupTarget(target *api.BackupTarget) map[string]string {
 	inputs := make(map[string]string)
 	if target != nil {
 		if target.Ref.Name != "" {
@@ -86,6 +86,19 @@ func (c *StashController) inputsForTarget(target *api.Target) map[string]string 
 		}
 		if len(target.Directories) > 0 {
 			inputs[apis.TargetDirectories] = strings.Join(target.Directories, ",")
+		}
+		if target.VolumeMounts != nil {
+			inputs[apis.TargetMountPath] = target.VolumeMounts[0].MountPath
+		}
+	}
+	return inputs
+}
+
+func (c *StashController) inputsForRestoreTarget(target *api.RestoreTarget) map[string]string {
+	inputs := make(map[string]string)
+	if target != nil {
+		if target.Ref.Name != "" {
+			inputs[apis.TargetName] = target.Ref.Name
 		}
 		if target.VolumeMounts != nil {
 			inputs[apis.TargetMountPath] = target.VolumeMounts[0].MountPath

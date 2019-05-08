@@ -199,24 +199,33 @@ func hasStashInitContainer(containers []core.Container) bool {
 	return false
 }
 
-func (c *StashController) getTotalHosts(target *api_v1beta1.Target, namespace string) (*int32, error) {
+func (c *StashController) getTotalHosts(target interface{}, namespace string) (*int32, error) {
 
 	// for cluster backup/restore, target is nil. in this case, there is only one host
 	if target == nil {
 		return types.Int32P(1), nil
 	}
 
-	switch target.Ref.Kind {
+	var targetRef api_v1beta1.TargetRef
+
+	switch target.(type) {
+	case *api_v1beta1.BackupTarget:
+		targetRef = target.(*api_v1beta1.BackupTarget).Ref
+	case *api_v1beta1.RestoreTarget:
+		targetRef = target.(*api_v1beta1.RestoreTarget).Ref
+	}
+
+	switch targetRef.Kind {
 	// all replicas of StatefulSet will take backup/restore. so total number of hosts will be number of replicas.
 	case apis.KindStatefulSet:
-		ss, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(target.Ref.Name, metav1.GetOptions{})
+		ss, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
 		return ss.Spec.Replicas, nil
 	// all Daemon pod will take backup/restore. so total number of hosts will be number of ready replicas
 	case apis.KindDaemonSet:
-		dmn, err := c.kubeClient.AppsV1().DaemonSets(namespace).Get(target.Ref.Name, metav1.GetOptions{})
+		dmn, err := c.kubeClient.AppsV1().DaemonSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}

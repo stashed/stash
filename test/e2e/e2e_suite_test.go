@@ -64,7 +64,7 @@ var _ = BeforeSuite(func() {
 	kaClient := ka.NewForConfigOrDie(clientConfig)
 	framework.StashProjectRoot = filepath.Join(homedir.HomeDir(), "go", "src", "github.com", "appscode", "stash")
 
-	root = framework.New(ctrlConfig.KubeClient, ctrlConfig.StashClient, kaClient, clientConfig, storageClass)
+	root = framework.New(ctrlConfig.KubeClient, ctrlConfig.StashClient, kaClient, clientConfig, options.StorageClass)
 	err = root.CreateTestNamespace()
 	Expect(err).NotTo(HaveOccurred())
 	By("Using test namespace " + root.Namespace())

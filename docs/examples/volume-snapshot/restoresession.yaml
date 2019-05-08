@@ -1,0 +1,31 @@
+apiVersion: stash.appscode.com/v1beta1
+kind: RestoreSession
+metadata:
+  name: demo-restore-from-volumesnapshot
+  namespace: demo
+spec:
+  volumeClaimTemplates:
+    - metadata:
+        name: my-first-pvc-restored
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "standard"
+        resources:
+          requests:
+            storage: 1Gi
+        dataSource:
+          kind: VolumeSnapshot
+          name: my-first-pvc-snapshot
+          apiGroup: snapshot.storage.k8s.io
+    - metadata:
+        name: my-second-pvc-restored
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "standard"
+        resources:
+          requests:
+            storage: 1Gi
+        dataSource:
+          kind: VolumeSnapshot
+          name: my-second-pvc-snapshot
+          apiGroup: snapshot.storage.k8s.io
