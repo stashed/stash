@@ -15,7 +15,6 @@ import (
 	rbac "k8s.io/api/rbac/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/reference"
 	core_util "kmodules.xyz/client-go/core/v1"
@@ -419,18 +418,8 @@ func (c *StashController) ensureRestoreJobRoleBinding(resource *core.ObjectRefer
 		Namespace: resource.Namespace,
 		Name:      c.getRestoreJobRoleBindingName(resource.Name),
 	}
-
-	rsObj, err := c.stashClient.StashV1beta1().RestoreSessions(resource.Namespace).Get(resource.Name, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-
-	exists, objRef := c.checkAndGetWorrkloadReference(rsObj.Spec.Target.Ref, rsObj.Namespace)
-
-	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		if exists {
-			core_util.EnsureOwnerReference(&in.ObjectMeta, objRef)
-		}
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
@@ -512,18 +501,8 @@ func (c *StashController) ensureBackupJobRoleBinding(resource *core.ObjectRefere
 		Namespace: resource.Namespace,
 		Name:      c.getBackupJobRoleBindingName(resource.Name),
 	}
-
-	bcObj, err := c.stashClient.StashV1beta1().BackupConfigurations(resource.Namespace).Get(resource.Name, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-
-	exists, objRef := c.checkAndGetWorrkloadReference(bcObj.Spec.Target.Ref, bcObj.Namespace)
-
-	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		if exists {
-			core_util.EnsureOwnerReference(&in.ObjectMeta, objRef)
-		}
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
@@ -540,76 +519,6 @@ func (c *StashController) ensureBackupJobRoleBinding(resource *core.ObjectRefere
 		return in
 	})
 	return err
-}
-
-func (c *StashController) checkAndGetWorrkloadReference(targetref api_v1beta1.TargetRef, namespace string) (bool bool, ref *core.ObjectReference) {
-	switch targetref.Kind {
-	case apis.KindDeployment:
-		w, err := c.kubeClient.AppsV1().Deployments(namespace).Get(targetref.Name, metav1.GetOptions{})
-		if err == nil {
-			objRef, err := reference.GetReference(scheme.Scheme, w)
-			if err == nil {
-				return true, objRef
-			}
-		}
-	case apis.KindReplicaSet:
-		w, err := c.kubeClient.AppsV1().ReplicaSets(namespace).Get(targetref.Name, metav1.GetOptions{})
-		if err == nil {
-			objRef, err := reference.GetReference(scheme.Scheme, w)
-			if err == nil {
-				return true, objRef
-			}
-		}
-	case apis.KindReplicationController:
-		w, err := c.kubeClient.CoreV1().ReplicationControllers(namespace).Get(targetref.Name, metav1.GetOptions{})
-		if err == nil {
-			objRef, err := reference.GetReference(scheme.Scheme, w)
-			if err == nil {
-				return true, objRef
-			}
-		}
-	case apis.KindDaemonSet:
-		w, err := c.kubeClient.AppsV1().DaemonSets(namespace).Get(targetref.Name, metav1.GetOptions{})
-		if err == nil {
-			objRef, err := reference.GetReference(scheme.Scheme, w)
-			if err == nil {
-				return true, objRef
-			}
-		}
-	case apis.KindStatefulSet:
-		w, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(targetref.Name, metav1.GetOptions{})
-		if err == nil {
-			objRef, err := reference.GetReference(scheme.Scheme, w)
-			if err == nil {
-				return true, objRef
-			}
-		}
-	case apis.KindDeploymentConfig:
-		w, err := c.ocClient.AppsV1().DeploymentConfigs(namespace).Get(targetref.Name, metav1.GetOptions{})
-		if err == nil {
-			objRef, err := reference.GetReference(scheme.Scheme, w)
-			if err == nil {
-				return true, objRef
-			}
-		}
-	case apis.KindPersistentVolumeClaim:
-		w, err := c.kubeClient.CoreV1().PersistentVolumeClaims(namespace).Get(targetref.Name, metav1.GetOptions{})
-		if err == nil {
-			objRef, err := reference.GetReference(scheme.Scheme, w)
-			if err == nil {
-				return true, objRef
-			}
-		}
-	case apis.KindAppBinding:
-		w, err := c.appCatalogClient.AppcatalogV1alpha1().AppBindings(namespace).Get(targetref.Name, metav1.GetOptions{})
-		if err == nil {
-			objRef, err := reference.GetReference(scheme.Scheme, w)
-			if err == nil {
-				return true, objRef
-			}
-		}
-	}
-	return false, nil
 }
 
 func (c *StashController) IsWorkloadExists(resource *core.ObjectReference) bool {
