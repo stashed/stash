@@ -25,8 +25,11 @@ func (c *StashController) ensureSidecarRoleBinding(resource *core.ObjectReferenc
 		Namespace: resource.Namespace,
 		Name:      c.getSidecarRoleBindingName(resource.Name),
 	}
+
 	_, _, err := rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
+		if c.IsWorkloadExists(resource) {
+			core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
+		}
 
 		if in.Annotations == nil {
 			in.Annotations = map[string]string{}
