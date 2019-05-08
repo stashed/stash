@@ -17,7 +17,7 @@ type TaskRef struct {
 }
 
 type BackupTarget struct {
-	// Ref refers to the target of backup/restore
+	// Ref refers to the backup target
 	Ref TargetRef `json:"ref,omitempty"`
 	// Directories specify the directories to backup
 	// +optional
@@ -33,7 +33,7 @@ type BackupTarget struct {
 }
 
 type RestoreTarget struct {
-	// Ref refers to the target of backup/restore
+	// Ref refers to the restore,target
 	Ref TargetRef `json:"ref,omitempty"`
 	// VolumeMounts specifies the volumes to mount inside stash sidecar/init container
 	// Specify the volumes that contains the target directories

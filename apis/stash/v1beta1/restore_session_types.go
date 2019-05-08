@@ -25,7 +25,7 @@ type RestoreSession struct {
 }
 
 type RestoreSessionSpec struct {
-	// Driver indicates the name of the agent to use to backup the target.
+	// Driver indicates the name of the agent to use to restore the target.
 	// Supported values are "Restic", "VolumeSnapshotter".
 	// Default value is "Restic".
 	// +optional

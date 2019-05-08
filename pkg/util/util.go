@@ -30,11 +30,21 @@ type RepoLabelData struct {
 	NodeName     string
 }
 
-func GetHostName(target *api_v1beta1.Target) (string, error) {
+func GetHostName(target interface{}) (string, error) {
 	if target == nil { // target nil for cluster backup
 		return "host-0", nil
 	}
-	switch target.Ref.Kind {
+
+	var targetRef api_v1beta1.TargetRef
+
+	switch target.(type) {
+	case *api_v1beta1.BackupTarget:
+		targetRef = target.(*api_v1beta1.BackupTarget).Ref
+	case *api_v1beta1.RestoreTarget:
+		targetRef = target.(*api_v1beta1.RestoreTarget).Ref
+	}
+
+	switch targetRef.Kind {
 	case apis.KindStatefulSet:
 		podName := os.Getenv("POD_NAME")
 		if podName == "" {

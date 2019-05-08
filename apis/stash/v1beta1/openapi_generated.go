@@ -794,7 +794,7 @@ func schema_stash_apis_stash_v1beta1_BackupTarget(ref common.ReferenceCallback) 
 				Properties: map[string]spec.Schema{
 					"ref": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Ref refers to the target of backup/restore",
+							Description: "Ref refers to the backup target",
 							Ref:         ref("github.com/appscode/stash/apis/stash/v1beta1.TargetRef"),
 						},
 					},
@@ -1395,7 +1395,7 @@ func schema_stash_apis_stash_v1beta1_RestoreSessionSpec(ref common.ReferenceCall
 				Properties: map[string]spec.Schema{
 					"driver": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Driver indicates the name of the agent to use to backup the target. Supported values are \"Restic\", \"VolumeSnapshotter\". Default value is \"Restic\".",
+							Description: "Driver indicates the name of the agent to use to restore the target. Supported values are \"Restic\", \"VolumeSnapshotter\". Default value is \"Restic\".",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -1511,7 +1511,7 @@ func schema_stash_apis_stash_v1beta1_RestoreTarget(ref common.ReferenceCallback)
 				Properties: map[string]spec.Schema{
 					"ref": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Ref refers to the target of backup/restore",
+							Description: "Ref refers to the restore,target",
 							Ref:         ref("github.com/appscode/stash/apis/stash/v1beta1.TargetRef"),
 						},
 					},

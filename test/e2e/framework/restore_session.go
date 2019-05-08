@@ -22,7 +22,7 @@ func (f *Invocation) RestoreSession(repoName string, targetref v1beta1.TargetRef
 				Name: repoName,
 			},
 			Rules: rules,
-			Target: &v1beta1.Target{
+			Target: &v1beta1.RestoreTarget{
 				Ref: targetref,
 				VolumeMounts: []core.VolumeMount{
 					{
@@ -56,8 +56,8 @@ func (f *Framework) EventuallyRestoreSessionPhase(meta metav1.ObjectMeta) Gomega
 	)
 }
 
-func (f *Invocation) PvcRestoreTarget(pvcName string) *v1beta1.Target {
-	return &v1beta1.Target{
+func (f *Invocation) PvcRestoreTarget(pvcName string) *v1beta1.RestoreTarget {
+	return &v1beta1.RestoreTarget{
 		Ref: v1beta1.TargetRef{
 			APIVersion: "v1",
 			Kind:       apis.KindPersistentVolumeClaim,

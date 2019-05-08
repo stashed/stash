@@ -13,8 +13,9 @@ import (
 
 type E2EOptions struct {
 	*server.ExtraOptions
-	KubeContext string
-	KubeConfig  string
+	KubeContext  string
+	KubeConfig   string
+	StorageClass string
 }
 
 var (
@@ -30,6 +31,7 @@ func init() {
 	flag.StringVar(&options.StashImageTag, "image-tag", "", "Set Stash Image Tag")
 	flag.StringVar(&options.KubeConfig, "kubeconfig", options.KubeConfig, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	flag.StringVar(&options.KubeContext, "kube-context", "", "Name of kube context")
+	flag.StringVar(&options.StorageClass, "storageclass", "standard", "Storageclass for PVC")
 	enableLogging()
 	flag.Parse()
 	opt.DockerRegistry = options.DockerRegistry

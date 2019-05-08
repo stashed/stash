@@ -65,7 +65,17 @@ const (
 	ReadinessTimeout = 2 * time.Minute
 )
 
-func IsTarget(target *v1beta1_api.Target, w *wapi.Workload) bool {
+func IsBackupTarget(target *v1beta1_api.BackupTarget, w *wapi.Workload) bool {
+	if target != nil &&
+		target.Ref.APIVersion == w.APIVersion &&
+		target.Ref.Kind == w.Kind &&
+		target.Ref.Name == w.Name {
+		return true
+	}
+	return false
+}
+
+func IsRestoreTarget(target *v1beta1_api.RestoreTarget, w *wapi.Workload) bool {
 	if target != nil &&
 		target.Ref.APIVersion == w.APIVersion &&
 		target.Ref.Kind == w.Kind &&

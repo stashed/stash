@@ -197,7 +197,7 @@ func (c *StashController) ensureBackupConfiguration(backupTemplate *api_v1beta1.
 		// set workload as owner of this backupConfiguration object
 		core_util.EnsureOwnerReference(&in.ObjectMeta, target)
 		in.Spec.Repository.Name = getRepositoryName(target)
-		in.Spec.Target = &api_v1beta1.Target{
+		in.Spec.Target = &api_v1beta1.BackupTarget{
 			Ref: api_v1beta1.TargetRef{
 				APIVersion: target.APIVersion,
 				Kind:       target.Kind,
