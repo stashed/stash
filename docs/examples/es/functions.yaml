@@ -1,0 +1,87 @@
+apiVersion: stash.appscode.com/v1beta1
+kind: Function
+metadata:
+  name: update-status
+spec:
+  image: diptadas/stash:es
+  args:
+    - update-status
+    - --namespace=${NAMESPACE:=}
+    - --repository=${REPOSITORY_NAME:=}
+    - --backup-session=${BACKUP_SESSION:=}
+    - --restore-session=${RESTORE_SESSION:=}
+    - --output-dir=${outputDir:=}
+  volumeMounts:
+  - name: ${outputVolume}
+    mountPath: ${outputDir}
+---
+apiVersion: stash.appscode.com/v1beta1
+kind: Function
+metadata:
+  name: es-backup
+spec:
+  image: diptadas/stash:es
+  args:
+  - backup-es
+  - --provider=${REPOSITORY_PROVIDER:=}
+  - --bucket=${REPOSITORY_BUCKET:=}
+  - --endpoint=${REPOSITORY_ENDPOINT:=}
+  - --path=${REPOSITORY_PREFIX:=}
+  - --secret-dir=/etc/repository/secret # specified
+  - --scratch-dir=/tmp/restic/scratch # specified
+  #- --enable-cache
+  - --hostname=${HOSTNAME:=} # TODO: user input or, from operator ?
+  #- --backup-dirs=${TARGET_DIRECTORIES:=}
+  - --es-args=${esArgs:=} # user input
+  - --namespace=${NAMESPACE:=}
+  - --app-binding=${TARGET_NAME:=}
+  - --retention-keep-last=${RETENTION_KEEP_LAST:=} # TODO: complete list
+  - --retention-keep-tags=${RETENTION_KEEP_TAGS:=}
+  - --retention-prune=${RETENTION_PRUNE:=}
+  - --retention-dry-run=${RETENTION_DRY_RUN:=}
+  - --output-dir=${outputDir:=}
+  #- --metrics-enabled
+  #- --metrics-pushgateway-url
+  #- --metrics-dir
+  #- --metrics-labels
+  volumeMounts:
+  - name: ${scratchDirVolume}
+    mountPath: /tmp/restic/scratch
+  - name: ${secretVolume}
+    mountPath: /etc/repository/secret
+  - name: ${outputVolume}
+    mountPath: ${outputDir}
+---
+apiVersion: stash.appscode.com/v1beta1
+kind: Function
+metadata:
+  name: es-restore
+spec:
+  image: diptadas/stash:es
+  args:
+  - restore-es
+  - --provider=${REPOSITORY_PROVIDER:=}
+  - --bucket=${REPOSITORY_BUCKET:=}
+  - --endpoint=${REPOSITORY_ENDPOINT:=}
+  - --path=${REPOSITORY_PREFIX:=}
+  - --secret-dir=/etc/repository/secret # specified
+  - --scratch-dir=/tmp/restic/scratch # specified
+  #- --enable-cache
+  - --hostname=${HOSTNAME:=}
+  #- --restore-dirs=${RESTORE_DIRECTORIES:=}
+  - --es-args=${esArgs:=} # user input
+  - --namespace=${NAMESPACE:=}
+  - --app-binding=${TARGET_NAME:=}
+  - --snapshots=${RESTORE_SNAPSHOTS:=}
+  - --output-dir=${outputDir:=}
+  #- --metrics-enabled
+  #- --metrics-pushgateway-url
+  #- --metrics-dir
+  #- --metrics-labels
+  volumeMounts:
+  - name: ${scratchDirVolume}
+    mountPath: /tmp/restic/scratch
+  - name: ${secretVolume}
+    mountPath: /etc/repository/secret
+  - name: ${outputVolume}
+    mountPath: ${outputDir}
