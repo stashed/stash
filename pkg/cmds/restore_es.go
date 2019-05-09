@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 
 	"github.com/appscode/go/flags"
-	"github.com/appscode/stash/pkg/restic"
 	"github.com/codeskyblue/go-sh"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,6 +12,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
+	"stash.appscode.dev/stash/pkg/restic"
 )
 
 func NewCmdRestoreES() *cobra.Command {
