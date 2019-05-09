@@ -3,6 +3,7 @@ package e2e_test
 import (
 	"flag"
 	"path/filepath"
+
 	"github.com/appscode/go/flags"
 	logs "github.com/appscode/go/log/golog"
 	"k8s.io/client-go/util/homedir"

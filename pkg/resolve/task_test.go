@@ -2,6 +2,7 @@ package resolve
 
 import (
 	"testing"
+
 	"gomodules.xyz/envsubst"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 )
