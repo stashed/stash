@@ -2,7 +2,6 @@ package util
 
 import (
 	"fmt"
-
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/golang/glog"
 	"github.com/pkg/errors"

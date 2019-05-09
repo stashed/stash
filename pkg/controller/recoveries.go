@@ -2,7 +2,6 @@ package controller
 
 import (
 	"fmt"
-
 	"github.com/appscode/go/log"
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"

@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-
 	"github.com/appscode/go/types"
 	"github.com/stretchr/testify/assert"
 	ofst "kmodules.xyz/offshoot-api/api/v1"

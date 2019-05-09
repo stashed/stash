@@ -3,7 +3,6 @@ package resolve
 import (
 	"encoding/json"
 	"fmt"
-
 	"gomodules.xyz/envsubst"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

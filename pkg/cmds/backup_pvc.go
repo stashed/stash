@@ -2,7 +2,6 @@ package cmds
 
 import (
 	"path/filepath"
-
 	"github.com/appscode/go/flags"
 	"github.com/appscode/go/log"
 	"github.com/spf13/cobra"

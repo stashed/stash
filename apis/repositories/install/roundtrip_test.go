@@ -18,7 +18,6 @@ package install
 
 import (
 	"testing"
-
 	"k8s.io/apimachinery/pkg/api/apitesting/roundtrip"
 )
 

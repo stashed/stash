@@ -2,7 +2,6 @@ package check
 
 import (
 	"fmt"
-
 	"github.com/appscode/go/log"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

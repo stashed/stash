@@ -3,7 +3,6 @@ package server
 import (
 	"flag"
 	"time"
-
 	stringz "github.com/appscode/go/strings"
 	v "github.com/appscode/go/version"
 	"github.com/spf13/pflag"

@@ -2,7 +2,6 @@ package cmds
 
 import (
 	"time"
-
 	"github.com/appscode/go/log"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"

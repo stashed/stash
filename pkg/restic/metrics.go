@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
 )

@@ -3,7 +3,6 @@ package cmds
 import (
 	"encoding/json"
 	"fmt"
-
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"

@@ -1,0 +1,13 @@
+apiVersion: stash.appscode.com/v1alpha1
+kind: Repository
+metadata:
+  name: local-repo-with-azuredisk
+  namespace: demo
+spec:
+  backend:
+    local:
+      mountPath: /safe/data
+      azureDisk:
+        diskName: stash.vhd
+        diskURI: https://someaccount.blob.microsoft.net/vhds/stash.vhd
+    storageSecretName: local-secret

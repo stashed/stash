@@ -3,7 +3,6 @@ package controller
 import (
 	"fmt"
 	"strings"
-
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"

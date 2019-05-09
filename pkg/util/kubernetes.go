@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"strings"
 	"time"
-
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
 	core "k8s.io/api/core/v1"

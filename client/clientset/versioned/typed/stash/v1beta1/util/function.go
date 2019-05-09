@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/json"
 	"fmt"
 
 	jsonpatch "github.com/evanphx/json-patch"

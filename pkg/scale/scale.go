@@ -3,7 +3,6 @@ package scale
 import (
 	"fmt"
 	"strconv"
-
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
 	apps "k8s.io/api/apps/v1"

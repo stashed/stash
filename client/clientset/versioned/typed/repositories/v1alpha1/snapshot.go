@@ -20,7 +20,6 @@ package v1alpha1
 
 import (
 	"time"
-
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	rest "k8s.io/client-go/rest"
 	v1alpha1 "stash.appscode.dev/stash/apis/repositories/v1alpha1"
