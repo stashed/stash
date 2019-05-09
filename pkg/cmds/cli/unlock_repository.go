@@ -10,10 +10,6 @@ import (
 	"github.com/appscode/go/flags"
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
-	"github.com/appscode/stash/apis/stash/v1alpha1"
-	stash_scheme "github.com/appscode/stash/client/clientset/versioned/scheme"
-	"github.com/appscode/stash/pkg/cmds/docker"
-	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
@@ -22,6 +18,10 @@ import (
 	batch_util "kmodules.xyz/client-go/batch/v1"
 	v1 "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/tools/cli"
+	"stash.appscode.dev/stash/apis/stash/v1alpha1"
+	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
+	"stash.appscode.dev/stash/pkg/cmds/docker"
+	"stash.appscode.dev/stash/pkg/util"
 )
 
 const (

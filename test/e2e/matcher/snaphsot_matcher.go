@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	snap_api "github.com/appscode/stash/apis/repositories/v1alpha1"
 	"github.com/onsi/gomega/types"
+	snap_api "stash.appscode.dev/stash/apis/repositories/v1alpha1"
 )
 
 func HavePrefixInName(prefix string) types.GomegaMatcher {

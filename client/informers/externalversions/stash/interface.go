@@ -19,9 +19,9 @@ limitations under the License.
 package stash
 
 import (
-	internalinterfaces "github.com/appscode/stash/client/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/appscode/stash/client/informers/externalversions/stash/v1alpha1"
-	v1beta1 "github.com/appscode/stash/client/informers/externalversions/stash/v1beta1"
+	internalinterfaces "stash.appscode.dev/stash/client/informers/externalversions/internalinterfaces"
+	v1alpha1 "stash.appscode.dev/stash/client/informers/externalversions/stash/v1alpha1"
+	v1beta1 "stash.appscode.dev/stash/client/informers/externalversions/stash/v1beta1"
 )
 
 // Interface provides access to each of this group's versions.

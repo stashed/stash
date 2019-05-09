@@ -34,7 +34,7 @@ func (btpl BackupConfigurationTemplate) CustomResourceDefinition() *apiextension
 		Labels: crdutils.Labels{
 			LabelsMap: map[string]string{"app": "stash"},
 		},
-		SpecDefinitionName:    "github.com/appscode/stash/apis/stash/v1beta1.BackupConfigurationTemplate",
+		SpecDefinitionName:    "stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplate",
 		EnableValidation:      true,
 		GetOpenAPIDefinitions: GetOpenAPIDefinitions,
 		AdditionalPrinterColumns: []apiextensions.CustomResourceColumnDefinition{

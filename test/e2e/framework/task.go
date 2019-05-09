@@ -3,10 +3,10 @@ package framework
 import (
 	"fmt"
 
-	"github.com/appscode/stash/apis"
-	"github.com/appscode/stash/apis/stash/v1beta1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"stash.appscode.dev/stash/apis"
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
 func (f *Invocation) BackupTask() v1beta1.Task {

@@ -1,9 +1,9 @@
 package v1alpha1
 
 import (
-	"github.com/appscode/stash/apis"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	crdutils "kmodules.xyz/client-go/apiextensions/v1beta1"
+	"stash.appscode.dev/stash/apis"
 )
 
 func (c Repository) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
@@ -30,7 +30,7 @@ func (c Repository) CustomResourceDefinition() *apiextensions.CustomResourceDefi
 		Labels: crdutils.Labels{
 			LabelsMap: map[string]string{"app": "stash"},
 		},
-		SpecDefinitionName:      "github.com/appscode/stash/apis/stash/v1beta1.Repository",
+		SpecDefinitionName:      "stash.appscode.dev/stash/apis/stash/v1beta1.Repository",
 		EnableValidation:        true,
 		GetOpenAPIDefinitions:   GetOpenAPIDefinitions,
 		EnableStatusSubresource: apis.EnableStatusSubresource,

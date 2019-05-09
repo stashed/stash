@@ -39,7 +39,7 @@ $ kubectl create ns demo
 namespace/demo created
 ```
 
->Note: YAML files used in this tutorial are stored in [/docs/examples/backup](/docs/examples/backup) directory of [appscode/stash](https://github.com/appscode/stash) repository.
+>Note: YAML files used in this tutorial are stored in [/docs/examples/backup](/docs/examples/backup) directory of [appscode/stash](https://github.com/stashed/stash) repository.
 
 ## Overview
 
@@ -59,14 +59,14 @@ The backup process consists of the following steps:
 
 ## Backup
 
-In order to take back up, we need some sample data. Stash has some sample data in [appscode/stash-data](https://github.com/appscode/stash-data) repository. As [gitRepo](https://kubernetes.io/docs/concepts/storage/volumes/#gitrepo) volume has been deprecated, we are not going to use this repository volume directly. Instead, we are going to create a [configMap](https://kubernetes.io/docs/concepts/storage/volumes/#configmap) from these data and use that ConfigMap as the data source.
+In order to take back up, we need some sample data. Stash has some sample data in [appscode/stash-data](https://github.com/stashed/stash-data) repository. As [gitRepo](https://kubernetes.io/docs/concepts/storage/volumes/#gitrepo) volume has been deprecated, we are not going to use this repository volume directly. Instead, we are going to create a [configMap](https://kubernetes.io/docs/concepts/storage/volumes/#configmap) from these data and use that ConfigMap as the data source.
 
 Let's create a ConfigMap from these sample data,
 
 ```console
 $ kubectl create configmap -n demo stash-sample-data \
-	--from-literal=LICENSE="$(curl -fsSL https://raw.githubusercontent.com/appscode/stash-data/master/LICENSE)" \
-	--from-literal=README.md="$(curl -fsSL https://raw.githubusercontent.com/appscode/stash-data/master/README.md)"
+	--from-literal=LICENSE="$(curl -fsSL https://raw.githubusercontent.com/stashed/stash-data/master/LICENSE)" \
+	--from-literal=README.md="$(curl -fsSL https://raw.githubusercontent.com/stashed/stash-data/master/README.md)"
 configmap/stash-sample-data created
 ```
 

@@ -3,8 +3,8 @@ package cli
 import (
 	"github.com/appscode/go/flags"
 	"github.com/appscode/go/log"
-	"github.com/appscode/stash/pkg/restic"
 	"github.com/spf13/cobra"
+	"stash.appscode.dev/stash/pkg/restic"
 )
 
 func NewUnlockLocalRepositoryCmd() *cobra.Command {

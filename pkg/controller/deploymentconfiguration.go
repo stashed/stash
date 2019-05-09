@@ -2,8 +2,6 @@ package controller
 
 import (
 	"github.com/appscode/go/log"
-	"github.com/appscode/stash/apis"
-	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -18,6 +16,8 @@ import (
 	webhook "kmodules.xyz/webhook-runtime/admission/v1beta1/workload"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 	wcs "kmodules.xyz/webhook-runtime/client/workload/v1"
+	"stash.appscode.dev/stash/apis"
+	"stash.appscode.dev/stash/pkg/util"
 )
 
 func (c *StashController) NewDeploymentConfigWebhook() hooks.AdmissionHook {

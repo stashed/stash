@@ -3,11 +3,6 @@ package cmds
 import (
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/log"
-	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
-	cs "github.com/appscode/stash/client/clientset/versioned"
-	stash_scheme "github.com/appscode/stash/client/clientset/versioned/scheme"
-	v1beta1_util "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1beta1/util"
-	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -15,6 +10,11 @@ import (
 	"k8s.io/client-go/tools/reference"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
+	v1beta1_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
+	"stash.appscode.dev/stash/pkg/util"
 )
 
 type options struct {

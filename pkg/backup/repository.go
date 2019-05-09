@@ -2,9 +2,9 @@ package backup
 
 import (
 	"github.com/appscode/go/log"
-	"github.com/appscode/stash/apis"
-	api "github.com/appscode/stash/apis/stash/v1alpha1"
-	"github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
+	"stash.appscode.dev/stash/apis"
+	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
 )
 
 func (c *Controller) createRepositoryCrdIfNotExist(restic *api.Restic, prefix string) (*api.Repository, error) {

@@ -3,8 +3,6 @@ package util
 import (
 	"fmt"
 
-	api "github.com/appscode/stash/apis/stash/v1alpha1"
-	cs "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1"
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
@@ -13,6 +11,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kutil "kmodules.xyz/client-go"
+	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	cs "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1"
 )
 
 func CreateOrPatchRepository(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(alert *api.Repository) *api.Repository) (*api.Repository, kutil.VerbType, error) {

@@ -1,4 +1,4 @@
-module github.com/appscode/stash
+module stash.appscode.dev/stash
 
 go 1.12
 

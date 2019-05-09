@@ -4,14 +4,14 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/log"
-	"github.com/appscode/stash/apis/stash/v1beta1"
-	stash_scheme "github.com/appscode/stash/client/clientset/versioned/scheme"
-	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/reference"
 	core_util "kmodules.xyz/client-go/core/v1"
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
+	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
+	"stash.appscode.dev/stash/pkg/util"
 )
 
 func NewTriggerBackupCmd() *cobra.Command {

@@ -3,6 +3,8 @@ go:
  - 1.x
  - tip
 
+go_import_path: stash.appscode.dev/stash
+
 install: true
 
 script:

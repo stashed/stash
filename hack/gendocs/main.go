@@ -11,8 +11,8 @@ import (
 	"text/template"
 
 	"github.com/appscode/go/runtime"
-	"github.com/appscode/stash/pkg/cmds"
 	"github.com/spf13/cobra/doc"
+	"stash.appscode.dev/stash/pkg/cmds"
 )
 
 const (
@@ -56,7 +56,7 @@ aliases:
 // ref: https://github.com/spf13/cobra/blob/master/doc/md_docs.md
 func main() {
 	rootCmd := cmds.NewRootCmd()
-	dir := runtime.GOPath() + "/src/github.com/appscode/stash/docs/reference"
+	dir := runtime.GOPath() + "/src/stash.appscode.dev/stash/docs/reference"
 	fmt.Printf("Generating cli markdown tree in: %v\n", dir)
 	err := os.RemoveAll(dir)
 	if err != nil {

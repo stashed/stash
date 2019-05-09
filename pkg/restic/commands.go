@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/appscode/go/log"
-	"github.com/appscode/stash/apis/stash/v1alpha1"
 	"github.com/armon/circbuf"
+	"stash.appscode.dev/stash/apis/stash/v1alpha1"
 )
 
 const (

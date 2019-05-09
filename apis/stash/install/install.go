@@ -17,10 +17,10 @@ limitations under the License.
 package install
 
 import (
-	"github.com/appscode/stash/apis/stash/v1alpha1"
-	"github.com/appscode/stash/apis/stash/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
 // Install registers the API group and adds types to a scheme

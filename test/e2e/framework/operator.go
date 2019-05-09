@@ -3,10 +3,10 @@ package framework
 import (
 	"path/filepath"
 
-	srvr "github.com/appscode/stash/pkg/cmds/server"
 	shell "github.com/codeskyblue/go-sh"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	srvr "stash.appscode.dev/stash/pkg/cmds/server"
 )
 
 var (

@@ -4,10 +4,6 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/types"
-	"github.com/appscode/stash/apis"
-	api_v1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
-	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
-	"github.com/appscode/stash/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	appsv1beta2 "k8s.io/api/apps/v1beta2"
@@ -18,6 +14,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 	wcs "kmodules.xyz/webhook-runtime/client/workload/v1"
+	"stash.appscode.dev/stash/apis"
+	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/stash/pkg/util"
 )
 
 // applyStashLogic takes an workload and perform some processing on it if any backup or restore is configured for this workload.

@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/appscode/stash/apis"
-	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
-	"github.com/appscode/stash/pkg/resolve"
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -15,6 +12,9 @@ import (
 	"k8s.io/client-go/tools/reference"
 	meta_util "kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/queue"
+	"stash.appscode.dev/stash/apis"
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/stash/pkg/resolve"
 )
 
 const (

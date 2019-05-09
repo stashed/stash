@@ -2,9 +2,9 @@ package util
 
 import (
 	go_str "github.com/appscode/go/strings"
-	api_v1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
-	api "github.com/appscode/stash/apis/stash/v1beta1"
-	"github.com/appscode/stash/pkg/restic"
+	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	api "stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/stash/pkg/restic"
 )
 
 // options that don't come from repository, backup-config, backup-session, restore-session

@@ -4,11 +4,6 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/log"
-	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
-	stash_scheme "github.com/appscode/stash/client/clientset/versioned/scheme"
-	v1beta1_util "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1beta1/util"
-	"github.com/appscode/stash/pkg/docker"
-	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	batch_v1beta1 "k8s.io/api/batch/v1beta1"
 	core "k8s.io/api/core/v1"
@@ -20,6 +15,11 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/tools/queue"
 	workload_api "kmodules.xyz/webhook-runtime/apis/workload/v1"
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
+	v1beta1_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
+	"stash.appscode.dev/stash/pkg/docker"
+	"stash.appscode.dev/stash/pkg/util"
 )
 
 // TODO: Add validator that will reject to create BackupConfiguration if any Restic exist for target workload

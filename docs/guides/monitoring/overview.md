@@ -131,7 +131,7 @@ $ helm install appscode/stash --name stash-operator --version 0.8.3 --namespace 
 
 **Script:**
 ```console
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.3/hack/deploy/stash.sh  | bash -s -- \
+$ curl -fsSL https://raw.githubusercontent.com/stashed/stash/0.8.3/hack/deploy/stash.sh  | bash -s -- \
   --monitoring-agent=prometheus.io/coreos-operator \
   --monitoring-backup=true \
   --monitoring-operator=true \

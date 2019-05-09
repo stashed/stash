@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
@@ -15,6 +14,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"kmodules.xyz/client-go/tools/queue"
+	"stash.appscode.dev/stash/pkg/util"
 )
 
 func (c *StashController) initJobWatcher() {

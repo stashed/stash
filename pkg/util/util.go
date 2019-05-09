@@ -8,15 +8,15 @@ import (
 	"strings"
 
 	"github.com/appscode/go/types"
-	"github.com/appscode/stash/apis"
-	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
-	"github.com/appscode/stash/pkg/restic"
 	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
 	store "kmodules.xyz/objectstore-api/api/v1"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
+	"stash.appscode.dev/stash/apis"
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/stash/pkg/restic"
 )
 
 var (

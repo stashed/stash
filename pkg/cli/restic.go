@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/appscode/go/log"
-	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	shell "github.com/codeskyblue/go-sh"
 	"github.com/pkg/errors"
+	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 )
 
 const (
@@ -167,7 +167,7 @@ func (w *ResticWrapper) Restore(path, host, snapshotID string) error {
 	args = append(args, host)
 
 	// Remove last part from the path.
-	// https://github.com/appscode/stash/issues/392
+	// https://github.com/stashed/stash/issues/392
 	args = append(args, "--target")
 	args = append(args, filepath.Dir(path))
 

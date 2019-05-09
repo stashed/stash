@@ -4,13 +4,13 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/types"
-	"github.com/appscode/stash/apis"
-	v1alpha1_api "github.com/appscode/stash/apis/stash/v1alpha1"
-	v1beta1_api "github.com/appscode/stash/apis/stash/v1beta1"
-	"github.com/appscode/stash/pkg/docker"
 	core "k8s.io/api/core/v1"
 	"kmodules.xyz/client-go/tools/cli"
 	"kmodules.xyz/client-go/tools/clientcmd"
+	"stash.appscode.dev/stash/apis"
+	v1alpha1_api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	v1beta1_api "stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/stash/pkg/docker"
 )
 
 func NewInitContainer(r *v1alpha1_api.Restic, workload v1alpha1_api.LocalTypedReference, image docker.Docker) core.Container {

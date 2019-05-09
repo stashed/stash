@@ -24,7 +24,7 @@ func (task Task) CustomResourceDefinition() *apiextensions.CustomResourceDefinit
 		Labels: crdutils.Labels{
 			LabelsMap: map[string]string{"app": "stash"},
 		},
-		SpecDefinitionName:    "github.com/appscode/stash/apis/stash/v1beta1.Task",
+		SpecDefinitionName:    "stash.appscode.dev/stash/apis/stash/v1beta1.Task",
 		EnableValidation:      true,
 		GetOpenAPIDefinitions: GetOpenAPIDefinitions,
 		AdditionalPrinterColumns: []apiextensions.CustomResourceColumnDefinition{

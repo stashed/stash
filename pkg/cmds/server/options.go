@@ -6,10 +6,6 @@ import (
 
 	stringz "github.com/appscode/go/strings"
 	v "github.com/appscode/go/version"
-	"github.com/appscode/stash/apis"
-	cs "github.com/appscode/stash/client/clientset/versioned"
-	"github.com/appscode/stash/pkg/controller"
-	"github.com/appscode/stash/pkg/docker"
 	"github.com/spf13/pflag"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	"k8s.io/client-go/kubernetes"
@@ -17,6 +13,10 @@ import (
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
 	ocapps "kmodules.xyz/openshift/apis/apps/v1"
 	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"
+	"stash.appscode.dev/stash/apis"
+	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	"stash.appscode.dev/stash/pkg/controller"
+	"stash.appscode.dev/stash/pkg/docker"
 )
 
 type ExtraOptions struct {

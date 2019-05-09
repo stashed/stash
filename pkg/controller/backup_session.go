@@ -5,14 +5,6 @@ import (
 	"time"
 
 	"github.com/appscode/go/log"
-	"github.com/appscode/stash/apis"
-	"github.com/appscode/stash/apis/stash"
-	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
-	stash_scheme "github.com/appscode/stash/client/clientset/versioned/scheme"
-	stash_util "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1beta1/util"
-	"github.com/appscode/stash/pkg/eventer"
-	"github.com/appscode/stash/pkg/resolve"
-	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	batchv1 "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
@@ -28,6 +20,14 @@ import (
 	"kmodules.xyz/webhook-runtime/admission"
 	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"
 	webhook "kmodules.xyz/webhook-runtime/admission/v1beta1/generic"
+	"stash.appscode.dev/stash/apis"
+	"stash.appscode.dev/stash/apis/stash"
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
+	stash_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
+	"stash.appscode.dev/stash/pkg/eventer"
+	"stash.appscode.dev/stash/pkg/resolve"
+	"stash.appscode.dev/stash/pkg/util"
 )
 
 const (

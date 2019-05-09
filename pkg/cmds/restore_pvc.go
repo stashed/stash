@@ -4,10 +4,10 @@ import (
 	"path/filepath"
 
 	"github.com/appscode/go/flags"
-	"github.com/appscode/stash/pkg/restic"
-	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/errors"
+	"stash.appscode.dev/stash/pkg/restic"
+	"stash.appscode.dev/stash/pkg/util"
 )
 
 const (

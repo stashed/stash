@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 
 	"github.com/appscode/go/log"
-	"github.com/appscode/stash/pkg/restic"
 	"github.com/spf13/cobra"
+	"stash.appscode.dev/stash/pkg/restic"
 )
 
 func NewUnlockRepositoryCmd() *cobra.Command {

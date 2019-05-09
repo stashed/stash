@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/appscode/go/types"
-	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
 type BackupOutput struct {

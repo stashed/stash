@@ -1,5 +1,5 @@
 # Stash
-[Stash by AppsCode](https://github.com/appscode/stash) - Backup your Kubernetes Volumes
+[Stash by AppsCode](https://github.com/stashed/stash) - Backup your Kubernetes Volumes
 ## TL;DR;
 
 ```console
@@ -10,7 +10,7 @@ $ helm install appscode/stash --name stash-operator --namespace kube-system
 
 ## Introduction
 
-This chart bootstraps a [Stash controller](https://github.com/appscode/stash) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
+This chart bootstraps a [Stash controller](https://github.com/stashed/stash) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
 ## Prerequisites
 

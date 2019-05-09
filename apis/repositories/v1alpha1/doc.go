@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 // +k8s:deepcopy-gen=package
-// +k8s:conversion-gen=github.com/appscode/stash/apis/repositories
+// +k8s:conversion-gen=stash.appscode.dev/stash/apis/repositories
 // +k8s:openapi-gen=true
 // +k8s:defaulter-gen=TypeMeta
 

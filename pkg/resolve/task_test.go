@@ -3,8 +3,8 @@ package resolve
 import (
 	"testing"
 
-	"github.com/appscode/stash/apis/stash/v1beta1"
 	"gomodules.xyz/envsubst"
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
 func TestResolveWithInputs(t *testing.T) {

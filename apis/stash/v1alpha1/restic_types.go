@@ -35,7 +35,7 @@ type ResticSpec struct {
 	// Compute Resources required by the sidecar container.
 	Resources         core.ResourceRequirements `json:"resources,omitempty"`
 	RetentionPolicies []RetentionPolicy         `json:"retentionPolicies,omitempty"`
-	// https://github.com/appscode/stash/issues/225
+	// https://github.com/stashed/stash/issues/225
 	Type BackupType `json:"type,omitempty"`
 	//Indicates that the Restic is paused from taking backup. Default value is 'false'
 	// +optional

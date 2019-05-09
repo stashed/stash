@@ -123,7 +123,7 @@ export STASH_BYPASS_VALIDATING_WEBHOOK_XRAY=false
 export STASH_USE_KUBEAPISERVER_FQDN_FOR_AKS=true
 export STASH_PRIORITY_CLASS=system-cluster-critical
 
-export SCRIPT_LOCATION="curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.3/"
+export SCRIPT_LOCATION="curl -fsSL https://raw.githubusercontent.com/stashed/stash/0.8.3/"
 if [[ "$APPSCODE_ENV" == "dev" ]]; then
   detect_tag
   export SCRIPT_LOCATION="cat "

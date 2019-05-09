@@ -32,8 +32,8 @@ development environment, please follow [these instructions](https://golang.org/d
 #### Download Source
 
 ```console
-$ go get github.com/appscode/stash
-$ cd $(go env GOPATH)/src/github.com/appscode/stash
+$ go get stash.appscode.dev/stash
+$ cd $(go env GOPATH)/src/stash.appscode.dev/stash
 ```
 
 #### Install Dev tools

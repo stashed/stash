@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/appscode/stash/apis"
-	api "github.com/appscode/stash/apis/stash/v1alpha1"
-	cs "github.com/appscode/stash/client/clientset/versioned"
-	stash_util "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
-	stash_util_v1beta1 "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1beta1/util"
-	"github.com/appscode/stash/pkg/eventer"
-	"github.com/appscode/stash/pkg/restic"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/pkg/apis/core"
+	"stash.appscode.dev/stash/apis"
+	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	stash_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
+	stash_util_v1beta1 "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
+	"stash.appscode.dev/stash/pkg/eventer"
+	"stash.appscode.dev/stash/pkg/restic"
 )
 
 type UpdateStatusOptions struct {

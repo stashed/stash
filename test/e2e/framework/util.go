@@ -6,13 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/appscode/stash/apis"
-	rep "github.com/appscode/stash/apis/repositories/v1alpha1"
-	api "github.com/appscode/stash/apis/stash/v1alpha1"
-	"github.com/appscode/stash/apis/stash/v1beta1"
-	cs "github.com/appscode/stash/client/clientset/versioned"
-	"github.com/appscode/stash/pkg/controller"
-	"github.com/appscode/stash/pkg/eventer"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
@@ -22,6 +15,13 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
+	"stash.appscode.dev/stash/apis"
+	rep "stash.appscode.dev/stash/apis/repositories/v1alpha1"
+	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
+	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	"stash.appscode.dev/stash/pkg/controller"
+	"stash.appscode.dev/stash/pkg/eventer"
 )
 
 var (

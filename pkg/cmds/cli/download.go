@@ -9,11 +9,11 @@ import (
 
 	"github.com/appscode/go/flags"
 	"github.com/appscode/go/log"
-	"github.com/appscode/stash/pkg/cmds/docker"
-	"github.com/appscode/stash/pkg/restic"
-	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"stash.appscode.dev/stash/pkg/cmds/docker"
+	"stash.appscode.dev/stash/pkg/restic"
+	"stash.appscode.dev/stash/pkg/util"
 )
 
 func NewDownloadCmd() *cobra.Command {

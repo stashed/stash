@@ -3,12 +3,12 @@ package cli
 import (
 	"github.com/appscode/go/flags"
 	"github.com/appscode/go/log"
-	"github.com/appscode/stash/apis/stash/v1alpha1"
-	"github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
 	"github.com/spf13/cobra"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
+	"stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
 )
 
 func NewCopyRepositoryCmd() *cobra.Command {

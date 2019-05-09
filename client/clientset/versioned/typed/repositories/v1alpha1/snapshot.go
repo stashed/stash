@@ -21,10 +21,10 @@ package v1alpha1
 import (
 	"time"
 
-	v1alpha1 "github.com/appscode/stash/apis/repositories/v1alpha1"
-	scheme "github.com/appscode/stash/client/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	rest "k8s.io/client-go/rest"
+	v1alpha1 "stash.appscode.dev/stash/apis/repositories/v1alpha1"
+	scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
 )
 
 // SnapshotsGetter has a method to return a SnapshotInterface.

@@ -4,12 +4,6 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/log"
-	api "github.com/appscode/stash/apis/stash/v1alpha1"
-	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
-	cs "github.com/appscode/stash/client/clientset/versioned"
-	stashinformers "github.com/appscode/stash/client/informers/externalversions"
-	stash_listers "github.com/appscode/stash/client/listers/stash/v1alpha1"
-	stash_listers_v1beta1 "github.com/appscode/stash/client/listers/stash/v1beta1"
 	"github.com/golang/glog"
 	crd_api "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
@@ -32,6 +26,12 @@ import (
 	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"
 	oc_informers "kmodules.xyz/openshift/client/informers/externalversions"
 	oc_listers "kmodules.xyz/openshift/client/listers/apps/v1"
+	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	stashinformers "stash.appscode.dev/stash/client/informers/externalversions"
+	stash_listers "stash.appscode.dev/stash/client/listers/stash/v1alpha1"
+	stash_listers_v1beta1 "stash.appscode.dev/stash/client/listers/stash/v1beta1"
 )
 
 type StashController struct {
