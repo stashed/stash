@@ -5,7 +5,7 @@ menu:
   product_stash_0.8.3:
     identifier: backend-gcs
     name: Google Cloud Storage
-    parent: backend
+    parent: v1alpha1-backend
     weight: 50
 product_name: stash
 menu_name: product_stash_0.8.3
@@ -110,6 +110,6 @@ restic "gcs-restic" created
 
 ## Next Steps
 
-- Learn how to use Stash in Google Kubernetes Engine (GKE) from [here](/docs/guides/platforms/gke.md).
-- Learn how to use Stash to backup a Kubernetes deployment from [here](/docs/guides/backup.md).
-- Learn how to recover from backed up snapshot from [here](/docs/guides/restore.md).
+- Learn how to use Stash in Google Kubernetes Engine (GKE) from [here](/docs/guides/v1alpha1/platforms/gke.md).
+- Learn how to use Stash to backup a Kubernetes deployment from [here](/docs/guides/v1alpha1/backup.md).
+- Learn how to recover from backed up snapshot from [here](/docs/guides/v1alpha1/restore.md).

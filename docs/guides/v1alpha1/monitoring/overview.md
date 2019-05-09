@@ -23,7 +23,7 @@ Stash has native support for monitoring via [Prometheus](https://prometheus.io/)
 Stash uses [Prometheus PushGateway](https://github.com/prometheus/pushgateway) to export the metrics for backup & recovery operations. Following diagram shows the logical structure of Stash monitoring flow.
 
 <p align="center">
-  <img alt="Monitoring Structure"  src="/docs/images/monitoring/stash-monitoring-structure.png">
+  <img alt="Monitoring Structure"  src="/docs/images/v1alpha1/monitoring/stash-monitoring-structure.png">
 </p>
 
 Stash operator runs two containers. The `operator` container runs controller and other necessary stuffs and the `pushgateway` container runs [prom/pushgateway](https://hub.docker.com/r/prom/pushgateway) image. Stash sidecar from different workloads pushes their metrics to this pushgateway. Then Prometheus server scraps these metrics through `stash-operator` service. Stash operator itself also provides some metrics at `/metrics` path of `:8443` port.
@@ -141,6 +141,6 @@ $ curl -fsSL https://raw.githubusercontent.com/stashed/stash/0.8.3/hack/deploy/s
 
 ## Next Steps
 
-- Learn how to monitor Stash using built-in Prometheus from [here](/docs/guides/monitoring/builtin.md).
-- Learn how to monitor Stash using CoreOS Prometheus operator from [here](/docs/guides/monitoring/coreos.md).
-- Learn how to use Grafana dashboard to visualize monitoring data from [here](/docs/guides/monitoring/grafana.md).
+- Learn how to monitor Stash using built-in Prometheus from [here](/docs/guides/v1alpha1/monitoring/builtin.md).
+- Learn how to monitor Stash using CoreOS Prometheus operator from [here](/docs/guides/v1alpha1/monitoring/coreos.md).
+- Learn how to use Grafana dashboard to visualize monitoring data from [here](/docs/guides/v1alpha1/monitoring/grafana.md).

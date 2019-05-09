@@ -251,13 +251,13 @@ Here, we can see 5 last successful backup [Snapshot](/docs/concepts/crds/snapsho
 If you navigate to `<bucket name>/demo/deployment/stash-demo` directory in your Minio Web UI. You will see, a repository has been created there.
 
 <p align="center">
-  <img alt="Repository in Minio Backend",  height="350px" src="/docs/images/platforms/minio/minio-repository.png">
+  <img alt="Repository in Minio Backend",  height="350px" src="/docs/images/v1alpha1/platforms/minio/minio-repository.png">
 </p>
 
 To view the snapshot files, navigate to `snapshots` directory of the repository,
 
 <p align="center">
-  <img alt="Snapshot in Minio Bucket" height="350px" src="/docs/images/platforms/minio/minio-snapshots.png">
+  <img alt="Snapshot in Minio Bucket" height="350px" src="/docs/images/v1alpha1/platforms/minio/minio-snapshots.png">
 </p>
 
 > Stash keeps all backup data encrypted. So, snapshot files in the bucket will not contain any meaningful data until they are decrypted.
@@ -461,4 +461,4 @@ $ kubectl delete ns demo
 ```
 
 - To uninstall Stash from your cluster, follow the instructions from [here](/docs/setup/uninstall.md).
-- If you have deployed Minio server by following the tutorial we have linked in [Before You Begin](/docs/guides/platforms/minio.md#before-you-begin) section, please clean-up Minio resources by following the [cleanup](https://github.com/appscode/third-party-tools/blob/master/storage/minio/README.md#cleanup) section of that tutorial.
+- If you have deployed Minio server by following the tutorial we have linked in [Before You Begin](/docs/guides/v1alpha1/platforms/minio.md#before-you-begin) section, please clean-up Minio resources by following the [cleanup](https://github.com/appscode/third-party-tools/blob/master/storage/minio/README.md#cleanup) section of that tutorial.

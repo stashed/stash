@@ -5,7 +5,7 @@ menu:
   product_stash_0.8.3:
     identifier: backend-azure
     name: Azure Blob Storage
-    parent: backend
+    parent: v1alpha1-backend
     weight: 40
 product_name: stash
 menu_name: product_stash_0.8.3
@@ -110,6 +110,6 @@ restic "azure-restic" created
 
 ## Next Steps
 
-- Learn how to use Stash in Azure Kubernetes Service (AKS) from [here](/docs/guides/platforms/aks.md).
-- Learn how to use Stash to backup a Kubernetes deployment from [here](/docs/guides/backup.md).
-- Learn how to recover from backed up snapshot from [here](/docs/guides/restore.md).
+- Learn how to use Stash in Azure Kubernetes Service (AKS) from [here](/docs/guides/v1alpha1/platforms/aks.md).
+- Learn how to use Stash to backup a Kubernetes deployment from [here](/docs/guides/v1alpha1/backup.md).
+- Learn how to recover from backed up snapshot from [here](/docs/guides/v1alpha1/restore.md).

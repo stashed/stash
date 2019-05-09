@@ -16,7 +16,7 @@ section_menu_id: guides
 
 # Using Stash with Rook Storage Service
 
-This tutorial will show you how to use Stash to **backup** and **restore** a Kubernetes volume in [Rook](https://rook.io/) storage service. Here, we are going to backup the `/source/data` folder of a busybox pod into [AWS S3](/docs/guides/backends.md#aws-s3) compatible [Rook Object Storage](https://rook.io/docs/rook/master/object.html). Then, we are going to show how to recover this data into a `PersistentVolumeClaim` of [Rook Block Storage](https://rook.io/docs/rook/master/block.html). We are going to also re-deploy deployment using this recovered volume.
+This tutorial will show you how to use Stash to **backup** and **restore** a Kubernetes volume in [Rook](https://rook.io/) storage service. Here, we are going to backup the `/source/data` folder of a busybox pod into [AWS S3](/docs/guides/v1alpha1/backends/overview.md#aws-s3) compatible [Rook Object Storage](https://rook.io/docs/rook/v0.9/ceph-object.html). Then, we are going to show how to recover this data into a `PersistentVolumeClaim` of [Rook Block Storage](https://rook.io/docs/rook/v0.9/ceph-block.html). We are going to also re-deploy deployment using this recovered volume.
 
 ## Before You Begin
 
@@ -30,7 +30,7 @@ At first, you need to have a Kubernetes cluster, and the kubectl command-line to
   - [Recovery](/docs/concepts/crds/recovery.md)
   - [Snapshot](/docs/concepts/crds/snapshot.md)
 
-- You will need a [Rook Storage Service](https://rook.io) with [Object Storage](https://rook.io/docs/rook/master/object.html) and [Block Storage](https://rook.io/docs/rook/master/block.html) configured. If you do not already have a **Rook Storage Service** configured, you can create one by following this [quickstart guide](https://rook.io/docs/rook/master/ceph-quickstart.html).
+- You will need a [Rook Storage Service](https://rook.io) with [Object Storage](https://rook.io/docs/rook/v0.9/ceph-object.html) and [Block Storage](https://rook.io/docs/rook/v0.9/ceph-block.html) configured. If you do not already have a **Rook Storage Service** configured, you can create one by following this [quickstart guide](https://rook.io/docs/rook/v0.9/quickstart-toc.html).
 
 To keep things isolated, we are going to use a separate namespace called `demo` throughout this tutorial.
 
@@ -268,7 +268,7 @@ In order to perform recovery, we need `Repository` crd `deployment.stah-demo` an
 
 **Create PVC:**
 
-We are going to recover our backed up data into a PVC. [Rook Block Storage](https://rook.io/docs/rook/master/block.html) allows mounting Rook storage into pod using  a `PersistentVolumeClaim`. At first, we need to know respective [StorageClass](https://kubernetes.io/docs/concepts/storage/storage-classes/) for Rook Block Storage.
+We are going to recover our backed up data into a PVC. [Rook Block Storage](https://rook.io/docs/rook/v0.9/ceph-block.html) allows mounting Rook storage into pod using  a `PersistentVolumeClaim`. At first, we need to know respective [StorageClass](https://kubernetes.io/docs/concepts/storage/storage-classes/) for Rook Block Storage.
 
 ```console
 $ kubectl get storageclass
