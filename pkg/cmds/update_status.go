@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/flags"
-	cs "github.com/appscode/stash/client/clientset/versioned"
-	"github.com/appscode/stash/pkg/restic"
-	"github.com/appscode/stash/pkg/status"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	"stash.appscode.dev/stash/pkg/restic"
+	"stash.appscode.dev/stash/pkg/status"
 )
 
 func NewCmdUpdateStatus() *cobra.Command {

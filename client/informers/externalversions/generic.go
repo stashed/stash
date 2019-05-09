@@ -21,10 +21,10 @@ package externalversions
 import (
 	"fmt"
 
-	v1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
-	v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
+	v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
 // GenericInformer is type of SharedIndexInformer which will locate and delegate to other

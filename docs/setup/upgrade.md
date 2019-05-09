@@ -154,7 +154,7 @@ spec:
       restartPolicy: Always
       volumes:
       - gitRepo:
-          repository: https://github.com/appscode/stash-data.git
+          repository: https://github.com/stashed/stash-data.git
         name: source-data
 ```
 

@@ -5,11 +5,11 @@ import (
 	"runtime"
 
 	"github.com/appscode/go/log"
-	_ "github.com/appscode/stash/client/clientset/versioned/fake"
-	"github.com/appscode/stash/pkg/cmds"
 	_ "k8s.io/client-go/kubernetes/fake"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"kmodules.xyz/client-go/logs"
+	_ "stash.appscode.dev/stash/client/clientset/versioned/fake"
+	"stash.appscode.dev/stash/pkg/cmds"
 )
 
 func main() {

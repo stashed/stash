@@ -6,10 +6,10 @@ import (
 
 	"github.com/appscode/go/flags"
 	"github.com/appscode/go/log"
-	"github.com/appscode/stash/apis/stash/v1beta1"
 	"github.com/spf13/cobra"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
 func NewBackupPVCmd() *cobra.Command {

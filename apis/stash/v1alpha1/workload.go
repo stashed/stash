@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/appscode/stash/apis"
+	"stash.appscode.dev/stash/apis"
 )
 
 // LocalTypedReference contains enough information to let you inspect or modify the referred object.

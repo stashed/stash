@@ -8,12 +8,6 @@ import (
 
 	"github.com/appscode/go/log"
 	gort "github.com/appscode/go/runtime"
-	"github.com/appscode/stash/apis"
-	repoinstall "github.com/appscode/stash/apis/repositories/install"
-	repov1alpha1 "github.com/appscode/stash/apis/repositories/v1alpha1"
-	stashinstall "github.com/appscode/stash/apis/stash/install"
-	stashv1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
-	stashv1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
 	"github.com/go-openapi/spec"
 	"github.com/golang/glog"
 	crd_api "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -22,15 +16,21 @@ import (
 	"k8s.io/kube-openapi/pkg/common"
 	crdutils "kmodules.xyz/client-go/apiextensions/v1beta1"
 	"kmodules.xyz/client-go/openapi"
+	"stash.appscode.dev/stash/apis"
+	repoinstall "stash.appscode.dev/stash/apis/repositories/install"
+	repov1alpha1 "stash.appscode.dev/stash/apis/repositories/v1alpha1"
+	stashinstall "stash.appscode.dev/stash/apis/stash/install"
+	stashv1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	stashv1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
 func generateCRDDefinitions() {
 	apis.EnableStatusSubresource = true
 
-	filename := gort.GOPath() + "/src/github.com/appscode/stash/apis/stash/v1alpha1/crds.yaml"
+	filename := gort.GOPath() + "/src/stash.appscode.dev/stash/apis/stash/v1alpha1/crds.yaml"
 	os.Remove(filename)
 
-	path := gort.GOPath() + "/src/github.com/appscode/stash/api/crds/"
+	path := gort.GOPath() + "/src/stash.appscode.dev/stash/api/crds/"
 	os.Remove(filepath.Join(path, "restic.yaml"))
 	os.Remove(filepath.Join(path, "recovery.yaml"))
 	os.Remove(filepath.Join(path, "repository.yaml"))
@@ -58,13 +58,13 @@ func generateCRDDefinitions() {
 
 func genCRD(version string, crds []*crd_api.CustomResourceDefinition) {
 
-	err := os.MkdirAll(filepath.Join(gort.GOPath(), "/src/github.com/appscode/stash/api/crds", version), 0755)
+	err := os.MkdirAll(filepath.Join(gort.GOPath(), "/src/stash.appscode.dev/stash/api/crds", version), 0755)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	for _, crd := range crds {
-		filename := filepath.Join(gort.GOPath(), "/src/github.com/appscode/stash/api/crds", version, crd.Spec.Names.Singular+".yaml")
+		filename := filepath.Join(gort.GOPath(), "/src/stash.appscode.dev/stash/api/crds", version, crd.Spec.Names.Singular+".yaml")
 		f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 		if err != nil {
 			log.Fatal(err)
@@ -126,7 +126,7 @@ func generateSwaggerJson() {
 		glog.Fatal(err)
 	}
 
-	filename := gort.GOPath() + "/src/github.com/appscode/stash/api/openapi-spec/swagger.json"
+	filename := gort.GOPath() + "/src/stash.appscode.dev/stash/api/openapi-spec/swagger.json"
 	err = os.MkdirAll(filepath.Dir(filename), 0755)
 	if err != nil {
 		glog.Fatal(err)

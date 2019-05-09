@@ -4,16 +4,16 @@ import (
 	"time"
 
 	"github.com/appscode/go/log"
-	cs "github.com/appscode/stash/client/clientset/versioned"
-	stashinformers "github.com/appscode/stash/client/informers/externalversions"
-	"github.com/appscode/stash/pkg/backup"
-	"github.com/appscode/stash/pkg/eventer"
-	"github.com/appscode/stash/pkg/restic"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"kmodules.xyz/client-go/meta"
+	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	stashinformers "stash.appscode.dev/stash/client/informers/externalversions"
+	"stash.appscode.dev/stash/pkg/backup"
+	"stash.appscode.dev/stash/pkg/eventer"
+	"stash.appscode.dev/stash/pkg/restic"
 )
 
 func NewCmdRunBackup() *cobra.Command {

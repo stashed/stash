@@ -7,11 +7,6 @@ import (
 	"github.com/appscode/go/flags"
 	"github.com/appscode/go/log/golog"
 	v "github.com/appscode/go/version"
-	"github.com/appscode/stash/apis"
-	"github.com/appscode/stash/client/clientset/versioned/scheme"
-	stash_cli "github.com/appscode/stash/pkg/cmds/cli"
-	"github.com/appscode/stash/pkg/cmds/docker"
-	"github.com/appscode/stash/pkg/util"
 	"github.com/spf13/cobra"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
@@ -19,6 +14,11 @@ import (
 	"kmodules.xyz/client-go/logs"
 	"kmodules.xyz/client-go/tools/cli"
 	ocscheme "kmodules.xyz/openshift/client/clientset/versioned/scheme"
+	"stash.appscode.dev/stash/apis"
+	"stash.appscode.dev/stash/client/clientset/versioned/scheme"
+	stash_cli "stash.appscode.dev/stash/pkg/cmds/cli"
+	"stash.appscode.dev/stash/pkg/cmds/docker"
+	"stash.appscode.dev/stash/pkg/util"
 )
 
 func NewRootCmd() *cobra.Command {

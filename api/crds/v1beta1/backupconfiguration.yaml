@@ -119,6 +119,7 @@ spec:
                         type: string
                     required:
                     - name
+                    type: object
                   type: array
                 result:
                   description: Status is a return value for calls that don't return
@@ -171,6 +172,7 @@ spec:
                                   cause of the error. If this value is empty there
                                   is no information available.
                                 type: string
+                            type: object
                           type: array
                         group:
                           description: The group attribute of the resource associated
@@ -198,6 +200,7 @@ spec:
                           description: 'UID of the resource. (when there is a single
                             resource which can be described). More info: http://kubernetes.io/docs/user-guide/identifiers#uids'
                           type: string
+                      type: object
                     kind:
                       description: 'Kind is a string value representing the REST resource
                         this object represents. Servers may infer this from the endpoint
@@ -238,6 +241,7 @@ spec:
                           description: selfLink is a URL representing this object.
                             Populated by the system. Read-only.
                           type: string
+                      type: object
                     reason:
                       description: A machine-readable description of why this operation
                         is in the "Failure" status. If this value is empty there is
@@ -248,13 +252,52 @@ spec:
                       description: 'Status of the operation. One of: "Success" or
                         "Failure". More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status'
                       type: string
+                  type: object
               required:
               - pending
+              type: object
             labels:
               description: 'Map of string keys and values that can be used to organize
                 and categorize (scope and select) objects. May match selectors of
                 replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
               type: object
+            managedFields:
+              description: |-
+                ManagedFields maps workflow-id and version to the set of fields that are managed by that workflow. This is mostly for internal housekeeping, and users typically shouldn't need to set or understand this field. A workflow can be the user's name, a controller's name, or the name of a specific apply path like "ci-cd". The set of fields is always in the version that the workflow used when modifying the object.
+
+                This field is alpha and can be changed or removed without notice.
+              items:
+                description: ManagedFieldsEntry is a workflow-id, a FieldSet and the
+                  group version of the resource that the fieldset applies to.
+                properties:
+                  apiVersion:
+                    description: APIVersion defines the version of this resource that
+                      this field set applies to. The format is "group/version" just
+                      like the top-level APIVersion field. It is necessary to track
+                      the version of a field set because it cannot be automatically
+                      converted.
+                    type: string
+                  fields:
+                    description: 'Fields stores a set of fields in a data structure
+                      like a Trie. To understand how this is used, see: https://github.com/kubernetes-sigs/structured-merge-diff'
+                    type: object
+                  manager:
+                    description: Manager is an identifier of the workflow managing
+                      these fields.
+                    type: string
+                  operation:
+                    description: Operation is the type of operation which lead to
+                      this ManagedFieldsEntry being created. The only valid values
+                      for this field are 'Apply' and 'Update'.
+                    type: string
+                  time:
+                    description: Time is a wrapper around time.Time which supports
+                      correct marshaling to YAML and JSON.  Wrappers are provided
+                      for many of the factory methods that the time package offers.
+                    format: date-time
+                    type: string
+                type: object
+              type: array
             name:
               description: 'Name must be unique within a namespace. Is required when
                 creating resources, although some resources may allow a client to
@@ -307,6 +350,7 @@ spec:
                 - kind
                 - name
                 - uid
+                type: object
               type: array
             resourceVersion:
               description: |-
@@ -324,6 +368,7 @@ spec:
 
                 Populated by the system. Read-only. More info: http://kubernetes.io/docs/user-guide/identifiers#uids
               type: string
+          type: object
         spec:
           properties:
             driver:
@@ -342,6 +387,7 @@ spec:
                 name:
                   description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
                   type: string
+              type: object
             retentionPolicy: {}
             runtimeSettings:
               properties:
@@ -356,6 +402,7 @@ spec:
                         classData:
                           format: int32
                           type: integer
+                      type: object
                     lifecycle:
                       description: Lifecycle describes actions that the management
                         system should take in response to container lifecycle events.
@@ -385,6 +432,7 @@ spec:
                                   items:
                                     type: string
                                   type: array
+                              type: object
                             httpGet:
                               description: HTTPGetAction describes an action based
                                 on HTTP Get requests.
@@ -410,6 +458,7 @@ spec:
                                     required:
                                     - name
                                     - value
+                                    type: object
                                   type: array
                                 path:
                                   description: Path to access on the HTTP server.
@@ -424,6 +473,7 @@ spec:
                                   type: string
                               required:
                               - port
+                              type: object
                             tcpSocket:
                               description: TCPSocketAction describes an action based
                                 on opening a socket
@@ -438,6 +488,8 @@ spec:
                                   - type: integer
                               required:
                               - port
+                              type: object
+                          type: object
                         preStop:
                           description: Handler defines a specific action that should
                             be taken
@@ -459,6 +511,7 @@ spec:
                                   items:
                                     type: string
                                   type: array
+                              type: object
                             httpGet:
                               description: HTTPGetAction describes an action based
                                 on HTTP Get requests.
@@ -484,6 +537,7 @@ spec:
                                     required:
                                     - name
                                     - value
+                                    type: object
                                   type: array
                                 path:
                                   description: Path to access on the HTTP server.
@@ -498,6 +552,7 @@ spec:
                                   type: string
                               required:
                               - port
+                              type: object
                             tcpSocket:
                               description: TCPSocketAction describes an action based
                                 on opening a socket
@@ -512,6 +567,9 @@ spec:
                                   - type: integer
                               required:
                               - port
+                              type: object
+                          type: object
+                      type: object
                     livenessProbe:
                       description: Probe describes a health check to be performed
                         against a container to determine whether it is alive or ready
@@ -532,6 +590,7 @@ spec:
                               items:
                                 type: string
                               type: array
+                          type: object
                         failureThreshold:
                           description: Minimum consecutive failures for the probe
                             to be considered failed after having succeeded. Defaults
@@ -563,6 +622,7 @@ spec:
                                 required:
                                 - name
                                 - value
+                                type: object
                               type: array
                             path:
                               description: Path to access on the HTTP server.
@@ -577,6 +637,7 @@ spec:
                               type: string
                           required:
                           - port
+                          type: object
                         initialDelaySeconds:
                           description: 'Number of seconds after the container has
                             started before liveness probes are initiated. More info:
@@ -608,18 +669,21 @@ spec:
                               - type: integer
                           required:
                           - port
+                          type: object
                         timeoutSeconds:
                           description: 'Number of seconds after which the probe times
                             out. Defaults to 1 second. Minimum value is 1. More info:
                             https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
                           format: int32
                           type: integer
+                      type: object
                     nice:
                       description: https://linux.die.net/man/1/nice
                       properties:
                         adjustment:
                           format: int32
                           type: integer
+                      type: object
                     readinessProbe:
                       description: Probe describes a health check to be performed
                         against a container to determine whether it is alive or ready
@@ -640,6 +704,7 @@ spec:
                               items:
                                 type: string
                               type: array
+                          type: object
                         failureThreshold:
                           description: Minimum consecutive failures for the probe
                             to be considered failed after having succeeded. Defaults
@@ -671,6 +736,7 @@ spec:
                                 required:
                                 - name
                                 - value
+                                type: object
                               type: array
                             path:
                               description: Path to access on the HTTP server.
@@ -685,6 +751,7 @@ spec:
                               type: string
                           required:
                           - port
+                          type: object
                         initialDelaySeconds:
                           description: 'Number of seconds after the container has
                             started before liveness probes are initiated. More info:
@@ -716,12 +783,14 @@ spec:
                               - type: integer
                           required:
                           - port
+                          type: object
                         timeoutSeconds:
                           description: 'Number of seconds after which the probe times
                             out. Defaults to 1 second. Minimum value is 1. More info:
                             https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
                           format: int32
                           type: integer
+                      type: object
                     resources:
                       description: ResourceRequirements describes the compute resource
                         requirements.
@@ -737,6 +806,7 @@ spec:
                             otherwise to an implementation-defined value. More info:
                             https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                           type: object
+                      type: object
                     securityContext:
                       description: SecurityContext holds security configuration that
                         will be applied to a container. Some fields are present in
@@ -765,6 +835,7 @@ spec:
                               items:
                                 type: string
                               type: array
+                          type: object
                         privileged:
                           description: Run container in privileged mode. Processes
                             in privileged containers are essentially equivalent to
@@ -827,6 +898,9 @@ spec:
                               description: User is a SELinux user label that applies
                                 to the container.
                               type: string
+                          type: object
+                      type: object
+                  type: object
                 pod:
                   properties:
                     affinity:
@@ -896,6 +970,7 @@ spec:
                                           required:
                                           - key
                                           - operator
+                                          type: object
                                         type: array
                                       matchFields:
                                         description: A list of node selector requirements
@@ -933,7 +1008,9 @@ spec:
                                           required:
                                           - key
                                           - operator
+                                          type: object
                                         type: array
+                                    type: object
                                   weight:
                                     description: Weight associated with matching the
                                       corresponding nodeSelectorTerm, in the range
@@ -943,6 +1020,7 @@ spec:
                                 required:
                                 - weight
                                 - preference
+                                type: object
                               type: array
                             requiredDuringSchedulingIgnoredDuringExecution:
                               description: A node selector represents the union of
@@ -995,6 +1073,7 @@ spec:
                                           required:
                                           - key
                                           - operator
+                                          type: object
                                         type: array
                                       matchFields:
                                         description: A list of node selector requirements
@@ -1032,10 +1111,14 @@ spec:
                                           required:
                                           - key
                                           - operator
+                                          type: object
                                         type: array
+                                    type: object
                                   type: array
                               required:
                               - nodeSelectorTerms
+                              type: object
+                          type: object
                         podAffinity:
                           description: Pod affinity is a group of inter pod affinity
                             scheduling rules.
@@ -1110,6 +1193,7 @@ spec:
                                               required:
                                               - key
                                               - operator
+                                              type: object
                                             type: array
                                           matchLabels:
                                             description: matchLabels is a map of {key,value}
@@ -1119,6 +1203,7 @@ spec:
                                               is "In", and the values array contains
                                               only "value". The requirements are ANDed.
                                             type: object
+                                        type: object
                                       namespaces:
                                         description: namespaces specifies which namespaces
                                           the labelSelector applies to (matches against);
@@ -1139,6 +1224,7 @@ spec:
                                         type: string
                                     required:
                                     - topologyKey
+                                    type: object
                                   weight:
                                     description: weight associated with matching the
                                       corresponding podAffinityTerm, in the range
@@ -1148,6 +1234,7 @@ spec:
                                 required:
                                 - weight
                                 - podAffinityTerm
+                                type: object
                               type: array
                             requiredDuringSchedulingIgnoredDuringExecution:
                               description: If the affinity requirements specified
@@ -1210,6 +1297,7 @@ spec:
                                           required:
                                           - key
                                           - operator
+                                          type: object
                                         type: array
                                       matchLabels:
                                         description: matchLabels is a map of {key,value}
@@ -1219,6 +1307,7 @@ spec:
                                           "In", and the values array contains only
                                           "value". The requirements are ANDed.
                                         type: object
+                                    type: object
                                   namespaces:
                                     description: namespaces specifies which namespaces
                                       the labelSelector applies to (matches against);
@@ -1238,7 +1327,9 @@ spec:
                                     type: string
                                 required:
                                 - topologyKey
+                                type: object
                               type: array
+                          type: object
                         podAntiAffinity:
                           description: Pod anti affinity is a group of inter pod anti
                             affinity scheduling rules.
@@ -1313,6 +1404,7 @@ spec:
                                               required:
                                               - key
                                               - operator
+                                              type: object
                                             type: array
                                           matchLabels:
                                             description: matchLabels is a map of {key,value}
@@ -1322,6 +1414,7 @@ spec:
                                               is "In", and the values array contains
                                               only "value". The requirements are ANDed.
                                             type: object
+                                        type: object
                                       namespaces:
                                         description: namespaces specifies which namespaces
                                           the labelSelector applies to (matches against);
@@ -1342,6 +1435,7 @@ spec:
                                         type: string
                                     required:
                                     - topologyKey
+                                    type: object
                                   weight:
                                     description: weight associated with matching the
                                       corresponding podAffinityTerm, in the range
@@ -1351,6 +1445,7 @@ spec:
                                 required:
                                 - weight
                                 - podAffinityTerm
+                                type: object
                               type: array
                             requiredDuringSchedulingIgnoredDuringExecution:
                               description: If the anti-affinity requirements specified
@@ -1413,6 +1508,7 @@ spec:
                                           required:
                                           - key
                                           - operator
+                                          type: object
                                         type: array
                                       matchLabels:
                                         description: matchLabels is a map of {key,value}
@@ -1422,6 +1518,7 @@ spec:
                                           "In", and the values array contains only
                                           "value". The requirements are ANDed.
                                         type: object
+                                    type: object
                                   namespaces:
                                     description: namespaces specifies which namespaces
                                       the labelSelector applies to (matches against);
@@ -1441,7 +1538,10 @@ spec:
                                     type: string
                                 required:
                                 - topologyKey
+                                type: object
                               type: array
+                          type: object
+                      type: object
                     automountServiceAccountToken:
                       description: AutomountServiceAccountToken indicates whether
                         a service account token should be automatically mounted.
@@ -1467,6 +1567,7 @@ spec:
                           name:
                             description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
                             type: string
+                        type: object
                       type: array
                     nodeName:
                       description: NodeName is a request to schedule this pod onto
@@ -1512,6 +1613,7 @@ spec:
                             type: string
                         required:
                         - conditionType
+                        type: object
                       type: array
                     runtimeClassName:
                       description: 'RuntimeClassName refers to a RuntimeClass object
@@ -1589,6 +1691,7 @@ spec:
                               description: User is a SELinux user label that applies
                                 to the container.
                               type: string
+                          type: object
                         supplementalGroups:
                           description: A list of groups applied to the first process
                             run in each container, in addition to the container's
@@ -1614,7 +1717,9 @@ spec:
                             required:
                             - name
                             - value
+                            type: object
                           type: array
+                      type: object
                     serviceAccountName:
                       description: 'ServiceAccountName is the name of the ServiceAccount
                         to use to run this pod. More info: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/'
@@ -1659,7 +1764,10 @@ spec:
                               to. If the operator is Exists, the value should be empty,
                               otherwise just a regular string.
                             type: string
+                        type: object
                       type: array
+                  type: object
+              type: object
             schedule:
               type: string
             target:
@@ -1677,6 +1785,7 @@ spec:
                       type: string
                     name:
                       type: string
+                  type: object
                 snapshotClassName:
                   description: Name of the VolumeSnapshotClass used by the VolumeSnapshot.
                     If not specified, a default snapshot class will be used if it
@@ -1712,10 +1821,20 @@ spec:
                         description: Path within the volume from which the container's
                           volume should be mounted. Defaults to "" (volume's root).
                         type: string
+                      subPathExpr:
+                        description: Expanded path within the volume from which the
+                          container's volume should be mounted. Behaves similarly
+                          to SubPath but environment variable references $(VAR_NAME)
+                          are expanded using the container's environment. Defaults
+                          to "" (volume's root). SubPathExpr and SubPath are mutually
+                          exclusive. This field is alpha in 1.14.
+                        type: string
                     required:
                     - name
                     - mountPath
+                    type: object
                   type: array
+              type: object
             task:
               properties:
                 name:
@@ -1732,7 +1851,9 @@ spec:
                     required:
                     - name
                     - value
+                    type: object
                   type: array
+              type: object
             tempDir:
               properties:
                 disableCaching:
@@ -1774,6 +1895,9 @@ spec:
 
                     This format is intended to make it difficult to use these numbers without writing some sort of special handling code in the hopes that that will cause implementors to also use a fixed point implementation.
                   type: string
+              type: object
+          type: object
+      type: object
   version: v1beta1
   versions:
   - name: v1beta1

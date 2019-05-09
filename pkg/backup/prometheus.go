@@ -4,8 +4,8 @@ import (
 	"regexp"
 	"strings"
 
-	api "github.com/appscode/stash/apis/stash/v1alpha1"
 	ini "gopkg.in/ini.v1"
+	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 )
 
 var (

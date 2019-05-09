@@ -5,10 +5,6 @@ import (
 	"os"
 	"path/filepath"
 
-	cs "github.com/appscode/stash/client/clientset/versioned"
-	"github.com/appscode/stash/pkg/cmds/docker"
-	docker_image "github.com/appscode/stash/pkg/docker"
-	"github.com/appscode/stash/pkg/restic"
 	"github.com/spf13/cobra"
 	core "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -16,6 +12,10 @@ import (
 	"k8s.io/client-go/util/homedir"
 	meta_util "kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/clientcmd"
+	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	"stash.appscode.dev/stash/pkg/cmds/docker"
+	docker_image "stash.appscode.dev/stash/pkg/docker"
+	"stash.appscode.dev/stash/pkg/restic"
 )
 
 const (

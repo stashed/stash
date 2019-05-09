@@ -4,11 +4,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/appscode/stash/apis"
-	apiAlpha "github.com/appscode/stash/apis/stash/v1alpha1"
-	api "github.com/appscode/stash/apis/stash/v1beta1"
-	"github.com/appscode/stash/pkg/util"
 	core_util "kmodules.xyz/client-go/core/v1"
+	"stash.appscode.dev/stash/apis"
+	apiAlpha "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	api "stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/stash/pkg/util"
 )
 
 func (c *StashController) inputsForBackupConfig(backupConfig api.BackupConfiguration) (map[string]string, error) {

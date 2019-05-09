@@ -32,7 +32,7 @@ Stash operator can be installed via a script or as a Helm chart.
 To install Stash in your Kubernetes cluster, run the following command:
 
 ```console
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.3/hack/deploy/stash.sh | bash
+$ curl -fsSL https://raw.githubusercontent.com/stashed/stash/0.8.3/hack/deploy/stash.sh | bash
 ```
 
 After successful installation, you should have a `stash-operator-***` pod running in the `kube-system` namespace.
@@ -44,10 +44,10 @@ stash-operator-846d47f489-jrb58       1/1       Running   0          48s
 
 #### Customizing Installer
 
-The installer script and associated yaml files can be found in the [/hack/deploy](https://github.com/appscode/stash/tree/0.8.3/hack/deploy) folder. You can see the full list of flags available to installer using `-h` flag.
+The installer script and associated yaml files can be found in the [/hack/deploy](https://github.com/stashed/stash/tree/0.8.3/hack/deploy) folder. You can see the full list of flags available to installer using `-h` flag.
 
 ```console
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.3/hack/deploy/stash.sh | bash -s -- -h
+$ curl -fsSL https://raw.githubusercontent.com/stashed/stash/0.8.3/hack/deploy/stash.sh | bash -s -- -h
 
 stash.sh - install stash operator
 
@@ -77,7 +77,7 @@ options:
 If you would like to run Stash operator pod in `master` instances, pass the `--run-on-master` flag:
 
 ```console
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.3/hack/deploy/stash.sh \
+$ curl -fsSL https://raw.githubusercontent.com/stashed/stash/0.8.3/hack/deploy/stash.sh \
     | bash -s -- --run-on-master
 ```
 
@@ -85,7 +85,7 @@ Stash operator will be installed in a `kube-system` namespace by default. If you
 
 ```console
 $ kubectl create namespace stash
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.3/hack/deploy/stash.sh \
+$ curl -fsSL https://raw.githubusercontent.com/stashed/stash/0.8.3/hack/deploy/stash.sh \
     | bash -s -- --namespace=stash [--run-on-master]
 ```
 
@@ -97,14 +97,14 @@ To pass the address of your private registry and optionally a image pull secret 
 
 ```console
 $ kubectl create namespace stash
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.3/hack/deploy/stash.sh \
+$ curl -fsSL https://raw.githubusercontent.com/stashed/stash/0.8.3/hack/deploy/stash.sh \
     | bash -s -- --docker-registry=MY_REGISTRY [--image-pull-secret=SECRET_NAME]
 ```
 
 Stash implements [validating admission webhooks](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#validatingadmissionwebhook) to validate Stash CRDs and **mutating webhooks** for Kubernetes workload types. This is helpful when you create `Restic` before creating workload objects. This allows stash operator to initialize the target workloads by adding sidecar or, init-container before workload-pods are created. Thus stash operator does not need to delete workload pods for applying changes. This is particularly helpful for workload kind `StatefulSet`, since Kubernetes does not support adding sidecar / init containers to StatefulSets after they are created. This is enabled by default for Kubernetes 1.9.0 or later releases. To disable this feature, pass the `--enable-validating-webhook=false` and `--enable-mutating-webhook=false` flag respectively.
 
 ```console
-$ curl -fsSL https://raw.githubusercontent.com/appscode/stash/0.8.3/hack/deploy/stash.sh \
+$ curl -fsSL https://raw.githubusercontent.com/stashed/stash/0.8.3/hack/deploy/stash.sh \
     | bash -s -- --enable-validating-webhook=false --enable-mutating-webhook=false
 ```
 
@@ -114,7 +114,7 @@ Stash 0.8.3 or later releases can use status sub resource for CustomResourceDefi
 <div class="tab-pane fade" id="helm" role="tabpanel" aria-labelledby="helm-tab">
 
 ## Using Helm
-Stash can be installed via [Helm](https://helm.sh/) using the [chart](https://github.com/appscode/stash/tree/0.8.3/chart/stash) from [AppsCode Charts Repository](https://github.com/appscode/charts). To install the chart with the release name `my-release`:
+Stash can be installed via [Helm](https://helm.sh/) using the [chart](https://github.com/stashed/stash/tree/0.8.3/chart/stash) from [AppsCode Charts Repository](https://github.com/appscode/charts). To install the chart with the release name `my-release`:
 
 ```console
 $ helm repo add appscode https://charts.appscode.com/stable/
@@ -126,7 +126,7 @@ appscode/stash  0.8.3    0.8.3  Stash by AppsCode - Backup your Kubernetes Volum
 $ helm install appscode/stash --name stash-operator --version 0.8.3 --namespace kube-system
 ```
 
-To see the detailed configuration options, visit [here](https://github.com/appscode/stash/tree/master/chart/stash).
+To see the detailed configuration options, visit [here](https://github.com/stashed/stash/tree/master/chart/stash).
 
 </div>
 

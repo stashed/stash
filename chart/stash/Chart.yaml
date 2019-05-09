@@ -3,10 +3,10 @@ description: 'Stash by AppsCode - Backup your Kubernetes Volumes'
 name: stash
 version: 0.8.3
 appVersion: 0.8.3
-home: https://github.com/appscode/stash
+home: https://github.com/stashed/stash
 icon: https://cdn.appscode.com/images/icon/stash.png
 sources:
-  - https://github.com/appscode/stash
+  - https://github.com/stashed/stash
 maintainers:
   - name: appscode
     email: support@appscode.com

@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/appscode/stash/pkg/restic"
 	"github.com/spf13/cobra"
+	"stash.appscode.dev/stash/pkg/restic"
 )
 
 const (

@@ -20,7 +20,7 @@ The following steps must be done from a Linux x64 bit machine.
 - Push all the changes to remote repo.
 - Build and push stash docker image:
 ```console
-$ cd ~/go/src/github.com/appscode/stash
+$ cd ~/go/src/stash.appscode.dev/stash
 ./hack/docker/setup.sh; env APPSCODE_ENV=prod ./hack/docker/setup.sh release
 ```
 

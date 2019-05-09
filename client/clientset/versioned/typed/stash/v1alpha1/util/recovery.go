@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/appscode/stash/apis"
-	api "github.com/appscode/stash/apis/stash/v1alpha1"
-	cs "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1"
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
@@ -15,6 +12,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kutil "kmodules.xyz/client-go"
+	"stash.appscode.dev/stash/apis"
+	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	cs "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1"
 )
 
 func CreateOrPatchRecovery(c cs.StashV1alpha1Interface, meta metav1.ObjectMeta, transform func(alert *api.Recovery) *api.Recovery) (*api.Recovery, kutil.VerbType, error) {

@@ -3712,7 +3712,7 @@
           "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.LabelSelector"
         },
         "type": {
-          "description": "https://github.com/appscode/stash/issues/225",
+          "description": "https://github.com/stashed/stash/issues/225",
           "type": "string"
         },
         "volumeMounts": {

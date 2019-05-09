@@ -2,13 +2,13 @@ package e2e_test
 
 import (
 	"github.com/appscode/go/crypto/rand"
-	"github.com/appscode/stash/apis"
-	"github.com/appscode/stash/apis/stash/v1beta1"
-	"github.com/appscode/stash/test/e2e/framework"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	v1 "kmodules.xyz/client-go/core/v1"
+	"stash.appscode.dev/stash/apis"
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/stash/test/e2e/framework"
 )
 
 var (

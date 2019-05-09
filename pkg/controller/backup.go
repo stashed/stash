@@ -4,13 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/appscode/stash/apis"
-	api_v1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
-	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
-	v1alpha1_util "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
-	v1beta1_util "github.com/appscode/stash/client/clientset/versioned/typed/stash/v1beta1/util"
-	"github.com/appscode/stash/pkg/resolve"
-	"github.com/appscode/stash/pkg/util"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,6 +12,13 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
+	"stash.appscode.dev/stash/apis"
+	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+	v1alpha1_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
+	v1beta1_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
+	"stash.appscode.dev/stash/pkg/resolve"
+	"stash.appscode.dev/stash/pkg/util"
 )
 
 // applyBackupAnnotationLogic check if the workload has backup annotations then ensure respective Repository and BackupConfiguration.

@@ -6,9 +6,9 @@ import (
 
 	"github.com/appscode/go/flags"
 	logs "github.com/appscode/go/log/golog"
-	"github.com/appscode/stash/pkg/cmds/server"
-	opt "github.com/appscode/stash/test/e2e/framework"
 	"k8s.io/client-go/util/homedir"
+	"stash.appscode.dev/stash/pkg/cmds/server"
+	opt "stash.appscode.dev/stash/test/e2e/framework"
 )
 
 type E2EOptions struct {

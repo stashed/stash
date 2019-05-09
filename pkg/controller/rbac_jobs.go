@@ -4,10 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	api_v1alpha1 "github.com/appscode/stash/apis/stash/v1alpha1"
-	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
-	stash_scheme "github.com/appscode/stash/client/clientset/versioned/scheme"
-	"github.com/appscode/stash/pkg/util"
 	"github.com/golang/glog"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
@@ -20,6 +16,10 @@ import (
 	meta_util "kmodules.xyz/client-go/meta"
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
 	appCatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
+	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
+	"stash.appscode.dev/stash/pkg/util"
 )
 
 const (

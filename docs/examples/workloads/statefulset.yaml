@@ -130,7 +130,7 @@ spec:
           name: stash-local
       volumes:
       - gitRepo:
-          repository: https://github.com/appscode/stash-data.git
+          repository: https://github.com/stashed/stash-data.git
         name: source-data
       - hostPath:
           path: /data/stash-test/restic-repo

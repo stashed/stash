@@ -109,6 +109,7 @@ spec:
                         type: string
                     required:
                     - name
+                    type: object
                   type: array
                 result:
                   description: Status is a return value for calls that don't return
@@ -161,6 +162,7 @@ spec:
                                   cause of the error. If this value is empty there
                                   is no information available.
                                 type: string
+                            type: object
                           type: array
                         group:
                           description: The group attribute of the resource associated
@@ -188,6 +190,7 @@ spec:
                           description: 'UID of the resource. (when there is a single
                             resource which can be described). More info: http://kubernetes.io/docs/user-guide/identifiers#uids'
                           type: string
+                      type: object
                     kind:
                       description: 'Kind is a string value representing the REST resource
                         this object represents. Servers may infer this from the endpoint
@@ -228,6 +231,7 @@ spec:
                           description: selfLink is a URL representing this object.
                             Populated by the system. Read-only.
                           type: string
+                      type: object
                     reason:
                       description: A machine-readable description of why this operation
                         is in the "Failure" status. If this value is empty there is
@@ -238,13 +242,52 @@ spec:
                       description: 'Status of the operation. One of: "Success" or
                         "Failure". More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status'
                       type: string
+                  type: object
               required:
               - pending
+              type: object
             labels:
               description: 'Map of string keys and values that can be used to organize
                 and categorize (scope and select) objects. May match selectors of
                 replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
               type: object
+            managedFields:
+              description: |-
+                ManagedFields maps workflow-id and version to the set of fields that are managed by that workflow. This is mostly for internal housekeeping, and users typically shouldn't need to set or understand this field. A workflow can be the user's name, a controller's name, or the name of a specific apply path like "ci-cd". The set of fields is always in the version that the workflow used when modifying the object.
+
+                This field is alpha and can be changed or removed without notice.
+              items:
+                description: ManagedFieldsEntry is a workflow-id, a FieldSet and the
+                  group version of the resource that the fieldset applies to.
+                properties:
+                  apiVersion:
+                    description: APIVersion defines the version of this resource that
+                      this field set applies to. The format is "group/version" just
+                      like the top-level APIVersion field. It is necessary to track
+                      the version of a field set because it cannot be automatically
+                      converted.
+                    type: string
+                  fields:
+                    description: 'Fields stores a set of fields in a data structure
+                      like a Trie. To understand how this is used, see: https://github.com/kubernetes-sigs/structured-merge-diff'
+                    type: object
+                  manager:
+                    description: Manager is an identifier of the workflow managing
+                      these fields.
+                    type: string
+                  operation:
+                    description: Operation is the type of operation which lead to
+                      this ManagedFieldsEntry being created. The only valid values
+                      for this field are 'Apply' and 'Update'.
+                    type: string
+                  time:
+                    description: Time is a wrapper around time.Time which supports
+                      correct marshaling to YAML and JSON.  Wrappers are provided
+                      for many of the factory methods that the time package offers.
+                    format: date-time
+                    type: string
+                type: object
+              type: array
             name:
               description: 'Name must be unique within a namespace. Is required when
                 creating resources, although some resources may allow a client to
@@ -297,6 +340,7 @@ spec:
                 - kind
                 - name
                 - uid
+                type: object
               type: array
             resourceVersion:
               description: |-
@@ -314,6 +358,7 @@ spec:
 
                 Populated by the system. Read-only. More info: http://kubernetes.io/docs/user-guide/identifiers#uids
               type: string
+          type: object
         spec:
           properties:
             steps:
@@ -335,7 +380,9 @@ spec:
                       required:
                       - name
                       - value
+                      type: object
                     type: array
+                type: object
               type: array
             volumes:
               description: List of volumes that can be mounted by containers belonging
@@ -376,6 +423,7 @@ spec:
                         type: string
                     required:
                     - volumeID
+                    type: object
                   azureDisk:
                     description: AzureDisk represents an Azure Data Disk mount on
                       the host and bind mount to the pod.
@@ -407,6 +455,7 @@ spec:
                     required:
                     - diskName
                     - diskURI
+                    type: object
                   azureFile:
                     description: AzureFile represents an Azure File Service mount
                       on the host and bind mount to the pod.
@@ -425,6 +474,7 @@ spec:
                     required:
                     - secretName
                     - shareName
+                    type: object
                   cephfs:
                     description: Represents a Ceph Filesystem mount that lasts the
                       lifetime of a pod Cephfs volumes do not support ownership management
@@ -457,12 +507,14 @@ spec:
                           name:
                             description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
                             type: string
+                        type: object
                       user:
                         description: 'Optional: User is the rados user name, default
                           is admin More info: https://releases.k8s.io/HEAD/examples/volumes/cephfs/README.md#how-to-use-it'
                         type: string
                     required:
                     - monitors
+                    type: object
                   cinder:
                     description: Represents a cinder volume resource in Openstack.
                       A Cinder volume must exist before mounting to a container. The
@@ -488,12 +540,14 @@ spec:
                           name:
                             description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
                             type: string
+                        type: object
                       volumeID:
                         description: 'volume id used to identify the volume in cinder
                           More info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md'
                         type: string
                     required:
                     - volumeID
+                    type: object
                   configMap:
                     description: |-
                       Adapts a ConfigMap into a volume.
@@ -543,6 +597,7 @@ spec:
                           required:
                           - key
                           - path
+                          type: object
                         type: array
                       name:
                         description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
@@ -551,6 +606,43 @@ spec:
                         description: Specify whether the ConfigMap or it's keys must
                           be defined
                         type: boolean
+                    type: object
+                  csi:
+                    description: Represents a source location of a volume to mount,
+                      managed by an external CSI driver
+                    properties:
+                      driver:
+                        description: Driver is the name of the CSI driver that handles
+                          this volume. Consult with your admin for the correct name
+                          as registered in the cluster.
+                        type: string
+                      fsType:
+                        description: Filesystem type to mount. Ex. "ext4", "xfs",
+                          "ntfs". If not provided, the empty value is passed to the
+                          associated CSI driver which will determine the default filesystem
+                          to apply.
+                        type: string
+                      nodePublishSecretRef:
+                        description: LocalObjectReference contains enough information
+                          to let you locate the referenced object inside the same
+                          namespace.
+                        properties:
+                          name:
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                            type: string
+                        type: object
+                      readOnly:
+                        description: Specifies a read-only configuration for the volume.
+                          Defaults to false (read/write).
+                        type: boolean
+                      volumeAttributes:
+                        description: VolumeAttributes stores driver-specific properties
+                          that are passed to the CSI driver. Consult your driver's
+                          documentation for supported values.
+                        type: object
+                    required:
+                    - driver
+                    type: object
                   downwardAPI:
                     description: DownwardAPIVolumeSource represents a volume containing
                       downward API info. Downward API volumes support ownership management
@@ -585,6 +677,7 @@ spec:
                                   type: string
                               required:
                               - fieldPath
+                              type: object
                             mode:
                               description: 'Optional: mode bits to use on this file,
                                 must be a value between 0 and 0777. If not specified,
@@ -648,9 +741,12 @@ spec:
                                   type: string
                               required:
                               - resource
+                              type: object
                           required:
                           - path
+                          type: object
                         type: array
+                    type: object
                   emptyDir:
                     description: Represents an empty directory for a pod. Empty directory
                       volumes support ownership management and SELinux relabeling.
@@ -695,6 +791,7 @@ spec:
 
                           This format is intended to make it difficult to use these numbers without writing some sort of special handling code in the hopes that that will cause implementors to also use a fixed point implementation.
                         type: string
+                    type: object
                   fc:
                     description: Represents a Fibre Channel volume. Fibre Channel
                       volumes can only be mounted as read/write once. Fibre Channel
@@ -725,6 +822,7 @@ spec:
                         items:
                           type: string
                         type: array
+                    type: object
                   flexVolume:
                     description: FlexVolume represents a generic volume resource that
                       is provisioned/attached using an exec based plugin.
@@ -754,8 +852,10 @@ spec:
                           name:
                             description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
                             type: string
+                        type: object
                     required:
                     - driver
+                    type: object
                   flocker:
                     description: Represents a Flocker volume mounted by the Flocker
                       agent. One and only one of datasetName and datasetUUID should
@@ -770,6 +870,7 @@ spec:
                         description: UUID of the dataset. This is unique identifier
                           of a Flocker dataset
                         type: string
+                    type: object
                   gcePersistentDisk:
                     description: |-
                       Represents a Persistent Disk resource in Google Compute Engine.
@@ -801,6 +902,7 @@ spec:
                         type: boolean
                     required:
                     - pdName
+                    type: object
                   gitRepo:
                     description: |-
                       Represents a volume that is populated with the contents of a git repository. Git repo volumes do not support ownership management. Git repo volumes support SELinux relabeling.
@@ -822,6 +924,7 @@ spec:
                         type: string
                     required:
                     - repository
+                    type: object
                   glusterfs:
                     description: Represents a Glusterfs mount that lasts the lifetime
                       of a pod. Glusterfs volumes do not support ownership management
@@ -843,6 +946,7 @@ spec:
                     required:
                     - endpoints
                     - path
+                    type: object
                   hostPath:
                     description: Represents a host path mapped into a pod. Host path
                       volumes do not support ownership management or SELinux relabeling.
@@ -858,6 +962,7 @@ spec:
                         type: string
                     required:
                     - path
+                    type: object
                   iscsi:
                     description: Represents an ISCSI disk. ISCSI volumes can only
                       be mounted as read/write once. ISCSI volumes support ownership
@@ -912,6 +1017,7 @@ spec:
                           name:
                             description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
                             type: string
+                        type: object
                       targetPortal:
                         description: iSCSI Target Portal. The Portal is either an
                           IP or ip_addr:port if the port is other than default (typically
@@ -921,6 +1027,7 @@ spec:
                     - targetPortal
                     - iqn
                     - lun
+                    type: object
                   name:
                     description: 'Volume''s name. Must be a DNS_LABEL and unique within
                       the pod. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
@@ -946,6 +1053,7 @@ spec:
                     required:
                     - server
                     - path
+                    type: object
                   persistentVolumeClaim:
                     description: PersistentVolumeClaimVolumeSource references the
                       user's PVC in the same namespace. This volume finds the bound
@@ -964,6 +1072,7 @@ spec:
                         type: boolean
                     required:
                     - claimName
+                    type: object
                   photonPersistentDisk:
                     description: Represents a Photon Controller persistent disk resource.
                     properties:
@@ -978,6 +1087,7 @@ spec:
                         type: string
                     required:
                     - pdID
+                    type: object
                   portworxVolume:
                     description: PortworxVolumeSource represents a Portworx volume
                       resource.
@@ -997,6 +1107,7 @@ spec:
                         type: string
                     required:
                     - volumeID
+                    type: object
                   projected:
                     description: Represents a projected volume source
                     properties:
@@ -1058,6 +1169,7 @@ spec:
                                     required:
                                     - key
                                     - path
+                                    type: object
                                   type: array
                                 name:
                                   description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
@@ -1066,6 +1178,7 @@ spec:
                                   description: Specify whether the ConfigMap or it's
                                     keys must be defined
                                   type: boolean
+                              type: object
                             downwardAPI:
                               description: Represents downward API info for projecting
                                 into a projected volume. Note that this is identical
@@ -1095,6 +1208,7 @@ spec:
                                             type: string
                                         required:
                                         - fieldPath
+                                        type: object
                                       mode:
                                         description: 'Optional: mode bits to use on
                                           this file, must be a value between 0 and
@@ -1160,9 +1274,12 @@ spec:
                                             type: string
                                         required:
                                         - resource
+                                        type: object
                                     required:
                                     - path
+                                    type: object
                                   type: array
+                              type: object
                             secret:
                               description: |-
                                 Adapts a secret into a projected volume.
@@ -1207,6 +1324,7 @@ spec:
                                     required:
                                     - key
                                     - path
+                                    type: object
                                   type: array
                                 name:
                                   description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
@@ -1215,6 +1333,7 @@ spec:
                                   description: Specify whether the Secret or its key
                                     must be defined
                                   type: boolean
+                              type: object
                             serviceAccountToken:
                               description: ServiceAccountTokenProjection represents
                                 a projected service account token volume. This projection
@@ -1248,9 +1367,12 @@ spec:
                                   type: string
                               required:
                               - path
+                              type: object
+                          type: object
                         type: array
                     required:
                     - sources
+                    type: object
                   quobyte:
                     description: Represents a Quobyte mount that lasts the lifetime
                       of a pod. Quobyte volumes do not support ownership management
@@ -1269,6 +1391,11 @@ spec:
                           (multiple entries are separated with commas) which acts
                           as the central registry for volumes
                         type: string
+                      tenant:
+                        description: Tenant owning the given Quobyte volume in the
+                          Backend Used with dynamically provisioned Quobyte volumes,
+                          value is set by the plugin
+                        type: string
                       user:
                         description: User to map volume access to Defaults to serivceaccount
                           user
@@ -1280,6 +1407,7 @@ spec:
                     required:
                     - registry
                     - volume
+                    type: object
                   rbd:
                     description: Represents a Rados Block Device mount that lasts
                       the lifetime of a pod. RBD volumes support ownership management
@@ -1320,6 +1448,7 @@ spec:
                           name:
                             description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
                             type: string
+                        type: object
                       user:
                         description: 'The rados user name. Default is admin. More
                           info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it'
@@ -1327,6 +1456,7 @@ spec:
                     required:
                     - monitors
                     - image
+                    type: object
                   scaleIO:
                     description: ScaleIOVolumeSource represents a persistent ScaleIO
                       volume
@@ -1355,6 +1485,7 @@ spec:
                           name:
                             description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
                             type: string
+                        type: object
                       sslEnabled:
                         description: Flag to enable/disable SSL communication with
                           Gateway, default false
@@ -1379,6 +1510,7 @@ spec:
                     - gateway
                     - system
                     - secretRef
+                    type: object
                   secret:
                     description: |-
                       Adapts a Secret into a volume.
@@ -1428,6 +1560,7 @@ spec:
                           required:
                           - key
                           - path
+                          type: object
                         type: array
                       optional:
                         description: Specify whether the Secret or it's keys must
@@ -1437,6 +1570,7 @@ spec:
                         description: 'Name of the secret in the pod''s namespace to
                           use. More info: https://kubernetes.io/docs/concepts/storage/volumes#secret'
                         type: string
+                    type: object
                   storageos:
                     description: Represents a StorageOS persistent volume resource.
                     properties:
@@ -1457,6 +1591,7 @@ spec:
                           name:
                             description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
                             type: string
+                        type: object
                       volumeName:
                         description: VolumeName is the human-readable name of the
                           StorageOS volume.  Volume names are only unique within a
@@ -1472,6 +1607,7 @@ spec:
                           namespaces within StorageOS. Namespaces that do not pre-exist
                           within StorageOS will be created.
                         type: string
+                    type: object
                   vsphereVolume:
                     description: Represents a vSphere volume resource.
                     properties:
@@ -1493,9 +1629,13 @@ spec:
                         type: string
                     required:
                     - volumePath
+                    type: object
                 required:
                 - name
+                type: object
               type: array
+          type: object
+      type: object
   version: v1beta1
   versions:
   - name: v1beta1

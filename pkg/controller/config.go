@@ -3,9 +3,6 @@ package controller
 import (
 	"time"
 
-	cs "github.com/appscode/stash/client/clientset/versioned"
-	stashinformers "github.com/appscode/stash/client/informers/externalversions"
-	"github.com/appscode/stash/pkg/eventer"
 	core "k8s.io/api/core/v1"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,6 +15,9 @@ import (
 	appcatalog_informers "kmodules.xyz/custom-resources/client/informers/externalversions"
 	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"
 	oc_informers "kmodules.xyz/openshift/client/informers/externalversions"
+	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	stashinformers "stash.appscode.dev/stash/client/informers/externalversions"
+	"stash.appscode.dev/stash/pkg/eventer"
 )
 
 const (

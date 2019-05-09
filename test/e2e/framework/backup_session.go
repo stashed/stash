@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/appscode/stash/apis/stash/v1beta1"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
 func (f *Framework) EventuallyBackupSessionPhase(meta metav1.ObjectMeta) GomegaAsyncAssertion {

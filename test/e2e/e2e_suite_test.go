@@ -7,11 +7,6 @@ import (
 	"time"
 
 	logs "github.com/appscode/go/log/golog"
-	"github.com/appscode/stash/apis"
-	"github.com/appscode/stash/client/clientset/versioned/scheme"
-	_ "github.com/appscode/stash/client/clientset/versioned/scheme"
-	"github.com/appscode/stash/pkg/controller"
-	"github.com/appscode/stash/test/e2e/framework"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
@@ -23,6 +18,11 @@ import (
 	discovery_util "kmodules.xyz/client-go/discovery"
 	"kmodules.xyz/client-go/tools/cli"
 	"kmodules.xyz/client-go/tools/clientcmd"
+	"stash.appscode.dev/stash/apis"
+	"stash.appscode.dev/stash/client/clientset/versioned/scheme"
+	_ "stash.appscode.dev/stash/client/clientset/versioned/scheme"
+	"stash.appscode.dev/stash/pkg/controller"
+	"stash.appscode.dev/stash/test/e2e/framework"
 )
 
 const (

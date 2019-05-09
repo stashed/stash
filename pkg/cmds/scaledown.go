@@ -2,11 +2,11 @@ package cmds
 
 import (
 	"github.com/appscode/go/log"
-	"github.com/appscode/stash/pkg/scale"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"kmodules.xyz/client-go/meta"
+	"stash.appscode.dev/stash/pkg/scale"
 )
 
 func NewCmdScaleDown() *cobra.Command {

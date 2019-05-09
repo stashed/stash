@@ -3,7 +3,7 @@ package restic
 import (
 	"time"
 
-	api_v1beta1 "github.com/appscode/stash/apis/stash/v1beta1"
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
 func (w *ResticWrapper) RunBackup(backupOption BackupOptions) (*BackupOutput, error) {
