@@ -1,0 +1,29 @@
+apiVersion: stash.appscode.com/v1beta1
+kind: BackupConfigurationTemplate
+metadata:
+  name: workload-backup-template
+spec:
+  # ============== Template for Repository ==========================
+  backend:
+    gcs:
+      bucket: stash-backup
+      prefix: stash/${TARGET_NAMESPACE}/${TARGET_KIND}/${TARGET_NAME}
+    storageSecretName: gcs-secret
+  wipeOut: false
+  # ============== Template for BackupConfiguration =================
+  schedule: "* * * * *"
+  # task: # no task section is required for workload data backup
+  #   name: workload-backup
+  runtimeSettings:
+    container:
+      securityContext:
+        runAsUser: 2000
+        runAsGroup: 2000
+  tempDir:
+    medium: "Memory"
+    size:  "1Gi"
+    disableCache: false
+  retentionPolicy:
+    name: 'keep-last-5'
+    keepLast: 5
+    prune: true

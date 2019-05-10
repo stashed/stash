@@ -30,7 +30,7 @@ To proceed with this tutorial, you have to meet following requirements:
 
 - You should be familiar with the following Stash concepts:
   - [Repository](/docs/concepts/crds/repository.md)
-  - [Recovery](/docs/concepts/crds/recovery.md)
+  - [Recovery](/docs/concepts/old-crds/recovery.md)
   - [Snapshot](/docs/concepts/crds/snapshot.md)
 
 To keep things isolated, we are going to use a separate namespace called `demo` throughout this tutorial. Create the namespace if you haven't created yet.

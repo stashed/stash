@@ -25,7 +25,7 @@ At first, you need to have a Kubernetes cluster, and the `kubectl` command-line 
 - Install `Stash` in your cluster following the steps [here](/docs/setup/install.md).
 
 - You should be familiar with the following Stash concepts:
-  - [Restic](/docs/concepts/crds/restic.md)
+  - [Restic](/docs/concepts/old-crds/restic.md)
   - [Repository](/docs/concepts/crds/repository.md)
   - [Snapshot](/docs/concepts/crds/snapshot.md)
 

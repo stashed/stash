@@ -22,7 +22,7 @@ Backend is where Stash stores backup snapshots. It can be a cloud storage like G
   <img alt="Stash Backup Overview" height="350px", src="/docs/images/v1alpha1/backup-overview.png">
 </p>
 
-Stash sidecar container receive backend information from `spec.backend` field of [Restic](/docs/concepts/crds/restic.md) crd. It obtains necessary credentials to access the backend from the secret specified in `spec.backend.storageSecretName` field of Restic crd. Then on first backup schedule, Stash initialize a repository in the backend.
+Stash sidecar container receive backend information from `spec.backend` field of [Restic](/docs/concepts/old-crds/restic.md) crd. It obtains necessary credentials to access the backend from the secret specified in `spec.backend.storageSecretName` field of Restic crd. Then on first backup schedule, Stash initialize a repository in the backend.
 
 Below, a screenshot that show a repository created at AWS S3 bucket named `stash-qa` for a Deployment named `stash-demo`.
 
