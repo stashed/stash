@@ -205,17 +205,23 @@ func hasStashInitContainer(containers []core.Container) bool {
 func (c *StashController) getTotalHosts(target interface{}, namespace string) (*int32, error) {
 
 	// for cluster backup/restore, target is nil. in this case, there is only one host
+	var targetRef api_v1beta1.TargetRef
 	if target == nil {
 		return types.Int32P(1), nil
 	}
-
-	var targetRef api_v1beta1.TargetRef
-
 	switch target.(type) {
 	case *api_v1beta1.BackupTarget:
-		targetRef = target.(*api_v1beta1.BackupTarget).Ref
+		t := target.(*api_v1beta1.BackupTarget)
+		if t == nil {
+			return types.Int32P(1), nil
+		}
+		targetRef = t.Ref
 	case *api_v1beta1.RestoreTarget:
-		targetRef = target.(*api_v1beta1.RestoreTarget).Ref
+		t := target.(*api_v1beta1.RestoreTarget)
+		if t == nil {
+			return types.Int32P(1), nil
+		}
+		targetRef = t.Ref
 	}
 
 	switch targetRef.Kind {

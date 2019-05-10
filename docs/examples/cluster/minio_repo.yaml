@@ -50,8 +50,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: minio-service
+  namespace: demo
 spec:
-  type: LoadBalancer
   ports:
     - port: 9000
       targetPort: 9000
@@ -65,6 +65,7 @@ metadata:
   name: minio-secret
   namespace: demo
 data:
+  RESTIC_PASSWORD: ZGVtbw==
   AWS_ACCESS_KEY_ID: bXlhY2Nlc3NrZXk=
   AWS_SECRET_ACCESS_KEY: bXlzZWNyZXRrZXk=
 type: Opaque
@@ -77,7 +78,7 @@ metadata:
 spec:
   backend:
     s3:
-      endpoint: 'http://minio-service.demo.svc'
+      endpoint: 'http://minio-service.demo.svc:9000'
       bucket: stash-repo
       prefix: demo
     storageSecretName: minio-secret

@@ -755,6 +755,7 @@ k8s.io/client-go/tools/record/util
 k8s.io/client-go/util/workqueue
 k8s.io/client-go/tools/auth
 k8s.io/client-go/tools/clientcmd/api/latest
+k8s.io/client-go/deprecated-dynamic
 k8s.io/client-go/discovery/cached/disk
 k8s.io/client-go/restmapper
 k8s.io/client-go/util/keyutil
@@ -912,6 +913,7 @@ kmodules.xyz/client-go/openapi
 kmodules.xyz/client-go/core/v1
 kmodules.xyz/client-go/rbac/v1
 kmodules.xyz/client-go/tools/queue
+kmodules.xyz/client-go/tools/backup
 kmodules.xyz/client-go/tools/cli
 kmodules.xyz/client-go/batch/v1
 kmodules.xyz/client-go/tools/clientcmd

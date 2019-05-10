@@ -5,10 +5,11 @@ import (
 
 	"github.com/appscode/go/flags"
 	"github.com/appscode/go/log"
-	"github.com/appscode/stash/pkg/restic"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/tools/clientcmd"
 	"kmodules.xyz/client-go/tools/backup"
+	"stash.appscode.dev/stash/pkg/restic"
+	"stash.appscode.dev/stash/pkg/util"
 )
 
 const (
@@ -35,10 +36,13 @@ func NewCmdBackupCluster() *cobra.Command {
 			ScratchDir:  restic.DefaultScratchDir,
 			EnableCache: false,
 		},
+		backupOpt: restic.BackupOptions{
+			Host: restic.DefaultHost,
+		},
 		metrics: restic.MetricsOptions{
 			JobName: JobClusterBackup,
 		},
-		backupDir: filepath.Join(restic.DefaultScratchDir,"cluster-resources"),
+		backupDir: filepath.Join(restic.DefaultScratchDir, "cluster-resources"),
 		sanitize:  false,
 	}
 
@@ -56,7 +60,7 @@ func NewCmdBackupCluster() *cobra.Command {
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&opt.masterURL, "master-url", "", "URL of master node")
+	cmd.Flags().StringVar(&opt.masterURL, "master", "", "URL of master node")
 	cmd.Flags().StringVar(&opt.kubeconfigPath, "kubeconfig", opt.kubeconfigPath, "kubeconfig file pointing at the 'core' kubernetes server")
 	cmd.Flags().StringVar(&opt.context, "context", "", "Context to use from kubeconfig file")
 	cmd.Flags().BoolVar(&opt.sanitize, "sanitize", false, "Cleanup decorators from dumped YAML files")
@@ -64,10 +68,12 @@ func NewCmdBackupCluster() *cobra.Command {
 	cmd.Flags().StringVar(&opt.setupOpt.Provider, "provider", opt.setupOpt.Provider, "Backend provider (i.e. gcs, s3, azure etc)")
 	cmd.Flags().StringVar(&opt.setupOpt.Bucket, "bucket", opt.setupOpt.Bucket, "Name of the cloud bucket/container (keep empty for local backend)")
 	cmd.Flags().StringVar(&opt.setupOpt.Endpoint, "endpoint", opt.setupOpt.Endpoint, "Endpoint for s3/s3 compatible backend")
+	cmd.Flags().StringVar(&opt.setupOpt.URL, "rest-server-url", opt.setupOpt.URL, "URL for rest backend")
 	cmd.Flags().StringVar(&opt.setupOpt.Path, "path", opt.setupOpt.Path, "Directory inside the bucket where backup will be stored")
 	cmd.Flags().StringVar(&opt.setupOpt.SecretDir, "secret-dir", opt.setupOpt.SecretDir, "Directory where storage secret has been mounted")
 	cmd.Flags().StringVar(&opt.setupOpt.ScratchDir, "scratch-dir", opt.setupOpt.ScratchDir, "Temporary directory")
 	cmd.Flags().BoolVar(&opt.setupOpt.EnableCache, "enable-cache", opt.setupOpt.EnableCache, "Specify weather to enable caching for restic")
+	cmd.Flags().IntVar(&opt.setupOpt.MaxConnections, "max-connections", opt.setupOpt.MaxConnections, "Specify maximum concurrent connections for GCS, Azure and B2 backend")
 
 	cmd.Flags().StringVar(&opt.backupOpt.Host, "hostname", opt.backupOpt.Host, "Name of the host machine")
 
@@ -97,20 +103,33 @@ func (opt *clusterBackupOptions) runClusterBackup() error {
 		return err
 	}
 
+	// if no explicit context is provided then try to detect context from kubeconfig file.
 	if opt.context == "" {
 		cfg, err := clientcmd.LoadFromFile(opt.kubeconfigPath)
 		if err == nil {
 			opt.context = cfg.CurrentContext
 		} else {
-			// using incluster config. so no context. use default.
+			// using in-cluster config. so no context. use default.
 			opt.context = "default"
 		}
 	}
+
+	// backup cluster resources yaml into opt.backupDir
 	mgr := backup.NewBackupManager(opt.context, config, opt.sanitize)
 
 	_, err = mgr.BackupToDir(opt.backupDir)
 	if err != nil {
 		return err
+	}
+
+	// apply nice, ionice settings from env
+	opt.setupOpt.Nice, err = util.NiceSettingsFromEnv()
+	if err != nil {
+		return handleResticError(opt.outputDir, restic.DefaultOutputFileName, err)
+	}
+	opt.setupOpt.IONice, err = util.IONiceSettingsFromEnv()
+	if err != nil {
+		return handleResticError(opt.outputDir, restic.DefaultOutputFileName, err)
 	}
 
 	// init restic wrapper
