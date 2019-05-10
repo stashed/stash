@@ -4,6 +4,7 @@ metadata:
   name: demo-backup
   namespace: demo
 spec:
+  driver: Restic
   repository:
     name: local-repo
   # task:

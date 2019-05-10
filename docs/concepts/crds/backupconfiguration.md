@@ -34,6 +34,7 @@ metadata:
   name: demo-backup
   namespace: demo
 spec:
+  driver: Restic
   repository:
     name: local-repo
   # task:
@@ -70,9 +71,9 @@ spec:
       - name:  my-private-registry-secret
       serviceAccountName: my-backup-svc
   tempDir:
-    medium: Memory
-    sizeLimit:  2Gi
-    disableCaching: false
+    medium: "Memory"
+    size:  "2Gi"
+    disableCache: false
   retentionPolicy:
     name: 'keep-last-5'
     keepLast: 5
@@ -84,6 +85,17 @@ Here, we are going to describe some important sections of `BackupConfiguration` 
 ### BackupConfiguration `Spec` Section
 
 `BackupConfiguration` object holds following fields in `.spec` section.
+
+#### spec.driver
+
+`spec.driver` indicates the tool to use to backup the target. Currently, Stash accept `Restic` and `VolumeSnapshotter` as driver. The default value of this field is `Restic`.
+
+The usage of the drivers are followings:
+
+|       Driver        |                                                                                                          Usage                                                                                                           |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Restic`            | Used to backup workload data, persistent volumes data and databases. It uses [restic](https://restic.net/) to backup the target.                                                                                         |
+| `VolumeSnapshotter` | Used to take snapshot of PersistentVolumeClaims of a targeted workload. It leverages Kubernetes [VolumeSnapshot](https://kubernetes.io/docs/concepts/storage/volume-snapshots/) crd and CSI driver to snapshot the PVCs. |
 
 #### spec.repository
 
@@ -115,6 +127,8 @@ Here, we are going to describe some important sections of `BackupConfiguration` 
 - **spec.target.directories :** `spec.target.directories` specifies list of directories to backup.
 
 - **spec.target.volumeMounts :** `spec.target.volumeMounts` list of volumes and their `mountPath` that contains the target directories. Stash will mount these volumes inside sidecar container or backup job.
+
+- **spec.target.snapshotClassName:** `spec.target.snapshotClassName` indicates the [VolumeSnapshotClass](https://kubernetes.io/docs/concepts/storage/volume-snapshot-classes/) to use for volume snasphotting. Use this field only if `spec.driver` is set to `VolumeSnapshotter`.
 
 #### spec.runtimeSettings
 

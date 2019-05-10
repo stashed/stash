@@ -41,6 +41,7 @@ metadata:
   name: statefulset-restore
   namespace: demo
 spec:
+  driver: Restic
   repository:
     name: local-repo
   # task:
@@ -113,6 +114,17 @@ Here, we are going to describe some important sections of `RestoreSession` crd.
 
 RestoreSession object holds the following fields in `.spec` section.
 
+#### spec.driver
+
+`spec.driver` indicates the tool to use to restore the target. Currently, Stash accepts `Restic` and `VolumeSnapshotter` as driver. The default value of this field is `Restic`.
+
+The usage of the drivers are followings:
+
+|       Driver        |                                                                                                                                            Usage                                                                                                                                             |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Restic`            | Used to restore workload data, persistent volumes data and databases. It uses [restic](https://restic.net/) to restore the target.                                                                                                                                                           |
+| `VolumeSnapshotter` | Used to initialize PersistentVolumeClaim from VolumeSnapshot. It leverages Kubernetes [VolumeSnapshot](https://kubernetes.io/docs/concepts/storage/volume-snapshots/) crd and CSI driver to initialize the target PVCs from respective snapshots. Currently, it can restore only in new PVC. |
+
 #### spec.repository
 
 `spec.repository.name` indicates the `Repository` crd name that holds necessary backend information where backed up data will be stored.
@@ -132,7 +144,11 @@ RestoreSession object holds the following fields in `.spec` section.
 
 - **spec.target.ref :** `spec.target.ref` refers to the restore target. You have to specify `apiVersion`, `kind` and `name` of the target. Stash will use this information to inject an `init-container` or to create a restore job.
 
-- **spec.target.volumeMounts :** `spec.target.volumeMounts` list of volumes and their `mountPath` where the data will be restored. Stash will mount these volumes inside the `init-container` or restore job.
+- **spec.target.volumeMounts :** `spec.target.volumeMounts` specifies a list of volumes and their `mountPath` where the data will be restored. Stash will mount these volumes inside the `init-container` or restore job.
+
+- **spec.target.volumeClaimTemplates :** `spec.target.volumeClaimTemplates` specifies a template for a list of PVCs that will be created by restoring data from respective VolumeSnapshots. You have to specify `spec.dataSource` section to respective VolumeSnapshot. You can template `spec.dataSource.name` section. Stash will resolve the template and dynamically creates respective PVCs and initialize them from respective VolumeSnapshots. Use this field only if `spec.driver` is set to `VolumeSnapshotter`. For more details on how to restore PVCs from VolumeSnapshot, please visit [here](/docs/guides/latest/volume-snapshot/restore.md).
+
+- **spec.target.replicas :** `spec.target.replicas` used to specify the number of replicas of a StatefulSet whose PVCs was snapshotted by `VolumeSnapshotter`. Stash uses this field to dynamically create the desired number of PVCs and initialize them from respective VolumeSnapshots. Use this field only if `spec.driver` is set to `VolumeSnapshotter` and `spec.target.volumeClaimTemplates` specified PVC template of a StatefulSet.
 
 #### spec.rules
 

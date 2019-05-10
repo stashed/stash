@@ -35,6 +35,6 @@ This concept section is divided into the following modules:
   - [AppBinding](/docs/concepts/appbinding.md) introduces concept of `AppBinding` crd which holds the information that are necessary to connect with a database.
   - [Snapshot](/docs/concepts/crds/snapshot.md) introduces concept of `Snapshot` object that represents backed up snapshots in a Kubernetes native way.
 
-- Old API
+- v1alpha1 API
   - [Restic](/docs/concepts/old-crds/restic.md) introduces the concept of `Restic` crd that is used for configuring [restic](https://restic.net) in a Kubernetes native way.
   - [Recovery](/docs/concepts/old-crds/recovery.md) introduces the concept of `Recovery` crd that is used to restore a backup taken using Stash.

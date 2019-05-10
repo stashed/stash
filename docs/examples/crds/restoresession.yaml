@@ -4,6 +4,7 @@ metadata:
   name: statefulset-restore
   namespace: demo
 spec:
+  driver: Restic
   repository:
     name: local-repo
   # task:
