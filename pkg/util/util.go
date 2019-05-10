@@ -173,6 +173,13 @@ func GetProvider(backend store.Backend) (string, error) {
 	return "", errors.New("unknown provider.")
 }
 
+func GetRestUrl(backend store.Backend) string {
+	if backend.Rest != nil {
+		return backend.Rest.URL
+	}
+	return ""
+}
+
 // TODO: move to store
 // returns 0 if not specified
 func GetMaxConnections(backend store.Backend) int {
