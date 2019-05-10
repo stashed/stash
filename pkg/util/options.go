@@ -72,5 +72,6 @@ func SetupOptionsForRepository(repository api_v1alpha1.Repository, extraOpt Extr
 		ScratchDir:     extraOpt.ScratchDir,
 		EnableCache:    extraOpt.EnableCache,
 		MaxConnections: GetMaxConnections(repository.Spec.Backend),
+		URL:            GetRestUrl(repository.Spec.Backend),
 	}, nil
 }
