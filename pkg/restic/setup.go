@@ -52,6 +52,11 @@ const (
 	OS_USER_DOMAIN_NAME    = "OS_USER_DOMAIN_NAME"
 	OS_PROJECT_NAME        = "OS_PROJECT_NAME"
 	OS_PROJECT_DOMAIN_NAME = "OS_PROJECT_DOMAIN_NAME"
+	// For keystone v3 application credential authentication (application credential id)
+	OS_APPLICATION_CREDENTIAL_ID     = "OS_APPLICATION_CREDENTIAL_ID"
+	OS_APPLICATION_CREDENTIAL_SECRET = "OS_APPLICATION_CREDENTIAL_SECRET"
+	// For keystone v3 application credential authentication (application credential name)
+	OS_APPLICATION_CREDENTIAL_NAME = "OS_APPLICATION_CREDENTIAL_NAME"
 	// For authentication based on tokens
 	OS_STORAGE_URL = "OS_STORAGE_URL"
 	OS_AUTH_TOKEN  = "OS_AUTH_TOKEN"
@@ -141,6 +146,10 @@ func (w *ResticWrapper) setupEnv() error {
 		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 
 		// For keystone v1 authentication
+		// Necessary Envs:
+		// ST_AUTH
+		// ST_USER
+		// ST_KEY
 		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, ST_AUTH)); err == nil {
 			w.sh.SetEnv(ST_AUTH, string(v))
 		}
@@ -152,6 +161,13 @@ func (w *ResticWrapper) setupEnv() error {
 		}
 
 		// For keystone v2 authentication (some variables are optional)
+		// Necessary Envs:
+		// OS_AUTH_URL
+		// OS_REGION_NAME
+		// OS_USERNAME
+		// OS_PASSWORD
+		// OS_TENANT_ID
+		// OS_TENANT_NAME
 		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, OS_AUTH_URL)); err == nil {
 			w.sh.SetEnv(OS_AUTH_URL, string(v))
 		}
@@ -172,6 +188,14 @@ func (w *ResticWrapper) setupEnv() error {
 		}
 
 		// For keystone v3 authentication (some variables are optional)
+		// Necessary Envs:
+		// OS_AUTH_URL (already set in v2 authentication section)
+		// OS_REGION_NAME (already set in v2 authentication section)
+		// OS_USERNAME (already set in v2 authentication section)
+		// OS_PASSWORD (already set in v2 authentication section)
+		// OS_USER_DOMAIN_NAME
+		// OS_PROJECT_NAME
+		// OS_PROJECT_DOMAIN_NAME
 		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, OS_USER_DOMAIN_NAME)); err == nil {
 			w.sh.SetEnv(OS_USER_DOMAIN_NAME, string(v))
 		}
@@ -182,7 +206,33 @@ func (w *ResticWrapper) setupEnv() error {
 			w.sh.SetEnv(OS_PROJECT_DOMAIN_NAME, string(v))
 		}
 
+		// For keystone v3 application credential authentication (application credential id)
+		// Necessary Envs:
+		// OS_AUTH_URL (already set in v2 authentication section)
+		// OS_APPLICATION_CREDENTIAL_ID
+		// OS_APPLICATION_CREDENTIAL_SECRET
+		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, OS_APPLICATION_CREDENTIAL_ID)); err == nil {
+			w.sh.SetEnv(OS_APPLICATION_CREDENTIAL_ID, string(v))
+		}
+		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, OS_APPLICATION_CREDENTIAL_SECRET)); err == nil {
+			w.sh.SetEnv(OS_APPLICATION_CREDENTIAL_SECRET, string(v))
+		}
+
+		// For keystone v3 application credential authentication (application credential name)
+		// Necessary Envs:
+		// OS_AUTH_URL (already set in v2 authentication section)
+		// OS_USERNAME (already set in v2 authentication section)
+		// OS_USER_DOMAIN_NAME (already set in v3 authentication section)
+		// OS_APPLICATION_CREDENTIAL_NAME
+		// OS_APPLICATION_CREDENTIAL_SECRET (already set in v3 authentication with credential id section)
+		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, OS_APPLICATION_CREDENTIAL_NAME)); err == nil {
+			w.sh.SetEnv(OS_APPLICATION_CREDENTIAL_NAME, string(v))
+		}
+
 		// For authentication based on tokens
+		// Necessary Envs:
+		// OS_STORAGE_URL
+		// OS_AUTH_TOKEN
 		if v, err := ioutil.ReadFile(filepath.Join(w.config.SecretDir, OS_STORAGE_URL)); err == nil {
 			w.sh.SetEnv(OS_STORAGE_URL, string(v))
 		}
