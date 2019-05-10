@@ -63,7 +63,7 @@ metadata:
 spec:
   backend:
     rest:
-      url: http://rest-server.demo.svc:8000/stash/backup/demo
+      url: http://rest-server.demo.svc:8000/stash-backup-demo
     storageSecretName: rest-secret
 ```
 
