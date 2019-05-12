@@ -14,7 +14,7 @@ section_menu_id: guides
 
 # OpenStack Swift
 
-Stash supports [OpenStack Swift](https://www.swiftstack.com/product/open-source/openstack-swift) as backend. This tutorial will show you how to use this backend.
+Stash supports [OpenStack Swift](https://www.swiftstack.com/product/open-source/openstack-swift) as a backend. This tutorial will show you how to use this backend.
 
 In order to use OpenStack Swift as backend, you have to create a `Secret` and a `Repository` object pointing to the desired Swift container.
 
@@ -126,7 +126,7 @@ Following parameters are available for `Swift` backend.
 | `swift.container` | `Required`. Name of Storage container                                          |
 | `swift.prefix`    | `Optional`. Path prefix inside the container where backed up data will be stored. |
 
-Below, the YAML of a sample `Repository` crd that uses a Swift container as backend.
+Below, the YAML of a sample `Repository` crd that uses a Swift container as a backend.
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1

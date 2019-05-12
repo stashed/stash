@@ -14,7 +14,7 @@ section_menu_id: guides
 
 # Microsoft Azure Storage
 
-Stash supports Microsoft's [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/) as backend. This tutorial will show you how to use this backend.
+Stash supports Microsoft's [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/) as a backend. This tutorial will show you how to use this backend.
 
 In order to use Azure Blob Storage as backend, you have to create a `Secret` and a `Repository` object pointing to the desired blob container.
 
@@ -53,7 +53,7 @@ Following parameters are available for `azure` backend.
 | `azure.prefix`         | `Optional` | Path prefix inside the container where backed up data will be stored.                                                               |
 | `azure.maxConnections` | `Optional` | Maximum number of parallel connections to use for uploading backup data. By default, Stash will use maximum 5 parallel connections. |
 
-Below, the YAML of a sample `Repository` crd that uses an Azure Blob container as backend.
+Below, the YAML of a sample `Repository` crd that uses an Azure Blob container as a backend.
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1

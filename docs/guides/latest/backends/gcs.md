@@ -14,7 +14,7 @@ section_menu_id: guides
 
 # Google Cloud Storage (GCS)
 
-Stash supports [Google Cloud Storage(GCS)](https://cloud.google.com/storage/) as backend. This tutorial will show you how to use this backend.
+Stash supports [Google Cloud Storage(GCS)](https://cloud.google.com/storage/) as a backend. This tutorial will show you how to use this backend.
 
 In order to use Google Cloud Storage as backend, you have to create a `Secret` and a `Repository` object pointing to the desired GCS bucket.
 
@@ -47,13 +47,13 @@ Now, you have to create a `Repository` crd. You have to provide the storage secr
 
 Following parameters are available for `gcs` backend.
 
-|      Parameter       |    Type    |                                                                                                                    Description                                                                                                                    |
-| -------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `gcs.bucket`         | `Required` | Name of Bucket. If the bucket does not exist yet, it will be created in the default location (US). It is not possible at the moment for Stash to create a new bucket in a different location, so you need to create it using a different program. |
-| `gcs.prefix`         | `Optional` | Path prefix inside the bucket where backed up data will be stored.                                                                                                                                                                                |
-| `gcs.maxConnections` | `Optional` | Maximum number of parallel connections to use for uploading backup data. By default, Stash will use maximum 5 parallel connections.                                                                                                               |
+|      Parameter       |    Type    |                                                                                                                    Description                                                                                                                     |
+| -------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `gcs.bucket`         | `Required` | Name of Bucket. If the bucket does not exist yet, it will be created in the default location (US). It is not possible at the moment for Stash to create a new bucket in a different location, so you need to create it using Google cloud console. |
+| `gcs.prefix`         | `Optional` | Path prefix inside the bucket where backed up data will be stored.                                                                                                                                                                                 |
+| `gcs.maxConnections` | `Optional` | Maximum number of parallel connections to use for uploading backup data. By default, Stash will use maximum 5 parallel connections.                                                                                                                |
 
-Below, the YAML of a sample `Repository` crd that uses a GCS bucket as backend.
+Below, the YAML of a sample `Repository` crd that uses a GCS bucket as a backend.
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1

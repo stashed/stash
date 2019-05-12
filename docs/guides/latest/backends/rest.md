@@ -14,7 +14,7 @@ section_menu_id: guides
 
 # REST Backend
 
-Stash supports restic's [REST Server](https://github.com/restic/rest-server) as backend. This tutorial will show you how to use this backend.
+Stash supports restic's [REST Server](https://github.com/restic/rest-server) as a backend. This tutorial will show you how to use this backend.
 
 In order to use REST Server as backend, you have to create a `Secret` and a `Repository` object pointing to the desired REST Server address.
 
@@ -52,7 +52,7 @@ Following parameters are available for `rest` backend,
 | ---------- | ---------- | ------------------------------------------------------------------------------------------------------------- |
 | `rest.url` | `Required` | URL of the REST Server along with an optional path inside the server where backed up snapshot will be stored. |
 
-Below, the YAML of a sample `Repository` crd that uses a REST Server as backend.
+Below, the YAML of a sample `Repository` crd that uses a REST Server as a backend.
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1

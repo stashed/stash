@@ -16,18 +16,18 @@ section_menu_id: guides
 
 # Stash Backends
 
-Backend is where Stash stores backed up snapshots. It can be a cloud storage like GCS bucket, AWS S3, Azure Blob Storage etc. or a Kubernetes persistent volume like [HostPath](https://kubernetes.io/docs/concepts/storage/volumes/#hostpath), [PersistentVolumeClaim](https://kubernetes.io/docs/concepts/storage/volumes/#persistentvolumeclaim), [NFS](https://kubernetes.io/docs/concepts/storage/volumes/#nfs) etc.
+Stash supports various backends for storing data snapshots. It can be a cloud storage like GCS bucket, AWS S3, Azure Blob Storage etc. or a Kubernetes persistent volume like [HostPath](https://kubernetes.io/docs/concepts/storage/volumes/#hostpath), [PersistentVolumeClaim](https://kubernetes.io/docs/concepts/storage/volumes/#persistentvolumeclaim), [NFS](https://kubernetes.io/docs/concepts/storage/volumes/#nfs) etc.
 
-Below diagram shows how Stash sidecar container access and store backed up data into a backend.
+The following diagram shows how Stash sidecar container accesses and backs up data into a backend.
 
 <figure align="center">
   <img alt="Stash Backend Overview" src="/docs/images/v1beta1/backends/backend_overview.svg">
   <figcaption align="center">Fig: Stash Backend Overview</figcaption>
 </figure>
 
-You have to create a [Repository](/docs/concepts/crds/repository.md) object which contains backend information and a `Secret` which contains necessary credentials to access the backend prior to backup a workload.
+You have to create a [Repository](/docs/concepts/crds/repository.md) object which contains backend information and a `Secret` which contains necessary credentials to access the backend.
 
-Stash sidecar/backup job will receive backend information from the `Repository` and access credentials from the `Secret`. Then on the first backup schedule, Stash will initialize a repository in the backend.
+Stash sidecar/backup job reads backend information from the `Repository` and retrieves access credentials from the `Secret`. Then on the first backup session, Stash will initialize a repository in the backend.
 
 Below, a screenshot that shows a repository created in AWS S3 bucket named `stash-qa`:
 
@@ -38,7 +38,7 @@ Below, a screenshot that shows a repository created in AWS S3 bucket named `stas
 
 You will see all snapshots taken by Stash at `/snapshot` directory of this repository.
 
-> Note: Stash keeps all backup data encrypted. So, snapshot files in the bucket will not contain any meaningful data until they are decrypted.
+> Note: Stash stores data encrypted at rest. So, snapshot files in the bucket will not contain any meaningful data until they are decrypted.
 
 ## Next Steps
 

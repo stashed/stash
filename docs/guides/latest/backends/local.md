@@ -36,7 +36,7 @@ secret/local-secret created
 
 ### Create Repository
 
-Now, you have to create a `Repository` crd that uses Kubernetes volume as backend. You have to provide the storage secret that we have created earlier in `spec.backend.storageSecretName` field.
+Now, you have to create a `Repository` crd that uses Kubernetes volume as a backend. You have to provide the storage secret that we have created earlier in `spec.backend.storageSecretName` field.
 
 Following parameters are available for `Local` backend.
 
@@ -46,11 +46,11 @@ Following parameters are available for `Local` backend.
 | `local.subPath`      | `Optional` | Sub-path inside the referenced volume where the backed up snapshot will be stored instead of its root. |
 | `local.VolumeSource` | `Required` | Any Kubernetes volume. Can be specified inlined. Example: `hostPath`.                                  |
 
-Here, we are going to show some sample `Repository` crds that uses different Kubernetes volume as backend.
+Here, we are going to show some sample `Repository` crds that uses different Kubernetes volume as a backend.
 
 ##### HostPath volume as Backend
 
-Below, the YAML of a sample `Repository` crd that uses a `hostPath` volume as backend.
+Below, the YAML of a sample `Repository` crd that uses a `hostPath` volume as a backend.
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
@@ -78,7 +78,7 @@ repository/local-repo-with-hostpath created
 
 ##### PersistentVolumeClaim as Backend
 
-Below, the YAML of a sample `Repository` crd that uses a `PersistentVolumeClaim` as backend.
+Below, the YAML of a sample `Repository` crd that uses a `PersistentVolumeClaim` as a backend.
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
@@ -104,7 +104,7 @@ repository/local-repo-with-pvc created
 
 ##### NFS volume as Backend
 
-Below, the YAML of a sample `Repository` crd that uses an `NFS` volume as backend.
+Below, the YAML of a sample `Repository` crd that uses an `NFS` volume as a backend.
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
@@ -131,7 +131,7 @@ repository/local-repo-with-nfs created
 
 ##### GCE PersitentDisk as Backend
 
-Below, the YAML of a sample `Repository` crd that uses a [gcePersistentDisk](https://kubernetes.io/docs/concepts/storage/volumes/#gcepersistentdisk) as backend.
+Below, the YAML of a sample `Repository` crd that uses a [gcePersistentDisk](https://kubernetes.io/docs/concepts/storage/volumes/#gcepersistentdisk) as a backend.
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
@@ -160,7 +160,7 @@ repository/local-repo-with-gcepersistentdisk created
 
 ##### AWS EBS volume as Backend
 
-Below, the YAML of a sample `Repository` crd that uses an [awsElasticBlockStore](https://kubernetes.io/docs/concepts/storage/volumes/#awselasticblockstore) as backend.
+Below, the YAML of a sample `Repository` crd that uses an [awsElasticBlockStore](https://kubernetes.io/docs/concepts/storage/volumes/#awselasticblockstore) as a backend.
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
@@ -189,7 +189,7 @@ repository/local-repo-with-awsebs created
 
 ##### Azure Disk as Backend
 
-Below, the YAML of a sample `Repository` crd that uses an [azureDisk](https://kubernetes.io/docs/concepts/storage/volumes/#azuredisk) as backend.
+Below, the YAML of a sample `Repository` crd that uses an [azureDisk](https://kubernetes.io/docs/concepts/storage/volumes/#azuredisk) as a backend.
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
@@ -216,7 +216,7 @@ repository/local-repo-with-azuredisk created
 
 ##### StorageOS as Backend
 
-Below, the YAML of a sample `Repository` crd that uses a [storageOS](https://kubernetes.io/docs/concepts/storage/volumes/#storageos) volume as backend.
+Below, the YAML of a sample `Repository` crd that uses a [storageOS](https://kubernetes.io/docs/concepts/storage/volumes/#storageos) volume as a backend.
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
@@ -243,7 +243,7 @@ repository/local-repo-with-storageos created
 
 ##### EmptyDir volume as Backend
 
-Below, the YAML of a sample `Repository` crd that uses an [emptyDir](https://kubernetes.io/docs/concepts/storage/volumes/#emptydir) as backend.
+Below, the YAML of a sample `Repository` crd that uses an [emptyDir](https://kubernetes.io/docs/concepts/storage/volumes/#emptydir) as a backend.
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1

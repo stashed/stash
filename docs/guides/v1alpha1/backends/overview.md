@@ -41,9 +41,9 @@ In order to use a backend, you have to configure `Restic` crd and create a `Secr
 
 ## Next Steps
 
-- Learn how to configure `local` backend from [here](/docs/guides/old/backends/local.md).
-- Learn how to configure `AWS S3` backend from [here](/docs/guides/old/backends/s3.md).
-- Learn how to configure `Google Cloud Storage (GCS)` backend from [here](/docs/guides/old/backends/gcs.md).
-- Learn how to configure `Microsoft Azure Storage` backend from [here](/docs/guides/old/backends/azure.md).
-- Learn how to configure `OpenStack Swift` backend from [here](/docs/guides/old/backends/swift.md).
-- Learn how to configure `Backblaze B2` backend from [here](/docs/guides/old/backends/b2.md).
+- Learn how to configure `local` backend from [here](/docs/guides/v1alpha1/backends/local.md).
+- Learn how to configure `AWS S3` backend from [here](/docs/guides/v1alpha1/backends/s3.md).
+- Learn how to configure `Google Cloud Storage (GCS)` backend from [here](/docs/guides/v1alpha1/backends/gcs.md).
+- Learn how to configure `Microsoft Azure Storage` backend from [here](/docs/guides/v1alpha1/backends/azure.md).
+- Learn how to configure `OpenStack Swift` backend from [here](/docs/guides/v1alpha1/backends/swift.md).
+- Learn how to configure `Backblaze B2` backend from [here](/docs/guides/v1alpha1/backends/b2.md).
