@@ -1,3 +1,16 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: rest-pvc
+  namespace: demo
+spec:
+  storageClassName: standard
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
 apiVersion: v1
 kind: Pod
 metadata:
@@ -12,6 +25,13 @@ spec:
     ports:
     - name: http-1
       containerPort: 8000
+    volumeMounts:
+    - name: storage
+      mountPath: /data
+  volumes:
+  - name:  storage
+    persistentVolumeClaim:
+      claimName: rest-pvc
 # kubectl logs -f -n demo rest-server
 # kubectl exec -it -n demo rest-server create_user myuser
 # kubectl create secret generic rest-secret -n demo --from-file=./RESTIC_PASSWORD --from-file=./REST_SERVER_USERNAME --from-file=./REST_SERVER_PASSWORD
@@ -29,17 +49,16 @@ spec:
     name: http-1
     protocol: TCP
     targetPort: 8000
-  type: NodePort
   selector:
     app: rest-server
 ---
 apiVersion: stash.appscode.com/v1alpha1
 kind: Repository
 metadata:
-  name: hello-repo
+  name: rest-repo
   namespace: demo
 spec:
   backend:
     rest:
-      url: http://172.17.0.4:8000/hello-prefix
+      url: http://rest-server.demo.svc:8000/stash/backup/demo
     storageSecretName: rest-secret

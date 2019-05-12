@@ -1,9 +1,10 @@
+
 ---
 title: Backend Overview | Stash
 description: An overview of backends used by Stash to store snapshot data.
 menu:
   product_stash_0.8.3:
-    identifier: backend-overview
+    identifier: v1alpha1-backend-overview
     name: What is Backend?
     parent: v1alpha1-backend
     weight: 10
@@ -19,7 +20,7 @@ section_menu_id: guides
 Backend is where Stash stores backup snapshots. It can be a cloud storage like GCS bucket, AWS S3, Azure Blob Storage etc. or a Kubernetes persistent volume like [HostPath](https://kubernetes.io/docs/concepts/storage/volumes/#hostpath), [PersistentVolumeClaim](https://kubernetes.io/docs/concepts/storage/volumes/#persistentvolumeclaim), [NFS](https://kubernetes.io/docs/concepts/storage/volumes/#nfs) etc. Below diagram show how Stash sidecar container access and store backup data into a backend storage.
 
 <p align="center">
-  <img alt="Stash Backup Overview" height="350px", src="/docs/images/v1alpha1/backup-overview.png">
+  <img alt="Stash Backup Overview" height="350px", src="/docs/images/backup-overview.png">
 </p>
 
 Stash sidecar container receive backend information from `spec.backend` field of [Restic](/docs/concepts/crds/restic.md) crd. It obtains necessary credentials to access the backend from the secret specified in `spec.backend.storageSecretName` field of Restic crd. Then on first backup schedule, Stash initialize a repository in the backend.
@@ -27,7 +28,7 @@ Stash sidecar container receive backend information from `spec.backend` field of
 Below, a screenshot that show a repository created at AWS S3 bucket named `stash-qa` for a Deployment named `stash-demo`.
 
 <p align="center">
-  <img alt="Repository in AWS S3 Backend", src="/docs/images/v1alpha1/platforms/eks/s3-backup-repository.png">
+  <img alt="Repository in AWS S3 Backend", src="/docs/images/platforms/eks/s3-backup-repository.png">
 </p>
 
 You will see all snapshots taken by Stash at `/snapshot` directory of this repository.

@@ -1,0 +1,13 @@
+apiVersion: stash.appscode.com/v1alpha1
+kind: Repository
+metadata:
+  name: local-repo-with-nfs
+  namespace: demo
+spec:
+  backend:
+    local:
+      mountPath: /safe/data
+      nfs:
+        server: "nfs-service.storage.svc.cluster.local" # use you own NFS server address
+        path: "/" # this path is relative to "/exports" path of NFS server
+    storageSecretName: local-secret

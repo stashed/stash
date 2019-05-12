@@ -1,0 +1,13 @@
+apiVersion: stash.appscode.com/v1alpha1
+kind: Repository
+metadata:
+  name: local-repo-with-awsebs
+  namespace: demo
+spec:
+  backend:
+    local:
+      mountPath: /safe/data
+      awsElasticBlockStore: # This AWS EBS volume must already exist.
+        volumeID: <volume-id>
+        fsType: ext4
+    storageSecretName: local-secret

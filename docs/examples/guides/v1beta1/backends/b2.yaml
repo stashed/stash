@@ -1,0 +1,11 @@
+apiVersion: stash.appscode.com/v1alpha1
+kind: Repository
+metadata:
+  name: b2-repo
+  namespace: demo
+spec:
+  backend:
+    b2:
+      bucket: stash-backup
+      prefix: /demo/deployment/my-deploy
+    storageSecretName: b2-secret
