@@ -83,7 +83,7 @@ Stash operator updates `.status` of a Recovery CRD when the recovery operation i
 ## Next Steps
 
 - Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/v1alpha1/backup.md).
-- Learn about the details of Restic CRD [here](/docs/concepts/crds/restic.md).
+- Learn about the details of Restic CRD [here](/docs/concepts/crds/v1alpha1/restic.md).
 - To restore a backup see [here](/docs/guides/v1alpha1/restore.md).
 - To run backup in offline mode see [here](/docs/guides/v1alpha1/offline_backup.md)
 - See the list of supported backends and how to configure them [here](/docs/guides/v1alpha1/backends/overview.md).

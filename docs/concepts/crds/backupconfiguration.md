@@ -17,15 +17,15 @@ section_menu_id: concepts
 
 ## What is BackupConfiguration
 
-A `BackupConfiguration` is a Kubernetes `CustomResourceDefinition (CRD)` which specifies the backup target, behaviors (schedule, retention policy etc.) and `Repository` object that holds backend information in Kubernetes native way.
+A `BackupConfiguration` is a Kubernetes `CustomResourceDefinition`(CRD) which specifies the backup target, parameters(schedule, retention policy etc.) and a `Repository` object that holds snapshot storage information in a Kubernetes native way.
 
-You have to create a `BackupConfiguration` object for each backup target. `BackupConfiguration` has 1-1 mapping with the target. Thus, only one target can be backed up using one `BackupConfiguration`.
+You have to create a `BackupConfiguration` object for each backup target. A backup target can be a workload, database or a PV/PVC.
 
 ## BackupConfiguration CRD Specification
 
-Like other official Kubernetes resources, `BackupConfiguration` has `TypeMeta`, `ObjectMeta` and `Spec` sections. However, unlike other Kubernetes resources, it does not have a `Status` section.
+Like any official Kubernetes resource, a `BackupConfiguration` has `TypeMeta`, `ObjectMeta` and `Spec` sections. However, unlike other Kubernetes resources, it does not have a `Status` section.
 
-A sample `BackupConfiguration` object to backup a Deployment's data is shown below,
+A sample `BackupConfiguration` object to backup the volumes of a Deployment is shown below:
 
 ```yaml
 apiVersion: stash.appscode.com/v1beta1
@@ -80,22 +80,32 @@ spec:
     prune: true
 ```
 
-Here, we are going to describe some important sections of `BackupConfiguration` crd.
+Here, we are going to describe the various sections of `BackupConfiguration` crd.
 
-### BackupConfiguration `Spec` Section
+### BackupConfiguration `Spec`
 
-`BackupConfiguration` object holds following fields in `.spec` section.
+A `BackupConfiguration` object has the following fields in the `spec` section.
 
 #### spec.driver
 
-`spec.driver` indicates the tool to use to backup the target. Currently, Stash accept `Restic` and `VolumeSnapshotter` as driver. The default value of this field is `Restic`.
+`spec.driver` indicates the mechanism used to backup a target. Currently, Stash supports `Restic` and `VolumeSnapshotter` as drivers. The default value of this field is `Restic`.
 
-The usage of the drivers are followings:
-
-|       Driver        |                                                                                                          Usage                                                                                                           |
+| Driver              | Usage                                                                                                                                                                                                                    |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `Restic`            | Used to backup workload data, persistent volumes data and databases. It uses [restic](https://restic.net/) to backup the target.                                                                                         |
+| `Restic`            | Used to backup workload data, persistent volumes data and databases. It uses [restic](https://restic.net) to backup the target.                                                                                          |
 | `VolumeSnapshotter` | Used to take snapshot of PersistentVolumeClaims of a targeted workload. It leverages Kubernetes [VolumeSnapshot](https://kubernetes.io/docs/concepts/storage/volume-snapshots/) crd and CSI driver to snapshot the PVCs. |
+
+#### spec.target
+
+`spec.target` field indicates the target for backup runs. This field consists of the following sub-fields:
+
+- **spec.target.ref :** `spec.target.ref` refers to the target of backup. You have to specify `apiVersion`, `kind` and `name` of the target. Stash will use this information to inject a sidecar to the target or to create a backup job for it.
+
+- **spec.target.directories :** `spec.target.directories` specifies list of directories to backup.
+
+- **spec.target.volumeMounts :** `spec.target.volumeMounts` are the list of volumes and their `mountPath`s that contain the target directories. Stash will mount these volumes inside a sidecar container or a backup job.
+
+- **spec.target.snapshotClassName:** `spec.target.snapshotClassName` indicates the [VolumeSnapshotClass](https://kubernetes.io/docs/concepts/storage/volume-snapshot-classes/) to use for volume snasphotting. Use this field only if `spec.driver` is set to `VolumeSnapshotter`.
 
 #### spec.repository
 
@@ -107,46 +117,36 @@ The usage of the drivers are followings:
 
 #### spec.task
 
-`spec.task` specifies the name and parameters of [Task](/docs/concepts/crds/task.md) template to use to backup the target.
+`spec.task` specifies the name and parameters of the [Task](/docs/concepts/crds/task.md) template used to backup the target.
 
-- **spec.task.name:** `spec.task.name` indicates the name of the `Task` template to use for this backup process.
+- **spec.task.name:** `spec.task.name` indicates the name of the `Task` template used for this backup process.
 - **spec.task.params:** `spec.task.params` is an array of custom parameters to use to configure the task.
 
-> `spec.task` section is not necessary for backing up workload data (i.e. Deployment, DaemonSet, StatefulSet etc.). However, it is necessary for backing up databases and stand-alone PVC.
+> `spec.task` section is not required for backing up workload data (i.e. Deployment, DaemonSet, StatefulSet etc.). However, it is necessary for backing up databases and stand-alone PVCs.
 
 #### spec.paused
 
 `spec.paused` can be used as `enable/disable` switch for backup. If it is set `true`, Stash will not take any backup of the target specified by this BackupConfiguration.
 
-#### spec.target
-
-`spec.target` field indicates the target of backup. This section consist of the following fields:
-
-- **spec.target.ref :** `spec.target.ref` refers to the target of backup. You have to specify `apiVersion`, `kind` and `name` of the target. Stash will use this information to inject a sidecar to the target or to create a backup job for it.
-
-- **spec.target.directories :** `spec.target.directories` specifies list of directories to backup.
-
-- **spec.target.volumeMounts :** `spec.target.volumeMounts` list of volumes and their `mountPath` that contains the target directories. Stash will mount these volumes inside sidecar container or backup job.
-
-- **spec.target.snapshotClassName:** `spec.target.snapshotClassName` indicates the [VolumeSnapshotClass](https://kubernetes.io/docs/concepts/storage/volume-snapshot-classes/) to use for volume snasphotting. Use this field only if `spec.driver` is set to `VolumeSnapshotter`.
-
 #### spec.runtimeSettings
 
-`spec.runtimeSettings` allows to configure runtime environment for backup sidecar or job. You can specify runtime settings in both pod level and container level.
+`spec.runtimeSettings` allows to configure runtime environment for the backup sidecar or job. You can specify runtime settings at both pod level and container level.
 
 - **spec.runtimeSettings.container**
   
-  `spec.runtimeSettings.container` is used to configure backup sidecar/job in container level. You can configure the following container level parameters:
+  `spec.runtimeSettings.container` is used to configure the backup sidecar/job at container level. You can configure the following container level parameters:
 
 |       Field       |                                                                                                           Usage                                                                                                            |
 | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `resources`       | Compute resources required by sidecar container or backup job. To know how to manage resources for containers, please visit [here](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/). |
+| `resources`       | Compute resources required by the sidecar container or backup job. To learn how to manage resources for containers, please visit [here](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/). |
 | `livenessProbe`   | Periodic probe of backup sidecar/job container's liveness. Container will be restarted if the probe fails.                                                                                                                 |
 | `readinessProbe`  | Periodic probe of backup sidecar/job container's readiness. Container will be removed from service endpoints if the probe fails.                                                                                           |
 | `lifecycle`       | Actions that the management system should take in response to container lifecycle events.                                                                                                                                  |
 | `securityContext` | Security options that backup sidecar/job's container should run with. For more details, please visit [here](https://kubernetes.io/docs/concepts/policy/security-context/).                                                 |
 | `nice`            | Set CPU scheduling priority for backup process. For more details about `nice`, please visit [here](https://www.askapache.com/optimize/optimize-nice-ionice/#nice).                                                         |
 | `ionice`          | Set I/O scheduling class and priority for backup process. For more details about `ionice`, please visit [here](https://www.askapache.com/optimize/optimize-nice-ionice/#ionice).                                           |
+| `env`             | A list of the environment variables to set in the sidecar container or backup job's container.                                                                                                                         |
+| `envFrom`         | This allows to set environment variables to the container that will be created for this function from a Secret or ConfigMap.                                                                                               |
 
 - **spec.runtimeSettings.pod**
 
@@ -154,13 +154,13 @@ The usage of the drivers are followings:
 
 |             Field              |                                                                                                                  Usage                                                                                                                   |
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `serviceAccountName`           | Name of the `ServiceAccount` to use for backup job. Stash sidecar will use the same `ServiceAccount` as the target.                                                                                                                      |
+| `serviceAccountName`           | Name of the `ServiceAccount` to use for the backup job. Stash sidecar will use the same `ServiceAccount` as the target workload.                                                                                                                      |
 | `nodeSelector`                 | Selector which must be true for backup job pod to fit on a node.                                                                                                                                                                         |
 | `automountServiceAccountToken` | Indicates whether a service account token should be automatically mounted into the backup pod.                                                                                                                                           |
-| `nodeName`                     | NodeName is used to request to schedule backup job's pod onto a specific node.                                                                                                                                                           |
+| `nodeName`                     | `nodeName` is used to request to schedule backup job's pod onto a specific node.                                                                                                                                                           |
 | `securityContext`              | Security options that backup job's pod should run with. For more details, please visit [here](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).                                                               |
 | `imagePullSecrets`             | A list of secret names in the same namespace that will be used to pull image from private Docker registry. For more details, please visit [here](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/). |
-| `affinity`                     | Affinity and anti-affinity to schedule backup job's pod in the desired node. For more details, please visit [here](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity).                       |
+| `affinity`                     | Affinity and anti-affinity to schedule backup job's pod on a desired node. For more details, please visit [here](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity).                       |
 | `schedulerName`                | Name of the scheduler that should dispatch the backup job.                                                                                                                                                                               |
 | `tolerations`                  | Taints and Tolerations to ensure that backup job's pod is not scheduled in inappropriate nodes. For more details about `toleration`, please visit [here](https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/).       |
 | `priorityClassName`            | Indicates the backup job pod's priority class. For more details, please visit [here](https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/).                                                                        |
@@ -171,11 +171,11 @@ The usage of the drivers are followings:
 
 #### spec.tempDir
 
-Stash mounts an `emtpyDir` for holding temporary files. It is also used for `caching` for faster backup performance. You can configure the `emptyDir` using `spec.tempDir` section. You can also disable `caching` using this field. Following fields are configurable in `spec.tempDir` section:
+Stash mounts an `emptyDir` for holding temporary files. It is also used for `caching` for faster backup performance. You can configure the `emptyDir` using `spec.tempDir` section. You can also disable `caching` using this field. The following fields are configurable in `spec.tempDir` section:
 
 - **spec.tempDir.medium :** Specifies the type of storage medium should back this directory.
 - **spec.tempDir.sizeLimit :** Maximum limit of storage for this volume.
-- **spec.tempDir.disableCaching :** Disable caching while backup. This may negatively impact backup performance.
+- **spec.tempDir.disableCaching :** Disable caching while backup. This may negatively impact backup performance. This is set to `false` by default.
 
 #### spec.retentionPolicy
 

@@ -296,7 +296,7 @@ spec:
 
 **How it will work?**
 
-- When Stash will see a `BackupConfiguration` crd for database backup, it will lunch  a `CronJob` to take periodic backup of this database.
+- When Stash will see a `BackupConfiguration` crd for database backup, it will launch  a `CronJob` to take periodic backup of this database.
 
 ### Restore Database
 
@@ -330,7 +330,7 @@ spec:
 
 **How it will work?:**
 
-- Stash will lunch a Job to restore the backed up database and initialize target with this recovered data.
+- Stash will launch a Job to restore the backed up database and initialize target with this recovered data.
 
 ## Schedule Backup Cluster YAMLs
 
@@ -368,7 +368,7 @@ spec:
 
 **How it will work?**
 
-- Stash will lunch a `CronJob` using informations of the `Task` crd specified through `task` filed.
+- Stash will launch a `CronJob` using informations of the `Task` crd specified through `task` filed.
 - The `CronJob` will take periodic backup of the cluster.
 
 ## Trigger Backup Instantly
@@ -396,7 +396,7 @@ spec:
 **How it will work?**
 
 - For scheduled  backup through `sidecar` container, the `sidecar` container will take instant backup as it watches for `BackupSession` crd.
-- For scheduled backup through `CronJob`, Stash will lunch another job to take instant backup of the target.
+- For scheduled backup through `CronJob`, Stash will launch another job to take instant backup of the target.
 
 ## Default Backup
 

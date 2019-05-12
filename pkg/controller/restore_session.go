@@ -126,7 +126,7 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 				log.Infof("Skipping processing RestoreSession %s/%s. Reason: phase is %q.", restoreSession.Namespace, restoreSession.Name, restoreSession.Status.Phase)
 				return nil
 			}
-			// check weather restore session is completed or running and set it's phase accordingly
+			// check whether restore session is completed or running and set it's phase accordingly
 			phase, err := c.getRestoreSessionPhase(restoreSession)
 
 			if err != nil || phase == api_v1beta1.RestoreSessionFailed {

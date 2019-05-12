@@ -17,13 +17,13 @@ section_menu_id: concepts
 
 ## What is BackupSession
 
-A `BackupSession` is a Kubernetes `CustomResourceDefinition (CRD)` which represents a backup instance of the respective target pointed by a `BackupConfiguration` in Kubernetes native way.
+A `BackupSession` is a Kubernetes `CustomResourceDefinition`(CRD) which represents a backup run of the respective target referenced by a `BackupConfiguration` in a Kubernetes native way.
 
-When a backup schedule appears, the respective `CronJob` creates a `BackupSession` object. It points to the respective `BackupConfiguration`. Controller that runs inside backup sidecar (in case of backup through job, it is stash operator itself) watches this `BackupSession` object and start taking backup instantly.
+Stash operator creates a Kubernetes `CronJob` according to the schedule defined in a `BackupConfiguration`. On each backup schedule, this `CronJob` creates a `BackupSession` object. It points to the respective `BackupConfiguration`. Controller that runs inside backup sidecar (in case of backup via jobs, it is stash operator itself) watches this `BackupSession` object and start taking backup instantly.
 
 You can also create a `BackupSession` object manually to trigger backup instantly.
 
->In this tutorial, we are going to use **host** word to indicate an entity (pod) whose data is backed up.
+>In this article, we are going to use **host** word to indicate an entity (pod) whose data is backed up.
 
 >- For `Deployment`, `ReplicationController` and `ReplicaSet`, backup process run in only one pod. This pod is referred as **host-0**.
 >- For `StatefulSet`, backup process run in all pods. In this case, **pod-0** is known as **host-0**, **pod-1** is known as **host-1**, **pod-2** is known as **host-2** and so on.
@@ -32,7 +32,7 @@ You can also create a `BackupSession` object manually to trigger backup instantl
 
 ## BackupSession CRD Specification
 
-Like other official Kubernetes resources, `BackupSession` has `TypeMeta`, `ObjectMeta` and `Spec` , `Status` sections.
+Like any official Kubernetes resource, a `BackupSession` has `TypeMeta`, `ObjectMeta` and `Spec` , `Status` sections.
 
 A sample `BackupSession` created for backing up a Deployment's data is shown below,
 
@@ -68,9 +68,9 @@ status:
       uploaded: 0 B
 ```
 
-Here, we are going to describe some important sections of `BackupSession` crd.
+Here, we are going to describe the various sections of a `BackupSession` object.
 
-### BackupSession `Metadata` Section
+### BackupSession `Metadata`
 
 #### metadata.name
 
@@ -86,17 +86,17 @@ Here, we are going to describe some important sections of `BackupSession` crd.
 
 >If you create `BackupSession` manually to trigger a backup instantly, make sure that you have added `backup-configuration: <BackupConfiguration name>` label to your `BackupSession`. Otherwise, it will not trigger backup for workloads (those resources that are backed up using sidecar).
 
-### BackupSession `Spec` Section
+### BackupSession `Spec`
 
-BackupSession object has the following fields in `.spec` section:
+A `BackupSession` object has the following fields in the `spec` section:
 
 #### spec.backupConfiguration
 
-`spec.backupConfiguration.name` indicates the name of the `BackupConfiguration` object whose target will be triggered to take backup instantly by this `BackupSession`.
+`spec.backupConfiguration.name` indicates the name of the `BackupConfiguration` object whose target will be backed up instantly in this `BackupSession`.
 
-### BackupSession `Status` Section
+### BackupSession `Status`
 
-`.status` section of `BackupSession` shows progress, stats and overall phase of backup process in this session. Backup sidecar container or job update their respective filed of this `.status` after they complete their task. `.status` section consist of following fields:
+`.status` section of `BackupSession` shows progress, stats and the overall progress of backup process in this session.A backup sidecar container or job updates the respective `.status` sub-field after it completes its task. `.status` section consists of the following fields:
 
 #### status.phase
 
@@ -104,7 +104,7 @@ BackupSession object has the following fields in `.spec` section:
 
 #### status.totalHosts
 
-A `BackupSession` may trigger backup of multiple hosts. For example, all the pod's of a `Deployment`, `ReplicaSet` and `ReplicationController` mounts same volume. In this case, Stash will backup data only from one pod. Thus, the total number of hosts for these workloads will be 1. On the other hand, pods of `StatefulSet` and `DaemonSet` may have different volume mounted into different replica. In this case, Stash will backup data from all individual pods. Thus, the total number of hosts for these workloads will be number of replicas for `StatefulSet` and number of running daemon pods for `DaemonSet`.
+A `BackupSession` may trigger backup of multiple hosts. For example, all the pod's of a `Deployment`, `ReplicaSet` and `ReplicationController` mounts same volume. In this case, Stash will backup data only from one pod. Thus, the total number of hosts for these workloads will be 1. On the other hand, pods of `StatefulSet` and `DaemonSet` may have different volumes mounted into different replicas. In this case, Stash will backup data from all individual pods. Thus, the total number of hosts for these workloads will be number of replicas for `StatefulSet` and number of running daemon pods for `DaemonSet`.
 
 #### status.sessionDuration
 
@@ -112,25 +112,25 @@ A `BackupSession` may trigger backup of multiple hosts. For example, all the pod
 
 #### status.stats
 
-`status.stats` section is an array of backup statistics of individual hosts. Each host adds their statistics in this array after completing their backup process.
+`status.stats` section is an array of backup statistics pertaining to individual hosts. Each host adds its statistics in this array after completing its backup process.
 
-Individual host stats entry consist of following fields:
+Each stats entry consists of the following fields:
 
 - **hostname :** `hostname` indicates the name of the host.
 - **phase :** `phase` indicates the backup phase of this host.
 - **duration :** `duration` indicates the total time taken to complete backup for this host.
-- **snapshots :** Stash creates one snapshot for each target directories specified in `spec.target.directories` field of `BackupConfiguration` object. `snapshots` field holds statistics of each of these individual snapshots. Each snapshot statistics has following fields:
+- **snapshots :** Stash creates one snapshot for each target directories specified in `spec.target.directories` field of `BackupConfiguration` object. The `snapshots` field holds statistics of each of these individual snapshots. Each snapshot statistics has the following fields:
   - **name :** `name` indicates the name of the snapshot.
   - **directory :** `directory` indicates the directory that was backed up in this snapshot.
   - **size :** `size` indicates the size of data to backup from this directory.
-  - **uploaded :** `uploaded` indicates size of data that was uploaded to backend for this snapshot. This could be much smaller than `size` if some data was already uploaded in the backend in the previous backup session.
-  - **processingTime :** `processingTime` indicates the time taken to process the data of target directory.
+  - **uploaded :** `uploaded` indicates size of data that was uploaded to backend for this snapshot. This could be much smaller than `size` if some data was already uploaded in the backend in previous backup sessions.
+  - **processingTime :** `processingTime` indicates the time taken to process the data of the target directory.
   - **fileStats :** `fileStats` field show statics of files that were backed up in this snapshot.
     - **totalFiles :** `totalFiles` shows the total number of files that were backed up in this snapshot.
     - **newFiles :** `newFiles` shows the number of new files that were backed up in this snapshot.
     - **modifiedFiles :** `modifiedFiles` shows the number of files that were modified since last backup of this directory.
     - **unmodifiedFiles :** `unmodifiedFiles` shows the number of files that hasn't been changed since last backup of this directory.
-- **error :** `error` shows the reason for failure if the backup process fail for this host.
+- **error :** `error` shows the reason for failure if the backup process failed for this host.
 
 ## Next Steps
 

@@ -18,14 +18,14 @@ type BackupMetrics struct {
 }
 
 type RestoreMetrics struct {
-	// RestoreSuccess show weather the current restore session succeeded or not
+	// RestoreSuccess show whether the current restore session succeeded or not
 	RestoreSuccess prometheus.Gauge
 	// SessionDuration show total time taken to complete the restore session
 	SessionDuration prometheus.Gauge
 }
 
 type BackupSessionMetrics struct {
-	// BackupSuccess show weather the current backup session succeeded or not
+	// BackupSuccess show whether the current backup session succeeded or not
 	BackupSuccess prometheus.Gauge
 	// SessionDuration show total time taken to complete the restore session
 	SessionDuration prometheus.Gauge
@@ -70,7 +70,7 @@ func newBackupMetrics(labels prometheus.Labels) *BackupMetrics {
 					Namespace:   "stash",
 					Subsystem:   "backup",
 					Name:        "session_success",
-					Help:        "Indicates weather the current backup session succeeded or not",
+					Help:        "Indicates whether the current backup session succeeded or not",
 					ConstLabels: labels,
 				},
 			),
@@ -198,7 +198,7 @@ func newRestoreMetrics(labels prometheus.Labels) *RestoreMetrics {
 				Namespace:   "stash",
 				Subsystem:   "restore",
 				Name:        "session_success",
-				Help:        "Indicates weather the current restore session succeeded or not",
+				Help:        "Indicates whether the current restore session succeeded or not",
 				ConstLabels: labels,
 			},
 		),

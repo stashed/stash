@@ -47,9 +47,9 @@ status:
   username: ""
 ```
 
-Here, we are going to describe some relevant sections of a `Snapshot` object.
+Here, we are going to describe the various sections of a `Snapshot` object.
 
-### Snapshot `Metadata` Section
+### Snapshot `Metadata`
 
 - **metadata.name**
 
@@ -67,7 +67,7 @@ Here, we are going to describe some relevant sections of a `Snapshot` object.
 
   A `Snapshot` object holds `Repository` name as a label in `metadata.labels` section. This helps a user to query the snapshots of a particular `Repository`.
 
-### Snapshot `Status` Section
+### Snapshot `Status`
 
 `Snapshot` object has the following fields in `.status` section:
 
@@ -153,11 +153,11 @@ $ kubectl delete snapshot local-repo-9ac3160b -n demo
 snapshot.repositories.stash.appscode.com "local-repo-9ac3160b" deleted
 ```
 
-## Precondition for Snapshot
+## Preconditions for Snapshot
 
 1. Stash provides `Snapshots` listing facility with the help of an Aggregated API Server. Your cluster must support Aggregated API Server. Otherwise, you won't be able to perform `get`, `list` or `delete`  operation on `Snapshot`.
 
-2. If you are using [local](/docs/guides/backends/local.md) backend, the respective pod that took the backup must be in `Running` state. It is not necessary if you use cloud backend.
+2. If you are using [local](/docs/guides/backends/local.md) backend, the respective pod that took the backup must be in `Running` state. It is not necessary if you use cloud backends.
 
 ## Next Steps
 

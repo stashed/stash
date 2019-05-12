@@ -1,24 +1,24 @@
 ---
-title: Stash Restore-Pg
+title: Stash Restore-Es
 menu:
   product_stash_0.8.3:
-    identifier: stash-restore-pg
-    name: Stash Restore-Pg
+    identifier: stash-restore-es
+    name: Stash Restore-Es
     parent: reference
 product_name: stash
 menu_name: product_stash_0.8.3
 section_menu_id: reference
 ---
-## stash restore-pg
+## stash restore-es
 
-Restores Postgres DB Backup
+Restores ElasticSearch DB Backup
 
 ### Synopsis
 
-Restores Postgres DB Backup
+Restores ElasticSearch DB Backup
 
 ```
-stash restore-pg [flags]
+stash restore-es [flags]
 ```
 
 ### Options
@@ -28,11 +28,11 @@ stash restore-pg [flags]
       --bucket string                    Name of the cloud bucket/container (keep empty for local backend)
       --enable-cache                     Specify whether to enable caching for restic
       --endpoint string                  Endpoint for s3/s3 compatible backend
-  -h, --help                             help for restore-pg
-      --hostname string                  Name of the host machine (default "host-0")
+      --es-args string                   Additional arguments
+  -h, --help                             help for restore-es
+      --hostname string                  Name of the host machine
       --kubeconfig string                Path to kubeconfig file with authorization information (the master location is set by the master flag).
       --master string                    The address of the Kubernetes API server (overrides any value in kubeconfig)
-      --max-connections int              Specify maximum concurrent connections for GCS, Azure and B2 backend
       --metrics-dir string               Directory where to write metric.prom file (keep empty if you don't want to write metric in a text file)
       --metrics-enabled                  Specify whether to export Prometheus metrics
       --metrics-labels strings           Labels to apply in exported metrics
@@ -40,12 +40,10 @@ stash restore-pg [flags]
       --namespace string                 Namespace of Backup/Restore Session (default "default")
       --output-dir string                Directory where output.json file will be written (keep empty if you don't need to write output in file)
       --path string                      Directory inside the bucket where backup will be stored
-      --pg-args string                   Additional arguments
       --provider string                  Backend provider (i.e. gcs, s3, azure etc)
-      --rest-server-url string           URL for rest backend
       --scratch-dir string               Temporary directory (default "/tmp")
       --secret-dir string                Directory where storage secret has been mounted
-      --snapshot string                  Snapshot to dump
+      --snapshots strings                Snapshots to restore
 ```
 
 ### Options inherited from parent commands

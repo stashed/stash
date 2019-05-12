@@ -17,15 +17,15 @@ section_menu_id: concepts
 
 ## What is Function
 
-A complete backup or restore process may consist of several steps. For example, in order to backup a PostgreSQL database we first need to dump the database then upload the dumped file to the backend. Then we need to update the respective`Repository` and `BackupSession` status and send Prometheus metrics. In Stash, we call such individual step as a `Function`.
+A complete backup or restore process may consist of several steps. For example, in order to backup a PostgreSQL database we first need to dump the database and upload the dumped file to a backend. Then we need to update the respective`Repository` and `BackupSession` status and send Prometheus metrics. In Stash, we call such individual steps a `Function`.
 
-A `Function` is a Kubernetes `CustomResourceDefinition (CRD)` which basically specifies a template for a container that performs only a specific action. For example, `pg-backup` function only dump and upload the dumped file into the backend where `update-status` function updates the status of respective `BackupSession` and `Repository` and send Prometheus metrics to pushgateway based on the output of `pg-backup` function.
+A `Function` is a Kubernetes `CustomResourceDefinition`(CRD) which basically specifies a template for a container that performs only a specific action. For example, `pg-backup` function only dump and upload the dumped file into the backend where `update-status` function updates the status of respective `BackupSession` and `Repository` and send Prometheus metrics to pushgateway based on the output of `pg-backup` function.
 
-When you install Stash, some default `Function` will be automatically created for supported targets. However, you can create your own function to customize or extend the backup/restore process.
+When you install Stash, some `Function`s will be pre-installed for supported targets like databases, etc. However, you can create your own function to customize or extend the backup/restore process.
 
 ## Function CRD Specification
 
-Like other official Kubernetes resources, `Function` has `TypeMeta`, `ObjectMeta` and `Spec` sections. However, unlike other Kubernetes resources, it does not have a `Status` section.
+Like any official Kubernetes resource, a `Function` has `TypeMeta`, `ObjectMeta` and `Spec` sections. However, unlike other Kubernetes resources, it does not have a `Status` section.
 
 A sample `Function` object to backup a PostgreSQL is shown below,
 
@@ -87,11 +87,11 @@ spec:
   - --enable-status-subresource=${ENABLE_STATUS_SUBRESOURCE:=false}
 ```
 
-Here, we are going to describe some important sections of a `Function` crd.
+Here, we are going to describe the various sections of a `Function` crd.
 
-### Function `Spec` Section
+### Function `Spec`
 
-Function object holds the following fields in `.spec` section:
+A `Function` object has the following fields in the `spec` section:
 
 #### spec.image
 
@@ -103,7 +103,7 @@ Function object holds the following fields in `.spec` section:
 
 #### spec.args
 
-`spec.args` specifies a list of arguments that will be passed to the entrypoint. You can template this section using some variables. Stash will resolve all the variables before creating the respective container. A variable should follow the following patterns:
+`spec.args` specifies a list of arguments that will be passed to the entrypoint. You can templatize this section using `envsubst` style variables. Stash will resolve all the variables before creating the respective container. A variable should follow the following patterns:
 
 - ${VARIABLE_NAME:=default-value}
 - ${VARIABLE_NAME:=}
@@ -112,11 +112,11 @@ In the first case, if Stash can't resolve the variable, the default value will b
 
 ##### Stash Provided Variables
 
-Stash can provide value of the following variables utilizing `BackupConfiguration`, `BackupSession`, `RestoreSession`, `Repository`, `Task`, `Function`, `BackupConfigurationTemplate` etc.
+Stash operator provides the following built-in variables based on `BackupConfiguration`, `BackupSession`, `RestoreSession`, `Repository`, `Task`, `Function`, `BackupConfigurationTemplate` etc.
 
 |    Environment Variable     |                                                                                      Usage                                                                                       |
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `NAMESPACE`                 | Namespace of backup or restore job                                                                                                                                               |
+| `NAMESPACE`                 | Namespace of backup or restore job/workload                                                                                                                                      |
 | `BACKUP_SESSION`            | Name of the respective BackupSession object                                                                                                                                      |
 | `RESTORE_SESSION`           | Name of the respective RestoreSession object                                                                                                                                     |
 | `REPOSITORY_NAME`           | Name of the Repository object that holds respective backend information                                                                                                          |
@@ -135,21 +135,21 @@ Stash can provide value of the following variables utilizing `BackupConfiguratio
 | `TARGET_DIRECTORIES`        | Array of directories that are subject to backup                                                                                                                                  |
 | `RESTORE_DIRECTORIES`       | Array of directories that are subject to restore                                                                                                                                 |
 | `RESTORE_SNAPSHOTS`         | Name of the snapshot that will be restored                                                                                                                                       |
-| `RETENTION_KEEP_LAST`       | Number of latest snapshot to keep                                                                                                                                                |
-| `RETENTION_KEEP_HOURLY`     | Number of hourly snapshot to keep                                                                                                                                                |
-| `RETENTION_KEEP_DAILY`      | Number of daily snapshot to keep                                                                                                                                                 |
-| `RETENTION_KEEP_WEEKLY`     | Number of weekly snapshot to keep                                                                                                                                                |
-| `RETENTION_KEEP_MONTHLY`    | Number of monthly snapshot to keep                                                                                                                                               |
-| `RETENTION_KEEP_YEARLY`     | Number of yearly snapshot to keep                                                                                                                                                |
-| `RETENTION_KEEP_TAGS`       | Keep only those snapshot that has these tags                                                                                                                                     |
-| `RETENTION_PRUNE`           | Specify weather to remove data of old snapshot completely from the backend                                                                                                       |
-| `RETENTION_DRY_RUN`         | Specify weather to run cleanup in test mode                                                                                                                                      |
-| `ENABLE_CACHE`              | Specify weather to use cache while backup or restore                                                                                                                             |
+| `RETENTION_KEEP_LAST`       | Number of latest snapshots to keep                                                                                                                                               |
+| `RETENTION_KEEP_HOURLY`     | Number of hourly snapshots to keep                                                                                                                                               |
+| `RETENTION_KEEP_DAILY`      | Number of daily snapshots to keep                                                                                                                                                |
+| `RETENTION_KEEP_WEEKLY`     | Number of weekly snapshots to keep                                                                                                                                               |
+| `RETENTION_KEEP_MONTHLY`    | Number of monthly snapshots to keep                                                                                                                                              |
+| `RETENTION_KEEP_YEARLY`     | Number of yearly snapshots to keep                                                                                                                                               |
+| `RETENTION_KEEP_TAGS`       | Keep only those snapshots that have these tags                                                                                                                                   |
+| `RETENTION_PRUNE`           | Specify whether to remove data of old snapshot completely from the backend                                                                                                       |
+| `RETENTION_DRY_RUN`         | Specify whether to run cleanup in test mode                                                                                                                                      |
+| `ENABLE_CACHE`              | Specify whether to use cache while backup or restore                                                                                                                             |
 | `MAX_CONNECTIONS`           | Specifies number of parallel connections to upload/download data to/from backend                                                                                                 |
 | `NICE_ADJUSTMENT`           | Adjustment value to configure `nice` to throttle the load on cpu.                                                                                                                |
 | `IONICE_CLASS`              | Name of the `ionice` class                                                                                                                                                       |
 | `IONICE_CLASS_DATA`         | Value of the `ionice` class data                                                                                                                                                 |
-| `ENABLE_STATUS_SUBRESOURCE` | Specifies weather crd has subresource enabled                                                                                                                                    |
+| `ENABLE_STATUS_SUBRESOURCE` | Specifies whether crd has subresource enabled                                                                                                                                    |
 
 If you want to use a variable that is not present this table, you have to provide its value in `spec.task.params` section of `BackupConfiguration` crd.
 
@@ -161,14 +161,6 @@ If you want to use a variable that is not present this table, you have to provid
 
 `spec.ports` specifies a list of the ports to expose from the respective container that will be created for this function.
 
-#### spec.env
-
-`spec.env` section specifies a list of the environment variable to set in the container that will be created for this function.
-
-#### spec.envFrom
-
-`spec.envFrom` allows to set environment variables to the container that will be created for this function from a Secret or ConfigMap.
-
 #### spec.volumeMounts
 
 `spec.volumeMounts` specifies a list of volume names and their `mountPath` that will be mounted into the container that will be created for this function.
@@ -179,7 +171,7 @@ If you want to use a variable that is not present this table, you have to provid
 
 #### spec.runtimeSettings
 
-`spec.runtimeSettings.container` allows to configure runtime environment of backup job in container level. You can configure the following container level parameters,
+`spec.runtimeSettings.container` allows to configure runtime environment of a backup job at container level. You can configure the following container level parameters:
 
   |       Field       |                                                                                                           Usage                                                                                                            |
   | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -190,6 +182,9 @@ If you want to use a variable that is not present this table, you have to provid
   | `securityContext` | Security options that backup sidecar/job's container should run with. For more details, please visit [here](https://kubernetes.io/docs/concepts/policy/security-context/).                                                 |
   | `nice`            | Set CPU scheduling priority for the backup process. For more details about `nice`, please visit [here](https://www.askapache.com/optimize/optimize-nice-ionice/#nice).                                                     |
   | `ionice`          | Set I/O scheduling class and priority for the backup process. For more details about `ionice`, please visit [here](https://www.askapache.com/optimize/optimize-nice-ionice/#ionice).                                       |
+  | `env`             | A list of the environment variables to set in the container that will be created for this function.                                                                                                                         |
+  | `envFrom`         | This allows to set environment variables to the container that will be created for this function from a Secret or ConfigMap.                                                                                               |
+
 
 #### spec.podSecurityPolicyName
 

@@ -25,16 +25,16 @@ This concept section is divided into the following modules:
   - [Architecture](/docs/concepts/what-is-stash/architecture.md) provides a visual representation of Stash architecture. It also provides a brief overview of the components it uses.
 
 - Declarative API
-  - [Repository](/docs/concepts/crds/repository.md) introduces concept of `Repository` crd that holds backend information in a Kubernetes native way.
-  - [BackupConfiguration](/docs/concepts/crds/backupconfiguration.md) introduces concept of `BackupConfiguration` crd that is used to configure backup for a target resource in Kubernetes native way.
-  - [BackupSession](/docs/concepts/crds/backupsession.md) introduces concept of `BackupSession` crd that represents a backup instance of a target resource for respective `BackupConfiguration` object.
-  - [RestoreSession](/docs/concepts/crds/restoresession.md) introduces concept of `RestoreSession` crd that represents a restore instance of a target resource.
-  - [Function](/docs/concepts/crds/function.md) introduces concept of `Function` crd that represents a step of a backup or restore process.
-  - [Task](/docs/concepts/crds/task.md) introduces concept of `Task` crd which specifies an ordered collection of multiple `Function` and their parameters that make up a complete backup or restore process.
-  - [BackupConfigurationTemplate](/docs/concepts/crds/backupconfiguration_template.md) introduces concept of `BackupConfigurationTemplate` crd that specifies a template for `Repository` and `BackupConfiguration` object which provides option to backup using few annotations only.
-  - [AppBinding](/docs/concepts/appbinding.md) introduces concept of `AppBinding` crd which holds the information that are necessary to connect with a database.
-  - [Snapshot](/docs/concepts/crds/snapshot.md) introduces concept of `Snapshot` object that represents backed up snapshots in a Kubernetes native way.
+  - [Repository](/docs/concepts/crds/repository.md) introduces the concept of `Repository` crd that holds backend information in a Kubernetes native way.
+  - [BackupConfiguration](/docs/concepts/crds/backupconfiguration.md) introduces the concept of `BackupConfiguration` crd that is used to configure backup for a target resource in a Kubernetes native way.
+  - [BackupSession](/docs/concepts/crds/backupsession.md) introduces the concept of `BackupSession` crd that represents a backup run of a target resource for the respective `BackupConfiguration` object.
+  - [RestoreSession](/docs/concepts/crds/restoresession.md) introduces the concept of `RestoreSession` crd that represents a restore run of a target resource.
+  - [Function](/docs/concepts/crds/function.md) introduces the concept of `Function` crd that represents a step of a backup or restore process.
+  - [Task](/docs/concepts/crds/task.md) introduces the concept of `Task` crd which specifies an ordered collection of multiple `Function`s and their parameters that make up a complete backup or restore process.
+  - [BackupConfigurationTemplate](/docs/concepts/crds/backupconfiguration_template.md) introduces the concept of `BackupConfigurationTemplate` crd that specifies a template for `Repository` and `BackupConfiguration` object which provides an option to share backup configuration across similar targets.
+  - [AppBinding](/docs/concepts/appbinding.md) introduces the concept of `AppBinding` crd which holds the information that are necessary to connect with an application like database.
+  - [Snapshot](/docs/concepts/crds/snapshot.md) introduces the concept of `Snapshot` object that represents backed up snapshots in a Kubernetes native way.
 
 - v1alpha1 API
-  - [Restic](/docs/concepts/old-crds/restic.md) introduces the concept of `Restic` crd that is used for configuring [restic](https://restic.net) in a Kubernetes native way.
-  - [Recovery](/docs/concepts/old-crds/recovery.md) introduces the concept of `Recovery` crd that is used to restore a backup taken using Stash.
+  - [Restic](/docs/concepts/crds/v1alpha1/restic.md) introduces the concept of `Restic` crd that is used for configuring [restic](https://restic.net) in a Kubernetes native way.
+  - [Recovery](/docs/concepts/crds/v1alpha1/recovery.md) introduces the concept of `Recovery` crd that is used to restore a backup taken using Stash.

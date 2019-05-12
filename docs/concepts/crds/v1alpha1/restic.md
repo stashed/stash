@@ -161,7 +161,7 @@ For more details about how to disable and resume Restic see [here](/docs/guides/
 - Learn about Repository CRD [here](/docs/concepts/crds/repository.md)
 - Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/v1alpha1/backup.md).
 - To restore a backup see [here](/docs/guides/v1alpha1/restore.md).
-- Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
+- Learn about the details of Recovery CRD [here](/docs/concepts/crds/v1alpha1/recovery.md).
 - To run backup in offline mode see [here](/docs/guides/v1alpha1/offline_backup.md)
 - See the list of supported backends and how to configure them [here](/docs/guides/v1alpha1/backends/overview.md).
 - See working examples for supported workload types [here](/docs/guides/v1alpha1/workloads.md).

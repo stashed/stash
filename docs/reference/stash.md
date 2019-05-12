@@ -44,6 +44,7 @@ Stash is a Kubernetes operator for restic. For more information, visit here: htt
 ### SEE ALSO
 
 * [stash backup](/docs/reference/stash_backup.md)	 - Run Stash Backup
+* [stash backup-es](/docs/reference/stash_backup-es.md)	 - Takes a backup of ElasticSearch DB
 * [stash backup-mongo](/docs/reference/stash_backup-mongo.md)	 - Takes a backup of Mongo DB
 * [stash backup-mysql](/docs/reference/stash_backup-mysql.md)	 - Takes a backup of MySQL DB
 * [stash backup-pg](/docs/reference/stash_backup-pg.md)	 - Takes a backup of Postgres DB
@@ -55,6 +56,7 @@ Stash is a Kubernetes operator for restic. For more information, visit here: htt
 * [stash forget](/docs/reference/stash_forget.md)	 - Delete snapshots from a restic repository
 * [stash recover](/docs/reference/stash_recover.md)	 - Recover restic backup
 * [stash restore](/docs/reference/stash_restore.md)	 - Restore from backup
+* [stash restore-es](/docs/reference/stash_restore-es.md)	 - Restores ElasticSearch DB Backup
 * [stash restore-mongo](/docs/reference/stash_restore-mongo.md)	 - Restores Mongo DB Backup
 * [stash restore-mysql](/docs/reference/stash_restore-mysql.md)	 - Restores MySQL DB Backup
 * [stash restore-pg](/docs/reference/stash_restore-pg.md)	 - Restores Postgres DB Backup

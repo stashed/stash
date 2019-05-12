@@ -17,15 +17,15 @@ section_menu_id: concepts
 
 ## What is Repository
 
-A `Repository` is a Kubernetes `CustomResourceDefinition (CRD)` which represents [backend](/docs/guides/backends/overview.md) information in Kubernetes native way.
+A `Repository` is a Kubernetes `CustomResourceDefinition`(CRD) which represents [backend](/docs/guides/backends/overview.md) information in a Kubernetes native way.
 
-You have to create a `Repository` object for each backup target. `Repository` object has 1-1 mapping with the target. Thus, only one target can be backed up into one `Repository`.
+You have to create a `Repository` object for each backup target. Since v1beta1 api, a `Repository` object has 1-1 mapping with a target. Thus, only one target can be backed up into one `Repository`.
 
 ## Repository CRD Specification
 
-Like other official Kubernetes resources, `Repostiory` object has `TypeMeta`, `ObjectMeta`, `Spec` and `Status` sections.
+Like any official Kubernetes resource, a `Repostiory` object has `TypeMeta`, `ObjectMeta`, `Spec` and `Status` sections.
 
-A sample `Repository` object that uses GCS bucket as backend is shown below,
+A sample `Repository` object that uses Google Cloud Storage(GCS) bucket as backend is shown below:
 
 ```yaml
 apiVersion: stash.appscode.com/v1alpha1
@@ -49,22 +49,22 @@ status:
   snapshotRemovedOnLastCleanup: 1
 ```
 
-Here, we are going to describe some important sections of the `Repository` crd.
+Here, we are going to describe the various sections of the `Repository` crd.
 
-### Repository `Spec` Section
+### Repository `Spec`
 
-`Repository` CRD holds the following information in `.spec` section.
+`Repository` CRD has the following fields in the `.spec` section.
 
 - **spec.backend**
-`spec.backend` holds the backend information where the backed up snapshots will be stored. To learn how to configure `Repository` crd for  various backends, please visit [here](/docs/guides/backends/overview.md).
+`spec.backend` specifies the storage location where the backed up snapshots will be stored. To learn how to configure `Repository` crd for  various backends, please visit [here](/docs/guides/backends/overview.md).
 
 - **backend prefix/subPath**
 `prefix` of any backend denotes the directory inside the backend where the backed up snapshots will be stored. In case of **Local** backend, `subPath` is used for this purpose.
 
 - **spec.wipeOut**
-As the name implies, `spec.wipeOut` field indicates whether Stash should delete respective backed up files from the backend when `Repository` crd is deleted. The default value of this field is `false` which tells Stash not to delete backed up data when the user deletes a `Repository` crd.
+As the name implies, `spec.wipeOut` field indicates whether Stash operator should delete backed up files from the backend when `Repository` crd is deleted. The default value of this field is `false` which tells Stash to not delete backed up data when a user deletes a `Repository` crd.
 
-### Repository `Status` Section
+### Repository `Status`
 
 Stash operator updates `.status` of a Repository crd every time a backup operation is completed. `Repository` crd shows the following statistics in status section:
 
@@ -78,7 +78,7 @@ Stash operator updates `.status` of a Repository crd every time a backup operati
 Stash checks the integrity of backed up files after each backup. `status.integrity` shows the result of the integrity check.
 
 - **status.size**
-`status.size` shows the total size of repository after last backup.
+`status.size` shows the total size of a repository after last backup.
 
 - **status.snapshotCount**
 `status.SnapshotCount` shows the number of snapshots stored in the Repository.
@@ -88,7 +88,7 @@ Stash checks the integrity of backed up files after each backup. `status.integri
 
 ## Deleting Repository
 
-Stash allows the users to delete **only `Repository` crd** or **`Repository` crd along with respective backed up data**. Here, we are going to show how to perform these delete operations.
+Stash allows users to delete **only `Repository` crd** or **`Repository` crd along with respective backed up data**. Here, we are going to show how to perform these operations.
 
 **Delete only `Repository` keeping backed up data :**
 
@@ -102,7 +102,7 @@ $ kubectl delete repository gcs-demo-repo
 repository "gcs-demo-repo" deleted
 ```
 
-This will delete only `Repository` crd. It won't delete any backed up data from the backend.
+This will delete only `Repository` crd. It won't delete any backed up data from the backend. You can recreate the `Repository` object later to reuse existing data as long as your restic password in unchanged.
 
 >If you delete `Repository` crd while respective stash sidecar still exists on the workload, it will fail to take further backup.
 
@@ -128,7 +128,7 @@ Here, is an example of deleting backed up data from GCS backend,
   repository "gcs-demo-repo" deleted
   ```
 
-You can browse your backend storage bucket to verify that the backed up data has been deleted.
+You can browse your backend storage bucket to verify that the backed up data has been wiped out.
 
 ## Next Steps
 

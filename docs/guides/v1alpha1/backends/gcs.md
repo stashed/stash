@@ -14,7 +14,7 @@ section_menu_id: guides
 
 # Google Cloud Storage (GCS)
 
-Stash supports Google Cloud Storage(GCS) as backend. This tutorial will show you how to configure **Restic** and storage **Secret** for GCS backend.
+Stash supports Google Cloud Storage(GCS) as a backend. This tutorial will show you how to configure **Restic** and storage **Secret** for GCS backend.
 
 #### Create Storage Secret
 
