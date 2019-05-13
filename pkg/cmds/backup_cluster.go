@@ -138,7 +138,8 @@ func (opt *clusterBackupOptions) runClusterBackup() error {
 		return err
 	}
 
-	// Run backup
+	// Now backup the directory where dumped YAML is stored
+	opt.backupOpt.BackupDirs = []string{opt.backupDir}
 	backupOutput, backupErr := resticWrapper.RunBackup(opt.backupOpt)
 	// If metrics are enabled then generate metrics
 	if opt.metrics.Enabled {

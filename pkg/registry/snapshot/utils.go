@@ -404,14 +404,14 @@ func isV1Alpha1Repository(repository stash.Repository) bool {
 	return ok
 }
 
-func repoNotFound(repo string ,err error) bool {
-	repoNotFoundMessage:=fmt.Sprintf("exit status 1, reason: %s",repo)
+func repoNotFound(repo string, err error) bool {
+	repoNotFoundMessage := fmt.Sprintf("exit status 1, reason: %s", repo)
 
 	scanner := bufio.NewScanner(strings.NewReader(err.Error()))
 	var line string
 	for scanner.Scan() {
 		line = scanner.Text()
-		if strings.TrimSpace(line)==repoNotFoundMessage {
+		if strings.TrimSpace(line) == repoNotFoundMessage {
 			return true
 		}
 	}
