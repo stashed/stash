@@ -3,9 +3,11 @@ module stash.appscode.dev/stash
 go 1.12
 
 require (
+	github.com/Azure/go-autorest v11.1.2+incompatible // indirect
 	github.com/appscode/go v0.0.0-20190424183524-60025f1135c9
 	github.com/appscode/osm v0.11.0 // indirect
 	github.com/armon/circbuf v0.0.0-20190214190532-5111143e8da2
+	github.com/aws/aws-sdk-go v1.14.33 // indirect
 	github.com/cenkalti/backoff v2.1.1+incompatible
 	github.com/codeskyblue/go-sh v0.0.0-20190412065543-76bd3d59ff27
 	github.com/emicklei/go-restful v2.9.4+incompatible // indirect
@@ -28,6 +30,7 @@ require (
 	gomodules.xyz/cert v1.0.0
 	gomodules.xyz/envsubst v0.0.0-20190321051520-c745d52104af
 	google.golang.org/genproto v0.0.0-20190502173448-54afdca5d873 // indirect
+	google.golang.org/grpc v1.19.1 // indirect
 	gopkg.in/ini.v1 v1.42.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
@@ -40,7 +43,7 @@ require (
 	k8s.io/kube-aggregator v0.0.0-20190508104018-6d3d96b06d29
 	k8s.io/kube-openapi v0.0.0-20190502190224-411b2483e503
 	k8s.io/kubernetes v1.14.1
-	kmodules.xyz/client-go v0.0.0-20190508091620-0d215c04352f
+	kmodules.xyz/client-go v0.0.0-20190513064657-a9147783199a
 	kmodules.xyz/custom-resources v0.0.0-20190225012057-ed1c15a0bbda
 	kmodules.xyz/objectstore-api v0.0.0-20190506085934-94c81c8acca9
 	kmodules.xyz/offshoot-api v0.0.0-20190513045534-4f3df05f40c2
