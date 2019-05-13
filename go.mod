@@ -3,15 +3,10 @@ module stash.appscode.dev/stash
 go 1.12
 
 require (
-	github.com/Masterminds/glide v0.13.2 // indirect
-	github.com/Masterminds/semver v1.4.2 // indirect
-	github.com/Masterminds/vcs v1.13.0 // indirect
 	github.com/appscode/go v0.0.0-20190424183524-60025f1135c9
 	github.com/appscode/osm v0.11.0 // indirect
 	github.com/armon/circbuf v0.0.0-20190214190532-5111143e8da2
-	github.com/bmatcuk/doublestar v1.1.1 // indirect
 	github.com/cenkalti/backoff v2.1.1+incompatible
-	github.com/codegangsta/cli v1.20.0 // indirect
 	github.com/codeskyblue/go-sh v0.0.0-20190412065543-76bd3d59ff27
 	github.com/evanphx/json-patch v4.2.0+incompatible
 	github.com/go-openapi/spec v0.19.0
@@ -19,22 +14,16 @@ require (
 	github.com/gopherjs/gopherjs v0.0.0-20190430165422-3e4dfb77656c // indirect
 	github.com/graymeta/stow v0.0.0-00010101000000-000000000000
 	github.com/json-iterator/go v1.1.6
-	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v0.9.3-0.20190127221311-3c4408c8b829
 	github.com/prometheus/common v0.4.0 // indirect
-	github.com/sgotti/glide-vc v0.1.0 // indirect
 	github.com/smartystreets/assertions v0.0.0-20190401211740-f487f9de1cd3 // indirect
 	github.com/spf13/afero v1.2.2
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3
 	github.com/stretchr/testify v1.3.0
-	golang.org/x/crypto v0.0.0-20190510104115-cbcb75029529 // indirect
-	golang.org/x/net v0.0.0-20190509222800-a4d6f7feada5 // indirect
-	golang.org/x/sys v0.0.0-20190509141414-a5b02f93d862 // indirect
-	golang.org/x/tools v0.0.0-20190511041617-99f201b6807e // indirect
 	gomodules.xyz/cert v1.0.0
 	gomodules.xyz/envsubst v0.0.0-20190321051520-c745d52104af
 	google.golang.org/genproto v0.0.0-20190502173448-54afdca5d873 // indirect
