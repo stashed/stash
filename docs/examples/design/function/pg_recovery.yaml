@@ -4,18 +4,18 @@ kind: Function
 metadata:
   name: pgRecovery
 spec:
-  container:
-    image:  appscodeci/postgresql-tool:v1
-    name:  postgres-tool
-    args:
-    - recover
-    - --provider=${provider}
-    - --hostname=${hostname}
-    - --path=${repoDir}
-    - --output-dir=${outputDir}
-    - --metrics.enabled=${enableMetric}
-    - --metrics.pushgateway-url=${pushgatewayURL}
-    - --metrics.labels="workload-kind=${workloadKind},workload-name=${workloadName}"
+  image:  appscodeci/postgresql-tool:v1
+  name:  postgres-tool
+  args:
+  - recover
+  - --provider=${provider}
+  - --hostname=${hostname}
+  - --path=${repoDir}
+  - --output-dir=${outputDir}
+  - --metrics.enabled=${enableMetric}
+  - --metrics.pushgateway-url=${pushgatewayURL}
+  - --metrics.labels="workload-kind=${workloadKind},workload-name=${workloadName}"
+  runtimeSettings:
     env:
     - name:  PGPASSWORD
       valueFrom:
@@ -29,8 +29,8 @@ spec:
           key: "POSTGRES_USER"
     - name:  DB_HOST
       value: $(host)
-    volumeMounts:
-    - name: ${tempVolumeName}
-      mountPath: /tmp/restic
-    - name: ${storageSecretName}
-      mountPath: /etc/secrets/storage-secret
+  volumeMounts:
+  - name: ${tempVolumeName}
+    mountPath: /tmp/restic
+  - name: ${storageSecretName}
+    mountPath: /etc/secrets/storage-secret

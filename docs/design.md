@@ -650,26 +650,25 @@ kind: Function
 metadata:
   name: clusterBackup
 spec:
-  container:
-    image:  appscodeci/cluster-tool:v1
-    name:  cluster-tool
-    args:
-    - backup
-    - --sanitize=${sanitize}
-    - --provider=${provider}
-    - --hostname=${hostname}
-    - --path=${repoDir}
-    - --output-dir=${outputDir}
-    - --retention-policy.policy=${policy}
-    - --retention-policy.value=${retentionValue}
-    - --metrics.enabled=${enableMetric}
-    - --metrics.pushgateway-url=${pushgatewayURL}
-    - --metrics.labels="workload-kind=${workloadKind},workload-name=${workloadName}"
-    volumeMounts:
-    - name: ${tempVolumeName}
-      mountPath: /tmp/restic
-    - name: ${storageSecretName}
-      mountPath: /etc/secrets/storage-secret
+  image:  appscodeci/cluster-tool:v1
+  name:  cluster-tool
+  args:
+  - backup
+  - --sanitize=${sanitize}
+  - --provider=${provider}
+  - --hostname=${hostname}
+  - --path=${repoDir}
+  - --output-dir=${outputDir}
+  - --retention-policy.policy=${policy}
+  - --retention-policy.value=${retentionValue}
+  - --metrics.enabled=${enableMetric}
+  - --metrics.pushgateway-url=${pushgatewayURL}
+  - --metrics.labels="workload-kind=${workloadKind},workload-name=${workloadName}"
+  volumeMounts:
+  - name: ${tempVolumeName}
+    mountPath: /tmp/restic
+  - name: ${storageSecretName}
+    mountPath: /etc/secrets/storage-secret
 ```
 
 #### pgBackup
@@ -681,21 +680,21 @@ kind: Function
 metadata:
   name: pgBackup
 spec:
-  container:
-    image:  appscodeci/postgresql-tool:v1
-    name:  postgres-tool
-    args:
-    - backup
-    - --database=${databases}
-    - --provider=${provider}
-    - --hostname=${hostname}
-    - --path=${repoDir}
-    - --output-dir=${outputDir}
-    - --retention-policy.policy=${policy}
-    - --retention-policy.value=${retentionValue}
-    - --metrics.enabled=${enableMetric}
-    - --metrics.pushgateway-url=${pushgatewayURL}
-    - --metrics.labels="workload-kind=${workloadKind},workload-name=${workloadName}"
+  image:  appscodeci/postgresql-tool:v1
+  name:  postgres-tool
+  args:
+  - backup
+  - --database=${databases}
+  - --provider=${provider}
+  - --hostname=${hostname}
+  - --path=${repoDir}
+  - --output-dir=${outputDir}
+  - --retention-policy.policy=${policy}
+  - --retention-policy.value=${retentionValue}
+  - --metrics.enabled=${enableMetric}
+  - --metrics.pushgateway-url=${pushgatewayURL}
+  - --metrics.labels="workload-kind=${workloadKind},workload-name=${workloadName}"
+  runtimeSettings:
     env:
     - name:  PGPASSWORD
       valueFrom:
@@ -709,11 +708,11 @@ spec:
           key: "POSTGRES_USER"
     - name:  DB_HOST
       value: $(host)
-    volumeMounts:
-    - name: ${tempVolumeName}
-      mountPath: /tmp/restic
-    - name: ${storageSecretName}
-      mountPath: /etc/secrets/storage-secret
+  volumeMounts:
+  - name: ${tempVolumeName}
+    mountPath: /tmp/restic
+  - name: ${storageSecretName}
+    mountPath: /etc/secrets/storage-secret
 
 ```
 
@@ -726,18 +725,18 @@ kind: Function
 metadata:
   name: pgRecovery
 spec:
-  container:
-    image:  appscodeci/postgresql-tool:v1
-    name:  postgres-tool
-    args:
-    - restore
-    - --provider=${provider}
-    - --hostname=${hostname}
-    - --path=${repoDir}
-    - --output-dir=${outputDir}
-    - --metrics.enabled=${enableMetric}
-    - --metrics.pushgateway-url=${pushgatewayURL}
-    - --metrics.labels="workload-kind=${workloadKind},workload-name=${workloadName}"
+  image:  appscodeci/postgresql-tool:v1
+  name:  postgres-tool
+  args:
+  - restore
+  - --provider=${provider}
+  - --hostname=${hostname}
+  - --path=${repoDir}
+  - --output-dir=${outputDir}
+  - --metrics.enabled=${enableMetric}
+  - --metrics.pushgateway-url=${pushgatewayURL}
+  - --metrics.labels="workload-kind=${workloadKind},workload-name=${workloadName}"
+  runtimeSettings:
     env:
     - name:  PGPASSWORD
       valueFrom:
@@ -751,10 +750,10 @@ spec:
           key: "POSTGRES_USER"
     - name:  DB_HOST
       value: $(host)
-    volumeMounts:
-    - name: ${tempVolumeName}
-      mountPath: /tmp/restic
-    - name: ${storageSecretName}
+  volumeMounts:
+  - name: ${tempVolumeName}
+    mountPath: /tmp/restic
+  - name: ${storageSecretName}
       mountPath: /etc/secrets/storage-secret
 ```
 
@@ -767,17 +766,16 @@ kind: Function
 metadata:
   name: stashPostBackup
 spec:
-  container:
-    image: appscode/stash:0.9.0
-    name:  stash-post-backup
-    args:
-    - post-backup-update
-    - --repository=${repoName}
-    - --backupsession=${backupSessionName}
-    - --output-json-dir=${outputJsonDir}
-    volumeMounts:
-    - name: ${outputVolumeName}
-      mountPath: /tmp/restic
+  image: appscode/stash:0.9.0
+  name:  stash-post-backup
+  args:
+  - post-backup-update
+  - --repository=${repoName}
+  - --backupsession=${backupSessionName}
+  - --output-json-dir=${outputJsonDir}
+  volumeMounts:
+  - name: ${outputVolumeName}
+    mountPath: /tmp/restic
 ```
 
 ## stashPostRecovery
@@ -789,16 +787,15 @@ kind: Function
 metadata:
   name: stashPostRecovery
 spec:
-  container:
-    image: appscode/stash:0.9.0
-    name:  stash-post-recovery
-    args:
-    - post-recovery-update
-    - --recoveryconfiguration=${recoveryConfigurationName}
-    - --output-json-dir=${outputJsonDir}
-    volumeMounts:
-    - name: ${outputVolumeName}
-      mountPath: /tmp/restic
+  image: appscode/stash:0.9.0
+  name:  stash-post-recovery
+  args:
+  - post-recovery-update
+  - --recoveryconfiguration=${recoveryConfigurationName}
+  - --output-json-dir=${outputJsonDir}
+  volumeMounts:
+  - name: ${outputVolumeName}
+    mountPath: /tmp/restic
 ```
 
 ## Task

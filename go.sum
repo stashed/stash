@@ -89,6 +89,8 @@ github.com/elazarl/goproxy/ext v0.0.0-20190421051319-9d40249d3c2f h1:AUj1VoZUfhP
 github.com/elazarl/goproxy/ext v0.0.0-20190421051319-9d40249d3c2f/go.mod h1:gNh8nYJoAm43RfaxurUnxr+N1PwuFV3ZMl/efxlIlY8=
 github.com/emicklei/go-restful v2.9.3+incompatible h1:2OwhVdhtzYUp5P5wuGsVDPagKSRd9JK72sJCHVCXh5g=
 github.com/emicklei/go-restful v2.9.3+incompatible/go.mod h1:otzb+WCGbkyDHkqmQmT5YD2WR4BBwUdeQoFo8l/7tVs=
+github.com/emicklei/go-restful v2.9.4+incompatible h1:Yn7UC2niwBIe8vwaISwOp3zWTZlft84MsoVa9K50FSI=
+github.com/emicklei/go-restful v2.9.4+incompatible/go.mod h1:otzb+WCGbkyDHkqmQmT5YD2WR4BBwUdeQoFo8l/7tVs=
 github.com/evanphx/json-patch v4.0.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/evanphx/json-patch v4.2.0+incompatible h1:fUDGZCv/7iAN7u0puUVhvKCcsR6vRfwrJatElLBEf0I=
 github.com/evanphx/json-patch v4.2.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
@@ -485,8 +487,8 @@ kmodules.xyz/custom-resources v0.0.0-20190225012057-ed1c15a0bbda h1:CakBaOFRIOuq
 kmodules.xyz/custom-resources v0.0.0-20190225012057-ed1c15a0bbda/go.mod h1:XSLXXzWk0aRybMX3PaR/4Kx938krmL5o3EaP1K7ltMg=
 kmodules.xyz/objectstore-api v0.0.0-20190506085934-94c81c8acca9 h1:PlHk5XcNw2SqeSRKAyE9idW349HFN7G4c5j2n0ChhZY=
 kmodules.xyz/objectstore-api v0.0.0-20190506085934-94c81c8acca9/go.mod h1:1HB+nnEbax/i2gAPFQRzL3pah1BpnVUcoTCzSgvP1Hw=
-kmodules.xyz/offshoot-api v0.0.0-20190508142450-1c69d50f3c1c h1:9HGKgaK4z4ulGeqHwYGb8ZemC2Nl91sMSZXLygTFuTw=
-kmodules.xyz/offshoot-api v0.0.0-20190508142450-1c69d50f3c1c/go.mod h1:x8mHwAqHV0QMkoZtp4rhlmxBswDsasxfaNOnKTJ52kI=
+kmodules.xyz/offshoot-api v0.0.0-20190513045534-4f3df05f40c2 h1:l6F8uo3hoLW8OFarID65Zz5qtvVkekGrtgZICGfpUVw=
+kmodules.xyz/offshoot-api v0.0.0-20190513045534-4f3df05f40c2/go.mod h1:x8mHwAqHV0QMkoZtp4rhlmxBswDsasxfaNOnKTJ52kI=
 kmodules.xyz/openshift v0.0.0-20190225002038-ca9787d09794 h1:iTuTPHwR51nr0z545XMabeFrvFx0uGdAfzIuOaKCFuY=
 kmodules.xyz/openshift v0.0.0-20190225002038-ca9787d09794/go.mod h1:OA2SQV7Rn2+E553Xfp0uY5nwG0A9FztRiaWgP12Ubz8=
 kmodules.xyz/openshift v0.0.0-20190508141315-99ec9fc946bf h1:UyVK/KyL2O7XNV+1c7ZQL39HeIGdH79JlZTf/0E0Z/0=

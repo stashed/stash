@@ -67,20 +67,6 @@ type FunctionSpec struct {
 	// +patchMergeKey=containerPort
 	// +patchStrategy=merge
 	Ports []core.ContainerPort `json:"ports,omitempty" patchStrategy:"merge" patchMergeKey:"containerPort"`
-	// List of sources to populate environment variables in the container.
-	// The keys defined within a source must be a C_IDENTIFIER. All invalid keys
-	// will be reported as an event when the container is starting. When a key exists in multiple
-	// sources, the value associated with the last source will take precedence.
-	// Values defined by an Env with a duplicate key will take precedence.
-	// Cannot be updated.
-	// +optional
-	EnvFrom []core.EnvFromSource `json:"envFrom,omitempty"`
-	// List of environment variables to set in the container.
-	// Cannot be updated.
-	// +optional
-	// +patchMergeKey=name
-	// +patchStrategy=merge
-	Env []core.EnvVar `json:"env,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
 	// Pod volumes to mount into the container's filesystem.
 	// Cannot be updated.
 	// +optional
