@@ -130,6 +130,12 @@ func applyContainerRuntimeSettings(container core.Container, settings ofst.Conta
 	if settings.SecurityContext != nil {
 		container.SecurityContext = settings.SecurityContext
 	}
+	if len(settings.EnvFrom) > 0 {
+		container.EnvFrom = append(container.EnvFrom, settings.EnvFrom...)
+	}
+	if len(settings.Env) > 0 {
+		container.Env = core_util.UpsertEnvVars(container.Env, settings.Env...)
+	}
 	// set nice, ionice settings as env
 	if settings.Nice != nil && settings.Nice.Adjustment != nil {
 		container.Env = core_util.UpsertEnvVars(container.Env, core.EnvVar{
