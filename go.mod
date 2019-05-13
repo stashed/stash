@@ -8,6 +8,7 @@ require (
 	github.com/armon/circbuf v0.0.0-20190214190532-5111143e8da2
 	github.com/cenkalti/backoff v2.1.1+incompatible
 	github.com/codeskyblue/go-sh v0.0.0-20190412065543-76bd3d59ff27
+	github.com/emicklei/go-restful v2.9.4+incompatible // indirect
 	github.com/evanphx/json-patch v4.2.0+incompatible
 	github.com/go-openapi/spec v0.19.0
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
@@ -42,7 +43,7 @@ require (
 	kmodules.xyz/client-go v0.0.0-20190508091620-0d215c04352f
 	kmodules.xyz/custom-resources v0.0.0-20190225012057-ed1c15a0bbda
 	kmodules.xyz/objectstore-api v0.0.0-20190506085934-94c81c8acca9
-	kmodules.xyz/offshoot-api v0.0.0-20190508142450-1c69d50f3c1c
+	kmodules.xyz/offshoot-api v0.0.0-20190513045534-4f3df05f40c2
 	kmodules.xyz/openshift v0.0.0-20190508141315-99ec9fc946bf
 	kmodules.xyz/webhook-runtime v0.0.0-20190508093950-b721b4eba5e5
 )

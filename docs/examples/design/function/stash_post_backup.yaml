@@ -4,14 +4,13 @@ kind: Function
 metadata:
   name: stashPostBackup
 spec:
-  container:
-    image: appscode/stash:0.9.0
-    name:  stash-post-backup
-    args:
-    - post-backup-update
-    - --repository=${repoName}
-    - --backupsession=${backupSessionName}
-    - --output-json-dir=${outputJsonDir}
-    volumeMounts:
-    - name: ${outputVolumeName}
-      mountPath: /tmp/restic
+  image: appscode/stash:0.9.0
+  name:  stash-post-backup
+  args:
+  - post-backup-update
+  - --repository=${repoName}
+  - --backupsession=${backupSessionName}
+  - --output-json-dir=${outputJsonDir}
+  volumeMounts:
+  - name: ${outputVolumeName}
+    mountPath: /tmp/restic

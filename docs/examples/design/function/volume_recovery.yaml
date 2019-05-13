@@ -4,21 +4,20 @@ kind: Function
 metadata:
   name: volumeRecovery
 spec:
-  container:
-    image:  appscodeci/volume-tool:v1
-    name:  volume-tool
-    args:
-    - recover
-    - --target-directories=${targetDirectories}
-    - --provider=${provider}
-    - --hostname=${hostname}
-    - --path=${repoDir}
-    - --output-dir=${outputDir}
-    - --metrics.enabled=${enableMetric}
-    - --metrics.pushgateway-url=${pushgatewayURL}
-    - --metrics.labels="workload-kind=${workloadKind},workload-name=${workloadName}"
-    volumeMounts:
-    - name: ${tempVolumeName}
-      mountPath: /tmp/restic
-    - name: ${storageSecretName}
-      mountPath: /etc/secrets/storage-secret
+  image:  appscodeci/volume-tool:v1
+  name:  volume-tool
+  args:
+  - recover
+  - --target-directories=${targetDirectories}
+  - --provider=${provider}
+  - --hostname=${hostname}
+  - --path=${repoDir}
+  - --output-dir=${outputDir}
+  - --metrics.enabled=${enableMetric}
+  - --metrics.pushgateway-url=${pushgatewayURL}
+  - --metrics.labels="workload-kind=${workloadKind},workload-name=${workloadName}"
+  volumeMounts:
+  - name: ${tempVolumeName}
+    mountPath: /tmp/restic
+  - name: ${storageSecretName}
+    mountPath: /etc/secrets/storage-secret

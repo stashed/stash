@@ -69,8 +69,8 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 			Args:            function.Spec.Args,
 			WorkingDir:      function.Spec.WorkingDir,
 			Ports:           function.Spec.Ports,
-			EnvFrom:         function.Spec.EnvFrom,
-			Env:             function.Spec.Env,
+			EnvFrom:         function.Spec.RuntimeSettings.EnvFrom,
+			Env:             function.Spec.RuntimeSettings.Env,
 			VolumeMounts:    function.Spec.VolumeMounts,
 			VolumeDevices:   function.Spec.VolumeDevices,
 			Resources:       function.Spec.RuntimeSettings.Resources,
@@ -129,6 +129,12 @@ func applyContainerRuntimeSettings(container core.Container, settings ofst.Conta
 	}
 	if settings.SecurityContext != nil {
 		container.SecurityContext = settings.SecurityContext
+	}
+	if len(settings.EnvFrom) > 0 {
+		container.EnvFrom = append(container.EnvFrom, settings.EnvFrom...)
+	}
+	if len(settings.Env) > 0 {
+		container.Env = core_util.UpsertEnvVars(container.Env, settings.Env...)
 	}
 	// set nice, ionice settings as env
 	if settings.Nice != nil && settings.Nice.Adjustment != nil {

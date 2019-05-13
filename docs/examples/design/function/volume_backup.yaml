@@ -4,23 +4,22 @@ kind: Function
 metadata:
   name: volumeBackup
 spec:
-  container:
-    image:  appscodeci/volume-tool:v1
-    name:  volume-tool
-    args:
-    - backup
-    - --target-directories=${targetDirectories}
-    - --provider=${provider}
-    - --hostname=${hostname}
-    - --path=${repoDir}
-    - --output-dir=${outputDir}
-    - --retention-policy.policy=${policy}
-    - --retention-policy.value=${retentionValue}
-    - --metrics.enabled=${enableMetric}
-    - --metrics.pushgateway-url=${pushgatewayURL}
-    - --metrics.labels="workload-kind=${workloadKind},workload-name=${workloadName}"
-    volumeMounts:
-    - name: ${tempVolumeName}
-      mountPath: /tmp/restic
-    - name: ${storageSecretName}
-      mountPath: /etc/secrets/storage-secret
+  image:  appscodeci/volume-tool:v1
+  name:  volume-tool
+  args:
+  - backup
+  - --target-directories=${targetDirectories}
+  - --provider=${provider}
+  - --hostname=${hostname}
+  - --path=${repoDir}
+  - --output-dir=${outputDir}
+  - --retention-policy.policy=${policy}
+  - --retention-policy.value=${retentionValue}
+  - --metrics.enabled=${enableMetric}
+  - --metrics.pushgateway-url=${pushgatewayURL}
+  - --metrics.labels="workload-kind=${workloadKind},workload-name=${workloadName}"
+  volumeMounts:
+  - name: ${tempVolumeName}
+    mountPath: /tmp/restic
+  - name: ${storageSecretName}
+    mountPath: /etc/secrets/storage-secret
