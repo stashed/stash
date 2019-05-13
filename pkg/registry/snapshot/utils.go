@@ -1,12 +1,14 @@
 package snapshot
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/appscode/go/log"
 	core "k8s.io/api/core/v1"
@@ -288,8 +290,14 @@ func (r *REST) getV1Beta1Snapshots(repository *stash.Repository, snapshotIDs []s
 		return nil, err
 	}
 	// list snapshots, returns all snapshots for empty snapshotIDs
+	// if there is no restic repository in the backend, this will return error.
+	// in this case, we have to return empty snapshot list.
 	results, err := resticWrapper.ListSnapshots(snapshotIDs)
 	if err != nil {
+		// check if the error is happening because of not having restic repository in the backend.
+		if repoNotFound(resticWrapper.GetRepo(), err) {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -394,4 +402,18 @@ func isV1Alpha1Repository(repository stash.Repository) bool {
 	}
 	_, ok := repository.Labels["restic"]
 	return ok
+}
+
+func repoNotFound(repo string, err error) bool {
+	repoNotFoundMessage := fmt.Sprintf("exit status 1, reason: %s", repo)
+
+	scanner := bufio.NewScanner(strings.NewReader(err.Error()))
+	var line string
+	for scanner.Scan() {
+		line = scanner.Text()
+		if strings.TrimSpace(line) == repoNotFoundMessage {
+			return true
+		}
+	}
+	return false
 }

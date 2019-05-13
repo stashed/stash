@@ -36,17 +36,24 @@ type RepoLabelData struct {
 }
 
 func GetHostName(target interface{}) (string, error) {
-	if target == nil { // target nil for cluster backup
+	// target nil for cluster backup
+	var targetRef api_v1beta1.TargetRef
+	if target == nil {
 		return "host-0", nil
 	}
-
-	var targetRef api_v1beta1.TargetRef
-
 	switch target.(type) {
 	case *api_v1beta1.BackupTarget:
-		targetRef = target.(*api_v1beta1.BackupTarget).Ref
+		t := target.(*api_v1beta1.BackupTarget)
+		if t == nil {
+			return "host-0", nil
+		}
+		targetRef = t.Ref
 	case *api_v1beta1.RestoreTarget:
-		targetRef = target.(*api_v1beta1.RestoreTarget).Ref
+		t := target.(*api_v1beta1.RestoreTarget)
+		if t == nil {
+			return "host-0", nil
+		}
+		targetRef = t.Ref
 	}
 
 	switch targetRef.Kind {

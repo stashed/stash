@@ -99,3 +99,10 @@ func (w *ResticWrapper) HideCMD() {
 		w.sh.ShowCMD = false
 	}
 }
+
+func (w *ResticWrapper) GetRepo() string {
+	if w.sh != nil {
+		return w.sh.Env[RESTIC_REPOSITORY]
+	}
+	return ""
+}
