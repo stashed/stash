@@ -14,9 +14,10 @@ import (
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/util/sets"
-	dynamic "k8s.io/client-go/deprecated-dynamic"
 	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/yaml"
@@ -115,7 +116,10 @@ func (mgr BackupManager) Backup(process processorFunc) error {
 	if err := rest.SetKubernetesDefaults(mgr.config); err != nil {
 		return err
 	}
-	mgr.config.ContentConfig = dynamic.ContentConfig()
+	mgr.config.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: scheme.Codecs}
+	if mgr.config.UserAgent == "" {
+		mgr.config.UserAgent = rest.DefaultKubernetesUserAgent()
+	}
 
 	disClient, err := discovery.NewDiscoveryClientForConfig(mgr.config)
 	if err != nil {
