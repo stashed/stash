@@ -95,19 +95,6 @@ func NewRestoreInitContainer(rs *v1beta1_api.RestoreSession, repository *v1alpha
 
 	// pass container runtime settings from RestoreSession to init-container
 	if rs.Spec.RuntimeSettings.Container != nil {
-		// In order to preserve file ownership, restore process need to be run as root user.
-		// Stash image uses non-root user "stash"(1005). We have to use securityContext to run stash as root user.
-		// If a user specify securityContext either in pod level or container level in RuntimeSetting,
-		// don't overwrite that. In this case, user must take the responsibility of possible file ownership modification.
-		securityContext := &core.SecurityContext{
-			RunAsUser:  types.Int64P(0),
-			RunAsGroup: types.Int64P(0),
-		}
-		if rs.Spec.RuntimeSettings.Container.SecurityContext != nil {
-			securityContext = rs.Spec.RuntimeSettings.Container.SecurityContext
-		}
-		initContainer.SecurityContext = securityContext
-
 		initContainer.Resources = rs.Spec.RuntimeSettings.Container.Resources
 
 		if rs.Spec.RuntimeSettings.Container.LivenessProbe != nil {
@@ -120,6 +107,19 @@ func NewRestoreInitContainer(rs *v1beta1_api.RestoreSession, repository *v1alpha
 			initContainer.Lifecycle = rs.Spec.RuntimeSettings.Container.Lifecycle
 		}
 	}
+
+	// In order to preserve file ownership, restore process need to be run as root user.
+	// Stash image uses non-root user "stash"(1005). We have to use securityContext to run stash as root user.
+	// If a user specify securityContext either in pod level or container level in RuntimeSetting,
+	// don't overwrite that. In this case, user must take the responsibility of possible file ownership modification.
+	securityContext := &core.SecurityContext{
+		RunAsUser:  types.Int64P(0),
+		RunAsGroup: types.Int64P(0),
+	}
+	if rs.Spec.RuntimeSettings.Container != nil {
+		securityContext = UpsertSecurityContext(securityContext, rs.Spec.RuntimeSettings.Container.SecurityContext)
+	}
+	initContainer.SecurityContext = UpsertSecurityContext(initContainer.SecurityContext, securityContext)
 
 	return initContainer
 }

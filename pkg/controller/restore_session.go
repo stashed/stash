@@ -17,6 +17,7 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/queue"
+	ofst "kmodules.xyz/offshoot-api/api/v1"
 	"kmodules.xyz/webhook-runtime/admission"
 	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"
 	webhook "kmodules.xyz/webhook-runtime/admission/v1beta1/generic"
@@ -251,15 +252,18 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 	// Stash image uses non-root user "stash"(1005). We have to use securityContext to run stash as root user.
 	// If a user specify securityContext either in pod level or container level in RuntimeSetting,
 	// don't overwrite that. In this case, user must take the responsibility of possible file ownership modification.
-	defaultSecurityContext := &core.SecurityContext{
+	defaultSecurityContext := &core.PodSecurityContext{
 		RunAsUser:  types.Int64P(0),
 		RunAsGroup: types.Int64P(0),
 	}
 
 	if (taskResolver.RuntimeSettings.Pod != nil && taskResolver.RuntimeSettings.Pod.SecurityContext == nil) &&
 		(taskResolver.RuntimeSettings.Container != nil && taskResolver.RuntimeSettings.Container.SecurityContext == nil) {
-		taskResolver.RuntimeSettings.Container.SecurityContext = defaultSecurityContext
 	}
+	if taskResolver.RuntimeSettings.Pod == nil {
+		taskResolver.RuntimeSettings.Pod = &ofst.PodRuntimeSettings{}
+	}
+	taskResolver.RuntimeSettings.Pod.SecurityContext = util.UpsertPodSecurityContext(defaultSecurityContext, taskResolver.RuntimeSettings.Pod.SecurityContext)
 
 	podSpec, err := taskResolver.GetPodSpec()
 	if err != nil {

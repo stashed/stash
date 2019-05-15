@@ -150,6 +150,90 @@ func UpsertSecretVolume(volumes []core.Volume, secretName string) []core.Volume 
 	})
 }
 
+// UpsertSecurityContext update current SecurityContext with new SecurityContext.
+// If a field is not present in the new SecurityContext, value of the current SecurityContext for this field will be used.
+func UpsertSecurityContext(currentSC, newSC *core.SecurityContext) *core.SecurityContext {
+	if newSC == nil {
+		return currentSC
+	}
+
+	var finalSC *core.SecurityContext
+	if currentSC == nil {
+		finalSC = &core.SecurityContext{}
+	} else {
+		finalSC = currentSC.DeepCopy()
+	}
+
+	if newSC.Capabilities != nil {
+		finalSC.Capabilities = newSC.Capabilities
+	}
+	if newSC.Privileged != nil {
+		finalSC.Privileged = newSC.Privileged
+	}
+	if newSC.SELinuxOptions != nil {
+		finalSC.SELinuxOptions = newSC.SELinuxOptions
+	}
+	if newSC.RunAsUser != nil {
+		finalSC.RunAsUser = newSC.RunAsUser
+	}
+	if newSC.RunAsGroup != nil {
+		finalSC.RunAsGroup = newSC.RunAsGroup
+	}
+	if newSC.RunAsNonRoot != nil {
+		finalSC.RunAsNonRoot = newSC.RunAsNonRoot
+	}
+	if newSC.ReadOnlyRootFilesystem != nil {
+		finalSC.ReadOnlyRootFilesystem = newSC.ReadOnlyRootFilesystem
+	}
+	if newSC.AllowPrivilegeEscalation != nil {
+		finalSC.AllowPrivilegeEscalation = newSC.AllowPrivilegeEscalation
+	}
+	if newSC.ProcMount != nil {
+		finalSC.ProcMount = newSC.ProcMount
+	}
+
+	return finalSC
+}
+
+// UpsertPodSecurityContext update current SecurityContext with new SecurityContext.
+// If a field is not present in the new SecurityContext, value of the current SecurityContext for this field will be used.
+func UpsertPodSecurityContext(currentSC, newSC *core.PodSecurityContext) *core.PodSecurityContext {
+	if newSC == nil {
+		return currentSC
+	}
+
+	var finalSC *core.PodSecurityContext
+	if currentSC == nil {
+		finalSC = &core.PodSecurityContext{}
+	} else {
+		finalSC = currentSC.DeepCopy()
+	}
+
+	if newSC.SELinuxOptions != nil {
+		finalSC.SELinuxOptions = newSC.SELinuxOptions
+	}
+	if newSC.RunAsUser != nil {
+		finalSC.RunAsUser = newSC.RunAsUser
+	}
+	if newSC.RunAsGroup != nil {
+		finalSC.RunAsGroup = newSC.RunAsGroup
+	}
+	if newSC.RunAsNonRoot != nil {
+		finalSC.RunAsNonRoot = newSC.RunAsNonRoot
+	}
+	if newSC.SupplementalGroups != nil {
+		finalSC.SupplementalGroups = newSC.SupplementalGroups
+	}
+	if newSC.FSGroup != nil {
+		finalSC.FSGroup = newSC.FSGroup
+	}
+	if newSC.Sysctls != nil {
+		finalSC.Sysctls = newSC.Sysctls
+	}
+
+	return finalSC
+}
+
 func MergeLocalVolume(volumes []core.Volume, backend *store.Backend) []core.Volume {
 	// check if stash-local volume already exist
 	oldPos := -1

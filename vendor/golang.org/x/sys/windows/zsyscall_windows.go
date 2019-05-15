@@ -111,6 +111,7 @@ var (
 	procGetExitCodeProcess                 = modkernel32.NewProc("GetExitCodeProcess")
 	procGetStartupInfoW                    = modkernel32.NewProc("GetStartupInfoW")
 	procGetCurrentProcess                  = modkernel32.NewProc("GetCurrentProcess")
+	procGetCurrentThread                   = modkernel32.NewProc("GetCurrentThread")
 	procGetProcessTimes                    = modkernel32.NewProc("GetProcessTimes")
 	procDuplicateHandle                    = modkernel32.NewProc("DuplicateHandle")
 	procWaitForSingleObject                = modkernel32.NewProc("WaitForSingleObject")
@@ -253,7 +254,17 @@ var (
 	procEqualSid                           = modadvapi32.NewProc("EqualSid")
 	procCheckTokenMembership               = modadvapi32.NewProc("CheckTokenMembership")
 	procOpenProcessToken                   = modadvapi32.NewProc("OpenProcessToken")
+	procGetCurrentThreadToken              = modadvapi32.NewProc("GetCurrentThreadToken")
+	procOpenThreadToken                    = modadvapi32.NewProc("OpenThreadToken")
+	procGetCurrentProcessToken             = modadvapi32.NewProc("GetCurrentProcessToken")
+	procImpersonateSelf                    = modadvapi32.NewProc("ImpersonateSelf")
+	procRevertToSelf                       = modadvapi32.NewProc("RevertToSelf")
+	procSetThreadToken                     = modadvapi32.NewProc("SetThreadToken")
+	procLookupPrivilegeValueW              = modadvapi32.NewProc("LookupPrivilegeValueW")
+	procAdjustTokenPrivileges              = modadvapi32.NewProc("AdjustTokenPrivileges")
 	procGetTokenInformation                = modadvapi32.NewProc("GetTokenInformation")
+	procSetTokenInformation                = modadvapi32.NewProc("SetTokenInformation")
+	procDuplicateTokenEx                   = modadvapi32.NewProc("DuplicateTokenEx")
 	procGetUserProfileDirectoryW           = moduserenv.NewProc("GetUserProfileDirectoryW")
 	procGetSystemDirectoryW                = modkernel32.NewProc("GetSystemDirectoryW")
 )
@@ -1065,6 +1076,19 @@ func GetStartupInfo(startupInfo *StartupInfo) (err error) {
 
 func GetCurrentProcess() (pseudoHandle Handle, err error) {
 	r0, _, e1 := syscall.Syscall(procGetCurrentProcess.Addr(), 0, 0, 0, 0)
+	pseudoHandle = Handle(r0)
+	if pseudoHandle == 0 {
+		if e1 != 0 {
+			err = errnoErr(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
+func GetCurrentThread() (pseudoHandle Handle, err error) {
+	r0, _, e1 := syscall.Syscall(procGetCurrentThread.Addr(), 0, 0, 0, 0)
 	pseudoHandle = Handle(r0)
 	if pseudoHandle == 0 {
 		if e1 != 0 {
@@ -2729,8 +2753,8 @@ func checkTokenMembership(tokenHandle Token, sidToCheck *SID, isMember *int32) (
 	return
 }
 
-func OpenProcessToken(h Handle, access uint32, token *Token) (err error) {
-	r1, _, e1 := syscall.Syscall(procOpenProcessToken.Addr(), 3, uintptr(h), uintptr(access), uintptr(unsafe.Pointer(token)))
+func OpenProcessToken(process Handle, access uint32, token *Token) (err error) {
+	r1, _, e1 := syscall.Syscall(procOpenProcessToken.Addr(), 3, uintptr(process), uintptr(access), uintptr(unsafe.Pointer(token)))
 	if r1 == 0 {
 		if e1 != 0 {
 			err = errnoErr(e1)
@@ -2741,8 +2765,128 @@ func OpenProcessToken(h Handle, access uint32, token *Token) (err error) {
 	return
 }
 
-func GetTokenInformation(t Token, infoClass uint32, info *byte, infoLen uint32, returnedLen *uint32) (err error) {
-	r1, _, e1 := syscall.Syscall6(procGetTokenInformation.Addr(), 5, uintptr(t), uintptr(infoClass), uintptr(unsafe.Pointer(info)), uintptr(infoLen), uintptr(unsafe.Pointer(returnedLen)), 0)
+func GetCurrentThreadToken() (token Token) {
+	r0, _, _ := syscall.Syscall(procGetCurrentThreadToken.Addr(), 0, 0, 0, 0)
+	token = Token(r0)
+	return
+}
+
+func OpenThreadToken(thread Handle, access uint32, openAsSelf bool, token *Token) (err error) {
+	var _p0 uint32
+	if openAsSelf {
+		_p0 = 1
+	} else {
+		_p0 = 0
+	}
+	r1, _, e1 := syscall.Syscall6(procOpenThreadToken.Addr(), 4, uintptr(thread), uintptr(access), uintptr(_p0), uintptr(unsafe.Pointer(token)), 0, 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			err = errnoErr(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
+func GetCurrentProcessToken() (token Token) {
+	r0, _, _ := syscall.Syscall(procGetCurrentProcessToken.Addr(), 0, 0, 0, 0)
+	token = Token(r0)
+	return
+}
+
+func ImpersonateSelf(impersonationlevel uint32) (err error) {
+	r1, _, e1 := syscall.Syscall(procImpersonateSelf.Addr(), 1, uintptr(impersonationlevel), 0, 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			err = errnoErr(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
+func RevertToSelf() (err error) {
+	r1, _, e1 := syscall.Syscall(procRevertToSelf.Addr(), 0, 0, 0, 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			err = errnoErr(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
+func SetThreadToken(thread *Handle, token Token) (err error) {
+	r1, _, e1 := syscall.Syscall(procSetThreadToken.Addr(), 2, uintptr(unsafe.Pointer(thread)), uintptr(token), 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			err = errnoErr(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
+func LookupPrivilegeValue(systemname *uint16, name *uint16, luid *LUID) (err error) {
+	r1, _, e1 := syscall.Syscall(procLookupPrivilegeValueW.Addr(), 3, uintptr(unsafe.Pointer(systemname)), uintptr(unsafe.Pointer(name)), uintptr(unsafe.Pointer(luid)))
+	if r1 == 0 {
+		if e1 != 0 {
+			err = errnoErr(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
+func AdjustTokenPrivileges(token Token, disableAllPrivileges bool, newstate *Tokenprivileges, buflen uint32, prevstate *Tokenprivileges, returnlen *uint32) (err error) {
+	var _p0 uint32
+	if disableAllPrivileges {
+		_p0 = 1
+	} else {
+		_p0 = 0
+	}
+	r1, _, e1 := syscall.Syscall6(procAdjustTokenPrivileges.Addr(), 6, uintptr(token), uintptr(_p0), uintptr(unsafe.Pointer(newstate)), uintptr(buflen), uintptr(unsafe.Pointer(prevstate)), uintptr(unsafe.Pointer(returnlen)))
+	if r1 == 0 {
+		if e1 != 0 {
+			err = errnoErr(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
+func GetTokenInformation(token Token, infoClass uint32, info *byte, infoLen uint32, returnedLen *uint32) (err error) {
+	r1, _, e1 := syscall.Syscall6(procGetTokenInformation.Addr(), 5, uintptr(token), uintptr(infoClass), uintptr(unsafe.Pointer(info)), uintptr(infoLen), uintptr(unsafe.Pointer(returnedLen)), 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			err = errnoErr(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
+func SetTokenInformation(token Token, infoClass uint32, info *byte, infoLen uint32) (err error) {
+	r1, _, e1 := syscall.Syscall6(procSetTokenInformation.Addr(), 4, uintptr(token), uintptr(infoClass), uintptr(unsafe.Pointer(info)), uintptr(infoLen), 0, 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			err = errnoErr(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
+func DuplicateTokenEx(existingToken Token, desiredAccess uint32, tokenAttributes *SecurityAttributes, impersonationLevel uint32, tokenType uint32, newToken *Token) (err error) {
+	r1, _, e1 := syscall.Syscall6(procDuplicateTokenEx.Addr(), 6, uintptr(existingToken), uintptr(desiredAccess), uintptr(unsafe.Pointer(tokenAttributes)), uintptr(impersonationLevel), uintptr(tokenType), uintptr(unsafe.Pointer(newToken)))
 	if r1 == 0 {
 		if e1 != 0 {
 			err = errnoErr(e1)
