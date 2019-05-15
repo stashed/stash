@@ -23,7 +23,7 @@ Backend is where Stash stores backup snapshots. It can be a cloud storage like G
   <img alt="Stash Backup Overview" height="350px", src="/docs/images/backup-overview.png">
 </p>
 
-Stash sidecar container receive backend information from `spec.backend` field of [Restic](/docs/concepts/crds/restic.md) crd. It obtains necessary credentials to access the backend from the secret specified in `spec.backend.storageSecretName` field of Restic crd. Then on first backup schedule, Stash initialize a repository in the backend.
+Stash sidecar container receive backend information from `spec.backend` field of [Restic](/docs/concepts/crds/v1alpha1/restic.md) crd. It obtains necessary credentials to access the backend from the secret specified in `spec.backend.storageSecretName` field of Restic crd. Then on first backup schedule, Stash initialize a repository in the backend.
 
 Below, a screenshot that show a repository created at AWS S3 bucket named `stash-qa` for a Deployment named `stash-demo`.
 
@@ -35,7 +35,7 @@ You will see all snapshots taken by Stash at `/snapshot` directory of this repos
 
 > Note: Stash keeps all backup data encrypted. So, snapshot files in the bucket will not contain any meaningful data until they are decrypted.
 
-Stash creates a [Repository](/docs/concepts/crds/repository.md) crd that represents original repository in backend in Kubernetes native way. It holds information like number of backup snapshot taken, time when last backup was taken etc.
+Stash creates a [Repository](/docs/concepts/crds/repository.md) crd that represents original repository in backend in a Kubernetes native way. It holds information like number of backup snapshot taken, time when last backup was taken etc.
 
 In order to use a backend, you have to configure `Restic` crd and create a `Secret` with necessary credentials.
 

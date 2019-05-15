@@ -18,14 +18,14 @@ type BackupMetrics struct {
 }
 
 type RestoreMetrics struct {
-	// RestoreSuccess show weather the current restore session succeeded or not
+	// RestoreSuccess show whether the current restore session succeeded or not
 	RestoreSuccess prometheus.Gauge
 	// SessionDuration show total time taken to complete the restore session
 	SessionDuration prometheus.Gauge
 }
 
 type BackupSessionMetrics struct {
-	// BackupSuccess show weather the current backup session succeeded or not
+	// BackupSuccess show whether the current backup session succeeded or not
 	BackupSuccess prometheus.Gauge
 	// SessionDuration show total time taken to complete the restore session
 	SessionDuration prometheus.Gauge
@@ -57,8 +57,8 @@ type RepositoryMetrics struct {
 	RepoSize prometheus.Gauge
 	// SnapshotCount shows number of snapshots stored in the repository
 	SnapshotCount prometheus.Gauge
-	// SnapshotRemovedOnLastCleanup shows number of old snapshots cleaned up according to retention policy on last backup session
-	SnapshotRemovedOnLastCleanup prometheus.Gauge
+	// SnapshotsRemovedOnLastCleanup shows number of old snapshots cleaned up according to retention policy on last backup session
+	SnapshotsRemovedOnLastCleanup prometheus.Gauge
 }
 
 func newBackupMetrics(labels prometheus.Labels) *BackupMetrics {
@@ -70,7 +70,7 @@ func newBackupMetrics(labels prometheus.Labels) *BackupMetrics {
 					Namespace:   "stash",
 					Subsystem:   "backup",
 					Name:        "session_success",
-					Help:        "Indicates weather the current backup session succeeded or not",
+					Help:        "Indicates whether the current backup session succeeded or not",
 					ConstLabels: labels,
 				},
 			),
@@ -177,7 +177,7 @@ func newBackupMetrics(labels prometheus.Labels) *BackupMetrics {
 					ConstLabels: labels,
 				},
 			),
-			SnapshotRemovedOnLastCleanup: prometheus.NewGauge(
+			SnapshotsRemovedOnLastCleanup: prometheus.NewGauge(
 				prometheus.GaugeOpts{
 					Namespace:   "stash",
 					Subsystem:   "repository",
@@ -198,7 +198,7 @@ func newRestoreMetrics(labels prometheus.Labels) *RestoreMetrics {
 				Namespace:   "stash",
 				Subsystem:   "restore",
 				Name:        "session_success",
-				Help:        "Indicates weather the current restore session succeeded or not",
+				Help:        "Indicates whether the current restore session succeeded or not",
 				ConstLabels: labels,
 			},
 		),
@@ -252,7 +252,7 @@ func (backupOutput *BackupOutput) HandleMetrics(metricOpt *MetricsOptions, backu
 		metrics.RepositoryMetrics.RepoIntegrity,
 		metrics.RepositoryMetrics.RepoSize,
 		metrics.RepositoryMetrics.SnapshotCount,
-		metrics.RepositoryMetrics.SnapshotRemovedOnLastCleanup,
+		metrics.RepositoryMetrics.SnapshotsRemovedOnLastCleanup,
 	)
 	return metricOpt.sendMetrics(registry, metricOpt.JobName)
 }
@@ -351,7 +351,7 @@ func (backupMetrics *BackupMetrics) setValues(backupOutput *BackupOutput) error 
 	}
 	backupMetrics.RepositoryMetrics.RepoSize.Set(repoSize)
 	backupMetrics.RepositoryMetrics.SnapshotCount.Set(float64(backupOutput.RepositoryStats.SnapshotCount))
-	backupMetrics.RepositoryMetrics.SnapshotRemovedOnLastCleanup.Set(float64(backupOutput.RepositoryStats.SnapshotRemovedOnLastCleanup))
+	backupMetrics.RepositoryMetrics.SnapshotsRemovedOnLastCleanup.Set(float64(backupOutput.RepositoryStats.SnapshotsRemovedOnLastCleanup))
 	return nil
 }
 

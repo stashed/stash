@@ -1566,8 +1566,8 @@ spec:
               description: SnapshotCount shows number of snapshots stored in the repository
               format: int32
               type: integer
-            snapshotRemovedOnLastCleanup:
-              description: SnapshotRemovedOnLastCleanup shows number of old snapshots
+            snapshotsRemovedOnLastCleanup:
+              description: SnapshotsRemovedOnLastCleanup shows number of old snapshots
                 cleaned up according to retention policy on last backup session
               format: int32
               type: integer

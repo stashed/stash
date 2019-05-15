@@ -70,7 +70,6 @@ stash run [flags]
       --contention-profiling                                    Enable lock contention profiling, if profiling is enabled
       --docker-registry string                                  Docker image registry for sidecar, init-container, check-job, recovery-job and kubectl-job (default "appscode")
       --enable-mutating-webhook                                 If true, enables mutating webhooks for KubeDB CRDs.
-      --enable-swagger-ui                                       Enables swagger ui on the apiserver at /swagger-ui
       --enable-validating-webhook                               If true, enables validating webhooks for KubeDB CRDs.
   -h, --help                                                    help for run
       --http2-max-streams-per-connection int                    The limit that the server gives to clients for the maximum number of streams in an HTTP/2 connection. Zero means to use golang's default. (default 1000)

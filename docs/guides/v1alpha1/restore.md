@@ -30,7 +30,7 @@ To proceed with this tutorial, you have to meet following requirements:
 
 - You should be familiar with the following Stash concepts:
   - [Repository](/docs/concepts/crds/repository.md)
-  - [Recovery](/docs/concepts/crds/recovery.md)
+  - [Recovery](/docs/concepts/crds/v1alpha1/recovery.md)
   - [Snapshot](/docs/concepts/crds/snapshot.md)
 
 To keep things isolated, we are going to use a separate namespace called `demo` throughout this tutorial. Create the namespace if you haven't created yet.
@@ -315,8 +315,8 @@ If you would like to uninstall Stash operator, please follow the steps [here](/d
 
 ## Next Steps
 
-- Learn about the details of Restic CRD [here](/docs/concepts/crds/restic.md).
-- Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
+- Learn about the details of Restic CRD [here](/docs/concepts/crds/v1alpha1/restic.md).
+- Learn about the details of Recovery CRD [here](/docs/concepts/crds/v1alpha1/recovery.md).
 - To run backup in offline mode see [here](/docs/guides/v1alpha1/offline_backup.md)
 - See the list of supported backends and how to configure them [here](/docs/guides/v1alpha1/backends/overview.md).
 - See working examples for supported workload types [here](/docs/guides/v1alpha1/workloads.md).

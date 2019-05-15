@@ -111,7 +111,7 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 			in.Integrity = backupOutput.RepositoryStats.Integrity
 			in.Size = backupOutput.RepositoryStats.Size
 			in.SnapshotCount = backupOutput.RepositoryStats.SnapshotCount
-			in.SnapshotRemovedOnLastCleanup = backupOutput.RepositoryStats.SnapshotRemovedOnLastCleanup
+			in.SnapshotsRemovedOnLastCleanup = backupOutput.RepositoryStats.SnapshotsRemovedOnLastCleanup
 
 			currentTime := metav1.Now()
 			in.LastBackupTime = &currentTime

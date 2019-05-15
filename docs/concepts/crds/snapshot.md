@@ -5,7 +5,7 @@ menu:
     identifier: snapshot-overview
     name: Snapshot
     parent: crds
-    weight: 25
+    weight: 50
 product_name: stash
 menu_name: product_stash_0.8.3
 section_menu_id: concepts
@@ -15,163 +15,142 @@ section_menu_id: concepts
 # Snapshot
 
 ## What is Snapshot
-A `Snapshot` is a representation of [restic](https://restic.net/) backup snapshot in a Kubernetes native way. With the help of [Aggregated API Servers](https://github.com/kubernetes/community/blob/master/contributors/design-proposals/api-machinery/aggregated-api-servers.md), **Stash** provides the users a way to `view`,`list` and `delete` snapshots from restic repositories. Now, a user can view some crucial information of snapshots like `creationTimestamp`, `snapshot id`, `backed up path`  etc. In future, this will enable the users to recover a particular snapshot using stash.
+
+A `Snapshot` is a representation of backup snapshot in a Kubernetes native way. Stash uses an [Aggregated API Server](https://github.com/kubernetes/community/blob/master/contributors/design-proposals/api-machinery/aggregated-api-servers.md) to provide `get` and `list` capabilities for snapshots from the backend.
+
+This enables you to view some useful information such as `creationTimestamp`, `snapshot id`, `backed up path` etc of a snapshot. This also provides the capability to restore a specific snapshot.
 
 ## Snapshot structure
-A sample `Snapshot` object's structure created by backing up a `Deployment` is shown below,
+
+Like other official Kuberentes resources, a `Snapshot` has `TypeMeta`, `ObjectMeta` and `Status` sections. However, unlike other Kubernetes resources, it does not have a `Spec` section.
+
+A sample `Snapshot` object is shown below,
 
 ```yaml
 apiVersion: repositories.stash.appscode.com/v1alpha1
 kind: Snapshot
 metadata:
-  creationTimestamp: 2018-04-09T06:43:03Z
+  creationTimestamp: "2019-04-25T05:05:06Z"
   labels:
-    repository: deployment.stash-demo
-    restic: stash-demo
-    workload-kind: Deployment
-    workload-name: stash-demo
-  name: deployment.stash-demo-11156792
-  namespace: default
-  selfLink: /apis/repositories.stash.appscode.com/v1alpha1/namespaces/default/snapshots/deployment.stash-demo-11156792
-  uid: 11156792ffe5a52ef076c4e7c74f79a4e6ad6f8d4d2a8a078cf9ee507a8f360c
+    repository: local-repo
+  name: local-repo-d421fe22
+  namespace: demo
+  selfLink: /apis/repositories.stash.appscode.com/v1alpha1/namespaces/demo/snapshots/local-repo-d421fe22
+  uid: d421fe22de090511a74b8ab5f1f307f2fa4e0d8e2f624a7481095db828127147
 status:
   gid: 0
-  hostname: stash-demo
+  hostname: host-0
   paths:
   - /source/data
-  tree: ab2311afd593e5ef6f95df652215c9d1102b1731b72e2784386350ae95f1a145
+  tree: bb1d63756e937c001cf48ed062c69a9968978821a328f5ab06873f3b90346da2
   uid: 0
   username: ""
-
 ```
 
-Here, we are going to describe some important sections of `Snapshot` object.
+Here, we are going to describe the various sections of a `Snapshot` object.
 
-### Snapshot Name
+### Snapshot `Metadata`
 
-`name` filed in `metadata` of a `Snapshot` object represent its name. It follows this pattern,
-`<respective repository crd name>-<first 8 digits of snapshot id>`
+- **metadata.name**
 
-### Snapshot UID
+  `metadata.name` specifies the name of the `Snapshot` object. It follows the following pattern, `<Repository crd name>-<first 8 digits of snapshot id>`.
 
-`uid` field in `metadata` of `Snapshot` object represents complete restic snapshot id.
+- **metadata.uid**
 
-### CreationTimestamp
-`creationTimestamp` in `metadata` field of a `Snapshot` object represents the time when the snapshot was created.
+  `metadata.uid` specifies the complete id of the respective restic snapshot in the backend.
 
-### Snapshot Labels
+- **metadata.creationTimestamp**
 
-A `Snapshot` object maintains some important information using labels. These labels enable a user to filter `Snapshot` according to `repository`, `restic`, `workload-kind`, `workload-name`, `node-name` etc. Details of these labels are given below.
+  `metadata.creationTimestamp` represents the time when the snapshot was created.
 
-| Label name      | Description                                                                                                                                                 |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `repository`    | Name of the `Repository`  where this `Snapshot` is stored.                                                                                                  |
-| `restic`        | Name of the `Restic` which is responsible for this `Snapshot`.                                                                                              |
-| `workload-kind` | `Kind` of the workload for which the `Snapshot` has been created.                                                                                           |
-| `workload-name` | `Name` of the workload for which the `Snapshot` has been created.                                                                                           |
-| `pod-name`      | This `label` present when the respective workload is `StatefulSet`. It represents the pod name of the `StatefulSet` who is responsible for this `Snapshot`. |
-| `node-name`     | This `label` present when the respective workload is `DaemonSet`. It represents the node name where the `DaemonSet` is running.                             |
+- **metadata.labels**
 
-### Snapshot Status
+  A `Snapshot` object holds `Repository` name as a label in `metadata.labels` section. This helps a user to query the snapshots of a particular `Repository`.
 
-`Snapshot` object has following status fields,
+### Snapshot `Status`
 
-* `status.gid` indicates the group identifier of the user who took this backup.
-* `status.hostname` indicates the name of the host object whose data is backed up in this snapshot. For `Deployment`,`ReplicaSet` and `ReplicationController` it is workload name. For `DaemonSet` hostname is node name and for `StatefulSet` hostname is pod name.
-* `status.path` indicates the path that is backed up in this snapshot.
-* `status.tree` indicates `tree` of the restic snapshot. For more details see [here](https://restic.readthedocs.io/en/stable/100_references.html#trees-and-data).
-* `status.uid` indicates id of the user who took this backup. For `root` user it is 0.
-* `status.username` indicates the name of the user.
-* `status.tags` indicates tags of the snapshot.
+`Snapshot` object has the following fields in `.status` section:
+
+- **status.gid**
+`status.gid` indicates the group identifier of the user who took this backup.
+
+- **status.hostname**
+`status.hostname` indicates the name of the **host** whose data was backed up in this snapshot. For `Deployment`,`ReplicaSet` and `ReplicationController` it is **host-0**. For `DaemonSet`, hostname is the respective **node name** where daemon pod is running. For `StatefulSet`, hostname is **host-\<pod ordinal\>** for the respective pods.
+
+- **status.path**
+`status.path` indicates the path that has been backed up in this snapshot.
+
+- **status.tree**
+`status.tree` indicates `tree` of the restic snapshot. For more details, please visit [here](https://restic.readthedocs.io/en/stable/100_references.html#trees-and-data).
+
+- **status.uid**
+`status.uid` indicates `uid` of the user who took this backup. For `root` user it is 0.
+
+- **status.username**
+`status.username` indicates the name of the user who runs the backup process that took the backup.
+
+- **status.tags**
+`status.tags` indicates the tags of the snapshot.
 
 ## Working with Snapshot
 
 **Listing Snapshots:**
 
 ```console
-# List Snapshots of all repositories in the current namespace
+# List Snapshots of all Repositories in the current namespace
 $ kubectl get snapshot
 
-# List Snapshots of a particular repository
-$ kubectl get snapshot -l repository=deployment.stash-demo
+# List Snapshots of all Repositories of all namespaces
+$ kubectl get snapshot --all-namespaces
 
-# List all Snapshots of a particular workload type
-$ kubectl get snapshot -l workload-kind=Deployment
+# List Snapshots of all Repositories of a particular namespace
+$ kubectl get snapshot -n demo
 
-# List Snapshots of a particular workload
-$ kubectl get snapshot -l workload-name=stash-demo
+# List Snapshots of a particular Repository
+$ kubectl get snapshot -l repository=local-repo
 
-# List all Snapshots created by a particular restic
-$ kubectl get snapshot -l restic=stash-demo
-
-# List Snapshots of a particular pod(only for StatefulSet)
-$ kubectl get snapshot -l pod-name=stash-demo-0
-
-# List Snapshots of a particular node(only for DaemonSet)
-kubectl get snapshot -l node-name=minikube
-
-# List Snapshot of specific repositories
-$ kubectl get snapshot -l 'repository in (deployment.stash-demo,statefulset.stash-demo-0)'
+# List Snapshots from multiple Repositories
+$ kubectl get snapshot -l 'repository in (local-repo,gcs-repo)'
 ```
 
 **Viewing information of a particular Snapshot:**
 
 ```console
-$ kubectl get snapshot <snapshot name> -o yaml
+$ kubectl get snapshot [-n <namespace>] <snapshot name> -o yaml
 
 # Example:
-$ kubectl get snapshot deployment.stash-demo-3d8cd994 -o yaml
+$ kubectl get snapshot -n demo local-repo-02b0ed42 -o yaml
 ```
 
 ```yaml
 apiVersion: repositories.stash.appscode.com/v1alpha1
 kind: Snapshot
 metadata:
-  creationTimestamp: 2018-04-09T10:06:04Z
+  creationTimestamp: "2019-04-25T06:01:04Z"
   labels:
-    repository: deployment.stash-demo
-    restic: stash-demo
-    workload-kind: Deployment
-    workload-name: stash-demo
-  name: deployment.stash-demo-3d8cd994
-  namespace: default
-  selfLink: /apis/repositories.stash.appscode.com/v1alpha1/namespaces/default/snapshots/deployment.stash-demo-3d8cd994
-  uid: 3d8cd994a3bddcff1d16ac166601d93454d0eb31e2240801e7c1ec030e5af0bf
+    repository: local-repo
+  name: local-repo-02b0ed42
+  namespace: demo
+  selfLink: /apis/repositories.stash.appscode.com/v1alpha1/namespaces/demo/snapshots/local-repo-02b0ed42
+  uid: 02b0ed42791d2d13756cb9e2d05db42f514d51e23028f42bcbe3a152978aa499
 status:
   gid: 0
-  hostname: stash-demo
+  hostname: host-0
   paths:
   - /source/data
-  tree: ab2311afd593e5ef6f95df652215c9d1102b1731b72e2784386350ae95f1a145
+  tree: bb1d63756e937c001cf48ed062c69a9968978821a328f5ab06873f3b90346da2
   uid: 0
   username: ""
 ```
 
-**Deleting a particular Snapshot:**
+## Preconditions for Snapshot
 
-```console
-$ kubectl delete snapshot <snapshot name>
+1. Stash provides `Snapshots` listing facility with the help of an Aggregated API Server. Your cluster must support Aggregated API Server. Otherwise, you won't be able to perform `get` or `list` operation on `Snapshot`.
 
-# Example:
-$ kubectl delete snapshot statefulset.stash-demo-0-d690726d
-snapshot "statefulset.stash-demo-0-d690726d" deleted
-
-```
-
-## Precondition for Snaphsot
-
-1. Stash provides `Snapshots` listing facility with the help of aggregated api server. Stash start aggregated api server if any of the `ValidatingWebhook` and `MutatingWebhook` is enabled. If both of the webhooks are disabled or if your cluster does not support aggregated api server or webhooks, you won't able to list `Snapshot`.
-2. If you are using `hostPath` for `Restic` backend, stash takes help of workload pod to provide snapshot list. In this case, workload pod must be running while listing `Snapshot`.
-3. If you are using [offline backup](/docs/guides/v1alpha1/offline_backup.md) and `hostPath` as your `Restic` backend, you won't able to list `Snapshot`.
+2. If you are using [local](/docs/guides/backends/local.md) backend, the respective pod that took the backup must be in `Running` state. It is not necessary if you use cloud backends.
 
 ## Next Steps
 
-- Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/v1alpha1/backup.md).
-- To restore a backup see [here](/docs/guides/v1alpha1/restore.md).
-- Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
-- To run backup in offline mode see [here](/docs/guides/v1alpha1/offline_backup.md)
-- See the list of supported backends and how to configure them [here](/docs/guides/v1alpha1/backends/overview.md).
-- See working examples for supported workload types [here](/docs/guides/v1alpha1/workloads.md).
-- Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/v1alpha1/monitoring/overview.md).
-- Learn about how to configure [RBAC roles](/docs/guides/v1alpha1/rbac.md).
-- Want to hack on Stash? Check our [contribution guidelines](/docs/CONTRIBUTING.md).
+- Learn how to configure `BackupConfiguration` to backup workloads data from [here](/docs/guides/latest/workloads/backup.md).
+- Learn how to configure `BackupConfiguration` to backup databases from [here](/docs/guides/latest/databases/backup.md).
+- Learn how to configure `BackupConfiguration` to backup stand-alone PVC from [here](/docs/guides/latest/volumes/backup.md).

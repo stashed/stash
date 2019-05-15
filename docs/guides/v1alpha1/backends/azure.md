@@ -14,7 +14,7 @@ section_menu_id: guides
 
 # Microsoft Azure Storage
 
-Stash supports Microsoft Azure Storage as backend. This tutorial will show you how to configure **Restic** and storage **Secret** for Azure Storage.
+Stash supports Microsoft Azure Storage as a backend. This tutorial will show you how to configure **Restic** and storage **Secret** for Azure Storage.
 
 #### Create Storage Secret
 

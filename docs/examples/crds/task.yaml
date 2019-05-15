@@ -1,0 +1,20 @@
+apiVersion: stash.appscode.com/v1beta1
+kind: Task
+metadata:
+  name: pg-backup
+spec:
+  steps:
+  - name: pg-backup
+    params:
+    - name: outputDir # specifies where to write output file
+      value: /tmp/output
+    - name: secretVolume # specifies where backend secret has been mounted
+      value: secret-volume
+  - name: update-status
+    params:
+    - name: outputDir # specifies where previous step wrote output file. it will read that file and update status of respective resources accordingly.
+      value: /tmp/output
+  volumes:
+  - name: secret-volume
+    secret:
+      secretName: ${REPOSITORY_SECRET_NAME}

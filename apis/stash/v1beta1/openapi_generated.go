@@ -14652,7 +14652,7 @@ func schema_stash_apis_stash_v1beta1_Rule(ref common.ReferenceCallback) common.O
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
-					"subjects": {
+					"targetHosts": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Subjects specifies the list of hosts that are subject to this rule",
 							Type:        []string{"array"},

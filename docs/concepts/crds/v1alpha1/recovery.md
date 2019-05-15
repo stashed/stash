@@ -4,21 +4,23 @@ menu:
   product_stash_0.8.3:
     identifier: recovery-overview
     name: Recovery
-    parent: crds
+    parent: v1alpha1-crds
     weight: 20
 product_name: stash
 menu_name: product_stash_0.8.3
 section_menu_id: concepts
 ---
 
-> New to Stash? Please start [here](/docs/concepts/README.md).
+>**Warning:** Recovery crd has been deprecated in **v1beta1 api** and will be removed in future version. Please use [RestoreSession](/docs/concepts/crds/restoresession.md) instead.
 
 # Recoveries
 
 ## What is Recovery
+
 A `Recovery` is a Kubernetes `CustomResourceDefinition` (CRD). It provides configuration for restoring a backup taken using Stash. You only need to specify the `Repository`, `Snapshot` and `path` you want to recover and volume where the backup will be restored.
 
 ## Recovery Spec
+
 As with all other Kubernetes objects, a Recovery needs `apiVersion`, `kind`, and `metadata` fields. It also needs a `.spec` section. Below is an example Recovery object.
 
 ```yaml
@@ -59,6 +61,7 @@ Indicates the name of the `Snapshot` object that represents **restic** backup sn
 An array of strings specifying the file-group paths that were backed up using `Restic`.
 
 ### spec.recoveredVolumes
+
 Indicates an array of volumes where recovered snapshot data will be stored. Here, `mountPath` specifies where the volume will be mounted in the restore `Job`. Note that, `Recovery` recovers data in the same paths from where the backup was taken (specified in `spec.paths`). So, volumes must be mounted on those paths or their parent paths. Following parameters are available for `recoveredVolumes`.
 
 | Parameter                       | Description                                                                                       |
@@ -80,7 +83,7 @@ Stash operator updates `.status` of a Recovery CRD when the recovery operation i
 ## Next Steps
 
 - Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/v1alpha1/backup.md).
-- Learn about the details of Restic CRD [here](/docs/concepts/crds/restic.md).
+- Learn about the details of Restic CRD [here](/docs/concepts/crds/v1alpha1/restic.md).
 - To restore a backup see [here](/docs/guides/v1alpha1/restore.md).
 - To run backup in offline mode see [here](/docs/guides/v1alpha1/offline_backup.md)
 - See the list of supported backends and how to configure them [here](/docs/guides/v1alpha1/backends/overview.md).

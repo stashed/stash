@@ -25,7 +25,7 @@ At first, you need to have a Kubernetes cluster, and the `kubectl` command-line 
 - Install `Stash` in your cluster following the steps [here](/docs/setup/install.md).
 
 - You should be familiar with the following Stash concepts:
-  - [Restic](/docs/concepts/crds/restic.md)
+  - [Restic](/docs/concepts/crds/v1alpha1/restic.md)
   - [Repository](/docs/concepts/crds/repository.md)
   - [Snapshot](/docs/concepts/crds/snapshot.md)
 
@@ -56,7 +56,7 @@ The offline backup process consists of the following steps:
 4. Then, Stash operator injects an [init-container](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) named `stash` and mounts the target volume in it.
 5. Stash operator creates a [CronJob](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/) with name `stash-scaledown-cron-{restic-name}`.
 6. The `CronJob` restarts workload on the scheduled interval.
-7. Finally, `stash` init-container takes backup of the volume to the specified backend when pod restarts. It also creates a `Repository` crd during the first backup which represents the backend in Kubernetes native way.
+7. Finally, `stash` init-container takes backup of the volume to the specified backend when pod restarts. It also creates a `Repository` crd during the first backup which represents the backend in a Kubernetes native way.
 
 The `CronJob` restarts workloads according to the following rules:
 
@@ -426,9 +426,9 @@ If you would like to uninstall Stash operator, please follow the steps [here](/d
 ## Next Steps
 
 - Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/v1alpha1/backup.md).
-- Learn about the details of Restic CRD [here](/docs/concepts/crds/restic.md).
+- Learn about the details of Restic CRD [here](/docs/concepts/crds/v1alpha1/restic.md).
 - To restore a backup see [here](/docs/guides/v1alpha1/restore.md).
-- Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
+- Learn about the details of Recovery CRD [here](/docs/concepts/crds/v1alpha1/recovery.md).
 - See the list of supported backends and how to configure them [here](/docs/guides/v1alpha1/backends/overview.md).
 - See working examples for supported workload types [here](/docs/guides/v1alpha1/workloads.md).
 - Thinking about monitoring your backup operations? Stash works [out-of-the-box with Prometheus](/docs/guides/v1alpha1/monitoring/overview.md).

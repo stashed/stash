@@ -41,7 +41,7 @@ func RestoreOptionsForHost(hostname string, rules []api.Rule) restic.RestoreOpti
 			sourceHost = rule.SourceHost
 		}
 
-		if len(rule.Subjects) == 0 || go_str.Contains(rule.Subjects, hostname) {
+		if len(rule.TargetHosts) == 0 || go_str.Contains(rule.TargetHosts, hostname) {
 			return restic.RestoreOptions{
 				Host:        hostname,
 				SourceHost:  sourceHost,

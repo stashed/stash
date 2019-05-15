@@ -13864,9 +13864,9 @@ func schema_stash_apis_stash_v1alpha1_RepositoryStatus(ref common.ReferenceCallb
 							Format:      "int32",
 						},
 					},
-					"snapshotRemovedOnLastCleanup": {
+					"snapshotsRemovedOnLastCleanup": {
 						SchemaProps: spec.SchemaProps{
-							Description: "SnapshotRemovedOnLastCleanup shows number of old snapshots cleaned up according to retention policy on last backup session",
+							Description: "SnapshotsRemovedOnLastCleanup shows number of old snapshots cleaned up according to retention policy on last backup session",
 							Type:        []string{"integer"},
 							Format:      "int32",
 						},

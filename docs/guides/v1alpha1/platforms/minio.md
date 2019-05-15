@@ -25,9 +25,9 @@ At first, you need to have a Kubernetes cluster, and the `kubectl` command-line 
 - Install `Stash` in your cluster following the steps [here](/docs/setup/install.md).
 
 - You should be familiar with the following Stash concepts:
-  - [Restic](/docs/concepts/crds/restic.md)
+  - [Restic](/docs/concepts/crds/v1alpha1/restic.md)
   - [Repository](/docs/concepts/crds/repository.md)
-  - [Recovery](/docs/concepts/crds/recovery.md)
+  - [Recovery](/docs/concepts/crds/v1alpha1/recovery.md)
   - [Snapshot](/docs/concepts/crds/snapshot.md)
 
 - You will need a TLS secured [Minio](https://docs.minio.io/) server to store backed up data. If you already do not have a Minio server running, deploy one following the tutorial from [here](https://github.com/appscode/third-party-tools/blob/master/storage/minio/README.md). For this tutorial, we have deployed Minio server in `storage` namespace and it is accessible through `minio.storage.svc` dns.

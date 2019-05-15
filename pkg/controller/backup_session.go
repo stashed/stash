@@ -88,7 +88,7 @@ func (c *StashController) runBackupSessionProcessor(key string) error {
 		return nil
 	}
 
-	// check weather backup session is completed or running and set it's phase accordingly
+	// check whether backup session is completed or running and set it's phase accordingly
 	phase, err := c.getBackupSessionPhase(backupSession)
 
 	if phase == api_v1beta1.BackupSessionFailed {

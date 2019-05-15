@@ -1,0 +1,18 @@
+apiVersion: repositories.stash.appscode.com/v1alpha1
+kind: Snapshot
+metadata:
+  creationTimestamp: "2019-04-25T05:05:06Z"
+  labels:
+    repository: local-repo
+  name: local-repo-d421fe22
+  namespace: demo
+  selfLink: /apis/repositories.stash.appscode.com/v1alpha1/namespaces/demo/snapshots/local-repo-d421fe22
+  uid: d421fe22de090511a74b8ab5f1f307f2fa4e0d8e2f624a7481095db828127147
+status:
+  gid: 0
+  hostname: host-0
+  paths:
+  - /source/data
+  tree: bb1d63756e937c001cf48ed062c69a9968978821a328f5ab06873f3b90346da2
+  uid: 0
+  username: ""

@@ -25,12 +25,12 @@ stash restore [flags]
 
 ```
       --backoff-max-wait duration   Maximum wait for initial response from kube apiserver; 0 disables the timeout
-      --enable-cache                Specify weather to enable caching for restic (default true)
+      --enable-cache                Specify whether to enable caching for restic (default true)
   -h, --help                        help for restore
       --kubeconfig string           Path to kubeconfig file with authorization information (the master location is set by the master flag).
       --master string               The address of the Kubernetes API server (overrides any value in kubeconfig)
       --max-connections int         Specify maximum concurrent connections for GCS, Azure and B2 backend
-      --metrics-enabled             Specify weather to export Prometheus metrics
+      --metrics-enabled             Specify whether to export Prometheus metrics
       --pushgateway-url string      Pushgateway URL where the metrics will be pushed
       --restore-session string      Name of the RestoreSession CRD.
       --secret-dir string           Directory where storage secret has been mounted

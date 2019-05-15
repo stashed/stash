@@ -25,9 +25,9 @@ At first, you need to have a Kubernetes cluster in Google Cloud Platform. If you
 - Install Stash in your cluster following the steps [here](/docs/setup/install.md).
 
 - You should be familiar with the following Stash concepts:
-  - [Restic](/docs/concepts/crds/restic.md)
+  - [Restic](/docs/concepts/crds/v1alpha1/restic.md)
   - [Repository](/docs/concepts/crds/repository.md)
-  - [Recovery](/docs/concepts/crds/recovery.md)
+  - [Recovery](/docs/concepts/crds/v1alpha1/recovery.md)
   - [Snapshot](/docs/concepts/crds/snapshot.md)
 
 - You will need a [GCS Bucket](https://console.cloud.google.com/storage) and [GCE persistent disk](https://console.cloud.google.com/compute/disks). GCE persistent disk must be in the same GCE project and zone as the cluster.

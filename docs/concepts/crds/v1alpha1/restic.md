@@ -4,21 +4,23 @@ menu:
   product_stash_0.8.3:
     identifier: restic-overview
     name: Restic
-    parent: crds
+    parent: v1alpha1-crds
     weight: 10
 product_name: stash
 menu_name: product_stash_0.8.3
 section_menu_id: concepts
 ---
 
-> New to Stash? Please start [here](/docs/concepts/README.md).
+>**Warning:** Restic crd has been deprecated in **v1beta1 api** and will be removed in future version. Please use [BackupConfiguration](/docs/concepts/crds/backupconfiguration.md) instead.
 
 # Restics
 
 ## What is Restic
+
 A `Restic` is a Kubernetes `CustomResourceDefinition` (CRD). It provides declarative configuration for [restic](https://restic.net) in a Kubernetes native way. You only need to describe the desired backup operations in a Restic object, and the Stash operator will reconfigure the matching workloads to the desired state for you.
 
 ## Restic Spec
+
 As with all other Kubernetes objects, a Restic needs `apiVersion`, `kind`, and `metadata` fields. It also needs a `.spec` section. Below is an example Restic object.
 
 ```yaml
@@ -53,12 +55,14 @@ spec:
 The `.spec` section has following parts:
 
 ### spec.selector
+
 `spec.selector` is a required field that specifies a [label selector](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) for the Deployments, ReplicaSets, ReplicationControllers, DaemonSets and StatefulSets targeted by this Restic. Selectors are always matched against the labels of Deployments, ReplicaSets, ReplicationControllers, DaemonSets and StatefulSets in the same namespace as Restic object itself. You can create Deployment, etc and its matching Restic is any order. As long as the labels match, Stash operator will add sidecar container to the workload.  If multiple `Restic` objects are matched to a given workload, Stash operator will error out and avoid adding sidecar container.
 
 ### spec.type
 The default value for `spec.type` is `online`. For offline backup you need to specify `spec.type=offline`. For more details see [here](/docs/guides/v1alpha1/offline_backup.md).
 
 ### spec.fileGroups
+
 `spec.fileGroups` is a required field that specifies one or more directories that are backed up by [restic](https://restic.net). For each directory, you can specify custom tags and retention policy for snapshots.
 
  - `spec.fileGroups[].path` represents a local directory that backed up by `restic`.
@@ -88,6 +92,7 @@ You can set one or more of these retention policy options together. To learn mor
 To learn how to configure various backends for Restic, please visit [here](/docs/guides/v1alpha1/backends/overview.md).
 
 ### spec.schedule
+
 `spec.schedule` is a [cron expression](https://github.com/robfig/cron/blob/v2/doc.go#L26) that indicates how often `restic` commands are invoked for file groups.
 At each tick, `restic backup` and `restic forget` commands are run for each of the configured file groups.
 
@@ -95,9 +100,11 @@ At each tick, `restic backup` and `restic forget` commands are run for each of t
 `spec.paused` can be used as `enable/disable` switch for Restic. The default value is `false`. To stop restic from taking backup set `spec.paused: true`. For more details see [here](/docs/guides/v1alpha1/backup.md#disable-backup).
 
 ### spec.resources
+
 `spec.resources` refers to compute resources required by the `stash` sidecar container. To learn more, visit [here](http://kubernetes.io/docs/user-guide/compute-resources/).
 
 ### spec.volumeMounts
+
 `spec.volumeMounts` refers to volumes to be mounted in `stash` sidecar to get access to fileGroup paths.
 
 ## Backup Repository Structure
@@ -124,15 +131,18 @@ This prefix is particularly helpful when you are using a single bucket to backup
 In these scenarios, `Restic` crd without a prefix will cause conflict in the repository directory in the bucket. You can overcome it using a different prefix for each workload.
 
 ## Workload Annotations
+
 For each workload where a sidecar container is added by Stash operator, the following annotations are added:
 
  - `restic.appscode.com/last-applied-configuration` indicates the configuration of applied Restic CRD.
  - `restic.appscode.com/tag` indicates the tag of `appscode/stash` Docker image that was added as a sidecar.
 
 ## Updating Restic
+
 The sidecar container watches for changes in the Restic fileGroups, backend and schedule. These changes are automatically applied on the next run of `restic` commands. If the selector of a Restic CRD is changed, Stash operator will update workload accordingly by adding/removing sidecars as required.
 
 ## Disable Restic
+
 To stop Restic from taking backup, you can do the following things:
 
 * Set `spec.paused: true` in Restic `yaml` and then update the Restic object. This means:
@@ -151,7 +161,7 @@ For more details about how to disable and resume Restic see [here](/docs/guides/
 - Learn about Repository CRD [here](/docs/concepts/crds/repository.md)
 - Learn how to use Stash to backup a Kubernetes deployment [here](/docs/guides/v1alpha1/backup.md).
 - To restore a backup see [here](/docs/guides/v1alpha1/restore.md).
-- Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
+- Learn about the details of Recovery CRD [here](/docs/concepts/crds/v1alpha1/recovery.md).
 - To run backup in offline mode see [here](/docs/guides/v1alpha1/offline_backup.md)
 - See the list of supported backends and how to configure them [here](/docs/guides/v1alpha1/backends/overview.md).
 - See working examples for supported workload types [here](/docs/guides/v1alpha1/workloads.md).

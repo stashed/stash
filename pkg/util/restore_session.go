@@ -12,7 +12,7 @@ import (
 	v1beta1_listers "stash.appscode.dev/stash/client/listers/stash/v1beta1"
 )
 
-// GetAppliedRestoreSession check weather RestoreSession was applied as annotation and returns the object definition if exist.
+// GetAppliedRestoreSession check whether RestoreSession was applied as annotation and returns the object definition if exist.
 func GetAppliedRestoreSession(m map[string]string) (*v1beta1_api.RestoreSession, error) {
 	data := GetString(m, v1beta1_api.KeyLastAppliedRestoreSession)
 	if data == "" {
@@ -82,7 +82,7 @@ func FindRestoreSession(lister v1beta1_listers.RestoreSessionLister, w *wapi.Wor
 	return latestRestoreSession, nil
 }
 
-// RestoreSessionEqual check weather two RestoreSessions has same specification.
+// RestoreSessionEqual check whether two RestoreSessions has same specification.
 func RestoreSessionEqual(old, new *v1beta1_api.RestoreSession) bool {
 
 	var oldSpec, newSpec *v1beta1_api.RestoreSessionSpec

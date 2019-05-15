@@ -25,9 +25,9 @@ At first, you need to have a Kubernetes cluster, and the kubectl command-line to
 - Install `Stash` in your cluster following the steps [here](/docs/setup/install.md).
 
 - You should be familiar with the following Stash concepts:
-  - [Restic](/docs/concepts/crds/restic.md)
+  - [Restic](/docs/concepts/crds/v1alpha1/restic.md)
   - [Repository](/docs/concepts/crds/repository.md)
-  - [Recovery](/docs/concepts/crds/recovery.md)
+  - [Recovery](/docs/concepts/crds/v1alpha1/recovery.md)
   - [Snapshot](/docs/concepts/crds/snapshot.md)
 
 - You will need a [Rook Storage Service](https://rook.io) with [Object Storage](https://rook.io/docs/rook/v0.9/ceph-object.html) and [Block Storage](https://rook.io/docs/rook/v0.9/ceph-block.html) configured. If you do not already have a **Rook Storage Service** configured, you can create one by following this [quickstart guide](https://rook.io/docs/rook/v0.9/quickstart-toc.html).

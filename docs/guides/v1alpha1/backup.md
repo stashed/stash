@@ -26,7 +26,7 @@ At first, you need to have a Kubernetes cluster, and the `kubectl` command-line 
 
 - You should be familiar with the following Stash concepts:
 
-  - [Restic](/docs/concepts/crds/restic.md)
+  - [Restic](/docs/concepts/crds/v1alpha1/restic.md)
   - [Repository](/docs/concepts/crds/repository.md)
   - [Snapshot](/docs/concepts/crds/snapshot.md)
 
@@ -55,7 +55,7 @@ The backup process consists of the following steps:
 2. Then, the user creates a `Restic` crd which specifies the targeted workload for backup. It also specifies the backend information where the backed up data will be stored.
 3. Stash operator watches for `Restic` crd. Once, it found a `Restic` crd, it identifies the targeted workloads that match `Restic`'s selector.
 4. Then, Stash operator injects a sidecar container named `stash` and mounts the target volume into it.
-5. Finally, `stash` sidecar container takes periodic backup of the volume to specified backend. It also creates a `Repository` crd in first backup which represents the original repository in the backend in Kubernetes native way.
+5. Finally, `stash` sidecar container takes periodic backup of the volume to specified backend. It also creates a `Repository` crd in first backup which represents the original repository in the backend in a Kubernetes native way.
 
 ## Backup
 
@@ -529,9 +529,9 @@ If you would like to uninstall Stash operator, please follow the steps [here](/d
 
 ## Next Steps
 
-- Learn about the details of Restic CRD [here](/docs/concepts/crds/restic.md).
+- Learn about the details of Restic CRD [here](/docs/concepts/crds/v1alpha1/restic.md).
 - To restore a backup see [here](/docs/guides/v1alpha1/restore.md).
-- Learn about the details of Recovery CRD [here](/docs/concepts/crds/recovery.md).
+- Learn about the details of Recovery CRD [here](/docs/concepts/crds/v1alpha1/recovery.md).
 - To run backup in offline mode see [here](/docs/guides/v1alpha1/offline_backup.md)
 - See the list of supported backends and how to configure them [here](/docs/guides/v1alpha1/backends/overview.md).
 - See working examples for supported workload types [here](/docs/guides/v1alpha1/workloads.md).

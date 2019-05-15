@@ -16,7 +16,7 @@ import (
 	v1beta1_listers "stash.appscode.dev/stash/client/listers/stash/v1beta1"
 )
 
-// GetAppliedBackupConfiguration check weather BackupConfiguration was applied as annotation and returns the object definition if exist.
+// GetAppliedBackupConfiguration check whether BackupConfiguration was applied as annotation and returns the object definition if exist.
 func GetAppliedBackupConfiguration(m map[string]string) (*v1beta1_api.BackupConfiguration, error) {
 	data := GetString(m, v1beta1_api.KeyLastAppliedBackupConfiguration)
 
@@ -68,7 +68,7 @@ func FindBackupConfiguration(lister v1beta1_listers.BackupConfigurationLister, w
 	return nil, nil
 }
 
-// BackupConfigurationEqual check weather two BackupConfigurations has same specification.
+// BackupConfigurationEqual check whether two BackupConfigurations has same specification.
 func BackupConfigurationEqual(old, new *v1beta1_api.BackupConfiguration) bool {
 	var oldSpec, newSpec *v1beta1_api.BackupConfigurationSpec
 	if old != nil {

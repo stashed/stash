@@ -54,7 +54,7 @@ type RestoreSessionSpec struct {
 type Rule struct {
 	// Subjects specifies the list of hosts that are subject to this rule
 	// +optional
-	Subjects []string `json:"subjects,omitempty"`
+	TargetHosts []string `json:"targetHosts,omitempty"`
 	// SourceHost specifies the name of the host whose backed up state we are trying to restore
 	// By default, it will indicate the workload itself
 	// +optional
