@@ -58,14 +58,14 @@ build_docker() {
   chmod 755 restic_${NEW_RESTIC_VER}
 
   cat >Dockerfile <<EOL
-FROM mysql:8.0.3
+FROM mysql:8.0.14
 
 # add our user and group first to make sure their IDs get assigned consistently, regardless of whatever dependencies get added
-RUN addgroup -g 1005 stash \
-    && adduser -u 1005 -G stash -D stash
+RUN groupadd -r stash --gid=1005 \
+    && useradd -r -g stash  --uid=1005 stash
 
 RUN set -x \
-  && apk add --update --no-cache ca-certificates
+    && apt-get update && apt-get install -y --no-install-recommends ca-certificates
 
 COPY restic_${NEW_RESTIC_VER} /bin/restic_${NEW_RESTIC_VER}
 COPY stash /bin/stash
