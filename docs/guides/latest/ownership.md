@@ -5,7 +5,7 @@ menu:
   product_stash_0.8.3:
     identifier: file-ownership-stash
     name: File Ownership
-    parent: guides
+    parent: latest-guides
     weight: 150
 product_name: stash
 menu_name: product_stash_0.8.3
