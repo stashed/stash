@@ -16,7 +16,7 @@ section_menu_id: concepts
 
 ## What is Snapshot
 
-A `Snapshot` is a representation of backup snapshot in a Kubernetes native way. Stash uses an [Aggregated API Server](https://github.com/kubernetes/community/blob/master/contributors/design-proposals/api-machinery/aggregated-api-servers.md) to provide `view`, `list` and `delete` capabilities for snapshots from the backend.
+A `Snapshot` is a representation of backup snapshot in a Kubernetes native way. Stash uses an [Aggregated API Server](https://github.com/kubernetes/community/blob/master/contributors/design-proposals/api-machinery/aggregated-api-servers.md) to provide `get` and `list` capabilities for snapshots from the backend.
 
 This enables you to view some useful information such as `creationTimestamp`, `snapshot id`, `backed up path` etc of a snapshot. This also provides the capability to restore a specific snapshot.
 
@@ -143,19 +143,9 @@ status:
   username: ""
 ```
 
-**Deleting a particular Snapshot:**
-
-```console
-$ kubectl delete snapshot <snapshot name> [-n <namespace>]
-
-# Example:
-$ kubectl delete snapshot local-repo-9ac3160b -n demo
-snapshot.repositories.stash.appscode.com "local-repo-9ac3160b" deleted
-```
-
 ## Preconditions for Snapshot
 
-1. Stash provides `Snapshots` listing facility with the help of an Aggregated API Server. Your cluster must support Aggregated API Server. Otherwise, you won't be able to perform `get`, `list` or `delete`  operation on `Snapshot`.
+1. Stash provides `Snapshots` listing facility with the help of an Aggregated API Server. Your cluster must support Aggregated API Server. Otherwise, you won't be able to perform `get` or `list` operation on `Snapshot`.
 
 2. If you are using [local](/docs/guides/backends/local.md) backend, the respective pod that took the backup must be in `Running` state. It is not necessary if you use cloud backends.
 
