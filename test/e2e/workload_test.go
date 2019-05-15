@@ -588,7 +588,7 @@ var _ = Describe("StatefulSet", func() {
 			}
 			rules = []v1beta1.Rule{
 				{
-					Subjects: []string{
+					TargetHosts: []string{
 						"host-3",
 						"host-4",
 					},
@@ -598,8 +598,8 @@ var _ = Describe("StatefulSet", func() {
 					},
 				},
 				{
-					Subjects:   []string{},
-					SourceHost: "",
+					TargetHosts: []string{},
+					SourceHost:  "",
 					Paths: []string{
 						framework.TestSourceDataMountPath,
 					},

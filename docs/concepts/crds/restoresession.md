@@ -55,11 +55,11 @@ spec:
     - mountPath: /source/data
       name: source-data
   rules:
-  - subjects: ["host-3","host-4"] # "host-3" and "host-4" will have restored data of backed up host "host-1"
+  - targetHosts: ["host-3","host-4"] # "host-3" and "host-4" will have restored data of backed up host "host-1"
     sourceHost: "host-1" # source host
     paths:
     - /source/data
-  - subjects: [] # empty host match all hosts
+  - targetHosts: [] # empty host match all hosts
     sourceHost: "" # no source host indicates that the host is pod itself
     paths:
     - /source/data
@@ -154,7 +154,7 @@ A `RestoreSession` object has the following fields in the `spec` section.
 
 Each restore rule has the following fields:
 
-- **subjects :** `subjects` field contains a list of host names which are subject to this rule. If `subjects` field is empty, this rule applies to all hosts for which there is no specific rule. In the sample `RestoreSession` given above, the first rule applies to only `host-3` and `host-4` and the second rule is applicable to all hosts.
+- **targetHosts :** `targetHosts` field contains a list of host names which are subject to this rule. If `targetHosts` field is empty, this rule applies to all hosts for which there is no specific rule. In the sample `RestoreSession` given above, the first rule applies to only `host-3` and `host-4` and the second rule is applicable to all hosts.
 - **sourceHost :** `sourceHost` specifies the name of host whose backed up data will be restored by this rule. In the sample `RestoreSession`, the first rule specify that backed up data of `host-0` (i.e. `pod-0` of old StatefulSet) will be restored into `host-3` and `host-4` (i.e. `pod-3` and `pod-4` of new StatefulSet). If you keep `sourceHost` field empty as the second rule of the above example, data from a similar backup host will be restored on the respective restore host. That means, backed up data of `host-0` will be restored into `host-0`, backed up data of `host-1` will be restored into `host-1` and so on.
 - **paths :** `paths` specifies a list of directories that will be restored into the hosts who are subject to this rule.
 - **snapshots :** `snapshots` specifies the list of snapshots that will be restored into the hosts who are subject to this rule.

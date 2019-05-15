@@ -7,11 +7,11 @@ spec:
   repository:
     name: local-repo
   rules:
-  - subjects: ["host-3","host-4"] # "host-3" and "host-4" will have restored data of backed up host "host-1"
+  - targetHosts: ["host-3","host-4"] # "host-3" and "host-4" will have restored data of backed up host "host-1"
     sourceHost: "host-1" # source host
     paths:
     - /source/data
-  - subjects: [] # empty host match all hosts
+  - targetHosts: [] # empty host match all hosts
     sourceHost: "" # no source host indicates that the host is pod itself
     paths:
     - /source/data
