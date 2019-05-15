@@ -46,7 +46,7 @@ status:
   lastBackupTime: "2019-04-15T06:14:15Z"
   size: 2.567 KiB
   snapshotCount: 5
-  snapshotRemovedOnLastCleanup: 1
+  snapshotsRemovedOnLastCleanup: 1
 ```
 
 Here, we are going to describe the various sections of the `Repository` crd.
@@ -83,8 +83,8 @@ Stash checks the integrity of backed up files after each backup. `status.integri
 - **status.snapshotCount**
 `status.SnapshotCount` shows the number of snapshots stored in the Repository.
 
-- **status.snapshotRemovedOnLastCleanup**
-`status.snapshotRemovedOnLastCleanup` shows the number of old snapshots that has been cleaned up according to retention policy on last backup session.
+- **status.snapshotsRemovedOnLastCleanup**
+`status.snapshotsRemovedOnLastCleanup` shows the number of old snapshots that has been cleaned up according to retention policy on last backup session.
 
 ## Deleting Repository
 

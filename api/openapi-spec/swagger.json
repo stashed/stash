@@ -3613,8 +3613,8 @@
           "type": "integer",
           "format": "int32"
         },
-        "snapshotRemovedOnLastCleanup": {
-          "description": "SnapshotRemovedOnLastCleanup shows number of old snapshots cleaned up according to retention policy on last backup session",
+        "snapshotsRemovedOnLastCleanup": {
+          "description": "SnapshotsRemovedOnLastCleanup shows number of old snapshots cleaned up according to retention policy on last backup session",
           "type": "integer",
           "format": "int32"
         }

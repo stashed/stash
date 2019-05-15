@@ -104,7 +104,7 @@ backupsession.stash.appscode.com/pvc-backup-01 created
     integrity: true
     size: 5.913 KiB
     snapshotCount: 10
-    snapshotRemovedOnLastCleanup: 2
+    snapshotsRemovedOnLastCleanup: 2
 ```
 
 ## Restore to Destination PVC

@@ -57,8 +57,8 @@ type RepositoryMetrics struct {
 	RepoSize prometheus.Gauge
 	// SnapshotCount shows number of snapshots stored in the repository
 	SnapshotCount prometheus.Gauge
-	// SnapshotRemovedOnLastCleanup shows number of old snapshots cleaned up according to retention policy on last backup session
-	SnapshotRemovedOnLastCleanup prometheus.Gauge
+	// SnapshotsRemovedOnLastCleanup shows number of old snapshots cleaned up according to retention policy on last backup session
+	SnapshotsRemovedOnLastCleanup prometheus.Gauge
 }
 
 func newBackupMetrics(labels prometheus.Labels) *BackupMetrics {
@@ -177,7 +177,7 @@ func newBackupMetrics(labels prometheus.Labels) *BackupMetrics {
 					ConstLabels: labels,
 				},
 			),
-			SnapshotRemovedOnLastCleanup: prometheus.NewGauge(
+			SnapshotsRemovedOnLastCleanup: prometheus.NewGauge(
 				prometheus.GaugeOpts{
 					Namespace:   "stash",
 					Subsystem:   "repository",
@@ -252,7 +252,7 @@ func (backupOutput *BackupOutput) HandleMetrics(metricOpt *MetricsOptions, backu
 		metrics.RepositoryMetrics.RepoIntegrity,
 		metrics.RepositoryMetrics.RepoSize,
 		metrics.RepositoryMetrics.SnapshotCount,
-		metrics.RepositoryMetrics.SnapshotRemovedOnLastCleanup,
+		metrics.RepositoryMetrics.SnapshotsRemovedOnLastCleanup,
 	)
 	return metricOpt.sendMetrics(registry, metricOpt.JobName)
 }
@@ -351,7 +351,7 @@ func (backupMetrics *BackupMetrics) setValues(backupOutput *BackupOutput) error 
 	}
 	backupMetrics.RepositoryMetrics.RepoSize.Set(repoSize)
 	backupMetrics.RepositoryMetrics.SnapshotCount.Set(float64(backupOutput.RepositoryStats.SnapshotCount))
-	backupMetrics.RepositoryMetrics.SnapshotRemovedOnLastCleanup.Set(float64(backupOutput.RepositoryStats.SnapshotRemovedOnLastCleanup))
+	backupMetrics.RepositoryMetrics.SnapshotsRemovedOnLastCleanup.Set(float64(backupOutput.RepositoryStats.SnapshotsRemovedOnLastCleanup))
 	return nil
 }
 

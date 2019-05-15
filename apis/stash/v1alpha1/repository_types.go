@@ -46,8 +46,8 @@ type RepositoryStatus struct {
 	Size string `json:"size,omitempty"`
 	// SnapshotCount shows number of snapshots stored in the repository
 	SnapshotCount int `json:"snapshotCount,omitempty"`
-	// SnapshotRemovedOnLastCleanup shows number of old snapshots cleaned up according to retention policy on last backup session
-	SnapshotRemovedOnLastCleanup int `json:"snapshotRemovedOnLastCleanup,omitempty"`
+	// SnapshotsRemovedOnLastCleanup shows number of old snapshots cleaned up according to retention policy on last backup session
+	SnapshotsRemovedOnLastCleanup int `json:"snapshotsRemovedOnLastCleanup,omitempty"`
 
 	// Deprecated
 	LastSuccessfulBackupTime *metav1.Time `json:"lastSuccessfulBackupTime,omitempty"`
