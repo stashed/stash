@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/appscode/go/log"
+	"github.com/appscode/go/types"
 	"github.com/golang/glog"
 	batchv1 "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
@@ -188,7 +189,7 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		// ServiceAccount hasn't been specified. so create new one with same name as RestoreSession object.
 		serviceAccountName = objectMeta.Name
 
-		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, objectMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
+		_, _, err = core_util.CreateOrPatchServiceAccount(c.kubeClient, objectMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
 			core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 			if in.Labels == nil {
 				in.Labels = map[string]string{}
@@ -196,12 +197,14 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 			in.Labels[util.LabelApp] = util.AppLabelStash
 			return in
 		})
-		if err != nil {
-			return err
-		}
 	}
 
-	err = c.ensureRestoreJobRBAC(ref, serviceAccountName)
+	psps, err := c.getRestoreJobPSPNames(restoreSession)
+	if err != nil {
+		return err
+	}
+
+	err = c.ensureRestoreJobRBAC(ref, serviceAccountName, psps)
 	if err != nil {
 		return err
 	}
@@ -243,6 +246,21 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		RuntimeSettings: restoreSession.Spec.RuntimeSettings,
 		TempDir:         restoreSession.Spec.TempDir,
 	}
+
+	// In order to preserve file ownership, restore process need to be run as root user.
+	// Stash image uses non-root user "stash"(1005). We have to use securityContext to run stash as root user.
+	// If a user specify securityContext either in pod level or container level in RuntimeSetting,
+	// don't overwrite that. In this case, user must take the responsibility of possible file ownership modification.
+	defaultSecurityContext := &core.SecurityContext{
+		RunAsUser:  types.Int64P(0),
+		RunAsGroup: types.Int64P(0),
+	}
+
+	if (taskResolver.RuntimeSettings.Pod != nil && taskResolver.RuntimeSettings.Pod.SecurityContext == nil) &&
+		(taskResolver.RuntimeSettings.Container != nil && taskResolver.RuntimeSettings.Container.SecurityContext == nil) {
+		taskResolver.RuntimeSettings.Container.SecurityContext = defaultSecurityContext
+	}
+
 	podSpec, err := taskResolver.GetPodSpec()
 	if err != nil {
 		return err

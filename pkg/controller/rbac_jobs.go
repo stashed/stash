@@ -7,6 +7,7 @@ import (
 	"github.com/golang/glog"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
+	policy_v1beta1 "k8s.io/api/policy/v1beta1"
 	rbac "k8s.io/api/rbac/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,9 +42,9 @@ func (c *StashController) getRestoreJobRoleBindingName(name string) string {
 	return name + "-" + RestoreJobClusterRole
 }
 
-func (c *StashController) ensureCronJobRBAC(resource *core.ObjectReference, sa string) error {
+func (c *StashController) ensureCronJobRBAC(resource *core.ObjectReference, sa string, psps []string) error {
 	// ensure CronJob cluster role
-	err := c.ensureCronJobClusterRole()
+	err := c.ensureCronJobClusterRole(psps)
 	if err != nil {
 		return err
 	}
@@ -53,7 +54,7 @@ func (c *StashController) ensureCronJobRBAC(resource *core.ObjectReference, sa s
 	return nil
 }
 
-func (c *StashController) ensureCronJobClusterRole() error {
+func (c *StashController) ensureCronJobClusterRole(psps []string) error {
 	meta := metav1.ObjectMeta{
 		Name: CronJobClusterRole,
 	}
@@ -72,6 +73,12 @@ func (c *StashController) ensureCronJobClusterRole() error {
 				APIGroups: []string{api_v1beta1.SchemeGroupVersion.Group},
 				Resources: []string{api_v1beta1.ResourcePluralBackupConfiguration},
 				Verbs:     []string{"*"},
+			},
+			{
+				APIGroups:     []string{policy_v1beta1.GroupName},
+				Resources:     []string{"podsecuritypolicies"},
+				Verbs:         []string{"use"},
+				ResourceNames: psps,
 			},
 		}
 		return in
@@ -367,9 +374,9 @@ func (c *StashController) ensureRepoReaderRolebindingDeleted(meta *metav1.Object
 	return nil
 }
 
-func (c *StashController) ensureRestoreJobRBAC(ref *core.ObjectReference, sa string) error {
+func (c *StashController) ensureRestoreJobRBAC(ref *core.ObjectReference, sa string, psps []string) error {
 	// ensure ClusterRole for restore job
-	err := c.ensureRestoreJobClusterRole()
+	err := c.ensureRestoreJobClusterRole(psps)
 	if err != nil {
 		return err
 	}
@@ -383,7 +390,7 @@ func (c *StashController) ensureRestoreJobRBAC(ref *core.ObjectReference, sa str
 	return nil
 }
 
-func (c *StashController) ensureRestoreJobClusterRole() error {
+func (c *StashController) ensureRestoreJobClusterRole(psps []string) error {
 
 	meta := metav1.ObjectMeta{Name: RestoreJobClusterRole}
 	_, _, err := rbac_util.CreateOrPatchClusterRole(c.kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
@@ -404,6 +411,12 @@ func (c *StashController) ensureRestoreJobClusterRole() error {
 				APIGroups: []string{core.GroupName},
 				Resources: []string{"events"},
 				Verbs:     []string{"create"},
+			},
+			{
+				APIGroups:     []string{policy_v1beta1.GroupName},
+				Resources:     []string{"podsecuritypolicies"},
+				Verbs:         []string{"use"},
+				ResourceNames: psps,
 			},
 		}
 		return in
@@ -437,9 +450,9 @@ func (c *StashController) ensureRestoreJobRoleBinding(resource *core.ObjectRefer
 	return err
 }
 
-func (c *StashController) ensureBackupJobRBAC(ref *core.ObjectReference, sa string) error {
+func (c *StashController) ensureBackupJobRBAC(ref *core.ObjectReference, sa string, psps []string) error {
 	// ensure ClusterRole for restore job
-	err := c.ensureBackupJobClusterRole()
+	err := c.ensureBackupJobClusterRole(psps)
 	if err != nil {
 		return err
 	}
@@ -453,7 +466,7 @@ func (c *StashController) ensureBackupJobRBAC(ref *core.ObjectReference, sa stri
 	return nil
 }
 
-func (c *StashController) ensureBackupJobClusterRole() error {
+func (c *StashController) ensureBackupJobClusterRole(psps []string) error {
 
 	meta := metav1.ObjectMeta{Name: BackupJobClusterRole}
 	_, _, err := rbac_util.CreateOrPatchClusterRole(c.kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
@@ -487,6 +500,12 @@ func (c *StashController) ensureBackupJobClusterRole() error {
 				APIGroups: []string{core.GroupName},
 				Resources: []string{"events"},
 				Verbs:     []string{"create"},
+			},
+			{
+				APIGroups:     []string{policy_v1beta1.GroupName},
+				Resources:     []string{"podsecuritypolicies"},
+				Verbs:         []string{"use"},
+				ResourceNames: psps,
 			},
 		}
 		return in

@@ -71,8 +71,8 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, rs *api_v
 		util.NewRestoreInitContainer(rs, repository, image),
 	)
 
-	// keep existing image pull secrets and add new image pull secrets if specified in RestoreSession spec.
 	if rs.Spec.RuntimeSettings.Pod != nil {
+		// keep existing image pull secrets and add new image pull secrets if specified in RestoreSession spec.
 		w.Spec.Template.Spec.ImagePullSecrets = core_util.MergeLocalObjectReferences(
 			w.Spec.Template.Spec.ImagePullSecrets,
 			rs.Spec.RuntimeSettings.Pod.ImagePullSecrets,

@@ -76,6 +76,7 @@ The following table lists the configurable parameters of the Stash chart and the
 | `monitoring.operator`                | Specify whether to monitor Stash operator.                                                                                                                                 | `false`                                                   |
 | `monitoring.prometheus.namespace`    | Specify the namespace where Prometheus server is running or will be deployed.                                                                                              | Release namespace                                         |
 | `monitoring.serviceMonitor.labels`   | Specify the labels for ServiceMonitor. Prometheus crd will select ServiceMonitor using these labels. Only usable when monitoring agent is `prometheus.io/coreos-operator`. | `app: <generated app name>` and `release: <release name>` |
+| `additionalPodSecurityPolicies`      | Additional psp names passed to operator                                                                                                                                    | `[]`                                                      |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example:
 
