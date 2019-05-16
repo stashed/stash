@@ -81,10 +81,7 @@ func (c *StashController) runBackupConfigurationProcessor(key string) error {
 				return nil
 			}
 
-			if backupConfiguration.Spec.Target != nil &&
-				backupConfiguration.Spec.Driver == api_v1beta1.VolumeSnapshotter {
-				//TODO
-			} else if backupConfiguration.Spec.Target != nil &&
+			if backupConfiguration.Spec.Target != nil && backupConfiguration.Spec.Driver != api_v1beta1.VolumeSnapshotter &&
 				util.BackupModel(backupConfiguration.Spec.Target.Ref.Kind) == util.ModelSidecar {
 				if err := c.EnsureV1beta1Sidecar(backupConfiguration); err != nil {
 					return err

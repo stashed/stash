@@ -607,11 +607,6 @@ func (c *StashController) ensureVolumeSnapshotJobClusterRole() error {
 				Verbs:     []string{"*"},
 			},
 			{
-				APIGroups: []string{core.SchemeGroupVersion.Group},
-				Resources: []string{"secrets"},
-				Verbs:     []string{"get"},
-			},
-			{
 				APIGroups: []string{core.GroupName},
 				Resources: []string{"events"},
 				Verbs:     []string{"create"},

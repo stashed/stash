@@ -6,9 +6,10 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
-	crdv1 "github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1alpha1"
-	snapshot_cs "github.com/kubernetes-csi/external-snapshotter/pkg/client/clientset/versioned"
+	vs "github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1alpha1"
+	vs_cs "github.com/kubernetes-csi/external-snapshotter/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -24,7 +25,7 @@ import (
 )
 
 var (
-	pvclist = make([]string, 0)
+	pvcList = make([]string, 0)
 )
 
 type VSoption struct {
@@ -32,7 +33,7 @@ type VSoption struct {
 	namespace      string
 	kubeClient     kubernetes.Interface
 	stashClient    cs.Interface
-	snapshotClient snapshot_cs.Interface
+	snapshotClient vs_cs.Interface
 }
 
 func NewCmdCreateVolumeSnapshot() *cobra.Command {
@@ -46,7 +47,7 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:               "create-vs",
-		Short:             "Take a backup of Volume Snapshot",
+		Short:             "Take snapshot of PersistentVolumeClaims",
 		DisableAutoGenTag: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
@@ -55,9 +56,9 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 			}
 			opt.kubeClient = kubernetes.NewForConfigOrDie(config)
 			opt.stashClient = cs.NewForConfigOrDie(config)
-			opt.snapshotClient = snapshot_cs.NewForConfigOrDie(config)
+			opt.snapshotClient = vs_cs.NewForConfigOrDie(config)
 
-			err = opt.CreateBackupSessionVolumeSnapshot()
+			err = opt.CreateVolumeSnapshot()
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -66,11 +67,12 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&opt.name, "backupsession.name", "", "Set BackupSession Name")
-	cmd.Flags().StringVar(&opt.namespace, "backupsession.namespace", opt.namespace, "Set BackupSession Namespace")
 	return cmd
 }
 
-func (opt *VSoption) CreateBackupSessionVolumeSnapshot() error {
+func (opt *VSoption) CreateVolumeSnapshot() error {
+	// Start clock to measure total session duration
+	startTime := time.Now()
 	backupSession, err := opt.stashClient.StashV1beta1().BackupSessions(opt.namespace).Get(opt.name, metav1.GetOptions{})
 	if err != nil {
 		return err
@@ -79,9 +81,10 @@ func (opt *VSoption) CreateBackupSessionVolumeSnapshot() error {
 	if err != nil {
 		return err
 	}
-	if backupConfiguration == nil {
-		return fmt.Errorf("BackupConfiguration is nil")
+	if backupConfiguration == nil || backupConfiguration.Spec.Target == nil {
+		return fmt.Errorf("BackupConfiguration or  backupConfiguration target is nil")
 	}
+
 	kind := backupConfiguration.Spec.Target.Ref.Kind
 	name := backupConfiguration.Spec.Target.Ref.Name
 	namespace := backupConfiguration.Namespace
@@ -92,64 +95,53 @@ func (opt *VSoption) CreateBackupSessionVolumeSnapshot() error {
 		if err != nil {
 			return err
 		}
-		vollist := deployment.Spec.Template.Spec.Volumes
-		totalPVC(vollist)
+		getPVCs(deployment.Spec.Template.Spec.Volumes)
+
 	case workload_api.KindDaemonSet:
 		daemon, err := opt.kubeClient.AppsV1().DaemonSets(namespace).Get(name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
-		vollist := daemon.Spec.Template.Spec.Volumes
-		totalPVC(vollist)
+		getPVCs(daemon.Spec.Template.Spec.Volumes)
+
 	case workload_api.KindReplicationController:
-		RC, err := opt.kubeClient.CoreV1().ReplicationControllers(namespace).Get(name, metav1.GetOptions{})
+		rc, err := opt.kubeClient.CoreV1().ReplicationControllers(namespace).Get(name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
-		vollist := RC.Spec.Template.Spec.Volumes
-		totalPVC(vollist)
+		getPVCs(rc.Spec.Template.Spec.Volumes)
+
 	case workload_api.KindReplicaSet:
-		RS, err := opt.kubeClient.AppsV1().ReplicaSets(namespace).Get(name, metav1.GetOptions{})
+		rs, err := opt.kubeClient.AppsV1().ReplicaSets(namespace).Get(name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
-		vollist := RS.Spec.Template.Spec.Volumes
-		totalPVC(vollist)
+		getPVCs(rs.Spec.Template.Spec.Volumes)
+
 	case workload_api.KindStatefulSet:
-		SS, err := opt.kubeClient.AppsV1().StatefulSets(namespace).Get(name, metav1.GetOptions{})
+		ss, err := opt.kubeClient.AppsV1().StatefulSets(namespace).Get(name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
-		pvclist = []string{}
-		vollist := SS.Spec.VolumeClaimTemplates
-		for i := int32(0); i < types.Int32(SS.Spec.Replicas); i++ {
-			podName := fmt.Sprintf("%v-%v", SS.Name, i)
-			for _, list := range vollist {
-				pvclist = append(pvclist, fmt.Sprintf("%v-%v", list.Name, podName))
-			}
-		}
+		getPVCsForStatefulset(ss.Spec.VolumeClaimTemplates, ss)
 
 	case apis.KindPersistentVolumeClaim:
-		pvclist = []string{}
-		pvcName := backupConfiguration.Spec.Target.Ref.Name
-		pvclist = append(pvclist, pvcName)
+		pvcList = []string{name}
 	}
 
-	ObjectMeta := []metav1.ObjectMeta{}
+	objectMeta := []metav1.ObjectMeta{}
 
-	for _, pvcName := range pvclist {
-		volumesnapshot := opt.VolumeSnapshot(backupConfiguration, pvcName)
-		vs, err := opt.snapshotClient.VolumesnapshotV1alpha1().VolumeSnapshots(namespace).Create(&volumesnapshot)
+	for _, pvcName := range pvcList {
+		volumeSnapshot := opt.getVolumeSnapshotDefinition(backupConfiguration, pvcName, backupSession.CreationTimestamp)
+		vs, err := opt.snapshotClient.VolumesnapshotV1alpha1().VolumeSnapshots(namespace).Create(&volumeSnapshot)
 		if err != nil {
 			return err
 		}
-		ObjectMeta = append(ObjectMeta, vs.ObjectMeta)
+		objectMeta = append(objectMeta, vs.ObjectMeta)
 	}
 
-	for i, pvcName := range pvclist {
-		// Start clock to measure total session duration
-		startTime := time.Now()
-		err = util.WaitUntilVolumeSnapshotReady(opt.snapshotClient, ObjectMeta[i])
+	for i, pvcName := range pvcList {
+		err = util.WaitUntilVolumeSnapshotReady(opt.snapshotClient, objectMeta[i])
 		if err != nil {
 			return err
 		}
@@ -178,17 +170,14 @@ func (opt *VSoption) CreateBackupSessionVolumeSnapshot() error {
 	return nil
 }
 
-func (opt *VSoption) VolumeSnapshot(backupConfiguration *v1beta1.BackupConfiguration, pvcName string) (volumeSnapshot crdv1.VolumeSnapshot) {
-	curTime := fmt.Sprintf("%d-%02d-%02dt%02d-%02d-%02d-00-00-stash",
-		time.Now().Year(), time.Now().Month(), time.Now().Day(),
-		time.Now().Hour(), time.Now().Minute(), time.Now().Second())
+func (opt *VSoption) getVolumeSnapshotDefinition(backupConfiguration *v1beta1.BackupConfiguration, pvcName string, creationTimestamp metav1.Time) (volumeSnapshot vs.VolumeSnapshot) {
 
-	return crdv1.VolumeSnapshot{
+	return vs.VolumeSnapshot{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf(pvcName + "-" + curTime),
+			Name:      fmt.Sprintf("%v-%d-%02d-%02dt%02d-%02d-%02d-stash", pvcName, creationTimestamp.Year(), creationTimestamp.Month(), creationTimestamp.Day(), creationTimestamp.Hour(), creationTimestamp.Minute(), creationTimestamp.Second()),
 			Namespace: backupConfiguration.Namespace,
 		},
-		Spec: crdv1.VolumeSnapshotSpec{
+		Spec: vs.VolumeSnapshotSpec{
 			VolumeSnapshotClassName: &backupConfiguration.Spec.Target.VolumeSnapshotClassName,
 			Source: &corev1.TypedLocalObjectReference{
 				Kind: apis.KindPersistentVolumeClaim,
@@ -199,11 +188,22 @@ func (opt *VSoption) VolumeSnapshot(backupConfiguration *v1beta1.BackupConfigura
 
 }
 
-func totalPVC(vollist []corev1.Volume) {
-	pvclist = []string{}
-	for _, list := range vollist {
+func getPVCs(volList []corev1.Volume) {
+	pvcList = []string{}
+	for _, list := range volList {
 		if list.PersistentVolumeClaim != nil {
-			pvclist = append(pvclist, list.PersistentVolumeClaim.ClaimName)
+			pvcList = append(pvcList, list.PersistentVolumeClaim.ClaimName)
 		}
 	}
+}
+
+func getPVCsForStatefulset(volList []corev1.PersistentVolumeClaim, ss *appsv1.StatefulSet) {
+	pvcList = []string{}
+	for i := int32(0); i < types.Int32(ss.Spec.Replicas); i++ {
+		podName := fmt.Sprintf("%v-%v", ss.Name, i)
+		for _, list := range volList {
+			pvcList = append(pvcList, fmt.Sprintf("%v-%v", list.Name, podName))
+		}
+	}
+
 }

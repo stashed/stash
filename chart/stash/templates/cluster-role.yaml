@@ -113,3 +113,10 @@ rules:
   {{- range $x := .Values.additionalPodSecurityPolicies }}
   - {{ $x }}
   {{- end }}
+- apiGroups:
+    - snapshot.storage.k8s.io
+  resources:
+    - volumesnapshots
+    - volumesnapshotcontents
+    - volumesnapshotclasses
+  verbs: ["create", "get", "list", "watch", "patch"]

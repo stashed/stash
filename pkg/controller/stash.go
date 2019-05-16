@@ -241,32 +241,28 @@ func (c *StashController) getTotalHosts(target interface{}, namespace string, dr
 			if err != nil {
 				return nil, err
 			}
-			vollist := deployment.Spec.Template.Spec.Volumes
-			return countPVC(vollist), err
+			return countPVC(deployment.Spec.Template.Spec.Volumes), err
 
 		case apis.KindDaemonSet:
 			daemon, err := c.kubeClient.AppsV1().DaemonSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
 			if err != nil {
 				return nil, err
 			}
-			vollist := daemon.Spec.Template.Spec.Volumes
-			return countPVC(vollist), err
+			return countPVC(daemon.Spec.Template.Spec.Volumes), err
 
 		case apis.KindReplicaSet:
 			RS, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
 			if err != nil {
 				return nil, err
 			}
-			vollist := RS.Spec.Template.Spec.Volumes
-			return countPVC(vollist), err
+			return countPVC(RS.Spec.Template.Spec.Volumes), err
 
 		case apis.KindReplicationController:
 			RC, err := c.kubeClient.CoreV1().ReplicationControllers(namespace).Get(targetRef.Name, metav1.GetOptions{})
 			if err != nil {
 				return nil, err
 			}
-			vollist := RC.Spec.Template.Spec.Volumes
-			return countPVC(vollist), err
+			return countPVC(RC.Spec.Template.Spec.Volumes), err
 
 		default:
 			return types.Int32P(1), nil
@@ -296,8 +292,8 @@ func (c *StashController) getTotalHosts(target interface{}, namespace string, dr
 
 func countPVC(vollist []core.Volume) *int32 {
 	count = 0
-	for _, list := range vollist {
-		if list.PersistentVolumeClaim != nil {
+	for _, vol := range vollist {
+		if vol.PersistentVolumeClaim != nil {
 			count++
 		}
 	}

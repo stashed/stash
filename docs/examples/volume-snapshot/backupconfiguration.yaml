@@ -5,13 +5,13 @@ metadata:
   namespace: demo
 spec:
   schedule: "* * * * *"
-  driver: volumeSnapshotter
+  driver: VolumeSnapshotter
   target:
     ref:
       apiVersion: apps/v1
-      kind: Deployment
-      name: stash-demo
-    snapshotClassName: myVolumeSnapshotClassName
+      kind: StatefulSet
+      name: web
+    snapshotClassName: default-snapshot-class
   retentionPolicy:
     name: 'keep-last-5'
     keepLast: 5

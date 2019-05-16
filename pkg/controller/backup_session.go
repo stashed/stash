@@ -128,7 +128,7 @@ func (c *StashController) runBackupSessionProcessor(key string) error {
 		if err != nil {
 			return err
 		}
-		return c.ensureBackupJobForVolumeSnapshot(backupConfig, backupSession)
+		return c.ensureVolumeSnapshotterJob(backupConfig, backupSession)
 	}
 	// skip if backup model is sidecar.
 	// for sidecar model controller inside sidecar will take care of it.
@@ -155,11 +155,6 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 	}
 
 	backupConfigRef, err := reference.GetReference(stash_scheme.Scheme, backupConfig)
-	if err != nil {
-		return err
-	}
-
-	backupSessionRef, err := reference.GetReference(stash_scheme.Scheme, backupSession)
 	if err != nil {
 		return err
 	}
@@ -246,7 +241,7 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 	// create Backup Job
 	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, jobMeta, func(in *batchv1.Job) *batchv1.Job {
 		// set BackupSession as owner of this Job
-		core_util.EnsureOwnerReference(&in.ObjectMeta, backupSessionRef)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, backupConfigRef)
 		in.Labels = map[string]string{
 			// job controller should not delete this job on completion
 			// use a different label than v1alpha1 job labels to skip deletion from job controller
@@ -406,18 +401,13 @@ func (c *StashController) getBackupSessionPhase(backupSession *api_v1beta1.Backu
 	return api_v1beta1.BackupSessionSucceeded, nil
 }
 
-func (c *StashController) ensureBackupJobForVolumeSnapshot(backupConfig *api_v1beta1.BackupConfiguration, backupSession *api_v1beta1.BackupSession) error {
+func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.BackupConfiguration, backupSession *api_v1beta1.BackupSession) error {
 	jobMeta := metav1.ObjectMeta{
 		Name:      VolumeSnapshotPrefix + backupSession.Name,
 		Namespace: backupSession.Namespace,
 	}
 
 	backupConfigRef, err := reference.GetReference(stash_scheme.Scheme, backupConfig)
-	if err != nil {
-		return err
-	}
-
-	backupSessionRef, err := reference.GetReference(stash_scheme.Scheme, backupSession)
 	if err != nil {
 		return err
 	}
@@ -456,7 +446,7 @@ func (c *StashController) ensureBackupJobForVolumeSnapshot(backupConfig *api_v1b
 	// create Snapshot Volume Job
 	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, jobMeta, func(in *batchv1.Job) *batchv1.Job {
 		// set BackupSession as owner of this Job
-		core_util.EnsureOwnerReference(&in.ObjectMeta, backupSessionRef)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, backupConfigRef)
 		in.Labels = map[string]string{
 			// job controller should not delete this job on completion
 			// use a different label than v1alpha1 job labels to skip deletion from job controller
@@ -472,7 +462,6 @@ func (c *StashController) ensureBackupJobForVolumeSnapshot(backupConfig *api_v1b
 				Args: []string{
 					"create-vs",
 					fmt.Sprintf("--backupsession.name=%s", backupSession.Name),
-					fmt.Sprintf("--backupsession.namespace=%s", backupSession.Namespace),
 					fmt.Sprintf("--enable-status-subresource=%v", apis.EnableStatusSubresource),
 					fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
 					fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
