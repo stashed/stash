@@ -8,6 +8,7 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
+	snapshot_cs "github.com/kubernetes-csi/external-snapshotter/pkg/client/clientset/versioned"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -463,6 +464,15 @@ func WaitUntilDeploymentConfigReady(c oc_cs.Interface, meta metav1.ObjectMeta) e
 	return wait.PollImmediate(RetryInterval, ReadinessTimeout, func() (bool, error) {
 		if obj, err := c.AppsV1().DeploymentConfigs(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
 			return obj.Spec.Replicas == obj.Status.ReadyReplicas, nil
+		}
+		return false, nil
+	})
+}
+
+func WaitUntilVolumeSnapshotReady(c snapshot_cs.Interface, meta metav1.ObjectMeta) error {
+	return wait.PollImmediate(RetryInterval, 30*time.Minute, func() (bool, error) {
+		if obj, err := c.VolumesnapshotV1alpha1().VolumeSnapshots(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+			return obj.Status.ReadyToUse == true, nil
 		}
 		return false, nil
 	})

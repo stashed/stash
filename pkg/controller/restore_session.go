@@ -315,7 +315,7 @@ func (c *StashController) setRestoreSessionFailed(restoreSession *api_v1beta1.Re
 
 func (c *StashController) setRestoreSessionRunning(restoreSession *api_v1beta1.RestoreSession) error {
 
-	totalHosts, err := c.getTotalHosts(restoreSession.Spec.Target, restoreSession.Namespace)
+	totalHosts, err := c.getTotalHosts(restoreSession.Spec.Target, restoreSession.Namespace, restoreSession.Spec.Driver)
 	if err != nil {
 		return err
 	}

@@ -4,11 +4,16 @@ go 1.12
 
 require (
 	github.com/Azure/go-autorest v11.1.2+incompatible // indirect
+	github.com/Masterminds/glide v0.13.2 // indirect
+	github.com/Masterminds/semver v1.4.2 // indirect
+	github.com/Masterminds/vcs v1.13.0 // indirect
 	github.com/appscode/go v0.0.0-20190424183524-60025f1135c9
 	github.com/appscode/osm v0.11.0 // indirect
 	github.com/armon/circbuf v0.0.0-20190214190532-5111143e8da2
 	github.com/aws/aws-sdk-go v1.14.33 // indirect
+	github.com/bmatcuk/doublestar v1.1.1 // indirect
 	github.com/cenkalti/backoff v2.1.1+incompatible
+	github.com/codegangsta/cli v1.20.0 // indirect
 	github.com/codeskyblue/go-sh v0.0.0-20190412065543-76bd3d59ff27
 	github.com/emicklei/go-restful v2.9.5+incompatible // indirect
 	github.com/evanphx/json-patch v4.2.0+incompatible

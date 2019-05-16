@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/golang/glog"
+	crdv1 "github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1alpha1"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	policy "k8s.io/api/policy/v1beta1"
@@ -29,6 +30,7 @@ const (
 	RestoreInitContainerClusterRole = "stash-restore-init-container"
 	RestoreJobClusterRole           = "stash-restore-job"
 	BackupJobClusterRole            = "stash-backup-job"
+	VolumeSnapshotClusterRole       = "stash-volumesnapshot-job"
 	CronJobClusterRole              = "stash-cron-job"
 	KindRole                        = "Role"
 	KindClusterRole                 = "ClusterRole"
@@ -36,6 +38,10 @@ const (
 
 func (c *StashController) getBackupJobRoleBindingName(name string) string {
 	return name + "-" + BackupJobClusterRole
+}
+
+func (c *StashController) getVolumesnapshotJobRoleBindingName(name string) string {
+	return name + "-" + VolumeSnapshotClusterRole
 }
 
 func (c *StashController) getRestoreJobRoleBindingName(name string) string {
@@ -475,6 +481,22 @@ func (c *StashController) ensureRestoreJobRoleBinding(resource *core.ObjectRefer
 	return err
 }
 
+func (c *StashController) ensureVolumeSnapshotJobRBAC(ref *core.ObjectReference, sa string) error {
+	// ensure ClusterRole for VolumeSnapshot job
+	err := c.ensureVolumeSnapshotJobClusterRole()
+	if err != nil {
+		return err
+	}
+
+	// ensure RoleBinding for VolumeSnapshot job
+	err = c.ensureVolumeSnapshotJobRoleBinding(ref, sa)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (c *StashController) ensureBackupJobRBAC(ref *core.ObjectReference, sa string, psps []string) error {
 	// ensure ClusterRole for restore job
 	err := c.ensureBackupJobClusterRole(psps)
@@ -555,6 +577,88 @@ func (c *StashController) ensureBackupJobRoleBinding(resource *core.ObjectRefere
 		in.Subjects = []rbac.Subject{
 			{
 				Kind:      "ServiceAccount",
+				Name:      sa,
+				Namespace: resource.Namespace,
+			},
+		}
+		return in
+	})
+	return err
+}
+
+func (c *StashController) ensureVolumeSnapshotJobClusterRole() error {
+
+	meta := metav1.ObjectMeta{Name: VolumeSnapshotClusterRole}
+	_, _, err := rbac_util.CreateOrPatchClusterRole(c.kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+		if in.Labels == nil {
+			in.Labels = map[string]string{}
+		}
+		in.Labels[util.LabelApp] = util.AppLabelStash
+
+		in.Rules = []rbac.PolicyRule{
+			{
+				APIGroups: []string{api_v1beta1.SchemeGroupVersion.Group},
+				Resources: []string{"*"},
+				Verbs:     []string{"*"},
+			},
+			{
+				APIGroups: []string{api_v1alpha1.SchemeGroupVersion.Group},
+				Resources: []string{"*"},
+				Verbs:     []string{"*"},
+			},
+			{
+				APIGroups: []string{core.SchemeGroupVersion.Group},
+				Resources: []string{"secrets"},
+				Verbs:     []string{"get"},
+			},
+			{
+				APIGroups: []string{core.GroupName},
+				Resources: []string{"events"},
+				Verbs:     []string{"create"},
+			},
+			{
+				APIGroups: []string{apps.GroupName},
+				Resources: []string{"deployments", "statefulsets"},
+				Verbs:     []string{"get", "list"},
+			},
+			{
+				APIGroups: []string{apps.GroupName},
+				Resources: []string{"daemonsets", "replicasets"},
+				Verbs:     []string{"get", "list"},
+			},
+			{
+				APIGroups: []string{core.GroupName},
+				Resources: []string{"replicationcontrollers"},
+				Verbs:     []string{"get", "list"},
+			},
+			{
+				APIGroups: []string{crdv1.GroupName},
+				Resources: []string{"volumesnapshots", "volumesnapshotcontents", "volumesnapshotclasses"},
+				Verbs:     []string{"create", "get", "list", "watch", "patch"},
+			},
+		}
+		return in
+	})
+	return err
+}
+
+func (c *StashController) ensureVolumeSnapshotJobRoleBinding(resource *core.ObjectReference, sa string) error {
+
+	meta := metav1.ObjectMeta{
+		Namespace: resource.Namespace,
+		Name:      c.getVolumesnapshotJobRoleBindingName(resource.Name),
+	}
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
+
+		in.RoleRef = rbac.RoleRef{
+			APIGroup: rbac.GroupName,
+			Kind:     KindClusterRole,
+			Name:     VolumeSnapshotClusterRole,
+		}
+		in.Subjects = []rbac.Subject{
+			{
+				Kind:      rbac.ServiceAccountKind,
 				Name:      sa,
 				Namespace: resource.Namespace,
 			},
