@@ -8,34 +8,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-func convertToMinutesSeconds(time string) (int, int, error) {
-	parts := strings.Split(time, ":")
-	if len(parts) != 2 {
-		return 0, 0, fmt.Errorf("failed to convert minutes")
-	}
-	minutes, err := strconv.Atoi(parts[0])
-	if err != nil {
-		return 0, 0, err
-	}
-
-	fraction, err := strconv.Atoi(parts[1])
-	if err != nil {
-		return 0, 0, err
-	}
-	seconds := int((fraction * 60) / 100)
-	if seconds >= 60 {
-		m := int(seconds / 60)
-		minutes = minutes + m
-		seconds = seconds - m*60
-	}
-
-	return minutes, seconds, nil
-}
-
-func separators(r rune) bool {
-	return r == ' ' || r == '\t' || r == ','
-}
-
 func convertSizeToBytes(dataSize string) (float64, error) {
 	parts := strings.Split(dataSize, " ")
 	if len(parts) != 2 {
@@ -79,4 +51,33 @@ func convertTimeToSeconds(processingTime string) (int, error) {
 	}
 
 	return minutes*60 + seconds, nil
+}
+
+func formatBytes(c uint64) string {
+	b := float64(c)
+
+	switch {
+	case c > 1<<40:
+		return fmt.Sprintf("%.3f TiB", b/(1<<40))
+	case c > 1<<30:
+		return fmt.Sprintf("%.3f GiB", b/(1<<30))
+	case c > 1<<20:
+		return fmt.Sprintf("%.3f MiB", b/(1<<20))
+	case c > 1<<10:
+		return fmt.Sprintf("%.3f KiB", b/(1<<10))
+	default:
+		return fmt.Sprintf("%d B", c)
+	}
+}
+
+func formatSeconds(sec uint64) string {
+	hours := sec / 3600
+	sec -= hours * 3600
+	min := sec / 60
+	sec -= min * 60
+	if hours > 0 {
+		return fmt.Sprintf("%d:%02d:%02d", hours, min, sec)
+	}
+
+	return fmt.Sprintf("%d:%02d", min, sec)
 }
