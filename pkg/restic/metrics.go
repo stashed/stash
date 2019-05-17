@@ -11,6 +11,8 @@ import (
 )
 
 type BackupMetrics struct {
+	// BackupSetupMetrics indicates whether backup was successfully setup for the target
+	BackupSetupMetrics prometheus.Gauge
 	// BackupSessionMetrics shows metrics related to last backup session
 	BackupSessionMetrics *BackupSessionMetrics
 	// RepositoryMetrics shows metrics related to repository after last backup
@@ -64,6 +66,15 @@ type RepositoryMetrics struct {
 func newBackupMetrics(labels prometheus.Labels) *BackupMetrics {
 
 	return &BackupMetrics{
+		BackupSetupMetrics: prometheus.NewGauge(
+			prometheus.GaugeOpts{
+				Namespace:   "stash",
+				Subsystem:   "backup",
+				Name:        "setup_success",
+				Help:        "Indicates whether backup was successfully setup for the target",
+				ConstLabels: labels,
+			},
+		),
 		BackupSessionMetrics: &BackupSessionMetrics{
 			BackupSuccess: prometheus.NewGauge(
 				prometheus.GaugeOpts{
@@ -190,6 +201,20 @@ func newBackupMetrics(labels prometheus.Labels) *BackupMetrics {
 	}
 }
 
+func newBackupSetupMetrics(labels prometheus.Labels) *BackupMetrics {
+
+	return &BackupMetrics{
+		BackupSetupMetrics: prometheus.NewGauge(
+			prometheus.GaugeOpts{
+				Namespace:   "stash",
+				Subsystem:   "backup",
+				Name:        "setup_success",
+				Help:        "Indicates whether backup was successfully setup for the target",
+				ConstLabels: labels,
+			},
+		),
+	}
+}
 func newRestoreMetrics(labels prometheus.Labels) *RestoreMetrics {
 
 	return &RestoreMetrics{
@@ -212,6 +237,25 @@ func newRestoreMetrics(labels prometheus.Labels) *RestoreMetrics {
 			},
 		),
 	}
+}
+
+func HandleBackupSetupMetrics(metricOpt MetricsOptions, setupErr error) error {
+	labels := metricLabels(metricOpt.Labels)
+	metrics := newBackupSetupMetrics(labels)
+
+	if setupErr == nil {
+		metrics.BackupSetupMetrics.Set(1)
+	} else {
+		metrics.BackupSetupMetrics.Set(0)
+	}
+
+	// create metric registry
+	registry := prometheus.NewRegistry()
+	registry.MustRegister(
+		metrics.BackupSetupMetrics,
+	)
+	// send metrics
+	return metricOpt.sendMetrics(registry, metricOpt.JobName)
 }
 
 func (backupOutput *BackupOutput) HandleMetrics(metricOpt *MetricsOptions, backupErr error) error {
@@ -293,7 +337,7 @@ func (backupMetrics *BackupMetrics) setValues(backupOutput *BackupOutput) error 
 	var (
 		totalDataSize        float64
 		totalUploadSize      float64
-		totalProcessingTime  int
+		totalProcessingTime  uint64
 		totalFiles           int
 		totalNewFiles        int
 		totalModifiedFiles   int

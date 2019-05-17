@@ -252,7 +252,7 @@ func (w *ResticWrapper) stats() ([]byte, error) {
 	log.Infoln("Reading repository status")
 	args := w.appendCacheDirFlag([]interface{}{"stats"})
 	args = w.appendMaxConnectionsFlag(args)
-	args = append(args, "--mode=raw-data", "--quiet")
+	args = append(args, "--quiet", "--json")
 	args = w.appendCaCertFlag(args)
 
 	return w.run(Command{Name: ResticCMD, Args: args})

@@ -2,55 +2,68 @@ package restic
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 func convertSizeToBytes(dataSize string) (float64, error) {
-	parts := strings.Split(dataSize, " ")
-	if len(parts) != 2 {
-		return 0, errors.New("invalid data size format")
-	}
+	var size float64
 
-	switch parts[1] {
-	case "B":
-		size, err := strconv.ParseFloat(parts[0], 64)
+	switch {
+	case strings.HasSuffix(dataSize, "TiB"):
+		_, err := fmt.Sscanf(dataSize, "%f TiB", &size)
 		if err != nil {
-			return 0, err
+			return 0, nil
+		}
+		return size * (1 << 40), nil
+	case strings.HasSuffix(dataSize, "GiB"):
+		_, err := fmt.Sscanf(dataSize, "%f GiB", &size)
+		if err != nil {
+			return 0, nil
+		}
+		return size * (1 << 30), nil
+	case strings.HasSuffix(dataSize, "MiB"):
+		_, err := fmt.Sscanf(dataSize, "%f MiB", &size)
+		if err != nil {
+			return 0, nil
+		}
+		return size * (1 << 20), nil
+	case strings.HasSuffix(dataSize, "KiB"):
+		_, err := fmt.Sscanf(dataSize, "%f KiB", &size)
+		if err != nil {
+			return 0, nil
+		}
+		return size * (1 << 10), nil
+	default:
+		_, err := fmt.Sscanf(dataSize, "%f B", &size)
+		if err != nil {
+			return 0, nil
 		}
 		return size, nil
-	case "KiB", "KB":
-		size, err := strconv.ParseFloat(parts[0], 64)
-		if err != nil {
-			return 0, err
-		}
-		return size * 1024, nil
-	case "MiB", "MB":
-		size, err := strconv.ParseFloat(parts[0], 64)
-		if err != nil {
-			return 0, err
-		}
-		return size * 1024 * 1024, nil
-	case "GiB", "GB":
-		size, err := strconv.ParseFloat(parts[0], 64)
-		if err != nil {
-			return 0, err
-		}
-		return size * 1024 * 1024 * 1024, nil
+
 	}
-	return 0, errors.New("unknown unit for data size")
 }
 
-func convertTimeToSeconds(processingTime string) (int, error) {
-	var minutes, seconds int
-	_, err := fmt.Sscanf(processingTime, "%dm%ds", &minutes, &seconds)
-	if err != nil {
-		return 0, err
+func convertTimeToSeconds(processingTime string) (uint64, error) {
+	var h, m, s uint64
+	parts := strings.Split(processingTime, ":")
+	if len(parts) == 3 {
+		_, err := fmt.Sscanf(processingTime, "%d:%d:%d", &h, &m, &s)
+		if err != nil {
+			return 0, err
+		}
+	} else if len(parts) == 2 {
+		_, err := fmt.Sscanf(processingTime, "%d:%d", &m, &s)
+		if err != nil {
+			return 0, err
+		}
+	} else {
+		_, err := fmt.Sscanf(processingTime, "%d", &s)
+		if err != nil {
+			return 0, err
+		}
 	}
 
-	return minutes*60 + seconds, nil
+	return h*3600 + m*60 + s, nil
 }
 
 func formatBytes(c uint64) string {
