@@ -15,7 +15,7 @@ source "$REPO_ROOT/hack/libbuild/common/public_image.sh"
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
 IMG=stash
 RESTIC_VER=${RESTIC_VER:-0.8.3}
-NEW_RESTIC_VER=${NEW_RESTIC_VER:-0.9.4} # also update in restic wrapper library
+NEW_RESTIC_VER=${NEW_RESTIC_VER:-0.9.5} # also update in restic wrapper library
 RESTIC_BRANCH=${RESTIC_BRANCH:-stash-0.4.2}
 
 DIST=$REPO_ROOT/dist

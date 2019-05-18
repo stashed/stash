@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	ResticCMD = "/bin/restic_0.9.4"
+	ResticCMD = "/bin/restic_0.9.5"
 	IONiceCMD = "/bin/ionice"
 	NiceCMD   = "/bin/nice"
 )
@@ -77,7 +77,7 @@ func (w *ResticWrapper) initRepositoryIfAbsent() ([]byte, error) {
 
 func (w *ResticWrapper) backup(path, host string, tags []string) ([]byte, error) {
 	log.Infoln("Backing up target data")
-	args := []interface{}{"backup", path}
+	args := []interface{}{"backup", path, "--quiet", "--json"}
 	if host != "" {
 		args = append(args, "--host")
 		args = append(args, host)
@@ -104,7 +104,7 @@ func (w *ResticWrapper) backupFromStdin(options BackupOptions) ([]byte, error) {
 		commands = append(commands, options.StdinPipeCommand)
 	}
 
-	args := []interface{}{"backup", "--stdin"}
+	args := []interface{}{"backup", "--stdin", "--quiet", "--json"}
 	if options.StdinFileName != "" {
 		args = append(args, "--stdin-filename")
 		args = append(args, options.StdinFileName)
@@ -125,7 +125,7 @@ func (w *ResticWrapper) backupFromStdin(options BackupOptions) ([]byte, error) {
 func (w *ResticWrapper) cleanup(retentionPolicy v1alpha1.RetentionPolicy) ([]byte, error) {
 	log.Infoln("Cleaning old snapshots according to retention policy")
 
-	args := []interface{}{"forget"}
+	args := []interface{}{"forget", "--quiet", "--json"}
 
 	if retentionPolicy.KeepLast > 0 {
 		args = append(args, string(v1alpha1.KeepLast))
@@ -252,7 +252,7 @@ func (w *ResticWrapper) stats() ([]byte, error) {
 	log.Infoln("Reading repository status")
 	args := w.appendCacheDirFlag([]interface{}{"stats"})
 	args = w.appendMaxConnectionsFlag(args)
-	args = append(args, "--mode=raw-data", "--quiet")
+	args = append(args, "--quiet", "--json")
 	args = w.appendCaCertFlag(args)
 
 	return w.run(Command{Name: ResticCMD, Args: args})

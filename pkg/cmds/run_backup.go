@@ -3,7 +3,6 @@ package cmds
 import (
 	"time"
 
-	"github.com/appscode/go/log"
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
@@ -52,9 +51,8 @@ func NewCmdRunBackup() *cobra.Command {
 			con.Recorder = eventer.NewEventRecorder(con.K8sClient, backup.BackupEventComponent)
 			con.Metrics.JobName = con.BackupConfigurationName
 			if err = con.RunBackup(); err != nil {
-				log.Errorln("failed to complete backup. Reason: ", err)
-				//set BackupSession status "Failed", write event and prometheus metrics
-				return con.HandleBackupFailure(err)
+				// send setup failure metrics and fail the container so it restart to re-try
+				con.HandleBackupSetupFailure(err)
 			}
 			return nil
 		},
