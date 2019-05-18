@@ -1,7 +1,7 @@
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
-  name: default-backupsession-cron-psp
+  name: stash-backupsession-cron
   labels:
     app: stash
 spec:

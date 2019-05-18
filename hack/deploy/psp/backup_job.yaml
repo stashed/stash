@@ -1,7 +1,7 @@
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
-  name: default-backup-job-psp
+  name: stash-backup-job
   labels:
     app: stash
 spec:

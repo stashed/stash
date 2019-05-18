@@ -1,7 +1,7 @@
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
-  name: default-restore-job-psp
+  name: stash-restore-job
   labels:
     {{- include "stash.labels" . | nindent 4 }}
 spec:

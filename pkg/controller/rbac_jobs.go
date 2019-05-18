@@ -7,7 +7,7 @@ import (
 	"github.com/golang/glog"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
-	policy_v1beta1 "k8s.io/api/policy/v1beta1"
+	policy "k8s.io/api/policy/v1beta1"
 	rbac "k8s.io/api/rbac/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -75,7 +75,7 @@ func (c *StashController) ensureCronJobClusterRole(psps []string) error {
 				Verbs:     []string{"*"},
 			},
 			{
-				APIGroups:     []string{policy_v1beta1.GroupName},
+				APIGroups:     []string{policy.GroupName},
 				Resources:     []string{"podsecuritypolicies"},
 				Verbs:         []string{"use"},
 				ResourceNames: psps,
@@ -413,7 +413,7 @@ func (c *StashController) ensureRestoreJobClusterRole(psps []string) error {
 				Verbs:     []string{"create"},
 			},
 			{
-				APIGroups:     []string{policy_v1beta1.GroupName},
+				APIGroups:     []string{policy.GroupName},
 				Resources:     []string{"podsecuritypolicies"},
 				Verbs:         []string{"use"},
 				ResourceNames: psps,
@@ -502,7 +502,7 @@ func (c *StashController) ensureBackupJobClusterRole(psps []string) error {
 				Verbs:     []string{"create"},
 			},
 			{
-				APIGroups:     []string{policy_v1beta1.GroupName},
+				APIGroups:     []string{policy.GroupName},
 				Resources:     []string{"podsecuritypolicies"},
 				Verbs:         []string{"use"},
 				ResourceNames: psps,

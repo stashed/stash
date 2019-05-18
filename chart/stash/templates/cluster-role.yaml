@@ -107,9 +107,9 @@ rules:
   verbs: ["use"]
   resourceNames:
   - {{ template "stash.fullname" . }}
-  - default-backupsession-cron-psp
-  - default-backup-job-psp
-  - default-restore-job-psp
+  - stash-backupsession-cron
+  - stash-backup-job
+  - stash-restore-job
   {{- range $x := .Values.additionalPodSecurityPolicies }}
   - {{ $x }}
   {{- end }}

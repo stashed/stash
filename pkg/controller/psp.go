@@ -6,9 +6,9 @@ import (
 )
 
 const (
-	DefaultBackupSessionCronJobPSPName = "default-backupsession-cron-psp"
-	DefaultBackupJobPSPName            = "default-backup-job-psp"
-	DefaultRestoreJobPSPName           = "default-restore-job-psp"
+	DefaultBackupSessionCronJobPSPName = "stash-backupsession-cron"
+	DefaultBackupJobPSPName            = "stash-backup-job"
+	DefaultRestoreJobPSPName           = "stash-restore-job"
 )
 
 func (c *StashController) getBackupSessionCronJobPSPNames() []string {
@@ -28,7 +28,7 @@ func (c *StashController) getBackupJobPSPNames(backupConfig *api_v1beta1.BackupC
 		return nil, err
 	}
 
-	psps := []string{}
+	var psps []string
 	for _, step := range task.Spec.Steps {
 		fn, err := c.stashClient.StashV1beta1().Functions().Get(step.Name, metav1.GetOptions{})
 		if err != nil {
@@ -59,7 +59,7 @@ func (c *StashController) getRestoreJobPSPNames(restoreSession *api_v1beta1.Rest
 		return nil, err
 	}
 
-	psps := []string{}
+	var psps []string
 	for _, step := range task.Spec.Steps {
 		fn, err := c.stashClient.StashV1beta1().Functions().Get(step.Name, metav1.GetOptions{})
 		if err != nil {

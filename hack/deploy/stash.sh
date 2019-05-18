@@ -339,7 +339,7 @@ if [ "$STASH_UNINSTALL" -eq 1 ]; then
   kubectl delete servicemonitor stash-servicemonitor --namespace $PROMETHEUS_NAMESPACE || true
   kubectl delete secret stash-apiserver-cert --namespace $PROMETHEUS_NAMESPACE || true
   # delete psp resources
-  kubectl delete psp stash-operator-psp default-backup-job-psp default-backupsession-cron-psp default-restore-job-psp || true
+  kubectl delete psp stash-operator-psp stash-backup-job stash-backupsession-cron stash-restore-job || true
 
   echo "waiting for stash operator pod to stop running"
   for (( ; ; )); do
