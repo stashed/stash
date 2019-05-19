@@ -34,15 +34,15 @@ At first, let's understand how backup and restore behaves in different scenario.
 
 If we look at the table carefully, we will notice the following behaviors:
 
-1. The user of the backup `sidecar` does not have any effect on backup. It just needs read permission of the target files.
-2. If the restore container runs as `root` user then original ownership of the restored files are preserved.
-3. If the restore container runs as `non-root` user then the ownership of the restored files is changed to restore container's user and restored files become read-only to the original user unless it was `root` user.
+1. The user of the backup `sidecar` just needs read permission of the target files.
+2. If the restore container runs as `root` user, then original ownership of the restored files are preserved.
+3. If the restore container runs as `non-root` user, then the ownership of the restored files is changed to restore container's user and restored files may become read-only to the original user unless it was `root` user.
 
-So, we can see when we run restore container as `non-root` user, it raises some serious concerns as the restored files become read-only to the original user. Next section will discuss how we can avoid or fix this problem.
+So, we can see when we run restore container as `non-root` user, it may cause some problems as the restored files become read-only to the original user. Next section will discuss how we can avoid or fix this problem.
 
 ## Avoid or Fix Ownership Issue
 
-As we have seen when the ownership of the restored files gets changed, they can be unusable to the original user. We need to avoid or fix this issue.
+As we have seen when the ownership of the restored files gets changed, they can become unreadable to the original user. We need to avoid or fix this issue.
 
 There could be two scenarios for the restored files user.
 
@@ -51,7 +51,7 @@ There could be two scenarios for the restored files user.
 
 ### Restored files user is the same as the original user
 
-This is likely to be the most common scenario. Generally, the same application whose data was backed up will use the restored files after a restore. In this case, if your cluster supports running containers as `root` user, then it is fairly easy to avoid this issue. You just need to run the restore container as `root` user which Stash does by default. However, things get little more complicated when your cluster does not support running containers as `root` user. In this case, you can do followings:
+This is likely to be the most common scenario. Generally, the same application whose data was backed up will use the restored files after a restore operation. In this case, if your cluster supports running containers as `root` user, then it is fairly easy to avoid this issue. You just need to run the restore container as `root` user which Stash does by default. However, things get little more complicated when your cluster does not support running containers as `root` user. In this case, you can do followings:
 
 - Run restore container as the same user as the original container.
 - Change the ownership of the restored files using `chown` after the restore is completed.
