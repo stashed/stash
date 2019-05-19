@@ -165,7 +165,7 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 			Name:      serviceAccountName,
 			Namespace: backupConfig.Namespace,
 		}
-		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
+		_, _, err = core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
 			core_util.EnsureOwnerReference(&in.ObjectMeta, backupConfigRef)
 			if in.Labels == nil {
 				in.Labels = map[string]string{}
@@ -173,12 +173,15 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 			in.Labels[util.LabelApp] = util.AppLabelStash
 			return in
 		})
-		if err != nil {
-			return err
-		}
+
 	}
 
-	err = c.ensureBackupJobRBAC(backupConfigRef, serviceAccountName)
+	psps, err := c.getBackupJobPSPNames(backupConfig)
+	if err != nil {
+		return err
+	}
+
+	err = c.ensureBackupJobRBAC(backupConfigRef, serviceAccountName, psps)
 	if err != nil {
 		return err
 	}

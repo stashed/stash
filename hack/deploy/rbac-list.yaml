@@ -100,7 +100,16 @@ rules:
   resources:
   - deploymentconfigs
   verbs: ["get", "list", "watch", "patch"]
-
+- apiGroups:
+  - policy
+  resources:
+  - podsecuritypolicies
+  verbs: ["use"]
+  resourceNames:
+  - stash-operator-psp
+  - stash-backupsession-cron
+  - stash-backup-job
+  - stash-restore-job
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

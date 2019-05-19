@@ -27,6 +27,11 @@ rules:
   - "*"
   verbs: ["*"]
 - apiGroups:
+  - appcatalog.appscode.com
+  resources:
+  - "*"
+  verbs: ["*"]
+- apiGroups:
   - apps
   resources:
   - daemonsets
@@ -51,6 +56,11 @@ rules:
   resources:
   - configmaps
   verbs: ["create", "update", "get", "delete"]
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs: ["get","list","watch"]
 - apiGroups:
   - ""
   resources:
@@ -85,3 +95,21 @@ rules:
   - roles
   - rolebindings
   verbs: ["get", "create", "delete", "patch"]
+- apiGroups:
+  - apps.openshift.io
+  resources:
+  - deploymentconfigs
+  verbs: ["get", "list", "watch", "patch"]
+- apiGroups:
+  - policy
+  resources:
+  - podsecuritypolicies
+  verbs: ["use"]
+  resourceNames:
+  - {{ template "stash.fullname" . }}
+  - stash-backupsession-cron
+  - stash-backup-job
+  - stash-restore-job
+  {{- range $x := .Values.additionalPodSecurityPolicies }}
+  - {{ $x }}
+  {{- end }}

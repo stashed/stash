@@ -213,7 +213,7 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 		// ServiceAccount hasn't been specified. so create new one with same name as BackupConfiguration object.
 		serviceAccountName = meta.Name
 
-		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
+		_, _, err = core_util.CreateOrPatchServiceAccount(c.kubeClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
 			core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 			if in.Labels == nil {
 				in.Labels = map[string]string{}
@@ -221,13 +221,10 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 			in.Labels[util.LabelApp] = util.AppLabelStash
 			return in
 		})
-		if err != nil {
-			return err
-		}
 	}
 
 	// now ensure RBAC stuff for this CronJob
-	err = c.ensureCronJobRBAC(ref, serviceAccountName)
+	err = c.ensureCronJobRBAC(ref, serviceAccountName, c.getBackupSessionCronJobPSPNames())
 	if err != nil {
 		return err
 	}

@@ -1,0 +1,21 @@
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: stash-restore-job
+  labels:
+    {{- include "stash.labels" . | nindent 4 }}
+spec:
+  allowPrivilegeEscalation: false
+  volumes:
+  - "*" # restore job need to access all types of volume as user may restore to any types of volume
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: RunAsAny
+  seLinux:
+    rule: RunAsAny
+  supplementalGroups:
+    rule: RunAsAny
+  fsGroup:
+    rule: RunAsAny

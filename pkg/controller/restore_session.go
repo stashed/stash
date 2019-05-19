@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/appscode/go/log"
+	"github.com/appscode/go/types"
 	"github.com/golang/glog"
 	batchv1 "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
@@ -16,6 +17,7 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/queue"
+	ofst "kmodules.xyz/offshoot-api/api/v1"
 	"kmodules.xyz/webhook-runtime/admission"
 	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"
 	webhook "kmodules.xyz/webhook-runtime/admission/v1beta1/generic"
@@ -188,7 +190,7 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		// ServiceAccount hasn't been specified. so create new one with same name as RestoreSession object.
 		serviceAccountName = objectMeta.Name
 
-		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, objectMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
+		_, _, err = core_util.CreateOrPatchServiceAccount(c.kubeClient, objectMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
 			core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 			if in.Labels == nil {
 				in.Labels = map[string]string{}
@@ -196,12 +198,14 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 			in.Labels[util.LabelApp] = util.AppLabelStash
 			return in
 		})
-		if err != nil {
-			return err
-		}
 	}
 
-	err = c.ensureRestoreJobRBAC(ref, serviceAccountName)
+	psps, err := c.getRestoreJobPSPNames(restoreSession)
+	if err != nil {
+		return err
+	}
+
+	err = c.ensureRestoreJobRBAC(ref, serviceAccountName, psps)
 	if err != nil {
 		return err
 	}
@@ -243,6 +247,21 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		RuntimeSettings: restoreSession.Spec.RuntimeSettings,
 		TempDir:         restoreSession.Spec.TempDir,
 	}
+
+	// In order to preserve file ownership, restore process need to be run as root user.
+	// Stash image uses non-root user "stash"(1005). We have to use securityContext to run stash as root user.
+	// If a user specify securityContext either in pod level or container level in RuntimeSetting,
+	// don't overwrite that. In this case, user must take the responsibility of possible file ownership modification.
+	defaultSecurityContext := &core.PodSecurityContext{
+		RunAsUser:  types.Int64P(0),
+		RunAsGroup: types.Int64P(0),
+	}
+
+	if taskResolver.RuntimeSettings.Pod == nil {
+		taskResolver.RuntimeSettings.Pod = &ofst.PodRuntimeSettings{}
+	}
+	taskResolver.RuntimeSettings.Pod.SecurityContext = util.UpsertPodSecurityContext(defaultSecurityContext, taskResolver.RuntimeSettings.Pod.SecurityContext)
+
 	podSpec, err := taskResolver.GetPodSpec()
 	if err != nil {
 		return err

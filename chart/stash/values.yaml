@@ -101,3 +101,13 @@ monitoring:
     namespace: ""
   serviceMonitor:
     labels: {}
+
+# Additional psp names passed to operator
+# example: helm install appscode/stash \
+#            --set additionalPodSecurityPolicies[0]=abc \
+#            --set additionalPodSecurityPolicies[1]=xyz
+additionalPodSecurityPolicies: []
+
+# Name of platform (eg: Openshift, AKS, EKS, GKE, etc.)
+platform:
+  openshift: false

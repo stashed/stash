@@ -338,6 +338,8 @@ if [ "$STASH_UNINSTALL" -eq 1 ]; then
   # delete servicemonitor and stash-apiserver-cert secret. ignore error as they might not exist
   kubectl delete servicemonitor stash-servicemonitor --namespace $PROMETHEUS_NAMESPACE || true
   kubectl delete secret stash-apiserver-cert --namespace $PROMETHEUS_NAMESPACE || true
+  # delete psp resources
+  kubectl delete psp stash-operator-psp stash-backup-job stash-backupsession-cron stash-restore-job || true
 
   echo "waiting for stash operator pod to stop running"
   for (( ; ; )); do
@@ -427,6 +429,12 @@ if [ "$STASH_RUN_ON_MASTER" -eq 1 ]; then
   kubectl patch deploy stash-operator -n $STASH_NAMESPACE \
     --patch="$(${SCRIPT_LOCATION}hack/deploy/run-on-master.yaml)"
 fi
+
+echo "Applying Pod Sucurity Policies"
+${SCRIPT_LOCATION}hack/deploy/psp/operator.yaml | $ONESSL envsubst | kubectl apply -f -
+${SCRIPT_LOCATION}hack/deploy/psp/backupsession-cron.yaml | $ONESSL envsubst | kubectl apply -f -
+${SCRIPT_LOCATION}hack/deploy/psp/backup-job.yaml | $ONESSL envsubst | kubectl apply -f -
+${SCRIPT_LOCATION}hack/deploy/psp/restore-job.yaml | $ONESSL envsubst | kubectl apply -f -
 
 if [ "$STASH_ENABLE_APISERVER" = true ]; then
   ${SCRIPT_LOCATION}hack/deploy/apiservices.yaml | $ONESSL envsubst | kubectl apply -f -
