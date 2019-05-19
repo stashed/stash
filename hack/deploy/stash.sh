@@ -432,9 +432,9 @@ fi
 
 echo "Applying Pod Sucurity Policies"
 ${SCRIPT_LOCATION}hack/deploy/psp/operator.yaml | $ONESSL envsubst | kubectl apply -f -
-${SCRIPT_LOCATION}hack/deploy/psp/backupsession_cron.yaml | $ONESSL envsubst | kubectl apply -f -
-${SCRIPT_LOCATION}hack/deploy/psp/backup_job.yaml | $ONESSL envsubst | kubectl apply -f -
-${SCRIPT_LOCATION}hack/deploy/psp/restore_job.yaml | $ONESSL envsubst | kubectl apply -f -
+${SCRIPT_LOCATION}hack/deploy/psp/backupsession-cron.yaml | $ONESSL envsubst | kubectl apply -f -
+${SCRIPT_LOCATION}hack/deploy/psp/backup-job.yaml | $ONESSL envsubst | kubectl apply -f -
+${SCRIPT_LOCATION}hack/deploy/psp/restore-job.yaml | $ONESSL envsubst | kubectl apply -f -
 
 if [ "$STASH_ENABLE_APISERVER" = true ]; then
   ${SCRIPT_LOCATION}hack/deploy/apiservices.yaml | $ONESSL envsubst | kubectl apply -f -

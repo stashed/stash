@@ -257,9 +257,6 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		RunAsGroup: types.Int64P(0),
 	}
 
-	if (taskResolver.RuntimeSettings.Pod != nil && taskResolver.RuntimeSettings.Pod.SecurityContext == nil) &&
-		(taskResolver.RuntimeSettings.Container != nil && taskResolver.RuntimeSettings.Container.SecurityContext == nil) {
-	}
 	if taskResolver.RuntimeSettings.Pod == nil {
 		taskResolver.RuntimeSettings.Pod = &ofst.PodRuntimeSettings{}
 	}

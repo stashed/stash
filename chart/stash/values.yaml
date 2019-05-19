@@ -107,3 +107,7 @@ monitoring:
 #            --set additionalPodSecurityPolicies[0]=abc \
 #            --set additionalPodSecurityPolicies[1]=xyz
 additionalPodSecurityPolicies: []
+
+# Name of platform (eg: Openshift, AKS, EKS, GKE, etc.)
+platform:
+  openshift: false
