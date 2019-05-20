@@ -47,7 +47,7 @@ menu_name: product_stash_{{ .Version }}
 section_menu_id: reference
 {{- if .RootCmd }}
 aliases:
-  - products/stash/{{ .Version }}/reference/
+  - /products/stash/{{ .Version }}/reference/
 {{ end }}
 ---
 `))

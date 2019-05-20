@@ -11,7 +11,7 @@ product_name: stash
 menu_name: product_stash_0.8.3
 section_menu_id: reference
 aliases:
-  - products/stash/0.8.3/reference/
+  - /products/stash/0.8.3/reference/
 
 ---
 ## stash
@@ -44,6 +44,7 @@ Stash is a Kubernetes operator for restic. For more information, visit here: htt
 ### SEE ALSO
 
 * [stash backup](/docs/reference/stash_backup.md)	 - Run Stash Backup
+* [stash backup-cluster](/docs/reference/stash_backup-cluster.md)	 - Takes a backup of Cluster's resources YAML
 * [stash backup-es](/docs/reference/stash_backup-es.md)	 - Takes a backup of ElasticSearch DB
 * [stash backup-mongo](/docs/reference/stash_backup-mongo.md)	 - Takes a backup of Mongo DB
 * [stash backup-mysql](/docs/reference/stash_backup-mysql.md)	 - Takes a backup of MySQL DB
