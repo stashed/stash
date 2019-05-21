@@ -157,13 +157,15 @@ Each restore rule has the following fields:
 - **targetHosts :** `targetHosts` field contains a list of host names which are subject to this rule. If `targetHosts` field is empty, this rule applies to all hosts for which there is no specific rule. In the sample `RestoreSession` given above, the first rule applies to only `host-3` and `host-4` and the second rule is applicable to all hosts.
 - **sourceHost :** `sourceHost` specifies the name of host whose backed up data will be restored by this rule. In the sample `RestoreSession`, the first rule specify that backed up data of `host-0` (i.e. `pod-0` of old StatefulSet) will be restored into `host-3` and `host-4` (i.e. `pod-3` and `pod-4` of new StatefulSet). If you keep `sourceHost` field empty as the second rule of the above example, data from a similar backup host will be restored on the respective restore host. That means, backed up data of `host-0` will be restored into `host-0`, backed up data of `host-1` will be restored into `host-1` and so on.
 - **paths :** `paths` specifies a list of directories that will be restored into the hosts who are subject to this rule.
-- **snapshots :** `snapshots` specifies the list of snapshots that will be restored into the hosts who are subject to this rule.
+- **snapshots :** `snapshots` specifies the list of snapshots that will be restored into the hosts who are subject to this rule. If you don't specify snapshot field, latest snasphot of the directories specified in `paths` section will be restored.
 
-  >Note that, if you specify `snapshots` section, you don't have to specify `paths` section because each snapshot contains backup data of only one directory. Thus, if you specify both `paths` and `snapshots` and if a path does not exist in the specified snapshot then restore process will fail.
+Restore rules comply with the following conditions:
 
-When the restore process runs in a host, it starts matching rules from the beginning. When a rule is matched, it immediately takes backup according to that rule and completes it's backup process. No further rules are checked. So, if your rule section has multiple matching rules for a host, only the first matching rule will be applied to restore for this host.
-
-> If no rule matches for a host, no data will be restored on that host.
+- There could be at most one rule with empty `targetHosts` field.
+- No two rules with non-emtpy `targetHosts` can't be matched for a single host.
+- Stash backup only one directory in a single snapshot. So, if you specify `snapshots` field in a rule, you can't specify `paths` field as it may cause restore failure if a directory wasn't backed up in a snapshot specified in the `snapshots` field.
+- If no rule matches for a host, no data will be restored on that host.
+- The order of the rules does not have any effect on the restore process.
 
 #### spec.runtimeSettings
 

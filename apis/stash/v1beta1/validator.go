@@ -12,7 +12,7 @@ func (r RestoreSession) IsValid() error {
 	// ========== spec.Rules validation================
 	// We must ensure following:
 	// 1. There is at most one rule with empty targetHosts field.
-	// 2. No two rule with non-emtpy targetHosts matches for a host.
+	// 2. No two rules with non-emtpy targetHosts matches for a host.
 	// 3. If snapshot field is specified in a rule then paths is not specified.
 
 	// ensure the there is at most one rule with source
