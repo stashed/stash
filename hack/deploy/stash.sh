@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eou pipefail
 
-crds=(restics repositories recoveries backupconfigurations backupsessions)
+crds=(restics repositories recoveries backupconfigurations backupsessions backupconfigurationtemplates functions restoresessions tasks)
 
 echo "checking kubeconfig context"
 kubectl config current-context || {
