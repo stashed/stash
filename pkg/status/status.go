@@ -83,7 +83,7 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 	}
 	_, err = eventer.CreateEvent(
 		o.KubeClient,
-		eventer.BackupSessionEventComponent,
+		eventer.EventSourcePostBackupStatusUpdater,
 		backupSession,
 		eventType,
 		eventReason,
@@ -152,7 +152,7 @@ func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.Resto
 	}
 	_, err = eventer.CreateEvent(
 		o.KubeClient,
-		eventer.RestoreSessionEventComponent,
+		eventer.EventSourcePostRestoreStatusUpdater,
 		restoreSession,
 		eventType,
 		eventReason,

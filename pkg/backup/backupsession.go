@@ -456,7 +456,7 @@ func (c *BackupSessionController) writeBackupFailureEvent(backupSession *api_v1b
 	if rerr == nil {
 		eventer.CreateEventWithLog(
 			c.K8sClient,
-			eventer.BackupSessionEventComponent,
+			eventer.EventSourceBackupSidecar,
 			ref,
 			core.EventTypeWarning,
 			eventer.EventReasonHostBackupFailed,

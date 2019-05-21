@@ -40,6 +40,12 @@ rules:
   - statefulsets
   verbs: ["get", "list", "watch", "patch"]
 - apiGroups:
+  - extensions
+  resources:
+  - daemonsets
+  - deployments
+  verbs: ["get", "list", "watch", "patch"]
+- apiGroups:
   - batch
   resources:
   - jobs

@@ -10,12 +10,18 @@ import (
 	"github.com/appscode/go/types"
 	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
+	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
+	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
 	store "kmodules.xyz/objectstore-api/api/v1"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
+	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"
 	"stash.appscode.dev/stash/apis"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/restic"
 )
 
@@ -280,4 +286,102 @@ func ParseInt32P(v string) (*int32, error) {
 		return nil, err
 	}
 	return types.Int32P(int32(vi)), nil
+}
+
+type WorkloadClients struct {
+	KubeClient       kubernetes.Interface
+	OcClient         oc_cs.Interface
+	StashClient      cs.Interface
+	CRDClient        crd_cs.ApiextensionsV1beta1Interface
+	AppCatalogClient appcatalog_cs.Interface
+}
+
+func (wc *WorkloadClients) IsTargetExist(target api_v1beta1.TargetRef, namespace string) bool {
+
+	fmt.Println(target.APIVersion, target.Kind, target.Name, namespace)
+	switch target.Kind {
+	case apis.KindDeployment:
+		switch target.APIVersion {
+		case apis.APIVersionAppsV1:
+			if _, err := wc.KubeClient.AppsV1().Deployments(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+				return true
+			}
+		case apis.APIVersionAppsV1beta1:
+			if _, err := wc.KubeClient.AppsV1beta1().Deployments(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+				return true
+			}
+		case apis.APIVersionAppsV1beta2:
+			if _, err := wc.KubeClient.AppsV1beta2().Deployments(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+				return true
+			}
+		case apis.APIVersionExtensionV1beta1:
+			if _, err := wc.KubeClient.ExtensionsV1beta1().Deployments(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+				return true
+			}
+		}
+	case apis.KindDaemonSet:
+		switch target.APIVersion {
+		case apis.APIVersionAppsV1:
+			if _, err := wc.KubeClient.AppsV1().DaemonSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+				return true
+			}
+		case apis.APIVersionAppsV1beta2:
+			if _, err := wc.KubeClient.AppsV1beta2().DaemonSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+				return true
+			}
+		case apis.APIVersionExtensionV1beta1:
+			if _, err := wc.KubeClient.ExtensionsV1beta1().DaemonSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+				return true
+			}
+		}
+	case apis.KindStatefulSet:
+		switch target.APIVersion {
+		case apis.APIVersionAppsV1:
+			if _, err := wc.KubeClient.AppsV1().StatefulSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+				return true
+			}
+		case apis.APIVersionAppsV1beta1:
+			if _, err := wc.KubeClient.AppsV1beta1().StatefulSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+				return true
+			}
+		case apis.APIVersionAppsV1beta2:
+			if _, err := wc.KubeClient.AppsV1beta2().StatefulSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+				return true
+			}
+		}
+	case apis.KindReplicationController:
+		if _, err := wc.KubeClient.CoreV1().ReplicationControllers(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+			return true
+		}
+	case apis.KindReplicaSet:
+		switch target.APIVersion {
+		case apis.APIVersionAppsV1:
+			if _, err := wc.KubeClient.AppsV1().StatefulSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+				return true
+			}
+		case apis.APIVersionAppsV1beta1:
+			if _, err := wc.KubeClient.AppsV1beta1().StatefulSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+				return true
+			}
+		case apis.APIVersionAppsV1beta2:
+			if _, err := wc.KubeClient.AppsV1beta2().StatefulSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+				return true
+			}
+		}
+	case apis.KindDeploymentConfig:
+		if wc.OcClient != nil {
+			if _, err := wc.OcClient.AppsV1().DeploymentConfigs(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+				return true
+			}
+		}
+	case apis.KindPersistentVolumeClaim:
+		if _, err := wc.KubeClient.CoreV1().PersistentVolumeClaims(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+			return true
+		}
+	case apis.KindAppBinding:
+		if _, err := wc.AppCatalogClient.AppcatalogV1alpha1().AppBindings(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+			return true
+		}
+	}
+	return false
 }
