@@ -10,6 +10,7 @@ import (
 	core "k8s.io/api/core/v1"
 	policy "k8s.io/api/policy/v1beta1"
 	rbac "k8s.io/api/rbac/v1"
+	storage_api_v1 "k8s.io/api/storage/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd/api"
@@ -25,15 +26,17 @@ import (
 )
 
 const (
-	SidecarClusterRole              = "stash-sidecar"
-	ScaledownJobRole                = "stash-scaledownjob"
-	RestoreInitContainerClusterRole = "stash-restore-init-container"
-	RestoreJobClusterRole           = "stash-restore-job"
-	BackupJobClusterRole            = "stash-backup-job"
-	VolumeSnapshotClusterRole       = "stash-volumesnapshot-job"
-	CronJobClusterRole              = "stash-cron-job"
-	KindRole                        = "Role"
-	KindClusterRole                 = "ClusterRole"
+	SidecarClusterRole               = "stash-sidecar"
+	ScaledownJobRole                 = "stash-scaledownjob"
+	RestoreInitContainerClusterRole  = "stash-restore-init-container"
+	RestoreJobClusterRole            = "stash-restore-job"
+	BackupJobClusterRole             = "stash-backup-job"
+	VolumeSnapshotClusterRole        = "stash-volumesnapshot-job"
+	VolumeSnapshotRestoreClusterRole = "stash-volumesnapshot-restore-job"
+	CronJobClusterRole               = "stash-cron-job"
+	KindRole                         = "Role"
+	KindClusterRole                  = "ClusterRole"
+	StorageClassClusterRole          = "stash-storageclass"
 )
 
 func (c *StashController) getBackupJobRoleBindingName(name string) string {
@@ -46,6 +49,13 @@ func (c *StashController) getVolumesnapshotJobRoleBindingName(name string) strin
 
 func (c *StashController) getRestoreJobRoleBindingName(name string) string {
 	return name + "-" + RestoreJobClusterRole
+}
+
+func (c *StashController) getVolumeSnapshotRestoreJobRoleBindingName(name string) string {
+	return name + "-" + VolumeSnapshotRestoreClusterRole
+}
+func (c *StashController) getStorageClassClusterRoleBindingName(name string) string {
+	return name + "-" + StorageClassClusterRole
 }
 
 func (c *StashController) ensureCronJobRBAC(resource *core.ObjectReference, sa string, psps []string) error {
@@ -650,6 +660,145 @@ func (c *StashController) ensureVolumeSnapshotJobRoleBinding(resource *core.Obje
 			APIGroup: rbac.GroupName,
 			Kind:     KindClusterRole,
 			Name:     VolumeSnapshotClusterRole,
+		}
+		in.Subjects = []rbac.Subject{
+			{
+				Kind:      rbac.ServiceAccountKind,
+				Name:      sa,
+				Namespace: resource.Namespace,
+			},
+		}
+		return in
+	})
+	return err
+}
+
+func (c *StashController) ensureVolumeSnapshotRestoreJobRBAC(ref *core.ObjectReference, sa string) error {
+	// ensure ClusterRole for restore job
+	err := c.ensureVolumeSnapshotRestoreJobClusterRole()
+	if err != nil {
+		return err
+	}
+
+	// ensure RoleBinding for restore job
+	err = c.ensureVolumeSnapshotRestoreJobRoleBinding(ref, sa)
+	if err != nil {
+		return err
+	}
+
+	//ensure storageClass ClusterRole for restore job
+	err = c.ensureStorageClassClusterRole()
+	if err != nil {
+		return err
+	}
+
+	//ensure storageClass ClusterRoleBinding for restore job
+	err = c.ensureStorageClassClusterRoleBinding(ref, sa)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *StashController) ensureVolumeSnapshotRestoreJobClusterRole() error {
+
+	meta := metav1.ObjectMeta{Name: VolumeSnapshotRestoreClusterRole}
+	_, _, err := rbac_util.CreateOrPatchClusterRole(c.kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+		if in.Labels == nil {
+			in.Labels = map[string]string{}
+		}
+		in.Labels["app"] = "stash"
+
+		in.Rules = []rbac.PolicyRule{
+			{
+				APIGroups: []string{api_v1beta1.SchemeGroupVersion.Group},
+				Resources: []string{"*"},
+				Verbs:     []string{"*"},
+			},
+			{
+				APIGroups: []string{core.GroupName},
+				Resources: []string{"events"},
+				Verbs:     []string{"create"},
+			},
+			{
+				APIGroups: []string{core.GroupName},
+				Resources: []string{"persistentvolumeclaims"},
+				Verbs:     []string{"get", "list", "watch", "create", "patch"},
+			},
+			{
+				APIGroups: []string{storage_api_v1.GroupName},
+				Resources: []string{"storageclasses"},
+				Verbs:     []string{"get"},
+			},
+		}
+		return in
+
+	})
+	return err
+}
+
+func (c *StashController) ensureVolumeSnapshotRestoreJobRoleBinding(resource *core.ObjectReference, sa string) error {
+
+	meta := metav1.ObjectMeta{
+		Namespace: resource.Namespace,
+		Name:      c.getVolumeSnapshotRestoreJobRoleBindingName(resource.Name),
+	}
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
+
+		in.RoleRef = rbac.RoleRef{
+			APIGroup: rbac.GroupName,
+			Kind:     "ClusterRole",
+			Name:     VolumeSnapshotRestoreClusterRole,
+		}
+		in.Subjects = []rbac.Subject{
+			{
+				Kind:      rbac.ServiceAccountKind,
+				Name:      sa,
+				Namespace: resource.Namespace,
+			},
+		}
+		return in
+	})
+	return err
+}
+
+func (c *StashController) ensureStorageClassClusterRole() error {
+
+	meta := metav1.ObjectMeta{Name: StorageClassClusterRole}
+	_, _, err := rbac_util.CreateOrPatchClusterRole(c.kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+		if in.Labels == nil {
+			in.Labels = map[string]string{}
+		}
+		in.Labels["app"] = "stash"
+
+		in.Rules = []rbac.PolicyRule{
+			{
+				APIGroups: []string{storage_api_v1.GroupName},
+				Resources: []string{"storageclasses"},
+				Verbs:     []string{"get"},
+			},
+		}
+		return in
+
+	})
+	return err
+}
+
+func (c *StashController) ensureStorageClassClusterRoleBinding(resource *core.ObjectReference, sa string) error {
+
+	meta := metav1.ObjectMeta{
+		Name:      c.getStorageClassClusterRoleBindingName(resource.Name),
+		Namespace: resource.Namespace,
+	}
+	_, _, err := rbac_util.CreateOrPatchClusterRoleBinding(c.kubeClient, meta, func(in *rbac.ClusterRoleBinding) *rbac.ClusterRoleBinding {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
+
+		in.RoleRef = rbac.RoleRef{
+			APIGroup: rbac.GroupName,
+			Kind:     "ClusterRole",
+			Name:     StorageClassClusterRole,
 		}
 		in.Subjects = []rbac.Subject{
 			{

@@ -78,6 +78,7 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.AddCommand(stash_cli.NewCLICmd())
 	rootCmd.AddCommand(docker.NewDockerCmd())
 	rootCmd.AddCommand(NewCmdCreateVolumeSnapshot())
+	rootCmd.AddCommand(NewCmdRestoreVolumeSnapshot())
 
 	return rootCmd
 }

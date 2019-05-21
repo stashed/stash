@@ -123,7 +123,7 @@ func (opt *VSoption) CreateVolumeSnapshot() error {
 		if err != nil {
 			return err
 		}
-		getPVCsForStatefulset(ss.Spec.VolumeClaimTemplates, ss)
+		getPVCsForStatefulset(ss.Spec.VolumeClaimTemplates, ss, backupConfiguration.Spec.Target.Replicas)
 
 	case apis.KindPersistentVolumeClaim:
 		pvcList = []string{name}
@@ -171,10 +171,9 @@ func (opt *VSoption) CreateVolumeSnapshot() error {
 }
 
 func (opt *VSoption) getVolumeSnapshotDefinition(backupConfiguration *v1beta1.BackupConfiguration, pvcName string, creationTimestamp metav1.Time) (volumeSnapshot vs.VolumeSnapshot) {
-
 	return vs.VolumeSnapshot{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%v-%d-%02d-%02dt%02d-%02d-%02d-stash", pvcName, creationTimestamp.Year(), creationTimestamp.Month(), creationTimestamp.Day(), creationTimestamp.Hour(), creationTimestamp.Minute(), creationTimestamp.Second()),
+			Name:      fmt.Sprintf("%s-%s", pvcName, fmt.Sprintf("%d", creationTimestamp.Unix())),
 			Namespace: backupConfiguration.Namespace,
 		},
 		Spec: vs.VolumeSnapshotSpec{
@@ -197,12 +196,18 @@ func getPVCs(volList []corev1.Volume) {
 	}
 }
 
-func getPVCsForStatefulset(volList []corev1.PersistentVolumeClaim, ss *appsv1.StatefulSet) {
+func getPVCsForStatefulset(volList []corev1.PersistentVolumeClaim, ss *appsv1.StatefulSet, replicas *int32) {
 	pvcList = []string{}
-	for i := int32(0); i < types.Int32(ss.Spec.Replicas); i++ {
+	var rep *int32
+	if replicas != nil {
+		rep = replicas
+	} else {
+		rep = ss.Spec.Replicas
+	}
+	for i := int32(0); i < types.Int32(rep); i++ {
 		podName := fmt.Sprintf("%v-%v", ss.Name, i)
-		for _, list := range volList {
-			pvcList = append(pvcList, fmt.Sprintf("%v-%v", list.Name, podName))
+		for _, vol := range volList {
+			pvcList = append(pvcList, fmt.Sprintf("%v-%v", vol.Name, podName))
 		}
 	}
 

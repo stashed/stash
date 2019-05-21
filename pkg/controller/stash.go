@@ -210,12 +210,16 @@ func (c *StashController) getTotalHosts(target interface{}, namespace string, dr
 
 	// for cluster backup/restore, target is nil. in this case, there is only one host
 	var targetRef api_v1beta1.TargetRef
+	var rep *int32
 	if target == nil {
 		return types.Int32P(1), nil
 	}
 	switch target.(type) {
 	case *api_v1beta1.BackupTarget:
 		t := target.(*api_v1beta1.BackupTarget)
+		if t.Replicas != nil {
+			rep = t.Replicas
+		}
 		if t == nil {
 			return types.Int32P(1), nil
 		}
@@ -224,6 +228,13 @@ func (c *StashController) getTotalHosts(target interface{}, namespace string, dr
 		t := target.(*api_v1beta1.RestoreTarget)
 		if t == nil {
 			return types.Int32P(1), nil
+		} else if driver == api_v1beta1.VolumeSnapshotter {
+			def := int32(1)
+			if t.Replicas != nil {
+				def = types.Int32(t.Replicas)
+			}
+			return types.Int32P(def * int32(len(t.VolumeClaimTemplates))), nil
+
 		}
 		targetRef = t.Ref
 	}
@@ -234,6 +245,9 @@ func (c *StashController) getTotalHosts(target interface{}, namespace string, dr
 			ss, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
 			if err != nil {
 				return nil, err
+			}
+			if rep != nil {
+				return types.Int32P(types.Int32(rep) * int32(len(ss.Spec.VolumeClaimTemplates))), err
 			}
 			return types.Int32P(types.Int32(ss.Spec.Replicas) * int32(len(ss.Spec.VolumeClaimTemplates))), err
 		case apis.KindDeployment:

@@ -477,3 +477,12 @@ func WaitUntilVolumeSnapshotReady(c snapshot_cs.Interface, meta metav1.ObjectMet
 		return false, nil
 	})
 }
+
+func WaitUntilPVCReady(c kubernetes.Interface, meta metav1.ObjectMeta) error {
+	return wait.PollImmediate(RetryInterval, 30*time.Minute, func() (bool, error) {
+		if obj, err := c.CoreV1().PersistentVolumeClaims(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+			return obj.Status.Phase == core.ClaimBound, nil
+		}
+		return false, nil
+	})
+}
