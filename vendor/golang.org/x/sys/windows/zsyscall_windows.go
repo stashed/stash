@@ -37,6 +37,7 @@ func errnoErr(e syscall.Errno) error {
 var (
 	modadvapi32 = NewLazySystemDLL("advapi32.dll")
 	modkernel32 = NewLazySystemDLL("kernel32.dll")
+	moduserenv  = NewLazySystemDLL("userenv.dll")
 	modshell32  = NewLazySystemDLL("shell32.dll")
 	modmswsock  = NewLazySystemDLL("mswsock.dll")
 	modcrypt32  = NewLazySystemDLL("crypt32.dll")
@@ -45,7 +46,7 @@ var (
 	modiphlpapi = NewLazySystemDLL("iphlpapi.dll")
 	modsecur32  = NewLazySystemDLL("secur32.dll")
 	modnetapi32 = NewLazySystemDLL("netapi32.dll")
-	moduserenv  = NewLazySystemDLL("userenv.dll")
+	modwtsapi32 = NewLazySystemDLL("wtsapi32.dll")
 
 	procRegisterEventSourceW               = modadvapi32.NewProc("RegisterEventSourceW")
 	procDeregisterEventSource              = modadvapi32.NewProc("DeregisterEventSource")
@@ -66,6 +67,7 @@ var (
 	procQueryServiceConfig2W               = modadvapi32.NewProc("QueryServiceConfig2W")
 	procEnumServicesStatusExW              = modadvapi32.NewProc("EnumServicesStatusExW")
 	procQueryServiceStatusEx               = modadvapi32.NewProc("QueryServiceStatusEx")
+	procNotifyServiceStatusChangeW         = modadvapi32.NewProc("NotifyServiceStatusChangeW")
 	procGetLastError                       = modkernel32.NewProc("GetLastError")
 	procLoadLibraryW                       = modkernel32.NewProc("LoadLibraryW")
 	procLoadLibraryExW                     = modkernel32.NewProc("LoadLibraryExW")
@@ -126,6 +128,8 @@ var (
 	procFreeEnvironmentStringsW            = modkernel32.NewProc("FreeEnvironmentStringsW")
 	procGetEnvironmentVariableW            = modkernel32.NewProc("GetEnvironmentVariableW")
 	procSetEnvironmentVariableW            = modkernel32.NewProc("SetEnvironmentVariableW")
+	procCreateEnvironmentBlock             = moduserenv.NewProc("CreateEnvironmentBlock")
+	procDestroyEnvironmentBlock            = moduserenv.NewProc("DestroyEnvironmentBlock")
 	procSetFileTime                        = modkernel32.NewProc("SetFileTime")
 	procGetFileAttributesW                 = modkernel32.NewProc("GetFileAttributesW")
 	procSetFileAttributesW                 = modkernel32.NewProc("SetFileAttributesW")
@@ -183,6 +187,7 @@ var (
 	procSetEvent                           = modkernel32.NewProc("SetEvent")
 	procResetEvent                         = modkernel32.NewProc("ResetEvent")
 	procPulseEvent                         = modkernel32.NewProc("PulseEvent")
+	procSleepEx                            = modkernel32.NewProc("SleepEx")
 	procDefineDosDeviceW                   = modkernel32.NewProc("DefineDosDeviceW")
 	procDeleteVolumeMountPointW            = modkernel32.NewProc("DeleteVolumeMountPointW")
 	procFindFirstVolumeW                   = modkernel32.NewProc("FindFirstVolumeW")
@@ -262,11 +267,15 @@ var (
 	procSetThreadToken                     = modadvapi32.NewProc("SetThreadToken")
 	procLookupPrivilegeValueW              = modadvapi32.NewProc("LookupPrivilegeValueW")
 	procAdjustTokenPrivileges              = modadvapi32.NewProc("AdjustTokenPrivileges")
+	procAdjustTokenGroups                  = modadvapi32.NewProc("AdjustTokenGroups")
 	procGetTokenInformation                = modadvapi32.NewProc("GetTokenInformation")
 	procSetTokenInformation                = modadvapi32.NewProc("SetTokenInformation")
 	procDuplicateTokenEx                   = modadvapi32.NewProc("DuplicateTokenEx")
 	procGetUserProfileDirectoryW           = moduserenv.NewProc("GetUserProfileDirectoryW")
 	procGetSystemDirectoryW                = modkernel32.NewProc("GetSystemDirectoryW")
+	procWTSQueryUserToken                  = modwtsapi32.NewProc("WTSQueryUserToken")
+	procWTSEnumerateSessionsW              = modwtsapi32.NewProc("WTSEnumerateSessionsW")
+	procWTSFreeMemory                      = modwtsapi32.NewProc("WTSFreeMemory")
 )
 
 func RegisterEventSource(uncServerName *uint16, sourceName *uint16) (handle Handle, err error) {
@@ -497,6 +506,14 @@ func QueryServiceStatusEx(service Handle, infoLevel uint32, buff *byte, buffSize
 		} else {
 			err = syscall.EINVAL
 		}
+	}
+	return
+}
+
+func NotifyServiceStatusChange(service Handle, notifyMask uint32, notifier *SERVICE_NOTIFY) (ret error) {
+	r0, _, _ := syscall.Syscall(procNotifyServiceStatusChangeW.Addr(), 3, uintptr(service), uintptr(notifyMask), uintptr(unsafe.Pointer(notifier)))
+	if r0 != 0 {
+		ret = syscall.Errno(r0)
 	}
 	return
 }
@@ -1286,6 +1303,36 @@ func SetEnvironmentVariable(name *uint16, value *uint16) (err error) {
 	return
 }
 
+func CreateEnvironmentBlock(block **uint16, token Token, inheritExisting bool) (err error) {
+	var _p0 uint32
+	if inheritExisting {
+		_p0 = 1
+	} else {
+		_p0 = 0
+	}
+	r1, _, e1 := syscall.Syscall(procCreateEnvironmentBlock.Addr(), 3, uintptr(unsafe.Pointer(block)), uintptr(token), uintptr(_p0))
+	if r1 == 0 {
+		if e1 != 0 {
+			err = errnoErr(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
+func DestroyEnvironmentBlock(block *uint16) (err error) {
+	r1, _, e1 := syscall.Syscall(procDestroyEnvironmentBlock.Addr(), 1, uintptr(unsafe.Pointer(block)), 0, 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			err = errnoErr(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
 func SetFileTime(handle Handle, ctime *Filetime, atime *Filetime, wtime *Filetime) (err error) {
 	r1, _, e1 := syscall.Syscall6(procSetFileTime.Addr(), 4, uintptr(handle), uintptr(unsafe.Pointer(ctime)), uintptr(unsafe.Pointer(atime)), uintptr(unsafe.Pointer(wtime)), 0, 0)
 	if r1 == 0 {
@@ -1951,6 +1998,18 @@ func PulseEvent(event Handle) (err error) {
 			err = syscall.EINVAL
 		}
 	}
+	return
+}
+
+func SleepEx(milliseconds uint32, alertable bool) (ret uint32) {
+	var _p0 uint32
+	if alertable {
+		_p0 = 1
+	} else {
+		_p0 = 0
+	}
+	r0, _, _ := syscall.Syscall(procSleepEx.Addr(), 2, uintptr(milliseconds), uintptr(_p0), 0)
+	ret = uint32(r0)
 	return
 }
 
@@ -2861,6 +2920,24 @@ func AdjustTokenPrivileges(token Token, disableAllPrivileges bool, newstate *Tok
 	return
 }
 
+func AdjustTokenGroups(token Token, resetToDefault bool, newstate *Tokengroups, buflen uint32, prevstate *Tokengroups, returnlen *uint32) (err error) {
+	var _p0 uint32
+	if resetToDefault {
+		_p0 = 1
+	} else {
+		_p0 = 0
+	}
+	r1, _, e1 := syscall.Syscall6(procAdjustTokenGroups.Addr(), 6, uintptr(token), uintptr(_p0), uintptr(unsafe.Pointer(newstate)), uintptr(buflen), uintptr(unsafe.Pointer(prevstate)), uintptr(unsafe.Pointer(returnlen)))
+	if r1 == 0 {
+		if e1 != 0 {
+			err = errnoErr(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
 func GetTokenInformation(token Token, infoClass uint32, info *byte, infoLen uint32, returnedLen *uint32) (err error) {
 	r1, _, e1 := syscall.Syscall6(procGetTokenInformation.Addr(), 5, uintptr(token), uintptr(infoClass), uintptr(unsafe.Pointer(info)), uintptr(infoLen), uintptr(unsafe.Pointer(returnedLen)), 0)
 	if r1 == 0 {
@@ -2919,5 +2996,34 @@ func getSystemDirectory(dir *uint16, dirLen uint32) (len uint32, err error) {
 			err = syscall.EINVAL
 		}
 	}
+	return
+}
+
+func WTSQueryUserToken(session uint32, token *Token) (err error) {
+	r1, _, e1 := syscall.Syscall(procWTSQueryUserToken.Addr(), 2, uintptr(session), uintptr(unsafe.Pointer(token)), 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			err = errnoErr(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
+func WTSEnumerateSessions(handle Handle, reserved uint32, version uint32, sessions **WTS_SESSION_INFO, count *uint32) (err error) {
+	r1, _, e1 := syscall.Syscall6(procWTSEnumerateSessionsW.Addr(), 5, uintptr(handle), uintptr(reserved), uintptr(version), uintptr(unsafe.Pointer(sessions)), uintptr(unsafe.Pointer(count)), 0)
+	if r1 == 0 {
+		if e1 != 0 {
+			err = errnoErr(e1)
+		} else {
+			err = syscall.EINVAL
+		}
+	}
+	return
+}
+
+func WTSFreeMemory(ptr uintptr) {
+	syscall.Syscall(procWTSFreeMemory.Addr(), 1, uintptr(ptr), 0, 0)
 	return
 }
