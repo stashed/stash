@@ -75,10 +75,35 @@ func (c *StashController) ensureCronJobClusterRole(psps []string) error {
 				Verbs:     []string{"*"},
 			},
 			{
+				APIGroups: []string{core.GroupName},
+				Resources: []string{"events"},
+				Verbs:     []string{"create"},
+			},
+			{
 				APIGroups:     []string{policy.GroupName},
 				Resources:     []string{"podsecuritypolicies"},
 				Verbs:         []string{"use"},
 				ResourceNames: psps,
+			},
+			{
+				APIGroups: []string{apps.GroupName},
+				Resources: []string{"deployments", "statefulsets", "replicasets", "daemonsets"},
+				Verbs:     []string{"get"},
+			},
+			{
+				APIGroups: []string{core.GroupName},
+				Resources: []string{"replicationcontrollers", "persistentvolumeclaims"},
+				Verbs:     []string{"get"},
+			},
+			{
+				APIGroups: []string{"apps.openshift.io"},
+				Resources: []string{"deploymentconfigs"},
+				Verbs:     []string{"get"},
+			},
+			{
+				APIGroups: []string{"appcatalog.appscode.com"},
+				Resources: []string{"*"},
+				Verbs:     []string{"get"},
 			},
 		}
 		return in

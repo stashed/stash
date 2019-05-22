@@ -36,7 +36,6 @@ const (
 	EventReasonAdmissionWebhookNotActivated  = "AdmissionWebhookNotActivated"
 	EventReasonInvalidBackupConfiguration    = "InvalidBackupConfiguration"
 
-	BackupSessionEventComponent        = "stash-backup-session"
 	EventReasonInvalidBackupSession    = "InvalidBackupSession"
 	EventReasonBackupSessionSucceeded  = "BackupSessionSucceeded"
 	EventReasonBackupSessionFailed     = "BackupSessionFailedToExecute"
@@ -45,7 +44,6 @@ const (
 	EventReasonHostBackupSucceded      = "SuccessfulHostBackup"
 	EventReasonHostBackupFailed        = "FailedHostBackup"
 
-	RestoreSessionEventComponent       = "stash-restore-session"
 	EventReasonInvalidRestoreSession   = "InvalidRestoreSession"
 	EventReasonRestoreSessionSucceeded = "RestoreSessionSucceeded"
 	EventReasonRestoreSessionFailed    = "RestoreSessionFailedToExecute"
@@ -56,6 +54,18 @@ const (
 	EventReasonRestoreSucceded      = "SuccessfulRestoreSession"
 	EventReasonHostRestoreSucceeded = "SuccessfulHostRestore"
 	EventReasonHostRestoreFailed    = "FailedHostRestore"
+
+	// Event Sources
+	EventSourceBackupSessionController  = "BackupSession Controller"
+	EventSourceRestoreSessionController = "RestoreSession Controller"
+	EventSourceBackupSidecar            = "Backup Sidecar"
+	EventSourceRestoreInitContainer     = "Restore Init-Container"
+	EventSourceBackupTriggeringCronJob  = "Backup Triggering CronJob"
+	EventSourcePostBackupStatusUpdater  = "Post Backup Status Updater"
+	EventSourcePostRestoreStatusUpdater = "Post Restore Status Updater"
+
+	// Event Reasons
+	EventReasonBackupSkipped = "Backup Skipped"
 )
 
 func NewEventRecorder(client kubernetes.Interface, component string) record.EventRecorder {

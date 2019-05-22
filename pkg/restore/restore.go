@@ -23,10 +23,6 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 )
 
-const (
-	RestoreSessionEventComponent = "stash-restore-session"
-)
-
 type Options struct {
 	MasterURL          string
 	KubeconfigPath     string
@@ -89,7 +85,7 @@ func (opt *Options) electRestoreLeader(restoreSession *api_v1beta1.RestoreSessio
 
 	rlc := resourcelock.ResourceLockConfig{
 		Identity:      os.Getenv(util.KeyPodName),
-		EventRecorder: eventer.NewEventRecorder(opt.KubeClient, RestoreSessionEventComponent),
+		EventRecorder: eventer.NewEventRecorder(opt.KubeClient, eventer.EventSourceRestoreInitContainer),
 	}
 
 	resLock, err := resourcelock.New(
@@ -185,7 +181,7 @@ func (opt *Options) runRestore(restoreSession *api_v1beta1.RestoreSession) error
 	if rerr == nil {
 		eventer.CreateEventWithLog(
 			opt.KubeClient,
-			RestoreSessionEventComponent,
+			eventer.EventSourceRestoreInitContainer,
 			ref,
 			core.EventTypeNormal,
 			eventer.EventReasonHostRestoreSucceeded,
@@ -234,7 +230,7 @@ func (opt *Options) writeRestoreFailureEvent(restoreSession *api_v1beta1.Restore
 	if rerr == nil {
 		eventer.CreateEventWithLog(
 			opt.KubeClient,
-			RestoreSessionEventComponent,
+			eventer.EventSourceRestoreInitContainer,
 			ref,
 			core.EventTypeWarning,
 			eventer.EventReasonHostRestoreFailed,

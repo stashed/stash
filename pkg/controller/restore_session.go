@@ -303,7 +303,7 @@ func (c *StashController) setRestoreSessionFailed(restoreSession *api_v1beta1.Re
 	// write failure event
 	_, err = eventer.CreateEvent(
 		c.kubeClient,
-		eventer.RestoreSessionEventComponent,
+		eventer.EventSourceRestoreSessionController,
 		restoreSession,
 		core.EventTypeWarning,
 		eventer.EventReasonRestoreSessionFailed,
@@ -333,7 +333,7 @@ func (c *StashController) setRestoreSessionRunning(restoreSession *api_v1beta1.R
 	// write job creation success event
 	_, err = eventer.CreateEvent(
 		c.kubeClient,
-		eventer.RestoreSessionEventComponent,
+		eventer.EventSourceRestoreSessionController,
 		restoreSession,
 		core.EventTypeNormal,
 		eventer.EventReasonRestoreJobCreated,
@@ -368,7 +368,7 @@ func (c *StashController) setRestoreSessionSucceeded(restoreSession *api_v1beta1
 	// write job creation success event
 	_, err = eventer.CreateEvent(
 		c.kubeClient,
-		eventer.RestoreSessionEventComponent,
+		eventer.EventSourceRestoreSessionController,
 		restoreSession,
 		core.EventTypeNormal,
 		eventer.EventReasonRestoreSessionSucceeded,

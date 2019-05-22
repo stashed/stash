@@ -21,11 +21,11 @@ github.com/appscode/go/log
 github.com/appscode/go/version
 github.com/appscode/go/encoding/json/types
 github.com/appscode/go/runtime
-github.com/appscode/go/crypto/rand
 github.com/appscode/go/flags
 github.com/appscode/go/log/golog
 github.com/appscode/go/types
 github.com/appscode/go/strings
+github.com/appscode/go/crypto/rand
 github.com/appscode/go/context
 github.com/appscode/go/sets
 github.com/appscode/go/analytics
@@ -103,7 +103,7 @@ github.com/docker/distribution/digestset
 # github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c
 github.com/docker/spdystream
 github.com/docker/spdystream/spdy
-# github.com/emicklei/go-restful v2.9.4+incompatible
+# github.com/emicklei/go-restful v2.9.5+incompatible
 github.com/emicklei/go-restful
 github.com/emicklei/go-restful/log
 # github.com/evanphx/json-patch v4.2.0+incompatible
@@ -210,7 +210,7 @@ github.com/modern-go/concurrent
 github.com/modern-go/reflect2
 # github.com/munnerz/goautoneg v0.0.0-20190414153302-2ae31c8b6b30
 github.com/munnerz/goautoneg
-# github.com/ncw/swift v1.0.41
+# github.com/ncw/swift v1.0.47
 github.com/ncw/swift
 # github.com/onsi/ginkgo v1.8.0
 github.com/onsi/ginkgo
@@ -254,7 +254,7 @@ github.com/peterbourgon/diskv
 github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
-# github.com/prometheus/client_golang v0.9.3-0.20190127221311-3c4408c8b829
+# github.com/prometheus/client_golang v0.9.3
 github.com/prometheus/client_golang/prometheus
 github.com/prometheus/client_golang/prometheus/push
 github.com/prometheus/client_golang/prometheus/internal
@@ -276,7 +276,7 @@ github.com/sergi/go-diff/diffmatchpatch
 # github.com/spf13/afero v1.2.2
 github.com/spf13/afero
 github.com/spf13/afero/mem
-# github.com/spf13/cobra v0.0.3
+# github.com/spf13/cobra v0.0.4
 github.com/spf13/cobra/doc
 github.com/spf13/cobra
 # github.com/spf13/pflag v1.0.3
@@ -307,7 +307,7 @@ go.opencensus.io/resource
 go.opencensus.io
 # golang.org/x/crypto v0.0.0-20190513172903-22d7a77e9e5f
 golang.org/x/crypto/ssh/terminal
-# golang.org/x/net v0.0.0-20190514140710-3ec191127204
+# golang.org/x/net v0.0.0-20190520210107-018c4d40a106
 golang.org/x/net/http2
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2/hpack
@@ -326,7 +326,7 @@ golang.org/x/oauth2/google
 golang.org/x/oauth2/internal
 golang.org/x/oauth2/jws
 golang.org/x/oauth2/jwt
-# golang.org/x/sys v0.0.0-20190514135907-3a4b5fb9f71f
+# golang.org/x/sys v0.0.0-20190520201301-c432e742b0af
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 # golang.org/x/text v0.3.2
@@ -913,11 +913,11 @@ kmodules.xyz/client-go/openapi
 kmodules.xyz/client-go/core/v1
 kmodules.xyz/client-go/rbac/v1
 kmodules.xyz/client-go/tools/queue
+kmodules.xyz/client-go/discovery
 kmodules.xyz/client-go/tools/backup
 kmodules.xyz/client-go/tools/cli
 kmodules.xyz/client-go/batch/v1
 kmodules.xyz/client-go/tools/clientcmd
-kmodules.xyz/client-go/discovery
 kmodules.xyz/client-go/admissionregistration/v1beta1
 kmodules.xyz/client-go/apps/v1
 kmodules.xyz/client-go/batch/v1beta1
@@ -941,15 +941,15 @@ kmodules.xyz/objectstore-api/osm
 # kmodules.xyz/offshoot-api v0.0.0-20190513045534-4f3df05f40c2
 kmodules.xyz/offshoot-api/api/v1
 # kmodules.xyz/openshift v0.0.0-20190508141315-99ec9fc946bf
-kmodules.xyz/openshift/client/clientset/versioned/scheme
 kmodules.xyz/openshift/apis/apps/v1
 kmodules.xyz/openshift/client/clientset/versioned
+kmodules.xyz/openshift/client/clientset/versioned/scheme
 kmodules.xyz/openshift/client/clientset/versioned/typed/apps/v1/util
 kmodules.xyz/openshift/client/informers/externalversions
 kmodules.xyz/openshift/client/listers/apps/v1
-kmodules.xyz/openshift/apis/security/v1
 kmodules.xyz/openshift/client/clientset/versioned/typed/apps/v1
 kmodules.xyz/openshift/client/clientset/versioned/typed/security/v1
+kmodules.xyz/openshift/apis/security/v1
 kmodules.xyz/openshift/client/informers/externalversions/apps
 kmodules.xyz/openshift/client/informers/externalversions/internalinterfaces
 kmodules.xyz/openshift/client/informers/externalversions/security

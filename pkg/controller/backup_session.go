@@ -265,7 +265,7 @@ func (c *StashController) setBackupSessionFailed(backupSession *api_v1beta1.Back
 	// write failure event
 	_, err = eventer.CreateEvent(
 		c.kubeClient,
-		eventer.BackupSessionEventComponent,
+		eventer.EventSourceBackupSessionController,
 		backupSession,
 		core.EventTypeWarning,
 		eventer.EventReasonBackupSessionFailed,
@@ -288,7 +288,7 @@ func (c *StashController) setBackupSessionSkipped(backupSession *api_v1beta1.Bac
 	// write skip event
 	_, err = eventer.CreateEvent(
 		c.kubeClient,
-		eventer.BackupSessionEventComponent,
+		eventer.EventSourceBackupSessionController,
 		backupSession,
 		core.EventTypeWarning,
 		eventer.EventReasonBackupSessionSkipped,
@@ -326,7 +326,7 @@ func (c *StashController) setBackupSessionRunning(backupSession *api_v1beta1.Bac
 	// write job creation success event
 	_, err = eventer.CreateEvent(
 		c.kubeClient,
-		eventer.BackupSessionEventComponent,
+		eventer.EventSourceBackupSessionController,
 		backupSession,
 		core.EventTypeNormal,
 		eventer.EventReasonBackupSessionJobCreated,
@@ -361,7 +361,7 @@ func (c *StashController) setBackupSessionSucceeded(backupSession *api_v1beta1.B
 	// write event for successful backup
 	_, err = eventer.CreateEvent(
 		c.kubeClient,
-		eventer.BackupSessionEventComponent,
+		eventer.EventSourceBackupSessionController,
 		backupSession,
 		core.EventTypeNormal,
 		eventer.EventReasonSuccessfulBackup,

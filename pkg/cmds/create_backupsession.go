@@ -1,27 +1,39 @@
 package cmds
 
 import (
-	"github.com/appscode/go/crypto/rand"
+	"fmt"
+	"strings"
+	"time"
+
 	"github.com/appscode/go/log"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/reference"
+	"k8s.io/kubernetes/pkg/apis/core"
 	core_util "kmodules.xyz/client-go/core/v1"
+	"kmodules.xyz/client-go/discovery"
 	"kmodules.xyz/client-go/meta"
+	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
+	ocapps "kmodules.xyz/openshift/apis/apps/v1"
+	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"
+	"stash.appscode.dev/stash/apis"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
 	v1beta1_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
+	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/pkg/util"
 )
 
 type options struct {
-	name        string
-	namespace   string
-	k8sClient   kubernetes.Interface
-	stashClient cs.Interface
+	name             string
+	namespace        string
+	k8sClient        kubernetes.Interface
+	stashClient      cs.Interface
+	appcatalogClient appcatalog_cs.Interface
+	ocClient         oc_cs.Interface
 }
 
 func NewCmdCreateBackupSession() *cobra.Command {
@@ -45,6 +57,11 @@ func NewCmdCreateBackupSession() *cobra.Command {
 			}
 			opt.k8sClient = kubernetes.NewForConfigOrDie(config)
 			opt.stashClient = cs.NewForConfigOrDie(config)
+			opt.appcatalogClient = appcatalog_cs.NewForConfigOrDie(config)
+			// if cluster has OpenShift DeploymentConfig then generate OcClient
+			if discovery.IsPreferredAPIResource(opt.k8sClient.Discovery(), ocapps.GroupVersion.String(), apis.KindDeploymentConfig) {
+				opt.ocClient = oc_cs.NewForConfigOrDie(config)
+			}
 
 			err = opt.createBackupSession()
 			if err != nil {
@@ -64,7 +81,8 @@ func NewCmdCreateBackupSession() *cobra.Command {
 
 func (opt *options) createBackupSession() error {
 	bsMeta := metav1.ObjectMeta{
-		Name:            rand.WithUniqSuffix(opt.name),
+		// Name format: <BackupConfiguration name>-<timestamp in unix format>
+		Name:            fmt.Sprintf("%s-%d", opt.name, time.Now().Unix()),
 		Namespace:       opt.namespace,
 		OwnerReferences: []metav1.OwnerReference{},
 	}
@@ -74,15 +92,36 @@ func (opt *options) createBackupSession() error {
 	}
 	// skip if BackupConfiguration paused
 	if backupConfiguration.Spec.Paused {
-		log.Infof("Skipping creating BackupSession. Reason: Backup Configuration %s/%s is paused.", backupConfiguration.Namespace, backupConfiguration.Name)
-		return nil
+		msg := fmt.Sprintf("Skipping creating BackupSession. Reason: Backup Configuration %s/%s is paused.", backupConfiguration.Namespace, backupConfiguration.Name)
+		log.Infoln(msg)
+
+		// write event to BackupConfiguration denoting that backup session has been skipped
+		return writeBackupSessionSkippedEvent(opt.k8sClient, backupConfiguration, msg)
 	}
+	// if target does not exist then skip creating BackupSession
+	wc := util.WorkloadClients{
+		KubeClient:       opt.k8sClient,
+		StashClient:      opt.stashClient,
+		AppCatalogClient: opt.appcatalogClient,
+		OcClient:         opt.ocClient,
+	}
+
+	if backupConfiguration.Spec.Target != nil && !wc.IsTargetExist(backupConfiguration.Spec.Target.Ref, backupConfiguration.Namespace) {
+		msg := fmt.Sprintf("Skipping creating BackupSession. Reason: Target workload %s/%s does not exist.",
+			strings.ToLower(backupConfiguration.Spec.Target.Ref.Kind), backupConfiguration.Spec.Target.Ref.Name)
+		log.Infoln(msg)
+
+		// write event to BackupConfiguration denoting that backup session has been skipped
+		return writeBackupSessionSkippedEvent(opt.k8sClient, backupConfiguration, msg)
+	}
+
+	// create BackupSession
 	ref, err := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
 	if err != nil {
 		return err
 	}
 	_, _, err = v1beta1_util.CreateOrPatchBackupSession(opt.stashClient.StashV1beta1(), bsMeta, func(in *api_v1beta1.BackupSession) *api_v1beta1.BackupSession {
-		// Set Backupconfiguration  as Backupsession Owner
+		// Set BackupConfiguration  as BackupSession Owner
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 		in.Spec.BackupConfiguration.Name = opt.name
 		if in.Labels == nil {
@@ -92,5 +131,17 @@ func (opt *options) createBackupSession() error {
 		in.Labels[util.LabelBackupConfiguration] = backupConfiguration.Name
 		return in
 	})
+	return err
+}
+
+func writeBackupSessionSkippedEvent(kubeClient kubernetes.Interface, backupConfiguration *api_v1beta1.BackupConfiguration, msg string) error {
+	_, err := eventer.CreateEvent(
+		kubeClient,
+		eventer.EventSourceBackupTriggeringCronJob,
+		backupConfiguration,
+		core.EventTypeNormal,
+		eventer.EventReasonBackupSkipped,
+		msg,
+	)
 	return err
 }
