@@ -7,6 +7,7 @@ import (
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	hashutil "k8s.io/kubernetes/pkg/util/hash"
 	crdutils "kmodules.xyz/client-go/apiextensions/v1beta1"
+	meta_util "kmodules.xyz/client-go/meta"
 )
 
 func (b BackupConfiguration) GetSpecHash() string {
@@ -60,4 +61,15 @@ func (bc BackupConfiguration) CustomResourceDefinition() *apiextensions.CustomRe
 			},
 		},
 	})
+}
+
+// OffshootLabels return labels consist of the labels provided by user to BackupConfiguration crd and
+// stash specific generic labels. It overwrites the the user provided labels if it matched with stash specific generic labels.
+func (bc BackupConfiguration) OffshootLabels(name string) map[string]string {
+	genericLabels := make(map[string]string, 0)
+	genericLabels[meta_util.NameLabelKey] = name
+	genericLabels[meta_util.InstanceLabelKey] = bc.Name
+	genericLabels[meta_util.ComponentLabelKey] = StashRestoreComponent
+	genericLabels[meta_util.ManagedByLabelKey] = StashKey
+	return meta_util.FilterKeys(StashKey, genericLabels, bc.Labels)
 }

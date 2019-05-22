@@ -18,7 +18,7 @@ func (c *StashController) getRestoreInitContainerRoleBindingName(name string) st
 	return name + "-" + RestoreInitContainerClusterRole
 }
 
-func (c *StashController) ensureRestoreInitContainerRBAC(ref *core.ObjectReference, sa string) error {
+func (c *StashController) ensureRestoreInitContainerRBAC(ref *core.ObjectReference, sa string,labels map[string]string) error {
 	// ensure ClusterRole for restore init container
 	err := c.ensureRestoreInitContainerClusterRole()
 	if err != nil {
@@ -26,7 +26,7 @@ func (c *StashController) ensureRestoreInitContainerRBAC(ref *core.ObjectReferen
 	}
 
 	// ensure RoleBinding for restore init container
-	err = c.ensureRestoreInitContainerRoleBinding(ref, sa)
+	err = c.ensureRestoreInitContainerRoleBinding(ref, sa,labels)
 	if err != nil {
 		return err
 	}
@@ -69,10 +69,11 @@ func (c *StashController) ensureRestoreInitContainerClusterRole() error {
 	return err
 }
 
-func (c *StashController) ensureRestoreInitContainerRoleBinding(resource *core.ObjectReference, sa string) error {
+func (c *StashController) ensureRestoreInitContainerRoleBinding(resource *core.ObjectReference, sa string, labels map[string]string) error {
 	meta := metav1.ObjectMeta{
 		Namespace: resource.Namespace,
 		Name:      c.getRestoreInitContainerRoleBindingName(resource.Name),
+		Labels: labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)

@@ -47,3 +47,12 @@ const (
 
 	StatusSubresourceEnabled = "ENABLE_STATUS_SUBRESOURCE"
 )
+
+const (
+	AppBackupTriggeringJob = "backup-cron-job"
+	AppBackupTriggeringJobServiceAccount = "backup-cron-job-sa"
+	AppBackupTriggeringJobRoleBinding = "backup-cron-job-rolebinding"
+
+	AppBackupSidecarRoleBinding = "backup-sidecar-rolebinding"
+	AppRestoreInitContainerRoleBinding = "restore-init-container-rolebinding"
+)
