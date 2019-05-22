@@ -16,33 +16,31 @@ func (r RestoreSession) IsValid() error {
 	// 3. If snapshot field is specified in a rule then paths is not specified.
 
 	// ensure the there is at most one rule with source
-	var ruleIndexes []int
+	var ruleIdx []int
 	for i, rule := range r.Spec.Rules {
 		if len(rule.TargetHosts) == 0 {
-			ruleIndexes = append(ruleIndexes, i)
+			ruleIdx = append(ruleIdx, i)
 		}
 	}
-	if len(ruleIndexes) > 1 {
+	if len(ruleIdx) > 1 {
 		return fmt.Errorf("\n\t"+
 			"Error: Invalid RestoreSession specification.\n\t"+
 			"Reason: %s.\n\t"+
-			"Hints: There could be at most one rule with empty targetHosts.", multipleRuleWithEmptyTargetHostError(ruleIndexes))
+			"Hints: There can be at most one rule with empty targetHosts.", multipleRuleWithEmptyTargetHostError(ruleIdx))
 	}
 
 	// ensure that no two rules with non-emtpy targetHosts matches for a host
 	res := make(map[string]int, 0)
 	for i, rule := range r.Spec.Rules {
-		if len(rule.TargetHosts) != 0 {
-			for _, host := range rule.TargetHosts {
-				v, ok := res[host]
-				if ok {
-					return fmt.Errorf("\n\t"+
-						"Error: Invalid RestoreSession specification.\n\t"+
-						"Reason: Multiple rules (rule[%d] and rule[%d]) matches for host %q.\n\t"+
-						"Hints: There could be only one matching rule for a host.", v, i, host)
-				} else {
-					res[host] = i
-				}
+		for _, host := range rule.TargetHosts {
+			v, ok := res[host]
+			if ok {
+				return fmt.Errorf("\n\t"+
+					"Error: Invalid RestoreSession specification.\n\t"+
+					"Reason: Multiple rules (rule[%d] and rule[%d]) match for host %q.\n\t"+
+					"Hints: There could be only one matching rule for a host.", v, i, host)
+			} else {
+				res[host] = i
 			}
 		}
 	}
@@ -53,7 +51,7 @@ func (r RestoreSession) IsValid() error {
 			return fmt.Errorf("\n\t"+
 				"Error: Invalid RestoreSession specification.\n\t"+
 				"Reason: Both 'snapshots' and 'paths' fileds are specified in rule[%d].\n\t"+
-				"Hints: A snpashot contains backup data of only one directory. So, you don't have to specify 'paths' if you specify snapshot field.", i)
+				"Hints: A snpashot contains backup data of only one directory. So, you can't specify 'paths' if you specify snapshot field.", i)
 		}
 	}
 	return nil
