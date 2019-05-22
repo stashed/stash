@@ -4,7 +4,7 @@ metadata:
   name: backup-pvc
   namespace: demo
 spec:
-  storageClassName: csi-gce-pd
+  storageClassName: "standard"
   accessModes:
     - ReadWriteOnce
   resources:

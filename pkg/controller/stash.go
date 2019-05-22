@@ -228,15 +228,15 @@ func (c *StashController) getTotalHosts(target interface{}, namespace string, dr
 		t := target.(*api_v1beta1.RestoreTarget)
 		if t == nil {
 			return types.Int32P(1), nil
-		} else if driver == api_v1beta1.VolumeSnapshotter {
+		}
+		targetRef = t.Ref
+		if driver == api_v1beta1.VolumeSnapshotter {
 			def := int32(1)
 			if t.Replicas != nil {
 				def = types.Int32(t.Replicas)
 			}
 			return types.Int32P(def * int32(len(t.VolumeClaimTemplates))), nil
-
 		}
-		targetRef = t.Ref
 	}
 
 	if driver == api_v1beta1.VolumeSnapshotter {

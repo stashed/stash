@@ -22,6 +22,7 @@ require (
 	github.com/gopherjs/gopherjs v0.0.0-20190430165422-3e4dfb77656c // indirect
 	github.com/graymeta/stow v0.0.0-00010101000000-000000000000
 	github.com/json-iterator/go v1.1.6
+	github.com/kubernetes-csi/external-snapshotter v1.1.0
 	github.com/mattn/go-isatty v0.0.8 // indirect
 	github.com/ncw/swift v1.0.47 // indirect
 	github.com/onsi/ginkgo v1.8.0

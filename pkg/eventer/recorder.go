@@ -47,6 +47,7 @@ const (
 	EventReasonInvalidRestoreSession   = "InvalidRestoreSession"
 	EventReasonRestoreSessionSucceeded = "RestoreSessionSucceeded"
 	EventReasonRestoreSessionFailed    = "RestoreSessionFailedToExecute"
+	EventReasonRestorePhaseUnknown     = "RestoreSession Phase Unknown"
 	EventReasonRestoreJobCreated       = "RestoreJobCreated"
 
 	// RestoreSession events

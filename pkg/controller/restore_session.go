@@ -133,8 +133,10 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 			// check whether restore session is completed or running and set it's phase accordingly
 			phase, err := c.getRestoreSessionPhase(restoreSession)
 
-			if err != nil || phase == api_v1beta1.RestoreSessionFailed {
+			if phase == api_v1beta1.RestoreSessionFailed {
 				return c.setRestoreSessionFailed(restoreSession, err)
+			} else if phase == api_v1beta1.RestoreSessionUnknown {
+				return c.setRestoreSessionUnknown(restoreSession, err)
 			} else if phase == api_v1beta1.RestoreSessionSucceeded {
 				return c.setRestoreSessionSucceeded(restoreSession)
 			} else if phase == api_v1beta1.RestoreSessionRunning {
@@ -323,6 +325,30 @@ func (c *StashController) setRestoreSessionFailed(restoreSession *api_v1beta1.Re
 	return err
 }
 
+func (c *StashController) setRestoreSessionUnknown(restoreSession *api_v1beta1.RestoreSession, jobErr error) error {
+
+	// set RestoreSession phase to "Unknown"
+	_, err := v1beta1_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
+		in.Phase = api_v1beta1.RestoreSessionUnknown
+		return in
+	}, apis.EnableStatusSubresource)
+	if err != nil {
+		return err
+	}
+
+	// write failure event
+	_, err = eventer.CreateEvent(
+		c.kubeClient,
+		eventer.RestoreSessionEventComponent,
+		restoreSession,
+		core.EventTypeWarning,
+		eventer.EventReasonRestorePhaseUnknown,
+		jobErr.Error(),
+	)
+
+	return err
+}
+
 func (c *StashController) setRestoreSessionRunning(restoreSession *api_v1beta1.RestoreSession) error {
 
 	totalHosts, err := c.getTotalHosts(restoreSession.Spec.Target, restoreSession.Namespace, restoreSession.Spec.Driver)
@@ -405,6 +431,13 @@ func (c *StashController) getRestoreSessionPhase(restoreSession *api_v1beta1.Res
 	for _, host := range restoreSession.Status.Stats {
 		if host.Phase == api_v1beta1.HostRestoreFailed {
 			return api_v1beta1.RestoreSessionFailed, fmt.Errorf("restore failed for host: %s. Reason: %s", host.Hostname, host.Error)
+		}
+	}
+
+	// check if any of the host phase is "Unknown". if any of their phase is "Unknown", then consider entire restore session phase is unknown.
+	for _, host := range restoreSession.Status.Stats {
+		if host.Phase == api_v1beta1.HostRestoreUnknown {
+			return api_v1beta1.RestoreSessionUnknown, fmt.Errorf("restore phase is 'Unknown' for host: %s. Reason: %s", host.Hostname, host.Error)
 		}
 	}
 

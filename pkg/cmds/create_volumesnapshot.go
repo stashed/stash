@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/appscode/go/log"
-	"github.com/appscode/go/types"
 	vs "github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1alpha1"
 	vs_cs "github.com/kubernetes-csi/external-snapshotter/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
@@ -15,17 +14,12 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"kmodules.xyz/client-go/meta"
-	workload_api "kmodules.xyz/webhook-runtime/apis/workload/v1"
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/restic"
 	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
-)
-
-var (
-	pvcList = make([]string, 0)
 )
 
 type VSoption struct {
@@ -81,49 +75,56 @@ func (opt *VSoption) CreateVolumeSnapshot() error {
 	if err != nil {
 		return err
 	}
-	if backupConfiguration == nil || backupConfiguration.Spec.Target == nil {
-		return fmt.Errorf("BackupConfiguration or  backupConfiguration target is nil")
+	if backupConfiguration == nil {
+		return fmt.Errorf("BackupConfiguration is nil")
+	}
+	if backupConfiguration.Spec.Target == nil {
+		return fmt.Errorf("backupConfiguration target is nil")
 	}
 
 	kind := backupConfiguration.Spec.Target.Ref.Kind
 	name := backupConfiguration.Spec.Target.Ref.Name
 	namespace := backupConfiguration.Namespace
 
+	var (
+		pvcList []string
+	)
+
 	switch kind {
-	case workload_api.KindDeployment:
+	case apis.KindDeployment:
 		deployment, err := opt.kubeClient.AppsV1().Deployments(namespace).Get(name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
-		getPVCs(deployment.Spec.Template.Spec.Volumes)
+		pvcList = getPVCs(deployment.Spec.Template.Spec.Volumes)
 
-	case workload_api.KindDaemonSet:
+	case apis.KindDaemonSet:
 		daemon, err := opt.kubeClient.AppsV1().DaemonSets(namespace).Get(name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
-		getPVCs(daemon.Spec.Template.Spec.Volumes)
+		pvcList = getPVCs(daemon.Spec.Template.Spec.Volumes)
 
-	case workload_api.KindReplicationController:
+	case apis.KindReplicationController:
 		rc, err := opt.kubeClient.CoreV1().ReplicationControllers(namespace).Get(name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
-		getPVCs(rc.Spec.Template.Spec.Volumes)
+		pvcList = getPVCs(rc.Spec.Template.Spec.Volumes)
 
-	case workload_api.KindReplicaSet:
+	case apis.KindReplicaSet:
 		rs, err := opt.kubeClient.AppsV1().ReplicaSets(namespace).Get(name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
-		getPVCs(rs.Spec.Template.Spec.Volumes)
+		pvcList = getPVCs(rs.Spec.Template.Spec.Volumes)
 
-	case workload_api.KindStatefulSet:
+	case apis.KindStatefulSet:
 		ss, err := opt.kubeClient.AppsV1().StatefulSets(namespace).Get(name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
-		getPVCsForStatefulset(ss.Spec.VolumeClaimTemplates, ss, backupConfiguration.Spec.Target.Replicas)
+		pvcList = getPVCsForStatefulset(ss.Spec.VolumeClaimTemplates, ss, backupConfiguration.Spec.Target.Replicas)
 
 	case apis.KindPersistentVolumeClaim:
 		pvcList = []string{name}
@@ -187,28 +188,30 @@ func (opt *VSoption) getVolumeSnapshotDefinition(backupConfiguration *v1beta1.Ba
 
 }
 
-func getPVCs(volList []corev1.Volume) {
-	pvcList = []string{}
-	for _, list := range volList {
-		if list.PersistentVolumeClaim != nil {
-			pvcList = append(pvcList, list.PersistentVolumeClaim.ClaimName)
+func getPVCs(volList []corev1.Volume) []string {
+	pvcList := make([]string, 0)
+	for _, vol := range volList {
+		if vol.PersistentVolumeClaim != nil {
+			pvcList = append(pvcList, vol.PersistentVolumeClaim.ClaimName)
 		}
 	}
+	return pvcList
 }
 
-func getPVCsForStatefulset(volList []corev1.PersistentVolumeClaim, ss *appsv1.StatefulSet, replicas *int32) {
-	pvcList = []string{}
+func getPVCsForStatefulset(volList []corev1.PersistentVolumeClaim, ss *appsv1.StatefulSet, replicas *int32) []string {
+	pvcList := make([]string, 0)
 	var rep *int32
 	if replicas != nil {
 		rep = replicas
 	} else {
 		rep = ss.Spec.Replicas
 	}
-	for i := int32(0); i < types.Int32(rep); i++ {
+	for i := int32(0); i < *rep; i++ {
 		podName := fmt.Sprintf("%v-%v", ss.Name, i)
 		for _, vol := range volList {
 			pvcList = append(pvcList, fmt.Sprintf("%v-%v", vol.Name, podName))
 		}
 	}
+	return pvcList
 
 }
