@@ -438,6 +438,8 @@ golang.org/x/tools v0.0.0-20190312170243-e65039ee4138/go.mod h1:LCzVGOaR6xXOjkQ3
 golang.org/x/tools v0.0.0-20190328211700-ab21143f2384/go.mod h1:LCzVGOaR6xXOjkQ3onu1FJEFr0SW1gC7cKk1uF8kGRs=
 golang.org/x/tools v0.0.0-20190520220859-26647e34d3c0 h1:lvPfJvgU8ph6AjkvFjGFZaot/UyeyrJZA0jr2T3x6oI=
 golang.org/x/tools v0.0.0-20190520220859-26647e34d3c0/go.mod h1:RgjU9mgBXZiqYHBnxXauZ1Gv1EHHAz9KjViQ78xBX0Q=
+golang.org/x/tools v0.0.0-20190521203540-521d6ed310dd h1:7E3PabyysDSEjnaANKBgums/hyvMI/HoHQ50qZEzTrg=
+golang.org/x/tools v0.0.0-20190521203540-521d6ed310dd/go.mod h1:RgjU9mgBXZiqYHBnxXauZ1Gv1EHHAz9KjViQ78xBX0Q=
 gomodules.xyz/cert v1.0.0 h1:ARg6YgYP5VktgmId6t6FlAhi9XXNGWwn2WMYvt35tEM=
 gomodules.xyz/cert v1.0.0/go.mod h1:amhuI40SpnLj/4dWzsfZyVpblMsfKi0tYH83era8078=
 gomodules.xyz/envsubst v0.0.0-20190321051520-c745d52104af h1:dvSifHtcUenMJOxj0sZs1lJ87ALY4jKvpfr3yTUK0OY=

@@ -297,76 +297,26 @@ type WorkloadClients struct {
 }
 
 func (wc *WorkloadClients) IsTargetExist(target api_v1beta1.TargetRef, namespace string) bool {
-
-	fmt.Println(target.APIVersion, target.Kind, target.Name, namespace)
 	switch target.Kind {
 	case apis.KindDeployment:
-		switch target.APIVersion {
-		case apis.APIVersionAppsV1:
-			if _, err := wc.KubeClient.AppsV1().Deployments(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
-				return true
-			}
-		case apis.APIVersionAppsV1beta1:
-			if _, err := wc.KubeClient.AppsV1beta1().Deployments(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
-				return true
-			}
-		case apis.APIVersionAppsV1beta2:
-			if _, err := wc.KubeClient.AppsV1beta2().Deployments(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
-				return true
-			}
-		case apis.APIVersionExtensionV1beta1:
-			if _, err := wc.KubeClient.ExtensionsV1beta1().Deployments(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
-				return true
-			}
+		if _, err := wc.KubeClient.AppsV1().Deployments(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+			return true
 		}
 	case apis.KindDaemonSet:
-		switch target.APIVersion {
-		case apis.APIVersionAppsV1:
-			if _, err := wc.KubeClient.AppsV1().DaemonSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
-				return true
-			}
-		case apis.APIVersionAppsV1beta2:
-			if _, err := wc.KubeClient.AppsV1beta2().DaemonSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
-				return true
-			}
-		case apis.APIVersionExtensionV1beta1:
-			if _, err := wc.KubeClient.ExtensionsV1beta1().DaemonSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
-				return true
-			}
+		if _, err := wc.KubeClient.AppsV1().DaemonSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+			return true
 		}
 	case apis.KindStatefulSet:
-		switch target.APIVersion {
-		case apis.APIVersionAppsV1:
-			if _, err := wc.KubeClient.AppsV1().StatefulSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
-				return true
-			}
-		case apis.APIVersionAppsV1beta1:
-			if _, err := wc.KubeClient.AppsV1beta1().StatefulSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
-				return true
-			}
-		case apis.APIVersionAppsV1beta2:
-			if _, err := wc.KubeClient.AppsV1beta2().StatefulSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
-				return true
-			}
+		if _, err := wc.KubeClient.AppsV1().StatefulSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+			return true
 		}
 	case apis.KindReplicationController:
 		if _, err := wc.KubeClient.CoreV1().ReplicationControllers(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
 			return true
 		}
 	case apis.KindReplicaSet:
-		switch target.APIVersion {
-		case apis.APIVersionAppsV1:
-			if _, err := wc.KubeClient.AppsV1().StatefulSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
-				return true
-			}
-		case apis.APIVersionAppsV1beta1:
-			if _, err := wc.KubeClient.AppsV1beta1().StatefulSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
-				return true
-			}
-		case apis.APIVersionAppsV1beta2:
-			if _, err := wc.KubeClient.AppsV1beta2().StatefulSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
-				return true
-			}
+		if _, err := wc.KubeClient.AppsV1().StatefulSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+			return true
 		}
 	case apis.KindDeploymentConfig:
 		if wc.OcClient != nil {
