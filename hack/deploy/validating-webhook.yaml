@@ -62,3 +62,22 @@ webhooks:
     - repositories
   failurePolicy: Fail
   ${STASH_WEBHOOK_SIDE_EFFECTS}
+- name: restoresession.admission.stash.appscode.com
+  clientConfig:
+    service:
+      namespace: default
+      name: kubernetes
+      path: /apis/admission.stash.appscode.com/v1beta1/restoresessionvalidators
+    caBundle: ${KUBE_CA}
+  rules:
+  - operations:
+    - CREATE
+    - UPDATE
+    apiGroups:
+    - stash.appscode.com
+    apiVersions:
+    - "*"
+    resources:
+    - restoresessions
+  failurePolicy: Fail
+  ${STASH_WEBHOOK_SIDE_EFFECTS}

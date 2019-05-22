@@ -31,26 +31,35 @@ func RestoreOptionForRestoreSession(restoreSession api.RestoreSession, extraOpt 
 	return RestoreOptionsForHost(extraOpt.Host, restoreSession.Spec.Rules)
 }
 
-// return first matching rule
-// if hosts is empty for any rule, it will match any hostname
+// return the matching rule
+// if targetHosts is empty for a rule, it will match any hostname
 func RestoreOptionsForHost(hostname string, rules []api.Rule) restic.RestoreOptions {
+	var matchedRule restic.RestoreOptions
+	// first check for rules non-empty targetHost
 	for _, rule := range rules {
-		// if host is specified in rule then use it. otherwise use workload itself as host
+		// if sourceHost is specified in the rule then use it. otherwise use workload itself as host
 		sourceHost := hostname
 		if rule.SourceHost != "" {
 			sourceHost = rule.SourceHost
 		}
 
 		if len(rule.TargetHosts) == 0 || go_str.Contains(rule.TargetHosts, hostname) {
-			return restic.RestoreOptions{
+			matchedRule = restic.RestoreOptions{
 				Host:        hostname,
 				SourceHost:  sourceHost,
 				RestoreDirs: rule.Paths,
 				Snapshots:   rule.Snapshots,
 			}
+			// if rule has empty targetHost then check further rules to see if any other rule with non-empty targetHost matches
+			if len(rule.TargetHosts) == 0 {
+				continue
+			} else {
+				return matchedRule
+			}
 		}
 	}
-	return restic.RestoreOptions{}
+	// matchedRule is either emtpy or contains restore option for the rules with empty targetHost field.
+	return matchedRule
 }
 
 func SetupOptionsForRepository(repository api_v1alpha1.Repository, extraOpt ExtraOptions) (restic.SetupOptions, error) {
