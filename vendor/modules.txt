@@ -866,7 +866,7 @@ k8s.io/kube-openapi/pkg/handler
 k8s.io/kube-openapi/pkg/util
 k8s.io/kube-openapi/pkg/util/proto
 k8s.io/kube-openapi/pkg/schemaconv
-# k8s.io/kubernetes v1.14.2 => k8s.io/kubernetes v1.14.0
+# k8s.io/kubernetes v1.14.1 => k8s.io/kubernetes v1.14.0
 k8s.io/kubernetes/pkg/util/hash
 k8s.io/kubernetes/pkg/apis/core
 k8s.io/kubernetes/pkg/api/legacyscheme
