@@ -4,40 +4,34 @@ go 1.12
 
 require (
 	github.com/Azure/go-autorest v11.1.2+incompatible // indirect
-	github.com/Masterminds/glide v0.13.2 // indirect
-	github.com/Masterminds/semver v1.4.2 // indirect
-	github.com/Masterminds/vcs v1.13.0 // indirect
 	github.com/appscode/go v0.0.0-20190424183524-60025f1135c9
 	github.com/appscode/osm v0.11.0 // indirect
 	github.com/armon/circbuf v0.0.0-20190214190532-5111143e8da2
 	github.com/aws/aws-sdk-go v1.14.33 // indirect
-	github.com/bmatcuk/doublestar v1.1.1 // indirect
 	github.com/cenkalti/backoff v2.1.1+incompatible
-	github.com/codegangsta/cli v1.20.0 // indirect
 	github.com/codeskyblue/go-sh v0.0.0-20190412065543-76bd3d59ff27
-	github.com/emicklei/go-restful v2.9.4+incompatible // indirect
+	github.com/emicklei/go-restful v2.9.5+incompatible // indirect
 	github.com/evanphx/json-patch v4.2.0+incompatible
 	github.com/go-openapi/spec v0.19.0
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/gopherjs/gopherjs v0.0.0-20190430165422-3e4dfb77656c // indirect
 	github.com/graymeta/stow v0.0.0-00010101000000-000000000000
 	github.com/json-iterator/go v1.1.6
-	github.com/mitchellh/go-homedir v1.1.0 // indirect
+	github.com/mattn/go-isatty v0.0.8 // indirect
+	github.com/ncw/swift v1.0.47 // indirect
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
 	github.com/pkg/errors v0.8.1
-	github.com/prometheus/client_golang v0.9.3-0.20190127221311-3c4408c8b829
-	github.com/prometheus/common v0.4.0 // indirect
-	github.com/sgotti/glide-vc v0.1.0 // indirect
+	github.com/prometheus/client_golang v0.9.3
+	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/smartystreets/assertions v0.0.0-20190401211740-f487f9de1cd3 // indirect
 	github.com/spf13/afero v1.2.2
-	github.com/spf13/cobra v0.0.3
+	github.com/spf13/cobra v0.0.4
 	github.com/spf13/pflag v1.0.3
 	github.com/stretchr/testify v1.3.0
 	golang.org/x/crypto v0.0.0-20190513172903-22d7a77e9e5f // indirect
 	golang.org/x/net v0.0.0-20190520210107-018c4d40a106 // indirect
 	golang.org/x/sys v0.0.0-20190520201301-c432e742b0af // indirect
-	golang.org/x/tools v0.0.0-20190521203540-521d6ed310dd // indirect
 	gomodules.xyz/cert v1.0.0
 	gomodules.xyz/envsubst v0.0.0-20190321051520-c745d52104af
 	google.golang.org/genproto v0.0.0-20190502173448-54afdca5d873 // indirect
@@ -53,7 +47,7 @@ require (
 	k8s.io/client-go v11.0.0+incompatible
 	k8s.io/kube-aggregator v0.0.0-20190508104018-6d3d96b06d29
 	k8s.io/kube-openapi v0.0.0-20190502190224-411b2483e503
-	k8s.io/kubernetes v1.14.1
+	k8s.io/kubernetes v1.14.2
 	kmodules.xyz/client-go v0.0.0-20190513064657-a9147783199a
 	kmodules.xyz/custom-resources v0.0.0-20190225012057-ed1c15a0bbda
 	kmodules.xyz/objectstore-api v0.0.0-20190506085934-94c81c8acca9

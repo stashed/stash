@@ -591,6 +591,7 @@ func (tml *Tokenmandatorylabel) Size() uint32 {
 //sys	SetThreadToken(thread *Handle, token Token) (err error) = advapi32.SetThreadToken
 //sys	LookupPrivilegeValue(systemname *uint16, name *uint16, luid *LUID) (err error) = advapi32.LookupPrivilegeValueW
 //sys	AdjustTokenPrivileges(token Token, disableAllPrivileges bool, newstate *Tokenprivileges, buflen uint32, prevstate *Tokenprivileges, returnlen *uint32) (err error) = advapi32.AdjustTokenPrivileges
+//sys	AdjustTokenGroups(token Token, resetToDefault bool, newstate *Tokengroups, buflen uint32, prevstate *Tokengroups, returnlen *uint32) (err error) = advapi32.AdjustTokenGroups
 //sys	GetTokenInformation(token Token, infoClass uint32, info *byte, infoLen uint32, returnedLen *uint32) (err error) = advapi32.GetTokenInformation
 //sys	SetTokenInformation(token Token, infoClass uint32, info *byte, infoLen uint32) (err error) = advapi32.SetTokenInformation
 //sys	DuplicateTokenEx(existingToken Token, desiredAccess uint32, tokenAttributes *SecurityAttributes, impersonationLevel uint32, tokenType uint32, newToken *Token) (err error) = advapi32.DuplicateTokenEx
@@ -692,6 +693,28 @@ func (t Token) GetUserProfileDirectory() (string, error) {
 	}
 }
 
+// Returns whether the current token is elevated from a UAC perspective.
+func (token Token) IsElevated() bool {
+	var isElevated uint32
+	var outLen uint32
+	err := GetTokenInformation(token, TokenElevation, (*byte)(unsafe.Pointer(&isElevated)), uint32(unsafe.Sizeof(isElevated)), &outLen)
+	if err != nil {
+		return false
+	}
+	return outLen == uint32(unsafe.Sizeof(isElevated)) && isElevated != 0
+}
+
+// Returns the linked token, which may be an elevated UAC token.
+func (token Token) GetLinkedToken() (Token, error) {
+	var linkedToken Token
+	var outLen uint32
+	err := GetTokenInformation(token, TokenLinkedToken, (*byte)(unsafe.Pointer(&linkedToken)), uint32(unsafe.Sizeof(linkedToken)), &outLen)
+	if err != nil {
+		return Token(0), err
+	}
+	return linkedToken, nil
+}
+
 // GetSystemDirectory retrieves path to current location of the system
 // directory, which is typically, though not always, C:\Windows\System32.
 func GetSystemDirectory() (string, error) {
@@ -717,3 +740,45 @@ func (t Token) IsMember(sid *SID) (bool, error) {
 	}
 	return b != 0, nil
 }
+
+const (
+	WTS_CONSOLE_CONNECT        = 0x1
+	WTS_CONSOLE_DISCONNECT     = 0x2
+	WTS_REMOTE_CONNECT         = 0x3
+	WTS_REMOTE_DISCONNECT      = 0x4
+	WTS_SESSION_LOGON          = 0x5
+	WTS_SESSION_LOGOFF         = 0x6
+	WTS_SESSION_LOCK           = 0x7
+	WTS_SESSION_UNLOCK         = 0x8
+	WTS_SESSION_REMOTE_CONTROL = 0x9
+	WTS_SESSION_CREATE         = 0xa
+	WTS_SESSION_TERMINATE      = 0xb
+)
+
+const (
+	WTSActive       = 0
+	WTSConnected    = 1
+	WTSConnectQuery = 2
+	WTSShadow       = 3
+	WTSDisconnected = 4
+	WTSIdle         = 5
+	WTSListen       = 6
+	WTSReset        = 7
+	WTSDown         = 8
+	WTSInit         = 9
+)
+
+type WTSSESSION_NOTIFICATION struct {
+	Size      uint32
+	SessionID uint32
+}
+
+type WTS_SESSION_INFO struct {
+	SessionID         uint32
+	WindowStationName *uint16
+	State             uint32
+}
+
+//sys WTSQueryUserToken(session uint32, token *Token) (err error) = wtsapi32.WTSQueryUserToken
+//sys WTSEnumerateSessions(handle Handle, reserved uint32, version uint32, sessions **WTS_SESSION_INFO, count *uint32) (err error) = wtsapi32.WTSEnumerateSessionsW
+//sys WTSFreeMemory(ptr uintptr) = wtsapi32.WTSFreeMemory
