@@ -202,16 +202,20 @@ func hasStashInitContainer(containers []core.Container) bool {
 	return false
 }
 
-func (c *StashController) getTotalHosts(target interface{}, namespace string) (*int32, error) {
+func (c *StashController) getTotalHosts(target interface{}, namespace string, driver api_v1beta1.Snapshotter) (*int32, error) {
 
 	// for cluster backup/restore, target is nil. in this case, there is only one host
 	var targetRef api_v1beta1.TargetRef
+	var rep *int32
 	if target == nil {
 		return types.Int32P(1), nil
 	}
 	switch target.(type) {
 	case *api_v1beta1.BackupTarget:
 		t := target.(*api_v1beta1.BackupTarget)
+		if t.Replicas != nil {
+			rep = t.Replicas
+		}
 		if t == nil {
 			return types.Int32P(1), nil
 		}
@@ -222,25 +226,86 @@ func (c *StashController) getTotalHosts(target interface{}, namespace string) (*
 			return types.Int32P(1), nil
 		}
 		targetRef = t.Ref
+		if driver == api_v1beta1.VolumeSnapshotter {
+			def := int32(1)
+			if t.Replicas != nil {
+				def = types.Int32(t.Replicas)
+			}
+			return types.Int32P(def * int32(len(t.VolumeClaimTemplates))), nil
+		}
 	}
 
-	switch targetRef.Kind {
-	// all replicas of StatefulSet will take backup/restore. so total number of hosts will be number of replicas.
-	case apis.KindStatefulSet:
-		ss, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
+	if driver == api_v1beta1.VolumeSnapshotter {
+		switch targetRef.Kind {
+		case apis.KindStatefulSet:
+			ss, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
+			if err != nil {
+				return nil, err
+			}
+			if rep != nil {
+				return types.Int32P(types.Int32(rep) * int32(len(ss.Spec.VolumeClaimTemplates))), err
+			}
+			return types.Int32P(types.Int32(ss.Spec.Replicas) * int32(len(ss.Spec.VolumeClaimTemplates))), err
+		case apis.KindDeployment:
+			deployment, err := c.kubeClient.AppsV1().Deployments(namespace).Get(targetRef.Name, metav1.GetOptions{})
+			if err != nil {
+				return nil, err
+			}
+			return countPVC(deployment.Spec.Template.Spec.Volumes), err
+
+		case apis.KindDaemonSet:
+			daemon, err := c.kubeClient.AppsV1().DaemonSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
+			if err != nil {
+				return nil, err
+			}
+			return countPVC(daemon.Spec.Template.Spec.Volumes), err
+
+		case apis.KindReplicaSet:
+			rs, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
+			if err != nil {
+				return nil, err
+			}
+			return countPVC(rs.Spec.Template.Spec.Volumes), err
+
+		case apis.KindReplicationController:
+			rc, err := c.kubeClient.CoreV1().ReplicationControllers(namespace).Get(targetRef.Name, metav1.GetOptions{})
+			if err != nil {
+				return nil, err
+			}
+			return countPVC(rc.Spec.Template.Spec.Volumes), err
+
+		default:
+			return types.Int32P(1), nil
 		}
-		return ss.Spec.Replicas, nil
-	// all Daemon pod will take backup/restore. so total number of hosts will be number of ready replicas
-	case apis.KindDaemonSet:
-		dmn, err := c.kubeClient.AppsV1().DaemonSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
+	} else {
+		switch targetRef.Kind {
+		// all replicas of StatefulSet will take backup/restore. so total number of hosts will be number of replicas.
+		case apis.KindStatefulSet:
+			ss, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
+			if err != nil {
+				return nil, err
+			}
+			return ss.Spec.Replicas, nil
+		// all Daemon pod will take backup/restore. so total number of hosts will be number of ready replicas
+		case apis.KindDaemonSet:
+			dmn, err := c.kubeClient.AppsV1().DaemonSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
+			if err != nil {
+				return nil, err
+			}
+			return &dmn.Status.NumberReady, nil
+		// for all other workloads, only one replica will take backup/restore. so number of total host will be 1
+		default:
+			return types.Int32P(1), nil
 		}
-		return &dmn.Status.NumberReady, nil
-	// for all other workloads, only one replica will take backup/restore. so number of total host will be 1
-	default:
-		return types.Int32P(1), nil
 	}
+}
+
+func countPVC(vollist []core.Volume) *int32 {
+	var count int32
+	for _, vol := range vollist {
+		if vol.PersistentVolumeClaim != nil {
+			count++
+		}
+	}
+	return &count
 }

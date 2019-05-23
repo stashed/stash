@@ -583,9 +583,7 @@ func (tml *Tokenmandatorylabel) Size() uint32 {
 // Authorization Functions
 //sys	checkTokenMembership(tokenHandle Token, sidToCheck *SID, isMember *int32) (err error) = advapi32.CheckTokenMembership
 //sys	OpenProcessToken(process Handle, access uint32, token *Token) (err error) = advapi32.OpenProcessToken
-//sys	GetCurrentThreadToken() (token Token) = advapi32.GetCurrentThreadToken
 //sys	OpenThreadToken(thread Handle, access uint32, openAsSelf bool, token *Token) (err error) = advapi32.OpenThreadToken
-//sys	GetCurrentProcessToken() (token Token) = advapi32.GetCurrentProcessToken
 //sys	ImpersonateSelf(impersonationlevel uint32) (err error) = advapi32.ImpersonateSelf
 //sys	RevertToSelf() (err error) = advapi32.RevertToSelf
 //sys	SetThreadToken(thread *Handle, token Token) (err error) = advapi32.SetThreadToken
@@ -608,7 +606,9 @@ func (tml *Tokenmandatorylabel) Size() uint32 {
 type Token Handle
 
 // OpenCurrentProcessToken opens the access token
-// associated with current process.
+// associated with current process. It is a real
+// token that needs to be closed, unlike
+// GetCurrentProcessToken.
 func OpenCurrentProcessToken() (Token, error) {
 	p, e := GetCurrentProcess()
 	if e != nil {
@@ -620,6 +620,27 @@ func OpenCurrentProcessToken() (Token, error) {
 		return 0, e
 	}
 	return t, nil
+}
+
+// GetCurrentProcessToken returns the access token associated with
+// the current process. It is a pseudo token that does not need
+// to be closed.
+func GetCurrentProcessToken() Token {
+	return Token(^uintptr(4 - 1))
+}
+
+// GetCurrentThreadToken return the access token associated with
+// the current thread. It is a pseudo token that does not need
+// to be closed.
+func GetCurrentThreadToken() Token {
+	return Token(^uintptr(5 - 1))
+}
+
+// GetCurrentThreadEffectiveToken returns the effective access token
+// associated with the current thread. It is a pseudo token that does
+// not need to be closed.
+func GetCurrentThreadEffectiveToken() Token {
+	return Token(^uintptr(6 - 1))
 }
 
 // Close releases access to access token.

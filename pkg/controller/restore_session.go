@@ -16,6 +16,7 @@ import (
 	batch_util "kmodules.xyz/client-go/batch/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
+	"kmodules.xyz/client-go/tools/cli"
 	"kmodules.xyz/client-go/tools/queue"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 	"kmodules.xyz/webhook-runtime/admission"
@@ -27,6 +28,7 @@ import (
 	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
 	stash_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
 	v1beta1_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
+	"stash.appscode.dev/stash/pkg/docker"
 	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/pkg/resolve"
 	"stash.appscode.dev/stash/pkg/util"
@@ -131,13 +133,23 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 			// check whether restore session is completed or running and set it's phase accordingly
 			phase, err := c.getRestoreSessionPhase(restoreSession)
 
-			if err != nil || phase == api_v1beta1.RestoreSessionFailed {
+			if phase == api_v1beta1.RestoreSessionFailed {
 				return c.setRestoreSessionFailed(restoreSession, err)
+			} else if phase == api_v1beta1.RestoreSessionUnknown {
+				return c.setRestoreSessionUnknown(restoreSession, err)
 			} else if phase == api_v1beta1.RestoreSessionSucceeded {
 				return c.setRestoreSessionSucceeded(restoreSession)
 			} else if phase == api_v1beta1.RestoreSessionRunning {
 				log.Infof("Skipping processing RestoreSession %s/%s. Reason: phase is %q.", restoreSession.Namespace, restoreSession.Name, restoreSession.Status.Phase)
 				return nil
+			}
+
+			if restoreSession.Spec.Target != nil && restoreSession.Spec.Driver == api_v1beta1.VolumeSnapshotter {
+				err := c.setRestoreSessionRunning(restoreSession)
+				if err != nil {
+					return err
+				}
+				return c.ensureVolumeSnapshotterRestoreJob(restoreSession)
 			}
 
 			// if target is kubernetes workload i.e. Deployment, StatefulSet etc. then inject restore init-container
@@ -313,9 +325,33 @@ func (c *StashController) setRestoreSessionFailed(restoreSession *api_v1beta1.Re
 	return err
 }
 
+func (c *StashController) setRestoreSessionUnknown(restoreSession *api_v1beta1.RestoreSession, jobErr error) error {
+
+	// set RestoreSession phase to "Unknown"
+	_, err := v1beta1_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
+		in.Phase = api_v1beta1.RestoreSessionUnknown
+		return in
+	}, apis.EnableStatusSubresource)
+	if err != nil {
+		return err
+	}
+
+	// write failure event
+	_, err = eventer.CreateEvent(
+		c.kubeClient,
+		eventer.EventSourceRestoreSessionController,
+		restoreSession,
+		core.EventTypeWarning,
+		eventer.EventReasonRestorePhaseUnknown,
+		jobErr.Error(),
+	)
+
+	return err
+}
+
 func (c *StashController) setRestoreSessionRunning(restoreSession *api_v1beta1.RestoreSession) error {
 
-	totalHosts, err := c.getTotalHosts(restoreSession.Spec.Target, restoreSession.Namespace)
+	totalHosts, err := c.getTotalHosts(restoreSession.Spec.Target, restoreSession.Namespace, restoreSession.Spec.Driver)
 	if err != nil {
 		return err
 	}
@@ -398,6 +434,86 @@ func (c *StashController) getRestoreSessionPhase(restoreSession *api_v1beta1.Res
 		}
 	}
 
+	// check if any of the host phase is "Unknown". if any of their phase is "Unknown", then consider entire restore session phase is unknown.
+	for _, host := range restoreSession.Status.Stats {
+		if host.Phase == api_v1beta1.HostRestoreUnknown {
+			return api_v1beta1.RestoreSessionUnknown, fmt.Errorf("restore phase is 'Unknown' for host: %s. Reason: %s", host.Hostname, host.Error)
+		}
+	}
+
 	// restore has been completed successfully
 	return api_v1beta1.RestoreSessionSucceeded, nil
+}
+
+func (c *StashController) ensureVolumeSnapshotterRestoreJob(restoreSession *api_v1beta1.RestoreSession) error {
+	jobMeta := metav1.ObjectMeta{
+		Name:      VolumeSnapshotPrefix + restoreSession.Name,
+		Namespace: restoreSession.Namespace,
+	}
+
+	ref, err := reference.GetReference(stash_scheme.Scheme, restoreSession)
+	if err != nil {
+		return err
+	}
+
+	serviceAccountName := "default"
+	//ensure respective RBAC stuffs
+	//Create new ServiceAccount
+	serviceAccountName = restoreSession.Name
+	saMeta := metav1.ObjectMeta{
+		Name:      serviceAccountName,
+		Namespace: restoreSession.Namespace,
+	}
+	_, _, err = core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+		if in.Labels == nil {
+			in.Labels = map[string]string{}
+		}
+		in.Labels[util.LabelApp] = util.AppLabelStash
+		return in
+	})
+	if err != nil {
+		return err
+	}
+
+	err = c.ensureVolumeSnapshotRestoreJobRBAC(ref, serviceAccountName)
+	if err != nil {
+		return err
+	}
+
+	image := docker.Docker{
+		Registry: c.DockerRegistry,
+		Image:    docker.ImageStash,
+		Tag:      c.StashImageTag,
+	}
+
+	// create Snapshot Volume Job
+	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, jobMeta, func(in *batchv1.Job) *batchv1.Job {
+		// set BackupSession as owner of this Job
+		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+		in.Labels = map[string]string{
+			// job controller should not delete this job on completion
+			// use a different label than v1alpha1 job labels to skip deletion from job controller
+			// TODO: Remove job controller, cleanup backup-session periodically
+			util.LabelApp: util.AppLabelStashV1Beta1,
+		}
+		in.Spec.Template.Spec.Containers = core_util.UpsertContainer(
+			in.Spec.Template.Spec.Containers,
+			core.Container{
+				Name:            util.StashContainer,
+				ImagePullPolicy: core.PullAlways,
+				Image:           image.ToContainerImage(),
+				Args: []string{
+					"restore-vs",
+					fmt.Sprintf("--restoresession.name=%s", restoreSession.Name),
+					fmt.Sprintf("--enable-status-subresource=%v", apis.EnableStatusSubresource),
+					fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
+				},
+			})
+		in.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
+		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+
+		return in
+	})
+	return nil
 }

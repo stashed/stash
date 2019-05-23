@@ -10,6 +10,7 @@ import (
 	"k8s.io/kubernetes/pkg/apis/core"
 	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	stash_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
 	stash_util_v1beta1 "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
@@ -97,32 +98,37 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 	if backupOutput.HostBackupStats.Error != "" {
 		return nil
 	}
-
-	// get repository and update status
-	repository, err := o.StashClient.StashV1alpha1().Repositories(o.Namespace).Get(o.Repository, metav1.GetOptions{})
+	bs, err := o.StashClient.StashV1beta1().BackupConfigurations(o.Namespace).Get(backupSession.Spec.BackupConfiguration.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
-	_, err = stash_util.UpdateRepositoryStatus(
-		o.StashClient.StashV1alpha1(),
-		repository,
-		func(in *api.RepositoryStatus) *api.RepositoryStatus {
-			// TODO: fix Restic Wrapper
-			in.Integrity = backupOutput.RepositoryStats.Integrity
-			in.Size = backupOutput.RepositoryStats.Size
-			in.SnapshotCount = backupOutput.RepositoryStats.SnapshotCount
-			in.SnapshotsRemovedOnLastCleanup = backupOutput.RepositoryStats.SnapshotsRemovedOnLastCleanup
+	if bs.Spec.Driver != api_v1beta1.VolumeSnapshotter {
+		// get repository and update status
+		repository, err := o.StashClient.StashV1alpha1().Repositories(o.Namespace).Get(o.Repository, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		_, err = stash_util.UpdateRepositoryStatus(
+			o.StashClient.StashV1alpha1(),
+			repository,
+			func(in *api.RepositoryStatus) *api.RepositoryStatus {
+				// TODO: fix Restic Wrapper
+				in.Integrity = backupOutput.RepositoryStats.Integrity
+				in.Size = backupOutput.RepositoryStats.Size
+				in.SnapshotCount = backupOutput.RepositoryStats.SnapshotCount
+				in.SnapshotsRemovedOnLastCleanup = backupOutput.RepositoryStats.SnapshotsRemovedOnLastCleanup
 
-			currentTime := metav1.Now()
-			in.LastBackupTime = &currentTime
+				currentTime := metav1.Now()
+				in.LastBackupTime = &currentTime
 
-			if in.FirstBackupTime == nil {
-				in.FirstBackupTime = &currentTime
-			}
-			return in
-		},
-		apis.EnableStatusSubresource,
-	)
+				if in.FirstBackupTime == nil {
+					in.FirstBackupTime = &currentTime
+				}
+				return in
+			},
+			apis.EnableStatusSubresource,
+		)
+	}
 	return err
 }
 

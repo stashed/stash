@@ -26,6 +26,10 @@ type BackupTarget struct {
 	// Specify the volumes that contains the target directories
 	// +optional
 	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty"`
+	//replicas are the desired number of replicas whose data should be backed up.
+	// If unspecified, defaults to 1.
+	// +optional
+	Replicas *int32 `json:"replicas,omitempty"`
 	// Name of the VolumeSnapshotClass used by the VolumeSnapshot. If not specified, a default snapshot class will be used if it is available.
 	// Use this field only if the "driver" field is set to "volumeSnapshotter".
 	// +optional

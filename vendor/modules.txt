@@ -194,6 +194,11 @@ github.com/jmespath/go-jmespath
 github.com/jpillora/go-ogle-analytics
 # github.com/json-iterator/go v1.1.6
 github.com/json-iterator/go
+# github.com/kubernetes-csi/external-snapshotter v1.1.0
+github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1alpha1
+github.com/kubernetes-csi/external-snapshotter/pkg/client/clientset/versioned
+github.com/kubernetes-csi/external-snapshotter/pkg/client/clientset/versioned/typed/volumesnapshot/v1alpha1
+github.com/kubernetes-csi/external-snapshotter/pkg/client/clientset/versioned/scheme
 # github.com/mailru/easyjson v0.0.0-20190403194419-1ea4449da983
 github.com/mailru/easyjson/jlexer
 github.com/mailru/easyjson/jwriter
@@ -307,7 +312,7 @@ go.opencensus.io/resource
 go.opencensus.io
 # golang.org/x/crypto v0.0.0-20190513172903-22d7a77e9e5f
 golang.org/x/crypto/ssh/terminal
-# golang.org/x/net v0.0.0-20190520210107-018c4d40a106
+# golang.org/x/net v0.0.0-20190522155817-f3200d17e092
 golang.org/x/net/http2
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2/hpack
@@ -326,7 +331,7 @@ golang.org/x/oauth2/google
 golang.org/x/oauth2/internal
 golang.org/x/oauth2/jws
 golang.org/x/oauth2/jwt
-# golang.org/x/sys v0.0.0-20190520201301-c432e742b0af
+# golang.org/x/sys v0.0.0-20190522044717-8097e1b27ff5
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 # golang.org/x/text v0.3.2
@@ -435,9 +440,10 @@ gopkg.in/yaml.v2
 # k8s.io/api v0.0.0-20190503110853-61630f889b3c => k8s.io/api v0.0.0-20190313235455-40a48860b5ab
 k8s.io/api/core/v1
 k8s.io/api/rbac/v1
+k8s.io/api/apps/v1
+k8s.io/api/storage/v1
 k8s.io/api/batch/v1
 k8s.io/api/admission/v1beta1
-k8s.io/api/apps/v1
 k8s.io/api/apps/v1beta1
 k8s.io/api/apps/v1beta2
 k8s.io/api/batch/v1beta1
@@ -467,7 +473,6 @@ k8s.io/api/scheduling/v1
 k8s.io/api/scheduling/v1alpha1
 k8s.io/api/scheduling/v1beta1
 k8s.io/api/settings/v1alpha1
-k8s.io/api/storage/v1
 k8s.io/api/storage/v1alpha1
 k8s.io/api/storage/v1beta1
 # k8s.io/apiextensions-apiserver v0.0.0-20190508104225-cdabac1ba2af => k8s.io/apiextensions-apiserver v0.0.0-20190315093550-53c4693659ed

@@ -17,6 +17,7 @@ require (
 	github.com/gopherjs/gopherjs v0.0.0-20190430165422-3e4dfb77656c // indirect
 	github.com/graymeta/stow v0.0.0-00010101000000-000000000000
 	github.com/json-iterator/go v1.1.6
+	github.com/kubernetes-csi/external-snapshotter v1.1.0
 	github.com/mattn/go-isatty v0.0.8 // indirect
 	github.com/ncw/swift v1.0.47 // indirect
 	github.com/onsi/ginkgo v1.8.0
@@ -30,8 +31,8 @@ require (
 	github.com/spf13/pflag v1.0.3
 	github.com/stretchr/testify v1.3.0
 	golang.org/x/crypto v0.0.0-20190513172903-22d7a77e9e5f // indirect
-	golang.org/x/net v0.0.0-20190520210107-018c4d40a106 // indirect
-	golang.org/x/sys v0.0.0-20190520201301-c432e742b0af // indirect
+	golang.org/x/net v0.0.0-20190522155817-f3200d17e092 // indirect
+	golang.org/x/sys v0.0.0-20190522044717-8097e1b27ff5 // indirect
 	gomodules.xyz/cert v1.0.0
 	gomodules.xyz/envsubst v0.0.0-20190321051520-c745d52104af
 	google.golang.org/genproto v0.0.0-20190502173448-54afdca5d873 // indirect

@@ -92,6 +92,7 @@ type HostRestorePhase string
 const (
 	HostRestoreSucceeded HostRestorePhase = "Succeeded"
 	HostRestoreFailed    HostRestorePhase = "Failed"
+	HostRestoreUnknown   HostRestorePhase = "Unknown"
 )
 
 type RestoreSessionStatus struct {

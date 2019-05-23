@@ -259,9 +259,7 @@ var (
 	procEqualSid                           = modadvapi32.NewProc("EqualSid")
 	procCheckTokenMembership               = modadvapi32.NewProc("CheckTokenMembership")
 	procOpenProcessToken                   = modadvapi32.NewProc("OpenProcessToken")
-	procGetCurrentThreadToken              = modadvapi32.NewProc("GetCurrentThreadToken")
 	procOpenThreadToken                    = modadvapi32.NewProc("OpenThreadToken")
-	procGetCurrentProcessToken             = modadvapi32.NewProc("GetCurrentProcessToken")
 	procImpersonateSelf                    = modadvapi32.NewProc("ImpersonateSelf")
 	procRevertToSelf                       = modadvapi32.NewProc("RevertToSelf")
 	procSetThreadToken                     = modadvapi32.NewProc("SetThreadToken")
@@ -2824,12 +2822,6 @@ func OpenProcessToken(process Handle, access uint32, token *Token) (err error) {
 	return
 }
 
-func GetCurrentThreadToken() (token Token) {
-	r0, _, _ := syscall.Syscall(procGetCurrentThreadToken.Addr(), 0, 0, 0, 0)
-	token = Token(r0)
-	return
-}
-
 func OpenThreadToken(thread Handle, access uint32, openAsSelf bool, token *Token) (err error) {
 	var _p0 uint32
 	if openAsSelf {
@@ -2845,12 +2837,6 @@ func OpenThreadToken(thread Handle, access uint32, openAsSelf bool, token *Token
 			err = syscall.EINVAL
 		}
 	}
-	return
-}
-
-func GetCurrentProcessToken() (token Token) {
-	r0, _, _ := syscall.Syscall(procGetCurrentProcessToken.Addr(), 0, 0, 0, 0)
-	token = Token(r0)
 	return
 }
 

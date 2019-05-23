@@ -1,0 +1,23 @@
+apiVersion: snapshot.storage.k8s.io/v1alpha1
+kind: VolumeSnapshot
+metadata:
+  creationTimestamp: "2019-05-16t06-06-11z"
+  finalizers:
+    - snapshot.storage.kubernetes.io/volumesnapshot-protection
+  generation: 4
+  name: pvc-1558421829
+  namespace: demo
+  resourceVersion: "963212"
+  selfLink: /apis/snapshot.storage.k8s.io/v1alpha1/namespaces/demo/volumesnapshots/pvc-2019-05-16t06-06-09-stash
+  uid: b47259fe-77a0-11e9-91dc-42010a80001a
+spec:
+  snapshotClassName: default-snapshot-class
+  snapshotContentName: snapcontent-b47259fe-77a0-11e9-91dc-42010a80001a
+  source:
+    apiGroup: null
+    kind: PersistentVolumeClaim
+    name: pvc
+status:
+  creationTime: "2019-05-16T06:06:12Z"
+  readyToUse: true
+  restoreSize: 6Gi

@@ -13936,6 +13936,13 @@ func schema_stash_apis_stash_v1beta1_BackupTarget(ref common.ReferenceCallback) 
 							},
 						},
 					},
+					"replicas": {
+						SchemaProps: spec.SchemaProps{
+							Description: "replicas are the desired number of replicas whose data should be backed up. If unspecified, defaults to 1.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
 					"snapshotClassName": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Name of the VolumeSnapshotClass used by the VolumeSnapshot. If not specified, a default snapshot class will be used if it is available. Use this field only if the \"driver\" field is set to \"volumeSnapshotter\".",

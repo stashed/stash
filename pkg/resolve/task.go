@@ -223,3 +223,7 @@ func resolveWithInputs(obj interface{}, inputs map[string]string) error {
 func ResolveBackend(backend *store.Backend, input map[string]string) error {
 	return resolveWithInputs(backend, input)
 }
+
+func ResolvePVCSpec(pvc *core.PersistentVolumeClaim, input map[string]string) error {
+	return resolveWithInputs(pvc, input)
+}

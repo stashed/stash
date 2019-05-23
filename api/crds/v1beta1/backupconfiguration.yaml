@@ -1960,6 +1960,11 @@ spec:
                     name:
                       type: string
                   type: object
+                replicas:
+                  description: replicas are the desired number of replicas whose data
+                    should be backed up. If unspecified, defaults to 1.
+                  format: int32
+                  type: integer
                 snapshotClassName:
                   description: Name of the VolumeSnapshotClass used by the VolumeSnapshot.
                     If not specified, a default snapshot class will be used if it

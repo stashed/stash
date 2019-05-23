@@ -53,6 +53,7 @@ Stash is a Kubernetes operator for restic. For more information, visit here: htt
 * [stash check](/docs/reference/stash_check.md)	 - Check restic backup
 * [stash cli](/docs/reference/stash_cli.md)	 - Stash CLI
 * [stash create-backupsession](/docs/reference/stash_create-backupsession.md)	 - create a BackupSession
+* [stash create-vs](/docs/reference/stash_create-vs.md)	 - Take snapshot of PersistentVolumeClaims
 * [stash docker](/docs/reference/stash_docker.md)	 - Run restic commands inside Docker
 * [stash forget](/docs/reference/stash_forget.md)	 - Delete snapshots from a restic repository
 * [stash recover](/docs/reference/stash_recover.md)	 - Recover restic backup
@@ -62,6 +63,7 @@ Stash is a Kubernetes operator for restic. For more information, visit here: htt
 * [stash restore-mysql](/docs/reference/stash_restore-mysql.md)	 - Restores MySQL DB Backup
 * [stash restore-pg](/docs/reference/stash_restore-pg.md)	 - Restores Postgres DB Backup
 * [stash restore-pvc](/docs/reference/stash_restore-pvc.md)	 - Takes a restore of Persistent Volume Claim
+* [stash restore-vs](/docs/reference/stash_restore-vs.md)	 - Restore PVC from VolumeSnapshot
 * [stash run](/docs/reference/stash_run.md)	 - Launch Stash Controller
 * [stash run-backup](/docs/reference/stash_run-backup.md)	 - Take backup of workload directories
 * [stash scaledown](/docs/reference/stash_scaledown.md)	 - Scale down workload
