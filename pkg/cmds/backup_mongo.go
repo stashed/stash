@@ -56,11 +56,11 @@ func NewCmdBackupMongo() *cobra.Command {
 			var err error
 			setupOpt.Nice, err = util.NiceSettingsFromEnv()
 			if err != nil {
-				return handleResticError(outputDir, restic.DefaultOutputFileName, err)
+				return util.HandleResticError(outputDir, restic.DefaultOutputFileName, err)
 			}
 			setupOpt.IONice, err = util.IONiceSettingsFromEnv()
 			if err != nil {
-				return handleResticError(outputDir, restic.DefaultOutputFileName, err)
+				return util.HandleResticError(outputDir, restic.DefaultOutputFileName, err)
 			}
 
 			// prepare client

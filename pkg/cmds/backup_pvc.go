@@ -4,10 +4,8 @@ import (
 	"path/filepath"
 
 	"github.com/appscode/go/flags"
-	"github.com/appscode/go/log"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/errors"
-	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/restic"
 	"stash.appscode.dev/stash/pkg/util"
 )
@@ -42,17 +40,17 @@ func NewCmdBackupPVC() *cobra.Command {
 			var err error
 			setupOpt.Nice, err = util.NiceSettingsFromEnv()
 			if err != nil {
-				return handleResticError(outputDir, restic.DefaultOutputFileName, err)
+				return util.HandleResticError(outputDir, restic.DefaultOutputFileName, err)
 			}
 			setupOpt.IONice, err = util.IONiceSettingsFromEnv()
 			if err != nil {
-				return handleResticError(outputDir, restic.DefaultOutputFileName, err)
+				return util.HandleResticError(outputDir, restic.DefaultOutputFileName, err)
 			}
 
 			// init restic wrapper
 			resticWrapper, err := restic.NewResticWrapper(setupOpt)
 			if err != nil {
-				return handleResticError(outputDir, restic.DefaultOutputFileName, err)
+				return util.HandleResticError(outputDir, restic.DefaultOutputFileName, err)
 			}
 			// Run backup
 			backupOutput, backupErr := resticWrapper.RunBackup(backupOpt)
@@ -60,11 +58,11 @@ func NewCmdBackupPVC() *cobra.Command {
 			if metrics.Enabled {
 				err := backupOutput.HandleMetrics(&metrics, backupErr)
 				if err != nil {
-					return handleResticError(outputDir, restic.DefaultOutputFileName, errors.NewAggregate([]error{backupErr, err}))
+					return util.HandleResticError(outputDir, restic.DefaultOutputFileName, errors.NewAggregate([]error{backupErr, err}))
 				}
 			}
 			if backupErr != nil {
-				return handleResticError(outputDir, restic.DefaultOutputFileName, backupErr)
+				return util.HandleResticError(outputDir, restic.DefaultOutputFileName, backupErr)
 			}
 			// If output directory specified, then write the output in "output.json" file in the specified directory
 			if outputDir != "" {
@@ -105,17 +103,4 @@ func NewCmdBackupPVC() *cobra.Command {
 	cmd.Flags().StringSliceVar(&metrics.Labels, "metrics-labels", metrics.Labels, "Labels to apply in exported metrics")
 
 	return cmd
-}
-
-// works for both backup and restore output
-func handleResticError(outputDir, fileName string, backupErr error) error {
-	if outputDir == "" || fileName == "" {
-		return backupErr
-	}
-	log.Infoln("Writing restic error to output file, error:", backupErr.Error())
-	backupOut := restic.BackupOutput{
-		HostBackupStats: api_v1beta1.HostBackupStats{
-			Error: backupErr.Error(),
-		}}
-	return backupOut.WriteOutput(filepath.Join(outputDir, fileName))
 }
