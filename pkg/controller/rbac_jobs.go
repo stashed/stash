@@ -58,28 +58,24 @@ func (c *StashController) getStorageClassClusterRoleBindingName(name string) str
 	return name + "-" + StorageClassClusterRole
 }
 
-func (c *StashController) ensureCronJobRBAC(resource *core.ObjectReference, sa string, psps []string) error {
-func (c *StashController) ensureCronJobRBAC(resource *core.ObjectReference, sa string, psps []string,labels map[string]string) error {
+func (c *StashController) ensureCronJobRBAC(resource *core.ObjectReference, sa string, psps []string, labels map[string]string) error {
 	// ensure CronJob cluster role
-	err := c.ensureCronJobClusterRole(psps)
+	err := c.ensureCronJobClusterRole(psps, labels)
 	if err != nil {
 		return err
 	}
 
 	// ensure RoleBinding
-	err = c.ensureCronJobRoleBinding(resource, sa,labels)
+	err = c.ensureCronJobRoleBinding(resource, sa, labels)
 	return nil
 }
 
-func (c *StashController) ensureCronJobClusterRole(psps []string) error {
+func (c *StashController) ensureCronJobClusterRole(psps []string, labels map[string]string) error {
 	meta := metav1.ObjectMeta{
-		Name: CronJobClusterRole,
+		Name:   CronJobClusterRole,
+		Labels: labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchClusterRole(c.kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
-		if in.Labels == nil {
-			in.Labels = map[string]string{}
-		}
-		in.Labels[util.LabelApp] = util.AppLabelStash
 		in.Rules = []rbac.PolicyRule{
 			{
 				APIGroups: []string{api_v1beta1.SchemeGroupVersion.Group},
@@ -129,11 +125,11 @@ func (c *StashController) ensureCronJobClusterRole(psps []string) error {
 	return err
 }
 
-func (c *StashController) ensureCronJobRoleBinding(resource *core.ObjectReference, sa string,labels map[string]string) error {
+func (c *StashController) ensureCronJobRoleBinding(resource *core.ObjectReference, sa string, labels map[string]string) error {
 	meta := metav1.ObjectMeta{
 		Name:      resource.Name,
 		Namespace: resource.Namespace,
-		Labels: labels,
+		Labels:    labels,
 	}
 
 	// ensure role binding
@@ -412,15 +408,15 @@ func (c *StashController) ensureRepoReaderRolebindingDeleted(meta *metav1.Object
 	return nil
 }
 
-func (c *StashController) ensureRestoreJobRBAC(ref *core.ObjectReference, sa string, psps []string,labels map[string]string) error {
+func (c *StashController) ensureRestoreJobRBAC(ref *core.ObjectReference, sa string, psps []string, labels map[string]string) error {
 	// ensure ClusterRole for restore job
-	err := c.ensureRestoreJobClusterRole(psps,labels)
+	err := c.ensureRestoreJobClusterRole(psps, labels)
 	if err != nil {
 		return err
 	}
 
 	// ensure RoleBinding for restore job
-	err = c.ensureRestoreJobRoleBinding(ref, sa,labels)
+	err = c.ensureRestoreJobRoleBinding(ref, sa, labels)
 	if err != nil {
 		return err
 	}
@@ -428,12 +424,10 @@ func (c *StashController) ensureRestoreJobRBAC(ref *core.ObjectReference, sa str
 	return nil
 }
 
-func (c *StashController) ensureRestoreJobClusterRole(psps []string,labels map[string]string) error {
+func (c *StashController) ensureRestoreJobClusterRole(psps []string, labels map[string]string) error {
 
-	// remove app name label from
-	delete(labels,meta_util.NameLabelKey)
 	meta := metav1.ObjectMeta{
-		Name: RestoreJobClusterRole,
+		Name:   RestoreJobClusterRole,
 		Labels: labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchClusterRole(c.kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
@@ -463,12 +457,12 @@ func (c *StashController) ensureRestoreJobClusterRole(psps []string,labels map[s
 	return err
 }
 
-func (c *StashController) ensureRestoreJobRoleBinding(resource *core.ObjectReference, sa string,labels map[string]string) error {
+func (c *StashController) ensureRestoreJobRoleBinding(resource *core.ObjectReference, sa string, labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
 		Namespace: resource.Namespace,
 		Name:      c.getRestoreJobRoleBindingName(resource.Name),
-		Labels: labels,
+		Labels:    labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
@@ -490,15 +484,15 @@ func (c *StashController) ensureRestoreJobRoleBinding(resource *core.ObjectRefer
 	return err
 }
 
-func (c *StashController) ensureVolumeSnapshotJobRBAC(ref *core.ObjectReference, sa string) error {
+func (c *StashController) ensureVolumeSnapshotJobRBAC(ref *core.ObjectReference, sa string, labels map[string]string) error {
 	// ensure ClusterRole for VolumeSnapshot job
-	err := c.ensureVolumeSnapshotJobClusterRole()
+	err := c.ensureVolumeSnapshotJobClusterRole(labels)
 	if err != nil {
 		return err
 	}
 
 	// ensure RoleBinding for VolumeSnapshot job
-	err = c.ensureVolumeSnapshotJobRoleBinding(ref, sa)
+	err = c.ensureVolumeSnapshotJobRoleBinding(ref, sa, labels)
 	if err != nil {
 		return err
 	}
@@ -506,15 +500,15 @@ func (c *StashController) ensureVolumeSnapshotJobRBAC(ref *core.ObjectReference,
 	return nil
 }
 
-func (c *StashController) ensureBackupJobRBAC(ref *core.ObjectReference, sa string, psps []string) error {
+func (c *StashController) ensureBackupJobRBAC(ref *core.ObjectReference, sa string, psps []string, labels map[string]string) error {
 	// ensure ClusterRole for restore job
-	err := c.ensureBackupJobClusterRole(psps)
+	err := c.ensureBackupJobClusterRole(psps, labels)
 	if err != nil {
 		return err
 	}
 
 	// ensure RoleBinding for restore job
-	err = c.ensureBackupJobRoleBinding(ref, sa)
+	err = c.ensureBackupJobRoleBinding(ref, sa, labels)
 	if err != nil {
 		return err
 	}
@@ -522,14 +516,13 @@ func (c *StashController) ensureBackupJobRBAC(ref *core.ObjectReference, sa stri
 	return nil
 }
 
-func (c *StashController) ensureBackupJobClusterRole(psps []string) error {
+func (c *StashController) ensureBackupJobClusterRole(psps []string, labels map[string]string) error {
 
-	meta := metav1.ObjectMeta{Name: BackupJobClusterRole}
+	meta := metav1.ObjectMeta{
+		Name:   BackupJobClusterRole,
+		Labels: labels,
+	}
 	_, _, err := rbac_util.CreateOrPatchClusterRole(c.kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
-		if in.Labels == nil {
-			in.Labels = map[string]string{}
-		}
-		in.Labels[util.LabelApp] = util.AppLabelStash
 
 		in.Rules = []rbac.PolicyRule{
 			{
@@ -569,11 +562,12 @@ func (c *StashController) ensureBackupJobClusterRole(psps []string) error {
 	return err
 }
 
-func (c *StashController) ensureBackupJobRoleBinding(resource *core.ObjectReference, sa string) error {
+func (c *StashController) ensureBackupJobRoleBinding(resource *core.ObjectReference, sa string, labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
 		Namespace: resource.Namespace,
 		Name:      c.getBackupJobRoleBindingName(resource.Name),
+		Labels:    labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
@@ -595,14 +589,13 @@ func (c *StashController) ensureBackupJobRoleBinding(resource *core.ObjectRefere
 	return err
 }
 
-func (c *StashController) ensureVolumeSnapshotJobClusterRole() error {
+func (c *StashController) ensureVolumeSnapshotJobClusterRole(labels map[string]string) error {
 
-	meta := metav1.ObjectMeta{Name: VolumeSnapshotClusterRole}
+	meta := metav1.ObjectMeta{
+		Name:   VolumeSnapshotClusterRole,
+		Labels: labels,
+	}
 	_, _, err := rbac_util.CreateOrPatchClusterRole(c.kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
-		if in.Labels == nil {
-			in.Labels = map[string]string{}
-		}
-		in.Labels[util.LabelApp] = util.AppLabelStash
 
 		in.Rules = []rbac.PolicyRule{
 			{
@@ -646,11 +639,12 @@ func (c *StashController) ensureVolumeSnapshotJobClusterRole() error {
 	return err
 }
 
-func (c *StashController) ensureVolumeSnapshotJobRoleBinding(resource *core.ObjectReference, sa string) error {
+func (c *StashController) ensureVolumeSnapshotJobRoleBinding(resource *core.ObjectReference, sa string, labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
 		Namespace: resource.Namespace,
 		Name:      c.getVolumesnapshotJobRoleBindingName(resource.Name),
+		Labels:    labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
@@ -672,27 +666,27 @@ func (c *StashController) ensureVolumeSnapshotJobRoleBinding(resource *core.Obje
 	return err
 }
 
-func (c *StashController) ensureVolumeSnapshotRestoreJobRBAC(ref *core.ObjectReference, sa string) error {
+func (c *StashController) ensureVolumeSnapshotRestoreJobRBAC(ref *core.ObjectReference, sa string, labels map[string]string) error {
 	// ensure ClusterRole for restore job
-	err := c.ensureVolumeSnapshotRestoreJobClusterRole()
+	err := c.ensureVolumeSnapshotRestoreJobClusterRole(labels)
 	if err != nil {
 		return err
 	}
 
 	// ensure RoleBinding for restore job
-	err = c.ensureVolumeSnapshotRestoreJobRoleBinding(ref, sa)
+	err = c.ensureVolumeSnapshotRestoreJobRoleBinding(ref, sa, labels)
 	if err != nil {
 		return err
 	}
 
 	//ensure storageClass ClusterRole for restore job
-	err = c.ensureStorageClassClusterRole()
+	err = c.ensureStorageClassClusterRole(labels)
 	if err != nil {
 		return err
 	}
 
 	//ensure storageClass ClusterRoleBinding for restore job
-	err = c.ensureStorageClassClusterRoleBinding(ref, sa)
+	err = c.ensureStorageClassClusterRoleBinding(ref, sa, labels)
 	if err != nil {
 		return err
 	}
@@ -700,14 +694,13 @@ func (c *StashController) ensureVolumeSnapshotRestoreJobRBAC(ref *core.ObjectRef
 	return nil
 }
 
-func (c *StashController) ensureVolumeSnapshotRestoreJobClusterRole() error {
+func (c *StashController) ensureVolumeSnapshotRestoreJobClusterRole(labels map[string]string) error {
 
-	meta := metav1.ObjectMeta{Name: VolumeSnapshotRestoreClusterRole}
+	meta := metav1.ObjectMeta{
+		Name:   VolumeSnapshotRestoreClusterRole,
+		Labels: labels,
+	}
 	_, _, err := rbac_util.CreateOrPatchClusterRole(c.kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
-		if in.Labels == nil {
-			in.Labels = map[string]string{}
-		}
-		in.Labels["app"] = "stash"
 
 		in.Rules = []rbac.PolicyRule{
 			{
@@ -737,11 +730,12 @@ func (c *StashController) ensureVolumeSnapshotRestoreJobClusterRole() error {
 	return err
 }
 
-func (c *StashController) ensureVolumeSnapshotRestoreJobRoleBinding(resource *core.ObjectReference, sa string) error {
+func (c *StashController) ensureVolumeSnapshotRestoreJobRoleBinding(resource *core.ObjectReference, sa string, labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
 		Namespace: resource.Namespace,
 		Name:      c.getVolumeSnapshotRestoreJobRoleBindingName(resource.Name),
+		Labels:    labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
@@ -763,14 +757,13 @@ func (c *StashController) ensureVolumeSnapshotRestoreJobRoleBinding(resource *co
 	return err
 }
 
-func (c *StashController) ensureStorageClassClusterRole() error {
+func (c *StashController) ensureStorageClassClusterRole(labels map[string]string) error {
 
-	meta := metav1.ObjectMeta{Name: StorageClassClusterRole}
+	meta := metav1.ObjectMeta{
+		Name:   StorageClassClusterRole,
+		Labels: labels,
+	}
 	_, _, err := rbac_util.CreateOrPatchClusterRole(c.kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
-		if in.Labels == nil {
-			in.Labels = map[string]string{}
-		}
-		in.Labels["app"] = "stash"
 
 		in.Rules = []rbac.PolicyRule{
 			{
@@ -785,11 +778,12 @@ func (c *StashController) ensureStorageClassClusterRole() error {
 	return err
 }
 
-func (c *StashController) ensureStorageClassClusterRoleBinding(resource *core.ObjectReference, sa string) error {
+func (c *StashController) ensureStorageClassClusterRoleBinding(resource *core.ObjectReference, sa string, labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
 		Name:      c.getStorageClassClusterRoleBindingName(resource.Name),
 		Namespace: resource.Namespace,
+		Labels:    labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchClusterRoleBinding(c.kubeClient, meta, func(in *rbac.ClusterRoleBinding) *rbac.ClusterRoleBinding {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)

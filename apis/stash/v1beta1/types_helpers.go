@@ -1,8 +1,8 @@
 package v1beta1
 
 const (
-	StashBackupComponent = "stash-backup"
-	StashRestoreComponent= "stash-restore"
+	StashBackupComponent  = "stash-backup"
+	StashRestoreComponent = "stash-restore"
 )
 
 // TODO: complete

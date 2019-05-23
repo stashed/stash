@@ -55,7 +55,7 @@ const (
 	ModelSidecar             = "sidecar"
 	ModelCronJob             = "cronjob"
 	LabelApp                 = "app"
-	LabelBackupConfiguration = "backup-configuration"
+	LabelBackupConfiguration = apis.StashKey + "/backup-configuration"
 	StashSecretVolume        = "stash-secret-volume"
 	StashSecretMountDir      = "/etc/stash/repository/secret"
 

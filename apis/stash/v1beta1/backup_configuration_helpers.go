@@ -69,5 +69,16 @@ func (bc BackupConfiguration) OffshootLabels() map[string]string {
 	genericLabels := make(map[string]string, 0)
 	genericLabels[meta_util.ComponentLabelKey] = StashBackupComponent
 	genericLabels[meta_util.ManagedByLabelKey] = StashKey
-	return meta_util.FilterKeys(StashKey, genericLabels, bc.Labels)
+
+	return upsertLabels(bc.Labels, genericLabels)
+}
+
+func upsertLabels(originalLabels, additionalLabels map[string]string) map[string]string {
+	if originalLabels == nil {
+		originalLabels = make(map[string]string, len(additionalLabels))
+	}
+	for k, v := range additionalLabels {
+		originalLabels[k] = v
+	}
+	return originalLabels
 }

@@ -66,5 +66,5 @@ func (rs RestoreSession) OffshootLabels() map[string]string {
 	genericLabels := make(map[string]string, 0)
 	genericLabels[meta_util.ComponentLabelKey] = StashRestoreComponent
 	genericLabels[meta_util.ManagedByLabelKey] = StashKey
-	return meta_util.FilterKeys(StashKey, genericLabels, rs.Labels)
+	return upsertLabels(rs.Labels, genericLabels)
 }

@@ -11,22 +11,21 @@ import (
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
-	"stash.appscode.dev/stash/pkg/util"
 )
 
 func (c *StashController) getRestoreInitContainerRoleBindingName(name string) string {
 	return name + "-" + RestoreInitContainerClusterRole
 }
 
-func (c *StashController) ensureRestoreInitContainerRBAC(ref *core.ObjectReference, sa string,labels map[string]string) error {
+func (c *StashController) ensureRestoreInitContainerRBAC(ref *core.ObjectReference, sa string, labels map[string]string) error {
 	// ensure ClusterRole for restore init container
-	err := c.ensureRestoreInitContainerClusterRole()
+	err := c.ensureRestoreInitContainerClusterRole(labels)
 	if err != nil {
 		return err
 	}
 
 	// ensure RoleBinding for restore init container
-	err = c.ensureRestoreInitContainerRoleBinding(ref, sa,labels)
+	err = c.ensureRestoreInitContainerRoleBinding(ref, sa, labels)
 	if err != nil {
 		return err
 	}
@@ -34,13 +33,12 @@ func (c *StashController) ensureRestoreInitContainerRBAC(ref *core.ObjectReferen
 	return nil
 }
 
-func (c *StashController) ensureRestoreInitContainerClusterRole() error {
-	meta := metav1.ObjectMeta{Name: RestoreInitContainerClusterRole}
+func (c *StashController) ensureRestoreInitContainerClusterRole(labels map[string]string) error {
+	meta := metav1.ObjectMeta{
+		Name:   RestoreInitContainerClusterRole,
+		Labels: labels,
+	}
 	_, _, err := rbac_util.CreateOrPatchClusterRole(c.kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
-		if in.Labels == nil {
-			in.Labels = map[string]string{}
-		}
-		in.Labels[util.LabelApp] = util.AppLabelStash
 
 		in.Rules = []rbac.PolicyRule{
 			{
@@ -73,7 +71,7 @@ func (c *StashController) ensureRestoreInitContainerRoleBinding(resource *core.O
 	meta := metav1.ObjectMeta{
 		Namespace: resource.Namespace,
 		Name:      c.getRestoreInitContainerRoleBindingName(resource.Name),
-		Labels: labels,
+		Labels:    labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)

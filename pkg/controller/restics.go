@@ -21,6 +21,7 @@ import (
 	"kmodules.xyz/webhook-runtime/admission"
 	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"
 	webhook "kmodules.xyz/webhook-runtime/admission/v1beta1/generic"
+	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/pkg/docker"
@@ -171,9 +172,10 @@ func (c *StashController) EnsureScaledownCronJob(restic *api.Restic) error {
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
-		in.Labels["app"] = util.AppLabelStash
 		in.Labels[util.AnnotationRestic] = restic.Name
 		in.Labels[util.AnnotationOperation] = util.OperationScaleDown
+		// ensure job gets deleted on completion
+		in.Labels[apis.KeyDeleteJobOnCompletion] = "true"
 
 		// spec
 		in.Spec.Schedule = restic.Spec.Schedule

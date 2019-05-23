@@ -14,7 +14,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"kmodules.xyz/client-go/tools/queue"
-	"stash.appscode.dev/stash/pkg/util"
+	"stash.appscode.dev/stash/apis"
 )
 
 func (c *StashController) initJobWatcher() {
@@ -26,7 +26,7 @@ func (c *StashController) initJobWatcher() {
 			cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc},
 			func(options *metav1.ListOptions) {
 				options.LabelSelector = labels.SelectorFromSet(map[string]string{
-					"app": util.AppLabelStash,
+					apis.KeyDeleteJobOnCompletion: "true",
 				}).String()
 			},
 		)
