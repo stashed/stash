@@ -57,6 +57,7 @@ options:
 -h, --help                             show brief help
 -n, --namespace=NAMESPACE              specify namespace (default: kube-system)
     --docker-registry                  docker registry used to pull stash images (default: appscode)
+    --pushgateway-registry             docker registry used to pull Prometheus pushgateway image (default: prom)
     --image-pull-secret                name of secret used to pull stash operator images
     --run-on-master                    run stash operator on master
     --enable-mutating-webhook          enable/disable mutating webhooks for Kubernetes workloads

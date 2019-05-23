@@ -76,29 +76,35 @@ onessl_found() {
 
 onessl_found || {
   echo "Downloading onessl ..."
-  # ref: https://stackoverflow.com/a/27776822/244009
-  case "$(uname -s)" in
-    Darwin)
-      curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.10.0/onessl-darwin-amd64
-      chmod +x onessl
-      export ONESSL=./onessl
-      ;;
+  if [[ "$(uname -m)" == "aarch64" ]]; then
+    curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.10.0/onessl-linux-arm64
+    chmod +x onessl
+    export ONESSL=./onessl
+  else
+    # ref: https://stackoverflow.com/a/27776822/244009
+    case "$(uname -s)" in
+      Darwin)
+        curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.10.0/onessl-darwin-amd64
+        chmod +x onessl
+        export ONESSL=./onessl
+        ;;
 
-    Linux)
-      curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.10.0/onessl-linux-amd64
-      chmod +x onessl
-      export ONESSL=./onessl
-      ;;
+      Linux)
+        curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.10.0/onessl-linux-amd64
+        chmod +x onessl
+        export ONESSL=./onessl
+        ;;
 
-    CYGWIN* | MINGW* | MSYS*)
-      curl -fsSL -o onessl.exe https://github.com/kubepack/onessl/releases/download/0.10.0/onessl-windows-amd64.exe
-      chmod +x onessl.exe
-      export ONESSL=./onessl.exe
-      ;;
-    *)
-      echo 'other OS'
-      ;;
-  esac
+      CYGWIN* | MINGW* | MSYS*)
+        curl -fsSL -o onessl.exe https://github.com/kubepack/onessl/releases/download/0.10.0/onessl-windows-amd64.exe
+        chmod +x onessl.exe
+        export ONESSL=./onessl.exe
+        ;;
+      *)
+        echo 'other OS'
+        ;;
+    esac
+  fi
 }
 
 # ref: https://stackoverflow.com/a/7069755/244009
@@ -112,6 +118,7 @@ export STASH_RUN_ON_MASTER=0
 export STASH_ENABLE_VALIDATING_WEBHOOK=false
 export STASH_ENABLE_MUTATING_WEBHOOK=false
 export STASH_DOCKER_REGISTRY=appscode
+export PUSHGATEWAY_DOCKER_REGISTRY=prom
 export STASH_IMAGE_TAG=0.8.3
 export STASH_IMAGE_PULL_SECRET=
 export STASH_IMAGE_PULL_POLICY=IfNotPresent
@@ -160,6 +167,7 @@ show_help() {
   echo "-h, --help                             show brief help"
   echo "-n, --namespace=NAMESPACE              specify namespace (default: kube-system)"
   echo "    --docker-registry                  docker registry used to pull stash images (default: appscode)"
+  echo "    --pushgateway-registry             docker registry used to pull Prometheus pushgateway image (default: prom)"
   echo "    --image-pull-secret                name of secret used to pull stash operator images"
   echo "    --run-on-master                    run stash operator on master"
   echo "    --enable-mutating-webhook          enable/disable mutating webhooks for Kubernetes workloads"
@@ -199,6 +207,10 @@ while test $# -gt 0; do
       ;;
     --docker-registry*)
       export STASH_DOCKER_REGISTRY=$(echo $1 | sed -e 's/^[^=]*=//g')
+      shift
+      ;;
+    --pushgateway-registry*)
+      export PUSHGATEWAY_DOCKER_REGISTRY=$(echo $1 | sed -e 's/^[^=]*=//g')
       shift
       ;;
     --image-pull-secret*)
