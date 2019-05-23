@@ -339,7 +339,7 @@ func (c *StashController) setRestoreSessionUnknown(restoreSession *api_v1beta1.R
 	// write failure event
 	_, err = eventer.CreateEvent(
 		c.kubeClient,
-		eventer.RestoreSessionEventComponent,
+		eventer.EventSourceRestoreSessionController,
 		restoreSession,
 		core.EventTypeWarning,
 		eventer.EventReasonRestorePhaseUnknown,

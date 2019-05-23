@@ -2,6 +2,7 @@ package cmds
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/appscode/go/log"
@@ -133,7 +134,8 @@ func (opt *VSoption) CreateVolumeSnapshot() error {
 	objectMeta := []metav1.ObjectMeta{}
 
 	for _, pvcName := range pvcList {
-		volumeSnapshot := opt.getVolumeSnapshotDefinition(backupConfiguration, pvcName, backupSession.CreationTimestamp)
+		parts := strings.Split(backupSession.Name, "-")
+		volumeSnapshot := opt.getVolumeSnapshotDefinition(backupConfiguration, pvcName, parts[len(parts)-1])
 		vs, err := opt.snapshotClient.VolumesnapshotV1alpha1().VolumeSnapshots(namespace).Create(&volumeSnapshot)
 		if err != nil {
 			return err
@@ -171,10 +173,10 @@ func (opt *VSoption) CreateVolumeSnapshot() error {
 	return nil
 }
 
-func (opt *VSoption) getVolumeSnapshotDefinition(backupConfiguration *v1beta1.BackupConfiguration, pvcName string, creationTimestamp metav1.Time) (volumeSnapshot vs.VolumeSnapshot) {
+func (opt *VSoption) getVolumeSnapshotDefinition(backupConfiguration *v1beta1.BackupConfiguration, pvcName string, timestamp string) (volumeSnapshot vs.VolumeSnapshot) {
 	return vs.VolumeSnapshot{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", pvcName, fmt.Sprintf("%d", creationTimestamp.Unix())),
+			Name:      fmt.Sprintf("%s-%s", pvcName, timestamp),
 			Namespace: backupConfiguration.Namespace,
 		},
 		Spec: vs.VolumeSnapshotSpec{

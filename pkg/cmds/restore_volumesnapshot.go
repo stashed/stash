@@ -97,10 +97,12 @@ func (opt *VSoption) RestoreVolumeSnapshot() error {
 	}
 
 	objectMeta := []metav1.ObjectMeta{}
+	pvcAllReadyExists := false
 
 	for _, data := range pvcData {
 		pvc := opt.getPVCDefinition(data)
-		_, err := opt.kubeClient.CoreV1().PersistentVolumeClaims(opt.namespace).Get(data.pvc.Name, metav1.GetOptions{})
+
+		_, err = opt.kubeClient.CoreV1().PersistentVolumeClaims(opt.namespace).Get(pvc.Name, metav1.GetOptions{})
 		if err != nil {
 			if kerr.IsNotFound(err) {
 				pvc, err := opt.kubeClient.CoreV1().PersistentVolumeClaims(opt.namespace).Create(pvc)
@@ -114,6 +116,7 @@ func (opt *VSoption) RestoreVolumeSnapshot() error {
 
 		} else {
 			// write failure event for existing PVC
+			pvcAllReadyExists = true
 			restoreOutput := restic.RestoreOutput{
 				HostRestoreStats: v1beta1.HostRestoreStats{
 					Hostname: pvc.Name,
@@ -121,12 +124,14 @@ func (opt *VSoption) RestoreVolumeSnapshot() error {
 					Error:    fmt.Sprintf("%s already exixts", pvc.Name),
 				},
 			}
-			err := opt.updateRestoreSessionStatus(restoreOutput)
+			err := opt.updateRestoreSessionStatus(restoreOutput, startTime)
 			if err != nil {
 				return err
 			}
-
 		}
+	}
+	if pvcAllReadyExists {
+		return nil
 	}
 
 	for i, data := range pvcData {
@@ -143,11 +148,13 @@ func (opt *VSoption) RestoreVolumeSnapshot() error {
 					Error:    fmt.Sprintf("VolumeBindingMode is 'WaitForFirstConsumer'. Stash is unable to decide wheather the restore has succeeded or not as the PVC will not bind with respective PV until any workload mount it."),
 				},
 			}
-			err := opt.updateRestoreSessionStatus(restoreOutput)
+			err := opt.updateRestoreSessionStatus(restoreOutput, startTime)
 			if err != nil {
 				return err
 			}
+			continue
 		}
+
 		err = util.WaitUntilPVCReady(opt.kubeClient, objectMeta[i])
 		if err != nil {
 			return err
@@ -158,10 +165,7 @@ func (opt *VSoption) RestoreVolumeSnapshot() error {
 				Phase:    v1beta1.HostRestoreSucceeded,
 			},
 		}
-		// Volume Snapshot complete. Read current time and calculate total backup duration.
-		endTime := time.Now()
-		restoreOutput.HostRestoreStats.Duration = endTime.Sub(startTime).String()
-		err = opt.updateRestoreSessionStatus(restoreOutput)
+		err = opt.updateRestoreSessionStatus(restoreOutput, startTime)
 		if err != nil {
 			return err
 		}
@@ -170,15 +174,14 @@ func (opt *VSoption) RestoreVolumeSnapshot() error {
 }
 
 func (opt *VSoption) getPVCDefinition(data PVC) *corev1.PersistentVolumeClaim {
+	inputs := make(map[string]string, 0)
 	if data.podOrdinal == nil {
 		data.pvc.Name = data.pvcName
 	} else {
-		data.pvc.Name = fmt.Sprintf("%v-%v", data.pvcName, types.Int32(data.podOrdinal))
+		data.pvc.Name = fmt.Sprintf("%v-%v", data.pvcName, *data.podOrdinal)
+		inputs["POD_ORDINAL"] = strconv.Itoa(int(*data.podOrdinal))
 	}
-	inputs := make(map[string]string, 0)
 	inputs["CLAIM_NAME"] = data.pvcName
-	fmt.Println(strconv.Itoa(int(*data.podOrdinal)))
-	inputs["POD_ORDINAL"] = strconv.Itoa(int(*data.podOrdinal))
 	err := resolve.ResolvePVCSpec(&data.pvc, inputs)
 	if err != nil {
 		return nil
@@ -186,7 +189,7 @@ func (opt *VSoption) getPVCDefinition(data PVC) *corev1.PersistentVolumeClaim {
 	return &data.pvc
 }
 
-func (opt *VSoption) updateRestoreSessionStatus(restoreOutput restic.RestoreOutput) error {
+func (opt *VSoption) updateRestoreSessionStatus(restoreOutput restic.RestoreOutput, startTime time.Time) error {
 	// Update Backup Session
 	o := status.UpdateStatusOptions{
 		KubeClient:     opt.kubeClient,
@@ -194,5 +197,8 @@ func (opt *VSoption) updateRestoreSessionStatus(restoreOutput restic.RestoreOutp
 		Namespace:      opt.namespace,
 		RestoreSession: opt.name,
 	}
+	// Volume Snapshot complete. Read current time and calculate total backup duration.
+	endTime := time.Now()
+	restoreOutput.HostRestoreStats.Duration = endTime.Sub(startTime).String()
 	return o.UpdatePostRestoreStatus(&restoreOutput)
 }

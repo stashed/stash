@@ -265,18 +265,18 @@ func (c *StashController) getTotalHosts(target interface{}, namespace string, dr
 			return countPVC(daemon.Spec.Template.Spec.Volumes), err
 
 		case apis.KindReplicaSet:
-			RS, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
+			rs, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
 			if err != nil {
 				return nil, err
 			}
-			return countPVC(RS.Spec.Template.Spec.Volumes), err
+			return countPVC(rs.Spec.Template.Spec.Volumes), err
 
 		case apis.KindReplicationController:
-			RC, err := c.kubeClient.CoreV1().ReplicationControllers(namespace).Get(targetRef.Name, metav1.GetOptions{})
+			rc, err := c.kubeClient.CoreV1().ReplicationControllers(namespace).Get(targetRef.Name, metav1.GetOptions{})
 			if err != nil {
 				return nil, err
 			}
-			return countPVC(RC.Spec.Template.Spec.Volumes), err
+			return countPVC(rc.Spec.Template.Spec.Volumes), err
 
 		default:
 			return types.Int32P(1), nil
