@@ -71,7 +71,7 @@ spec:
         args:
         - --web.listen-address=:56789
         - --persistence.file=/var/pv/pushgateway.dat
-        image: prom/pushgateway:v0.5.2
+        image: ${PUSHGATEWAY_DOCKER_REGISTRY}/pushgateway:v0.5.2
         ports:
         - containerPort: 56789
           name: pushgateway
