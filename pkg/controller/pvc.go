@@ -86,7 +86,7 @@ func (c *StashController) applyBackupAnnotationLogicForPVC(pvc *core.PersistentV
 		}
 
 		// resolve BackupConfigurationTemplate's variables
-		inputs := make(map[string]string, 0)
+		inputs := make(map[string]string)
 		inputs[apis.TargetAPIVersion] = pvc.APIVersion
 		inputs[apis.TargetKind] = strings.ToLower(pvc.Kind)
 		inputs[apis.TargetName] = pvc.Name

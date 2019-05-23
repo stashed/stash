@@ -16,7 +16,7 @@ func (b BackupConfiguration) GetSpecHash() string {
 	return strconv.FormatUint(hash.Sum64(), 10)
 }
 
-func (bc BackupConfiguration) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+func (b BackupConfiguration) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crdutils.NewCustomResourceDefinition(crdutils.Config{
 		Group:         SchemeGroupVersion.Group,
 		Plural:        ResourcePluralBackupConfiguration,
@@ -65,19 +65,19 @@ func (bc BackupConfiguration) CustomResourceDefinition() *apiextensions.CustomRe
 
 // OffshootLabels return labels consist of the labels provided by user to BackupConfiguration crd and
 // stash specific generic labels. It overwrites the the user provided labels if it matched with stash specific generic labels.
-func (bc BackupConfiguration) OffshootLabels() map[string]string {
-	genericLabels := make(map[string]string, 0)
-	genericLabels[meta_util.ComponentLabelKey] = StashBackupComponent
-	genericLabels[meta_util.ManagedByLabelKey] = StashKey
+func (b BackupConfiguration) OffshootLabels() map[string]string {
+	overrides := make(map[string]string)
+	overrides[meta_util.ComponentLabelKey] = StashBackupComponent
+	overrides[meta_util.ManagedByLabelKey] = StashKey
 
-	return upsertLabels(bc.Labels, genericLabels)
+	return upsertLabels(b.Labels, overrides)
 }
 
-func upsertLabels(originalLabels, additionalLabels map[string]string) map[string]string {
+func upsertLabels(originalLabels, overrides map[string]string) map[string]string {
 	if originalLabels == nil {
-		originalLabels = make(map[string]string, len(additionalLabels))
+		originalLabels = make(map[string]string, len(overrides))
 	}
-	for k, v := range additionalLabels {
+	for k, v := range overrides {
 		originalLabels[k] = v
 	}
 	return originalLabels

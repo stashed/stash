@@ -242,7 +242,7 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 		// set BackupSession as owner of this Job
 		core_util.EnsureOwnerReference(&in.ObjectMeta, backupConfigRef)
 		if in.Labels == nil {
-			in.Labels = make(map[string]string, 0)
+			in.Labels = make(map[string]string)
 		}
 		// backup job is created by resolving task and function. we should not delete it when it goes to completed state.
 		// user might need to know what was the final resolved job specification for debugging purpose.
@@ -448,7 +448,7 @@ func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.B
 		// set BackupSession as owner of this Job
 		core_util.EnsureOwnerReference(&in.ObjectMeta, backupConfigRef)
 		if in.Labels == nil {
-			in.Labels = make(map[string]string, 0)
+			in.Labels = make(map[string]string)
 		}
 		// ensure that job gets deleted on completion
 		in.Labels[apis.KeyDeleteJobOnCompletion] = "true"
