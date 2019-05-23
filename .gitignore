@@ -31,7 +31,3 @@ _testmain.go
 
 /bin
 /.go
-/.push-*
-/.container-*
-/.dockerfile-*
-/.idea
