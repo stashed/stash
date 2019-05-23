@@ -48,11 +48,13 @@ BASEIMAGE_PROD   ?= gcr.io/distroless/static
 BASEIMAGE_DBG    ?= debian:stretch
 
 IMAGE            := $(REGISTRY)/$(BIN)
+VERSION_PROD     := $(VERSION)
+VERSION_DBG      := $(VERSION)-dbg
 TAG              := $(VERSION)_$(OS)_$(ARCH)
 TAG_PROD         := $(TAG)
-TAG_DBG          := $(TAG_PROD)-dbg
+TAG_DBG          := $(VERSION)-dbg_$(OS)_$(ARCH)
 CANARY_TAG_PROD  := canary_$(OS)_$(ARCH)
-CANARY_TAG_DBG   := $(CANARY_TAG_PROD)-dbg
+CANARY_TAG_DBG   := canary-dbg_$(OS)_$(ARCH)
 
 GO_VERSION       ?= 1.12.5
 BUILD_IMAGE      ?= appscode/golang-dev:$(GO_VERSION)-stretch
@@ -205,6 +207,12 @@ bin/.push-$(DOTFILE_IMAGE)-%: bin/.container-$(DOTFILE_IMAGE)-%
 	fi
 	@echo
 
+.PHONY: docker-manifest
+docker-manifest: docker-manifest-PROD docker-manifest-DBG
+docker-manifest-%:
+	DOCKER_CLI_EXPERIMENTAL=enabled docker manifest create -a $(IMAGE):$(VERSION_$*) $(foreach PLATFORM,$(DOCKER_PLATFORMS),$(IMAGE):$(VERSION_$*)_$(subst /,_,$(PLATFORM)))
+	DOCKER_CLI_EXPERIMENTAL=enabled docker manifest push $(IMAGE):$(VERSION_$*)
+
 test: $(BUILD_DIRS)
 	@docker run                                                 \
 	    -i                                                      \
@@ -254,7 +262,7 @@ dev: gen fmt push
 ci: lint test build #cover
 
 .PHONY: qa
-qa:
+qa: docker-manifest
 	@if [ "$$APPSCODE_ENV" = "prod" ]; then                                              \
 		echo "Nothing to do in prod env. Are you trying to 'release' binaries to prod?"; \
 		exit 1;                                                                          \
@@ -266,7 +274,7 @@ qa:
 	@$(MAKE) clean all-push --no-print-directory
 
 .PHONY: release
-release:
+release: docker-manifest
 	@if [ "$$APPSCODE_ENV" != "prod" ]; then      \
 		echo "'release' only works in PROD env."; \
 		exit 1;                                   \
