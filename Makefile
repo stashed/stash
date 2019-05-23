@@ -53,8 +53,6 @@ VERSION_DBG      := $(VERSION)-dbg
 TAG              := $(VERSION)_$(OS)_$(ARCH)
 TAG_PROD         := $(TAG)
 TAG_DBG          := $(VERSION)-dbg_$(OS)_$(ARCH)
-CANARY_TAG_PROD  := canary_$(OS)_$(ARCH)
-CANARY_TAG_DBG   := canary-dbg_$(OS)_$(ARCH)
 
 GO_VERSION       ?= 1.12.5
 BUILD_IMAGE      ?= appscode/golang-dev:$(GO_VERSION)-stretch
@@ -192,19 +190,12 @@ bin/.container-$(DOTFILE_IMAGE)-%: bin/$(OS)_$(ARCH)/$(BIN) $(DOCKERFILE_%)
 	    $(DOCKERFILE_$*) > bin/.dockerfile-$*-$(OS)_$(ARCH)
 	@docker build -t $(IMAGE):$(TAG_$*) -f bin/.dockerfile-$*-$(OS)_$(ARCH) .
 	@docker images -q $(IMAGE):$(TAG_$*) > $@
-	@if [ $(version_strategy) = commit_hash ] && [ $(git_branch) = master ]; then \
-		docker tag $(IMAGE):$(TAG_$*) $(IMAGE):$(CANARY_TAG_$*);                  \
-	fi
 	@echo
 
 push: bin/.push-$(DOTFILE_IMAGE)-PROD bin/.push-$(DOTFILE_IMAGE)-DBG
 bin/.push-$(DOTFILE_IMAGE)-%: bin/.container-$(DOTFILE_IMAGE)-%
 	@docker push $(IMAGE):$(TAG_$*)
 	@echo "pushed: $(IMAGE):$(TAG_$*)"
-	@if [ $(version_strategy) = commit_hash ] && [ $(git_branch) = master ]; then \
-		docker push $(IMAGE):$(CANARY_TAG_$*);                                    \
-		echo "pushed: $(IMAGE):$(TAG_$*)";                                        \
-	fi
 	@echo
 
 .PHONY: docker-manifest
