@@ -62,11 +62,9 @@ func (c RestoreSession) CustomResourceDefinition() *apiextensions.CustomResource
 
 // OffshootLabels return labels consist of the labels provided by user to BackupConfiguration crd and
 // stash specific generic labels. It overwrites the the user provided labels if it matched with stash specific generic labels.
-func (rs RestoreSession) OffshootLabels(name string) map[string]string {
+func (rs RestoreSession) OffshootLabels() map[string]string {
 	genericLabels := make(map[string]string, 0)
-	genericLabels[meta_util.NameLabelKey] = name
-	genericLabels[meta_util.InstanceLabelKey] = rs.Name
-	genericLabels[meta_util.ComponentLabelKey] = StashBackupComponent
+	genericLabels[meta_util.ComponentLabelKey] = StashRestoreComponent
 	genericLabels[meta_util.ManagedByLabelKey] = StashKey
 	return meta_util.FilterKeys(StashKey, genericLabels, rs.Labels)
 }

@@ -434,7 +434,7 @@ func (c *StashController) ensureRestoreJobClusterRole(psps []string,labels map[s
 	delete(labels,meta_util.NameLabelKey)
 	meta := metav1.ObjectMeta{
 		Name: RestoreJobClusterRole,
-		Labels:
+		Labels: labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchClusterRole(c.kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 
@@ -463,11 +463,12 @@ func (c *StashController) ensureRestoreJobClusterRole(psps []string,labels map[s
 	return err
 }
 
-func (c *StashController) ensureRestoreJobRoleBinding(resource *core.ObjectReference, sa string) error {
+func (c *StashController) ensureRestoreJobRoleBinding(resource *core.ObjectReference, sa string,labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
 		Namespace: resource.Namespace,
 		Name:      c.getRestoreJobRoleBindingName(resource.Name),
+		Labels: labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)

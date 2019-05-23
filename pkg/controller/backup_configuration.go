@@ -3,8 +3,6 @@ package controller
 import (
 	"fmt"
 
-	"stash.appscode.dev/stash/apis"
-
 	"github.com/appscode/go/log"
 	"github.com/golang/glog"
 	batch_v1beta1 "k8s.io/api/batch/v1beta1"
@@ -199,7 +197,7 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 	meta := metav1.ObjectMeta{
 		Name:      backupConfiguration.Name,
 		Namespace: backupConfiguration.Namespace,
-		Labels:    backupConfiguration.OffshootLabels(apis.AppBackupTriggeringJob),
+		Labels:    backupConfiguration.OffshootLabels(),
 	}
 	ref, err := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
 	if err != nil {
@@ -219,13 +217,13 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 
 		_, _, err = core_util.CreateOrPatchServiceAccount(c.kubeClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
 			core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
-			in.Labels = backupConfiguration.OffshootLabels(apis.AppBackupTriggeringJobServiceAccount)
+			in.Labels = backupConfiguration.OffshootLabels()
 			return in
 		})
 	}
 
 	// now ensure RBAC stuff for this CronJob
-	err = c.ensureCronJobRBAC(ref, serviceAccountName, c.getBackupSessionCronJobPSPNames(),backupConfiguration.OffshootLabels(apis.AppBackupTriggeringJobRoleBinding))
+	err = c.ensureCronJobRBAC(ref, serviceAccountName, c.getBackupSessionCronJobPSPNames(),backupConfiguration.OffshootLabels())
 	if err != nil {
 		return err
 	}
@@ -235,10 +233,7 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 
 		in.Spec.Schedule = backupConfiguration.Spec.Schedule
-		if in.Spec.JobTemplate.Labels == nil {
-			in.Spec.JobTemplate.Labels = map[string]string{}
-		}
-		in.Spec.JobTemplate.Labels[util.LabelApp] = util.AppLabelStash
+		in.Spec.JobTemplate.Labels = backupConfiguration.OffshootLabels()
 
 		in.Spec.JobTemplate.Spec.Template.Spec.Containers = core_util.UpsertContainer(
 			in.Spec.JobTemplate.Spec.Template.Spec.Containers,
