@@ -7,13 +7,14 @@ RUN set -x \
   && apt-get update \
   && apt-get install -y --no-install-recommends apt-transport-https ca-certificates curl bzip2
 
-RUN set -x                                                                                                                                                     \
-  && curl -Lo restic.bz2 https://github.com/restic/restic/releases/download/v{RESTIC_VER}/restic_{RESTIC_VER}_{ARG_OS}_{ARG_ARCH}.bz2                          \
-  && bzip2 -d restic.bz2                                                                                                                                       \
-  && chmod 755 restic                                                                                                                                          \
-  && curl -Lo restic_{NEW_RESTIC_VER}.bz2 https://github.com/restic/restic/releases/download/v{NEW_RESTIC_VER}/restic_{NEW_RESTIC_VER}_{ARG_OS}_{ARG_ARCH}.bz2 \
-  && bzip2 -d restic_{NEW_RESTIC_VER}.bz2                                                                                                                      \
+RUN set -x                                                                                                                                                          \
+  && curl -fsSL -o restic.bz2 https://github.com/restic/restic/releases/download/v{RESTIC_VER}/restic_{RESTIC_VER}_{ARG_OS}_{ARG_ARCH}.bz2                          \
+  && bzip2 -d restic.bz2                                                                                                                                            \
+  && chmod 755 restic                                                                                                                                               \
+  && curl -fsSL -o restic_{NEW_RESTIC_VER}.bz2 https://github.com/restic/restic/releases/download/v{NEW_RESTIC_VER}/restic_{NEW_RESTIC_VER}_{ARG_OS}_{ARG_ARCH}.bz2 \
+  && bzip2 -d restic_{NEW_RESTIC_VER}.bz2                                                                                                                           \
   && chmod 755 restic_{NEW_RESTIC_VER}
+
 
 
 FROM {ARG_FROM}
