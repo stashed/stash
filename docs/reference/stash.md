@@ -63,7 +63,7 @@ Stash is a Kubernetes operator for restic. For more information, visit here: htt
 * [stash restore-mysql](/docs/reference/stash_restore-mysql.md)	 - Restores MySQL DB Backup
 * [stash restore-pg](/docs/reference/stash_restore-pg.md)	 - Restores Postgres DB Backup
 * [stash restore-pvc](/docs/reference/stash_restore-pvc.md)	 - Takes a restore of Persistent Volume Claim
-* [stash restore-vs](/docs/reference/stash_restore-vs.md)	 - Take a restore snapshot of PersistentVolumeClaims
+* [stash restore-vs](/docs/reference/stash_restore-vs.md)	 - Restore PVC from VolumeSnapshot
 * [stash run](/docs/reference/stash_run.md)	 - Launch Stash Controller
 * [stash run-backup](/docs/reference/stash_run-backup.md)	 - Take backup of workload directories
 * [stash scaledown](/docs/reference/stash_scaledown.md)	 - Scale down workload

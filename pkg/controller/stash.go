@@ -20,10 +20,6 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 )
 
-var (
-	count int32
-)
-
 // applyStashLogic takes an workload and perform some processing on it if any backup or restore is configured for this workload.
 func (c *StashController) applyStashLogic(w *wapi.Workload, caller string) (bool, error) {
 	// check if restore is configured for this workload and perform respective operations
@@ -305,7 +301,7 @@ func (c *StashController) getTotalHosts(target interface{}, namespace string, dr
 }
 
 func countPVC(vollist []core.Volume) *int32 {
-	count = 0
+	var count int32
 	for _, vol := range vollist {
 		if vol.PersistentVolumeClaim != nil {
 			count++

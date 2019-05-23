@@ -80,5 +80,7 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.AddCommand(NewCmdCreateVolumeSnapshot())
 	rootCmd.AddCommand(NewCmdRestoreVolumeSnapshot())
 
+	rootCmd.AddCommand(NewCmdBackupCluster())
+
 	return rootCmd
 }

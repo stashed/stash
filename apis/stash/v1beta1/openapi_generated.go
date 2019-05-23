@@ -13938,7 +13938,7 @@ func schema_stash_apis_stash_v1beta1_BackupTarget(ref common.ReferenceCallback) 
 					},
 					"replicas": {
 						SchemaProps: spec.SchemaProps{
-							Description: "replicas are the desired number of replicas that's data should be backed up If unspecified, defaults to 1.",
+							Description: "replicas are the desired number of replicas whose data should be backed up. If unspecified, defaults to 1.",
 							Type:        []string{"integer"},
 							Format:      "int32",
 						},
