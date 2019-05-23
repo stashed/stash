@@ -55,7 +55,7 @@ func NewCmdBackupCluster() *cobra.Command {
 			err := opt.runClusterBackup()
 			if err != nil {
 				log.Errorln(err)
-				return handleResticError(opt.outputDir, restic.DefaultOutputFileName, err)
+				return util.HandleResticError(opt.outputDir, restic.DefaultOutputFileName, err)
 			}
 			return nil
 		},
@@ -125,11 +125,11 @@ func (opt *clusterBackupOptions) runClusterBackup() error {
 	// apply nice, ionice settings from env
 	opt.setupOpt.Nice, err = util.NiceSettingsFromEnv()
 	if err != nil {
-		return handleResticError(opt.outputDir, restic.DefaultOutputFileName, err)
+		return util.HandleResticError(opt.outputDir, restic.DefaultOutputFileName, err)
 	}
 	opt.setupOpt.IONice, err = util.IONiceSettingsFromEnv()
 	if err != nil {
-		return handleResticError(opt.outputDir, restic.DefaultOutputFileName, err)
+		return util.HandleResticError(opt.outputDir, restic.DefaultOutputFileName, err)
 	}
 
 	// init restic wrapper

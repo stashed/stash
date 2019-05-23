@@ -40,17 +40,17 @@ func NewCmdRestorePVC() *cobra.Command {
 			var err error
 			setupOpt.Nice, err = util.NiceSettingsFromEnv()
 			if err != nil {
-				return handleResticError(outputDir, restic.DefaultOutputFileName, err)
+				return util.HandleResticError(outputDir, restic.DefaultOutputFileName, err)
 			}
 			setupOpt.IONice, err = util.IONiceSettingsFromEnv()
 			if err != nil {
-				return handleResticError(outputDir, restic.DefaultOutputFileName, err)
+				return util.HandleResticError(outputDir, restic.DefaultOutputFileName, err)
 			}
 
 			// init restic wrapper
 			resticWrapper, err := restic.NewResticWrapper(setupOpt)
 			if err != nil {
-				return handleResticError(outputDir, restic.DefaultOutputFileName, err)
+				return util.HandleResticError(outputDir, restic.DefaultOutputFileName, err)
 			}
 			// Run restore
 			restoreOutput, restoreErr := resticWrapper.RunRestore(restoreOpt)
@@ -58,11 +58,11 @@ func NewCmdRestorePVC() *cobra.Command {
 			if metrics.Enabled {
 				err := restoreOutput.HandleMetrics(&metrics, restoreErr)
 				if err != nil {
-					return handleResticError(outputDir, restic.DefaultOutputFileName, errors.NewAggregate([]error{restoreErr, err}))
+					return util.HandleResticError(outputDir, restic.DefaultOutputFileName, errors.NewAggregate([]error{restoreErr, err}))
 				}
 			}
 			if restoreErr != nil {
-				return handleResticError(outputDir, restic.DefaultOutputFileName, restoreErr)
+				return util.HandleResticError(outputDir, restic.DefaultOutputFileName, restoreErr)
 			}
 			// If output directory specified, then write the output in "output.json" file in the specified directory
 			if outputDir != "" {
