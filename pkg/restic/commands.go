@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -17,8 +18,6 @@ import (
 
 const (
 	ResticCMD = "/bin/restic_0.9.5"
-	IONiceCMD = "/bin/ionice"
-	NiceCMD   = "/bin/nice"
 )
 
 type Snapshot struct {
@@ -318,7 +317,14 @@ func (w *ResticWrapper) run(commands ...Command) ([]byte, error) {
 	for _, cmd := range commands {
 		if cmd.Name == ResticCMD {
 			// first apply NiceSettings, then apply IONiceSettings
-			cmd = w.applyIONiceSettings(w.applyNiceSettings(cmd))
+			cmd, err = w.applyNiceSettings(cmd)
+			if err != nil {
+				return nil, err
+			}
+			cmd, err = w.applyIONiceSettings(cmd)
+			if err != nil {
+				return nil, err
+			}
 		}
 		w.sh.Command(cmd.Name, cmd.Args...)
 	}
@@ -339,9 +345,15 @@ func formatError(err error, stdErr string) error {
 	return err
 }
 
-func (w *ResticWrapper) applyIONiceSettings(oldCommand Command) Command {
+func (w *ResticWrapper) applyIONiceSettings(oldCommand Command) (Command, error) {
 	if w.config.IONice == nil {
-		return oldCommand
+		return oldCommand, nil
+	}
+
+	// detect "ionice" installation path
+	IONiceCMD, err := exec.LookPath("ionice")
+	if err != nil {
+		return Command{}, err
 	}
 	newCommand := Command{
 		Name: IONiceCMD,
@@ -358,12 +370,18 @@ func (w *ResticWrapper) applyIONiceSettings(oldCommand Command) Command {
 	// append oldCommand as args of newCommand
 	newCommand.Args = append(newCommand.Args, oldCommand.Name)
 	newCommand.Args = append(newCommand.Args, oldCommand.Args...)
-	return newCommand
+	return newCommand, nil
 }
 
-func (w *ResticWrapper) applyNiceSettings(oldCommand Command) Command {
+func (w *ResticWrapper) applyNiceSettings(oldCommand Command) (Command, error) {
 	if w.config.Nice == nil {
-		return oldCommand
+		return oldCommand, nil
+	}
+
+	// detect "nice" installation path
+	NiceCMD, err := exec.LookPath("nice")
+	if err != nil {
+		return Command{}, err
 	}
 	newCommand := Command{
 		Name: NiceCMD,
@@ -375,5 +393,5 @@ func (w *ResticWrapper) applyNiceSettings(oldCommand Command) Command {
 	// append oldCommand as args of newCommand
 	newCommand.Args = append(newCommand.Args, oldCommand.Name)
 	newCommand.Args = append(newCommand.Args, oldCommand.Args...)
-	return newCommand
+	return newCommand, nil
 }

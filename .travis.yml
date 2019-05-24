@@ -5,6 +5,30 @@ go:
 
 go_import_path: stash.appscode.dev/stash
 
+cache:
+  directories:
+  - $HOME/.cache/go-build
+  - $GOPATH/pkg/mod
+
+env:
+  global:
+  - ARG_OS=linux
+  - ARG_ARCH=amd64
+  - RESTIC_VER="0.8.3"
+  - NEW_RESTIC_VER="0.9.5"
+
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install -y curl bzip2
+  - curl -fsSL -o restic.bz2 https://github.com/restic/restic/releases/download/v${RESTIC_VER}/restic_${RESTIC_VER}_${ARG_OS}_${ARG_ARCH}.bz2
+  - bzip2 -d restic.bz2
+  - chmod +x restic
+  - sudo mv restic /bin/restic
+  - curl -fsSL -o restic_${NEW_RESTIC_VER}.bz2 https://github.com/restic/restic/releases/download/v${NEW_RESTIC_VER}/restic_${NEW_RESTIC_VER}_${ARG_OS}_${ARG_ARCH}.bz2
+  - bzip2 -d restic_${NEW_RESTIC_VER}.bz2
+  - chmod +x restic_${NEW_RESTIC_VER}
+  - sudo mv restic_${NEW_RESTIC_VER} /bin/restic_${NEW_RESTIC_VER}
+
 install: true
 
 script:

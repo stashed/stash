@@ -3,7 +3,6 @@ package restic
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"testing"
@@ -11,13 +10,14 @@ import (
 	"github.com/appscode/go/types"
 	"github.com/stretchr/testify/assert"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
+	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
 )
 
 var (
-	localRepoDir      = "/tmp/stash/repo"
-	scratchDir        = "/tmp/stash/scratch"
-	secretDir         = "/tmp/stash/secret"
-	targetDir         = "/tmp/stash/target"
+	localRepoDir      string
+	scratchDir        string
+	secretDir         string
+	targetDir         string
 	password          = "password"
 	fileName          = "some-file"
 	fileContent       = "hello stash"
@@ -25,28 +25,33 @@ var (
 	stdoutPipeCommand = Command{Name: "cat"}
 )
 
-func setupTest() *ResticWrapper {
+func setupTest(tempDir string) (*ResticWrapper, error) {
+	localRepoDir = filepath.Join(tempDir, "repo")
+	scratchDir = filepath.Join(tempDir, "scratch")
+	secretDir = filepath.Join(tempDir, "secret")
+	targetDir = filepath.Join(tempDir, "target")
+
 	if err := os.MkdirAll(localRepoDir, 0777); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	if err := os.MkdirAll(scratchDir, 0777); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	if err := os.MkdirAll(secretDir, 0777); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	err := ioutil.WriteFile(filepath.Join(secretDir, RESTIC_PASSWORD), []byte(password), os.ModePerm)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	if err := os.MkdirAll(targetDir, 0777); err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	err = ioutil.WriteFile(filepath.Join(targetDir, fileName), []byte(fileContent), os.ModePerm)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	setupOpt := SetupOptions{
@@ -59,71 +64,91 @@ func setupTest() *ResticWrapper {
 
 	w, err := NewResticWrapper(setupOpt)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
-	return w
+	return w, nil
 }
 
-func cleanup() {
-	if err := os.RemoveAll(localRepoDir); err != nil {
-		log.Fatal(err)
+func cleanup(tempDir string) error {
+	if err := os.RemoveAll(tempDir); err != nil {
+		return err
 	}
-	if err := os.RemoveAll(scratchDir); err != nil {
-		log.Fatal(err)
-	}
-	if err := os.RemoveAll(secretDir); err != nil {
-		log.Fatal(err)
-	}
-	if err := os.RemoveAll(targetDir); err != nil {
-		log.Fatal(err)
-	}
+	return nil
 }
 
 func TestBackupRestoreDirs(t *testing.T) {
-	w := setupTest()
-	defer cleanup()
+	tempDir, err := ioutil.TempDir("", "stash-unit-test-")
+	if err != nil {
+		t.Error(err)
+	}
+
+	w, err := setupTest(tempDir)
+	if err != nil {
+		t.Error(err)
+	}
+	defer cleanup(tempDir)
 
 	backupOpt := BackupOptions{
 		BackupDirs: []string{targetDir},
+		RetentionPolicy: api_v1alpha1.RetentionPolicy{
+			Name:     "keep-last-1",
+			KeepLast: 1,
+			Prune:    true,
+			DryRun:   false,
+		},
 	}
 	backupOut, err := w.RunBackup(backupOpt)
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
 	fmt.Println(backupOut)
 
 	// delete target then restore
 	if err = os.RemoveAll(targetDir); err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
 	restoreOpt := RestoreOptions{
 		RestoreDirs: []string{targetDir},
 	}
 	restoreOut, err := w.RunRestore(restoreOpt)
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
 	fmt.Println(restoreOut)
 
 	// check file
 	fileContentByte, err := ioutil.ReadFile(filepath.Join(targetDir, fileName))
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
 	assert.Equal(t, fileContent, string(fileContentByte))
 }
 
 func TestBackupRestoreStdin(t *testing.T) {
-	w := setupTest()
-	defer cleanup()
+	tempDir, err := ioutil.TempDir("", "stash-unit-test-")
+	if err != nil {
+		t.Error(err)
+	}
+
+	w, err := setupTest(tempDir)
+	if err != nil {
+		t.Error(err)
+	}
+	defer cleanup(tempDir)
 
 	backupOpt := BackupOptions{
 		StdinPipeCommand: stdinPipeCommand,
 		StdinFileName:    fileName,
+		RetentionPolicy: api_v1alpha1.RetentionPolicy{
+			Name:     "keep-last-1",
+			KeepLast: 1,
+			Prune:    true,
+			DryRun:   false,
+		},
 	}
 	backupOut, err := w.RunBackup(backupOpt)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 	fmt.Println("backup output:", backupOut)
 
@@ -133,14 +158,22 @@ func TestBackupRestoreStdin(t *testing.T) {
 	}
 	dumpOut, err := w.Dump(dumpOpt)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 	fmt.Println("dump output:", dumpOut)
 }
 
 func TestBackupRestoreWithScheduling(t *testing.T) {
-	w := setupTest()
-	defer cleanup()
+	tempDir, err := ioutil.TempDir("", "stash-unit-test-")
+	if err != nil {
+		t.Error(err)
+	}
+
+	w, err := setupTest(tempDir)
+	if err != nil {
+		t.Error(err)
+	}
+	defer cleanup(tempDir)
 
 	w.config.IONice = &ofst.IONiceSettings{
 		Class:     types.Int32P(2),
@@ -152,37 +185,51 @@ func TestBackupRestoreWithScheduling(t *testing.T) {
 
 	backupOpt := BackupOptions{
 		BackupDirs: []string{targetDir},
+		RetentionPolicy: api_v1alpha1.RetentionPolicy{
+			Name:     "keep-last-1",
+			KeepLast: 1,
+			Prune:    true,
+			DryRun:   false,
+		},
 	}
 	backupOut, err := w.RunBackup(backupOpt)
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
 	fmt.Println(backupOut)
 
 	// delete target then restore
 	if err = os.RemoveAll(targetDir); err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
 	restoreOpt := RestoreOptions{
 		RestoreDirs: []string{targetDir},
 	}
 	restoreOut, err := w.RunRestore(restoreOpt)
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
 	fmt.Println(restoreOut)
 
 	// check file
 	fileContentByte, err := ioutil.ReadFile(filepath.Join(targetDir, fileName))
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
 	assert.Equal(t, fileContent, string(fileContentByte))
 }
 
 func TestBackupRestoreStdinWithScheduling(t *testing.T) {
-	w := setupTest()
-	defer cleanup()
+	tempDir, err := ioutil.TempDir("", "stash-unit-test-")
+	if err != nil {
+		t.Error(err)
+	}
+
+	w, err := setupTest(tempDir)
+	if err != nil {
+		t.Error(err)
+	}
+	defer cleanup(tempDir)
 
 	w.config.IONice = &ofst.IONiceSettings{
 		Class:     types.Int32P(2),
@@ -195,10 +242,16 @@ func TestBackupRestoreStdinWithScheduling(t *testing.T) {
 	backupOpt := BackupOptions{
 		StdinPipeCommand: stdinPipeCommand,
 		StdinFileName:    fileName,
+		RetentionPolicy: api_v1alpha1.RetentionPolicy{
+			Name:     "keep-last-1",
+			KeepLast: 1,
+			Prune:    true,
+			DryRun:   false,
+		},
 	}
 	backupOut, err := w.RunBackup(backupOpt)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 	fmt.Println("backup output:", backupOut)
 
@@ -208,7 +261,7 @@ func TestBackupRestoreStdinWithScheduling(t *testing.T) {
 	}
 	dumpOut, err := w.Dump(dumpOpt)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 	fmt.Println("dump output:", dumpOut)
 }
