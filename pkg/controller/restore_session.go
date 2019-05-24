@@ -126,7 +126,8 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 			}
 
 			if restoreSession.Status.Phase == api_v1beta1.RestoreSessionFailed ||
-				restoreSession.Status.Phase == api_v1beta1.RestoreSessionSucceeded {
+				restoreSession.Status.Phase == api_v1beta1.RestoreSessionSucceeded ||
+				restoreSession.Status.Phase == api_v1beta1.RestoreSessionUnknown {
 				log.Infof("Skipping processing RestoreSession %s/%s. Reason: phase is %q.", restoreSession.Namespace, restoreSession.Name, restoreSession.Status.Phase)
 				return nil
 			}
@@ -195,7 +196,7 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		return err
 	}
 
-	// if RBAC is enabled then ensure respective ClusterRole,RoleBinding,ServiceAccount etc.
+	// Ensure respective RBAC and PSP stuff.
 	serviceAccountName := "default"
 	if restoreSession.Spec.RuntimeSettings.Pod != nil &&
 		restoreSession.Spec.RuntimeSettings.Pod.ServiceAccountName != "" {
@@ -222,6 +223,22 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		return err
 	}
 
+	// Now there could be two restore scenario for restoring through job.
+	// 1. Restore target is a Database or a existing PVC. In this case, we need to resolve task and function then create a job to restore.
+	// 2. VolumeClaimTemplate has been specified. In this case, we have to create the PVCs then restore on it. We will create one job for each PVC to restore in parallel.
+
+	// Check whether VolumeClaimTemplate is specified. If so, create the PVCs and create restore jobs for them. Otherwise, resolve task template and create a single job.
+	if restoreSession.Spec.Target != nil && restoreSession.Spec.Target.VolumeClaimTemplates != nil {
+		return c.createPVCThenRestore(restoreSession, objectMeta, ref, serviceAccountName)
+	} else {
+		return c.resolveTaskThenRestore(restoreSession, objectMeta, ref, serviceAccountName)
+	}
+
+}
+
+// resolveTaskThenRestore resolves Functions and Tasks then create a restore job to restore the target.
+func (c *StashController) resolveTaskThenRestore(restoreSession *api_v1beta1.RestoreSession,
+	meta metav1.ObjectMeta, ref *core.ObjectReference, serviceAccountName string) error {
 	// get repository for backupConfig
 	repository, err := c.stashClient.StashV1alpha1().Repositories(restoreSession.Namespace).Get(
 		restoreSession.Spec.Repository.Name,
@@ -284,11 +301,11 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 	}
 
 	// create Restore Job
-	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, objectMeta, func(in *batchv1.Job) *batchv1.Job {
+	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, meta, func(in *batchv1.Job) *batchv1.Job {
 		// set RestoreSession as owner of this Job
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 
-		in.Labels = offshootLabels
+		in.Labels = restoreSession.OffshootLabels()
 		// restore job is created by resolving task and function. we should not delete it when it goes to completed state.
 		// user might need to know what was the final resolved job specification for debugging purpose.
 		in.Labels[apis.KeyDeleteJobOnCompletion] = "false"
@@ -299,6 +316,14 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 	})
 
 	return err
+}
+
+// createPVCThenRestore creates PVCs according to the VolumeClaimTemplate specified in RestoreSession target
+// creates one job for each PVC to restore in parallel.
+func (c *StashController) createPVCThenRestore(restoreSession *api_v1beta1.RestoreSession,
+	meta metav1.ObjectMeta, ref *core.ObjectReference, serviceAccountName string) error {
+
+	return nil
 }
 
 func (c *StashController) setRestoreSessionFailed(restoreSession *api_v1beta1.RestoreSession, jobErr error) error {
@@ -487,7 +512,39 @@ func (c *StashController) ensureVolumeSnapshotterRestoreJob(restoreSession *api_
 		Tag:      c.StashImageTag,
 	}
 
-	// create Snapshot Volume Job
+	jobTemplate := core.PodTemplateSpec{
+		Spec: core.PodSpec{
+			Volumes:        nil,
+			InitContainers: nil,
+			Containers: []core.Container{
+				{
+					Name:            util.StashContainer,
+					ImagePullPolicy: core.PullAlways,
+					Image:           image.ToContainerImage(),
+					Args: []string{
+						"restore-vs",
+						fmt.Sprintf("--restoresession.name=%s", restoreSession.Name),
+						fmt.Sprintf("--enable-status-subresource=%v", apis.EnableStatusSubresource),
+						fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
+					},
+				},
+			},
+			RestartPolicy:      core.RestartPolicyNever,
+			ServiceAccountName: serviceAccountName,
+		},
+	}
+
+	// Pass container RuntimeSettings from RestoreSession
+	if restoreSession.Spec.RuntimeSettings.Container != nil {
+		jobTemplate.Spec.Containers[0] = util.ApplyContainerRuntimeSettings(jobTemplate.Spec.Containers[0], *restoreSession.Spec.RuntimeSettings.Container)
+	}
+
+	// Pass pod RuntimeSettings from RestoreSession
+	if restoreSession.Spec.RuntimeSettings.Pod != nil {
+		jobTemplate.Spec = util.ApplyPodRuntimeSettings(jobTemplate.Spec, *restoreSession.Spec.RuntimeSettings.Pod)
+	}
+
+	// Create VolumeSnapshotter Job
 	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, jobMeta, func(in *batchv1.Job) *batchv1.Job {
 		// set BackupSession as owner of this Job
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
@@ -496,22 +553,7 @@ func (c *StashController) ensureVolumeSnapshotterRestoreJob(restoreSession *api_
 		// ensure that job gets deleted when complete
 		in.Labels[apis.KeyDeleteJobOnCompletion] = "true"
 
-		in.Spec.Template.Spec.Containers = core_util.UpsertContainer(
-			in.Spec.Template.Spec.Containers,
-			core.Container{
-				Name:            util.StashContainer,
-				ImagePullPolicy: core.PullAlways,
-				Image:           image.ToContainerImage(),
-				Args: []string{
-					"restore-vs",
-					fmt.Sprintf("--restoresession.name=%s", restoreSession.Name),
-					fmt.Sprintf("--enable-status-subresource=%v", apis.EnableStatusSubresource),
-					fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
-				},
-			})
-		in.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
-		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-
+		in.Spec.Template = jobTemplate
 		return in
 	})
 	return nil
