@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/appscode/go/log"
 	"github.com/spf13/cobra"
@@ -46,12 +47,9 @@ func NewTriggerBackupCmd() *cobra.Command {
 			// create backupSession for backupConfig
 			backupSession := &v1beta1.BackupSession{
 				ObjectMeta: metav1.ObjectMeta{
-					GenerateName: backupConfigName + "-",
-					Namespace:    namespace,
-					Labels: map[string]string{
-						util.LabelApp:                 util.AppLabelStash,
-						util.LabelBackupConfiguration: backupConfigName,
-					},
+					Name:      fmt.Sprintf("%s-%d", backupConfigName, time.Now().Unix()),
+					Namespace: namespace,
+					Labels:    backupConfig.OffshootLabels(),
 				},
 				Spec: v1beta1.BackupSessionSpec{
 					BackupConfiguration: v1.LocalObjectReference{
@@ -59,6 +57,9 @@ func NewTriggerBackupCmd() *cobra.Command {
 					},
 				},
 			}
+
+			// BackupConfiguration name as a label so that BackupSession controller inside sidecar can discover this BackupSession
+			backupSession.Labels[util.LabelBackupConfiguration] = backupConfigName
 
 			// set backupConfig as backupSession's owner
 			ref, err := reference.GetReference(stash_scheme.Scheme, backupConfig)

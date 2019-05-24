@@ -148,10 +148,12 @@ func (c *StashController) runBackupSessionProcessor(key string) error {
 }
 
 func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSession, backupConfig *api_v1beta1.BackupConfiguration) error {
+	offshootLabels := backupConfig.OffshootLabels()
 
 	jobMeta := metav1.ObjectMeta{
 		Name:      BackupJobPrefix + backupSession.Name,
 		Namespace: backupSession.Namespace,
+		Labels:    offshootLabels,
 	}
 
 	backupConfigRef, err := reference.GetReference(stash_scheme.Scheme, backupConfig)
@@ -170,13 +172,10 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 		saMeta := metav1.ObjectMeta{
 			Name:      serviceAccountName,
 			Namespace: backupConfig.Namespace,
+			Labels:    offshootLabels,
 		}
 		_, _, err = core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
 			core_util.EnsureOwnerReference(&in.ObjectMeta, backupConfigRef)
-			if in.Labels == nil {
-				in.Labels = map[string]string{}
-			}
-			in.Labels[util.LabelApp] = util.AppLabelStash
 			return in
 		})
 
@@ -187,7 +186,7 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 		return err
 	}
 
-	err = c.ensureBackupJobRBAC(backupConfigRef, serviceAccountName, psps)
+	err = c.ensureBackupJobRBAC(backupConfigRef, serviceAccountName, psps, offshootLabels)
 	if err != nil {
 		return err
 	}
@@ -242,12 +241,13 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, jobMeta, func(in *batchv1.Job) *batchv1.Job {
 		// set BackupSession as owner of this Job
 		core_util.EnsureOwnerReference(&in.ObjectMeta, backupConfigRef)
-		in.Labels = map[string]string{
-			// job controller should not delete this job on completion
-			// use a different label than v1alpha1 job labels to skip deletion from job controller
-			// TODO: Remove job controller, cleanup backup-session periodically
-			util.LabelApp: util.AppLabelStashV1Beta1,
+		if in.Labels == nil {
+			in.Labels = make(map[string]string)
 		}
+		// backup job is created by resolving task and function. we should not delete it when it goes to completed state.
+		// user might need to know what was the final resolved job specification for debugging purpose.
+		in.Labels[apis.KeyDeleteJobOnCompletion] = "false"
+
 		in.Spec.Template.Spec = podSpec
 		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
@@ -402,9 +402,12 @@ func (c *StashController) getBackupSessionPhase(backupSession *api_v1beta1.Backu
 }
 
 func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.BackupConfiguration, backupSession *api_v1beta1.BackupSession) error {
+	offshootLabels := backupConfig.OffshootLabels()
+
 	jobMeta := metav1.ObjectMeta{
 		Name:      VolumeSnapshotPrefix + backupSession.Name,
 		Namespace: backupSession.Namespace,
+		Labels:    offshootLabels,
 	}
 
 	backupConfigRef, err := reference.GetReference(stash_scheme.Scheme, backupConfig)
@@ -419,20 +422,17 @@ func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.B
 	saMeta := metav1.ObjectMeta{
 		Name:      serviceAccountName,
 		Namespace: backupConfig.Namespace,
+		Labels:    offshootLabels,
 	}
 	_, _, err = core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, backupConfigRef)
-		if in.Labels == nil {
-			in.Labels = map[string]string{}
-		}
-		in.Labels[util.LabelApp] = util.AppLabelStash
 		return in
 	})
 	if err != nil {
 		return err
 	}
 
-	err = c.ensureVolumeSnapshotJobRBAC(backupConfigRef, serviceAccountName)
+	err = c.ensureVolumeSnapshotJobRBAC(backupConfigRef, serviceAccountName, offshootLabels)
 	if err != nil {
 		return err
 	}
@@ -443,16 +443,16 @@ func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.B
 		Tag:      c.StashImageTag,
 	}
 
-	//Create VolumeSnapshotter job
+	// Create VolumeSnapshotter job
 	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, jobMeta, func(in *batchv1.Job) *batchv1.Job {
 		// set BackupSession as owner of this Job
 		core_util.EnsureOwnerReference(&in.ObjectMeta, backupConfigRef)
-		in.Labels = map[string]string{
-			// job controller should not delete this job on completion
-			// use a different label than v1alpha1 job labels to skip deletion from job controller
-			// TODO: Remove job controller, cleanup backup-session periodically
-			util.LabelApp: util.AppLabelStashV1Beta1,
+		if in.Labels == nil {
+			in.Labels = make(map[string]string)
 		}
+		// ensure that job gets deleted on completion
+		in.Labels[apis.KeyDeleteJobOnCompletion] = "true"
+
 		in.Spec.Template.Spec.Containers = core_util.UpsertContainer(
 			in.Spec.Template.Spec.Containers,
 			core.Container{

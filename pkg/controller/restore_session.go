@@ -182,9 +182,12 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 }
 
 func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSession) error {
+	offshootLabels := restoreSession.OffshootLabels()
+
 	objectMeta := metav1.ObjectMeta{
 		Name:      RestoreJobPrefix + restoreSession.Name,
 		Namespace: restoreSession.Namespace,
+		Labels:    offshootLabels,
 	}
 
 	ref, err := reference.GetReference(stash_scheme.Scheme, restoreSession)
@@ -204,10 +207,7 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 
 		_, _, err = core_util.CreateOrPatchServiceAccount(c.kubeClient, objectMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
 			core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
-			if in.Labels == nil {
-				in.Labels = map[string]string{}
-			}
-			in.Labels[util.LabelApp] = util.AppLabelStash
+			in.Labels = offshootLabels
 			return in
 		})
 	}
@@ -217,7 +217,7 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		return err
 	}
 
-	err = c.ensureRestoreJobRBAC(ref, serviceAccountName, psps)
+	err = c.ensureRestoreJobRBAC(ref, serviceAccountName, psps, offshootLabels)
 	if err != nil {
 		return err
 	}
@@ -287,12 +287,12 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, objectMeta, func(in *batchv1.Job) *batchv1.Job {
 		// set RestoreSession as owner of this Job
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
-		in.Labels = map[string]string{
-			// job controller should not delete this job on completion
-			// use a different label than v1alpha1 job labels to skip deletion from job controller
-			// TODO: Remove job controller, cleanup restore-session periodically
-			util.LabelApp: util.AppLabelStashV1Beta1,
-		}
+
+		in.Labels = offshootLabels
+		// restore job is created by resolving task and function. we should not delete it when it goes to completed state.
+		// user might need to know what was the final resolved job specification for debugging purpose.
+		in.Labels[apis.KeyDeleteJobOnCompletion] = "false"
+
 		in.Spec.Template.Spec = podSpec
 		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 		return in
@@ -446,9 +446,12 @@ func (c *StashController) getRestoreSessionPhase(restoreSession *api_v1beta1.Res
 }
 
 func (c *StashController) ensureVolumeSnapshotterRestoreJob(restoreSession *api_v1beta1.RestoreSession) error {
+	offshootLabels := restoreSession.OffshootLabels()
+
 	jobMeta := metav1.ObjectMeta{
 		Name:      VolumeSnapshotPrefix + restoreSession.Name,
 		Namespace: restoreSession.Namespace,
+		Labels:    offshootLabels,
 	}
 
 	ref, err := reference.GetReference(stash_scheme.Scheme, restoreSession)
@@ -466,17 +469,14 @@ func (c *StashController) ensureVolumeSnapshotterRestoreJob(restoreSession *api_
 	}
 	_, _, err = core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
-		if in.Labels == nil {
-			in.Labels = map[string]string{}
-		}
-		in.Labels[util.LabelApp] = util.AppLabelStash
+		in.Labels = offshootLabels
 		return in
 	})
 	if err != nil {
 		return err
 	}
 
-	err = c.ensureVolumeSnapshotRestoreJobRBAC(ref, serviceAccountName)
+	err = c.ensureVolumeSnapshotRestoreJobRBAC(ref, serviceAccountName, offshootLabels)
 	if err != nil {
 		return err
 	}
@@ -491,12 +491,11 @@ func (c *StashController) ensureVolumeSnapshotterRestoreJob(restoreSession *api_
 	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, jobMeta, func(in *batchv1.Job) *batchv1.Job {
 		// set BackupSession as owner of this Job
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
-		in.Labels = map[string]string{
-			// job controller should not delete this job on completion
-			// use a different label than v1alpha1 job labels to skip deletion from job controller
-			// TODO: Remove job controller, cleanup backup-session periodically
-			util.LabelApp: util.AppLabelStashV1Beta1,
-		}
+
+		in.Labels = offshootLabels
+		// ensure that job gets deleted when complete
+		in.Labels[apis.KeyDeleteJobOnCompletion] = "true"
+
 		in.Spec.Template.Spec.Containers = core_util.UpsertContainer(
 			in.Spec.Template.Spec.Containers,
 			core.Container{

@@ -63,7 +63,7 @@ func (c *StashController) applyBackupAnnotationLogic(w *wapi.Workload) error {
 		}
 
 		// resolve BackupConfigurationTemplate's variables
-		inputs := make(map[string]string, 0)
+		inputs := make(map[string]string)
 		inputs[apis.TargetAPIVersion] = w.APIVersion
 		inputs[apis.TargetKind] = strings.ToLower(w.Kind)
 		inputs[apis.TargetName] = w.Name

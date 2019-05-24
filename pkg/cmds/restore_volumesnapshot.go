@@ -174,7 +174,7 @@ func (opt *VSoption) RestoreVolumeSnapshot() error {
 }
 
 func (opt *VSoption) getPVCDefinition(data PVC) *corev1.PersistentVolumeClaim {
-	inputs := make(map[string]string, 0)
+	inputs := make(map[string]string)
 	if data.podOrdinal == nil {
 		data.pvc.Name = data.pvcName
 	} else {

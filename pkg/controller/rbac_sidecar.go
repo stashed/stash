@@ -20,10 +20,11 @@ func (c *StashController) getSidecarRoleBindingName(name string) string {
 	return name + "-" + SidecarClusterRole
 }
 
-func (c *StashController) ensureSidecarRoleBinding(resource *core.ObjectReference, sa string) error {
+func (c *StashController) ensureSidecarRoleBinding(resource *core.ObjectReference, sa string, labels map[string]string) error {
 	meta := metav1.ObjectMeta{
 		Namespace: resource.Namespace,
 		Name:      c.getSidecarRoleBindingName(resource.Name),
+		Labels:    labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)

@@ -124,11 +124,11 @@ func (opt *options) createBackupSession() error {
 		// Set BackupConfiguration  as BackupSession Owner
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 		in.Spec.BackupConfiguration.Name = opt.name
-		if in.Labels == nil {
-			in.Labels = map[string]string{}
-		}
-		in.Labels[util.LabelApp] = util.AppLabelStash
+
+		in.Labels = backupConfiguration.OffshootLabels()
+		// add BackupConfiguration name as a labels so that BackupSession controller inside sidecar can discover this BackupSession
 		in.Labels[util.LabelBackupConfiguration] = backupConfiguration.Name
+
 		return in
 	})
 	return err

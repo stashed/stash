@@ -72,7 +72,7 @@ func (c *StashController) applyBackupAnnotationLogicForAppBinding(ab *appCatalog
 		}
 
 		// resolve BackupConfigurationTemplate's variables
-		inputs := make(map[string]string, 0)
+		inputs := make(map[string]string)
 		inputs[apis.TargetAPIVersion] = ab.APIVersion
 		inputs[apis.TargetKind] = strings.ToLower(ab.Kind)
 		inputs[apis.TargetName] = ab.Name

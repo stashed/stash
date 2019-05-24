@@ -15,6 +15,7 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/tools/queue"
 	workload_api "kmodules.xyz/webhook-runtime/apis/workload/v1"
+	"stash.appscode.dev/stash/apis"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
 	v1beta1_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
@@ -185,6 +186,8 @@ func (c *StashController) sendEventToWorkloadQueue(kind, namespace, resourceName
 // the CornJob will create a BackupSession object in each schedule
 // respective BackupSession controller will watch this BackupSession object and take backup instantly
 func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupConfiguration) error {
+	offshootLabels := backupConfiguration.OffshootLabels()
+
 	if backupConfiguration == nil {
 		return fmt.Errorf("BackupConfiguration is nil")
 	}
@@ -197,7 +200,9 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 	meta := metav1.ObjectMeta{
 		Name:      backupConfiguration.Name,
 		Namespace: backupConfiguration.Namespace,
+		Labels:    offshootLabels,
 	}
+
 	ref, err := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
 	if err != nil {
 		return err
@@ -216,16 +221,12 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 
 		_, _, err = core_util.CreateOrPatchServiceAccount(c.kubeClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
 			core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
-			if in.Labels == nil {
-				in.Labels = map[string]string{}
-			}
-			in.Labels[util.LabelApp] = util.AppLabelStash
 			return in
 		})
 	}
 
 	// now ensure RBAC stuff for this CronJob
-	err = c.ensureCronJobRBAC(ref, serviceAccountName, c.getBackupSessionCronJobPSPNames())
+	err = c.ensureCronJobRBAC(ref, serviceAccountName, c.getBackupSessionCronJobPSPNames(), offshootLabels)
 	if err != nil {
 		return err
 	}
@@ -235,10 +236,10 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 
 		in.Spec.Schedule = backupConfiguration.Spec.Schedule
-		if in.Spec.JobTemplate.Labels == nil {
-			in.Spec.JobTemplate.Labels = map[string]string{}
-		}
-		in.Spec.JobTemplate.Labels[util.LabelApp] = util.AppLabelStash
+		in.Spec.JobTemplate.Labels = offshootLabels
+		// ensure that job gets deleted on completion
+		in.Spec.JobTemplate.Labels[apis.KeyDeleteJobOnCompletion] = "true"
+
 		in.Spec.JobTemplate.Spec.Template.Spec.Containers = core_util.UpsertContainer(
 			in.Spec.JobTemplate.Spec.Template.Spec.Containers,
 			core.Container{
