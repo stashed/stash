@@ -77,7 +77,7 @@ func cleanup(tempDir string) error {
 }
 
 func TestBackupRestoreDirs(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "stash-unit-test")
+	tempDir, err := ioutil.TempDir("", "stash-unit-test-")
 	if err != nil {
 		t.Error(err)
 	}
@@ -125,7 +125,7 @@ func TestBackupRestoreDirs(t *testing.T) {
 }
 
 func TestBackupRestoreStdin(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "stash-unit-test")
+	tempDir, err := ioutil.TempDir("", "stash-unit-test-")
 	if err != nil {
 		t.Error(err)
 	}
@@ -220,7 +220,7 @@ func TestBackupRestoreWithScheduling(t *testing.T) {
 }
 
 func TestBackupRestoreStdinWithScheduling(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "stash-unit-test")
+	tempDir, err := ioutil.TempDir("", "stash-unit-test-")
 	if err != nil {
 		t.Error(err)
 	}
