@@ -31,7 +31,7 @@ Please pick a version of Stash that matches your Kubernetes installation.
 | [0.8.3](https://github.com/stashed/stash/releases/tag/0.8.3) (uses CRD)           | [User Guide](https://appscode.com/products/stash/0.8.3)         | 1.9.x+             |
 | [0.7.0](https://github.com/stashed/stash/releases/tag/0.7.0) (uses CRD)           | [User Guide](https://appscode.com/products/stash/0.7.0)         | 1.8.x              |
 | [0.6.4](https://github.com/stashed/stash/releases/tag/0.6.4) (uses CRD)           | [User Guide](https://appscode.com/products/stash/0.6.4)         | 1.7.x              |
-| [0.4.2](https://github.com/stashed/stash/releases/tag/0.4.2) (uses TPR)           | [User Guide](https://github.com/stashed/stash/tree/0.4.2/docs) | 1.5.x - 1.6.x      |
+| [0.4.2](https://github.com/stashed/stash/releases/tag/0.4.2) (uses TPR)           | [User Guide](https://github.com/stashed/docs/tree/0.4.2/docs) | 1.5.x - 1.6.x      |
 
 ## Installation
 
