@@ -19,6 +19,7 @@ import (
 	"kmodules.xyz/client-go/tools/cli"
 	"kmodules.xyz/client-go/tools/clientcmd"
 	"kmodules.xyz/client-go/tools/queue"
+	ofst_util "kmodules.xyz/offshoot-api/util"
 	"kmodules.xyz/webhook-runtime/admission"
 	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"
 	webhook "kmodules.xyz/webhook-runtime/admission/v1beta1/generic"
@@ -443,33 +444,47 @@ func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.B
 		Tag:      c.StashImageTag,
 	}
 
+	jobTemplate := core.PodTemplateSpec{
+		Spec: core.PodSpec{
+			Containers: []core.Container{
+				{
+					Name:            util.StashContainer,
+					ImagePullPolicy: core.PullAlways,
+					Image:           image.ToContainerImage(),
+					Args: []string{
+						"create-vs",
+						fmt.Sprintf("--backupsession.name=%s", backupSession.Name),
+						fmt.Sprintf("--enable-status-subresource=%v", apis.EnableStatusSubresource),
+						fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
+						fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
+					},
+				},
+			},
+			RestartPolicy:      core.RestartPolicyNever,
+			ServiceAccountName: serviceAccountName,
+		},
+	}
+
+	// Pass container RuntimeSettings from BackupConfiguration
+	if backupConfig.Spec.RuntimeSettings.Container != nil {
+		jobTemplate.Spec.Containers[0] = ofst_util.ApplyContainerRuntimeSettings(jobTemplate.Spec.Containers[0], *backupConfig.Spec.RuntimeSettings.Container)
+	}
+
+	// Pass pod RuntimeSettings from BackupConfiguration
+	if backupConfig.Spec.RuntimeSettings.Pod != nil {
+		jobTemplate.Spec = ofst_util.ApplyPodRuntimeSettings(jobTemplate.Spec, *backupConfig.Spec.RuntimeSettings.Pod)
+	}
+
 	// Create VolumeSnapshotter job
 	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, jobMeta, func(in *batchv1.Job) *batchv1.Job {
 		// set BackupSession as owner of this Job
 		core_util.EnsureOwnerReference(&in.ObjectMeta, backupConfigRef)
-		if in.Labels == nil {
-			in.Labels = make(map[string]string)
-		}
+
+		in.Labels = offshootLabels
 		// ensure that job gets deleted on completion
 		in.Labels[apis.KeyDeleteJobOnCompletion] = "true"
 
-		in.Spec.Template.Spec.Containers = core_util.UpsertContainer(
-			in.Spec.Template.Spec.Containers,
-			core.Container{
-				Name:            util.StashContainer,
-				ImagePullPolicy: core.PullAlways,
-				Image:           image.ToContainerImage(),
-				Args: []string{
-					"create-vs",
-					fmt.Sprintf("--backupsession.name=%s", backupSession.Name),
-					fmt.Sprintf("--enable-status-subresource=%v", apis.EnableStatusSubresource),
-					fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
-					fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
-				},
-			})
-		in.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
-		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-
+		in.Spec.Template = jobTemplate
 		return in
 	})
 

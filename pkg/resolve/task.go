@@ -10,6 +10,7 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	store "kmodules.xyz/objectstore-api/api/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
+	ofst_util "kmodules.xyz/offshoot-api/util"
 	v1beta1_api "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/util"
@@ -85,7 +86,7 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 
 		// apply RuntimeSettings to Container
 		if o.RuntimeSettings.Container != nil {
-			container = util.ApplyContainerRuntimeSettings(container, *o.RuntimeSettings.Container)
+			container = ofst_util.ApplyContainerRuntimeSettings(container, *o.RuntimeSettings.Container)
 		}
 
 		containers = append(containers, container)
@@ -102,7 +103,7 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 	}
 	// apply RuntimeSettings to PodSpec
 	if o.RuntimeSettings.Pod != nil {
-		podSpec = util.ApplyPodRuntimeSettings(podSpec, *o.RuntimeSettings.Pod)
+		podSpec = ofst_util.ApplyPodRuntimeSettings(podSpec, *o.RuntimeSettings.Pod)
 	}
 	// always upsert tmp volume
 	podSpec.Volumes = util.UpsertTmpVolume(podSpec.Volumes, o.TempDir)

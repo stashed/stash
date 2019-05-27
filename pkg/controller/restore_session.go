@@ -19,6 +19,7 @@ import (
 	"kmodules.xyz/client-go/tools/cli"
 	"kmodules.xyz/client-go/tools/queue"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
+	ofst_util "kmodules.xyz/offshoot-api/util"
 	"kmodules.xyz/webhook-runtime/admission"
 	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"
 	webhook "kmodules.xyz/webhook-runtime/admission/v1beta1/generic"
@@ -514,8 +515,6 @@ func (c *StashController) ensureVolumeSnapshotterRestoreJob(restoreSession *api_
 
 	jobTemplate := core.PodTemplateSpec{
 		Spec: core.PodSpec{
-			Volumes:        nil,
-			InitContainers: nil,
 			Containers: []core.Container{
 				{
 					Name:            util.StashContainer,
@@ -536,12 +535,12 @@ func (c *StashController) ensureVolumeSnapshotterRestoreJob(restoreSession *api_
 
 	// Pass container RuntimeSettings from RestoreSession
 	if restoreSession.Spec.RuntimeSettings.Container != nil {
-		jobTemplate.Spec.Containers[0] = util.ApplyContainerRuntimeSettings(jobTemplate.Spec.Containers[0], *restoreSession.Spec.RuntimeSettings.Container)
+		jobTemplate.Spec.Containers[0] = ofst_util.ApplyContainerRuntimeSettings(jobTemplate.Spec.Containers[0], *restoreSession.Spec.RuntimeSettings.Container)
 	}
 
 	// Pass pod RuntimeSettings from RestoreSession
 	if restoreSession.Spec.RuntimeSettings.Pod != nil {
-		jobTemplate.Spec = util.ApplyPodRuntimeSettings(jobTemplate.Spec, *restoreSession.Spec.RuntimeSettings.Pod)
+		jobTemplate.Spec = ofst_util.ApplyPodRuntimeSettings(jobTemplate.Spec, *restoreSession.Spec.RuntimeSettings.Pod)
 	}
 
 	// Create VolumeSnapshotter Job
