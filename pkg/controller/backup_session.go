@@ -16,10 +16,7 @@ import (
 	batch_util "kmodules.xyz/client-go/batch/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
-	"kmodules.xyz/client-go/tools/cli"
-	"kmodules.xyz/client-go/tools/clientcmd"
 	"kmodules.xyz/client-go/tools/queue"
-	ofst_util "kmodules.xyz/offshoot-api/util"
 	"kmodules.xyz/webhook-runtime/admission"
 	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"
 	webhook "kmodules.xyz/webhook-runtime/admission/v1beta1/generic"
@@ -444,35 +441,9 @@ func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.B
 		Tag:      c.StashImageTag,
 	}
 
-	jobTemplate := core.PodTemplateSpec{
-		Spec: core.PodSpec{
-			Containers: []core.Container{
-				{
-					Name:            util.StashContainer,
-					ImagePullPolicy: core.PullAlways,
-					Image:           image.ToContainerImage(),
-					Args: []string{
-						"create-vs",
-						fmt.Sprintf("--backupsession.name=%s", backupSession.Name),
-						fmt.Sprintf("--enable-status-subresource=%v", apis.EnableStatusSubresource),
-						fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
-						fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
-					},
-				},
-			},
-			RestartPolicy:      core.RestartPolicyNever,
-			ServiceAccountName: serviceAccountName,
-		},
-	}
-
-	// Pass container RuntimeSettings from BackupConfiguration
-	if backupConfig.Spec.RuntimeSettings.Container != nil {
-		jobTemplate.Spec.Containers[0] = ofst_util.ApplyContainerRuntimeSettings(jobTemplate.Spec.Containers[0], *backupConfig.Spec.RuntimeSettings.Container)
-	}
-
-	// Pass pod RuntimeSettings from BackupConfiguration
-	if backupConfig.Spec.RuntimeSettings.Pod != nil {
-		jobTemplate.Spec = ofst_util.ApplyPodRuntimeSettings(jobTemplate.Spec, *backupConfig.Spec.RuntimeSettings.Pod)
+	jobTemplate, err := util.NewVolumeSnapshotterJob(backupSession, backupConfig, image)
+	if err != nil {
+		return err
 	}
 
 	// Create VolumeSnapshotter job
@@ -484,7 +455,8 @@ func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.B
 		// ensure that job gets deleted on completion
 		in.Labels[apis.KeyDeleteJobOnCompletion] = "true"
 
-		in.Spec.Template = jobTemplate
+		in.Spec.Template = *jobTemplate
+		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 		return in
 	})
 
