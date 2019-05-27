@@ -17,7 +17,6 @@ import (
 	"kmodules.xyz/client-go/meta"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
 	store "kmodules.xyz/objectstore-api/api/v1"
-	ofst "kmodules.xyz/offshoot-api/api/v1"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
 	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"
 	"stash.appscode.dev/stash/apis"
@@ -335,101 +334,4 @@ func (wc *WorkloadClients) IsTargetExist(target api_v1beta1.TargetRef, namespace
 		}
 	}
 	return false
-}
-
-// TODO: move to kmodules
-func ApplyContainerRuntimeSettings(container core.Container, settings ofst.ContainerRuntimeSettings) core.Container {
-	if len(settings.Resources.Limits) > 0 {
-		container.Resources.Limits = settings.Resources.Limits
-	}
-	if len(settings.Resources.Limits) > 0 {
-		container.Resources.Requests = settings.Resources.Requests
-	}
-	if settings.LivenessProbe != nil {
-		container.LivenessProbe = settings.LivenessProbe
-	}
-	if settings.ReadinessProbe != nil {
-		container.ReadinessProbe = settings.ReadinessProbe
-	}
-	if settings.Lifecycle != nil {
-		container.Lifecycle = settings.Lifecycle
-	}
-	if settings.SecurityContext != nil {
-		container.SecurityContext = settings.SecurityContext
-	}
-	if len(settings.EnvFrom) > 0 {
-		container.EnvFrom = append(container.EnvFrom, settings.EnvFrom...)
-	}
-	if len(settings.Env) > 0 {
-		container.Env = core_util.UpsertEnvVars(container.Env, settings.Env...)
-	}
-	// set nice, ionice settings as env
-	if settings.Nice != nil && settings.Nice.Adjustment != nil {
-		container.Env = core_util.UpsertEnvVars(container.Env, core.EnvVar{
-			Name:  apis.NiceAdjustment,
-			Value: fmt.Sprint(*settings.Nice.Adjustment),
-		})
-	}
-	if settings.IONice != nil {
-		if settings.IONice.Class != nil {
-			container.Env = core_util.UpsertEnvVars(container.Env, core.EnvVar{
-				Name:  apis.IONiceClass,
-				Value: fmt.Sprint(*settings.IONice.Class),
-			})
-		}
-		if settings.IONice.ClassData != nil {
-			container.Env = core_util.UpsertEnvVars(container.Env, core.EnvVar{
-				Name:  apis.IONiceClassData,
-				Value: fmt.Sprint(*settings.IONice.ClassData),
-			})
-		}
-	}
-	return container
-}
-
-// TODO: move to kmodules
-func ApplyPodRuntimeSettings(podSpec core.PodSpec, settings ofst.PodRuntimeSettings) core.PodSpec {
-	if settings.NodeSelector != nil && len(settings.NodeSelector) > 0 {
-		podSpec.NodeSelector = settings.NodeSelector
-	}
-	if settings.ServiceAccountName != "" {
-		podSpec.ServiceAccountName = settings.ServiceAccountName
-	}
-	if settings.AutomountServiceAccountToken != nil {
-		podSpec.AutomountServiceAccountToken = settings.AutomountServiceAccountToken
-	}
-	if settings.NodeName != "" {
-		podSpec.NodeName = settings.NodeName
-	}
-	if settings.SecurityContext != nil {
-		podSpec.SecurityContext = settings.SecurityContext
-	}
-	if len(settings.ImagePullSecrets) > 0 {
-		podSpec.ImagePullSecrets = settings.ImagePullSecrets
-	}
-	if settings.Affinity != nil {
-		podSpec.Affinity = settings.Affinity
-	}
-	if settings.SchedulerName != "" {
-		podSpec.SchedulerName = settings.SchedulerName
-	}
-	if len(settings.Tolerations) > 0 {
-		podSpec.Tolerations = settings.Tolerations
-	}
-	if settings.PriorityClassName != "" {
-		podSpec.PriorityClassName = settings.PriorityClassName
-	}
-	if settings.Priority != nil {
-		podSpec.Priority = settings.Priority
-	}
-	if len(settings.ReadinessGates) > 0 {
-		podSpec.ReadinessGates = settings.ReadinessGates
-	}
-	if settings.RuntimeClassName != nil {
-		podSpec.RuntimeClassName = settings.RuntimeClassName
-	}
-	if settings.EnableServiceLinks != nil {
-		podSpec.EnableServiceLinks = settings.EnableServiceLinks
-	}
-	return podSpec
 }
