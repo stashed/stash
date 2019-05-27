@@ -59,12 +59,23 @@ func GetHostName(target interface{}) (string, error) {
 		if t == nil {
 			return "host-0", nil
 		}
+		// replicas is specified when restore StatefulSet volumes using job.
+		// so we have to handle this case too.
+		if t.Replicas != nil { // StatefulSet volumes.
+			podName := os.Getenv(KeyPodName)
+			if podName == "" {
+				return "", fmt.Errorf("missing podName for %s", apis.KindStatefulSet)
+			}
+			podInfo := strings.Split(podName, "-")
+			podOrdinal := podInfo[len(podInfo)-1]
+			return "host-" + podOrdinal, nil
+		}
 		targetRef = t.Ref
 	}
 
 	switch targetRef.Kind {
 	case apis.KindStatefulSet:
-		podName := os.Getenv("POD_NAME")
+		podName := os.Getenv(KeyPodName)
 		if podName == "" {
 			return "", fmt.Errorf("missing podName for %s", apis.KindStatefulSet)
 		}
@@ -72,7 +83,7 @@ func GetHostName(target interface{}) (string, error) {
 		podOrdinal := podInfo[len(podInfo)-1]
 		return "host-" + podOrdinal, nil
 	case apis.KindDaemonSet:
-		nodeName := os.Getenv("NODE_NAME")
+		nodeName := os.Getenv(KeyNodeName)
 		if nodeName == "" {
 			return "", fmt.Errorf("missing nodeName for %s", apis.KindDaemonSet)
 		}
@@ -334,4 +345,53 @@ func (wc *WorkloadClients) IsTargetExist(target api_v1beta1.TargetRef, namespace
 		}
 	}
 	return false
+}
+
+func GetPVCFromVolumeClaimTemplates(ordinal int32, claimTemplates []core.PersistentVolumeClaim) ([]core.PersistentVolumeClaim, error) {
+	pvcList := make([]core.PersistentVolumeClaim, 0)
+
+	for _, claim := range claimTemplates {
+
+		if ordinal != -1 {
+			claim.Name = fmt.Sprintf("%s-%d", claim.Name, ordinal)
+		}
+
+		pvcList = append(pvcList, claim)
+	}
+
+	return pvcList, nil
+}
+
+// CreateBatchPVC creates a batch of PVCs whose definitions has been provided in pvcList argument
+func CreateBatchPVC(kubeClient kubernetes.Interface, namespace string, pvcList []core.PersistentVolumeClaim) error {
+	for _, pvc := range pvcList {
+		_, err := kubeClient.CoreV1().PersistentVolumeClaims(namespace).Create(&pvc)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// PVCListToVolumes return a list of volumes to mount in pod for a list of PVCs
+func PVCListToVolumes(pvcList []core.PersistentVolumeClaim, ordinal int32) []core.Volume {
+	volList := make([]core.Volume, 0)
+	var volName string
+	for _, pvc := range pvcList {
+		if ordinal != int32(-1) {
+			// StatefulSet's PVC. Remove the pod ordinal suffix.
+			volName = strings.TrimSuffix(pvc.Name, fmt.Sprintf("-%d", ordinal))
+		} else {
+			volName = pvc.Name
+		}
+		volList = append(volList, core.Volume{
+			Name: volName,
+			VolumeSource: core.VolumeSource{
+				PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
+					ClaimName: pvc.Name,
+				},
+			},
+		})
+	}
+	return volList
 }

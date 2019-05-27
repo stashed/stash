@@ -214,6 +214,16 @@ func NewPVCRestoreJob(rs *api_v1beta1.RestoreSession, repository *api_v1alpha1.R
 			fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
 			fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
 		}, cli.LoggerOptions.ToFlags()...),
+		Env: []core.EnvVar{
+			{
+				Name: KeyPodName,
+				ValueFrom: &core.EnvVarSource{
+					FieldRef: &core.ObjectFieldSelector{
+						FieldPath: "metadata.name",
+					},
+				},
+			},
+		},
 		VolumeMounts: []core.VolumeMount{
 			{
 				Name:      StashSecretVolume,

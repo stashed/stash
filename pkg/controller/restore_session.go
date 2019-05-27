@@ -325,6 +325,45 @@ func (c *StashController) createPVCThenRestore(restoreSession *api_v1beta1.Resto
 	repository *api_v1alpha1.Repository, meta metav1.ObjectMeta, ref *core.ObjectReference, serviceAccountName string) error {
 	// Create PVCs specified in VolumeClaimTemplate
 
+	if restoreSession.Spec.Target.Replicas != nil { // restoring StatefulSets volumes
+		pvcList, err := util.GetPVCFromVolumeClaimTemplates(-1, restoreSession.Spec.Target.VolumeClaimTemplates)
+		if err != nil {
+			return err
+		}
+
+		err = util.CreateBatchPVC(c.kubeClient, restoreSession.Namespace, pvcList)
+		if err != nil {
+			return err
+		}
+
+		err = c.createRestoreJob(restoreSession, repository, meta, ref, serviceAccountName, util.PVCListToVolumes(pvcList, -1))
+		if err != nil {
+			return err
+		}
+	} else {
+		for ordinal := int32(0); ordinal < *restoreSession.Spec.Target.Replicas; ordinal++ {
+			pvcList, err := util.GetPVCFromVolumeClaimTemplates(ordinal, restoreSession.Spec.Target.VolumeClaimTemplates)
+			if err != nil {
+				return err
+			}
+
+			err = util.CreateBatchPVC(c.kubeClient, restoreSession.Namespace, pvcList)
+			if err != nil {
+				return err
+			}
+
+			err = c.createRestoreJob(restoreSession, repository, meta, ref, serviceAccountName, util.PVCListToVolumes(pvcList, ordinal))
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c *StashController) createRestoreJob(restoreSession *api_v1beta1.RestoreSession, repository *api_v1alpha1.Repository,
+	meta metav1.ObjectMeta, ref *core.ObjectReference, serviceAccountName string, volumes []core.Volume) error {
 	image := docker.Docker{
 		Registry: c.DockerRegistry,
 		Image:    docker.ImageStash,
@@ -335,6 +374,9 @@ func (c *StashController) createPVCThenRestore(restoreSession *api_v1beta1.Resto
 	if err != nil {
 		return err
 	}
+
+	// add PVCs to volume list of the job
+	jobTemplate.Spec.Volumes = core_util.UpsertVolume(jobTemplate.Spec.Volumes, volumes...)
 
 	// Create restore Job
 	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, meta, func(in *batchv1.Job) *batchv1.Job {
