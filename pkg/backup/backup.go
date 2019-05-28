@@ -9,7 +9,7 @@ import (
 	"github.com/appscode/go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
-	cron "gopkg.in/robfig/cron.v2"
+	"gopkg.in/robfig/cron.v2"
 	core "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -29,9 +29,9 @@ import (
 	stashinformers "stash.appscode.dev/stash/client/informers/externalversions"
 	stash_listers "stash.appscode.dev/stash/client/listers/stash/v1alpha1"
 	"stash.appscode.dev/stash/pkg/cli"
-	"stash.appscode.dev/stash/pkg/controller"
 	"stash.appscode.dev/stash/pkg/docker"
 	"stash.appscode.dev/stash/pkg/eventer"
+	rbac2 "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 )
 
@@ -423,7 +423,7 @@ func (c *Controller) ensureCheckRBAC(restic *core.ObjectReference) error {
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
 			Kind:     "ClusterRole",
-			Name:     controller.SidecarClusterRole,
+			Name:     rbac2.SidecarClusterRole,
 		}
 		in.Subjects = []rbac.Subject{
 			{

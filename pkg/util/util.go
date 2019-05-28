@@ -19,6 +19,7 @@ import (
 	store "kmodules.xyz/objectstore-api/api/v1"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
 	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"
+	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 	"stash.appscode.dev/stash/apis"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
@@ -394,4 +395,28 @@ func PVCListToVolumes(pvcList []core.PersistentVolumeClaim, ordinal int32) []cor
 		})
 	}
 	return volList
+}
+
+func HasStashContainer(w *wapi.Workload) bool {
+	return HasStashSidecar(w.Spec.Template.Spec.Containers) || HasStashInitContainer(w.Spec.Template.Spec.InitContainers)
+}
+
+func HasStashSidecar(containers []core.Container) bool {
+	// check if the workload has stash sidecar container
+	for _, c := range containers {
+		if c.Name == StashContainer {
+			return true
+		}
+	}
+	return false
+}
+
+func HasStashInitContainer(containers []core.Container) bool {
+	// check if the workload has stash init-container
+	for _, c := range containers {
+		if c.Name == StashInitContainer {
+			return true
+		}
+	}
+	return false
 }

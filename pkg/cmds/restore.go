@@ -21,6 +21,7 @@ func NewCmdRestore() *cobra.Command {
 			ScratchDir:  "/tmp",
 			EnableCache: true,
 		},
+		RestoreModel: restore.RestoreModelInitContainer,
 	}
 
 	cmd := &cobra.Command{
@@ -62,6 +63,7 @@ func NewCmdRestore() *cobra.Command {
 
 	cmd.Flags().BoolVar(&opt.Metrics.Enabled, "metrics-enabled", opt.Metrics.Enabled, "Specify whether to export Prometheus metrics")
 	cmd.Flags().StringVar(&opt.Metrics.PushgatewayURL, "pushgateway-url", opt.Metrics.PushgatewayURL, "Pushgateway URL where the metrics will be pushed")
+	cmd.Flags().StringVar(&opt.RestoreModel, "restore-model", opt.RestoreModel, "Specify whether using job or init-container to restore (default init-container)")
 
 	return cmd
 }

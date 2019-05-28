@@ -155,7 +155,7 @@ func (c *StashController) ensureUnnecessaryConfigMapLockDeleted(w *wapi.Workload
 		Name:       w.Name,
 	}
 
-	if !hasStashSidecar(w.Spec.Template.Spec.Containers) {
+	if !util.HasStashSidecar(w.Spec.Template.Spec.Containers) {
 		// delete backup ConfigMap lock
 		err := util.DeleteBackupConfigMapLock(c.kubeClient, w.Namespace, r)
 		if err != nil && !kerr.IsNotFound(err) {
@@ -168,7 +168,7 @@ func (c *StashController) ensureUnnecessaryConfigMapLockDeleted(w *wapi.Workload
 		}
 	}
 
-	if !hasStashInitContainer(w.Spec.Template.Spec.InitContainers) {
+	if !util.HasStashInitContainer(w.Spec.Template.Spec.InitContainers) {
 		// delete restore ConfigMap lock
 		err := util.DeleteRestoreConfigMapLock(c.kubeClient, w.Namespace, r)
 		if err != nil && !kerr.IsNotFound(err) {
@@ -176,30 +176,6 @@ func (c *StashController) ensureUnnecessaryConfigMapLockDeleted(w *wapi.Workload
 		}
 	}
 	return nil
-}
-
-func hasStashContainer(w *wapi.Workload) bool {
-	return hasStashSidecar(w.Spec.Template.Spec.Containers) || hasStashInitContainer(w.Spec.Template.Spec.InitContainers)
-}
-
-func hasStashSidecar(containers []core.Container) bool {
-	// check if the workload has stash sidecar container
-	for _, c := range containers {
-		if c.Name == util.StashContainer {
-			return true
-		}
-	}
-	return false
-}
-
-func hasStashInitContainer(containers []core.Container) bool {
-	// check if the workload has stash init-container
-	for _, c := range containers {
-		if c.Name == util.StashInitContainer {
-			return true
-		}
-	}
-	return false
 }
 
 func (c *StashController) getTotalHosts(target interface{}, namespace string, driver api_v1beta1.Snapshotter) (*int32, error) {
@@ -210,6 +186,8 @@ func (c *StashController) getTotalHosts(target interface{}, namespace string, dr
 	if target == nil {
 		return types.Int32P(1), nil
 	}
+
+	// target interface can be BackupTarget or RestoreTarget. We need to extract TargetRef from it.
 	switch target.(type) {
 	case *api_v1beta1.BackupTarget:
 		t := target.(*api_v1beta1.BackupTarget)
@@ -233,76 +211,92 @@ func (c *StashController) getTotalHosts(target interface{}, namespace string, dr
 			}
 			return types.Int32P(def * int32(len(t.VolumeClaimTemplates))), nil
 		}
+		// if volumeClaimTemplates is specified when using Restic driver, we can calculate total host from it
+		if driver != api_v1beta1.VolumeSnapshotter && t.VolumeClaimTemplates != nil {
+			if t.Replicas == nil {
+				return types.Int32P(1), nil
+			} else {
+				return t.Replicas, nil
+			}
+		}
 	}
 
 	if driver == api_v1beta1.VolumeSnapshotter {
-		switch targetRef.Kind {
-		case apis.KindStatefulSet:
-			ss, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
-			if err != nil {
-				return nil, err
-			}
-			if rep != nil {
-				return types.Int32P(types.Int32(rep) * int32(len(ss.Spec.VolumeClaimTemplates))), err
-			}
-			return types.Int32P(types.Int32(ss.Spec.Replicas) * int32(len(ss.Spec.VolumeClaimTemplates))), err
-		case apis.KindDeployment:
-			deployment, err := c.kubeClient.AppsV1().Deployments(namespace).Get(targetRef.Name, metav1.GetOptions{})
-			if err != nil {
-				return nil, err
-			}
-			return countPVC(deployment.Spec.Template.Spec.Volumes), err
-
-		case apis.KindDaemonSet:
-			daemon, err := c.kubeClient.AppsV1().DaemonSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
-			if err != nil {
-				return nil, err
-			}
-			return countPVC(daemon.Spec.Template.Spec.Volumes), err
-
-		case apis.KindReplicaSet:
-			rs, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
-			if err != nil {
-				return nil, err
-			}
-			return countPVC(rs.Spec.Template.Spec.Volumes), err
-
-		case apis.KindReplicationController:
-			rc, err := c.kubeClient.CoreV1().ReplicationControllers(namespace).Get(targetRef.Name, metav1.GetOptions{})
-			if err != nil {
-				return nil, err
-			}
-			return countPVC(rc.Spec.Template.Spec.Volumes), err
-
-		default:
-			return types.Int32P(1), nil
-		}
+		return c.getTotalHostForVolumeSnapshotter(targetRef, namespace, rep)
 	} else {
-		switch targetRef.Kind {
-		// all replicas of StatefulSet will take backup/restore. so total number of hosts will be number of replicas.
-		case apis.KindStatefulSet:
-			ss, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
-			if err != nil {
-				return nil, err
-			}
-			return ss.Spec.Replicas, nil
-		// all Daemon pod will take backup/restore. so total number of hosts will be number of ready replicas
-		case apis.KindDaemonSet:
-			dmn, err := c.kubeClient.AppsV1().DaemonSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
-			if err != nil {
-				return nil, err
-			}
-			return &dmn.Status.NumberReady, nil
-		// for all other workloads, only one replica will take backup/restore. so number of total host will be 1
-		default:
-			return types.Int32P(1), nil
-		}
+		return c.getTotalHostForRestic(targetRef, namespace, rep)
 	}
 }
 
-func countPVC(vollist []core.Volume) *int32 {
+func (c *StashController) getTotalHostForVolumeSnapshotter(targetRef api_v1beta1.TargetRef, namespace string, replica *int32) (*int32, error) {
+	switch targetRef.Kind {
+	case apis.KindStatefulSet:
+		ss, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		if replica != nil {
+			return types.Int32P(*replica * int32(len(ss.Spec.VolumeClaimTemplates))), err
+		}
+		return types.Int32P(types.Int32(ss.Spec.Replicas) * int32(len(ss.Spec.VolumeClaimTemplates))), err
+	case apis.KindDeployment:
+		deployment, err := c.kubeClient.AppsV1().Deployments(namespace).Get(targetRef.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		return countPVC(deployment.Spec.Template.Spec.Volumes), err
+
+	case apis.KindDaemonSet:
+		daemon, err := c.kubeClient.AppsV1().DaemonSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		return countPVC(daemon.Spec.Template.Spec.Volumes), err
+
+	case apis.KindReplicaSet:
+		rs, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		return countPVC(rs.Spec.Template.Spec.Volumes), err
+
+	case apis.KindReplicationController:
+		rc, err := c.kubeClient.CoreV1().ReplicationControllers(namespace).Get(targetRef.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		return countPVC(rc.Spec.Template.Spec.Volumes), err
+
+	default:
+		return types.Int32P(1), nil
+	}
+}
+
+func (c *StashController) getTotalHostForRestic(targetRef api_v1beta1.TargetRef, namespace string, replica *int32) (*int32, error) {
+	switch targetRef.Kind {
+	// all replicas of StatefulSet will take backup/restore. so total number of hosts will be number of replicas.
+	case apis.KindStatefulSet:
+		ss, err := c.kubeClient.AppsV1().StatefulSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		return ss.Spec.Replicas, nil
+	// all Daemon pod will take backup/restore. so total number of hosts will be number of ready replicas
+	case apis.KindDaemonSet:
+		dmn, err := c.kubeClient.AppsV1().DaemonSets(namespace).Get(targetRef.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		return &dmn.Status.NumberReady, nil
+	// for all other workloads, only one replica will take backup/restore. so number of total host will be 1
+	default:
+		return types.Int32P(1), nil
+	}
+}
+
+func countPVC(volList []core.Volume) *int32 {
 	var count int32
-	for _, vol := range vollist {
+	for _, vol := range volList {
 		if vol.PersistentVolumeClaim != nil {
 			count++
 		}

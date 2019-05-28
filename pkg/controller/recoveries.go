@@ -22,6 +22,7 @@ import (
 	stash_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
 	"stash.appscode.dev/stash/pkg/docker"
 	"stash.appscode.dev/stash/pkg/eventer"
+	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 )
 
@@ -169,13 +170,13 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 	if err != nil {
 		return err
 	}
-	if err := c.ensureRecoveryRBAC(ref); err != nil {
+	if err := stash_rbac.EnsureRecoveryRBAC(c.kubeClient, ref); err != nil {
 		err = fmt.Errorf("error ensuring rbac for recovery job %s, reason: %s", job.Name, err)
 		eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, rec, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
 		return err
 	}
 
-	if err := c.ensureRepoReaderRBAC(ref, rec); err != nil {
+	if err := stash_rbac.EnsureRepoReaderRBAC(c.kubeClient, c.stashClient, ref, rec); err != nil {
 		err = fmt.Errorf("error ensuring repository-reader rbac for recovery job %s, reason: %s", job.Name, err)
 		eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, rec, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
 		return err

@@ -26,6 +26,7 @@ import (
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/pkg/docker"
 	"stash.appscode.dev/stash/pkg/eventer"
+	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 )
 
@@ -210,7 +211,7 @@ func (c *StashController) EnsureScaledownCronJob(restic *api.Restic) error {
 	if err != nil {
 		return err
 	}
-	if err = c.ensureScaledownJobRBAC(ref); err != nil {
+	if err = stash_rbac.EnsureScaledownJobRBAC(c.kubeClient, ref); err != nil {
 		return fmt.Errorf("error ensuring rbac for kubectl cron job %s, reason: %s", meta.Name, err)
 	}
 

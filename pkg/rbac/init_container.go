@@ -1,4 +1,4 @@
-package controller
+package rbac
 
 import (
 	"github.com/appscode/go/log"
@@ -6,6 +6,7 @@ import (
 	rbac "k8s.io/api/rbac/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	core_util "kmodules.xyz/client-go/core/v1"
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
@@ -13,19 +14,15 @@ import (
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
-func (c *StashController) getRestoreInitContainerRoleBindingName(name string) string {
-	return name + "-" + RestoreInitContainerClusterRole
-}
-
-func (c *StashController) ensureRestoreInitContainerRBAC(ref *core.ObjectReference, sa string, labels map[string]string) error {
+func EnsureRestoreInitContainerRBAC(kubeClient kubernetes.Interface, ref *core.ObjectReference, sa string, labels map[string]string) error {
 	// ensure ClusterRole for restore init container
-	err := c.ensureRestoreInitContainerClusterRole(labels)
+	err := ensureRestoreInitContainerClusterRole(kubeClient, labels)
 	if err != nil {
 		return err
 	}
 
 	// ensure RoleBinding for restore init container
-	err = c.ensureRestoreInitContainerRoleBinding(ref, sa, labels)
+	err = ensureRestoreInitContainerRoleBinding(kubeClient, ref, sa, labels)
 	if err != nil {
 		return err
 	}
@@ -33,12 +30,12 @@ func (c *StashController) ensureRestoreInitContainerRBAC(ref *core.ObjectReferen
 	return nil
 }
 
-func (c *StashController) ensureRestoreInitContainerClusterRole(labels map[string]string) error {
+func ensureRestoreInitContainerClusterRole(kubeClient kubernetes.Interface, labels map[string]string) error {
 	meta := metav1.ObjectMeta{
 		Name:   RestoreInitContainerClusterRole,
 		Labels: labels,
 	}
-	_, _, err := rbac_util.CreateOrPatchClusterRole(c.kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
+	_, _, err := rbac_util.CreateOrPatchClusterRole(kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 
 		in.Rules = []rbac.PolicyRule{
 			{
@@ -67,13 +64,13 @@ func (c *StashController) ensureRestoreInitContainerClusterRole(labels map[strin
 	return err
 }
 
-func (c *StashController) ensureRestoreInitContainerRoleBinding(resource *core.ObjectReference, sa string, labels map[string]string) error {
+func ensureRestoreInitContainerRoleBinding(kubeClient kubernetes.Interface, resource *core.ObjectReference, sa string, labels map[string]string) error {
 	meta := metav1.ObjectMeta{
 		Namespace: resource.Namespace,
-		Name:      c.getRestoreInitContainerRoleBindingName(resource.Name),
+		Name:      getRestoreInitContainerRoleBindingName(resource.Name),
 		Labels:    labels,
 	}
-	_, _, err := rbac_util.CreateOrPatchRoleBinding(c.kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
+	_, _, err := rbac_util.CreateOrPatchRoleBinding(kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
 		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
 
 		if in.Annotations == nil {
@@ -97,16 +94,20 @@ func (c *StashController) ensureRestoreInitContainerRoleBinding(resource *core.O
 	return err
 }
 
-func (c *StashController) ensureRestoreInitContainerRoleBindingDeleted(w *wapi.Workload) error {
-	err := c.kubeClient.RbacV1().RoleBindings(w.Namespace).Delete(
-		c.getRestoreInitContainerRoleBindingName(w.Name),
+func getRestoreInitContainerRoleBindingName(name string) string {
+	return name + "-" + RestoreInitContainerClusterRole
+}
+
+func ensureRestoreInitContainerRoleBindingDeleted(kubeClient kubernetes.Interface, w *wapi.Workload) error {
+	err := kubeClient.RbacV1().RoleBindings(w.Namespace).Delete(
+		getRestoreInitContainerRoleBindingName(w.Name),
 		&metav1.DeleteOptions{},
 	)
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
 	if err == nil {
-		log.Infof("RoleBinding %s/%s has been deleted", w.Namespace, c.getRestoreInitContainerRoleBindingName(w.Name))
+		log.Infof("RoleBinding %s/%s has been deleted", w.Namespace, getRestoreInitContainerRoleBindingName(w.Name))
 	}
 	return nil
 }

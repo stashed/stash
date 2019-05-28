@@ -27,6 +27,7 @@ import (
 	stash_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
 	"stash.appscode.dev/stash/pkg/docker"
 	"stash.appscode.dev/stash/pkg/eventer"
+	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/resolve"
 	"stash.appscode.dev/stash/pkg/util"
 )
@@ -184,7 +185,7 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 		return err
 	}
 
-	err = c.ensureBackupJobRBAC(backupConfigRef, serviceAccountName, psps, offshootLabels)
+	err = stash_rbac.EnsureBackupJobRBAC(c.kubeClient, backupConfigRef, serviceAccountName, psps, offshootLabels)
 	if err != nil {
 		return err
 	}
@@ -430,7 +431,7 @@ func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.B
 		return err
 	}
 
-	err = c.ensureVolumeSnapshotJobRBAC(backupConfigRef, serviceAccountName, offshootLabels)
+	err = stash_rbac.EnsureVolumeSnapshotterJobRBAC(c.kubeClient, backupConfigRef, serviceAccountName, offshootLabels)
 	if err != nil {
 		return err
 	}

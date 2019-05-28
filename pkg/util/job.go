@@ -198,13 +198,14 @@ func NewRecoveryJob(stashClient cs.Interface, recovery *api_v1alpha1.Recovery, i
 	return job, nil
 }
 
-func NewPVCRestoreJob(rs *api_v1beta1.RestoreSession, repository *api_v1alpha1.Repository, image docker.Docker) (*core.PodTemplateSpec, error) {
+func NewPVCRestorerJob(rs *api_v1beta1.RestoreSession, repository *api_v1alpha1.Repository, image docker.Docker, meta metav1.ObjectMeta) (*core.PodTemplateSpec, error) {
 	container := core.Container{
 		Name:  StashContainer,
 		Image: image.ToContainerImage(),
 		Args: append([]string{
 			"restore",
 			"--restore-session=" + rs.Name,
+			"--restore-model=job",
 			"--secret-dir=" + StashSecretMountDir,
 			fmt.Sprintf("--enable-cache=%v", !rs.Spec.TempDir.DisableCaching),
 			fmt.Sprintf("--max-connections=%v", GetMaxConnections(repository.Spec.Backend)),
@@ -216,10 +217,14 @@ func NewPVCRestoreJob(rs *api_v1beta1.RestoreSession, repository *api_v1alpha1.R
 		}, cli.LoggerOptions.ToFlags()...),
 		Env: []core.EnvVar{
 			{
-				Name: KeyPodName,
+				Name:  KeyPodName,
+				Value: meta.Name,
+			},
+			{
+				Name: KeyNodeName,
 				ValueFrom: &core.EnvVarSource{
 					FieldRef: &core.ObjectFieldSelector{
-						FieldPath: "metadata.name",
+						FieldPath: "spec.nodeName",
 					},
 				},
 			},
@@ -273,10 +278,18 @@ func NewPVCRestoreJob(rs *api_v1beta1.RestoreSession, repository *api_v1alpha1.R
 			RestartPolicy: core.RestartPolicyNever,
 		},
 	}
+
 	// Pass pod RuntimeSettings from RestoreSession
 	if rs.Spec.RuntimeSettings.Pod != nil {
 		jobTemplate.Spec = ofst_util.ApplyPodRuntimeSettings(jobTemplate.Spec, *rs.Spec.RuntimeSettings.Pod)
 	}
+
+	// add an emptyDir volume for holding temporary files
+	jobTemplate.Spec.Volumes = UpsertTmpVolume(jobTemplate.Spec.Volumes, rs.Spec.TempDir)
+	// add storage secret as volume to the workload. this has been mounted on the container above.
+	jobTemplate.Spec.Volumes = UpsertSecretVolume(jobTemplate.Spec.Volumes, repository.Spec.Backend.StorageSecretName)
+	// if Repository uses local volume as backend, append this volume to the job
+	jobTemplate.Spec.Volumes = MergeLocalVolume(jobTemplate.Spec.Volumes, &repository.Spec.Backend)
 
 	return jobTemplate, nil
 }

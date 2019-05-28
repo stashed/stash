@@ -30,6 +30,7 @@ import (
 	v1beta1_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
 	"stash.appscode.dev/stash/pkg/docker"
 	"stash.appscode.dev/stash/pkg/eventer"
+	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/resolve"
 	"stash.appscode.dev/stash/pkg/util"
 )
@@ -170,6 +171,7 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 				// target is not a workload. we have to restore by a job.
 				err := c.ensureRestoreJob(restoreSession)
 				if err != nil {
+					log.Warningln("failed to ensure restore job. Reason: ", err)
 					return c.setRestoreSessionFailed(restoreSession, err)
 				}
 
@@ -211,6 +213,9 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 			in.Labels = offshootLabels
 			return in
 		})
+		if err != nil {
+			return err
+		}
 	}
 
 	psps, err := c.getRestoreJobPSPNames(restoreSession)
@@ -218,7 +223,7 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		return err
 	}
 
-	err = c.ensureRestoreJobRBAC(ref, serviceAccountName, psps, offshootLabels)
+	err = stash_rbac.EnsureRestoreJobRBAC(c.kubeClient, ref, serviceAccountName, psps, offshootLabels)
 	if err != nil {
 		return err
 	}
@@ -325,7 +330,7 @@ func (c *StashController) createPVCThenRestore(restoreSession *api_v1beta1.Resto
 	repository *api_v1alpha1.Repository, meta metav1.ObjectMeta, ref *core.ObjectReference, serviceAccountName string) error {
 	// Create PVCs specified in VolumeClaimTemplate
 
-	if restoreSession.Spec.Target.Replicas != nil { // restoring StatefulSets volumes
+	if restoreSession.Spec.Target.Replicas == nil {
 		pvcList, err := util.GetPVCFromVolumeClaimTemplates(-1, restoreSession.Spec.Target.VolumeClaimTemplates)
 		if err != nil {
 			return err
@@ -340,7 +345,7 @@ func (c *StashController) createPVCThenRestore(restoreSession *api_v1beta1.Resto
 		if err != nil {
 			return err
 		}
-	} else {
+	} else { // restoring StatefulSets volumes
 		for ordinal := int32(0); ordinal < *restoreSession.Spec.Target.Replicas; ordinal++ {
 			pvcList, err := util.GetPVCFromVolumeClaimTemplates(ordinal, restoreSession.Spec.Target.VolumeClaimTemplates)
 			if err != nil {
@@ -352,7 +357,9 @@ func (c *StashController) createPVCThenRestore(restoreSession *api_v1beta1.Resto
 				return err
 			}
 
-			err = c.createRestoreJob(restoreSession, repository, meta, ref, serviceAccountName, util.PVCListToVolumes(pvcList, ordinal))
+			jobMeta := meta
+			jobMeta.Name = fmt.Sprintf("%s-%d", meta.Name, ordinal)
+			err = c.createRestoreJob(restoreSession, repository, jobMeta, ref, serviceAccountName, util.PVCListToVolumes(pvcList, ordinal))
 			if err != nil {
 				return err
 			}
@@ -370,7 +377,7 @@ func (c *StashController) createRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		Tag:      c.StashImageTag,
 	}
 
-	jobTemplate, err := util.NewPVCRestoreJob(restoreSession, repository, image)
+	jobTemplate, err := util.NewPVCRestorerJob(restoreSession, repository, image, meta)
 	if err != nil {
 		return err
 	}
@@ -393,6 +400,7 @@ func (c *StashController) createRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 		return in
 	})
+
 	return err
 }
 
@@ -571,7 +579,7 @@ func (c *StashController) ensureVolumeRestorerJob(restoreSession *api_v1beta1.Re
 		return err
 	}
 
-	err = c.ensureVolumeSnapshotRestoreJobRBAC(ref, serviceAccountName, offshootLabels)
+	err = stash_rbac.EnsureVolumeSnapshotRestorerJobRBAC(c.kubeClient, ref, serviceAccountName, offshootLabels)
 	if err != nil {
 		return err
 	}

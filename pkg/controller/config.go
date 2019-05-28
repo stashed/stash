@@ -18,6 +18,7 @@ import (
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	stashinformers "stash.appscode.dev/stash/client/informers/externalversions"
 	"stash.appscode.dev/stash/pkg/eventer"
+	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 )
 
 const (
@@ -92,7 +93,7 @@ func (c *Config) New() (*StashController, error) {
 		}
 	}
 
-	if err := ctrl.ensureSidecarClusterRole(); err != nil {
+	if err := stash_rbac.EnsureSidecarClusterRole(c.KubeClient); err != nil {
 		return nil, err
 	}
 
