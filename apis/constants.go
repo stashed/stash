@@ -18,6 +18,7 @@ const (
 	TargetName        = "TARGET_NAME"
 	TargetAPIVersion  = "TARGET_API_VERSION"
 	TargetKind        = "TARGET_KIND"
+	TargetResource    = "TARGET_RESOURCE"
 	TargetNamespace   = "TARGET_NAMESPACE"
 	TargetMountPath   = "TARGET_MOUNT_PATH"
 	TargetDirectories = "TARGET_DIRECTORIES"
