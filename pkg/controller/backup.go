@@ -10,6 +10,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
 	core_util "kmodules.xyz/client-go/core/v1"
+	discovery "kmodules.xyz/client-go/discovery"
 	meta_util "kmodules.xyz/client-go/meta"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 	"stash.appscode.dev/stash/apis"
@@ -68,6 +69,12 @@ func (c *StashController) applyBackupAnnotationLogic(w *wapi.Workload) error {
 		inputs[apis.TargetKind] = strings.ToLower(w.Kind)
 		inputs[apis.TargetName] = w.Name
 		inputs[apis.TargetNamespace] = w.Namespace
+
+		gvr, err := discovery.ResourceForGVK(c.kubeClient.Discovery(), w.GroupVersionKind())
+		if err != nil {
+			return err
+		}
+		inputs[apis.TargetResource] = gvr.Resource
 
 		err = resolve.ResolveBackend(&backupTemplate.Spec.Backend, inputs)
 		if err != nil {
