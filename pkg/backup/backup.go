@@ -31,7 +31,7 @@ import (
 	"stash.appscode.dev/stash/pkg/cli"
 	"stash.appscode.dev/stash/pkg/docker"
 	"stash.appscode.dev/stash/pkg/eventer"
-	rbac2 "stash.appscode.dev/stash/pkg/rbac"
+	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 )
 
@@ -423,7 +423,7 @@ func (c *Controller) ensureCheckRBAC(restic *core.ObjectReference) error {
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
 			Kind:     "ClusterRole",
-			Name:     rbac2.SidecarClusterRole,
+			Name:     stash_rbac.SidecarClusterRole,
 		}
 		in.Subjects = []rbac.Subject{
 			{
