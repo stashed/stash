@@ -3,6 +3,11 @@ go:
  - 1.x
  - tip
 
+cache:
+  directories:
+  - $HOME/.cache/go-build
+  - $GOPATH/pkg/mod
+
 go_import_path: kmodules.xyz/client-go
 
 install: true

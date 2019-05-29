@@ -16,8 +16,6 @@ import (
 	batch_util "kmodules.xyz/client-go/batch/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
-	"kmodules.xyz/client-go/tools/cli"
-	"kmodules.xyz/client-go/tools/clientcmd"
 	"kmodules.xyz/client-go/tools/queue"
 	"kmodules.xyz/webhook-runtime/admission"
 	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"
@@ -29,6 +27,7 @@ import (
 	stash_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
 	"stash.appscode.dev/stash/pkg/docker"
 	"stash.appscode.dev/stash/pkg/eventer"
+	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/resolve"
 	"stash.appscode.dev/stash/pkg/util"
 )
@@ -186,7 +185,7 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 		return err
 	}
 
-	err = c.ensureBackupJobRBAC(backupConfigRef, serviceAccountName, psps, offshootLabels)
+	err = stash_rbac.EnsureBackupJobRBAC(c.kubeClient, backupConfigRef, serviceAccountName, psps, offshootLabels)
 	if err != nil {
 		return err
 	}
@@ -432,7 +431,7 @@ func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.B
 		return err
 	}
 
-	err = c.ensureVolumeSnapshotJobRBAC(backupConfigRef, serviceAccountName, offshootLabels)
+	err = stash_rbac.EnsureVolumeSnapshotterJobRBAC(c.kubeClient, backupConfigRef, serviceAccountName, offshootLabels)
 	if err != nil {
 		return err
 	}
@@ -443,33 +442,22 @@ func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.B
 		Tag:      c.StashImageTag,
 	}
 
+	jobTemplate, err := util.NewVolumeSnapshotterJob(backupSession, backupConfig, image)
+	if err != nil {
+		return err
+	}
+
 	// Create VolumeSnapshotter job
 	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, jobMeta, func(in *batchv1.Job) *batchv1.Job {
 		// set BackupSession as owner of this Job
 		core_util.EnsureOwnerReference(&in.ObjectMeta, backupConfigRef)
-		if in.Labels == nil {
-			in.Labels = make(map[string]string)
-		}
+
+		in.Labels = offshootLabels
 		// ensure that job gets deleted on completion
 		in.Labels[apis.KeyDeleteJobOnCompletion] = "true"
 
-		in.Spec.Template.Spec.Containers = core_util.UpsertContainer(
-			in.Spec.Template.Spec.Containers,
-			core.Container{
-				Name:            util.StashContainer,
-				ImagePullPolicy: core.PullAlways,
-				Image:           image.ToContainerImage(),
-				Args: []string{
-					"create-vs",
-					fmt.Sprintf("--backupsession.name=%s", backupSession.Name),
-					fmt.Sprintf("--enable-status-subresource=%v", apis.EnableStatusSubresource),
-					fmt.Sprintf("--use-kubeapiserver-fqdn-for-aks=%v", clientcmd.UseKubeAPIServerFQDNForAKS()),
-					fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
-				},
-			})
-		in.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
+		in.Spec.Template = *jobTemplate
 		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-
 		return in
 	})
 

@@ -14,6 +14,7 @@ import (
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/docker"
+	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 )
 
@@ -29,7 +30,7 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, rs *api_v
 	}
 	//Don't create RBAC stuff when the caller is webhook to make the webhooks side effect free.
 	if caller != util.CallerWebhook {
-		err = c.ensureRestoreInitContainerRBAC(ref, sa, rs.OffshootLabels())
+		err = stash_rbac.EnsureRestoreInitContainerRBAC(c.kubeClient, ref, sa, rs.OffshootLabels())
 		if err != nil {
 			return err
 		}
@@ -115,7 +116,7 @@ func (c *StashController) ensureRestoreInitContainerDeleted(w *wapi.Workload, rs
 
 	// restore init-container has been removed but workload still may have backup sidecar
 	// so removed respective volumes that were added to the workload only if the workload does not have backup sidecar
-	if !hasStashContainer(w) {
+	if !util.HasStashContainer(w) {
 		// remove the helpers volumes added for init-container
 		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)

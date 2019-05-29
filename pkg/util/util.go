@@ -19,6 +19,7 @@ import (
 	store "kmodules.xyz/objectstore-api/api/v1"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
 	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"
+	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 	"stash.appscode.dev/stash/apis"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
@@ -59,12 +60,23 @@ func GetHostName(target interface{}) (string, error) {
 		if t == nil {
 			return "host-0", nil
 		}
+		// replicas is specified when restore StatefulSet volumes using job.
+		// so we have to handle this case too.
+		if t.Replicas != nil { // StatefulSet volumes.
+			podName := os.Getenv(KeyPodName)
+			if podName == "" {
+				return "", fmt.Errorf("missing podName for %s", apis.KindStatefulSet)
+			}
+			podInfo := strings.Split(podName, "-")
+			podOrdinal := podInfo[len(podInfo)-1]
+			return "host-" + podOrdinal, nil
+		}
 		targetRef = t.Ref
 	}
 
 	switch targetRef.Kind {
 	case apis.KindStatefulSet:
-		podName := os.Getenv("POD_NAME")
+		podName := os.Getenv(KeyPodName)
 		if podName == "" {
 			return "", fmt.Errorf("missing podName for %s", apis.KindStatefulSet)
 		}
@@ -72,7 +84,7 @@ func GetHostName(target interface{}) (string, error) {
 		podOrdinal := podInfo[len(podInfo)-1]
 		return "host-" + podOrdinal, nil
 	case apis.KindDaemonSet:
-		nodeName := os.Getenv("NODE_NAME")
+		nodeName := os.Getenv(KeyNodeName)
 		if nodeName == "" {
 			return "", fmt.Errorf("missing nodeName for %s", apis.KindDaemonSet)
 		}
@@ -330,6 +342,79 @@ func (wc *WorkloadClients) IsTargetExist(target api_v1beta1.TargetRef, namespace
 		}
 	case apis.KindAppBinding:
 		if _, err := wc.AppCatalogClient.AppcatalogV1alpha1().AppBindings(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+			return true
+		}
+	}
+	return false
+}
+
+func GetPVCFromVolumeClaimTemplates(ordinal int32, claimTemplates []core.PersistentVolumeClaim) ([]core.PersistentVolumeClaim, error) {
+	pvcList := make([]core.PersistentVolumeClaim, 0)
+
+	for _, claim := range claimTemplates {
+
+		if ordinal != -1 {
+			claim.Name = fmt.Sprintf("%s-%d", claim.Name, ordinal)
+		}
+
+		pvcList = append(pvcList, claim)
+	}
+
+	return pvcList, nil
+}
+
+// CreateBatchPVC creates a batch of PVCs whose definitions has been provided in pvcList argument
+func CreateBatchPVC(kubeClient kubernetes.Interface, namespace string, pvcList []core.PersistentVolumeClaim) error {
+	for _, pvc := range pvcList {
+		_, err := kubeClient.CoreV1().PersistentVolumeClaims(namespace).Create(&pvc)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// PVCListToVolumes return a list of volumes to mount in pod for a list of PVCs
+func PVCListToVolumes(pvcList []core.PersistentVolumeClaim, ordinal int32) []core.Volume {
+	volList := make([]core.Volume, 0)
+	var volName string
+	for _, pvc := range pvcList {
+		if ordinal != int32(-1) {
+			// StatefulSet's PVC. Remove the pod ordinal suffix.
+			volName = strings.TrimSuffix(pvc.Name, fmt.Sprintf("-%d", ordinal))
+		} else {
+			volName = pvc.Name
+		}
+		volList = append(volList, core.Volume{
+			Name: volName,
+			VolumeSource: core.VolumeSource{
+				PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
+					ClaimName: pvc.Name,
+				},
+			},
+		})
+	}
+	return volList
+}
+
+func HasStashContainer(w *wapi.Workload) bool {
+	return HasStashSidecar(w.Spec.Template.Spec.Containers) || HasStashInitContainer(w.Spec.Template.Spec.InitContainers)
+}
+
+func HasStashSidecar(containers []core.Container) bool {
+	// check if the workload has stash sidecar container
+	for _, c := range containers {
+		if c.Name == StashContainer {
+			return true
+		}
+	}
+	return false
+}
+
+func HasStashInitContainer(containers []core.Container) bool {
+	// check if the workload has stash init-container
+	for _, c := range containers {
+		if c.Name == StashInitContainer {
 			return true
 		}
 	}

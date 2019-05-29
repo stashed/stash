@@ -20,6 +20,7 @@ import (
 	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/docker"
+	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 )
 
@@ -34,7 +35,7 @@ func (c *StashController) ensureWorkloadSidecar(w *wapi.Workload, restic *api_v1
 	}
 	//Don't create RBAC stuff when the caller is webhook to make the webhooks side effect free.
 	if caller != util.CallerWebhook {
-		err = c.ensureSidecarRoleBinding(ref, sa, nil)
+		err = stash_rbac.EnsureSidecarRoleBinding(c.kubeClient, ref, sa, nil)
 		if err != nil {
 			return err
 		}
@@ -121,7 +122,7 @@ func (c *StashController) ensureWorkloadSidecarDeleted(w *wapi.Workload, restic 
 	}
 	// backup sidecar/init-container has been removed but workload still may have restore init-container
 	// so removed respective volumes that were added to the workload only if the workload does not have restore init-container
-	if !hasStashContainer(w) {
+	if !util.HasStashContainer(w) {
 		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
 
@@ -148,7 +149,7 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, bc *api_v1beta1.
 	}
 	//Don't create RBAC stuff when the caller is webhook to make the webhooks side effect free.
 	if caller != util.CallerWebhook {
-		err = c.ensureSidecarRoleBinding(ref, sa, bc.OffshootLabels())
+		err = stash_rbac.EnsureSidecarRoleBinding(c.kubeClient, ref, sa, bc.OffshootLabels())
 		if err != nil {
 			return err
 		}
@@ -229,7 +230,7 @@ func (c *StashController) ensureBackupSidecarDeleted(w *wapi.Workload, bc *api_v
 
 	// backup sidecar has been removed but workload still may have restore init-container
 	// so removed respective volumes that were added to the workload only if the workload does not have restore init-container
-	if !hasStashContainer(w) {
+	if !util.HasStashContainer(w) {
 		// remove the helpers volumes that were added for sidecar
 		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, util.ScratchDirVolumeName)
 		w.Spec.Template.Spec.Volumes = util.EnsureVolumeDeleted(w.Spec.Template.Spec.Volumes, util.PodinfoVolumeName)
@@ -266,8 +267,8 @@ func (c *StashController) ensureWorkloadLatestState(w *wapi.Workload) (bool, err
 			return false, nil // ignore temporary server errors
 		}
 
-		workloadSidecarState := hasStashSidecar(w.Spec.Template.Spec.Containers)
-		workloadInitContainerState := hasStashInitContainer(w.Spec.Template.Spec.InitContainers)
+		workloadSidecarState := util.HasStashSidecar(w.Spec.Template.Spec.Containers)
+		workloadInitContainerState := util.HasStashInitContainer(w.Spec.Template.Spec.InitContainers)
 		workloadBackupResourceHash := util.GetString(w.Spec.Template.Annotations, api_v1beta1.AppliedBackupConfigurationSpecHash)
 		workloadResticResourceHash := util.GetString(w.Spec.Template.Annotations, api_v1alpha1.ResourceHash)
 		workloadRestoreResourceHash := util.GetString(w.Spec.Template.Annotations, api_v1beta1.AppliedRestoreSessionSpecHash)
@@ -279,8 +280,8 @@ func (c *StashController) ensureWorkloadLatestState(w *wapi.Workload) (bool, err
 			if !isPodOwnedByWorkload(w, pod) {
 				continue
 			}
-			podSidecarState := hasStashSidecar(pod.Spec.Containers)
-			podInitContainerState := hasStashInitContainer(pod.Spec.InitContainers)
+			podSidecarState := util.HasStashSidecar(pod.Spec.Containers)
+			podInitContainerState := util.HasStashInitContainer(pod.Spec.InitContainers)
 			podBackupResourceHash := util.GetString(pod.Annotations, api_v1beta1.AppliedBackupConfigurationSpecHash)
 			podResticResourceHash := util.GetString(pod.Annotations, api_v1alpha1.ResourceHash)
 			podRestoreResourceHash := util.GetString(pod.Annotations, api_v1beta1.AppliedRestoreSessionSpecHash)

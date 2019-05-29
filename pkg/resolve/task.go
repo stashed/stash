@@ -10,7 +10,7 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	store "kmodules.xyz/objectstore-api/api/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
-	"stash.appscode.dev/stash/apis"
+	ofst_util "kmodules.xyz/offshoot-api/util"
 	v1beta1_api "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/util"
@@ -86,7 +86,7 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 
 		// apply RuntimeSettings to Container
 		if o.RuntimeSettings.Container != nil {
-			container = applyContainerRuntimeSettings(container, *o.RuntimeSettings.Container)
+			container = ofst_util.ApplyContainerRuntimeSettings(container, *o.RuntimeSettings.Container)
 		}
 
 		containers = append(containers, container)
@@ -103,108 +103,11 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 	}
 	// apply RuntimeSettings to PodSpec
 	if o.RuntimeSettings.Pod != nil {
-		podSpec = applyPodRuntimeSettings(podSpec, *o.RuntimeSettings.Pod)
+		podSpec = ofst_util.ApplyPodRuntimeSettings(podSpec, *o.RuntimeSettings.Pod)
 	}
 	// always upsert tmp volume
 	podSpec.Volumes = util.UpsertTmpVolume(podSpec.Volumes, o.TempDir)
 	return podSpec, nil
-}
-
-// TODO: move to kmodules
-func applyContainerRuntimeSettings(container core.Container, settings ofst.ContainerRuntimeSettings) core.Container {
-	if len(settings.Resources.Limits) > 0 {
-		container.Resources.Limits = settings.Resources.Limits
-	}
-	if len(settings.Resources.Limits) > 0 {
-		container.Resources.Requests = settings.Resources.Requests
-	}
-	if settings.LivenessProbe != nil {
-		container.LivenessProbe = settings.LivenessProbe
-	}
-	if settings.ReadinessProbe != nil {
-		container.ReadinessProbe = settings.ReadinessProbe
-	}
-	if settings.Lifecycle != nil {
-		container.Lifecycle = settings.Lifecycle
-	}
-	if settings.SecurityContext != nil {
-		container.SecurityContext = settings.SecurityContext
-	}
-	if len(settings.EnvFrom) > 0 {
-		container.EnvFrom = append(container.EnvFrom, settings.EnvFrom...)
-	}
-	if len(settings.Env) > 0 {
-		container.Env = core_util.UpsertEnvVars(container.Env, settings.Env...)
-	}
-	// set nice, ionice settings as env
-	if settings.Nice != nil && settings.Nice.Adjustment != nil {
-		container.Env = core_util.UpsertEnvVars(container.Env, core.EnvVar{
-			Name:  apis.NiceAdjustment,
-			Value: fmt.Sprint(*settings.Nice.Adjustment),
-		})
-	}
-	if settings.IONice != nil {
-		if settings.IONice.Class != nil {
-			container.Env = core_util.UpsertEnvVars(container.Env, core.EnvVar{
-				Name:  apis.IONiceClass,
-				Value: fmt.Sprint(*settings.IONice.Class),
-			})
-		}
-		if settings.IONice.ClassData != nil {
-			container.Env = core_util.UpsertEnvVars(container.Env, core.EnvVar{
-				Name:  apis.IONiceClassData,
-				Value: fmt.Sprint(*settings.IONice.ClassData),
-			})
-		}
-	}
-	return container
-}
-
-// TODO: move to kmodules
-func applyPodRuntimeSettings(podSpec core.PodSpec, settings ofst.PodRuntimeSettings) core.PodSpec {
-	if settings.NodeSelector != nil && len(settings.NodeSelector) > 0 {
-		podSpec.NodeSelector = settings.NodeSelector
-	}
-	if settings.ServiceAccountName != "" {
-		podSpec.ServiceAccountName = settings.ServiceAccountName
-	}
-	if settings.AutomountServiceAccountToken != nil {
-		podSpec.AutomountServiceAccountToken = settings.AutomountServiceAccountToken
-	}
-	if settings.NodeName != "" {
-		podSpec.NodeName = settings.NodeName
-	}
-	if settings.SecurityContext != nil {
-		podSpec.SecurityContext = settings.SecurityContext
-	}
-	if len(settings.ImagePullSecrets) > 0 {
-		podSpec.ImagePullSecrets = settings.ImagePullSecrets
-	}
-	if settings.Affinity != nil {
-		podSpec.Affinity = settings.Affinity
-	}
-	if settings.SchedulerName != "" {
-		podSpec.SchedulerName = settings.SchedulerName
-	}
-	if len(settings.Tolerations) > 0 {
-		podSpec.Tolerations = settings.Tolerations
-	}
-	if settings.PriorityClassName != "" {
-		podSpec.PriorityClassName = settings.PriorityClassName
-	}
-	if settings.Priority != nil {
-		podSpec.Priority = settings.Priority
-	}
-	if len(settings.ReadinessGates) > 0 {
-		podSpec.ReadinessGates = settings.ReadinessGates
-	}
-	if settings.RuntimeClassName != nil {
-		podSpec.RuntimeClassName = settings.RuntimeClassName
-	}
-	if settings.EnableServiceLinks != nil {
-		podSpec.EnableServiceLinks = settings.EnableServiceLinks
-	}
-	return podSpec
 }
 
 func resolveWithInputs(obj interface{}, inputs map[string]string) error {

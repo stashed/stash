@@ -15,6 +15,7 @@ import (
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 	wcs "kmodules.xyz/webhook-runtime/client/workload/v1"
 	"stash.appscode.dev/stash/apis"
+	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 )
 
@@ -134,7 +135,7 @@ func (c *StashController) runReplicaSetInjector(key string) error {
 			if err != nil {
 				return err
 			}
-			err = c.ensureUnnecessaryWorkloadRBACDeleted(w)
+			err = stash_rbac.EnsureUnnecessaryWorkloadRBACDeleted(c.kubeClient, w)
 			if err != nil {
 				return err
 			}

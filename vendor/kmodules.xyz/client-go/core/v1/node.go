@@ -16,7 +16,7 @@ import (
 func CreateOrPatchNode(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*core.Node) *core.Node) (*core.Node, kutil.VerbType, error) {
 	cur, err := c.CoreV1().Nodes().Get(meta.Name, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
-		glog.V(3).Infof("Creating Node %s/%s.", meta.Namespace, meta.Name)
+		glog.V(3).Infof("Creating Node %s", meta.Name)
 		out, err := c.CoreV1().Nodes().Create(transform(&core.Node{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Node",

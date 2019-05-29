@@ -821,8 +821,6 @@ type Sigset_t struct {
 	Val [16]uint64
 }
 
-const _C__NSIG = 0x41
-
 type SignalfdSiginfo struct {
 	Signo     uint32
 	Errno     int32

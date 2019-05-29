@@ -20,8 +20,8 @@ import (
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
-	"stash.appscode.dev/stash/pkg/controller"
 	"stash.appscode.dev/stash/pkg/eventer"
+	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 )
 
 var (
@@ -133,7 +133,7 @@ func (f *Framework) DeleteJobAndDependents(jobName string, recovery *api.Recover
 
 	By("Checking repo-reader role-binding deleted")
 	Eventually(func() bool {
-		_, err := f.KubeClient.RbacV1().RoleBindings(recovery.Spec.Repository.Namespace).Get(controller.GetRepoReaderRoleBindingName(jobName, recovery.Namespace), metav1.GetOptions{})
+		_, err := f.KubeClient.RbacV1().RoleBindings(recovery.Spec.Repository.Namespace).Get(stash_rbac.GetRepoReaderRoleBindingName(jobName, recovery.Namespace), metav1.GetOptions{})
 		return kerr.IsNotFound(err) || kerr.IsGone(err)
 	}, time.Minute*3, time.Second*2).Should(BeTrue())
 }

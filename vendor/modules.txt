@@ -331,7 +331,7 @@ golang.org/x/oauth2/google
 golang.org/x/oauth2/internal
 golang.org/x/oauth2/jws
 golang.org/x/oauth2/jwt
-# golang.org/x/sys v0.0.0-20190528183647-3626398d7749
+# golang.org/x/sys v0.0.0-20190508100423-12bbe5a7a520
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 # golang.org/x/text v0.3.2
@@ -909,7 +909,7 @@ k8s.io/utils/integer
 k8s.io/utils/buffer
 k8s.io/utils/trace
 k8s.io/utils/pointer
-# kmodules.xyz/client-go v0.0.0-20190513064657-a9147783199a
+# kmodules.xyz/client-go v0.0.0-20190524133821-9c8a87771aea
 kmodules.xyz/client-go/logs
 kmodules.xyz/client-go/apiextensions/v1beta1
 kmodules.xyz/client-go/meta
@@ -943,8 +943,9 @@ kmodules.xyz/custom-resources/client/informers/externalversions/appcatalog/v1alp
 # kmodules.xyz/objectstore-api v0.0.0-20190506085934-94c81c8acca9
 kmodules.xyz/objectstore-api/api/v1
 kmodules.xyz/objectstore-api/osm
-# kmodules.xyz/offshoot-api v0.0.0-20190513045534-4f3df05f40c2
+# kmodules.xyz/offshoot-api v0.0.0-20190527055803-91d8460d2992
 kmodules.xyz/offshoot-api/api/v1
+kmodules.xyz/offshoot-api/util
 # kmodules.xyz/openshift v0.0.0-20190508141315-99ec9fc946bf
 kmodules.xyz/openshift/apis/apps/v1
 kmodules.xyz/openshift/client/clientset/versioned

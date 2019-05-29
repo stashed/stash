@@ -20,6 +20,7 @@ import (
 	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
 	v1beta1_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
 	"stash.appscode.dev/stash/pkg/docker"
+	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 )
 
@@ -226,7 +227,7 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 	}
 
 	// now ensure RBAC stuff for this CronJob
-	err = c.ensureCronJobRBAC(ref, serviceAccountName, c.getBackupSessionCronJobPSPNames(), offshootLabels)
+	err = stash_rbac.EnsureCronJobRBAC(c.kubeClient, ref, serviceAccountName, c.getBackupSessionCronJobPSPNames(), offshootLabels)
 	if err != nil {
 		return err
 	}

@@ -15,6 +15,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"kmodules.xyz/client-go/tools/queue"
 	"stash.appscode.dev/stash/apis"
+	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 )
 
 func (c *StashController) initJobWatcher() {
@@ -63,7 +64,7 @@ func (c *StashController) runJobInjector(key string) error {
 
 			glog.Infof("Deleted stash job: %s", job.GetName())
 
-			err = c.ensureRepoReaderRolebindingDeleted(&job.ObjectMeta)
+			err = stash_rbac.EnsureRepoReaderRolebindingDeleted(c.kubeClient, c.stashClient, &job.ObjectMeta)
 			if err != nil {
 				return fmt.Errorf("failed to delete repo-reader rolebinding. reason: %s", err)
 			}

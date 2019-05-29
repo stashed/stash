@@ -9,6 +9,7 @@ import (
 	"kmodules.xyz/client-go/tools/cli"
 	"kmodules.xyz/client-go/tools/clientcmd"
 	store "kmodules.xyz/objectstore-api/api/v1"
+	ofst_util "kmodules.xyz/offshoot-api/util"
 	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	v1beta1_api "stash.appscode.dev/stash/apis/stash/v1beta1"
@@ -153,27 +154,7 @@ func NewBackupSidecarContainer(bc *v1beta1_api.BackupConfiguration, backend *sto
 	}
 	// pass container runtime settings from BackupConfiguration to sidecar
 	if bc.Spec.RuntimeSettings.Container != nil {
-		// by default container will run as root
-		securityContext := &core.SecurityContext{
-			RunAsUser:  types.Int64P(0),
-			RunAsGroup: types.Int64P(0),
-		}
-		if bc.Spec.RuntimeSettings.Container.SecurityContext != nil {
-			securityContext = bc.Spec.RuntimeSettings.Container.SecurityContext
-		}
-		sidecar.SecurityContext = securityContext
-
-		sidecar.Resources = bc.Spec.RuntimeSettings.Container.Resources
-
-		if bc.Spec.RuntimeSettings.Container.LivenessProbe != nil {
-			sidecar.LivenessProbe = bc.Spec.RuntimeSettings.Container.LivenessProbe
-		}
-		if bc.Spec.RuntimeSettings.Container.ReadinessProbe != nil {
-			sidecar.ReadinessProbe = bc.Spec.RuntimeSettings.Container.ReadinessProbe
-		}
-		if bc.Spec.RuntimeSettings.Container.Lifecycle != nil {
-			sidecar.Lifecycle = bc.Spec.RuntimeSettings.Container.Lifecycle
-		}
+		sidecar = ofst_util.ApplyContainerRuntimeSettings(sidecar, *bc.Spec.RuntimeSettings.Container)
 	}
 	return sidecar
 }

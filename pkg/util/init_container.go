@@ -7,6 +7,7 @@ import (
 	core "k8s.io/api/core/v1"
 	"kmodules.xyz/client-go/tools/cli"
 	"kmodules.xyz/client-go/tools/clientcmd"
+	ofst_util "kmodules.xyz/offshoot-api/util"
 	"stash.appscode.dev/stash/apis"
 	v1alpha1_api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	v1beta1_api "stash.appscode.dev/stash/apis/stash/v1beta1"
@@ -95,17 +96,7 @@ func NewRestoreInitContainer(rs *v1beta1_api.RestoreSession, repository *v1alpha
 
 	// pass container runtime settings from RestoreSession to init-container
 	if rs.Spec.RuntimeSettings.Container != nil {
-		initContainer.Resources = rs.Spec.RuntimeSettings.Container.Resources
-
-		if rs.Spec.RuntimeSettings.Container.LivenessProbe != nil {
-			initContainer.LivenessProbe = rs.Spec.RuntimeSettings.Container.LivenessProbe
-		}
-		if rs.Spec.RuntimeSettings.Container.ReadinessProbe != nil {
-			initContainer.ReadinessProbe = rs.Spec.RuntimeSettings.Container.ReadinessProbe
-		}
-		if rs.Spec.RuntimeSettings.Container.Lifecycle != nil {
-			initContainer.Lifecycle = rs.Spec.RuntimeSettings.Container.Lifecycle
-		}
+		initContainer = ofst_util.ApplyContainerRuntimeSettings(initContainer, *rs.Spec.RuntimeSettings.Container)
 	}
 
 	// In order to preserve file ownership, restore process need to be run as root user.
@@ -117,9 +108,8 @@ func NewRestoreInitContainer(rs *v1beta1_api.RestoreSession, repository *v1alpha
 		RunAsGroup: types.Int64P(0),
 	}
 	if rs.Spec.RuntimeSettings.Container != nil {
-		securityContext = UpsertSecurityContext(securityContext, rs.Spec.RuntimeSettings.Container.SecurityContext)
+		initContainer.SecurityContext = UpsertSecurityContext(securityContext, rs.Spec.RuntimeSettings.Container.SecurityContext)
 	}
-	initContainer.SecurityContext = UpsertSecurityContext(initContainer.SecurityContext, securityContext)
 
 	return initContainer
 }

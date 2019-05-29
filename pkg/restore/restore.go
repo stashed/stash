@@ -23,6 +23,11 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 )
 
+const (
+	RestoreModelInitContainer = "init-container"
+	RestoreModelJob           = "job"
+)
+
 type Options struct {
 	MasterURL          string
 	KubeconfigPath     string
@@ -33,8 +38,9 @@ type Options struct {
 	SetupOpt restic.SetupOptions
 	Metrics  restic.MetricsOptions
 
-	KubeClient  kubernetes.Interface
-	StashClient cs.Interface
+	KubeClient   kubernetes.Interface
+	StashClient  cs.Interface
+	RestoreModel string
 }
 
 func Restore(opt *Options) error {
@@ -68,15 +74,24 @@ func Restore(opt *Options) error {
 	if err != nil {
 		return err
 	}
-	// apply nice/ionice settings
-	if restoreSession.Spec.RuntimeSettings.Container != nil {
-		setupOptions.Nice = restoreSession.Spec.RuntimeSettings.Container.Nice
-		setupOptions.IONice = restoreSession.Spec.RuntimeSettings.Container.IONice
+	// apply nice, ionice settings from env
+	setupOptions.Nice, err = util.NiceSettingsFromEnv()
+	if err != nil {
+		return err
+	}
+	setupOptions.IONice, err = util.IONiceSettingsFromEnv()
+	if err != nil {
+		return err
 	}
 	opt.SetupOpt = setupOptions
 
-	// only one pod can acquire restic repository lock. so we need leader election to determine who will acquire the lock
-	return opt.electRestoreLeader(restoreSession)
+	// if we are restoring using job then there no need to lock the repository
+	if opt.RestoreModel == RestoreModelJob {
+		return opt.runRestore(restoreSession)
+	} else {
+		// only one pod can acquire restic repository lock. so we need leader election to determine who will acquire the lock
+		return opt.electRestoreLeader(restoreSession)
+	}
 }
 
 func (opt *Options) electRestoreLeader(restoreSession *api_v1beta1.RestoreSession) error {
@@ -206,7 +221,9 @@ func HandleRestoreFailure(opt *Options, restoreErr error) error {
 	hostStats := api_v1beta1.HostRestoreStats{
 		Hostname: host,
 		Phase:    api_v1beta1.HostRestoreFailed,
-		Error:    err.Error(),
+	}
+	if restoreErr != nil {
+		hostStats.Error = restoreErr.Error()
 	}
 	// add or update entry for this host in RestoreSession status
 	_, err = stash_util_v1beta1.UpdateRestoreSessionStatusForHost(opt.StashClient.StashV1beta1(), restoreSession, hostStats)

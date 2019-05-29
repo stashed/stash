@@ -16,7 +16,6 @@ import (
 	batch_util "kmodules.xyz/client-go/batch/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
-	"kmodules.xyz/client-go/tools/cli"
 	"kmodules.xyz/client-go/tools/queue"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 	"kmodules.xyz/webhook-runtime/admission"
@@ -24,12 +23,14 @@ import (
 	webhook "kmodules.xyz/webhook-runtime/admission/v1beta1/generic"
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash"
+	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
 	stash_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
 	v1beta1_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
 	"stash.appscode.dev/stash/pkg/docker"
 	"stash.appscode.dev/stash/pkg/eventer"
+	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/resolve"
 	"stash.appscode.dev/stash/pkg/util"
 )
@@ -126,7 +127,8 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 			}
 
 			if restoreSession.Status.Phase == api_v1beta1.RestoreSessionFailed ||
-				restoreSession.Status.Phase == api_v1beta1.RestoreSessionSucceeded {
+				restoreSession.Status.Phase == api_v1beta1.RestoreSessionSucceeded ||
+				restoreSession.Status.Phase == api_v1beta1.RestoreSessionUnknown {
 				log.Infof("Skipping processing RestoreSession %s/%s. Reason: phase is %q.", restoreSession.Namespace, restoreSession.Name, restoreSession.Status.Phase)
 				return nil
 			}
@@ -149,7 +151,7 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 				if err != nil {
 					return err
 				}
-				return c.ensureVolumeSnapshotterRestoreJob(restoreSession)
+				return c.ensureVolumeRestorerJob(restoreSession)
 			}
 
 			// if target is kubernetes workload i.e. Deployment, StatefulSet etc. then inject restore init-container
@@ -166,9 +168,10 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 				return c.setRestoreSessionRunning(restoreSession)
 			} else {
 
-				// target is not a workload. we have to restore by a job. create restore job.
+				// target is not a workload. we have to restore by a job.
 				err := c.ensureRestoreJob(restoreSession)
 				if err != nil {
+					log.Warningln("failed to ensure restore job. Reason: ", err)
 					return c.setRestoreSessionFailed(restoreSession, err)
 				}
 
@@ -195,7 +198,7 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		return err
 	}
 
-	// if RBAC is enabled then ensure respective ClusterRole,RoleBinding,ServiceAccount etc.
+	// Ensure respective RBAC and PSP stuff.
 	serviceAccountName := "default"
 	if restoreSession.Spec.RuntimeSettings.Pod != nil &&
 		restoreSession.Spec.RuntimeSettings.Pod.ServiceAccountName != "" {
@@ -210,6 +213,9 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 			in.Labels = offshootLabels
 			return in
 		})
+		if err != nil {
+			return err
+		}
 	}
 
 	psps, err := c.getRestoreJobPSPNames(restoreSession)
@@ -217,12 +223,12 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		return err
 	}
 
-	err = c.ensureRestoreJobRBAC(ref, serviceAccountName, psps, offshootLabels)
+	err = stash_rbac.EnsureRestoreJobRBAC(c.kubeClient, ref, serviceAccountName, psps, offshootLabels)
 	if err != nil {
 		return err
 	}
 
-	// get repository for backupConfig
+	// get repository for RestoreSession
 	repository, err := c.stashClient.StashV1alpha1().Repositories(restoreSession.Namespace).Get(
 		restoreSession.Spec.Repository.Name,
 		metav1.GetOptions{},
@@ -231,8 +237,25 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		return err
 	}
 
-	// resolve task template
+	// Now there could be two restore scenario for restoring through job.
+	// 1. Restore target is a Database or a existing PVC. In this case, we need to resolve Task and Function then create a job to restore.
+	// 2. VolumeClaimTemplate has been specified. In this case, we have to create the PVCs then restore on it. We will create one job for each replicas to restore in parallel.
 
+	// Check whether VolumeClaimTemplate is specified. If so, create the PVCs and create restore job for each replicas.
+	// Otherwise, resolve task template and create a single job.
+	if restoreSession.Spec.Target != nil && restoreSession.Spec.Target.VolumeClaimTemplates != nil {
+		return c.createPVCThenRestore(restoreSession, repository, objectMeta, ref, serviceAccountName)
+	} else {
+		return c.resolveTaskThenRestore(restoreSession, repository, objectMeta, ref, serviceAccountName)
+	}
+
+}
+
+// resolveTaskThenRestore resolves Functions and Tasks then create a restore job to restore the target.
+func (c *StashController) resolveTaskThenRestore(restoreSession *api_v1beta1.RestoreSession,
+	repository *api_v1alpha1.Repository, meta metav1.ObjectMeta, ref *core.ObjectReference, serviceAccountName string) error {
+
+	// resolve task template
 	explicitInputs := make(map[string]string)
 	for _, param := range restoreSession.Spec.Task.Params {
 		explicitInputs[param.Name] = param.Value
@@ -284,11 +307,11 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 	}
 
 	// create Restore Job
-	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, objectMeta, func(in *batchv1.Job) *batchv1.Job {
+	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, meta, func(in *batchv1.Job) *batchv1.Job {
 		// set RestoreSession as owner of this Job
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 
-		in.Labels = offshootLabels
+		in.Labels = restoreSession.OffshootLabels()
 		// restore job is created by resolving task and function. we should not delete it when it goes to completed state.
 		// user might need to know what was the final resolved job specification for debugging purpose.
 		in.Labels[apis.KeyDeleteJobOnCompletion] = "false"
@@ -301,52 +324,147 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 	return err
 }
 
-func (c *StashController) setRestoreSessionFailed(restoreSession *api_v1beta1.RestoreSession, jobErr error) error {
+// createPVCThenRestore creates PVCs according to the VolumeClaimTemplate specified in RestoreSession target
+// creates one job for each PVC to restore in parallel.
+func (c *StashController) createPVCThenRestore(restoreSession *api_v1beta1.RestoreSession,
+	repository *api_v1alpha1.Repository, meta metav1.ObjectMeta, ref *core.ObjectReference, serviceAccountName string) error {
+	// Create PVCs specified in VolumeClaimTemplate
 
-	// set RestoreSession phase to "Failed"
-	_, err := v1beta1_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
-		in.Phase = api_v1beta1.RestoreSessionFailed
-		return in
-	}, apis.EnableStatusSubresource)
+	if restoreSession.Spec.Target.Replicas == nil {
+		pvcList, err := util.GetPVCFromVolumeClaimTemplates(-1, restoreSession.Spec.Target.VolumeClaimTemplates)
+		if err != nil {
+			return err
+		}
+
+		err = util.CreateBatchPVC(c.kubeClient, restoreSession.Namespace, pvcList)
+		if err != nil {
+			return err
+		}
+
+		err = c.createPVCRestorerJob(restoreSession, repository, meta, ref, serviceAccountName, util.PVCListToVolumes(pvcList, -1))
+		if err != nil {
+			return err
+		}
+	} else { // restoring StatefulSets volumes
+		for ordinal := int32(0); ordinal < *restoreSession.Spec.Target.Replicas; ordinal++ {
+			pvcList, err := util.GetPVCFromVolumeClaimTemplates(ordinal, restoreSession.Spec.Target.VolumeClaimTemplates)
+			if err != nil {
+				return err
+			}
+
+			err = util.CreateBatchPVC(c.kubeClient, restoreSession.Namespace, pvcList)
+			if err != nil {
+				return err
+			}
+
+			jobMeta := meta
+			jobMeta.Name = fmt.Sprintf("%s-%d", meta.Name, ordinal)
+			err = c.createPVCRestorerJob(restoreSession, repository, jobMeta, ref, serviceAccountName, util.PVCListToVolumes(pvcList, ordinal))
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c *StashController) createPVCRestorerJob(restoreSession *api_v1beta1.RestoreSession, repository *api_v1alpha1.Repository,
+	meta metav1.ObjectMeta, ref *core.ObjectReference, serviceAccountName string, volumes []core.Volume) error {
+	image := docker.Docker{
+		Registry: c.DockerRegistry,
+		Image:    docker.ImageStash,
+		Tag:      c.StashImageTag,
+	}
+
+	jobTemplate, err := util.NewPVCRestorerJob(restoreSession, repository, image, meta)
 	if err != nil {
 		return err
 	}
 
-	// write failure event
-	_, err = eventer.CreateEvent(
-		c.kubeClient,
-		eventer.EventSourceRestoreSessionController,
-		restoreSession,
-		core.EventTypeWarning,
-		eventer.EventReasonRestoreSessionFailed,
-		jobErr.Error(),
-	)
+	// add PVCs to volume list of the job
+	jobTemplate.Spec.Volumes = core_util.UpsertVolume(jobTemplate.Spec.Volumes, volumes...)
+
+	// Create restore Job
+	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, meta, func(in *batchv1.Job) *batchv1.Job {
+		// set BackupSession as owner of this Job
+		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+
+		if in.Labels == nil {
+			in.Labels = make(map[string]string, 0)
+		}
+		// ensure that job gets deleted when complete
+		in.Labels[apis.KeyDeleteJobOnCompletion] = "true"
+
+		in.Spec.Template = *jobTemplate
+		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+		return in
+	})
 
 	return err
 }
 
-func (c *StashController) setRestoreSessionUnknown(restoreSession *api_v1beta1.RestoreSession, jobErr error) error {
+func (c *StashController) ensureVolumeRestorerJob(restoreSession *api_v1beta1.RestoreSession) error {
+	offshootLabels := restoreSession.OffshootLabels()
 
-	// set RestoreSession phase to "Unknown"
-	_, err := v1beta1_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
-		in.Phase = api_v1beta1.RestoreSessionUnknown
-		return in
-	}, apis.EnableStatusSubresource)
+	jobMeta := metav1.ObjectMeta{
+		Name:      VolumeSnapshotPrefix + restoreSession.Name,
+		Namespace: restoreSession.Namespace,
+		Labels:    offshootLabels,
+	}
+
+	ref, err := reference.GetReference(stash_scheme.Scheme, restoreSession)
 	if err != nil {
 		return err
 	}
 
-	// write failure event
-	_, err = eventer.CreateEvent(
-		c.kubeClient,
-		eventer.EventSourceRestoreSessionController,
-		restoreSession,
-		core.EventTypeWarning,
-		eventer.EventReasonRestorePhaseUnknown,
-		jobErr.Error(),
-	)
+	serviceAccountName := "default"
+	//ensure respective RBAC stuffs
+	//Create new ServiceAccount
+	serviceAccountName = restoreSession.Name
+	saMeta := metav1.ObjectMeta{
+		Name:      serviceAccountName,
+		Namespace: restoreSession.Namespace,
+	}
+	_, _, err = core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+		in.Labels = offshootLabels
+		return in
+	})
+	if err != nil {
+		return err
+	}
 
-	return err
+	err = stash_rbac.EnsureVolumeSnapshotRestorerJobRBAC(c.kubeClient, ref, serviceAccountName, offshootLabels)
+	if err != nil {
+		return err
+	}
+
+	image := docker.Docker{
+		Registry: c.DockerRegistry,
+		Image:    docker.ImageStash,
+		Tag:      c.StashImageTag,
+	}
+
+	jobTemplate, err := util.NewVolumeRestorerJob(restoreSession, image)
+	if err != nil {
+		return err
+	}
+
+	// Create Volume restorer Job
+	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, jobMeta, func(in *batchv1.Job) *batchv1.Job {
+		// set BackupSession as owner of this Job
+		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+
+		in.Labels = offshootLabels
+		// ensure that job gets deleted when complete
+		in.Labels[apis.KeyDeleteJobOnCompletion] = "true"
+
+		in.Spec.Template = *jobTemplate
+		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+		return in
+	})
+	return nil
 }
 
 func (c *StashController) setRestoreSessionRunning(restoreSession *api_v1beta1.RestoreSession) error {
@@ -414,6 +532,54 @@ func (c *StashController) setRestoreSessionSucceeded(restoreSession *api_v1beta1
 	return err
 }
 
+func (c *StashController) setRestoreSessionFailed(restoreSession *api_v1beta1.RestoreSession, jobErr error) error {
+
+	// set RestoreSession phase to "Failed"
+	_, err := v1beta1_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
+		in.Phase = api_v1beta1.RestoreSessionFailed
+		return in
+	}, apis.EnableStatusSubresource)
+	if err != nil {
+		return err
+	}
+
+	// write failure event
+	_, err = eventer.CreateEvent(
+		c.kubeClient,
+		eventer.EventSourceRestoreSessionController,
+		restoreSession,
+		core.EventTypeWarning,
+		eventer.EventReasonRestoreSessionFailed,
+		jobErr.Error(),
+	)
+
+	return err
+}
+
+func (c *StashController) setRestoreSessionUnknown(restoreSession *api_v1beta1.RestoreSession, jobErr error) error {
+
+	// set RestoreSession phase to "Unknown"
+	_, err := v1beta1_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
+		in.Phase = api_v1beta1.RestoreSessionUnknown
+		return in
+	}, apis.EnableStatusSubresource)
+	if err != nil {
+		return err
+	}
+
+	// write failure event
+	_, err = eventer.CreateEvent(
+		c.kubeClient,
+		eventer.EventSourceRestoreSessionController,
+		restoreSession,
+		core.EventTypeWarning,
+		eventer.EventReasonRestorePhaseUnknown,
+		jobErr.Error(),
+	)
+
+	return err
+}
+
 func (c *StashController) getRestoreSessionPhase(restoreSession *api_v1beta1.RestoreSession) (api_v1beta1.RestoreSessionPhase, error) {
 	// RestoreSession phase is empty or "Pending" then return it. controller will process accordingly
 	if restoreSession.Status.TotalHosts == nil ||
@@ -443,76 +609,4 @@ func (c *StashController) getRestoreSessionPhase(restoreSession *api_v1beta1.Res
 
 	// restore has been completed successfully
 	return api_v1beta1.RestoreSessionSucceeded, nil
-}
-
-func (c *StashController) ensureVolumeSnapshotterRestoreJob(restoreSession *api_v1beta1.RestoreSession) error {
-	offshootLabels := restoreSession.OffshootLabels()
-
-	jobMeta := metav1.ObjectMeta{
-		Name:      VolumeSnapshotPrefix + restoreSession.Name,
-		Namespace: restoreSession.Namespace,
-		Labels:    offshootLabels,
-	}
-
-	ref, err := reference.GetReference(stash_scheme.Scheme, restoreSession)
-	if err != nil {
-		return err
-	}
-
-	serviceAccountName := "default"
-	//ensure respective RBAC stuffs
-	//Create new ServiceAccount
-	serviceAccountName = restoreSession.Name
-	saMeta := metav1.ObjectMeta{
-		Name:      serviceAccountName,
-		Namespace: restoreSession.Namespace,
-	}
-	_, _, err = core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
-		in.Labels = offshootLabels
-		return in
-	})
-	if err != nil {
-		return err
-	}
-
-	err = c.ensureVolumeSnapshotRestoreJobRBAC(ref, serviceAccountName, offshootLabels)
-	if err != nil {
-		return err
-	}
-
-	image := docker.Docker{
-		Registry: c.DockerRegistry,
-		Image:    docker.ImageStash,
-		Tag:      c.StashImageTag,
-	}
-
-	// create Snapshot Volume Job
-	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, jobMeta, func(in *batchv1.Job) *batchv1.Job {
-		// set BackupSession as owner of this Job
-		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
-
-		in.Labels = offshootLabels
-		// ensure that job gets deleted when complete
-		in.Labels[apis.KeyDeleteJobOnCompletion] = "true"
-
-		in.Spec.Template.Spec.Containers = core_util.UpsertContainer(
-			in.Spec.Template.Spec.Containers,
-			core.Container{
-				Name:            util.StashContainer,
-				ImagePullPolicy: core.PullAlways,
-				Image:           image.ToContainerImage(),
-				Args: []string{
-					"restore-vs",
-					fmt.Sprintf("--restoresession.name=%s", restoreSession.Name),
-					fmt.Sprintf("--enable-status-subresource=%v", apis.EnableStatusSubresource),
-					fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
-				},
-			})
-		in.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
-		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-
-		return in
-	})
-	return nil
 }
