@@ -47,4 +47,6 @@ const (
 	IONiceClassData = "IONICE_CLASS_DATA"
 
 	StatusSubresourceEnabled = "ENABLE_STATUS_SUBRESOURCE"
+
+	PushgatewayURL = "PUSH_GATEWAY_URL"
 )

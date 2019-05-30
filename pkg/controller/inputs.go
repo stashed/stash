@@ -27,6 +27,10 @@ func (c *StashController) inputsForBackupConfig(backupConfig api.BackupConfigura
 	// always enable cache if nothing specified
 	inputs[apis.EnableCache] = strconv.FormatBool(!backupConfig.Spec.TempDir.DisableCaching)
 
+	// add PushgatewayURL as input
+	metricInputs := c.inputForMetrics()
+	inputs = core_util.UpsertMap(inputs, metricInputs)
+
 	return inputs, nil
 }
 
@@ -47,6 +51,10 @@ func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSess
 
 	// always enable cache if nothing specified
 	inputs[apis.EnableCache] = strconv.FormatBool(!restoreSession.Spec.TempDir.DisableCaching)
+
+	// add PushgatewayURL as input
+	metricInputs := c.inputForMetrics()
+	inputs = core_util.UpsertMap(inputs, metricInputs)
 
 	return inputs, nil
 }
@@ -138,4 +146,10 @@ func (c *StashController) inputsForRetentionPolicy(retentionPolicy apiAlpha.Rete
 		inputs[apis.RetentionDryRun] = "true"
 	}
 	return inputs
+}
+
+func (c *StashController) inputForMetrics() map[string]string {
+	return map[string]string{
+		apis.PushgatewayURL: util.PushgatewayURL(),
+	}
 }
