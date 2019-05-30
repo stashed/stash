@@ -48,5 +48,5 @@ const (
 
 	StatusSubresourceEnabled = "ENABLE_STATUS_SUBRESOURCE"
 
-	PushgatewayURL = "PUSH_GATEWAY_URL"
+	PushgatewayURL = "PROMETHEUS_PUSHGATEWAY_URL"
 )
