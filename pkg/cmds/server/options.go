@@ -2,10 +2,9 @@ package server
 
 import (
 	"flag"
+	"fmt"
 	"time"
 
-	stringz "github.com/appscode/go/strings"
-	v "github.com/appscode/go/version"
 	"github.com/spf13/pflag"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	"k8s.io/client-go/kubernetes"
@@ -35,7 +34,7 @@ type ExtraOptions struct {
 func NewExtraOptions() *ExtraOptions {
 	return &ExtraOptions{
 		DockerRegistry: docker.ACRegistry,
-		StashImageTag:  stringz.Val(v.Version.Version, "canary"),
+		StashImageTag:  "",
 		MaxNumRequeues: 5,
 		NumThreads:     2,
 		ScratchDir:     "/tmp",
@@ -57,7 +56,6 @@ func (s *ExtraOptions) AddGoFlags(fs *flag.FlagSet) {
 	fs.BoolVar(&s.EnableMutatingWebhook, "enable-mutating-webhook", s.EnableMutatingWebhook, "If true, enables mutating webhooks for KubeDB CRDs.")
 	fs.BoolVar(&s.EnableValidatingWebhook, "enable-validating-webhook", s.EnableValidatingWebhook, "If true, enables validating webhooks for KubeDB CRDs.")
 	fs.BoolVar(&apis.EnableStatusSubresource, "enable-status-subresource", apis.EnableStatusSubresource, "If true, uses sub resource for KubeDB crds.")
-
 }
 
 func (s *ExtraOptions) AddFlags(fs *pflag.FlagSet) {
@@ -100,4 +98,16 @@ func (s *ExtraOptions) ApplyTo(cfg *controller.Config) error {
 	}
 
 	return nil
+}
+
+func (s *ExtraOptions) Validate() []error {
+	if s == nil {
+		return nil
+	}
+
+	var errs []error
+	if s.StashImageTag == "" {
+		errs = append(errs, fmt.Errorf("--image-tag must be specified"))
+	}
+	return errs
 }

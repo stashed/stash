@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/pflag"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	openapinamer "k8s.io/apiserver/pkg/endpoints/openapi"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
@@ -51,7 +52,10 @@ func (o StashOptions) AddFlags(fs *pflag.FlagSet) {
 }
 
 func (o StashOptions) Validate(args []string) error {
-	return nil
+	var errs []error
+	errs = append(errs, o.RecommendedOptions.Validate()...)
+	errs = append(errs, o.ExtraOptions.Validate()...)
+	return utilerrors.NewAggregate(errs)
 }
 
 func (o *StashOptions) Complete() error {
