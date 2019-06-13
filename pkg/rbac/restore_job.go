@@ -12,6 +12,7 @@ import (
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
 	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+	appCatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 )
 
 const (
@@ -54,6 +55,16 @@ func ensureRestoreJobClusterRole(kubeClient kubernetes.Interface, psps []string,
 				APIGroups: []string{api_v1alpha1.SchemeGroupVersion.Group},
 				Resources: []string{api_v1alpha1.ResourcePluralRepository},
 				Verbs:     []string{"*"},
+			},
+			{
+				APIGroups: []string{appCatalog.SchemeGroupVersion.Group},
+				Resources: []string{appCatalog.ResourceApps},
+				Verbs:     []string{"get"},
+			},
+			{
+				APIGroups: []string{core.SchemeGroupVersion.Group},
+				Resources: []string{"secrets"},
+				Verbs:     []string{"get"},
 			},
 			{
 				APIGroups: []string{core.GroupName},
