@@ -109,6 +109,8 @@ func NewRestoreInitContainer(rs *v1beta1_api.RestoreSession, repository *v1alpha
 	}
 	if rs.Spec.RuntimeSettings.Container != nil {
 		initContainer.SecurityContext = UpsertSecurityContext(securityContext, rs.Spec.RuntimeSettings.Container.SecurityContext)
+	} else {
+		initContainer.SecurityContext = securityContext
 	}
 
 	return initContainer

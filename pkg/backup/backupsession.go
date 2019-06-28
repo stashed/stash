@@ -369,7 +369,10 @@ func (c *BackupSessionController) electBackupLeader(backupSession *api_v1beta1.B
 				err := c.backup(backupSession, backupConfiguration)
 				if err != nil {
 					// send failure metrics and update BackupSession status
-					err = c.handleBackupFailure(backupSession, err)
+					err2 := c.handleBackupFailure(backupSession, err)
+					if err2 != nil {
+						err = errors.NewAggregate([]error{err, err2})
+					}
 					// step down from leadership so that other replicas can start backup
 					cancel()
 					// log failure. don't fail the container as it may interrupt user's service
@@ -423,7 +426,9 @@ func (c *BackupSessionController) HandleBackupSetupFailure(setupErr error) {
 	backupConfiguration, err := c.StashClient.StashV1beta1().BackupConfigurations(c.Namespace).Get(c.BackupConfigurationName, metav1.GetOptions{})
 	if err != nil {
 		e2 := errors.NewAggregate([]error{setupErr, err})
-		log.Fatalln("failed to setup backup process. Reason: ", e2.Error())
+		if e2 != nil {
+			log.Fatalln("failed to setup backup process. Reason: ", e2.Error())
+		}
 	}
 	c.Metrics.Labels = append(c.Metrics.Labels, fmt.Sprintf("BackupConfiguration=%s", backupConfiguration.Name))
 	if backupConfiguration.Spec.Target != nil {

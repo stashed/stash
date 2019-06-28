@@ -3,6 +3,7 @@ package resolve
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"gomodules.xyz/envsubst"
 	core "k8s.io/api/core/v1"
@@ -63,7 +64,7 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 
 		// container from function spec
 		container := core.Container{
-			Name:            fmt.Sprintf("%s-%d", function.Name, i), // TODO
+			Name:            fmt.Sprintf("%s-%d", strings.ReplaceAll(function.Name, ".", "-"), i), // TODO
 			Image:           function.Spec.Image,
 			Command:         function.Spec.Command,
 			Args:            function.Spec.Args,
