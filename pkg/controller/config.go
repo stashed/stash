@@ -85,8 +85,14 @@ func (c *Config) New() (*StashController, error) {
 		return nil, err
 	}
 
-	// ensure update-status function
-	err := util.EnsureUpdateStatusFunction(ctrl.stashClient, ctrl.DockerRegistry, ctrl.StashImageTag)
+	// ensure default functions
+	err := util.EnsureDefaultFunctions(ctrl.stashClient, ctrl.DockerRegistry, ctrl.StashImageTag)
+	if err != nil {
+		return nil, err
+	}
+
+	// ensure default tasks
+	err = util.EnsureDefaultTasks(ctrl.stashClient)
 	if err != nil {
 		return nil, err
 	}
