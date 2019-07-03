@@ -2,7 +2,6 @@ package cmds
 
 import (
 	"fmt"
-	"stash.appscode.dev/stash/pkg/resolve"
 	"strconv"
 	"time"
 
@@ -19,6 +18,7 @@ import (
 	"kmodules.xyz/client-go/meta"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	"stash.appscode.dev/stash/pkg/resolve"
 	"stash.appscode.dev/stash/pkg/restic"
 	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
@@ -81,13 +81,13 @@ func (opt *VSoption) RestoreVolumeSnapshot() error {
 
 	pvcList := make([]core.PersistentVolumeClaim, 0)
 
-    if restoreSession.Spec.Target.Replicas == nil{
-		pvcs, err := opt.getPVCFromVolumeClaimTemplates(-1,  restoreSession.Spec.Target.VolumeClaimTemplates, startTime)
-		if err != nil{
+	if restoreSession.Spec.Target.Replicas == nil {
+		pvcs, err := opt.getPVCFromVolumeClaimTemplates(-1, restoreSession.Spec.Target.VolumeClaimTemplates, startTime)
+		if err != nil {
 			return err
 		}
 		pvcList = append(pvcList, pvcs...)
-	} else{
+	} else {
 		for ordinal := int32(0); ordinal < *restoreSession.Spec.Target.Replicas; ordinal++ {
 			pvcs, err := opt.getPVCFromVolumeClaimTemplates(ordinal, restoreSession.Spec.Target.VolumeClaimTemplates, startTime)
 			if err != nil {
@@ -103,7 +103,7 @@ func (opt *VSoption) RestoreVolumeSnapshot() error {
 	for _, pvc := range pvcList {
 
 		_, err = opt.snapshotClient.VolumesnapshotV1alpha1().VolumeSnapshots(opt.namespace).Get(pvc.Spec.DataSource.Name, metav1.GetOptions{})
-		if err != nil{
+		if err != nil {
 			volumeSnapshotExists = true
 			// write failure event for not existing volumeSnapshot
 			restoreOutput := restic.RestoreOutput{
@@ -171,7 +171,7 @@ func (opt *VSoption) RestoreVolumeSnapshot() error {
 			continue
 		}
 
-		err = util.WaitUntilPVCReady(opt.kubeClient,pvc.ObjectMeta)
+		err = util.WaitUntilPVCReady(opt.kubeClient, pvc.ObjectMeta)
 		if err != nil {
 			return err
 		}
@@ -189,19 +189,18 @@ func (opt *VSoption) RestoreVolumeSnapshot() error {
 	return nil
 }
 
-
-func(opt *VSoption) getPVCFromVolumeClaimTemplates(ordinal int32, claimTemplates []core.PersistentVolumeClaim, startTime time.Time) ([]core.PersistentVolumeClaim, error){
+func (opt *VSoption) getPVCFromVolumeClaimTemplates(ordinal int32, claimTemplates []core.PersistentVolumeClaim, startTime time.Time) ([]core.PersistentVolumeClaim, error) {
 	pvcList := make([]core.PersistentVolumeClaim, 0)
 
 	for _, claim := range claimTemplates {
 		pvc, err := opt.getPVCDefinition(ordinal, claim)
-		if err != nil{
+		if err != nil {
 			// write failure event
 			restoreOutput := restic.RestoreOutput{
 				HostRestoreStats: v1beta1.HostRestoreStats{
 					Hostname: pvc.Name,
 					Phase:    v1beta1.HostRestoreFailed,
-					Error:   err.Error(),
+					Error:    err.Error(),
 				},
 			}
 			err := opt.updateRestoreSessionStatus(restoreOutput, startTime)
@@ -213,14 +212,14 @@ func(opt *VSoption) getPVCFromVolumeClaimTemplates(ordinal int32, claimTemplates
 	return pvcList, nil
 }
 
-func (opt *VSoption) getPVCDefinition(ordinal int32, claim core.PersistentVolumeClaim) (core.PersistentVolumeClaim, error){
+func (opt *VSoption) getPVCDefinition(ordinal int32, claim core.PersistentVolumeClaim) (core.PersistentVolumeClaim, error) {
 	inputs := make(map[string]string)
 	inputs["POD_ORDINAL"] = strconv.Itoa(int(ordinal))
 	inputs["CLAIM_NAME"] = claim.Name
-	if ordinal != int32(-1){
+	if ordinal != int32(-1) {
 		claim.Name = fmt.Sprintf("%v-%v", claim.Name, ordinal)
 	}
-    dataSource := claim.Spec.DataSource
+	dataSource := claim.Spec.DataSource
 	err := resolve.ResolvePVCSpec(&claim, inputs)
 	claim.Spec.DataSource = dataSource
 	return claim, err
