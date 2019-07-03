@@ -9,7 +9,7 @@ import (
 	"github.com/appscode/go/types"
 	vs_cs "github.com/kubernetes-csi/external-snapshotter/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
-	corev1 "k8s.io/api/core/v1"
+	core "k8s.io/api/core/v1"
 	storage_api_v1 "k8s.io/api/storage/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,12 +23,6 @@ import (
 	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
 )
-
-type PVC struct {
-	podOrdinal *int32
-	pvcName    string
-	pvc        corev1.PersistentVolumeClaim
-}
 
 func NewCmdRestoreVolumeSnapshot() *cobra.Command {
 	var (
@@ -85,40 +79,56 @@ func (opt *VSoption) RestoreVolumeSnapshot() error {
 		return fmt.Errorf("restoreSession Target is nil")
 	}
 
-	pvcData := []PVC{}
+	pvcList := make([]core.PersistentVolumeClaim, 0)
 
 	if restoreSession.Spec.Target.Replicas == nil {
-		for _, vol := range restoreSession.Spec.Target.VolumeClaimTemplates {
-			pvcData = append(pvcData, PVC{pvcName: vol.Name, pvc: vol})
-
+		pvcs, err := opt.getPVCFromVolumeClaimTemplates(-1, restoreSession.Spec.Target.VolumeClaimTemplates, startTime)
+		if err != nil {
+			return err
 		}
+		pvcList = append(pvcList, pvcs...)
 	} else {
-		for i := int32(0); i < *restoreSession.Spec.Target.Replicas; i++ {
-			for _, vol := range restoreSession.Spec.Target.VolumeClaimTemplates {
-				pvcData = append(pvcData, PVC{pvcName: vol.Name, podOrdinal: types.Int32P(i), pvc: vol})
+		for ordinal := int32(0); ordinal < *restoreSession.Spec.Target.Replicas; ordinal++ {
+			pvcs, err := opt.getPVCFromVolumeClaimTemplates(ordinal, restoreSession.Spec.Target.VolumeClaimTemplates, startTime)
+			if err != nil {
+				return err
 			}
+			pvcList = append(pvcList, pvcs...)
 		}
-
 	}
 
-	objectMeta := []metav1.ObjectMeta{}
 	pvcAllReadyExists := false
+	volumeSnapshotExists := false
 
-	for _, data := range pvcData {
-		pvc := opt.getPVCDefinition(data)
+	for _, pvc := range pvcList {
 
+		_, err = opt.snapshotClient.VolumesnapshotV1alpha1().VolumeSnapshots(opt.namespace).Get(pvc.Spec.DataSource.Name, metav1.GetOptions{})
+		if err != nil {
+			volumeSnapshotExists = true
+			// write failure event for not existing volumeSnapshot
+			restoreOutput := restic.RestoreOutput{
+				HostRestoreStats: v1beta1.HostRestoreStats{
+					Hostname: pvc.Name,
+					Phase:    v1beta1.HostRestoreFailed,
+					Error:    fmt.Sprintf("%s not exixts", pvc.Spec.DataSource.Name),
+				},
+			}
+			err := opt.updateRestoreSessionStatus(restoreOutput, startTime)
+			if err != nil {
+				return err
+			}
+			continue
+		}
 		_, err = opt.kubeClient.CoreV1().PersistentVolumeClaims(opt.namespace).Get(pvc.Name, metav1.GetOptions{})
 		if err != nil {
 			if kerr.IsNotFound(err) {
-				pvc, err := opt.kubeClient.CoreV1().PersistentVolumeClaims(opt.namespace).Create(pvc)
+				_, err := opt.kubeClient.CoreV1().PersistentVolumeClaims(opt.namespace).Create(&pvc)
 				if err != nil {
 					return err
 				}
-				objectMeta = append(objectMeta, pvc.ObjectMeta)
 			} else {
 				return err
 			}
-
 		} else {
 			// write failure event for existing PVC
 			pvcAllReadyExists = true
@@ -135,12 +145,13 @@ func (opt *VSoption) RestoreVolumeSnapshot() error {
 			}
 		}
 	}
-	if pvcAllReadyExists {
+
+	if pvcAllReadyExists || volumeSnapshotExists {
 		return nil
 	}
 
-	for i, data := range pvcData {
-		storageClass, err := opt.kubeClient.StorageV1().StorageClasses().Get(types.String(data.pvc.Spec.StorageClassName), metav1.GetOptions{})
+	for _, pvc := range pvcList {
+		storageClass, err := opt.kubeClient.StorageV1().StorageClasses().Get(types.String(pvc.Spec.StorageClassName), metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -148,7 +159,7 @@ func (opt *VSoption) RestoreVolumeSnapshot() error {
 			// write failure event because of VolumeBindingMode is WaitForFirstConsumer
 			restoreOutput := restic.RestoreOutput{
 				HostRestoreStats: v1beta1.HostRestoreStats{
-					Hostname: objectMeta[i].Name,
+					Hostname: pvc.Name,
 					Phase:    v1beta1.HostRestoreUnknown,
 					Error:    fmt.Sprintf("VolumeBindingMode is 'WaitForFirstConsumer'. Stash is unable to decide wheather the restore has succeeded or not as the PVC will not bind with respective PV until any workload mount it."),
 				},
@@ -160,13 +171,13 @@ func (opt *VSoption) RestoreVolumeSnapshot() error {
 			continue
 		}
 
-		err = util.WaitUntilPVCReady(opt.kubeClient, objectMeta[i])
+		err = util.WaitUntilPVCReady(opt.kubeClient, pvc.ObjectMeta)
 		if err != nil {
 			return err
 		}
 		restoreOutput := restic.RestoreOutput{
 			HostRestoreStats: v1beta1.HostRestoreStats{
-				Hostname: objectMeta[i].Name,
+				Hostname: pvc.Name,
 				Phase:    v1beta1.HostRestoreSucceeded,
 			},
 		}
@@ -178,20 +189,40 @@ func (opt *VSoption) RestoreVolumeSnapshot() error {
 	return nil
 }
 
-func (opt *VSoption) getPVCDefinition(data PVC) *corev1.PersistentVolumeClaim {
+func (opt *VSoption) getPVCFromVolumeClaimTemplates(ordinal int32, claimTemplates []core.PersistentVolumeClaim, startTime time.Time) ([]core.PersistentVolumeClaim, error) {
+	pvcList := make([]core.PersistentVolumeClaim, 0)
+
+	for _, claim := range claimTemplates {
+		pvc, err := opt.getPVCDefinition(ordinal, claim)
+		if err != nil {
+			// write failure event
+			restoreOutput := restic.RestoreOutput{
+				HostRestoreStats: v1beta1.HostRestoreStats{
+					Hostname: pvc.Name,
+					Phase:    v1beta1.HostRestoreFailed,
+					Error:    err.Error(),
+				},
+			}
+			err := opt.updateRestoreSessionStatus(restoreOutput, startTime)
+			return pvcList, err
+		}
+		pvc.Namespace = opt.namespace
+		pvcList = append(pvcList, pvc)
+	}
+	return pvcList, nil
+}
+
+func (opt *VSoption) getPVCDefinition(ordinal int32, claim core.PersistentVolumeClaim) (core.PersistentVolumeClaim, error) {
 	inputs := make(map[string]string)
-	if data.podOrdinal == nil {
-		data.pvc.Name = data.pvcName
-	} else {
-		data.pvc.Name = fmt.Sprintf("%v-%v", data.pvcName, *data.podOrdinal)
-		inputs["POD_ORDINAL"] = strconv.Itoa(int(*data.podOrdinal))
+	inputs["POD_ORDINAL"] = strconv.Itoa(int(ordinal))
+	inputs["CLAIM_NAME"] = claim.Name
+	if ordinal != int32(-1) {
+		claim.Name = fmt.Sprintf("%v-%v", claim.Name, ordinal)
 	}
-	inputs["CLAIM_NAME"] = data.pvcName
-	err := resolve.ResolvePVCSpec(&data.pvc, inputs)
-	if err != nil {
-		return nil
-	}
-	return &data.pvc
+	dataSource := claim.Spec.DataSource
+	err := resolve.ResolvePVCSpec(&claim, inputs)
+	claim.Spec.DataSource = dataSource
+	return claim, err
 }
 
 func (opt *VSoption) updateRestoreSessionStatus(restoreOutput restic.RestoreOutput, startTime time.Time) error {
