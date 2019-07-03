@@ -9,6 +9,7 @@ import (
 	"stash.appscode.dev/stash/pkg/docker"
 )
 
+// EnsureDefaultFunctions creates "update-status", "pvc-backup" and "pvc-restore" Functions if they are not already present
 func EnsureDefaultFunctions(stashClient cs.Interface, registry, imageTag string) error {
 	image := docker.Docker{
 		Registry: registry,
@@ -31,6 +32,7 @@ func EnsureDefaultFunctions(stashClient cs.Interface, registry, imageTag string)
 	return nil
 }
 
+// EnsureDefaultTasks creates "pvc-backup" and "pvc-restore" Tasks if they are not already present
 func EnsureDefaultTasks(stashClient cs.Interface) error {
 	defaultTasks := []*api_v1beta1.Task{
 		pvcBackupTask(),
