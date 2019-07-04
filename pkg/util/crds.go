@@ -2,10 +2,10 @@ package util
 
 import (
 	core "k8s.io/api/core/v1"
-	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	util_v1beta1 "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
 	"stash.appscode.dev/stash/pkg/docker"
 )
 
@@ -24,8 +24,11 @@ func EnsureDefaultFunctions(stashClient cs.Interface, registry, imageTag string)
 	}
 
 	for _, fn := range defaultFunctions {
-		_, err := stashClient.StashV1beta1().Functions().Create(fn)
-		if err != nil && !kerr.IsAlreadyExists(err) {
+		_, _, err := util_v1beta1.CreateOrPatchFunction(stashClient.StashV1beta1(), fn.ObjectMeta, func(in *api_v1beta1.Function) *api_v1beta1.Function {
+			in.Spec = fn.Spec
+			return in
+		})
+		if err != nil {
 			return err
 		}
 	}
@@ -40,8 +43,11 @@ func EnsureDefaultTasks(stashClient cs.Interface) error {
 	}
 
 	for _, task := range defaultTasks {
-		_, err := stashClient.StashV1beta1().Tasks().Create(task)
-		if err != nil && !kerr.IsAlreadyExists(err) {
+		_, _, err := util_v1beta1.CreateOrPatchTask(stashClient.StashV1beta1(), task.ObjectMeta, func(in *api_v1beta1.Task) *api_v1beta1.Task {
+			in.Spec = task.Spec
+			return in
+		})
+		if err != nil {
 			return err
 		}
 	}
