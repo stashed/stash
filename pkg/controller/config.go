@@ -19,6 +19,7 @@ import (
 	stashinformers "stash.appscode.dev/stash/client/informers/externalversions"
 	"stash.appscode.dev/stash/pkg/eventer"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
+	"stash.appscode.dev/stash/pkg/util"
 )
 
 const (
@@ -79,9 +80,23 @@ func (c *Config) New() (*StashController, error) {
 		recorder:                  eventer.NewEventRecorder(c.KubeClient, "stash-operator"),
 	}
 
+	// register CRDs
 	if err := ctrl.ensureCustomResourceDefinitions(); err != nil {
 		return nil, err
 	}
+
+	// ensure default functions
+	err := util.EnsureDefaultFunctions(ctrl.stashClient, ctrl.DockerRegistry, ctrl.StashImageTag)
+	if err != nil {
+		return nil, err
+	}
+
+	// ensure default tasks
+	err = util.EnsureDefaultTasks(ctrl.stashClient)
+	if err != nil {
+		return nil, err
+	}
+
 	if c.EnableMutatingWebhook {
 		if err := reg_util.UpdateMutatingWebhookCABundle(c.ClientConfig, mutatingWebhook); err != nil {
 			return nil, err
