@@ -270,6 +270,8 @@ func NewPVCRestorerJob(rs *api_v1beta1.RestoreSession, repository *api_v1alpha1.
 	}
 	if rs.Spec.RuntimeSettings.Container != nil {
 		container.SecurityContext = UpsertSecurityContext(securityContext, rs.Spec.RuntimeSettings.Container.SecurityContext)
+	} else {
+		container.SecurityContext = securityContext
 	}
 
 	jobTemplate := &core.PodTemplateSpec{

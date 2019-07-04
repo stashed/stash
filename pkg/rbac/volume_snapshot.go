@@ -174,6 +174,11 @@ func ensureVolumeSnapshotRestorerJobClusterRole(kubeClient kubernetes.Interface,
 				Resources: []string{"storageclasses"},
 				Verbs:     []string{"get"},
 			},
+			{
+				APIGroups: []string{crdv1.GroupName},
+				Resources: []string{"volumesnapshots"},
+				Verbs:     []string{"get"},
+			},
 		}
 		return in
 
@@ -224,6 +229,11 @@ func ensureStorageReaderClassClusterRole(kubeClient kubernetes.Interface, labels
 			{
 				APIGroups: []string{storage_api_v1.GroupName},
 				Resources: []string{"storageclasses"},
+				Verbs:     []string{"get"},
+			},
+			{
+				APIGroups: []string{crdv1.GroupName},
+				Resources: []string{"volumesnapshots"},
 				Verbs:     []string{"get"},
 			},
 		}
