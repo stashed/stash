@@ -21,13 +21,14 @@ const (
 
 var (
 	tplFrontMatter = template.Must(template.New("index").Parse(`---
-title: Reference
-description: Stash CLI Reference
+title: Stash Operator
+description: Stash Operator Reference
 menu:
   product_stash_{{ .Version }}:
-    identifier: reference
-    name: Reference
-    weight: 1000
+    identifier: operator
+    name: Stash Operator
+    parent: reference
+    weight: 20
 menu_name: product_stash_{{ .Version }}
 ---
 `))
@@ -38,16 +39,17 @@ menu:
   product_stash_{{ .Version }}:
     identifier: {{ .ID }}
     name: {{ .Name }}
-    parent: reference
+    parent: operator
 {{- if .RootCmd }}
     weight: 0
 {{ end }}
 product_name: stash
-menu_name: product_stash_{{ .Version }}
 section_menu_id: reference
+menu_name: product_stash_{{ .Version }}
 {{- if .RootCmd }}
+url: /products/stash/{{ .Version }}/reference/operator/
 aliases:
-  - /products/stash/{{ .Version }}/reference/
+  - /products/stash/{{ .Version }}/reference/operator/operator/
 {{ end }}
 ---
 `))
@@ -56,7 +58,7 @@ aliases:
 // ref: https://github.com/spf13/cobra/blob/master/doc/md_docs.md
 func main() {
 	rootCmd := cmds.NewRootCmd()
-	dir := runtime.GOPath() + "/src/stash.appscode.dev/stash/docs/reference"
+	dir := runtime.GOPath() + "/src/stash.appscode.dev/docs/docs/reference/operator"
 	fmt.Printf("Generating cli markdown tree in: %v\n", dir)
 	err := os.RemoveAll(dir)
 	if err != nil {
@@ -68,8 +70,13 @@ func main() {
 	}
 
 	filePrepender := func(filename string) string {
-		name := filepath.Base(filename)
-		base := strings.TrimSuffix(name, path.Ext(name))
+		filename = filepath.Base(filename)
+		base := strings.TrimSuffix(filename, path.Ext(filename))
+		name := strings.Title(strings.Replace(base, "_", " ", -1))
+		parts := strings.Split(name, " ")
+		if len(parts) > 1 {
+			name = strings.Join(parts[1:], " ")
+		}
 		data := struct {
 			ID      string
 			Name    string
@@ -77,7 +84,7 @@ func main() {
 			RootCmd bool
 		}{
 			strings.Replace(base, "_", "-", -1),
-			strings.Title(strings.Replace(base, "_", " ", -1)),
+			name,
 			version,
 			!strings.ContainsRune(base, '_'),
 		}
@@ -89,7 +96,7 @@ func main() {
 	}
 
 	linkHandler := func(name string) string {
-		return "/docs/reference/" + name
+		return "/docs/reference/operator/" + name
 	}
 	doc.GenMarkdownTreeCustom(rootCmd, dir, filePrepender, linkHandler)
 
