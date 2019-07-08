@@ -10,9 +10,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 	core_util "kmodules.xyz/client-go/core/v1"
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
+	appCatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
-	appCatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 )
 
 const (
