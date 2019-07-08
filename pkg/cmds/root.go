@@ -16,8 +16,6 @@ import (
 	ocscheme "kmodules.xyz/openshift/client/clientset/versioned/scheme"
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/client/clientset/versioned/scheme"
-	stash_cli "stash.appscode.dev/stash/pkg/cmds/cli"
-	"stash.appscode.dev/stash/pkg/cmds/docker"
 	"stash.appscode.dev/stash/pkg/util"
 )
 
@@ -61,26 +59,10 @@ func NewRootCmd() *cobra.Command {
 	rootCmd.AddCommand(NewCmdBackupPVC())
 	rootCmd.AddCommand(NewCmdRestorePVC())
 
-	rootCmd.AddCommand(NewCmdBackupPG())
-	rootCmd.AddCommand(NewCmdRestorePG())
-
-	rootCmd.AddCommand(NewCmdBackupMySql())
-	rootCmd.AddCommand(NewCmdRestoreMySql())
-
-	rootCmd.AddCommand(NewCmdBackupMongo())
-	rootCmd.AddCommand(NewCmdRestoreMongo())
-
-	rootCmd.AddCommand(NewCmdBackupES())
-	rootCmd.AddCommand(NewCmdRestoreES())
-
 	rootCmd.AddCommand(NewCmdUpdateStatus())
 
-	rootCmd.AddCommand(stash_cli.NewCLICmd())
-	rootCmd.AddCommand(docker.NewDockerCmd())
 	rootCmd.AddCommand(NewCmdCreateVolumeSnapshot())
 	rootCmd.AddCommand(NewCmdRestoreVolumeSnapshot())
-
-	rootCmd.AddCommand(NewCmdBackupCluster())
 
 	return rootCmd
 }
