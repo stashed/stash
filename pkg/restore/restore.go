@@ -186,7 +186,7 @@ func (opt *Options) runRestore(restoreSession *api_v1beta1.RestoreSession) error
 	}
 
 	//get updated RestoreSession
-	restoreSession, err = opt.StashClient.StashV1beta1().RestoreSessions(opt.Namespace).Get(restoreSession.Name, metav1.GetOptions{})
+	restoreSession, err = opt.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(restoreSession.Name, metav1.GetOptions{})
 	if err != nil{
 		return err
 	}
