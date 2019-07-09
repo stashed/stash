@@ -185,6 +185,12 @@ func (opt *Options) runRestore(restoreSession *api_v1beta1.RestoreSession) error
 		}
 	}
 
+	//get updated RestoreSession
+	restoreSession, err = opt.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(restoreSession.Name, metav1.GetOptions{})
+	if err != nil{
+		return err
+	}
+
 	// restore is complete. add/update an entry for this host in RestoreSession status
 	_, err = stash_util_v1beta1.UpdateRestoreSessionStatusForHost(opt.StashClient.StashV1beta1(), restoreSession, restoreOutput.HostRestoreStats)
 	if err != nil {
