@@ -9,7 +9,7 @@ import (
 	"github.com/appscode/go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
-	"gopkg.in/robfig/cron.v2"
+	"github.com/robfig/cron/v3"
 	core "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
