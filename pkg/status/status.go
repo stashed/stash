@@ -36,10 +36,14 @@ func (o UpdateStatusOptions) UpdateBackupStatusFromFile() error {
 	if err != nil {
 		return err
 	}
+
 	var backupErr error
-	if backupOutput.HostBackupStats.Error != "" {
-		backupErr = fmt.Errorf(backupOutput.HostBackupStats.Error)
+	for _, hostStats := range backupOutput.HostBackupStats {
+		if hostStats.Error != "" {
+			backupErr = errors.NewAggregate([]error{backupErr, fmt.Errorf(hostStats.Error)})
+		}
 	}
+
 	updateStatusErr := o.UpdatePostBackupStatus(backupOutput)
 	return errors.NewAggregate([]error{backupErr, updateStatusErr})
 }
@@ -50,10 +54,14 @@ func (o UpdateStatusOptions) UpdateRestoreStatusFromFile() error {
 	if err != nil {
 		return err
 	}
+
 	var restoreErr error
-	if restoreOutput.HostRestoreStats.Error != "" {
-		restoreErr = fmt.Errorf(restoreOutput.HostRestoreStats.Error)
+	for _, hostStats := range restoreOutput.HostRestoreStats {
+		if hostStats.Error != "" {
+			restoreErr = errors.NewAggregate([]error{restoreErr, fmt.Errorf(hostStats.Error)})
+		}
 	}
+
 	updateStatusErr := o.UpdatePostRestoreStatus(restoreOutput)
 	return errors.NewAggregate([]error{restoreErr, updateStatusErr})
 }
@@ -65,39 +73,44 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 		return err
 	}
 
-	// add or update entry for this host in BackupSession status
-	_, err = stash_util_v1beta1.UpdateBackupSessionStatusForHost(o.StashClient.StashV1beta1(), backupSession, backupOutput.HostBackupStats)
-	if err != nil {
-		return err
-	}
+	overallBackupSucceeded := true
 
-	// create event for backup session
-	var eventType, eventReason, eventMessage string
-	if backupOutput.HostBackupStats.Error != "" {
-		eventType = core.EventTypeWarning
-		eventReason = eventer.EventReasonHostBackupFailed
-		eventMessage = fmt.Sprintf("backup failed for host %q. Reason: %s", backupOutput.HostBackupStats.Hostname, backupOutput.HostBackupStats.Error)
-	} else {
-		eventType = core.EventTypeNormal
-		eventReason = eventer.EventReasonHostBackupSucceded
-		eventMessage = fmt.Sprintf("backup succeeded for host %s", backupOutput.HostBackupStats.Hostname)
-	}
-	_, err = eventer.CreateEvent(
-		o.KubeClient,
-		eventer.EventSourcePostBackupStatusUpdater,
-		backupSession,
-		eventType,
-		eventReason,
-		eventMessage,
-	)
-	if err != nil {
-		return err
+	// add or update entry for each host in BackupSession status
+	for _, hostStats := range backupOutput.HostBackupStats {
+		_, err = stash_util_v1beta1.UpdateBackupSessionStatusForHost(o.StashClient.StashV1beta1(), backupSession, hostStats)
+		if err != nil {
+			return err
+		}
+		// create event for backup session
+		var eventType, eventReason, eventMessage string
+		if hostStats.Error != "" {
+			overallBackupSucceeded = false
+			eventType = core.EventTypeWarning
+			eventReason = eventer.EventReasonHostBackupFailed
+			eventMessage = fmt.Sprintf("backup failed for host %q. Reason: %s", hostStats.Hostname, hostStats.Error)
+		} else {
+			eventType = core.EventTypeNormal
+			eventReason = eventer.EventReasonHostBackupSucceded
+			eventMessage = fmt.Sprintf("backup succeeded for host %s", hostStats.Hostname)
+		}
+		_, err = eventer.CreateEvent(
+			o.KubeClient,
+			eventer.EventSourcePostBackupStatusUpdater,
+			backupSession,
+			eventType,
+			eventReason,
+			eventMessage,
+		)
+		if err != nil {
+			return err
+		}
 	}
 
 	// no need to update repository status for failed backup
-	if backupOutput.HostBackupStats.Error != "" {
+	if !overallBackupSucceeded {
 		return nil
 	}
+
 	bs, err := o.StashClient.StashV1beta1().BackupConfigurations(o.Namespace).Get(backupSession.Spec.BackupConfiguration.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
@@ -140,29 +153,35 @@ func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.Resto
 	}
 
 	// add or update entry for this host in RestoreSession status
-	_, err = stash_util_v1beta1.UpdateRestoreSessionStatusForHost(o.StashClient.StashV1beta1(), restoreSession, restoreOutput.HostRestoreStats)
-	if err != nil {
-		return err
-	}
+	for _, hostStats := range restoreOutput.HostRestoreStats {
 
-	// create event for restore session
-	var eventType, eventReason, eventMessage string
-	if restoreOutput.HostRestoreStats.Error != "" {
-		eventType = core.EventTypeWarning
-		eventReason = eventer.EventReasonHostRestoreFailed
-		eventMessage = fmt.Sprintf("restore failed for host %q. Reason: %s", restoreOutput.HostRestoreStats.Hostname, restoreOutput.HostRestoreStats.Error)
-	} else {
-		eventType = core.EventTypeNormal
-		eventReason = eventer.EventReasonHostRestoreSucceeded
-		eventMessage = fmt.Sprintf("restore succeeded for host %q", restoreOutput.HostRestoreStats.Hostname)
+		_, err = stash_util_v1beta1.UpdateRestoreSessionStatusForHost(o.StashClient.StashV1beta1(), restoreSession, hostStats)
+		if err != nil {
+			return err
+		}
+
+		// create event for restore session
+		var eventType, eventReason, eventMessage string
+		if hostStats.Error != "" {
+			eventType = core.EventTypeWarning
+			eventReason = eventer.EventReasonHostRestoreFailed
+			eventMessage = fmt.Sprintf("restore failed for host %q. Reason: %s", hostStats.Hostname, hostStats.Error)
+		} else {
+			eventType = core.EventTypeNormal
+			eventReason = eventer.EventReasonHostRestoreSucceeded
+			eventMessage = fmt.Sprintf("restore succeeded for host %q", hostStats.Hostname)
+		}
+		_, err = eventer.CreateEvent(
+			o.KubeClient,
+			eventer.EventSourcePostRestoreStatusUpdater,
+			restoreSession,
+			eventType,
+			eventReason,
+			eventMessage,
+		)
+		if err != nil {
+			return err
+		}
 	}
-	_, err = eventer.CreateEvent(
-		o.KubeClient,
-		eventer.EventSourcePostRestoreStatusUpdater,
-		restoreSession,
-		eventType,
-		eventReason,
-		eventMessage,
-	)
-	return err
+	return nil
 }

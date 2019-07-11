@@ -187,27 +187,29 @@ func (opt *Options) runRestore(restoreSession *api_v1beta1.RestoreSession) error
 
 	//get updated RestoreSession
 	restoreSession, err = opt.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(restoreSession.Name, metav1.GetOptions{})
-	if err != nil{
-		return err
-	}
-
-	// restore is complete. add/update an entry for this host in RestoreSession status
-	_, err = stash_util_v1beta1.UpdateRestoreSessionStatusForHost(opt.StashClient.StashV1beta1(), restoreSession, restoreOutput.HostRestoreStats)
 	if err != nil {
 		return err
 	}
 
-	// write success event
-	ref, rerr := reference.GetReference(stash_scheme.Scheme, restoreSession)
-	if rerr == nil {
-		eventer.CreateEventWithLog(
-			opt.KubeClient,
-			eventer.EventSourceRestoreInitContainer,
-			ref,
-			core.EventTypeNormal,
-			eventer.EventReasonHostRestoreSucceeded,
-			fmt.Sprintf("Successfully restored for host %q.", host),
-		)
+	// restore is complete. add/update an entry for each host in RestoreSession status
+	for _, hostStats := range restoreOutput.HostRestoreStats {
+		_, err = stash_util_v1beta1.UpdateRestoreSessionStatusForHost(opt.StashClient.StashV1beta1(), restoreSession, hostStats)
+		if err != nil {
+			return err
+		}
+
+		// write success event
+		ref, rerr := reference.GetReference(stash_scheme.Scheme, restoreSession)
+		if rerr == nil {
+			eventer.CreateEventWithLog(
+				opt.KubeClient,
+				eventer.EventSourceRestoreInitContainer,
+				ref,
+				core.EventTypeNormal,
+				eventer.EventReasonHostRestoreSucceeded,
+				fmt.Sprintf("Successfully restored for host %q.", hostStats.Hostname),
+			)
+		}
 	}
 
 	return nil
@@ -240,7 +242,7 @@ func HandleRestoreFailure(opt *Options, restoreErr error) error {
 	// send prometheus metrics
 	if opt.Metrics.Enabled {
 		restoreOutput := &restic.RestoreOutput{
-			HostRestoreStats: hostStats,
+			HostRestoreStats: []api_v1beta1.HostRestoreStats{hostStats},
 		}
 		return restoreOutput.HandleMetrics(&opt.Metrics, restoreErr)
 	}

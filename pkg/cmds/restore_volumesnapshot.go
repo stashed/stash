@@ -107,13 +107,16 @@ func (opt *VSoption) RestoreVolumeSnapshot() error {
 			volumeSnapshotExists = true
 			// write failure event for not existing volumeSnapshot
 			restoreOutput := restic.RestoreOutput{
-				HostRestoreStats: v1beta1.HostRestoreStats{
-					Hostname: pvc.Name,
-					Phase:    v1beta1.HostRestoreFailed,
-					Error:    fmt.Sprintf("%s not exixts", pvc.Spec.DataSource.Name),
+				HostRestoreStats: []v1beta1.HostRestoreStats{
+					{
+						Hostname: pvc.Name,
+						Phase:    v1beta1.HostRestoreFailed,
+						Error:    fmt.Sprintf("%s not exixts", pvc.Spec.DataSource.Name),
+						Duration: time.Now().Sub(startTime).String(),
+					},
 				},
 			}
-			err := opt.updateRestoreSessionStatus(restoreOutput, startTime)
+			err := opt.updateRestoreSessionStatus(restoreOutput)
 			if err != nil {
 				return err
 			}
@@ -133,13 +136,16 @@ func (opt *VSoption) RestoreVolumeSnapshot() error {
 			// write failure event for existing PVC
 			pvcAllReadyExists = true
 			restoreOutput := restic.RestoreOutput{
-				HostRestoreStats: v1beta1.HostRestoreStats{
-					Hostname: pvc.Name,
-					Phase:    v1beta1.HostRestoreFailed,
-					Error:    fmt.Sprintf("%s already exixts", pvc.Name),
+				HostRestoreStats: []v1beta1.HostRestoreStats{
+					{
+						Hostname: pvc.Name,
+						Phase:    v1beta1.HostRestoreFailed,
+						Error:    fmt.Sprintf("%s already exixts", pvc.Name),
+						Duration: time.Now().Sub(startTime).String(),
+					},
 				},
 			}
-			err := opt.updateRestoreSessionStatus(restoreOutput, startTime)
+			err := opt.updateRestoreSessionStatus(restoreOutput)
 			if err != nil {
 				return err
 			}
@@ -158,13 +164,16 @@ func (opt *VSoption) RestoreVolumeSnapshot() error {
 		if *storageClass.VolumeBindingMode != storage_api_v1.VolumeBindingImmediate {
 			// write failure event because of VolumeBindingMode is WaitForFirstConsumer
 			restoreOutput := restic.RestoreOutput{
-				HostRestoreStats: v1beta1.HostRestoreStats{
-					Hostname: pvc.Name,
-					Phase:    v1beta1.HostRestoreUnknown,
-					Error:    fmt.Sprintf("VolumeBindingMode is 'WaitForFirstConsumer'. Stash is unable to decide wheather the restore has succeeded or not as the PVC will not bind with respective PV until any workload mount it."),
+				HostRestoreStats: []v1beta1.HostRestoreStats{
+					{
+						Hostname: pvc.Name,
+						Phase:    v1beta1.HostRestoreUnknown,
+						Error:    fmt.Sprintf("VolumeBindingMode is 'WaitForFirstConsumer'. Stash is unable to decide wheather the restore has succeeded or not as the PVC will not bind with respective PV until any workload mount it."),
+						Duration: time.Now().Sub(startTime).String(),
+					},
 				},
 			}
-			err := opt.updateRestoreSessionStatus(restoreOutput, startTime)
+			err := opt.updateRestoreSessionStatus(restoreOutput)
 			if err != nil {
 				return err
 			}
@@ -176,12 +185,15 @@ func (opt *VSoption) RestoreVolumeSnapshot() error {
 			return err
 		}
 		restoreOutput := restic.RestoreOutput{
-			HostRestoreStats: v1beta1.HostRestoreStats{
-				Hostname: pvc.Name,
-				Phase:    v1beta1.HostRestoreSucceeded,
+			HostRestoreStats: []v1beta1.HostRestoreStats{
+				{
+					Hostname: pvc.Name,
+					Phase:    v1beta1.HostRestoreSucceeded,
+					Duration: time.Now().Sub(startTime).String(),
+				},
 			},
 		}
-		err = opt.updateRestoreSessionStatus(restoreOutput, startTime)
+		err = opt.updateRestoreSessionStatus(restoreOutput)
 		if err != nil {
 			return err
 		}
@@ -197,13 +209,16 @@ func (opt *VSoption) getPVCFromVolumeClaimTemplates(ordinal int32, claimTemplate
 		if err != nil {
 			// write failure event
 			restoreOutput := restic.RestoreOutput{
-				HostRestoreStats: v1beta1.HostRestoreStats{
-					Hostname: pvc.Name,
-					Phase:    v1beta1.HostRestoreFailed,
-					Error:    err.Error(),
+				HostRestoreStats: []v1beta1.HostRestoreStats{
+					{
+						Hostname: pvc.Name,
+						Phase:    v1beta1.HostRestoreFailed,
+						Error:    err.Error(),
+						Duration: time.Now().Sub(startTime).String(),
+					},
 				},
 			}
-			err := opt.updateRestoreSessionStatus(restoreOutput, startTime)
+			err := opt.updateRestoreSessionStatus(restoreOutput)
 			return pvcList, err
 		}
 		pvc.Namespace = opt.namespace
@@ -225,7 +240,7 @@ func (opt *VSoption) getPVCDefinition(ordinal int32, claim core.PersistentVolume
 	return claim, err
 }
 
-func (opt *VSoption) updateRestoreSessionStatus(restoreOutput restic.RestoreOutput, startTime time.Time) error {
+func (opt *VSoption) updateRestoreSessionStatus(restoreOutput restic.RestoreOutput) error {
 	// Update Backup Session
 	o := status.UpdateStatusOptions{
 		KubeClient:     opt.kubeClient,
@@ -233,8 +248,6 @@ func (opt *VSoption) updateRestoreSessionStatus(restoreOutput restic.RestoreOutp
 		Namespace:      opt.namespace,
 		RestoreSession: opt.name,
 	}
-	// Volume Snapshot complete. Read current time and calculate total backup duration.
-	endTime := time.Now()
-	restoreOutput.HostRestoreStats.Duration = endTime.Sub(startTime).String()
+
 	return o.UpdatePostRestoreStatus(&restoreOutput)
 }

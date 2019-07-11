@@ -1,11 +1,16 @@
 package restic
 
 import (
+	"sync"
 	"time"
 
+	"github.com/appscode/go/types"
+	"k8s.io/apimachinery/pkg/util/errors"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
+// RunBackup takes backup, cleanup old snapshots, check repository integrity etc.
+// It extract valuable information from respective restic command it runs and return them for further use.
 func (w *ResticWrapper) RunBackup(backupOption BackupOptions) (*BackupOutput, error) {
 	// Start clock to measure total session duration
 	startTime := time.Now()
@@ -16,34 +21,124 @@ func (w *ResticWrapper) RunBackup(backupOption BackupOptions) (*BackupOutput, er
 		return nil, err
 	}
 
-	backupOutput := &BackupOutput{
-		HostBackupStats: api_v1beta1.HostBackupStats{
-			Hostname: backupOption.Host,
-		},
+	backupOutput := &BackupOutput{}
+
+	// Run backup
+	hostStats, err := w.runBackup(backupOption)
+	if err != nil {
+		return nil, err
+	}
+	backupOutput.HostBackupStats = []api_v1beta1.HostBackupStats{hostStats}
+
+	// Check repository integrity
+	out, err := w.check()
+	if err != nil {
+		return nil, err
+	}
+	// Extract information from output of "check" command
+	integrity := extractCheckInfo(out)
+	backupOutput.RepositoryStats.Integrity = types.BoolP(integrity)
+
+	// Cleanup old snapshots according to retention policy
+	out, err = w.cleanup(backupOption.RetentionPolicy, "")
+	if err != nil {
+		return nil, err
+	}
+	// Extract information from output of cleanup command
+	kept, removed, err := extractCleanupInfo(out)
+	if err != nil {
+		return nil, err
+	}
+	backupOutput.RepositoryStats.SnapshotCount = kept
+	backupOutput.RepositoryStats.SnapshotsRemovedOnLastCleanup = removed
+
+	// Read repository statics after cleanup
+	out, err = w.stats()
+	if err != nil {
+		return nil, err
 	}
 
-	if backupOption.StdinPipeCommand.Name != "" { // Backup from stdin
-		out, err := w.backupFromStdin(backupOption)
-		if err != nil {
-			return nil, err
+	// Extract information from output of "stats" command
+	repoSize, err := extractStatsInfo(out)
+	if err != nil {
+		return nil, err
+	}
+	backupOutput.RepositoryStats.Size = repoSize
+
+	// Backup complete. Read current time and calculate total backup duration.
+	endTime := time.Now()
+	for idx := range backupOutput.HostBackupStats {
+		if backupOutput.HostBackupStats[idx].Hostname == backupOption.Host {
+			backupOutput.HostBackupStats[idx].Duration = endTime.Sub(startTime).String()
+			backupOutput.HostBackupStats[idx].Phase = api_v1beta1.HostBackupSucceeded
 		}
-		// Extract information from the output of backup command
-		err = backupOutput.extractBackupInfo(out, backupOption.StdinFileName, backupOption.Host)
-		if err != nil {
-			return nil, err
-		}
-	} else { // Backup all target directories
-		for _, dir := range backupOption.BackupDirs {
-			out, err := w.backup(dir, backupOption.Host, nil)
+	}
+
+	return backupOutput, nil
+}
+
+// RunParallelBackup runs multiple backup in parallel.
+// Host must be different for each backup.
+func (w *ResticWrapper) RunParallelBackup(backupOptions []BackupOptions, maxConcurrency int) (*BackupOutput, error) {
+	// Start clock to measure total session duration
+	startTime := time.Now()
+
+	// Initialize restic repository if it does not exist
+	_, err := w.initRepositoryIfAbsent()
+	if err != nil {
+		return nil, err
+	}
+
+	// WaitGroup to wait until all go routine finish
+	wg := sync.WaitGroup{}
+	// concurrencyLimiter channel is used to limit maximum number simultaneous go routine
+	concurrencyLimiter := make(chan bool, maxConcurrency)
+	defer close(concurrencyLimiter)
+
+	var backupErr error
+	mu := sync.Mutex{} // use lock to avoid racing condition
+	backupOutput := &BackupOutput{}
+
+	for _, opt := range backupOptions {
+		// try to send message in concurrencyLimiter channel.
+		// if maximum allowed concurrent backup is already running, program control will stuck here.
+		concurrencyLimiter <- true
+
+		// starting new go routine. add it to WaitGroup
+		wg.Add(1)
+
+		go func(opt BackupOptions) {
+			// when this go routine completes it task, release a slot from the concurrencyLimiter channel
+			// so that another go routine can start. Also, tell the WaitGroup that it is done with its task.
+			defer func() {
+				<-concurrencyLimiter
+				wg.Done()
+			}()
+
+			// run backup
+			hostStats, err := w.runBackup(opt)
 			if err != nil {
-				return nil, err
+				// acquire lock to make sure no other go routine is writing to backupErr variable
+				mu.Lock()
+				backupErr = errors.NewAggregate([]error{backupErr, err})
+				mu.Unlock()
+				return
 			}
-			// Extract information from the output of backup command
-			err = backupOutput.extractBackupInfo(out, dir, backupOption.Host)
-			if err != nil {
-				return nil, err
-			}
-		}
+			hostStats.Duration = time.Now().Sub(startTime).String()
+			hostStats.Phase = api_v1beta1.HostBackupSucceeded
+
+			// add hostStats to backupOutput. use lock to avoid racing condition.
+			mu.Lock()
+			backupOutput.upsertHostBackupStats(hostStats)
+			mu.Unlock()
+		}(opt)
+	}
+
+	// wait for all the go routines to complete
+	wg.Wait()
+
+	if backupErr != nil {
+		return nil, backupErr
 	}
 
 	// Check repository integrity
@@ -52,17 +147,24 @@ func (w *ResticWrapper) RunBackup(backupOption BackupOptions) (*BackupOutput, er
 		return nil, err
 	}
 	// Extract information from output of "check" command
-	backupOutput.extractCheckInfo(out)
+	integrity := extractCheckInfo(out)
+	backupOutput.RepositoryStats.Integrity = types.BoolP(integrity)
 
-	// Cleanup old snapshot according to retention policy
-	out, err = w.cleanup(backupOption.RetentionPolicy)
-	if err != nil {
-		return nil, err
-	}
-	// Extract information from output of cleanup command
-	err = backupOutput.extractCleanupInfo(out)
-	if err != nil {
-		return nil, err
+	// Cleanup old snapshots according to retention policy
+	backupOutput.RepositoryStats.SnapshotCount = 0
+	backupOutput.RepositoryStats.SnapshotsRemovedOnLastCleanup = 0
+	for _, opt := range backupOptions {
+		out, err = w.cleanup(opt.RetentionPolicy, opt.Host)
+		if err != nil {
+			return nil, err
+		}
+		// Extract information from output of cleanup command
+		kept, removed, err := extractCleanupInfo(out)
+		if err != nil {
+			return nil, err
+		}
+		backupOutput.RepositoryStats.SnapshotCount += kept
+		backupOutput.RepositoryStats.SnapshotsRemovedOnLastCleanup += removed
 	}
 
 	// Read repository statics after cleanup
@@ -72,15 +174,74 @@ func (w *ResticWrapper) RunBackup(backupOption BackupOptions) (*BackupOutput, er
 	}
 
 	// Extract information from output of "stats" command
-	err = backupOutput.extractStatsInfo(out)
+	repoSize, err := extractStatsInfo(out)
 	if err != nil {
 		return nil, err
 	}
-
-	// Backup complete. Read current time and calculate total backup duration.
-	endTime := time.Now()
-	backupOutput.HostBackupStats.Duration = endTime.Sub(startTime).String()
-	backupOutput.HostBackupStats.Phase = api_v1beta1.HostBackupSucceeded
+	backupOutput.RepositoryStats.Size = repoSize
 
 	return backupOutput, nil
+}
+
+func (w *ResticWrapper) runBackup(backupOption BackupOptions) (api_v1beta1.HostBackupStats, error) {
+	hostStats := api_v1beta1.HostBackupStats{
+		Hostname: backupOption.Host,
+	}
+
+	if backupOption.StdinPipeCommand.Name != "" { // Backup from stdin
+		out, err := w.backupFromStdin(backupOption)
+		if err != nil {
+			return hostStats, err
+		}
+		// Extract information from the output of backup command
+		snapStats, err := extractBackupInfo(out, backupOption.StdinFileName, backupOption.Host)
+		if err != nil {
+			return hostStats, err
+		}
+		hostStats.Snapshots = []api_v1beta1.SnapshotStats{snapStats}
+		return hostStats, nil
+	} else { // Backup all target directories
+		for _, dir := range backupOption.BackupDirs {
+			out, err := w.backup(dir, backupOption.Host, nil)
+			if err != nil {
+				return hostStats, err
+			}
+			// Extract information from the output of backup command
+			stats, err := extractBackupInfo(out, dir, backupOption.Host)
+			if err != nil {
+				return hostStats, err
+			}
+			hostStats = upsertSnapshotStats(hostStats, stats)
+		}
+	}
+
+	return hostStats, nil
+}
+
+func upsertSnapshotStats(hostStats api_v1beta1.HostBackupStats, snapStats api_v1beta1.SnapshotStats) api_v1beta1.HostBackupStats {
+	for i, s := range hostStats.Snapshots {
+		// if there is already an entry for this snapshot, then update it
+		if s.Name == snapStats.Name {
+			hostStats.Snapshots[i] = snapStats
+			return hostStats
+		}
+	}
+	// no entry for this snapshot. add a new entry
+	hostStats.Snapshots = append(hostStats.Snapshots, snapStats)
+	return hostStats
+}
+
+func (backupOutput *BackupOutput) upsertHostBackupStats(hostStats api_v1beta1.HostBackupStats) {
+
+	// check if a entry already exist for this host in backupOutput. If exist then update it.
+	for i, v := range backupOutput.HostBackupStats {
+		if v.Hostname == hostStats.Hostname {
+			backupOutput.HostBackupStats[i] = hostStats
+			return
+		}
+	}
+
+	// no entry for this host. add a new entry
+	backupOutput.HostBackupStats = append(backupOutput.HostBackupStats, hostStats)
+	return
 }

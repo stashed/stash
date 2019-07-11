@@ -154,6 +154,8 @@ func (opt *VSoption) CreateVolumeSnapshot() error {
 		if err != nil {
 			return err
 		}
+		// Volume Snapshot complete. Read current time and calculate total backup duration.
+		endTime := time.Now()
 		// Update Backup Session
 		o := status.UpdateStatusOptions{
 			KubeClient:    opt.kubeClient,
@@ -162,14 +164,14 @@ func (opt *VSoption) CreateVolumeSnapshot() error {
 			BackupSession: opt.name,
 		}
 		backupOutput := restic.BackupOutput{
-			HostBackupStats: v1beta1.HostBackupStats{
-				Hostname: pvcName,
-				Phase:    v1beta1.HostBackupSucceeded,
+			HostBackupStats: []v1beta1.HostBackupStats{
+				{
+					Hostname: pvcName,
+					Phase:    v1beta1.HostBackupSucceeded,
+					Duration: endTime.Sub(startTime).String(),
+				},
 			},
 		}
-		// Volume Snapshot complete. Read current time and calculate total backup duration.
-		endTime := time.Now()
-		backupOutput.HostBackupStats.Duration = endTime.Sub(startTime).String()
 
 		err = o.UpdatePostBackupStatus(&backupOutput)
 		if err != nil {

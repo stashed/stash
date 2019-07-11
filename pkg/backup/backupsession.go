@@ -415,7 +415,7 @@ func (c *BackupSessionController) handleBackupFailure(backupSession *api_v1beta1
 	// send prometheus metrics
 	if c.Metrics.Enabled {
 		backupOutput := &restic.BackupOutput{
-			HostBackupStats: hostStats,
+			HostBackupStats: []api_v1beta1.HostBackupStats{hostStats},
 		}
 		return backupOutput.HandleMetrics(&c.Metrics, backupErr)
 	}
