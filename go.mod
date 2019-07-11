@@ -23,7 +23,8 @@ require (
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
 	github.com/pkg/errors v0.8.1
-	github.com/prometheus/client_golang v0.9.3
+	github.com/prometheus/client_golang v0.9.4
+	github.com/robfig/cron/v3 v3.0.0
 	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/smartystreets/assertions v0.0.0-20190401211740-f487f9de1cd3 // indirect
 	github.com/spf13/afero v1.2.2
@@ -38,7 +39,6 @@ require (
 	google.golang.org/grpc v1.19.1 // indirect
 	gopkg.in/ini.v1 v1.42.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
-	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	k8s.io/api v0.0.0-20190503110853-61630f889b3c
 	k8s.io/apiextensions-apiserver v0.0.0-20190508104225-cdabac1ba2af
 	k8s.io/apimachinery v0.0.0-20190508063446-a3da69d3723c
@@ -58,7 +58,6 @@ require (
 
 replace (
 	github.com/graymeta/stow => github.com/appscode/stow v0.0.0-20190506085026-ca5baa008ea3
-	gopkg.in/robfig/cron.v2 => github.com/appscode/cron v0.0.0-20170717094345-ca60c6d796d4
 	k8s.io/api => k8s.io/api v0.0.0-20190313235455-40a48860b5ab
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20190315093550-53c4693659ed
 	k8s.io/apimachinery => github.com/kmodules/apimachinery v0.0.0-20190508045248-a52a97a7a2bf
