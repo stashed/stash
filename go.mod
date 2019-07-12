@@ -3,15 +3,13 @@ module stash.appscode.dev/stash
 go 1.12
 
 require (
-	github.com/Azure/go-autorest v11.1.2+incompatible // indirect
-	github.com/appscode/go v0.0.0-20190523031839-1468ee3a76e8
+	github.com/appscode/go v0.0.0-20190621064509-6b292c9166e3
 	github.com/appscode/osm v0.11.0 // indirect
 	github.com/armon/circbuf v0.0.0-20190214190532-5111143e8da2
-	github.com/aws/aws-sdk-go v1.14.33 // indirect
 	github.com/cenkalti/backoff v2.1.1+incompatible
 	github.com/codeskyblue/go-sh v0.0.0-20190412065543-76bd3d59ff27
 	github.com/emicklei/go-restful v2.9.5+incompatible // indirect
-	github.com/evanphx/json-patch v4.2.0+incompatible
+	github.com/evanphx/json-patch v4.5.0+incompatible
 	github.com/go-openapi/spec v0.19.0
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/gopherjs/gopherjs v0.0.0-20190430165422-3e4dfb77656c // indirect
@@ -23,7 +21,8 @@ require (
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
 	github.com/pkg/errors v0.8.1
-	github.com/prometheus/client_golang v0.9.3
+	github.com/prometheus/client_golang v0.9.4
+	github.com/robfig/cron/v3 v3.0.0
 	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/smartystreets/assertions v0.0.0-20190401211740-f487f9de1cd3 // indirect
 	github.com/spf13/afero v1.2.2
@@ -34,11 +33,8 @@ require (
 	golang.org/x/net v0.0.0-20190522155817-f3200d17e092 // indirect
 	gomodules.xyz/cert v1.0.0
 	gomodules.xyz/envsubst v0.0.0-20190321051520-c745d52104af
-	google.golang.org/genproto v0.0.0-20190502173448-54afdca5d873 // indirect
-	google.golang.org/grpc v1.19.1 // indirect
 	gopkg.in/ini.v1 v1.42.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
-	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	k8s.io/api v0.0.0-20190503110853-61630f889b3c
 	k8s.io/apiextensions-apiserver v0.0.0-20190508104225-cdabac1ba2af
 	k8s.io/apimachinery v0.0.0-20190508063446-a3da69d3723c
@@ -58,7 +54,6 @@ require (
 
 replace (
 	github.com/graymeta/stow => github.com/appscode/stow v0.0.0-20190506085026-ca5baa008ea3
-	gopkg.in/robfig/cron.v2 => github.com/appscode/cron v0.0.0-20170717094345-ca60c6d796d4
 	k8s.io/api => k8s.io/api v0.0.0-20190313235455-40a48860b5ab
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20190315093550-53c4693659ed
 	k8s.io/apimachinery => github.com/kmodules/apimachinery v0.0.0-20190508045248-a52a97a7a2bf

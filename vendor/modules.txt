@@ -1,6 +1,6 @@
-# cloud.google.com/go v0.38.0
+# cloud.google.com/go v0.39.0
 cloud.google.com/go/compute/metadata
-# github.com/Azure/azure-sdk-for-go v21.3.0+incompatible
+# github.com/Azure/azure-sdk-for-go v27.3.0+incompatible
 github.com/Azure/azure-sdk-for-go/storage
 github.com/Azure/azure-sdk-for-go/version
 # github.com/Azure/go-autorest v11.1.2+incompatible
@@ -16,7 +16,7 @@ github.com/NYTimes/gziphandler
 github.com/PuerkitoBio/purell
 # github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
 github.com/PuerkitoBio/urlesc
-# github.com/appscode/go v0.0.0-20190523031839-1468ee3a76e8
+# github.com/appscode/go v0.0.0-20190621064509-6b292c9166e3
 github.com/appscode/go/log
 github.com/appscode/go/version
 github.com/appscode/go/encoding/json/types
@@ -38,7 +38,7 @@ github.com/appscode/jsonpatch
 github.com/appscode/osm/context
 # github.com/armon/circbuf v0.0.0-20190214190532-5111143e8da2
 github.com/armon/circbuf
-# github.com/aws/aws-sdk-go v1.14.33
+# github.com/aws/aws-sdk-go v1.19.16
 github.com/aws/aws-sdk-go/aws
 github.com/aws/aws-sdk-go/aws/credentials
 github.com/aws/aws-sdk-go/aws/credentials/stscreds
@@ -48,6 +48,7 @@ github.com/aws/aws-sdk-go/service/s3
 github.com/aws/aws-sdk-go/aws/awserr
 github.com/aws/aws-sdk-go/aws/endpoints
 github.com/aws/aws-sdk-go/internal/sdkio
+github.com/aws/aws-sdk-go/internal/ini
 github.com/aws/aws-sdk-go/internal/shareddefaults
 github.com/aws/aws-sdk-go/aws/client
 github.com/aws/aws-sdk-go/service/sts
@@ -55,10 +56,12 @@ github.com/aws/aws-sdk-go/aws/client/metadata
 github.com/aws/aws-sdk-go/aws/corehandlers
 github.com/aws/aws-sdk-go/aws/request
 github.com/aws/aws-sdk-go/internal/sdkuri
+github.com/aws/aws-sdk-go/aws/credentials/processcreds
 github.com/aws/aws-sdk-go/aws/csm
 github.com/aws/aws-sdk-go/aws/defaults
 github.com/aws/aws-sdk-go/aws/awsutil
 github.com/aws/aws-sdk-go/aws/signer/v4
+github.com/aws/aws-sdk-go/internal/s3err
 github.com/aws/aws-sdk-go/private/protocol
 github.com/aws/aws-sdk-go/private/protocol/eventstream
 github.com/aws/aws-sdk-go/private/protocol/eventstream/eventstreamapi
@@ -106,14 +109,12 @@ github.com/docker/spdystream/spdy
 # github.com/emicklei/go-restful v2.9.5+incompatible
 github.com/emicklei/go-restful
 github.com/emicklei/go-restful/log
-# github.com/evanphx/json-patch v4.2.0+incompatible
+# github.com/evanphx/json-patch v4.5.0+incompatible
 github.com/evanphx/json-patch
 # github.com/fatih/structs v1.1.0
 github.com/fatih/structs
 # github.com/ghodss/yaml v1.0.0
 github.com/ghodss/yaml
-# github.com/go-ini/ini v1.40.0
-github.com/go-ini/ini
 # github.com/go-openapi/jsonpointer v0.19.0
 github.com/go-openapi/jsonpointer
 # github.com/go-openapi/jsonreference v0.19.0
@@ -259,19 +260,21 @@ github.com/peterbourgon/diskv
 github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
-# github.com/prometheus/client_golang v0.9.3
+# github.com/prometheus/client_golang v0.9.4
 github.com/prometheus/client_golang/prometheus
 github.com/prometheus/client_golang/prometheus/push
 github.com/prometheus/client_golang/prometheus/internal
 # github.com/prometheus/client_model v0.0.0-20190129233127-fd36f4220a90
 github.com/prometheus/client_model/go
-# github.com/prometheus/common v0.4.0
+# github.com/prometheus/common v0.4.1
 github.com/prometheus/common/expfmt
 github.com/prometheus/common/model
 github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg
-# github.com/prometheus/procfs v0.0.0-20190507164030-5867b95ac084
+# github.com/prometheus/procfs v0.0.2
 github.com/prometheus/procfs
 github.com/prometheus/procfs/internal/fs
+# github.com/robfig/cron/v3 v3.0.0
+github.com/robfig/cron/v3
 # github.com/russross/blackfriday v1.5.2
 github.com/russross/blackfriday
 # github.com/satori/go.uuid v1.2.0
@@ -367,7 +370,7 @@ gomodules.xyz/envsubst/parse
 gomodules.xyz/envsubst/path
 # gomodules.xyz/version v0.0.0-20190507203204-7cec7ee542d3
 gomodules.xyz/version
-# google.golang.org/api v0.4.0
+# google.golang.org/api v0.5.0
 google.golang.org/api/storage/v1
 google.golang.org/api/gensupport
 google.golang.org/api/googleapi
@@ -388,9 +391,9 @@ google.golang.org/appengine/internal/base
 google.golang.org/appengine/internal/datastore
 google.golang.org/appengine/internal/log
 google.golang.org/appengine/internal/remote_api
-# google.golang.org/genproto v0.0.0-20190502173448-54afdca5d873
+# google.golang.org/genproto v0.0.0-20190508193815-b515fa19cec8
 google.golang.org/genproto/googleapis/rpc/status
-# google.golang.org/grpc v1.19.1
+# google.golang.org/grpc v1.20.1
 google.golang.org/grpc
 google.golang.org/grpc/codes
 google.golang.org/grpc/credentials
@@ -406,6 +409,7 @@ google.golang.org/grpc/encoding
 google.golang.org/grpc/encoding/proto
 google.golang.org/grpc/internal
 google.golang.org/grpc/internal/backoff
+google.golang.org/grpc/internal/balancerload
 google.golang.org/grpc/internal/binarylog
 google.golang.org/grpc/internal/channelz
 google.golang.org/grpc/internal/envconfig
@@ -431,8 +435,6 @@ gopkg.in/inf.v0
 gopkg.in/ini.v1
 # gopkg.in/natefinch/lumberjack.v2 v2.0.0
 gopkg.in/natefinch/lumberjack.v2
-# gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5 => github.com/appscode/cron v0.0.0-20170717094345-ca60c6d796d4
-gopkg.in/robfig/cron.v2
 # gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
 gopkg.in/tomb.v1
 # gopkg.in/yaml.v2 v2.2.2
@@ -442,10 +444,10 @@ k8s.io/api/core/v1
 k8s.io/api/rbac/v1
 k8s.io/api/apps/v1
 k8s.io/api/storage/v1
-k8s.io/api/batch/v1
 k8s.io/api/admission/v1beta1
 k8s.io/api/apps/v1beta1
 k8s.io/api/apps/v1beta2
+k8s.io/api/batch/v1
 k8s.io/api/batch/v1beta1
 k8s.io/api/extensions/v1beta1
 k8s.io/api/policy/v1beta1
@@ -664,7 +666,6 @@ k8s.io/client-go/tools/leaderelection/resourcelock
 k8s.io/client-go/tools/record
 k8s.io/client-go/tools/reference
 k8s.io/client-go/tools/clientcmd
-k8s.io/client-go/util/homedir
 k8s.io/client-go/informers
 k8s.io/client-go/informers/batch/v1
 k8s.io/client-go/informers/core/v1
@@ -761,9 +762,10 @@ k8s.io/client-go/tools/record/util
 k8s.io/client-go/util/workqueue
 k8s.io/client-go/tools/auth
 k8s.io/client-go/tools/clientcmd/api/latest
+k8s.io/client-go/util/homedir
+k8s.io/client-go/util/keyutil
 k8s.io/client-go/discovery/cached/disk
 k8s.io/client-go/restmapper
-k8s.io/client-go/util/keyutil
 k8s.io/client-go/informers/admissionregistration
 k8s.io/client-go/informers/apps
 k8s.io/client-go/informers/auditregistration
@@ -919,12 +921,11 @@ kmodules.xyz/client-go/core/v1
 kmodules.xyz/client-go/rbac/v1
 kmodules.xyz/client-go/tools/queue
 kmodules.xyz/client-go/discovery
-kmodules.xyz/client-go/tools/backup
 kmodules.xyz/client-go/tools/cli
-kmodules.xyz/client-go/batch/v1
 kmodules.xyz/client-go/tools/clientcmd
 kmodules.xyz/client-go/admissionregistration/v1beta1
 kmodules.xyz/client-go/apps/v1
+kmodules.xyz/client-go/batch/v1
 kmodules.xyz/client-go/batch/v1beta1
 kmodules.xyz/client-go/dynamic
 kmodules.xyz/client-go/tools/analytics
