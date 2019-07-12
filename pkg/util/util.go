@@ -348,21 +348,6 @@ func (wc *WorkloadClients) IsTargetExist(target api_v1beta1.TargetRef, namespace
 	return false
 }
 
-func GetPVCFromVolumeClaimTemplates(ordinal int32, claimTemplates []core.PersistentVolumeClaim) ([]core.PersistentVolumeClaim, error) {
-	pvcList := make([]core.PersistentVolumeClaim, 0)
-
-	for _, claim := range claimTemplates {
-
-		if ordinal != -1 {
-			claim.Name = fmt.Sprintf("%s-%d", claim.Name, ordinal)
-		}
-
-		pvcList = append(pvcList, claim)
-	}
-
-	return pvcList, nil
-}
-
 // CreateBatchPVC creates a batch of PVCs whose definitions has been provided in pvcList argument
 func CreateBatchPVC(kubeClient kubernetes.Interface, namespace string, pvcList []core.PersistentVolumeClaim) error {
 	for _, pvc := range pvcList {
@@ -379,12 +364,7 @@ func PVCListToVolumes(pvcList []core.PersistentVolumeClaim, ordinal int32) []cor
 	volList := make([]core.Volume, 0)
 	var volName string
 	for _, pvc := range pvcList {
-		if ordinal != int32(-1) {
-			// StatefulSet's PVC. Remove the pod ordinal suffix.
-			volName = strings.TrimSuffix(pvc.Name, fmt.Sprintf("-%d", ordinal))
-		} else {
-			volName = pvc.Name
-		}
+		volName = strings.TrimSuffix(pvc.Name, fmt.Sprintf("-%d", ordinal))
 		volList = append(volList, core.Volume{
 			Name: volName,
 			VolumeSource: core.VolumeSource{

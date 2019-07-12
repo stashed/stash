@@ -80,21 +80,17 @@ func (opt *VSoption) RestoreVolumeSnapshot() error {
 	}
 
 	pvcList := make([]core.PersistentVolumeClaim, 0)
+	replicas := int32(1)
 
-	if restoreSession.Spec.Target.Replicas == nil {
-		pvcs, err := opt.getPVCFromVolumeClaimTemplates(-1, restoreSession.Spec.Target.VolumeClaimTemplates, startTime)
+	if restoreSession.Spec.Target.Replicas != nil {
+		replicas = *restoreSession.Spec.Target.Replicas
+	}
+	for ordinal := int32(0); ordinal < replicas; ordinal++ {
+		pvcs, err := opt.getPVCFromVolumeClaimTemplates(ordinal, restoreSession.Spec.Target.VolumeClaimTemplates, startTime)
 		if err != nil {
 			return err
 		}
 		pvcList = append(pvcList, pvcs...)
-	} else {
-		for ordinal := int32(0); ordinal < *restoreSession.Spec.Target.Replicas; ordinal++ {
-			pvcs, err := opt.getPVCFromVolumeClaimTemplates(ordinal, restoreSession.Spec.Target.VolumeClaimTemplates, startTime)
-			if err != nil {
-				return err
-			}
-			pvcList = append(pvcList, pvcs...)
-		}
 	}
 
 	pvcAllReadyExists := false
@@ -215,10 +211,6 @@ func (opt *VSoption) getPVCFromVolumeClaimTemplates(ordinal int32, claimTemplate
 func (opt *VSoption) getPVCDefinition(ordinal int32, claim core.PersistentVolumeClaim) (core.PersistentVolumeClaim, error) {
 	inputs := make(map[string]string)
 	inputs["POD_ORDINAL"] = strconv.Itoa(int(ordinal))
-	inputs["CLAIM_NAME"] = claim.Name
-	if ordinal != int32(-1) {
-		claim.Name = fmt.Sprintf("%v-%v", claim.Name, ordinal)
-	}
 	dataSource := claim.Spec.DataSource
 	err := resolve.ResolvePVCSpec(&claim, inputs)
 	claim.Spec.DataSource = dataSource
