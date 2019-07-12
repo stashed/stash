@@ -8,6 +8,7 @@ import (
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
+// RunRestore run restore process for a single host.
 func (w *ResticWrapper) RunRestore(restoreOptions RestoreOptions) (*RestoreOutput, error) {
 	// Start clock to measure total restore duration
 	startTime := time.Now()
@@ -33,6 +34,8 @@ func (w *ResticWrapper) RunRestore(restoreOptions RestoreOptions) (*RestoreOutpu
 	return restoreOutput, nil
 }
 
+// RunParallelRestore run restore process for multiple hosts in parallel using go routine.
+// You can control maximum number of parallel backup using maxConcurrency parameter.
 func (w *ResticWrapper) RunParallelRestore(restoreOptions []RestoreOptions, maxConcurrency int) (*RestoreOutput, error) {
 	// Start clock to measure total restore duration
 	startTime := time.Now()
@@ -91,6 +94,7 @@ func (w *ResticWrapper) RunParallelRestore(restoreOptions []RestoreOptions, maxC
 	return restoreOutput, nil
 }
 
+// Dump run restore process for a single host and output the restored files in stdout.
 func (w *ResticWrapper) Dump(dumpOptions DumpOptions) (*RestoreOutput, error) {
 	// Start clock to measure total restore duration
 	startTime := time.Now()
@@ -111,6 +115,8 @@ func (w *ResticWrapper) Dump(dumpOptions DumpOptions) (*RestoreOutput, error) {
 	return restoreOutput, nil
 }
 
+// ParallelDump run dump for multiple hosts concurrently using go routine.
+// You can control maximum number of parallel restore process using maxConcurrency parameter.
 func (w *ResticWrapper) ParallelDump(dumpOptions []DumpOptions, maxConcurrency int) (*RestoreOutput, error) {
 	// Start clock to measure total restore duration
 	startTime := time.Now()

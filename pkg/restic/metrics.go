@@ -11,6 +11,7 @@ import (
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
+// BackupMetrics defines prometheus metrics for backup setup and individual host backup
 type BackupMetrics struct {
 	// BackupSetupMetrics indicates whether backup was successfully setup for the target
 	BackupSetupMetrics prometheus.Gauge
@@ -18,6 +19,7 @@ type BackupMetrics struct {
 	HostBackupMetrics *HostBackupMetrics
 }
 
+// RestoreMetrics defines metrics for restore process for individual hosts
 type RestoreMetrics struct {
 	// RestoreSuccess show whether the current restore session succeeded or not
 	RestoreSuccess prometheus.Gauge
@@ -25,6 +27,7 @@ type RestoreMetrics struct {
 	SessionDuration prometheus.Gauge
 }
 
+// HostBackupMetrics defines Prometheus metrics for backup individual hosts
 type HostBackupMetrics struct {
 	// BackupSuccess show whether the current backup for a host succeeded or not
 	BackupSuccess prometheus.Gauge
@@ -40,6 +43,7 @@ type HostBackupMetrics struct {
 	FileMetrics *FileMetrics
 }
 
+//  FileMetrics defines Prometheus metrics for target files of a backup process
 type FileMetrics struct {
 	// TotalFiles shows total number of files that has been backed up
 	TotalFiles prometheus.Gauge
@@ -51,6 +55,7 @@ type FileMetrics struct {
 	UnmodifiedFiles prometheus.Gauge
 }
 
+// RepositoryMetrics defines Prometheus metrics for Repository state after each backup
 type RepositoryMetrics struct {
 	// RepoIntegrity shows result of repository integrity check after last backup
 	RepoIntegrity prometheus.Gauge
@@ -234,6 +239,7 @@ func newRestoreMetrics(labels prometheus.Labels) *RestoreMetrics {
 	}
 }
 
+// HandleBackupSetupMetrics generate and send Prometheus metrics for backup setup
 func HandleBackupSetupMetrics(metricOpt MetricsOptions, setupErr error) error {
 	labels := metricLabels(metricOpt.Labels)
 	metrics := newBackupSetupMetrics(labels)
@@ -253,6 +259,7 @@ func HandleBackupSetupMetrics(metricOpt MetricsOptions, setupErr error) error {
 	return metricOpt.sendMetrics(registry, metricOpt.JobName)
 }
 
+// HandleMetrics generate and send Prometheus metrics for backup process
 func (backupOutput *BackupOutput) HandleMetrics(metricOpt *MetricsOptions, backupErr error) error {
 	if backupOutput == nil {
 		return fmt.Errorf("invalid backup output")

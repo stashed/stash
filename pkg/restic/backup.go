@@ -188,7 +188,8 @@ func (w *ResticWrapper) runBackup(backupOption BackupOptions) (api_v1beta1.HostB
 		Hostname: backupOption.Host,
 	}
 
-	if backupOption.StdinPipeCommand.Name != "" { // Backup from stdin
+	// Backup from stdin
+	if backupOption.StdinPipeCommand.Name != "" {
 		out, err := w.backupFromStdin(backupOption)
 		if err != nil {
 			return hostStats, err
@@ -200,19 +201,20 @@ func (w *ResticWrapper) runBackup(backupOption BackupOptions) (api_v1beta1.HostB
 		}
 		hostStats.Snapshots = []api_v1beta1.SnapshotStats{snapStats}
 		return hostStats, nil
-	} else { // Backup all target directories
-		for _, dir := range backupOption.BackupDirs {
-			out, err := w.backup(dir, backupOption.Host, nil)
-			if err != nil {
-				return hostStats, err
-			}
-			// Extract information from the output of backup command
-			stats, err := extractBackupInfo(out, dir, backupOption.Host)
-			if err != nil {
-				return hostStats, err
-			}
-			hostStats = upsertSnapshotStats(hostStats, stats)
+	}
+
+	// Backup all target directories
+	for _, dir := range backupOption.BackupDirs {
+		out, err := w.backup(dir, backupOption.Host, nil)
+		if err != nil {
+			return hostStats, err
 		}
+		// Extract information from the output of backup command
+		stats, err := extractBackupInfo(out, dir, backupOption.Host)
+		if err != nil {
+			return hostStats, err
+		}
+		hostStats = upsertSnapshotStats(hostStats, stats)
 	}
 
 	return hostStats, nil
