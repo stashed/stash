@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/appscode/go/types"
+	"github.com/codeskyblue/go-sh"
 	"k8s.io/apimachinery/pkg/util/errors"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 )
@@ -115,8 +116,16 @@ func (w *ResticWrapper) RunParallelBackup(backupOptions []BackupOptions, maxConc
 				wg.Done()
 			}()
 
-			// run backup
-			hostStats, err := w.runBackup(opt)
+			// sh field in ResticWrapper is a pointer. we must not use same w in multiple go routine.
+			// otherwise they might enter in a racing condition.
+			nw := &ResticWrapper{
+				sh:     sh.NewSession(),
+				config: w.config,
+			}
+			*nw.sh = *w.sh // copy value of w.sh into nw.sh
+
+			//fmt.Printf("%v\n%v\n",nw,w)
+			hostStats, err := nw.runBackup(opt)
 			if err != nil {
 				// acquire lock to make sure no other go routine is writing to backupErr variable
 				mu.Lock()
@@ -188,6 +197,7 @@ func (w *ResticWrapper) runBackup(backupOption BackupOptions) (api_v1beta1.HostB
 		Hostname: backupOption.Host,
 	}
 
+	//fmt.Println("shell: ",w)
 	// Backup from stdin
 	if backupOption.StdinPipeCommand.Name != "" {
 		out, err := w.backupFromStdin(backupOption)

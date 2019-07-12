@@ -1,0 +1,17 @@
+hash: 6646f6a83ac9c3238b14623c15c7c0357c8e92999f5b1952cc5af603962a52b5
+updated: 2019-04-17T14:46:09.227846616+06:00
+imports:
+- name: github.com/fatih/color
+  version: 8cba60da5e213d8f7c2e7d330cfeb7e617af3312
+  repo: https://github.com/the-redback/color.git
+- name: github.com/hokaccha/go-prettyjson
+  version: f579f869bbfea48a61fbea09207cadd1aaeceb83
+- name: github.com/mattn/go-colorable
+  version: 3a70a971f94a22f2fa562ffcc7a0eb45f5daf045
+- name: github.com/mattn/go-isatty
+  version: c2a7a6ca930a4cd0bc33a3f298eb71960732a3a7
+- name: golang.org/x/sys
+  version: 95c6576299259db960f6c5b9b69ea52422860fce
+  subpackages:
+  - unix
+testImports: []

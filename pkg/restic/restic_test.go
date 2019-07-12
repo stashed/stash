@@ -9,6 +9,7 @@ import (
 
 	"github.com/appscode/go/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/the-redback/go-oneliners"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
 )
@@ -264,4 +265,79 @@ func TestBackupRestoreStdinWithScheduling(t *testing.T) {
 		t.Error(err)
 	}
 	fmt.Println("dump output:", dumpOut)
+}
+
+func TestRunParallelBackup(t *testing.T) {
+	tempDir, err := ioutil.TempDir("", "stash-unit-test-")
+	if err != nil {
+		t.Error(err)
+	}
+
+	// write large (100Mb) sample  file
+	largeContent := make([]byte, 104857600)
+	fileContent = string(largeContent)
+
+	w, err := setupTest(tempDir)
+	if err != nil {
+		t.Error(err)
+	}
+	defer cleanup(tempDir)
+
+	backupOpts := []BackupOptions{
+		{
+			Host: "host-0",
+			BackupDirs: []string{targetDir},
+			RetentionPolicy: api_v1alpha1.RetentionPolicy{
+				Name:     "keep-last-1",
+				KeepLast: 1,
+				Prune:    true,
+				DryRun:   false,
+			},
+		},
+		{
+			Host: "host-1",
+			BackupDirs: []string{targetDir},
+			RetentionPolicy: api_v1alpha1.RetentionPolicy{
+				Name:     "keep-last-1",
+				KeepLast: 1,
+				Prune:    true,
+				DryRun:   false,
+			},
+		},
+		{
+			Host: "host-2",
+			BackupDirs: []string{targetDir},
+			RetentionPolicy: api_v1alpha1.RetentionPolicy{
+				Name:     "keep-last-1",
+				KeepLast: 1,
+				Prune:    true,
+				DryRun:   false,
+			},
+		},
+	}
+	backupOut, err := w.RunParallelBackup(backupOpts,2)
+	if err != nil {
+		t.Error(err)
+	}
+	oneliners.PrettyJson(backupOut,"Backup Output")
+
+	//// delete target then restore
+	//if err = os.RemoveAll(targetDir); err != nil {
+	//	t.Error(err)
+	//}
+	//restoreOpt := RestoreOptions{
+	//	RestoreDirs: []string{targetDir},
+	//}
+	//restoreOut, err := w.RunRestore(restoreOpt)
+	//if err != nil {
+	//	t.Error(err)
+	//}
+	//fmt.Println(restoreOut)
+	//
+	//// check file
+	//fileContentByte, err := ioutil.ReadFile(filepath.Join(targetDir, fileName))
+	//if err != nil {
+	//	t.Error(err)
+	//}
+	//assert.Equal(t, fileContent, string(fileContentByte))
 }

@@ -43,7 +43,7 @@ type HostBackupMetrics struct {
 	FileMetrics *FileMetrics
 }
 
-//  FileMetrics defines Prometheus metrics for target files of a backup process
+// FileMetrics defines Prometheus metrics for target files of a backup process
 type FileMetrics struct {
 	// TotalFiles shows total number of files that has been backed up
 	TotalFiles prometheus.Gauge
