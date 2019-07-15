@@ -121,9 +121,10 @@ func (in *ResticWrapper) DeepCopy() *ResticWrapper {
 		for k, v := range in.sh.Env {
 			out.sh.Env[k] = v
 		}
-		out.sh.Stdin = in.sh.Stdin
-		out.sh.Stdout = in.sh.Stdout
-		out.sh.Stderr = in.sh.Stderr
+		// don't use same stdin, stdout, stderr for each instant to avoid data race.
+		//out.sh.Stdin = in.sh.Stdin
+		//out.sh.Stdout = in.sh.Stdout
+		//out.sh.Stderr = in.sh.Stderr
 		out.sh.ShowCMD = in.sh.ShowCMD
 		out.sh.PipeFail = in.sh.PipeFail
 		out.sh.PipeStdErrors = in.sh.PipeStdErrors
