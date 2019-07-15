@@ -2,7 +2,7 @@ package controller
 
 import (
 	"github.com/golang/glog"
-	"github.com/graymeta/stow"
+	"gomodules.xyz/stow"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	core_util "kmodules.xyz/client-go/core/v1"

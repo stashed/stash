@@ -7,7 +7,9 @@ import (
 	"github.com/imdario/mergo"
 	jsoniter "github.com/json-iterator/go"
 	core "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 var json = jsoniter.ConfigFastest
@@ -265,4 +267,29 @@ func RemoveOwnerReference(meta metav1.Object, owner *core.ObjectReference) {
 		}
 	}
 	meta.SetOwnerReferences(ownerRefs)
+}
+
+func IsOwnedByRef(o runtime.Object, owner *core.ObjectReference) bool {
+	obj, err := meta.Accessor(o)
+	if err != nil {
+		return false
+	}
+
+	return o.GetObjectKind().GroupVersionKind() == owner.GroupVersionKind() &&
+		obj.GetName() == owner.Name &&
+		(string(owner.UID) == "" || obj.GetUID() == owner.UID)
+}
+
+func IsOwnedBy(o1 runtime.Object, o2 runtime.Object) bool {
+	obj, err := meta.Accessor(o1)
+	if err != nil {
+		return false
+	}
+	owner, err := meta.Accessor(o2)
+	if err != nil {
+		return false
+	}
+	return o1.GetObjectKind().GroupVersionKind() == o2.GetObjectKind().GroupVersionKind() &&
+		obj.GetName() == owner.GetName() &&
+		(string(owner.GetUID()) == "" || obj.GetUID() == owner.GetUID())
 }

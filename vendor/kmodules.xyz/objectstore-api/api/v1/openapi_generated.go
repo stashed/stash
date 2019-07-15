@@ -44,6 +44,7 @@ func schema_kmodulesxyz_objectstore_api_api_v1_AzureSpec(ref common.ReferenceCal
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"container": {
 						SchemaProps: spec.SchemaProps{
@@ -66,7 +67,6 @@ func schema_kmodulesxyz_objectstore_api_api_v1_AzureSpec(ref common.ReferenceCal
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -74,6 +74,7 @@ func schema_kmodulesxyz_objectstore_api_api_v1_B2Spec(ref common.ReferenceCallba
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"bucket": {
 						SchemaProps: spec.SchemaProps{
@@ -96,7 +97,6 @@ func schema_kmodulesxyz_objectstore_api_api_v1_B2Spec(ref common.ReferenceCallba
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -104,6 +104,7 @@ func schema_kmodulesxyz_objectstore_api_api_v1_Backend(ref common.ReferenceCallb
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"storageSecretName": {
 						SchemaProps: spec.SchemaProps{
@@ -158,6 +159,7 @@ func schema_kmodulesxyz_objectstore_api_api_v1_GCSSpec(ref common.ReferenceCallb
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"bucket": {
 						SchemaProps: spec.SchemaProps{
@@ -180,7 +182,6 @@ func schema_kmodulesxyz_objectstore_api_api_v1_GCSSpec(ref common.ReferenceCallb
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -188,6 +189,7 @@ func schema_kmodulesxyz_objectstore_api_api_v1_LocalSpec(ref common.ReferenceCal
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"hostPath": {
 						SchemaProps: spec.SchemaProps{
@@ -351,6 +353,12 @@ func schema_kmodulesxyz_objectstore_api_api_v1_LocalSpec(ref common.ReferenceCal
 							Ref:         ref("k8s.io/api/core/v1.StorageOSVolumeSource"),
 						},
 					},
+					"csi": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CSI (Container Storage Interface) represents storage that is handled by an external CSI driver (Alpha feature).",
+							Ref:         ref("k8s.io/api/core/v1.CSIVolumeSource"),
+						},
+					},
 					"mountPath": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
@@ -367,7 +375,7 @@ func schema_kmodulesxyz_objectstore_api_api_v1_LocalSpec(ref common.ReferenceCal
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.AWSElasticBlockStoreVolumeSource", "k8s.io/api/core/v1.AzureDiskVolumeSource", "k8s.io/api/core/v1.AzureFileVolumeSource", "k8s.io/api/core/v1.CephFSVolumeSource", "k8s.io/api/core/v1.CinderVolumeSource", "k8s.io/api/core/v1.ConfigMapVolumeSource", "k8s.io/api/core/v1.DownwardAPIVolumeSource", "k8s.io/api/core/v1.EmptyDirVolumeSource", "k8s.io/api/core/v1.FCVolumeSource", "k8s.io/api/core/v1.FlexVolumeSource", "k8s.io/api/core/v1.FlockerVolumeSource", "k8s.io/api/core/v1.GCEPersistentDiskVolumeSource", "k8s.io/api/core/v1.GitRepoVolumeSource", "k8s.io/api/core/v1.GlusterfsVolumeSource", "k8s.io/api/core/v1.HostPathVolumeSource", "k8s.io/api/core/v1.ISCSIVolumeSource", "k8s.io/api/core/v1.NFSVolumeSource", "k8s.io/api/core/v1.PersistentVolumeClaimVolumeSource", "k8s.io/api/core/v1.PhotonPersistentDiskVolumeSource", "k8s.io/api/core/v1.PortworxVolumeSource", "k8s.io/api/core/v1.ProjectedVolumeSource", "k8s.io/api/core/v1.QuobyteVolumeSource", "k8s.io/api/core/v1.RBDVolumeSource", "k8s.io/api/core/v1.ScaleIOVolumeSource", "k8s.io/api/core/v1.SecretVolumeSource", "k8s.io/api/core/v1.StorageOSVolumeSource", "k8s.io/api/core/v1.VsphereVirtualDiskVolumeSource"},
+			"k8s.io/api/core/v1.AWSElasticBlockStoreVolumeSource", "k8s.io/api/core/v1.AzureDiskVolumeSource", "k8s.io/api/core/v1.AzureFileVolumeSource", "k8s.io/api/core/v1.CSIVolumeSource", "k8s.io/api/core/v1.CephFSVolumeSource", "k8s.io/api/core/v1.CinderVolumeSource", "k8s.io/api/core/v1.ConfigMapVolumeSource", "k8s.io/api/core/v1.DownwardAPIVolumeSource", "k8s.io/api/core/v1.EmptyDirVolumeSource", "k8s.io/api/core/v1.FCVolumeSource", "k8s.io/api/core/v1.FlexVolumeSource", "k8s.io/api/core/v1.FlockerVolumeSource", "k8s.io/api/core/v1.GCEPersistentDiskVolumeSource", "k8s.io/api/core/v1.GitRepoVolumeSource", "k8s.io/api/core/v1.GlusterfsVolumeSource", "k8s.io/api/core/v1.HostPathVolumeSource", "k8s.io/api/core/v1.ISCSIVolumeSource", "k8s.io/api/core/v1.NFSVolumeSource", "k8s.io/api/core/v1.PersistentVolumeClaimVolumeSource", "k8s.io/api/core/v1.PhotonPersistentDiskVolumeSource", "k8s.io/api/core/v1.PortworxVolumeSource", "k8s.io/api/core/v1.ProjectedVolumeSource", "k8s.io/api/core/v1.QuobyteVolumeSource", "k8s.io/api/core/v1.RBDVolumeSource", "k8s.io/api/core/v1.ScaleIOVolumeSource", "k8s.io/api/core/v1.SecretVolumeSource", "k8s.io/api/core/v1.StorageOSVolumeSource", "k8s.io/api/core/v1.VsphereVirtualDiskVolumeSource"},
 	}
 }
 
@@ -375,6 +383,7 @@ func schema_kmodulesxyz_objectstore_api_api_v1_RestServerSpec(ref common.Referen
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"url": {
 						SchemaProps: spec.SchemaProps{
@@ -385,7 +394,6 @@ func schema_kmodulesxyz_objectstore_api_api_v1_RestServerSpec(ref common.Referen
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -393,6 +401,7 @@ func schema_kmodulesxyz_objectstore_api_api_v1_S3Spec(ref common.ReferenceCallba
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"endpoint": {
 						SchemaProps: spec.SchemaProps{
@@ -415,7 +424,6 @@ func schema_kmodulesxyz_objectstore_api_api_v1_S3Spec(ref common.ReferenceCallba
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -423,6 +431,7 @@ func schema_kmodulesxyz_objectstore_api_api_v1_SwiftSpec(ref common.ReferenceCal
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"container": {
 						SchemaProps: spec.SchemaProps{
@@ -439,6 +448,5 @@ func schema_kmodulesxyz_objectstore_api_api_v1_SwiftSpec(ref common.ReferenceCal
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }

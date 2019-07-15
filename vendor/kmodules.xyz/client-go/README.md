@@ -6,7 +6,7 @@
 [![Twitter](https://img.shields.io/twitter/follow/appscodehq.svg?style=social&logo=twitter&label=Follow)](https://twitter.com/intent/follow?screen_name=AppsCodeHQ)
 
 # client-go
-Kubernetes client-go utilities
+Kubernetes client-go utilities. This package is a collection of helper methods for `k8s.io/client-go`. [AppsCode](https://appscode.com) develops and maintains this library and uses across their various projects. `kmodules.xyz/client-go` is not a replacement for `k8s.io/client-go`.
 
 ## Related Libraries
 - [Kubernetes webhook runtime](https://github.com/kmodules/webhook-runtime)

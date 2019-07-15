@@ -28,8 +28,6 @@ import (
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
 	AppcatalogV1alpha1() appcatalogv1alpha1.AppcatalogV1alpha1Interface
-	// Deprecated: please explicitly pick a version if possible.
-	Appcatalog() appcatalogv1alpha1.AppcatalogV1alpha1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
@@ -41,12 +39,6 @@ type Clientset struct {
 
 // AppcatalogV1alpha1 retrieves the AppcatalogV1alpha1Client
 func (c *Clientset) AppcatalogV1alpha1() appcatalogv1alpha1.AppcatalogV1alpha1Interface {
-	return c.appcatalogV1alpha1
-}
-
-// Deprecated: Appcatalog retrieves the default version of AppcatalogClient.
-// Please explicitly pick a version.
-func (c *Clientset) Appcatalog() appcatalogv1alpha1.AppcatalogV1alpha1Interface {
 	return c.appcatalogV1alpha1
 }
 
