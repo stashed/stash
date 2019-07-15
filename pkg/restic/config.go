@@ -107,6 +107,7 @@ func (w *ResticWrapper) GetRepo() string {
 	return ""
 }
 
+// DeepCopy function copy input ResticWrapper and returns a new wrapper with copy of its content.
 func (in *ResticWrapper) DeepCopy() *ResticWrapper {
 	if in == nil {
 		return nil
