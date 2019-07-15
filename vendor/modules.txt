@@ -111,8 +111,6 @@ github.com/emicklei/go-restful
 github.com/emicklei/go-restful/log
 # github.com/evanphx/json-patch v4.5.0+incompatible
 github.com/evanphx/json-patch
-# github.com/fatih/color v1.7.0
-github.com/fatih/color
 # github.com/fatih/structs v1.1.0
 github.com/fatih/structs
 # github.com/ghodss/yaml v1.0.0
@@ -181,8 +179,6 @@ github.com/grpc-ecosystem/go-grpc-prometheus
 # github.com/hashicorp/golang-lru v0.5.1
 github.com/hashicorp/golang-lru
 github.com/hashicorp/golang-lru/simplelru
-# github.com/hokaccha/go-prettyjson v0.0.0-20180920040306-f579f869bbfe
-github.com/hokaccha/go-prettyjson
 # github.com/hpcloud/tail v1.0.0
 github.com/hpcloud/tail
 github.com/hpcloud/tail/ratelimiter
@@ -210,10 +206,6 @@ github.com/mailru/easyjson/jwriter
 github.com/mailru/easyjson/buffer
 # github.com/marstr/guid v1.1.0
 github.com/marstr/guid
-# github.com/mattn/go-colorable v0.1.1
-github.com/mattn/go-colorable
-# github.com/mattn/go-isatty v0.0.8
-github.com/mattn/go-isatty
 # github.com/matttproud/golang_protobuf_extensions v1.0.1
 github.com/matttproud/golang_protobuf_extensions/pbutil
 # github.com/mitchellh/mapstructure v1.1.2
@@ -299,8 +291,6 @@ github.com/spf13/cobra
 github.com/spf13/pflag
 # github.com/stretchr/testify v1.3.0
 github.com/stretchr/testify/assert
-# github.com/the-redback/go-oneliners v0.0.0-20190417084731-74f7694e6dae
-github.com/the-redback/go-oneliners
 # github.com/yudai/gojsondiff v0.0.0-20180504020246-0525c875b75c
 github.com/yudai/gojsondiff
 github.com/yudai/gojsondiff/formatter

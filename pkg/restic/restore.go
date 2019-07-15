@@ -37,8 +37,6 @@ func (w *ResticWrapper) RunRestore(restoreOptions RestoreOptions) (*RestoreOutpu
 // RunParallelRestore run restore process for multiple hosts in parallel using go routine.
 // You can control maximum number of parallel backup using maxConcurrency parameter.
 func (w *ResticWrapper) RunParallelRestore(restoreOptions []RestoreOptions, maxConcurrency int) (*RestoreOutput, error) {
-	// Start clock to measure total restore duration
-	startTime := time.Now()
 
 	// WaitGroup to wait until all go routine finish
 	wg := sync.WaitGroup{}
@@ -52,13 +50,16 @@ func (w *ResticWrapper) RunParallelRestore(restoreOptions []RestoreOptions, maxC
 
 	for _, opt := range restoreOptions {
 		// try to send message in concurrencyLimiter channel.
-		// if maximum allowed concurrent backup is already running, program control will stuck here.
+		// if maximum allowed concurrent restore is already running, program control will stuck here.
 		concurrencyLimiter <- true
 
 		// starting new go routine. add it to WaitGroup
 		wg.Add(1)
 
-		go func(opt RestoreOptions) {
+		// Start clock to measure restore duration
+		startTime := time.Now()
+
+		go func(opt RestoreOptions, start time.Time) {
 			// when this go routine completes it task, release a slot from the concurrencyLimiter channel
 			// so that another go routine can start. Also, tell the WaitGroup that it is done with its task.
 			defer func() {
@@ -66,8 +67,12 @@ func (w *ResticWrapper) RunParallelRestore(restoreOptions []RestoreOptions, maxC
 				wg.Done()
 			}()
 
+			// sh field in ResticWrapper is a pointer. we must not use same w in multiple go routine.
+			// otherwise they might enter in a racing condition.
+			nw := w.DeepCopy()
+
 			// run restore
-			err := w.runRestore(opt)
+			err := nw.runRestore(opt)
 			if err != nil {
 				mu.Lock()
 				restoreErr = errors.NewAggregate([]error{restoreErr, err})
@@ -77,15 +82,18 @@ func (w *ResticWrapper) RunParallelRestore(restoreOptions []RestoreOptions, maxC
 			hostStats := api_v1beta1.HostRestoreStats{
 				Hostname: opt.Host,
 			}
-			hostStats.Duration = time.Now().Sub(startTime).String()
+			hostStats.Duration = time.Now().Sub(start).String()
 			hostStats.Phase = api_v1beta1.HostRestoreSucceeded
 
 			// add hostStats to restoreOutput
 			mu.Lock()
 			restoreOutput.upsertHostRestoreStats(hostStats)
 			mu.Unlock()
-		}(opt)
+		}(opt, startTime)
 	}
+
+	// wait for all the go routines to complete
+	wg.Wait()
 
 	if restoreErr != nil {
 		return nil, restoreErr
@@ -118,8 +126,6 @@ func (w *ResticWrapper) Dump(dumpOptions DumpOptions) (*RestoreOutput, error) {
 // ParallelDump run dump for multiple hosts concurrently using go routine.
 // You can control maximum number of parallel restore process using maxConcurrency parameter.
 func (w *ResticWrapper) ParallelDump(dumpOptions []DumpOptions, maxConcurrency int) (*RestoreOutput, error) {
-	// Start clock to measure total restore duration
-	startTime := time.Now()
 
 	// WaitGroup to wait until all go routine finish
 	wg := sync.WaitGroup{}
@@ -138,8 +144,10 @@ func (w *ResticWrapper) ParallelDump(dumpOptions []DumpOptions, maxConcurrency i
 
 		// starting new go routine. add it to WaitGroup
 		wg.Add(1)
+		// Start clock to measure restore duration
+		startTime := time.Now()
 
-		go func(opt DumpOptions) {
+		go func(opt DumpOptions, start time.Time) {
 			// when this go routine completes it task, release a slot from the concurrencyLimiter channel
 			// so that another go routine can start. Also, tell the WaitGroup that it is done with its task.
 			defer func() {
@@ -147,8 +155,12 @@ func (w *ResticWrapper) ParallelDump(dumpOptions []DumpOptions, maxConcurrency i
 				wg.Done()
 			}()
 
+			// sh field in ResticWrapper is a pointer. we must not use same w in multiple go routine.
+			// otherwise they might enter in a racing condition.
+			nw := w.DeepCopy()
+
 			// run restore
-			_, err := w.dump(opt)
+			_, err := nw.dump(opt)
 			if err != nil {
 				mu.Lock()
 				restoreErr = errors.NewAggregate([]error{restoreErr, err})
@@ -158,15 +170,18 @@ func (w *ResticWrapper) ParallelDump(dumpOptions []DumpOptions, maxConcurrency i
 			hostStats := api_v1beta1.HostRestoreStats{
 				Hostname: opt.Host,
 			}
-			hostStats.Duration = time.Now().Sub(startTime).String()
+			hostStats.Duration = time.Now().Sub(start).String()
 			hostStats.Phase = api_v1beta1.HostRestoreSucceeded
 
 			// add hostStats to restoreOutput
 			mu.Lock()
 			restoreOutput.upsertHostRestoreStats(hostStats)
 			mu.Unlock()
-		}(opt)
+		}(opt, startTime)
 	}
+
+	// wait for all the go routines to complete
+	wg.Wait()
 
 	if restoreErr != nil {
 		return nil, restoreErr

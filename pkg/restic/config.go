@@ -106,3 +106,28 @@ func (w *ResticWrapper) GetRepo() string {
 	}
 	return ""
 }
+
+func (in *ResticWrapper) DeepCopy() *ResticWrapper {
+	if in == nil {
+		return nil
+	}
+	out := new(ResticWrapper)
+
+	if in.sh != nil {
+		out.sh = shell.NewSession()
+
+		// set values in.sh to out.sh
+		for k, v := range in.sh.Env {
+			out.sh.Env[k] = v
+		}
+		out.sh.Stdin = in.sh.Stdin
+		out.sh.Stdout = in.sh.Stdout
+		out.sh.Stderr = in.sh.Stderr
+		out.sh.ShowCMD = in.sh.ShowCMD
+		out.sh.PipeFail = in.sh.PipeFail
+		out.sh.PipeStdErrors = in.sh.PipeStdErrors
+
+	}
+	out.config = in.config
+	return out
+}

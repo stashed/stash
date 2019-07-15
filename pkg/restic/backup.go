@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/appscode/go/types"
-	"github.com/codeskyblue/go-sh"
 	"k8s.io/apimachinery/pkg/util/errors"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 )
@@ -81,8 +80,6 @@ func (w *ResticWrapper) RunBackup(backupOption BackupOptions) (*BackupOutput, er
 // RunParallelBackup runs multiple backup in parallel.
 // Host must be different for each backup.
 func (w *ResticWrapper) RunParallelBackup(backupOptions []BackupOptions, maxConcurrency int) (*BackupOutput, error) {
-	// Start clock to measure total session duration
-	startTime := time.Now()
 
 	// Initialize restic repository if it does not exist
 	_, err := w.initRepositoryIfAbsent()
@@ -108,7 +105,11 @@ func (w *ResticWrapper) RunParallelBackup(backupOptions []BackupOptions, maxConc
 		// starting new go routine. add it to WaitGroup
 		wg.Add(1)
 
-		go func(opt BackupOptions) {
+		// Start clock to measure session duration
+		startTime := time.Now()
+
+		go func(opt BackupOptions, start time.Time) {
+
 			// when this go routine completes it task, release a slot from the concurrencyLimiter channel
 			// so that another go routine can start. Also, tell the WaitGroup that it is done with its task.
 			defer func() {
@@ -118,13 +119,8 @@ func (w *ResticWrapper) RunParallelBackup(backupOptions []BackupOptions, maxConc
 
 			// sh field in ResticWrapper is a pointer. we must not use same w in multiple go routine.
 			// otherwise they might enter in a racing condition.
-			nw := &ResticWrapper{
-				sh:     sh.NewSession(),
-				config: w.config,
-			}
-			*nw.sh = *w.sh // copy value of w.sh into nw.sh
+			nw := w.DeepCopy()
 
-			//fmt.Printf("%v\n%v\n",nw,w)
 			hostStats, err := nw.runBackup(opt)
 			if err != nil {
 				// acquire lock to make sure no other go routine is writing to backupErr variable
@@ -133,14 +129,14 @@ func (w *ResticWrapper) RunParallelBackup(backupOptions []BackupOptions, maxConc
 				mu.Unlock()
 				return
 			}
-			hostStats.Duration = time.Now().Sub(startTime).String()
+			hostStats.Duration = time.Now().Sub(start).String()
 			hostStats.Phase = api_v1beta1.HostBackupSucceeded
 
 			// add hostStats to backupOutput. use lock to avoid racing condition.
 			mu.Lock()
 			backupOutput.upsertHostBackupStats(hostStats)
 			mu.Unlock()
-		}(opt)
+		}(opt,startTime)
 	}
 
 	// wait for all the go routines to complete
