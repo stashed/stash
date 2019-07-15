@@ -5,8 +5,8 @@ import (
 	"strconv"
 
 	"github.com/appscode/go/crypto/rand"
-	"github.com/graymeta/stow"
 	. "github.com/onsi/gomega"
+	"gomodules.xyz/stow"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

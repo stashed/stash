@@ -2,7 +2,6 @@ package v1
 
 import (
 	"fmt"
-
 	appsv1 "k8s.io/api/apps/v1"
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	appsv1beta2 "k8s.io/api/apps/v1beta2"
@@ -57,23 +56,23 @@ func NewObject(kindOrResource string, name, ns string) (runtime.Object, error) {
 			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns},
 		}, nil
 	case v1.KindDeployment, v1.ResourceDeployments, v1.ResourceDeployment:
-		return &appsv1beta1.Deployment{
-			TypeMeta:   metav1.TypeMeta{APIVersion: appsv1beta1.SchemeGroupVersion.String(), Kind: v1.KindDeployment},
+		return &appsv1.Deployment{
+			TypeMeta:   metav1.TypeMeta{APIVersion: appsv1.SchemeGroupVersion.String(), Kind: v1.KindDeployment},
 			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns},
 		}, nil
 	case v1.KindDaemonSet, v1.ResourceDaemonSets, v1.ResourceDaemonSet:
-		return &extensions.DaemonSet{
-			TypeMeta:   metav1.TypeMeta{APIVersion: extensions.SchemeGroupVersion.String(), Kind: v1.KindDaemonSet},
+		return &appsv1.DaemonSet{
+			TypeMeta:   metav1.TypeMeta{APIVersion: appsv1.SchemeGroupVersion.String(), Kind: v1.KindDaemonSet},
 			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns},
 		}, nil
 	case v1.KindReplicaSet, v1.ResourceReplicaSets, v1.ResourceReplicaSet:
-		return &extensions.ReplicaSet{
-			TypeMeta:   metav1.TypeMeta{APIVersion: extensions.SchemeGroupVersion.String(), Kind: v1.KindReplicaSet},
+		return &appsv1.ReplicaSet{
+			TypeMeta:   metav1.TypeMeta{APIVersion: appsv1.SchemeGroupVersion.String(), Kind: v1.KindReplicaSet},
 			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns},
 		}, nil
 	case v1.KindStatefulSet, v1.ResourceStatefulSets, v1.ResourceStatefulSet:
-		return &appsv1beta1.StatefulSet{
-			TypeMeta:   metav1.TypeMeta{APIVersion: appsv1beta1.SchemeGroupVersion.String(), Kind: v1.KindStatefulSet},
+		return &appsv1.StatefulSet{
+			TypeMeta:   metav1.TypeMeta{APIVersion: appsv1.SchemeGroupVersion.String(), Kind: v1.KindStatefulSet},
 			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns},
 		}, nil
 	case v1.KindJob, v1.ResourceJobs, v1.ResourceJob:
@@ -185,6 +184,12 @@ func ApplyWorkload(obj runtime.Object, w *v1.Workload) error {
 		if w.Spec.Replicas != nil {
 			t.Spec.Replicas = w.Spec.Replicas
 		}
+		if w.Spec.Selector != nil {
+			if len(w.Spec.Selector.MatchExpressions) > 0 {
+				return fmt.Errorf("selector.matchExpressions is not supported for ReplicationController %s/%s", w.Namespace, w.Name)
+			}
+			t.Spec.Selector = w.Spec.Selector.MatchLabels
+		}
 		// Deployment
 	case *extensions.Deployment:
 		t.ObjectMeta = w.ObjectMeta
@@ -192,11 +197,17 @@ func ApplyWorkload(obj runtime.Object, w *v1.Workload) error {
 		if w.Spec.Replicas != nil {
 			t.Spec.Replicas = w.Spec.Replicas
 		}
+		if w.Spec.Selector != nil {
+			t.Spec.Selector = w.Spec.Selector
+		}
 	case *appsv1beta1.Deployment:
 		t.ObjectMeta = w.ObjectMeta
 		t.Spec.Template = w.Spec.Template
 		if w.Spec.Replicas != nil {
 			t.Spec.Replicas = w.Spec.Replicas
+		}
+		if w.Spec.Selector != nil {
+			t.Spec.Selector = w.Spec.Selector
 		}
 	case *appsv1beta2.Deployment:
 		t.ObjectMeta = w.ObjectMeta
@@ -204,22 +215,37 @@ func ApplyWorkload(obj runtime.Object, w *v1.Workload) error {
 		if w.Spec.Replicas != nil {
 			t.Spec.Replicas = w.Spec.Replicas
 		}
+		if w.Spec.Selector != nil {
+			t.Spec.Selector = w.Spec.Selector
+		}
 	case *appsv1.Deployment:
 		t.ObjectMeta = w.ObjectMeta
 		t.Spec.Template = w.Spec.Template
 		if w.Spec.Replicas != nil {
 			t.Spec.Replicas = w.Spec.Replicas
 		}
+		if w.Spec.Selector != nil {
+			t.Spec.Selector = w.Spec.Selector
+		}
 		// DaemonSet
 	case *extensions.DaemonSet:
 		t.ObjectMeta = w.ObjectMeta
 		t.Spec.Template = w.Spec.Template
+		if w.Spec.Selector != nil {
+			t.Spec.Selector = w.Spec.Selector
+		}
 	case *appsv1beta2.DaemonSet:
 		t.ObjectMeta = w.ObjectMeta
 		t.Spec.Template = w.Spec.Template
+		if w.Spec.Selector != nil {
+			t.Spec.Selector = w.Spec.Selector
+		}
 	case *appsv1.DaemonSet:
 		t.ObjectMeta = w.ObjectMeta
 		t.Spec.Template = w.Spec.Template
+		if w.Spec.Selector != nil {
+			t.Spec.Selector = w.Spec.Selector
+		}
 		// ReplicaSet
 	case *extensions.ReplicaSet:
 		t.ObjectMeta = w.ObjectMeta
@@ -227,17 +253,26 @@ func ApplyWorkload(obj runtime.Object, w *v1.Workload) error {
 		if w.Spec.Replicas != nil {
 			t.Spec.Replicas = w.Spec.Replicas
 		}
+		if w.Spec.Selector != nil {
+			t.Spec.Selector = w.Spec.Selector
+		}
 	case *appsv1beta2.ReplicaSet:
 		t.ObjectMeta = w.ObjectMeta
 		t.Spec.Template = w.Spec.Template
 		if w.Spec.Replicas != nil {
 			t.Spec.Replicas = w.Spec.Replicas
 		}
+		if w.Spec.Selector != nil {
+			t.Spec.Selector = w.Spec.Selector
+		}
 	case *appsv1.ReplicaSet:
 		t.ObjectMeta = w.ObjectMeta
 		t.Spec.Template = w.Spec.Template
 		if w.Spec.Replicas != nil {
 			t.Spec.Replicas = w.Spec.Replicas
+		}
+		if w.Spec.Selector != nil {
+			t.Spec.Selector = w.Spec.Selector
 		}
 		// StatefulSet
 	case *appsv1beta1.StatefulSet:
@@ -246,11 +281,17 @@ func ApplyWorkload(obj runtime.Object, w *v1.Workload) error {
 		if w.Spec.Replicas != nil {
 			t.Spec.Replicas = w.Spec.Replicas
 		}
+		if w.Spec.Selector != nil {
+			t.Spec.Selector = w.Spec.Selector
+		}
 	case *appsv1beta2.StatefulSet:
 		t.ObjectMeta = w.ObjectMeta
 		t.Spec.Template = w.Spec.Template
 		if w.Spec.Replicas != nil {
 			t.Spec.Replicas = w.Spec.Replicas
+		}
+		if w.Spec.Selector != nil {
+			t.Spec.Selector = w.Spec.Selector
 		}
 	case *appsv1.StatefulSet:
 		t.ObjectMeta = w.ObjectMeta
@@ -258,20 +299,35 @@ func ApplyWorkload(obj runtime.Object, w *v1.Workload) error {
 		if w.Spec.Replicas != nil {
 			t.Spec.Replicas = w.Spec.Replicas
 		}
+		if w.Spec.Selector != nil {
+			t.Spec.Selector = w.Spec.Selector
+		}
 		// Job
 	case *batchv1.Job:
 		t.ObjectMeta = w.ObjectMeta
 		t.Spec.Template = w.Spec.Template
+		if w.Spec.Selector != nil {
+			t.Spec.Selector = w.Spec.Selector
+		}
 		// CronJob
 	case *batchv1beta1.CronJob:
 		t.ObjectMeta = w.ObjectMeta
 		t.Spec.JobTemplate.Spec.Template = w.Spec.Template
+		if w.Spec.Selector != nil {
+			t.Spec.JobTemplate.Spec.Selector = w.Spec.Selector
+		}
 		// DeploymentConfig
 	case *ocapps.DeploymentConfig:
 		t.ObjectMeta = w.ObjectMeta
 		t.Spec.Template = &w.Spec.Template
 		if w.Spec.Replicas != nil {
 			t.Spec.Replicas = *w.Spec.Replicas
+		}
+		if w.Spec.Selector != nil {
+			if len(w.Spec.Selector.MatchExpressions) > 0 {
+				return fmt.Errorf("selector.matchExpressions is not supported for DeploymentConfig %s/%s", w.Namespace, w.Name)
+			}
+			t.Spec.Selector = w.Spec.Selector.MatchLabels
 		}
 	default:
 		return fmt.Errorf("the object is not a pod or does not have a pod template")

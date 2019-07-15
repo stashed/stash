@@ -1,0 +1,17 @@
+language: go
+go:
+ - 1.x
+ - tip
+
+cache:
+  directories:
+  - $HOME/.cache/go-build
+  - $GOPATH/pkg/mod
+
+go_import_path: gomodules.xyz/stow
+
+install: true
+
+script:
+  - go build ./...
+  - go test -v ./...

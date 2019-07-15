@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	jp "github.com/appscode/jsonpatch"
 	jsonpatch "github.com/evanphx/json-patch"
 	jsoniter "github.com/json-iterator/go"
+	jp "gomodules.xyz/jsonpatch/v2"
 	"k8s.io/apimachinery/pkg/util/mergepatch"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 )
