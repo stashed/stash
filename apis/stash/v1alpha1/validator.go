@@ -25,8 +25,7 @@ func (r Restic) IsValid() error {
 		}
 	}
 
-	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
-	_, err := parser.Parse(r.Spec.Schedule)
+	_, err := cron.ParseStandard(r.Spec.Schedule)
 	if err != nil {
 		return fmt.Errorf("spec.schedule %s is invalid. Reason: %s", r.Spec.Schedule, err)
 	}
