@@ -15,14 +15,15 @@ import (
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/util"
+	"strings"
 )
 
 const (
 	SidecarClusterRole = "stash-sidecar"
 )
 
-func getSidecarRoleBindingName(name string) string {
-	return name + "-" + SidecarClusterRole
+func getSidecarRoleBindingName(name string, kind string) string {
+	return strings.ToLower(kind) + "-" + name + "-" + SidecarClusterRole
 }
 
 func EnsureSidecarClusterRole(kubeClient kubernetes.Interface) error {
@@ -98,7 +99,7 @@ func EnsureSidecarClusterRole(kubeClient kubernetes.Interface) error {
 func EnsureSidecarRoleBinding(kubeClient kubernetes.Interface, resource *core.ObjectReference, sa string, labels map[string]string) error {
 	meta := metav1.ObjectMeta{
 		Namespace: resource.Namespace,
-		Name:      getSidecarRoleBindingName(resource.Name),
+		Name:      getSidecarRoleBindingName(resource.Name, resource.Kind),
 		Labels:    labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchRoleBinding(kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
@@ -127,14 +128,14 @@ func EnsureSidecarRoleBinding(kubeClient kubernetes.Interface, resource *core.Ob
 
 func ensureSidecarRoleBindingDeleted(kubeClient kubernetes.Interface, w *wapi.Workload) error {
 	err := kubeClient.RbacV1().RoleBindings(w.Namespace).Delete(
-		getSidecarRoleBindingName(w.Name),
+		getSidecarRoleBindingName(w.Name, w.Kind),
 		&metav1.DeleteOptions{},
 	)
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
 	if err == nil {
-		log.Infof("RoleBinding %s/%s has been deleted", w.Namespace, getSidecarRoleBindingName(w.Name))
+		log.Infof("RoleBinding %s/%s has been deleted", w.Namespace, getSidecarRoleBindingName(w.Name, w.Kind))
 	}
 	return nil
 }

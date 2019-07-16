@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/appscode/go/log"
@@ -329,9 +330,12 @@ func (c *StashController) resolveTaskThenRestore(restoreSession *api_v1beta1.Res
 func (c *StashController) createPVCThenRestore(restoreSession *api_v1beta1.RestoreSession,
 	repository *api_v1alpha1.Repository, meta metav1.ObjectMeta, ref *core.ObjectReference, serviceAccountName string) error {
 	// Create PVCs specified in VolumeClaimTemplate
-
-	if restoreSession.Spec.Target.Replicas == nil {
-		pvcList, err := util.GetPVCFromVolumeClaimTemplates(-1, restoreSession.Spec.Target.VolumeClaimTemplates)
+	replicas := int32(1)
+	if restoreSession.Spec.Target.Replicas != nil {
+		replicas = *restoreSession.Spec.Target.Replicas
+	}
+	for ordinal := int32(0); ordinal < replicas; ordinal++ {
+		pvcList, err := GetPVCFromVolumeClaimTemplates(ordinal, restoreSession.Spec.Target.VolumeClaimTemplates)
 		if err != nil {
 			return err
 		}
@@ -341,28 +345,11 @@ func (c *StashController) createPVCThenRestore(restoreSession *api_v1beta1.Resto
 			return err
 		}
 
-		err = c.createPVCRestorerJob(restoreSession, repository, meta, ref, serviceAccountName, util.PVCListToVolumes(pvcList, -1))
+		jobMeta := meta
+		jobMeta.Name = fmt.Sprintf("%s-%d", meta.Name, ordinal)
+		err = c.createPVCRestorerJob(restoreSession, repository, jobMeta, ref, serviceAccountName, util.PVCListToVolumes(pvcList, ordinal))
 		if err != nil {
 			return err
-		}
-	} else { // restoring StatefulSets volumes
-		for ordinal := int32(0); ordinal < *restoreSession.Spec.Target.Replicas; ordinal++ {
-			pvcList, err := util.GetPVCFromVolumeClaimTemplates(ordinal, restoreSession.Spec.Target.VolumeClaimTemplates)
-			if err != nil {
-				return err
-			}
-
-			err = util.CreateBatchPVC(c.kubeClient, restoreSession.Namespace, pvcList)
-			if err != nil {
-				return err
-			}
-
-			jobMeta := meta
-			jobMeta.Name = fmt.Sprintf("%s-%d", meta.Name, ordinal)
-			err = c.createPVCRestorerJob(restoreSession, repository, jobMeta, ref, serviceAccountName, util.PVCListToVolumes(pvcList, ordinal))
-			if err != nil {
-				return err
-			}
 		}
 	}
 
@@ -609,4 +596,19 @@ func (c *StashController) getRestoreSessionPhase(restoreSession *api_v1beta1.Res
 
 	// restore has been completed successfully
 	return api_v1beta1.RestoreSessionSucceeded, nil
+}
+
+//GetPVCFromVolumeClaimTemplates return PVC list from VolumeClaimTemplate
+func GetPVCFromVolumeClaimTemplates(ordinal int32, claimTemplates []core.PersistentVolumeClaim) ([]core.PersistentVolumeClaim, error) {
+	pvcList := make([]core.PersistentVolumeClaim, 0)
+	for _, claim := range claimTemplates {
+		inputs := make(map[string]string)
+		inputs["POD_ORDINAL"] = strconv.Itoa(int(ordinal))
+		err := resolve.ResolvePVCSpec(&claim, inputs)
+		if err != nil {
+			return pvcList, err
+		}
+		pvcList = append(pvcList, claim)
+	}
+	return pvcList, nil
 }
