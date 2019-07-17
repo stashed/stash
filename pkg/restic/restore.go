@@ -43,11 +43,13 @@ func (w *ResticWrapper) RunParallelRestore(restoreOptions []RestoreOptions, maxC
 	concurrencyLimiter := make(chan bool, maxConcurrency)
 	defer close(concurrencyLimiter)
 
-	var restoreErr []error
+	var (
+		restoreErrs []error
+		mu          sync.Mutex
+	)
 	restoreOutput := &RestoreOutput{}
-	mu := sync.Mutex{}
 
-	for _, opt := range restoreOptions {
+	for i := range restoreOptions {
 		// try to send message in concurrencyLimiter channel.
 		// if maximum allowed concurrent restore is already running, program control will stuck here.
 		concurrencyLimiter <- true
@@ -71,7 +73,7 @@ func (w *ResticWrapper) RunParallelRestore(restoreOptions []RestoreOptions, maxC
 			err := nw.runRestore(opt)
 			if err != nil {
 				mu.Lock()
-				restoreErr = append(restoreErr, err)
+				restoreErrs = append(restoreErrs, err)
 				mu.Unlock()
 				return
 			}
@@ -85,17 +87,13 @@ func (w *ResticWrapper) RunParallelRestore(restoreOptions []RestoreOptions, maxC
 			mu.Lock()
 			restoreOutput.upsertHostRestoreStats(hostStats)
 			mu.Unlock()
-		}(opt, time.Now())
+		}(restoreOptions[i], time.Now())
 	}
 
 	// wait for all the go routines to complete
 	wg.Wait()
 
-	if restoreErr != nil {
-		return nil, errors.NewAggregate(restoreErr)
-	}
-
-	return restoreOutput, nil
+	return restoreOutput, errors.NewAggregate(restoreErrs)
 }
 
 // Dump run restore process for a single host and output the restored files in stdout.
@@ -128,11 +126,14 @@ func (w *ResticWrapper) ParallelDump(dumpOptions []DumpOptions, maxConcurrency i
 	concurrencyLimiter := make(chan bool, maxConcurrency)
 	defer close(concurrencyLimiter)
 
-	var restoreErr []error
-	restoreOutput := &RestoreOutput{}
-	mu := sync.Mutex{}
+	var (
+		restoreErrs []error
+		mu          sync.Mutex
+	)
 
-	for _, opt := range dumpOptions {
+	restoreOutput := &RestoreOutput{}
+
+	for i := range dumpOptions {
 		// try to send message in concurrencyLimiter channel.
 		// if maximum allowed concurrent backup is already running, program control will stuck here.
 		concurrencyLimiter <- true
@@ -156,7 +157,7 @@ func (w *ResticWrapper) ParallelDump(dumpOptions []DumpOptions, maxConcurrency i
 			_, err := nw.dump(opt)
 			if err != nil {
 				mu.Lock()
-				restoreErr = append(restoreErr, err)
+				restoreErrs = append(restoreErrs, err)
 				mu.Unlock()
 				return
 			}
@@ -170,17 +171,13 @@ func (w *ResticWrapper) ParallelDump(dumpOptions []DumpOptions, maxConcurrency i
 			mu.Lock()
 			restoreOutput.upsertHostRestoreStats(hostStats)
 			mu.Unlock()
-		}(opt, time.Now())
+		}(dumpOptions[i], time.Now())
 	}
 
 	// wait for all the go routines to complete
 	wg.Wait()
 
-	if restoreErr != nil {
-		return nil, errors.NewAggregate(restoreErr)
-	}
-
-	return restoreOutput, nil
+	return restoreOutput, errors.NewAggregate(restoreErrs)
 }
 
 func (w *ResticWrapper) runRestore(restoreOptions RestoreOptions) error {

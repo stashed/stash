@@ -91,11 +91,14 @@ func (w *ResticWrapper) RunParallelBackup(backupOptions []BackupOptions, maxConc
 	concurrencyLimiter := make(chan bool, maxConcurrency)
 	defer close(concurrencyLimiter)
 
-	var backupErr []error
-	mu := sync.Mutex{} // use lock to avoid racing condition
+	var (
+		backupErrs []error
+		mu         sync.Mutex // use lock to avoid racing condition
+	)
+
 	backupOutput := &BackupOutput{}
 
-	for _, opt := range backupOptions {
+	for i := range backupOptions {
 		// try to send message in concurrencyLimiter channel.
 		// if maximum allowed concurrent backup is already running, program control will stuck here.
 		concurrencyLimiter <- true
@@ -120,7 +123,7 @@ func (w *ResticWrapper) RunParallelBackup(backupOptions []BackupOptions, maxConc
 			if err != nil {
 				// acquire lock to make sure no other go routine is writing to backupErr
 				mu.Lock()
-				backupErr = append(backupErr, err)
+				backupErrs = append(backupErrs, err)
 				mu.Unlock()
 				return
 			}
@@ -131,14 +134,14 @@ func (w *ResticWrapper) RunParallelBackup(backupOptions []BackupOptions, maxConc
 			mu.Lock()
 			backupOutput.upsertHostBackupStats(hostStats)
 			mu.Unlock()
-		}(opt, time.Now())
+		}(backupOptions[i], time.Now())
 	}
 
 	// wait for all the go routines to complete
 	wg.Wait()
 
-	if backupErr != nil {
-		return nil, errors.NewAggregate(backupErr)
+	if backupErrs != nil {
+		return nil, errors.NewAggregate(backupErrs)
 	}
 
 	// Check repository integrity

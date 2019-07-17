@@ -37,22 +37,19 @@ func (o UpdateStatusOptions) UpdateBackupStatusFromFile() error {
 		return err
 	}
 
-	var backupErr []error
+	var backupErrs []error
 	for _, hostStats := range backupOutput.HostBackupStats {
 		if hostStats.Error != "" {
-			backupErr = append(backupErr, fmt.Errorf(hostStats.Error))
+			backupErrs = append(backupErrs, fmt.Errorf(hostStats.Error))
 		}
 	}
 
 	updateStatusErr := o.UpdatePostBackupStatus(backupOutput)
 	if updateStatusErr != nil {
-		backupErr = append(backupErr, updateStatusErr)
+		backupErrs = append(backupErrs, updateStatusErr)
 	}
 
-	if backupErr != nil {
-		return errors.NewAggregate(backupErr)
-	}
-	return nil
+	return errors.NewAggregate(backupErrs)
 }
 
 func (o UpdateStatusOptions) UpdateRestoreStatusFromFile() error {
@@ -62,22 +59,19 @@ func (o UpdateStatusOptions) UpdateRestoreStatusFromFile() error {
 		return err
 	}
 
-	var restoreErr []error
+	var restoreErrs []error
 	for _, hostStats := range restoreOutput.HostRestoreStats {
 		if hostStats.Error != "" {
-			restoreErr = append(restoreErr, fmt.Errorf(hostStats.Error))
+			restoreErrs = append(restoreErrs, fmt.Errorf(hostStats.Error))
 		}
 	}
 
 	updateStatusErr := o.UpdatePostRestoreStatus(restoreOutput)
 	if updateStatusErr != nil {
-		restoreErr = append(restoreErr, updateStatusErr)
+		restoreErrs = append(restoreErrs, updateStatusErr)
 	}
 
-	if restoreErr != nil {
-		return errors.NewAggregate(restoreErr)
-	}
-	return nil
+	return errors.NewAggregate(restoreErrs)
 }
 
 func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupOutput) error {

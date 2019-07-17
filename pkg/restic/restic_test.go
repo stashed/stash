@@ -294,8 +294,8 @@ func TestRunParallelBackup(t *testing.T) {
 	assert.Equal(t, backupOutput.RepositoryStats.SnapshotCount, 3)
 
 	// verify each host status
-	for _, hostStats := range backupOutput.HostBackupStats {
-		assert.Equal(t, hostStats.Phase, api_v1beta1.HostBackupSucceeded)
+	for i := range backupOutput.HostBackupStats {
+		assert.Equal(t, backupOutput.HostBackupStats[i].Phase, api_v1beta1.HostBackupSucceeded)
 	}
 }
 
@@ -322,8 +322,8 @@ func TestRunParallelRestore(t *testing.T) {
 	}
 
 	// verify that all host backup has succeeded
-	for _, hostStats := range backupOutput.HostBackupStats {
-		assert.Equal(t, hostStats.Phase, api_v1beta1.HostBackupSucceeded)
+	for i := range backupOutput.HostBackupStats {
+		assert.Equal(t, backupOutput.HostBackupStats[i].Phase, api_v1beta1.HostBackupSucceeded)
 	}
 
 	// run parallel restore
@@ -337,14 +337,14 @@ func TestRunParallelRestore(t *testing.T) {
 	}
 
 	// verify that all host has been restored successfully
-	for _, hostStats := range restoreOutput.HostRestoreStats {
-		assert.Equal(t, hostStats.Phase, api_v1beta1.HostRestoreSucceeded)
+	for i := range restoreOutput.HostRestoreStats {
+		assert.Equal(t, restoreOutput.HostRestoreStats[i].Phase, api_v1beta1.HostRestoreSucceeded)
 	}
 
 	// verify that restored file contents are identical to the backed up file
-	for _, opt := range restoreOptions {
+	for i := range restoreOptions {
 		// check file
-		restoredFileContent, err := ioutil.ReadFile(filepath.Join(opt.Destination, targetDir, fileName))
+		restoredFileContent, err := ioutil.ReadFile(filepath.Join(restoreOptions[i].Destination, targetDir, fileName))
 		if err != nil {
 			t.Error(err)
 		}
@@ -375,8 +375,8 @@ func TestRunParallelDump(t *testing.T) {
 	}
 
 	// verify that all host backup has succeeded
-	for _, hostStats := range backupOutput.HostBackupStats {
-		assert.Equal(t, hostStats.Phase, api_v1beta1.HostBackupSucceeded)
+	for i := range backupOutput.HostBackupStats {
+		assert.Equal(t, backupOutput.HostBackupStats[i].Phase, api_v1beta1.HostBackupSucceeded)
 	}
 
 	// run parallel dump
@@ -390,8 +390,8 @@ func TestRunParallelDump(t *testing.T) {
 	}
 
 	// verify that all host has been restored successfully
-	for _, hostStats := range dumpOutput.HostRestoreStats {
-		assert.Equal(t, hostStats.Phase, api_v1beta1.HostRestoreSucceeded)
+	for i := range dumpOutput.HostRestoreStats {
+		assert.Equal(t, dumpOutput.HostRestoreStats[i].Phase, api_v1beta1.HostRestoreSucceeded)
 	}
 }
 
