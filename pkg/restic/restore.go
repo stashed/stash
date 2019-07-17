@@ -22,9 +22,8 @@ func (w *ResticWrapper) RunRestore(restoreOptions RestoreOptions) (*RestoreOutpu
 		return nil, err
 	}
 
-	// Restore successful. Read current time and calculate total session duration.
-	endTime := time.Now()
-	restoreStats.Duration = endTime.Sub(startTime).String()
+	// Restore successful. Now, calculate total session duration.
+	restoreStats.Duration = time.Since(startTime).String()
 	restoreStats.Phase = api_v1beta1.HostRestoreSucceeded
 
 	restoreOutput := &RestoreOutput{
@@ -44,7 +43,7 @@ func (w *ResticWrapper) RunParallelRestore(restoreOptions []RestoreOptions, maxC
 	concurrencyLimiter := make(chan bool, maxConcurrency)
 	defer close(concurrencyLimiter)
 
-	var restoreErr error
+	var restoreErr []error
 	restoreOutput := &RestoreOutput{}
 	mu := sync.Mutex{}
 
@@ -56,10 +55,7 @@ func (w *ResticWrapper) RunParallelRestore(restoreOptions []RestoreOptions, maxC
 		// starting new go routine. add it to WaitGroup
 		wg.Add(1)
 
-		// Start clock to measure restore duration
-		startTime := time.Now()
-
-		go func(opt RestoreOptions, start time.Time) {
+		go func(opt RestoreOptions, startTime time.Time) {
 			// when this go routine completes it task, release a slot from the concurrencyLimiter channel
 			// so that another go routine can start. Also, tell the WaitGroup that it is done with its task.
 			defer func() {
@@ -69,34 +65,34 @@ func (w *ResticWrapper) RunParallelRestore(restoreOptions []RestoreOptions, maxC
 
 			// sh field in ResticWrapper is a pointer. we must not use same w in multiple go routine.
 			// otherwise they might enter in a racing condition.
-			nw := w.DeepCopy()
+			nw := w.Copy()
 
 			// run restore
 			err := nw.runRestore(opt)
 			if err != nil {
 				mu.Lock()
-				restoreErr = errors.NewAggregate([]error{restoreErr, err})
+				restoreErr = append(restoreErr, err)
 				mu.Unlock()
 				return
 			}
 			hostStats := api_v1beta1.HostRestoreStats{
 				Hostname: opt.Host,
 			}
-			hostStats.Duration = time.Now().Sub(start).String()
+			hostStats.Duration = time.Since(startTime).String()
 			hostStats.Phase = api_v1beta1.HostRestoreSucceeded
 
 			// add hostStats to restoreOutput
 			mu.Lock()
 			restoreOutput.upsertHostRestoreStats(hostStats)
 			mu.Unlock()
-		}(opt, startTime)
+		}(opt, time.Now())
 	}
 
 	// wait for all the go routines to complete
 	wg.Wait()
 
 	if restoreErr != nil {
-		return nil, restoreErr
+		return nil, errors.NewAggregate(restoreErr)
 	}
 
 	return restoreOutput, nil
@@ -112,9 +108,8 @@ func (w *ResticWrapper) Dump(dumpOptions DumpOptions) (*RestoreOutput, error) {
 		return nil, err
 	}
 
-	// Dump successful. Read current time and calculate total session duration.
-	endTime := time.Now()
-	restoreStats.Duration = endTime.Sub(startTime).String()
+	// Dump successful. Now, calculate total session duration.
+	restoreStats.Duration = time.Since(startTime).String()
 	restoreStats.Phase = api_v1beta1.HostRestoreSucceeded
 
 	restoreOutput := &RestoreOutput{
@@ -133,7 +128,7 @@ func (w *ResticWrapper) ParallelDump(dumpOptions []DumpOptions, maxConcurrency i
 	concurrencyLimiter := make(chan bool, maxConcurrency)
 	defer close(concurrencyLimiter)
 
-	var restoreErr error
+	var restoreErr []error
 	restoreOutput := &RestoreOutput{}
 	mu := sync.Mutex{}
 
@@ -144,10 +139,8 @@ func (w *ResticWrapper) ParallelDump(dumpOptions []DumpOptions, maxConcurrency i
 
 		// starting new go routine. add it to WaitGroup
 		wg.Add(1)
-		// Start clock to measure restore duration
-		startTime := time.Now()
 
-		go func(opt DumpOptions, start time.Time) {
+		go func(opt DumpOptions, startTime time.Time) {
 			// when this go routine completes it task, release a slot from the concurrencyLimiter channel
 			// so that another go routine can start. Also, tell the WaitGroup that it is done with its task.
 			defer func() {
@@ -157,34 +150,34 @@ func (w *ResticWrapper) ParallelDump(dumpOptions []DumpOptions, maxConcurrency i
 
 			// sh field in ResticWrapper is a pointer. we must not use same w in multiple go routine.
 			// otherwise they might enter in a racing condition.
-			nw := w.DeepCopy()
+			nw := w.Copy()
 
 			// run restore
 			_, err := nw.dump(opt)
 			if err != nil {
 				mu.Lock()
-				restoreErr = errors.NewAggregate([]error{restoreErr, err})
+				restoreErr = append(restoreErr, err)
 				mu.Unlock()
 				return
 			}
 			hostStats := api_v1beta1.HostRestoreStats{
 				Hostname: opt.Host,
 			}
-			hostStats.Duration = time.Now().Sub(start).String()
+			hostStats.Duration = time.Since(startTime).String()
 			hostStats.Phase = api_v1beta1.HostRestoreSucceeded
 
 			// add hostStats to restoreOutput
 			mu.Lock()
 			restoreOutput.upsertHostRestoreStats(hostStats)
 			mu.Unlock()
-		}(opt, startTime)
+		}(opt, time.Now())
 	}
 
 	// wait for all the go routines to complete
 	wg.Wait()
 
 	if restoreErr != nil {
-		return nil, restoreErr
+		return nil, errors.NewAggregate(restoreErr)
 	}
 
 	return restoreOutput, nil

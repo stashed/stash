@@ -65,11 +65,9 @@ func (w *ResticWrapper) RunBackup(backupOption BackupOptions) (*BackupOutput, er
 	}
 	backupOutput.RepositoryStats.Size = repoSize
 
-	// Backup complete. Read current time and calculate total backup duration.
-	endTime := time.Now()
 	for idx := range backupOutput.HostBackupStats {
 		if backupOutput.HostBackupStats[idx].Hostname == backupOption.Host {
-			backupOutput.HostBackupStats[idx].Duration = endTime.Sub(startTime).String()
+			backupOutput.HostBackupStats[idx].Duration = time.Since(startTime).String()
 			backupOutput.HostBackupStats[idx].Phase = api_v1beta1.HostBackupSucceeded
 		}
 	}
@@ -93,7 +91,7 @@ func (w *ResticWrapper) RunParallelBackup(backupOptions []BackupOptions, maxConc
 	concurrencyLimiter := make(chan bool, maxConcurrency)
 	defer close(concurrencyLimiter)
 
-	var backupErr error
+	var backupErr []error
 	mu := sync.Mutex{} // use lock to avoid racing condition
 	backupOutput := &BackupOutput{}
 
@@ -105,10 +103,7 @@ func (w *ResticWrapper) RunParallelBackup(backupOptions []BackupOptions, maxConc
 		// starting new go routine. add it to WaitGroup
 		wg.Add(1)
 
-		// Start clock to measure session duration
-		startTime := time.Now()
-
-		go func(opt BackupOptions, start time.Time) {
+		go func(opt BackupOptions, startTime time.Time) {
 
 			// when this go routine completes it task, release a slot from the concurrencyLimiter channel
 			// so that another go routine can start. Also, tell the WaitGroup that it is done with its task.
@@ -119,31 +114,31 @@ func (w *ResticWrapper) RunParallelBackup(backupOptions []BackupOptions, maxConc
 
 			// sh field in ResticWrapper is a pointer. we must not use same w in multiple go routine.
 			// otherwise they might enter in a racing condition.
-			nw := w.DeepCopy()
+			nw := w.Copy()
 
 			hostStats, err := nw.runBackup(opt)
 			if err != nil {
-				// acquire lock to make sure no other go routine is writing to backupErr variable
+				// acquire lock to make sure no other go routine is writing to backupErr
 				mu.Lock()
-				backupErr = errors.NewAggregate([]error{backupErr, err})
+				backupErr = append(backupErr, err)
 				mu.Unlock()
 				return
 			}
-			hostStats.Duration = time.Now().Sub(start).String()
+			hostStats.Duration = time.Since(startTime).String()
 			hostStats.Phase = api_v1beta1.HostBackupSucceeded
 
 			// add hostStats to backupOutput. use lock to avoid racing condition.
 			mu.Lock()
 			backupOutput.upsertHostBackupStats(hostStats)
 			mu.Unlock()
-		}(opt,startTime)
+		}(opt, time.Now())
 	}
 
 	// wait for all the go routines to complete
 	wg.Wait()
 
 	if backupErr != nil {
-		return nil, backupErr
+		return nil, errors.NewAggregate(backupErr)
 	}
 
 	// Check repository integrity

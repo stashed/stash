@@ -14,7 +14,7 @@ import (
 )
 
 type BackupOutput struct {
-	// HostBackupStats shows backup statistics of current host
+	// HostBackupStats shows backup statistics of a host
 	HostBackupStats []api_v1beta1.HostBackupStats `json:"hostBackupStats,omitempty"`
 	// RepositoryStats shows statistics of repository after last backup
 	RepositoryStats RepositoryStats `json:"repository,omitempty"`
@@ -32,7 +32,7 @@ type RepositoryStats struct {
 }
 
 type RestoreOutput struct {
-	// HostRestoreStats shows restore statistics of current host
+	// HostRestoreStats shows restore statistics of a host
 	HostRestoreStats []api_v1beta1.HostRestoreStats `json:"hostRestoreStats,omitempty"`
 }
 
