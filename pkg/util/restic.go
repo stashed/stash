@@ -86,8 +86,10 @@ func HandleResticError(outputDir, fileName string, backupErr error) error {
 	}
 	log.Infoln("Writing restic error to output file, error:", backupErr.Error())
 	backupOut := restic.BackupOutput{
-		HostBackupStats: api_v1beta1.HostBackupStats{
-			Error: backupErr.Error(),
+		HostBackupStats: []api_v1beta1.HostBackupStats{
+			{
+				Error: backupErr.Error(),
+			},
 		}}
 	return backupOut.WriteOutput(filepath.Join(outputDir, fileName))
 }

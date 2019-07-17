@@ -10,13 +10,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/appscode/go/types"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
 type BackupOutput struct {
-	// HostBackupStats shows backup statistics of current host
-	HostBackupStats api_v1beta1.HostBackupStats `json:"hostBackupStats,omitempty"`
+	// HostBackupStats shows backup statistics of a host
+	HostBackupStats []api_v1beta1.HostBackupStats `json:"hostBackupStats,omitempty"`
 	// RepositoryStats shows statistics of repository after last backup
 	RepositoryStats RepositoryStats `json:"repository,omitempty"`
 }
@@ -33,8 +32,8 @@ type RepositoryStats struct {
 }
 
 type RestoreOutput struct {
-	// HostRestoreStats shows restore statistics of current host
-	HostRestoreStats api_v1beta1.HostRestoreStats `json:"hostRestoreStats,omitempty"`
+	// HostRestoreStats shows restore statistics of a host
+	HostRestoreStats []api_v1beta1.HostRestoreStats `json:"hostRestoreStats,omitempty"`
 }
 
 // WriteOutput write output of backup process into output.json file in the directory
@@ -99,7 +98,11 @@ func ReadRestoreOutput(filename string) (*RestoreOutput, error) {
 
 // ExtractBackupInfo extract information from output of "restic backup" command and
 // save valuable information into backupOutput
-func (backupOutput *BackupOutput) extractBackupInfo(output []byte, directory string, host string) error {
+func extractBackupInfo(output []byte, directory string, hostname string) (api_v1beta1.SnapshotStats, error) {
+	snapshotStats := api_v1beta1.SnapshotStats{
+		Directory: directory,
+	}
+
 	// unmarshal json output
 	var jsonOutput BackupSummary
 	dec := json.NewDecoder(bytes.NewReader(output))
@@ -111,16 +114,12 @@ func (backupOutput *BackupOutput) extractBackupInfo(output []byte, directory str
 			break
 		}
 		if err != nil {
-			return err
+			return snapshotStats, err
 		}
 		// if message type is summary then we have found our desired message block
 		if jsonOutput.MessageType == "summary" {
 			break
 		}
-	}
-
-	snapshotStats := api_v1beta1.SnapshotStats{
-		Directory: directory,
 	}
 
 	snapshotStats.FileStats.NewFiles = jsonOutput.FilesNew
@@ -133,65 +132,52 @@ func (backupOutput *BackupOutput) extractBackupInfo(output []byte, directory str
 	snapshotStats.ProcessingTime = formatSeconds(uint64(jsonOutput.TotalDuration))
 	snapshotStats.Name = jsonOutput.SnapshotID
 
-	// if there is already an entry for this directory then update that
-	for i, v := range backupOutput.HostBackupStats.Snapshots {
-		if v.Directory == snapshotStats.Directory {
-			backupOutput.HostBackupStats.Snapshots[i] = snapshotStats
-			return nil
-		}
-	}
-
-	// new entry. so append to backupOutput.
-	backupOutput.HostBackupStats.Snapshots = append(backupOutput.HostBackupStats.Snapshots, snapshotStats)
-
-	return nil
+	return snapshotStats, nil
 }
 
 // ExtractCheckInfo extract information from output of "restic check" command and
 // save valuable information into backupOutput
-func (backupOutput *BackupOutput) extractCheckInfo(out []byte) {
+func extractCheckInfo(out []byte) bool {
 	scanner := bufio.NewScanner(bytes.NewReader(out))
 	var line string
 	for scanner.Scan() {
 		line = scanner.Text()
 		line = strings.TrimSpace(line)
 		if line == "no errors were found" {
-			backupOutput.RepositoryStats.Integrity = types.BoolP(true)
-			return
+			return true
 		}
 	}
-	backupOutput.RepositoryStats.Integrity = types.BoolP(false)
+	return false
 }
 
 // ExtractCleanupInfo extract information from output of "restic forget" command and
 // save valuable information into backupOutput
-func (backupOutput *BackupOutput) extractCleanupInfo(out []byte) error {
+func extractCleanupInfo(out []byte) (int, int, error) {
 	var fg []ForgetGroup
 	err := json.Unmarshal(out, &fg)
 	if err != nil {
-		return err
+		return 0, 0, err
 	}
 
-	backupOutput.RepositoryStats.SnapshotsRemovedOnLastCleanup = 0
-	backupOutput.RepositoryStats.SnapshotCount = 0
+	keep := 0
+	removed := 0
 	for i := 0; i < len(fg); i++ {
-		backupOutput.RepositoryStats.SnapshotsRemovedOnLastCleanup += len(fg[i].Remove)
-		backupOutput.RepositoryStats.SnapshotCount += len(fg[i].Keep)
+		keep += len(fg[i].Keep)
+		removed += len(fg[i].Remove)
 	}
 
-	return nil
+	return keep, removed, nil
 }
 
 // ExtractStatsInfo extract information from output of "restic stats" command and
 // save valuable information into backupOutput
-func (backupOutput *BackupOutput) extractStatsInfo(out []byte) error {
+func extractStatsInfo(out []byte) (string, error) {
 	var stat StatsContainer
 	err := json.Unmarshal(out, &stat)
 	if err != nil {
-		return err
+		return "", err
 	}
-	backupOutput.RepositoryStats.Size = formatBytes(stat.TotalSize)
-	return nil
+	return formatBytes(stat.TotalSize), nil
 }
 
 type BackupSummary struct {
