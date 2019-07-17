@@ -108,28 +108,28 @@ func (w *ResticWrapper) GetRepo() string {
 }
 
 // Copy function copy input ResticWrapper and returns a new wrapper with copy of its content.
-func (in *ResticWrapper) Copy() *ResticWrapper {
-	if in == nil {
+func (w *ResticWrapper) Copy() *ResticWrapper {
+	if w == nil {
 		return nil
 	}
 	out := new(ResticWrapper)
 
-	if in.sh != nil {
+	if w.sh != nil {
 		out.sh = shell.NewSession()
 
 		// set values in.sh to out.sh
-		for k, v := range in.sh.Env {
+		for k, v := range w.sh.Env {
 			out.sh.Env[k] = v
 		}
 		// don't use same stdin, stdout, stderr for each instant to avoid data race.
 		//out.sh.Stdin = in.sh.Stdin
 		//out.sh.Stdout = in.sh.Stdout
 		//out.sh.Stderr = in.sh.Stderr
-		out.sh.ShowCMD = in.sh.ShowCMD
-		out.sh.PipeFail = in.sh.PipeFail
-		out.sh.PipeStdErrors = in.sh.PipeStdErrors
+		out.sh.ShowCMD = w.sh.ShowCMD
+		out.sh.PipeFail = w.sh.PipeFail
+		out.sh.PipeStdErrors = w.sh.PipeStdErrors
 
 	}
-	out.config = in.config
+	out.config = w.config
 	return out
 }
