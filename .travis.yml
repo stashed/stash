@@ -12,6 +12,8 @@ cache:
 
 env:
   global:
+  - GOFLAGS=-mod=vendor
+  - GO111MODULE=on
   - ARG_OS=linux
   - ARG_ARCH=amd64
   - RESTIC_VER="0.8.3"
