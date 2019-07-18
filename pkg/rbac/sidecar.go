@@ -1,6 +1,8 @@
 package rbac
 
 import (
+	"strings"
+
 	"github.com/appscode/go/log"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
@@ -15,7 +17,6 @@ import (
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/util"
-	"strings"
 )
 
 const (
