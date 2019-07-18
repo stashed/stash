@@ -53,7 +53,7 @@ func (w *ResticWrapper) RunBackup(backupOption BackupOptions) (*BackupOutput, er
 	backupOutput.RepositoryStats.SnapshotsRemovedOnLastCleanup = removed
 
 	// Read repository statics after cleanup
-	out, err = w.stats()
+	out, err = w.stats("")
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +171,7 @@ func (w *ResticWrapper) RunParallelBackup(backupOptions []BackupOptions, maxConc
 	}
 
 	// Read repository statics after cleanup
-	out, err = w.stats()
+	out, err = w.stats("")
 	if err != nil {
 		return nil, err
 	}
