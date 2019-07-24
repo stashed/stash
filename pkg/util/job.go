@@ -198,6 +198,7 @@ func NewRecoveryJob(stashClient cs.Interface, recovery *api_v1alpha1.Recovery, i
 	return job, nil
 }
 
+// NewPVCRestorerJob return a job definition to restore pvc.
 func NewPVCRestorerJob(rs *api_v1beta1.RestoreSession, repository *api_v1alpha1.Repository, image docker.Docker, meta metav1.ObjectMeta) (*core.PodTemplateSpec, error) {
 	container := core.Container{
 		Name:  StashContainer,
@@ -275,6 +276,7 @@ func NewPVCRestorerJob(rs *api_v1beta1.RestoreSession, repository *api_v1alpha1.
 	}
 
 	jobTemplate := &core.PodTemplateSpec{
+		ObjectMeta: meta,
 		Spec: core.PodSpec{
 			Containers:    []core.Container{container},
 			RestartPolicy: core.RestartPolicyNever,
