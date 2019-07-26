@@ -248,7 +248,7 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 	// 1. Restore process follows Function-Task model. In this case, we have to resolve respective Functions and Task to get desired job definition.
 	// 2. Restore process does not follow Function-Task model. In this case, we have to generate simple volume restorer job definition.
 
-	jobTemplate := &core.PodTemplateSpec{}
+	var jobTemplate *core.PodTemplateSpec
 
 	if restoreSession.Spec.Task.Name != "" {
 		// Restore process follows Function-Task model. So, resolve Function and Task to get desired job definition.
@@ -265,7 +265,8 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 	}
 
 	// If volumeClaimTemplate is not specified then we don't need any further processing. Just, create the job
-	if restoreSession.Spec.Target == nil || (restoreSession.Spec.Target != nil && len(restoreSession.Spec.Target.VolumeClaimTemplates) == 0) {
+	if restoreSession.Spec.Target == nil ||
+		(restoreSession.Spec.Target != nil && len(restoreSession.Spec.Target.VolumeClaimTemplates) == 0) {
 		return c.createRestoreJob(jobTemplate, jobTemplate.ObjectMeta, ref, serviceAccountName)
 	}
 
