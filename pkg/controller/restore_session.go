@@ -265,7 +265,7 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 	}
 
 	// If volumeClaimTemplate is not specified then we don't need any further processing. Just, create the job
-	if restoreSession.Spec.Target == nil || (restoreSession.Spec.Target != nil && restoreSession.Spec.Target.VolumeMounts == nil) {
+	if restoreSession.Spec.Target == nil || (restoreSession.Spec.Target != nil && len(restoreSession.Spec.Target.VolumeClaimTemplates) == 0) {
 		return c.createRestoreJob(jobTemplate, jobTemplate.ObjectMeta, ref, serviceAccountName)
 	}
 
