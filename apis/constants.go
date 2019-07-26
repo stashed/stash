@@ -22,6 +22,7 @@ const (
 	TargetNamespace   = "TARGET_NAMESPACE"
 	TargetMountPath   = "TARGET_MOUNT_PATH"
 	TargetDirectories = "TARGET_DIRECTORIES"
+	TargetAppVersion  = "TARGET_APP_VERSION"
 
 	RestoreDirectories = "RESTORE_DIRECTORIES"
 	RestoreSnapshots   = "RESTORE_SNAPSHOTS"
