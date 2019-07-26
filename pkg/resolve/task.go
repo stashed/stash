@@ -9,7 +9,6 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
-	store "kmodules.xyz/objectstore-api/api/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 	ofst_util "kmodules.xyz/offshoot-api/util"
 	v1beta1_api "stash.appscode.dev/stash/apis/stash/v1beta1"
@@ -124,8 +123,8 @@ func resolveWithInputs(obj interface{}, inputs map[string]string) error {
 	return json.Unmarshal([]byte(resolved), obj)
 }
 
-func ResolveBackend(backend *store.Backend, input map[string]string) error {
-	return resolveWithInputs(backend, input)
+func ResolveBackupTemplate(btpl *v1beta1_api.BackupConfigurationTemplate, input map[string]string) error {
+	return resolveWithInputs(btpl, input)
 }
 
 func ResolvePVCSpec(pvc *core.PersistentVolumeClaim, input map[string]string) error {

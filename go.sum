@@ -55,7 +55,6 @@ github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRF
 github.com/apache/thrift v0.12.0/go.mod h1:cp2SuWMxlEZw2r+iP2GNCdIi4C1qmUzdZFSVb+bacwQ=
 github.com/appscode/docker-registry-client v0.0.0-20180426150142-1bb02bb202b0/go.mod h1:W9bsWfSbgJXUXzBZ+tSBV2g+zzT7ANPHQFsSXRHYKsA=
 github.com/appscode/go v0.0.0-20190424183524-60025f1135c9/go.mod h1:/PrESzUKHRrwhmBMpVXfGK3e/D0tqN+/dc8nSH03llU=
-github.com/appscode/go v0.0.0-20190621064509-6b292c9166e3 h1:3V9/ZIWMUreWG6JTP34N2mii+gt2XCek7xPS66qKm90=
 github.com/appscode/go v0.0.0-20190621064509-6b292c9166e3/go.mod h1:lZoPivA2BU6pxBzZ4KssqO69zfmCV5J4bscOFLIbCEA=
 github.com/appscode/go v0.0.0-20190722173419-e454bf744023 h1:RFcQLLdIALM+/Ut8IoUPuhULmn7sdV3Y9x+aqlwfR4c=
 github.com/appscode/go v0.0.0-20190722173419-e454bf744023/go.mod h1:VHCQuszPTOu/LEgSAfVX5H7w0MkkBvddUp+7kw4JCac=

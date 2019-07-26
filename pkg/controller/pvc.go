@@ -92,7 +92,7 @@ func (c *StashController) applyBackupAnnotationLogicForPVC(pvc *core.PersistentV
 		inputs[apis.TargetName] = pvc.Name
 		inputs[apis.TargetNamespace] = pvc.Namespace
 
-		err = resolve.ResolveBackend(&backupTemplate.Spec.Backend, inputs)
+		err = resolve.ResolveBackupTemplate(backupTemplate, inputs)
 		if err != nil {
 			return err
 		}

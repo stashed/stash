@@ -76,7 +76,7 @@ func (c *StashController) applyBackupAnnotationLogic(w *wapi.Workload) error {
 		}
 		inputs[apis.TargetResource] = gvr.Resource
 
-		err = resolve.ResolveBackend(&backupTemplate.Spec.Backend, inputs)
+		err = resolve.ResolveBackupTemplate(backupTemplate, inputs)
 		if err != nil {
 			return err
 		}

@@ -77,8 +77,9 @@ func (c *StashController) applyBackupAnnotationLogicForAppBinding(ab *appCatalog
 		inputs[apis.TargetKind] = strings.ToLower(ab.Kind)
 		inputs[apis.TargetName] = ab.Name
 		inputs[apis.TargetNamespace] = ab.Namespace
+		inputs[apis.TargetAppVersion] = ab.Spec.Version
 
-		err = resolve.ResolveBackend(&backupTemplate.Spec.Backend, inputs)
+		err = resolve.ResolveBackupTemplate(backupTemplate, inputs)
 		if err != nil {
 			return err
 		}
