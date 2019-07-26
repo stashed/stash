@@ -57,6 +57,8 @@ github.com/appscode/docker-registry-client v0.0.0-20180426150142-1bb02bb202b0/go
 github.com/appscode/go v0.0.0-20190424183524-60025f1135c9/go.mod h1:/PrESzUKHRrwhmBMpVXfGK3e/D0tqN+/dc8nSH03llU=
 github.com/appscode/go v0.0.0-20190621064509-6b292c9166e3 h1:3V9/ZIWMUreWG6JTP34N2mii+gt2XCek7xPS66qKm90=
 github.com/appscode/go v0.0.0-20190621064509-6b292c9166e3/go.mod h1:lZoPivA2BU6pxBzZ4KssqO69zfmCV5J4bscOFLIbCEA=
+github.com/appscode/go v0.0.0-20190722173419-e454bf744023 h1:RFcQLLdIALM+/Ut8IoUPuhULmn7sdV3Y9x+aqlwfR4c=
+github.com/appscode/go v0.0.0-20190722173419-e454bf744023/go.mod h1:VHCQuszPTOu/LEgSAfVX5H7w0MkkBvddUp+7kw4JCac=
 github.com/appscode/jsonpatch v0.0.0-20190108182946-7c0e3b262f30/go.mod h1:4AJxUpXUhv4N+ziTvIcWWXgeorXpxPZOfk9HdEVr96M=
 github.com/appscode/osm v0.12.0 h1:l7cM6auoo6k6Ic59dn/lrEusNu2dvL3hF2Lxdds4JEU=
 github.com/appscode/osm v0.12.0/go.mod h1:M2dkG7yApVG4hWvRli6FgDxYItfkkN7jZditR2AAvdA=
@@ -105,6 +107,7 @@ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/denisenkom/go-mssqldb v0.0.0-20190121005146-b04fd42d9952/go.mod h1:xN/JuLBIz4bjkxNmByTiV1IbhfnYb6oo99phBn4Eqhc=
+github.com/denisenkom/go-mssqldb v0.0.0-20190707035753-2be1aa521ff4/go.mod h1:zAg7JM8CkOJ43xKXIj7eRO9kmWm/TW578qo+oDO6tuM=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible h1:7qlOGliEKZXTDg6OTjfoBKDXWrumCAMpl/TFQ4/5kLM=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/dimchansky/utfbom v1.1.0/go.mod h1:rO41eb7gLfo8SF1jd9F8HplJm1Fewwi4mQvIirEdv+8=
@@ -166,6 +169,7 @@ github.com/go-xorm/builder v0.3.3/go.mod h1:v8mE3MFBgtL+RGFNfUnAMUqqfk/Y4W5KuwCF
 github.com/go-xorm/core v0.6.2/go.mod h1:bwPIfLdm/FzWgVUH8WPVlr+uJhscvNGFcaZKXsI3n2c=
 github.com/go-xorm/sqlfiddle v0.0.0-20180821085327-62ce714f951a/go.mod h1:56xuuqnHyryaerycW3BfssRdxQstACi0Epw/yC5E2xM=
 github.com/go-xorm/xorm v0.7.3/go.mod h1:npNkX0GgFcODSSKHj7nhJPobHwa5E7usBBZUFaxCsXA=
+github.com/go-xorm/xorm v0.7.4/go.mod h1:vpza5fydeRgt+stvo9qgMhSNohYqmNt0I1/D6hkCekA=
 github.com/gogo/protobuf v1.1.1/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7atdtwQ=
 github.com/gogo/protobuf v1.2.0/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7atdtwQ=
 github.com/gogo/protobuf v1.2.1 h1:/s5zKNz0uPFCZ5hddgPdo2TK2TVrUNMn0OOX8/aZMTE=
@@ -432,6 +436,7 @@ golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9/go.mod h1:6SG95UA2DQfeDnf
 golang.org/x/crypto v0.0.0-20190122013713-64072686203f/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
 golang.org/x/crypto v0.0.0-20190211182817-74369b46fc67/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
+golang.org/x/crypto v0.0.0-20190325154230-a5d413f7728c/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20190422183909-d864b10871cd/go.mod h1:yigFU9vqHzYiE8UmvKecakEJjdnWj3jj499lnFckfCI=
 golang.org/x/crypto v0.0.0-20190506204251-e1dfcc566284/go.mod h1:yigFU9vqHzYiE8UmvKecakEJjdnWj3jj499lnFckfCI=
 golang.org/x/crypto v0.0.0-20190605123033-f99c8df09eb5 h1:58fnuSXlxZmFdJyvtTFVmVhcMLU6v5fEb/ok4wyqtNU=
@@ -528,7 +533,7 @@ gomodules.xyz/envsubst v0.0.0-20190321051520-c745d52104af h1:dvSifHtcUenMJOxj0sZ
 gomodules.xyz/envsubst v0.0.0-20190321051520-c745d52104af/go.mod h1:2o5f7bd13XIITbE2ZKieE05YkqB2KDoZkqKccGebduA=
 gomodules.xyz/jsonpatch/v2 v2.0.0 h1:OyHbl+7IOECpPKfVK42oFr6N7+Y2dR+Jsb/IiDV3hOo=
 gomodules.xyz/jsonpatch/v2 v2.0.0/go.mod h1:IhYNNY4jnS53ZnfE4PAmpKtDpTCj1JFXc+3mwe7XcUU=
-gomodules.xyz/stow v0.2.0 h1:7yEz3Mu3V96xhfjfuk62oZpkwTXDWB6cRVwqHuBtoog=
+gomodules.xyz/stow v0.2.0 h1:YL2QID9eO5FoNYIh+F56SCwBS3L57xlyqqABipCEZoA=
 gomodules.xyz/stow v0.2.0/go.mod h1:nSTw1H1Gb/GktlrUgElN4YR+jww9OcNsxxrx3zNp+qA=
 gomodules.xyz/version v0.0.0-20190507203204-7cec7ee542d3 h1:MiBtMikyjuBwD22+QIEsbnMHdRkknM/0N5ig34jSNgQ=
 gomodules.xyz/version v0.0.0-20190507203204-7cec7ee542d3/go.mod h1:Y8xuV02mL/45psyPKG3NCVOwvAOy6T5Kx0l3rCjKSjU=
@@ -613,10 +618,10 @@ kmodules.xyz/client-go v0.0.0-20190507204740-e4690d8026e7/go.mod h1:3meAILhyA9BT
 kmodules.xyz/client-go v0.0.0-20190508091620-0d215c04352f/go.mod h1:R1t4K2wWb6PTkhQPEjqQIWz+gRS0/Z0mMfIy/TsdB/w=
 kmodules.xyz/client-go v0.0.0-20190715080709-7162a6c90b04 h1:17h0mshnlihkZMP6LqMmpliCQIknKasjdNGWyZCCmV4=
 kmodules.xyz/client-go v0.0.0-20190715080709-7162a6c90b04/go.mod h1:3h1/ZglH6fV2uv3p9AB1JnHUknhWniShJ7fBJfSf7Js=
-kmodules.xyz/custom-resources v0.0.0-20190508103408-464e8324c3ec h1:a7sxsWe1QYUZaEWxGpSuzB6ZAdXmCwNh2SyMTLQKGEI=
-kmodules.xyz/custom-resources v0.0.0-20190508103408-464e8324c3ec/go.mod h1:0C61XSEPGexAmkrayynpNnCTacvkwn4802CRAQ5tUPI=
-kmodules.xyz/objectstore-api v0.0.0-20190715131036-28ef070833ef h1:eaSKE7rl/PpTChPQWk+KWQAB/axEYYbSkDN8wkGZnXc=
-kmodules.xyz/objectstore-api v0.0.0-20190715131036-28ef070833ef/go.mod h1:SwUpd3z5BvdUks/Nh8Wtyp8US2ATxhxQmMathe4lyOM=
+kmodules.xyz/custom-resources v0.0.0-20190723185639-711575c0b8a9 h1:wLeUF4rEVaQxIgXHLNcLQiTCZWzgmU78erhWCHKhKUg=
+kmodules.xyz/custom-resources v0.0.0-20190723185639-711575c0b8a9/go.mod h1:0C61XSEPGexAmkrayynpNnCTacvkwn4802CRAQ5tUPI=
+kmodules.xyz/objectstore-api v0.0.0-20190718002052-da668b440b0b h1:VRUyLLGvBjAezi9pQ89vGR+tcO+XROdJanGe2gPyGrY=
+kmodules.xyz/objectstore-api v0.0.0-20190718002052-da668b440b0b/go.mod h1:SwUpd3z5BvdUks/Nh8Wtyp8US2ATxhxQmMathe4lyOM=
 kmodules.xyz/offshoot-api v0.0.0-20190715115723-36c8fce142c1 h1:ak95Tpl+ur0n+18naC3FzNL01f6QmV9UR3zRF/SCFUs=
 kmodules.xyz/offshoot-api v0.0.0-20190715115723-36c8fce142c1/go.mod h1:A6ALSeFH5Qm9fEkBu6hKfa4cV4ulDWqGo4rm3l00QnI=
 kmodules.xyz/openshift v0.0.0-20190225002038-ca9787d09794/go.mod h1:OA2SQV7Rn2+E553Xfp0uY5nwG0A9FztRiaWgP12Ubz8=
@@ -633,3 +638,5 @@ sigs.k8s.io/structured-merge-diff v0.0.0-20190302045857-e85c7b244fd2 h1:9r5DY45e
 sigs.k8s.io/structured-merge-diff v0.0.0-20190302045857-e85c7b244fd2/go.mod h1:wWxsB5ozmmv/SG7nM11ayaAW51xMvak/t1r0CSlcokI=
 sigs.k8s.io/yaml v1.1.0 h1:4A07+ZFc2wgJwo8YNlQpr1rVlgUDlxXHhPJciaPY5gs=
 sigs.k8s.io/yaml v1.1.0/go.mod h1:UJmg0vDUVViEyp3mgSv9WPwZCDxu4rQW1olrI1uml+o=
+xorm.io/builder v0.3.5/go.mod h1:ZFbByS/KxZI1FKRjL05PyJ4YrK2bcxlUaAxdum5aTR8=
+xorm.io/core v0.6.3/go.mod h1:8kz/C6arVW/O9vk3PgCiMJO2hIAm1UcuOL3dSPyZ2qo=

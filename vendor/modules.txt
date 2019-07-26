@@ -22,7 +22,7 @@ github.com/NYTimes/gziphandler
 github.com/PuerkitoBio/purell
 # github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
 github.com/PuerkitoBio/urlesc
-# github.com/appscode/go v0.0.0-20190621064509-6b292c9166e3
+# github.com/appscode/go v0.0.0-20190722173419-e454bf744023
 github.com/appscode/go/log
 github.com/appscode/go/version
 github.com/appscode/go/encoding/json/types
@@ -958,7 +958,7 @@ kmodules.xyz/client-go/batch/v1beta1
 kmodules.xyz/client-go/dynamic
 kmodules.xyz/client-go/tools/analytics
 kmodules.xyz/client-go/apiregistration/v1beta1
-# kmodules.xyz/custom-resources v0.0.0-20190508103408-464e8324c3ec
+# kmodules.xyz/custom-resources v0.0.0-20190723185639-711575c0b8a9
 kmodules.xyz/custom-resources/client/clientset/versioned
 kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1
 kmodules.xyz/custom-resources/client/clientset/versioned/scheme
@@ -969,7 +969,7 @@ kmodules.xyz/custom-resources/apis/appcatalog
 kmodules.xyz/custom-resources/client/informers/externalversions/appcatalog
 kmodules.xyz/custom-resources/client/informers/externalversions/internalinterfaces
 kmodules.xyz/custom-resources/client/informers/externalversions/appcatalog/v1alpha1
-# kmodules.xyz/objectstore-api v0.0.0-20190715131036-28ef070833ef
+# kmodules.xyz/objectstore-api v0.0.0-20190718002052-da668b440b0b
 kmodules.xyz/objectstore-api/api/v1
 kmodules.xyz/objectstore-api/osm
 # kmodules.xyz/offshoot-api v0.0.0-20190715115723-36c8fce142c1

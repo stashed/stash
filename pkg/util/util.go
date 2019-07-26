@@ -211,9 +211,9 @@ func GetMaxConnections(backend store.Backend) int {
 	if backend.GCS != nil {
 		return backend.GCS.MaxConnections
 	} else if backend.Azure != nil {
-		return backend.GCS.MaxConnections
+		return backend.Azure.MaxConnections
 	} else if backend.B2 != nil {
-		return backend.GCS.MaxConnections
+		return backend.B2.MaxConnections
 	}
 	return 0
 }

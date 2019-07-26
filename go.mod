@@ -3,7 +3,7 @@ module stash.appscode.dev/stash
 go 1.12
 
 require (
-	github.com/appscode/go v0.0.0-20190621064509-6b292c9166e3
+	github.com/appscode/go v0.0.0-20190722173419-e454bf744023
 	github.com/armon/circbuf v0.0.0-20190214190532-5111143e8da2
 	github.com/cenkalti/backoff v2.1.1+incompatible
 	github.com/codeskyblue/go-sh v0.0.0-20190412065543-76bd3d59ff27
@@ -39,8 +39,8 @@ require (
 	k8s.io/kube-openapi v0.0.0-20190502190224-411b2483e503
 	k8s.io/kubernetes v1.14.1
 	kmodules.xyz/client-go v0.0.0-20190715080709-7162a6c90b04
-	kmodules.xyz/custom-resources v0.0.0-20190508103408-464e8324c3ec
-	kmodules.xyz/objectstore-api v0.0.0-20190715131036-28ef070833ef
+	kmodules.xyz/custom-resources v0.0.0-20190723185639-711575c0b8a9
+	kmodules.xyz/objectstore-api v0.0.0-20190718002052-da668b440b0b
 	kmodules.xyz/offshoot-api v0.0.0-20190715115723-36c8fce142c1
 	kmodules.xyz/openshift v0.0.0-20190508141315-99ec9fc946bf
 	kmodules.xyz/webhook-runtime v0.0.0-20190715115250-a84fbf77dd30
