@@ -16,6 +16,7 @@ limitations under the License.
 
 // +k8s:defaulter-gen=TypeMeta
 // +k8s:deepcopy-gen=package
+// +kubebuilder:skip
 
 // Package api is the internal version of the API.
 // +groupName=repositories.stash.appscode.com

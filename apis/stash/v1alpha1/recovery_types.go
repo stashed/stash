@@ -7,10 +7,23 @@ import (
 	store "kmodules.xyz/objectstore-api/api/v1"
 )
 
+const (
+	ResourceKindRecovery     = "Recovery"
+	ResourceSingularRecovery = "recovery"
+	ResourcePluralRecovery   = "recoveries"
+)
+
 // +genclient
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:path=recoveries,singular=recovery,shortName=rec,categories={storage,appscode,all}
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Repository-Namespace",type="string",JSONPath=".spec.repository.namespace"
+// +kubebuilder:printcolumn:name="Repository-Name",type="string",JSONPath=".spec.repository.name"
+// +kubebuilder:printcolumn:name="Snapshot",type="string",JSONPath=".spec.snapshot"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type Recovery struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
