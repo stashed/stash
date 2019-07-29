@@ -52,6 +52,13 @@ func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSess
 	// always enable cache if nothing specified
 	inputs[apis.EnableCache] = strconv.FormatBool(!restoreSession.Spec.TempDir.DisableCaching)
 
+	// pass replicas field to function. if not set pass default 1.
+	replicas := int32(1)
+	if restoreSession.Spec.Target != nil && restoreSession.Spec.Target.Replicas != nil {
+		replicas = *restoreSession.Spec.Target.Replicas
+	}
+	inputs[apis.TargetAppReplicas] = string(replicas)
+
 	// add PushgatewayURL as input
 	metricInputs := c.inputForMetrics()
 	inputs = core_util.UpsertMap(inputs, metricInputs)
