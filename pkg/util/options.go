@@ -22,7 +22,7 @@ func BackupOptionsForBackupConfig(backupConfig api.BackupConfiguration, extraOpt
 		RetentionPolicy: backupConfig.Spec.RetentionPolicy,
 	}
 	if backupConfig.Spec.Target != nil {
-		backupOpt.BackupDirs = backupConfig.Spec.Target.Directories
+		backupOpt.BackupPaths = backupConfig.Spec.Target.Paths
 	}
 	return backupOpt
 }
@@ -45,10 +45,10 @@ func RestoreOptionsForHost(hostname string, rules []api.Rule) restic.RestoreOpti
 
 		if len(rule.TargetHosts) == 0 || go_str.Contains(rule.TargetHosts, hostname) {
 			matchedRule = restic.RestoreOptions{
-				Host:        hostname,
-				SourceHost:  sourceHost,
-				RestoreDirs: rule.Paths,
-				Snapshots:   rule.Snapshots,
+				Host:         hostname,
+				SourceHost:   sourceHost,
+				RestorePaths: rule.Paths,
+				Snapshots:    rule.Snapshots,
 			}
 			// if rule has empty targetHost then check further rules to see if any other rule with non-empty targetHost matches
 			if len(rule.TargetHosts) == 0 {

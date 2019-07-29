@@ -24,10 +24,10 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
+	// BackupBlueprints returns a BackupBlueprintInformer.
+	BackupBlueprints() BackupBlueprintInformer
 	// BackupConfigurations returns a BackupConfigurationInformer.
 	BackupConfigurations() BackupConfigurationInformer
-	// BackupConfigurationTemplates returns a BackupConfigurationTemplateInformer.
-	BackupConfigurationTemplates() BackupConfigurationTemplateInformer
 	// BackupSessions returns a BackupSessionInformer.
 	BackupSessions() BackupSessionInformer
 	// Functions returns a FunctionInformer.
@@ -49,14 +49,14 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
+// BackupBlueprints returns a BackupBlueprintInformer.
+func (v *version) BackupBlueprints() BackupBlueprintInformer {
+	return &backupBlueprintInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
 // BackupConfigurations returns a BackupConfigurationInformer.
 func (v *version) BackupConfigurations() BackupConfigurationInformer {
 	return &backupConfigurationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// BackupConfigurationTemplates returns a BackupConfigurationTemplateInformer.
-func (v *version) BackupConfigurationTemplates() BackupConfigurationTemplateInformer {
-	return &backupConfigurationTemplateInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
 // BackupSessions returns a BackupSessionInformer.

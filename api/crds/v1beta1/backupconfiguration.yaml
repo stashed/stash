@@ -1946,8 +1946,8 @@ spec:
               type: string
             target:
               properties:
-                directories:
-                  description: Directories specify the directories to backup
+                paths:
+                  description: Paths specify the file paths to backup
                   items:
                     type: string
                   type: array

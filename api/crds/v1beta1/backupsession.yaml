@@ -421,10 +421,6 @@ spec:
                       that has been taken for this host in current backup session
                     items:
                       properties:
-                        directory:
-                          description: Directory indicates the directory that has
-                            been backed up in this snapshot
-                          type: string
                         fileStats:
                           properties:
                             modifiedFiles:
@@ -451,6 +447,10 @@ spec:
                         name:
                           description: Name indicates the name of the backup snapshot
                             created for this host
+                          type: string
+                        path:
+                          description: Path indicates the directory that has been
+                            backed up in this snapshot
                           type: string
                         processingTime:
                           description: ProcessingTime indicates time taken to process

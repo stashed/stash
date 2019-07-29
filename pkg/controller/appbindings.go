@@ -59,19 +59,19 @@ func (c *StashController) applyBackupAnnotationLogicForAppBinding(ab *appCatalog
 	}
 
 	// if ab has backup annotations then ensure respective Repository and BackupConfiguration
-	if meta_util.HasKey(ab.Annotations, api_v1beta1.KeyBackupConfigurationTemplate) {
-		// backup annotations found. so, we have to ensure Repository and BackupConfiguration from BackupConfigurationTemplate
-		backupTemplateName, err := meta_util.GetStringValue(ab.Annotations, api_v1beta1.KeyBackupConfigurationTemplate)
+	if meta_util.HasKey(ab.Annotations, api_v1beta1.KeyBackupBlueprint) {
+		// backup annotations found. so, we have to ensure Repository and BackupConfiguration from BackupBlueprint
+		backupBlueprintName, err := meta_util.GetStringValue(ab.Annotations, api_v1beta1.KeyBackupBlueprint)
 		if err != nil {
 			return err
 		}
 
-		backupTemplate, err := c.stashClient.StashV1beta1().BackupConfigurationTemplates().Get(backupTemplateName, metav1.GetOptions{})
+		backupBlueprint, err := c.stashClient.StashV1beta1().BackupBlueprints().Get(backupBlueprintName, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
 
-		// resolve BackupConfigurationTemplate's variables
+		// resolve BackupBlueprint's variables
 		inputs := make(map[string]string)
 		inputs[apis.TargetAPIVersion] = ab.APIVersion
 		inputs[apis.TargetKind] = strings.ToLower(ab.Kind)
@@ -79,19 +79,19 @@ func (c *StashController) applyBackupAnnotationLogicForAppBinding(ab *appCatalog
 		inputs[apis.TargetNamespace] = ab.Namespace
 		inputs[apis.TargetAppVersion] = ab.Spec.Version
 
-		err = resolve.ResolveBackupTemplate(backupTemplate, inputs)
+		err = resolve.ResolveBackupBlueprint(backupBlueprint, inputs)
 		if err != nil {
 			return err
 		}
 
 		// ensure Repository crd
-		err = c.ensureRepository(backupTemplate, targetRef)
+		err = c.ensureRepository(backupBlueprint, targetRef)
 		if err != nil {
 			return err
 		}
 
 		// ensure BackupConfiguration crd
-		err = c.ensureBackupConfiguration(backupTemplate, nil, nil, targetRef)
+		err = c.ensureBackupConfiguration(backupBlueprint, nil, nil, targetRef)
 		if err != nil {
 			return err
 		}

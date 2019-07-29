@@ -22,21 +22,23 @@ type Command struct {
 	Args []interface{}
 }
 
-// if StdinPipeCommand is specified, BackupDirs will not be used
+// BackupOptions specifies backup information
+// if StdinPipeCommand is specified, BackupPaths will not be used
 type BackupOptions struct {
 	Host             string
-	BackupDirs       []string
+	BackupPaths      []string
 	StdinPipeCommand Command
 	StdinFileName    string // default "stdin"
 	RetentionPolicy  v1alpha1.RetentionPolicy
 }
 
+// RestoreOptions specifies restore information
 type RestoreOptions struct {
-	Host        string
-	SourceHost  string
-	RestoreDirs []string
-	Snapshots   []string // when Snapshots are specified SourceHost and RestoreDirs will not be used
-	Destination string   // destination path where snapshot will be restored, used in cli
+	Host         string
+	SourceHost   string
+	RestorePaths []string
+	Snapshots    []string // when Snapshots are specified SourceHost and RestorePaths will not be used
+	Destination  string   // destination path where snapshot will be restored, used in cli
 }
 
 type DumpOptions struct {

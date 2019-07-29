@@ -31,58 +31,58 @@ import (
 	v1beta1 "stash.appscode.dev/stash/client/listers/stash/v1beta1"
 )
 
-// BackupConfigurationTemplateInformer provides access to a shared informer and lister for
-// BackupConfigurationTemplates.
-type BackupConfigurationTemplateInformer interface {
+// BackupBlueprintInformer provides access to a shared informer and lister for
+// BackupBlueprints.
+type BackupBlueprintInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1beta1.BackupConfigurationTemplateLister
+	Lister() v1beta1.BackupBlueprintLister
 }
 
-type backupConfigurationTemplateInformer struct {
+type backupBlueprintInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 }
 
-// NewBackupConfigurationTemplateInformer constructs a new informer for BackupConfigurationTemplate type.
+// NewBackupBlueprintInformer constructs a new informer for BackupBlueprint type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewBackupConfigurationTemplateInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredBackupConfigurationTemplateInformer(client, resyncPeriod, indexers, nil)
+func NewBackupBlueprintInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredBackupBlueprintInformer(client, resyncPeriod, indexers, nil)
 }
 
-// NewFilteredBackupConfigurationTemplateInformer constructs a new informer for BackupConfigurationTemplate type.
+// NewFilteredBackupBlueprintInformer constructs a new informer for BackupBlueprint type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredBackupConfigurationTemplateInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredBackupBlueprintInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.StashV1beta1().BackupConfigurationTemplates().List(options)
+				return client.StashV1beta1().BackupBlueprints().List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.StashV1beta1().BackupConfigurationTemplates().Watch(options)
+				return client.StashV1beta1().BackupBlueprints().Watch(options)
 			},
 		},
-		&stashv1beta1.BackupConfigurationTemplate{},
+		&stashv1beta1.BackupBlueprint{},
 		resyncPeriod,
 		indexers,
 	)
 }
 
-func (f *backupConfigurationTemplateInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredBackupConfigurationTemplateInformer(client, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+func (f *backupBlueprintInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewFilteredBackupBlueprintInformer(client, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
-func (f *backupConfigurationTemplateInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&stashv1beta1.BackupConfigurationTemplate{}, f.defaultInformer)
+func (f *backupBlueprintInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&stashv1beta1.BackupBlueprint{}, f.defaultInformer)
 }
 
-func (f *backupConfigurationTemplateInformer) Lister() v1beta1.BackupConfigurationTemplateLister {
-	return v1beta1.NewBackupConfigurationTemplateLister(f.Informer().GetIndexer())
+func (f *backupBlueprintInformer) Lister() v1beta1.BackupBlueprintLister {
+	return v1beta1.NewBackupBlueprintLister(f.Informer().GetIndexer())
 }

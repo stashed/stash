@@ -18,7 +18,7 @@ var (
 	localRepoDir      string
 	scratchDir        string
 	secretDir         string
-	targetDir         string
+	targetPath        string
 	password          = "password"
 	fileName          = "some-file"
 	fileContent       = "hello stash"
@@ -30,7 +30,7 @@ func setupTest(tempDir string) (*ResticWrapper, error) {
 	localRepoDir = filepath.Join(tempDir, "repo")
 	scratchDir = filepath.Join(tempDir, "scratch")
 	secretDir = filepath.Join(tempDir, "secret")
-	targetDir = filepath.Join(tempDir, "target")
+	targetPath = filepath.Join(tempDir, "target")
 
 	if err := os.MkdirAll(localRepoDir, 0777); err != nil {
 		return nil, err
@@ -47,10 +47,10 @@ func setupTest(tempDir string) (*ResticWrapper, error) {
 		return nil, err
 	}
 
-	if err := os.MkdirAll(targetDir, 0777); err != nil {
+	if err := os.MkdirAll(targetPath, 0777); err != nil {
 		return nil, err
 	}
-	err = ioutil.WriteFile(filepath.Join(targetDir, fileName), []byte(fileContent), os.ModePerm)
+	err = ioutil.WriteFile(filepath.Join(targetPath, fileName), []byte(fileContent), os.ModePerm)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ func TestBackupRestoreDirs(t *testing.T) {
 	defer cleanup(tempDir)
 
 	backupOpt := BackupOptions{
-		BackupDirs: []string{targetDir},
+		BackupPaths: []string{targetPath},
 		RetentionPolicy: api_v1alpha1.RetentionPolicy{
 			Name:     "keep-last-1",
 			KeepLast: 1,
@@ -105,11 +105,11 @@ func TestBackupRestoreDirs(t *testing.T) {
 	fmt.Println(backupOut)
 
 	// delete target then restore
-	if err = os.RemoveAll(targetDir); err != nil {
+	if err = os.RemoveAll(targetPath); err != nil {
 		t.Error(err)
 	}
 	restoreOpt := RestoreOptions{
-		RestoreDirs: []string{targetDir},
+		RestorePaths: []string{targetPath},
 	}
 	restoreOut, err := w.RunRestore(restoreOpt)
 	if err != nil {
@@ -118,7 +118,7 @@ func TestBackupRestoreDirs(t *testing.T) {
 	fmt.Println(restoreOut)
 
 	// check file
-	fileContentByte, err := ioutil.ReadFile(filepath.Join(targetDir, fileName))
+	fileContentByte, err := ioutil.ReadFile(filepath.Join(targetPath, fileName))
 	if err != nil {
 		t.Error(err)
 	}
@@ -185,7 +185,7 @@ func TestBackupRestoreWithScheduling(t *testing.T) {
 	}
 
 	backupOpt := BackupOptions{
-		BackupDirs: []string{targetDir},
+		BackupPaths: []string{targetPath},
 		RetentionPolicy: api_v1alpha1.RetentionPolicy{
 			Name:     "keep-last-1",
 			KeepLast: 1,
@@ -200,11 +200,11 @@ func TestBackupRestoreWithScheduling(t *testing.T) {
 	fmt.Println(backupOut)
 
 	// delete target then restore
-	if err = os.RemoveAll(targetDir); err != nil {
+	if err = os.RemoveAll(targetPath); err != nil {
 		t.Error(err)
 	}
 	restoreOpt := RestoreOptions{
-		RestoreDirs: []string{targetDir},
+		RestorePaths: []string{targetPath},
 	}
 	restoreOut, err := w.RunRestore(restoreOpt)
 	if err != nil {
@@ -213,7 +213,7 @@ func TestBackupRestoreWithScheduling(t *testing.T) {
 	fmt.Println(restoreOut)
 
 	// check file
-	fileContentByte, err := ioutil.ReadFile(filepath.Join(targetDir, fileName))
+	fileContentByte, err := ioutil.ReadFile(filepath.Join(targetPath, fileName))
 	if err != nil {
 		t.Error(err)
 	}
@@ -344,7 +344,7 @@ func TestRunParallelRestore(t *testing.T) {
 	// verify that restored file contents are identical to the backed up file
 	for i := range restoreOptions {
 		// check file
-		restoredFileContent, err := ioutil.ReadFile(filepath.Join(restoreOptions[i].Destination, targetDir, fileName))
+		restoredFileContent, err := ioutil.ReadFile(filepath.Join(restoreOptions[i].Destination, targetPath, fileName))
 		if err != nil {
 			t.Error(err)
 		}
@@ -398,8 +398,8 @@ func TestRunParallelDump(t *testing.T) {
 func newParallelBackupOptions() []BackupOptions {
 	return []BackupOptions{
 		{
-			Host:       "host-0",
-			BackupDirs: []string{targetDir},
+			Host:        "host-0",
+			BackupPaths: []string{targetPath},
 			RetentionPolicy: api_v1alpha1.RetentionPolicy{
 				Name:     "keep-last-1",
 				KeepLast: 1,
@@ -408,8 +408,8 @@ func newParallelBackupOptions() []BackupOptions {
 			},
 		},
 		{
-			Host:       "host-1",
-			BackupDirs: []string{targetDir},
+			Host:        "host-1",
+			BackupPaths: []string{targetPath},
 			RetentionPolicy: api_v1alpha1.RetentionPolicy{
 				Name:     "keep-last-1",
 				KeepLast: 1,
@@ -418,8 +418,8 @@ func newParallelBackupOptions() []BackupOptions {
 			},
 		},
 		{
-			Host:       "host-2",
-			BackupDirs: []string{targetDir},
+			Host:        "host-2",
+			BackupPaths: []string{targetPath},
 			RetentionPolicy: api_v1alpha1.RetentionPolicy{
 				Name:     "keep-last-1",
 				KeepLast: 1,
@@ -443,22 +443,22 @@ func newParallelRestoreOptions(tempDir string) ([]RestoreOptions, error) {
 
 	return []RestoreOptions{
 		{
-			Host:        "host-0",
-			SourceHost:  "",
-			RestoreDirs: []string{targetDir},
-			Destination: filepath.Join(tempDir, "host-0"),
+			Host:         "host-0",
+			SourceHost:   "",
+			RestorePaths: []string{targetPath},
+			Destination:  filepath.Join(tempDir, "host-0"),
 		},
 		{
-			Host:        "host-1",
-			SourceHost:  "",
-			RestoreDirs: []string{targetDir},
-			Destination: filepath.Join(tempDir, "host-1"),
+			Host:         "host-1",
+			SourceHost:   "",
+			RestorePaths: []string{targetPath},
+			Destination:  filepath.Join(tempDir, "host-1"),
 		},
 		{
-			Host:        "host-2",
-			SourceHost:  "",
-			RestoreDirs: []string{targetDir},
-			Destination: filepath.Join(tempDir, "host-2"),
+			Host:         "host-2",
+			SourceHost:   "",
+			RestorePaths: []string{targetPath},
+			Destination:  filepath.Join(tempDir, "host-2"),
 		},
 	}, nil
 }
@@ -468,17 +468,17 @@ func newParallelDumpOptions(tempDir string) ([]DumpOptions, error) {
 	return []DumpOptions{
 		{
 			Host:              "host-0",
-			FileName:          filepath.Join(targetDir, fileName),
+			FileName:          filepath.Join(targetPath, fileName),
 			StdoutPipeCommand: stdoutPipeCommand,
 		},
 		{
 			Host:              "host-1",
-			FileName:          filepath.Join(targetDir, fileName),
+			FileName:          filepath.Join(targetPath, fileName),
 			StdoutPipeCommand: stdoutPipeCommand,
 		},
 		{
 			Host:              "host-2",
-			FileName:          filepath.Join(targetDir, fileName),
+			FileName:          filepath.Join(targetPath, fileName),
 			StdoutPipeCommand: stdoutPipeCommand,
 		},
 	}, nil

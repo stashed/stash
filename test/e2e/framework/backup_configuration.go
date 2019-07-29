@@ -22,7 +22,7 @@ func (f *Invocation) BackupConfiguration(repoName string, targetref v1beta1.Targ
 			Schedule: "*/3 * * * *",
 			Target: &v1beta1.BackupTarget{
 				Ref: targetref,
-				Directories: []string{
+				Paths: []string{
 					TestSourceDataMountPath,
 				},
 				VolumeMounts: []core.VolumeMount{
@@ -63,7 +63,7 @@ func (f *Invocation) PvcBackupTarget(pvcName string) *v1beta1.BackupTarget {
 				MountPath: TestSourceDataMountPath,
 			},
 		},
-		Directories: []string{
+		Paths: []string{
 			TestSourceDataMountPath,
 		},
 	}

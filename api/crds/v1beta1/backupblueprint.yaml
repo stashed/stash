@@ -5,7 +5,7 @@ metadata:
   creationTimestamp: null
   labels:
     app: stash
-  name: backupconfigurationtemplates.stash.appscode.com
+  name: backupblueprints.stash.appscode.com
 spec:
   additionalPrinterColumns:
   - JSONPath: .spec.task.name
@@ -23,11 +23,11 @@ spec:
     - stash
     - appscode
     - backup
-    kind: BackupConfigurationTemplate
-    plural: backupconfigurationtemplates
+    kind: BackupBlueprint
+    plural: backupblueprints
     shortNames:
-    - btpl
-    singular: backupconfigurationtemplate
+    - bb
+    singular: backupblueprint
   scope: Cluster
   validation:
     openAPIV3Schema:
