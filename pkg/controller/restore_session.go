@@ -298,7 +298,16 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		jobTemplate.Spec.Volumes = core_util.UpsertVolume(jobTemplate.Spec.Volumes, volumes...)
 
 		// add ordinal suffix to the job name so that multiple restore job can run concurrently
-		jobTemplate.Name = fmt.Sprintf("%s-%d", jobMeta.Name, ordinal)
+		for i, c := range jobTemplate.Spec.Containers {
+			if c.Name == util.StashContainer {
+				for j, e := range jobTemplate.Spec.Containers[i].Env {
+					if e.Name == util.KeyPodName {
+						jobTemplate.Spec.Containers[i].Env[j].Value = fmt.Sprintf("%s-%d", jobMeta.Name, ordinal)
+					}
+				}
+
+			}
+		}
 
 		// create restore job
 		err = c.createRestoreJob(jobTemplate, jobTemplate.ObjectMeta, ref, serviceAccountName)
