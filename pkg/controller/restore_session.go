@@ -252,13 +252,13 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 
 	if restoreSession.Spec.Task.Name != "" {
 		// Restore process follows Function-Task model. So, resolve Function and Task to get desired job definition.
-		jobTemplate, err = c.resolveRestoreTask(restoreSession, repository, jobMeta, ref, serviceAccountName)
+		jobTemplate, err = c.resolveRestoreTask(restoreSession, repository, ref, serviceAccountName)
 		if err != nil {
 			return err
 		}
 	} else {
 		// Restore process does not follow Function-Task model. So, generate simple volume restorer job definition.
-		jobTemplate, err = util.NewPVCRestorerJob(restoreSession, repository, image, jobMeta)
+		jobTemplate, err = util.NewPVCRestorerJob(restoreSession, repository, image)
 		if err != nil {
 			return err
 		}
@@ -267,7 +267,7 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 	// If volumeClaimTemplate is not specified then we don't need any further processing. Just, create the job
 	if restoreSession.Spec.Target == nil ||
 		(restoreSession.Spec.Target != nil && len(restoreSession.Spec.Target.VolumeClaimTemplates) == 0) {
-		return c.createRestoreJob(jobTemplate, jobTemplate.ObjectMeta, ref, serviceAccountName)
+		return c.createRestoreJob(jobTemplate, jobMeta, ref, serviceAccountName)
 	}
 
 	// volumeClaimTemplate has been specified. Now, we have to do the following for each replica:
@@ -295,21 +295,27 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 
 		// add PVCs as volume to the job
 		volumes := util.PVCListToVolumes(pvcList, ordinal)
-		jobTemplate.Spec.Volumes = core_util.UpsertVolume(jobTemplate.Spec.Volumes, volumes...)
 
+		// use copy of the original job template. otherwise, each iteration will append volumes in the same template
+		restoreJobTemplate := jobTemplate.DeepCopy()
+		restoreJobMeta := jobMeta.DeepCopy()
 		// add ordinal suffix to the job name so that multiple restore job can run concurrently
-		for i, c := range jobTemplate.Spec.Containers {
-			if c.Name == util.StashContainer {
-				for j, e := range jobTemplate.Spec.Containers[i].Env {
-					if e.Name == util.KeyPodOrdinal {
-						jobTemplate.Spec.Containers[i].Env[j].Value = fmt.Sprintf("%d", ordinal)
-					}
-				}
-			}
+		restoreJobMeta.Name = fmt.Sprintf("%s-%d", jobMeta.Name, ordinal)
+
+		restoreJobTemplate.Spec.Volumes = core_util.UpsertVolume(restoreJobTemplate.Spec.Volumes, volumes...)
+
+		ordinalEnv := core.EnvVar{
+			Name:  util.KeyPodOrdinal,
+			Value: fmt.Sprintf("%d", ordinal),
+		}
+
+		// insert POD_ORDINAL env in all containers.
+		for i, c := range restoreJobTemplate.Spec.Containers {
+			restoreJobTemplate.Spec.Containers[i].Env = core_util.UpsertEnvVars(c.Env, ordinalEnv)
 		}
 
 		// create restore job
-		err = c.createRestoreJob(jobTemplate, jobTemplate.ObjectMeta, ref, serviceAccountName)
+		err = c.createRestoreJob(restoreJobTemplate, *restoreJobMeta, ref, serviceAccountName)
 		if err != nil {
 			return err
 		}
@@ -337,7 +343,7 @@ func (c *StashController) createRestoreJob(jobTemplate *core.PodTemplateSpec, me
 
 // resolveRestoreTask resolves Functions and Tasks then returns a job definition to restore the target.
 func (c *StashController) resolveRestoreTask(restoreSession *api_v1beta1.RestoreSession,
-	repository *api_v1alpha1.Repository, meta metav1.ObjectMeta, ref *core.ObjectReference, serviceAccountName string) (*core.PodTemplateSpec, error) {
+	repository *api_v1alpha1.Repository, ref *core.ObjectReference, serviceAccountName string) (*core.PodTemplateSpec, error) {
 
 	// resolve task template
 	explicitInputs := make(map[string]string)
@@ -392,8 +398,7 @@ func (c *StashController) resolveRestoreTask(restoreSession *api_v1beta1.Restore
 	}
 
 	podTemplate := &core.PodTemplateSpec{
-		ObjectMeta: meta,
-		Spec:       podSpec,
+		Spec: podSpec,
 	}
 	return podTemplate, nil
 }
@@ -610,7 +615,7 @@ func getPVCFromVolumeClaimTemplates(ordinal int32, claimTemplates []core.Persist
 	pvcList := make([]core.PersistentVolumeClaim, 0)
 	for _, claim := range claimTemplates {
 		inputs := make(map[string]string)
-		inputs["POD_ORDINAL"] = strconv.Itoa(int(ordinal))
+		inputs[util.KeyPodOrdinal] = strconv.Itoa(int(ordinal))
 		err := resolve.ResolvePVCSpec(&claim, inputs)
 		if err != nil {
 			return pvcList, err
