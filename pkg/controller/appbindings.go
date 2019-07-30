@@ -58,21 +58,7 @@ func (c *StashController) applyBackupAnnotationLogicForAppBinding(ab *appCatalog
 		return fmt.Errorf("failed to create reference of %s %s/%s. Reason: %v", ab.Kind, ab.Namespace, ab.Name, err)
 	}
 
-	if ab.Spec.Type == "" {
-		return fmt.Errorf("type field is empty for AppBinding: %s/%s. Please set it to respective database types. (example: types: PostgreSQL)", ab.Namespace, ab.Name)
-	}
-	// split / separated app type
-	targetAppGroupResource := strings.Split(string(ab.Spec.Type), "/")
-	size := len(targetAppGroupResource)
-
-	// take last part as resource type
-	targetAppResource := targetAppGroupResource[size-1]
-
-	// take rest of the part as group
-	targetAppGroup := ""
-	if size > 1 {
-		targetAppGroup = strings.Join(targetAppGroupResource[0:size-1], "/")
-	}
+	targetAppGroup, targetAppResource := ab.AppGroupResource()
 
 	// if ab has backup annotations then ensure respective Repository and BackupConfiguration
 	if meta_util.HasKey(ab.Annotations, api_v1beta1.KeyBackupBlueprint) {
