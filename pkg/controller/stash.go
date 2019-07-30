@@ -198,21 +198,27 @@ func (c *StashController) getTotalHosts(target interface{}, namespace string, dr
 			return types.Int32P(1), nil
 		}
 		targetRef = t.Ref
+
 	case *api_v1beta1.RestoreTarget:
 		t := target.(*api_v1beta1.RestoreTarget)
 		if t == nil {
 			return types.Int32P(1), nil
 		}
 		targetRef = t.Ref
+
+		// for VolumeSnapshot, we consider each PVC as a separate host.
+		// hence, number of host = replica * number of PVC in each replica
 		if driver == api_v1beta1.VolumeSnapshotter {
-			def := int32(1)
+			replica := int32(1)
 			if t.Replicas != nil {
-				def = types.Int32(t.Replicas)
+				replica = types.Int32(t.Replicas)
 			}
-			return types.Int32P(def * int32(len(t.VolumeClaimTemplates))), nil
+			return types.Int32P(replica * int32(len(t.VolumeClaimTemplates))), nil
 		}
-		// if volumeClaimTemplates is specified when using Restic driver, we can calculate total host from it
-		if driver != api_v1beta1.VolumeSnapshotter && t.VolumeClaimTemplates != nil {
+
+		// if volumeClaimTemplates is specified when using Restic driver, restore is done through job.
+		// stash creates restore job for each replica. hence, number of total host is the number of replicas.
+		if len(t.VolumeClaimTemplates) != 0 || t.Replicas != nil {
 			if t.Replicas == nil {
 				return types.Int32P(1), nil
 			} else {

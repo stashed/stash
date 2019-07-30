@@ -59,8 +59,9 @@ const (
 	StashSecretVolume        = "stash-secret-volume"
 	StashSecretMountDir      = "/etc/stash/repository/secret"
 
-	KeyPodName  = "POD_NAME"
-	KeyNodeName = "NODE_NAME"
+	KeyPodName    = "POD_NAME"
+	KeyNodeName   = "NODE_NAME"
+	KeyPodOrdinal = "POD_ORDINAL"
 
 	RetryInterval    = 50 * time.Millisecond
 	ReadinessTimeout = 2 * time.Minute
