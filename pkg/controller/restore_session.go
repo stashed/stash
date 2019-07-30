@@ -301,11 +301,10 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		for i, c := range jobTemplate.Spec.Containers {
 			if c.Name == util.StashContainer {
 				for j, e := range jobTemplate.Spec.Containers[i].Env {
-					if e.Name == util.KeyPodName {
-						jobTemplate.Spec.Containers[i].Env[j].Value = fmt.Sprintf("%s-%d", jobMeta.Name, ordinal)
+					if e.Name == util.KeyPodOrdinal {
+						jobTemplate.Spec.Containers[i].Env[j].Value = fmt.Sprintf("%d", ordinal)
 					}
 				}
-
 			}
 		}
 

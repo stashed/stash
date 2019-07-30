@@ -63,13 +63,11 @@ func GetHostName(target interface{}) (string, error) {
 		// replicas is specified when restore StatefulSet volumes using job.
 		// so we have to handle this case too.
 		if t.Replicas != nil { // StatefulSet volumes.
-			podName := os.Getenv(KeyPodName)
-			if podName == "" {
-				return "", fmt.Errorf("missing podName for %s", apis.KindStatefulSet)
+		    if os.Getenv(KeyPodOrdinal) != ""{
+		    	return "host-" + os.Getenv(KeyPodOrdinal), nil
+			}else{
+				return "", fmt.Errorf("missing pod ordinal for %s", apis.KindStatefulSet)
 			}
-			podInfo := strings.Split(podName, "-")
-			podOrdinal := podInfo[len(podInfo)-1]
-			return "host-" + podOrdinal, nil
 		}
 		targetRef = t.Ref
 	}

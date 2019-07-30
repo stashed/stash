@@ -218,8 +218,8 @@ func NewPVCRestorerJob(rs *api_v1beta1.RestoreSession, repository *api_v1alpha1.
 		}, cli.LoggerOptions.ToFlags()...),
 		Env: []core.EnvVar{
 			{
-				Name:  KeyPodName,
-				Value: meta.Name,
+				Name:  KeyPodOrdinal,
+				Value: "0",
 			},
 			{
 				Name: KeyNodeName,
