@@ -15,14 +15,15 @@ const (
 
 	Hostname = "HOSTNAME"
 
-	TargetName       = "TARGET_NAME"
-	TargetAPIVersion = "TARGET_API_VERSION"
-	TargetKind       = "TARGET_KIND"
-	TargetResource   = "TARGET_RESOURCE"
-	TargetNamespace  = "TARGET_NAMESPACE"
-	TargetMountPath  = "TARGET_MOUNT_PATH"
-	TargetPaths      = "TARGET_PATHS"
-	TargetAppVersion = "TARGET_APP_VERSION"
+	TargetName        = "TARGET_NAME"
+	TargetAPIVersion  = "TARGET_API_VERSION"
+	TargetKind        = "TARGET_KIND"
+	TargetResource    = "TARGET_RESOURCE"
+	TargetNamespace   = "TARGET_NAMESPACE"
+	TargetMountPath   = "TARGET_MOUNT_PATH"
+	TargetPaths       = "TARGET_PATHS"
+	TargetAppVersion  = "TARGET_APP_VERSION"
+	TargetAppReplicas = "TARGET_APP_REPLICAS"
 
 	RestorePaths     = "RESTORE_PATHS"
 	RestoreSnapshots = "RESTORE_SNAPSHOTS"
