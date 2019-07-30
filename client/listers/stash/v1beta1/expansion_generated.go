@@ -18,6 +18,10 @@ limitations under the License.
 
 package v1beta1
 
+// BackupBlueprintListerExpansion allows custom methods to be added to
+// BackupBlueprintLister.
+type BackupBlueprintListerExpansion interface{}
+
 // BackupConfigurationListerExpansion allows custom methods to be added to
 // BackupConfigurationLister.
 type BackupConfigurationListerExpansion interface{}
@@ -25,10 +29,6 @@ type BackupConfigurationListerExpansion interface{}
 // BackupConfigurationNamespaceListerExpansion allows custom methods to be added to
 // BackupConfigurationNamespaceLister.
 type BackupConfigurationNamespaceListerExpansion interface{}
-
-// BackupConfigurationTemplateListerExpansion allows custom methods to be added to
-// BackupConfigurationTemplateLister.
-type BackupConfigurationTemplateListerExpansion interface{}
 
 // BackupSessionListerExpansion allows custom methods to be added to
 // BackupSessionLister.

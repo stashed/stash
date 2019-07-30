@@ -98,9 +98,9 @@ func ReadRestoreOutput(filename string) (*RestoreOutput, error) {
 
 // ExtractBackupInfo extract information from output of "restic backup" command and
 // save valuable information into backupOutput
-func extractBackupInfo(output []byte, directory string, hostname string) (api_v1beta1.SnapshotStats, error) {
+func extractBackupInfo(output []byte, path string, hostname string) (api_v1beta1.SnapshotStats, error) {
 	snapshotStats := api_v1beta1.SnapshotStats{
-		Directory: directory,
+		Path: path,
 	}
 
 	// unmarshal json output

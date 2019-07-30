@@ -27,8 +27,8 @@ import (
 
 type StashV1beta1Interface interface {
 	RESTClient() rest.Interface
+	BackupBlueprintsGetter
 	BackupConfigurationsGetter
-	BackupConfigurationTemplatesGetter
 	BackupSessionsGetter
 	FunctionsGetter
 	RestoreSessionsGetter
@@ -40,12 +40,12 @@ type StashV1beta1Client struct {
 	restClient rest.Interface
 }
 
-func (c *StashV1beta1Client) BackupConfigurations(namespace string) BackupConfigurationInterface {
-	return newBackupConfigurations(c, namespace)
+func (c *StashV1beta1Client) BackupBlueprints() BackupBlueprintInterface {
+	return newBackupBlueprints(c)
 }
 
-func (c *StashV1beta1Client) BackupConfigurationTemplates() BackupConfigurationTemplateInterface {
-	return newBackupConfigurationTemplates(c)
+func (c *StashV1beta1Client) BackupConfigurations(namespace string) BackupConfigurationInterface {
+	return newBackupConfigurations(c, namespace)
 }
 
 func (c *StashV1beta1Client) BackupSessions(namespace string) BackupSessionInterface {

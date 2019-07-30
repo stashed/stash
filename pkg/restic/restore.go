@@ -188,8 +188,8 @@ func (w *ResticWrapper) runRestore(restoreOptions RestoreOptions) error {
 				return err
 			}
 		}
-	} else if len(restoreOptions.RestoreDirs) != 0 {
-		for _, path := range restoreOptions.RestoreDirs {
+	} else if len(restoreOptions.RestorePaths) != 0 {
+		for _, path := range restoreOptions.RestorePaths {
 			if _, err := w.restore(path, restoreOptions.SourceHost, "", restoreOptions.Destination); err != nil {
 				return err
 			}

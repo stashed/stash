@@ -48,7 +48,7 @@ func generateCRDDefinitions() {
 		stashv1beta1.Function{}.CustomResourceDefinition(),
 		stashv1beta1.BackupConfiguration{}.CustomResourceDefinition(),
 		stashv1beta1.BackupSession{}.CustomResourceDefinition(),
-		stashv1beta1.BackupConfigurationTemplate{}.CustomResourceDefinition(),
+		stashv1beta1.BackupBlueprint{}.CustomResourceDefinition(),
 		stashv1beta1.RestoreSession{}.CustomResourceDefinition(),
 		stashv1beta1.Task{}.CustomResourceDefinition(),
 	}
@@ -113,7 +113,7 @@ func generateSwaggerJson() {
 			// v1beta1 resources
 			{stashv1beta1.SchemeGroupVersion, stashv1beta1.ResourcePluralBackupConfiguration, stashv1beta1.ResourceKindBackupConfiguration, true},
 			{stashv1beta1.SchemeGroupVersion, stashv1beta1.ResourceKindBackupSession, stashv1beta1.ResourceKindBackupSession, true},
-			{stashv1beta1.SchemeGroupVersion, stashv1beta1.ResourceKindBackupConfigurationTemplate, stashv1beta1.ResourceKindBackupConfigurationTemplate, false},
+			{stashv1beta1.SchemeGroupVersion, stashv1beta1.ResourceKindBackupBlueprint, stashv1beta1.ResourceKindBackupBlueprint, false},
 			{stashv1beta1.SchemeGroupVersion, stashv1beta1.ResourcePluralRestoreSession, stashv1beta1.ResourceKindRestoreSession, true},
 			{stashv1beta1.SchemeGroupVersion, stashv1beta1.ResourceKindFunction, stashv1beta1.ResourceKindFunction, false},
 			{stashv1beta1.SchemeGroupVersion, stashv1beta1.ResourcePluralTask, stashv1beta1.ResourceKindTask, false},

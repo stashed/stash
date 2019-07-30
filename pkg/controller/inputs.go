@@ -46,7 +46,7 @@ func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSess
 	// append inputs from RestoreOptions
 	restoreOptions := util.RestoreOptionsForHost(host, restoreSession.Spec.Rules)
 	inputs[apis.Hostname] = restoreOptions.SourceHost
-	inputs[apis.RestoreDirectories] = strings.Join(restoreOptions.RestoreDirs, ",")
+	inputs[apis.RestorePaths] = strings.Join(restoreOptions.RestorePaths, ",")
 	inputs[apis.RestoreSnapshots] = strings.Join(restoreOptions.Snapshots, ",")
 
 	// always enable cache if nothing specified
@@ -99,8 +99,8 @@ func (c *StashController) inputsForBackupTarget(target *api.BackupTarget) map[st
 		if target.Ref.Name != "" {
 			inputs[apis.TargetName] = target.Ref.Name
 		}
-		if len(target.Directories) > 0 {
-			inputs[apis.TargetDirectories] = strings.Join(target.Directories, ",")
+		if len(target.Paths) > 0 {
+			inputs[apis.TargetPaths] = strings.Join(target.Paths, ",")
 		}
 		if target.VolumeMounts != nil {
 			inputs[apis.TargetMountPath] = target.VolumeMounts[0].MountPath

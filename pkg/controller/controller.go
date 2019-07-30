@@ -137,7 +137,7 @@ func (c *StashController) ensureCustomResourceDefinitions() error {
 		api_v1beta1.BackupSession{}.CustomResourceDefinition(),
 		api_v1beta1.Task{}.CustomResourceDefinition(),
 		api_v1beta1.Function{}.CustomResourceDefinition(),
-		api_v1beta1.BackupConfigurationTemplate{}.CustomResourceDefinition(),
+		api_v1beta1.BackupBlueprint{}.CustomResourceDefinition(),
 		api_v1beta1.BackupConfiguration{}.CustomResourceDefinition(),
 		api_v1beta1.BackupSession{}.CustomResourceDefinition(),
 		api_v1beta1.RestoreSession{}.CustomResourceDefinition(),

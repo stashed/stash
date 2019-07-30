@@ -7,9 +7,9 @@ import (
 )
 
 const (
-	ResourceKindBackupConfigurationTemplate     = "BackupConfigurationTemplate"
-	ResourcePluralBackupConfigurationTemplate   = "backupconfigurationtemplates"
-	ResourceSingularBackupConfigurationTemplate = "backupconfigurationtemplate"
+	ResourceKindBackupBlueprint     = "BackupBlueprint"
+	ResourcePluralBackupBlueprint   = "backupblueprints"
+	ResourceSingularBackupBlueprint = "backupblueprint"
 )
 
 // +genclient
@@ -17,13 +17,13 @@ const (
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-type BackupConfigurationTemplate struct {
+type BackupBlueprint struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              BackupConfigurationTemplateSpec `json:"spec,omitempty"`
+	Spec              BackupBlueprintSpec `json:"spec,omitempty"`
 }
 
-type BackupConfigurationTemplateSpec struct {
+type BackupBlueprintSpec struct {
 	// RepositorySpec is used to create Repository crd for respective workload
 	v1alpha1.RepositorySpec `json:",inline"`
 	Schedule                string `json:"schedule,omitempty"`
@@ -43,8 +43,8 @@ type BackupConfigurationTemplateSpec struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-type BackupConfigurationTemplateList struct {
+type BackupBlueprintList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []BackupConfigurationTemplate `json:"items,omitempty"`
+	Items           []BackupBlueprint `json:"items,omitempty"`
 }

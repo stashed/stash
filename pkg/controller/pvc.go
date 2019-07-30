@@ -63,11 +63,11 @@ func (c *StashController) applyBackupAnnotationLogicForPVC(pvc *core.PersistentV
 	}
 
 	// if pvc has backup annotations then ensure respective Repository and BackupConfiguration
-	if meta_util.HasKey(pvc.Annotations, api_v1beta1.KeyBackupConfigurationTemplate) &&
+	if meta_util.HasKey(pvc.Annotations, api_v1beta1.KeyBackupBlueprint) &&
 		meta_util.HasKey(pvc.Annotations, api_v1beta1.KeyMountPath) &&
-		meta_util.HasKey(pvc.Annotations, api_v1beta1.KeyTargetDirectories) {
-		// backup annotations found. so, we have to ensure Repository and BackupConfiguration from BackupConfigurationTemplate
-		backupTemplateName, err := meta_util.GetStringValue(pvc.Annotations, api_v1beta1.KeyBackupConfigurationTemplate)
+		meta_util.HasKey(pvc.Annotations, api_v1beta1.KeyTargetPaths) {
+		// backup annotations found. so, we have to ensure Repository and BackupConfiguration from BackupBlueprint
+		backupBlueprintName, err := meta_util.GetStringValue(pvc.Annotations, api_v1beta1.KeyBackupBlueprint)
 		if err != nil {
 			return err
 		}
@@ -75,30 +75,30 @@ func (c *StashController) applyBackupAnnotationLogicForPVC(pvc *core.PersistentV
 		if err != nil {
 			return err
 		}
-		directories, err := meta_util.GetStringValue(pvc.Annotations, api_v1beta1.KeyTargetDirectories)
+		paths, err := meta_util.GetStringValue(pvc.Annotations, api_v1beta1.KeyTargetPaths)
 		if err != nil {
 			return err
 		}
 
-		backupTemplate, err := c.stashClient.StashV1beta1().BackupConfigurationTemplates().Get(backupTemplateName, metav1.GetOptions{})
+		backupBlueprint, err := c.stashClient.StashV1beta1().BackupBlueprints().Get(backupBlueprintName, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
 
-		// resolve BackupConfigurationTemplate's variables
+		// resolve BackupBlueprint's variables
 		inputs := make(map[string]string)
 		inputs[apis.TargetAPIVersion] = pvc.APIVersion
 		inputs[apis.TargetKind] = strings.ToLower(pvc.Kind)
 		inputs[apis.TargetName] = pvc.Name
 		inputs[apis.TargetNamespace] = pvc.Namespace
 
-		err = resolve.ResolveBackupTemplate(backupTemplate, inputs)
+		err = resolve.ResolveBackupBlueprint(backupBlueprint, inputs)
 		if err != nil {
 			return err
 		}
 
 		// ensure Repository crd
-		err = c.ensureRepository(backupTemplate, targetRef)
+		err = c.ensureRepository(backupBlueprint, targetRef)
 		if err != nil {
 			return err
 		}
@@ -110,7 +110,7 @@ func (c *StashController) applyBackupAnnotationLogicForPVC(pvc *core.PersistentV
 				MountPath: mountPath,
 			},
 		}
-		err = c.ensureBackupConfiguration(backupTemplate, strings.Split(directories, ","), volumeMounts, targetRef)
+		err = c.ensureBackupConfiguration(backupBlueprint, strings.Split(paths, ","), volumeMounts, targetRef)
 		if err != nil {
 			return err
 		}

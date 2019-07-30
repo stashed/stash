@@ -123,8 +123,8 @@ func resolveWithInputs(obj interface{}, inputs map[string]string) error {
 	return json.Unmarshal([]byte(resolved), obj)
 }
 
-func ResolveBackupTemplate(btpl *v1beta1_api.BackupConfigurationTemplate, input map[string]string) error {
-	return resolveWithInputs(btpl, input)
+func ResolveBackupBlueprint(bb *v1beta1_api.BackupBlueprint, input map[string]string) error {
+	return resolveWithInputs(bb, input)
 }
 
 func ResolvePVCSpec(pvc *core.PersistentVolumeClaim, input map[string]string) error {

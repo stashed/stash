@@ -29,15 +29,15 @@ func (c *StashController) applyBackupAnnotationLogic(w *wapi.Workload) error {
 		return fmt.Errorf("failed to create object reference of %s %s/%s. Reason: %v", w.Kind, w.Namespace, w.Namespace, err)
 	}
 	// if workload has backup annotations then ensure respective Repository and BackupConfiguration
-	if meta_util.HasKey(w.Annotations, api_v1beta1.KeyBackupConfigurationTemplate) &&
-		meta_util.HasKey(w.Annotations, api_v1beta1.KeyTargetDirectories) &&
+	if meta_util.HasKey(w.Annotations, api_v1beta1.KeyBackupBlueprint) &&
+		meta_util.HasKey(w.Annotations, api_v1beta1.KeyTargetPaths) &&
 		meta_util.HasKey(w.Annotations, api_v1beta1.KeyVolumeMounts) {
-		// backup annotations found. so, we have to ensure Repository and BackupConfiguration from BackupConfigurationTemplate
-		backupTemplateName, err := meta_util.GetStringValue(w.Annotations, api_v1beta1.KeyBackupConfigurationTemplate)
+		// backup annotations found. so, we have to ensure Repository and BackupConfiguration from BackupBlueprint
+		backupBlueprintName, err := meta_util.GetStringValue(w.Annotations, api_v1beta1.KeyBackupBlueprint)
 		if err != nil {
 			return err
 		}
-		directories, err := meta_util.GetStringValue(w.Annotations, api_v1beta1.KeyTargetDirectories)
+		paths, err := meta_util.GetStringValue(w.Annotations, api_v1beta1.KeyTargetPaths)
 		if err != nil {
 			return err
 		}
@@ -57,13 +57,13 @@ func (c *StashController) applyBackupAnnotationLogic(w *wapi.Workload) error {
 				return fmt.Errorf("invalid volume-mounts annotations. use 'vol1Name:mountPath,vol2Name:mountPath' format")
 			}
 		}
-		// read respective BackupConfigurationTemplate crd
-		backupTemplate, err := c.stashClient.StashV1beta1().BackupConfigurationTemplates().Get(backupTemplateName, metav1.GetOptions{})
+		// read respective BackupBlueprint crd
+		backupBlueprint, err := c.stashClient.StashV1beta1().BackupBlueprints().Get(backupBlueprintName, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
 
-		// resolve BackupConfigurationTemplate's variables
+		// resolve BackupBlueprint's variables
 		inputs := make(map[string]string)
 		inputs[apis.TargetAPIVersion] = w.APIVersion
 		inputs[apis.TargetKind] = strings.ToLower(w.Kind)
@@ -76,19 +76,19 @@ func (c *StashController) applyBackupAnnotationLogic(w *wapi.Workload) error {
 		}
 		inputs[apis.TargetResource] = gvr.Resource
 
-		err = resolve.ResolveBackupTemplate(backupTemplate, inputs)
+		err = resolve.ResolveBackupBlueprint(backupBlueprint, inputs)
 		if err != nil {
 			return err
 		}
 
 		// ensure Repository crd
-		err = c.ensureRepository(backupTemplate, targetRef)
+		err = c.ensureRepository(backupBlueprint, targetRef)
 		if err != nil {
 			return err
 		}
 
 		// ensure BackupConfiguration crd
-		err = c.ensureBackupConfiguration(backupTemplate, strings.Split(directories, ","), volumeMounts, targetRef)
+		err = c.ensureBackupConfiguration(backupBlueprint, strings.Split(paths, ","), volumeMounts, targetRef)
 		if err != nil {
 			return err
 		}
@@ -183,19 +183,19 @@ func (c *StashController) applyResticLogic(w *wapi.Workload, caller string) (boo
 	return false, nil
 }
 
-func (c *StashController) ensureRepository(backupTemplate *api_v1beta1.BackupConfigurationTemplate, target *core.ObjectReference) error {
+func (c *StashController) ensureRepository(backupBlueprint *api_v1beta1.BackupBlueprint, target *core.ObjectReference) error {
 	meta := metav1.ObjectMeta{
 		Name:      getRepositoryName(target),
 		Namespace: target.Namespace,
 	}
 	_, _, err := v1alpha1_util.CreateOrPatchRepository(c.stashClient.StashV1alpha1(), meta, func(in *api_v1alpha1.Repository) *api_v1alpha1.Repository {
-		in.Spec.Backend = backupTemplate.Spec.Backend
+		in.Spec.Backend = backupBlueprint.Spec.Backend
 		return in
 	})
 	return err
 }
 
-func (c *StashController) ensureBackupConfiguration(backupTemplate *api_v1beta1.BackupConfigurationTemplate, directories []string, volumeMounts []core.VolumeMount, target *core.ObjectReference) error {
+func (c *StashController) ensureBackupConfiguration(backupBlueprint *api_v1beta1.BackupBlueprint, paths []string, volumeMounts []core.VolumeMount, target *core.ObjectReference) error {
 	meta := metav1.ObjectMeta{
 		Name:      getBackupConfigurationName(target),
 		Namespace: target.Namespace,
@@ -210,15 +210,15 @@ func (c *StashController) ensureBackupConfiguration(backupTemplate *api_v1beta1.
 				Kind:       target.Kind,
 				Name:       target.Name,
 			},
-			Directories:  directories,
+			Paths:        paths,
 			VolumeMounts: volumeMounts,
 		}
 
-		in.Spec.Schedule = backupTemplate.Spec.Schedule
-		in.Spec.Task = backupTemplate.Spec.Task
-		in.Spec.RetentionPolicy = backupTemplate.Spec.RetentionPolicy
-		in.Spec.RuntimeSettings = backupTemplate.Spec.RuntimeSettings
-		in.Spec.TempDir = backupTemplate.Spec.TempDir
+		in.Spec.Schedule = backupBlueprint.Spec.Schedule
+		in.Spec.Task = backupBlueprint.Spec.Task
+		in.Spec.RetentionPolicy = backupBlueprint.Spec.RetentionPolicy
+		in.Spec.RuntimeSettings = backupBlueprint.Spec.RuntimeSettings
+		in.Spec.TempDir = backupBlueprint.Spec.TempDir
 		return in
 	})
 

@@ -9,19 +9,19 @@ import (
 	crdutils "kmodules.xyz/client-go/apiextensions/v1beta1"
 )
 
-func (btpl BackupConfigurationTemplate) GetSpecHash() string {
+func (bb BackupBlueprint) GetSpecHash() string {
 	hash := fnv.New64a()
-	hashutil.DeepHashObject(hash, btpl.Spec)
+	hashutil.DeepHashObject(hash, bb.Spec)
 	return strconv.FormatUint(hash.Sum64(), 10)
 }
 
-func (btpl BackupConfigurationTemplate) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
+func (bb BackupBlueprint) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
 	return crdutils.NewCustomResourceDefinition(crdutils.Config{
 		Group:         SchemeGroupVersion.Group,
-		Plural:        ResourcePluralBackupConfigurationTemplate,
-		Singular:      ResourceSingularBackupConfigurationTemplate,
-		Kind:          ResourceKindBackupConfigurationTemplate,
-		ShortNames:    []string{"btpl"},
+		Plural:        ResourcePluralBackupBlueprint,
+		Singular:      ResourceSingularBackupBlueprint,
+		Kind:          ResourceKindBackupBlueprint,
+		ShortNames:    []string{"bb"},
 		Categories:    []string{"stash", "appscode", "backup"},
 		ResourceScope: string(apiextensions.ClusterScoped),
 		Versions: []apiextensions.CustomResourceDefinitionVersion{
@@ -34,7 +34,7 @@ func (btpl BackupConfigurationTemplate) CustomResourceDefinition() *apiextension
 		Labels: crdutils.Labels{
 			LabelsMap: map[string]string{"app": "stash"},
 		},
-		SpecDefinitionName:    "stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplate",
+		SpecDefinitionName:    "stash.appscode.dev/stash/apis/stash/v1beta1.BackupBlueprint",
 		EnableValidation:      true,
 		GetOpenAPIDefinitions: GetOpenAPIDefinitions,
 		AdditionalPrinterColumns: []apiextensions.CustomResourceColumnDefinition{

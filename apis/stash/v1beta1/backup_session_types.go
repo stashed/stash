@@ -87,8 +87,8 @@ type HostBackupStats struct {
 type SnapshotStats struct {
 	// Name indicates the name of the backup snapshot created for this host
 	Name string `json:"name,omitempty"`
-	// Directory indicates the directory that has been backed up in this snapshot
-	Directory string `json:"directory,omitempty"`
+	// Path indicates the directory that has been backed up in this snapshot
+	Path string `json:"path,omitempty"`
 	// Size indicates the size of data to backup in target directory
 	Size string `json:"size,omitempty"`
 	// Uploaded indicates size of data uploaded to backend for this snapshot

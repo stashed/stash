@@ -31,7 +31,7 @@ func NewCmdRunBackup() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:               "run-backup",
-		Short:             "Take backup of workload directories",
+		Short:             "Take backup of workload paths",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := clientcmd.BuildConfigFromFlags(con.MasterURL, con.KubeconfigPath)

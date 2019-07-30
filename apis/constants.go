@@ -21,12 +21,12 @@ const (
 	TargetResource    = "TARGET_RESOURCE"
 	TargetNamespace   = "TARGET_NAMESPACE"
 	TargetMountPath   = "TARGET_MOUNT_PATH"
-	TargetDirectories = "TARGET_DIRECTORIES"
+	TargetPaths       = "TARGET_PATHS"
 	TargetAppVersion  = "TARGET_APP_VERSION"
 	TargetAppReplicas = "TARGET_APP_REPLICAS"
 
-	RestoreDirectories = "RESTORE_DIRECTORIES"
-	RestoreSnapshots   = "RESTORE_SNAPSHOTS"
+	RestorePaths     = "RESTORE_PATHS"
+	RestoreSnapshots = "RESTORE_SNAPSHOTS"
 
 	RetentionKeepLast    = "RETENTION_KEEP_LAST"
 	RetentionKeepHourly  = "RETENTION_KEEP_HOURLY"
