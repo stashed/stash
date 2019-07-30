@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/appscode/go/log"
 	"github.com/golang/glog"
@@ -199,7 +200,7 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 	}
 
 	meta := metav1.ObjectMeta{
-		Name:      backupConfiguration.Name,
+		Name:      getBackupCronJobName(backupConfiguration),
 		Namespace: backupConfiguration.Namespace,
 		Labels:    offshootLabels,
 	}
@@ -269,7 +270,7 @@ func (c *StashController) EnsureCronJobDeleted(backupConfiguration *api_v1beta1.
 		return err
 	}
 
-	cur, err := c.kubeClient.BatchV1beta1().CronJobs(backupConfiguration.Namespace).Get(backupConfiguration.Name, metav1.GetOptions{})
+	cur, err := c.kubeClient.BatchV1beta1().CronJobs(backupConfiguration.Namespace).Get(getBackupCronJobName(backupConfiguration), metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			return nil
@@ -282,4 +283,8 @@ func (c *StashController) EnsureCronJobDeleted(backupConfiguration *api_v1beta1.
 		return in
 	})
 	return err
+}
+
+func getBackupCronJobName(backupConfiguration *api_v1beta1.BackupConfiguration) string {
+	return strings.ReplaceAll(backupConfiguration.Name, ".", "-")
 }

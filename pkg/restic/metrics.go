@@ -261,12 +261,20 @@ func HandleBackupSetupMetrics(metricOpt MetricsOptions, setupErr error) error {
 
 // HandleMetrics generate and send Prometheus metrics for backup process
 func (backupOutput *BackupOutput) HandleMetrics(metricOpt *MetricsOptions, backupErr error) error {
-	if backupOutput == nil {
-		return fmt.Errorf("invalid backup output")
-	}
 
 	// create metric registry
 	registry := prometheus.NewRegistry()
+
+	if backupOutput == nil {
+		if backupErr != nil {
+			labels := metricLabels(metricOpt.Labels)
+			metrics := newBackupMetrics(labels)
+			metrics.HostBackupMetrics.BackupSuccess.Set(0)
+			registry.MustRegister(metrics.HostBackupMetrics.BackupSuccess)
+			return metricOpt.sendMetrics(registry, metricOpt.JobName)
+		}
+		return fmt.Errorf("invalid backup output")
+	}
 
 	// create metrics for individual hosts
 	for _, hostStats := range backupOutput.HostBackupStats {
@@ -318,12 +326,19 @@ func (backupOutput *BackupOutput) HandleMetrics(metricOpt *MetricsOptions, backu
 }
 
 func (restoreOutput *RestoreOutput) HandleMetrics(metricOpt *MetricsOptions, restoreErr error) error {
-	if restoreOutput == nil {
-		return fmt.Errorf("invalid restore output")
-	}
-
 	// create metric registry
 	registry := prometheus.NewRegistry()
+
+	if restoreOutput == nil {
+		if restoreErr != nil {
+			labels := metricLabels(metricOpt.Labels)
+			metrics := newRestoreMetrics(labels)
+			metrics.RestoreSuccess.Set(0)
+			registry.MustRegister(metrics.RestoreSuccess)
+			return metricOpt.sendMetrics(registry, metricOpt.JobName)
+		}
+		return fmt.Errorf("invalid restore output")
+	}
 
 	// create metrics for each host
 	for _, hostStats := range restoreOutput.HostRestoreStats {

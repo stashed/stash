@@ -1,6 +1,8 @@
 package rbac
 
 import (
+	"strings"
+
 	core "k8s.io/api/core/v1"
 	policy "k8s.io/api/policy/v1beta1"
 	rbac "k8s.io/api/rbac/v1"
@@ -107,5 +109,5 @@ func ensureBackupJobRoleBinding(kubeClient kubernetes.Interface, resource *core.
 }
 
 func getBackupJobRoleBindingName(name string) string {
-	return name + "-" + BackupJobClusterRole
+	return strings.ReplaceAll(name, ".", "-") + "-" + BackupJobClusterRole
 }

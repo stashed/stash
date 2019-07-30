@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/appscode/go/log"
@@ -150,7 +151,7 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 	offshootLabels := backupConfig.OffshootLabels()
 
 	jobMeta := metav1.ObjectMeta{
-		Name:      BackupJobPrefix + backupSession.Name,
+		Name:      getBackupJobName(backupSession),
 		Namespace: backupSession.Namespace,
 		Labels:    offshootLabels,
 	}
@@ -167,7 +168,7 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 		serviceAccountName = backupConfig.Spec.RuntimeSettings.Pod.ServiceAccountName
 	} else {
 		// ServiceAccount hasn't been specified. so create new one.
-		serviceAccountName = backupConfig.Name
+		serviceAccountName = getBackupJobServiceAccountName(backupConfig)
 		saMeta := metav1.ObjectMeta{
 			Name:      serviceAccountName,
 			Namespace: backupConfig.Namespace,
@@ -404,7 +405,7 @@ func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.B
 	offshootLabels := backupConfig.OffshootLabels()
 
 	jobMeta := metav1.ObjectMeta{
-		Name:      VolumeSnapshotPrefix + backupSession.Name,
+		Name:      getVolumeSnapshotterJobName(backupSession),
 		Namespace: backupSession.Namespace,
 		Labels:    offshootLabels,
 	}
@@ -462,4 +463,16 @@ func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.B
 	})
 
 	return err
+}
+
+func getBackupJobName(backupSession *api_v1beta1.BackupSession) string {
+	return BackupJobPrefix + strings.ReplaceAll(backupSession.Name, ".", "-")
+}
+
+func getBackupJobServiceAccountName(backupConfiguration *api_v1beta1.BackupConfiguration) string {
+	return strings.ReplaceAll(backupConfiguration.Name, ".", "-")
+}
+
+func getVolumeSnapshotterJobName(backupSession *api_v1beta1.BackupSession) string {
+	return VolumeSnapshotPrefix + strings.ReplaceAll(backupSession.Name, ".", "-")
 }

@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/appscode/go/log"
@@ -195,7 +196,7 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 	offshootLabels := restoreSession.OffshootLabels()
 
 	jobMeta := metav1.ObjectMeta{
-		Name:      RestoreJobPrefix + restoreSession.Name,
+		Name:      getRestoreJobName(restoreSession),
 		Namespace: restoreSession.Namespace,
 		Labels:    offshootLabels,
 	}
@@ -407,7 +408,7 @@ func (c *StashController) ensureVolumeRestorerJob(restoreSession *api_v1beta1.Re
 	offshootLabels := restoreSession.OffshootLabels()
 
 	jobMeta := metav1.ObjectMeta{
-		Name:      VolumeSnapshotPrefix + restoreSession.Name,
+		Name:      getVolumeRestorerJobName(restoreSession),
 		Namespace: restoreSession.Namespace,
 		Labels:    offshootLabels,
 	}
@@ -623,4 +624,12 @@ func getPVCFromVolumeClaimTemplates(ordinal int32, claimTemplates []core.Persist
 		pvcList = append(pvcList, claim)
 	}
 	return pvcList, nil
+}
+
+func getRestoreJobName(restoreSession *api_v1beta1.RestoreSession) string {
+	return RestoreJobPrefix + strings.ReplaceAll(restoreSession.Name, ".", "-")
+}
+
+func getVolumeRestorerJobName(restoreSession *api_v1beta1.RestoreSession) string {
+	return VolumeSnapshotPrefix + strings.ReplaceAll(restoreSession.Name, ".", "-")
 }
