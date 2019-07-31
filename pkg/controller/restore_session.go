@@ -321,6 +321,11 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 			Value: fmt.Sprintf("%d", ordinal),
 		}
 
+		// insert POD_ORDINAL env in all init-containers.
+		for i, c := range restoreJobTemplate.Spec.InitContainers {
+			restoreJobTemplate.Spec.InitContainers[i].Env = core_util.UpsertEnvVars(c.Env, ordinalEnv)
+		}
+
 		// insert POD_ORDINAL env in all containers.
 		for i, c := range restoreJobTemplate.Spec.Containers {
 			restoreJobTemplate.Spec.Containers[i].Env = core_util.UpsertEnvVars(c.Env, ordinalEnv)
