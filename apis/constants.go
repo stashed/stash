@@ -13,7 +13,8 @@ const (
 	RepositoryEndpoint   = "REPOSITORY_ENDPOINT"
 	RepositoryURL        = "REPOSITORY_URL"
 
-	Hostname = "HOSTNAME"
+	Hostname       = "HOSTNAME"
+	SourceHostname = "SOURCE_HOSTNAME"
 
 	TargetName        = "TARGET_NAME"
 	TargetAPIVersion  = "TARGET_API_VERSION"

@@ -41,7 +41,8 @@ func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSess
 
 	// append inputs from RestoreOptions
 	restoreOptions := util.RestoreOptionsForHost(host, restoreSession.Spec.Rules)
-	inputs[apis.Hostname] = restoreOptions.SourceHost
+	inputs[apis.Hostname] = restoreOptions.Host
+	inputs[apis.SourceHostname] = restoreOptions.SourceHost
 	inputs[apis.RestorePaths] = strings.Join(restoreOptions.RestorePaths, ",")
 	inputs[apis.RestoreSnapshots] = strings.Join(restoreOptions.Snapshots, ",")
 

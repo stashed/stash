@@ -43,6 +43,7 @@ type RestoreOptions struct {
 
 type DumpOptions struct {
 	Host              string
+	SourceHost        string
 	Snapshot          string // default "latest"
 	Path              string
 	FileName          string // default "stdin"

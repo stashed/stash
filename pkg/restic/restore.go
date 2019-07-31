@@ -101,7 +101,15 @@ func (w *ResticWrapper) Dump(dumpOptions DumpOptions) (*RestoreOutput, error) {
 	// Start clock to measure total restore duration
 	startTime := time.Now()
 
-	restoreStats := api_v1beta1.HostRestoreStats{}
+	restoreStats := api_v1beta1.HostRestoreStats{
+		Hostname: dumpOptions.Host,
+	}
+
+	// if source host is not specified then use current host as source host
+	if dumpOptions.SourceHost == "" {
+		dumpOptions.SourceHost = dumpOptions.Host
+	}
+
 	if _, err := w.dump(dumpOptions); err != nil {
 		return nil, err
 	}
@@ -152,6 +160,11 @@ func (w *ResticWrapper) ParallelDump(dumpOptions []DumpOptions, maxConcurrency i
 			// sh field in ResticWrapper is a pointer. we must not use same w in multiple go routine.
 			// otherwise they might enter in a racing condition.
 			nw := w.Copy()
+
+			// if source host is not specified then use current host as source host
+			if opt.SourceHost == "" {
+				opt.SourceHost = opt.Host
+			}
 
 			// run restore
 			_, err := nw.dump(opt)
