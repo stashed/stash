@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -52,7 +53,7 @@ func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSess
 	if restoreSession.Spec.Target != nil && restoreSession.Spec.Target.Replicas != nil {
 		replicas = *restoreSession.Spec.Target.Replicas
 	}
-	inputs[apis.TargetAppReplicas] = string(replicas)
+	inputs[apis.TargetAppReplicas] = fmt.Sprintf("%d",replicas)
 
 	// add PushgatewayURL as input
 	metricInputs := c.inputForMetrics()
