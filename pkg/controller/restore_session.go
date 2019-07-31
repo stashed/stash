@@ -293,9 +293,6 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 			return err
 		}
 
-		// add PVCs as volume to the job
-		volumes := util.PVCListToVolumes(pvcList, ordinal)
-
 		// add ordinal suffix to the job name so that multiple restore job can run concurrently
 		restoreJobMeta := jobMeta.DeepCopy()
 		restoreJobMeta.Name = fmt.Sprintf("%s-%d", jobMeta.Name, ordinal)
@@ -315,7 +312,9 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 			restoreJobTemplate = jobTemplate.DeepCopy()
 		}
 
-		restoreJobTemplate.Spec.Volumes = core_util.UpsertVolume(restoreJobTemplate.Spec.Volumes, volumes...)
+		// mount the newly created PVCs into the job
+		volumes := util.PVCListToVolumes(pvcList, ordinal)
+		restoreJobTemplate.Spec = util.AttachPVC(restoreJobTemplate.Spec, volumes, restoreSession.Spec.Target.VolumeMounts)
 
 		ordinalEnv := core.EnvVar{
 			Name:  util.KeyPodOrdinal,
