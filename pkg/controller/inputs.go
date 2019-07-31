@@ -34,15 +34,10 @@ func (c *StashController) inputsForBackupConfig(backupConfig api.BackupConfigura
 	return inputs, nil
 }
 
-func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSession) (map[string]string, error) {
+func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSession, host string) (map[string]string, error) {
 	// get inputs for target
 	inputs := c.inputsForRestoreTarget(restoreSession.Spec.Target)
 
-	// get host name for target
-	host, err := util.GetHostName(restoreSession.Spec.Target)
-	if err != nil {
-		return nil, err
-	}
 	// append inputs from RestoreOptions
 	restoreOptions := util.RestoreOptionsForHost(host, restoreSession.Spec.Rules)
 	inputs[apis.Hostname] = restoreOptions.SourceHost

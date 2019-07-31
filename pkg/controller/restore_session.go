@@ -252,7 +252,7 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 
 	if restoreSession.Spec.Task.Name != "" {
 		// Restore process follows Function-Task model. So, resolve Function and Task to get desired job definition.
-		jobTemplate, err = c.resolveRestoreTask(restoreSession, repository, ref, serviceAccountName)
+		jobTemplate, err = c.resolveRestoreTask(restoreSession, repository, ref, serviceAccountName, "host-0")
 		if err != nil {
 			return err
 		}
@@ -296,11 +296,24 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		// add PVCs as volume to the job
 		volumes := util.PVCListToVolumes(pvcList, ordinal)
 
-		// use copy of the original job template. otherwise, each iteration will append volumes in the same template
-		restoreJobTemplate := jobTemplate.DeepCopy()
-		restoreJobMeta := jobMeta.DeepCopy()
 		// add ordinal suffix to the job name so that multiple restore job can run concurrently
+		restoreJobMeta := jobMeta.DeepCopy()
 		restoreJobMeta.Name = fmt.Sprintf("%s-%d", jobMeta.Name, ordinal)
+
+		var restoreJobTemplate *core.PodTemplateSpec
+
+		// if restore process follows Function-Task model, then resolve the Functions and Task  for this host
+		if restoreSession.Spec.Task.Name != "" {
+			restoreJobTemplate, err = c.resolveRestoreTask(restoreSession, repository, ref,
+				serviceAccountName, fmt.Sprintf("host-%d", ordinal))
+
+			if err != nil {
+				return err
+			}
+		} else {
+			// use copy of the original job template. otherwise, each iteration will append volumes in the same template
+			restoreJobTemplate = jobTemplate.DeepCopy()
+		}
 
 		restoreJobTemplate.Spec.Volumes = core_util.UpsertVolume(restoreJobTemplate.Spec.Volumes, volumes...)
 
@@ -343,7 +356,7 @@ func (c *StashController) createRestoreJob(jobTemplate *core.PodTemplateSpec, me
 
 // resolveRestoreTask resolves Functions and Tasks then returns a job definition to restore the target.
 func (c *StashController) resolveRestoreTask(restoreSession *api_v1beta1.RestoreSession,
-	repository *api_v1alpha1.Repository, ref *core.ObjectReference, serviceAccountName string) (*core.PodTemplateSpec, error) {
+	repository *api_v1alpha1.Repository, ref *core.ObjectReference, serviceAccountName, hostname string) (*core.PodTemplateSpec, error) {
 
 	// resolve task template
 	explicitInputs := make(map[string]string)
@@ -355,7 +368,7 @@ func (c *StashController) resolveRestoreTask(restoreSession *api_v1beta1.Restore
 	if err != nil {
 		return nil, fmt.Errorf("cannot resolve implicit inputs for Repository %s/%s, reason: %s", repository.Namespace, repository.Name, err)
 	}
-	rsInputs, err := c.inputsForRestoreSession(*restoreSession)
+	rsInputs, err := c.inputsForRestoreSession(*restoreSession, hostname)
 	if err != nil {
 		return nil, fmt.Errorf("cannot resolve implicit inputs for RestoreSession %s/%s, reason: %s", restoreSession.Namespace, restoreSession.Name, err)
 	}
