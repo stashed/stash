@@ -110,7 +110,7 @@ func (c *StashController) applyBackupAnnotationLogicForPVC(pvc *core.PersistentV
 				MountPath: mountPath,
 			},
 		}
-		err = c.ensureBackupConfiguration(backupBlueprint, strings.Split(paths, ","), volumeMounts, targetRef, targetRef.Kind)
+		err = c.ensureBackupConfiguration(backupBlueprint, strings.Split(paths, ","), volumeMounts, targetRef)
 		if err != nil {
 			return err
 		}

@@ -96,7 +96,7 @@ func (c *StashController) applyBackupAnnotationLogicForAppBinding(ab *appCatalog
 		}
 
 		// ensure BackupConfiguration crd
-		err = c.ensureBackupConfiguration(backupBlueprint, nil, nil, targetRef, targetAppResource)
+		err = c.ensureBackupConfiguration(backupBlueprint, nil, nil, targetRef)
 		if err != nil {
 			return err
 		}

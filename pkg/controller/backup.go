@@ -88,7 +88,7 @@ func (c *StashController) applyBackupAnnotationLogic(w *wapi.Workload) error {
 		}
 
 		// ensure BackupConfiguration crd
-		err = c.ensureBackupConfiguration(backupBlueprint, strings.Split(paths, ","), volumeMounts, targetRef, targetRef.Kind)
+		err = c.ensureBackupConfiguration(backupBlueprint, strings.Split(paths, ","), volumeMounts, targetRef)
 		if err != nil {
 			return err
 		}
@@ -195,7 +195,7 @@ func (c *StashController) ensureRepository(backupBlueprint *api_v1beta1.BackupBl
 	return err
 }
 
-func (c *StashController) ensureBackupConfiguration(backupBlueprint *api_v1beta1.BackupBlueprint, paths []string, volumeMounts []core.VolumeMount, target *core.ObjectReference, prefix string) error {
+func (c *StashController) ensureBackupConfiguration(backupBlueprint *api_v1beta1.BackupBlueprint, paths []string, volumeMounts []core.VolumeMount, target *core.ObjectReference) error {
 	meta := metav1.ObjectMeta{
 		Name:      getBackupConfigurationName(target),
 		Namespace: target.Namespace,
