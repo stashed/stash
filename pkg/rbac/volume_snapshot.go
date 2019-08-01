@@ -1,6 +1,8 @@
 package rbac
 
 import (
+	"fmt"
+
 	crdv1 "github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1alpha1"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
@@ -15,9 +17,9 @@ import (
 )
 
 const (
-	VolumeSnapshotterClusterRole      = "stash-volumesnapshot-job"
-	VolumeSnapshotRestorerClusterRole = "stash-volumesnapshot-restore-job"
-	StorageClassReaderClusterRole     = "stash-storageclass"
+	StashVolumeSnapshotterJob      = "stash-volumesnapshotter-job"
+	StashVolumeSnapshotRestorerJob = "stash-volumesnapshot-restorer-job"
+	StashStorageClassReader        = "stash-storage-class-reader"
 )
 
 func EnsureVolumeSnapshotterJobRBAC(kubeClient kubernetes.Interface, ref *core.ObjectReference, sa string, labels map[string]string) error {
@@ -39,7 +41,7 @@ func EnsureVolumeSnapshotterJobRBAC(kubeClient kubernetes.Interface, ref *core.O
 func ensureVolumeSnapshotterJobClusterRole(kubeClient kubernetes.Interface, labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
-		Name:   VolumeSnapshotterClusterRole,
+		Name:   StashVolumeSnapshotterJob,
 		Labels: labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchClusterRole(kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
@@ -99,7 +101,7 @@ func ensureVolumeSnapshotterJobRoleBinding(kubeClient kubernetes.Interface, reso
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
 			Kind:     KindClusterRole,
-			Name:     VolumeSnapshotterClusterRole,
+			Name:     StashVolumeSnapshotterJob,
 		}
 		in.Subjects = []rbac.Subject{
 			{
@@ -114,7 +116,7 @@ func ensureVolumeSnapshotterJobRoleBinding(kubeClient kubernetes.Interface, reso
 }
 
 func getVolumesnapshotterJobRoleBindingName(name string) string {
-	return name + "-" + VolumeSnapshotterClusterRole
+	return fmt.Sprintf("%s-%s", StashVolumeSnapshotterJob, name)
 }
 
 func EnsureVolumeSnapshotRestorerJobRBAC(kubeClient kubernetes.Interface, ref *core.ObjectReference, sa string, labels map[string]string) error {
@@ -148,7 +150,7 @@ func EnsureVolumeSnapshotRestorerJobRBAC(kubeClient kubernetes.Interface, ref *c
 func ensureVolumeSnapshotRestorerJobClusterRole(kubeClient kubernetes.Interface, labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
-		Name:   VolumeSnapshotRestorerClusterRole,
+		Name:   StashVolumeSnapshotRestorerJob,
 		Labels: labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchClusterRole(kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
@@ -199,7 +201,7 @@ func ensureVolumeSnapshotRestorerJobRoleBinding(kubeClient kubernetes.Interface,
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
 			Kind:     "ClusterRole",
-			Name:     VolumeSnapshotRestorerClusterRole,
+			Name:     StashVolumeSnapshotRestorerJob,
 		}
 		in.Subjects = []rbac.Subject{
 			{
@@ -214,13 +216,13 @@ func ensureVolumeSnapshotRestorerJobRoleBinding(kubeClient kubernetes.Interface,
 }
 
 func getVolumeSnapshotRestorerJobRoleBindingName(name string) string {
-	return name + "-" + VolumeSnapshotRestorerClusterRole
+	return fmt.Sprintf("%s-%s", StashVolumeSnapshotRestorerJob, name)
 }
 
 func ensureStorageReaderClassClusterRole(kubeClient kubernetes.Interface, labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
-		Name:   StorageClassReaderClusterRole,
+		Name:   StashStorageClassReader,
 		Labels: labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchClusterRole(kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
@@ -256,7 +258,7 @@ func ensureStorageClassReaderClusterRoleBinding(kubeClient kubernetes.Interface,
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
 			Kind:     "ClusterRole",
-			Name:     StorageClassReaderClusterRole,
+			Name:     StashStorageClassReader,
 		}
 		in.Subjects = []rbac.Subject{
 			{
@@ -271,5 +273,5 @@ func ensureStorageClassReaderClusterRoleBinding(kubeClient kubernetes.Interface,
 }
 
 func getStorageClassReaderClusterRoleBindingName(name string) string {
-	return name + "-" + StorageClassReaderClusterRole
+	return fmt.Sprintf("%s-%s", StashStorageClassReader, name)
 }

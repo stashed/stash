@@ -423,7 +423,7 @@ func (c *Controller) ensureCheckRBAC(restic *core.ObjectReference) error {
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
 			Kind:     "ClusterRole",
-			Name:     stash_rbac.SidecarClusterRole,
+			Name:     stash_rbac.StashSidecar,
 		}
 		in.Subjects = []rbac.Subject{
 			{

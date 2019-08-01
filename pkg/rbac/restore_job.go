@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	RestoreJobClusterRole = "stash-restore-job"
+	StashRestoreJob = "stash-restore-job"
 )
 
 func EnsureRestoreJobRBAC(kubeClient kubernetes.Interface, ref *core.ObjectReference, sa string, psps []string, labels map[string]string) error {
@@ -38,7 +38,7 @@ func EnsureRestoreJobRBAC(kubeClient kubernetes.Interface, ref *core.ObjectRefer
 func ensureRestoreJobClusterRole(kubeClient kubernetes.Interface, psps []string, labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
-		Name:   RestoreJobClusterRole,
+		Name:   StashRestoreJob,
 		Labels: labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchClusterRole(kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
@@ -96,7 +96,7 @@ func ensureRestoreJobRoleBinding(kubeClient kubernetes.Interface, resource *core
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
 			Kind:     "ClusterRole",
-			Name:     RestoreJobClusterRole,
+			Name:     StashRestoreJob,
 		}
 		in.Subjects = []rbac.Subject{
 			{
@@ -111,5 +111,5 @@ func ensureRestoreJobRoleBinding(kubeClient kubernetes.Interface, resource *core
 }
 
 func getRestoreJobRoleBindingName(name string) string {
-	return name + "-" + RestoreJobClusterRole
+	return fmt.Sprintf("%s-%s", StashRestoreJob, name)
 }

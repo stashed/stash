@@ -1,6 +1,7 @@
 package rbac
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/appscode/go/log"
@@ -20,15 +21,15 @@ import (
 )
 
 const (
-	SidecarClusterRole = "stash-sidecar"
+	StashSidecar = "stash-sidecar"
 )
 
 func getSidecarRoleBindingName(name string, kind string) string {
-	return strings.ToLower(kind) + "-" + name + "-" + SidecarClusterRole
+	return fmt.Sprintf("%s-%s-%s", StashSidecar, strings.ToLower(kind), name)
 }
 
 func EnsureSidecarClusterRole(kubeClient kubernetes.Interface) error {
-	meta := metav1.ObjectMeta{Name: SidecarClusterRole}
+	meta := metav1.ObjectMeta{Name: StashSidecar}
 	_, _, err := rbac_util.CreateOrPatchClusterRole(kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
@@ -113,7 +114,7 @@ func EnsureSidecarRoleBinding(kubeClient kubernetes.Interface, resource *core.Ob
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
 			Kind:     "ClusterRole",
-			Name:     SidecarClusterRole,
+			Name:     StashSidecar,
 		}
 		in.Subjects = []rbac.Subject{
 			{
