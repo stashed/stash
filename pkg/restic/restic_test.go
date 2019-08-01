@@ -386,11 +386,13 @@ func TestRunParallelDump(t *testing.T) {
 	}
 	dumpOutput, err := w.ParallelDump(dumpOptions, 2)
 	if err != nil {
+		t.Log(err)
 		t.Error(err)
 	}
 
 	// verify that all host has been restored successfully
 	for i := range dumpOutput.HostRestoreStats {
+		t.Logf("Host: %s, Phase: %s", dumpOutput.HostRestoreStats[i].Hostname,dumpOutput.HostRestoreStats[i].Phase)
 		assert.Equal(t, dumpOutput.HostRestoreStats[i].Phase, api_v1beta1.HostRestoreSucceeded)
 	}
 }
