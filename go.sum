@@ -532,7 +532,7 @@ gomodules.xyz/envsubst v0.0.0-20190321051520-c745d52104af h1:dvSifHtcUenMJOxj0sZ
 gomodules.xyz/envsubst v0.0.0-20190321051520-c745d52104af/go.mod h1:2o5f7bd13XIITbE2ZKieE05YkqB2KDoZkqKccGebduA=
 gomodules.xyz/jsonpatch/v2 v2.0.0 h1:OyHbl+7IOECpPKfVK42oFr6N7+Y2dR+Jsb/IiDV3hOo=
 gomodules.xyz/jsonpatch/v2 v2.0.0/go.mod h1:IhYNNY4jnS53ZnfE4PAmpKtDpTCj1JFXc+3mwe7XcUU=
-gomodules.xyz/stow v0.2.0 h1:YL2QID9eO5FoNYIh+F56SCwBS3L57xlyqqABipCEZoA=
+gomodules.xyz/stow v0.2.0 h1:7yEz3Mu3V96xhfjfuk62oZpkwTXDWB6cRVwqHuBtoog=
 gomodules.xyz/stow v0.2.0/go.mod h1:nSTw1H1Gb/GktlrUgElN4YR+jww9OcNsxxrx3zNp+qA=
 gomodules.xyz/version v0.0.0-20190507203204-7cec7ee542d3 h1:MiBtMikyjuBwD22+QIEsbnMHdRkknM/0N5ig34jSNgQ=
 gomodules.xyz/version v0.0.0-20190507203204-7cec7ee542d3/go.mod h1:Y8xuV02mL/45psyPKG3NCVOwvAOy6T5Kx0l3rCjKSjU=

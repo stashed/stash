@@ -3,16 +3,12 @@ go:
  - 1.x
  - tip
 
-go_import_path: gomodules.xyz/stow
-
-env:
-  global:
-  - GO111MODULE=on
-
 cache:
   directories:
   - $HOME/.cache/go-build
   - $GOPATH/pkg/mod
+
+go_import_path: gomodules.xyz/stow
 
 install: true
 

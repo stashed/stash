@@ -362,11 +362,11 @@ func TestRunParallelDump(t *testing.T) {
 	largeContent := make([]byte, 104857600)
 	fileContent = string(largeContent)
 
+	defer cleanup(tempDir)
 	w, err := setupTest(tempDir)
 	if err != nil {
 		t.Error(err)
 	}
-	defer cleanup(tempDir)
 
 	backupOpts := newParallelBackupOptions()
 	backupOutput, err := w.RunParallelBackup(backupOpts, 2)
