@@ -98,7 +98,7 @@ func (c *StashController) applyBackupAnnotationLogicForPVC(pvc *core.PersistentV
 		}
 
 		// ensure Repository crd
-		err = c.ensureRepository(backupBlueprint, targetRef, targetRef.Kind)
+		err = c.ensureRepository(backupBlueprint, targetRef)
 		if err != nil {
 			return err
 		}
@@ -120,12 +120,12 @@ func (c *StashController) applyBackupAnnotationLogicForPVC(pvc *core.PersistentV
 		// if respective BackupConfiguration exist then backup annotations has been removed.
 		// in this case, we have to remove the BackupConfiguration too.
 		// however, we will keep Repository crd as it is required for restore.
-		_, err := c.stashClient.StashV1beta1().BackupConfigurations(pvc.Namespace).Get(getBackupConfigurationName(targetRef, targetRef.Kind), metav1.GetOptions{})
+		_, err := c.stashClient.StashV1beta1().BackupConfigurations(pvc.Namespace).Get(getBackupConfigurationName(targetRef), metav1.GetOptions{})
 		if err != nil && !kerr.IsNotFound(err) {
 			return err
 		}
 		// BackupConfiguration exist. so, we have to remove it.
-		err = c.stashClient.StashV1beta1().BackupConfigurations(pvc.Namespace).Delete(getBackupConfigurationName(targetRef, targetRef.Kind), meta_util.DeleteInBackground())
+		err = c.stashClient.StashV1beta1().BackupConfigurations(pvc.Namespace).Delete(getBackupConfigurationName(targetRef), meta_util.DeleteInBackground())
 		if err != nil && !kerr.IsNotFound(err) {
 			return err
 		}

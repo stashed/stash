@@ -90,7 +90,7 @@ func (c *StashController) applyBackupAnnotationLogicForAppBinding(ab *appCatalog
 		}
 
 		// ensure Repository crd
-		err = c.ensureRepository(backupBlueprint, targetRef, targetAppResource)
+		err = c.ensureRepository(backupBlueprint, targetRef)
 		if err != nil {
 			return err
 		}
@@ -106,12 +106,12 @@ func (c *StashController) applyBackupAnnotationLogicForAppBinding(ab *appCatalog
 		// if respective BackupConfiguration exist then backup annotations has been removed.
 		// in this case, we have to remove the BackupConfiguration too.
 		// however, we will keep Repository crd as it is required for restore.
-		_, err := c.stashClient.StashV1beta1().BackupConfigurations(ab.Namespace).Get(getBackupConfigurationName(targetRef, targetAppResource), metav1.GetOptions{})
+		_, err := c.stashClient.StashV1beta1().BackupConfigurations(ab.Namespace).Get(getBackupConfigurationName(targetRef), metav1.GetOptions{})
 		if err != nil && !kerr.IsNotFound(err) {
 			return err
 		}
 		// BackupConfiguration exist. so, we have to remove it.
-		err = c.stashClient.StashV1beta1().BackupConfigurations(ab.Namespace).Delete(getBackupConfigurationName(targetRef, targetAppResource), meta_util.DeleteInBackground())
+		err = c.stashClient.StashV1beta1().BackupConfigurations(ab.Namespace).Delete(getBackupConfigurationName(targetRef), meta_util.DeleteInBackground())
 		if err != nil && !kerr.IsNotFound(err) {
 			return err
 		}
