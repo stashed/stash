@@ -13,6 +13,7 @@ package unix
 
 import (
 	"encoding/binary"
+	"net"
 	"runtime"
 	"syscall"
 	"unsafe"
@@ -104,12 +105,6 @@ func IoctlSetRTCTime(fd int, value *RTCTime) error {
 // from fd, using the specified request number.
 func IoctlGetInt(fd int, req uint) (int, error) {
 	var value int
-	err := ioctl(fd, req, uintptr(unsafe.Pointer(&value)))
-	return value, err
-}
-
-func IoctlGetUint32(fd int, req uint) (uint32, error) {
-	var value uint32
 	err := ioctl(fd, req, uintptr(unsafe.Pointer(&value)))
 	return value, err
 }
@@ -764,7 +759,7 @@ const px_proto_oe = 0
 
 type SockaddrPPPoE struct {
 	SID    uint16
-	Remote []byte
+	Remote net.HardwareAddr
 	Dev    string
 	raw    RawSockaddrPPPoX
 }
@@ -915,7 +910,7 @@ func anyToSockaddr(fd int, rsa *RawSockaddrAny) (Sockaddr, error) {
 		}
 		sa := &SockaddrPPPoE{
 			SID:    binary.BigEndian.Uint16(pp[6:8]),
-			Remote: pp[8:14],
+			Remote: net.HardwareAddr(pp[8:14]),
 		}
 		for i := 14; i < 14+IFNAMSIZ; i++ {
 			if pp[i] == 0 {
@@ -1413,6 +1408,10 @@ func Reboot(cmd int) (err error) {
 	return reboot(LINUX_REBOOT_MAGIC1, LINUX_REBOOT_MAGIC2, cmd, "")
 }
 
+func ReadDirent(fd int, buf []byte) (n int, err error) {
+	return Getdents(fd, buf)
+}
+
 //sys	mount(source string, target string, fstype string, flags uintptr, data *byte) (err error)
 
 func Mount(source string, target string, fstype string, flags uintptr, data string) (err error) {
@@ -1445,8 +1444,6 @@ func Sendfile(outfd int, infd int, offset *int64, count int) (written int, err e
 //sys	Acct(path string) (err error)
 //sys	AddKey(keyType string, description string, payload []byte, ringid int) (id int, err error)
 //sys	Adjtimex(buf *Timex) (state int, err error)
-//sys	Capget(hdr *CapUserHeader, data *CapUserData) (err error)
-//sys	Capset(hdr *CapUserHeader, data *CapUserData) (err error)
 //sys	Chdir(path string) (err error)
 //sys	Chroot(path string) (err error)
 //sys	ClockGetres(clockid int32, res *Timespec) (err error)
@@ -1534,13 +1531,9 @@ func Setgid(uid int) (err error) {
 	return EOPNOTSUPP
 }
 
-func Signalfd(fd int, sigmask *Sigset_t, flags int) (newfd int, err error) {
-	return signalfd(fd, sigmask, _C__NSIG/8, flags)
-}
-
 //sys	Setpriority(which int, who int, prio int) (err error)
 //sys	Setxattr(path string, attr string, data []byte, flags int) (err error)
-//sys	signalfd(fd int, sigmask *Sigset_t, maskSize uintptr, flags int) (newfd int, err error) = SYS_SIGNALFD4
+//sys	Signalfd(fd int, mask *Sigset_t, flags int) = SYS_SIGNALFD4
 //sys	Statx(dirfd int, path string, flags int, mask int, stat *Statx_t) (err error)
 //sys	Sync()
 //sys	Syncfs(fd int) (err error)
@@ -1752,6 +1745,8 @@ func OpenByHandleAt(mountFD int, handle FileHandle, flags int) (fd int, err erro
 // Alarm
 // ArchPrctl
 // Brk
+// Capget
+// Capset
 // ClockNanosleep
 // ClockSettime
 // Clone
