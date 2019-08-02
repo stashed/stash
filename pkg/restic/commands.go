@@ -222,7 +222,7 @@ func (w *ResticWrapper) dump(dumpOptions DumpOptions) ([]byte, error) {
 	}
 	if dumpOptions.Host != "" {
 		args = append(args, "--host")
-		args = append(args, dumpOptions.Host)
+		args = append(args, dumpOptions.SourceHost)
 	}
 	if dumpOptions.Path != "" {
 		args = append(args, "--path")

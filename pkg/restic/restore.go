@@ -34,7 +34,7 @@ func (w *ResticWrapper) RunRestore(restoreOptions RestoreOptions) (*RestoreOutpu
 }
 
 // RunParallelRestore run restore process for multiple hosts in parallel using go routine.
-// You can control maximum number of parallel backup using maxConcurrency parameter.
+// You can control maximum number of parallel restore using maxConcurrency parameter.
 func (w *ResticWrapper) RunParallelRestore(restoreOptions []RestoreOptions, maxConcurrency int) (*RestoreOutput, error) {
 
 	// WaitGroup to wait until all go routine finish
@@ -101,7 +101,15 @@ func (w *ResticWrapper) Dump(dumpOptions DumpOptions) (*RestoreOutput, error) {
 	// Start clock to measure total restore duration
 	startTime := time.Now()
 
-	restoreStats := api_v1beta1.HostRestoreStats{}
+	restoreStats := api_v1beta1.HostRestoreStats{
+		Hostname: dumpOptions.Host,
+	}
+
+	// if source host is not specified then use current host as source host
+	if dumpOptions.SourceHost == "" {
+		dumpOptions.SourceHost = dumpOptions.Host
+	}
+
 	if _, err := w.dump(dumpOptions); err != nil {
 		return nil, err
 	}
@@ -135,14 +143,14 @@ func (w *ResticWrapper) ParallelDump(dumpOptions []DumpOptions, maxConcurrency i
 
 	for i := range dumpOptions {
 		// try to send message in concurrencyLimiter channel.
-		// if maximum allowed concurrent backup is already running, program control will stuck here.
+		// if maximum allowed concurrent restore is already running, program control will stuck here.
 		concurrencyLimiter <- true
 
 		// starting new go routine. add it to WaitGroup
 		wg.Add(1)
 
 		go func(opt DumpOptions, startTime time.Time) {
-			// when this go routine completes it task, release a slot from the concurrencyLimiter channel
+			// when this go routine completes its task, release a slot from the concurrencyLimiter channel
 			// so that another go routine can start. Also, tell the WaitGroup that it is done with its task.
 			defer func() {
 				<-concurrencyLimiter
@@ -152,6 +160,11 @@ func (w *ResticWrapper) ParallelDump(dumpOptions []DumpOptions, maxConcurrency i
 			// sh field in ResticWrapper is a pointer. we must not use same w in multiple go routine.
 			// otherwise they might enter in a racing condition.
 			nw := w.Copy()
+
+			// if source host is not specified then use current host as source host
+			if opt.SourceHost == "" {
+				opt.SourceHost = opt.Host
+			}
 
 			// run restore
 			_, err := nw.dump(opt)

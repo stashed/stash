@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -34,18 +35,14 @@ func (c *StashController) inputsForBackupConfig(backupConfig api.BackupConfigura
 	return inputs, nil
 }
 
-func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSession) (map[string]string, error) {
+func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSession, host string) (map[string]string, error) {
 	// get inputs for target
 	inputs := c.inputsForRestoreTarget(restoreSession.Spec.Target)
 
-	// get host name for target
-	host, err := util.GetHostName(restoreSession.Spec.Target)
-	if err != nil {
-		return nil, err
-	}
 	// append inputs from RestoreOptions
 	restoreOptions := util.RestoreOptionsForHost(host, restoreSession.Spec.Rules)
-	inputs[apis.Hostname] = restoreOptions.SourceHost
+	inputs[apis.Hostname] = restoreOptions.Host
+	inputs[apis.SourceHostname] = restoreOptions.SourceHost
 	inputs[apis.RestorePaths] = strings.Join(restoreOptions.RestorePaths, ",")
 	inputs[apis.RestoreSnapshots] = strings.Join(restoreOptions.Snapshots, ",")
 
@@ -57,7 +54,7 @@ func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSess
 	if restoreSession.Spec.Target != nil && restoreSession.Spec.Target.Replicas != nil {
 		replicas = *restoreSession.Spec.Target.Replicas
 	}
-	inputs[apis.TargetAppReplicas] = string(replicas)
+	inputs[apis.TargetAppReplicas] = fmt.Sprintf("%d", replicas)
 
 	// add PushgatewayURL as input
 	metricInputs := c.inputForMetrics()

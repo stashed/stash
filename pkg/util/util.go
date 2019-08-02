@@ -262,6 +262,17 @@ func AttachLocalBackend(podSpec core.PodSpec, localSpec store.LocalSpec) core.Po
 	return podSpec
 }
 
+func AttachPVC(podSpec core.PodSpec, volumes []core.Volume, volumeMounts []core.VolumeMount) core.PodSpec {
+	podSpec.Volumes = core_util.UpsertVolume(podSpec.Volumes, volumes...)
+	for i := range podSpec.InitContainers {
+		podSpec.InitContainers[i].VolumeMounts = core_util.UpsertVolumeMount(podSpec.InitContainers[i].VolumeMounts, volumeMounts...)
+	}
+	for i := range podSpec.Containers {
+		podSpec.Containers[i].VolumeMounts = core_util.UpsertVolumeMount(podSpec.Containers[i].VolumeMounts, volumeMounts...)
+	}
+	return podSpec
+}
+
 func NiceSettingsFromEnv() (*v1.NiceSettings, error) {
 	var settings *v1.NiceSettings
 	if v, ok := os.LookupEnv(apis.NiceAdjustment); ok {
