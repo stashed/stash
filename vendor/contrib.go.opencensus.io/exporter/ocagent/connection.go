@@ -27,10 +27,7 @@ const (
 
 func (ae *Exporter) setStateDisconnected() {
 	atomic.StoreInt32(&ae.connectionState, sDisconnected)
-	select {
-	case ae.disconnectedCh <- true:
-	default:
-	}
+	ae.disconnectedCh <- true
 }
 
 func (ae *Exporter) setStateConnected() {

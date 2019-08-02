@@ -1,7 +1,9 @@
 package osm
 
 import (
+	"io/ioutil"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -48,8 +50,8 @@ const (
 // ├── ca.crt
 // └── config
 
-func NewOSMSecret(client kubernetes.Interface, name, namespace string, spec api.Backend) (*core.Secret, error) {
-	osmCtx, err := NewOSMContext(client, spec, namespace)
+func NewOSMSecret(kc kubernetes.Interface, name, namespace string, spec api.Backend) (*core.Secret, error) {
+	osmCtx, err := NewOSMContext(kc, spec, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -82,6 +84,42 @@ func NewOSMSecret(client kubernetes.Interface, name, namespace string, spec api.
 		out.Data[CaCertFileName] = []byte(cacertData)
 	}
 	return out, nil
+}
+
+func WriteOSMConfig(kc kubernetes.Interface, namespace string, spec api.Backend, filename string) error {
+	osmCtx, err := NewOSMContext(kc, spec, namespace)
+	if err != nil {
+		return err
+	}
+
+	dir := filepath.Dir(filename)
+
+	err = os.MkdirAll(dir, 0755)
+	if err != nil {
+		return err
+	}
+
+	cacertData, certDataFound := osmCtx.Config[s3.ConfigCACertData]
+	if certDataFound {
+		// assume that CA cert file is mounted at SecretMountPath directory
+		f2 := filepath.Join(dir, CaCertFileName)
+		err = ioutil.WriteFile(f2, []byte(cacertData), 0644)
+		if err != nil {
+			return err
+		}
+		osmCtx.Config[s3.ConfigCACertFile] = f2
+		delete(osmCtx.Config, s3.ConfigCACertData)
+	}
+
+	osmCfg := &otx.OSMConfig{
+		CurrentContext: osmCtx.Name,
+		Contexts:       []*otx.Context{osmCtx},
+	}
+	osmBytes, err := yaml.Marshal(osmCfg)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(filename, osmBytes, 0644)
 }
 
 func CheckBucketAccess(client kubernetes.Interface, spec api.Backend, namespace string) error {
