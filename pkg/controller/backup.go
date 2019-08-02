@@ -226,9 +226,9 @@ func (c *StashController) ensureBackupConfiguration(backupBlueprint *api_v1beta1
 }
 
 func getRepositoryName(target *core.ObjectReference, prefix string) string {
-	return strings.ToLower(prefix) + target.Name
+	return fmt.Sprintf("%s-%s", strings.ToLower(prefix), target.Name)
 }
 
 func getBackupConfigurationName(target *core.ObjectReference, prefix string) string {
-	return strings.ToLower(prefix) + target.Name
+	return fmt.Sprintf("%s-%s", strings.ToLower(prefix), target.Name)
 }
