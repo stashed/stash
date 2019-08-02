@@ -39,8 +39,8 @@ require (
 	k8s.io/kube-openapi v0.0.0-20190502190224-411b2483e503
 	k8s.io/kubernetes v1.14.1
 	kmodules.xyz/client-go v0.0.0-20190715080709-7162a6c90b04
-	kmodules.xyz/custom-resources v0.0.0-20190723185639-711575c0b8a9
-	kmodules.xyz/objectstore-api v0.0.0-20190715131036-28ef070833ef
+	kmodules.xyz/custom-resources v0.0.0-20190730174012-d0224972f055
+	kmodules.xyz/objectstore-api v0.0.0-20190718002052-da668b440b0b
 	kmodules.xyz/offshoot-api v0.0.0-20190715115723-36c8fce142c1
 	kmodules.xyz/openshift v0.0.0-20190508141315-99ec9fc946bf
 	kmodules.xyz/webhook-runtime v0.0.0-20190715115250-a84fbf77dd30

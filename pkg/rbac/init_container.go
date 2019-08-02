@@ -1,6 +1,7 @@
 package rbac
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/appscode/go/log"
@@ -34,7 +35,7 @@ func EnsureRestoreInitContainerRBAC(kubeClient kubernetes.Interface, ref *core.O
 
 func ensureRestoreInitContainerClusterRole(kubeClient kubernetes.Interface, labels map[string]string) error {
 	meta := metav1.ObjectMeta{
-		Name:   RestoreInitContainerClusterRole,
+		Name:   StashRestoreInitContainer,
 		Labels: labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchClusterRole(kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
@@ -82,7 +83,7 @@ func ensureRestoreInitContainerRoleBinding(kubeClient kubernetes.Interface, reso
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
 			Kind:     "ClusterRole",
-			Name:     RestoreInitContainerClusterRole,
+			Name:     StashRestoreInitContainer,
 		}
 		in.Subjects = []rbac.Subject{
 			{
@@ -97,7 +98,7 @@ func ensureRestoreInitContainerRoleBinding(kubeClient kubernetes.Interface, reso
 }
 
 func getRestoreInitContainerRoleBindingName(name string, kind string) string {
-	return strings.ToLower(kind) + "-" + name + "-" + RestoreInitContainerClusterRole
+	return fmt.Sprintf("%s-%s", StashRestoreInitContainer, strings.ToLower(kind))
 }
 
 func ensureRestoreInitContainerRoleBindingDeleted(kubeClient kubernetes.Interface, w *wapi.Workload) error {

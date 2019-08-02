@@ -1,6 +1,8 @@
 package rbac
 
 import (
+	"fmt"
+
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	policy "k8s.io/api/policy/v1beta1"
@@ -13,7 +15,7 @@ import (
 )
 
 const (
-	CronJobClusterRole = "stash-cron-job"
+	StashCronJob = "stash-cron-job"
 )
 
 func EnsureCronJobRBAC(kubeClient kubernetes.Interface, resource *core.ObjectReference, sa string, psps []string, labels map[string]string) error {
@@ -30,7 +32,7 @@ func EnsureCronJobRBAC(kubeClient kubernetes.Interface, resource *core.ObjectRef
 
 func ensureCronJobClusterRole(kubeClient kubernetes.Interface, psps []string, labels map[string]string) error {
 	meta := metav1.ObjectMeta{
-		Name:   CronJobClusterRole,
+		Name:   StashCronJob,
 		Labels: labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchClusterRole(kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
@@ -85,7 +87,7 @@ func ensureCronJobClusterRole(kubeClient kubernetes.Interface, psps []string, la
 
 func ensureCronJobRoleBinding(kubeClient kubernetes.Interface, resource *core.ObjectReference, sa string, labels map[string]string) error {
 	meta := metav1.ObjectMeta{
-		Name:      resource.Name,
+		Name:      fmt.Sprintf("%s-%s", StashCronJob, resource.Name),
 		Namespace: resource.Namespace,
 		Labels:    labels,
 	}
@@ -97,7 +99,7 @@ func ensureCronJobRoleBinding(kubeClient kubernetes.Interface, resource *core.Ob
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
 			Kind:     KindClusterRole,
-			Name:     CronJobClusterRole,
+			Name:     StashCronJob,
 		}
 		in.Subjects = []rbac.Subject{
 			{

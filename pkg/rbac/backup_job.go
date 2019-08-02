@@ -1,6 +1,9 @@
 package rbac
 
 import (
+	"fmt"
+	"strings"
+
 	core "k8s.io/api/core/v1"
 	policy "k8s.io/api/policy/v1beta1"
 	rbac "k8s.io/api/rbac/v1"
@@ -14,7 +17,7 @@ import (
 )
 
 const (
-	BackupJobClusterRole = "stash-backup-job"
+	StashBackupJob = "stash-backup-job"
 )
 
 func EnsureBackupJobRBAC(kubeClient kubernetes.Interface, ref *core.ObjectReference, sa string, psps []string, labels map[string]string) error {
@@ -36,7 +39,7 @@ func EnsureBackupJobRBAC(kubeClient kubernetes.Interface, ref *core.ObjectRefere
 func ensureBackupJobClusterRole(kubeClient kubernetes.Interface, psps []string, labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
-		Name:   BackupJobClusterRole,
+		Name:   StashBackupJob,
 		Labels: labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchClusterRole(kubeClient, meta, func(in *rbac.ClusterRole) *rbac.ClusterRole {
@@ -92,7 +95,7 @@ func ensureBackupJobRoleBinding(kubeClient kubernetes.Interface, resource *core.
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
 			Kind:     "ClusterRole",
-			Name:     BackupJobClusterRole,
+			Name:     StashBackupJob,
 		}
 		in.Subjects = []rbac.Subject{
 			{
@@ -107,5 +110,5 @@ func ensureBackupJobRoleBinding(kubeClient kubernetes.Interface, resource *core.
 }
 
 func getBackupJobRoleBindingName(name string) string {
-	return name + "-" + BackupJobClusterRole
+	return fmt.Sprintf("%s-%s", StashBackupJob, strings.ReplaceAll(name, ".", "-"))
 }

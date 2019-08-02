@@ -617,10 +617,10 @@ kmodules.xyz/client-go v0.0.0-20190507204740-e4690d8026e7/go.mod h1:3meAILhyA9BT
 kmodules.xyz/client-go v0.0.0-20190508091620-0d215c04352f/go.mod h1:R1t4K2wWb6PTkhQPEjqQIWz+gRS0/Z0mMfIy/TsdB/w=
 kmodules.xyz/client-go v0.0.0-20190715080709-7162a6c90b04 h1:17h0mshnlihkZMP6LqMmpliCQIknKasjdNGWyZCCmV4=
 kmodules.xyz/client-go v0.0.0-20190715080709-7162a6c90b04/go.mod h1:3h1/ZglH6fV2uv3p9AB1JnHUknhWniShJ7fBJfSf7Js=
-kmodules.xyz/custom-resources v0.0.0-20190723185639-711575c0b8a9 h1:wLeUF4rEVaQxIgXHLNcLQiTCZWzgmU78erhWCHKhKUg=
-kmodules.xyz/custom-resources v0.0.0-20190723185639-711575c0b8a9/go.mod h1:0C61XSEPGexAmkrayynpNnCTacvkwn4802CRAQ5tUPI=
-kmodules.xyz/objectstore-api v0.0.0-20190715131036-28ef070833ef h1:eaSKE7rl/PpTChPQWk+KWQAB/axEYYbSkDN8wkGZnXc=
-kmodules.xyz/objectstore-api v0.0.0-20190715131036-28ef070833ef/go.mod h1:SwUpd3z5BvdUks/Nh8Wtyp8US2ATxhxQmMathe4lyOM=
+kmodules.xyz/custom-resources v0.0.0-20190730174012-d0224972f055 h1:w5CZ2h0pkofl6gAtchAP79vEuMAkbyRngU1jV9lzfWc=
+kmodules.xyz/custom-resources v0.0.0-20190730174012-d0224972f055/go.mod h1:0C61XSEPGexAmkrayynpNnCTacvkwn4802CRAQ5tUPI=
+kmodules.xyz/objectstore-api v0.0.0-20190718002052-da668b440b0b h1:VRUyLLGvBjAezi9pQ89vGR+tcO+XROdJanGe2gPyGrY=
+kmodules.xyz/objectstore-api v0.0.0-20190718002052-da668b440b0b/go.mod h1:SwUpd3z5BvdUks/Nh8Wtyp8US2ATxhxQmMathe4lyOM=
 kmodules.xyz/offshoot-api v0.0.0-20190715115723-36c8fce142c1 h1:ak95Tpl+ur0n+18naC3FzNL01f6QmV9UR3zRF/SCFUs=
 kmodules.xyz/offshoot-api v0.0.0-20190715115723-36c8fce142c1/go.mod h1:A6ALSeFH5Qm9fEkBu6hKfa4cV4ulDWqGo4rm3l00QnI=
 kmodules.xyz/openshift v0.0.0-20190225002038-ca9787d09794/go.mod h1:OA2SQV7Rn2+E553Xfp0uY5nwG0A9FztRiaWgP12Ubz8=

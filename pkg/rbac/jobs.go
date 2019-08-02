@@ -23,10 +23,10 @@ import (
 )
 
 const (
-	ScaledownJobRole                = "stash-scaledownjob"
-	RestoreInitContainerClusterRole = "stash-restore-init-container"
-	KindRole                        = "Role"
-	KindClusterRole                 = "ClusterRole"
+	ScaledownJobRole          = "stash-scaledownjob"
+	StashRestoreInitContainer = "stash-restore-init-container"
+	KindRole                  = "Role"
+	KindClusterRole           = "ClusterRole"
 )
 
 // use scaledownjob-role, service-account and role-binding name same as job name
@@ -147,7 +147,7 @@ func EnsureRecoveryRBAC(kubeClient kubernetes.Interface, resource *core.ObjectRe
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
 			Kind:     "ClusterRole",
-			Name:     SidecarClusterRole,
+			Name:     StashSidecar,
 		}
 		in.Subjects = []rbac.Subject{
 			{

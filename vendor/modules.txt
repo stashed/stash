@@ -958,7 +958,7 @@ kmodules.xyz/client-go/batch/v1beta1
 kmodules.xyz/client-go/dynamic
 kmodules.xyz/client-go/tools/analytics
 kmodules.xyz/client-go/apiregistration/v1beta1
-# kmodules.xyz/custom-resources v0.0.0-20190723185639-711575c0b8a9
+# kmodules.xyz/custom-resources v0.0.0-20190730174012-d0224972f055
 kmodules.xyz/custom-resources/client/clientset/versioned
 kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1
 kmodules.xyz/custom-resources/client/clientset/versioned/scheme

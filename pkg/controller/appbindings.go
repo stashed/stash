@@ -58,6 +58,12 @@ func (c *StashController) applyBackupAnnotationLogicForAppBinding(ab *appCatalog
 		return fmt.Errorf("failed to create reference of %s %s/%s. Reason: %v", ab.Kind, ab.Namespace, ab.Name, err)
 	}
 
+	targetAppGroup, targetAppResource := ab.AppGroupResource()
+	prefix := targetAppResource
+	if prefix == "" {
+		prefix = ab.Kind
+	}
+
 	// if ab has backup annotations then ensure respective Repository and BackupConfiguration
 	if meta_util.HasKey(ab.Annotations, api_v1beta1.KeyBackupBlueprint) {
 		// backup annotations found. so, we have to ensure Repository and BackupConfiguration from BackupBlueprint
@@ -78,6 +84,9 @@ func (c *StashController) applyBackupAnnotationLogicForAppBinding(ab *appCatalog
 		inputs[apis.TargetName] = ab.Name
 		inputs[apis.TargetNamespace] = ab.Namespace
 		inputs[apis.TargetAppVersion] = ab.Spec.Version
+		inputs[apis.TargetAppGroup] = targetAppGroup
+		inputs[apis.TargetAppResource] = targetAppResource
+		inputs[apis.TargetAppType] = string(ab.Spec.Type)
 
 		err = resolve.ResolveBackupBlueprint(backupBlueprint, inputs)
 		if err != nil {
@@ -85,13 +94,13 @@ func (c *StashController) applyBackupAnnotationLogicForAppBinding(ab *appCatalog
 		}
 
 		// ensure Repository crd
-		err = c.ensureRepository(backupBlueprint, targetRef)
+		err = c.ensureRepository(backupBlueprint, targetRef, prefix)
 		if err != nil {
 			return err
 		}
 
 		// ensure BackupConfiguration crd
-		err = c.ensureBackupConfiguration(backupBlueprint, nil, nil, targetRef)
+		err = c.ensureBackupConfiguration(backupBlueprint, nil, nil, targetRef, prefix)
 		if err != nil {
 			return err
 		}
@@ -101,12 +110,12 @@ func (c *StashController) applyBackupAnnotationLogicForAppBinding(ab *appCatalog
 		// if respective BackupConfiguration exist then backup annotations has been removed.
 		// in this case, we have to remove the BackupConfiguration too.
 		// however, we will keep Repository crd as it is required for restore.
-		_, err := c.stashClient.StashV1beta1().BackupConfigurations(ab.Namespace).Get(getBackupConfigurationName(targetRef), metav1.GetOptions{})
+		_, err := c.stashClient.StashV1beta1().BackupConfigurations(ab.Namespace).Get(getBackupConfigurationName(targetRef, prefix), metav1.GetOptions{})
 		if err != nil && !kerr.IsNotFound(err) {
 			return err
 		}
 		// BackupConfiguration exist. so, we have to remove it.
-		err = c.stashClient.StashV1beta1().BackupConfigurations(ab.Namespace).Delete(getBackupConfigurationName(targetRef), meta_util.DeleteInBackground())
+		err = c.stashClient.StashV1beta1().BackupConfigurations(ab.Namespace).Delete(getBackupConfigurationName(targetRef, prefix), meta_util.DeleteInBackground())
 		if err != nil && !kerr.IsNotFound(err) {
 			return err
 		}
