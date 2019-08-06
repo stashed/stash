@@ -22,7 +22,6 @@ func (bs BackupSession) CustomResourceDefinition() *apiextensions.CustomResource
 		Plural:        ResourcePluralBackupSession,
 		Singular:      ResourceSingularBackupSession,
 		Kind:          ResourceKindBackupSession,
-		ShortNames:    []string{"bs"},
 		Categories:    []string{"stash", "backup", "appscode"},
 		ResourceScope: string(apiextensions.NamespaceScoped),
 		Versions: []apiextensions.CustomResourceDefinitionVersion{
