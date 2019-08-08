@@ -472,7 +472,7 @@ func WaitUntilDeploymentConfigReady(c oc_cs.Interface, meta metav1.ObjectMeta) e
 
 func WaitUntilVolumeSnapshotReady(c snapshot_cs.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(RetryInterval, 2*time.Hour, func() (bool, error) {
-		if obj, err := c.VolumesnapshotV1alpha1().VolumeSnapshots(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
+		if obj, err := c.SnapshotV1alpha1().VolumeSnapshots(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err == nil {
 			return obj.Status.ReadyToUse == true, nil
 		}
 		return false, nil

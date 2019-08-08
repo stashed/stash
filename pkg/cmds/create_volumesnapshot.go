@@ -142,7 +142,7 @@ func (opt *VSoption) CreateVolumeSnapshot() error {
 	for _, pvcName := range pvcList {
 		parts := strings.Split(backupSession.Name, "-")
 		volumeSnapshot := opt.getVolumeSnapshotDefinition(backupConfiguration, pvcName, parts[len(parts)-1])
-		vs, err := opt.snapshotClient.VolumesnapshotV1alpha1().VolumeSnapshots(namespace).Create(&volumeSnapshot)
+		vs, err := opt.snapshotClient.SnapshotV1alpha1().VolumeSnapshots(namespace).Create(&volumeSnapshot)
 		if err != nil {
 			return err
 		}

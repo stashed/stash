@@ -2300,33 +2300,6 @@ func (p *parser) parse() error {
 //
 // The input is assumed to be UTF-8 encoded.
 func Parse(r io.Reader) (*Node, error) {
-	return ParseWithOptions(r)
-}
-
-// ParseFragment parses a fragment of HTML and returns the nodes that were
-// found. If the fragment is the InnerHTML for an existing element, pass that
-// element in context.
-//
-// It has the same intricacies as Parse.
-func ParseFragment(r io.Reader, context *Node) ([]*Node, error) {
-	return ParseFragmentWithOptions(r, context)
-}
-
-// ParseOption configures a parser.
-type ParseOption func(p *parser)
-
-// ParseOptionEnableScripting configures the scripting flag.
-// https://html.spec.whatwg.org/multipage/webappapis.html#enabling-and-disabling-scripting
-//
-// By default, scripting is enabled.
-func ParseOptionEnableScripting(enable bool) ParseOption {
-	return func(p *parser) {
-		p.scripting = enable
-	}
-}
-
-// ParseWithOptions is like Parse, with options.
-func ParseWithOptions(r io.Reader, opts ...ParseOption) (*Node, error) {
 	p := &parser{
 		tokenizer: NewTokenizer(r),
 		doc: &Node{
@@ -2336,11 +2309,6 @@ func ParseWithOptions(r io.Reader, opts ...ParseOption) (*Node, error) {
 		framesetOK: true,
 		im:         initialIM,
 	}
-
-	for _, f := range opts {
-		f(p)
-	}
-
 	err := p.parse()
 	if err != nil {
 		return nil, err
@@ -2348,8 +2316,12 @@ func ParseWithOptions(r io.Reader, opts ...ParseOption) (*Node, error) {
 	return p.doc, nil
 }
 
-// ParseFragmentWithOptions is like ParseFragment, with options.
-func ParseFragmentWithOptions(r io.Reader, context *Node, opts ...ParseOption) ([]*Node, error) {
+// ParseFragment parses a fragment of HTML and returns the nodes that were
+// found. If the fragment is the InnerHTML for an existing element, pass that
+// element in context.
+//
+// It has the same intricacies as Parse.
+func ParseFragment(r io.Reader, context *Node) ([]*Node, error) {
 	contextTag := ""
 	if context != nil {
 		if context.Type != ElementNode {
@@ -2371,10 +2343,6 @@ func ParseFragmentWithOptions(r io.Reader, context *Node, opts ...ParseOption) (
 		scripting: true,
 		fragment:  true,
 		context:   context,
-	}
-
-	for _, f := range opts {
-		f(p)
 	}
 
 	root := &Node{
