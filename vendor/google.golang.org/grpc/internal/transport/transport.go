@@ -327,7 +327,8 @@ func (s *Stream) TrailersOnly() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return s.noHeaders, nil
+	// if !headerDone, some other connection error occurred.
+	return s.noHeaders && atomic.LoadUint32(&s.headerDone) == 1, nil
 }
 
 // Trailer returns the cached trailer metedata. Note that if it is not called
@@ -609,9 +610,6 @@ type ClientTransport interface {
 
 	// GetGoAwayReason returns the reason why GoAway frame was received.
 	GetGoAwayReason() GoAwayReason
-
-	// RemoteAddr returns the remote network address.
-	RemoteAddr() net.Addr
 
 	// IncrMsgSent increments the number of message sent through this transport.
 	IncrMsgSent()

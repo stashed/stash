@@ -98,7 +98,7 @@ func (opt *VSoption) RestoreVolumeSnapshot() error {
 
 	for _, pvc := range pvcList {
 
-		_, err = opt.snapshotClient.VolumesnapshotV1alpha1().VolumeSnapshots(opt.namespace).Get(pvc.Spec.DataSource.Name, metav1.GetOptions{})
+		_, err = opt.snapshotClient.SnapshotV1alpha1().VolumeSnapshots(opt.namespace).Get(pvc.Spec.DataSource.Name, metav1.GetOptions{})
 		if err != nil {
 			volumeSnapshotExists = true
 			// write failure event for not existing volumeSnapshot
