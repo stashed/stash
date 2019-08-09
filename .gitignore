@@ -31,3 +31,5 @@ _testmain.go
 
 /bin
 /.go
+
+**/apiserver.local.config
