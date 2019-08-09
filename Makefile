@@ -70,7 +70,7 @@ TAG              := $(VERSION)_$(OS)_$(ARCH)
 TAG_PROD         := $(TAG)
 TAG_DBG          := $(VERSION)-dbg_$(OS)_$(ARCH)
 
-GO_VERSION       ?= 1.12.6
+GO_VERSION       ?= 1.12.7
 BUILD_IMAGE      ?= appscode/golang-dev:$(GO_VERSION)-stretch
 
 OUTBIN = bin/$(OS)_$(ARCH)/$(BIN)
@@ -216,7 +216,7 @@ bin/.container-$(DOTFILE_IMAGE)-%: bin/$(OS)_$(ARCH)/$(BIN) $(DOCKERFILE_%)
 	    -e 's|{RESTIC_VER}|$(RESTIC_VER)|g'         \
 	    -e 's|{NEW_RESTIC_VER}|$(NEW_RESTIC_VER)|g' \
 	    $(DOCKERFILE_$*) > bin/.dockerfile-$*-$(OS)_$(ARCH)
-	@docker build --pull -t $(IMAGE):$(TAG_$*) -f bin/.dockerfile-$*-$(OS)_$(ARCH) .
+	DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --platform $(OS)/$(ARCH) --load --pull -t $(IMAGE):$(TAG_$*) -f bin/.dockerfile-$*-$(OS)_$(ARCH) .
 	@docker images -q $(IMAGE):$(TAG_$*) > $@
 	@echo
 
