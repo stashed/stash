@@ -1,6 +1,11 @@
 package restic
 
 import (
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+
 	shell "github.com/codeskyblue/go-sh"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 	"stash.appscode.dev/stash/apis/stash/v1alpha1"
@@ -95,6 +100,24 @@ func (w *ResticWrapper) SetEnv(key, value string) {
 	if w.sh != nil {
 		w.sh.SetEnv(key, value)
 	}
+}
+
+func (w *ResticWrapper) DumpEnv(path string, dumpedFile string) error {
+	if err := os.MkdirAll(path, 0755); err != nil {
+		return err
+	}
+
+	var envs string
+	if w.sh != nil {
+		for k, v := range w.sh.Env {
+			envs = envs + fmt.Sprintln(k+"="+v)
+		}
+	}
+
+	if err := ioutil.WriteFile(filepath.Join(path, dumpedFile), []byte(envs), 0755); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (w *ResticWrapper) HideCMD() {
