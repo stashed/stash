@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 
 	shell "github.com/codeskyblue/go-sh"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
@@ -109,12 +110,17 @@ func (w *ResticWrapper) DumpEnv(path string, dumpedFile string) error {
 
 	var envs string
 	if w.sh != nil {
-		for k, v := range w.sh.Env {
-			envs = envs + fmt.Sprintln(k+"="+v)
+		sortedKeys := make([]string, 0, len(w.sh.Env))
+		for k := range w.sh.Env {
+			sortedKeys = append(sortedKeys, k)
+		}
+		sort.Strings(sortedKeys) //sort by key
+		for _, v := range sortedKeys {
+			envs = envs + fmt.Sprintln(v+"="+w.sh.Env[v])
 		}
 	}
 
-	if err := ioutil.WriteFile(filepath.Join(path, dumpedFile), []byte(envs), 0755); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(path, dumpedFile), []byte(envs), 0600); err != nil {
 		return err
 	}
 	return nil
