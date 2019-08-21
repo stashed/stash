@@ -17,10 +17,6 @@ import (
 	"stash.appscode.dev/stash/pkg/resolve"
 )
 
-const (
-	StashDefaultVolume = "stash-volume"
-)
-
 func (c *StashController) initPVCWatcher() {
 	c.pvcInformer = c.kubeInformerFactory.Core().V1().PersistentVolumeClaims().Informer()
 	c.pvcQueue = queue.New(apis.KindPersistentVolumeClaim, c.MaxNumRequeues, c.NumThreads, c.processPVCKey)
@@ -63,19 +59,9 @@ func (c *StashController) applyBackupAnnotationLogicForPVC(pvc *core.PersistentV
 	}
 
 	// if pvc has backup annotations then ensure respective Repository and BackupConfiguration
-	if meta_util.HasKey(pvc.Annotations, api_v1beta1.KeyBackupBlueprint) &&
-		meta_util.HasKey(pvc.Annotations, api_v1beta1.KeyMountPath) &&
-		meta_util.HasKey(pvc.Annotations, api_v1beta1.KeyTargetPaths) {
+	if meta_util.HasKey(pvc.Annotations, api_v1beta1.KeyBackupBlueprint) {
 		// backup annotations found. so, we have to ensure Repository and BackupConfiguration from BackupBlueprint
 		backupBlueprintName, err := meta_util.GetStringValue(pvc.Annotations, api_v1beta1.KeyBackupBlueprint)
-		if err != nil {
-			return err
-		}
-		mountPath, err := meta_util.GetStringValue(pvc.Annotations, api_v1beta1.KeyMountPath)
-		if err != nil {
-			return err
-		}
-		paths, err := meta_util.GetStringValue(pvc.Annotations, api_v1beta1.KeyTargetPaths)
 		if err != nil {
 			return err
 		}
@@ -103,14 +89,9 @@ func (c *StashController) applyBackupAnnotationLogicForPVC(pvc *core.PersistentV
 			return err
 		}
 
-		// ensure BackupConfiguration crd
-		volumeMounts := []core.VolumeMount{
-			{
-				Name:      StashDefaultVolume,
-				MountPath: mountPath,
-			},
-		}
-		err = c.ensureBackupConfiguration(backupBlueprint, strings.Split(paths, ","), volumeMounts, targetRef, targetRef.Kind)
+		// ensure BackupConfiguration crd. For stand-alone PVC backup, we don't need to specify target paths and volumeMounts.
+		// Stash will use default target path and mount path.
+		err = c.ensureBackupConfiguration(backupBlueprint, nil, nil, targetRef, targetRef.Kind)
 		if err != nil {
 			return err
 		}

@@ -51,10 +51,12 @@ func (c *StashController) applyBackupAnnotationLogic(w *wapi.Workload) error {
 		volumeMounts := []core.VolumeMount{}
 		for _, m := range mounts {
 			vol := strings.Split(m, ":")
-			if len(vol) == 2 {
+			if len(vol) == 3 {
+				volumeMounts = append(volumeMounts, core.VolumeMount{Name: vol[0], MountPath: vol[1], SubPath: vol[2]})
+			} else if len(vol) == 2 {
 				volumeMounts = append(volumeMounts, core.VolumeMount{Name: vol[0], MountPath: vol[1]})
 			} else {
-				return fmt.Errorf("invalid volume-mounts annotations. use 'vol1Name:mountPath,vol2Name:mountPath' format")
+				return fmt.Errorf("invalid volume-mounts annotations. use either 'volName:mountPath' or 'volName:mountPath:subPath' format")
 			}
 		}
 		// read respective BackupBlueprint crd

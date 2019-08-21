@@ -96,11 +96,18 @@ func (c *StashController) inputsForBackupTarget(target *api.BackupTarget) map[st
 		if target.Ref.Name != "" {
 			inputs[apis.TargetName] = target.Ref.Name
 		}
+		// If target paths are provided then use them. Otherwise, use stash default mount path.
 		if len(target.Paths) > 0 {
 			inputs[apis.TargetPaths] = strings.Join(target.Paths, ",")
+		} else {
+			inputs[apis.TargetPaths] = apis.StashDefaultMountPath
 		}
-		if target.VolumeMounts != nil {
-			inputs[apis.TargetMountPath] = target.VolumeMounts[0].MountPath
+
+		// If mount path is provided, then use it. Otherwise, use stash default mount path.
+		if len(target.VolumeMounts) > 0 {
+			inputs[apis.TargetMountPath] = target.VolumeMounts[0].MountPath // We assume that user will provide only one mountPath for stand-alone PVC.
+		} else {
+			inputs[apis.TargetMountPath] = apis.StashDefaultMountPath
 		}
 	}
 	return inputs
@@ -112,8 +119,11 @@ func (c *StashController) inputsForRestoreTarget(target *api.RestoreTarget) map[
 		if target.Ref.Name != "" {
 			inputs[apis.TargetName] = target.Ref.Name
 		}
-		if target.VolumeMounts != nil {
-			inputs[apis.TargetMountPath] = target.VolumeMounts[0].MountPath
+		// If mount path is provided, then use it. Otherwise, use stash default mount path.
+		if len(target.VolumeMounts) > 0 {
+			inputs[apis.TargetMountPath] = target.VolumeMounts[0].MountPath // We assume that user will provide only one mountPath for stand-alone PVC.
+		} else {
+			inputs[apis.TargetMountPath] = apis.StashDefaultMountPath
 		}
 	}
 	return inputs

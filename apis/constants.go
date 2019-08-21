@@ -56,4 +56,7 @@ const (
 	StatusSubresourceEnabled = "ENABLE_STATUS_SUBRESOURCE"
 
 	PushgatewayURL = "PROMETHEUS_PUSHGATEWAY_URL"
+
+	StashDefaultVolume    = "stash-volume"
+	StashDefaultMountPath = "/stash-data"
 )
