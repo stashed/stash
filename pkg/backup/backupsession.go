@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"k8s.io/client-go/rest"
+
 	"github.com/appscode/go/log"
 	"github.com/golang/glog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,6 +35,7 @@ import (
 )
 
 type BackupSessionController struct {
+	Config               *rest.Config
 	K8sClient            kubernetes.Interface
 	StashClient          cs.Interface
 	MasterURL            string
@@ -256,7 +259,7 @@ func (c *BackupSessionController) backup(backupSession *api_v1beta1.BackupSessio
 
 	// if metrics are enabled then generate metrics
 	if c.Metrics.Enabled {
-		err := backupOutput.HandleMetrics(&c.Metrics, nil)
+		err := backupOutput.HandleMetrics(c.Config, backupConfiguration, &c.Metrics, nil)
 		if err != nil {
 			return err
 		}
@@ -417,7 +420,7 @@ func (c *BackupSessionController) handleBackupFailure(backupSession *api_v1beta1
 		backupOutput := &restic.BackupOutput{
 			HostBackupStats: []api_v1beta1.HostBackupStats{hostStats},
 		}
-		return backupOutput.HandleMetrics(&c.Metrics, backupErr)
+		return backupOutput.HandleMetrics(c.Config, backupConfiguration, &c.Metrics, backupErr)
 	}
 	return nil
 }
@@ -430,14 +433,10 @@ func (c *BackupSessionController) HandleBackupSetupFailure(setupErr error) {
 			log.Fatalln("failed to setup backup process. Reason: ", e2.Error())
 		}
 	}
-	c.Metrics.Labels = append(c.Metrics.Labels, fmt.Sprintf("BackupConfiguration=%s", backupConfiguration.Name))
-	if backupConfiguration.Spec.Target != nil {
-		c.Metrics.Labels = append(c.Metrics.Labels, fmt.Sprintf("kind=%s", backupConfiguration.Spec.Target.Ref.Kind))
-		c.Metrics.Labels = append(c.Metrics.Labels, fmt.Sprintf("name=%s", backupConfiguration.Spec.Target.Ref.Name))
-	}
+
 	// send prometheus metrics
 	if c.Metrics.Enabled {
-		err := restic.HandleBackupSetupMetrics(c.Metrics, setupErr)
+		err := restic.HandleBackupSetupMetrics(c.Config, backupConfiguration, c.Metrics, setupErr)
 		setupErr = errors.NewAggregate([]error{setupErr, err})
 	}
 	// fail the container so that it restart and re-try this process.
@@ -452,7 +451,7 @@ func (c *BackupSessionController) handleBackupSetupSuccess(backupConfiguration *
 	}
 	// send prometheus metrics
 	if c.Metrics.Enabled {
-		err := restic.HandleBackupSetupMetrics(c.Metrics, nil)
+		err := restic.HandleBackupSetupMetrics(c.Config, backupConfiguration, c.Metrics, nil)
 		if err != nil {
 			log.Warningln("failed to send prometheus metrics. Reason: ", err.Error())
 		}

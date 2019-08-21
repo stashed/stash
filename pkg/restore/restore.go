@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"k8s.io/client-go/rest"
+
 	"github.com/appscode/go/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
@@ -29,6 +31,7 @@ const (
 )
 
 type Options struct {
+	Config             *rest.Config
 	MasterURL          string
 	KubeconfigPath     string
 	Namespace          string
@@ -179,7 +182,7 @@ func (opt *Options) runRestore(restoreSession *api_v1beta1.RestoreSession) error
 
 	// if metrics are enabled then send metrics
 	if opt.Metrics.Enabled {
-		err := restoreOutput.HandleMetrics(&opt.Metrics, nil)
+		err := restoreOutput.HandleMetrics(opt.Config, restoreSession, &opt.Metrics, nil)
 		if err != nil {
 			return err
 		}
@@ -244,7 +247,7 @@ func HandleRestoreFailure(opt *Options, restoreErr error) error {
 		restoreOutput := &restic.RestoreOutput{
 			HostRestoreStats: []api_v1beta1.HostRestoreStats{hostStats},
 		}
-		return restoreOutput.HandleMetrics(&opt.Metrics, restoreErr)
+		return restoreOutput.HandleMetrics(opt.Config, restoreSession, &opt.Metrics, restoreErr)
 	}
 	return nil
 }

@@ -5,7 +5,10 @@ import (
 
 	"github.com/appscode/go/flags"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/client-go/tools/clientcmd"
+	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/restic"
 	"stash.appscode.dev/stash/pkg/util"
 )
@@ -16,8 +19,12 @@ const (
 
 func NewCmdRestorePVC() *cobra.Command {
 	var (
-		outputDir  string
-		restoreOpt = restic.RestoreOptions{
+		masterURL          string
+		kubeconfigPath     string
+		namespace          string
+		restoreSessionName string
+		outputDir          string
+		restoreOpt         = restic.RestoreOptions{
 			Host: restic.DefaultHost,
 		}
 		setupOpt = restic.SetupOptions{
@@ -54,9 +61,23 @@ func NewCmdRestorePVC() *cobra.Command {
 			}
 			// Run restore
 			restoreOutput, restoreErr := resticWrapper.RunRestore(restoreOpt)
-			// If metrics are enabled then generate metrics
+
+			// If metric is enabled then generate metrics
 			if metrics.Enabled {
-				err := restoreOutput.HandleMetrics(&metrics, restoreErr)
+				config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
+				if err != nil {
+					return err
+				}
+				stashClient, err := cs.NewForConfig(config)
+				if err != nil {
+					return err
+				}
+				restoreSession, err := stashClient.StashV1beta1().RestoreSessions(namespace).Get(restoreSessionName, metav1.GetOptions{})
+				if err != nil {
+					return err
+				}
+
+				err = restoreOutput.HandleMetrics(config, restoreSession, &metrics, restoreErr)
 				if err != nil {
 					return util.HandleResticError(outputDir, restic.DefaultOutputFileName, errors.NewAggregate([]error{restoreErr, err}))
 				}
@@ -71,6 +92,11 @@ func NewCmdRestorePVC() *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
+	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
+	cmd.Flags().StringVar(&namespace, "namespace", "default", "Namespace of Backup/Restore Session")
+	cmd.Flags().StringVar(&restoreSessionName, "restoresession", restoreSessionName, "Name of the responsible RestoreSession crd")
 
 	cmd.Flags().StringVar(&setupOpt.Provider, "provider", setupOpt.Provider, "Backend provider (i.e. gcs, s3, azure etc)")
 	cmd.Flags().StringVar(&setupOpt.Bucket, "bucket", setupOpt.Bucket, "Name of the cloud bucket/container (keep empty for local backend)")
