@@ -14,7 +14,6 @@ import (
 	"kmodules.xyz/objectstore-api/osm"
 	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/pkg/util"
 )
 
 type KindMetaReplicas struct {
@@ -86,7 +85,7 @@ func (f *Framework) BrowseResticRepository(repository *api.Repository) ([]stow.I
 		return nil, err
 	}
 
-	bucket, prefix, err := util.GetBucketAndPrefix(&repository.Spec.Backend)
+	bucket, prefix, err := repository.Spec.Backend.GetBucketAndPrefix()
 	if err != nil {
 		return nil, err
 	}

@@ -6,17 +6,14 @@ import (
 	"strings"
 	"time"
 
-	"stash.appscode.dev/stash/pkg/util"
-
-	"k8s.io/client-go/rest"
-	"stash.appscode.dev/stash/apis"
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/rest"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
+	"stash.appscode.dev/stash/apis"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+	cs "stash.appscode.dev/stash/client/clientset/versioned"
 )
 
 // BackupMetrics defines prometheus metrics for backup setup and individual host backup
@@ -497,11 +494,11 @@ func backupMetricLabels(clientConfig *rest.Config, backupConfig *api_v1beta1.Bac
 			if err != nil {
 				return nil, err
 			}
-			promLabels["target_kind"] = appKind
+			promLabels["kind"] = appKind
 		default:
-			promLabels["target_kind"] = backupConfig.Spec.Target.Ref.Kind
+			promLabels["kind"] = backupConfig.Spec.Target.Ref.Kind
 		}
-		promLabels["target_name"] = backupConfig.Spec.Target.Ref.Name
+		promLabels["name"] = backupConfig.Spec.Target.Ref.Name
 	}
 	return promLabels, nil
 }
@@ -525,11 +522,11 @@ func repoMetricLabels(clientConfig *rest.Config, backupConfig *api_v1beta1.Backu
 		if err != nil {
 			return nil, err
 		}
-		provider, err := util.GetProvider(repository.Spec.Backend)
+		provider, err := repository.Spec.Backend.GetProvider()
 		if err != nil {
 			return nil, err
 		}
-		bucket, _, err := util.GetBucketAndPrefix(&repository.Spec.Backend)
+		bucket, _, err := repository.Spec.Backend.GetBucketAndPrefix()
 		if err != nil {
 			return nil, err
 		}

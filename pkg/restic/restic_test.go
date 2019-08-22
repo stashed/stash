@@ -9,6 +9,7 @@ import (
 
 	"github.com/appscode/go/types"
 	"github.com/stretchr/testify/assert"
+	storage "kmodules.xyz/objectstore-api/api/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
@@ -56,7 +57,7 @@ func setupTest(tempDir string) (*ResticWrapper, error) {
 	}
 
 	setupOpt := SetupOptions{
-		Provider:    ProviderLocal,
+		Provider:    storage.ProviderLocal,
 		Path:        localRepoDir,
 		SecretDir:   secretDir,
 		ScratchDir:  scratchDir,
