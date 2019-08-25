@@ -5,11 +5,11 @@ import (
 
 	"github.com/appscode/go/flags"
 	"github.com/spf13/cobra"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/restic"
+	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
 )
 
@@ -62,29 +62,35 @@ func NewCmdRestorePVC() *cobra.Command {
 			// Run restore
 			restoreOutput, restoreErr := resticWrapper.RunRestore(restoreOpt)
 
-			// If metric is enabled then generate metrics
-			if metrics.Enabled {
-				config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
-				if err != nil {
-					return err
-				}
-				stashClient, err := cs.NewForConfig(config)
-				if err != nil {
-					return err
-				}
-				restoreSession, err := stashClient.StashV1beta1().RestoreSessions(namespace).Get(restoreSessionName, metav1.GetOptions{})
-				if err != nil {
-					return err
-				}
+			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
+			if err != nil {
+				return err
+			}
+			kubeClient, err := kubernetes.NewForConfig(config)
+			if err != nil {
+				return err
+			}
+			stashClient, err := cs.NewForConfig(config)
+			if err != nil {
+				return err
+			}
 
-				err = restoreOutput.HandleMetrics(config, restoreSession, &metrics, restoreErr)
-				if err != nil {
-					return util.HandleResticError(outputDir, restic.DefaultOutputFileName, errors.NewAggregate([]error{restoreErr, err}))
-				}
+			// Update Backup Session and Repository status
+			o := status.UpdateStatusOptions{
+				Config:         config,
+				KubeClient:     kubeClient,
+				StashClient:    stashClient,
+				Namespace:      namespace,
+				RestoreSession: restoreSessionName,
+				Metrics:        metrics,
+				Error:          restoreErr,
 			}
-			if restoreErr != nil {
-				return util.HandleResticError(outputDir, restic.DefaultOutputFileName, restoreErr)
+
+			err = o.UpdatePostRestoreStatus(restoreOutput)
+			if err != nil {
+				return err
 			}
+
 			// If output directory specified, then write the output in "output.json" file in the specified directory
 			if outputDir != "" {
 				return restoreOutput.WriteOutput(filepath.Join(outputDir, restic.DefaultOutputFileName))

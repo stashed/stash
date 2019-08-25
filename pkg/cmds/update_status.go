@@ -41,6 +41,7 @@ func NewCmdUpdateStatus() *cobra.Command {
 				return err
 			}
 
+			opt.Config = config
 			if opt.BackupSession != "" {
 				return opt.UpdateBackupStatusFromFile()
 			}
@@ -59,6 +60,9 @@ func NewCmdUpdateStatus() *cobra.Command {
 	cmd.Flags().StringVar(&opt.BackupSession, "backup-session", opt.BackupSession, "Name of the Backup Session")
 	cmd.Flags().StringVar(&opt.RestoreSession, "restore-session", opt.RestoreSession, "Name of the Restore Session")
 	cmd.Flags().StringVar(&opt.OutputDir, "output-dir", opt.OutputDir, "Directory where output.json file will be written (keep empty if you don't need to write output in file)")
+	cmd.Flags().BoolVar(&opt.Metrics.Enabled, "metrics-enabled", opt.Metrics.Enabled, "Specify whether to export Prometheus metrics")
+	cmd.Flags().StringVar(&opt.Metrics.PushgatewayURL, "metrics-pushgateway-url", opt.Metrics.PushgatewayURL, "Pushgateway URL where the metrics will be pushed")
+	cmd.Flags().StringSliceVar(&opt.Metrics.Labels, "metrics-labels", opt.Metrics.Labels, "Labels to apply in exported metrics")
 
 	return cmd
 }

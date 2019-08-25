@@ -251,26 +251,18 @@ func (c *BackupSessionController) backup(backupSession *api_v1beta1.BackupSessio
 
 	// BackupOptions configuration
 	backupOpt := util.BackupOptionsForBackupConfig(*backupConfiguration, extraOpt)
-	backupOutput, err := resticWrapper.RunBackup(backupOpt)
-	if err != nil {
-		return err
-	}
-
-	// if metrics are enabled then generate metrics
-	if c.Metrics.Enabled {
-		err := backupOutput.HandleMetrics(c.Config, backupConfiguration, &c.Metrics, nil)
-		if err != nil {
-			return err
-		}
-	}
+	backupOutput, backupErr := resticWrapper.RunBackup(backupOpt)
 
 	// Update Backup Session and Repository status
 	o := status.UpdateStatusOptions{
+		Config:        c.Config,
 		KubeClient:    c.K8sClient,
 		StashClient:   c.StashClient.(*cs.Clientset),
 		Namespace:     c.Namespace,
 		BackupSession: backupSession.Name,
 		Repository:    backupConfiguration.Spec.Repository.Name,
+		Metrics:       c.Metrics,
+		Error:         backupErr,
 	}
 
 	err = o.UpdatePostBackupStatus(backupOutput)

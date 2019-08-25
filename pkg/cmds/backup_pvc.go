@@ -5,11 +5,11 @@ import (
 
 	"github.com/appscode/go/flags"
 	"github.com/spf13/cobra"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/restic"
+	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
 )
 
@@ -19,12 +19,12 @@ const (
 
 func NewCmdBackupPVC() *cobra.Command {
 	var (
-		masterURL        string
-		kubeconfigPath   string
-		namespace        string
-		backupConfigName string
-		outputDir        string
-		backupOpt        = restic.BackupOptions{
+		masterURL         string
+		kubeconfigPath    string
+		namespace         string
+		backupSessionName string
+		outputDir         string
+		backupOpt         = restic.BackupOptions{
 			Host: restic.DefaultHost,
 		}
 		setupOpt = restic.SetupOptions{
@@ -61,29 +61,35 @@ func NewCmdBackupPVC() *cobra.Command {
 			// Run backup
 			backupOutput, backupErr := resticWrapper.RunBackup(backupOpt)
 
-			// If metric is enabled then generate metrics
-			if metrics.Enabled {
-				config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
-				if err != nil {
-					return err
-				}
-				stashClient, err := cs.NewForConfig(config)
-				if err != nil {
-					return err
-				}
-				backupConfig, err := stashClient.StashV1beta1().BackupConfigurations(namespace).Get(backupConfigName, metav1.GetOptions{})
-				if err != nil {
-					return err
-				}
+			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
+			if err != nil {
+				return err
+			}
+			kubeClient, err := kubernetes.NewForConfig(config)
+			if err != nil {
+				return err
+			}
+			stashClient, err := cs.NewForConfig(config)
+			if err != nil {
+				return err
+			}
 
-				err = backupOutput.HandleMetrics(config, backupConfig, &metrics, backupErr)
-				if err != nil {
-					return util.HandleResticError(outputDir, restic.DefaultOutputFileName, errors.NewAggregate([]error{backupErr, err}))
-				}
+			// Update Backup Session and Repository status
+			o := status.UpdateStatusOptions{
+				Config:        config,
+				KubeClient:    kubeClient,
+				StashClient:   stashClient,
+				Namespace:     namespace,
+				BackupSession: backupSessionName,
+				Metrics:       metrics,
+				Error:         backupErr,
 			}
-			if backupErr != nil {
-				return util.HandleResticError(outputDir, restic.DefaultOutputFileName, backupErr)
+
+			err = o.UpdatePostBackupStatus(backupOutput)
+			if err != nil {
+				return err
 			}
+
 			// If output directory specified, then write the output in "output.json" file in the specified directory
 			if outputDir != "" {
 				return backupOutput.WriteOutput(filepath.Join(outputDir, restic.DefaultOutputFileName))
@@ -95,7 +101,7 @@ func NewCmdBackupPVC() *cobra.Command {
 	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&namespace, "namespace", "default", "Namespace of Backup/Restore Session")
-	cmd.Flags().StringVar(&backupConfigName, "backupconfig", backupConfigName, "Name of the responsible BackupConfiguration crd")
+	cmd.Flags().StringVar(&backupSessionName, "backupsession", backupSessionName, "Name of the responsible BackupSession crd")
 
 	cmd.Flags().StringVar(&setupOpt.Provider, "provider", setupOpt.Provider, "Backend provider (i.e. gcs, s3, azure etc)")
 	cmd.Flags().StringVar(&setupOpt.Bucket, "bucket", setupOpt.Bucket, "Name of the cloud bucket/container (keep empty for local backend)")

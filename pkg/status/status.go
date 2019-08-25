@@ -7,6 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/kubernetes/pkg/apis/core"
 	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
@@ -19,6 +20,7 @@ import (
 )
 
 type UpdateStatusOptions struct {
+	Config      *rest.Config
 	KubeClient  kubernetes.Interface
 	StashClient *cs.Clientset
 
@@ -28,6 +30,8 @@ type UpdateStatusOptions struct {
 	RestoreSession string
 	OutputDir      string
 	OutputFileName string
+	Metrics        restic.MetricsOptions
+	Error          error
 }
 
 func (o UpdateStatusOptions) UpdateBackupStatusFromFile() error {
@@ -114,16 +118,13 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 		}
 	}
 
-	// no need to update repository status for failed backup
-	if !overallBackupSucceeded {
-		return nil
-	}
-
-	bs, err := o.StashClient.StashV1beta1().BackupConfigurations(o.Namespace).Get(backupSession.Spec.BackupConfiguration.Name, metav1.GetOptions{})
+	backupConfig, err := o.StashClient.StashV1beta1().BackupConfigurations(o.Namespace).Get(backupSession.Spec.BackupConfiguration.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
-	if bs.Spec.Driver != api_v1beta1.VolumeSnapshotter {
+
+	// if overall backup succeeded and Restic driver is used then update repository status
+	if overallBackupSucceeded && backupConfig.Spec.Driver != api_v1beta1.VolumeSnapshotter {
 		// get repository and update status
 		repository, err := o.StashClient.StashV1alpha1().Repositories(o.Namespace).Get(o.Repository, metav1.GetOptions{})
 		if err != nil {
@@ -150,7 +151,11 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 			apis.EnableStatusSubresource,
 		)
 	}
-	return err
+	// if metrics enabled then send metrics
+	if o.Metrics.Enabled {
+		return backupOutput.HandleMetrics(o.Config, backupConfig, &o.Metrics, o.Error)
+	}
+	return nil
 }
 
 func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.RestoreOutput) error {
@@ -190,6 +195,10 @@ func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.Resto
 		if err != nil {
 			return err
 		}
+	}
+	// if metrics enabled then send metrics
+	if o.Metrics.Enabled {
+		return restoreOutput.HandleMetrics(o.Config, restoreSession, &o.Metrics, o.Error)
 	}
 	return nil
 }

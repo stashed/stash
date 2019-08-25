@@ -486,19 +486,30 @@ func backupMetricLabels(clientConfig *rest.Config, backupConfig *api_v1beta1.Bac
 			promLabels[parts[0]] = parts[1]
 		}
 	}
-	// insert target kind and name as metric labels
-	if backupConfig != nil && backupConfig.Spec.Target != nil {
-		switch backupConfig.Spec.Target.Ref.Kind {
-		case apis.KindAppBinding:
-			appKind, err := getAppKind(clientConfig, backupConfig.Spec.Target.Ref.Name, backupConfig.Namespace)
-			if err != nil {
-				return nil, err
+	// insert target information as metrics label
+	if backupConfig != nil {
+		if backupConfig.Spec.Driver == api_v1beta1.VolumeSnapshotter {
+			promLabels["driver"] = string(api_v1beta1.VolumeSnapshotter)
+			// for VolumeSnapshot individual volumes is target
+			promLabels["kind"] = apis.KindPersistentVolumeClaim
+			// for VolumeSnapshot hostname label will have the respective PVC name
+		} else {
+			promLabels["driver"] = string(api_v1beta1.ResticSnapshotter)
+			// if target specified then add target info as label
+			if backupConfig.Spec.Target != nil {
+				switch backupConfig.Spec.Target.Ref.Kind {
+				case apis.KindAppBinding:
+					appKind, err := getAppKind(clientConfig, backupConfig.Spec.Target.Ref.Name, backupConfig.Namespace)
+					if err != nil {
+						return nil, err
+					}
+					promLabels["kind"] = appKind
+				default:
+					promLabels["kind"] = backupConfig.Spec.Target.Ref.Kind
+				}
+				promLabels["name"] = backupConfig.Spec.Target.Ref.Name
 			}
-			promLabels["kind"] = appKind
-		default:
-			promLabels["kind"] = backupConfig.Spec.Target.Ref.Kind
 		}
-		promLabels["name"] = backupConfig.Spec.Target.Ref.Name
 		promLabels["namespace"] = backupConfig.Namespace
 		promLabels["repository"] = backupConfig.Spec.Repository.Name
 	}
@@ -558,19 +569,30 @@ func restoreMetricLabels(clientConfig *rest.Config, restoreSession *api_v1beta1.
 			promLabels[parts[0]] = parts[1]
 		}
 	}
-	// insert target kind and name as metric labels
-	if restoreSession != nil && restoreSession.Spec.Target != nil {
-		switch restoreSession.Spec.Target.Ref.Kind {
-		case apis.KindAppBinding:
-			appKind, err := getAppKind(clientConfig, restoreSession.Spec.Target.Ref.Name, restoreSession.Namespace)
-			if err != nil {
-				return nil, err
+	// insert target information as metrics label
+	if restoreSession != nil {
+		if restoreSession.Spec.Driver == api_v1beta1.VolumeSnapshotter {
+			promLabels["driver"] = string(api_v1beta1.VolumeSnapshotter)
+			// for VolumeSnapshot individual volumes is target
+			promLabels["kind"] = apis.KindPersistentVolumeClaim
+			// for VolumeSnapshot hostname label will have the respective PVC name
+		} else {
+			promLabels["driver"] = string(api_v1beta1.ResticSnapshotter)
+			// if target specified then add target info as label
+			if restoreSession.Spec.Target != nil {
+				switch restoreSession.Spec.Target.Ref.Kind {
+				case apis.KindAppBinding:
+					appKind, err := getAppKind(clientConfig, restoreSession.Spec.Target.Ref.Name, restoreSession.Namespace)
+					if err != nil {
+						return nil, err
+					}
+					promLabels["kind"] = appKind
+				default:
+					promLabels["kind"] = restoreSession.Spec.Target.Ref.Kind
+				}
+				promLabels["name"] = restoreSession.Spec.Target.Ref.Name
 			}
-			promLabels["kind"] = appKind
-		default:
-			promLabels["kind"] = restoreSession.Spec.Target.Ref.Kind
 		}
-		promLabels["name"] = restoreSession.Spec.Target.Ref.Name
 		promLabels["namespace"] = restoreSession.Namespace
 		promLabels["repository"] = restoreSession.Spec.Repository.Name
 	}
