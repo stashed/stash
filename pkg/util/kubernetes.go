@@ -236,6 +236,21 @@ func UpsertPodSecurityContext(currentSC, newSC *core.PodSecurityContext) *core.P
 	return finalSC
 }
 
+func UpsertDefaultPodSecurityContext(currentSC *core.PodSecurityContext) *core.PodSecurityContext {
+
+	defaultSecurityContext := &core.PodSecurityContext{
+		// GKE alpha cluster needs to run non-root container as user 65535
+		// Otherwise, ServiceAccount tokens does not get mounted into respective pod
+		// Ref: https://github.com/stashed/stash/issues/873
+		FSGroup: types.Int64P(65535),
+	}
+	// Don't overwrite user provided one.
+	// First parameter is overwritten by second parameter.
+	// Hence, we are sending defaultSecurityContext as first parameter and currentSc as second parameter
+	// so that current one does not get overwritten by default one.
+	return UpsertPodSecurityContext(defaultSecurityContext, currentSC)
+}
+
 func MergeLocalVolume(volumes []core.Volume, backend *store.Backend) []core.Volume {
 	// check if stash-local volume already exist
 	oldPos := -1

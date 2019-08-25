@@ -196,6 +196,12 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, bc *api_v1beta1.
 		)
 	}
 
+	// TODO: should we modify user's workloads security context?
+	// apply default pod level security context (fsGroup: 65535)
+	// this will not overwrite user provided security context
+	// it will just insert if not present.
+	w.Spec.Template.Spec.SecurityContext = util.UpsertDefaultPodSecurityContext(w.Spec.Template.Spec.SecurityContext)
+
 	w.Spec.Template.Spec.Volumes = util.UpsertTmpVolume(w.Spec.Template.Spec.Volumes, bc.Spec.TempDir)
 	w.Spec.Template.Spec.Volumes = util.UpsertDownwardVolume(w.Spec.Template.Spec.Volumes)
 	w.Spec.Template.Spec.Volumes = util.UpsertSecretVolume(w.Spec.Template.Spec.Volumes, repository.Spec.Backend.StorageSecretName)

@@ -79,6 +79,13 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, rs *api_v
 			rs.Spec.RuntimeSettings.Pod.ImagePullSecrets,
 		)
 	}
+
+	// TODO: should we modify user's workloads security context?
+	// apply default pod level security context (fsGroup: 65535)
+	// this will not overwrite user provided security context
+	// it will just insert if not present.
+	w.Spec.Template.Spec.SecurityContext = util.UpsertDefaultPodSecurityContext(w.Spec.Template.Spec.SecurityContext)
+
 	// add an emptyDir volume for holding temporary files
 	w.Spec.Template.Spec.Volumes = util.UpsertTmpVolume(w.Spec.Template.Spec.Volumes, rs.Spec.TempDir)
 	// add  downward volume to make some information of the workload accessible to the container
