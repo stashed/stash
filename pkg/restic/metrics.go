@@ -499,6 +499,8 @@ func backupMetricLabels(clientConfig *rest.Config, backupConfig *api_v1beta1.Bac
 			promLabels["kind"] = backupConfig.Spec.Target.Ref.Kind
 		}
 		promLabels["name"] = backupConfig.Spec.Target.Ref.Name
+		promLabels["namespace"] = backupConfig.Namespace
+		promLabels["repository"] = backupConfig.Spec.Repository.Name
 	}
 	return promLabels, nil
 }
@@ -522,19 +524,27 @@ func repoMetricLabels(clientConfig *rest.Config, backupConfig *api_v1beta1.Backu
 		if err != nil {
 			return nil, err
 		}
-		provider, err := repository.Spec.Backend.GetProvider()
+		provider, err := repository.Spec.Backend.Provider()
 		if err != nil {
 			return nil, err
 		}
-		bucket, _, err := repository.Spec.Backend.GetBucketAndPrefix()
+		bucket, err := repository.Spec.Backend.Container()
+		if err != nil {
+			return nil, err
+		}
+		prefix, err := repository.Spec.Backend.Prefix()
 		if err != nil {
 			return nil, err
 		}
 
 		promLabels["name"] = repository.Name
+		promLabels["namespace"] = repository.Namespace
 		promLabels["backend"] = provider
 		if bucket != "" {
 			promLabels["bucket"] = bucket
+		}
+		if prefix != "" {
+			promLabels["prefix"] = prefix
 		}
 	}
 	return promLabels, nil
@@ -556,11 +566,13 @@ func restoreMetricLabels(clientConfig *rest.Config, restoreSession *api_v1beta1.
 			if err != nil {
 				return nil, err
 			}
-			promLabels["target_kind"] = appKind
+			promLabels["kind"] = appKind
 		default:
-			promLabels["target_kind"] = restoreSession.Spec.Target.Ref.Kind
+			promLabels["kind"] = restoreSession.Spec.Target.Ref.Kind
 		}
-		promLabels["target_name"] = restoreSession.Spec.Target.Ref.Name
+		promLabels["name"] = restoreSession.Spec.Target.Ref.Name
+		promLabels["namespace"] = restoreSession.Namespace
+		promLabels["repository"] = restoreSession.Spec.Repository.Name
 	}
 	return promLabels, nil
 }

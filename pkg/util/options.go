@@ -63,24 +63,31 @@ func RestoreOptionsForHost(hostname string, rules []api.Rule) restic.RestoreOpti
 }
 
 func SetupOptionsForRepository(repository api_v1alpha1.Repository, extraOpt ExtraOptions) (restic.SetupOptions, error) {
-	provider, err := repository.Spec.Backend.GetProvider()
+	provider, err := repository.Spec.Backend.Provider()
 	if err != nil {
 		return restic.SetupOptions{}, err
 	}
-	bucket, prefix, err := repository.Spec.Backend.GetBucketAndPrefix()
+	bucket, err := repository.Spec.Backend.Container()
 	if err != nil {
 		return restic.SetupOptions{}, err
 	}
+	prefix, err := repository.Spec.Backend.Prefix()
+	if err != nil {
+		return restic.SetupOptions{}, err
+	}
+	endpoint, _ := repository.Spec.Backend.Endpoint()
+	restURL, _ := repository.Spec.Backend.Endpoint()
+
 	return restic.SetupOptions{
 		Provider:       provider,
 		Bucket:         bucket,
 		Path:           prefix,
-		Endpoint:       repository.Spec.Backend.GetEndpoint(),
+		Endpoint:       endpoint,
 		CacertFile:     extraOpt.CacertFile,
 		SecretDir:      extraOpt.SecretDir,
 		ScratchDir:     extraOpt.ScratchDir,
 		EnableCache:    extraOpt.EnableCache,
-		MaxConnections: repository.Spec.Backend.GetMaxConnections(),
-		URL:            repository.Spec.Backend.GetRestUrl(),
+		MaxConnections: repository.Spec.Backend.MaxConnections(),
+		URL:            restURL,
 	}, nil
 }

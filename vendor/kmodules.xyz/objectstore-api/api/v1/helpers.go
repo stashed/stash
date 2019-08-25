@@ -1,8 +1,7 @@
 package v1
 
 import (
-	"path/filepath"
-	"strings"
+	"net/url"
 
 	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
@@ -20,20 +19,24 @@ const (
 
 // Container returns name of the bucket
 func (backend Backend) Container() (string, error) {
-	if backend.S3 != nil {
+	if backend.Local != nil {
+		return backend.Local.MountPath, nil
+	} else if backend.S3 != nil {
 		return backend.S3.Bucket, nil
 	} else if backend.GCS != nil {
 		return backend.GCS.Bucket, nil
 	} else if backend.Azure != nil {
 		return backend.Azure.Container, nil
-	} else if backend.Local != nil {
-		return backend.Local.MountPath, nil
 	} else if backend.Swift != nil {
 		return backend.Swift.Container, nil
 	} else if backend.Rest != nil {
-		return backend.Rest.URL, nil
+		u, err := url.Parse(backend.Rest.URL)
+		if err != nil {
+			return "", err
+		}
+		return u.Host, nil
 	}
-	return "", errors.New("no storage provider is configured")
+	return "", errors.New("failed to get container. Reason: Unknown backend type.")
 }
 
 // Location returns the location of backend (<provider>:<bucket name>)
@@ -48,8 +51,6 @@ func (backend Backend) Location() (string, error) {
 		return "local:" + backend.Local.MountPath, nil
 	} else if backend.Swift != nil {
 		return "swift:" + backend.Swift.Container, nil
-	} else if backend.Rest != nil {
-		return "rest:" + backend.Rest.URL, nil
 	}
 	return "", errors.New("no storage provider is configured")
 }
@@ -68,26 +69,30 @@ func (l LocalSpec) ToVolumeAndMount(volName string) (core.Volume, core.VolumeMou
 	return vol, mnt
 }
 
-// GetBucketAndPrefix return bucket and the prefix used in the backend
-func (backend Backend) GetBucketAndPrefix() (string, string, error) {
+// Prefix returns the prefix used in the backend
+func (backend Backend) Prefix() (string, error) {
 	if backend.Local != nil {
-		return "", filepath.Join(backend.Local.MountPath, strings.TrimPrefix(backend.Local.SubPath, "/")), nil
+		return "", nil
 	} else if backend.S3 != nil {
-		return backend.S3.Bucket, strings.TrimPrefix(backend.S3.Prefix, backend.S3.Bucket+"/"), nil
+		return backend.S3.Prefix, nil
 	} else if backend.GCS != nil {
-		return backend.GCS.Bucket, backend.GCS.Prefix, nil
+		return backend.GCS.Prefix, nil
 	} else if backend.Azure != nil {
-		return backend.Azure.Container, backend.Azure.Prefix, nil
+		return backend.Azure.Prefix, nil
 	} else if backend.Swift != nil {
-		return backend.Swift.Container, backend.Swift.Prefix, nil
+		return backend.Swift.Prefix, nil
 	} else if backend.Rest != nil {
-		return "", "", nil
+		u, err := url.Parse(backend.Rest.URL)
+		if err != nil {
+			return "", err
+		}
+		return u.Path, nil
 	}
-	return "", "", errors.New("unknown backend type.")
+	return "", errors.New("failed to get prefix. Reason: Unknown backend type.")
 }
 
-// GetProvider returns the provider of the backend
-func (backend Backend) GetProvider() (string, error) {
+// Provider returns the provider of the backend
+func (backend Backend) Provider() (string, error) {
 	if backend.Local != nil {
 		return ProviderLocal, nil
 	} else if backend.S3 != nil {
@@ -106,9 +111,9 @@ func (backend Backend) GetProvider() (string, error) {
 	return "", errors.New("unknown provider.")
 }
 
-// GetMaxConnections returns maximum parallel connection to use to connect with the backend
+// MaxConnections returns maximum parallel connection to use to connect with the backend
 // returns 0 if not specified
-func (backend Backend) GetMaxConnections() int {
+func (backend Backend) MaxConnections() int {
 	if backend.GCS != nil {
 		return backend.GCS.MaxConnections
 	} else if backend.Azure != nil {
@@ -119,18 +124,12 @@ func (backend Backend) GetMaxConnections() int {
 	return 0
 }
 
-// GetEndpoint returns endpoint of S3/S3 compatible backend
-func (backend Backend) GetEndpoint() string {
+// Endpoint returns endpoint of Restic rest server and S3/S3 compatible backend
+func (backend Backend) Endpoint() (string, bool) {
 	if backend.S3 != nil {
-		return backend.S3.Endpoint
+		return backend.S3.Endpoint, true
+	} else if backend.Rest != nil {
+		return backend.Rest.URL, true
 	}
-	return ""
-}
-
-// GetRestUrl returns the URL of REST backend
-func (backend *Backend) GetRestUrl() string {
-	if backend.Rest != nil {
-		return backend.Rest.URL
-	}
-	return ""
+	return "", false
 }

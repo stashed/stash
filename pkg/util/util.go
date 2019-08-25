@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -157,6 +158,24 @@ func FixBackendPrefix(backend *store.Backend, autoPrefix string) *store.Backend 
 		backend.B2.Prefix = strings.TrimSuffix(backend.B2.Prefix, "/")
 	}
 	return backend
+}
+
+// TODO: move to store
+func GetBucketAndPrefix(backend *store.Backend) (string, string, error) {
+	if backend.Local != nil {
+		return "", filepath.Join(backend.Local.MountPath, strings.TrimPrefix(backend.Local.SubPath, "/")), nil
+	} else if backend.S3 != nil {
+		return backend.S3.Bucket, strings.TrimPrefix(backend.S3.Prefix, backend.S3.Bucket+"/"), nil
+	} else if backend.GCS != nil {
+		return backend.GCS.Bucket, backend.GCS.Prefix, nil
+	} else if backend.Azure != nil {
+		return backend.Azure.Container, backend.Azure.Prefix, nil
+	} else if backend.Swift != nil {
+		return backend.Swift.Container, backend.Swift.Prefix, nil
+	} else if backend.Rest != nil {
+		return "", "", nil
+	}
+	return "", "", errors.New("unknown backend type.")
 }
 
 func ExtractDataFromRepositoryLabel(labels map[string]string) (data RepoLabelData, err error) {

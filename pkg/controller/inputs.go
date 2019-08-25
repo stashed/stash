@@ -71,10 +71,13 @@ func (c *StashController) inputsForRepository(repository *apiAlpha.Repository) (
 	if repository.Name != "" {
 		inputs[apis.RepositoryName] = repository.Name
 	}
-	if inputs[apis.RepositoryProvider], err = repository.Spec.Backend.GetProvider(); err != nil {
+	if inputs[apis.RepositoryProvider], err = repository.Spec.Backend.Provider(); err != nil {
 		return
 	}
-	if inputs[apis.RepositoryBucket], inputs[apis.RepositoryPrefix], err = repository.Spec.Backend.GetBucketAndPrefix(); err != nil {
+	if inputs[apis.RepositoryBucket], err = repository.Spec.Backend.Container(); err != nil {
+		return
+	}
+	if inputs[apis.RepositoryPrefix], err = repository.Spec.Backend.Prefix(); err != nil {
 		return
 	}
 	if repository.Spec.Backend.StorageSecretName != "" {
@@ -86,7 +89,7 @@ func (c *StashController) inputsForRepository(repository *apiAlpha.Repository) (
 	if repository.Spec.Backend.Rest != nil && repository.Spec.Backend.Rest.URL != "" {
 		inputs[apis.RepositoryURL] = repository.Spec.Backend.Rest.URL
 	}
-	inputs[apis.MaxConnections] = strconv.Itoa(repository.Spec.Backend.GetMaxConnections())
+	inputs[apis.MaxConnections] = strconv.Itoa(repository.Spec.Backend.MaxConnections())
 	return
 }
 

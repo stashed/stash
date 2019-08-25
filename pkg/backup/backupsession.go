@@ -443,11 +443,6 @@ func (c *BackupSessionController) HandleBackupSetupFailure(setupErr error) {
 }
 
 func (c *BackupSessionController) handleBackupSetupSuccess(backupConfiguration *api_v1beta1.BackupConfiguration) {
-	c.Metrics.Labels = append(c.Metrics.Labels, fmt.Sprintf("BackupConfiguration=%s", backupConfiguration.Name))
-	if backupConfiguration.Spec.Target != nil {
-		c.Metrics.Labels = append(c.Metrics.Labels, fmt.Sprintf("kind=%s", backupConfiguration.Spec.Target.Ref.Kind))
-		c.Metrics.Labels = append(c.Metrics.Labels, fmt.Sprintf("name=%s", backupConfiguration.Spec.Target.Ref.Name))
-	}
 	// send prometheus metrics
 	if c.Metrics.Enabled {
 		err := restic.HandleBackupSetupMetrics(c.Config, backupConfiguration, c.Metrics, nil)
