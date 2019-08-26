@@ -6,7 +6,6 @@ const (
 
 	KeyBackupBlueprint = StashKey + "/backup-blueprint"
 	KeyTargetPaths     = StashKey + "/target-paths"
-	KeyMountPath       = StashKey + "/mountpath"
 	KeyVolumeMounts    = StashKey + "/volume-mounts"
 
 	KeyLastAppliedRestoreSession      = StashKey + "/last-applied-restoresession"

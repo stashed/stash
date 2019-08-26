@@ -5,6 +5,7 @@ import (
 
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"stash.appscode.dev/stash/apis"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	util_v1beta1 "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
@@ -177,7 +178,7 @@ func pvcBackupTask() *api_v1beta1.Task {
 						},
 						{
 							Name:  "targetVolume",
-							Value: "target-volume",
+							Value: apis.StashDefaultVolume,
 						},
 						{
 							Name:  "secretVolume",
@@ -197,7 +198,7 @@ func pvcBackupTask() *api_v1beta1.Task {
 			},
 			Volumes: []core.Volume{
 				{
-					Name: "target-volume",
+					Name: apis.StashDefaultVolume,
 					VolumeSource: core.VolumeSource{
 						PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
 							ClaimName: "${TARGET_NAME}",
@@ -233,7 +234,7 @@ func pvcRestoreTask() *api_v1beta1.Task {
 						},
 						{
 							Name:  "targetVolume",
-							Value: "target-volume",
+							Value: apis.StashDefaultVolume,
 						},
 						{
 							Name:  "secretVolume",
@@ -253,7 +254,7 @@ func pvcRestoreTask() *api_v1beta1.Task {
 			},
 			Volumes: []core.Volume{
 				{
-					Name: "target-volume",
+					Name: apis.StashDefaultVolume,
 					VolumeSource: core.VolumeSource{
 						PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
 							ClaimName: "${TARGET_NAME}",
