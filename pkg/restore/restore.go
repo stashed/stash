@@ -19,7 +19,6 @@ import (
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
-	stash_util_v1beta1 "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
 	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/pkg/restic"
 	"stash.appscode.dev/stash/pkg/status"
@@ -209,27 +208,30 @@ func HandleRestoreFailure(opt *Options, restoreErr error) error {
 		return err
 	}
 
-	hostStats := api_v1beta1.HostRestoreStats{
-		Hostname: host,
-		Phase:    api_v1beta1.HostRestoreFailed,
-	}
+	var errorMsg string
 	if restoreErr != nil {
-		hostStats.Error = restoreErr.Error()
+		errorMsg = restoreErr.Error()
 	}
-	// add or update entry for this host in RestoreSession status
-	_, err = stash_util_v1beta1.UpdateRestoreSessionStatusForHost(opt.StashClient.StashV1beta1(), restoreSession, hostStats)
-
-	// write failure event
-	opt.writeRestoreFailureEvent(restoreSession, host, restoreErr)
-
-	// send prometheus metrics
-	if opt.Metrics.Enabled {
-		restoreOutput := &restic.RestoreOutput{
-			HostRestoreStats: []api_v1beta1.HostRestoreStats{hostStats},
-		}
-		return restoreOutput.HandleMetrics(opt.Config, restoreSession, &opt.Metrics, restoreErr)
+	restoreOutput := &restic.RestoreOutput{
+		HostRestoreStats: []api_v1beta1.HostRestoreStats{
+			{
+				Hostname: host,
+				Phase:    api_v1beta1.HostRestoreFailed,
+				Error:    errorMsg,
+			},
+		},
 	}
-	return nil
+	statusOpt := status.UpdateStatusOptions{
+		Config:         opt.Config,
+		KubeClient:     opt.KubeClient,
+		StashClient:    opt.StashClient,
+		Namespace:      opt.Namespace,
+		RestoreSession: opt.RestoreSessionName,
+		Metrics:        opt.Metrics,
+		Error:          restoreErr,
+	}
+
+	return statusOpt.UpdatePostRestoreStatus(restoreOutput)
 }
 
 func (opt *Options) writeRestoreFailureEvent(restoreSession *api_v1beta1.RestoreSession, host string, err error) {

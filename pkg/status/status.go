@@ -22,7 +22,7 @@ import (
 type UpdateStatusOptions struct {
 	Config      *rest.Config
 	KubeClient  kubernetes.Interface
-	StashClient *cs.Clientset
+	StashClient cs.Interface
 
 	Namespace      string
 	Repository     string

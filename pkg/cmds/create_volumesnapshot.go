@@ -159,7 +159,7 @@ func (opt *VSoption) CreateVolumeSnapshot() error {
 		// Update Backup Session
 		o := status.UpdateStatusOptions{
 			KubeClient:    opt.kubeClient,
-			StashClient:   opt.stashClient.(*cs.Clientset),
+			StashClient:   opt.stashClient,
 			Namespace:     opt.namespace,
 			BackupSession: opt.name,
 		}

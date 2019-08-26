@@ -2,6 +2,7 @@ package util
 
 import (
 	go_str "github.com/appscode/go/strings"
+	storage "kmodules.xyz/objectstore-api/api/v1"
 	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	api "stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/restic"
@@ -75,8 +76,12 @@ func SetupOptionsForRepository(repository api_v1alpha1.Repository, extraOpt Extr
 	if err != nil {
 		return restic.SetupOptions{}, err
 	}
-	endpoint, _ := repository.Spec.Backend.Endpoint()
-	restURL, _ := repository.Spec.Backend.Endpoint()
+	var endpoint, restURL string
+	if provider == storage.ProviderRest {
+		restURL, _ = repository.Spec.Backend.Endpoint()
+	} else {
+		endpoint, _ = repository.Spec.Backend.Endpoint()
+	}
 
 	return restic.SetupOptions{
 		Provider:       provider,

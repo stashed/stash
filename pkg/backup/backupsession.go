@@ -24,7 +24,6 @@ import (
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
-	v1beta1_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
 	stashinformers "stash.appscode.dev/stash/client/informers/externalversions"
 	"stash.appscode.dev/stash/client/listers/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/eventer"
@@ -257,7 +256,7 @@ func (c *BackupSessionController) backup(backupSession *api_v1beta1.BackupSessio
 	o := status.UpdateStatusOptions{
 		Config:        c.Config,
 		KubeClient:    c.K8sClient,
-		StashClient:   c.StashClient.(*cs.Clientset),
+		StashClient:   c.StashClient,
 		Namespace:     c.Namespace,
 		BackupSession: backupSession.Name,
 		Repository:    backupConfiguration.Spec.Repository.Name,
@@ -393,27 +392,27 @@ func (c *BackupSessionController) handleBackupFailure(backupSession *api_v1beta1
 	if err != nil {
 		return err
 	}
-
-	hostStats := api_v1beta1.HostBackupStats{
-		Hostname: host,
-		Phase:    api_v1beta1.HostBackupFailed,
-		Error:    backupErr.Error(),
+	backupOutput := &restic.BackupOutput{
+		HostBackupStats: []api_v1beta1.HostBackupStats{
+			{
+				Hostname: host,
+				Phase:    api_v1beta1.HostBackupFailed,
+				Error:    backupErr.Error(),
+			},
+		},
 	}
 
-	// add or update entry for this host in BackupSession status
-	_, err = v1beta1_util.UpdateBackupSessionStatusForHost(c.StashClient.StashV1beta1(), backupSession, hostStats)
-
-	// write failure event
-	c.writeBackupFailureEvent(backupSession, host, backupErr)
-
-	// send prometheus metrics
-	if c.Metrics.Enabled {
-		backupOutput := &restic.BackupOutput{
-			HostBackupStats: []api_v1beta1.HostBackupStats{hostStats},
-		}
-		return backupOutput.HandleMetrics(c.Config, backupConfiguration, &c.Metrics, backupErr)
+	statusOpt := status.UpdateStatusOptions{
+		Config:        c.Config,
+		KubeClient:    c.K8sClient,
+		StashClient:   c.StashClient,
+		Namespace:     c.Namespace,
+		BackupSession: backupSession.Name,
+		Metrics:       c.Metrics,
+		Error:         backupErr,
 	}
-	return nil
+
+	return statusOpt.UpdatePostBackupStatus(backupOutput)
 }
 
 func (c *BackupSessionController) HandleBackupSetupFailure(setupErr error) {

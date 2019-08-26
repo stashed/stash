@@ -30,6 +30,7 @@ import (
 	"stash.appscode.dev/stash/pkg/eventer"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/resolve"
+	"stash.appscode.dev/stash/pkg/restic"
 	"stash.appscode.dev/stash/pkg/util"
 )
 
@@ -96,8 +97,15 @@ func (c *StashController) runBackupSessionProcessor(key string) error {
 	phase, err := c.getBackupSessionPhase(backupSession)
 
 	if phase == api_v1beta1.BackupSessionFailed {
+		// one or more hosts has failed to complete their backup process.
+		// mark entire backup session as failure.
+		// individual hosts has updated their respective stats and has sent respective metrics.
+		// now, just set BackupSession phase "Failed" and create an event.
 		return c.setBackupSessionFailed(backupSession, err)
 	} else if phase == api_v1beta1.BackupSessionSucceeded {
+		// all hosts has completed their backup process successfully.
+		// individual hosts has updated their respective stats and has sent respective metrics.
+		// now, just set BackupSession phase "Succeeded" and create an event.
 		return c.setBackupSessionSucceeded(backupSession)
 	} else if phase == api_v1beta1.BackupSessionRunning {
 		log.Infof("Skipping processing BackupSession %s/%s. Reason: phase is %q.", backupSession.Namespace, backupSession.Name, backupSession.Status.Phase)
@@ -124,11 +132,11 @@ func (c *StashController) runBackupSessionProcessor(key string) error {
 	}
 
 	if backupConfig.Spec.Target != nil && backupConfig.Spec.Driver == api_v1beta1.VolumeSnapshotter {
-		err := c.setBackupSessionRunning(backupSession)
+		err := c.ensureVolumeSnapshotterJob(backupConfig, backupSession)
 		if err != nil {
-			return err
+			return c.handleBackupJobCreationFailure(backupSession, backupConfig, err)
 		}
-		return c.ensureVolumeSnapshotterJob(backupConfig, backupSession)
+		return c.setBackupSessionRunning(backupSession)
 	}
 	// skip if backup model is sidecar.
 	// for sidecar model controller inside sidecar will take care of it.
@@ -140,7 +148,8 @@ func (c *StashController) runBackupSessionProcessor(key string) error {
 	// create backup job
 	err = c.ensureBackupJob(backupSession, backupConfig)
 	if err != nil {
-		return c.setBackupSessionFailed(backupSession, err)
+		// failed to ensure backup job. set BackupSession phase "Failed" and send failure metrics.
+		return c.handleBackupJobCreationFailure(backupSession, backupConfig, err)
 	}
 
 	// job has been created successfully. set BackupSession phase "Running"
@@ -251,6 +260,70 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 		in.Spec.Template.Spec = podSpec
 		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
+		return in
+	})
+
+	return err
+}
+
+func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.BackupConfiguration, backupSession *api_v1beta1.BackupSession) error {
+	offshootLabels := backupConfig.OffshootLabels()
+
+	jobMeta := metav1.ObjectMeta{
+		Name:      getVolumeSnapshotterJobName(backupSession),
+		Namespace: backupSession.Namespace,
+		Labels:    offshootLabels,
+	}
+
+	backupConfigRef, err := reference.GetReference(stash_scheme.Scheme, backupConfig)
+	if err != nil {
+		return err
+	}
+
+	serviceAccountName := "default"
+	//ensure respective RBAC stuffs
+	//Create new ServiceAccount
+	serviceAccountName = backupConfig.Name
+	saMeta := metav1.ObjectMeta{
+		Name:      serviceAccountName,
+		Namespace: backupConfig.Namespace,
+		Labels:    offshootLabels,
+	}
+	_, _, err = core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, backupConfigRef)
+		return in
+	})
+	if err != nil {
+		return err
+	}
+
+	err = stash_rbac.EnsureVolumeSnapshotterJobRBAC(c.kubeClient, backupConfigRef, serviceAccountName, offshootLabels)
+	if err != nil {
+		return err
+	}
+
+	image := docker.Docker{
+		Registry: c.DockerRegistry,
+		Image:    docker.ImageStash,
+		Tag:      c.StashImageTag,
+	}
+
+	jobTemplate, err := util.NewVolumeSnapshotterJob(backupSession, backupConfig, image)
+	if err != nil {
+		return err
+	}
+
+	// Create VolumeSnapshotter job
+	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, jobMeta, func(in *batchv1.Job) *batchv1.Job {
+		// set BackupSession as owner of this Job
+		core_util.EnsureOwnerReference(&in.ObjectMeta, backupConfigRef)
+
+		in.Labels = offshootLabels
+		// ensure that job gets deleted on completion
+		in.Labels[apis.KeyDeleteJobOnCompletion] = "true"
+
+		in.Spec.Template = *jobTemplate
+		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 		return in
 	})
 
@@ -401,68 +474,24 @@ func (c *StashController) getBackupSessionPhase(backupSession *api_v1beta1.Backu
 	return api_v1beta1.BackupSessionSucceeded, nil
 }
 
-func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.BackupConfiguration, backupSession *api_v1beta1.BackupSession) error {
-	offshootLabels := backupConfig.OffshootLabels()
+func (c *StashController) handleBackupJobCreationFailure(backupSession *api_v1beta1.BackupSession, backupConfig *api_v1beta1.BackupConfiguration, backupErr error) error {
+	log.Warningln("failed to ensure backup job. Reason: ", backupErr)
 
-	jobMeta := metav1.ObjectMeta{
-		Name:      getVolumeSnapshotterJobName(backupSession),
-		Namespace: backupSession.Namespace,
-		Labels:    offshootLabels,
+	// send prometheus metrics
+	metricOpt := &restic.MetricsOptions{
+		Enabled:        true,
+		PushgatewayURL: util.PushgatewayURL(),
+		Labels:         nil,
+		JobName:        "stash-operator",
 	}
-
-	backupConfigRef, err := reference.GetReference(stash_scheme.Scheme, backupConfig)
+	backupOutput := restic.BackupOutput{}
+	err := backupOutput.HandleMetrics(c.clientConfig, backupConfig, metricOpt, backupErr)
 	if err != nil {
-		return err
+		log.Infof("Failed to send prometheus metrics. Reason: %v", err)
 	}
 
-	serviceAccountName := "default"
-	//ensure respective RBAC stuffs
-	//Create new ServiceAccount
-	serviceAccountName = backupConfig.Name
-	saMeta := metav1.ObjectMeta{
-		Name:      serviceAccountName,
-		Namespace: backupConfig.Namespace,
-		Labels:    offshootLabels,
-	}
-	_, _, err = core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, backupConfigRef)
-		return in
-	})
-	if err != nil {
-		return err
-	}
-
-	err = stash_rbac.EnsureVolumeSnapshotterJobRBAC(c.kubeClient, backupConfigRef, serviceAccountName, offshootLabels)
-	if err != nil {
-		return err
-	}
-
-	image := docker.Docker{
-		Registry: c.DockerRegistry,
-		Image:    docker.ImageStash,
-		Tag:      c.StashImageTag,
-	}
-
-	jobTemplate, err := util.NewVolumeSnapshotterJob(backupSession, backupConfig, image)
-	if err != nil {
-		return err
-	}
-
-	// Create VolumeSnapshotter job
-	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, jobMeta, func(in *batchv1.Job) *batchv1.Job {
-		// set BackupSession as owner of this Job
-		core_util.EnsureOwnerReference(&in.ObjectMeta, backupConfigRef)
-
-		in.Labels = offshootLabels
-		// ensure that job gets deleted on completion
-		in.Labels[apis.KeyDeleteJobOnCompletion] = "true"
-
-		in.Spec.Template = *jobTemplate
-		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-		return in
-	})
-
-	return err
+	// set BackupSession phase failed and create an event
+	return c.setBackupSessionFailed(backupSession, backupErr)
 }
 
 func getBackupJobName(backupSession *api_v1beta1.BackupSession) string {
