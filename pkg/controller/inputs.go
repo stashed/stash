@@ -29,7 +29,7 @@ func (c *StashController) inputsForBackupConfig(backupConfig api.BackupConfigura
 	inputs[apis.EnableCache] = strconv.FormatBool(!backupConfig.Spec.TempDir.DisableCaching)
 
 	// add PushgatewayURL as input
-	metricInputs := c.inputForMetrics()
+	metricInputs := c.inputForMetrics(backupConfig.Name)
 	inputs = core_util.UpsertMap(inputs, metricInputs)
 
 	return inputs, nil
@@ -57,7 +57,7 @@ func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSess
 	inputs[apis.TargetAppReplicas] = fmt.Sprintf("%d", replicas)
 
 	// add PushgatewayURL as input
-	metricInputs := c.inputForMetrics()
+	metricInputs := c.inputForMetrics(restoreSession.Name)
 	inputs = core_util.UpsertMap(inputs, metricInputs)
 
 	return inputs, nil
@@ -165,8 +165,9 @@ func (c *StashController) inputsForRetentionPolicy(retentionPolicy apiAlpha.Rete
 	return inputs
 }
 
-func (c *StashController) inputForMetrics() map[string]string {
+func (c *StashController) inputForMetrics(jobName string) map[string]string {
 	return map[string]string{
-		apis.PushgatewayURL: util.PushgatewayURL(),
+		apis.PushgatewayURL:    util.PushgatewayURL(),
+		apis.PrometheusJobName: jobName,
 	}
 }

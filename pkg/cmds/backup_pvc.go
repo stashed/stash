@@ -5,34 +5,19 @@ import (
 
 	"github.com/appscode/go/flags"
 	"github.com/spf13/cobra"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/restic"
-	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
-)
-
-const (
-	JobPVCBackup = "stash-pvc-backup"
 )
 
 func NewCmdBackupPVC() *cobra.Command {
 	var (
-		masterURL         string
-		kubeconfigPath    string
-		namespace         string
-		backupSessionName string
-		outputDir         string
-		backupOpt         = restic.BackupOptions{
+		outputDir string
+		backupOpt = restic.BackupOptions{
 			Host: restic.DefaultHost,
 		}
 		setupOpt = restic.SetupOptions{
 			ScratchDir:  restic.DefaultScratchDir,
 			EnableCache: false,
-		}
-		metrics = restic.MetricsOptions{
-			JobName: JobPVCBackup,
 		}
 	)
 
@@ -42,8 +27,9 @@ func NewCmdBackupPVC() *cobra.Command {
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			flags.EnsureRequiredFlags(cmd, "backup-dirs", "provider", "secret-dir")
-			var err error
+
 			// apply nice, ionice settings from env
+			var err error
 			setupOpt.Nice, err = util.NiceSettingsFromEnv()
 			if err != nil {
 				return util.HandleResticError(outputDir, restic.DefaultOutputFileName, err)
@@ -60,36 +46,9 @@ func NewCmdBackupPVC() *cobra.Command {
 			}
 			// Run backup
 			backupOutput, backupErr := resticWrapper.RunBackup(backupOpt)
-
-			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
-			if err != nil {
-				return err
+			if backupErr != nil {
+				return util.HandleResticError(outputDir, restic.DefaultOutputFileName, backupErr)
 			}
-			kubeClient, err := kubernetes.NewForConfig(config)
-			if err != nil {
-				return err
-			}
-			stashClient, err := cs.NewForConfig(config)
-			if err != nil {
-				return err
-			}
-
-			// Update Backup Session and Repository status
-			o := status.UpdateStatusOptions{
-				Config:        config,
-				KubeClient:    kubeClient,
-				StashClient:   stashClient,
-				Namespace:     namespace,
-				BackupSession: backupSessionName,
-				Metrics:       metrics,
-				Error:         backupErr,
-			}
-
-			err = o.UpdatePostBackupStatus(backupOutput)
-			if err != nil {
-				return err
-			}
-
 			// If output directory specified, then write the output in "output.json" file in the specified directory
 			if outputDir != "" {
 				return backupOutput.WriteOutput(filepath.Join(outputDir, restic.DefaultOutputFileName))
@@ -97,11 +56,6 @@ func NewCmdBackupPVC() *cobra.Command {
 			return nil
 		},
 	}
-
-	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
-	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&namespace, "namespace", "default", "Namespace of Backup/Restore Session")
-	cmd.Flags().StringVar(&backupSessionName, "backupsession", backupSessionName, "Name of the responsible BackupSession crd")
 
 	cmd.Flags().StringVar(&setupOpt.Provider, "provider", setupOpt.Provider, "Backend provider (i.e. gcs, s3, azure etc)")
 	cmd.Flags().StringVar(&setupOpt.Bucket, "bucket", setupOpt.Bucket, "Name of the cloud bucket/container (keep empty for local backend)")
@@ -127,11 +81,6 @@ func NewCmdBackupPVC() *cobra.Command {
 	cmd.Flags().BoolVar(&backupOpt.RetentionPolicy.DryRun, "retention-dry-run", backupOpt.RetentionPolicy.DryRun, "Specify whether to test retention policy without deleting actual data")
 
 	cmd.Flags().StringVar(&outputDir, "output-dir", outputDir, "Directory where output.json file will be written (keep empty if you don't need to write output in file)")
-
-	cmd.Flags().BoolVar(&metrics.Enabled, "metrics-enabled", metrics.Enabled, "Specify whether to export Prometheus metrics")
-	cmd.Flags().StringVar(&metrics.PushgatewayURL, "metrics-pushgateway-url", metrics.PushgatewayURL, "Pushgateway URL where the metrics will be pushed")
-	cmd.Flags().StringVar(&metrics.MetricFileDir, "metrics-dir", metrics.MetricFileDir, "Directory where to write metric.prom file (keep empty if you don't want to write metric in a text file)")
-	cmd.Flags().StringSliceVar(&metrics.Labels, "metrics-labels", metrics.Labels, "Labels to apply in exported metrics")
 
 	return cmd
 }

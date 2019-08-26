@@ -5,34 +5,19 @@ import (
 
 	"github.com/appscode/go/flags"
 	"github.com/spf13/cobra"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/restic"
-	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
-)
-
-const (
-	JobPVCRestore = "stash-pvc-restore"
 )
 
 func NewCmdRestorePVC() *cobra.Command {
 	var (
-		masterURL          string
-		kubeconfigPath     string
-		namespace          string
-		restoreSessionName string
-		outputDir          string
-		restoreOpt         = restic.RestoreOptions{
+		outputDir  string
+		restoreOpt = restic.RestoreOptions{
 			Host: restic.DefaultHost,
 		}
 		setupOpt = restic.SetupOptions{
 			ScratchDir:  restic.DefaultScratchDir,
 			EnableCache: false,
-		}
-		metrics = restic.MetricsOptions{
-			JobName: JobPVCRestore,
 		}
 	)
 
@@ -61,34 +46,8 @@ func NewCmdRestorePVC() *cobra.Command {
 			}
 			// Run restore
 			restoreOutput, restoreErr := resticWrapper.RunRestore(restoreOpt)
-
-			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
-			if err != nil {
-				return err
-			}
-			kubeClient, err := kubernetes.NewForConfig(config)
-			if err != nil {
-				return err
-			}
-			stashClient, err := cs.NewForConfig(config)
-			if err != nil {
-				return err
-			}
-
-			// Update Backup Session and Repository status
-			o := status.UpdateStatusOptions{
-				Config:         config,
-				KubeClient:     kubeClient,
-				StashClient:    stashClient,
-				Namespace:      namespace,
-				RestoreSession: restoreSessionName,
-				Metrics:        metrics,
-				Error:          restoreErr,
-			}
-
-			err = o.UpdatePostRestoreStatus(restoreOutput)
-			if err != nil {
-				return err
+			if restoreErr != nil {
+				return util.HandleResticError(outputDir, restic.DefaultOutputFileName, restoreErr)
 			}
 
 			// If output directory specified, then write the output in "output.json" file in the specified directory
@@ -98,11 +57,6 @@ func NewCmdRestorePVC() *cobra.Command {
 			return nil
 		},
 	}
-
-	cmd.Flags().StringVar(&masterURL, "master", masterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
-	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&namespace, "namespace", "default", "Namespace of Backup/Restore Session")
-	cmd.Flags().StringVar(&restoreSessionName, "restoresession", restoreSessionName, "Name of the responsible RestoreSession crd")
 
 	cmd.Flags().StringVar(&setupOpt.Provider, "provider", setupOpt.Provider, "Backend provider (i.e. gcs, s3, azure etc)")
 	cmd.Flags().StringVar(&setupOpt.Bucket, "bucket", setupOpt.Bucket, "Name of the cloud bucket/container (keep empty for local backend)")
@@ -119,11 +73,6 @@ func NewCmdRestorePVC() *cobra.Command {
 	cmd.Flags().StringSliceVar(&restoreOpt.Snapshots, "snapshots", restoreOpt.Snapshots, "List of snapshots to be restored")
 
 	cmd.Flags().StringVar(&outputDir, "output-dir", outputDir, "Directory where output.json file will be written (keep empty if you don't need to write output in file)")
-
-	cmd.Flags().BoolVar(&metrics.Enabled, "metrics-enabled", metrics.Enabled, "Specify whether to export Prometheus metrics")
-	cmd.Flags().StringVar(&metrics.PushgatewayURL, "metrics-pushgateway-url", metrics.PushgatewayURL, "Pushgateway URL where the metrics will be pushed")
-	cmd.Flags().StringVar(&metrics.MetricFileDir, "metrics-dir", metrics.MetricFileDir, "Directory where to write metric.prom file (keep empty if you don't want to write metric in a text file)")
-	cmd.Flags().StringSliceVar(&metrics.Labels, "metrics-labels", metrics.Labels, "Labels to apply in exported metrics")
 
 	return cmd
 }

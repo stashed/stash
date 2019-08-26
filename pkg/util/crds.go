@@ -68,12 +68,13 @@ func updateStatusFunction(image docker.Docker) *api_v1beta1.Function {
 			Args: []string{
 				"update-status",
 				"--namespace=${NAMESPACE:=default}",
-				"--backup-session=${BACKUP_SESSION:=}",
+				"--backupsession=${BACKUP_SESSION:=}",
 				"--repository=${REPOSITORY_NAME:=}",
-				"--restore-session=${RESTORE_SESSION:=}",
+				"--restoresession=${RESTORE_SESSION:=}",
 				"--output-dir=${outputDir:=}",
 				"--metrics-enabled=true",
 				fmt.Sprintf("--metrics-pushgateway-url=%s", PushgatewayURL()),
+				"--prom-job-name=${PROMETHEUS_JOB_NAME:=}",
 				"--enable-status-subresource=${ENABLE_STATUS_SUBRESOURCE:=false}",
 			},
 		},
@@ -110,8 +111,6 @@ func pvcBackupFunction(image docker.Docker) *api_v1beta1.Function {
 				"--retention-prune=${RETENTION_PRUNE:=false}",
 				"--retention-dry-run=${RETENTION_DRY_RUN:=false}",
 				"--output-dir=${outputDir:=}",
-				"--metrics-enabled=true",
-				fmt.Sprintf("--metrics-pushgateway-url=%s", PushgatewayURL()),
 			},
 			VolumeMounts: []core.VolumeMount{
 				{
@@ -149,8 +148,6 @@ func pvcRestoreFunction(image docker.Docker) *api_v1beta1.Function {
 				"--restore-paths=${RESTORE_PATHS}",
 				"--snapshots=${RESTORE_SNAPSHOTS:=}",
 				"--output-dir=${outputDir:=}",
-				"--metrics-enabled=true",
-				fmt.Sprintf("--metrics-pushgateway-url=%s", PushgatewayURL()),
 			},
 			VolumeMounts: []core.VolumeMount{
 				{
