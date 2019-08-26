@@ -110,6 +110,8 @@ func pvcBackupFunction(image docker.Docker) *api_v1beta1.Function {
 				"--retention-prune=${RETENTION_PRUNE:=false}",
 				"--retention-dry-run=${RETENTION_DRY_RUN:=false}",
 				"--output-dir=${outputDir:=}",
+				"--metrics-enabled=true",
+				fmt.Sprintf("--metrics-pushgateway-url=%s", PushgatewayURL()),
 			},
 			VolumeMounts: []core.VolumeMount{
 				{
@@ -147,6 +149,8 @@ func pvcRestoreFunction(image docker.Docker) *api_v1beta1.Function {
 				"--restore-paths=${RESTORE_PATHS}",
 				"--snapshots=${RESTORE_SNAPSHOTS:=}",
 				"--output-dir=${outputDir:=}",
+				"--metrics-enabled=true",
+				fmt.Sprintf("--metrics-pushgateway-url=%s", PushgatewayURL()),
 			},
 			VolumeMounts: []core.VolumeMount{
 				{
