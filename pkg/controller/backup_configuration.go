@@ -256,6 +256,8 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 			})
 		in.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
 		in.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+		// insert default pod level security context
+		in.Spec.JobTemplate.Spec.Template.Spec.SecurityContext = util.UpsertDefaultPodSecurityContext(in.Spec.JobTemplate.Spec.Template.Spec.SecurityContext)
 		return in
 	})
 

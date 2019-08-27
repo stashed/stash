@@ -236,6 +236,20 @@ func UpsertPodSecurityContext(currentSC, newSC *core.PodSecurityContext) *core.P
 	return finalSC
 }
 
+func UpsertDefaultPodSecurityContext(currentSC *core.PodSecurityContext) *core.PodSecurityContext {
+
+	defaultSecurityContext := &core.PodSecurityContext{
+		// In GKE alpha clusters, service account token is only redable by owner or group
+		// xref: https://kubernetes.slack.com/archives/C09R1TL6A/p1560290949126300
+		FSGroup: types.Int64P(65535),
+	}
+	// Don't overwrite user provided one.
+	// First parameter is overwritten by second parameter.
+	// Hence, we are sending defaultSecurityContext as first parameter and currentSc as second parameter
+	// so that current one does not get overwritten by default one.
+	return UpsertPodSecurityContext(defaultSecurityContext, currentSC)
+}
+
 func MergeLocalVolume(volumes []core.Volume, backend *store.Backend) []core.Volume {
 	// check if stash-local volume already exist
 	oldPos := -1
