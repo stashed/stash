@@ -239,9 +239,8 @@ func UpsertPodSecurityContext(currentSC, newSC *core.PodSecurityContext) *core.P
 func UpsertDefaultPodSecurityContext(currentSC *core.PodSecurityContext) *core.PodSecurityContext {
 
 	defaultSecurityContext := &core.PodSecurityContext{
-		// GKE alpha cluster needs to run non-root container as user 65535
-		// Otherwise, ServiceAccount tokens does not get mounted into respective pod
-		// Ref: https://github.com/stashed/stash/issues/873
+		// In gke alpha clusters, service account token is only redable by owner or group
+		// xref: https://kubernetes.slack.com/archives/C09R1TL6A/p1560290949126300
 		FSGroup: types.Int64P(65535),
 	}
 	// Don't overwrite user provided one.
