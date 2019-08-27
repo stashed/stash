@@ -239,7 +239,7 @@ func UpsertPodSecurityContext(currentSC, newSC *core.PodSecurityContext) *core.P
 func UpsertDefaultPodSecurityContext(currentSC *core.PodSecurityContext) *core.PodSecurityContext {
 
 	defaultSecurityContext := &core.PodSecurityContext{
-		// In gke alpha clusters, service account token is only redable by owner or group
+		// In GKE alpha clusters, service account token is only redable by owner or group
 		// xref: https://kubernetes.slack.com/archives/C09R1TL6A/p1560290949126300
 		FSGroup: types.Int64P(65535),
 	}
