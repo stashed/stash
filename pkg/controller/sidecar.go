@@ -138,7 +138,7 @@ func (c *StashController) ensureWorkloadSidecarDeleted(w *wapi.Workload, restic 
 }
 
 func (c *StashController) ensureBackupSidecar(w *wapi.Workload, bc *api_v1beta1.BackupConfiguration, caller string) error {
-	sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
+	sa := w.Spec.Template.Spec.ServiceAccountName
 	ref, err := reference.GetReference(scheme.Scheme, w)
 	if err != nil {
 		ref = &core.ObjectReference{

@@ -170,7 +170,7 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 		return err
 	}
 
-	serviceAccountName := "default"
+	var serviceAccountName string
 
 	// if RBAC is enabled then ensure respective RBAC stuffs
 	if backupConfig.Spec.RuntimeSettings.Pod != nil && backupConfig.Spec.RuntimeSettings.Pod.ServiceAccountName != "" {
@@ -280,10 +280,9 @@ func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.B
 		return err
 	}
 
-	serviceAccountName := "default"
 	//ensure respective RBAC stuffs
 	//Create new ServiceAccount
-	serviceAccountName = backupConfig.Name
+	serviceAccountName := backupConfig.Name
 	saMeta := metav1.ObjectMeta{
 		Name:      serviceAccountName,
 		Namespace: backupConfig.Namespace,

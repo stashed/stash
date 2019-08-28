@@ -55,7 +55,7 @@ const (
 
 	StatusSubresourceEnabled = "ENABLE_STATUS_SUBRESOURCE"
 
-	PushgatewayURL = "PROMETHEUS_PUSHGATEWAY_URL"
+	PushgatewayURL    = "PROMETHEUS_PUSHGATEWAY_URL"
 	PrometheusJobName = "PROMETHEUS_JOB_NAME"
 
 	StashDefaultVolume    = "stash-volume"

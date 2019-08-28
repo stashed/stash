@@ -215,7 +215,7 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 	}
 
 	// Ensure respective RBAC and PSP stuff.
-	serviceAccountName := "default"
+	var serviceAccountName string
 	if restoreSession.Spec.RuntimeSettings.Pod != nil &&
 		restoreSession.Spec.RuntimeSettings.Pod.ServiceAccountName != "" {
 		// ServiceAccount has been specified, so use it.
@@ -443,10 +443,9 @@ func (c *StashController) ensureVolumeRestorerJob(restoreSession *api_v1beta1.Re
 		return err
 	}
 
-	serviceAccountName := "default"
 	//ensure respective RBAC stuffs
 	//Create new ServiceAccount
-	serviceAccountName = restoreSession.Name
+	serviceAccountName := restoreSession.Name
 	saMeta := metav1.ObjectMeta{
 		Name:      serviceAccountName,
 		Namespace: restoreSession.Namespace,
