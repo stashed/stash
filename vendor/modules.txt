@@ -554,7 +554,7 @@ k8s.io/apimachinery/pkg/util/rand
 k8s.io/apimachinery/pkg/util/httpstream/spdy
 k8s.io/apimachinery/pkg/apis/meta/v1/unstructured/unstructuredscheme
 k8s.io/apimachinery/third_party/forked/golang/netutil
-# k8s.io/apiserver v0.0.0-20190516230822-f89599b3f645 => github.com/kmodules/apiserver v0.0.0-20190508082252-8397d761d4b5
+# k8s.io/apiserver v0.0.0-20190516230822-f89599b3f645 => github.com/kmodules/apiserver v0.0.0-20190811223248-5a95b2df4348
 k8s.io/apiserver/pkg/server
 k8s.io/apiserver/pkg/endpoints/openapi
 k8s.io/apiserver/pkg/server/options
@@ -953,7 +953,7 @@ kmodules.xyz/custom-resources/apis/appcatalog
 kmodules.xyz/custom-resources/client/informers/externalversions/appcatalog
 kmodules.xyz/custom-resources/client/informers/externalversions/internalinterfaces
 kmodules.xyz/custom-resources/client/informers/externalversions/appcatalog/v1alpha1
-# kmodules.xyz/objectstore-api v0.0.0-20190808153322-733e8798e8de
+# kmodules.xyz/objectstore-api v0.0.0-20190824212210-196174aa0fc0
 kmodules.xyz/objectstore-api/api/v1
 kmodules.xyz/objectstore-api/osm
 # kmodules.xyz/offshoot-api v0.0.0-20190808152534-e3dc715f844b

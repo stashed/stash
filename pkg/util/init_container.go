@@ -43,7 +43,7 @@ func NewRestoreInitContainer(rs *v1beta1_api.RestoreSession, repository *v1alpha
 			"--restore-session=" + rs.Name,
 			"--secret-dir=" + StashSecretMountDir,
 			fmt.Sprintf("--enable-cache=%v", !rs.Spec.TempDir.DisableCaching),
-			fmt.Sprintf("--max-connections=%v", GetMaxConnections(repository.Spec.Backend)),
+			fmt.Sprintf("--max-connections=%v", repository.Spec.Backend.MaxConnections()),
 			"--metrics-enabled=true",
 			"--pushgateway-url=" + PushgatewayURL(),
 			fmt.Sprintf("--enable-status-subresource=%v", apis.EnableStatusSubresource),

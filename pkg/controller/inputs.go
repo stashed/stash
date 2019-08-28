@@ -29,7 +29,7 @@ func (c *StashController) inputsForBackupConfig(backupConfig api.BackupConfigura
 	inputs[apis.EnableCache] = strconv.FormatBool(!backupConfig.Spec.TempDir.DisableCaching)
 
 	// add PushgatewayURL as input
-	metricInputs := c.inputForMetrics()
+	metricInputs := c.inputForMetrics(backupConfig.Name)
 	inputs = core_util.UpsertMap(inputs, metricInputs)
 
 	return inputs, nil
@@ -57,7 +57,7 @@ func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSess
 	inputs[apis.TargetAppReplicas] = fmt.Sprintf("%d", replicas)
 
 	// add PushgatewayURL as input
-	metricInputs := c.inputForMetrics()
+	metricInputs := c.inputForMetrics(restoreSession.Name)
 	inputs = core_util.UpsertMap(inputs, metricInputs)
 
 	return inputs, nil
@@ -71,10 +71,13 @@ func (c *StashController) inputsForRepository(repository *apiAlpha.Repository) (
 	if repository.Name != "" {
 		inputs[apis.RepositoryName] = repository.Name
 	}
-	if inputs[apis.RepositoryProvider], err = util.GetProvider(repository.Spec.Backend); err != nil {
+	if inputs[apis.RepositoryProvider], err = repository.Spec.Backend.Provider(); err != nil {
 		return
 	}
-	if inputs[apis.RepositoryBucket], inputs[apis.RepositoryPrefix], err = util.GetBucketAndPrefix(&repository.Spec.Backend); err != nil {
+	if inputs[apis.RepositoryBucket], err = repository.Spec.Backend.Container(); err != nil {
+		return
+	}
+	if inputs[apis.RepositoryPrefix], err = repository.Spec.Backend.Prefix(); err != nil {
 		return
 	}
 	if repository.Spec.Backend.StorageSecretName != "" {
@@ -84,9 +87,9 @@ func (c *StashController) inputsForRepository(repository *apiAlpha.Repository) (
 		inputs[apis.RepositoryEndpoint] = repository.Spec.Backend.S3.Endpoint
 	}
 	if repository.Spec.Backend.Rest != nil && repository.Spec.Backend.Rest.URL != "" {
-		inputs[apis.RepositoryURL] = repository.Spec.Backend.Rest.URL
+		inputs[apis.RepositoryEndpoint] = repository.Spec.Backend.Rest.URL
 	}
-	inputs[apis.MaxConnections] = strconv.Itoa(util.GetMaxConnections(repository.Spec.Backend))
+	inputs[apis.MaxConnections] = strconv.Itoa(repository.Spec.Backend.MaxConnections())
 	return
 }
 
@@ -162,8 +165,9 @@ func (c *StashController) inputsForRetentionPolicy(retentionPolicy apiAlpha.Rete
 	return inputs
 }
 
-func (c *StashController) inputForMetrics() map[string]string {
+func (c *StashController) inputForMetrics(jobName string) map[string]string {
 	return map[string]string{
-		apis.PushgatewayURL: util.PushgatewayURL(),
+		apis.PushgatewayURL:    util.PushgatewayURL(),
+		apis.PrometheusJobName: jobName,
 	}
 }

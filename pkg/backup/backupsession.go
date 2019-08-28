@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
@@ -23,7 +24,6 @@ import (
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
-	v1beta1_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
 	stashinformers "stash.appscode.dev/stash/client/informers/externalversions"
 	"stash.appscode.dev/stash/client/listers/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/eventer"
@@ -33,6 +33,7 @@ import (
 )
 
 type BackupSessionController struct {
+	Config               *rest.Config
 	K8sClient            kubernetes.Interface
 	StashClient          cs.Interface
 	MasterURL            string
@@ -249,26 +250,18 @@ func (c *BackupSessionController) backup(backupSession *api_v1beta1.BackupSessio
 
 	// BackupOptions configuration
 	backupOpt := util.BackupOptionsForBackupConfig(*backupConfiguration, extraOpt)
-	backupOutput, err := resticWrapper.RunBackup(backupOpt)
-	if err != nil {
-		return err
-	}
-
-	// if metrics are enabled then generate metrics
-	if c.Metrics.Enabled {
-		err := backupOutput.HandleMetrics(&c.Metrics, nil)
-		if err != nil {
-			return err
-		}
-	}
+	backupOutput, backupErr := resticWrapper.RunBackup(backupOpt)
 
 	// Update Backup Session and Repository status
 	o := status.UpdateStatusOptions{
+		Config:        c.Config,
 		KubeClient:    c.K8sClient,
-		StashClient:   c.StashClient.(*cs.Clientset),
+		StashClient:   c.StashClient,
 		Namespace:     c.Namespace,
 		BackupSession: backupSession.Name,
 		Repository:    backupConfiguration.Spec.Repository.Name,
+		Metrics:       c.Metrics,
+		Error:         backupErr,
 	}
 
 	err = o.UpdatePostBackupStatus(backupOutput)
@@ -399,27 +392,27 @@ func (c *BackupSessionController) handleBackupFailure(backupSession *api_v1beta1
 	if err != nil {
 		return err
 	}
-
-	hostStats := api_v1beta1.HostBackupStats{
-		Hostname: host,
-		Phase:    api_v1beta1.HostBackupFailed,
-		Error:    backupErr.Error(),
+	backupOutput := &restic.BackupOutput{
+		HostBackupStats: []api_v1beta1.HostBackupStats{
+			{
+				Hostname: host,
+				Phase:    api_v1beta1.HostBackupFailed,
+				Error:    backupErr.Error(),
+			},
+		},
 	}
 
-	// add or update entry for this host in BackupSession status
-	_, err = v1beta1_util.UpdateBackupSessionStatusForHost(c.StashClient.StashV1beta1(), backupSession, hostStats)
-
-	// write failure event
-	c.writeBackupFailureEvent(backupSession, host, backupErr)
-
-	// send prometheus metrics
-	if c.Metrics.Enabled {
-		backupOutput := &restic.BackupOutput{
-			HostBackupStats: []api_v1beta1.HostBackupStats{hostStats},
-		}
-		return backupOutput.HandleMetrics(&c.Metrics, backupErr)
+	statusOpt := status.UpdateStatusOptions{
+		Config:        c.Config,
+		KubeClient:    c.K8sClient,
+		StashClient:   c.StashClient,
+		Namespace:     c.Namespace,
+		BackupSession: backupSession.Name,
+		Metrics:       c.Metrics,
+		Error:         backupErr,
 	}
-	return nil
+
+	return statusOpt.UpdatePostBackupStatus(backupOutput)
 }
 
 func (c *BackupSessionController) HandleBackupSetupFailure(setupErr error) {
@@ -430,14 +423,10 @@ func (c *BackupSessionController) HandleBackupSetupFailure(setupErr error) {
 			log.Fatalln("failed to setup backup process. Reason: ", e2.Error())
 		}
 	}
-	c.Metrics.Labels = append(c.Metrics.Labels, fmt.Sprintf("BackupConfiguration=%s", backupConfiguration.Name))
-	if backupConfiguration.Spec.Target != nil {
-		c.Metrics.Labels = append(c.Metrics.Labels, fmt.Sprintf("kind=%s", backupConfiguration.Spec.Target.Ref.Kind))
-		c.Metrics.Labels = append(c.Metrics.Labels, fmt.Sprintf("name=%s", backupConfiguration.Spec.Target.Ref.Name))
-	}
+
 	// send prometheus metrics
 	if c.Metrics.Enabled {
-		err := restic.HandleBackupSetupMetrics(c.Metrics, setupErr)
+		err := restic.HandleBackupSetupMetrics(c.Config, backupConfiguration, c.Metrics, setupErr)
 		setupErr = errors.NewAggregate([]error{setupErr, err})
 	}
 	// fail the container so that it restart and re-try this process.
@@ -445,14 +434,9 @@ func (c *BackupSessionController) HandleBackupSetupFailure(setupErr error) {
 }
 
 func (c *BackupSessionController) handleBackupSetupSuccess(backupConfiguration *api_v1beta1.BackupConfiguration) {
-	c.Metrics.Labels = append(c.Metrics.Labels, fmt.Sprintf("BackupConfiguration=%s", backupConfiguration.Name))
-	if backupConfiguration.Spec.Target != nil {
-		c.Metrics.Labels = append(c.Metrics.Labels, fmt.Sprintf("kind=%s", backupConfiguration.Spec.Target.Ref.Kind))
-		c.Metrics.Labels = append(c.Metrics.Labels, fmt.Sprintf("name=%s", backupConfiguration.Spec.Target.Ref.Name))
-	}
 	// send prometheus metrics
 	if c.Metrics.Enabled {
-		err := restic.HandleBackupSetupMetrics(c.Metrics, nil)
+		err := restic.HandleBackupSetupMetrics(c.Config, backupConfiguration, c.Metrics, nil)
 		if err != nil {
 			log.Warningln("failed to send prometheus metrics. Reason: ", err.Error())
 		}

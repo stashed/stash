@@ -35,7 +35,7 @@ require (
 	k8s.io/kubernetes v1.14.0
 	kmodules.xyz/client-go v0.0.0-20190808141354-bbb9e14f60ab
 	kmodules.xyz/custom-resources v0.0.0-20190808144301-114abf10dfe2
-	kmodules.xyz/objectstore-api v0.0.0-20190808153322-733e8798e8de
+	kmodules.xyz/objectstore-api v0.0.0-20190824212210-196174aa0fc0
 	kmodules.xyz/offshoot-api v0.0.0-20190808152534-e3dc715f844b
 	kmodules.xyz/openshift v0.0.0-20190808144841-c8f9a927f1d1
 	kmodules.xyz/webhook-runtime v0.0.0-20190808145328-4186c470d56b
@@ -46,7 +46,7 @@ replace (
 	k8s.io/api => k8s.io/api v0.0.0-20190313235455-40a48860b5ab
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20190315093550-53c4693659ed
 	k8s.io/apimachinery => github.com/kmodules/apimachinery v0.0.0-20190508045248-a52a97a7a2bf
-	k8s.io/apiserver => github.com/kmodules/apiserver v0.0.0-20190508082252-8397d761d4b5
+	k8s.io/apiserver => github.com/kmodules/apiserver v0.0.0-20190811223248-5a95b2df4348
 	k8s.io/cli-runtime => k8s.io/cli-runtime v0.0.0-20190314001948-2899ed30580f
 	k8s.io/cloud-provider => k8s.io/cloud-provider v0.0.0-20190314002645-c892ea32361a
 	k8s.io/component-base => k8s.io/component-base v0.0.0-20190314000054-4a91899592f4

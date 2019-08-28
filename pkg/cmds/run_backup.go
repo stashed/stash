@@ -40,6 +40,7 @@ func NewCmdRunBackup() *cobra.Command {
 				return err
 			}
 
+			con.Config = config
 			con.K8sClient = kubernetes.NewForConfigOrDie(config)
 			con.StashClient = cs.NewForConfigOrDie(config)
 			con.StashInformerFactory = stashinformers.NewSharedInformerFactoryWithOptions(

@@ -211,7 +211,7 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 	}
 
 	// if RBAC is enabled then ensure respective ClusterRole,RoleBinding,ServiceAccount etc.
-	serviceAccountName := "default"
+	var serviceAccountName string
 
 	if backupConfiguration.Spec.RuntimeSettings.Pod != nil &&
 		backupConfiguration.Spec.RuntimeSettings.Pod.ServiceAccountName != "" {

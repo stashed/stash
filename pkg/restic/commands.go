@@ -13,6 +13,7 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/armon/circbuf"
+	storage "kmodules.xyz/objectstore-api/api/v1"
 	"stash.appscode.dev/stash/apis/stash/v1alpha1"
 )
 
@@ -286,11 +287,11 @@ func (w *ResticWrapper) appendMaxConnectionsFlag(args []interface{}) []interface
 	var maxConOption string
 	if w.config.MaxConnections > 0 {
 		switch w.config.Provider {
-		case ProviderGCS:
+		case storage.ProviderGCS:
 			maxConOption = fmt.Sprintf("gs.connections=%d", w.config.MaxConnections)
-		case ProviderAzure:
+		case storage.ProviderAzure:
 			maxConOption = fmt.Sprintf("azure.connections=%d", w.config.MaxConnections)
-		case ProviderB2:
+		case storage.ProviderB2:
 			maxConOption = fmt.Sprintf("b2.connections=%d", w.config.MaxConnections)
 		}
 	}

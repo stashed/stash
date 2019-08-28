@@ -419,7 +419,7 @@ func (c *Config) Complete(informers informers.SharedInformerFactory) CompletedCo
 		c.RequestInfoResolver = NewRequestInfoResolver(c)
 	}
 
-	if c.SecureServing.CertFile != "" {
+	if c.SecureServing != nil && c.SecureServing.CertFile != "" {
 		certChecker, err := healthz.NewCertHealthz(c.SecureServing.CertFile)
 		if err != nil {
 			klog.Fatalf("failed to create certificate checker. Reason: %v", err)

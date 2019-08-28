@@ -5,13 +5,8 @@ import (
 
 	"github.com/appscode/go/flags"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/util/errors"
 	"stash.appscode.dev/stash/pkg/restic"
 	"stash.appscode.dev/stash/pkg/util"
-)
-
-const (
-	JobPVCBackup = "stash-pvc-backup"
 )
 
 func NewCmdBackupPVC() *cobra.Command {
@@ -23,9 +18,6 @@ func NewCmdBackupPVC() *cobra.Command {
 		setupOpt = restic.SetupOptions{
 			ScratchDir:  restic.DefaultScratchDir,
 			EnableCache: false,
-		}
-		metrics = restic.MetricsOptions{
-			JobName: JobPVCBackup,
 		}
 	)
 
@@ -54,13 +46,6 @@ func NewCmdBackupPVC() *cobra.Command {
 			}
 			// Run backup
 			backupOutput, backupErr := resticWrapper.RunBackup(backupOpt)
-			// If metrics are enabled then generate metrics
-			if metrics.Enabled {
-				err := backupOutput.HandleMetrics(&metrics, backupErr)
-				if err != nil {
-					return util.HandleResticError(outputDir, restic.DefaultOutputFileName, errors.NewAggregate([]error{backupErr, err}))
-				}
-			}
 			if backupErr != nil {
 				return util.HandleResticError(outputDir, restic.DefaultOutputFileName, backupErr)
 			}
@@ -74,8 +59,7 @@ func NewCmdBackupPVC() *cobra.Command {
 
 	cmd.Flags().StringVar(&setupOpt.Provider, "provider", setupOpt.Provider, "Backend provider (i.e. gcs, s3, azure etc)")
 	cmd.Flags().StringVar(&setupOpt.Bucket, "bucket", setupOpt.Bucket, "Name of the cloud bucket/container (keep empty for local backend)")
-	cmd.Flags().StringVar(&setupOpt.Endpoint, "endpoint", setupOpt.Endpoint, "Endpoint for s3/s3 compatible backend")
-	cmd.Flags().StringVar(&setupOpt.URL, "rest-server-url", setupOpt.URL, "URL for rest backend")
+	cmd.Flags().StringVar(&setupOpt.Endpoint, "endpoint", setupOpt.Endpoint, "Endpoint for s3/s3 compatible backend or REST server URL")
 	cmd.Flags().StringVar(&setupOpt.Path, "path", setupOpt.Path, "Directory inside the bucket where backed up data will be stored")
 	cmd.Flags().StringVar(&setupOpt.SecretDir, "secret-dir", setupOpt.SecretDir, "Directory where storage secret has been mounted")
 	cmd.Flags().StringVar(&setupOpt.ScratchDir, "scratch-dir", setupOpt.ScratchDir, "Temporary directory")
@@ -96,11 +80,6 @@ func NewCmdBackupPVC() *cobra.Command {
 	cmd.Flags().BoolVar(&backupOpt.RetentionPolicy.DryRun, "retention-dry-run", backupOpt.RetentionPolicy.DryRun, "Specify whether to test retention policy without deleting actual data")
 
 	cmd.Flags().StringVar(&outputDir, "output-dir", outputDir, "Directory where output.json file will be written (keep empty if you don't need to write output in file)")
-
-	cmd.Flags().BoolVar(&metrics.Enabled, "metrics-enabled", metrics.Enabled, "Specify whether to export Prometheus metrics")
-	cmd.Flags().StringVar(&metrics.PushgatewayURL, "metrics-pushgateway-url", metrics.PushgatewayURL, "Pushgateway URL where the metrics will be pushed")
-	cmd.Flags().StringVar(&metrics.MetricFileDir, "metrics-dir", metrics.MetricFileDir, "Directory where to write metric.prom file (keep empty if you don't want to write metric in a text file)")
-	cmd.Flags().StringSliceVar(&metrics.Labels, "metrics-labels", metrics.Labels, "Labels to apply in exported metrics")
 
 	return cmd
 }

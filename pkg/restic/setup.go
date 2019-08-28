@@ -6,17 +6,11 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+
+	storage "kmodules.xyz/objectstore-api/api/v1"
 )
 
 const (
-	ProviderLocal = "local"
-	ProviderS3    = "s3"
-	ProviderGCS   = "gcs"
-	ProviderAzure = "azure"
-	ProviderSwift = "swift"
-	ProviderB2    = "b2"
-	ProviderRest  = "rest"
-
 	RESTIC_REPOSITORY = "RESTIC_REPOSITORY"
 	RESTIC_PASSWORD   = "RESTIC_PASSWORD"
 	TMPDIR            = "TMPDIR"
@@ -99,14 +93,14 @@ func (w *ResticWrapper) setupEnv() error {
 
 	switch w.config.Provider {
 
-	case ProviderLocal:
+	case storage.ProviderLocal:
 		r := w.config.Path
 		if err := os.MkdirAll(r, 0755); err != nil {
 			return err
 		}
 		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 
-	case ProviderS3:
+	case storage.ProviderS3:
 		r := fmt.Sprintf("s3:%s/%s", w.config.Endpoint, filepath.Join(w.config.Bucket, w.config.Path))
 		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 
@@ -117,7 +111,7 @@ func (w *ResticWrapper) setupEnv() error {
 			w.sh.SetEnv(AWS_SECRET_ACCESS_KEY, string(v))
 		}
 
-	case ProviderGCS:
+	case storage.ProviderGCS:
 		r := fmt.Sprintf("gs:%s:/%s", w.config.Bucket, w.config.Path)
 		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 
@@ -130,7 +124,7 @@ func (w *ResticWrapper) setupEnv() error {
 			w.sh.SetEnv(GOOGLE_APPLICATION_CREDENTIALS, filepath.Join(w.config.SecretDir, GOOGLE_SERVICE_ACCOUNT_JSON_KEY))
 		}
 
-	case ProviderAzure:
+	case storage.ProviderAzure:
 		r := fmt.Sprintf("azure:%s:/%s", w.config.Bucket, w.config.Path)
 		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 
@@ -141,7 +135,7 @@ func (w *ResticWrapper) setupEnv() error {
 			w.sh.SetEnv(AZURE_ACCOUNT_KEY, string(v))
 		}
 
-	case ProviderSwift:
+	case storage.ProviderSwift:
 		r := fmt.Sprintf("swift:%s:/%s", w.config.Bucket, w.config.Path)
 		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 
@@ -240,7 +234,7 @@ func (w *ResticWrapper) setupEnv() error {
 			w.sh.SetEnv(OS_AUTH_TOKEN, string(v))
 		}
 
-	case ProviderB2:
+	case storage.ProviderB2:
 		r := fmt.Sprintf("b2:%s:/%s", w.config.Bucket, w.config.Path)
 		w.sh.SetEnv(RESTIC_REPOSITORY, r)
 
@@ -252,8 +246,8 @@ func (w *ResticWrapper) setupEnv() error {
 			w.sh.SetEnv(B2_ACCOUNT_KEY, string(v))
 		}
 
-	case ProviderRest:
-		u, err := url.Parse(w.config.URL)
+	case storage.ProviderRest:
+		u, err := url.Parse(w.config.Endpoint)
 		if err != nil {
 			return err
 		}

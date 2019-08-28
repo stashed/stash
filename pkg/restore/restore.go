@@ -7,9 +7,11 @@ import (
 	"time"
 
 	"github.com/appscode/go/log"
+	"github.com/golang/glog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/client-go/tools/reference"
@@ -17,9 +19,9 @@ import (
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
-	stash_util_v1beta1 "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
 	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/pkg/restic"
+	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
 )
 
@@ -29,6 +31,7 @@ const (
 )
 
 type Options struct {
+	Config             *rest.Config
 	MasterURL          string
 	KubeconfigPath     string
 	Namespace          string
@@ -172,46 +175,25 @@ func (opt *Options) runRestore(restoreSession *api_v1beta1.RestoreSession) error
 	}
 
 	// run restore process
-	restoreOutput, err := w.RunRestore(util.RestoreOptionsForHost(host, restoreSession.Spec.Rules))
+	restoreOutput, restoreErr := w.RunRestore(util.RestoreOptionsForHost(host, restoreSession.Spec.Rules))
+
+	// Update Backup Session and Repository status
+	o := status.UpdateStatusOptions{
+		Config:         opt.Config,
+		KubeClient:     opt.KubeClient,
+		StashClient:    opt.StashClient.(*cs.Clientset),
+		Namespace:      opt.Namespace,
+		RestoreSession: restoreSession.Name,
+		Repository:     restoreSession.Spec.Repository.Name,
+		Metrics:        opt.Metrics,
+		Error:          restoreErr,
+	}
+
+	err = o.UpdatePostRestoreStatus(restoreOutput)
 	if err != nil {
 		return err
 	}
-
-	// if metrics are enabled then send metrics
-	if opt.Metrics.Enabled {
-		err := restoreOutput.HandleMetrics(&opt.Metrics, nil)
-		if err != nil {
-			return err
-		}
-	}
-
-	//get updated RestoreSession
-	restoreSession, err = opt.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(restoreSession.Name, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-
-	// restore is complete. add/update an entry for each host in RestoreSession status
-	for _, hostStats := range restoreOutput.HostRestoreStats {
-		_, err = stash_util_v1beta1.UpdateRestoreSessionStatusForHost(opt.StashClient.StashV1beta1(), restoreSession, hostStats)
-		if err != nil {
-			return err
-		}
-
-		// write success event
-		ref, rerr := reference.GetReference(stash_scheme.Scheme, restoreSession)
-		if rerr == nil {
-			eventer.CreateEventWithLog(
-				opt.KubeClient,
-				eventer.EventSourceRestoreInitContainer,
-				ref,
-				core.EventTypeNormal,
-				eventer.EventReasonHostRestoreSucceeded,
-				fmt.Sprintf("Successfully restored for host %q.", hostStats.Hostname),
-			)
-		}
-	}
-
+	glog.Info("Restore has been completed successfully")
 	return nil
 }
 
@@ -226,27 +208,30 @@ func HandleRestoreFailure(opt *Options, restoreErr error) error {
 		return err
 	}
 
-	hostStats := api_v1beta1.HostRestoreStats{
-		Hostname: host,
-		Phase:    api_v1beta1.HostRestoreFailed,
-	}
+	var errorMsg string
 	if restoreErr != nil {
-		hostStats.Error = restoreErr.Error()
+		errorMsg = restoreErr.Error()
 	}
-	// add or update entry for this host in RestoreSession status
-	_, err = stash_util_v1beta1.UpdateRestoreSessionStatusForHost(opt.StashClient.StashV1beta1(), restoreSession, hostStats)
-
-	// write failure event
-	opt.writeRestoreFailureEvent(restoreSession, host, restoreErr)
-
-	// send prometheus metrics
-	if opt.Metrics.Enabled {
-		restoreOutput := &restic.RestoreOutput{
-			HostRestoreStats: []api_v1beta1.HostRestoreStats{hostStats},
-		}
-		return restoreOutput.HandleMetrics(&opt.Metrics, restoreErr)
+	restoreOutput := &restic.RestoreOutput{
+		HostRestoreStats: []api_v1beta1.HostRestoreStats{
+			{
+				Hostname: host,
+				Phase:    api_v1beta1.HostRestoreFailed,
+				Error:    errorMsg,
+			},
+		},
 	}
-	return nil
+	statusOpt := status.UpdateStatusOptions{
+		Config:         opt.Config,
+		KubeClient:     opt.KubeClient,
+		StashClient:    opt.StashClient,
+		Namespace:      opt.Namespace,
+		RestoreSession: opt.RestoreSessionName,
+		Metrics:        opt.Metrics,
+		Error:          restoreErr,
+	}
+
+	return statusOpt.UpdatePostRestoreStatus(restoreOutput)
 }
 
 func (opt *Options) writeRestoreFailureEvent(restoreSession *api_v1beta1.RestoreSession, host string, err error) {
