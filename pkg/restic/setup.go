@@ -247,7 +247,7 @@ func (w *ResticWrapper) setupEnv() error {
 		}
 
 	case storage.ProviderRest:
-		u, err := url.Parse(w.config.URL)
+		u, err := url.Parse(w.config.Endpoint)
 		if err != nil {
 			return err
 		}

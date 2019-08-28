@@ -11,7 +11,6 @@ const (
 	RepositoryBucket     = "REPOSITORY_BUCKET"
 	RepositoryPrefix     = "REPOSITORY_PREFIX"
 	RepositoryEndpoint   = "REPOSITORY_ENDPOINT"
-	RepositoryURL        = "REPOSITORY_URL"
 
 	Hostname       = "HOSTNAME"
 	SourceHostname = "SOURCE_HOSTNAME"
