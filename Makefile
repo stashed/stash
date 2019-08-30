@@ -46,6 +46,10 @@ RESTIC_VER       := 0.8.3
 # also update in restic wrapper library
 NEW_RESTIC_VER   := 0.9.5
 
+# dependency for "nice" and "ionice" in amd64 architecture
+GNU_LIBC_PATH := /lib/x86_64-linux-gnu/libc.so.6
+LIB_LD_PATH   := /lib64/ld-linux-x86-64.so.2
+
 ###
 ### These variables should not need tweaking.
 ###
@@ -208,6 +212,10 @@ DOTFILE_IMAGE    = $(subst /,_,$(IMAGE))-$(TAG)
 container: bin/.container-$(DOTFILE_IMAGE)-PROD bin/.container-$(DOTFILE_IMAGE)-DBG
 bin/.container-$(DOTFILE_IMAGE)-%: bin/$(OS)_$(ARCH)/$(BIN) $(DOCKERFILE_%)
 	@echo "container: $(IMAGE):$(TAG_$*)"
+	ifneq ($(ARCH),amd64); then \
+    	GNU_LIBC_PATH := /lib/aarch64-linux-gnu/libc.so.6 \
+        LIB_LD_PATH   := /lib/ld-linux-aarch64.so.1 \
+	endif
 	@sed                                            \
 	    -e 's|{ARG_BIN}|$(BIN)|g'                   \
 	    -e 's|{ARG_ARCH}|$(ARCH)|g'                 \
@@ -215,6 +223,8 @@ bin/.container-$(DOTFILE_IMAGE)-%: bin/$(OS)_$(ARCH)/$(BIN) $(DOCKERFILE_%)
 	    -e 's|{ARG_FROM}|$(BASEIMAGE_$*)|g'         \
 	    -e 's|{RESTIC_VER}|$(RESTIC_VER)|g'         \
 	    -e 's|{NEW_RESTIC_VER}|$(NEW_RESTIC_VER)|g' \
+	    -e 's|{GNU_LIBC_PATH}|$(GNU_LIBC_PATH)|g'   \
+	    -e 's|{LIB_LD_PATH}|$(LIB_LD_PATH)|g'       \
 	    $(DOCKERFILE_$*) > bin/.dockerfile-$*-$(OS)_$(ARCH)
 	@DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --platform $(OS)/$(ARCH) --load --pull -t $(IMAGE):$(TAG_$*) -f bin/.dockerfile-$*-$(OS)_$(ARCH) .
 	@docker images -q $(IMAGE):$(TAG_$*) > $@
