@@ -49,11 +49,11 @@ type RestoreSessionSpec struct {
 	// +optional
 	Rules []Rule `json:"rules,omitempty"`
 	// RuntimeSettings allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc.
-	//+optional
+	// +optional
 	RuntimeSettings ofst.RuntimeSettings `json:"runtimeSettings,omitempty"`
 	// Temp directory configuration for functions/sidecar
 	// An `EmptyDir` will always be mounted at /tmp with this settings
-	//+optional
+	// +optional
 	TempDir EmptyDirSettings `json:"tempDir,omitempty"`
 	// InterimVolumeTemplate specifies a template for a volume to hold targeted data temporarily
 	// before uploading to backend or inserting into target. It is only usable for job model.
@@ -116,7 +116,7 @@ type RestoreSessionStatus struct {
 	// +optional
 	Phase RestoreSessionPhase `json:"phase,omitempty"`
 	// TotalHosts specifies total number of hosts that will be restored for this RestoreSession
-	// +Optional
+	// +optional
 	TotalHosts *int32 `json:"totalHosts,omitempty"`
 	// SessionDuration specify total time taken to complete current restore session (sum of restore duration of all hosts)
 	// +optional

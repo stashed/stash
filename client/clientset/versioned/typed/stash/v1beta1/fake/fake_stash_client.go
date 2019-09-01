@@ -28,6 +28,10 @@ type FakeStashV1beta1 struct {
 	*testing.Fake
 }
 
+func (c *FakeStashV1beta1) BackupBatches(namespace string) v1beta1.BackupBatchInterface {
+	return &FakeBackupBatches{c, namespace}
+}
+
 func (c *FakeStashV1beta1) BackupBlueprints() v1beta1.BackupBlueprintInterface {
 	return &FakeBackupBlueprints{c}
 }

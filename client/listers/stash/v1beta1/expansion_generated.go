@@ -18,6 +18,14 @@ limitations under the License.
 
 package v1beta1
 
+// BackupBatchListerExpansion allows custom methods to be added to
+// BackupBatchLister.
+type BackupBatchListerExpansion interface{}
+
+// BackupBatchNamespaceListerExpansion allows custom methods to be added to
+// BackupBatchNamespaceLister.
+type BackupBatchNamespaceListerExpansion interface{}
+
 // BackupBlueprintListerExpansion allows custom methods to be added to
 // BackupBlueprintLister.
 type BackupBlueprintListerExpansion interface{}

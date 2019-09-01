@@ -62,7 +62,7 @@ type BackupSessionStatus struct {
 	// +optional
 	Phase BackupSessionPhase `json:"phase,omitempty"`
 	// TotalHosts specifies total number of hosts that will be backed up for this BackupSession
-	// +Optional
+	// +optional
 	TotalHosts *int32 `json:"totalHosts,omitempty"`
 	// SessionDuration specify total time taken to complete current backup session (sum of backup duration of all hosts)
 	// +optional

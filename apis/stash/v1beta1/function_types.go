@@ -83,10 +83,10 @@ type FunctionSpec struct {
 	// +optional
 	VolumeDevices []core.VolumeDevice `json:"volumeDevices,omitempty" patchStrategy:"merge" patchMergeKey:"devicePath"`
 	// RuntimeSettings allow to specify Resources, LivenessProbe, ReadinessProbe, Lifecycle, SecurityContext etc.
-	//+optional
+	// +optional
 	RuntimeSettings *ofst.ContainerRuntimeSettings `json:"runtimeSettings,omitempty"`
 	// Name of PodSecurityPolicy(PSP) required by this function
-	//+optional
+	// +optional
 	PodSecurityPolicyName string `json:"podSecurityPolicyName,omitempty"`
 }
 
