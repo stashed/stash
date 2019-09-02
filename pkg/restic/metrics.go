@@ -292,13 +292,14 @@ func (backupOutput *BackupOutput) HandleMetrics(config *rest.Config, backupConfi
 		return err
 	}
 
+	if backupErr != nil {
+		metrics := newBackupMetrics(labels)
+		metrics.HostBackupMetrics.BackupSuccess.Set(0)
+		registry.MustRegister(metrics.HostBackupMetrics.BackupSuccess)
+		return metricOpt.sendMetrics(registry, metricOpt.JobName)
+	}
+
 	if backupOutput == nil {
-		if backupErr != nil {
-			metrics := newBackupMetrics(labels)
-			metrics.HostBackupMetrics.BackupSuccess.Set(0)
-			registry.MustRegister(metrics.HostBackupMetrics.BackupSuccess)
-			return metricOpt.sendMetrics(registry, metricOpt.JobName)
-		}
 		return fmt.Errorf("invalid backup output")
 	}
 
@@ -310,49 +311,57 @@ func (backupOutput *BackupOutput) HandleMetrics(config *rest.Config, backupConfi
 		}
 		metrics := newBackupMetrics(upsertLabel(labels, hostLabel))
 
-		if backupErr == nil && hostStats.Error == "" {
+		if hostStats.Error == "" {
 			// set metrics values from backupOutput
 			err := metrics.setValues(hostStats)
 			if err != nil {
 				return err
 			}
 			metrics.HostBackupMetrics.BackupSuccess.Set(1)
+
+			registry.MustRegister(
+				// register backup session metrics
+				metrics.HostBackupMetrics.BackupSuccess,
+				metrics.HostBackupMetrics.SessionDuration,
+				metrics.HostBackupMetrics.FileMetrics.TotalFiles,
+				metrics.HostBackupMetrics.FileMetrics.NewFiles,
+				metrics.HostBackupMetrics.FileMetrics.ModifiedFiles,
+				metrics.HostBackupMetrics.FileMetrics.UnmodifiedFiles,
+				metrics.HostBackupMetrics.DataSize,
+				metrics.HostBackupMetrics.DataUploaded,
+				metrics.HostBackupMetrics.DataProcessingTime,
+			)
 		} else {
 			metrics.HostBackupMetrics.BackupSuccess.Set(0)
+
+			registry.MustRegister(
+				// register backup session metrics
+				metrics.HostBackupMetrics.BackupSuccess,
+			)
 		}
-		registry.MustRegister(
-			// register backup session metrics
-			metrics.HostBackupMetrics.BackupSuccess,
-			metrics.HostBackupMetrics.SessionDuration,
-			metrics.HostBackupMetrics.FileMetrics.TotalFiles,
-			metrics.HostBackupMetrics.FileMetrics.NewFiles,
-			metrics.HostBackupMetrics.FileMetrics.ModifiedFiles,
-			metrics.HostBackupMetrics.FileMetrics.UnmodifiedFiles,
-			metrics.HostBackupMetrics.DataSize,
-			metrics.HostBackupMetrics.DataUploaded,
-			metrics.HostBackupMetrics.DataProcessingTime,
-		)
 	}
 
 	// crete repository metrics
-	repoMetricLabels, err := repoMetricLabels(config, backupConfig, metricOpt.Labels)
-	if err != nil {
-		return err
-	}
+	if backupOutput.RepositoryStats.Integrity != nil {
+		repoMetricLabels, err := repoMetricLabels(config, backupConfig, metricOpt.Labels)
+		if err != nil {
+			return err
+		}
 
-	repoMetrics := newRepositoryMetrics(repoMetricLabels)
-	err = repoMetrics.setValues(backupOutput.RepositoryStats)
-	if err != nil {
-		return err
-	}
+		repoMetrics := newRepositoryMetrics(repoMetricLabels)
+		err = repoMetrics.setValues(backupOutput.RepositoryStats)
+		if err != nil {
+			return err
+		}
 
-	// register repository metrics
-	registry.MustRegister(
-		repoMetrics.RepoIntegrity,
-		repoMetrics.RepoSize,
-		repoMetrics.SnapshotCount,
-		repoMetrics.SnapshotsRemovedOnLastCleanup,
-	)
+		// register repository metrics
+		registry.MustRegister(
+			repoMetrics.RepoIntegrity,
+			repoMetrics.RepoSize,
+			repoMetrics.SnapshotCount,
+			repoMetrics.SnapshotsRemovedOnLastCleanup,
+		)
+	}
 
 	return metricOpt.sendMetrics(registry, metricOpt.JobName)
 }
@@ -365,13 +374,15 @@ func (restoreOutput *RestoreOutput) HandleMetrics(config *rest.Config, restoreSe
 	if err != nil {
 		return err
 	}
+
+	if restoreErr != nil {
+		metrics := newRestoreMetrics(labels)
+		metrics.RestoreSuccess.Set(0)
+		registry.MustRegister(metrics.RestoreSuccess)
+		return metricOpt.sendMetrics(registry, metricOpt.JobName)
+	}
+
 	if restoreOutput == nil {
-		if restoreErr != nil {
-			metrics := newRestoreMetrics(labels)
-			metrics.RestoreSuccess.Set(0)
-			registry.MustRegister(metrics.RestoreSuccess)
-			return metricOpt.sendMetrics(registry, metricOpt.JobName)
-		}
 		return fmt.Errorf("invalid restore output")
 	}
 
@@ -383,20 +394,24 @@ func (restoreOutput *RestoreOutput) HandleMetrics(config *rest.Config, restoreSe
 		}
 		metrics := newRestoreMetrics(upsertLabel(labels, hostLabel))
 
-		if restoreErr == nil && hostStats.Error == "" {
+		if hostStats.Error == "" {
 			duration, err := time.ParseDuration(hostStats.Duration)
 			if err != nil {
 				return err
 			}
 			metrics.SessionDuration.Set(duration.Seconds())
 			metrics.RestoreSuccess.Set(1)
+
+			registry.MustRegister(
+				metrics.SessionDuration,
+				metrics.RestoreSuccess,
+			)
 		} else {
 			metrics.RestoreSuccess.Set(0)
+			registry.MustRegister(
+				metrics.RestoreSuccess,
+			)
 		}
-		registry.MustRegister(
-			metrics.SessionDuration,
-			metrics.RestoreSuccess,
-		)
 	}
 
 	return metricOpt.sendMetrics(registry, metricOpt.JobName)
@@ -457,7 +472,7 @@ func (backupMetrics *BackupMetrics) setValues(hostOutput api_v1beta1.HostBackupS
 
 func (repoMetrics *RepositoryMetrics) setValues(repoStats RepositoryStats) error {
 	// set repository metrics values
-	if *repoStats.Integrity {
+	if repoStats.Integrity != nil && *repoStats.Integrity {
 		repoMetrics.RepoIntegrity.Set(1)
 	} else {
 		repoMetrics.RepoIntegrity.Set(0)
