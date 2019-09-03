@@ -65,7 +65,7 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&opt.name, "backupsession.name", "", "Set BackupSession Name")
+	cmd.Flags().StringVar(&opt.name, "backupsession", "", "Name of the respective BackupSession object")
 	cmd.Flags().BoolVar(&opt.metrics.Enabled, "metrics-enabled", opt.metrics.Enabled, "Specify whether to export Prometheus metrics")
 	cmd.Flags().StringVar(&opt.metrics.PushgatewayURL, "pushgateway-url", opt.metrics.PushgatewayURL, "Pushgateway URL where the metrics will be pushed")
 	return cmd
@@ -195,7 +195,6 @@ func (opt *VSoption) getVolumeSnapshotDefinition(backupConfiguration *v1beta1.Ba
 			},
 		},
 	}
-
 }
 
 func getPVCs(volList []corev1.Volume) []string {

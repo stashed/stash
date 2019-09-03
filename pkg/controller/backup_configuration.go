@@ -250,8 +250,8 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 				Image:           image.ToContainerImage(),
 				Args: []string{
 					"create-backupsession",
-					fmt.Sprintf("--backupsession.name=%s", backupConfiguration.Name),
-					fmt.Sprintf("--backupsession.namespace=%s", backupConfiguration.Namespace),
+					fmt.Sprintf("--backupconfiguration=%s", backupConfiguration.Name),
+					fmt.Sprintf("--namespace=%s", backupConfiguration.Namespace),
 				},
 			})
 		in.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever

@@ -341,7 +341,7 @@ func (backupOutput *BackupOutput) HandleMetrics(config *rest.Config, backupConfi
 		}
 	}
 
-	// crete repository metrics
+	// create repository metrics
 	if backupOutput.RepositoryStats.Integrity != nil {
 		repoMetricLabels, err := repoMetricLabels(config, backupConfig, metricOpt.Labels)
 		if err != nil {

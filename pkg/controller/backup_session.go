@@ -131,13 +131,6 @@ func (c *StashController) runBackupSessionProcessor(key string) error {
 		return c.setBackupSessionSkipped(backupSession, "Backup Configuration is paused")
 	}
 
-	if backupConfig.Spec.Target != nil && backupConfig.Spec.Driver == api_v1beta1.VolumeSnapshotter {
-		err := c.ensureVolumeSnapshotterJob(backupConfig, backupSession)
-		if err != nil {
-			return c.handleBackupJobCreationFailure(backupSession, backupConfig, err)
-		}
-		return c.setBackupSessionRunning(backupSession)
-	}
 	// skip if backup model is sidecar.
 	// for sidecar model controller inside sidecar will take care of it.
 	if backupConfig.Spec.Target != nil && util.BackupModel(backupConfig.Spec.Target.Ref.Kind) == util.ModelSidecar {
@@ -145,7 +138,16 @@ func (c *StashController) runBackupSessionProcessor(key string) error {
 		return c.setBackupSessionRunning(backupSession)
 	}
 
-	// create backup job
+	// if VolumeSnapshotter driver is used then ensure VolumeSnapshotter job
+	if backupConfig.Spec.Target != nil && backupConfig.Spec.Driver == api_v1beta1.VolumeSnapshotter {
+		err := c.ensureVolumeSnapshotterJob(backupConfig, backupSession)
+		if err != nil {
+			return c.handleBackupJobCreationFailure(backupSession, backupConfig, err)
+		}
+		return c.setBackupSessionRunning(backupSession)
+	}
+
+	// Restic driver has been used. Now, create a backup job
 	err = c.ensureBackupJob(backupSession, backupConfig)
 	if err != nil {
 		// failed to ensure backup job. set BackupSession phase "Failed" and send failure metrics.

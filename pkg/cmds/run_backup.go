@@ -16,7 +16,7 @@ import (
 )
 
 func NewCmdRunBackup() *cobra.Command {
-	con := backup.BackupSessionController{
+	opt := backup.BackupSessionController{
 		MasterURL:      "",
 		KubeconfigPath: "",
 		Namespace:      meta.Namespace(),
@@ -34,38 +34,38 @@ func NewCmdRunBackup() *cobra.Command {
 		Short:             "Take backup of workload paths",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			config, err := clientcmd.BuildConfigFromFlags(con.MasterURL, con.KubeconfigPath)
+			config, err := clientcmd.BuildConfigFromFlags(opt.MasterURL, opt.KubeconfigPath)
 			if err != nil {
 				glog.Fatalf("Could not get Kubernetes config: %s", err)
 				return err
 			}
 
-			con.Config = config
-			con.K8sClient = kubernetes.NewForConfigOrDie(config)
-			con.StashClient = cs.NewForConfigOrDie(config)
-			con.StashInformerFactory = stashinformers.NewSharedInformerFactoryWithOptions(
-				con.StashClient,
-				con.ResyncPeriod,
-				stashinformers.WithNamespace(con.Namespace),
+			opt.Config = config
+			opt.K8sClient = kubernetes.NewForConfigOrDie(config)
+			opt.StashClient = cs.NewForConfigOrDie(config)
+			opt.StashInformerFactory = stashinformers.NewSharedInformerFactoryWithOptions(
+				opt.StashClient,
+				opt.ResyncPeriod,
+				stashinformers.WithNamespace(opt.Namespace),
 				stashinformers.WithTweakListOptions(nil),
 			)
-			con.Recorder = eventer.NewEventRecorder(con.K8sClient, backup.BackupEventComponent)
-			con.Metrics.JobName = con.BackupConfigurationName
-			if err = con.RunBackup(); err != nil {
+			opt.Recorder = eventer.NewEventRecorder(opt.K8sClient, backup.BackupEventComponent)
+			opt.Metrics.JobName = opt.BackupConfigurationName
+			if err = opt.RunBackup(); err != nil {
 				// send setup failure metrics and fail the container so it restart to re-try
-				con.HandleBackupSetupFailure(err)
+				opt.HandleBackupSetupFailure(err)
 			}
 			return nil
 		},
 	}
-	cmd.Flags().StringVar(&con.MasterURL, "master", con.MasterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
-	cmd.Flags().StringVar(&con.KubeconfigPath, "kubeconfig", con.KubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&con.BackupConfigurationName, "backup-configuration", con.BackupConfigurationName, "Set BackupConfiguration Name")
-	cmd.Flags().StringVar(&con.SetupOpt.SecretDir, "secret-dir", con.SetupOpt.SecretDir, "Directory where storage secret has been mounted")
-	cmd.Flags().BoolVar(&con.SetupOpt.EnableCache, "enable-cache", con.SetupOpt.EnableCache, "Specify whether to enable caching for restic")
-	cmd.Flags().IntVar(&con.SetupOpt.MaxConnections, "max-connections", con.SetupOpt.MaxConnections, "Specify maximum concurrent connections for GCS, Azure and B2 backend")
-	cmd.Flags().BoolVar(&con.Metrics.Enabled, "metrics-enabled", con.Metrics.Enabled, "Specify whether to export Prometheus metrics")
-	cmd.Flags().StringVar(&con.Metrics.PushgatewayURL, "pushgateway-url", con.Metrics.PushgatewayURL, "URL of Prometheus pushgateway used to cache backup metrics")
+	cmd.Flags().StringVar(&opt.MasterURL, "master", opt.MasterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
+	cmd.Flags().StringVar(&opt.KubeconfigPath, "kubeconfig", opt.KubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
+	cmd.Flags().StringVar(&opt.BackupConfigurationName, "backupconfiguration", opt.BackupConfigurationName, "Name of the respective BackupConfiguration object")
+	cmd.Flags().StringVar(&opt.SetupOpt.SecretDir, "secret-dir", opt.SetupOpt.SecretDir, "Directory where storage secret has been mounted")
+	cmd.Flags().BoolVar(&opt.SetupOpt.EnableCache, "enable-cache", opt.SetupOpt.EnableCache, "Specify whether to enable caching for restic")
+	cmd.Flags().IntVar(&opt.SetupOpt.MaxConnections, "max-connections", opt.SetupOpt.MaxConnections, "Specify maximum concurrent connections for GCS, Azure and B2 backend")
+	cmd.Flags().BoolVar(&opt.Metrics.Enabled, "metrics-enabled", opt.Metrics.Enabled, "Specify whether to export Prometheus metrics")
+	cmd.Flags().StringVar(&opt.Metrics.PushgatewayURL, "pushgateway-url", opt.Metrics.PushgatewayURL, "URL of Prometheus pushgateway used to cache backup metrics")
 
 	return cmd
 }

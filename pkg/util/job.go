@@ -302,7 +302,7 @@ func NewVolumeSnapshotterJob(bs *api_v1beta1.BackupSession, bc *api_v1beta1.Back
 		Image: image.ToContainerImage(),
 		Args: append([]string{
 			"create-vs",
-			fmt.Sprintf("--backupsession.name=%s", bs.Name),
+			fmt.Sprintf("--backupsession=%s", bs.Name),
 			"--metrics-enabled=true",
 			"--pushgateway-url=" + PushgatewayURL(),
 			fmt.Sprintf("--enable-status-subresource=%v", apis.EnableStatusSubresource),
@@ -340,7 +340,7 @@ func NewVolumeRestorerJob(rs *api_v1beta1.RestoreSession, image docker.Docker) (
 		Image: image.ToContainerImage(),
 		Args: append([]string{
 			"restore-vs",
-			fmt.Sprintf("--restoresession.name=%s", rs.Name),
+			fmt.Sprintf("--restoresession=%s", rs.Name),
 			"--metrics-enabled=true",
 			"--pushgateway-url=" + PushgatewayURL(),
 			fmt.Sprintf("--enable-status-subresource=%v", apis.EnableStatusSubresource),

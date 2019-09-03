@@ -156,14 +156,6 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 				return nil
 			}
 
-			if restoreSession.Spec.Target != nil && restoreSession.Spec.Driver == api_v1beta1.VolumeSnapshotter {
-				err := c.ensureVolumeRestorerJob(restoreSession)
-				if err != nil {
-					return c.handleRestoreJobCreationFailure(restoreSession, err)
-				}
-				return c.setRestoreSessionRunning(restoreSession)
-			}
-
 			// if target is kubernetes workload i.e. Deployment, StatefulSet etc. then inject restore init-container
 			if restoreSession.Spec.Target != nil && util.BackupModel(restoreSession.Spec.Target.Ref.Kind) == util.ModelSidecar {
 				// send event to workload controller. workload controller will take care of injecting restore init-container
@@ -176,20 +168,29 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 					return err
 				}
 				return c.setRestoreSessionRunning(restoreSession)
-			} else {
+			}
 
-				// target is not a workload. we have to restore by a job.
-				err := c.ensureRestoreJob(restoreSession)
+			// target is not kubernetes workload. so, restore needs to be done using a job.
+			// if driver is VolumeSnapshotter then ensure volume restorer job
+			if restoreSession.Spec.Target != nil && restoreSession.Spec.Driver == api_v1beta1.VolumeSnapshotter {
+				err := c.ensureVolumeRestorerJob(restoreSession)
 				if err != nil {
-					// failed to ensure restore job. set RestoreSession phase "Failed" and send prometheus metrics.
 					return c.handleRestoreJobCreationFailure(restoreSession, err)
 				}
-
-				// restore job has been created successfully. set RestoreSession phase to "Running"
 				return c.setRestoreSessionRunning(restoreSession)
 			}
-		}
 
+			// driver is Restic. ensure restore job.
+			err = c.ensureRestoreJob(restoreSession)
+			if err != nil {
+				// failed to ensure restore job. set RestoreSession phase "Failed" and send prometheus metrics.
+				return c.handleRestoreJobCreationFailure(restoreSession, err)
+			}
+
+			// restore job has been created successfully. set RestoreSession phase to "Running"
+			return c.setRestoreSessionRunning(restoreSession)
+
+		}
 	}
 	return nil
 }

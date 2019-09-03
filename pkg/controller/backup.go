@@ -33,65 +33,9 @@ func (c *StashController) applyBackupAnnotationLogic(w *wapi.Workload) error {
 		meta_util.HasKey(w.Annotations, api_v1beta1.KeyTargetPaths) &&
 		meta_util.HasKey(w.Annotations, api_v1beta1.KeyVolumeMounts) {
 		// backup annotations found. so, we have to ensure Repository and BackupConfiguration from BackupBlueprint
-		backupBlueprintName, err := meta_util.GetStringValue(w.Annotations, api_v1beta1.KeyBackupBlueprint)
+		err = c.ensureAutoBackupResources(w, targetRef)
 		if err != nil {
-			return err
-		}
-		paths, err := meta_util.GetStringValue(w.Annotations, api_v1beta1.KeyTargetPaths)
-		if err != nil {
-			return err
-		}
-
-		v, err := meta_util.GetStringValue(w.Annotations, api_v1beta1.KeyVolumeMounts)
-		if err != nil {
-			return err
-		}
-		// extract volume and mount information from volumeMount annotation
-		mounts := strings.Split(v, ",")
-		volumeMounts := []core.VolumeMount{}
-		for _, m := range mounts {
-			vol := strings.Split(m, ":")
-			if len(vol) == 3 {
-				volumeMounts = append(volumeMounts, core.VolumeMount{Name: vol[0], MountPath: vol[1], SubPath: vol[2]})
-			} else if len(vol) == 2 {
-				volumeMounts = append(volumeMounts, core.VolumeMount{Name: vol[0], MountPath: vol[1]})
-			} else {
-				return fmt.Errorf("invalid volume-mounts annotations. use either 'volName:mountPath' or 'volName:mountPath:subPath' format")
-			}
-		}
-		// read respective BackupBlueprint crd
-		backupBlueprint, err := c.stashClient.StashV1beta1().BackupBlueprints().Get(backupBlueprintName, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-
-		// resolve BackupBlueprint's variables
-		inputs := make(map[string]string)
-		inputs[apis.TargetAPIVersion] = w.APIVersion
-		inputs[apis.TargetKind] = strings.ToLower(w.Kind)
-		inputs[apis.TargetName] = w.Name
-		inputs[apis.TargetNamespace] = w.Namespace
-
-		gvr, err := discovery.ResourceForGVK(c.kubeClient.Discovery(), w.GroupVersionKind())
-		if err != nil {
-			return err
-		}
-		inputs[apis.TargetResource] = gvr.Resource
-
-		err = resolve.ResolveBackupBlueprint(backupBlueprint, inputs)
-		if err != nil {
-			return err
-		}
-
-		// ensure Repository crd
-		err = c.ensureRepository(backupBlueprint, targetRef, targetRef.Kind)
-		if err != nil {
-			return err
-		}
-
-		// ensure BackupConfiguration crd
-		err = c.ensureBackupConfiguration(backupBlueprint, strings.Split(paths, ","), volumeMounts, targetRef, targetRef.Kind)
-		if err != nil {
+			// TODO
 			return err
 		}
 
@@ -100,13 +44,9 @@ func (c *StashController) applyBackupAnnotationLogic(w *wapi.Workload) error {
 		// if respective BackupConfiguration exist then backup annotations has been removed.
 		// in this case, we have to remove the BackupConfiguration too.
 		// however, we will keep Repository crd as it is required for restore.
-		_, err := c.stashClient.StashV1beta1().BackupConfigurations(w.Namespace).Get(getBackupConfigurationName(targetRef, targetRef.Kind), metav1.GetOptions{})
-		if err != nil && !kerr.IsNotFound(err) {
-			return err
-		}
-		// BackupConfiguration exist. so, we have to remove it.
-		err = c.stashClient.StashV1beta1().BackupConfigurations(w.Namespace).Delete(getBackupConfigurationName(targetRef, targetRef.Kind), meta_util.DeleteInBackground())
-		if err != nil && !kerr.IsNotFound(err) {
+		err = c.ensureAutoBackupResourcesDeleted(w, targetRef)
+		if err != nil {
+			// TODO
 			return err
 		}
 	}
@@ -183,6 +123,86 @@ func (c *StashController) applyResticLogic(w *wapi.Workload, caller string) (boo
 	}
 
 	return false, nil
+}
+
+// ensureAutoBackupResources creates(if does not exist) BackupConfiguration and Repository object for the respective workload
+func (c *StashController) ensureAutoBackupResources(w *wapi.Workload, targetRef *core.ObjectReference) error {
+	backupBlueprintName, err := meta_util.GetStringValue(w.Annotations, api_v1beta1.KeyBackupBlueprint)
+	if err != nil {
+		return err
+	}
+	paths, err := meta_util.GetStringValue(w.Annotations, api_v1beta1.KeyTargetPaths)
+	if err != nil {
+		return err
+	}
+
+	v, err := meta_util.GetStringValue(w.Annotations, api_v1beta1.KeyVolumeMounts)
+	if err != nil {
+		return err
+	}
+	// extract volume and mount information from volumeMount annotation
+	mounts := strings.Split(v, ",")
+	volumeMounts := []core.VolumeMount{}
+	for _, m := range mounts {
+		vol := strings.Split(m, ":")
+		if len(vol) == 3 {
+			volumeMounts = append(volumeMounts, core.VolumeMount{Name: vol[0], MountPath: vol[1], SubPath: vol[2]})
+		} else if len(vol) == 2 {
+			volumeMounts = append(volumeMounts, core.VolumeMount{Name: vol[0], MountPath: vol[1]})
+		} else {
+			return fmt.Errorf("invalid volume-mounts annotations. use either 'volName:mountPath' or 'volName:mountPath:subPath' format")
+		}
+	}
+	// read respective BackupBlueprint crd
+	backupBlueprint, err := c.stashClient.StashV1beta1().BackupBlueprints().Get(backupBlueprintName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	// resolve BackupBlueprint's variables
+	inputs := make(map[string]string)
+	inputs[apis.TargetAPIVersion] = w.APIVersion
+	inputs[apis.TargetKind] = strings.ToLower(w.Kind)
+	inputs[apis.TargetName] = w.Name
+	inputs[apis.TargetNamespace] = w.Namespace
+
+	gvr, err := discovery.ResourceForGVK(c.kubeClient.Discovery(), w.GroupVersionKind())
+	if err != nil {
+		return err
+	}
+	inputs[apis.TargetResource] = gvr.Resource
+
+	err = resolve.ResolveBackupBlueprint(backupBlueprint, inputs)
+	if err != nil {
+		return err
+	}
+
+	// ensure Repository crd
+	err = c.ensureRepository(backupBlueprint, targetRef, targetRef.Kind)
+	if err != nil {
+		return err
+	}
+
+	// ensure BackupConfiguration crd
+	err = c.ensureBackupConfiguration(backupBlueprint, strings.Split(paths, ","), volumeMounts, targetRef, targetRef.Kind)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// ensureAutoBackupResourcesDeleted deletes(if previously created) BackupConfiguration object for the respective workload
+func (c *StashController) ensureAutoBackupResourcesDeleted(w *wapi.Workload, targetRef *core.ObjectReference) error {
+	_, err := c.stashClient.StashV1beta1().BackupConfigurations(w.Namespace).Get(getBackupConfigurationName(targetRef, targetRef.Kind), metav1.GetOptions{})
+	if err != nil && !kerr.IsNotFound(err) {
+		return err
+	}
+	// BackupConfiguration exist. so, we have to remove it.
+	err = c.stashClient.StashV1beta1().BackupConfigurations(w.Namespace).Delete(getBackupConfigurationName(targetRef, targetRef.Kind), meta_util.DeleteInBackground())
+	if err != nil && !kerr.IsNotFound(err) {
+		return err
+	}
+	return nil
 }
 
 func (c *StashController) ensureRepository(backupBlueprint *api_v1beta1.BackupBlueprint, target *core.ObjectReference, prefix string) error {
