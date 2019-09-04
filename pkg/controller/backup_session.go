@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"stash.appscode.dev/stash/pkg/restic"
+
 	"github.com/appscode/go/log"
 	"github.com/golang/glog"
 	batchv1 "k8s.io/api/batch/v1"
@@ -30,7 +32,6 @@ import (
 	"stash.appscode.dev/stash/pkg/eventer"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/resolve"
-	"stash.appscode.dev/stash/pkg/restic"
 	"stash.appscode.dev/stash/pkg/util"
 )
 
@@ -128,7 +129,7 @@ func (c *StashController) runBackupSessionProcessor(key string) error {
 	// skip if BackupConfiguration paused
 	if backupConfig.Spec.Paused {
 		log.Infof("Skipping processing BackupSession %s/%s. Reason: Backup Configuration is paused.", backupSession.Namespace, backupSession.Name)
-		return c.setBackupSessionSkipped(backupSession, "Backup Configuration is paused")
+		return c.setBackupSessionSkipped(backupSession, fmt.Sprintf("BackupConfiguration %s/%s is paused", backupConfig.Namespace, backupConfig.Name))
 	}
 
 	// skip if backup model is sidecar.
@@ -142,8 +143,9 @@ func (c *StashController) runBackupSessionProcessor(key string) error {
 	if backupConfig.Spec.Target != nil && backupConfig.Spec.Driver == api_v1beta1.VolumeSnapshotter {
 		err := c.ensureVolumeSnapshotterJob(backupConfig, backupSession)
 		if err != nil {
-			return c.handleBackupJobCreationFailure(backupSession, backupConfig, err)
+			return c.handleBackupJobCreationFailure(backupSession, err)
 		}
+		// VolumeSnapshotter job has been created successfully. Set BackupSession phase "Running"
 		return c.setBackupSessionRunning(backupSession)
 	}
 
@@ -151,10 +153,10 @@ func (c *StashController) runBackupSessionProcessor(key string) error {
 	err = c.ensureBackupJob(backupSession, backupConfig)
 	if err != nil {
 		// failed to ensure backup job. set BackupSession phase "Failed" and send failure metrics.
-		return c.handleBackupJobCreationFailure(backupSession, backupConfig, err)
+		return c.handleBackupJobCreationFailure(backupSession, err)
 	}
 
-	// job has been created successfully. set BackupSession phase "Running"
+	// Backup job has been created successfully. Set BackupSession phase "Running"
 	return c.setBackupSessionRunning(backupSession)
 }
 
@@ -331,10 +333,10 @@ func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.B
 	return err
 }
 
-func (c *StashController) setBackupSessionFailed(backupSession *api_v1beta1.BackupSession, jobErr error) error {
+func (c *StashController) setBackupSessionFailed(backupSession *api_v1beta1.BackupSession, err error) error {
 
 	// set BackupSession phase to "Failed"
-	_, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
+	updatedBackupSession, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 		in.Phase = api_v1beta1.BackupSessionFailed
 		return in
 	}, apis.EnableStatusSubresource)
@@ -342,17 +344,27 @@ func (c *StashController) setBackupSessionFailed(backupSession *api_v1beta1.Back
 		return err
 	}
 
-	// write failure event
-	_, err = eventer.CreateEvent(
+	// write failure event to BackupSession
+	_, _ = eventer.CreateEvent(
 		c.kubeClient,
 		eventer.EventSourceBackupSessionController,
 		backupSession,
 		core.EventTypeWarning,
 		eventer.EventReasonBackupSessionFailed,
-		jobErr.Error(),
+		fmt.Sprintf("Backup session failed to complete. Reason: %v", err),
 	)
 
-	return err
+	// send backup session specific metrics
+	backupConfig, err2 := c.stashClient.StashV1beta1().BackupConfigurations(backupSession.Namespace).Get(backupSession.Spec.BackupConfiguration.Name, metav1.GetOptions{})
+	if err2 != nil {
+		return err2
+	}
+	metricsOpt := &restic.MetricsOptions{
+		Enabled:        true,
+		PushgatewayURL: util.PushgatewayURL(),
+		JobName:        backupConfig.Name,
+	}
+	return metricsOpt.SendBackupSessionMetrics(c.clientConfig, backupConfig, updatedBackupSession.Status)
 }
 
 func (c *StashController) setBackupSessionSkipped(backupSession *api_v1beta1.BackupSession, reason string) error {
@@ -374,7 +386,6 @@ func (c *StashController) setBackupSessionSkipped(backupSession *api_v1beta1.Bac
 		eventer.EventReasonBackupSessionSkipped,
 		reason,
 	)
-
 	return err
 }
 
@@ -388,6 +399,7 @@ func (c *StashController) setBackupSessionRunning(backupSession *api_v1beta1.Bac
 		return err
 	}
 
+	// find out the total number of hosts that will be backed up in this backup session
 	totalHosts, err := c.getTotalHosts(backupConfig.Spec.Target, backupConfig.Namespace, backupConfig.Spec.Driver)
 	if err != nil {
 		return err
@@ -403,33 +415,25 @@ func (c *StashController) setBackupSessionRunning(backupSession *api_v1beta1.Bac
 		return err
 	}
 
-	// write job creation success event
+	// write event to the BackupSession
 	_, err = eventer.CreateEvent(
 		c.kubeClient,
 		eventer.EventSourceBackupSessionController,
 		backupSession,
 		core.EventTypeNormal,
-		eventer.EventReasonBackupSessionJobCreated,
-		fmt.Sprintf("backup job has been created succesfully for BackupSession %s/%s", backupSession.Namespace, backupSession.Name),
+		eventer.EventReasonBackupSessionRunning,
+		fmt.Sprintf("Backup job has been created succesfully/sidecar is watching the BackupSession."),
 	)
-
 	return err
 }
 
 func (c *StashController) setBackupSessionSucceeded(backupSession *api_v1beta1.BackupSession) error {
 
-	// total backup session duration is sum of individual host backup duration
-	var sessionDuration time.Duration
-	for _, hostStats := range backupSession.Status.Stats {
-		hostBackupDuration, err := time.ParseDuration(hostStats.Duration)
-		if err != nil {
-			return err
-		}
-		sessionDuration = sessionDuration + hostBackupDuration
-	}
+	// total backup session duration is the difference between the time when BackupSession was created and current time
+	sessionDuration := time.Since(backupSession.CreationTimestamp.Time)
 
-	// update BackupSession status
-	_, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
+	// set BackupSession phase "Succeeded"
+	updatedBackupSession, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 		in.Phase = api_v1beta1.BackupSessionSucceeded
 		in.SessionDuration = sessionDuration.String()
 		return in
@@ -444,11 +448,21 @@ func (c *StashController) setBackupSessionSucceeded(backupSession *api_v1beta1.B
 		eventer.EventSourceBackupSessionController,
 		backupSession,
 		core.EventTypeNormal,
-		eventer.EventReasonSuccessfulBackup,
-		fmt.Sprintf("backup has been completed succesfully for BackupSession %s/%s", backupSession.Namespace, backupSession.Name),
+		eventer.EventReasonBackupSessionSucceeded,
+		fmt.Sprintf("Backup session completed successfully"),
 	)
 
-	return err
+	// send backup session specific metrics
+	backupConfig, err := c.stashClient.StashV1beta1().BackupConfigurations(backupSession.Namespace).Get(backupSession.Spec.BackupConfiguration.Name, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	metricsOpt := &restic.MetricsOptions{
+		Enabled:        true,
+		PushgatewayURL: util.PushgatewayURL(),
+		JobName:        backupConfig.Name,
+	}
+	return metricsOpt.SendBackupSessionMetrics(c.clientConfig, backupConfig, updatedBackupSession.Status)
 }
 
 func (c *StashController) getBackupSessionPhase(backupSession *api_v1beta1.BackupSession) (api_v1beta1.BackupSessionPhase, error) {
@@ -475,24 +489,21 @@ func (c *StashController) getBackupSessionPhase(backupSession *api_v1beta1.Backu
 	return api_v1beta1.BackupSessionSucceeded, nil
 }
 
-func (c *StashController) handleBackupJobCreationFailure(backupSession *api_v1beta1.BackupSession, backupConfig *api_v1beta1.BackupConfiguration, backupErr error) error {
-	log.Warningln("failed to ensure backup job. Reason: ", backupErr)
+func (c *StashController) handleBackupJobCreationFailure(backupSession *api_v1beta1.BackupSession, err error) error {
+	log.Warningln("failed to ensure backup job. Reason: ", err)
 
-	// send prometheus metrics
-	metricOpt := &restic.MetricsOptions{
-		Enabled:        true,
-		PushgatewayURL: util.PushgatewayURL(),
-		Labels:         nil,
-		JobName:        "stash-operator",
-	}
-	backupOutput := restic.BackupOutput{}
-	err := backupOutput.HandleMetrics(c.clientConfig, backupConfig, metricOpt, backupErr)
-	if err != nil {
-		log.Infof("Failed to send prometheus metrics. Reason: %v", err)
-	}
+	// write event to BackupSession
+	_, _ = eventer.CreateEvent(
+		c.kubeClient,
+		eventer.EventSourceBackupSessionController,
+		backupSession,
+		core.EventTypeWarning,
+		eventer.EventReasonBackupJobCreationFailed,
+		fmt.Sprintf("failed to create backup job for BackupSession %s/%s. Reason: %v", backupSession.Namespace, backupSession.Name, err),
+	)
 
 	// set BackupSession phase failed and create an event
-	return c.setBackupSessionFailed(backupSession, backupErr)
+	return c.setBackupSessionFailed(backupSession, err)
 }
 
 func getBackupJobName(backupSession *api_v1beta1.BackupSession) string {

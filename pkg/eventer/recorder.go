@@ -19,7 +19,6 @@ const (
 	EventReasonInvalidRecovery               = "InvalidRecovery"
 	EventReasonInvalidCronExpression         = "InvalidCronExpression"
 	EventReasonSuccessfulCronExpressionReset = "SuccessfulCronExpressionReset"
-	EventReasonSuccessfulBackup              = "SuccessfulBackup"
 	EventReasonFailedToBackup                = "FailedBackup"
 	EventReasonSuccessfulRecovery            = "SuccessfulRecovery"
 	EventReasonFailedToRecover               = "FailedRecovery"
@@ -36,13 +35,9 @@ const (
 	EventReasonAdmissionWebhookNotActivated  = "AdmissionWebhookNotActivated"
 	EventReasonInvalidBackupConfiguration    = "InvalidBackupConfiguration"
 
-	EventReasonInvalidBackupSession    = "InvalidBackupSession"
-	EventReasonBackupSessionSucceeded  = "BackupSessionSucceeded"
-	EventReasonBackupSessionFailed     = "BackupSessionFailedToExecute"
-	EventReasonBackupSessionSkipped    = "BackupSessionSkipped"
-	EventReasonBackupSessionJobCreated = "BackupSessionJobCreated"
-	EventReasonHostBackupSucceded      = "SuccessfulHostBackup"
-	EventReasonHostBackupFailed        = "FailedHostBackup"
+	EventReasonInvalidBackupSession = "InvalidBackupSession"
+	EventReasonHostBackupSucceded   = "SuccessfulHostBackup"
+	EventReasonHostBackupFailed     = "FailedHostBackup"
 
 	EventReasonInvalidRestoreSession   = "InvalidRestoreSession"
 	EventReasonRestoreSessionSucceeded = "RestoreSessionSucceeded"
@@ -56,16 +51,36 @@ const (
 	EventReasonHostRestoreSucceeded = "SuccessfulHostRestore"
 	EventReasonHostRestoreFailed    = "FailedHostRestore"
 
-	// Event Sources
-	EventSourceBackupSessionController  = "BackupSession Controller"
-	EventSourceRestoreSessionController = "RestoreSession Controller"
-	EventSourceBackupSidecar            = "Backup Sidecar"
-	EventSourceRestoreInitContainer     = "Restore Init-Container"
-	EventSourceBackupTriggeringCronJob  = "Backup Triggering CronJob"
-	EventSourcePostBackupStatusUpdater  = "Post Backup Status Updater"
-	EventSourcePostRestoreStatusUpdater = "Post Restore Status Updater"
+	// ====================== Event Sources ===================================
+	EventSourceBackupConfigurationController = "BackupConfiguration Controller"
+	EventSourceBackupSessionController       = "BackupSession Controller"
+	EventSourceRestoreSessionController      = "RestoreSession Controller"
+	EventSourceBackupSidecar                 = "Backup Sidecar"
+	EventSourceRestoreInitContainer          = "Restore Init-Container"
+	EventSourceBackupTriggeringCronJob       = "Backup Triggering CronJob"
+	EventSourcePostBackupStatusUpdater       = "Post Backup Status Updater"
+	EventSourcePostRestoreStatusUpdater      = "Post Restore Status Updater"
+	EventSourceAutoBackupHandler             = "Auto Backup Handler"
 
-	// Event Reasons
+	// ======================= Event Reasons ========================
+	// BackupConfiguration Events
+	EventReasonCronJobCreationFailed   = "CronJob Creation Failed"
+	EventReasonSidecarInjectionFailed  = "Sidecar Injection Failed"
+	EventReasonBackupJobCreationFailed = "Backup Job Creation Failed"
+	// BackupSession Events
+	EventReasonBackupSessionFailed    = "BackupSession Failed"
+	EventReasonBackupSessionSkipped   = "BackupSession Skipped"
+	EventReasonBackupSessionRunning   = "BackupSession Running"
+	EventReasonBackupSessionSucceeded = "BackupSession Succeeded"
+	// RestoreSession Events
+	EventReasonInitContainerInjectionFailed  = "Init-Container Injection Failed"
+	EventReasonRestoreJobCreationFailed = "Restore Job Creation Failed"
+	// Auto Backup Events
+	EventReasonAutoBackupResourcesCreationFailed    = "Auto Backup Resources Creation Failed"
+	EventReasonAutoBackupResourcesCreationSucceeded = "Auto Backup Resources Creation Succeeded"
+	EventReasonAutoBackupResourcesDeletionFailed    = "Auto Backup Resources Deletion Failed"
+	EventReasonAutoBackupResourcesDeletionSucceeded = "Auto Backup Resources Deletion Succeeded"
+
 	EventReasonBackupSkipped = "Backup Skipped"
 )
 

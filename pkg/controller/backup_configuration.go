@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"stash.appscode.dev/stash/pkg/eventer"
+
 	"github.com/appscode/go/log"
 	"github.com/golang/glog"
 	batch_v1beta1 "k8s.io/api/batch/v1beta1"
@@ -88,11 +90,14 @@ func (c *StashController) runBackupConfigurationProcessor(key string) error {
 				backupConfiguration.Spec.Driver != api_v1beta1.VolumeSnapshotter &&
 				util.BackupModel(backupConfiguration.Spec.Target.Ref.Kind) == util.ModelSidecar {
 				if err := c.EnsureV1beta1Sidecar(backupConfiguration); err != nil {
-					return err
+					return c.handleSidecarInjectionFailure(backupConfiguration, err)
 				}
 			}
 			// create a CronJob that will create BackupSession on each schedule
-			return c.EnsureCronJob(backupConfiguration)
+			err = c.EnsureCronJob(backupConfiguration)
+			if err != nil {
+				return c.handleCronJobCreationFailure(backupConfiguration, err)
+			}
 		}
 	}
 	return nil
@@ -289,4 +294,46 @@ func (c *StashController) EnsureCronJobDeleted(backupConfiguration *api_v1beta1.
 
 func getBackupCronJobName(backupConfiguration *api_v1beta1.BackupConfiguration) string {
 	return strings.ReplaceAll(backupConfiguration.Name, ".", "-")
+}
+
+func (c *StashController) handleCronJobCreationFailure(backupConfig *api_v1beta1.BackupConfiguration, err error) error {
+	log.Warningf("failed to ensure cron job for BackupConfiguration %s/%s. Reason: %v", backupConfig.Namespace, backupConfig.Name, err)
+
+	// write event to BackupConfiguration
+	_, err2 := eventer.CreateEvent(
+		c.kubeClient,
+		eventer.EventSourceBackupConfigurationController,
+		backupConfig,
+		core.EventTypeWarning,
+		eventer.EventReasonCronJobCreationFailed,
+		fmt.Sprintf("failed to ensure CronJob for BackupConfiguration  %s/%s. Reason: %v", backupConfig.Namespace, backupConfig.Name, err),
+	)
+	return err2
+}
+
+func (c *StashController) handleWorkloadControllerTriggerFailure(ref *core.ObjectReference, err error) error {
+	var obj,eventSource,eventReason string
+	switch ref.Kind {
+	case api_v1beta1.ResourceKindBackupConfiguration:
+		obj = "sidecar"
+		eventSource = eventer.EventSourceBackupConfigurationController
+		eventReason = eventer.EventReasonSidecarInjectionFailed
+	case api_v1beta1.ResourceKindRestoreSession:
+		obj = "init-container"
+		eventSource = eventer.EventSourceRestoreSessionController
+		eventReason = eventer.EventReasonInitContainerInjectionFailed
+	}
+
+	log.Warningf("failed to ensure sidecar/init-container for %s %s/%s. Reason: %v", ref.Kind,ref.Namespace, ref.Name, err)
+
+	// write event to BackupConfiguration/RestoreSession
+	_, err2 := eventer.CreateEvent(
+		c.kubeClient,
+		eventSource,
+		ref,
+		core.EventTypeWarning,
+		eventReason,
+		fmt.Sprintf("failed to ensure sidecar for BackupConfiguration  %s/%s. Reason: %v", backupConfig.Namespace, backupConfig.Name, err),
+	)
+	return err2
 }

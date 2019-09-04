@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"stash.appscode.dev/stash/pkg/eventer"
 	"time"
 
 	"github.com/appscode/go/log"
@@ -325,4 +326,64 @@ func isPodOwnedByWorkload(w *wapi.Workload, pod core.Pod) bool {
 		}
 	}
 	return false
+}
+
+func (c *StashController) handleSidecarInjectionFailure(ref *core.ObjectReference, err error) error {
+	log.Warningf("Failed to create auto backup resources for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
+
+	// write event to respective resource
+	_, err2 := eventer.CreateEvent(
+		c.kubeClient,
+		eventer.EventSourceAutoBackupHandler,
+		ref,
+		core.EventTypeWarning,
+		eventer.EventReasonAutoBackupResourcesCreationFailed,
+		fmt.Sprintf("Failed to create auto backup resources for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err),
+	)
+	return err2
+}
+
+func (c *StashController) handleSidecarInjectionSuccess(ref *core.ObjectReference) error {
+	log.Infof("Successfully created auto backup resources for %s %s/%s.", ref.Kind, ref.Namespace, ref.Name)
+
+	// write event to respective resource
+	_, err2 := eventer.CreateEvent(
+		c.kubeClient,
+		eventer.EventSourceAutoBackupHandler,
+		ref,
+		core.EventTypeWarning,
+		eventer.EventReasonAutoBackupResourcesCreationSucceeded,
+		fmt.Sprintf("Successfully created auto backup resources for %s %s/%s.", ref.Kind, ref.Namespace, ref.Name),
+	)
+	return err2
+}
+
+func (c *StashController) handleSidecarDeletionFailure(ref *core.ObjectReference, err error) error {
+	log.Warningf("Failed to delete auto backup resources for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
+
+	// write event to respective resource
+	_, err2 := eventer.CreateEvent(
+		c.kubeClient,
+		eventer.EventSourceAutoBackupHandler,
+		ref,
+		core.EventTypeWarning,
+		eventer.EventReasonAutoBackupResourcesDeletionFailed,
+		fmt.Sprintf("Failed to deleted auto backup resources for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err),
+	)
+	return err2
+}
+
+func (c *StashController) handleSidecarDeletionSuccess(ref *core.ObjectReference) error {
+	log.Infof("Successfully deleted auto backup resources for %s %s/%s.", ref.Kind, ref.Namespace, ref.Name)
+
+	// write event to respective resource
+	_, err2 := eventer.CreateEvent(
+		c.kubeClient,
+		eventer.EventSourceAutoBackupHandler,
+		ref,
+		core.EventTypeWarning,
+		eventer.EventReasonAutoBackupResourcesDeletionSucceeded,
+		fmt.Sprintf("Successfully deleted auto backup resources for %s %s/%s.", ref.Kind, ref.Namespace, ref.Name),
+	)
+	return err2
 }

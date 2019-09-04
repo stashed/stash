@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	kutil "kmodules.xyz/client-go"
+
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -67,58 +69,99 @@ func (c *StashController) applyBackupAnnotationLogicForAppBinding(ab *appCatalog
 	// if ab has backup annotations then ensure respective Repository and BackupConfiguration
 	if meta_util.HasKey(ab.Annotations, api_v1beta1.KeyBackupBlueprint) {
 		// backup annotations found. so, we have to ensure Repository and BackupConfiguration from BackupBlueprint
-		backupBlueprintName, err := meta_util.GetStringValue(ab.Annotations, api_v1beta1.KeyBackupBlueprint)
+		verb, err := c.ensureAutoBackupResourcesForAppBinding(ab, targetRef, targetAppGroup, targetAppResource, prefix)
 		if err != nil {
-			return err
+			return c.handleAutoBackupResourcesCreationFailure(targetRef, err)
 		}
-
-		backupBlueprint, err := c.stashClient.StashV1beta1().BackupBlueprints().Get(backupBlueprintName, metav1.GetOptions{})
-		if err != nil {
-			return err
+		if verb != kutil.VerbUnchanged {
+			return c.handleAutoBackupResourcesCreationSuccess(targetRef)
 		}
-
-		// resolve BackupBlueprint's variables
-		inputs := make(map[string]string)
-		inputs[apis.TargetAPIVersion] = ab.APIVersion
-		inputs[apis.TargetKind] = strings.ToLower(ab.Kind)
-		inputs[apis.TargetName] = ab.Name
-		inputs[apis.TargetNamespace] = ab.Namespace
-		inputs[apis.TargetAppVersion] = ab.Spec.Version
-		inputs[apis.TargetAppGroup] = targetAppGroup
-		inputs[apis.TargetAppResource] = targetAppResource
-		inputs[apis.TargetAppType] = string(ab.Spec.Type)
-
-		err = resolve.ResolveBackupBlueprint(backupBlueprint, inputs)
-		if err != nil {
-			return err
-		}
-
-		// ensure Repository crd
-		err = c.ensureRepository(backupBlueprint, targetRef, prefix)
-		if err != nil {
-			return err
-		}
-
-		// ensure BackupConfiguration crd
-		err = c.ensureBackupConfiguration(backupBlueprint, nil, nil, targetRef, prefix)
-		if err != nil {
-			return err
-		}
-
 	} else {
 		// app binding does not have backup annotations. it might be removed or was never added.
 		// if respective BackupConfiguration exist then backup annotations has been removed.
 		// in this case, we have to remove the BackupConfiguration too.
 		// however, we will keep Repository crd as it is required for restore.
-		_, err := c.stashClient.StashV1beta1().BackupConfigurations(ab.Namespace).Get(getBackupConfigurationName(targetRef, prefix), metav1.GetOptions{})
-		if err != nil && !kerr.IsNotFound(err) {
-			return err
+		verb, err := c.ensureAutoBackupResourcesForAppBindingDeleted(ab, targetRef, prefix)
+		if err != nil {
+			return c.handleAutoBackupResourcesDeletionFailure(targetRef, err)
 		}
-		// BackupConfiguration exist. so, we have to remove it.
-		err = c.stashClient.StashV1beta1().BackupConfigurations(ab.Namespace).Delete(getBackupConfigurationName(targetRef, prefix), meta_util.DeleteInBackground())
-		if err != nil && !kerr.IsNotFound(err) {
-			return err
+		if verb != kutil.VerbUnchanged {
+			return c.handleAutoBackupResourcesDeletionSuccess(targetRef)
 		}
 	}
 	return nil
+}
+
+func (c *StashController) ensureAutoBackupResourcesForAppBinding(
+	ab *appCatalog.AppBinding,
+	targetRef *core.ObjectReference,
+	targetAppGroup string,
+	targetAppResource string,
+	prefix string,
+) (kutil.VerbType, error) {
+
+	backupBlueprintName, err := meta_util.GetStringValue(ab.Annotations, api_v1beta1.KeyBackupBlueprint)
+	if err != nil {
+		return kutil.VerbUnchanged, err
+	}
+
+	backupBlueprint, err := c.stashClient.StashV1beta1().BackupBlueprints().Get(backupBlueprintName, metav1.GetOptions{})
+	if err != nil {
+		return kutil.VerbUnchanged, err
+	}
+
+	// resolve BackupBlueprint's variables
+	inputs := make(map[string]string)
+	inputs[apis.TargetAPIVersion] = ab.APIVersion
+	inputs[apis.TargetKind] = strings.ToLower(ab.Kind)
+	inputs[apis.TargetName] = ab.Name
+	inputs[apis.TargetNamespace] = ab.Namespace
+	inputs[apis.TargetAppVersion] = ab.Spec.Version
+	inputs[apis.TargetAppGroup] = targetAppGroup
+	inputs[apis.TargetAppResource] = targetAppResource
+	inputs[apis.TargetAppType] = string(ab.Spec.Type)
+
+	err = resolve.ResolveBackupBlueprint(backupBlueprint, inputs)
+	if err != nil {
+		return kutil.VerbUnchanged, err
+	}
+
+	// ensure Repository crd
+	verb1, err := c.ensureRepository(backupBlueprint, targetRef, prefix)
+	if err != nil {
+		return kutil.VerbUnchanged, err
+	}
+
+	// ensure BackupConfiguration crd
+	verb2, err := c.ensureBackupConfiguration(backupBlueprint, nil, nil, targetRef, prefix)
+	if err != nil {
+		return kutil.VerbUnchanged, err
+	}
+	// if both of the verb is unchanged then no create/update happened to the auto backup resources
+	if verb1 == kutil.VerbUnchanged || verb2 == kutil.VerbUnchanged {
+		return kutil.VerbUnchanged, nil
+	}
+	// auto backup resources has been created/updated
+	// we will use this information to write event to AppBinding
+	// so, "created" or "updated" verb has same effect to the end result
+	// we can return any of them.
+	return kutil.VerbCreated, nil
+}
+
+func (c *StashController) ensureAutoBackupResourcesForAppBindingDeleted(
+	ab *appCatalog.AppBinding,
+	targetRef *core.ObjectReference,
+	prefix string,
+) (kutil.VerbType, error) {
+
+	_, err := c.stashClient.StashV1beta1().BackupConfigurations(ab.Namespace).Get(getBackupConfigurationName(targetRef, prefix), metav1.GetOptions{})
+	if err != nil && !kerr.IsNotFound(err) {
+		return kutil.VerbUnchanged, err
+	}
+	// BackupConfiguration exist. so, we have to remove it.
+	err = c.stashClient.StashV1beta1().BackupConfigurations(ab.Namespace).Delete(getBackupConfigurationName(targetRef, prefix), meta_util.DeleteInBackground())
+	if err != nil && !kerr.IsNotFound(err) {
+		return kutil.VerbUnchanged, err
+	}
+	return kutil.VerbDeleted, nil
 }

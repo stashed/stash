@@ -340,7 +340,8 @@ func newRestoreHostMetrics(labels prometheus.Labels) *RestoreMetrics {
 	}
 }
 
-func (metricOpt *MetricsOptions) SendBackupSessionMetrics(config *rest.Config, backupConfig *api_v1beta1.BackupConfiguration, status *api_v1beta1.BackupSessionStatus) error {
+// SendBackupSessionMetrics send backup session metrics to the Pushgateway
+func (metricOpt *MetricsOptions) SendBackupSessionMetrics(config *rest.Config, backupConfig *api_v1beta1.BackupConfiguration, status api_v1beta1.BackupSessionStatus) error {
 	// create metric registry
 	registry := prometheus.NewRegistry()
 
@@ -383,7 +384,7 @@ func (metricOpt *MetricsOptions) SendBackupSessionMetrics(config *rest.Config, b
 	return metricOpt.sendMetrics(registry, metricOpt.JobName)
 }
 
-// HandleMetrics generate and send Prometheus metrics for backup process
+// SendBackupSessionMetrics send backup metrics for individual hosts to the Pushgateway
 func (metricOpt *MetricsOptions) SendBackupHostMetrics(config *rest.Config, backupConfig *api_v1beta1.BackupConfiguration, backupOutput *BackupOutput) error {
 	if backupOutput == nil {
 		return fmt.Errorf("invalid backup output. Backup output shouldn't be nil")
@@ -460,6 +461,7 @@ func (metricOpt *MetricsOptions) SendBackupHostMetrics(config *rest.Config, back
 	return metricOpt.sendMetrics(registry, metricOpt.JobName)
 }
 
+// SendRestoreSessionMetrics send restore session metrics to the Pushgateway
 func (metricOpt *MetricsOptions) SendRestoreSessionMetrics(config *rest.Config, restoreSession *api_v1beta1.RestoreSession) error {
 	// create metric registry
 	registry := prometheus.NewRegistry()
@@ -504,6 +506,7 @@ func (metricOpt *MetricsOptions) SendRestoreSessionMetrics(config *rest.Config, 
 	return metricOpt.sendMetrics(registry, metricOpt.JobName)
 }
 
+// SendRestoreHostMetrics send restore metrics for individual hosts to the Pushgateway
 func (metricOpt *MetricsOptions) SendRestoreHostMetrics(config *rest.Config, restoreSession *api_v1beta1.RestoreSession, restoreOutput *RestoreOutput) error {
 	if restoreOutput == nil {
 		return fmt.Errorf("invalid restore output. Restore output shouldn't be nil")

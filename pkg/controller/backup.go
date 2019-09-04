@@ -4,6 +4,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/appscode/go/log"
+	"stash.appscode.dev/stash/pkg/eventer"
+
+	kutil "kmodules.xyz/client-go"
+
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,21 +38,24 @@ func (c *StashController) applyBackupAnnotationLogic(w *wapi.Workload) error {
 		meta_util.HasKey(w.Annotations, api_v1beta1.KeyTargetPaths) &&
 		meta_util.HasKey(w.Annotations, api_v1beta1.KeyVolumeMounts) {
 		// backup annotations found. so, we have to ensure Repository and BackupConfiguration from BackupBlueprint
-		err = c.ensureAutoBackupResources(w, targetRef)
+		verb, err := c.ensureAutoBackupResourcesForWorkload(w, targetRef)
 		if err != nil {
-			// TODO
-			return err
+			return c.handleAutoBackupResourcesCreationFailure(targetRef, err)
 		}
-
+		if verb != kutil.VerbUnchanged {
+			return c.handleAutoBackupResourcesCreationSuccess(targetRef)
+		}
 	} else {
 		// workload does not have backup annotations. it might be removed or was never added.
 		// if respective BackupConfiguration exist then backup annotations has been removed.
 		// in this case, we have to remove the BackupConfiguration too.
 		// however, we will keep Repository crd as it is required for restore.
-		err = c.ensureAutoBackupResourcesDeleted(w, targetRef)
+		verb, err := c.ensureAutoBackupResourcesForWorkloadDeleted(w, targetRef)
 		if err != nil {
-			// TODO
-			return err
+			return c.handleAutoBackupResourcesDeletionFailure(targetRef, err)
+		}
+		if verb != kutil.VerbUnchanged {
+			return c.handleAutoBackupResourcesDeletionSuccess(targetRef)
 		}
 	}
 	return nil
@@ -126,19 +134,19 @@ func (c *StashController) applyResticLogic(w *wapi.Workload, caller string) (boo
 }
 
 // ensureAutoBackupResources creates(if does not exist) BackupConfiguration and Repository object for the respective workload
-func (c *StashController) ensureAutoBackupResources(w *wapi.Workload, targetRef *core.ObjectReference) error {
+func (c *StashController) ensureAutoBackupResourcesForWorkload(w *wapi.Workload, targetRef *core.ObjectReference) (kutil.VerbType, error) {
 	backupBlueprintName, err := meta_util.GetStringValue(w.Annotations, api_v1beta1.KeyBackupBlueprint)
 	if err != nil {
-		return err
+		return kutil.VerbUnchanged, err
 	}
 	paths, err := meta_util.GetStringValue(w.Annotations, api_v1beta1.KeyTargetPaths)
 	if err != nil {
-		return err
+		return kutil.VerbUnchanged, err
 	}
 
 	v, err := meta_util.GetStringValue(w.Annotations, api_v1beta1.KeyVolumeMounts)
 	if err != nil {
-		return err
+		return kutil.VerbUnchanged, err
 	}
 	// extract volume and mount information from volumeMount annotation
 	mounts := strings.Split(v, ",")
@@ -150,13 +158,13 @@ func (c *StashController) ensureAutoBackupResources(w *wapi.Workload, targetRef 
 		} else if len(vol) == 2 {
 			volumeMounts = append(volumeMounts, core.VolumeMount{Name: vol[0], MountPath: vol[1]})
 		} else {
-			return fmt.Errorf("invalid volume-mounts annotations. use either 'volName:mountPath' or 'volName:mountPath:subPath' format")
+			return kutil.VerbUnchanged, fmt.Errorf("invalid volume-mounts annotations. use either 'volName:mountPath' or 'volName:mountPath:subPath' format")
 		}
 	}
 	// read respective BackupBlueprint crd
 	backupBlueprint, err := c.stashClient.StashV1beta1().BackupBlueprints().Get(backupBlueprintName, metav1.GetOptions{})
 	if err != nil {
-		return err
+		return kutil.VerbUnchanged, err
 	}
 
 	// resolve BackupBlueprint's variables
@@ -168,61 +176,72 @@ func (c *StashController) ensureAutoBackupResources(w *wapi.Workload, targetRef 
 
 	gvr, err := discovery.ResourceForGVK(c.kubeClient.Discovery(), w.GroupVersionKind())
 	if err != nil {
-		return err
+		return kutil.VerbUnchanged, err
 	}
 	inputs[apis.TargetResource] = gvr.Resource
 
 	err = resolve.ResolveBackupBlueprint(backupBlueprint, inputs)
 	if err != nil {
-		return err
+		return kutil.VerbUnchanged, err
 	}
 
 	// ensure Repository crd
-	err = c.ensureRepository(backupBlueprint, targetRef, targetRef.Kind)
+	verb1, err := c.ensureRepository(backupBlueprint, targetRef, targetRef.Kind)
 	if err != nil {
-		return err
+		return kutil.VerbUnchanged, err
 	}
 
 	// ensure BackupConfiguration crd
-	err = c.ensureBackupConfiguration(backupBlueprint, strings.Split(paths, ","), volumeMounts, targetRef, targetRef.Kind)
+	verb2, err := c.ensureBackupConfiguration(backupBlueprint, strings.Split(paths, ","), volumeMounts, targetRef, targetRef.Kind)
 	if err != nil {
-		return err
+		return kutil.VerbUnchanged, err
 	}
-	return nil
+	// if both of the verb is unchanged then no create/update happened to the auto backup resources
+	if verb1 == kutil.VerbUnchanged || verb2 == kutil.VerbUnchanged {
+		return kutil.VerbUnchanged, nil
+	}
+	// auto backup resources has been created/updated
+	// we will use this information to write event to AppBinding
+	// so, "created" or "updated" verb has same effect to the end result
+	// we can return any of them.
+	return kutil.VerbCreated, nil
 }
 
 // ensureAutoBackupResourcesDeleted deletes(if previously created) BackupConfiguration object for the respective workload
-func (c *StashController) ensureAutoBackupResourcesDeleted(w *wapi.Workload, targetRef *core.ObjectReference) error {
+func (c *StashController) ensureAutoBackupResourcesForWorkloadDeleted(w *wapi.Workload, targetRef *core.ObjectReference) (kutil.VerbType, error) {
 	_, err := c.stashClient.StashV1beta1().BackupConfigurations(w.Namespace).Get(getBackupConfigurationName(targetRef, targetRef.Kind), metav1.GetOptions{})
 	if err != nil && !kerr.IsNotFound(err) {
-		return err
+		return kutil.VerbUnchanged, err
 	}
 	// BackupConfiguration exist. so, we have to remove it.
 	err = c.stashClient.StashV1beta1().BackupConfigurations(w.Namespace).Delete(getBackupConfigurationName(targetRef, targetRef.Kind), meta_util.DeleteInBackground())
 	if err != nil && !kerr.IsNotFound(err) {
-		return err
+		return kutil.VerbUnchanged, err
 	}
-	return nil
+	return kutil.VerbDeleted, nil
 }
 
-func (c *StashController) ensureRepository(backupBlueprint *api_v1beta1.BackupBlueprint, target *core.ObjectReference, prefix string) error {
+func (c *StashController) ensureRepository(backupBlueprint *api_v1beta1.BackupBlueprint, target *core.ObjectReference, prefix string) (kutil.VerbType, error) {
 	meta := metav1.ObjectMeta{
 		Name:      getRepositoryName(target, prefix),
 		Namespace: target.Namespace,
 	}
-	_, _, err := v1alpha1_util.CreateOrPatchRepository(c.stashClient.StashV1alpha1(), meta, func(in *api_v1alpha1.Repository) *api_v1alpha1.Repository {
+	_, verb, err := v1alpha1_util.CreateOrPatchRepository(c.stashClient.StashV1alpha1(), meta, func(in *api_v1alpha1.Repository) *api_v1alpha1.Repository {
 		in.Spec.Backend = backupBlueprint.Spec.Backend
 		return in
 	})
-	return err
+	if err != nil {
+		return kutil.VerbUnchanged, err
+	}
+	return verb, nil
 }
 
-func (c *StashController) ensureBackupConfiguration(backupBlueprint *api_v1beta1.BackupBlueprint, paths []string, volumeMounts []core.VolumeMount, target *core.ObjectReference, prefix string) error {
+func (c *StashController) ensureBackupConfiguration(backupBlueprint *api_v1beta1.BackupBlueprint, paths []string, volumeMounts []core.VolumeMount, target *core.ObjectReference, prefix string) (kutil.VerbType, error) {
 	meta := metav1.ObjectMeta{
 		Name:      getBackupConfigurationName(target, prefix),
 		Namespace: target.Namespace,
 	}
-	_, _, err := v1beta1_util.CreateOrPatchBackupConfiguration(c.stashClient.StashV1beta1(), meta, func(in *api_v1beta1.BackupConfiguration) *api_v1beta1.BackupConfiguration {
+	_, verb, err := v1beta1_util.CreateOrPatchBackupConfiguration(c.stashClient.StashV1beta1(), meta, func(in *api_v1beta1.BackupConfiguration) *api_v1beta1.BackupConfiguration {
 		// set workload as owner of this backupConfiguration object
 		core_util.EnsureOwnerReference(&in.ObjectMeta, target)
 		in.Spec.Repository.Name = getRepositoryName(target, prefix)
@@ -244,7 +263,10 @@ func (c *StashController) ensureBackupConfiguration(backupBlueprint *api_v1beta1
 		return in
 	})
 
-	return err
+	if err != nil {
+		return kutil.VerbUnchanged, err
+	}
+	return verb, nil
 }
 
 func getRepositoryName(target *core.ObjectReference, prefix string) string {
@@ -253,4 +275,64 @@ func getRepositoryName(target *core.ObjectReference, prefix string) string {
 
 func getBackupConfigurationName(target *core.ObjectReference, prefix string) string {
 	return fmt.Sprintf("%s-%s", strings.ToLower(prefix), target.Name)
+}
+
+func (c *StashController) handleAutoBackupResourcesCreationFailure(ref *core.ObjectReference, err error) error {
+	log.Warningf("Failed to create auto backup resources for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
+
+	// write event to respective resource
+	_, err2 := eventer.CreateEvent(
+		c.kubeClient,
+		eventer.EventSourceAutoBackupHandler,
+		ref,
+		core.EventTypeWarning,
+		eventer.EventReasonAutoBackupResourcesCreationFailed,
+		fmt.Sprintf("Failed to create auto backup resources for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err),
+	)
+	return err2
+}
+
+func (c *StashController) handleAutoBackupResourcesCreationSuccess(ref *core.ObjectReference) error {
+	log.Infof("Successfully created auto backup resources for %s %s/%s.", ref.Kind, ref.Namespace, ref.Name)
+
+	// write event to respective resource
+	_, err2 := eventer.CreateEvent(
+		c.kubeClient,
+		eventer.EventSourceAutoBackupHandler,
+		ref,
+		core.EventTypeWarning,
+		eventer.EventReasonAutoBackupResourcesCreationSucceeded,
+		fmt.Sprintf("Successfully created auto backup resources for %s %s/%s.", ref.Kind, ref.Namespace, ref.Name),
+	)
+	return err2
+}
+
+func (c *StashController) handleAutoBackupResourcesDeletionFailure(ref *core.ObjectReference, err error) error {
+	log.Warningf("Failed to delete auto backup resources for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
+
+	// write event to respective resource
+	_, err2 := eventer.CreateEvent(
+		c.kubeClient,
+		eventer.EventSourceAutoBackupHandler,
+		ref,
+		core.EventTypeWarning,
+		eventer.EventReasonAutoBackupResourcesDeletionFailed,
+		fmt.Sprintf("Failed to deleted auto backup resources for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err),
+	)
+	return err2
+}
+
+func (c *StashController) handleAutoBackupResourcesDeletionSuccess(ref *core.ObjectReference) error {
+	log.Infof("Successfully deleted auto backup resources for %s %s/%s.", ref.Kind, ref.Namespace, ref.Name)
+
+	// write event to respective resource
+	_, err2 := eventer.CreateEvent(
+		c.kubeClient,
+		eventer.EventSourceAutoBackupHandler,
+		ref,
+		core.EventTypeWarning,
+		eventer.EventReasonAutoBackupResourcesDeletionSucceeded,
+		fmt.Sprintf("Successfully deleted auto backup resources for %s %s/%s.", ref.Kind, ref.Namespace, ref.Name),
+	)
+	return err2
 }

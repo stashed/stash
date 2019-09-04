@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"stash.appscode.dev/stash/pkg/eventer"
 
 	"github.com/appscode/go/log"
 	core "k8s.io/api/core/v1"
@@ -137,4 +138,64 @@ func (c *StashController) ensureRestoreInitContainerDeleted(w *wapi.Workload, rs
 		delete(w.Annotations, api_v1beta1.KeyLastAppliedRestoreSession)
 	}
 	return nil
+}
+
+func (c *StashController) handleInitContainerInjectionFailure(ref *core.ObjectReference, err error) error {
+	log.Warningf("Failed to create auto backup resources for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
+
+	// write event to respective resource
+	_, err2 := eventer.CreateEvent(
+		c.kubeClient,
+		eventer.EventSourceAutoBackupHandler,
+		ref,
+		core.EventTypeWarning,
+		eventer.EventReasonAutoBackupResourcesCreationFailed,
+		fmt.Sprintf("Failed to create auto backup resources for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err),
+	)
+	return err2
+}
+
+func (c *StashController) handleInitContainerInjectionSuccess(ref *core.ObjectReference) error {
+	log.Infof("Successfully created auto backup resources for %s %s/%s.", ref.Kind, ref.Namespace, ref.Name)
+
+	// write event to respective resource
+	_, err2 := eventer.CreateEvent(
+		c.kubeClient,
+		eventer.EventSourceAutoBackupHandler,
+		ref,
+		core.EventTypeWarning,
+		eventer.EventReasonAutoBackupResourcesCreationSucceeded,
+		fmt.Sprintf("Successfully created auto backup resources for %s %s/%s.", ref.Kind, ref.Namespace, ref.Name),
+	)
+	return err2
+}
+
+func (c *StashController) handleInitContainerDeletionFailure(ref *core.ObjectReference, err error) error {
+	log.Warningf("Failed to delete auto backup resources for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
+
+	// write event to respective resource
+	_, err2 := eventer.CreateEvent(
+		c.kubeClient,
+		eventer.EventSourceAutoBackupHandler,
+		ref,
+		core.EventTypeWarning,
+		eventer.EventReasonAutoBackupResourcesDeletionFailed,
+		fmt.Sprintf("Failed to deleted auto backup resources for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err),
+	)
+	return err2
+}
+
+func (c *StashController) handleInitContainerDeletionSuccess(ref *core.ObjectReference) error {
+	log.Infof("Successfully deleted auto backup resources for %s %s/%s.", ref.Kind, ref.Namespace, ref.Name)
+
+	// write event to respective resource
+	_, err2 := eventer.CreateEvent(
+		c.kubeClient,
+		eventer.EventSourceAutoBackupHandler,
+		ref,
+		core.EventTypeWarning,
+		eventer.EventReasonAutoBackupResourcesDeletionSucceeded,
+		fmt.Sprintf("Successfully deleted auto backup resources for %s %s/%s.", ref.Kind, ref.Namespace, ref.Name),
+	)
+	return err2
 }
