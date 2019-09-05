@@ -333,7 +333,7 @@ func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.B
 	return err
 }
 
-func (c *StashController) setBackupSessionFailed(backupSession *api_v1beta1.BackupSession, err error) error {
+func (c *StashController) setBackupSessionFailed(backupSession *api_v1beta1.BackupSession, backupErr error) error {
 
 	// set BackupSession phase to "Failed"
 	updatedBackupSession, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
@@ -351,7 +351,7 @@ func (c *StashController) setBackupSessionFailed(backupSession *api_v1beta1.Back
 		backupSession,
 		core.EventTypeWarning,
 		eventer.EventReasonBackupSessionFailed,
-		fmt.Sprintf("Backup session failed to complete. Reason: %v", err),
+		fmt.Sprintf("Backup session failed to complete. Reason: %v", backupErr),
 	)
 
 	// send backup session specific metrics
@@ -442,7 +442,7 @@ func (c *StashController) setBackupSessionSucceeded(backupSession *api_v1beta1.B
 		return err
 	}
 
-	// write event for successful backup
+	// write event to the BackupSession for successful backup
 	_, err = eventer.CreateEvent(
 		c.kubeClient,
 		eventer.EventSourceBackupSessionController,
@@ -502,7 +502,7 @@ func (c *StashController) handleBackupJobCreationFailure(backupSession *api_v1be
 		fmt.Sprintf("failed to create backup job for BackupSession %s/%s. Reason: %v", backupSession.Namespace, backupSession.Name, err),
 	)
 
-	// set BackupSession phase failed and create an event
+	// set BackupSession phase failed
 	return c.setBackupSessionFailed(backupSession, err)
 }
 

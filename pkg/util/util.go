@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"stash.appscode.dev/stash/pkg/resolve"
+
 	"k8s.io/client-go/tools/reference"
 
 	"github.com/appscode/go/types"
@@ -386,4 +388,19 @@ func GetWorkloadReference(w *wapi.Workload) (*core.ObjectReference, error) {
 		}, nil
 	}
 	return ref, err
+}
+
+// GetPVCFromVolumeClaimTemplates returns list of PVCs generated according to the VolumeClaimTemplates
+func GetPVCFromVolumeClaimTemplates(ordinal int32, claimTemplates []core.PersistentVolumeClaim) ([]core.PersistentVolumeClaim, error) {
+	pvcList := make([]core.PersistentVolumeClaim, 0)
+	for _, claim := range claimTemplates {
+		inputs := make(map[string]string)
+		inputs[KeyPodOrdinal] = strconv.Itoa(int(ordinal))
+		err := resolve.ResolvePVCSpec(&claim, inputs)
+		if err != nil {
+			return pvcList, err
+		}
+		pvcList = append(pvcList, claim)
+	}
+	return pvcList, nil
 }

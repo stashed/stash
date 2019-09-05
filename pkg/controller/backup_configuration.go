@@ -55,7 +55,11 @@ func (c *StashController) runBackupConfigurationProcessor(key string) error {
 		if backupConfiguration.DeletionTimestamp != nil {
 			if core_util.HasFinalizer(backupConfiguration.ObjectMeta, api_v1beta1.StashKey) {
 				if err = c.EnsureV1beta1SidecarDeleted(backupConfiguration); err != nil {
-					return err
+					ref, rerr := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
+					if rerr != nil {
+						return err
+					}
+					return c.handleWorkloadControllerTriggerFailure(ref, err)
 				}
 				if err = c.EnsureCronJobDeleted(backupConfiguration); err != nil {
 					return err
@@ -90,11 +94,11 @@ func (c *StashController) runBackupConfigurationProcessor(key string) error {
 				backupConfiguration.Spec.Driver != api_v1beta1.VolumeSnapshotter &&
 				util.BackupModel(backupConfiguration.Spec.Target.Ref.Kind) == util.ModelSidecar {
 				if err := c.EnsureV1beta1Sidecar(backupConfiguration); err != nil {
-					ref, err := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
-					if err != nil {
+					ref, rerr := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
+					if rerr != nil {
 						return err
 					}
-					return c.handleSidecarInjectionFailure(ref, err)
+					return c.handleWorkloadControllerTriggerFailure(ref, err)
 				}
 			}
 			// create a CronJob that will create BackupSession on each schedule

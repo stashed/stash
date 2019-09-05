@@ -40,10 +40,6 @@ const (
 	EventReasonHostBackupFailed     = "FailedHostBackup"
 
 	EventReasonInvalidRestoreSession   = "InvalidRestoreSession"
-	EventReasonRestoreSessionSucceeded = "RestoreSessionSucceeded"
-	EventReasonRestoreSessionFailed    = "RestoreSessionFailedToExecute"
-	EventReasonRestorePhaseUnknown     = "RestoreSession Phase Unknown"
-	EventReasonRestoreJobCreated       = "RestoreJobCreated"
 
 	// RestoreSession events
 	EventReasonRestoreFailed        = "FailedRestoreSession"
@@ -73,7 +69,10 @@ const (
 	EventReasonBackupSessionRunning   = "BackupSession Running"
 	EventReasonBackupSessionSucceeded = "BackupSession Succeeded"
 	// RestoreSession Events
-
+	EventReasonRestoreJobCreated       = "Restore Job Created"
+	EventReasonRestoreSessionFailed    = "RestoreSession Failed"
+	EventReasonRestoreSessionSucceeded = "RestoreSession Succeeded"
+	EventReasonRestorePhaseUnknown     = "RestoreSession Phase Unknown"
 	EventReasonRestoreJobCreationFailed = "Restore Job Creation Failed"
 	// Auto Backup Events
 	EventReasonAutoBackupResourcesCreationFailed    = "Auto Backup Resources Creation Failed"
