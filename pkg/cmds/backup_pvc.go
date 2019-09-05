@@ -5,6 +5,7 @@ import (
 
 	"github.com/appscode/go/flags"
 	"github.com/spf13/cobra"
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/restic"
 	"stash.appscode.dev/stash/pkg/util"
 )
@@ -28,27 +29,20 @@ func NewCmdBackupPVC() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			flags.EnsureRequiredFlags(cmd, "backup-dirs", "provider", "secret-dir")
 
-			// apply nice, ionice settings from env
-			var err error
-			setupOpt.Nice, err = util.NiceSettingsFromEnv()
+			var backupOutput *restic.BackupOutput
+			backupOutput, err := backup(backupOpt, setupOpt)
 			if err != nil {
-				return util.HandleResticError(outputDir, restic.DefaultOutputFileName, err)
-			}
-			setupOpt.IONice, err = util.IONiceSettingsFromEnv()
-			if err != nil {
-				return util.HandleResticError(outputDir, restic.DefaultOutputFileName, err)
+				backupOutput = &restic.BackupOutput{
+					HostBackupStats: []api_v1beta1.HostBackupStats{
+						{
+							Hostname: backupOpt.Host,
+							Phase:    api_v1beta1.HostBackupFailed,
+							Error:    err.Error(),
+						},
+					},
+				}
 			}
 
-			// init restic wrapper
-			resticWrapper, err := restic.NewResticWrapper(setupOpt)
-			if err != nil {
-				return util.HandleResticError(outputDir, restic.DefaultOutputFileName, err)
-			}
-			// Run backup
-			backupOutput, backupErr := resticWrapper.RunBackup(backupOpt)
-			if backupErr != nil {
-				return util.HandleResticError(outputDir, restic.DefaultOutputFileName, backupErr)
-			}
 			// If output directory specified, then write the output in "output.json" file in the specified directory
 			if outputDir != "" {
 				return backupOutput.WriteOutput(filepath.Join(outputDir, restic.DefaultOutputFileName))
@@ -82,4 +76,24 @@ func NewCmdBackupPVC() *cobra.Command {
 	cmd.Flags().StringVar(&outputDir, "output-dir", outputDir, "Directory where output.json file will be written (keep empty if you don't need to write output in file)")
 
 	return cmd
+}
+
+func backup(backupOpt restic.BackupOptions, setupOpt restic.SetupOptions) (*restic.BackupOutput, error) {
+	// apply nice, ionice settings from env
+	var err error
+	setupOpt.Nice, err = util.NiceSettingsFromEnv()
+	if err != nil {
+		return nil, err
+	}
+	setupOpt.IONice, err = util.IONiceSettingsFromEnv()
+	if err != nil {
+		return nil, err
+	}
+
+	// init restic wrapper
+	resticWrapper, err := restic.NewResticWrapper(setupOpt)
+	if err != nil {
+		return nil, err
+	}
+	return resticWrapper.RunBackup(backupOpt)
 }
