@@ -90,7 +90,11 @@ func (c *StashController) runBackupConfigurationProcessor(key string) error {
 				backupConfiguration.Spec.Driver != api_v1beta1.VolumeSnapshotter &&
 				util.BackupModel(backupConfiguration.Spec.Target.Ref.Kind) == util.ModelSidecar {
 				if err := c.EnsureV1beta1Sidecar(backupConfiguration); err != nil {
-					return c.handleSidecarInjectionFailure(backupConfiguration, err)
+					ref, err := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
+					if err != nil {
+						return err
+					}
+					return c.handleSidecarInjectionFailure(ref, err)
 				}
 			}
 			// create a CronJob that will create BackupSession on each schedule
@@ -312,19 +316,15 @@ func (c *StashController) handleCronJobCreationFailure(backupConfig *api_v1beta1
 }
 
 func (c *StashController) handleWorkloadControllerTriggerFailure(ref *core.ObjectReference, err error) error {
-	var obj,eventSource,eventReason string
+	var eventSource string
 	switch ref.Kind {
 	case api_v1beta1.ResourceKindBackupConfiguration:
-		obj = "sidecar"
 		eventSource = eventer.EventSourceBackupConfigurationController
-		eventReason = eventer.EventReasonSidecarInjectionFailed
 	case api_v1beta1.ResourceKindRestoreSession:
-		obj = "init-container"
 		eventSource = eventer.EventSourceRestoreSessionController
-		eventReason = eventer.EventReasonInitContainerInjectionFailed
 	}
 
-	log.Warningf("failed to ensure sidecar/init-container for %s %s/%s. Reason: %v", ref.Kind,ref.Namespace, ref.Name, err)
+	log.Warningf("failed to trigger workload controller for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
 
 	// write event to BackupConfiguration/RestoreSession
 	_, err2 := eventer.CreateEvent(
@@ -332,8 +332,8 @@ func (c *StashController) handleWorkloadControllerTriggerFailure(ref *core.Objec
 		eventSource,
 		ref,
 		core.EventTypeWarning,
-		eventReason,
-		fmt.Sprintf("failed to ensure sidecar for BackupConfiguration  %s/%s. Reason: %v", backupConfig.Namespace, backupConfig.Name, err),
+		eventer.EventReasonWorkloadControllerTriggeringFailed,
+		fmt.Sprintf("failed to trigger workload controller for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err),
 	)
 	return err2
 }

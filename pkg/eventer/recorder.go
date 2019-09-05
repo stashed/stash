@@ -55,6 +55,7 @@ const (
 	EventSourceBackupConfigurationController = "BackupConfiguration Controller"
 	EventSourceBackupSessionController       = "BackupSession Controller"
 	EventSourceRestoreSessionController      = "RestoreSession Controller"
+	EventSourceWorkloadController            = "Workload Controller"
 	EventSourceBackupSidecar                 = "Backup Sidecar"
 	EventSourceRestoreInitContainer          = "Restore Init-Container"
 	EventSourceBackupTriggeringCronJob       = "Backup Triggering CronJob"
@@ -65,7 +66,6 @@ const (
 	// ======================= Event Reasons ========================
 	// BackupConfiguration Events
 	EventReasonCronJobCreationFailed   = "CronJob Creation Failed"
-	EventReasonSidecarInjectionFailed  = "Sidecar Injection Failed"
 	EventReasonBackupJobCreationFailed = "Backup Job Creation Failed"
 	// BackupSession Events
 	EventReasonBackupSessionFailed    = "BackupSession Failed"
@@ -73,15 +73,26 @@ const (
 	EventReasonBackupSessionRunning   = "BackupSession Running"
 	EventReasonBackupSessionSucceeded = "BackupSession Succeeded"
 	// RestoreSession Events
-	EventReasonInitContainerInjectionFailed  = "Init-Container Injection Failed"
+
 	EventReasonRestoreJobCreationFailed = "Restore Job Creation Failed"
 	// Auto Backup Events
 	EventReasonAutoBackupResourcesCreationFailed    = "Auto Backup Resources Creation Failed"
 	EventReasonAutoBackupResourcesCreationSucceeded = "Auto Backup Resources Creation Succeeded"
 	EventReasonAutoBackupResourcesDeletionFailed    = "Auto Backup Resources Deletion Failed"
 	EventReasonAutoBackupResourcesDeletionSucceeded = "Auto Backup Resources Deletion Succeeded"
+	// Sidecar Events
+	EventReasonSidecarInjectionFailed    = "Sidecar Injection Failed"
+	EventReasonSidecarInjectionSucceeded = "Sidecar Injection Succeeded"
+	EventReasonSidecarDeletionFailed    = "Sidecar Deletion Failed"
+	EventReasonSidecarDeletionSucceeded = "Sidecar Deletion Succeeded"
+	// Init-container Events
+	EventReasonInitContainerInjectionFailed    = "Init-Container Injection Failed"
+	EventReasonInitContainerInjectionSucceeded = "Init-Container Injection Succeeded"
+	EventReasonInitContainerDeletionFailed    = "Init-Container Deletion Failed"
+	EventReasonInitContainerDeletionSucceeded = "Init-Container Deletion Succeeded"
 
-	EventReasonBackupSkipped = "Backup Skipped"
+	EventReasonBackupSkipped                      = "Backup Skipped"
+	EventReasonWorkloadControllerTriggeringFailed = "Failed To Trigger Workload Controller"
 )
 
 func NewEventRecorder(client kubernetes.Interface, component string) record.EventRecorder {

@@ -7,12 +7,15 @@ import (
 	"strconv"
 	"strings"
 
+	"k8s.io/client-go/tools/reference"
+
 	"github.com/appscode/go/types"
 	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
@@ -370,4 +373,17 @@ func HasStashInitContainer(containers []core.Container) bool {
 		}
 	}
 	return false
+}
+
+// GetWorkloadReference return reference of the workload.
+func GetWorkloadReference(w *wapi.Workload) (*core.ObjectReference, error) {
+	ref, err := reference.GetReference(scheme.Scheme, w)
+	if err != nil && err != reference.ErrNilObject {
+		return &core.ObjectReference{
+			Name:       w.Name,
+			Namespace:  w.Namespace,
+			APIVersion: w.APIVersion,
+		}, nil
+	}
+	return ref, err
 }

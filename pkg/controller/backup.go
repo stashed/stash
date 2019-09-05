@@ -77,10 +77,16 @@ func (c *StashController) applyBackupConfigurationLogic(w *wapi.Workload, caller
 	// in this case, we have to add/update sidecar container accordingly.
 	if newbc != nil && !util.BackupConfigurationEqual(oldbc, newbc) {
 		err := c.ensureBackupSidecar(w, newbc, caller)
-		if err != nil {
+		// write sidecar injection failure/success event
+		ref, rerr := util.GetWorkloadReference(w)
+		if err != nil && rerr != nil {
 			return false, err
+		} else if err != nil && rerr == nil {
+			return false, c.handleSidecarInjectionFailure(ref, err)
+		} else if err == nil && rerr != nil {
+			return true, nil
 		}
-		return true, nil
+		return true, c.handleSidecarInjectionSuccess(ref)
 
 	} else if oldbc != nil && newbc == nil {
 		// there was BackupConfiguration before but it does not exist now.
@@ -88,10 +94,16 @@ func (c *StashController) applyBackupConfigurationLogic(w *wapi.Workload, caller
 		// in this case, we have to delete the backup sidecar container
 		// and remove respective annotations from the workload.
 		err := c.ensureBackupSidecarDeleted(w, oldbc)
-		if err != nil {
+		// write sidecar deletion failure/success event
+		ref, rerr := util.GetWorkloadReference(w)
+		if err != nil && rerr != nil {
 			return false, err
+		} else if err != nil && rerr == nil {
+			return false, c.handleSidecarDeletionFailure(ref, err)
+		} else if err == nil && rerr != nil {
+			return true, nil
 		}
-		return true, nil
+		return true, c.handleSidecarDeletionSuccess(ref)
 	}
 	return false, nil
 }

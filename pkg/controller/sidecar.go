@@ -2,8 +2,9 @@ package controller
 
 import (
 	"fmt"
-	"stash.appscode.dev/stash/pkg/eventer"
 	"time"
+
+	"stash.appscode.dev/stash/pkg/eventer"
 
 	"github.com/appscode/go/log"
 	stringz "github.com/appscode/go/strings"
@@ -140,14 +141,11 @@ func (c *StashController) ensureWorkloadSidecarDeleted(w *wapi.Workload, restic 
 
 func (c *StashController) ensureBackupSidecar(w *wapi.Workload, bc *api_v1beta1.BackupConfiguration, caller string) error {
 	sa := w.Spec.Template.Spec.ServiceAccountName
-	ref, err := reference.GetReference(scheme.Scheme, w)
+	ref, err := util.GetWorkloadReference(w)
 	if err != nil {
-		ref = &core.ObjectReference{
-			Name:       w.Name,
-			Namespace:  w.Namespace,
-			APIVersion: w.APIVersion,
-		}
+		return err
 	}
+
 	//Don't create RBAC stuff when the caller is webhook to make the webhooks side effect free.
 	if caller != util.CallerWebhook {
 		err = stash_rbac.EnsureSidecarRoleBinding(c.kubeClient, ref, sa, bc.OffshootLabels())
@@ -329,61 +327,61 @@ func isPodOwnedByWorkload(w *wapi.Workload, pod core.Pod) bool {
 }
 
 func (c *StashController) handleSidecarInjectionFailure(ref *core.ObjectReference, err error) error {
-	log.Warningf("Failed to create auto backup resources for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
+	log.Warningf("Failed to inject stash sidecar inot %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
 
 	// write event to respective resource
 	_, err2 := eventer.CreateEvent(
 		c.kubeClient,
-		eventer.EventSourceAutoBackupHandler,
+		eventer.EventSourceWorkloadController,
 		ref,
 		core.EventTypeWarning,
-		eventer.EventReasonAutoBackupResourcesCreationFailed,
-		fmt.Sprintf("Failed to create auto backup resources for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err),
+		eventer.EventReasonSidecarInjectionFailed,
+		fmt.Sprintf("Failed to inject stash sidecar into %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err),
 	)
 	return err2
 }
 
 func (c *StashController) handleSidecarInjectionSuccess(ref *core.ObjectReference) error {
-	log.Infof("Successfully created auto backup resources for %s %s/%s.", ref.Kind, ref.Namespace, ref.Name)
+	log.Infof("Successfully injected stash sidecar into %s %s/%s.", ref.Kind, ref.Namespace, ref.Name)
 
 	// write event to respective resource
 	_, err2 := eventer.CreateEvent(
 		c.kubeClient,
-		eventer.EventSourceAutoBackupHandler,
+		eventer.EventSourceWorkloadController,
 		ref,
 		core.EventTypeWarning,
-		eventer.EventReasonAutoBackupResourcesCreationSucceeded,
-		fmt.Sprintf("Successfully created auto backup resources for %s %s/%s.", ref.Kind, ref.Namespace, ref.Name),
+		eventer.EventReasonSidecarInjectionSucceeded,
+		fmt.Sprintf("Successfully injected stash sidecar into %s %s/%s.", ref.Kind, ref.Namespace, ref.Name),
 	)
 	return err2
 }
 
 func (c *StashController) handleSidecarDeletionFailure(ref *core.ObjectReference, err error) error {
-	log.Warningf("Failed to delete auto backup resources for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
+	log.Warningf("Failed to remove stash sidecar from %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
 
 	// write event to respective resource
 	_, err2 := eventer.CreateEvent(
 		c.kubeClient,
-		eventer.EventSourceAutoBackupHandler,
+		eventer.EventSourceWorkloadController,
 		ref,
 		core.EventTypeWarning,
-		eventer.EventReasonAutoBackupResourcesDeletionFailed,
-		fmt.Sprintf("Failed to deleted auto backup resources for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err),
+		eventer.EventReasonSidecarDeletionFailed,
+		fmt.Sprintf("Failed to remove stash sidecar from %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err),
 	)
 	return err2
 }
 
 func (c *StashController) handleSidecarDeletionSuccess(ref *core.ObjectReference) error {
-	log.Infof("Successfully deleted auto backup resources for %s %s/%s.", ref.Kind, ref.Namespace, ref.Name)
+	log.Infof("Successfully removed stash sidecar from %s %s/%s.", ref.Kind, ref.Namespace, ref.Name)
 
 	// write event to respective resource
 	_, err2 := eventer.CreateEvent(
 		c.kubeClient,
-		eventer.EventSourceAutoBackupHandler,
+		eventer.EventSourceWorkloadController,
 		ref,
 		core.EventTypeWarning,
-		eventer.EventReasonAutoBackupResourcesDeletionSucceeded,
-		fmt.Sprintf("Successfully deleted auto backup resources for %s %s/%s.", ref.Kind, ref.Namespace, ref.Name),
+		eventer.EventReasonSidecarDeletionSucceeded,
+		fmt.Sprintf("Successfully stash sidecar from %s %s/%s.", ref.Kind, ref.Namespace, ref.Name),
 	)
 	return err2
 }
