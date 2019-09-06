@@ -10,6 +10,7 @@ import (
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/restic"
 	"stash.appscode.dev/stash/pkg/restore"
+	"stash.appscode.dev/stash/pkg/util"
 )
 
 func NewCmdRestore() *cobra.Command {
@@ -39,16 +40,19 @@ func NewCmdRestore() *cobra.Command {
 			opt.StashClient = cs.NewForConfigOrDie(config)
 
 			opt.Metrics.JobName = opt.RestoreSessionName
-			// run restore
-			err = restore.Restore(opt)
+			opt.Host, err = util.GetRestoreHostName(opt.StashClient, opt.RestoreSessionName, opt.Namespace)
 			if err != nil {
-				// set RestoreSession status "Failed", write event and send prometheus metrics
-				e2 := restore.HandleRestoreFailure(opt, err)
-				if e2 != nil {
-					err = errors.NewAggregate([]error{err, e2})
-				}
-				// fail this container so that it restart and re-try to restore
-				log.Fatalln(err)
+				return err
+			}
+			// run restore
+			restoreOutput, restoreErr := restore.Restore(opt)
+			if restoreErr != nil {
+				err = opt.HandleRestoreFailure(restoreErr)
+				return errors.NewAggregate([]error{restoreErr, err})
+
+			}
+			if restoreOutput != nil {
+				return opt.HandleRestoreSuccess(restoreOutput)
 			}
 			return nil
 		},

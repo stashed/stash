@@ -13,6 +13,7 @@ import (
 	"stash.appscode.dev/stash/pkg/backup"
 	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/pkg/restic"
+	"stash.appscode.dev/stash/pkg/util"
 )
 
 func NewCmdRunBackup() *cobra.Command {
@@ -51,9 +52,13 @@ func NewCmdRunBackup() *cobra.Command {
 			)
 			opt.Recorder = eventer.NewEventRecorder(opt.K8sClient, backup.BackupEventComponent)
 			opt.Metrics.JobName = opt.BackupConfigurationName
+			opt.Host, err = util.GetBackupHostName(opt.StashClient, opt.BackupConfigurationName, opt.Namespace)
+			if err != nil {
+				return err
+			}
+			// run backup
 			if err = opt.RunBackup(); err != nil {
-				// send setup failure metrics and fail the container so it restart to re-try
-				opt.HandleBackupSetupFailure(err)
+				return opt.HandleBackupSetupFailure(err)
 			}
 			return nil
 		},

@@ -3,6 +3,7 @@ package resolve
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"gomodules.xyz/envsubst"
@@ -133,4 +134,19 @@ func ResolveBackupBlueprint(bb *v1beta1_api.BackupBlueprint, input map[string]st
 
 func ResolvePVCSpec(pvc *core.PersistentVolumeClaim, input map[string]string) error {
 	return resolveWithInputs(pvc, input)
+}
+
+// GetPVCFromVolumeClaimTemplates returns list of PVCs generated according to the VolumeClaimTemplates
+func GetPVCFromVolumeClaimTemplates(ordinal int32, claimTemplates []core.PersistentVolumeClaim) ([]core.PersistentVolumeClaim, error) {
+	pvcList := make([]core.PersistentVolumeClaim, 0)
+	for i := range claimTemplates {
+		inputs := make(map[string]string)
+		inputs[util.KeyPodOrdinal] = strconv.Itoa(int(ordinal))
+		err := ResolvePVCSpec(&claimTemplates[i], inputs)
+		if err != nil {
+			return pvcList, err
+		}
+		pvcList = append(pvcList, claimTemplates[i])
+	}
+	return pvcList, nil
 }

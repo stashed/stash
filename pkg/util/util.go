@@ -25,7 +25,7 @@ import (
 	"stash.appscode.dev/stash/apis"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
-	"stash.appscode.dev/stash/pkg/resolve"
+	"stash.appscode.dev/stash/pkg/restic"
 )
 
 var (
@@ -102,6 +102,28 @@ func GetHostName(target interface{}) (string, error) {
 	default:
 		return "host-0", nil
 	}
+}
+
+func GetBackupHostName(stashClient cs.Interface, backupConfigName, namespace string) (string, error) {
+	backupConfig, err := stashClient.StashV1beta1().BackupConfigurations(namespace).Get(backupConfigName, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	if backupConfig.Spec.Target != nil {
+		return GetHostName(backupConfig.Spec.Target.Ref)
+	}
+	return restic.DefaultHost, nil
+}
+
+func GetRestoreHostName(stashClient cs.Interface, restoreSessionName, namespace string) (string, error) {
+	restoreSession, err := stashClient.StashV1beta1().RestoreSessions(namespace).Get(restoreSessionName, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	if restoreSession.Spec.Target != nil {
+		return GetHostName(restoreSession.Spec.Target.Ref)
+	}
+	return restic.DefaultHost, nil
 }
 
 func PushgatewayURL() string {
@@ -386,19 +408,4 @@ func GetWorkloadReference(w *wapi.Workload) (*core.ObjectReference, error) {
 		}, nil
 	}
 	return ref, err
-}
-
-// GetPVCFromVolumeClaimTemplates returns list of PVCs generated according to the VolumeClaimTemplates
-func GetPVCFromVolumeClaimTemplates(ordinal int32, claimTemplates []core.PersistentVolumeClaim) ([]core.PersistentVolumeClaim, error) {
-	pvcList := make([]core.PersistentVolumeClaim, 0)
-	for i := range claimTemplates {
-		inputs := make(map[string]string)
-		inputs[KeyPodOrdinal] = strconv.Itoa(int(ordinal))
-		err := resolve.ResolvePVCSpec(&claimTemplates[i], inputs)
-		if err != nil {
-			return pvcList, err
-		}
-		pvcList = append(pvcList, claimTemplates[i])
-	}
-	return pvcList, nil
 }

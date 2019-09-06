@@ -296,7 +296,7 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 
 	for ordinal := int32(0); ordinal < replicas; ordinal++ {
 		// resolve template part of the volumeClaimTemplate and generate PVC definition according to the template
-		pvcList, err := util.GetPVCFromVolumeClaimTemplates(ordinal, restoreSession.Spec.Target.VolumeClaimTemplates)
+		pvcList, err := resolve.GetPVCFromVolumeClaimTemplates(ordinal, restoreSession.Spec.Target.VolumeClaimTemplates)
 		if err != nil {
 			return err
 		}
