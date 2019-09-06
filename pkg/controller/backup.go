@@ -5,15 +5,12 @@ import (
 	"strings"
 
 	"github.com/appscode/go/log"
-	"stash.appscode.dev/stash/pkg/eventer"
-
-	kutil "kmodules.xyz/client-go"
-
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
+	kutil "kmodules.xyz/client-go"
 	core_util "kmodules.xyz/client-go/core/v1"
 	discovery "kmodules.xyz/client-go/discovery"
 	meta_util "kmodules.xyz/client-go/meta"
@@ -23,6 +20,7 @@ import (
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	v1alpha1_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
 	v1beta1_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
+	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/pkg/resolve"
 	"stash.appscode.dev/stash/pkg/util"
 )

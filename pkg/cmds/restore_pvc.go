@@ -5,6 +5,7 @@ import (
 
 	"github.com/appscode/go/flags"
 	"github.com/spf13/cobra"
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/restic"
 	"stash.appscode.dev/stash/pkg/util"
 )
@@ -28,28 +29,19 @@ func NewCmdRestorePVC() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			flags.EnsureRequiredFlags(cmd, "restore-dirs", "provider", "secret-dir")
 
-			// apply nice, ionice settings from env
-			var err error
-			setupOpt.Nice, err = util.NiceSettingsFromEnv()
+			var restoreOutput *restic.RestoreOutput
+			restoreOutput, err := restorePVC(restoreOpt, setupOpt)
 			if err != nil {
-				return util.HandleResticError(outputDir, restic.DefaultOutputFileName, err)
+				restoreOutput = &restic.RestoreOutput{
+					HostRestoreStats: []api_v1beta1.HostRestoreStats{
+						{
+							Hostname: restoreOpt.Host,
+							Phase:    api_v1beta1.HostRestoreFailed,
+							Error:    err.Error(),
+						},
+					},
+				}
 			}
-			setupOpt.IONice, err = util.IONiceSettingsFromEnv()
-			if err != nil {
-				return util.HandleResticError(outputDir, restic.DefaultOutputFileName, err)
-			}
-
-			// init restic wrapper
-			resticWrapper, err := restic.NewResticWrapper(setupOpt)
-			if err != nil {
-				return util.HandleResticError(outputDir, restic.DefaultOutputFileName, err)
-			}
-			// Run restore
-			restoreOutput, restoreErr := resticWrapper.RunRestore(restoreOpt)
-			if restoreErr != nil {
-				return util.HandleResticError(outputDir, restic.DefaultOutputFileName, restoreErr)
-			}
-
 			// If output directory specified, then write the output in "output.json" file in the specified directory
 			if outputDir != "" {
 				return restoreOutput.WriteOutput(filepath.Join(outputDir, restic.DefaultOutputFileName))
@@ -74,4 +66,25 @@ func NewCmdRestorePVC() *cobra.Command {
 	cmd.Flags().StringVar(&outputDir, "output-dir", outputDir, "Directory where output.json file will be written (keep empty if you don't need to write output in file)")
 
 	return cmd
+}
+
+func restorePVC(restoreOpt restic.RestoreOptions, setupOpt restic.SetupOptions) (*restic.RestoreOutput, error) {
+	var err error
+	// apply nice, ionice settings from env
+	setupOpt.Nice, err = util.NiceSettingsFromEnv()
+	if err != nil {
+		return nil, err
+	}
+	setupOpt.IONice, err = util.IONiceSettingsFromEnv()
+	if err != nil {
+		return nil, err
+	}
+
+	// init restic wrapper
+	resticWrapper, err := restic.NewResticWrapper(setupOpt)
+	if err != nil {
+		return nil, err
+	}
+	// Run restore
+	return resticWrapper.RunRestore(restoreOpt)
 }

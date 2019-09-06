@@ -7,10 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	"stash.appscode.dev/stash/pkg/resolve"
-
-	"k8s.io/client-go/tools/reference"
-
 	"github.com/appscode/go/types"
 	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
@@ -18,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/reference"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
@@ -28,6 +25,7 @@ import (
 	"stash.appscode.dev/stash/apis"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	"stash.appscode.dev/stash/pkg/resolve"
 )
 
 var (
@@ -393,14 +391,14 @@ func GetWorkloadReference(w *wapi.Workload) (*core.ObjectReference, error) {
 // GetPVCFromVolumeClaimTemplates returns list of PVCs generated according to the VolumeClaimTemplates
 func GetPVCFromVolumeClaimTemplates(ordinal int32, claimTemplates []core.PersistentVolumeClaim) ([]core.PersistentVolumeClaim, error) {
 	pvcList := make([]core.PersistentVolumeClaim, 0)
-	for _, claim := range claimTemplates {
+	for i := range claimTemplates {
 		inputs := make(map[string]string)
 		inputs[KeyPodOrdinal] = strconv.Itoa(int(ordinal))
-		err := resolve.ResolvePVCSpec(&claim, inputs)
+		err := resolve.ResolvePVCSpec(&claimTemplates[i], inputs)
 		if err != nil {
 			return pvcList, err
 		}
-		pvcList = append(pvcList, claim)
+		pvcList = append(pvcList, claimTemplates[i])
 	}
 	return pvcList, nil
 }

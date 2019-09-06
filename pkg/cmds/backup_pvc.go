@@ -30,7 +30,7 @@ func NewCmdBackupPVC() *cobra.Command {
 			flags.EnsureRequiredFlags(cmd, "backup-dirs", "provider", "secret-dir")
 
 			var backupOutput *restic.BackupOutput
-			backupOutput, err := backup(backupOpt, setupOpt)
+			backupOutput, err := backupPVC(backupOpt, setupOpt)
 			if err != nil {
 				backupOutput = &restic.BackupOutput{
 					HostBackupStats: []api_v1beta1.HostBackupStats{
@@ -78,7 +78,7 @@ func NewCmdBackupPVC() *cobra.Command {
 	return cmd
 }
 
-func backup(backupOpt restic.BackupOptions, setupOpt restic.SetupOptions) (*restic.BackupOutput, error) {
+func backupPVC(backupOpt restic.BackupOptions, setupOpt restic.SetupOptions) (*restic.BackupOutput, error) {
 	// apply nice, ionice settings from env
 	var err error
 	setupOpt.Nice, err = util.NiceSettingsFromEnv()

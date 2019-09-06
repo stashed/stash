@@ -4,14 +4,13 @@ import (
 	"fmt"
 	"strings"
 
-	kutil "kmodules.xyz/client-go"
-
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
+	kutil "kmodules.xyz/client-go"
 	meta_util "kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/queue"
 	"stash.appscode.dev/stash/apis"

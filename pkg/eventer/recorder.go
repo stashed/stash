@@ -62,7 +62,7 @@ const (
 	EventReasonRestoreSessionSucceeded  = "RestoreSession Succeeded"
 	EventReasonRestorePhaseUnknown      = "RestoreSession Phase Unknown"
 	EventReasonRestoreJobCreationFailed = "Restore Job Creation Failed"
-	EventReasonHostRestoreSucceeded      = "Host Restore Succeeded"
+	EventReasonHostRestoreSucceeded     = "Host Restore Succeeded"
 	EventReasonHostRestoreFailed        = "Host Restore Failed"
 	// Auto Backup Events
 	EventReasonAutoBackupResourcesCreationFailed    = "Auto Backup Resources Creation Failed"

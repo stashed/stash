@@ -5,8 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"stash.appscode.dev/stash/pkg/status"
-
 	"github.com/appscode/go/log"
 	vs "github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1alpha1"
 	vs_cs "github.com/kubernetes-csi/external-snapshotter/pkg/client/clientset/versioned"
@@ -22,11 +20,13 @@ import (
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/restic"
+	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
 )
 
 type VSoption struct {
 	backupsession  string
+	restoresession string
 	namespace      string
 	kubeClient     kubernetes.Interface
 	stashClient    cs.Interface
@@ -60,7 +60,7 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 			opt.stashClient = cs.NewForConfigOrDie(config)
 			opt.snapshotClient = vs_cs.NewForConfigOrDie(config)
 
-			backupOutput, err := opt.CreateVolumeSnapshot()
+			backupOutput, err := opt.createVolumeSnapshot()
 			if err != nil {
 				return err
 			}
@@ -84,7 +84,7 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 	return cmd
 }
 
-func (opt *VSoption) CreateVolumeSnapshot() (*restic.BackupOutput, error) {
+func (opt *VSoption) createVolumeSnapshot() (*restic.BackupOutput, error) {
 	// Start clock to measure total session duration
 	startTime := time.Now()
 	backupSession, err := opt.stashClient.StashV1beta1().BackupSessions(opt.namespace).Get(opt.backupsession, metav1.GetOptions{})
@@ -133,7 +133,7 @@ func (opt *VSoption) CreateVolumeSnapshot() (*restic.BackupOutput, error) {
 		} else {
 			backupOutput.HostBackupStats = append(backupOutput.HostBackupStats, api_v1beta1.HostBackupStats{
 				Hostname: pvcName,
-				Phase:    api_v1beta1.HostBackupFailed,
+				Phase:    api_v1beta1.HostBackupSucceeded,
 				Duration: time.Since(startTime).String(),
 			})
 		}

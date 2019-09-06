@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"stash.appscode.dev/stash/pkg/eventer"
-
 	"github.com/appscode/go/log"
 	"github.com/golang/glog"
 	batch_v1beta1 "k8s.io/api/batch/v1beta1"
@@ -23,6 +21,7 @@ import (
 	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
 	v1beta1_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
 	"stash.appscode.dev/stash/pkg/docker"
+	"stash.appscode.dev/stash/pkg/eventer"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 )

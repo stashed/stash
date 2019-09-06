@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"stash.appscode.dev/stash/pkg/eventer"
-
 	"github.com/appscode/go/log"
 	stringz "github.com/appscode/go/strings"
 	core "k8s.io/api/core/v1"
@@ -22,6 +20,7 @@ import (
 	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/docker"
+	"stash.appscode.dev/stash/pkg/eventer"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 )

@@ -5,8 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"stash.appscode.dev/stash/pkg/restic"
-
 	"github.com/appscode/go/log"
 	"github.com/golang/glog"
 	batchv1 "k8s.io/api/batch/v1"
@@ -32,6 +30,7 @@ import (
 	"stash.appscode.dev/stash/pkg/eventer"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/resolve"
+	"stash.appscode.dev/stash/pkg/restic"
 	"stash.appscode.dev/stash/pkg/util"
 )
 
