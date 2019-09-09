@@ -128,6 +128,9 @@ func (c *StashController) inputsForBackupTarget(target *api.BackupTarget) map[st
 		} else {
 			inputs[apis.TargetMountPath] = apis.StashDefaultMountPath
 		}
+		if target.VolumeClaimTemplates[0].Name != "" && target.Ref.Name == "" {
+			inputs[apis.TargetName] = target.VolumeClaimTemplates[0].ObjectMeta.Name
+		}
 	}
 	return inputs
 }
