@@ -52,7 +52,7 @@ func NewCmdUpdateStatus() *cobra.Command {
 			if opt.RestoreSession != "" {
 				return opt.UpdateRestoreStatusFromFile()
 			}
-			return fmt.Errorf("backup-session or, restore-session not specified")
+			return fmt.Errorf("respective BackupSession or RestoreSession is not specified")
 		},
 	}
 

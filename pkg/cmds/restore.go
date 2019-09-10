@@ -10,6 +10,7 @@ import (
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/restic"
 	"stash.appscode.dev/stash/pkg/restore"
+	"stash.appscode.dev/stash/pkg/util"
 )
 
 func NewCmdRestore() *cobra.Command {
@@ -39,23 +40,26 @@ func NewCmdRestore() *cobra.Command {
 			opt.StashClient = cs.NewForConfigOrDie(config)
 
 			opt.Metrics.JobName = opt.RestoreSessionName
-			// run restore
-			err = restore.Restore(opt)
+			opt.Host, err = util.GetRestoreHostName(opt.StashClient, opt.RestoreSessionName, opt.Namespace)
 			if err != nil {
-				// set RestoreSession status "Failed", write event and send prometheus metrics
-				e2 := restore.HandleRestoreFailure(opt, err)
-				if e2 != nil {
-					err = errors.NewAggregate([]error{err, e2})
-				}
-				// fail this container so that it restart and re-try to restore
-				log.Fatalln(err)
+				return err
+			}
+			// run restore
+			restoreOutput, restoreErr := restore.Restore(opt)
+			if restoreErr != nil {
+				err = opt.HandleRestoreFailure(restoreErr)
+				return errors.NewAggregate([]error{restoreErr, err})
+
+			}
+			if restoreOutput != nil {
+				return opt.HandleRestoreSuccess(restoreOutput)
 			}
 			return nil
 		},
 	}
 	cmd.Flags().StringVar(&opt.MasterURL, "master", opt.MasterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&opt.KubeconfigPath, "kubeconfig", opt.KubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&opt.RestoreSessionName, "restore-session", opt.RestoreSessionName, "Name of the RestoreSession CRD.")
+	cmd.Flags().StringVar(&opt.RestoreSessionName, "restoresession", opt.RestoreSessionName, "Name of the respective RestoreSession object.")
 	cmd.Flags().DurationVar(&opt.BackoffMaxWait, "backoff-max-wait", 0, "Maximum wait for initial response from kube apiserver; 0 disables the timeout")
 	cmd.Flags().BoolVar(&opt.SetupOpt.EnableCache, "enable-cache", opt.SetupOpt.EnableCache, "Specify whether to enable caching for restic")
 	cmd.Flags().IntVar(&opt.SetupOpt.MaxConnections, "max-connections", opt.SetupOpt.MaxConnections, "Specify maximum concurrent connections for GCS, Azure and B2 backend")

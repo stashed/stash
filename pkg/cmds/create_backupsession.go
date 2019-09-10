@@ -28,7 +28,7 @@ import (
 )
 
 type options struct {
-	name             string
+	backupConfigName string
 	namespace        string
 	k8sClient        kubernetes.Interface
 	stashClient      cs.Interface
@@ -73,8 +73,8 @@ func NewCmdCreateBackupSession() *cobra.Command {
 
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&opt.name, "backupsession.name", "", "Set BackupSession Name")
-	cmd.Flags().StringVar(&opt.namespace, "backupsession.namespace", opt.namespace, "Set BackupSession Namespace")
+	cmd.Flags().StringVar(&opt.backupConfigName, "backupconfiguration", "", "Name of the respective BackupConfiguration object")
+	cmd.Flags().StringVar(&opt.namespace, "namespace", opt.namespace, "Namespace of the respective BackupConfiguration object")
 
 	return cmd
 }
@@ -82,11 +82,11 @@ func NewCmdCreateBackupSession() *cobra.Command {
 func (opt *options) createBackupSession() error {
 	bsMeta := metav1.ObjectMeta{
 		// Name format: <BackupConfiguration name>-<timestamp in unix format>
-		Name:            fmt.Sprintf("%s-%d", opt.name, time.Now().Unix()),
+		Name:            fmt.Sprintf("%s-%d", opt.backupConfigName, time.Now().Unix()),
 		Namespace:       opt.namespace,
 		OwnerReferences: []metav1.OwnerReference{},
 	}
-	backupConfiguration, err := opt.stashClient.StashV1beta1().BackupConfigurations(opt.namespace).Get(opt.name, metav1.GetOptions{})
+	backupConfiguration, err := opt.stashClient.StashV1beta1().BackupConfigurations(opt.namespace).Get(opt.backupConfigName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func (opt *options) createBackupSession() error {
 	_, _, err = v1beta1_util.CreateOrPatchBackupSession(opt.stashClient.StashV1beta1(), bsMeta, func(in *api_v1beta1.BackupSession) *api_v1beta1.BackupSession {
 		// Set BackupConfiguration  as BackupSession Owner
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
-		in.Spec.BackupConfiguration.Name = opt.name
+		in.Spec.BackupConfiguration.Name = opt.backupConfigName
 
 		in.Labels = backupConfiguration.OffshootLabels()
 		// add BackupConfiguration name as a labels so that BackupSession controller inside sidecar can discover this BackupSession

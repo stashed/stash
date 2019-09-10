@@ -13,6 +13,8 @@ import (
 	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/reference"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
@@ -23,6 +25,7 @@ import (
 	"stash.appscode.dev/stash/apis"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	"stash.appscode.dev/stash/pkg/restic"
 )
 
 var (
@@ -30,8 +33,9 @@ var (
 )
 
 const (
-	CallerWebhook    = "webhook"
-	CallerController = "controller"
+	CallerWebhook       = "webhook"
+	CallerController    = "controller"
+	PushgatewayLocalURL = "http://localhost:56789"
 )
 
 type RepoLabelData struct {
@@ -99,6 +103,28 @@ func GetHostName(target interface{}) (string, error) {
 	default:
 		return "host-0", nil
 	}
+}
+
+func GetBackupHostName(stashClient cs.Interface, backupConfigName, namespace string) (string, error) {
+	backupConfig, err := stashClient.StashV1beta1().BackupConfigurations(namespace).Get(backupConfigName, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	if backupConfig.Spec.Target != nil {
+		return GetHostName(backupConfig.Spec.Target)
+	}
+	return restic.DefaultHost, nil
+}
+
+func GetRestoreHostName(stashClient cs.Interface, restoreSessionName, namespace string) (string, error) {
+	restoreSession, err := stashClient.StashV1beta1().RestoreSessions(namespace).Get(restoreSessionName, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	if restoreSession.Spec.Target != nil {
+		return GetHostName(restoreSession.Spec.Target)
+	}
+	return restic.DefaultHost, nil
 }
 
 func PushgatewayURL() string {
@@ -370,4 +396,17 @@ func HasStashInitContainer(containers []core.Container) bool {
 		}
 	}
 	return false
+}
+
+// GetWorkloadReference return reference of the workload.
+func GetWorkloadReference(w *wapi.Workload) (*core.ObjectReference, error) {
+	ref, err := reference.GetReference(scheme.Scheme, w)
+	if err != nil && err != reference.ErrNilObject {
+		return &core.ObjectReference{
+			Name:       w.Name,
+			Namespace:  w.Namespace,
+			APIVersion: w.APIVersion,
+		}, nil
+	}
+	return ref, err
 }

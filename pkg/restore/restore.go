@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/appscode/go/log"
-	"github.com/golang/glog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes"
@@ -40,51 +39,47 @@ type Options struct {
 
 	SetupOpt restic.SetupOptions
 	Metrics  restic.MetricsOptions
+	Host     string
 
 	KubeClient   kubernetes.Interface
 	StashClient  cs.Interface
 	RestoreModel string
 }
 
-func Restore(opt *Options) error {
+func Restore(opt *Options) (*restic.RestoreOutput, error) {
 
 	// get the RestoreSession crd
 	restoreSession, err := opt.StashClient.StashV1beta1().RestoreSessions(opt.Namespace).Get(opt.RestoreSessionName, metav1.GetOptions{})
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if restoreSession.Spec.Target == nil {
-		return fmt.Errorf("invalid RestoreSession. Target is nil")
+		return nil, fmt.Errorf("invalid RestoreSession. Target is nil")
 	}
 
 	repository, err := opt.StashClient.StashV1alpha1().Repositories(opt.Namespace).Get(restoreSession.Spec.Repository.Name, metav1.GetOptions{})
 	if err != nil {
-		return err
-	}
-
-	host, err := util.GetHostName(restoreSession.Spec.Target)
-	if err != nil {
-		return err
+		return nil, err
 	}
 
 	extraOptions := util.ExtraOptions{
-		Host:        host,
+		Host:        opt.Host,
 		SecretDir:   opt.SetupOpt.SecretDir,
 		EnableCache: opt.SetupOpt.EnableCache,
 		ScratchDir:  opt.SetupOpt.ScratchDir,
 	}
 	setupOptions, err := util.SetupOptionsForRepository(*repository, extraOptions)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// apply nice, ionice settings from env
 	setupOptions.Nice, err = util.NiceSettingsFromEnv()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	setupOptions.IONice, err = util.IONiceSettingsFromEnv()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	opt.SetupOpt = setupOptions
 
@@ -93,7 +88,7 @@ func Restore(opt *Options) error {
 		return opt.runRestore(restoreSession)
 	} else {
 		// only one pod can acquire restic repository lock. so we need leader election to determine who will acquire the lock
-		return opt.electRestoreLeader(restoreSession)
+		return nil, opt.electRestoreLeader(restoreSession)
 	}
 }
 
@@ -133,16 +128,23 @@ func (opt *Options) electRestoreLeader(restoreSession *api_v1beta1.RestoreSessio
 			OnStartedLeading: func(ctx context.Context) {
 				log.Infoln("Got leadership, preparing for restore")
 				// run restore process
-				err := opt.runRestore(restoreSession)
-				if err != nil {
-					e2 := HandleRestoreFailure(opt, err)
+				restoreOutput, restoreErr := opt.runRestore(restoreSession)
+				if restoreErr != nil {
+					e2 := opt.HandleRestoreFailure(restoreErr)
 					if e2 != nil {
-						err = errors.NewAggregate([]error{err, e2})
+						restoreErr = errors.NewAggregate([]error{restoreErr, e2})
 					}
 					// step down from leadership so that other replicas try to restore
 					cancel()
 					// fail the container so that it restart and re-try to restore
-					log.Fatalln("failed to complete restore. Reason: ", err.Error())
+					log.Fatalf("failed to complete restore. Reason: %v", restoreErr)
+				}
+				if restoreOutput != nil {
+					err = opt.HandleRestoreSuccess(restoreOutput)
+					if err != nil {
+						cancel()
+						log.Fatalf("failed to complete restore. Reason: %v", err)
+					}
 				}
 				// restore process is complete. now, step down from leadership so that other replicas can start
 				cancel()
@@ -155,82 +157,75 @@ func (opt *Options) electRestoreLeader(restoreSession *api_v1beta1.RestoreSessio
 	return nil
 }
 
-func (opt *Options) runRestore(restoreSession *api_v1beta1.RestoreSession) error {
-
-	host, err := util.GetHostName(restoreSession.Spec.Target)
-	if err != nil {
-		return err
-	}
+func (opt *Options) runRestore(restoreSession *api_v1beta1.RestoreSession) (*restic.RestoreOutput, error) {
 
 	// if already restored for this host then don't process further
-	if opt.isRestoredForThisHost(restoreSession, host) {
-		log.Infof("Skipping restore for RestoreSession %s/%s. Reason: RestoreSession already processed for host %q.", restoreSession.Namespace, restoreSession.Name, host)
-		return nil
+	if opt.isRestoredForThisHost(restoreSession, opt.Host) {
+		log.Infof("Skipping restore for RestoreSession %s/%s. Reason: RestoreSession already processed for host %q.", restoreSession.Namespace, restoreSession.Name, opt.Host)
+		return nil, nil
 	}
 
 	// setup restic wrapper
 	w, err := restic.NewResticWrapper(opt.SetupOpt)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// run restore process
-	restoreOutput, restoreErr := w.RunRestore(util.RestoreOptionsForHost(host, restoreSession.Spec.Rules))
-
-	// Update Backup Session and Repository status
-	o := status.UpdateStatusOptions{
-		Config:         opt.Config,
-		KubeClient:     opt.KubeClient,
-		StashClient:    opt.StashClient.(*cs.Clientset),
-		Namespace:      opt.Namespace,
-		RestoreSession: restoreSession.Name,
-		Repository:     restoreSession.Spec.Repository.Name,
-		Metrics:        opt.Metrics,
-		Error:          restoreErr,
-	}
-
-	err = o.UpdatePostRestoreStatus(restoreOutput)
-	if err != nil {
-		return err
-	}
-	glog.Info("Restore has been completed successfully")
-	return nil
+	return w.RunRestore(util.RestoreOptionsForHost(opt.Host, restoreSession.Spec.Rules))
 }
 
-func HandleRestoreFailure(opt *Options, restoreErr error) error {
-	restoreSession, err := opt.StashClient.StashV1beta1().RestoreSessions(opt.Namespace).Get(opt.RestoreSessionName, metav1.GetOptions{})
+func (c *Options) HandleRestoreSuccess(restoreOutput *restic.RestoreOutput) error {
+	// write log
+	log.Infof("Restore completed successfully for RestoreSession %s", c.RestoreSessionName)
+
+	// add/update entry into RestoreSession status for this host
+	restoreSession, err := c.StashClient.StashV1beta1().RestoreSessions(c.Namespace).Get(c.RestoreSessionName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
-	host, err := util.GetHostName(restoreSession.Spec.Target)
+	statusOpt := status.UpdateStatusOptions{
+		Config:         c.Config,
+		KubeClient:     c.KubeClient,
+		StashClient:    c.StashClient,
+		Namespace:      c.Namespace,
+		Repository:     restoreSession.Spec.Repository.Name,
+		RestoreSession: c.RestoreSessionName,
+		Metrics:        c.Metrics,
+	}
+	return statusOpt.UpdatePostRestoreStatus(restoreOutput)
+}
+
+func (c *Options) HandleRestoreFailure(restoreErr error) error {
+	// write log
+	log.Warningf("Failed to complete restore process for RestoreSession %s. Reason: %v", c.RestoreSessionName, restoreErr)
+
+	// add/update entry into RestoreSession status for this host
+	restoreSession, err := c.StashClient.StashV1beta1().RestoreSessions(c.Namespace).Get(c.RestoreSessionName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
-	var errorMsg string
-	if restoreErr != nil {
-		errorMsg = restoreErr.Error()
-	}
 	restoreOutput := &restic.RestoreOutput{
 		HostRestoreStats: []api_v1beta1.HostRestoreStats{
 			{
-				Hostname: host,
+				Hostname: c.Host,
 				Phase:    api_v1beta1.HostRestoreFailed,
-				Error:    errorMsg,
+				Error:    fmt.Sprintf("failed to complete restore process for host %s. Reaosn: %v", c.Host, restoreErr),
 			},
 		},
 	}
-	statusOpt := status.UpdateStatusOptions{
-		Config:         opt.Config,
-		KubeClient:     opt.KubeClient,
-		StashClient:    opt.StashClient,
-		Namespace:      opt.Namespace,
-		RestoreSession: opt.RestoreSessionName,
-		Metrics:        opt.Metrics,
-		Error:          restoreErr,
-	}
 
+	statusOpt := status.UpdateStatusOptions{
+		Config:         c.Config,
+		KubeClient:     c.KubeClient,
+		StashClient:    c.StashClient,
+		Namespace:      c.Namespace,
+		Repository:     restoreSession.Spec.Repository.Name,
+		RestoreSession: c.RestoreSessionName,
+		Metrics:        c.Metrics,
+	}
 	return statusOpt.UpdatePostRestoreStatus(restoreOutput)
 }
 
@@ -253,15 +248,14 @@ func (opt *Options) writeRestoreFailureEvent(restoreSession *api_v1beta1.Restore
 
 func (opt *Options) isRestoredForThisHost(restoreSession *api_v1beta1.RestoreSession, host string) bool {
 
-	// if overall restoreSession phase is "Succeeded" or "Failed" then it has been processed already
-	if restoreSession.Status.Phase == api_v1beta1.RestoreSessionSucceeded ||
-		restoreSession.Status.Phase == api_v1beta1.RestoreSessionFailed {
+	// if overall restoreSession phase is "Succeeded" then restore has been complete for this host
+	if restoreSession.Status.Phase == api_v1beta1.RestoreSessionSucceeded {
 		return true
 	}
 
-	// if restoreSession has entry for this host in status field, then it has been already processed for this host
+	// if restoreSession has entry for this host in status field and it is succeeded, then restore has been completed for this host
 	for _, hostStats := range restoreSession.Status.Stats {
-		if hostStats.Hostname == host {
+		if hostStats.Hostname == host && hostStats.Phase == api_v1beta1.HostRestoreSucceeded {
 			return true
 		}
 	}
