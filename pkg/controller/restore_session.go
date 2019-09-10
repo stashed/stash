@@ -38,7 +38,8 @@ import (
 )
 
 const (
-	RestoreJobPrefix = "stash-restore-"
+	RestoreJobPrefix                = "stash-restore-"
+	PromJobRestoreSessionController = "stash-restoresession-controller"
 )
 
 func (c *StashController) NewRestoreSessionWebhook() hooks.AdmissionHook {
@@ -554,8 +555,8 @@ func (c *StashController) setRestoreSessionSucceeded(restoreSession *api_v1beta1
 	// send restore session specific metrics
 	metricsOpt := &restic.MetricsOptions{
 		Enabled:        true,
-		PushgatewayURL: util.PushgatewayURL(),
-		JobName:        restoreSession.Name,
+		PushgatewayURL: util.PushgatewayLocalURL,
+		JobName:        PromJobRestoreSessionController,
 	}
 	return metricsOpt.SendRestoreSessionMetrics(c.clientConfig, updatedRestoreSession)
 }
@@ -584,8 +585,8 @@ func (c *StashController) setRestoreSessionFailed(restoreSession *api_v1beta1.Re
 	// send restore session specific metrics
 	metricsOpt := &restic.MetricsOptions{
 		Enabled:        true,
-		PushgatewayURL: util.PushgatewayURL(),
-		JobName:        restoreSession.Name,
+		PushgatewayURL: util.PushgatewayLocalURL,
+		JobName:        PromJobRestoreSessionController,
 	}
 	return metricsOpt.SendRestoreSessionMetrics(c.clientConfig, updatedRestoreSession)
 }

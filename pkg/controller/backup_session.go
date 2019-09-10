@@ -35,8 +35,9 @@ import (
 )
 
 const (
-	BackupJobPrefix      = "stash-backup-"
-	VolumeSnapshotPrefix = "volume-snapshot-"
+	BackupJobPrefix                = "stash-backup-"
+	VolumeSnapshotPrefix           = "volume-snapshot-"
+	PromJobBackupSessionController = "stash-backupsession-controller"
 )
 
 func (c *StashController) NewBackupSessionWebhook() hooks.AdmissionHook {
@@ -190,7 +191,6 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 			core_util.EnsureOwnerReference(&in.ObjectMeta, backupConfigRef)
 			return in
 		})
-
 	}
 
 	psps, err := c.getBackupJobPSPNames(backupConfig)
@@ -360,8 +360,8 @@ func (c *StashController) setBackupSessionFailed(backupSession *api_v1beta1.Back
 	}
 	metricsOpt := &restic.MetricsOptions{
 		Enabled:        true,
-		PushgatewayURL: util.PushgatewayURL(),
-		JobName:        backupConfig.Name,
+		PushgatewayURL: util.PushgatewayLocalURL,
+		JobName:        PromJobBackupSessionController,
 	}
 	return metricsOpt.SendBackupSessionMetrics(c.clientConfig, backupConfig, updatedBackupSession.Status)
 }
@@ -458,8 +458,8 @@ func (c *StashController) setBackupSessionSucceeded(backupSession *api_v1beta1.B
 	}
 	metricsOpt := &restic.MetricsOptions{
 		Enabled:        true,
-		PushgatewayURL: util.PushgatewayURL(),
-		JobName:        backupConfig.Name,
+		PushgatewayURL: util.PushgatewayLocalURL,
+		JobName:        PromJobBackupSessionController,
 	}
 	return metricsOpt.SendBackupSessionMetrics(c.clientConfig, backupConfig, updatedBackupSession.Status)
 }

@@ -358,11 +358,11 @@ func (metricOpt *MetricsOptions) SendBackupSessionMetrics(config *rest.Config, b
 		metrics.BackupSessionMetrics.SessionSuccess.Set(1)
 
 		// set total time taken to complete the backup session
-		duration, err := convertTimeToSeconds(status.SessionDuration)
+		duration, err := time.ParseDuration(status.SessionDuration)
 		if err != nil {
 			return err
 		}
-		metrics.BackupSessionMetrics.SessionDuration.Set(float64(duration))
+		metrics.BackupSessionMetrics.SessionDuration.Set(duration.Seconds())
 
 		// set total number of host that was backed up in this backup session
 		if status.TotalHosts != nil {
@@ -480,11 +480,11 @@ func (metricOpt *MetricsOptions) SendRestoreSessionMetrics(config *rest.Config, 
 		metrics.RestoreSessionMetrics.SessionSuccess.Set(1)
 
 		// set total time taken to complete the restore session
-		duration, err := convertTimeToSeconds(status.SessionDuration)
+		duration, err := time.ParseDuration(status.SessionDuration)
 		if err != nil {
 			return err
 		}
-		metrics.RestoreSessionMetrics.SessionDuration.Set(float64(duration))
+		metrics.RestoreSessionMetrics.SessionDuration.Set(duration.Seconds())
 
 		// set total number of host that was restored in this restore session
 		if status.TotalHosts != nil {

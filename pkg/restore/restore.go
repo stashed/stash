@@ -62,13 +62,8 @@ func Restore(opt *Options) (*restic.RestoreOutput, error) {
 		return nil, err
 	}
 
-	host, err := util.GetHostName(restoreSession.Spec.Target)
-	if err != nil {
-		return nil, err
-	}
-
 	extraOptions := util.ExtraOptions{
-		Host:        host,
+		Host:        opt.Host,
 		SecretDir:   opt.SetupOpt.SecretDir,
 		EnableCache: opt.SetupOpt.EnableCache,
 		ScratchDir:  opt.SetupOpt.ScratchDir,
@@ -253,15 +248,14 @@ func (opt *Options) writeRestoreFailureEvent(restoreSession *api_v1beta1.Restore
 
 func (opt *Options) isRestoredForThisHost(restoreSession *api_v1beta1.RestoreSession, host string) bool {
 
-	// if overall restoreSession phase is "Succeeded" or "Failed" then it has been processed already
-	if restoreSession.Status.Phase == api_v1beta1.RestoreSessionSucceeded ||
-		restoreSession.Status.Phase == api_v1beta1.RestoreSessionFailed {
+	// if overall restoreSession phase is "Succeeded" then restore has been complete for this host
+	if restoreSession.Status.Phase == api_v1beta1.RestoreSessionSucceeded {
 		return true
 	}
 
-	// if restoreSession has entry for this host in status field, then it has been already processed for this host
+	// if restoreSession has entry for this host in status field and it is succeeded, then restore has been completed for this host
 	for _, hostStats := range restoreSession.Status.Stats {
-		if hostStats.Hostname == host {
+		if hostStats.Hostname == host && hostStats.Phase == api_v1beta1.HostRestoreSucceeded {
 			return true
 		}
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/log"
+	stringz "github.com/appscode/go/strings"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
@@ -18,7 +19,7 @@ import (
 
 func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, rs *api_v1beta1.RestoreSession, caller string) error {
 	// if RBAC is enabled then ensure ServiceAccount and respective ClusterRole and RoleBinding
-	sa := w.Spec.Template.Spec.ServiceAccountName
+	sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
 	ref, err := util.GetWorkloadReference(w)
 	if err != nil {
 		return err

@@ -6,7 +6,6 @@ import (
 
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
-	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/reference"
 	kutil "kmodules.xyz/client-go"
@@ -80,7 +79,7 @@ func (c *StashController) applyBackupAnnotationLogicForAppBinding(ab *appCatalog
 		// if respective BackupConfiguration exist then backup annotations has been removed.
 		// in this case, we have to remove the BackupConfiguration too.
 		// however, we will keep Repository crd as it is required for restore.
-		verb, err := c.ensureAutoBackupResourcesForAppBindingDeleted(ab, targetRef, prefix)
+		verb, err := c.ensureAutoBackupResourcesDeleted(targetRef, ab.Namespace, prefix)
 		if err != nil {
 			return c.handleAutoBackupResourcesDeletionFailure(targetRef, err)
 		}
@@ -145,22 +144,4 @@ func (c *StashController) ensureAutoBackupResourcesForAppBinding(
 	// so, "created" or "updated" verb has same effect to the end result
 	// we can return any of them.
 	return kutil.VerbCreated, nil
-}
-
-func (c *StashController) ensureAutoBackupResourcesForAppBindingDeleted(
-	ab *appCatalog.AppBinding,
-	targetRef *core.ObjectReference,
-	prefix string,
-) (kutil.VerbType, error) {
-
-	_, err := c.stashClient.StashV1beta1().BackupConfigurations(ab.Namespace).Get(getBackupConfigurationName(targetRef, prefix), metav1.GetOptions{})
-	if err != nil && !kerr.IsNotFound(err) {
-		return kutil.VerbUnchanged, err
-	}
-	// BackupConfiguration exist. so, we have to remove it.
-	err = c.stashClient.StashV1beta1().BackupConfigurations(ab.Namespace).Delete(getBackupConfigurationName(targetRef, prefix), meta_util.DeleteInBackground())
-	if err != nil && !kerr.IsNotFound(err) {
-		return kutil.VerbUnchanged, err
-	}
-	return kutil.VerbDeleted, nil
 }

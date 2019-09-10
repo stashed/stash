@@ -48,7 +48,7 @@ func (c *StashController) applyBackupAnnotationLogic(w *wapi.Workload) error {
 		// if respective BackupConfiguration exist then backup annotations has been removed.
 		// in this case, we have to remove the BackupConfiguration too.
 		// however, we will keep Repository crd as it is required for restore.
-		verb, err := c.ensureAutoBackupResourcesForWorkloadDeleted(w, targetRef)
+		verb, err := c.ensureAutoBackupResourcesDeleted(targetRef, w.Namespace, targetRef.Kind)
 		if err != nil {
 			return c.handleAutoBackupResourcesDeletionFailure(targetRef, err)
 		}
@@ -217,14 +217,17 @@ func (c *StashController) ensureAutoBackupResourcesForWorkload(w *wapi.Workload,
 	return kutil.VerbCreated, nil
 }
 
-// ensureAutoBackupResourcesDeleted deletes(if previously created) BackupConfiguration object for the respective workload
-func (c *StashController) ensureAutoBackupResourcesForWorkloadDeleted(w *wapi.Workload, targetRef *core.ObjectReference) (kutil.VerbType, error) {
-	_, err := c.stashClient.StashV1beta1().BackupConfigurations(w.Namespace).Get(getBackupConfigurationName(targetRef, targetRef.Kind), metav1.GetOptions{})
-	if err != nil && !kerr.IsNotFound(err) {
+// ensureAutoBackupResourcesDeleted deletes(if previously created) BackupConfiguration object for the respective resources
+func (c *StashController) ensureAutoBackupResourcesDeleted(targetRef *core.ObjectReference, namespace, prefix string) (kutil.VerbType, error) {
+	_, err := c.stashClient.StashV1beta1().BackupConfigurations(namespace).Get(getBackupConfigurationName(targetRef, targetRef.Kind), metav1.GetOptions{})
+	if err != nil {
+		if kerr.IsNotFound(err) {
+			return kutil.VerbUnchanged, nil
+		}
 		return kutil.VerbUnchanged, err
 	}
 	// BackupConfiguration exist. so, we have to remove it.
-	err = c.stashClient.StashV1beta1().BackupConfigurations(w.Namespace).Delete(getBackupConfigurationName(targetRef, targetRef.Kind), meta_util.DeleteInBackground())
+	err = c.stashClient.StashV1beta1().BackupConfigurations(namespace).Delete(getBackupConfigurationName(targetRef, prefix), meta_util.DeleteInBackground())
 	if err != nil && !kerr.IsNotFound(err) {
 		return kutil.VerbUnchanged, err
 	}

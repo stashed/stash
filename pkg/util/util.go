@@ -33,8 +33,9 @@ var (
 )
 
 const (
-	CallerWebhook    = "webhook"
-	CallerController = "controller"
+	CallerWebhook       = "webhook"
+	CallerController    = "controller"
+	PushgatewayLocalURL = "http://localhost:56789"
 )
 
 type RepoLabelData struct {
@@ -110,7 +111,7 @@ func GetBackupHostName(stashClient cs.Interface, backupConfigName, namespace str
 		return "", err
 	}
 	if backupConfig.Spec.Target != nil {
-		return GetHostName(backupConfig.Spec.Target.Ref)
+		return GetHostName(backupConfig.Spec.Target)
 	}
 	return restic.DefaultHost, nil
 }
@@ -121,7 +122,7 @@ func GetRestoreHostName(stashClient cs.Interface, restoreSessionName, namespace 
 		return "", err
 	}
 	if restoreSession.Spec.Target != nil {
-		return GetHostName(restoreSession.Spec.Target.Ref)
+		return GetHostName(restoreSession.Spec.Target)
 	}
 	return restic.DefaultHost, nil
 }
