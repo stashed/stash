@@ -116,7 +116,7 @@ var _ = Describe("Deployment", func() {
 			f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Delete BackupConfiguration")
-			err = f.DeleteBackupConfiguration(backupCfg)
+			err = f.DeleteBackupConfiguration(backupCfg.ObjectMeta)
 			err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, backupCfg.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -147,9 +147,9 @@ var _ = Describe("Deployment", func() {
 			err = framework.WaitUntilDeploymentDeleted(f.KubeClient, deployment.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = f.DeleteRepository(repo)
+			err = f.DeleteRepository(repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo)
+			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)
@@ -207,9 +207,9 @@ var _ = Describe("Deployment", func() {
 			err = framework.WaitUntilDeploymentDeleted(f.KubeClient, deployment.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = f.DeleteRepository(repo)
+			err = f.DeleteRepository(repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo)
+			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)
@@ -259,7 +259,7 @@ var _ = Describe("Deployment", func() {
 			f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Delete BackupConfiguration")
-			err = f.DeleteBackupConfiguration(backupCfg)
+			err = f.DeleteBackupConfiguration(backupCfg.ObjectMeta)
 			err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, backupCfg.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -312,9 +312,9 @@ var _ = Describe("Deployment", func() {
 			err = framework.WaitUntilDeploymentDeleted(f.KubeClient, recoveredDeployment.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = f.DeleteRepository(repo)
+			err = f.DeleteRepository(repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo)
+			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)
@@ -429,7 +429,7 @@ var _ = Describe("StatefulSet", func() {
 			f.EventuallyBackupSessionPhase(bs.ObjectMeta).Should(Equal(v1beta1.BackupSessionSucceeded))
 
 			By("Delete BackupConfiguration")
-			err = f.DeleteBackupConfiguration(backupCfg)
+			err = f.DeleteBackupConfiguration(backupCfg.ObjectMeta)
 			err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, backupCfg.ObjectMeta)
 			Expect(err).ShouldNot(HaveOccurred())
 
@@ -462,9 +462,9 @@ var _ = Describe("StatefulSet", func() {
 			err = framework.WaitUntilStatefulSetDeleted(f.KubeClient, ss.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = f.DeleteRepository(repo)
+			err = f.DeleteRepository(repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo)
+			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)
@@ -530,9 +530,9 @@ var _ = Describe("StatefulSet", func() {
 			err = framework.WaitUntilStatefulSetDeleted(f.KubeClient, recoveredss.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = f.DeleteRepository(repo)
+			err = f.DeleteRepository(repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo)
+			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)
@@ -616,9 +616,9 @@ var _ = Describe("StatefulSet", func() {
 			err = framework.WaitUntilStatefulSetDeleted(f.KubeClient, recoveredss.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = f.DeleteRepository(repo)
+			err = f.DeleteRepository(repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo)
+			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)
@@ -746,7 +746,7 @@ var _ = Describe("DaemonSet", func() {
 			f.EventuallyBackupSessionPhase(bs.ObjectMeta).Should(Equal(v1beta1.BackupSessionSucceeded))
 
 			By("Delete BackupConfiguration")
-			err = f.DeleteBackupConfiguration(backupCfg)
+			err = f.DeleteBackupConfiguration(backupCfg.ObjectMeta)
 			err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, backupCfg.ObjectMeta)
 			Expect(err).ShouldNot(HaveOccurred())
 
@@ -779,9 +779,9 @@ var _ = Describe("DaemonSet", func() {
 			err = framework.WaitUntilDaemonSetDeleted(f.KubeClient, daemonset.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = f.DeleteRepository(repo)
+			err = f.DeleteRepository(repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo)
+			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)
@@ -846,9 +846,9 @@ var _ = Describe("DaemonSet", func() {
 			err = framework.WaitUntilDaemonSetDeleted(f.KubeClient, recoveredDaemonset.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = f.DeleteRepository(repo)
+			err = f.DeleteRepository(repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo)
+			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)
@@ -968,7 +968,7 @@ var _ = Describe("ReplicationController", func() {
 			f.EventuallyRepository(&rc).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Delete BackupConfiguration")
-			err = f.DeleteBackupConfiguration(backupCfg)
+			err = f.DeleteBackupConfiguration(backupCfg.ObjectMeta)
 			err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, backupCfg.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -998,9 +998,9 @@ var _ = Describe("ReplicationController", func() {
 			err = framework.WaitUntilReplicationControllerDeleted(f.KubeClient, rc.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = f.DeleteRepository(repo)
+			err = f.DeleteRepository(repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo)
+			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)
@@ -1056,9 +1056,9 @@ var _ = Describe("ReplicationController", func() {
 			err = framework.WaitUntilReplicationControllerDeleted(f.KubeClient, rc.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = f.DeleteRepository(repo)
+			err = f.DeleteRepository(repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo)
+			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)
@@ -1108,7 +1108,7 @@ var _ = Describe("ReplicationController", func() {
 			f.EventuallyRepository(&rc).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Delete BackupConfiguration")
-			err = f.DeleteBackupConfiguration(backupCfg)
+			err = f.DeleteBackupConfiguration(backupCfg.ObjectMeta)
 			err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, backupCfg.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -1168,9 +1168,9 @@ var _ = Describe("ReplicationController", func() {
 			err = framework.WaitUntilReplicationControllerDeleted(f.KubeClient, recoveredRC.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = f.DeleteRepository(repo)
+			err = f.DeleteRepository(repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo)
+			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)
@@ -1288,7 +1288,7 @@ var _ = Describe("ReplicaSet", func() {
 			f.EventuallyRepository(&rs).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Delete BackupConfiguration")
-			err = f.DeleteBackupConfiguration(backupCfg)
+			err = f.DeleteBackupConfiguration(backupCfg.ObjectMeta)
 			err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, backupCfg.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -1322,9 +1322,9 @@ var _ = Describe("ReplicaSet", func() {
 			err = framework.WaitUntilReplicaSetDeleted(f.KubeClient, rs.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = f.DeleteRepository(repo)
+			err = f.DeleteRepository(repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo)
+			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)
@@ -1377,9 +1377,9 @@ var _ = Describe("ReplicaSet", func() {
 			err = framework.WaitUntilReplicaSetDeleted(f.KubeClient, rs.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = f.DeleteRepository(repo)
+			err = f.DeleteRepository(repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo)
+			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)
@@ -1429,7 +1429,7 @@ var _ = Describe("ReplicaSet", func() {
 			f.EventuallyRepository(&rs).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Delete BackupConfiguration")
-			err = f.DeleteBackupConfiguration(backupCfg)
+			err = f.DeleteBackupConfiguration(backupCfg.ObjectMeta)
 			err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, backupCfg.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -1491,9 +1491,9 @@ var _ = Describe("ReplicaSet", func() {
 			err = framework.WaitUntilReplicaSetDeleted(f.KubeClient, recoveredRS.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = f.DeleteRepository(repo)
+			err = f.DeleteRepository(repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo)
+			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)

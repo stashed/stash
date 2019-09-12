@@ -24,6 +24,9 @@ const (
 	FunctionPvcBackup    = "pvc-backup"
 	FunctionPvcRestore   = "pvc-restore"
 	FunctionUpdateStatus = "update-status"
+
+	FunctionPVCBackup = "pvc-backup"
+	TaskPVCBackup     = "pvc-backup"
 )
 
 var (
@@ -148,4 +151,9 @@ func (f *Invocation) DeleteFunction(meta metav1.ObjectMeta) error {
 func (f *Invocation) DeleteTask(meta metav1.ObjectMeta) error {
 	return f.StashClient.StashV1beta1().Tasks().Delete(meta.Name, &metav1.DeleteOptions{})
 
+}
+
+func (f *Invocation) GetFunction() error {
+	_, err := f.StashClient.StashV1beta1().Functions().Get(FunctionPVCBackup, metav1.GetOptions{})
+	return err
 }

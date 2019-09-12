@@ -1,7 +1,11 @@
 package framework
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/appscode/go/crypto/rand"
+	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"stash.appscode.dev/stash/apis"
@@ -46,8 +50,8 @@ func (f *Invocation) CreateBackupConfiguration(backupCfg v1beta1.BackupConfigura
 	return err
 }
 
-func (f *Invocation) DeleteBackupConfiguration(backupCfg v1beta1.BackupConfiguration) error {
-	return f.StashClient.StashV1beta1().BackupConfigurations(backupCfg.Namespace).Delete(backupCfg.Name, &metav1.DeleteOptions{})
+func (f *Invocation) DeleteBackupConfiguration(meta metav1.ObjectMeta) error {
+	return f.StashClient.StashV1beta1().BackupConfigurations(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
 }
 
 func (f *Invocation) PvcBackupTarget(pvcName string) *v1beta1.BackupTarget {
@@ -67,4 +71,30 @@ func (f *Invocation) PvcBackupTarget(pvcName string) *v1beta1.BackupTarget {
 			TestSourceDataMountPath,
 		},
 	}
+}
+
+func (f *Framework) EventuallyBackupConfigurationCreated(meta metav1.ObjectMeta) GomegaAsyncAssertion {
+	return Eventually(
+		func() bool {
+			objList, err := f.StashClient.StashV1beta1().BackupConfigurations(meta.Namespace).List(metav1.ListOptions{})
+			Expect(err).NotTo(HaveOccurred())
+			if len(objList.Items) > 0 {
+				return true
+			}
+			return false
+		},
+		time.Minute*2,
+		time.Second*5,
+	)
+}
+
+func (f *Framework) GetBackupConfiguration(meta metav1.ObjectMeta) (backupConfig v1beta1.BackupConfiguration, err error) {
+	backupCfglist, err := f.StashClient.StashV1beta1().BackupConfigurations(meta.Namespace).List(metav1.ListOptions{})
+	if err != nil {
+		return backupConfig, err
+	}
+	if len(backupCfglist.Items) > 0 {
+		return backupCfglist.Items[0], nil
+	}
+	return backupConfig, fmt.Errorf("no BackupSession found")
 }

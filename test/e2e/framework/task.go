@@ -120,3 +120,8 @@ func (f *Invocation) RestoreTask() v1beta1.Task {
 		},
 	}
 }
+
+func (f *Invocation) GetTask() error {
+	_, err := f.StashClient.StashV1beta1().Tasks().Get(TaskPVCBackup, metav1.GetOptions{})
+	return err
+}

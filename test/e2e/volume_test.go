@@ -136,7 +136,7 @@ var _ = Describe("Volume", func() {
 			f.EventuallyBackupSessionPhase(bs.ObjectMeta).Should(Equal(v1beta1.BackupSessionSucceeded))
 
 			By("Delete BackupConfiguration")
-			err = f.DeleteBackupConfiguration(backupCfg)
+			err = f.DeleteBackupConfiguration(backupCfg.ObjectMeta)
 			err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, backupCfg.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -156,9 +156,9 @@ var _ = Describe("Volume", func() {
 			err = f.DeletePersistentVolumeClaim(bpvc.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = f.DeleteRepository(repo)
+			err = f.DeleteRepository(repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo)
+			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)
@@ -201,9 +201,9 @@ var _ = Describe("Volume", func() {
 			err = f.DeletePersistentVolumeClaim(rpvc.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = f.DeleteRepository(repo)
+			err = f.DeleteRepository(repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo)
+			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = f.DeleteRestoreSession(restoreSession.ObjectMeta)

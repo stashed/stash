@@ -1,8 +1,10 @@
 package framework
 
 import (
+	"fmt"
 	"math"
 	"strconv"
+	"time"
 
 	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/gomega"
@@ -36,6 +38,8 @@ func (f *Framework) EventuallyRepository(workload interface{}) GomegaAsyncAssert
 			return f.ReplicaSetRepos(workload.(*apps.ReplicaSet))
 		case *apps.StatefulSet:
 			return f.StatefulSetRepos(workload.(*apps.StatefulSet))
+		case *core.PersistentVolumeClaim:
+			return f.PVCRepos(workload.(*core.PersistentVolumeClaim))
 		default:
 			return nil
 		}
@@ -71,10 +75,11 @@ func (f *Framework) DeleteRepositories(repositories []*api.Repository) {
 	}
 }
 
-func (f *Framework) DeleteRepository(repository *api.Repository) error {
-	err := f.StashClient.StashV1alpha1().Repositories(repository.Namespace).Delete(repository.Name, deleteInBackground())
+func (f *Framework) DeleteRepository(meta metav1.ObjectMeta) error {
+	err := f.StashClient.StashV1alpha1().Repositories(meta.Namespace).Delete(meta.Name, deleteInBackground())
 	return err
 }
+
 func (f *Framework) BrowseResticRepository(repository *api.Repository) ([]stow.Item, error) {
 	cfg, err := osm.NewOSMContext(f.KubeClient, repository.Spec.Backend, repository.Namespace)
 	if err != nil {
@@ -144,4 +149,30 @@ func (f *Invocation) Repository(secretName string, pvcName string) *api.Reposito
 			},
 		},
 	}
+}
+
+func (f *Framework) EventuallyRepositoryCreated(meta metav1.ObjectMeta) GomegaAsyncAssertion {
+	return Eventually(
+		func() bool {
+			objList, err := f.StashClient.StashV1alpha1().Repositories(meta.Namespace).List(metav1.ListOptions{})
+			Expect(err).NotTo(HaveOccurred())
+			if len(objList.Items) > 0 {
+				return true
+			}
+			return false
+		},
+		time.Minute*2,
+		time.Second*5,
+	)
+}
+
+func (f *Framework) GetRepository(meta metav1.ObjectMeta) (repository *api.Repository, err error) {
+	repolist, err := f.StashClient.StashV1alpha1().Repositories(meta.Namespace).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	if len(repolist.Items) > 0 {
+		return &repolist.Items[0], nil
+	}
+	return nil, fmt.Errorf("no BackupSession found")
 }
