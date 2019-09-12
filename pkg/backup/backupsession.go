@@ -17,13 +17,12 @@ import (
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/client-go/tools/reference"
 	"k8s.io/kubernetes/pkg/apis/core"
+	"kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/queue"
 	"stash.appscode.dev/stash/apis"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
-	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
 	stashinformers "stash.appscode.dev/stash/client/informers/externalversions"
 	"stash.appscode.dev/stash/client/listers/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/eventer"
@@ -45,15 +44,14 @@ type BackupSessionController struct {
 	//backupConfiguration
 	BackupConfigurationName string
 	Namespace               string
-	//Restic
-	SetupOpt restic.SetupOptions
-	Metrics  restic.MetricsOptions
 	//Backup Session
 	bsQueue    *queue.Worker
 	bsInformer cache.SharedIndexInformer
 	bsLister   v1beta1.BackupSessionLister
 
-	Status   status.UpdateStatusOptions
+	SetupOpt restic.SetupOptions
+	Host     string
+	Metrics  restic.MetricsOptions
 	Recorder record.EventRecorder
 }
 
@@ -103,9 +101,11 @@ func (c *BackupSessionController) runBackupSessionController(backupConfiguration
 	}
 	c.bsQueue.Run(stopCh)
 
-	// controller has started successfully. send successful backup setup metrics
-	log.Infoln("Started BackupSession controller........")
-	c.handleBackupSetupSuccess(backupConfiguration)
+	// BackupSession controller has started successfully. write event to the respective BackupConfiguration.
+	err = c.handleBackupSetupSuccess(backupConfiguration)
+	if err != nil {
+		return err
+	}
 
 	// wait until stop signal is sent.
 	<-stopCh
@@ -154,42 +154,38 @@ func (c *BackupSessionController) processBackupSession(key string) error {
 		backupSession := obj.(*api_v1beta1.BackupSession)
 		glog.Infof("Sync/Add/Update for Backup Session %s", backupSession.GetName())
 
-		err := c.startBackupProcess(backupSession)
+		backupOutput, err := c.startBackupProcess(backupSession)
 		if err != nil {
-			e2 := c.handleBackupFailure(backupSession, err)
-			err = errors.NewAggregate([]error{err, e2})
-			// log failure. don't fail the container as it may interrupt user's service
-			log.Infoln("failed to complete backup. Reason: ", err.Error())
+			return c.handleBackupFailure(backupSession.Name, err)
+		}
+
+		if backupOutput != nil {
+			return c.handleBackupSuccess(backupSession.Name, backupOutput)
 		}
 	}
 	return nil
 }
 
-func (c *BackupSessionController) startBackupProcess(backupSession *api_v1beta1.BackupSession) error {
+func (c *BackupSessionController) startBackupProcess(backupSession *api_v1beta1.BackupSession) (*restic.BackupOutput, error) {
 	// get respective BackupConfiguration for BackupSession
 	backupConfiguration, err := c.StashClient.StashV1beta1().BackupConfigurations(backupSession.Namespace).Get(
 		backupSession.Spec.BackupConfiguration.Name,
 		metav1.GetOptions{},
 	)
 	if err != nil {
-		return fmt.Errorf("can't get BackupConfiguration for BackupSession %s/%s, reason: %s", backupSession.Namespace, backupSession.Name, err)
+		return nil, fmt.Errorf("can't get BackupConfiguration for BackupSession %s/%s. Reason: %s", backupSession.Namespace, backupSession.Name, err)
 	}
 
 	// skip if BackupConfiguration paused
 	if backupConfiguration.Spec.Paused {
 		log.Infof("Skipping processing BackupSession %s/%s. Reason: Backup Configuration is paused.", backupSession.Namespace, backupSession.Name)
-		return nil
-	}
-
-	host, err := util.GetHostName(backupConfiguration.Spec.Target)
-	if err != nil {
-		return err
+		return nil, nil
 	}
 
 	// if BackupSession already has been processed for this host then skip further processing
-	if c.isBackupTakenForThisHost(backupSession, host) {
-		log.Infof("Skip processing BackupSession %s/%s. Reason: BackupSession has been processed already for host %q\n", backupSession.Namespace, backupSession.Name, host)
-		return nil
+	if c.isBackupTakenForThisHost(backupSession, c.Host) {
+		log.Infof("Skip processing BackupSession %s/%s. Reason: BackupSession has been processed already for host %q\n", backupSession.Namespace, backupSession.Name, c.Host)
+		return nil, nil
 	}
 
 	// For Deployment, ReplicaSet and ReplicationController only leader pod is running this controller so no problem with restic repo lock.
@@ -200,27 +196,21 @@ func (c *BackupSessionController) startBackupProcess(backupSession *api_v1beta1.
 	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController, apis.KindDeploymentConfig:
 		return c.backup(backupSession, backupConfiguration)
 	default:
-		return c.electBackupLeader(backupSession, backupConfiguration)
+		return nil, c.electBackupLeader(backupSession, backupConfiguration)
 	}
 }
 
-func (c *BackupSessionController) backup(backupSession *api_v1beta1.BackupSession, backupConfiguration *api_v1beta1.BackupConfiguration) error {
+func (c *BackupSessionController) backup(backupSession *api_v1beta1.BackupSession, backupConfiguration *api_v1beta1.BackupConfiguration) (*restic.BackupOutput, error) {
 
 	// get repository
 	repository, err := c.StashClient.StashV1alpha1().Repositories(backupConfiguration.Namespace).Get(backupConfiguration.Spec.Repository.Name, metav1.GetOptions{})
 	if err != nil {
-		return err
-	}
-
-	// get host name
-	host, err := util.GetHostName(backupConfiguration.Spec.Target)
-	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// configure SourceHost, SecretDirectory, EnableCache and ScratchDirectory
 	extraOpt := util.ExtraOptions{
-		Host:        host,
+		Host:        c.Host,
 		SecretDir:   c.SetupOpt.SecretDir,
 		EnableCache: c.SetupOpt.EnableCache,
 		ScratchDir:  c.SetupOpt.ScratchDir,
@@ -229,49 +219,29 @@ func (c *BackupSessionController) backup(backupSession *api_v1beta1.BackupSessio
 	// configure setupOption
 	c.SetupOpt, err = util.SetupOptionsForRepository(*repository, extraOpt)
 	if err != nil {
-		return fmt.Errorf("setup option for repository fail")
+		return nil, fmt.Errorf("setup option for repository fail")
 	}
 
 	// apply nice, ionice settings from env
 	c.SetupOpt.Nice, err = util.NiceSettingsFromEnv()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	c.SetupOpt.IONice, err = util.IONiceSettingsFromEnv()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// init restic wrapper
 	resticWrapper, err := restic.NewResticWrapper(c.SetupOpt)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// BackupOptions configuration
 	backupOpt := util.BackupOptionsForBackupConfig(*backupConfiguration, extraOpt)
-	backupOutput, backupErr := resticWrapper.RunBackup(backupOpt)
-
-	// Update Backup Session and Repository status
-	o := status.UpdateStatusOptions{
-		Config:        c.Config,
-		KubeClient:    c.K8sClient,
-		StashClient:   c.StashClient,
-		Namespace:     c.Namespace,
-		BackupSession: backupSession.Name,
-		Repository:    backupConfiguration.Spec.Repository.Name,
-		Metrics:       c.Metrics,
-		Error:         backupErr,
-	}
-
-	err = o.UpdatePostBackupStatus(backupOutput)
-	if err != nil {
-		return err
-	}
-
-	glog.Info("Backup has been completed successfully")
-
-	return nil
+	// Run Backup
+	return resticWrapper.RunBackup(backupOpt)
 }
 
 func (c *BackupSessionController) electLeaderPod(backupConfiguration *api_v1beta1.BackupConfiguration, stopCh <-chan struct{}) error {
@@ -308,12 +278,20 @@ func (c *BackupSessionController) electLeaderPod(backupConfiguration *api_v1beta
 			OnStartedLeading: func(ctx context.Context) {
 				log.Infoln("Got leadership, starting BackupSession controller")
 				// this pod is now leader. run BackupSession controller.
-				err := c.runBackupSessionController(backupConfiguration, stopCh)
-				if err != nil {
-					// send failure metric and fail the container so that it retry to setup
-					c.HandleBackupSetupFailure(err)
+				setupErr := c.runBackupSessionController(backupConfiguration, stopCh)
+				if setupErr != nil {
+					// write event to the respective BackpConfiguration
+					err := c.HandleBackupSetupFailure(err)
 					// step down from leadership so that other replicas can try to start BackupSession controller
 					cancel()
+					// fail the container so that it restart and retry.
+					// we should not fail container as it may interrupt user's service.
+					// however, we are doing it here because it is happening for the first time when stash has injected
+					// a sidecar. user's pod will restart automatically for sidecar injection. so, we can restart the pod
+					// to ensure backup has been configured properly at this time as the user will be aware of service interruption.
+					if err != nil {
+						log.Fatal(err)
+					}
 				}
 			},
 			OnStoppedLeading: func() {
@@ -359,17 +337,23 @@ func (c *BackupSessionController) electBackupLeader(backupSession *api_v1beta1.B
 			OnStartedLeading: func(ctx context.Context) {
 				log.Infoln("Got leadership, preparing for backup")
 				// run backup process
-				err := c.backup(backupSession, backupConfiguration)
-				if err != nil {
-					// send failure metrics and update BackupSession status
-					err2 := c.handleBackupFailure(backupSession, err)
-					if err2 != nil {
-						err = errors.NewAggregate([]error{err, err2})
+				backupOutput, backupErr := c.backup(backupSession, backupConfiguration)
+				if backupErr != nil {
+					err := c.handleBackupFailure(backupSession.Name, backupErr)
+					if err != nil {
+						backupErr = errors.NewAggregate([]error{backupErr, err})
 					}
 					// step down from leadership so that other replicas can start backup
 					cancel()
 					// log failure. don't fail the container as it may interrupt user's service
-					log.Warningln("failed to complete backup. Reason: ", err.Error())
+					log.Warningf("failed to complete backup. Reason: %v", backupErr)
+				}
+				if backupOutput != nil {
+					err := c.handleBackupSuccess(backupSession.Name, backupOutput)
+					if err != nil {
+						// log failure. don't fail the container as it may interrupt user's service
+						log.Warningf("failed to complete backup. Reason: %v", backupErr)
+					}
 				}
 				// backup process is complete. now, step down from leadership so that other replicas can start
 				cancel()
@@ -382,22 +366,80 @@ func (c *BackupSessionController) electBackupLeader(backupSession *api_v1beta1.B
 	return nil
 }
 
-func (c *BackupSessionController) handleBackupFailure(backupSession *api_v1beta1.BackupSession, backupErr error) error {
-	backupConfiguration, err := c.StashClient.StashV1beta1().BackupConfigurations(backupSession.Namespace).Get(backupSession.Spec.BackupConfiguration.Name, metav1.GetOptions{})
+func (c *BackupSessionController) HandleBackupSetupFailure(setupErr error) error {
+	// write log
+	log.Warningf("failed to start BackupSessionController. Reason: %v", setupErr)
+
+	// write event to BackupConfiguration
+	backupConfiguration, err := c.StashClient.StashV1beta1().BackupConfigurations(c.Namespace).Get(c.BackupConfigurationName, metav1.GetOptions{})
+	if err != nil {
+		return errors.NewAggregate([]error{setupErr, err})
+	}
+	_, err = eventer.CreateEvent(
+		c.K8sClient,
+		eventer.EventSourceBackupSidecar,
+		backupConfiguration,
+		core.EventTypeWarning,
+		eventer.EventReasonFailedToStartBackupSessionController,
+		fmt.Sprintf("failed to start BackupSession controller in pod %s/%s Reason: %v", meta.Namespace(), os.Getenv(util.KeyPodName), setupErr),
+	)
+	return errors.NewAggregate([]error{setupErr, err})
+}
+
+func (c *BackupSessionController) handleBackupSetupSuccess(backupConfiguration *api_v1beta1.BackupConfiguration) error {
+	// write log
+	log.Infof("BackupSession controller started successfully.")
+
+	// write event to BackupConfiguration
+	_, err := eventer.CreateEvent(
+		c.K8sClient,
+		eventer.EventSourceBackupSidecar,
+		backupConfiguration,
+		core.EventTypeNormal,
+		eventer.EventReasonBackupSessionControllerStarted,
+		fmt.Sprintf("BackupSession controller started successfully in pod %s/%s.", meta.Namespace(), os.Getenv(util.KeyPodName)),
+	)
+	return err
+}
+
+func (c *BackupSessionController) handleBackupSuccess(backupSessionName string, backupOutput *restic.BackupOutput) error {
+	// write log
+	log.Infof("Backup completed successfully for BackupSession %s", backupSessionName)
+
+	// add/update entry into BackupSession status for this host
+	backupConfig, err := c.StashClient.StashV1beta1().BackupConfigurations(c.Namespace).Get(c.BackupConfigurationName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
-	host, err := util.GetHostName(backupConfiguration.Spec.Target)
+	statusOpt := status.UpdateStatusOptions{
+		Config:        c.Config,
+		KubeClient:    c.K8sClient,
+		StashClient:   c.StashClient,
+		Namespace:     c.Namespace,
+		Repository:    backupConfig.Spec.Repository.Name,
+		BackupSession: backupSessionName,
+		Metrics:       c.Metrics,
+	}
+	return statusOpt.UpdatePostBackupStatus(backupOutput)
+}
+
+func (c *BackupSessionController) handleBackupFailure(backupSessionName string, backupErr error) error {
+	// write log
+	log.Warningf("Failed to take backup for BackupSession %s. Reason: ", backupSessionName, backupErr)
+
+	// add/update entry into BackupSession status for this host
+	backupConfig, err := c.StashClient.StashV1beta1().BackupConfigurations(c.Namespace).Get(c.BackupConfigurationName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
+
 	backupOutput := &restic.BackupOutput{
 		HostBackupStats: []api_v1beta1.HostBackupStats{
 			{
-				Hostname: host,
+				Hostname: c.Host,
 				Phase:    api_v1beta1.HostBackupFailed,
-				Error:    backupErr.Error(),
+				Error:    fmt.Sprintf("failed to complete backup for host %s. Reaosn: %v", c.Host, backupErr),
 			},
 		},
 	}
@@ -407,57 +449,11 @@ func (c *BackupSessionController) handleBackupFailure(backupSession *api_v1beta1
 		KubeClient:    c.K8sClient,
 		StashClient:   c.StashClient,
 		Namespace:     c.Namespace,
-		BackupSession: backupSession.Name,
+		Repository:    backupConfig.Spec.Repository.Name,
+		BackupSession: backupSessionName,
 		Metrics:       c.Metrics,
-		Error:         backupErr,
 	}
-
 	return statusOpt.UpdatePostBackupStatus(backupOutput)
-}
-
-func (c *BackupSessionController) HandleBackupSetupFailure(setupErr error) {
-	backupConfiguration, err := c.StashClient.StashV1beta1().BackupConfigurations(c.Namespace).Get(c.BackupConfigurationName, metav1.GetOptions{})
-	if err != nil {
-		e2 := errors.NewAggregate([]error{setupErr, err})
-		if e2 != nil {
-			log.Fatalln("failed to setup backup process. Reason: ", e2.Error())
-		}
-	}
-
-	// send prometheus metrics
-	if c.Metrics.Enabled {
-		err := restic.HandleBackupSetupMetrics(c.Config, backupConfiguration, c.Metrics, setupErr)
-		setupErr = errors.NewAggregate([]error{setupErr, err})
-	}
-	// fail the container so that it restart and re-try this process.
-	log.Fatalln("failed to setup backup process. Reason: ", setupErr.Error())
-}
-
-func (c *BackupSessionController) handleBackupSetupSuccess(backupConfiguration *api_v1beta1.BackupConfiguration) {
-	// send prometheus metrics
-	if c.Metrics.Enabled {
-		err := restic.HandleBackupSetupMetrics(c.Config, backupConfiguration, c.Metrics, nil)
-		if err != nil {
-			log.Warningln("failed to send prometheus metrics. Reason: ", err.Error())
-		}
-	}
-}
-
-func (c *BackupSessionController) writeBackupFailureEvent(backupSession *api_v1beta1.BackupSession, host string, err error) {
-	// write failure event
-	ref, rerr := reference.GetReference(stash_scheme.Scheme, backupSession)
-	if rerr == nil {
-		eventer.CreateEventWithLog(
-			c.K8sClient,
-			eventer.EventSourceBackupSidecar,
-			ref,
-			core.EventTypeWarning,
-			eventer.EventReasonHostBackupFailed,
-			fmt.Sprintf("Failed to backup host %q. Reason: %v", host, err),
-		)
-	} else {
-		log.Errorf("Failed to write backup failure event. Reason: %v", rerr)
-	}
 }
 
 func (c *BackupSessionController) isBackupTakenForThisHost(backupSession *api_v1beta1.BackupSession, host string) bool {

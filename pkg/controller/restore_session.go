@@ -2,7 +2,6 @@ package controller
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -39,7 +38,8 @@ import (
 )
 
 const (
-	RestoreJobPrefix = "stash-restore-"
+	RestoreJobPrefix                = "stash-restore-"
+	PromJobRestoreSessionController = "stash-restoresession-controller"
 )
 
 func (c *StashController) NewRestoreSessionWebhook() hooks.AdmissionHook {
@@ -91,12 +91,10 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 
 		// if RestoreSession is being deleted then remove respective init-container
 		if restoreSession.DeletionTimestamp != nil {
-
 			// if RestoreSession has stash finalizer then respective init-container (for workloads) hasn't been removed
 			// remove respective init-container and finally remove finalizer
 			if core_util.HasFinalizer(restoreSession.ObjectMeta, api_v1beta1.StashKey) {
 				if restoreSession.Spec.Target != nil && util.BackupModel(restoreSession.Spec.Target.Ref.Kind) == util.ModelSidecar {
-
 					// send event to workload controller. workload controller will take care of removing restore init-container
 					err := c.sendEventToWorkloadQueue(
 						restoreSession.Spec.Target.Ref.Kind,
@@ -104,8 +102,11 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 						restoreSession.Spec.Target.Ref.Name,
 					)
 					if err != nil {
-						log.Errorln(err)
-						return err
+						ref, rerr := reference.GetReference(stash_scheme.Scheme, restoreSession)
+						if rerr != nil {
+							return err
+						}
+						return c.handleWorkloadControllerTriggerFailure(ref, err)
 					}
 				}
 
@@ -156,14 +157,6 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 				return nil
 			}
 
-			if restoreSession.Spec.Target != nil && restoreSession.Spec.Driver == api_v1beta1.VolumeSnapshotter {
-				err := c.ensureVolumeRestorerJob(restoreSession)
-				if err != nil {
-					return c.handleRestoreJobCreationFailure(restoreSession, err)
-				}
-				return c.setRestoreSessionRunning(restoreSession)
-			}
-
 			// if target is kubernetes workload i.e. Deployment, StatefulSet etc. then inject restore init-container
 			if restoreSession.Spec.Target != nil && util.BackupModel(restoreSession.Spec.Target.Ref.Kind) == util.ModelSidecar {
 				// send event to workload controller. workload controller will take care of injecting restore init-container
@@ -173,23 +166,36 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 					restoreSession.Spec.Target.Ref.Name,
 				)
 				if err != nil {
-					return err
+					ref, rerr := reference.GetReference(stash_scheme.Scheme, restoreSession)
+					if rerr != nil {
+						return err
+					}
+					return c.handleWorkloadControllerTriggerFailure(ref, err)
 				}
-				return c.setRestoreSessionRunning(restoreSession)
-			} else {
-
-				// target is not a workload. we have to restore by a job.
-				err := c.ensureRestoreJob(restoreSession)
-				if err != nil {
-					// failed to ensure restore job. set RestoreSession phase "Failed" and send prometheus metrics.
-					return c.handleRestoreJobCreationFailure(restoreSession, err)
-				}
-
-				// restore job has been created successfully. set RestoreSession phase to "Running"
 				return c.setRestoreSessionRunning(restoreSession)
 			}
-		}
 
+			// target is not kubernetes workload. so, restore needs to be done using a job.
+			// if driver is VolumeSnapshotter then ensure volume restorer job
+			if restoreSession.Spec.Target != nil && restoreSession.Spec.Driver == api_v1beta1.VolumeSnapshotter {
+				err := c.ensureVolumeRestorerJob(restoreSession)
+				if err != nil {
+					return c.handleRestoreJobCreationFailure(restoreSession, err)
+				}
+				return c.setRestoreSessionRunning(restoreSession)
+			}
+
+			// Restic driver has been used. Ensure restore job.
+			err = c.ensureRestoreJob(restoreSession)
+			if err != nil {
+				// failed to ensure restore job. set RestoreSession phase "Failed" and send prometheus metrics.
+				return c.handleRestoreJobCreationFailure(restoreSession, err)
+			}
+
+			// restore job has been created successfully. set RestoreSession phase to "Running"
+			return c.setRestoreSessionRunning(restoreSession)
+
+		}
 	}
 	return nil
 }
@@ -291,7 +297,7 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 
 	for ordinal := int32(0); ordinal < replicas; ordinal++ {
 		// resolve template part of the volumeClaimTemplate and generate PVC definition according to the template
-		pvcList, err := getPVCFromVolumeClaimTemplates(ordinal, restoreSession.Spec.Target.VolumeClaimTemplates)
+		pvcList, err := resolve.GetPVCFromVolumeClaimTemplates(ordinal, restoreSession.Spec.Target.VolumeClaimTemplates)
 		if err != nil {
 			return err
 		}
@@ -523,18 +529,11 @@ func (c *StashController) setRestoreSessionRunning(restoreSession *api_v1beta1.R
 
 func (c *StashController) setRestoreSessionSucceeded(restoreSession *api_v1beta1.RestoreSession) error {
 
-	// total restore session duration is sum of individual host restore duration
-	var sessionDuration time.Duration
-	for _, hostStats := range restoreSession.Status.Stats {
-		hostRestoreDuration, err := time.ParseDuration(hostStats.Duration)
-		if err != nil {
-			return err
-		}
-		sessionDuration = sessionDuration + hostRestoreDuration
-	}
+	// total restore session duration is the difference between the time when RestoreSession was created and current time
+	sessionDuration := time.Since(restoreSession.CreationTimestamp.Time)
 
 	// update RestoreSession status
-	_, err := stash_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
+	updatedRestoreSession, err := stash_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
 		in.Phase = api_v1beta1.RestoreSessionSucceeded
 		in.SessionDuration = sessionDuration.String()
 		return in
@@ -543,7 +542,7 @@ func (c *StashController) setRestoreSessionSucceeded(restoreSession *api_v1beta1
 		return err
 	}
 
-	// write job creation success event
+	// write event to the  RestoreSession for successful restore
 	_, err = eventer.CreateEvent(
 		c.kubeClient,
 		eventer.EventSourceRestoreSessionController,
@@ -553,13 +552,19 @@ func (c *StashController) setRestoreSessionSucceeded(restoreSession *api_v1beta1
 		fmt.Sprintf("restore has been completed succesfully for RestoreSession %s/%s", restoreSession.Namespace, restoreSession.Name),
 	)
 
-	return err
+	// send restore session specific metrics
+	metricsOpt := &restic.MetricsOptions{
+		Enabled:        true,
+		PushgatewayURL: util.PushgatewayLocalURL,
+		JobName:        PromJobRestoreSessionController,
+	}
+	return metricsOpt.SendRestoreSessionMetrics(c.clientConfig, updatedRestoreSession)
 }
 
-func (c *StashController) setRestoreSessionFailed(restoreSession *api_v1beta1.RestoreSession, jobErr error) error {
+func (c *StashController) setRestoreSessionFailed(restoreSession *api_v1beta1.RestoreSession, restoreErr error) error {
 
 	// set RestoreSession phase to "Failed"
-	_, err := v1beta1_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
+	updatedRestoreSession, err := v1beta1_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
 		in.Phase = api_v1beta1.RestoreSessionFailed
 		return in
 	}, apis.EnableStatusSubresource)
@@ -568,19 +573,25 @@ func (c *StashController) setRestoreSessionFailed(restoreSession *api_v1beta1.Re
 	}
 
 	// write failure event
-	_, err = eventer.CreateEvent(
+	_, _ = eventer.CreateEvent(
 		c.kubeClient,
 		eventer.EventSourceRestoreSessionController,
 		restoreSession,
 		core.EventTypeWarning,
 		eventer.EventReasonRestoreSessionFailed,
-		jobErr.Error(),
+		fmt.Sprintf("Restore session failed to complete. Reason: %v", restoreErr),
 	)
 
-	return err
+	// send restore session specific metrics
+	metricsOpt := &restic.MetricsOptions{
+		Enabled:        true,
+		PushgatewayURL: util.PushgatewayLocalURL,
+		JobName:        PromJobRestoreSessionController,
+	}
+	return metricsOpt.SendRestoreSessionMetrics(c.clientConfig, updatedRestoreSession)
 }
 
-func (c *StashController) setRestoreSessionUnknown(restoreSession *api_v1beta1.RestoreSession, jobErr error) error {
+func (c *StashController) setRestoreSessionUnknown(restoreSession *api_v1beta1.RestoreSession, restoreErr error) error {
 
 	// set RestoreSession phase to "Unknown"
 	_, err := v1beta1_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
@@ -598,9 +609,8 @@ func (c *StashController) setRestoreSessionUnknown(restoreSession *api_v1beta1.R
 		restoreSession,
 		core.EventTypeWarning,
 		eventer.EventReasonRestorePhaseUnknown,
-		jobErr.Error(),
+		fmt.Sprintf("Restore session phase is unknown. Reason: %v", restoreErr),
 	)
-
 	return err
 }
 
@@ -638,36 +648,18 @@ func (c *StashController) getRestoreSessionPhase(restoreSession *api_v1beta1.Res
 func (c *StashController) handleRestoreJobCreationFailure(restoreSession *api_v1beta1.RestoreSession, restoreErr error) error {
 	log.Warningln("failed to ensure restore job. Reason: ", restoreErr)
 
-	// send prometheus metrics
-	metricOpt := &restic.MetricsOptions{
-		Enabled:        true,
-		PushgatewayURL: util.PushgatewayURL(),
-		Labels:         nil,
-		JobName:        "stash-operator",
-	}
-	restoreOutput := restic.RestoreOutput{}
-	err := restoreOutput.HandleMetrics(c.clientConfig, restoreSession, metricOpt, restoreErr)
-	if err != nil {
-		log.Infof("Failed to send prometheus metrics. Reason: %v", err)
-	}
+	// write event to BackupSession
+	_, _ = eventer.CreateEvent(
+		c.kubeClient,
+		eventer.EventSourceRestoreSessionController,
+		restoreSession,
+		core.EventTypeWarning,
+		eventer.EventReasonRestoreJobCreationFailed,
+		fmt.Sprintf("failed to create restore job for RestoreSession %s/%s. Reason: %v", restoreSession.Namespace, restoreSession.Name, restoreErr),
+	)
 
-	// set RestoreSession phase failed and create an event
+	// set RestoreSession phase failed
 	return c.setRestoreSessionFailed(restoreSession, restoreErr)
-}
-
-// getPVCFromVolumeClaimTemplates returns list of PVCs generated according to the VolumeClaimTemplate
-func getPVCFromVolumeClaimTemplates(ordinal int32, claimTemplates []core.PersistentVolumeClaim) ([]core.PersistentVolumeClaim, error) {
-	pvcList := make([]core.PersistentVolumeClaim, 0)
-	for _, claim := range claimTemplates {
-		inputs := make(map[string]string)
-		inputs[util.KeyPodOrdinal] = strconv.Itoa(int(ordinal))
-		err := resolve.ResolvePVCSpec(&claim, inputs)
-		if err != nil {
-			return pvcList, err
-		}
-		pvcList = append(pvcList, claim)
-	}
-	return pvcList, nil
 }
 
 func getRestoreJobName(restoreSession *api_v1beta1.RestoreSession) string {

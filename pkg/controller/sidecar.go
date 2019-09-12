@@ -20,6 +20,7 @@ import (
 	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/docker"
+	"stash.appscode.dev/stash/pkg/eventer"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 )
@@ -138,15 +139,12 @@ func (c *StashController) ensureWorkloadSidecarDeleted(w *wapi.Workload, restic 
 }
 
 func (c *StashController) ensureBackupSidecar(w *wapi.Workload, bc *api_v1beta1.BackupConfiguration, caller string) error {
-	sa := w.Spec.Template.Spec.ServiceAccountName
+	sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
 	ref, err := reference.GetReference(scheme.Scheme, w)
 	if err != nil {
-		ref = &core.ObjectReference{
-			Name:       w.Name,
-			Namespace:  w.Namespace,
-			APIVersion: w.APIVersion,
-		}
+		return err
 	}
+
 	//Don't create RBAC stuff when the caller is webhook to make the webhooks side effect free.
 	if caller != util.CallerWebhook {
 		err = stash_rbac.EnsureSidecarRoleBinding(c.kubeClient, ref, sa, bc.OffshootLabels())
@@ -325,4 +323,64 @@ func isPodOwnedByWorkload(w *wapi.Workload, pod core.Pod) bool {
 		}
 	}
 	return false
+}
+
+func (c *StashController) handleSidecarInjectionFailure(ref *core.ObjectReference, err error) error {
+	log.Warningf("Failed to inject stash sidecar inot %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
+
+	// write event to respective resource
+	_, err2 := eventer.CreateEvent(
+		c.kubeClient,
+		eventer.EventSourceWorkloadController,
+		ref,
+		core.EventTypeWarning,
+		eventer.EventReasonSidecarInjectionFailed,
+		fmt.Sprintf("Failed to inject stash sidecar into %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err),
+	)
+	return err2
+}
+
+func (c *StashController) handleSidecarInjectionSuccess(ref *core.ObjectReference) error {
+	log.Infof("Successfully injected stash sidecar into %s %s/%s.", ref.Kind, ref.Namespace, ref.Name)
+
+	// write event to respective resource
+	_, err2 := eventer.CreateEvent(
+		c.kubeClient,
+		eventer.EventSourceWorkloadController,
+		ref,
+		core.EventTypeWarning,
+		eventer.EventReasonSidecarInjectionSucceeded,
+		fmt.Sprintf("Successfully injected stash sidecar into %s %s/%s.", ref.Kind, ref.Namespace, ref.Name),
+	)
+	return err2
+}
+
+func (c *StashController) handleSidecarDeletionFailure(ref *core.ObjectReference, err error) error {
+	log.Warningf("Failed to remove stash sidecar from %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
+
+	// write event to respective resource
+	_, err2 := eventer.CreateEvent(
+		c.kubeClient,
+		eventer.EventSourceWorkloadController,
+		ref,
+		core.EventTypeWarning,
+		eventer.EventReasonSidecarDeletionFailed,
+		fmt.Sprintf("Failed to remove stash sidecar from %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err),
+	)
+	return err2
+}
+
+func (c *StashController) handleSidecarDeletionSuccess(ref *core.ObjectReference) error {
+	log.Infof("Successfully removed stash sidecar from %s %s/%s.", ref.Kind, ref.Namespace, ref.Name)
+
+	// write event to respective resource
+	_, err2 := eventer.CreateEvent(
+		c.kubeClient,
+		eventer.EventSourceWorkloadController,
+		ref,
+		core.EventTypeWarning,
+		eventer.EventReasonSidecarDeletionSucceeded,
+		fmt.Sprintf("Successfully stash sidecar from %s %s/%s.", ref.Kind, ref.Namespace, ref.Name),
+	)
+	return err2
 }

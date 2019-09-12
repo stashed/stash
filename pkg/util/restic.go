@@ -3,19 +3,15 @@ package util
 import (
 	"bytes"
 	"fmt"
-	"path/filepath"
 	"reflect"
 
-	"github.com/appscode/go/log"
 	"github.com/pkg/errors"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"kmodules.xyz/client-go/meta"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	stash_listers "stash.appscode.dev/stash/client/listers/stash/v1alpha1"
-	"stash.appscode.dev/stash/pkg/restic"
 )
 
 func GetAppliedRestic(m map[string]string) (*api.Restic, error) {
@@ -77,19 +73,4 @@ func ResticEqual(old, new *api.Restic) bool {
 		newSpec = &new.Spec
 	}
 	return reflect.DeepEqual(oldSpec, newSpec)
-}
-
-// works for both backup and restore output
-func HandleResticError(outputDir, fileName string, backupErr error) error {
-	if outputDir == "" || fileName == "" {
-		return backupErr
-	}
-	log.Infoln("Writing restic error to output file, error:", backupErr.Error())
-	backupOut := restic.BackupOutput{
-		HostBackupStats: []api_v1beta1.HostBackupStats{
-			{
-				Error: backupErr.Error(),
-			},
-		}}
-	return backupOut.WriteOutput(filepath.Join(outputDir, fileName))
 }

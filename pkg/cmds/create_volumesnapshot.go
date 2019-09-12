@@ -17,6 +17,7 @@ import (
 	"kmodules.xyz/client-go/meta"
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/restic"
 	"stash.appscode.dev/stash/pkg/status"
@@ -24,7 +25,8 @@ import (
 )
 
 type VSoption struct {
-	name           string
+	backupsession  string
+	restoresession string
 	namespace      string
 	kubeClient     kubernetes.Interface
 	stashClient    cs.Interface
@@ -39,7 +41,8 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 		opt            = VSoption{
 			namespace: meta.Namespace(),
 			metrics: restic.MetricsOptions{
-				Enabled: false,
+				Enabled: true,
+				JobName: "stash-volumesnapshotter",
 			},
 		}
 	)
@@ -48,7 +51,7 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 		Use:               "create-vs",
 		Short:             "Take snapshot of PersistentVolumeClaims",
 		DisableAutoGenTag: true,
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfigPath)
 			if err != nil {
 				log.Fatalf("Could not get Kubernetes config: %s", err)
@@ -57,128 +60,131 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 			opt.stashClient = cs.NewForConfigOrDie(config)
 			opt.snapshotClient = vs_cs.NewForConfigOrDie(config)
 
-			err = opt.CreateVolumeSnapshot()
+			backupOutput, err := opt.createVolumeSnapshot()
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
+
+			statOpt := status.UpdateStatusOptions{
+				Config:        config,
+				KubeClient:    opt.kubeClient,
+				StashClient:   opt.stashClient,
+				Namespace:     opt.namespace,
+				BackupSession: opt.backupsession,
+				Metrics:       opt.metrics,
+			}
+			return statOpt.UpdatePostBackupStatus(backupOutput)
 		},
 	}
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&opt.name, "backupsession.name", "", "Set BackupSession Name")
+	cmd.Flags().StringVar(&opt.backupsession, "backupsession", "", "Name of the respective BackupSession object")
 	cmd.Flags().BoolVar(&opt.metrics.Enabled, "metrics-enabled", opt.metrics.Enabled, "Specify whether to export Prometheus metrics")
 	cmd.Flags().StringVar(&opt.metrics.PushgatewayURL, "pushgateway-url", opt.metrics.PushgatewayURL, "Pushgateway URL where the metrics will be pushed")
 	return cmd
 }
 
-func (opt *VSoption) CreateVolumeSnapshot() error {
+func (opt *VSoption) createVolumeSnapshot() (*restic.BackupOutput, error) {
 	// Start clock to measure total session duration
 	startTime := time.Now()
-	backupSession, err := opt.stashClient.StashV1beta1().BackupSessions(opt.namespace).Get(opt.name, metav1.GetOptions{})
+	backupSession, err := opt.stashClient.StashV1beta1().BackupSessions(opt.namespace).Get(opt.backupsession, metav1.GetOptions{})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	backupConfiguration, err := opt.stashClient.StashV1beta1().BackupConfigurations(opt.namespace).Get(backupSession.Spec.BackupConfiguration.Name, metav1.GetOptions{})
+	backupConfig, err := opt.stashClient.StashV1beta1().BackupConfigurations(opt.namespace).Get(backupSession.Spec.BackupConfiguration.Name, metav1.GetOptions{})
 	if err != nil {
-		return err
-	}
-	if backupConfiguration == nil {
-		return fmt.Errorf("BackupConfiguration is nil")
-	}
-	if backupConfiguration.Spec.Target == nil {
-		return fmt.Errorf("backupConfiguration target is nil")
+		return nil, err
 	}
 
-	kind := backupConfiguration.Spec.Target.Ref.Kind
-	name := backupConfiguration.Spec.Target.Ref.Name
-	namespace := backupConfiguration.Namespace
+	if backupConfig.Spec.Target == nil {
+		return nil, fmt.Errorf("no target has been specified for BackupConfiguration %s/%s", backupConfig.Namespace, backupConfig.Name)
+	}
 
-	var (
-		pvcList []string
-	)
+	pvcNames, err := opt.getTargetPVCNames(backupConfig.Spec.Target.Ref, backupConfig.Spec.Target.Replicas)
+	if err != nil {
+		return nil, err
+	}
 
-	switch kind {
-	case apis.KindDeployment:
-		deployment, err := opt.kubeClient.AppsV1().Deployments(namespace).Get(name, metav1.GetOptions{})
+	vsMeta := []metav1.ObjectMeta{}
+
+	// create VolumeSnapshots
+	for _, pvcName := range pvcNames {
+		// use timestamp suffix of BackupSession name as suffix of the VolumeSnapshots name
+		parts := strings.Split(backupSession.Name, "-")
+		volumeSnapshot := opt.getVolumeSnapshotDefinition(backupConfig, pvcName, parts[len(parts)-1])
+		snapshot, err := opt.snapshotClient.SnapshotV1alpha1().VolumeSnapshots(opt.namespace).Create(&volumeSnapshot)
 		if err != nil {
-			return err
+			return nil, err
+		}
+		vsMeta = append(vsMeta, snapshot.ObjectMeta)
+	}
+
+	// now wait for all the VolumeSnapshots are completed (ready to to use)
+	backupOutput := &restic.BackupOutput{}
+	for i, pvcName := range pvcNames {
+		// wait until this VolumeSnapshot is ready to use
+		err = util.WaitUntilVolumeSnapshotReady(opt.snapshotClient, vsMeta[i])
+		if err != nil {
+			backupOutput.HostBackupStats = append(backupOutput.HostBackupStats, api_v1beta1.HostBackupStats{
+				Hostname: pvcName,
+				Phase:    api_v1beta1.HostBackupFailed,
+				Error:    err.Error(),
+			})
+		} else {
+			backupOutput.HostBackupStats = append(backupOutput.HostBackupStats, api_v1beta1.HostBackupStats{
+				Hostname: pvcName,
+				Phase:    api_v1beta1.HostBackupSucceeded,
+				Duration: time.Since(startTime).String(),
+			})
+		}
+
+	}
+	return backupOutput, nil
+}
+
+func (opt *VSoption) getTargetPVCNames(targetRef api_v1beta1.TargetRef, replicas *int32) ([]string, error) {
+	var pvcList []string
+
+	switch targetRef.Kind {
+	case apis.KindDeployment:
+		deployment, err := opt.kubeClient.AppsV1().Deployments(opt.namespace).Get(targetRef.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
 		}
 		pvcList = getPVCs(deployment.Spec.Template.Spec.Volumes)
 
 	case apis.KindDaemonSet:
-		daemon, err := opt.kubeClient.AppsV1().DaemonSets(namespace).Get(name, metav1.GetOptions{})
+		daemon, err := opt.kubeClient.AppsV1().DaemonSets(opt.namespace).Get(targetRef.Name, metav1.GetOptions{})
 		if err != nil {
-			return err
+			return nil, err
 		}
 		pvcList = getPVCs(daemon.Spec.Template.Spec.Volumes)
 
 	case apis.KindReplicationController:
-		rc, err := opt.kubeClient.CoreV1().ReplicationControllers(namespace).Get(name, metav1.GetOptions{})
+		rc, err := opt.kubeClient.CoreV1().ReplicationControllers(opt.namespace).Get(targetRef.Name, metav1.GetOptions{})
 		if err != nil {
-			return err
+			return nil, err
 		}
 		pvcList = getPVCs(rc.Spec.Template.Spec.Volumes)
 
 	case apis.KindReplicaSet:
-		rs, err := opt.kubeClient.AppsV1().ReplicaSets(namespace).Get(name, metav1.GetOptions{})
+		rs, err := opt.kubeClient.AppsV1().ReplicaSets(opt.namespace).Get(targetRef.Name, metav1.GetOptions{})
 		if err != nil {
-			return err
+			return nil, err
 		}
 		pvcList = getPVCs(rs.Spec.Template.Spec.Volumes)
 
 	case apis.KindStatefulSet:
-		ss, err := opt.kubeClient.AppsV1().StatefulSets(namespace).Get(name, metav1.GetOptions{})
+		ss, err := opt.kubeClient.AppsV1().StatefulSets(opt.namespace).Get(targetRef.Name, metav1.GetOptions{})
 		if err != nil {
-			return err
+			return nil, err
 		}
-		pvcList = getPVCsForStatefulset(ss.Spec.VolumeClaimTemplates, ss, backupConfiguration.Spec.Target.Replicas)
+		pvcList = getPVCsForStatefulset(ss.Spec.VolumeClaimTemplates, ss, replicas)
 
 	case apis.KindPersistentVolumeClaim:
-		pvcList = []string{name}
+		pvcList = []string{targetRef.Name}
 	}
-
-	objectMeta := []metav1.ObjectMeta{}
-
-	for _, pvcName := range pvcList {
-		parts := strings.Split(backupSession.Name, "-")
-		volumeSnapshot := opt.getVolumeSnapshotDefinition(backupConfiguration, pvcName, parts[len(parts)-1])
-		vs, err := opt.snapshotClient.SnapshotV1alpha1().VolumeSnapshots(namespace).Create(&volumeSnapshot)
-		if err != nil {
-			return err
-		}
-		objectMeta = append(objectMeta, vs.ObjectMeta)
-	}
-
-	for i, pvcName := range pvcList {
-		err = util.WaitUntilVolumeSnapshotReady(opt.snapshotClient, objectMeta[i])
-		if err != nil {
-			return err
-		}
-		// Volume Snapshot complete. Read current time and calculate total backup duration.
-		endTime := time.Now()
-		// Update Backup Session
-		o := status.UpdateStatusOptions{
-			KubeClient:    opt.kubeClient,
-			StashClient:   opt.stashClient,
-			Namespace:     opt.namespace,
-			BackupSession: opt.name,
-		}
-		backupOutput := restic.BackupOutput{
-			HostBackupStats: []v1beta1.HostBackupStats{
-				{
-					Hostname: pvcName,
-					Phase:    v1beta1.HostBackupSucceeded,
-					Duration: endTime.Sub(startTime).String(),
-				},
-			},
-		}
-
-		err = o.UpdatePostBackupStatus(&backupOutput)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return pvcList, nil
 }
 
 func (opt *VSoption) getVolumeSnapshotDefinition(backupConfiguration *v1beta1.BackupConfiguration, pvcName string, timestamp string) (volumeSnapshot vs.VolumeSnapshot) {
@@ -195,7 +201,6 @@ func (opt *VSoption) getVolumeSnapshotDefinition(backupConfiguration *v1beta1.Ba
 			},
 		},
 	}
-
 }
 
 func getPVCs(volList []corev1.Volume) []string {

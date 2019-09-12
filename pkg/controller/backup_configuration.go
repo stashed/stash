@@ -21,6 +21,7 @@ import (
 	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
 	v1beta1_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
 	"stash.appscode.dev/stash/pkg/docker"
+	"stash.appscode.dev/stash/pkg/eventer"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 	"stash.appscode.dev/stash/pkg/util"
 )
@@ -53,7 +54,11 @@ func (c *StashController) runBackupConfigurationProcessor(key string) error {
 		if backupConfiguration.DeletionTimestamp != nil {
 			if core_util.HasFinalizer(backupConfiguration.ObjectMeta, api_v1beta1.StashKey) {
 				if err = c.EnsureV1beta1SidecarDeleted(backupConfiguration); err != nil {
-					return err
+					ref, rerr := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
+					if rerr != nil {
+						return err
+					}
+					return c.handleWorkloadControllerTriggerFailure(ref, err)
 				}
 				if err = c.EnsureCronJobDeleted(backupConfiguration); err != nil {
 					return err
@@ -88,11 +93,18 @@ func (c *StashController) runBackupConfigurationProcessor(key string) error {
 				backupConfiguration.Spec.Driver != api_v1beta1.VolumeSnapshotter &&
 				util.BackupModel(backupConfiguration.Spec.Target.Ref.Kind) == util.ModelSidecar {
 				if err := c.EnsureV1beta1Sidecar(backupConfiguration); err != nil {
-					return err
+					ref, rerr := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
+					if rerr != nil {
+						return err
+					}
+					return c.handleWorkloadControllerTriggerFailure(ref, err)
 				}
 			}
 			// create a CronJob that will create BackupSession on each schedule
-			return c.EnsureCronJob(backupConfiguration)
+			err = c.EnsureCronJob(backupConfiguration)
+			if err != nil {
+				return c.handleCronJobCreationFailure(backupConfiguration, err)
+			}
 		}
 	}
 	return nil
@@ -250,8 +262,8 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 				Image:           image.ToContainerImage(),
 				Args: []string{
 					"create-backupsession",
-					fmt.Sprintf("--backupsession.name=%s", backupConfiguration.Name),
-					fmt.Sprintf("--backupsession.namespace=%s", backupConfiguration.Namespace),
+					fmt.Sprintf("--backupconfiguration=%s", backupConfiguration.Name),
+					fmt.Sprintf("--namespace=%s", backupConfiguration.Namespace),
 				},
 			})
 		in.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever
@@ -289,4 +301,42 @@ func (c *StashController) EnsureCronJobDeleted(backupConfiguration *api_v1beta1.
 
 func getBackupCronJobName(backupConfiguration *api_v1beta1.BackupConfiguration) string {
 	return strings.ReplaceAll(backupConfiguration.Name, ".", "-")
+}
+
+func (c *StashController) handleCronJobCreationFailure(backupConfig *api_v1beta1.BackupConfiguration, err error) error {
+	log.Warningf("failed to ensure cron job for BackupConfiguration %s/%s. Reason: %v", backupConfig.Namespace, backupConfig.Name, err)
+
+	// write event to BackupConfiguration
+	_, err2 := eventer.CreateEvent(
+		c.kubeClient,
+		eventer.EventSourceBackupConfigurationController,
+		backupConfig,
+		core.EventTypeWarning,
+		eventer.EventReasonCronJobCreationFailed,
+		fmt.Sprintf("failed to ensure CronJob for BackupConfiguration  %s/%s. Reason: %v", backupConfig.Namespace, backupConfig.Name, err),
+	)
+	return err2
+}
+
+func (c *StashController) handleWorkloadControllerTriggerFailure(ref *core.ObjectReference, err error) error {
+	var eventSource string
+	switch ref.Kind {
+	case api_v1beta1.ResourceKindBackupConfiguration:
+		eventSource = eventer.EventSourceBackupConfigurationController
+	case api_v1beta1.ResourceKindRestoreSession:
+		eventSource = eventer.EventSourceRestoreSessionController
+	}
+
+	log.Warningf("failed to trigger workload controller for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
+
+	// write event to BackupConfiguration/RestoreSession
+	_, err2 := eventer.CreateEvent(
+		c.kubeClient,
+		eventSource,
+		ref,
+		core.EventTypeWarning,
+		eventer.EventReasonWorkloadControllerTriggeringFailed,
+		fmt.Sprintf("failed to trigger workload controller for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err),
+	)
+	return err2
 }

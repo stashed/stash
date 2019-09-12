@@ -96,7 +96,7 @@ func NewBackupSidecarContainer(bc *v1beta1_api.BackupConfiguration, backend *sto
 		Image: image.ToContainerImage(),
 		Args: append([]string{
 			"run-backup",
-			"--backup-configuration=" + bc.Name,
+			"--backupconfiguration=" + bc.Name,
 			"--secret-dir=" + StashSecretMountDir,
 			fmt.Sprintf("--enable-cache=%v", !bc.Spec.TempDir.DisableCaching),
 			fmt.Sprintf("--max-connections=%v", backend.MaxConnections()),

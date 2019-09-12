@@ -5,13 +5,11 @@ import (
 	"path/filepath"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/kubernetes/pkg/apis/core"
 	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	stash_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
 	stash_util_v1beta1 "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
@@ -31,7 +29,6 @@ type UpdateStatusOptions struct {
 	OutputDir      string
 	OutputFileName string
 	Metrics        restic.MetricsOptions
-	Error          error
 }
 
 func (o UpdateStatusOptions) UpdateBackupStatusFromFile() error {
@@ -40,20 +37,7 @@ func (o UpdateStatusOptions) UpdateBackupStatusFromFile() error {
 	if err != nil {
 		return err
 	}
-
-	var backupErrs []error
-	for _, hostStats := range backupOutput.HostBackupStats {
-		if hostStats.Error != "" {
-			backupErrs = append(backupErrs, fmt.Errorf(hostStats.Error))
-		}
-	}
-
-	updateStatusErr := o.UpdatePostBackupStatus(backupOutput)
-	if updateStatusErr != nil {
-		backupErrs = append(backupErrs, updateStatusErr)
-	}
-
-	return errors.NewAggregate(backupErrs)
+	return o.UpdatePostBackupStatus(backupOutput)
 }
 
 func (o UpdateStatusOptions) UpdateRestoreStatusFromFile() error {
@@ -62,23 +46,13 @@ func (o UpdateStatusOptions) UpdateRestoreStatusFromFile() error {
 	if err != nil {
 		return err
 	}
-
-	var restoreErrs []error
-	for _, hostStats := range restoreOutput.HostRestoreStats {
-		if hostStats.Error != "" {
-			restoreErrs = append(restoreErrs, fmt.Errorf(hostStats.Error))
-		}
-	}
-
-	updateStatusErr := o.UpdatePostRestoreStatus(restoreOutput)
-	if updateStatusErr != nil {
-		restoreErrs = append(restoreErrs, updateStatusErr)
-	}
-
-	return errors.NewAggregate(restoreErrs)
+	return o.UpdatePostRestoreStatus(restoreOutput)
 }
 
 func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupOutput) error {
+	if backupOutput == nil {
+		return fmt.Errorf("invalid backup ouputput. Backup output must not be nil")
+	}
 	// get backup session, update status and create event
 	backupSession, err := o.StashClient.StashV1beta1().BackupSessions(o.Namespace).Get(o.BackupSession, metav1.GetOptions{})
 	if err != nil {
@@ -87,13 +61,13 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 
 	overallBackupSucceeded := true
 
-	// add or update entry for each host in BackupSession status
+	// add or update entry for each host in BackupSession status + create event
 	for _, hostStats := range backupOutput.HostBackupStats {
 		_, err = stash_util_v1beta1.UpdateBackupSessionStatusForHost(o.StashClient.StashV1beta1(), backupSession, hostStats)
 		if err != nil {
 			return err
 		}
-		// create event for backup session
+		// create event to the BackupSession
 		var eventType, eventReason, eventMessage string
 		if hostStats.Error != "" {
 			overallBackupSucceeded = false
@@ -107,7 +81,7 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 		}
 		_, err = eventer.CreateEvent(
 			o.KubeClient,
-			eventer.EventSourcePostBackupStatusUpdater,
+			eventer.EventSourceStatusUpdater,
 			backupSession,
 			eventType,
 			eventReason,
@@ -118,23 +92,17 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 		}
 	}
 
-	backupConfig, err := o.StashClient.StashV1beta1().BackupConfigurations(o.Namespace).Get(backupSession.Spec.BackupConfiguration.Name, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-
-	// if overall backup succeeded and Restic driver is used then update repository status
-	if overallBackupSucceeded && backupConfig.Spec.Driver != api_v1beta1.VolumeSnapshotter {
-		// get repository and update status
+	// if overall backup succeeded and repository status presents in backupOutput then update Repository status
+	if overallBackupSucceeded && backupOutput.RepositoryStats.Integrity != nil {
 		repository, err := o.StashClient.StashV1alpha1().Repositories(o.Namespace).Get(o.Repository, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
+
 		_, err = stash_util.UpdateRepositoryStatus(
 			o.StashClient.StashV1alpha1(),
 			repository,
 			func(in *api.RepositoryStatus) *api.RepositoryStatus {
-				// TODO: fix Restic Wrapper
 				in.Integrity = backupOutput.RepositoryStats.Integrity
 				in.Size = backupOutput.RepositoryStats.Size
 				in.SnapshotCount = backupOutput.RepositoryStats.SnapshotCount
@@ -150,30 +118,39 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 			},
 			apis.EnableStatusSubresource,
 		)
+		if err != nil {
+			return err
+		}
 	}
-	// if metrics enabled then send metrics
+	// if metrics enabled then send metrics to the Prometheus pushgateway
 	if o.Metrics.Enabled {
-		return backupOutput.HandleMetrics(o.Config, backupConfig, &o.Metrics, o.Error)
+		backupConfig, err := o.StashClient.StashV1beta1().BackupConfigurations(o.Namespace).Get(backupSession.Spec.BackupConfiguration.Name, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		return o.Metrics.SendBackupHostMetrics(o.Config, backupConfig, backupOutput)
 	}
 	return nil
 }
 
 func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.RestoreOutput) error {
+	if restoreOutput == nil {
+		return fmt.Errorf("invalid restore output. Restore output must not be nil")
+	}
 	// get restore session, update status and create event
 	restoreSession, err := o.StashClient.StashV1beta1().RestoreSessions(o.Namespace).Get(o.RestoreSession, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
-	// add or update entry for this host in RestoreSession status
+	// add or update entry for each host in RestoreSession status
 	for _, hostStats := range restoreOutput.HostRestoreStats {
-
 		_, err = stash_util_v1beta1.UpdateRestoreSessionStatusForHost(o.StashClient.StashV1beta1(), restoreSession, hostStats)
 		if err != nil {
 			return err
 		}
 
-		// create event for restore session
+		// create event to the RestoreSession
 		var eventType, eventReason, eventMessage string
 		if hostStats.Error != "" {
 			eventType = core.EventTypeWarning
@@ -186,7 +163,7 @@ func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.Resto
 		}
 		_, err = eventer.CreateEvent(
 			o.KubeClient,
-			eventer.EventSourcePostRestoreStatusUpdater,
+			eventer.EventSourceStatusUpdater,
 			restoreSession,
 			eventType,
 			eventReason,
@@ -196,9 +173,9 @@ func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.Resto
 			return err
 		}
 	}
-	// if metrics enabled then send metrics
+	// if metrics enabled then send metrics to the Prometheus pushgateway
 	if o.Metrics.Enabled {
-		return restoreOutput.HandleMetrics(o.Config, restoreSession, &o.Metrics, o.Error)
+		return o.Metrics.SendRestoreHostMetrics(o.Config, restoreSession, restoreOutput)
 	}
 	return nil
 }

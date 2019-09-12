@@ -34,39 +34,57 @@ const (
 	EventReasonCheckJobCreated               = "CheckJobCreated"
 	EventReasonFailedSetup                   = "SetupFailed"
 	EventReasonAdmissionWebhookNotActivated  = "AdmissionWebhookNotActivated"
-	EventReasonInvalidBackupConfiguration    = "InvalidBackupConfiguration"
 
-	EventReasonInvalidBackupSession    = "InvalidBackupSession"
-	EventReasonBackupSessionSucceeded  = "BackupSessionSucceeded"
-	EventReasonBackupSessionFailed     = "BackupSessionFailedToExecute"
-	EventReasonBackupSessionSkipped    = "BackupSessionSkipped"
-	EventReasonBackupSessionJobCreated = "BackupSessionJobCreated"
-	EventReasonHostBackupSucceded      = "SuccessfulHostBackup"
-	EventReasonHostBackupFailed        = "FailedHostBackup"
+	// ====================== Event Sources ===================================
+	EventSourceBackupConfigurationController = "BackupConfiguration Controller"
+	EventSourceBackupSessionController       = "BackupSession Controller"
+	EventSourceRestoreSessionController      = "RestoreSession Controller"
+	EventSourceWorkloadController            = "Workload Controller"
+	EventSourceBackupSidecar                 = "Backup Sidecar"
+	EventSourceRestoreInitContainer          = "Restore Init-Container"
+	EventSourceBackupTriggeringCronJob       = "Backup Triggering CronJob"
+	EventSourceStatusUpdater                 = "Status Updater"
+	EventSourceAutoBackupHandler             = "Auto Backup Handler"
 
-	EventReasonInvalidRestoreSession   = "InvalidRestoreSession"
-	EventReasonRestoreSessionSucceeded = "RestoreSessionSucceeded"
-	EventReasonRestoreSessionFailed    = "RestoreSessionFailedToExecute"
-	EventReasonRestorePhaseUnknown     = "RestoreSession Phase Unknown"
-	EventReasonRestoreJobCreated       = "RestoreJobCreated"
+	// ======================= Event Reasons ========================
+	// BackupConfiguration Events
+	EventReasonCronJobCreationFailed   = "CronJob Creation Failed"
+	EventReasonBackupJobCreationFailed = "Backup Job Creation Failed"
+	// BackupSession Events
+	EventReasonBackupSessionFailed    = "BackupSession Failed"
+	EventReasonBackupSessionSkipped   = "BackupSession Skipped"
+	EventReasonBackupSessionRunning   = "BackupSession Running"
+	EventReasonBackupSessionSucceeded = "BackupSession Succeeded"
+	EventReasonHostBackupSucceded     = "Host Backup Succeeded"
+	EventReasonHostBackupFailed       = "Host Backup Failed"
+	// RestoreSession Events
+	EventReasonRestoreJobCreated        = "Restore Job Created"
+	EventReasonRestoreSessionFailed     = "RestoreSession Failed"
+	EventReasonRestoreSessionSucceeded  = "RestoreSession Succeeded"
+	EventReasonRestorePhaseUnknown      = "RestoreSession Phase Unknown"
+	EventReasonRestoreJobCreationFailed = "Restore Job Creation Failed"
+	EventReasonHostRestoreSucceeded     = "Host Restore Succeeded"
+	EventReasonHostRestoreFailed        = "Host Restore Failed"
+	// Auto Backup Events
+	EventReasonAutoBackupResourcesCreationFailed    = "Auto Backup Resources Creation Failed"
+	EventReasonAutoBackupResourcesCreationSucceeded = "Auto Backup Resources Creation Succeeded"
+	EventReasonAutoBackupResourcesDeletionFailed    = "Auto Backup Resources Deletion Failed"
+	EventReasonAutoBackupResourcesDeletionSucceeded = "Auto Backup Resources Deletion Succeeded"
+	// Sidecar Events
+	EventReasonSidecarInjectionFailed               = "Sidecar Injection Failed"
+	EventReasonSidecarInjectionSucceeded            = "Sidecar Injection Succeeded"
+	EventReasonSidecarDeletionFailed                = "Sidecar Deletion Failed"
+	EventReasonSidecarDeletionSucceeded             = "Sidecar Deletion Succeeded"
+	EventReasonFailedToStartBackupSessionController = "Failed To Start BackupSession Controller"
+	EventReasonBackupSessionControllerStarted       = "BackupSession Controller Started"
+	// Init-container Events
+	EventReasonInitContainerInjectionFailed    = "Init-Container Injection Failed"
+	EventReasonInitContainerInjectionSucceeded = "Init-Container Injection Succeeded"
+	EventReasonInitContainerDeletionFailed     = "Init-Container Deletion Failed"
+	EventReasonInitContainerDeletionSucceeded  = "Init-Container Deletion Succeeded"
 
-	// RestoreSession events
-	EventReasonRestoreFailed        = "FailedRestoreSession"
-	EventReasonRestoreSucceded      = "SuccessfulRestoreSession"
-	EventReasonHostRestoreSucceeded = "SuccessfulHostRestore"
-	EventReasonHostRestoreFailed    = "FailedHostRestore"
-
-	// Event Sources
-	EventSourceBackupSessionController  = "BackupSession Controller"
-	EventSourceRestoreSessionController = "RestoreSession Controller"
-	EventSourceBackupSidecar            = "Backup Sidecar"
-	EventSourceRestoreInitContainer     = "Restore Init-Container"
-	EventSourceBackupTriggeringCronJob  = "Backup Triggering CronJob"
-	EventSourcePostBackupStatusUpdater  = "Post Backup Status Updater"
-	EventSourcePostRestoreStatusUpdater = "Post Restore Status Updater"
-
-	// Event Reasons
-	EventReasonBackupSkipped = "Backup Skipped"
+	EventReasonBackupSkipped                      = "Backup Skipped"
+	EventReasonWorkloadControllerTriggeringFailed = "Failed To Trigger Workload Controller"
 )
 
 func NewEventRecorder(client kubernetes.Interface, component string) record.EventRecorder {
