@@ -417,6 +417,20 @@ func WaitUntilDeploymentDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta)
 	})
 }
 
+func WaitUntilPodDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
+
+	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
+		if _, err := kc.CoreV1().Pods(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
+			if kerr.IsNotFound(err) {
+				return true, nil
+			} else {
+				return true, err
+			}
+		}
+		return false, nil
+	})
+}
+
 func WaitUntilDaemonSetDeleted(kc kubernetes.Interface, meta metav1.ObjectMeta) error {
 
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {

@@ -8,7 +8,7 @@ import (
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
-func (f *Invocation) GetBackupBlueprint(secret string) v1beta1.BackupBlueprint {
+func (f *Invocation) BackupBlueprint(secret string) v1beta1.BackupBlueprint {
 
 	return v1beta1.BackupBlueprint{
 		ObjectMeta: metav1.ObjectMeta{
@@ -40,4 +40,8 @@ func (f *Framework) CreateBackupBlueprint(backupBlueprint v1beta1.BackupBlueprin
 
 func (f *Invocation) DeleteBackupBlueprint(name string) error {
 	return f.StashClient.StashV1beta1().BackupBlueprints().Delete(name, &metav1.DeleteOptions{})
+}
+
+func (f *Framework) GetBackupBlueprint(name string) (*v1beta1.BackupBlueprint, error) {
+	return f.StashClient.StashV1beta1().BackupBlueprints().Get(name, metav1.GetOptions{})
 }
