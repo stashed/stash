@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	ExecStash      = "/bin/stash"
+	ExecStash      = "/stash"
 	scratchDirName = "scratch"
 	secretDirName  = "secret"
 )
@@ -157,6 +157,10 @@ func (r *REST) execOnSidecar(repository *stash.Repository, cmd string, snapshotI
 		bc, err := util.FindBackupConfigForRepository(r.stashClient, *repository)
 		if err != nil {
 			return nil, err
+		}
+		if bc == nil {
+			return nil, fmt.Errorf("can't list snapshots for repository %s/%s."+
+				" Reason: Reposiotry uses local backend and no BackupConfiguration exists for it.", repository.Namespace, repository.Name)
 		}
 		// only allow sidecar model
 		if bc.Spec.Target == nil || util.BackupModel(bc.Spec.Target.Ref.Kind) == util.ModelCronJob {

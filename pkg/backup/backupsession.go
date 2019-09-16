@@ -426,7 +426,7 @@ func (c *BackupSessionController) handleBackupSuccess(backupSessionName string, 
 
 func (c *BackupSessionController) handleBackupFailure(backupSessionName string, backupErr error) error {
 	// write log
-	log.Warningf("Failed to take backup for BackupSession %s. Reason: ", backupSessionName, backupErr)
+	log.Warningf("Failed to take backup for BackupSession %s. Reason: %v", backupSessionName, backupErr)
 
 	// add/update entry into BackupSession status for this host
 	backupConfig, err := c.StashClient.StashV1beta1().BackupConfigurations(c.Namespace).Get(c.BackupConfigurationName, metav1.GetOptions{})
