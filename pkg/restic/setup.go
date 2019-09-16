@@ -94,7 +94,7 @@ func (w *ResticWrapper) setupEnv() error {
 	switch w.config.Provider {
 
 	case storage.ProviderLocal:
-		r := w.config.Path
+		r := w.config.Bucket
 		if err := os.MkdirAll(r, 0755); err != nil {
 			return err
 		}
