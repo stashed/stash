@@ -118,6 +118,8 @@ func (c completedConfig) New() (*StashServer, error) {
 			ctrl.NewRepositoryWebhook(),
 			// ctrl.NewBackupSessionWebhook(),
 			ctrl.NewRestoreSessionWebhook(),
+			ctrl.NewBackupBlueprintWebhook(),
+			ctrl.NewBackupConfigurationWebhook(),
 		)
 	}
 	if c.ExtraConfig.EnableMutatingWebhook {

@@ -4,6 +4,12 @@ import (
 	"fmt"
 	"strings"
 
+	"stash.appscode.dev/stash/apis"
+
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"kmodules.xyz/webhook-runtime/admission"
+
 	"github.com/appscode/go/log"
 	"github.com/golang/glog"
 	batch_v1beta1 "k8s.io/api/batch/v1beta1"
@@ -15,8 +21,10 @@ import (
 	batch_util "kmodules.xyz/client-go/batch/v1beta1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/tools/queue"
+	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"
+	webhook "kmodules.xyz/webhook-runtime/admission/v1beta1/generic"
 	workload_api "kmodules.xyz/webhook-runtime/apis/workload/v1"
-	"stash.appscode.dev/stash/apis"
+	"stash.appscode.dev/stash/apis/stash"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
 	v1beta1_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
@@ -27,6 +35,32 @@ import (
 )
 
 // TODO: Add validator that will reject to create BackupConfiguration if any Restic exist for target workload
+
+func (c *StashController) NewBackupConfigurationWebhook() hooks.AdmissionHook {
+	return webhook.NewGenericWebhook(
+		schema.GroupVersionResource{
+			Group:    "admission.stash.appscode.com",
+			Version:  "v1beta1",
+			Resource: "backupconfigurationvalidators",
+		},
+		"backupconfigurationvalidator",
+		[]string{stash.GroupName},
+		api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindBackupConfiguration),
+		nil,
+		&admission.ResourceHandlerFuncs{
+			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
+				backupConfig := obj.(*api_v1beta1.BackupConfiguration)
+				resticList, err := c.stashClient.StashV1alpha1().Restics(backupConfig.Namespace).List(metav1.ListOptions{})
+				if err != nil {
+					if kerr.IsNotFound(err) {
+						return nil, nil
+					}
+				}
+				return nil, backupConfig.IsValid(c.kubeClient, resticList)
+			},
+		},
+	)
+}
 
 func (c *StashController) initBackupConfigurationWatcher() {
 	c.bcInformer = c.stashInformerFactory.Stash().V1beta1().BackupConfigurations().Informer()
