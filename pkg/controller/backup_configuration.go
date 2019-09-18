@@ -49,14 +49,7 @@ func (c *StashController) NewBackupConfigurationWebhook() hooks.AdmissionHook {
 		nil,
 		&admission.ResourceHandlerFuncs{
 			CreateFunc: func(obj runtime.Object) (runtime.Object, error) {
-				backupConfig := obj.(*api_v1beta1.BackupConfiguration)
-				resticList, err := c.stashClient.StashV1alpha1().Restics(backupConfig.Namespace).List(metav1.ListOptions{})
-				if err != nil {
-					if kerr.IsNotFound(err) {
-						return nil, nil
-					}
-				}
-				return nil, backupConfig.IsValid(c.kubeClient, resticList)
+				return nil, obj.(*api_v1beta1.BackupConfiguration).IsValid()
 			},
 		},
 	)

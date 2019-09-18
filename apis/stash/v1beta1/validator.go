@@ -2,13 +2,6 @@ package v1beta1
 
 import (
 	"fmt"
-
-	kerr "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/kubernetes"
-	"stash.appscode.dev/stash/apis"
-	"stash.appscode.dev/stash/apis/stash/v1alpha1"
 )
 
 // TODO: complete
@@ -81,94 +74,27 @@ func (b BackupBlueprint) IsValid() error {
 	// We must ensure the following:
 	// 1. Spec.schedule
 	// 2. Spec.Backend.StorageSecretName
-	// 3.
 	if b.Spec.Schedule == "" {
 		return fmt.Errorf("\n\t" +
 			"Error:  Invalid BackupBlueprint specification.\n\t" +
-			"Reason: BackupConfiguration Schedule is not specified\n\t" +
-			"Hints: Schedule is a cron expression like \"* * * * *\"")
+			"Reason: Schedule hasn't been specified\n\t" +
+			"Hints: Provide a cron expression(i.e. \"* */5 * * *\") in 'spec.schedule' filed.")
 	}
 	if b.Spec.Backend.StorageSecretName == "" {
 		return fmt.Errorf("\n\t" +
 			"Error:  Invalid BackupBlueprint specification.\n\t" +
-			"Reason: Repository secret is not specified\n\t")
+			"Reason: Storage secret is not specified\n\t")
 	}
 	return nil
 
 }
 
-func (b BackupConfiguration) IsValid(kubeClient kubernetes.Interface, list *v1alpha1.ResticList) error {
+func (b BackupConfiguration) IsValid() error {
 	if b.Spec.Schedule == "" {
 		return fmt.Errorf("\n\t" +
 			"Error:  Invalid BackupBlueprint specification.\n\t" +
-			"Reason: BackupConfiguration Schedule is not specified\n\t" +
-			"Hints: Schedule is a cron expression like \"* * * * *\"")
+			"Reason: Schedule hasn't been specified\n\t" +
+			"Hints: Provide a cron expression(i.e. \"* */5 * * *\") in 'spec.schedule' filed.")
 	}
-	// If the target(workload) is already invoked by Restic then
-	// BackupConfiguration will not be created.
-	fmt.Println("hello")
-	if b.Spec.Target != nil {
-		var label map[string]string
-		switch b.Spec.Target.Ref.Kind {
-		case apis.KindDeployment:
-			workload, err := kubeClient.AppsV1().Deployments(b.Namespace).Get(b.Spec.Target.Ref.Name, metav1.GetOptions{})
-			if err != nil {
-				if kerr.IsNotFound(err) {
-					return nil
-				} else {
-					return err
-				}
-			}
-			label = workload.Labels
-		case apis.KindStatefulSet:
-			workload, err := kubeClient.AppsV1().StatefulSets(b.Namespace).Get(b.Spec.Target.Ref.Name, metav1.GetOptions{})
-			if err != nil {
-				if kerr.IsNotFound(err) {
-					return nil
-				} else {
-					return err
-				}
-			}
-			label = workload.Labels
-		case apis.KindDaemonSet:
-			workload, err := kubeClient.AppsV1().DaemonSets(b.Namespace).Get(b.Spec.Target.Ref.Name, metav1.GetOptions{})
-			if err != nil {
-				if kerr.IsNotFound(err) {
-					return nil
-				} else {
-					return err
-				}
-			}
-			label = workload.Labels
-		case apis.KindReplicationController:
-			workload, err := kubeClient.CoreV1().ReplicationControllers(b.Namespace).Get(b.Spec.Target.Ref.Name, metav1.GetOptions{})
-			if err != nil {
-				if kerr.IsNotFound(err) {
-					return nil
-				}
-			}
-			label = workload.Labels
-		case apis.KindReplicaSet:
-			workload, err := kubeClient.AppsV1().ReplicaSets(b.Namespace).Get(b.Spec.Target.Ref.Name, metav1.GetOptions{})
-			if err != nil {
-				if kerr.IsNotFound(err) {
-					return nil
-				}
-			}
-			label = workload.Labels
-		}
-		for _, restic := range list.Items {
-			selector, err := metav1.LabelSelectorAsSelector(&restic.Spec.Selector)
-			if err != nil {
-				return nil
-			}
-			if selector.Matches(labels.Set(label)) {
-				return fmt.Errorf("\n\t" +
-					"Error:  Workload is not available for BackupConfiguration to backup\n\t" +
-					"Reason: Workload already invoked by Restic\n\t")
-			}
-		}
-	}
-
 	return nil
 }
