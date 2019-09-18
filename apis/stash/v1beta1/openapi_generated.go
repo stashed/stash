@@ -13574,11 +13574,17 @@ func schema_stash_apis_stash_v1beta1_BackupBlueprintSpec(ref common.ReferenceCal
 							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1beta1.EmptyDirSettings"),
 						},
 					},
+					"interimVolume": {
+						SchemaProps: spec.SchemaProps{
+							Description: "InterimVolume specifies a template for a volume to hold targeted data temporarily before uploading to backend or inserting into target. It is only usable for job model. Don't specify it in sidecar model.",
+							Ref:         ref("k8s.io/api/core/v1.PersistentVolumeClaim"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/objectstore-api/api/v1.Backend", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/stash/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/stash/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/stash/apis/stash/v1beta1.TaskRef"},
+			"k8s.io/api/core/v1.PersistentVolumeClaim", "kmodules.xyz/objectstore-api/api/v1.Backend", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/stash/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/stash/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/stash/apis/stash/v1beta1.TaskRef"},
 	}
 }
 
@@ -13727,11 +13733,17 @@ func schema_stash_apis_stash_v1beta1_BackupConfigurationSpec(ref common.Referenc
 							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1beta1.EmptyDirSettings"),
 						},
 					},
+					"interimVolume": {
+						SchemaProps: spec.SchemaProps{
+							Description: "InterimVolume specifies a template for a volume to hold targeted data temporarily before uploading to backend or inserting into target. It is only usable for job model. Don't specify it in sidecar model.",
+							Ref:         ref("k8s.io/api/core/v1.PersistentVolumeClaim"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.LocalObjectReference", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/stash/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupTarget", "stash.appscode.dev/stash/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/stash/apis/stash/v1beta1.TaskRef"},
+			"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaim", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/stash/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupTarget", "stash.appscode.dev/stash/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/stash/apis/stash/v1beta1.TaskRef"},
 	}
 }
 
@@ -14538,11 +14550,17 @@ func schema_stash_apis_stash_v1beta1_RestoreSessionSpec(ref common.ReferenceCall
 							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1beta1.EmptyDirSettings"),
 						},
 					},
+					"interimVolume": {
+						SchemaProps: spec.SchemaProps{
+							Description: "InterimVolume specifies a template for a volume to hold targeted data temporarily before uploading to backend or inserting into target. It is only usable for job model. Don't specify it in sidecar model.",
+							Ref:         ref("k8s.io/api/core/v1.PersistentVolumeClaim"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.LocalObjectReference", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/stash/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/stash/apis/stash/v1beta1.RestoreTarget", "stash.appscode.dev/stash/apis/stash/v1beta1.Rule", "stash.appscode.dev/stash/apis/stash/v1beta1.TaskRef"},
+			"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaim", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/stash/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/stash/apis/stash/v1beta1.RestoreTarget", "stash.appscode.dev/stash/apis/stash/v1beta1.Rule", "stash.appscode.dev/stash/apis/stash/v1beta1.TaskRef"},
 	}
 }
 
