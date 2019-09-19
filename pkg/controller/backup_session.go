@@ -251,7 +251,7 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 	}
 
 	// upsert InterimVolume to hold the backup/restored data temporarily
-	backupSessionRef, err := reference.GetReference(stash_scheme.Scheme, backupConfig)
+	backupSessionRef, err := reference.GetReference(stash_scheme.Scheme, backupSession)
 	if err != nil {
 		return err
 	}
@@ -264,16 +264,9 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, jobMeta, func(in *batchv1.Job) *batchv1.Job {
 		// set BackupSession as owner of this Job
 		core_util.EnsureOwnerReference(&in.ObjectMeta, backupSessionRef)
-		if in.Labels == nil {
-			in.Labels = make(map[string]string)
-		}
-		// backup job is created by resolving task and function. we should not delete it when it goes to completed state.
-		// user might need to know what was the final resolved job specification for debugging purpose.
-		in.Labels[apis.KeyDeleteJobOnCompletion] = "false"
 
 		in.Spec.Template.Spec = podSpec
 		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-
 		return in
 	})
 
@@ -332,9 +325,6 @@ func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.B
 		core_util.EnsureOwnerReference(&in.ObjectMeta, backupConfigRef)
 
 		in.Labels = offshootLabels
-		// ensure that job gets deleted on completion
-		in.Labels[apis.KeyDeleteJobOnCompletion] = "true"
-
 		in.Spec.Template = *jobTemplate
 		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 		return in

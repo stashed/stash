@@ -28,6 +28,14 @@ func (c *StashController) inputsForBackupConfig(backupConfig api.BackupConfigura
 	// always enable cache if nothing specified
 	inputs[apis.EnableCache] = strconv.FormatBool(!backupConfig.Spec.TempDir.DisableCaching)
 
+	// interim data volume input
+	if backupConfig.Spec.InterimVolumeTemplate != nil {
+		inputs[apis.InterimDataDir] = apis.StashInterimDataDir
+	} else {
+		// if interim volume is not specified then use temp dir to store data temporarily
+		inputs[apis.InterimDataDir] = fmt.Sprintf("%s/stash/interim-data", util.TmpDirMountPath)
+	}
+
 	// add PushgatewayURL as input
 	metricInputs := c.inputForMetrics(backupConfig.Name)
 	inputs = core_util.UpsertMap(inputs, metricInputs)
@@ -55,6 +63,14 @@ func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSess
 		replicas = *restoreSession.Spec.Target.Replicas
 	}
 	inputs[apis.TargetAppReplicas] = fmt.Sprintf("%d", replicas)
+
+	// interim data volume input
+	if restoreSession.Spec.InterimVolumeTemplate != nil {
+		inputs[apis.InterimDataDir] = apis.StashInterimDataDir
+	} else {
+		// if interim volume is not specified then use temp dir to store data temporarily
+		inputs[apis.InterimDataDir] = fmt.Sprintf("%s/stash/interim-data", util.TmpDirMountPath)
+	}
 
 	// add PushgatewayURL as input
 	metricInputs := c.inputForMetrics(restoreSession.Name)

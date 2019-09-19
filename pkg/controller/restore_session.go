@@ -365,12 +365,6 @@ func (c *StashController) createRestoreJob(jobTemplate *core.PodTemplateSpec, me
 		// set RestoreSession as owner of this Job
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 
-		if in.Labels == nil {
-			in.Labels = make(map[string]string, 0)
-		}
-		// ensure that job gets deleted when complete
-		in.Labels[apis.KeyDeleteJobOnCompletion] = "false"
-
 		in.Spec.Template = *jobTemplate
 		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 		return in

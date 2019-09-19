@@ -428,7 +428,7 @@ func UpsertInterimVolume(kubeClient kubernetes.Interface, podSpec core.PodSpec, 
 	createdPVC, _, err := core_util.CreateOrPatchPVC(kubeClient, pvcMeta, func(in *core.PersistentVolumeClaim) *core.PersistentVolumeClaim {
 		// Set BackupConfiguration/RestoreSession as owner of the PVC so that it get deleted when the respective
 		// BackupConfiguration/RestoreSession is deleted.
-		core_util.EnsureOwnerReference(&pvcMeta, ref)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 		in.Spec = interimVolumeTemplate.Spec
 		return in
 	})
@@ -439,7 +439,7 @@ func UpsertInterimVolume(kubeClient kubernetes.Interface, podSpec core.PodSpec, 
 	// Attach the PVC to the pod template
 	volumes := []core.Volume{
 		{
-			Name: createdPVC.Name,
+			Name: apis.StashInterimVolume,
 			VolumeSource: core.VolumeSource{
 				PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
 					ClaimName: createdPVC.Name,
@@ -449,7 +449,7 @@ func UpsertInterimVolume(kubeClient kubernetes.Interface, podSpec core.PodSpec, 
 	}
 	volumeMounts := []core.VolumeMount{
 		{
-			Name:      createdPVC.Name,
+			Name:      apis.StashInterimVolume,
 			MountPath: apis.StashInterimVolumeMountPath,
 		},
 	}

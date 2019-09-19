@@ -14,6 +14,7 @@ const (
 
 	Hostname       = "HOSTNAME"
 	SourceHostname = "SOURCE_HOSTNAME"
+	InterimDataDir = "INTERIM_DATA_DIR"
 
 	TargetName       = "TARGET_NAME"
 	TargetAPIVersion = "TARGET_API_VERSION"
@@ -59,6 +60,7 @@ const (
 
 	StashDefaultVolume          = "stash-volume"
 	StashDefaultMountPath       = "/stash-data"
-	StashInterimVolume          = "interim-volume"
-	StashInterimVolumeMountPath = "/stash/interim-data"
+	StashInterimVolume          = "stash-interim-volume"
+	StashInterimVolumeMountPath = "/stash/interim-volume"
+	StashInterimDataDir         = "/stash/interim-volume/data"
 )
