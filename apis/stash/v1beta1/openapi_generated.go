@@ -14564,9 +14564,9 @@ func schema_stash_apis_stash_v1beta1_RestoreSessionSpec(ref common.ReferenceCall
 							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1beta1.EmptyDirSettings"),
 						},
 					},
-					"interimVolume": {
+					"interimVolumeTemplate": {
 						SchemaProps: spec.SchemaProps{
-							Description: "InterimVolume specifies a template for a volume to hold targeted data temporarily before uploading to backend or inserting into target. It is only usable for job model. Don't specify it in sidecar model.",
+							Description: "InterimVolumeTemplate specifies a template for a volume to hold targeted data temporarily before uploading to backend or inserting into target. It is only usable for job model. Don't specify it in sidecar model.",
 							Ref:         ref("k8s.io/api/core/v1.PersistentVolumeClaim"),
 						},
 					},

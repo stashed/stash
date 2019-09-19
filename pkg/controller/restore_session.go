@@ -282,6 +282,11 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 	// If volumeClaimTemplate is not specified then we don't need any further processing. Just, create the job
 	if restoreSession.Spec.Target == nil ||
 		(restoreSession.Spec.Target != nil && len(restoreSession.Spec.Target.VolumeClaimTemplates) == 0) {
+		// upsert InterimVolume to hold the backup/restored data temporarily
+		jobTemplate.Spec, err = util.UpsertInterimVolume(c.kubeClient, jobTemplate.Spec, restoreSession.Spec.InterimVolumeTemplate, ref)
+		if err != nil {
+			return err
+		}
 		return c.createRestoreJob(jobTemplate, jobMeta, ref, serviceAccountName)
 	}
 

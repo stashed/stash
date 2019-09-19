@@ -57,6 +57,8 @@ const (
 	PushgatewayURL    = "PROMETHEUS_PUSHGATEWAY_URL"
 	PrometheusJobName = "PROMETHEUS_JOB_NAME"
 
-	StashDefaultVolume    = "stash-volume"
-	StashDefaultMountPath = "/stash-data"
+	StashDefaultVolume          = "stash-volume"
+	StashDefaultMountPath       = "/stash-data"
+	StashInterimVolume          = "interim-volume"
+	StashInterimVolumeMountPath = "/stash/interim-data"
 )

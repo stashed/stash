@@ -678,8 +678,8 @@ func (in *RestoreSessionSpec) DeepCopyInto(out *RestoreSessionSpec) {
 	}
 	in.RuntimeSettings.DeepCopyInto(&out.RuntimeSettings)
 	in.TempDir.DeepCopyInto(&out.TempDir)
-	if in.InterimVolume != nil {
-		in, out := &in.InterimVolume, &out.InterimVolume
+	if in.InterimVolumeTemplate != nil {
+		in, out := &in.InterimVolumeTemplate, &out.InterimVolumeTemplate
 		*out = new(v1.PersistentVolumeClaim)
 		(*in).DeepCopyInto(*out)
 	}
