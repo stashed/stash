@@ -3,860 +3,1246 @@ package e2e_test
 import (
 	"fmt"
 
-	"stash.appscode.dev/stash/apis/stash/v1alpha1"
-
-	v1 "kmodules.xyz/objectstore-api/api/v1"
-
-	"stash.appscode.dev/stash/test/e2e/matcher"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	apps_util "kmodules.xyz/client-go/apps/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
+	v1 "kmodules.xyz/objectstore-api/api/v1"
 	"stash.appscode.dev/stash/apis"
+	"stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/util"
 	"stash.appscode.dev/stash/test/e2e/framework"
 )
 
-var (
-	backupBlueprint v1beta1.BackupBlueprint
-)
-
-var _ = Describe("PVC", func() {
-	BeforeEach(func() {
-		f = root.Invoke()
-
-		By("Ensure function")
-		err = f.GetFunction()
-		Expect(err).NotTo(HaveOccurred())
-		By("Ensure Task")
-		err = f.GetTask()
-		Expect(err).NotTo(HaveOccurred())
-	})
-	JustBeforeEach(func() {
-		cred = f.SecretForGCSBackend()
-		if missing, _ := BeZero().Match(cred); missing {
-			Skip("Missing repository credential")
-		}
-		backupBlueprint = f.BackupBlueprint(cred.Name)
-	})
-	AfterEach(func() {
-		err = f.DeleteSecret(cred.ObjectMeta)
-		Expect(err).NotTo(HaveOccurred())
-		err = framework.WaitUntilSecretDeleted(f.KubeClient, cred.ObjectMeta)
-		Expect(err).NotTo(HaveOccurred())
-	})
+var _ = Describe("Auto-Backup", func() {
 	var (
-		testPVCAutoBackup = func() {
-			By(fmt.Sprintf("Creating %s/%s storage Secret", cred.Namespace, cred.Name))
-			err = f.CreateSecret(cred)
-			Expect(err).NotTo(HaveOccurred())
-
-			By(fmt.Sprintf("Creating %s/%s BackupBlueprint", backupBlueprint.Namespace, backupBlueprint.Name))
-			_, err = f.CreateBackupBlueprint(backupBlueprint)
-			Expect(err).NotTo(HaveOccurred())
-
-			By(fmt.Sprintf("Creating New %s/%s PVC", pvc.Namespace, pvc.Name))
-			err = f.CreatePersistentVolumeClaim(pvc)
-			Expect(err).NotTo(HaveOccurred())
-
-			By(fmt.Sprintf("Creating %s/%s Pod", pod.Namespace, pod.Name))
-			err = f.CreatePod(pod)
-			Expect(err).NotTo(HaveOccurred())
-			err = core_util.WaitUntilPodRunning(f.KubeClient, pod.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Creating sample data inside Pod")
-			err = f.CreateSampleDataInsideWorkload(pod.ObjectMeta, apis.KindPersistentVolumeClaim)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Reading sample data from /source/data directory inside pod")
-			sampleData, err = f.ReadSampleDataFromFromWorkload(pod.ObjectMeta, apis.KindPersistentVolumeClaim)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(sampleData).To(Not(BeEmpty()))
-
-			By(fmt.Sprintf("Adding annotations to the %s/%s PVC to run auto backup", pvc.Namespace, pvc.Name))
-			err = f.AddAnnotationsToTarget(backupBlueprint.Name, pvc.ObjectMeta, apis.KindPersistentVolumeClaim)
-			Expect(err).NotTo(HaveOccurred())
-
-			By(fmt.Sprintf("validating updated %s/%s PVC has new annotation", pvc.Namespace, pvc.Name))
-			f.EventuallyAnnotationsUpdated(backupBlueprint.Name, pvc.ObjectMeta, apis.KindPersistentVolumeClaim).Should(BeTrue())
-
-			By("Waiting for created Repository")
-			f.EventuallyRepositoryCreated(pvc.ObjectMeta).Should(BeTrue())
-			repo, err = f.GetRepository(pvc.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Waiting for created BackupConfiguration")
-			f.EventuallyBackupConfigurationCreated(pvc.ObjectMeta).Should(BeTrue())
-			backupCfg, err = f.GetBackupConfiguration(pvc.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Waiting for BackupSession")
-			f.EventuallyBackupSessionCreated(pvc.ObjectMeta).Should(BeTrue())
-			backupSession, err := f.GetBackupSession(pvc.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Check for succeeded BackupSession")
-			f.EventuallyBackupSessionPhase(backupSession.ObjectMeta).Should(Equal(v1beta1.BackupSessionSucceeded))
-
-			By("Check for repository status updated")
-			f.EventuallyRepository(&pvc).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
-		}
+		cred core.Secret
+		f    *framework.Invocation
 	)
-	Context("Should success AutoBackup for PVC", func() {
-		BeforeEach(func() {
-			pvc = f.GetPersistentVolumeClaim()
-			pod = f.Pod(pvc.Name)
-		})
-		JustBeforeEach(func() {
-			backupBlueprint.Spec.Task = v1beta1.TaskRef{
-				Name: framework.TaskPVCBackup,
+
+	var _ = Describe("Deployment", func() {
+		var (
+			pvc        *core.PersistentVolumeClaim
+			deployment apps.Deployment
+
+			testDeploymentAutoBackupSucceeded = func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s ", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating BackupBlueprint: %s ", f.BackupBlueprint.Name))
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating Deployment: %s/%s", deployment.Namespace, deployment.Name))
+				_, err = f.CreateDeployment(deployment)
+				err = util.WaitUntilDeploymentReady(f.KubeClient, deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Create and Ensure sample data inside running workload")
+				err = f.CreateAndEnsureSampleDataInsideWorkload(deployment.ObjectMeta, apis.KindDeployment)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Adding auto-backup specific annotations to the Deployment: %s/%s", deployment.Namespace, deployment.Name))
+				err = f.AddAutoBackupAnnotationsToTarget(f.BackupBlueprint.Name, deployment.ObjectMeta, apis.KindDeployment)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that the auto-backup annotations has been added successfully")
+				f.EventuallyAutoBackupAnnotationsFound(f.BackupBlueprint.Name, deployment.ObjectMeta, apis.KindDeployment).Should(BeTrue())
+
+				By("Waiting for Repository")
+				f.EventuallyRepositoryCreated(f.Namespace()).Should(BeTrue())
+				f.Repository, err = f.GetRepository(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupConfiguration")
+				f.EventuallyBackupConfigurationCreated(f.Namespace()).Should(BeTrue())
+				f.BackupConfig, err = f.GetBackupConfiguration(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupSession")
+				f.EventuallyBackupSessionCreated(f.Namespace()).Should(BeTrue())
+				f.BackupSession, err = f.GetBackupSession(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupSession to be succeeded")
+				f.EventuallyBackupSessionPhase(f.BackupSession.ObjectMeta).Should(Equal(v1beta1.BackupSessionSucceeded))
+
+				By("Check for repository status to be updated")
+				f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 			}
-		})
-		AfterEach(func() {
-			err = f.DeletePod(pod.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilPodDeleted(f.KubeClient, pod.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			err := f.DeletePersistentVolumeClaim(pvc.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = f.DeleteBackupBlueprint(backupBlueprint.Name)
-			err = framework.WaitUntilBackupBlueprintDeleted(f.StashClient, backupBlueprint.Name)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = f.DeleteBackupConfiguration(backupCfg.ObjectMeta)
-			err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, backupCfg.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = f.DeleteRepository(repo.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-		})
-		It("Run AutoBackup for new PVC", func() {
-			By("Checking AutoBackup is succeeded")
-			testPVCAutoBackup()
-
-		})
-	})
-	Context("Should fail AutoBackup for Missing BackupBlueprint credential", func() {
-
-	})
-	Context("Should fail AutoBackup for Missing Annotation in PVC", func() {
+		)
 		BeforeEach(func() {
-			pvc = f.GetPersistentVolumeClaim()
-			pod = f.Pod(pvc.Name)
+			f = root.Invoke()
 		})
 		JustBeforeEach(func() {
-			backupBlueprint.Spec.Task = v1beta1.TaskRef{
-				Name: framework.TaskPVCBackup,
+			cred = f.SecretForGCSBackend()
+			if missing, _ := BeZero().Match(cred); missing {
+				Skip("Missing repository credential")
 			}
+			f.BackupBlueprint = f.BackupBlueprintObj(cred.Name)
 		})
 		AfterEach(func() {
-			err = f.DeleteBackupBlueprint(backupBlueprint.Name)
-			err = framework.WaitUntilBackupBlueprintDeleted(f.StashClient, backupBlueprint.Name)
+			err := f.DeleteSecret(cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = framework.WaitUntilSecretDeleted(f.KubeClient, cred.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 		})
-		It("Should fail AutoBackup for missing/giving wrong BackupBlueprint name as annotations in PVC", func() {
-			By(fmt.Sprintf("Creating %s/%s storage Secret", cred.Namespace, cred.Name))
-			err = f.CreateSecret(cred)
-			Expect(err).NotTo(HaveOccurred())
-
-			By(fmt.Sprintf("Creating %s/%s BackupBlueprint", backupBlueprint.Namespace, backupBlueprint.Name))
-			_, err = f.CreateBackupBlueprint(backupBlueprint)
-			Expect(err).NotTo(HaveOccurred())
-
-			By(fmt.Sprintf("Creating New %s/%s PVC", pvc.Namespace, pvc.Name))
-			err = f.CreatePersistentVolumeClaim(pvc)
-			Expect(err).NotTo(HaveOccurred())
-
-			By(fmt.Sprintf("Creating %s/%s Pod", pod.Namespace, pod.Name))
-			err = f.CreatePod(pod)
-			Expect(err).NotTo(HaveOccurred())
-			err = core_util.WaitUntilPodRunning(f.KubeClient, pod.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Creating sample data inside Pod")
-			err = f.CreateSampleDataInsideWorkload(pod.ObjectMeta, apis.KindPersistentVolumeClaim)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Reading sample data from /source/data directory inside pod")
-			sampleData, err = f.ReadSampleDataFromFromWorkload(pod.ObjectMeta, apis.KindPersistentVolumeClaim)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(sampleData).To(Not(BeEmpty()))
-
-			By(fmt.Sprintf("Adding Wrong(BackupBlueprint name) annotations to the %s/%s PVC to run AutoBackup", pvc.Namespace, pvc.Name))
-			wrongBackupBlueprintName := "backup-blueprint"
-			pvc, _, err = core_util.PatchPVC(f.KubeClient, pvc, func(in *core.PersistentVolumeClaim) *core.PersistentVolumeClaim {
-				in.SetAnnotations(map[string]string{
-					v1beta1.KeyBackupBlueprint: wrongBackupBlueprintName,
-				})
-				return in
+		Context("Success event: ", func() {
+			BeforeEach(func() {
+				pvc = f.GetPersistentVolumeClaim()
+				err := f.CreatePersistentVolumeClaim(pvc)
+				Expect(err).NotTo(HaveOccurred())
+				deployment = f.Deployment(pvc.Name)
 			})
-			Expect(err).NotTo(HaveOccurred())
+			AfterEach(func() {
+				err := f.DeleteDeployment(deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilDeploymentDeleted(f.KubeClient, deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeleteBackupBlueprint(f.BackupBlueprint.Name)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilBackupBlueprintDeleted(f.StashClient, f.BackupBlueprint.Name)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeleteBackupConfiguration(f.BackupConfig.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, f.BackupConfig.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeleteRepository(f.Repository.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilRepositoryDeleted(f.StashClient, f.Repository.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeletePersistentVolumeClaim(pvc.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
-			By("Should not get respective BackupBlueprint because of adding wrong annotations in PVC")
-			annotations := pvc.GetAnnotations()
-			fmt.Println(annotations)
-			_, err = f.GetBackupBlueprint(annotations[v1beta1.KeyBackupBlueprint])
-			Expect(err).To(HaveOccurred())
-
-			err = f.DeletePod(pod.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilPodDeleted(f.KubeClient, pod.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			err := f.DeletePersistentVolumeClaim(pvc.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-		})
-	})
-})
-
-var _ = Describe("Deployment", func() {
-	BeforeEach(func() {
-		f = root.Invoke()
-	})
-	JustBeforeEach(func() {
-		cred = f.SecretForGCSBackend()
-		if missing, _ := BeZero().Match(cred); missing {
-			Skip("Missing repository credential")
-		}
-		backupBlueprint = f.BackupBlueprint(cred.Name)
-	})
-	AfterEach(func() {
-		err = f.DeleteSecret(cred.ObjectMeta)
-		Expect(err).NotTo(HaveOccurred())
-		err = framework.WaitUntilSecretDeleted(f.KubeClient, cred.ObjectMeta)
-		Expect(err).NotTo(HaveOccurred())
-	})
-	var (
-		AutoBackupSucceededTest = func() {
-			By(fmt.Sprintf("Creating %s/%s storage Secret", cred.Namespace, cred.Name))
-			err = f.CreateSecret(cred)
-			Expect(err).NotTo(HaveOccurred())
-
-			By(fmt.Sprintf("Creating %s/%s BackupBlueprint", backupBlueprint.Namespace, backupBlueprint.Name))
-			_, err = f.CreateBackupBlueprint(backupBlueprint)
-			Expect(err).NotTo(HaveOccurred())
-
-			By(fmt.Sprintf("Creating New %s/%s Deployment", deployment.Namespace, deployment.Name))
-			_, err = f.CreateDeployment(deployment)
-			err = util.WaitUntilDeploymentReady(f.KubeClient, deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Creating sample data inside workload")
-			err = f.CreateSampleDataInsideWorkload(deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Reading sample data from /source/data mountPath inside workload")
-			sampleData, err = f.ReadSampleDataFromFromWorkload(deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(sampleData).To(Not(BeEmpty()))
-
-			By(fmt.Sprintf("Adding annotations to the %s/%s Deployment to run auto backup", deployment.Namespace, deployment.Name))
-			err = f.AddAnnotationsToTarget(backupBlueprint.Name, deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-
-			By(fmt.Sprintf("validating updated %s/%s Deployment has new annotation", deployment.Namespace, deployment.Name))
-			f.EventuallyAnnotationsUpdated(backupBlueprint.Name, deployment.ObjectMeta, apis.KindDeployment).Should(BeTrue())
-
-			By("Waiting for created Repository")
-			f.EventuallyRepositoryCreated(deployment.ObjectMeta).Should(BeTrue())
-			repo, err = f.GetRepository(deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Waiting for created BackupConfiguration")
-			f.EventuallyBackupConfigurationCreated(deployment.ObjectMeta).Should(BeTrue())
-			backupCfg, err = f.GetBackupConfiguration(deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Waiting for BackupSession")
-			f.EventuallyBackupSessionCreated(deployment.ObjectMeta).Should(BeTrue())
-			backupSession, err := f.GetBackupSession(deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Check for succeeded BackupSession")
-			f.EventuallyBackupSessionPhase(backupSession.ObjectMeta).Should(Equal(v1beta1.BackupSessionSucceeded))
-
-			By("Check for repository status updated")
-			f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
-		}
-	)
-	Context("Should success AutoBackup for Deployment", func() {
-		BeforeEach(func() {
-			pvc = f.GetPersistentVolumeClaim()
-			err = f.CreatePersistentVolumeClaim(pvc)
-			Expect(err).NotTo(HaveOccurred())
-			deployment = f.Deployment(pvc.Name)
-		})
-		AfterEach(func() {
-			err = f.DeleteDeployment(deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilDeploymentDeleted(f.KubeClient, deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = f.DeleteBackupBlueprint(backupBlueprint.Name)
-			err = framework.WaitUntilBackupBlueprintDeleted(f.StashClient, backupBlueprint.Name)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = f.DeleteBackupConfiguration(backupCfg.ObjectMeta)
-			err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, backupCfg.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = f.DeleteRepository(repo.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			err := f.DeletePersistentVolumeClaim(pvc.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-		})
-		It("Run AutoBackup for new Deployment", func() {
-			By("Checking AutoBackup is succeeded")
-			AutoBackupSucceededTest()
-
-		})
-	})
-	Context("Should fail AutoBackup for Missing BackupBlueprint credential", func() {
-		BeforeEach(func() {
-			pvc = f.GetPersistentVolumeClaim()
-			err = f.CreatePersistentVolumeClaim(pvc)
-			Expect(err).NotTo(HaveOccurred())
-			deployment = f.Deployment(pvc.Name)
-		})
-		JustBeforeEach(func() {
-			backupBlueprint = f.BackupBlueprint(cred.Name)
-		})
-		AfterEach(func() {
-			err = f.DeleteBackupBlueprint(backupBlueprint.Name)
-			err = framework.WaitUntilBackupBlueprintDeleted(f.StashClient, backupBlueprint.Name)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = f.DeleteBackupConfiguration(backupCfg.ObjectMeta)
-			err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, backupCfg.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = f.DeleteRepository(repo.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			err := f.DeletePersistentVolumeClaim(pvc.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-		})
-		It("Should fail AutoBackup for missing Repository secret in BackupBlueprint", func() {
-			By(fmt.Sprintf("Creating %s/%s storage Secret", cred.Namespace, cred.Name))
-			err = f.CreateSecret(cred)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Adding empty/wrong Repository Secret in BackupBlueprint")
-			backupBlueprint.Spec.Backend.StorageSecretName = ""
-
-			By(fmt.Sprintf("Creating %s/%s BackupBlueprint", backupBlueprint.Namespace, backupBlueprint.Name))
-			_, err = f.CreateBackupBlueprint(backupBlueprint)
-			Expect(err).NotTo(HaveOccurred())
-
-			By(fmt.Sprintf("Creating New %s/%s Deployment", deployment.Namespace, deployment.Name))
-			_, err = f.CreateDeployment(deployment)
-			err = util.WaitUntilDeploymentReady(f.KubeClient, deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Creating sample data inside workload")
-			err = f.CreateSampleDataInsideWorkload(deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Reading sample data from /source/data mountPath inside workload")
-			sampleData, err = f.ReadSampleDataFromFromWorkload(deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(sampleData).To(Not(BeEmpty()))
-
-			By(fmt.Sprintf("Adding annotations to the %s/%s Deployment to run auto backup", deployment.Namespace, deployment.Name))
-			err = f.AddAnnotationsToTarget(backupBlueprint.Name, deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-
-			By(fmt.Sprintf("validating updated %s/%s Deployment has new annotation", deployment.Namespace, deployment.Name))
-			f.EventuallyAnnotationsUpdated(backupBlueprint.Name, deployment.ObjectMeta, apis.KindDeployment).Should(BeTrue())
-
-			By("Waiting for created Repository")
-			f.EventuallyRepositoryCreated(deployment.ObjectMeta).Should(BeTrue())
-			repo, err = f.GetRepository(deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Waiting for created BackupConfiguration")
-			f.EventuallyBackupConfigurationCreated(deployment.ObjectMeta).Should(BeTrue())
-			backupCfg, err = f.GetBackupConfiguration(deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Waiting for BackupSession")
-			f.EventuallyBackupSessionCreated(deployment.ObjectMeta).Should(BeTrue())
-			_, err := f.GetBackupSession(deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Should fail Sidecar injection because of missing Repository Secret")
-			f.EventuallyDeployment(deployment.ObjectMeta).ShouldNot(matcher.HaveSidecar(util.StashContainer))
-
-		})
-		It("Should fail AutoBackup for missing Repository Backend in BackupBlueprint", func() {
-			By(fmt.Sprintf("Creating %s/%s storage Secret", cred.Namespace, cred.Name))
-			err = f.CreateSecret(cred)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Adding empty/wrong Repository Backend in BackupBlueprint")
-			gcsbackend := v1.GCSSpec{}
-			backupBlueprint.Spec.Backend.GCS = &gcsbackend
-
-			By(fmt.Sprintf("Creating %s/%s BackupBlueprint", backupBlueprint.Namespace, backupBlueprint.Name))
-			_, err = f.CreateBackupBlueprint(backupBlueprint)
-			Expect(err).NotTo(HaveOccurred())
-
-			By(fmt.Sprintf("Creating New %s/%s Deployment", deployment.Namespace, deployment.Name))
-			_, err = f.CreateDeployment(deployment)
-			err = util.WaitUntilDeploymentReady(f.KubeClient, deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Creating sample data inside workload")
-			err = f.CreateSampleDataInsideWorkload(deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Reading sample data from /source/data mountPath inside workload")
-			sampleData, err = f.ReadSampleDataFromFromWorkload(deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(sampleData).To(Not(BeEmpty()))
-
-			By(fmt.Sprintf("Adding annotations to the %s/%s Deployment to run auto backup", deployment.Namespace, deployment.Name))
-			err = f.AddAnnotationsToTarget(backupBlueprint.Name, deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-
-			By(fmt.Sprintf("validating updated %s/%s Deployment has new annotation", deployment.Namespace, deployment.Name))
-			f.EventuallyAnnotationsUpdated(backupBlueprint.Name, deployment.ObjectMeta, apis.KindDeployment).Should(BeTrue())
-
-			By("Waiting for created Repository")
-			f.EventuallyRepositoryCreated(deployment.ObjectMeta).Should(BeTrue())
-			repo, err = f.GetRepository(deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Waiting for created BackupConfiguration")
-			f.EventuallyBackupConfigurationCreated(deployment.ObjectMeta).Should(BeTrue())
-			backupCfg, err = f.GetBackupConfiguration(deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Waiting for BackupSession")
-			f.EventuallyBackupSessionCreated(deployment.ObjectMeta).Should(BeTrue())
-			backupSession, err := f.GetBackupSession(deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Should fail BackupSession for wrong/missing backend credential in BackupBlueprint")
-			f.EventuallyBackupSessionPhase(backupSession.ObjectMeta).Should(Equal(v1beta1.BackupSessionFailed))
-
-		})
-		It("Should fail AutoBackup for missing BackupConfiguration RetentionPolicy in BackupBlueprint", func() {
-			By(fmt.Sprintf("Creating %s/%s storage Secret", cred.Namespace, cred.Name))
-			err = f.CreateSecret(cred)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Adding empty/wrong RetentionPolicy in BackupBlueprint")
-			backupBlueprint.Spec.RetentionPolicy = v1alpha1.RetentionPolicy{}
-
-			By(fmt.Sprintf("Creating %s/%s BackupBlueprint", backupBlueprint.Namespace, backupBlueprint.Name))
-			_, err = f.CreateBackupBlueprint(backupBlueprint)
-			Expect(err).NotTo(HaveOccurred())
-
-			By(fmt.Sprintf("Creating New %s/%s Deployment", deployment.Namespace, deployment.Name))
-			_, err = f.CreateDeployment(deployment)
-			err = util.WaitUntilDeploymentReady(f.KubeClient, deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Creating sample data inside workload")
-			err = f.CreateSampleDataInsideWorkload(deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Reading sample data from /source/data mountPath inside workload")
-			sampleData, err = f.ReadSampleDataFromFromWorkload(deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(sampleData).To(Not(BeEmpty()))
-
-			By(fmt.Sprintf("Adding annotations to the %s/%s Deployment to run auto backup", deployment.Namespace, deployment.Name))
-			err = f.AddAnnotationsToTarget(backupBlueprint.Name, deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-
-			By(fmt.Sprintf("validating updated %s/%s Deployment has new annotation", deployment.Namespace, deployment.Name))
-			f.EventuallyAnnotationsUpdated(backupBlueprint.Name, deployment.ObjectMeta, apis.KindDeployment).Should(BeTrue())
-
-			By("Waiting for created Repository")
-			f.EventuallyRepositoryCreated(deployment.ObjectMeta).Should(BeTrue())
-			repo, err = f.GetRepository(deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Waiting for created BackupConfiguration")
-			f.EventuallyBackupConfigurationCreated(deployment.ObjectMeta).Should(BeTrue())
-			backupCfg, err = f.GetBackupConfiguration(deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Waiting for BackupSession")
-			f.EventuallyBackupSessionCreated(deployment.ObjectMeta).Should(BeTrue())
-			backupSession, err := f.GetBackupSession(deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Should fail BackupSession for missing RetentionPolicy in BackupBlueprint")
-			f.EventuallyBackupSessionPhase(backupSession.ObjectMeta).Should(Equal(v1beta1.BackupSessionFailed))
-		})
-		It("Should fail AutoBackup for missing BackupConfiguration Schedule in BackupBlueprint", func() {
-			By(fmt.Sprintf("Creating %s/%s storage Secret", cred.Namespace, cred.Name))
-			err = f.CreateSecret(cred)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Adding empty/wrong RetentionPolicy in BackupBlueprint")
-			backupBlueprint.Spec.Schedule = ""
-
-			By(fmt.Sprintf("Creating %s/%s BackupBlueprint", backupBlueprint.Namespace, backupBlueprint.Name))
-			_, err = f.CreateBackupBlueprint(backupBlueprint)
-			Expect(err).NotTo(HaveOccurred())
-
-			By(fmt.Sprintf("Creating New %s/%s Deployment", deployment.Namespace, deployment.Name))
-			_, err = f.CreateDeployment(deployment)
-			err = util.WaitUntilDeploymentReady(f.KubeClient, deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Creating sample data inside workload")
-			err = f.CreateSampleDataInsideWorkload(deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Reading sample data from /source/data mountPath inside workload")
-			sampleData, err = f.ReadSampleDataFromFromWorkload(deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(sampleData).To(Not(BeEmpty()))
-
-			By(fmt.Sprintf("Adding annotations to the %s/%s Deployment to run auto backup", deployment.Namespace, deployment.Name))
-			err = f.AddAnnotationsToTarget(backupBlueprint.Name, deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-
-			By(fmt.Sprintf("validating updated %s/%s Deployment has new annotation", deployment.Namespace, deployment.Name))
-			f.EventuallyAnnotationsUpdated(backupBlueprint.Name, deployment.ObjectMeta, apis.KindDeployment).Should(BeTrue())
-
-			By("Waiting for created Repository")
-			f.EventuallyRepositoryCreated(deployment.ObjectMeta).Should(BeTrue())
-			repo, err = f.GetRepository(deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Waiting for created BackupConfiguration")
-			f.EventuallyBackupConfigurationCreated(deployment.ObjectMeta).Should(BeTrue())
-			backupCfg, err = f.GetBackupConfiguration(deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Should fail creating BackupSession for missing Schedule in BackupBlueprint")
-			f.EventuallyBackupSessionNotCreated(deployment.ObjectMeta).Should(BeTrue())
-			_, err := f.GetBackupSession(deployment.ObjectMeta)
-			Expect(err).To(HaveOccurred())
-		})
-
-	})
-	Context("Should failed AutoBackup for Missing Annotation in Deployment", func() {
-		BeforeEach(func() {
-			pvc = f.GetPersistentVolumeClaim()
-			err = f.CreatePersistentVolumeClaim(pvc)
-			Expect(err).NotTo(HaveOccurred())
-			deployment = f.Deployment(pvc.Name)
-		})
-		AfterEach(func() {
-			err = f.DeleteBackupBlueprint(backupBlueprint.Name)
-			err = framework.WaitUntilBackupBlueprintDeleted(f.StashClient, backupBlueprint.Name)
-			Expect(err).NotTo(HaveOccurred())
-
-			err := f.DeletePersistentVolumeClaim(pvc.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-		})
-		It("Should fail AutoBackup for missing/giving wrong BackupBlueprint name as annotations in Deployment", func() {
-			By(fmt.Sprintf("Creating %s/%s storage Secret", cred.Namespace, cred.Name))
-			err = f.CreateSecret(cred)
-			Expect(err).NotTo(HaveOccurred())
-
-			By(fmt.Sprintf("Creating %s/%s BackupBlueprint", backupBlueprint.Namespace, backupBlueprint.Name))
-			_, err = f.CreateBackupBlueprint(backupBlueprint)
-			Expect(err).NotTo(HaveOccurred())
-
-			By(fmt.Sprintf("Creating New %s/%s Deployment", deployment.Namespace, deployment.Name))
-			_, err = f.CreateDeployment(deployment)
-			err = util.WaitUntilDeploymentReady(f.KubeClient, deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Creating sample data inside workload")
-			err = f.CreateSampleDataInsideWorkload(deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Reading sample data from /source/data mountPath inside workload")
-			sampleData, err = f.ReadSampleDataFromFromWorkload(deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(sampleData).To(Not(BeEmpty()))
-
-			By(fmt.Sprintf("Adding Wrong(BackupBlueprint name) annotations to the %s/%s Deployment to run AutoBackup", deployment.Namespace, deployment.Name))
-			wrongBackupBlueprintName := "backup-blueprint"
-			deployment, _, err := apps_util.PatchDeployment(f.KubeClient, &deployment, func(in *apps.Deployment) *apps.Deployment {
-				in.SetAnnotations(map[string]string{
-					v1beta1.KeyBackupBlueprint: wrongBackupBlueprintName,
-					v1beta1.KeyTargetPaths:     "/source/data",
-					v1beta1.KeyVolumeMounts:    "source-data:/source/data",
-				})
-				return in
 			})
-			Expect(err).NotTo(HaveOccurred())
-
-			By(" Should not get respective BackupBlueprint because of adding wrong annotations in Deployment")
-			annotations := deployment.Annotations
-			fmt.Println(annotations)
-			_, err = f.GetBackupBlueprint(annotations[v1beta1.KeyBackupBlueprint])
-			Expect(err).To(HaveOccurred())
-
+			It("Should success auto-backup for the Deployment", func() {
+				testDeploymentAutoBackupSucceeded()
+			})
 		})
-		It("Should fail AutoBackup for missing/giving wrong TargetPath in Deployment annotations", func() {
-			By(fmt.Sprintf("Creating %s/%s storage Secret", cred.Namespace, cred.Name))
-			err = f.CreateSecret(cred)
-			Expect(err).NotTo(HaveOccurred())
+		Context("Failure event: ", func() {
+			BeforeEach(func() {
+				pvc = f.GetPersistentVolumeClaim()
+				err := f.CreatePersistentVolumeClaim(pvc)
+				Expect(err).NotTo(HaveOccurred())
+				deployment = f.Deployment(pvc.Name)
+			})
+			AfterEach(func() {
+				err := f.DeleteDeployment(deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilDeploymentDeleted(f.KubeClient, deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
-			By(fmt.Sprintf("Creating %s/%s BackupBlueprint", backupBlueprint.Namespace, backupBlueprint.Name))
-			_, err = f.CreateBackupBlueprint(backupBlueprint)
-			Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteBackupBlueprint(f.BackupBlueprint.Name)
+				err = framework.WaitUntilBackupBlueprintDeleted(f.StashClient, f.BackupBlueprint.Name)
+				Expect(err).NotTo(HaveOccurred())
 
-			By(fmt.Sprintf("Creating New %s/%s Deployment", deployment.Namespace, deployment.Name))
-			_, err = f.CreateDeployment(deployment)
-			err = util.WaitUntilDeploymentReady(f.KubeClient, deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteBackupConfiguration(f.BackupConfig.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, f.BackupConfig.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
-			By("Creating sample data inside workload")
-			err = f.CreateSampleDataInsideWorkload(deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteRepository(f.Repository.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilRepositoryDeleted(f.StashClient, f.Repository.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
-			By("Reading sample data from /source/data mountPath inside workload")
-			sampleData, err = f.ReadSampleDataFromFromWorkload(deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(sampleData).To(Not(BeEmpty()))
+				err = f.DeletePersistentVolumeClaim(pvc.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
-			By(fmt.Sprintf("Adding Wrong(TargetPath) annotations to the %s/%s Deployment to run AutoBackup", deployment.Namespace, deployment.Name))
-			_, _, err = apps_util.PatchDeployment(f.KubeClient, &deployment, func(in *apps.Deployment) *apps.Deployment {
+			})
+			It("Should fail auto-backup for adding inappropriate Repository secret in BackupBlueprint", func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating inappropraite BackupBlueprint: %s", f.BackupBlueprint.Name))
+				f.BackupBlueprint.Spec.Backend.StorageSecretName = ""
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).To(HaveOccurred())
+			})
+			It("Should fail auto-backup for adding inappropriate Repository backend in BackupBlueprint", func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating inappropraite BackupBlueprint: %s", f.BackupBlueprint.Name))
+				f.BackupBlueprint.Spec.Backend.GCS = &v1.GCSSpec{}
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating Deployment: %s/%s", deployment.Namespace, deployment.Name))
+				_, err = f.CreateDeployment(deployment)
+				err = util.WaitUntilDeploymentReady(f.KubeClient, deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Create and Ensure sample data inside running workload")
+				err = f.CreateAndEnsureSampleDataInsideWorkload(deployment.ObjectMeta, apis.KindDeployment)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Adding auto-backup specific annotations to the Deployment: %s/%s", deployment.Namespace, deployment.Name))
+				err = f.AddAutoBackupAnnotationsToTarget(f.BackupBlueprint.Name, deployment.ObjectMeta, apis.KindDeployment)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that the auto-backup annotations has been added successfully")
+				f.EventuallyAutoBackupAnnotationsFound(f.BackupBlueprint.Name, deployment.ObjectMeta, apis.KindDeployment).Should(BeTrue())
+
+				By("Waiting for Repository")
+				f.EventuallyRepositoryCreated(f.Namespace()).Should(BeTrue())
+				f.Repository, err = f.GetRepository(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupConfiguration")
+				f.EventuallyBackupConfigurationCreated(f.Namespace()).Should(BeTrue())
+				f.BackupConfig, err = f.GetBackupConfiguration(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupSession")
+				f.EventuallyBackupSessionCreated(f.Namespace()).Should(BeTrue())
+				f.BackupSession, err = f.GetBackupSession(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("waiting for BackupSession to be failed")
+				f.EventuallyBackupSessionPhase(f.BackupSession.ObjectMeta).Should(Equal(v1beta1.BackupSessionFailed))
+
+			})
+			It("Should fail auto-backup for adding inappropriate BackupConfiguration RetentionPolicy in BackupBlueprint", func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating inappropraite BackupBlueprint: %s", f.BackupBlueprint.Name))
+				f.BackupBlueprint.Spec.RetentionPolicy = v1alpha1.RetentionPolicy{}
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).To(HaveOccurred())
+			})
+			It("Should fail auto-backup for adding inappropriate BackupConfiguration Schedule in BackupBlueprint", func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating inappropraite BackupBlueprint: %s", f.BackupBlueprint.Name))
+				f.BackupBlueprint.Spec.Schedule = ""
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).To(HaveOccurred())
+			})
+
+			It("Should fail auto-backup for adding inappropriate BackupBlueprint annotation in Deployment", func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s ", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating BackupBlueprint: %s ", f.BackupBlueprint.Name))
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating Deployment: %s/%s", deployment.Namespace, deployment.Name))
+				_, err = f.CreateDeployment(deployment)
+				err = util.WaitUntilDeploymentReady(f.KubeClient, deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Create and Ensure sample data inside running workload")
+				err = f.CreateAndEnsureSampleDataInsideWorkload(deployment.ObjectMeta, apis.KindDeployment)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Adding auto-backup inappropriate annotations to the Deployment: %s/%s", deployment.Namespace, deployment.Name))
+				wrongBackupBlueprintName := "backup-blueprint"
+				deployment, _, err := apps_util.PatchDeployment(f.KubeClient, &deployment, func(in *apps.Deployment) *apps.Deployment {
+					in.SetAnnotations(map[string]string{
+						v1beta1.KeyBackupBlueprint: wrongBackupBlueprintName,
+						v1beta1.KeyTargetPaths:     framework.TestSourceDataTargetPath,
+						v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
+					})
+					return in
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that the auto-backup annotations has been added successfully")
+				Expect(deployment.Annotations[v1beta1.KeyBackupBlueprint]).To(Equal(wrongBackupBlueprintName))
+				Expect(deployment.Annotations[v1beta1.KeyTargetPaths]).To(Equal(framework.TestSourceDataTargetPath))
+				Expect(deployment.Annotations[v1beta1.KeyVolumeMounts]).To(Equal(framework.TestSourceDataVolumeMount))
+
+				By("Will fail to get respective BackupBlueprint")
+				annotations := deployment.Annotations
+				_, err = f.GetBackupBlueprint(annotations[v1beta1.KeyBackupBlueprint])
+				Expect(err).To(HaveOccurred())
+
+			})
+			It("Should fail auto-backup for adding inappropriate TargetPath/MountPath annotations in Deployment", func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s ", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating BackupBlueprint: %s ", f.BackupBlueprint.Name))
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating Deployment: %s/%s", deployment.Namespace, deployment.Name))
+				_, err = f.CreateDeployment(deployment)
+				err = util.WaitUntilDeploymentReady(f.KubeClient, deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Create and Ensure sample data inside running workload")
+				err = f.CreateAndEnsureSampleDataInsideWorkload(deployment.ObjectMeta, apis.KindDeployment)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Adding auto-backup inappropriate annotations to the Deployment: %s/%s", deployment.Namespace, deployment.Name))
 				wrongTargetPath := "/source/data-1"
-				in.SetAnnotations(map[string]string{
-					v1beta1.KeyBackupBlueprint: backupBlueprint.Name,
-					v1beta1.KeyTargetPaths:     wrongTargetPath,
-					v1beta1.KeyVolumeMounts:    "source-data:/source/data",
+				deployment, _, err := apps_util.PatchDeployment(f.KubeClient, &deployment, func(in *apps.Deployment) *apps.Deployment {
+					in.SetAnnotations(map[string]string{
+						v1beta1.KeyBackupBlueprint: f.BackupBlueprint.Name,
+						v1beta1.KeyTargetPaths:     wrongTargetPath,
+						v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
+					})
+					return in
 				})
-				return in
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that the auto-backup annotations has been added successfully")
+				Expect(deployment.Annotations[v1beta1.KeyBackupBlueprint]).To(Equal(f.BackupBlueprint.Name))
+				Expect(deployment.Annotations[v1beta1.KeyTargetPaths]).To(Equal(wrongTargetPath))
+				Expect(deployment.Annotations[v1beta1.KeyVolumeMounts]).To(Equal(framework.TestSourceDataVolumeMount))
+
+				By("Waiting for Repository")
+				f.EventuallyRepositoryCreated(f.Namespace()).Should(BeTrue())
+				f.Repository, err = f.GetRepository(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupConfiguration")
+				f.EventuallyBackupConfigurationCreated(f.Namespace()).Should(BeTrue())
+				f.BackupConfig, err = f.GetBackupConfiguration(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupSession")
+				f.EventuallyBackupSessionCreated(f.Namespace()).Should(BeTrue())
+				f.BackupSession, err = f.GetBackupSession(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupSession to be failed")
+				f.EventuallyBackupSessionPhase(f.BackupSession.ObjectMeta).Should(Equal(v1beta1.BackupSessionFailed))
 			})
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Waiting for created Repository")
-			f.EventuallyRepositoryCreated(deployment.ObjectMeta).Should(BeTrue())
-			repo, err = f.GetRepository(deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Waiting for created BackupConfiguration")
-			f.EventuallyBackupConfigurationCreated(deployment.ObjectMeta).Should(BeTrue())
-			backupCfg, err = f.GetBackupConfiguration(deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Waiting for BackupSession")
-			f.EventuallyBackupSessionCreated(deployment.ObjectMeta).Should(BeTrue())
-			backupSession, err := f.GetBackupSession(deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Should fail BackupSession for adding wrong TargetPath as annotations in Deployment")
-			f.EventuallyBackupSessionPhase(backupSession.ObjectMeta).Should(Equal(v1beta1.BackupSessionFailed))
-
-			err = f.DeleteDeployment(deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilDeploymentDeleted(f.KubeClient, backupCfg.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = f.DeleteBackupConfiguration(backupCfg.ObjectMeta)
-			err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, backupCfg.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = f.DeleteRepository(repo.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-		})
-		It("Should fail AutoBackup for missing/giving wrong MountPath in Deployment annotations", func() {
-			By(fmt.Sprintf("Creating %s/%s storage Secret", cred.Namespace, cred.Name))
-			err = f.CreateSecret(cred)
-			Expect(err).NotTo(HaveOccurred())
-
-			By(fmt.Sprintf("Creating %s/%s BackupBlueprint", backupBlueprint.Namespace, backupBlueprint.Name))
-			_, err = f.CreateBackupBlueprint(backupBlueprint)
-			Expect(err).NotTo(HaveOccurred())
-
-			By(fmt.Sprintf("Creating New %s/%s Deployment", deployment.Namespace, deployment.Name))
-			_, err = f.CreateDeployment(deployment)
-			err = util.WaitUntilDeploymentReady(f.KubeClient, deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Creating sample data inside workload")
-			err = f.CreateSampleDataInsideWorkload(deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Reading sample data from /source/data mountPath inside workload")
-			sampleData, err = f.ReadSampleDataFromFromWorkload(deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(sampleData).To(Not(BeEmpty()))
-
-			By(fmt.Sprintf("Adding Wrong(TargetPath) annotations to the %s/%s Deployment to run AutoBackup", deployment.Namespace, deployment.Name))
-			_, _, err = apps_util.PatchDeployment(f.KubeClient, &deployment, func(in *apps.Deployment) *apps.Deployment {
-				wrongMountPath := "source-data:/source/data-1"
-				in.SetAnnotations(map[string]string{
-					v1beta1.KeyBackupBlueprint: backupBlueprint.Name,
-					v1beta1.KeyTargetPaths:     "/source/data",
-					v1beta1.KeyVolumeMounts:    wrongMountPath,
-				})
-				return in
-			})
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Waiting for created Repository")
-			f.EventuallyRepositoryCreated(deployment.ObjectMeta).Should(BeTrue())
-			repo, err = f.GetRepository(deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Waiting for created BackupConfiguration")
-			f.EventuallyBackupConfigurationCreated(deployment.ObjectMeta).Should(BeTrue())
-			backupCfg, err = f.GetBackupConfiguration(deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Waiting for BackupSession")
-			f.EventuallyBackupSessionCreated(deployment.ObjectMeta).Should(BeTrue())
-			backupSession, err := f.GetBackupSession(deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Should fail BackupSession for adding wrong MountPath as annotations in Deployment")
-			f.EventuallyBackupSessionPhase(backupSession.ObjectMeta).Should(Equal(v1beta1.BackupSessionFailed))
-
-			err = f.DeleteDeployment(deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilDeploymentDeleted(f.KubeClient, backupCfg.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = f.DeleteBackupConfiguration(backupCfg.ObjectMeta)
-			err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, backupCfg.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = f.DeleteRepository(repo.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
 
 		})
 	})
-})
 
-var _ = Describe("StatefulSet", func() {
-	BeforeEach(func() {
-		f = root.Invoke()
-	})
-	JustBeforeEach(func() {
-		cred = f.SecretForGCSBackend()
-		if missing, _ := BeZero().Match(cred); missing {
-			Skip("Missing repository credential")
-		}
-		backupBlueprint = f.BackupBlueprint(cred.Name)
-	})
-	AfterEach(func() {
-		err = f.DeleteSecret(cred.ObjectMeta)
-		Expect(err).NotTo(HaveOccurred())
-		err = framework.WaitUntilSecretDeleted(f.KubeClient, cred.ObjectMeta)
-		Expect(err).NotTo(HaveOccurred())
-	})
-	var (
-		testSSAutoBackup = func() {
-			By(fmt.Sprintf("Creating %s/%s storage Secret", cred.Namespace, cred.Name))
-			err = f.CreateSecret(cred)
-			Expect(err).NotTo(HaveOccurred())
+	var _ = Describe("StatefulSet", func() {
+		var (
+			statefulSet apps.StatefulSet
+			service     core.Service
 
-			By(fmt.Sprintf("Creating %s/%s BackupBlueprint", backupBlueprint.Namespace, backupBlueprint.Name))
-			_, err = f.CreateBackupBlueprint(backupBlueprint)
-			Expect(err).NotTo(HaveOccurred())
+			testStatefulSetAutoBackupSucceeded = func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
 
-			By(fmt.Sprintf("Creating New %s/%s StatefulSet", ss.Namespace, ss.Name))
-			_, err = f.CreateStatefulSet(ss)
-			err = util.WaitUntilStatefulSetReady(f.KubeClient, ss.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
+				By(fmt.Sprintf("Creating BackupBlueprint: %s", f.BackupBlueprint.Name))
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).NotTo(HaveOccurred())
 
-			By("Creating sample data inside workload")
-			err = f.CreateSampleDataInsideWorkload(ss.ObjectMeta, apis.KindStatefulSet)
-			Expect(err).NotTo(HaveOccurred())
+				By(fmt.Sprintf("Creating StatefulSet: %s/%s", statefulSet.Namespace, statefulSet.Name))
+				_, err = f.CreateStatefulSet(statefulSet)
+				err = util.WaitUntilStatefulSetReady(f.KubeClient, statefulSet.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
-			By("Reading sample data from /source/data mountPath inside workload")
-			sampleData, err = f.ReadSampleDataFromFromWorkload(ss.ObjectMeta, apis.KindStatefulSet)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(sampleData).To(Not(BeEmpty()))
+				By("Create and Ensure sample data inside running workload")
+				err = f.CreateAndEnsureSampleDataInsideWorkload(statefulSet.ObjectMeta, apis.KindStatefulSet)
+				Expect(err).NotTo(HaveOccurred())
 
-			By(fmt.Sprintf("Adding annotations to the %s/%s Stateful to run auto backup", ss.Namespace, ss.Name))
-			err = f.AddAnnotationsToTarget(backupBlueprint.Name, ss.ObjectMeta, apis.KindStatefulSet)
-			Expect(err).NotTo(HaveOccurred())
+				By(fmt.Sprintf("Adding auto-backup specific annotations to the StatefulSet: %s/%s", statefulSet.Namespace, statefulSet.Name))
+				err = f.AddAutoBackupAnnotationsToTarget(f.BackupBlueprint.Name, statefulSet.ObjectMeta, apis.KindStatefulSet)
+				Expect(err).NotTo(HaveOccurred())
 
-			By(fmt.Sprintf("validating updated %s/%s Stateful has new annotation", ss.Namespace, ss.Name))
-			f.EventuallyAnnotationsUpdated(backupBlueprint.Name, ss.ObjectMeta, apis.KindStatefulSet).Should(BeTrue())
+				By("Verifying that the auto-backup annotations has been added successfully")
+				f.EventuallyAutoBackupAnnotationsFound(f.BackupBlueprint.Name, statefulSet.ObjectMeta, apis.KindStatefulSet).Should(BeTrue())
 
-			By("Waiting for created Repository")
-			f.EventuallyRepositoryCreated(ss.ObjectMeta).Should(BeTrue())
-			repo, err = f.GetRepository(ss.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
+				By("Waiting for Repository")
+				f.EventuallyRepositoryCreated(f.Namespace()).Should(BeTrue())
+				f.Repository, err = f.GetRepository(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
 
-			By("Waiting for created BackupConfiguration")
-			f.EventuallyBackupConfigurationCreated(ss.ObjectMeta).Should(BeTrue())
-			backupCfg, err = f.GetBackupConfiguration(ss.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
+				By("Waiting for BackupConfiguration")
+				f.EventuallyBackupConfigurationCreated(f.Namespace()).Should(BeTrue())
+				f.BackupConfig, err = f.GetBackupConfiguration(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
 
-			By("Waiting for BackupSession")
-			f.EventuallyBackupSessionCreated(ss.ObjectMeta).Should(BeTrue())
-			backupSession, err := f.GetBackupSession(ss.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
+				By("Waiting for BackupSession")
+				f.EventuallyBackupSessionCreated(f.Namespace()).Should(BeTrue())
+				backupSession, err := f.GetBackupSession(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
 
-			By("Check for succeeded BackupSession")
-			f.EventuallyBackupSessionPhase(backupSession.ObjectMeta).Should(Equal(v1beta1.BackupSessionSucceeded))
+				By("Waiting for BackupSession to be succeeded")
+				f.EventuallyBackupSessionPhase(backupSession.ObjectMeta).Should(Equal(v1beta1.BackupSessionSucceeded))
 
-		}
-	)
-	Context("Auto Backup for StatefulSet", func() {
+			}
+		)
 		BeforeEach(func() {
-			svc = f.HeadlessService()
-			ss = f.StatefulSetForV1beta1API()
+			f = root.Invoke()
 		})
 		JustBeforeEach(func() {
-			By("Creating service " + svc.Name)
-			err = f.CreateOrPatchService(svc)
-			Expect(err).NotTo(HaveOccurred())
+			cred = f.SecretForGCSBackend()
+			if missing, _ := BeZero().Match(cred); missing {
+				Skip("Missing repository credential")
+			}
+			f.BackupBlueprint = f.BackupBlueprintObj(cred.Name)
 		})
 		AfterEach(func() {
-			err = f.DeleteStatefulSet(ss.ObjectMeta)
+			err := f.DeleteSecret(cred.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilStatefulSetDeleted(f.KubeClient, ss.ObjectMeta)
+			err = framework.WaitUntilSecretDeleted(f.KubeClient, cred.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
-
-			err = f.DeleteBackupBlueprint(backupBlueprint.Name)
-			err = framework.WaitUntilBackupBlueprintDeleted(f.StashClient, backupBlueprint.Name)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = f.DeleteBackupConfiguration(ss.ObjectMeta)
-			err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, ss.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = f.DeleteRepository(repo.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-			err = framework.WaitUntilRepositoryDeleted(f.StashClient, repo.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
 		})
-		It("General Auto Backup new StatefulSet", func() {
-			By("testing Auto Backup")
-			testSSAutoBackup()
+
+		Context("Success event: ", func() {
+			BeforeEach(func() {
+				service = f.HeadlessService()
+				statefulSet = f.StatefulSetForV1beta1API()
+			})
+			JustBeforeEach(func() {
+				By("Creating service " + service.Name)
+				err := f.CreateOrPatchService(service)
+				Expect(err).NotTo(HaveOccurred())
+			})
+			AfterEach(func() {
+				err := f.DeleteStatefulSet(statefulSet.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilStatefulSetDeleted(f.KubeClient, statefulSet.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeleteService(service.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilServiceDeleted(f.KubeClient, service.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeleteBackupBlueprint(f.BackupBlueprint.Name)
+				err = framework.WaitUntilBackupBlueprintDeleted(f.StashClient, f.BackupBlueprint.Name)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeleteBackupConfiguration(statefulSet.ObjectMeta)
+				err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, statefulSet.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeleteRepository(f.Repository.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilRepositoryDeleted(f.StashClient, f.Repository.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+			})
+			It("Should success auto-backup for the StatefulSet", func() {
+				testStatefulSetAutoBackupSucceeded()
+			})
+		})
+		Context("Failure event: ", func() {
+			BeforeEach(func() {
+				service = f.HeadlessService()
+				statefulSet = f.StatefulSetForV1beta1API()
+			})
+			JustBeforeEach(func() {
+				By("Creating service " + service.Name)
+				err := f.CreateOrPatchService(service)
+				Expect(err).NotTo(HaveOccurred())
+			})
+			AfterEach(func() {
+				err := f.DeleteStatefulSet(statefulSet.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilStatefulSetDeleted(f.KubeClient, statefulSet.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeleteService(service.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilServiceDeleted(f.KubeClient, service.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeleteBackupBlueprint(f.BackupBlueprint.Name)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilBackupBlueprintDeleted(f.StashClient, f.BackupBlueprint.Name)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeleteBackupConfiguration(statefulSet.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, statefulSet.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeleteRepository(f.Repository.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilRepositoryDeleted(f.StashClient, f.Repository.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+			})
+			It("Should fail auto-backup for adding inappropriate BackupBlueprint annotation in StatefulSet", func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s ", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating BackupBlueprint: %s ", f.BackupBlueprint.Name))
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating StatefulSet: %s/%s", statefulSet.Namespace, statefulSet.Name))
+				_, err = f.CreateStatefulSet(statefulSet)
+				err = util.WaitUntilStatefulSetReady(f.KubeClient, statefulSet.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Create and Ensure sample data inside running workload")
+				err = f.CreateAndEnsureSampleDataInsideWorkload(statefulSet.ObjectMeta, apis.KindStatefulSet)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Adding auto-backup inappropriate annotations to the StatefulSet: %s/%s", statefulSet.Namespace, statefulSet.Name))
+				wrongBackupBlueprintName := "backup-blueprint"
+				statefulSet, _, err := apps_util.PatchStatefulSet(f.KubeClient, &statefulSet, func(in *apps.StatefulSet) *apps.StatefulSet {
+					in.SetAnnotations(map[string]string{
+						v1beta1.KeyBackupBlueprint: wrongBackupBlueprintName,
+						v1beta1.KeyTargetPaths:     framework.TestSourceDataTargetPath,
+						v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
+					})
+					return in
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that the auto-backup annotations has been added successfully")
+				Expect(statefulSet.Annotations[v1beta1.KeyBackupBlueprint]).To(Equal(wrongBackupBlueprintName))
+				Expect(statefulSet.Annotations[v1beta1.KeyTargetPaths]).To(Equal(framework.TestSourceDataTargetPath))
+				Expect(statefulSet.Annotations[v1beta1.KeyVolumeMounts]).To(Equal(framework.TestSourceDataVolumeMount))
+
+				By("Will fail to get respective BackupBlueprint")
+				annotations := statefulSet.Annotations
+				_, err = f.GetBackupBlueprint(annotations[v1beta1.KeyBackupBlueprint])
+				Expect(err).To(HaveOccurred())
+			})
+			It("Should fail auto-backup for adding inappropriate TargetPath/MountPath annotations in StatefulSet", func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s ", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating BackupBlueprint: %s ", f.BackupBlueprint.Name))
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating StatefulSet: %s/%s", statefulSet.Namespace, statefulSet.Name))
+				_, err = f.CreateStatefulSet(statefulSet)
+				err = util.WaitUntilStatefulSetReady(f.KubeClient, statefulSet.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Create and Ensure sample data inside running workload")
+				err = f.CreateAndEnsureSampleDataInsideWorkload(statefulSet.ObjectMeta, apis.KindStatefulSet)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Adding auto-backup inappropriate annotations to the StatefulSet: %s/%s", statefulSet.Namespace, statefulSet.Name))
+				wrongTargetPath := "/source/data-1"
+				statefulSet, _, err := apps_util.PatchStatefulSet(f.KubeClient, &statefulSet, func(in *apps.StatefulSet) *apps.StatefulSet {
+					in.SetAnnotations(map[string]string{
+						v1beta1.KeyBackupBlueprint: f.BackupBlueprint.Name,
+						v1beta1.KeyTargetPaths:     wrongTargetPath,
+						v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
+					})
+					return in
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that the auto-backup annotations has been added successfully")
+				Expect(statefulSet.Annotations[v1beta1.KeyBackupBlueprint]).To(Equal(f.BackupBlueprint.Name))
+				Expect(statefulSet.Annotations[v1beta1.KeyTargetPaths]).To(Equal(wrongTargetPath))
+				Expect(statefulSet.Annotations[v1beta1.KeyVolumeMounts]).To(Equal(framework.TestSourceDataVolumeMount))
+
+				By("Waiting for Repository")
+				f.EventuallyRepositoryCreated(f.Namespace()).Should(BeTrue())
+				f.Repository, err = f.GetRepository(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupConfiguration")
+				f.EventuallyBackupConfigurationCreated(f.Namespace()).Should(BeTrue())
+				f.BackupConfig, err = f.GetBackupConfiguration(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupSession")
+				f.EventuallyBackupSessionCreated(f.Namespace()).Should(BeTrue())
+				f.BackupSession, err = f.GetBackupSession(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupSession to be failed")
+				f.EventuallyBackupSessionPhase(f.BackupSession.ObjectMeta).Should(Equal(v1beta1.BackupSessionFailed))
+			})
+
+			It("Should fail auto-backup for adding inappropriate Repository secret in BackupBlueprint", func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating inappropraite BackupBlueprint: %s", f.BackupBlueprint.Name))
+				f.BackupBlueprint.Spec.Backend.StorageSecretName = ""
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).To(HaveOccurred())
+			})
+			It("Should fail auto-backup for adding inappropriate Repository backend in BackupBlueprint", func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating inappropraite BackupBlueprint: %s", f.BackupBlueprint.Name))
+				f.BackupBlueprint.Spec.Backend.GCS = &v1.GCSSpec{}
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating StateFulSet: %s/%s", statefulSet.Namespace, statefulSet.Name))
+				_, err = f.CreateStatefulSet(statefulSet)
+				err = util.WaitUntilStatefulSetReady(f.KubeClient, statefulSet.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Create and Ensure sample data inside running workload")
+				err = f.CreateAndEnsureSampleDataInsideWorkload(statefulSet.ObjectMeta, apis.KindStatefulSet)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Adding auto-backup specific annotations to the StatefulSet: %s/%s", statefulSet.Namespace, statefulSet.Name))
+				err = f.AddAutoBackupAnnotationsToTarget(f.BackupBlueprint.Name, statefulSet.ObjectMeta, apis.KindStatefulSet)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that the auto-backup annotations has been added successfully")
+				f.EventuallyAutoBackupAnnotationsFound(f.BackupBlueprint.Name, statefulSet.ObjectMeta, apis.KindStatefulSet).Should(BeTrue())
+
+				By("Waiting for Repository")
+				f.EventuallyRepositoryCreated(f.Namespace()).Should(BeTrue())
+				f.Repository, err = f.GetRepository(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupConfiguration")
+				f.EventuallyBackupConfigurationCreated(f.Namespace()).Should(BeTrue())
+				f.BackupConfig, err = f.GetBackupConfiguration(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupSession")
+				f.EventuallyBackupSessionCreated(f.Namespace()).Should(BeTrue())
+				f.BackupSession, err = f.GetBackupSession(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("waiting for BackupSession to be failed")
+				f.EventuallyBackupSessionPhase(f.BackupSession.ObjectMeta).Should(Equal(v1beta1.BackupSessionFailed))
+
+			})
+			It("Should fail auto-backup for adding inappropriate BackupConfiguration RetentionPolicy in BackupBlueprint", func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating inappropraite BackupBlueprint: %s", f.BackupBlueprint.Name))
+				f.BackupBlueprint.Spec.RetentionPolicy = v1alpha1.RetentionPolicy{}
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).To(HaveOccurred())
+			})
+			It("Should fail auto-backup for adding inappropriate BackupConfiguration Schedule in BackupBlueprint", func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating inappropraite BackupBlueprint: %s", f.BackupBlueprint.Name))
+				f.BackupBlueprint.Spec.Schedule = ""
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+	})
+
+	var _ = Describe("DaemonSet", func() {
+		var (
+			pvc       *core.PersistentVolumeClaim
+			daemonset apps.DaemonSet
+
+			testDaemonSetAutoBackupSucceeded = func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s ", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating BackupBlueprint: %s ", f.BackupBlueprint.Name))
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating DaemonSet: %s/%s", daemonset.Namespace, daemonset.Name))
+				_, err = f.CreateDaemonSet(daemonset)
+				err = util.WaitUntilDaemonSetReady(f.KubeClient, daemonset.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.WaitUntilDaemonPodReady(daemonset.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				f.EventuallyPodAccessible(daemonset.ObjectMeta).Should(BeTrue())
+
+				By("Create and Ensure sample data inside running workload")
+				err = f.CreateAndEnsureSampleDataInsideWorkload(daemonset.ObjectMeta, apis.KindDaemonSet)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Adding auto-backup specific annotations to the DaemonSet: %s/%s", daemonset.Namespace, daemonset.Name))
+				err = f.AddAutoBackupAnnotationsToTarget(f.BackupBlueprint.Name, daemonset.ObjectMeta, apis.KindDaemonSet)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that the auto-backup annotations has been added successfully")
+				f.EventuallyAutoBackupAnnotationsFound(f.BackupBlueprint.Name, daemonset.ObjectMeta, apis.KindDaemonSet).Should(BeTrue())
+
+				By("Waiting for Repository")
+				f.EventuallyRepositoryCreated(f.Namespace()).Should(BeTrue())
+				f.Repository, err = f.GetRepository(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupConfiguration")
+				f.EventuallyBackupConfigurationCreated(f.Namespace()).Should(BeTrue())
+				f.BackupConfig, err = f.GetBackupConfiguration(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupSession")
+				f.EventuallyBackupSessionCreated(f.Namespace()).Should(BeTrue())
+				f.BackupSession, err = f.GetBackupSession(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupSession to be succeeded")
+				f.EventuallyBackupSessionPhase(f.BackupSession.ObjectMeta).Should(Equal(v1beta1.BackupSessionSucceeded))
+
+				By("Check for repository status to be updated")
+				f.EventuallyRepository(&daemonset).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			}
+		)
+		BeforeEach(func() {
+			f = root.Invoke()
+		})
+		JustBeforeEach(func() {
+			cred = f.SecretForGCSBackend()
+			if missing, _ := BeZero().Match(cred); missing {
+				Skip("Missing repository credential")
+			}
+			f.BackupBlueprint = f.BackupBlueprintObj(cred.Name)
+		})
+		AfterEach(func() {
+			err := f.DeleteSecret(cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = framework.WaitUntilSecretDeleted(f.KubeClient, cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+		})
+		Context("Success event: ", func() {
+			BeforeEach(func() {
+				pvc = f.GetPersistentVolumeClaim()
+				err := f.CreatePersistentVolumeClaim(pvc)
+				Expect(err).NotTo(HaveOccurred())
+				daemonset = f.DaemonSet(pvc.Name)
+			})
+			AfterEach(func() {
+				err := f.DeleteDaemonSet(daemonset.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilDaemonSetDeleted(f.KubeClient, daemonset.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeleteBackupBlueprint(f.BackupBlueprint.Name)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilBackupBlueprintDeleted(f.StashClient, f.BackupBlueprint.Name)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeleteBackupConfiguration(f.BackupConfig.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, f.BackupConfig.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeleteRepository(f.Repository.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilRepositoryDeleted(f.StashClient, f.Repository.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeletePersistentVolumeClaim(pvc.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+			})
+			It("Should success auto-backup for the DaemonSet", func() {
+				testDaemonSetAutoBackupSucceeded()
+			})
+		})
+		Context("Failure event: ", func() {
+			BeforeEach(func() {
+				pvc = f.GetPersistentVolumeClaim()
+				err := f.CreatePersistentVolumeClaim(pvc)
+				Expect(err).NotTo(HaveOccurred())
+				daemonset = f.DaemonSet(pvc.Name)
+			})
+			AfterEach(func() {
+				err := f.DeleteDaemonSet(daemonset.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilDaemonSetDeleted(f.KubeClient, daemonset.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeleteBackupBlueprint(f.BackupBlueprint.Name)
+				err = framework.WaitUntilBackupBlueprintDeleted(f.StashClient, f.BackupBlueprint.Name)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeleteBackupConfiguration(f.BackupConfig.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, f.BackupConfig.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeleteRepository(f.Repository.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilRepositoryDeleted(f.StashClient, f.Repository.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeletePersistentVolumeClaim(pvc.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+			})
+			It("Should fail auto-backup for adding inappropriate Repository secret in BackupBlueprint", func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating inappropraite BackupBlueprint: %s", f.BackupBlueprint.Name))
+				f.BackupBlueprint.Spec.Backend.StorageSecretName = ""
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).To(HaveOccurred())
+			})
+			It("Should fail auto-backup for adding inappropriate Repository backend in BackupBlueprint", func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating inappropraite BackupBlueprint: %s", f.BackupBlueprint.Name))
+				f.BackupBlueprint.Spec.Backend.GCS = &v1.GCSSpec{}
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating DaemonSet: %s/%s", daemonset.Namespace, daemonset.Name))
+				_, err = f.CreateDaemonSet(daemonset)
+				err = util.WaitUntilDaemonSetReady(f.KubeClient, daemonset.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.WaitUntilDaemonPodReady(daemonset.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				f.EventuallyPodAccessible(daemonset.ObjectMeta).Should(BeTrue())
+
+				By("Create and Ensure sample data inside running workload")
+				err = f.CreateAndEnsureSampleDataInsideWorkload(daemonset.ObjectMeta, apis.KindDaemonSet)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Adding auto-backup specific annotations to the DaemonSet: %s/%s", daemonset.Namespace, daemonset.Name))
+				err = f.AddAutoBackupAnnotationsToTarget(f.BackupBlueprint.Name, daemonset.ObjectMeta, apis.KindDaemonSet)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that the auto-backup annotations has been added successfully")
+				f.EventuallyAutoBackupAnnotationsFound(f.BackupBlueprint.Name, daemonset.ObjectMeta, apis.KindDaemonSet).Should(BeTrue())
+
+				By("Waiting for Repository")
+				f.EventuallyRepositoryCreated(f.Namespace()).Should(BeTrue())
+				f.Repository, err = f.GetRepository(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupConfiguration")
+				f.EventuallyBackupConfigurationCreated(f.Namespace()).Should(BeTrue())
+				f.BackupConfig, err = f.GetBackupConfiguration(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupSession")
+				f.EventuallyBackupSessionCreated(f.Namespace()).Should(BeTrue())
+				f.BackupSession, err = f.GetBackupSession(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("waiting for BackupSession to be failed")
+				f.EventuallyBackupSessionPhase(f.BackupSession.ObjectMeta).Should(Equal(v1beta1.BackupSessionFailed))
+
+			})
+			It("Should fail auto-backup for adding inappropriate BackupConfiguration RetentionPolicy in BackupBlueprint", func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating inappropraite BackupBlueprint: %s", f.BackupBlueprint.Name))
+				f.BackupBlueprint.Spec.RetentionPolicy = v1alpha1.RetentionPolicy{}
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).To(HaveOccurred())
+			})
+			It("Should fail auto-backup for adding inappropriate BackupConfiguration Schedule in BackupBlueprint", func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating inappropraite BackupBlueprint: %s", f.BackupBlueprint.Name))
+				f.BackupBlueprint.Spec.Schedule = ""
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).To(HaveOccurred())
+			})
+
+			It("Should fail auto-backup for adding inappropriate BackupBlueprint annotation in DaemonSet", func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s ", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating BackupBlueprint: %s ", f.BackupBlueprint.Name))
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating DaemonSet: %s/%s", daemonset.Namespace, daemonset.Name))
+				_, err = f.CreateDaemonSet(daemonset)
+				err = util.WaitUntilDaemonSetReady(f.KubeClient, daemonset.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.WaitUntilDaemonPodReady(daemonset.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				f.EventuallyPodAccessible(daemonset.ObjectMeta).Should(BeTrue())
+
+				By("Create and Ensure sample data inside running workload")
+				err = f.CreateAndEnsureSampleDataInsideWorkload(daemonset.ObjectMeta, apis.KindDaemonSet)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Adding auto-backup inappropriate annotations to the DaemonSet: %s/%s", daemonset.Namespace, daemonset.Name))
+				wrongBackupBlueprintName := "backup-blueprint"
+				daemonset, _, err := apps_util.PatchDaemonSet(f.KubeClient, &daemonset, func(in *apps.DaemonSet) *apps.DaemonSet {
+					in.SetAnnotations(map[string]string{
+						v1beta1.KeyBackupBlueprint: wrongBackupBlueprintName,
+						v1beta1.KeyTargetPaths:     framework.TestSourceDataTargetPath,
+						v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
+					})
+					return in
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that the auto-backup annotations has been added successfully")
+				Expect(daemonset.Annotations[v1beta1.KeyBackupBlueprint]).To(Equal(wrongBackupBlueprintName))
+				Expect(daemonset.Annotations[v1beta1.KeyTargetPaths]).To(Equal(framework.TestSourceDataTargetPath))
+				Expect(daemonset.Annotations[v1beta1.KeyVolumeMounts]).To(Equal(framework.TestSourceDataVolumeMount))
+
+				By("Will fail to get respective BackupBlueprint")
+				annotations := daemonset.Annotations
+				_, err = f.GetBackupBlueprint(annotations[v1beta1.KeyBackupBlueprint])
+				Expect(err).To(HaveOccurred())
+
+			})
+			It("Should fail auto-backup for adding inappropriate TargetPath/MountPath annotations in DaemonSet", func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s ", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating BackupBlueprint: %s ", f.BackupBlueprint.Name))
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating DaemonSet: %s/%s", daemonset.Namespace, daemonset.Name))
+				_, err = f.CreateDaemonSet(daemonset)
+				err = util.WaitUntilDaemonSetReady(f.KubeClient, daemonset.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.WaitUntilDaemonPodReady(daemonset.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				f.EventuallyPodAccessible(daemonset.ObjectMeta).Should(BeTrue())
+
+				By("Create and Ensure sample data inside running workload")
+				err = f.CreateAndEnsureSampleDataInsideWorkload(daemonset.ObjectMeta, apis.KindDaemonSet)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Adding auto-backup inappropriate annotations to the DaemonSet: %s/%s", daemonset.Namespace, daemonset.Name))
+				wrongTargetPath := "/source/data-1"
+				daemonset, _, err := apps_util.PatchDaemonSet(f.KubeClient, &daemonset, func(in *apps.DaemonSet) *apps.DaemonSet {
+					in.SetAnnotations(map[string]string{
+						v1beta1.KeyBackupBlueprint: f.BackupBlueprint.Name,
+						v1beta1.KeyTargetPaths:     wrongTargetPath,
+						v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
+					})
+					return in
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that the auto-backup annotations has been added successfully")
+				Expect(daemonset.Annotations[v1beta1.KeyBackupBlueprint]).To(Equal(f.BackupBlueprint.Name))
+				Expect(daemonset.Annotations[v1beta1.KeyTargetPaths]).To(Equal(wrongTargetPath))
+				Expect(daemonset.Annotations[v1beta1.KeyVolumeMounts]).To(Equal(framework.TestSourceDataVolumeMount))
+
+				By("Waiting for Repository")
+				f.EventuallyRepositoryCreated(f.Namespace()).Should(BeTrue())
+				f.Repository, err = f.GetRepository(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupConfiguration")
+				f.EventuallyBackupConfigurationCreated(f.Namespace()).Should(BeTrue())
+				f.BackupConfig, err = f.GetBackupConfiguration(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupSession")
+				f.EventuallyBackupSessionCreated(f.Namespace()).Should(BeTrue())
+				f.BackupSession, err = f.GetBackupSession(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupSession to be failed")
+				f.EventuallyBackupSessionPhase(f.BackupSession.ObjectMeta).Should(Equal(v1beta1.BackupSessionFailed))
+			})
 
 		})
 	})
 
+	var _ = Describe("PVC", func() {
+		var (
+			pvc *core.PersistentVolumeClaim
+			pod core.Pod
+
+			testPVCAutoBackupSucceeded = func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s ", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating BackupBlueprint: %s ", f.BackupBlueprint.Name))
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating PVC: %s/%s ", pvc.Namespace, pvc.Name))
+				err = f.CreatePersistentVolumeClaim(pvc)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating Pod: %s/%s", pod.Namespace, pod.Name))
+				err = f.CreatePod(pod)
+				Expect(err).NotTo(HaveOccurred())
+				err = core_util.WaitUntilPodRunning(f.KubeClient, pod.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Create and Ensure sample data inside running workload")
+				err = f.CreateAndEnsureSampleDataInsideWorkload(pod.ObjectMeta, apis.KindPersistentVolumeClaim)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Adding auto-backup specific annotations to the PVC: %s/%s", pvc.Namespace, pvc.Name))
+				err = f.AddAutoBackupAnnotationsToTarget(f.BackupBlueprint.Name, pvc.ObjectMeta, apis.KindPersistentVolumeClaim)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that the auto-backup annotations has been added successfully")
+				f.EventuallyAutoBackupAnnotationsFound(f.BackupBlueprint.Name, pvc.ObjectMeta, apis.KindPersistentVolumeClaim).Should(BeTrue())
+
+				By("Waiting for Repository")
+				f.EventuallyRepositoryCreated(f.Namespace()).Should(BeTrue())
+				f.Repository, err = f.GetRepository(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupConfiguration")
+				f.EventuallyBackupConfigurationCreated(f.Namespace()).Should(BeTrue())
+				f.BackupConfig, err = f.GetBackupConfiguration(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupSession")
+				f.EventuallyBackupSessionCreated(f.Namespace()).Should(BeTrue())
+				f.BackupSession, err = f.GetBackupSession(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupSession to be succeeded")
+				f.EventuallyBackupSessionPhase(f.BackupSession.ObjectMeta).Should(Equal(v1beta1.BackupSessionSucceeded))
+
+				By("Waiting for Repository status to be updated")
+				f.EventuallyRepository(&pvc).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
+			}
+		)
+		BeforeEach(func() {
+			f = root.Invoke()
+
+			By("Ensure pvc-backup Function exist")
+			err := f.VerifyPVCBackupFunction()
+			Expect(err).NotTo(HaveOccurred())
+			By("Ensure pvc-backup Task exist")
+			err = f.VerifyPVCBackupTask()
+			Expect(err).NotTo(HaveOccurred())
+		})
+		JustBeforeEach(func() {
+			cred = f.SecretForGCSBackend()
+			if missing, _ := BeZero().Match(cred); missing {
+				Skip("Missing repository credential")
+			}
+			f.BackupBlueprint = f.BackupBlueprintObj(cred.Name)
+		})
+		AfterEach(func() {
+			err := f.DeleteSecret(cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = framework.WaitUntilSecretDeleted(f.KubeClient, cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		Context("Success event: ", func() {
+			BeforeEach(func() {
+				pvc = f.GetPersistentVolumeClaim()
+				pod = f.Pod(pvc.Name)
+			})
+			JustBeforeEach(func() {
+				f.BackupBlueprint.Spec.Task = v1beta1.TaskRef{
+					Name: framework.TaskPVCBackup,
+				}
+			})
+			AfterEach(func() {
+				err := f.DeletePod(pod.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilPodDeleted(f.KubeClient, pod.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeletePersistentVolumeClaim(pvc.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeleteBackupBlueprint(f.BackupBlueprint.Name)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilBackupBlueprintDeleted(f.StashClient, f.BackupBlueprint.Name)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeleteBackupConfiguration(f.BackupConfig.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, f.BackupConfig.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeleteRepository(f.Repository.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilRepositoryDeleted(f.StashClient, f.Repository.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+			})
+			It("Should success auto-backup for the PVC", func() {
+				testPVCAutoBackupSucceeded()
+			})
+		})
+		Context("Failure event: ", func() {
+			BeforeEach(func() {
+				pvc = f.GetPersistentVolumeClaim()
+				pod = f.Pod(pvc.Name)
+			})
+			JustBeforeEach(func() {
+				f.BackupBlueprint.Spec.Task = v1beta1.TaskRef{
+					Name: framework.TaskPVCBackup,
+				}
+			})
+			AfterEach(func() {
+				err := f.DeletePod(pod.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilPodDeleted(f.KubeClient, pod.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeletePersistentVolumeClaim(pvc.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeleteBackupBlueprint(f.BackupBlueprint.Name)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilBackupBlueprintDeleted(f.StashClient, f.BackupBlueprint.Name)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeleteBackupConfiguration(f.BackupConfig.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, f.BackupConfig.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = f.DeleteRepository(f.Repository.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilRepositoryDeleted(f.StashClient, f.Repository.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+			})
+			It("Should fail auto-backup for adding inappropriate BackupBlueprint annotation in PVC", func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s ", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating BackupBlueprint: %s ", f.BackupBlueprint.Name))
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating PVC: %s/%s ", pvc.Namespace, pvc.Name))
+				err = f.CreatePersistentVolumeClaim(pvc)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating Pod: %s/%s", pod.Namespace, pod.Name))
+				err = f.CreatePod(pod)
+				Expect(err).NotTo(HaveOccurred())
+				err = core_util.WaitUntilPodRunning(f.KubeClient, pod.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Create and Ensure sample data inside running workload")
+				err = f.CreateAndEnsureSampleDataInsideWorkload(pod.ObjectMeta, apis.KindPersistentVolumeClaim)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Adding auto-backup inappropriate annotation to the PVC: %s/%s", pvc.Namespace, pvc.Name))
+				wrongBackupBlueprintName := "backup-blueprint"
+				pvc, _, err = core_util.PatchPVC(f.KubeClient, pvc, func(in *core.PersistentVolumeClaim) *core.PersistentVolumeClaim {
+					in.SetAnnotations(map[string]string{
+						v1beta1.KeyBackupBlueprint: wrongBackupBlueprintName,
+					})
+					return in
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that the auto-backup annotation have been added successfully")
+				Expect(pvc.Annotations[v1beta1.KeyBackupBlueprint]).To(Equal(wrongBackupBlueprintName))
+
+				By("Will fail to get respective BackupBlueprint")
+				annotations := pvc.GetAnnotations()
+				_, err = f.GetBackupBlueprint(annotations[v1beta1.KeyBackupBlueprint])
+				Expect(err).To(HaveOccurred())
+			})
+
+			It("Should fail auto-backup for adding inappropriate Repository secret in BackupBlueprint", func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s ", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating inappropriate BackupBlueprint: %s", f.BackupBlueprint.Name))
+				f.BackupBlueprint.Spec.Backend.StorageSecretName = ""
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).To(HaveOccurred())
+			})
+			It("Should fail auto-backup for adding inappropriate Repository backend in BackupBlueprint", func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s ", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating inappropraite BackupBlueprint: %s ", f.BackupBlueprint.Name))
+				f.BackupBlueprint.Spec.Backend.GCS = &v1.GCSSpec{}
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating PVC: %s/%s ", pvc.Namespace, pvc.Name))
+				err = f.CreatePersistentVolumeClaim(pvc)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating Pod: %s/%s", pod.Namespace, pod.Name))
+				err = f.CreatePod(pod)
+				Expect(err).NotTo(HaveOccurred())
+				err = core_util.WaitUntilPodRunning(f.KubeClient, pod.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Create and Ensure sample data inside running workload")
+				err = f.CreateAndEnsureSampleDataInsideWorkload(pod.ObjectMeta, apis.KindPersistentVolumeClaim)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Adding auto-backup specific annotations to the PVC: %s/%s", pvc.Namespace, pvc.Name))
+				err = f.AddAutoBackupAnnotationsToTarget(f.BackupBlueprint.Name, pvc.ObjectMeta, apis.KindPersistentVolumeClaim)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that the auto-backup annotations has been added successfully")
+				f.EventuallyAutoBackupAnnotationsFound(f.BackupBlueprint.Name, pvc.ObjectMeta, apis.KindPersistentVolumeClaim).Should(BeTrue())
+
+				By("Waiting for Repository")
+				f.EventuallyRepositoryCreated(f.Namespace()).Should(BeTrue())
+				f.Repository, err = f.GetRepository(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupConfiguration")
+				f.EventuallyBackupConfigurationCreated(f.Namespace()).Should(BeTrue())
+				f.BackupConfig, err = f.GetBackupConfiguration(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Waiting for BackupSession")
+				f.EventuallyBackupSessionCreated(f.Namespace()).Should(BeTrue())
+				f.BackupSession, err = f.GetBackupSession(f.Namespace())
+				Expect(err).NotTo(HaveOccurred())
+
+				By("waiting for BackupSession to be failed")
+				f.EventuallyBackupSessionPhase(f.BackupSession.ObjectMeta).Should(Equal(v1beta1.BackupSessionFailed))
+			})
+			It("Should fail auto-backup for adding inappropriate BackupConfiguration RetentionPolicy in BackupBlueprint", func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s ", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating inappropraite BackupBlueprint: %s ", f.BackupBlueprint.Name))
+				f.BackupBlueprint.Spec.RetentionPolicy = v1alpha1.RetentionPolicy{}
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).To(HaveOccurred())
+			})
+			It("Should fail auto-backup for adding inappropriate BackupConfiguration Schedule in BackupBlueprint", func() {
+				By(fmt.Sprintf("Creating storage Secret: %s/%s ", cred.Namespace, cred.Name))
+				err := f.CreateSecret(cred)
+				Expect(err).NotTo(HaveOccurred())
+
+				By(fmt.Sprintf("Creating BackupBlueprint: %s ", f.BackupBlueprint.Name))
+				f.BackupBlueprint.Spec.Schedule = ""
+				_, err = f.CreateBackupBlueprint(f.BackupBlueprint)
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
 })

@@ -3,6 +3,9 @@ package framework
 import (
 	"path/filepath"
 
+	"stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
+
 	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
@@ -43,8 +46,12 @@ func New(kubeClient kubernetes.Interface, extClient cs.Interface, kaClient ka.In
 
 func (f *Framework) Invoke() *Invocation {
 	return &Invocation{
-		Framework: f,
-		app:       rand.WithUniqSuffix("stash-e2e"),
+		Framework:       f,
+		app:             rand.WithUniqSuffix("stash-e2e"),
+		BackupBlueprint: &v1beta1.BackupBlueprint{},
+		BackupSession:   &v1beta1.BackupSession{},
+		Repository:      &v1alpha1.Repository{},
+		BackupConfig:    &v1beta1.BackupConfiguration{},
 	}
 }
 
@@ -58,5 +65,9 @@ func (f *Invocation) App() string {
 
 type Invocation struct {
 	*Framework
-	app string
+	app             string
+	BackupConfig    *v1beta1.BackupConfiguration
+	BackupSession   *v1beta1.BackupSession
+	BackupBlueprint *v1beta1.BackupBlueprint
+	Repository      *v1alpha1.Repository
 }

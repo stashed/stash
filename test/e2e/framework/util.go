@@ -31,14 +31,16 @@ var (
 )
 
 const (
-	TestSoucreDemoDataPath = "/data/stash-test/demo-data"
-	TestSourceDataDir1     = "/source/data/dir-1"
-	TestSourceDataDir2     = "/source/data/dir-2"
-	KindRestic             = "Restic"
-	KindRepository         = "Repository"
-	KindRecovery           = "Recovery"
-	PullInterval           = time.Second * 2
-	WaitTimeOut            = time.Minute * 3
+	TestSoucreDemoDataPath    = "/data/stash-test/demo-data"
+	TestSourceDataDir1        = "/source/data/dir-1"
+	TestSourceDataDir2        = "/source/data/dir-2"
+	KindRestic                = "Restic"
+	KindRepository            = "Repository"
+	KindRecovery              = "Recovery"
+	TestSourceDataTargetPath  = "/source/data"
+	TestSourceDataVolumeMount = "source-data:/source/data"
+	PullInterval              = time.Second * 2
+	WaitTimeOut               = time.Minute * 3
 )
 
 func (f *Framework) EventualEvent(meta metav1.ObjectMeta) GomegaAsyncAssertion {
@@ -531,6 +533,9 @@ func WaitUntilResticDeleted(sc cs.Interface, meta metav1.ObjectMeta) error {
 
 func WaitUntilBackupConfigurationDeleted(sc cs.Interface, meta metav1.ObjectMeta) error {
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
+		if meta.Name == "" {
+			return true, nil
+		}
 		if _, err := sc.StashV1beta1().BackupConfigurations(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
 			if kerr.IsNotFound(err) {
 				return true, nil
@@ -544,6 +549,9 @@ func WaitUntilBackupConfigurationDeleted(sc cs.Interface, meta metav1.ObjectMeta
 
 func WaitUntilBackupBlueprintDeleted(sc cs.Interface, name string) error {
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
+		if name == "" {
+			return true, nil
+		}
 		if _, err := sc.StashV1beta1().BackupBlueprints().Get(name, metav1.GetOptions{}); err != nil {
 			if kerr.IsNotFound(err) {
 				return true, nil
@@ -605,6 +613,9 @@ func WaitUntilRepositoriesDeleted(sc cs.Interface, repositories []*api.Repositor
 func WaitUntilRepositoryDeleted(sc cs.Interface, meta metav1.ObjectMeta) error {
 
 	return wait.PollImmediate(PullInterval, WaitTimeOut, func() (done bool, err error) {
+		if meta.Name == "" {
+			return true, nil
+		}
 		if _, err := sc.StashV1alpha1().Repositories(meta.Namespace).Get(meta.Name, metav1.GetOptions{}); err != nil {
 			if kerr.IsNotFound(err) {
 				return true, nil
@@ -712,7 +723,7 @@ func (f *Invocation) ReadDataFromPod(meta metav1.ObjectMeta) (data string, err e
 	return data, err
 }
 
-func (f *Invocation) AddAnnotationsToTarget(backupBlueprintName string, meta metav1.ObjectMeta, resourceKind string) error {
+func (f *Invocation) AddAutoBackupAnnotationsToTarget(backupBlueprintName string, meta metav1.ObjectMeta, resourceKind string) error {
 	switch resourceKind {
 	case apis.KindPersistentVolumeClaim:
 		obj, err := f.KubeClient.CoreV1().PersistentVolumeClaims(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
@@ -736,8 +747,8 @@ func (f *Invocation) AddAnnotationsToTarget(backupBlueprintName string, meta met
 		_, _, err = v1.PatchDeployment(f.KubeClient, obj, func(in *apps.Deployment) *apps.Deployment {
 			in.SetAnnotations(map[string]string{
 				v1beta1.KeyBackupBlueprint: backupBlueprintName,
-				v1beta1.KeyTargetPaths:     "/source/data",
-				v1beta1.KeyVolumeMounts:    "source-data:/source/data",
+				v1beta1.KeyTargetPaths:     TestSourceDataTargetPath,
+				v1beta1.KeyVolumeMounts:    TestSourceDataVolumeMount,
 			})
 			return in
 		})
@@ -752,8 +763,8 @@ func (f *Invocation) AddAnnotationsToTarget(backupBlueprintName string, meta met
 		_, _, err = v1.PatchStatefulSet(f.KubeClient, obj, func(in *apps.StatefulSet) *apps.StatefulSet {
 			in.SetAnnotations(map[string]string{
 				v1beta1.KeyBackupBlueprint: backupBlueprintName,
-				v1beta1.KeyTargetPaths:     "/source/data",
-				v1beta1.KeyVolumeMounts:    "source-data:/source/data",
+				v1beta1.KeyTargetPaths:     TestSourceDataTargetPath,
+				v1beta1.KeyVolumeMounts:    TestSourceDataVolumeMount,
 			})
 			return in
 		})
@@ -768,8 +779,8 @@ func (f *Invocation) AddAnnotationsToTarget(backupBlueprintName string, meta met
 		_, _, err = v1.PatchDaemonSet(f.KubeClient, obj, func(in *apps.DaemonSet) *apps.DaemonSet {
 			in.SetAnnotations(map[string]string{
 				v1beta1.KeyBackupBlueprint: backupBlueprintName,
-				v1beta1.KeyTargetPaths:     "/source/data",
-				v1beta1.KeyVolumeMounts:    "source-data:/source/data",
+				v1beta1.KeyTargetPaths:     TestSourceDataTargetPath,
+				v1beta1.KeyVolumeMounts:    TestSourceDataVolumeMount,
 			})
 			return in
 		})
@@ -780,7 +791,7 @@ func (f *Invocation) AddAnnotationsToTarget(backupBlueprintName string, meta met
 	return nil
 }
 
-func (f *Framework) EventuallyAnnotationsUpdated(backupBlueprintName string, meta metav1.ObjectMeta, resourceKind string) GomegaAsyncAssertion {
+func (f *Framework) EventuallyAutoBackupAnnotationsFound(backupBlueprintName string, meta metav1.ObjectMeta, resourceKind string) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
 			switch resourceKind {
@@ -793,22 +804,22 @@ func (f *Framework) EventuallyAnnotationsUpdated(backupBlueprintName string, met
 				obj, err := f.KubeClient.AppsV1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(obj.Annotations[v1beta1.KeyBackupBlueprint]).To(Equal(backupBlueprintName))
-				Expect(obj.Annotations[v1beta1.KeyTargetPaths]).To(Equal("/source/data"))
-				Expect(obj.Annotations[v1beta1.KeyVolumeMounts]).To(Equal("source-data:/source/data"))
+				Expect(obj.Annotations[v1beta1.KeyTargetPaths]).To(Equal(TestSourceDataTargetPath))
+				Expect(obj.Annotations[v1beta1.KeyVolumeMounts]).To(Equal(TestSourceDataVolumeMount))
 				return true
 			case apis.KindStatefulSet:
 				obj, err := f.KubeClient.AppsV1().StatefulSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(obj.Annotations[v1beta1.KeyBackupBlueprint]).To(Equal(backupBlueprintName))
-				Expect(obj.Annotations[v1beta1.KeyTargetPaths]).To(Equal("/source/data"))
-				Expect(obj.Annotations[v1beta1.KeyVolumeMounts]).To(Equal("source-data:/source/data"))
+				Expect(obj.Annotations[v1beta1.KeyTargetPaths]).To(Equal(TestSourceDataTargetPath))
+				Expect(obj.Annotations[v1beta1.KeyVolumeMounts]).To(Equal(TestSourceDataVolumeMount))
 				return true
 			case apis.KindDaemonSet:
 				obj, err := f.KubeClient.AppsV1().DaemonSets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(obj.Annotations[v1beta1.KeyBackupBlueprint]).To(Equal(backupBlueprintName))
-				Expect(obj.Annotations[v1beta1.KeyTargetPaths]).To(Equal("/source/data"))
-				Expect(obj.Annotations[v1beta1.KeyVolumeMounts]).To(Equal("source-data:/source/data"))
+				Expect(obj.Annotations[v1beta1.KeyTargetPaths]).To(Equal(TestSourceDataTargetPath))
+				Expect(obj.Annotations[v1beta1.KeyVolumeMounts]).To(Equal(TestSourceDataVolumeMount))
 				return true
 			}
 			return false
@@ -816,4 +827,17 @@ func (f *Framework) EventuallyAnnotationsUpdated(backupBlueprintName string, met
 		time.Minute*2,
 		time.Second*5,
 	)
+}
+
+func (f *Framework) CreateAndEnsureSampleDataInsideWorkload(meta metav1.ObjectMeta, resourceKind string) error {
+	err := f.CreateSampleDataInsideWorkload(meta, resourceKind)
+	if err != nil {
+		return err
+	}
+	sampleData, err := f.ReadSampleDataFromFromWorkload(meta, resourceKind)
+	if err != nil {
+		return err
+	}
+	Expect(sampleData).To(Not(BeEmpty()))
+	return nil
 }

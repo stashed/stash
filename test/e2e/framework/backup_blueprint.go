@@ -2,15 +2,16 @@ package framework
 
 import (
 	"github.com/appscode/go/crypto/rand"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	store "kmodules.xyz/objectstore-api/api/v1"
 	"stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
-func (f *Invocation) BackupBlueprint(secret string) v1beta1.BackupBlueprint {
+func (f *Invocation) BackupBlueprintObj(secret string) *v1beta1.BackupBlueprint {
 
-	return v1beta1.BackupBlueprint{
+	return &v1beta1.BackupBlueprint{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: rand.WithUniqSuffix(f.app),
 		},
@@ -34,12 +35,19 @@ func (f *Invocation) BackupBlueprint(secret string) v1beta1.BackupBlueprint {
 	}
 }
 
-func (f *Framework) CreateBackupBlueprint(backupBlueprint v1beta1.BackupBlueprint) (*v1beta1.BackupBlueprint, error) {
-	return f.StashClient.StashV1beta1().BackupBlueprints().Create(&backupBlueprint)
+func (f *Framework) CreateBackupBlueprint(backupBlueprint *v1beta1.BackupBlueprint) (*v1beta1.BackupBlueprint, error) {
+	return f.StashClient.StashV1beta1().BackupBlueprints().Create(backupBlueprint)
 }
 
 func (f *Invocation) DeleteBackupBlueprint(name string) error {
-	return f.StashClient.StashV1beta1().BackupBlueprints().Delete(name, &metav1.DeleteOptions{})
+	if name == "" {
+		return nil
+	}
+	err := f.StashClient.StashV1beta1().BackupBlueprints().Delete(name, &metav1.DeleteOptions{})
+	if kerr.IsNotFound(err) {
+		return nil
+	}
+	return err
 }
 
 func (f *Framework) GetBackupBlueprint(name string) (*v1beta1.BackupBlueprint, error) {

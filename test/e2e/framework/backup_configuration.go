@@ -7,6 +7,7 @@ import (
 	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1alpha1"
@@ -51,7 +52,14 @@ func (f *Invocation) CreateBackupConfiguration(backupCfg v1beta1.BackupConfigura
 }
 
 func (f *Invocation) DeleteBackupConfiguration(meta metav1.ObjectMeta) error {
-	return f.StashClient.StashV1beta1().BackupConfigurations(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+	if meta.Name == "" {
+		return nil
+	}
+	err := f.StashClient.StashV1beta1().BackupConfigurations(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+	if kerr.IsNotFound(err) {
+		return nil
+	}
+	return nil
 }
 
 func (f *Invocation) PvcBackupTarget(pvcName string) *v1beta1.BackupTarget {
@@ -73,10 +81,10 @@ func (f *Invocation) PvcBackupTarget(pvcName string) *v1beta1.BackupTarget {
 	}
 }
 
-func (f *Framework) EventuallyBackupConfigurationCreated(meta metav1.ObjectMeta) GomegaAsyncAssertion {
+func (f *Framework) EventuallyBackupConfigurationCreated(namespace string) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			objList, err := f.StashClient.StashV1beta1().BackupConfigurations(meta.Namespace).List(metav1.ListOptions{})
+			objList, err := f.StashClient.StashV1beta1().BackupConfigurations(namespace).List(metav1.ListOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			if len(objList.Items) > 0 {
 				return true
@@ -88,13 +96,13 @@ func (f *Framework) EventuallyBackupConfigurationCreated(meta metav1.ObjectMeta)
 	)
 }
 
-func (f *Framework) GetBackupConfiguration(meta metav1.ObjectMeta) (backupConfig v1beta1.BackupConfiguration, err error) {
-	backupCfglist, err := f.StashClient.StashV1beta1().BackupConfigurations(meta.Namespace).List(metav1.ListOptions{})
+func (f *Framework) GetBackupConfiguration(namespace string) (backupConfig *v1beta1.BackupConfiguration, err error) {
+	backupCfglist, err := f.StashClient.StashV1beta1().BackupConfigurations(namespace).List(metav1.ListOptions{})
 	if err != nil {
 		return backupConfig, err
 	}
 	if len(backupCfglist.Items) > 0 {
-		return backupCfglist.Items[0], nil
+		return &backupCfglist.Items[0], nil
 	}
 	return backupConfig, fmt.Errorf("no BackupSession found")
 }

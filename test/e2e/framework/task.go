@@ -121,7 +121,7 @@ func (f *Invocation) RestoreTask() v1beta1.Task {
 	}
 }
 
-func (f *Invocation) GetTask() error {
+func (f *Invocation) VerifyPVCBackupTask() error {
 	_, err := f.StashClient.StashV1beta1().Tasks().Get(TaskPVCBackup, metav1.GetOptions{})
 	return err
 }

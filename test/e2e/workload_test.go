@@ -54,7 +54,7 @@ var _ = Describe("Deployment", func() {
 		pvc = f.GetPersistentVolumeClaim()
 		err = f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
-		repo = f.Repository(cred.Name, pvc.Name)
+		repo = f.RepositoryObj(cred.Name, pvc.Name)
 
 		backupCfg = f.BackupConfiguration(repo.Name, targetref)
 		rules = []v1beta1.Rule{
@@ -105,8 +105,8 @@ var _ = Describe("Deployment", func() {
 			f.EventuallyDeployment(deployment.ObjectMeta).Should(matcher.HaveSidecar(util.StashContainer))
 
 			By("Waiting for BackupSession")
-			f.EventuallyBackupSessionCreated(backupCfg.ObjectMeta).Should(BeTrue())
-			bs, err := f.GetBackupSession(backupCfg.ObjectMeta)
+			f.EventuallyBackupSessionCreated(backupCfg.Namespace).Should(BeTrue())
+			bs, err := f.GetBackupSession(backupCfg.Namespace)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Check for succeeded BackupSession")
@@ -248,8 +248,8 @@ var _ = Describe("Deployment", func() {
 			f.CheckLeaderElection(deployment.ObjectMeta, apis.KindDeployment, v1beta1.ResourceKindBackupConfiguration)
 
 			By("Waiting for BackupSession")
-			f.EventuallyBackupSessionCreated(backupCfg.ObjectMeta).Should(BeTrue())
-			bs, err := f.GetBackupSession(backupCfg.ObjectMeta)
+			f.EventuallyBackupSessionCreated(backupCfg.Namespace).Should(BeTrue())
+			bs, err := f.GetBackupSession(backupCfg.Namespace)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Check for succeeded BackupSession")
@@ -373,7 +373,7 @@ var _ = Describe("StatefulSet", func() {
 		pvc = f.GetPersistentVolumeClaim()
 		err = f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
-		repo = f.Repository(cred.Name, pvc.Name)
+		repo = f.RepositoryObj(cred.Name, pvc.Name)
 
 		backupCfg = f.BackupConfiguration(repo.Name, targetref)
 		restoreSession = f.RestoreSession(repo.Name, targetref, rules)
@@ -418,8 +418,8 @@ var _ = Describe("StatefulSet", func() {
 			f.EventuallyStatefulSet(ss.ObjectMeta).Should(matcher.HaveSidecar(util.StashContainer))
 
 			By("Waiting for BackupSession")
-			f.EventuallyBackupSessionCreated(backupCfg.ObjectMeta).Should(BeTrue())
-			bs, err := f.GetBackupSession(backupCfg.ObjectMeta)
+			f.EventuallyBackupSessionCreated(backupCfg.Namespace).Should(BeTrue())
+			bs, err := f.GetBackupSession(backupCfg.Namespace)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Check for repository status updated")
@@ -683,7 +683,7 @@ var _ = Describe("DaemonSet", func() {
 		pvc = f.GetPersistentVolumeClaim()
 		err = f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
-		repo = f.Repository(cred.Name, pvc.Name)
+		repo = f.RepositoryObj(cred.Name, pvc.Name)
 
 		backupCfg = f.BackupConfiguration(repo.Name, targetref)
 		rules = []v1beta1.Rule{
@@ -735,8 +735,8 @@ var _ = Describe("DaemonSet", func() {
 			f.EventuallyDaemonSet(daemonset.ObjectMeta).Should(matcher.HaveSidecar(util.StashContainer))
 
 			By("Waiting for BackupSession")
-			f.EventuallyBackupSessionCreated(backupCfg.ObjectMeta).Should(BeTrue())
-			bs, err := f.GetBackupSession(backupCfg.ObjectMeta)
+			f.EventuallyBackupSessionCreated(backupCfg.Namespace).Should(BeTrue())
+			bs, err := f.GetBackupSession(backupCfg.Namespace)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Check for repository status updated")
@@ -906,7 +906,7 @@ var _ = Describe("ReplicationController", func() {
 		pvc = f.GetPersistentVolumeClaim()
 		err = f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
-		repo = f.Repository(cred.Name, pvc.Name)
+		repo = f.RepositoryObj(cred.Name, pvc.Name)
 
 		backupCfg = f.BackupConfiguration(repo.Name, targetref)
 		rules = []v1beta1.Rule{
@@ -957,8 +957,8 @@ var _ = Describe("ReplicationController", func() {
 			f.EventuallyReplicationController(rc.ObjectMeta).Should(matcher.HaveSidecar(util.StashContainer))
 
 			By("Waiting for BackupSession")
-			f.EventuallyBackupSessionCreated(backupCfg.ObjectMeta).Should(BeTrue())
-			bs, err := f.GetBackupSession(backupCfg.ObjectMeta)
+			f.EventuallyBackupSessionCreated(backupCfg.Namespace).Should(BeTrue())
+			bs, err := f.GetBackupSession(backupCfg.Namespace)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Check for succeeded BackupSession")
@@ -1097,8 +1097,8 @@ var _ = Describe("ReplicationController", func() {
 			f.CheckLeaderElection(rc.ObjectMeta, apis.KindReplicationController, v1beta1.ResourceKindBackupConfiguration)
 
 			By("Waiting for BackupSession")
-			f.EventuallyBackupSessionCreated(backupCfg.ObjectMeta).Should(BeTrue())
-			bs, err := f.GetBackupSession(backupCfg.ObjectMeta)
+			f.EventuallyBackupSessionCreated(backupCfg.Namespace).Should(BeTrue())
+			bs, err := f.GetBackupSession(backupCfg.Namespace)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Check for succeeded BackupSession")
@@ -1226,7 +1226,7 @@ var _ = Describe("ReplicaSet", func() {
 		pvc = f.GetPersistentVolumeClaim()
 		err = f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
-		repo = f.Repository(cred.Name, pvc.Name)
+		repo = f.RepositoryObj(cred.Name, pvc.Name)
 
 		backupCfg = f.BackupConfiguration(repo.Name, targetref)
 		rules = []v1beta1.Rule{
@@ -1277,8 +1277,8 @@ var _ = Describe("ReplicaSet", func() {
 			f.EventuallyReplicaSet(rs.ObjectMeta).Should(matcher.HaveSidecar(util.StashContainer))
 
 			By("Waiting for BackupSession")
-			f.EventuallyBackupSessionCreated(backupCfg.ObjectMeta).Should(BeTrue())
-			bs, err := f.GetBackupSession(backupCfg.ObjectMeta)
+			f.EventuallyBackupSessionCreated(backupCfg.Namespace).Should(BeTrue())
+			bs, err := f.GetBackupSession(backupCfg.Namespace)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Check for succeeded BackupSession")
@@ -1418,8 +1418,8 @@ var _ = Describe("ReplicaSet", func() {
 			f.CheckLeaderElection(rs.ObjectMeta, apis.KindReplicaSet, v1beta1.ResourceKindBackupConfiguration)
 
 			By("Waiting for BackupSession")
-			f.EventuallyBackupSessionCreated(backupCfg.ObjectMeta).Should(BeTrue())
-			bs, err := f.GetBackupSession(backupCfg.ObjectMeta)
+			f.EventuallyBackupSessionCreated(backupCfg.Namespace).Should(BeTrue())
+			bs, err := f.GetBackupSession(backupCfg.Namespace)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Check for succeeded BackupSession")

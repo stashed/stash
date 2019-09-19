@@ -7,6 +7,7 @@ import (
 
 	"github.com/appscode/go/crypto/rand"
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 )
@@ -147,5 +148,9 @@ func (f *Invocation) CreatePod(pod core.Pod) error {
 }
 
 func (f *Invocation) DeletePod(meta metav1.ObjectMeta) error {
-	return f.KubeClient.CoreV1().Pods(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+	err := f.KubeClient.CoreV1().Pods(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+	if kerr.IsNotFound(err) {
+		return nil
+	}
+	return err
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/appscode/go/types"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -34,7 +35,11 @@ func (f *Framework) CreateDeployment(obj apps.Deployment) (*apps.Deployment, err
 }
 
 func (f *Framework) DeleteDeployment(meta metav1.ObjectMeta) error {
-	return f.KubeClient.AppsV1().Deployments(meta.Namespace).Delete(meta.Name, deleteInBackground())
+	err := f.KubeClient.AppsV1().Deployments(meta.Namespace).Delete(meta.Name, deleteInBackground())
+	if kerr.IsNotFound(err) {
+		return nil
+	}
+	return err
 }
 
 func (f *Framework) EventuallyDeployment(meta metav1.ObjectMeta) GomegaAsyncAssertion {

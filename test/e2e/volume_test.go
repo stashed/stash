@@ -59,7 +59,7 @@ var _ = Describe("Volume", func() {
 		err = f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
 
-		repo = f.Repository(cred.Name, pvc.Name)
+		repo = f.RepositoryObj(cred.Name, pvc.Name)
 
 		backupCfg = f.BackupConfiguration(repo.Name, targetref)
 		backupCfg.Spec.Target = f.PvcBackupTarget(bpvc.Name)
@@ -128,8 +128,8 @@ var _ = Describe("Volume", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting for BackupSession")
-			f.EventuallyBackupSessionCreated(backupCfg.ObjectMeta).Should(BeTrue())
-			bs, err := f.GetBackupSession(backupCfg.ObjectMeta)
+			f.EventuallyBackupSessionCreated(backupCfg.Namespace).Should(BeTrue())
+			bs, err := f.GetBackupSession(backupCfg.Namespace)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Check for succeeded BackupSession")

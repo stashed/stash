@@ -153,7 +153,7 @@ func (f *Invocation) DeleteTask(meta metav1.ObjectMeta) error {
 
 }
 
-func (f *Invocation) GetFunction() error {
+func (f *Invocation) VerifyPVCBackupFunction() error {
 	_, err := f.StashClient.StashV1beta1().Functions().Get(FunctionPVCBackup, metav1.GetOptions{})
 	return err
 }

@@ -11,6 +11,7 @@ import (
 	"gomodules.xyz/stow"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	store "kmodules.xyz/objectstore-api/api/v1"
 	"kmodules.xyz/objectstore-api/osm"
@@ -76,7 +77,13 @@ func (f *Framework) DeleteRepositories(repositories []*api.Repository) {
 }
 
 func (f *Framework) DeleteRepository(meta metav1.ObjectMeta) error {
+	if meta.Name == "" {
+		return nil
+	}
 	err := f.StashClient.StashV1alpha1().Repositories(meta.Namespace).Delete(meta.Name, deleteInBackground())
+	if kerr.IsNotFound(err) {
+		return nil
+	}
 	return err
 }
 
@@ -129,7 +136,7 @@ func (f *Framework) CreateRepository(repo *api.Repository) error {
 
 }
 
-func (f *Invocation) Repository(secretName string, pvcName string) *api.Repository {
+func (f *Invocation) RepositoryObj(secretName string, pvcName string) *api.Repository {
 	return &api.Repository{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(f.app + "-local"),
@@ -151,10 +158,10 @@ func (f *Invocation) Repository(secretName string, pvcName string) *api.Reposito
 	}
 }
 
-func (f *Framework) EventuallyRepositoryCreated(meta metav1.ObjectMeta) GomegaAsyncAssertion {
+func (f *Framework) EventuallyRepositoryCreated(namespace string) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			objList, err := f.StashClient.StashV1alpha1().Repositories(meta.Namespace).List(metav1.ListOptions{})
+			objList, err := f.StashClient.StashV1alpha1().Repositories(namespace).List(metav1.ListOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			if len(objList.Items) > 0 {
 				return true
@@ -166,8 +173,8 @@ func (f *Framework) EventuallyRepositoryCreated(meta metav1.ObjectMeta) GomegaAs
 	)
 }
 
-func (f *Framework) GetRepository(meta metav1.ObjectMeta) (repository *api.Repository, err error) {
-	repolist, err := f.StashClient.StashV1alpha1().Repositories(meta.Namespace).List(metav1.ListOptions{})
+func (f *Framework) GetRepository(namespace string) (repository *api.Repository, err error) {
+	repolist, err := f.StashClient.StashV1alpha1().Repositories(namespace).List(metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
