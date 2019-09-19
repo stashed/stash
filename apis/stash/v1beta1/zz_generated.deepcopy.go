@@ -94,10 +94,15 @@ func (in *BackupBlueprintSpec) DeepCopyInto(out *BackupBlueprintSpec) {
 	in.RetentionPolicy.DeepCopyInto(&out.RetentionPolicy)
 	in.RuntimeSettings.DeepCopyInto(&out.RuntimeSettings)
 	in.TempDir.DeepCopyInto(&out.TempDir)
-	if in.InterimVolume != nil {
-		in, out := &in.InterimVolume, &out.InterimVolume
+	if in.InterimVolumeTemplate != nil {
+		in, out := &in.InterimVolumeTemplate, &out.InterimVolumeTemplate
 		*out = new(v1.PersistentVolumeClaim)
 		(*in).DeepCopyInto(*out)
+	}
+	if in.BackupHistoryLimit != nil {
+		in, out := &in.BackupHistoryLimit, &out.BackupHistoryLimit
+		*out = new(int32)
+		**out = **in
 	}
 	return
 }
@@ -185,10 +190,15 @@ func (in *BackupConfigurationSpec) DeepCopyInto(out *BackupConfigurationSpec) {
 	in.RetentionPolicy.DeepCopyInto(&out.RetentionPolicy)
 	in.RuntimeSettings.DeepCopyInto(&out.RuntimeSettings)
 	in.TempDir.DeepCopyInto(&out.TempDir)
-	if in.InterimVolume != nil {
-		in, out := &in.InterimVolume, &out.InterimVolume
+	if in.InterimVolumeTemplate != nil {
+		in, out := &in.InterimVolumeTemplate, &out.InterimVolumeTemplate
 		*out = new(v1.PersistentVolumeClaim)
 		(*in).DeepCopyInto(*out)
+	}
+	if in.BackupHistoryLimit != nil {
+		in, out := &in.BackupHistoryLimit, &out.BackupHistoryLimit
+		*out = new(int32)
+		**out = **in
 	}
 	return
 }

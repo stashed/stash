@@ -371,12 +371,18 @@ spec:
           type: object
         spec:
           properties:
+            backupHistoryLimit:
+              description: 'BackupHistoryLimit specifies the number of BackupSession
+                and it''s associate resources to keep. This is helpful for debugging
+                purpose. Default: 1'
+              format: int32
+              type: integer
             driver:
               description: Driver indicates the name of the agent to use to backup
                 the target. Supported values are "Restic", "VolumeSnapshotter". Default
                 value is "Restic".
               type: string
-            interimVolume:
+            interimVolumeTemplate:
               description: PersistentVolumeClaim is a user's request for and claim
                 to a persistent volume
               properties:

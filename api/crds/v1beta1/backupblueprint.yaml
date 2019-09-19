@@ -1681,7 +1681,13 @@ spec:
                       type: string
                   type: object
               type: object
-            interimVolume:
+            backupHistoryLimit:
+              description: 'BackupHistoryLimit specifies the number of BackupSession
+                and it''s associate resources to keep. This is helpful for debugging
+                purpose. Default: 1'
+              format: int32
+              type: integer
+            interimVolumeTemplate:
               description: PersistentVolumeClaim is a user's request for and claim
                 to a persistent volume
               properties:
