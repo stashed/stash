@@ -1863,8 +1863,6 @@ spec:
                 - mountPath
                 type: object
               type: array
-          required:
-          - retentionPolicies
           type: object
       type: object
   version: v1alpha1
