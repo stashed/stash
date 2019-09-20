@@ -37,7 +37,7 @@ func (b BackupConfiguration) CustomResourceDefinition() *apiextensions.CustomRes
 		},
 		SpecDefinitionName:    "stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfiguration",
 		EnableValidation:      true,
-		GetOpenAPIDefinitions: GetOpenAPIDefinitions,
+		GetOpenAPIDefinitions: GetOpenAPIDefinitionsWithRetentionPolicy,
 		AdditionalPrinterColumns: []apiextensions.CustomResourceColumnDefinition{
 			{
 				Name:     "Task",

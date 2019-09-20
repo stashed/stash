@@ -13588,6 +13588,7 @@ func schema_stash_apis_stash_v1beta1_BackupBlueprintSpec(ref common.ReferenceCal
 						},
 					},
 				},
+				Required: []string{"retentionPolicy"},
 			},
 		},
 		Dependencies: []string{
@@ -13754,6 +13755,7 @@ func schema_stash_apis_stash_v1beta1_BackupConfigurationSpec(ref common.Referenc
 						},
 					},
 				},
+				Required: []string{"retentionPolicy"},
 			},
 		},
 		Dependencies: []string{
