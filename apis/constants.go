@@ -61,6 +61,6 @@ const (
 	StashDefaultVolume          = "stash-volume"
 	StashDefaultMountPath       = "/stash-data"
 	StashInterimVolume          = "stash-interim-volume"
-	StashInterimVolumeMountPath = "/stash/interim-volume"
-	StashInterimDataDir         = "/stash/interim-volume/data"
+	StashInterimVolumeMountPath = "/stash-interim-volume"
+	StashInterimDataDir         = "/stash-interim-volume/data"
 )
