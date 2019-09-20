@@ -14186,6 +14186,7 @@ func schema_stash_apis_stash_v1alpha1_RetentionPolicy(ref common.ReferenceCallba
 						},
 					},
 				},
+				Required: []string{"name", "prune"},
 			},
 		},
 	}

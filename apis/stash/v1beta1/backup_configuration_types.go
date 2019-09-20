@@ -41,7 +41,7 @@ type BackupConfigurationSpec struct {
 	// +optional
 	Target *BackupTarget `json:"target,omitempty"`
 	// RetentionPolicy indicates the policy to follow to clean old backup snapshots
-	RetentionPolicy v1alpha1.RetentionPolicy `json:"retentionPolicy,omitempty"`
+	RetentionPolicy v1alpha1.RetentionPolicy `json:"retentionPolicy"`
 	// Indicates that the BackupConfiguration is paused from taking backup. Default value is 'false'
 	// +optional
 	Paused bool `json:"paused,omitempty"`

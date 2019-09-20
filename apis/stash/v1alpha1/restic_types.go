@@ -85,7 +85,7 @@ const (
 )
 
 type RetentionPolicy struct {
-	Name        string   `json:"name,omitempty"`
+	Name        string   `json:"name"`
 	KeepLast    int      `json:"keepLast,omitempty"`
 	KeepHourly  int      `json:"keepHourly,omitempty"`
 	KeepDaily   int      `json:"keepDaily,omitempty"`
@@ -93,6 +93,6 @@ type RetentionPolicy struct {
 	KeepMonthly int      `json:"keepMonthly,omitempty"`
 	KeepYearly  int      `json:"keepYearly,omitempty"`
 	KeepTags    []string `json:"keepTags,omitempty"`
-	Prune       bool     `json:"prune,omitempty"`
+	Prune       bool     `json:"prune"`
 	DryRun      bool     `json:"dryRun,omitempty"`
 }

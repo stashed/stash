@@ -31,7 +31,7 @@ type BackupBlueprintSpec struct {
 	// +optional
 	Task TaskRef `json:"task,omitempty"`
 	// RetentionPolicy indicates the policy to follow to clean old backup snapshots
-	RetentionPolicy v1alpha1.RetentionPolicy `json:"retentionPolicy,omitempty"`
+	RetentionPolicy v1alpha1.RetentionPolicy `json:"retentionPolicy"`
 	// RuntimeSettings allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc.
 	//+optional
 	RuntimeSettings ofst.RuntimeSettings `json:"runtimeSettings,omitempty"`

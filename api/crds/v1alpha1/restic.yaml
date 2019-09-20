@@ -1771,6 +1771,9 @@ spec:
                     type: string
                   prune:
                     type: boolean
+                required:
+                - name
+                - prune
                 type: object
               type: array
             schedule:

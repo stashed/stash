@@ -1681,7 +1681,40 @@ spec:
                       type: string
                   type: object
               type: object
-            retentionPolicy: {}
+            retentionPolicy:
+              properties:
+                dryRun:
+                  type: boolean
+                keepDaily:
+                  format: int32
+                  type: integer
+                keepHourly:
+                  format: int32
+                  type: integer
+                keepLast:
+                  format: int32
+                  type: integer
+                keepMonthly:
+                  format: int32
+                  type: integer
+                keepTags:
+                  items:
+                    type: string
+                  type: array
+                keepWeekly:
+                  format: int32
+                  type: integer
+                keepYearly:
+                  format: int32
+                  type: integer
+                name:
+                  type: string
+                prune:
+                  type: boolean
+              required:
+              - name
+              - prune
+              type: object
             runtimeSettings:
               properties:
                 container:
@@ -3301,6 +3334,8 @@ spec:
             wipeOut:
               description: If true, delete respective restic repository
               type: boolean
+          required:
+          - retentionPolicy
           type: object
       type: object
   version: v1beta1
