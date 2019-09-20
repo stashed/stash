@@ -18,6 +18,7 @@ import (
 	"errors"
 	"time"
 
+	"go.opencensus.io/exemplar"
 	"go.opencensus.io/stats"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/tag"
@@ -49,13 +50,13 @@ func viewDataToMetric(vd *view.Data) (*metricspb.Metric, error) {
 	}
 
 	metric := &metricspb.Metric{
-		MetricDescriptor: descriptor,
-		Timeseries:       timeseries,
+		Descriptor_: descriptor,
+		Timeseries:  timeseries,
 	}
 	return metric, nil
 }
 
-func viewToMetricDescriptor(v *view.View) (*metricspb.MetricDescriptor, error) {
+func viewToMetricDescriptor(v *view.View) (*metricspb.Metric_MetricDescriptor, error) {
 	if v == nil {
 		return nil, errNilView
 	}
@@ -63,12 +64,14 @@ func viewToMetricDescriptor(v *view.View) (*metricspb.MetricDescriptor, error) {
 		return nil, errNilMeasure
 	}
 
-	desc := &metricspb.MetricDescriptor{
-		Name:        stringOrCall(v.Name, v.Measure.Name),
-		Description: stringOrCall(v.Description, v.Measure.Description),
-		Unit:        v.Measure.Unit(),
-		Type:        aggregationToMetricDescriptorType(v),
-		LabelKeys:   tagKeysToLabelKeys(v.TagKeys),
+	desc := &metricspb.Metric_MetricDescriptor{
+		MetricDescriptor: &metricspb.MetricDescriptor{
+			Name:        stringOrCall(v.Name, v.Measure.Name),
+			Description: stringOrCall(v.Description, v.Measure.Description),
+			Unit:        v.Measure.Unit(),
+			Type:        aggregationToMetricDescriptorType(v),
+			LabelKeys:   tagKeysToLabelKeys(v.TagKeys),
+		},
 	}
 	return desc, nil
 }
@@ -202,10 +205,9 @@ func rowToPoint(v *view.View, row *view.Row, endTimestamp *timestamp.Timestamp, 
 	case *view.DistributionData:
 		pt.Value = &metricspb.Point_DistributionValue{
 			DistributionValue: &metricspb.DistributionValue{
-				Count: data.Count,
-				Sum:   float64(data.Count) * data.Mean, // because Mean := Sum/Count
-				// TODO: Add Exemplar
-				Buckets: bucketsToProtoBuckets(data.CountPerBucket),
+				Count:   data.Count,
+				Sum:     float64(data.Count) * data.Mean, // because Mean := Sum/Count
+				Buckets: bucketsToProtoBuckets(data.CountPerBucket, data.ExemplarsPerBucket),
 				BucketOptions: &metricspb.DistributionValue_BucketOptions{
 					Type: &metricspb.DistributionValue_BucketOptions_Explicit_{
 						Explicit: &metricspb.DistributionValue_BucketOptions_Explicit{
@@ -236,13 +238,31 @@ func setPointValue(pt *metricspb.Point, value float64, mType measureType) {
 	}
 }
 
-func bucketsToProtoBuckets(countPerBucket []int64) []*metricspb.DistributionValue_Bucket {
+// countPerBucket and exemplars are of the same length in well formed data,
+// otherwise ensure that even if exemplars are non-existent that we always
+// insert counts and create distribution value buckets.
+func bucketsToProtoBuckets(countPerBucket []int64, exemplars []*exemplar.Exemplar) []*metricspb.DistributionValue_Bucket {
 	distBuckets := make([]*metricspb.DistributionValue_Bucket, len(countPerBucket))
 	for i := 0; i < len(countPerBucket); i++ {
 		count := countPerBucket[i]
 
+		var exmplr *exemplar.Exemplar
+		if i < len(exemplars) {
+			exmplr = exemplars[i]
+		}
+
+		var protoExemplar *metricspb.DistributionValue_Exemplar
+		if exmplr != nil {
+			protoExemplar = &metricspb.DistributionValue_Exemplar{
+				Value:       exmplr.Value,
+				Timestamp:   timeToTimestamp(exmplr.Timestamp),
+				Attachments: exmplr.Attachments,
+			}
+		}
+
 		distBuckets[i] = &metricspb.DistributionValue_Bucket{
-			Count: count,
+			Count:    count,
+			Exemplar: protoExemplar,
 		}
 	}
 
