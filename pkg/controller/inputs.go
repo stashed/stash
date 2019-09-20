@@ -33,7 +33,7 @@ func (c *StashController) inputsForBackupConfig(backupConfig api.BackupConfigura
 		inputs[apis.InterimDataDir] = apis.StashInterimDataDir
 	} else {
 		// if interim volume is not specified then use temp dir to store data temporarily
-		inputs[apis.InterimDataDir] = fmt.Sprintf("%s/stash/interim-data", util.TmpDirMountPath)
+		inputs[apis.InterimDataDir] = fmt.Sprintf("%s/stash-interim-volume/data", util.TmpDirMountPath)
 	}
 
 	// add PushgatewayURL as input
@@ -69,7 +69,7 @@ func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSess
 		inputs[apis.InterimDataDir] = apis.StashInterimDataDir
 	} else {
 		// if interim volume is not specified then use temp dir to store data temporarily
-		inputs[apis.InterimDataDir] = fmt.Sprintf("%s/stash/interim-data", util.TmpDirMountPath)
+		inputs[apis.InterimDataDir] = fmt.Sprintf("%s/stash-interim-volume/data", util.TmpDirMountPath)
 	}
 
 	// add PushgatewayURL as input

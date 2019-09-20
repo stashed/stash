@@ -10,6 +10,7 @@ import (
 	"github.com/golang/glog"
 	batchv1 "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -564,7 +565,7 @@ func (c *StashController) cleanupBackupHistory(backupConfig *api_v1beta1.BackupC
 	// delete the BackupSession that does not fit within the history limit
 	for i := int(historyLimit); i < len(bsList); i++ {
 		err = c.stashClient.StashV1beta1().BackupSessions(backupConfig.Namespace).Delete(bsList[i].Name, meta.DeleteInBackground())
-		if err != nil {
+		if err != nil && !(kerr.IsNotFound(err) || kerr.IsGone(err)) {
 			return err
 		}
 	}

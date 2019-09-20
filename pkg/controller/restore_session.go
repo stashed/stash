@@ -486,8 +486,6 @@ func (c *StashController) ensureVolumeRestorerJob(restoreSession *api_v1beta1.Re
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 
 		in.Labels = offshootLabels
-		// ensure that job gets deleted when complete
-		in.Labels[apis.KeyDeleteJobOnCompletion] = "true"
 
 		in.Spec.Template = *jobTemplate
 		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName

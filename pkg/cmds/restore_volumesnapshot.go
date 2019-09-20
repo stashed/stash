@@ -154,7 +154,7 @@ func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
 				restoreOutput.HostRestoreStats = append(restoreOutput.HostRestoreStats, api_v1beta1.HostRestoreStats{
 					Hostname: createdPVCs[i].Name,
 					Phase:    api_v1beta1.HostRestoreFailed,
-					Error:    fmt.Sprintf("failed to restore. Reason: StorageClass %s not found.", createdPVCs[i].Spec.StorageClassName),
+					Error:    fmt.Sprintf("failed to restore. Reason: StorageClass %s not found.", *createdPVCs[i].Spec.StorageClassName),
 				})
 				// continue to process next pvc
 				continue
