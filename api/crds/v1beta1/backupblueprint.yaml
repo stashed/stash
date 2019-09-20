@@ -3301,6 +3301,8 @@ spec:
             wipeOut:
               description: If true, delete respective restic repository
               type: boolean
+          required:
+          - retentionPolicy
           type: object
       type: object
   version: v1beta1

@@ -1771,6 +1771,9 @@ spec:
                     type: string
                   prune:
                     type: boolean
+                required:
+                - name
+                - prune
                 type: object
               type: array
             schedule:
@@ -1860,6 +1863,8 @@ spec:
                 - mountPath
                 type: object
               type: array
+          required:
+          - retentionPolicies
           type: object
       type: object
   version: v1alpha1

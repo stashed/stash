@@ -34,7 +34,7 @@ type ResticSpec struct {
 	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty"`
 	// Compute Resources required by the sidecar container.
 	Resources         core.ResourceRequirements `json:"resources,omitempty"`
-	RetentionPolicies []RetentionPolicy         `json:"retentionPolicies,omitempty"`
+	RetentionPolicies []RetentionPolicy         `json:"retentionPolicies"`
 	// https://github.com/stashed/stash/issues/225
 	Type BackupType `json:"type,omitempty"`
 	//Indicates that the Restic is paused from taking backup. Default value is 'false'
@@ -85,7 +85,7 @@ const (
 )
 
 type RetentionPolicy struct {
-	Name        string   `json:"name,omitempty"`
+	Name        string   `json:"name"`
 	KeepLast    int      `json:"keepLast,omitempty"`
 	KeepHourly  int      `json:"keepHourly,omitempty"`
 	KeepDaily   int      `json:"keepDaily,omitempty"`
@@ -93,6 +93,6 @@ type RetentionPolicy struct {
 	KeepMonthly int      `json:"keepMonthly,omitempty"`
 	KeepYearly  int      `json:"keepYearly,omitempty"`
 	KeepTags    []string `json:"keepTags,omitempty"`
-	Prune       bool     `json:"prune,omitempty"`
+	Prune       bool     `json:"prune"`
 	DryRun      bool     `json:"dryRun,omitempty"`
 }

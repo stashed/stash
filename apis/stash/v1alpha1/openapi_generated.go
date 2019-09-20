@@ -14075,6 +14075,7 @@ func schema_stash_apis_stash_v1alpha1_ResticSpec(ref common.ReferenceCallback) c
 						},
 					},
 				},
+				Required: []string{"retentionPolicies"},
 			},
 		},
 		Dependencies: []string{
@@ -14186,6 +14187,7 @@ func schema_stash_apis_stash_v1alpha1_RetentionPolicy(ref common.ReferenceCallba
 						},
 					},
 				},
+				Required: []string{"name", "prune"},
 			},
 		},
 	}
