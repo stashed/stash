@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/appscode/go/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -33,6 +34,7 @@ type UpdateStatusOptions struct {
 
 func (o UpdateStatusOptions) UpdateBackupStatusFromFile() error {
 	// read backup output from file
+	log.Infof("Reading backup output from file: %s", filepath.Join(o.OutputDir, o.OutputFileName))
 	backupOutput, err := restic.ReadBackupOutput(filepath.Join(o.OutputDir, o.OutputFileName))
 	if err != nil {
 		return err
@@ -42,6 +44,7 @@ func (o UpdateStatusOptions) UpdateBackupStatusFromFile() error {
 
 func (o UpdateStatusOptions) UpdateRestoreStatusFromFile() error {
 	// read restore output from file
+	log.Infof("Reading restore output from file: %s", filepath.Join(o.OutputDir, o.OutputFileName))
 	restoreOutput, err := restic.ReadRestoreOutput(filepath.Join(o.OutputDir, o.OutputFileName))
 	if err != nil {
 		return err
@@ -63,6 +66,7 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 
 	// add or update entry for each host in BackupSession status + create event
 	for _, hostStats := range backupOutput.HostBackupStats {
+		log.Infof("Updating status of BackupSession: %s/%s for host: %s", backupSession.Namespace, backupSession.Name, hostStats.Hostname)
 		_, err = stash_util_v1beta1.UpdateBackupSessionStatusForHost(o.StashClient.StashV1beta1(), backupSession, hostStats)
 		if err != nil {
 			return err
@@ -145,6 +149,7 @@ func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.Resto
 
 	// add or update entry for each host in RestoreSession status
 	for _, hostStats := range restoreOutput.HostRestoreStats {
+		log.Infof("Updating status of RestoreSession: %s/%s for host: %s", restoreSession.Namespace, restoreSession.Name, hostStats.Hostname)
 		_, err = stash_util_v1beta1.UpdateRestoreSessionStatusForHost(o.StashClient.StashV1beta1(), restoreSession, hostStats)
 		if err != nil {
 			return err

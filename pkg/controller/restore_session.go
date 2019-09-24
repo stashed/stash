@@ -282,6 +282,11 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 	// If volumeClaimTemplate is not specified then we don't need any further processing. Just, create the job
 	if restoreSession.Spec.Target == nil ||
 		(restoreSession.Spec.Target != nil && len(restoreSession.Spec.Target.VolumeClaimTemplates) == 0) {
+		// upsert InterimVolume to hold the backup/restored data temporarily
+		jobTemplate.Spec, err = util.UpsertInterimVolume(c.kubeClient, jobTemplate.Spec, restoreSession.Spec.InterimVolumeTemplate, ref)
+		if err != nil {
+			return err
+		}
 		return c.createRestoreJob(jobTemplate, jobMeta, ref, serviceAccountName)
 	}
 
@@ -359,12 +364,6 @@ func (c *StashController) createRestoreJob(jobTemplate *core.PodTemplateSpec, me
 	_, _, err := batch_util.CreateOrPatchJob(c.kubeClient, meta, func(in *batchv1.Job) *batchv1.Job {
 		// set RestoreSession as owner of this Job
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
-
-		if in.Labels == nil {
-			in.Labels = make(map[string]string, 0)
-		}
-		// ensure that job gets deleted when complete
-		in.Labels[apis.KeyDeleteJobOnCompletion] = "false"
 
 		in.Spec.Template = *jobTemplate
 		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
@@ -487,8 +486,6 @@ func (c *StashController) ensureVolumeRestorerJob(restoreSession *api_v1beta1.Re
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 
 		in.Labels = offshootLabels
-		// ensure that job gets deleted when complete
-		in.Labels[apis.KeyDeleteJobOnCompletion] = "true"
 
 		in.Spec.Template = *jobTemplate
 		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName

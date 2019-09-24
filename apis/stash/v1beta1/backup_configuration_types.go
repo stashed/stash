@@ -50,8 +50,18 @@ type BackupConfigurationSpec struct {
 	RuntimeSettings ofst.RuntimeSettings `json:"runtimeSettings,omitempty"`
 	// Temp directory configuration for functions/sidecar
 	// An `EmptyDir` will always be mounted at /tmp with this settings
-	//+optional
+	// +optional
 	TempDir EmptyDirSettings `json:"tempDir,omitempty"`
+	// InterimVolumeTemplate specifies a template for a volume to hold targeted data temporarily
+	// before uploading to backend or inserting into target. It is only usable for job model.
+	// Don't specify it in sidecar model.
+	// +optional
+	InterimVolumeTemplate *core.PersistentVolumeClaim `json:"interimVolumeTemplate,omitempty"`
+	// BackupHistoryLimit specifies the number of BackupSession and it's associate resources to keep.
+	// This is helpful for debugging purpose.
+	// Default: 1
+	// +optional
+	BackupHistoryLimit *int32 `json:"backupHistoryLimit,omitempty"`
 }
 
 type EmptyDirSettings struct {

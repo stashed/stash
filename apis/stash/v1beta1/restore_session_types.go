@@ -49,6 +49,11 @@ type RestoreSessionSpec struct {
 	// An `EmptyDir` will always be mounted at /tmp with this settings
 	//+optional
 	TempDir EmptyDirSettings `json:"tempDir,omitempty"`
+	// InterimVolumeTemplate specifies a template for a volume to hold targeted data temporarily
+	// before uploading to backend or inserting into target. It is only usable for job model.
+	// Don't specify it in sidecar model.
+	// +optional
+	InterimVolumeTemplate *core.PersistentVolumeClaim `json:"interimVolumeTemplate,omitempty"`
 }
 
 type Rule struct {

@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/golang/glog"
 	batchv1 "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -249,20 +251,23 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 		podSpec = util.AttachLocalBackend(podSpec, *repository.Spec.Backend.Local)
 	}
 
+	// upsert InterimVolume to hold the backup/restored data temporarily
+	backupSessionRef, err := reference.GetReference(stash_scheme.Scheme, backupSession)
+	if err != nil {
+		return err
+	}
+	podSpec, err = util.UpsertInterimVolume(c.kubeClient, podSpec, backupConfig.Spec.InterimVolumeTemplate, backupSessionRef)
+	if err != nil {
+		return err
+	}
+
 	// create Backup Job
 	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, jobMeta, func(in *batchv1.Job) *batchv1.Job {
 		// set BackupSession as owner of this Job
-		core_util.EnsureOwnerReference(&in.ObjectMeta, backupConfigRef)
-		if in.Labels == nil {
-			in.Labels = make(map[string]string)
-		}
-		// backup job is created by resolving task and function. we should not delete it when it goes to completed state.
-		// user might need to know what was the final resolved job specification for debugging purpose.
-		in.Labels[apis.KeyDeleteJobOnCompletion] = "false"
+		core_util.EnsureOwnerReference(&in.ObjectMeta, backupSessionRef)
 
 		in.Spec.Template.Spec = podSpec
 		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-
 		return in
 	})
 
@@ -321,9 +326,6 @@ func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.B
 		core_util.EnsureOwnerReference(&in.ObjectMeta, backupConfigRef)
 
 		in.Labels = offshootLabels
-		// ensure that job gets deleted on completion
-		in.Labels[apis.KeyDeleteJobOnCompletion] = "true"
-
 		in.Spec.Template = *jobTemplate
 		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 		return in
@@ -363,7 +365,13 @@ func (c *StashController) setBackupSessionFailed(backupSession *api_v1beta1.Back
 		PushgatewayURL: util.PushgatewayLocalURL,
 		JobName:        PromJobBackupSessionController,
 	}
-	return metricsOpt.SendBackupSessionMetrics(c.clientConfig, backupConfig, updatedBackupSession.Status)
+	err = metricsOpt.SendBackupSessionMetrics(c.clientConfig, backupConfig, updatedBackupSession.Status)
+	if err != nil {
+		return err
+	}
+
+	// cleanup old BackupSessions
+	return c.cleanupBackupHistory(backupConfig)
 }
 
 func (c *StashController) setBackupSessionSkipped(backupSession *api_v1beta1.BackupSession, reason string) error {
@@ -461,7 +469,13 @@ func (c *StashController) setBackupSessionSucceeded(backupSession *api_v1beta1.B
 		PushgatewayURL: util.PushgatewayLocalURL,
 		JobName:        PromJobBackupSessionController,
 	}
-	return metricsOpt.SendBackupSessionMetrics(c.clientConfig, backupConfig, updatedBackupSession.Status)
+	err = metricsOpt.SendBackupSessionMetrics(c.clientConfig, backupConfig, updatedBackupSession.Status)
+	if err != nil {
+		return err
+	}
+
+	// cleanup old BackupSessions
+	return c.cleanupBackupHistory(backupConfig)
 }
 
 func (c *StashController) getBackupSessionPhase(backupSession *api_v1beta1.BackupSession) (api_v1beta1.BackupSessionPhase, error) {
@@ -515,4 +529,45 @@ func getBackupJobServiceAccountName(backupConfiguration *api_v1beta1.BackupConfi
 
 func getVolumeSnapshotterJobName(backupSession *api_v1beta1.BackupSession) string {
 	return VolumeSnapshotPrefix + strings.ReplaceAll(backupSession.Name, ".", "-")
+}
+
+// cleanupBackupHistory deletes old BackupSessions and theirs associate resources according to BackupHistoryLimit
+func (c *StashController) cleanupBackupHistory(backupConfig *api_v1beta1.BackupConfiguration) error {
+	// default history limit is 1
+	historyLimit := int32(1)
+	if backupConfig.Spec.BackupHistoryLimit != nil {
+		historyLimit = *backupConfig.Spec.BackupHistoryLimit
+	}
+
+	// BackupSession use BackupConfiguration name as label. We can use this label as selector to list only the BackupSession
+	// of this particular BackupConfiguration.
+	label := metav1.LabelSelector{
+		MatchLabels: map[string]string{
+			util.LabelBackupConfiguration: backupConfig.Name,
+		},
+	}
+	selector, err := metav1.LabelSelectorAsSelector(&label)
+	if err != nil {
+		return err
+	}
+
+	// list all the BackupSessions of this particular BackupConfiguration
+	bsList, err := c.backupSessionLister.BackupSessions(backupConfig.Namespace).List(selector)
+	if err != nil {
+		return err
+	}
+
+	// sort BackupSession according to creation timestamp. keep latest BackupSession first.
+	sort.Slice(bsList, func(i, j int) bool {
+		return bsList[i].CreationTimestamp.After(bsList[j].CreationTimestamp.Time)
+	})
+
+	// delete the BackupSession that does not fit within the history limit
+	for i := int(historyLimit); i < len(bsList); i++ {
+		err = c.stashClient.StashV1beta1().BackupSessions(backupConfig.Namespace).Delete(bsList[i].Name, meta.DeleteInBackground())
+		if err != nil && !(kerr.IsNotFound(err) || kerr.IsGone(err)) {
+			return err
+		}
+	}
+	return nil
 }
