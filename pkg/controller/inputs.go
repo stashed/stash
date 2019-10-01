@@ -128,9 +128,6 @@ func (c *StashController) inputsForBackupTarget(target *api.BackupTarget) map[st
 		} else {
 			inputs[apis.TargetMountPath] = apis.StashDefaultMountPath
 		}
-		if target.VolumeClaimTemplates[0].Name != "" && target.Ref.Name == "" {
-			inputs[apis.TargetName] = target.VolumeClaimTemplates[0].ObjectMeta.Name
-		}
 	}
 	return inputs
 }
@@ -146,6 +143,9 @@ func (c *StashController) inputsForRestoreTarget(target *api.RestoreTarget) map[
 			inputs[apis.TargetMountPath] = target.VolumeMounts[0].MountPath // We assume that user will provide only one mountPath for stand-alone PVC.
 		} else {
 			inputs[apis.TargetMountPath] = apis.StashDefaultMountPath
+		}
+		if len(target.VolumeClaimTemplates) > 0 && target.Ref.Name == "" {
+			inputs[apis.TargetName] = target.VolumeClaimTemplates[0].ObjectMeta.Name
 		}
 	}
 	return inputs
