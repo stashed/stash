@@ -326,7 +326,7 @@ func isPodOwnedByWorkload(w *wapi.Workload, pod core.Pod) bool {
 }
 
 func (c *StashController) handleSidecarInjectionFailure(ref *core.ObjectReference, err error) error {
-	log.Warningf("Failed to inject stash sidecar inot %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
+	log.Warningf("Failed to inject stash sidecar into %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
 
 	// write event to respective resource
 	_, err2 := eventer.CreateEvent(

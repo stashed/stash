@@ -142,11 +142,12 @@ func GetPVCFromVolumeClaimTemplates(ordinal int32, claimTemplates []core.Persist
 	for i := range claimTemplates {
 		inputs := make(map[string]string)
 		inputs[util.KeyPodOrdinal] = strconv.Itoa(int(ordinal))
-		err := ResolvePVCSpec(&claimTemplates[i], inputs)
+		claim := claimTemplates[i].DeepCopy()
+		err := ResolvePVCSpec(claim, inputs)
 		if err != nil {
 			return pvcList, err
 		}
-		pvcList = append(pvcList, claimTemplates[i])
+		pvcList = append(pvcList, *claim)
 	}
 	return pvcList, nil
 }
