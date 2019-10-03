@@ -21,7 +21,7 @@ const (
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Selector",type="string",JSONPath=".spec.selector"
 // +kubebuilder:printcolumn:name="Schedule",type="string",JSONPath=".spec.schedule"
-// +kubebuilder:printcolumn:name="Backup-Type",type="string",JSONPath=".spec.type",priority=10,
+// +kubebuilder:printcolumn:name="Backup-Type",type="string",JSONPath=".spec.type",priority=10
 // +kubebuilder:printcolumn:name="Paused",type="boolean",JSONPath=".spec.paused"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type Restic struct {

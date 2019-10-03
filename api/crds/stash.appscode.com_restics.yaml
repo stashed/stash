@@ -6,11 +6,37 @@ metadata:
   creationTimestamp: null
   name: restics.stash.appscode.com
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.selector
+    name: Selector
+    type: string
+  - JSONPath: .spec.schedule
+    name: Schedule
+    type: string
+  - JSONPath: .spec.type
+    name: Backup-Type
+    priority: 10
+    type: string
+  - JSONPath: .spec.paused
+    name: Paused
+    type: boolean
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
   group: stash.appscode.com
   names:
+    categories:
+    - stash
+    - appscode
+    - all
     kind: Restic
     plural: restics
-  scope: ""
+    shortNames:
+    - rst
+    singular: restic
+  scope: Namespaced
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       properties:

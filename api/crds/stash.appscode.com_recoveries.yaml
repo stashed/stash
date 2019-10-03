@@ -8,13 +8,16 @@ metadata:
 spec:
   additionalPrinterColumns:
   - JSONPath: .spec.repository.namespace
-    name: Repository-Namespace
+    name: Repository-NS
     type: string
   - JSONPath: .spec.repository.name
     name: Repository-Name
     type: string
   - JSONPath: .spec.snapshot
     name: Snapshot
+    type: string
+  - JSONPath: .status.phase
+    name: Phase
     type: string
   - JSONPath: .metadata.creationTimestamp
     name: Age

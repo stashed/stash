@@ -1032,9 +1032,35 @@ spec:
                   type: string
               type: object
             retentionPolicy:
-              $ref: '#/definitions/stash.appscode.dev~1stash~1apis~1stash~1v1alpha1~0RetentionPolicy'
               description: RetentionPolicy indicates the policy to follow to clean
                 old backup snapshots
+              properties:
+                dryRun:
+                  type: boolean
+                keepDaily:
+                  type: integer
+                keepHourly:
+                  type: integer
+                keepLast:
+                  type: integer
+                keepMonthly:
+                  type: integer
+                keepTags:
+                  items:
+                    type: string
+                  type: array
+                keepWeekly:
+                  type: integer
+                keepYearly:
+                  type: integer
+                name:
+                  type: string
+                prune:
+                  type: boolean
+              required:
+              - name
+              - prune
+              type: object
             runtimeSettings:
               description: RuntimeSettings allow to specify Resources, NodeSelector,
                 Affinity, Toleration, ReadinessProbe etc.
