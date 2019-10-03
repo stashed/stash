@@ -16,6 +16,12 @@ const (
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:path=backupsessions,singular=backupsession,categories={stash,appscode,all}
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="BackupConfiguration",type="string",JSONPath=".spec.backupConfiguration.name"
+// +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type BackupSession struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

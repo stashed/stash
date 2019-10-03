@@ -6,11 +6,22 @@ metadata:
   creationTimestamp: null
   name: tasks.stash.appscode.com
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
   group: stash.appscode.com
   names:
+    categories:
+    - stash
+    - appscode
     kind: Task
     plural: tasks
-  scope: ""
+    shortNames:
+    - task
+    singular: task
+  scope: Namespaced
+  subresources: {}
   validation:
     openAPIV3Schema:
       properties:

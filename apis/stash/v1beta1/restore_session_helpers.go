@@ -24,7 +24,7 @@ func (r RestoreSession) CustomResourceDefinition() *apiextensions.CustomResource
 		Singular:      ResourceSingularRestoreSession,
 		Kind:          ResourceKindRestoreSession,
 		ShortNames:    []string{"restore"},
-		Categories:    []string{"stash", "appscode", "restore"},
+		Categories:    []string{"stash", "appscode", "all"},
 		ResourceScope: string(apiextensions.NamespaceScoped),
 		Versions: []apiextensions.CustomResourceDefinitionVersion{
 			{
@@ -42,7 +42,7 @@ func (r RestoreSession) CustomResourceDefinition() *apiextensions.CustomResource
 		EnableStatusSubresource: apis.EnableStatusSubresource,
 		AdditionalPrinterColumns: []apiextensions.CustomResourceColumnDefinition{
 			{
-				Name:     "Repository-Name",
+				Name:     "Repository",
 				Type:     "string",
 				JSONPath: ".spec.repository.name",
 			},

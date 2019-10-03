@@ -13,7 +13,7 @@ func (c Repository) CustomResourceDefinition() *apiextensions.CustomResourceDefi
 		Singular:      ResourceSingularRepository,
 		Kind:          ResourceKindRepository,
 		ShortNames:    []string{"repo"},
-		Categories:    []string{"storage", "appscode", "stash"},
+		Categories:    []string{"stash", "appscode"},
 		ResourceScope: string(apiextensions.NamespaceScoped),
 		Versions: []apiextensions.CustomResourceDefinitionVersion{
 			{

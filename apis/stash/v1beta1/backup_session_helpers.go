@@ -22,7 +22,7 @@ func (bs BackupSession) CustomResourceDefinition() *apiextensions.CustomResource
 		Plural:        ResourcePluralBackupSession,
 		Singular:      ResourceSingularBackupSession,
 		Kind:          ResourceKindBackupSession,
-		Categories:    []string{"stash", "backup", "appscode"},
+		Categories:    []string{"stash", "appscode", "all"},
 		ResourceScope: string(apiextensions.NamespaceScoped),
 		Versions: []apiextensions.CustomResourceDefinitionVersion{
 			{

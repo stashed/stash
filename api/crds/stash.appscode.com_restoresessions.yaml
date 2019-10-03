@@ -6,11 +6,30 @@ metadata:
   creationTimestamp: null
   name: restoresessions.stash.appscode.com
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.repository.name
+    name: Repository
+    type: string
+  - JSONPath: .status.phase
+    name: Phase
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
   group: stash.appscode.com
   names:
+    categories:
+    - stash
+    - appscode
+    - all
     kind: RestoreSession
     plural: restoresessions
-  scope: ""
+    shortNames:
+    - restore
+    singular: restoresession
+  scope: Namespaced
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       properties:

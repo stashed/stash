@@ -22,7 +22,7 @@ func (bb BackupBlueprint) CustomResourceDefinition() *apiextensions.CustomResour
 		Singular:      ResourceSingularBackupBlueprint,
 		Kind:          ResourceKindBackupBlueprint,
 		ShortNames:    []string{"bb"},
-		Categories:    []string{"stash", "appscode", "backup"},
+		Categories:    []string{"stash", "appscode"},
 		ResourceScope: string(apiextensions.ClusterScoped),
 		Versions: []apiextensions.CustomResourceDefinitionVersion{
 			{
