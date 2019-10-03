@@ -23,7 +23,7 @@ func (b BackupConfiguration) CustomResourceDefinition() *apiextensions.CustomRes
 		Singular:      ResourceSingularBackupConfiguration,
 		Kind:          ResourceKindBackupConfiguration,
 		ShortNames:    []string{"bc"},
-		Categories:    []string{"stash", "appscode", "backup"},
+		Categories:    []string{"stash", "appscode", "all"},
 		ResourceScope: string(apiextensions.NamespaceScoped),
 		Versions: []apiextensions.CustomResourceDefinitionVersion{
 			{

@@ -6,11 +6,36 @@ metadata:
   creationTimestamp: null
   name: repositories.stash.appscode.com
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.integrity
+    name: Integrity
+    type: boolean
+  - JSONPath: .status.size
+    name: Size
+    type: string
+  - JSONPath: .status.snapshotCount
+    name: Snapshot-Count
+    type: integer
+  - JSONPath: .status.lastBackupTime
+    format: date-time
+    name: Last-Successful-Backup
+    type: date
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
   group: stash.appscode.com
   names:
+    categories:
+    - stash
+    - appscode
     kind: Repository
     plural: repositories
-  scope: ""
+    shortNames:
+    - repo
+    singular: repository
+  scope: Namespaced
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       properties:

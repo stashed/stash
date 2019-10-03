@@ -16,6 +16,14 @@ const (
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:path=restics,singular=restic,shortName=rst,categories={stash,appscode,all}
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Selector",type="string",JSONPath=".spec.selector"
+// +kubebuilder:printcolumn:name="Schedule",type="string",JSONPath=".spec.schedule"
+// +kubebuilder:printcolumn:name="Backup-Type",type="string",JSONPath=".spec.type",priority=10
+// +kubebuilder:printcolumn:name="Paused",type="boolean",JSONPath=".spec.paused"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type Restic struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

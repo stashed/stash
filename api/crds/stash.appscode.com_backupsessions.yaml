@@ -6,11 +6,28 @@ metadata:
   creationTimestamp: null
   name: backupsessions.stash.appscode.com
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.backupConfiguration.name
+    name: BackupConfiguration
+    type: string
+  - JSONPath: .status.phase
+    name: Phase
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
   group: stash.appscode.com
   names:
+    categories:
+    - stash
+    - appscode
+    - all
     kind: BackupSession
     plural: backupsessions
-  scope: ""
+    singular: backupsession
+  scope: Namespaced
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       properties:

@@ -13,7 +13,7 @@ func (c Recovery) CustomResourceDefinition() *apiextensions.CustomResourceDefini
 		Singular:      ResourceSingularRecovery,
 		Kind:          ResourceKindRecovery,
 		ShortNames:    []string{"rec"},
-		Categories:    []string{"storage", "appscode", "all"},
+		Categories:    []string{"stash", "appscode", "all"},
 		ResourceScope: string(apiextensions.NamespaceScoped),
 		Versions: []apiextensions.CustomResourceDefinitionVersion{
 			{
@@ -31,7 +31,7 @@ func (c Recovery) CustomResourceDefinition() *apiextensions.CustomResourceDefini
 		EnableStatusSubresource: apis.EnableStatusSubresource,
 		AdditionalPrinterColumns: []apiextensions.CustomResourceColumnDefinition{
 			{
-				Name:     "Repository-Namespace",
+				Name:     "Repository-NS",
 				Type:     "string",
 				JSONPath: ".spec.repository.namespace",
 			},

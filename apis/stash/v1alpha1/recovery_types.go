@@ -20,9 +20,10 @@ const (
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:path=recoveries,singular=recovery,shortName=rec,categories={storage,appscode,all}
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Repository-Namespace",type="string",JSONPath=".spec.repository.namespace"
+// +kubebuilder:printcolumn:name="Repository-NS",type="string",JSONPath=".spec.repository.namespace"
 // +kubebuilder:printcolumn:name="Repository-Name",type="string",JSONPath=".spec.repository.name"
 // +kubebuilder:printcolumn:name="Snapshot",type="string",JSONPath=".spec.snapshot"
+// +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type Recovery struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`

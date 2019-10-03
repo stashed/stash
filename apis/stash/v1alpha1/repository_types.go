@@ -16,6 +16,14 @@ const (
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:path=repositories,singular=repository,shortName=repo,categories={stash,appscode}
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Integrity",type="boolean",JSONPath=".status.integrity"
+// +kubebuilder:printcolumn:name="Size",type="string",JSONPath=".status.size"
+// +kubebuilder:printcolumn:name="Snapshot-Count",type="integer",JSONPath=".status.snapshotCount"
+// +kubebuilder:printcolumn:name="Last-Successful-Backup",type="date",format="date-time",JSONPath=".status.lastBackupTime"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type Repository struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

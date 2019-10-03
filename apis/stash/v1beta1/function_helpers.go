@@ -12,7 +12,7 @@ func (fn Function) CustomResourceDefinition() *apiextensions.CustomResourceDefin
 		Singular:      ResourceSingularFunction,
 		Kind:          ResourceKindFunction,
 		ShortNames:    []string{"fn"},
-		Categories:    []string{"stash", "appscode", "kube-ci"},
+		Categories:    []string{"stash", "appscode"},
 		ResourceScope: string(apiextensions.ClusterScoped),
 		Versions: []apiextensions.CustomResourceDefinitionVersion{
 			{

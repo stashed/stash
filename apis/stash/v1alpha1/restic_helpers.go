@@ -23,7 +23,7 @@ func (c Restic) CustomResourceDefinition() *apiextensions.CustomResourceDefiniti
 		Singular:      ResourceSingularRestic,
 		Kind:          ResourceKindRestic,
 		ShortNames:    []string{"rst"},
-		Categories:    []string{"storage", "appscode", "all"},
+		Categories:    []string{"stash", "appscode", "all"},
 		ResourceScope: string(apiextensions.NamespaceScoped),
 		Versions: []apiextensions.CustomResourceDefinitionVersion{
 			{
