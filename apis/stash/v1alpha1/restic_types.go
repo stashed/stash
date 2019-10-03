@@ -7,12 +7,9 @@ import (
 )
 
 const (
-	ResourceKindRestic       = "Restic"
-	ResourceSingularRestic   = "restic"
-	ResourcePluralRestic     = "restics"
-	ResourceKindRecovery     = "Recovery"
-	ResourceSingularRecovery = "recovery"
-	ResourcePluralRecovery   = "recoveries"
+	ResourceKindRestic     = "Restic"
+	ResourceSingularRestic = "restic"
+	ResourcePluralRestic   = "restics"
 )
 
 // +genclient

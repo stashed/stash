@@ -1,27 +1,16 @@
+
 ---
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   creationTimestamp: null
-  labels:
-    app: stash
   name: tasks.stash.appscode.com
 spec:
-  additionalPrinterColumns:
-  - JSONPath: .metadata.creationTimestamp
-    name: Age
-    type: date
   group: stash.appscode.com
   names:
-    categories:
-    - stash
-    - appscode
     kind: Task
     plural: tasks
-    shortNames:
-    - task
-    singular: task
-  scope: Cluster
+  scope: ""
   validation:
     openAPIV3Schema:
       properties:
@@ -40,6 +29,8 @@ spec:
             which includes all objects users must create.
           properties:
             annotations:
+              additionalProperties:
+                type: string
               description: 'Annotations is an unstructured key value map stored with
                 a resource that may be set by external tools to store and retrieve
                 arbitrary metadata. They are not queryable and should be preserved
@@ -52,9 +43,11 @@ spec:
                 going to ignore it if set in create or update request.
               type: string
             creationTimestamp:
-              description: Time is a wrapper around time.Time which supports correct
-                marshaling to YAML and JSON.  Wrappers are provided for many of the
-                factory methods that the time package offers.
+              description: "CreationTimestamp is a timestamp representing the server
+                time when this object was created. It is not guaranteed to be set
+                in happens-before order across separate operations. Clients may not
+                set this value. It is represented in RFC3339 form and is in UTC. \n
+                Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata"
               format: date-time
               type: string
             deletionGracePeriodSeconds:
@@ -64,9 +57,25 @@ spec:
               format: int64
               type: integer
             deletionTimestamp:
-              description: Time is a wrapper around time.Time which supports correct
-                marshaling to YAML and JSON.  Wrappers are provided for many of the
-                factory methods that the time package offers.
+              description: "DeletionTimestamp is RFC 3339 date and time at which this
+                resource will be deleted. This field is set by the server when a graceful
+                deletion is requested by the user, and is not directly settable by
+                a client. The resource is expected to be deleted (no longer visible
+                from resource lists, and not reachable by name) after the time in
+                this field, once the finalizers list is empty. As long as the finalizers
+                list contains items, deletion is blocked. Once the deletionTimestamp
+                is set, this value may not be unset or be set further into the future,
+                although it may be shortened or the resource may be deleted prior
+                to this time. For example, a user may request that a pod is deleted
+                in 30 seconds. The Kubelet will react by sending a graceful termination
+                signal to the containers in the pod. After that 30 seconds, the Kubelet
+                will send a hard termination signal (SIGKILL) to the container and
+                after cleanup, remove the pod from the API. In the presence of network
+                partitions, this object may still exist after this timestamp, until
+                an administrator or automated process can determine the resource is
+                fully terminated. If not set, graceful deletion of the object has
+                not been requested. \n Populated by the system when a graceful deletion
+                is requested. Read-only. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata"
               format: date-time
               type: string
             finalizers:
@@ -78,12 +87,19 @@ spec:
                 type: string
               type: array
             generateName:
-              description: |-
-                GenerateName is an optional prefix, used by the server, to generate a unique name ONLY IF the Name field has not been provided. If this field is used, the name returned to the client will be different than the name passed. This value will also be combined with a unique suffix. The provided value has the same validation rules as the Name field, and may be truncated by the length of the suffix required to make the value unique on the server.
-
-                If this field is specified and the generated name exists, the server will NOT return a 409 - instead, it will either return 201 Created or 500 with Reason ServerTimeout indicating a unique name could not be found in the time allotted, and the client should retry (optionally after the time indicated in the Retry-After header).
-
-                Applied only if Name is not specified. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#idempotency
+              description: "GenerateName is an optional prefix, used by the server,
+                to generate a unique name ONLY IF the Name field has not been provided.
+                If this field is used, the name returned to the client will be different
+                than the name passed. This value will also be combined with a unique
+                suffix. The provided value has the same validation rules as the Name
+                field, and may be truncated by the length of the suffix required to
+                make the value unique on the server. \n If this field is specified
+                and the generated name exists, the server will NOT return a 409 -
+                instead, it will either return 201 Created or 500 with Reason ServerTimeout
+                indicating a unique name could not be found in the time allotted,
+                and the client should retry (optionally after the time indicated in
+                the Retry-After header). \n Applied only if Name is not specified.
+                More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#idempotency"
               type: string
             generation:
               description: A sequence number representing a specific generation of
@@ -91,7 +107,17 @@ spec:
               format: int64
               type: integer
             initializers:
-              description: Initializers tracks the progress of initialization.
+              description: "An initializer is a controller which enforces some system
+                invariant at object creation time. This field is a list of initializers
+                that have not yet acted on this object. If nil or empty, this object
+                has been completely initialized. Otherwise, the object is considered
+                uninitialized and is hidden (in list/watch and get calls) from clients
+                that haven't explicitly asked to observe uninitialized objects. \n
+                When an object is created, the system will populate this list with
+                the current set of initializers. Only privileged users may set or
+                modify this list. Once it is empty, it may not be modified further
+                by any user. \n DEPRECATED - initializers are an alpha field and will
+                be removed in v1.15."
               properties:
                 pending:
                   description: Pending is a list of initializers that must execute
@@ -112,8 +138,9 @@ spec:
                     type: object
                   type: array
                 result:
-                  description: Status is a return value for calls that don't return
-                    other objects.
+                  description: If result is set with the Failure field, the object
+                    will be persisted to storage and then deleted, ensuring that other
+                    clients can observe the deletion.
                   properties:
                     apiVersion:
                       description: 'APIVersion defines the versioned schema of this
@@ -127,13 +154,10 @@ spec:
                       format: int32
                       type: integer
                     details:
-                      description: StatusDetails is a set of additional properties
-                        that MAY be set by the server to provide additional information
-                        about a response. The Reason field of a Status object defines
-                        what attributes will be set. Clients must ignore fields that
-                        do not match the defined type of each attribute, and should
-                        assume that any attribute may be empty, invalid, or under
-                        defined.
+                      description: Extended data associated with the reason.  Each
+                        reason may define its own extended details. This field is
+                        optional and the data returned is not guaranteed to conform
+                        to any schema except that defined by the reason type.
                       properties:
                         causes:
                           description: The Causes array includes more details associated
@@ -145,12 +169,15 @@ spec:
                               errors are encountered.
                             properties:
                               field:
-                                description: |-
-                                  The field of the resource that has caused this error, as named by its JSON serialization. May include dot and postfix notation for nested attributes. Arrays are zero-indexed.  Fields may appear more than once in an array of causes due to fields having multiple errors. Optional.
-
-                                  Examples:
-                                    "name" - the field "name" on the current resource
-                                    "items[0].name" - the field "name" on the first array entry in "items"
+                                description: "The field of the resource that has caused
+                                  this error, as named by its JSON serialization.
+                                  May include dot and postfix notation for nested
+                                  attributes. Arrays are zero-indexed.  Fields may
+                                  appear more than once in an array of causes due
+                                  to fields having multiple errors. Optional. \n Examples:
+                                  \  \"name\" - the field \"name\" on the current
+                                  resource   \"items[0].name\" - the field \"name\"
+                                  on the first array entry in \"items\""
                                 type: string
                               message:
                                 description: A human-readable description of the cause
@@ -202,9 +229,7 @@ spec:
                         operation.
                       type: string
                     metadata:
-                      description: ListMeta describes metadata that synthetic resources
-                        must have, including lists and various status objects. A resource
-                        may have only one of {ObjectMeta, ListMeta}.
+                      description: 'Standard list metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
                       properties:
                         continue:
                           description: continue may be set if the user set a limit
@@ -247,15 +272,21 @@ spec:
               - pending
               type: object
             labels:
+              additionalProperties:
+                type: string
               description: 'Map of string keys and values that can be used to organize
                 and categorize (scope and select) objects. May match selectors of
                 replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
               type: object
             managedFields:
-              description: |-
-                ManagedFields maps workflow-id and version to the set of fields that are managed by that workflow. This is mostly for internal housekeeping, and users typically shouldn't need to set or understand this field. A workflow can be the user's name, a controller's name, or the name of a specific apply path like "ci-cd". The set of fields is always in the version that the workflow used when modifying the object.
-
-                This field is alpha and can be changed or removed without notice.
+              description: "ManagedFields maps workflow-id and version to the set
+                of fields that are managed by that workflow. This is mostly for internal
+                housekeeping, and users typically shouldn't need to set or understand
+                this field. A workflow can be the user's name, a controller's name,
+                or the name of a specific apply path like \"ci-cd\". The set of fields
+                is always in the version that the workflow used when modifying the
+                object. \n This field is alpha and can be changed or removed without
+                notice."
               items:
                 description: ManagedFieldsEntry is a workflow-id, a FieldSet and the
                   group version of the resource that the fieldset applies to.
@@ -268,8 +299,8 @@ spec:
                       converted.
                     type: string
                   fields:
-                    description: 'Fields stores a set of fields in a data structure
-                      like a Trie. To understand how this is used, see: https://github.com/kubernetes-sigs/structured-merge-diff'
+                    additionalProperties: true
+                    description: Fields identifies a set of fields.
                     type: object
                   manager:
                     description: Manager is an identifier of the workflow managing
@@ -281,9 +312,8 @@ spec:
                       for this field are 'Apply' and 'Update'.
                     type: string
                   time:
-                    description: Time is a wrapper around time.Time which supports
-                      correct marshaling to YAML and JSON.  Wrappers are provided
-                      for many of the factory methods that the time package offers.
+                    description: Time is timestamp of when these fields were set.
+                      It should always be empty if Operation is 'Apply'
                     format: date-time
                     type: string
                 type: object
@@ -296,10 +326,12 @@ spec:
                 Cannot be updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
               type: string
             namespace:
-              description: |-
-                Namespace defines the space within each name must be unique. An empty namespace is equivalent to the "default" namespace, but "default" is the canonical representation. Not all objects are required to be scoped to a namespace - the value of this field for those objects will be empty.
-
-                Must be a DNS_LABEL. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/namespaces
+              description: "Namespace defines the space within each name must be unique.
+                An empty namespace is equivalent to the \"default\" namespace, but
+                \"default\" is the canonical representation. Not all objects are required
+                to be scoped to a namespace - the value of this field for those objects
+                will be empty. \n Must be a DNS_LABEL. Cannot be updated. More info:
+                http://kubernetes.io/docs/user-guide/namespaces"
               type: string
             ownerReferences:
               description: List of objects depended by this object. If ALL objects
@@ -343,20 +375,24 @@ spec:
                 type: object
               type: array
             resourceVersion:
-              description: |-
-                An opaque value that represents the internal version of this object that can be used by clients to determine when objects have changed. May be used for optimistic concurrency, change detection, and the watch operation on a resource or set of resources. Clients must treat these values as opaque and passed unmodified back to the server. They may only be valid for a particular resource or set of resources.
-
-                Populated by the system. Read-only. Value must be treated as opaque by clients and . More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency
+              description: "An opaque value that represents the internal version of
+                this object that can be used by clients to determine when objects
+                have changed. May be used for optimistic concurrency, change detection,
+                and the watch operation on a resource or set of resources. Clients
+                must treat these values as opaque and passed unmodified back to the
+                server. They may only be valid for a particular resource or set of
+                resources. \n Populated by the system. Read-only. Value must be treated
+                as opaque by clients and . More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency"
               type: string
             selfLink:
               description: SelfLink is a URL representing this object. Populated by
                 the system. Read-only.
               type: string
             uid:
-              description: |-
-                UID is the unique in time and space value for this object. It is typically generated by the server on successful creation of a resource and is not allowed to change on PUT operations.
-
-                Populated by the system. Read-only. More info: http://kubernetes.io/docs/user-guide/identifiers#uids
+              description: "UID is the unique in time and space value for this object.
+                It is typically generated by the server on successful creation of
+                a resource and is not allowed to change on PUT operations. \n Populated
+                by the system. Read-only. More info: http://kubernetes.io/docs/user-guide/identifiers#uids"
               type: string
           type: object
         spec:
@@ -392,17 +428,18 @@ spec:
                   accessed by any container in the pod.
                 properties:
                   awsElasticBlockStore:
-                    description: |-
-                      Represents a Persistent Disk resource in AWS.
-
-                      An AWS EBS disk must exist before mounting to a container. The disk must also be in the same AWS zone as the kubelet. An AWS EBS disk can only be mounted as read/write once. AWS EBS volumes support ownership management and SELinux relabeling.
+                    description: 'AWSElasticBlockStore represents an AWS Disk resource
+                      that is attached to a kubelet''s host machine and then exposed
+                      to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore'
                     properties:
                       fsType:
                         description: 'Filesystem type of the volume that you want
                           to mount. Tip: Ensure that the filesystem type is supported
                           by the host operating system. Examples: "ext4", "xfs", "ntfs".
                           Implicitly inferred to be "ext4" if unspecified. More info:
-                          https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore'
+                          https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore
+                          TODO: how do we prevent errors in the filesystem from compromising
+                          the machine'
                         type: string
                       partition:
                         description: 'The partition in the volume that you want to
@@ -476,9 +513,8 @@ spec:
                     - shareName
                     type: object
                   cephfs:
-                    description: Represents a Ceph Filesystem mount that lasts the
-                      lifetime of a pod Cephfs volumes do not support ownership management
-                      or SELinux relabeling.
+                    description: CephFS represents a Ceph FS mount on the host that
+                      shares a pod's lifetime
                     properties:
                       monitors:
                         description: 'Required: Monitors is a collection of Ceph monitors
@@ -500,12 +536,12 @@ spec:
                           for User, default is /etc/ceph/user.secret More info: https://releases.k8s.io/HEAD/examples/volumes/cephfs/README.md#how-to-use-it'
                         type: string
                       secretRef:
-                        description: LocalObjectReference contains enough information
-                          to let you locate the referenced object inside the same
-                          namespace.
+                        description: 'Optional: SecretRef is reference to the authentication
+                          secret for User, default is empty. More info: https://releases.k8s.io/HEAD/examples/volumes/cephfs/README.md#how-to-use-it'
                         properties:
                           name:
-                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
                             type: string
                         type: object
                       user:
@@ -516,10 +552,8 @@ spec:
                     - monitors
                     type: object
                   cinder:
-                    description: Represents a cinder volume resource in Openstack.
-                      A Cinder volume must exist before mounting to a container. The
-                      volume must also be in the same region as the kubelet. Cinder
-                      volumes support ownership management and SELinux relabeling.
+                    description: 'Cinder represents a cinder volume attached and mounted
+                      on kubelets host machine More info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md'
                     properties:
                       fsType:
                         description: 'Filesystem type to mount. Must be a filesystem
@@ -533,12 +567,12 @@ spec:
                           info: https://releases.k8s.io/HEAD/examples/mysql-cinder-pd/README.md'
                         type: boolean
                       secretRef:
-                        description: LocalObjectReference contains enough information
-                          to let you locate the referenced object inside the same
-                          namespace.
+                        description: 'Optional: points to a secret object containing
+                          parameters used to connect to OpenStack.'
                         properties:
                           name:
-                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
                             type: string
                         type: object
                       volumeID:
@@ -549,10 +583,8 @@ spec:
                     - volumeID
                     type: object
                   configMap:
-                    description: |-
-                      Adapts a ConfigMap into a volume.
-
-                      The contents of the target ConfigMap's Data field will be presented in a volume as files using the keys in the Data field as the file names, unless the items element is populated with specific mappings of keys to paths. ConfigMap volumes support ownership management and SELinux relabeling.
+                    description: ConfigMap represents a configMap that should populate
+                      this volume
                     properties:
                       defaultMode:
                         description: 'Optional: mode bits to use on created files
@@ -600,7 +632,8 @@ spec:
                           type: object
                         type: array
                       name:
-                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                          TODO: Add other useful fields. apiVersion, kind, uid?'
                         type: string
                       optional:
                         description: Specify whether the ConfigMap or it's keys must
@@ -608,8 +641,8 @@ spec:
                         type: boolean
                     type: object
                   csi:
-                    description: Represents a source location of a volume to mount,
-                      managed by an external CSI driver
+                    description: CSI (Container Storage Interface) represents storage
+                      that is handled by an external CSI driver (Alpha feature).
                     properties:
                       driver:
                         description: Driver is the name of the CSI driver that handles
@@ -623,12 +656,16 @@ spec:
                           to apply.
                         type: string
                       nodePublishSecretRef:
-                        description: LocalObjectReference contains enough information
-                          to let you locate the referenced object inside the same
-                          namespace.
+                        description: NodePublishSecretRef is a reference to the secret
+                          object containing sensitive information to pass to the CSI
+                          driver to complete the CSI NodePublishVolume and NodeUnpublishVolume
+                          calls. This field is optional, and  may be empty if no secret
+                          is required. If the secret object contains more than one
+                          secret, all secret references are passed.
                         properties:
                           name:
-                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
                             type: string
                         type: object
                       readOnly:
@@ -636,6 +673,8 @@ spec:
                           Defaults to false (read/write).
                         type: boolean
                       volumeAttributes:
+                        additionalProperties:
+                          type: string
                         description: VolumeAttributes stores driver-specific properties
                           that are passed to the CSI driver. Consult your driver's
                           documentation for supported values.
@@ -644,9 +683,8 @@ spec:
                     - driver
                     type: object
                   downwardAPI:
-                    description: DownwardAPIVolumeSource represents a volume containing
-                      downward API info. Downward API volumes support ownership management
-                      and SELinux relabeling.
+                    description: DownwardAPI represents downward API about the pod
+                      that should populate this volume
                     properties:
                       defaultMode:
                         description: 'Optional: mode bits to use on created files
@@ -664,8 +702,8 @@ spec:
                             to create the file containing the pod field
                           properties:
                             fieldRef:
-                              description: ObjectFieldSelector selects an APIVersioned
-                                field of an object.
+                              description: 'Required: Selects a field of the pod:
+                                only annotations, labels, name and namespace are supported.'
                               properties:
                                 apiVersion:
                                   description: Version of the schema the FieldPath
@@ -695,46 +733,17 @@ spec:
                                 ''..'''
                               type: string
                             resourceFieldRef:
-                              description: ResourceFieldSelector represents container
-                                resources (cpu, memory) and their output format
+                              description: 'Selects a resource of the container: only
+                                resources limits and requests (limits.cpu, limits.memory,
+                                requests.cpu and requests.memory) are currently supported.'
                               properties:
                                 containerName:
                                   description: 'Container name: required for volumes,
                                     optional for env vars'
                                   type: string
                                 divisor:
-                                  description: |-
-                                    Quantity is a fixed-point representation of a number. It provides convenient marshaling/unmarshaling in JSON and YAML, in addition to String() and Int64() accessors.
-
-                                    The serialization format is:
-
-                                    <quantity>        ::= <signedNumber><suffix>
-                                      (Note that <suffix> may be empty, from the "" case in <decimalSI>.)
-                                    <digit>           ::= 0 | 1 | ... | 9 <digits>          ::= <digit> | <digit><digits> <number>          ::= <digits> | <digits>.<digits> | <digits>. | .<digits> <sign>            ::= "+" | "-" <signedNumber>    ::= <number> | <sign><number> <suffix>          ::= <binarySI> | <decimalExponent> | <decimalSI> <binarySI>        ::= Ki | Mi | Gi | Ti | Pi | Ei
-                                      (International System of units; See: http://physics.nist.gov/cuu/Units/binary.html)
-                                    <decimalSI>       ::= m | "" | k | M | G | T | P | E
-                                      (Note that 1024 = 1Ki but 1000 = 1k; I didn't choose the capitalization.)
-                                    <decimalExponent> ::= "e" <signedNumber> | "E" <signedNumber>
-
-                                    No matter which of the three exponent forms is used, no quantity may represent a number greater than 2^63-1 in magnitude, nor may it have more than 3 decimal places. Numbers larger or more precise will be capped or rounded up. (E.g.: 0.1m will rounded up to 1m.) This may be extended in the future if we require larger or smaller quantities.
-
-                                    When a Quantity is parsed from a string, it will remember the type of suffix it had, and will use the same type again when it is serialized.
-
-                                    Before serializing, Quantity will be put in "canonical form". This means that Exponent/suffix will be adjusted up or down (with a corresponding increase or decrease in Mantissa) such that:
-                                      a. No precision is lost
-                                      b. No fractional digits will be emitted
-                                      c. The exponent (or suffix) is as large as possible.
-                                    The sign will be omitted unless the number is negative.
-
-                                    Examples:
-                                      1.5 will be serialized as "1500m"
-                                      1.5Gi will be serialized as "1536Mi"
-
-                                    Note that the quantity will NEVER be internally represented by a floating point number. That is the whole point of this exercise.
-
-                                    Non-canonical values will still parse as long as they are well formed, but will be re-emitted in their canonical form. (So always use canonical form, or don't diff.)
-
-                                    This format is intended to make it difficult to use these numbers without writing some sort of special handling code in the hopes that that will cause implementors to also use a fixed point implementation.
+                                  description: Specifies the output format of the
+                                    exposed resources, defaults to "1"
                                   type: string
                                 resource:
                                   description: 'Required: resource to select'
@@ -748,8 +757,8 @@ spec:
                         type: array
                     type: object
                   emptyDir:
-                    description: Represents an empty directory for a pod. Empty directory
-                      volumes support ownership management and SELinux relabeling.
+                    description: 'EmptyDir represents a temporary directory that shares
+                      a pod''s lifetime. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir'
                     properties:
                       medium:
                         description: 'What type of storage medium should back this
@@ -758,49 +767,25 @@ spec:
                           More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir'
                         type: string
                       sizeLimit:
-                        description: |-
-                          Quantity is a fixed-point representation of a number. It provides convenient marshaling/unmarshaling in JSON and YAML, in addition to String() and Int64() accessors.
-
-                          The serialization format is:
-
-                          <quantity>        ::= <signedNumber><suffix>
-                            (Note that <suffix> may be empty, from the "" case in <decimalSI>.)
-                          <digit>           ::= 0 | 1 | ... | 9 <digits>          ::= <digit> | <digit><digits> <number>          ::= <digits> | <digits>.<digits> | <digits>. | .<digits> <sign>            ::= "+" | "-" <signedNumber>    ::= <number> | <sign><number> <suffix>          ::= <binarySI> | <decimalExponent> | <decimalSI> <binarySI>        ::= Ki | Mi | Gi | Ti | Pi | Ei
-                            (International System of units; See: http://physics.nist.gov/cuu/Units/binary.html)
-                          <decimalSI>       ::= m | "" | k | M | G | T | P | E
-                            (Note that 1024 = 1Ki but 1000 = 1k; I didn't choose the capitalization.)
-                          <decimalExponent> ::= "e" <signedNumber> | "E" <signedNumber>
-
-                          No matter which of the three exponent forms is used, no quantity may represent a number greater than 2^63-1 in magnitude, nor may it have more than 3 decimal places. Numbers larger or more precise will be capped or rounded up. (E.g.: 0.1m will rounded up to 1m.) This may be extended in the future if we require larger or smaller quantities.
-
-                          When a Quantity is parsed from a string, it will remember the type of suffix it had, and will use the same type again when it is serialized.
-
-                          Before serializing, Quantity will be put in "canonical form". This means that Exponent/suffix will be adjusted up or down (with a corresponding increase or decrease in Mantissa) such that:
-                            a. No precision is lost
-                            b. No fractional digits will be emitted
-                            c. The exponent (or suffix) is as large as possible.
-                          The sign will be omitted unless the number is negative.
-
-                          Examples:
-                            1.5 will be serialized as "1500m"
-                            1.5Gi will be serialized as "1536Mi"
-
-                          Note that the quantity will NEVER be internally represented by a floating point number. That is the whole point of this exercise.
-
-                          Non-canonical values will still parse as long as they are well formed, but will be re-emitted in their canonical form. (So always use canonical form, or don't diff.)
-
-                          This format is intended to make it difficult to use these numbers without writing some sort of special handling code in the hopes that that will cause implementors to also use a fixed point implementation.
+                        description: 'Total amount of local storage required for this
+                          EmptyDir volume. The size limit is also applicable for memory
+                          medium. The maximum usage on memory medium EmptyDir would
+                          be the minimum value between the SizeLimit specified here
+                          and the sum of memory limits of all containers in a pod.
+                          The default is nil which means that the limit is undefined.
+                          More info: http://kubernetes.io/docs/user-guide/volumes#emptydir'
                         type: string
                     type: object
                   fc:
-                    description: Represents a Fibre Channel volume. Fibre Channel
-                      volumes can only be mounted as read/write once. Fibre Channel
-                      volumes support ownership management and SELinux relabeling.
+                    description: FC represents a Fibre Channel resource that is attached
+                      to a kubelet's host machine and then exposed to the pod.
                     properties:
                       fsType:
-                        description: Filesystem type to mount. Must be a filesystem
+                        description: 'Filesystem type to mount. Must be a filesystem
                           type supported by the host operating system. Ex. "ext4",
                           "xfs", "ntfs". Implicitly inferred to be "ext4" if unspecified.
+                          TODO: how do we prevent errors in the filesystem from compromising
+                          the machine'
                         type: string
                       lun:
                         description: 'Optional: FC target lun number'
@@ -838,6 +823,8 @@ spec:
                           script.
                         type: string
                       options:
+                        additionalProperties:
+                          type: string
                         description: 'Optional: Extra command options if any.'
                         type: object
                       readOnly:
@@ -845,22 +832,24 @@ spec:
                           here will force the ReadOnly setting in VolumeMounts.'
                         type: boolean
                       secretRef:
-                        description: LocalObjectReference contains enough information
-                          to let you locate the referenced object inside the same
-                          namespace.
+                        description: 'Optional: SecretRef is reference to the secret
+                          object containing sensitive information to pass to the plugin
+                          scripts. This may be empty if no secret object is specified.
+                          If the secret object contains more than one secret, all
+                          secrets are passed to the plugin scripts.'
                         properties:
                           name:
-                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
                             type: string
                         type: object
                     required:
                     - driver
                     type: object
                   flocker:
-                    description: Represents a Flocker volume mounted by the Flocker
-                      agent. One and only one of datasetName and datasetUUID should
-                      be set. Flocker volumes do not support ownership management
-                      or SELinux relabeling.
+                    description: Flocker represents a Flocker volume attached to a
+                      kubelet's host machine. This depends on the Flocker control
+                      service being running
                     properties:
                       datasetName:
                         description: Name of the dataset stored as metadata -> name
@@ -872,17 +861,18 @@ spec:
                         type: string
                     type: object
                   gcePersistentDisk:
-                    description: |-
-                      Represents a Persistent Disk resource in Google Compute Engine.
-
-                      A GCE PD must exist before mounting to a container. The disk must also be in the same GCE project and zone as the kubelet. A GCE PD can only be mounted as read/write once or read-only many times. GCE PDs support ownership management and SELinux relabeling.
+                    description: 'GCEPersistentDisk represents a GCE Disk resource
+                      that is attached to a kubelet''s host machine and then exposed
+                      to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk'
                     properties:
                       fsType:
                         description: 'Filesystem type of the volume that you want
                           to mount. Tip: Ensure that the filesystem type is supported
                           by the host operating system. Examples: "ext4", "xfs", "ntfs".
                           Implicitly inferred to be "ext4" if unspecified. More info:
-                          https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk'
+                          https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
+                          TODO: how do we prevent errors in the filesystem from compromising
+                          the machine'
                         type: string
                       partition:
                         description: 'The partition in the volume that you want to
@@ -904,10 +894,11 @@ spec:
                     - pdName
                     type: object
                   gitRepo:
-                    description: |-
-                      Represents a volume that is populated with the contents of a git repository. Git repo volumes do not support ownership management. Git repo volumes support SELinux relabeling.
-
-                      DEPRECATED: GitRepo is deprecated. To provision a container with a git repo, mount an EmptyDir into an InitContainer that clones the repo using git, then mount the EmptyDir into the Pod's container.
+                    description: 'GitRepo represents a git repository at a particular
+                      revision. DEPRECATED: GitRepo is deprecated. To provision a
+                      container with a git repo, mount an EmptyDir into an InitContainer
+                      that clones the repo using git, then mount the EmptyDir into
+                      the Pod''s container.'
                     properties:
                       directory:
                         description: Target directory name. Must not contain or start
@@ -926,9 +917,8 @@ spec:
                     - repository
                     type: object
                   glusterfs:
-                    description: Represents a Glusterfs mount that lasts the lifetime
-                      of a pod. Glusterfs volumes do not support ownership management
-                      or SELinux relabeling.
+                    description: 'Glusterfs represents a Glusterfs mount on the host
+                      that shares a pod''s lifetime. More info: https://releases.k8s.io/HEAD/examples/volumes/glusterfs/README.md'
                     properties:
                       endpoints:
                         description: 'EndpointsName is the endpoint name that details
@@ -948,8 +938,13 @@ spec:
                     - path
                     type: object
                   hostPath:
-                    description: Represents a host path mapped into a pod. Host path
-                      volumes do not support ownership management or SELinux relabeling.
+                    description: 'HostPath represents a pre-existing file or directory
+                      on the host machine that is directly exposed to the container.
+                      This is generally used for system agents or other privileged
+                      things that are allowed to see the host machine. Most containers
+                      will NOT need this. More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath
+                      --- TODO(jonesdl) We need to restrict who can use host directory
+                      mounts and who can/can not mount host directories as read/write.'
                     properties:
                       path:
                         description: 'Path of the directory on the host. If the path
@@ -964,9 +959,9 @@ spec:
                     - path
                     type: object
                   iscsi:
-                    description: Represents an ISCSI disk. ISCSI volumes can only
-                      be mounted as read/write once. ISCSI volumes support ownership
-                      management and SELinux relabeling.
+                    description: 'ISCSI represents an ISCSI Disk resource that is
+                      attached to a kubelet''s host machine and then exposed to the
+                      pod. More info: https://releases.k8s.io/HEAD/examples/volumes/iscsi/README.md'
                     properties:
                       chapAuthDiscovery:
                         description: whether support iSCSI Discovery CHAP authentication
@@ -979,7 +974,9 @@ spec:
                           to mount. Tip: Ensure that the filesystem type is supported
                           by the host operating system. Examples: "ext4", "xfs", "ntfs".
                           Implicitly inferred to be "ext4" if unspecified. More info:
-                          https://kubernetes.io/docs/concepts/storage/volumes#iscsi'
+                          https://kubernetes.io/docs/concepts/storage/volumes#iscsi
+                          TODO: how do we prevent errors in the filesystem from compromising
+                          the machine'
                         type: string
                       initiatorName:
                         description: Custom iSCSI Initiator Name. If initiatorName
@@ -1010,12 +1007,11 @@ spec:
                           in VolumeMounts. Defaults to false.
                         type: boolean
                       secretRef:
-                        description: LocalObjectReference contains enough information
-                          to let you locate the referenced object inside the same
-                          namespace.
+                        description: CHAP Secret for iSCSI target and initiator authentication
                         properties:
                           name:
-                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
                             type: string
                         type: object
                       targetPortal:
@@ -1024,18 +1020,17 @@ spec:
                           TCP ports 860 and 3260).
                         type: string
                     required:
-                    - targetPortal
                     - iqn
                     - lun
+                    - targetPortal
                     type: object
                   name:
                     description: 'Volume''s name. Must be a DNS_LABEL and unique within
                       the pod. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
                     type: string
                   nfs:
-                    description: Represents an NFS mount that lasts the lifetime of
-                      a pod. NFS volumes do not support ownership management or SELinux
-                      relabeling.
+                    description: 'NFS represents an NFS mount on the host that shares
+                      a pod''s lifetime More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs'
                     properties:
                       path:
                         description: 'Path that is exported by the NFS server. More
@@ -1051,15 +1046,13 @@ spec:
                           NFS server. More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs'
                         type: string
                     required:
-                    - server
                     - path
+                    - server
                     type: object
                   persistentVolumeClaim:
-                    description: PersistentVolumeClaimVolumeSource references the
-                      user's PVC in the same namespace. This volume finds the bound
-                      PV and mounts that volume for the pod. A PersistentVolumeClaimVolumeSource
-                      is, essentially, a wrapper around another type of volume that
-                      is owned by someone else (the system).
+                    description: 'PersistentVolumeClaimVolumeSource represents a reference
+                      to a PersistentVolumeClaim in the same namespace. More info:
+                      https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims'
                     properties:
                       claimName:
                         description: 'ClaimName is the name of a PersistentVolumeClaim
@@ -1074,7 +1067,8 @@ spec:
                     - claimName
                     type: object
                   photonPersistentDisk:
-                    description: Represents a Photon Controller persistent disk resource.
+                    description: PhotonPersistentDisk represents a PhotonController
+                      persistent disk attached and mounted on kubelets host machine
                     properties:
                       fsType:
                         description: Filesystem type to mount. Must be a filesystem
@@ -1089,8 +1083,8 @@ spec:
                     - pdID
                     type: object
                   portworxVolume:
-                    description: PortworxVolumeSource represents a Portworx volume
-                      resource.
+                    description: PortworxVolume represents a portworx volume attached
+                      and mounted on kubelets host machine
                     properties:
                       fsType:
                         description: FSType represents the filesystem type to mount
@@ -1109,7 +1103,8 @@ spec:
                     - volumeID
                     type: object
                   projected:
-                    description: Represents a projected volume source
+                    description: Items for all in one resources secrets, configmaps,
+                      and downward API
                     properties:
                       defaultMode:
                         description: Mode bits to use on created files by default.
@@ -1126,10 +1121,8 @@ spec:
                             other supported volume types
                           properties:
                             configMap:
-                              description: |-
-                                Adapts a ConfigMap into a projected volume.
-
-                                The contents of the target ConfigMap's Data field will be presented in a projected volume as files using the keys in the Data field as the file names, unless the items element is populated with specific mappings of keys to paths. Note that this is identical to a configmap volume source without the default mode.
+                              description: information about the configMap data to
+                                project
                               properties:
                                 items:
                                   description: If unspecified, each key-value pair
@@ -1172,7 +1165,9 @@ spec:
                                     type: object
                                   type: array
                                 name:
-                                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Add other useful fields. apiVersion, kind,
+                                    uid?'
                                   type: string
                                 optional:
                                   description: Specify whether the ConfigMap or it's
@@ -1180,10 +1175,8 @@ spec:
                                   type: boolean
                               type: object
                             downwardAPI:
-                              description: Represents downward API info for projecting
-                                into a projected volume. Note that this is identical
-                                to a downwardAPI volume source without the default
-                                mode.
+                              description: information about the downwardAPI data
+                                to project
                               properties:
                                 items:
                                   description: Items is a list of DownwardAPIVolume
@@ -1194,8 +1187,9 @@ spec:
                                       pod field
                                     properties:
                                       fieldRef:
-                                        description: ObjectFieldSelector selects an
-                                          APIVersioned field of an object.
+                                        description: 'Required: Selects a field of
+                                          the pod: only annotations, labels, name
+                                          and namespace are supported.'
                                         properties:
                                           apiVersion:
                                             description: Version of the schema the
@@ -1227,47 +1221,19 @@ spec:
                                           the relative path must not start with ''..'''
                                         type: string
                                       resourceFieldRef:
-                                        description: ResourceFieldSelector represents
-                                          container resources (cpu, memory) and their
-                                          output format
+                                        description: 'Selects a resource of the container:
+                                          only resources limits and requests (limits.cpu,
+                                          limits.memory, requests.cpu and requests.memory)
+                                          are currently supported.'
                                         properties:
                                           containerName:
                                             description: 'Container name: required
                                               for volumes, optional for env vars'
                                             type: string
                                           divisor:
-                                            description: |-
-                                              Quantity is a fixed-point representation of a number. It provides convenient marshaling/unmarshaling in JSON and YAML, in addition to String() and Int64() accessors.
-
-                                              The serialization format is:
-
-                                              <quantity>        ::= <signedNumber><suffix>
-                                                (Note that <suffix> may be empty, from the "" case in <decimalSI>.)
-                                              <digit>           ::= 0 | 1 | ... | 9 <digits>          ::= <digit> | <digit><digits> <number>          ::= <digits> | <digits>.<digits> | <digits>. | .<digits> <sign>            ::= "+" | "-" <signedNumber>    ::= <number> | <sign><number> <suffix>          ::= <binarySI> | <decimalExponent> | <decimalSI> <binarySI>        ::= Ki | Mi | Gi | Ti | Pi | Ei
-                                                (International System of units; See: http://physics.nist.gov/cuu/Units/binary.html)
-                                              <decimalSI>       ::= m | "" | k | M | G | T | P | E
-                                                (Note that 1024 = 1Ki but 1000 = 1k; I didn't choose the capitalization.)
-                                              <decimalExponent> ::= "e" <signedNumber> | "E" <signedNumber>
-
-                                              No matter which of the three exponent forms is used, no quantity may represent a number greater than 2^63-1 in magnitude, nor may it have more than 3 decimal places. Numbers larger or more precise will be capped or rounded up. (E.g.: 0.1m will rounded up to 1m.) This may be extended in the future if we require larger or smaller quantities.
-
-                                              When a Quantity is parsed from a string, it will remember the type of suffix it had, and will use the same type again when it is serialized.
-
-                                              Before serializing, Quantity will be put in "canonical form". This means that Exponent/suffix will be adjusted up or down (with a corresponding increase or decrease in Mantissa) such that:
-                                                a. No precision is lost
-                                                b. No fractional digits will be emitted
-                                                c. The exponent (or suffix) is as large as possible.
-                                              The sign will be omitted unless the number is negative.
-
-                                              Examples:
-                                                1.5 will be serialized as "1500m"
-                                                1.5Gi will be serialized as "1536Mi"
-
-                                              Note that the quantity will NEVER be internally represented by a floating point number. That is the whole point of this exercise.
-
-                                              Non-canonical values will still parse as long as they are well formed, but will be re-emitted in their canonical form. (So always use canonical form, or don't diff.)
-
-                                              This format is intended to make it difficult to use these numbers without writing some sort of special handling code in the hopes that that will cause implementors to also use a fixed point implementation.
+                                            description: Specifies the output format
+                                              of the exposed resources, defaults to
+                                              "1"
                                             type: string
                                           resource:
                                             description: 'Required: resource to select'
@@ -1281,10 +1247,7 @@ spec:
                                   type: array
                               type: object
                             secret:
-                              description: |-
-                                Adapts a secret into a projected volume.
-
-                                The contents of the target Secret's Data field will be presented in a projected volume as files using the keys in the Data field as the file names. Note that this is identical to a secret volume source without the default mode.
+                              description: information about the secret data to project
                               properties:
                                 items:
                                   description: If unspecified, each key-value pair
@@ -1327,7 +1290,9 @@ spec:
                                     type: object
                                   type: array
                                 name:
-                                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Add other useful fields. apiVersion, kind,
+                                    uid?'
                                   type: string
                                 optional:
                                   description: Specify whether the Secret or its key
@@ -1335,11 +1300,8 @@ spec:
                                   type: boolean
                               type: object
                             serviceAccountToken:
-                              description: ServiceAccountTokenProjection represents
-                                a projected service account token volume. This projection
-                                can be used to insert a service account token into
-                                the pods runtime filesystem for use against APIs (Kubernetes
-                                API Server or otherwise).
+                              description: information about the serviceAccountToken
+                                data to project
                               properties:
                                 audience:
                                   description: Audience is the intended audience of
@@ -1374,9 +1336,8 @@ spec:
                     - sources
                     type: object
                   quobyte:
-                    description: Represents a Quobyte mount that lasts the lifetime
-                      of a pod. Quobyte volumes do not support ownership management
-                      or SELinux relabeling.
+                    description: Quobyte represents a Quobyte mount on the host that
+                      shares a pod's lifetime
                     properties:
                       group:
                         description: Group to map volume access to Default is no group
@@ -1409,16 +1370,17 @@ spec:
                     - volume
                     type: object
                   rbd:
-                    description: Represents a Rados Block Device mount that lasts
-                      the lifetime of a pod. RBD volumes support ownership management
-                      and SELinux relabeling.
+                    description: 'RBD represents a Rados Block Device mount on the
+                      host that shares a pod''s lifetime. More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md'
                     properties:
                       fsType:
                         description: 'Filesystem type of the volume that you want
                           to mount. Tip: Ensure that the filesystem type is supported
                           by the host operating system. Examples: "ext4", "xfs", "ntfs".
                           Implicitly inferred to be "ext4" if unspecified. More info:
-                          https://kubernetes.io/docs/concepts/storage/volumes#rbd'
+                          https://kubernetes.io/docs/concepts/storage/volumes#rbd
+                          TODO: how do we prevent errors in the filesystem from compromising
+                          the machine'
                         type: string
                       image:
                         description: 'The rados image name. More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it'
@@ -1441,12 +1403,13 @@ spec:
                           in VolumeMounts. Defaults to false. More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it'
                         type: boolean
                       secretRef:
-                        description: LocalObjectReference contains enough information
-                          to let you locate the referenced object inside the same
-                          namespace.
+                        description: 'SecretRef is name of the authentication secret
+                          for RBDUser. If provided overrides keyring. Default is nil.
+                          More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it'
                         properties:
                           name:
-                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
                             type: string
                         type: object
                       user:
@@ -1454,12 +1417,12 @@ spec:
                           info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it'
                         type: string
                     required:
-                    - monitors
                     - image
+                    - monitors
                     type: object
                   scaleIO:
-                    description: ScaleIOVolumeSource represents a persistent ScaleIO
-                      volume
+                    description: ScaleIO represents a ScaleIO persistent volume attached
+                      and mounted on Kubernetes nodes.
                     properties:
                       fsType:
                         description: Filesystem type to mount. Must be a filesystem
@@ -1478,12 +1441,13 @@ spec:
                           will force the ReadOnly setting in VolumeMounts.
                         type: boolean
                       secretRef:
-                        description: LocalObjectReference contains enough information
-                          to let you locate the referenced object inside the same
-                          namespace.
+                        description: SecretRef references to the secret for ScaleIO
+                          user and other sensitive information. If this is not provided,
+                          Login operation will fail.
                         properties:
                           name:
-                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
                             type: string
                         type: object
                       sslEnabled:
@@ -1508,14 +1472,12 @@ spec:
                         type: string
                     required:
                     - gateway
-                    - system
                     - secretRef
+                    - system
                     type: object
                   secret:
-                    description: |-
-                      Adapts a Secret into a volume.
-
-                      The contents of the target Secret's Data field will be presented in a volume as files using the keys in the Data field as the file names. Secret volumes support ownership management and SELinux relabeling.
+                    description: 'Secret represents a secret that should populate
+                      this volume. More info: https://kubernetes.io/docs/concepts/storage/volumes#secret'
                     properties:
                       defaultMode:
                         description: 'Optional: mode bits to use on created files
@@ -1572,7 +1534,8 @@ spec:
                         type: string
                     type: object
                   storageos:
-                    description: Represents a StorageOS persistent volume resource.
+                    description: StorageOS represents a StorageOS volume attached
+                      and mounted on Kubernetes nodes.
                     properties:
                       fsType:
                         description: Filesystem type to mount. Must be a filesystem
@@ -1584,12 +1547,13 @@ spec:
                           will force the ReadOnly setting in VolumeMounts.
                         type: boolean
                       secretRef:
-                        description: LocalObjectReference contains enough information
-                          to let you locate the referenced object inside the same
-                          namespace.
+                        description: SecretRef specifies the secret to use for obtaining
+                          the StorageOS API credentials.  If not specified, default
+                          values will be attempted.
                         properties:
                           name:
-                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              TODO: Add other useful fields. apiVersion, kind, uid?'
                             type: string
                         type: object
                       volumeName:
@@ -1609,7 +1573,8 @@ spec:
                         type: string
                     type: object
                   vsphereVolume:
-                    description: Represents a vSphere volume resource.
+                    description: VsphereVolume represents a vSphere volume attached
+                      and mounted on kubelets host machine
                     properties:
                       fsType:
                         description: Filesystem type to mount. Must be a filesystem
@@ -1636,7 +1601,6 @@ spec:
               type: array
           type: object
       type: object
-  version: v1beta1
   versions:
   - name: v1beta1
     served: true
