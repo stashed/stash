@@ -85,7 +85,7 @@ func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
 		return nil, fmt.Errorf("no target has been specified for RestoreSession %s/%s", restoreSession.Namespace, restoreSession.Name)
 	}
 
-	pvcList := make([]core.PersistentVolumeClaim, 0)
+	var pvcList []core.PersistentVolumeClaim
 	// if replica field is specified, then use it. otherwise, default it to 1
 	replicas := int32(1)
 	if restoreSession.Spec.Target.Replicas != nil {
@@ -102,7 +102,7 @@ func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
 	}
 
 	// createdPVCs holds the definition of the PVCs that has been created successfully
-	createdPVCs := make([]core.PersistentVolumeClaim, 0)
+	var createdPVCs []core.PersistentVolumeClaim
 
 	// now create the PVCs
 	restoreOutput := &restic.RestoreOutput{}
