@@ -6,11 +6,28 @@ metadata:
   creationTimestamp: null
   name: backupblueprints.stash.appscode.com
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.task.name
+    name: Task
+    type: string
+  - JSONPath: .spec.schedule
+    name: Schedule
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
   group: stash.appscode.com
   names:
+    categories:
+    - stash
+    - appscode
     kind: BackupBlueprint
     plural: backupblueprints
-  scope: ""
+    shortNames:
+    - bb
+    singular: backupblueprint
+  scope: Namespaced
+  subresources: {}
   validation:
     openAPIV3Schema:
       properties:
