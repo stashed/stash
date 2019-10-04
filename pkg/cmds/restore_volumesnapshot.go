@@ -102,7 +102,7 @@ func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
 	}
 
 	// createdPVCs holds the definition of the PVCs that has been created successfully
-	createdPVCs := make([]core.PersistentVolumeClaim, 0)
+	var createdPVCs []core.PersistentVolumeClaim
 
 	// now create the PVCs
 	restoreOutput := &restic.RestoreOutput{}
