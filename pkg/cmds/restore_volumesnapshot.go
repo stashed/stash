@@ -85,7 +85,7 @@ func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
 		return nil, fmt.Errorf("no target has been specified for RestoreSession %s/%s", restoreSession.Namespace, restoreSession.Name)
 	}
 
-	pvcList := make([]core.PersistentVolumeClaim, 0)
+	var pvcList []core.PersistentVolumeClaim
 	// if replica field is specified, then use it. otherwise, default it to 1
 	replicas := int32(1)
 	if restoreSession.Spec.Target.Replicas != nil {
@@ -117,7 +117,7 @@ func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
 						Phase:    api_v1beta1.HostRestoreFailed,
 						Error:    fmt.Sprintf("VolumeSnapshot %s/%s does not exist", pvcList[i].Namespace, pvcList[i].Spec.DataSource.Name),
 					})
-					// continue to process next pvc
+					// continue to process next VolumeSnapshot
 					continue
 				} else {
 					return nil, err
@@ -126,7 +126,7 @@ func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
 		}
 
 		// now, create the PVC
-		_, err := opt.kubeClient.CoreV1().PersistentVolumeClaims(opt.namespace).Create(&pvcList[i])
+		pvc, err := opt.kubeClient.CoreV1().PersistentVolumeClaims(opt.namespace).Create(&pvcList[i])
 		if err != nil {
 			if kerr.IsAlreadyExists(err) {
 				restoreOutput.HostRestoreStats = append(restoreOutput.HostRestoreStats, api_v1beta1.HostRestoreStats{
@@ -141,7 +141,7 @@ func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
 			}
 		}
 		// PVC has been created successfully. store it's definition so that we can wait for it to be initialized
-		createdPVCs = append(createdPVCs, pvcList[i])
+		createdPVCs = append(createdPVCs, *pvc)
 	}
 
 	// now, wait for the PVCs to be initialized from respective VolumeSnapshot

@@ -136,7 +136,7 @@ func (c *StashController) runBackupSessionProcessor(key string) error {
 
 	// skip if backup model is sidecar.
 	// for sidecar model controller inside sidecar will take care of it.
-	if backupConfig.Spec.Target != nil && util.BackupModel(backupConfig.Spec.Target.Ref.Kind) == util.ModelSidecar {
+	if backupConfig.Spec.Target != nil && backupConfig.Spec.Driver != api_v1beta1.VolumeSnapshotter && util.BackupModel(backupConfig.Spec.Target.Ref.Kind) == util.ModelSidecar {
 		log.Infof("Skipping processing BackupSession %s/%s. Reason: Backup model is sidecar. Controller inside sidecar will take care of it.", backupSession.Namespace, backupSession.Name)
 		return c.setBackupSessionRunning(backupSession)
 	}

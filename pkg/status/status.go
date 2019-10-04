@@ -67,7 +67,7 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 	// add or update entry for each host in BackupSession status + create event
 	for _, hostStats := range backupOutput.HostBackupStats {
 		log.Infof("Updating status of BackupSession: %s/%s for host: %s", backupSession.Namespace, backupSession.Name, hostStats.Hostname)
-		_, err = stash_util_v1beta1.UpdateBackupSessionStatusForHost(o.StashClient.StashV1beta1(), backupSession, hostStats)
+		backupSession, err = stash_util_v1beta1.UpdateBackupSessionStatusForHost(o.StashClient.StashV1beta1(), backupSession, hostStats)
 		if err != nil {
 			return err
 		}
@@ -150,7 +150,7 @@ func (o UpdateStatusOptions) UpdatePostRestoreStatus(restoreOutput *restic.Resto
 	// add or update entry for each host in RestoreSession status
 	for _, hostStats := range restoreOutput.HostRestoreStats {
 		log.Infof("Updating status of RestoreSession: %s/%s for host: %s", restoreSession.Namespace, restoreSession.Name, hostStats.Hostname)
-		_, err = stash_util_v1beta1.UpdateRestoreSessionStatusForHost(o.StashClient.StashV1beta1(), restoreSession, hostStats)
+		restoreSession, err = stash_util_v1beta1.UpdateRestoreSessionStatusForHost(o.StashClient.StashV1beta1(), restoreSession, hostStats)
 		if err != nil {
 			return err
 		}

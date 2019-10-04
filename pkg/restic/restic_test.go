@@ -58,7 +58,7 @@ func setupTest(tempDir string) (*ResticWrapper, error) {
 
 	setupOpt := SetupOptions{
 		Provider:    storage.ProviderLocal,
-		Bucket:        localRepoDir,
+		Bucket:      localRepoDir,
 		SecretDir:   secretDir,
 		ScratchDir:  scratchDir,
 		EnableCache: false,
