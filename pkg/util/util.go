@@ -241,12 +241,14 @@ func AttachLocalBackend(podSpec core.PodSpec, localSpec store.LocalSpec) core.Po
 }
 
 func AttachPVC(podSpec core.PodSpec, volumes []core.Volume, volumeMounts []core.VolumeMount) core.PodSpec {
-	podSpec.Volumes = core_util.UpsertVolume(podSpec.Volumes, volumes...)
-	for i := range podSpec.InitContainers {
-		podSpec.InitContainers[i].VolumeMounts = core_util.UpsertVolumeMount(podSpec.InitContainers[i].VolumeMounts, volumeMounts...)
-	}
-	for i := range podSpec.Containers {
-		podSpec.Containers[i].VolumeMounts = core_util.UpsertVolumeMount(podSpec.Containers[i].VolumeMounts, volumeMounts...)
+	if len(volumeMounts) > 0 {
+		podSpec.Volumes = core_util.UpsertVolume(podSpec.Volumes, volumes...)
+		for i := range podSpec.InitContainers {
+			podSpec.InitContainers[i].VolumeMounts = core_util.UpsertVolumeMount(podSpec.InitContainers[i].VolumeMounts, volumeMounts...)
+		}
+		for i := range podSpec.Containers {
+			podSpec.Containers[i].VolumeMounts = core_util.UpsertVolumeMount(podSpec.Containers[i].VolumeMounts, volumeMounts...)
+		}
 	}
 	return podSpec
 }
