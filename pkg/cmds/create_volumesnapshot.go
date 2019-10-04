@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"stash.appscode.dev/stash/pkg/volumesnapshot"
+
 	"github.com/appscode/go/log"
 	vs "github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1alpha1"
 	vs_cs "github.com/kubernetes-csi/external-snapshotter/pkg/client/clientset/versioned"
@@ -138,6 +140,10 @@ func (opt *VSoption) createVolumeSnapshot() (*restic.BackupOutput, error) {
 			})
 		}
 
+	}
+	err = volumesnapshot.ApplyRetentionPolicy(backupConfig.Spec.RetentionPolicy, backupConfig.Namespace, opt.snapshotClient)
+	if err != nil {
+		return nil, err
 	}
 	return backupOutput, nil
 }
