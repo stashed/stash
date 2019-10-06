@@ -2,13 +2,13 @@ package e2e_test
 
 import (
 	"flag"
+	"os"
 	"path/filepath"
 
 	"github.com/appscode/go/flags"
 	logs "github.com/appscode/go/log/golog"
 	"k8s.io/client-go/util/homedir"
 	"stash.appscode.dev/stash/pkg/cmds/server"
-	opt "stash.appscode.dev/stash/test/e2e/framework"
 )
 
 type E2EOptions struct {
@@ -21,12 +21,17 @@ type E2EOptions struct {
 var (
 	options = &E2EOptions{
 		ExtraOptions: server.NewExtraOptions(),
-		KubeConfig:   filepath.Join(homedir.HomeDir(), ".kube", "config"),
+		KubeConfig: func() string {
+			kubecfg := os.Getenv("KUBECONFIG")
+			if kubecfg != "" {
+				return kubecfg
+			}
+			return filepath.Join(homedir.HomeDir(), ".kube", "config")
+		}(),
 	}
 )
 
 func init() {
-	//options.AddGoFlags(flag.CommandLine)
 	flag.StringVar(&options.DockerRegistry, "docker-registry", "", "Set Docker Registry")
 	flag.StringVar(&options.StashImageTag, "image-tag", "", "Set Stash Image Tag")
 	flag.StringVar(&options.KubeConfig, "kubeconfig", options.KubeConfig, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
@@ -34,9 +39,6 @@ func init() {
 	flag.StringVar(&options.StorageClass, "storageclass", "standard", "Storageclass for PVC")
 	enableLogging()
 	flag.Parse()
-	opt.DockerRegistry = options.DockerRegistry
-	opt.DockerImageTag = options.StashImageTag
-
 }
 
 func enableLogging() {

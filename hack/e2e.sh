@@ -20,9 +20,10 @@ export CGO_ENABLED=0
 export GO111MODULE=on
 export GOFLAGS="-mod=vendor"
 
+GINKGO_ARGS=${GINKGO_ARGS:-}
+TEST_ARGS=${TEST_ARGS:-}
+DOCKER_REGISTRY=${DOCKER_REGISTRY:-}
+
 echo "Running e2e tests:"
-ginkgo -r --v --progress --trace test -- \
-    --docker-registry=${DOCKER_REGISTRY} \
-    --image-tag=${TAG}                   \
-    --storageclass=${STORAGE_CLASS}
-echo
+cmd="ginkgo -r --v --progress --trace --noisyPendings=false ${GINKGO_ARGS} test -- --docker-registry=${DOCKER_REGISTRY} ${TEST_ARGS}"
+echo $cmd; $cmd

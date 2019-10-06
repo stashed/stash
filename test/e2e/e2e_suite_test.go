@@ -1,21 +1,20 @@
 package e2e_test
 
 import (
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
-	logs "github.com/appscode/go/log/golog"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/dynamic"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/util/homedir"
 	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
 	discovery_util "kmodules.xyz/client-go/discovery"
+	"kmodules.xyz/client-go/logs"
 	"kmodules.xyz/client-go/tools/cli"
 	"kmodules.xyz/client-go/tools/clientcmd"
 	"stash.appscode.dev/stash/apis"
@@ -62,20 +61,16 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	kaClient := ka.NewForConfigOrDie(clientConfig)
-	framework.StashProjectRoot = filepath.Join(homedir.HomeDir(), "go", "src", "github.com", "appscode", "stash")
+	dmClient := dynamic.NewForConfigOrDie(clientConfig)
 
-	root = framework.New(ctrlConfig.KubeClient, ctrlConfig.StashClient, kaClient, clientConfig, options.StorageClass)
+	root = framework.New(ctrlConfig.KubeClient, ctrlConfig.StashClient, kaClient, dmClient, clientConfig, options.StorageClass)
+	framework.RootFramework = root
 	err = root.CreateTestNamespace()
 	Expect(err).NotTo(HaveOccurred())
 	By("Using test namespace " + root.Namespace())
-
-	By("Starting the Stash Operator")
-	root.InstallStashOperator(options.KubeConfig, options.ExtraOptions)
 })
 
 var _ = AfterSuite(func() {
-	By("Deleting Stash Operator")
-	root.UninstallStashOperator()
 	By("Deleting namespace: " + root.Namespace())
 	err := root.DeleteNamespace(root.Namespace())
 	Expect(err).NotTo(HaveOccurred())

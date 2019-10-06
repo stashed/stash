@@ -21,7 +21,61 @@ jobs:
 
     - name: Build
       env:
-        DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+        REGISTRY: appscodeci
+        DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        USERNAME: 1gtm
       run: |
-        docker login docker.pkg.github.com --username stashed --password ${DOCKER_TOKEN}
-        make push REGISTRY=docker.pkg.github.com/stashed/stash
+        docker login --username ${USERNAME} --password ${DOCKER_TOKEN}
+        make push
+
+    - name: Create Kubernetes cluster
+      id: kind
+      uses: engineerd/setup-kind@v0.1.0
+      with:
+        config: hack/kubernetes/kind.yaml
+
+    - name: Prepare cluster for testing
+      id: local-path
+      env:
+        DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        USERNAME: 1gtm
+        REGISTRY_SECRET: regcred
+      run: |
+        export KUBECONFIG="$(kind get kubeconfig-path)"
+        echo
+        echo "waiting for nodes to be ready ..."
+        kubectl wait --for=condition=Ready nodes --all --timeout=5m
+        kubectl get nodes
+        echo
+        echo "installing local-path provisioner ..."
+        kubectl delete storageclass --all
+        kubectl apply -f https://github.com/rancher/local-path-provisioner/raw/v0.0.11/deploy/local-path-storage.yaml
+        kubectl wait --for=condition=Ready pods -n local-path-storage --all --timeout=5m
+        kubectl apply -f hack/kubernetes/storageclass/standard.yaml
+        echo
+        echo "create docker-registry secret"
+        kubectl create secret docker-registry ${REGISTRY_SECRET} --namespace=kube-system --docker-server=https://index.docker.io/v1/ --docker-username=${USERNAME} --docker-password=${DOCKER_TOKEN}
+
+    - name: Check out installer
+      run: |
+        cd ..
+        git clone https://github.com/stashed/installer.git
+        cd installer
+        git checkout master
+
+    - name: Run e2e tests
+      env:
+        REGISTRY: appscodeci
+        REGISTRY_SECRET: regcred
+        TEST_CREDENTIALS: ${{ secrets.TEST_CREDENTIALS }}
+        GOOGLE_SERVICE_ACCOUNT_JSON_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON_KEY }}
+      run: |
+        export KUBECONFIG="$(kind get kubeconfig-path)"
+        echo "preparing test credentials"
+        mkdir -p hack/config
+        echo -n "$TEST_CREDENTIALS" > hack/config/.env
+        echo >> hack/config/.env
+        echo "GOOGLE_SERVICE_ACCOUNT_JSON_KEY=$(echo $GOOGLE_SERVICE_ACCOUNT_JSON_KEY)" >> hack/config/.env
+        make install
+        echo
+        make e2e-tests
