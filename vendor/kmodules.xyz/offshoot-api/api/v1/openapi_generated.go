@@ -685,11 +685,17 @@ func schema_kmodulesxyz_offshoot_api_api_v1_ServiceSpec(ref common.ReferenceCall
 							Format:      "int32",
 						},
 					},
+					"sessionAffinityConfig": {
+						SchemaProps: spec.SchemaProps{
+							Description: "sessionAffinityConfig contains the configurations of session affinity.",
+							Ref:         ref("k8s.io/api/core/v1.SessionAffinityConfig"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"kmodules.xyz/offshoot-api/api/v1.ServicePort"},
+			"k8s.io/api/core/v1.SessionAffinityConfig", "kmodules.xyz/offshoot-api/api/v1.ServicePort"},
 	}
 }
 

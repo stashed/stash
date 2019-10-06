@@ -2,7 +2,9 @@ package version
 
 import (
 	"fmt"
+
 	"github.com/spf13/cobra"
+	semver "gomodules.xyz/version"
 )
 
 type version struct {
@@ -52,18 +54,34 @@ var Version version
 
 func NewCmdVersion() *cobra.Command {
 	var short bool
+	var check string
 	cmd := &cobra.Command{
 		Use:               "version",
 		Short:             "Prints binary version number.",
 		DisableAutoGenTag: true,
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if short {
 				fmt.Print(Version.Version)
 			} else {
 				Version.Print()
 			}
+			if check != "" {
+				c, err := semver.NewConstraint(check)
+				if err != nil {
+					return fmt.Errorf("failed to parse --check: %v", err)
+				}
+				v, err := semver.NewSemver(Version.Version)
+				if err != nil {
+					return fmt.Errorf("failed to parse version: %v", err)
+				}
+				if !c.Check(v) {
+					return fmt.Errorf("version %q fails to meet constraint %q", v.String(), c.String())
+				}
+			}
+			return nil
 		},
 	}
 	cmd.Flags().BoolVar(&short, "short", false, "Print just the version number.")
+	cmd.Flags().StringVar(&check, "check", "", "Check version constraint")
 	return cmd
 }

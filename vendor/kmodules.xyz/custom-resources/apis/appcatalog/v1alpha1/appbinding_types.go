@@ -95,7 +95,7 @@ type ClientConfig struct {
 	// If the webhook is running within the cluster, then you should use `service`.
 	//
 	// +optional
-	Service *ServiceReference `json:"service"`
+	Service *ServiceReference `json:"service,omitempty"`
 
 	// InsecureSkipTLSVerify disables TLS certificate verification when communicating with this app.
 	// This is strongly discouraged.  You should use the CABundle instead.

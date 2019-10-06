@@ -138,6 +138,6 @@ func generateSwaggerJson() {
 }
 
 func main() {
-	generateCRDDefinitions()
-	//generateSwaggerJson()
+	// generateCRDDefinitions()
+	generateSwaggerJson()
 }
