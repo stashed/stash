@@ -392,3 +392,27 @@ func (v *Version) Clone() *Version {
 func (v *Version) ToMutator() *Mutator {
 	return &Mutator{Version: v}
 }
+
+// Major returns major version number of this Version object
+func (v *Version) Major() int64 {
+	if len(v.segments) >= 1 {
+		return v.segments[0]
+	}
+	return 0
+}
+
+// Minor returns minor version number of this Version object
+func (v *Version) Minor() int64 {
+	if len(v.segments) >= 2 {
+		return v.segments[1]
+	}
+	return 0
+}
+
+// Patch returns patch version number of this Version object
+func (v *Version) Patch() int64 {
+	if len(v.segments) >= 3 {
+		return v.segments[2]
+	}
+	return 0
+}

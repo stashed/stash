@@ -233,6 +233,10 @@ type ServiceSpec struct {
 	// and ExternalTrafficPolicy is set to Local.
 	// +optional
 	HealthCheckNodePort int32 `json:"healthCheckNodePort,omitempty"`
+
+	// sessionAffinityConfig contains the configurations of session affinity.
+	// +optional
+	SessionAffinityConfig *core.SessionAffinityConfig `json:"sessionAffinityConfig,omitempty"`
 }
 
 // ServicePort contains information on service's port.

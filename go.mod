@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
-	github.com/appscode/go v0.0.0-20190808133642-1d4ef1f1c1e0
+	github.com/appscode/go v0.0.0-20191006073906-e3d193d493fc
 	github.com/armon/circbuf v0.0.0-20190214190532-5111143e8da2
 	github.com/cenkalti/backoff v2.1.1+incompatible
 	github.com/codeskyblue/go-sh v0.0.0-20190412065543-76bd3d59ff27
@@ -39,10 +39,10 @@ require (
 	k8s.io/kube-aggregator v0.0.0-20190314000639-da8327669ac5
 	k8s.io/kube-openapi v0.0.0-20190502190224-411b2483e503
 	k8s.io/kubernetes v1.14.0
-	kmodules.xyz/client-go v0.0.0-20190808141354-bbb9e14f60ab
-	kmodules.xyz/custom-resources v0.0.0-20190808144301-114abf10dfe2
-	kmodules.xyz/objectstore-api v0.0.0-20190824212210-196174aa0fc0
-	kmodules.xyz/offshoot-api v0.0.0-20190808152534-e3dc715f844b
+	kmodules.xyz/client-go v0.0.0-20191006173540-91f8ee6b6b4b
+	kmodules.xyz/custom-resources v0.0.0-20190927035424-65fe358bb045
+	kmodules.xyz/objectstore-api v0.0.0-20191006080053-fc8b57fadcf0
+	kmodules.xyz/offshoot-api v0.0.0-20190901210649-de049192326c
 	kmodules.xyz/openshift v0.0.0-20190808144841-c8f9a927f1d1
 	kmodules.xyz/webhook-runtime v0.0.0-20190808145328-4186c470d56b
 )
