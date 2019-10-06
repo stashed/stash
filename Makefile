@@ -203,8 +203,8 @@ openapi-%:
 			--report-filename api/api-rules/violation_exceptions.list
 
 # Generate CRD manifests
-.PHONY: manifests
-manifests:
+.PHONY: gen-crds
+gen-crds:
 	@echo "Generating CRD manifests"
 	@docker run --rm -ti                    \
 		-u $$(id -u):$$(id -g)              \
@@ -218,6 +218,17 @@ manifests:
 			$(CRD_OPTIONS)                  \
 			paths="./apis/..."              \
 			output:crd:artifacts:config=api/crds
+
+.PHONY: label-crds
+label-crds: $(BUILD_DIRS)
+	@for f in api/crds/*.yaml; do \
+		echo "applying app=stash label to $$f"; \
+		kubectl label --overwrite -f $$f --local=true -o yaml app=stash > bin/crd.yaml; \
+		mv bin/crd.yaml $$f; \
+	done
+
+.PHONY: manifests
+manifests: gen-crds label-crds
 
 .PHONY: gen
 gen: clientset openapi manifests
