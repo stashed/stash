@@ -8,6 +8,7 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/golang/glog"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -17,7 +18,6 @@ import (
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/kubernetes/pkg/apis/core"
 	"kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/queue"
 	"stash.appscode.dev/stash/apis"
