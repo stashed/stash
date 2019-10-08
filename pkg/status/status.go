@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 
 	"github.com/appscode/go/log"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/kubernetes/pkg/apis/core"
 	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"

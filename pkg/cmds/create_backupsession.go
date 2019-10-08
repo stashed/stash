@@ -7,11 +7,11 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/spf13/cobra"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/reference"
-	"k8s.io/kubernetes/pkg/apis/core"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/discovery"
 	"kmodules.xyz/client-go/meta"
