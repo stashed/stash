@@ -141,7 +141,14 @@ func (opt *VSoption) createVolumeSnapshot() (*restic.BackupOutput, error) {
 		}
 
 	}
-	err = volumesnapshot.ApplyRetentionPolicy(backupConfig.Spec.RetentionPolicy, backupConfig.Namespace, opt.snapshotClient)
+
+	kept, removed, err := volumesnapshot.ApplyRetentionPolicy(backupConfig.Spec.RetentionPolicy, backupOutput.HostBackupStats, backupConfig.Namespace, opt.snapshotClient)
+	if err != nil {
+		return nil, err
+	}
+	backupOutput.RepositoryStats.SnapshotsRemovedOnLastCleanup = len(removed)
+	backupOutput.RepositoryStats.SnapshotCount = len(kept)
+	err = volumesnapshot.CleanupSnapshots(removed, backupConfig.Namespace, opt.snapshotClient)
 	if err != nil {
 		return nil, err
 	}

@@ -2,7 +2,10 @@ package volumesnapshot
 
 import (
 	"sort"
+	"strings"
 	"time"
+
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
 
 	vs_api "github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1alpha1"
 	vs_cs "github.com/kubernetes-csi/external-snapshotter/pkg/client/clientset/versioned"
@@ -11,7 +14,7 @@ import (
 	"stash.appscode.dev/stash/apis/stash/v1alpha1"
 )
 
-// Empty returns true iff no policy has been configured (all values zero).
+// Empty returns true if no policy has been configured (all values zero).
 func IsPolicyEmpty(policy v1alpha1.RetentionPolicy) bool {
 	if policy.KeepLast > 0 || policy.KeepHourly > 0 || policy.KeepDaily > 0 || policy.KeepMonthly > 0 || policy.KeepWeekly > 0 || policy.KeepYearly > 0 {
 		return true
@@ -51,7 +54,7 @@ func always(d time.Time, nr int) int {
 }
 
 type VolumeSnapshot struct {
-	vs vs_api.VolumeSnapshot
+	VolumeSnap vs_api.VolumeSnapshot
 }
 
 type VolumeSnapshots []VolumeSnapshot
@@ -60,7 +63,7 @@ func (vs VolumeSnapshots) Len() int {
 	return len(vs)
 }
 func (vs VolumeSnapshots) Less(i, j int) bool {
-	return vs[i].vs.CreationTimestamp.Time.After(vs[j].vs.CreationTimestamp.Time)
+	return vs[i].VolumeSnap.CreationTimestamp.Time.After(vs[j].VolumeSnap.CreationTimestamp.Time)
 }
 func (vs VolumeSnapshots) Swap(i, j int) {
 	vs[i], vs[j] = vs[j], vs[i]
@@ -69,33 +72,36 @@ func (vs VolumeSnapshots) Swap(i, j int) {
 // ApplyRetentionPolicy do the following steps:
 // 1. sorts all the VolumeSnapshot according to CreationTimeStamp.
 // 2. then list that are to be kept and removed according to the policy.
-// 3. then remove those VolumeSnapshot according to policy that are not necessary.
-func ApplyRetentionPolicy(policy v1alpha1.RetentionPolicy, namespace string, vsClient vs_cs.Interface) error {
+func ApplyRetentionPolicy(policy v1alpha1.RetentionPolicy, hostBackupStats []v1beta1.HostBackupStats, namespace string, vsClient vs_cs.Interface) (VolumeSnapshots, VolumeSnapshots, error) {
 	vsList, err := vsClient.SnapshotV1alpha1().VolumeSnapshots(namespace).List(v1.ListOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) || len(vsList.Items) == 0 {
-			return nil
+			return nil, nil, nil
 		}
-		return err
+		return nil, nil, err
 	}
 
 	var volumeSnapshots VolumeSnapshots
-
+	// filter VolumeSnapshots according to PVC source
 	for _, vs := range vsList.Items {
-		volumeSnapshots = append(volumeSnapshots, VolumeSnapshot{vs: vs})
+		for _, host := range hostBackupStats {
+			if vs.Spec.Source.Name == host.Hostname {
+				volumeSnapshots = append(volumeSnapshots, VolumeSnapshot{VolumeSnap: vs})
+			}
+		}
 	}
 
 	// sorts the VolumeSnapshots according to CreationTimeStamp
 	sort.Sort(VolumeSnapshots(volumeSnapshots))
 
 	if !IsPolicyEmpty(policy) {
-		return nil
+		return nil, nil, nil
 	}
 
 	var buckets = [6]struct {
-		Count  int
-		bucker func(d time.Time, nr int) int
-		Last   int
+		Count     int
+		LastAdded func(d time.Time, nr int) int
+		Last      int
 	}{
 		{policy.KeepLast, always, -1},
 		{policy.KeepHourly, ymdh, -1},
@@ -105,12 +111,21 @@ func ApplyRetentionPolicy(policy v1alpha1.RetentionPolicy, namespace string, vsC
 		{policy.KeepYearly, y, -1},
 	}
 
-	var keep, remove VolumeSnapshots
+	var kept, removed VolumeSnapshots
 	for nr, vs := range volumeSnapshots {
 		var keepSnap bool
+		// keep VolumeSnapshot that are created from the same PVC source at the same time
+		for _, kvs := range kept {
+			kvcParts := strings.Split(kvs.VolumeSnap.Name, "-")
+			vsParts := strings.Split(vs.VolumeSnap.Name, "-")
+			if kvcParts[len(kvcParts)-1] == vsParts[len(kvcParts)-1] {
+				keepSnap = true
+			}
+		}
+		// keep VolumeSnapshot that are matched with the policy
 		for i, b := range buckets {
 			if b.Count > 0 {
-				val := b.bucker(vs.vs.CreationTimestamp.Time, nr)
+				val := b.LastAdded(vs.VolumeSnap.CreationTimestamp.Time, nr)
 				if val != b.Last {
 					keepSnap = true
 					buckets[i].Last = val
@@ -118,20 +133,27 @@ func ApplyRetentionPolicy(policy v1alpha1.RetentionPolicy, namespace string, vsC
 				}
 			}
 		}
-		if keepSnap {
-			keep = append(keep, vs)
-		} else {
-			remove = append(remove, vs)
-		}
 
+		if keepSnap {
+			kept = append(kept, vs)
+		} else {
+			removed = append(removed, vs)
+		}
 	}
 
-	for _, vs := range remove {
-		err := vsClient.SnapshotV1alpha1().VolumeSnapshots(namespace).Delete(vs.vs.Name, &v1.DeleteOptions{})
+	return kept, removed, nil
+}
+
+// remove VolumeSnapshot that are not necessary according to RetentionPolicy
+func CleanupSnapshots(removed []VolumeSnapshot, namespace string, vsClient vs_cs.Interface) error {
+	for _, vs := range removed {
+		err := vsClient.SnapshotV1alpha1().VolumeSnapshots(namespace).Delete(vs.VolumeSnap.Name, &v1.DeleteOptions{})
 		if err != nil {
+			if kerr.IsNotFound(err) {
+				return nil
+			}
 			return err
 		}
 	}
-
 	return nil
 }
