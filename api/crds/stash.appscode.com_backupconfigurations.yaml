@@ -2809,6 +2809,7 @@ spec:
                   type: object
               type: object
             schedule:
+              description: Schedule specifies the schedule for invoking backup sessions
               type: string
             target:
               description: Target specify the backup target
@@ -2902,6 +2903,8 @@ spec:
                     - value
                     type: object
                   type: array
+              required:
+              - name
               type: object
             tempDir:
               description: Temp directory configuration for functions/sidecar An `EmptyDir`

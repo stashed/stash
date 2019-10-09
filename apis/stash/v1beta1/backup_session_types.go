@@ -30,8 +30,14 @@ type BackupSession struct {
 }
 
 type BackupSessionSpec struct {
+	// Invoker refers to the BackupConfiguration or BackupBatch being used to invoke this backup session
+	// +optional
+	Invoker BackupInvokerRef `json:"invoker,omitempty"`
+
 	// BackupConfiguration indicates the target BackupConfiguration crd
-	BackupConfiguration core.LocalObjectReference `json:"backupConfiguration,omitempty"`
+	// Deprecated: Use Invoker
+	// +optional
+	BackupConfiguration *core.LocalObjectReference `json:"backupConfiguration,omitempty"`
 }
 
 type BackupSessionPhase string

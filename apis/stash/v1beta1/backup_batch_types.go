@@ -2,6 +2,7 @@ package v1beta1
 
 import (
 	core "k8s.io/api/core/v1"
+	"stash.appscode.dev/stash/apis/stash/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,16 +28,30 @@ type BackupBatch struct {
 }
 
 type BackupBatchSpec struct {
-	Schedule string `json:"schedule,omitempty"`
-
-	// Members specify the backup configurations that are part of this batch
+	// backupConfigurationTemplates is a list of backup configurations that are part of this batch
 	// +optional
-	Members []core.LocalObjectReference `json:"members,omitempty"`
-
-	// Indicates that the BackupBatch is paused from taking backup. Default value is 'false'
+	BackupConfigurationTemplates []BackupConfigurationTemplate `json:"backupConfigurationTemplates,omitempty"`
+	// Schedule specifies the schedule for invoking backup sessions
+	// +optional
+	Schedule string `json:"schedule,omitempty"`
+	// Driver indicates the name of the agent to use to backup the target.
+	// Supported values are "Restic", "VolumeSnapshotter".
+	// Default value is "Restic".
+	// +optional
+	Driver Snapshotter `json:"driver,omitempty"`
+	// Repository refer to the Repository crd that holds backend information
+	// +optional
+	Repository core.LocalObjectReference `json:"repository,omitempty"`
+	// RetentionPolicy indicates the policy to follow to clean old backup snapshots
+	RetentionPolicy v1alpha1.RetentionPolicy `json:"retentionPolicy"`
+	// Indicates that the BackupConfiguration is paused from taking backup. Default value is 'false'
 	// +optional
 	Paused bool `json:"paused,omitempty"`
-
+	// BackupHistoryLimit specifies the number of BackupSession and it's associate resources to keep.
+	// This is helpful for debugging purpose.
+	// Default: 1
+	// +optional
+	BackupHistoryLimit *int32 `json:"backupHistoryLimit,omitempty"`
 	// Actions that Stash should take in response to backup sessions.
 	// Cannot be updated.
 	// +optional

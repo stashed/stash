@@ -360,6 +360,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfiguration":             schema_stash_apis_stash_v1beta1_BackupConfiguration(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationList":         schema_stash_apis_stash_v1beta1_BackupConfigurationList(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationSpec":         schema_stash_apis_stash_v1beta1_BackupConfigurationSpec(ref),
+		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplate":     schema_stash_apis_stash_v1beta1_BackupConfigurationTemplate(ref),
+		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplateSpec": schema_stash_apis_stash_v1beta1_BackupConfigurationTemplateSpec(ref),
+		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupInvokerRef":                schema_stash_apis_stash_v1beta1_BackupInvokerRef(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupSession":                   schema_stash_apis_stash_v1beta1_BackupSession(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupSessionList":               schema_stash_apis_stash_v1beta1_BackupSessionList(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupSessionSpec":               schema_stash_apis_stash_v1beta1_BackupSessionSpec(ref),
@@ -16059,30 +16062,57 @@ func schema_stash_apis_stash_v1beta1_BackupBatchSpec(ref common.ReferenceCallbac
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
-					"schedule": {
+					"backupConfigurationTemplates": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"members": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Members specify the backup configurations that are part of this batch",
+							Description: "backupConfigurationTemplates is a list of backup configurations that are part of this batch",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("k8s.io/api/core/v1.LocalObjectReference"),
+										Ref: ref("stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplate"),
 									},
 								},
 							},
 						},
 					},
+					"schedule": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Schedule specifies the schedule for invoking backup sessions",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"driver": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Driver indicates the name of the agent to use to backup the target. Supported values are \"Restic\", \"VolumeSnapshotter\". Default value is \"Restic\".",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"repository": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Repository refer to the Repository crd that holds backend information",
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
+						},
+					},
+					"retentionPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RetentionPolicy indicates the policy to follow to clean old backup snapshots",
+							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1alpha1.RetentionPolicy"),
+						},
+					},
 					"paused": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Indicates that the BackupBatch is paused from taking backup. Default value is 'false'",
+							Description: "Indicates that the BackupConfiguration is paused from taking backup. Default value is 'false'",
 							Type:        []string{"boolean"},
 							Format:      "",
+						},
+					},
+					"backupHistoryLimit": {
+						SchemaProps: spec.SchemaProps{
+							Description: "BackupHistoryLimit specifies the number of BackupSession and it's associate resources to keep. This is helpful for debugging purpose. Default: 1",
+							Type:        []string{"integer"},
+							Format:      "int32",
 						},
 					},
 					"hooks": {
@@ -16092,10 +16122,11 @@ func schema_stash_apis_stash_v1beta1_BackupBatchSpec(ref common.ReferenceCallbac
 						},
 					},
 				},
+				Required: []string{"retentionPolicy"},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.LocalObjectReference", "stash.appscode.dev/stash/apis/stash/v1beta1.Hooks"},
+			"k8s.io/api/core/v1.LocalObjectReference", "stash.appscode.dev/stash/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplate", "stash.appscode.dev/stash/apis/stash/v1beta1.Hooks"},
 	}
 }
 
@@ -16342,25 +16373,6 @@ func schema_stash_apis_stash_v1beta1_BackupConfigurationSpec(ref common.Referenc
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
-					"schedule": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"driver": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Driver indicates the name of the agent to use to backup the target. Supported values are \"Restic\", \"VolumeSnapshotter\". Default value is \"Restic\".",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"repository": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Repository refer to the Repository crd that holds backend information",
-							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
-						},
-					},
 					"task": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Task specify the Task crd that specifies the steps to take backup",
@@ -16371,19 +16383,6 @@ func schema_stash_apis_stash_v1beta1_BackupConfigurationSpec(ref common.Referenc
 						SchemaProps: spec.SchemaProps{
 							Description: "Target specify the backup target",
 							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1beta1.BackupTarget"),
-						},
-					},
-					"retentionPolicy": {
-						SchemaProps: spec.SchemaProps{
-							Description: "RetentionPolicy indicates the policy to follow to clean old backup snapshots",
-							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1alpha1.RetentionPolicy"),
-						},
-					},
-					"paused": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Indicates that the BackupConfiguration is paused from taking backup. Default value is 'false'",
-							Type:        []string{"boolean"},
-							Format:      "",
 						},
 					},
 					"runtimeSettings": {
@@ -16404,11 +16403,133 @@ func schema_stash_apis_stash_v1beta1_BackupConfigurationSpec(ref common.Referenc
 							Ref:         ref("k8s.io/api/core/v1.PersistentVolumeClaim"),
 						},
 					},
+					"hooks": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Actions that Stash should take in response to backup sessions. Cannot be updated.",
+							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1beta1.Hooks"),
+						},
+					},
+					"schedule": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Schedule specifies the schedule for invoking backup sessions",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"driver": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Driver indicates the name of the agent to use to backup the target. Supported values are \"Restic\", \"VolumeSnapshotter\". Default value is \"Restic\".",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"repository": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Repository refer to the Repository crd that holds backend information",
+							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
+						},
+					},
+					"retentionPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RetentionPolicy indicates the policy to follow to clean old backup snapshots",
+							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1alpha1.RetentionPolicy"),
+						},
+					},
+					"paused": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Indicates that the BackupConfiguration is paused from taking backup. Default value is 'false'",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 					"backupHistoryLimit": {
 						SchemaProps: spec.SchemaProps{
 							Description: "BackupHistoryLimit specifies the number of BackupSession and it's associate resources to keep. This is helpful for debugging purpose. Default: 1",
 							Type:        []string{"integer"},
 							Format:      "int32",
+						},
+					},
+				},
+				Required: []string{"retentionPolicy"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaim", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/stash/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupTarget", "stash.appscode.dev/stash/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/stash/apis/stash/v1beta1.Hooks", "stash.appscode.dev/stash/apis/stash/v1beta1.TaskRef"},
+	}
+}
+
+func schema_stash_apis_stash_v1beta1_BackupConfigurationTemplate(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplateSpec"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplateSpec"},
+	}
+}
+
+func schema_stash_apis_stash_v1beta1_BackupConfigurationTemplateSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"task": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Task specify the Task crd that specifies the steps to take backup",
+							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1beta1.TaskRef"),
+						},
+					},
+					"target": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Target specify the backup target",
+							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1beta1.BackupTarget"),
+						},
+					},
+					"runtimeSettings": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RuntimeSettings allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc.",
+							Ref:         ref("kmodules.xyz/offshoot-api/api/v1.RuntimeSettings"),
+						},
+					},
+					"tempDir": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Temp directory configuration for functions/sidecar An `EmptyDir` will always be mounted at /tmp with this settings",
+							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1beta1.EmptyDirSettings"),
+						},
+					},
+					"interimVolumeTemplate": {
+						SchemaProps: spec.SchemaProps{
+							Description: "InterimVolumeTemplate specifies a template for a volume to hold targeted data temporarily before uploading to backend or inserting into target. It is only usable for job model. Don't specify it in sidecar model.",
+							Ref:         ref("k8s.io/api/core/v1.PersistentVolumeClaim"),
 						},
 					},
 					"hooks": {
@@ -16418,11 +16539,45 @@ func schema_stash_apis_stash_v1beta1_BackupConfigurationSpec(ref common.Referenc
 						},
 					},
 				},
-				Required: []string{"retentionPolicy"},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaim", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/stash/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupTarget", "stash.appscode.dev/stash/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/stash/apis/stash/v1beta1.Hooks", "stash.appscode.dev/stash/apis/stash/v1beta1.TaskRef"},
+			"k8s.io/api/core/v1.PersistentVolumeClaim", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupTarget", "stash.appscode.dev/stash/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/stash/apis/stash/v1beta1.Hooks", "stash.appscode.dev/stash/apis/stash/v1beta1.TaskRef"},
+	}
+}
+
+func schema_stash_apis_stash_v1beta1_BackupInvokerRef(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "BackupInvokerRef contains information that points to the backup configuration or batch being used",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"apiGroup": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIGroup is the group for the resource being referenced",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is the type of resource being referenced",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name is the name of resource being referenced",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"kind", "name"},
+			},
+		},
 	}
 }
 
@@ -16520,9 +16675,15 @@ func schema_stash_apis_stash_v1beta1_BackupSessionSpec(ref common.ReferenceCallb
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
+					"invoker": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Invoker refers to the BackupConfiguration or BackupBatch being used to invoke this backup session",
+							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1beta1.BackupInvokerRef"),
+						},
+					},
 					"backupConfiguration": {
 						SchemaProps: spec.SchemaProps{
-							Description: "BackupConfiguration indicates the target BackupConfiguration crd",
+							Description: "BackupConfiguration indicates the target BackupConfiguration crd Deprecated: Use Invoker",
 							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
 						},
 					},
@@ -16530,7 +16691,7 @@ func schema_stash_apis_stash_v1beta1_BackupSessionSpec(ref common.ReferenceCallb
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.LocalObjectReference"},
+			"k8s.io/api/core/v1.LocalObjectReference", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupInvokerRef"},
 	}
 }
 
@@ -17631,6 +17792,7 @@ func schema_stash_apis_stash_v1beta1_TaskRef(ref common.ReferenceCallback) commo
 						},
 					},
 				},
+				Required: []string{"name"},
 			},
 		},
 		Dependencies: []string{

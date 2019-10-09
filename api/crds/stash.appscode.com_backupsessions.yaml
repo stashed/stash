@@ -415,13 +415,30 @@ spec:
         spec:
           properties:
             backupConfiguration:
-              description: BackupConfiguration indicates the target BackupConfiguration
-                crd
+              description: 'BackupConfiguration indicates the target BackupConfiguration
+                crd Deprecated: Use Invoker'
               properties:
                 name:
                   description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                     TODO: Add other useful fields. apiVersion, kind, uid?'
                   type: string
+              type: object
+            invoker:
+              description: Invoker refers to the BackupConfiguration or BackupBatch
+                being used to invoke this backup session
+              properties:
+                apiGroup:
+                  description: APIGroup is the group for the resource being referenced
+                  type: string
+                kind:
+                  description: Kind is the type of resource being referenced
+                  type: string
+                name:
+                  description: Name is the name of resource being referenced
+                  type: string
+              required:
+              - kind
+              - name
               type: object
           type: object
         status:
