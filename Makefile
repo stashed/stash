@@ -221,6 +221,7 @@ gen-crds:
 			$(CRD_OPTIONS)                  \
 			paths="./apis/..."              \
 			output:crd:artifacts:config=api/crds
+	@rm -rf api/crds/stash.appscode.com_backupconfigurationtemplates.yaml
 
 .PHONY: label-crds
 label-crds: $(BUILD_DIRS)

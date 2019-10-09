@@ -24,6 +24,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
+	// BackupBatches returns a BackupBatchInformer.
+	BackupBatches() BackupBatchInformer
 	// BackupBlueprints returns a BackupBlueprintInformer.
 	BackupBlueprints() BackupBlueprintInformer
 	// BackupConfigurations returns a BackupConfigurationInformer.
@@ -47,6 +49,11 @@ type version struct {
 // New returns a new Interface.
 func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakListOptions internalinterfaces.TweakListOptionsFunc) Interface {
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
+}
+
+// BackupBatches returns a BackupBatchInformer.
+func (v *version) BackupBatches() BackupBatchInformer {
+	return &backupBatchInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // BackupBlueprints returns a BackupBlueprintInformer.

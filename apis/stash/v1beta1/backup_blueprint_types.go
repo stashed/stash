@@ -39,7 +39,7 @@ type BackupBlueprintSpec struct {
 	// RetentionPolicy indicates the policy to follow to clean old backup snapshots
 	RetentionPolicy v1alpha1.RetentionPolicy `json:"retentionPolicy"`
 	// RuntimeSettings allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc.
-	//+optional
+	// +optional
 	RuntimeSettings ofst.RuntimeSettings `json:"runtimeSettings,omitempty"`
 	// Temp directory configuration for functions/sidecar
 	// An `EmptyDir` will always be mounted at /tmp with this settings

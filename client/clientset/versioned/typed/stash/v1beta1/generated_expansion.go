@@ -18,6 +18,8 @@ limitations under the License.
 
 package v1beta1
 
+type BackupBatchExpansion interface{}
+
 type BackupBlueprintExpansion interface{}
 
 type BackupConfigurationExpansion interface{}

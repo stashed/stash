@@ -30,8 +30,14 @@ type BackupSession struct {
 }
 
 type BackupSessionSpec struct {
+	// Invoker refers to the BackupConfiguration or BackupBatch being used to invoke this backup session
+	// +optional
+	Invoker BackupInvokerRef `json:"invoker,omitempty"`
+
 	// BackupConfiguration indicates the target BackupConfiguration crd
-	BackupConfiguration core.LocalObjectReference `json:"backupConfiguration,omitempty"`
+	// Deprecated: Use Invoker
+	// +optional
+	BackupConfiguration *core.LocalObjectReference `json:"backupConfiguration,omitempty"`
 }
 
 type BackupSessionPhase string
@@ -62,7 +68,7 @@ type BackupSessionStatus struct {
 	// +optional
 	Phase BackupSessionPhase `json:"phase,omitempty"`
 	// TotalHosts specifies total number of hosts that will be backed up for this BackupSession
-	// +Optional
+	// +optional
 	TotalHosts *int32 `json:"totalHosts,omitempty"`
 	// SessionDuration specify total time taken to complete current backup session (sum of backup duration of all hosts)
 	// +optional

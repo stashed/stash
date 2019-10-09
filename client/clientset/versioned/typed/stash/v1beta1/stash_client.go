@@ -27,6 +27,7 @@ import (
 
 type StashV1beta1Interface interface {
 	RESTClient() rest.Interface
+	BackupBatchesGetter
 	BackupBlueprintsGetter
 	BackupConfigurationsGetter
 	BackupSessionsGetter
@@ -38,6 +39,10 @@ type StashV1beta1Interface interface {
 // StashV1beta1Client is used to interact with features provided by the stash.appscode.com group.
 type StashV1beta1Client struct {
 	restClient rest.Interface
+}
+
+func (c *StashV1beta1Client) BackupBatches(namespace string) BackupBatchInterface {
+	return newBackupBatches(c, namespace)
 }
 
 func (c *StashV1beta1Client) BackupBlueprints() BackupBlueprintInterface {
