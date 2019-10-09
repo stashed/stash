@@ -20,15 +20,17 @@ func (f *Invocation) BackupConfiguration(repoName string, targetref v1beta1.Targ
 				Name: repoName,
 			},
 			Schedule: "*/3 * * * *",
-			Target: &v1beta1.BackupTarget{
-				Ref: targetref,
-				Paths: []string{
-					TestSourceDataMountPath,
-				},
-				VolumeMounts: []core.VolumeMount{
-					{
-						Name:      TestSourceDataVolumeName,
-						MountPath: TestSourceDataMountPath,
+			BackupConfigurationTemplateSpec: v1beta1.BackupConfigurationTemplateSpec{
+				Target: &v1beta1.BackupTarget{
+					Ref: targetref,
+					Paths: []string{
+						TestSourceDataMountPath,
+					},
+					VolumeMounts: []core.VolumeMount{
+						{
+							Name:      TestSourceDataVolumeName,
+							MountPath: TestSourceDataMountPath,
+						},
 					},
 				},
 			},
