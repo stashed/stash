@@ -1,8 +1,7 @@
-package volumesnapshot
+package util
 
 import (
 	"sort"
-	"strings"
 	"time"
 
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
@@ -72,30 +71,14 @@ func (vs VolumeSnapshots) Swap(i, j int) {
 // ApplyRetentionPolicy do the following steps:
 // 1. sorts all the VolumeSnapshot according to CreationTimeStamp.
 // 2. then list that are to be kept and removed according to the policy.
-func ApplyRetentionPolicy(policy v1alpha1.RetentionPolicy, hostBackupStats []v1beta1.HostBackupStats, namespace string, vsClient vs_cs.Interface) (VolumeSnapshots, VolumeSnapshots, error) {
-	vsList, err := vsClient.SnapshotV1alpha1().VolumeSnapshots(namespace).List(v1.ListOptions{})
-	if err != nil {
-		if kerr.IsNotFound(err) || len(vsList.Items) == 0 {
-			return nil, nil, nil
-		}
-		return nil, nil, err
-	}
-
-	var volumeSnapshots VolumeSnapshots
-	// filter VolumeSnapshots according to PVC source
-	for _, vs := range vsList.Items {
-		for _, host := range hostBackupStats {
-			if vs.Spec.Source.Name == host.Hostname {
-				volumeSnapshots = append(volumeSnapshots, VolumeSnapshot{VolumeSnap: vs})
-			}
-		}
-	}
+// 3. remove VolumeSnapshot that are not necessary according to RetentionPolicy
+func applyRetentionPolicy(policy v1alpha1.RetentionPolicy, volumeSnapshots VolumeSnapshots, namespace string, vsClient vs_cs.Interface) error {
 
 	// sorts the VolumeSnapshots according to CreationTimeStamp
 	sort.Sort(VolumeSnapshots(volumeSnapshots))
 
 	if !IsPolicyEmpty(policy) {
-		return nil, nil, nil
+		return nil
 	}
 
 	var buckets = [6]struct {
@@ -114,14 +97,6 @@ func ApplyRetentionPolicy(policy v1alpha1.RetentionPolicy, hostBackupStats []v1b
 	var kept, removed VolumeSnapshots
 	for nr, vs := range volumeSnapshots {
 		var keepSnap bool
-		// keep VolumeSnapshot that are created from the same PVC source at the same time
-		for _, kvs := range kept {
-			kvcParts := strings.Split(kvs.VolumeSnap.Name, "-")
-			vsParts := strings.Split(vs.VolumeSnap.Name, "-")
-			if kvcParts[len(kvcParts)-1] == vsParts[len(kvcParts)-1] {
-				keepSnap = true
-			}
-		}
 		// keep VolumeSnapshot that are matched with the policy
 		for i, b := range buckets {
 			if b.Count > 0 {
@@ -141,11 +116,6 @@ func ApplyRetentionPolicy(policy v1alpha1.RetentionPolicy, hostBackupStats []v1b
 		}
 	}
 
-	return kept, removed, nil
-}
-
-// remove VolumeSnapshot that are not necessary according to RetentionPolicy
-func CleanupSnapshots(removed []VolumeSnapshot, namespace string, vsClient vs_cs.Interface) error {
 	for _, vs := range removed {
 		err := vsClient.SnapshotV1alpha1().VolumeSnapshots(namespace).Delete(vs.VolumeSnap.Name, &v1.DeleteOptions{})
 		if err != nil {
@@ -155,5 +125,32 @@ func CleanupSnapshots(removed []VolumeSnapshot, namespace string, vsClient vs_cs
 			return err
 		}
 	}
+
+	return nil
+}
+
+func CleanupSnapshots(policy v1alpha1.RetentionPolicy, hostBackupStats []v1beta1.HostBackupStats, namespace string, vsClient vs_cs.Interface) error {
+	vsList, err := vsClient.SnapshotV1alpha1().VolumeSnapshots(namespace).List(v1.ListOptions{})
+	if err != nil {
+		if kerr.IsNotFound(err) || len(vsList.Items) == 0 {
+			return nil
+		}
+		return err
+	}
+	// filter VolumeSnapshots according to PVC source
+	// then apply RetentionPolicy rule
+	for _, host := range hostBackupStats {
+		var volumeSnapshots VolumeSnapshots
+		for _, vs := range vsList.Items {
+			if host.Hostname == vs.Spec.Source.Name {
+				volumeSnapshots = append(volumeSnapshots, VolumeSnapshot{VolumeSnap: vs})
+			}
+		}
+		err := applyRetentionPolicy(policy, volumeSnapshots, namespace, vsClient)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
