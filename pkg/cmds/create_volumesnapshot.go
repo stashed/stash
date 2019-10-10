@@ -5,8 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"stash.appscode.dev/stash/pkg/volumesnapshot"
-
 	"github.com/appscode/go/log"
 	vs "github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1alpha1"
 	vs_cs "github.com/kubernetes-csi/external-snapshotter/pkg/client/clientset/versioned"
@@ -142,16 +140,11 @@ func (opt *VSoption) createVolumeSnapshot() (*restic.BackupOutput, error) {
 
 	}
 
-	kept, removed, err := volumesnapshot.ApplyRetentionPolicy(backupConfig.Spec.RetentionPolicy, backupOutput.HostBackupStats, backupConfig.Namespace, opt.snapshotClient)
+	err = util.CleanupSnapshots(backupConfig.Spec.RetentionPolicy, backupOutput.HostBackupStats, backupSession.Namespace, opt.snapshotClient)
 	if err != nil {
 		return nil, err
 	}
-	backupOutput.RepositoryStats.SnapshotsRemovedOnLastCleanup = len(removed)
-	backupOutput.RepositoryStats.SnapshotCount = len(kept)
-	err = volumesnapshot.CleanupSnapshots(removed, backupConfig.Namespace, opt.snapshotClient)
-	if err != nil {
-		return nil, err
-	}
+
 	return backupOutput, nil
 }
 
