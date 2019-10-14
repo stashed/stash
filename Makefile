@@ -141,7 +141,7 @@ DOCKER_REPO_ROOT := /go/src/$(GO_PKG)/$(REPO)
 .PHONY: clientset
 clientset:
 	# for EAS types
-	@docker run --rm -ti                                          \
+	@docker run --rm 	                                          \
 		-u $$(id -u):$$(id -g)                                    \
 		-v /tmp:/.cache                                           \
 		-v $$(pwd):$(DOCKER_REPO_ROOT)                            \
@@ -158,7 +158,7 @@ clientset:
 			--go-header-file "./hack/boilerplate.go.txt"
 
 	# for both CRD and EAS types
-	@docker run --rm -ti                                          \
+	@docker run --rm 	                                          \
 		-u $$(id -u):$$(id -g)                                    \
 		-v /tmp:/.cache                                           \
 		-v $$(pwd):$(DOCKER_REPO_ROOT)                            \
@@ -177,7 +177,7 @@ clientset:
 .PHONY: openapi
 openapi: $(addprefix openapi-, $(subst :,_, $(API_GROUPS)))
 	@echo "Generating api/openapi-spec/swagger.json"
-	@docker run --rm -ti                                 \
+	@docker run --rm 	                                 \
 		-u $$(id -u):$$(id -g)                           \
 		-v /tmp:/.cache                                  \
 		-v $$(pwd):$(DOCKER_REPO_ROOT)                   \
@@ -190,7 +190,7 @@ openapi: $(addprefix openapi-, $(subst :,_, $(API_GROUPS)))
 openapi-%:
 	@echo "Generating openapi schema for $(subst _,/,$*)"
 	@mkdir -p api/api-rules
-	@docker run --rm -ti                                 \
+	@docker run --rm 	                                 \
 		-u $$(id -u):$$(id -g)                           \
 		-v /tmp:/.cache                                  \
 		-v $$(pwd):$(DOCKER_REPO_ROOT)                   \
@@ -209,7 +209,7 @@ openapi-%:
 .PHONY: gen-crds
 gen-crds:
 	@echo "Generating CRD manifests"
-	@docker run --rm -ti                    \
+	@docker run --rm 	                    \
 		-u $$(id -u):$$(id -g)              \
 		-v /tmp:/.cache                     \
 		-v $$(pwd):$(DOCKER_REPO_ROOT)      \
@@ -452,8 +452,25 @@ purge:
 .PHONY: dev
 dev: gen fmt push
 
+.PHONY: verify
+verify: verify-modules verify-gen
+
+.PHONY: verify-modules
+verify-modules:
+	GO111MODULE=on go mod tidy
+	GO111MODULE=on go mod vendor
+	@if !(git diff --quiet HEAD); then \
+		echo "go module files are out of date"; exit 1; \
+	fi
+
+.PHONY: verify-gen
+verify-gen: gen
+	@if !(git diff --quiet HEAD); then \
+		echo "generated files are out of date, run make gen"; exit 1; \
+	fi
+
 .PHONY: ci
-ci: lint test build #cover
+ci: verify lint test build #cover
 
 .PHONY: qa
 qa:
