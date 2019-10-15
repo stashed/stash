@@ -22,6 +22,7 @@ import (
 	"stash.appscode.dev/stash/pkg/restic"
 	"stash.appscode.dev/stash/pkg/status"
 	"stash.appscode.dev/stash/pkg/util"
+	"stash.appscode.dev/stash/pkg/volumesnapshot"
 )
 
 type VSoption struct {
@@ -140,7 +141,7 @@ func (opt *VSoption) createVolumeSnapshot() (*restic.BackupOutput, error) {
 
 	}
 
-	err = util.CleanupSnapshots(backupConfig.Spec.RetentionPolicy, backupOutput.HostBackupStats, backupSession.Namespace, opt.snapshotClient)
+	err = volumesnapshot.CleanupSnapshots(backupConfig.Spec.RetentionPolicy, backupOutput.HostBackupStats, backupSession.Namespace, opt.snapshotClient)
 	if err != nil {
 		return nil, err
 	}
