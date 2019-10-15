@@ -23,10 +23,6 @@ const (
 	testNamespace = "demo"
 )
 
-var (
-	ClassName = "standard"
-)
-
 func creationTime(t string) time.Time {
 	tm := parseTime(t)
 	return tm
@@ -59,17 +55,17 @@ func TestCleanupSnapshots(t *testing.T) {
 	//}
 
 	var volumeSnaps = []*crdv1.VolumeSnapshot{
-		newSnapshot("snap1", ClassName, "snapcontent-snapuid1", "snapuid1", "claim1", true, nil, creationTime("2019-10-10T05:36:07Z")),
-		newSnapshot("snap2", ClassName, "snapcontent-snapuid2", "snapuid2", "claim1", true, nil, creationTime("2018-10-10T05:36:07Z")),
-		newSnapshot("snap3", ClassName, "snapcontent-snapuid3", "snapuid3", "claim1", true, nil, creationTime("2017-10-10T05:36:07Z")),
-		newSnapshot("snap4", ClassName, "snapcontent-snapuid4", "snapuid4", "claim1", true, nil, creationTime("2019-11-10T05:36:07Z")),
-		newSnapshot("snap5", ClassName, "snapcontent-snapuid5", "snapuid5", "claim1", true, nil, creationTime("2019-12-10T05:36:07Z")),
-		newSnapshot("snap6", ClassName, "snapcontent-snapuid6", "snapuid6", "claim1", true, nil, creationTime("2019-10-10T05:30:07Z")),
-		newSnapshot("snap7", ClassName, "snapcontent-snapuid7", "snapuid7", "claim1", true, nil, creationTime("2019-10-10T05:15:07Z")),
-		newSnapshot("snap8", ClassName, "snapcontent-snapuid8", "snapuid8", "claim1", true, nil, creationTime("2018-10-11T05:36:07Z")),
-		newSnapshot("snap9", ClassName, "snapcontent-snapuid9", "snapuid9", "claim1", true, nil, creationTime("2017-12-10T05:36:07Z")),
-		newSnapshot("snap10", ClassName, "snapcontent-snapuid4", "snapuid4", "claim2", true, nil, creationTime("2019-11-10T05:36:07Z")),
-		newSnapshot("snap11", ClassName, "snapcontent-snapuid5", "snapuid5", "claim2", true, nil, creationTime("2019-12-10T05:36:07Z")),
+		newSnapshot("snap1", "standard", "snapcontent-snapuid1", "snapuid1", "claim1", true, nil, creationTime("2019-10-10T05:36:07Z")),
+		newSnapshot("snap2", "standard", "snapcontent-snapuid2", "snapuid2", "claim1", true, nil, creationTime("2018-10-10T05:36:07Z")),
+		newSnapshot("snap3", "standard", "snapcontent-snapuid3", "snapuid3", "claim1", true, nil, creationTime("2017-10-10T05:36:07Z")),
+		newSnapshot("snap4", "standard", "snapcontent-snapuid4", "snapuid4", "claim1", true, nil, creationTime("2019-11-10T05:36:07Z")),
+		newSnapshot("snap5", "standard", "snapcontent-snapuid5", "snapuid5", "claim1", true, nil, creationTime("2019-12-10T05:36:07Z")),
+		newSnapshot("snap6", "standard", "snapcontent-snapuid6", "snapuid6", "claim1", true, nil, creationTime("2019-10-10T05:30:07Z")),
+		newSnapshot("snap7", "standard", "snapcontent-snapuid7", "snapuid7", "claim1", true, nil, creationTime("2019-10-10T05:15:07Z")),
+		newSnapshot("snap8", "standard", "snapcontent-snapuid8", "snapuid8", "claim1", true, nil, creationTime("2018-10-11T05:36:07Z")),
+		newSnapshot("snap9", "standard", "snapcontent-snapuid9", "snapuid9", "claim1", true, nil, creationTime("2017-12-10T05:36:07Z")),
+		newSnapshot("snap10", "standard", "snapcontent-snapuid4", "snapuid4", "claim2", true, nil, creationTime("2019-11-10T05:36:07Z")),
+		newSnapshot("snap11", "standard", "snapcontent-snapuid5", "snapuid5", "claim2", true, nil, creationTime("2019-12-10T05:36:07Z")),
 	}
 	var objs []runtime.Object
 	for _, vs := range volumeSnaps {
@@ -96,13 +92,13 @@ func TestCleanupSnapshots(t *testing.T) {
 			description:     "KeepLast",
 			namespace:       testNamespace,
 			policy:          v1alpha1.RetentionPolicy{KeepLast: 3},
-			hostBackupStats: []v1beta1.HostBackupStats{{Hostname: "claim1"}, {Hostname: "claim1"}},
+			hostBackupStats: []v1beta1.HostBackupStats{{Hostname: "claim1"}},
 			expected: []*crdv1.VolumeSnapshot{
-				newSnapshot("snap1", ClassName, "snapcontent-snapuid1", "snapuid1", "claim1", true, nil, creationTime("2019-10-10T05:36:07Z")),
-				newSnapshot("snap4", ClassName, "snapcontent-snapuid4", "snapuid4", "claim1", true, nil, creationTime("2019-11-10T05:36:07Z")),
-				newSnapshot("snap5", ClassName, "snapcontent-snapuid5", "snapuid5", "claim1", true, nil, creationTime("2019-12-10T05:36:07Z")),
-				newSnapshot("snap10", ClassName, "snapcontent-snapuid4", "snapuid4", "claim2", true, nil, creationTime("2019-11-10T05:36:07Z")),
-				newSnapshot("snap11", ClassName, "snapcontent-snapuid5", "snapuid5", "claim2", true, nil, creationTime("2019-12-10T05:36:07Z")),
+				newSnapshot("snap1", "standard", "snapcontent-snapuid1", "snapuid1", "claim1", true, nil, creationTime("2019-10-10T05:36:07Z")),
+				newSnapshot("snap4", "standard", "snapcontent-snapuid4", "snapuid4", "claim1", true, nil, creationTime("2019-11-10T05:36:07Z")),
+				newSnapshot("snap5", "standard", "snapcontent-snapuid5", "snapuid5", "claim1", true, nil, creationTime("2019-12-10T05:36:07Z")),
+				newSnapshot("snap10", "standard", "snapcontent-snapuid4", "snapuid4", "claim2", true, nil, creationTime("2019-11-10T05:36:07Z")),
+				newSnapshot("snap11", "standard", "snapcontent-snapuid5", "snapuid5", "claim2", true, nil, creationTime("2019-12-10T05:36:07Z")),
 			},
 			objects: objs,
 		},
@@ -112,11 +108,11 @@ func TestCleanupSnapshots(t *testing.T) {
 			policy:          v1alpha1.RetentionPolicy{KeepHourly: 3},
 			hostBackupStats: []v1beta1.HostBackupStats{{Hostname: "claim1"}, {Hostname: "claim2"}},
 			expected: []*crdv1.VolumeSnapshot{
-				newSnapshot("snap1", ClassName, "snapcontent-snapuid1", "snapuid1", "claim1", true, nil, creationTime("2019-10-10T05:36:07Z")),
-				newSnapshot("snap4", ClassName, "snapcontent-snapuid4", "snapuid4", "claim1", true, nil, creationTime("2019-11-10T05:36:07Z")),
-				newSnapshot("snap5", ClassName, "snapcontent-snapuid5", "snapuid5", "claim1", true, nil, creationTime("2019-12-10T05:36:07Z")),
-				newSnapshot("snap10", ClassName, "snapcontent-snapuid4", "snapuid4", "claim2", true, nil, creationTime("2019-11-10T05:36:07Z")),
-				newSnapshot("snap11", ClassName, "snapcontent-snapuid5", "snapuid5", "claim2", true, nil, creationTime("2019-12-10T05:36:07Z")),
+				newSnapshot("snap1", "standard", "snapcontent-snapuid1", "snapuid1", "claim1", true, nil, creationTime("2019-10-10T05:36:07Z")),
+				newSnapshot("snap4", "standard", "snapcontent-snapuid4", "snapuid4", "claim1", true, nil, creationTime("2019-11-10T05:36:07Z")),
+				newSnapshot("snap5", "standard", "snapcontent-snapuid5", "snapuid5", "claim1", true, nil, creationTime("2019-12-10T05:36:07Z")),
+				newSnapshot("snap10", "standard", "snapcontent-snapuid4", "snapuid4", "claim2", true, nil, creationTime("2019-11-10T05:36:07Z")),
+				newSnapshot("snap11", "standard", "snapcontent-snapuid5", "snapuid5", "claim2", true, nil, creationTime("2019-12-10T05:36:07Z")),
 			},
 			objects: objs,
 		},
@@ -126,11 +122,11 @@ func TestCleanupSnapshots(t *testing.T) {
 			policy:          v1alpha1.RetentionPolicy{KeepDaily: 3},
 			hostBackupStats: []v1beta1.HostBackupStats{{Hostname: "claim1"}, {Hostname: "claim2"}},
 			expected: []*crdv1.VolumeSnapshot{
-				newSnapshot("snap1", ClassName, "snapcontent-snapuid1", "snapuid1", "claim1", true, nil, creationTime("2019-10-10T05:36:07Z")),
-				newSnapshot("snap4", ClassName, "snapcontent-snapuid4", "snapuid4", "claim1", true, nil, creationTime("2019-11-10T05:36:07Z")),
-				newSnapshot("snap5", ClassName, "snapcontent-snapuid5", "snapuid5", "claim1", true, nil, creationTime("2019-12-10T05:36:07Z")),
-				newSnapshot("snap10", ClassName, "snapcontent-snapuid4", "snapuid4", "claim2", true, nil, creationTime("2019-11-10T05:36:07Z")),
-				newSnapshot("snap11", ClassName, "snapcontent-snapuid5", "snapuid5", "claim2", true, nil, creationTime("2019-12-10T05:36:07Z")),
+				newSnapshot("snap1", "standard", "snapcontent-snapuid1", "snapuid1", "claim1", true, nil, creationTime("2019-10-10T05:36:07Z")),
+				newSnapshot("snap4", "standard", "snapcontent-snapuid4", "snapuid4", "claim1", true, nil, creationTime("2019-11-10T05:36:07Z")),
+				newSnapshot("snap5", "standard", "snapcontent-snapuid5", "snapuid5", "claim1", true, nil, creationTime("2019-12-10T05:36:07Z")),
+				newSnapshot("snap10", "standard", "snapcontent-snapuid4", "snapuid4", "claim2", true, nil, creationTime("2019-11-10T05:36:07Z")),
+				newSnapshot("snap11", "standard", "snapcontent-snapuid5", "snapuid5", "claim2", true, nil, creationTime("2019-12-10T05:36:07Z")),
 			},
 			objects: objs,
 		},
@@ -140,10 +136,10 @@ func TestCleanupSnapshots(t *testing.T) {
 			policy:          v1alpha1.RetentionPolicy{KeepYearly: 3},
 			hostBackupStats: []v1beta1.HostBackupStats{{Hostname: "claim1"}, {Hostname: "claim2"}},
 			expected: []*crdv1.VolumeSnapshot{
-				newSnapshot("snap5", ClassName, "snapcontent-snapuid5", "snapuid5", "claim1", true, nil, creationTime("2019-12-10T05:36:07Z")),
-				newSnapshot("snap8", ClassName, "snapcontent-snapuid8", "snapuid8", "claim1", true, nil, creationTime("2018-10-11T05:36:07Z")),
-				newSnapshot("snap9", ClassName, "snapcontent-snapuid9", "snapuid9", "claim1", true, nil, creationTime("2017-12-10T05:36:07Z")),
-				newSnapshot("snap11", ClassName, "snapcontent-snapuid5", "snapuid5", "claim2", true, nil, creationTime("2019-12-10T05:36:07Z")),
+				newSnapshot("snap5", "standard", "snapcontent-snapuid5", "snapuid5", "claim1", true, nil, creationTime("2019-12-10T05:36:07Z")),
+				newSnapshot("snap8", "standard", "snapcontent-snapuid8", "snapuid8", "claim1", true, nil, creationTime("2018-10-11T05:36:07Z")),
+				newSnapshot("snap9", "standard", "snapcontent-snapuid9", "snapuid9", "claim1", true, nil, creationTime("2017-12-10T05:36:07Z")),
+				newSnapshot("snap11", "standard", "snapcontent-snapuid5", "snapuid5", "claim2", true, nil, creationTime("2019-12-10T05:36:07Z")),
 			},
 			objects: objs,
 		},
@@ -153,11 +149,11 @@ func TestCleanupSnapshots(t *testing.T) {
 			policy:          v1alpha1.RetentionPolicy{KeepLast: 3, KeepDaily: 3},
 			hostBackupStats: []v1beta1.HostBackupStats{{Hostname: "claim1"}, {Hostname: "claim2"}},
 			expected: []*crdv1.VolumeSnapshot{
-				newSnapshot("snap1", ClassName, "snapcontent-snapuid1", "snapuid1", "claim1", true, nil, creationTime("2019-10-10T05:36:07Z")),
-				newSnapshot("snap4", ClassName, "snapcontent-snapuid4", "snapuid4", "claim1", true, nil, creationTime("2019-11-10T05:36:07Z")),
-				newSnapshot("snap5", ClassName, "snapcontent-snapuid5", "snapuid5", "claim1", true, nil, creationTime("2019-12-10T05:36:07Z")),
-				newSnapshot("snap10", ClassName, "snapcontent-snapuid4", "snapuid4", "claim2", true, nil, creationTime("2019-11-10T05:36:07Z")),
-				newSnapshot("snap11", ClassName, "snapcontent-snapuid5", "snapuid5", "claim2", true, nil, creationTime("2019-12-10T05:36:07Z")),
+				newSnapshot("snap1", "standard", "snapcontent-snapuid1", "snapuid1", "claim1", true, nil, creationTime("2019-10-10T05:36:07Z")),
+				newSnapshot("snap4", "standard", "snapcontent-snapuid4", "snapuid4", "claim1", true, nil, creationTime("2019-11-10T05:36:07Z")),
+				newSnapshot("snap5", "standard", "snapcontent-snapuid5", "snapuid5", "claim1", true, nil, creationTime("2019-12-10T05:36:07Z")),
+				newSnapshot("snap10", "standard", "snapcontent-snapuid4", "snapuid4", "claim2", true, nil, creationTime("2019-11-10T05:36:07Z")),
+				newSnapshot("snap11", "standard", "snapcontent-snapuid5", "snapuid5", "claim2", true, nil, creationTime("2019-12-10T05:36:07Z")),
 			},
 			objects: objs,
 		},
@@ -167,10 +163,10 @@ func TestCleanupSnapshots(t *testing.T) {
 			policy:          v1alpha1.RetentionPolicy{KeepWeekly: 2, KeepMonthly: 2},
 			hostBackupStats: []v1beta1.HostBackupStats{{Hostname: "claim1"}, {Hostname: "claim2"}},
 			expected: []*crdv1.VolumeSnapshot{
-				newSnapshot("snap4", ClassName, "snapcontent-snapuid4", "snapuid4", "claim1", true, nil, creationTime("2019-11-10T05:36:07Z")),
-				newSnapshot("snap5", ClassName, "snapcontent-snapuid5", "snapuid5", "claim1", true, nil, creationTime("2019-12-10T05:36:07Z")),
-				newSnapshot("snap10", ClassName, "snapcontent-snapuid4", "snapuid4", "claim2", true, nil, creationTime("2019-11-10T05:36:07Z")),
-				newSnapshot("snap11", ClassName, "snapcontent-snapuid5", "snapuid5", "claim2", true, nil, creationTime("2019-12-10T05:36:07Z")),
+				newSnapshot("snap4", "standard", "snapcontent-snapuid4", "snapuid4", "claim1", true, nil, creationTime("2019-11-10T05:36:07Z")),
+				newSnapshot("snap5", "standard", "snapcontent-snapuid5", "snapuid5", "claim1", true, nil, creationTime("2019-12-10T05:36:07Z")),
+				newSnapshot("snap10", "standard", "snapcontent-snapuid4", "snapuid4", "claim2", true, nil, creationTime("2019-11-10T05:36:07Z")),
+				newSnapshot("snap11", "standard", "snapcontent-snapuid5", "snapuid5", "claim2", true, nil, creationTime("2019-12-10T05:36:07Z")),
 			},
 			objects: objs,
 		},
@@ -180,13 +176,13 @@ func TestCleanupSnapshots(t *testing.T) {
 			policy:          v1alpha1.RetentionPolicy{KeepWeekly: 2, KeepMonthly: 3, KeepYearly: 4},
 			hostBackupStats: []v1beta1.HostBackupStats{{Hostname: "claim1"}, {Hostname: "claim2"}},
 			expected: []*crdv1.VolumeSnapshot{
-				newSnapshot("snap1", ClassName, "snapcontent-snapuid1", "snapuid1", "claim1", true, nil, creationTime("2019-10-10T05:36:07Z")),
-				newSnapshot("snap4", ClassName, "snapcontent-snapuid4", "snapuid4", "claim1", true, nil, creationTime("2019-11-10T05:36:07Z")),
-				newSnapshot("snap5", ClassName, "snapcontent-snapuid5", "snapuid5", "claim1", true, nil, creationTime("2019-12-10T05:36:07Z")),
-				newSnapshot("snap8", ClassName, "snapcontent-snapuid8", "snapuid8", "claim1", true, nil, creationTime("2018-10-11T05:36:07Z")),
-				newSnapshot("snap9", ClassName, "snapcontent-snapuid9", "snapuid9", "claim1", true, nil, creationTime("2017-12-10T05:36:07Z")),
-				newSnapshot("snap10", ClassName, "snapcontent-snapuid4", "snapuid4", "claim2", true, nil, creationTime("2019-11-10T05:36:07Z")),
-				newSnapshot("snap11", ClassName, "snapcontent-snapuid5", "snapuid5", "claim2", true, nil, creationTime("2019-12-10T05:36:07Z")),
+				newSnapshot("snap1", "standard", "snapcontent-snapuid1", "snapuid1", "claim1", true, nil, creationTime("2019-10-10T05:36:07Z")),
+				newSnapshot("snap4", "standard", "snapcontent-snapuid4", "snapuid4", "claim1", true, nil, creationTime("2019-11-10T05:36:07Z")),
+				newSnapshot("snap5", "standard", "snapcontent-snapuid5", "snapuid5", "claim1", true, nil, creationTime("2019-12-10T05:36:07Z")),
+				newSnapshot("snap8", "standard", "snapcontent-snapuid8", "snapuid8", "claim1", true, nil, creationTime("2018-10-11T05:36:07Z")),
+				newSnapshot("snap9", "standard", "snapcontent-snapuid9", "snapuid9", "claim1", true, nil, creationTime("2017-12-10T05:36:07Z")),
+				newSnapshot("snap10", "standard", "snapcontent-snapuid4", "snapuid4", "claim2", true, nil, creationTime("2019-11-10T05:36:07Z")),
+				newSnapshot("snap11", "standard", "snapcontent-snapuid5", "snapuid5", "claim2", true, nil, creationTime("2019-12-10T05:36:07Z")),
 			},
 			objects: objs,
 		},
@@ -221,7 +217,7 @@ func TestCleanupSnapshots(t *testing.T) {
 
 }
 
-func newSnapshot(name, className, boundToContent, snapshotUID, claimName string, ready bool, err *storagev1beta1.VolumeError, creationTime time.Time) *crdv1.VolumeSnapshot {
+func newSnapshot(name, volumeSnapshotClass, boundToContent, snapshotUID, claimName string, ready bool, err *storagev1beta1.VolumeError, creationTime time.Time) *crdv1.VolumeSnapshot {
 	snapshot := crdv1.VolumeSnapshot{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            name,
@@ -231,7 +227,7 @@ func newSnapshot(name, className, boundToContent, snapshotUID, claimName string,
 			SelfLink:        "/apis/snapshot.storage.k8s.io/v1alpha1/namespaces/" + testNamespace + "/volumesnapshots/" + name,
 		},
 		Spec: crdv1.VolumeSnapshotSpec{
-			VolumeSnapshotClassName: &className,
+			VolumeSnapshotClassName: &volumeSnapshotClass,
 			SnapshotContentName:     boundToContent,
 		},
 		Status: crdv1.VolumeSnapshotStatus{
