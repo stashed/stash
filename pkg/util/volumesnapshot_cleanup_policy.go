@@ -4,13 +4,12 @@ import (
 	"sort"
 	"time"
 
-	"stash.appscode.dev/stash/apis/stash/v1beta1"
-
 	vs_api "github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1alpha1"
 	vs_cs "github.com/kubernetes-csi/external-snapshotter/pkg/client/clientset/versioned"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
 // Empty returns true if no policy has been configured (all values zero).

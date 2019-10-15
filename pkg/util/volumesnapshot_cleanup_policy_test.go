@@ -1,215 +1,149 @@
 package util
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/appscode/go/strings"
+	"stash.appscode.dev/stash/apis"
 
-	"k8s.io/apimachinery/pkg/runtime"
-
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"stash.appscode.dev/stash/apis/stash/v1beta1"
-
+	type_util "github.com/appscode/go/types"
 	crdv1 "github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1alpha1"
 	vsfake "github.com/kubernetes-csi/external-snapshotter/pkg/client/clientset/versioned/fake"
-	storagev1beta1 "k8s.io/api/storage/v1beta1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
-const (
-	testNamespace = "demo"
-)
-
-func creationTime(t string) time.Time {
-	tm := parseTime(t)
-	return tm
+type snapInfo struct {
+	name         string
+	creationTime string
+	pvcName      string
 }
 
-func parseTime(t string) time.Time {
-	tm, err := time.Parse(time.RFC3339, t)
-	if err != nil {
-		panic(err)
-	}
-	return tm
+type testInfo struct {
+	description       string
+	policy            v1alpha1.RetentionPolicy
+	hostBackupStats   []v1beta1.HostBackupStats
+	expectedSnapshots []string
 }
+
+const testNamespace = "vs-retention-policy-test"
 
 func TestCleanupSnapshots(t *testing.T) {
 
-	//var policy = []v1alpha1.RetentionPolicy{
-	//	{Name: "No Policy"},
-	//	{Name: "KeepLast", KeepLast: 3},
-	//	{Name: "KeepHourly", KeepHourly: 3},
-	//	{Name: "KeepDaily", KeepDaily: 3},
-	//	{Name: "KeepWeakly", KeepWeekly: 3},
-	//	{Name: "KeepMonthly", KeepMonthly: 3},
-	//	{Name: "KeepYearly", KeepYearly: 3},
-	//	{Name: "KeepLast & KeepHourly", KeepLast: 3, KeepHourly: 3},
-	//	{Name: "KeepLast & KeepDaily", KeepLast: 3, KeepDaily: 3},
-	//	{Name: "KeepLast & KeepDaily", KeepLast: 2, KeepDaily: 3},
-	//	{Name: "KeepLast & KeepWeekly & KeepMonthly", KeepHourly: 2, KeepWeekly: 2, KeepMonthly: 2},
-	//	{Name: "KeepLast & KeepMonthly & KeepYearly", KeepLast: 3, KeepMonthly: 2, KeepYearly: 2},
-	//	{Name: "KeepWeekly & KeepMonthly & KeepYearly", KeepWeekly: 2, KeepMonthly: 2, KeepYearly: 3},
-	//}
-
-	var volumeSnaps = []*crdv1.VolumeSnapshot{
-		newSnapshot("snap1", "standard", "snapcontent-snapuid1", "snapuid1", "claim1", true, nil, creationTime("2019-10-10T05:36:07Z")),
-		newSnapshot("snap2", "standard", "snapcontent-snapuid2", "snapuid2", "claim1", true, nil, creationTime("2018-10-10T05:36:07Z")),
-		newSnapshot("snap3", "standard", "snapcontent-snapuid3", "snapuid3", "claim1", true, nil, creationTime("2017-10-10T05:36:07Z")),
-		newSnapshot("snap4", "standard", "snapcontent-snapuid4", "snapuid4", "claim1", true, nil, creationTime("2019-11-10T05:36:07Z")),
-		newSnapshot("snap5", "standard", "snapcontent-snapuid5", "snapuid5", "claim1", true, nil, creationTime("2019-12-10T05:36:07Z")),
-		newSnapshot("snap6", "standard", "snapcontent-snapuid6", "snapuid6", "claim1", true, nil, creationTime("2019-10-10T05:30:07Z")),
-		newSnapshot("snap7", "standard", "snapcontent-snapuid7", "snapuid7", "claim1", true, nil, creationTime("2019-10-10T05:15:07Z")),
-		newSnapshot("snap8", "standard", "snapcontent-snapuid8", "snapuid8", "claim1", true, nil, creationTime("2018-10-11T05:36:07Z")),
-		newSnapshot("snap9", "standard", "snapcontent-snapuid9", "snapuid9", "claim1", true, nil, creationTime("2017-12-10T05:36:07Z")),
-		newSnapshot("snap10", "standard", "snapcontent-snapuid4", "snapuid4", "claim2", true, nil, creationTime("2019-11-10T05:36:07Z")),
-		newSnapshot("snap11", "standard", "snapcontent-snapuid5", "snapuid5", "claim2", true, nil, creationTime("2019-12-10T05:36:07Z")),
-	}
-	var objs []runtime.Object
-	for _, vs := range volumeSnaps {
-		objs = append(objs, vs)
+	snapMeta := []snapInfo{
+		{name: "snap-1", creationTime: "2019-12-10T05:36:07Z", pvcName: "pvc-1"},
+		{name: "snap-2", creationTime: "2019-11-10T05:36:07Z", pvcName: "pvc-1"},
+		{name: "snap-3", creationTime: "2019-10-10T05:36:07Z", pvcName: "pvc-1"},
+		{name: "snap-4", creationTime: "2019-10-10T05:30:07Z", pvcName: "pvc-1"},
+		{name: "snap-5", creationTime: "2019-10-10T05:15:07Z", pvcName: "pvc-1"},
+		{name: "snap-6", creationTime: "2018-10-11T05:36:07Z", pvcName: "pvc-1"},
+		{name: "snap-7", creationTime: "2018-10-10T05:36:07Z", pvcName: "pvc-1"},
+		{name: "snap-8", creationTime: "2017-12-10T05:36:07Z", pvcName: "pvc-1"},
+		{name: "snap-9", creationTime: "2017-10-10T05:36:07Z", pvcName: "pvc-1"},
+		{name: "snap-10", creationTime: "2019-12-10T05:36:07Z", pvcName: "pvc-2"},
+		{name: "snap-11", creationTime: "2019-10-10T05:36:07Z", pvcName: "pvc-2"},
+		{name: "snap-12", creationTime: "2019-10-10T05:36:07Z", pvcName: "pvc-2"},
+		{name: "snap-13", creationTime: "2019-10-09T05:30:07Z", pvcName: "pvc-2"},
 	}
 
-	var tests = []struct {
-		description     string
-		namespace       string
-		policy          v1alpha1.RetentionPolicy
-		hostBackupStats []v1beta1.HostBackupStats
-		expected        []*crdv1.VolumeSnapshot
-		objects         []runtime.Object
-	}{
+	testCases := []testInfo{
 		{
-			description:     "No Policy",
-			namespace:       testNamespace,
-			policy:          v1alpha1.RetentionPolicy{},
-			hostBackupStats: []v1beta1.HostBackupStats{{Hostname: "claim1"}},
-			expected:        volumeSnaps,
-			objects:         objs,
+			description:       "No Policy",
+			policy:            v1alpha1.RetentionPolicy{},
+			hostBackupStats:   []v1beta1.HostBackupStats{{Hostname: "pvc-1"}, {Hostname: "pvc-2"}},
+			expectedSnapshots: []string{"snap-1", "snap-2", "snap-3", "snap-4", "snap-5", "snap-6", "snap-7", "snap-8", "snap-9", "snap-10", "snap-11", "snap-12", "snap-13"}, // should keep all snapshots
 		},
 		{
-			description:     "KeepLast",
-			namespace:       testNamespace,
-			policy:          v1alpha1.RetentionPolicy{KeepLast: 3},
-			hostBackupStats: []v1beta1.HostBackupStats{{Hostname: "claim1"}},
-			expected: []*crdv1.VolumeSnapshot{
-				newSnapshot("snap1", "standard", "snapcontent-snapuid1", "snapuid1", "claim1", true, nil, creationTime("2019-10-10T05:36:07Z")),
-				newSnapshot("snap4", "standard", "snapcontent-snapuid4", "snapuid4", "claim1", true, nil, creationTime("2019-11-10T05:36:07Z")),
-				newSnapshot("snap5", "standard", "snapcontent-snapuid5", "snapuid5", "claim1", true, nil, creationTime("2019-12-10T05:36:07Z")),
-				newSnapshot("snap10", "standard", "snapcontent-snapuid4", "snapuid4", "claim2", true, nil, creationTime("2019-11-10T05:36:07Z")),
-				newSnapshot("snap11", "standard", "snapcontent-snapuid5", "snapuid5", "claim2", true, nil, creationTime("2019-12-10T05:36:07Z")),
-			},
-			objects: objs,
+			description:       "KeepLast",
+			policy:            v1alpha1.RetentionPolicy{KeepLast: 3},
+			hostBackupStats:   []v1beta1.HostBackupStats{{Hostname: "pvc-1"}, {Hostname: "pvc-2"}},
+			expectedSnapshots: []string{"snap-1", "snap-2", "snap-3", "snap-10", "snap-11", "snap-12"}, // should keep last 3 snapshots of claim 1 and last 3 snapshots of claim 2
 		},
 		{
-			description:     "KeepHourly",
-			namespace:       testNamespace,
-			policy:          v1alpha1.RetentionPolicy{KeepHourly: 3},
-			hostBackupStats: []v1beta1.HostBackupStats{{Hostname: "claim1"}, {Hostname: "claim2"}},
-			expected: []*crdv1.VolumeSnapshot{
-				newSnapshot("snap1", "standard", "snapcontent-snapuid1", "snapuid1", "claim1", true, nil, creationTime("2019-10-10T05:36:07Z")),
-				newSnapshot("snap4", "standard", "snapcontent-snapuid4", "snapuid4", "claim1", true, nil, creationTime("2019-11-10T05:36:07Z")),
-				newSnapshot("snap5", "standard", "snapcontent-snapuid5", "snapuid5", "claim1", true, nil, creationTime("2019-12-10T05:36:07Z")),
-				newSnapshot("snap10", "standard", "snapcontent-snapuid4", "snapuid4", "claim2", true, nil, creationTime("2019-11-10T05:36:07Z")),
-				newSnapshot("snap11", "standard", "snapcontent-snapuid5", "snapuid5", "claim2", true, nil, creationTime("2019-12-10T05:36:07Z")),
-			},
-			objects: objs,
+			description:       "KeepHourly",
+			policy:            v1alpha1.RetentionPolicy{KeepHourly: 3},
+			hostBackupStats:   []v1beta1.HostBackupStats{{Hostname: "pvc-1"}, {Hostname: "pvc-2"}},
+			expectedSnapshots: []string{"snap-1", "snap-2", "snap-3", "snap-10", "snap-11", "snap-13"},
 		},
 		{
-			description:     "KeepDaily",
-			namespace:       testNamespace,
-			policy:          v1alpha1.RetentionPolicy{KeepDaily: 3},
-			hostBackupStats: []v1beta1.HostBackupStats{{Hostname: "claim1"}, {Hostname: "claim2"}},
-			expected: []*crdv1.VolumeSnapshot{
-				newSnapshot("snap1", "standard", "snapcontent-snapuid1", "snapuid1", "claim1", true, nil, creationTime("2019-10-10T05:36:07Z")),
-				newSnapshot("snap4", "standard", "snapcontent-snapuid4", "snapuid4", "claim1", true, nil, creationTime("2019-11-10T05:36:07Z")),
-				newSnapshot("snap5", "standard", "snapcontent-snapuid5", "snapuid5", "claim1", true, nil, creationTime("2019-12-10T05:36:07Z")),
-				newSnapshot("snap10", "standard", "snapcontent-snapuid4", "snapuid4", "claim2", true, nil, creationTime("2019-11-10T05:36:07Z")),
-				newSnapshot("snap11", "standard", "snapcontent-snapuid5", "snapuid5", "claim2", true, nil, creationTime("2019-12-10T05:36:07Z")),
-			},
-			objects: objs,
+			description:       "KeepDaily",
+			policy:            v1alpha1.RetentionPolicy{KeepDaily: 3},
+			hostBackupStats:   []v1beta1.HostBackupStats{{Hostname: "pvc-1"}, {Hostname: "pvc-2"}},
+			expectedSnapshots: []string{"snap-1", "snap-2", "snap-3", "snap-10", "snap-11", "snap-13"},
 		},
 		{
-			description:     "KeepYearly",
-			namespace:       testNamespace,
-			policy:          v1alpha1.RetentionPolicy{KeepYearly: 3},
-			hostBackupStats: []v1beta1.HostBackupStats{{Hostname: "claim1"}, {Hostname: "claim2"}},
-			expected: []*crdv1.VolumeSnapshot{
-				newSnapshot("snap5", "standard", "snapcontent-snapuid5", "snapuid5", "claim1", true, nil, creationTime("2019-12-10T05:36:07Z")),
-				newSnapshot("snap8", "standard", "snapcontent-snapuid8", "snapuid8", "claim1", true, nil, creationTime("2018-10-11T05:36:07Z")),
-				newSnapshot("snap9", "standard", "snapcontent-snapuid9", "snapuid9", "claim1", true, nil, creationTime("2017-12-10T05:36:07Z")),
-				newSnapshot("snap11", "standard", "snapcontent-snapuid5", "snapuid5", "claim2", true, nil, creationTime("2019-12-10T05:36:07Z")),
-			},
-			objects: objs,
+			description:       "KeepMonthly",
+			policy:            v1alpha1.RetentionPolicy{KeepMonthly: 3},
+			hostBackupStats:   []v1beta1.HostBackupStats{{Hostname: "pvc-1"}, {Hostname: "pvc-2"}},
+			expectedSnapshots: []string{"snap-1", "snap-2", "snap-3", "snap-10", "snap-11"},
 		},
 		{
-			description:     "KeepLast & KeepDaily",
-			namespace:       testNamespace,
-			policy:          v1alpha1.RetentionPolicy{KeepLast: 3, KeepDaily: 3},
-			hostBackupStats: []v1beta1.HostBackupStats{{Hostname: "claim1"}, {Hostname: "claim2"}},
-			expected: []*crdv1.VolumeSnapshot{
-				newSnapshot("snap1", "standard", "snapcontent-snapuid1", "snapuid1", "claim1", true, nil, creationTime("2019-10-10T05:36:07Z")),
-				newSnapshot("snap4", "standard", "snapcontent-snapuid4", "snapuid4", "claim1", true, nil, creationTime("2019-11-10T05:36:07Z")),
-				newSnapshot("snap5", "standard", "snapcontent-snapuid5", "snapuid5", "claim1", true, nil, creationTime("2019-12-10T05:36:07Z")),
-				newSnapshot("snap10", "standard", "snapcontent-snapuid4", "snapuid4", "claim2", true, nil, creationTime("2019-11-10T05:36:07Z")),
-				newSnapshot("snap11", "standard", "snapcontent-snapuid5", "snapuid5", "claim2", true, nil, creationTime("2019-12-10T05:36:07Z")),
-			},
-			objects: objs,
+			description:       "KeepYearly",
+			policy:            v1alpha1.RetentionPolicy{KeepYearly: 3},
+			hostBackupStats:   []v1beta1.HostBackupStats{{Hostname: "pvc-1"}, {Hostname: "pvc-2"}},
+			expectedSnapshots: []string{"snap-1", "snap-6", "snap-8", "snap-10"},
 		},
 		{
-			description:     "KeepWeekly & KeepMonthly",
-			namespace:       testNamespace,
-			policy:          v1alpha1.RetentionPolicy{KeepWeekly: 2, KeepMonthly: 2},
-			hostBackupStats: []v1beta1.HostBackupStats{{Hostname: "claim1"}, {Hostname: "claim2"}},
-			expected: []*crdv1.VolumeSnapshot{
-				newSnapshot("snap4", "standard", "snapcontent-snapuid4", "snapuid4", "claim1", true, nil, creationTime("2019-11-10T05:36:07Z")),
-				newSnapshot("snap5", "standard", "snapcontent-snapuid5", "snapuid5", "claim1", true, nil, creationTime("2019-12-10T05:36:07Z")),
-				newSnapshot("snap10", "standard", "snapcontent-snapuid4", "snapuid4", "claim2", true, nil, creationTime("2019-11-10T05:36:07Z")),
-				newSnapshot("snap11", "standard", "snapcontent-snapuid5", "snapuid5", "claim2", true, nil, creationTime("2019-12-10T05:36:07Z")),
-			},
-			objects: objs,
+			description:       "KeepLast & KeepDaily",
+			policy:            v1alpha1.RetentionPolicy{KeepLast: 3, KeepDaily: 3},
+			hostBackupStats:   []v1beta1.HostBackupStats{{Hostname: "pvc-1"}, {Hostname: "pvc-2"}},
+			expectedSnapshots: []string{"snap-1", "snap-2", "snap-3", "snap-10", "snap-11", "snap-12", "snap-13"},
 		},
 		{
-			description:     "KeepWeekly & KeepMonthly & KeepYearly",
-			namespace:       testNamespace,
-			policy:          v1alpha1.RetentionPolicy{KeepWeekly: 2, KeepMonthly: 3, KeepYearly: 4},
-			hostBackupStats: []v1beta1.HostBackupStats{{Hostname: "claim1"}, {Hostname: "claim2"}},
-			expected: []*crdv1.VolumeSnapshot{
-				newSnapshot("snap1", "standard", "snapcontent-snapuid1", "snapuid1", "claim1", true, nil, creationTime("2019-10-10T05:36:07Z")),
-				newSnapshot("snap4", "standard", "snapcontent-snapuid4", "snapuid4", "claim1", true, nil, creationTime("2019-11-10T05:36:07Z")),
-				newSnapshot("snap5", "standard", "snapcontent-snapuid5", "snapuid5", "claim1", true, nil, creationTime("2019-12-10T05:36:07Z")),
-				newSnapshot("snap8", "standard", "snapcontent-snapuid8", "snapuid8", "claim1", true, nil, creationTime("2018-10-11T05:36:07Z")),
-				newSnapshot("snap9", "standard", "snapcontent-snapuid9", "snapuid9", "claim1", true, nil, creationTime("2017-12-10T05:36:07Z")),
-				newSnapshot("snap10", "standard", "snapcontent-snapuid4", "snapuid4", "claim2", true, nil, creationTime("2019-11-10T05:36:07Z")),
-				newSnapshot("snap11", "standard", "snapcontent-snapuid5", "snapuid5", "claim2", true, nil, creationTime("2019-12-10T05:36:07Z")),
-			},
-			objects: objs,
+			description:       "KeepWeekly & KeepMonthly",
+			policy:            v1alpha1.RetentionPolicy{KeepWeekly: 2, KeepMonthly: 2},
+			hostBackupStats:   []v1beta1.HostBackupStats{{Hostname: "pvc-1"}, {Hostname: "pvc-2"}},
+			expectedSnapshots: []string{"snap-1", "snap-2", "snap-10", "snap-11"},
+		},
+		{
+			description:       "KeepWeekly & KeepMonthly & KeepYearly",
+			policy:            v1alpha1.RetentionPolicy{KeepWeekly: 2, KeepMonthly: 3, KeepYearly: 4},
+			hostBackupStats:   []v1beta1.HostBackupStats{{Hostname: "pvc-1"}, {Hostname: "pvc-2"}},
+			expectedSnapshots: []string{"snap-1", "snap-2", "snap-3", "snap-6", "snap-8", "snap-10", "snap-11"},
 		},
 	}
 
-	for _, test := range tests {
+	for _, test := range testCases {
 		t.Run(test.description, func(t *testing.T) {
-			vsClient := vsfake.NewSimpleClientset(test.objects...)
-			err := CleanupSnapshots(test.policy, test.hostBackupStats, test.namespace, vsClient)
+			volumeSnasphots, err := getVolumeSnapshots(snapMeta)
 			if err != nil {
-				t.Errorf("Unexpected error: %s", err)
+				t.Errorf("Failed to generate VolumeSnasphots. Reason: %v", err)
 				return
 			}
-			vsList, err := vsClient.SnapshotV1alpha1().VolumeSnapshots(test.namespace).List(metav1.ListOptions{})
+			vsClient := vsfake.NewSimpleClientset(volumeSnasphots...)
+			err = CleanupSnapshots(test.policy, test.hostBackupStats, testNamespace, vsClient)
 			if err != nil {
-				t.Errorf("Unexpected error: %s", err)
+				t.Errorf("Failed to cleanup VolumeSnapshots. Reason: %v", err)
 				return
 			}
-			if len(vsList.Items) != len(test.expected) {
-				t.Errorf(cmp.Diff(len(vsList.Items), len(test.expected)))
+			vsList, err := vsClient.SnapshotV1alpha1().VolumeSnapshots(testNamespace).List(metav1.ListOptions{})
+			if err != nil {
+				t.Errorf("Failed to list remaining VolumeSnapshots. Reason: %v", err)
+				return
+			}
+			if len(test.expectedSnapshots) != len(vsList.Items) {
+				var remainingSnapshots []string
+				for i := range vsList.Items {
+					remainingSnapshots = append(remainingSnapshots, vsList.Items[i].Name)
+				}
+
+				t.Errorf("Remaining VolumeSnapshot number did not match with expected number."+
+					"\nExpected: %d"+
+					"\nFound: %d"+
+					"\nExpected Snapshots: %q"+
+					"\nRemaining Snapshots: %q", len(test.expectedSnapshots), len(vsList.Items), test.expectedSnapshots, remainingSnapshots)
 				return
 			}
 
-			for i, vs := range vsList.Items {
-				if !cmp.Equal(vs, *test.expected[i]) {
-					t.Errorf(cmp.Diff(vs, *test.expected[i]))
-					return
+			for _, vs := range vsList.Items {
+				if !strings.Contains(test.expectedSnapshots, vs.Name) {
+					t.Errorf("VolumeSnapshot %s should be deleted according to retention-policy: %s.", vs.Name, test.description)
 				}
 			}
 		})
@@ -217,28 +151,45 @@ func TestCleanupSnapshots(t *testing.T) {
 
 }
 
-func newSnapshot(name, volumeSnapshotClass, boundToContent, snapshotUID, claimName string, ready bool, err *storagev1beta1.VolumeError, creationTime time.Time) *crdv1.VolumeSnapshot {
-	snapshot := crdv1.VolumeSnapshot{
+func getVolumeSnapshots(snapMetas []snapInfo) ([]runtime.Object, error) {
+	snapshots := make([]runtime.Object, 0)
+	for i := range snapMetas {
+		snapshot, err := newSnapshot(snapMetas[i])
+		if err != nil {
+			return nil, err
+		}
+
+		snapshots = append(snapshots, snapshot)
+	}
+	return snapshots, nil
+}
+
+func newSnapshot(snapMeta snapInfo) (*crdv1.VolumeSnapshot, error) {
+	creationTimestamp, err := time.Parse(time.RFC3339, snapMeta.creationTime)
+	if err != nil {
+		return nil, err
+	}
+
+	return &crdv1.VolumeSnapshot{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            name,
-			Namespace:       testNamespace,
-			UID:             types.UID(snapshotUID),
-			ResourceVersion: "1",
-			SelfLink:        "/apis/snapshot.storage.k8s.io/v1alpha1/namespaces/" + testNamespace + "/volumesnapshots/" + name,
+			Name:              snapMeta.name,
+			Namespace:         testNamespace,
+			UID:               types.UID(snapMeta.name),
+			ResourceVersion:   "1",
+			SelfLink:          "/apis/snapshot.storage.k8s.io/v1alpha1/namespaces/" + testNamespace + "/volumesnapshots/" + snapMeta.name,
+			CreationTimestamp: metav1.Time{Time: creationTimestamp},
 		},
 		Spec: crdv1.VolumeSnapshotSpec{
-			VolumeSnapshotClassName: &volumeSnapshotClass,
-			SnapshotContentName:     boundToContent,
+			VolumeSnapshotClassName: type_util.StringP("standard"),
+			SnapshotContentName:     fmt.Sprintf("snapshot-content-%s", snapMeta.name),
+			Source: &v1.TypedLocalObjectReference{
+				Name: snapMeta.pvcName,
+				Kind: apis.KindPersistentVolumeClaim,
+			},
 		},
 		Status: crdv1.VolumeSnapshotStatus{
-			ReadyToUse: ready,
-			Error:      err,
+			ReadyToUse: true,
+			Error:      nil,
 		},
-	}
-	snapshot.Spec.Source = &v1.TypedLocalObjectReference{
-		Name: claimName,
-		Kind: "PersistentVolumeClaim",
-	}
-	snapshot.SetCreationTimestamp(metav1.Time{Time: creationTime})
-	return &snapshot
+	}, nil
 }
