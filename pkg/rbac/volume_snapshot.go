@@ -80,7 +80,7 @@ func ensureVolumeSnapshotterJobClusterRole(kubeClient kubernetes.Interface, labe
 			{
 				APIGroups: []string{crdv1.GroupName},
 				Resources: []string{"volumesnapshots", "volumesnapshotcontents", "volumesnapshotclasses"},
-				Verbs:     []string{"create", "get", "list", "watch", "patch"},
+				Verbs:     []string{"create", "get", "list", "watch", "patch", "delete"},
 			},
 		}
 		return in
