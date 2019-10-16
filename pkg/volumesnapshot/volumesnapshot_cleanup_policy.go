@@ -12,9 +12,17 @@ import (
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
-// Empty returns true if no policy has been configured (all values zero).
-func IsPolicyEmpty(policy v1alpha1.RetentionPolicy) bool {
-	if policy.KeepLast > 0 || policy.KeepHourly > 0 || policy.KeepDaily > 0 || policy.KeepMonthly > 0 || policy.KeepWeekly > 0 || policy.KeepYearly > 0 {
+// Some of the code at this file is copied from restic repository.
+// Ref: https://github.com/restic/restic/blob/604b18aa7426148a55f76307ca729e829ff6b61d/internal/restic/snapshot_policy.go#L152:6
+
+// isPolicyEmpty returns true if no policy has been configured (all values zero).
+func isPolicyEmpty(policy v1alpha1.RetentionPolicy) bool {
+	if policy.KeepLast > 0 ||
+		policy.KeepHourly > 0 ||
+		policy.KeepDaily > 0 ||
+		policy.KeepMonthly > 0 ||
+		policy.KeepWeekly > 0 ||
+		policy.KeepYearly > 0 {
 		return true
 	}
 	return false
@@ -76,7 +84,7 @@ func applyRetentionPolicy(policy v1alpha1.RetentionPolicy, volumeSnapshots Volum
 	// sorts the VolumeSnapshots according to CreationTimeStamp
 	sort.Sort(VolumeSnapshots(volumeSnapshots))
 
-	if !IsPolicyEmpty(policy) {
+	if !isPolicyEmpty(policy) {
 		return nil
 	}
 
