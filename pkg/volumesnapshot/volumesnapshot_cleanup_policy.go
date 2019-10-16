@@ -12,8 +12,8 @@ import (
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
-// Some of the code at this file is copied from restic repository.
-// Ref: https://github.com/restic/restic/blob/604b18aa7426148a55f76307ca729e829ff6b61d/internal/restic/snapshot_policy.go#L152:6
+// Some of the code of this file has been copied from restic/restic repository.
+// ref: https://github.com/restic/restic/blob/604b18aa7426148a55f76307ca729e829ff6b61d/internal/restic/snapshot_policy.go#L152:6
 
 // isPolicyEmpty returns true if no policy has been configured (all values zero).
 func isPolicyEmpty(policy v1alpha1.RetentionPolicy) bool {
