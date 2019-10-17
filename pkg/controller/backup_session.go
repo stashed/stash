@@ -14,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/reference"
 	batch_util "kmodules.xyz/client-go/batch/v1"
@@ -89,7 +90,22 @@ func (c *StashController) runBackupSessionProcessor(key string) error {
 
 	backupSession := obj.(*api_v1beta1.BackupSession)
 	glog.Infof("Sync/Add/Update for BackupSession %s", backupSession.GetName())
+	// process sync/add/update event
+	err = c.applyBackupSessionReconciliationLogic(backupSession)
+	if err != nil {
+		return err
+	}
+	// We have successfully completed respective stuffs for the current state of this resource.
+	// Hence, let's set observed generation as same as the current generation.
+	_, err = stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
+		in.ObservedGeneration = backupSession.Generation
+		return in
+	}, apis.EnableStatusSubresource)
 
+	return err
+}
+
+func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *api_v1beta1.BackupSession) error {
 	if backupSession.Status.Phase == api_v1beta1.BackupSessionFailed ||
 		backupSession.Status.Phase == api_v1beta1.BackupSessionSucceeded {
 		log.Infof("Skipping processing BackupSession %s/%s. Reason: phase is %q.", backupSession.Namespace, backupSession.Name, backupSession.Status.Phase)
@@ -342,7 +358,7 @@ func (c *StashController) setBackupSessionFailed(backupSession *api_v1beta1.Back
 		return in
 	}, apis.EnableStatusSubresource)
 	if err != nil {
-		return err
+		return errors.NewAggregate([]error{backupErr, err})
 	}
 
 	// write failure event to BackupSession
@@ -358,7 +374,7 @@ func (c *StashController) setBackupSessionFailed(backupSession *api_v1beta1.Back
 	// send backup session specific metrics
 	backupConfig, err2 := c.stashClient.StashV1beta1().BackupConfigurations(backupSession.Namespace).Get(backupSession.Spec.BackupConfiguration.Name, metav1.GetOptions{})
 	if err2 != nil {
-		return err2
+		return errors.NewAggregate([]error{backupErr, err})
 	}
 	metricsOpt := &restic.MetricsOptions{
 		Enabled:        true,
@@ -367,11 +383,12 @@ func (c *StashController) setBackupSessionFailed(backupSession *api_v1beta1.Back
 	}
 	err = metricsOpt.SendBackupSessionMetrics(c.clientConfig, backupConfig, updatedBackupSession.Status)
 	if err != nil {
-		return err
+		return errors.NewAggregate([]error{backupErr, err})
 	}
 
 	// cleanup old BackupSessions
-	return c.cleanupBackupHistory(backupConfig)
+	err = c.cleanupBackupHistory(backupConfig)
+	return errors.NewAggregate([]error{backupErr, err})
 }
 
 func (c *StashController) setBackupSessionSkipped(backupSession *api_v1beta1.BackupSession, reason string) error {

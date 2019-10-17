@@ -123,7 +123,9 @@ func (opt *options) createBackupSession() error {
 	_, _, err = v1beta1_util.CreateOrPatchBackupSession(opt.stashClient.StashV1beta1(), bsMeta, func(in *api_v1beta1.BackupSession) *api_v1beta1.BackupSession {
 		// Set BackupConfiguration  as BackupSession Owner
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
-		in.Spec.BackupConfiguration.Name = opt.backupConfigName
+		in.Spec.BackupConfiguration = &core.LocalObjectReference{
+			Name: opt.backupConfigName,
+		}
 
 		in.Labels = backupConfiguration.OffshootLabels()
 		// add BackupConfiguration name as a labels so that BackupSession controller inside sidecar can discover this BackupSession

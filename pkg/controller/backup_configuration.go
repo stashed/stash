@@ -47,77 +47,81 @@ func (c *StashController) runBackupConfigurationProcessor(key string) error {
 	}
 	if !exists {
 		glog.Warningf("BackupConfiguration %s does not exit anymore\n", key)
+		return nil
+	}
 
-	} else {
-		backupConfiguration := obj.(*api_v1beta1.BackupConfiguration)
-		glog.Infof("Sync/Add/Update for BackupConfiguration %s", backupConfiguration.GetName())
-		// check if BackupConfiguration is being deleted. if it is being deleted then delete respective resources.
-		if backupConfiguration.DeletionTimestamp != nil {
-			if core_util.HasFinalizer(backupConfiguration.ObjectMeta, api_v1beta1.StashKey) {
-				if err = c.EnsureV1beta1SidecarDeleted(backupConfiguration); err != nil {
-					ref, rerr := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
-					if rerr != nil {
-						return err
-					}
-					return c.handleWorkloadControllerTriggerFailure(ref, err)
-				}
-				if err = c.EnsureCronJobDeleted(backupConfiguration); err != nil {
-					return err
-				}
-				// Remove finalizer
-				_, _, err = v1beta1_util.PatchBackupConfiguration(c.stashClient.StashV1beta1(), backupConfiguration, func(in *api_v1beta1.BackupConfiguration) *api_v1beta1.BackupConfiguration {
-					in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, api_v1beta1.StashKey)
-					return in
+	backupConfiguration := obj.(*api_v1beta1.BackupConfiguration)
+	glog.Infof("Sync/Add/Update for BackupConfiguration %s", backupConfiguration.GetName())
+	// process syc/add/update event
+	err = c.applyBackupConfigurationReconciliationLogic(backupConfiguration)
+	if err != nil {
+		return err
+	}
 
-				})
-				if err != nil {
-					return err
+	// We have successfully completed respective stuffs for the current state of this resource.
+	// Hence, let's set observed generation as same as the current generation.
+	_, err = v1beta1_util.UpdateBackupConfigurationStatus(c.stashClient.StashV1beta1(), backupConfiguration, func(in *api_v1beta1.BackupConfigurationStatus) *api_v1beta1.BackupConfigurationStatus {
+		in.ObservedGeneration = backupConfiguration.Generation
+		return in
+	}, apis.EnableStatusSubresource)
+
+	return err
+}
+
+func (c *StashController) applyBackupConfigurationReconciliationLogic(backupConfiguration *api_v1beta1.BackupConfiguration) error {
+	// check if BackupConfiguration is being deleted. if it is being deleted then delete respective resources.
+	if backupConfiguration.DeletionTimestamp != nil {
+		if core_util.HasFinalizer(backupConfiguration.ObjectMeta, api_v1beta1.StashKey) {
+			if err := c.EnsureV1beta1SidecarDeleted(backupConfiguration); err != nil {
+				ref, rerr := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
+				if rerr != nil {
+					return errors.NewAggregate([]error{err, rerr})
 				}
+				return c.handleWorkloadControllerTriggerFailure(ref, err)
 			}
-		} else {
-			// add a finalizer so that we can remove respective resources before this BackupConfiguration is deleted
+			if err := c.EnsureCronJobDeleted(backupConfiguration); err != nil {
+				return err
+			}
+			// Remove finalizer
 			_, _, err := v1beta1_util.PatchBackupConfiguration(c.stashClient.StashV1beta1(), backupConfiguration, func(in *api_v1beta1.BackupConfiguration) *api_v1beta1.BackupConfiguration {
-				in.ObjectMeta = core_util.AddFinalizer(in.ObjectMeta, api_v1beta1.StashKey)
+				in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, api_v1beta1.StashKey)
 				return in
+
 			})
 			if err != nil {
 				return err
 			}
-
-			err = c.doStuff(backupConfiguration)
-			if err == nil {
-				_, err = v1beta1_util.UpdateBackupConfigurationStatus(c.stashClient.StashV1beta1(), backupConfiguration, func(in *api_v1beta1.BackupConfigurationStatus) *api_v1beta1.BackupConfigurationStatus {
-					in.ObservedGeneration = backupConfiguration.Generation
-					return in
-				})
-				return err
+		}
+	} else {
+		// add a finalizer so that we can remove respective resources before this BackupConfiguration is deleted
+		_, _, err := v1beta1_util.PatchBackupConfiguration(c.stashClient.StashV1beta1(), backupConfiguration, func(in *api_v1beta1.BackupConfiguration) *api_v1beta1.BackupConfiguration {
+			in.ObjectMeta = core_util.AddFinalizer(in.ObjectMeta, api_v1beta1.StashKey)
+			return in
+		})
+		if err != nil {
+			return err
+		}
+		// skip if BackupConfiguration paused
+		if backupConfiguration.Spec.Paused {
+			log.Infof("Skipping processing BackupConfiguration %s/%s. Reason: Backup Configuration is paused.", backupConfiguration.Namespace, backupConfiguration.Name)
+			return nil
+		}
+		if backupConfiguration.Spec.Target != nil &&
+			backupConfiguration.Spec.Driver != api_v1beta1.VolumeSnapshotter &&
+			util.BackupModel(backupConfiguration.Spec.Target.Ref.Kind) == util.ModelSidecar {
+			if err := c.EnsureV1beta1Sidecar(backupConfiguration); err != nil {
+				ref, rerr := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
+				if rerr != nil {
+					return errors.NewAggregate([]error{err, rerr})
+				}
+				return c.handleWorkloadControllerTriggerFailure(ref, err)
 			}
 		}
-	}
-	return nil
-}
-
-func (c *StashController) doStuff(backupConfiguration *api_v1beta1.BackupConfiguration) error {
-	// skip if BackupConfiguration paused
-	if backupConfiguration.Spec.Paused {
-		log.Infof("Skipping processing BackupConfiguration %s/%s. Reason: Backup Configuration is paused.", backupConfiguration.Namespace, backupConfiguration.Name)
-		return nil
-	}
-	if backupConfiguration.Spec.Target != nil &&
-		backupConfiguration.Spec.Driver != api_v1beta1.VolumeSnapshotter &&
-		util.BackupModel(backupConfiguration.Spec.Target.Ref.Kind) == util.ModelSidecar {
-		if err := c.EnsureV1beta1Sidecar(backupConfiguration); err != nil {
-			ref, rerr := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
-			if rerr != nil {
-				return err
-			}
-			return c.handleWorkloadControllerTriggerFailure(ref, err)
+		// create a CronJob that will create BackupSession on each schedule
+		err = c.EnsureCronJob(backupConfiguration)
+		if err != nil {
+			return c.handleCronJobCreationFailure(backupConfiguration, err)
 		}
-	}
-	// create a CronJob that will create BackupSession on each schedule
-	err := c.EnsureCronJob(backupConfiguration)
-	if err != nil {
-		return c.handleCronJobCreationFailure(backupConfiguration, err)
 	}
 	return nil
 }

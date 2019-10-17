@@ -8,6 +8,7 @@ import (
 	hashutil "k8s.io/kubernetes/pkg/util/hash"
 	crdutils "kmodules.xyz/client-go/apiextensions/v1beta1"
 	meta_util "kmodules.xyz/client-go/meta"
+	"stash.appscode.dev/stash/apis"
 )
 
 func (b BackupBatch) GetSpecHash() string {
@@ -35,9 +36,10 @@ func (b BackupBatch) CustomResourceDefinition() *apiextensions.CustomResourceDef
 		Labels: crdutils.Labels{
 			LabelsMap: map[string]string{"app": "stash"},
 		},
-		SpecDefinitionName:    "stash.appscode.dev/stash/apis/stash/v1beta1.BackupBatch",
-		EnableValidation:      true,
-		GetOpenAPIDefinitions: GetOpenAPIDefinitions,
+		SpecDefinitionName:      "stash.appscode.dev/stash/apis/stash/v1beta1.BackupBatch",
+		EnableValidation:        true,
+		GetOpenAPIDefinitions:   GetOpenAPIDefinitions,
+		EnableStatusSubresource: apis.EnableStatusSubresource,
 		AdditionalPrinterColumns: []apiextensions.CustomResourceColumnDefinition{
 			{
 				Name:     "Schedule",

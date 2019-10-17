@@ -13,6 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/tools/reference"
 	batch_util "kmodules.xyz/client-go/batch/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
@@ -85,81 +86,34 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 	if !exists {
 		glog.Warningf("RestoreSession %s does not exist anymore\n", key)
 		return nil
-	} else {
-		restoreSession := obj.(*api_v1beta1.RestoreSession)
-		glog.Infof("Sync/Add/Update for RestoreSession %s", restoreSession.GetName())
+	}
 
-		// if RestoreSession is being deleted then remove respective init-container
-		if restoreSession.DeletionTimestamp != nil {
-			// if RestoreSession has stash finalizer then respective init-container (for workloads) hasn't been removed
-			// remove respective init-container and finally remove finalizer
-			if core_util.HasFinalizer(restoreSession.ObjectMeta, api_v1beta1.StashKey) {
-				if restoreSession.Spec.Target != nil && util.BackupModel(restoreSession.Spec.Target.Ref.Kind) == util.ModelSidecar {
-					// send event to workload controller. workload controller will take care of removing restore init-container
-					err := c.sendEventToWorkloadQueue(
-						restoreSession.Spec.Target.Ref.Kind,
-						restoreSession.Namespace,
-						restoreSession.Spec.Target.Ref.Name,
-					)
-					if err != nil {
-						ref, rerr := reference.GetReference(stash_scheme.Scheme, restoreSession)
-						if rerr != nil {
-							return err
-						}
-						return c.handleWorkloadControllerTriggerFailure(ref, err)
-					}
-				}
+	restoreSession := obj.(*api_v1beta1.RestoreSession)
+	glog.Infof("Sync/Add/Update for RestoreSession %s", restoreSession.GetName())
+	// process sync/add/update event
+	err = c.applyRestoreSessionReconciliationLogic(restoreSession)
+	if err != nil {
+		return err
+	}
 
-				// remove finalizer
-				_, _, err = v1beta1_util.PatchRestoreSession(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSession) *api_v1beta1.RestoreSession {
-					in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, api_v1beta1.StashKey)
-					return in
-				})
-				if err != nil {
-					log.Errorln(err)
-					return err
-				}
-			}
-		} else {
-			// add finalizer
-			_, _, err = v1beta1_util.PatchRestoreSession(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSession) *api_v1beta1.RestoreSession {
-				in.ObjectMeta = core_util.AddFinalizer(in.ObjectMeta, api_v1beta1.StashKey)
-				return in
-			})
-			if err != nil {
-				return err
-			}
+	// We have successfully completed respective stuffs for the current state of this resource.
+	// Hence, let's set observed generation as same as the current generation.
+	_, err = stash_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
+		in.ObservedGeneration = restoreSession.Generation
+		return in
+	}, apis.EnableStatusSubresource)
 
-			if restoreSession.Status.Phase == api_v1beta1.RestoreSessionFailed ||
-				restoreSession.Status.Phase == api_v1beta1.RestoreSessionSucceeded ||
-				restoreSession.Status.Phase == api_v1beta1.RestoreSessionUnknown {
-				log.Infof("Skipping processing RestoreSession %s/%s. Reason: phase is %q.", restoreSession.Namespace, restoreSession.Name, restoreSession.Status.Phase)
-				return nil
-			}
-			// check whether restore session is completed or running and set it's phase accordingly
-			phase, err := c.getRestoreSessionPhase(restoreSession)
+	return err
+}
 
-			if phase == api_v1beta1.RestoreSessionFailed {
-				// one or more hosts has failed to complete their restore process.
-				// mark entire restore session as failure.
-				// individual hosts has updated their respective stats and has sent respective metrics.
-				// now, just set RestoreSession phase "Failed" and create an event.
-				return c.setRestoreSessionFailed(restoreSession, err)
-			} else if phase == api_v1beta1.RestoreSessionUnknown {
-				// all hosts has completed their restore process successfully.
-				// individual hosts has updated their respective stats and has sent respective metrics.
-				// now, just set RestoreSession phase "Succeeded" and create an event.
-				return c.setRestoreSessionUnknown(restoreSession, err)
-			} else if phase == api_v1beta1.RestoreSessionSucceeded {
-				return c.setRestoreSessionSucceeded(restoreSession)
-			} else if phase == api_v1beta1.RestoreSessionRunning {
-				log.Infof("Skipping processing RestoreSession %s/%s. Reason: phase is %q.", restoreSession.Namespace, restoreSession.Name, restoreSession.Status.Phase)
-				return nil
-			}
-
-			// if target is kubernetes workload i.e. Deployment, StatefulSet etc. then inject restore init-container
+func (c *StashController) applyRestoreSessionReconciliationLogic(restoreSession *api_v1beta1.RestoreSession) error {
+	// if RestoreSession is being deleted then remove respective init-container
+	if restoreSession.DeletionTimestamp != nil {
+		// if RestoreSession has stash finalizer then respective init-container (for workloads) hasn't been removed
+		// remove respective init-container and finally remove finalizer
+		if core_util.HasFinalizer(restoreSession.ObjectMeta, api_v1beta1.StashKey) {
 			if restoreSession.Spec.Target != nil && util.BackupModel(restoreSession.Spec.Target.Ref.Kind) == util.ModelSidecar {
-				// send event to workload controller. workload controller will take care of injecting restore init-container
+				// send event to workload controller. workload controller will take care of removing restore init-container
 				err := c.sendEventToWorkloadQueue(
 					restoreSession.Spec.Target.Ref.Kind,
 					restoreSession.Namespace,
@@ -168,34 +122,97 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 				if err != nil {
 					ref, rerr := reference.GetReference(stash_scheme.Scheme, restoreSession)
 					if rerr != nil {
-						return err
+						return errors.NewAggregate([]error{err, rerr})
 					}
 					return c.handleWorkloadControllerTriggerFailure(ref, err)
 				}
-				return c.setRestoreSessionRunning(restoreSession)
 			}
 
-			// target is not kubernetes workload. so, restore needs to be done using a job.
-			// if driver is VolumeSnapshotter then ensure volume restorer job
-			if restoreSession.Spec.Target != nil && restoreSession.Spec.Driver == api_v1beta1.VolumeSnapshotter {
-				err := c.ensureVolumeRestorerJob(restoreSession)
-				if err != nil {
-					return c.handleRestoreJobCreationFailure(restoreSession, err)
-				}
-				return c.setRestoreSessionRunning(restoreSession)
-			}
-
-			// Restic driver has been used. Ensure restore job.
-			err = c.ensureRestoreJob(restoreSession)
+			// remove finalizer
+			_, _, err := v1beta1_util.PatchRestoreSession(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSession) *api_v1beta1.RestoreSession {
+				in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, api_v1beta1.StashKey)
+				return in
+			})
 			if err != nil {
-				// failed to ensure restore job. set RestoreSession phase "Failed" and send prometheus metrics.
+				log.Errorln(err)
+				return err
+			}
+		}
+	} else {
+		// add finalizer
+		_, _, err := v1beta1_util.PatchRestoreSession(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSession) *api_v1beta1.RestoreSession {
+			in.ObjectMeta = core_util.AddFinalizer(in.ObjectMeta, api_v1beta1.StashKey)
+			return in
+		})
+		if err != nil {
+			return err
+		}
+
+		if restoreSession.Status.Phase == api_v1beta1.RestoreSessionFailed ||
+			restoreSession.Status.Phase == api_v1beta1.RestoreSessionSucceeded ||
+			restoreSession.Status.Phase == api_v1beta1.RestoreSessionUnknown {
+			log.Infof("Skipping processing RestoreSession %s/%s. Reason: phase is %q.", restoreSession.Namespace, restoreSession.Name, restoreSession.Status.Phase)
+			return nil
+		}
+		// check whether restore session is completed or running and set it's phase accordingly
+		phase, err := c.getRestoreSessionPhase(restoreSession)
+
+		if phase == api_v1beta1.RestoreSessionFailed {
+			// one or more hosts has failed to complete their restore process.
+			// mark entire restore session as failure.
+			// individual hosts has updated their respective stats and has sent respective metrics.
+			// now, just set RestoreSession phase "Failed" and create an event.
+			return c.setRestoreSessionFailed(restoreSession, err)
+		} else if phase == api_v1beta1.RestoreSessionUnknown {
+			// all hosts has completed their restore process successfully.
+			// individual hosts has updated their respective stats and has sent respective metrics.
+			// now, just set RestoreSession phase "Succeeded" and create an event.
+			return c.setRestoreSessionUnknown(restoreSession, err)
+		} else if phase == api_v1beta1.RestoreSessionSucceeded {
+			return c.setRestoreSessionSucceeded(restoreSession)
+		} else if phase == api_v1beta1.RestoreSessionRunning {
+			log.Infof("Skipping processing RestoreSession %s/%s. Reason: phase is %q.", restoreSession.Namespace, restoreSession.Name, restoreSession.Status.Phase)
+			return nil
+		}
+
+		// if target is kubernetes workload i.e. Deployment, StatefulSet etc. then inject restore init-container
+		if restoreSession.Spec.Target != nil && util.BackupModel(restoreSession.Spec.Target.Ref.Kind) == util.ModelSidecar {
+			// send event to workload controller. workload controller will take care of injecting restore init-container
+			err := c.sendEventToWorkloadQueue(
+				restoreSession.Spec.Target.Ref.Kind,
+				restoreSession.Namespace,
+				restoreSession.Spec.Target.Ref.Name,
+			)
+			if err != nil {
+				ref, rerr := reference.GetReference(stash_scheme.Scheme, restoreSession)
+				if rerr != nil {
+					return err
+				}
+				return c.handleWorkloadControllerTriggerFailure(ref, err)
+			}
+			return c.setRestoreSessionRunning(restoreSession)
+		}
+
+		// target is not kubernetes workload. so, restore needs to be done using a job.
+		// if driver is VolumeSnapshotter then ensure volume restorer job
+		if restoreSession.Spec.Target != nil && restoreSession.Spec.Driver == api_v1beta1.VolumeSnapshotter {
+			err := c.ensureVolumeRestorerJob(restoreSession)
+			if err != nil {
 				return c.handleRestoreJobCreationFailure(restoreSession, err)
 			}
-
-			// restore job has been created successfully. set RestoreSession phase to "Running"
 			return c.setRestoreSessionRunning(restoreSession)
-
 		}
+
+		// Restic driver has been used. Ensure restore job.
+		err = c.ensureRestoreJob(restoreSession)
+		if err != nil {
+			// failed to ensure restore job. set RestoreSession phase "Failed" and send prometheus metrics.
+			return c.handleRestoreJobCreationFailure(restoreSession, err)
+		}
+
+		// restore job has been created successfully. set RestoreSession phase to "Running"
+		return c.setRestoreSessionRunning(restoreSession)
+
 	}
 	return nil
 }
@@ -566,7 +583,7 @@ func (c *StashController) setRestoreSessionFailed(restoreSession *api_v1beta1.Re
 		return in
 	}, apis.EnableStatusSubresource)
 	if err != nil {
-		return err
+		return errors.NewAggregate([]error{restoreErr, err})
 	}
 
 	// write failure event
@@ -585,7 +602,8 @@ func (c *StashController) setRestoreSessionFailed(restoreSession *api_v1beta1.Re
 		PushgatewayURL: util.PushgatewayLocalURL,
 		JobName:        PromJobRestoreSessionController,
 	}
-	return metricsOpt.SendRestoreSessionMetrics(c.clientConfig, updatedRestoreSession)
+	err = metricsOpt.SendRestoreSessionMetrics(c.clientConfig, updatedRestoreSession)
+	return errors.NewAggregate([]error{restoreErr, err})
 }
 
 func (c *StashController) setRestoreSessionUnknown(restoreSession *api_v1beta1.RestoreSession, restoreErr error) error {
@@ -596,7 +614,7 @@ func (c *StashController) setRestoreSessionUnknown(restoreSession *api_v1beta1.R
 		return in
 	}, apis.EnableStatusSubresource)
 	if err != nil {
-		return err
+		return errors.NewAggregate([]error{restoreErr, err})
 	}
 
 	// write failure event
@@ -608,7 +626,7 @@ func (c *StashController) setRestoreSessionUnknown(restoreSession *api_v1beta1.R
 		eventer.EventReasonRestorePhaseUnknown,
 		fmt.Sprintf("Restore session phase is unknown. Reason: %v", restoreErr),
 	)
-	return err
+	return errors.NewAggregate([]error{restoreErr, err})
 }
 
 func (c *StashController) getRestoreSessionPhase(restoreSession *api_v1beta1.RestoreSession) (api_v1beta1.RestoreSessionPhase, error) {

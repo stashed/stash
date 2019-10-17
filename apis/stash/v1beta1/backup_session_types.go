@@ -58,7 +58,7 @@ const (
 )
 
 type BackupSessionStatus struct {
-	// observedGeneration is the most recent generation observed for this BackupSession. It corresponds to the
+	// ObservedGeneration is the most recent generation observed for this BackupSession. It corresponds to the
 	// BackupSession's generation, which is updated on mutation by the API Server.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`

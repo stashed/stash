@@ -18,6 +18,7 @@ const (
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:path=backupbatches,singular=backupbatch,categories={stash,appscode,all}
+// +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Schedule",type="string",JSONPath=".spec.schedule"
 // +kubebuilder:printcolumn:name="Paused",type="boolean",JSONPath=".spec.paused"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
@@ -60,7 +61,7 @@ type BackupBatchSpec struct {
 }
 
 type BackupBatchStatus struct {
-	// observedGeneration is the most recent generation observed for this BackupBatch. It corresponds to the
+	// ObservedGeneration is the most recent generation observed for this BackupBatch. It corresponds to the
 	// BackupBatch's generation, which is updated on mutation by the API Server.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
