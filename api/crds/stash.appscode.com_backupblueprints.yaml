@@ -1647,6 +1647,8 @@ spec:
                       type: string
                     prefix:
                       type: string
+                    region:
+                      type: string
                   type: object
                 storageSecretName:
                   type: string
@@ -3905,15 +3907,6 @@ spec:
               type: boolean
           required:
           - retentionPolicy
-          type: object
-        status:
-          properties:
-            observedGeneration:
-              description: observedGeneration is the most recent generation observed
-                for this StatefulSet. It corresponds to the StatefulSet's generation,
-                which is updated on mutation by the API Server.
-              format: int64
-              type: integer
           type: object
       type: object
   versions:

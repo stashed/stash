@@ -358,7 +358,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupBlueprint":                 schema_stash_apis_stash_v1beta1_BackupBlueprint(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupBlueprintList":             schema_stash_apis_stash_v1beta1_BackupBlueprintList(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupBlueprintSpec":             schema_stash_apis_stash_v1beta1_BackupBlueprintSpec(ref),
-		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupBlueprintStatus":           schema_stash_apis_stash_v1beta1_BackupBlueprintStatus(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfiguration":             schema_stash_apis_stash_v1beta1_BackupConfiguration(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationList":         schema_stash_apis_stash_v1beta1_BackupConfigurationList(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationSpec":         schema_stash_apis_stash_v1beta1_BackupConfigurationSpec(ref),
@@ -15263,6 +15262,12 @@ func schema_kmodulesxyz_objectstore_api_api_v1_S3Spec(ref common.ReferenceCallba
 							Format: "",
 						},
 					},
+					"region": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 				},
 			},
 		},
@@ -16187,16 +16192,11 @@ func schema_stash_apis_stash_v1beta1_BackupBlueprint(ref common.ReferenceCallbac
 							Ref: ref("stash.appscode.dev/stash/apis/stash/v1beta1.BackupBlueprintSpec"),
 						},
 					},
-					"status": {
-						SchemaProps: spec.SchemaProps{
-							Ref: ref("stash.appscode.dev/stash/apis/stash/v1beta1.BackupBlueprintStatus"),
-						},
-					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupBlueprintSpec", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupBlueprintStatus"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupBlueprintSpec"},
 	}
 }
 
@@ -16313,25 +16313,6 @@ func schema_stash_apis_stash_v1beta1_BackupBlueprintSpec(ref common.ReferenceCal
 		},
 		Dependencies: []string{
 			"k8s.io/api/core/v1.PersistentVolumeClaim", "kmodules.xyz/objectstore-api/api/v1.Backend", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/stash/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/stash/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/stash/apis/stash/v1beta1.TaskRef"},
-	}
-}
-
-func schema_stash_apis_stash_v1beta1_BackupBlueprintStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"observedGeneration": {
-						SchemaProps: spec.SchemaProps{
-							Description: "observedGeneration is the most recent generation observed for this StatefulSet. It corresponds to the StatefulSet's generation, which is updated on mutation by the API Server.",
-							Type:        []string{"integer"},
-							Format:      "int64",
-						},
-					},
-				},
-			},
-		},
 	}
 }
 

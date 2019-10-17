@@ -9456,9 +9456,6 @@
         },
         "spec": {
           "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.BackupBlueprintSpec"
-        },
-        "status": {
-          "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.BackupBlueprintStatus"
         }
       },
       "x-kubernetes-group-version-kind": [
@@ -9539,16 +9536,6 @@
         "wipeOut": {
           "description": "If true, delete respective restic repository",
           "type": "boolean"
-        }
-      }
-    },
-    "dev.appscode.stash.stash.apis.stash.v1beta1.BackupBlueprintStatus": {
-      "type": "object",
-      "properties": {
-        "observedGeneration": {
-          "description": "observedGeneration is the most recent generation observed for this StatefulSet. It corresponds to the StatefulSet's generation, which is updated on mutation by the API Server.",
-          "type": "integer",
-          "format": "int64"
         }
       }
     },
@@ -13423,6 +13410,9 @@
           "type": "string"
         },
         "prefix": {
+          "type": "string"
+        },
+        "region": {
           "type": "string"
         }
       }
