@@ -1,7 +1,6 @@
 package v1alpha1
 
 import (
-	"github.com/appscode/go/encoding/json/types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	store "kmodules.xyz/objectstore-api/api/v1"
 )
@@ -40,10 +39,10 @@ type RepositorySpec struct {
 }
 
 type RepositoryStatus struct {
-	// observedGeneration is the most recent generation observed for this resource. It corresponds to the
-	// resource's generation, which is updated on mutation by the API Server.
+	// ObservedGeneration is the most recent generation observed for this Repository. It corresponds to the
+	// Repository's generation, which is updated on mutation by the API Server.
 	// +optional
-	ObservedGeneration *types.IntHash `json:"observedGeneration,omitempty"`
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 	// FirstBackupTime indicates the timestamp when the first backup was taken
 	FirstBackupTime *metav1.Time `json:"firstBackupTime,omitempty"`
 	// LastBackupTime indicates the timestamp when the latest backup was taken

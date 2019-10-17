@@ -9140,8 +9140,9 @@
           "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Time"
         },
         "observedGeneration": {
-          "description": "observedGeneration is the most recent generation observed for this resource. It corresponds to the resource's generation, which is updated on mutation by the API Server.",
-          "$ref": "#/definitions/com.github.appscode.go.encoding.json.types.IntHash"
+          "description": "ObservedGeneration is the most recent generation observed for this Repository. It corresponds to the Repository's generation, which is updated on mutation by the API Server.",
+          "type": "integer",
+          "format": "int64"
         },
         "size": {
           "description": "Size show size of repository after last backup",
