@@ -103,6 +103,19 @@ func (m *IntHash) Equal(u *IntHash) bool {
 	return false
 }
 
+func (m *IntHash) MatchGeneration(u *IntHash) bool {
+	if m == nil {
+		return u == nil
+	}
+	if u == nil { // t != nil
+		return false
+	}
+	if m == u {
+		return true
+	}
+	return m.generation == u.generation
+}
+
 func (m *IntHash) DeepCopyInto(out *IntHash) {
 	*out = *m
 }

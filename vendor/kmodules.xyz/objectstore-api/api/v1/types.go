@@ -5,40 +5,62 @@ import (
 )
 
 const (
-	AWS_ACCESS_KEY_ID     = "AWS_ACCESS_KEY_ID"
+	// Deprecated: Use kmodules.xyz/constants/aws
+	AWS_ACCESS_KEY_ID = "AWS_ACCESS_KEY_ID"
+	// Deprecated: Use kmodules.xyz/constants/aws
 	AWS_SECRET_ACCESS_KEY = "AWS_SECRET_ACCESS_KEY"
-	CA_CERT_DATA          = "CA_CERT_DATA"
+	// Deprecated: Use kmodules.xyz/constants/aws
+	CA_CERT_DATA = "CA_CERT_DATA"
 
-	GOOGLE_PROJECT_ID               = "GOOGLE_PROJECT_ID"
+	// Deprecated: Use kmodules.xyz/constants/google
+	GOOGLE_PROJECT_ID = "GOOGLE_PROJECT_ID"
+	// Deprecated: Use kmodules.xyz/constants/google
 	GOOGLE_SERVICE_ACCOUNT_JSON_KEY = "GOOGLE_SERVICE_ACCOUNT_JSON_KEY"
-	GOOGLE_APPLICATION_CREDENTIALS  = "GOOGLE_APPLICATION_CREDENTIALS"
+	// Deprecated: Use kmodules.xyz/constants/google
+	GOOGLE_APPLICATION_CREDENTIALS = "GOOGLE_APPLICATION_CREDENTIALS"
 
+	// Deprecated: Use kmodules.xyz/constants/azure
 	AZURE_ACCOUNT_NAME = "AZURE_ACCOUNT_NAME"
-	AZURE_ACCOUNT_KEY  = "AZURE_ACCOUNT_KEY"
+	// Deprecated: Use kmodules.xyz/constants/azure
+	AZURE_ACCOUNT_KEY = "AZURE_ACCOUNT_KEY"
 
 	// swift
-	OS_USERNAME    = "OS_USERNAME"
-	OS_PASSWORD    = "OS_PASSWORD"
+	// Deprecated: Use kmodules.xyz/constants/openstack
+	OS_USERNAME = "OS_USERNAME"
+	// Deprecated: Use kmodules.xyz/constants/openstack
+	OS_PASSWORD = "OS_PASSWORD"
+	// Deprecated: Use kmodules.xyz/constants/openstack
 	OS_REGION_NAME = "OS_REGION_NAME"
-	OS_AUTH_URL    = "OS_AUTH_URL"
+	// Deprecated: Use kmodules.xyz/constants/openstack
+	OS_AUTH_URL = "OS_AUTH_URL"
 
 	// v3 specific
-	OS_USER_DOMAIN_NAME    = "OS_USER_DOMAIN_NAME"
-	OS_PROJECT_NAME        = "OS_PROJECT_NAME"
+	// Deprecated: Use kmodules.xyz/constants/openstack
+	OS_USER_DOMAIN_NAME = "OS_USER_DOMAIN_NAME"
+	// Deprecated: Use kmodules.xyz/constants/openstack
+	OS_PROJECT_NAME = "OS_PROJECT_NAME"
+	// Deprecated: Use kmodules.xyz/constants/openstack
 	OS_PROJECT_DOMAIN_NAME = "OS_PROJECT_DOMAIN_NAME"
 
 	// v2 specific
-	OS_TENANT_ID   = "OS_TENANT_ID"
+	// Deprecated: Use kmodules.xyz/constants/openstack
+	OS_TENANT_ID = "OS_TENANT_ID"
+	// Deprecated: Use kmodules.xyz/constants/openstack
 	OS_TENANT_NAME = "OS_TENANT_NAME"
 
 	// v1 specific
+	// Deprecated: Use kmodules.xyz/constants/openstack
 	ST_AUTH = "ST_AUTH"
+	// Deprecated: Use kmodules.xyz/constants/openstack
 	ST_USER = "ST_USER"
-	ST_KEY  = "ST_KEY"
+	// Deprecated: Use kmodules.xyz/constants/openstack
+	ST_KEY = "ST_KEY"
 
 	// Manual authentication
+	// Deprecated: Use kmodules.xyz/constants/openstack
 	OS_STORAGE_URL = "OS_STORAGE_URL"
-	OS_AUTH_TOKEN  = "OS_AUTH_TOKEN"
+	// Deprecated: Use kmodules.xyz/constants/openstack
+	OS_AUTH_TOKEN = "OS_AUTH_TOKEN"
 )
 
 type Backend struct {
@@ -63,6 +85,7 @@ type S3Spec struct {
 	Endpoint string `json:"endpoint,omitempty"`
 	Bucket   string `json:"bucket,omitempty"`
 	Prefix   string `json:"prefix,omitempty"`
+	Region   string `json:"region,omitempty"`
 }
 
 type GCSSpec struct {

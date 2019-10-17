@@ -1,11 +1,8 @@
 package v1
 
 import (
-	"io/ioutil"
-	"log"
 	"net/url"
 
-	"github.com/appscode/go/os"
 	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
 )
@@ -135,73 +132,4 @@ func (backend Backend) Endpoint() (string, bool) {
 		return backend.Rest.URL, true
 	}
 	return "", false
-}
-
-const (
-	GCPSACredentialJson = "sa.json"
-)
-
-func GoogleServiceAccountFromEnv() string {
-	if data := os.Getenv(GOOGLE_SERVICE_ACCOUNT_JSON_KEY); len(data) > 0 {
-		return data
-	}
-	if data, err := ioutil.ReadFile(os.Getenv(GOOGLE_APPLICATION_CREDENTIALS)); err == nil {
-		return string(data)
-	}
-	log.Println("GOOGLE_SERVICE_ACCOUNT_JSON_KEY and GOOGLE_APPLICATION_CREDENTIALS are empty")
-	return ""
-}
-
-func GoogleCredentialsFromEnv() map[string][]byte {
-	sa := GoogleServiceAccountFromEnv()
-	if len(sa) == 0 {
-		return map[string][]byte{}
-	}
-	return map[string][]byte{
-		GCPSACredentialJson: []byte(sa),
-	}
-}
-
-const (
-	AzureClientSecret   = "client-secret"
-	AzureSubscriptionID = "subscription-id"
-	AzureTenantID       = "tenant-id"
-	AzureClientID       = "client-id"
-)
-
-func AzureCredentialsFromEnv() map[string][]byte {
-	subscriptionID := os.Getenv("AZURE_SUBSCRIPTION_ID")
-	tenantID := os.Getenv("AZURE_TENANT_ID")
-	clientID := os.Getenv("AZURE_CLIENT_ID")
-	clientSecret := os.Getenv("AZURE_CLIENT_SECRET")
-	if len(subscriptionID) == 0 || len(tenantID) == 0 || len(clientID) == 0 || len(clientSecret) == 0 {
-		log.Println("Azure credentials for empty")
-		return map[string][]byte{}
-	}
-
-	return map[string][]byte{
-		AzureSubscriptionID: []byte(subscriptionID),
-		AzureTenantID:       []byte(tenantID),
-		AzureClientID:       []byte(clientID),
-		AzureClientSecret:   []byte(clientSecret),
-	}
-}
-
-const (
-	AWSCredentialAccessKeyKey = "access_key"
-	AWSCredentialSecretKeyKey = "secret_key"
-)
-
-func AWSCredentialsFromEnv() map[string][]byte {
-	awsAccessKeyId := os.Getenv("AWS_ACCESS_KEY_ID")
-	awsSecretAccessKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
-	if len(awsAccessKeyId) == 0 || len(awsSecretAccessKey) == 0 {
-		log.Println("AWS credentials for empty")
-		return map[string][]byte{}
-	}
-
-	return map[string][]byte{
-		AWSCredentialAccessKeyKey: []byte(awsAccessKeyId),
-		AWSCredentialSecretKeyKey: []byte(awsSecretAccessKey),
-	}
 }
