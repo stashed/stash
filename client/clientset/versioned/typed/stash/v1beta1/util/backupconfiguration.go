@@ -5,6 +5,7 @@ import (
 
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/golang/glog"
+	"github.com/pkg/errors"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -77,5 +78,58 @@ func TryUpdateBackupConfiguration(c cs.StashV1beta1Interface, meta metav1.Object
 	if err != nil {
 		err = fmt.Errorf("failed to update BackupConfiguration %s/%s after %d attempts due to %v", meta.Namespace, meta.Name, attempt, err)
 	}
+	return
+}
+
+func UpdateBackupConfigurationStatus(
+	c cs.StashV1beta1Interface,
+	in *api.BackupConfiguration,
+	transform func(*api.BackupConfigurationStatus) *api.BackupConfigurationStatus,
+	useSubresource ...bool,
+) (result *api.BackupConfiguration, err error) {
+	if len(useSubresource) > 1 {
+		return nil, errors.Errorf("invalid value passed for useSubresource: %v", useSubresource)
+	}
+	apply := func(x *api.BackupConfiguration) *api.BackupConfiguration {
+		out := &api.BackupConfiguration{
+			TypeMeta:   x.TypeMeta,
+			ObjectMeta: x.ObjectMeta,
+			Spec:       x.Spec,
+			Status:     *transform(in.Status.DeepCopy()),
+		}
+		return out
+	}
+
+	if len(useSubresource) == 1 && useSubresource[0] {
+		attempt := 0
+		cur := in.DeepCopy()
+		err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
+			attempt++
+			var e2 error
+			result, e2 = c.BackupConfigurations(in.Namespace).UpdateStatus(apply(cur))
+			if kerr.IsConflict(e2) {
+				latest, e3 := c.BackupConfigurations(in.Namespace).Get(in.Name, metav1.GetOptions{})
+				switch {
+				case e3 == nil:
+					cur = latest
+					return false, nil
+				case kutil.IsRequestRetryable(e3):
+					return false, nil
+				default:
+					return false, e3
+				}
+			} else if err != nil && !kutil.IsRequestRetryable(e2) {
+				return false, e2
+			}
+			return e2 == nil, nil
+		})
+
+		if err != nil {
+			err = fmt.Errorf("failed to update status of BackupConfiguration %s/%s after %d attempts due to %v", in.Namespace, in.Name, attempt, err)
+		}
+		return
+	}
+
+	result, _, err = PatchBackupConfigurationObject(c, in, apply(in))
 	return
 }

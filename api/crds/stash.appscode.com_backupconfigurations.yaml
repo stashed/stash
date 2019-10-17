@@ -2927,8 +2927,8 @@ spec:
           properties:
             observedGeneration:
               description: observedGeneration is the most recent generation observed
-                for this StatefulSet. It corresponds to the StatefulSet's generation,
-                which is updated on mutation by the API Server.
+                for this BackupConfiguration. It corresponds to the BackupConfiguration's
+                generation, which is updated on mutation by the API Server.
               format: int64
               type: integer
           type: object

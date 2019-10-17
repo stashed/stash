@@ -106,8 +106,8 @@ const (
 )
 
 type RestoreSessionStatus struct {
-	// observedGeneration is the most recent generation observed for this StatefulSet. It corresponds to the
-	// StatefulSet's generation, which is updated on mutation by the API Server.
+	// observedGeneration is the most recent generation observed for this RestoreSession. It corresponds to the
+	// RestoreSession's generation, which is updated on mutation by the API Server.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 	// Phase indicates the overall phase of the restore process for this RestoreSession. Phase will be "Succeeded" only if

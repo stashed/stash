@@ -117,8 +117,8 @@ const (
 )
 
 type BackupConfigurationStatus struct {
-	// observedGeneration is the most recent generation observed for this StatefulSet. It corresponds to the
-	// StatefulSet's generation, which is updated on mutation by the API Server.
+	// observedGeneration is the most recent generation observed for this BackupConfiguration. It corresponds to the
+	// BackupConfiguration's generation, which is updated on mutation by the API Server.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }

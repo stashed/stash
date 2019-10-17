@@ -60,8 +60,8 @@ type BackupBatchSpec struct {
 }
 
 type BackupBatchStatus struct {
-	// observedGeneration is the most recent generation observed for this StatefulSet. It corresponds to the
-	// StatefulSet's generation, which is updated on mutation by the API Server.
+	// observedGeneration is the most recent generation observed for this BackupBatch. It corresponds to the
+	// BackupBatch's generation, which is updated on mutation by the API Server.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }

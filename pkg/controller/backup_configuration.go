@@ -10,6 +10,7 @@ import (
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/reference"
 	batch_util "kmodules.xyz/client-go/batch/v1beta1"
@@ -83,29 +84,40 @@ func (c *StashController) runBackupConfigurationProcessor(key string) error {
 				return err
 			}
 
-			// skip if BackupConfiguration paused
-			if backupConfiguration.Spec.Paused {
-				log.Infof("Skipping processing BackupConfiguration %s/%s. Reason: Backup Configuration is paused.", backupConfiguration.Namespace, backupConfiguration.Name)
-				return nil
-			}
-
-			if backupConfiguration.Spec.Target != nil &&
-				backupConfiguration.Spec.Driver != api_v1beta1.VolumeSnapshotter &&
-				util.BackupModel(backupConfiguration.Spec.Target.Ref.Kind) == util.ModelSidecar {
-				if err := c.EnsureV1beta1Sidecar(backupConfiguration); err != nil {
-					ref, rerr := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
-					if rerr != nil {
-						return err
-					}
-					return c.handleWorkloadControllerTriggerFailure(ref, err)
-				}
-			}
-			// create a CronJob that will create BackupSession on each schedule
-			err = c.EnsureCronJob(backupConfiguration)
-			if err != nil {
-				return c.handleCronJobCreationFailure(backupConfiguration, err)
+			err = c.doStuff(backupConfiguration)
+			if err == nil {
+				_, err = v1beta1_util.UpdateBackupConfigurationStatus(c.stashClient.StashV1beta1(), backupConfiguration, func(in *api_v1beta1.BackupConfigurationStatus) *api_v1beta1.BackupConfigurationStatus {
+					in.ObservedGeneration = backupConfiguration.Generation
+					return in
+				})
+				return err
 			}
 		}
+	}
+	return nil
+}
+
+func (c *StashController) doStuff(backupConfiguration *api_v1beta1.BackupConfiguration) error {
+	// skip if BackupConfiguration paused
+	if backupConfiguration.Spec.Paused {
+		log.Infof("Skipping processing BackupConfiguration %s/%s. Reason: Backup Configuration is paused.", backupConfiguration.Namespace, backupConfiguration.Name)
+		return nil
+	}
+	if backupConfiguration.Spec.Target != nil &&
+		backupConfiguration.Spec.Driver != api_v1beta1.VolumeSnapshotter &&
+		util.BackupModel(backupConfiguration.Spec.Target.Ref.Kind) == util.ModelSidecar {
+		if err := c.EnsureV1beta1Sidecar(backupConfiguration); err != nil {
+			ref, rerr := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
+			if rerr != nil {
+				return err
+			}
+			return c.handleWorkloadControllerTriggerFailure(ref, err)
+		}
+	}
+	// create a CronJob that will create BackupSession on each schedule
+	err := c.EnsureCronJob(backupConfiguration)
+	if err != nil {
+		return c.handleCronJobCreationFailure(backupConfiguration, err)
 	}
 	return nil
 }
@@ -315,7 +327,7 @@ func (c *StashController) handleCronJobCreationFailure(backupConfig *api_v1beta1
 		eventer.EventReasonCronJobCreationFailed,
 		fmt.Sprintf("failed to ensure CronJob for BackupConfiguration  %s/%s. Reason: %v", backupConfig.Namespace, backupConfig.Name, err),
 	)
-	return err2
+	return errors.NewAggregate([]error{err, err2})
 }
 
 func (c *StashController) handleWorkloadControllerTriggerFailure(ref *core.ObjectReference, err error) error {
@@ -338,5 +350,5 @@ func (c *StashController) handleWorkloadControllerTriggerFailure(ref *core.Objec
 		eventer.EventReasonWorkloadControllerTriggeringFailed,
 		fmt.Sprintf("failed to trigger workload controller for %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err),
 	)
-	return err2
+	return errors.NewAggregate([]error{err, err2})
 }

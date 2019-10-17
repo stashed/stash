@@ -9434,7 +9434,7 @@
       "type": "object",
       "properties": {
         "observedGeneration": {
-          "description": "observedGeneration is the most recent generation observed for this StatefulSet. It corresponds to the StatefulSet's generation, which is updated on mutation by the API Server.",
+          "description": "observedGeneration is the most recent generation observed for this BackupBatch. It corresponds to the BackupBatch's generation, which is updated on mutation by the API Server.",
           "type": "integer",
           "format": "int64"
         }
@@ -9658,7 +9658,7 @@
       "type": "object",
       "properties": {
         "observedGeneration": {
-          "description": "observedGeneration is the most recent generation observed for this StatefulSet. It corresponds to the StatefulSet's generation, which is updated on mutation by the API Server.",
+          "description": "observedGeneration is the most recent generation observed for this BackupConfiguration. It corresponds to the BackupConfiguration's generation, which is updated on mutation by the API Server.",
           "type": "integer",
           "format": "int64"
         }
@@ -9809,7 +9809,7 @@
       "type": "object",
       "properties": {
         "observedGeneration": {
-          "description": "observedGeneration is the most recent generation observed for this StatefulSet. It corresponds to the StatefulSet's generation, which is updated on mutation by the API Server.",
+          "description": "observedGeneration is the most recent generation observed for this BackupSession. It corresponds to the BackupSession's generation, which is updated on mutation by the API Server.",
           "type": "integer",
           "format": "int64"
         },
@@ -10221,7 +10221,7 @@
       "type": "object",
       "properties": {
         "observedGeneration": {
-          "description": "observedGeneration is the most recent generation observed for this StatefulSet. It corresponds to the StatefulSet's generation, which is updated on mutation by the API Server.",
+          "description": "observedGeneration is the most recent generation observed for this RestoreSession. It corresponds to the RestoreSession's generation, which is updated on mutation by the API Server.",
           "type": "integer",
           "format": "int64"
         },
