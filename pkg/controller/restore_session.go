@@ -101,7 +101,7 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 	_, err = stash_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
 		in.ObservedGeneration = restoreSession.Generation
 		return in
-	}, apis.EnableStatusSubresource)
+	}, true)
 
 	return err
 }
@@ -411,7 +411,7 @@ func (c *StashController) resolveRestoreTask(restoreSession *api_v1beta1.Restore
 	implicitInputs := core_util.UpsertMap(repoInputs, rsInputs)
 	implicitInputs[apis.Namespace] = restoreSession.Namespace
 	implicitInputs[apis.RestoreSession] = restoreSession.Name
-	implicitInputs[apis.StatusSubresourceEnabled] = fmt.Sprint(apis.EnableStatusSubresource)
+	implicitInputs[apis.StatusSubresourceEnabled] = fmt.Sprint(true)
 
 	taskResolver := resolve.TaskResolver{
 		StashClient:     c.stashClient,
@@ -523,7 +523,7 @@ func (c *StashController) setRestoreSessionRunning(restoreSession *api_v1beta1.R
 		in.Phase = api_v1beta1.RestoreSessionRunning
 		in.TotalHosts = totalHosts
 		return in
-	}, apis.EnableStatusSubresource)
+	}, true)
 	if err != nil {
 		return err
 	}
@@ -551,7 +551,7 @@ func (c *StashController) setRestoreSessionSucceeded(restoreSession *api_v1beta1
 		in.Phase = api_v1beta1.RestoreSessionSucceeded
 		in.SessionDuration = sessionDuration.String()
 		return in
-	}, apis.EnableStatusSubresource)
+	}, true)
 	if err != nil {
 		return err
 	}
@@ -581,7 +581,7 @@ func (c *StashController) setRestoreSessionFailed(restoreSession *api_v1beta1.Re
 	updatedRestoreSession, err := v1beta1_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
 		in.Phase = api_v1beta1.RestoreSessionFailed
 		return in
-	}, apis.EnableStatusSubresource)
+	}, true)
 	if err != nil {
 		return errors.NewAggregate([]error{restoreErr, err})
 	}
@@ -612,7 +612,7 @@ func (c *StashController) setRestoreSessionUnknown(restoreSession *api_v1beta1.R
 	_, err := v1beta1_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
 		in.Phase = api_v1beta1.RestoreSessionUnknown
 		return in
-	}, apis.EnableStatusSubresource)
+	}, true)
 	if err != nil {
 		return errors.NewAggregate([]error{restoreErr, err})
 	}

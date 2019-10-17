@@ -10,7 +10,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/reference"
-	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/client/clientset/versioned/scheme"
 	cs "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1"
@@ -65,7 +64,7 @@ func (c *Controller) Run() {
 		stash_util.UpdateRecoveryStatus(c.stashClient, recovery, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 			in.Phase = api.RecoveryFailed
 			return in
-		}, apis.EnableStatusSubresource)
+		}, true)
 		ref, rerr := reference.GetReference(scheme.Scheme, recovery)
 		if rerr == nil {
 			eventer.CreateEventWithLog(
@@ -87,7 +86,7 @@ func (c *Controller) Run() {
 		stash_util.UpdateRecoveryStatus(c.stashClient, recovery, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 			in.Phase = api.RecoveryFailed
 			return in
-		}, apis.EnableStatusSubresource)
+		}, true)
 		ref, rerr := reference.GetReference(scheme.Scheme, recovery)
 		if rerr == nil {
 			eventer.CreateEventWithLog(
@@ -109,7 +108,7 @@ func (c *Controller) Run() {
 		in.Phase = api.RecoverySucceeded
 		// TODO: status.Stats
 		return in
-	}, apis.EnableStatusSubresource)
+	}, true)
 	ref, rerr := reference.GetReference(scheme.Scheme, recovery)
 	if rerr == nil {
 		eventer.CreateEventWithLog(

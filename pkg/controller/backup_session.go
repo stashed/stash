@@ -100,7 +100,7 @@ func (c *StashController) runBackupSessionProcessor(key string) error {
 	_, err = stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 		in.ObservedGeneration = backupSession.Generation
 		return in
-	}, apis.EnableStatusSubresource)
+	}, true)
 
 	return err
 }
@@ -249,7 +249,7 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 	implicitInputs := core_util.UpsertMap(repoInputs, bcInputs)
 	implicitInputs[apis.Namespace] = backupSession.Namespace
 	implicitInputs[apis.BackupSession] = backupSession.Name
-	implicitInputs[apis.StatusSubresourceEnabled] = fmt.Sprint(apis.EnableStatusSubresource)
+	implicitInputs[apis.StatusSubresourceEnabled] = fmt.Sprint(true)
 
 	taskResolver := resolve.TaskResolver{
 		StashClient:     c.stashClient,
@@ -356,7 +356,7 @@ func (c *StashController) setBackupSessionFailed(backupSession *api_v1beta1.Back
 	updatedBackupSession, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 		in.Phase = api_v1beta1.BackupSessionFailed
 		return in
-	}, apis.EnableStatusSubresource)
+	}, true)
 	if err != nil {
 		return errors.NewAggregate([]error{backupErr, err})
 	}
@@ -396,7 +396,7 @@ func (c *StashController) setBackupSessionSkipped(backupSession *api_v1beta1.Bac
 	_, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 		in.Phase = api_v1beta1.BackupSessionSkipped
 		return in
-	}, apis.EnableStatusSubresource)
+	}, true)
 	if err != nil {
 		return err
 	}
@@ -434,7 +434,7 @@ func (c *StashController) setBackupSessionRunning(backupSession *api_v1beta1.Bac
 		in.Phase = api_v1beta1.BackupSessionRunning
 		in.TotalHosts = totalHosts
 		return in
-	}, apis.EnableStatusSubresource)
+	}, true)
 	if err != nil {
 		return err
 	}
@@ -461,7 +461,7 @@ func (c *StashController) setBackupSessionSucceeded(backupSession *api_v1beta1.B
 		in.Phase = api_v1beta1.BackupSessionSucceeded
 		in.SessionDuration = sessionDuration.String()
 		return in
-	}, apis.EnableStatusSubresource)
+	}, true)
 	if err != nil {
 		return err
 	}

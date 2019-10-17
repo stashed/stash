@@ -3,7 +3,6 @@ package v1alpha1
 import (
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	crdutils "kmodules.xyz/client-go/apiextensions/v1beta1"
-	"stash.appscode.dev/stash/apis"
 )
 
 func (c Recovery) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
@@ -28,7 +27,7 @@ func (c Recovery) CustomResourceDefinition() *apiextensions.CustomResourceDefini
 		SpecDefinitionName:      "stash.appscode.dev/stash/apis/stash/v1alpha1.Recovery",
 		EnableValidation:        true,
 		GetOpenAPIDefinitions:   GetOpenAPIDefinitions,
-		EnableStatusSubresource: apis.EnableStatusSubresource,
+		EnableStatusSubresource: true,
 		AdditionalPrinterColumns: []apiextensions.CustomResourceColumnDefinition{
 			{
 				Name:     "Repository-NS",

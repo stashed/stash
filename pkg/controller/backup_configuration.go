@@ -63,7 +63,7 @@ func (c *StashController) runBackupConfigurationProcessor(key string) error {
 	_, err = v1beta1_util.UpdateBackupConfigurationStatus(c.stashClient.StashV1beta1(), backupConfiguration, func(in *api_v1beta1.BackupConfigurationStatus) *api_v1beta1.BackupConfigurationStatus {
 		in.ObservedGeneration = backupConfiguration.Generation
 		return in
-	}, apis.EnableStatusSubresource)
+	}, true)
 
 	return err
 }
