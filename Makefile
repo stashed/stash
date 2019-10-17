@@ -57,7 +57,7 @@ NEW_RESTIC_VER   := 0.9.5
 ###
 
 SRC_PKGS := apis client pkg
-SRC_DIRS := $(SRC_PKGS) *.go test hack/gendocs # directories which hold app source (not vendored)
+SRC_DIRS := $(SRC_PKGS) *.go test hack/gencrd hack/gendocs # directories which hold app source (not vendored)
 
 DOCKER_PLATFORMS := linux/amd64 linux/arm linux/arm64
 BIN_PLATFORMS    := $(DOCKER_PLATFORMS) windows/amd64 darwin/amd64
@@ -464,13 +464,13 @@ verify-modules:
 	fi
 
 .PHONY: verify-gen
-verify-gen: gen
+verify-gen: gen fmt
 	@if !(git diff --quiet HEAD); then \
 		echo "generated files are out of date, run make gen"; exit 1; \
 	fi
 
 .PHONY: ci
-ci: verify lint test build #cover
+ci: verify-gen lint build test #cover
 
 .PHONY: qa
 qa:
