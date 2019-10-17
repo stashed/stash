@@ -9344,6 +9344,9 @@
         },
         "spec": {
           "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.BackupBatchSpec"
+        },
+        "status": {
+          "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.BackupBatchStatus"
         }
       },
       "x-kubernetes-group-version-kind": [
@@ -9427,6 +9430,16 @@
         }
       }
     },
+    "dev.appscode.stash.stash.apis.stash.v1beta1.BackupBatchStatus": {
+      "type": "object",
+      "properties": {
+        "observedGeneration": {
+          "description": "observedGeneration is the most recent generation observed for this StatefulSet. It corresponds to the StatefulSet's generation, which is updated on mutation by the API Server.",
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
     "dev.appscode.stash.stash.apis.stash.v1beta1.BackupBlueprint": {
       "type": "object",
       "properties": {
@@ -9443,6 +9456,9 @@
         },
         "spec": {
           "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.BackupBlueprintSpec"
+        },
+        "status": {
+          "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.BackupBlueprintStatus"
         }
       },
       "x-kubernetes-group-version-kind": [
@@ -9526,6 +9542,16 @@
         }
       }
     },
+    "dev.appscode.stash.stash.apis.stash.v1beta1.BackupBlueprintStatus": {
+      "type": "object",
+      "properties": {
+        "observedGeneration": {
+          "description": "observedGeneration is the most recent generation observed for this StatefulSet. It corresponds to the StatefulSet's generation, which is updated on mutation by the API Server.",
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
     "dev.appscode.stash.stash.apis.stash.v1beta1.BackupConfiguration": {
       "type": "object",
       "properties": {
@@ -9542,6 +9568,9 @@
         },
         "spec": {
           "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.BackupConfigurationSpec"
+        },
+        "status": {
+          "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.BackupConfigurationStatus"
         }
       },
       "x-kubernetes-group-version-kind": [
@@ -9635,6 +9664,16 @@
         "tempDir": {
           "description": "Temp directory configuration for functions/sidecar An `EmptyDir` will always be mounted at /tmp with this settings",
           "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.EmptyDirSettings"
+        }
+      }
+    },
+    "dev.appscode.stash.stash.apis.stash.v1beta1.BackupConfigurationStatus": {
+      "type": "object",
+      "properties": {
+        "observedGeneration": {
+          "description": "observedGeneration is the most recent generation observed for this StatefulSet. It corresponds to the StatefulSet's generation, which is updated on mutation by the API Server.",
+          "type": "integer",
+          "format": "int64"
         }
       }
     },
@@ -9783,8 +9822,9 @@
       "type": "object",
       "properties": {
         "observedGeneration": {
-          "description": "ObservedGeneration is the most recent generation observed for this resource. It corresponds to the resource's generation, which is updated on mutation by the API Server.",
-          "$ref": "#/definitions/com.github.appscode.go.encoding.json.types.IntHash"
+          "description": "observedGeneration is the most recent generation observed for this StatefulSet. It corresponds to the StatefulSet's generation, which is updated on mutation by the API Server.",
+          "type": "integer",
+          "format": "int64"
         },
         "phase": {
           "description": "Phase indicates the overall phase of the backup process for this BackupSession. Phase will be \"Succeeded\" only if phase of all hosts are \"Succeeded\". If any of the host fail to complete backup, Phase will be \"Failed\".",
@@ -10194,8 +10234,9 @@
       "type": "object",
       "properties": {
         "observedGeneration": {
-          "description": "observedGeneration is the most recent generation observed for this resource. It corresponds to the resource's generation, which is updated on mutation by the API Server.",
-          "$ref": "#/definitions/com.github.appscode.go.encoding.json.types.IntHash"
+          "description": "observedGeneration is the most recent generation observed for this StatefulSet. It corresponds to the StatefulSet's generation, which is updated on mutation by the API Server.",
+          "type": "integer",
+          "format": "int64"
         },
         "phase": {
           "description": "Phase indicates the overall phase of the restore process for this RestoreSession. Phase will be \"Succeeded\" only if phase of all hosts are \"Succeeded\". If any of the host fail to complete restore, Phase will be \"Failed\".",

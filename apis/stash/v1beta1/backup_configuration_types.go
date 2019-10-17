@@ -27,7 +27,8 @@ const (
 type BackupConfiguration struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              BackupConfigurationSpec `json:"spec,omitempty"`
+	Spec              BackupConfigurationSpec   `json:"spec,omitempty"`
+	Status            BackupConfigurationStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -108,6 +109,20 @@ type EmptyDirSettings struct {
 	DisableCaching bool `json:"disableCaching,omitempty"`
 }
 
+type Snapshotter string
+
+const (
+	ResticSnapshotter Snapshotter = "Restic"
+	VolumeSnapshotter Snapshotter = "VolumeSnapshotter"
+)
+
+type BackupConfigurationStatus struct {
+	// observedGeneration is the most recent generation observed for this StatefulSet. It corresponds to the
+	// StatefulSet's generation, which is updated on mutation by the API Server.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+}
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 type BackupConfigurationList struct {
@@ -115,10 +130,3 @@ type BackupConfigurationList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []BackupConfiguration `json:"items,omitempty"`
 }
-
-type Snapshotter string
-
-const (
-	ResticSnapshotter Snapshotter = "Restic"
-	VolumeSnapshotter Snapshotter = "VolumeSnapshotter"
-)

@@ -24,7 +24,8 @@ const (
 type BackupBatch struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              BackupBatchSpec `json:"spec,omitempty"`
+	Spec              BackupBatchSpec   `json:"spec,omitempty"`
+	Status            BackupBatchStatus `json:"status,omitempty"`
 }
 
 type BackupBatchSpec struct {
@@ -56,6 +57,13 @@ type BackupBatchSpec struct {
 	// Cannot be updated.
 	// +optional
 	Hooks *Hooks `json:"hooks,omitempty"`
+}
+
+type BackupBatchStatus struct {
+	// observedGeneration is the most recent generation observed for this StatefulSet. It corresponds to the
+	// StatefulSet's generation, which is updated on mutation by the API Server.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

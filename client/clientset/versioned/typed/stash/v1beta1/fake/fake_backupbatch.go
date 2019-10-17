@@ -100,6 +100,18 @@ func (c *FakeBackupBatches) Update(backupBatch *v1beta1.BackupBatch) (result *v1
 	return obj.(*v1beta1.BackupBatch), err
 }
 
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+func (c *FakeBackupBatches) UpdateStatus(backupBatch *v1beta1.BackupBatch) (*v1beta1.BackupBatch, error) {
+	obj, err := c.Fake.
+		Invokes(testing.NewUpdateSubresourceAction(backupbatchesResource, "status", c.ns, backupBatch), &v1beta1.BackupBatch{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1beta1.BackupBatch), err
+}
+
 // Delete takes name of the backupBatch and deletes it. Returns an error if one occurs.
 func (c *FakeBackupBatches) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.

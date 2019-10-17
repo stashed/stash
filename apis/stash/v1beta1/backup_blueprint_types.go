@@ -26,7 +26,8 @@ const (
 type BackupBlueprint struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              BackupBlueprintSpec `json:"spec,omitempty"`
+	Spec              BackupBlueprintSpec   `json:"spec,omitempty"`
+	Status            BackupBlueprintStatus `json:"status,omitempty"`
 }
 
 type BackupBlueprintSpec struct {
@@ -55,6 +56,13 @@ type BackupBlueprintSpec struct {
 	// Default: 1
 	// +optional
 	BackupHistoryLimit *int32 `json:"backupHistoryLimit,omitempty"`
+}
+
+type BackupBlueprintStatus struct {
+	// observedGeneration is the most recent generation observed for this StatefulSet. It corresponds to the
+	// StatefulSet's generation, which is updated on mutation by the API Server.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

@@ -444,10 +444,11 @@ spec:
         status:
           properties:
             observedGeneration:
-              description: ObservedGeneration is the most recent generation observed
-                for this resource. It corresponds to the resource's generation, which
-                is updated on mutation by the API Server.
-              type: string
+              description: observedGeneration is the most recent generation observed
+                for this StatefulSet. It corresponds to the StatefulSet's generation,
+                which is updated on mutation by the API Server.
+              format: int64
+              type: integer
             phase:
               description: Phase indicates the overall phase of the backup process
                 for this BackupSession. Phase will be "Succeeded" only if phase of
