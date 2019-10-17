@@ -511,6 +511,7 @@ k8s.io/apimachinery/pkg/types
 k8s.io/apimachinery/pkg/api/errors
 k8s.io/apimachinery/pkg/util/wait
 k8s.io/apimachinery/pkg/util/errors
+k8s.io/apimachinery/pkg/apis/meta/v1/unstructured
 k8s.io/apimachinery/pkg/apis/meta/internalversion
 k8s.io/apimachinery/pkg/version
 k8s.io/apimachinery/pkg/fields
@@ -521,7 +522,6 @@ k8s.io/apimachinery/pkg/util/naming
 k8s.io/apimachinery/pkg/util/sets
 k8s.io/apimachinery/pkg/api/apitesting/roundtrip
 k8s.io/apimachinery/third_party/forked/golang/reflect
-k8s.io/apimachinery/pkg/apis/meta/v1/unstructured
 k8s.io/apimachinery/pkg/runtime/serializer/versioning
 k8s.io/apimachinery/pkg/util/mergepatch
 k8s.io/apimachinery/pkg/util/strategicpatch
@@ -680,6 +680,7 @@ k8s.io/client-go/tools/leaderelection/resourcelock
 k8s.io/client-go/tools/record
 k8s.io/client-go/tools/reference
 k8s.io/client-go/tools/clientcmd
+k8s.io/client-go/dynamic
 k8s.io/client-go/informers
 k8s.io/client-go/informers/batch/v1
 k8s.io/client-go/informers/core/v1
@@ -798,7 +799,6 @@ k8s.io/client-go/informers/rbac
 k8s.io/client-go/informers/scheduling
 k8s.io/client-go/informers/settings
 k8s.io/client-go/informers/storage
-k8s.io/client-go/dynamic
 k8s.io/client-go/tools/watch
 k8s.io/client-go/transport/spdy
 k8s.io/client-go/util/exec
