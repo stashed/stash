@@ -22,7 +22,6 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
 	"kmodules.xyz/client-go/tools/queue"
-	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	stash_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
@@ -318,7 +317,7 @@ func (c *Controller) runResticBackup(restic *api.Restic, repository *api.Reposit
 				}
 				in.LastBackupDuration = endTime.Sub(startTime.Time).String()
 				return in
-			}, apis.EnableStatusSubresource)
+			})
 		}
 	}()
 

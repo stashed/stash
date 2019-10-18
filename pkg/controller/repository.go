@@ -41,7 +41,7 @@ func (c *StashController) NewRepositoryWebhook() hooks.AdmissionHook {
 func (c *StashController) initRepositoryWatcher() {
 	c.repoInformer = c.stashInformerFactory.Stash().V1alpha1().Repositories().Informer()
 	c.repoQueue = queue.New("Repository", c.MaxNumRequeues, c.NumThreads, c.runRepositoryReconciler)
-	c.repoInformer.AddEventHandler(queue.DefaultEventHandler(c.repoQueue.GetQueue()))
+	c.repoInformer.AddEventHandler(queue.NewReconcilableHandler(c.repoQueue.GetQueue()))
 	c.repoLister = c.stashInformerFactory.Stash().V1alpha1().Repositories().Lister()
 }
 

@@ -22,7 +22,7 @@ type QueueingEventHandler struct {
 
 var _ cache.ResourceEventHandler = &QueueingEventHandler{}
 
-func DefaultEventHandler(queue workqueue.RateLimitingInterface) *QueueingEventHandler {
+func DefaultEventHandler(queue workqueue.RateLimitingInterface) cache.ResourceEventHandler {
 	return &QueueingEventHandler{
 		queue:         queue,
 		enqueueAdd:    nil,
@@ -31,7 +31,7 @@ func DefaultEventHandler(queue workqueue.RateLimitingInterface) *QueueingEventHa
 	}
 }
 
-func NewEventHandler(queue workqueue.RateLimitingInterface, enqueueUpdate func(oldObj, newObj interface{}) bool) *QueueingEventHandler {
+func NewEventHandler(queue workqueue.RateLimitingInterface, enqueueUpdate func(oldObj, newObj interface{}) bool) cache.ResourceEventHandler {
 	return &QueueingEventHandler{
 		queue:         queue,
 		enqueueAdd:    nil,
@@ -40,7 +40,7 @@ func NewEventHandler(queue workqueue.RateLimitingInterface, enqueueUpdate func(o
 	}
 }
 
-func NewUpsertHandler(queue workqueue.RateLimitingInterface) *QueueingEventHandler {
+func NewUpsertHandler(queue workqueue.RateLimitingInterface) cache.ResourceEventHandler {
 	return &QueueingEventHandler{
 		queue:         queue,
 		enqueueAdd:    nil,
@@ -49,7 +49,7 @@ func NewUpsertHandler(queue workqueue.RateLimitingInterface) *QueueingEventHandl
 	}
 }
 
-func NewDeleteHandler(queue workqueue.RateLimitingInterface) *QueueingEventHandler {
+func NewDeleteHandler(queue workqueue.RateLimitingInterface) cache.ResourceEventHandler {
 	return &QueueingEventHandler{
 		queue:         queue,
 		enqueueAdd:    func(_ interface{}) bool { return false },
@@ -58,7 +58,21 @@ func NewDeleteHandler(queue workqueue.RateLimitingInterface) *QueueingEventHandl
 	}
 }
 
-func NewObservableHandler(queue workqueue.RateLimitingInterface, enableStatusSubresource bool) *QueueingEventHandler {
+func NewReconcilableHandler(queue workqueue.RateLimitingInterface) cache.ResourceEventHandler {
+	return &QueueingEventHandler{
+		queue: queue,
+		enqueueAdd: func(o interface{}) bool {
+			return !meta_util.AlreadyReconciled(o)
+		},
+		enqueueUpdate: func(old, nu interface{}) bool {
+			return (nu.(metav1.Object)).GetDeletionTimestamp() != nil || !meta_util.AlreadyReconciled(nu)
+		},
+		enqueueDelete: true,
+	}
+}
+
+// Deprecated, should not be used after we drop support for Kubernetes 1.10. Use NewReconcilableHandler
+func NewObservableHandler(queue workqueue.RateLimitingInterface, enableStatusSubresource bool) cache.ResourceEventHandler {
 	return &QueueingEventHandler{
 		queue: queue,
 		enqueueAdd: func(o interface{}) bool {
@@ -72,7 +86,8 @@ func NewObservableHandler(queue workqueue.RateLimitingInterface, enableStatusSub
 	}
 }
 
-func NewObservableUpdateHandler(queue workqueue.RateLimitingInterface, enableStatusSubresource bool) *QueueingEventHandler {
+// Deprecated, should not be used after we drop support for Kubernetes 1.10. Use NewReconcilableHandler
+func NewObservableUpdateHandler(queue workqueue.RateLimitingInterface, enableStatusSubresource bool) cache.ResourceEventHandler {
 	return &QueueingEventHandler{
 		queue:      queue,
 		enqueueAdd: nil,

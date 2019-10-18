@@ -20,6 +20,7 @@ const (
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:path=backupconfigurations,singular=backupconfiguration,shortName=bc,categories={stash,appscode,all}
+// +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Task",type="string",JSONPath=".spec.task.name"
 // +kubebuilder:printcolumn:name="Schedule",type="string",JSONPath=".spec.schedule"
 // +kubebuilder:printcolumn:name="Paused",type="boolean",JSONPath=".spec.paused"
@@ -27,7 +28,8 @@ const (
 type BackupConfiguration struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              BackupConfigurationSpec `json:"spec,omitempty"`
+	Spec              BackupConfigurationSpec   `json:"spec,omitempty"`
+	Status            BackupConfigurationStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -108,6 +110,20 @@ type EmptyDirSettings struct {
 	DisableCaching bool `json:"disableCaching,omitempty"`
 }
 
+type Snapshotter string
+
+const (
+	ResticSnapshotter Snapshotter = "Restic"
+	VolumeSnapshotter Snapshotter = "VolumeSnapshotter"
+)
+
+type BackupConfigurationStatus struct {
+	// ObservedGeneration is the most recent generation observed for this BackupConfiguration. It corresponds to the
+	// BackupConfiguration's generation, which is updated on mutation by the API Server.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+}
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 type BackupConfigurationList struct {
@@ -115,10 +131,3 @@ type BackupConfigurationList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []BackupConfiguration `json:"items,omitempty"`
 }
-
-type Snapshotter string
-
-const (
-	ResticSnapshotter Snapshotter = "Restic"
-	VolumeSnapshotter Snapshotter = "VolumeSnapshotter"
-)

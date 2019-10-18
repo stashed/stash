@@ -22,7 +22,7 @@ github.com/NYTimes/gziphandler
 github.com/PuerkitoBio/purell
 # github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
 github.com/PuerkitoBio/urlesc
-# github.com/appscode/go v0.0.0-20191006073906-e3d193d493fc
+# github.com/appscode/go v0.0.0-20191016085057-e186b6c94a3b
 github.com/appscode/go/log
 github.com/appscode/go/version
 github.com/appscode/go/encoding/json/types
@@ -34,7 +34,6 @@ github.com/appscode/go/strings
 github.com/appscode/go/crypto/rand
 github.com/appscode/go/context
 github.com/appscode/go/sets
-github.com/appscode/go/os
 github.com/appscode/go/analytics
 github.com/appscode/go/net
 github.com/appscode/go/encoding/yaml
@@ -512,6 +511,7 @@ k8s.io/apimachinery/pkg/types
 k8s.io/apimachinery/pkg/api/errors
 k8s.io/apimachinery/pkg/util/wait
 k8s.io/apimachinery/pkg/util/errors
+k8s.io/apimachinery/pkg/apis/meta/v1/unstructured
 k8s.io/apimachinery/pkg/apis/meta/internalversion
 k8s.io/apimachinery/pkg/version
 k8s.io/apimachinery/pkg/fields
@@ -522,7 +522,6 @@ k8s.io/apimachinery/pkg/util/naming
 k8s.io/apimachinery/pkg/util/sets
 k8s.io/apimachinery/pkg/api/apitesting/roundtrip
 k8s.io/apimachinery/third_party/forked/golang/reflect
-k8s.io/apimachinery/pkg/apis/meta/v1/unstructured
 k8s.io/apimachinery/pkg/runtime/serializer/versioning
 k8s.io/apimachinery/pkg/util/mergepatch
 k8s.io/apimachinery/pkg/util/strategicpatch
@@ -681,6 +680,7 @@ k8s.io/client-go/tools/leaderelection/resourcelock
 k8s.io/client-go/tools/record
 k8s.io/client-go/tools/reference
 k8s.io/client-go/tools/clientcmd
+k8s.io/client-go/dynamic
 k8s.io/client-go/informers
 k8s.io/client-go/informers/batch/v1
 k8s.io/client-go/informers/core/v1
@@ -799,7 +799,6 @@ k8s.io/client-go/informers/rbac
 k8s.io/client-go/informers/scheduling
 k8s.io/client-go/informers/settings
 k8s.io/client-go/informers/storage
-k8s.io/client-go/dynamic
 k8s.io/client-go/tools/watch
 k8s.io/client-go/transport/spdy
 k8s.io/client-go/util/exec
@@ -926,7 +925,7 @@ k8s.io/utils/integer
 k8s.io/utils/buffer
 k8s.io/utils/trace
 k8s.io/utils/pointer
-# kmodules.xyz/client-go v0.0.0-20191006173540-91f8ee6b6b4b
+# kmodules.xyz/client-go v0.0.0-20191016085444-3044854ca625
 kmodules.xyz/client-go/logs
 kmodules.xyz/client-go/apiextensions/v1beta1
 kmodules.xyz/client-go/meta
@@ -956,7 +955,7 @@ kmodules.xyz/custom-resources/apis/appcatalog
 kmodules.xyz/custom-resources/client/informers/externalversions/appcatalog
 kmodules.xyz/custom-resources/client/informers/externalversions/internalinterfaces
 kmodules.xyz/custom-resources/client/informers/externalversions/appcatalog/v1alpha1
-# kmodules.xyz/objectstore-api v0.0.0-20191006080053-fc8b57fadcf0
+# kmodules.xyz/objectstore-api v0.0.0-20191014210450-ac380fa650a3
 kmodules.xyz/objectstore-api/api/v1
 kmodules.xyz/objectstore-api/osm
 # kmodules.xyz/offshoot-api v0.0.0-20190901210649-de049192326c

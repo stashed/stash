@@ -75,7 +75,6 @@ func updateStatusFunction(image docker.Docker) *api_v1beta1.Function {
 				"--metrics-enabled=true",
 				fmt.Sprintf("--metrics-pushgateway-url=%s", PushgatewayURL()),
 				"--prom-job-name=${PROMETHEUS_JOB_NAME:=}",
-				"--enable-status-subresource=${ENABLE_STATUS_SUBRESOURCE:=false}",
 			},
 		},
 	}

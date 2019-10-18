@@ -8,7 +8,6 @@ import (
 	hashutil "k8s.io/kubernetes/pkg/util/hash"
 	crdutils "kmodules.xyz/client-go/apiextensions/v1beta1"
 	meta_util "kmodules.xyz/client-go/meta"
-	"stash.appscode.dev/stash/apis"
 )
 
 func (r RestoreSession) GetSpecHash() string {
@@ -39,7 +38,7 @@ func (r RestoreSession) CustomResourceDefinition() *apiextensions.CustomResource
 		SpecDefinitionName:      "stash.appscode.dev/stash/apis/stash/v1beta1.RestoreSession",
 		EnableValidation:        true,
 		GetOpenAPIDefinitions:   GetOpenAPIDefinitions,
-		EnableStatusSubresource: apis.EnableStatusSubresource,
+		EnableStatusSubresource: true,
 		AdditionalPrinterColumns: []apiextensions.CustomResourceColumnDefinition{
 			{
 				Name:     "Repository",

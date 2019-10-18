@@ -14,7 +14,6 @@ import (
 	"kmodules.xyz/client-go/logs"
 	"kmodules.xyz/client-go/tools/cli"
 	ocscheme "kmodules.xyz/openshift/client/clientset/versioned/scheme"
-	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/client/clientset/versioned/scheme"
 	"stash.appscode.dev/stash/pkg/util"
 )
@@ -40,7 +39,6 @@ func NewRootCmd() *cobra.Command {
 	logs.ParseFlags()
 	rootCmd.PersistentFlags().StringVar(&util.ServiceName, "service-name", "stash-operator", "Stash service name.")
 	rootCmd.PersistentFlags().BoolVar(&cli.EnableAnalytics, "enable-analytics", cli.EnableAnalytics, "Send analytical events to Google Analytics")
-	rootCmd.PersistentFlags().BoolVar(&apis.EnableStatusSubresource, "enable-status-subresource", apis.EnableStatusSubresource, "If true, uses sub resource for crds.")
 
 	rootCmd.AddCommand(v.NewCmdVersion())
 	stopCh := genericapiserver.SetupSignalHandler()

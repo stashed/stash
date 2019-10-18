@@ -9,7 +9,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	stash_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
@@ -120,7 +119,6 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 				}
 				return in
 			},
-			apis.EnableStatusSubresource,
 		)
 		if err != nil {
 			return err

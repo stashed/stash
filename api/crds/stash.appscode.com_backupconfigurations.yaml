@@ -31,7 +31,8 @@ spec:
     - bc
     singular: backupconfiguration
   scope: Namespaced
-  subresources: {}
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       properties:
@@ -2922,6 +2923,15 @@ spec:
               type: object
           required:
           - retentionPolicy
+          type: object
+        status:
+          properties:
+            observedGeneration:
+              description: ObservedGeneration is the most recent generation observed
+                for this BackupConfiguration. It corresponds to the BackupConfiguration's
+                generation, which is updated on mutation by the API Server.
+              format: int64
+              type: integer
           type: object
       type: object
   versions:

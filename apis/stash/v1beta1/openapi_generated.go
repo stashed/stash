@@ -354,12 +354,14 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupBatch":                     schema_stash_apis_stash_v1beta1_BackupBatch(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupBatchList":                 schema_stash_apis_stash_v1beta1_BackupBatchList(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupBatchSpec":                 schema_stash_apis_stash_v1beta1_BackupBatchSpec(ref),
+		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupBatchStatus":               schema_stash_apis_stash_v1beta1_BackupBatchStatus(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupBlueprint":                 schema_stash_apis_stash_v1beta1_BackupBlueprint(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupBlueprintList":             schema_stash_apis_stash_v1beta1_BackupBlueprintList(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupBlueprintSpec":             schema_stash_apis_stash_v1beta1_BackupBlueprintSpec(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfiguration":             schema_stash_apis_stash_v1beta1_BackupConfiguration(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationList":         schema_stash_apis_stash_v1beta1_BackupConfigurationList(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationSpec":         schema_stash_apis_stash_v1beta1_BackupConfigurationSpec(ref),
+		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationStatus":       schema_stash_apis_stash_v1beta1_BackupConfigurationStatus(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplate":     schema_stash_apis_stash_v1beta1_BackupConfigurationTemplate(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplateSpec": schema_stash_apis_stash_v1beta1_BackupConfigurationTemplateSpec(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupInvokerRef":                schema_stash_apis_stash_v1beta1_BackupInvokerRef(ref),
@@ -15260,6 +15262,12 @@ func schema_kmodulesxyz_objectstore_api_api_v1_S3Spec(ref common.ReferenceCallba
 							Format: "",
 						},
 					},
+					"region": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 				},
 			},
 		},
@@ -16003,11 +16011,16 @@ func schema_stash_apis_stash_v1beta1_BackupBatch(ref common.ReferenceCallback) c
 							Ref: ref("stash.appscode.dev/stash/apis/stash/v1beta1.BackupBatchSpec"),
 						},
 					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("stash.appscode.dev/stash/apis/stash/v1beta1.BackupBatchStatus"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupBatchSpec"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupBatchSpec", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupBatchStatus"},
 	}
 }
 
@@ -16127,6 +16140,25 @@ func schema_stash_apis_stash_v1beta1_BackupBatchSpec(ref common.ReferenceCallbac
 		},
 		Dependencies: []string{
 			"k8s.io/api/core/v1.LocalObjectReference", "stash.appscode.dev/stash/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplate", "stash.appscode.dev/stash/apis/stash/v1beta1.Hooks"},
+	}
+}
+
+func schema_stash_apis_stash_v1beta1_BackupBatchStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"observedGeneration": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ObservedGeneration is the most recent generation observed for this BackupBatch. It corresponds to the BackupBatch's generation, which is updated on mutation by the API Server.",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -16314,11 +16346,16 @@ func schema_stash_apis_stash_v1beta1_BackupConfiguration(ref common.ReferenceCal
 							Ref: ref("stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationSpec"),
 						},
 					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationStatus"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationSpec"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationSpec", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationStatus"},
 	}
 }
 
@@ -16455,6 +16492,25 @@ func schema_stash_apis_stash_v1beta1_BackupConfigurationSpec(ref common.Referenc
 		},
 		Dependencies: []string{
 			"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaim", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/stash/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupTarget", "stash.appscode.dev/stash/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/stash/apis/stash/v1beta1.Hooks", "stash.appscode.dev/stash/apis/stash/v1beta1.TaskRef"},
+	}
+}
+
+func schema_stash_apis_stash_v1beta1_BackupConfigurationStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"observedGeneration": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ObservedGeneration is the most recent generation observed for this BackupConfiguration. It corresponds to the BackupConfiguration's generation, which is updated on mutation by the API Server.",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -16701,12 +16757,6 @@ func schema_stash_apis_stash_v1beta1_BackupSessionStatus(ref common.ReferenceCal
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
-					"observedGeneration": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ObservedGeneration is the most recent generation observed for this resource. It corresponds to the resource's generation, which is updated on mutation by the API Server.",
-							Ref:         ref("github.com/appscode/go/encoding/json/types.IntHash"),
-						},
-					},
 					"phase": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Phase indicates the overall phase of the backup process for this BackupSession. Phase will be \"Succeeded\" only if phase of all hosts are \"Succeeded\". If any of the host fail to complete backup, Phase will be \"Failed\".",
@@ -16745,7 +16795,7 @@ func schema_stash_apis_stash_v1beta1_BackupSessionStatus(ref common.ReferenceCal
 			},
 		},
 		Dependencies: []string{
-			"github.com/appscode/go/encoding/json/types.IntHash", "stash.appscode.dev/stash/apis/stash/v1beta1.HostBackupStats"},
+			"stash.appscode.dev/stash/apis/stash/v1beta1.HostBackupStats"},
 	}
 }
 
@@ -17437,12 +17487,6 @@ func schema_stash_apis_stash_v1beta1_RestoreSessionStatus(ref common.ReferenceCa
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
-					"observedGeneration": {
-						SchemaProps: spec.SchemaProps{
-							Description: "observedGeneration is the most recent generation observed for this resource. It corresponds to the resource's generation, which is updated on mutation by the API Server.",
-							Ref:         ref("github.com/appscode/go/encoding/json/types.IntHash"),
-						},
-					},
 					"phase": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Phase indicates the overall phase of the restore process for this RestoreSession. Phase will be \"Succeeded\" only if phase of all hosts are \"Succeeded\". If any of the host fail to complete restore, Phase will be \"Failed\".",
@@ -17481,7 +17525,7 @@ func schema_stash_apis_stash_v1beta1_RestoreSessionStatus(ref common.ReferenceCa
 			},
 		},
 		Dependencies: []string{
-			"github.com/appscode/go/encoding/json/types.IntHash", "stash.appscode.dev/stash/apis/stash/v1beta1.HostRestoreStats"},
+			"stash.appscode.dev/stash/apis/stash/v1beta1.HostRestoreStats"},
 	}
 }
 

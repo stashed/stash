@@ -39,6 +39,7 @@ type BackupConfigurationsGetter interface {
 type BackupConfigurationInterface interface {
 	Create(*v1beta1.BackupConfiguration) (*v1beta1.BackupConfiguration, error)
 	Update(*v1beta1.BackupConfiguration) (*v1beta1.BackupConfiguration, error)
+	UpdateStatus(*v1beta1.BackupConfiguration) (*v1beta1.BackupConfiguration, error)
 	Delete(name string, options *v1.DeleteOptions) error
 	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
 	Get(name string, options v1.GetOptions) (*v1beta1.BackupConfiguration, error)
@@ -126,6 +127,22 @@ func (c *backupConfigurations) Update(backupConfiguration *v1beta1.BackupConfigu
 		Namespace(c.ns).
 		Resource("backupconfigurations").
 		Name(backupConfiguration.Name).
+		Body(backupConfiguration).
+		Do().
+		Into(result)
+	return
+}
+
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+
+func (c *backupConfigurations) UpdateStatus(backupConfiguration *v1beta1.BackupConfiguration) (result *v1beta1.BackupConfiguration, err error) {
+	result = &v1beta1.BackupConfiguration{}
+	err = c.client.Put().
+		Namespace(c.ns).
+		Resource("backupconfigurations").
+		Name(backupConfiguration.Name).
+		SubResource("status").
 		Body(backupConfiguration).
 		Do().
 		Into(result)

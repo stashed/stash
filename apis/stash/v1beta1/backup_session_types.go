@@ -1,7 +1,6 @@
 package v1beta1
 
 import (
-	"github.com/appscode/go/encoding/json/types"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -59,10 +58,6 @@ const (
 )
 
 type BackupSessionStatus struct {
-	// ObservedGeneration is the most recent generation observed for this resource. It corresponds to the
-	// resource's generation, which is updated on mutation by the API Server.
-	// +optional
-	ObservedGeneration *types.IntHash `json:"observedGeneration,omitempty"`
 	// Phase indicates the overall phase of the backup process for this BackupSession. Phase will be "Succeeded" only if
 	// phase of all hosts are "Succeeded". If any of the host fail to complete backup, Phase will be "Failed".
 	// +optional

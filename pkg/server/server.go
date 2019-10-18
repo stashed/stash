@@ -69,6 +69,9 @@ type StashServer struct {
 }
 
 func (op *StashServer) Run(stopCh <-chan struct{}) error {
+	if err := op.Controller.MigrateObservedGeneration(); err != nil {
+		return fmt.Errorf("failed  to migrate observedGeneration to int64 for existing objects. Reason: %v", err)
+	}
 	// sync cache
 	go op.Controller.Run(stopCh)
 	return op.GenericAPIServer.PrepareRun().Run(stopCh)

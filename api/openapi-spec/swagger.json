@@ -9140,8 +9140,9 @@
           "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Time"
         },
         "observedGeneration": {
-          "description": "observedGeneration is the most recent generation observed for this resource. It corresponds to the resource's generation, which is updated on mutation by the API Server.",
-          "$ref": "#/definitions/com.github.appscode.go.encoding.json.types.IntHash"
+          "description": "ObservedGeneration is the most recent generation observed for this Repository. It corresponds to the Repository's generation, which is updated on mutation by the API Server.",
+          "type": "integer",
+          "format": "int64"
         },
         "size": {
           "description": "Size show size of repository after last backup",
@@ -9344,6 +9345,9 @@
         },
         "spec": {
           "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.BackupBatchSpec"
+        },
+        "status": {
+          "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.BackupBatchStatus"
         }
       },
       "x-kubernetes-group-version-kind": [
@@ -9424,6 +9428,16 @@
         "schedule": {
           "description": "Schedule specifies the schedule for invoking backup sessions",
           "type": "string"
+        }
+      }
+    },
+    "dev.appscode.stash.stash.apis.stash.v1beta1.BackupBatchStatus": {
+      "type": "object",
+      "properties": {
+        "observedGeneration": {
+          "description": "ObservedGeneration is the most recent generation observed for this BackupBatch. It corresponds to the BackupBatch's generation, which is updated on mutation by the API Server.",
+          "type": "integer",
+          "format": "int64"
         }
       }
     },
@@ -9542,6 +9556,9 @@
         },
         "spec": {
           "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.BackupConfigurationSpec"
+        },
+        "status": {
+          "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.BackupConfigurationStatus"
         }
       },
       "x-kubernetes-group-version-kind": [
@@ -9635,6 +9652,16 @@
         "tempDir": {
           "description": "Temp directory configuration for functions/sidecar An `EmptyDir` will always be mounted at /tmp with this settings",
           "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.EmptyDirSettings"
+        }
+      }
+    },
+    "dev.appscode.stash.stash.apis.stash.v1beta1.BackupConfigurationStatus": {
+      "type": "object",
+      "properties": {
+        "observedGeneration": {
+          "description": "ObservedGeneration is the most recent generation observed for this BackupConfiguration. It corresponds to the BackupConfiguration's generation, which is updated on mutation by the API Server.",
+          "type": "integer",
+          "format": "int64"
         }
       }
     },
@@ -9782,10 +9809,6 @@
     "dev.appscode.stash.stash.apis.stash.v1beta1.BackupSessionStatus": {
       "type": "object",
       "properties": {
-        "observedGeneration": {
-          "description": "ObservedGeneration is the most recent generation observed for this resource. It corresponds to the resource's generation, which is updated on mutation by the API Server.",
-          "$ref": "#/definitions/com.github.appscode.go.encoding.json.types.IntHash"
-        },
         "phase": {
           "description": "Phase indicates the overall phase of the backup process for this BackupSession. Phase will be \"Succeeded\" only if phase of all hosts are \"Succeeded\". If any of the host fail to complete backup, Phase will be \"Failed\".",
           "type": "string"
@@ -10193,10 +10216,6 @@
     "dev.appscode.stash.stash.apis.stash.v1beta1.RestoreSessionStatus": {
       "type": "object",
       "properties": {
-        "observedGeneration": {
-          "description": "observedGeneration is the most recent generation observed for this resource. It corresponds to the resource's generation, which is updated on mutation by the API Server.",
-          "$ref": "#/definitions/com.github.appscode.go.encoding.json.types.IntHash"
-        },
         "phase": {
           "description": "Phase indicates the overall phase of the restore process for this RestoreSession. Phase will be \"Succeeded\" only if phase of all hosts are \"Succeeded\". If any of the host fail to complete restore, Phase will be \"Failed\".",
           "type": "string"
@@ -13382,6 +13401,9 @@
           "type": "string"
         },
         "prefix": {
+          "type": "string"
+        },
+        "region": {
           "type": "string"
         }
       }

@@ -1,9 +1,5 @@
 package apis
 
-var (
-	EnableStatusSubresource bool
-)
-
 const (
 	StashKey   = "stash.appscode.com"
 	VersionTag = StashKey + "/tag"

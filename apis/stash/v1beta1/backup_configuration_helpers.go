@@ -35,9 +35,10 @@ func (b BackupConfiguration) CustomResourceDefinition() *apiextensions.CustomRes
 		Labels: crdutils.Labels{
 			LabelsMap: map[string]string{"app": "stash"},
 		},
-		SpecDefinitionName:    "stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfiguration",
-		EnableValidation:      true,
-		GetOpenAPIDefinitions: GetOpenAPIDefinitionsWithRetentionPolicy,
+		SpecDefinitionName:      "stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfiguration",
+		EnableValidation:        true,
+		GetOpenAPIDefinitions:   GetOpenAPIDefinitionsWithRetentionPolicy,
+		EnableStatusSubresource: true,
 		AdditionalPrinterColumns: []apiextensions.CustomResourceColumnDefinition{
 			{
 				Name:     "Task",

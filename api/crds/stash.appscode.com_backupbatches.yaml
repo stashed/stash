@@ -26,7 +26,8 @@ spec:
     plural: backupbatches
     singular: backupbatch
   scope: Namespaced
-  subresources: {}
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       properties:
@@ -3783,6 +3784,15 @@ spec:
               type: string
           required:
           - retentionPolicy
+          type: object
+        status:
+          properties:
+            observedGeneration:
+              description: ObservedGeneration is the most recent generation observed
+                for this BackupBatch. It corresponds to the BackupBatch's generation,
+                which is updated on mutation by the API Server.
+              format: int64
+              type: integer
           type: object
       type: object
   versions:

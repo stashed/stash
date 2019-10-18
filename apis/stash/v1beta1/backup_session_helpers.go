@@ -7,7 +7,6 @@ import (
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	hashutil "k8s.io/kubernetes/pkg/util/hash"
 	crdutils "kmodules.xyz/client-go/apiextensions/v1beta1"
-	"stash.appscode.dev/stash/apis"
 )
 
 func (bs BackupSession) GetSpecHash() string {
@@ -37,7 +36,7 @@ func (bs BackupSession) CustomResourceDefinition() *apiextensions.CustomResource
 		SpecDefinitionName:      "stash.appscode.dev/stash/apis/stash/v1beta1.BackupSession",
 		EnableValidation:        true,
 		GetOpenAPIDefinitions:   GetOpenAPIDefinitions,
-		EnableStatusSubresource: apis.EnableStatusSubresource,
+		EnableStatusSubresource: true,
 		AdditionalPrinterColumns: []apiextensions.CustomResourceColumnDefinition{
 			{
 				Name:     "BackupConfiguration",

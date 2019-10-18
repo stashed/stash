@@ -18,13 +18,15 @@ const (
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:path=backupbatches,singular=backupbatch,categories={stash,appscode,all}
+// +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Schedule",type="string",JSONPath=".spec.schedule"
 // +kubebuilder:printcolumn:name="Paused",type="boolean",JSONPath=".spec.paused"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type BackupBatch struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              BackupBatchSpec `json:"spec,omitempty"`
+	Spec              BackupBatchSpec   `json:"spec,omitempty"`
+	Status            BackupBatchStatus `json:"status,omitempty"`
 }
 
 type BackupBatchSpec struct {
@@ -56,6 +58,13 @@ type BackupBatchSpec struct {
 	// Cannot be updated.
 	// +optional
 	Hooks *Hooks `json:"hooks,omitempty"`
+}
+
+type BackupBatchStatus struct {
+	// ObservedGeneration is the most recent generation observed for this BackupBatch. It corresponds to the
+	// BackupBatch's generation, which is updated on mutation by the API Server.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

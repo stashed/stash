@@ -15236,6 +15236,12 @@ func schema_kmodulesxyz_objectstore_api_api_v1_S3Spec(ref common.ReferenceCallba
 							Format: "",
 						},
 					},
+					"region": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 				},
 			},
 		},
@@ -16351,8 +16357,9 @@ func schema_stash_apis_stash_v1alpha1_RepositoryStatus(ref common.ReferenceCallb
 				Properties: map[string]spec.Schema{
 					"observedGeneration": {
 						SchemaProps: spec.SchemaProps{
-							Description: "observedGeneration is the most recent generation observed for this resource. It corresponds to the resource's generation, which is updated on mutation by the API Server.",
-							Ref:         ref("github.com/appscode/go/encoding/json/types.IntHash"),
+							Description: "ObservedGeneration is the most recent generation observed for this Repository. It corresponds to the Repository's generation, which is updated on mutation by the API Server.",
+							Type:        []string{"integer"},
+							Format:      "int64",
 						},
 					},
 					"firstBackupTime": {
@@ -16419,7 +16426,7 @@ func schema_stash_apis_stash_v1alpha1_RepositoryStatus(ref common.ReferenceCallb
 			},
 		},
 		Dependencies: []string{
-			"github.com/appscode/go/encoding/json/types.IntHash", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
