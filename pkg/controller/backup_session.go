@@ -73,7 +73,7 @@ func (c *StashController) NewBackupSessionWebhook() hooks.AdmissionHook {
 func (c *StashController) initBackupSessionWatcher() {
 	c.backupSessionInformer = c.stashInformerFactory.Stash().V1beta1().BackupSessions().Informer()
 	c.backupSessionQueue = queue.New(api_v1beta1.ResourceKindBackupSession, c.MaxNumRequeues, c.NumThreads, c.runBackupSessionProcessor)
-	c.backupSessionInformer.AddEventHandler(queue.NewReconcilableHandler(c.backupSessionQueue.GetQueue()))
+	c.backupSessionInformer.AddEventHandler(queue.DefaultEventHandler(c.backupSessionQueue.GetQueue()))
 	c.backupSessionLister = c.stashInformerFactory.Stash().V1beta1().BackupSessions().Lister()
 }
 
@@ -91,18 +91,7 @@ func (c *StashController) runBackupSessionProcessor(key string) error {
 	backupSession := obj.(*api_v1beta1.BackupSession)
 	glog.Infof("Sync/Add/Update for BackupSession %s", backupSession.GetName())
 	// process sync/add/update event
-	err = c.applyBackupSessionReconciliationLogic(backupSession)
-	if err != nil {
-		return err
-	}
-	// We have successfully completed respective stuffs for the current state of this resource.
-	// Hence, let's set observed generation as same as the current generation.
-	_, err = stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
-		in.ObservedGeneration = backupSession.Generation
-		return in
-	}, true)
-
-	return err
+	return c.applyBackupSessionReconciliationLogic(backupSession)
 }
 
 func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *api_v1beta1.BackupSession) error {
@@ -356,7 +345,7 @@ func (c *StashController) setBackupSessionFailed(backupSession *api_v1beta1.Back
 	updatedBackupSession, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 		in.Phase = api_v1beta1.BackupSessionFailed
 		return in
-	}, true)
+	})
 	if err != nil {
 		return errors.NewAggregate([]error{backupErr, err})
 	}
@@ -396,7 +385,7 @@ func (c *StashController) setBackupSessionSkipped(backupSession *api_v1beta1.Bac
 	_, err := stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 		in.Phase = api_v1beta1.BackupSessionSkipped
 		return in
-	}, true)
+	})
 	if err != nil {
 		return err
 	}
@@ -434,7 +423,7 @@ func (c *StashController) setBackupSessionRunning(backupSession *api_v1beta1.Bac
 		in.Phase = api_v1beta1.BackupSessionRunning
 		in.TotalHosts = totalHosts
 		return in
-	}, true)
+	})
 	if err != nil {
 		return err
 	}
@@ -461,7 +450,7 @@ func (c *StashController) setBackupSessionSucceeded(backupSession *api_v1beta1.B
 		in.Phase = api_v1beta1.BackupSessionSucceeded
 		in.SessionDuration = sessionDuration.String()
 		return in
-	}, true)
+	})
 	if err != nil {
 		return err
 	}

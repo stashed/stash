@@ -58,10 +58,6 @@ const (
 )
 
 type BackupSessionStatus struct {
-	// ObservedGeneration is the most recent generation observed for this BackupSession. It corresponds to the
-	// BackupSession's generation, which is updated on mutation by the API Server.
-	// +optional
-	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 	// Phase indicates the overall phase of the backup process for this BackupSession. Phase will be "Succeeded" only if
 	// phase of all hosts are "Succeeded". If any of the host fail to complete backup, Phase will be "Failed".
 	// +optional

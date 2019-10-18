@@ -55,7 +55,6 @@ func (s *ExtraOptions) AddGoFlags(fs *flag.FlagSet) {
 
 	fs.BoolVar(&s.EnableMutatingWebhook, "enable-mutating-webhook", s.EnableMutatingWebhook, "If true, enables mutating webhooks for KubeDB CRDs.")
 	fs.BoolVar(&s.EnableValidatingWebhook, "enable-validating-webhook", s.EnableValidatingWebhook, "If true, enables validating webhooks for KubeDB CRDs.")
-	fs.BoolVar(&true, "enable-status-subresource", true, "If true, uses sub resource for KubeDB crds.")
 }
 
 func (s *ExtraOptions) AddFlags(fs *pflag.FlagSet) {

@@ -73,7 +73,7 @@ func (c *StashController) NewRestoreSessionWebhook() hooks.AdmissionHook {
 func (c *StashController) initRestoreSessionWatcher() {
 	c.restoreSessionInformer = c.stashInformerFactory.Stash().V1beta1().RestoreSessions().Informer()
 	c.restoreSessionQueue = queue.New(api_v1beta1.ResourceKindRestoreSession, c.MaxNumRequeues, c.NumThreads, c.runRestoreSessionProcessor)
-	c.restoreSessionInformer.AddEventHandler(queue.NewReconcilableHandler(c.restoreSessionQueue.GetQueue()))
+	c.restoreSessionInformer.AddEventHandler(queue.DefaultEventHandler(c.restoreSessionQueue.GetQueue()))
 	c.restoreSessionLister = c.stashInformerFactory.Stash().V1beta1().RestoreSessions().Lister()
 }
 
@@ -91,19 +91,7 @@ func (c *StashController) runRestoreSessionProcessor(key string) error {
 	restoreSession := obj.(*api_v1beta1.RestoreSession)
 	glog.Infof("Sync/Add/Update for RestoreSession %s", restoreSession.GetName())
 	// process sync/add/update event
-	err = c.applyRestoreSessionReconciliationLogic(restoreSession)
-	if err != nil {
-		return err
-	}
-
-	// We have successfully completed respective stuffs for the current state of this resource.
-	// Hence, let's set observed generation as same as the current generation.
-	_, err = stash_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
-		in.ObservedGeneration = restoreSession.Generation
-		return in
-	}, true)
-
-	return err
+	return c.applyRestoreSessionReconciliationLogic(restoreSession)
 }
 
 func (c *StashController) applyRestoreSessionReconciliationLogic(restoreSession *api_v1beta1.RestoreSession) error {
@@ -523,7 +511,7 @@ func (c *StashController) setRestoreSessionRunning(restoreSession *api_v1beta1.R
 		in.Phase = api_v1beta1.RestoreSessionRunning
 		in.TotalHosts = totalHosts
 		return in
-	}, true)
+	})
 	if err != nil {
 		return err
 	}
@@ -551,7 +539,7 @@ func (c *StashController) setRestoreSessionSucceeded(restoreSession *api_v1beta1
 		in.Phase = api_v1beta1.RestoreSessionSucceeded
 		in.SessionDuration = sessionDuration.String()
 		return in
-	}, true)
+	})
 	if err != nil {
 		return err
 	}
@@ -581,7 +569,7 @@ func (c *StashController) setRestoreSessionFailed(restoreSession *api_v1beta1.Re
 	updatedRestoreSession, err := v1beta1_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
 		in.Phase = api_v1beta1.RestoreSessionFailed
 		return in
-	}, true)
+	})
 	if err != nil {
 		return errors.NewAggregate([]error{restoreErr, err})
 	}
@@ -612,7 +600,7 @@ func (c *StashController) setRestoreSessionUnknown(restoreSession *api_v1beta1.R
 	_, err := v1beta1_util.UpdateRestoreSessionStatus(c.stashClient.StashV1beta1(), restoreSession, func(in *api_v1beta1.RestoreSessionStatus) *api_v1beta1.RestoreSessionStatus {
 		in.Phase = api_v1beta1.RestoreSessionUnknown
 		return in
-	}, true)
+	})
 	if err != nil {
 		return errors.NewAggregate([]error{restoreErr, err})
 	}

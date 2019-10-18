@@ -106,10 +106,6 @@ const (
 )
 
 type RestoreSessionStatus struct {
-	// ObservedGeneration is the most recent generation observed for this RestoreSession. It corresponds to the
-	// RestoreSession's generation, which is updated on mutation by the API Server.
-	// +optional
-	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 	// Phase indicates the overall phase of the restore process for this RestoreSession. Phase will be "Succeeded" only if
 	// phase of all hosts are "Succeeded". If any of the host fail to complete restore, Phase will be "Failed".
 	// +optional

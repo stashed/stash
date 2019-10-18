@@ -16757,13 +16757,6 @@ func schema_stash_apis_stash_v1beta1_BackupSessionStatus(ref common.ReferenceCal
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
-					"observedGeneration": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ObservedGeneration is the most recent generation observed for this BackupSession. It corresponds to the BackupSession's generation, which is updated on mutation by the API Server.",
-							Type:        []string{"integer"},
-							Format:      "int64",
-						},
-					},
 					"phase": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Phase indicates the overall phase of the backup process for this BackupSession. Phase will be \"Succeeded\" only if phase of all hosts are \"Succeeded\". If any of the host fail to complete backup, Phase will be \"Failed\".",
@@ -17494,13 +17487,6 @@ func schema_stash_apis_stash_v1beta1_RestoreSessionStatus(ref common.ReferenceCa
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
-					"observedGeneration": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ObservedGeneration is the most recent generation observed for this RestoreSession. It corresponds to the RestoreSession's generation, which is updated on mutation by the API Server.",
-							Type:        []string{"integer"},
-							Format:      "int64",
-						},
-					},
 					"phase": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Phase indicates the overall phase of the restore process for this RestoreSession. Phase will be \"Succeeded\" only if phase of all hosts are \"Succeeded\". If any of the host fail to complete restore, Phase will be \"Failed\".",

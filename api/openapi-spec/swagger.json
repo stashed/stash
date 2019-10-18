@@ -9809,11 +9809,6 @@
     "dev.appscode.stash.stash.apis.stash.v1beta1.BackupSessionStatus": {
       "type": "object",
       "properties": {
-        "observedGeneration": {
-          "description": "ObservedGeneration is the most recent generation observed for this BackupSession. It corresponds to the BackupSession's generation, which is updated on mutation by the API Server.",
-          "type": "integer",
-          "format": "int64"
-        },
         "phase": {
           "description": "Phase indicates the overall phase of the backup process for this BackupSession. Phase will be \"Succeeded\" only if phase of all hosts are \"Succeeded\". If any of the host fail to complete backup, Phase will be \"Failed\".",
           "type": "string"
@@ -10221,11 +10216,6 @@
     "dev.appscode.stash.stash.apis.stash.v1beta1.RestoreSessionStatus": {
       "type": "object",
       "properties": {
-        "observedGeneration": {
-          "description": "ObservedGeneration is the most recent generation observed for this RestoreSession. It corresponds to the RestoreSession's generation, which is updated on mutation by the API Server.",
-          "type": "integer",
-          "format": "int64"
-        },
         "phase": {
           "description": "Phase indicates the overall phase of the restore process for this RestoreSession. Phase will be \"Succeeded\" only if phase of all hosts are \"Succeeded\". If any of the host fail to complete restore, Phase will be \"Failed\".",
           "type": "string"

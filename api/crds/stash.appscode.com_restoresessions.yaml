@@ -3352,12 +3352,6 @@ spec:
           type: object
         status:
           properties:
-            observedGeneration:
-              description: ObservedGeneration is the most recent generation observed
-                for this RestoreSession. It corresponds to the RestoreSession's generation,
-                which is updated on mutation by the API Server.
-              format: int64
-              type: integer
             phase:
               description: Phase indicates the overall phase of the restore process
                 for this RestoreSession. Phase will be "Succeeded" only if phase of

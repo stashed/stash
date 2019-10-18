@@ -39,7 +39,6 @@ func NewRootCmd() *cobra.Command {
 	logs.ParseFlags()
 	rootCmd.PersistentFlags().StringVar(&util.ServiceName, "service-name", "stash-operator", "Stash service name.")
 	rootCmd.PersistentFlags().BoolVar(&cli.EnableAnalytics, "enable-analytics", cli.EnableAnalytics, "Send analytical events to Google Analytics")
-	rootCmd.PersistentFlags().BoolVar(&true, "enable-status-subresource", true, "If true, uses sub resource for crds.")
 
 	rootCmd.AddCommand(v.NewCmdVersion())
 	stopCh := genericapiserver.SetupSignalHandler()

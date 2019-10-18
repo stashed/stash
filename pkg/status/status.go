@@ -119,7 +119,6 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 				}
 				return in
 			},
-			true,
 		)
 		if err != nil {
 			return err

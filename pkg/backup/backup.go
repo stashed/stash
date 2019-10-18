@@ -317,7 +317,7 @@ func (c *Controller) runResticBackup(restic *api.Restic, repository *api.Reposit
 				}
 				in.LastBackupDuration = endTime.Sub(startTime.Time).String()
 				return in
-			}, true)
+			})
 		}
 	}()
 
