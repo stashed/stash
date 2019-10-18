@@ -1,23 +1,19 @@
 package e2e_test
 
 import (
-	"strings"
 	"testing"
 	"time"
 
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
-	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
-	discovery_util "kmodules.xyz/client-go/discovery"
 	"kmodules.xyz/client-go/logs"
 	"kmodules.xyz/client-go/tools/cli"
 	"kmodules.xyz/client-go/tools/clientcmd"
-	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/client/clientset/versioned/scheme"
 	_ "stash.appscode.dev/stash/client/clientset/versioned/scheme"
 	"stash.appscode.dev/stash/pkg/controller"
@@ -51,12 +47,6 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	ctrlConfig := controller.NewConfig(clientConfig)
 
-	discClient, err := discovery.NewDiscoveryClientForConfig(clientConfig)
-	serverVersion, err := discovery_util.GetBaseVersion(discClient)
-	Expect(err).NotTo(HaveOccurred())
-	if strings.Compare(serverVersion, "1.11") >= 0 {
-		apis.EnableStatusSubresource = true
-	}
 	err = options.ApplyTo(ctrlConfig)
 	Expect(err).NotTo(HaveOccurred())
 
