@@ -27,7 +27,6 @@ func NewInitContainer(r *v1alpha1_api.Restic, workload v1alpha1_api.LocalTypedRe
 		fmt.Sprintf("--enable-analytics=%v", cli.EnableAnalytics),
 	}
 	container.Args = append(container.Args, cli.LoggerOptions.ToFlags()...)
-	container.Args = append(container.Args, "--enable-rbac=true")
 
 	return container
 }
