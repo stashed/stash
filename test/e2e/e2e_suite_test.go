@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
-	"k8s.io/client-go/dynamic"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
@@ -39,22 +39,20 @@ func TestE2e(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	scheme.AddToScheme(clientsetscheme.Scheme)
-	scheme.AddToScheme(legacyscheme.Scheme)
+	utilruntime.Must(scheme.AddToScheme(clientsetscheme.Scheme))
+	utilruntime.Must(scheme.AddToScheme(legacyscheme.Scheme))
 	cli.LoggerOptions.Verbosity = "5"
 
 	clientConfig, err := clientcmd.BuildConfigFromContext(options.KubeConfig, options.KubeContext)
 	Expect(err).NotTo(HaveOccurred())
-	ctrlConfig := controller.NewConfig(clientConfig)
+	cfg := controller.NewConfig(clientConfig)
 
-	err = options.ApplyTo(ctrlConfig)
+	err = options.ApplyTo(cfg)
 	Expect(err).NotTo(HaveOccurred())
 
 	kaClient := ka.NewForConfigOrDie(clientConfig)
-	dmClient := dynamic.NewForConfigOrDie(clientConfig)
 
-	root = framework.New(ctrlConfig.KubeClient, ctrlConfig.StashClient, kaClient, dmClient, clientConfig, options.StorageClass)
-	framework.RootFramework = root
+	root = framework.New(cfg.KubeClient, cfg.StashClient, kaClient, clientConfig, options.StorageClass)
 	err = root.CreateTestNamespace()
 	Expect(err).NotTo(HaveOccurred())
 	By("Using test namespace " + root.Namespace())

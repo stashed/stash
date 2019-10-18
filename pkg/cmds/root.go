@@ -8,6 +8,7 @@ import (
 	"github.com/appscode/go/log/golog"
 	v "github.com/appscode/go/version"
 	"github.com/spf13/cobra"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
@@ -28,10 +29,10 @@ func NewRootCmd() *cobra.Command {
 			flags.DumpAll(c.Flags())
 			cli.SendAnalytics(c, v.Version.Version)
 
-			scheme.AddToScheme(clientsetscheme.Scheme)
-			scheme.AddToScheme(legacyscheme.Scheme)
-			ocscheme.AddToScheme(clientsetscheme.Scheme)
-			ocscheme.AddToScheme(legacyscheme.Scheme)
+			utilruntime.Must(scheme.AddToScheme(clientsetscheme.Scheme))
+			utilruntime.Must(scheme.AddToScheme(legacyscheme.Scheme))
+			utilruntime.Must(ocscheme.AddToScheme(clientsetscheme.Scheme))
+			utilruntime.Must(ocscheme.AddToScheme(legacyscheme.Scheme))
 			cli.LoggerOptions = golog.ParseFlags(c.Flags())
 		},
 	}

@@ -49,6 +49,7 @@ func generateSwaggerJson() {
 			stashv1beta1.GetOpenAPIDefinitions,
 			repov1alpha1.GetOpenAPIDefinitions,
 		},
+		//nolint:govet
 		Resources: []openapi.TypeInfo{
 			// v1alpha1 resources
 			{stashv1alpha1.SchemeGroupVersion, stashv1alpha1.ResourcePluralRestic, stashv1alpha1.ResourceKindRestic, true},
