@@ -70,12 +70,11 @@ func FindBackupConfiguration(lister v1beta1_listers.BackupConfigurationLister, w
 
 // BackupConfigurationEqual check whether two BackupConfigurations has same specification.
 func BackupConfigurationEqual(old, new *v1beta1_api.BackupConfiguration) bool {
-	var oldSpec, newSpec *v1beta1_api.BackupConfigurationSpec
-	if old != nil {
-		oldSpec = &old.Spec
+	if (old == nil && new != nil) || (old != nil && new == nil) {
+		return false
 	}
-	if new != nil {
-		newSpec = &new.Spec
+	if old == nil && new == nil {
+		return true
 	}
 
 	// If "spec.paused" field is changed, we don't need to restart the workload.
@@ -84,15 +83,15 @@ func BackupConfigurationEqual(old, new *v1beta1_api.BackupConfiguration) bool {
 	// We should not change the original value of "spec.paused" field of the old BackupConfiguration.
 	// Hence, we will keep the original value in a temporary variable and re-assign the original value
 	// after the comparison.
-	if oldSpec != nil && newSpec != nil {
-		tmp := oldSpec.Paused
-		oldSpec.Paused = newSpec.Paused
-		res := reflect.DeepEqual(oldSpec, newSpec)
-		oldSpec.Paused = tmp
-		return res
 
-	}
-	return reflect.DeepEqual(oldSpec, newSpec)
+	oldSpec := &old.Spec
+	newSpec := &new.Spec
+
+	oldVal := oldSpec.Paused
+	oldSpec.Paused = newSpec.Paused
+	result := reflect.DeepEqual(oldSpec, newSpec)
+	oldSpec.Paused = oldVal
+	return result
 }
 
 func BackupPending(phase v1beta1_api.BackupSessionPhase) bool {
