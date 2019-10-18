@@ -238,7 +238,6 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 	implicitInputs := core_util.UpsertMap(repoInputs, bcInputs)
 	implicitInputs[apis.Namespace] = backupSession.Namespace
 	implicitInputs[apis.BackupSession] = backupSession.Name
-	implicitInputs[apis.StatusSubresourceEnabled] = fmt.Sprint(true)
 
 	taskResolver := resolve.TaskResolver{
 		StashClient:     c.stashClient,
