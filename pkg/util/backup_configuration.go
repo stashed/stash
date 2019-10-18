@@ -77,6 +77,21 @@ func BackupConfigurationEqual(old, new *v1beta1_api.BackupConfiguration) bool {
 	if new != nil {
 		newSpec = &new.Spec
 	}
+
+	// If "spec.paused" field is changed, we don't need to restart the workload.
+	// Hence, we will compare the new and old BackupConfiguration spec after making
+	// `spec.paused` field equal. This will avoid the restart.
+	// We should not change the original value of "spec.paused" field of the old BackupConfiguration.
+	// Hence, we will keep the original value in a temporary variable and re-assign the original value
+	// after the comparison.
+	if oldSpec != nil && newSpec != nil {
+		tmp := oldSpec.Paused
+		oldSpec.Paused = newSpec.Paused
+		res := reflect.DeepEqual(oldSpec, newSpec)
+		oldSpec.Paused = tmp
+		return res
+
+	}
 	return reflect.DeepEqual(oldSpec, newSpec)
 }
 

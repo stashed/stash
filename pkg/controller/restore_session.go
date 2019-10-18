@@ -399,7 +399,6 @@ func (c *StashController) resolveRestoreTask(restoreSession *api_v1beta1.Restore
 	implicitInputs := core_util.UpsertMap(repoInputs, rsInputs)
 	implicitInputs[apis.Namespace] = restoreSession.Namespace
 	implicitInputs[apis.RestoreSession] = restoreSession.Name
-	implicitInputs[apis.StatusSubresourceEnabled] = fmt.Sprint(true)
 
 	taskResolver := resolve.TaskResolver{
 		StashClient:     c.stashClient,

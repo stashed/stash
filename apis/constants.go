@@ -53,8 +53,6 @@ const (
 	IONiceClass     = "IONICE_CLASS"
 	IONiceClassData = "IONICE_CLASS_DATA"
 
-	StatusSubresourceEnabled = "ENABLE_STATUS_SUBRESOURCE"
-
 	PushgatewayURL    = "PROMETHEUS_PUSHGATEWAY_URL"
 	PrometheusJobName = "PROMETHEUS_JOB_NAME"
 
