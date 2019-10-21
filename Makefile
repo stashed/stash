@@ -348,18 +348,16 @@ test: unit-tests e2e-tests
 
 bin/.container-$(DOTFILE_IMAGE)-TEST:
 	@echo "container: $(TEST_IMAGE)"
-	@if [ -z $(docker images -q $(TEST_IMAGE)) ]; then \
-		sed                                            \
-		    -e 's|{ARG_BIN}|$(BIN)|g'                   \
-		    -e 's|{ARG_ARCH}|$(ARCH)|g'                 \
-		    -e 's|{ARG_OS}|$(OS)|g'                     \
-		    -e 's|{ARG_FROM}|$(BUILD_IMAGE)|g'         \
-		    -e 's|{RESTIC_VER}|$(RESTIC_VER)|g'         \
-		    -e 's|{NEW_RESTIC_VER}|$(NEW_RESTIC_VER)|g' \
-		    $(DOCKERFILE_TEST) > bin/.dockerfile-TEST-$(OS)_$(ARCH);      \
-		DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --platform $(OS)/$(ARCH) --load --pull -t $(TEST_IMAGE) -f bin/.dockerfile-TEST-$(OS)_$(ARCH) .;  \
-		docker images -q $(TEST_IMAGE) > $@;   \
-	fi
+	@sed                                            \
+	    -e 's|{ARG_BIN}|$(BIN)|g'                   \
+	    -e 's|{ARG_ARCH}|$(ARCH)|g'                 \
+	    -e 's|{ARG_OS}|$(OS)|g'                     \
+	    -e 's|{ARG_FROM}|$(BUILD_IMAGE)|g'          \
+	    -e 's|{RESTIC_VER}|$(RESTIC_VER)|g'         \
+	    -e 's|{NEW_RESTIC_VER}|$(NEW_RESTIC_VER)|g' \
+	    $(DOCKERFILE_TEST) > bin/.dockerfile-TEST-$(OS)_$(ARCH)
+	@DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --platform $(OS)/$(ARCH) --load --pull -t $(TEST_IMAGE) -f bin/.dockerfile-TEST-$(OS)_$(ARCH) .
+	@docker images -q $(TEST_IMAGE) > $@
 	@echo
 
 unit-tests: $(BUILD_DIRS) bin/.container-$(DOTFILE_IMAGE)-TEST
