@@ -36,7 +36,7 @@ func NewCheckJob(restic *api_v1alpha1.Restic, hostName, smartPrefix string, imag
 				AnnotationRestic:    restic.Name,
 				AnnotationOperation: OperationCheck,
 				// ensure that job gets deleted on completion
-				apis.KeyDeleteJobOnCompletion: "true",
+				apis.KeyDeleteJobOnCompletion: apis.AllowDeletingJobOnCompletion,
 			},
 		},
 		Spec: batch.JobSpec{
@@ -129,7 +129,7 @@ func NewRecoveryJob(stashClient cs.Interface, recovery *api_v1alpha1.Recovery, i
 				AnnotationRecovery:  recovery.Name,
 				AnnotationOperation: OperationRecovery,
 				// ensure that the job gets deleted on completion
-				apis.KeyDeleteJobOnCompletion: "true",
+				apis.KeyDeleteJobOnCompletion: apis.AllowDeletingJobOnCompletion,
 			},
 		},
 		Spec: batch.JobSpec{

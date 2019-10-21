@@ -276,7 +276,7 @@ var _ = Describe("Snapshots", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking deleted snapshot not exist")
-			singleSnapshot, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).Get(snapshotToDelete, metav1.GetOptions{})
+			_, err = f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).Get(snapshotToDelete, metav1.GetOptions{})
 			Expect(err).To(HaveOccurred())
 		}
 	)

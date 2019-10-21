@@ -9,6 +9,7 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/reference"
@@ -141,7 +142,10 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 
 	job, err := util.NewRecoveryJob(c.stashClient, rec, image)
 	if err != nil {
-		eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, rec, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
+		_, err2 := eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, rec, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
+		if err2 != nil {
+			return err
+		}
 		return err
 	}
 	job.Spec.Template.Spec.ServiceAccountName = job.Name
@@ -154,13 +158,19 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 		}
 		log.Errorln(err)
 
-		stash_util.UpdateRecoveryStatus(c.stashClient.StashV1alpha1(), rec, func(in *api.RecoveryStatus) *api.RecoveryStatus {
+		_, err2 := stash_util.UpdateRecoveryStatus(c.stashClient.StashV1alpha1(), rec, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 			in.Phase = api.RecoveryFailed
 			return in
 		})
+		if err2 != nil {
+			return err
+		}
 		ref, rerr := reference.GetReference(scheme.Scheme, rec)
 		if rerr == nil {
-			eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, ref, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
+			_, err2 := eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, ref, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
+			if err2 != nil {
+				return err
+			}
 		}
 		return err
 	}
@@ -171,14 +181,14 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 	}
 	if err := stash_rbac.EnsureRecoveryRBAC(c.kubeClient, ref); err != nil {
 		err = fmt.Errorf("error ensuring rbac for recovery job %s, reason: %s", job.Name, err)
-		eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, rec, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
-		return err
+		_, err2 := eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, rec, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
+		return errors.NewAggregate([]error{err, err2})
 	}
 
 	if err := stash_rbac.EnsureRepoReaderRBAC(c.kubeClient, c.stashClient, ref, rec); err != nil {
 		err = fmt.Errorf("error ensuring repository-reader rbac for recovery job %s, reason: %s", job.Name, err)
-		eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, rec, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
-		return err
+		_, err2 := eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, rec, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
+		return errors.NewAggregate([]error{err, err2})
 	}
 
 	log.Infoln("Recovery job created:", job.Name)
@@ -186,10 +196,10 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 	if rerr == nil {
 		c.recorder.Eventf(ref, core.EventTypeNormal, eventer.EventReasonJobCreated, "Recovery job created: %s", job.Name)
 	}
-	stash_util.UpdateRecoveryStatus(c.stashClient.StashV1alpha1(), rec, func(in *api.RecoveryStatus) *api.RecoveryStatus {
+	_, err = stash_util.UpdateRecoveryStatus(c.stashClient.StashV1alpha1(), rec, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 		in.Phase = api.RecoveryRunning
 		return in
 	})
 
-	return nil
+	return err
 }

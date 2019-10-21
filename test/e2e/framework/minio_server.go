@@ -11,6 +11,7 @@ import (
 	"gomodules.xyz/cert"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -67,7 +68,10 @@ func (fi *Invocation) CreateMinioServer(tls bool, ips []net.IP) (string, error) 
 	if err != nil {
 		return "", err
 	}
-	apps_util.WaitUntilDeploymentReady(fi.KubeClient, mdeploy.ObjectMeta)
+	err = apps_util.WaitUntilDeploymentReady(fi.KubeClient, mdeploy.ObjectMeta)
+	if err != nil {
+		return "", err
+	}
 	return fi.MinioServiceAddres(), nil
 }
 
@@ -260,26 +264,51 @@ func (fi *Invocation) CreateServiceForMinioServer(obj core.Service) (*core.Servi
 	return fi.KubeClient.CoreV1().Services(obj.Namespace).Create(&obj)
 }
 
-func (fi *Invocation) DeleteMinioServer() {
-	fi.DeleteSecretForMinioServer(mcred.ObjectMeta)
-	fi.DeletePVCForMinioServer(mpvc.ObjectMeta)
-	fi.DeleteDeploymentForMinioServer(mdeploy.ObjectMeta)
-	fi.DeleteServiceForMinioServer(msrvc.ObjectMeta)
+func (fi *Invocation) DeleteMinioServer() error {
+	if err := fi.DeleteSecretForMinioServer(mcred.ObjectMeta); err != nil {
+		return err
+	}
+	if err := fi.DeletePVCForMinioServer(mpvc.ObjectMeta); err != nil {
+		return err
+	}
+	if err := fi.DeleteDeploymentForMinioServer(mdeploy.ObjectMeta); err != nil {
+		return err
+	}
+	if err := fi.DeleteServiceForMinioServer(msrvc.ObjectMeta); err != nil {
+		return err
+	}
+	return nil
 }
 func (f *Framework) DeleteSecretForMinioServer(meta metav1.ObjectMeta) error {
-	return f.KubeClient.CoreV1().Secrets(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	err := f.KubeClient.CoreV1().Secrets(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	if !kerr.IsNotFound(err) {
+		return err
+	}
+	return nil
 }
 
 func (f *Framework) DeletePVCForMinioServer(meta metav1.ObjectMeta) error {
-	return f.KubeClient.CoreV1().PersistentVolumeClaims(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	err := f.KubeClient.CoreV1().PersistentVolumeClaims(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	if !kerr.IsNotFound(err) {
+		return err
+	}
+	return nil
 }
 
 func (f *Framework) DeleteDeploymentForMinioServer(meta metav1.ObjectMeta) error {
-	return f.KubeClient.AppsV1().Deployments(meta.Namespace).Delete(meta.Name, deleteInBackground())
+	err := f.KubeClient.AppsV1().Deployments(meta.Namespace).Delete(meta.Name, deleteInBackground())
+	if !kerr.IsNotFound(err) {
+		return err
+	}
+	return nil
 }
 
 func (f *Framework) DeleteServiceForMinioServer(meta metav1.ObjectMeta) error {
-	return f.KubeClient.CoreV1().Services(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	err := f.KubeClient.CoreV1().Services(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	if !kerr.IsNotFound(err) {
+		return err
+	}
+	return nil
 }
 
 func (fi *Invocation) MinioServerSANs(ips []net.IP) cert.AltNames {

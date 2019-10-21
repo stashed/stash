@@ -198,6 +198,9 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 			core_util.EnsureOwnerReference(&in.ObjectMeta, backupConfigRef)
 			return in
 		})
+		if err != nil {
+			return err
+		}
 	}
 
 	psps, err := c.getBackupJobPSPNames(backupConfig)

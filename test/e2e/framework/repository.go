@@ -9,6 +9,7 @@ import (
 	"gomodules.xyz/stow"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	store "kmodules.xyz/objectstore-api/api/v1"
 	"kmodules.xyz/objectstore-api/osm"
@@ -25,17 +26,17 @@ type KindMetaReplicas struct {
 
 func (f *Framework) EventuallyRepository(workload interface{}) GomegaAsyncAssertion {
 	return Eventually(func() []*api.Repository {
-		switch workload.(type) {
+		switch w := workload.(type) {
 		case *apps.DaemonSet:
-			return f.DaemonSetRepos(workload.(*apps.DaemonSet))
+			return f.DaemonSetRepos(w)
 		case *apps.Deployment:
-			return f.DeploymentRepos(workload.(*apps.Deployment))
+			return f.DeploymentRepos(w)
 		case *core.ReplicationController:
-			return f.ReplicationControllerRepos(workload.(*core.ReplicationController))
+			return f.ReplicationControllerRepos(w)
 		case *apps.ReplicaSet:
-			return f.ReplicaSetRepos(workload.(*apps.ReplicaSet))
+			return f.ReplicaSetRepos(w)
 		case *apps.StatefulSet:
-			return f.StatefulSetRepos(workload.(*apps.StatefulSet))
+			return f.StatefulSetRepos(w)
 		default:
 			return nil
 		}
@@ -73,7 +74,10 @@ func (f *Framework) DeleteRepositories(repositories []*api.Repository) {
 
 func (f *Framework) DeleteRepository(repository *api.Repository) error {
 	err := f.StashClient.StashV1alpha1().Repositories(repository.Namespace).Delete(repository.Name, deleteInBackground())
-	return err
+	if !kerr.IsNotFound(err) {
+		return err
+	}
+	return nil
 }
 func (f *Framework) BrowseResticRepository(repository *api.Repository) ([]stow.Item, error) {
 	cfg, err := osm.NewOSMContext(f.KubeClient, repository.Spec.Backend, repository.Namespace)

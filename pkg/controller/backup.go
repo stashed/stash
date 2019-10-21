@@ -91,7 +91,7 @@ func (c *StashController) applyBackupConfigurationLogic(w *wapi.Workload, caller
 		// this means BackupConfiguration has been removed.
 		// in this case, we have to delete the backup sidecar container
 		// and remove respective annotations from the workload.
-		err := c.ensureBackupSidecarDeleted(w, oldbc)
+		err := c.ensureBackupSidecarDeleted(w)
 		// write sidecar deletion failure/success event
 		ref, rerr := util.GetWorkloadReference(w)
 		if err != nil && rerr != nil {
@@ -133,10 +133,7 @@ func (c *StashController) applyResticLogic(w *wapi.Workload, caller string) (boo
 		// this means Restic has been removed.
 		// in this case, we have to delete the backup sidecar container
 		// and remove respective annotations from the workload.
-		err := c.ensureWorkloadSidecarDeleted(w, oldRestic)
-		if err != nil {
-			return false, nil
-		}
+		c.ensureWorkloadSidecarDeleted(w, oldRestic)
 		return true, nil
 	}
 

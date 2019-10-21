@@ -253,6 +253,9 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 			core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
 			return in
 		})
+		if err != nil {
+			return err
+		}
 	}
 
 	// now ensure RBAC stuff for this CronJob
@@ -268,7 +271,7 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 		in.Spec.Schedule = backupConfiguration.Spec.Schedule
 		in.Spec.JobTemplate.Labels = offshootLabels
 		// ensure that job gets deleted on completion
-		in.Spec.JobTemplate.Labels[apis.KeyDeleteJobOnCompletion] = "true"
+		in.Spec.JobTemplate.Labels[apis.KeyDeleteJobOnCompletion] = apis.AllowDeletingJobOnCompletion
 
 		in.Spec.JobTemplate.Spec.Template.Spec.Containers = core_util.UpsertContainer(
 			in.Spec.JobTemplate.Spec.Template.Spec.Containers,

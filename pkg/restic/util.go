@@ -12,31 +12,31 @@ func convertSizeToBytes(dataSize string) (float64, error) {
 	case strings.HasSuffix(dataSize, "TiB"):
 		_, err := fmt.Sscanf(dataSize, "%f TiB", &size)
 		if err != nil {
-			return 0, nil
+			return 0, err
 		}
 		return size * (1 << 40), nil
 	case strings.HasSuffix(dataSize, "GiB"):
 		_, err := fmt.Sscanf(dataSize, "%f GiB", &size)
 		if err != nil {
-			return 0, nil
+			return 0, err
 		}
 		return size * (1 << 30), nil
 	case strings.HasSuffix(dataSize, "MiB"):
 		_, err := fmt.Sscanf(dataSize, "%f MiB", &size)
 		if err != nil {
-			return 0, nil
+			return 0, err
 		}
 		return size * (1 << 20), nil
 	case strings.HasSuffix(dataSize, "KiB"):
 		_, err := fmt.Sscanf(dataSize, "%f KiB", &size)
 		if err != nil {
-			return 0, nil
+			return 0, err
 		}
 		return size * (1 << 10), nil
 	default:
 		_, err := fmt.Sscanf(dataSize, "%f B", &size)
 		if err != nil {
-			return 0, nil
+			return 0, err
 		}
 		return size, nil
 

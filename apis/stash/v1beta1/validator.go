@@ -30,7 +30,7 @@ func (r RestoreSession) IsValid() error {
 	}
 
 	// ensure that no two rules with non-emtpy targetHosts matches for a host
-	res := make(map[string]int, 0)
+	res := make(map[string]int)
 	for i, rule := range r.Spec.Rules {
 		for _, host := range rule.TargetHosts {
 			v, ok := res[host]

@@ -12,10 +12,7 @@ const (
 
 // TODO: complete
 func (t TargetRef) IsWorkload() bool {
-	if t.Kind == "Deployment" {
-		return true
-	}
-	return false
+	return t.Kind == "Deployment"
 }
 
 func GetOpenAPIDefinitionsWithRetentionPolicy(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {

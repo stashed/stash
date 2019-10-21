@@ -221,7 +221,7 @@ func (c *Controller) setup() (*api.Restic, *api.Repository, error) {
 	if err := os.MkdirAll(c.opt.ScratchDir, 0755); err != nil {
 		return nil, nil, fmt.Errorf("failed to create scratch dir: %s", err)
 	}
-	if err := ioutil.WriteFile(c.opt.ScratchDir+"/.stash", []byte("test"), 644); err != nil {
+	if err := ioutil.WriteFile(c.opt.ScratchDir+"/.stash", []byte("test"), 0644); err != nil {
 		return nil, nil, fmt.Errorf("no write access in scratch dir: %s", err)
 	}
 
@@ -256,7 +256,7 @@ func (c *Controller) setup() (*api.Restic, *api.Repository, error) {
 }
 
 func (c *Controller) runResticBackup(restic *api.Restic, repository *api.Repository) (err error) {
-	if restic.Spec.Paused == true {
+	if restic.Spec.Paused {
 		log.Infoln("skipped logging since restic is paused.")
 		return nil
 	}
@@ -300,16 +300,21 @@ func (c *Controller) runResticBackup(restic *api.Restic, repository *api.Reposit
 			}
 			restic_session_duration_seconds_total.Set(endTime.Sub(startTime.Time).Seconds())
 
-			push.Collectors(c.JobName(restic),
-				c.GroupingKeys(restic),
-				c.opt.PushgatewayURL,
+			pusher := push.New(c.opt.PushgatewayURL, c.JobName(restic))
+			registry := prometheus.NewRegistry()
+			registry.MustRegister(
 				restic_session_success,
 				restic_session_fail,
 				restic_session_duration_seconds_total,
-				restic_session_duration_seconds)
+				restic_session_duration_seconds,
+			)
+			err := pusher.Gatherer(registry).Push()
+			if err != nil {
+				log.Errorln(err)
+			}
 		}
 		if err == nil {
-			stash_util.UpdateRepositoryStatus(c.stashClient.StashV1alpha1(), repository, func(in *api.RepositoryStatus) *api.RepositoryStatus {
+			_, err2 := stash_util.UpdateRepositoryStatus(c.stashClient.StashV1alpha1(), repository, func(in *api.RepositoryStatus) *api.RepositoryStatus {
 				in.BackupCount++
 				in.LastBackupTime = &startTime
 				if in.FirstBackupTime == nil {
@@ -318,6 +323,9 @@ func (c *Controller) runResticBackup(restic *api.Restic, repository *api.Reposit
 				in.LastBackupDuration = endTime.Sub(startTime.Time).String()
 				return in
 			})
+			if err2 != nil {
+				log.Errorln(err2)
+			}
 		}
 	}()
 
@@ -383,7 +391,7 @@ func (c *Controller) runResticBackup(restic *api.Restic, repository *api.Reposit
 func (c *Controller) measure(f func(*api.Restic, api.FileGroup) error, restic *api.Restic, fg api.FileGroup, g prometheus.Gauge) (err error) {
 	startTime := time.Now()
 	defer func() {
-		g.Set(time.Now().Sub(startTime).Seconds())
+		g.Set(time.Since(startTime).Seconds())
 	}()
 	err = f(restic, fg)
 	return

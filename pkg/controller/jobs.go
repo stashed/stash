@@ -27,7 +27,7 @@ func (c *StashController) initJobWatcher() {
 			cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc},
 			func(options *metav1.ListOptions) {
 				options.LabelSelector = labels.SelectorFromSet(map[string]string{
-					apis.KeyDeleteJobOnCompletion: "true",
+					apis.KeyDeleteJobOnCompletion: apis.AllowDeletingJobOnCompletion,
 				}).String()
 			},
 		)

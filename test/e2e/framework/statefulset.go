@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -103,7 +104,11 @@ func (f *Framework) CreateStatefulSet(obj apps.StatefulSet) (*apps.StatefulSet, 
 }
 
 func (f *Framework) DeleteStatefulSet(meta metav1.ObjectMeta) error {
-	return f.KubeClient.AppsV1().StatefulSets(meta.Namespace).Delete(meta.Name, deleteInBackground())
+	err := f.KubeClient.AppsV1().StatefulSets(meta.Namespace).Delete(meta.Name, deleteInBackground())
+	if !kerr.IsNotFound(err) {
+		return err
+	}
+	return nil
 }
 
 func (f *Framework) EventuallyStatefulSet(meta metav1.ObjectMeta) GomegaAsyncAssertion {

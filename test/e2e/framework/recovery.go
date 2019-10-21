@@ -7,6 +7,7 @@ import (
 	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	store "kmodules.xyz/objectstore-api/api/v1"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
@@ -52,7 +53,11 @@ func (f *Framework) CreateRecovery(obj api.Recovery) error {
 }
 
 func (f *Framework) DeleteRecovery(meta metav1.ObjectMeta) error {
-	return f.StashClient.StashV1alpha1().Recoveries(meta.Namespace).Delete(meta.Name, deleteInBackground())
+	err := f.StashClient.StashV1alpha1().Recoveries(meta.Namespace).Delete(meta.Name, deleteInBackground())
+	if !kerr.IsNotFound(err) {
+		return err
+	}
+	return nil
 }
 
 func (f *Framework) EventuallyRecoverySucceed(meta metav1.ObjectMeta) GomegaAsyncAssertion {

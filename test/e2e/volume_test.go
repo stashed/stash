@@ -12,7 +12,6 @@ import (
 )
 
 var (
-	bpv              *core.PersistentVolume
 	bpvc             *core.PersistentVolumeClaim
 	rpvc             *core.PersistentVolumeClaim
 	pod              core.Pod

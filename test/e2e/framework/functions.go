@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
@@ -140,11 +141,17 @@ func (f *Invocation) CreateTask(task v1beta1.Task) error {
 }
 
 func (f *Invocation) DeleteFunction(meta metav1.ObjectMeta) error {
-	return f.StashClient.StashV1beta1().Functions().Delete(meta.Name, &metav1.DeleteOptions{})
-
+	err := f.StashClient.StashV1beta1().Functions().Delete(meta.Name, &metav1.DeleteOptions{})
+	if !kerr.IsNotFound(err) {
+		return err
+	}
+	return nil
 }
 
 func (f *Invocation) DeleteTask(meta metav1.ObjectMeta) error {
-	return f.StashClient.StashV1beta1().Tasks().Delete(meta.Name, &metav1.DeleteOptions{})
-
+	err := f.StashClient.StashV1beta1().Tasks().Delete(meta.Name, &metav1.DeleteOptions{})
+	if !kerr.IsNotFound(err) {
+		return err
+	}
+	return nil
 }

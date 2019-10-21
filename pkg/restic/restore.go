@@ -223,5 +223,4 @@ func (restoreOutput *RestoreOutput) upsertHostRestoreStats(hostStats api_v1beta1
 
 	// no entry for this host. add a new entry
 	restoreOutput.HostRestoreStats = append(restoreOutput.HostRestoreStats, hostStats)
-	return
 }

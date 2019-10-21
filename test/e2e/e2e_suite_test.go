@@ -25,9 +25,7 @@ const (
 )
 
 var (
-	ctrl         *controller.StashController
-	root         *framework.Framework
-	storageClass = "standard"
+	root *framework.Framework
 )
 
 func TestE2e(t *testing.T) {

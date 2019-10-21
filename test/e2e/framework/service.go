@@ -2,6 +2,7 @@ package framework
 
 import (
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 )
@@ -37,7 +38,11 @@ func (f *Framework) CreateService(obj core.Service) error {
 }
 
 func (f *Framework) DeleteService(meta metav1.ObjectMeta) error {
-	return f.KubeClient.CoreV1().Services(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	err := f.KubeClient.CoreV1().Services(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	if !kerr.IsNotFound(err) {
+		return err
+	}
+	return nil
 }
 
 func (f *Framework) CreateOrPatchService(obj core.Service) error {

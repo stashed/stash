@@ -90,7 +90,10 @@ func (c *Controller) electLeader() error {
 			Callbacks: leaderelection.LeaderCallbacks{
 				OnStartedLeading: func(ctx context.Context) {
 					log.Infoln("Got leadership, preparing backup backup")
-					c.setupAndRunScheduler(ctx.Done())
+					err := c.setupAndRunScheduler(ctx.Done())
+					if err != nil {
+						log.Errorln(err)
+					}
 				},
 				OnStoppedLeading: func() {
 					log.Infoln("Lost leadership, stopping backup backup")
@@ -139,7 +142,12 @@ func (c *Controller) configureScheduler(r *api.Restic) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.cron.AddFunc("0 0 */3 * *", func() { c.checkOnceForScheduler() })
+	_, err = c.cron.AddFunc("0 0 */3 * *", func() {
+		err2 := c.checkOnceForScheduler()
+		if err2 != nil {
+			log.Errorln(err2)
+		}
+	})
 	return err
 }
 

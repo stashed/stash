@@ -109,7 +109,7 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, rs *api_v
 	return nil
 }
 
-func (c *StashController) ensureRestoreInitContainerDeleted(w *wapi.Workload, rs *api_v1beta1.RestoreSession) error {
+func (c *StashController) ensureRestoreInitContainerDeleted(w *wapi.Workload) error {
 	// remove resource hash annotation
 	if w.Spec.Template.Annotations != nil {
 		delete(w.Spec.Template.Annotations, api_v1beta1.AppliedRestoreSessionSpecHash)

@@ -4,6 +4,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/appscode/go/log"
 	vs_api "github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1alpha1"
 	vs_cs "github.com/kubernetes-csi/external-snapshotter/pkg/client/clientset/versioned"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -133,6 +134,7 @@ func applyRetentionPolicy(policy v1alpha1.RetentionPolicy, volumeSnapshots Volum
 		}
 	}
 
+	log.Infof("VolumeSnapshot kept: %d removed: %d", len(kept), len(removed))
 	return nil
 }
 

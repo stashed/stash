@@ -43,7 +43,7 @@ func (c *StashController) inputsForBackupConfig(backupConfig api.BackupConfigura
 	return inputs, nil
 }
 
-func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSession, host string) (map[string]string, error) {
+func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSession, host string) map[string]string {
 	// get inputs for target
 	inputs := c.inputsForRestoreTarget(restoreSession.Spec.Target)
 
@@ -76,7 +76,7 @@ func (c *StashController) inputsForRestoreSession(restoreSession api.RestoreSess
 	metricInputs := c.inputForMetrics(restoreSession.Name)
 	inputs = core_util.UpsertMap(inputs, metricInputs)
 
-	return inputs, nil
+	return inputs
 }
 
 func (c *StashController) inputsForRepository(repository *apiAlpha.Repository) (inputs map[string]string, err error) {

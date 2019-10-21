@@ -194,13 +194,13 @@ func (c *BackupSessionController) startBackupProcess(backupSession *api_v1beta1.
 	// step down from leadership so that another replica can acquire leadership and start taking backup.
 	switch backupConfiguration.Spec.Target.Ref.Kind {
 	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController, apis.KindDeploymentConfig:
-		return c.backup(backupSession, backupConfiguration)
+		return c.backup(backupConfiguration)
 	default:
 		return nil, c.electBackupLeader(backupSession, backupConfiguration)
 	}
 }
 
-func (c *BackupSessionController) backup(backupSession *api_v1beta1.BackupSession, backupConfiguration *api_v1beta1.BackupConfiguration) (*restic.BackupOutput, error) {
+func (c *BackupSessionController) backup(backupConfiguration *api_v1beta1.BackupConfiguration) (*restic.BackupOutput, error) {
 
 	// get repository
 	repository, err := c.StashClient.StashV1alpha1().Repositories(backupConfiguration.Namespace).Get(backupConfiguration.Spec.Repository.Name, metav1.GetOptions{})
@@ -337,7 +337,7 @@ func (c *BackupSessionController) electBackupLeader(backupSession *api_v1beta1.B
 			OnStartedLeading: func(ctx context.Context) {
 				log.Infoln("Got leadership, preparing for backup")
 				// run backup process
-				backupOutput, backupErr := c.backup(backupSession, backupConfiguration)
+				backupOutput, backupErr := c.backup(backupConfiguration)
 				if backupErr != nil {
 					err := c.handleBackupFailure(backupSession.Name, backupErr)
 					if err != nil {

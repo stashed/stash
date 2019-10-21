@@ -28,7 +28,11 @@ func (f *Framework) CreateNamespace(ns *core.Namespace) error {
 }
 
 func (f *Framework) DeleteNamespace(name string) error {
-	return f.KubeClient.CoreV1().Namespaces().Delete(name, deleteInBackground())
+	err := f.KubeClient.CoreV1().Namespaces().Delete(name, deleteInBackground())
+	if !kerr.IsNotFound(err) {
+		return err
+	}
+	return nil
 }
 
 func (f *Framework) NewNamespace(name string) *core.Namespace {
