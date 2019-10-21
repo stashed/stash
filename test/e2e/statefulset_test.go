@@ -20,7 +20,7 @@ import (
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 )
 
-var _ = Describe("StatefulSet", func() {
+var _ = XDescribe("StatefulSet", func() {
 	var (
 		err          error
 		f            *framework.Invocation
@@ -68,9 +68,9 @@ var _ = Describe("StatefulSet", func() {
 		restic.Spec.Backend.StorageSecretName = cred.Name
 		secondRestic.Spec.Backend.StorageSecretName = cred.Name
 		svc = f.HeadlessService()
-		pvc := f.GetPersistentVolumeClaim()
+		pvc := f.PersistentVolumeClaim()
 
-		err := f.CreatePersistentVolumeClaim(pvc)
+		_, err := f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
 		ss = f.StatefulSet(pvc.Name)
 		localRef = api.LocalTypedReference{

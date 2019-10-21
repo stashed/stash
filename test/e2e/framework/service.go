@@ -39,7 +39,7 @@ func (f *Framework) CreateService(obj core.Service) error {
 
 func (f *Framework) DeleteService(meta metav1.ObjectMeta) error {
 	err := f.KubeClient.CoreV1().Services(meta.Namespace).Delete(meta.Name, deleteInForeground())
-	if !kerr.IsNotFound(err) {
+	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
 	return nil

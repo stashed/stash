@@ -12,8 +12,8 @@ import (
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
-func (f *Invocation) RestoreSession(repoName string, targetref v1beta1.TargetRef, rules []v1beta1.Rule) v1beta1.RestoreSession {
-	return v1beta1.RestoreSession{
+func (f *Invocation) GetRestoreSessionForWorkload(repoName string, targetRef v1beta1.TargetRef) *v1beta1.RestoreSession {
+	return &v1beta1.RestoreSession{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(f.app),
 			Namespace: f.namespace,
@@ -22,9 +22,13 @@ func (f *Invocation) RestoreSession(repoName string, targetref v1beta1.TargetRef
 			Repository: core.LocalObjectReference{
 				Name: repoName,
 			},
-			Rules: rules,
+			Rules: []v1beta1.Rule{
+				{
+					Paths: []string{TestSourceDataMountPath},
+				},
+			},
 			Target: &v1beta1.RestoreTarget{
-				Ref: targetref,
+				Ref: targetRef,
 				VolumeMounts: []core.VolumeMount{
 					{
 						Name:      TestSourceDataVolumeName,
@@ -36,17 +40,34 @@ func (f *Invocation) RestoreSession(repoName string, targetref v1beta1.TargetRef
 	}
 }
 
-func (f *Invocation) CreateRestoreSession(restoreSession v1beta1.RestoreSession) error {
-	_, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Create(&restoreSession)
+func (f *Invocation) CreateRestoreSession(restoreSession *v1beta1.RestoreSession) error {
+	_, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Create(restoreSession)
 	return err
 }
 
 func (f Invocation) DeleteRestoreSession(meta metav1.ObjectMeta) error {
 	err := f.StashClient.StashV1beta1().RestoreSessions(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
-	if !kerr.IsNotFound(err) {
+	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
 	return nil
+}
+
+func (f *Framework) EventuallyRestoreProcessCompleted(meta metav1.ObjectMeta) GomegaAsyncAssertion {
+	return Eventually(
+		func() bool {
+			rs, err := f.StashClient.StashV1beta1().RestoreSessions(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			if err != nil {
+				return false
+			}
+			if rs.Status.Phase == v1beta1.RestoreSessionSucceeded ||
+				rs.Status.Phase == v1beta1.RestoreSessionFailed ||
+				rs.Status.Phase == v1beta1.RestoreSessionUnknown {
+				return true
+			}
+			return false
+		},
+	)
 }
 
 func (f *Framework) EventuallyRestoreSessionPhase(meta metav1.ObjectMeta) GomegaAsyncAssertion {

@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (f *Invocation) GetPersistentVolumeClaim() *core.PersistentVolumeClaim {
+func (f *Invocation) PersistentVolumeClaim() *core.PersistentVolumeClaim {
 	return &core.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("pvc"),
@@ -28,14 +28,13 @@ func (f *Invocation) GetPersistentVolumeClaim() *core.PersistentVolumeClaim {
 	}
 }
 
-func (f *Invocation) CreatePersistentVolumeClaim(pvc *core.PersistentVolumeClaim) error {
-	_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(pvc.Namespace).Create(pvc)
-	return err
+func (f *Framework) CreatePersistentVolumeClaim(pvc *core.PersistentVolumeClaim) (*core.PersistentVolumeClaim, error) {
+	return f.KubeClient.CoreV1().PersistentVolumeClaims(pvc.Namespace).Create(pvc)
 }
 
 func (f *Invocation) DeletePersistentVolumeClaim(meta metav1.ObjectMeta) error {
 	err := f.KubeClient.CoreV1().PersistentVolumeClaims(meta.Namespace).Delete(meta.Name, deleteInForeground())
-	if !kerr.IsNotFound(err) {
+	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
 	return nil

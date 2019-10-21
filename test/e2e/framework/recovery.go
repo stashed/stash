@@ -54,7 +54,7 @@ func (f *Framework) CreateRecovery(obj api.Recovery) error {
 
 func (f *Framework) DeleteRecovery(meta metav1.ObjectMeta) error {
 	err := f.StashClient.StashV1alpha1().Recoveries(meta.Namespace).Delete(meta.Name, deleteInBackground())
-	if !kerr.IsNotFound(err) {
+	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
 	return nil

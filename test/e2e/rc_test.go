@@ -18,7 +18,7 @@ import (
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 )
 
-var _ = Describe("ReplicationController", func() {
+var _ = XDescribe("ReplicationController", func() {
 	var (
 		err          error
 		f            *framework.Invocation
@@ -63,8 +63,8 @@ var _ = Describe("ReplicationController", func() {
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
 		secondRestic.Spec.Backend.StorageSecretName = cred.Name
-		pvc := f.GetPersistentVolumeClaim()
-		err := f.CreatePersistentVolumeClaim(pvc)
+		pvc := f.PersistentVolumeClaim()
+		_, err := f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
 		rc = f.ReplicationController(pvc.Name)
 		localRef = api.LocalTypedReference{
