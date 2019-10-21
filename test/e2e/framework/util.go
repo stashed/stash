@@ -201,6 +201,9 @@ func (f *Framework) ReadSampleDataFromFromWorkload(meta metav1.ObjectMeta, resou
 		var data string
 		datas := make([]string, 0)
 		data, err = f.ExecOnPod(pod, "ls", "-R", TestSourceDataMountPath)
+		if err != nil {
+			return nil, err
+		}
 		datas = append(datas, data)
 		return datas, nil
 	case apis.KindStatefulSet, apis.KindDaemonSet:

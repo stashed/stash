@@ -36,6 +36,9 @@ var _ = Describe("Deployment", func() {
 		recovery     api.Recovery
 		localRef     api.LocalTypedReference
 	)
+	const (
+		SecondResticName = "second-restic"
+	)
 
 	BeforeEach(func() {
 		f = root.Invoke()
@@ -672,7 +675,7 @@ var _ = Describe("Deployment", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 				secondRestic = restic
-				secondRestic.Name = "second-restic"
+				secondRestic.Name = SecondResticName
 			})
 			It("should mutate and backup new Deployment", shouldMutateAndBackupNewDeployment)
 			It("should not mutate new Deployment if no restic select it", shouldNotMutateNewDeployment)
