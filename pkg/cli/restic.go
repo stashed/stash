@@ -206,7 +206,7 @@ func (w *ResticWrapper) appendCaCertFlag(args []interface{}) []interface{} {
 	return args
 }
 
-//nolint:govet
+//nolint:unparam
 func (w *ResticWrapper) run(cmd string, args []interface{}) error {
 	out, err := w.sh.Command(cmd, args...).CombinedOutput()
 	if err != nil {

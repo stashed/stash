@@ -33,7 +33,7 @@ var _ = Describe("ReplicaSet", func() {
 	)
 
 	const (
-		SecondResticName = "second-restic"
+		SecondResticName    = "second-restic"
 		AtEveryThreeMinutes = "@every 3m"
 	)
 

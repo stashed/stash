@@ -33,7 +33,7 @@ var _ = Describe("StatefulSet", func() {
 		localRef     api.LocalTypedReference
 	)
 	const (
-		SecondResticName = "second-restic"
+		SecondResticName    = "second-restic"
 		AtEveryThreeMinutes = "@every 3m"
 	)
 

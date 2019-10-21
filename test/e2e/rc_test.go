@@ -31,7 +31,7 @@ var _ = Describe("ReplicationController", func() {
 	)
 
 	const (
-		SecondResticName = "second-restic"
+		SecondResticName    = "second-restic"
 		AtEveryThreeMinutes = "@every 3m"
 	)
 
