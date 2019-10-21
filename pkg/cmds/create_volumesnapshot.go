@@ -92,7 +92,7 @@ func (opt *VSoption) createVolumeSnapshot() (*restic.BackupOutput, error) {
 	if err != nil {
 		return nil, err
 	}
-	backupConfig, err := opt.stashClient.StashV1beta1().BackupConfigurations(opt.namespace).Get(backupSession.Spec.BackupConfiguration.Name, metav1.GetOptions{})
+	backupConfig, err := opt.stashClient.StashV1beta1().BackupConfigurations(opt.namespace).Get(backupSession.Spec.Invoker.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

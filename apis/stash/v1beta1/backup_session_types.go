@@ -1,7 +1,6 @@
 package v1beta1
 
 import (
-	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -32,11 +31,6 @@ type BackupSessionSpec struct {
 	// Invoker refers to the BackupConfiguration or BackupBatch being used to invoke this backup session
 	// +optional
 	Invoker BackupInvokerRef `json:"invoker,omitempty"`
-
-	// BackupConfiguration indicates the target BackupConfiguration crd
-	// Deprecated: Use Invoker
-	// +optional
-	BackupConfiguration *core.LocalObjectReference `json:"backupConfiguration,omitempty"`
 }
 
 type BackupSessionPhase string

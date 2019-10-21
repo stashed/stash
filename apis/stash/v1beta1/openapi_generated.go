@@ -16737,17 +16737,11 @@ func schema_stash_apis_stash_v1beta1_BackupSessionSpec(ref common.ReferenceCallb
 							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1beta1.BackupInvokerRef"),
 						},
 					},
-					"backupConfiguration": {
-						SchemaProps: spec.SchemaProps{
-							Description: "BackupConfiguration indicates the target BackupConfiguration crd Deprecated: Use Invoker",
-							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
-						},
-					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.LocalObjectReference", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupInvokerRef"},
+			"stash.appscode.dev/stash/apis/stash/v1beta1.BackupInvokerRef"},
 	}
 }
 

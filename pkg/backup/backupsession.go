@@ -169,7 +169,7 @@ func (c *BackupSessionController) processBackupSession(key string) error {
 func (c *BackupSessionController) startBackupProcess(backupSession *api_v1beta1.BackupSession) (*restic.BackupOutput, error) {
 	// get respective BackupConfiguration for BackupSession
 	backupConfiguration, err := c.StashClient.StashV1beta1().BackupConfigurations(backupSession.Namespace).Get(
-		backupSession.Spec.BackupConfiguration.Name,
+		backupSession.Spec.Invoker.Name,
 		metav1.GetOptions{},
 	)
 	if err != nil {

@@ -9796,10 +9796,6 @@
     "dev.appscode.stash.stash.apis.stash.v1beta1.BackupSessionSpec": {
       "type": "object",
       "properties": {
-        "backupConfiguration": {
-          "description": "BackupConfiguration indicates the target BackupConfiguration crd Deprecated: Use Invoker",
-          "$ref": "#/definitions/io.k8s.api.core.v1.LocalObjectReference"
-        },
         "invoker": {
           "description": "Invoker refers to the BackupConfiguration or BackupBatch being used to invoke this backup session",
           "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.BackupInvokerRef"

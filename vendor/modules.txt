@@ -920,7 +920,7 @@ k8s.io/kubernetes/pkg/apis/autoscaling
 k8s.io/kubernetes/pkg/util/parsers
 k8s.io/kubernetes/pkg/apis/networking
 k8s.io/kubernetes/pkg/apis/policy
-# k8s.io/utils v0.0.0-20190506122338-8fab8cb257d5 => k8s.io/utils v0.0.0-20190221042446-c2654d5206da
+# k8s.io/utils v0.0.0-20190506122338-8fab8cb257d5 => k8s.io/utils v0.0.0-20190514214443-0a167cbac756
 k8s.io/utils/integer
 k8s.io/utils/buffer
 k8s.io/utils/trace

@@ -41,65 +41,65 @@ var (
 	msrvc   core.Service
 )
 
-func (fi *Framework) CreateMinioServer(tls bool, ips []net.IP) (string, error) {
+func (f *Framework) CreateMinioServer(tls bool, ips []net.IP) (string, error) {
 	//creating secret for minio server
-	mcred = fi.SecretForMinioServer(ips)
-	err := fi.CreateSecret(mcred)
+	mcred = f.SecretForMinioServer(ips)
+	err := f.CreateSecret(mcred)
 	if err != nil {
 		return "", err
 	}
 
 	//creating deployment for minio server
-	mdeploy = fi.DeploymentForMinioServer()
+	mdeploy = f.DeploymentForMinioServer()
 	if !tls { // if tls not enabled then don't mount secret for cacerts
-		mdeploy.Spec.Template.Spec.Containers = fi.RemoveSecretVolumeMount(mdeploy.Spec.Template.Spec.Containers)
+		mdeploy.Spec.Template.Spec.Containers = f.RemoveSecretVolumeMount(mdeploy.Spec.Template.Spec.Containers)
 	}
-	err = fi.CreateDeploymentForMinioServer(mdeploy)
+	err = f.CreateDeploymentForMinioServer(mdeploy)
 	if err != nil {
 		return "", err
 	}
 
 	//creating pvc for minio server
-	mpvc = fi.PVCForMinioServer()
-	err = fi.CreatePersistentVolumeClaimForMinioServer(mpvc)
+	mpvc = f.PVCForMinioServer()
+	err = f.CreatePersistentVolumeClaimForMinioServer(mpvc)
 	if err != nil {
 		return "", nil
 	}
 
 	//creating service for minio server
-	msrvc = fi.ServiceForMinioServer()
-	_, err = fi.CreateServiceForMinioServer(msrvc)
+	msrvc = f.ServiceForMinioServer()
+	_, err = f.CreateServiceForMinioServer(msrvc)
 	if err != nil {
 		return "", err
 	}
-	err = apps_util.WaitUntilDeploymentReady(fi.KubeClient, mdeploy.ObjectMeta)
+	err = apps_util.WaitUntilDeploymentReady(f.KubeClient, mdeploy.ObjectMeta)
 	if err != nil {
 		return "", err
 	}
-	return fi.MinioServiceAddres(), nil
+	return f.MinioServiceAddres(), nil
 }
 
-func (fi *Framework) SecretForMinioServer(ips []net.IP) core.Secret {
-	crt, key, err := fi.CertStore.NewServerCertPairBytes(fi.MinioServerSANs(ips))
+func (f *Framework) SecretForMinioServer(ips []net.IP) core.Secret {
+	crt, key, err := f.CertStore.NewServerCertPairBytes(f.MinioServerSANs(ips))
 	Expect(err).NotTo(HaveOccurred())
 
 	return core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      MinioServerSecret,
-			Namespace: fi.namespace,
+			Namespace: f.namespace,
 		},
 		Data: map[string][]byte{
-			MINIO_PUBLIC_CRT_NAME:  []byte(string(crt) + "\n" + string(fi.CertStore.CACertBytes())),
+			MINIO_PUBLIC_CRT_NAME:  []byte(string(crt) + "\n" + string(f.CertStore.CACertBytes())),
 			MINIO_PRIVATE_KEY_NAME: key,
 		},
 	}
 }
 
-func (fi *Framework) PVCForMinioServer() core.PersistentVolumeClaim {
+func (f *Framework) PVCForMinioServer() core.PersistentVolumeClaim {
 	return core.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      MinioPVCStorage,
-			Namespace: fi.namespace,
+			Namespace: f.namespace,
 			Labels: map[string]string{
 				// this label will be used to mount this pvc as volume in minio server container
 				"app": "minio-storage-claim",
@@ -119,20 +119,20 @@ func (fi *Framework) PVCForMinioServer() core.PersistentVolumeClaim {
 	}
 }
 
-func (fi *Framework) CreatePersistentVolumeClaimForMinioServer(obj core.PersistentVolumeClaim) error {
-	_, err := fi.KubeClient.CoreV1().PersistentVolumeClaims(obj.Namespace).Create(&obj)
+func (f *Framework) CreatePersistentVolumeClaimForMinioServer(obj core.PersistentVolumeClaim) error {
+	_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(obj.Namespace).Create(&obj)
 	return err
 }
 
-func (fi *Framework) DeploymentForMinioServer() apps.Deployment {
+func (f *Framework) DeploymentForMinioServer() apps.Deployment {
 	labels := map[string]string{
-		"app": fi.namespace + "minio-server",
+		"app": f.namespace + "minio-server",
 	}
 
 	return apps.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      MinioServer,
-			Namespace: fi.namespace,
+			Namespace: f.namespace,
 		},
 		Spec: apps.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
@@ -226,7 +226,7 @@ func (fi *Framework) DeploymentForMinioServer() apps.Deployment {
 	}
 }
 
-func (fi *Framework) RemoveSecretVolumeMount(containers []core.Container) []core.Container {
+func (f *Framework) RemoveSecretVolumeMount(containers []core.Container) []core.Container {
 	resp := make([]core.Container, 0)
 	for _, c := range containers {
 		if c.Name == "minio-server" {
@@ -237,16 +237,16 @@ func (fi *Framework) RemoveSecretVolumeMount(containers []core.Container) []core
 	return resp
 }
 
-func (fi *Framework) CreateDeploymentForMinioServer(obj apps.Deployment) error {
-	_, err := fi.KubeClient.AppsV1().Deployments(obj.Namespace).Create(&obj)
+func (f *Framework) CreateDeploymentForMinioServer(obj apps.Deployment) error {
+	_, err := f.KubeClient.AppsV1().Deployments(obj.Namespace).Create(&obj)
 	return err
 }
 
-func (fi *Framework) ServiceForMinioServer() core.Service {
+func (f *Framework) ServiceForMinioServer() core.Service {
 	return core.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      MinioNodePortServic,
-			Namespace: fi.namespace,
+			Namespace: f.namespace,
 		},
 		Spec: core.ServiceSpec{
 			Type: core.ServiceTypeLoadBalancer,
@@ -258,27 +258,27 @@ func (fi *Framework) ServiceForMinioServer() core.Service {
 				},
 			},
 			Selector: map[string]string{
-				"app": fi.namespace + "minio-server",
+				"app": f.namespace + "minio-server",
 			},
 		},
 	}
 }
 
-func (fi *Framework) CreateServiceForMinioServer(obj core.Service) (*core.Service, error) {
-	return fi.KubeClient.CoreV1().Services(obj.Namespace).Create(&obj)
+func (f *Framework) CreateServiceForMinioServer(obj core.Service) (*core.Service, error) {
+	return f.KubeClient.CoreV1().Services(obj.Namespace).Create(&obj)
 }
 
-func (fi *Framework) DeleteMinioServer() error {
-	if err := fi.DeleteSecretForMinioServer(mcred.ObjectMeta); err != nil {
+func (f *Framework) DeleteMinioServer() error {
+	if err := f.DeleteSecretForMinioServer(mcred.ObjectMeta); err != nil {
 		return err
 	}
-	if err := fi.DeletePVCForMinioServer(mpvc.ObjectMeta); err != nil {
+	if err := f.DeletePVCForMinioServer(mpvc.ObjectMeta); err != nil {
 		return err
 	}
-	if err := fi.DeleteDeploymentForMinioServer(mdeploy.ObjectMeta); err != nil {
+	if err := f.DeleteDeploymentForMinioServer(mdeploy.ObjectMeta); err != nil {
 		return err
 	}
-	if err := fi.DeleteServiceForMinioServer(msrvc.ObjectMeta); err != nil {
+	if err := f.DeleteServiceForMinioServer(msrvc.ObjectMeta); err != nil {
 		return err
 	}
 	return nil
@@ -315,15 +315,15 @@ func (f *Framework) DeleteServiceForMinioServer(meta metav1.ObjectMeta) error {
 	return nil
 }
 
-func (fi *Framework) MinioServerSANs(ips []net.IP) cert.AltNames {
+func (f *Framework) MinioServerSANs(ips []net.IP) cert.AltNames {
 	altNames := cert.AltNames{
-		DNSNames: []string{fi.MinioServiceAddres()},
+		DNSNames: []string{f.MinioServiceAddres()},
 		IPs:      ips,
 	}
 	return altNames
 }
 
-func (fi *Framework) MinioServiceAddres() string {
-	return fmt.Sprintf(MinioNodePortServic+".%s.svc", fi.namespace)
+func (f *Framework) MinioServiceAddres() string {
+	return fmt.Sprintf(MinioNodePortServic+".%s.svc", f.namespace)
 
 }

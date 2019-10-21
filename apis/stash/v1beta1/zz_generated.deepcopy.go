@@ -412,7 +412,7 @@ func (in *BackupSession) DeepCopyInto(out *BackupSession) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
 	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
-	in.Spec.DeepCopyInto(&out.Spec)
+	out.Spec = in.Spec
 	in.Status.DeepCopyInto(&out.Status)
 	return
 }
@@ -472,11 +472,6 @@ func (in *BackupSessionList) DeepCopyObject() runtime.Object {
 func (in *BackupSessionSpec) DeepCopyInto(out *BackupSessionSpec) {
 	*out = *in
 	out.Invoker = in.Invoker
-	if in.BackupConfiguration != nil {
-		in, out := &in.BackupConfiguration, &out.BackupConfiguration
-		*out = new(v1.LocalObjectReference)
-		**out = **in
-	}
 	return
 }
 

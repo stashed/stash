@@ -6,7 +6,6 @@ import (
 
 	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/gomega"
-	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/util"
@@ -84,8 +83,10 @@ func (f *Invocation) TriggerInstantBackup(backupConfig *v1beta1.BackupConfigurat
 			},
 		},
 		Spec: v1beta1.BackupSessionSpec{
-			BackupConfiguration: &core.LocalObjectReference{
-				Name: backupConfig.Name,
+			Invoker: v1beta1.BackupInvokerRef{
+				APIGroup: v1beta1.SchemeGroupVersion.Group,
+				Kind:     v1beta1.ResourceKindBackupConfiguration,
+				Name:     backupConfig.Name,
 			},
 		},
 	}
