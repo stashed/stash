@@ -261,6 +261,7 @@ var _ = Describe("Deployment", func() {
 
 			By("Delete BackupConfiguration")
 			err = f.DeleteBackupConfiguration(backupCfg)
+			Expect(err).NotTo(HaveOccurred())
 			err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, backupCfg.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -431,6 +432,7 @@ var _ = Describe("StatefulSet", func() {
 
 			By("Delete BackupConfiguration")
 			err = f.DeleteBackupConfiguration(backupCfg)
+			Expect(err).NotTo(HaveOccurred())
 			err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, backupCfg.ObjectMeta)
 			Expect(err).ShouldNot(HaveOccurred())
 
@@ -748,6 +750,7 @@ var _ = Describe("DaemonSet", func() {
 
 			By("Delete BackupConfiguration")
 			err = f.DeleteBackupConfiguration(backupCfg)
+			Expect(err).NotTo(HaveOccurred())
 			err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, backupCfg.ObjectMeta)
 			Expect(err).ShouldNot(HaveOccurred())
 
