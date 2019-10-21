@@ -88,6 +88,7 @@ endif
 BUILD_DIRS  := bin/$(OS)_$(ARCH)     \
                .go/bin/$(OS)_$(ARCH) \
                .go/cache             \
+               hack/config           \
                $(HOME)/.credentials  \
                $(HOME)/.kube         \
                $(HOME)/.minikube
@@ -466,11 +467,11 @@ verify-modules:
 .PHONY: verify-gen
 verify-gen: gen fmt
 	@if !(git diff --quiet HEAD); then \
-		echo "generated files are out of date, run make gen"; exit 1; \
+		echo "files are out of date, run make gen fmt"; exit 1; \
 	fi
 
 .PHONY: ci
-ci: verify-gen lint build test #cover
+ci: verify lint build test #cover
 
 .PHONY: qa
 qa:

@@ -147,7 +147,7 @@ func newS3Client(config stow.Config, region string) (client *s3.S3, endpoint str
 	}
 
 	awsConfig := aws.NewConfig().
-		WithHTTPClient(http.DefaultClient).
+		WithHTTPClient(new(http.Client)).
 		WithMaxRetries(aws.UseServiceDefaultRetries).
 		WithLogger(aws.NewDefaultLogger()).
 		WithLogLevel(aws.LogOff).
