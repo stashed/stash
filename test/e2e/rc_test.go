@@ -30,6 +30,11 @@ var _ = Describe("ReplicationController", func() {
 		localRef     api.LocalTypedReference
 	)
 
+	const (
+		SecondResticName = "second-restic"
+		AtEveryThreeMinutes = "@every 3m"
+	)
+
 	BeforeEach(func() {
 		f = root.Invoke()
 	})
@@ -601,7 +606,7 @@ var _ = Describe("ReplicationController", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 				secondRestic = restic
-				secondRestic.Name = "second-restic"
+				secondRestic.Name = SecondResticName
 			})
 			It("should mutate and backup new ReplicationController", shouldMutateAndBackupNewReplicationController)
 			It("should not mutate new ReplicationController if no restic select it", shouldNotMutateNewReplicationController)
@@ -626,7 +631,7 @@ var _ = Describe("ReplicationController", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
 				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "@every 3m"
+				restic.Spec.Schedule = AtEveryThreeMinutes
 			})
 			It(`should backup new RC`, func() {
 				By("Creating repository Secret " + cred.Name)
@@ -687,7 +692,7 @@ var _ = Describe("ReplicationController", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
 				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "@every 3m"
+				restic.Spec.Schedule = AtEveryThreeMinutes
 			})
 			It(`should backup new Replication Controller`, func() {
 				By("Creating repository Secret " + cred.Name)

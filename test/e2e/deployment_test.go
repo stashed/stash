@@ -37,7 +37,8 @@ var _ = Describe("Deployment", func() {
 		localRef     api.LocalTypedReference
 	)
 	const (
-		SecondResticName = "second-restic"
+		SecondResticName    = "second-restic"
+		AtEveryThreeMinutes = "@every 3m"
 	)
 
 	BeforeEach(func() {
@@ -700,7 +701,7 @@ var _ = Describe("Deployment", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
 				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "@every 3m"
+				restic.Spec.Schedule = AtEveryThreeMinutes
 			})
 			It(`should backup new Deployment`, func() {
 				By("Creating repository Secret " + cred.Name)
@@ -761,7 +762,7 @@ var _ = Describe("Deployment", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
 				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "@every 3m"
+				restic.Spec.Schedule = AtEveryThreeMinutes
 			})
 			It(`should backup new Deployment`, func() {
 				By("Creating repository Secret " + cred.Name)

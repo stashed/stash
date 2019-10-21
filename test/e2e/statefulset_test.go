@@ -32,6 +32,10 @@ var _ = Describe("StatefulSet", func() {
 		recovery     api.Recovery
 		localRef     api.LocalTypedReference
 	)
+	const (
+		SecondResticName = "second-restic"
+		AtEveryThreeMinutes = "@every 3m"
+	)
 
 	BeforeEach(func() {
 		f = root.Invoke()
@@ -623,7 +627,7 @@ var _ = Describe("StatefulSet", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 				secondRestic = restic
-				secondRestic.Name = "second-restic"
+				secondRestic.Name = SecondResticName
 			})
 			It("should mutate and backup new StatefulSet", shouldMutateAndBackupNewStatefulSet)
 			It("should not mutate new StatefulSet if no restic select it", shouldNotMutateNewStatefulSet)
@@ -652,7 +656,7 @@ var _ = Describe("StatefulSet", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
 				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "@every 3m"
+				restic.Spec.Schedule = AtEveryThreeMinutes
 			})
 			It(`should backup new StatefulSet`, func() {
 				By("Creating repository Secret " + cred.Name)
@@ -719,7 +723,7 @@ var _ = Describe("StatefulSet", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
 				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "@every 3m"
+				restic.Spec.Schedule = AtEveryThreeMinutes
 			})
 			It(`should backup new StatefulSet`, func() {
 				By("Creating repository Secret " + cred.Name)

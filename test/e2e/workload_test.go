@@ -117,6 +117,7 @@ var _ = Describe("Deployment", func() {
 
 			By("Delete BackupConfiguration")
 			err = f.DeleteBackupConfiguration(backupCfg)
+			Expect(err).NotTo(HaveOccurred())
 			err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, backupCfg.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 

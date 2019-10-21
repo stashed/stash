@@ -136,6 +136,7 @@ var _ = Describe("Volume", func() {
 
 			By("Delete BackupConfiguration")
 			err = f.DeleteBackupConfiguration(backupCfg)
+			Expect(err).NotTo(HaveOccurred())
 			err = framework.WaitUntilBackupConfigurationDeleted(f.StashClient, backupCfg.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -217,6 +218,7 @@ var _ = Describe("Volume", func() {
 
 			By("Create another PVC")
 			err := f.CreatePersistentVolumeClaim(rpvc)
+			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating Restore Session")
 			restoreSession.Spec.Target.Ref.Name = rpvc.Name
