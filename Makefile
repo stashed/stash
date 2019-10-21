@@ -78,6 +78,7 @@ TAG_DBG          := $(VERSION)-dbg_$(OS)_$(ARCH)
 
 GO_VERSION       ?= 1.12.10
 BUILD_IMAGE      ?= appscode/golang-dev:$(GO_VERSION)-stretch
+TEST_IMAGE       ?= appscode/golang-dev:$(GO_VERSION)-stash
 
 OUTBIN = bin/$(OS)_$(ARCH)/$(BIN)
 ifeq ($(OS),windows)
@@ -95,6 +96,7 @@ BUILD_DIRS  := bin/$(OS)_$(ARCH)     \
 
 DOCKERFILE_PROD  = Dockerfile.in
 DOCKERFILE_DBG   = Dockerfile.dbg
+DOCKERFILE_TEST  = Dockerfile.test
 
 # If you want to build all binaries, see the 'all-build' rule.
 # If you want to build all containers, see the 'all-container' rule.
@@ -344,7 +346,23 @@ docker-manifest-%:
 .PHONY: test
 test: unit-tests e2e-tests
 
-unit-tests: $(BUILD_DIRS)
+bin/.container-$(DOTFILE_IMAGE)-TEST:
+	@echo "container: $(TEST_IMAGE)"
+	@if [ -z $(docker images -q $(TEST_IMAGE)) ]; then \
+		sed                                            \
+		    -e 's|{ARG_BIN}|$(BIN)|g'                   \
+		    -e 's|{ARG_ARCH}|$(ARCH)|g'                 \
+		    -e 's|{ARG_OS}|$(OS)|g'                     \
+		    -e 's|{ARG_FROM}|$(BUILD_IMAGE)|g'         \
+		    -e 's|{RESTIC_VER}|$(RESTIC_VER)|g'         \
+		    -e 's|{NEW_RESTIC_VER}|$(NEW_RESTIC_VER)|g' \
+		    $(DOCKERFILE_TEST) > bin/.dockerfile-TEST-$(OS)_$(ARCH);      \
+		DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --platform $(OS)/$(ARCH) --load --pull -t $(TEST_IMAGE) -f bin/.dockerfile-TEST-$(OS)_$(ARCH) .;  \
+		docker images -q $(TEST_IMAGE) > $@;   \
+	fi
+	@echo
+
+unit-tests: $(BUILD_DIRS) bin/.container-$(DOTFILE_IMAGE)-TEST
 	@docker run                                                 \
 	    -i                                                      \
 	    --rm                                                    \
@@ -356,7 +374,7 @@ unit-tests: $(BUILD_DIRS)
 	    -v $$(pwd)/.go/cache:/.cache                            \
 	    --env HTTP_PROXY=$(HTTP_PROXY)                          \
 	    --env HTTPS_PROXY=$(HTTPS_PROXY)                        \
-	    $(BUILD_IMAGE)                                          \
+	    $(TEST_IMAGE)                                           \
 	    /bin/bash -c "                                          \
 	        ARCH=$(ARCH)                                        \
 	        OS=$(OS)                                            \
