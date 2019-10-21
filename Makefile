@@ -471,7 +471,7 @@ verify-gen: gen fmt
 	fi
 
 .PHONY: ci
-ci: verify lint build test #cover
+ci: verify lint build unit-tests #cover
 
 .PHONY: qa
 qa:
