@@ -7,17 +7,14 @@ import (
 	"time"
 
 	"github.com/appscode/go/log"
-	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
-	"k8s.io/client-go/tools/reference"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
-	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
 	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/pkg/restic"
 	"stash.appscode.dev/stash/pkg/status"
@@ -227,23 +224,6 @@ func (c *Options) HandleRestoreFailure(restoreErr error) error {
 		Metrics:        c.Metrics,
 	}
 	return statusOpt.UpdatePostRestoreStatus(restoreOutput)
-}
-
-func (opt *Options) writeRestoreFailureEvent(restoreSession *api_v1beta1.RestoreSession, host string, err error) {
-	// write failure event
-	ref, rerr := reference.GetReference(stash_scheme.Scheme, restoreSession)
-	if rerr == nil {
-		eventer.CreateEventWithLog(
-			opt.KubeClient,
-			eventer.EventSourceRestoreInitContainer,
-			ref,
-			core.EventTypeWarning,
-			eventer.EventReasonHostRestoreFailed,
-			fmt.Sprintf("Failed to restore for host %q. Reason: %v", host, err),
-		)
-	} else {
-		log.Errorf("Failed to write failure event. Reason: %v", rerr)
-	}
 }
 
 func (opt *Options) isRestoredForThisHost(restoreSession *api_v1beta1.RestoreSession, host string) bool {

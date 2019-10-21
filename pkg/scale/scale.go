@@ -30,7 +30,6 @@ type Options struct {
 type Controller struct {
 	k8sClient kubernetes.Interface
 	opt       Options
-	locked    chan struct{}
 }
 
 var (

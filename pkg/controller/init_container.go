@@ -109,7 +109,7 @@ func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, rs *api_v
 	return nil
 }
 
-func (c *StashController) ensureRestoreInitContainerDeleted(w *wapi.Workload, rs *api_v1beta1.RestoreSession) error {
+func (c *StashController) ensureRestoreInitContainerDeleted(w *wapi.Workload) {
 	// remove resource hash annotation
 	if w.Spec.Template.Annotations != nil {
 		delete(w.Spec.Template.Annotations, api_v1beta1.AppliedRestoreSessionSpecHash)
@@ -133,7 +133,6 @@ func (c *StashController) ensureRestoreInitContainerDeleted(w *wapi.Workload, rs
 	if w.Annotations != nil {
 		delete(w.Annotations, api_v1beta1.KeyLastAppliedRestoreSession)
 	}
-	return nil
 }
 
 func (c *StashController) handleInitContainerInjectionFailure(ref *core.ObjectReference, err error) error {
@@ -162,21 +161,6 @@ func (c *StashController) handleInitContainerInjectionSuccess(ref *core.ObjectRe
 		core.EventTypeWarning,
 		eventer.EventReasonInitContainerInjectionSucceeded,
 		fmt.Sprintf("Successfully injected stash init-container into %s %s/%s.", ref.Kind, ref.Namespace, ref.Name),
-	)
-	return err2
-}
-
-func (c *StashController) handleInitContainerDeletionFailure(ref *core.ObjectReference, err error) error {
-	log.Warningf("Failed to remove stash init-container from %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
-
-	// write event to respective resource
-	_, err2 := eventer.CreateEvent(
-		c.kubeClient,
-		eventer.EventSourceWorkloadController,
-		ref,
-		core.EventTypeWarning,
-		eventer.EventReasonInitContainerDeletionFailed,
-		fmt.Sprintf("Failed to remove stash init-container from %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err),
 	)
 	return err2
 }

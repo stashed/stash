@@ -43,6 +43,9 @@ func (r *REST) getSnapshots(repository *stash.Repository, snapshotIDs []string) 
 		Name: info.WorkloadName,
 	}
 	hostName, smartPrefix, err := workload.HostnamePrefix(info.PodName, info.NodeName)
+	if err != nil {
+		return nil, err
+	}
 
 	secret, err := r.kubeClient.CoreV1().Secrets(repository.Namespace).Get(backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
@@ -51,12 +54,12 @@ func (r *REST) getSnapshots(repository *stash.Repository, snapshotIDs []string) 
 
 	backend = util.FixBackendPrefix(backend, smartPrefix)
 
-	cli := cli.New("/tmp", false, hostName)
-	if _, err = cli.SetupEnv(*backend, secret, smartPrefix); err != nil {
+	wrapper := cli.New("/tmp", false, hostName)
+	if _, err = wrapper.SetupEnv(*backend, secret, smartPrefix); err != nil {
 		return nil, err
 	}
 
-	results, err := cli.ListSnapshots(snapshotIDs)
+	results, err := wrapper.ListSnapshots(snapshotIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -102,6 +105,9 @@ func (r *REST) forgetSnapshots(repository *stash.Repository, snapshotIDs []strin
 		Name: info.WorkloadName,
 	}
 	hostName, smartPrefix, err := workload.HostnamePrefix(info.PodName, info.NodeName)
+	if err != nil {
+		return err
+	}
 
 	secret, err := r.kubeClient.CoreV1().Secrets(repository.Namespace).Get(backend.StorageSecretName, metav1.GetOptions{})
 	if err != nil {
@@ -110,12 +116,12 @@ func (r *REST) forgetSnapshots(repository *stash.Repository, snapshotIDs []strin
 
 	backend = util.FixBackendPrefix(backend, smartPrefix)
 
-	cli := cli.New("/tmp", false, hostName)
-	if _, err = cli.SetupEnv(*backend, secret, smartPrefix); err != nil {
+	wrapper := cli.New("/tmp", false, hostName)
+	if _, err = wrapper.SetupEnv(*backend, secret, smartPrefix); err != nil {
 		return err
 	}
 
-	err = cli.DeleteSnapshots(snapshotIDs)
+	err = wrapper.DeleteSnapshots(snapshotIDs)
 	if err != nil {
 		return err
 	}

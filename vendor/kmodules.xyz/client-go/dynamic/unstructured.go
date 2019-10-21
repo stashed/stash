@@ -2,6 +2,7 @@ package dynamic
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
@@ -90,8 +91,8 @@ func TryUpdate(
 	c dynamic.Interface,
 	gvr schema.GroupVersionResource,
 	meta metav1.ObjectMeta,
-	transform func(*unstructured.Unstructured) *unstructured.Unstructured) (result *unstructured.Unstructured, err error,
-) {
+	transform func(*unstructured.Unstructured) *unstructured.Unstructured,
+) (result *unstructured.Unstructured, err error) {
 	var ri dynamic.ResourceInterface
 	if meta.Namespace == "" {
 		ri = c.Resource(gvr)
@@ -115,6 +116,48 @@ func TryUpdate(
 
 	if err != nil {
 		err = errors.Errorf("failed to update %s %s/%s after %d attempts due to %v", gvr.String(), meta.Namespace, meta.Name, attempt, err)
+	}
+	return
+}
+
+func UpdateStatus(
+	c dynamic.Interface,
+	gvr schema.GroupVersionResource,
+	in *unstructured.Unstructured,
+	transform func(*unstructured.Unstructured) *unstructured.Unstructured,
+) (result *unstructured.Unstructured, err error) {
+	var ri dynamic.ResourceInterface
+	if in.GetNamespace() == "" {
+		ri = c.Resource(gvr)
+	} else {
+		ri = c.Resource(gvr).Namespace(in.GetNamespace())
+	}
+
+	attempt := 0
+	cur := in.DeepCopy()
+	err = wait.PollImmediate(kutil.RetryInterval, kutil.RetryTimeout, func() (bool, error) {
+		attempt++
+		var e2 error
+		result, e2 = ri.UpdateStatus(transform(cur), metav1.UpdateOptions{})
+		if kerr.IsConflict(e2) {
+			latest, e3 := ri.Get(in.GetName(), metav1.GetOptions{})
+			switch {
+			case e3 == nil:
+				cur = latest
+				return false, nil
+			case kutil.IsRequestRetryable(e3):
+				return false, nil
+			default:
+				return false, e3
+			}
+		} else if err != nil && !kutil.IsRequestRetryable(e2) {
+			return false, e2
+		}
+		return e2 == nil, nil
+	})
+
+	if err != nil {
+		err = fmt.Errorf("failed to update status of %s %s/%s after %d attempts due to %v", gvr.String(), in.GetNamespace(), in.GetName(), attempt, err)
 	}
 	return
 }

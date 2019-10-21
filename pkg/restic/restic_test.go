@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
 	"github.com/stretchr/testify/assert"
 	storage "kmodules.xyz/objectstore-api/api/v1"
@@ -71,11 +72,10 @@ func setupTest(tempDir string) (*ResticWrapper, error) {
 	return w, nil
 }
 
-func cleanup(tempDir string) error {
+func cleanup(tempDir string) {
 	if err := os.RemoveAll(tempDir); err != nil {
-		return err
+		log.Errorln(err)
 	}
-	return nil
 }
 
 func TestBackupRestoreDirs(t *testing.T) {
@@ -381,10 +381,8 @@ func TestRunParallelDump(t *testing.T) {
 	}
 
 	// run parallel dump
-	dumpOptions, err := newParallelDumpOptions(tempDir)
-	if err != nil {
-		t.Error(err)
-	}
+	dumpOptions := newParallelDumpOptions()
+
 	dumpOutput, err := w.ParallelDump(dumpOptions, 2)
 	if err != nil {
 		t.Error(err)
@@ -465,7 +463,7 @@ func newParallelRestoreOptions(tempDir string) ([]RestoreOptions, error) {
 	}, nil
 }
 
-func newParallelDumpOptions(tempDir string) ([]DumpOptions, error) {
+func newParallelDumpOptions() []DumpOptions {
 
 	return []DumpOptions{
 		{
@@ -483,5 +481,5 @@ func newParallelDumpOptions(tempDir string) ([]DumpOptions, error) {
 			FileName:          filepath.Join(targetPath, fileName),
 			StdoutPipeCommand: stdoutPipeCommand,
 		},
-	}, nil
+	}
 }

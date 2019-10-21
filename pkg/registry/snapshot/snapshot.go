@@ -88,8 +88,7 @@ func (r *REST) Get(ctx context.Context, name string, options *metav1.GetOptions)
 	}
 
 	// TODO: return &snapshots[0], nil
-	snapshot := &repositories.Snapshot{}
-	snapshot = &snapshots[0]
+	snapshot := &snapshots[0]
 	return snapshot, nil
 }
 

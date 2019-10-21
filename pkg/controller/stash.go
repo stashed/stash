@@ -75,14 +75,10 @@ func (c *StashController) applyRestoreLogic(w *wapi.Workload, caller string) (bo
 		// this means RestoreSession has been removed.
 		// in this case, we have to delete the restore init-container
 		// and remove respective annotations from the workload  and respective ConfigMapLock.
-		err := c.ensureRestoreInitContainerDeleted(w, oldRestore)
+		c.ensureRestoreInitContainerDeleted(w)
 		// write init-container deletion failure/success event
 		ref, rerr := util.GetWorkloadReference(w)
-		if err != nil && rerr != nil {
-			return false, err
-		} else if err != nil && rerr == nil {
-			return false, c.handleInitContainerDeletionFailure(ref, err)
-		} else if err == nil && rerr != nil {
+		if rerr != nil {
 			return true, nil
 		}
 		return true, c.handleInitContainerDeletionSuccess(ref)
@@ -200,9 +196,8 @@ func (c *StashController) getTotalHosts(target interface{}, namespace string, dr
 	}
 
 	// target interface can be BackupTarget or RestoreTarget. We need to extract TargetRef from it.
-	switch target.(type) {
+	switch t := target.(type) {
 	case *api_v1beta1.BackupTarget:
-		t := target.(*api_v1beta1.BackupTarget)
 		if t.Replicas != nil {
 			rep = t.Replicas
 		}
@@ -212,7 +207,6 @@ func (c *StashController) getTotalHosts(target interface{}, namespace string, dr
 		targetRef = t.Ref
 
 	case *api_v1beta1.RestoreTarget:
-		t := target.(*api_v1beta1.RestoreTarget)
 		if t == nil {
 			return types.Int32P(1), nil
 		}
@@ -242,7 +236,7 @@ func (c *StashController) getTotalHosts(target interface{}, namespace string, dr
 	if driver == api_v1beta1.VolumeSnapshotter {
 		return c.getTotalHostForVolumeSnapshotter(targetRef, namespace, rep)
 	} else {
-		return c.getTotalHostForRestic(targetRef, namespace, rep)
+		return c.getTotalHostForRestic(targetRef, namespace)
 	}
 }
 
@@ -290,7 +284,7 @@ func (c *StashController) getTotalHostForVolumeSnapshotter(targetRef api_v1beta1
 	}
 }
 
-func (c *StashController) getTotalHostForRestic(targetRef api_v1beta1.TargetRef, namespace string, replica *int32) (*int32, error) {
+func (c *StashController) getTotalHostForRestic(targetRef api_v1beta1.TargetRef, namespace string) (*int32, error) {
 	switch targetRef.Kind {
 	// all replicas of StatefulSet will take backup/restore. so total number of hosts will be number of replicas.
 	case apis.KindStatefulSet:

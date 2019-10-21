@@ -134,7 +134,10 @@ func (c *StashController) runResticInjector(key string) error {
 		glog.Infof("Sync/Add/Update for Restic %s", restic.GetName())
 
 		if restic.Spec.Type == api.BackupOffline {
-			c.EnsureScaledownCronJob(restic)
+			err = c.EnsureScaledownCronJob(restic)
+			if err != nil {
+				return err
+			}
 		}
 		c.EnsureSidecar(restic)
 		c.EnsureSidecarDeleted(restic.Namespace, restic.Name)
@@ -176,7 +179,7 @@ func (c *StashController) EnsureScaledownCronJob(restic *api.Restic) error {
 		in.Labels[util.AnnotationRestic] = restic.Name
 		in.Labels[util.AnnotationOperation] = util.OperationScaleDown
 		// ensure job gets deleted on completion
-		in.Labels[apis.KeyDeleteJobOnCompletion] = "true"
+		in.Labels[apis.KeyDeleteJobOnCompletion] = apis.AllowDeletingJobOnCompletion
 
 		// spec
 		in.Spec.Schedule = restic.Spec.Schedule

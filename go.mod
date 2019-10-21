@@ -21,13 +21,14 @@ require (
 	github.com/prometheus/client_golang v0.9.3-0.20190127221311-3c4408c8b829
 	github.com/robfig/cron/v3 v3.0.0
 	github.com/sirupsen/logrus v1.4.1 // indirect
+	github.com/smartystreets/assertions v0.0.0-20190116191733-b6c0e53d7304 // indirect
 	github.com/spf13/afero v1.2.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
 	github.com/stretchr/testify v1.3.0
 	gomodules.xyz/cert v1.0.0
 	gomodules.xyz/envsubst v0.1.0
-	gomodules.xyz/stow v0.2.0
+	gomodules.xyz/stow v0.2.2
 	gopkg.in/ini.v1 v1.41.0
 	k8s.io/api v0.0.0-20190503110853-61630f889b3c
 	k8s.io/apiextensions-apiserver v0.0.0-20190516231611-bf6753f2aa24
@@ -40,7 +41,7 @@ require (
 	k8s.io/kube-aggregator v0.0.0-20190314000639-da8327669ac5
 	k8s.io/kube-openapi v0.0.0-20190502190224-411b2483e503
 	k8s.io/kubernetes v1.14.0
-	kmodules.xyz/client-go v0.0.0-20191016085444-3044854ca625
+	kmodules.xyz/client-go v0.0.0-20191021083014-0be9e7d5b970
 	kmodules.xyz/custom-resources v0.0.0-20190927035424-65fe358bb045
 	kmodules.xyz/objectstore-api v0.0.0-20191014210450-ac380fa650a3
 	kmodules.xyz/offshoot-api v0.0.0-20190901210649-de049192326c

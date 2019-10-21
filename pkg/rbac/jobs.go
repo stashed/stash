@@ -43,7 +43,7 @@ func EnsureScaledownJobRBAC(kubeClient kubernetes.Interface, resource *core.Obje
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
-		in.Labels["app"] = "stash"
+		in.Labels["app"] = util.AppLabelStash
 
 		in.Rules = []rbac.PolicyRule{
 			{
@@ -83,7 +83,7 @@ func EnsureScaledownJobRBAC(kubeClient kubernetes.Interface, resource *core.Obje
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
-		in.Labels["app"] = "stash"
+		in.Labels["app"] = util.AppLabelStash
 		return in
 	})
 	if err != nil {
@@ -97,7 +97,7 @@ func EnsureScaledownJobRBAC(kubeClient kubernetes.Interface, resource *core.Obje
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
-		in.Labels["app"] = "stash"
+		in.Labels["app"] = util.AppLabelStash
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
@@ -142,7 +142,7 @@ func EnsureRecoveryRBAC(kubeClient kubernetes.Interface, resource *core.ObjectRe
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
-		in.Labels["app"] = "stash"
+		in.Labels["app"] = util.AppLabelStash
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
@@ -184,7 +184,7 @@ func EnsureRepoReaderRBAC(kubeClient kubernetes.Interface, stashClient stash_cs.
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
-		in.Labels["app"] = "stash"
+		in.Labels["app"] = util.AppLabelStash
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
@@ -220,7 +220,7 @@ func ensureRepoReaderRole(kubeClient kubernetes.Interface, repo *api_v1alpha1.Re
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
-		in.Labels["app"] = "stash"
+		in.Labels["app"] = util.AppLabelStash
 
 		in.Rules = []rbac.PolicyRule{
 			{

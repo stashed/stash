@@ -24,10 +24,7 @@ func (f *Framework) EventuallyBackupSessionCreated(meta metav1.ObjectMeta) Gomeg
 		func() bool {
 			backupsnlist, err := f.StashClient.StashV1beta1().BackupSessions(meta.Namespace).List(metav1.ListOptions{})
 			Expect(err).NotTo(HaveOccurred())
-			if len(backupsnlist.Items) > 0 {
-				return true
-			}
-			return false
+			return len(backupsnlist.Items) > 0
 		},
 		time.Minute*7,
 		time.Second*5,

@@ -3,6 +3,7 @@ package controller
 import (
 	"time"
 
+	"github.com/appscode/go/log"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -26,7 +27,10 @@ func (c *StashController) initNamespaceWatcher() {
 				items, err := c.rstLister.Restics(ns.Name).List(labels.Everything())
 				if err == nil {
 					for _, item := range items {
-						c.stashClient.StashV1alpha1().Restics(item.Namespace).Delete(item.Name, &metav1.DeleteOptions{})
+						err2 := c.stashClient.StashV1alpha1().Restics(item.Namespace).Delete(item.Name, &metav1.DeleteOptions{})
+						if err2 != nil {
+							log.Errorln(err2)
+						}
 					}
 				}
 				// TODO: delete other resources that may cause namespace stuck in terminating state

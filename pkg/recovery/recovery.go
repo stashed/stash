@@ -61,10 +61,13 @@ func (c *Controller) Run() {
 
 	if err = recovery.IsValid(); err != nil {
 		log.Errorf("Failed to validate recovery %s, reason: %s", recovery.Name, err)
-		stash_util.UpdateRecoveryStatus(c.stashClient, recovery, func(in *api.RecoveryStatus) *api.RecoveryStatus {
+		_, err = stash_util.UpdateRecoveryStatus(c.stashClient, recovery, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 			in.Phase = api.RecoveryFailed
 			return in
 		})
+		if err != nil {
+			log.Errorln(err)
+		}
 		ref, rerr := reference.GetReference(scheme.Scheme, recovery)
 		if rerr == nil {
 			eventer.CreateEventWithLog(
@@ -83,10 +86,13 @@ func (c *Controller) Run() {
 
 	if err = c.RecoverOrErr(recovery); err != nil {
 		log.Errorf("Failed to complete recovery %s, reason: %s", recovery.Name, err)
-		stash_util.UpdateRecoveryStatus(c.stashClient, recovery, func(in *api.RecoveryStatus) *api.RecoveryStatus {
+		_, err = stash_util.UpdateRecoveryStatus(c.stashClient, recovery, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 			in.Phase = api.RecoveryFailed
 			return in
 		})
+		if err != nil {
+			log.Errorln(err)
+		}
 		ref, rerr := reference.GetReference(scheme.Scheme, recovery)
 		if rerr == nil {
 			eventer.CreateEventWithLog(
@@ -104,11 +110,14 @@ func (c *Controller) Run() {
 	}
 
 	log.Infof("Recovery %s succeeded\n", recovery.Name)
-	stash_util.UpdateRecoveryStatus(c.stashClient, recovery, func(in *api.RecoveryStatus) *api.RecoveryStatus {
+	_, err = stash_util.UpdateRecoveryStatus(c.stashClient, recovery, func(in *api.RecoveryStatus) *api.RecoveryStatus {
 		in.Phase = api.RecoverySucceeded
 		// TODO: status.Stats
 		return in
 	})
+	if err != nil {
+		log.Errorln(err)
+	}
 	ref, rerr := reference.GetReference(scheme.Scheme, recovery)
 	if rerr == nil {
 		eventer.CreateEventWithLog(
@@ -148,8 +157,8 @@ func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
 
 	backend := util.FixBackendPrefix(repository.Spec.Backend.DeepCopy(), smartPrefix)
 
-	cli := cli.New("/tmp", false, hostname)
-	if _, err = cli.SetupEnv(*backend, secret, smartPrefix); err != nil {
+	wrapper := cli.New("/tmp", false, hostname)
+	if _, err = wrapper.SetupEnv(*backend, secret, smartPrefix); err != nil {
 		return err
 	}
 
@@ -163,7 +172,7 @@ func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
 
 	var errRec error
 	for _, path := range recovery.Spec.Paths {
-		d, err := c.measure(cli.Restore, path, hostname, snapshotID)
+		d, err := c.measure(wrapper.Restore, path, hostname, snapshotID)
 		if err != nil {
 			errRec = err
 			ref, rerr := reference.GetReference(scheme.Scheme, recovery)
@@ -179,9 +188,15 @@ func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
 			} else {
 				log.Errorf("Failed to write event on %s %s. Reason: %s", recovery.Kind, recovery.Name, rerr)
 			}
-			stash_util.SetRecoveryStats(c.stashClient, recovery, path, d, api.RecoveryFailed)
+			_, err = stash_util.SetRecoveryStats(c.stashClient, recovery, path, d, api.RecoveryFailed)
+			if err != nil {
+				return err
+			}
 		} else {
-			stash_util.SetRecoveryStats(c.stashClient, recovery, path, d, api.RecoverySucceeded)
+			_, err = stash_util.SetRecoveryStats(c.stashClient, recovery, path, d, api.RecoverySucceeded)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -191,5 +206,5 @@ func (c *Controller) RecoverOrErr(recovery *api.Recovery) error {
 func (c *Controller) measure(f func(string, string, string) error, path, host, snapshotID string) (time.Duration, error) {
 	startTime := time.Now()
 	err := f(path, host, snapshotID)
-	return time.Now().Sub(startTime), err
+	return time.Since(startTime), err
 }

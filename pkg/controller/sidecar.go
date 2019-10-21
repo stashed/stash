@@ -109,7 +109,7 @@ func (c *StashController) ensureWorkloadSidecar(w *wapi.Workload, restic *api_v1
 	return nil
 }
 
-func (c *StashController) ensureWorkloadSidecarDeleted(w *wapi.Workload, restic *api_v1alpha1.Restic) error {
+func (c *StashController) ensureWorkloadSidecarDeleted(w *wapi.Workload, restic *api_v1alpha1.Restic) {
 
 	if w.Spec.Template.Annotations != nil {
 		// mark pods with restic resource version, used to force restart pods for rc/rs
@@ -135,7 +135,6 @@ func (c *StashController) ensureWorkloadSidecarDeleted(w *wapi.Workload, restic 
 		delete(w.Annotations, api_v1alpha1.LastAppliedConfiguration)
 		delete(w.Annotations, apis.VersionTag)
 	}
-	return nil
 }
 
 func (c *StashController) ensureBackupSidecar(w *wapi.Workload, bc *api_v1beta1.BackupConfiguration, caller string) error {
@@ -224,7 +223,7 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, bc *api_v1beta1.
 	return nil
 }
 
-func (c *StashController) ensureBackupSidecarDeleted(w *wapi.Workload, bc *api_v1beta1.BackupConfiguration) error {
+func (c *StashController) ensureBackupSidecarDeleted(w *wapi.Workload) {
 	// remove resource hash annotation
 	if w.Spec.Template.Annotations != nil {
 		delete(w.Spec.Template.Annotations, api_v1beta1.AppliedBackupConfigurationSpecHash)
@@ -248,8 +247,6 @@ func (c *StashController) ensureBackupSidecarDeleted(w *wapi.Workload, bc *api_v
 	if w.Annotations != nil {
 		delete(w.Annotations, api_v1beta1.KeyLastAppliedBackupConfiguration)
 	}
-
-	return nil
 }
 
 // ensureWorkloadLatestState check if the workload's pod has latest update of workload specification
@@ -305,7 +302,10 @@ func (c *StashController) ensureWorkloadLatestState(w *wapi.Workload) (bool, err
 		}
 		stateChanged = true
 		for _, pod := range podsToRestart {
-			c.kubeClient.CoreV1().Pods(w.Namespace).Delete(pod.Name, &metav1.DeleteOptions{})
+			err := c.kubeClient.CoreV1().Pods(w.Namespace).Delete(pod.Name, &metav1.DeleteOptions{})
+			if err != nil {
+				log.Errorln(err)
+			}
 		}
 		return false, nil // try again
 	})
@@ -351,21 +351,6 @@ func (c *StashController) handleSidecarInjectionSuccess(ref *core.ObjectReferenc
 		core.EventTypeWarning,
 		eventer.EventReasonSidecarInjectionSucceeded,
 		fmt.Sprintf("Successfully injected stash sidecar into %s %s/%s.", ref.Kind, ref.Namespace, ref.Name),
-	)
-	return err2
-}
-
-func (c *StashController) handleSidecarDeletionFailure(ref *core.ObjectReference, err error) error {
-	log.Warningf("Failed to remove stash sidecar from %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err)
-
-	// write event to respective resource
-	_, err2 := eventer.CreateEvent(
-		c.kubeClient,
-		eventer.EventSourceWorkloadController,
-		ref,
-		core.EventTypeWarning,
-		eventer.EventReasonSidecarDeletionFailed,
-		fmt.Sprintf("Failed to remove stash sidecar from %s %s/%s. Reason: %v", ref.Kind, ref.Namespace, ref.Name, err),
 	)
 	return err2
 }

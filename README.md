@@ -1,5 +1,5 @@
 [![Go Report Card](https://goreportcard.com/badge/stash.appscode.dev/stash)](https://goreportcard.com/report/stash.appscode.dev/stash)
-[![Build Status](https://travis-ci.org/stashed/stash.svg?branch=master)](https://travis-ci.org/stashed/stash)
+[![Build Status](https://github.com/stashed/stash/workflows/CI/badge.svg)](https://github.com/stashed/stash/actions?workflow=CI)
 [![codecov](https://codecov.io/gh/stashed/stash/branch/master/graph/badge.svg)](https://codecov.io/gh/stashed/stash)
 [![Docker Pulls](https://img.shields.io/docker/pulls/appscode/stash.svg)](https://hub.docker.com/r/appscode/stash/)
 [![Slack](https://slack.appscode.com/badge.svg)](https://slack.appscode.com)

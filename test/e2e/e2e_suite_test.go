@@ -1,23 +1,19 @@
 package e2e_test
 
 import (
-	"strings"
 	"testing"
 	"time"
 
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
-	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/dynamic"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
-	discovery_util "kmodules.xyz/client-go/discovery"
 	"kmodules.xyz/client-go/logs"
 	"kmodules.xyz/client-go/tools/cli"
 	"kmodules.xyz/client-go/tools/clientcmd"
-	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/client/clientset/versioned/scheme"
 	_ "stash.appscode.dev/stash/client/clientset/versioned/scheme"
 	"stash.appscode.dev/stash/pkg/controller"
@@ -29,9 +25,7 @@ const (
 )
 
 var (
-	ctrl         *controller.StashController
-	root         *framework.Framework
-	storageClass = "standard"
+	root *framework.Framework
 )
 
 func TestE2e(t *testing.T) {
@@ -43,28 +37,20 @@ func TestE2e(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-	scheme.AddToScheme(clientsetscheme.Scheme)
-	scheme.AddToScheme(legacyscheme.Scheme)
+	utilruntime.Must(scheme.AddToScheme(clientsetscheme.Scheme))
+	utilruntime.Must(scheme.AddToScheme(legacyscheme.Scheme))
 	cli.LoggerOptions.Verbosity = "5"
 
 	clientConfig, err := clientcmd.BuildConfigFromContext(options.KubeConfig, options.KubeContext)
 	Expect(err).NotTo(HaveOccurred())
-	ctrlConfig := controller.NewConfig(clientConfig)
+	cfg := controller.NewConfig(clientConfig)
 
-	discClient, err := discovery.NewDiscoveryClientForConfig(clientConfig)
-	serverVersion, err := discovery_util.GetBaseVersion(discClient)
-	Expect(err).NotTo(HaveOccurred())
-	if strings.Compare(serverVersion, "1.11") >= 0 {
-		apis.EnableStatusSubresource = true
-	}
-	err = options.ApplyTo(ctrlConfig)
+	err = options.ApplyTo(cfg)
 	Expect(err).NotTo(HaveOccurred())
 
 	kaClient := ka.NewForConfigOrDie(clientConfig)
-	dmClient := dynamic.NewForConfigOrDie(clientConfig)
 
-	root = framework.New(ctrlConfig.KubeClient, ctrlConfig.StashClient, kaClient, dmClient, clientConfig, options.StorageClass)
-	framework.RootFramework = root
+	root = framework.New(cfg.KubeClient, cfg.StashClient, kaClient, clientConfig, options.StorageClass)
 	err = root.CreateTestNamespace()
 	Expect(err).NotTo(HaveOccurred())
 	By("Using test namespace " + root.Namespace())

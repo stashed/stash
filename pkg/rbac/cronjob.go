@@ -26,8 +26,7 @@ func EnsureCronJobRBAC(kubeClient kubernetes.Interface, resource *core.ObjectRef
 	}
 
 	// ensure RoleBinding
-	err = ensureCronJobRoleBinding(kubeClient, resource, sa, labels)
-	return nil
+	return ensureCronJobRoleBinding(kubeClient, resource, sa, labels)
 }
 
 func ensureCronJobClusterRole(kubeClient kubernetes.Interface, psps []string, labels map[string]string) error {

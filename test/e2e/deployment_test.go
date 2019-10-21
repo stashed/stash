@@ -36,6 +36,10 @@ var _ = Describe("Deployment", func() {
 		recovery     api.Recovery
 		localRef     api.LocalTypedReference
 	)
+	const (
+		SecondResticName    = "second-restic"
+		AtEveryThreeMinutes = "@every 3m"
+	)
 
 	BeforeEach(func() {
 		f = root.Invoke()
@@ -155,7 +159,8 @@ var _ = Describe("Deployment", func() {
 			f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Deleting restic " + restic.Name)
-			f.DeleteRestic(restic.ObjectMeta)
+			err = f.DeleteRestic(restic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting to remove sidecar")
 			f.EventuallyDeployment(deployment.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
@@ -400,9 +405,12 @@ var _ = Describe("Deployment", func() {
 
 	Describe("Creating restic for", func() {
 		AfterEach(func() {
-			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
+			err = f.DeleteDeployment(deployment.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteRestic(restic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteSecret(cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context(`"Local" backend`, func() {
@@ -471,9 +479,12 @@ var _ = Describe("Deployment", func() {
 
 	Describe("Changing Deployment labels", func() {
 		AfterEach(func() {
-			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
+			err = f.DeleteDeployment(deployment.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteRestic(restic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteSecret(cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 		})
 		BeforeEach(func() {
 			cred = f.SecretForLocalBackend()
@@ -484,9 +495,12 @@ var _ = Describe("Deployment", func() {
 
 	Describe("Changing Restic selector", func() {
 		AfterEach(func() {
-			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
+			err = f.DeleteDeployment(deployment.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteRestic(restic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteSecret(cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 		})
 		BeforeEach(func() {
 			cred = f.SecretForLocalBackend()
@@ -497,8 +511,10 @@ var _ = Describe("Deployment", func() {
 
 	Describe("Deleting restic for", func() {
 		AfterEach(func() {
-			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
+			err = f.DeleteDeployment(deployment.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteSecret(cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context(`"Local" backend`, func() {
@@ -560,11 +576,15 @@ var _ = Describe("Deployment", func() {
 
 	Describe("Recovery as job's owner-ref", func() {
 		AfterEach(func() {
-			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
-			f.DeleteRecovery(recovery.ObjectMeta)
-			err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
+			err = f.DeleteDeployment(deployment.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteRestic(restic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteSecret(cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteRecovery(recovery.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -619,9 +639,12 @@ var _ = Describe("Deployment", func() {
 
 	Describe("Leader election for", func() {
 		AfterEach(func() {
-			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
+			err = f.DeleteDeployment(deployment.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteRestic(restic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteSecret(cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context(`"Local" backend`, func() {
@@ -635,12 +658,16 @@ var _ = Describe("Deployment", func() {
 
 	Describe("Stash Webhook for", func() {
 		AfterEach(func() {
-			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteRestic(secondRestic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
+			err = f.DeleteDeployment(deployment.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteRestic(restic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteRestic(secondRestic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteSecret(cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 
-			err := framework.WaitUntilResticDeleted(f.StashClient, secondRestic.ObjectMeta)
+			err = framework.WaitUntilResticDeleted(f.StashClient, secondRestic.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -649,7 +676,7 @@ var _ = Describe("Deployment", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 				secondRestic = restic
-				secondRestic.Name = "second-restic"
+				secondRestic.Name = SecondResticName
 			})
 			It("should mutate and backup new Deployment", shouldMutateAndBackupNewDeployment)
 			It("should not mutate new Deployment if no restic select it", shouldNotMutateNewDeployment)
@@ -661,9 +688,12 @@ var _ = Describe("Deployment", func() {
 
 	Describe("Offline backup for", func() {
 		AfterEach(func() {
-			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
+			err = f.DeleteDeployment(deployment.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteRestic(restic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteSecret(cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context(`Single Replica`, func() {
@@ -671,7 +701,7 @@ var _ = Describe("Deployment", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
 				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "@every 3m"
+				restic.Spec.Schedule = AtEveryThreeMinutes
 			})
 			It(`should backup new Deployment`, func() {
 				By("Creating repository Secret " + cred.Name)
@@ -732,7 +762,7 @@ var _ = Describe("Deployment", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
 				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "@every 3m"
+				restic.Spec.Schedule = AtEveryThreeMinutes
 			})
 			It(`should backup new Deployment`, func() {
 				By("Creating repository Secret " + cred.Name)
@@ -792,9 +822,12 @@ var _ = Describe("Deployment", func() {
 
 	Describe("No retention policy", func() {
 		AfterEach(func() {
-			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
+			err = f.DeleteDeployment(deployment.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteRestic(restic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteSecret(cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context(`"Local" backend`, func() {
@@ -810,10 +843,14 @@ var _ = Describe("Deployment", func() {
 
 	Describe("Minio server", func() {
 		AfterEach(func() {
-			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
-			f.DeleteMinioServer()
+			err = f.DeleteDeployment(deployment.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteRestic(restic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteSecret(cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteMinioServer()
+			Expect(err).NotTo(HaveOccurred())
 		})
 		Context("With cacert", func() {
 			BeforeEach(func() {
@@ -895,10 +932,14 @@ var _ = Describe("Deployment", func() {
 	Describe("Private docker registry", func() {
 		var registryCred core.Secret
 		AfterEach(func() {
-			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
-			f.DeleteSecret(registryCred.ObjectMeta)
+			err = f.DeleteDeployment(deployment.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteRestic(restic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteSecret(cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteSecret(registryCred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 
 			err := framework.WaitUntilSecretDeleted(f.KubeClient, registryCred.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
@@ -927,9 +968,12 @@ var _ = Describe("Deployment", func() {
 	Describe("Pause Restic to stop backup", func() {
 		Context(`"Local" backend`, func() {
 			AfterEach(func() {
-				f.DeleteDeployment(deployment.ObjectMeta)
-				f.DeleteRestic(restic.ObjectMeta)
-				f.DeleteSecret(cred.ObjectMeta)
+				err = f.DeleteDeployment(deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteRestic(restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteSecret(cred.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
@@ -1010,9 +1054,12 @@ var _ = Describe("Deployment", func() {
 	Describe("Repository CRD", func() {
 		Context(`"Local" backend`, func() {
 			AfterEach(func() {
-				f.DeleteDeployment(deployment.ObjectMeta)
-				f.DeleteRestic(restic.ObjectMeta)
-				f.DeleteSecret(cred.ObjectMeta)
+				err = f.DeleteDeployment(deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteRestic(restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteSecret(cred.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
@@ -1052,11 +1099,16 @@ var _ = Describe("Deployment", func() {
 
 	Describe("Complete Recovery", func() {
 		AfterEach(func() {
-			f.CleanupRecoveredVolume(deployment.ObjectMeta)
-			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
-			f.DeleteRecovery(recovery.ObjectMeta)
+			err = f.CleanupRecoveredVolume(deployment.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteDeployment(deployment.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteRestic(restic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteSecret(cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteRecovery(recovery.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 
 			err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
@@ -1100,10 +1152,12 @@ var _ = Describe("Deployment", func() {
 				Expect(previousData).NotTo(BeEmpty())
 
 				By("Deleting deployment")
-				f.DeleteDeployment(deployment.ObjectMeta)
+				err = f.DeleteDeployment(deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				By("Deleting restic")
-				f.DeleteRestic(restic.ObjectMeta)
+				err = f.DeleteRestic(restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				// wait until deployment terminated
 				err = framework.WaitUntilDeploymentDeleted(f.KubeClient, deployment.ObjectMeta)
@@ -1155,7 +1209,8 @@ var _ = Describe("Deployment", func() {
 				By("Creating Deployment " + deployment.Name)
 				_, err = f.CreateDeployment(deployment)
 				Expect(err).NotTo(HaveOccurred())
-				apps_util.WaitUntilDeploymentReady(f.KubeClient, deployment.ObjectMeta)
+				err = apps_util.WaitUntilDeploymentReady(f.KubeClient, deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating demo data in hostPath")
 				err = f.CreateDemoData(deployment.ObjectMeta)
@@ -1185,10 +1240,12 @@ var _ = Describe("Deployment", func() {
 				Expect(previousData).NotTo(BeEmpty())
 
 				By("Deleting deployment")
-				f.DeleteDeployment(deployment.ObjectMeta)
+				err = f.DeleteDeployment(deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				By("Deleting restic")
-				f.DeleteRestic(restic.ObjectMeta)
+				err = f.DeleteRestic(restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				// wait until deployment terminated
 				err = framework.WaitUntilDeploymentDeleted(f.KubeClient, deployment.ObjectMeta)
@@ -1230,11 +1287,16 @@ var _ = Describe("Deployment", func() {
 			recoveryNamespace *core.Namespace
 		)
 		AfterEach(func() {
-			f.CleanupRecoveredVolume(deployment.ObjectMeta)
-			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
-			f.DeleteRecovery(recovery.ObjectMeta)
+			err = f.CleanupRecoveredVolume(deployment.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteDeployment(deployment.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteRestic(restic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteSecret(cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteRecovery(recovery.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 
 			err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
@@ -1242,7 +1304,8 @@ var _ = Describe("Deployment", func() {
 
 		Context(`"Local" backend,single fileGroup`, func() {
 			AfterEach(func() {
-				f.DeleteNamespace(recoveryNamespace.Name)
+				err = f.DeleteNamespace(recoveryNamespace.Name)
+				Expect(err).NotTo(HaveOccurred())
 
 				err := framework.WaitUntilNamespaceDeleted(f.KubeClient, recoveryNamespace.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
@@ -1286,10 +1349,12 @@ var _ = Describe("Deployment", func() {
 				Expect(previousData).NotTo(BeEmpty())
 
 				By("Deleting deployment")
-				f.DeleteDeployment(deployment.ObjectMeta)
+				err = f.DeleteDeployment(deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				By("Deleting restic")
-				f.DeleteRestic(restic.ObjectMeta)
+				err = f.DeleteRestic(restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				// wait until deployment terminated
 				err = framework.WaitUntilDeploymentDeleted(f.KubeClient, deployment.ObjectMeta)
@@ -1336,11 +1401,16 @@ var _ = Describe("Deployment", func() {
 
 		Context(`"Local" backend, multiple fileGroup`, func() {
 			AfterEach(func() {
-				f.CleanupRecoveredVolume(deployment.ObjectMeta)
-				f.DeleteDeployment(deployment.ObjectMeta)
-				f.DeleteRestic(restic.ObjectMeta)
-				f.DeleteSecret(cred.ObjectMeta)
-				f.DeleteRecovery(recovery.ObjectMeta)
+				err = f.CleanupRecoveredVolume(deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteDeployment(deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteRestic(restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteSecret(cred.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteRecovery(recovery.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
@@ -1360,7 +1430,8 @@ var _ = Describe("Deployment", func() {
 				By("Creating Deployment " + deployment.Name)
 				_, err = f.CreateDeployment(deployment)
 				Expect(err).NotTo(HaveOccurred())
-				apps_util.WaitUntilDeploymentReady(f.KubeClient, deployment.ObjectMeta)
+				err = apps_util.WaitUntilDeploymentReady(f.KubeClient, deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating demo data in hostPath")
 				err = f.CreateDemoData(deployment.ObjectMeta)
@@ -1411,10 +1482,12 @@ var _ = Describe("Deployment", func() {
 				f.EventuallyRepository(&deployment).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">", previousBackupCount)))
 
 				By("Deleting deployment")
-				f.DeleteDeployment(deployment.ObjectMeta)
+				err = f.DeleteDeployment(deployment.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				By("Deleting restic")
-				f.DeleteRestic(restic.ObjectMeta)
+				err = f.DeleteRestic(restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				// wait until deployment terminated
 				err = framework.WaitUntilDeploymentDeleted(f.KubeClient, deployment.ObjectMeta)
@@ -1456,19 +1529,25 @@ var _ = Describe("Deployment", func() {
 
 	Describe("Repository WipeOut", func() {
 		AfterEach(func() {
-			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
+			err = f.DeleteDeployment(deployment.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteRestic(restic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteSecret(cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context(`"Minio" backend`, func() {
 			AfterEach(func() {
-				f.DeleteMinioServer()
+				err = f.DeleteMinioServer()
+				Expect(err).NotTo(HaveOccurred())
 			})
 			BeforeEach(func() {
 				clusterIP := net.IP{192, 168, 99, 100}
 
 				pod, err := f.GetOperatorPod()
+				Expect(err).NotTo(HaveOccurred())
+
 				if pod.Spec.NodeName != "minikube" {
 					node, err := f.KubeClient.CoreV1().Nodes().Get(pod.Spec.NodeName, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
@@ -1542,9 +1621,12 @@ var _ = Describe("Deployment", func() {
 
 	Describe("CheckJob", func() {
 		AfterEach(func() {
-			f.DeleteDeployment(deployment.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
+			err = f.DeleteDeployment(deployment.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteRestic(restic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteSecret(cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context("Multiple Replica", func() {

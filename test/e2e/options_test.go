@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/appscode/go/flags"
+	"github.com/appscode/go/log"
 	logs "github.com/appscode/go/log/golog"
 	"k8s.io/client-go/util/homedir"
 	"stash.appscode.dev/stash/pkg/cmds/server"
@@ -46,7 +47,10 @@ func enableLogging() {
 		logs.InitLogs()
 		defer logs.FlushLogs()
 	}()
-	flag.Set("logtostderr", "true")
+	err := flag.Set("logtostderr", "true")
+	if err != nil {
+		log.Errorln(err)
+	}
 	logLevelFlag := flag.Lookup("v")
 	if logLevelFlag != nil {
 		if len(logLevelFlag.Value.String()) > 0 && logLevelFlag.Value.String() != "0" {

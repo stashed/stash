@@ -32,6 +32,10 @@ var _ = Describe("StatefulSet", func() {
 		recovery     api.Recovery
 		localRef     api.LocalTypedReference
 	)
+	const (
+		SecondResticName    = "second-restic"
+		AtEveryThreeMinutes = "@every 3m"
+	)
 
 	BeforeEach(func() {
 		f = root.Invoke()
@@ -173,7 +177,8 @@ var _ = Describe("StatefulSet", func() {
 			f.EventuallyRepository(&ss).Should(WithTransform(f.BackupCountInRepositoriesStatus, BeNumerically(">=", 1)))
 
 			By("Deleting restic " + restic.Name)
-			f.DeleteRestic(restic.ObjectMeta)
+			err = f.DeleteRestic(restic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 
 			By("Waiting to remove sidecar")
 			f.EventuallyStatefulSet(ss.ObjectMeta).ShouldNot(HaveSidecar(util.StashContainer))
@@ -423,10 +428,14 @@ var _ = Describe("StatefulSet", func() {
 
 	Describe("Creating restic for", func() {
 		AfterEach(func() {
-			f.DeleteStatefulSet(ss.ObjectMeta)
-			f.DeleteService(svc.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
+			err = f.DeleteStatefulSet(ss.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteService(svc.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteRestic(restic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteSecret(cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context(`"Local" backend`, func() {
@@ -495,10 +504,14 @@ var _ = Describe("StatefulSet", func() {
 
 	XDescribe("Changing StatefulSet labels", func() {
 		AfterEach(func() {
-			f.DeleteStatefulSet(ss.ObjectMeta)
-			f.DeleteService(svc.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
+			err = f.DeleteStatefulSet(ss.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteService(svc.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteRestic(restic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteSecret(cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 		})
 		BeforeEach(func() {
 			cred = f.SecretForLocalBackend()
@@ -509,10 +522,14 @@ var _ = Describe("StatefulSet", func() {
 
 	XDescribe("Changing Restic selector", func() {
 		AfterEach(func() {
-			f.DeleteStatefulSet(ss.ObjectMeta)
-			f.DeleteService(svc.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
+			err = f.DeleteStatefulSet(ss.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteService(svc.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteRestic(restic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteSecret(cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 		})
 		BeforeEach(func() {
 			cred = f.SecretForLocalBackend()
@@ -523,9 +540,12 @@ var _ = Describe("StatefulSet", func() {
 
 	XDescribe("Deleting restic for", func() {
 		AfterEach(func() {
-			f.DeleteStatefulSet(ss.ObjectMeta)
-			f.DeleteService(svc.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
+			err = f.DeleteStatefulSet(ss.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteService(svc.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteSecret(cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context(`"Local" backend`, func() {
@@ -587,11 +607,16 @@ var _ = Describe("StatefulSet", func() {
 
 	Describe("Stash Webhook for", func() {
 		AfterEach(func() {
-			f.DeleteStatefulSet(ss.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteRestic(secondRestic.ObjectMeta)
-			f.DeleteService(svc.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
+			err = f.DeleteStatefulSet(ss.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteRestic(restic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteRestic(secondRestic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteService(svc.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteSecret(cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
 
 			err := framework.WaitUntilResticDeleted(f.StashClient, secondRestic.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
@@ -602,7 +627,7 @@ var _ = Describe("StatefulSet", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForLocalBackend()
 				secondRestic = restic
-				secondRestic.Name = "second-restic"
+				secondRestic.Name = SecondResticName
 			})
 			It("should mutate and backup new StatefulSet", shouldMutateAndBackupNewStatefulSet)
 			It("should not mutate new StatefulSet if no restic select it", shouldNotMutateNewStatefulSet)
@@ -614,11 +639,16 @@ var _ = Describe("StatefulSet", func() {
 
 	Describe("Offline backup for", func() {
 		AfterEach(func() {
-			f.DeleteStatefulSet(ss.ObjectMeta)
-			f.DeleteRestic(restic.ObjectMeta)
-			f.DeleteSecret(cred.ObjectMeta)
-			f.DeleteService(svc.ObjectMeta)
-			framework.CleanupMinikubeHostPath()
+			err = f.DeleteStatefulSet(ss.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteRestic(restic.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteSecret(cred.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = f.DeleteService(svc.ObjectMeta)
+			Expect(err).NotTo(HaveOccurred())
+			err = framework.CleanupMinikubeHostPath()
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context(`Single Replica`, func() {
@@ -626,7 +656,7 @@ var _ = Describe("StatefulSet", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
 				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "@every 3m"
+				restic.Spec.Schedule = AtEveryThreeMinutes
 			})
 			It(`should backup new StatefulSet`, func() {
 				By("Creating repository Secret " + cred.Name)
@@ -693,7 +723,7 @@ var _ = Describe("StatefulSet", func() {
 				cred = f.SecretForLocalBackend()
 				restic = f.ResticForHostPathLocalBackend()
 				restic.Spec.Type = api.BackupOffline
-				restic.Spec.Schedule = "@every 3m"
+				restic.Spec.Schedule = AtEveryThreeMinutes
 			})
 			It(`should backup new StatefulSet`, func() {
 				By("Creating repository Secret " + cred.Name)
@@ -759,10 +789,14 @@ var _ = Describe("StatefulSet", func() {
 	Describe("Pause Restic to stop backup", func() {
 		Context(`"Local" backend`, func() {
 			AfterEach(func() {
-				f.DeleteStatefulSet(ss.ObjectMeta)
-				f.DeleteService(svc.ObjectMeta)
-				f.DeleteRestic(restic.ObjectMeta)
-				f.DeleteSecret(cred.ObjectMeta)
+				err = f.DeleteStatefulSet(ss.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteService(svc.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteRestic(restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteSecret(cred.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
@@ -843,10 +877,14 @@ var _ = Describe("StatefulSet", func() {
 	Describe("Create Repository CRD", func() {
 		Context(`"Local" backend, single replica`, func() {
 			AfterEach(func() {
-				f.DeleteStatefulSet(ss.ObjectMeta)
-				f.DeleteService(svc.ObjectMeta)
-				f.DeleteRestic(restic.ObjectMeta)
-				f.DeleteSecret(cred.ObjectMeta)
+				err = f.DeleteStatefulSet(ss.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteService(svc.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteRestic(restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteSecret(cred.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
@@ -889,10 +927,14 @@ var _ = Describe("StatefulSet", func() {
 		})
 		Context(`"Local" backend, multiple replica`, func() {
 			AfterEach(func() {
-				f.DeleteStatefulSet(ss.ObjectMeta)
-				f.DeleteService(svc.ObjectMeta)
-				f.DeleteRestic(restic.ObjectMeta)
-				f.DeleteSecret(cred.ObjectMeta)
+				err = f.DeleteStatefulSet(ss.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteService(svc.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteRestic(restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteSecret(cred.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
@@ -939,11 +981,16 @@ var _ = Describe("StatefulSet", func() {
 	Describe("Complete Recovery", func() {
 		Context(`"Local" backend, single fileGroup`, func() {
 			AfterEach(func() {
-				f.CleanupRecoveredVolume(ss.ObjectMeta)
-				f.DeleteStatefulSet(ss.ObjectMeta)
-				f.DeleteRestic(restic.ObjectMeta)
-				f.DeleteSecret(cred.ObjectMeta)
-				f.DeleteRecovery(recovery.ObjectMeta)
+				err = f.CleanupRecoveredVolume(ss.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteStatefulSet(ss.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteRestic(restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteSecret(cred.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteRecovery(recovery.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
@@ -986,10 +1033,12 @@ var _ = Describe("StatefulSet", func() {
 				Expect(previousData).NotTo(BeEmpty())
 
 				By("Deleting ss")
-				f.DeleteStatefulSet(ss.ObjectMeta)
+				err = f.DeleteStatefulSet(ss.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				By("Deleting restic")
-				f.DeleteRestic(restic.ObjectMeta)
+				err = f.DeleteRestic(restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				// wait until statefulset terminated
 				err = framework.WaitUntilStatefulSetDeleted(f.KubeClient, ss.ObjectMeta)
@@ -1032,11 +1081,16 @@ var _ = Describe("StatefulSet", func() {
 
 		Context(`"Local" backend, multiple fileGroup`, func() {
 			AfterEach(func() {
-				f.CleanupRecoveredVolume(ss.ObjectMeta)
-				f.DeleteStatefulSet(ss.ObjectMeta)
-				f.DeleteRestic(restic.ObjectMeta)
-				f.DeleteSecret(cred.ObjectMeta)
-				f.DeleteRecovery(recovery.ObjectMeta)
+				err = f.CleanupRecoveredVolume(ss.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteStatefulSet(ss.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteRestic(restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteSecret(cred.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteRecovery(recovery.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
@@ -1053,7 +1107,8 @@ var _ = Describe("StatefulSet", func() {
 				By("Creating StatefulSet " + ss.Name)
 				_, err = f.CreateStatefulSet(ss)
 				Expect(err).NotTo(HaveOccurred())
-				apps_util.WaitUntilStatefulSetReady(f.KubeClient, ss.ObjectMeta)
+				err = apps_util.WaitUntilStatefulSetReady(f.KubeClient, ss.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating demo data in hostPath")
 				err = f.CreateDemoData(ss.ObjectMeta)
@@ -1064,12 +1119,15 @@ var _ = Describe("StatefulSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				// delete old statefulset create new one so that it start with init container
-				f.DeleteStatefulSet(ss.ObjectMeta)
-				framework.WaitUntilStatefulSetDeleted(f.KubeClient, ss.ObjectMeta)
+				err = f.DeleteStatefulSet(ss.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = framework.WaitUntilStatefulSetDeleted(f.KubeClient, ss.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 				_, err = f.CreateStatefulSet(ss)
 
 				Expect(err).NotTo(HaveOccurred())
-				apps_util.WaitUntilStatefulSetReady(f.KubeClient, ss.ObjectMeta)
+				err = apps_util.WaitUntilStatefulSetReady(f.KubeClient, ss.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for init-container")
 				f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveSidecar(util.StashContainer))
@@ -1091,10 +1149,12 @@ var _ = Describe("StatefulSet", func() {
 				Expect(previousData).NotTo(BeEmpty())
 
 				By("Deleting ss")
-				f.DeleteStatefulSet(ss.ObjectMeta)
+				err = f.DeleteStatefulSet(ss.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				By("Deleting restic")
-				f.DeleteRestic(restic.ObjectMeta)
+				err = f.DeleteRestic(restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				// wait until statefulset terminated
 				err = framework.WaitUntilStatefulSetDeleted(f.KubeClient, ss.ObjectMeta)
@@ -1142,12 +1202,18 @@ var _ = Describe("StatefulSet", func() {
 		)
 		Context(`"Local" backend, single fileGroup`, func() {
 			AfterEach(func() {
-				f.CleanupRecoveredVolume(ss.ObjectMeta)
-				f.DeleteStatefulSet(ss.ObjectMeta)
-				f.DeleteRestic(restic.ObjectMeta)
-				f.DeleteSecret(cred.ObjectMeta)
-				f.DeleteRecovery(recovery.ObjectMeta)
-				f.DeleteNamespace(recoveryNamespace.Name)
+				err = f.CleanupRecoveredVolume(ss.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteStatefulSet(ss.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteRestic(restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteSecret(cred.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteRecovery(recovery.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+				err = f.DeleteNamespace(recoveryNamespace.Name)
+				Expect(err).NotTo(HaveOccurred())
 
 				err := framework.WaitUntilRecoveryDeleted(f.StashClient, recovery.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
@@ -1194,10 +1260,12 @@ var _ = Describe("StatefulSet", func() {
 				Expect(previousData).NotTo(BeEmpty())
 
 				By("Deleting ss")
-				f.DeleteStatefulSet(ss.ObjectMeta)
+				err = f.DeleteStatefulSet(ss.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				By("Deleting restic")
-				f.DeleteRestic(restic.ObjectMeta)
+				err = f.DeleteRestic(restic.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
 
 				// wait until statefulset terminated
 				err = framework.WaitUntilStatefulSetDeleted(f.KubeClient, ss.ObjectMeta)

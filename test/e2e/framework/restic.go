@@ -4,6 +4,7 @@ import (
 	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	store "kmodules.xyz/objectstore-api/api/v1"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
@@ -172,7 +173,11 @@ func (f *Framework) CreateRestic(obj api.Restic) error {
 }
 
 func (f *Framework) DeleteRestic(meta metav1.ObjectMeta) error {
-	return f.StashClient.StashV1alpha1().Restics(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	err := f.StashClient.StashV1alpha1().Restics(meta.Namespace).Delete(meta.Name, deleteInForeground())
+	if !kerr.IsNotFound(err) {
+		return err
+	}
+	return nil
 }
 
 func (f *Framework) UpdateRestic(meta metav1.ObjectMeta, transformer func(*api.Restic) *api.Restic) error {

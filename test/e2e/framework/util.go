@@ -201,6 +201,9 @@ func (f *Framework) ReadSampleDataFromFromWorkload(meta metav1.ObjectMeta, resou
 		var data string
 		datas := make([]string, 0)
 		data, err = f.ExecOnPod(pod, "ls", "-R", TestSourceDataMountPath)
+		if err != nil {
+			return nil, err
+		}
 		datas = append(datas, data)
 		return datas, nil
 	case apis.KindStatefulSet, apis.KindDaemonSet:
@@ -342,9 +345,7 @@ func GetPathsFromResticFileGroups(restic *api.Restic) []string {
 func GetPathsFromRestoreSession(restoreSession *v1beta1.RestoreSession) []string {
 	paths := make([]string, 0)
 	for i := range restoreSession.Spec.Rules {
-		for _, p := range restoreSession.Spec.Rules[i].Paths {
-			paths = append(paths, p)
-		}
+		paths = append(paths, restoreSession.Spec.Rules[i].Paths...)
 	}
 	paths = removeDuplicates(paths)
 	return paths

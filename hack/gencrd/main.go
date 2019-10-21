@@ -49,6 +49,7 @@ func generateSwaggerJson() {
 			stashv1beta1.GetOpenAPIDefinitions,
 			repov1alpha1.GetOpenAPIDefinitions,
 		},
+		//nolint:govet
 		Resources: []openapi.TypeInfo{
 			// v1alpha1 resources
 			{stashv1alpha1.SchemeGroupVersion, stashv1alpha1.ResourcePluralRestic, stashv1alpha1.ResourceKindRestic, true},
@@ -64,6 +65,7 @@ func generateSwaggerJson() {
 			{stashv1beta1.SchemeGroupVersion, stashv1beta1.ResourceKindFunction, stashv1beta1.ResourceKindFunction, false},
 			{stashv1beta1.SchemeGroupVersion, stashv1beta1.ResourcePluralTask, stashv1beta1.ResourceKindTask, false},
 		},
+		//nolint:govet
 		RDResources: []openapi.TypeInfo{
 			{repov1alpha1.SchemeGroupVersion, repov1alpha1.ResourcePluralSnapshot, repov1alpha1.ResourceKindSnapshot, true},
 		},

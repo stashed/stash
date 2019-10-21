@@ -57,7 +57,7 @@ NEW_RESTIC_VER   := 0.9.5
 ###
 
 SRC_PKGS := apis client pkg
-SRC_DIRS := $(SRC_PKGS) *.go test hack/gendocs # directories which hold app source (not vendored)
+SRC_DIRS := $(SRC_PKGS) *.go test hack/gencrd hack/gendocs # directories which hold app source (not vendored)
 
 DOCKER_PLATFORMS := linux/amd64 linux/arm linux/arm64
 BIN_PLATFORMS    := $(DOCKER_PLATFORMS) windows/amd64 darwin/amd64
@@ -78,6 +78,7 @@ TAG_DBG          := $(VERSION)-dbg_$(OS)_$(ARCH)
 
 GO_VERSION       ?= 1.12.10
 BUILD_IMAGE      ?= appscode/golang-dev:$(GO_VERSION)-stretch
+TEST_IMAGE       ?= appscode/golang-dev:$(GO_VERSION)-stash
 
 OUTBIN = bin/$(OS)_$(ARCH)/$(BIN)
 ifeq ($(OS),windows)
@@ -88,12 +89,14 @@ endif
 BUILD_DIRS  := bin/$(OS)_$(ARCH)     \
                .go/bin/$(OS)_$(ARCH) \
                .go/cache             \
+               hack/config           \
                $(HOME)/.credentials  \
                $(HOME)/.kube         \
                $(HOME)/.minikube
 
 DOCKERFILE_PROD  = Dockerfile.in
 DOCKERFILE_DBG   = Dockerfile.dbg
+DOCKERFILE_TEST  = Dockerfile.test
 
 # If you want to build all binaries, see the 'all-build' rule.
 # If you want to build all containers, see the 'all-container' rule.
@@ -343,7 +346,21 @@ docker-manifest-%:
 .PHONY: test
 test: unit-tests e2e-tests
 
-unit-tests: $(BUILD_DIRS)
+bin/.container-$(DOTFILE_IMAGE)-TEST:
+	@echo "container: $(TEST_IMAGE)"
+	@sed                                            \
+	    -e 's|{ARG_BIN}|$(BIN)|g'                   \
+	    -e 's|{ARG_ARCH}|$(ARCH)|g'                 \
+	    -e 's|{ARG_OS}|$(OS)|g'                     \
+	    -e 's|{ARG_FROM}|$(BUILD_IMAGE)|g'          \
+	    -e 's|{RESTIC_VER}|$(RESTIC_VER)|g'         \
+	    -e 's|{NEW_RESTIC_VER}|$(NEW_RESTIC_VER)|g' \
+	    $(DOCKERFILE_TEST) > bin/.dockerfile-TEST-$(OS)_$(ARCH)
+	@DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --platform $(OS)/$(ARCH) --load --pull -t $(TEST_IMAGE) -f bin/.dockerfile-TEST-$(OS)_$(ARCH) .
+	@docker images -q $(TEST_IMAGE) > $@
+	@echo
+
+unit-tests: $(BUILD_DIRS) bin/.container-$(DOTFILE_IMAGE)-TEST
 	@docker run                                                 \
 	    -i                                                      \
 	    --rm                                                    \
@@ -355,7 +372,7 @@ unit-tests: $(BUILD_DIRS)
 	    -v $$(pwd)/.go/cache:/.cache                            \
 	    --env HTTP_PROXY=$(HTTP_PROXY)                          \
 	    --env HTTPS_PROXY=$(HTTPS_PROXY)                        \
-	    $(BUILD_IMAGE)                                          \
+	    $(TEST_IMAGE)                                           \
 	    /bin/bash -c "                                          \
 	        ARCH=$(ARCH)                                        \
 	        OS=$(OS)                                            \
@@ -464,13 +481,13 @@ verify-modules:
 	fi
 
 .PHONY: verify-gen
-verify-gen: gen
+verify-gen: gen fmt
 	@if !(git diff --quiet HEAD); then \
-		echo "generated files are out of date, run make gen"; exit 1; \
+		echo "files are out of date, run make gen fmt"; exit 1; \
 	fi
 
 .PHONY: ci
-ci: verify lint test build #cover
+ci: verify lint build unit-tests #cover
 
 .PHONY: qa
 qa:

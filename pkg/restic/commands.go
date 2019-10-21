@@ -60,7 +60,7 @@ func (w *ResticWrapper) deleteSnapshots(snapshotIDs []string) ([]byte, error) {
 	return w.run(Command{Name: ResticCMD, Args: args})
 }
 
-func (w *ResticWrapper) initRepositoryIfAbsent() ([]byte, error) {
+func (w *ResticWrapper) initRepositoryIfAbsent() error {
 	log.Infoln("Ensuring restic repository in the backend")
 	args := w.appendCacheDirFlag([]interface{}{"snapshots", "--json"})
 	args = w.appendCaCertFlag(args)
@@ -70,9 +70,12 @@ func (w *ResticWrapper) initRepositoryIfAbsent() ([]byte, error) {
 		args = w.appendCaCertFlag(args)
 		args = w.appendMaxConnectionsFlag(args)
 
-		return w.run(Command{Name: ResticCMD, Args: args})
+		_, err := w.run(Command{Name: ResticCMD, Args: args})
+		if err != nil {
+			return err
+		}
 	}
-	return nil, nil
+	return nil
 }
 
 func (w *ResticWrapper) backup(path, host string, tags []string) ([]byte, error) {
