@@ -37,14 +37,22 @@ var _ = Describe("Snapshots", func() {
 		f = root.Invoke()
 	})
 	AfterEach(func() {
-		f.DeleteDaemonSet(daemon.ObjectMeta)
-		f.DeleteDeployment(deployment.ObjectMeta)
-		f.DeleteReplicationController(rc.ObjectMeta)
-		f.DeleteReplicaSet(rs.ObjectMeta)
-		f.DeleteService(svc.ObjectMeta)
-		f.DeleteStatefulSet(ss.ObjectMeta)
-		f.DeleteRestic(restic.ObjectMeta)
-		f.DeleteSecret(cred.ObjectMeta)
+		err = f.DeleteDaemonSet(daemon.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+		err = f.DeleteDeployment(deployment.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+		err = f.DeleteReplicationController(rc.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+		err = f.DeleteReplicaSet(rs.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+		err = f.DeleteService(svc.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+		err = f.DeleteStatefulSet(ss.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+		err = f.DeleteRestic(restic.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
+		err = f.DeleteSecret(cred.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
 		f.DeleteRepositories(f.DaemonSetRepos(&daemon))
 		f.DeleteRepositories(f.DeploymentRepos(&deployment))
 		f.DeleteRepositories(f.ReplicationControllerRepos(&rc))
@@ -217,6 +225,7 @@ var _ = Describe("Snapshots", func() {
 
 			By("Get a particular snapshot")
 			snapshots, err := f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).List(metav1.ListOptions{LabelSelector: "workload-kind=Deployment"})
+			Expect(err).NotTo(HaveOccurred())
 			singleSnapshot, err := f.StashClient.RepositoriesV1alpha1().Snapshots(f.Namespace()).Get(snapshots.Items[len(snapshots.Items)-1].Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(singleSnapshot.Name).To(BeEquivalentTo(snapshots.Items[len(snapshots.Items)-1].Name))
@@ -284,7 +293,8 @@ var _ = Describe("Snapshots", func() {
 	Describe("Snapshots operations", func() {
 		Context(`"Local" backend`, func() {
 			AfterEach(func() {
-				framework.CleanupMinikubeHostPath()
+				err = framework.CleanupMinikubeHostPath()
+				Expect(err).NotTo(HaveOccurred())
 			})
 			BeforeEach(func() {
 				cred = f.SecretForLocalBackend()
@@ -295,7 +305,8 @@ var _ = Describe("Snapshots", func() {
 		})
 		Context(`"Minio" backend`, func() {
 			AfterEach(func() {
-				f.DeleteMinioServer()
+				err = f.DeleteMinioServer()
+				Expect(err).NotTo(HaveOccurred())
 			})
 			BeforeEach(func() {
 				By("Checking if Restic installed in /bin directory")

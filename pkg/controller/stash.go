@@ -75,14 +75,10 @@ func (c *StashController) applyRestoreLogic(w *wapi.Workload, caller string) (bo
 		// this means RestoreSession has been removed.
 		// in this case, we have to delete the restore init-container
 		// and remove respective annotations from the workload  and respective ConfigMapLock.
-		err := c.ensureRestoreInitContainerDeleted(w)
+		c.ensureRestoreInitContainerDeleted(w)
 		// write init-container deletion failure/success event
 		ref, rerr := util.GetWorkloadReference(w)
-		if err != nil && rerr != nil {
-			return false, err
-		} else if err != nil && rerr == nil {
-			return false, c.handleInitContainerDeletionFailure(ref, err)
-		} else if err == nil && rerr != nil {
+		if rerr != nil {
 			return true, nil
 		}
 		return true, c.handleInitContainerDeletionSuccess(ref)

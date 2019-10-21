@@ -381,10 +381,8 @@ func TestRunParallelDump(t *testing.T) {
 	}
 
 	// run parallel dump
-	dumpOptions, err := newParallelDumpOptions()
-	if err != nil {
-		t.Error(err)
-	}
+	dumpOptions := newParallelDumpOptions()
+
 	dumpOutput, err := w.ParallelDump(dumpOptions, 2)
 	if err != nil {
 		t.Error(err)
@@ -465,7 +463,7 @@ func newParallelRestoreOptions(tempDir string) ([]RestoreOptions, error) {
 	}, nil
 }
 
-func newParallelDumpOptions() ([]DumpOptions, error) {
+func newParallelDumpOptions() []DumpOptions {
 
 	return []DumpOptions{
 		{
@@ -483,5 +481,5 @@ func newParallelDumpOptions() ([]DumpOptions, error) {
 			FileName:          filepath.Join(targetPath, fileName),
 			StdoutPipeCommand: stdoutPipeCommand,
 		},
-	}, nil
+	}
 }

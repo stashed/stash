@@ -91,14 +91,10 @@ func (c *StashController) applyBackupConfigurationLogic(w *wapi.Workload, caller
 		// this means BackupConfiguration has been removed.
 		// in this case, we have to delete the backup sidecar container
 		// and remove respective annotations from the workload.
-		err := c.ensureBackupSidecarDeleted(w)
+		c.ensureBackupSidecarDeleted(w)
 		// write sidecar deletion failure/success event
 		ref, rerr := util.GetWorkloadReference(w)
-		if err != nil && rerr != nil {
-			return false, err
-		} else if err != nil && rerr == nil {
-			return false, c.handleSidecarDeletionFailure(ref, err)
-		} else if err == nil && rerr != nil {
+		if rerr != nil {
 			return true, nil
 		}
 		return true, c.handleSidecarDeletionSuccess(ref)

@@ -272,7 +272,7 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 
 	if restoreSession.Spec.Task.Name != "" {
 		// Restore process follows Function-Task model. So, resolve Function and Task to get desired job definition.
-		jobTemplate, err = c.resolveRestoreTask(restoreSession, repository, serviceAccountName, "host-0")
+		jobTemplate, err = c.resolveRestoreTask(restoreSession, repository, "host-0")
 		if err != nil {
 			return err
 		}
@@ -327,7 +327,7 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		// if restore process follows Function-Task model, then resolve the Functions and Task  for this host
 		if restoreSession.Spec.Task.Name != "" {
 			restoreJobTemplate, err = c.resolveRestoreTask(restoreSession, repository,
-				serviceAccountName, fmt.Sprintf("host-%d", ordinal))
+				fmt.Sprintf("host-%d", ordinal))
 
 			if err != nil {
 				return err
@@ -379,7 +379,7 @@ func (c *StashController) createRestoreJob(jobTemplate *core.PodTemplateSpec, me
 
 // resolveRestoreTask resolves Functions and Tasks then returns a job definition to restore the target.
 func (c *StashController) resolveRestoreTask(restoreSession *api_v1beta1.RestoreSession,
-	repository *api_v1alpha1.Repository, serviceAccountName, hostname string) (*core.PodTemplateSpec, error) {
+	repository *api_v1alpha1.Repository, hostname string) (*core.PodTemplateSpec, error) {
 
 	// resolve task template
 	explicitInputs := make(map[string]string)
@@ -493,7 +493,7 @@ func (c *StashController) ensureVolumeRestorerJob(restoreSession *api_v1beta1.Re
 		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 		return in
 	})
-	return nil
+	return err
 }
 
 func (c *StashController) setRestoreSessionRunning(restoreSession *api_v1beta1.RestoreSession) error {
@@ -550,6 +550,9 @@ func (c *StashController) setRestoreSessionSucceeded(restoreSession *api_v1beta1
 		eventer.EventReasonRestoreSessionSucceeded,
 		fmt.Sprintf("restore has been completed succesfully for RestoreSession %s/%s", restoreSession.Namespace, restoreSession.Name),
 	)
+	if err != nil {
+		log.Errorf("failed to write event in RestoreSession %s/%s. Reason: %v", restoreSession.Namespace, restoreSession.Name, err)
+	}
 
 	// send restore session specific metrics
 	metricsOpt := &restic.MetricsOptions{

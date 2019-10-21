@@ -467,6 +467,9 @@ func (c *StashController) setBackupSessionSucceeded(backupSession *api_v1beta1.B
 		eventer.EventReasonBackupSessionSucceeded,
 		fmt.Sprintf("Backup session completed successfully"),
 	)
+	if err != nil {
+		log.Errorf("failed to write event in BackupSession %s/%s. Reason: %v", backupSession.Namespace, backupSession.Name, err)
+	}
 
 	// send backup session specific metrics
 	backupConfig, err := c.stashClient.StashV1beta1().BackupConfigurations(backupSession.Namespace).Get(backupSession.Spec.BackupConfiguration.Name, metav1.GetOptions{})
