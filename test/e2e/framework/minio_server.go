@@ -5,7 +5,6 @@ import (
 	"net"
 	"path/filepath"
 
-	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
 	. "github.com/onsi/gomega"
 	"gomodules.xyz/cert"
@@ -28,6 +27,11 @@ const (
 
 	MINIO_CERTS_MOUNTPATH = "/root/.minio/certs"
 	StandardStorageClass  = "standard"
+
+	MinioServer         = "minio-server"
+	MinioServerSecret   = "minio-server-secret"
+	MinioPVCStorage     = "minio-pvc-storage"
+	MinioNodePortServic = "minio-nodeport-service"
 )
 
 var (
@@ -37,19 +41,12 @@ var (
 	msrvc   core.Service
 )
 
-func (fi *Invocation) CreateMinioServer(tls bool, ips []net.IP) (string, error) {
+func (fi *Framework) CreateMinioServer(tls bool, ips []net.IP) (string, error) {
 	//creating secret for minio server
 	mcred = fi.SecretForMinioServer(ips)
 	err := fi.CreateSecret(mcred)
 	if err != nil {
 		return "", err
-	}
-
-	//creating pvc for minio server
-	mpvc = fi.PVCForMinioServer()
-	err = fi.CreatePersistentVolumeClaimForMinioServer(mpvc)
-	if err != nil {
-		return "", nil
 	}
 
 	//creating deployment for minio server
@@ -60,6 +57,13 @@ func (fi *Invocation) CreateMinioServer(tls bool, ips []net.IP) (string, error) 
 	err = fi.CreateDeploymentForMinioServer(mdeploy)
 	if err != nil {
 		return "", err
+	}
+
+	//creating pvc for minio server
+	mpvc = fi.PVCForMinioServer()
+	err = fi.CreatePersistentVolumeClaimForMinioServer(mpvc)
+	if err != nil {
+		return "", nil
 	}
 
 	//creating service for minio server
@@ -75,13 +79,13 @@ func (fi *Invocation) CreateMinioServer(tls bool, ips []net.IP) (string, error) 
 	return fi.MinioServiceAddres(), nil
 }
 
-func (fi *Invocation) SecretForMinioServer(ips []net.IP) core.Secret {
+func (fi *Framework) SecretForMinioServer(ips []net.IP) core.Secret {
 	crt, key, err := fi.CertStore.NewServerCertPairBytes(fi.MinioServerSANs(ips))
 	Expect(err).NotTo(HaveOccurred())
 
 	return core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "minio-server-secret",
+			Name:      MinioServerSecret,
 			Namespace: fi.namespace,
 		},
 		Data: map[string][]byte{
@@ -91,10 +95,10 @@ func (fi *Invocation) SecretForMinioServer(ips []net.IP) core.Secret {
 	}
 }
 
-func (fi *Invocation) PVCForMinioServer() core.PersistentVolumeClaim {
+func (fi *Framework) PVCForMinioServer() core.PersistentVolumeClaim {
 	return core.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "minio-pv-claim",
+			Name:      MinioPVCStorage,
 			Namespace: fi.namespace,
 			Labels: map[string]string{
 				// this label will be used to mount this pvc as volume in minio server container
@@ -115,19 +119,19 @@ func (fi *Invocation) PVCForMinioServer() core.PersistentVolumeClaim {
 	}
 }
 
-func (fi *Invocation) CreatePersistentVolumeClaimForMinioServer(obj core.PersistentVolumeClaim) error {
+func (fi *Framework) CreatePersistentVolumeClaimForMinioServer(obj core.PersistentVolumeClaim) error {
 	_, err := fi.KubeClient.CoreV1().PersistentVolumeClaims(obj.Namespace).Create(&obj)
 	return err
 }
 
-func (fi *Invocation) DeploymentForMinioServer() apps.Deployment {
+func (fi *Framework) DeploymentForMinioServer() apps.Deployment {
 	labels := map[string]string{
-		"app": fi.app + "minio-server",
+		"app": fi.namespace + "minio-server",
 	}
 
 	return apps.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix("minio-server"),
+			Name:      MinioServer,
 			Namespace: fi.namespace,
 		},
 		Spec: apps.DeploymentSpec{
@@ -150,7 +154,7 @@ func (fi *Invocation) DeploymentForMinioServer() apps.Deployment {
 							Name: "minio-storage",
 							VolumeSource: core.VolumeSource{
 								PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
-									ClaimName: "minio-pv-claim",
+									ClaimName: MinioPVCStorage,
 								},
 							},
 						},
@@ -158,7 +162,7 @@ func (fi *Invocation) DeploymentForMinioServer() apps.Deployment {
 							Name: "minio-certs",
 							VolumeSource: core.VolumeSource{
 								Secret: &core.SecretVolumeSource{
-									SecretName: "minio-server-secret",
+									SecretName: MinioServerSecret,
 									Items: []core.KeyToPath{
 										{
 											Key:  MINIO_PUBLIC_CRT_NAME,
@@ -222,7 +226,7 @@ func (fi *Invocation) DeploymentForMinioServer() apps.Deployment {
 	}
 }
 
-func (fi *Invocation) RemoveSecretVolumeMount(containers []core.Container) []core.Container {
+func (fi *Framework) RemoveSecretVolumeMount(containers []core.Container) []core.Container {
 	resp := make([]core.Container, 0)
 	for _, c := range containers {
 		if c.Name == "minio-server" {
@@ -233,15 +237,15 @@ func (fi *Invocation) RemoveSecretVolumeMount(containers []core.Container) []cor
 	return resp
 }
 
-func (fi *Invocation) CreateDeploymentForMinioServer(obj apps.Deployment) error {
+func (fi *Framework) CreateDeploymentForMinioServer(obj apps.Deployment) error {
 	_, err := fi.KubeClient.AppsV1().Deployments(obj.Namespace).Create(&obj)
 	return err
 }
 
-func (fi *Invocation) ServiceForMinioServer() core.Service {
+func (fi *Framework) ServiceForMinioServer() core.Service {
 	return core.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "minio-service",
+			Name:      MinioNodePortServic,
 			Namespace: fi.namespace,
 		},
 		Spec: core.ServiceSpec{
@@ -254,17 +258,17 @@ func (fi *Invocation) ServiceForMinioServer() core.Service {
 				},
 			},
 			Selector: map[string]string{
-				"app": fi.app + "minio-server",
+				"app": fi.namespace + "minio-server",
 			},
 		},
 	}
 }
 
-func (fi *Invocation) CreateServiceForMinioServer(obj core.Service) (*core.Service, error) {
+func (fi *Framework) CreateServiceForMinioServer(obj core.Service) (*core.Service, error) {
 	return fi.KubeClient.CoreV1().Services(obj.Namespace).Create(&obj)
 }
 
-func (fi *Invocation) DeleteMinioServer() error {
+func (fi *Framework) DeleteMinioServer() error {
 	if err := fi.DeleteSecretForMinioServer(mcred.ObjectMeta); err != nil {
 		return err
 	}
@@ -281,7 +285,7 @@ func (fi *Invocation) DeleteMinioServer() error {
 }
 func (f *Framework) DeleteSecretForMinioServer(meta metav1.ObjectMeta) error {
 	err := f.KubeClient.CoreV1().Secrets(meta.Namespace).Delete(meta.Name, deleteInForeground())
-	if !kerr.IsNotFound(err) {
+	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
 	return nil
@@ -289,7 +293,7 @@ func (f *Framework) DeleteSecretForMinioServer(meta metav1.ObjectMeta) error {
 
 func (f *Framework) DeletePVCForMinioServer(meta metav1.ObjectMeta) error {
 	err := f.KubeClient.CoreV1().PersistentVolumeClaims(meta.Namespace).Delete(meta.Name, deleteInForeground())
-	if !kerr.IsNotFound(err) {
+	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
 	return nil
@@ -297,7 +301,7 @@ func (f *Framework) DeletePVCForMinioServer(meta metav1.ObjectMeta) error {
 
 func (f *Framework) DeleteDeploymentForMinioServer(meta metav1.ObjectMeta) error {
 	err := f.KubeClient.AppsV1().Deployments(meta.Namespace).Delete(meta.Name, deleteInBackground())
-	if !kerr.IsNotFound(err) {
+	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
 	return nil
@@ -305,13 +309,13 @@ func (f *Framework) DeleteDeploymentForMinioServer(meta metav1.ObjectMeta) error
 
 func (f *Framework) DeleteServiceForMinioServer(meta metav1.ObjectMeta) error {
 	err := f.KubeClient.CoreV1().Services(meta.Namespace).Delete(meta.Name, deleteInForeground())
-	if !kerr.IsNotFound(err) {
+	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
 	return nil
 }
 
-func (fi *Invocation) MinioServerSANs(ips []net.IP) cert.AltNames {
+func (fi *Framework) MinioServerSANs(ips []net.IP) cert.AltNames {
 	altNames := cert.AltNames{
 		DNSNames: []string{fi.MinioServiceAddres()},
 		IPs:      ips,
@@ -319,7 +323,7 @@ func (fi *Invocation) MinioServerSANs(ips []net.IP) cert.AltNames {
 	return altNames
 }
 
-func (fi *Invocation) MinioServiceAddres() string {
-	return fmt.Sprintf("minio-service.%s.svc", fi.namespace)
+func (fi *Framework) MinioServiceAddres() string {
+	return fmt.Sprintf(MinioNodePortServic+".%s.svc", fi.namespace)
 
 }

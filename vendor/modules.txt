@@ -32,8 +32,8 @@ github.com/appscode/go/log/golog
 github.com/appscode/go/types
 github.com/appscode/go/strings
 github.com/appscode/go/crypto/rand
-github.com/appscode/go/context
 github.com/appscode/go/sets
+github.com/appscode/go/context
 github.com/appscode/go/analytics
 github.com/appscode/go/net
 github.com/appscode/go/encoding/yaml
@@ -944,6 +944,8 @@ kmodules.xyz/client-go/batch/v1beta1
 kmodules.xyz/client-go/dynamic
 kmodules.xyz/client-go/tools/analytics
 kmodules.xyz/client-go/apiregistration/v1beta1
+# kmodules.xyz/constants v0.0.0-20191009183447-fbd33067b8a6
+kmodules.xyz/constants/google
 # kmodules.xyz/custom-resources v0.0.0-20190927035424-65fe358bb045
 kmodules.xyz/custom-resources/client/clientset/versioned
 kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1

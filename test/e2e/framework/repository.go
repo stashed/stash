@@ -1,10 +1,12 @@
 package framework
 
 import (
+	"fmt"
 	"math"
 	"strconv"
 
 	"github.com/appscode/go/crypto/rand"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gomodules.xyz/stow"
 	apps "k8s.io/api/apps/v1"
@@ -74,7 +76,7 @@ func (f *Framework) DeleteRepositories(repositories []*api.Repository) {
 
 func (f *Framework) DeleteRepository(repository *api.Repository) error {
 	err := f.StashClient.StashV1alpha1().Repositories(repository.Namespace).Delete(repository.Name, deleteInBackground())
-	if !kerr.IsNotFound(err) {
+	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
 	return nil
@@ -128,7 +130,7 @@ func (f *Framework) CreateRepository(repo *api.Repository) error {
 
 }
 
-func (f *Invocation) Repository(secretName string, pvcName string) *api.Repository {
+func (f *Invocation) NewLocalRepository(secretName string, pvcName string) *api.Repository {
 	return &api.Repository{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(f.app + "-local"),
@@ -148,4 +150,106 @@ func (f *Invocation) Repository(secretName string, pvcName string) *api.Reposito
 			},
 		},
 	}
+}
+
+func (f *Invocation) NewGCSRepository(secretName string) *api.Repository {
+	return &api.Repository{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rand.WithUniqSuffix(fmt.Sprintf("gcs-%s", f.app)),
+			Namespace: f.namespace,
+		},
+		Spec: api.RepositorySpec{
+			Backend: store.Backend{
+				GCS: &store.GCSSpec{
+					Bucket: "appscode-qa",
+					Prefix: fmt.Sprintf("stash-e2e/%s/%s", f.namespace, f.app),
+				},
+				StorageSecretName: secretName,
+			},
+			WipeOut: false,
+		},
+	}
+}
+
+func (f *Invocation) NewMinioRepository(secretName string) *api.Repository {
+	return &api.Repository{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rand.WithUniqSuffix(fmt.Sprintf("minio-%s", f.app)),
+			Namespace: f.namespace,
+		},
+		Spec: api.RepositorySpec{
+			Backend: store.Backend{
+				S3: &store.S3Spec{
+					Endpoint: f.MinioServiceAddres(),
+					Bucket:   "minio-bucket",
+					Prefix:   fmt.Sprintf("stash-e2e/%s/%s", f.namespace, f.app),
+				},
+				StorageSecretName: secretName,
+			},
+			WipeOut: false,
+		},
+	}
+}
+
+func (f *Invocation) SetupLocalRepository() (*api.Repository, error) {
+	// Create Storage Secret
+	By("Creating Storage Secret")
+	cred := f.SecretForLocalBackend()
+	err := f.CreateSecret(cred)
+	Expect(err).NotTo(HaveOccurred())
+	f.AppendToCleanupList(&cred)
+
+	// We are going to use an PVC as backend
+	By("Creating Backend PVC")
+	backendPVC := f.PersistentVolumeClaim()
+	backendPVC, err = f.CreatePersistentVolumeClaim(backendPVC)
+	Expect(err).NotTo(HaveOccurred())
+	f.AppendToCleanupList(backendPVC)
+
+	// Generate Repository Definition
+	repo := f.NewLocalRepository(cred.Name, backendPVC.Name)
+
+	// Create Repository
+	By("Creating Repository")
+	return f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+}
+
+func (f *Invocation) SetupGCSRepository() (*api.Repository, error) {
+	// Create Storage Secret
+	By("Creating Storage Secret")
+	cred := f.SecretForGCSBackend()
+
+	if missing, _ := BeZero().Match(cred); missing {
+		Skip("Missing GCS credential")
+	}
+	err := f.CreateSecret(cred)
+	Expect(err).NotTo(HaveOccurred())
+	f.AppendToCleanupList(&cred)
+
+	// Generate Repository Definition
+	repo := f.NewGCSRepository(cred.Name)
+
+	// Create Repository
+	By("Creating Repository")
+	return f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+}
+
+func (f *Invocation) SetupMinioRepository() (*api.Repository, error) {
+	// Create Storage Secret
+	By("Creating Storage Secret")
+	cred := f.SecretForMinioBackend(true)
+
+	if missing, _ := BeZero().Match(cred); missing {
+		Skip("Missing Minio credential")
+	}
+	err := f.CreateSecret(cred)
+	Expect(err).NotTo(HaveOccurred())
+	f.AppendToCleanupList(&cred)
+
+	// Generate Repository Definition
+	repo := f.NewMinioRepository(cred.Name)
+
+	// Create Repository
+	By("Creating Repository")
+	return f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
 }

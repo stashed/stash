@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"net"
 	"testing"
 	"time"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/dynamic"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
@@ -18,6 +20,10 @@ import (
 	_ "stash.appscode.dev/stash/client/clientset/versioned/scheme"
 	"stash.appscode.dev/stash/pkg/controller"
 	"stash.appscode.dev/stash/test/e2e/framework"
+
+	//	test sources
+	_ "stash.appscode.dev/stash/test/e2e/volumes"
+	_ "stash.appscode.dev/stash/test/e2e/workloads"
 )
 
 const (
@@ -43,21 +49,31 @@ var _ = BeforeSuite(func() {
 
 	clientConfig, err := clientcmd.BuildConfigFromContext(options.KubeConfig, options.KubeContext)
 	Expect(err).NotTo(HaveOccurred())
-	cfg := controller.NewConfig(clientConfig)
+	ctrlConfig := controller.NewConfig(clientConfig)
 
-	err = options.ApplyTo(cfg)
+	err = options.ApplyTo(ctrlConfig)
 	Expect(err).NotTo(HaveOccurred())
 
 	kaClient := ka.NewForConfigOrDie(clientConfig)
+	dmClient := dynamic.NewForConfigOrDie(clientConfig)
 
-	root = framework.New(cfg.KubeClient, cfg.StashClient, kaClient, clientConfig, options.StorageClass)
+	root = framework.New(ctrlConfig.KubeClient, ctrlConfig.StashClient, kaClient, dmClient, clientConfig, options.StorageClass)
+	framework.RootFramework = root
+	By("Using test namespace " + root.Namespace())
 	err = root.CreateTestNamespace()
 	Expect(err).NotTo(HaveOccurred())
-	By("Using test namespace " + root.Namespace())
+
+	By("Deploy TLS secured Minio Server")
+	_, err = root.CreateMinioServer(true, []net.IP{net.ParseIP("127.0.0.1")})
+	Expect(err).NotTo(HaveOccurred())
 })
 
 var _ = AfterSuite(func() {
+	By("Deleting Minio server")
+	err := root.DeleteMinioServer()
+	Expect(err).NotTo(HaveOccurred())
+
 	By("Deleting namespace: " + root.Namespace())
-	err := root.DeleteNamespace(root.Namespace())
+	err = root.DeleteNamespace(root.Namespace())
 	Expect(err).NotTo(HaveOccurred())
 })

@@ -299,7 +299,7 @@ func (c *StashController) getTotalHostForRestic(targetRef api_v1beta1.TargetRef,
 		if err != nil {
 			return nil, err
 		}
-		return &dmn.Status.NumberReady, nil
+		return &dmn.Status.DesiredNumberScheduled, nil
 	// for all other workloads, only one replica will take backup/restore. so number of total host will be 1
 	default:
 		return types.Int32P(1), nil

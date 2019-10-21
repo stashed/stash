@@ -18,7 +18,7 @@ import (
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 )
 
-var _ = Describe("Snapshots", func() {
+var _ = XDescribe("Snapshots", func() {
 	var (
 		err        error
 		f          *framework.Invocation
@@ -101,10 +101,10 @@ var _ = Describe("Snapshots", func() {
 			Skip("Missing repository credential")
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
-		pvc := f.GetPersistentVolumeClaim()
-		err := f.CreatePersistentVolumeClaim(pvc)
+		pvc := f.PersistentVolumeClaim()
+		_, err := f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
-		daemon = f.DaemonSet(pvc.Name)
+		daemon = f.DaemonSet()
 
 		deployment = f.Deployment(pvc.Name)
 		rc = f.ReplicationController(pvc.Name)

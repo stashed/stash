@@ -1,13 +1,14 @@
 package framework
 
 import (
-	"io/ioutil"
 	"os"
 
 	"github.com/appscode/go/crypto/rand"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"kmodules.xyz/constants/google"
+	googleconsts "kmodules.xyz/constants/google"
 	"stash.appscode.dev/stash/pkg/cli"
 )
 
@@ -72,17 +73,12 @@ func (fi *Invocation) SecretForDOBackend() core.Secret {
 }
 
 func (fi *Invocation) SecretForGCSBackend() core.Secret {
-	if os.Getenv(cli.GOOGLE_PROJECT_ID) == "" ||
-		(os.Getenv(cli.GOOGLE_APPLICATION_CREDENTIALS) == "" && os.Getenv(cli.GOOGLE_SERVICE_ACCOUNT_JSON_KEY) == "") {
+	jsonKey := googleconsts.ServiceAccountFromEnv()
+
+	if jsonKey == "" || os.Getenv(google.GOOGLE_PROJECT_ID) == "" {
 		return core.Secret{}
 	}
 
-	jsonKey := os.Getenv(cli.GOOGLE_SERVICE_ACCOUNT_JSON_KEY)
-	if jsonKey == "" {
-		if keyBytes, err := ioutil.ReadFile(os.Getenv(cli.GOOGLE_APPLICATION_CREDENTIALS)); err == nil {
-			jsonKey = string(keyBytes)
-		}
-	}
 	return core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(fi.app + "-gcs"),
@@ -199,7 +195,7 @@ func (f *Framework) CreateSecret(obj core.Secret) error {
 
 func (f *Framework) DeleteSecret(meta metav1.ObjectMeta) error {
 	err := f.KubeClient.CoreV1().Secrets(meta.Namespace).Delete(meta.Name, deleteInForeground())
-	if !kerr.IsNotFound(err) {
+	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
 	return nil

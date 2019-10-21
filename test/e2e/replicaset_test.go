@@ -20,7 +20,7 @@ import (
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 )
 
-var _ = Describe("ReplicaSet", func() {
+var _ = XDescribe("ReplicaSet", func() {
 	var (
 		err          error
 		f            *framework.Invocation
@@ -65,8 +65,8 @@ var _ = Describe("ReplicaSet", func() {
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
 		secondRestic.Spec.Backend.StorageSecretName = cred.Name
-		pvc := f.GetPersistentVolumeClaim()
-		err := f.CreatePersistentVolumeClaim(pvc)
+		pvc := f.PersistentVolumeClaim()
+		_, err := f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
 		rs = f.ReplicaSet(pvc.Name)
 		localRef = api.LocalTypedReference{

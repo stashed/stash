@@ -17,6 +17,7 @@ const (
 	KindPersistentVolumeClaim = "PersistentVolumeClaim"
 	KindAppBinding            = "AppBinding"
 	KindDeploymentConfig      = "DeploymentConfig"
+	KindSecret                = "Secret"
 )
 
 const (

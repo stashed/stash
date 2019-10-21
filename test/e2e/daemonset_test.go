@@ -19,7 +19,7 @@ import (
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 )
 
-var _ = Describe("DaemonSet", func() {
+var _ = XDescribe("DaemonSet", func() {
 	var (
 		err          error
 		f            *framework.Invocation
@@ -62,10 +62,7 @@ var _ = Describe("DaemonSet", func() {
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
 		secondRestic.Spec.Backend.StorageSecretName = cred.Name
-		pvc := f.GetPersistentVolumeClaim()
-		err := f.CreatePersistentVolumeClaim(pvc)
-		Expect(err).NotTo(HaveOccurred())
-		daemon = f.DaemonSet(pvc.Name)
+		daemon = f.DaemonSet()
 		localRef = api.LocalTypedReference{
 			Kind: apis.KindDaemonSet,
 			Name: daemon.Name,

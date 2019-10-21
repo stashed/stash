@@ -42,6 +42,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20190502190224-411b2483e503
 	k8s.io/kubernetes v1.14.0
 	kmodules.xyz/client-go v0.0.0-20191021083014-0be9e7d5b970
+	kmodules.xyz/constants v0.0.0-20191009183447-fbd33067b8a6
 	kmodules.xyz/custom-resources v0.0.0-20190927035424-65fe358bb045
 	kmodules.xyz/objectstore-api v0.0.0-20191014210450-ac380fa650a3
 	kmodules.xyz/offshoot-api v0.0.0-20190901210649-de049192326c

@@ -174,7 +174,7 @@ func (f *Framework) CreateRestic(obj api.Restic) error {
 
 func (f *Framework) DeleteRestic(meta metav1.ObjectMeta) error {
 	err := f.StashClient.StashV1alpha1().Restics(meta.Namespace).Delete(meta.Name, deleteInForeground())
-	if !kerr.IsNotFound(err) {
+	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
 	return nil

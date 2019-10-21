@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/appscode/go/crypto/rand"
+	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -70,7 +72,7 @@ func (f *Framework) GetPod(meta metav1.ObjectMeta) (*core.Pod, error) {
 	return nil, fmt.Errorf("no pod found for workload %v", meta.Name)
 }
 
-func (f *Framework) GetAllPod(meta metav1.ObjectMeta) ([]core.Pod, error) {
+func (f *Framework) GetAllPods(meta metav1.ObjectMeta) ([]core.Pod, error) {
 	pods := make([]core.Pod, 0)
 	labelSelector := fields.SelectorFromSet(meta.Labels)
 	podList, err := f.KubeClient.CoreV1().Pods(meta.Namespace).List(metav1.ListOptions{LabelSelector: labelSelector.String()})
@@ -149,8 +151,33 @@ func (f *Invocation) CreatePod(pod core.Pod) error {
 
 func (f *Invocation) DeletePod(meta metav1.ObjectMeta) error {
 	err := f.KubeClient.CoreV1().Pods(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
-	if !kerr.IsNotFound(err) {
+	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
 	return nil
+}
+
+func (f *Framework) EventuallyPodAccessible(meta metav1.ObjectMeta) GomegaAsyncAssertion {
+	return Eventually(func() bool {
+		labelSelector := fields.SelectorFromSet(meta.Labels)
+		podList, err := f.KubeClient.CoreV1().Pods(meta.Namespace).List(metav1.ListOptions{LabelSelector: labelSelector.String()})
+		Expect(err).NotTo(HaveOccurred())
+
+		if len(podList.Items) == 0 {
+			return false
+		}
+
+		allPodAccessible := true
+		for _, pod := range podList.Items {
+			_, err := f.ExecOnPod(&pod, "ls", "-R")
+			if err != nil {
+				allPodAccessible = false
+				break
+			}
+		}
+		return allPodAccessible
+	},
+		time.Minute*2,
+		time.Second*2,
+	)
 }
