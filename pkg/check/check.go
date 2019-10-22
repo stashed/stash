@@ -3,15 +3,16 @@ package check
 import (
 	"fmt"
 
+	cs "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1"
+	"stash.appscode.dev/stash/pkg/cli"
+	"stash.appscode.dev/stash/pkg/eventer"
+
 	"github.com/appscode/go/log"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
-	cs "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1"
-	"stash.appscode.dev/stash/pkg/cli"
-	"stash.appscode.dev/stash/pkg/eventer"
 )
 
 const (

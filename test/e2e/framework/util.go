@@ -7,6 +7,14 @@ import (
 	"strings"
 	"time"
 
+	"stash.appscode.dev/stash/apis"
+	rep "stash.appscode.dev/stash/apis/repositories/v1alpha1"
+	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
+	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	"stash.appscode.dev/stash/pkg/eventer"
+	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
+
 	"github.com/appscode/go/sets"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -20,13 +28,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	appCatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	ocapps "kmodules.xyz/openshift/apis/apps/v1"
-	"stash.appscode.dev/stash/apis"
-	rep "stash.appscode.dev/stash/apis/repositories/v1alpha1"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/apis/stash/v1beta1"
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
-	"stash.appscode.dev/stash/pkg/eventer"
-	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
 )
 
 var (

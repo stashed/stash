@@ -4,6 +4,12 @@ import (
 	"fmt"
 	"time"
 
+	"stash.appscode.dev/stash/apis"
+	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/stash/pkg/util"
+	"stash.appscode.dev/stash/test/e2e/framework"
+	. "stash.appscode.dev/stash/test/e2e/matcher"
+
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
 	. "github.com/onsi/ginkgo"
@@ -13,11 +19,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apps_util "kmodules.xyz/client-go/apps/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
-	"stash.appscode.dev/stash/apis"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/pkg/util"
-	"stash.appscode.dev/stash/test/e2e/framework"
-	. "stash.appscode.dev/stash/test/e2e/matcher"
 )
 
 var _ = XDescribe("StatefulSet", func() {

@@ -3,13 +3,14 @@ package cmds
 import (
 	"fmt"
 
+	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	"stash.appscode.dev/stash/pkg/restic"
+	"stash.appscode.dev/stash/pkg/status"
+
 	"github.com/appscode/go/flags"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
-	"stash.appscode.dev/stash/pkg/restic"
-	"stash.appscode.dev/stash/pkg/status"
 )
 
 const (

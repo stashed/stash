@@ -1,8 +1,9 @@
 package v1beta1
 
 import (
-	"k8s.io/kube-openapi/pkg/common"
 	"stash.appscode.dev/stash/apis/stash/v1alpha1"
+
+	"k8s.io/kube-openapi/pkg/common"
 )
 
 const (

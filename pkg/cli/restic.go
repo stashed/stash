@@ -6,10 +6,11 @@ import (
 	"strings"
 	"time"
 
+	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+
 	"github.com/appscode/go/log"
 	shell "github.com/codeskyblue/go-sh"
 	"github.com/pkg/errors"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 )
 
 const (

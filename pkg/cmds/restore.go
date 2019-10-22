@@ -1,16 +1,17 @@
 package cmds
 
 import (
+	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	"stash.appscode.dev/stash/pkg/restic"
+	"stash.appscode.dev/stash/pkg/restore"
+	"stash.appscode.dev/stash/pkg/util"
+
 	"github.com/appscode/go/log"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"kmodules.xyz/client-go/meta"
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
-	"stash.appscode.dev/stash/pkg/restic"
-	"stash.appscode.dev/stash/pkg/restore"
-	"stash.appscode.dev/stash/pkg/util"
 )
 
 func NewCmdRestore() *cobra.Command {

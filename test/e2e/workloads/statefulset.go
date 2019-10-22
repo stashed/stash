@@ -3,6 +3,13 @@ package workloads
 import (
 	"fmt"
 
+	"stash.appscode.dev/stash/apis"
+	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/stash/pkg/util"
+	"stash.appscode.dev/stash/test/e2e/framework"
+	. "stash.appscode.dev/stash/test/e2e/matcher"
+
 	"github.com/appscode/go/sets"
 	"github.com/appscode/go/types"
 	. "github.com/onsi/ginkgo"
@@ -10,12 +17,6 @@ import (
 	apps "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apps_util "kmodules.xyz/client-go/apps/v1"
-	"stash.appscode.dev/stash/apis"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/apis/stash/v1beta1"
-	"stash.appscode.dev/stash/pkg/util"
-	"stash.appscode.dev/stash/test/e2e/framework"
-	. "stash.appscode.dev/stash/test/e2e/matcher"
 )
 
 var _ = Describe("StatefulSet", func() {

@@ -6,6 +6,16 @@ import (
 	"os"
 	"time"
 
+	"stash.appscode.dev/stash/apis"
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	stashinformers "stash.appscode.dev/stash/client/informers/externalversions"
+	"stash.appscode.dev/stash/client/listers/stash/v1beta1"
+	"stash.appscode.dev/stash/pkg/eventer"
+	"stash.appscode.dev/stash/pkg/restic"
+	"stash.appscode.dev/stash/pkg/status"
+	"stash.appscode.dev/stash/pkg/util"
+
 	"github.com/appscode/go/log"
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
@@ -20,15 +30,6 @@ import (
 	"k8s.io/client-go/tools/record"
 	"kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/queue"
-	"stash.appscode.dev/stash/apis"
-	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
-	stashinformers "stash.appscode.dev/stash/client/informers/externalversions"
-	"stash.appscode.dev/stash/client/listers/stash/v1beta1"
-	"stash.appscode.dev/stash/pkg/eventer"
-	"stash.appscode.dev/stash/pkg/restic"
-	"stash.appscode.dev/stash/pkg/status"
-	"stash.appscode.dev/stash/pkg/util"
 )
 
 type BackupSessionController struct {

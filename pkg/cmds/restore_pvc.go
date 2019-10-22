@@ -3,11 +3,12 @@ package cmds
 import (
 	"path/filepath"
 
-	"github.com/appscode/go/flags"
-	"github.com/spf13/cobra"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/restic"
 	"stash.appscode.dev/stash/pkg/util"
+
+	"github.com/appscode/go/flags"
+	"github.com/spf13/cobra"
 )
 
 func NewCmdRestorePVC() *cobra.Command {

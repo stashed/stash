@@ -5,15 +5,16 @@ import (
 	"fmt"
 	"reflect"
 
+	"stash.appscode.dev/stash/apis/stash/v1alpha1"
+	v1beta1_api "stash.appscode.dev/stash/apis/stash/v1beta1"
+	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	v1beta1_listers "stash.appscode.dev/stash/client/listers/stash/v1beta1"
+
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"kmodules.xyz/client-go/meta"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
-	"stash.appscode.dev/stash/apis/stash/v1alpha1"
-	v1beta1_api "stash.appscode.dev/stash/apis/stash/v1beta1"
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
-	v1beta1_listers "stash.appscode.dev/stash/client/listers/stash/v1beta1"
 )
 
 // GetAppliedBackupConfiguration check whether BackupConfiguration was applied as annotation and returns the object definition if exist.

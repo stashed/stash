@@ -1,8 +1,9 @@
 package controller
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (

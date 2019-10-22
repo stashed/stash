@@ -5,6 +5,14 @@ import (
 	"os"
 	"strings"
 
+	"stash.appscode.dev/stash/apis/repositories"
+	"stash.appscode.dev/stash/apis/repositories/install"
+	"stash.appscode.dev/stash/apis/repositories/v1alpha1"
+	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/stash/pkg/controller"
+	"stash.appscode.dev/stash/pkg/eventer"
+	snapregistry "stash.appscode.dev/stash/pkg/registry/snapshot"
+
 	admission "k8s.io/api/admission/v1beta1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,13 +29,6 @@ import (
 	store "kmodules.xyz/objectstore-api/api/v1"
 	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"
 	admissionreview "kmodules.xyz/webhook-runtime/registry/admissionreview/v1beta1"
-	"stash.appscode.dev/stash/apis/repositories"
-	"stash.appscode.dev/stash/apis/repositories/install"
-	"stash.appscode.dev/stash/apis/repositories/v1alpha1"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/pkg/controller"
-	"stash.appscode.dev/stash/pkg/eventer"
-	snapregistry "stash.appscode.dev/stash/pkg/registry/snapshot"
 )
 
 const (

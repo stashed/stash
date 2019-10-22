@@ -1,6 +1,8 @@
 package framework
 
 import (
+	"stash.appscode.dev/stash/pkg/util"
+
 	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
@@ -10,7 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kutil "kmodules.xyz/client-go"
-	"stash.appscode.dev/stash/pkg/util"
 )
 
 func (fi *Invocation) DaemonSet() apps.DaemonSet {

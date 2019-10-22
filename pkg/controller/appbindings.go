@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"strings"
 
+	"stash.appscode.dev/stash/apis"
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/stash/pkg/resolve"
+
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,9 +17,6 @@ import (
 	"kmodules.xyz/client-go/tools/queue"
 	appCatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	catalog_scheme "kmodules.xyz/custom-resources/client/clientset/versioned/scheme"
-	"stash.appscode.dev/stash/apis"
-	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
-	"stash.appscode.dev/stash/pkg/resolve"
 )
 
 func (c *StashController) initAppBindingWatcher() {

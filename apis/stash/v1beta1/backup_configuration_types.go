@@ -1,11 +1,12 @@
 package v1beta1
 
 import (
+	"stash.appscode.dev/stash/apis/stash/v1alpha1"
+
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
-	"stash.appscode.dev/stash/apis/stash/v1alpha1"
 )
 
 const (

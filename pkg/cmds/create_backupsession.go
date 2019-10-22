@@ -5,6 +5,14 @@ import (
 	"strings"
 	"time"
 
+	"stash.appscode.dev/stash/apis"
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
+	v1beta1_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
+	"stash.appscode.dev/stash/pkg/eventer"
+	"stash.appscode.dev/stash/pkg/util"
+
 	"github.com/appscode/go/log"
 	"github.com/spf13/cobra"
 	core "k8s.io/api/core/v1"
@@ -18,13 +26,6 @@ import (
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
 	ocapps "kmodules.xyz/openshift/apis/apps/v1"
 	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"
-	"stash.appscode.dev/stash/apis"
-	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
-	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
-	v1beta1_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
-	"stash.appscode.dev/stash/pkg/eventer"
-	"stash.appscode.dev/stash/pkg/util"
 )
 
 type options struct {

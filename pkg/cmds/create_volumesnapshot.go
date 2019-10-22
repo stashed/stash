@@ -5,6 +5,15 @@ import (
 	"strings"
 	"time"
 
+	"stash.appscode.dev/stash/apis"
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	"stash.appscode.dev/stash/pkg/restic"
+	"stash.appscode.dev/stash/pkg/status"
+	"stash.appscode.dev/stash/pkg/util"
+	"stash.appscode.dev/stash/pkg/volumesnapshot"
+
 	"github.com/appscode/go/log"
 	vs "github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1alpha1"
 	vs_cs "github.com/kubernetes-csi/external-snapshotter/pkg/client/clientset/versioned"
@@ -15,14 +24,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"kmodules.xyz/client-go/meta"
-	"stash.appscode.dev/stash/apis"
-	"stash.appscode.dev/stash/apis/stash/v1beta1"
-	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
-	"stash.appscode.dev/stash/pkg/restic"
-	"stash.appscode.dev/stash/pkg/status"
-	"stash.appscode.dev/stash/pkg/util"
-	"stash.appscode.dev/stash/pkg/volumesnapshot"
 )
 
 type VSoption struct {

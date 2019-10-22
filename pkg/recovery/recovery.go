@@ -4,12 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/appscode/go/log"
-	"github.com/cenkalti/backoff"
-	core "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/reference"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/client/clientset/versioned/scheme"
 	cs "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1"
@@ -17,6 +11,13 @@ import (
 	"stash.appscode.dev/stash/pkg/cli"
 	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/pkg/util"
+
+	"github.com/appscode/go/log"
+	"github.com/cenkalti/backoff"
+	core "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/reference"
 )
 
 type Controller struct {

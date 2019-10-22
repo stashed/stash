@@ -3,6 +3,12 @@ package controller
 import (
 	"fmt"
 
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/stash/pkg/docker"
+	"stash.appscode.dev/stash/pkg/eventer"
+	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
+	"stash.appscode.dev/stash/pkg/util"
+
 	"github.com/appscode/go/log"
 	stringz "github.com/appscode/go/strings"
 	core "k8s.io/api/core/v1"
@@ -10,11 +16,6 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
-	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
-	"stash.appscode.dev/stash/pkg/docker"
-	"stash.appscode.dev/stash/pkg/eventer"
-	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
-	"stash.appscode.dev/stash/pkg/util"
 )
 
 func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, rs *api_v1beta1.RestoreSession, caller string) error {

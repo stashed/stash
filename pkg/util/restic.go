@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"reflect"
 
+	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	stash_listers "stash.appscode.dev/stash/client/listers/stash/v1alpha1"
+
 	"github.com/pkg/errors"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"kmodules.xyz/client-go/meta"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	stash_listers "stash.appscode.dev/stash/client/listers/stash/v1alpha1"
 )
 
 func GetAppliedRestic(m map[string]string) (*api.Restic, error) {

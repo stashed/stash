@@ -1,6 +1,11 @@
 package controller
 
 import (
+	"stash.appscode.dev/stash/apis/stash"
+	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	stash_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
+	"stash.appscode.dev/stash/pkg/util"
+
 	"github.com/golang/glog"
 	"gomodules.xyz/stow"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -11,10 +16,6 @@ import (
 	"kmodules.xyz/webhook-runtime/admission"
 	hooks "kmodules.xyz/webhook-runtime/admission/v1beta1"
 	webhook "kmodules.xyz/webhook-runtime/admission/v1beta1/generic"
-	"stash.appscode.dev/stash/apis/stash"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	stash_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
-	"stash.appscode.dev/stash/pkg/util"
 )
 
 func (c *StashController) NewRepositoryWebhook() hooks.AdmissionHook {

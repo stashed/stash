@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+
 	"github.com/appscode/go/log"
 	core "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
@@ -13,8 +16,6 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
 func EnsureRestoreInitContainerRBAC(kubeClient kubernetes.Interface, ref *core.ObjectReference, sa string, labels map[string]string) error {

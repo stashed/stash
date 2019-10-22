@@ -4,6 +4,9 @@ import (
 	"flag"
 	"os"
 
+	"stash.appscode.dev/stash/client/clientset/versioned/scheme"
+	"stash.appscode.dev/stash/pkg/util"
+
 	"github.com/appscode/go/flags"
 	"github.com/appscode/go/log/golog"
 	v "github.com/appscode/go/version"
@@ -15,8 +18,6 @@ import (
 	"kmodules.xyz/client-go/logs"
 	"kmodules.xyz/client-go/tools/cli"
 	ocscheme "kmodules.xyz/openshift/client/clientset/versioned/scheme"
-	"stash.appscode.dev/stash/client/clientset/versioned/scheme"
-	"stash.appscode.dev/stash/pkg/util"
 )
 
 func NewRootCmd() *cobra.Command {
