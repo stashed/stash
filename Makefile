@@ -254,7 +254,7 @@ fmt: $(BUILD_DIRS)
 	    --env HTTPS_PROXY=$(HTTPS_PROXY)                        \
 	    $(BUILD_IMAGE)                                          \
 	    /bin/bash -c "                                          \
-	        REPO_PKG=$(GO_PKG)/$(REPO)                          \
+	        REPO_PKG=$(GO_PKG)                                  \
 	        ./hack/fmt.sh $(SRC_DIRS)                           \
 	    "
 
