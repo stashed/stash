@@ -64,7 +64,7 @@ func (f *Invocation) DeleteBackupConfiguration(backupCfg v1beta1.BackupConfigura
 	return nil
 }
 
-func (f *Invocation) PvcBackupTarget(pvcName string) *v1beta1.BackupTarget {
+func (f *Invocation) PVCBackupTarget(pvcName string) *v1beta1.BackupTarget {
 	return &v1beta1.BackupTarget{
 		Ref: v1beta1.TargetRef{
 			APIVersion: "v1",

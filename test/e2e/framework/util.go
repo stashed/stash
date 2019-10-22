@@ -34,14 +34,19 @@ var (
 )
 
 const (
-	TestSoucreDemoDataPath = "/data/stash-test/demo-data"
-	TestSourceDataDir1     = "/source/data/dir-1"
-	TestSourceDataDir2     = "/source/data/dir-2"
-	KindRestic             = "Restic"
-	KindRepository         = "Repository"
-	KindRecovery           = "Recovery"
-	PullInterval           = time.Second * 2
-	WaitTimeOut            = time.Minute * 3
+	TestSoucreDemoDataPath  = "/data/stash-test/demo-data"
+	TestSourceDataDir1      = "/source/data/dir-1"
+	TestSourceDataDir2      = "/source/data/dir-2"
+	KindRestic              = "Restic"
+	KindRepository          = "Repository"
+	KindRecovery            = "Recovery"
+	PullInterval            = time.Second * 2
+	WaitTimeOut             = time.Minute * 3
+	FunctionPVCBackup       = "pvc-backup"
+	TaskPVCBackup           = "pvc-backup"
+	FunctionPVCRestore      = "pvc-restore"
+	TaskPVCRestore          = "pvc-restore"
+	FunctionPVCUpdateStatus = "update-status"
 )
 
 func (f *Framework) EventualEvent(meta metav1.ObjectMeta) GomegaAsyncAssertion {
@@ -751,6 +756,10 @@ func getGVRAndObjectMeta(obj interface{}) (schema.GroupVersionResource, metav1.O
 		w.GetObjectKind().SetGroupVersionKind(core.SchemeGroupVersion.WithKind(apis.KindReplicationController))
 		gvk := w.GroupVersionKind()
 		return schema.GroupVersionResource{Group: gvk.Group, Version: gvk.Version, Resource: apis.ResourcePluralReplicationController}, w.ObjectMeta, nil
+	case *core.Pod:
+		w.GetObjectKind().SetGroupVersionKind(core.SchemeGroupVersion.WithKind(v1.KindPod))
+		gvk := w.GroupVersionKind()
+		return schema.GroupVersionResource{Group: gvk.Group, Version: gvk.Version, Resource: v1.ResourcePods}, w.ObjectMeta, nil
 	case *ocapps.DeploymentConfig:
 		w.GetObjectKind().SetGroupVersionKind(ocapps.GroupVersion.WithKind(apis.KindDeploymentConfig))
 		gvk := w.GroupVersionKind()
@@ -791,4 +800,28 @@ func getGVRAndObjectMeta(obj interface{}) (schema.GroupVersionResource, metav1.O
 	default:
 		return schema.GroupVersionResource{}, metav1.ObjectMeta{}, fmt.Errorf("failed to get GroupVersionResource. Reason: Unknown resource type")
 	}
+}
+
+func (f *Invocation) VerifyPVCBackupFunctionAndTask() error {
+	_, err := f.StashClient.StashV1beta1().Functions().Get(FunctionPVCBackup, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	_, err = f.StashClient.StashV1beta1().Functions().Get(FunctionPVCRestore, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	_, err = f.StashClient.StashV1beta1().Functions().Get(FunctionPVCUpdateStatus, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	_, err = f.StashClient.StashV1beta1().Tasks().Get(TaskPVCBackup, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	_, err = f.StashClient.StashV1beta1().Tasks().Get(TaskPVCRestore, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
 }
