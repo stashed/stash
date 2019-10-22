@@ -22,7 +22,7 @@ jobs:
 
     - name: Set up Docker Buildx
       id: buildx
-      uses: crazy-max/ghaction-docker-buildx@master
+      uses: crazy-max/ghaction-docker-buildx@v1
       with:
         version: latest
 
