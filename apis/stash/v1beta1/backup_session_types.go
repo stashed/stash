@@ -17,7 +17,8 @@ const (
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:path=backupsessions,singular=backupsession,categories={stash,appscode,all}
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="BackupConfiguration",type="string",JSONPath=".spec.backupConfiguration.name"
+// +kubebuilder:printcolumn:name="Invoker-Type",type="string",JSONPath=".spec.invoker.kind"
+// +kubebuilder:printcolumn:name="Invoker-Name",type="string",JSONPath=".spec.invoker.name"
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type BackupSession struct {
