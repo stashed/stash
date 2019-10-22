@@ -184,11 +184,3 @@ func (f *Framework) EventuallyPodAccessible(meta metav1.ObjectMeta) GomegaAsyncA
 		time.Second*2,
 	)
 }
-
-func (f *Framework) EventuallyPod(meta metav1.ObjectMeta) GomegaAsyncAssertion {
-	return Eventually(func() *core.Pod {
-		obj, err := f.KubeClient.CoreV1().Pods(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
-		Expect(err).NotTo(HaveOccurred())
-		return obj
-	})
-}

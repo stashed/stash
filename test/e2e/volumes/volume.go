@@ -43,10 +43,9 @@ var _ = Describe("Volume", func() {
 			return createdPVC
 		}
 
-		deployPod = func(name string) *core.Pod {
+		deployPod = func(pvcName string) *core.Pod {
 			// Generate Pod definition
-			pod := f.Pod(name)
-			pod.Name = fmt.Sprintf("pod-%s", name)
+			pod := f.Pod(pvcName)
 
 			By("Deploying Pod: " + pod.Name)
 			createdPod, err := f.CreatePod(pod)
@@ -64,7 +63,7 @@ var _ = Describe("Volume", func() {
 		}
 
 		generateSampleData = func(pod *core.Pod) sets.String {
-			By("Generating sample data inside Pod pods")
+			By("Generating sample data inside Pod")
 			err := f.CreateSampleDataInsideWorkload(pod.ObjectMeta, apis.KindPersistentVolumeClaim)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -84,7 +83,7 @@ var _ = Describe("Volume", func() {
 			}
 		}
 
-		setupPodBackup = func(pvc *core.PersistentVolumeClaim, repo *api.Repository) *v1beta1.BackupConfiguration {
+		setupPVCBackup = func(pvc *core.PersistentVolumeClaim, repo *api.Repository) *v1beta1.BackupConfiguration {
 			// Generate desired BackupConfiguration definition
 			backupConfig := f.GetBackupConfigurationForWorkload(repo.Name, getTargetRef(pvc))
 			backupConfig.Spec.Target = f.PVCBackupTarget(pvc.Name)
@@ -103,7 +102,7 @@ var _ = Describe("Volume", func() {
 
 		takeInstantBackup = func(pvc *core.PersistentVolumeClaim, repo *api.Repository) {
 			// Setup Backup
-			backupConfig := setupPodBackup(pvc, repo)
+			backupConfig := setupPVCBackup(pvc, repo)
 
 			// Trigger Instant Backup
 			By("Triggering Instant Backup")
@@ -156,11 +155,6 @@ var _ = Describe("Volume", func() {
 	)
 
 	Context("PVC", func() {
-		BeforeEach(func() {
-			By("Ensure pvc-backup Function and Task exist")
-			err := f.VerifyPVCBackupFunctionAndTask()
-			Expect(err).NotTo(HaveOccurred())
-		})
 
 		Context("Restore in same PVC", func() {
 
@@ -193,14 +187,13 @@ var _ = Describe("Volume", func() {
 
 				// Verify that restored data is same as the original data
 				By("Verifying restored data is same as the original data")
-				fmt.Println("data...", sampleData.List(), " ", restoredData.List())
 				Expect(restoredData).Should(BeSameAs(sampleData))
 			})
 		})
 
-		Context("Restore in same PVC", func() {
+		Context("Restore in different PVC", func() {
 
-			It("should Backup & Restore in the source PVC", func() {
+			It("should restore backed up data into different PVC", func() {
 				// Create new PVC
 				pvc := createPVC(fmt.Sprintf("source-pvc-%s", f.App()))
 				// Deploy a Pod
