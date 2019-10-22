@@ -23,7 +23,7 @@ export GOFLAGS="-mod=vendor"
 TARGETS="$@"
 
 echo "Running reimport.py"
-cmd="reimport.py ${TARGETS}"
+cmd="reimport3.py ${REPO_PKG} ${TARGETS}"
 $cmd
 echo
 
