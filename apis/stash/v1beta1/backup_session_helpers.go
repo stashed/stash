@@ -39,9 +39,14 @@ func (bs BackupSession) CustomResourceDefinition() *apiextensions.CustomResource
 		EnableStatusSubresource: true,
 		AdditionalPrinterColumns: []apiextensions.CustomResourceColumnDefinition{
 			{
-				Name:     "BackupConfiguration",
+				Name:     "Invoker-Type",
 				Type:     "string",
-				JSONPath: ".spec.backupConfiguration.name",
+				JSONPath: ".spec.invoker.kind",
+			},
+			{
+				Name:     "Invoker-Name",
+				Type:     "string",
+				JSONPath: ".spec.invoker.name",
 			},
 			{
 				Name:     "Phase",
