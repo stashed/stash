@@ -104,10 +104,14 @@ func (f *Framework) GetOperatorPod() (*core.Pod, error) {
 }
 
 func (f *Invocation) Pod(pvcName string) core.Pod {
+	labels := map[string]string{
+		"app": f.app,
+	}
 	return core.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("test-write-source"),
 			Namespace: f.namespace,
+			Labels:    labels,
 		},
 		Spec: core.PodSpec{
 			Containers: []core.Container{
@@ -144,9 +148,8 @@ func (f *Invocation) Pod(pvcName string) core.Pod {
 	}
 }
 
-func (f *Invocation) CreatePod(pod core.Pod) error {
-	_, err := f.KubeClient.CoreV1().Pods(pod.Namespace).Create(&pod)
-	return err
+func (f *Invocation) CreatePod(pod core.Pod) (*core.Pod, error) {
+	return f.KubeClient.CoreV1().Pods(pod.Namespace).Create(&pod)
 }
 
 func (f *Invocation) DeletePod(meta metav1.ObjectMeta) error {

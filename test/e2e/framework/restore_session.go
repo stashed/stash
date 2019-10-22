@@ -81,7 +81,7 @@ func (f *Framework) EventuallyRestoreSessionPhase(meta metav1.ObjectMeta) Gomega
 	)
 }
 
-func (f *Invocation) PvcRestoreTarget(pvcName string) *v1beta1.RestoreTarget {
+func (f *Invocation) PVCRestoreTarget(pvcName string) *v1beta1.RestoreTarget {
 	return &v1beta1.RestoreTarget{
 		Ref: v1beta1.TargetRef{
 			APIVersion: "v1",

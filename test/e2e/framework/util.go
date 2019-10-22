@@ -42,6 +42,8 @@ const (
 	KindRecovery           = "Recovery"
 	PullInterval           = time.Second * 2
 	WaitTimeOut            = time.Minute * 3
+	TaskPVCBackup          = "pvc-backup"
+	TaskPVCRestore         = "pvc-restore"
 )
 
 func (f *Framework) EventualEvent(meta metav1.ObjectMeta) GomegaAsyncAssertion {
@@ -751,6 +753,10 @@ func getGVRAndObjectMeta(obj interface{}) (schema.GroupVersionResource, metav1.O
 		w.GetObjectKind().SetGroupVersionKind(core.SchemeGroupVersion.WithKind(apis.KindReplicationController))
 		gvk := w.GroupVersionKind()
 		return schema.GroupVersionResource{Group: gvk.Group, Version: gvk.Version, Resource: apis.ResourcePluralReplicationController}, w.ObjectMeta, nil
+	case *core.Pod:
+		w.GetObjectKind().SetGroupVersionKind(core.SchemeGroupVersion.WithKind(apis.KindPod))
+		gvk := w.GroupVersionKind()
+		return schema.GroupVersionResource{Group: gvk.Group, Version: gvk.Version, Resource: apis.ResourcePluralPod}, w.ObjectMeta, nil
 	case *ocapps.DeploymentConfig:
 		w.GetObjectKind().SetGroupVersionKind(ocapps.GroupVersion.WithKind(apis.KindDeploymentConfig))
 		gvk := w.GroupVersionKind()
