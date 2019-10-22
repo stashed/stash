@@ -123,8 +123,10 @@ func (opt *options) createBackupSession() error {
 	_, _, err = v1beta1_util.CreateOrPatchBackupSession(opt.stashClient.StashV1beta1(), bsMeta, func(in *api_v1beta1.BackupSession) *api_v1beta1.BackupSession {
 		// Set BackupConfiguration  as BackupSession Owner
 		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
-		in.Spec.BackupConfiguration = &core.LocalObjectReference{
-			Name: opt.backupConfigName,
+		in.Spec.Invoker = api_v1beta1.BackupInvokerRef{
+			APIGroup: api_v1beta1.SchemeGroupVersion.Group,
+			Kind:     api_v1beta1.ResourceKindBackupConfiguration,
+			Name:     opt.backupConfigName,
 		}
 
 		in.Labels = backupConfiguration.OffshootLabels()

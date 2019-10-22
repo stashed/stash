@@ -126,7 +126,7 @@ func (c *StashController) applyBackupSessionReconciliationLogic(backupSession *a
 	// backup process for this BackupSession has not started. so let's start backup process
 	// get BackupConfiguration for BackupSession
 	backupConfig, err := c.stashClient.StashV1beta1().BackupConfigurations(backupSession.Namespace).Get(
-		backupSession.Spec.BackupConfiguration.Name,
+		backupSession.Spec.Invoker.Name,
 		metav1.GetOptions{},
 	)
 	if err != nil {
@@ -363,7 +363,7 @@ func (c *StashController) setBackupSessionFailed(backupSession *api_v1beta1.Back
 	)
 
 	// send backup session specific metrics
-	backupConfig, err2 := c.stashClient.StashV1beta1().BackupConfigurations(backupSession.Namespace).Get(backupSession.Spec.BackupConfiguration.Name, metav1.GetOptions{})
+	backupConfig, err2 := c.stashClient.StashV1beta1().BackupConfigurations(backupSession.Namespace).Get(backupSession.Spec.Invoker.Name, metav1.GetOptions{})
 	if err2 != nil {
 		return errors.NewAggregate([]error{backupErr, err})
 	}
@@ -407,7 +407,7 @@ func (c *StashController) setBackupSessionSkipped(backupSession *api_v1beta1.Bac
 func (c *StashController) setBackupSessionRunning(backupSession *api_v1beta1.BackupSession) error {
 
 	backupConfig, err := c.stashClient.StashV1beta1().BackupConfigurations(backupSession.Namespace).Get(
-		backupSession.Spec.BackupConfiguration.Name,
+		backupSession.Spec.Invoker.Name,
 		metav1.GetOptions{},
 	)
 	if err != nil {
@@ -471,7 +471,7 @@ func (c *StashController) setBackupSessionSucceeded(backupSession *api_v1beta1.B
 	}
 
 	// send backup session specific metrics
-	backupConfig, err := c.stashClient.StashV1beta1().BackupConfigurations(backupSession.Namespace).Get(backupSession.Spec.BackupConfiguration.Name, metav1.GetOptions{})
+	backupConfig, err := c.stashClient.StashV1beta1().BackupConfigurations(backupSession.Namespace).Get(backupSession.Spec.Invoker.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}

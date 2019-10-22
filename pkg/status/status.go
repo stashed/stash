@@ -126,7 +126,7 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 	}
 	// if metrics enabled then send metrics to the Prometheus pushgateway
 	if o.Metrics.Enabled {
-		backupConfig, err := o.StashClient.StashV1beta1().BackupConfigurations(o.Namespace).Get(backupSession.Spec.BackupConfiguration.Name, metav1.GetOptions{})
+		backupConfig, err := o.StashClient.StashV1beta1().BackupConfigurations(o.Namespace).Get(backupSession.Spec.Invoker.Name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
