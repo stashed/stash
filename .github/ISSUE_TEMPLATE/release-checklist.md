@@ -30,8 +30,7 @@ This step is required only if any change has been introduces since the last rele
 
 **Step-4: Website Update**
 - [ ] Update [appscode/static-assets](https://github.com/appscode/static-assets)
-- [ ] Update [appscode-cloud/hugo-appscode](https://github.com/appscode-cloud/hugo-appscode)
-- [ ] Render & Verify latest update locally
+- [ ] Render & Verify latest update locally in [appscode-cloud/hugo-appscode](https://github.com/appscode-cloud/hugo-appscode)
 - [ ] Publish Website
 
 **Step-5: Announcement**
