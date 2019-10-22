@@ -1,6 +1,10 @@
 package backup
 
 import (
+	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/stash/pkg/eventer"
+	"stash.appscode.dev/stash/pkg/util"
+
 	"github.com/appscode/go/log"
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
@@ -8,9 +12,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/reference"
 	"kmodules.xyz/client-go/tools/queue"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/pkg/eventer"
-	"stash.appscode.dev/stash/pkg/util"
 )
 
 func (c *Controller) initResticWatcher() {

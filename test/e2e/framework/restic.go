@@ -1,14 +1,15 @@
 package framework
 
 import (
+	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	stash_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
+
 	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	store "kmodules.xyz/objectstore-api/api/v1"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	stash_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
 )
 
 func (fi *Invocation) _restic() api.Restic {

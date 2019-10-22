@@ -3,17 +3,18 @@ package volumes
 import (
 	"fmt"
 
+	"stash.appscode.dev/stash/apis"
+	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/stash/test/e2e/framework"
+	. "stash.appscode.dev/stash/test/e2e/matcher"
+
 	"github.com/appscode/go/sets"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "kmodules.xyz/client-go/core/v1"
-	"stash.appscode.dev/stash/apis"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/apis/stash/v1beta1"
-	"stash.appscode.dev/stash/test/e2e/framework"
-	. "stash.appscode.dev/stash/test/e2e/matcher"
 )
 
 var _ = Describe("Volume", func() {

@@ -5,6 +5,12 @@ import (
 	"os"
 	"path/filepath"
 
+	repoinstall "stash.appscode.dev/stash/apis/repositories/install"
+	repov1alpha1 "stash.appscode.dev/stash/apis/repositories/v1alpha1"
+	stashinstall "stash.appscode.dev/stash/apis/stash/install"
+	stashv1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	stashv1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+
 	gort "github.com/appscode/go/runtime"
 	"github.com/go-openapi/spec"
 	"github.com/golang/glog"
@@ -12,11 +18,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/kube-openapi/pkg/common"
 	"kmodules.xyz/client-go/openapi"
-	repoinstall "stash.appscode.dev/stash/apis/repositories/install"
-	repov1alpha1 "stash.appscode.dev/stash/apis/repositories/v1alpha1"
-	stashinstall "stash.appscode.dev/stash/apis/stash/install"
-	stashv1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	stashv1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
 func generateSwaggerJson() {

@@ -5,6 +5,15 @@ import (
 	"testing"
 	"time"
 
+	//	test sources
+
+	"stash.appscode.dev/stash/client/clientset/versioned/scheme"
+	_ "stash.appscode.dev/stash/client/clientset/versioned/scheme"
+	"stash.appscode.dev/stash/pkg/controller"
+	"stash.appscode.dev/stash/test/e2e/framework"
+	_ "stash.appscode.dev/stash/test/e2e/volumes"
+	_ "stash.appscode.dev/stash/test/e2e/workloads"
+
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
@@ -16,14 +25,6 @@ import (
 	"kmodules.xyz/client-go/logs"
 	"kmodules.xyz/client-go/tools/cli"
 	"kmodules.xyz/client-go/tools/clientcmd"
-	"stash.appscode.dev/stash/client/clientset/versioned/scheme"
-	_ "stash.appscode.dev/stash/client/clientset/versioned/scheme"
-	"stash.appscode.dev/stash/pkg/controller"
-	"stash.appscode.dev/stash/test/e2e/framework"
-
-	//	test sources
-	_ "stash.appscode.dev/stash/test/e2e/volumes"
-	_ "stash.appscode.dev/stash/test/e2e/workloads"
 )
 
 const (

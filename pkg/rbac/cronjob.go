@@ -3,6 +3,8 @@ package rbac
 import (
 	"fmt"
 
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	policy "k8s.io/api/policy/v1beta1"
@@ -11,7 +13,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	core_util "kmodules.xyz/client-go/core/v1"
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
-	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
 const (

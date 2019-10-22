@@ -19,11 +19,6 @@ limitations under the License.
 package fake
 
 import (
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/discovery"
-	fakediscovery "k8s.io/client-go/discovery/fake"
-	"k8s.io/client-go/testing"
 	clientset "stash.appscode.dev/stash/client/clientset/versioned"
 	repositoriesv1alpha1 "stash.appscode.dev/stash/client/clientset/versioned/typed/repositories/v1alpha1"
 	fakerepositoriesv1alpha1 "stash.appscode.dev/stash/client/clientset/versioned/typed/repositories/v1alpha1/fake"
@@ -31,6 +26,12 @@ import (
 	fakestashv1alpha1 "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1/fake"
 	stashv1beta1 "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1"
 	fakestashv1beta1 "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/fake"
+
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/discovery"
+	fakediscovery "k8s.io/client-go/discovery/fake"
+	"k8s.io/client-go/testing"
 )
 
 // NewSimpleClientset returns a clientset that will respond with the provided objects.

@@ -4,9 +4,10 @@ import (
 	"sync"
 	"time"
 
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+
 	"github.com/appscode/go/types"
 	"k8s.io/apimachinery/pkg/util/errors"
-	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
 // RunBackup takes backup, cleanup old snapshots, check repository integrity etc.

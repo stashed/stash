@@ -5,6 +5,12 @@ import (
 	"fmt"
 	"time"
 
+	"stash.appscode.dev/stash/apis"
+	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/stash/client/clientset/versioned/scheme"
+	"stash.appscode.dev/stash/pkg/eventer"
+	"stash.appscode.dev/stash/pkg/util"
+
 	"github.com/appscode/go/log"
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
@@ -15,11 +21,6 @@ import (
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/client-go/tools/reference"
-	"stash.appscode.dev/stash/apis"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/client/clientset/versioned/scheme"
-	"stash.appscode.dev/stash/pkg/eventer"
-	"stash.appscode.dev/stash/pkg/util"
 )
 
 func (c *Controller) BackupScheduler() error {

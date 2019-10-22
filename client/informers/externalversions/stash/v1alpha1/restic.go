@@ -21,14 +21,15 @@ package v1alpha1
 import (
 	time "time"
 
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	runtime "k8s.io/apimachinery/pkg/runtime"
-	watch "k8s.io/apimachinery/pkg/watch"
-	cache "k8s.io/client-go/tools/cache"
 	stashv1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	versioned "stash.appscode.dev/stash/client/clientset/versioned"
 	internalinterfaces "stash.appscode.dev/stash/client/informers/externalversions/internalinterfaces"
 	v1alpha1 "stash.appscode.dev/stash/client/listers/stash/v1alpha1"
+
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	runtime "k8s.io/apimachinery/pkg/runtime"
+	watch "k8s.io/apimachinery/pkg/watch"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // ResticInformer provides access to a shared informer and lister for

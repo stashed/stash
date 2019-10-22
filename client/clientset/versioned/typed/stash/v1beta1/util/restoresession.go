@@ -3,6 +3,9 @@ package util
 import (
 	"fmt"
 
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+	cs "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1"
+
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/golang/glog"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -10,8 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kutil "kmodules.xyz/client-go"
-	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
-	cs "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1"
 )
 
 func CreateOrPatchRestoreSession(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, transform func(in *api_v1beta1.RestoreSession) *api_v1beta1.RestoreSession) (*api_v1beta1.RestoreSession, kutil.VerbType, error) {

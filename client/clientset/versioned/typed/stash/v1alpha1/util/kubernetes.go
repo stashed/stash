@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"reflect"
 
+	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+
 	jsoniter "github.com/json-iterator/go"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"kmodules.xyz/client-go/meta"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 )
 
 var json = jsoniter.ConfigFastest

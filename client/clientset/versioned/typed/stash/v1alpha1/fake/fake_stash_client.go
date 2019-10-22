@@ -19,9 +19,10 @@ limitations under the License.
 package fake
 
 import (
+	v1alpha1 "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1"
+
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
-	v1alpha1 "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1"
 )
 
 type FakeStashV1alpha1 struct {

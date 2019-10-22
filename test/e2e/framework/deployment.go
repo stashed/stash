@@ -1,6 +1,8 @@
 package framework
 
 import (
+	"stash.appscode.dev/stash/pkg/util"
+
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
 	. "github.com/onsi/gomega"
@@ -9,7 +11,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kutil "kmodules.xyz/client-go"
-	"stash.appscode.dev/stash/pkg/util"
 )
 
 func (fi *Invocation) Deployment(pvcName string) apps.Deployment {

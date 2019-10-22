@@ -5,6 +5,10 @@ import (
 	"io"
 	"net"
 
+	"stash.appscode.dev/stash/apis/repositories/v1alpha1"
+	"stash.appscode.dev/stash/pkg/controller"
+	"stash.appscode.dev/stash/pkg/server"
+
 	"github.com/spf13/pflag"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -13,9 +17,6 @@ import (
 	genericoptions "k8s.io/apiserver/pkg/server/options"
 	"kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/clientcmd"
-	"stash.appscode.dev/stash/apis/repositories/v1alpha1"
-	"stash.appscode.dev/stash/pkg/controller"
-	"stash.appscode.dev/stash/pkg/server"
 )
 
 const defaultEtcdPathPrefix = "/registry/stash.appscode.com"

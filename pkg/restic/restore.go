@@ -4,8 +4,9 @@ import (
 	"sync"
 	"time"
 
-	"k8s.io/apimachinery/pkg/util/errors"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+
+	"k8s.io/apimachinery/pkg/util/errors"
 )
 
 // RunRestore run restore process for a single host.

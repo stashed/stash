@@ -5,11 +5,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"stash.appscode.dev/stash/pkg/cmds/server"
+
 	"github.com/appscode/go/flags"
 	"github.com/appscode/go/log"
 	logs "github.com/appscode/go/log/golog"
 	"k8s.io/client-go/util/homedir"
-	"stash.appscode.dev/stash/pkg/cmds/server"
 )
 
 type E2EOptions struct {

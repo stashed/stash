@@ -11,10 +11,11 @@ import (
 	"strings"
 	"time"
 
+	"stash.appscode.dev/stash/apis/stash/v1alpha1"
+
 	"github.com/appscode/go/log"
 	"github.com/armon/circbuf"
 	storage "kmodules.xyz/objectstore-api/api/v1"
-	"stash.appscode.dev/stash/apis/stash/v1alpha1"
 )
 
 const (

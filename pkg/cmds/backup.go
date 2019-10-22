@@ -5,6 +5,13 @@ import (
 	"strings"
 	"time"
 
+	"stash.appscode.dev/stash/apis"
+	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	"stash.appscode.dev/stash/pkg/backup"
+	"stash.appscode.dev/stash/pkg/docker"
+	"stash.appscode.dev/stash/pkg/scale"
+	"stash.appscode.dev/stash/pkg/util"
+
 	"github.com/appscode/go/log"
 	v "github.com/appscode/go/version"
 	"github.com/spf13/cobra"
@@ -12,12 +19,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/cli"
-	"stash.appscode.dev/stash/apis"
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
-	"stash.appscode.dev/stash/pkg/backup"
-	"stash.appscode.dev/stash/pkg/docker"
-	"stash.appscode.dev/stash/pkg/scale"
-	"stash.appscode.dev/stash/pkg/util"
 )
 
 func NewCmdBackup() *cobra.Command {

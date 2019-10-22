@@ -21,12 +21,13 @@ package v1alpha1
 import (
 	"time"
 
+	v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
+
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	rest "k8s.io/client-go/rest"
-	v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
 )
 
 // RecoveriesGetter has a method to return a RecoveryInterface.

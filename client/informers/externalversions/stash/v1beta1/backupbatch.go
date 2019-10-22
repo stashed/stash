@@ -21,14 +21,15 @@ package v1beta1
 import (
 	time "time"
 
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	runtime "k8s.io/apimachinery/pkg/runtime"
-	watch "k8s.io/apimachinery/pkg/watch"
-	cache "k8s.io/client-go/tools/cache"
 	stashv1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	versioned "stash.appscode.dev/stash/client/clientset/versioned"
 	internalinterfaces "stash.appscode.dev/stash/client/informers/externalversions/internalinterfaces"
 	v1beta1 "stash.appscode.dev/stash/client/listers/stash/v1beta1"
+
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	runtime "k8s.io/apimachinery/pkg/runtime"
+	watch "k8s.io/apimachinery/pkg/watch"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // BackupBatchInformer provides access to a shared informer and lister for

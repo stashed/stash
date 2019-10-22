@@ -1,10 +1,11 @@
 package v1beta1
 
 import (
+	"stash.appscode.dev/stash/apis/stash"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"stash.appscode.dev/stash/apis/stash"
 )
 
 var SchemeGroupVersion = schema.GroupVersion{Group: stash.GroupName, Version: "v1beta1"}

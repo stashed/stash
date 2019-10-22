@@ -7,9 +7,10 @@ import (
 	"path/filepath"
 	"sort"
 
+	"stash.appscode.dev/stash/apis/stash/v1alpha1"
+
 	shell "github.com/codeskyblue/go-sh"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
-	"stash.appscode.dev/stash/apis/stash/v1alpha1"
 )
 
 const (

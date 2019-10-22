@@ -6,6 +6,17 @@ import (
 	"os"
 	"time"
 
+	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	stash_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
+	stashinformers "stash.appscode.dev/stash/client/informers/externalversions"
+	stash_listers "stash.appscode.dev/stash/client/listers/stash/v1alpha1"
+	"stash.appscode.dev/stash/pkg/cli"
+	"stash.appscode.dev/stash/pkg/docker"
+	"stash.appscode.dev/stash/pkg/eventer"
+	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
+	"stash.appscode.dev/stash/pkg/util"
+
 	"github.com/appscode/go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
@@ -22,16 +33,6 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
 	"kmodules.xyz/client-go/tools/queue"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
-	stash_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
-	stashinformers "stash.appscode.dev/stash/client/informers/externalversions"
-	stash_listers "stash.appscode.dev/stash/client/listers/stash/v1alpha1"
-	"stash.appscode.dev/stash/pkg/cli"
-	"stash.appscode.dev/stash/pkg/docker"
-	"stash.appscode.dev/stash/pkg/eventer"
-	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
-	"stash.appscode.dev/stash/pkg/util"
 )
 
 type Options struct {

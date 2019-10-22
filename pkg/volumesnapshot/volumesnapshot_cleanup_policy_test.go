@@ -5,6 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"stash.appscode.dev/stash/apis"
+	"stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
+
 	"github.com/appscode/go/strings"
 	type_util "github.com/appscode/go/types"
 	crdv1 "github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1alpha1"
@@ -13,9 +17,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"stash.appscode.dev/stash/apis"
-	"stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
 type snapInfo struct {

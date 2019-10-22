@@ -1,12 +1,13 @@
 package controller
 
 import (
+	"stash.appscode.dev/stash/apis/stash/v1alpha1"
+
 	"github.com/appscode/go/encoding/json/types"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
-	"stash.appscode.dev/stash/apis/stash/v1alpha1"
 )
 
 func (c *StashController) MigrateObservedGeneration() error {

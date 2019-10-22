@@ -10,6 +10,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"stash.appscode.dev/stash/apis/repositories"
+	stash "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/stash/pkg/cli"
+	"stash.appscode.dev/stash/pkg/restic"
+	"stash.appscode.dev/stash/pkg/util"
+
 	"github.com/appscode/go/log"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,11 +23,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/remotecommand"
 	core_util "kmodules.xyz/client-go/core/v1"
-	"stash.appscode.dev/stash/apis/repositories"
-	stash "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/pkg/cli"
-	"stash.appscode.dev/stash/pkg/restic"
-	"stash.appscode.dev/stash/pkg/util"
 )
 
 const (

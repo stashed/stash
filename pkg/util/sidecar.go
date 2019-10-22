@@ -3,6 +3,11 @@ package util
 import (
 	"fmt"
 
+	"stash.appscode.dev/stash/apis"
+	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	v1beta1_api "stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/stash/pkg/docker"
+
 	"github.com/appscode/go/types"
 	core "k8s.io/api/core/v1"
 	"kmodules.xyz/client-go/tools/analytics"
@@ -10,10 +15,6 @@ import (
 	"kmodules.xyz/client-go/tools/clientcmd"
 	store "kmodules.xyz/objectstore-api/api/v1"
 	ofst_util "kmodules.xyz/offshoot-api/util"
-	"stash.appscode.dev/stash/apis"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	v1beta1_api "stash.appscode.dev/stash/apis/stash/v1beta1"
-	"stash.appscode.dev/stash/pkg/docker"
 )
 
 func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image docker.Docker) core.Container {

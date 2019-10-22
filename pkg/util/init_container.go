@@ -3,14 +3,15 @@ package util
 import (
 	"fmt"
 
+	v1alpha1_api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	v1beta1_api "stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/stash/pkg/docker"
+
 	"github.com/appscode/go/types"
 	core "k8s.io/api/core/v1"
 	"kmodules.xyz/client-go/tools/cli"
 	"kmodules.xyz/client-go/tools/clientcmd"
 	ofst_util "kmodules.xyz/offshoot-api/util"
-	v1alpha1_api "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	v1beta1_api "stash.appscode.dev/stash/apis/stash/v1beta1"
-	"stash.appscode.dev/stash/pkg/docker"
 )
 
 func NewInitContainer(r *v1alpha1_api.Restic, workload v1alpha1_api.LocalTypedReference, image docker.Docker) core.Container {

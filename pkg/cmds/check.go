@@ -1,13 +1,14 @@
 package cmds
 
 import (
+	cs "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1"
+	"stash.appscode.dev/stash/pkg/check"
+
 	"github.com/appscode/go/log"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"kmodules.xyz/client-go/meta"
-	cs "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1"
-	"stash.appscode.dev/stash/pkg/check"
 )
 
 func NewCmdCheck() *cobra.Command {

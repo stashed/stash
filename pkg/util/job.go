@@ -3,6 +3,12 @@ package util
 import (
 	"fmt"
 
+	"stash.appscode.dev/stash/apis"
+	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	"stash.appscode.dev/stash/pkg/docker"
+
 	"github.com/appscode/go/types"
 	batch "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
@@ -11,11 +17,6 @@ import (
 	"kmodules.xyz/client-go/tools/cli"
 	"kmodules.xyz/client-go/tools/clientcmd"
 	ofst_util "kmodules.xyz/offshoot-api/util"
-	"stash.appscode.dev/stash/apis"
-	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
-	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
-	"stash.appscode.dev/stash/pkg/docker"
 )
 
 func NewCheckJob(restic *api_v1alpha1.Restic, hostName, smartPrefix string, image docker.Docker) *batch.Job {
