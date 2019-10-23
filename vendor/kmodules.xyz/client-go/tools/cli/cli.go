@@ -5,10 +5,11 @@ import (
 	"strings"
 	"time"
 
+	"kmodules.xyz/client-go/tools/analytics"
+
 	"github.com/appscode/go/log/golog"
 	ga "github.com/jpillora/go-ogle-analytics"
 	"github.com/spf13/cobra"
-	"kmodules.xyz/client-go/tools/analytics"
 )
 
 const (
@@ -29,7 +30,7 @@ func SendAnalytics(c *cobra.Command, version string) {
 	if client, err := ga.NewClient(gaTrackingCode); err == nil {
 		client.ClientID(AnalyticsClientID)
 		parts := strings.Split(c.CommandPath(), " ")
-		client.Send(ga.NewEvent(parts[0], strings.Join(parts[1:], "/")).Label(version))
+		_ = client.Send(ga.NewEvent(parts[0], strings.Join(parts[1:], "/")).Label(version))
 	}
 }
 

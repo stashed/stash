@@ -62,8 +62,7 @@ func SchemaOrBoolToJSONProps(schemaOrBool *spec.SchemaOrBool, openapiSpec map[st
 
 // SchemPropsMapToJSONMap converts map[string]Schema to map[string]JSONSchemaProps
 func SchemPropsMapToJSONMap(schemaMap map[string]spec.Schema, openapiSpec map[string]common.OpenAPIDefinition, nested bool) map[string]extensionsobj.JSONSchemaProps {
-	var m map[string]extensionsobj.JSONSchemaProps
-	m = make(map[string]extensionsobj.JSONSchemaProps)
+	m := make(map[string]extensionsobj.JSONSchemaProps)
 	for key, schema := range schemaMap {
 		m[key] = *SchemaPropsToJSONProps(&schema, openapiSpec, nested)
 	}

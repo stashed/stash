@@ -24,8 +24,7 @@ type GetAPIDefinitions func(ref common.ReferenceCallback) map[string]common.Open
 // GetCustomResourceValidations returns a CRD validation spec map. It took the openapi generated definition from kube-openapi as argument
 func GetCustomResourceValidations(fn GetAPIDefinitions) map[string]*extensionsobj.CustomResourceValidation {
 	openapiSpec := fn(OpenAPIRefCallBack)
-	var definitions map[string]*extensionsobj.CustomResourceValidation
-	definitions = make(map[string]*extensionsobj.CustomResourceValidation)
+	definitions := make(map[string]*extensionsobj.CustomResourceValidation)
 	for key, definition := range openapiSpec {
 		schema := definition.Schema
 		definitions[key] = &extensionsobj.CustomResourceValidation{

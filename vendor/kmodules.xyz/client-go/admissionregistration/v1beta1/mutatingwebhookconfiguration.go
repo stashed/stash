@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
@@ -167,32 +168,35 @@ func SyncMutatingWebhookCABundle(config *rest.Config, webhookConfigName string) 
 		},
 	}
 
-	go watchtools.UntilWithSync(
-		ctx,
-		lw,
-		&reg.MutatingWebhookConfiguration{},
-		nil,
-		func(event watch.Event) (bool, error) {
-			switch event.Type {
-			case watch.Deleted:
-				return false, nil
-			case watch.Error:
-				return false, errors.New("error watching")
-			case watch.Added, watch.Modified:
-				cur := event.Object.(*reg.MutatingWebhookConfiguration)
-				_, _, err := PatchMutatingWebhookConfiguration(kc, cur, func(in *reg.MutatingWebhookConfiguration) *reg.MutatingWebhookConfiguration {
-					for i := range in.Webhooks {
-						in.Webhooks[i].ClientConfig.CABundle = config.CAData
+	go func() {
+		_, err := watchtools.UntilWithSync(
+			ctx,
+			lw,
+			&reg.MutatingWebhookConfiguration{},
+			nil,
+			func(event watch.Event) (bool, error) {
+				switch event.Type {
+				case watch.Deleted:
+					return false, nil
+				case watch.Error:
+					return false, errors.New("error watching")
+				case watch.Added, watch.Modified:
+					cur := event.Object.(*reg.MutatingWebhookConfiguration)
+					_, _, err := PatchMutatingWebhookConfiguration(kc, cur, func(in *reg.MutatingWebhookConfiguration) *reg.MutatingWebhookConfiguration {
+						for i := range in.Webhooks {
+							in.Webhooks[i].ClientConfig.CABundle = config.CAData
+						}
+						return in
+					})
+					if err != nil {
+						glog.Warning(err)
 					}
-					return in
-				})
-				if err != nil {
-					glog.Warning(err)
+					return false, nil // continue
+				default:
+					return false, fmt.Errorf("unexpected event type: %v", event.Type)
 				}
-				return false, nil // continue
-			default:
-				return false, fmt.Errorf("unexpected event type: %v", event.Type)
-			}
-		})
+			})
+		utilruntime.Must(err)
+	}()
 	return
 }

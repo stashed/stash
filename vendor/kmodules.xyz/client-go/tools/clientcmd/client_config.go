@@ -4,6 +4,8 @@ import (
 	"net"
 	"os"
 
+	"kmodules.xyz/client-go/meta"
+
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
@@ -11,7 +13,6 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"kmodules.xyz/client-go/meta"
 )
 
 // BuildConfigFromFlags is a helper function that builds configs from a master

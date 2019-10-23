@@ -24,6 +24,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/spf13/pflag"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog"
 )
@@ -37,7 +38,7 @@ const logFlushFreqFlagName = "log-flush-frequency"
 var logFlushFreq = pflag.Duration(logFlushFreqFlagName, 5*time.Second, "Maximum number of seconds between log flushes")
 
 func init() {
-	flag.Set("stderrthreshold", "INFO")
+	utilruntime.Must(flag.Set("stderrthreshold", "INFO"))
 }
 
 // AddFlags registers this package's flags on arbitrary FlagSets, such that they point to the
@@ -65,7 +66,7 @@ func InitLogs() {
 
 func ParseFlags() {
 	// ref: https://github.com/kubernetes/kubernetes/issues/17162#issuecomment-225596212
-	flag.CommandLine.Parse([]string{})
+	utilruntime.Must(flag.CommandLine.Parse([]string{}))
 
 	klogFlags := flag.NewFlagSet("klog", flag.ExitOnError)
 	klog.InitFlags(klogFlags)
@@ -75,7 +76,7 @@ func ParseFlags() {
 		f2 := klogFlags.Lookup(f1.Name)
 		if f2 != nil {
 			value := f1.Value.String()
-			f2.Value.Set(value)
+			utilruntime.Must(f2.Value.Set(value))
 		}
 	})
 }

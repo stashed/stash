@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	v1 "kmodules.xyz/client-go/core/v1"
+	discovery_util "kmodules.xyz/client-go/discovery"
+
 	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -24,8 +27,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 	watchtools "k8s.io/client-go/tools/watch"
 	kutil "kmodules.xyz/client-go"
-	v1 "kmodules.xyz/client-go/core/v1"
-	discovery_util "kmodules.xyz/client-go/discovery"
 )
 
 func WaitUntilDeleted(ri dynamic.ResourceInterface, stopCh <-chan struct{}, name string, subresources ...string) error {

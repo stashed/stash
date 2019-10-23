@@ -1,6 +1,8 @@
 package v1
 
 import (
+	core_util "kmodules.xyz/client-go/core/v1"
+
 	. "github.com/appscode/go/types"
 	atypes "github.com/appscode/go/types"
 	"github.com/golang/glog"
@@ -13,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	kutil "kmodules.xyz/client-go"
-	core_util "kmodules.xyz/client-go/core/v1"
 )
 
 func CreateOrPatchStatefulSet(c kubernetes.Interface, meta metav1.ObjectMeta, transform func(*apps.StatefulSet) *apps.StatefulSet) (*apps.StatefulSet, kutil.VerbType, error) {

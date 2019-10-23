@@ -112,7 +112,7 @@ func FilterSubResources(resources []schema.GroupVersionResource) []schema.GroupV
 func LoadRestMapper(client discovery.DiscoveryInterface) (*DefaultRESTMapper, error) {
 	restMapper := NewDefaultRESTMapper([]schema.GroupVersion{})
 
-	resourceLists, err := client.ServerResources()
+	_, resourceLists, err := client.ServerGroupsAndResources()
 	if discovery.IsGroupDiscoveryFailedError(err) {
 		glog.Errorf("Skipping failed API Groups: %v", err)
 	} else if err != nil {

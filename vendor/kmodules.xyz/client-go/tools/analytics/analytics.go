@@ -9,6 +9,8 @@ import (
 	"sort"
 	"strings"
 
+	"kmodules.xyz/client-go/meta"
+
 	"github.com/appscode/go/analytics"
 	net2 "github.com/appscode/go/net"
 	"github.com/appscode/go/sets"
@@ -19,7 +21,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"kmodules.xyz/client-go/meta"
 )
 
 const (
@@ -109,7 +110,7 @@ func ClientID() string {
 			sort.Slice(ips, func(i, j int) bool { return bytes.Compare(ips[i], ips[j]) < 0 })
 			hasher := md5.New()
 			for _, ip := range ips {
-				hasher.Write(ip)
+				_, _ = hasher.Write(ip)
 			}
 			return hex.EncodeToString(hasher.Sum(nil))
 		}
@@ -146,7 +147,7 @@ func ClientID() string {
 	sort.Slice(ips, func(i, j int) bool { return bytes.Compare(ips[i], ips[j]) < 0 })
 	hasher := md5.New()
 	for _, ip := range ips {
-		hasher.Write(ip)
+		_, _ = hasher.Write(ip)
 	}
 	return hex.EncodeToString(hasher.Sum(nil))
 }
@@ -154,7 +155,7 @@ func ClientID() string {
 func hash(data ...string) string {
 	hasher := md5.New()
 	for _, x := range data {
-		hasher.Write([]byte(x))
+		_, _ = hasher.Write([]byte(x))
 	}
 	return hex.EncodeToString(hasher.Sum(nil))
 }

@@ -117,7 +117,7 @@ func NewCustomResourceDefinition(config Config, options ...func(map[string]commo
 			AdditionalPrinterColumns: config.AdditionalPrinterColumns,
 		},
 	}
-	if config.SpecDefinitionName != "" && config.EnableValidation == true {
+	if config.SpecDefinitionName != "" && config.EnableValidation {
 		crd.Spec.Validation = GetCustomResourceValidation(config.SpecDefinitionName, config.GetOpenAPIDefinitions, options)
 	}
 	if config.EnableStatusSubresource || config.EnableScaleSubresource {
