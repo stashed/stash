@@ -925,7 +925,7 @@ k8s.io/utils/integer
 k8s.io/utils/buffer
 k8s.io/utils/trace
 k8s.io/utils/pointer
-# kmodules.xyz/client-go v0.0.0-20191023014104-b4d8f6cd8cb5
+# kmodules.xyz/client-go v0.0.0-20191023042933-b12d1ccfaf57
 kmodules.xyz/client-go/logs
 kmodules.xyz/client-go/apiextensions/v1beta1
 kmodules.xyz/client-go/meta

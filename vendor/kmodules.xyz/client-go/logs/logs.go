@@ -76,7 +76,9 @@ func ParseFlags() {
 		f2 := klogFlags.Lookup(f1.Name)
 		if f2 != nil {
 			value := f1.Value.String()
-			utilruntime.Must(f2.Value.Set(value))
+			// Ignore error. klog's -log_backtrace_at flag throws error when set to empty string.
+			// Unfortunately, there is no way to tell if a flag was set to empty string or left unset on command line.
+			_ = f2.Value.Set(value)
 		}
 	})
 }
