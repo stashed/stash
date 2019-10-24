@@ -88,7 +88,10 @@ func (f *Framework) EventuallyCronJobCreated(meta metav1.ObjectMeta) GomegaAsync
 	return Eventually(
 		func() bool {
 			_, err := f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
-			return err == nil
+			if err == nil && !kerr.IsNotFound(err) {
+				return true
+			}
+			return false
 		},
 		time.Minute*2,
 		time.Second*5,

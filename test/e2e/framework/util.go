@@ -814,12 +814,7 @@ func (f *Invocation) AddAutoBackupAnnotationsToTarget(annotations map[string]str
 		return err
 	}
 	mod := cur.DeepCopy()
-	switch cur.GetKind() {
-	case apis.KindPersistentVolumeClaim:
-		mod.SetAnnotations(annotations)
-	case apis.KindDeployment, apis.KindStatefulSet, apis.KindDaemonSet, apis.KindReplicaSet, apis.KindReplicationController:
-		mod.SetAnnotations(annotations)
-	}
+	mod.SetAnnotations(annotations)
 	out, _, err := dynamic.PatchObject(f.dmClient, gvr, cur, mod)
 	if err != nil {
 

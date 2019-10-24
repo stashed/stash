@@ -16,7 +16,7 @@ func (f *Invocation) BackupBlueprint(repoInfo v1alpha1.RepositorySpec) *v1beta1.
 		},
 		Spec: v1beta1.BackupBlueprintSpec{
 			RepositorySpec: repoInfo,
-			Schedule:       "*/5 * * * *",
+			Schedule:       "*/2 * * * *",
 			RetentionPolicy: v1alpha1.RetentionPolicy{
 				Name:     "keep-last-5",
 				KeepLast: 5,
