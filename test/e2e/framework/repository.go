@@ -46,6 +46,16 @@ func (f *Framework) EventuallyRepository(workload interface{}) GomegaAsyncAssert
 	})
 }
 
+func (f *Framework) EventuallyRepositoryCreated(meta metav1.ObjectMeta) GomegaAsyncAssertion {
+	return Eventually(func() bool {
+		_, err := f.StashClient.StashV1alpha1().Repositories(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		if err == nil && !kerr.IsNotFound(err) {
+			return true
+		}
+		return false
+	})
+}
+
 func (f *Framework) GetRepositories(kmr KindMetaReplicas) []*api.Repository {
 	repoNames := make([]string, 0)
 	nodeName := f.GetNodeName(kmr.Meta)
@@ -196,7 +206,7 @@ func (f *Invocation) SetupLocalRepository() (*api.Repository, error) {
 	// Create Storage Secret
 	By("Creating Storage Secret")
 	cred := f.SecretForLocalBackend()
-	err := f.CreateSecret(cred)
+	_, err := f.CreateSecret(cred)
 	Expect(err).NotTo(HaveOccurred())
 	f.AppendToCleanupList(&cred)
 
@@ -223,7 +233,7 @@ func (f *Invocation) SetupGCSRepository() (*api.Repository, error) {
 	if missing, _ := BeZero().Match(cred); missing {
 		Skip("Missing GCS credential")
 	}
-	err := f.CreateSecret(cred)
+	_, err := f.CreateSecret(cred)
 	Expect(err).NotTo(HaveOccurred())
 	f.AppendToCleanupList(&cred)
 
@@ -243,7 +253,7 @@ func (f *Invocation) SetupMinioRepository() (*api.Repository, error) {
 	if missing, _ := BeZero().Match(cred); missing {
 		Skip("Missing Minio credential")
 	}
-	err := f.CreateSecret(cred)
+	_, err := f.CreateSecret(cred)
 	Expect(err).NotTo(HaveOccurred())
 	f.AppendToCleanupList(&cred)
 

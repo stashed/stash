@@ -44,7 +44,7 @@ var (
 func (f *Framework) CreateMinioServer(tls bool, ips []net.IP) (string, error) {
 	//creating secret for minio server
 	mcred = f.SecretForMinioServer(ips)
-	err := f.CreateSecret(mcred)
+	_, err := f.CreateSecret(mcred)
 	if err != nil {
 		return "", err
 	}

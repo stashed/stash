@@ -73,7 +73,7 @@ var _ = XDescribe("DaemonSet", func() {
 	var (
 		shouldBackupNewDaemonSet = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -101,7 +101,7 @@ var _ = XDescribe("DaemonSet", func() {
 
 		shouldBackupExistingDaemonSet = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating DaemonSet " + daemon.Name)
@@ -129,7 +129,7 @@ var _ = XDescribe("DaemonSet", func() {
 
 		shouldStopBackup = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -159,7 +159,7 @@ var _ = XDescribe("DaemonSet", func() {
 
 		shouldStopBackupIfLabelChanged = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -194,7 +194,7 @@ var _ = XDescribe("DaemonSet", func() {
 
 		shouldStopBackupIfSelectorChanged = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -231,7 +231,7 @@ var _ = XDescribe("DaemonSet", func() {
 
 		shouldMutateAndBackupNewDaemonSet = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -260,7 +260,7 @@ var _ = XDescribe("DaemonSet", func() {
 
 		shouldNotMutateNewDaemonSet = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating DaemonSet " + daemon.Name)
@@ -273,7 +273,7 @@ var _ = XDescribe("DaemonSet", func() {
 
 		shouldRejectToCreateNewDaemonSet = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating first restic " + restic.Name)
@@ -291,7 +291,7 @@ var _ = XDescribe("DaemonSet", func() {
 
 		shouldRemoveSidecarInstantly = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -326,7 +326,7 @@ var _ = XDescribe("DaemonSet", func() {
 
 		shouldAddSidecarInstantly = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -582,7 +582,7 @@ var _ = XDescribe("DaemonSet", func() {
 			})
 			It(`should backup new DaemonSet`, func() {
 				By("Creating repository Secret " + cred.Name)
-				err = f.CreateSecret(cred)
+				_, err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating restic " + restic.Name)
@@ -650,7 +650,7 @@ var _ = XDescribe("DaemonSet", func() {
 			})
 			It(`should be able to Pause and Resume backup`, func() {
 				By("Creating repository Secret " + cred.Name)
-				err = f.CreateSecret(cred)
+				_, err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating restic")
@@ -731,7 +731,7 @@ var _ = XDescribe("DaemonSet", func() {
 			})
 			It(`should create Repository CRD`, func() {
 				By("Creating repository Secret " + cred.Name)
-				err = f.CreateSecret(cred)
+				_, err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating restic")
@@ -785,7 +785,7 @@ var _ = XDescribe("DaemonSet", func() {
 			})
 			It(`recovered volume should have same data`, func() {
 				By("Creating repository Secret " + cred.Name)
-				err = f.CreateSecret(cred)
+				_, err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating restic")
@@ -878,7 +878,7 @@ var _ = XDescribe("DaemonSet", func() {
 			})
 			It(`recovered volume should have same data`, func() {
 				By("Creating repository Secret " + cred.Name)
-				err = f.CreateSecret(cred)
+				_, err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
 				daemon.Spec.Template.Spec.Volumes = f.HostPathVolumeWithMultipleDirectory()
@@ -991,7 +991,7 @@ var _ = XDescribe("DaemonSet", func() {
 			})
 			It(`recovered volume should have same data`, func() {
 				By("Creating repository Secret " + cred.Name)
-				err = f.CreateSecret(cred)
+				_, err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating restic")

@@ -2,7 +2,7 @@ package framework
 
 import (
 	"fmt"
-	"time"
+	"strings"
 
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/util"
@@ -47,8 +47,6 @@ func (f *Framework) EventuallyBackupSessionCreated(meta metav1.ObjectMeta) Gomeg
 			Expect(err).NotTo(HaveOccurred())
 			return len(backupsnlist.Items) > 0
 		},
-		time.Minute*7,
-		time.Second*5,
 	)
 }
 
@@ -58,7 +56,11 @@ func (f *Framework) GetBackupSession(meta metav1.ObjectMeta) (*v1beta1.BackupSes
 		return nil, err
 	}
 	if len(backupsnlist.Items) > 0 {
-		return &backupsnlist.Items[0], nil
+		for _, bs := range backupsnlist.Items {
+			if strings.HasPrefix(bs.Name, meta.Name) {
+				return &bs, nil
+			}
+		}
 	}
 	return nil, fmt.Errorf("no BackupSession found")
 }

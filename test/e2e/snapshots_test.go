@@ -201,7 +201,7 @@ var _ = XDescribe("Snapshots", func() {
 
 		performOperationOnSnapshot = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic")

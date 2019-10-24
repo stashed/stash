@@ -22,10 +22,13 @@ import (
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
+	"kmodules.xyz/client-go/dynamic"
 	appCatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	ocapps "kmodules.xyz/openshift/apis/apps/v1"
 )
@@ -35,16 +38,18 @@ var (
 )
 
 const (
-	TestSoucreDemoDataPath = "/data/stash-test/demo-data"
-	TestSourceDataDir1     = "/source/data/dir-1"
-	TestSourceDataDir2     = "/source/data/dir-2"
-	KindRestic             = "Restic"
-	KindRepository         = "Repository"
-	KindRecovery           = "Recovery"
-	PullInterval           = time.Second * 2
-	WaitTimeOut            = time.Minute * 3
-	TaskPVCBackup          = "pvc-backup"
-	TaskPVCRestore         = "pvc-restore"
+	TestSoucreDemoDataPath    = "/data/stash-test/demo-data"
+	TestSourceDataDir1        = "/source/data/dir-1"
+	TestSourceDataDir2        = "/source/data/dir-2"
+	KindRestic                = "Restic"
+	KindRepository            = "Repository"
+	KindRecovery              = "Recovery"
+	PullInterval              = time.Second * 2
+	WaitTimeOut               = time.Minute * 3
+	TestSourceDataTargetPath  = "/source/data"
+	TestSourceDataVolumeMount = "source-data:/source/data"
+	WrongBackupBlueprintName  = "backup-blueprint"
+	WrongTargetPath           = "/source/data-1"
 )
 
 func (f *Framework) EventualEvent(meta metav1.ObjectMeta) GomegaAsyncAssertion {
@@ -798,4 +803,53 @@ func getGVRAndObjectMeta(obj interface{}) (schema.GroupVersionResource, metav1.O
 	default:
 		return schema.GroupVersionResource{}, metav1.ObjectMeta{}, fmt.Errorf("failed to get GroupVersionResource. Reason: Unknown resource type")
 	}
+}
+
+func (f *Invocation) AddAutoBackupAnnotationsToTarget(annotations map[string]string, obj interface{}) error {
+	schm := scheme.Scheme
+	gvr, _, _ := getGVRAndObjectMeta(obj)
+	cur := &unstructured.Unstructured{}
+	err := schm.Convert(obj, cur, nil)
+	if err != nil {
+		return err
+	}
+	mod := cur.DeepCopy()
+	switch cur.GetKind() {
+	case apis.KindPersistentVolumeClaim:
+		mod.SetAnnotations(annotations)
+	case apis.KindDeployment, apis.KindStatefulSet, apis.KindDaemonSet, apis.KindReplicaSet, apis.KindReplicationController:
+		mod.SetAnnotations(annotations)
+	}
+	out, _, err := dynamic.PatchObject(f.dmClient, gvr, cur, mod)
+	if err != nil {
+
+		return err
+	}
+	err = schm.Convert(out, obj, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (f *Framework) EventuallyAutoBackupAnnotationsFound(expectedAnnotations map[string]string, obj interface{}) GomegaAsyncAssertion {
+	return Eventually(
+		func() bool {
+			schm := scheme.Scheme
+			cur := &unstructured.Unstructured{}
+			err := schm.Convert(obj, cur, nil)
+			if err != nil {
+				return false
+			}
+			getAnnotations := cur.GetAnnotations()
+			for k, v := range expectedAnnotations {
+				if getAnnotations[k] != v {
+					return false
+				}
+			}
+			return true
+		},
+		time.Minute*2,
+		time.Second*5,
+	)
 }

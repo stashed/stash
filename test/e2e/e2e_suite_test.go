@@ -25,6 +25,15 @@ import (
 	"kmodules.xyz/client-go/logs"
 	"kmodules.xyz/client-go/tools/cli"
 	"kmodules.xyz/client-go/tools/clientcmd"
+	"stash.appscode.dev/stash/client/clientset/versioned/scheme"
+	_ "stash.appscode.dev/stash/client/clientset/versioned/scheme"
+	"stash.appscode.dev/stash/pkg/controller"
+	"stash.appscode.dev/stash/test/e2e/framework"
+
+	//	test sources
+	_ "stash.appscode.dev/stash/test/e2e/auto-backup"
+	_ "stash.appscode.dev/stash/test/e2e/volumes"
+	_ "stash.appscode.dev/stash/test/e2e/workloads"
 )
 
 const (
