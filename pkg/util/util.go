@@ -325,7 +325,7 @@ func (wc *WorkloadClients) IsTargetExist(target api_v1beta1.TargetRef, namespace
 			return true
 		}
 	case apis.KindReplicaSet:
-		if _, err := wc.KubeClient.AppsV1().StatefulSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
+		if _, err := wc.KubeClient.AppsV1().ReplicaSets(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
 			return true
 		}
 	case apis.KindDeploymentConfig:
