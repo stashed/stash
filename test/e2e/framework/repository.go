@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"time"
 
 	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
@@ -53,7 +54,10 @@ func (f *Framework) EventuallyRepositoryCreated(meta metav1.ObjectMeta) GomegaAs
 			return true
 		}
 		return false
-	})
+	},
+		time.Minute*2,
+		time.Second*5,
+	)
 }
 
 func (f *Framework) GetRepositories(kmr KindMetaReplicas) []*api.Repository {

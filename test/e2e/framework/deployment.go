@@ -1,6 +1,8 @@
 package framework
 
 import (
+	"time"
+
 	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/appscode/go/crypto/rand"
@@ -51,7 +53,10 @@ func (f *Framework) EventuallyDeployment(meta metav1.ObjectMeta) GomegaAsyncAsse
 		obj, err := f.KubeClient.AppsV1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		return obj
-	})
+	},
+		time.Minute*2,
+		time.Second*5,
+	)
 }
 
 func (f *Invocation) WaitUntilDeploymentReadyWithSidecar(meta metav1.ObjectMeta) error {

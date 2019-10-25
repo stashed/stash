@@ -29,6 +29,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"kmodules.xyz/client-go/dynamic"
+	"kmodules.xyz/client-go/meta"
 	appCatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	ocapps "kmodules.xyz/openshift/apis/apps/v1"
 )
@@ -46,6 +47,8 @@ const (
 	KindRecovery              = "Recovery"
 	PullInterval              = time.Second * 2
 	WaitTimeOut               = time.Minute * 3
+	TaskPVCBackup             = "pvc-backup"
+	TaskPVCRestore            = "pvc-restore"
 	TestSourceDataTargetPath  = "/source/data"
 	TestSourceDataVolumeMount = "source-data:/source/data"
 	WrongBackupBlueprintName  = "backup-blueprint"
@@ -836,9 +839,9 @@ func (f *Framework) EventuallyAutoBackupAnnotationsFound(expectedAnnotations map
 			if err != nil {
 				return false
 			}
-			getAnnotations := cur.GetAnnotations()
+			annotations := cur.GetAnnotations()
 			for k, v := range expectedAnnotations {
-				if getAnnotations[k] != v {
+				if !(meta.HasKey(annotations, k) && annotations[k] == v) {
 					return false
 				}
 			}

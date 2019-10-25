@@ -106,5 +106,8 @@ func (f *Framework) EventuallyBackupConfigurationCreated(meta metav1.ObjectMeta)
 				return true
 			}
 			return false
-		})
+		},
+		time.Minute*2,
+		time.Second*5,
+	)
 }

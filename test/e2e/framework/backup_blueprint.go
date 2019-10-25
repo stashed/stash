@@ -1,11 +1,12 @@
 package framework
 
 import (
+	"stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
+
 	"github.com/appscode/go/crypto/rand"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
 func (f *Invocation) BackupBlueprint(repoInfo v1alpha1.RepositorySpec) *v1beta1.BackupBlueprint {
@@ -16,7 +17,7 @@ func (f *Invocation) BackupBlueprint(repoInfo v1alpha1.RepositorySpec) *v1beta1.
 		},
 		Spec: v1beta1.BackupBlueprintSpec{
 			RepositorySpec: repoInfo,
-			Schedule:       "*/2 * * * *",
+			Schedule:       "*/59 * * * *",
 			RetentionPolicy: v1alpha1.RetentionPolicy{
 				Name:     "keep-last-5",
 				KeepLast: 5,

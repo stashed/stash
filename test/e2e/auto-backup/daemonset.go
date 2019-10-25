@@ -3,6 +3,13 @@ package auto_backup
 import (
 	"fmt"
 
+	"stash.appscode.dev/stash/apis"
+	"stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/stash/pkg/util"
+	"stash.appscode.dev/stash/test/e2e/framework"
+	. "stash.appscode.dev/stash/test/e2e/matcher"
+
 	"github.com/appscode/go/sets"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -11,12 +18,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apps_util "kmodules.xyz/client-go/apps/v1"
 	store "kmodules.xyz/objectstore-api/api/v1"
-	"stash.appscode.dev/stash/apis"
-	"stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/apis/stash/v1beta1"
-	"stash.appscode.dev/stash/pkg/util"
-	"stash.appscode.dev/stash/test/e2e/framework"
-	. "stash.appscode.dev/stash/test/e2e/matcher"
 )
 
 var _ = Describe("Auto-Backup", func() {
@@ -35,12 +36,12 @@ var _ = Describe("Auto-Backup", func() {
 	var (
 		createBackendSecretForMinio = func() *core.Secret {
 			// Create Storage Secret
-			By("Creating Storage Secret for Minio")
 			cred := f.SecretForMinioBackend(true)
 
 			if missing, _ := BeZero().Match(cred); missing {
 				Skip("Missing Minio credential")
 			}
+			By(fmt.Sprintf("Creating Storage Secret for Minio: %s/%s", cred.Namespace, cred.Name))
 			createdCred, err := f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 			f.AppendToCleanupList(&cred)
@@ -71,7 +72,7 @@ var _ = Describe("Auto-Backup", func() {
 			bb := f.BackupBlueprint(getRepositoryInfo(secret.Name))
 			bb.Name = name
 
-			By(fmt.Sprintf("Creating BackupBlueprint: %s ", bb.Name))
+			By(fmt.Sprintf("Creating BackupBlueprint: %s", bb.Name))
 			createdBB, err := f.CreateBackupBlueprint(bb)
 			Expect(err).NotTo(HaveOccurred())
 			f.AppendToCleanupList(createdBB)
@@ -83,7 +84,7 @@ var _ = Describe("Auto-Backup", func() {
 			dmn := f.DaemonSet()
 			dmn.Name = name
 
-			By("Deploying DaemonSet: " + dmn.Name)
+			By(fmt.Sprintf("Deploying DaemonSet: %s/%s", dmn.Namespace, dmn.Name))
 			createdDmn, err := f.CreateDaemonSet(dmn)
 			Expect(err).NotTo(HaveOccurred())
 			f.AppendToCleanupList(createdDmn)
@@ -111,7 +112,7 @@ var _ = Describe("Auto-Backup", func() {
 			return sampleData
 		}
 
-		addAnnotationsToWorkload = func(annotations map[string]string, dmn *apps.DaemonSet) {
+		addAnnotationsToTarget = func(annotations map[string]string, dmn *apps.DaemonSet) {
 			By(fmt.Sprintf("Adding auto-backup specific annotations to the DaemonSet: %s/%s", dmn.Namespace, dmn.Name))
 			err := f.AddAutoBackupAnnotationsToTarget(annotations, dmn)
 			Expect(err).NotTo(HaveOccurred())
@@ -120,203 +121,231 @@ var _ = Describe("Auto-Backup", func() {
 			f.EventuallyAutoBackupAnnotationsFound(annotations, dmn).Should(BeTrue())
 		}
 
-		checkBackupSessionSucceeded = func(dmn *apps.DaemonSet) {
+		takeInstantBackup = func(backupConfig *v1beta1.BackupConfiguration) {
+			// Trigger Instant Backup
+			By("Triggering Instant Backup")
+			backupSession, err := f.TriggerInstantBackup(backupConfig)
+			Expect(err).NotTo(HaveOccurred())
+			f.AppendToCleanupList(backupSession)
+
+			By("Waiting for backup process to complete")
+			f.EventuallyBackupProcessCompleted(backupSession.ObjectMeta).Should(BeTrue())
+
+			By("Verifying that BackupSession has succeeded")
+			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
+		}
+
+		instantBackupFailed = func(backupConfig *v1beta1.BackupConfiguration) {
+			// Trigger Instant Backup
+			By("Triggering Instant Backup")
+			backupSession, err := f.TriggerInstantBackup(backupConfig)
+			Expect(err).NotTo(HaveOccurred())
+			f.AppendToCleanupList(backupSession)
+
+			By("Waiting for backup process to complete")
+			f.EventuallyBackupProcessCompleted(backupSession.ObjectMeta).Should(BeTrue())
+
+			By("Verifying that BackupSession has failed")
+			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
+		}
+
+		checkRepositoryAndBackupConfiguration = func(dmn *apps.DaemonSet) *v1beta1.BackupConfiguration {
 			// BackupBlueprint create BackupConfiguration and Repository such that
 			// the name of the BackupConfiguration and Repository will follow
 			// the patter: <lower case of the workload kind>-<workload name>.
 			// we will form the meta name and namespace for farther process.
-			meta := metav1.ObjectMeta{
+			objMeta := metav1.ObjectMeta{
 				Name:      fmt.Sprintf("daemonset-%s", dmn.Name),
 				Namespace: f.Namespace(),
 			}
 			By("Waiting for Repository")
-			f.EventuallyRepositoryCreated(meta).Should(BeTrue())
+			f.EventuallyRepositoryCreated(objMeta).Should(BeTrue())
 
 			By("Waiting for BackupConfiguration")
-			f.EventuallyBackupConfigurationCreated(meta).Should(BeTrue())
+			f.EventuallyBackupConfigurationCreated(objMeta).Should(BeTrue())
+			backupConfig, err := f.StashClient.StashV1beta1().BackupConfigurations(objMeta.Namespace).Get(objMeta.Name, metav1.GetOptions{})
+			Expect(err).NotTo(HaveOccurred())
 
 			By("Verifying that backup triggering CronJob has been created")
-			f.EventuallyCronJobCreated(meta).Should(BeTrue())
+			f.EventuallyCronJobCreated(objMeta).Should(BeTrue())
 
 			By("Verifying that sidecar has been injected")
 			f.EventuallyDaemonSet(dmn.ObjectMeta).Should(HaveSidecar(util.StashContainer))
 
 			By("Waiting for DaemonSet to be ready with sidecar")
-			err := f.WaitUntilDaemonSetReadyWithSidecar(dmn.ObjectMeta)
+			err = f.WaitUntilDaemonSetReadyWithSidecar(dmn.ObjectMeta)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Waiting for BackupSession")
-			f.EventuallyBackupSessionCreated(meta).Should(BeTrue())
-
-			By("Waiting for backup process to complete")
-			bs, err := f.GetBackupSession(meta)
-			Expect(err).NotTo(HaveOccurred())
-			f.EventuallyBackupProcessCompleted(bs.ObjectMeta).Should(BeTrue())
-
-			By("Verifying that BackupSession has succeeded")
-			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(bs.Namespace).Get(bs.Name, metav1.GetOptions{})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
-		}
-
-		checkBackupSessionFailed = func(dmn *apps.DaemonSet) {
-			// BackupBlueprint create BackupConfiguration and Repository such that
-			// the name of the BackupConfiguration and Repository will follow
-			// the patter: <lower case of the workload kind>-<workload name>.
-			// we will form the meta name and namespace using this pattern for farther process.
-			meta := metav1.ObjectMeta{
-				Name:      fmt.Sprintf("daemonset-%s", dmn.Name),
-				Namespace: f.Namespace(),
-			}
-			By("Waiting for Repository")
-			f.EventuallyRepositoryCreated(meta).Should(BeTrue())
-
-			By("Waiting for BackupConfiguration")
-			f.EventuallyBackupConfigurationCreated(meta).Should(BeTrue())
-
-			By("Waiting for BackupSession")
-			f.EventuallyBackupSessionCreated(meta).Should(BeTrue())
-
-			By("Waiting for backup process to complete")
-			bs, err := f.GetBackupSession(meta)
-			Expect(err).NotTo(HaveOccurred())
-			f.EventuallyBackupProcessCompleted(bs.ObjectMeta).Should(BeTrue())
-
-			By("Verifying that BackupSession has failed")
-			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(bs.Namespace).Get(bs.Name, metav1.GetOptions{})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
+			return backupConfig
 		}
 	)
 
 	Context("DaemonSet", func() {
 
-		Context("Success event: ", func() {
+		Context("Success Case", func() {
 
-			It("should success auto-backup for the DaemonSet", func() {
+			It("should backup successfully", func() {
 				// Create BackupBlueprint
 				bb := createBackupBlueprint(fmt.Sprintf("backupblueprint-%s", f.App()))
+
 				// Deploy a DaemonSet
 				dmn := deployDaemonSet(fmt.Sprintf("dmn-%s", f.App()))
+
 				// Generate Sample Data
 				generateSampleData(dmn)
-				// create proper annotations for DaemonSet auto-backup
+
+				// create proper annotations for Target
 				annotations := map[string]string{
 					v1beta1.KeyBackupBlueprint: bb.Name,
 					v1beta1.KeyTargetPaths:     framework.TestSourceDataTargetPath,
 					v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
 				}
-				// Adding and Ensuring annotations to workload
-				addAnnotationsToWorkload(annotations, dmn)
-				// check Stash Object status
-				checkBackupSessionSucceeded(dmn)
+				// Adding and Ensuring annotations to Target
+				addAnnotationsToTarget(annotations, dmn)
+
+				// ensure Repository and BackupConfiguration
+				backupConfig := checkRepositoryAndBackupConfiguration(dmn)
+
+				// Take an Instant Backup the Sample Data
+				takeInstantBackup(backupConfig)
 			})
 		})
 
-		Context("Failure event: ", func() {
-			It("Should fail for adding inappropriate Repository secret in BackupBlueprint", func() {
-				// Create Storage Secret for Minio
-				secret := createBackendSecretForMinio()
+		Context("Failure Case", func() {
 
-				// Generate BackupBlueprint definition
-				bb := f.BackupBlueprint(getRepositoryInfo(secret.Name))
-				bb.Spec.Backend.StorageSecretName = ""
-				By(fmt.Sprintf("Creating inappropraite BackupBlueprint: %s", bb.Name))
-				_, err := f.CreateBackupBlueprint(bb)
-				Expect(err).To(HaveOccurred())
-				f.AppendToCleanupList(bb)
-			})
-			It("Should fail for adding inappropriate Repository backend in BackupBlueprint", func() {
-				// Create Storage Secret for Minio
-				secret := createBackendSecretForMinio()
+			Context("Add inappropriate Repository and BackupConfiguration credential to BackupBlueprint", func() {
+				It("should fail BackupSession for missing Backend credential", func() {
+					// Create Storage Secret for Minio
+					secret := createBackendSecretForMinio()
 
-				// Generate BackupBlueprint definition
-				bb := f.BackupBlueprint(getRepositoryInfo(secret.Name))
-				bb.Spec.Backend.S3 = &store.S3Spec{}
-				By(fmt.Sprintf("Creating inappropraite BackupBlueprint: %s", bb.Name))
-				_, err := f.CreateBackupBlueprint(bb)
-				Expect(err).To(HaveOccurred())
-				f.AppendToCleanupList(bb)
-				// Deploy a DaemonSet
-				dmn := deployDaemonSet(fmt.Sprintf("dmn-%s", f.App()))
-				// Generate Sample Data
-				generateSampleData(dmn)
-				// create proper annotations for DaemonSet auto-backup
-				annotations := map[string]string{
-					v1beta1.KeyBackupBlueprint: bb.Name,
-					v1beta1.KeyTargetPaths:     framework.TestSourceDataTargetPath,
-					v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
-				}
-				// Adding and Ensuring annotations to workload
-				addAnnotationsToWorkload(annotations, dmn)
-				// check Stash Object status
-				checkBackupSessionFailed(dmn)
-			})
-			It("Should fail for adding inappropriate BackupConfiguration RetentionPolicy in BackupBlueprint", func() {
-				// Create Storage Secret for Minio
-				secret := createBackendSecretForMinio()
+					// Generate BackupBlueprint definition
+					bb := f.BackupBlueprint(getRepositoryInfo(secret.Name))
+					bb.Spec.Backend.S3 = &store.S3Spec{}
+					By(fmt.Sprintf("Creating BackupBlueprint: %s", bb.Name))
+					_, err := f.CreateBackupBlueprint(bb)
+					Expect(err).NotTo(HaveOccurred())
+					f.AppendToCleanupList(bb)
 
-				// Generate BackupBlueprint definition
-				bb := f.BackupBlueprint(getRepositoryInfo(secret.Name))
-				bb.Spec.RetentionPolicy = v1alpha1.RetentionPolicy{}
+					// Deploy a DaemonSet
+					dmn := deployDaemonSet(fmt.Sprintf("dmn-%s", f.App()))
 
-				By(fmt.Sprintf("Creating inappropraite BackupBlueprint: %s", bb.Name))
-				_, err := f.CreateBackupBlueprint(bb)
-				Expect(err).To(HaveOccurred())
-			})
-			It("Should fail for adding inappropriate BackupConfiguration Schedule in BackupBlueprint", func() {
-				// Create Storage Secret for Minio
-				secret := createBackendSecretForMinio()
+					// Generate Sample Data
+					generateSampleData(dmn)
 
-				// Generate BackupBlueprint definition
-				bb := f.BackupBlueprint(getRepositoryInfo(secret.Name))
-				By(fmt.Sprintf("Creating inappropraite BackupBlueprint: %s", bb.Name))
-				bb.Spec.Schedule = ""
-				_, err := f.CreateBackupBlueprint(bb)
-				Expect(err).To(HaveOccurred())
-			})
-			It("Should fail auto-backup for adding inappropriate BackupBlueprint annotation in DaemonSet", func() {
-				// Create BackupBlueprint
-				createBackupBlueprint(fmt.Sprintf("backupblueprint-%s", f.App()))
-				// Deploy a DaemonSet
-				dmn := deployDaemonSet(fmt.Sprintf("dmn-%s", f.App()))
-				// Generate Sample Data
-				generateSampleData(dmn)
+					// create annotations for DaemonSet
+					annotations := map[string]string{
+						v1beta1.KeyBackupBlueprint: bb.Name,
+						v1beta1.KeyTargetPaths:     framework.TestSourceDataTargetPath,
+						v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
+					}
+					// Adding and Ensuring annotations to Target
+					addAnnotationsToTarget(annotations, dmn)
 
-				// wrong BackupBlueprint Name set as annotations to DaemonSet
-				annotations := map[string]string{
-					v1beta1.KeyBackupBlueprint: framework.WrongBackupBlueprintName,
-					v1beta1.KeyTargetPaths:     framework.TestSourceDataTargetPath,
-					v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
-				}
-				// Adding and Ensuring annotations to workload
-				addAnnotationsToWorkload(annotations, dmn)
+					// ensure Repository and BackupConfiguration
+					backupConfig := checkRepositoryAndBackupConfiguration(dmn)
 
-				By("Will fail to get respective BackupBlueprint")
-				getAnnotations := dmn.GetAnnotations()
-				_, err := f.GetBackupBlueprint(getAnnotations[v1beta1.KeyBackupBlueprint])
-				Expect(err).To(HaveOccurred())
-			})
-			It("Should fail for adding inappropriate TargetPath/MountPath annotations in DaemonSet", func() {
-				// Create BackupBlueprint
-				bb := createBackupBlueprint(fmt.Sprintf("backupblueprint-%s", f.App()))
-				// Deploy a DaemonSet
-				dmn := deployDaemonSet(fmt.Sprintf("dmn-%s", f.App()))
-				// Generate Sample Data
-				generateSampleData(dmn)
+					instantBackupFailed(backupConfig)
+				})
+				It("should fail BackupSession for missing RetentionPolicy", func() {
+					// Create Storage Secret for Minio
+					secret := createBackendSecretForMinio()
 
-				// wrong BackupBlueprint Name set as annotations to DaemonSet
-				annotations := map[string]string{
-					v1beta1.KeyBackupBlueprint: bb.Name,
-					v1beta1.KeyTargetPaths:     framework.WrongTargetPath,
-					v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
-				}
-				// Adding and Ensuring annotations to workload
-				addAnnotationsToWorkload(annotations, dmn)
-				// check Stash Object status
-				checkBackupSessionFailed(dmn)
+					// Generate BackupBlueprint definition
+					bb := f.BackupBlueprint(getRepositoryInfo(secret.Name))
+					bb.Spec.RetentionPolicy = v1alpha1.RetentionPolicy{}
+					By(fmt.Sprintf("Creating BackupBlueprint: %s", bb.Name))
+					_, err := f.CreateBackupBlueprint(bb)
+					Expect(err).NotTo(HaveOccurred())
+
+					// Deploy a DaemonSet
+					dmn := deployDaemonSet(fmt.Sprintf("dmn-%s", f.App()))
+
+					// Generate Sample Data
+					generateSampleData(dmn)
+
+					// create proper annotations for Target
+					annotations := map[string]string{
+						v1beta1.KeyBackupBlueprint: bb.Name,
+						v1beta1.KeyTargetPaths:     framework.TestSourceDataTargetPath,
+						v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
+					}
+					// Adding and Ensuring annotations to Target
+					addAnnotationsToTarget(annotations, dmn)
+
+					// ensure Repository and BackupConfiguration
+					backupConfig := checkRepositoryAndBackupConfiguration(dmn)
+
+					instantBackupFailed(backupConfig)
+				})
 			})
 
+			Context("Add inappropriate annotation to Target", func() {
+				It("should fail to get respective BackupBlueprint for adding wrong BackupBlueprint name", func() {
+					// Create BackupBlueprint
+					createBackupBlueprint(fmt.Sprintf("backupblueprint-%s", f.App()))
+
+					// Deploy a DaemonSet
+					dmn := deployDaemonSet(fmt.Sprintf("dmn-%s", f.App()))
+
+					// Generate Sample Data
+					generateSampleData(dmn)
+
+					// set wrong annotations to Deployment
+					annotations := map[string]string{
+						v1beta1.KeyBackupBlueprint: framework.WrongBackupBlueprintName,
+						v1beta1.KeyTargetPaths:     framework.TestSourceDataTargetPath,
+						v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
+					}
+					// Adding and Ensuring annotations to Target
+					addAnnotationsToTarget(annotations, dmn)
+
+					By("Will fail to get respective BackupBlueprint")
+					getAnnotations := dmn.GetAnnotations()
+					_, err := f.GetBackupBlueprint(getAnnotations[v1beta1.KeyBackupBlueprint])
+					Expect(err).To(HaveOccurred())
+				})
+				It("should fail BackupSession for adding inappropriate TargetPath/MountPath", func() {
+					// Create BackupBlueprint
+					bb := createBackupBlueprint(fmt.Sprintf("backupblueprint-%s", f.App()))
+
+					// Deploy a DaemonSet
+					dmn := deployDaemonSet(fmt.Sprintf("dmn-%s", f.App()))
+
+					// Generate Sample Data
+					generateSampleData(dmn)
+
+					// set wrong annotations to DaemonSet
+					annotations := map[string]string{
+						v1beta1.KeyBackupBlueprint: bb.Name,
+						v1beta1.KeyTargetPaths:     framework.WrongTargetPath,
+						v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
+					}
+					// Adding and Ensuring annotations to Target
+					addAnnotationsToTarget(annotations, dmn)
+
+					// ensure Repository and BackupConfiguration
+					backupConfig := checkRepositoryAndBackupConfiguration(dmn)
+
+					// Trigger Instant Backup
+					By("Triggering Instant Backup")
+					backupSession, err := f.TriggerInstantBackup(backupConfig)
+					Expect(err).NotTo(HaveOccurred())
+					f.AppendToCleanupList(backupSession)
+
+					By("Waiting for backup process to complete")
+					f.EventuallyBackupProcessCompleted(backupSession.ObjectMeta).Should(BeTrue())
+
+					By("Verifying that BackupSession has failed")
+					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
+				})
+
+			})
 		})
 	})
 
