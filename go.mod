@@ -3,26 +3,33 @@ module stash.appscode.dev/stash
 go 1.12
 
 require (
-	github.com/appscode/go v0.0.0-20191016085057-e186b6c94a3b
+	cloud.google.com/go v0.41.0 // indirect
+	contrib.go.opencensus.io/exporter/ocagent v0.4.12 // indirect
+	github.com/PuerkitoBio/purell v1.1.1 // indirect
+	github.com/appscode/go v0.0.0-20191025021232-311ac347b3ef
 	github.com/armon/circbuf v0.0.0-20190214190532-5111143e8da2
 	github.com/cenkalti/backoff v2.1.1+incompatible
 	github.com/codeskyblue/go-sh v0.0.0-20190412065543-76bd3d59ff27
 	github.com/evanphx/json-patch v4.5.0+incompatible
 	github.com/go-openapi/spec v0.19.0
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
+	github.com/google/martian v2.1.1-0.20190517191504-25dcb96d9e51+incompatible // indirect
+	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e // indirect
 	github.com/json-iterator/go v1.1.6
+	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kubernetes-csi/external-snapshotter v1.2.0
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v0.9.4
 	github.com/robfig/cron/v3 v3.0.0
+	github.com/sirupsen/logrus v1.4.1 // indirect
 	github.com/smartystreets/assertions v0.0.0-20190116191733-b6c0e53d7304 // indirect
 	github.com/spf13/afero v1.2.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
 	github.com/stretchr/testify v1.3.0
-	gomodules.xyz/cert v1.0.0
+	gomodules.xyz/cert v1.0.1
 	gomodules.xyz/envsubst v0.1.0
 	gomodules.xyz/stow v0.2.2
 	gopkg.in/ini.v1 v1.41.0
@@ -30,7 +37,10 @@ require (
 	k8s.io/apiextensions-apiserver v0.0.0-20190516231611-bf6753f2aa24
 	k8s.io/apimachinery v0.0.0-20190508063446-a3da69d3723c
 	k8s.io/apiserver v0.0.0-20190516230822-f89599b3f645
+	k8s.io/cli-runtime v0.0.0-20190516231937-17bc0b7fcef5 // indirect
 	k8s.io/client-go v11.0.0+incompatible
+	k8s.io/component-base v0.0.0-20190424053038-9fe063da3132 // indirect
+	k8s.io/klog v0.3.1 // indirect
 	k8s.io/kube-aggregator v0.0.0-20190314000639-da8327669ac5
 	k8s.io/kube-openapi v0.0.0-20190502190224-411b2483e503
 	k8s.io/kubernetes v1.14.0
