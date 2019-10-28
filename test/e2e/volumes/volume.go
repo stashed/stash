@@ -3,9 +3,9 @@ package volumes
 import (
 	"fmt"
 
-	"stash.appscode.dev/stash/apis"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
+
+	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/test/e2e/framework"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 
@@ -15,6 +15,7 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "kmodules.xyz/client-go/core/v1"
+	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 )
 
 var _ = Describe("Volume", func() {
@@ -31,19 +32,6 @@ var _ = Describe("Volume", func() {
 	})
 
 	var (
-		createPVC = func(name string) *core.PersistentVolumeClaim {
-			// Generate PVC definition
-			pvc := f.PersistentVolumeClaim()
-			pvc.Name = name
-
-			By("Creating PVC: " + pvc.Name)
-			createdPVC, err := f.CreatePersistentVolumeClaim(pvc)
-			Expect(err).NotTo(HaveOccurred())
-			f.AppendToCleanupList(createdPVC)
-
-			return createdPVC
-		}
-
 		deployPod = func(pvcName string) *core.Pod {
 			// Generate Pod definition
 			pod := f.Pod(pvcName)
@@ -63,30 +51,9 @@ var _ = Describe("Volume", func() {
 			return createdPod
 		}
 
-		generateSampleData = func(pod *core.Pod) sets.String {
-			By("Generating sample data inside Pod")
-			err := f.CreateSampleDataInsideWorkload(pod.ObjectMeta, apis.KindPersistentVolumeClaim)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Verifying that sample data has been generated")
-			sampleData, err := f.ReadSampleDataFromFromWorkload(pod.ObjectMeta, apis.KindPersistentVolumeClaim)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(sampleData).ShouldNot(BeEmpty())
-
-			return sampleData
-		}
-
-		getTargetRef = func(pvc *core.PersistentVolumeClaim) v1beta1.TargetRef {
-			return v1beta1.TargetRef{
-				Name:       pvc.Name,
-				Kind:       apis.KindPersistentVolumeClaim,
-				APIVersion: "v1",
-			}
-		}
-
 		setupPVCBackup = func(pvc *core.PersistentVolumeClaim, repo *api.Repository) *v1beta1.BackupConfiguration {
 			// Generate desired BackupConfiguration definition
-			backupConfig := f.GetBackupConfigurationForWorkload(repo.Name, getTargetRef(pvc))
+			backupConfig := f.GetBackupConfigurationForWorkload(repo.Name, framework.GetTargetRef(pvc.Name, apis.KindPersistentVolumeClaim))
 			backupConfig.Spec.Target = f.PVCBackupTarget(pvc.Name)
 			backupConfig.Spec.Task.Name = framework.TaskPVCBackup
 
@@ -101,29 +68,10 @@ var _ = Describe("Volume", func() {
 			return createdBC
 		}
 
-		takeInstantBackup = func(pvc *core.PersistentVolumeClaim, repo *api.Repository) {
-			// Setup Backup
-			backupConfig := setupPVCBackup(pvc, repo)
-
-			// Trigger Instant Backup
-			By("Triggering Instant Backup")
-			backupSession, err := f.TriggerInstantBackup(backupConfig)
-			Expect(err).NotTo(HaveOccurred())
-			f.AppendToCleanupList(backupSession)
-
-			By("Waiting for backup process to complete")
-			f.EventuallyBackupProcessCompleted(backupSession.ObjectMeta).Should(BeTrue())
-
-			By("Verifying that BackupSession has succeeded")
-			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
-		}
-
 		restoreData = func(pvc *core.PersistentVolumeClaim, pod *core.Pod, repo *api.Repository) sets.String {
 			// Generate desired RestoreSession definition
 			By("Creating RestoreSession")
-			restoreSession := f.GetRestoreSessionForWorkload(repo.Name, getTargetRef(pvc))
+			restoreSession := f.GetRestoreSessionForWorkload(repo.Name, framework.GetTargetRef(pvc.Name, apis.KindPersistentVolumeClaim))
 			restoreSession.Spec.Target = f.PVCRestoreTarget(pvc.Name)
 			restoreSession.Spec.Rules = []v1beta1.Rule{
 				{
@@ -147,7 +95,7 @@ var _ = Describe("Volume", func() {
 			Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
 
 			By("Reading restored data")
-			restoredData, err := f.ReadSampleDataFromFromWorkload(pod.ObjectMeta, apis.KindPersistentVolumeClaim)
+			restoredData, err := f.ReadSampleDataFromFromWorkload(pod.ObjectMeta, apis.KindPod)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(restoredData).NotTo(BeEmpty())
 
@@ -158,15 +106,14 @@ var _ = Describe("Volume", func() {
 	Context("PVC", func() {
 
 		Context("Restore in same PVC", func() {
-
 			It("should Backup & Restore in the source PVC", func() {
 				// Create new PVC
-				pvc := createPVC(fmt.Sprintf("source-pvc-%s", f.App()))
+				pvc := f.CreateNewPVC(fmt.Sprintf("source-pvc-%s", f.App()))
 				// Deploy a Pod
 				pod := deployPod(pvc.Name)
 
 				// Generate Sample Data
-				sampleData := generateSampleData(pod)
+				sampleData := f.GenerateSampleData(pod.ObjectMeta, apis.KindPod)
 
 				// Setup a Minio Repository
 				By("Creating Repository")
@@ -174,12 +121,15 @@ var _ = Describe("Volume", func() {
 				Expect(err).NotTo(HaveOccurred())
 				f.AppendToCleanupList(repo)
 
+				// Setup Backup
+				backupConfig := setupPVCBackup(pvc, repo)
+
 				// Take an Instant Backup the Sample Data
-				takeInstantBackup(pvc, repo)
+				f.TakeInstantBackup(backupConfig.ObjectMeta)
 
 				// Simulate disaster scenario. Delete the data from source PVC
 				By("Deleting sample data from source Pod")
-				err = f.CleanupSampleDataFromWorkload(pod.ObjectMeta, apis.KindPersistentVolumeClaim)
+				err = f.CleanupSampleDataFromWorkload(pod.ObjectMeta, apis.KindPod)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Restore the backup data
@@ -193,15 +143,14 @@ var _ = Describe("Volume", func() {
 		})
 
 		Context("Restore in different PVC", func() {
-
 			It("should restore backed up data into different PVC", func() {
 				// Create new PVC
-				pvc := createPVC(fmt.Sprintf("source-pvc-%s", f.App()))
+				pvc := f.CreateNewPVC(fmt.Sprintf("source-diff-pvc-%s", f.App()))
 				// Deploy a Pod
 				pod := deployPod(pvc.Name)
 
 				// Generate Sample Data
-				sampleData := generateSampleData(pod)
+				sampleData := f.GenerateSampleData(pod.ObjectMeta, apis.KindPod)
 
 				// Setup a Minio Repository
 				By("Creating Repository")
@@ -209,11 +158,14 @@ var _ = Describe("Volume", func() {
 				Expect(err).NotTo(HaveOccurred())
 				f.AppendToCleanupList(repo)
 
+				// Setup Backup
+				backupConfig := setupPVCBackup(pvc, repo)
+
 				// Take an Instant Backup the Sample Data
-				takeInstantBackup(pvc, repo)
+				f.TakeInstantBackup(backupConfig.ObjectMeta)
 
 				// Create restored Pvc
-				restoredPVC := createPVC(fmt.Sprintf("restore-pvc-%s", f.App()))
+				restoredPVC := f.CreateNewPVC(fmt.Sprintf("restore-pvc-%s", f.App()))
 
 				// Deploy another Pod
 				restoredPod := deployPod(restoredPVC.Name)

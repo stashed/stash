@@ -75,21 +75,21 @@ func (f *Framework) EventuallyBackupSessionTotalHost(meta metav1.ObjectMeta) Gom
 	)
 }
 
-func (f *Invocation) TriggerInstantBackup(backupConfig *v1beta1.BackupConfiguration) (*v1beta1.BackupSession, error) {
+func (f *Invocation) TriggerInstantBackup(objMeta metav1.ObjectMeta) (*v1beta1.BackupSession, error) {
 	backupSession := &v1beta1.BackupSession{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix(backupConfig.Name),
-			Namespace: backupConfig.Namespace,
+			Name:      rand.WithUniqSuffix(objMeta.Name),
+			Namespace: objMeta.Namespace,
 			Labels: map[string]string{
 				util.LabelApp:                 util.AppLabelStash,
-				util.LabelBackupConfiguration: backupConfig.Name,
+				util.LabelBackupConfiguration: objMeta.Name,
 			},
 		},
 		Spec: v1beta1.BackupSessionSpec{
 			Invoker: v1beta1.BackupInvokerRef{
 				APIGroup: v1beta1.SchemeGroupVersion.Group,
 				Kind:     v1beta1.ResourceKindBackupConfiguration,
-				Name:     backupConfig.Name,
+				Name:     objMeta.Name,
 			},
 		},
 	}

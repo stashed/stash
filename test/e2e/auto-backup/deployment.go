@@ -2,23 +2,16 @@ package auto_backup
 
 import (
 	"fmt"
-	"strings"
 
-	"stash.appscode.dev/stash/apis"
-	"stash.appscode.dev/stash/apis/stash/v1alpha1"
-	"stash.appscode.dev/stash/apis/stash/v1beta1"
-	"stash.appscode.dev/stash/pkg/util"
-	"stash.appscode.dev/stash/test/e2e/framework"
-	. "stash.appscode.dev/stash/test/e2e/matcher"
-
-	"github.com/appscode/go/sets"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
-	core "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apps_util "kmodules.xyz/client-go/apps/v1"
 	store "kmodules.xyz/objectstore-api/api/v1"
+	"stash.appscode.dev/stash/apis"
+	"stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/stash/test/e2e/framework"
 )
 
 var _ = Describe("Auto-Backup", func() {
@@ -35,67 +28,9 @@ var _ = Describe("Auto-Backup", func() {
 	})
 
 	var (
-		createBackendSecretForMinio = func() *core.Secret {
-			// Create Storage Secret
-			cred := f.SecretForMinioBackend(true)
-
-			if missing, _ := BeZero().Match(cred); missing {
-				Skip("Missing Minio credential")
-			}
-			By(fmt.Sprintf("Creating Storage Secret for Minio: %s/%s", cred.Namespace, cred.Name))
-			createdCred, err := f.CreateSecret(cred)
-			Expect(err).NotTo(HaveOccurred())
-			f.AppendToCleanupList(&cred)
-
-			return createdCred
-		}
-
-		getRepositoryInfo = func(secretName string) v1alpha1.RepositorySpec {
-			repoInfo := v1alpha1.RepositorySpec{
-				Backend: store.Backend{
-					S3: &store.S3Spec{
-						Endpoint: f.MinioServiceAddres(),
-						Bucket:   "minio-bucket",
-						Prefix:   fmt.Sprintf("stash-e2e/%s/%s", f.Namespace(), f.App()),
-					},
-					StorageSecretName: secretName,
-				},
-				WipeOut: false,
-			}
-			return repoInfo
-		}
-
-		createBackupBlueprint = func(name string) *v1beta1.BackupBlueprint {
-			// Create Secret for BackupBlueprint
-			secret := createBackendSecretForMinio()
-
-			// Generate BackupBlueprint definition
-			bb := f.BackupBlueprint(getRepositoryInfo(secret.Name))
-			bb.Name = name
-
-			By(fmt.Sprintf("Creating BackupBlueprint: %s", bb.Name))
-			createdBB, err := f.CreateBackupBlueprint(bb)
-			Expect(err).NotTo(HaveOccurred())
-			f.AppendToCleanupList(createdBB)
-			return createdBB
-		}
-
-		createPVC = func(name string) *core.PersistentVolumeClaim {
-			// Generate PVC definition
-			pvc := f.PersistentVolumeClaim()
-			pvc.Name = fmt.Sprintf("%s-pvc-%s", strings.Split(name, "-")[0], f.App())
-
-			By(fmt.Sprintf("Creating PVC: %s/%s", pvc.Namespace, pvc.Name))
-			createdPVC, err := f.CreatePersistentVolumeClaim(pvc)
-			Expect(err).NotTo(HaveOccurred())
-			f.AppendToCleanupList(createdPVC)
-
-			return createdPVC
-		}
-
 		deployDeployment = func(name string) *apps.Deployment {
 			// Create PVC for Deployment
-			pvc := createPVC(name)
+			pvc := f.CreateNewPVC(name)
 			// Generate Deployment definition
 			deployment := f.Deployment(pvc.Name)
 			deployment.Name = name
@@ -114,90 +49,6 @@ var _ = Describe("Auto-Backup", func() {
 
 			return createdDeployment
 		}
-
-		generateSampleData = func(deployment *apps.Deployment) sets.String {
-			By("Generating sample data inside Deployment pods")
-			err := f.CreateSampleDataInsideWorkload(deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Verifying that sample data has been generated")
-			sampleData, err := f.ReadSampleDataFromFromWorkload(deployment.ObjectMeta, apis.KindDeployment)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(sampleData).ShouldNot(BeEmpty())
-
-			return sampleData
-		}
-
-		addAnnotationsToTarget = func(annotations map[string]string, deployment *apps.Deployment) {
-			By(fmt.Sprintf("Adding auto-backup specific annotations to the Deployment: %s/%s", deployment.Namespace, deployment.Name))
-			err := f.AddAutoBackupAnnotationsToTarget(annotations, deployment)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Verifying that the auto-backup annotations has been added successfully")
-			f.EventuallyAutoBackupAnnotationsFound(annotations, deployment).Should(BeTrue())
-		}
-
-		takeInstantBackup = func(backupConfig *v1beta1.BackupConfiguration) {
-			// Trigger Instant Backup
-			By("Triggering Instant Backup")
-			backupSession, err := f.TriggerInstantBackup(backupConfig)
-			Expect(err).NotTo(HaveOccurred())
-			f.AppendToCleanupList(backupSession)
-
-			By("Waiting for backup process to complete")
-			f.EventuallyBackupProcessCompleted(backupSession.ObjectMeta).Should(BeTrue())
-
-			By("Verifying that BackupSession has succeeded")
-			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
-		}
-
-		instantBackupFailed = func(backupConfig *v1beta1.BackupConfiguration) {
-			// Trigger Instant Backup
-			By("Triggering Instant Backup")
-			backupSession, err := f.TriggerInstantBackup(backupConfig)
-			Expect(err).NotTo(HaveOccurred())
-			f.AppendToCleanupList(backupSession)
-
-			By("Waiting for backup process to complete")
-			f.EventuallyBackupProcessCompleted(backupSession.ObjectMeta).Should(BeTrue())
-
-			By("Verifying that BackupSession has failed")
-			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
-		}
-
-		checkRepositoryAndBackupConfiguration = func(deployment *apps.Deployment) *v1beta1.BackupConfiguration {
-			// BackupBlueprint create BackupConfiguration and Repository such that
-			// the name of the BackupConfiguration and Repository will follow
-			// the patter: <lower case of the workload kind>-<workload name>.
-			// we will form the meta name and namespace for farther process.
-			objMeta := metav1.ObjectMeta{
-				Name:      fmt.Sprintf("deployment-%s", deployment.Name),
-				Namespace: f.Namespace(),
-			}
-			By("Waiting for Repository")
-			f.EventuallyRepositoryCreated(objMeta).Should(BeTrue())
-
-			By("Waiting for BackupConfiguration")
-			f.EventuallyBackupConfigurationCreated(objMeta).Should(BeTrue())
-			backupConfig, err := f.StashClient.StashV1beta1().BackupConfigurations(objMeta.Namespace).Get(objMeta.Name, metav1.GetOptions{})
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Verifying that backup triggering CronJob has been created")
-			f.EventuallyCronJobCreated(objMeta).Should(BeTrue())
-
-			By("Verifying that sidecar has been injected")
-			f.EventuallyDeployment(deployment.ObjectMeta).Should(HaveSidecar(util.StashContainer))
-
-			By("Waiting for Deployment to be ready with sidecar")
-			err = f.WaitUntilDeploymentReadyWithSidecar(deployment.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			return backupConfig
-		}
 	)
 
 	Context("Deployment", func() {
@@ -205,13 +56,13 @@ var _ = Describe("Auto-Backup", func() {
 		Context("Success Case", func() {
 			It("should backup successfully", func() {
 				// Create BackupBlueprint
-				bb := createBackupBlueprint(fmt.Sprintf("backupblueprint-%s", f.App()))
+				bb := f.CreateNewBackupBlueprint(fmt.Sprintf("backupblueprint-%s", f.App()))
 
 				// Deploy a Deployment
 				deployment := deployDeployment(fmt.Sprintf("deployment-%s", f.App()))
 
 				// Generate Sample Data
-				generateSampleData(deployment)
+				f.GenerateSampleData(deployment.ObjectMeta, apis.KindDeployment)
 
 				// create annotation for Target
 				annotations := map[string]string{
@@ -220,13 +71,13 @@ var _ = Describe("Auto-Backup", func() {
 					v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
 				}
 				// Adding and Ensuring annotations to Target
-				addAnnotationsToTarget(annotations, deployment)
+				f.AddAnnotationsToTarget(annotations, deployment)
 
 				// ensure Repository and BackupConfiguration
-				backupConfig := checkRepositoryAndBackupConfiguration(deployment)
+				backupConfig := f.CheckRepositoryAndBackupConfiguration(deployment.ObjectMeta, apis.KindDeployment)
 
 				// Take an Instant Backup the Sample Data
-				takeInstantBackup(backupConfig)
+				f.TakeInstantBackup(backupConfig.ObjectMeta)
 			})
 		})
 
@@ -235,10 +86,10 @@ var _ = Describe("Auto-Backup", func() {
 			Context("Add inappropriate Repository and BackupConfiguration credential to BackupBlueprint", func() {
 				It("should fail BackupSession for missing Backend credential", func() {
 					// Create storage Secret for Minio
-					secret := createBackendSecretForMinio()
+					secret := f.CreateBackendSecretForMinio()
 
 					// Generate BackupBlueprint definition
-					bb := f.BackupBlueprint(getRepositoryInfo(secret.Name))
+					bb := f.BackupBlueprint(f.GetRepositoryInfo(secret.Name))
 					bb.Spec.Backend.S3 = &store.S3Spec{}
 					By(fmt.Sprintf("Creating BackupBlueprint: %s", bb.Name))
 					_, err := f.CreateBackupBlueprint(bb)
@@ -249,7 +100,7 @@ var _ = Describe("Auto-Backup", func() {
 					deployment := deployDeployment(fmt.Sprintf("deployment-%s", f.App()))
 
 					// Generate Sample Data
-					generateSampleData(deployment)
+					f.GenerateSampleData(deployment.ObjectMeta, apis.KindDeployment)
 
 					// create annotations for Deployment
 					annotations := map[string]string{
@@ -258,19 +109,19 @@ var _ = Describe("Auto-Backup", func() {
 						v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
 					}
 					// Adding and Ensuring annotations to Target
-					addAnnotationsToTarget(annotations, deployment)
+					f.AddAnnotationsToTarget(annotations, deployment)
 
 					// ensure Repository and BackupConfiguration
-					backupConfig := checkRepositoryAndBackupConfiguration(deployment)
+					backupConfig := f.CheckRepositoryAndBackupConfiguration(deployment.ObjectMeta, apis.KindDeployment)
 
-					instantBackupFailed(backupConfig)
+					f.InstantBackupFailed(backupConfig.ObjectMeta)
 				})
 				It("should fail BackupSession for missing RetentionPolicy", func() {
 					// Create storage Secret for Minio
-					secret := createBackendSecretForMinio()
+					secret := f.CreateBackendSecretForMinio()
 
 					// Generate BackupBlueprint definition
-					bb := f.BackupBlueprint(getRepositoryInfo(secret.Name))
+					bb := f.BackupBlueprint(f.GetRepositoryInfo(secret.Name))
 					bb.Spec.RetentionPolicy = v1alpha1.RetentionPolicy{}
 
 					By(fmt.Sprintf("Creating BackupBlueprint: %s", bb.Name))
@@ -281,7 +132,7 @@ var _ = Describe("Auto-Backup", func() {
 					deployment := deployDeployment(fmt.Sprintf("deployment-%s", f.App()))
 
 					// Generate Sample Data
-					generateSampleData(deployment)
+					f.GenerateSampleData(deployment.ObjectMeta, apis.KindDeployment)
 
 					// create annotations for Deployment
 					annotations := map[string]string{
@@ -290,24 +141,25 @@ var _ = Describe("Auto-Backup", func() {
 						v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
 					}
 					// Adding and Ensuring annotations to Target
-					addAnnotationsToTarget(annotations, deployment)
+					f.AddAnnotationsToTarget(annotations, deployment)
 
-					backupConfig := checkRepositoryAndBackupConfiguration(deployment)
+					// ensure Repository and BackupConfiguration
+					backupConfig := f.CheckRepositoryAndBackupConfiguration(deployment.ObjectMeta, apis.KindDeployment)
 
-					instantBackupFailed(backupConfig)
+					f.InstantBackupFailed(backupConfig.ObjectMeta)
 				})
 			})
 
 			Context("Add inappropriate annotation to Target", func() {
 				It("should fail to get respective BackupBlueprint for adding wrong BackupBlueprint name", func() {
 					// Create BackupBlueprint
-					createBackupBlueprint(fmt.Sprintf("backupblueprint-%s", f.App()))
+					f.CreateNewBackupBlueprint(fmt.Sprintf("backupblueprint-%s", f.App()))
 
 					// Deploy a Deployment
 					deployment := deployDeployment(fmt.Sprintf("deployment-%s", f.App()))
 
 					// Generate Sample Data
-					generateSampleData(deployment)
+					f.GenerateSampleData(deployment.ObjectMeta, apis.KindDeployment)
 
 					// set wrong annotations to Deployment
 					annotations := map[string]string{
@@ -316,7 +168,7 @@ var _ = Describe("Auto-Backup", func() {
 						v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
 					}
 					// Adding and Ensuring annotations to Target
-					addAnnotationsToTarget(annotations, deployment)
+					f.AddAnnotationsToTarget(annotations, deployment)
 
 					By("Will fail to get respective BackupBlueprint")
 					getAnnotations := deployment.GetAnnotations()
@@ -325,13 +177,13 @@ var _ = Describe("Auto-Backup", func() {
 				})
 				It("should fail BackupSession for adding inappropriate TargetPath/MountPath", func() {
 					// Create BackupBlueprint
-					bb := createBackupBlueprint(fmt.Sprintf("backupblueprint-%s", f.App()))
+					bb := f.CreateNewBackupBlueprint(fmt.Sprintf("backupblueprint-%s", f.App()))
 
 					// Deploy a Deployment
 					deployment := deployDeployment(fmt.Sprintf("deployment-%s", f.App()))
 
 					// Generate Sample Data
-					generateSampleData(deployment)
+					f.GenerateSampleData(deployment.ObjectMeta, apis.KindDeployment)
 
 					// set wrong annotations to Deployment
 					annotations := map[string]string{
@@ -340,24 +192,12 @@ var _ = Describe("Auto-Backup", func() {
 						v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
 					}
 					// Adding and Ensuring annotations to Target
-					addAnnotationsToTarget(annotations, deployment)
+					f.AddAnnotationsToTarget(annotations, deployment)
 
 					// ensure Repository and BackupConfiguration
-					backupConfig := checkRepositoryAndBackupConfiguration(deployment)
+					backupConfig := f.CheckRepositoryAndBackupConfiguration(deployment.ObjectMeta, apis.KindDeployment)
 
-					// Trigger Instant Backup
-					By("Triggering Instant Backup")
-					backupSession, err := f.TriggerInstantBackup(backupConfig)
-					Expect(err).NotTo(HaveOccurred())
-					f.AppendToCleanupList(backupSession)
-
-					By("Waiting for backup process to complete")
-					f.EventuallyBackupProcessCompleted(backupSession.ObjectMeta).Should(BeTrue())
-
-					By("Verifying that BackupSession has failed")
-					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
-					Expect(err).NotTo(HaveOccurred())
-					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
+					f.InstantBackupFailed(backupConfig.ObjectMeta)
 				})
 			})
 		})

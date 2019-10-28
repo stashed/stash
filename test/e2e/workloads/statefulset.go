@@ -75,105 +75,9 @@ var _ = Describe("StatefulSet", func() {
 			return createdss
 		}
 
-		generateSampleData = func(ss *apps.StatefulSet) sets.String {
-			By("Generating sample data inside StatefulSet pods")
-			err := f.CreateSampleDataInsideWorkload(ss.ObjectMeta, apis.KindStatefulSet)
-			Expect(err).NotTo(HaveOccurred())
-
-			By("Verifying that sample data has been generated")
-			sampleData, err := f.ReadSampleDataFromFromWorkload(ss.ObjectMeta, apis.KindStatefulSet)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(sampleData).ShouldNot(BeEmpty())
-
-			return sampleData
-		}
-
-		getTargetRef = func(ss *apps.StatefulSet) v1beta1.TargetRef {
-			return v1beta1.TargetRef{
-				Name:       ss.Name,
-				Kind:       apis.KindStatefulSet,
-				APIVersion: "apps/v1",
-			}
-		}
-
-		setupSSBackup = func(ss *apps.StatefulSet, repo *api.Repository) *v1beta1.BackupConfiguration {
-			// Generate desired BackupConfiguration definition
-			backupConfig := f.GetBackupConfigurationForWorkload(repo.Name, getTargetRef(ss))
-
-			By("Creating BackupConfiguration: " + backupConfig.Name)
-			createdBC, err := f.StashClient.StashV1beta1().BackupConfigurations(backupConfig.Namespace).Create(backupConfig)
-			Expect(err).NotTo(HaveOccurred())
-			f.AppendToCleanupList(createdBC)
-
-			By("Verifying that backup triggering CronJob has been created")
-			f.EventuallyCronJobCreated(backupConfig.ObjectMeta).Should(BeTrue())
-
-			By("Verifying that sidecar has been injected")
-			f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveSidecar(util.StashContainer))
-
-			By("Waiting for StatefulSet to be ready with sidecar")
-			err = f.WaitUntilStatefulSetReadyWithSidecar(ss.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-
-			return createdBC
-		}
-
-		takeInstantBackup = func(ss *apps.StatefulSet, repo *api.Repository) {
-			// Setup Backup
-			backupConfig := setupSSBackup(ss, repo)
-
-			// Trigger Instant Backup
-			By("Triggering Instant Backup")
-			backupSession, err := f.TriggerInstantBackup(backupConfig)
-			Expect(err).NotTo(HaveOccurred())
-			f.AppendToCleanupList(backupSession)
-
-			By("Waiting for backup process to complete")
-			f.EventuallyBackupProcessCompleted(backupSession.ObjectMeta).Should(BeTrue())
-
-			By("Verifying that BackupSession has succeeded")
-			completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
-		}
-
-		restoreData = func(ss *apps.StatefulSet, repo *api.Repository) sets.String {
-			By("Creating RestoreSession")
-			restoreSession := f.GetRestoreSessionForWorkload(repo.Name, getTargetRef(ss))
-			err := f.CreateRestoreSession(restoreSession)
-			Expect(err).NotTo(HaveOccurred())
-			f.AppendToCleanupList(restoreSession)
-
-			By("Verifying that init-container has been injected")
-			f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveInitContainer(util.StashInitContainer))
-
-			By("Waiting for restore process to complete")
-			f.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta).Should(BeTrue())
-
-			By("Verifying that RestoreSession succeeded")
-			completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(restoreSession.Name, metav1.GetOptions{})
-			Expect(err).NotTo(HaveOccurred())
-			Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
-
-			By("Waiting for StatefulSet to be ready with init-container")
-			err = f.WaitUntilStatefulSetWithInitContainer(ss.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-			f.EventuallyPodAccessible(ss.ObjectMeta).Should(BeTrue())
-
-			//fmt.Println("sleeping.......")
-			//time.Sleep(2 * time.Minute)
-
-			By("Reading restored data")
-			restoredData, err := f.ReadSampleDataFromFromWorkload(ss.ObjectMeta, apis.KindStatefulSet)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(restoredData).NotTo(BeEmpty())
-
-			return restoredData
-		}
-
 		restoreDataOnScaledUpSS = func(ss *apps.StatefulSet, repo *api.Repository) sets.String {
 			By("Creating RestoreSession")
-			restoreSession := f.GetRestoreSessionForWorkload(repo.Name, getTargetRef(ss))
+			restoreSession := f.GetRestoreSessionForWorkload(repo.Name, framework.GetTargetRef(ss.Name, apis.KindStatefulSet))
 			restoreSession.Spec.Rules = []v1beta1.Rule{
 				{
 					TargetHosts: []string{
@@ -225,22 +129,23 @@ var _ = Describe("StatefulSet", func() {
 	Context("StatefulSet", func() {
 
 		Context("Restore in same StatefulSet", func() {
-
 			It("should Backup & Restore in the source StatefulSet", func() {
 				// Deploy a StatefulSet
 				ss := deploySS(fmt.Sprintf("source-ss-%s", f.App()))
 
 				// Generate Sample Data
-				sampleData := generateSampleData(ss)
+				sampleData := f.GenerateSampleData(ss.ObjectMeta, apis.KindStatefulSet)
 
 				// Setup a Minio Repository
-				By("Creating Repository")
 				repo, err := f.SetupMinioRepository()
 				Expect(err).NotTo(HaveOccurred())
 				f.AppendToCleanupList(repo)
 
+				// Setup Backup
+				backupConfig := f.SetupWorkloadBackup(ss.ObjectMeta, repo, apis.KindStatefulSet)
+
 				// Take an Instant Backup the Sample Data
-				takeInstantBackup(ss, repo)
+				f.TakeInstantBackup(backupConfig.ObjectMeta)
 
 				// Simulate disaster scenario. Delete the data from source PVC
 				By("Deleting sample data from source StatefulSet")
@@ -248,8 +153,8 @@ var _ = Describe("StatefulSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				// Restore the backup data
-				By("Restoring the backed up data in the original Statefulset")
-				restoredData := restoreData(ss, repo)
+				By("Restoring the backed up data in the original StatefulSet")
+				restoredData := f.RestoreData(ss.ObjectMeta, repo, apis.KindStatefulSet)
 
 				// Verify that restored data is same as the original data
 				By("Verifying restored data is same as the original data")
@@ -258,29 +163,30 @@ var _ = Describe("StatefulSet", func() {
 		})
 
 		Context("Restore in different StatefulSet", func() {
-
 			It("should restore backed up data into different StatefulSet", func() {
 				// Deploy a StatefulSet
 				ss := deploySS(fmt.Sprintf("source-ss-%s", f.App()))
 
 				// Generate Sample Data
-				sampleData := generateSampleData(ss)
+				sampleData := f.GenerateSampleData(ss.ObjectMeta, apis.KindStatefulSet)
 
 				// Setup a Minio Repository
-				By("Creating Repository")
 				repo, err := f.SetupMinioRepository()
 				Expect(err).NotTo(HaveOccurred())
 				f.AppendToCleanupList(repo)
 
+				// Setup Backup
+				backupConfig := f.SetupWorkloadBackup(ss.ObjectMeta, repo, apis.KindStatefulSet)
+
 				// Take an Instant Backup the Sample Data
-				takeInstantBackup(ss, repo)
+				f.TakeInstantBackup(backupConfig.ObjectMeta)
 
 				// Deploy restored StatefulSet
 				restoredSS := deploySS(fmt.Sprintf("restored-ss-%s", f.App()))
 
 				// Restore the backup data
 				By("Restoring the backed up data in the restored StatefulSet")
-				restoredData := restoreData(restoredSS, repo)
+				restoredData := f.RestoreData(restoredSS.ObjectMeta, repo, apis.KindStatefulSet)
 
 				// Verify that restored data is same as the original data
 				By("Verifying restored data is same as the original data")
@@ -289,22 +195,23 @@ var _ = Describe("StatefulSet", func() {
 		})
 
 		Context("Restore on scaled up StatefulSet", func() {
-
 			It("should restore backed up data into scaled up StatefulSet", func() {
 				// Deploy a StatefulSet
 				ss := deploySS(fmt.Sprintf("source-ss-%s", f.App()))
 
 				// Generate Sample Data
-				sampleData := generateSampleData(ss)
+				sampleData := f.GenerateSampleData(ss.ObjectMeta, apis.KindStatefulSet)
 
 				// Setup a Minio Repository
-				By("Creating Repository")
 				repo, err := f.SetupMinioRepository()
 				Expect(err).NotTo(HaveOccurred())
 				f.AppendToCleanupList(repo)
 
+				// Setup Backup
+				backupConfig := f.SetupWorkloadBackup(ss.ObjectMeta, repo, apis.KindStatefulSet)
+
 				// Take an Instant Backup the Sample Data
-				takeInstantBackup(ss, repo)
+				f.TakeInstantBackup(backupConfig.ObjectMeta)
 
 				// Deploy restored StatefulSet
 				restoredSS := deployScaledUpSS(fmt.Sprintf("restored-ss-%s", f.App()))
