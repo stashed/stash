@@ -323,45 +323,6 @@ var _ = Describe("Auto-Backup", func() {
 					_, err := f.GetBackupBlueprint(getAnnotations[v1beta1.KeyBackupBlueprint])
 					Expect(err).To(HaveOccurred())
 				})
-				It("should fail BackupSession for adding inappropriate TargetPath/MountPath", func() {
-					// Create BackupBlueprint
-					bb := createBackupBlueprint(fmt.Sprintf("backupblueprint-%s", f.App()))
-
-					// Create a PVC
-					pvc := createPVC(fmt.Sprintf("pvc-%s", f.App()))
-
-					// Deploy a Pod
-					pod := deployPod(pvc.Name)
-
-					// Generate Sample Data
-					generateSampleData(pod)
-
-					// set wrong annotations to Deployment
-					annotations := map[string]string{
-						v1beta1.KeyBackupBlueprint: bb.Name,
-						v1beta1.KeyTargetPaths:     framework.WrongTargetPath,
-						v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
-					}
-					// Adding and Ensuring annotations to Target
-					addAnnotationsToTarget(annotations, pvc)
-
-					// ensure Repository and BackupConfiguration
-					backupConfig := checkRepositoryAndBackupConfiguration(pvc)
-
-					// Trigger Instant Backup
-					By("Triggering Instant Backup")
-					backupSession, err := f.TriggerInstantBackup(backupConfig)
-					Expect(err).NotTo(HaveOccurred())
-					f.AppendToCleanupList(backupSession)
-
-					By("Waiting for backup process to complete")
-					f.EventuallyBackupProcessCompleted(backupSession.ObjectMeta).Should(BeTrue())
-
-					By("Verifying that BackupSession has failed")
-					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
-					Expect(err).NotTo(HaveOccurred())
-					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
-				})
 			})
 		})
 	})
