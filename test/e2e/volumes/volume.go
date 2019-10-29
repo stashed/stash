@@ -45,7 +45,7 @@ var _ = Describe("Volume", func() {
 			return createdBC, err
 		}
 
-		setupRestoreProcessForPVC = func(pvc *core.PersistentVolumeClaim, pod *core.Pod, repo *api.Repository) (*v1beta1.RestoreSession, error) {
+		setupRestoreProcessForPVC = func(pvc *core.PersistentVolumeClaim, repo *api.Repository) (*v1beta1.RestoreSession, error) {
 			// Generate desired RestoreSession definition
 			By("Creating RestoreSession")
 			restoreSession := f.GetRestoreSessionForWorkload(repo.Name, framework.GetTargetRef(pvc.Name, apis.KindPersistentVolumeClaim))
@@ -106,7 +106,7 @@ var _ = Describe("Volume", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original Pod")
-				restoreSession, err := setupRestoreProcessForPVC(pvc, pod, repo)
+				restoreSession, err := setupRestoreProcessForPVC(pvc, repo)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -159,7 +159,7 @@ var _ = Describe("Volume", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original Pod")
-				restoreSession, err := setupRestoreProcessForPVC(restoredPVC, pod, repo)
+				restoreSession, err := setupRestoreProcessForPVC(restoredPVC, repo)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")

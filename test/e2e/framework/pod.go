@@ -6,8 +6,6 @@ import (
 	"strings"
 	"time"
 
-	v1 "kmodules.xyz/client-go/core/v1"
-
 	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -15,6 +13,7 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	v1 "kmodules.xyz/client-go/core/v1"
 )
 
 const (
