@@ -94,9 +94,9 @@ BUILD_DIRS  := bin/$(OS)_$(ARCH)     \
                $(HOME)/.kube         \
                $(HOME)/.minikube
 
-DOCKERFILE_PROD  = Dockerfile.in
-DOCKERFILE_DBG   = Dockerfile.dbg
-DOCKERFILE_TEST  = Dockerfile.test
+DOCKERFILE_PROD  = in.Dockerfile
+DOCKERFILE_DBG   = dbg.Dockerfile
+DOCKERFILE_TEST  = test.Dockerfile
 
 # If you want to build all binaries, see the 'all-build' rule.
 # If you want to build all containers, see the 'all-container' rule.
@@ -158,7 +158,7 @@ clientset:
 			$(GO_PKG)/$(REPO)/apis                                \
 			$(GO_PKG)/$(REPO)/apis                                \
 			repositories:v1alpha1                                 \
-			--go-header-file "./hack/boilerplate.go.txt"
+			--go-header-file "./hack/license/go.txt"
 
 	# for both CRD and EAS types
 	@docker run --rm 	                                          \
@@ -174,7 +174,7 @@ clientset:
 			$(GO_PKG)/$(REPO)/client                              \
 			$(GO_PKG)/$(REPO)/apis                                \
 			"$(API_GROUPS)"                                       \
-			--go-header-file "./hack/boilerplate.go.txt"
+			--go-header-file "./hack/license/go.txt"
 
 # Generate openapi schema
 .PHONY: openapi
@@ -203,7 +203,7 @@ openapi-%:
 		$(CODE_GENERATOR_IMAGE)                          \
 		openapi-gen                                      \
 			--v 1 --logtostderr                          \
-			--go-header-file "./hack/boilerplate.go.txt" \
+			--go-header-file "./hack/license/go.txt" \
 			--input-dirs "$(GO_PKG)/$(REPO)/apis/$(subst _,/,$*),k8s.io/apimachinery/pkg/apis/meta/v1,k8s.io/apimachinery/pkg/api/resource,k8s.io/apimachinery/pkg/runtime,k8s.io/apimachinery/pkg/util/intstr,k8s.io/apimachinery/pkg/version,k8s.io/api/core/v1,k8s.io/api/apps/v1,kmodules.xyz/offshoot-api/api/v1,github.com/appscode/go/encoding/json/types,kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1,k8s.io/api/rbac/v1,kmodules.xyz/objectstore-api/api/v1" \
 			--output-package "$(GO_PKG)/$(REPO)/apis/$(subst _,/,$*)" \
 			--report-filename api/api-rules/violation_exceptions.list
@@ -489,8 +489,21 @@ verify-gen: gen fmt
 		echo "files are out of date, run make gen fmt"; exit 1; \
 	fi
 
+.PHONY: check-license
+check-license:
+	@echo "Checking files have proper license header"
+	@docker run --rm 	                                 \
+		-u $$(id -u):$$(id -g)                           \
+		-v /tmp:/.cache                                  \
+		-v $$(pwd):$(DOCKER_REPO_ROOT)                   \
+		-w $(DOCKER_REPO_ROOT)                           \
+		--env HTTP_PROXY=$(HTTP_PROXY)                   \
+		--env HTTPS_PROXY=$(HTTPS_PROXY)                 \
+		$(BUILD_IMAGE)                                   \
+		ltag -t "./hack/license" --excludes "vendor contrib" --check -v
+
 .PHONY: ci
-ci: verify lint build unit-tests #cover
+ci: verify check-license lint build unit-tests #cover
 
 .PHONY: qa
 qa:
