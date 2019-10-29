@@ -3,15 +3,16 @@ package auto_backup
 import (
 	"fmt"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	core "k8s.io/api/core/v1"
-	store "kmodules.xyz/objectstore-api/api/v1"
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/util"
 	"stash.appscode.dev/stash/test/e2e/framework"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	core "k8s.io/api/core/v1"
+	store "kmodules.xyz/objectstore-api/api/v1"
 )
 
 var _ = Describe("Auto-Backup", func() {

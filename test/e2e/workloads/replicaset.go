@@ -53,7 +53,7 @@ var _ = Describe("ReplicaSet", func() {
 
 		deployRSWithMultipleReplica = func(name string) *apps.ReplicaSet {
 			// Create PVC for ReplicaSet
-			pvc := f.CreateNewPVC(fmt.Sprintf(name))
+			pvc := f.CreateNewPVC(name)
 			// Generate ReplicaSet definition
 			rs := f.ReplicaSet(pvc.Name)
 			rs.Spec.Replicas = types.Int32P(2) // two replicas

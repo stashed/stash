@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"stash.appscode.dev/stash/apis"
+	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/util"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
@@ -11,10 +12,10 @@ import (
 	"github.com/appscode/go/sets"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	store "kmodules.xyz/objectstore-api/api/v1"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 )
 
 func (f *Invocation) CreateNewPVC(name string) *core.PersistentVolumeClaim {
@@ -177,22 +178,22 @@ func GetTargetRef(name string, kind string) v1beta1.TargetRef {
 	switch kind {
 	case apis.KindDeployment:
 		targetRef.Kind = apis.KindDeployment
-		targetRef.APIVersion = "apps/v1"
+		targetRef.APIVersion = apps.SchemeGroupVersion.String()
 	case apis.KindDaemonSet:
 		targetRef.Kind = apis.KindDaemonSet
-		targetRef.APIVersion = "apps/v1"
+		targetRef.APIVersion = apps.SchemeGroupVersion.String()
 	case apis.KindStatefulSet:
 		targetRef.Kind = apis.KindStatefulSet
-		targetRef.APIVersion = "apps/v1"
+		targetRef.APIVersion = apps.SchemeGroupVersion.String()
 	case apis.KindReplicationController:
 		targetRef.Kind = apis.KindReplicationController
-		targetRef.APIVersion = "v1"
+		targetRef.APIVersion = core.SchemeGroupVersion.String()
 	case apis.KindReplicaSet:
 		targetRef.Kind = apis.KindReplicaSet
-		targetRef.APIVersion = "apps/v1"
+		targetRef.APIVersion = apps.SchemeGroupVersion.String()
 	case apis.KindPersistentVolumeClaim:
 		targetRef.Kind = apis.KindPersistentVolumeClaim
-		targetRef.APIVersion = "v1"
+		targetRef.APIVersion = core.SchemeGroupVersion.String()
 	}
 	return targetRef
 }
