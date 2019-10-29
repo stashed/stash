@@ -213,9 +213,23 @@ func (f Invocation) CheckRepositoryAndBackupConfiguration(workloadMeta metav1.Ob
 	// the patter: <lower case of the workload kind>-<workload name>.
 	// we will form the meta name and namespace for farther process.
 	objMeta := metav1.ObjectMeta{
-		Name:      fmt.Sprintf("deployment-%s", workloadMeta.Name),
 		Namespace: f.Namespace(),
 	}
+	switch kind {
+	case apis.KindDeployment:
+		objMeta.Name = fmt.Sprintf("deployment-%s", workloadMeta.Name)
+	case apis.KindDaemonSet:
+		objMeta.Name = fmt.Sprintf("daemonset-%s", workloadMeta.Name)
+	case apis.KindStatefulSet:
+		objMeta.Name = fmt.Sprintf("statefulset-%s", workloadMeta.Name)
+	case apis.KindReplicationController:
+		objMeta.Name = fmt.Sprintf("replicationcontroller-%s", workloadMeta.Name)
+	case apis.KindReplicaSet:
+		objMeta.Name = fmt.Sprintf("replicaset-%s", workloadMeta.Name)
+	case apis.KindPersistentVolumeClaim:
+		objMeta.Name = fmt.Sprintf("persistentvolumeclaim-%s", workloadMeta.Name)
+	}
+
 	By("Waiting for Repository")
 	f.EventuallyRepositoryCreated(objMeta).Should(BeTrue())
 
