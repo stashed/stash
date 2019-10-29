@@ -216,7 +216,7 @@ func (f *Invocation) SetupLocalRepository() (*api.Repository, error) {
 
 	// We are going to use an PVC as backend
 	By("Creating Backend PVC")
-	backendPVC := f.PersistentVolumeClaim()
+	backendPVC := f.PersistentVolumeClaim(rand.WithUniqSuffix("pvc"))
 	backendPVC, err = f.CreatePersistentVolumeClaim(backendPVC)
 	Expect(err).NotTo(HaveOccurred())
 	f.AppendToCleanupList(backendPVC)

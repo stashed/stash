@@ -3,16 +3,15 @@ package workloads
 import (
 	"fmt"
 
-	"stash.appscode.dev/stash/apis"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
-	"stash.appscode.dev/stash/pkg/util"
+
+	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/test/e2e/framework"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 
-	"github.com/appscode/go/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	core "k8s.io/api/core/v1"
 )
 
 var _ = Describe("ReplicationController", func() {
@@ -28,59 +27,12 @@ var _ = Describe("ReplicationController", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	var (
-		deployRC = func(name string) *core.ReplicationController {
-			// Create PVC for ReplicationController
-			pvc := f.CreateNewPVC(name)
-			// Generate ReplicationController definition
-			rc := f.ReplicationController(pvc.Name)
-			rc.Name = name
-
-			By("Deploying ReplicationController: " + rc.Name)
-			createdRC, err := f.CreateReplicationController(rc)
-			Expect(err).NotTo(HaveOccurred())
-			f.AppendToCleanupList(createdRC)
-
-			By("Waiting for ReplicationController to be ready")
-			err = util.WaitUntilRCReady(f.KubeClient, createdRC.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-			// check that we can execute command to the pod.
-			// this is necessary because we will exec into the pods and create sample data
-			f.EventuallyPodAccessible(createdRC.ObjectMeta).Should(BeTrue())
-
-			return createdRC
-		}
-
-		deployRCWithMultipleReplica = func(name string) *core.ReplicationController {
-			// Create PVC for ReplicationController
-			pvc := f.CreateNewPVC(name)
-			// Generate ReplicationController definition
-			rc := f.ReplicationController(pvc.Name)
-			rc.Spec.Replicas = types.Int32P(2) // two replicas
-			rc.Name = name
-
-			By("Deploying ReplicationController: " + rc.Name)
-			createdRC, err := f.CreateReplicationController(rc)
-			Expect(err).NotTo(HaveOccurred())
-			f.AppendToCleanupList(createdRC)
-
-			By("Waiting for ReplicationController to be ready")
-			err = util.WaitUntilRCReady(f.KubeClient, createdRC.ObjectMeta)
-			Expect(err).NotTo(HaveOccurred())
-			// check that we can execute command to the pod.
-			// this is necessary because we will exec into the pods and create sample data
-			f.EventuallyPodAccessible(createdRC.ObjectMeta).Should(BeTrue())
-
-			return createdRC
-		}
-	)
-
 	Context("ReplicationController", func() {
 
 		Context("Restore in same ReplicationController", func() {
 			It("should Backup & Restore in the source ReplicationController", func() {
 				// Deploy a ReplicationController
-				rc := deployRC(fmt.Sprintf("source-rc-%s", f.App()))
+				rc := f.DeployReplicationController(fmt.Sprintf("source-rc1-%s", f.App()), int32(1))
 
 				// Generate Sample Data
 				sampleData := f.GenerateSampleData(rc.ObjectMeta, apis.KindReplicationController)
@@ -90,20 +42,36 @@ var _ = Describe("ReplicationController", func() {
 				Expect(err).NotTo(HaveOccurred())
 				f.AppendToCleanupList(repo)
 
-				// Setup Backup
-				backupConfig := f.SetupWorkloadBackup(rc.ObjectMeta, repo, apis.KindReplicationController)
+				// Setup workload Backup
+				backupConfig, err := f.SetupWorkloadBackup(rc.ObjectMeta, repo, apis.KindReplicationController)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup the Sample Data
-				f.TakeInstantBackup(backupConfig.ObjectMeta)
+				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that BackupSession has succeeded")
+				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
 				// Simulate disaster scenario. Delete the data from source PVC
 				By("Deleting sample data from source ReplicationController")
 				err = f.CleanupSampleDataFromWorkload(rc.ObjectMeta, apis.KindReplicationController)
 				Expect(err).NotTo(HaveOccurred())
 
-				// Restore the backup data
+				// Restore the backed up data
 				By("Restoring the backed up data in the original ReplicationController")
-				restoredData := f.RestoreData(rc.ObjectMeta, repo, apis.KindReplicationController)
+				restoreSession, err := f.SetupRestoreProcess(rc.ObjectMeta, repo, apis.KindReplicationController)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that RestoreSession succeeded")
+				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(restoreSession.Name, metav1.GetOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+
+				// Get restored data
+				restoredData := f.RestoredData(rc.ObjectMeta, apis.KindReplicationController)
 
 				// Verify that restored data is same as the original data
 				By("Verifying restored data is same as the original data")
@@ -114,7 +82,7 @@ var _ = Describe("ReplicationController", func() {
 		Context("Restore in different ReplicationController", func() {
 			It("should restore backed up data into different ReplicationController", func() {
 				// Deploy a ReplicationController
-				rc := deployRC(fmt.Sprintf("source-rc-%s", f.App()))
+				rc := f.DeployReplicationController(fmt.Sprintf("source-rc2-%s", f.App()), int32(1))
 
 				// Generate Sample Data
 				sampleData := f.GenerateSampleData(rc.ObjectMeta, apis.KindReplicationController)
@@ -124,18 +92,34 @@ var _ = Describe("ReplicationController", func() {
 				Expect(err).NotTo(HaveOccurred())
 				f.AppendToCleanupList(repo)
 
-				// Setup Backup
-				backupConfig := f.SetupWorkloadBackup(rc.ObjectMeta, repo, apis.KindReplicationController)
+				// Setup workload Backup
+				backupConfig, err := f.SetupWorkloadBackup(rc.ObjectMeta, repo, apis.KindReplicationController)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup the Sample Data
-				f.TakeInstantBackup(backupConfig.ObjectMeta)
+				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that BackupSession has succeeded")
+				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
 				// Deploy restored ReplicationController
-				restoredRC := deployRC(fmt.Sprintf("restored-rc-%s", f.App()))
+				restoredRC := f.DeployReplicationController(fmt.Sprintf("restored-rc-%s", f.App()), int32(1))
 
-				// Restore the backup data
-				By("Restoring the backed up data in the restored ReplicationController")
-				restoredData := f.RestoreData(restoredRC.ObjectMeta, repo, apis.KindReplicationController)
+				// Restore the backed up data
+				By("Restoring the backed up data in different ReplicationController")
+				restoreSession, err := f.SetupRestoreProcess(restoredRC.ObjectMeta, repo, apis.KindReplicationController)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that RestoreSession succeeded")
+				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(restoreSession.Name, metav1.GetOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+
+				// Get restored data
+				restoredData := f.RestoredData(restoredRC.ObjectMeta, apis.KindReplicationController)
 
 				// Verify that restored data is same as the original data
 				By("Verifying restored data is same as the original data")
@@ -146,7 +130,7 @@ var _ = Describe("ReplicationController", func() {
 		Context("Leader election for backup and restore ReplicationController", func() {
 			It("Should leader elect and backup and restore ReplicationController", func() {
 				// Deploy a ReplicationController
-				rc := deployRCWithMultipleReplica(fmt.Sprintf("source-rc-%s", f.App()))
+				rc := f.DeployReplicationController(fmt.Sprintf("source-rc3-%s", f.App()), int32(2))
 
 				//  Generate Sample Data
 				sampleData := f.GenerateSampleData(rc.ObjectMeta, apis.KindReplicationController)
@@ -156,23 +140,39 @@ var _ = Describe("ReplicationController", func() {
 				Expect(err).NotTo(HaveOccurred())
 				f.AppendToCleanupList(repo)
 
-				// Setup Backup
-				backupConfig := f.SetupWorkloadBackup(rc.ObjectMeta, repo, apis.KindReplicationController)
+				// Setup workload Backup
+				backupConfig, err := f.SetupWorkloadBackup(rc.ObjectMeta, repo, apis.KindReplicationController)
+				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for leader election")
 				f.CheckLeaderElection(rc.ObjectMeta, apis.KindReplicationController, v1beta1.ResourceKindBackupConfiguration)
 
 				// Take an Instant Backup the Sample Data
-				f.TakeInstantBackup(backupConfig.ObjectMeta)
+				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that BackupSession has succeeded")
+				completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
 				// Simulate disaster scenario. Delete the data from source PVC
 				By("Deleting sample data from source ReplicationController")
 				err = f.CleanupSampleDataFromWorkload(rc.ObjectMeta, apis.KindReplicationController)
 				Expect(err).NotTo(HaveOccurred())
 
-				// Restore the backup data
+				// Restore the backed up data
 				By("Restoring the backed up data in the original ReplicationController")
-				restoredData := f.RestoreData(rc.ObjectMeta, repo, apis.KindReplicationController)
+				restoreSession, err := f.SetupRestoreProcess(rc.ObjectMeta, repo, apis.KindReplicationController)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("Verifying that RestoreSession succeeded")
+				completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(restoreSession.Name, metav1.GetOptions{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+
+				// Get restored data
+				restoredData := f.RestoredData(rc.ObjectMeta, apis.KindReplicationController)
 
 				// Verify that restored data is same as the original data
 				By("Verifying restored data is same as the original data")

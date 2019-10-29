@@ -69,7 +69,7 @@ var _ = XDescribe("Deployment", func() {
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
 		secondRestic.Spec.Backend.StorageSecretName = cred.Name
-		pvc := f.PersistentVolumeClaim()
+		pvc := f.PersistentVolumeClaim(rand.WithUniqSuffix("pvc"))
 		_, err := f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
 		deployment = f.Deployment(pvc.Name)

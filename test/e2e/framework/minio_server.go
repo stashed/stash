@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/appscode/go/types"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gomodules.xyz/cert"
 	apps "k8s.io/api/apps/v1"
@@ -326,4 +327,19 @@ func (f *Framework) MinioServerSANs(ips []net.IP) cert.AltNames {
 func (f *Framework) MinioServiceAddres() string {
 	return fmt.Sprintf(MinioNodePortServic+"%s"+".%s.svc", f.namespace, f.namespace)
 
+}
+
+func (f Invocation) CreateBackendSecretForMinio() *core.Secret {
+	// Create Storage Secret
+	cred := f.SecretForMinioBackend(true)
+
+	if missing, _ := BeZero().Match(cred); missing {
+		Skip("Missing Minio credential")
+	}
+	By(fmt.Sprintf("Creating Storage Secret for Minio: %s/%s", cred.Namespace, cred.Name))
+	createdCred, err := f.CreateSecret(cred)
+	Expect(err).NotTo(HaveOccurred())
+	f.AppendToCleanupList(&cred)
+
+	return createdCred
 }

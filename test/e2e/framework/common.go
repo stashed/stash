@@ -15,21 +15,7 @@ import (
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	store "kmodules.xyz/objectstore-api/api/v1"
 )
-
-func (f *Invocation) CreateNewPVC(name string) *core.PersistentVolumeClaim {
-	// Generate PVC definition
-	pvc := f.PersistentVolumeClaim()
-	pvc.Name = name
-
-	By(fmt.Sprintf("Creating PVC: %s/%s", pvc.Namespace, pvc.Name))
-	createdPVC, err := f.CreatePersistentVolumeClaim(pvc)
-	Expect(err).NotTo(HaveOccurred())
-	f.AppendToCleanupList(createdPVC)
-
-	return createdPVC
-}
 
 func (f *Framework) GenerateSampleData(objMeta metav1.ObjectMeta, kind string) sets.String {
 	By("Generating sample data inside workload pods")
@@ -44,7 +30,7 @@ func (f *Framework) GenerateSampleData(objMeta metav1.ObjectMeta, kind string) s
 	return sampleData
 }
 
-func (f *Invocation) SetupWorkloadBackup(objMeta metav1.ObjectMeta, repo *api.Repository, kind string) *v1beta1.BackupConfiguration {
+func (f *Invocation) SetupWorkloadBackup(objMeta metav1.ObjectMeta, repo *api.Repository, kind string) (*v1beta1.BackupConfiguration, error) {
 	// Generate desired BackupConfiguration definition
 	backupConfig := f.GetBackupConfigurationForWorkload(repo.Name, GetTargetRef(objMeta.Name, kind))
 
@@ -79,46 +65,34 @@ func (f *Invocation) SetupWorkloadBackup(objMeta metav1.ObjectMeta, repo *api.Re
 		By("Waiting for ReplicationController to be ready with sidecar")
 		err = f.WaitUntilRCReadyWithSidecar(objMeta)
 	}
-	Expect(err).NotTo(HaveOccurred())
-
-	return createdBC
+	return createdBC, err
 }
 
-func (f *Invocation) TakeInstantBackup(objMeta metav1.ObjectMeta) {
+func (f *Invocation) TakeInstantBackup(objMeta metav1.ObjectMeta) (*v1beta1.BackupSession, error) {
 	// Trigger Instant Backup
 	By("Triggering Instant Backup")
 	backupSession, err := f.TriggerInstantBackup(objMeta)
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		return backupSession, err
+	}
 	f.AppendToCleanupList(backupSession)
 
 	By("Waiting for backup process to complete")
 	f.EventuallyBackupProcessCompleted(backupSession.ObjectMeta).Should(BeTrue())
 
-	By("Verifying that BackupSession has succeeded")
-	completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
-	Expect(err).NotTo(HaveOccurred())
-	Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
-
+	return backupSession, nil
 }
 
-func (f *Invocation) InstantBackupFailed(objMeta metav1.ObjectMeta) {
-	// Trigger Instant Backup
-	By("Triggering Instant Backup")
-	backupSession, err := f.TriggerInstantBackup(objMeta)
+func (f *Invocation) RestoredData(objMeta metav1.ObjectMeta, kind string) sets.String {
+	By("Reading restored data")
+	restoredData, err := f.ReadSampleDataFromFromWorkload(objMeta, kind)
 	Expect(err).NotTo(HaveOccurred())
-	f.AppendToCleanupList(backupSession)
+	Expect(restoredData).NotTo(BeEmpty())
 
-	By("Waiting for backup process to complete")
-	f.EventuallyBackupProcessCompleted(backupSession.ObjectMeta).Should(BeTrue())
-
-	By("Verifying that BackupSession has failed")
-	completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
-	Expect(err).NotTo(HaveOccurred())
-	Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
-
+	return restoredData
 }
 
-func (f *Invocation) RestoreData(objMeta metav1.ObjectMeta, repo *api.Repository, kind string) sets.String {
+func (f *Invocation) SetupRestoreProcess(objMeta metav1.ObjectMeta, repo *api.Repository, kind string) (*v1beta1.RestoreSession, error) {
 	By("Creating RestoreSession")
 	restoreSession := f.GetRestoreSessionForWorkload(repo.Name, GetTargetRef(objMeta.Name, kind))
 	err := f.CreateRestoreSession(restoreSession)
@@ -129,46 +103,30 @@ func (f *Invocation) RestoreData(objMeta metav1.ObjectMeta, repo *api.Repository
 	switch kind {
 	case apis.KindDeployment:
 		f.EventuallyDeployment(objMeta).Should(HaveInitContainer(util.StashInitContainer))
+		By("Waiting for workload to be ready with init-container")
+		err = f.WaitUntilDeploymentReadyWithInitContainer(objMeta)
 	case apis.KindDaemonSet:
 		f.EventuallyDaemonSet(objMeta).Should(HaveInitContainer(util.StashInitContainer))
+		By("Waiting for workload to be ready with init-container")
+		err = f.WaitUntilDaemonSetReadyWithInitContainer(objMeta)
 	case apis.KindStatefulSet:
 		f.EventuallyStatefulSet(objMeta).Should(HaveInitContainer(util.StashInitContainer))
+		By("Waiting for workload to be ready with init-container")
+		err = f.WaitUntilStatefulSetWithInitContainer(objMeta)
 	case apis.KindReplicaSet:
 		f.EventuallyReplicaSet(objMeta).Should(HaveInitContainer(util.StashInitContainer))
+		By("Waiting for workload to be ready with init-container")
+		err = f.WaitUntilRSReadyWithInitContainer(objMeta)
 	case apis.KindReplicationController:
 		f.EventuallyReplicationController(objMeta).Should(HaveInitContainer(util.StashInitContainer))
+		By("Waiting for workload to be ready with init-container")
+		err = f.WaitUntilRCReadyWithInitContainer(objMeta)
 	}
-
+	f.EventuallyPodAccessible(objMeta).Should(BeTrue())
 	By("Waiting for restore process to complete")
 	f.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta).Should(BeTrue())
 
-	By("Verifying that RestoreSession succeeded")
-	completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(restoreSession.Name, metav1.GetOptions{})
-	Expect(err).NotTo(HaveOccurred())
-	Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
-
-	By("Waiting for workload to be ready with init-container")
-	switch kind {
-	case apis.KindDeployment:
-		err = f.WaitUntilDeploymentReadyWithInitContainer(objMeta)
-	case apis.KindDaemonSet:
-		err = f.WaitUntilDaemonSetReadyWithInitContainer(objMeta)
-	case apis.KindStatefulSet:
-		err = f.WaitUntilStatefulSetWithInitContainer(objMeta)
-	case apis.KindReplicaSet:
-		err = f.WaitUntilRSReadyWithInitContainer(objMeta)
-	case apis.KindReplicationController:
-		err = f.WaitUntilRCReadyWithInitContainer(objMeta)
-	}
-	Expect(err).NotTo(HaveOccurred())
-	f.EventuallyPodAccessible(objMeta).Should(BeTrue())
-
-	By("Reading restored data")
-	restoredData, err := f.ReadSampleDataFromFromWorkload(objMeta, kind)
-	Expect(err).NotTo(HaveOccurred())
-	Expect(restoredData).NotTo(BeEmpty())
-
-	return restoredData
+	return restoreSession, err
 }
 
 func GetTargetRef(name string, kind string) v1beta1.TargetRef {
@@ -198,7 +156,7 @@ func GetTargetRef(name string, kind string) v1beta1.TargetRef {
 	return targetRef
 }
 
-func (f Invocation) AddAnnotationsToTarget(annotations map[string]string, obj interface{}) {
+func (f Invocation) AddAutoBackupAnnotations(annotations map[string]string, obj interface{}) {
 	By("Adding auto-backup specific annotations to the Workload")
 	err := f.AddAutoBackupAnnotationsToTarget(annotations, obj)
 	Expect(err).NotTo(HaveOccurred())
@@ -207,7 +165,7 @@ func (f Invocation) AddAnnotationsToTarget(annotations map[string]string, obj in
 	f.EventuallyAutoBackupAnnotationsFound(annotations, obj).Should(BeTrue())
 }
 
-func (f Invocation) CheckRepositoryAndBackupConfiguration(workloadMeta metav1.ObjectMeta, kind string) *v1beta1.BackupConfiguration {
+func (f Invocation) VerifyAutoBackupConfigured(workloadMeta metav1.ObjectMeta, kind string) *v1beta1.BackupConfiguration {
 	// BackupBlueprint create BackupConfiguration and Repository such that
 	// the name of the BackupConfiguration and Repository will follow
 	// the patter: <lower case of the workload kind>-<workload name>.
@@ -267,49 +225,4 @@ func (f Invocation) CheckRepositoryAndBackupConfiguration(workloadMeta metav1.Ob
 	Expect(err).NotTo(HaveOccurred())
 
 	return backupConfig
-}
-
-func (f Invocation) CreateBackendSecretForMinio() *core.Secret {
-	// Create Storage Secret
-	cred := f.SecretForMinioBackend(true)
-
-	if missing, _ := BeZero().Match(cred); missing {
-		Skip("Missing Minio credential")
-	}
-	By(fmt.Sprintf("Creating Storage Secret for Minio: %s/%s", cred.Namespace, cred.Name))
-	createdCred, err := f.CreateSecret(cred)
-	Expect(err).NotTo(HaveOccurred())
-	f.AppendToCleanupList(&cred)
-
-	return createdCred
-}
-
-func (f Invocation) CreateNewBackupBlueprint(name string) *v1beta1.BackupBlueprint {
-	// Create Secret for BackupBlueprint
-	secret := f.CreateBackendSecretForMinio()
-
-	// Generate BackupBlueprint definition
-	bb := f.BackupBlueprint(f.GetRepositoryInfo(secret.Name))
-	bb.Name = name
-
-	By(fmt.Sprintf("Creating BackupBlueprint: %s", bb.Name))
-	createdBB, err := f.CreateBackupBlueprint(bb)
-	Expect(err).NotTo(HaveOccurred())
-	f.AppendToCleanupList(createdBB)
-	return createdBB
-}
-
-func (f Invocation) GetRepositoryInfo(secretName string) api.RepositorySpec {
-	repoInfo := api.RepositorySpec{
-		Backend: store.Backend{
-			S3: &store.S3Spec{
-				Endpoint: f.MinioServiceAddres(),
-				Bucket:   "minio-bucket",
-				Prefix:   fmt.Sprintf("stash-e2e/%s/%s", f.Namespace(), f.App()),
-			},
-			StorageSecretName: secretName,
-		},
-		WipeOut: false,
-	}
-	return repoInfo
 }

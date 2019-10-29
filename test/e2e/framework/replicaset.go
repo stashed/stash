@@ -5,12 +5,14 @@ import (
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kutil "kmodules.xyz/client-go"
+	apps_util "kmodules.xyz/client-go/apps/v1"
 )
 
 func (fi *Invocation) ReplicaSet(pvcName string) apps.ReplicaSet {
@@ -108,4 +110,27 @@ func (f *Invocation) WaitUntilRSReadyWithInitContainer(meta metav1.ObjectMeta) e
 		}
 		return false, nil
 	})
+}
+
+func (f *Invocation) DeployReplicaSet(name string, replica int32) *apps.ReplicaSet {
+	// Create PVC for ReplicaSet
+	pvc := f.CreateNewPVC(name)
+	// Generate ReplicaSet definition
+	rs := f.ReplicaSet(pvc.Name)
+	rs.Spec.Replicas = &replica
+	rs.Name = name
+
+	By("Deploying ReplicaSet: " + rs.Name)
+	createdRS, err := f.CreateReplicaSet(rs)
+	Expect(err).NotTo(HaveOccurred())
+	f.AppendToCleanupList(createdRS)
+
+	By("Waiting for ReplicaSet to be ready")
+	err = apps_util.WaitUntilReplicaSetReady(f.KubeClient, createdRS.ObjectMeta)
+	Expect(err).NotTo(HaveOccurred())
+	// check that we can execute command to the pod.
+	// this is necessary because we will exec into the pods and create sample data
+	f.EventuallyPodAccessible(createdRS.ObjectMeta).Should(BeTrue())
+
+	return createdRS
 }

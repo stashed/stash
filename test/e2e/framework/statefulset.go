@@ -5,6 +5,7 @@ import (
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
@@ -13,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kutil "kmodules.xyz/client-go"
+	apps_util "kmodules.xyz/client-go/apps/v1"
 )
 
 func (fi *Invocation) StatefulSet(pvcName string) apps.StatefulSet {
@@ -177,4 +179,25 @@ func (f *Invocation) WaitUntilStatefulSetWithInitContainer(meta metav1.ObjectMet
 		}
 		return false, nil
 	})
+}
+
+func (f *Invocation) DeployStatefulSet(name string, replica int32) *apps.StatefulSet {
+	// Generate StatefulSet definition
+	ss := f.StatefulSetForV1beta1API()
+	ss.Spec.Replicas = &replica
+	ss.Name = name
+
+	By("Deploying StatefulSet: " + ss.Name)
+	createdss, err := f.CreateStatefulSet(ss)
+	Expect(err).NotTo(HaveOccurred())
+	f.AppendToCleanupList(createdss)
+
+	By("Waiting for StatefulSet to be ready")
+	err = apps_util.WaitUntilStatefulSetReady(f.KubeClient, createdss.ObjectMeta)
+	Expect(err).NotTo(HaveOccurred())
+	// check that we can execute command to the pod.
+	// this is necessary because we will exec into the pods and create sample data
+	f.EventuallyPodAccessible(createdss.ObjectMeta).Should(BeTrue())
+
+	return createdss
 }

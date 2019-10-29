@@ -6,7 +6,10 @@ import (
 	"strings"
 	"time"
 
+	v1 "kmodules.xyz/client-go/core/v1"
+
 	"github.com/appscode/go/crypto/rand"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -183,4 +186,23 @@ func (f *Framework) EventuallyPodAccessible(meta metav1.ObjectMeta) GomegaAsyncA
 		time.Minute*2,
 		time.Second*2,
 	)
+}
+
+func (f *Invocation) DeployPod(pvcName string) *core.Pod {
+	// Generate Pod definition
+	pod := f.Pod(pvcName)
+
+	By(fmt.Sprintf("Deploying Pod: %s/%s", pod.Namespace, pod.Name))
+	createdPod, err := f.CreatePod(pod)
+	Expect(err).NotTo(HaveOccurred())
+	f.AppendToCleanupList(createdPod)
+
+	By("Waiting for Pod to be ready")
+	err = v1.WaitUntilPodRunning(f.KubeClient, createdPod.ObjectMeta)
+	Expect(err).NotTo(HaveOccurred())
+	// check that we can execute command to the pod.
+	// this is necessary because we will exec into the pods and create sample data
+	f.EventuallyPodAccessible(createdPod.ObjectMeta).Should(BeTrue())
+
+	return createdPod
 }

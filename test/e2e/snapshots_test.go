@@ -5,6 +5,8 @@ import (
 	"os/exec"
 	"strconv"
 
+	"github.com/appscode/go/crypto/rand"
+
 	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/pkg/util"
@@ -102,7 +104,7 @@ var _ = XDescribe("Snapshots", func() {
 			Skip("Missing repository credential")
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
-		pvc := f.PersistentVolumeClaim()
+		pvc := f.PersistentVolumeClaim(rand.WithUniqSuffix("pvc"))
 		_, err := f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
 		daemon = f.DaemonSet()
