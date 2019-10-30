@@ -38,8 +38,9 @@ github.com/apache/thrift v0.12.0/go.mod h1:cp2SuWMxlEZw2r+iP2GNCdIi4C1qmUzdZFSVb
 github.com/appscode/docker-registry-client v0.0.0-20180426150142-1bb02bb202b0/go.mod h1:W9bsWfSbgJXUXzBZ+tSBV2g+zzT7ANPHQFsSXRHYKsA=
 github.com/appscode/go v0.0.0-20190808133642-1d4ef1f1c1e0/go.mod h1:iy07dV61Z7QQdCKJCIvUoDL21u6AIceRhZzyleh2ymc=
 github.com/appscode/go v0.0.0-20191006073906-e3d193d493fc/go.mod h1:hUW7Fq0KY2/ntGnYAzemyUpIhLL6bXrTljN6SRY/+Lc=
-github.com/appscode/go v0.0.0-20191016085057-e186b6c94a3b h1:UskbETXW8u0DRCPU1pyBIgA55BFUnjuYjmt3qOBMdAY=
 github.com/appscode/go v0.0.0-20191016085057-e186b6c94a3b/go.mod h1:hUW7Fq0KY2/ntGnYAzemyUpIhLL6bXrTljN6SRY/+Lc=
+github.com/appscode/go v0.0.0-20191025021232-311ac347b3ef h1:nTbtvdVAVwFgKANCR4KU36Jo1V9Xs/Z2GMEAlpOVG1Y=
+github.com/appscode/go v0.0.0-20191025021232-311ac347b3ef/go.mod h1:hUW7Fq0KY2/ntGnYAzemyUpIhLL6bXrTljN6SRY/+Lc=
 github.com/appscode/osm v0.12.0 h1:7Rde+KnOp3EvHscXHS6rfdqiq6IO/2HZ2pKeE4f/sRo=
 github.com/appscode/osm v0.12.0/go.mod h1:+ZXU2HilSSow2o0gsOolJfOTkhqQ2FcGROOum4wEh4w=
 github.com/armon/circbuf v0.0.0-20190214190532-5111143e8da2 h1:7Ip0wMmLHLRJdrloDxZfhMm0xrLXZS8+COSu2bXmEQs=
@@ -410,8 +411,8 @@ golang.org/x/tools v0.0.0-20190114222345-bf090417da8b/go.mod h1:n7NCudcB/nEzxVGm
 golang.org/x/tools v0.0.0-20190226205152-f727befe758c/go.mod h1:9Yl7xja0Znq3iFh3HoIrodX9oNMXvdceNzlUR8zjMvY=
 golang.org/x/tools v0.0.0-20190312170243-e65039ee4138/go.mod h1:LCzVGOaR6xXOjkQ3onu1FJEFr0SW1gC7cKk1uF8kGRs=
 golang.org/x/tools v0.0.0-20190328211700-ab21143f2384/go.mod h1:LCzVGOaR6xXOjkQ3onu1FJEFr0SW1gC7cKk1uF8kGRs=
-gomodules.xyz/cert v1.0.0 h1:9vcN2V4g9Ol8LGqHd0FWSO0N8SjIbFLombfVk8Js22o=
-gomodules.xyz/cert v1.0.0/go.mod h1:MG5H3SxZdkG8nng6QuQhXMTs+qt/qDLNXgUtbme82hQ=
+gomodules.xyz/cert v1.0.1 h1:rowTfCHIKfcItwYurd1LYEmeMg9Svt4n5HWaoNS2HkE=
+gomodules.xyz/cert v1.0.1/go.mod h1:DBLsvMRZSqek9FyAX/wVtUWkO6muPoWIvSlqGtrjGWg=
 gomodules.xyz/envsubst v0.1.0 h1:xvS0A4NeRwa8y3qW/+jgc13nT3rW1nlcuePDJujHzBM=
 gomodules.xyz/envsubst v0.1.0/go.mod h1:2o5f7bd13XIITbE2ZKieE05YkqB2KDoZkqKccGebduA=
 gomodules.xyz/jsonpatch/v2 v2.0.0 h1:OyHbl+7IOECpPKfVK42oFr6N7+Y2dR+Jsb/IiDV3hOo=

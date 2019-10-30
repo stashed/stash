@@ -16,9 +16,12 @@ limitations under the License.
 package framework
 
 import (
+	"fmt"
+
 	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/appscode/go/crypto/rand"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
@@ -27,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kutil "kmodules.xyz/client-go"
+	apps_util "kmodules.xyz/client-go/apps/v1"
 )
 
 func (fi *Invocation) DaemonSet() apps.DaemonSet {
@@ -160,4 +164,25 @@ func (f *Invocation) WaitUntilDaemonSetReadyWithInitContainer(meta metav1.Object
 		}
 		return false, nil
 	})
+}
+
+func (f *Invocation) DeployDaemonSet(name string) (*apps.DaemonSet, error) {
+	// Generate DaemonSet definition
+	dmn := f.DaemonSet()
+	dmn.Name = name
+
+	By(fmt.Sprintf("Deploying DaemonSet: %s/%s", dmn.Namespace, dmn.Name))
+	createdDmn, err := f.CreateDaemonSet(dmn)
+	if err != nil {
+		return createdDmn, err
+	}
+	f.AppendToCleanupList(createdDmn)
+
+	By("Waiting for DaemonSet to be ready")
+	err = apps_util.WaitUntilDaemonSetReady(f.KubeClient, createdDmn.ObjectMeta)
+	// check that we can execute command to the pod.
+	// this is necessary because we will exec into the pods and create sample data
+	f.EventuallyPodAccessible(createdDmn.ObjectMeta).Should(BeTrue())
+
+	return createdDmn, err
 }

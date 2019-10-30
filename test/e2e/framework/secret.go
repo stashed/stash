@@ -204,9 +204,9 @@ func (fi *Invocation) SecretForRegistry(dockerCfgJson []byte) core.Secret {
 
 // TODO: Add more methods for Swift, Backblaze B2, Rest server backend.
 
-func (f *Framework) CreateSecret(obj core.Secret) error {
-	_, err := f.KubeClient.CoreV1().Secrets(obj.Namespace).Create(&obj)
-	return err
+func (f *Framework) CreateSecret(obj core.Secret) (*core.Secret, error) {
+	return f.KubeClient.CoreV1().Secrets(obj.Namespace).Create(&obj)
+
 }
 
 func (f *Framework) DeleteSecret(meta metav1.ObjectMeta) error {

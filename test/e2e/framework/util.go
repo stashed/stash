@@ -37,10 +37,14 @@ import (
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
+	"kmodules.xyz/client-go/dynamic"
+	"kmodules.xyz/client-go/meta"
 	appCatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	ocapps "kmodules.xyz/openshift/apis/apps/v1"
 )
@@ -50,16 +54,20 @@ var (
 )
 
 const (
-	TestSoucreDemoDataPath = "/data/stash-test/demo-data"
-	TestSourceDataDir1     = "/source/data/dir-1"
-	TestSourceDataDir2     = "/source/data/dir-2"
-	KindRestic             = "Restic"
-	KindRepository         = "Repository"
-	KindRecovery           = "Recovery"
-	PullInterval           = time.Second * 2
-	WaitTimeOut            = time.Minute * 3
-	TaskPVCBackup          = "pvc-backup"
-	TaskPVCRestore         = "pvc-restore"
+	TestSoucreDemoDataPath    = "/data/stash-test/demo-data"
+	TestSourceDataDir1        = "/source/data/dir-1"
+	TestSourceDataDir2        = "/source/data/dir-2"
+	KindRestic                = "Restic"
+	KindRepository            = "Repository"
+	KindRecovery              = "Recovery"
+	PullInterval              = time.Second * 2
+	WaitTimeOut               = time.Minute * 3
+	TaskPVCBackup             = "pvc-backup"
+	TaskPVCRestore            = "pvc-restore"
+	TestSourceDataTargetPath  = "/source/data"
+	TestSourceDataVolumeMount = "source-data:/source/data"
+	WrongBackupBlueprintName  = "backup-blueprint"
+	WrongTargetPath           = "/source/data-1"
 )
 
 func (f *Framework) EventualEvent(meta metav1.ObjectMeta) GomegaAsyncAssertion {
@@ -77,6 +85,20 @@ func (f *Framework) EventualEvent(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 }
 
 func (f *Framework) EventualWarning(meta metav1.ObjectMeta, involvedObjectKind string) GomegaAsyncAssertion {
+	return Eventually(func() []core.Event {
+		fieldSelector := fields.SelectorFromSet(fields.Set{
+			"involvedObject.kind":      involvedObjectKind,
+			"involvedObject.name":      meta.Name,
+			"involvedObject.namespace": meta.Namespace,
+			"type":                     core.EventTypeWarning,
+		})
+		events, err := f.KubeClient.CoreV1().Events(f.namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
+		Expect(err).NotTo(HaveOccurred())
+		return events.Items
+	})
+}
+
+func (f *Framework) EventuallyEvent(meta metav1.ObjectMeta, involvedObjectKind string) GomegaAsyncAssertion {
 	return Eventually(func() []core.Event {
 		fieldSelector := fields.SelectorFromSet(fields.Set{
 			"involvedObject.kind":      involvedObjectKind,
@@ -216,7 +238,7 @@ func (f *Framework) ReadSampleDataFromMountedDirectory(meta metav1.ObjectMeta, p
 
 func (f *Framework) ReadSampleDataFromFromWorkload(meta metav1.ObjectMeta, resourceKind string) (sets.String, error) {
 	switch resourceKind {
-	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController, apis.KindPersistentVolumeClaim:
+	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController, apis.KindPod:
 		pod, err := f.GetPod(meta)
 		if err != nil {
 			return nil, err
@@ -641,7 +663,7 @@ func (f *Framework) GetNodeName(meta metav1.ObjectMeta) string {
 
 func (f *Framework) CreateSampleDataInsideWorkload(meta metav1.ObjectMeta, resourceKind string) error {
 	switch resourceKind {
-	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController, apis.KindPersistentVolumeClaim:
+	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController, apis.KindPod:
 		pod, err := f.GetPod(meta)
 		if err != nil {
 			return err
@@ -668,7 +690,7 @@ func (f *Framework) CreateSampleDataInsideWorkload(meta metav1.ObjectMeta, resou
 func (f *Invocation) CleanupSampleDataFromWorkload(meta metav1.ObjectMeta, resourceKind string) error {
 
 	switch resourceKind {
-	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController, apis.KindPersistentVolumeClaim:
+	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController, apis.KindPod:
 		pod, err := f.GetPod(meta)
 		if err != nil {
 			return err
@@ -813,4 +835,48 @@ func getGVRAndObjectMeta(obj interface{}) (schema.GroupVersionResource, metav1.O
 	default:
 		return schema.GroupVersionResource{}, metav1.ObjectMeta{}, fmt.Errorf("failed to get GroupVersionResource. Reason: Unknown resource type")
 	}
+}
+
+func (f *Invocation) AddAnnotations(annotations map[string]string, obj interface{}) error {
+	schm := scheme.Scheme
+	gvr, _, _ := getGVRAndObjectMeta(obj)
+	cur := &unstructured.Unstructured{}
+	err := schm.Convert(obj, cur, nil)
+	if err != nil {
+		return err
+	}
+	mod := cur.DeepCopy()
+	mod.SetAnnotations(annotations)
+	out, _, err := dynamic.PatchObject(f.dmClient, gvr, cur, mod)
+	if err != nil {
+
+		return err
+	}
+	err = schm.Convert(out, obj, nil)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (f *Framework) EventuallyAnnotationsFound(expectedAnnotations map[string]string, obj interface{}) GomegaAsyncAssertion {
+	return Eventually(
+		func() bool {
+			schm := scheme.Scheme
+			cur := &unstructured.Unstructured{}
+			err := schm.Convert(obj, cur, nil)
+			if err != nil {
+				return false
+			}
+			annotations := cur.GetAnnotations()
+			for k, v := range expectedAnnotations {
+				if !(meta.HasKey(annotations, k) && annotations[k] == v) {
+					return false
+				}
+			}
+			return true
+		},
+		time.Minute*2,
+		time.Second*5,
+	)
 }

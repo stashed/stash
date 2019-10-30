@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
-	github.com/appscode/go v0.0.0-20191016085057-e186b6c94a3b
+	github.com/appscode/go v0.0.0-20191025021232-311ac347b3ef
 	github.com/armon/circbuf v0.0.0-20190214190532-5111143e8da2
 	github.com/cenkalti/backoff v2.1.1+incompatible
 	github.com/codeskyblue/go-sh v0.0.0-20190412065543-76bd3d59ff27
@@ -26,7 +26,7 @@ require (
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
 	github.com/stretchr/testify v1.3.0
-	gomodules.xyz/cert v1.0.0
+	gomodules.xyz/cert v1.0.1
 	gomodules.xyz/envsubst v0.1.0
 	gomodules.xyz/stow v0.2.2
 	gopkg.in/ini.v1 v1.41.0

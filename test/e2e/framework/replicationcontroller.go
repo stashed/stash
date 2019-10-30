@@ -20,6 +20,7 @@ import (
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -123,4 +124,32 @@ func (f *Invocation) WaitUntilRCReadyWithInitContainer(meta metav1.ObjectMeta) e
 		}
 		return false, nil
 	})
+}
+
+func (f *Invocation) DeployReplicationController(name string, replica int32) (*core.ReplicationController, error) {
+	// Create PVC for ReplicationController
+	pvc, err := f.CreateNewPVC(name)
+	if err != nil {
+		return &core.ReplicationController{}, err
+	}
+	// Generate ReplicationController definition
+	rc := f.ReplicationController(pvc.Name)
+	rc.Spec.Replicas = &replica
+	rc.Name = name
+
+	By("Deploying ReplicationController: " + rc.Name)
+	createdRC, err := f.CreateReplicationController(rc)
+	if err != nil {
+		return createdRC, err
+	}
+	f.AppendToCleanupList(createdRC)
+
+	By("Waiting for ReplicationController to be ready")
+	err = util.WaitUntilRCReady(f.KubeClient, createdRC.ObjectMeta)
+	Expect(err).NotTo(HaveOccurred())
+	// check that we can execute command to the pod.
+	// this is necessary because we will exec into the pods and create sample data
+	f.EventuallyPodAccessible(createdRC.ObjectMeta).Should(BeTrue())
+
+	return createdRC, err
 }

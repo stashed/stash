@@ -26,6 +26,7 @@ import (
 	"stash.appscode.dev/stash/test/e2e/framework"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 
+	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
@@ -117,7 +118,7 @@ var _ = XDescribe("Snapshots", func() {
 			Skip("Missing repository credential")
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
-		pvc := f.PersistentVolumeClaim()
+		pvc := f.PersistentVolumeClaim(rand.WithUniqSuffix("pvc"))
 		_, err := f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
 		daemon = f.DaemonSet()
@@ -216,7 +217,7 @@ var _ = XDescribe("Snapshots", func() {
 
 		performOperationOnSnapshot = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic")

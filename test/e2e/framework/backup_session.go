@@ -17,7 +17,7 @@ package framework
 
 import (
 	"fmt"
-	"time"
+	"strings"
 
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/util"
@@ -62,8 +62,6 @@ func (f *Framework) EventuallyBackupSessionCreated(meta metav1.ObjectMeta) Gomeg
 			Expect(err).NotTo(HaveOccurred())
 			return len(backupsnlist.Items) > 0
 		},
-		time.Minute*7,
-		time.Second*5,
 	)
 }
 
@@ -73,7 +71,11 @@ func (f *Framework) GetBackupSession(meta metav1.ObjectMeta) (*v1beta1.BackupSes
 		return nil, err
 	}
 	if len(backupsnlist.Items) > 0 {
-		return &backupsnlist.Items[0], nil
+		for _, bs := range backupsnlist.Items {
+			if strings.HasPrefix(bs.Name, meta.Name) {
+				return &bs, nil
+			}
+		}
 	}
 	return nil, fmt.Errorf("no BackupSession found")
 }
@@ -88,21 +90,21 @@ func (f *Framework) EventuallyBackupSessionTotalHost(meta metav1.ObjectMeta) Gom
 	)
 }
 
-func (f *Invocation) TriggerInstantBackup(backupConfig *v1beta1.BackupConfiguration) (*v1beta1.BackupSession, error) {
+func (f *Invocation) TriggerInstantBackup(objMeta metav1.ObjectMeta) (*v1beta1.BackupSession, error) {
 	backupSession := &v1beta1.BackupSession{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix(backupConfig.Name),
-			Namespace: backupConfig.Namespace,
+			Name:      rand.WithUniqSuffix(objMeta.Name),
+			Namespace: objMeta.Namespace,
 			Labels: map[string]string{
 				util.LabelApp:                 util.AppLabelStash,
-				util.LabelBackupConfiguration: backupConfig.Name,
+				util.LabelBackupConfiguration: objMeta.Name,
 			},
 		},
 		Spec: v1beta1.BackupSessionSpec{
 			Invoker: v1beta1.BackupInvokerRef{
 				APIGroup: v1beta1.SchemeGroupVersion.Group,
 				Kind:     v1beta1.ResourceKindBackupConfiguration,
-				Name:     backupConfig.Name,
+				Name:     objMeta.Name,
 			},
 		},
 	}

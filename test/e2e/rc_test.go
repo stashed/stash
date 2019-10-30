@@ -79,7 +79,7 @@ var _ = XDescribe("ReplicationController", func() {
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
 		secondRestic.Spec.Backend.StorageSecretName = cred.Name
-		pvc := f.PersistentVolumeClaim()
+		pvc := f.PersistentVolumeClaim(rand.WithUniqSuffix("pvc"))
 		_, err := f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
 		rc = f.ReplicationController(pvc.Name)
@@ -92,7 +92,7 @@ var _ = XDescribe("ReplicationController", func() {
 	var (
 		shouldBackupNewReplicationController = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -120,7 +120,7 @@ var _ = XDescribe("ReplicationController", func() {
 
 		shouldBackupExistingReplicationController = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating ReplicationController " + rc.Name)
@@ -148,7 +148,7 @@ var _ = XDescribe("ReplicationController", func() {
 
 		shouldStopBackup = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -178,7 +178,7 @@ var _ = XDescribe("ReplicationController", func() {
 
 		shouldStopBackupIfLabelChanged = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -213,7 +213,7 @@ var _ = XDescribe("ReplicationController", func() {
 
 		shouldStopBackupIfSelectorChanged = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -250,7 +250,7 @@ var _ = XDescribe("ReplicationController", func() {
 
 		shouldElectLeaderAndBackupRC = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -281,7 +281,7 @@ var _ = XDescribe("ReplicationController", func() {
 
 		shouldMutateAndBackupNewReplicationController = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -310,7 +310,7 @@ var _ = XDescribe("ReplicationController", func() {
 
 		shouldNotMutateNewReplicationController = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating ReplicationController " + rc.Name)
@@ -323,7 +323,7 @@ var _ = XDescribe("ReplicationController", func() {
 
 		shouldRejectToCreateNewReplicationController = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating first restic " + restic.Name)
@@ -341,7 +341,7 @@ var _ = XDescribe("ReplicationController", func() {
 
 		shouldRemoveSidecarInstantly = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -376,7 +376,7 @@ var _ = XDescribe("ReplicationController", func() {
 
 		shouldAddSidecarInstantly = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -651,7 +651,7 @@ var _ = XDescribe("ReplicationController", func() {
 			})
 			It(`should backup new RC`, func() {
 				By("Creating repository Secret " + cred.Name)
-				err = f.CreateSecret(cred)
+				_, err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating restic " + restic.Name)
@@ -712,7 +712,7 @@ var _ = XDescribe("ReplicationController", func() {
 			})
 			It(`should backup new Replication Controller`, func() {
 				By("Creating repository Secret " + cred.Name)
-				err = f.CreateSecret(cred)
+				_, err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating restic " + restic.Name)
@@ -782,7 +782,7 @@ var _ = XDescribe("ReplicationController", func() {
 			})
 			It(`should be able to Pause and Resume backup`, func() {
 				By("Creating repository Secret " + cred.Name)
-				err = f.CreateSecret(cred)
+				_, err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating restic " + restic.Name)
@@ -863,7 +863,7 @@ var _ = XDescribe("ReplicationController", func() {
 			})
 			It(`should create Repository CRD`, func() {
 				By("Creating repository Secret " + cred.Name)
-				err = f.CreateSecret(cred)
+				_, err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating restic " + restic.Name)
@@ -917,7 +917,7 @@ var _ = XDescribe("ReplicationController", func() {
 			})
 			It(`recovered volume should have same data`, func() {
 				By("Creating repository Secret " + cred.Name)
-				err = f.CreateSecret(cred)
+				_, err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating restic")
@@ -1013,7 +1013,7 @@ var _ = XDescribe("ReplicationController", func() {
 			})
 			It(`recovered volume should have same data`, func() {
 				By("Creating repository Secret " + cred.Name)
-				err = f.CreateSecret(cred)
+				_, err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
 				rc.Spec.Template.Spec.Volumes = f.HostPathVolumeWithMultipleDirectory()
@@ -1124,7 +1124,7 @@ var _ = XDescribe("ReplicationController", func() {
 			})
 			It(`recovered volume should have same data`, func() {
 				By("Creating repository Secret " + cred.Name)
-				err = f.CreateSecret(cred)
+				_, err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating restic")

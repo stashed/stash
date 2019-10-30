@@ -84,7 +84,7 @@ var _ = XDescribe("StatefulSet", func() {
 		restic.Spec.Backend.StorageSecretName = cred.Name
 		secondRestic.Spec.Backend.StorageSecretName = cred.Name
 		svc = f.HeadlessService()
-		pvc := f.PersistentVolumeClaim()
+		pvc := f.PersistentVolumeClaim(rand.WithUniqSuffix("pvc"))
 
 		_, err := f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
@@ -98,7 +98,7 @@ var _ = XDescribe("StatefulSet", func() {
 	var (
 		shouldBackupNewStatefulSet = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -132,7 +132,7 @@ var _ = XDescribe("StatefulSet", func() {
 
 		shouldBackupExistingStatefulSet = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating service " + svc.Name)
@@ -166,7 +166,7 @@ var _ = XDescribe("StatefulSet", func() {
 
 		shouldStopBackup = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -202,7 +202,7 @@ var _ = XDescribe("StatefulSet", func() {
 
 		shouldStopBackupIfLabelChanged = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -243,7 +243,7 @@ var _ = XDescribe("StatefulSet", func() {
 
 		shouldStopBackupIfSelectorChanged = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -285,7 +285,7 @@ var _ = XDescribe("StatefulSet", func() {
 
 		shouldMutateAndBackupNewStatefulSet = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -320,7 +320,7 @@ var _ = XDescribe("StatefulSet", func() {
 
 		shouldNotMutateNewStatefulSet = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating service " + svc.Name)
@@ -337,7 +337,7 @@ var _ = XDescribe("StatefulSet", func() {
 
 		shouldRejectToCreateNewStatefulSet = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating first restic " + restic.Name)
@@ -359,7 +359,7 @@ var _ = XDescribe("StatefulSet", func() {
 
 		shouldRemoveSidecarInstantly = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -400,7 +400,7 @@ var _ = XDescribe("StatefulSet", func() {
 
 		shouldAddSidecarInstantly = func() {
 			By("Creating repository Secret " + cred.Name)
-			err = f.CreateSecret(cred)
+			_, err = f.CreateSecret(cred)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating restic " + restic.Name)
@@ -676,7 +676,7 @@ var _ = XDescribe("StatefulSet", func() {
 			})
 			It(`should backup new StatefulSet`, func() {
 				By("Creating repository Secret " + cred.Name)
-				err = f.CreateSecret(cred)
+				_, err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating restic " + restic.Name)
@@ -743,7 +743,7 @@ var _ = XDescribe("StatefulSet", func() {
 			})
 			It(`should backup new StatefulSet`, func() {
 				By("Creating repository Secret " + cred.Name)
-				err = f.CreateSecret(cred)
+				_, err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating restic " + restic.Name)
@@ -820,7 +820,7 @@ var _ = XDescribe("StatefulSet", func() {
 			})
 			It(`should able to Pause and Resume backup`, func() {
 				By("Creating repository Secret " + cred.Name)
-				err = f.CreateSecret(cred)
+				_, err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating restic")
@@ -908,7 +908,7 @@ var _ = XDescribe("StatefulSet", func() {
 			})
 			It(`create`, func() {
 				By("Creating repository Secret " + cred.Name)
-				err = f.CreateSecret(cred)
+				_, err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating restic")
@@ -958,7 +958,7 @@ var _ = XDescribe("StatefulSet", func() {
 			})
 			It(`create`, func() {
 				By("Creating repository Secret " + cred.Name)
-				err = f.CreateSecret(cred)
+				_, err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating restic")
@@ -1018,7 +1018,7 @@ var _ = XDescribe("StatefulSet", func() {
 			})
 			It(`recovered volume should have same data`, func() {
 				By("Creating repository Secret " + cred.Name)
-				err = f.CreateSecret(cred)
+				_, err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating restic")
@@ -1116,7 +1116,7 @@ var _ = XDescribe("StatefulSet", func() {
 			})
 			It(`recovered volume should have same data`, func() {
 				By("Creating repository Secret " + cred.Name)
-				err = f.CreateSecret(cred)
+				_, err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
 				ss.Spec.Template.Spec.Volumes = f.HostPathVolumeWithMultipleDirectory()
@@ -1245,7 +1245,7 @@ var _ = XDescribe("StatefulSet", func() {
 			})
 			It(`recovered volume should have same data`, func() {
 				By("Creating repository Secret " + cred.Name)
-				err = f.CreateSecret(cred)
+				_, err = f.CreateSecret(cred)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating restic")

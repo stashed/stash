@@ -22,7 +22,7 @@ github.com/NYTimes/gziphandler
 github.com/PuerkitoBio/purell
 # github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
 github.com/PuerkitoBio/urlesc
-# github.com/appscode/go v0.0.0-20191016085057-e186b6c94a3b
+# github.com/appscode/go v0.0.0-20191025021232-311ac347b3ef
 github.com/appscode/go/log
 github.com/appscode/go/version
 github.com/appscode/go/encoding/json/types
@@ -371,7 +371,7 @@ golang.org/x/text/internal/language/compact
 golang.org/x/text/internal/tag
 # golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
 golang.org/x/time/rate
-# gomodules.xyz/cert v1.0.0
+# gomodules.xyz/cert v1.0.1
 gomodules.xyz/cert
 gomodules.xyz/cert/certstore
 # gomodules.xyz/envsubst v0.1.0

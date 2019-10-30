@@ -16,16 +16,20 @@ limitations under the License.
 package framework
 
 import (
+	"time"
+
 	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/types"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kutil "kmodules.xyz/client-go"
+	apps_util "kmodules.xyz/client-go/apps/v1"
 )
 
 func (fi *Invocation) Deployment(pvcName string) apps.Deployment {
@@ -66,7 +70,10 @@ func (f *Framework) EventuallyDeployment(meta metav1.ObjectMeta) GomegaAsyncAsse
 		obj, err := f.KubeClient.AppsV1().Deployments(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 		return obj
-	})
+	},
+		time.Minute*2,
+		time.Second*5,
+	)
 }
 
 func (f *Invocation) WaitUntilDeploymentReadyWithSidecar(meta metav1.ObjectMeta) error {
@@ -123,4 +130,32 @@ func (f *Invocation) WaitUntilDeploymentReadyWithInitContainer(meta metav1.Objec
 		}
 		return false, nil
 	})
+}
+
+func (f *Invocation) DeployDeployment(name string, replica int32) (*apps.Deployment, error) {
+	// Create PVC for Deployment
+	pvc, err := f.CreateNewPVC(name)
+	if err != nil {
+		return &apps.Deployment{}, err
+	}
+	// Generate Deployment definition
+	deployment := f.Deployment(pvc.Name)
+	deployment.Name = name
+	deployment.Spec.Replicas = &replica
+
+	By("Deploying Deployment: " + deployment.Name)
+	createdDeployment, err := f.CreateDeployment(deployment)
+	if err != nil {
+		return createdDeployment, err
+	}
+	f.AppendToCleanupList(createdDeployment)
+
+	By("Waiting for Deployment to be ready")
+	err = apps_util.WaitUntilDeploymentReady(f.KubeClient, createdDeployment.ObjectMeta)
+	Expect(err).NotTo(HaveOccurred())
+	// check that we can execute command to the pod.
+	// this is necessary because we will exec into the pods and create sample data
+	f.EventuallyPodAccessible(createdDeployment.ObjectMeta).Should(BeTrue())
+
+	return createdDeployment, err
 }

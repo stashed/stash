@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 
 	"github.com/appscode/go/types"
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gomodules.xyz/cert"
 	apps "k8s.io/api/apps/v1"
@@ -59,7 +60,7 @@ var (
 func (f *Framework) CreateMinioServer(tls bool, ips []net.IP) (string, error) {
 	//creating secret for minio server
 	mcred = f.SecretForMinioServer(ips)
-	err := f.CreateSecret(mcred)
+	_, err := f.CreateSecret(mcred)
 	if err != nil {
 		return "", err
 	}
@@ -100,7 +101,7 @@ func (f *Framework) SecretForMinioServer(ips []net.IP) core.Secret {
 
 	return core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      MinioServerSecret,
+			Name:      fmt.Sprintf(MinioServerSecret + f.namespace),
 			Namespace: f.namespace,
 		},
 		Data: map[string][]byte{
@@ -113,7 +114,7 @@ func (f *Framework) SecretForMinioServer(ips []net.IP) core.Secret {
 func (f *Framework) PVCForMinioServer() core.PersistentVolumeClaim {
 	return core.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      MinioPVCStorage,
+			Name:      fmt.Sprintf(MinioPVCStorage+"%s", f.namespace),
 			Namespace: f.namespace,
 			Labels: map[string]string{
 				// this label will be used to mount this pvc as volume in minio server container
@@ -169,7 +170,7 @@ func (f *Framework) DeploymentForMinioServer() apps.Deployment {
 							Name: "minio-storage",
 							VolumeSource: core.VolumeSource{
 								PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
-									ClaimName: MinioPVCStorage,
+									ClaimName: fmt.Sprintf(MinioPVCStorage+"%s", f.namespace),
 								},
 							},
 						},
@@ -177,7 +178,7 @@ func (f *Framework) DeploymentForMinioServer() apps.Deployment {
 							Name: "minio-certs",
 							VolumeSource: core.VolumeSource{
 								Secret: &core.SecretVolumeSource{
-									SecretName: MinioServerSecret,
+									SecretName: fmt.Sprintf(MinioServerSecret+"%s", f.namespace),
 									Items: []core.KeyToPath{
 										{
 											Key:  MINIO_PUBLIC_CRT_NAME,
@@ -260,7 +261,7 @@ func (f *Framework) CreateDeploymentForMinioServer(obj apps.Deployment) error {
 func (f *Framework) ServiceForMinioServer() core.Service {
 	return core.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      MinioNodePortServic,
+			Name:      fmt.Sprintf(MinioNodePortServic+"%s", f.namespace),
 			Namespace: f.namespace,
 		},
 		Spec: core.ServiceSpec{
@@ -339,6 +340,20 @@ func (f *Framework) MinioServerSANs(ips []net.IP) cert.AltNames {
 }
 
 func (f *Framework) MinioServiceAddres() string {
-	return fmt.Sprintf(MinioNodePortServic+".%s.svc", f.namespace)
+	return fmt.Sprintf(MinioNodePortServic+"%s"+".%s.svc", f.namespace, f.namespace)
 
+}
+
+func (f Invocation) CreateBackendSecretForMinio() (*core.Secret, error) {
+	// Create Storage Secret
+	cred := f.SecretForMinioBackend(true)
+
+	if missing, _ := BeZero().Match(cred); missing {
+		Skip("Missing Minio credential")
+	}
+	By(fmt.Sprintf("Creating Storage Secret for Minio: %s/%s", cred.Namespace, cred.Name))
+	createdCred, err := f.CreateSecret(cred)
+	f.AppendToCleanupList(&cred)
+
+	return createdCred, err
 }
