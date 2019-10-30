@@ -166,7 +166,7 @@ func (f Invocation) AddAutoBackupAnnotations(annotations map[string]string, obj 
 	}
 
 	By("Verifying that the auto-backup annotations has been added successfully")
-	f.EventuallyEventAnnotationsFound(annotations, obj).Should(BeTrue())
+	f.EventuallyAnnotationsFound(annotations, obj).Should(BeTrue())
 	return nil
 }
 

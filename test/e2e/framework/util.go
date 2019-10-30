@@ -844,7 +844,7 @@ func (f *Invocation) AddAnnotations(annotations map[string]string, obj interface
 	return nil
 }
 
-func (f *Framework) EventuallyEventAnnotationsFound(expectedAnnotations map[string]string, obj interface{}) GomegaAsyncAssertion {
+func (f *Framework) EventuallyAnnotationsFound(expectedAnnotations map[string]string, obj interface{}) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
 			schm := scheme.Scheme

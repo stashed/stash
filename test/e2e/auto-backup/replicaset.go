@@ -76,7 +76,7 @@ var _ = Describe("Auto-Backup", func() {
 		Context("Failure Case", func() {
 
 			Context("Missing AutoBackup resource credential in BackupBlueprint", func() {
-				It("should should fail BackupSession for missing Backend credential", func() {
+				It("should fail BackupSession for missing Backend credential", func() {
 					// Create Secret for BackupBlueprint
 					secret, err := f.CreateBackendSecretForMinio()
 					Expect(err).NotTo(HaveOccurred())
