@@ -83,6 +83,20 @@ func (f *Framework) EventualWarning(meta metav1.ObjectMeta, involvedObjectKind s
 	})
 }
 
+func (f *Framework) EventuallyAutoBackup(meta metav1.ObjectMeta, involvedObjectKind string) GomegaAsyncAssertion {
+	return Eventually(func() []core.Event {
+		fieldSelector := fields.SelectorFromSet(fields.Set{
+			"involvedObject.kind":      involvedObjectKind,
+			"involvedObject.name":      meta.Name,
+			"involvedObject.namespace": meta.Namespace,
+			"type":                     core.EventTypeWarning,
+		})
+		events, err := f.KubeClient.CoreV1().Events(f.namespace).List(metav1.ListOptions{FieldSelector: fieldSelector.String()})
+		Expect(err).NotTo(HaveOccurred())
+		return events.Items
+	})
+}
+
 func (f *Framework) CountSuccessfulBackups(events []core.Event) int {
 	count := 0
 	for _, e := range events {

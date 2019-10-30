@@ -6,7 +6,9 @@ import (
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/test/e2e/framework"
+	"stash.appscode.dev/stash/test/e2e/matcher"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -146,7 +148,7 @@ var _ = Describe("Auto-Backup", func() {
 			})
 
 			Context("Add inappropriate annotation to Target", func() {
-				It("should fail to create AutoBackup resources", func() {
+				FIt("should fail to create AutoBackup resources", func() {
 					// Create BackupBlueprint
 					bb := f.CreateBackupBlueprintForPVC(fmt.Sprintf("backupblueprint-%s", f.App()))
 
@@ -163,10 +165,7 @@ var _ = Describe("Auto-Backup", func() {
 					anno[v1beta1.KeyBackupBlueprint] = framework.WrongBackupBlueprintName
 					f.AddAutoBackupAnnotations(anno, pvc)
 
-					By("Will fail to get respective BackupBlueprint")
-					getAnnotations := pvc.GetAnnotations()
-					_, err := f.GetBackupBlueprint(getAnnotations[v1beta1.KeyBackupBlueprint])
-					Expect(err).To(HaveOccurred())
+					f.EventuallyAutoBackup(pvc.ObjectMeta, apis.KindPersistentVolumeClaim).Should(matcher.HaveEvent(eventer.EventReasonAutoBackupResourcesCreationFailed))
 				})
 			})
 		})

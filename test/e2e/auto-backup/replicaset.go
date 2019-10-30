@@ -6,7 +6,9 @@ import (
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/test/e2e/framework"
+	"stash.appscode.dev/stash/test/e2e/matcher"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -72,8 +74,11 @@ var _ = Describe("Auto-Backup", func() {
 
 			Context("Missing AutoBackup resource credential in BackupBlueprint", func() {
 				It("should should fail BackupSession for missing Backend credential", func() {
+					// Create Secret for BackupBlueprint
+					secret := f.CreateBackendSecretForMinio()
+
 					// Generate BackupBlueprint definition
-					bb := f.BackupBlueprint("")
+					bb := f.BackupBlueprint(secret.Name)
 					bb.Spec.Backend.S3 = &store.S3Spec{}
 					By(fmt.Sprintf("Creating BackupBlueprint: %s", bb.Name))
 					_, err := f.CreateBackupBlueprint(bb)
@@ -136,7 +141,7 @@ var _ = Describe("Auto-Backup", func() {
 			})
 
 			Context("Add inappropriate annotation to Target", func() {
-				It("should fail to create AutoBackup resources", func() {
+				FIt("should fail to create AutoBackup resources", func() {
 					// Create BackupBlueprint
 					f.CreateBackupBlueprintForWorkload(fmt.Sprintf("backupblueprint-%s", f.App()))
 
@@ -149,10 +154,7 @@ var _ = Describe("Auto-Backup", func() {
 					// Add and Ensure annotations to Target
 					f.AddAutoBackupAnnotations(annotations(framework.WrongBackupBlueprintName), rs)
 
-					By("Will fail to get respective BackupBlueprint")
-					getAnnotations := rs.GetAnnotations()
-					_, err := f.GetBackupBlueprint(getAnnotations[v1beta1.KeyBackupBlueprint])
-					Expect(err).To(HaveOccurred())
+					f.EventuallyAutoBackup(rs.ObjectMeta, apis.KindReplicaSet).Should(matcher.HaveEvent(eventer.EventReasonAutoBackupResourcesCreationFailed))
 				})
 				It("should fail BackupSession for adding inappropriate TargetPath/MountPath", func() {
 					// Create BackupBlueprint

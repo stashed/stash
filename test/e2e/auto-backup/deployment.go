@@ -6,7 +6,9 @@ import (
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/test/e2e/framework"
+	"stash.appscode.dev/stash/test/e2e/matcher"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -137,7 +139,7 @@ var _ = Describe("Auto-Backup", func() {
 			})
 
 			Context("Add inappropriate annotation to Target", func() {
-				It("should fail to create AutoBackup resources", func() {
+				FIt("should fail to create AutoBackup resources", func() {
 					// Create BackupBlueprint
 					f.CreateBackupBlueprintForWorkload(fmt.Sprintf("backupblueprint-%s", f.App()))
 
@@ -150,10 +152,7 @@ var _ = Describe("Auto-Backup", func() {
 					// Add and Ensure annotations to Target
 					f.AddAutoBackupAnnotations(annotations(framework.WrongBackupBlueprintName), deployment)
 
-					By("Will fail to get respective BackupBlueprint")
-					getAnnotations := deployment.GetAnnotations()
-					_, err := f.GetBackupBlueprint(getAnnotations[v1beta1.KeyBackupBlueprint])
-					Expect(err).To(HaveOccurred())
+					f.EventuallyAutoBackup(deployment.ObjectMeta, apis.KindDeployment).Should(matcher.HaveEvent(eventer.EventReasonAutoBackupResourcesCreationFailed))
 				})
 				It("should fail BackupSession for adding inappropriate TargetPath/MountPath", func() {
 					// Create BackupBlueprint
