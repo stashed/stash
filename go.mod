@@ -3,8 +3,6 @@ module stash.appscode.dev/stash
 go 1.12
 
 require (
-	cloud.google.com/go v0.41.0 // indirect
-	contrib.go.opencensus.io/exporter/ocagent v0.4.12 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/appscode/go v0.0.0-20191025021232-311ac347b3ef
 	github.com/armon/circbuf v0.0.0-20190214190532-5111143e8da2
