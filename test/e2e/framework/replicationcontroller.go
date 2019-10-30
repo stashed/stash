@@ -111,9 +111,12 @@ func (f *Invocation) WaitUntilRCReadyWithInitContainer(meta metav1.ObjectMeta) e
 	})
 }
 
-func (f *Invocation) DeployReplicationController(name string, replica int32) *core.ReplicationController {
+func (f *Invocation) DeployReplicationController(name string, replica int32) (*core.ReplicationController, error) {
 	// Create PVC for ReplicationController
-	pvc := f.CreateNewPVC(name)
+	pvc, err := f.CreateNewPVC(name)
+	if err != nil {
+		return &core.ReplicationController{}, err
+	}
 	// Generate ReplicationController definition
 	rc := f.ReplicationController(pvc.Name)
 	rc.Spec.Replicas = &replica
@@ -121,7 +124,9 @@ func (f *Invocation) DeployReplicationController(name string, replica int32) *co
 
 	By("Deploying ReplicationController: " + rc.Name)
 	createdRC, err := f.CreateReplicationController(rc)
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		return createdRC, err
+	}
 	f.AppendToCleanupList(createdRC)
 
 	By("Waiting for ReplicationController to be ready")
@@ -131,5 +136,5 @@ func (f *Invocation) DeployReplicationController(name string, replica int32) *co
 	// this is necessary because we will exec into the pods and create sample data
 	f.EventuallyPodAccessible(createdRC.ObjectMeta).Should(BeTrue())
 
-	return createdRC
+	return createdRC, err
 }

@@ -187,21 +187,22 @@ func (f *Framework) EventuallyPodAccessible(meta metav1.ObjectMeta) GomegaAsyncA
 	)
 }
 
-func (f *Invocation) DeployPod(pvcName string) *core.Pod {
+func (f *Invocation) DeployPod(pvcName string) (*core.Pod, error) {
 	// Generate Pod definition
 	pod := f.Pod(pvcName)
 
 	By(fmt.Sprintf("Deploying Pod: %s/%s", pod.Namespace, pod.Name))
 	createdPod, err := f.CreatePod(pod)
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		return createdPod, err
+	}
 	f.AppendToCleanupList(createdPod)
 
 	By("Waiting for Pod to be ready")
 	err = v1.WaitUntilPodRunning(f.KubeClient, createdPod.ObjectMeta)
-	Expect(err).NotTo(HaveOccurred())
 	// check that we can execute command to the pod.
 	// this is necessary because we will exec into the pods and create sample data
 	f.EventuallyPodAccessible(createdPod.ObjectMeta).Should(BeTrue())
 
-	return createdPod
+	return createdPod, err
 }

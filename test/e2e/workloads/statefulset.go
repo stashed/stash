@@ -75,10 +75,12 @@ var _ = Describe("StatefulSet", func() {
 		Context("Restore in same StatefulSet", func() {
 			It("should Backup & Restore in the source StatefulSet", func() {
 				// Deploy a StatefulSet
-				ss := f.DeployStatefulSet(fmt.Sprintf("source-ss1-%s", f.App()), int32(3))
+				ss, err := f.DeployStatefulSet(fmt.Sprintf("source-ss1-%s", f.App()), int32(3))
+				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
-				sampleData := f.GenerateSampleData(ss.ObjectMeta, apis.KindStatefulSet)
+				sampleData, err := f.GenerateSampleData(ss.ObjectMeta, apis.KindStatefulSet)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()
@@ -125,10 +127,12 @@ var _ = Describe("StatefulSet", func() {
 		Context("Restore in different StatefulSet", func() {
 			It("should restore backed up data into different StatefulSet", func() {
 				// Deploy a StatefulSet
-				ss := f.DeployStatefulSet(fmt.Sprintf("source-ss2-%s", f.App()), int32(3))
+				ss, err := f.DeployStatefulSet(fmt.Sprintf("source-ss2-%s", f.App()), int32(3))
+				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
-				sampleData := f.GenerateSampleData(ss.ObjectMeta, apis.KindStatefulSet)
+				sampleData, err := f.GenerateSampleData(ss.ObjectMeta, apis.KindStatefulSet)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()
@@ -149,7 +153,8 @@ var _ = Describe("StatefulSet", func() {
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
 				// Deploy restored StatefulSet
-				restoredSS := f.DeployStatefulSet(fmt.Sprintf("restored-ss2-%s", f.App()), int32(3))
+				restoredSS, err := f.DeployStatefulSet(fmt.Sprintf("restored-ss2-%s", f.App()), int32(3))
+				Expect(err).NotTo(HaveOccurred())
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original StatefulSet")
@@ -173,10 +178,12 @@ var _ = Describe("StatefulSet", func() {
 		Context("Restore on scaled up StatefulSet", func() {
 			It("should restore backed up data into scaled up StatefulSet", func() {
 				// Deploy a StatefulSet
-				ss := f.DeployStatefulSet(fmt.Sprintf("source-ss3-%s", f.App()), int32(3))
+				ss, err := f.DeployStatefulSet(fmt.Sprintf("source-ss3-%s", f.App()), int32(3))
+				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
-				sampleData := f.GenerateSampleData(ss.ObjectMeta, apis.KindStatefulSet)
+				sampleData, err := f.GenerateSampleData(ss.ObjectMeta, apis.KindStatefulSet)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()
@@ -197,7 +204,8 @@ var _ = Describe("StatefulSet", func() {
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
 				// Deploy restored StatefulSet
-				restoredSS := f.DeployStatefulSet(fmt.Sprintf("restored-ss3-%s", f.App()), int32(5))
+				restoredSS, err := f.DeployStatefulSet(fmt.Sprintf("restored-ss3-%s", f.App()), int32(5))
+				Expect(err).NotTo(HaveOccurred())
 
 				// Restore the backed up data
 				By("Restoring the backed up data in different StatefulSet")

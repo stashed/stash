@@ -181,7 +181,7 @@ func (f *Invocation) WaitUntilStatefulSetWithInitContainer(meta metav1.ObjectMet
 	})
 }
 
-func (f *Invocation) DeployStatefulSet(name string, replica int32) *apps.StatefulSet {
+func (f *Invocation) DeployStatefulSet(name string, replica int32) (*apps.StatefulSet, error) {
 	// Generate StatefulSet definition
 	ss := f.StatefulSetForV1beta1API()
 	ss.Spec.Replicas = &replica
@@ -189,7 +189,9 @@ func (f *Invocation) DeployStatefulSet(name string, replica int32) *apps.Statefu
 
 	By("Deploying StatefulSet: " + ss.Name)
 	createdss, err := f.CreateStatefulSet(ss)
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		return createdss, err
+	}
 	f.AppendToCleanupList(createdss)
 
 	By("Waiting for StatefulSet to be ready")
@@ -199,5 +201,5 @@ func (f *Invocation) DeployStatefulSet(name string, replica int32) *apps.Statefu
 	// this is necessary because we will exec into the pods and create sample data
 	f.EventuallyPodAccessible(createdss.ObjectMeta).Should(BeTrue())
 
-	return createdss
+	return createdss, err
 }

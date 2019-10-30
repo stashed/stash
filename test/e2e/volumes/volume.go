@@ -74,12 +74,16 @@ var _ = Describe("Volume", func() {
 		Context("Restore in same PVC", func() {
 			It("should Backup & Restore in the source PVC", func() {
 				// Create new PVC
-				pvc := f.CreateNewPVC(fmt.Sprintf("source-pvc-%s", f.App()))
+				pvc, err := f.CreateNewPVC(fmt.Sprintf("source-pvc-%s", f.App()))
+				Expect(err).NotTo(HaveOccurred())
+
 				// Deploy a Pod
-				pod := f.DeployPod(pvc.Name)
+				pod, err := f.DeployPod(pvc.Name)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
-				sampleData := f.GenerateSampleData(pod.ObjectMeta, apis.KindPod)
+				sampleData, err := f.GenerateSampleData(pod.ObjectMeta, apis.KindPod)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()
@@ -126,12 +130,16 @@ var _ = Describe("Volume", func() {
 		Context("Restore in different PVC", func() {
 			It("should restore backed up data into different PVC", func() {
 				// Create new PVC
-				pvc := f.CreateNewPVC(fmt.Sprintf("source-pvc1-%s", f.App()))
+				pvc, err := f.CreateNewPVC(fmt.Sprintf("source-pvc1-%s", f.App()))
+				Expect(err).NotTo(HaveOccurred())
+
 				// Deploy a Pod
-				pod := f.DeployPod(pvc.Name)
+				pod, err := f.DeployPod(pvc.Name)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
-				sampleData := f.GenerateSampleData(pod.ObjectMeta, apis.KindPod)
+				sampleData, err := f.GenerateSampleData(pod.ObjectMeta, apis.KindPod)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()
@@ -152,10 +160,12 @@ var _ = Describe("Volume", func() {
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
 				// Create restored Pvc
-				restoredPVC := f.CreateNewPVC(fmt.Sprintf("restore-pvc-%s", f.App()))
+				restoredPVC, err := f.CreateNewPVC(fmt.Sprintf("restore-pvc-%s", f.App()))
+				Expect(err).NotTo(HaveOccurred())
 
 				// Deploy another Pod
-				restoredPod := f.DeployPod(restoredPVC.Name)
+				restoredPod, err := f.DeployPod(restoredPVC.Name)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original Pod")

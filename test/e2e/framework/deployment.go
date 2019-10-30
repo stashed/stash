@@ -117,9 +117,12 @@ func (f *Invocation) WaitUntilDeploymentReadyWithInitContainer(meta metav1.Objec
 	})
 }
 
-func (f *Invocation) DeployDeployment(name string, replica int32) *apps.Deployment {
+func (f *Invocation) DeployDeployment(name string, replica int32) (*apps.Deployment, error) {
 	// Create PVC for Deployment
-	pvc := f.CreateNewPVC(name)
+	pvc, err := f.CreateNewPVC(name)
+	if err != nil {
+		return &apps.Deployment{}, err
+	}
 	// Generate Deployment definition
 	deployment := f.Deployment(pvc.Name)
 	deployment.Name = name
@@ -127,7 +130,9 @@ func (f *Invocation) DeployDeployment(name string, replica int32) *apps.Deployme
 
 	By("Deploying Deployment: " + deployment.Name)
 	createdDeployment, err := f.CreateDeployment(deployment)
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		return createdDeployment, err
+	}
 	f.AppendToCleanupList(createdDeployment)
 
 	By("Waiting for Deployment to be ready")
@@ -137,5 +142,5 @@ func (f *Invocation) DeployDeployment(name string, replica int32) *apps.Deployme
 	// this is necessary because we will exec into the pods and create sample data
 	f.EventuallyPodAccessible(createdDeployment.ObjectMeta).Should(BeTrue())
 
-	return createdDeployment
+	return createdDeployment, err
 }

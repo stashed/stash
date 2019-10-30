@@ -31,10 +31,12 @@ var _ = Describe("Deployment", func() {
 		Context("Restore in same Deployment", func() {
 			It("should Backup & Restore in the source Deployment", func() {
 				// Deploy a Deployment
-				deployment := f.DeployDeployment(fmt.Sprintf("source-deployment1-%s", f.App()), int32(1))
+				deployment, err := f.DeployDeployment(fmt.Sprintf("source-deployment1-%s", f.App()), int32(1))
+				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
-				sampleData := f.GenerateSampleData(deployment.ObjectMeta, apis.KindDeployment)
+				sampleData, err := f.GenerateSampleData(deployment.ObjectMeta, apis.KindDeployment)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()
@@ -81,10 +83,12 @@ var _ = Describe("Deployment", func() {
 		Context("Restore in different Deployment", func() {
 			It("should restore backed up data into different Deployment", func() {
 				// Deploy a Deployment
-				deployment := f.DeployDeployment(fmt.Sprintf("source-deployment2-%s", f.App()), int32(1))
+				deployment, err := f.DeployDeployment(fmt.Sprintf("source-deployment2-%s", f.App()), int32(1))
+				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
-				sampleData := f.GenerateSampleData(deployment.ObjectMeta, apis.KindDeployment)
+				sampleData, err := f.GenerateSampleData(deployment.ObjectMeta, apis.KindDeployment)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Setup a Minio Repository
 				By("Creating Repository")
@@ -106,7 +110,8 @@ var _ = Describe("Deployment", func() {
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
 				// Deploy restored Deployment
-				restoredDeployment := f.DeployDeployment(fmt.Sprintf("restored-deployment-%s", f.App()), int32(1))
+				restoredDeployment, err := f.DeployDeployment(fmt.Sprintf("restored-deployment-%s", f.App()), int32(1))
+				Expect(err).NotTo(HaveOccurred())
 
 				// Restore the backed up data
 				By("Restoring the backed up data in different Deployment")
@@ -130,10 +135,12 @@ var _ = Describe("Deployment", func() {
 		Context("Leader election for backup and restore Deployment", func() {
 			It("Should leader elect and backup and restore Deployment", func() {
 				// Deploy a Deployment
-				deployment := f.DeployDeployment(fmt.Sprintf("source-deployment3-%s", f.App()), int32(2))
+				deployment, err := f.DeployDeployment(fmt.Sprintf("source-deployment3-%s", f.App()), int32(2))
+				Expect(err).NotTo(HaveOccurred())
 
 				//  Generate Sample Data
-				sampleData := f.GenerateSampleData(deployment.ObjectMeta, apis.KindDeployment)
+				sampleData, err := f.GenerateSampleData(deployment.ObjectMeta, apis.KindDeployment)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()

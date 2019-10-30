@@ -8,7 +8,6 @@ import (
 
 	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	store "kmodules.xyz/objectstore-api/api/v1"
@@ -61,9 +60,12 @@ func (f *Framework) GetBackupBlueprint(name string) (*v1beta1.BackupBlueprint, e
 	return f.StashClient.StashV1beta1().BackupBlueprints().Get(name, metav1.GetOptions{})
 }
 
-func (f Invocation) CreateBackupBlueprintForWorkload(name string) *v1beta1.BackupBlueprint {
+func (f Invocation) CreateBackupBlueprintForWorkload(name string) (*v1beta1.BackupBlueprint, error) {
 	// Create Secret for BackupBlueprint
-	secret := f.CreateBackendSecretForMinio()
+	secret, err := f.CreateBackendSecretForMinio()
+	if err != nil {
+		return &v1beta1.BackupBlueprint{}, err
+	}
 
 	// Generate BackupBlueprint definition
 	bb := f.BackupBlueprint(secret.Name)
@@ -71,14 +73,16 @@ func (f Invocation) CreateBackupBlueprintForWorkload(name string) *v1beta1.Backu
 
 	By(fmt.Sprintf("Creating BackupBlueprint: %s", bb.Name))
 	createdBB, err := f.CreateBackupBlueprint(bb)
-	Expect(err).NotTo(HaveOccurred())
 	f.AppendToCleanupList(createdBB)
-	return createdBB
+	return createdBB, err
 }
 
-func (f Invocation) CreateBackupBlueprintForPVC(name string) *v1beta1.BackupBlueprint {
+func (f Invocation) CreateBackupBlueprintForPVC(name string) (*v1beta1.BackupBlueprint, error) {
 	// Create Secret for BackupBlueprint
-	secret := f.CreateBackendSecretForMinio()
+	secret, err := f.CreateBackendSecretForMinio()
+	if err != nil {
+		return &v1beta1.BackupBlueprint{}, err
+	}
 
 	// Generate BackupBlueprint definition
 	bb := f.BackupBlueprint(secret.Name)
@@ -87,7 +91,6 @@ func (f Invocation) CreateBackupBlueprintForPVC(name string) *v1beta1.BackupBlue
 
 	By(fmt.Sprintf("Creating BackupBlueprint: %s", bb.Name))
 	createdBB, err := f.CreateBackupBlueprint(bb)
-	Expect(err).NotTo(HaveOccurred())
 	f.AppendToCleanupList(createdBB)
-	return createdBB
+	return createdBB, err
 }

@@ -31,10 +31,12 @@ var _ = Describe("ReplicationController", func() {
 		Context("Restore in same ReplicationController", func() {
 			It("should Backup & Restore in the source ReplicationController", func() {
 				// Deploy a ReplicationController
-				rc := f.DeployReplicationController(fmt.Sprintf("source-rc1-%s", f.App()), int32(1))
+				rc, err := f.DeployReplicationController(fmt.Sprintf("source-rc1-%s", f.App()), int32(1))
+				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
-				sampleData := f.GenerateSampleData(rc.ObjectMeta, apis.KindReplicationController)
+				sampleData, err := f.GenerateSampleData(rc.ObjectMeta, apis.KindReplicationController)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()
@@ -81,10 +83,12 @@ var _ = Describe("ReplicationController", func() {
 		Context("Restore in different ReplicationController", func() {
 			It("should restore backed up data into different ReplicationController", func() {
 				// Deploy a ReplicationController
-				rc := f.DeployReplicationController(fmt.Sprintf("source-rc2-%s", f.App()), int32(1))
+				rc, err := f.DeployReplicationController(fmt.Sprintf("source-rc2-%s", f.App()), int32(1))
+				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
-				sampleData := f.GenerateSampleData(rc.ObjectMeta, apis.KindReplicationController)
+				sampleData, err := f.GenerateSampleData(rc.ObjectMeta, apis.KindReplicationController)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()
@@ -105,7 +109,8 @@ var _ = Describe("ReplicationController", func() {
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
 				// Deploy restored ReplicationController
-				restoredRC := f.DeployReplicationController(fmt.Sprintf("restored-rc-%s", f.App()), int32(1))
+				restoredRC, err := f.DeployReplicationController(fmt.Sprintf("restored-rc-%s", f.App()), int32(1))
+				Expect(err).NotTo(HaveOccurred())
 
 				// Restore the backed up data
 				By("Restoring the backed up data in different ReplicationController")
@@ -129,10 +134,12 @@ var _ = Describe("ReplicationController", func() {
 		Context("Leader election for backup and restore ReplicationController", func() {
 			It("Should leader elect and backup and restore ReplicationController", func() {
 				// Deploy a ReplicationController
-				rc := f.DeployReplicationController(fmt.Sprintf("source-rc3-%s", f.App()), int32(2))
+				rc, err := f.DeployReplicationController(fmt.Sprintf("source-rc3-%s", f.App()), int32(2))
+				Expect(err).NotTo(HaveOccurred())
 
 				//  Generate Sample Data
-				sampleData := f.GenerateSampleData(rc.ObjectMeta, apis.KindReplicationController)
+				sampleData, err := f.GenerateSampleData(rc.ObjectMeta, apis.KindReplicationController)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()

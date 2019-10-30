@@ -151,22 +151,23 @@ func (f *Invocation) WaitUntilDaemonSetReadyWithInitContainer(meta metav1.Object
 	})
 }
 
-func (f *Invocation) DeployDaemonSet(name string) *apps.DaemonSet {
+func (f *Invocation) DeployDaemonSet(name string) (*apps.DaemonSet, error) {
 	// Generate DaemonSet definition
 	dmn := f.DaemonSet()
 	dmn.Name = name
 
 	By(fmt.Sprintf("Deploying DaemonSet: %s/%s", dmn.Namespace, dmn.Name))
 	createdDmn, err := f.CreateDaemonSet(dmn)
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		return createdDmn, err
+	}
 	f.AppendToCleanupList(createdDmn)
 
 	By("Waiting for DaemonSet to be ready")
 	err = apps_util.WaitUntilDaemonSetReady(f.KubeClient, createdDmn.ObjectMeta)
-	Expect(err).NotTo(HaveOccurred())
 	// check that we can execute command to the pod.
 	// this is necessary because we will exec into the pods and create sample data
 	f.EventuallyPodAccessible(createdDmn.ObjectMeta).Should(BeTrue())
 
-	return createdDmn
+	return createdDmn, err
 }

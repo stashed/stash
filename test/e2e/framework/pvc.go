@@ -5,7 +5,6 @@ import (
 
 	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -44,14 +43,13 @@ func (f *Invocation) DeletePersistentVolumeClaim(meta metav1.ObjectMeta) error {
 	return nil
 }
 
-func (f *Invocation) CreateNewPVC(name string) *core.PersistentVolumeClaim {
+func (f *Invocation) CreateNewPVC(name string) (*core.PersistentVolumeClaim, error) {
 	// Generate PVC definition
 	pvc := f.PersistentVolumeClaim(name)
 
 	By(fmt.Sprintf("Creating PVC: %s/%s", pvc.Namespace, pvc.Name))
 	createdPVC, err := f.CreatePersistentVolumeClaim(pvc)
-	Expect(err).NotTo(HaveOccurred())
 	f.AppendToCleanupList(createdPVC)
 
-	return createdPVC
+	return createdPVC, err
 }

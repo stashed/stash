@@ -29,15 +29,13 @@ var _ = Describe("Auto-Backup", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	var (
-		annotations = func(backupBlueprintName string) map[string]string {
-			return map[string]string{
-				v1beta1.KeyBackupBlueprint: backupBlueprintName,
-				v1beta1.KeyTargetPaths:     framework.TestSourceDataTargetPath,
-				v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
-			}
+	annotations := func(backupBlueprintName string) map[string]string {
+		return map[string]string{
+			v1beta1.KeyBackupBlueprint: backupBlueprintName,
+			v1beta1.KeyTargetPaths:     framework.TestSourceDataTargetPath,
+			v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
 		}
-	)
+	}
 
 	Context("ReplicationController", func() {
 
@@ -45,19 +43,24 @@ var _ = Describe("Auto-Backup", func() {
 
 			It("should backup successfully", func() {
 				// Create BackupBlueprint
-				bb := f.CreateBackupBlueprintForWorkload(fmt.Sprintf("backupblueprint-%s", f.App()))
+				bb, err := f.CreateBackupBlueprintForWorkload(fmt.Sprintf("backupblueprint-%s", f.App()))
+				Expect(err).NotTo(HaveOccurred())
 
 				// Deploy a ReplicationController
-				rc := f.DeployReplicationController(fmt.Sprintf("rc1-%s", f.App()), int32(1))
+				rc, err := f.DeployReplicationController(fmt.Sprintf("rc1-%s", f.App()), int32(1))
+				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
-				f.GenerateSampleData(rc.ObjectMeta, apis.KindReplicationController)
+				_, err = f.GenerateSampleData(rc.ObjectMeta, apis.KindReplicationController)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Add and Ensure annotations to Target
-				f.AddAutoBackupAnnotations(annotations(bb.Name), rc)
+				err = f.AddAutoBackupAnnotations(annotations(bb.Name), rc)
+				Expect(err).NotTo(HaveOccurred())
 
 				// ensure Repository and BackupConfiguration
-				backupConfig := f.VerifyAutoBackupConfigured(rc.ObjectMeta, apis.KindReplicationController)
+				backupConfig, err := f.VerifyAutoBackupConfigured(rc.ObjectMeta, apis.KindReplicationController)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup the Sample Data
 				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
@@ -75,27 +78,32 @@ var _ = Describe("Auto-Backup", func() {
 			Context("Missing AutoBackup resource credential in BackupBlueprint", func() {
 				It("should should fail BackupSession for missing Backend credential", func() {
 					// Create Secret for BackupBlueprint
-					secret := f.CreateBackendSecretForMinio()
+					secret, err := f.CreateBackendSecretForMinio()
+					Expect(err).NotTo(HaveOccurred())
 
 					// Generate BackupBlueprint definition
 					bb := f.BackupBlueprint(secret.Name)
 					bb.Spec.Backend.S3 = &store.S3Spec{}
 					By(fmt.Sprintf("Creating BackupBlueprint: %s", bb.Name))
-					_, err := f.CreateBackupBlueprint(bb)
+					_, err = f.CreateBackupBlueprint(bb)
 					Expect(err).NotTo(HaveOccurred())
 					f.AppendToCleanupList(bb)
 
 					// Deploy a ReplicationController
-					rc := f.DeployReplicationController(fmt.Sprintf("rc2-%s", f.App()), int32(1))
+					rc, err := f.DeployReplicationController(fmt.Sprintf("rc2-%s", f.App()), int32(1))
+					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
-					f.GenerateSampleData(rc.ObjectMeta, apis.KindReplicationController)
+					_, err = f.GenerateSampleData(rc.ObjectMeta, apis.KindReplicationController)
+					Expect(err).NotTo(HaveOccurred())
 
 					// Add and Ensure annotations to Target
-					f.AddAutoBackupAnnotations(annotations(bb.Name), rc)
+					err = f.AddAutoBackupAnnotations(annotations(bb.Name), rc)
+					Expect(err).NotTo(HaveOccurred())
 
 					// ensure Repository and BackupConfiguration
-					backupConfig := f.VerifyAutoBackupConfigured(rc.ObjectMeta, apis.KindReplicationController)
+					backupConfig, err := f.VerifyAutoBackupConfigured(rc.ObjectMeta, apis.KindReplicationController)
+					Expect(err).NotTo(HaveOccurred())
 
 					// Take an Instant Backup the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
@@ -108,26 +116,31 @@ var _ = Describe("Auto-Backup", func() {
 				})
 				It("should fail BackupSession for missing RetentionPolicy", func() {
 					// Create Storage Secret for Minio
-					secret := f.CreateBackendSecretForMinio()
+					secret, err := f.CreateBackendSecretForMinio()
+					Expect(err).NotTo(HaveOccurred())
 
 					// Generate BackupBlueprint definition
 					bb := f.BackupBlueprint(secret.Name)
 					bb.Spec.RetentionPolicy = v1alpha1.RetentionPolicy{}
 					By(fmt.Sprintf("Creating BackupBlueprint: %s", bb.Name))
-					_, err := f.CreateBackupBlueprint(bb)
+					_, err = f.CreateBackupBlueprint(bb)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Deploy a ReplicationController
-					rc := f.DeployReplicationController(fmt.Sprintf("rc3-%s", f.App()), int32(1))
+					rc, err := f.DeployReplicationController(fmt.Sprintf("rc3-%s", f.App()), int32(1))
+					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
-					f.GenerateSampleData(rc.ObjectMeta, apis.KindReplicationController)
+					_, err = f.GenerateSampleData(rc.ObjectMeta, apis.KindReplicationController)
+					Expect(err).NotTo(HaveOccurred())
 
 					// Add and Ensure annotations to Target
-					f.AddAutoBackupAnnotations(annotations(bb.Name), rc)
+					err = f.AddAutoBackupAnnotations(annotations(bb.Name), rc)
+					Expect(err).NotTo(HaveOccurred())
 
 					// ensure Repository and BackupConfiguration
-					backupConfig := f.VerifyAutoBackupConfigured(rc.ObjectMeta, apis.KindReplicationController)
+					backupConfig, err := f.VerifyAutoBackupConfigured(rc.ObjectMeta, apis.KindReplicationController)
+					Expect(err).NotTo(HaveOccurred())
 
 					// Take an Instant Backup the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
@@ -141,38 +154,48 @@ var _ = Describe("Auto-Backup", func() {
 			})
 
 			Context("Add inappropriate annotation to Target", func() {
-				FIt("should fail auto-backup for adding inappropriate BackupBlueprint annotation in ReplicationController", func() {
+				It("should fail auto-backup for adding inappropriate BackupBlueprint annotation in ReplicationController", func() {
 					// Create BackupBlueprint
-					f.CreateBackupBlueprintForWorkload(fmt.Sprintf("backupblueprint-%s", f.App()))
+					_, err := f.CreateBackupBlueprintForWorkload(fmt.Sprintf("backupblueprint-%s", f.App()))
+					Expect(err).NotTo(HaveOccurred())
 
 					// Deploy a ReplicationController
-					rc := f.DeployReplicationController(fmt.Sprintf("rc4-%s", f.App()), int32(1))
+					rc, err := f.DeployReplicationController(fmt.Sprintf("rc4-%s", f.App()), int32(1))
+					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
-					f.GenerateSampleData(rc.ObjectMeta, apis.KindReplicationController)
+					_, err = f.GenerateSampleData(rc.ObjectMeta, apis.KindReplicationController)
+					Expect(err).NotTo(HaveOccurred())
 
 					// Add and Ensure annotations to Target
-					f.AddAutoBackupAnnotations(annotations(framework.WrongBackupBlueprintName), rc)
+					err = f.AddAutoBackupAnnotations(annotations(framework.WrongBackupBlueprintName), rc)
+					Expect(err).NotTo(HaveOccurred())
 
-					f.EventuallyAutoBackup(rc.ObjectMeta, apis.KindReplicationController).Should(matcher.HaveEvent(eventer.EventReasonAutoBackupResourcesCreationFailed))
+					// AutoBackup Resource creation failed
+					f.EventuallyEvent(rc.ObjectMeta, apis.KindReplicationController).Should(matcher.HaveEvent(eventer.EventReasonAutoBackupResourcesCreationFailed))
 				})
 				It("should fail BackupSession for adding inappropriate TargetPath/MountPath ReplicationController", func() {
 					// Create BackupBlueprint
-					bb := f.CreateBackupBlueprintForWorkload(fmt.Sprintf("backupblueprint-%s", f.App()))
+					bb, err := f.CreateBackupBlueprintForWorkload(fmt.Sprintf("backupblueprint-%s", f.App()))
+					Expect(err).NotTo(HaveOccurred())
 
 					// Deploy a ReplicationController
-					rc := f.DeployReplicationController(fmt.Sprintf("rc5-%s", f.App()), int32(1))
+					rc, err := f.DeployReplicationController(fmt.Sprintf("rc5-%s", f.App()), int32(1))
+					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
-					f.GenerateSampleData(rc.ObjectMeta, apis.KindReplicationController)
+					_, err = f.GenerateSampleData(rc.ObjectMeta, apis.KindReplicationController)
+					Expect(err).NotTo(HaveOccurred())
 
 					// Add and Ensure annotations to Target
 					anno := annotations(bb.Name)
 					anno[v1beta1.KeyTargetPaths] = framework.WrongTargetPath
-					f.AddAutoBackupAnnotations(anno, rc)
+					err = f.AddAutoBackupAnnotations(anno, rc)
+					Expect(err).NotTo(HaveOccurred())
 
 					// ensure Repository and BackupConfiguration
-					backupConfig := f.VerifyAutoBackupConfigured(rc.ObjectMeta, apis.KindReplicationController)
+					backupConfig, err := f.VerifyAutoBackupConfigured(rc.ObjectMeta, apis.KindReplicationController)
+					Expect(err).NotTo(HaveOccurred())
 
 					// Take an Instant Backup the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)

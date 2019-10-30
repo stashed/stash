@@ -17,17 +17,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (f *Framework) GenerateSampleData(objMeta metav1.ObjectMeta, kind string) sets.String {
+func (f *Framework) GenerateSampleData(objMeta metav1.ObjectMeta, kind string) (sets.String, error) {
 	By("Generating sample data inside workload pods")
 	err := f.CreateSampleDataInsideWorkload(objMeta, kind)
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		return sets.String{}, err
+	}
 
 	By("Verifying that sample data has been generated")
 	sampleData, err := f.ReadSampleDataFromFromWorkload(objMeta, kind)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(sampleData).ShouldNot(BeEmpty())
 
-	return sampleData
+	return sampleData, nil
 }
 
 func (f *Invocation) SetupWorkloadBackup(objMeta metav1.ObjectMeta, repo *api.Repository, kind string) (*v1beta1.BackupConfiguration, error) {
@@ -156,16 +158,19 @@ func GetTargetRef(name string, kind string) v1beta1.TargetRef {
 	return targetRef
 }
 
-func (f Invocation) AddAutoBackupAnnotations(annotations map[string]string, obj interface{}) {
-	By("Adding auto-backup specific annotations to the Workload")
-	err := f.AddAutoBackupAnnotationsToTarget(annotations, obj)
-	Expect(err).NotTo(HaveOccurred())
+func (f Invocation) AddAutoBackupAnnotations(annotations map[string]string, obj interface{}) error {
+	By("Adding auto-backup specific annotations to the Target")
+	err := f.AddAnnotations(annotations, obj)
+	if err != nil {
+		return err
+	}
 
 	By("Verifying that the auto-backup annotations has been added successfully")
-	f.EventuallyAutoBackupAnnotationsFound(annotations, obj).Should(BeTrue())
+	f.EventuallyEventAnnotationsFound(annotations, obj).Should(BeTrue())
+	return nil
 }
 
-func (f Invocation) VerifyAutoBackupConfigured(workloadMeta metav1.ObjectMeta, kind string) *v1beta1.BackupConfiguration {
+func (f Invocation) VerifyAutoBackupConfigured(workloadMeta metav1.ObjectMeta, kind string) (*v1beta1.BackupConfiguration, error) {
 	// BackupBlueprint create BackupConfiguration and Repository such that
 	// the name of the BackupConfiguration and Repository will follow
 	// the patter: <lower case of the workload kind>-<workload name>.
@@ -194,7 +199,9 @@ func (f Invocation) VerifyAutoBackupConfigured(workloadMeta metav1.ObjectMeta, k
 	By("Waiting for BackupConfiguration")
 	f.EventuallyBackupConfigurationCreated(objMeta).Should(BeTrue())
 	backupConfig, err := f.StashClient.StashV1beta1().BackupConfigurations(objMeta.Namespace).Get(objMeta.Name, metav1.GetOptions{})
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		return backupConfig, err
+	}
 
 	By("Verifying that backup triggering CronJob has been created")
 	f.EventuallyCronJobCreated(objMeta).Should(BeTrue())
@@ -222,7 +229,6 @@ func (f Invocation) VerifyAutoBackupConfigured(workloadMeta metav1.ObjectMeta, k
 		By("Waiting for ReplicationController to be ready with sidecar")
 		err = f.WaitUntilRCReadyWithSidecar(workloadMeta)
 	}
-	Expect(err).NotTo(HaveOccurred())
 
-	return backupConfig
+	return backupConfig, err
 }

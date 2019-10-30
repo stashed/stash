@@ -83,7 +83,7 @@ func (f *Framework) EventualWarning(meta metav1.ObjectMeta, involvedObjectKind s
 	})
 }
 
-func (f *Framework) EventuallyAutoBackup(meta metav1.ObjectMeta, involvedObjectKind string) GomegaAsyncAssertion {
+func (f *Framework) EventuallyEvent(meta metav1.ObjectMeta, involvedObjectKind string) GomegaAsyncAssertion {
 	return Eventually(func() []core.Event {
 		fieldSelector := fields.SelectorFromSet(fields.Set{
 			"involvedObject.kind":      involvedObjectKind,
@@ -822,7 +822,7 @@ func getGVRAndObjectMeta(obj interface{}) (schema.GroupVersionResource, metav1.O
 	}
 }
 
-func (f *Invocation) AddAutoBackupAnnotationsToTarget(annotations map[string]string, obj interface{}) error {
+func (f *Invocation) AddAnnotations(annotations map[string]string, obj interface{}) error {
 	schm := scheme.Scheme
 	gvr, _, _ := getGVRAndObjectMeta(obj)
 	cur := &unstructured.Unstructured{}
@@ -844,7 +844,7 @@ func (f *Invocation) AddAutoBackupAnnotationsToTarget(annotations map[string]str
 	return nil
 }
 
-func (f *Framework) EventuallyAutoBackupAnnotationsFound(expectedAnnotations map[string]string, obj interface{}) GomegaAsyncAssertion {
+func (f *Framework) EventuallyEventAnnotationsFound(expectedAnnotations map[string]string, obj interface{}) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
 			schm := scheme.Scheme

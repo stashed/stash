@@ -31,10 +31,12 @@ var _ = Describe("Workload Test", func() {
 		Context("Restore in same DaemonSet", func() {
 			It("should Backup & Restore in the source DaemonSet", func() {
 				// Deploy a DaemonSet
-				dmn := f.DeployDaemonSet(fmt.Sprintf("source-daemon1-%s", f.App()))
+				dmn, err := f.DeployDaemonSet(fmt.Sprintf("source-daemon1-%s", f.App()))
+				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
-				sampleData := f.GenerateSampleData(dmn.ObjectMeta, apis.KindDaemonSet)
+				sampleData, err := f.GenerateSampleData(dmn.ObjectMeta, apis.KindDaemonSet)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()
@@ -81,10 +83,12 @@ var _ = Describe("Workload Test", func() {
 		Context("Restore in different DaemonSet", func() {
 			It("should restore backed up data into different DaemonSet", func() {
 				// Deploy a DaemonSet
-				dmn := f.DeployDaemonSet(fmt.Sprintf("source-daemon2-%s", f.App()))
+				dmn, err := f.DeployDaemonSet(fmt.Sprintf("source-daemon2-%s", f.App()))
+				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
-				sampleData := f.GenerateSampleData(dmn.ObjectMeta, apis.KindDaemonSet)
+				sampleData, err := f.GenerateSampleData(dmn.ObjectMeta, apis.KindDaemonSet)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()
@@ -105,7 +109,8 @@ var _ = Describe("Workload Test", func() {
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
 				// Deploy restored DaemonSet
-				restoredDmn := f.DeployDaemonSet(fmt.Sprintf("restored-daemon-%s", f.App()))
+				restoredDmn, err := f.DeployDaemonSet(fmt.Sprintf("restored-daemon-%s", f.App()))
+				Expect(err).NotTo(HaveOccurred())
 
 				// Restore the backed up data
 				By("Restoring the backed up data in different DaemonSet")

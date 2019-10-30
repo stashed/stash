@@ -29,34 +29,37 @@ var _ = Describe("Auto-Backup", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	var (
-		annotations = func(backupBlueprintName string) map[string]string {
-			return map[string]string{
-				v1beta1.KeyBackupBlueprint: backupBlueprintName,
-				v1beta1.KeyTargetPaths:     framework.TestSourceDataTargetPath,
-				v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
-			}
+	annotations := func(backupBlueprintName string) map[string]string {
+		return map[string]string{
+			v1beta1.KeyBackupBlueprint: backupBlueprintName,
+			v1beta1.KeyTargetPaths:     framework.TestSourceDataTargetPath,
+			v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
 		}
-	)
+	}
 
 	Context("Deployment", func() {
 
 		Context("Success Case", func() {
 			It("should backup successfully", func() {
 				// Create BackupBlueprint
-				bb := f.CreateBackupBlueprintForWorkload(fmt.Sprintf("backupblueprint-%s", f.App()))
+				bb, err := f.CreateBackupBlueprintForWorkload(fmt.Sprintf("backupblueprint-%s", f.App()))
+				Expect(err).NotTo(HaveOccurred())
 
 				// Deploy a Deployment
-				deployment := f.DeployDeployment(fmt.Sprintf("deployment1-%s", f.App()), int32(1))
+				deployment, err := f.DeployDeployment(fmt.Sprintf("deployment1-%s", f.App()), int32(1))
+				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
-				f.GenerateSampleData(deployment.ObjectMeta, apis.KindDeployment)
+				_, err = f.GenerateSampleData(deployment.ObjectMeta, apis.KindDeployment)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Add and Ensure annotations to Target
-				f.AddAutoBackupAnnotations(annotations(bb.Name), deployment)
+				err = f.AddAutoBackupAnnotations(annotations(bb.Name), deployment)
+				Expect(err).NotTo(HaveOccurred())
 
 				// ensure Repository and BackupConfiguration
-				backupConfig := f.VerifyAutoBackupConfigured(deployment.ObjectMeta, apis.KindDeployment)
+				backupConfig, err := f.VerifyAutoBackupConfigured(deployment.ObjectMeta, apis.KindDeployment)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup the Sample Data
 				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
@@ -74,26 +77,32 @@ var _ = Describe("Auto-Backup", func() {
 			Context("Missing AutoBackup resource credential in BackupBlueprint", func() {
 				It("should fail BackupSession for missing Backend credential", func() {
 					// Create Secret for BackupBlueprint
-					secret := f.CreateBackendSecretForMinio()
+					secret, err := f.CreateBackendSecretForMinio()
+					Expect(err).NotTo(HaveOccurred())
+
 					// Generate BackupBlueprint definition
 					bb := f.BackupBlueprint(secret.Name)
 					bb.Spec.Backend.S3 = &store.S3Spec{}
 					By(fmt.Sprintf("Creating BackupBlueprint: %s", bb.Name))
-					_, err := f.CreateBackupBlueprint(bb)
+					_, err = f.CreateBackupBlueprint(bb)
 					Expect(err).NotTo(HaveOccurred())
 					f.AppendToCleanupList(bb)
 
 					// Deploy a Deployment
-					deployment := f.DeployDeployment(fmt.Sprintf("deployment2-%s", f.App()), int32(1))
+					deployment, err := f.DeployDeployment(fmt.Sprintf("deployment2-%s", f.App()), int32(1))
+					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
-					f.GenerateSampleData(deployment.ObjectMeta, apis.KindDeployment)
+					_, err = f.GenerateSampleData(deployment.ObjectMeta, apis.KindDeployment)
+					Expect(err).NotTo(HaveOccurred())
 
 					// Add and Ensure annotations to Target
-					f.AddAutoBackupAnnotations(annotations(bb.Name), deployment)
+					err = f.AddAutoBackupAnnotations(annotations(bb.Name), deployment)
+					Expect(err).NotTo(HaveOccurred())
 
 					// ensure Repository and BackupConfiguration
-					backupConfig := f.VerifyAutoBackupConfigured(deployment.ObjectMeta, apis.KindDeployment)
+					backupConfig, err := f.VerifyAutoBackupConfigured(deployment.ObjectMeta, apis.KindDeployment)
+					Expect(err).NotTo(HaveOccurred())
 
 					// Take an Instant Backup the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
@@ -106,26 +115,31 @@ var _ = Describe("Auto-Backup", func() {
 				})
 				It("should fail BackupSession for missing RetentionPolicy", func() {
 					// Create Storage Secret for Minio
-					secret := f.CreateBackendSecretForMinio()
+					secret, err := f.CreateBackendSecretForMinio()
+					Expect(err).NotTo(HaveOccurred())
 
 					// Generate BackupBlueprint definition
 					bb := f.BackupBlueprint(secret.Name)
 					bb.Spec.RetentionPolicy = v1alpha1.RetentionPolicy{}
 					By(fmt.Sprintf("Creating BackupBlueprint: %s", bb.Name))
-					_, err := f.CreateBackupBlueprint(bb)
+					_, err = f.CreateBackupBlueprint(bb)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Deploy a Deployment
-					deployment := f.DeployDeployment(fmt.Sprintf("deployment3-%s", f.App()), int32(1))
+					deployment, err := f.DeployDeployment(fmt.Sprintf("deployment3-%s", f.App()), int32(1))
+					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
-					f.GenerateSampleData(deployment.ObjectMeta, apis.KindDeployment)
+					_, err = f.GenerateSampleData(deployment.ObjectMeta, apis.KindDeployment)
+					Expect(err).NotTo(HaveOccurred())
 
 					// Add and Ensure annotations to Target
-					f.AddAutoBackupAnnotations(annotations(bb.Name), deployment)
+					err = f.AddAutoBackupAnnotations(annotations(bb.Name), deployment)
+					Expect(err).NotTo(HaveOccurred())
 
 					// ensure Repository and BackupConfiguration
-					backupConfig := f.VerifyAutoBackupConfigured(deployment.ObjectMeta, apis.KindDeployment)
+					backupConfig, err := f.VerifyAutoBackupConfigured(deployment.ObjectMeta, apis.KindDeployment)
+					Expect(err).NotTo(HaveOccurred())
 
 					// Take an Instant Backup the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
@@ -139,38 +153,48 @@ var _ = Describe("Auto-Backup", func() {
 			})
 
 			Context("Add inappropriate annotation to Target", func() {
-				FIt("should fail to create AutoBackup resources", func() {
+				It("should fail to create AutoBackup resources", func() {
 					// Create BackupBlueprint
-					f.CreateBackupBlueprintForWorkload(fmt.Sprintf("backupblueprint-%s", f.App()))
+					_, err := f.CreateBackupBlueprintForWorkload(fmt.Sprintf("backupblueprint-%s", f.App()))
+					Expect(err).NotTo(HaveOccurred())
 
 					// Deploy a Deployment
-					deployment := f.DeployDeployment(fmt.Sprintf("deployment4-%s", f.App()), int32(1))
+					deployment, err := f.DeployDeployment(fmt.Sprintf("deployment4-%s", f.App()), int32(1))
+					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
-					f.GenerateSampleData(deployment.ObjectMeta, apis.KindDeployment)
+					_, err = f.GenerateSampleData(deployment.ObjectMeta, apis.KindDeployment)
+					Expect(err).NotTo(HaveOccurred())
 
 					// Add and Ensure annotations to Target
-					f.AddAutoBackupAnnotations(annotations(framework.WrongBackupBlueprintName), deployment)
+					err = f.AddAutoBackupAnnotations(annotations(framework.WrongBackupBlueprintName), deployment)
+					Expect(err).NotTo(HaveOccurred())
 
-					f.EventuallyAutoBackup(deployment.ObjectMeta, apis.KindDeployment).Should(matcher.HaveEvent(eventer.EventReasonAutoBackupResourcesCreationFailed))
+					// AutoBackup Resource creation failed
+					f.EventuallyEvent(deployment.ObjectMeta, apis.KindDeployment).Should(matcher.HaveEvent(eventer.EventReasonAutoBackupResourcesCreationFailed))
 				})
 				It("should fail BackupSession for adding inappropriate TargetPath/MountPath", func() {
 					// Create BackupBlueprint
-					bb := f.CreateBackupBlueprintForWorkload(fmt.Sprintf("backupblueprint-%s", f.App()))
+					bb, err := f.CreateBackupBlueprintForWorkload(fmt.Sprintf("backupblueprint-%s", f.App()))
+					Expect(err).NotTo(HaveOccurred())
 
 					// Deploy a Deployment
-					deployment := f.DeployDeployment(fmt.Sprintf("deployment5-%s", f.App()), int32(1))
+					deployment, err := f.DeployDeployment(fmt.Sprintf("deployment5-%s", f.App()), int32(1))
+					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
-					f.GenerateSampleData(deployment.ObjectMeta, apis.KindDeployment)
+					_, err = f.GenerateSampleData(deployment.ObjectMeta, apis.KindDeployment)
+					Expect(err).NotTo(HaveOccurred())
 
 					// Add and Ensure annotations to Target
 					anno := annotations(bb.Name)
 					anno[v1beta1.KeyTargetPaths] = framework.WrongTargetPath
-					f.AddAutoBackupAnnotations(anno, deployment)
+					err = f.AddAutoBackupAnnotations(anno, deployment)
+					Expect(err).NotTo(HaveOccurred())
 
 					// ensure Repository and BackupConfiguration
-					backupConfig := f.VerifyAutoBackupConfigured(deployment.ObjectMeta, apis.KindDeployment)
+					backupConfig, err := f.VerifyAutoBackupConfigured(deployment.ObjectMeta, apis.KindDeployment)
+					Expect(err).NotTo(HaveOccurred())
 
 					// Take an Instant Backup the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)

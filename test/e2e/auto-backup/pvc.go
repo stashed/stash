@@ -29,13 +29,11 @@ var _ = Describe("Auto-Backup", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	var (
-		annotations = func(backupBlueprintName string) map[string]string {
-			return map[string]string{
-				v1beta1.KeyBackupBlueprint: backupBlueprintName,
-			}
+	annotations := func(backupBlueprintName string) map[string]string {
+		return map[string]string{
+			v1beta1.KeyBackupBlueprint: backupBlueprintName,
 		}
-	)
+	}
 
 	Context("PVC", func() {
 
@@ -43,22 +41,28 @@ var _ = Describe("Auto-Backup", func() {
 
 			It("should backup successfully", func() {
 				// Create BackupBlueprint
-				bb := f.CreateBackupBlueprintForPVC(fmt.Sprintf("backupblueprint-%s", f.App()))
+				bb, err := f.CreateBackupBlueprintForPVC(fmt.Sprintf("backupblueprint-%s", f.App()))
+				Expect(err).NotTo(HaveOccurred())
 
 				// Create a PVC
-				pvc := f.CreateNewPVC(fmt.Sprintf("pvc1-%s", f.App()))
+				pvc, err := f.CreateNewPVC(fmt.Sprintf("pvc1-%s", f.App()))
+				Expect(err).NotTo(HaveOccurred())
 
 				// Deploy a Pod
-				pod := f.DeployPod(pvc.Name)
+				pod, err := f.DeployPod(pvc.Name)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
-				f.GenerateSampleData(pod.ObjectMeta, apis.KindPod)
+				_, err = f.GenerateSampleData(pod.ObjectMeta, apis.KindPod)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Add and Ensure annotations to Target
-				f.AddAutoBackupAnnotations(annotations(bb.Name), pvc)
+				err = f.AddAutoBackupAnnotations(annotations(bb.Name), pvc)
+				Expect(err).NotTo(HaveOccurred())
 
 				// ensure Repository and BackupConfiguration
-				backupConfig := f.VerifyAutoBackupConfigured(pvc.ObjectMeta, apis.KindPersistentVolumeClaim)
+				backupConfig, err := f.VerifyAutoBackupConfigured(pvc.ObjectMeta, apis.KindPersistentVolumeClaim)
+				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup the Sample Data
 				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
@@ -76,30 +80,36 @@ var _ = Describe("Auto-Backup", func() {
 			Context("Missing AutoBackup resource credential in BackupBlueprint", func() {
 				It("should fail BackupSession for missing Backend credential", func() {
 					// Create Secret for BackupBlueprint
-					secret := f.CreateBackendSecretForMinio()
+					secret, err := f.CreateBackendSecretForMinio()
+					Expect(err).NotTo(HaveOccurred())
 
 					// Generate BackupBlueprint definition
 					bb := f.BackupBlueprint(secret.Name)
 					bb.Spec.Backend.S3 = &store.S3Spec{}
 					By(fmt.Sprintf("Creating BackupBlueprint: %s", bb.Name))
-					_, err := f.CreateBackupBlueprint(bb)
+					_, err = f.CreateBackupBlueprint(bb)
 					Expect(err).NotTo(HaveOccurred())
 					f.AppendToCleanupList(bb)
 
 					// Create a PVC
-					pvc := f.CreateNewPVC(fmt.Sprintf("pvc2-%s", f.App()))
+					pvc, err := f.CreateNewPVC(fmt.Sprintf("pvc2-%s", f.App()))
+					Expect(err).NotTo(HaveOccurred())
 
 					// Deploy a Pod
-					pod := f.DeployPod(pvc.Name)
+					pod, err := f.DeployPod(pvc.Name)
+					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
-					f.GenerateSampleData(pod.ObjectMeta, apis.KindPod)
+					_, err = f.GenerateSampleData(pod.ObjectMeta, apis.KindPod)
+					Expect(err).NotTo(HaveOccurred())
 
 					// Add and Ensure annotations to Target
-					f.AddAutoBackupAnnotations(annotations(bb.Name), pvc)
+					err = f.AddAutoBackupAnnotations(annotations(bb.Name), pvc)
+					Expect(err).NotTo(HaveOccurred())
 
 					// ensure Repository and BackupConfiguration
-					backupConfig := f.VerifyAutoBackupConfigured(pvc.ObjectMeta, apis.KindPersistentVolumeClaim)
+					backupConfig, err := f.VerifyAutoBackupConfigured(pvc.ObjectMeta, apis.KindPersistentVolumeClaim)
+					Expect(err).NotTo(HaveOccurred())
 
 					// Take an Instant Backup the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
@@ -112,29 +122,35 @@ var _ = Describe("Auto-Backup", func() {
 				})
 				It("should fail BackupSession for missing RetentionPolicy", func() {
 					// Create storage Secret for Minio
-					secret := f.CreateBackendSecretForMinio()
+					secret, err := f.CreateBackendSecretForMinio()
+					Expect(err).NotTo(HaveOccurred())
 
 					// Generate BackupBlueprint definition
 					bb := f.BackupBlueprint(secret.Name)
 					bb.Spec.RetentionPolicy = v1alpha1.RetentionPolicy{}
 					By(fmt.Sprintf("Creating BackupBlueprint: %s", bb.Name))
-					_, err := f.CreateBackupBlueprint(bb)
+					_, err = f.CreateBackupBlueprint(bb)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Create a PVC
-					pvc := f.CreateNewPVC(fmt.Sprintf("pvc3-%s", f.App()))
+					pvc, err := f.CreateNewPVC(fmt.Sprintf("pvc3-%s", f.App()))
+					Expect(err).NotTo(HaveOccurred())
 
 					// Deploy a Pod
-					pod := f.DeployPod(pvc.Name)
+					pod, err := f.DeployPod(pvc.Name)
+					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
-					f.GenerateSampleData(pod.ObjectMeta, apis.KindPod)
+					_, err = f.GenerateSampleData(pod.ObjectMeta, apis.KindPod)
+					Expect(err).NotTo(HaveOccurred())
 
 					// Add and Ensure annotations to Target
-					f.AddAutoBackupAnnotations(annotations(bb.Name), pvc)
+					err = f.AddAutoBackupAnnotations(annotations(bb.Name), pvc)
+					Expect(err).NotTo(HaveOccurred())
 
 					// ensure Repository and BackupConfiguration
-					backupConfig := f.VerifyAutoBackupConfigured(pvc.ObjectMeta, apis.KindPersistentVolumeClaim)
+					backupConfig, err := f.VerifyAutoBackupConfigured(pvc.ObjectMeta, apis.KindPersistentVolumeClaim)
+					Expect(err).NotTo(HaveOccurred())
 
 					// Take an Instant Backup the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
@@ -148,24 +164,30 @@ var _ = Describe("Auto-Backup", func() {
 			})
 
 			Context("Add inappropriate annotation to Target", func() {
-				FIt("should fail to create AutoBackup resources", func() {
+				It("should fail to create AutoBackup resources", func() {
 					// Create BackupBlueprint
-					bb := f.CreateBackupBlueprintForPVC(fmt.Sprintf("backupblueprint-%s", f.App()))
+					bb, err := f.CreateBackupBlueprintForPVC(fmt.Sprintf("backupblueprint-%s", f.App()))
+					Expect(err).NotTo(HaveOccurred())
 
 					// Create a PVC
-					pvc := f.CreateNewPVC(fmt.Sprintf("pvc4-%s", f.App()))
+					pvc, err := f.CreateNewPVC(fmt.Sprintf("pvc4-%s", f.App()))
+					Expect(err).NotTo(HaveOccurred())
 
 					// Deploy a Pod
-					pod := f.DeployPod(pvc.Name)
+					pod, err := f.DeployPod(pvc.Name)
+					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
-					f.GenerateSampleData(pod.ObjectMeta, apis.KindPod)
+					_, err = f.GenerateSampleData(pod.ObjectMeta, apis.KindPod)
+					Expect(err).NotTo(HaveOccurred())
 
 					anno := annotations(bb.Name)
 					anno[v1beta1.KeyBackupBlueprint] = framework.WrongBackupBlueprintName
-					f.AddAutoBackupAnnotations(anno, pvc)
+					err = f.AddAutoBackupAnnotations(anno, pvc)
+					Expect(err).NotTo(HaveOccurred())
 
-					f.EventuallyAutoBackup(pvc.ObjectMeta, apis.KindPersistentVolumeClaim).Should(matcher.HaveEvent(eventer.EventReasonAutoBackupResourcesCreationFailed))
+					// AutoBackup Resource creation failed
+					f.EventuallyEvent(pvc.ObjectMeta, apis.KindPersistentVolumeClaim).Should(matcher.HaveEvent(eventer.EventReasonAutoBackupResourcesCreationFailed))
 				})
 			})
 		})

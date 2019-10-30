@@ -112,9 +112,12 @@ func (f *Invocation) WaitUntilRSReadyWithInitContainer(meta metav1.ObjectMeta) e
 	})
 }
 
-func (f *Invocation) DeployReplicaSet(name string, replica int32) *apps.ReplicaSet {
+func (f *Invocation) DeployReplicaSet(name string, replica int32) (*apps.ReplicaSet, error) {
 	// Create PVC for ReplicaSet
-	pvc := f.CreateNewPVC(name)
+	pvc, err := f.CreateNewPVC(name)
+	if err != nil {
+		return &apps.ReplicaSet{}, err
+	}
 	// Generate ReplicaSet definition
 	rs := f.ReplicaSet(pvc.Name)
 	rs.Spec.Replicas = &replica
@@ -122,7 +125,9 @@ func (f *Invocation) DeployReplicaSet(name string, replica int32) *apps.ReplicaS
 
 	By("Deploying ReplicaSet: " + rs.Name)
 	createdRS, err := f.CreateReplicaSet(rs)
-	Expect(err).NotTo(HaveOccurred())
+	if err != nil {
+		return createdRS, err
+	}
 	f.AppendToCleanupList(createdRS)
 
 	By("Waiting for ReplicaSet to be ready")
@@ -132,5 +137,5 @@ func (f *Invocation) DeployReplicaSet(name string, replica int32) *apps.ReplicaS
 	// this is necessary because we will exec into the pods and create sample data
 	f.EventuallyPodAccessible(createdRS.ObjectMeta).Should(BeTrue())
 
-	return createdRS
+	return createdRS, err
 }
