@@ -489,9 +489,22 @@ verify-gen: gen fmt
 		echo "files are out of date, run make gen fmt"; exit 1; \
 	fi
 
+.PHONY: add-license
+add-license:
+	@echo "Adding license header"
+	@docker run --rm 	                                 \
+		-u $$(id -u):$$(id -g)                           \
+		-v /tmp:/.cache                                  \
+		-v $$(pwd):$(DOCKER_REPO_ROOT)                   \
+		-w $(DOCKER_REPO_ROOT)                           \
+		--env HTTP_PROXY=$(HTTP_PROXY)                   \
+		--env HTTPS_PROXY=$(HTTPS_PROXY)                 \
+		$(BUILD_IMAGE)                                   \
+		ltag -t "./hack/license" --excludes "vendor contrib" -v
+
 .PHONY: check-license
 check-license:
-	@echo "Checking files have proper license header"
+	@echo "Checking files for license header"
 	@docker run --rm 	                                 \
 		-u $$(id -u):$$(id -g)                           \
 		-v /tmp:/.cache                                  \
