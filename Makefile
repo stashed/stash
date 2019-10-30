@@ -94,9 +94,11 @@ BUILD_DIRS  := bin/$(OS)_$(ARCH)     \
                $(HOME)/.kube         \
                $(HOME)/.minikube
 
-DOCKERFILE_PROD  = in.Dockerfile
-DOCKERFILE_DBG   = dbg.Dockerfile
-DOCKERFILE_TEST  = test.Dockerfile
+DOCKERFILE_PROD  = Dockerfile.in
+DOCKERFILE_DBG   = Dockerfile.dbg
+DOCKERFILE_TEST  = Dockerfile.test
+
+DOCKER_REPO_ROOT := /go/src/$(GO_PKG)/$(REPO)
 
 # If you want to build all binaries, see the 'all-build' rule.
 # If you want to build all containers, see the 'all-container' rule.
@@ -137,8 +139,6 @@ version:
 	@echo ::set-output name=git_branch::$(git_branch)
 	@echo ::set-output name=commit_hash::$(commit_hash)
 	@echo ::set-output name=commit_timestamp::$(commit_timestamp)
-
-DOCKER_REPO_ROOT := /go/src/$(GO_PKG)/$(REPO)
 
 # Generate a typed clientset
 .PHONY: clientset
