@@ -292,11 +292,11 @@ func (c *StashController) ensureBackupConfiguration(backupBlueprint *api_v1beta1
 }
 
 func getRepositoryName(target *core.ObjectReference, prefix string) string {
-	return fmt.Sprintf("%s-%s", strings.ToLower(prefix), target.Name)
+	return meta_util.ValidNameWithPrefix(util.ResourceKindShortForm(prefix), target.Name)
 }
 
 func getBackupConfigurationName(target *core.ObjectReference, prefix string) string {
-	return fmt.Sprintf("%s-%s", strings.ToLower(prefix), target.Name)
+	return meta_util.ValidNameWithPrefix(util.ResourceKindShortForm(prefix), target.Name)
 }
 
 func (c *StashController) handleAutoBackupResourcesCreationFailure(ref *core.ObjectReference, err error) error {

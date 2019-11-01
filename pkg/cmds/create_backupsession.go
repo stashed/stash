@@ -98,7 +98,7 @@ func NewCmdCreateBackupSession() *cobra.Command {
 func (opt *options) createBackupSession() error {
 	bsMeta := metav1.ObjectMeta{
 		// Name format: <BackupConfiguration name>-<timestamp in unix format>
-		Name:            fmt.Sprintf("%s-%d", opt.backupConfigName, time.Now().Unix()),
+		Name:            meta.ValidNameWithSuffix(opt.backupConfigName, fmt.Sprintf("%d", time.Now().Unix())),
 		Namespace:       opt.namespace,
 		OwnerReferences: []metav1.OwnerReference{},
 	}

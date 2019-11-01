@@ -472,3 +472,31 @@ func UpsertInterimVolume(kubeClient kubernetes.Interface, podSpec core.PodSpec, 
 	}
 	return AttachPVC(podSpec, volumes, volumeMounts), nil
 }
+
+func ResourceKindShortForm(kind string) string {
+	switch kind {
+	case apis.KindDeployment:
+		return "deploy"
+	case apis.KindReplicationController:
+		return "rc"
+	case apis.KindDaemonSet:
+		return "dmn"
+	case apis.KindStatefulSet:
+		return "sts"
+	case apis.KindPersistentVolumeClaim:
+		return "pvc"
+	case apis.KindPod:
+		return "po"
+	case apis.KindAppBinding:
+		return "ab"
+	case api_v1beta1.ResourceKindBackupConfiguration:
+		return "bc"
+	case api_v1beta1.ResourceKindBackupSession:
+		return "bs"
+	case api_v1beta1.ResourcePluralBackupBlueprint:
+		return "bb"
+	case api_v1beta1.ResourceKindRestoreSession:
+		return "rs"
+	}
+	return strings.ToLower(kind)
+}
