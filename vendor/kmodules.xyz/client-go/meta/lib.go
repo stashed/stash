@@ -1,12 +1,14 @@
 package meta
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/validation"
 )
 
 // https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/#labels
@@ -74,4 +76,37 @@ func FilterKeys(domainKey string, out, in map[string]string) map[string]string {
 		}
 	}
 	return out
+}
+
+func ValidNameWithPrefix(prefix, name string) string {
+	out := fmt.Sprintf("%s-%s", prefix, name)
+	return strings.Trim(out[:min(validation.DNS1123LabelMaxLength, len(out))], "-")
+}
+
+func ValidNameWithSuffix(name, suffix string) string {
+	out := fmt.Sprintf("%s-%s", name, suffix)
+	return strings.Trim(out[max(0, len(out)-validation.DNS1123LabelMaxLength):], "-")
+}
+
+func ValidNameWithPefixNSuffix(prefix, name, suffix string) string {
+	out := strings.Trim(fmt.Sprintf("%s-%s-%s", prefix, name, suffix), "-")
+	n := len(out)
+	if n <= validation.DNS1123LabelMaxLength {
+		return out
+	}
+	return out[:validation.DNS1123LabelMaxLength/2+1] + out[(n-validation.DNS1123LabelMaxLength/2):]
+}
+
+func min(x, y int) int {
+	if x < y {
+		return x
+	}
+	return y
+}
+
+func max(x, y int) int {
+	if x > y {
+		return x
+	}
+	return y
 }
