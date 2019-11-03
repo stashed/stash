@@ -35,8 +35,8 @@ export GOOS="${OS}"
 export GO111MODULE=on
 export GOFLAGS="-mod=vendor"
 
-go install                                              \
-    -installsuffix "static"                             \
+go install \
+    -installsuffix "static" \
     -ldflags "                                          \
       -X main.Version=${VERSION}                        \
       -X main.VersionStrategy=${version_strategy:-}     \
@@ -47,5 +47,5 @@ go install                                              \
       -X main.GoVersion=$(go version | cut -d " " -f 3) \
       -X main.Compiler=$(go env CC)                     \
       -X main.Platform=${OS}/${ARCH}                    \
-    "                                                   \
+    " \
     ./...
