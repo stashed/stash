@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	"stash.appscode.dev/stash/apis"
-	apis_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/restic"
 
@@ -65,19 +65,19 @@ type RepoLabelData struct {
 // GetHostName returns hostname for a target
 func GetHostName(target interface{}) (string, error) {
 	// target nil for cluster backup
-	var targetRef apis_v1beta1.TargetRef
+	var targetRef api_v1beta1.TargetRef
 	if target == nil {
 		return DefaultHost, nil
 	}
 
 	// read targetRef field from BackupTarget or RestoreTarget
 	switch t := target.(type) {
-	case *apis_v1beta1.BackupTarget:
+	case *api_v1beta1.BackupTarget:
 		if t == nil {
 			return DefaultHost, nil
 		}
 		targetRef = t.Ref
-	case *apis_v1beta1.RestoreTarget:
+	case *api_v1beta1.RestoreTarget:
 		if t == nil {
 			return DefaultHost, nil
 		}
@@ -322,7 +322,7 @@ type WorkloadClients struct {
 	AppCatalogClient appcatalog_cs.Interface
 }
 
-func (wc *WorkloadClients) IsTargetExist(target apis_v1beta1.TargetRef, namespace string) bool {
+func (wc *WorkloadClients) IsTargetExist(target api_v1beta1.TargetRef, namespace string) bool {
 	switch target.Kind {
 	case apis.KindDeployment:
 		if _, err := wc.KubeClient.AppsV1().Deployments(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
@@ -489,16 +489,7 @@ func ResourceKindShortForm(kind string) string {
 		return "po"
 	case apis.KindAppBinding:
 		return "app"
-	case apis.KindBackupConfiguration:
-		return "bc"
-	case apis.KindBackupSession:
-		return "bs"
-	case apis.KindBackupBlueprint:
-		return "bb"
-	case apis.KindRestoreSession:
-		return "rs"
-	case apis.KindRepository:
-		return "repo"
+	default:
+		return strings.ToLower(kind)
 	}
-	return strings.ToLower(kind)
 }
