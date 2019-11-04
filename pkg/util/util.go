@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	"stash.appscode.dev/stash/apis"
-	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
+	apis_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/restic"
 
@@ -65,19 +65,19 @@ type RepoLabelData struct {
 // GetHostName returns hostname for a target
 func GetHostName(target interface{}) (string, error) {
 	// target nil for cluster backup
-	var targetRef api_v1beta1.TargetRef
+	var targetRef apis_v1beta1.TargetRef
 	if target == nil {
 		return DefaultHost, nil
 	}
 
 	// read targetRef field from BackupTarget or RestoreTarget
 	switch t := target.(type) {
-	case *api_v1beta1.BackupTarget:
+	case *apis_v1beta1.BackupTarget:
 		if t == nil {
 			return DefaultHost, nil
 		}
 		targetRef = t.Ref
-	case *api_v1beta1.RestoreTarget:
+	case *apis_v1beta1.RestoreTarget:
 		if t == nil {
 			return DefaultHost, nil
 		}
@@ -322,7 +322,7 @@ type WorkloadClients struct {
 	AppCatalogClient appcatalog_cs.Interface
 }
 
-func (wc *WorkloadClients) IsTargetExist(target api_v1beta1.TargetRef, namespace string) bool {
+func (wc *WorkloadClients) IsTargetExist(target apis_v1beta1.TargetRef, namespace string) bool {
 	switch target.Kind {
 	case apis.KindDeployment:
 		if _, err := wc.KubeClient.AppsV1().Deployments(namespace).Get(target.Name, metav1.GetOptions{}); err == nil {
@@ -480,7 +480,7 @@ func ResourceKindShortForm(kind string) string {
 	case apis.KindReplicationController:
 		return "rc"
 	case apis.KindDaemonSet:
-		return "dmn"
+		return "ds"
 	case apis.KindStatefulSet:
 		return "sts"
 	case apis.KindPersistentVolumeClaim:
@@ -488,14 +488,14 @@ func ResourceKindShortForm(kind string) string {
 	case apis.KindPod:
 		return "po"
 	case apis.KindAppBinding:
-		return "ab"
-	case api_v1beta1.ResourceKindBackupConfiguration:
+		return "app"
+	case apis_v1beta1.ResourceKindBackupConfiguration:
 		return "bc"
-	case api_v1beta1.ResourceKindBackupSession:
+	case apis_v1beta1.ResourceKindBackupSession:
 		return "bs"
-	case api_v1beta1.ResourcePluralBackupBlueprint:
+	case apis_v1beta1.ResourcePluralBackupBlueprint:
 		return "bb"
-	case api_v1beta1.ResourceKindRestoreSession:
+	case apis_v1beta1.ResourceKindRestoreSession:
 		return "rs"
 	}
 	return strings.ToLower(kind)

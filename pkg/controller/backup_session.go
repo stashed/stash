@@ -54,8 +54,8 @@ import (
 )
 
 const (
-	BackupJobPrefix                = "backup-"
-	VolumeSnapshotPrefix           = "vs-"
+	BackupJobPrefix                = "backup"
+	VolumeSnapshotPrefix           = "vs"
 	PromJobBackupSessionController = "stash-backupsession-controller"
 )
 

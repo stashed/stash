@@ -55,7 +55,7 @@ import (
 )
 
 const (
-	RestoreJobPrefix                = "restore-"
+	RestoreJobPrefix                = "restore"
 	PromJobRestoreSessionController = "stash-restoresession-controller"
 )
 
