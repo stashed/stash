@@ -489,14 +489,16 @@ func ResourceKindShortForm(kind string) string {
 		return "po"
 	case apis.KindAppBinding:
 		return "app"
-	case apis_v1beta1.ResourceKindBackupConfiguration:
+	case apis.KindBackupConfiguration:
 		return "bc"
-	case apis_v1beta1.ResourceKindBackupSession:
+	case apis.KindBackupSession:
 		return "bs"
-	case apis_v1beta1.ResourcePluralBackupBlueprint:
+	case apis.KindBackupBlueprint:
 		return "bb"
-	case apis_v1beta1.ResourceKindRestoreSession:
+	case apis.KindRestoreSession:
 		return "rs"
+	case apis.KindRepository:
+		return "repo"
 	}
 	return strings.ToLower(kind)
 }

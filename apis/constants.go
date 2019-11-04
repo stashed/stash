@@ -76,4 +76,13 @@ const (
 	StashInterimVolume          = "stash-interim-volume"
 	StashInterimVolumeMountPath = "/stash-interim-volume"
 	StashInterimDataDir         = "/stash-interim-volume/data"
+
+	KindBackupConfiguration = "BackupConfiguration"
+	KindBackupSession       = "BackupSession"
+	KindRestoreSession      = "RestoreSession"
+	KindBackupBlueprint     = "BackupBlueprint"
+	KindBackupBatch         = "BackupBatch"
+	KindRepository          = "Repository"
+	KindFunction            = "Function"
+	KindTask                = "Task"
 )
