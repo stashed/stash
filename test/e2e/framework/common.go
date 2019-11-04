@@ -16,8 +16,6 @@ limitations under the License.
 package framework
 
 import (
-	"fmt"
-
 	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
@@ -30,6 +28,7 @@ import (
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"kmodules.xyz/client-go/meta"
 )
 
 func (f *Framework) GenerateSampleData(objMeta metav1.ObjectMeta, kind string) (sets.String, error) {
@@ -192,20 +191,7 @@ func (f Invocation) VerifyAutoBackupConfigured(workloadMeta metav1.ObjectMeta, k
 	// we will form the meta name and namespace for farther process.
 	objMeta := metav1.ObjectMeta{
 		Namespace: f.Namespace(),
-	}
-	switch kind {
-	case apis.KindDeployment:
-		objMeta.Name = fmt.Sprintf("deployment-%s", workloadMeta.Name)
-	case apis.KindDaemonSet:
-		objMeta.Name = fmt.Sprintf("daemonset-%s", workloadMeta.Name)
-	case apis.KindStatefulSet:
-		objMeta.Name = fmt.Sprintf("statefulset-%s", workloadMeta.Name)
-	case apis.KindReplicationController:
-		objMeta.Name = fmt.Sprintf("replicationcontroller-%s", workloadMeta.Name)
-	case apis.KindReplicaSet:
-		objMeta.Name = fmt.Sprintf("replicaset-%s", workloadMeta.Name)
-	case apis.KindPersistentVolumeClaim:
-		objMeta.Name = fmt.Sprintf("persistentvolumeclaim-%s", workloadMeta.Name)
+		Name:      meta.ValidNameWithPrefix(util.ResourceKindShortForm(kind), workloadMeta.Name),
 	}
 
 	By("Waiting for Repository")

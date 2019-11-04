@@ -55,7 +55,7 @@ import (
 )
 
 const (
-	RestoreJobPrefix                = "stash-restore-"
+	RestoreJobPrefix                = "restore"
 	PromJobRestoreSessionController = "stash-restoresession-controller"
 )
 
@@ -681,9 +681,9 @@ func (c *StashController) handleRestoreJobCreationFailure(restoreSession *api_v1
 }
 
 func getRestoreJobName(restoreSession *api_v1beta1.RestoreSession) string {
-	return RestoreJobPrefix + strings.ReplaceAll(restoreSession.Name, ".", "-")
+	return meta.ValidNameWithPrefix(RestoreJobPrefix, strings.ReplaceAll(restoreSession.Name, ".", "-"))
 }
 
 func getVolumeRestorerJobName(restoreSession *api_v1beta1.RestoreSession) string {
-	return VolumeSnapshotPrefix + strings.ReplaceAll(restoreSession.Name, ".", "-")
+	return meta.ValidNameWithPrefix(VolumeSnapshotPrefix, strings.ReplaceAll(restoreSession.Name, ".", "-"))
 }

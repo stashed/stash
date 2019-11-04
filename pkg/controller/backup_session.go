@@ -54,8 +54,8 @@ import (
 )
 
 const (
-	BackupJobPrefix                = "stash-backup-"
-	VolumeSnapshotPrefix           = "volume-snapshot-"
+	BackupJobPrefix                = "backup"
+	VolumeSnapshotPrefix           = "vs"
 	PromJobBackupSessionController = "stash-backupsession-controller"
 )
 
@@ -547,7 +547,7 @@ func (c *StashController) handleBackupJobCreationFailure(backupSession *api_v1be
 }
 
 func getBackupJobName(backupSession *api_v1beta1.BackupSession) string {
-	return BackupJobPrefix + strings.ReplaceAll(backupSession.Name, ".", "-")
+	return meta.ValidNameWithPrefix(BackupJobPrefix, strings.ReplaceAll(backupSession.Name, ".", "-"))
 }
 
 func getBackupJobServiceAccountName(backupConfiguration *api_v1beta1.BackupConfiguration) string {
@@ -555,7 +555,7 @@ func getBackupJobServiceAccountName(backupConfiguration *api_v1beta1.BackupConfi
 }
 
 func getVolumeSnapshotterJobName(backupSession *api_v1beta1.BackupSession) string {
-	return VolumeSnapshotPrefix + strings.ReplaceAll(backupSession.Name, ".", "-")
+	return meta.ValidNameWithPrefix(VolumeSnapshotPrefix, strings.ReplaceAll(backupSession.Name, ".", "-"))
 }
 
 // cleanupBackupHistory deletes old BackupSessions and theirs associate resources according to BackupHistoryLimit
