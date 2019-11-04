@@ -473,6 +473,7 @@ func UpsertInterimVolume(kubeClient kubernetes.Interface, podSpec core.PodSpec, 
 	return AttachPVC(podSpec, volumes, volumeMounts), nil
 }
 
+// xref: https://kubernetes.io/docs/reference/kubectl/overview/#resource-types
 func ResourceKindShortForm(kind string) string {
 	switch kind {
 	case apis.KindDeployment:
