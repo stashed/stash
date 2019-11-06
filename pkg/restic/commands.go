@@ -368,7 +368,7 @@ func (w *ResticWrapper) run(commands ...Command) ([]byte, error) {
 func formatError(err error, stdErr string) error {
 	parts := strings.Split(strings.TrimSuffix(stdErr, "\n"), "\n")
 	if len(parts) > 1 {
-		return fmt.Errorf("%s, reason: %s", err, parts[len(parts)-1:][0])
+		return fmt.Errorf("%s", strings.Join(parts[1:], " "))
 	}
 	return err
 }

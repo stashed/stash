@@ -29,6 +29,8 @@ func (backend Backend) Container() (string, error) {
 		return backend.Azure.Container, nil
 	} else if backend.Swift != nil {
 		return backend.Swift.Container, nil
+	} else if backend.B2 != nil {
+		return backend.B2.Bucket, nil
 	} else if backend.Rest != nil {
 		u, err := url.Parse(backend.Rest.URL)
 		if err != nil {
@@ -51,6 +53,8 @@ func (backend Backend) Location() (string, error) {
 		return "local:" + backend.Local.MountPath, nil
 	} else if backend.Swift != nil {
 		return "swift:" + backend.Swift.Container, nil
+	} else if backend.B2 != nil {
+		return "b2:" + backend.B2.Bucket, nil
 	}
 	return "", errors.New("no storage provider is configured")
 }
@@ -79,6 +83,8 @@ func (backend Backend) Prefix() (string, error) {
 		return backend.GCS.Prefix, nil
 	} else if backend.Azure != nil {
 		return backend.Azure.Prefix, nil
+	} else if backend.B2 != nil {
+		return backend.B2.Prefix, nil
 	} else if backend.Swift != nil {
 		return backend.Swift.Prefix, nil
 	} else if backend.Rest != nil {
