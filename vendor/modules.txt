@@ -957,7 +957,7 @@ kmodules.xyz/custom-resources/apis/appcatalog
 kmodules.xyz/custom-resources/client/informers/externalversions/appcatalog
 kmodules.xyz/custom-resources/client/informers/externalversions/internalinterfaces
 kmodules.xyz/custom-resources/client/informers/externalversions/appcatalog/v1alpha1
-# kmodules.xyz/objectstore-api v0.0.0-20191014210450-ac380fa650a3
+# kmodules.xyz/objectstore-api v0.0.0-20191106100235-bea39a8e0874
 kmodules.xyz/objectstore-api/api/v1
 kmodules.xyz/objectstore-api/osm
 # kmodules.xyz/offshoot-api v0.0.0-20190901210649-de049192326c
