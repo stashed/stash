@@ -97,7 +97,17 @@ func Convert_repositories_Snapshot_To_v1alpha1_Snapshot(in *repositories.Snapsho
 
 func autoConvert_v1alpha1_SnapshotList_To_repositories_SnapshotList(in *SnapshotList, out *repositories.SnapshotList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]repositories.Snapshot)(unsafe.Pointer(&in.Items))
+	if in.Items != nil {
+		in, out := &in.Items, &out.Items
+		*out = make([]repositories.Snapshot, len(*in))
+		for i := range *in {
+			if err := Convert_v1alpha1_Snapshot_To_repositories_Snapshot(&(*in)[i], &(*out)[i], s); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Items = nil
+	}
 	return nil
 }
 
@@ -108,7 +118,17 @@ func Convert_v1alpha1_SnapshotList_To_repositories_SnapshotList(in *SnapshotList
 
 func autoConvert_repositories_SnapshotList_To_v1alpha1_SnapshotList(in *repositories.SnapshotList, out *SnapshotList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]Snapshot)(unsafe.Pointer(&in.Items))
+	if in.Items != nil {
+		in, out := &in.Items, &out.Items
+		*out = make([]Snapshot, len(*in))
+		for i := range *in {
+			if err := Convert_repositories_Snapshot_To_v1alpha1_Snapshot(&(*in)[i], &(*out)[i], s); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Items = nil
+	}
 	return nil
 }
 
@@ -122,8 +142,8 @@ func autoConvert_v1alpha1_SnapshotStatus_To_repositories_SnapshotStatus(in *Snap
 	out.Paths = *(*[]string)(unsafe.Pointer(&in.Paths))
 	out.Hostname = in.Hostname
 	out.Username = in.Username
-	out.UID = in.UID
-	out.Gid = in.Gid
+	out.UID = int(in.UID)
+	out.Gid = int(in.Gid)
 	out.Tags = *(*[]string)(unsafe.Pointer(&in.Tags))
 	return nil
 }
@@ -138,8 +158,8 @@ func autoConvert_repositories_SnapshotStatus_To_v1alpha1_SnapshotStatus(in *repo
 	out.Paths = *(*[]string)(unsafe.Pointer(&in.Paths))
 	out.Hostname = in.Hostname
 	out.Username = in.Username
-	out.UID = in.UID
-	out.Gid = in.Gid
+	out.UID = int32(in.UID)
+	out.Gid = int32(in.Gid)
 	out.Tags = *(*[]string)(unsafe.Pointer(&in.Tags))
 	return nil
 }

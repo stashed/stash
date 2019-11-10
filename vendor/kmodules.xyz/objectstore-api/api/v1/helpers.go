@@ -1,3 +1,19 @@
+/*
+Copyright The Kmodules Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package v1
 
 import (
@@ -119,7 +135,7 @@ func (backend Backend) Provider() (string, error) {
 
 // MaxConnections returns maximum parallel connection to use to connect with the backend
 // returns 0 if not specified
-func (backend Backend) MaxConnections() int {
+func (backend Backend) MaxConnections() int64 {
 	if backend.GCS != nil {
 		return backend.GCS.MaxConnections
 	} else if backend.Azure != nil {

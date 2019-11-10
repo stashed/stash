@@ -1,5 +1,5 @@
 /*
-Copyright 2019 AppsCode Inc.
+Copyright The Kmodules Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,10 +19,11 @@ limitations under the License.
 package v1alpha1
 
 import (
+	v1alpha1 "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
-	v1alpha1 "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 )
 
 // AppBindingLister helps list AppBindings.

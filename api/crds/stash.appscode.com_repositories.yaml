@@ -431,6 +431,7 @@ spec:
                     container:
                       type: string
                     maxConnections:
+                      format: int64
                       type: integer
                     prefix:
                       type: string
@@ -440,6 +441,7 @@ spec:
                     bucket:
                       type: string
                     maxConnections:
+                      format: int64
                       type: integer
                     prefix:
                       type: string
@@ -449,6 +451,7 @@ spec:
                     bucket:
                       type: string
                     maxConnections:
+                      format: int64
                       type: integer
                     prefix:
                       type: string
@@ -1705,16 +1708,18 @@ spec:
                 which is updated on mutation by the API Server.
               format: int64
               type: integer
-            size:
-              description: Size show size of repository after last backup
-              type: string
             snapshotCount:
               description: SnapshotCount shows number of snapshots stored in the repository
+              format: int64
               type: integer
             snapshotsRemovedOnLastCleanup:
               description: SnapshotsRemovedOnLastCleanup shows number of old snapshots
                 cleaned up according to retention policy on last backup session
+              format: int64
               type: integer
+            totalSize:
+              description: TotalSize show size of repository after last backup
+              type: string
           type: object
       type: object
   versions:

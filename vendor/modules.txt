@@ -201,7 +201,7 @@ github.com/jmespath/go-jmespath
 github.com/jpillora/go-ogle-analytics
 # github.com/json-iterator/go v1.1.6
 github.com/json-iterator/go
-# github.com/kubernetes-csi/external-snapshotter v1.2.0
+# github.com/kubernetes-csi/external-snapshotter v1.2.2
 github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1alpha1
 github.com/kubernetes-csi/external-snapshotter/pkg/client/clientset/versioned
 github.com/kubernetes-csi/external-snapshotter/pkg/client/clientset/versioned/typed/volumesnapshot/v1alpha1
@@ -925,7 +925,7 @@ k8s.io/utils/integer
 k8s.io/utils/buffer
 k8s.io/utils/trace
 k8s.io/utils/pointer
-# kmodules.xyz/client-go v0.0.0-20191101042247-ee9566c9ac7f
+# kmodules.xyz/client-go v0.0.0-20191107203555-78563b72c377
 kmodules.xyz/client-go/logs
 kmodules.xyz/client-go/apiextensions/v1beta1
 kmodules.xyz/client-go/meta
@@ -944,9 +944,12 @@ kmodules.xyz/client-go/batch/v1beta1
 kmodules.xyz/client-go/dynamic
 kmodules.xyz/client-go/tools/analytics
 kmodules.xyz/client-go/apiregistration/v1beta1
-# kmodules.xyz/constants v0.0.0-20191009183447-fbd33067b8a6
+# kmodules.xyz/constants v0.0.0-20191024095500-cd4313df4aa6
 kmodules.xyz/constants/google
-# kmodules.xyz/custom-resources v0.0.0-20190927035424-65fe358bb045
+kmodules.xyz/constants/aws
+kmodules.xyz/constants/azure
+kmodules.xyz/constants/openstack
+# kmodules.xyz/custom-resources v0.0.0-20191111200327-6984cba51875
 kmodules.xyz/custom-resources/client/clientset/versioned
 kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1
 kmodules.xyz/custom-resources/client/clientset/versioned/scheme
@@ -957,10 +960,10 @@ kmodules.xyz/custom-resources/apis/appcatalog
 kmodules.xyz/custom-resources/client/informers/externalversions/appcatalog
 kmodules.xyz/custom-resources/client/informers/externalversions/internalinterfaces
 kmodules.xyz/custom-resources/client/informers/externalversions/appcatalog/v1alpha1
-# kmodules.xyz/objectstore-api v0.0.0-20191106100235-bea39a8e0874
+# kmodules.xyz/objectstore-api v0.0.0-20191111201754-2aba8370dfda
 kmodules.xyz/objectstore-api/api/v1
 kmodules.xyz/objectstore-api/osm
-# kmodules.xyz/offshoot-api v0.0.0-20190901210649-de049192326c
+# kmodules.xyz/offshoot-api v0.0.0-20191111195805-1105abf4a162
 kmodules.xyz/offshoot-api/api/v1
 kmodules.xyz/offshoot-api/util
 # kmodules.xyz/openshift v0.0.0-20190808144841-c8f9a927f1d1
@@ -980,7 +983,9 @@ kmodules.xyz/openshift/client/informers/externalversions/apps/v1
 kmodules.xyz/openshift/client/informers/externalversions/security/v1
 kmodules.xyz/openshift/apis/apps/install
 kmodules.xyz/openshift/client/listers/security/v1
-# kmodules.xyz/webhook-runtime v0.0.0-20190808145328-4186c470d56b
+# kmodules.xyz/prober v0.0.0-20191111210804-26d3576296bc
+kmodules.xyz/prober/api/v1
+# kmodules.xyz/webhook-runtime v0.0.0-20191106182834-bf518fbc7b19
 kmodules.xyz/webhook-runtime/admission
 kmodules.xyz/webhook-runtime/admission/v1beta1
 kmodules.xyz/webhook-runtime/admission/v1beta1/generic

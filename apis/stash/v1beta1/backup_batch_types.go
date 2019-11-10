@@ -40,53 +40,53 @@ const (
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type BackupBatch struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              BackupBatchSpec   `json:"spec,omitempty"`
-	Status            BackupBatchStatus `json:"status,omitempty"`
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+	Spec              BackupBatchSpec   `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
+	Status            BackupBatchStatus `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
 }
 
 type BackupBatchSpec struct {
 	// backupConfigurationTemplates is a list of backup configurations that are part of this batch
 	// +optional
-	BackupConfigurationTemplates []BackupConfigurationTemplate `json:"backupConfigurationTemplates,omitempty"`
+	BackupConfigurationTemplates []BackupConfigurationTemplate `json:"backupConfigurationTemplates,omitempty" protobuf:"bytes,1,rep,name=backupConfigurationTemplates"`
 	// Schedule specifies the schedule for invoking backup sessions
 	// +optional
-	Schedule string `json:"schedule,omitempty"`
+	Schedule string `json:"schedule,omitempty" protobuf:"bytes,2,opt,name=schedule"`
 	// Driver indicates the name of the agent to use to backup the target.
 	// Supported values are "Restic", "VolumeSnapshotter".
 	// Default value is "Restic".
 	// +optional
-	Driver Snapshotter `json:"driver,omitempty"`
+	Driver Snapshotter `json:"driver,omitempty" protobuf:"bytes,3,opt,name=driver,casttype=Snapshotter"`
 	// Repository refer to the Repository crd that holds backend information
 	// +optional
-	Repository core.LocalObjectReference `json:"repository,omitempty"`
+	Repository core.LocalObjectReference `json:"repository,omitempty" protobuf:"bytes,4,opt,name=repository"`
 	// RetentionPolicy indicates the policy to follow to clean old backup snapshots
-	RetentionPolicy v1alpha1.RetentionPolicy `json:"retentionPolicy"`
+	RetentionPolicy v1alpha1.RetentionPolicy `json:"retentionPolicy" protobuf:"bytes,5,opt,name=retentionPolicy"`
 	// Indicates that the BackupConfiguration is paused from taking backup. Default value is 'false'
 	// +optional
-	Paused bool `json:"paused,omitempty"`
+	Paused bool `json:"paused,omitempty" protobuf:"varint,6,opt,name=paused"`
 	// BackupHistoryLimit specifies the number of BackupSession and it's associate resources to keep.
 	// This is helpful for debugging purpose.
 	// Default: 1
 	// +optional
-	BackupHistoryLimit *int32 `json:"backupHistoryLimit,omitempty"`
+	BackupHistoryLimit *int32 `json:"backupHistoryLimit,omitempty" protobuf:"varint,7,opt,name=backupHistoryLimit"`
 	// Actions that Stash should take in response to backup sessions.
 	// Cannot be updated.
 	// +optional
-	Hooks *Hooks `json:"hooks,omitempty"`
+	Hooks *Hooks `json:"hooks,omitempty" protobuf:"bytes,8,opt,name=hooks"`
 }
 
 type BackupBatchStatus struct {
 	// ObservedGeneration is the most recent generation observed for this BackupBatch. It corresponds to the
 	// BackupBatch's generation, which is updated on mutation by the API Server.
 	// +optional
-	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+	ObservedGeneration int64 `json:"observedGeneration,omitempty" protobuf:"varint,1,opt,name=observedGeneration"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 type BackupBatchList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []BackupBatch `json:"items,omitempty"`
+	metav1.ListMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+	Items           []BackupBatch `json:"items,omitempty" protobuf:"bytes,2,rep,name=items"`
 }

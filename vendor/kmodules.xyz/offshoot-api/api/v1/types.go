@@ -1,3 +1,19 @@
+/*
+Copyright The Kmodules Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package v1
 
 import (
@@ -12,7 +28,7 @@ type ObjectMeta struct {
 	// queryable and should be preserved when modifying objects.
 	// More info: http://kubernetes.io/docs/user-guide/annotations
 	// +optional
-	Annotations map[string]string `json:"annotations,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty" protobuf:"bytes,1,rep,name=annotations"`
 }
 
 // PodTemplateSpec describes the data a pod should have when created from a template
@@ -20,24 +36,24 @@ type PodTemplateSpec struct {
 	// Standard object's metadata.
 	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
 	// +optional
-	ObjectMeta `json:"metadata,omitempty"`
+	ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
 
 	// Workload controller's metadata.
 	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
 	// +optional
-	Controller ObjectMeta `json:"controller,omitempty"`
+	Controller ObjectMeta `json:"controller,omitempty" protobuf:"bytes,2,opt,name=controller"`
 
 	// Specification of the desired behavior of the pod.
 	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status
 	// +optional
-	Spec PodSpec `json:"spec,omitempty"`
+	Spec PodSpec `json:"spec,omitempty" protobuf:"bytes,3,opt,name=spec"`
 }
 
 type PodSpec struct {
 	// ServiceAccountName is the name of the ServiceAccount to use to run this pod.
 	// More info: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
 	// +optional
-	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+	ServiceAccountName string `json:"serviceAccountName,omitempty" protobuf:"bytes,1,opt,name=serviceAccountName"`
 
 	// Arguments to the entrypoint.
 	// The docker image's CMD is used if this is not provided.
@@ -48,39 +64,39 @@ type PodSpec struct {
 	// Cannot be updated.
 	// More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
 	// +optional
-	Args []string `json:"args,omitempty"`
+	Args []string `json:"args,omitempty" protobuf:"bytes,2,rep,name=args"`
 
 	// NodeSelector is a selector which must be true for the pod to fit on a node.
 	// Selector which must match a node's labels for the pod to be scheduled on that node.
 	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
 	// +optional
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	NodeSelector map[string]string `json:"nodeSelector,omitempty" protobuf:"bytes,3,rep,name=nodeSelector"`
 
 	// Compute Resources required by the sidecar container.
-	Resources core.ResourceRequirements `json:"resources,omitempty"`
+	Resources core.ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,4,opt,name=resources"`
 
 	// If specified, the pod's scheduling constraints
 	// +optional
-	Affinity *core.Affinity `json:"affinity,omitempty"`
+	Affinity *core.Affinity `json:"affinity,omitempty" protobuf:"bytes,5,opt,name=affinity"`
 
 	// If specified, the pod will be dispatched by specified scheduler.
 	// If not specified, the pod will be dispatched by default scheduler.
 	// +optional
-	SchedulerName string `json:"schedulerName,omitempty"`
+	SchedulerName string `json:"schedulerName,omitempty" protobuf:"bytes,6,opt,name=schedulerName"`
 
 	// If specified, the pod's tolerations.
 	// +optional
-	Tolerations []core.Toleration `json:"tolerations,omitempty"`
+	Tolerations []core.Toleration `json:"tolerations,omitempty" protobuf:"bytes,7,rep,name=tolerations"`
 
 	// ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec.
 	// If specified, these secrets will be passed to individual puller implementations for them to use.
 	// +optional
-	ImagePullSecrets []core.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+	ImagePullSecrets []core.LocalObjectReference `json:"imagePullSecrets,omitempty" protobuf:"bytes,8,rep,name=imagePullSecrets"`
 
 	// List of environment variables to set in the container.
 	// Cannot be updated.
 	// +optional
-	Env []core.EnvVar `json:"env,omitempty"`
+	Env []core.EnvVar `json:"env,omitempty" protobuf:"bytes,9,rep,name=env"`
 
 	// List of initialization containers belonging to the pod.
 	// Init containers are executed in order prior to containers being started. If any
@@ -97,7 +113,7 @@ type PodSpec struct {
 	// More info: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
 	// +patchMergeKey=name
 	// +patchStrategy=merge
-	InitContainers []core.Container `json:"initContainers,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
+	InitContainers []core.Container `json:"initContainers,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,10,rep,name=initContainers"`
 
 	// If specified, indicates the pod's priority. "system-node-critical" and
 	// "system-cluster-critical" are two special keywords which indicate the
@@ -106,19 +122,19 @@ type PodSpec struct {
 	// If not specified, the pod priority will be default or zero if there is no
 	// default.
 	// +optional
-	PriorityClassName string `json:"priorityClassName,omitempty"`
+	PriorityClassName string `json:"priorityClassName,omitempty" protobuf:"bytes,11,opt,name=priorityClassName"`
 	// The priority value. Various system components use this field to find the
 	// priority of the pod. When Priority Admission Controller is enabled, it
 	// prevents users from setting this field. The admission controller populates
 	// this field from PriorityClassName.
 	// The higher the value, the higher the priority.
 	// +optional
-	Priority *int32 `json:"priority,omitempty"`
+	Priority *int32 `json:"priority,omitempty" protobuf:"varint,12,opt,name=priority"`
 
 	// SecurityContext holds pod-level security attributes and common container settings.
 	// Optional: Defaults to empty.  See type description for default values of each field.
 	// +optional
-	SecurityContext *core.PodSecurityContext `json:"securityContext,omitempty"`
+	SecurityContext *core.PodSecurityContext `json:"securityContext,omitempty" protobuf:"bytes,13,opt,name=securityContext"`
 
 	// Periodic probe of container liveness.
 	// Container will be restarted if the probe fails.
@@ -127,7 +143,7 @@ type PodSpec struct {
 	// Cannot be updated.
 	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
 	// +optional
-	LivenessProbe *core.Probe `json:"livenessProbe,omitempty"`
+	LivenessProbe *core.Probe `json:"livenessProbe,omitempty" protobuf:"bytes,14,opt,name=livenessProbe"`
 
 	// Periodic probe of container service readiness.
 	// Container will be removed from service endpoints if the probe fails.
@@ -136,12 +152,12 @@ type PodSpec struct {
 	// To ignore defaulting, set the value to empty ReadynessProbe "{}".
 	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
 	// +optional
-	ReadinessProbe *core.Probe `json:"readinessProbe,omitempty"`
+	ReadinessProbe *core.Probe `json:"readinessProbe,omitempty" protobuf:"bytes,15,opt,name=readinessProbe"`
 
 	// Actions that the management system should take in response to container lifecycle events.
 	// Cannot be updated.
 	// +optional
-	Lifecycle *core.Lifecycle `json:"lifecycle,omitempty"`
+	Lifecycle *core.Lifecycle `json:"lifecycle,omitempty" protobuf:"bytes,16,opt,name=lifecycle"`
 }
 
 // ServiceTemplateSpec describes the data a service should have when created from a template
@@ -149,12 +165,12 @@ type ServiceTemplateSpec struct {
 	// Standard object's metadata.
 	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
 	// +optional
-	ObjectMeta `json:"metadata,omitempty"`
+	ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
 
 	// Specification of the desired behavior of the service.
 	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status
 	// +optional
-	Spec ServiceSpec `json:"spec,omitempty"`
+	Spec ServiceSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
 }
 
 // ServiceSpec describes the attributes that a user creates on a service.
@@ -163,7 +179,7 @@ type ServiceSpec struct {
 	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
 	// +patchMergeKey=port
 	// +patchStrategy=merge
-	Ports []ServicePort `json:"ports,omitempty" patchStrategy:"merge" patchMergeKey:"port"`
+	Ports []ServicePort `json:"ports,omitempty" patchStrategy:"merge" patchMergeKey:"port" protobuf:"bytes,1,rep,name=ports"`
 
 	// clusterIP is the IP address of the service and is usually assigned
 	// randomly by the master. If an address is specified manually and is not in
@@ -175,7 +191,7 @@ type ServiceSpec struct {
 	// type is ExternalName.
 	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
 	// +optional
-	ClusterIP string `json:"clusterIP,omitempty"`
+	ClusterIP string `json:"clusterIP,omitempty" protobuf:"bytes,2,opt,name=clusterIP"`
 
 	// type determines how the Service is exposed. Defaults to ClusterIP. Valid
 	// options are ExternalName, ClusterIP, NodePort, and LoadBalancer.
@@ -192,7 +208,7 @@ type ServiceSpec struct {
 	// to the clusterIP.
 	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services---service-types
 	// +optional
-	Type core.ServiceType `json:"type,omitempty"`
+	Type core.ServiceType `json:"type,omitempty" protobuf:"bytes,3,opt,name=type,casttype=k8s.io/api/core/v1.ServiceType"`
 
 	// externalIPs is a list of IP addresses for which nodes in the cluster
 	// will also accept traffic for this service.  These IPs are not managed by
@@ -200,7 +216,7 @@ type ServiceSpec struct {
 	// at a node with this IP.  A common example is external load-balancers
 	// that are not part of the Kubernetes system.
 	// +optional
-	ExternalIPs []string `json:"externalIPs,omitempty"`
+	ExternalIPs []string `json:"externalIPs,omitempty" protobuf:"bytes,4,rep,name=externalIPs"`
 
 	// Only applies to Service Type: LoadBalancer
 	// LoadBalancer will get created with the IP specified in this field.
@@ -208,14 +224,14 @@ type ServiceSpec struct {
 	// the loadBalancerIP when a load balancer is created.
 	// This field will be ignored if the cloud-provider does not support the feature.
 	// +optional
-	LoadBalancerIP string `json:"loadBalancerIP,omitempty"`
+	LoadBalancerIP string `json:"loadBalancerIP,omitempty" protobuf:"bytes,5,opt,name=loadBalancerIP"`
 
 	// If specified and supported by the platform, this will restrict traffic through the cloud-provider
 	// load-balancer will be restricted to the specified client IPs. This field will be ignored if the
 	// cloud-provider does not support the feature."
 	// More info: https://kubernetes.io/docs/tasks/access-application-cluster/configure-cloud-provider-firewall/
 	// +optional
-	LoadBalancerSourceRanges []string `json:"loadBalancerSourceRanges,omitempty"`
+	LoadBalancerSourceRanges []string `json:"loadBalancerSourceRanges,omitempty" protobuf:"bytes,6,rep,name=loadBalancerSourceRanges"`
 
 	// externalTrafficPolicy denotes if this Service desires to route external
 	// traffic to node-local or cluster-wide endpoints. "Local" preserves the
@@ -224,7 +240,7 @@ type ServiceSpec struct {
 	// "Cluster" obscures the client source IP and may cause a second hop to
 	// another node, but should have good overall load-spreading.
 	// +optional
-	ExternalTrafficPolicy core.ServiceExternalTrafficPolicyType `json:"externalTrafficPolicy,omitempty"`
+	ExternalTrafficPolicy core.ServiceExternalTrafficPolicyType `json:"externalTrafficPolicy,omitempty" protobuf:"bytes,7,opt,name=externalTrafficPolicy,casttype=k8s.io/api/core/v1.ServiceExternalTrafficPolicyType"`
 
 	// healthCheckNodePort specifies the healthcheck nodePort for the service.
 	// If not specified, HealthCheckNodePort is created by the service api
@@ -232,11 +248,11 @@ type ServiceSpec struct {
 	// if specified by the client. Only effects when Type is set to LoadBalancer
 	// and ExternalTrafficPolicy is set to Local.
 	// +optional
-	HealthCheckNodePort int32 `json:"healthCheckNodePort,omitempty"`
+	HealthCheckNodePort int32 `json:"healthCheckNodePort,omitempty" protobuf:"varint,8,opt,name=healthCheckNodePort"`
 
 	// sessionAffinityConfig contains the configurations of session affinity.
 	// +optional
-	SessionAffinityConfig *core.SessionAffinityConfig `json:"sessionAffinityConfig,omitempty"`
+	SessionAffinityConfig *core.SessionAffinityConfig `json:"sessionAffinityConfig,omitempty" protobuf:"bytes,9,opt,name=sessionAffinityConfig"`
 }
 
 // ServicePort contains information on service's port.
@@ -246,10 +262,10 @@ type ServicePort struct {
 	// the 'Name' field in EndpointPort objects.
 	// Optional if only one ServicePort is defined on this service.
 	// +optional
-	Name string `json:"name,omitempty"`
+	Name string `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
 
 	// The port that will be exposed by this service.
-	Port int32 `json:"port"`
+	Port int32 `json:"port" protobuf:"varint,2,opt,name=port"`
 
 	// The port on each node on which this service is exposed when type=NodePort or LoadBalancer.
 	// Usually assigned by the system. If specified, it will be allocated to the service
@@ -257,7 +273,7 @@ type ServicePort struct {
 	// Default is to auto-allocate a port if the ServiceType of this Service requires one.
 	// More info: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
 	// +optional
-	NodePort int32 `json:"nodePort,omitempty"`
+	NodePort int32 `json:"nodePort,omitempty" protobuf:"varint,3,opt,name=nodePort"`
 }
 
 func MergeServicePorts(cur []core.ServicePort, desired []ServicePort) []core.ServicePort {

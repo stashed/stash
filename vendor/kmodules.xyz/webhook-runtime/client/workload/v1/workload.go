@@ -1,7 +1,27 @@
+/*
+Copyright The Kmodules Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 package v1
 
 import (
 	"fmt"
+
+	kutil "kmodules.xyz/client-go"
+	ocapps "kmodules.xyz/openshift/apis/apps/v1"
+	occ "kmodules.xyz/openshift/client/clientset/versioned"
+	v1 "kmodules.xyz/webhook-runtime/apis/workload/v1"
 
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/golang/glog"
@@ -19,10 +39,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
-	kutil "kmodules.xyz/client-go"
-	ocapps "kmodules.xyz/openshift/apis/apps/v1"
-	occ "kmodules.xyz/openshift/client/clientset/versioned"
-	v1 "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
 
 var json = jsoniter.ConfigFastest
@@ -71,82 +87,118 @@ func (c *workloads) Create(w *v1.Workload) (*v1.Workload, error) {
 	switch w.GroupVersionKind() {
 	case core.SchemeGroupVersion.WithKind(v1.KindPod):
 		obj := &core.Pod{}
-		ApplyWorkload(obj, w)
+		if err = ApplyWorkload(obj, w); err != nil {
+			return nil, err
+		}
 		out, err = c.kc.CoreV1().Pods(c.ns).Create(obj)
 		// ReplicationController
 	case core.SchemeGroupVersion.WithKind(v1.KindReplicationController):
 		obj := &core.ReplicationController{}
-		ApplyWorkload(obj, w)
+		if err = ApplyWorkload(obj, w); err != nil {
+			return nil, err
+		}
 		out, err = c.kc.CoreV1().ReplicationControllers(c.ns).Create(obj)
 		// Deployment
 	case extensions.SchemeGroupVersion.WithKind(v1.KindDeployment):
 		obj := &extensions.Deployment{}
-		ApplyWorkload(obj, w)
+		if err = ApplyWorkload(obj, w); err != nil {
+			return nil, err
+		}
 		out, err = c.kc.ExtensionsV1beta1().Deployments(c.ns).Create(obj)
 	case appsv1beta1.SchemeGroupVersion.WithKind(v1.KindDeployment):
 		obj := &appsv1beta1.Deployment{}
-		ApplyWorkload(obj, w)
+		if err = ApplyWorkload(obj, w); err != nil {
+			return nil, err
+		}
 		out, err = c.kc.AppsV1beta1().Deployments(c.ns).Create(obj)
 	case appsv1beta2.SchemeGroupVersion.WithKind(v1.KindDeployment):
 		obj := &appsv1beta2.Deployment{}
-		ApplyWorkload(obj, w)
+		if err = ApplyWorkload(obj, w); err != nil {
+			return nil, err
+		}
 		out, err = c.kc.AppsV1beta2().Deployments(c.ns).Create(obj)
 	case appsv1.SchemeGroupVersion.WithKind(v1.KindDeployment):
 		obj := &appsv1.Deployment{}
-		ApplyWorkload(obj, w)
+		if err = ApplyWorkload(obj, w); err != nil {
+			return nil, err
+		}
 		out, err = c.kc.AppsV1().Deployments(c.ns).Create(obj)
 		// DaemonSet
 	case extensions.SchemeGroupVersion.WithKind(v1.KindDaemonSet):
 		obj := &extensions.DaemonSet{}
-		ApplyWorkload(obj, w)
+		if err = ApplyWorkload(obj, w); err != nil {
+			return nil, err
+		}
 		out, err = c.kc.ExtensionsV1beta1().DaemonSets(c.ns).Create(obj)
 	case appsv1beta2.SchemeGroupVersion.WithKind(v1.KindDaemonSet):
 		obj := &appsv1beta2.DaemonSet{}
-		ApplyWorkload(obj, w)
+		if err = ApplyWorkload(obj, w); err != nil {
+			return nil, err
+		}
 		out, err = c.kc.AppsV1beta2().DaemonSets(c.ns).Create(obj)
 	case appsv1.SchemeGroupVersion.WithKind(v1.KindDaemonSet):
 		obj := &appsv1.DaemonSet{}
-		ApplyWorkload(obj, w)
+		if err = ApplyWorkload(obj, w); err != nil {
+			return nil, err
+		}
 		out, err = c.kc.AppsV1().DaemonSets(c.ns).Create(obj)
 		// ReplicaSet
 	case extensions.SchemeGroupVersion.WithKind(v1.KindReplicaSet):
 		obj := &extensions.ReplicaSet{}
-		ApplyWorkload(obj, w)
+		if err = ApplyWorkload(obj, w); err != nil {
+			return nil, err
+		}
 		out, err = c.kc.ExtensionsV1beta1().ReplicaSets(c.ns).Create(obj)
 	case appsv1beta2.SchemeGroupVersion.WithKind(v1.KindReplicaSet):
 		obj := &appsv1beta2.ReplicaSet{}
-		ApplyWorkload(obj, w)
+		if err = ApplyWorkload(obj, w); err != nil {
+			return nil, err
+		}
 		out, err = c.kc.AppsV1beta2().ReplicaSets(c.ns).Create(obj)
 	case appsv1.SchemeGroupVersion.WithKind(v1.KindReplicaSet):
 		obj := &appsv1.ReplicaSet{}
-		ApplyWorkload(obj, w)
+		if err = ApplyWorkload(obj, w); err != nil {
+			return nil, err
+		}
 		out, err = c.kc.AppsV1().ReplicaSets(c.ns).Create(obj)
 		// StatefulSet
 	case appsv1beta1.SchemeGroupVersion.WithKind(v1.KindStatefulSet):
 		obj := &appsv1beta1.StatefulSet{}
-		ApplyWorkload(obj, w)
+		if err = ApplyWorkload(obj, w); err != nil {
+			return nil, err
+		}
 		out, err = c.kc.AppsV1beta1().StatefulSets(c.ns).Create(obj)
 	case appsv1beta2.SchemeGroupVersion.WithKind(v1.KindStatefulSet):
 		obj := &appsv1beta2.StatefulSet{}
-		ApplyWorkload(obj, w)
+		if err = ApplyWorkload(obj, w); err != nil {
+			return nil, err
+		}
 		out, err = c.kc.AppsV1beta2().StatefulSets(c.ns).Create(obj)
 	case appsv1.SchemeGroupVersion.WithKind(v1.KindStatefulSet):
 		obj := &appsv1.StatefulSet{}
-		ApplyWorkload(obj, w)
+		if err = ApplyWorkload(obj, w); err != nil {
+			return nil, err
+		}
 		out, err = c.kc.AppsV1().StatefulSets(c.ns).Create(obj)
 		// Job
 	case batchv1.SchemeGroupVersion.WithKind(v1.KindJob):
 		obj := &batchv1.Job{}
-		ApplyWorkload(obj, w)
+		if err = ApplyWorkload(obj, w); err != nil {
+			return nil, err
+		}
 		out, err = c.kc.BatchV1().Jobs(c.ns).Create(obj)
 		// CronJob
 	case batchv1beta1.SchemeGroupVersion.WithKind(v1.KindCronJob):
 		obj := &batchv1beta1.CronJob{}
-		ApplyWorkload(obj, w)
+		if err = ApplyWorkload(obj, w); err != nil {
+			return nil, err
+		}
 		out, err = c.kc.BatchV1beta1().CronJobs(c.ns).Create(obj)
 	case ocapps.SchemeGroupVersion.WithKind(v1.KindDeploymentConfig):
 		obj := &ocapps.DeploymentConfig{}
-		ApplyWorkload(obj, w)
+		if err = ApplyWorkload(obj, w); err != nil {
+			return nil, err
+		}
 		out, err = c.oc.AppsV1().DeploymentConfigs(c.ns).Create(obj)
 	default:
 		err = fmt.Errorf("the object is not a pod or does not have a pod template")
