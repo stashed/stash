@@ -19,17 +19,27 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
+	"sync"
+	"syscall"
+	"time"
 
+	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/repositories/v1alpha1"
 	"stash.appscode.dev/stash/pkg/controller"
 	"stash.appscode.dev/stash/pkg/server"
 
+	"github.com/appscode/go/log"
+	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
+	license_client "go.bytebuilders.dev/client-go"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	openapinamer "k8s.io/apiserver/pkg/endpoints/openapi"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
+	"k8s.io/client-go/kubernetes"
 	"kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/clientcmd"
 )
@@ -132,5 +142,55 @@ func (o StashOptions) Run(stopCh <-chan struct{}) error {
 		return err
 	}
 
+	// Run initial license verification
+	err = verifyLicense(config.ExtraConfig.KubeClient)
+	if err != nil {
+		return err
+	}
+	// Start periodic license verification
+	runPeriodicLicenseVerification(config.ExtraConfig.KubeClient)
+
 	return s.Run(stopCh)
+}
+
+func runPeriodicLicenseVerification(kubeClient kubernetes.Interface) {
+	ticker := time.NewTicker(apis.LicenseVerificationInterval)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for range ticker.C {
+			err := verifyLicense(kubeClient)
+			if err != nil {
+				log.Warningln("failed to verify license. Reason: ", err.Error())
+				// send interrupt so that all go-routine shut-down
+				_ = syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+				return
+			}
+		}
+	}()
+	wg.Wait()
+}
+
+func verifyLicense(kubeClient kubernetes.Interface) error {
+	// In order to verify license, we need to know clusterID, productID and productOwnerID
+	// in addition to license key itself.
+	// clusterID is the UID of the kube-system namespace.
+	// productID and productOwnerID are unique id provided to a product while registering the product
+	// in the byte builders marketplace. They should be hardcoded into a product source code as constant
+
+	log.Infoln("Verifying license.....")
+	ns, err := kubeClient.CoreV1().Namespaces().Get("kube-system", metav1.GetOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to verify license")
+	}
+
+	clusterID := string(ns.UID)
+	licenseClient := license_client.NewClient("", os.Getenv(apis.StashLicenseKey), "https://appscode.ninja")
+
+	_, err = licenseClient.GetLicensePlan(clusterID, apis.StashProductID, apis.StashOwnerID)
+	if err != nil {
+		return errors.Wrap(err, "failed to verify license")
+	}
+	return nil
 }

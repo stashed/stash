@@ -25,7 +25,8 @@ require (
 	github.com/spf13/afero v1.2.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
-	github.com/stretchr/testify v1.3.0
+	github.com/stretchr/testify v1.4.0
+	go.bytebuilders.dev/client-go v0.0.0-20191111051259-3e213951ba30
 	gomodules.xyz/cert v1.0.1
 	gomodules.xyz/envsubst v0.1.0
 	gomodules.xyz/stow v0.2.2

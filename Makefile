@@ -27,6 +27,7 @@ API_GROUPS           ?= repositories:v1alpha1 stash:v1alpha1 stash:v1beta1
 
 # Where to push the docker image.
 REGISTRY ?= appscode
+STASH_LICENSE_KEY?=
 
 # This version-strategy uses git tags to set the version string
 git_branch       := $(shell git rev-parse --abbrev-ref HEAD)
@@ -457,7 +458,7 @@ $(BUILD_DIRS):
 .PHONY: install
 install:
 	@cd ../installer; \
-	APPSCODE_ENV=dev  STASH_IMAGE_TAG=$(TAG) ./deploy/stash.sh --docker-registry=$(REGISTRY) --image-pull-secret=$(REGISTRY_SECRET)
+	APPSCODE_ENV=dev  STASH_IMAGE_TAG=$(TAG) ./deploy/stash.sh --docker-registry=$(REGISTRY) --image-pull-secret=$(REGISTRY_SECRET) --license-key="$(STASH_LICENSE_KEY)"
 
 .PHONY: uninstall
 uninstall:

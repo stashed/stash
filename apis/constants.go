@@ -15,6 +15,8 @@ limitations under the License.
 */
 package apis
 
+import "time"
+
 const (
 	Namespace      = "NAMESPACE"
 	BackupSession  = "BACKUP_SESSION"
@@ -76,4 +78,10 @@ const (
 	StashInterimVolume          = "stash-interim-volume"
 	StashInterimVolumeMountPath = "/stash-interim-volume"
 	StashInterimDataDir         = "/stash-interim-volume/data"
+
+	// license specific constants
+	StashLicenseKey             = "STASH_LICENSE_KEY"
+	StashProductID              = "prod_FARXQdMCCvjfZw"
+	StashOwnerID                = 3
+	LicenseVerificationInterval = time.Minute * 5
 )
