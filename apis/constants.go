@@ -83,5 +83,5 @@ const (
 	StashLicenseKey             = "STASH_LICENSE_KEY"
 	StashProductID              = "prod_FARXQdMCCvjfZw"
 	StashOwnerID                = 3
-	LicenseVerificationInterval = time.Minute * 5
+	LicenseVerificationInterval = time.Hour * 1
 )

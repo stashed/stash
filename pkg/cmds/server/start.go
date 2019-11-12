@@ -20,26 +20,28 @@ import (
 	"io"
 	"net"
 	"os"
-	"sync"
+	"strings"
 	"syscall"
 	"time"
 
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/repositories/v1alpha1"
 	"stash.appscode.dev/stash/pkg/controller"
+	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/pkg/server"
 
 	"github.com/appscode/go/log"
-	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 	license_client "go.bytebuilders.dev/client-go"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/errors"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	openapinamer "k8s.io/apiserver/pkg/endpoints/openapi"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/kubernetes/pkg/apis/core"
 	"kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/clientcmd"
 )
@@ -142,34 +144,30 @@ func (o StashOptions) Run(stopCh <-chan struct{}) error {
 		return err
 	}
 
-	// Run initial license verification
+	// Run initial license verification. Don't start any controller if licence is invalid
 	err = verifyLicense(config.ExtraConfig.KubeClient)
 	if err != nil {
-		return err
+		return handleLicenseVerificationFailure(config.ExtraConfig.KubeClient, err)
 	}
+
 	// Start periodic license verification
-	runPeriodicLicenseVerification(config.ExtraConfig.KubeClient)
+	go runPeriodicLicenseVerification(config.ExtraConfig.KubeClient, stopCh)
 
 	return s.Run(stopCh)
 }
 
-func runPeriodicLicenseVerification(kubeClient kubernetes.Interface) {
+func runPeriodicLicenseVerification(kubeClient kubernetes.Interface, stopCh <-chan struct{}) {
 	ticker := time.NewTicker(apis.LicenseVerificationInterval)
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		for range ticker.C {
-			err := verifyLicense(kubeClient)
-			if err != nil {
-				log.Warningln("failed to verify license. Reason: ", err.Error())
-				// send interrupt so that all go-routine shut-down
-				_ = syscall.Kill(syscall.Getpid(), syscall.SIGINT)
-				return
-			}
+	for range ticker.C {
+		err := verifyLicense(kubeClient)
+		if err != nil {
+			_ = handleLicenseVerificationFailure(kubeClient, err)
+			// send interrupt so that all go-routine shut-down
+			_ = syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+			return
 		}
-	}()
-	wg.Wait()
+	}
+	<-stopCh
 }
 
 func verifyLicense(kubeClient kubernetes.Interface) error {
@@ -182,15 +180,46 @@ func verifyLicense(kubeClient kubernetes.Interface) error {
 	log.Infoln("Verifying license.....")
 	ns, err := kubeClient.CoreV1().Namespaces().Get("kube-system", metav1.GetOptions{})
 	if err != nil {
-		return errors.Wrap(err, "failed to verify license")
+		return err
 	}
 
 	clusterID := string(ns.UID)
-	licenseClient := license_client.NewClient("", os.Getenv(apis.StashLicenseKey), "https://appscode.ninja")
+	licenseClient := license_client.NewClient(
+		"",
+		strings.TrimSuffix(os.Getenv(apis.StashLicenseKey), "\n"),
+		"https://appscode.ninja",
+	)
 
 	_, err = licenseClient.GetLicensePlan(clusterID, apis.StashProductID, apis.StashOwnerID)
 	if err != nil {
-		return errors.Wrap(err, "failed to verify license")
+		return err
 	}
+	log.Infoln("License has been verified successfully")
 	return nil
+}
+
+func handleLicenseVerificationFailure(kubeClient kubernetes.Interface, licenseErr error) error {
+	// Log license verification failure
+	log.Warningln("failed to verify license. Reason: ", licenseErr.Error())
+
+	// Write event to stash operator deployment
+	podName := os.Getenv("MY_POD_NAME")
+	namespace := os.Getenv("MY_POD_NAMESPACE")
+
+	parts := strings.Split(podName, "-")
+	operatorName := strings.Join(parts[0:len(parts)-2], "-")
+
+	dpl, err := kubeClient.AppsV1().Deployments(namespace).Get(operatorName, metav1.GetOptions{})
+	if err != nil {
+		return errors.NewAggregate([]error{licenseErr, err})
+	}
+	_, err = eventer.CreateEvent(
+		kubeClient,
+		eventer.EventSourceLicenseVerifier,
+		dpl,
+		core.EventTypeWarning,
+		eventer.EventReasonLicenseVerificationFailed,
+		fmt.Sprintf("filed to verify license. Reason: %s", licenseErr.Error()),
+	)
+	return errors.NewAggregate([]error{licenseErr, err})
 }

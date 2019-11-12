@@ -60,8 +60,9 @@ const (
 	EventSourceBackupTriggeringCronJob       = "Backup Triggering CronJob"
 	EventSourceStatusUpdater                 = "Status Updater"
 	EventSourceAutoBackupHandler             = "Auto Backup Handler"
-
+	EventSourceLicenseVerifier               = "License Verifier"
 	// ======================= Event Reasons ========================
+	EventReasonLicenseVerificationFailed = "License Verification Failed"
 	// BackupConfiguration Events
 	EventReasonCronJobCreationFailed   = "CronJob Creation Failed"
 	EventReasonBackupJobCreationFailed = "Backup Job Creation Failed"
