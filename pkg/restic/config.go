@@ -81,7 +81,7 @@ type SetupOptions struct {
 	CacertFile     string
 	ScratchDir     string
 	EnableCache    bool
-	MaxConnections int
+	MaxConnections int64
 	Nice           *ofst.NiceSettings
 	IONice         *ofst.IONiceSettings
 }

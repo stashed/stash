@@ -129,27 +129,27 @@ func (w *ResticWrapper) Forget(resource *api.Restic, fg api.FileGroup) error {
 	args := []interface{}{"forget"}
 	if retentionPolicy.KeepLast > 0 {
 		args = append(args, string(api.KeepLast))
-		args = append(args, strconv.Itoa(retentionPolicy.KeepLast))
+		args = append(args, strconv.FormatInt(retentionPolicy.KeepLast, 10))
 	}
 	if retentionPolicy.KeepHourly > 0 {
 		args = append(args, string(api.KeepHourly))
-		args = append(args, strconv.Itoa(retentionPolicy.KeepHourly))
+		args = append(args, strconv.FormatInt(retentionPolicy.KeepHourly, 10))
 	}
 	if retentionPolicy.KeepDaily > 0 {
 		args = append(args, string(api.KeepDaily))
-		args = append(args, strconv.Itoa(retentionPolicy.KeepDaily))
+		args = append(args, strconv.FormatInt(retentionPolicy.KeepDaily, 10))
 	}
 	if retentionPolicy.KeepWeekly > 0 {
 		args = append(args, string(api.KeepWeekly))
-		args = append(args, strconv.Itoa(retentionPolicy.KeepWeekly))
+		args = append(args, strconv.FormatInt(retentionPolicy.KeepWeekly, 10))
 	}
 	if retentionPolicy.KeepMonthly > 0 {
 		args = append(args, string(api.KeepMonthly))
-		args = append(args, strconv.Itoa(retentionPolicy.KeepMonthly))
+		args = append(args, strconv.FormatInt(retentionPolicy.KeepMonthly, 10))
 	}
 	if retentionPolicy.KeepYearly > 0 {
 		args = append(args, string(api.KeepYearly))
-		args = append(args, strconv.Itoa(retentionPolicy.KeepYearly))
+		args = append(args, strconv.FormatInt(retentionPolicy.KeepYearly, 10))
 	}
 	for _, tag := range retentionPolicy.KeepTags {
 		args = append(args, string(api.KeepTag))

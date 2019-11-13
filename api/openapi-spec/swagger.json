@@ -8806,10 +8806,6 @@
     }
   },
   "definitions": {
-    "com.github.appscode.go.encoding.json.types.IntHash": {
-      "description": "IntHash represents as int64 Generation and string Hash. It is json serialized into \u003cint64\u003e$\u003chash_string\u003e.",
-      "type": "string"
-    },
     "dev.appscode.stash.stash.apis.repositories.v1alpha1.Snapshot": {
       "type": "object",
       "properties": {
@@ -9027,7 +9023,8 @@
       "properties": {
         "observedGeneration": {
           "description": "observedGeneration is the most recent generation observed for this resource. It corresponds to the resource's generation, which is updated on mutation by the API Server.",
-          "$ref": "#/definitions/com.github.appscode.go.encoding.json.types.IntHash"
+          "type": "integer",
+          "format": "int64"
         },
         "phase": {
           "type": "string"
@@ -9144,19 +9141,19 @@
           "type": "integer",
           "format": "int64"
         },
-        "size": {
-          "description": "Size show size of repository after last backup",
-          "type": "string"
-        },
         "snapshotCount": {
           "description": "SnapshotCount shows number of snapshots stored in the repository",
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "snapshotsRemovedOnLastCleanup": {
           "description": "SnapshotsRemovedOnLastCleanup shows number of old snapshots cleaned up according to retention policy on last backup session",
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
+        },
+        "totalSize": {
+          "description": "TotalSize show size of repository after last backup",
+          "type": "string"
         }
       }
     },
@@ -9293,19 +9290,19 @@
         },
         "keepDaily": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "keepHourly": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "keepLast": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "keepMonthly": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "keepTags": {
           "type": "array",
@@ -9315,11 +9312,11 @@
         },
         "keepWeekly": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "keepYearly": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "name": {
           "type": "string"
@@ -9880,22 +9877,22 @@
         "modifiedFiles": {
           "description": "ModifiedFiles shows total number of files that has been modified since last backup",
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "newFiles": {
           "description": "NewFiles shows total number of new files that has been created since last backup",
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "totalFiles": {
           "description": "TotalFiles shows total number of files that has been backed up",
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "unmodifiedFiles": {
           "description": "UnmodifiedFiles shows total number of files that has not been changed since last backup",
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         }
       }
     },
@@ -10038,11 +10035,11 @@
       "properties": {
         "postBackup": {
           "description": "PostBackup is called immediately after a backup session is complete.",
-          "$ref": "#/definitions/io.k8s.api.core.v1.Handler"
+          "$ref": "#/definitions/xyz.kmodules.prober.api.v1.Handler"
         },
         "preBackup": {
           "description": "PreBackup is called immediately before a backup session is initiated.",
-          "$ref": "#/definitions/io.k8s.api.core.v1.Handler"
+          "$ref": "#/definitions/xyz.kmodules.prober.api.v1.Handler"
         }
       }
     },
@@ -10311,8 +10308,8 @@
           "description": "ProcessingTime indicates time taken to process the target data",
           "type": "string"
         },
-        "size": {
-          "description": "Size indicates the size of data to backup in target directory",
+        "totalSize": {
+          "description": "TotalSize indicates the size of data to backup in target directory",
           "type": "string"
         },
         "uploaded": {
@@ -13190,7 +13187,7 @@
         },
         "maxConnections": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "prefix": {
           "type": "string"
@@ -13205,7 +13202,7 @@
         },
         "maxConnections": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "prefix": {
           "type": "string"
@@ -13249,7 +13246,7 @@
         },
         "maxConnections": {
           "type": "integer",
-          "format": "int32"
+          "format": "int64"
         },
         "prefix": {
           "type": "string"
@@ -13570,6 +13567,82 @@
         },
         "pod": {
           "$ref": "#/definitions/xyz.kmodules.offshoot-api.api.v1.PodRuntimeSettings"
+        }
+      }
+    },
+    "xyz.kmodules.prober.api.v1.HTTPPostAction": {
+      "description": "HTTPPostAction describes an action based on HTTP Post requests.",
+      "type": "object",
+      "required": [
+        "port"
+      ],
+      "properties": {
+        "body": {
+          "description": "Body to set in the request.",
+          "type": "string"
+        },
+        "form": {
+          "description": "Form to set in the request body.",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/xyz.kmodules.prober.api.v1.ValueList"
+          }
+        },
+        "host": {
+          "description": "Host name to connect to, defaults to the pod IP. You probably want to set \"Host\" in httpHeaders instead.",
+          "type": "string"
+        },
+        "httpHeaders": {
+          "description": "Custom headers to set in the request. HTTP allows repeated headers.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/io.k8s.api.core.v1.HTTPHeader"
+          }
+        },
+        "path": {
+          "description": "Path to access on the HTTP server.",
+          "type": "string"
+        },
+        "port": {
+          "description": "Name or number of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.",
+          "$ref": "#/definitions/io.k8s.apimachinery.pkg.util.intstr.IntOrString"
+        },
+        "scheme": {
+          "description": "Scheme to use for connecting to the host. Defaults to HTTP.",
+          "type": "string"
+        }
+      }
+    },
+    "xyz.kmodules.prober.api.v1.Handler": {
+      "description": "Handler defines a specific action that should be taken",
+      "type": "object",
+      "properties": {
+        "exec": {
+          "description": "One and only one of the following should be specified. Exec specifies the action to take.",
+          "$ref": "#/definitions/io.k8s.api.core.v1.ExecAction"
+        },
+        "httpGet": {
+          "description": "HTTPGet specifies the http Get request to perform.",
+          "$ref": "#/definitions/io.k8s.api.core.v1.HTTPGetAction"
+        },
+        "httpPost": {
+          "description": "HTTPPost specifies the http Post request to perform.",
+          "$ref": "#/definitions/xyz.kmodules.prober.api.v1.HTTPPostAction"
+        },
+        "tcpSocket": {
+          "description": "TCPSocket specifies an action involving a TCP port. TCP hooks not yet supported",
+          "$ref": "#/definitions/io.k8s.api.core.v1.TCPSocketAction"
+        }
+      }
+    },
+    "xyz.kmodules.prober.api.v1.ValueList": {
+      "type": "object",
+      "properties": {
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     }

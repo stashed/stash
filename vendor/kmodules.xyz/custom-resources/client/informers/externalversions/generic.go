@@ -1,5 +1,5 @@
 /*
-Copyright 2019 AppsCode Inc.
+Copyright The Kmodules Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,9 +21,10 @@ package externalversions
 import (
 	"fmt"
 
+	v1alpha1 "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
+
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
-	v1alpha1 "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 )
 
 // GenericInformer is type of SharedIndexInformer which will locate and delegate to other

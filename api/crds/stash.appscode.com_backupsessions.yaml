@@ -479,18 +479,22 @@ spec:
                             modifiedFiles:
                               description: ModifiedFiles shows total number of files
                                 that has been modified since last backup
+                              format: int64
                               type: integer
                             newFiles:
                               description: NewFiles shows total number of new files
                                 that has been created since last backup
+                              format: int64
                               type: integer
                             totalFiles:
                               description: TotalFiles shows total number of files
                                 that has been backed up
+                              format: int64
                               type: integer
                             unmodifiedFiles:
                               description: UnmodifiedFiles shows total number of files
                                 that has not been changed since last backup
+                              format: int64
                               type: integer
                           type: object
                         name:
@@ -505,9 +509,9 @@ spec:
                           description: ProcessingTime indicates time taken to process
                             the target data
                           type: string
-                        size:
-                          description: Size indicates the size of data to backup in
-                            target directory
+                        totalSize:
+                          description: TotalSize indicates the size of data to backup
+                            in target directory
                           type: string
                         uploaded:
                           description: Uploaded indicates size of data uploaded to

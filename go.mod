@@ -3,24 +3,22 @@ module stash.appscode.dev/stash
 go 1.12
 
 require (
-	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/appscode/go v0.0.0-20191025021232-311ac347b3ef
 	github.com/armon/circbuf v0.0.0-20190214190532-5111143e8da2
 	github.com/cenkalti/backoff v2.1.1+incompatible
 	github.com/codeskyblue/go-sh v0.0.0-20190412065543-76bd3d59ff27
 	github.com/evanphx/json-patch v4.5.0+incompatible
 	github.com/go-openapi/spec v0.19.0
+	github.com/gogo/protobuf v1.2.1
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e // indirect
 	github.com/json-iterator/go v1.1.6
-	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
-	github.com/kubernetes-csi/external-snapshotter v1.2.0
+	github.com/kubernetes-csi/external-snapshotter v1.2.2
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v0.9.3-0.20190127221311-3c4408c8b829
 	github.com/robfig/cron/v3 v3.0.0
-	github.com/sirupsen/logrus v1.4.1 // indirect
 	github.com/smartystreets/assertions v0.0.0-20190116191733-b6c0e53d7304 // indirect
 	github.com/spf13/afero v1.2.2
 	github.com/spf13/cobra v0.0.5
@@ -36,18 +34,17 @@ require (
 	k8s.io/apiserver v0.0.0-20190516230822-f89599b3f645
 	k8s.io/cli-runtime v0.0.0-20190516231937-17bc0b7fcef5 // indirect
 	k8s.io/client-go v11.0.0+incompatible
-	k8s.io/component-base v0.0.0-20190424053038-9fe063da3132 // indirect
-	k8s.io/klog v0.3.1 // indirect
 	k8s.io/kube-aggregator v0.0.0-20190314000639-da8327669ac5
 	k8s.io/kube-openapi v0.0.0-20190502190224-411b2483e503
 	k8s.io/kubernetes v1.14.0
-	kmodules.xyz/client-go v0.0.0-20191101042247-ee9566c9ac7f
-	kmodules.xyz/constants v0.0.0-20191009183447-fbd33067b8a6
-	kmodules.xyz/custom-resources v0.0.0-20190927035424-65fe358bb045
-	kmodules.xyz/objectstore-api v0.0.0-20191106100235-bea39a8e0874
-	kmodules.xyz/offshoot-api v0.0.0-20190901210649-de049192326c
+	kmodules.xyz/client-go v0.0.0-20191107203555-78563b72c377
+	kmodules.xyz/constants v0.0.0-20191024095500-cd4313df4aa6
+	kmodules.xyz/custom-resources v0.0.0-20191111200327-6984cba51875
+	kmodules.xyz/objectstore-api v0.0.0-20191111201754-2aba8370dfda
+	kmodules.xyz/offshoot-api v0.0.0-20191111195805-1105abf4a162
 	kmodules.xyz/openshift v0.0.0-20190808144841-c8f9a927f1d1
-	kmodules.xyz/webhook-runtime v0.0.0-20190808145328-4186c470d56b
+	kmodules.xyz/prober v0.0.0-20191111210804-26d3576296bc
+	kmodules.xyz/webhook-runtime v0.0.0-20191106182834-bf518fbc7b19
 )
 
 replace (

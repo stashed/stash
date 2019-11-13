@@ -121,7 +121,7 @@ func (c *StashController) inputsForRepository(repository *apiAlpha.Repository) (
 	if repository.Spec.Backend.Rest != nil && repository.Spec.Backend.Rest.URL != "" {
 		inputs[apis.RepositoryEndpoint] = repository.Spec.Backend.Rest.URL
 	}
-	inputs[apis.MaxConnections] = strconv.Itoa(repository.Spec.Backend.MaxConnections())
+	inputs[apis.MaxConnections] = strconv.FormatInt(repository.Spec.Backend.MaxConnections(), 10)
 	return
 }
 
@@ -171,22 +171,22 @@ func (c *StashController) inputsForRetentionPolicy(retentionPolicy apiAlpha.Rete
 	inputs := make(map[string]string)
 
 	if retentionPolicy.KeepLast > 0 {
-		inputs[apis.RetentionKeepLast] = strconv.Itoa(retentionPolicy.KeepLast)
+		inputs[apis.RetentionKeepLast] = strconv.FormatInt(retentionPolicy.KeepLast, 10)
 	}
 	if retentionPolicy.KeepHourly > 0 {
-		inputs[apis.RetentionKeepHourly] = strconv.Itoa(retentionPolicy.KeepHourly)
+		inputs[apis.RetentionKeepHourly] = strconv.FormatInt(retentionPolicy.KeepHourly, 10)
 	}
 	if retentionPolicy.KeepDaily > 0 {
-		inputs[apis.RetentionKeepDaily] = strconv.Itoa(retentionPolicy.KeepDaily)
+		inputs[apis.RetentionKeepDaily] = strconv.FormatInt(retentionPolicy.KeepDaily, 10)
 	}
 	if retentionPolicy.KeepWeekly > 0 {
-		inputs[apis.RetentionKeepWeekly] = strconv.Itoa(retentionPolicy.KeepWeekly)
+		inputs[apis.RetentionKeepWeekly] = strconv.FormatInt(retentionPolicy.KeepWeekly, 10)
 	}
 	if retentionPolicy.KeepMonthly > 0 {
-		inputs[apis.RetentionKeepMonthly] = strconv.Itoa(retentionPolicy.KeepMonthly)
+		inputs[apis.RetentionKeepMonthly] = strconv.FormatInt(retentionPolicy.KeepMonthly, 10)
 	}
 	if retentionPolicy.KeepYearly > 0 {
-		inputs[apis.RetentionKeepYearly] = strconv.Itoa(retentionPolicy.KeepYearly)
+		inputs[apis.RetentionKeepYearly] = strconv.FormatInt(retentionPolicy.KeepYearly, 10)
 	}
 	if len(retentionPolicy.KeepTags) > 0 {
 		inputs[apis.RetentionKeepTags] = strings.Join(retentionPolicy.KeepTags, ",")

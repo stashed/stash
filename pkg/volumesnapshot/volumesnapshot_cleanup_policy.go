@@ -106,7 +106,7 @@ func applyRetentionPolicy(policy v1alpha1.RetentionPolicy, volumeSnapshots Volum
 	}
 
 	var buckets = [6]struct {
-		Count     int
+		Count     int64
 		LastAdded func(d time.Time, nr int) int
 		Last      int
 	}{

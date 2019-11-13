@@ -573,14 +573,14 @@ func (backupMetrics *BackupMetrics) setValues(hostOutput api_v1beta1.HostBackupS
 		totalDataSize        float64
 		totalUploadSize      float64
 		totalProcessingTime  uint64
-		totalFiles           int
-		totalNewFiles        int
-		totalModifiedFiles   int
-		totalUnmodifiedFiles int
+		totalFiles           int64
+		totalNewFiles        int64
+		totalModifiedFiles   int64
+		totalUnmodifiedFiles int64
 	)
 
 	for _, v := range hostOutput.Snapshots {
-		dataSizeBytes, err := convertSizeToBytes(v.Size)
+		dataSizeBytes, err := convertSizeToBytes(v.TotalSize)
 		if err != nil {
 			return err
 		}

@@ -23,52 +23,52 @@ import (
 type BackupInvokerRef struct {
 	// APIGroup is the group for the resource being referenced
 	// +optional
-	APIGroup string `json:"apiGroup,omitempty"`
+	APIGroup string `json:"apiGroup,omitempty" protobuf:"bytes,1,opt,name=apiGroup"`
 	// Kind is the type of resource being referenced
-	Kind string `json:"kind"`
+	Kind string `json:"kind" protobuf:"bytes,2,opt,name=kind"`
 	// Name is the name of resource being referenced
-	Name string `json:"name"`
+	Name string `json:"name" protobuf:"bytes,3,opt,name=name"`
 }
 
 // Param declares a value to use for the Param called Name.
 type Param struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
+	Name  string `json:"name" protobuf:"bytes,1,opt,name=name"`
+	Value string `json:"value" protobuf:"bytes,2,opt,name=value"`
 }
 
 type TaskRef struct {
-	Name string `json:"name"`
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
 	// +optional
-	Params []Param `json:"params,omitempty"`
+	Params []Param `json:"params,omitempty" protobuf:"bytes,2,rep,name=params"`
 }
 
 type BackupTarget struct {
 	// Ref refers to the backup target
-	Ref TargetRef `json:"ref,omitempty"`
+	Ref TargetRef `json:"ref,omitempty" protobuf:"bytes,1,opt,name=ref"`
 	// Paths specify the file paths to backup
 	// +optional
-	Paths []string `json:"paths,omitempty"`
+	Paths []string `json:"paths,omitempty" protobuf:"bytes,2,rep,name=paths"`
 	// VolumeMounts specifies the volumes to mount inside stash sidecar/init container
 	// Specify the volumes that contains the target directories
 	// +optional
-	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty"`
+	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty" protobuf:"bytes,3,rep,name=volumeMounts"`
 	//replicas are the desired number of replicas whose data should be backed up.
 	// If unspecified, defaults to 1.
 	// +optional
-	Replicas *int32 `json:"replicas,omitempty"`
+	Replicas *int32 `json:"replicas,omitempty" protobuf:"varint,4,opt,name=replicas"`
 	// Name of the VolumeSnapshotClass used by the VolumeSnapshot. If not specified, a default snapshot class will be used if it is available.
 	// Use this field only if the "driver" field is set to "volumeSnapshotter".
 	// +optional
-	VolumeSnapshotClassName string `json:"snapshotClassName,omitempty"`
+	VolumeSnapshotClassName string `json:"snapshotClassName,omitempty" protobuf:"bytes,5,opt,name=snapshotClassName"`
 }
 
 type RestoreTarget struct {
 	// Ref refers to the restore,target
-	Ref TargetRef `json:"ref,omitempty"`
+	Ref TargetRef `json:"ref,omitempty" protobuf:"bytes,2,opt,name=ref"`
 	// VolumeMounts specifies the volumes to mount inside stash sidecar/init container
 	// Specify the volumes that contains the target directories
 	// +optional
-	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty"`
+	VolumeMounts []core.VolumeMount `json:"volumeMounts,omitempty" protobuf:"bytes,3,rep,name=volumeMounts"`
 	// replicas is the desired number of replicas of the given Template.
 	// These are replicas in the sense that they are instantiations of the
 	// same Template, but individual replicas also have a consistent identity.
@@ -77,11 +77,11 @@ type RestoreTarget struct {
 	Replicas *int32 `json:"replicas,omitempty" protobuf:"varint,1,opt,name=replicas"`
 	// volumeClaimTemplates is a list of claims that will be created while restore from VolumeSnapshot
 	// +optional
-	VolumeClaimTemplates []core.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
+	VolumeClaimTemplates []core.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty" protobuf:"bytes,4,rep,name=volumeClaimTemplates"`
 }
 
 type TargetRef struct {
-	APIVersion string `json:"apiVersion,omitempty"`
-	Kind       string `json:"kind,omitempty"`
-	Name       string `json:"name,omitempty"`
+	APIVersion string `json:"apiVersion,omitempty" protobuf:"bytes,1,opt,name=apiVersion"`
+	Kind       string `json:"kind,omitempty" protobuf:"bytes,2,opt,name=kind"`
+	Name       string `json:"name,omitempty" protobuf:"bytes,3,opt,name=name"`
 }

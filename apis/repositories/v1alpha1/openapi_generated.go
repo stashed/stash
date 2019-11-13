@@ -351,6 +351,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"kmodules.xyz/offshoot-api/api/v1.ServicePort":                                schema_kmodulesxyz_offshoot_api_api_v1_ServicePort(ref),
 		"kmodules.xyz/offshoot-api/api/v1.ServiceSpec":                                schema_kmodulesxyz_offshoot_api_api_v1_ServiceSpec(ref),
 		"kmodules.xyz/offshoot-api/api/v1.ServiceTemplateSpec":                        schema_kmodulesxyz_offshoot_api_api_v1_ServiceTemplateSpec(ref),
+		"kmodules.xyz/prober/api/v1.HTTPPostAction":                                   schema_kmodulesxyz_prober_api_v1_HTTPPostAction(ref),
+		"kmodules.xyz/prober/api/v1.Handler":                                          schema_kmodulesxyz_prober_api_v1_Handler(ref),
+		"kmodules.xyz/prober/api/v1.ValueList":                                        schema_kmodulesxyz_prober_api_v1_ValueList(ref),
 		"stash.appscode.dev/stash/apis/repositories/v1alpha1.Snapshot":                schema_stash_apis_repositories_v1alpha1_Snapshot(ref),
 		"stash.appscode.dev/stash/apis/repositories/v1alpha1.SnapshotList":            schema_stash_apis_repositories_v1alpha1_SnapshotList(ref),
 		"stash.appscode.dev/stash/apis/repositories/v1alpha1.SnapshotStatus":          schema_stash_apis_repositories_v1alpha1_SnapshotStatus(ref),
@@ -14459,8 +14462,7 @@ func schema_custom_resources_apis_appcatalog_v1alpha1_AppBinding(ref common.Refe
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "AppBinding defines a generic user application.",
-				Type:        []string{"object"},
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -14864,7 +14866,7 @@ func schema_kmodulesxyz_objectstore_api_api_v1_AzureSpec(ref common.ReferenceCal
 					"maxConnections": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"integer"},
-							Format: "int32",
+							Format: "int64",
 						},
 					},
 				},
@@ -14894,7 +14896,7 @@ func schema_kmodulesxyz_objectstore_api_api_v1_B2Spec(ref common.ReferenceCallba
 					"maxConnections": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"integer"},
-							Format: "int32",
+							Format: "int64",
 						},
 					},
 				},
@@ -14979,7 +14981,7 @@ func schema_kmodulesxyz_objectstore_api_api_v1_GCSSpec(ref common.ReferenceCallb
 					"maxConnections": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"integer"},
-							Format: "int32",
+							Format: "int64",
 						},
 					},
 				},
@@ -15940,6 +15942,147 @@ func schema_kmodulesxyz_offshoot_api_api_v1_ServiceTemplateSpec(ref common.Refer
 		},
 		Dependencies: []string{
 			"kmodules.xyz/offshoot-api/api/v1.ObjectMeta", "kmodules.xyz/offshoot-api/api/v1.ServiceSpec"},
+	}
+}
+
+func schema_kmodulesxyz_prober_api_v1_HTTPPostAction(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "HTTPPostAction describes an action based on HTTP Post requests.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"path": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Path to access on the HTTP server.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"port": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name or number of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.",
+							Ref:         ref("k8s.io/apimachinery/pkg/util/intstr.IntOrString"),
+						},
+					},
+					"host": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Host name to connect to, defaults to the pod IP. You probably want to set \"Host\" in httpHeaders instead.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"scheme": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Scheme to use for connecting to the host. Defaults to HTTP.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"httpHeaders": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Custom headers to set in the request. HTTP allows repeated headers.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/core/v1.HTTPHeader"),
+									},
+								},
+							},
+						},
+					},
+					"body": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Body to set in the request.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"form": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Form to set in the request body.",
+							Type:        []string{"object"},
+							AdditionalProperties: &spec.SchemaOrBool{
+								Allows: true,
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("kmodules.xyz/prober/api/v1.ValueList"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"port"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.HTTPHeader", "k8s.io/apimachinery/pkg/util/intstr.IntOrString", "kmodules.xyz/prober/api/v1.ValueList"},
+	}
+}
+
+func schema_kmodulesxyz_prober_api_v1_Handler(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Handler defines a specific action that should be taken",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"exec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "One and only one of the following should be specified. Exec specifies the action to take.",
+							Ref:         ref("k8s.io/api/core/v1.ExecAction"),
+						},
+					},
+					"httpGet": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HTTPGet specifies the http Get request to perform.",
+							Ref:         ref("k8s.io/api/core/v1.HTTPGetAction"),
+						},
+					},
+					"httpPost": {
+						SchemaProps: spec.SchemaProps{
+							Description: "HTTPPost specifies the http Post request to perform.",
+							Ref:         ref("kmodules.xyz/prober/api/v1.HTTPPostAction"),
+						},
+					},
+					"tcpSocket": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TCPSocket specifies an action involving a TCP port. TCP hooks not yet supported",
+							Ref:         ref("k8s.io/api/core/v1.TCPSocketAction"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.ExecAction", "k8s.io/api/core/v1.HTTPGetAction", "k8s.io/api/core/v1.TCPSocketAction", "kmodules.xyz/prober/api/v1.HTTPPostAction"},
+	}
+}
+
+func schema_kmodulesxyz_prober_api_v1_ValueList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"values": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 }
 

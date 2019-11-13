@@ -308,7 +308,7 @@ func TestRunParallelBackup(t *testing.T) {
 
 	// verify repository stats
 	assert.Equal(t, *backupOutput.RepositoryStats.Integrity, true)
-	assert.Equal(t, backupOutput.RepositoryStats.SnapshotCount, 3)
+	assert.Equal(t, backupOutput.RepositoryStats.SnapshotCount, int64(3))
 
 	// verify each host status
 	for i := range backupOutput.HostBackupStats {

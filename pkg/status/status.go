@@ -123,7 +123,7 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 			repository,
 			func(in *api.RepositoryStatus) *api.RepositoryStatus {
 				in.Integrity = backupOutput.RepositoryStats.Integrity
-				in.Size = backupOutput.RepositoryStats.Size
+				in.TotalSize = backupOutput.RepositoryStats.Size
 				in.SnapshotCount = backupOutput.RepositoryStats.SnapshotCount
 				in.SnapshotsRemovedOnLastCleanup = backupOutput.RepositoryStats.SnapshotsRemovedOnLastCleanup
 

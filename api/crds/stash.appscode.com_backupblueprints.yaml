@@ -423,6 +423,7 @@ spec:
                     container:
                       type: string
                     maxConnections:
+                      format: int64
                       type: integer
                     prefix:
                       type: string
@@ -432,6 +433,7 @@ spec:
                     bucket:
                       type: string
                     maxConnections:
+                      format: int64
                       type: integer
                     prefix:
                       type: string
@@ -441,6 +443,7 @@ spec:
                     bucket:
                       type: string
                     maxConnections:
+                      format: int64
                       type: integer
                     prefix:
                       type: string
@@ -2262,20 +2265,26 @@ spec:
                 dryRun:
                   type: boolean
                 keepDaily:
+                  format: int64
                   type: integer
                 keepHourly:
+                  format: int64
                   type: integer
                 keepLast:
+                  format: int64
                   type: integer
                 keepMonthly:
+                  format: int64
                   type: integer
                 keepTags:
                   items:
                     type: string
                   type: array
                 keepWeekly:
+                  format: int64
                   type: integer
                 keepYearly:
+                  format: int64
                   type: integer
                 name:
                   type: string
