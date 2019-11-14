@@ -22,6 +22,8 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/dynamic"
 )
 
@@ -31,41 +33,64 @@ func (c *StashController) MigrateObservedGeneration() error {
 		return err
 	}
 
-	repoClient := dc.Resource(v1alpha1.SchemeGroupVersion.WithResource(v1alpha1.ResourcePluralRepository))
-	repos, err := repoClient.Namespace(core.NamespaceAll).List(metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-	for _, repo := range repos.Items {
-		err := convertObservedGenerationToInt64(repoClient, repo)
+	var errs []error
+	for _, gvr := range []schema.GroupVersionResource{
+		v1alpha1.SchemeGroupVersion.WithResource(v1alpha1.ResourcePluralRepository),
+		v1alpha1.SchemeGroupVersion.WithResource(v1alpha1.ResourcePluralRecovery),
+	} {
+		client := dc.Resource(gvr)
+		objects, err := client.Namespace(core.NamespaceAll).List(metav1.ListOptions{})
 		if err != nil {
-			return err
+			errs = append(errs, err)
+			continue
+			// return err
+		}
+		for _, obj := range objects.Items {
+			changed1, e1 := convertObservedGenerationToInt64(&obj)
+			changed2, e2 := moveStatusSize(&obj)
+			if e1 != nil || e2 != nil {
+				errs = append(errs, e1, e2)
+			} else if changed1 || changed2 {
+				_, e3 := client.Namespace(obj.GetNamespace()).UpdateStatus(&obj, metav1.UpdateOptions{})
+				errs = append(errs, e3)
+			}
 		}
 	}
-
-	return nil
+	return utilerrors.NewAggregate(errs)
 }
 
-func convertObservedGenerationToInt64(client dynamic.NamespaceableResourceInterface, u unstructured.Unstructured) error {
+func convertObservedGenerationToInt64(u *unstructured.Unstructured) (bool, error) {
 	val, found, err := unstructured.NestedFieldNoCopy(u.Object, "status", "observedGeneration")
 	if err != nil {
-		return err
+		return false, err
 	}
 	if found {
 		if _, ok := val.(string); ok {
 			observed, err := types.ParseIntHash(val)
 			if err != nil {
-				return err
+				return false, err
 			}
 			err = unstructured.SetNestedField(u.Object, observed.Generation(), "status", "observedGeneration")
 			if err != nil {
-				return err
+				return false, err
 			}
-			_, err = client.Namespace(u.GetNamespace()).UpdateStatus(&u, metav1.UpdateOptions{})
-			if err != nil {
-				return err
-			}
+			return true, nil
 		}
 	}
-	return nil
+	return false, nil
+}
+
+func moveStatusSize(u *unstructured.Unstructured) (bool, error) {
+	val, found, err := unstructured.NestedFieldNoCopy(u.Object, "status", "size")
+	if err != nil {
+		return false, err
+	}
+	if found {
+		err = unstructured.SetNestedField(u.Object, val, "status", "totalSize")
+		if err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+	return false, nil
 }
