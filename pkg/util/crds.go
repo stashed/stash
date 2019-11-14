@@ -26,6 +26,7 @@ import (
 
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 // EnsureDefaultFunctions creates "update-status", "pvc-backup" and "pvc-restore" Functions if they are not already present
@@ -75,7 +76,11 @@ func EnsureDefaultTasks(stashClient cs.Interface) error {
 }
 
 func updateStatusFunction(image docker.Docker) *api_v1beta1.Function {
-	return &api_v1beta1.Function{
+	out := &api_v1beta1.Function{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: api_v1beta1.SchemeGroupVersion.String(),
+			Kind:       api_v1beta1.ResourceKindFunction,
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "update-status",
 		},
@@ -94,6 +99,11 @@ func updateStatusFunction(image docker.Docker) *api_v1beta1.Function {
 			},
 		},
 	}
+
+	data, _ := yaml.Marshal(out)
+	fmt.Println(string(data))
+
+	return out
 }
 
 func pvcBackupFunction(image docker.Docker) *api_v1beta1.Function {
