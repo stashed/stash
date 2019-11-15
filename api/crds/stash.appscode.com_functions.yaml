@@ -21,7 +21,7 @@ spec:
     shortNames:
     - fn
     singular: function
-  scope: Namespaced
+  scope: Cluster
   subresources: {}
   validation:
     openAPIV3Schema:

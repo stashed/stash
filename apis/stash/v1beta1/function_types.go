@@ -33,7 +33,7 @@ const (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:path=functions,singular=function,shortName=fn,categories={stash,appscode}
+// +kubebuilder:resource:path=functions,singular=function,scope=Cluster,shortName=fn,categories={stash,appscode}
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type Function struct {
 	metav1.TypeMeta   `json:",inline"`

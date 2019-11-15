@@ -601,7 +601,7 @@ clean:
 .PHONY: run
 run:
 	GO111MODULE=on go run -mod=vendor *.go run \
-		--v=10 \
+		--v=3 \
 		--secure-port=8443 \
 		--kubeconfig=$(KUBECONFIG) \
 		--authorization-kubeconfig=$(KUBECONFIG) \

@@ -98,7 +98,7 @@ message BackupBatchStatus {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:path=backupblueprints,singular=backupblueprint,shortName=bb,categories={stash,appscode}
+// +kubebuilder:resource:path=backupblueprints,singular=backupblueprint,scope=Cluster,shortName=bb,categories={stash,appscode}
 // +kubebuilder:printcolumn:name="Task",type="string",JSONPath=".spec.task.name"
 // +kubebuilder:printcolumn:name="Schedule",type="string",JSONPath=".spec.schedule"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
@@ -351,7 +351,7 @@ message FileStats {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:path=functions,singular=function,shortName=fn,categories={stash,appscode}
+// +kubebuilder:resource:path=functions,singular=function,scope=Cluster,shortName=fn,categories={stash,appscode}
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 message Function {
   optional k8s.io.apimachinery.pkg.apis.meta.v1.ObjectMeta metadata = 1;
@@ -655,7 +655,7 @@ message TargetRef {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:path=tasks,singular=task,shortName=task,categories={stash,appscode}
+// +kubebuilder:resource:path=tasks,singular=task,scope=Cluster,shortName=task,categories={stash,appscode}
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 message Task {
   optional k8s.io.apimachinery.pkg.apis.meta.v1.ObjectMeta metadata = 1;
