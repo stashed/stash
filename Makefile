@@ -273,10 +273,10 @@ gen-crd-protos-stash-v1beta1:
 			--packages=-k8s.io/api/core/v1,-kmodules.xyz/offshoot-api/api/v1,-kmodules.xyz/objectstore-api/api/v1,-kmodules.xyz/prober/api/v1,-stash.appscode.dev/stash/apis/stash/v1alpha1,stash.appscode.dev/stash/apis/stash/v1beta1
 
 .PHONY: manifests
-manifests: gen-crds label-crds gen-crd-protos
+manifests: gen-crds label-crds
 
 .PHONY: gen
-gen: clientset openapi manifests
+gen: clientset gen-crd-protos openapi manifests
 
 fmt: $(BUILD_DIRS)
 	@docker run                                                 \
