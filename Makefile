@@ -56,7 +56,7 @@ NEW_RESTIC_VER   := 0.9.5
 ### These variables should not need tweaking.
 ###
 
-SRC_PKGS := apis client pkg
+SRC_PKGS := api apis client pkg
 SRC_DIRS := $(SRC_PKGS) *.go test hack/gencrd hack/gendocs # directories which hold app source (not vendored)
 
 DOCKER_PLATFORMS := linux/amd64 linux/arm linux/arm64
@@ -77,7 +77,7 @@ TAG_PROD         := $(TAG)
 TAG_DBG          := $(VERSION)-dbg_$(OS)_$(ARCH)
 
 GO_VERSION       ?= 1.12.12
-BUILD_IMAGE      ?= appscode/golang-dev:$(GO_VERSION)-stretch
+BUILD_IMAGE      ?= appscode/golang-dev:$(GO_VERSION)
 TEST_IMAGE       ?= appscode/golang-dev:$(GO_VERSION)-stash
 
 OUTBIN = bin/$(OS)_$(ARCH)/$(BIN)
@@ -272,11 +272,25 @@ gen-crd-protos-stash-v1beta1:
 			--apimachinery-packages=-k8s.io/apimachinery/pkg/api/resource,-k8s.io/apimachinery/pkg/apis/meta/v1,-k8s.io/apimachinery/pkg/apis/meta/v1beta1,-k8s.io/apimachinery/pkg/runtime,-k8s.io/apimachinery/pkg/runtime/schema,-k8s.io/apimachinery/pkg/util/intstr \
 			--packages=-k8s.io/api/core/v1,-kmodules.xyz/offshoot-api/api/v1,-kmodules.xyz/objectstore-api/api/v1,-kmodules.xyz/prober/api/v1,-stash.appscode.dev/stash/apis/stash/v1alpha1,stash.appscode.dev/stash/apis/stash/v1beta1
 
+.PHONY: gen-bindata
+gen-bindata:
+	@docker run                                                 \
+	    -i                                                      \
+	    --rm                                                    \
+	    -u $$(id -u):$$(id -g)                                  \
+	    -v $$(pwd):/src                                         \
+	    -w /src/api/crds                                        \
+		-v /tmp:/.cache                                         \
+	    --env HTTP_PROXY=$(HTTP_PROXY)                          \
+	    --env HTTPS_PROXY=$(HTTPS_PROXY)                        \
+	    $(BUILD_IMAGE)                                          \
+	    go-bindata -ignore=\\.go -ignore=\\.DS_Store -mode=0644 -modtime=1573722179 -o bindata.go -pkg crds ./...
+
 .PHONY: manifests
-manifests: gen-crds label-crds
+manifests: gen-crds label-crds gen-bindata
 
 .PHONY: gen
-gen: clientset gen-crd-protos openapi manifests
+gen: clientset gen-crd-protos manifests openapi
 
 fmt: $(BUILD_DIRS)
 	@docker run                                                 \
@@ -583,3 +597,15 @@ release:
 .PHONY: clean
 clean:
 	rm -rf .go bin
+
+.PHONY: run
+run:
+	GO111MODULE=on go run -mod=vendor *.go run \
+		--v=3 \
+		--secure-port=8443 \
+		--kubeconfig=$(KUBECONFIG) \
+		--authorization-kubeconfig=$(KUBECONFIG) \
+		--authentication-kubeconfig=$(KUBECONFIG) \
+		--authentication-skip-lookup \
+		--docker-registry=$(REGISTRY) \
+		--image-tag=$(TAG)

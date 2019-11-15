@@ -76,6 +76,10 @@ func EnsureDefaultTasks(stashClient cs.Interface) error {
 
 func updateStatusFunction(image docker.Docker) *api_v1beta1.Function {
 	return &api_v1beta1.Function{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: api_v1beta1.SchemeGroupVersion.String(),
+			Kind:       api_v1beta1.ResourceKindFunction,
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "update-status",
 		},

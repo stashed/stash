@@ -35,7 +35,7 @@ const (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:path=backupblueprints,singular=backupblueprint,shortName=bb,categories={stash,appscode}
+// +kubebuilder:resource:path=backupblueprints,singular=backupblueprint,scope=Cluster,shortName=bb,categories={stash,appscode}
 // +kubebuilder:printcolumn:name="Task",type="string",JSONPath=".spec.task.name"
 // +kubebuilder:printcolumn:name="Schedule",type="string",JSONPath=".spec.schedule"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"

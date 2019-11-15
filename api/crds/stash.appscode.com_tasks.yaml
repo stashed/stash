@@ -21,7 +21,7 @@ spec:
     shortNames:
     - task
     singular: task
-  scope: Namespaced
+  scope: Cluster
   subresources: {}
   validation:
     openAPIV3Schema:
