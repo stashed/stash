@@ -455,7 +455,7 @@ func (c *BackupSessionController) handleBackupFailure(backupSessionName string, 
 			{
 				Hostname: c.Host,
 				Phase:    api_v1beta1.HostBackupFailed,
-				Error:    fmt.Sprintf("failed to complete backup for host %s. Reaosn: %v", c.Host, backupErr),
+				Error:    fmt.Sprintf("failed to complete backup for host %s. Reason: %v", c.Host, backupErr),
 			},
 		},
 	}
