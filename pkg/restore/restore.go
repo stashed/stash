@@ -225,7 +225,7 @@ func (c *Options) HandleRestoreFailure(restoreErr error) error {
 			{
 				Hostname: c.Host,
 				Phase:    api_v1beta1.HostRestoreFailed,
-				Error:    fmt.Sprintf("failed to complete restore process for host %s. Reaosn: %v", c.Host, restoreErr),
+				Error:    fmt.Sprintf("failed to complete restore process for host %s. Reason: %v", c.Host, restoreErr),
 			},
 		},
 	}
