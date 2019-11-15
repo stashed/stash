@@ -597,3 +597,15 @@ release:
 .PHONY: clean
 clean:
 	rm -rf .go bin
+
+.PHONY: run
+run:
+	GO111MODULE=on go run -mod=vendor *.go run \
+		--v=10 \
+		--secure-port=8443 \
+		--kubeconfig=$(KUBECONFIG) \
+		--authorization-kubeconfig=$(KUBECONFIG) \
+		--authentication-kubeconfig=$(KUBECONFIG) \
+		--authentication-skip-lookup \
+		--docker-registry=$(REGISTRY) \
+		--image-tag=$(TAG)
