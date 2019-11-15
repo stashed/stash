@@ -983,7 +983,7 @@ kmodules.xyz/openshift/client/informers/externalversions/apps/v1
 kmodules.xyz/openshift/client/informers/externalversions/security/v1
 kmodules.xyz/openshift/apis/apps/install
 kmodules.xyz/openshift/client/listers/security/v1
-# kmodules.xyz/prober v0.0.0-20191111210804-26d3576296bc
+# kmodules.xyz/prober v0.0.0-20191115064734-4f3932e5163a
 kmodules.xyz/prober/api/v1
 # kmodules.xyz/webhook-runtime v0.0.0-20191106182834-bf518fbc7b19
 kmodules.xyz/webhook-runtime/admission

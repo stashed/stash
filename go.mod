@@ -43,7 +43,7 @@ require (
 	kmodules.xyz/objectstore-api v0.0.0-20191111201754-2aba8370dfda
 	kmodules.xyz/offshoot-api v0.0.0-20191111195805-1105abf4a162
 	kmodules.xyz/openshift v0.0.0-20190808144841-c8f9a927f1d1
-	kmodules.xyz/prober v0.0.0-20191111210804-26d3576296bc
+	kmodules.xyz/prober v0.0.0-20191115064734-4f3932e5163a
 	kmodules.xyz/webhook-runtime v0.0.0-20191106182834-bf518fbc7b19
 	sigs.k8s.io/yaml v1.1.0
 )

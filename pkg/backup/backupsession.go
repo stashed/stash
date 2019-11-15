@@ -219,6 +219,11 @@ func (c *BackupSessionController) startBackupProcess(backupSession *api_v1beta1.
 
 func (c *BackupSessionController) backup(backupConfiguration *api_v1beta1.BackupConfiguration) (*restic.BackupOutput, error) {
 
+	// If preBackup hook is specified, then execute those hooks first
+	if backupConfiguration.Spec.Hooks != nil && backupConfiguration.Spec.Hooks.PreBackup != nil {
+
+	}
+
 	// get repository
 	repository, err := c.StashClient.StashV1alpha1().Repositories(backupConfiguration.Namespace).Get(backupConfiguration.Spec.Repository.Name, metav1.GetOptions{})
 	if err != nil {

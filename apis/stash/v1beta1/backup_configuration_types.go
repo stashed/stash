@@ -80,7 +80,7 @@ type BackupConfigurationTemplateSpec struct {
 	// Actions that Stash should take in response to backup sessions.
 	// Cannot be updated.
 	// +optional
-	Hooks *Hooks `json:"hooks,omitempty" protobuf:"bytes,6,opt,name=hooks"`
+	Hooks *BackupHooks `json:"hooks,omitempty" protobuf:"bytes,6,opt,name=hooks"`
 }
 
 type BackupConfigurationSpec struct {
@@ -111,7 +111,7 @@ type BackupConfigurationSpec struct {
 // Hooks describes actions that Stash should take in response to backup sessions. For the PostBackup
 // and PreBackup handlers, backup process blocks until the action is complete,
 // unless the container process fails, in which case the handler is aborted.
-type Hooks struct {
+type BackupHooks struct {
 	// PreBackup is called immediately before a backup session is initiated.
 	// +optional
 	PreBackup *prober.Handler `json:"preBackup,omitempty" protobuf:"bytes,1,opt,name=preBackup"`
