@@ -14,14 +14,33 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package crds
 
 import (
-	"stash.appscode.dev/stash/api/crds"
+	"fmt"
 
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/yaml"
 )
 
-func (_ Recovery) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
-	return crds.MustCustomResourceDefinition(SchemeGroupVersion.WithResource(ResourcePluralRecovery))
+func CustomResourceDefinition(gvr schema.GroupVersionResource) (*apiextensions.CustomResourceDefinition, error) {
+	data, err := Asset(fmt.Sprintf("%s_%s.yaml", gvr.Group, gvr.Resource))
+	if err != nil {
+		return nil, err
+	}
+	var out apiextensions.CustomResourceDefinition
+	err = yaml.Unmarshal(data, &out)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func MustCustomResourceDefinition(gvr schema.GroupVersionResource) *apiextensions.CustomResourceDefinition {
+	out, err := CustomResourceDefinition(gvr)
+	if err != nil {
+		panic(err)
+	}
+	return out
 }
