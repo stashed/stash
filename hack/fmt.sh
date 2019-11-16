@@ -22,7 +22,7 @@ export GOFLAGS="-mod=vendor"
 
 TARGETS="$@"
 
-if [ ! -z "$TARGETS" ]; then
+if [ -n "$TARGETS" ]; then
     echo "Running reimport.py"
     cmd="reimport3.py ${REPO_PKG} ${TARGETS}"
     $cmd
@@ -30,19 +30,19 @@ if [ ! -z "$TARGETS" ]; then
 
     echo "Running goimports:"
     cmd="goimports -w ${TARGETS}"
-    echo $cmd
+    echo "$cmd"
     $cmd
     echo
 
     echo "Running gofmt:"
     cmd="gofmt -s -w ${TARGETS}"
-    echo $cmd
+    echo "$cmd"
     $cmd
     echo
 fi
 
 echo "Running shfmt:"
 cmd="find . -path ./vendor -prune -o -name '*.sh' -exec shfmt -l -w -ci -i 4 {} \;"
-echo $cmd
+echo "$cmd"
 eval "$cmd" # xref: https://stackoverflow.com/a/5615748/244009
 echo
