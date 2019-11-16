@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package v1beta1
 
 import (
@@ -22,16 +23,11 @@ import (
 	"stash.appscode.dev/stash/api/crds"
 
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	hashutil "k8s.io/kubernetes/pkg/util/hash"
-	"sigs.k8s.io/yaml"
 )
 
 func (_ BackupBlueprint) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {
-	data := crds.MustAsset("stash.appscode.com_backupblueprints.yaml")
-	var out apiextensions.CustomResourceDefinition
-	utilruntime.Must(yaml.Unmarshal(data, &out))
-	return &out
+	return crds.MustCustomResourceDefinition(SchemeGroupVersion.WithResource(ResourcePluralBackupBlueprint))
 }
 
 func (bb BackupBlueprint) GetSpecHash() string {
