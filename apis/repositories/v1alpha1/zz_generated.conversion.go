@@ -23,10 +23,9 @@ package v1alpha1
 import (
 	unsafe "unsafe"
 
-	repositories "stash.appscode.dev/stash/apis/repositories"
-
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
+	repositories "stash.appscode.dev/stash/apis/repositories"
 )
 
 func init() {

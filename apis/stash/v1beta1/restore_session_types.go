@@ -79,7 +79,7 @@ type RestoreSessionSpec struct {
 	// Actions that Stash should take in response to restore sessions.
 	// Cannot be updated.
 	// +optional
-	Hooks *RestoreHooks `json:"hooks,omitempty" protobuf:"bytes,6,opt,name=hooks"`
+	Hooks *RestoreHooks `json:"hooks,omitempty" protobuf:"bytes,9,opt,name=hooks"`
 }
 
 type Rule struct {
