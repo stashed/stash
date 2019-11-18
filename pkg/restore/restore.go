@@ -36,6 +36,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
+	prober "kmodules.xyz/prober/probe"
 )
 
 const (
@@ -179,6 +180,20 @@ func (opt *Options) runRestore(restoreSession *api_v1beta1.RestoreSession) (*res
 		return nil, nil
 	}
 
+	// If preRestore hook is specified, then execute those hooks first
+	if restoreSession.Spec.Hooks != nil && restoreSession.Spec.Hooks.PreRestore != nil {
+		log.Infoln("Executing preRestore hooks........")
+		podName := os.Getenv(util.KeyPodName)
+		if podName == "" {
+			return nil, fmt.Errorf("failed to execute preRestore hooks. Reason: POD_NAME environment variable not found")
+		}
+		err := prober.RunProbe(opt.Config, restoreSession.Spec.Hooks.PreRestore, podName, opt.Namespace)
+		if err != nil {
+			return nil, err
+		}
+		log.Infoln("preRestore hooks has been executed successfully")
+	}
+
 	// setup restic wrapper
 	w, err := restic.NewResticWrapper(opt.SetupOpt)
 	if err != nil {
@@ -186,7 +201,25 @@ func (opt *Options) runRestore(restoreSession *api_v1beta1.RestoreSession) (*res
 	}
 
 	// run restore process
-	return w.RunRestore(util.RestoreOptionsForHost(opt.Host, restoreSession.Spec.Rules))
+	output, err := w.RunRestore(util.RestoreOptionsForHost(opt.Host, restoreSession.Spec.Rules))
+	if err != nil {
+		return nil, err
+	}
+
+	// If postRestore hook is specified, then execute those hooks after restore
+	if restoreSession.Spec.Hooks != nil && restoreSession.Spec.Hooks.PostRestore != nil {
+		log.Infoln("Executing postRestore hooks........")
+		podName := os.Getenv(util.KeyPodName)
+		if podName == "" {
+			return nil, fmt.Errorf("failed to execute postRestore hook. Reason: POD_NAME environment variable not found")
+		}
+		err := prober.RunProbe(opt.Config, restoreSession.Spec.Hooks.PostRestore, podName, opt.Namespace)
+		if err != nil {
+			return nil, err
+		}
+		log.Infoln("postRestore hooks has been executed successfully")
+	}
+	return output, nil
 }
 
 func (c *Options) HandleRestoreSuccess(restoreOutput *restic.RestoreOutput) error {

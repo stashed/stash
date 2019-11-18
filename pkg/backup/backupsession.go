@@ -46,6 +46,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	"kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/queue"
+	prober "kmodules.xyz/prober/probe"
 )
 
 type BackupSessionController struct {
@@ -221,7 +222,16 @@ func (c *BackupSessionController) backup(backupConfiguration *api_v1beta1.Backup
 
 	// If preBackup hook is specified, then execute those hooks first
 	if backupConfiguration.Spec.Hooks != nil && backupConfiguration.Spec.Hooks.PreBackup != nil {
-
+		log.Infoln("Executing preBackup hooks........")
+		podName := os.Getenv(util.KeyPodName)
+		if podName == "" {
+			return nil, fmt.Errorf("failed to execute preBackup hooks. Reason: POD_NAME environment variable not found")
+		}
+		err := prober.RunProbe(c.Config, backupConfiguration.Spec.Hooks.PreBackup, podName, c.Namespace)
+		if err != nil {
+			return nil, err
+		}
+		log.Infoln("preBackup hooks has been executed successfully")
 	}
 
 	// get repository
@@ -262,8 +272,27 @@ func (c *BackupSessionController) backup(backupConfiguration *api_v1beta1.Backup
 
 	// BackupOptions configuration
 	backupOpt := util.BackupOptionsForBackupConfig(*backupConfiguration, extraOpt)
+
 	// Run Backup
-	return resticWrapper.RunBackup(backupOpt)
+	output, err := resticWrapper.RunBackup(backupOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	// If postBackup hook is specified, then execute those hooks after backup
+	if backupConfiguration.Spec.Hooks != nil && backupConfiguration.Spec.Hooks.PostBackup != nil {
+		log.Infoln("Executing postBackup hooks........")
+		podName := os.Getenv(util.KeyPodName)
+		if podName == "" {
+			return nil, fmt.Errorf("failed to execute postBackup hook. Reason: POD_NAME environment variable not found")
+		}
+		err := prober.RunProbe(c.Config, backupConfiguration.Spec.Hooks.PostBackup, podName, c.Namespace)
+		if err != nil {
+			return nil, err
+		}
+		log.Infoln("postBackup hooks has been executed successfully")
+	}
+	return output, nil
 }
 
 func (c *BackupSessionController) electLeaderPod(backupConfiguration *api_v1beta1.BackupConfiguration, stopCh <-chan struct{}) error {

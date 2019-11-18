@@ -18,6 +18,7 @@ package cmds
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -38,14 +39,17 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"kmodules.xyz/client-go/meta"
+	prober "kmodules.xyz/prober/probe"
 )
 
 type VSoption struct {
 	backupsession  string
 	restoresession string
 	namespace      string
+	config         *rest.Config
 	kubeClient     kubernetes.Interface
 	stashClient    cs.Interface
 	snapshotClient vs_cs.Interface
@@ -74,6 +78,7 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 			if err != nil {
 				log.Fatalf("Could not get Kubernetes config: %s", err)
 			}
+			opt.config = config
 			opt.kubeClient = kubernetes.NewForConfigOrDie(config)
 			opt.stashClient = cs.NewForConfigOrDie(config)
 			opt.snapshotClient = vs_cs.NewForConfigOrDie(config)
@@ -116,6 +121,20 @@ func (opt *VSoption) createVolumeSnapshot() (*restic.BackupOutput, error) {
 
 	if backupConfig.Spec.Target == nil {
 		return nil, fmt.Errorf("no target has been specified for BackupConfiguration %s/%s", backupConfig.Namespace, backupConfig.Name)
+	}
+
+	// If preBackup hook is specified, then execute those hooks first
+	if backupConfig.Spec.Hooks != nil && backupConfig.Spec.Hooks.PreBackup != nil {
+		log.Infoln("Executing preBackup hooks........")
+		podName := os.Getenv(util.KeyPodName)
+		if podName == "" {
+			return nil, fmt.Errorf("failed to execute preBackup hooks. Reason: POD_NAME environment variable not found")
+		}
+		err := prober.RunProbe(opt.config, backupConfig.Spec.Hooks.PreBackup, podName, opt.namespace)
+		if err != nil {
+			return nil, err
+		}
+		log.Infoln("preBackup hooks has been executed successfully")
 	}
 
 	pvcNames, err := opt.getTargetPVCNames(backupConfig.Spec.Target.Ref, backupConfig.Spec.Target.Replicas)
@@ -161,6 +180,20 @@ func (opt *VSoption) createVolumeSnapshot() (*restic.BackupOutput, error) {
 	err = volumesnapshot.CleanupSnapshots(backupConfig.Spec.RetentionPolicy, backupOutput.HostBackupStats, backupSession.Namespace, opt.snapshotClient)
 	if err != nil {
 		return nil, err
+	}
+
+	// If postBackup hook is specified, then execute those hooks after backup
+	if backupConfig.Spec.Hooks != nil && backupConfig.Spec.Hooks.PostBackup != nil {
+		log.Infoln("Executing postBackup hooks........")
+		podName := os.Getenv(util.KeyPodName)
+		if podName == "" {
+			return nil, fmt.Errorf("failed to execute postBackup hook. Reason: POD_NAME environment variable not found")
+		}
+		err := prober.RunProbe(opt.config, backupConfig.Spec.Hooks.PostBackup, podName, opt.namespace)
+		if err != nil {
+			return nil, err
+		}
+		log.Infoln("postBackup hooks has been executed successfully")
 	}
 
 	return backupOutput, nil
