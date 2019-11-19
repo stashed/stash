@@ -19,7 +19,9 @@ package framework
 import (
 	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
+	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/util"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 
@@ -30,6 +32,7 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"kmodules.xyz/client-go/meta"
+	probev1 "kmodules.xyz/prober/api/v1"
 )
 
 func (f *Framework) GenerateSampleData(objMeta metav1.ObjectMeta, kind string) (sets.String, error) {
@@ -47,9 +50,12 @@ func (f *Framework) GenerateSampleData(objMeta metav1.ObjectMeta, kind string) (
 	return sampleData, nil
 }
 
-func (f *Invocation) SetupWorkloadBackup(objMeta metav1.ObjectMeta, repo *api.Repository, kind string) (*v1beta1.BackupConfiguration, error) {
+func (f *Invocation) SetupWorkloadBackup(objMeta metav1.ObjectMeta, repo *api_v1alpha1.Repository, kind string, preBackupHook, postBackupHook *probev1.Handler) (*v1beta1.BackupConfiguration, error) {
 	// Generate desired BackupConfiguration definition
 	backupConfig := f.GetBackupConfigurationForWorkload(repo.Name, GetTargetRef(objMeta.Name, kind))
+	if preBackupHook != nil || postBackupHook != nil {
+		backupConfig.Spec.Hooks = &api_v1beta1.BackupHooks{PreBackup: preBackupHook, PostBackup: postBackupHook}
+	}
 
 	By("Creating BackupConfiguration: " + backupConfig.Name)
 	createdBC, err := f.StashClient.StashV1beta1().BackupConfigurations(backupConfig.Namespace).Create(backupConfig)

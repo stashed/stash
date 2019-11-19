@@ -60,7 +60,7 @@ var _ = Describe("Deployment", func() {
 				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
-				backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment)
+				backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment, nil, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup the Sample Data
@@ -113,7 +113,7 @@ var _ = Describe("Deployment", func() {
 				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
-				backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment)
+				backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment, nil, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup the Sample Data
@@ -164,7 +164,7 @@ var _ = Describe("Deployment", func() {
 				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
-				backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment)
+				backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment, nil, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for leader election")

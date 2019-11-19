@@ -107,7 +107,7 @@ var _ = XDescribe("StatefulSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating service " + svc.Name)
-			err = f.CreateService(svc)
+			_, err = f.CreateService(svc)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating StatefulSet " + ss.Name)
@@ -137,7 +137,7 @@ var _ = XDescribe("StatefulSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating service " + svc.Name)
-			err = f.CreateService(svc)
+			_, err = f.CreateService(svc)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating StatefulSet " + ss.Name)
@@ -175,7 +175,7 @@ var _ = XDescribe("StatefulSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating service " + svc.Name)
-			err = f.CreateService(svc)
+			_, err = f.CreateService(svc)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating StatefulSet " + ss.Name)
@@ -211,7 +211,7 @@ var _ = XDescribe("StatefulSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating service " + svc.Name)
-			err = f.CreateService(svc)
+			_, err = f.CreateService(svc)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating StatefulSet " + ss.Name)
@@ -252,7 +252,7 @@ var _ = XDescribe("StatefulSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating service " + svc.Name)
-			err = f.CreateService(svc)
+			_, err = f.CreateService(svc)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating StatefulSet " + ss.Name)
@@ -294,7 +294,7 @@ var _ = XDescribe("StatefulSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating service " + svc.Name)
-			err = f.CreateService(svc)
+			_, err = f.CreateService(svc)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating StatefulSet " + ss.Name)
@@ -325,7 +325,7 @@ var _ = XDescribe("StatefulSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating service " + svc.Name)
-			err = f.CreateService(svc)
+			_, err = f.CreateService(svc)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating StatefulSet " + ss.Name)
@@ -350,7 +350,7 @@ var _ = XDescribe("StatefulSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating service " + svc.Name)
-			err = f.CreateService(svc)
+			_, err = f.CreateService(svc)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating StatefulSet " + ss.Name)
@@ -368,7 +368,7 @@ var _ = XDescribe("StatefulSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating service " + svc.Name)
-			err = f.CreateService(svc)
+			_, err = f.CreateService(svc)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating StatefulSet " + ss.Name)
@@ -409,7 +409,7 @@ var _ = XDescribe("StatefulSet", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating service " + svc.Name)
-			err = f.CreateService(svc)
+			_, err = f.CreateService(svc)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating StatefulSet " + ss.Name)
@@ -692,7 +692,7 @@ var _ = XDescribe("StatefulSet", func() {
 				}).Should(BeNil())
 
 				By("Creating service " + svc.Name)
-				err = f.CreateService(svc)
+				_, err = f.CreateService(svc)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating StatefulSet " + ss.Name)
@@ -759,7 +759,7 @@ var _ = XDescribe("StatefulSet", func() {
 				}).Should(BeNil())
 
 				By("Creating service " + svc.Name)
-				err = f.CreateService(svc)
+				_, err = f.CreateService(svc)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating StatefulSet " + ss.Name)
@@ -829,7 +829,7 @@ var _ = XDescribe("StatefulSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating service " + svc.Name)
-				err = f.CreateService(svc)
+				_, err = f.CreateService(svc)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating StatefulSet " + ss.Name)
@@ -917,7 +917,7 @@ var _ = XDescribe("StatefulSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating service " + svc.Name)
-				err = f.CreateService(svc)
+				_, err = f.CreateService(svc)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating StatefulSet " + ss.Name)
@@ -967,7 +967,7 @@ var _ = XDescribe("StatefulSet", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating service " + svc.Name)
-				err = f.CreateService(svc)
+				_, err = f.CreateService(svc)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Creating StatefulSet with 3 replica" + ss.Name)

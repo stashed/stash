@@ -36,6 +36,7 @@ import (
 	storage_api_v1 "k8s.io/api/storage/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"kmodules.xyz/client-go/meta"
@@ -236,7 +237,8 @@ func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
 		}
 		err := prober.RunProbe(opt.config, restoreSession.Spec.Hooks.PostRestore, podName, opt.namespace)
 		if err != nil {
-			return nil, err
+			return nil, errors.NewAggregate([]error{err, fmt.Errorf("note: Actual restore process has succeeded." +
+				"Hence, restored data might be present in the target even if the overall RestoreSession phase is 'Failed'")})
 		}
 		log.Infoln("postRestore hooks has been executed successfully")
 	}

@@ -288,7 +288,8 @@ func (c *BackupSessionController) backup(backupConfiguration *api_v1beta1.Backup
 		}
 		err := prober.RunProbe(c.Config, backupConfiguration.Spec.Hooks.PostBackup, podName, c.Namespace)
 		if err != nil {
-			return nil, err
+			return nil, errors.NewAggregate([]error{err, fmt.Errorf("note: Actual backup process has succeeded." +
+				"Hence, backup data might be present in the backend even if the overall BackupSession phase is 'Failed'")})
 		}
 		log.Infoln("postBackup hooks has been executed successfully")
 	}

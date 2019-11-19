@@ -155,7 +155,7 @@ var _ = XDescribe("Snapshots", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating service " + svc.Name)
-			err = f.CreateService(svc)
+			_, err = f.CreateService(svc)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Creating StatefulSet " + ss.Name)

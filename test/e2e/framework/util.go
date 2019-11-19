@@ -833,6 +833,10 @@ func getGVRAndObjectMeta(obj interface{}) (schema.GroupVersionResource, metav1.O
 		w.GetObjectKind().SetGroupVersionKind(core.SchemeGroupVersion.WithKind(apis.KindSecret))
 		gvk := w.GroupVersionKind()
 		return schema.GroupVersionResource{Group: gvk.Group, Version: gvk.Version, Resource: apis.ResourcePluralSecret}, w.ObjectMeta, nil
+	case *core.Service:
+		w.GetObjectKind().SetGroupVersionKind(core.SchemeGroupVersion.WithKind(apis.KindService))
+		gvk := w.GroupVersionKind()
+		return schema.GroupVersionResource{Group: gvk.Group, Version: gvk.Version, Resource: apis.ResourcePluralService}, w.ObjectMeta, nil
 	default:
 		return schema.GroupVersionResource{}, metav1.ObjectMeta{}, fmt.Errorf("failed to get GroupVersionResource. Reason: Unknown resource type")
 	}

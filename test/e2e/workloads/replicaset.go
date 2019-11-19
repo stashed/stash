@@ -60,7 +60,7 @@ var _ = Describe("ReplicaSet", func() {
 				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
-				backupConfig, err := f.SetupWorkloadBackup(rs.ObjectMeta, repo, apis.KindReplicaSet)
+				backupConfig, err := f.SetupWorkloadBackup(rs.ObjectMeta, repo, apis.KindReplicaSet, nil, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup the Sample Data
@@ -112,7 +112,7 @@ var _ = Describe("ReplicaSet", func() {
 				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
-				backupConfig, err := f.SetupWorkloadBackup(rs.ObjectMeta, repo, apis.KindReplicaSet)
+				backupConfig, err := f.SetupWorkloadBackup(rs.ObjectMeta, repo, apis.KindReplicaSet, nil, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup the Sample Data
@@ -163,7 +163,7 @@ var _ = Describe("ReplicaSet", func() {
 				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
-				backupConfig, err := f.SetupWorkloadBackup(rs.ObjectMeta, repo, apis.KindReplicaSet)
+				backupConfig, err := f.SetupWorkloadBackup(rs.ObjectMeta, repo, apis.KindReplicaSet, nil, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for leader election")

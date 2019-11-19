@@ -38,6 +38,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -191,7 +192,8 @@ func (opt *VSoption) createVolumeSnapshot() (*restic.BackupOutput, error) {
 		}
 		err := prober.RunProbe(opt.config, backupConfig.Spec.Hooks.PostBackup, podName, opt.namespace)
 		if err != nil {
-			return nil, err
+			return nil, errors.NewAggregate([]error{err, fmt.Errorf("note: Actual backup process has succeeded." +
+				"Hence, backup snapshot might be present in the backend even if the overall BackupSession phase is 'Failed'")})
 		}
 		log.Infoln("postBackup hooks has been executed successfully")
 	}

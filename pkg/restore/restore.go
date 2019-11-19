@@ -215,7 +215,8 @@ func (opt *Options) runRestore(restoreSession *api_v1beta1.RestoreSession) (*res
 		}
 		err := prober.RunProbe(opt.Config, restoreSession.Spec.Hooks.PostRestore, podName, opt.Namespace)
 		if err != nil {
-			return nil, err
+			return nil, errors.NewAggregate([]error{err, fmt.Errorf("note: Actual restore process has succeeded." +
+				"Hence, restored data might be present in the target even if the overall RestoreSession phase is 'Failed'")})
 		}
 		log.Infoln("postRestore hooks has been executed successfully")
 	}

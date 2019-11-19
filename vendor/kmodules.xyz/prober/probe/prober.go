@@ -184,27 +184,26 @@ func extractPort(param intstr.IntOrString, pod *core.Pod, containerName string) 
 	port := -1
 	var err error
 
-	if pod == nil {
-		return port, fmt.Errorf("failed to extract port. invalid pod")
-	}
-
-	var container core.Container
-	found := false
-	for i := range pod.Spec.Containers {
-		if pod.Spec.Containers[i].Name == containerName {
-			container = pod.Spec.Containers[i]
-			found = true
-			break
-		}
-	}
-	if !found {
-		return port, fmt.Errorf("failed to extract port. container not found")
-	}
-
 	switch param.Type {
 	case intstr.Int:
 		port = param.IntValue()
 	case intstr.String:
+		if pod == nil {
+			return port, fmt.Errorf("failed to extract port. invalid pod")
+		}
+
+		var container core.Container
+		found := false
+		for i := range pod.Spec.Containers {
+			if pod.Spec.Containers[i].Name == containerName {
+				container = pod.Spec.Containers[i]
+				found = true
+				break
+			}
+		}
+		if !found {
+			return port, fmt.Errorf("failed to extract port. container not found")
+		}
 		if port, err = findPortByName(container, param.StrVal); err != nil {
 			// Last ditch effort - maybe it was an int stored as string?
 			if port, err = strconv.Atoi(param.StrVal); err != nil {
@@ -214,6 +213,7 @@ func extractPort(param intstr.IntOrString, pod *core.Pod, containerName string) 
 	default:
 		return port, fmt.Errorf("intOrString had no kind: %+v", param)
 	}
+
 	if port > 0 && port < 65536 {
 		return port, nil
 	}

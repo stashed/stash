@@ -219,3 +219,106 @@ func (f *Invocation) DeployStatefulSet(name string, replica int32) (*apps.Statef
 
 	return createdss, err
 }
+
+func (f *Invocation) DeployStatefulSetWithProbeClient(name string) (*apps.StatefulSet, error) {
+	svc, err := f.CreateService(f.HeadlessService())
+	if err != nil {
+		return nil, err
+	}
+	f.AppendToCleanupList(svc)
+
+	labels := map[string]string{
+		"app":  f.app,
+		"kind": "statefulset",
+	}
+	// Generate StatefulSet definition
+	statefulset := &apps.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: f.namespace,
+		},
+		Spec: apps.StatefulSetSpec{
+			Replicas: types.Int32P(1),
+			Selector: &metav1.LabelSelector{
+				MatchLabels: labels,
+			},
+			ServiceName: TEST_HEADLESS_SERVICE,
+			Template: core.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: labels,
+				},
+				Spec: core.PodSpec{
+					Containers: []core.Container{
+						{
+							Name:  ProberDemoPodPrefix,
+							Image: "appscodeci/prober-demo",
+							Args: []string{
+								"run-client",
+							},
+							Env: []core.EnvVar{
+								{
+									Name:  ExitCodeSuccess,
+									Value: "0",
+								},
+								{
+									Name:  ExitCodeFail,
+									Value: "1",
+								},
+							},
+							Ports: []core.ContainerPort{
+								{
+									Name:          HttpPortName,
+									ContainerPort: HttpPort,
+								},
+								{
+									Name:          TcpPortName,
+									ContainerPort: TcpPort,
+								},
+							},
+							VolumeMounts: []core.VolumeMount{
+								{
+									Name:      TestSourceDataVolumeName,
+									MountPath: TestSourceDataMountPath,
+								},
+							},
+						},
+					},
+				},
+			},
+			VolumeClaimTemplates: []core.PersistentVolumeClaim{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: TestSourceDataVolumeName,
+					},
+					Spec: core.PersistentVolumeClaimSpec{
+						AccessModes: []core.PersistentVolumeAccessMode{
+							core.ReadWriteOnce,
+						},
+						StorageClassName: types.StringP(f.StorageClass),
+						Resources: core.ResourceRequirements{
+							Requests: core.ResourceList{
+								core.ResourceName(core.ResourceStorage): resource.MustParse("1Gi"),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	By("Deploying StatefulSet with Probe Client: " + statefulset.Name)
+	createdStatefulSet, err := f.CreateStatefulSet(*statefulset)
+	if err != nil {
+		return createdStatefulSet, err
+	}
+	f.AppendToCleanupList(createdStatefulSet)
+
+	By("Waiting for StatefulSet to be ready")
+	err = apps_util.WaitUntilStatefulSetReady(f.KubeClient, createdStatefulSet.ObjectMeta)
+	Expect(err).NotTo(HaveOccurred())
+	// check that we can execute command to the pod.
+	// this is necessary because we will exec into the pods and create sample data
+	f.EventuallyPodAccessible(createdStatefulSet.ObjectMeta).Should(BeTrue())
+
+	return createdStatefulSet, err
+}

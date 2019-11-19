@@ -60,7 +60,7 @@ var _ = Describe("Workload Test", func() {
 				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
-				backupConfig, err := f.SetupWorkloadBackup(dmn.ObjectMeta, repo, apis.KindDaemonSet)
+				backupConfig, err := f.SetupWorkloadBackup(dmn.ObjectMeta, repo, apis.KindDaemonSet, nil, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup the Sample Data
@@ -112,7 +112,7 @@ var _ = Describe("Workload Test", func() {
 				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
-				backupConfig, err := f.SetupWorkloadBackup(dmn.ObjectMeta, repo, apis.KindDaemonSet)
+				backupConfig, err := f.SetupWorkloadBackup(dmn.ObjectMeta, repo, apis.KindDaemonSet, nil, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup the Sample Data

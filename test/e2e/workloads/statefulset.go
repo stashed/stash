@@ -104,7 +104,7 @@ var _ = Describe("StatefulSet", func() {
 				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
-				backupConfig, err := f.SetupWorkloadBackup(ss.ObjectMeta, repo, apis.KindStatefulSet)
+				backupConfig, err := f.SetupWorkloadBackup(ss.ObjectMeta, repo, apis.KindStatefulSet, nil, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup the Sample Data
@@ -156,7 +156,7 @@ var _ = Describe("StatefulSet", func() {
 				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
-				backupConfig, err := f.SetupWorkloadBackup(ss.ObjectMeta, repo, apis.KindStatefulSet)
+				backupConfig, err := f.SetupWorkloadBackup(ss.ObjectMeta, repo, apis.KindStatefulSet, nil, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup the Sample Data
@@ -207,7 +207,7 @@ var _ = Describe("StatefulSet", func() {
 				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
-				backupConfig, err := f.SetupWorkloadBackup(ss.ObjectMeta, repo, apis.KindStatefulSet)
+				backupConfig, err := f.SetupWorkloadBackup(ss.ObjectMeta, repo, apis.KindStatefulSet, nil, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup the Sample Data
