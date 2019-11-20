@@ -504,4 +504,83 @@ var _ = Describe("PreBackup Hook", func() {
 			})
 		})
 	})
+
+	Context("ExecAction", func() {
+		Context("Sidecar Model", func() {
+			Context("Success Test", func() {
+				It("should execute probe successfully", func() {
+					// Deploy a StatefulSet.
+					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
+					Expect(err).NotTo(HaveOccurred())
+
+					// Generate Sample Data
+					_, err = f.GenerateSampleData(statefulset.ObjectMeta, apis.KindStatefulSet)
+					Expect(err).NotTo(HaveOccurred())
+
+					// Setup a Minio Repository
+					repo, err := f.SetupMinioRepository()
+					Expect(err).NotTo(HaveOccurred())
+					f.AppendToCleanupList(repo)
+
+					preBackupHook := &probev1.Handler{
+						Exec: &core.ExecAction{
+							Command: []string{"/bin/sh", "-c", `exit $EXIT_CODE_SUCCESS`},
+						},
+						ContainerName: framework.ProberDemoPodPrefix,
+					}
+					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, preBackupHook, nil)
+					Expect(err).NotTo(HaveOccurred())
+
+					// Take an Instant Backup the Sample Data
+					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Verifying that BackupSession has succeeded")
+					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
+				})
+			})
+
+			Context("Failure Test", func() {
+				It("should not take backup when probe failed", func() {
+					// Deploy a StatefulSet.
+					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
+					Expect(err).NotTo(HaveOccurred())
+
+					// Generate Sample Data
+					_, err = f.GenerateSampleData(statefulset.ObjectMeta, apis.KindStatefulSet)
+					Expect(err).NotTo(HaveOccurred())
+
+					// Setup a Minio Repository
+					repo, err := f.SetupMinioRepository()
+					Expect(err).NotTo(HaveOccurred())
+					f.AppendToCleanupList(repo)
+
+					preBackupHook := &probev1.Handler{
+						Exec: &core.ExecAction{
+							Command: []string{"/bin/sh", "-c", `exit $EXIT_CODE_FAIL`},
+						},
+						ContainerName: framework.ProberDemoPodPrefix,
+					}
+					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, preBackupHook, nil)
+					Expect(err).NotTo(HaveOccurred())
+
+					// Take an Instant Backup the Sample Data
+					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Verifying that BackupSession has failed")
+					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
+
+					By("Verifying that no snapshot has been taken")
+					repo, err = f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Get(repo.Name, metav1.GetOptions{})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(repo.Status.SnapshotCount).Should(BeZero())
+				})
+			})
+		})
+	})
 })

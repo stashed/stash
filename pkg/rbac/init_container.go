@@ -80,6 +80,11 @@ func ensureRestoreInitContainerClusterRole(kubeClient kubernetes.Interface, labe
 			},
 			{
 				APIGroups: []string{core.GroupName},
+				Resources: []string{"pods/exec"},
+				Verbs:     []string{"get", "list", "create", "delete"},
+			},
+			{
+				APIGroups: []string{core.GroupName},
 				Resources: []string{"events"},
 				Verbs:     []string{"create"},
 			},
