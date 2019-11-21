@@ -123,7 +123,7 @@ var _ = Describe("StatefulSet", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original StatefulSet")
-				restoreSession, err := f.SetupRestoreProcess(ss.ObjectMeta, repo, apis.KindStatefulSet)
+				restoreSession, err := f.SetupRestoreProcess(ss.ObjectMeta, repo, apis.KindStatefulSet, nil, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -174,7 +174,7 @@ var _ = Describe("StatefulSet", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original StatefulSet")
-				restoreSession, err := f.SetupRestoreProcess(restoredSS.ObjectMeta, repo, apis.KindStatefulSet)
+				restoreSession, err := f.SetupRestoreProcess(restoredSS.ObjectMeta, repo, apis.KindStatefulSet, nil, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")

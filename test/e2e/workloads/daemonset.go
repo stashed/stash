@@ -79,7 +79,7 @@ var _ = Describe("Workload Test", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original DaemonSet")
-				restoreSession, err := f.SetupRestoreProcess(dmn.ObjectMeta, repo, apis.KindDaemonSet)
+				restoreSession, err := f.SetupRestoreProcess(dmn.ObjectMeta, repo, apis.KindDaemonSet, nil, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -130,7 +130,7 @@ var _ = Describe("Workload Test", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in different DaemonSet")
-				restoreSession, err := f.SetupRestoreProcess(restoredDmn.ObjectMeta, repo, apis.KindDaemonSet)
+				restoreSession, err := f.SetupRestoreProcess(restoredDmn.ObjectMeta, repo, apis.KindDaemonSet, nil, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")

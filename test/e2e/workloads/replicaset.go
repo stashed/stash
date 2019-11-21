@@ -79,7 +79,7 @@ var _ = Describe("ReplicaSet", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original ReplicaSet")
-				restoreSession, err := f.SetupRestoreProcess(rs.ObjectMeta, repo, apis.KindReplicaSet)
+				restoreSession, err := f.SetupRestoreProcess(rs.ObjectMeta, repo, apis.KindReplicaSet, nil, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -130,7 +130,7 @@ var _ = Describe("ReplicaSet", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in different ReplicaSet")
-				restoreSession, err := f.SetupRestoreProcess(restoredRS.ObjectMeta, repo, apis.KindReplicaSet)
+				restoreSession, err := f.SetupRestoreProcess(restoredRS.ObjectMeta, repo, apis.KindReplicaSet, nil, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -185,7 +185,7 @@ var _ = Describe("ReplicaSet", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original ReplicaSet")
-				restoreSession, err := f.SetupRestoreProcess(rs.ObjectMeta, repo, apis.KindReplicaSet)
+				restoreSession, err := f.SetupRestoreProcess(rs.ObjectMeta, repo, apis.KindReplicaSet, nil, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")

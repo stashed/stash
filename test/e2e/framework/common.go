@@ -115,9 +115,15 @@ func (f *Invocation) RestoredData(objMeta metav1.ObjectMeta, kind string) sets.S
 	return restoredData
 }
 
-func (f *Invocation) SetupRestoreProcess(objMeta metav1.ObjectMeta, repo *api.Repository, kind string) (*v1beta1.RestoreSession, error) {
-	By("Creating RestoreSession")
+func (f *Invocation) SetupRestoreProcess(objMeta metav1.ObjectMeta, repo *api.Repository, kind string, preRestoreHook, postRestoreHook *probev1.Handler) (*v1beta1.RestoreSession, error) {
+
+	// Generate desired BackupConfiguration definition
 	restoreSession := f.GetRestoreSessionForWorkload(repo.Name, GetTargetRef(objMeta.Name, kind))
+	if preRestoreHook != nil || postRestoreHook != nil {
+		restoreSession.Spec.Hooks = &api_v1beta1.RestoreHooks{PreRestore: preRestoreHook, PostRestore: postRestoreHook}
+	}
+
+	By("Creating RestoreSession")
 	err := f.CreateRestoreSession(restoreSession)
 	Expect(err).NotTo(HaveOccurred())
 	f.AppendToCleanupList(restoreSession)

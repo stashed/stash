@@ -45,10 +45,11 @@ const (
 	MINIO_CERTS_MOUNTPATH = "/root/.minio/certs"
 	StandardStorageClass  = "standard"
 
-	MinioServer         = "minio-server"
-	MinioServerSecret   = "minio-server-secret"
-	MinioPVCStorage     = "minio-pvc-storage"
-	MinioNodePortServic = "minio-nodeport-service"
+	MinioServer       = "minio-server"
+	MinioServerSecret = "minio-server-secret"
+	MinioPVCStorage   = "minio-pvc-storage"
+	MinioService      = "minio-service"
+	LocalHostIP       = "127.0.0.1"
 )
 
 var (
@@ -262,11 +263,10 @@ func (f *Framework) CreateDeploymentForMinioServer(obj apps.Deployment) error {
 func (f *Framework) ServiceForMinioServer() core.Service {
 	return core.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf(MinioNodePortServic+"%s", f.namespace),
+			Name:      f.GetMinioServiceName(),
 			Namespace: f.namespace,
 		},
 		Spec: core.ServiceSpec{
-			Type: core.ServiceTypeLoadBalancer,
 			Ports: []core.ServicePort{
 				{
 					Port:       int32(443),
@@ -279,6 +279,10 @@ func (f *Framework) ServiceForMinioServer() core.Service {
 			},
 		},
 	}
+}
+
+func (f *Framework) GetMinioServiceName() string {
+	return fmt.Sprintf("%s-%s", MinioService, f.namespace)
 }
 
 func (f *Framework) CreateServiceForMinioServer(obj core.Service) (*core.Service, error) {
@@ -341,8 +345,7 @@ func (f *Framework) MinioServerSANs(ips []net.IP) cert.AltNames {
 }
 
 func (f *Framework) MinioServiceAddres() string {
-	return fmt.Sprintf(MinioNodePortServic+"%s"+".%s.svc", f.namespace, f.namespace)
-
+	return fmt.Sprintf("%s.%s.svc", f.GetMinioServiceName(), f.namespace)
 }
 
 func (f Invocation) CreateBackendSecretForMinio() (*core.Secret, error) {

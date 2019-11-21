@@ -83,7 +83,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	By("Deploy TLS secured Minio Server")
-	_, err = root.CreateMinioServer(true, []net.IP{net.ParseIP("127.0.0.1")})
+	_, err = root.CreateMinioServer(true, []net.IP{net.ParseIP(framework.LocalHostIP)})
 	Expect(err).NotTo(HaveOccurred())
 })
 

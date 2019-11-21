@@ -806,6 +806,7 @@ k8s.io/client-go/informers/storage
 k8s.io/client-go/tools/watch
 k8s.io/client-go/transport/spdy
 k8s.io/client-go/util/exec
+k8s.io/client-go/tools/portforward
 k8s.io/client-go/util/jsonpath
 k8s.io/client-go/pkg/apis/clientauthentication
 k8s.io/client-go/pkg/apis/clientauthentication/v1alpha1
@@ -948,6 +949,7 @@ kmodules.xyz/client-go/batch/v1
 kmodules.xyz/client-go/batch/v1beta1
 kmodules.xyz/client-go/dynamic
 kmodules.xyz/client-go/tools/analytics
+kmodules.xyz/client-go/tools/portforward
 kmodules.xyz/client-go/apiregistration/v1beta1
 kmodules.xyz/client-go/tools/exec
 # kmodules.xyz/constants v0.0.0-20191024095500-cd4313df4aa6

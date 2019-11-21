@@ -34,6 +34,7 @@ import (
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	pfutil "kmodules.xyz/client-go/tools/portforward"
 	store "kmodules.xyz/objectstore-api/api/v1"
 	"kmodules.xyz/objectstore-api/osm"
 )
@@ -112,7 +113,7 @@ func (f *Framework) DeleteRepository(repository *api.Repository) error {
 	}
 	return nil
 }
-func (f *Framework) BrowseResticRepository(repository *api.Repository) ([]stow.Item, error) {
+func (f *Framework) BrowseBackendRepository(repository *api.Repository) ([]stow.Item, error) {
 	cfg, err := osm.NewOSMContext(f.KubeClient, repository.Spec.Backend, repository.Namespace)
 	if err != nil {
 		return nil, err
@@ -140,6 +141,32 @@ func (f *Framework) BrowseResticRepository(repository *api.Repository) ([]stow.I
 		return nil, err
 	}
 	return items, nil
+}
+
+// BrowseMinioRepository browse backend minio repository to check if there is any data in the backend.
+// Minio server is running inside the cluster but the test is running outside of the cluster.
+// So, we can't access the Minio server using the service created for it.
+// Here, we are going to port-forward the Minio pod and and use the port-forwarded address to access the backend.
+func (f *Framework) BrowseMinioRepository(repo *api.Repository) ([]stow.Item, error) {
+	if repo.Spec.Backend.S3 == nil {
+		return nil, fmt.Errorf("failed to browse desired backend repository. Reason: Provided Repository does not use S3 or S3 compatible backend")
+	}
+	pod, err := f.GetMinioPod()
+	if err != nil {
+		return nil, err
+	}
+
+	tunnel := pfutil.NewTunnel(f.KubeClient.CoreV1().RESTClient(), f.ClientConfig, f.namespace, pod.Name, 443)
+	defer tunnel.Close()
+
+	err = tunnel.ForwardPort()
+	if err != nil {
+		return nil, err
+	}
+
+	// update endpoint so that BrowseBackendRepository() function uses the port-forwarded address
+	repo.Spec.Backend.S3.Endpoint = fmt.Sprintf("https://%s:%d", LocalHostIP, tunnel.Local)
+	return f.BrowseBackendRepository(repo)
 }
 
 func (f *Framework) BackupCountInRepositoriesStatus(repos []*api.Repository) int64 {

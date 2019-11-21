@@ -1607,7 +1607,7 @@ var _ = XDescribe("Deployment", func() {
 				f.EventuallyRepository(&deployment).Should(BeEmpty())
 
 				By("Checking restic repository is deleted")
-				items, err := f.BrowseResticRepository(repos[0])
+				items, err := f.BrowseBackendRepository(repos[0])
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(items).Should(BeEmpty())
 			})

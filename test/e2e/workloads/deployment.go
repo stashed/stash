@@ -79,7 +79,7 @@ var _ = Describe("Deployment", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original Deployment")
-				restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment)
+				restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment, nil, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -131,7 +131,7 @@ var _ = Describe("Deployment", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in different Deployment")
-				restoreSession, err := f.SetupRestoreProcess(restoredDeployment.ObjectMeta, repo, apis.KindDeployment)
+				restoreSession, err := f.SetupRestoreProcess(restoredDeployment.ObjectMeta, repo, apis.KindDeployment, nil, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -186,7 +186,7 @@ var _ = Describe("Deployment", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original Deployment")
-				restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment)
+				restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment, nil, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
