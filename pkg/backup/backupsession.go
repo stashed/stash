@@ -438,6 +438,10 @@ func (c *BackupSessionController) handleBackupSuccess(backupSessionName string, 
 		BackupSession: backupSessionName,
 		Metrics:       c.Metrics,
 	}
+	if backupConfig.Spec.Target != nil {
+		statusOpt.TargetRef = backupConfig.Spec.Target.Ref
+	}
+
 	return statusOpt.UpdatePostBackupStatus(backupOutput)
 }
 
@@ -470,6 +474,10 @@ func (c *BackupSessionController) handleBackupFailure(backupSessionName string, 
 		BackupSession: backupSessionName,
 		Metrics:       c.Metrics,
 	}
+	if backupConfig.Spec.Target != nil {
+		statusOpt.TargetRef = backupConfig.Spec.Target.Ref
+	}
+
 	return statusOpt.UpdatePostBackupStatus(backupOutput)
 }
 
@@ -483,10 +491,13 @@ func (c *BackupSessionController) isBackupTakenForThisHost(backupSession *api_v1
 	}
 
 	// if backupSession has entry for this host in status field, then it has been already processed for this host
-	for _, hostStats := range backupSession.Status.Stats {
-		if hostStats.Hostname == host {
-			return true
+	for _, target := range backupSession.Status.Targets {
+		for _, hostStats := range target.Stats {
+			if hostStats.Hostname == host {
+				return true
+			}
 		}
 	}
+
 	return false
 }

@@ -48,3 +48,5 @@ API rule violation: names_match,k8s.io/apimachinery/pkg/util/intstr,IntOrString,
 API rule violation: names_match,k8s.io/apimachinery/pkg/util/intstr,IntOrString,Type
 API rule violation: names_match,kmodules.xyz/offshoot-api/api/v1,ContainerRuntimeSettings,IONice
 API rule violation: names_match,stash.appscode.dev/stash/apis/stash/v1beta1,BackupTarget,VolumeSnapshotClassName
+API rule violation: names_match,stash.appscode.dev/stash/apis/stash/v1beta1,Target,Phase
+API rule violation: names_match,stash.appscode.dev/stash/apis/stash/v1beta1,Target,TargetedHost

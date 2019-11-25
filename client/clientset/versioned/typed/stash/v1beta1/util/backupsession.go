@@ -97,18 +97,24 @@ func TryUpdateBackupSession(c cs.StashV1beta1Interface, meta metav1.ObjectMeta, 
 	return
 }
 
-func UpdateBackupSessionStatusForHost(c cs.StashV1beta1Interface, backupSession *api_v1beta1.BackupSession, hostStats api_v1beta1.HostBackupStats) (*api_v1beta1.BackupSession, error) {
+func UpdateBackupSessionStatusForHost(c cs.StashV1beta1Interface, targetRef api_v1beta1.TargetRef, backupSession *api_v1beta1.BackupSession, hostStats api_v1beta1.HostBackupStats) (*api_v1beta1.BackupSession, error) {
 
 	out, err := UpdateBackupSessionStatus(c, backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 		// if an entry already exist for this host then update it
-		for i, v := range backupSession.Status.Stats {
-			if v.Hostname == hostStats.Hostname {
-				in.Stats[i] = hostStats
-				return in
+		for i, target := range backupSession.Status.Targets {
+			for j, v := range target.Stats {
+				if v.Hostname == hostStats.Hostname && targetRef.Kind == target.Ref.Kind && targetRef.Name == target.Ref.Name {
+					in.Targets[i].Stats[j] = hostStats
+					return in
+				}
 			}
 		}
 		// no entry for this host. so add a new entry.
-		in.Stats = append(in.Stats, hostStats)
+		for i, target := range backupSession.Status.Targets {
+			if targetRef.Kind == target.Ref.Kind && targetRef.Name == target.Ref.Name {
+				in.Targets[i].Stats = append(in.Targets[i].Stats, hostStats)
+			}
+		}
 		return in
 	})
 	return out, err

@@ -68,17 +68,39 @@ const (
 	HostBackupFailed    HostBackupPhase = "Failed"
 )
 
+type TargetBakcupPhase string
+
+const (
+	TargetBackupSucceeded TargetBakcupPhase = "Succeeded"
+	TargetBackupFailed    TargetBakcupPhase = "Failed"
+)
+
 type BackupSessionStatus struct {
 	// Phase indicates the overall phase of the backup process for this BackupSession. Phase will be "Succeeded" only if
 	// phase of all hosts are "Succeeded". If any of the host fail to complete backup, Phase will be "Failed".
 	// +optional
 	Phase BackupSessionPhase `json:"phase,omitempty" protobuf:"bytes,1,opt,name=phase,casttype=BackupSessionPhase"`
-	// TotalHosts specifies total number of hosts that will be backed up for this BackupSession
+	// TotalHosts specifies total number of hosts for all targets that will be backed up for this BackupSession
 	// +optional
 	TotalHosts *int32 `json:"totalHosts,omitempty" protobuf:"varint,2,opt,name=totalHosts"`
 	// SessionDuration specify total time taken to complete current backup session (sum of backup duration of all hosts)
 	// +optional
 	SessionDuration string `json:"sessionDuration,omitempty" protobuf:"bytes,3,opt,name=sessionDuration"`
+	// Targets specify overall backup status of all target that will be backed up
+	// optional
+	Targets []Target `json:"targets,omitempty" protobuf:"bytes,4,rep,name=targets"`
+}
+
+type Target struct {
+	// Ref refers to the backup target
+	// +optional
+	Ref TargetRef `json:"ref,omitempty" protobuf:"bytes,1,opt,name=ref"`
+	// TargetedHost specifies total number of hosts for individual target that will be backed up for this BackupSession
+	// +optional
+	TargetedHost *int32 `json:"targetedHosts,omitempty" protobuf:"varint,2,opt,name=targetedHosts"`
+	// Phase indicates backup phase of the individual target
+	// +optional
+	Phase TargetBakcupPhase `json:"targetBackupPhase,omitempty" protobuf:"bytes,3,opt,name=targetBackupPhase"`
 	// Stats shows statistics of individual hosts for this backup session
 	// +optional
 	Stats []HostBackupStats `json:"stats,omitempty" protobuf:"bytes,4,rep,name=stats"`

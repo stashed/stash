@@ -390,6 +390,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"stash.appscode.dev/stash/apis/stash/v1beta1.RestoreTarget":                   schema_stash_apis_stash_v1beta1_RestoreTarget(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.Rule":                            schema_stash_apis_stash_v1beta1_Rule(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.SnapshotStats":                   schema_stash_apis_stash_v1beta1_SnapshotStats(ref),
+		"stash.appscode.dev/stash/apis/stash/v1beta1.Target":                          schema_stash_apis_stash_v1beta1_Target(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.TargetRef":                       schema_stash_apis_stash_v1beta1_TargetRef(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.Task":                            schema_stash_apis_stash_v1beta1_Task(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.TaskList":                        schema_stash_apis_stash_v1beta1_TaskList(ref),
@@ -16903,7 +16904,7 @@ func schema_stash_apis_stash_v1beta1_BackupSessionStatus(ref common.ReferenceCal
 					},
 					"totalHosts": {
 						SchemaProps: spec.SchemaProps{
-							Description: "TotalHosts specifies total number of hosts that will be backed up for this BackupSession",
+							Description: "TotalHosts specifies total number of hosts for all targets that will be backed up for this BackupSession",
 							Type:        []string{"integer"},
 							Format:      "int32",
 						},
@@ -16915,14 +16916,14 @@ func schema_stash_apis_stash_v1beta1_BackupSessionStatus(ref common.ReferenceCal
 							Format:      "",
 						},
 					},
-					"stats": {
+					"targets": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Stats shows statistics of individual hosts for this backup session",
+							Description: "Targets specify overall backup status of all target that will be backed up optional",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("stash.appscode.dev/stash/apis/stash/v1beta1.HostBackupStats"),
+										Ref: ref("stash.appscode.dev/stash/apis/stash/v1beta1.Target"),
 									},
 								},
 							},
@@ -16932,7 +16933,7 @@ func schema_stash_apis_stash_v1beta1_BackupSessionStatus(ref common.ReferenceCal
 			},
 		},
 		Dependencies: []string{
-			"stash.appscode.dev/stash/apis/stash/v1beta1.HostBackupStats"},
+			"stash.appscode.dev/stash/apis/stash/v1beta1.Target"},
 	}
 }
 
@@ -17832,6 +17833,53 @@ func schema_stash_apis_stash_v1beta1_SnapshotStats(ref common.ReferenceCallback)
 		},
 		Dependencies: []string{
 			"stash.appscode.dev/stash/apis/stash/v1beta1.FileStats"},
+	}
+}
+
+func schema_stash_apis_stash_v1beta1_Target(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"ref": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Ref refers to the backup target",
+							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1beta1.TargetRef"),
+						},
+					},
+					"targetedHosts": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TargetedHost specifies total number of hosts for individual target that will be backed up for this BackupSession",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"targetBackupPhase": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Phase indicates backup phase of the individual target",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"stats": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Stats shows statistics of individual hosts for this backup session",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("stash.appscode.dev/stash/apis/stash/v1beta1.HostBackupStats"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"stash.appscode.dev/stash/apis/stash/v1beta1.HostBackupStats", "stash.appscode.dev/stash/apis/stash/v1beta1.TargetRef"},
 	}
 }
 

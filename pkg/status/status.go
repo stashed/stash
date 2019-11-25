@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	stash_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
 	stash_util_v1beta1 "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
@@ -46,6 +47,7 @@ type UpdateStatusOptions struct {
 	OutputDir      string
 	OutputFileName string
 	Metrics        restic.MetricsOptions
+	TargetRef      v1beta1.TargetRef
 }
 
 func (o UpdateStatusOptions) UpdateBackupStatusFromFile() error {
@@ -83,7 +85,7 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 	// add or update entry for each host in BackupSession status + create event
 	for _, hostStats := range backupOutput.HostBackupStats {
 		log.Infof("Updating status of BackupSession: %s/%s for host: %s", backupSession.Namespace, backupSession.Name, hostStats.Hostname)
-		backupSession, err = stash_util_v1beta1.UpdateBackupSessionStatusForHost(o.StashClient.StashV1beta1(), backupSession, hostStats)
+		backupSession, err = stash_util_v1beta1.UpdateBackupSessionStatusForHost(o.StashClient.StashV1beta1(), o.TargetRef, backupSession, hostStats)
 		if err != nil {
 			return err
 		}

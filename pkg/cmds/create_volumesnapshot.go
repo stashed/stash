@@ -91,6 +91,7 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 				BackupSession: opt.backupsession,
 				Metrics:       opt.metrics,
 			}
+
 			return statOpt.UpdatePostBackupStatus(backupOutput)
 		},
 	}

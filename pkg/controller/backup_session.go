@@ -441,6 +441,14 @@ func (c *StashController) setBackupSessionRunning(backupSession *api_v1beta1.Bac
 	_, err = stash_util.UpdateBackupSessionStatus(c.stashClient.StashV1beta1(), backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 		in.Phase = api_v1beta1.BackupSessionRunning
 		in.TotalHosts = totalHosts
+		if backupConfig.Spec.Target != nil {
+			in.Targets = append(in.Targets, api_v1beta1.Target{
+				Ref: api_v1beta1.TargetRef{
+					Name: backupConfig.Spec.Target.Ref.Name,
+					Kind: backupConfig.Spec.Target.Ref.Kind,
+				},
+			})
+		}
 		return in
 	})
 	if err != nil {
@@ -514,13 +522,20 @@ func (c *StashController) getBackupSessionPhase(backupSession *api_v1beta1.Backu
 		return api_v1beta1.BackupSessionPending, nil
 	}
 
+	// get all host specified by this BackupSession for further process
+	var stats []api_v1beta1.HostBackupStats
+	for _, target := range backupSession.Status.Targets {
+		stats = append(stats, target.Stats...)
+	}
+
 	// all hosts hasn't completed it's backup. BackupSession phase must be "Running".
-	if *backupSession.Status.TotalHosts != int32(len(backupSession.Status.Stats)) {
+	if *backupSession.Status.TotalHosts != int32(len(stats)) {
+		fmt.Println("stats......", len(stats))
 		return api_v1beta1.BackupSessionRunning, nil
 	}
 
 	// check if any of the host has failed to take backup. if any of them has failed, then consider entire backup session as a failure.
-	for _, host := range backupSession.Status.Stats {
+	for _, host := range stats {
 		if host.Phase == api_v1beta1.HostBackupFailed {
 			return api_v1beta1.BackupSessionFailed, fmt.Errorf("backup failed for host: %s. Reason: %s", host.Hostname, host.Error)
 		}
