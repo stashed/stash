@@ -62,6 +62,7 @@ func (pr execProber) Probe(config *rest.Config, pod *core.Pod, containerName str
 		opt.StreamOptions.Stdout = stdOut
 		opt.StreamOptions.Stderr = stdErr
 	})
+
 	if err != nil {
 		return api.Failure, data, err
 	}
