@@ -26,7 +26,9 @@ const (
 
 	KeyLastAppliedRestoreSession      = StashKey + "/last-applied-restoresession"
 	KeyLastAppliedBackupConfiguration = StashKey + "/last-applied-backupconfiguration"
+	KeyLastAppliedBackupBatch         = StashKey + "/last-applied-backupbatch"
 
 	AppliedBackupConfigurationSpecHash = StashKey + "/last-applied-backupconfiguration-hash"
+	AppliedBackupBatchSpecHash         = StashKey + "/last-applied-backupbatch-hash"
 	AppliedRestoreSessionSpecHash      = StashKey + "/last-applied-restoresession-hash"
 )

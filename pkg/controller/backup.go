@@ -119,6 +119,55 @@ func (c *StashController) applyBackupConfigurationLogic(w *wapi.Workload, caller
 	return false, nil
 }
 
+func (c *StashController) applyBackupBatchLogic(w *wapi.Workload, caller string) (bool, error) {
+	// detect old BackupBatch from annotations if it does exist.
+	oldbb, err := util.GetAppliedBackupBatch(w.Annotations)
+	if err != nil {
+		return false, err
+	}
+	// find existing BackupBatch for this workload
+	newbb, err := util.FindBackupBatch(c.bbLister, w)
+	if err != nil {
+		return false, err
+	}
+	// if BackupBatch currently exist for this workload but it is not same as old one,
+	// this means BackupBatch has been newly created/updated.
+	// in this case, we have to add/update sidecar container accordingly.
+	if newbb != nil && !util.BackupBatchEqual(oldbb, newbb) {
+		var backupConfigTemp *api_v1beta1.BackupConfigurationTemplate
+		for _, bct := range newbb.Spec.BackupConfigurationTemplates {
+			if bct.Spec.Target != nil && bct.Spec.Target.Ref.Kind == w.Kind && bct.Name == w.Name {
+				backupConfigTemp = &bct
+			}
+		}
+		err := c.ensureBackupSidecarForBackupBatch(w, backupConfigTemp, newbb, caller)
+		// write sidecar injection failure/success event
+		ref, rerr := util.GetWorkloadReference(w)
+		if err != nil && rerr != nil {
+			return false, err
+		} else if err != nil && rerr == nil {
+			return false, c.handleSidecarInjectionFailure(ref, err)
+		} else if err == nil && rerr != nil {
+			return true, nil
+		}
+		return true, c.handleSidecarInjectionSuccess(ref)
+
+	} else if oldbb != nil && newbb == nil {
+		// there was BackupBatch before but it does not exist now.
+		// this means BackupBatch has been removed.
+		// in this case, we have to delete the backup sidecar container
+		// and remove respective annotations from the workload.
+		c.ensureBackupSidecarDeleted(w)
+		// write sidecar deletion failure/success event
+		ref, rerr := util.GetWorkloadReference(w)
+		if rerr != nil {
+			return true, nil
+		}
+		return true, c.handleSidecarDeletionSuccess(ref)
+	}
+	return false, nil
+}
+
 func (c *StashController) applyResticLogic(w *wapi.Workload, caller string) (bool, error) {
 	// detect old Restic from annotations if it does exist
 	oldRestic, err := util.GetAppliedRestic(w.Annotations)
