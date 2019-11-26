@@ -9422,6 +9422,10 @@
           "description": "RetentionPolicy indicates the policy to follow to clean old backup snapshots",
           "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1alpha1.RetentionPolicy"
         },
+        "runtimeSettings": {
+          "description": "RuntimeSettings allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc, and used to create service account for CronJob.",
+          "$ref": "#/definitions/xyz.kmodules.offshoot-api.api.v1.RuntimeSettings"
+        },
         "schedule": {
           "description": "Schedule specifies the schedule for invoking backup sessions",
           "type": "string"

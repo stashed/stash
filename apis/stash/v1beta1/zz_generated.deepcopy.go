@@ -98,6 +98,7 @@ func (in *BackupBatchSpec) DeepCopyInto(out *BackupBatchSpec) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	in.RuntimeSettings.DeepCopyInto(&out.RuntimeSettings)
 	out.Repository = in.Repository
 	in.RetentionPolicy.DeepCopyInto(&out.RetentionPolicy)
 	if in.BackupHistoryLimit != nil {

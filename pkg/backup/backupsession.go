@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"stash.appscode.dev/stash/apis"
@@ -135,7 +136,8 @@ func (c *BackupSessionController) initBackupSessionWatcher(backupConfiguration *
 	// so we will watch only those BackupSessions that has this BackupConfiguration name in labels.
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			util.LabelBackupConfiguration: backupConfiguration.Name,
+			util.LabelInvokerType: strings.ToLower(backupConfiguration.Kind),
+			util.LabelInvokerName: backupConfiguration.Name,
 		},
 	})
 	if err != nil {

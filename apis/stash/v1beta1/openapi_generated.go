@@ -16239,6 +16239,12 @@ func schema_stash_apis_stash_v1beta1_BackupBatchSpec(ref common.ReferenceCallbac
 							Format:      "",
 						},
 					},
+					"runtimeSettings": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RuntimeSettings allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc, and used to create service account for CronJob.",
+							Ref:         ref("kmodules.xyz/offshoot-api/api/v1.RuntimeSettings"),
+						},
+					},
 					"driver": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Driver indicates the name of the agent to use to backup the target. Supported values are \"Restic\", \"VolumeSnapshotter\". Default value is \"Restic\".",
@@ -16283,7 +16289,7 @@ func schema_stash_apis_stash_v1beta1_BackupBatchSpec(ref common.ReferenceCallbac
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.LocalObjectReference", "stash.appscode.dev/stash/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplate", "stash.appscode.dev/stash/apis/stash/v1beta1.Hooks"},
+			"k8s.io/api/core/v1.LocalObjectReference", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/stash/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplate", "stash.appscode.dev/stash/apis/stash/v1beta1.Hooks"},
 	}
 }
 

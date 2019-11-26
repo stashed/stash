@@ -32,6 +32,7 @@ import (
 	"github.com/appscode/go/log"
 	"github.com/spf13/cobra"
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -45,7 +46,7 @@ import (
 )
 
 type options struct {
-	backupConfigName string
+	invokerName      string
 	namespace        string
 	k8sClient        kubernetes.Interface
 	stashClient      cs.Interface
@@ -80,42 +81,49 @@ func NewCmdCreateBackupSession() *cobra.Command {
 				opt.ocClient = oc_cs.NewForConfigOrDie(config)
 			}
 
-			err = opt.createBackupSession()
-			if err != nil {
+			if opt.Invoker() != nil {
 				log.Fatal(err)
 			}
-
 		},
 	}
 
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&opt.backupConfigName, "backupconfiguration", "", "Name of the respective BackupConfiguration object")
-	cmd.Flags().StringVar(&opt.namespace, "namespace", opt.namespace, "Namespace of the respective BackupConfiguration object")
+	cmd.Flags().StringVar(&opt.invokerName, "invokername", "", "Name of the respective BackupConfiguration/BackupBatch object")
+	cmd.Flags().StringVar(&opt.namespace, "invokernamespace", opt.namespace, "Namespace of the respective BackupConfiguration object")
 
 	return cmd
 }
 
-func (opt *options) createBackupSession() error {
+func (opt *options) createBackupSession(labels map[string]string, ref *core.ObjectReference) error {
 	bsMeta := metav1.ObjectMeta{
-		// Name format: <BackupConfiguration name>-<timestamp in unix format>
-		Name:            meta.ValidNameWithSuffix(opt.backupConfigName, fmt.Sprintf("%d", time.Now().Unix())),
+		// Name format: <BackupConfiguration/BackupBatch name>-<timestamp in unix format>
+		Name:            meta.ValidNameWithSuffix(ref.Name, fmt.Sprintf("%d", time.Now().Unix())),
 		Namespace:       opt.namespace,
 		OwnerReferences: []metav1.OwnerReference{},
 	}
-	backupConfiguration, err := opt.stashClient.StashV1beta1().BackupConfigurations(opt.namespace).Get(opt.backupConfigName, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-	// skip if BackupConfiguration paused
-	if backupConfiguration.Spec.Paused {
-		msg := fmt.Sprintf("Skipping creating BackupSession. Reason: Backup Configuration %s/%s is paused.", backupConfiguration.Namespace, backupConfiguration.Name)
-		log.Infoln(msg)
 
-		// write event to BackupConfiguration denoting that backup session has been skipped
-		return writeBackupSessionSkippedEvent(opt.k8sClient, backupConfiguration, msg)
-	}
-	// if target does not exist then skip creating BackupSession
+	// create BackupSession
+	_, _, err := v1beta1_util.CreateOrPatchBackupSession(opt.stashClient.StashV1beta1(), bsMeta, func(in *api_v1beta1.BackupSession) *api_v1beta1.BackupSession {
+		// Set BackupConfiguration/BackupBatch as BackupSession Owner
+		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+		in.Spec.Invoker = api_v1beta1.BackupInvokerRef{
+			APIGroup: api_v1beta1.SchemeGroupVersion.Group,
+			Kind:     ref.Kind,
+			Name:     ref.Name,
+		}
+
+		in.Labels = labels
+		// add BackupConfiguration/BackupBatch name and kind as a labels so that BackupSession controller inside sidecar can discover this BackupSession
+		in.Labels[util.LabelInvokerName] = ref.Name
+		in.Labels[util.LabelInvokerType] = strings.ToLower(ref.Kind)
+
+		return in
+	})
+	return err
+}
+
+func (opt *options) Invoker() error {
 	wc := util.WorkloadClients{
 		KubeClient:       opt.k8sClient,
 		StashClient:      opt.stashClient,
@@ -123,43 +131,64 @@ func (opt *options) createBackupSession() error {
 		OcClient:         opt.ocClient,
 	}
 
-	if backupConfiguration.Spec.Target != nil && !wc.IsTargetExist(backupConfiguration.Spec.Target.Ref, backupConfiguration.Namespace) {
-		msg := fmt.Sprintf("Skipping creating BackupSession. Reason: Target workload %s/%s does not exist.",
-			strings.ToLower(backupConfiguration.Spec.Target.Ref.Kind), backupConfiguration.Spec.Target.Ref.Name)
-		log.Infoln(msg)
-
-		// write event to BackupConfiguration denoting that backup session has been skipped
-		return writeBackupSessionSkippedEvent(opt.k8sClient, backupConfiguration, msg)
-	}
-
-	// create BackupSession
-	ref, err := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
-	if err != nil {
-		return err
-	}
-	_, _, err = v1beta1_util.CreateOrPatchBackupSession(opt.stashClient.StashV1beta1(), bsMeta, func(in *api_v1beta1.BackupSession) *api_v1beta1.BackupSession {
-		// Set BackupConfiguration  as BackupSession Owner
-		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
-		in.Spec.Invoker = api_v1beta1.BackupInvokerRef{
-			APIGroup: api_v1beta1.SchemeGroupVersion.Group,
-			Kind:     api_v1beta1.ResourceKindBackupConfiguration,
-			Name:     opt.backupConfigName,
+	backupConfiguration, err := opt.stashClient.StashV1beta1().BackupConfigurations(opt.namespace).Get(opt.invokerName, metav1.GetOptions{})
+	if err == nil && !kerr.IsNotFound(err) {
+		// create BackupConfiguration reference to set BackupSession owner
+		ref, err := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
+		if err != nil {
+			return err
 		}
+		// if target does not exist then skip creating BackupSession
+		if backupConfiguration.Spec.Target != nil && !wc.IsTargetExist(backupConfiguration.Spec.Target.Ref, backupConfiguration.Namespace) {
+			msg := fmt.Sprintf("Skipping creating BackupSession. Reason: Target workload %s/%s does not exist.",
+				strings.ToLower(backupConfiguration.Spec.Target.Ref.Kind), backupConfiguration.Spec.Target.Ref.Name)
+			log.Infoln(msg)
 
-		in.Labels = backupConfiguration.OffshootLabels()
-		// add BackupConfiguration name as a labels so that BackupSession controller inside sidecar can discover this BackupSession
-		in.Labels[util.LabelBackupConfiguration] = backupConfiguration.Name
+			// write event to BackupConfiguration denoting that backup session has been skipped
+			return writeBackupSessionSkippedEvent(opt.k8sClient, ref, msg)
+		}
+		err = opt.createBackupSession(backupConfiguration.OffshootLabels(), ref)
+		if err != nil {
+			return err
+		}
+	}
 
-		return in
-	})
+	if err == nil && kerr.IsNotFound(err) {
+		backupBatch, err := opt.stashClient.StashV1beta1().BackupBatches(opt.namespace).Get(opt.invokerName, metav1.GetOptions{})
+		if err == nil && !kerr.IsNotFound(err) {
+			// create backupBatch reference to set BackupSession owner
+			ref, err := reference.GetReference(stash_scheme.Scheme, backupBatch)
+			if err != nil {
+				return err
+			}
+			// if target does not exist then skip creating BackupSession
+			for _, backupConfigTemp := range backupBatch.Spec.BackupConfigurationTemplates {
+				if backupConfigTemp.Spec.Target != nil && !wc.IsTargetExist(backupConfigTemp.Spec.Target.Ref, backupConfigTemp.Namespace) {
+					msg := fmt.Sprintf("Skipping creating BackupSession. Reason: Target workload %s/%s does not exist.",
+						strings.ToLower(backupConfigTemp.Spec.Target.Ref.Kind), backupConfigTemp.Spec.Target.Ref.Name)
+					log.Infoln(msg)
+
+					// write event to BackupConfiguration denoting that backup session has been skipped
+					return writeBackupSessionSkippedEvent(opt.k8sClient, ref, msg)
+				}
+			}
+			err = opt.createBackupSession(backupBatch.OffshootLabels(), ref)
+			if err != nil {
+				return err
+			}
+		}
+		if err != nil {
+			return err
+		}
+	}
 	return err
 }
 
-func writeBackupSessionSkippedEvent(kubeClient kubernetes.Interface, backupConfiguration *api_v1beta1.BackupConfiguration, msg string) error {
+func writeBackupSessionSkippedEvent(kubeClient kubernetes.Interface, ref *core.ObjectReference, msg string) error {
 	_, err := eventer.CreateEvent(
 		kubeClient,
 		eventer.EventSourceBackupTriggeringCronJob,
-		backupConfiguration,
+		ref,
 		core.EventTypeNormal,
 		eventer.EventReasonBackupSkipped,
 		msg,

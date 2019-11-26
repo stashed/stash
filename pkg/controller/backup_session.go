@@ -586,7 +586,8 @@ func (c *StashController) cleanupBackupHistory(backupConfig *api_v1beta1.BackupC
 	// of this particular BackupConfiguration.
 	label := metav1.LabelSelector{
 		MatchLabels: map[string]string{
-			util.LabelBackupConfiguration: backupConfig.Name,
+			util.LabelInvokerType: strings.ToLower(backupConfig.Kind),
+			util.LabelInvokerName: backupConfig.Name,
 		},
 	}
 	selector, err := metav1.LabelSelectorAsSelector(&label)

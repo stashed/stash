@@ -62,33 +62,38 @@ message BackupBatchSpec {
   // +optional
   optional string schedule = 2;
 
+  // RuntimeSettings allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc,
+  // and used to create service account for CronJob.
+  // +optional
+  optional kmodules.xyz.offshoot_api.api.v1.RuntimeSettings runtimeSettings = 3;
+
   // Driver indicates the name of the agent to use to backup the target.
   // Supported values are "Restic", "VolumeSnapshotter".
   // Default value is "Restic".
   // +optional
-  optional string driver = 3;
+  optional string driver = 4;
 
   // Repository refer to the Repository crd that holds backend information
   // +optional
-  optional k8s.io.api.core.v1.LocalObjectReference repository = 4;
+  optional k8s.io.api.core.v1.LocalObjectReference repository = 5;
 
   // RetentionPolicy indicates the policy to follow to clean old backup snapshots
-  optional .stash.appscode.dev.stash.apis.stash.v1alpha1.RetentionPolicy retentionPolicy = 5;
+  optional .stash.appscode.dev.stash.apis.stash.v1alpha1.RetentionPolicy retentionPolicy = 6;
 
   // Indicates that the BackupConfiguration is paused from taking backup. Default value is 'false'
   // +optional
-  optional bool paused = 6;
+  optional bool paused = 7;
 
   // BackupHistoryLimit specifies the number of BackupSession and it's associate resources to keep.
   // This is helpful for debugging purpose.
   // Default: 1
   // +optional
-  optional int32 backupHistoryLimit = 7;
+  optional int32 backupHistoryLimit = 8;
 
   // Actions that Stash should take in response to backup sessions.
   // Cannot be updated.
   // +optional
-  optional Hooks hooks = 8;
+  optional Hooks hooks = 9;
 }
 
 message BackupBatchStatus {
