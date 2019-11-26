@@ -991,7 +991,7 @@ kmodules.xyz/openshift/client/informers/externalversions/apps/v1
 kmodules.xyz/openshift/client/informers/externalversions/security/v1
 kmodules.xyz/openshift/apis/apps/install
 kmodules.xyz/openshift/client/listers/security/v1
-# kmodules.xyz/prober v0.0.0-20191119085840-834304586817
+# kmodules.xyz/prober v0.0.0-20191125130315-22c431f09b5f
 kmodules.xyz/prober/api/v1
 kmodules.xyz/prober/probe
 kmodules.xyz/prober/api

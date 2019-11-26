@@ -53,6 +53,7 @@ func NewCmdRestore() *cobra.Command {
 				log.Fatal(err)
 				return err
 			}
+			opt.Config = config
 			opt.KubeClient = kubernetes.NewForConfigOrDie(config)
 			opt.StashClient = cs.NewForConfigOrDie(config)
 

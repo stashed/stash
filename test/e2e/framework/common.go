@@ -107,6 +107,7 @@ func (f *Invocation) TakeInstantBackup(objMeta metav1.ObjectMeta) (*v1beta1.Back
 }
 
 func (f *Invocation) RestoredData(objMeta metav1.ObjectMeta, kind string) sets.String {
+	f.EventuallyPodAccessible(objMeta).Should(BeTrue())
 	By("Reading restored data")
 	restoredData, err := f.ReadSampleDataFromFromWorkload(objMeta, kind)
 	Expect(err).NotTo(HaveOccurred())
@@ -132,26 +133,16 @@ func (f *Invocation) SetupRestoreProcess(objMeta metav1.ObjectMeta, repo *api.Re
 	switch kind {
 	case apis.KindDeployment:
 		f.EventuallyDeployment(objMeta).Should(HaveInitContainer(util.StashInitContainer))
-		By("Waiting for workload to be ready with init-container")
-		err = f.WaitUntilDeploymentReadyWithInitContainer(objMeta)
 	case apis.KindDaemonSet:
 		f.EventuallyDaemonSet(objMeta).Should(HaveInitContainer(util.StashInitContainer))
-		By("Waiting for workload to be ready with init-container")
-		err = f.WaitUntilDaemonSetReadyWithInitContainer(objMeta)
 	case apis.KindStatefulSet:
 		f.EventuallyStatefulSet(objMeta).Should(HaveInitContainer(util.StashInitContainer))
-		By("Waiting for workload to be ready with init-container")
-		err = f.WaitUntilStatefulSetWithInitContainer(objMeta)
 	case apis.KindReplicaSet:
 		f.EventuallyReplicaSet(objMeta).Should(HaveInitContainer(util.StashInitContainer))
-		By("Waiting for workload to be ready with init-container")
-		err = f.WaitUntilRSReadyWithInitContainer(objMeta)
 	case apis.KindReplicationController:
 		f.EventuallyReplicationController(objMeta).Should(HaveInitContainer(util.StashInitContainer))
-		By("Waiting for workload to be ready with init-container")
-		err = f.WaitUntilRCReadyWithInitContainer(objMeta)
 	}
-	f.EventuallyPodAccessible(objMeta).Should(BeTrue())
+
 	By("Waiting for restore process to complete")
 	f.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta).Should(BeTrue())
 
