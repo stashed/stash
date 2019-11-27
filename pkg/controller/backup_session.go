@@ -297,7 +297,7 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 	if err != nil {
 		return err
 	}
-	podSpec, err = util.UpsertInterimVolume(c.kubeClient, podSpec, backupConfig.Spec.InterimVolumeTemplate, backupSessionRef)
+	podSpec, err = util.UpsertInterimVolume(c.kubeClient, podSpec, backupConfig.Spec.InterimVolumeTemplate.ToCorePVC(), backupSessionRef)
 	if err != nil {
 		return err
 	}

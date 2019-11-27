@@ -21,9 +21,9 @@ limitations under the License.
 package v1beta1
 
 import (
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
-	offshootapiapiv1 "kmodules.xyz/offshoot-api/api/v1"
+	v1 "kmodules.xyz/offshoot-api/api/v1"
 	apiv1 "kmodules.xyz/prober/api/v1"
 )
 
@@ -59,7 +59,7 @@ func (in *BackupBatch) DeepCopyObject() runtime.Object {
 func (in *BackupBatchList) DeepCopyInto(out *BackupBatchList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]BackupBatch, len(*in))
@@ -170,7 +170,7 @@ func (in *BackupBlueprint) DeepCopyObject() runtime.Object {
 func (in *BackupBlueprintList) DeepCopyInto(out *BackupBlueprintList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]BackupBlueprint, len(*in))
@@ -262,7 +262,7 @@ func (in *BackupConfiguration) DeepCopyObject() runtime.Object {
 func (in *BackupConfigurationList) DeepCopyInto(out *BackupConfigurationList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]BackupConfiguration, len(*in))
@@ -335,7 +335,7 @@ func (in *BackupConfigurationStatus) DeepCopy() *BackupConfigurationStatus {
 func (in *BackupConfigurationTemplate) DeepCopyInto(out *BackupConfigurationTemplate) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
+	in.PartialObjectMeta.DeepCopyInto(&out.PartialObjectMeta)
 	in.Spec.DeepCopyInto(&out.Spec)
 	return
 }
@@ -466,7 +466,7 @@ func (in *BackupSession) DeepCopyObject() runtime.Object {
 func (in *BackupSessionList) DeepCopyInto(out *BackupSessionList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]BackupSession, len(*in))
@@ -551,7 +551,7 @@ func (in *BackupTarget) DeepCopyInto(out *BackupTarget) {
 	}
 	if in.VolumeMounts != nil {
 		in, out := &in.VolumeMounts, &out.VolumeMounts
-		*out = make([]v1.VolumeMount, len(*in))
+		*out = make([]corev1.VolumeMount, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -662,7 +662,7 @@ func (in *Function) DeepCopyObject() runtime.Object {
 func (in *FunctionList) DeepCopyInto(out *FunctionList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]Function, len(*in))
@@ -727,24 +727,24 @@ func (in *FunctionSpec) DeepCopyInto(out *FunctionSpec) {
 	}
 	if in.Ports != nil {
 		in, out := &in.Ports, &out.Ports
-		*out = make([]v1.ContainerPort, len(*in))
+		*out = make([]corev1.ContainerPort, len(*in))
 		copy(*out, *in)
 	}
 	if in.VolumeMounts != nil {
 		in, out := &in.VolumeMounts, &out.VolumeMounts
-		*out = make([]v1.VolumeMount, len(*in))
+		*out = make([]corev1.VolumeMount, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	if in.VolumeDevices != nil {
 		in, out := &in.VolumeDevices, &out.VolumeDevices
-		*out = make([]v1.VolumeDevice, len(*in))
+		*out = make([]corev1.VolumeDevice, len(*in))
 		copy(*out, *in)
 	}
 	if in.RuntimeSettings != nil {
 		in, out := &in.RuntimeSettings, &out.RuntimeSettings
-		*out = new(offshootapiapiv1.ContainerRuntimeSettings)
+		*out = new(v1.ContainerRuntimeSettings)
 		(*in).DeepCopyInto(*out)
 	}
 	return
@@ -873,7 +873,7 @@ func (in *RestoreSession) DeepCopyObject() runtime.Object {
 func (in *RestoreSessionList) DeepCopyInto(out *RestoreSessionList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]RestoreSession, len(*in))
@@ -976,7 +976,7 @@ func (in *RestoreTarget) DeepCopyInto(out *RestoreTarget) {
 	out.Ref = in.Ref
 	if in.VolumeMounts != nil {
 		in, out := &in.VolumeMounts, &out.VolumeMounts
-		*out = make([]v1.VolumeMount, len(*in))
+		*out = make([]corev1.VolumeMount, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -1101,7 +1101,7 @@ func (in *Task) DeepCopyObject() runtime.Object {
 func (in *TaskList) DeepCopyInto(out *TaskList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]Task, len(*in))
@@ -1163,7 +1163,7 @@ func (in *TaskSpec) DeepCopyInto(out *TaskSpec) {
 	}
 	if in.Volumes != nil {
 		in, out := &in.Volumes, &out.Volumes
-		*out = make([]v1.Volume, len(*in))
+		*out = make([]corev1.Volume, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}

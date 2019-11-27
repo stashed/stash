@@ -94,6 +94,7 @@ func (e *KnownBug) Error() string {
 
 var err62649_K1_9 = &KnownBug{URL: "https://github.com/kubernetes/kubernetes/pull/62649", Fix: "upgrade to Kubernetes 1.9.8 or later."}
 var err62649_K1_10 = &KnownBug{URL: "https://github.com/kubernetes/kubernetes/pull/62649", Fix: "upgrade to Kubernetes 1.10.2 or later."}
+var err83778_K1_16 = &KnownBug{URL: "https://github.com/kubernetes/kubernetes/pull/83787", Fix: "upgrade to Kubernetes 1.16.2 or later."}
 
 var (
 	DefaultConstraint                     = ">= 1.9.0"
@@ -109,6 +110,8 @@ var (
 		"1.9.7":  err62649_K1_9,
 		"1.10.0": err62649_K1_10,
 		"1.10.1": err62649_K1_10,
+		"1.16.0": err83778_K1_16,
+		"1.16.1": err83778_K1_16,
 	}
 )
 

@@ -3,8 +3,9 @@
 package v1
 
 import (
-	rest "k8s.io/client-go/rest"
 	v1 "kmodules.xyz/openshift/apis/security/v1"
+
+	rest "k8s.io/client-go/rest"
 )
 
 // PodSecurityPolicySubjectReviewsGetter has a method to return a PodSecurityPolicySubjectReviewInterface.

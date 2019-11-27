@@ -21,8 +21,8 @@ BIN      := stash
 COMPRESS ?=no
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS          ?= "crd:trivialVersions=true"
-CODE_GENERATOR_IMAGE ?= appscode/gengo:release-1.14
+CRD_OPTIONS          ?= "crd:trivialVersions=true,preserveUnknownFields=false"
+CODE_GENERATOR_IMAGE ?= appscode/gengo:release-1.16
 API_GROUPS           ?= repositories:v1alpha1 stash:v1alpha1 stash:v1beta1
 
 # Where to push the docker image.
@@ -76,7 +76,7 @@ TAG              := $(VERSION)_$(OS)_$(ARCH)
 TAG_PROD         := $(TAG)
 TAG_DBG          := $(VERSION)-dbg_$(OS)_$(ARCH)
 
-GO_VERSION       ?= 1.12.12
+GO_VERSION       ?= 1.13.5
 BUILD_IMAGE      ?= appscode/golang-dev:$(GO_VERSION)
 TEST_IMAGE       ?= appscode/golang-dev:$(GO_VERSION)-stash
 
@@ -187,6 +187,8 @@ openapi: $(addprefix openapi-, $(subst :,_, $(API_GROUPS)))
 		-w $(DOCKER_REPO_ROOT)                           \
 		--env HTTP_PROXY=$(HTTP_PROXY)                   \
 		--env HTTPS_PROXY=$(HTTPS_PROXY)                 \
+		--env GO111MODULE=on                             \
+		--env GOFLAGS="-mod=vendor"                      \
 		$(BUILD_IMAGE)                                   \
 		go run hack/gencrd/main.go
 

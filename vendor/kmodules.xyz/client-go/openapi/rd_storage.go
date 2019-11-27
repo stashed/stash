@@ -67,6 +67,6 @@ func (r *RDStorage) List(ctx context.Context, options *metainternalversion.ListO
 }
 
 // Deleter
-func (r *RDStorage) Delete(ctx context.Context, name string, options *metav1.DeleteOptions) (runtime.Object, bool, error) {
+func (r *RDStorage) Delete(ctx context.Context, name string, deleteValidation rest.ValidateObjectFunc, options *metav1.DeleteOptions) (runtime.Object, bool, error) {
 	return r.New(), true, nil
 }

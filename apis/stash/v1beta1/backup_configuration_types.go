@@ -53,9 +53,9 @@ type BackupConfiguration struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 type BackupConfigurationTemplate struct {
-	metav1.TypeMeta   `json:",inline,omitempty"`
-	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-	Spec              BackupConfigurationTemplateSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
+	metav1.TypeMeta        `json:",inline,omitempty"`
+	ofst.PartialObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+	Spec                   BackupConfigurationTemplateSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
 }
 
 type BackupConfigurationTemplateSpec struct {
@@ -76,7 +76,7 @@ type BackupConfigurationTemplateSpec struct {
 	// before uploading to backend or inserting into target. It is only usable for job model.
 	// Don't specify it in sidecar model.
 	// +optional
-	InterimVolumeTemplate *core.PersistentVolumeClaim `json:"interimVolumeTemplate,omitempty" protobuf:"bytes,5,opt,name=interimVolumeTemplate"`
+	InterimVolumeTemplate *ofst.PersistentVolumeClaim `json:"interimVolumeTemplate,omitempty" protobuf:"bytes,5,opt,name=interimVolumeTemplate"`
 	// Actions that Stash should take in response to backup sessions.
 	// +optional
 	Hooks *BackupHooks `json:"hooks,omitempty" protobuf:"bytes,6,opt,name=hooks"`

@@ -157,7 +157,7 @@ func (r *REST) List(ctx context.Context, options *metainternalversion.ListOption
 	return snapshotList, nil
 }
 
-func (r *REST) Delete(ctx context.Context, name string, options *metav1.DeleteOptions) (runtime.Object, bool, error) {
+func (r *REST) Delete(ctx context.Context, name string, deleteValidation rest.ValidateObjectFunc, options *metav1.DeleteOptions) (runtime.Object, bool, error) {
 	ns, ok := apirequest.NamespaceFrom(ctx)
 	if !ok {
 		return nil, false, apierrors.NewBadRequest("missing namespace")

@@ -37,6 +37,8 @@ const (
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:path=appbindings,singular=appbinding,categories={catalog,appscode,all}
+// +kubebuilder:printcolumn:name="Type",type="string",JSONPath=".spec.type"
+// +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.version"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 type AppBinding struct {
 	metav1.TypeMeta   `json:",inline,omitempty"`
@@ -76,6 +78,8 @@ type AppBindingSpec struct {
 	// in a Secret.
 	//
 	// +optional
+	// +kubebuilder:validation:EmbeddedResource
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Parameters *runtime.RawExtension `json:"parameters,omitempty" protobuf:"bytes,6,opt,name=parameters"`
 }
 
@@ -178,6 +182,8 @@ type AppReference struct {
 	// NEVER be used to hold sensitive information.
 	//
 	// +optional
+	// +kubebuilder:validation:EmbeddedResource
+	// +kubebuilder:pruning:PreserveUnknownFields
 	Parameters *runtime.RawExtension `json:"parameters,omitempty" protobuf:"bytes,3,opt,name=parameters"`
 }
 

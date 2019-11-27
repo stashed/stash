@@ -18,6 +18,7 @@ package v1beta1
 
 import (
 	core "k8s.io/api/core/v1"
+	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
 // BackupInvokerRef contains information that points to the backup configuration or batch being used
@@ -78,7 +79,7 @@ type RestoreTarget struct {
 	Replicas *int32 `json:"replicas,omitempty" protobuf:"varint,1,opt,name=replicas"`
 	// volumeClaimTemplates is a list of claims that will be created while restore from VolumeSnapshot
 	// +optional
-	VolumeClaimTemplates []core.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty" protobuf:"bytes,4,rep,name=volumeClaimTemplates"`
+	VolumeClaimTemplates []ofst.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty" protobuf:"bytes,4,rep,name=volumeClaimTemplates"`
 }
 
 type TargetRef struct {

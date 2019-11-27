@@ -56,6 +56,6 @@ func (r *CDStorage) Create(ctx context.Context, obj runtime.Object, createValida
 }
 
 // Deleter
-func (r *CDStorage) Delete(ctx context.Context, name string, options *metav1.DeleteOptions) (runtime.Object, bool, error) {
+func (r *CDStorage) Delete(ctx context.Context, name string, deleteValidation rest.ValidateObjectFunc, options *metav1.DeleteOptions) (runtime.Object, bool, error) {
 	return r.New(), true, nil
 }

@@ -19,7 +19,6 @@ package v1beta1
 import (
 	"stash.appscode.dev/stash/apis/stash/v1alpha1"
 
-	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
@@ -66,7 +65,7 @@ type BackupBlueprintSpec struct {
 	// before uploading to backend or inserting into target. It is only usable for job model.
 	// Don't specify it in sidecar model.
 	// +optional
-	InterimVolumeTemplate *core.PersistentVolumeClaim `json:"interimVolumeTemplate,omitempty" protobuf:"bytes,7,opt,name=interimVolumeTemplate"`
+	InterimVolumeTemplate *ofst.PersistentVolumeClaim `json:"interimVolumeTemplate,omitempty" protobuf:"bytes,7,opt,name=interimVolumeTemplate"`
 	// BackupHistoryLimit specifies the number of BackupSession and it's associate resources to keep.
 	// This is helpful for debugging purpose.
 	// Default: 1

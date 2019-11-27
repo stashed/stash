@@ -85,7 +85,7 @@ Outputs would be something like:
  }
 ```
 
-When you prefer the delta format of [jsondiffpatch](https://github.com/benjamine/jsondiffpatch), add the `-f delta` option.
+When you prefer the delta foramt of [jsondiffpatch](https://github.com/benjamine/jsondiffpatch), add the `-f delta` option.
 
 ```sh
 jd -f delta one.json another.json

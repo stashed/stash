@@ -202,12 +202,12 @@ func ResolvePVCSpec(pvc *core.PersistentVolumeClaim, input map[string]string) er
 }
 
 // GetPVCFromVolumeClaimTemplates returns list of PVCs generated according to the VolumeClaimTemplates
-func GetPVCFromVolumeClaimTemplates(ordinal int32, claimTemplates []core.PersistentVolumeClaim) ([]core.PersistentVolumeClaim, error) {
+func GetPVCFromVolumeClaimTemplates(ordinal int32, claimTemplates []ofst.PersistentVolumeClaim) ([]core.PersistentVolumeClaim, error) {
 	pvcList := make([]core.PersistentVolumeClaim, 0)
 	for i := range claimTemplates {
 		inputs := make(map[string]string)
 		inputs[util.KeyPodOrdinal] = strconv.Itoa(int(ordinal))
-		claim := claimTemplates[i].DeepCopy()
+		claim := claimTemplates[i].DeepCopy().ToCorePVC()
 		err := ResolvePVCSpec(claim, inputs)
 		if err != nil {
 			return pvcList, err

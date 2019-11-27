@@ -1,12 +1,12 @@
 package install
 
 import (
+	appsapiv1 "kmodules.xyz/openshift/apis/apps/v1"
+	appsv1 "kmodules.xyz/openshift/apis/apps/v1"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
-
-	appsapiv1 "kmodules.xyz/openshift/apis/apps/v1"
-	appsv1 "kmodules.xyz/openshift/apis/apps/v1"
 )
 
 func init() {

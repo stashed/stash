@@ -5,14 +5,15 @@ package v1
 import (
 	time "time"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	runtime "k8s.io/apimachinery/pkg/runtime"
-	watch "k8s.io/apimachinery/pkg/watch"
-	cache "k8s.io/client-go/tools/cache"
 	securityv1 "kmodules.xyz/openshift/apis/security/v1"
 	versioned "kmodules.xyz/openshift/client/clientset/versioned"
 	internalinterfaces "kmodules.xyz/openshift/client/informers/externalversions/internalinterfaces"
 	v1 "kmodules.xyz/openshift/client/listers/security/v1"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	runtime "k8s.io/apimachinery/pkg/runtime"
+	watch "k8s.io/apimachinery/pkg/watch"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // RangeAllocationInformer provides access to a shared informer and lister for

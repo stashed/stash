@@ -28,6 +28,7 @@ spec:
     shortNames:
     - restore
     singular: restoresession
+  preserveUnknownFields: false
   scope: Namespaced
   subresources:
     status: {}
@@ -37,12 +38,12 @@ spec:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
             of an object. Servers should convert recognized schemas to the latest
-            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
           type: string
         kind:
           description: 'Kind is a string value representing the REST resource this
             object represents. Servers may infer this from the endpoint the client
-            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
           type: string
         metadata:
           type: object
@@ -361,16 +362,118 @@ spec:
                   description: 'APIVersion defines the versioned schema of this representation
                     of an object. Servers should convert recognized schemas to the
                     latest internal value, and may reject unrecognized values. More
-                    info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+                    info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                   type: string
                 kind:
                   description: 'Kind is a string value representing the REST resource
                     this object represents. Servers may infer this from the endpoint
                     the client submits requests to. Cannot be updated. In CamelCase.
-                    More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+                    More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                   type: string
                 metadata:
-                  description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
+                  description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata'
+                  properties:
+                    annotations:
+                      additionalProperties:
+                        type: string
+                      description: 'Annotations is an unstructured key value map stored
+                        with a resource that may be set by external tools to store
+                        and retrieve arbitrary metadata. They are not queryable and
+                        should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+                      type: object
+                    creationTimestamp:
+                      description: "CreationTimestamp is a timestamp representing
+                        the server time when this object was created. It is not guaranteed
+                        to be set in happens-before order across separate operations.
+                        Clients may not set this value. It is represented in RFC3339
+                        form and is in UTC. \n Populated by the system. Read-only.
+                        Null for lists. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata"
+                      format: date-time
+                      type: string
+                    generateName:
+                      description: "GenerateName is an optional prefix, used by the
+                        server, to generate a unique name ONLY IF the Name field has
+                        not been provided. If this field is used, the name returned
+                        to the client will be different than the name passed. This
+                        value will also be combined with a unique suffix. The provided
+                        value has the same validation rules as the Name field, and
+                        may be truncated by the length of the suffix required to make
+                        the value unique on the server. \n If this field is specified
+                        and the generated name exists, the server will NOT return
+                        a 409 - instead, it will either return 201 Created or 500
+                        with Reason ServerTimeout indicating a unique name could not
+                        be found in the time allotted, and the client should retry
+                        (optionally after the time indicated in the Retry-After header).
+                        \n Applied only if Name is not specified. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#idempotency"
+                      type: string
+                    labels:
+                      additionalProperties:
+                        type: string
+                      description: 'Map of string keys and values that can be used
+                        to organize and categorize (scope and select) objects. May
+                        match selectors of replication controllers and services. More
+                        info: http://kubernetes.io/docs/user-guide/labels'
+                      type: object
+                    name:
+                      description: 'Name must be unique within a namespace. Is required
+                        when creating resources, although some resources may allow
+                        a client to request the generation of an appropriate name
+                        automatically. Name is primarily intended for creation idempotence
+                        and configuration definition. Cannot be updated. More info:
+                        http://kubernetes.io/docs/user-guide/identifiers#names'
+                      type: string
+                    namespace:
+                      description: "Namespace defines the space within each name must
+                        be unique. An empty namespace is equivalent to the \"default\"
+                        namespace, but \"default\" is the canonical representation.
+                        Not all objects are required to be scoped to a namespace -
+                        the value of this field for those objects will be empty. \n
+                        Must be a DNS_LABEL. Cannot be updated. More info: http://kubernetes.io/docs/user-guide/namespaces"
+                      type: string
+                    ownerReferences:
+                      description: List of objects depended by this object. If ALL
+                        objects in the list have been deleted, this object will be
+                        garbage collected. If this object is managed by a controller,
+                        then an entry in this list will point to this controller,
+                        with the controller field set to true. There cannot be more
+                        than one managing controller.
+                      items:
+                        description: OwnerReference contains enough information to
+                          let you identify an owning object. An owning object must
+                          be in the same namespace as the dependent, or be cluster-scoped,
+                          so there is no namespace field.
+                        properties:
+                          apiVersion:
+                            description: API version of the referent.
+                            type: string
+                          blockOwnerDeletion:
+                            description: If true, AND if the owner has the "foregroundDeletion"
+                              finalizer, then the owner cannot be deleted from the
+                              key-value store until this reference is removed. Defaults
+                              to false. To set this field, a user needs "delete" permission
+                              of the owner, otherwise 422 (Unprocessable Entity) will
+                              be returned.
+                            type: boolean
+                          controller:
+                            description: If true, this reference points to the managing
+                              controller.
+                            type: boolean
+                          kind:
+                            description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                            type: string
+                          name:
+                            description: 'Name of the referent. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+                            type: string
+                          uid:
+                            description: 'UID of the referent. More info: http://kubernetes.io/docs/user-guide/identifiers#uids'
+                            type: string
+                        required:
+                        - apiVersion
+                        - kind
+                        - name
+                        - uid
+                        type: object
+                      type: array
                   type: object
                 spec:
                   description: 'Spec defines the desired characteristics of a volume
@@ -632,7 +735,7 @@ spec:
                                     type: string
                                   optional:
                                     description: Specify whether the ConfigMap or
-                                      it's key must be defined
+                                      its key must be defined
                                     type: boolean
                                 required:
                                 - key
@@ -690,7 +793,7 @@ spec:
                                       uid?'
                                     type: string
                                   optional:
-                                    description: Specify whether the Secret or it's
+                                    description: Specify whether the Secret or its
                                       key must be defined
                                     type: boolean
                                 required:
@@ -853,10 +956,10 @@ spec:
                         preStop:
                           description: 'PreStop is called immediately before a container
                             is terminated due to an API request or management event
-                            such as liveness probe failure, preemption, resource contention,
-                            etc. The handler is not called if the container crashes
-                            or exits. The reason for termination is passed to the
-                            handler. The Pod''s termination grace period countdown
+                            such as liveness/startup probe failure, preemption, resource
+                            contention, etc. The handler is not called if the container
+                            crashes or exits. The reason for termination is passed
+                            to the handler. The Pod''s termination grace period countdown
                             begins before the PreStop hooked is executed. Regardless
                             of the outcome of the handler, the container will eventually
                             terminate within the Pod''s termination grace period.
@@ -1034,7 +1137,8 @@ spec:
                         successThreshold:
                           description: Minimum consecutive successes for the probe
                             to be considered successful after having failed. Defaults
-                            to 1. Must be 1 for liveness. Minimum value is 1.
+                            to 1. Must be 1 for liveness and startup. Minimum value
+                            is 1.
                           format: int32
                           type: integer
                         tcpSocket:
@@ -1159,7 +1263,8 @@ spec:
                         successThreshold:
                           description: Minimum consecutive successes for the probe
                             to be considered successful after having failed. Defaults
-                            to 1. Must be 1 for liveness. Minimum value is 1.
+                            to 1. Must be 1 for liveness and startup. Minimum value
+                            is 1.
                           format: int32
                           type: integer
                         tcpSocket:
@@ -1307,6 +1412,37 @@ spec:
                             user:
                               description: User is a SELinux user label that applies
                                 to the container.
+                              type: string
+                          type: object
+                        windowsOptions:
+                          description: The Windows specific settings applied to all
+                            containers. If unspecified, the options from the PodSecurityContext
+                            will be used. If set in both SecurityContext and PodSecurityContext,
+                            the value specified in SecurityContext takes precedence.
+                          properties:
+                            gmsaCredentialSpec:
+                              description: GMSACredentialSpec is where the GMSA admission
+                                webhook (https://github.com/kubernetes-sigs/windows-gmsa)
+                                inlines the contents of the GMSA credential spec named
+                                by the GMSACredentialSpecName field. This field is
+                                alpha-level and is only honored by servers that enable
+                                the WindowsGMSA feature flag.
+                              type: string
+                            gmsaCredentialSpecName:
+                              description: GMSACredentialSpecName is the name of the
+                                GMSA credential spec to use. This field is alpha-level
+                                and is only honored by servers that enable the WindowsGMSA
+                                feature flag.
+                              type: string
+                            runAsUserName:
+                              description: The UserName in Windows to run the entrypoint
+                                of the container process. Defaults to the user specified
+                                in image metadata if unspecified. May also be set
+                                in PodSecurityContext. If set in both SecurityContext
+                                and PodSecurityContext, the value specified in SecurityContext
+                                takes precedence. This field is alpha-level and it
+                                is only honored by servers that enable the WindowsRunAsUserName
+                                feature flag.
                               type: string
                           type: object
                       type: object
@@ -2124,6 +2260,38 @@ spec:
                             - value
                             type: object
                           type: array
+                        windowsOptions:
+                          description: The Windows specific settings applied to all
+                            containers. If unspecified, the options within a container's
+                            SecurityContext will be used. If set in both SecurityContext
+                            and PodSecurityContext, the value specified in SecurityContext
+                            takes precedence.
+                          properties:
+                            gmsaCredentialSpec:
+                              description: GMSACredentialSpec is where the GMSA admission
+                                webhook (https://github.com/kubernetes-sigs/windows-gmsa)
+                                inlines the contents of the GMSA credential spec named
+                                by the GMSACredentialSpecName field. This field is
+                                alpha-level and is only honored by servers that enable
+                                the WindowsGMSA feature flag.
+                              type: string
+                            gmsaCredentialSpecName:
+                              description: GMSACredentialSpecName is the name of the
+                                GMSA credential spec to use. This field is alpha-level
+                                and is only honored by servers that enable the WindowsGMSA
+                                feature flag.
+                              type: string
+                            runAsUserName:
+                              description: The UserName in Windows to run the entrypoint
+                                of the container process. Defaults to the user specified
+                                in image metadata if unspecified. May also be set
+                                in PodSecurityContext. If set in both SecurityContext
+                                and PodSecurityContext, the value specified in SecurityContext
+                                takes precedence. This field is alpha-level and it
+                                is only honored by servers that enable the WindowsRunAsUserName
+                                feature flag.
+                              type: string
+                          type: object
                       type: object
                     serviceAccountName:
                       description: 'ServiceAccountName is the name of the ServiceAccount
@@ -2205,16 +2373,123 @@ spec:
                         description: 'APIVersion defines the versioned schema of this
                           representation of an object. Servers should convert recognized
                           schemas to the latest internal value, and may reject unrecognized
-                          values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+                          values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                         type: string
                       kind:
                         description: 'Kind is a string value representing the REST
                           resource this object represents. Servers may infer this
                           from the endpoint the client submits requests to. Cannot
-                          be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+                          be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                         type: string
                       metadata:
-                        description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
+                        description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata'
+                        properties:
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            description: 'Annotations is an unstructured key value
+                              map stored with a resource that may be set by external
+                              tools to store and retrieve arbitrary metadata. They
+                              are not queryable and should be preserved when modifying
+                              objects. More info: http://kubernetes.io/docs/user-guide/annotations'
+                            type: object
+                          creationTimestamp:
+                            description: "CreationTimestamp is a timestamp representing
+                              the server time when this object was created. It is
+                              not guaranteed to be set in happens-before order across
+                              separate operations. Clients may not set this value.
+                              It is represented in RFC3339 form and is in UTC. \n
+                              Populated by the system. Read-only. Null for lists.
+                              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata"
+                            format: date-time
+                            type: string
+                          generateName:
+                            description: "GenerateName is an optional prefix, used
+                              by the server, to generate a unique name ONLY IF the
+                              Name field has not been provided. If this field is used,
+                              the name returned to the client will be different than
+                              the name passed. This value will also be combined with
+                              a unique suffix. The provided value has the same validation
+                              rules as the Name field, and may be truncated by the
+                              length of the suffix required to make the value unique
+                              on the server. \n If this field is specified and the
+                              generated name exists, the server will NOT return a
+                              409 - instead, it will either return 201 Created or
+                              500 with Reason ServerTimeout indicating a unique name
+                              could not be found in the time allotted, and the client
+                              should retry (optionally after the time indicated in
+                              the Retry-After header). \n Applied only if Name is
+                              not specified. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#idempotency"
+                            type: string
+                          labels:
+                            additionalProperties:
+                              type: string
+                            description: 'Map of string keys and values that can be
+                              used to organize and categorize (scope and select) objects.
+                              May match selectors of replication controllers and services.
+                              More info: http://kubernetes.io/docs/user-guide/labels'
+                            type: object
+                          name:
+                            description: 'Name must be unique within a namespace.
+                              Is required when creating resources, although some resources
+                              may allow a client to request the generation of an appropriate
+                              name automatically. Name is primarily intended for creation
+                              idempotence and configuration definition. Cannot be
+                              updated. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+                            type: string
+                          namespace:
+                            description: "Namespace defines the space within each
+                              name must be unique. An empty namespace is equivalent
+                              to the \"default\" namespace, but \"default\" is the
+                              canonical representation. Not all objects are required
+                              to be scoped to a namespace - the value of this field
+                              for those objects will be empty. \n Must be a DNS_LABEL.
+                              Cannot be updated. More info: http://kubernetes.io/docs/user-guide/namespaces"
+                            type: string
+                          ownerReferences:
+                            description: List of objects depended by this object.
+                              If ALL objects in the list have been deleted, this object
+                              will be garbage collected. If this object is managed
+                              by a controller, then an entry in this list will point
+                              to this controller, with the controller field set to
+                              true. There cannot be more than one managing controller.
+                            items:
+                              description: OwnerReference contains enough information
+                                to let you identify an owning object. An owning object
+                                must be in the same namespace as the dependent, or
+                                be cluster-scoped, so there is no namespace field.
+                              properties:
+                                apiVersion:
+                                  description: API version of the referent.
+                                  type: string
+                                blockOwnerDeletion:
+                                  description: If true, AND if the owner has the "foregroundDeletion"
+                                    finalizer, then the owner cannot be deleted from
+                                    the key-value store until this reference is removed.
+                                    Defaults to false. To set this field, a user needs
+                                    "delete" permission of the owner, otherwise 422
+                                    (Unprocessable Entity) will be returned.
+                                  type: boolean
+                                controller:
+                                  description: If true, this reference points to the
+                                    managing controller.
+                                  type: boolean
+                                kind:
+                                  description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                                  type: string
+                                name:
+                                  description: 'Name of the referent. More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+                                  type: string
+                                uid:
+                                  description: 'UID of the referent. More info: http://kubernetes.io/docs/user-guide/identifiers#uids'
+                                  type: string
+                              required:
+                              - apiVersion
+                              - kind
+                              - name
+                              - uid
+                              type: object
+                            type: array
                         type: object
                       spec:
                         description: 'Spec defines the desired characteristics of
@@ -2430,7 +2705,7 @@ spec:
                           to SubPath but environment variable references $(VAR_NAME)
                           are expanded using the container's environment. Defaults
                           to "" (volume's root). SubPathExpr and SubPath are mutually
-                          exclusive. This field is alpha in 1.14.
+                          exclusive. This field is beta in 1.15.
                         type: string
                     required:
                     - mountPath

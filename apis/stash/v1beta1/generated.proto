@@ -141,7 +141,7 @@ message BackupBlueprintSpec {
   // before uploading to backend or inserting into target. It is only usable for job model.
   // Don't specify it in sidecar model.
   // +optional
-  optional k8s.io.api.core.v1.PersistentVolumeClaim interimVolumeTemplate = 7;
+  optional kmodules.xyz.offshoot_api.api.v1.PersistentVolumeClaim interimVolumeTemplate = 7;
 
   // BackupHistoryLimit specifies the number of BackupSession and it's associate resources to keep.
   // This is helpful for debugging purpose.
@@ -210,7 +210,7 @@ message BackupConfigurationStatus {
 }
 
 message BackupConfigurationTemplate {
-  optional k8s.io.apimachinery.pkg.apis.meta.v1.ObjectMeta metadata = 1;
+  optional kmodules.xyz.offshoot_api.api.v1.PartialObjectMeta metadata = 1;
 
   optional BackupConfigurationTemplateSpec spec = 2;
 }
@@ -237,7 +237,7 @@ message BackupConfigurationTemplateSpec {
   // before uploading to backend or inserting into target. It is only usable for job model.
   // Don't specify it in sidecar model.
   // +optional
-  optional k8s.io.api.core.v1.PersistentVolumeClaim interimVolumeTemplate = 5;
+  optional kmodules.xyz.offshoot_api.api.v1.PersistentVolumeClaim interimVolumeTemplate = 5;
 
   // Actions that Stash should take in response to backup sessions.
   // +optional
@@ -575,7 +575,7 @@ message RestoreSessionSpec {
   // before uploading to backend or inserting into target. It is only usable for job model.
   // Don't specify it in sidecar model.
   // +optional
-  optional k8s.io.api.core.v1.PersistentVolumeClaim interimVolumeTemplate = 8;
+  optional kmodules.xyz.offshoot_api.api.v1.PersistentVolumeClaim interimVolumeTemplate = 8;
 
   // Actions that Stash should take in response to restore sessions.
   // +optional
@@ -619,7 +619,7 @@ message RestoreTarget {
 
   // volumeClaimTemplates is a list of claims that will be created while restore from VolumeSnapshot
   // +optional
-  repeated k8s.io.api.core.v1.PersistentVolumeClaim volumeClaimTemplates = 4;
+  repeated kmodules.xyz.offshoot_api.api.v1.PersistentVolumeClaim volumeClaimTemplates = 4;
 }
 
 message Rule {

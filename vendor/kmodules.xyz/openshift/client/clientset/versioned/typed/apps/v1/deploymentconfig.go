@@ -5,13 +5,14 @@ package v1
 import (
 	"time"
 
+	v1 "kmodules.xyz/openshift/apis/apps/v1"
+	scheme "kmodules.xyz/openshift/client/clientset/versioned/scheme"
+
 	v1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	rest "k8s.io/client-go/rest"
-	v1 "kmodules.xyz/openshift/apis/apps/v1"
-	scheme "kmodules.xyz/openshift/client/clientset/versioned/scheme"
 )
 
 // DeploymentConfigsGetter has a method to return a DeploymentConfigInterface.
