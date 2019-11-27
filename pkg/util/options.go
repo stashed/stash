@@ -33,13 +33,13 @@ type ExtraOptions struct {
 	EnableCache bool
 }
 
-func BackupOptionsForBackupConfig(backupConfig api.BackupConfiguration, extraOpt ExtraOptions) restic.BackupOptions {
+func BackupOptionsForBackupConfig(backupTarget *api.BackupTarget, retentionPolicy api_v1alpha1.RetentionPolicy, extraOpt ExtraOptions) restic.BackupOptions {
 	backupOpt := restic.BackupOptions{
 		Host:            extraOpt.Host,
-		RetentionPolicy: backupConfig.Spec.RetentionPolicy,
+		RetentionPolicy: retentionPolicy,
 	}
-	if backupConfig.Spec.Target != nil {
-		backupOpt.BackupPaths = backupConfig.Spec.Target.Paths
+	if backupTarget != nil {
+		backupOpt.BackupPaths = backupTarget.Paths
 	}
 	return backupOpt
 }

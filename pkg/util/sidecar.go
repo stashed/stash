@@ -18,6 +18,7 @@ package util
 
 import (
 	"fmt"
+	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "kmodules.xyz/offshoot-api/api/v1"
@@ -109,13 +110,16 @@ func NewSidecarContainer(r *api.Restic, workload api.LocalTypedReference, image 
 	return sidecar
 }
 
-func NewBackupSidecarContainer(objMeta metav1.ObjectMeta, containerRuntime *v1.ContainerRuntimeSettings, backupTarget *v1beta1_api.BackupTarget, tempDir v1beta1_api.EmptyDirSettings, backend *store.Backend, image docker.Docker) core.Container {
+func NewBackupSidecarContainer(objMeta metav1.ObjectMeta, kind string, containerRuntime *v1.ContainerRuntimeSettings, backupTarget *v1beta1_api.BackupTarget, tempDir v1beta1_api.EmptyDirSettings, backend *store.Backend, image docker.Docker) core.Container {
 	sidecar := core.Container{
 		Name:  StashContainer,
 		Image: image.ToContainerImage(),
 		Args: append([]string{
 			"run-backup",
 			"--invokername=" + objMeta.Name,
+			"--invokertype=" + strings.ToLower(kind),
+			"--targetname=" + backupTarget.Ref.Name,
+			"--targetkind=" + strings.ToLower(backupTarget.Ref.Kind),
 			"--secret-dir=" + StashSecretMountDir,
 			fmt.Sprintf("--enable-cache=%v", !tempDir.DisableCaching),
 			fmt.Sprintf("--max-connections=%v", backend.MaxConnections()),

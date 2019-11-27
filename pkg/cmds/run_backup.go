@@ -19,18 +19,16 @@ package cmds
 import (
 	"time"
 
-	cs "stash.appscode.dev/stash/client/clientset/versioned"
-	stashinformers "stash.appscode.dev/stash/client/informers/externalversions"
-	"stash.appscode.dev/stash/pkg/backup"
-	"stash.appscode.dev/stash/pkg/eventer"
-	"stash.appscode.dev/stash/pkg/restic"
-	"stash.appscode.dev/stash/pkg/util"
-
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"kmodules.xyz/client-go/meta"
+	cs "stash.appscode.dev/stash/client/clientset/versioned"
+	stashinformers "stash.appscode.dev/stash/client/informers/externalversions"
+	"stash.appscode.dev/stash/pkg/backup"
+	"stash.appscode.dev/stash/pkg/eventer"
+	"stash.appscode.dev/stash/pkg/restic"
 )
 
 func NewCmdRunBackup() *cobra.Command {
@@ -68,21 +66,21 @@ func NewCmdRunBackup() *cobra.Command {
 				stashinformers.WithTweakListOptions(nil),
 			)
 			opt.Recorder = eventer.NewEventRecorder(opt.K8sClient, backup.BackupEventComponent)
-			opt.Metrics.JobName = opt.BackupConfigurationName
-			opt.Host, err = util.GetBackupHostName(opt.StashClient, opt.BackupConfigurationName, opt.Namespace)
-			if err != nil {
-				return err
-			}
+			opt.Metrics.JobName = opt.InvokerName
 			// run backup
-			if err = opt.RunBackup(); err != nil {
-				return opt.HandleBackupSetupFailure(err)
+			if ref, err := opt.Invoker(); err != nil {
+				return opt.HandleBackupSetupFailure(ref, err)
 			}
 			return nil
 		},
 	}
 	cmd.Flags().StringVar(&opt.MasterURL, "master", opt.MasterURL, "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&opt.KubeconfigPath, "kubeconfig", opt.KubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&opt.BackupConfigurationName, "backupconfiguration", opt.BackupConfigurationName, "Name of the respective BackupConfiguration object")
+	cmd.Flags().StringVar(&opt.InvokerName, "invokername", opt.InvokerName, "Name of the respective BackupConfiguration object")
+	cmd.Flags().StringVar(&opt.InvokerType, "invokertype", opt.InvokerType, "BackupConfiguration/BackupBatch type object")
+	cmd.Flags().StringVar(&opt.BackupTargetName, "targetname", opt.BackupTargetName, "Name of the Target")
+	cmd.Flags().StringVar(&opt.BackupTargetKind, "targetkind", opt.BackupTargetKind, "Kind of the Target")
+	cmd.Flags().StringVar(&opt.Host, "host", opt.Host, "Name of the host that will be backed up")
 	cmd.Flags().StringVar(&opt.SetupOpt.SecretDir, "secret-dir", opt.SetupOpt.SecretDir, "Directory where storage secret has been mounted")
 	cmd.Flags().BoolVar(&opt.SetupOpt.EnableCache, "enable-cache", opt.SetupOpt.EnableCache, "Specify whether to enable caching for restic")
 	cmd.Flags().Int64Var(&opt.SetupOpt.MaxConnections, "max-connections", opt.SetupOpt.MaxConnections, "Specify maximum concurrent connections for GCS, Azure and B2 backend")

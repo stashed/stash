@@ -321,7 +321,7 @@ func (c *StashController) EnsureCronJob(ref *core.ObjectReference, podRuntimeSet
 				Args: []string{
 					"create-backupsession",
 					fmt.Sprintf("--invokername=%s", ref.Name),
-					fmt.Sprintf("--invokernamespace=%s", ref.Namespace),
+					fmt.Sprintf("--invokertype=%s", strings.ToLower(ref.Kind)),
 				},
 			})
 		in.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever

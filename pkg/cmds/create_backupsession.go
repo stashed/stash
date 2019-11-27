@@ -46,6 +46,7 @@ import (
 )
 
 type options struct {
+	invokerType      string
 	invokerName      string
 	namespace        string
 	k8sClient        kubernetes.Interface
@@ -90,7 +91,7 @@ func NewCmdCreateBackupSession() *cobra.Command {
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&opt.invokerName, "invokername", "", "Name of the respective BackupConfiguration/BackupBatch object")
-	cmd.Flags().StringVar(&opt.namespace, "invokernamespace", opt.namespace, "Namespace of the respective BackupConfiguration object")
+	cmd.Flags().StringVar(&opt.invokerType, "invokertype", opt.invokerType, "BackupConfiguration/BackupBatch type object")
 
 	return cmd
 }
@@ -115,8 +116,8 @@ func (opt *options) createBackupSession(labels map[string]string, ref *core.Obje
 
 		in.Labels = labels
 		// add BackupConfiguration/BackupBatch name and kind as a labels so that BackupSession controller inside sidecar can discover this BackupSession
-		in.Labels[util.LabelInvokerName] = ref.Name
-		in.Labels[util.LabelInvokerType] = strings.ToLower(ref.Kind)
+		in.Labels[util.LabelInvokerName] = opt.invokerName
+		in.Labels[util.LabelInvokerType] = opt.invokerType
 
 		return in
 	})
@@ -131,29 +132,7 @@ func (opt *options) Invoker() error {
 		OcClient:         opt.ocClient,
 	}
 
-	backupConfiguration, err := opt.stashClient.StashV1beta1().BackupConfigurations(opt.namespace).Get(opt.invokerName, metav1.GetOptions{})
-	if err == nil && !kerr.IsNotFound(err) {
-		// create BackupConfiguration reference to set BackupSession owner
-		ref, err := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
-		if err != nil {
-			return err
-		}
-		// if target does not exist then skip creating BackupSession
-		if backupConfiguration.Spec.Target != nil && !wc.IsTargetExist(backupConfiguration.Spec.Target.Ref, backupConfiguration.Namespace) {
-			msg := fmt.Sprintf("Skipping creating BackupSession. Reason: Target workload %s/%s does not exist.",
-				strings.ToLower(backupConfiguration.Spec.Target.Ref.Kind), backupConfiguration.Spec.Target.Ref.Name)
-			log.Infoln(msg)
-
-			// write event to BackupConfiguration denoting that backup session has been skipped
-			return writeBackupSessionSkippedEvent(opt.k8sClient, ref, msg)
-		}
-		err = opt.createBackupSession(backupConfiguration.OffshootLabels(), ref)
-		if err != nil {
-			return err
-		}
-	}
-
-	if err == nil && kerr.IsNotFound(err) {
+	if opt.invokerType == strings.ToLower(api_v1beta1.ResourceKindBackupBatch) {
 		backupBatch, err := opt.stashClient.StashV1beta1().BackupBatches(opt.namespace).Get(opt.invokerName, metav1.GetOptions{})
 		if err == nil && !kerr.IsNotFound(err) {
 			// create backupBatch reference to set BackupSession owner
@@ -172,16 +151,34 @@ func (opt *options) Invoker() error {
 					return writeBackupSessionSkippedEvent(opt.k8sClient, ref, msg)
 				}
 			}
-			err = opt.createBackupSession(backupBatch.OffshootLabels(), ref)
+			return opt.createBackupSession(backupBatch.OffshootLabels(), ref)
+		}
+		return err
+	}
+
+	if opt.invokerType == strings.ToLower(api_v1beta1.ResourceKindBackupConfiguration) {
+		backupConfiguration, err := opt.stashClient.StashV1beta1().BackupConfigurations(opt.namespace).Get(opt.invokerName, metav1.GetOptions{})
+		if err == nil && !kerr.IsNotFound(err) {
+			// create BackupConfiguration reference to set BackupSession owner
+			ref, err := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
 			if err != nil {
 				return err
 			}
+			// if target does not exist then skip creating BackupSession
+			if backupConfiguration.Spec.Target != nil && !wc.IsTargetExist(backupConfiguration.Spec.Target.Ref, backupConfiguration.Namespace) {
+				msg := fmt.Sprintf("Skipping creating BackupSession. Reason: Target workload %s/%s does not exist.",
+					strings.ToLower(backupConfiguration.Spec.Target.Ref.Kind), backupConfiguration.Spec.Target.Ref.Name)
+				log.Infoln(msg)
+
+				// write event to BackupConfiguration denoting that backup session has been skipped
+				return writeBackupSessionSkippedEvent(opt.k8sClient, ref, msg)
+			}
+			return opt.createBackupSession(backupConfiguration.OffshootLabels(), ref)
 		}
-		if err != nil {
-			return err
-		}
+		return err
 	}
-	return err
+
+	return nil
 }
 
 func writeBackupSessionSkippedEvent(kubeClient kubernetes.Interface, ref *core.ObjectReference, msg string) error {

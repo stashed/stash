@@ -522,7 +522,7 @@ func (c *StashController) getBackupSessionPhase(backupSession *api_v1beta1.Backu
 		return api_v1beta1.BackupSessionPending, nil
 	}
 
-	// get all host specified by this BackupSession for further process
+	// get all host specified by this BackupSession
 	var stats []api_v1beta1.HostBackupStats
 	for _, target := range backupSession.Status.Targets {
 		stats = append(stats, target.Stats...)
@@ -530,7 +530,6 @@ func (c *StashController) getBackupSessionPhase(backupSession *api_v1beta1.Backu
 
 	// all hosts hasn't completed it's backup. BackupSession phase must be "Running".
 	if *backupSession.Status.TotalHosts != int32(len(stats)) {
-		fmt.Println("stats......", len(stats))
 		return api_v1beta1.BackupSessionRunning, nil
 	}
 

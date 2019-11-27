@@ -199,7 +199,7 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, bc *api_v1beta1.
 
 	w.Spec.Template.Spec.Containers = core_util.UpsertContainer(
 		w.Spec.Template.Spec.Containers,
-		util.NewBackupSidecarContainer(bc.ObjectMeta, bc.Spec.RuntimeSettings.Container, bc.Spec.Target, bc.Spec.TempDir, &repository.Spec.Backend, image),
+		util.NewBackupSidecarContainer(bc.ObjectMeta, api_v1beta1.ResourceKindBackupConfiguration, bc.Spec.RuntimeSettings.Container, bc.Spec.Target, bc.Spec.TempDir, &repository.Spec.Backend, image),
 	)
 
 	// keep existing image pull secrets
@@ -285,7 +285,7 @@ func (c *StashController) ensureBackupSidecarForBackupBatch(w *wapi.Workload, ba
 
 	w.Spec.Template.Spec.Containers = core_util.UpsertContainer(
 		w.Spec.Template.Spec.Containers,
-		util.NewBackupSidecarContainer(backupBatch.ObjectMeta, backupConfigTemp.Spec.RuntimeSettings.Container, backupConfigTemp.Spec.Target, backupConfigTemp.Spec.TempDir, &repository.Spec.Backend, image),
+		util.NewBackupSidecarContainer(backupBatch.ObjectMeta, api_v1beta1.ResourceKindBackupBatch, backupConfigTemp.Spec.RuntimeSettings.Container, backupConfigTemp.Spec.Target, backupConfigTemp.Spec.TempDir, &repository.Spec.Backend, image),
 	)
 
 	// keep existing image pull secrets
