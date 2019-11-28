@@ -20,9 +20,6 @@ import (
 	"fmt"
 	"strings"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "kmodules.xyz/offshoot-api/api/v1"
-
 	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	v1beta1_api "stash.appscode.dev/stash/apis/stash/v1beta1"
@@ -30,10 +27,12 @@ import (
 
 	"github.com/appscode/go/types"
 	core "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"kmodules.xyz/client-go/tools/analytics"
 	"kmodules.xyz/client-go/tools/cli"
 	"kmodules.xyz/client-go/tools/clientcmd"
 	store "kmodules.xyz/objectstore-api/api/v1"
+	v1 "kmodules.xyz/offshoot-api/api/v1"
 	ofst_util "kmodules.xyz/offshoot-api/util"
 )
 

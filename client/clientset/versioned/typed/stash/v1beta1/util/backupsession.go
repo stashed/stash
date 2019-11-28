@@ -102,9 +102,12 @@ func UpdateBackupSessionStatusForHost(c cs.StashV1beta1Interface, targetRef api_
 	out, err := UpdateBackupSessionStatus(c, backupSession, func(in *api_v1beta1.BackupSessionStatus) *api_v1beta1.BackupSessionStatus {
 		// if an entry already exist for this host then update it
 		for i, target := range backupSession.Status.Targets {
-			for j, v := range target.Stats {
-				if v.Hostname == hostStats.Hostname && targetRef.Kind == target.Ref.Kind && targetRef.Name == target.Ref.Name {
+			for j, stat := range target.Stats {
+				if stat.Hostname == hostStats.Hostname && targetRef.Kind == target.Ref.Kind && targetRef.Name == target.Ref.Name {
 					in.Targets[i].Stats[j] = hostStats
+					in.Targets[i].Ref = target.Ref
+					in.Targets[i].TotalHosts = target.TotalHosts
+					in.Targets[i].Phase = target.Phase
 					return in
 				}
 			}
@@ -112,7 +115,21 @@ func UpdateBackupSessionStatusForHost(c cs.StashV1beta1Interface, targetRef api_
 		// no entry for this host. so add a new entry.
 		for i, target := range backupSession.Status.Targets {
 			if targetRef.Kind == target.Ref.Kind && targetRef.Name == target.Ref.Name {
-				in.Targets[i].Stats = append(in.Targets[i].Stats, hostStats)
+				in.Targets[i].Ref = target.Ref
+				in.Targets[i].TotalHosts = target.TotalHosts
+				targetHostStats := append(in.Targets[i].Stats, hostStats)
+				in.Targets[i].Stats = targetHostStats
+				if int32(len(targetHostStats)) != *target.TotalHosts {
+					in.Targets[i].Phase = api_v1beta1.TargetBackupRunning
+					return in
+				}
+				for _, host := range target.Stats {
+					if host.Phase == api_v1beta1.HostBackupFailed {
+						in.Targets[i].Phase = api_v1beta1.TargetBackupFailed
+						return in
+					}
+				}
+				in.Targets[i].Phase = api_v1beta1.TargetBackupSucceeded
 			}
 		}
 		return in

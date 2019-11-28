@@ -21,12 +21,12 @@ import (
 	"fmt"
 	"reflect"
 
-	"k8s.io/apimachinery/pkg/labels"
-	"kmodules.xyz/client-go/meta"
 	v1beta1_api "stash.appscode.dev/stash/apis/stash/v1beta1"
 	v1beta1_listers "stash.appscode.dev/stash/client/listers/stash/v1beta1"
 
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/labels"
+	"kmodules.xyz/client-go/meta"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
 

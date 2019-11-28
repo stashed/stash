@@ -20,8 +20,6 @@ import (
 	"fmt"
 	"strings"
 
-	v1 "kmodules.xyz/offshoot-api/api/v1"
-
 	"stash.appscode.dev/stash/apis"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
@@ -43,6 +41,7 @@ import (
 	batch_util "kmodules.xyz/client-go/batch/v1beta1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/tools/queue"
+	v1 "kmodules.xyz/offshoot-api/api/v1"
 	workload_api "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
 

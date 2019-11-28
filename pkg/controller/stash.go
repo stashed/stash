@@ -116,13 +116,13 @@ func (c *StashController) applyBackupLogic(w *wapi.Workload, caller string) (boo
 		}
 	}
 	// check if any BackupBatch exits for this workload. if exist then inject sidecar container
-	modified, err := c.applyBackupBatchLogic(w, caller)
+	_, err := c.applyBackupBatchLogic(w, caller)
 	if err != nil {
 		return false, err
 	}
 
 	// check if any BackupConfiguration exist for this workload. if exist then inject sidecar container
-	modified, err = c.applyBackupConfigurationLogic(w, caller)
+	modified, err := c.applyBackupConfigurationLogic(w, caller)
 	if err != nil {
 		return false, err
 	}

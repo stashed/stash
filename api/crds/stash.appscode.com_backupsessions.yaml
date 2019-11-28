@@ -173,18 +173,13 @@ spec:
                   targetBackupPhase:
                     description: Phase indicates backup phase of the individual target
                     type: string
-                  targetedHosts:
-                    description: TargetedHost specifies total number of hosts for
-                      individual target that will be backed up for this BackupSession
+                  totalHosts:
+                    description: TotalHosts specifies total number of hosts for individual
+                      target that will be backed up for this BackupSession
                     format: int32
                     type: integer
                 type: object
               type: array
-            totalHosts:
-              description: TotalHosts specifies total number of hosts for all targets
-                that will be backed up for this BackupSession
-              format: int32
-              type: integer
           type: object
       type: object
   version: v1beta1

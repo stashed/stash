@@ -19,6 +19,7 @@ package status
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
@@ -144,12 +145,32 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 		}
 	}
 	// if metrics enabled then send metrics to the Prometheus pushgateway
+
+	var backupTarget *v1beta1.BackupTarget
+	var driver v1beta1.Snapshotter
+
 	if o.Metrics.Enabled {
-		backupConfig, err := o.StashClient.StashV1beta1().BackupConfigurations(o.Namespace).Get(backupSession.Spec.Invoker.Name, metav1.GetOptions{})
-		if err != nil {
-			return err
+		if backupSession.Spec.Invoker.Kind == strings.ToLower(v1beta1.ResourceKindBackupBatch) {
+			backupBatch, err := o.StashClient.StashV1beta1().BackupBatches(o.Namespace).Get(backupSession.Spec.Invoker.Name, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			for _, backupConfig := range backupBatch.Spec.BackupConfigurationTemplates {
+				if backupConfig.Spec.Target != nil && backupConfig.Spec.Target.Ref.Kind == o.TargetRef.Kind &&
+					backupConfig.Spec.Target.Ref.Name == o.TargetRef.Name {
+					backupTarget = backupConfig.Spec.Target
+					driver = backupBatch.Spec.Driver
+				}
+			}
+		} else {
+			backupConfig, err := o.StashClient.StashV1beta1().BackupConfigurations(o.Namespace).Get(backupSession.Spec.Invoker.Name, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			backupTarget = backupConfig.Spec.Target
+			driver = backupConfig.Spec.Driver
 		}
-		return o.Metrics.SendBackupHostMetrics(o.Config, backupConfig, backupOutput)
+		return o.Metrics.SendBackupHostMetrics(o.Config, o.Namespace, backupTarget, o.Repository, driver, backupOutput)
 	}
 	return nil
 }

@@ -16908,13 +16908,6 @@ func schema_stash_apis_stash_v1beta1_BackupSessionStatus(ref common.ReferenceCal
 							Format:      "",
 						},
 					},
-					"totalHosts": {
-						SchemaProps: spec.SchemaProps{
-							Description: "TotalHosts specifies total number of hosts for all targets that will be backed up for this BackupSession",
-							Type:        []string{"integer"},
-							Format:      "int32",
-						},
-					},
 					"sessionDuration": {
 						SchemaProps: spec.SchemaProps{
 							Description: "SessionDuration specify total time taken to complete current backup session (sum of backup duration of all hosts)",
@@ -17854,9 +17847,9 @@ func schema_stash_apis_stash_v1beta1_Target(ref common.ReferenceCallback) common
 							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1beta1.TargetRef"),
 						},
 					},
-					"targetedHosts": {
+					"totalHosts": {
 						SchemaProps: spec.SchemaProps{
-							Description: "TargetedHost specifies total number of hosts for individual target that will be backed up for this BackupSession",
+							Description: "TotalHosts specifies total number of hosts for individual target that will be backed up for this BackupSession",
 							Type:        []string{"integer"},
 							Format:      "int32",
 						},

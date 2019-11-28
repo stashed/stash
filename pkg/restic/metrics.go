@@ -359,12 +359,12 @@ func newRestoreHostMetrics(labels prometheus.Labels) *RestoreMetrics {
 }
 
 // SendBackupSessionMetrics send backup session metrics to the Pushgateway
-func (metricOpt *MetricsOptions) SendBackupSessionMetrics(config *rest.Config, backupConfig *api_v1beta1.BackupConfiguration, status api_v1beta1.BackupSessionStatus) error {
+func (metricOpt *MetricsOptions) SendBackupSessionMetrics(config *rest.Config, namespace string, backupTarget *api_v1beta1.BackupTarget, repoName string, driver api_v1beta1.Snapshotter, status api_v1beta1.BackupSessionStatus) error {
 	// create metric registry
 	registry := prometheus.NewRegistry()
 
 	// generate metrics labels
-	labels, err := backupMetricLabels(config, backupConfig, metricOpt.Labels)
+	labels, err := backupMetricLabels(config, namespace, backupTarget, repoName, driver, metricOpt.Labels)
 	if err != nil {
 		return err
 	}
@@ -382,9 +382,9 @@ func (metricOpt *MetricsOptions) SendBackupSessionMetrics(config *rest.Config, b
 		}
 		metrics.BackupSessionMetrics.SessionDuration.Set(duration.Seconds())
 
-		// set total number of host that was backed up in this backup session
-		if status.TotalHosts != nil {
-			metrics.BackupSessionMetrics.HostCount.Set(float64(*status.TotalHosts))
+		// set total number of target that was backed up in this backup session
+		if len(status.Targets) > 0 {
+			metrics.BackupSessionMetrics.HostCount.Set(float64(len(status.Targets)))
 		}
 
 		// register metrics to the registry
@@ -403,7 +403,7 @@ func (metricOpt *MetricsOptions) SendBackupSessionMetrics(config *rest.Config, b
 }
 
 // SendBackupSessionMetrics send backup metrics for individual hosts to the Pushgateway
-func (metricOpt *MetricsOptions) SendBackupHostMetrics(config *rest.Config, backupConfig *api_v1beta1.BackupConfiguration, backupOutput *BackupOutput) error {
+func (metricOpt *MetricsOptions) SendBackupHostMetrics(config *rest.Config, namespace string, backupTarget *api_v1beta1.BackupTarget, repoName string, driver api_v1beta1.Snapshotter, backupOutput *BackupOutput) error {
 	if backupOutput == nil {
 		return fmt.Errorf("invalid backup output. Backup output shouldn't be nil")
 	}
@@ -411,7 +411,9 @@ func (metricOpt *MetricsOptions) SendBackupHostMetrics(config *rest.Config, back
 	// create metric registry
 	registry := prometheus.NewRegistry()
 
-	labels, err := backupMetricLabels(config, backupConfig, metricOpt.Labels)
+	// config, namespace, backupTarget, repoName, driver, metricOpt.Labels
+
+	labels, err := backupMetricLabels(config, namespace, backupTarget, repoName, driver, metricOpt.Labels)
 	if err != nil {
 		return err
 	}
@@ -456,7 +458,7 @@ func (metricOpt *MetricsOptions) SendBackupHostMetrics(config *rest.Config, back
 
 	// create repository metrics
 	if backupOutput.RepositoryStats.Integrity != nil {
-		repoMetricLabels, err := repoMetricLabels(config, backupConfig, metricOpt.Labels)
+		repoMetricLabels, err := repoMetricLabels(config, namespace, backupTarget, repoName, metricOpt.Labels)
 		if err != nil {
 			return err
 		}
@@ -660,28 +662,27 @@ func (metricOpt *MetricsOptions) sendMetrics(registry *prometheus.Registry, jobN
 	return nil
 }
 
-func backupMetricLabels(config *rest.Config, backupConfig *api_v1beta1.BackupConfiguration, userProvidedLabels []string) (prometheus.Labels, error) {
+func backupMetricLabels(config *rest.Config, namespace string, backupTarget *api_v1beta1.BackupTarget, repoName string, driver api_v1beta1.Snapshotter, userProvidedLabels []string) (prometheus.Labels, error) {
 	// add user provided labels
 	promLabels := parseUserProvidedLabels(userProvidedLabels)
 
 	// insert target information as metrics label
-	if backupConfig != nil {
-		if backupConfig.Spec.Driver == api_v1beta1.VolumeSnapshotter {
-			promLabels = upsertLabel(promLabels, volumeSnapshotterLabels())
-		} else {
-			promLabels[MetricsLabelDriver] = string(api_v1beta1.ResticSnapshotter)
-			// insert backup target specific labels
-			if backupConfig.Spec.Target != nil {
-				labels, err := targetLabels(config, backupConfig.Spec.Target.Ref, backupConfig.Namespace)
-				if err != nil {
-					return nil, err
-				}
-				promLabels = upsertLabel(promLabels, labels)
+	if driver == api_v1beta1.VolumeSnapshotter {
+		promLabels = upsertLabel(promLabels, volumeSnapshotterLabels())
+	} else {
+		promLabels[MetricsLabelDriver] = string(api_v1beta1.ResticSnapshotter)
+		// insert backup target specific labels
+		if backupTarget != nil {
+			labels, err := targetLabels(config, backupTarget.Ref, namespace)
+			if err != nil {
+				return nil, err
 			}
-			promLabels[MetricsLabelRepository] = backupConfig.Spec.Repository.Name
+			promLabels = upsertLabel(promLabels, labels)
 		}
-		promLabels[MetricsLabelNamespace] = backupConfig.Namespace
+		promLabels[MetricsLabelRepository] = repoName
 	}
+	promLabels[MetricsLabelNamespace] = namespace
+
 	return promLabels, nil
 }
 
@@ -710,17 +711,17 @@ func restoreMetricLabels(config *rest.Config, restoreSession *api_v1beta1.Restor
 	return promLabels, nil
 }
 
-func repoMetricLabels(clientConfig *rest.Config, backupConfig *api_v1beta1.BackupConfiguration, userProvidedLabels []string) (prometheus.Labels, error) {
+func repoMetricLabels(clientConfig *rest.Config, namespace string, backupTarget *api_v1beta1.BackupTarget, repoName string, userProvidedLabels []string) (prometheus.Labels, error) {
 	// add user provided labels
 	promLabels := parseUserProvidedLabels(userProvidedLabels)
 
 	// insert repository information as label
-	if backupConfig != nil && backupConfig.Spec.Target != nil {
+	if backupTarget != nil {
 		stashClient, err := cs.NewForConfig(clientConfig)
 		if err != nil {
 			return nil, err
 		}
-		repository, err := stashClient.StashV1alpha1().Repositories(backupConfig.Namespace).Get(backupConfig.Spec.Repository.Name, metav1.GetOptions{})
+		repository, err := stashClient.StashV1alpha1().Repositories(namespace).Get(repoName, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}

@@ -9820,11 +9820,6 @@
           "items": {
             "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.Target"
           }
-        },
-        "totalHosts": {
-          "description": "TotalHosts specifies total number of hosts for all targets that will be backed up for this BackupSession",
-          "type": "integer",
-          "format": "int32"
         }
       }
     },
@@ -10340,8 +10335,8 @@
           "description": "Phase indicates backup phase of the individual target",
           "type": "string"
         },
-        "targetedHosts": {
-          "description": "TargetedHost specifies total number of hosts for individual target that will be backed up for this BackupSession",
+        "totalHosts": {
+          "description": "TotalHosts specifies total number of hosts for individual target that will be backed up for this BackupSession",
           "type": "integer",
           "format": "int32"
         }

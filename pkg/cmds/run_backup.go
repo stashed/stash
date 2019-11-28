@@ -19,16 +19,17 @@ package cmds
 import (
 	"time"
 
-	"github.com/golang/glog"
-	"github.com/spf13/cobra"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
-	"kmodules.xyz/client-go/meta"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	stashinformers "stash.appscode.dev/stash/client/informers/externalversions"
 	"stash.appscode.dev/stash/pkg/backup"
 	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/pkg/restic"
+
+	"github.com/golang/glog"
+	"github.com/spf13/cobra"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
+	"kmodules.xyz/client-go/meta"
 )
 
 func NewCmdRunBackup() *cobra.Command {
@@ -68,7 +69,7 @@ func NewCmdRunBackup() *cobra.Command {
 			opt.Recorder = eventer.NewEventRecorder(opt.K8sClient, backup.BackupEventComponent)
 			opt.Metrics.JobName = opt.InvokerName
 			// run backup
-			if ref, err := opt.Invoker(); err != nil {
+			if ref, err := opt.BackupInvoker(); err != nil {
 				return opt.HandleBackupSetupFailure(ref, err)
 			}
 			return nil

@@ -296,17 +296,13 @@ message BackupSessionStatus {
   // +optional
   optional string phase = 1;
 
-  // TotalHosts specifies total number of hosts for all targets that will be backed up for this BackupSession
-  // +optional
-  optional int32 totalHosts = 2;
-
   // SessionDuration specify total time taken to complete current backup session (sum of backup duration of all hosts)
   // +optional
-  optional string sessionDuration = 3;
+  optional string sessionDuration = 2;
 
   // Targets specify overall backup status of all target that will be backed up
   // optional
-  repeated Target targets = 4;
+  repeated Target targets = 3;
 }
 
 message BackupTarget {
@@ -657,9 +653,9 @@ message Target {
   // +optional
   optional TargetRef ref = 1;
 
-  // TargetedHost specifies total number of hosts for individual target that will be backed up for this BackupSession
+  // TotalHosts specifies total number of hosts for individual target that will be backed up for this BackupSession
   // +optional
-  optional int32 targetedHosts = 2;
+  optional int32 totalHosts = 2;
 
   // Phase indicates backup phase of the individual target
   // +optional

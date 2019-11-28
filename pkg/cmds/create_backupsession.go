@@ -82,7 +82,7 @@ func NewCmdCreateBackupSession() *cobra.Command {
 				opt.ocClient = oc_cs.NewForConfigOrDie(config)
 			}
 
-			if opt.Invoker() != nil {
+			if opt.backupInvoker() != nil {
 				log.Fatal(err)
 			}
 		},
@@ -124,7 +124,7 @@ func (opt *options) createBackupSession(labels map[string]string, ref *core.Obje
 	return err
 }
 
-func (opt *options) Invoker() error {
+func (opt *options) backupInvoker() error {
 	wc := util.WorkloadClients{
 		KubeClient:       opt.k8sClient,
 		StashClient:      opt.stashClient,
@@ -154,9 +154,7 @@ func (opt *options) Invoker() error {
 			return opt.createBackupSession(backupBatch.OffshootLabels(), ref)
 		}
 		return err
-	}
-
-	if opt.invokerType == strings.ToLower(api_v1beta1.ResourceKindBackupConfiguration) {
+	} else {
 		backupConfiguration, err := opt.stashClient.StashV1beta1().BackupConfigurations(opt.namespace).Get(opt.invokerName, metav1.GetOptions{})
 		if err == nil && !kerr.IsNotFound(err) {
 			// create BackupConfiguration reference to set BackupSession owner
@@ -177,8 +175,6 @@ func (opt *options) Invoker() error {
 		}
 		return err
 	}
-
-	return nil
 }
 
 func writeBackupSessionSkippedEvent(kubeClient kubernetes.Interface, ref *core.ObjectReference, msg string) error {
