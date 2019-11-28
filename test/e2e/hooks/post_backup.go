@@ -64,15 +64,18 @@ var _ = Describe("PostBackup Hook", func() {
 						f.AppendToCleanupList(repo)
 
 						// Setup workload Backup
-						postBackupHook := &probev1.Handler{
-							HTTPGet: &core.HTTPGetAction{
-								Scheme: "HTTP",
-								Host:   fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, framework.TEST_HEADLESS_SERVICE, f.Namespace()),
-								Path:   "/success",
-								Port:   intstr.FromInt(framework.HttpPort),
-							},
-						}
-						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, nil, postBackupHook)
+						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
+							bc.Spec.Hooks = &v1beta1.BackupHooks{
+								PostBackup: &probev1.Handler{
+									HTTPGet: &core.HTTPGetAction{
+										Scheme: "HTTP",
+										Host:   fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, framework.TEST_HEADLESS_SERVICE, f.Namespace()),
+										Path:   "/success",
+										Port:   intstr.FromInt(framework.HttpPort),
+									},
+								},
+							}
+						})
 						Expect(err).NotTo(HaveOccurred())
 
 						// Take an Instant Backup the Sample Data
@@ -101,15 +104,19 @@ var _ = Describe("PostBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 						f.AppendToCleanupList(repo)
 
-						postBackupHook := &probev1.Handler{
-							HTTPGet: &core.HTTPGetAction{
-								Scheme: "HTTP",
-								Path:   "/success",
-								Port:   intstr.FromString(framework.HttpPortName),
-							},
-							ContainerName: framework.ProberDemoPodPrefix,
-						}
-						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, nil, postBackupHook)
+						// Setup backup
+						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
+							bc.Spec.Hooks = &v1beta1.BackupHooks{
+								PostBackup: &probev1.Handler{
+									HTTPGet: &core.HTTPGetAction{
+										Scheme: "HTTP",
+										Path:   "/success",
+										Port:   intstr.FromString(framework.HttpPortName),
+									},
+									ContainerName: framework.ProberDemoPodPrefix,
+								},
+							}
+						})
 						Expect(err).NotTo(HaveOccurred())
 
 						// Take an Instant Backup the Sample Data
@@ -139,15 +146,19 @@ var _ = Describe("PostBackup Hook", func() {
 					Expect(err).NotTo(HaveOccurred())
 					f.AppendToCleanupList(repo)
 
-					postBackupHook := &probev1.Handler{
-						HTTPGet: &core.HTTPGetAction{
-							Scheme: "HTTP",
-							Path:   "/fail",
-							Port:   intstr.FromString(framework.HttpPortName),
-						},
-						ContainerName: framework.ProberDemoPodPrefix,
-					}
-					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, nil, postBackupHook)
+					// Setup Backup
+					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
+						bc.Spec.Hooks = &v1beta1.BackupHooks{
+							PostBackup: &probev1.Handler{
+								HTTPGet: &core.HTTPGetAction{
+									Scheme: "HTTP",
+									Path:   "/fail",
+									Port:   intstr.FromString(framework.HttpPortName),
+								},
+								ContainerName: framework.ProberDemoPodPrefix,
+							},
+						}
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					// Take an Instant Backup the Sample Data
@@ -188,15 +199,18 @@ var _ = Describe("PostBackup Hook", func() {
 						f.AppendToCleanupList(repo)
 
 						// Setup workload Backup
-						postBackupHook := &probev1.Handler{
-							HTTPPost: &probev1.HTTPPostAction{
-								Scheme: "HTTP",
-								Host:   fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, framework.TEST_HEADLESS_SERVICE, f.Namespace()),
-								Path:   "/post-demo",
-								Port:   intstr.FromInt(framework.HttpPort),
-							},
-						}
-						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, nil, postBackupHook)
+						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
+							bc.Spec.Hooks = &v1beta1.BackupHooks{
+								PostBackup: &probev1.Handler{
+									HTTPPost: &probev1.HTTPPostAction{
+										Scheme: "HTTP",
+										Host:   fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, framework.TEST_HEADLESS_SERVICE, f.Namespace()),
+										Path:   "/post-demo",
+										Port:   intstr.FromInt(framework.HttpPort),
+									},
+								},
+							}
+						})
 						Expect(err).NotTo(HaveOccurred())
 
 						// Take an Instant Backup the Sample Data
@@ -225,15 +239,19 @@ var _ = Describe("PostBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 						f.AppendToCleanupList(repo)
 
-						postBackupHook := &probev1.Handler{
-							HTTPPost: &probev1.HTTPPostAction{
-								Scheme: "HTTP",
-								Path:   "/post-demo",
-								Port:   intstr.FromString(framework.HttpPortName),
-							},
-							ContainerName: framework.ProberDemoPodPrefix,
-						}
-						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, nil, postBackupHook)
+						// Setup Backup
+						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
+							bc.Spec.Hooks = &v1beta1.BackupHooks{
+								PostBackup: &probev1.Handler{
+									HTTPPost: &probev1.HTTPPostAction{
+										Scheme: "HTTP",
+										Path:   "/post-demo",
+										Port:   intstr.FromString(framework.HttpPortName),
+									},
+									ContainerName: framework.ProberDemoPodPrefix,
+								},
+							}
+						})
 						Expect(err).NotTo(HaveOccurred())
 
 						// Take an Instant Backup the Sample Data
@@ -262,16 +280,20 @@ var _ = Describe("PostBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 						f.AppendToCleanupList(repo)
 
-						postBackupHook := &probev1.Handler{
-							HTTPPost: &probev1.HTTPPostAction{
-								Scheme: "HTTP",
-								Path:   "/post-demo",
-								Port:   intstr.FromString(framework.HttpPortName),
-								Body:   `{"expectedCode":"200","expectedResponse":"success"}`,
-							},
-							ContainerName: framework.ProberDemoPodPrefix,
-						}
-						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, nil, postBackupHook)
+						// Setup Backup
+						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
+							bc.Spec.Hooks = &v1beta1.BackupHooks{
+								PostBackup: &probev1.Handler{
+									HTTPPost: &probev1.HTTPPostAction{
+										Scheme: "HTTP",
+										Path:   "/post-demo",
+										Port:   intstr.FromString(framework.HttpPortName),
+										Body:   `{"expectedCode":"200","expectedResponse":"success"}`,
+									},
+									ContainerName: framework.ProberDemoPodPrefix,
+								},
+							}
+						})
 						Expect(err).NotTo(HaveOccurred())
 
 						// Take an Instant Backup the Sample Data
@@ -300,25 +322,29 @@ var _ = Describe("PostBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 						f.AppendToCleanupList(repo)
 
-						postBackupHook := &probev1.Handler{
-							HTTPPost: &probev1.HTTPPostAction{
-								Scheme: "HTTP",
-								Path:   "/post-demo",
-								Port:   intstr.FromString(framework.HttpPortName),
-								Form: []probev1.FormEntry{
-									{
-										Key:    "expectedResponse",
-										Values: []string{"success"},
+						// Setup Backup
+						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
+							bc.Spec.Hooks = &v1beta1.BackupHooks{
+								PostBackup: &probev1.Handler{
+									HTTPPost: &probev1.HTTPPostAction{
+										Scheme: "HTTP",
+										Path:   "/post-demo",
+										Port:   intstr.FromString(framework.HttpPortName),
+										Form: []probev1.FormEntry{
+											{
+												Key:    "expectedResponse",
+												Values: []string{"success"},
+											},
+											{
+												Key:    "expectedCode",
+												Values: []string{"202"},
+											},
+										},
 									},
-									{
-										Key:    "expectedCode",
-										Values: []string{"202"},
-									},
+									ContainerName: framework.ProberDemoPodPrefix,
 								},
-							},
-							ContainerName: framework.ProberDemoPodPrefix,
-						}
-						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, nil, postBackupHook)
+							}
+						})
 						Expect(err).NotTo(HaveOccurred())
 
 						// Take an Instant Backup the Sample Data
@@ -348,25 +374,29 @@ var _ = Describe("PostBackup Hook", func() {
 					Expect(err).NotTo(HaveOccurred())
 					f.AppendToCleanupList(repo)
 
-					postBackupHook := &probev1.Handler{
-						HTTPPost: &probev1.HTTPPostAction{
-							Scheme: "HTTP",
-							Path:   "/post-demo",
-							Port:   intstr.FromString(framework.HttpPortName),
-							Form: []probev1.FormEntry{
-								{
-									Key:    "expectedResponse",
-									Values: []string{"fail"},
+					// Setup Backup
+					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
+						bc.Spec.Hooks = &v1beta1.BackupHooks{
+							PostBackup: &probev1.Handler{
+								HTTPPost: &probev1.HTTPPostAction{
+									Scheme: "HTTP",
+									Path:   "/post-demo",
+									Port:   intstr.FromString(framework.HttpPortName),
+									Form: []probev1.FormEntry{
+										{
+											Key:    "expectedResponse",
+											Values: []string{"fail"},
+										},
+										{
+											Key:    "expectedCode",
+											Values: []string{"403"},
+										},
+									},
 								},
-								{
-									Key:    "expectedCode",
-									Values: []string{"403"},
-								},
+								ContainerName: framework.ProberDemoPodPrefix,
 							},
-						},
-						ContainerName: framework.ProberDemoPodPrefix,
-					}
-					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, nil, postBackupHook)
+						}
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					// Take an Instant Backup the Sample Data
@@ -407,13 +437,16 @@ var _ = Describe("PostBackup Hook", func() {
 						f.AppendToCleanupList(repo)
 
 						// Setup workload Backup
-						postBackupHook := &probev1.Handler{
-							TCPSocket: &core.TCPSocketAction{
-								Host: fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, framework.TEST_HEADLESS_SERVICE, f.Namespace()),
-								Port: intstr.FromInt(framework.TcpPort),
-							},
-						}
-						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, nil, postBackupHook)
+						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
+							bc.Spec.Hooks = &v1beta1.BackupHooks{
+								PostBackup: &probev1.Handler{
+									TCPSocket: &core.TCPSocketAction{
+										Host: fmt.Sprintf("%s-0.%s.%s.svc", statefulset.Name, framework.TEST_HEADLESS_SERVICE, f.Namespace()),
+										Port: intstr.FromInt(framework.TcpPort),
+									},
+								},
+							}
+						})
 						Expect(err).NotTo(HaveOccurred())
 
 						// Take an Instant Backup the Sample Data
@@ -442,13 +475,17 @@ var _ = Describe("PostBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 						f.AppendToCleanupList(repo)
 
-						postBackupHook := &probev1.Handler{
-							TCPSocket: &core.TCPSocketAction{
-								Port: intstr.FromString(framework.TcpPortName),
-							},
-							ContainerName: framework.ProberDemoPodPrefix,
-						}
-						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, nil, postBackupHook)
+						// Setup Backup
+						backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
+							bc.Spec.Hooks = &v1beta1.BackupHooks{
+								PostBackup: &probev1.Handler{
+									TCPSocket: &core.TCPSocketAction{
+										Port: intstr.FromString(framework.TcpPortName),
+									},
+									ContainerName: framework.ProberDemoPodPrefix,
+								},
+							}
+						})
 						Expect(err).NotTo(HaveOccurred())
 
 						// Take an Instant Backup the Sample Data
@@ -478,13 +515,17 @@ var _ = Describe("PostBackup Hook", func() {
 					Expect(err).NotTo(HaveOccurred())
 					f.AppendToCleanupList(repo)
 
-					postBackupHook := &probev1.Handler{
-						TCPSocket: &core.TCPSocketAction{
-							Port: intstr.FromInt(9091),
-						},
-						ContainerName: framework.ProberDemoPodPrefix,
-					}
-					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, nil, postBackupHook)
+					// Setup Backup
+					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
+						bc.Spec.Hooks = &v1beta1.BackupHooks{
+							PostBackup: &probev1.Handler{
+								TCPSocket: &core.TCPSocketAction{
+									Port: intstr.FromInt(9091),
+								},
+								ContainerName: framework.ProberDemoPodPrefix,
+							},
+						}
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					// Take an Instant Backup the Sample Data
@@ -522,13 +563,17 @@ var _ = Describe("PostBackup Hook", func() {
 					Expect(err).NotTo(HaveOccurred())
 					f.AppendToCleanupList(repo)
 
-					postBackupHook := &probev1.Handler{
-						Exec: &core.ExecAction{
-							Command: []string{"/bin/sh", "-c", `exit $EXIT_CODE_SUCCESS`},
-						},
-						ContainerName: framework.ProberDemoPodPrefix,
-					}
-					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, nil, postBackupHook)
+					// Setup Backup
+					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
+						bc.Spec.Hooks = &v1beta1.BackupHooks{
+							PostBackup: &probev1.Handler{
+								Exec: &core.ExecAction{
+									Command: []string{"/bin/sh", "-c", `exit $EXIT_CODE_SUCCESS`},
+								},
+								ContainerName: framework.ProberDemoPodPrefix,
+							},
+						}
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					// Take an Instant Backup the Sample Data
@@ -557,13 +602,17 @@ var _ = Describe("PostBackup Hook", func() {
 					Expect(err).NotTo(HaveOccurred())
 					f.AppendToCleanupList(repo)
 
-					postBackupHook := &probev1.Handler{
-						Exec: &core.ExecAction{
-							Command: []string{"/bin/sh", "-c", `exit $EXIT_CODE_FAIL`},
-						},
-						ContainerName: framework.ProberDemoPodPrefix,
-					}
-					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, nil, postBackupHook)
+					// Setup Backup
+					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
+						bc.Spec.Hooks = &v1beta1.BackupHooks{
+							PostBackup: &probev1.Handler{
+								Exec: &core.ExecAction{
+									Command: []string{"/bin/sh", "-c", `exit $EXIT_CODE_FAIL`},
+								},
+								ContainerName: framework.ProberDemoPodPrefix,
+							},
+						}
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					// Take an Instant Backup the Sample Data

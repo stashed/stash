@@ -104,7 +104,7 @@ var _ = Describe("StatefulSet", func() {
 				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
-				backupConfig, err := f.SetupWorkloadBackup(ss.ObjectMeta, repo, apis.KindStatefulSet, nil, nil)
+				backupConfig, err := f.SetupWorkloadBackup(ss.ObjectMeta, repo, apis.KindStatefulSet)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup the Sample Data
@@ -123,7 +123,7 @@ var _ = Describe("StatefulSet", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original StatefulSet")
-				restoreSession, err := f.SetupRestoreProcess(ss.ObjectMeta, repo, apis.KindStatefulSet, nil, nil)
+				restoreSession, err := f.SetupRestoreProcess(ss.ObjectMeta, repo, apis.KindStatefulSet)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -156,7 +156,7 @@ var _ = Describe("StatefulSet", func() {
 				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
-				backupConfig, err := f.SetupWorkloadBackup(ss.ObjectMeta, repo, apis.KindStatefulSet, nil, nil)
+				backupConfig, err := f.SetupWorkloadBackup(ss.ObjectMeta, repo, apis.KindStatefulSet)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup the Sample Data
@@ -174,7 +174,7 @@ var _ = Describe("StatefulSet", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original StatefulSet")
-				restoreSession, err := f.SetupRestoreProcess(restoredSS.ObjectMeta, repo, apis.KindStatefulSet, nil, nil)
+				restoreSession, err := f.SetupRestoreProcess(restoredSS.ObjectMeta, repo, apis.KindStatefulSet)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -207,7 +207,7 @@ var _ = Describe("StatefulSet", func() {
 				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
-				backupConfig, err := f.SetupWorkloadBackup(ss.ObjectMeta, repo, apis.KindStatefulSet, nil, nil)
+				backupConfig, err := f.SetupWorkloadBackup(ss.ObjectMeta, repo, apis.KindStatefulSet)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup the Sample Data

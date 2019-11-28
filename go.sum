@@ -508,8 +508,8 @@ kmodules.xyz/offshoot-api v0.0.0-20191111195805-1105abf4a162 h1:RY/cT16ypeX4xlDZ
 kmodules.xyz/offshoot-api v0.0.0-20191111195805-1105abf4a162/go.mod h1:hR/2bD0gZo9XtLoRmQIg32HcuMT6VpQHbViujVyEhKE=
 kmodules.xyz/openshift v0.0.0-20190808144841-c8f9a927f1d1 h1:NmVj5+kPpUgoxRans2XZt5SXm9cVy8E3b4yHaeVzqak=
 kmodules.xyz/openshift v0.0.0-20190808144841-c8f9a927f1d1/go.mod h1:+E8HHcxBx6ja4oKOXZ6DCoQ+NjujODTgFOfgOe+ejXw=
-kmodules.xyz/prober v0.0.0-20191125130315-22c431f09b5f h1:nc0cwH2ZZMsGLudk/38wcyAgzQOcuv2Jdgkfy8GT6a4=
-kmodules.xyz/prober v0.0.0-20191125130315-22c431f09b5f/go.mod h1:Pf7xuHB5vrwVJTRBJ0Vhb06ntxjkkczIL/V5QbM4JJQ=
+kmodules.xyz/prober v0.0.0-20191127152141-f657db28f1c9 h1:8AD+62pGnMuSlvDdoju+qJ4KowKYFWkCkbIp8gXOtiY=
+kmodules.xyz/prober v0.0.0-20191127152141-f657db28f1c9/go.mod h1:Pf7xuHB5vrwVJTRBJ0Vhb06ntxjkkczIL/V5QbM4JJQ=
 kmodules.xyz/webhook-runtime v0.0.0-20191106182834-bf518fbc7b19 h1:mLG/BkKpXMDF16DzTuSeobWvV5U8zUPmWgW7H9jdlnA=
 kmodules.xyz/webhook-runtime v0.0.0-20191106182834-bf518fbc7b19/go.mod h1:syhMPnC4+NnSY88O/7DEEutTffzK8kuUbmF393nVTwM=
 sigs.k8s.io/kustomize v2.0.3+incompatible h1:JUufWFNlI44MdtnjUqVnvh29rR37PQFzPbLXqhyOyX0=

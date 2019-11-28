@@ -24,12 +24,14 @@ import (
 	"stash.appscode.dev/stash/test/e2e/framework"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 
+	"github.com/appscode/go/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ofst "kmodules.xyz/offshoot-api/api/v1"
 )
 
-var _ = Describe("Deployment", func() {
+var _ = Describe("Advanced Configuration", func() {
 
 	var f *framework.Invocation
 
@@ -59,7 +61,19 @@ var _ = Describe("Deployment", func() {
 				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
-				backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment, nil, nil)
+				backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment, func(bc *v1beta1.BackupConfiguration) {
+					bc.Spec.RuntimeSettings = ofst.RuntimeSettings{
+						Container: &ofst.ContainerRuntimeSettings{
+							Nice: &ofst.NiceSettings{
+								Adjustment: types.Int32P(5),
+							},
+							IONice: &ofst.IONiceSettings{
+								Class:     types.Int32P(2),
+								ClassData: types.Int32P(4),
+							},
+						},
+					}
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup the Sample Data
@@ -78,7 +92,19 @@ var _ = Describe("Deployment", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original Deployment")
-				restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment, nil, nil)
+				restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment, func(restore *v1beta1.RestoreSession) {
+					restore.Spec.RuntimeSettings = ofst.RuntimeSettings{
+						Container: &ofst.ContainerRuntimeSettings{
+							Nice: &ofst.NiceSettings{
+								Adjustment: types.Int32P(5),
+							},
+							IONice: &ofst.IONiceSettings{
+								Class:     types.Int32P(2),
+								ClassData: types.Int32P(4),
+							},
+						},
+					}
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")

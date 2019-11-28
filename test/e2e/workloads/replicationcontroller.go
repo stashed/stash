@@ -60,7 +60,7 @@ var _ = Describe("ReplicationController", func() {
 				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
-				backupConfig, err := f.SetupWorkloadBackup(rc.ObjectMeta, repo, apis.KindReplicationController, nil, nil)
+				backupConfig, err := f.SetupWorkloadBackup(rc.ObjectMeta, repo, apis.KindReplicationController)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup the Sample Data
@@ -79,7 +79,7 @@ var _ = Describe("ReplicationController", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original ReplicationController")
-				restoreSession, err := f.SetupRestoreProcess(rc.ObjectMeta, repo, apis.KindReplicationController, nil, nil)
+				restoreSession, err := f.SetupRestoreProcess(rc.ObjectMeta, repo, apis.KindReplicationController)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -112,7 +112,7 @@ var _ = Describe("ReplicationController", func() {
 				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
-				backupConfig, err := f.SetupWorkloadBackup(rc.ObjectMeta, repo, apis.KindReplicationController, nil, nil)
+				backupConfig, err := f.SetupWorkloadBackup(rc.ObjectMeta, repo, apis.KindReplicationController)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup the Sample Data
@@ -130,7 +130,7 @@ var _ = Describe("ReplicationController", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in different ReplicationController")
-				restoreSession, err := f.SetupRestoreProcess(restoredRC.ObjectMeta, repo, apis.KindReplicationController, nil, nil)
+				restoreSession, err := f.SetupRestoreProcess(restoredRC.ObjectMeta, repo, apis.KindReplicationController)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -163,7 +163,7 @@ var _ = Describe("ReplicationController", func() {
 				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
-				backupConfig, err := f.SetupWorkloadBackup(rc.ObjectMeta, repo, apis.KindReplicationController, nil, nil)
+				backupConfig, err := f.SetupWorkloadBackup(rc.ObjectMeta, repo, apis.KindReplicationController)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for leader election")
@@ -185,7 +185,7 @@ var _ = Describe("ReplicationController", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original ReplicationController")
-				restoreSession, err := f.SetupRestoreProcess(rc.ObjectMeta, repo, apis.KindReplicationController, nil, nil)
+				restoreSession, err := f.SetupRestoreProcess(rc.ObjectMeta, repo, apis.KindReplicationController)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")

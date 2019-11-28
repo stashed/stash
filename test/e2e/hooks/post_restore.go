@@ -66,7 +66,7 @@ var _ = Describe("PostRestore Hook", func() {
 					f.AppendToCleanupList(repo)
 
 					// Setup workload Backup
-					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, nil, nil)
+					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Take an Instant Backup the Sample Data
@@ -88,16 +88,18 @@ var _ = Describe("PostRestore Hook", func() {
 					_, err = f.ExecOnPod(pod, "touch", filepath.Join(framework.TestSourceDataMountPath, "corrupted-data.txt"))
 					Expect(err).NotTo(HaveOccurred())
 
-					postRestoreHook := &probev1.Handler{
-						Exec: &core.ExecAction{
-							Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm %s/corrupted-data.txt", framework.TestSourceDataMountPath)},
-						},
-						ContainerName: util.StashInitContainer,
-					}
-
 					// Restore the backed up data
 					By("Restoring the backed up data in the original StatefulSet")
-					restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, nil, postRestoreHook)
+					restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(restore *v1beta1.RestoreSession) {
+						restore.Spec.Hooks = &v1beta1.RestoreHooks{
+							PostRestore: &probev1.Handler{
+								Exec: &core.ExecAction{
+									Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm %s/corrupted-data.txt", framework.TestSourceDataMountPath)},
+								},
+								ContainerName: util.StashInitContainer,
+							},
+						}
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying that RestoreSession succeeded")
@@ -128,7 +130,7 @@ var _ = Describe("PostRestore Hook", func() {
 					f.AppendToCleanupList(repo)
 
 					// Setup workload Backup
-					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, nil, nil)
+					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Take an Instant Backup the Sample Data
@@ -147,16 +149,18 @@ var _ = Describe("PostRestore Hook", func() {
 					_, err = f.ExecOnPod(pod, "/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", framework.TestSourceDataMountPath))
 					Expect(err).NotTo(HaveOccurred())
 
-					postRestoreHook := &probev1.Handler{
-						Exec: &core.ExecAction{
-							Command: []string{"/bin/sh", "-c", "exit 1"},
-						},
-						ContainerName: util.StashInitContainer,
-					}
-
 					// Restore the backed up data
 					By("Restoring the backed up data in the original StatefulSet")
-					restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, nil, postRestoreHook)
+					restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(restore *v1beta1.RestoreSession) {
+						restore.Spec.Hooks = &v1beta1.RestoreHooks{
+							PostRestore: &probev1.Handler{
+								Exec: &core.ExecAction{
+									Command: []string{"/bin/sh", "-c", "exit 1"},
+								},
+								ContainerName: util.StashInitContainer,
+							},
+						}
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Verifying that RestoreSession has failed")

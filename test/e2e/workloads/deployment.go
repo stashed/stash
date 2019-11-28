@@ -60,7 +60,7 @@ var _ = Describe("Deployment", func() {
 				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
-				backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment, nil, nil)
+				backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup the Sample Data
@@ -79,7 +79,7 @@ var _ = Describe("Deployment", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original Deployment")
-				restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment, nil, nil)
+				restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -113,7 +113,7 @@ var _ = Describe("Deployment", func() {
 				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
-				backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment, nil, nil)
+				backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup the Sample Data
@@ -131,7 +131,7 @@ var _ = Describe("Deployment", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in different Deployment")
-				restoreSession, err := f.SetupRestoreProcess(restoredDeployment.ObjectMeta, repo, apis.KindDeployment, nil, nil)
+				restoreSession, err := f.SetupRestoreProcess(restoredDeployment.ObjectMeta, repo, apis.KindDeployment)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -164,7 +164,7 @@ var _ = Describe("Deployment", func() {
 				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
-				backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment, nil, nil)
+				backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Waiting for leader election")
@@ -186,7 +186,7 @@ var _ = Describe("Deployment", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original Deployment")
-				restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment, nil, nil)
+				restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")

@@ -21,7 +21,6 @@ import (
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
-	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/util"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 
@@ -32,7 +31,6 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"kmodules.xyz/client-go/meta"
-	probev1 "kmodules.xyz/prober/api/v1"
 )
 
 func (f *Framework) GenerateSampleData(objMeta metav1.ObjectMeta, kind string) (sets.String, error) {
@@ -50,11 +48,13 @@ func (f *Framework) GenerateSampleData(objMeta metav1.ObjectMeta, kind string) (
 	return sampleData, nil
 }
 
-func (f *Invocation) SetupWorkloadBackup(objMeta metav1.ObjectMeta, repo *api_v1alpha1.Repository, kind string, preBackupHook, postBackupHook *probev1.Handler) (*v1beta1.BackupConfiguration, error) {
+func (f *Invocation) SetupWorkloadBackup(objMeta metav1.ObjectMeta, repo *api_v1alpha1.Repository, kind string, transformFuncs ...func(bc *v1beta1.BackupConfiguration)) (*v1beta1.BackupConfiguration, error) {
 	// Generate desired BackupConfiguration definition
 	backupConfig := f.GetBackupConfigurationForWorkload(repo.Name, GetTargetRef(objMeta.Name, kind))
-	if preBackupHook != nil || postBackupHook != nil {
-		backupConfig.Spec.Hooks = &api_v1beta1.BackupHooks{PreBackup: preBackupHook, PostBackup: postBackupHook}
+	// transformFuncs provides a array of functions that made test specific change on the BackupConfiguration
+	// apply these test specific changes
+	for _, fn := range transformFuncs {
+		fn(backupConfig)
 	}
 
 	By("Creating BackupConfiguration: " + backupConfig.Name)
@@ -116,12 +116,14 @@ func (f *Invocation) RestoredData(objMeta metav1.ObjectMeta, kind string) sets.S
 	return restoredData
 }
 
-func (f *Invocation) SetupRestoreProcess(objMeta metav1.ObjectMeta, repo *api.Repository, kind string, preRestoreHook, postRestoreHook *probev1.Handler) (*v1beta1.RestoreSession, error) {
+func (f *Invocation) SetupRestoreProcess(objMeta metav1.ObjectMeta, repo *api.Repository, kind string, transformFuncs ...func(restore *v1beta1.RestoreSession)) (*v1beta1.RestoreSession, error) {
 
 	// Generate desired BackupConfiguration definition
 	restoreSession := f.GetRestoreSessionForWorkload(repo.Name, GetTargetRef(objMeta.Name, kind))
-	if preRestoreHook != nil || postRestoreHook != nil {
-		restoreSession.Spec.Hooks = &api_v1beta1.RestoreHooks{PreRestore: preRestoreHook, PostRestore: postRestoreHook}
+	// transformFuncs provides a array of functions that made test specific change on the RestoreSession
+	// apply these test specific changes.
+	for _, fn := range transformFuncs {
+		fn(restoreSession)
 	}
 
 	By("Creating RestoreSession")

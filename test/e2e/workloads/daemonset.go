@@ -60,7 +60,7 @@ var _ = Describe("Workload Test", func() {
 				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
-				backupConfig, err := f.SetupWorkloadBackup(dmn.ObjectMeta, repo, apis.KindDaemonSet, nil, nil)
+				backupConfig, err := f.SetupWorkloadBackup(dmn.ObjectMeta, repo, apis.KindDaemonSet)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup the Sample Data
@@ -79,7 +79,7 @@ var _ = Describe("Workload Test", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original DaemonSet")
-				restoreSession, err := f.SetupRestoreProcess(dmn.ObjectMeta, repo, apis.KindDaemonSet, nil, nil)
+				restoreSession, err := f.SetupRestoreProcess(dmn.ObjectMeta, repo, apis.KindDaemonSet)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -112,7 +112,7 @@ var _ = Describe("Workload Test", func() {
 				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
-				backupConfig, err := f.SetupWorkloadBackup(dmn.ObjectMeta, repo, apis.KindDaemonSet, nil, nil)
+				backupConfig, err := f.SetupWorkloadBackup(dmn.ObjectMeta, repo, apis.KindDaemonSet)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Take an Instant Backup the Sample Data
@@ -130,7 +130,7 @@ var _ = Describe("Workload Test", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in different DaemonSet")
-				restoreSession, err := f.SetupRestoreProcess(restoredDmn.ObjectMeta, repo, apis.KindDaemonSet, nil, nil)
+				restoreSession, err := f.SetupRestoreProcess(restoredDmn.ObjectMeta, repo, apis.KindDaemonSet)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
