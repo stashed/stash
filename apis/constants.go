@@ -77,4 +77,10 @@ const (
 	StashInterimVolume          = "stash-interim-volume"
 	StashInterimVolumeMountPath = "/stash-interim-volume"
 	StashInterimDataDir         = "/stash-interim-volume/data"
+
+	// backup or restore hooks
+	PreBackupHook   = "preBackup"
+	PostBackupHook  = "postBackup"
+	PreRestoreHook  = "preRestore"
+	PostRestoreHook = "postRestore"
 )

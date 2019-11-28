@@ -22,6 +22,7 @@ import (
 	"os"
 	"time"
 
+	"stash.appscode.dev/stash/apis"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/eventer"
@@ -36,7 +37,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
-	prober "kmodules.xyz/prober/probe"
 )
 
 const (
@@ -182,16 +182,10 @@ func (opt *Options) runRestore(restoreSession *api_v1beta1.RestoreSession) (*res
 
 	// If preRestore hook is specified, then execute those hooks first
 	if restoreSession.Spec.Hooks != nil && restoreSession.Spec.Hooks.PreRestore != nil {
-		log.Infoln("Executing preRestore hooks........")
-		podName := os.Getenv(util.KeyPodName)
-		if podName == "" {
-			return nil, fmt.Errorf("failed to execute preRestore hooks. Reason: POD_NAME environment variable not found")
-		}
-		err := prober.RunProbe(opt.Config, restoreSession.Spec.Hooks.PreRestore, podName, opt.Namespace)
+		err := util.ExecuteHook(opt.Config, restoreSession.Spec.Hooks, apis.PreRestoreHook, os.Getenv(util.KeyPodName), opt.Namespace)
 		if err != nil {
 			return nil, err
 		}
-		log.Infoln("preRestore hooks has been executed successfully")
 	}
 
 	// setup restic wrapper
@@ -200,25 +194,20 @@ func (opt *Options) runRestore(restoreSession *api_v1beta1.RestoreSession) (*res
 		return nil, err
 	}
 
-	// run restore process
-	output, err := w.RunRestore(util.RestoreOptionsForHost(opt.Host, restoreSession.Spec.Rules))
-	if err != nil {
-		return nil, err
+	// Run restore process
+	// If there is an error during restore, don't return.
+	// We will execute postRestore hook even if the restore failed.
+	// Reason: https://github.com/stashed/stash/issues/986
+	var restoreErr, hookErr error
+	output, restoreErr := w.RunRestore(util.RestoreOptionsForHost(opt.Host, restoreSession.Spec.Rules))
+
+	// If postRestore hook is specified, then execute those hooks
+	if restoreSession.Spec.Hooks != nil && restoreSession.Spec.Hooks.PostRestore != nil {
+		hookErr = util.ExecuteHook(opt.Config, restoreSession.Spec.Hooks, apis.PostRestoreHook, os.Getenv(util.KeyPodName), opt.Namespace)
 	}
 
-	// If postRestore hook is specified, then execute those hooks after restore
-	if restoreSession.Spec.Hooks != nil && restoreSession.Spec.Hooks.PostRestore != nil {
-		log.Infoln("Executing postRestore hooks........")
-		podName := os.Getenv(util.KeyPodName)
-		if podName == "" {
-			return nil, fmt.Errorf("failed to execute postRestore hook. Reason: POD_NAME environment variable not found")
-		}
-		err := prober.RunProbe(opt.Config, restoreSession.Spec.Hooks.PostRestore, podName, opt.Namespace)
-		if err != nil {
-			return nil, errors.NewAggregate([]error{err, fmt.Errorf("note: Actual restore process has succeeded." +
-				"Hence, restored data might be present in the target even if the overall RestoreSession phase is 'Failed'")})
-		}
-		log.Infoln("postRestore hooks has been executed successfully")
+	if restoreErr != nil || hookErr != nil {
+		return nil, errors.NewAggregate([]error{restoreErr, hookErr})
 	}
 	return output, nil
 }

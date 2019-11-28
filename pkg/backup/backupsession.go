@@ -46,7 +46,6 @@ import (
 	"k8s.io/client-go/tools/record"
 	"kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/queue"
-	prober "kmodules.xyz/prober/probe"
 )
 
 type BackupSessionController struct {
@@ -222,16 +221,10 @@ func (c *BackupSessionController) backup(backupConfiguration *api_v1beta1.Backup
 
 	// If preBackup hook is specified, then execute those hooks first
 	if backupConfiguration.Spec.Hooks != nil && backupConfiguration.Spec.Hooks.PreBackup != nil {
-		log.Infoln("Executing preBackup hooks........")
-		podName := os.Getenv(util.KeyPodName)
-		if podName == "" {
-			return nil, fmt.Errorf("failed to execute preBackup hooks. Reason: POD_NAME environment variable not found")
-		}
-		err := prober.RunProbe(c.Config, backupConfiguration.Spec.Hooks.PreBackup, podName, c.Namespace)
+		err := util.ExecuteHook(c.Config, backupConfiguration.Spec.Hooks, apis.PreBackupHook, os.Getenv(util.KeyPodName), c.Namespace)
 		if err != nil {
 			return nil, err
 		}
-		log.Infoln("preBackup hooks has been executed successfully")
 	}
 
 	// get repository
@@ -274,24 +267,18 @@ func (c *BackupSessionController) backup(backupConfiguration *api_v1beta1.Backup
 	backupOpt := util.BackupOptionsForBackupConfig(*backupConfiguration, extraOpt)
 
 	// Run Backup
-	output, err := resticWrapper.RunBackup(backupOpt)
-	if err != nil {
-		return nil, err
-	}
+	// If there is an error during backup, don't return.
+	// We will execute postBackup hook even if the backup failed.
+	// Reason: https://github.com/stashed/stash/issues/986
+	var backupErr, hookErr error
+	output, backupErr := resticWrapper.RunBackup(backupOpt)
 
-	// If postBackup hook is specified, then execute those hooks after backup
+	// If postBackup hook is specified, then execute those hooks
 	if backupConfiguration.Spec.Hooks != nil && backupConfiguration.Spec.Hooks.PostBackup != nil {
-		log.Infoln("Executing postBackup hooks........")
-		podName := os.Getenv(util.KeyPodName)
-		if podName == "" {
-			return nil, fmt.Errorf("failed to execute postBackup hook. Reason: POD_NAME environment variable not found")
-		}
-		err := prober.RunProbe(c.Config, backupConfiguration.Spec.Hooks.PostBackup, podName, c.Namespace)
-		if err != nil {
-			return nil, errors.NewAggregate([]error{err, fmt.Errorf("note: Actual backup process has succeeded." +
-				"Hence, backup data might be present in the backend even if the overall BackupSession phase is 'Failed'")})
-		}
-		log.Infoln("postBackup hooks has been executed successfully")
+		hookErr = util.ExecuteHook(c.Config, backupConfiguration.Spec.Hooks, apis.PostBackupHook, os.Getenv(util.KeyPodName), c.Namespace)
+	}
+	if backupErr != nil || hookErr != nil {
+		return nil, errors.NewAggregate([]error{backupErr, hookErr})
 	}
 	return output, nil
 }
