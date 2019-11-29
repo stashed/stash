@@ -123,7 +123,7 @@ func UpdateBackupSessionStatusForHost(c cs.StashV1beta1Interface, targetRef api_
 					in.Targets[i].Phase = api_v1beta1.TargetBackupRunning
 					return in
 				}
-				for _, host := range target.Stats {
+				for _, host := range targetHostStats {
 					if host.Phase == api_v1beta1.HostBackupFailed {
 						in.Targets[i].Phase = api_v1beta1.TargetBackupFailed
 						return in

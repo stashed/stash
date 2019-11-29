@@ -134,24 +134,22 @@ func (c *StashController) applyBackupBatchLogic(w *wapi.Workload, caller string)
 	// this means BackupBatch has been newly created/updated.
 	// in this case, we have to add/update sidecar container accordingly.
 	if newbb != nil && !util.BackupBatchEqual(oldbb, newbb) {
-		var backupConfigTemp *api_v1beta1.BackupConfigurationTemplate
-		for _, bct := range newbb.Spec.BackupConfigurationTemplates {
-			if bct.Spec.Target != nil && bct.Spec.Target.Ref.Kind == w.Kind && bct.Name == w.Name {
-				backupConfigTemp = &bct
+		//var backupConfigTemp api_v1beta1.BackupConfigurationTemplate
+		for _, backupConfigTemp := range newbb.Spec.BackupConfigurationTemplates {
+			if backupConfigTemp.Spec.Target != nil && backupConfigTemp.Spec.Target.Ref.Kind == w.Kind && backupConfigTemp.Spec.Target.Ref.Name == w.Name {
+				err := c.ensureBackupSidecarForBackupBatch(w, backupConfigTemp, newbb, caller)
+				// write sidecar injection failure/success event
+				ref, rerr := util.GetWorkloadReference(w)
+				if err != nil && rerr != nil {
+					return false, err
+				} else if err != nil && rerr == nil {
+					return false, c.handleSidecarInjectionFailure(ref, err)
+				} else if err == nil && rerr != nil {
+					return true, nil
+				}
+				return true, c.handleSidecarInjectionSuccess(ref)
 			}
 		}
-		err := c.ensureBackupSidecarForBackupBatch(w, backupConfigTemp, newbb, caller)
-		// write sidecar injection failure/success event
-		ref, rerr := util.GetWorkloadReference(w)
-		if err != nil && rerr != nil {
-			return false, err
-		} else if err != nil && rerr == nil {
-			return false, c.handleSidecarInjectionFailure(ref, err)
-		} else if err == nil && rerr != nil {
-			return true, nil
-		}
-		return true, c.handleSidecarInjectionSuccess(ref)
-
 	} else if oldbb != nil && newbb == nil {
 		// there was BackupBatch before but it does not exist now.
 		// this means BackupBatch has been removed.

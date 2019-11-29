@@ -240,7 +240,7 @@ func (c *StashController) ensureBackupSidecar(w *wapi.Workload, bc *api_v1beta1.
 	return nil
 }
 
-func (c *StashController) ensureBackupSidecarForBackupBatch(w *wapi.Workload, backupConfigTemp *api_v1beta1.BackupConfigurationTemplate, backupBatch *api_v1beta1.BackupBatch, caller string) error {
+func (c *StashController) ensureBackupSidecarForBackupBatch(w *wapi.Workload, backupConfigTemp api_v1beta1.BackupConfigurationTemplate, backupBatch *api_v1beta1.BackupBatch, caller string) error {
 	sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
 	ref, err := reference.GetReference(scheme.Scheme, w)
 	if err != nil {
@@ -281,6 +281,10 @@ func (c *StashController) ensureBackupSidecarForBackupBatch(w *wapi.Workload, ba
 		Registry: c.DockerRegistry,
 		Image:    docker.ImageStash,
 		Tag:      c.StashImageTag,
+	}
+
+	if backupConfigTemp.Spec.Target == nil {
+		return fmt.Errorf("backupConfigurationtemplate is not defined properly")
 	}
 
 	w.Spec.Template.Spec.Containers = core_util.UpsertContainer(

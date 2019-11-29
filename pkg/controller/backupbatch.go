@@ -43,7 +43,7 @@ func (c *StashController) initBackupBatchWatcher() {
 // information about the deployment to stdout. In case an error happened, it has to simply return the error.
 // The retry logic should not be part of the business logic.
 func (c *StashController) runBackupBatchProcessor(key string) error {
-	obj, exists, err := c.bcInformer.GetIndexer().GetByKey(key)
+	obj, exists, err := c.bbInformer.GetIndexer().GetByKey(key)
 	if err != nil {
 		glog.Errorf("Fetching object with key %s from store failed with %v", key, err)
 		return err
@@ -75,13 +75,19 @@ func (c *StashController) applyBackupBatchReconciliationLogic(backupBatch *api_v
 	// check if BackupBatch is being deleted. if it is being deleted then delete respective resources.
 	if backupBatch.DeletionTimestamp != nil {
 		if core_util.HasFinalizer(backupBatch.ObjectMeta, api_v1beta1.StashKey) {
-			if err := c.EnsureV1beta1SidecarDeleted(backupBatch); err != nil {
-				ref, rerr := reference.GetReference(stash_scheme.Scheme, backupBatch)
-				if rerr != nil {
-					return errors.NewAggregate([]error{err, rerr})
+			for _, backupConfigTemp := range backupBatch.Spec.BackupConfigurationTemplates {
+				if backupConfigTemp.Spec.Target != nil {
+					err := c.EnsureV1beta1SidecarDeleted(backupConfigTemp.Spec.Target.Ref, backupBatch.Namespace)
+					if err != nil {
+						ref, rerr := reference.GetReference(stash_scheme.Scheme, backupBatch)
+						if rerr != nil {
+							return errors.NewAggregate([]error{err, rerr})
+						}
+						return c.handleWorkloadControllerTriggerFailure(ref, err)
+					}
 				}
-				return c.handleWorkloadControllerTriggerFailure(ref, err)
 			}
+
 			if err := c.EnsureCronJobDeletedForBackupBatch(backupBatch); err != nil {
 				return err
 			}
@@ -109,11 +115,12 @@ func (c *StashController) applyBackupBatchReconciliationLogic(backupBatch *api_v
 			log.Infof("Skipping processing BackupBatch %s/%s. Reason: Backup Batch is paused.", backupBatch.Namespace, backupBatch.Name)
 			return nil
 		}
+
 		if len(backupBatch.Spec.BackupConfigurationTemplates) > 0 {
 			for _, backupConfigTemp := range backupBatch.Spec.BackupConfigurationTemplates {
 				if backupConfigTemp.Spec.Target != nil && backupBatch.Spec.Driver != api_v1beta1.VolumeSnapshotter &&
 					util.BackupModel(backupConfigTemp.Spec.Target.Ref.Kind) == util.ModelSidecar {
-					if err := c.EnsureV1beta1Sidecar(backupConfigTemp); err != nil {
+					if err := c.EnsureV1beta1Sidecar(backupConfigTemp.Spec.Target.Ref, backupBatch.Namespace); err != nil {
 						ref, rerr := reference.GetReference(stash_scheme.Scheme, backupBatch)
 						if rerr != nil {
 							return errors.NewAggregate([]error{err, rerr})

@@ -90,12 +90,15 @@ func (c *StashController) applyBackupConfigurationReconciliationLogic(backupConf
 	// check if BackupConfiguration is being deleted. if it is being deleted then delete respective resources.
 	if backupConfiguration.DeletionTimestamp != nil {
 		if core_util.HasFinalizer(backupConfiguration.ObjectMeta, api_v1beta1.StashKey) {
-			if err := c.EnsureV1beta1SidecarDeleted(backupConfiguration); err != nil {
-				ref, rerr := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
-				if rerr != nil {
-					return errors.NewAggregate([]error{err, rerr})
+			if backupConfiguration.Spec.Target != nil {
+				err := c.EnsureV1beta1SidecarDeleted(backupConfiguration.Spec.Target.Ref, backupConfiguration.Namespace)
+				if err != nil {
+					ref, rerr := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
+					if rerr != nil {
+						return errors.NewAggregate([]error{err, rerr})
+					}
+					return c.handleWorkloadControllerTriggerFailure(ref, err)
 				}
-				return c.handleWorkloadControllerTriggerFailure(ref, err)
 			}
 			if err := c.EnsureCronJobDeletedForBackupConfiguration(backupConfiguration); err != nil {
 				return err
@@ -127,7 +130,7 @@ func (c *StashController) applyBackupConfigurationReconciliationLogic(backupConf
 		if backupConfiguration.Spec.Target != nil &&
 			backupConfiguration.Spec.Driver != api_v1beta1.VolumeSnapshotter &&
 			util.BackupModel(backupConfiguration.Spec.Target.Ref.Kind) == util.ModelSidecar {
-			if err := c.EnsureV1beta1Sidecar(backupConfiguration); err != nil {
+			if err := c.EnsureV1beta1Sidecar(backupConfiguration.Spec.Target.Ref, backupConfiguration.Namespace); err != nil {
 				ref, rerr := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
 				if rerr != nil {
 					return errors.NewAggregate([]error{err, rerr})
@@ -146,42 +149,22 @@ func (c *StashController) applyBackupConfigurationReconciliationLogic(backupConf
 
 // EnsureV1beta1SidecarDeleted send an event to workload respective controller
 // the workload controller will take care of removing respective sidecar
-func (c *StashController) EnsureV1beta1SidecarDeleted(obj interface{}) error {
-	switch b := obj.(type) {
-	case *api_v1beta1.BackupConfiguration:
-		return c.sendEventToWorkloadQueue(
-			b.Spec.Target.Ref.Kind,
-			b.Namespace,
-			b.Spec.Target.Ref.Name,
-		)
-	case *api_v1beta1.BackupConfigurationTemplate:
-		return c.sendEventToWorkloadQueue(
-			b.Spec.Target.Ref.Kind,
-			b.Namespace,
-			b.Spec.Target.Ref.Name,
-		)
-	}
-	return fmt.Errorf("BackupConfiguration/BackupConfigurationTemplate is nil")
+func (c *StashController) EnsureV1beta1SidecarDeleted(targetRef api_v1beta1.TargetRef, namespace string) error {
+	return c.sendEventToWorkloadQueue(
+		targetRef.Kind,
+		namespace,
+		targetRef.Name,
+	)
 }
 
 // EnsureV1beta1Sidecar send an event to workload respective controller
 // the workload controller will take care of injecting backup sidecar
-func (c *StashController) EnsureV1beta1Sidecar(obj interface{}) error {
-	switch b := obj.(type) {
-	case *api_v1beta1.BackupConfiguration:
-		return c.sendEventToWorkloadQueue(
-			b.Spec.Target.Ref.Kind,
-			b.Namespace,
-			b.Spec.Target.Ref.Name,
-		)
-	case *api_v1beta1.BackupConfigurationTemplate:
-		return c.sendEventToWorkloadQueue(
-			b.Spec.Target.Ref.Kind,
-			b.Namespace,
-			b.Spec.Target.Ref.Name,
-		)
-	}
-	return fmt.Errorf("BackupConfiguration/BackupConfigurationTemplate is nil")
+func (c *StashController) EnsureV1beta1Sidecar(targetRef api_v1beta1.TargetRef, namespace string) error {
+	return c.sendEventToWorkloadQueue(
+		targetRef.Kind,
+		namespace,
+		targetRef.Name,
+	)
 }
 
 func (c *StashController) sendEventToWorkloadQueue(kind, namespace, resourceName string) error {
@@ -320,7 +303,7 @@ func (c *StashController) EnsureCronJob(ref *core.ObjectReference, podRuntimeSet
 				Args: []string{
 					"create-backupsession",
 					fmt.Sprintf("--invokername=%s", ref.Name),
-					fmt.Sprintf("--invokertype=%s", strings.ToLower(ref.Kind)),
+					fmt.Sprintf("--invokertype=%s", ref.Kind),
 				},
 			})
 		in.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = core.RestartPolicyNever

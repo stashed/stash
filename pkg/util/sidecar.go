@@ -18,7 +18,6 @@ package util
 
 import (
 	"fmt"
-	"strings"
 
 	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
@@ -116,9 +115,9 @@ func NewBackupSidecarContainer(objMeta metav1.ObjectMeta, kind string, container
 		Args: append([]string{
 			"run-backup",
 			"--invokername=" + objMeta.Name,
-			"--invokertype=" + strings.ToLower(kind),
+			"--invokertype=" + kind,
 			"--targetname=" + backupTarget.Ref.Name,
-			"--targetkind=" + strings.ToLower(backupTarget.Ref.Kind),
+			"--targetkind=" + backupTarget.Ref.Kind,
 			"--secret-dir=" + StashSecretMountDir,
 			fmt.Sprintf("--enable-cache=%v", !tempDir.DisableCaching),
 			fmt.Sprintf("--max-connections=%v", backend.MaxConnections()),

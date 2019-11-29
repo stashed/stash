@@ -19,7 +19,6 @@ package status
 import (
 	"fmt"
 	"path/filepath"
-	"strings"
 
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
@@ -150,7 +149,7 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 	var driver v1beta1.Snapshotter
 
 	if o.Metrics.Enabled {
-		if backupSession.Spec.Invoker.Kind == strings.ToLower(v1beta1.ResourceKindBackupBatch) {
+		if backupSession.Spec.Invoker.Kind == v1beta1.ResourceKindBackupBatch {
 			backupBatch, err := o.StashClient.StashV1beta1().BackupBatches(o.Namespace).Get(backupSession.Spec.Invoker.Name, metav1.GetOptions{})
 			if err != nil {
 				return err

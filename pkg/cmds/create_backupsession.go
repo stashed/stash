@@ -132,7 +132,7 @@ func (opt *options) backupInvoker() error {
 		OcClient:         opt.ocClient,
 	}
 
-	if opt.invokerType == strings.ToLower(api_v1beta1.ResourceKindBackupBatch) {
+	if opt.invokerType == api_v1beta1.ResourceKindBackupBatch {
 		backupBatch, err := opt.stashClient.StashV1beta1().BackupBatches(opt.namespace).Get(opt.invokerName, metav1.GetOptions{})
 		if err == nil && !kerr.IsNotFound(err) {
 			// create backupBatch reference to set BackupSession owner
@@ -142,7 +142,7 @@ func (opt *options) backupInvoker() error {
 			}
 			// if target does not exist then skip creating BackupSession
 			for _, backupConfigTemp := range backupBatch.Spec.BackupConfigurationTemplates {
-				if backupConfigTemp.Spec.Target != nil && !wc.IsTargetExist(backupConfigTemp.Spec.Target.Ref, backupConfigTemp.Namespace) {
+				if backupConfigTemp.Spec.Target != nil && !wc.IsTargetExist(backupConfigTemp.Spec.Target.Ref, backupBatch.Namespace) {
 					msg := fmt.Sprintf("Skipping creating BackupSession. Reason: Target workload %s/%s does not exist.",
 						strings.ToLower(backupConfigTemp.Spec.Target.Ref.Kind), backupConfigTemp.Spec.Target.Ref.Name)
 					log.Infoln(msg)

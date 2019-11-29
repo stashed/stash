@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"stash.appscode.dev/stash/apis"
@@ -81,7 +80,7 @@ type BackupSessionController struct {
 }
 
 func (c *BackupSessionController) BackupInvoker() (*core.ObjectReference, error) {
-	if c.InvokerType == strings.ToLower(api_v1beta1.ResourceKindBackupBatch) {
+	if c.InvokerType == api_v1beta1.ResourceKindBackupBatch {
 		// get BackupBatch
 		backupBatch, err := c.StashClient.StashV1beta1().BackupBatches(c.Namespace).Get(c.InvokerName, metav1.GetOptions{})
 		if err != nil {
@@ -96,7 +95,7 @@ func (c *BackupSessionController) BackupInvoker() (*core.ObjectReference, error)
 
 		for _, backupConfigTemp := range backupBatch.Spec.BackupConfigurationTemplates {
 			if backupConfigTemp.Spec.Target != nil &&
-				strings.ToLower(backupConfigTemp.Spec.Target.Ref.Kind) == c.BackupTargetKind &&
+				backupConfigTemp.Spec.Target.Ref.Kind == c.BackupTargetKind &&
 				backupConfigTemp.Spec.Target.Ref.Name == c.BackupTargetName {
 
 				c.Host, err = util.GetHostName(backupConfigTemp.Spec.Target)
@@ -248,7 +247,7 @@ func (c *BackupSessionController) startBackupProcess(backupSession *api_v1beta1.
 	var retentionPolicy v1alpha1.RetentionPolicy
 	var repoName string
 
-	if c.InvokerType == strings.ToLower(api_v1beta1.ResourceKindBackupBatch) {
+	if c.InvokerType == api_v1beta1.ResourceKindBackupBatch {
 		// get respective BackupBatch for BackupSession
 		backupBatch, err := c.StashClient.StashV1beta1().BackupBatches(c.Namespace).Get(c.InvokerName, metav1.GetOptions{})
 		if err != nil {
@@ -260,7 +259,7 @@ func (c *BackupSessionController) startBackupProcess(backupSession *api_v1beta1.
 
 		for _, backupConfigTemp := range backupBatch.Spec.BackupConfigurationTemplates {
 			if backupConfigTemp.Spec.Target != nil &&
-				strings.ToLower(backupConfigTemp.Spec.Target.Ref.Kind) == c.BackupTargetKind &&
+				backupConfigTemp.Spec.Target.Ref.Kind == c.BackupTargetKind &&
 				backupConfigTemp.Spec.Target.Ref.Name == c.BackupTargetName {
 				backupTarget = backupConfigTemp.Spec.Target
 			}
@@ -508,7 +507,7 @@ func (c *BackupSessionController) handleBackupSuccess(backupSessionName string, 
 	var backupTarget *api_v1beta1.BackupTarget
 	var repoName string
 
-	if c.InvokerType == strings.ToLower(api_v1beta1.ResourceKindBackupBatch) {
+	if c.InvokerType == api_v1beta1.ResourceKindBackupBatch {
 		backupBatch, err := c.StashClient.StashV1beta1().BackupBatches(c.Namespace).Get(c.InvokerName, metav1.GetOptions{})
 		if err != nil {
 			return err
@@ -554,7 +553,7 @@ func (c *BackupSessionController) handleBackupFailure(backupSessionName string, 
 	var backupTarget *api_v1beta1.BackupTarget
 	var repoName string
 
-	if c.InvokerType == strings.ToLower(api_v1beta1.ResourceKindBackupBatch) {
+	if c.InvokerType == api_v1beta1.ResourceKindBackupBatch {
 		backupBatch, err := c.StashClient.StashV1beta1().BackupBatches(c.Namespace).Get(c.InvokerName, metav1.GetOptions{})
 		if err != nil {
 			return err
