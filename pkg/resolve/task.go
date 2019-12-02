@@ -32,6 +32,7 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 	ofst_util "kmodules.xyz/offshoot-api/util"
+	prober "kmodules.xyz/prober/api/v1"
 )
 
 type TaskResolver struct {
@@ -40,6 +41,8 @@ type TaskResolver struct {
 	Inputs          map[string]string
 	RuntimeSettings ofst.RuntimeSettings
 	TempDir         v1beta1_api.EmptyDirSettings
+	preTaskHook     *prober.Handler
+	postTaskHook    *prober.Handler
 }
 
 func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {

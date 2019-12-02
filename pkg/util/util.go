@@ -532,6 +532,6 @@ func ExecuteHook(config *rest.Config, hook interface{}, hookType, podName, names
 		return hookErr
 	}
 
-	log.Infoln("Successfully executed %s hook.", hookType)
+	log.Infof("Successfully executed %s hook.\n", hookType)
 	return nil
 }
