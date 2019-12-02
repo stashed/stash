@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"stash.appscode.dev/stash/apis"
@@ -35,7 +36,6 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/appscode/go/log"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -325,6 +325,10 @@ func (c *BackupSessionController) backup(backupTarget *api_v1beta1.BackupTarget,
 		return nil, fmt.Errorf("setup option for repository fail")
 	}
 
+	if c.InvokerType == api_v1beta1.ResourceKindBackupBatch {
+		c.SetupOpt.Path = fmt.Sprintf("%s/%s/%s", c.SetupOpt.Path, strings.ToLower(c.BackupTargetKind), c.BackupTargetName)
+	}
+
 	// apply nice, ionice settings from env
 	c.SetupOpt.Nice, err = util.NiceSettingsFromEnv()
 	if err != nil {
@@ -452,7 +456,6 @@ func (c *BackupSessionController) electBackupLeader(backupSession *api_v1beta1.B
 					log.Warningf("failed to complete backup. Reason: %v", backupErr)
 				}
 				if backupOutput != nil {
-					spew.Dump(backupOutput)
 					err := c.handleBackupSuccess(backupSession.Name, backupOutput)
 					if err != nil {
 						// log failure. don't fail the container as it may interrupt user's service
