@@ -131,9 +131,9 @@ func (c *StashController) applyBackupBatchReconciliationLogic(backupBatch *api_v
 			}
 			// create a CronJob that will create BackupSession on each schedule
 			err = c.EnsureCronJobForBackupBatch(backupBatch)
-		}
-		if err != nil {
-			return c.handleCronJobCreationFailure(backupBatch, err)
+			if err != nil {
+				return c.handleCronJobCreationFailure(backupBatch, err)
+			}
 		}
 	}
 	return nil

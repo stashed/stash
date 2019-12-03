@@ -95,11 +95,11 @@ func (o UpdateStatusOptions) UpdatePostBackupStatus(backupOutput *restic.BackupO
 			overallBackupSucceeded = false
 			eventType = core.EventTypeWarning
 			eventReason = eventer.EventReasonHostBackupFailed
-			eventMessage = fmt.Sprintf("backup failed for host %q. Reason: %s", hostStats.Hostname, hostStats.Error)
+			eventMessage = fmt.Sprintf("backup failed for host %q of %q/%q. Reason: %s", hostStats.Hostname, o.TargetRef.Kind, o.TargetRef.Name, hostStats.Error)
 		} else {
 			eventType = core.EventTypeNormal
 			eventReason = eventer.EventReasonHostBackupSucceded
-			eventMessage = fmt.Sprintf("backup succeeded for host %s", hostStats.Hostname)
+			eventMessage = fmt.Sprintf("backup succeeded for host %s of %q/%q.", hostStats.Hostname, o.TargetRef.Kind, o.TargetRef.Name)
 		}
 		_, err = eventer.CreateEvent(
 			o.KubeClient,

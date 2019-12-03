@@ -29,24 +29,24 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 )
 
-func (c *StashController) inputsForBackupConfig(backupConfig api.BackupConfiguration) (map[string]string, error) {
+func (c *StashController) inputsForBackupConfig(config backupOption) (map[string]string, error) {
 	// get inputs for target
-	inputs := c.inputsForBackupTarget(backupConfig.Spec.Target)
+	inputs := c.inputsForBackupTarget(config.backupTarget)
 	// append inputs for RetentionPolicy
-	inputs = core_util.UpsertMap(inputs, c.inputsForRetentionPolicy(backupConfig.Spec.RetentionPolicy))
+	inputs = core_util.UpsertMap(inputs, c.inputsForRetentionPolicy(config.retentionPolicy))
 
 	// get host name for target
-	host, err := util.GetHostName(backupConfig.Spec.Target)
+	host, err := util.GetHostName(config.backupTarget)
 	if err != nil {
 		return nil, err
 	}
 	inputs[apis.Hostname] = host
 
 	// always enable cache if nothing specified
-	inputs[apis.EnableCache] = strconv.FormatBool(!backupConfig.Spec.TempDir.DisableCaching)
+	inputs[apis.EnableCache] = strconv.FormatBool(!config.tempDir.DisableCaching)
 
 	// interim data volume input
-	if backupConfig.Spec.InterimVolumeTemplate != nil {
+	if config.interimVolumeTemplate != nil {
 		inputs[apis.InterimDataDir] = apis.StashInterimDataDir
 	} else {
 		// if interim volume is not specified then use temp dir to store data temporarily
@@ -54,7 +54,7 @@ func (c *StashController) inputsForBackupConfig(backupConfig api.BackupConfigura
 	}
 
 	// add PushgatewayURL as input
-	metricInputs := c.inputForMetrics(backupConfig.Name)
+	metricInputs := c.inputForMetrics(config.objMeta.Name)
 	inputs = core_util.UpsertMap(inputs, metricInputs)
 
 	return inputs, nil

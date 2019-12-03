@@ -33,14 +33,14 @@ func (c *StashController) getBackupSessionCronJobPSPNames() []string {
 	return []string{DefaultBackupSessionCronJobPSPName}
 }
 
-func (c *StashController) getBackupJobPSPNames(backupConfig *api_v1beta1.BackupConfiguration) ([]string, error) {
+func (c *StashController) getBackupJobPSPNames(taskRef api_v1beta1.TaskRef) ([]string, error) {
 	// if task field is empty then return default backup job psp
-	if backupConfig.Spec.Task.Name == "" {
+	if taskRef.Name == "" {
 		return []string{DefaultBackupJobPSPName}, nil
 	}
 
 	// find out task and then functions. finally, get psp names from the functions
-	task, err := c.stashClient.StashV1beta1().Tasks().Get(backupConfig.Spec.Task.Name, metav1.GetOptions{})
+	task, err := c.stashClient.StashV1beta1().Tasks().Get(taskRef.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

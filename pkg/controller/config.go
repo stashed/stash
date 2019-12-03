@@ -19,6 +19,8 @@ package controller
 import (
 	"time"
 
+	"stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	stashinformers "stash.appscode.dev/stash/client/informers/externalversions"
 	"stash.appscode.dev/stash/pkg/eventer"
@@ -35,6 +37,7 @@ import (
 	"kmodules.xyz/client-go/discovery"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
 	appcatalog_informers "kmodules.xyz/custom-resources/client/informers/externalversions"
+	v1 "kmodules.xyz/offshoot-api/api/v1"
 	oc_cs "kmodules.xyz/openshift/client/clientset/versioned"
 	oc_informers "kmodules.xyz/openshift/client/informers/externalversions"
 )
@@ -63,6 +66,19 @@ type Config struct {
 	StashClient      cs.Interface
 	CRDClient        crd_cs.ApiextensionsV1beta1Interface
 	AppCatalogClient appcatalog_cs.Interface
+}
+
+type backupOption struct {
+	objMeta               metav1.ObjectMeta
+	offshootLabels        map[string]string
+	runtimeSettings       v1.RuntimeSettings
+	repositoryName        string
+	taskRef               v1beta1.TaskRef
+	tempDir               v1beta1.EmptyDirSettings
+	interimVolumeTemplate *core.PersistentVolumeClaim
+	backupTarget          *v1beta1.BackupTarget
+	retentionPolicy       v1alpha1.RetentionPolicy
+	ref                   *core.ObjectReference
 }
 
 func NewConfig(clientConfig *rest.Config) *Config {
