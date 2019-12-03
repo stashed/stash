@@ -535,3 +535,31 @@ func ExecuteHook(config *rest.Config, hook interface{}, hookType, podName, names
 	log.Infof("Successfully executed %s hook.\n", hookType)
 	return nil
 }
+
+func HookExecutorContainer(name string) *core.Container {
+	return &core.Container{
+		Name:  name,
+		Image: "${STASH_DOCKER_REGISTRY:=appscode}/${STASH_DOCKER_IMAGE:=stash}:${STASH_IMAGE_TAG:=latest}",
+		Args: []string{
+			"run-hook",
+			"--backupsession=${BACKUP_SESSION:=}",
+			"--restoresession=${RESTORE_SESSION:=}",
+			"--hook-type=${HOOK_TYPE:=}",
+			"--hostname=${HOSTNAME:=}",
+			"--output-dir=${outputDir:=}",
+			"--metrics-enabled=true",
+			fmt.Sprintf("--metrics-pushgateway-url=%s", PushgatewayURL()),
+			"--prom-job-name=${PROMETHEUS_JOB_NAME:=}",
+		},
+		Env: []core.EnvVar{
+			{
+				Name: KeyPodName,
+				ValueFrom: &core.EnvVarSource{
+					FieldRef: &core.ObjectFieldSelector{
+						FieldPath: "metadata.name",
+					},
+				},
+			},
+		},
+	}
+}

@@ -32,17 +32,16 @@ import (
 	core_util "kmodules.xyz/client-go/core/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
 	ofst_util "kmodules.xyz/offshoot-api/util"
-	prober "kmodules.xyz/prober/api/v1"
 )
 
 type TaskResolver struct {
-	StashClient     cs.Interface
-	TaskName        string
-	Inputs          map[string]string
-	RuntimeSettings ofst.RuntimeSettings
-	TempDir         v1beta1_api.EmptyDirSettings
-	preTaskHook     *prober.Handler
-	postTaskHook    *prober.Handler
+	StashClient       cs.Interface
+	TaskName          string
+	Inputs            map[string]string
+	RuntimeSettings   ofst.RuntimeSettings
+	TempDir           v1beta1_api.EmptyDirSettings
+	PreTaskHookInput  map[string]string
+	PostTaskHookInput map[string]string
 }
 
 func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
@@ -114,6 +113,25 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 	}
 	if len(containers) == 0 {
 		return core.PodSpec{}, fmt.Errorf("empty steps/containers for Task %s", task.Name)
+	}
+	// if hook specified then, add hook executor containers
+	if o.PreTaskHookInput != nil {
+		inputs := core_util.UpsertMap(o.Inputs, o.PreTaskHookInput)
+		hookExecutor := util.HookExecutorContainer("pre-task-hook")
+		if err = resolveWithInputs(hookExecutor, inputs); err != nil {
+			return core.PodSpec{}, fmt.Errorf("failed to resolve preTaskHook")
+		}
+		containers = append([]core.Container{*hookExecutor}, containers...)
+	}
+	if o.PostTaskHookInput != nil {
+		inputs := core_util.UpsertMap(o.Inputs, o.PostTaskHookInput)
+		hookExecutor := util.HookExecutorContainer("post-task-hook")
+		if err = resolveWithInputs(hookExecutor, inputs); err != nil {
+			return core.PodSpec{}, fmt.Errorf("failed to resolve postTaskHook")
+		}
+		lastContainer := containers[len(containers)-1]
+		containers[len(containers)-1] = *hookExecutor
+		containers = append(containers, lastContainer)
 	}
 	// podSpec from task
 	podSpec := core.PodSpec{
