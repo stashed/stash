@@ -210,20 +210,22 @@ func (c *StashController) invokeBackupBatch(backupSession *api_v1beta1.BackupSes
 
 	// Restic driver has been used. Now, create a backup job
 	for i, backupConfigTemp := range backupBatch.Spec.BackupConfigurationTemplates {
-		config.runtimeSettings = backupConfigTemp.Spec.RuntimeSettings
-		config.backupTarget = backupConfigTemp.Spec.Target
-		config.interimVolumeTemplate = backupConfigTemp.Spec.InterimVolumeTemplate
-		config.tempDir = backupConfigTemp.Spec.TempDir
-		config.taskRef = backupConfigTemp.Spec.Task
-		err = c.ensureBackupJob(config, backupSession, i)
-		if err != nil {
-			// failed to ensure backup job. set BackupSession phase "Failed" and send failure metrics.
-			return c.handleBackupJobCreationFailure(backupSession, err)
-		}
-		// Backup job has been created successfully. Set BackupSession phase "Running"
-		_, err = c.setBackupSessionRunning(backupConfigTemp.Spec.Target, backupBatch.Spec.Driver, backupSession)
-		if err != nil {
-			return err
+		if backupConfigTemp.Spec.Target != nil && util.BackupModel(backupConfigTemp.Spec.Target.Ref.Kind) != util.ModelSidecar {
+			config.runtimeSettings = backupConfigTemp.Spec.RuntimeSettings
+			config.backupTarget = backupConfigTemp.Spec.Target
+			config.interimVolumeTemplate = backupConfigTemp.Spec.InterimVolumeTemplate
+			config.tempDir = backupConfigTemp.Spec.TempDir
+			config.taskRef = backupConfigTemp.Spec.Task
+			err = c.ensureBackupJob(config, backupSession, i)
+			if err != nil {
+				// failed to ensure backup job. set BackupSession phase "Failed" and send failure metrics.
+				return c.handleBackupJobCreationFailure(backupSession, err)
+			}
+			// Backup job has been created successfully. Set BackupSession phase "Running"
+			backupSession, err = c.setBackupSessionRunning(backupConfigTemp.Spec.Target, backupBatch.Spec.Driver, backupSession)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -291,7 +293,6 @@ func (c *StashController) invokeBackupConfiguration(backupSession *api_v1beta1.B
 		// failed to ensure backup job. set BackupSession phase "Failed" and send failure metrics.
 		return c.handleBackupJobCreationFailure(backupSession, err)
 	}
-
 	// Backup job has been created successfully. Set BackupSession phase "Running"
 	_, err = c.setBackupSessionRunning(backupConfig.Spec.Target, backupConfig.Spec.Driver, backupSession)
 	return err
@@ -355,6 +356,10 @@ func (c *StashController) ensureBackupJob(config backupOption, backupSession *ap
 	repoInputs, err := c.inputsForRepository(repository)
 	if err != nil {
 		return fmt.Errorf("cannot resolve implicit inputs for Repository %s/%s, reason: %s", repository.Namespace, repository.Name, err)
+	}
+
+	if backupSession.Spec.Invoker.Kind == api_v1beta1.ResourceKindBackupBatch {
+		repoInputs[apis.RepositoryPrefix] = fmt.Sprintf("%s-%s-%s_%s", repoInputs[apis.RepositoryPrefix], config.objMeta.Namespace, config.backupTarget.Ref.Kind, config.backupTarget.Ref.Name)
 	}
 
 	bcInputs, err := c.inputsForBackupConfig(config)

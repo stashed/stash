@@ -284,7 +284,7 @@ func (c *StashController) ensureBackupSidecarForBackupBatch(w *wapi.Workload, ba
 	}
 
 	if backupConfigTemp.Spec.Target == nil {
-		return fmt.Errorf("backupConfigurationtemplate is not defined properly")
+		return fmt.Errorf("backupConfigurationtemplate target is nil")
 	}
 
 	w.Spec.Template.Spec.Containers = core_util.UpsertContainer(

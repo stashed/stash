@@ -132,6 +132,10 @@ func (c *StashController) inputsForBackupTarget(target *api.BackupTarget) map[st
 		if target.Ref.Name != "" {
 			inputs[apis.TargetName] = target.Ref.Name
 		}
+
+		if target.Ref.Kind != "" {
+			inputs[apis.TargetKind] = target.Ref.Kind
+		}
 		// If target paths are provided then use them. Otherwise, use stash default mount path.
 		if len(target.Paths) > 0 {
 			inputs[apis.TargetPaths] = strings.Join(target.Paths, ",")
