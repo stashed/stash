@@ -20,6 +20,7 @@ const (
 	StashDockerRegistry = "STASH_DOCKER_REGISTRY"
 	StashDockerImage    = "STASH_DOCKER_IMAGE"
 	StashImageTag       = "STASH_IMAGE_TAG"
+	ImageStash          = "stash"
 
 	Namespace      = "NAMESPACE"
 	BackupSession  = "BACKUP_SESSION"
@@ -88,4 +89,6 @@ const (
 	PostBackupHook  = "postBackup"
 	PreRestoreHook  = "preRestore"
 	PostRestoreHook = "postRestore"
+	PreTaskHook     = "pre-task-hook"
+	PostTaskHook    = "post-task-hook"
 )

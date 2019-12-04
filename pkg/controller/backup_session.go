@@ -262,7 +262,7 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 
 	// add docker image specific input
 	implicitInputs[apis.StashDockerRegistry] = c.DockerRegistry
-	implicitInputs[apis.StashDockerImage] = c.StashImageTag
+	implicitInputs[apis.StashDockerImage] = apis.ImageStash
 	implicitInputs[apis.StashImageTag] = c.StashImageTag
 
 	taskResolver := resolve.TaskResolver{

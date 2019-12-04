@@ -417,7 +417,7 @@ func (c *StashController) resolveRestoreTask(restoreSession *api_v1beta1.Restore
 
 	// add docker image specific input
 	implicitInputs[apis.StashDockerRegistry] = c.DockerRegistry
-	implicitInputs[apis.StashDockerImage] = c.StashImageTag
+	implicitInputs[apis.StashDockerImage] = apis.ImageStash
 	implicitInputs[apis.StashImageTag] = c.StashImageTag
 
 	taskResolver := resolve.TaskResolver{

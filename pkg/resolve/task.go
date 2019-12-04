@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"strings"
 
+	"stash.appscode.dev/stash/apis"
 	v1beta1_api "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/util"
@@ -117,7 +118,7 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 	// if hook specified then, add hook executor containers
 	if o.PreTaskHookInput != nil {
 		inputs := core_util.UpsertMap(o.Inputs, o.PreTaskHookInput)
-		hookExecutor := util.HookExecutorContainer("pre-task-hook")
+		hookExecutor := util.HookExecutorContainer(apis.PreTaskHook)
 		if err = resolveWithInputs(hookExecutor, inputs); err != nil {
 			return core.PodSpec{}, fmt.Errorf("failed to resolve preTaskHook")
 		}
@@ -125,7 +126,7 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 	}
 	if o.PostTaskHookInput != nil {
 		inputs := core_util.UpsertMap(o.Inputs, o.PostTaskHookInput)
-		hookExecutor := util.HookExecutorContainer("post-task-hook")
+		hookExecutor := util.HookExecutorContainer(apis.PostTaskHook)
 		if err = resolveWithInputs(hookExecutor, inputs); err != nil {
 			return core.PodSpec{}, fmt.Errorf("failed to resolve postTaskHook")
 		}

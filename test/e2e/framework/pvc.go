@@ -19,8 +19,13 @@ package framework
 import (
 	"fmt"
 
+	"stash.appscode.dev/stash/apis"
+	"stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
+
 	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -68,4 +73,55 @@ func (f *Invocation) CreateNewPVC(name string) (*core.PersistentVolumeClaim, err
 	f.AppendToCleanupList(createdPVC)
 
 	return createdPVC, err
+}
+
+func (f *Invocation) SetupPVCBackup(pvc *core.PersistentVolumeClaim, repo *v1alpha1.Repository, transformFuncs ...func(bc *v1beta1.BackupConfiguration)) (*v1beta1.BackupConfiguration, error) {
+	// Generate desired BackupConfiguration definition
+	backupConfig := f.GetBackupConfigurationForWorkload(repo.Name, GetTargetRef(pvc.Name, apis.KindPersistentVolumeClaim))
+	backupConfig.Spec.Target = f.PVCBackupTarget(pvc.Name)
+	backupConfig.Spec.Task.Name = TaskPVCBackup
+
+	// transformFuncs provides a array of functions that made test specific change on the BackupConfiguration
+	// apply these test specific changes
+	for _, fn := range transformFuncs {
+		fn(backupConfig)
+	}
+
+	By("Creating BackupConfiguration: " + backupConfig.Name)
+	createdBC, err := f.StashClient.StashV1beta1().BackupConfigurations(backupConfig.Namespace).Create(backupConfig)
+	f.AppendToCleanupList(createdBC)
+
+	By("Verifying that backup triggering CronJob has been created")
+	f.EventuallyCronJobCreated(backupConfig.ObjectMeta).Should(BeTrue())
+
+	return createdBC, err
+}
+
+func (f *Invocation) SetupRestoreProcessForPVC(pvc *core.PersistentVolumeClaim, repo *v1alpha1.Repository, transformFuncs ...func(restore *v1beta1.RestoreSession)) (*v1beta1.RestoreSession, error) {
+	// Generate desired RestoreSession definition
+	By("Creating RestoreSession")
+	restoreSession := f.GetRestoreSessionForWorkload(repo.Name, GetTargetRef(pvc.Name, apis.KindPersistentVolumeClaim))
+	restoreSession.Spec.Target = f.PVCRestoreTarget(pvc.Name)
+	restoreSession.Spec.Rules = []v1beta1.Rule{
+		{
+			Paths: []string{
+				TestSourceDataMountPath,
+			},
+		},
+	}
+	restoreSession.Spec.Task.Name = TaskPVCRestore
+
+	// transformFuncs provides a array of functions that made test specific change on the RestoreSession
+	// apply these test specific changes.
+	for _, fn := range transformFuncs {
+		fn(restoreSession)
+	}
+
+	err := f.CreateRestoreSession(restoreSession)
+	f.AppendToCleanupList(restoreSession)
+
+	By("Waiting for restore process to complete")
+	f.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta).Should(BeTrue())
+
+	return restoreSession, err
 }

@@ -37,7 +37,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"kmodules.xyz/client-go/meta"
 	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
-	prober "kmodules.xyz/prober/api/v1"
 )
 
 type hookOptions struct {
@@ -99,7 +98,7 @@ func NewCmdRunHook() *cobra.Command {
 	cmd.Flags().StringVar(&opt.kubeConfigPath, "kubeconfig", opt.kubeConfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&opt.backupSessionName, "backupsession", opt.backupSessionName, "Name of the respective BackupSession object")
 	cmd.Flags().StringVar(&opt.restoreSessionName, "restoresession", opt.restoreSessionName, "Name of the respective RestoreSession")
-	cmd.Flags().StringVar(&opt.hookType, "hook-type", opt.restoreSessionName, "Type of hook to execute")
+	cmd.Flags().StringVar(&opt.hookType, "hook-type", opt.hookType, "Type of hook to execute")
 	cmd.Flags().StringVar(&opt.hostname, "hostname", opt.hostname, "Name of the host that is being backed up or restored")
 	cmd.Flags().BoolVar(&opt.metricOpts.Enabled, "metrics-enabled", opt.metricOpts.Enabled, "Specify whether to export Prometheus metrics")
 	cmd.Flags().StringVar(&opt.metricOpts.PushgatewayURL, "metrics-pushgateway-url", opt.metricOpts.PushgatewayURL, "Pushgateway URL where the metrics will be pushed")
@@ -112,7 +111,6 @@ func NewCmdRunHook() *cobra.Command {
 func (opt *hookOptions) executeHook() error {
 	var backupConfig *v1beta1.BackupConfiguration
 	var restoreSession *v1beta1.RestoreSession
-	var hook *prober.Handler
 	var err error
 
 	// For backup hooks, BackupSession name will be provided. We will read the hooks from the underlying BackupConfiguration.
@@ -139,7 +137,7 @@ func (opt *hookOptions) executeHook() error {
 	}
 
 	// Extract the hooks from the BackupConfiguration or RestoreSession
-	hook, err = opt.getHook(backupConfig, restoreSession)
+	hook, err := opt.getHook(backupConfig, restoreSession)
 	if err != nil {
 		return err
 	}
@@ -153,29 +151,29 @@ func (opt *hookOptions) executeHook() error {
 	return util.ExecuteHook(opt.config, hook, opt.hookType, podName, opt.namespace)
 }
 
-func (opt *hookOptions) getHook(backupConfig *v1beta1.BackupConfiguration, restoreSession *v1beta1.RestoreSession) (*prober.Handler, error) {
+func (opt *hookOptions) getHook(backupConfig *v1beta1.BackupConfiguration, restoreSession *v1beta1.RestoreSession) (interface{}, error) {
 	switch opt.hookType {
 	case apis.PreBackupHook:
 		if backupConfig != nil && backupConfig.Spec.Hooks != nil && backupConfig.Spec.Hooks.PreBackup != nil {
-			return backupConfig.Spec.Hooks.PreBackup, nil
+			return backupConfig.Spec.Hooks, nil
 		} else {
 			return nil, fmt.Errorf("no %s hook found in BackupConfiguration %s/%s", opt.hookType, opt.namespace, opt.backupSessionName)
 		}
 	case apis.PostBackupHook:
 		if backupConfig != nil && backupConfig.Spec.Hooks != nil && backupConfig.Spec.Hooks.PostBackup != nil {
-			return backupConfig.Spec.Hooks.PostBackup, nil
+			return backupConfig.Spec.Hooks, nil
 		} else {
 			return nil, fmt.Errorf("no %s hook found in BackupConfiguration %s/%s", opt.hookType, opt.namespace, opt.backupSessionName)
 		}
 	case apis.PreRestoreHook:
 		if restoreSession != nil && restoreSession.Spec.Hooks != nil && restoreSession.Spec.Hooks.PreRestore != nil {
-			return restoreSession.Spec.Hooks.PreRestore, nil
+			return restoreSession.Spec.Hooks, nil
 		} else {
 			return nil, fmt.Errorf("no %s hook found in RestoreSession %s/%s", opt.hookType, opt.namespace, opt.restoreSessionName)
 		}
 	case apis.PostRestoreHook:
 		if restoreSession != nil && restoreSession.Spec.Hooks != nil && restoreSession.Spec.Hooks.PostRestore != nil {
-			return restoreSession.Spec.Hooks.PostRestore, nil
+			return restoreSession.Spec.Hooks, nil
 		} else {
 			return nil, fmt.Errorf("no %s hook found in RestoreSession %s/%s", opt.hookType, opt.namespace, opt.restoreSessionName)
 		}
