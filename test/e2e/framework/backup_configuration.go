@@ -22,6 +22,7 @@ import (
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/stash/pkg/controller"
 
 	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/gomega"
@@ -103,7 +104,7 @@ func (f *Invocation) PVCBackupTarget(pvcName string) *v1beta1.BackupTarget {
 func (f *Framework) EventuallyCronJobCreated(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			_, err := f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			_, err := f.KubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(controller.GetBackupCronJobName(meta.Name), metav1.GetOptions{})
 			if err == nil && !kerr.IsNotFound(err) {
 				return true
 			}

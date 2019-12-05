@@ -19,7 +19,6 @@ package framework
 import (
 	"fmt"
 
-	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/ginkgo"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -30,7 +29,7 @@ import (
 func (f *Invocation) PersistentVolumeClaim(name string) *core.PersistentVolumeClaim {
 	return &core.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix("pvc"),
+			Name:      name,
 			Namespace: f.namespace,
 		},
 		Spec: core.PersistentVolumeClaimSpec{

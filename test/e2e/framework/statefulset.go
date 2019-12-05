@@ -17,6 +17,8 @@ limitations under the License.
 package framework
 
 import (
+	"fmt"
+
 	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/appscode/go/crypto/rand"
@@ -203,7 +205,7 @@ func (f *Invocation) DeployStatefulSet(name string, replica int32) (*apps.Statef
 	ss.Spec.Replicas = &replica
 	ss.Name = name
 
-	By("Deploying StatefulSet: " + ss.Name)
+	By(fmt.Sprintf("Deploying StatefulSet: %s/%s", ss.Namespace, ss.Name))
 	createdss, err := f.CreateStatefulSet(ss)
 	if err != nil {
 		return createdss, err

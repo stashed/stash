@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"fmt"
 	"time"
 
 	"stash.appscode.dev/stash/pkg/util"
@@ -144,7 +145,7 @@ func (f *Invocation) DeployDeployment(name string, replica int32) (*apps.Deploym
 	deployment.Name = name
 	deployment.Spec.Replicas = &replica
 
-	By("Deploying Deployment: " + deployment.Name)
+	By(fmt.Sprintf("Deploying Deployment: %s/%s", deployment.Namespace, deployment.Name))
 	createdDeployment, err := f.CreateDeployment(deployment)
 	if err != nil {
 		return createdDeployment, err

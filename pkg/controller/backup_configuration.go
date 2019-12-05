@@ -254,7 +254,7 @@ func (c *StashController) EnsureCronJob(ref *core.ObjectReference, podRuntimeSet
 	}
 
 	meta := metav1.ObjectMeta{
-		Name:      getBackupCronJobName(ref.Name),
+		Name:      GetBackupCronJobName(ref.Name),
 		Namespace: ref.Namespace,
 		Labels:    labels,
 	}
@@ -319,7 +319,7 @@ func (c *StashController) EnsureCronJob(ref *core.ObjectReference, podRuntimeSet
 // EnsureCronJobDelete ensure that respective CronJob of a BackupConfiguration/BackupBatch has it as owner.
 // Kuebernetes garbage collector will take care of removing the CronJob
 func (c *StashController) EnsureCronJobDeleted(meta metav1.ObjectMeta, ref *core.ObjectReference) error {
-	cur, err := c.kubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(getBackupCronJobName(meta.Name), metav1.GetOptions{})
+	cur, err := c.kubeClient.BatchV1beta1().CronJobs(meta.Namespace).Get(GetBackupCronJobName(meta.Name), metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			return nil
@@ -334,7 +334,7 @@ func (c *StashController) EnsureCronJobDeleted(meta metav1.ObjectMeta, ref *core
 	return err
 }
 
-func getBackupCronJobName(name string) string {
+func GetBackupCronJobName(name string) string {
 	return strings.ReplaceAll(name, ".", "-")
 }
 
