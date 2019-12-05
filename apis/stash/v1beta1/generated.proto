@@ -659,7 +659,7 @@ message Target {
 
   // Phase indicates backup phase of the individual target
   // +optional
-  optional string targetBackupPhase = 3;
+  optional string targetPhase = 3;
 
   // Stats shows statistics of individual hosts for this backup session
   // +optional

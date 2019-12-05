@@ -68,12 +68,12 @@ const (
 	HostBackupFailed    HostBackupPhase = "Failed"
 )
 
-type TargetBakcupPhase string
+type TargetPhase string
 
 const (
-	TargetBackupSucceeded TargetBakcupPhase = "Succeeded"
-	TargetBackupRunning   TargetBakcupPhase = "Running"
-	TargetBackupFailed    TargetBakcupPhase = "Failed"
+	TargetBackupSucceeded TargetPhase = "Succeeded"
+	TargetBackupRunning   TargetPhase = "Running"
+	TargetBackupFailed    TargetPhase = "Failed"
 )
 
 type BackupSessionStatus struct {
@@ -98,7 +98,7 @@ type Target struct {
 	TotalHosts *int32 `json:"totalHosts,omitempty" protobuf:"varint,2,opt,name=totalHosts"`
 	// Phase indicates backup phase of the individual target
 	// +optional
-	Phase TargetBakcupPhase `json:"targetBackupPhase,omitempty" protobuf:"bytes,3,opt,name=targetBackupPhase"`
+	Phase TargetPhase `json:"targetPhase,omitempty" protobuf:"bytes,3,opt,name=targetPhase"`
 	// Stats shows statistics of individual hosts for this backup session
 	// +optional
 	Stats []HostBackupStats `json:"stats,omitempty" protobuf:"bytes,4,rep,name=stats"`

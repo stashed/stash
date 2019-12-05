@@ -17854,7 +17854,7 @@ func schema_stash_apis_stash_v1beta1_Target(ref common.ReferenceCallback) common
 							Format:      "int32",
 						},
 					},
-					"targetBackupPhase": {
+					"targetPhase": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Phase indicates backup phase of the individual target",
 							Type:        []string{"string"},

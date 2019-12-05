@@ -112,7 +112,8 @@ func UpdateBackupSessionStatusForHost(c cs.StashV1beta1Interface, targetRef api_
 				}
 			}
 		}
-		// no entry for this host. so add a new entry.
+		// no entry for this host. so add a new entry
+		// and Update BackupSession target status.
 		for i, target := range backupSession.Status.Targets {
 			if targetRef.Kind == target.Ref.Kind && targetRef.Name == target.Ref.Name {
 				in.Targets[i].Ref = target.Ref

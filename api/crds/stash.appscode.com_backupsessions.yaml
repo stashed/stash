@@ -170,7 +170,7 @@ spec:
                           type: array
                       type: object
                     type: array
-                  targetBackupPhase:
+                  targetPhase:
                     description: Phase indicates backup phase of the individual target
                     type: string
                   totalHosts:
