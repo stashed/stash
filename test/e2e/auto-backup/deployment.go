@@ -80,7 +80,7 @@ var _ = Describe("Auto-Backup", func() {
 				// Take an Instant Backup the Sample Data
 				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.TargetRef{
 					Name: backupConfig.Name,
-					Kind: backupConfig.Kind,
+					Kind: v1beta1.ResourceKindBackupConfiguration,
 				})
 				Expect(err).NotTo(HaveOccurred())
 
@@ -126,7 +126,7 @@ var _ = Describe("Auto-Backup", func() {
 					// Take an Instant Backup the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.TargetRef{
 						Name: backupConfig.Name,
-						Kind: backupConfig.Kind,
+						Kind: v1beta1.ResourceKindBackupConfiguration,
 					})
 					Expect(err).NotTo(HaveOccurred())
 
@@ -166,7 +166,7 @@ var _ = Describe("Auto-Backup", func() {
 					// Take an Instant Backup the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.TargetRef{
 						Name: backupConfig.Name,
-						Kind: backupConfig.Kind,
+						Kind: v1beta1.ResourceKindBackupConfiguration,
 					})
 					Expect(err).NotTo(HaveOccurred())
 
@@ -224,7 +224,7 @@ var _ = Describe("Auto-Backup", func() {
 					// Take an Instant Backup the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta, v1beta1.TargetRef{
 						Name: backupConfig.Name,
-						Kind: backupConfig.Kind,
+						Kind: v1beta1.ResourceKindBackupConfiguration,
 					})
 					Expect(err).NotTo(HaveOccurred())
 
