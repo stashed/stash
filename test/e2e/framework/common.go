@@ -50,7 +50,20 @@ func (f *Framework) GenerateSampleData(objMeta metav1.ObjectMeta, kind string) (
 
 func (f *Invocation) SetupWorkloadBackup(objMeta metav1.ObjectMeta, repo *api_v1alpha1.Repository, kind string, transformFuncs ...func(bc *v1beta1.BackupConfiguration)) (*v1beta1.BackupConfiguration, error) {
 	// Generate desired BackupConfiguration definition
-	backupConfig := f.GetBackupConfigurationForWorkload(repo.Name, GetTargetRef(objMeta.Name, kind))
+	backupConfig := f.GetBackupConfiguration(repo.Name, func(bc *v1beta1.BackupConfiguration) {
+		bc.Spec.Target = &v1beta1.BackupTarget{
+			Ref: GetTargetRef(objMeta.Name, kind),
+			Paths: []string{
+				TestSourceDataMountPath,
+			},
+			VolumeMounts: []core.VolumeMount{
+				{
+					Name:      TestSourceDataVolumeName,
+					MountPath: TestSourceDataMountPath,
+				},
+			},
+		}
+	})
 	// transformFuncs provides a array of functions that made test specific change on the BackupConfiguration
 	// apply these test specific changes
 	for _, fn := range transformFuncs {
@@ -119,7 +132,22 @@ func (f *Invocation) RestoredData(objMeta metav1.ObjectMeta, kind string) sets.S
 func (f *Invocation) SetupRestoreProcess(objMeta metav1.ObjectMeta, repo *api.Repository, kind string, transformFuncs ...func(restore *v1beta1.RestoreSession)) (*v1beta1.RestoreSession, error) {
 
 	// Generate desired BackupConfiguration definition
-	restoreSession := f.GetRestoreSessionForWorkload(repo.Name, GetTargetRef(objMeta.Name, kind))
+	restoreSession := f.GetRestoreSession(repo.Name, func(restore *v1beta1.RestoreSession) {
+		restore.Spec.Rules = []v1beta1.Rule{
+			{
+				Paths: []string{TestSourceDataMountPath},
+			},
+		}
+		restore.Spec.Target = &v1beta1.RestoreTarget{
+			Ref: GetTargetRef(objMeta.Name, kind),
+			VolumeMounts: []core.VolumeMount{
+				{
+					Name:      TestSourceDataVolumeName,
+					MountPath: TestSourceDataMountPath,
+				},
+			},
+		}
+	})
 	// transformFuncs provides a array of functions that made test specific change on the RestoreSession
 	// apply these test specific changes.
 	for _, fn := range transformFuncs {

@@ -19,7 +19,6 @@ package framework
 import (
 	"time"
 
-	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 
 	"github.com/appscode/go/crypto/rand"
@@ -29,8 +28,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (f *Invocation) GetRestoreSessionForWorkload(repoName string, targetRef v1beta1.TargetRef) *v1beta1.RestoreSession {
-	return &v1beta1.RestoreSession{
+func (f *Invocation) GetRestoreSession(repoName string, transformFuncs ...func(restore *v1beta1.RestoreSession)) *v1beta1.RestoreSession {
+	restoreSession := &v1beta1.RestoreSession{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(f.app),
 			Namespace: f.namespace,
@@ -39,22 +38,14 @@ func (f *Invocation) GetRestoreSessionForWorkload(repoName string, targetRef v1b
 			Repository: core.LocalObjectReference{
 				Name: repoName,
 			},
-			Rules: []v1beta1.Rule{
-				{
-					Paths: []string{TestSourceDataMountPath},
-				},
-			},
-			Target: &v1beta1.RestoreTarget{
-				Ref: targetRef,
-				VolumeMounts: []core.VolumeMount{
-					{
-						Name:      TestSourceDataVolumeName,
-						MountPath: TestSourceDataMountPath,
-					},
-				},
-			},
 		},
 	}
+	// transformFuncs provides a array of functions that made test specific change on the RestoreSession
+	// apply these test specific changes.
+	for _, fn := range transformFuncs {
+		fn(restoreSession)
+	}
+	return restoreSession
 }
 
 func (f *Invocation) CreateRestoreSession(restoreSession *v1beta1.RestoreSession) error {
@@ -96,20 +87,4 @@ func (f *Framework) EventuallyRestoreSessionPhase(meta metav1.ObjectMeta) Gomega
 		time.Minute*7,
 		time.Second*7,
 	)
-}
-
-func (f *Invocation) PVCRestoreTarget(pvcName string) *v1beta1.RestoreTarget {
-	return &v1beta1.RestoreTarget{
-		Ref: v1beta1.TargetRef{
-			APIVersion: "v1",
-			Kind:       apis.KindPersistentVolumeClaim,
-			Name:       pvcName,
-		},
-		VolumeMounts: []core.VolumeMount{
-			{
-				Name:      TestSourceDataVolumeName,
-				MountPath: TestSourceDataMountPath,
-			},
-		},
-	}
 }

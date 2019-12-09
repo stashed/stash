@@ -29,6 +29,8 @@ import (
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
+const outputFilePermissions = 0777
+
 type BackupOutput struct {
 	// HostBackupStats shows backup statistics of a host
 	HostBackupStats []api_v1beta1.HostBackupStats `json:"hostBackupStats,omitempty"`
@@ -59,10 +61,10 @@ func (out *BackupOutput) WriteOutput(fileName string) error {
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(fileName), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(fileName), outputFilePermissions); err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(fileName, jsonOutput, 0755); err != nil {
+	if err := ioutil.WriteFile(fileName, jsonOutput, outputFilePermissions); err != nil {
 		return err
 	}
 	return nil
@@ -73,10 +75,10 @@ func (out *RestoreOutput) WriteOutput(fileName string) error {
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(fileName), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(fileName), outputFilePermissions); err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(fileName, jsonOutput, 0755); err != nil {
+	if err := ioutil.WriteFile(fileName, jsonOutput, outputFilePermissions); err != nil {
 		return err
 	}
 	return nil

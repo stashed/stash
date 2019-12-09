@@ -696,7 +696,7 @@ func (f *Invocation) CleanupSampleDataFromWorkload(meta metav1.ObjectMeta, resou
 		if err != nil {
 			return err
 		}
-		_, err = f.ExecOnPod(pod, "rm", "-rf", filepath.Join(TestSourceDataMountPath, files[0]))
+		_, err = f.ExecOnPod(pod, "/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", TestSourceDataMountPath))
 		if err != nil {
 			return err
 		}
@@ -705,8 +705,8 @@ func (f *Invocation) CleanupSampleDataFromWorkload(meta metav1.ObjectMeta, resou
 		if err != nil {
 			return err
 		}
-		for i, pod := range pods {
-			_, err = f.ExecOnPod(&pod, "rm", "-rf", filepath.Join(TestSourceDataMountPath, files[i]))
+		for _, pod := range pods {
+			_, err = f.ExecOnPod(&pod, "/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", TestSourceDataMountPath))
 			if err != nil {
 				return err
 			}

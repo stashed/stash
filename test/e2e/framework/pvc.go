@@ -77,9 +77,12 @@ func (f *Invocation) CreateNewPVC(name string) (*core.PersistentVolumeClaim, err
 
 func (f *Invocation) SetupPVCBackup(pvc *core.PersistentVolumeClaim, repo *v1alpha1.Repository, transformFuncs ...func(bc *v1beta1.BackupConfiguration)) (*v1beta1.BackupConfiguration, error) {
 	// Generate desired BackupConfiguration definition
-	backupConfig := f.GetBackupConfigurationForWorkload(repo.Name, GetTargetRef(pvc.Name, apis.KindPersistentVolumeClaim))
-	backupConfig.Spec.Target = f.PVCBackupTarget(pvc.Name)
-	backupConfig.Spec.Task.Name = TaskPVCBackup
+	backupConfig := f.GetBackupConfiguration(repo.Name, func(bc *v1beta1.BackupConfiguration) {
+		bc.Spec.Target = &v1beta1.BackupTarget{
+			Ref: GetTargetRef(pvc.Name, apis.KindPersistentVolumeClaim),
+		}
+		bc.Spec.Task.Name = TaskPVCBackup
+	})
 
 	// transformFuncs provides a array of functions that made test specific change on the BackupConfiguration
 	// apply these test specific changes
@@ -100,16 +103,17 @@ func (f *Invocation) SetupPVCBackup(pvc *core.PersistentVolumeClaim, repo *v1alp
 func (f *Invocation) SetupRestoreProcessForPVC(pvc *core.PersistentVolumeClaim, repo *v1alpha1.Repository, transformFuncs ...func(restore *v1beta1.RestoreSession)) (*v1beta1.RestoreSession, error) {
 	// Generate desired RestoreSession definition
 	By("Creating RestoreSession")
-	restoreSession := f.GetRestoreSessionForWorkload(repo.Name, GetTargetRef(pvc.Name, apis.KindPersistentVolumeClaim))
-	restoreSession.Spec.Target = f.PVCRestoreTarget(pvc.Name)
-	restoreSession.Spec.Rules = []v1beta1.Rule{
-		{
-			Paths: []string{
-				TestSourceDataMountPath,
+	restoreSession := f.GetRestoreSession(repo.Name, func(restore *v1beta1.RestoreSession) {
+		restore.Spec.Target = &v1beta1.RestoreTarget{
+			Ref: GetTargetRef(pvc.Name, apis.KindPersistentVolumeClaim),
+		}
+		restore.Spec.Rules = []v1beta1.Rule{
+			{
+				Snapshots: []string{"latest"},
 			},
-		},
-	}
-	restoreSession.Spec.Task.Name = TaskPVCRestore
+		}
+		restore.Spec.Task.Name = TaskPVCRestore
+	})
 
 	// transformFuncs provides a array of functions that made test specific change on the RestoreSession
 	// apply these test specific changes.

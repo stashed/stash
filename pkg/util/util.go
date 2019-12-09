@@ -536,8 +536,8 @@ func ExecuteHook(config *rest.Config, hook interface{}, hookType, podName, names
 	return nil
 }
 
-func HookExecutorContainer(name string) *core.Container {
-	return &core.Container{
+func HookExecutorContainer(name string, shiblings []core.Container) *core.Container {
+	hookExecutor := &core.Container{
 		Name:  name,
 		Image: "${STASH_DOCKER_REGISTRY:=appscode}/${STASH_DOCKER_IMAGE:=stash}:${STASH_IMAGE_TAG:=latest}",
 		Args: []string{
@@ -562,4 +562,14 @@ func HookExecutorContainer(name string) *core.Container {
 			},
 		},
 	}
+	// now, upsert the volumeMounts of the sibling containers
+	// multiple containers may have same volume mounted on different directory
+	// in such cae, we will give priority to the last one.
+	var mounts []core.VolumeMount
+	for _, c := range shiblings {
+		mounts = append(mounts, c.VolumeMounts...)
+	}
+	hookExecutor.VolumeMounts = core_util.UpsertVolumeMount(hookExecutor.VolumeMounts, mounts...)
+
+	return hookExecutor
 }

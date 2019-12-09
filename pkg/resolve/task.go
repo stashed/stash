@@ -118,7 +118,7 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 	// if hook specified then, add hook executor containers
 	if o.PreTaskHookInput != nil {
 		inputs := core_util.UpsertMap(o.Inputs, o.PreTaskHookInput)
-		hookExecutor := util.HookExecutorContainer(apis.PreTaskHook)
+		hookExecutor := util.HookExecutorContainer(apis.PreTaskHook, containers)
 		if err = resolveWithInputs(hookExecutor, inputs); err != nil {
 			return core.PodSpec{}, fmt.Errorf("failed to resolve preTaskHook")
 		}
@@ -126,7 +126,7 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 	}
 	if o.PostTaskHookInput != nil {
 		inputs := core_util.UpsertMap(o.Inputs, o.PostTaskHookInput)
-		hookExecutor := util.HookExecutorContainer(apis.PostTaskHook)
+		hookExecutor := util.HookExecutorContainer(apis.PostTaskHook, containers)
 		if err = resolveWithInputs(hookExecutor, inputs); err != nil {
 			return core.PodSpec{}, fmt.Errorf("failed to resolve postTaskHook")
 		}
