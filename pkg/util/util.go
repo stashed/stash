@@ -510,7 +510,7 @@ func ExecuteHook(config *rest.Config, hook interface{}, hookType, podName, names
 		} else {
 			err := prober.RunProbe(config, h.PostBackup, podName, namespace)
 			if err != nil {
-				hookErr = fmt.Errorf(err.Error() + ". Warning: actual backup process has succeeded." +
+				hookErr = fmt.Errorf(err.Error() + ". Warning: The actual backup process may be succeeded." +
 					" Hence, backup data might be present in the backend even if the overall BackupSession phase is 'Failed'")
 			}
 		}
@@ -520,7 +520,7 @@ func ExecuteHook(config *rest.Config, hook interface{}, hookType, podName, names
 		} else {
 			err := prober.RunProbe(config, h.PostRestore, podName, namespace)
 			if err != nil {
-				hookErr = fmt.Errorf(err.Error() + ". Warning: actual restore process has succeeded." +
+				hookErr = fmt.Errorf(err.Error() + ". Warning: The actual restore process may be succeeded." +
 					" Hence, the restored data might be present in the target even if the overall RestoreSession phase is 'Failed'")
 			}
 		}

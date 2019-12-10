@@ -50,7 +50,7 @@ var _ = Describe("PostBackup Hook", func() {
 		Context("Sidecar Model", func() {
 			Context("Success Test", func() {
 				Context("Host and Port specified", func() {
-					It("should execute probe successfully", func() {
+					It("should execute hook successfully", func() {
 						// Deploy a StatefulSet with prober client. Here, we are using a StatefulSet because we need a stable address
 						// for pod where http request will be sent.
 						statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
@@ -92,7 +92,7 @@ var _ = Describe("PostBackup Hook", func() {
 				})
 
 				Context("Host and Port from Pod", func() {
-					It("should execute probe successfully", func() {
+					It("should execute hook successfully", func() {
 						// Deploy a StatefulSet.
 						statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
 						Expect(err).NotTo(HaveOccurred())
@@ -134,7 +134,7 @@ var _ = Describe("PostBackup Hook", func() {
 			})
 
 			Context("Failure Test", func() {
-				It("should take a backup even when postBackup hook failed", func() {
+				It("should take a backup even when the postBackup hook failed", func() {
 					// Deploy a StatefulSet.
 					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
 					Expect(err).NotTo(HaveOccurred())
@@ -185,7 +185,7 @@ var _ = Describe("PostBackup Hook", func() {
 		Context("Sidecar Model", func() {
 			Context("Success Test", func() {
 				Context("Host and Port specified", func() {
-					It("should execute probe successfully", func() {
+					It("should execute hook successfully", func() {
 						// Deploy a StatefulSet with prober client. Here, we are using a StatefulSet because we need a stable address
 						// for pod where http request will be sent.
 						statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
@@ -227,7 +227,7 @@ var _ = Describe("PostBackup Hook", func() {
 				})
 
 				Context("Host and Port from Pod", func() {
-					It("should execute probe successfully", func() {
+					It("should execute hook successfully", func() {
 						// Deploy a StatefulSet.
 						statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
 						Expect(err).NotTo(HaveOccurred())
@@ -362,7 +362,7 @@ var _ = Describe("PostBackup Hook", func() {
 			})
 
 			Context("Failure Test", func() {
-				It("should take  a backup even when postBackup hook failed", func() {
+				It("should take a backup even when the postBackup hook failed", func() {
 					// Deploy a StatefulSet.
 					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
 					Expect(err).NotTo(HaveOccurred())
@@ -423,7 +423,7 @@ var _ = Describe("PostBackup Hook", func() {
 		Context("Sidecar Model", func() {
 			Context("Success Test", func() {
 				Context("Host and Port specified", func() {
-					It("should execute probe successfully", func() {
+					It("should execute hook successfully", func() {
 						// Deploy a StatefulSet with prober client. Here, we are using a StatefulSet because we need a stable address
 						// for pod where http request will be sent.
 						statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
@@ -463,7 +463,7 @@ var _ = Describe("PostBackup Hook", func() {
 				})
 
 				Context("Host and Port from Pod", func() {
-					It("should execute probe successfully", func() {
+					It("should execute hook successfully", func() {
 						// Deploy a StatefulSet.
 						statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
 						Expect(err).NotTo(HaveOccurred())
@@ -503,7 +503,7 @@ var _ = Describe("PostBackup Hook", func() {
 			})
 
 			Context("Failure Test", func() {
-				It("should take a backup even when postBackup hook failed", func() {
+				It("should take a backup even when the postBackup hook failed", func() {
 					// Deploy a StatefulSet.
 					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
 					Expect(err).NotTo(HaveOccurred())
@@ -598,7 +598,7 @@ var _ = Describe("PostBackup Hook", func() {
 					Expect(newData).Should(BeEquivalentTo(emptyData))
 				})
 
-				It("should execute postBackup hook even when backup process failed", func() {
+				It("should execute postBackup hook even when the backup process failed", func() {
 					// Deploy a StatefulSet.
 					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
 					Expect(err).NotTo(HaveOccurred())
@@ -650,7 +650,7 @@ var _ = Describe("PostBackup Hook", func() {
 			})
 
 			Context("Failure Test", func() {
-				It("should take a backup even when postBackup probe failed", func() {
+				It("should take a backup even when the postBackup hook failed", func() {
 					// Deploy a StatefulSet.
 					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
 					Expect(err).NotTo(HaveOccurred())
@@ -755,7 +755,7 @@ var _ = Describe("PostBackup Hook", func() {
 						Expect(newData).Should(BeEquivalentTo(emptyData))
 					})
 
-					It("should execute postBackup hook even when backup failed", func() {
+					It("should execute postBackup hook even when the backup process failed", func() {
 						// Create new PVC
 						pvc, err := f.CreateNewPVC(fmt.Sprintf("source-pvc-%s", f.App()))
 						Expect(err).NotTo(HaveOccurred())
@@ -811,7 +811,7 @@ var _ = Describe("PostBackup Hook", func() {
 				})
 
 				Context("Failure Cases", func() {
-					It("should take backup even when postBackup hook failed", func() {
+					It("should take backup even when the postBackup hook failed", func() {
 						// Create new PVC
 						pvc, err := f.CreateNewPVC(fmt.Sprintf("source-pvc-%s", f.App()))
 						Expect(err).NotTo(HaveOccurred())
