@@ -134,7 +134,7 @@ var _ = Describe("PostBackup Hook", func() {
 			})
 
 			Context("Failure Test", func() {
-				It("should take a backup even when probe failed", func() {
+				It("should take a backup even when postBackup hook failed", func() {
 					// Deploy a StatefulSet.
 					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
 					Expect(err).NotTo(HaveOccurred())
@@ -362,7 +362,7 @@ var _ = Describe("PostBackup Hook", func() {
 			})
 
 			Context("Failure Test", func() {
-				It("should take  a backup even when probe failed", func() {
+				It("should take  a backup even when postBackup hook failed", func() {
 					// Deploy a StatefulSet.
 					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
 					Expect(err).NotTo(HaveOccurred())
@@ -503,7 +503,7 @@ var _ = Describe("PostBackup Hook", func() {
 			})
 
 			Context("Failure Test", func() {
-				It("should take a backup even when probe failed", func() {
+				It("should take a backup even when postBackup hook failed", func() {
 					// Deploy a StatefulSet.
 					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
 					Expect(err).NotTo(HaveOccurred())
@@ -551,14 +551,19 @@ var _ = Describe("PostBackup Hook", func() {
 	Context("ExecAction", func() {
 		Context("Sidecar Model", func() {
 			Context("Success Test", func() {
-				It("should execute probe successfully", func() {
+				It("should cleanup the sample data in postBackup hook", func() {
 					// Deploy a StatefulSet.
 					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
 					Expect(err).NotTo(HaveOccurred())
 
-					// Generate Sample Data
-					_, err = f.GenerateSampleData(statefulset.ObjectMeta, apis.KindStatefulSet)
+					// Reade directory data in empty state
+					emptyData, err := f.ReadSampleDataFromFromWorkload(statefulset.ObjectMeta, apis.KindStatefulSet)
 					Expect(err).NotTo(HaveOccurred())
+
+					// Generate Sample Data
+					sampleData, err := f.GenerateSampleData(statefulset.ObjectMeta, apis.KindStatefulSet)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(sampleData).ShouldNot(BeEquivalentTo(emptyData))
 
 					// Setup a Minio Repository
 					repo, err := f.SetupMinioRepository()
@@ -570,7 +575,7 @@ var _ = Describe("PostBackup Hook", func() {
 						bc.Spec.Hooks = &v1beta1.BackupHooks{
 							PostBackup: &probev1.Handler{
 								Exec: &core.ExecAction{
-									Command: []string{"/bin/sh", "-c", `exit $EXIT_CODE_SUCCESS`},
+									Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", framework.TestSourceDataMountPath)},
 								},
 								ContainerName: framework.ProberDemoPodPrefix,
 							},
@@ -586,18 +591,26 @@ var _ = Describe("PostBackup Hook", func() {
 					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
-				})
-			})
 
-			Context("Failure Test", func() {
-				It("should take a backup even when probe failed", func() {
+					By("Verifying that data has been removed in postBackup hook")
+					newData, err := f.ReadSampleDataFromFromWorkload(statefulset.ObjectMeta, apis.KindStatefulSet)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(newData).Should(BeEquivalentTo(emptyData))
+				})
+
+				It("should execute postBackup hook even when backup process failed", func() {
 					// Deploy a StatefulSet.
 					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
 					Expect(err).NotTo(HaveOccurred())
 
-					// Generate Sample Data
-					_, err = f.GenerateSampleData(statefulset.ObjectMeta, apis.KindStatefulSet)
+					// Reade directory data in empty state
+					emptyData, err := f.ReadSampleDataFromFromWorkload(statefulset.ObjectMeta, apis.KindStatefulSet)
 					Expect(err).NotTo(HaveOccurred())
+
+					// Generate Sample Data
+					sampleData, err := f.GenerateSampleData(statefulset.ObjectMeta, apis.KindStatefulSet)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(sampleData).ShouldNot(BeEquivalentTo(emptyData))
 
 					// Setup a Minio Repository
 					repo, err := f.SetupMinioRepository()
@@ -605,11 +618,64 @@ var _ = Describe("PostBackup Hook", func() {
 					f.AppendToCleanupList(repo)
 
 					// Setup Backup
+					// Use invalid retentionPolicy so that the backup process fail in cleanup step
+					// Remove old data in postBackup hook
 					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
 						bc.Spec.Hooks = &v1beta1.BackupHooks{
 							PostBackup: &probev1.Handler{
 								Exec: &core.ExecAction{
-									Command: []string{"/bin/sh", "-c", `exit $EXIT_CODE_FAIL`},
+									Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", framework.TestSourceDataMountPath)},
+								},
+								ContainerName: framework.ProberDemoPodPrefix,
+							},
+						}
+						bc.Spec.RetentionPolicy.KeepLast = 0 // invalid retention value to force backup process fail on cleanup step
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					// Take an Instant Backup the Sample Data
+					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Verifying that BackupSession has failed")
+					completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
+
+					By("Verifying that data has been removed in postBackup hook")
+					newData, err := f.ReadSampleDataFromFromWorkload(statefulset.ObjectMeta, apis.KindStatefulSet)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(newData).Should(BeEquivalentTo(emptyData))
+				})
+			})
+
+			Context("Failure Test", func() {
+				It("should take a backup even when postBackup probe failed", func() {
+					// Deploy a StatefulSet.
+					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
+					Expect(err).NotTo(HaveOccurred())
+
+					// Reade directory data in empty state
+					emptyData, err := f.ReadSampleDataFromFromWorkload(statefulset.ObjectMeta, apis.KindStatefulSet)
+					Expect(err).NotTo(HaveOccurred())
+
+					// Generate Sample Data
+					sampleData, err := f.GenerateSampleData(statefulset.ObjectMeta, apis.KindStatefulSet)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(sampleData).ShouldNot(BeEquivalentTo(emptyData))
+
+					// Setup a Minio Repository
+					repo, err := f.SetupMinioRepository()
+					Expect(err).NotTo(HaveOccurred())
+					f.AppendToCleanupList(repo)
+
+					// Setup Backup
+					// Return non-zero exit code so that the postBackup hook fail
+					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(bc *v1beta1.BackupConfiguration) {
+						bc.Spec.Hooks = &v1beta1.BackupHooks{
+							PostBackup: &probev1.Handler{
+								Exec: &core.ExecAction{
+									Command: []string{"/bin/sh", "-c", "exit 1"},
 								},
 								ContainerName: framework.ProberDemoPodPrefix,
 							},
@@ -634,10 +700,10 @@ var _ = Describe("PostBackup Hook", func() {
 			})
 		})
 
-		XContext("Job Model", func() {
+		Context("Job Model", func() {
 			Context("PVC", func() {
 				Context("Success Cases", func() {
-					It("should backup the file created in preBackup Hook", func() {
+					It("should cleanup the sample data in postBackup hook", func() {
 						// Create new PVC
 						pvc, err := f.CreateNewPVC(fmt.Sprintf("source-pvc-%s", f.App()))
 						Expect(err).NotTo(HaveOccurred())
@@ -646,10 +712,14 @@ var _ = Describe("PostBackup Hook", func() {
 						pod, err := f.DeployPod(pvc.Name)
 						Expect(err).NotTo(HaveOccurred())
 
+						// Reade directory data in empty state
+						emptyData, err := f.ReadSampleDataFromFromWorkload(pod.ObjectMeta, apis.KindPod)
+						Expect(err).NotTo(HaveOccurred())
+
 						// Generate Sample Data
 						sampleData, err := f.GenerateSampleData(pod.ObjectMeta, apis.KindPod)
 						Expect(err).NotTo(HaveOccurred())
-						Expect(sampleData).NotTo(BeEmpty())
+						Expect(sampleData).NotTo(BeEquivalentTo(emptyData))
 
 						// Setup a Minio Repository
 						repo, err := f.SetupMinioRepository()
@@ -664,7 +734,7 @@ var _ = Describe("PostBackup Hook", func() {
 									Exec: &core.ExecAction{
 										Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", apis.StashDefaultMountPath)},
 									},
-									ContainerName: apis.PreTaskHook,
+									ContainerName: apis.PostTaskHook,
 								},
 							}
 						})
@@ -682,12 +752,10 @@ var _ = Describe("PostBackup Hook", func() {
 						By("Verifying that data has been removed in postBackup hook")
 						newData, err := f.ReadSampleDataFromFromWorkload(pod.ObjectMeta, apis.KindPod)
 						Expect(err).NotTo(HaveOccurred())
-						Expect(newData).Should(BeEmpty())
+						Expect(newData).Should(BeEquivalentTo(emptyData))
 					})
-				})
 
-				Context("Failure Cases", func() {
-					It("should not take backup when the preBackup hook failed", func() {
+					It("should execute postBackup hook even when backup failed", func() {
 						// Create new PVC
 						pvc, err := f.CreateNewPVC(fmt.Sprintf("source-pvc-%s", f.App()))
 						Expect(err).NotTo(HaveOccurred())
@@ -696,9 +764,14 @@ var _ = Describe("PostBackup Hook", func() {
 						pod, err := f.DeployPod(pvc.Name)
 						Expect(err).NotTo(HaveOccurred())
 
-						// Generate Sample Data
-						_, err = f.GenerateSampleData(pod.ObjectMeta, apis.KindPod)
+						// Reade directory data in empty state
+						emptyData, err := f.ReadSampleDataFromFromWorkload(pod.ObjectMeta, apis.KindPod)
 						Expect(err).NotTo(HaveOccurred())
+
+						// Generate Sample Data
+						sampleData, err := f.GenerateSampleData(pod.ObjectMeta, apis.KindPod)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(sampleData).NotTo(BeEquivalentTo(emptyData))
 
 						// Setup a Minio Repository
 						repo, err := f.SetupMinioRepository()
@@ -706,14 +779,70 @@ var _ = Describe("PostBackup Hook", func() {
 						f.AppendToCleanupList(repo)
 
 						// Setup PVC Backup
+						// Use invalid retentionPolicy so that the backup process fail in cleanup step
+						// Remove old data in postBackup hook
 						backupConfig, err := f.SetupPVCBackup(pvc, repo, func(bc *v1beta1.BackupConfiguration) {
-							// try to write a file in an invalid directory so that the hook fail.
 							bc.Spec.Hooks = &v1beta1.BackupHooks{
-								PreBackup: &probev1.Handler{
+								PostBackup: &probev1.Handler{
 									Exec: &core.ExecAction{
-										Command: []string{"touch", "/invalid/directory/pre-hook.txt"},
+										Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", apis.StashDefaultMountPath)},
 									},
-									ContainerName: apis.PreTaskHook,
+									ContainerName: apis.PostTaskHook,
+								},
+							}
+							bc.Spec.RetentionPolicy.KeepLast = 0 // invalid retention value to force backup process fail on cleanup step
+						})
+						Expect(err).NotTo(HaveOccurred())
+
+						// Take an Instant Backup the Sample Data
+						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Verifying that BackupSession has failed")
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						Expect(err).NotTo(HaveOccurred())
+						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
+
+						By("Verifying that data has been removed in postBackup hook")
+						newData, err := f.ReadSampleDataFromFromWorkload(pod.ObjectMeta, apis.KindPod)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(newData).Should(BeEquivalentTo(emptyData))
+					})
+				})
+
+				Context("Failure Cases", func() {
+					It("should take backup even when postBackup hook failed", func() {
+						// Create new PVC
+						pvc, err := f.CreateNewPVC(fmt.Sprintf("source-pvc-%s", f.App()))
+						Expect(err).NotTo(HaveOccurred())
+
+						// Deploy a Pod
+						pod, err := f.DeployPod(pvc.Name)
+						Expect(err).NotTo(HaveOccurred())
+
+						// Reade directory data in empty state
+						emptyData, err := f.ReadSampleDataFromFromWorkload(pod.ObjectMeta, apis.KindPod)
+						Expect(err).NotTo(HaveOccurred())
+
+						// Generate Sample Data
+						sampleData, err := f.GenerateSampleData(pod.ObjectMeta, apis.KindPod)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(sampleData).NotTo(BeEquivalentTo(emptyData))
+
+						// Setup a Minio Repository
+						repo, err := f.SetupMinioRepository()
+						Expect(err).NotTo(HaveOccurred())
+						f.AppendToCleanupList(repo)
+
+						// Setup PVC Backup
+						// Return non-zero exit code from postBackup hook so that it fail
+						backupConfig, err := f.SetupPVCBackup(pvc, repo, func(bc *v1beta1.BackupConfiguration) {
+							bc.Spec.Hooks = &v1beta1.BackupHooks{
+								PostBackup: &probev1.Handler{
+									Exec: &core.ExecAction{
+										Command: []string{"/bin/sh", "-c", "exit 1"},
+									},
+									ContainerName: apis.PostTaskHook,
 								},
 							}
 						})
@@ -728,16 +857,10 @@ var _ = Describe("PostBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 
-						By("Verifying that Repository has zero SnapshotCount")
-						repo2, err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Get(repo.Name, metav1.GetOptions{})
-						Expect(err).NotTo(HaveOccurred())
-						Expect(repo2.Status.SnapshotCount).Should(BeZero())
-
-						By("Verifying that no bucket has been created in the backend")
-						_, err = f.BrowseMinioRepository(repo)
-						// if the bucket does not exist, then it should return an error with "not found" message
-						Expect(err).Should(HaveOccurred())
-						Expect(err.Error()).Should(BeEquivalentTo("not found"))
+						By("Verifying that a backup has been taken")
+						items, err := f.BrowseMinioRepository(repo)
+						Expect(err).ShouldNot(HaveOccurred())
+						Expect(items).ShouldNot(BeEmpty())
 					})
 				})
 			})

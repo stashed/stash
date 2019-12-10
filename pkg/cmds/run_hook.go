@@ -61,7 +61,6 @@ func NewCmdRunHook() *cobra.Command {
 		kubeConfigPath: "",
 		namespace:      meta.Namespace(),
 		hostname:       util.DefaultHost,
-		outputDir:      "/tmp/output",
 	}
 
 	cmd := &cobra.Command{

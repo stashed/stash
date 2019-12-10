@@ -239,7 +239,7 @@ func (f *Invocation) NewMinioRepository(secretName string) *api.Repository {
 			Backend: store.Backend{
 				S3: &store.S3Spec{
 					Endpoint: f.MinioServiceAddres(),
-					Bucket:   "minio-bucket",
+					Bucket:   f.app,
 					Prefix:   fmt.Sprintf("stash-e2e/%s/%s", f.namespace, f.app),
 				},
 				StorageSecretName: secretName,

@@ -56,6 +56,9 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 	}
 
 	var containers []core.Container
+	// User may overwrite some variables (i.e. outputDir) of hook executor container in Task params
+	// We need to substitute these variables properly. Params of last Function will have higher precedence
+	taskParams := make(map[string]string)
 
 	// get Functions for Task
 	for i, fn := range task.Spec.Steps {
@@ -69,6 +72,8 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 		for _, param := range fn.Params {
 			inputs[param.Name] = param.Value
 		}
+		taskParams = core_util.UpsertMap(taskParams, inputs)
+
 		// merge/replace backup config inputs
 		inputs = core_util.UpsertMap(inputs, o.Inputs)
 
@@ -117,7 +122,12 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 	}
 	// if hook specified then, add hook executor containers
 	if o.PreTaskHookInput != nil {
-		inputs := core_util.UpsertMap(o.Inputs, o.PreTaskHookInput)
+		// Inputs precedence:
+		// 1. Inputs from BackupConfiguration/RestoreSession
+		// 2. Inputs from Task params
+		// 3. Default hook specific inputs
+		inputs := core_util.UpsertMap(taskParams, o.Inputs)
+		inputs = core_util.UpsertMap(o.PreTaskHookInput, inputs)
 		hookExecutor := util.HookExecutorContainer(apis.PreTaskHook, containers)
 		if err = resolveWithInputs(hookExecutor, inputs); err != nil {
 			return core.PodSpec{}, fmt.Errorf("failed to resolve preTaskHook")
@@ -125,7 +135,8 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 		containers = append([]core.Container{*hookExecutor}, containers...)
 	}
 	if o.PostTaskHookInput != nil {
-		inputs := core_util.UpsertMap(o.Inputs, o.PostTaskHookInput)
+		inputs := core_util.UpsertMap(taskParams, o.Inputs)
+		inputs = core_util.UpsertMap(o.PostTaskHookInput, inputs)
 		hookExecutor := util.HookExecutorContainer(apis.PostTaskHook, containers)
 		if err = resolveWithInputs(hookExecutor, inputs); err != nil {
 			return core.PodSpec{}, fmt.Errorf("failed to resolve postTaskHook")
