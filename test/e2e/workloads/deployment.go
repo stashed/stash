@@ -63,7 +63,7 @@ var _ = Describe("Deployment", func() {
 				backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment)
 				Expect(err).NotTo(HaveOccurred())
 
-				// Take an Instant Backup the Sample Data
+				// Take an Instant Backup of the Sample Data
 				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -116,7 +116,7 @@ var _ = Describe("Deployment", func() {
 				backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment)
 				Expect(err).NotTo(HaveOccurred())
 
-				// Take an Instant Backup the Sample Data
+				// Take an Instant Backup of the Sample Data
 				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -170,7 +170,7 @@ var _ = Describe("Deployment", func() {
 				By("Waiting for leader election")
 				f.CheckLeaderElection(deployment.ObjectMeta, apis.KindDeployment, v1beta1.ResourceKindBackupConfiguration)
 
-				// Take an Instant Backup the Sample Data
+				// Take an Instant Backup of the Sample Data
 				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 

@@ -249,7 +249,7 @@ func (f *Framework) ReadSampleDataFromFromWorkload(meta metav1.ObjectMeta, resou
 		if err != nil {
 			return nil, err
 		}
-		set.Insert(data)
+		set.Insert(strings.TrimSpace(data))
 		return set, nil
 	case apis.KindStatefulSet, apis.KindDaemonSet:
 		set := sets.NewString()
@@ -262,7 +262,7 @@ func (f *Framework) ReadSampleDataFromFromWorkload(meta metav1.ObjectMeta, resou
 			if err != nil {
 				return set, err
 			}
-			set.Insert(data)
+			set.Insert(strings.TrimSpace(data))
 		}
 		return set, err
 	}

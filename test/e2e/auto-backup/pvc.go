@@ -80,7 +80,7 @@ var _ = Describe("Auto-Backup", func() {
 				backupConfig, err := f.VerifyAutoBackupConfigured(pvc.ObjectMeta, apis.KindPersistentVolumeClaim)
 				Expect(err).NotTo(HaveOccurred())
 
-				// Take an Instant Backup the Sample Data
+				// Take an Instant Backup of the Sample Data
 				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -127,7 +127,7 @@ var _ = Describe("Auto-Backup", func() {
 					backupConfig, err := f.VerifyAutoBackupConfigured(pvc.ObjectMeta, apis.KindPersistentVolumeClaim)
 					Expect(err).NotTo(HaveOccurred())
 
-					// Take an Instant Backup the Sample Data
+					// Take an Instant Backup of the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -168,7 +168,7 @@ var _ = Describe("Auto-Backup", func() {
 					backupConfig, err := f.VerifyAutoBackupConfigured(pvc.ObjectMeta, apis.KindPersistentVolumeClaim)
 					Expect(err).NotTo(HaveOccurred())
 
-					// Take an Instant Backup the Sample Data
+					// Take an Instant Backup of the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 

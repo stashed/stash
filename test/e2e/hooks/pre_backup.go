@@ -79,7 +79,7 @@ var _ = Describe("PreBackup Hook", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						// Take an Instant Backup the Sample Data
+						// Take an Instant Backup of the Sample Data
 						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -120,7 +120,7 @@ var _ = Describe("PreBackup Hook", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						// Take an Instant Backup the Sample Data
+						// Take an Instant Backup of the Sample Data
 						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -162,7 +162,7 @@ var _ = Describe("PreBackup Hook", func() {
 					})
 					Expect(err).NotTo(HaveOccurred())
 
-					// Take an Instant Backup the Sample Data
+					// Take an Instant Backup of the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -220,7 +220,7 @@ var _ = Describe("PreBackup Hook", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						// Take an Instant Backup the Sample Data
+						// Take an Instant Backup of the Sample Data
 						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -261,7 +261,7 @@ var _ = Describe("PreBackup Hook", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						// Take an Instant Backup the Sample Data
+						// Take an Instant Backup of the Sample Data
 						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -303,7 +303,7 @@ var _ = Describe("PreBackup Hook", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						// Take an Instant Backup the Sample Data
+						// Take an Instant Backup of the Sample Data
 						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -354,7 +354,7 @@ var _ = Describe("PreBackup Hook", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						// Take an Instant Backup the Sample Data
+						// Take an Instant Backup of the Sample Data
 						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -406,7 +406,7 @@ var _ = Describe("PreBackup Hook", func() {
 					})
 					Expect(err).NotTo(HaveOccurred())
 
-					// Take an Instant Backup the Sample Data
+					// Take an Instant Backup of the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -462,7 +462,7 @@ var _ = Describe("PreBackup Hook", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						// Take an Instant Backup the Sample Data
+						// Take an Instant Backup of the Sample Data
 						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -501,7 +501,7 @@ var _ = Describe("PreBackup Hook", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						// Take an Instant Backup the Sample Data
+						// Take an Instant Backup of the Sample Data
 						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -541,7 +541,7 @@ var _ = Describe("PreBackup Hook", func() {
 					})
 					Expect(err).NotTo(HaveOccurred())
 
-					// Take an Instant Backup the Sample Data
+					// Take an Instant Backup of the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -595,7 +595,7 @@ var _ = Describe("PreBackup Hook", func() {
 					})
 					Expect(err).NotTo(HaveOccurred())
 
-					// Take an Instant Backup the Sample Data
+					// Take an Instant Backup of the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -634,7 +634,7 @@ var _ = Describe("PreBackup Hook", func() {
 					})
 					Expect(err).NotTo(HaveOccurred())
 
-					// Take an Instant Backup the Sample Data
+					// Take an Instant Backup of the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -691,7 +691,7 @@ var _ = Describe("PreBackup Hook", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						// Take an Instant Backup the Sample Data
+						// Take an Instant Backup of the Sample Data
 						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -711,7 +711,7 @@ var _ = Describe("PreBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						// Restore the backed up data
-						By("Restoring the backed up data in the original Pod")
+						By("Restoring the backed up data")
 						restoreSession, err := f.SetupRestoreProcessForPVC(pvc, repo)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -762,7 +762,7 @@ var _ = Describe("PreBackup Hook", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						// Take an Instant Backup the Sample Data
+						// Take an Instant Backup of the Sample Data
 						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
 

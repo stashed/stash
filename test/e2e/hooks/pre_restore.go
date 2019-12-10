@@ -50,15 +50,20 @@ var _ = Describe("PreRestore Hook", func() {
 	Context("ExecAction", func() {
 		Context("Sidecar Model", func() {
 			Context("Success Test", func() {
-				It("probe should remove the corrupted data before restore", func() {
+				It("should remove the corrupted data in preRestore hook", func() {
 					// Deploy a StatefulSet with prober client. Here, we are using a StatefulSet because we need a stable address
 					// for pod where http request will be sent.
 					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
 					Expect(err).NotTo(HaveOccurred())
 
+					// Read data at empty state
+					emptyData, err := f.ReadSampleDataFromFromWorkload(statefulset.ObjectMeta, apis.KindStatefulSet)
+					Expect(err).NotTo(HaveOccurred())
+
 					// Generate Sample Data
 					sampleData, err := f.GenerateSampleData(statefulset.ObjectMeta, apis.KindStatefulSet)
 					Expect(err).NotTo(HaveOccurred())
+					Expect(sampleData).ShouldNot(BeSameAs(emptyData))
 
 					// Setup a Minio Repository
 					repo, err := f.SetupMinioRepository()
@@ -69,7 +74,7 @@ var _ = Describe("PreRestore Hook", func() {
 					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet)
 					Expect(err).NotTo(HaveOccurred())
 
-					// Take an Instant Backup the Sample Data
+					// Take an Instant Backup of the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -88,6 +93,7 @@ var _ = Describe("PreRestore Hook", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					// Restore the backed up data
+					// Remove corrupted data in preRestore hook
 					By("Restoring the backed up data in the original StatefulSet")
 					restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(restore *v1beta1.RestoreSession) {
 						restore.Spec.Hooks = &v1beta1.RestoreHooks{
@@ -113,15 +119,20 @@ var _ = Describe("PreRestore Hook", func() {
 			})
 
 			Context("Failure Test", func() {
-				It("should not restore when probe failed", func() {
+				It("should not restore when preRestore hook failed", func() {
 					// Deploy a StatefulSet with prober client. Here, we are using a StatefulSet because we need a stable address
 					// for pod where http request will be sent.
 					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
 					Expect(err).NotTo(HaveOccurred())
 
+					// Read data at empty state
+					emptyData, err := f.ReadSampleDataFromFromWorkload(statefulset.ObjectMeta, apis.KindStatefulSet)
+					Expect(err).NotTo(HaveOccurred())
+
 					// Generate Sample Data
 					sampleData, err := f.GenerateSampleData(statefulset.ObjectMeta, apis.KindStatefulSet)
 					Expect(err).NotTo(HaveOccurred())
+					Expect(sampleData).ShouldNot(BeSameAs(emptyData))
 
 					// Setup a Minio Repository
 					repo, err := f.SetupMinioRepository()
@@ -132,7 +143,7 @@ var _ = Describe("PreRestore Hook", func() {
 					backupConfig, err := f.SetupWorkloadBackup(statefulset.ObjectMeta, repo, apis.KindStatefulSet)
 					Expect(err).NotTo(HaveOccurred())
 
-					// Take an Instant Backup the Sample Data
+					// Take an Instant Backup of the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -149,7 +160,8 @@ var _ = Describe("PreRestore Hook", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					// Restore the backed up data
-					By("Restoring the backed up data in the original StatefulSet")
+					// Return a non-zero exit code from preRestore hook so that the hook fail
+					By("Restoring the backed up data")
 					restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(restore *v1beta1.RestoreSession) {
 						restore.Spec.Hooks = &v1beta1.RestoreHooks{
 							PreRestore: &probev1.Handler{
@@ -177,9 +189,151 @@ var _ = Describe("PreRestore Hook", func() {
 					err = app_util.WaitUntilStatefulSetReady(f.KubeClient, statefulset.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
-					By("Verifying that no data has been restored")
 					restoredData := f.RestoredData(statefulset.ObjectMeta, apis.KindStatefulSet)
-					Expect(restoredData).ShouldNot(BeSameAs(sampleData))
+					By("Verifying that no data has been restored")
+					Expect(restoredData).Should(BeSameAs(emptyData))
+				})
+			})
+		})
+
+		Context("Job Model", func() {
+			Context("PVC", func() {
+				Context("Success Cases", func() {
+					It("should remove corrupted data in preRestore hook", func() {
+						// Create new PVC
+						pvc, err := f.CreateNewPVC(fmt.Sprintf("source-pvc-%s", f.App()))
+						Expect(err).NotTo(HaveOccurred())
+
+						// Deploy a Pod
+						pod, err := f.DeployPod(pvc.Name)
+						Expect(err).NotTo(HaveOccurred())
+
+						// Read data at empty state
+						emptyData, err := f.ReadSampleDataFromFromWorkload(pod.ObjectMeta, apis.KindPod)
+						Expect(err).NotTo(HaveOccurred())
+
+						// Generate Sample Data
+						sampleData, err := f.GenerateSampleData(pod.ObjectMeta, apis.KindPod)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(sampleData).ShouldNot(BeSameAs(emptyData))
+
+						// Setup a Minio Repository
+						repo, err := f.SetupMinioRepository()
+						Expect(err).NotTo(HaveOccurred())
+						f.AppendToCleanupList(repo)
+
+						// Setup PVC Backup
+						backupConfig, err := f.SetupPVCBackup(pvc, repo)
+						Expect(err).NotTo(HaveOccurred())
+
+						// Take an Instant Backup of the Sample Data
+						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Verifying that BackupSession has succeeded")
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						Expect(err).NotTo(HaveOccurred())
+						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
+
+						// Simulate disaster scenario. Corrupt the old data from source PVC.
+						// Here, we are just creating a new file so that the resulting data does not match
+						// with the sample data.
+						By("Modifying source data")
+						_, err = f.ExecOnPod(pod, "touch", filepath.Join(framework.TestSourceDataMountPath, "corrupted-data.txt"))
+						Expect(err).NotTo(HaveOccurred())
+
+						// Restore the backed up data
+						// Cleanup corrupted data in preRestore hook
+						By("Restoring the backed up data")
+						restoreSession, err := f.SetupRestoreProcessForPVC(pvc, repo, func(restore *v1beta1.RestoreSession) {
+							restore.Spec.Hooks = &v1beta1.RestoreHooks{
+								PreRestore: &probev1.Handler{
+									Exec: &core.ExecAction{
+										Command: []string{"/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", apis.StashDefaultMountPath)},
+									},
+									ContainerName: apis.PreTaskHook,
+								},
+							}
+						})
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Verifying that RestoreSession has succeeded")
+						completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(restoreSession.Name, metav1.GetOptions{})
+						Expect(err).NotTo(HaveOccurred())
+						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+
+						By("Verifying that the restored data is same as the sample data")
+						restoredData := f.RestoredData(pod.ObjectMeta, apis.KindPod)
+						Expect(restoredData).Should(BeSameAs(sampleData))
+					})
+				})
+
+				Context("Failure Cases", func() {
+					It("should not restore when preRestore hook failed", func() {
+						// Create new PVC
+						pvc, err := f.CreateNewPVC(fmt.Sprintf("source-pvc-%s", f.App()))
+						Expect(err).NotTo(HaveOccurred())
+
+						// Deploy a Pod
+						pod, err := f.DeployPod(pvc.Name)
+						Expect(err).NotTo(HaveOccurred())
+
+						// Read data at empty state
+						emptyData, err := f.ReadSampleDataFromFromWorkload(pod.ObjectMeta, apis.KindPod)
+						Expect(err).NotTo(HaveOccurred())
+
+						// Generate Sample Data
+						sampleData, err := f.GenerateSampleData(pod.ObjectMeta, apis.KindPod)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(sampleData).ShouldNot(BeSameAs(emptyData))
+
+						// Setup a Minio Repository
+						repo, err := f.SetupMinioRepository()
+						Expect(err).NotTo(HaveOccurred())
+						f.AppendToCleanupList(repo)
+
+						// Setup PVC Backup
+						backupConfig, err := f.SetupPVCBackup(pvc, repo)
+						Expect(err).NotTo(HaveOccurred())
+
+						// Take an Instant Backup of the Sample Data
+						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Verifying that BackupSession has succeeded")
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						Expect(err).NotTo(HaveOccurred())
+						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
+
+						// Simulate disaster scenario. Remove old data
+						By("Removing source data")
+						_, err = f.ExecOnPod(pod, "/bin/sh", "-c", fmt.Sprintf("rm -rf %s/*", framework.TestSourceDataMountPath))
+						Expect(err).NotTo(HaveOccurred())
+
+						// Restore the backed up data
+						// Return non-zero exit code from preRestore hook so that the hook fail
+						By("Restoring the backed up data")
+						restoreSession, err := f.SetupRestoreProcessForPVC(pvc, repo, func(restore *v1beta1.RestoreSession) {
+							restore.Spec.Hooks = &v1beta1.RestoreHooks{
+								PreRestore: &probev1.Handler{
+									Exec: &core.ExecAction{
+										Command: []string{"/bin/sh", "-c", "exit 1"},
+									},
+									ContainerName: apis.PreTaskHook,
+								},
+							}
+						})
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Verifying that RestoreSession has failed")
+						completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(restoreSession.Name, metav1.GetOptions{})
+						Expect(err).NotTo(HaveOccurred())
+						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionFailed))
+
+						restoredData := f.RestoredData(pod.ObjectMeta, apis.KindPod)
+						By("Verifying that no data has been restored")
+						Expect(restoredData).Should(BeSameAs(emptyData))
+					})
 				})
 			})
 		})

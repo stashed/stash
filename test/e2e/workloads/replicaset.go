@@ -63,7 +63,7 @@ var _ = Describe("ReplicaSet", func() {
 				backupConfig, err := f.SetupWorkloadBackup(rs.ObjectMeta, repo, apis.KindReplicaSet)
 				Expect(err).NotTo(HaveOccurred())
 
-				// Take an Instant Backup the Sample Data
+				// Take an Instant Backup of the Sample Data
 				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -115,7 +115,7 @@ var _ = Describe("ReplicaSet", func() {
 				backupConfig, err := f.SetupWorkloadBackup(rs.ObjectMeta, repo, apis.KindReplicaSet)
 				Expect(err).NotTo(HaveOccurred())
 
-				// Take an Instant Backup the Sample Data
+				// Take an Instant Backup of the Sample Data
 				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -169,7 +169,7 @@ var _ = Describe("ReplicaSet", func() {
 				By("Waiting for leader election")
 				f.CheckLeaderElection(rs.ObjectMeta, apis.KindReplicaSet, v1beta1.ResourceKindBackupConfiguration)
 
-				// Take an Instant Backup the Sample Data
+				// Take an Instant Backup of the Sample Data
 				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 

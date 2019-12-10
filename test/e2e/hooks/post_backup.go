@@ -80,7 +80,7 @@ var _ = Describe("PostBackup Hook", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						// Take an Instant Backup the Sample Data
+						// Take an Instant Backup of the Sample Data
 						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -121,7 +121,7 @@ var _ = Describe("PostBackup Hook", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						// Take an Instant Backup the Sample Data
+						// Take an Instant Backup of the Sample Data
 						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -163,7 +163,7 @@ var _ = Describe("PostBackup Hook", func() {
 					})
 					Expect(err).NotTo(HaveOccurred())
 
-					// Take an Instant Backup the Sample Data
+					// Take an Instant Backup of the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -215,7 +215,7 @@ var _ = Describe("PostBackup Hook", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						// Take an Instant Backup the Sample Data
+						// Take an Instant Backup of the Sample Data
 						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -256,7 +256,7 @@ var _ = Describe("PostBackup Hook", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						// Take an Instant Backup the Sample Data
+						// Take an Instant Backup of the Sample Data
 						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -298,7 +298,7 @@ var _ = Describe("PostBackup Hook", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						// Take an Instant Backup the Sample Data
+						// Take an Instant Backup of the Sample Data
 						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -349,7 +349,7 @@ var _ = Describe("PostBackup Hook", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						// Take an Instant Backup the Sample Data
+						// Take an Instant Backup of the Sample Data
 						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -401,7 +401,7 @@ var _ = Describe("PostBackup Hook", func() {
 					})
 					Expect(err).NotTo(HaveOccurred())
 
-					// Take an Instant Backup the Sample Data
+					// Take an Instant Backup of the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -451,7 +451,7 @@ var _ = Describe("PostBackup Hook", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						// Take an Instant Backup the Sample Data
+						// Take an Instant Backup of the Sample Data
 						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -490,7 +490,7 @@ var _ = Describe("PostBackup Hook", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						// Take an Instant Backup the Sample Data
+						// Take an Instant Backup of the Sample Data
 						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -530,7 +530,7 @@ var _ = Describe("PostBackup Hook", func() {
 					})
 					Expect(err).NotTo(HaveOccurred())
 
-					// Take an Instant Backup the Sample Data
+					// Take an Instant Backup of the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -556,7 +556,7 @@ var _ = Describe("PostBackup Hook", func() {
 					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
 					Expect(err).NotTo(HaveOccurred())
 
-					// Reade directory data in empty state
+					// Read data at empty state
 					emptyData, err := f.ReadSampleDataFromFromWorkload(statefulset.ObjectMeta, apis.KindStatefulSet)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -583,7 +583,7 @@ var _ = Describe("PostBackup Hook", func() {
 					})
 					Expect(err).NotTo(HaveOccurred())
 
-					// Take an Instant Backup the Sample Data
+					// Take an Instant Backup of the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -603,7 +603,7 @@ var _ = Describe("PostBackup Hook", func() {
 					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
 					Expect(err).NotTo(HaveOccurred())
 
-					// Reade directory data in empty state
+					// Read data at empty state
 					emptyData, err := f.ReadSampleDataFromFromWorkload(statefulset.ObjectMeta, apis.KindStatefulSet)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -633,7 +633,7 @@ var _ = Describe("PostBackup Hook", func() {
 					})
 					Expect(err).NotTo(HaveOccurred())
 
-					// Take an Instant Backup the Sample Data
+					// Take an Instant Backup of the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -655,7 +655,7 @@ var _ = Describe("PostBackup Hook", func() {
 					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
 					Expect(err).NotTo(HaveOccurred())
 
-					// Reade directory data in empty state
+					// Read data at empty state
 					emptyData, err := f.ReadSampleDataFromFromWorkload(statefulset.ObjectMeta, apis.KindStatefulSet)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -683,7 +683,7 @@ var _ = Describe("PostBackup Hook", func() {
 					})
 					Expect(err).NotTo(HaveOccurred())
 
-					// Take an Instant Backup the Sample Data
+					// Take an Instant Backup of the Sample Data
 					backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -712,7 +712,7 @@ var _ = Describe("PostBackup Hook", func() {
 						pod, err := f.DeployPod(pvc.Name)
 						Expect(err).NotTo(HaveOccurred())
 
-						// Reade directory data in empty state
+						// Read data at empty state
 						emptyData, err := f.ReadSampleDataFromFromWorkload(pod.ObjectMeta, apis.KindPod)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -740,7 +740,7 @@ var _ = Describe("PostBackup Hook", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						// Take an Instant Backup the Sample Data
+						// Take an Instant Backup of the Sample Data
 						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -764,7 +764,7 @@ var _ = Describe("PostBackup Hook", func() {
 						pod, err := f.DeployPod(pvc.Name)
 						Expect(err).NotTo(HaveOccurred())
 
-						// Reade directory data in empty state
+						// Read data at empty state
 						emptyData, err := f.ReadSampleDataFromFromWorkload(pod.ObjectMeta, apis.KindPod)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -794,7 +794,7 @@ var _ = Describe("PostBackup Hook", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						// Take an Instant Backup the Sample Data
+						// Take an Instant Backup of the Sample Data
 						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -820,7 +820,7 @@ var _ = Describe("PostBackup Hook", func() {
 						pod, err := f.DeployPod(pvc.Name)
 						Expect(err).NotTo(HaveOccurred())
 
-						// Reade directory data in empty state
+						// Read data at empty state
 						emptyData, err := f.ReadSampleDataFromFromWorkload(pod.ObjectMeta, apis.KindPod)
 						Expect(err).NotTo(HaveOccurred())
 
@@ -848,7 +848,7 @@ var _ = Describe("PostBackup Hook", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						// Take an Instant Backup the Sample Data
+						// Take an Instant Backup of the Sample Data
 						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
 
