@@ -724,8 +724,10 @@ func (f *Invocation) ReadDataFromPod(meta metav1.ObjectMeta) (data string, err e
 	return data, err
 }
 
-func (f *Invocation) AppendToCleanupList(resource interface{}) {
-	f.testResources = append(f.testResources, resource)
+func (f *Invocation) AppendToCleanupList(resources ...interface{}) {
+	for i := range resources {
+		f.testResources = append(f.testResources, resources[i])
+	}
 }
 
 func (f *Invocation) CleanupTestResources() error {

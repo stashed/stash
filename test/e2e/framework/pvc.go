@@ -45,7 +45,7 @@ func (f *Invocation) PersistentVolumeClaim(name string) *core.PersistentVolumeCl
 			StorageClassName: &f.StorageClass,
 			Resources: core.ResourceRequirements{
 				Requests: core.ResourceList{
-					core.ResourceName(core.ResourceStorage): resource.MustParse("10Mi"),
+					core.ResourceStorage: resource.MustParse("10Mi"),
 				},
 			},
 		},

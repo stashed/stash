@@ -37,9 +37,7 @@ import (
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/dynamic"
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
-	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
 	"kmodules.xyz/client-go/logs"
 	"kmodules.xyz/client-go/tools/cli"
@@ -74,10 +72,7 @@ var _ = BeforeSuite(func() {
 	err = options.ApplyTo(ctrlConfig)
 	Expect(err).NotTo(HaveOccurred())
 
-	kaClient := ka.NewForConfigOrDie(clientConfig)
-	dmClient := dynamic.NewForConfigOrDie(clientConfig)
-
-	root = framework.New(ctrlConfig.KubeClient, ctrlConfig.StashClient, kaClient, dmClient, clientConfig, options.StorageClass)
+	root = framework.New(ctrlConfig.KubeClient, ctrlConfig.StashClient, clientConfig, options.StorageClass)
 	framework.RootFramework = root
 	By("Using test namespace " + root.Namespace())
 	err = root.CreateTestNamespace()

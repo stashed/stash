@@ -17,18 +17,22 @@ limitations under the License.
 package hooks
 
 import (
+	"database/sql"
 	"fmt"
+	"time"
 
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/test/e2e/framework"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 
+	_ "github.com/go-sql-driver/mysql"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	pfutil "kmodules.xyz/client-go/tools/portforward"
 	probev1 "kmodules.xyz/prober/api/v1"
 )
 
@@ -782,6 +786,36 @@ var _ = Describe("PreBackup Hook", func() {
 						Expect(err).Should(HaveOccurred())
 						Expect(err.Error()).Should(BeEquivalentTo("not found"))
 					})
+				})
+			})
+
+			Context("MySQL", func() {
+				FIt("should execute hook successfully", func() {
+					// Deploy MySQL database and respective service,secret,PVC and AppBinding.
+					By("Deploying MySQL Server")
+					dpl, err := f.DeployMySQLDatabase()
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Port forwarding MySQL pod")
+					pod, err := f.GetPod(dpl.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+					tunnel := pfutil.NewTunnel(f.KubeClient.CoreV1().RESTClient(), f.ClientConfig, pod.Namespace, pod.Name, framework.MySQLServingPortNumber)
+					defer tunnel.Close()
+					err = tunnel.ForwardPort()
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Connecting with MySQL Server")
+					addr := fmt.Sprintf("tcp(%s:%d)", framework.LocalHostIP, tunnel.Local)
+					db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@%s/mysql", framework.SuperUser, f.App(), addr))
+					Expect(err).NotTo(HaveOccurred())
+					defer db.Close()
+					db.SetConnMaxLifetime(time.Second * 10)
+					err = f.EventuallyConnectWithMySQLServer(db)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Creating Sample Table")
+					err = f.CreateMySQLTable(db, "sample")
+					Expect(err).NotTo(HaveOccurred())
 				})
 			})
 		})
