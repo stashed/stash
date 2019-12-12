@@ -31,6 +31,7 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"kmodules.xyz/client-go/meta"
+	appcatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 )
 
 func (f *Framework) GenerateSampleData(objMeta metav1.ObjectMeta, kind string) (sets.String, error) {
@@ -202,6 +203,9 @@ func GetTargetRef(name string, kind string) v1beta1.TargetRef {
 	case apis.KindPersistentVolumeClaim:
 		targetRef.Kind = apis.KindPersistentVolumeClaim
 		targetRef.APIVersion = core.SchemeGroupVersion.String()
+	case apis.KindAppBinding:
+		targetRef.Kind = apis.KindAppBinding
+		targetRef.APIVersion = appcatalog.SchemeGroupVersion.String()
 	}
 	return targetRef
 }

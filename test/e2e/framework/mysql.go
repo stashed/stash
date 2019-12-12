@@ -5,28 +5,36 @@ import (
 	"fmt"
 	"time"
 
-	"k8s.io/apimachinery/pkg/util/wait"
+	"stash.appscode.dev/stash/apis"
+	"stash.appscode.dev/stash/apis/stash/v1alpha1"
+	"stash.appscode.dev/stash/apis/stash/v1beta1"
 
-	"k8s.io/apimachinery/pkg/api/resource"
-
+	"github.com/appscode/go/sets"
 	_ "github.com/go-sql-driver/mysql"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	apps_util "kmodules.xyz/client-go/apps/v1"
 	appCatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 )
 
 const (
-	KeyUser     = "user"
+	KeyUser     = "username"
 	KeyPassword = "password"
 	SuperUser   = "root"
 
 	KeyMySQLRootPassword   = "MYSQL_ROOT_PASSWORD"
 	MySQLServingPortName   = "mysql"
-	MySQLServingPortNumber = 33060
+	MySQLContainerName     = "mysql"
+	MySQLServingPortNumber = 3306
+	MySQLBackupTask        = "mysql-backup-8.0.14"
+	MySQLRestoreTask       = "mysql-restore-8.0.14"
+	MySQLBackupFunction    = "mysql-backup-8.0.14"
+	MySQLRestoreFunction   = "mysql-restore-8.0.14"
 )
 
 func (f *Invocation) MySQLCredentials() *core.Secret {
@@ -102,8 +110,8 @@ func (f *Invocation) MySQLDeployment(cred *core.Secret, pvc *core.PersistentVolu
 				Spec: core.PodSpec{
 					Containers: []core.Container{
 						{
-							Name:  "mysql",
-							Image: "mysql:8.0.14",
+							Name:  MySQLContainerName,
+							Image: "mysql:8",
 							Env: []core.EnvVar{
 								{
 									Name: KeyMySQLRootPassword,
@@ -170,7 +178,7 @@ func (f *Invocation) MySQLAppBinding(cred *core.Secret, svc *core.Service) *appC
 	}
 }
 
-func (f *Invocation) DeployMySQLDatabase() (*apps.Deployment, error) {
+func (f *Invocation) DeployMySQLDatabase() (*apps.Deployment, *appCatalog.AppBinding, error) {
 	By("Creating Secret for MySQL")
 	cred := f.MySQLCredentials()
 	_, err := f.CreateSecret(*cred)
@@ -201,13 +209,12 @@ func (f *Invocation) DeployMySQLDatabase() (*apps.Deployment, error) {
 	Expect(err).NotTo(HaveOccurred())
 
 	f.AppendToCleanupList(appBinding, dpl, svc, pvc, cred)
-	return dpl, nil
+	return dpl, appBinding, nil
 }
 
 func (f *Invocation) EventuallyConnectWithMySQLServer(db *sql.DB) error {
-	return wait.PollImmediate(2*time.Second, 3*time.Minute, func() (bool, error) {
+	return wait.PollImmediate(5*time.Second, 2*time.Minute, func() (bool, error) {
 		if err := db.Ping(); err != nil {
-			fmt.Println(err)
 			return false, nil // don't return error. we need to retry.
 		}
 		return true, nil
@@ -218,17 +225,80 @@ func (f *Invocation) createAppBinding(appBinding *appCatalog.AppBinding) (*appCa
 	return f.catalogClient.AppcatalogV1alpha1().AppBindings(appBinding.Namespace).Create(appBinding)
 }
 
-func (f *Invocation) CreateMySQLTable(db *sql.DB, tableName string) error {
-	stmnt, err := db.Prepare(fmt.Sprintf("CREATE TABLE %s ( ID int );"))
+func (f *Invocation) CreateTable(db *sql.DB, tableName string) error {
+	stmnt, err := db.Prepare(fmt.Sprintf("CREATE TABLE %s ( ID int );", tableName))
 	if err != nil {
 		return err
 	}
 	defer stmnt.Close()
 
-	result, err := stmnt.Exec()
+	_, err = stmnt.Exec()
 	if err != nil {
 		return err
 	}
-	fmt.Println("========= Result: ", result)
 	return nil
+}
+
+func (f *Invocation) ListTables(db *sql.DB) (sets.String, error) {
+	res, err := db.Query("SHOW TABLES IN mysql")
+	if err != nil {
+		return nil, err
+	}
+	defer res.Close()
+	tables := sets.String{}
+	var tableName string
+	for res.Next() {
+		err = res.Scan(&tableName)
+		if err != nil {
+			return nil, err
+		}
+		tables.Insert(tableName)
+	}
+	return tables, nil
+}
+
+func (f *Invocation) SetupDatabaseBackup(appBinding *appCatalog.AppBinding, repo *v1alpha1.Repository, transformFuncs ...func(bc *v1beta1.BackupConfiguration)) (*v1beta1.BackupConfiguration, error) {
+	// Generate desired BackupConfiguration definition
+	backupConfig := f.GetBackupConfiguration(repo.Name, func(bc *v1beta1.BackupConfiguration) {
+		bc.Spec.Target = &v1beta1.BackupTarget{
+			Ref: GetTargetRef(appBinding.Name, apis.KindAppBinding),
+		}
+		bc.Spec.Task.Name = MySQLBackupTask
+	})
+
+	// transformFuncs provides a array of functions that made test specific change on the BackupConfiguration
+	// apply these test specific changes
+	for _, fn := range transformFuncs {
+		fn(backupConfig)
+	}
+
+	By("Creating BackupConfiguration: " + backupConfig.Name)
+	createdBC, err := f.StashClient.StashV1beta1().BackupConfigurations(backupConfig.Namespace).Create(backupConfig)
+	f.AppendToCleanupList(createdBC)
+
+	By("Verifying that backup triggering CronJob has been created")
+	f.EventuallyCronJobCreated(backupConfig.ObjectMeta).Should(BeTrue())
+
+	return createdBC, err
+}
+
+func (f *Invocation) MySQLAddonInstalled() bool {
+	_, err := f.StashClient.StashV1beta1().Functions().Get(MySQLBackupFunction, metav1.GetOptions{})
+	if err != nil {
+		return false
+	}
+
+	_, err = f.StashClient.StashV1beta1().Functions().Get(MySQLRestoreFunction, metav1.GetOptions{})
+	if err != nil {
+		return false
+	}
+
+	_, err = f.StashClient.StashV1beta1().Tasks().Get(MySQLBackupTask, metav1.GetOptions{})
+	if err != nil {
+		return false
+	}
+
+	_, err = f.StashClient.StashV1beta1().Tasks().Get(MySQLRestoreTask, metav1.GetOptions{})
+
+	return err == nil
 }

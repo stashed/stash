@@ -95,4 +95,7 @@ jobs:
         echo "GOOGLE_SERVICE_ACCOUNT_JSON_KEY=$(echo $GOOGLE_SERVICE_ACCOUNT_JSON_KEY)" >> hack/config/.env
         make install
         echo
+        echo "installing addons"
+        curl -fsSL https://github.com/stashed/catalog/raw/master/deploy/script.sh | bash
+        echo
         make e2e-tests
