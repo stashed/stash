@@ -536,8 +536,8 @@ func ExecuteHook(config *rest.Config, hook interface{}, hookType, podName, names
 	return nil
 }
 
-func HookExecutorContainer(name string, shiblings []core.Container) *core.Container {
-	hookExecutor := &core.Container{
+func HookExecutorContainer(name string, shiblings []core.Container) core.Container {
+	hookExecutor := core.Container{
 		Name:  name,
 		Image: "${STASH_DOCKER_REGISTRY:=appscode}/${STASH_DOCKER_IMAGE:=stash}:${STASH_IMAGE_TAG:=latest}",
 		Args: []string{

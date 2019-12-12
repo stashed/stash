@@ -789,7 +789,7 @@ var _ = Describe("PreBackup Hook", func() {
 				})
 			})
 
-			FContext("MySQL", func() {
+			Context("MySQL", func() {
 				const (
 					sampleTable = "StashDemo"
 				)
@@ -802,7 +802,7 @@ var _ = Describe("PreBackup Hook", func() {
 				})
 
 				Context("Success Test", func() {
-					It("should pause the database in preBackup hook", func() {
+					It("should make the database read-only in preBackup hook", func() {
 						// Deploy MySQL database and respective service,secret,PVC and AppBinding.
 						By("Deploying MySQL Server")
 						dpl, appBinding, err := f.DeployMySQLDatabase()
@@ -840,7 +840,7 @@ var _ = Describe("PreBackup Hook", func() {
 						f.AppendToCleanupList(repo)
 
 						// Setup Database Backup
-						// Here, we are going to make the database read only in preBackup hook.
+						// Here, we are going to make the database read-only in preBackup hook.
 						// We won't make the database writable after the backup because we will try to write
 						// in the read only database to verify that the preBackup hook was executed properly
 						backupConfig, err := f.SetupDatabaseBackup(appBinding, repo, func(bc *v1beta1.BackupConfiguration) {
@@ -865,14 +865,14 @@ var _ = Describe("PreBackup Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
-						By("Verifying that the database is read only")
+						By("Verifying that the database is read-only")
 						err = f.CreateTable(db, "readOnlyTest")
 						Expect(err).Should(HaveOccurred())
 					})
 				})
 
 				Context("Failure Test", func() {
-					It("should not backup when preBackup hook failed", func() {
+					It("should not take backup when preBackup hook failed", func() {
 						// Deploy MySQL database and respective service,secret,PVC and AppBinding.
 						By("Deploying MySQL Server")
 						dpl, appBinding, err := f.DeployMySQLDatabase()

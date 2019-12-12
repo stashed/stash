@@ -226,7 +226,7 @@ func (f *Invocation) createAppBinding(appBinding *appCatalog.AppBinding) (*appCa
 }
 
 func (f *Invocation) CreateTable(db *sql.DB, tableName string) error {
-	stmnt, err := db.Prepare(fmt.Sprintf("CREATE TABLE %s ( ID int );", tableName))
+	stmnt, err := db.Prepare(fmt.Sprintf("CREATE TABLE %s ( property varchar(25),  value int );", tableName))
 	if err != nil {
 		return err
 	}
@@ -255,6 +255,42 @@ func (f *Invocation) ListTables(db *sql.DB) (sets.String, error) {
 		tables.Insert(tableName)
 	}
 	return tables, nil
+}
+
+func (f *Invocation) InsertRow(db *sql.DB, tableName string, property string, value int) error {
+	stmnt, err := db.Prepare(fmt.Sprintf("INSERT INTO %s ( %s, %v );", tableName, property, value))
+	if err != nil {
+		return err
+	}
+	defer stmnt.Close()
+
+	_, err = stmnt.Exec()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (f *Invocation) ReadProperty(db *sql.DB, tableName, property string) (int, error) {
+	res, err := db.Query(fmt.Sprintf("SELECT * from %s WHERE property = '%s'; ", tableName, property))
+	if err != nil {
+		return 0, err
+	}
+	defer res.Close()
+
+	var propertyName string
+	var value int
+
+	for res.Next() {
+		err = res.Scan(&propertyName, &value)
+		if err != nil {
+			return 0, err
+		}
+		if propertyName == property {
+			return value, nil
+		}
+	}
+	return 0, fmt.Errorf("no entry for property: %q in the database", property)
 }
 
 func (f *Invocation) SetupDatabaseBackup(appBinding *appCatalog.AppBinding, repo *v1alpha1.Repository, transformFuncs ...func(bc *v1beta1.BackupConfiguration)) (*v1beta1.BackupConfiguration, error) {

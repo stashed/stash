@@ -129,20 +129,35 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 		inputs := core_util.UpsertMap(taskParams, o.Inputs)
 		inputs = core_util.UpsertMap(o.PreTaskHookInput, inputs)
 		hookExecutor := util.HookExecutorContainer(apis.PreTaskHook, containers)
-		if err = resolveWithInputs(hookExecutor, inputs); err != nil {
-			return core.PodSpec{}, fmt.Errorf("failed to resolve preTaskHook")
+
+		if err = resolveWithInputs(&hookExecutor, inputs); err != nil {
+			return core.PodSpec{}, fmt.Errorf("failed to resolve preTaskHook. Reason: %v", err)
 		}
-		containers = append([]core.Container{*hookExecutor}, containers...)
+
+		// apply RuntimeSettings to Container
+		if o.RuntimeSettings.Container != nil {
+			hookExecutor = ofst_util.ApplyContainerRuntimeSettings(hookExecutor, *o.RuntimeSettings.Container)
+		}
+
+		containers = append([]core.Container{hookExecutor}, containers...)
 	}
+
 	if o.PostTaskHookInput != nil {
 		inputs := core_util.UpsertMap(taskParams, o.Inputs)
 		inputs = core_util.UpsertMap(o.PostTaskHookInput, inputs)
 		hookExecutor := util.HookExecutorContainer(apis.PostTaskHook, containers)
-		if err = resolveWithInputs(hookExecutor, inputs); err != nil {
-			return core.PodSpec{}, fmt.Errorf("failed to resolve postTaskHook")
+
+		if err = resolveWithInputs(&hookExecutor, inputs); err != nil {
+			return core.PodSpec{}, fmt.Errorf("failed to resolve postTaskHook. Reason: %v", err)
 		}
+
+		// apply RuntimeSettings to Container
+		if o.RuntimeSettings.Container != nil {
+			hookExecutor = ofst_util.ApplyContainerRuntimeSettings(hookExecutor, *o.RuntimeSettings.Container)
+		}
+
 		lastContainer := containers[len(containers)-1]
-		containers[len(containers)-1] = *hookExecutor
+		containers[len(containers)-1] = hookExecutor
 		containers = append(containers, lastContainer)
 	}
 	// podSpec from task

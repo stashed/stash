@@ -17,19 +17,20 @@ limitations under the License.
 package hooks
 
 import (
+	"database/sql"
 	"fmt"
+	"time"
 
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/test/e2e/framework"
-
-	//. "stash.appscode.dev/stash/test/e2e/matcher"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	pfutil "kmodules.xyz/client-go/tools/portforward"
 	probev1 "kmodules.xyz/prober/api/v1"
 )
 
@@ -843,6 +844,239 @@ var _ = Describe("PostBackup Hook", func() {
 										Command: []string{"/bin/sh", "-c", "exit 1"},
 									},
 									ContainerName: apis.PostTaskHook,
+								},
+							}
+						})
+						Expect(err).NotTo(HaveOccurred())
+
+						// Take an Instant Backup of the Sample Data
+						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Verifying that BackupSession has failed")
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						Expect(err).NotTo(HaveOccurred())
+						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
+
+						By("Verifying that a backup has been taken")
+						items, err := f.BrowseMinioRepository(repo)
+						Expect(err).ShouldNot(HaveOccurred())
+						Expect(items).ShouldNot(BeEmpty())
+					})
+				})
+			})
+
+			Context("MySQL", func() {
+				const (
+					sampleTable = "StashDemo"
+				)
+
+				BeforeEach(func() {
+					// Skip test if respective Functions and Tasks are not installed.
+					if !f.MySQLAddonInstalled() {
+						Skip("MySQL addon is not installed")
+					}
+				})
+
+				Context("Success Test", func() {
+					It("should make the database writable that was made read-only in preBackup hook", func() {
+						// Deploy MySQL database and respective service,secret,PVC and AppBinding.
+						By("Deploying MySQL Server")
+						dpl, appBinding, err := f.DeployMySQLDatabase()
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Port forwarding MySQL pod")
+						pod, err := f.GetPod(dpl.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+						tunnel := pfutil.NewTunnel(f.KubeClient.CoreV1().RESTClient(), f.ClientConfig, pod.Namespace, pod.Name, framework.MySQLServingPortNumber)
+						defer tunnel.Close()
+						err = tunnel.ForwardPort()
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Connecting with MySQL Server")
+						connstr := fmt.Sprintf("%s:%s@tcp(%s:%d)/mysql", framework.SuperUser, f.App(), framework.LocalHostIP, tunnel.Local)
+						db, err := sql.Open("mysql", connstr)
+						Expect(err).NotTo(HaveOccurred())
+						defer db.Close()
+						db.SetConnMaxLifetime(time.Second * 10)
+						err = f.EventuallyConnectWithMySQLServer(db)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Creating Sample Table")
+						err = f.CreateTable(db, sampleTable)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Verifying that the sample table has been created")
+						tables, err := f.ListTables(db)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(tables.Has(sampleTable)).Should(BeTrue())
+
+						// Setup a Minio Repository
+						repo, err := f.SetupMinioRepository()
+						Expect(err).NotTo(HaveOccurred())
+						f.AppendToCleanupList(repo)
+
+						// Setup Database Backup
+						// Here, we are going to make the database read only in preBackup hook.
+						// Then, we will make the database writable in postBackup hook.
+						backupConfig, err := f.SetupDatabaseBackup(appBinding, repo, func(bc *v1beta1.BackupConfiguration) {
+							bc.Spec.Hooks = &v1beta1.BackupHooks{
+								PreBackup: &probev1.Handler{
+									Exec: &core.ExecAction{
+										Command: []string{"/bin/sh", "-c",
+											`mysql -u root --password=$MYSQL_ROOT_PASSWORD -e "SET GLOBAL super_read_only = ON;"`},
+									},
+									ContainerName: framework.MySQLContainerName,
+								},
+								PostBackup: &probev1.Handler{
+									Exec: &core.ExecAction{
+										Command: []string{"/bin/sh", "-c",
+											`mysql -u root --password=$MYSQL_ROOT_PASSWORD -e "SET GLOBAL super_read_only = OFF;"`},
+									},
+									ContainerName: framework.MySQLContainerName,
+								},
+							}
+						})
+						Expect(err).NotTo(HaveOccurred())
+
+						// Take an Instant Backup of the Sample Data
+						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Verifying that BackupSession has succeeded")
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						Expect(err).NotTo(HaveOccurred())
+						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
+
+						By("Verifying that the database is writable")
+						err = f.CreateTable(db, "readOnlyTest")
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					It("should execute postBackup hook even when the backup process failed", func() {
+						// Deploy MySQL database and respective service,secret,PVC and AppBinding.
+						By("Deploying MySQL Server")
+						dpl, appBinding, err := f.DeployMySQLDatabase()
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Port forwarding MySQL pod")
+						pod, err := f.GetPod(dpl.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+						tunnel := pfutil.NewTunnel(f.KubeClient.CoreV1().RESTClient(), f.ClientConfig, pod.Namespace, pod.Name, framework.MySQLServingPortNumber)
+						defer tunnel.Close()
+						err = tunnel.ForwardPort()
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Connecting with MySQL Server")
+						connstr := fmt.Sprintf("%s:%s@tcp(%s:%d)/mysql", framework.SuperUser, f.App(), framework.LocalHostIP, tunnel.Local)
+						db, err := sql.Open("mysql", connstr)
+						Expect(err).NotTo(HaveOccurred())
+						defer db.Close()
+						db.SetConnMaxLifetime(time.Second * 10)
+						err = f.EventuallyConnectWithMySQLServer(db)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Creating Sample Table")
+						err = f.CreateTable(db, sampleTable)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Verifying that the sample table has been created")
+						tables, err := f.ListTables(db)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(tables.Has(sampleTable)).Should(BeTrue())
+
+						// Setup a Minio Repository
+						repo, err := f.SetupMinioRepository()
+						Expect(err).NotTo(HaveOccurred())
+						f.AppendToCleanupList(repo)
+
+						// Setup Database Backup
+						// Here, we are going to make the database read only in preBackup hook.
+						// Then, we will make the database writable in postBackup hook.
+						// Use invalid retentionPolicy so that the backup process fail in cleanup step
+						backupConfig, err := f.SetupDatabaseBackup(appBinding, repo, func(bc *v1beta1.BackupConfiguration) {
+							bc.Spec.Hooks = &v1beta1.BackupHooks{
+								PreBackup: &probev1.Handler{
+									Exec: &core.ExecAction{
+										Command: []string{"/bin/sh", "-c",
+											`mysql -u root --password=$MYSQL_ROOT_PASSWORD -e "SET GLOBAL super_read_only = ON;"`},
+									},
+									ContainerName: framework.MySQLContainerName,
+								},
+								PostBackup: &probev1.Handler{
+									Exec: &core.ExecAction{
+										Command: []string{"/bin/sh", "-c",
+											`mysql -u root --password=$MYSQL_ROOT_PASSWORD -e "SET GLOBAL super_read_only = OFF;"`},
+									},
+									ContainerName: framework.MySQLContainerName,
+								},
+							}
+							bc.Spec.RetentionPolicy.KeepLast = 0 // invalid retention value to force backup process fail on cleanup step
+						})
+						Expect(err).NotTo(HaveOccurred())
+
+						// Take an Instant Backup of the Sample Data
+						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Verifying that BackupSession has failed")
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						Expect(err).NotTo(HaveOccurred())
+						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
+
+						By("Verifying that the postBackup hook has been executed")
+						err = f.CreateTable(db, "readOnlyTest")
+						Expect(err).NotTo(HaveOccurred())
+					})
+				})
+
+				Context("Failure Test", func() {
+					FIt("should take backup even when postBackup hook failed", func() {
+						// Deploy MySQL database and respective service,secret,PVC and AppBinding.
+						By("Deploying MySQL Server")
+						dpl, appBinding, err := f.DeployMySQLDatabase()
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Port forwarding MySQL pod")
+						pod, err := f.GetPod(dpl.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+						tunnel := pfutil.NewTunnel(f.KubeClient.CoreV1().RESTClient(), f.ClientConfig, pod.Namespace, pod.Name, framework.MySQLServingPortNumber)
+						defer tunnel.Close()
+						err = tunnel.ForwardPort()
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Connecting with MySQL Server")
+						connstr := fmt.Sprintf("%s:%s@tcp(%s:%d)/mysql", framework.SuperUser, f.App(), framework.LocalHostIP, tunnel.Local)
+						db, err := sql.Open("mysql", connstr)
+						Expect(err).NotTo(HaveOccurred())
+						defer db.Close()
+						db.SetConnMaxLifetime(time.Second * 10)
+						err = f.EventuallyConnectWithMySQLServer(db)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Creating Sample Table")
+						err = f.CreateTable(db, sampleTable)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Verifying that the sample table has been created")
+						tables, err := f.ListTables(db)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(tables.Has(sampleTable)).Should(BeTrue())
+
+						// Setup a Minio Repository
+						repo, err := f.SetupMinioRepository()
+						Expect(err).NotTo(HaveOccurred())
+						f.AppendToCleanupList(repo)
+
+						// Setup Database Backup
+						// Return non-zero exit code from the postBackup hook so that it fail.
+						backupConfig, err := f.SetupDatabaseBackup(appBinding, repo, func(bc *v1beta1.BackupConfiguration) {
+							bc.Spec.Hooks = &v1beta1.BackupHooks{
+								PostBackup: &probev1.Handler{
+									Exec: &core.ExecAction{
+										Command: []string{"/bin/sh", "-c", "exit 1"},
+									},
+									ContainerName: framework.MySQLContainerName,
 								},
 							}
 						})
