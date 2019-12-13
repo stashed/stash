@@ -29,7 +29,7 @@ import (
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
-const outputFilePermissions = 0777
+const FileModeRWXAll = 0777
 
 type BackupOutput struct {
 	// HostBackupStats shows backup statistics of a host
@@ -61,13 +61,14 @@ func (out *BackupOutput) WriteOutput(fileName string) error {
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(fileName), outputFilePermissions); err != nil {
+	if err := os.MkdirAll(filepath.Dir(fileName), FileModeRWXAll); err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(fileName, jsonOutput, outputFilePermissions); err != nil {
+	if err := ioutil.WriteFile(fileName, jsonOutput, FileModeRWXAll); err != nil { // this does not make the file writable to other users
 		return err
 	}
-	return nil
+	// change the file permission to make it writable to other users
+	return os.Chmod(fileName, FileModeRWXAll)
 }
 
 func (out *RestoreOutput) WriteOutput(fileName string) error {
@@ -75,13 +76,14 @@ func (out *RestoreOutput) WriteOutput(fileName string) error {
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(fileName), outputFilePermissions); err != nil {
+	if err := os.MkdirAll(filepath.Dir(fileName), FileModeRWXAll); err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(fileName, jsonOutput, outputFilePermissions); err != nil {
+	if err := ioutil.WriteFile(fileName, jsonOutput, FileModeRWXAll); err != nil { // this does not make the file writable to other users
 		return err
 	}
-	return nil
+	// change the file permission to make it writable to other users
+	return os.Chmod(fileName, FileModeRWXAll)
 }
 
 func ReadBackupOutput(filename string) (*BackupOutput, error) {
