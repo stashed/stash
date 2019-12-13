@@ -128,7 +128,7 @@ func (f *Invocation) MySQLDeployment(cred *core.Secret, pvc *core.PersistentVolu
 					Containers: []core.Container{
 						{
 							Name:  MySQLContainerName,
-							Image: "mysql:8",
+							Image: "mysql:8.0.14",
 							Env: []core.EnvVar{
 								{
 									Name: KeyMySQLRootPassword,
@@ -440,7 +440,7 @@ func mysqlBackupFunction(image docker.Docker) *v1beta1.Function {
 				"--enable-cache=${ENABLE_CACHE:=true}",
 				"--max-connections=${MAX_CONNECTIONS:=0}",
 				"--hostname=${HOSTNAME:=}",
-				"--mysql-args=${myArgs:=}",
+				"--mysql-args=${myArgs:=--all-databases}",
 				// target information
 				"--appbinding=${TARGET_NAME:=}",
 				"--namespace=${NAMESPACE:=default}",
