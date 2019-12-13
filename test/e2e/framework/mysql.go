@@ -250,10 +250,7 @@ func (f *Invocation) CreateTable(db *sql.DB, tableName string) error {
 	defer stmnt.Close()
 
 	_, err = stmnt.Exec()
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (f *Invocation) ListTables(db *sql.DB) (sets.String, error) {
@@ -275,21 +272,18 @@ func (f *Invocation) ListTables(db *sql.DB) (sets.String, error) {
 }
 
 func (f *Invocation) InsertRow(db *sql.DB, tableName string, property string, value int) error {
-	stmnt, err := db.Prepare(fmt.Sprintf("INSERT INTO %s ( %s, %v );", tableName, property, value))
+	stmnt, err := db.Prepare(fmt.Sprintf("INSERT INTO %s( property, value) VALUES(?,?);", tableName))
 	if err != nil {
 		return err
 	}
 	defer stmnt.Close()
 
-	_, err = stmnt.Exec()
-	if err != nil {
-		return err
-	}
-	return nil
+	_, err = stmnt.Exec(property, value)
+	return err
 }
 
 func (f *Invocation) ReadProperty(db *sql.DB, tableName, property string) (int, error) {
-	res, err := db.Query(fmt.Sprintf("SELECT * from %s WHERE property = '%s'; ", tableName, property))
+	res, err := db.Query(fmt.Sprintf("SELECT * FROM %s WHERE property=?;", tableName), property)
 	if err != nil {
 		return 0, err
 	}
@@ -308,6 +302,17 @@ func (f *Invocation) ReadProperty(db *sql.DB, tableName, property string) (int, 
 		}
 	}
 	return 0, fmt.Errorf("no entry for property: %q in the database", property)
+}
+
+func (f *Invocation) UpdateProperty(db *sql.DB, tableName, property string, newValue int) error {
+	stmnt, err := db.Prepare(fmt.Sprintf("UPDATE %s SET value=? WHERE property=?; ", tableName))
+	if err != nil {
+		return err
+	}
+	defer stmnt.Close()
+
+	_, err = stmnt.Exec(newValue, property)
+	return err
 }
 
 func (f *Invocation) SetupDatabaseBackup(appBinding *appCatalog.AppBinding, repo *v1alpha1.Repository, transformFuncs ...func(bc *v1beta1.BackupConfiguration)) (*v1beta1.BackupConfiguration, error) {
@@ -333,6 +338,36 @@ func (f *Invocation) SetupDatabaseBackup(appBinding *appCatalog.AppBinding, repo
 	f.EventuallyCronJobCreated(backupConfig.ObjectMeta).Should(BeTrue())
 
 	return createdBC, err
+}
+
+func (f *Invocation) SetupDatabaseRestore(appBinding *appCatalog.AppBinding, repo *v1alpha1.Repository, transformFuncs ...func(restore *v1beta1.RestoreSession)) (*v1beta1.RestoreSession, error) {
+	// Generate desired RestoreSession definition
+	By("Creating RestoreSession")
+	restoreSession := f.GetRestoreSession(repo.Name, func(restore *v1beta1.RestoreSession) {
+		restore.Spec.Target = &v1beta1.RestoreTarget{
+			Ref: GetTargetRef(appBinding.Name, apis.KindAppBinding),
+		}
+		restore.Spec.Rules = []v1beta1.Rule{
+			{
+				Snapshots: []string{"latest"},
+			},
+		}
+		restore.Spec.Task.Name = MySQLRestoreTask
+	})
+
+	// transformFuncs provides a array of functions that made test specific change on the RestoreSession
+	// apply these test specific changes.
+	for _, fn := range transformFuncs {
+		fn(restoreSession)
+	}
+
+	err := f.CreateRestoreSession(restoreSession)
+	f.AppendToCleanupList(restoreSession)
+
+	By("Waiting for restore process to complete")
+	f.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta).Should(BeTrue())
+
+	return restoreSession, err
 }
 
 func (f *Framework) EnsureMySQLAddon() error {

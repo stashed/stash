@@ -353,7 +353,7 @@ var _ = Describe("PreRestore Hook", func() {
 				})
 
 				Context("Success Test", func() {
-					It("should remove corrupted data in preRestore hook", func() {
+					It("should remove corrupted table in preRestore hook", func() {
 						// Deploy MySQL database and respective service,secret,PVC and AppBinding.
 						By("Deploying MySQL Server")
 						dpl, appBinding, err := f.DeployMySQLDatabase()
@@ -384,6 +384,17 @@ var _ = Describe("PreRestore Hook", func() {
 						tables, err := f.ListTables(db)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(tables.Has(sampleTable)).Should(BeTrue())
+
+						By("Insert sample data")
+						property := "price"
+						originalValue := 123456
+						err = f.InsertRow(db, sampleTable, property, originalValue)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Verify that sample data has been inserted")
+						res, err := f.ReadProperty(db, sampleTable, property)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(res).Should(BeEquivalentTo(originalValue))
 
 						// Setup a Minio Repository
 						repo, err := f.SetupMinioRepository()
@@ -404,12 +415,46 @@ var _ = Describe("PreRestore Hook", func() {
 						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
 						// Simulate disaster
-						// Update data of the table
+						// Update data of the sample table
+						By("Updating data to simulate disaster")
+						err = f.UpdateProperty(db, sampleTable, property, 0)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Verifying that the data has been updated")
+						res, err = f.ReadProperty(db, sampleTable, property)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(res).ShouldNot(BeEquivalentTo(originalValue))
+
+						// Restore the backed up data
+						// Cleanup corrupted data in preRestore hook
+						By("Restoring the backed up data")
+						restoreSession, err := f.SetupDatabaseRestore(appBinding, repo, func(restore *v1beta1.RestoreSession) {
+							restore.Spec.Hooks = &v1beta1.RestoreHooks{
+								PreRestore: &probev1.Handler{
+									Exec: &core.ExecAction{
+										Command: []string{"/bin/sh", "-c",
+											fmt.Sprintf("`mysql -u root --password=$MYSQL_ROOT_PASSWORD -e \"USE mysql; DROP TABLE %s;\"`", sampleTable)},
+									},
+									ContainerName: framework.MySQLContainerName,
+								},
+							}
+						})
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Verifying that RestoreSession has succeeded")
+						completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(restoreSession.Name, metav1.GetOptions{})
+						Expect(err).NotTo(HaveOccurred())
+						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
+
+						By("Verifying that the original data has been restored")
+						res, err = f.ReadProperty(db, sampleTable, property)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(res).Should(BeEquivalentTo(originalValue))
 					})
 				})
 
 				Context("Failure Test", func() {
-					It("should not take backup when preBackup hook failed", func() {
+					It("should not restore when preRestore hook failed", func() {
 						// Deploy MySQL database and respective service,secret,PVC and AppBinding.
 						By("Deploying MySQL Server")
 						dpl, appBinding, err := f.DeployMySQLDatabase()
@@ -441,16 +486,52 @@ var _ = Describe("PreRestore Hook", func() {
 						Expect(err).NotTo(HaveOccurred())
 						Expect(tables.Has(sampleTable)).Should(BeTrue())
 
+						By("Insert sample data")
+						property := "price"
+						originalValue := 123456
+						err = f.InsertRow(db, sampleTable, property, originalValue)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Verify that sample data has been inserted")
+						res, err := f.ReadProperty(db, sampleTable, property)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(res).Should(BeEquivalentTo(originalValue))
+
 						// Setup a Minio Repository
 						repo, err := f.SetupMinioRepository()
 						Expect(err).NotTo(HaveOccurred())
 						f.AppendToCleanupList(repo)
 
 						// Setup Database Backup
-						// Return non-zero exit code from the preBackup hook so that it fail.
-						backupConfig, err := f.SetupDatabaseBackup(appBinding, repo, func(bc *v1beta1.BackupConfiguration) {
-							bc.Spec.Hooks = &v1beta1.BackupHooks{
-								PreBackup: &probev1.Handler{
+						backupConfig, err := f.SetupDatabaseBackup(appBinding, repo)
+						Expect(err).NotTo(HaveOccurred())
+
+						// Take an Instant Backup of the Sample Data
+						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Verifying that BackupSession has succeeded")
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						Expect(err).NotTo(HaveOccurred())
+						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
+
+						// Simulate disaster
+						// Update data of the sample table
+						By("Updating data to simulate disaster")
+						err = f.UpdateProperty(db, sampleTable, property, 0)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Verifying that the data has been updated")
+						res, err = f.ReadProperty(db, sampleTable, property)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(res).ShouldNot(BeEquivalentTo(originalValue))
+
+						// Restore the backed up data
+						// Return non-zero exit code so that the preRestore hook fail
+						By("Restoring the backed up data")
+						restoreSession, err := f.SetupDatabaseRestore(appBinding, repo, func(restore *v1beta1.RestoreSession) {
+							restore.Spec.Hooks = &v1beta1.RestoreHooks{
+								PreRestore: &probev1.Handler{
 									Exec: &core.ExecAction{
 										Command: []string{"/bin/sh", "-c", "exit 1"},
 									},
@@ -460,25 +541,15 @@ var _ = Describe("PreRestore Hook", func() {
 						})
 						Expect(err).NotTo(HaveOccurred())
 
-						// Take an Instant Backup of the Sample Data
-						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
+						By("Verifying that RestoreSession has failed")
+						completedRS, err := f.StashClient.StashV1beta1().RestoreSessions(restoreSession.Namespace).Get(restoreSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
+						Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionFailed))
 
-						By("Verifying that BackupSession has failed")
-						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						By("Verifying that the table contains corrupted data")
+						res, err = f.ReadProperty(db, sampleTable, property)
 						Expect(err).NotTo(HaveOccurred())
-						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
-
-						By("Verifying that Repository has zero SnapshotCount")
-						repo2, err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Get(repo.Name, metav1.GetOptions{})
-						Expect(err).NotTo(HaveOccurred())
-						Expect(repo2.Status.SnapshotCount).Should(BeZero())
-
-						By("Verifying that no bucket has been created in the backend")
-						_, err = f.BrowseMinioRepository(repo)
-						// if the bucket does not exist, then it should return an error with "not found" message
-						Expect(err).Should(HaveOccurred())
-						Expect(err.Error()).Should(BeEquivalentTo("not found"))
+						Expect(res).ShouldNot(BeEquivalentTo(originalValue))
 					})
 				})
 			})
