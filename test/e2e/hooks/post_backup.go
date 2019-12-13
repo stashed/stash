@@ -879,7 +879,7 @@ var _ = Describe("PostBackup Hook", func() {
 				})
 
 				Context("Success Test", func() {
-					It("should make the database writable that was made read-only in preBackup hook", func() {
+					FIt("should make the database writable that was made read-only in preBackup hook", func() {
 						// Deploy MySQL database and respective service,secret,PVC and AppBinding.
 						By("Deploying MySQL Server")
 						dpl, appBinding, err := f.DeployMySQLDatabase()
@@ -1031,7 +1031,7 @@ var _ = Describe("PostBackup Hook", func() {
 				})
 
 				Context("Failure Test", func() {
-					FIt("should take backup even when postBackup hook failed", func() {
+					It("should take backup even when postBackup hook failed", func() {
 						// Deploy MySQL database and respective service,secret,PVC and AppBinding.
 						By("Deploying MySQL Server")
 						dpl, appBinding, err := f.DeployMySQLDatabase()

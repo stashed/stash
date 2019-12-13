@@ -8,6 +8,7 @@ import (
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
+	"stash.appscode.dev/stash/pkg/docker"
 
 	"github.com/appscode/go/sets"
 	_ "github.com/go-sql-driver/mysql"
@@ -318,6 +319,71 @@ func (f *Invocation) SetupDatabaseBackup(appBinding *appCatalog.AppBinding, repo
 	return createdBC, err
 }
 
+func (f *Framework) EnsureMySQLAddon() error {
+	image := docker.Docker{
+		Image:    "stash-mysql",
+		Registry: f.DockerRegistry,
+		Tag:      "8.0.14",
+	}
+
+	// create MySQL backup Function
+	backupFunc := mysqlBackupFunction(image)
+	_, err := f.StashClient.StashV1beta1().Functions().Create(backupFunc)
+	if err != nil {
+		return err
+	}
+
+	// create MySQL restore function
+	restoreFunc := mysqlRestoreFunction(image)
+	_, err = f.StashClient.StashV1beta1().Functions().Create(restoreFunc)
+	if err != nil {
+		return err
+	}
+
+	// create MySQL backup Task
+	backupTask := mysqlBackupTask()
+	_, err = f.StashClient.StashV1beta1().Tasks().Create(backupTask)
+	if err != nil {
+		return err
+	}
+
+	// create MySQL restore Task
+	restoreTask := mysqlRestoreTask()
+	_, err = f.StashClient.StashV1beta1().Tasks().Create(restoreTask)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (f *Framework) EnsureMySQLAddonDeleted() error {
+	// delete MySQL backup Function
+	err := f.StashClient.StashV1beta1().Functions().Delete(MySQLBackupFunction, deleteInBackground())
+	if err != nil {
+		return err
+	}
+
+	// delete MySQL restore Function
+	err = f.StashClient.StashV1beta1().Functions().Delete(MySQLRestoreFunction, deleteInBackground())
+	if err != nil {
+		return err
+	}
+
+	// delete MySQL backup Task
+	err = f.StashClient.StashV1beta1().Tasks().Delete(MySQLBackupTask, deleteInBackground())
+	if err != nil {
+		return err
+	}
+
+	// delete MySQL restore Task
+	err = f.StashClient.StashV1beta1().Functions().Delete(MySQLRestoreTask, deleteInBackground())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (f *Invocation) MySQLAddonInstalled() bool {
 	_, err := f.StashClient.StashV1beta1().Functions().Get(MySQLBackupFunction, metav1.GetOptions{})
 	if err != nil {
@@ -337,4 +403,176 @@ func (f *Invocation) MySQLAddonInstalled() bool {
 	_, err = f.StashClient.StashV1beta1().Tasks().Get(MySQLRestoreTask, metav1.GetOptions{})
 
 	return err == nil
+}
+
+func mysqlBackupFunction(image docker.Docker) *v1beta1.Function {
+	return &v1beta1.Function{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: MySQLBackupFunction,
+		},
+		Spec: v1beta1.FunctionSpec{
+			Image: image.ToContainerImage(),
+			Args: []string{
+				"backup-mysql",
+				// setup information
+				"--provider=${REPOSITORY_PROVIDER:=}",
+				"--bucket=${REPOSITORY_BUCKET:=}",
+				"--endpoint=${REPOSITORY_ENDPOINT:=}",
+				"--path=${REPOSITORY_PREFIX:=}",
+				"--secret-dir=/etc/repository/secret",
+				"--scratch-dir=/tmp",
+				"--enable-cache=${ENABLE_CACHE:=true}",
+				"--max-connections=${MAX_CONNECTIONS:=0}",
+				"--hostname=${HOSTNAME:=}",
+				"--mysql-args=${myArgs:=}",
+				// target information
+				"--appbinding=${TARGET_NAME:=}",
+				"--namespace=${NAMESPACE:=default}",
+				// cleanup information
+				"--retention-keep-last=${RETENTION_KEEP_LAST:=0}",
+				"--retention-keep-hourly=${RETENTION_KEEP_HOURLY:=0}",
+				"--retention-keep-daily=${RETENTION_KEEP_DAILY:=0}",
+				"--retention-keep-weekly=${RETENTION_KEEP_WEEKLY:=0}",
+				"--retention-keep-monthly=${RETENTION_KEEP_MONTHLY:=0}",
+				"--retention-keep-yearly=${RETENTION_KEEP_YEARLY:=0}",
+				"--retention-keep-tags=${RETENTION_KEEP_TAGS:=}",
+				"--retention-prune=${RETENTION_PRUNE:=false}",
+				"--retention-dry-run=${RETENTION_DRY_RUN:=false}",
+				// output information
+				"--output-dir=${outputDir:=}",
+			},
+			VolumeMounts: []core.VolumeMount{
+				{
+					Name:      "${secretVolume}",
+					MountPath: "/etc/repository/secret",
+				},
+			},
+		},
+	}
+}
+
+func mysqlRestoreFunction(image docker.Docker) *v1beta1.Function {
+	return &v1beta1.Function{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: MySQLRestoreFunction,
+		},
+		Spec: v1beta1.FunctionSpec{
+			Image: image.ToContainerImage(),
+			Args: []string{
+				"restore-mysql",
+				// setup information
+				"--provider=${REPOSITORY_PROVIDER:=}",
+				"--bucket=${REPOSITORY_BUCKET:=}",
+				"--endpoint=${REPOSITORY_ENDPOINT:=}",
+				"--path=${REPOSITORY_PREFIX:=}",
+				"--secret-dir=/etc/repository/secret",
+				"--scratch-dir=/tmp",
+				"--enable-cache=${ENABLE_CACHE:=true}",
+				"--max-connections=${MAX_CONNECTIONS:=0}",
+				"--hostname=${HOSTNAME:=}",
+				"--source-hostname=${SOURCE_HOSTNAME:=}",
+				"--mysql-args=${myArgs:=}",
+				// target information
+				"--appbinding=${TARGET_NAME:=}",
+				"--namespace=${NAMESPACE:=default}",
+				"--snapshot=${RESTORE_SNAPSHOTS:=}",
+				// output information
+				"--output-dir=${outputDir:=}",
+			},
+			VolumeMounts: []core.VolumeMount{
+				{
+					Name:      "${secretVolume}",
+					MountPath: "/etc/repository/secret",
+				},
+			},
+		},
+	}
+}
+
+func mysqlBackupTask() *v1beta1.Task {
+	return &v1beta1.Task{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: MySQLBackupTask,
+		},
+		Spec: v1beta1.TaskSpec{
+			Steps: []v1beta1.FunctionRef{
+				{
+					Name: MySQLBackupFunction,
+					Params: []v1beta1.Param{
+						{
+							Name:  "outputDir",
+							Value: "/tmp/output",
+						},
+						{
+							Name:  "secretVolume",
+							Value: "secret-volume",
+						},
+					},
+				},
+				{
+					Name: "update-status",
+					Params: []v1beta1.Param{
+						{
+							Name:  "outputDir",
+							Value: "/tmp/output",
+						},
+					},
+				},
+			},
+			Volumes: []core.Volume{
+				{
+					Name: "secret-volume",
+					VolumeSource: core.VolumeSource{
+						Secret: &core.SecretVolumeSource{
+							SecretName: "${REPOSITORY_SECRET_NAME}",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func mysqlRestoreTask() *v1beta1.Task {
+	return &v1beta1.Task{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: MySQLRestoreTask,
+		},
+		Spec: v1beta1.TaskSpec{
+			Steps: []v1beta1.FunctionRef{
+				{
+					Name: MySQLRestoreFunction,
+					Params: []v1beta1.Param{
+						{
+							Name:  "outputDir",
+							Value: "/tmp/output",
+						},
+						{
+							Name:  "secretVolume",
+							Value: "secret-volume",
+						},
+					},
+				},
+				{
+					Name: "update-status",
+					Params: []v1beta1.Param{
+						{
+							Name:  "outputDir",
+							Value: "/tmp/output",
+						},
+					},
+				},
+			},
+			Volumes: []core.Volume{
+				{
+					Name: "secret-volume",
+					VolumeSource: core.VolumeSource{
+						Secret: &core.SecretVolumeSource{
+							SecretName: "${REPOSITORY_SECRET_NAME}",
+						},
+					},
+				},
+			},
+		},
+	}
 }

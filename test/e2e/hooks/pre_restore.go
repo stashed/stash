@@ -17,8 +17,10 @@ limitations under the License.
 package hooks
 
 import (
+	"database/sql"
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
@@ -31,6 +33,7 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	app_util "kmodules.xyz/client-go/apps/v1"
+	pfutil "kmodules.xyz/client-go/tools/portforward"
 	probev1 "kmodules.xyz/prober/api/v1"
 )
 
@@ -333,6 +336,149 @@ var _ = Describe("PreRestore Hook", func() {
 						restoredData := f.RestoredData(pod.ObjectMeta, apis.KindPod)
 						By("Verifying that no data has been restored")
 						Expect(restoredData).Should(BeSameAs(emptyData))
+					})
+				})
+			})
+
+			Context("MySQL", func() {
+				const (
+					sampleTable = "StashDemo"
+				)
+
+				BeforeEach(func() {
+					// Skip test if respective Functions and Tasks are not installed.
+					if !f.MySQLAddonInstalled() {
+						Skip("MySQL addon is not installed")
+					}
+				})
+
+				Context("Success Test", func() {
+					It("should remove corrupted data in preRestore hook", func() {
+						// Deploy MySQL database and respective service,secret,PVC and AppBinding.
+						By("Deploying MySQL Server")
+						dpl, appBinding, err := f.DeployMySQLDatabase()
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Port forwarding MySQL pod")
+						pod, err := f.GetPod(dpl.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+						tunnel := pfutil.NewTunnel(f.KubeClient.CoreV1().RESTClient(), f.ClientConfig, pod.Namespace, pod.Name, framework.MySQLServingPortNumber)
+						defer tunnel.Close()
+						err = tunnel.ForwardPort()
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Connecting with MySQL Server")
+						connstr := fmt.Sprintf("%s:%s@tcp(%s:%d)/mysql", framework.SuperUser, f.App(), framework.LocalHostIP, tunnel.Local)
+						db, err := sql.Open("mysql", connstr)
+						Expect(err).NotTo(HaveOccurred())
+						defer db.Close()
+						db.SetConnMaxLifetime(time.Second * 10)
+						err = f.EventuallyConnectWithMySQLServer(db)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Creating Sample Table")
+						err = f.CreateTable(db, sampleTable)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Verifying that the sample table has been created")
+						tables, err := f.ListTables(db)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(tables.Has(sampleTable)).Should(BeTrue())
+
+						// Setup a Minio Repository
+						repo, err := f.SetupMinioRepository()
+						Expect(err).NotTo(HaveOccurred())
+						f.AppendToCleanupList(repo)
+
+						// Setup Database Backup
+						backupConfig, err := f.SetupDatabaseBackup(appBinding, repo)
+						Expect(err).NotTo(HaveOccurred())
+
+						// Take an Instant Backup of the Sample Data
+						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Verifying that BackupSession has succeeded")
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						Expect(err).NotTo(HaveOccurred())
+						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
+
+						// Simulate disaster
+						// Update data of the table
+					})
+				})
+
+				Context("Failure Test", func() {
+					It("should not take backup when preBackup hook failed", func() {
+						// Deploy MySQL database and respective service,secret,PVC and AppBinding.
+						By("Deploying MySQL Server")
+						dpl, appBinding, err := f.DeployMySQLDatabase()
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Port forwarding MySQL pod")
+						pod, err := f.GetPod(dpl.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+						tunnel := pfutil.NewTunnel(f.KubeClient.CoreV1().RESTClient(), f.ClientConfig, pod.Namespace, pod.Name, framework.MySQLServingPortNumber)
+						defer tunnel.Close()
+						err = tunnel.ForwardPort()
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Connecting with MySQL Server")
+						connstr := fmt.Sprintf("%s:%s@tcp(%s:%d)/mysql", framework.SuperUser, f.App(), framework.LocalHostIP, tunnel.Local)
+						db, err := sql.Open("mysql", connstr)
+						Expect(err).NotTo(HaveOccurred())
+						defer db.Close()
+						db.SetConnMaxLifetime(time.Second * 10)
+						err = f.EventuallyConnectWithMySQLServer(db)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Creating Sample Table")
+						err = f.CreateTable(db, sampleTable)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Verifying that the sample table has been created")
+						tables, err := f.ListTables(db)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(tables.Has(sampleTable)).Should(BeTrue())
+
+						// Setup a Minio Repository
+						repo, err := f.SetupMinioRepository()
+						Expect(err).NotTo(HaveOccurred())
+						f.AppendToCleanupList(repo)
+
+						// Setup Database Backup
+						// Return non-zero exit code from the preBackup hook so that it fail.
+						backupConfig, err := f.SetupDatabaseBackup(appBinding, repo, func(bc *v1beta1.BackupConfiguration) {
+							bc.Spec.Hooks = &v1beta1.BackupHooks{
+								PreBackup: &probev1.Handler{
+									Exec: &core.ExecAction{
+										Command: []string{"/bin/sh", "-c", "exit 1"},
+									},
+									ContainerName: framework.MySQLContainerName,
+								},
+							}
+						})
+						Expect(err).NotTo(HaveOccurred())
+
+						// Take an Instant Backup of the Sample Data
+						backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+
+						By("Verifying that BackupSession has failed")
+						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
+						Expect(err).NotTo(HaveOccurred())
+						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
+
+						By("Verifying that Repository has zero SnapshotCount")
+						repo2, err := f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Get(repo.Name, metav1.GetOptions{})
+						Expect(err).NotTo(HaveOccurred())
+						Expect(repo2.Status.SnapshotCount).Should(BeZero())
+
+						By("Verifying that no bucket has been created in the backend")
+						_, err = f.BrowseMinioRepository(repo)
+						// if the bucket does not exist, then it should return an error with "not found" message
+						Expect(err).Should(HaveOccurred())
+						Expect(err.Error()).Should(BeEquivalentTo("not found"))
 					})
 				})
 			})
