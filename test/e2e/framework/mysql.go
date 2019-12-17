@@ -230,7 +230,8 @@ func (f *Invocation) DeployMySQLDatabase() (*apps.Deployment, *appCatalog.AppBin
 }
 
 func (f *Invocation) EventuallyConnectWithMySQLServer(db *sql.DB) error {
-	return wait.PollImmediate(5*time.Second, 2*time.Minute, func() (bool, error) {
+
+	return wait.PollImmediate(5*time.Second, 5*time.Minute, func() (bool, error) {
 		if err := db.Ping(); err != nil {
 			return false, nil // don't return error. we need to retry.
 		}

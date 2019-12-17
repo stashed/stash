@@ -30,8 +30,10 @@ import (
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/eventer"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
+	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/appscode/go/sets"
+	shell "github.com/codeskyblue/go-sh"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
@@ -886,4 +888,64 @@ func (f *Framework) EventuallyAnnotationsFound(expectedAnnotations map[string]st
 		time.Minute*2,
 		time.Second*5,
 	)
+}
+
+func (f *Invocation) PrintDebugHelpers() {
+	sh := shell.NewSession()
+
+	fmt.Println("\n======================================[ Describe BackupSession ]===================================================")
+	if err := sh.Command("/usr/bin/kubectl", "describe", "backupsession", "-n", f.Namespace()).Run(); err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println("\n======================================[ Describe BackupConfiguration ]==========================================")
+	if err := sh.Command("/usr/bin/kubectl", "describe", "backupconfiguration", "-n", f.Namespace()).Run(); err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println("\n======================================[ Describe RestoreSession ]==========================================")
+	if err := sh.Command("/usr/bin/kubectl", "describe", "restoresession", "-n", f.Namespace()).Run(); err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println("\n======================================[ Describe Job ]===================================================")
+	if err := sh.Command("/usr/bin/kubectl", "describe", "job", "-n", f.Namespace()).Run(); err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println("\n======================================[ Describe Pod ]===================================================")
+	if err := sh.Command("/usr/bin/kubectl", "describe", "po", "-n", f.Namespace()).Run(); err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println("\n======================================[ Log from Stash sidecar/init-container ]===================================================")
+	pods, err := f.KubeClient.CoreV1().Pods(f.Namespace()).List(metav1.ListOptions{})
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		for _, pod := range pods.Items {
+			if util.HasStashSidecar(pod.Spec.Containers) {
+				if err := sh.Command("/usr/bin/kubectl", "logs", "-n", f.Namespace(), pod.Name, "-c", "stash").Run(); err != nil {
+					fmt.Println(err)
+				}
+			}
+
+			if util.HasStashInitContainer(pod.Spec.InitContainers) {
+				if err := sh.Command("/usr/bin/kubectl", "logs", "-n", f.Namespace(), pod.Name, "-c", "stash-init").Run(); err != nil {
+					fmt.Println(err)
+				}
+			}
+
+		}
+	}
+
+	fmt.Println("\n======================================[ Log from Stash operator ]===================================================")
+	pod, err := f.GetOperatorPod()
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		if err := sh.Command("/usr/bin/kubectl", "logs", "-n", "kube-system", pod.Name, "-c", "operator").Run(); err != nil {
+			fmt.Println(err)
+		}
+	}
 }

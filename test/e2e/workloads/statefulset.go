@@ -40,6 +40,12 @@ var _ = Describe("StatefulSet", func() {
 		f = framework.NewInvocation()
 	})
 
+	JustAfterEach(func() {
+		if CurrentGinkgoTestDescription().Failed {
+			f.PrintDebugHelpers()
+		}
+	})
+
 	AfterEach(func() {
 		err := f.CleanupTestResources()
 		Expect(err).NotTo(HaveOccurred())

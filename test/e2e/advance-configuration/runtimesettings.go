@@ -39,6 +39,12 @@ var _ = Describe("Advanced Configuration", func() {
 		f = framework.NewInvocation()
 	})
 
+	JustAfterEach(func() {
+		if CurrentGinkgoTestDescription().Failed {
+			f.PrintDebugHelpers()
+		}
+	})
+
 	AfterEach(func() {
 		err := f.CleanupTestResources()
 		Expect(err).NotTo(HaveOccurred())
