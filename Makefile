@@ -506,20 +506,34 @@ lint: $(BUILD_DIRS)
 $(BUILD_DIRS):
 	@mkdir -p $@
 
+REGISTRY_SECRET ?=
+
+ifeq ($(strip $(REGISTRY_SECRET)),)
+	IMAGE_PULL_SECRETS =
+else
+	IMAGE_PULL_SECRETS = --set imagePullSecrets[0]=$(REGISTRY_SECRET)
+endif
+
 .PHONY: install
 install:
 	@cd ../installer; \
-	APPSCODE_ENV=dev  STASH_IMAGE_TAG=$(TAG) ./deploy/stash.sh --docker-registry=$(REGISTRY) --image-pull-secret=$(REGISTRY_SECRET)
+	helm install stash charts/stash \
+		--namespace=kube-system \
+		--set operator.registry=$(REGISTRY) \
+		--set operator.tag=$(TAG) \
+		--set imagePullPolicy=Always \
+		$(IMAGE_PULL_SECRETS); \
+	kubectl wait --for=condition=Ready pods -n kube-system -l app=stash --timeout=5m; \
+	kubectl wait --for=condition=Available apiservice -l app=stash --timeout=5m
 
 .PHONY: uninstall
 uninstall:
 	@cd ../installer; \
-	./deploy/stash.sh --uninstall
+	helm uninstall stash --namespace=kube-system || true
 
 .PHONY: purge
-purge:
-	@cd ../installer; \
-	./deploy/stash.sh --uninstall --purge
+purge: uninstall
+	kubectl delete crds -l app=stash
 
 .PHONY: dev
 dev: gen fmt push
