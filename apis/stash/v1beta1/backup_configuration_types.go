@@ -78,7 +78,6 @@ type BackupConfigurationTemplateSpec struct {
 	// +optional
 	InterimVolumeTemplate *core.PersistentVolumeClaim `json:"interimVolumeTemplate,omitempty" protobuf:"bytes,5,opt,name=interimVolumeTemplate"`
 	// Actions that Stash should take in response to backup sessions.
-	// Cannot be updated.
 	// +optional
 	Hooks *BackupHooks `json:"hooks,omitempty" protobuf:"bytes,6,opt,name=hooks"`
 }

@@ -55,7 +55,6 @@ spec:
               type: string
             hooks:
               description: Actions that Stash should take in response to restore sessions.
-                Cannot be updated.
               properties:
                 postRestore:
                   description: PostRestore is called immediately after a restore session

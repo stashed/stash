@@ -16598,7 +16598,7 @@ func schema_stash_apis_stash_v1beta1_BackupConfigurationSpec(ref common.Referenc
 					},
 					"hooks": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Actions that Stash should take in response to backup sessions. Cannot be updated.",
+							Description: "Actions that Stash should take in response to backup sessions.",
 							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1beta1.BackupHooks"),
 						},
 					},
@@ -16746,7 +16746,7 @@ func schema_stash_apis_stash_v1beta1_BackupConfigurationTemplateSpec(ref common.
 					},
 					"hooks": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Actions that Stash should take in response to backup sessions. Cannot be updated.",
+							Description: "Actions that Stash should take in response to backup sessions.",
 							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1beta1.BackupHooks"),
 						},
 					},
@@ -17652,7 +17652,7 @@ func schema_stash_apis_stash_v1beta1_RestoreSessionSpec(ref common.ReferenceCall
 					},
 					"hooks": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Actions that Stash should take in response to restore sessions. Cannot be updated.",
+							Description: "Actions that Stash should take in response to restore sessions.",
 							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1beta1.RestoreHooks"),
 						},
 					},

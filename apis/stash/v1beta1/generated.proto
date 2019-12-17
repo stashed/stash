@@ -240,7 +240,6 @@ message BackupConfigurationTemplateSpec {
   optional k8s.io.api.core.v1.PersistentVolumeClaim interimVolumeTemplate = 5;
 
   // Actions that Stash should take in response to backup sessions.
-  // Cannot be updated.
   // +optional
   optional BackupHooks hooks = 6;
 }
@@ -579,7 +578,6 @@ message RestoreSessionSpec {
   optional k8s.io.api.core.v1.PersistentVolumeClaim interimVolumeTemplate = 8;
 
   // Actions that Stash should take in response to restore sessions.
-  // Cannot be updated.
   // +optional
   optional RestoreHooks hooks = 9;
 }

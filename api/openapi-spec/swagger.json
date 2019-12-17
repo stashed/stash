@@ -9611,7 +9611,7 @@
           "type": "string"
         },
         "hooks": {
-          "description": "Actions that Stash should take in response to backup sessions. Cannot be updated.",
+          "description": "Actions that Stash should take in response to backup sessions.",
           "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.BackupHooks"
         },
         "interimVolumeTemplate": {
@@ -9685,7 +9685,7 @@
       "type": "object",
       "properties": {
         "hooks": {
-          "description": "Actions that Stash should take in response to backup sessions. Cannot be updated.",
+          "description": "Actions that Stash should take in response to backup sessions.",
           "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.BackupHooks"
         },
         "interimVolumeTemplate": {
@@ -10188,7 +10188,7 @@
           "type": "string"
         },
         "hooks": {
-          "description": "Actions that Stash should take in response to restore sessions. Cannot be updated.",
+          "description": "Actions that Stash should take in response to restore sessions.",
           "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.RestoreHooks"
         },
         "interimVolumeTemplate": {

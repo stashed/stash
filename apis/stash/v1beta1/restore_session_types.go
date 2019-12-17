@@ -77,7 +77,6 @@ type RestoreSessionSpec struct {
 	// +optional
 	InterimVolumeTemplate *core.PersistentVolumeClaim `json:"interimVolumeTemplate,omitempty" protobuf:"bytes,8,opt,name=interimVolumeTemplate"`
 	// Actions that Stash should take in response to restore sessions.
-	// Cannot be updated.
 	// +optional
 	Hooks *RestoreHooks `json:"hooks,omitempty" protobuf:"bytes,9,opt,name=hooks"`
 }

@@ -69,7 +69,7 @@ spec:
                     properties:
                       hooks:
                         description: Actions that Stash should take in response to
-                          backup sessions. Cannot be updated.
+                          backup sessions.
                         properties:
                           postBackup:
                             description: PostBackup is called immediately after a
