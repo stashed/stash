@@ -86,7 +86,7 @@ func ensureRestoreJobClusterRole(kubeClient kubernetes.Interface, psps []string,
 			{
 				APIGroups: []string{core.SchemeGroupVersion.Group},
 				Resources: []string{"pods/exec"},
-				Verbs:     []string{"get", "create", "delete"},
+				Verbs:     []string{"get", "create"},
 			},
 			{
 				APIGroups: []string{core.GroupName},

@@ -87,7 +87,7 @@ func ensureVolumeSnapshotterJobClusterRole(kubeClient kubernetes.Interface, labe
 			{
 				APIGroups: []string{core.GroupName},
 				Resources: []string{"pods/exec"},
-				Verbs:     []string{"get", "list", "create", "delete"},
+				Verbs:     []string{"get", "create"},
 			},
 			{
 				APIGroups: []string{apps.GroupName},
