@@ -929,6 +929,9 @@ func (f *Invocation) PrintDebugHelpers() {
 					Command("cut", "-f", "4-", "-d ").
 					Command("awk", `{$1=$2;print}`).
 					Command("uniq").Run()
+				if err != nil {
+					fmt.Println(err)
+				}
 			}
 
 			if util.HasStashInitContainer(pod.Spec.InitContainers) {
