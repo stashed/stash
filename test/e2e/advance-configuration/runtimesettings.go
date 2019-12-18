@@ -42,6 +42,7 @@ var _ = Describe("Advanced Configuration", func() {
 	JustAfterEach(func() {
 		if CurrentGinkgoTestDescription().Failed {
 			f.PrintDebugHelpers()
+			framework.TestFailed = true
 		}
 	})
 

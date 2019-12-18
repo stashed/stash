@@ -43,6 +43,7 @@ var _ = Describe("StatefulSet", func() {
 	JustAfterEach(func() {
 		if CurrentGinkgoTestDescription().Failed {
 			f.PrintDebugHelpers()
+			framework.TestFailed = true
 		}
 	})
 

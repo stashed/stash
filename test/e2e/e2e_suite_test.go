@@ -91,6 +91,10 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
+	if framework.TestFailed {
+		root.PrintOperatorLog()
+	}
+
 	By("Deleting Minio server")
 	err := root.DeleteMinioServer()
 	Expect(err).NotTo(HaveOccurred())

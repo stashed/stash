@@ -40,6 +40,7 @@ var _ = Describe("Workload Test", func() {
 	JustAfterEach(func() {
 		if CurrentGinkgoTestDescription().Failed {
 			f.PrintDebugHelpers()
+			framework.TestFailed = true
 		}
 	})
 

@@ -925,26 +925,41 @@ func (f *Invocation) PrintDebugHelpers() {
 	} else {
 		for _, pod := range pods.Items {
 			if util.HasStashSidecar(pod.Spec.Containers) {
-				if err := sh.Command("/usr/bin/kubectl", "logs", "-n", f.Namespace(), pod.Name, "-c", "stash").Run(); err != nil {
-					fmt.Println(err)
-				}
+				err = sh.Command("/usr/bin/kubectl", "logs", "-n", f.namespace, pod.Name, "-c", "stash").
+					Command("cut", "-f", "4-", "-d ").
+					Command("awk", `{$1=$2;print}`).
+					Command("uniq").Run()
 			}
 
 			if util.HasStashInitContainer(pod.Spec.InitContainers) {
-				if err := sh.Command("/usr/bin/kubectl", "logs", "-n", f.Namespace(), pod.Name, "-c", "stash-init").Run(); err != nil {
+				err = sh.Command("/usr/bin/kubectl", "logs", "-n", f.namespace, pod.Name, "-c", "stash-init").
+					Command("cut", "-f", "4-", "-d ").
+					Command("awk", `{$1=$2;print}`).
+					Command("uniq").Run()
+				if err != nil {
 					fmt.Println(err)
 				}
 			}
 
 		}
 	}
+}
+
+func (f *Framework) PrintOperatorLog() {
+	sh := shell.NewSession()
+	sh.PipeStdErrors = true
 
 	fmt.Println("\n======================================[ Log from Stash operator ]===================================================")
 	pod, err := f.GetOperatorPod()
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		if err := sh.Command("/usr/bin/kubectl", "logs", "-n", "kube-system", pod.Name, "-c", "operator").Run(); err != nil {
+		err := sh.Command("/usr/bin/kubectl", "logs", "-n", "kube-system", pod.Name, "-c", "operator").
+			Command("grep", "-i", "error").
+			Command("cut", "-f", "4-", "-d ").
+			Command("awk", `{$1=$2;print}`).
+			Command("uniq").Run()
+		if err != nil {
 			fmt.Println(err)
 		}
 	}

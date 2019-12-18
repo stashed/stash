@@ -153,6 +153,10 @@ func (f *Invocation) MySQLDeployment(cred *core.Secret, pvc *core.PersistentVolu
 									Name:      pvc.Name,
 									MountPath: "/var/lib/mysql",
 								},
+								{
+									Name:      "config-volume",
+									MountPath: "/etc/mysql/conf.d",
+								},
 							},
 						},
 					},
@@ -163,6 +167,12 @@ func (f *Invocation) MySQLDeployment(cred *core.Secret, pvc *core.PersistentVolu
 								PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
 									ClaimName: pvc.Name,
 								},
+							},
+						},
+						{
+							Name: "config-volume",
+							VolumeSource: core.VolumeSource{
+								EmptyDir: &core.EmptyDirVolumeSource{},
 							},
 						},
 					},

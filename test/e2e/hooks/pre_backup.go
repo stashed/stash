@@ -47,6 +47,7 @@ var _ = Describe("PreBackup Hook", func() {
 	JustAfterEach(func() {
 		if CurrentGinkgoTestDescription().Failed {
 			f.PrintDebugHelpers()
+			framework.TestFailed = true
 		}
 	})
 
@@ -96,7 +97,7 @@ var _ = Describe("PreBackup Hook", func() {
 						By("Verifying that BackupSession has succeeded")
 						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
-						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
+						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 					})
 				})
 
@@ -808,7 +809,7 @@ var _ = Describe("PreBackup Hook", func() {
 				})
 
 				Context("Success Test", func() {
-					It("should make the database read-only in preBackup hook", func() {
+					FIt("should make the database read-only in preBackup hook", func() {
 						// Deploy MySQL database and respective service,secret,PVC and AppBinding.
 						By("Deploying MySQL Server")
 						dpl, appBinding, err := f.DeployMySQLDatabase()

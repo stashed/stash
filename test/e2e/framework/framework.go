@@ -48,6 +48,8 @@ type Framework struct {
 // RootFramework will be used to invoke new Invocation before each test from the individual test packages
 var RootFramework *Framework
 
+var TestFailed = false
+
 func New(clientConfig *rest.Config, storageClass, registry string) *Framework {
 	store, err := certstore.NewCertStore(afero.NewMemMapFs(), filepath.Join("", "pki"))
 	Expect(err).NotTo(HaveOccurred())
