@@ -809,7 +809,7 @@ var _ = Describe("PreBackup Hook", func() {
 				})
 
 				Context("Success Test", func() {
-					FIt("should make the database read-only in preBackup hook", func() {
+					It("should make the database read-only in preBackup hook", func() {
 						// Deploy MySQL database and respective service,secret,PVC and AppBinding.
 						By("Deploying MySQL Server")
 						dpl, appBinding, err := f.DeployMySQLDatabase()

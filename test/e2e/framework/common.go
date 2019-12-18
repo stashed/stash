@@ -24,7 +24,6 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 
-	"github.com/appscode/go/sets"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
@@ -34,11 +33,11 @@ import (
 	appcatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 )
 
-func (f *Framework) GenerateSampleData(objMeta metav1.ObjectMeta, kind string) (sets.String, error) {
+func (f *Framework) GenerateSampleData(objMeta metav1.ObjectMeta, kind string) ([]string, error) {
 	By("Generating sample data inside workload pods")
 	err := f.CreateSampleDataInsideWorkload(objMeta, kind)
 	if err != nil {
-		return sets.String{}, err
+		return nil, err
 	}
 
 	By("Verifying that sample data has been generated")
@@ -120,7 +119,7 @@ func (f *Invocation) TakeInstantBackup(objMeta metav1.ObjectMeta) (*v1beta1.Back
 	return backupSession, nil
 }
 
-func (f *Invocation) RestoredData(objMeta metav1.ObjectMeta, kind string) sets.String {
+func (f *Invocation) RestoredData(objMeta metav1.ObjectMeta, kind string) []string {
 	f.EventuallyPodAccessible(objMeta).Should(BeTrue())
 	By("Reading restored data")
 	restoredData, err := f.ReadSampleDataFromFromWorkload(objMeta, kind)

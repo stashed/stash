@@ -212,7 +212,7 @@ func (f *Framework) ReadSampleDataFromMountedDirectory(meta metav1.ObjectMeta, p
 		var data string
 		datas := make([]string, 0)
 		for _, p := range paths {
-			data, err = f.ExecOnPod(pod, "ls", "-R", p)
+			data, err = f.ExecOnPod(pod, "ls", p)
 			if err != nil {
 				return nil, err
 			}
@@ -227,7 +227,7 @@ func (f *Framework) ReadSampleDataFromMountedDirectory(meta metav1.ObjectMeta, p
 		}
 		for _, path := range paths {
 			for _, pod := range pods {
-				data, err := f.ExecOnPod(&pod, "ls", "-R", path)
+				data, err := f.ExecOnPod(&pod, "ls", path)
 				if err != nil {
 					continue
 				}
@@ -239,7 +239,7 @@ func (f *Framework) ReadSampleDataFromMountedDirectory(meta metav1.ObjectMeta, p
 	return []string{}, nil
 }
 
-func (f *Framework) ReadSampleDataFromFromWorkload(meta metav1.ObjectMeta, resourceKind string) (sets.String, error) {
+func (f *Framework) ReadSampleDataFromFromWorkload(meta metav1.ObjectMeta, resourceKind string) ([]string, error) {
 	switch resourceKind {
 	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController, apis.KindPod:
 		pod, err := f.GetPod(meta)
@@ -247,28 +247,28 @@ func (f *Framework) ReadSampleDataFromFromWorkload(meta metav1.ObjectMeta, resou
 			return nil, err
 		}
 		set := sets.NewString()
-		data, err := f.ExecOnPod(pod, "ls", "-R", TestSourceDataMountPath)
+		data, err := f.ExecOnPod(pod, "ls", TestSourceDataMountPath)
 		if err != nil {
 			return nil, err
 		}
 		set.Insert(strings.TrimSpace(data))
-		return set, nil
+		return set.List(), nil
 	case apis.KindStatefulSet, apis.KindDaemonSet:
 		set := sets.NewString()
 		pods, err := f.GetAllPods(meta)
 		if err != nil {
-			return set, err
+			return set.List(), err
 		}
 		for _, pod := range pods {
-			data, err := f.ExecOnPod(&pod, "ls", "-R", TestSourceDataMountPath)
+			data, err := f.ExecOnPod(&pod, "ls", TestSourceDataMountPath)
 			if err != nil {
-				return set, err
+				return set.List(), err
 			}
 			set.Insert(strings.TrimSpace(data))
 		}
-		return set, err
+		return set.List(), err
 	}
-	return sets.NewString(), nil
+	return nil, nil
 }
 
 func (f *Framework) CreateDirectory(meta metav1.ObjectMeta, directories []string) error {
@@ -960,7 +960,7 @@ func (f *Framework) PrintOperatorLog() {
 		err := sh.Command("/usr/bin/kubectl", "logs", "-n", "kube-system", pod.Name, "-c", "operator").
 			Command("grep", "-i", "error").
 			Command("cut", "-f", "4-", "-d ").
-			Command("awk", `{$1=$2;print}`).
+			Command("awk", `{$2=$2;print}`).
 			Command("uniq").Run()
 		if err != nil {
 			fmt.Println(err)

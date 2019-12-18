@@ -29,6 +29,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -58,6 +59,12 @@ var _ = Describe("StatefulSet", func() {
 			restoreSession := f.GetRestoreSession(repo.Name, func(restore *v1beta1.RestoreSession) {
 				restore.Spec.Target = &v1beta1.RestoreTarget{
 					Ref: framework.GetTargetRef(ss.Name, apis.KindStatefulSet),
+					VolumeMounts: []core.VolumeMount{
+						{
+							Name:      framework.TestSourceDataVolumeName,
+							MountPath: framework.TestSourceDataMountPath,
+						},
+					},
 				}
 				restore.Spec.Rules = []v1beta1.Rule{
 					{
@@ -72,7 +79,6 @@ var _ = Describe("StatefulSet", func() {
 					},
 					{
 						TargetHosts: []string{},
-						SourceHost:  "",
 						Paths: []string{
 							framework.TestSourceDataMountPath,
 						},
