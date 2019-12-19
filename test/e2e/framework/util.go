@@ -30,7 +30,6 @@ import (
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/eventer"
 	stash_rbac "stash.appscode.dev/stash/pkg/rbac"
-	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/appscode/go/sets"
 	shell "github.com/codeskyblue/go-sh"
@@ -891,59 +890,56 @@ func (f *Framework) EventuallyAnnotationsFound(expectedAnnotations map[string]st
 }
 
 func (f *Invocation) PrintDebugHelpers() {
+	const kubectl = "/usr/bin/kubectl"
 	sh := shell.NewSession()
 
 	fmt.Println("\n======================================[ Describe BackupSession ]===================================================")
-	if err := sh.Command("/usr/bin/kubectl", "describe", "backupsession", "-n", f.Namespace()).Run(); err != nil {
+	if err := sh.Command(kubectl, "describe", "backupsession", "-n", f.Namespace()).Run(); err != nil {
 		fmt.Println(err)
 	}
 
 	fmt.Println("\n======================================[ Describe BackupConfiguration ]==========================================")
-	if err := sh.Command("/usr/bin/kubectl", "describe", "backupconfiguration", "-n", f.Namespace()).Run(); err != nil {
+	if err := sh.Command(kubectl, "describe", "backupconfiguration", "-n", f.Namespace()).Run(); err != nil {
 		fmt.Println(err)
 	}
 
 	fmt.Println("\n======================================[ Describe RestoreSession ]==========================================")
-	if err := sh.Command("/usr/bin/kubectl", "describe", "restoresession", "-n", f.Namespace()).Run(); err != nil {
+	if err := sh.Command(kubectl, "describe", "restoresession", "-n", f.Namespace()).Run(); err != nil {
 		fmt.Println(err)
 	}
 
 	fmt.Println("\n======================================[ Describe Job ]===================================================")
-	if err := sh.Command("/usr/bin/kubectl", "describe", "job", "-n", f.Namespace()).Run(); err != nil {
+	if err := sh.Command(kubectl, "describe", "job", "-n", f.Namespace()).Run(); err != nil {
 		fmt.Println(err)
 	}
 
-	fmt.Println("\n======================================[ Describe Pod ]===================================================")
-	if err := sh.Command("/usr/bin/kubectl", "describe", "po", "-n", f.Namespace()).Run(); err != nil {
-		fmt.Println(err)
-	}
-
-	fmt.Println("\n======================================[ Log from Stash sidecar/init-container ]===================================================")
+	fmt.Println("\n===============[ Debug info for Stash sidecar/init-container/backup job/restore job ]===================")
 	pods, err := f.KubeClient.CoreV1().Pods(f.Namespace()).List(metav1.ListOptions{})
 	if err != nil {
 		fmt.Println(err)
 	} else {
 		for _, pod := range pods.Items {
-			if util.HasStashSidecar(pod.Spec.Containers) {
-				err = sh.Command("/usr/bin/kubectl", "logs", "-n", f.namespace, pod.Name, "-c", "stash").
+			debugTarget, containerArgs := isDebugTarget(append(pod.Spec.InitContainers, pod.Spec.Containers...))
+			if debugTarget {
+				fmt.Printf("\n--------------- Describe Pod: %s -------------------\n", pod.Name)
+				if err := sh.Command(kubectl, "describe", "po", "-n", f.Namespace(), pod.Name).Run(); err != nil {
+					fmt.Println(err)
+				}
+
+				fmt.Printf("\n---------------- Log from Pod: %s ------------------\n", pod.Name)
+				logArgs := []interface{}{"logs", "-n", f.namespace, pod.Name}
+				for i := range containerArgs {
+					logArgs = append(logArgs, containerArgs[i])
+				}
+
+				err = sh.Command(kubectl, logArgs...).
 					Command("cut", "-f", "4-", "-d ").
-					Command("awk", `{$1=$2;print}`).
+					Command("awk", `{$2=$2;print}`).
 					Command("uniq").Run()
 				if err != nil {
 					fmt.Println(err)
 				}
 			}
-
-			if util.HasStashInitContainer(pod.Spec.InitContainers) {
-				err = sh.Command("/usr/bin/kubectl", "logs", "-n", f.namespace, pod.Name, "-c", "stash-init").
-					Command("cut", "-f", "4-", "-d ").
-					Command("awk", `{$1=$2;print}`).
-					Command("uniq").Run()
-				if err != nil {
-					fmt.Println(err)
-				}
-			}
-
 		}
 	}
 }
@@ -966,4 +962,15 @@ func (f *Framework) PrintOperatorLog() {
 			fmt.Println(err)
 		}
 	}
+}
+
+func isDebugTarget(containers []core.Container) (bool, []string) {
+	for _, c := range containers {
+		if c.Name == "stash" || c.Name == "stash-init" {
+			return true, []string{"-c", c.Name}
+		} else if strings.HasPrefix(c.Name, "update-status") {
+			return true, []string{"--all-containers"}
+		}
+	}
+	return false, nil
 }
