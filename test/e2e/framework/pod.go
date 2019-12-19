@@ -114,8 +114,12 @@ func (f *Framework) GetOperatorPod() (*core.Pod, error) {
 		return nil, err
 	}
 	for _, pod := range podList.Items {
-		if strings.HasPrefix(pod.Name, OperatorName) {
-			return &pod, nil
+		if strings.HasPrefix(pod.Name, "stash") {
+			for _, c := range pod.Spec.Containers {
+				if c.Name == "operator" {
+					return &pod, nil
+				}
+			}
 		}
 	}
 	return nil, fmt.Errorf("operator pod not found")
