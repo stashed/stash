@@ -17,6 +17,11 @@ limitations under the License.
 package apis
 
 const (
+	StashDockerRegistry = "STASH_DOCKER_REGISTRY"
+	StashDockerImage    = "STASH_DOCKER_IMAGE"
+	StashImageTag       = "STASH_IMAGE_TAG"
+	ImageStash          = "stash"
+
 	Namespace      = "NAMESPACE"
 	BackupSession  = "BACKUP_SESSION"
 	RestoreSession = "RESTORE_SESSION"
@@ -77,4 +82,13 @@ const (
 	StashInterimVolume          = "stash-interim-volume"
 	StashInterimVolumeMountPath = "/stash-interim-volume"
 	StashInterimDataDir         = "/stash-interim-volume/data"
+
+	// backup or restore hooks
+	HookType        = "HOOK_TYPE"
+	PreBackupHook   = "preBackup"
+	PostBackupHook  = "postBackup"
+	PreRestoreHook  = "preRestore"
+	PostRestoreHook = "postRestore"
+	PreTaskHook     = "pre-task-hook"
+	PostTaskHook    = "post-task-hook"
 )

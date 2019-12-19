@@ -351,9 +351,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"kmodules.xyz/offshoot-api/api/v1.ServicePort":                                schema_kmodulesxyz_offshoot_api_api_v1_ServicePort(ref),
 		"kmodules.xyz/offshoot-api/api/v1.ServiceSpec":                                schema_kmodulesxyz_offshoot_api_api_v1_ServiceSpec(ref),
 		"kmodules.xyz/offshoot-api/api/v1.ServiceTemplateSpec":                        schema_kmodulesxyz_offshoot_api_api_v1_ServiceTemplateSpec(ref),
+		"kmodules.xyz/prober/api/v1.FormEntry":                                        schema_kmodulesxyz_prober_api_v1_FormEntry(ref),
 		"kmodules.xyz/prober/api/v1.HTTPPostAction":                                   schema_kmodulesxyz_prober_api_v1_HTTPPostAction(ref),
 		"kmodules.xyz/prober/api/v1.Handler":                                          schema_kmodulesxyz_prober_api_v1_Handler(ref),
-		"kmodules.xyz/prober/api/v1.ValueList":                                        schema_kmodulesxyz_prober_api_v1_ValueList(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupBatch":                     schema_stash_apis_stash_v1beta1_BackupBatch(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupBatchList":                 schema_stash_apis_stash_v1beta1_BackupBatchList(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupBatchSpec":                 schema_stash_apis_stash_v1beta1_BackupBatchSpec(ref),
@@ -367,6 +367,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationStatus":       schema_stash_apis_stash_v1beta1_BackupConfigurationStatus(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplate":     schema_stash_apis_stash_v1beta1_BackupConfigurationTemplate(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplateSpec": schema_stash_apis_stash_v1beta1_BackupConfigurationTemplateSpec(ref),
+		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupHooks":                     schema_stash_apis_stash_v1beta1_BackupHooks(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupInvokerRef":                schema_stash_apis_stash_v1beta1_BackupInvokerRef(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupSession":                   schema_stash_apis_stash_v1beta1_BackupSession(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.BackupSessionList":               schema_stash_apis_stash_v1beta1_BackupSessionList(ref),
@@ -379,10 +380,10 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"stash.appscode.dev/stash/apis/stash/v1beta1.FunctionList":                    schema_stash_apis_stash_v1beta1_FunctionList(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.FunctionRef":                     schema_stash_apis_stash_v1beta1_FunctionRef(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.FunctionSpec":                    schema_stash_apis_stash_v1beta1_FunctionSpec(ref),
-		"stash.appscode.dev/stash/apis/stash/v1beta1.Hooks":                           schema_stash_apis_stash_v1beta1_Hooks(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.HostBackupStats":                 schema_stash_apis_stash_v1beta1_HostBackupStats(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.HostRestoreStats":                schema_stash_apis_stash_v1beta1_HostRestoreStats(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.Param":                           schema_stash_apis_stash_v1beta1_Param(ref),
+		"stash.appscode.dev/stash/apis/stash/v1beta1.RestoreHooks":                    schema_stash_apis_stash_v1beta1_RestoreHooks(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.RestoreSession":                  schema_stash_apis_stash_v1beta1_RestoreSession(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.RestoreSessionList":              schema_stash_apis_stash_v1beta1_RestoreSessionList(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.RestoreSessionSpec":              schema_stash_apis_stash_v1beta1_RestoreSessionSpec(ref),
@@ -15983,6 +15984,37 @@ func schema_kmodulesxyz_offshoot_api_api_v1_ServiceTemplateSpec(ref common.Refer
 	}
 }
 
+func schema_kmodulesxyz_prober_api_v1_FormEntry(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"key": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"values": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func schema_kmodulesxyz_prober_api_v1_HTTPPostAction(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -16040,12 +16072,11 @@ func schema_kmodulesxyz_prober_api_v1_HTTPPostAction(ref common.ReferenceCallbac
 					"form": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Form to set in the request body.",
-							Type:        []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("kmodules.xyz/prober/api/v1.ValueList"),
+										Ref: ref("kmodules.xyz/prober/api/v1.FormEntry"),
 									},
 								},
 							},
@@ -16056,7 +16087,7 @@ func schema_kmodulesxyz_prober_api_v1_HTTPPostAction(ref common.ReferenceCallbac
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.HTTPHeader", "k8s.io/apimachinery/pkg/util/intstr.IntOrString", "kmodules.xyz/prober/api/v1.ValueList"},
+			"k8s.io/api/core/v1.HTTPHeader", "k8s.io/apimachinery/pkg/util/intstr.IntOrString", "kmodules.xyz/prober/api/v1.FormEntry"},
 	}
 }
 
@@ -16091,36 +16122,18 @@ func schema_kmodulesxyz_prober_api_v1_Handler(ref common.ReferenceCallback) comm
 							Ref:         ref("k8s.io/api/core/v1.TCPSocketAction"),
 						},
 					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"k8s.io/api/core/v1.ExecAction", "k8s.io/api/core/v1.HTTPGetAction", "k8s.io/api/core/v1.TCPSocketAction", "kmodules.xyz/prober/api/v1.HTTPPostAction"},
-	}
-}
-
-func schema_kmodulesxyz_prober_api_v1_ValueList(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
-				Properties: map[string]spec.Schema{
-					"values": {
+					"containerName": {
 						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
-									},
-								},
-							},
+							Description: "ContainerName specifies the name of the container where to execute the commands for Exec probe or where to find the port for HTTP or TCP probe",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},
 			},
 		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.ExecAction", "k8s.io/api/core/v1.HTTPGetAction", "k8s.io/api/core/v1.TCPSocketAction", "kmodules.xyz/prober/api/v1.HTTPPostAction"},
 	}
 }
 
@@ -16274,7 +16287,7 @@ func schema_stash_apis_stash_v1beta1_BackupBatchSpec(ref common.ReferenceCallbac
 					"hooks": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Actions that Stash should take in response to backup sessions. Cannot be updated.",
-							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1beta1.Hooks"),
+							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1beta1.BackupHooks"),
 						},
 					},
 				},
@@ -16282,7 +16295,7 @@ func schema_stash_apis_stash_v1beta1_BackupBatchSpec(ref common.ReferenceCallbac
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.LocalObjectReference", "stash.appscode.dev/stash/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplate", "stash.appscode.dev/stash/apis/stash/v1beta1.Hooks"},
+			"k8s.io/api/core/v1.LocalObjectReference", "stash.appscode.dev/stash/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupConfigurationTemplate", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupHooks"},
 	}
 }
 
@@ -16585,8 +16598,8 @@ func schema_stash_apis_stash_v1beta1_BackupConfigurationSpec(ref common.Referenc
 					},
 					"hooks": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Actions that Stash should take in response to backup sessions. Cannot be updated.",
-							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1beta1.Hooks"),
+							Description: "Actions that Stash should take in response to backup sessions.",
+							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1beta1.BackupHooks"),
 						},
 					},
 					"schedule": {
@@ -16634,7 +16647,7 @@ func schema_stash_apis_stash_v1beta1_BackupConfigurationSpec(ref common.Referenc
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaim", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/stash/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupTarget", "stash.appscode.dev/stash/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/stash/apis/stash/v1beta1.Hooks", "stash.appscode.dev/stash/apis/stash/v1beta1.TaskRef"},
+			"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaim", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/stash/apis/stash/v1alpha1.RetentionPolicy", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupHooks", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupTarget", "stash.appscode.dev/stash/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/stash/apis/stash/v1beta1.TaskRef"},
 	}
 }
 
@@ -16733,15 +16746,42 @@ func schema_stash_apis_stash_v1beta1_BackupConfigurationTemplateSpec(ref common.
 					},
 					"hooks": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Actions that Stash should take in response to backup sessions. Cannot be updated.",
-							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1beta1.Hooks"),
+							Description: "Actions that Stash should take in response to backup sessions.",
+							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1beta1.BackupHooks"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.PersistentVolumeClaim", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupTarget", "stash.appscode.dev/stash/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/stash/apis/stash/v1beta1.Hooks", "stash.appscode.dev/stash/apis/stash/v1beta1.TaskRef"},
+			"k8s.io/api/core/v1.PersistentVolumeClaim", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupHooks", "stash.appscode.dev/stash/apis/stash/v1beta1.BackupTarget", "stash.appscode.dev/stash/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/stash/apis/stash/v1beta1.TaskRef"},
+	}
+}
+
+func schema_stash_apis_stash_v1beta1_BackupHooks(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Hooks describes actions that Stash should take in response to backup sessions. For the PostBackup and PreBackup handlers, backup process blocks until the action is complete, unless the container process fails, in which case the handler is aborted.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"preBackup": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PreBackup is called immediately before a backup session is initiated.",
+							Ref:         ref("kmodules.xyz/prober/api/v1.Handler"),
+						},
+					},
+					"postBackup": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PostBackup is called immediately after a backup session is complete.",
+							Ref:         ref("kmodules.xyz/prober/api/v1.Handler"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"kmodules.xyz/prober/api/v1.Handler"},
 	}
 }
 
@@ -17312,33 +17352,6 @@ func schema_stash_apis_stash_v1beta1_FunctionSpec(ref common.ReferenceCallback) 
 	}
 }
 
-func schema_stash_apis_stash_v1beta1_Hooks(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "Hooks describes actions that Stash should take in response to backup sessions. For the PostBackup and PreBackup handlers, backup process blocks until the action is complete, unless the container process fails, in which case the handler is aborted.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"preBackup": {
-						SchemaProps: spec.SchemaProps{
-							Description: "PreBackup is called immediately before a backup session is initiated.",
-							Ref:         ref("kmodules.xyz/prober/api/v1.Handler"),
-						},
-					},
-					"postBackup": {
-						SchemaProps: spec.SchemaProps{
-							Description: "PostBackup is called immediately after a backup session is complete.",
-							Ref:         ref("kmodules.xyz/prober/api/v1.Handler"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"kmodules.xyz/prober/api/v1.Handler"},
-	}
-}
-
 func schema_stash_apis_stash_v1beta1_HostBackupStats(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -17457,6 +17470,33 @@ func schema_stash_apis_stash_v1beta1_Param(ref common.ReferenceCallback) common.
 				Required: []string{"name", "value"},
 			},
 		},
+	}
+}
+
+func schema_stash_apis_stash_v1beta1_RestoreHooks(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Hooks describes actions that Stash should take in response to restore sessions. For the PostRestore and PreRestore handlers, restore process blocks until the action is complete, unless the container process fails, in which case the handler is aborted.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"preRestore": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PreRestore is called immediately before a restore session is initiated.",
+							Ref:         ref("kmodules.xyz/prober/api/v1.Handler"),
+						},
+					},
+					"postRestore": {
+						SchemaProps: spec.SchemaProps{
+							Description: "PostRestore is called immediately after a restore session is complete.",
+							Ref:         ref("kmodules.xyz/prober/api/v1.Handler"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"kmodules.xyz/prober/api/v1.Handler"},
 	}
 }
 
@@ -17610,11 +17650,17 @@ func schema_stash_apis_stash_v1beta1_RestoreSessionSpec(ref common.ReferenceCall
 							Ref:         ref("k8s.io/api/core/v1.PersistentVolumeClaim"),
 						},
 					},
+					"hooks": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Actions that Stash should take in response to restore sessions.",
+							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1beta1.RestoreHooks"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaim", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/stash/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/stash/apis/stash/v1beta1.RestoreTarget", "stash.appscode.dev/stash/apis/stash/v1beta1.Rule", "stash.appscode.dev/stash/apis/stash/v1beta1.TaskRef"},
+			"k8s.io/api/core/v1.LocalObjectReference", "k8s.io/api/core/v1.PersistentVolumeClaim", "kmodules.xyz/offshoot-api/api/v1.RuntimeSettings", "stash.appscode.dev/stash/apis/stash/v1beta1.EmptyDirSettings", "stash.appscode.dev/stash/apis/stash/v1beta1.RestoreHooks", "stash.appscode.dev/stash/apis/stash/v1beta1.RestoreTarget", "stash.appscode.dev/stash/apis/stash/v1beta1.Rule", "stash.appscode.dev/stash/apis/stash/v1beta1.TaskRef"},
 	}
 }
 

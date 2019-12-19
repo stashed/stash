@@ -66,7 +66,7 @@ BIN_PLATFORMS    := $(DOCKER_PLATFORMS) windows/amd64 darwin/amd64
 OS   := $(if $(GOOS),$(GOOS),$(shell go env GOOS))
 ARCH := $(if $(GOARCH),$(GOARCH),$(shell go env GOARCH))
 
-BASEIMAGE_PROD   ?= gcr.io/distroless/base
+BASEIMAGE_PROD   ?= busybox:1.31.1
 BASEIMAGE_DBG    ?= debian:stretch
 
 IMAGE            := $(REGISTRY)/$(BIN)
@@ -539,7 +539,7 @@ purge: uninstall
 dev: gen fmt push
 
 .PHONY: verify
-verify: verify-modules verify-gen
+verify: verify-gen # verify-modules
 
 .PHONY: verify-modules
 verify-modules:

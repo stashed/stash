@@ -29,6 +29,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
+	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -40,6 +41,13 @@ var _ = Describe("StatefulSet", func() {
 		f = framework.NewInvocation()
 	})
 
+	JustAfterEach(func() {
+		if CurrentGinkgoTestDescription().Failed {
+			f.PrintDebugHelpers()
+			framework.TestFailed = true
+		}
+	})
+
 	AfterEach(func() {
 		err := f.CleanupTestResources()
 		Expect(err).NotTo(HaveOccurred())
@@ -48,26 +56,36 @@ var _ = Describe("StatefulSet", func() {
 	var (
 		setupRestoreProcessOnScaledUpSS = func(ss *apps.StatefulSet, repo *api.Repository) (*v1beta1.RestoreSession, error) {
 			By("Creating RestoreSession")
-			restoreSession := f.GetRestoreSessionForWorkload(repo.Name, framework.GetTargetRef(ss.Name, apis.KindStatefulSet))
-			restoreSession.Spec.Rules = []v1beta1.Rule{
-				{
-					TargetHosts: []string{
-						"host-3",
-						"host-4",
+			restoreSession := f.GetRestoreSession(repo.Name, func(restore *v1beta1.RestoreSession) {
+				restore.Spec.Target = &v1beta1.RestoreTarget{
+					Ref: framework.GetTargetRef(ss.Name, apis.KindStatefulSet),
+					VolumeMounts: []core.VolumeMount{
+						{
+							Name:      framework.TestSourceDataVolumeName,
+							MountPath: framework.TestSourceDataMountPath,
+						},
 					},
-					SourceHost: "host-0",
-					Paths: []string{
-						framework.TestSourceDataMountPath,
+				}
+				restore.Spec.Rules = []v1beta1.Rule{
+					{
+						TargetHosts: []string{
+							"host-3",
+							"host-4",
+						},
+						SourceHost: "host-0",
+						Paths: []string{
+							framework.TestSourceDataMountPath,
+						},
 					},
-				},
-				{
-					TargetHosts: []string{},
-					SourceHost:  "",
-					Paths: []string{
-						framework.TestSourceDataMountPath,
+					{
+						TargetHosts: []string{},
+						Paths: []string{
+							framework.TestSourceDataMountPath,
+						},
 					},
-				},
-			}
+				}
+			})
+
 			err := f.CreateRestoreSession(restoreSession)
 			Expect(err).NotTo(HaveOccurred())
 			f.AppendToCleanupList(restoreSession)
@@ -107,7 +125,7 @@ var _ = Describe("StatefulSet", func() {
 				backupConfig, err := f.SetupWorkloadBackup(ss.ObjectMeta, repo, apis.KindStatefulSet)
 				Expect(err).NotTo(HaveOccurred())
 
-				// Take an Instant Backup the Sample Data
+				// Take an Instant Backup of the Sample Data
 				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -159,7 +177,7 @@ var _ = Describe("StatefulSet", func() {
 				backupConfig, err := f.SetupWorkloadBackup(ss.ObjectMeta, repo, apis.KindStatefulSet)
 				Expect(err).NotTo(HaveOccurred())
 
-				// Take an Instant Backup the Sample Data
+				// Take an Instant Backup of the Sample Data
 				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -210,7 +228,7 @@ var _ = Describe("StatefulSet", func() {
 				backupConfig, err := f.SetupWorkloadBackup(ss.ObjectMeta, repo, apis.KindStatefulSet)
 				Expect(err).NotTo(HaveOccurred())
 
-				// Take an Instant Backup the Sample Data
+				// Take an Instant Backup of the Sample Data
 				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 

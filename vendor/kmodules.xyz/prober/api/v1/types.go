@@ -39,6 +39,10 @@ type Handler struct {
 	// TODO: implement a realistic TCP lifecycle hook
 	// +optional
 	TCPSocket *core.TCPSocketAction `json:"tcpSocket,omitempty" protobuf:"bytes,4,opt,name=tcpSocket"`
+	// ContainerName specifies the name of the container where to execute the commands for Exec probe
+	// or where to find the port for HTTP or TCP probe
+	// +optional
+	ContainerName string `json:"containerName,omitempty" protobuf:"bytes,5,opt,name=containerName"`
 }
 
 // HTTPPostAction describes an action based on HTTP Post requests.
@@ -66,9 +70,10 @@ type HTTPPostAction struct {
 	Body string `json:"body,omitempty" protobuf:"bytes,6,opt,name=body"`
 	// Form to set in the request body.
 	// +optional
-	Form map[string]ValueList `json:"form,omitempty" protobuf:"bytes,7,rep,name=form"`
+	Form []FormEntry `json:"form,omitempty" protobuf:"bytes,7,rep,name=form"`
 }
 
-type ValueList struct {
-	Values []string `json:"values,omitempty" protobuf:"bytes,1,rep,name=values"`
+type FormEntry struct {
+	Key    string   `json:"key,omitempty" protobuf:"bytes,1,rep,name=key"`
+	Values []string `json:"values,omitempty" protobuf:"bytes,2,rep,name=values"`
 }

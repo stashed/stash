@@ -35,6 +35,7 @@ import (
 	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/appscode/go/log"
+	"github.com/appscode/go/types"
 	"github.com/golang/glog"
 	batchv1 "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
@@ -259,6 +260,11 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 	implicitInputs[apis.Namespace] = backupSession.Namespace
 	implicitInputs[apis.BackupSession] = backupSession.Name
 
+	// add docker image specific input
+	implicitInputs[apis.StashDockerRegistry] = c.DockerRegistry
+	implicitInputs[apis.StashDockerImage] = apis.ImageStash
+	implicitInputs[apis.StashImageTag] = c.StashImageTag
+
 	taskResolver := resolve.TaskResolver{
 		StashClient:     c.stashClient,
 		TaskName:        backupConfig.Spec.Task.Name,
@@ -266,6 +272,17 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 		RuntimeSettings: backupConfig.Spec.RuntimeSettings,
 		TempDir:         backupConfig.Spec.TempDir,
 	}
+
+	// if preBackup or postBackup Hook is specified, add their specific inputs
+	if backupConfig.Spec.Hooks != nil && backupConfig.Spec.Hooks.PreBackup != nil {
+		taskResolver.PreTaskHookInput = make(map[string]string)
+		taskResolver.PreTaskHookInput[apis.HookType] = apis.PreBackupHook
+	}
+	if backupConfig.Spec.Hooks != nil && backupConfig.Spec.Hooks.PostBackup != nil {
+		taskResolver.PostTaskHookInput = make(map[string]string)
+		taskResolver.PostTaskHookInput[apis.HookType] = apis.PostBackupHook
+	}
+
 	podSpec, err := taskResolver.GetPodSpec()
 	if err != nil {
 		return fmt.Errorf("can't get PodSpec for BackupConfiguration %s/%s, reason: %s", backupConfig.Namespace, backupConfig.Name, err)
@@ -292,6 +309,7 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 
 		in.Spec.Template.Spec = podSpec
 		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+		in.Spec.BackoffLimit = types.Int32P(1)
 		return in
 	})
 
@@ -352,6 +370,7 @@ func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.B
 		in.Labels = offshootLabels
 		in.Spec.Template = *jobTemplate
 		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+		in.Spec.BackoffLimit = types.Int32P(1)
 		return in
 	})
 

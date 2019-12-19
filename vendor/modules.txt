@@ -125,6 +125,10 @@ github.com/emicklei/go-restful/log
 github.com/evanphx/json-patch
 # github.com/fatih/structs v1.1.0
 github.com/fatih/structs
+# github.com/gabriel-vasile/mimetype v0.3.22
+github.com/gabriel-vasile/mimetype
+github.com/gabriel-vasile/mimetype/internal/matchers
+github.com/gabriel-vasile/mimetype/internal/json
 # github.com/ghodss/yaml v1.0.0
 github.com/ghodss/yaml
 # github.com/go-openapi/jsonpointer v0.19.0
@@ -135,6 +139,8 @@ github.com/go-openapi/jsonreference
 github.com/go-openapi/spec
 # github.com/go-openapi/swag v0.17.2
 github.com/go-openapi/swag
+# github.com/go-sql-driver/mysql v1.4.1
+github.com/go-sql-driver/mysql
 # github.com/gogo/protobuf v1.2.1
 github.com/gogo/protobuf/proto
 github.com/gogo/protobuf/sortkeys
@@ -396,6 +402,7 @@ google.golang.org/api/googleapi
 google.golang.org/api/googleapi/internal/uritemplates
 google.golang.org/api/support/bundler
 # google.golang.org/appengine v1.4.0
+google.golang.org/appengine/cloudsql
 google.golang.org/appengine
 google.golang.org/appengine/urlfetch
 google.golang.org/appengine/internal
@@ -802,6 +809,7 @@ k8s.io/client-go/informers/storage
 k8s.io/client-go/tools/watch
 k8s.io/client-go/transport/spdy
 k8s.io/client-go/util/exec
+k8s.io/client-go/tools/portforward
 k8s.io/client-go/util/jsonpath
 k8s.io/client-go/pkg/apis/clientauthentication
 k8s.io/client-go/pkg/apis/clientauthentication/v1alpha1
@@ -924,6 +932,7 @@ k8s.io/kubernetes/pkg/apis/policy
 k8s.io/utils/integer
 k8s.io/utils/buffer
 k8s.io/utils/trace
+k8s.io/utils/io
 k8s.io/utils/pointer
 # kmodules.xyz/client-go v0.0.0-20191107203555-78563b72c377
 kmodules.xyz/client-go/logs
@@ -943,7 +952,9 @@ kmodules.xyz/client-go/batch/v1
 kmodules.xyz/client-go/batch/v1beta1
 kmodules.xyz/client-go/dynamic
 kmodules.xyz/client-go/tools/analytics
+kmodules.xyz/client-go/tools/portforward
 kmodules.xyz/client-go/apiregistration/v1beta1
+kmodules.xyz/client-go/tools/exec
 # kmodules.xyz/constants v0.0.0-20191024095500-cd4313df4aa6
 kmodules.xyz/constants/google
 kmodules.xyz/constants/aws
@@ -983,8 +994,13 @@ kmodules.xyz/openshift/client/informers/externalversions/apps/v1
 kmodules.xyz/openshift/client/informers/externalversions/security/v1
 kmodules.xyz/openshift/apis/apps/install
 kmodules.xyz/openshift/client/listers/security/v1
-# kmodules.xyz/prober v0.0.0-20191111210804-26d3576296bc
+# kmodules.xyz/prober v0.0.0-20191127152141-f657db28f1c9
 kmodules.xyz/prober/api/v1
+kmodules.xyz/prober/probe
+kmodules.xyz/prober/api
+kmodules.xyz/prober/probe/exec
+kmodules.xyz/prober/probe/http
+kmodules.xyz/prober/probe/tcp
 # kmodules.xyz/webhook-runtime v0.0.0-20191106182834-bf518fbc7b19
 kmodules.xyz/webhook-runtime/admission
 kmodules.xyz/webhook-runtime/admission/v1beta1

@@ -69,12 +69,18 @@ spec:
                     properties:
                       hooks:
                         description: Actions that Stash should take in response to
-                          backup sessions. Cannot be updated.
+                          backup sessions.
                         properties:
                           postBackup:
                             description: PostBackup is called immediately after a
                               backup session is complete.
                             properties:
+                              containerName:
+                                description: ContainerName specifies the name of the
+                                  container where to execute the commands for Exec
+                                  probe or where to find the port for HTTP or TCP
+                                  probe
+                                type: string
                               exec:
                                 description: One and only one of the following should
                                   be specified. Exec specifies the action to take.
@@ -146,15 +152,17 @@ spec:
                                     description: Body to set in the request.
                                     type: string
                                   form:
-                                    additionalProperties:
+                                    description: Form to set in the request body.
+                                    items:
                                       properties:
+                                        key:
+                                          type: string
                                         values:
                                           items:
                                             type: string
                                           type: array
                                       type: object
-                                    description: Form to set in the request body.
-                                    type: object
+                                    type: array
                                   host:
                                     description: Host name to connect to, defaults
                                       to the pod IP. You probably want to set "Host"
@@ -221,6 +229,12 @@ spec:
                             description: PreBackup is called immediately before a
                               backup session is initiated.
                             properties:
+                              containerName:
+                                description: ContainerName specifies the name of the
+                                  container where to execute the commands for Exec
+                                  probe or where to find the port for HTTP or TCP
+                                  probe
+                                type: string
                               exec:
                                 description: One and only one of the following should
                                   be specified. Exec specifies the action to take.
@@ -292,15 +306,17 @@ spec:
                                     description: Body to set in the request.
                                     type: string
                                   form:
-                                    additionalProperties:
+                                    description: Form to set in the request body.
+                                    items:
                                       properties:
+                                        key:
+                                          type: string
                                         values:
                                           items:
                                             type: string
                                           type: array
                                       type: object
-                                    description: Form to set in the request body.
-                                    type: object
+                                    type: array
                                   host:
                                     description: Host name to connect to, defaults
                                       to the pod IP. You probably want to set "Host"
@@ -2484,6 +2500,11 @@ spec:
                   description: PostBackup is called immediately after a backup session
                     is complete.
                   properties:
+                    containerName:
+                      description: ContainerName specifies the name of the container
+                        where to execute the commands for Exec probe or where to find
+                        the port for HTTP or TCP probe
+                      type: string
                     exec:
                       description: One and only one of the following should be specified.
                         Exec specifies the action to take.
@@ -2550,15 +2571,17 @@ spec:
                           description: Body to set in the request.
                           type: string
                         form:
-                          additionalProperties:
+                          description: Form to set in the request body.
+                          items:
                             properties:
+                              key:
+                                type: string
                               values:
                                 items:
                                   type: string
                                 type: array
                             type: object
-                          description: Form to set in the request body.
-                          type: object
+                          type: array
                         host:
                           description: Host name to connect to, defaults to the pod
                             IP. You probably want to set "Host" in httpHeaders instead.
@@ -2624,6 +2647,11 @@ spec:
                   description: PreBackup is called immediately before a backup session
                     is initiated.
                   properties:
+                    containerName:
+                      description: ContainerName specifies the name of the container
+                        where to execute the commands for Exec probe or where to find
+                        the port for HTTP or TCP probe
+                      type: string
                     exec:
                       description: One and only one of the following should be specified.
                         Exec specifies the action to take.
@@ -2690,15 +2718,17 @@ spec:
                           description: Body to set in the request.
                           type: string
                         form:
-                          additionalProperties:
+                          description: Form to set in the request body.
+                          items:
                             properties:
+                              key:
+                                type: string
                               values:
                                 items:
                                   type: string
                                 type: array
                             type: object
-                          description: Form to set in the request body.
-                          type: object
+                          type: array
                         host:
                           description: Host name to connect to, defaults to the pod
                             IP. You probably want to set "Host" in httpHeaders instead.

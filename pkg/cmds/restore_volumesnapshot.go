@@ -18,6 +18,7 @@ package cmds
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
@@ -38,6 +39,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"kmodules.xyz/client-go/meta"
+	prober "kmodules.xyz/prober/probe"
 )
 
 func NewCmdRestoreVolumeSnapshot() *cobra.Command {
@@ -62,6 +64,7 @@ func NewCmdRestoreVolumeSnapshot() *cobra.Command {
 			if err != nil {
 				log.Fatalf("Could not get Kubernetes config: %s", err)
 			}
+			opt.config = config
 			opt.kubeClient = kubernetes.NewForConfigOrDie(config)
 			opt.stashClient = cs.NewForConfigOrDie(config)
 			opt.snapshotClient = vs_cs.NewForConfigOrDie(config)
@@ -100,6 +103,20 @@ func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
 
 	if restoreSession.Spec.Target == nil {
 		return nil, fmt.Errorf("no target has been specified for RestoreSession %s/%s", restoreSession.Namespace, restoreSession.Name)
+	}
+
+	// If preRestore hook is specified, then execute those hooks first
+	if restoreSession.Spec.Hooks != nil && restoreSession.Spec.Hooks.PreRestore != nil {
+		log.Infoln("Executing preRestore hooks........")
+		podName := os.Getenv(util.KeyPodName)
+		if podName == "" {
+			return nil, fmt.Errorf("failed to execute preRestore hooks. Reason: POD_NAME environment variable not found")
+		}
+		err := prober.RunProbe(opt.config, restoreSession.Spec.Hooks.PreRestore, podName, opt.namespace)
+		if err != nil {
+			return nil, err
+		}
+		log.Infoln("preRestore hooks has been executed successfully")
 	}
 
 	var pvcList []core.PersistentVolumeClaim
@@ -210,5 +227,20 @@ func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
 			Duration: time.Since(startTime).String(),
 		})
 	}
+	// If postRestore hook is specified, then execute those hooks after restore
+	if restoreSession.Spec.Hooks != nil && restoreSession.Spec.Hooks.PostRestore != nil {
+		log.Infoln("Executing postRestore hooks........")
+		podName := os.Getenv(util.KeyPodName)
+		if podName == "" {
+			return nil, fmt.Errorf("failed to execute postRestore hook. Reason: POD_NAME environment variable not found")
+		}
+		err := prober.RunProbe(opt.config, restoreSession.Spec.Hooks.PostRestore, podName, opt.namespace)
+		if err != nil {
+			return nil, fmt.Errorf(err.Error() + "Warning: The actual restore process may be succeeded." +
+				"Hence, the restored data might be present in the target even if the overall RestoreSession phase is 'Failed'")
+		}
+		log.Infoln("postRestore hooks has been executed successfully")
+	}
+
 	return restoreOutput, nil
 }

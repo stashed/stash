@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"strings"
 
+	"stash.appscode.dev/stash/apis"
 	v1beta1_api "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/util"
@@ -35,11 +36,13 @@ import (
 )
 
 type TaskResolver struct {
-	StashClient     cs.Interface
-	TaskName        string
-	Inputs          map[string]string
-	RuntimeSettings ofst.RuntimeSettings
-	TempDir         v1beta1_api.EmptyDirSettings
+	StashClient       cs.Interface
+	TaskName          string
+	Inputs            map[string]string
+	RuntimeSettings   ofst.RuntimeSettings
+	TempDir           v1beta1_api.EmptyDirSettings
+	PreTaskHookInput  map[string]string
+	PostTaskHookInput map[string]string
 }
 
 func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
@@ -53,6 +56,9 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 	}
 
 	var containers []core.Container
+	// User may overwrite some variables (i.e. outputDir) of hook executor container in Task params
+	// We need to substitute these variables properly. Params of last Function will have higher precedence
+	taskParams := make(map[string]string)
 
 	// get Functions for Task
 	for i, fn := range task.Spec.Steps {
@@ -66,6 +72,8 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 		for _, param := range fn.Params {
 			inputs[param.Name] = param.Value
 		}
+		taskParams = core_util.UpsertMap(taskParams, inputs)
+
 		// merge/replace backup config inputs
 		inputs = core_util.UpsertMap(inputs, o.Inputs)
 
@@ -111,6 +119,46 @@ func (o TaskResolver) GetPodSpec() (core.PodSpec, error) {
 	}
 	if len(containers) == 0 {
 		return core.PodSpec{}, fmt.Errorf("empty steps/containers for Task %s", task.Name)
+	}
+	// if hook specified then, add hook executor containers
+	if o.PreTaskHookInput != nil {
+		// Inputs precedence:
+		// 1. Inputs from BackupConfiguration/RestoreSession
+		// 2. Inputs from Task params
+		// 3. Default hook specific inputs
+		inputs := core_util.UpsertMap(taskParams, o.Inputs)
+		inputs = core_util.UpsertMap(o.PreTaskHookInput, inputs)
+		hookExecutor := util.HookExecutorContainer(apis.PreTaskHook, containers)
+
+		if err = resolveWithInputs(&hookExecutor, inputs); err != nil {
+			return core.PodSpec{}, fmt.Errorf("failed to resolve preTaskHook. Reason: %v", err)
+		}
+
+		// apply RuntimeSettings to Container
+		if o.RuntimeSettings.Container != nil {
+			hookExecutor = ofst_util.ApplyContainerRuntimeSettings(hookExecutor, *o.RuntimeSettings.Container)
+		}
+
+		containers = append([]core.Container{hookExecutor}, containers...)
+	}
+
+	if o.PostTaskHookInput != nil {
+		inputs := core_util.UpsertMap(taskParams, o.Inputs)
+		inputs = core_util.UpsertMap(o.PostTaskHookInput, inputs)
+		hookExecutor := util.HookExecutorContainer(apis.PostTaskHook, containers)
+
+		if err = resolveWithInputs(&hookExecutor, inputs); err != nil {
+			return core.PodSpec{}, fmt.Errorf("failed to resolve postTaskHook. Reason: %v", err)
+		}
+
+		// apply RuntimeSettings to Container
+		if o.RuntimeSettings.Container != nil {
+			hookExecutor = ofst_util.ApplyContainerRuntimeSettings(hookExecutor, *o.RuntimeSettings.Container)
+		}
+
+		lastContainer := containers[len(containers)-1]
+		containers[len(containers)-1] = hookExecutor
+		containers = append(containers, lastContainer)
 	}
 	// podSpec from task
 	podSpec := core.PodSpec{

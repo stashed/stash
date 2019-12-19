@@ -37,6 +37,13 @@ var _ = Describe("Deployment", func() {
 		f = framework.NewInvocation()
 	})
 
+	JustAfterEach(func() {
+		if CurrentGinkgoTestDescription().Failed {
+			f.PrintDebugHelpers()
+			framework.TestFailed = true
+		}
+	})
+
 	AfterEach(func() {
 		err := f.CleanupTestResources()
 		Expect(err).NotTo(HaveOccurred())
@@ -63,7 +70,7 @@ var _ = Describe("Deployment", func() {
 				backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment)
 				Expect(err).NotTo(HaveOccurred())
 
-				// Take an Instant Backup the Sample Data
+				// Take an Instant Backup of the Sample Data
 				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -116,7 +123,7 @@ var _ = Describe("Deployment", func() {
 				backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment)
 				Expect(err).NotTo(HaveOccurred())
 
-				// Take an Instant Backup the Sample Data
+				// Take an Instant Backup of the Sample Data
 				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -170,7 +177,7 @@ var _ = Describe("Deployment", func() {
 				By("Waiting for leader election")
 				f.CheckLeaderElection(deployment.ObjectMeta, apis.KindDeployment, v1beta1.ResourceKindBackupConfiguration)
 
-				// Take an Instant Backup the Sample Data
+				// Take an Instant Backup of the Sample Data
 				backupSession, err := f.TakeInstantBackup(backupConfig.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 

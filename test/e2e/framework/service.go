@@ -48,9 +48,8 @@ func (fi *Invocation) HeadlessService() core.Service {
 	}
 }
 
-func (f *Framework) CreateService(obj core.Service) error {
-	_, err := f.KubeClient.CoreV1().Services(obj.Namespace).Create(&obj)
-	return err
+func (f *Framework) CreateService(obj core.Service) (*core.Service, error) {
+	return f.KubeClient.CoreV1().Services(obj.Namespace).Create(&obj)
 }
 
 func (f *Framework) DeleteService(meta metav1.ObjectMeta) error {

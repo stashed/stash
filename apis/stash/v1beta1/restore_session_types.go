@@ -20,6 +20,7 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ofst "kmodules.xyz/offshoot-api/api/v1"
+	prober "kmodules.xyz/prober/api/v1"
 )
 
 const (
@@ -75,6 +76,9 @@ type RestoreSessionSpec struct {
 	// Don't specify it in sidecar model.
 	// +optional
 	InterimVolumeTemplate *core.PersistentVolumeClaim `json:"interimVolumeTemplate,omitempty" protobuf:"bytes,8,opt,name=interimVolumeTemplate"`
+	// Actions that Stash should take in response to restore sessions.
+	// +optional
+	Hooks *RestoreHooks `json:"hooks,omitempty" protobuf:"bytes,9,opt,name=hooks"`
 }
 
 type Rule struct {
@@ -93,6 +97,19 @@ type Rule struct {
 	// Don't specify if you have specified snapshots field.
 	// +optional
 	Paths []string `json:"paths,omitempty" protobuf:"bytes,4,rep,name=paths"`
+}
+
+// Hooks describes actions that Stash should take in response to restore sessions. For the PostRestore
+// and PreRestore handlers, restore process blocks until the action is complete,
+// unless the container process fails, in which case the handler is aborted.
+type RestoreHooks struct {
+	// PreRestore is called immediately before a restore session is initiated.
+	// +optional
+	PreRestore *prober.Handler `json:"preRestore,omitempty" protobuf:"bytes,1,opt,name=preRestore"`
+
+	// PostRestore is called immediately after a restore session is complete.
+	// +optional
+	PostRestore *prober.Handler `json:"postRestore,omitempty" protobuf:"bytes,2,opt,name=postRestore"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

@@ -219,6 +219,14 @@ func (c *BackupSessionController) startBackupProcess(backupSession *api_v1beta1.
 
 func (c *BackupSessionController) backup(backupConfiguration *api_v1beta1.BackupConfiguration) (*restic.BackupOutput, error) {
 
+	// If preBackup hook is specified, then execute those hooks first
+	if backupConfiguration.Spec.Hooks != nil && backupConfiguration.Spec.Hooks.PreBackup != nil {
+		err := util.ExecuteHook(c.Config, backupConfiguration.Spec.Hooks, apis.PreBackupHook, os.Getenv(util.KeyPodName), c.Namespace)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// get repository
 	repository, err := c.StashClient.StashV1alpha1().Repositories(backupConfiguration.Namespace).Get(backupConfiguration.Spec.Repository.Name, metav1.GetOptions{})
 	if err != nil {
@@ -257,8 +265,22 @@ func (c *BackupSessionController) backup(backupConfiguration *api_v1beta1.Backup
 
 	// BackupOptions configuration
 	backupOpt := util.BackupOptionsForBackupConfig(*backupConfiguration, extraOpt)
+
 	// Run Backup
-	return resticWrapper.RunBackup(backupOpt)
+	// If there is an error during backup, don't return.
+	// We will execute postBackup hook even if the backup failed.
+	// Reason: https://github.com/stashed/stash/issues/986
+	var backupErr, hookErr error
+	output, backupErr := resticWrapper.RunBackup(backupOpt)
+
+	// If postBackup hook is specified, then execute those hooks
+	if backupConfiguration.Spec.Hooks != nil && backupConfiguration.Spec.Hooks.PostBackup != nil {
+		hookErr = util.ExecuteHook(c.Config, backupConfiguration.Spec.Hooks, apis.PostBackupHook, os.Getenv(util.KeyPodName), c.Namespace)
+	}
+	if backupErr != nil || hookErr != nil {
+		return nil, errors.NewAggregate([]error{backupErr, hookErr})
+	}
+	return output, nil
 }
 
 func (c *BackupSessionController) electLeaderPod(backupConfiguration *api_v1beta1.BackupConfiguration, stopCh <-chan struct{}) error {

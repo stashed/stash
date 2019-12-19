@@ -19,7 +19,6 @@ package framework
 import (
 	"time"
 
-	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 
@@ -30,8 +29,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (f *Invocation) GetBackupConfigurationForWorkload(repoName string, targetRef v1beta1.TargetRef) *v1beta1.BackupConfiguration {
-	return &v1beta1.BackupConfiguration{
+func (f *Invocation) GetBackupConfiguration(repoName string, transformFuncs ...func(bc *v1beta1.BackupConfiguration)) *v1beta1.BackupConfiguration {
+	backupConfig := &v1beta1.BackupConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(f.app),
 			Namespace: f.namespace,
@@ -50,22 +49,15 @@ func (f *Invocation) GetBackupConfigurationForWorkload(repoName string, targetRe
 				KeepLast: 5,
 				Prune:    true,
 			},
-			BackupConfigurationTemplateSpec: v1beta1.BackupConfigurationTemplateSpec{
-				Target: &v1beta1.BackupTarget{
-					Ref: targetRef,
-					Paths: []string{
-						TestSourceDataMountPath,
-					},
-					VolumeMounts: []core.VolumeMount{
-						{
-							Name:      TestSourceDataVolumeName,
-							MountPath: TestSourceDataMountPath,
-						},
-					},
-				},
-			},
 		},
 	}
+	// transformFuncs provides a array of functions that made test specific change on the BackupConfiguration
+	// apply these test specific changes
+	for _, fn := range transformFuncs {
+		fn(backupConfig)
+	}
+
+	return backupConfig
 }
 
 func (f *Invocation) CreateBackupConfiguration(backupCfg v1beta1.BackupConfiguration) error {
@@ -79,25 +71,6 @@ func (f *Invocation) DeleteBackupConfiguration(backupCfg v1beta1.BackupConfigura
 		return err
 	}
 	return nil
-}
-
-func (f *Invocation) PVCBackupTarget(pvcName string) *v1beta1.BackupTarget {
-	return &v1beta1.BackupTarget{
-		Ref: v1beta1.TargetRef{
-			APIVersion: "v1",
-			Kind:       apis.KindPersistentVolumeClaim,
-			Name:       pvcName,
-		},
-		VolumeMounts: []core.VolumeMount{
-			{
-				Name:      TestSourceDataVolumeName,
-				MountPath: TestSourceDataMountPath,
-			},
-		},
-		Paths: []string{
-			TestSourceDataMountPath,
-		},
-	}
 }
 
 func (f *Framework) EventuallyCronJobCreated(meta metav1.ObjectMeta) GomegaAsyncAssertion {

@@ -22,6 +22,7 @@ import (
 	"os"
 	"time"
 
+	"stash.appscode.dev/stash/apis"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/eventer"
@@ -179,14 +180,36 @@ func (opt *Options) runRestore(restoreSession *api_v1beta1.RestoreSession) (*res
 		return nil, nil
 	}
 
+	// If preRestore hook is specified, then execute those hooks first
+	if restoreSession.Spec.Hooks != nil && restoreSession.Spec.Hooks.PreRestore != nil {
+		err := util.ExecuteHook(opt.Config, restoreSession.Spec.Hooks, apis.PreRestoreHook, os.Getenv(util.KeyPodName), opt.Namespace)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// setup restic wrapper
 	w, err := restic.NewResticWrapper(opt.SetupOpt)
 	if err != nil {
 		return nil, err
 	}
 
-	// run restore process
-	return w.RunRestore(util.RestoreOptionsForHost(opt.Host, restoreSession.Spec.Rules))
+	// Run restore process
+	// If there is an error during restore, don't return.
+	// We will execute postRestore hook even if the restore failed.
+	// Reason: https://github.com/stashed/stash/issues/986
+	var restoreErr, hookErr error
+	output, restoreErr := w.RunRestore(util.RestoreOptionsForHost(opt.Host, restoreSession.Spec.Rules))
+
+	// If postRestore hook is specified, then execute those hooks
+	if restoreSession.Spec.Hooks != nil && restoreSession.Spec.Hooks.PostRestore != nil {
+		hookErr = util.ExecuteHook(opt.Config, restoreSession.Spec.Hooks, apis.PostRestoreHook, os.Getenv(util.KeyPodName), opt.Namespace)
+	}
+
+	if restoreErr != nil || hookErr != nil {
+		return nil, errors.NewAggregate([]error{restoreErr, hookErr})
+	}
+	return output, nil
 }
 
 func (c *Options) HandleRestoreSuccess(restoreOutput *restic.RestoreOutput) error {

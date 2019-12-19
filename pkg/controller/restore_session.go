@@ -389,6 +389,7 @@ func (c *StashController) createRestoreJob(jobTemplate *core.PodTemplateSpec, me
 
 		in.Spec.Template = *jobTemplate
 		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+		in.Spec.BackoffLimit = types.Int32P(1)
 		return in
 	})
 	return err
@@ -414,12 +415,27 @@ func (c *StashController) resolveRestoreTask(restoreSession *api_v1beta1.Restore
 	implicitInputs[apis.Namespace] = restoreSession.Namespace
 	implicitInputs[apis.RestoreSession] = restoreSession.Name
 
+	// add docker image specific input
+	implicitInputs[apis.StashDockerRegistry] = c.DockerRegistry
+	implicitInputs[apis.StashDockerImage] = apis.ImageStash
+	implicitInputs[apis.StashImageTag] = c.StashImageTag
+
 	taskResolver := resolve.TaskResolver{
 		StashClient:     c.stashClient,
 		TaskName:        restoreSession.Spec.Task.Name,
 		Inputs:          core_util.UpsertMap(explicitInputs, implicitInputs),
 		RuntimeSettings: restoreSession.Spec.RuntimeSettings,
 		TempDir:         restoreSession.Spec.TempDir,
+	}
+
+	// if preRestore or postRestore Hook is specified, add their specific inputs
+	if restoreSession.Spec.Hooks != nil && restoreSession.Spec.Hooks.PreRestore != nil {
+		taskResolver.PreTaskHookInput = make(map[string]string)
+		taskResolver.PreTaskHookInput[apis.HookType] = apis.PreRestoreHook
+	}
+	if restoreSession.Spec.Hooks != nil && restoreSession.Spec.Hooks.PostRestore != nil {
+		taskResolver.PostTaskHookInput = make(map[string]string)
+		taskResolver.PostTaskHookInput[apis.HookType] = apis.PostRestoreHook
 	}
 
 	// In order to preserve file ownership, restore process need to be run as root user.
@@ -507,6 +523,7 @@ func (c *StashController) ensureVolumeRestorerJob(restoreSession *api_v1beta1.Re
 
 		in.Spec.Template = *jobTemplate
 		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+		in.Spec.BackoffLimit = types.Int32P(1)
 		return in
 	})
 	return err

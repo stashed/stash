@@ -29,38 +29,51 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
+	appcatalog_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
 )
 
 type Framework struct {
-	KubeClient   kubernetes.Interface
-	StashClient  cs.Interface
-	KAClient     ka.Interface
-	dmClient     dynamic.Interface
-	namespace    string
-	CertStore    *certstore.CertStore
-	ClientConfig *rest.Config
-	StorageClass string
+	KubeClient     kubernetes.Interface
+	StashClient    cs.Interface
+	KAClient       ka.Interface
+	catalogClient  appcatalog_cs.Interface
+	dmClient       dynamic.Interface
+	namespace      string
+	CertStore      *certstore.CertStore
+	ClientConfig   *rest.Config
+	StorageClass   string
+	DockerRegistry string
 }
 
 // RootFramework will be used to invoke new Invocation before each test from the individual test packages
 var RootFramework *Framework
 
-func New(kubeClient kubernetes.Interface, extClient cs.Interface, kaClient ka.Interface, dmClient dynamic.Interface, clientConfig *rest.Config, storageClass string) *Framework {
+var TestFailed = false
+
+func New(clientConfig *rest.Config, storageClass, registry string) *Framework {
 	store, err := certstore.NewCertStore(afero.NewMemMapFs(), filepath.Join("", "pki"))
 	Expect(err).NotTo(HaveOccurred())
 
 	err = store.InitCA()
 	Expect(err).NotTo(HaveOccurred())
 
+	kubeClient := kubernetes.NewForConfigOrDie(clientConfig)
+	stashClient := cs.NewForConfigOrDie(clientConfig)
+	kaClient := ka.NewForConfigOrDie(clientConfig)
+	dmClient := dynamic.NewForConfigOrDie(clientConfig)
+	catalogClient := appcatalog_cs.NewForConfigOrDie(clientConfig)
+
 	return &Framework{
-		KubeClient:   kubeClient,
-		StashClient:  extClient,
-		KAClient:     kaClient,
-		dmClient:     dmClient,
-		namespace:    rand.WithUniqSuffix("test-stash"),
-		CertStore:    store,
-		ClientConfig: clientConfig,
-		StorageClass: storageClass,
+		KubeClient:     kubeClient,
+		StashClient:    stashClient,
+		KAClient:       kaClient,
+		dmClient:       dmClient,
+		catalogClient:  catalogClient,
+		namespace:      rand.WithUniqSuffix("test-stash"),
+		CertStore:      store,
+		ClientConfig:   clientConfig,
+		StorageClass:   storageClass,
+		DockerRegistry: registry,
 	}
 }
 func NewInvocation() *Invocation {

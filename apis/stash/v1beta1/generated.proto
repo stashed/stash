@@ -88,7 +88,7 @@ message BackupBatchSpec {
   // Actions that Stash should take in response to backup sessions.
   // Cannot be updated.
   // +optional
-  optional Hooks hooks = 8;
+  optional BackupHooks hooks = 8;
 }
 
 message BackupBatchStatus {
@@ -240,9 +240,21 @@ message BackupConfigurationTemplateSpec {
   optional k8s.io.api.core.v1.PersistentVolumeClaim interimVolumeTemplate = 5;
 
   // Actions that Stash should take in response to backup sessions.
-  // Cannot be updated.
   // +optional
-  optional Hooks hooks = 6;
+  optional BackupHooks hooks = 6;
+}
+
+// Hooks describes actions that Stash should take in response to backup sessions. For the PostBackup
+// and PreBackup handlers, backup process blocks until the action is complete,
+// unless the container process fails, in which case the handler is aborted.
+message BackupHooks {
+  // PreBackup is called immediately before a backup session is initiated.
+  // +optional
+  optional kmodules.xyz.prober.api.v1.Handler preBackup = 1;
+
+  // PostBackup is called immediately after a backup session is complete.
+  // +optional
+  optional kmodules.xyz.prober.api.v1.Handler postBackup = 2;
 }
 
 // BackupInvokerRef contains information that points to the backup configuration or batch being used
@@ -447,19 +459,6 @@ message FunctionSpec {
   optional string podSecurityPolicyName = 9;
 }
 
-// Hooks describes actions that Stash should take in response to backup sessions. For the PostBackup
-// and PreBackup handlers, backup process blocks until the action is complete,
-// unless the container process fails, in which case the handler is aborted.
-message Hooks {
-  // PreBackup is called immediately before a backup session is initiated.
-  // +optional
-  optional kmodules.xyz.prober.api.v1.Handler preBackup = 1;
-
-  // PostBackup is called immediately after a backup session is complete.
-  // +optional
-  optional kmodules.xyz.prober.api.v1.Handler postBackup = 2;
-}
-
 message HostBackupStats {
   // Hostname indicate name of the host that has been backed up
   // +optional
@@ -505,6 +504,19 @@ message Param {
   optional string name = 1;
 
   optional string value = 2;
+}
+
+// Hooks describes actions that Stash should take in response to restore sessions. For the PostRestore
+// and PreRestore handlers, restore process blocks until the action is complete,
+// unless the container process fails, in which case the handler is aborted.
+message RestoreHooks {
+  // PreRestore is called immediately before a restore session is initiated.
+  // +optional
+  optional kmodules.xyz.prober.api.v1.Handler preRestore = 1;
+
+  // PostRestore is called immediately after a restore session is complete.
+  // +optional
+  optional kmodules.xyz.prober.api.v1.Handler postRestore = 2;
 }
 
 // +kubebuilder:object:root=true
@@ -564,6 +576,10 @@ message RestoreSessionSpec {
   // Don't specify it in sidecar model.
   // +optional
   optional k8s.io.api.core.v1.PersistentVolumeClaim interimVolumeTemplate = 8;
+
+  // Actions that Stash should take in response to restore sessions.
+  // +optional
+  optional RestoreHooks hooks = 9;
 }
 
 message RestoreSessionStatus {

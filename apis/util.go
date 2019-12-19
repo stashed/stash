@@ -35,6 +35,7 @@ const (
 	KindAppBinding            = "AppBinding"
 	KindDeploymentConfig      = "DeploymentConfig"
 	KindSecret                = "Secret"
+	KindService               = "Service"
 )
 
 const (
@@ -48,4 +49,5 @@ const (
 	ResourcePluralAppBinding            = "appbindings"
 	ResourcePluralDeploymentConfig      = "deploymentconfigs"
 	ResourcePluralSecret                = "secrets"
+	ResourcePluralService               = "services"
 )

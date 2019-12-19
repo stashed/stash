@@ -19,24 +19,25 @@ package framework
 import (
 	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
+	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/pkg/util"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 
-	"github.com/appscode/go/sets"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"kmodules.xyz/client-go/meta"
+	appcatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 )
 
-func (f *Framework) GenerateSampleData(objMeta metav1.ObjectMeta, kind string) (sets.String, error) {
+func (f *Framework) GenerateSampleData(objMeta metav1.ObjectMeta, kind string) ([]string, error) {
 	By("Generating sample data inside workload pods")
 	err := f.CreateSampleDataInsideWorkload(objMeta, kind)
 	if err != nil {
-		return sets.String{}, err
+		return nil, err
 	}
 
 	By("Verifying that sample data has been generated")
@@ -47,9 +48,27 @@ func (f *Framework) GenerateSampleData(objMeta metav1.ObjectMeta, kind string) (
 	return sampleData, nil
 }
 
-func (f *Invocation) SetupWorkloadBackup(objMeta metav1.ObjectMeta, repo *api.Repository, kind string) (*v1beta1.BackupConfiguration, error) {
+func (f *Invocation) SetupWorkloadBackup(objMeta metav1.ObjectMeta, repo *api_v1alpha1.Repository, kind string, transformFuncs ...func(bc *v1beta1.BackupConfiguration)) (*v1beta1.BackupConfiguration, error) {
 	// Generate desired BackupConfiguration definition
-	backupConfig := f.GetBackupConfigurationForWorkload(repo.Name, GetTargetRef(objMeta.Name, kind))
+	backupConfig := f.GetBackupConfiguration(repo.Name, func(bc *v1beta1.BackupConfiguration) {
+		bc.Spec.Target = &v1beta1.BackupTarget{
+			Ref: GetTargetRef(objMeta.Name, kind),
+			Paths: []string{
+				TestSourceDataMountPath,
+			},
+			VolumeMounts: []core.VolumeMount{
+				{
+					Name:      TestSourceDataVolumeName,
+					MountPath: TestSourceDataMountPath,
+				},
+			},
+		}
+	})
+	// transformFuncs provides a array of functions that made test specific change on the BackupConfiguration
+	// apply these test specific changes
+	for _, fn := range transformFuncs {
+		fn(backupConfig)
+	}
 
 	By("Creating BackupConfiguration: " + backupConfig.Name)
 	createdBC, err := f.StashClient.StashV1beta1().BackupConfigurations(backupConfig.Namespace).Create(backupConfig)
@@ -100,7 +119,8 @@ func (f *Invocation) TakeInstantBackup(objMeta metav1.ObjectMeta) (*v1beta1.Back
 	return backupSession, nil
 }
 
-func (f *Invocation) RestoredData(objMeta metav1.ObjectMeta, kind string) sets.String {
+func (f *Invocation) RestoredData(objMeta metav1.ObjectMeta, kind string) []string {
+	f.EventuallyPodAccessible(objMeta).Should(BeTrue())
 	By("Reading restored data")
 	restoredData, err := f.ReadSampleDataFromFromWorkload(objMeta, kind)
 	Expect(err).NotTo(HaveOccurred())
@@ -109,9 +129,32 @@ func (f *Invocation) RestoredData(objMeta metav1.ObjectMeta, kind string) sets.S
 	return restoredData
 }
 
-func (f *Invocation) SetupRestoreProcess(objMeta metav1.ObjectMeta, repo *api.Repository, kind string) (*v1beta1.RestoreSession, error) {
+func (f *Invocation) SetupRestoreProcess(objMeta metav1.ObjectMeta, repo *api.Repository, kind string, transformFuncs ...func(restore *v1beta1.RestoreSession)) (*v1beta1.RestoreSession, error) {
+
+	// Generate desired BackupConfiguration definition
+	restoreSession := f.GetRestoreSession(repo.Name, func(restore *v1beta1.RestoreSession) {
+		restore.Spec.Rules = []v1beta1.Rule{
+			{
+				Paths: []string{TestSourceDataMountPath},
+			},
+		}
+		restore.Spec.Target = &v1beta1.RestoreTarget{
+			Ref: GetTargetRef(objMeta.Name, kind),
+			VolumeMounts: []core.VolumeMount{
+				{
+					Name:      TestSourceDataVolumeName,
+					MountPath: TestSourceDataMountPath,
+				},
+			},
+		}
+	})
+	// transformFuncs provides a array of functions that made test specific change on the RestoreSession
+	// apply these test specific changes.
+	for _, fn := range transformFuncs {
+		fn(restoreSession)
+	}
+
 	By("Creating RestoreSession")
-	restoreSession := f.GetRestoreSessionForWorkload(repo.Name, GetTargetRef(objMeta.Name, kind))
 	err := f.CreateRestoreSession(restoreSession)
 	Expect(err).NotTo(HaveOccurred())
 	f.AppendToCleanupList(restoreSession)
@@ -120,26 +163,16 @@ func (f *Invocation) SetupRestoreProcess(objMeta metav1.ObjectMeta, repo *api.Re
 	switch kind {
 	case apis.KindDeployment:
 		f.EventuallyDeployment(objMeta).Should(HaveInitContainer(util.StashInitContainer))
-		By("Waiting for workload to be ready with init-container")
-		err = f.WaitUntilDeploymentReadyWithInitContainer(objMeta)
 	case apis.KindDaemonSet:
 		f.EventuallyDaemonSet(objMeta).Should(HaveInitContainer(util.StashInitContainer))
-		By("Waiting for workload to be ready with init-container")
-		err = f.WaitUntilDaemonSetReadyWithInitContainer(objMeta)
 	case apis.KindStatefulSet:
 		f.EventuallyStatefulSet(objMeta).Should(HaveInitContainer(util.StashInitContainer))
-		By("Waiting for workload to be ready with init-container")
-		err = f.WaitUntilStatefulSetWithInitContainer(objMeta)
 	case apis.KindReplicaSet:
 		f.EventuallyReplicaSet(objMeta).Should(HaveInitContainer(util.StashInitContainer))
-		By("Waiting for workload to be ready with init-container")
-		err = f.WaitUntilRSReadyWithInitContainer(objMeta)
 	case apis.KindReplicationController:
 		f.EventuallyReplicationController(objMeta).Should(HaveInitContainer(util.StashInitContainer))
-		By("Waiting for workload to be ready with init-container")
-		err = f.WaitUntilRCReadyWithInitContainer(objMeta)
 	}
-	f.EventuallyPodAccessible(objMeta).Should(BeTrue())
+
 	By("Waiting for restore process to complete")
 	f.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta).Should(BeTrue())
 
@@ -169,6 +202,9 @@ func GetTargetRef(name string, kind string) v1beta1.TargetRef {
 	case apis.KindPersistentVolumeClaim:
 		targetRef.Kind = apis.KindPersistentVolumeClaim
 		targetRef.APIVersion = core.SchemeGroupVersion.String()
+	case apis.KindAppBinding:
+		targetRef.Kind = apis.KindAppBinding
+		targetRef.APIVersion = appcatalog.SchemeGroupVersion.String()
 	}
 	return targetRef
 }

@@ -19,24 +19,24 @@ package matcher
 import (
 	"fmt"
 
-	"github.com/appscode/go/sets"
+	"github.com/appscode/go/strings"
 	"github.com/onsi/gomega/types"
 )
 
-func BeSameAs(sample sets.String) types.GomegaMatcher {
+func BeSameAs(sample []string) types.GomegaMatcher {
 	return &recoveredDataMatcher{
 		sample: sample,
 	}
 }
 
 type recoveredDataMatcher struct {
-	sample sets.String
+	sample []string
 }
 
 func (matcher *recoveredDataMatcher) Match(actual interface{}) (success bool, err error) {
-	recoveredData := actual.(sets.String)
-	for data := range recoveredData {
-		if !matcher.sample.Has(data) {
+	recoveredData := actual.([]string)
+	for _, data := range recoveredData {
+		if !strings.Contains(matcher.sample, data) {
 			return false, nil
 		}
 	}

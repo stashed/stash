@@ -121,6 +121,19 @@ func (f *Framework) GetOperatorPod() (*core.Pod, error) {
 	return nil, fmt.Errorf("operator pod not found")
 }
 
+func (f *Framework) GetMinioPod() (*core.Pod, error) {
+	podList, err := f.KubeClient.CoreV1().Pods(f.namespace).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	for _, pod := range podList.Items {
+		if strings.HasPrefix(pod.Name, MinioServer) {
+			return &pod, nil
+		}
+	}
+	return nil, fmt.Errorf("operator pod not found")
+}
+
 func (f *Invocation) Pod(pvcName string) core.Pod {
 	labels := map[string]string{
 		"app": f.app,

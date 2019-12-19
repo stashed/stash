@@ -74,7 +74,7 @@ type BackupBatchSpec struct {
 	// Actions that Stash should take in response to backup sessions.
 	// Cannot be updated.
 	// +optional
-	Hooks *Hooks `json:"hooks,omitempty" protobuf:"bytes,8,opt,name=hooks"`
+	Hooks *BackupHooks `json:"hooks,omitempty" protobuf:"bytes,8,opt,name=hooks"`
 }
 
 type BackupBatchStatus struct {

@@ -81,8 +81,13 @@ func EnsureSidecarClusterRole(kubeClient kubernetes.Interface) error {
 			},
 			{
 				APIGroups: []string{core.GroupName},
-				Resources: []string{"secrets"},
+				Resources: []string{"secrets", "pods"},
 				Verbs:     []string{"get"},
+			},
+			{
+				APIGroups: []string{core.GroupName},
+				Resources: []string{"pods/exec"},
+				Verbs:     []string{"get", "create"},
 			},
 			{
 				APIGroups: []string{core.GroupName},

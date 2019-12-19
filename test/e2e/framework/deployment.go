@@ -33,6 +33,16 @@ import (
 	apps_util "kmodules.xyz/client-go/apps/v1"
 )
 
+const (
+	ProberDemoPodPrefix = "prober-demo"
+	ExitCodeSuccess     = "EXIT_CODE_SUCCESS"
+	ExitCodeFail        = "EXIT_CODE_FAIL"
+	HttpPortName        = "http-port"
+	HttpPort            = 8080
+	TcpPortName         = "tcp-port"
+	TcpPort             = 9090
+)
+
 func (fi *Invocation) Deployment(pvcName string) apps.Deployment {
 	labels := map[string]string{
 		"app":  fi.app,

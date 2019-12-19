@@ -9408,7 +9408,7 @@
         },
         "hooks": {
           "description": "Actions that Stash should take in response to backup sessions. Cannot be updated.",
-          "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.Hooks"
+          "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.BackupHooks"
         },
         "paused": {
           "description": "Indicates that the BackupConfiguration is paused from taking backup. Default value is 'false'",
@@ -9611,8 +9611,8 @@
           "type": "string"
         },
         "hooks": {
-          "description": "Actions that Stash should take in response to backup sessions. Cannot be updated.",
-          "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.Hooks"
+          "description": "Actions that Stash should take in response to backup sessions.",
+          "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.BackupHooks"
         },
         "interimVolumeTemplate": {
           "description": "InterimVolumeTemplate specifies a template for a volume to hold targeted data temporarily before uploading to backend or inserting into target. It is only usable for job model. Don't specify it in sidecar model.",
@@ -9685,8 +9685,8 @@
       "type": "object",
       "properties": {
         "hooks": {
-          "description": "Actions that Stash should take in response to backup sessions. Cannot be updated.",
-          "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.Hooks"
+          "description": "Actions that Stash should take in response to backup sessions.",
+          "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.BackupHooks"
         },
         "interimVolumeTemplate": {
           "description": "InterimVolumeTemplate specifies a template for a volume to hold targeted data temporarily before uploading to backend or inserting into target. It is only usable for job model. Don't specify it in sidecar model.",
@@ -9707,6 +9707,20 @@
         "tempDir": {
           "description": "Temp directory configuration for functions/sidecar An `EmptyDir` will always be mounted at /tmp with this settings",
           "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.EmptyDirSettings"
+        }
+      }
+    },
+    "dev.appscode.stash.stash.apis.stash.v1beta1.BackupHooks": {
+      "description": "Hooks describes actions that Stash should take in response to backup sessions. For the PostBackup and PreBackup handlers, backup process blocks until the action is complete, unless the container process fails, in which case the handler is aborted.",
+      "type": "object",
+      "properties": {
+        "postBackup": {
+          "description": "PostBackup is called immediately after a backup session is complete.",
+          "$ref": "#/definitions/xyz.kmodules.prober.api.v1.Handler"
+        },
+        "preBackup": {
+          "description": "PreBackup is called immediately before a backup session is initiated.",
+          "$ref": "#/definitions/xyz.kmodules.prober.api.v1.Handler"
         }
       }
     },
@@ -10029,20 +10043,6 @@
         }
       }
     },
-    "dev.appscode.stash.stash.apis.stash.v1beta1.Hooks": {
-      "description": "Hooks describes actions that Stash should take in response to backup sessions. For the PostBackup and PreBackup handlers, backup process blocks until the action is complete, unless the container process fails, in which case the handler is aborted.",
-      "type": "object",
-      "properties": {
-        "postBackup": {
-          "description": "PostBackup is called immediately after a backup session is complete.",
-          "$ref": "#/definitions/xyz.kmodules.prober.api.v1.Handler"
-        },
-        "preBackup": {
-          "description": "PreBackup is called immediately before a backup session is initiated.",
-          "$ref": "#/definitions/xyz.kmodules.prober.api.v1.Handler"
-        }
-      }
-    },
     "dev.appscode.stash.stash.apis.stash.v1beta1.HostBackupStats": {
       "type": "object",
       "properties": {
@@ -10105,6 +10105,20 @@
         },
         "value": {
           "type": "string"
+        }
+      }
+    },
+    "dev.appscode.stash.stash.apis.stash.v1beta1.RestoreHooks": {
+      "description": "Hooks describes actions that Stash should take in response to restore sessions. For the PostRestore and PreRestore handlers, restore process blocks until the action is complete, unless the container process fails, in which case the handler is aborted.",
+      "type": "object",
+      "properties": {
+        "postRestore": {
+          "description": "PostRestore is called immediately after a restore session is complete.",
+          "$ref": "#/definitions/xyz.kmodules.prober.api.v1.Handler"
+        },
+        "preRestore": {
+          "description": "PreRestore is called immediately before a restore session is initiated.",
+          "$ref": "#/definitions/xyz.kmodules.prober.api.v1.Handler"
         }
       }
     },
@@ -10172,6 +10186,10 @@
         "driver": {
           "description": "Driver indicates the name of the agent to use to restore the target. Supported values are \"Restic\", \"VolumeSnapshotter\". Default value is \"Restic\".",
           "type": "string"
+        },
+        "hooks": {
+          "description": "Actions that Stash should take in response to restore sessions.",
+          "$ref": "#/definitions/dev.appscode.stash.stash.apis.stash.v1beta1.RestoreHooks"
         },
         "interimVolumeTemplate": {
           "description": "InterimVolumeTemplate specifies a template for a volume to hold targeted data temporarily before uploading to backend or inserting into target. It is only usable for job model. Don't specify it in sidecar model.",
@@ -13570,6 +13588,20 @@
         }
       }
     },
+    "xyz.kmodules.prober.api.v1.FormEntry": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "xyz.kmodules.prober.api.v1.HTTPPostAction": {
       "description": "HTTPPostAction describes an action based on HTTP Post requests.",
       "type": "object",
@@ -13583,9 +13615,9 @@
         },
         "form": {
           "description": "Form to set in the request body.",
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/xyz.kmodules.prober.api.v1.ValueList"
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/xyz.kmodules.prober.api.v1.FormEntry"
           }
         },
         "host": {
@@ -13617,6 +13649,10 @@
       "description": "Handler defines a specific action that should be taken",
       "type": "object",
       "properties": {
+        "containerName": {
+          "description": "ContainerName specifies the name of the container where to execute the commands for Exec probe or where to find the port for HTTP or TCP probe",
+          "type": "string"
+        },
         "exec": {
           "description": "One and only one of the following should be specified. Exec specifies the action to take.",
           "$ref": "#/definitions/io.k8s.api.core.v1.ExecAction"
@@ -13632,17 +13668,6 @@
         "tcpSocket": {
           "description": "TCPSocket specifies an action involving a TCP port. TCP hooks not yet supported",
           "$ref": "#/definitions/io.k8s.api.core.v1.TCPSocketAction"
-        }
-      }
-    },
-    "xyz.kmodules.prober.api.v1.ValueList": {
-      "type": "object",
-      "properties": {
-        "values": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         }
       }
     }
