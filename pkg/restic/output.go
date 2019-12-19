@@ -29,7 +29,7 @@ import (
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
-const FileModeRWAll = 0666
+const FileModeRWAll = 0766
 
 type BackupOutput struct {
 	// HostBackupStats shows backup statistics of a host
