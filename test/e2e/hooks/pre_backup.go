@@ -97,7 +97,7 @@ var _ = Describe("PreBackup Hook", func() {
 						By("Verifying that BackupSession has succeeded")
 						completedBS, err := f.StashClient.StashV1beta1().BackupSessions(backupSession.Namespace).Get(backupSession.Name, metav1.GetOptions{})
 						Expect(err).NotTo(HaveOccurred())
-						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
+						Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 					})
 				})
 
