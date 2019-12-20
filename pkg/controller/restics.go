@@ -227,11 +227,8 @@ func (c *StashController) EnsureScaledownCronJob(restic *api.Restic) error {
 		return err
 	}
 
-	ref, err := reference.GetReference(scheme.Scheme, cronJob)
-	if err != nil {
-		return err
-	}
-	if err = stash_rbac.EnsureScaledownJobRBAC(c.kubeClient, ref); err != nil {
+	owner := metav1.NewControllerRef(cronJob, batch.SchemeGroupVersion.WithKind(apis.KindCronJob))
+	if err = stash_rbac.EnsureScaledownJobRBAC(c.kubeClient, owner, cronJob.Namespace); err != nil {
 		return fmt.Errorf("error ensuring rbac for kubectl cron job %s, reason: %s", meta.Name, err)
 	}
 

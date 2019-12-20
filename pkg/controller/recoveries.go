@@ -19,6 +19,7 @@ package controller
 import (
 	"fmt"
 
+	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	stash_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
@@ -29,8 +30,10 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/golang/glog"
+	batchv1 "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/errors"
@@ -182,27 +185,22 @@ func (c *StashController) runRecoveryJob(rec *api.Recovery) error {
 		if err2 != nil {
 			return err
 		}
-		ref, rerr := reference.GetReference(scheme.Scheme, rec)
-		if rerr == nil {
-			_, err2 := eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, ref, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
-			if err2 != nil {
-				return err
-			}
+		_, err2 = eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, rec, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
+		if err2 != nil {
+			return err
 		}
 		return err
 	}
 
-	ref, err := reference.GetReference(scheme.Scheme, job)
-	if err != nil {
-		return err
-	}
-	if err := stash_rbac.EnsureRecoveryRBAC(c.kubeClient, ref); err != nil {
+	owner := metav1.NewControllerRef(job, batchv1.SchemeGroupVersion.WithKind(apis.KindJob))
+
+	if err := stash_rbac.EnsureRecoveryRBAC(c.kubeClient, owner, rec.Namespace); err != nil {
 		err = fmt.Errorf("error ensuring rbac for recovery job %s, reason: %s", job.Name, err)
 		_, err2 := eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, rec, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
 		return errors.NewAggregate([]error{err, err2})
 	}
 
-	if err := stash_rbac.EnsureRepoReaderRBAC(c.kubeClient, c.stashClient, ref, rec); err != nil {
+	if err := stash_rbac.EnsureRepoReaderRBAC(c.kubeClient, c.stashClient, owner, rec); err != nil {
 		err = fmt.Errorf("error ensuring repository-reader rbac for recovery job %s, reason: %s", job.Name, err)
 		_, err2 := eventer.CreateEvent(c.kubeClient, RecoveryEventComponent, rec, core.EventTypeWarning, eventer.EventReasonJobFailedToCreate, err.Error())
 		return errors.NewAggregate([]error{err, err2})

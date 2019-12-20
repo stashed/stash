@@ -24,7 +24,6 @@ import (
 	"stash.appscode.dev/stash/apis"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
-	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
 	v1beta1_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
 	"stash.appscode.dev/stash/pkg/eventer"
 	"stash.appscode.dev/stash/pkg/util"
@@ -35,7 +34,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/reference"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/discovery"
 	"kmodules.xyz/client-go/meta"
@@ -133,13 +131,10 @@ func (opt *options) createBackupSession() error {
 	}
 
 	// create BackupSession
-	ref, err := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
-	if err != nil {
-		return err
-	}
+	owner := metav1.NewControllerRef(backupConfiguration, api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindBackupConfiguration))
 	_, _, err = v1beta1_util.CreateOrPatchBackupSession(opt.stashClient.StashV1beta1(), bsMeta, func(in *api_v1beta1.BackupSession) *api_v1beta1.BackupSession {
 		// Set BackupConfiguration  as BackupSession Owner
-		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 		in.Spec.Invoker = api_v1beta1.BackupInvokerRef{
 			APIGroup: api_v1beta1.SchemeGroupVersion.Group,
 			Kind:     api_v1beta1.ResourceKindBackupConfiguration,

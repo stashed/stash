@@ -22,7 +22,6 @@ import (
 
 	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	stash_cs "stash.appscode.dev/stash/client/clientset/versioned"
-	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
 	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/golang/glog"
@@ -33,7 +32,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd/api"
-	"k8s.io/client-go/tools/reference"
 	core_util "kmodules.xyz/client-go/core/v1"
 	meta_util "kmodules.xyz/client-go/meta"
 	rbac_util "kmodules.xyz/client-go/rbac/v1"
@@ -48,14 +46,14 @@ const (
 
 // use scaledownjob-role, service-account and role-binding name same as job name
 // set job as owner of role, service-account and role-binding
-func EnsureScaledownJobRBAC(kubeClient kubernetes.Interface, resource *core.ObjectReference) error {
+func EnsureScaledownJobRBAC(kubeClient kubernetes.Interface, owner *metav1.OwnerReference, namespace string) error {
 	// ensure roles
 	meta := metav1.ObjectMeta{
 		Name:      ScaledownJobRole,
-		Namespace: resource.Namespace,
+		Namespace: namespace,
 	}
 	_, _, err := rbac_util.CreateOrPatchRole(kubeClient, meta, func(in *rbac.Role) *rbac.Role {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
@@ -92,11 +90,11 @@ func EnsureScaledownJobRBAC(kubeClient kubernetes.Interface, resource *core.Obje
 
 	// ensure service account
 	meta = metav1.ObjectMeta{
-		Name:      resource.Name,
-		Namespace: resource.Namespace,
+		Name:      owner.Name,
+		Namespace: namespace,
 	}
 	_, _, err = core_util.CreateOrPatchServiceAccount(kubeClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
@@ -109,7 +107,7 @@ func EnsureScaledownJobRBAC(kubeClient kubernetes.Interface, resource *core.Obje
 
 	// ensure role binding
 	_, _, err = rbac_util.CreateOrPatchRoleBinding(kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
@@ -135,14 +133,14 @@ func EnsureScaledownJobRBAC(kubeClient kubernetes.Interface, resource *core.Obje
 
 // use sidecar-cluster-role, service-account and role-binding name same as job name
 // set job as owner of service-account and role-binding
-func EnsureRecoveryRBAC(kubeClient kubernetes.Interface, resource *core.ObjectReference) error {
+func EnsureRecoveryRBAC(kubeClient kubernetes.Interface, owner *metav1.OwnerReference, namespace string) error {
 	// ensure service account
 	meta := metav1.ObjectMeta{
-		Name:      resource.Name,
-		Namespace: resource.Namespace,
+		Name:      owner.Name,
+		Namespace: namespace,
 	}
 	_, _, err := core_util.CreateOrPatchServiceAccount(kubeClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
 		}
@@ -154,7 +152,7 @@ func EnsureRecoveryRBAC(kubeClient kubernetes.Interface, resource *core.ObjectRe
 
 	// ensure role binding
 	_, _, err = rbac_util.CreateOrPatchRoleBinding(kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
@@ -178,9 +176,9 @@ func EnsureRecoveryRBAC(kubeClient kubernetes.Interface, resource *core.ObjectRe
 	return err
 }
 
-func EnsureRepoReaderRBAC(kubeClient kubernetes.Interface, stashClient stash_cs.Interface, resource *core.ObjectReference, rec *api_v1alpha1.Recovery) error {
+func EnsureRepoReaderRBAC(kubeClient kubernetes.Interface, stashClient stash_cs.Interface, owner *metav1.OwnerReference, rec *api_v1alpha1.Recovery) error {
 	meta := metav1.ObjectMeta{
-		Name:      GetRepoReaderRoleBindingName(resource.Name, resource.Namespace),
+		Name:      GetRepoReaderRoleBindingName(owner.Name, rec.Namespace),
 		Namespace: rec.Spec.Repository.Namespace,
 	}
 
@@ -212,8 +210,8 @@ func EnsureRepoReaderRBAC(kubeClient kubernetes.Interface, stashClient stash_cs.
 		in.Subjects = []rbac.Subject{
 			{
 				Kind:      "ServiceAccount",
-				Name:      resource.Name,
-				Namespace: resource.Namespace,
+				Name:      owner.Name,
+				Namespace: rec.Namespace,
 			},
 		}
 		return in
@@ -227,12 +225,9 @@ func ensureRepoReaderRole(kubeClient kubernetes.Interface, repo *api_v1alpha1.Re
 		Namespace: repo.Namespace,
 	}
 
-	ref, err := reference.GetReference(stash_scheme.Scheme, repo)
-	if err != nil {
-		return err
-	}
-	_, _, err = rbac_util.CreateOrPatchRole(kubeClient, meta, func(in *rbac.Role) *rbac.Role {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+	owner := metav1.NewControllerRef(repo, api_v1alpha1.SchemeGroupVersion.WithKind(api_v1alpha1.ResourceKindRepository))
+	_, _, err := rbac_util.CreateOrPatchRole(kubeClient, meta, func(in *rbac.Role) *rbac.Role {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
 		if in.Labels == nil {
 			in.Labels = map[string]string{}

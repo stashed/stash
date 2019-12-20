@@ -433,7 +433,7 @@ func GetWorkloadReference(w *wapi.Workload) (*core.ObjectReference, error) {
 }
 
 // UpsertInterimVolume create a PVC according to InterimVolumeTemplate and attach it to the respective pod
-func UpsertInterimVolume(kubeClient kubernetes.Interface, podSpec core.PodSpec, interimVolumeTemplate *core.PersistentVolumeClaim, ref *core.ObjectReference) (core.PodSpec, error) {
+func UpsertInterimVolume(kubeClient kubernetes.Interface, podSpec core.PodSpec, interimVolumeTemplate *core.PersistentVolumeClaim, namespace string, owner *metav1.OwnerReference) (core.PodSpec, error) {
 	// if no InterimVolumeTemplate is provided then nothing to do
 	if interimVolumeTemplate == nil {
 		return podSpec, nil
@@ -441,15 +441,15 @@ func UpsertInterimVolume(kubeClient kubernetes.Interface, podSpec core.PodSpec, 
 
 	// Use BackupConfiguration/RestoreSession name as prefix of the interim volume
 	pvcMeta := metav1.ObjectMeta{
-		Name:      fmt.Sprintf("%s-%s", interimVolumeTemplate.Name, ref.Name),
-		Namespace: ref.Namespace,
+		Name:      fmt.Sprintf("%s-%s", interimVolumeTemplate.Name, owner.Name),
+		Namespace: namespace,
 	}
 
 	// create the interim pvc
 	createdPVC, _, err := core_util.CreateOrPatchPVC(kubeClient, pvcMeta, func(in *core.PersistentVolumeClaim) *core.PersistentVolumeClaim {
 		// Set BackupConfiguration/RestoreSession as owner of the PVC so that it get deleted when the respective
 		// BackupConfiguration/RestoreSession is deleted.
-		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 		in.Spec = interimVolumeTemplate.Spec
 		return in
 	})

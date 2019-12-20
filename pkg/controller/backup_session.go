@@ -25,7 +25,6 @@ import (
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
-	stash_scheme "stash.appscode.dev/stash/client/clientset/versioned/scheme"
 	stash_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1beta1/util"
 	"stash.appscode.dev/stash/pkg/docker"
 	"stash.appscode.dev/stash/pkg/eventer"
@@ -45,7 +44,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/tools/clientcmd/api"
-	"k8s.io/client-go/tools/reference"
 	batch_util "kmodules.xyz/client-go/batch/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
@@ -194,10 +192,7 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 		Labels:    offshootLabels,
 	}
 
-	backupConfigRef, err := reference.GetReference(stash_scheme.Scheme, backupConfig)
-	if err != nil {
-		return err
-	}
+	owner := metav1.NewControllerRef(backupConfig, api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindBackupConfiguration))
 
 	var serviceAccountName string
 
@@ -212,8 +207,8 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 			Namespace: backupConfig.Namespace,
 			Labels:    offshootLabels,
 		}
-		_, _, err = core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
-			core_util.EnsureOwnerReference(&in.ObjectMeta, backupConfigRef)
+		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
+			core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 			return in
 		})
 		if err != nil {
@@ -226,7 +221,7 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 		return err
 	}
 
-	err = stash_rbac.EnsureBackupJobRBAC(c.kubeClient, backupConfigRef, serviceAccountName, psps, offshootLabels)
+	err = stash_rbac.EnsureBackupJobRBAC(c.kubeClient, owner, backupConfig.Namespace, serviceAccountName, psps, offshootLabels)
 	if err != nil {
 		return err
 	}
@@ -293,11 +288,9 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 	}
 
 	// upsert InterimVolume to hold the backup/restored data temporarily
-	backupSessionRef, err := reference.GetReference(stash_scheme.Scheme, backupSession)
-	if err != nil {
-		return err
-	}
-	podSpec, err = util.UpsertInterimVolume(c.kubeClient, podSpec, backupConfig.Spec.InterimVolumeTemplate.ToCorePVC(), backupSessionRef)
+	ownerBackupSession := metav1.NewControllerRef(backupSession, api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindBackupSession))
+
+	podSpec, err = util.UpsertInterimVolume(c.kubeClient, podSpec, backupConfig.Spec.InterimVolumeTemplate.ToCorePVC(), backupConfig.Namespace, owner)
 	if err != nil {
 		return err
 	}
@@ -305,7 +298,7 @@ func (c *StashController) ensureBackupJob(backupSession *api_v1beta1.BackupSessi
 	// create Backup Job
 	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, jobMeta, func(in *batchv1.Job) *batchv1.Job {
 		// set BackupSession as owner of this Job
-		core_util.EnsureOwnerReference(&in.ObjectMeta, backupSessionRef)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, ownerBackupSession)
 
 		in.Spec.Template.Spec = podSpec
 		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
@@ -325,10 +318,7 @@ func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.B
 		Labels:    offshootLabels,
 	}
 
-	backupConfigRef, err := reference.GetReference(stash_scheme.Scheme, backupConfig)
-	if err != nil {
-		return err
-	}
+	owner := metav1.NewControllerRef(backupConfig, api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindBackupConfiguration))
 
 	//ensure respective RBAC stuffs
 	//Create new ServiceAccount
@@ -338,15 +328,15 @@ func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.B
 		Namespace: backupConfig.Namespace,
 		Labels:    offshootLabels,
 	}
-	_, _, err = core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, backupConfigRef)
+	_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 		return in
 	})
 	if err != nil {
 		return err
 	}
 
-	err = stash_rbac.EnsureVolumeSnapshotterJobRBAC(c.kubeClient, backupConfigRef, serviceAccountName, offshootLabels)
+	err = stash_rbac.EnsureVolumeSnapshotterJobRBAC(c.kubeClient, owner, backupConfig.Namespace, serviceAccountName, offshootLabels)
 	if err != nil {
 		return err
 	}
@@ -365,7 +355,7 @@ func (c *StashController) ensureVolumeSnapshotterJob(backupConfig *api_v1beta1.B
 	// Create VolumeSnapshotter job
 	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, jobMeta, func(in *batchv1.Job) *batchv1.Job {
 		// set BackupSession as owner of this Job
-		core_util.EnsureOwnerReference(&in.ObjectMeta, backupConfigRef)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
 		in.Labels = offshootLabels
 		in.Spec.Template = *jobTemplate

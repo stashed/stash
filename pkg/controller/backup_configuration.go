@@ -250,10 +250,7 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 		Labels:    offshootLabels,
 	}
 
-	ref, err := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
-	if err != nil {
-		return err
-	}
+	owner := metav1.NewControllerRef(backupConfiguration, api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindBackupConfiguration))
 
 	// if RBAC is enabled then ensure respective ClusterRole,RoleBinding,ServiceAccount etc.
 	var serviceAccountName string
@@ -266,8 +263,8 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 		// ServiceAccount hasn't been specified. so create new one with same name as BackupConfiguration object.
 		serviceAccountName = meta.Name
 
-		_, _, err = core_util.CreateOrPatchServiceAccount(c.kubeClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
-			core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
+			core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 			return in
 		})
 		if err != nil {
@@ -276,14 +273,14 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 	}
 
 	// now ensure RBAC stuff for this CronJob
-	err = stash_rbac.EnsureCronJobRBAC(c.kubeClient, ref, serviceAccountName, c.getBackupSessionCronJobPSPNames(), offshootLabels)
+	err := stash_rbac.EnsureCronJobRBAC(c.kubeClient, owner, backupConfiguration.Namespace, serviceAccountName, c.getBackupSessionCronJobPSPNames(), offshootLabels)
 	if err != nil {
 		return err
 	}
 
 	_, _, err = batch_util.CreateOrPatchCronJob(c.kubeClient, meta, func(in *batch_v1beta1.CronJob) *batch_v1beta1.CronJob {
 		//set backup-configuration as cron-job owner
-		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
 		in.Spec.Schedule = backupConfiguration.Spec.Schedule
 		in.Spec.JobTemplate.Labels = offshootLabels
@@ -315,10 +312,7 @@ func (c *StashController) EnsureCronJob(backupConfiguration *api_v1beta1.BackupC
 // EnsureCronJobDelete ensure that respective CronJob of a BackupConfiguration has it as owner.
 // Kuebernetes garbage collector will take care of removing the CronJob
 func (c *StashController) EnsureCronJobDeleted(backupConfiguration *api_v1beta1.BackupConfiguration) error {
-	ref, err := reference.GetReference(stash_scheme.Scheme, backupConfiguration)
-	if err != nil {
-		return err
-	}
+	owner := metav1.NewControllerRef(backupConfiguration, api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindBackupConfiguration))
 
 	cur, err := c.kubeClient.BatchV1beta1().CronJobs(backupConfiguration.Namespace).Get(getBackupCronJobName(backupConfiguration), metav1.GetOptions{})
 	if err != nil {
@@ -329,7 +323,7 @@ func (c *StashController) EnsureCronJobDeleted(backupConfiguration *api_v1beta1.
 	}
 
 	_, _, err = batch_util.PatchCronJob(c.kubeClient, cur, func(in *batch_v1beta1.CronJob) *batch_v1beta1.CronJob {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 		return in
 	})
 	return err

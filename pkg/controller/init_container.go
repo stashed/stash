@@ -37,13 +37,14 @@ import (
 func (c *StashController) ensureRestoreInitContainer(w *wapi.Workload, rs *api_v1beta1.RestoreSession, caller string) error {
 	// if RBAC is enabled then ensure ServiceAccount and respective ClusterRole and RoleBinding
 	sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
-	ref, err := util.GetWorkloadReference(w)
-	if err != nil {
-		return err
-	}
+
 	//Don't create RBAC stuff when the caller is webhook to make the webhooks side effect free.
 	if caller != util.CallerWebhook {
-		err = stash_rbac.EnsureRestoreInitContainerRBAC(c.kubeClient, ref, sa, rs.OffshootLabels())
+		owner, err := ownerWorkload(w)
+		if err != nil {
+			return err
+		}
+		err = stash_rbac.EnsureRestoreInitContainerRBAC(c.kubeClient, owner, rs.Namespace, sa, rs.OffshootLabels())
 		if err != nil {
 			return err
 		}

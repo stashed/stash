@@ -36,7 +36,7 @@ const (
 	StashRestoreJob = "stash-restore-job"
 )
 
-func EnsureRestoreJobRBAC(kubeClient kubernetes.Interface, ref *core.ObjectReference, sa string, psps []string, labels map[string]string) error {
+func EnsureRestoreJobRBAC(kubeClient kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, psps []string, labels map[string]string) error {
 	// ensure ClusterRole for restore job
 	err := ensureRestoreJobClusterRole(kubeClient, psps, labels)
 	if err != nil {
@@ -44,7 +44,7 @@ func EnsureRestoreJobRBAC(kubeClient kubernetes.Interface, ref *core.ObjectRefer
 	}
 
 	// ensure RoleBinding for restore job
-	err = ensureRestoreJobRoleBinding(kubeClient, ref, sa, labels)
+	err = ensureRestoreJobRoleBinding(kubeClient, owner, namespace, sa, labels)
 	if err != nil {
 		return err
 	}
@@ -105,10 +105,10 @@ func ensureRestoreJobClusterRole(kubeClient kubernetes.Interface, psps []string,
 	return err
 }
 
-func ensureRestoreJobRoleBinding(kubeClient kubernetes.Interface, resource *core.ObjectReference, sa string, labels map[string]string) error {
+func ensureRestoreJobRoleBinding(kubeClient kubernetes.Interface, resource *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
-		Namespace: resource.Namespace,
+		Namespace: namespace,
 		Name:      getRestoreJobRoleBindingName(resource.Name),
 		Labels:    labels,
 	}
@@ -124,7 +124,7 @@ func ensureRestoreJobRoleBinding(kubeClient kubernetes.Interface, resource *core
 			{
 				Kind:      "ServiceAccount",
 				Name:      sa,
-				Namespace: resource.Namespace,
+				Namespace: namespace,
 			},
 		}
 		return in
