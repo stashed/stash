@@ -29,7 +29,7 @@ import (
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 )
 
-const FileModeRWAll = 0666
+const FileModeRWXAll = 0777
 
 type BackupOutput struct {
 	// HostBackupStats shows backup statistics of a host
@@ -61,7 +61,7 @@ func (out *BackupOutput) WriteOutput(fileName string) error {
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(fileName), FileModeRWAll); err != nil {
+	if err := os.MkdirAll(filepath.Dir(fileName), FileModeRWXAll); err != nil {
 		return err
 	}
 	// check if the output file already exist. if it does not, then owner should chmod to make the file writable to other users
@@ -70,12 +70,12 @@ func (out *BackupOutput) WriteOutput(fileName string) error {
 		newFile = true
 	}
 
-	if err := ioutil.WriteFile(fileName, jsonOutput, FileModeRWAll); err != nil { // this does not make the file writable to other users
+	if err := ioutil.WriteFile(fileName, jsonOutput, FileModeRWXAll); err != nil { // this does not make the file writable to other users
 		return err
 	}
 	// change the file permission to make it writable to other users
 	if newFile {
-		return os.Chmod(fileName, FileModeRWAll)
+		return os.Chmod(fileName, FileModeRWXAll)
 	}
 	return nil
 }
@@ -85,7 +85,7 @@ func (out *RestoreOutput) WriteOutput(fileName string) error {
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(fileName), FileModeRWAll); err != nil {
+	if err := os.MkdirAll(filepath.Dir(fileName), FileModeRWXAll); err != nil {
 		return err
 	}
 	// check if the output file already exist. if it does not, then owner should chmod to make the file writable to other users
@@ -94,12 +94,12 @@ func (out *RestoreOutput) WriteOutput(fileName string) error {
 		newFile = true
 	}
 
-	if err := ioutil.WriteFile(fileName, jsonOutput, FileModeRWAll); err != nil { // this does not make the file writable to other users
+	if err := ioutil.WriteFile(fileName, jsonOutput, FileModeRWXAll); err != nil { // this does not make the file writable to other users
 		return err
 	}
 	// change the file permission to make it writable to other users
 	if newFile {
-		return os.Chmod(fileName, FileModeRWAll)
+		return os.Chmod(fileName, FileModeRWXAll)
 	}
 	return nil
 }
