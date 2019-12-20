@@ -17,31 +17,14 @@ limitations under the License.
 package v1
 
 import (
-	"fmt"
-
-	"github.com/appscode/go/types"
 	"github.com/imdario/mergo"
 	jsoniter "github.com/json-iterator/go"
 	core "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 var json = jsoniter.ConfigFastest
-
-func RemoveNextInitializer(m metav1.ObjectMeta) metav1.ObjectMeta {
-	if m.GetInitializers() != nil {
-		pendingInitializers := m.GetInitializers().Pending
-		// Remove self from the list of pending Initializers while preserving ordering.
-		if len(pendingInitializers) == 1 {
-			m.Initializers = nil
-		} else {
-			m.Initializers.Pending = append(pendingInitializers[:0], pendingInitializers[1:]...)
-		}
-	}
-	return m
-}
 
 func AddFinalizer(m metav1.ObjectMeta, finalizer string) metav1.ObjectMeta {
 	for _, name := range m.Finalizers {
@@ -238,74 +221,78 @@ func MergeLocalObjectReferences(l1, l2 []core.LocalObjectReference) []core.Local
 	return result
 }
 
-func EnsureOwnerReference(meta metav1.Object, owner *core.ObjectReference) {
-	if owner == nil ||
-		owner.APIVersion == "" ||
-		owner.Kind == "" ||
-		owner.Name == "" ||
-		owner.UID == "" {
+// NewOwnerRef creates an OwnerReference pointing to the given owner.
+func NewOwnerRef(owner metav1.Object, gvk schema.GroupVersionKind) *metav1.OwnerReference {
+	blockOwnerDeletion := false
+	isController := false
+	return &metav1.OwnerReference{
+		APIVersion:         gvk.GroupVersion().String(),
+		Kind:               gvk.Kind,
+		Name:               owner.GetName(),
+		UID:                owner.GetUID(),
+		BlockOwnerDeletion: &blockOwnerDeletion,
+		Controller:         &isController,
+	}
+}
+
+// EnsureOwnerReference adds owner if absent or syncs owner if already present.
+//
+// If you are writing a controller or an operator, use the following code snippet for dependent objects.
+// Here, `controller = true` and `blockOwnerDeletion = true`
+//
+// owner := metav1.NewControllerRef(foo, samplev1alpha1.SchemeGroupVersion.WithKind("Foo"))
+// EnsureOwnerReference(dependent, owner)
+//
+// If our CRD is not a controller but just want to be a owner, use the following code snippet.
+// Here, `controller = false` and `blockOwnerDeletion = false`
+//
+// owner := NewOwnerRef(foo, samplev1alpha1.SchemeGroupVersion.WithKind("Foo"))
+// EnsureOwnerReference(dependent, owner)
+//
+// To understand the impact of `blockOwnerDeletion`, read:
+// - https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/#foreground-cascading-deletion
+// - https://github.com/kubernetes/apimachinery/blob/v0.17.0/pkg/apis/meta/v1/types.go#L297-L323
+func EnsureOwnerReference(dependent metav1.Object, owner *metav1.OwnerReference) {
+	if owner == nil {
 		return
 	}
-	if meta.GetNamespace() != owner.Namespace {
-		panic(fmt.Errorf("owner %s %s must be from the same namespace as object %s", owner.Kind, owner.Name, meta.GetName()))
-	}
 
-	ownerRefs := meta.GetOwnerReferences()
+	refs := dependent.GetOwnerReferences()
 
 	fi := -1
-	for i, ref := range ownerRefs {
-		if ref.Kind == owner.Kind && ref.Name == owner.Name {
+	for i := range refs {
+		if refs[i].UID == owner.UID {
 			fi = i
 			break
 		}
 	}
 	if fi == -1 {
-		ownerRefs = append(ownerRefs, metav1.OwnerReference{})
-		fi = len(ownerRefs) - 1
-	}
-	ownerRefs[fi].APIVersion = owner.APIVersion
-	ownerRefs[fi].Kind = owner.Kind
-	ownerRefs[fi].Name = owner.Name
-	ownerRefs[fi].UID = owner.UID
-	if ownerRefs[fi].BlockOwnerDeletion == nil {
-		ownerRefs[fi].BlockOwnerDeletion = types.FalseP()
+		refs = append(refs, *owner)
+	} else {
+		refs[fi] = *owner
 	}
 
-	meta.SetOwnerReferences(ownerRefs)
+	dependent.SetOwnerReferences(refs)
 }
 
-func RemoveOwnerReference(meta metav1.Object, owner *core.ObjectReference) {
-	ownerRefs := meta.GetOwnerReferences()
-	for i, ref := range ownerRefs {
-		if ref.Kind == owner.Kind && ref.Name == owner.Name {
-			ownerRefs = append(ownerRefs[:i], ownerRefs[i+1:]...)
+func RemoveOwnerReference(dependent metav1.Object, owner metav1.Object) {
+	refs := dependent.GetOwnerReferences()
+	for i := range refs {
+		if refs[i].UID == owner.GetUID() {
+			refs = append(refs[:i], refs[i+1:]...)
 			break
 		}
 	}
-	meta.SetOwnerReferences(ownerRefs)
+	dependent.SetOwnerReferences(refs)
 }
 
-func IsOwnedByRef(o runtime.Object, owner *core.ObjectReference) bool {
-	obj, err := meta.Accessor(o)
-	if err != nil {
-		return false
+// IsOwnedBy checks if the dependent has a owner reference to the given owner
+func IsOwnedBy(dependent metav1.Object, owner metav1.Object) (owned bool, controller bool) {
+	refs := dependent.GetOwnerReferences()
+	for i := range refs {
+		if refs[i].UID == owner.GetUID() {
+			return true, refs[i].Controller != nil && *refs[i].Controller
+		}
 	}
-
-	return o.GetObjectKind().GroupVersionKind() == owner.GroupVersionKind() &&
-		obj.GetName() == owner.Name &&
-		(string(owner.UID) == "" || obj.GetUID() == owner.UID)
-}
-
-func IsOwnedBy(o1 runtime.Object, o2 runtime.Object) bool {
-	obj, err := meta.Accessor(o1)
-	if err != nil {
-		return false
-	}
-	owner, err := meta.Accessor(o2)
-	if err != nil {
-		return false
-	}
-	return o1.GetObjectKind().GroupVersionKind() == o2.GetObjectKind().GroupVersionKind() &&
-		obj.GetName() == owner.GetName() &&
-		(string(owner.GetUID()) == "" || obj.GetUID() == owner.GetUID())
+	return false, false
 }

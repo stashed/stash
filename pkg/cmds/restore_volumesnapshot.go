@@ -143,7 +143,7 @@ func (opt *VSoption) restoreVolumeSnapshot() (*restic.RestoreOutput, error) {
 	for i := range pvcList {
 		// verify that the respective VolumeSnapshot exist
 		if pvcList[i].Spec.DataSource != nil {
-			_, err = opt.snapshotClient.SnapshotV1alpha1().VolumeSnapshots(opt.namespace).Get(pvcList[i].Spec.DataSource.Name, metav1.GetOptions{})
+			_, err = opt.snapshotClient.SnapshotV1beta1().VolumeSnapshots(opt.namespace).Get(pvcList[i].Spec.DataSource.Name, metav1.GetOptions{})
 			if err != nil {
 				if kerr.IsNotFound(err) { // respective VolumeSnapshot does not exist
 					restoreOutput.HostRestoreStats = append(restoreOutput.HostRestoreStats, api_v1beta1.HostRestoreStats{

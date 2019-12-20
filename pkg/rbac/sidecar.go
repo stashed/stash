@@ -120,14 +120,14 @@ func EnsureSidecarClusterRole(kubeClient kubernetes.Interface) error {
 	return err
 }
 
-func EnsureSidecarRoleBinding(kubeClient kubernetes.Interface, resource *core.ObjectReference, sa string, labels map[string]string) error {
+func EnsureSidecarRoleBinding(kubeClient kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
 	meta := metav1.ObjectMeta{
-		Namespace: resource.Namespace,
-		Name:      getSidecarRoleBindingName(resource.Name, resource.Kind),
+		Namespace: namespace,
+		Name:      getSidecarRoleBindingName(owner.Name, owner.Kind),
 		Labels:    labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchRoleBinding(kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
 		if in.Annotations == nil {
 			in.Annotations = map[string]string{}
@@ -142,7 +142,7 @@ func EnsureSidecarRoleBinding(kubeClient kubernetes.Interface, resource *core.Ob
 			{
 				Kind:      rbac.ServiceAccountKind,
 				Name:      sa,
-				Namespace: resource.Namespace,
+				Namespace: namespace,
 			},
 		}
 		return in

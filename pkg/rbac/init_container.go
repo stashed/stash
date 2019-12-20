@@ -34,7 +34,7 @@ import (
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
 )
 
-func EnsureRestoreInitContainerRBAC(kubeClient kubernetes.Interface, ref *core.ObjectReference, sa string, labels map[string]string) error {
+func EnsureRestoreInitContainerRBAC(kubeClient kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
 	// ensure ClusterRole for restore init container
 	err := ensureRestoreInitContainerClusterRole(kubeClient, labels)
 	if err != nil {
@@ -42,7 +42,7 @@ func EnsureRestoreInitContainerRBAC(kubeClient kubernetes.Interface, ref *core.O
 	}
 
 	// ensure RoleBinding for restore init container
-	err = ensureRestoreInitContainerRoleBinding(kubeClient, ref, sa, labels)
+	err = ensureRestoreInitContainerRoleBinding(kubeClient, owner, namespace, sa, labels)
 	if err != nil {
 		return err
 	}
@@ -94,14 +94,14 @@ func ensureRestoreInitContainerClusterRole(kubeClient kubernetes.Interface, labe
 	return err
 }
 
-func ensureRestoreInitContainerRoleBinding(kubeClient kubernetes.Interface, resource *core.ObjectReference, sa string, labels map[string]string) error {
+func ensureRestoreInitContainerRoleBinding(kubeClient kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
 	meta := metav1.ObjectMeta{
-		Namespace: resource.Namespace,
-		Name:      getRestoreInitContainerRoleBindingName(resource.Kind),
+		Namespace: namespace,
+		Name:      getRestoreInitContainerRoleBindingName(owner.Kind),
 		Labels:    labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchRoleBinding(kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
 		if in.Annotations == nil {
 			in.Annotations = map[string]string{}
@@ -116,7 +116,7 @@ func ensureRestoreInitContainerRoleBinding(kubeClient kubernetes.Interface, reso
 			{
 				Kind:      rbac.ServiceAccountKind,
 				Name:      sa,
-				Namespace: resource.Namespace,
+				Namespace: namespace,
 			},
 		}
 		return in

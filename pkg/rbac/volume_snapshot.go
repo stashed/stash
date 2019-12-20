@@ -22,7 +22,7 @@ import (
 	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 
-	crdv1 "github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1alpha1"
+	crdv1 "github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1beta1"
 	apps "k8s.io/api/apps/v1"
 	core "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
@@ -39,7 +39,7 @@ const (
 	StashStorageClassReader        = "stash-storage-class-reader"
 )
 
-func EnsureVolumeSnapshotterJobRBAC(kubeClient kubernetes.Interface, ref *core.ObjectReference, sa string, labels map[string]string) error {
+func EnsureVolumeSnapshotterJobRBAC(kubeClient kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
 	// ensure ClusterRole for VolumeSnapshot job
 	err := ensureVolumeSnapshotterJobClusterRole(kubeClient, labels)
 	if err != nil {
@@ -47,7 +47,7 @@ func EnsureVolumeSnapshotterJobRBAC(kubeClient kubernetes.Interface, ref *core.O
 	}
 
 	// ensure RoleBinding for VolumeSnapshot job
-	err = ensureVolumeSnapshotterJobRoleBinding(kubeClient, ref, sa, labels)
+	err = ensureVolumeSnapshotterJobRoleBinding(kubeClient, owner, namespace, sa, labels)
 	if err != nil {
 		return err
 	}
@@ -115,10 +115,10 @@ func ensureVolumeSnapshotterJobClusterRole(kubeClient kubernetes.Interface, labe
 	return err
 }
 
-func ensureVolumeSnapshotterJobRoleBinding(kubeClient kubernetes.Interface, resource *core.ObjectReference, sa string, labels map[string]string) error {
+func ensureVolumeSnapshotterJobRoleBinding(kubeClient kubernetes.Interface, resource *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
-		Namespace: resource.Namespace,
+		Namespace: namespace,
 		Name:      getVolumesnapshotterJobRoleBindingName(resource.Name),
 		Labels:    labels,
 	}
@@ -134,7 +134,7 @@ func ensureVolumeSnapshotterJobRoleBinding(kubeClient kubernetes.Interface, reso
 			{
 				Kind:      rbac.ServiceAccountKind,
 				Name:      sa,
-				Namespace: resource.Namespace,
+				Namespace: namespace,
 			},
 		}
 		return in
@@ -146,7 +146,7 @@ func getVolumesnapshotterJobRoleBindingName(name string) string {
 	return fmt.Sprintf("%s-%s", StashVolumeSnapshotterJob, name)
 }
 
-func EnsureVolumeSnapshotRestorerJobRBAC(kubeClient kubernetes.Interface, ref *core.ObjectReference, sa string, labels map[string]string) error {
+func EnsureVolumeSnapshotRestorerJobRBAC(kubeClient kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
 	// ensure ClusterRole for restore job
 	err := ensureVolumeSnapshotRestorerJobClusterRole(kubeClient, labels)
 	if err != nil {
@@ -154,7 +154,7 @@ func EnsureVolumeSnapshotRestorerJobRBAC(kubeClient kubernetes.Interface, ref *c
 	}
 
 	// ensure RoleBinding for restore job
-	err = ensureVolumeSnapshotRestorerJobRoleBinding(kubeClient, ref, sa, labels)
+	err = ensureVolumeSnapshotRestorerJobRoleBinding(kubeClient, owner, namespace, sa, labels)
 	if err != nil {
 		return err
 	}
@@ -166,7 +166,7 @@ func EnsureVolumeSnapshotRestorerJobRBAC(kubeClient kubernetes.Interface, ref *c
 	}
 
 	//ensure storageClass ClusterRoleBinding for restore job
-	err = ensureStorageClassReaderClusterRoleBinding(kubeClient, ref, sa, labels)
+	err = ensureStorageClassReaderClusterRoleBinding(kubeClient, owner, namespace, sa, labels)
 	if err != nil {
 		return err
 	}
@@ -215,10 +215,10 @@ func ensureVolumeSnapshotRestorerJobClusterRole(kubeClient kubernetes.Interface,
 	return err
 }
 
-func ensureVolumeSnapshotRestorerJobRoleBinding(kubeClient kubernetes.Interface, resource *core.ObjectReference, sa string, labels map[string]string) error {
+func ensureVolumeSnapshotRestorerJobRoleBinding(kubeClient kubernetes.Interface, resource *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
-		Namespace: resource.Namespace,
+		Namespace: namespace,
 		Name:      getVolumeSnapshotRestorerJobRoleBindingName(resource.Name),
 		Labels:    labels,
 	}
@@ -234,7 +234,7 @@ func ensureVolumeSnapshotRestorerJobRoleBinding(kubeClient kubernetes.Interface,
 			{
 				Kind:      rbac.ServiceAccountKind,
 				Name:      sa,
-				Namespace: resource.Namespace,
+				Namespace: namespace,
 			},
 		}
 		return in
@@ -272,11 +272,11 @@ func ensureStorageReaderClassClusterRole(kubeClient kubernetes.Interface, labels
 	return err
 }
 
-func ensureStorageClassReaderClusterRoleBinding(kubeClient kubernetes.Interface, resource *core.ObjectReference, sa string, labels map[string]string) error {
+func ensureStorageClassReaderClusterRoleBinding(kubeClient kubernetes.Interface, resource *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
 		Name:      getStorageClassReaderClusterRoleBindingName(resource.Name),
-		Namespace: resource.Namespace,
+		Namespace: namespace,
 		Labels:    labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchClusterRoleBinding(kubeClient, meta, func(in *rbac.ClusterRoleBinding) *rbac.ClusterRoleBinding {
@@ -291,7 +291,7 @@ func ensureStorageClassReaderClusterRoleBinding(kubeClient kubernetes.Interface,
 			{
 				Kind:      rbac.ServiceAccountKind,
 				Name:      sa,
-				Namespace: resource.Namespace,
+				Namespace: namespace,
 			},
 		}
 		return in

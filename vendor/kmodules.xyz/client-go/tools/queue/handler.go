@@ -88,34 +88,6 @@ func NewReconcilableHandler(queue workqueue.RateLimitingInterface) cache.Resourc
 	}
 }
 
-// Deprecated, should not be used after we drop support for Kubernetes 1.10. Use NewReconcilableHandler
-func NewObservableHandler(queue workqueue.RateLimitingInterface, enableStatusSubresource bool) cache.ResourceEventHandler {
-	return &QueueingEventHandler{
-		queue: queue,
-		enqueueAdd: func(o interface{}) bool {
-			return !meta_util.AlreadyObserved(o, enableStatusSubresource)
-		},
-		enqueueUpdate: func(old, nu interface{}) bool {
-			return (nu.(metav1.Object)).GetDeletionTimestamp() != nil ||
-				!meta_util.AlreadyObserved2(old, nu, enableStatusSubresource)
-		},
-		enqueueDelete: true,
-	}
-}
-
-// Deprecated, should not be used after we drop support for Kubernetes 1.10. Use NewReconcilableHandler
-func NewObservableUpdateHandler(queue workqueue.RateLimitingInterface, enableStatusSubresource bool) cache.ResourceEventHandler {
-	return &QueueingEventHandler{
-		queue:      queue,
-		enqueueAdd: nil,
-		enqueueUpdate: func(old, nu interface{}) bool {
-			return (nu.(metav1.Object)).GetDeletionTimestamp() != nil ||
-				!meta_util.AlreadyObserved2(old, nu, enableStatusSubresource)
-		},
-		enqueueDelete: true,
-	}
-}
-
 func Enqueue(queue workqueue.RateLimitingInterface, obj interface{}) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 	if err != nil {

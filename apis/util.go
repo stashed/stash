@@ -36,6 +36,8 @@ const (
 	KindDeploymentConfig      = "DeploymentConfig"
 	KindSecret                = "Secret"
 	KindService               = "Service"
+	KindJob                   = "Job"
+	KindCronJob               = "CronJob"
 )
 
 const (

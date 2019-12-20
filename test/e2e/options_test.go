@@ -20,6 +20,7 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
+	"testing"
 
 	"stash.appscode.dev/stash/pkg/cmds/server"
 
@@ -49,7 +50,8 @@ var (
 	}
 )
 
-func init() {
+// xref: https://github.com/onsi/ginkgo/issues/602#issuecomment-559421839
+func TestMain(m *testing.M) {
 	flag.StringVar(&options.DockerRegistry, "docker-registry", "", "Set Docker Registry")
 	flag.StringVar(&options.StashImageTag, "image-tag", "", "Set Stash Image Tag")
 	flag.StringVar(&options.KubeConfig, "kubeconfig", options.KubeConfig, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
@@ -57,6 +59,7 @@ func init() {
 	flag.StringVar(&options.StorageClass, "storageclass", "standard", "Storageclass for PVC")
 	enableLogging()
 	flag.Parse()
+	os.Exit(m.Run())
 }
 
 func enableLogging() {

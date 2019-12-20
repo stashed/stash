@@ -22,6 +22,7 @@ import (
 	"os"
 	"time"
 
+	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	stash_util "stash.appscode.dev/stash/client/clientset/versioned/typed/stash/v1alpha1/util"
@@ -37,6 +38,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
 	"github.com/robfig/cron/v3"
+	batchv1 "k8s.io/api/batch/v1"
 	core "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -191,11 +193,8 @@ func (c *Controller) Backup() error {
 		}
 
 		// create service-account and role-binding
-		ref, err := reference.GetReference(scheme.Scheme, job)
-		if err != nil {
-			return err
-		}
-		if err = c.ensureCheckRBAC(ref); err != nil {
+		owner := metav1.NewControllerRef(job, batchv1.SchemeGroupVersion.WithKind(apis.KindJob))
+		if err = c.ensureCheckRBAC(job.Namespace, owner); err != nil {
 			return fmt.Errorf("error ensuring rbac for check job %s, reason: %s", job.Name, err)
 		}
 
@@ -416,14 +415,14 @@ func (c *Controller) measure(f func(*api.Restic, api.FileGroup) error, restic *a
 
 // use sidecar-cluster-role, service-account and role-binding name same as job name
 // set job as owner of service-account and role-binding
-func (c *Controller) ensureCheckRBAC(restic *core.ObjectReference) error {
+func (c *Controller) ensureCheckRBAC(namespace string, owner *metav1.OwnerReference) error {
 	// ensure service account
 	meta := metav1.ObjectMeta{
-		Name:      restic.Name,
-		Namespace: restic.Namespace,
+		Name:      owner.Name,
+		Namespace: namespace,
 	}
 	_, _, err := core_util.CreateOrPatchServiceAccount(c.k8sClient, meta, func(in *core.ServiceAccount) *core.ServiceAccount {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, restic)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
 		if in.Labels == nil {
 			in.Labels = map[string]string{}
@@ -437,7 +436,7 @@ func (c *Controller) ensureCheckRBAC(restic *core.ObjectReference) error {
 
 	// ensure role binding
 	_, _, err = rbac_util.CreateOrPatchRoleBinding(c.k8sClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, restic)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
 		if in.Labels == nil {
 			in.Labels = map[string]string{}

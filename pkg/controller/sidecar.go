@@ -34,9 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd/api"
-	"k8s.io/client-go/tools/reference"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/meta"
 	wapi "kmodules.xyz/webhook-runtime/apis/workload/v1"
@@ -44,16 +42,13 @@ import (
 
 func (c *StashController) ensureWorkloadSidecar(w *wapi.Workload, restic *api_v1alpha1.Restic, caller string) error {
 	sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
-	ref, err := reference.GetReference(scheme.Scheme, w)
+	owner, err := ownerWorkload(w)
 	if err != nil {
-		ref = &core.ObjectReference{
-			Name:      w.Name,
-			Namespace: w.Namespace,
-		}
+		return err
 	}
 	//Don't create RBAC stuff when the caller is webhook to make the webhooks side effect free.
 	if caller != util.CallerWebhook {
-		err = stash_rbac.EnsureSidecarRoleBinding(c.kubeClient, ref, sa, nil)
+		err = stash_rbac.EnsureSidecarRoleBinding(c.kubeClient, owner, w.Namespace, sa, nil)
 		if err != nil {
 			return err
 		}
@@ -156,14 +151,14 @@ func (c *StashController) ensureWorkloadSidecarDeleted(w *wapi.Workload, restic 
 
 func (c *StashController) ensureBackupSidecar(w *wapi.Workload, bc *api_v1beta1.BackupConfiguration, caller string) error {
 	sa := stringz.Val(w.Spec.Template.Spec.ServiceAccountName, "default")
-	ref, err := reference.GetReference(scheme.Scheme, w)
+	owner, err := ownerWorkload(w)
 	if err != nil {
 		return err
 	}
 
 	//Don't create RBAC stuff when the caller is webhook to make the webhooks side effect free.
 	if caller != util.CallerWebhook {
-		err = stash_rbac.EnsureSidecarRoleBinding(c.kubeClient, ref, sa, bc.OffshootLabels())
+		err = stash_rbac.EnsureSidecarRoleBinding(c.kubeClient, owner, bc.Namespace, sa, bc.OffshootLabels())
 		if err != nil {
 			return err
 		}

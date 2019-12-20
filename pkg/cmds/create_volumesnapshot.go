@@ -32,7 +32,7 @@ import (
 	"stash.appscode.dev/stash/pkg/volumesnapshot"
 
 	"github.com/appscode/go/log"
-	vs "github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1alpha1"
+	vs "github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1beta1"
 	vs_cs "github.com/kubernetes-csi/external-snapshotter/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	appsv1 "k8s.io/api/apps/v1"
@@ -149,7 +149,7 @@ func (opt *VSoption) createVolumeSnapshot() (*restic.BackupOutput, error) {
 		// use timestamp suffix of BackupSession name as suffix of the VolumeSnapshots name
 		parts := strings.Split(backupSession.Name, "-")
 		volumeSnapshot := opt.getVolumeSnapshotDefinition(backupConfig, pvcName, parts[len(parts)-1])
-		snapshot, err := opt.snapshotClient.SnapshotV1alpha1().VolumeSnapshots(opt.namespace).Create(&volumeSnapshot)
+		snapshot, err := opt.snapshotClient.SnapshotV1beta1().VolumeSnapshots(opt.namespace).Create(&volumeSnapshot)
 		if err != nil {
 			return nil, err
 		}
@@ -253,9 +253,8 @@ func (opt *VSoption) getVolumeSnapshotDefinition(backupConfiguration *v1beta1.Ba
 		},
 		Spec: vs.VolumeSnapshotSpec{
 			VolumeSnapshotClassName: &backupConfiguration.Spec.Target.VolumeSnapshotClassName,
-			Source: &corev1.TypedLocalObjectReference{
-				Kind: apis.KindPersistentVolumeClaim,
-				Name: pvcName,
+			Source: vs.VolumeSnapshotSource{
+				PersistentVolumeClaimName: &pvcName,
 			},
 		},
 	}

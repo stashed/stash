@@ -22,11 +22,9 @@ import (
 
 	"stash.appscode.dev/stash/apis"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
-	"stash.appscode.dev/stash/pkg/resolve"
 
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
 	kutil "kmodules.xyz/client-go"
@@ -59,12 +57,7 @@ func (c *StashController) processPVCKey(key string) error {
 
 		pvc := obj.(*core.PersistentVolumeClaim).DeepCopy()
 		pvc.GetObjectKind().SetGroupVersionKind(core.SchemeGroupVersion.WithKind(apis.KindPersistentVolumeClaim))
-
-		err := c.applyBackupAnnotationLogicForPVC(pvc)
-		if err != nil {
-			return err
-		}
-
+		return c.applyBackupAnnotationLogicForPVC(pvc)
 	}
 	return nil
 }
@@ -78,7 +71,7 @@ func (c *StashController) applyBackupAnnotationLogicForPVC(pvc *core.PersistentV
 	// if pvc has backup annotations then ensure respective Repository and BackupConfiguration
 	if meta_util.HasKey(pvc.Annotations, api_v1beta1.KeyBackupBlueprint) {
 		// backup annotations found. so, we have to ensure Repository and BackupConfiguration from BackupBlueprint
-		verb, err := c.ensureAutoBackupResourcesForPVC(pvc, targetRef)
+		verb, err := c.ensureAutoBackupResourcesForPVC(pvc)
 		if err != nil {
 			return c.handleAutoBackupResourcesCreationFailure(targetRef, err)
 		}
@@ -101,14 +94,8 @@ func (c *StashController) applyBackupAnnotationLogicForPVC(pvc *core.PersistentV
 	return nil
 }
 
-func (c *StashController) ensureAutoBackupResourcesForPVC(pvc *core.PersistentVolumeClaim, targetRef *core.ObjectReference) (kutil.VerbType, error) {
-
+func (c *StashController) ensureAutoBackupResourcesForPVC(pvc *core.PersistentVolumeClaim) (kutil.VerbType, error) {
 	backupBlueprintName, err := meta_util.GetStringValue(pvc.Annotations, api_v1beta1.KeyBackupBlueprint)
-	if err != nil {
-		return kutil.VerbUnchanged, err
-	}
-
-	backupBlueprint, err := c.stashClient.StashV1beta1().BackupBlueprints().Get(backupBlueprintName, metav1.GetOptions{})
 	if err != nil {
 		return kutil.VerbUnchanged, err
 	}
@@ -120,30 +107,5 @@ func (c *StashController) ensureAutoBackupResourcesForPVC(pvc *core.PersistentVo
 	inputs[apis.TargetName] = pvc.Name
 	inputs[apis.TargetNamespace] = pvc.Namespace
 
-	err = resolve.ResolveBackupBlueprint(backupBlueprint, inputs)
-	if err != nil {
-		return kutil.VerbUnchanged, err
-	}
-
-	// ensure Repository crd
-	verb1, err := c.ensureRepository(backupBlueprint, targetRef, targetRef.Kind)
-	if err != nil {
-		return kutil.VerbUnchanged, err
-	}
-
-	// ensure BackupConfiguration crd. For stand-alone PVC backup, we don't need to specify target paths and volumeMounts.
-	// Stash will use default target path and mount path.
-	verb2, err := c.ensureBackupConfiguration(backupBlueprint, nil, nil, targetRef, targetRef.Kind)
-	if err != nil {
-		return kutil.VerbUnchanged, err
-	}
-	// if both of the verb is unchanged then no create/update happened to the auto backup resources
-	if verb1 == kutil.VerbUnchanged || verb2 == kutil.VerbUnchanged {
-		return kutil.VerbUnchanged, nil
-	}
-	// auto backup resources has been created/updated
-	// we will use this information to write event to PVC
-	// so, "created" or "updated" verb has same effect to the end result
-	// we can return any of them.
-	return kutil.VerbCreated, nil
+	return c.ensureAutoBackupResources(backupBlueprintName, inputs, pvc)
 }

@@ -237,10 +237,7 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		Labels:    offshootLabels,
 	}
 
-	ref, err := reference.GetReference(stash_scheme.Scheme, restoreSession)
-	if err != nil {
-		return err
-	}
+	owner := metav1.NewControllerRef(restoreSession, api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindRestoreSession))
 
 	// Ensure respective RBAC and PSP stuff.
 	var serviceAccountName string
@@ -252,8 +249,8 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		// ServiceAccount hasn't been specified. so create new one with same name as RestoreSession object.
 		serviceAccountName = jobMeta.Name
 
-		_, _, err = core_util.CreateOrPatchServiceAccount(c.kubeClient, jobMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
-			core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+		_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, jobMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
+			core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 			in.Labels = offshootLabels
 			return in
 		})
@@ -267,7 +264,7 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		return err
 	}
 
-	err = stash_rbac.EnsureRestoreJobRBAC(c.kubeClient, ref, serviceAccountName, psps, offshootLabels)
+	err = stash_rbac.EnsureRestoreJobRBAC(c.kubeClient, owner, restoreSession.Namespace, serviceAccountName, psps, offshootLabels)
 	if err != nil {
 		return err
 	}
@@ -305,11 +302,11 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 	if restoreSession.Spec.Target == nil ||
 		(restoreSession.Spec.Target != nil && len(restoreSession.Spec.Target.VolumeClaimTemplates) == 0) {
 		// upsert InterimVolume to hold the backup/restored data temporarily
-		jobTemplate.Spec, err = util.UpsertInterimVolume(c.kubeClient, jobTemplate.Spec, restoreSession.Spec.InterimVolumeTemplate, ref)
+		jobTemplate.Spec, err = util.UpsertInterimVolume(c.kubeClient, jobTemplate.Spec, restoreSession.Spec.InterimVolumeTemplate.ToCorePVC(), restoreSession.Namespace, owner)
 		if err != nil {
 			return err
 		}
-		return c.createRestoreJob(jobTemplate, jobMeta, ref, serviceAccountName)
+		return c.createRestoreJob(jobTemplate, jobMeta, owner, serviceAccountName)
 	}
 
 	// volumeClaimTemplate has been specified. Now, we have to do the following for each replica:
@@ -374,7 +371,7 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 		}
 
 		// create restore job
-		err = c.createRestoreJob(restoreJobTemplate, *restoreJobMeta, ref, serviceAccountName)
+		err = c.createRestoreJob(restoreJobTemplate, *restoreJobMeta, owner, serviceAccountName)
 		if err != nil {
 			return err
 		}
@@ -382,10 +379,10 @@ func (c *StashController) ensureRestoreJob(restoreSession *api_v1beta1.RestoreSe
 	return nil
 }
 
-func (c *StashController) createRestoreJob(jobTemplate *core.PodTemplateSpec, meta metav1.ObjectMeta, ref *core.ObjectReference, serviceAccountName string) error {
+func (c *StashController) createRestoreJob(jobTemplate *core.PodTemplateSpec, meta metav1.ObjectMeta, owner *metav1.OwnerReference, serviceAccountName string) error {
 	_, _, err := batch_util.CreateOrPatchJob(c.kubeClient, meta, func(in *batchv1.Job) *batchv1.Job {
 		// set RestoreSession as owner of this Job
-		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
 		in.Spec.Template = *jobTemplate
 		in.Spec.Template.Spec.ServiceAccountName = serviceAccountName
@@ -477,10 +474,7 @@ func (c *StashController) ensureVolumeRestorerJob(restoreSession *api_v1beta1.Re
 		Labels:    offshootLabels,
 	}
 
-	ref, err := reference.GetReference(stash_scheme.Scheme, restoreSession)
-	if err != nil {
-		return err
-	}
+	owner := metav1.NewControllerRef(restoreSession, api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindRestoreSession))
 
 	//ensure respective RBAC stuffs
 	//Create new ServiceAccount
@@ -489,8 +483,8 @@ func (c *StashController) ensureVolumeRestorerJob(restoreSession *api_v1beta1.Re
 		Name:      serviceAccountName,
 		Namespace: restoreSession.Namespace,
 	}
-	_, _, err = core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+	_, _, err := core_util.CreateOrPatchServiceAccount(c.kubeClient, saMeta, func(in *core.ServiceAccount) *core.ServiceAccount {
+		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 		in.Labels = offshootLabels
 		return in
 	})
@@ -498,7 +492,7 @@ func (c *StashController) ensureVolumeRestorerJob(restoreSession *api_v1beta1.Re
 		return err
 	}
 
-	err = stash_rbac.EnsureVolumeSnapshotRestorerJobRBAC(c.kubeClient, ref, serviceAccountName, offshootLabels)
+	err = stash_rbac.EnsureVolumeSnapshotRestorerJobRBAC(c.kubeClient, owner, restoreSession.Namespace, serviceAccountName, offshootLabels)
 	if err != nil {
 		return err
 	}
@@ -517,7 +511,7 @@ func (c *StashController) ensureVolumeRestorerJob(restoreSession *api_v1beta1.Re
 	// Create Volume restorer Job
 	_, _, err = batch_util.CreateOrPatchJob(c.kubeClient, jobMeta, func(in *batchv1.Job) *batchv1.Job {
 		// set RestoreSession as owner of this Job
-		core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
 		in.Labels = offshootLabels
 

@@ -95,7 +95,7 @@ func (in *Recovery) DeepCopyObject() runtime.Object {
 func (in *RecoveryList) DeepCopyInto(out *RecoveryList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]Recovery, len(*in))
@@ -218,7 +218,7 @@ func (in *Repository) DeepCopyObject() runtime.Object {
 func (in *RepositoryList) DeepCopyInto(out *RepositoryList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]Repository, len(*in))
@@ -328,7 +328,7 @@ func (in *Restic) DeepCopyObject() runtime.Object {
 func (in *ResticList) DeepCopyInto(out *ResticList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]Restic, len(*in))

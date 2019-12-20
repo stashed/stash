@@ -37,7 +37,7 @@ const (
 	StashBackupJob = "stash-backup-job"
 )
 
-func EnsureBackupJobRBAC(kubeClient kubernetes.Interface, ref *core.ObjectReference, sa string, psps []string, labels map[string]string) error {
+func EnsureBackupJobRBAC(kubeClient kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, psps []string, labels map[string]string) error {
 	// ensure ClusterRole for restore job
 	err := ensureBackupJobClusterRole(kubeClient, psps, labels)
 	if err != nil {
@@ -45,7 +45,7 @@ func EnsureBackupJobRBAC(kubeClient kubernetes.Interface, ref *core.ObjectRefere
 	}
 
 	// ensure RoleBinding for restore job
-	err = ensureBackupJobRoleBinding(kubeClient, ref, sa, labels)
+	err = ensureBackupJobRoleBinding(kubeClient, owner, namespace, sa, labels)
 	if err != nil {
 		return err
 	}
@@ -104,15 +104,15 @@ func ensureBackupJobClusterRole(kubeClient kubernetes.Interface, psps []string, 
 	return err
 }
 
-func ensureBackupJobRoleBinding(kubeClient kubernetes.Interface, resource *core.ObjectReference, sa string, labels map[string]string) error {
+func ensureBackupJobRoleBinding(kubeClient kubernetes.Interface, owner *metav1.OwnerReference, namespace, sa string, labels map[string]string) error {
 
 	meta := metav1.ObjectMeta{
-		Namespace: resource.Namespace,
-		Name:      getBackupJobRoleBindingName(resource.Name),
+		Name:      getBackupJobRoleBindingName(owner.Name),
+		Namespace: namespace,
 		Labels:    labels,
 	}
 	_, _, err := rbac_util.CreateOrPatchRoleBinding(kubeClient, meta, func(in *rbac.RoleBinding) *rbac.RoleBinding {
-		core_util.EnsureOwnerReference(&in.ObjectMeta, resource)
+		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
 		in.RoleRef = rbac.RoleRef{
 			APIGroup: rbac.GroupName,
@@ -123,7 +123,7 @@ func ensureBackupJobRoleBinding(kubeClient kubernetes.Interface, resource *core.
 			{
 				Kind:      "ServiceAccount",
 				Name:      sa,
-				Namespace: resource.Namespace,
+				Namespace: namespace,
 			},
 		}
 		return in

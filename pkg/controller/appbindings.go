@@ -22,11 +22,9 @@ import (
 
 	"stash.appscode.dev/stash/apis"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
-	"stash.appscode.dev/stash/pkg/resolve"
 
 	"github.com/golang/glog"
 	core "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/reference"
 	kutil "kmodules.xyz/client-go"
 	meta_util "kmodules.xyz/client-go/meta"
@@ -60,11 +58,7 @@ func (c *StashController) processAppBindingKey(key string) error {
 
 		ab := obj.(*appCatalog.AppBinding).DeepCopy()
 		ab.GetObjectKind().SetGroupVersionKind(core.SchemeGroupVersion.WithKind(apis.KindAppBinding))
-
-		err := c.applyBackupAnnotationLogicForAppBinding(ab)
-		if err != nil {
-			return err
-		}
+		return c.applyBackupAnnotationLogicForAppBinding(ab)
 	}
 	return nil
 }
@@ -84,7 +78,7 @@ func (c *StashController) applyBackupAnnotationLogicForAppBinding(ab *appCatalog
 	// if ab has backup annotations then ensure respective Repository and BackupConfiguration
 	if meta_util.HasKey(ab.Annotations, api_v1beta1.KeyBackupBlueprint) {
 		// backup annotations found. so, we have to ensure Repository and BackupConfiguration from BackupBlueprint
-		verb, err := c.ensureAutoBackupResourcesForAppBinding(ab, targetRef, targetAppGroup, targetAppResource, prefix)
+		verb, err := c.ensureAutoBackupResourcesForAppBinding(ab, targetAppGroup, targetAppResource)
 		if err != nil {
 			return c.handleAutoBackupResourcesCreationFailure(targetRef, err)
 		}
@@ -107,20 +101,9 @@ func (c *StashController) applyBackupAnnotationLogicForAppBinding(ab *appCatalog
 	return nil
 }
 
-func (c *StashController) ensureAutoBackupResourcesForAppBinding(
-	ab *appCatalog.AppBinding,
-	targetRef *core.ObjectReference,
-	targetAppGroup string,
-	targetAppResource string,
-	prefix string,
-) (kutil.VerbType, error) {
+func (c *StashController) ensureAutoBackupResourcesForAppBinding(ab *appCatalog.AppBinding, targetAppGroup, targetAppResource string) (kutil.VerbType, error) {
 
 	backupBlueprintName, err := meta_util.GetStringValue(ab.Annotations, api_v1beta1.KeyBackupBlueprint)
-	if err != nil {
-		return kutil.VerbUnchanged, err
-	}
-
-	backupBlueprint, err := c.stashClient.StashV1beta1().BackupBlueprints().Get(backupBlueprintName, metav1.GetOptions{})
 	if err != nil {
 		return kutil.VerbUnchanged, err
 	}
@@ -136,29 +119,5 @@ func (c *StashController) ensureAutoBackupResourcesForAppBinding(
 	inputs[apis.TargetAppResource] = targetAppResource
 	inputs[apis.TargetAppType] = string(ab.Spec.Type)
 
-	err = resolve.ResolveBackupBlueprint(backupBlueprint, inputs)
-	if err != nil {
-		return kutil.VerbUnchanged, err
-	}
-
-	// ensure Repository crd
-	verb1, err := c.ensureRepository(backupBlueprint, targetRef, prefix)
-	if err != nil {
-		return kutil.VerbUnchanged, err
-	}
-
-	// ensure BackupConfiguration crd
-	verb2, err := c.ensureBackupConfiguration(backupBlueprint, nil, nil, targetRef, prefix)
-	if err != nil {
-		return kutil.VerbUnchanged, err
-	}
-	// if both of the verb is unchanged then no create/update happened to the auto backup resources
-	if verb1 == kutil.VerbUnchanged || verb2 == kutil.VerbUnchanged {
-		return kutil.VerbUnchanged, nil
-	}
-	// auto backup resources has been created/updated
-	// we will use this information to write event to AppBinding
-	// so, "created" or "updated" verb has same effect to the end result
-	// we can return any of them.
-	return kutil.VerbCreated, nil
+	return c.ensureAutoBackupResources(backupBlueprintName, inputs, ab)
 }

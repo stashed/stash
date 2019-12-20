@@ -14,8 +14,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        k8s: [v1.12.10, v1.14.6, v1.16.2]
+        k8s: [v1.12.10, v1.14.6, v1.16.3, v1.17.0]
     steps:
+
+    - name: Set up Go 1.13
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.13
+      id: go
 
     - name: Check out code into the Go module directory
       uses: actions/checkout@v1
@@ -48,6 +54,7 @@ jobs:
       id: kind
       uses: engineerd/setup-kind@v0.1.0
       with:
+        version: v0.6.0
         config: hack/kubernetes/kind.yaml
         image: kindest/node:${{ matrix.k8s }}
 
@@ -58,8 +65,6 @@ jobs:
         USERNAME: 1gtm
         REGISTRY_SECRET: regcred
       run: |
-        export KUBECONFIG="$(kind get kubeconfig-path)"
-        echo
         echo "waiting for nodes to be ready ..."
         kubectl wait --for=condition=Ready nodes --all --timeout=5m
         kubectl get nodes
@@ -90,7 +95,6 @@ jobs:
         TEST_CREDENTIALS: ${{ secrets.TEST_CREDENTIALS }}
         GOOGLE_SERVICE_ACCOUNT_JSON_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON_KEY }}
       run: |
-        export KUBECONFIG="$(kind get kubeconfig-path)"
         echo "preparing test credentials"
         mkdir -p hack/config
         echo -n "$TEST_CREDENTIALS" > hack/config/.env

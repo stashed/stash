@@ -75,7 +75,7 @@ type RestoreSessionSpec struct {
 	// before uploading to backend or inserting into target. It is only usable for job model.
 	// Don't specify it in sidecar model.
 	// +optional
-	InterimVolumeTemplate *core.PersistentVolumeClaim `json:"interimVolumeTemplate,omitempty" protobuf:"bytes,8,opt,name=interimVolumeTemplate"`
+	InterimVolumeTemplate *ofst.PersistentVolumeClaim `json:"interimVolumeTemplate,omitempty" protobuf:"bytes,8,opt,name=interimVolumeTemplate"`
 	// Actions that Stash should take in response to restore sessions.
 	// +optional
 	Hooks *RestoreHooks `json:"hooks,omitempty" protobuf:"bytes,9,opt,name=hooks"`

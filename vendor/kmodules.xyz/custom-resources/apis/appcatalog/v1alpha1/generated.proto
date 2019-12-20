@@ -70,6 +70,8 @@ message AddKeysFromTransform {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:path=appbindings,singular=appbinding,categories={catalog,appscode,all}
+// +kubebuilder:printcolumn:name="Type",type="string",JSONPath=".spec.type"
+// +kubebuilder:printcolumn:name="Version",type="string",JSONPath=".spec.version"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 message AppBinding {
   optional k8s.io.apimachinery.pkg.apis.meta.v1.ObjectMeta metadata = 1;
@@ -117,6 +119,8 @@ message AppBindingSpec {
   // in a Secret.
   //
   // +optional
+  // +kubebuilder:validation:EmbeddedResource
+  // +kubebuilder:pruning:PreserveUnknownFields
   optional k8s.io.apimachinery.pkg.runtime.RawExtension parameters = 6;
 }
 
@@ -137,6 +141,8 @@ message AppReference {
   // NEVER be used to hold sensitive information.
   //
   // +optional
+  // +kubebuilder:validation:EmbeddedResource
+  // +kubebuilder:pruning:PreserveUnknownFields
   optional k8s.io.apimachinery.pkg.runtime.RawExtension parameters = 3;
 }
 

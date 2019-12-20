@@ -21,15 +21,13 @@ import (
 	"testing"
 	"time"
 
-	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 
 	"github.com/appscode/go/strings"
 	type_util "github.com/appscode/go/types"
-	crdv1 "github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1alpha1"
+	crdv1 "github.com/kubernetes-csi/external-snapshotter/pkg/apis/volumesnapshot/v1beta1"
 	vsfake "github.com/kubernetes-csi/external-snapshotter/pkg/client/clientset/versioned/fake"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -138,7 +136,7 @@ func TestCleanupSnapshots(t *testing.T) {
 				t.Errorf("Failed to cleanup VolumeSnapshots. Reason: %v", err)
 				return
 			}
-			vsList, err := vsClient.SnapshotV1alpha1().VolumeSnapshots(testNamespace).List(metav1.ListOptions{})
+			vsList, err := vsClient.SnapshotV1beta1().VolumeSnapshots(testNamespace).List(metav1.ListOptions{})
 			if err != nil {
 				t.Errorf("Failed to list remaining VolumeSnapshots. Reason: %v", err)
 				return
@@ -186,6 +184,7 @@ func newSnapshot(snapMeta snapInfo) (*crdv1.VolumeSnapshot, error) {
 		return nil, err
 	}
 
+	snapshotContentName := fmt.Sprintf("snapshot-content-%s", snapMeta.name)
 	return &crdv1.VolumeSnapshot{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              snapMeta.name,
@@ -197,14 +196,13 @@ func newSnapshot(snapMeta snapInfo) (*crdv1.VolumeSnapshot, error) {
 		},
 		Spec: crdv1.VolumeSnapshotSpec{
 			VolumeSnapshotClassName: type_util.StringP("standard"),
-			SnapshotContentName:     fmt.Sprintf("snapshot-content-%s", snapMeta.name),
-			Source: &v1.TypedLocalObjectReference{
-				Name: snapMeta.pvcName,
-				Kind: apis.KindPersistentVolumeClaim,
+			Source: crdv1.VolumeSnapshotSource{
+				PersistentVolumeClaimName: &snapMeta.pvcName,
+				VolumeSnapshotContentName: &snapshotContentName,
 			},
 		},
-		Status: crdv1.VolumeSnapshotStatus{
-			ReadyToUse: true,
+		Status: &crdv1.VolumeSnapshotStatus{
+			ReadyToUse: type_util.TrueP(),
 			Error:      nil,
 		},
 	}, nil
