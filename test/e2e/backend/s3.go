@@ -18,15 +18,12 @@ package backend
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"stash.appscode.dev/stash/apis"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/test/e2e/framework"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 
-	"github.com/appscode/go/sets"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,54 +42,6 @@ var _ = Describe("S3 Backend", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	var (
-		setupS3Repository = func() (*api.Repository, error) {
-			// Create Storage Secret
-			By("Creating Storage Secret")
-			cred := f.SecretForS3Backend()
-
-			if missing, _ := BeZero().Match(cred); missing {
-				Skip("Missing S3 credential")
-			}
-			_, err := f.CreateSecret(cred)
-			if err != nil {
-				return nil, err
-			}
-			f.AppendToCleanupList(&cred)
-
-			// Generate Repository Definition
-			repo := f.NewS3Repository(cred.Name)
-
-			// Create Repository
-			By("Creating Repository")
-			repo, err = f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
-			if err != nil {
-				return repo, err
-			}
-			return repo, nil
-		}
-
-		generateSampleBigFile = func(meta metav1.ObjectMeta, kind string) (sets.String, error) {
-			By("Generating sample data inside workload pods")
-			set := sets.NewString()
-			pod, err := f.GetPod(meta)
-			if err != nil {
-				return set, err
-			}
-			_, err = f.ExecOnPod(pod, "truncate", "-s", "128M", filepath.Join(framework.TestSourceDataMountPath, "file.txt"))
-			if err != nil {
-				return set, err
-			}
-
-			By("Verifying that sample data has been generated")
-			sampleData, err := f.ReadSampleDataFromFromWorkload(meta, kind)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(sampleData).ShouldNot(BeEmpty())
-
-			return sampleData, nil
-		}
-	)
-
 	Context("General Backup/Restore", func() {
 		It("should backup/restore in/from S3 backend", func() {
 			// Deploy a Deployment
@@ -104,7 +53,7 @@ var _ = Describe("S3 Backend", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			// Setup a S3 Repository
-			repo, err := f.SetupS3Repository()
+			repo, err := f.SetupS3Repository(true)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Setup workload Backup
@@ -155,7 +104,7 @@ var _ = Describe("S3 Backend", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			// Setup a S3 Repository
-			repo, err := setupS3Repository()
+			repo, err := f.SetupS3Repository(false)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Setup workload Backup
@@ -180,7 +129,7 @@ var _ = Describe("S3 Backend", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking remote repository has been deleted")
-			items, err := f.BrowseResticRepository(repo)
+			items, err := f.BrowseBackendRepository(repo)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(items).Should(BeEmpty())
 
@@ -194,11 +143,11 @@ var _ = Describe("S3 Backend", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			// Generate Sample Data
-			sampleData, err := generateSampleBigFile(deployment.ObjectMeta, apis.KindDeployment)
+			sampleData, err := f.GenerateBigSampleFile(deployment.ObjectMeta, apis.KindDeployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Setup a S3 Repository
-			repo, err := f.SetupS3Repository()
+			repo, err := f.SetupS3Repository(true)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Setup workload Backup

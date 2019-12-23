@@ -19,14 +19,12 @@ package backend
 import (
 	"fmt"
 	"net"
-	"path/filepath"
 
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/test/e2e/framework"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 
-	"github.com/appscode/go/sets"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,28 +42,6 @@ var _ = Describe("Rest Backend", func() {
 		err := f.CleanupTestResources()
 		Expect(err).NotTo(HaveOccurred())
 	})
-
-	var (
-		generateSampleBigFile = func(meta metav1.ObjectMeta, kind string) (sets.String, error) {
-			By("Generating sample data inside workload pods")
-			set := sets.NewString()
-			pod, err := f.GetPod(meta)
-			if err != nil {
-				return set, err
-			}
-			_, err = f.ExecOnPod(pod, "truncate", "-s", "128M", filepath.Join(framework.TestSourceDataMountPath, "file.txt"))
-			if err != nil {
-				return set, err
-			}
-
-			By("Verifying that sample data has been generated")
-			sampleData, err := f.ReadSampleDataFromFromWorkload(meta, kind)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(sampleData).ShouldNot(BeEmpty())
-
-			return sampleData, nil
-		}
-	)
 
 	Context("General Backup/Restore with tls secured", func() {
 		BeforeEach(func() {
@@ -137,7 +113,7 @@ var _ = Describe("Rest Backend", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			// Generate Sample Data
-			sampleData, err := generateSampleBigFile(deployment.ObjectMeta, apis.KindDeployment)
+			sampleData, err := f.GenerateBigSampleFile(deployment.ObjectMeta, apis.KindDeployment)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Setup a Rest Repository
@@ -237,5 +213,4 @@ var _ = Describe("Rest Backend", func() {
 			Expect(restoredData).Should(BeSameAs(sampleData))
 		})
 	})
-
 })

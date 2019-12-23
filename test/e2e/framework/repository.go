@@ -188,7 +188,7 @@ func (f *Framework) CreateRepository(repo *api.Repository) error {
 
 }
 
-func (f *Invocation) NewLocalRepositoryInPVC(secretName string, pvcName string) *api.Repository {
+func (f *Invocation) NewLocalRepositoryWithPVC(secretName string, pvcName string) *api.Repository {
 	return &api.Repository{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(f.app + "-local"),
@@ -393,7 +393,7 @@ func (f *Invocation) NewB2Repository(secretName string, maxConnection int64) *ap
 	}
 }
 
-func (f *Invocation) SetupLocalRepositoryInPVC() (*api.Repository, error) {
+func (f *Invocation) SetupLocalRepositoryWithPVC() (*api.Repository, error) {
 	// Create Storage Secret
 	By("Creating Storage Secret")
 	cred := f.SecretForLocalBackend()
@@ -409,7 +409,7 @@ func (f *Invocation) SetupLocalRepositoryInPVC() (*api.Repository, error) {
 	f.AppendToCleanupList(backendPVC)
 
 	// Generate Repository Definition
-	repo := f.NewLocalRepositoryInPVC(cred.Name, backendPVC.Name)
+	repo := f.NewLocalRepositoryWithPVC(cred.Name, backendPVC.Name)
 
 	// Create Repository
 	By("Creating Repository")
@@ -422,7 +422,7 @@ func (f *Invocation) SetupLocalRepositoryInPVC() (*api.Repository, error) {
 	return repo, nil
 }
 
-func (f *Invocation) SetupLocalRepositoryInHostPath() (*api.Repository, error) {
+func (f *Invocation) SetupLocalRepositoryWithHostPath() (*api.Repository, error) {
 	// Create Storage Secret
 	By("Creating Storage Secret")
 	cred := f.SecretForLocalBackend()
@@ -445,7 +445,7 @@ func (f *Invocation) SetupLocalRepositoryInHostPath() (*api.Repository, error) {
 	return repo, nil
 }
 
-func (f *Invocation) SetupLocalRepositoryInNFSServer() (*api.Repository, error) {
+func (f *Invocation) SetupLocalRepositoryWithNFSServer() (*api.Repository, error) {
 	// Create Storage Secret
 	By("Creating Storage Secret")
 	cred := f.SecretForLocalBackend()
@@ -468,7 +468,7 @@ func (f *Invocation) SetupLocalRepositoryInNFSServer() (*api.Repository, error) 
 	return repo, nil
 }
 
-func (f *Invocation) SetupGCSRepository(maxConnection int64) (*api.Repository, error) {
+func (f *Invocation) SetupGCSRepository(maxConnection int64, appendRepoToCleanupList bool) (*api.Repository, error) {
 	// Create Storage Secret
 	By("Creating Storage Secret")
 	cred := f.SecretForGCSBackend()
@@ -493,7 +493,9 @@ func (f *Invocation) SetupGCSRepository(maxConnection int64) (*api.Repository, e
 
 	// If `.spec.wipeOut` is set to "true", then the corresponding Secret is required to delete the remote repository.
 	// Hence we need to delete the Repository object first.
-	f.AppendToCleanupList(repo)
+	if appendRepoToCleanupList {
+		f.AppendToCleanupList(repo)
+	}
 	f.AppendToCleanupList(&cred)
 
 	return repo, nil
@@ -530,7 +532,7 @@ func (f *Invocation) SetupMinioRepository() (*api.Repository, error) {
 	return repo, nil
 }
 
-func (f *Invocation) SetupS3Repository() (*api.Repository, error) {
+func (f *Invocation) SetupS3Repository(appendToCleanupList bool) (*api.Repository, error) {
 	// Create Storage Secret
 	By("Creating Storage Secret")
 	cred := f.SecretForS3Backend()
@@ -555,13 +557,15 @@ func (f *Invocation) SetupS3Repository() (*api.Repository, error) {
 
 	// If `.spec.wipeOut` is set to "true", then the corresponding Secret is required to delete the remote repository.
 	// Hence we need to delete the Repository object first.
-	f.AppendToCleanupList(repo)
+	if appendToCleanupList {
+		f.AppendToCleanupList(repo)
+	}
 	f.AppendToCleanupList(&cred)
 
 	return repo, nil
 }
 
-func (f *Invocation) SetupAzureRepository(maxConnection int64) (*api.Repository, error) {
+func (f *Invocation) SetupAzureRepository(maxConnection int64, addRepoToCleanupList bool) (*api.Repository, error) {
 	// Create Storage Secret
 	By("Creating Storage Secret")
 	cred := f.SecretForAzureBackend()
@@ -586,7 +590,9 @@ func (f *Invocation) SetupAzureRepository(maxConnection int64) (*api.Repository,
 
 	// If `.spec.wipeOut` is set to "true", then the corresponding Secret is required to delete the remote repository.
 	// Hence we need to delete the Repository object first.
-	f.AppendToCleanupList(repo)
+	if addRepoToCleanupList {
+		f.AppendToCleanupList(repo)
+	}
 	f.AppendToCleanupList(&cred)
 
 	return repo, nil
@@ -623,7 +629,7 @@ func (f *Invocation) SetupRestRepository(tls bool) (*api.Repository, error) {
 	return repo, nil
 }
 
-func (f *Invocation) SetupSwiftRepository() (*api.Repository, error) {
+func (f *Invocation) SetupSwiftRepository(appendRepoToCleanupList bool) (*api.Repository, error) {
 	// Create Storage Secret
 	By("Creating Storage Secret")
 	cred := f.SecretForSwiftBackend()
@@ -648,7 +654,9 @@ func (f *Invocation) SetupSwiftRepository() (*api.Repository, error) {
 
 	// If `.spec.wipeOut` is set to "true", then the corresponding Secret is required to delete the remote repository.
 	// Hence we need to delete the Repository object first.
-	f.AppendToCleanupList(repo)
+	if appendRepoToCleanupList {
+		f.AppendToCleanupList(repo)
+	}
 	f.AppendToCleanupList(&cred)
 
 	return repo, nil

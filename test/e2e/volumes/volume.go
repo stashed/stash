@@ -49,47 +49,6 @@ var _ = Describe("Volume", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	var (
-		setupPVCBackup = func(pvc *core.PersistentVolumeClaim, repo *api.Repository) (*v1beta1.BackupConfiguration, error) {
-			// Generate desired BackupConfiguration definition
-			backupConfig := f.GetBackupConfigurationForWorkload(repo.Name, f.GetTargetRef(pvc.Name, apis.KindPersistentVolumeClaim))
-			backupConfig.Spec.Target = f.PVCBackupTarget(pvc.Name)
-			backupConfig.Spec.Task.Name = framework.TaskPVCBackup
-
-			By("Creating BackupConfiguration: " + backupConfig.Name)
-			createdBC, err := f.StashClient.StashV1beta1().BackupConfigurations(backupConfig.Namespace).Create(backupConfig)
-			f.AppendToCleanupList(createdBC)
-
-			By("Verifying that backup triggering CronJob has been created")
-			f.EventuallyCronJobCreated(backupConfig.ObjectMeta).Should(BeTrue())
-
-			return createdBC, err
-		}
-
-		setupRestoreProcessForPVC = func(pvc *core.PersistentVolumeClaim, repo *api.Repository) (*v1beta1.RestoreSession, error) {
-			// Generate desired RestoreSession definition
-			By("Creating RestoreSession")
-			restoreSession := f.GetRestoreSessionForWorkload(repo.Name, f.GetTargetRef(pvc.Name, apis.KindPersistentVolumeClaim))
-			restoreSession.Spec.Target = f.PVCRestoreTarget(pvc.Name)
-			restoreSession.Spec.Rules = []v1beta1.Rule{
-				{
-					Paths: []string{
-						framework.TestSourceDataMountPath,
-					},
-				},
-			}
-			restoreSession.Spec.Task.Name = framework.TaskPVCRestore
-
-			err := f.CreateRestoreSession(restoreSession)
-			f.AppendToCleanupList(restoreSession)
-
-			By("Waiting for restore process to complete")
-			f.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta).Should(BeTrue())
-
-			return restoreSession, err
-		}
-	)
-
 	Context("PVC", func() {
 
 		Context("Restore in same PVC", func() {
@@ -109,6 +68,7 @@ var _ = Describe("Volume", func() {
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()
 				Expect(err).NotTo(HaveOccurred())
+				f.AppendToCleanupList(repo)
 
 				// Setup PVC Backup
 				backupConfig, err := f.SetupPVCBackup(pvc, repo)
@@ -164,6 +124,7 @@ var _ = Describe("Volume", func() {
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()
 				Expect(err).NotTo(HaveOccurred())
+				f.AppendToCleanupList(repo)
 
 				// Setup PVC Backup
 				backupConfig, err := f.SetupPVCBackup(pvc, repo)

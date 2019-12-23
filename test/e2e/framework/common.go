@@ -17,6 +17,8 @@ limitations under the License.
 package framework
 
 import (
+	"path/filepath"
+
 	"stash.appscode.dev/stash/apis"
 	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	api_v1alpha1 "stash.appscode.dev/stash/apis/stash/v1alpha1"
@@ -33,7 +35,7 @@ import (
 	appcatalog "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 )
 
-func (f *Framework) GenerateSampleData(objMeta metav1.ObjectMeta, kind string) ([]string, error) {
+func (f *Invocation) GenerateSampleData(objMeta metav1.ObjectMeta, kind string) ([]string, error) {
 	By("Generating sample data inside workload pods")
 	err := f.CreateSampleDataInsideWorkload(objMeta, kind)
 	if err != nil {
@@ -42,6 +44,25 @@ func (f *Framework) GenerateSampleData(objMeta metav1.ObjectMeta, kind string) (
 
 	By("Verifying that sample data has been generated")
 	sampleData, err := f.ReadSampleDataFromFromWorkload(objMeta, kind)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(sampleData).ShouldNot(BeEmpty())
+
+	return sampleData, nil
+}
+
+func (f *Invocation) GenerateBigSampleFile(meta metav1.ObjectMeta, kind string) ([]string, error) {
+	By("Generating sample data inside workload pods")
+	pod, err := f.GetPod(meta)
+	if err != nil {
+		return nil, err
+	}
+	_, err = f.ExecOnPod(pod, "truncate", "-s", "128M", filepath.Join(TestSourceDataMountPath, "file.txt"))
+	if err != nil {
+		return nil, err
+	}
+
+	By("Verifying that sample data has been generated")
+	sampleData, err := f.ReadSampleDataFromFromWorkload(meta, kind)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(sampleData).ShouldNot(BeEmpty())
 
@@ -179,7 +200,7 @@ func (f *Invocation) SetupRestoreProcess(objMeta metav1.ObjectMeta, repo *api.Re
 	return restoreSession, err
 }
 
-func (f *Invocation) GetTargetRef(name string, kind string) v1beta1.TargetRef {
+func GetTargetRef(name string, kind string) v1beta1.TargetRef {
 	targetRef := v1beta1.TargetRef{
 		Name: name,
 	}
