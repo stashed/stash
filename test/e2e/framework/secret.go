@@ -190,6 +190,24 @@ func (fi *Invocation) SecretForMinioBackend(includeCacert bool) core.Secret {
 	return secret
 }
 
+func (fi *Invocation) SecretForRestBackend(includeCacert bool) core.Secret {
+	secret := core.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rand.WithUniqSuffix(fi.app + "-rest"),
+			Namespace: fi.namespace,
+		},
+		Data: map[string][]byte{
+			cli.RESTIC_PASSWORD:      []byte(TEST_RESTIC_PASSWORD),
+			cli.REST_SERVER_USERNAME: []byte(TEST_REST_SERVER_USERNAME),
+			cli.REST_SERVER_PASSWORD: []byte(TEST_REST_SERVER_PASSWORD),
+		},
+	}
+	if includeCacert {
+		secret.Data[cli.CA_CERT_DATA] = fi.CertStore.CACertBytes()
+	}
+	return secret
+}
+
 func (fi *Invocation) SecretForRegistry(dockerCfgJson []byte) core.Secret {
 	return core.Secret{
 		ObjectMeta: metav1.ObjectMeta{

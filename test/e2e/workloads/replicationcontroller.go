@@ -64,7 +64,6 @@ var _ = Describe("ReplicationController", func() {
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()
 				Expect(err).NotTo(HaveOccurred())
-				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
 				backupConfig, err := f.SetupWorkloadBackup(rc.ObjectMeta, repo, apis.KindReplicationController)
@@ -116,7 +115,6 @@ var _ = Describe("ReplicationController", func() {
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()
 				Expect(err).NotTo(HaveOccurred())
-				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
 				backupConfig, err := f.SetupWorkloadBackup(rc.ObjectMeta, repo, apis.KindReplicationController)
@@ -167,7 +165,6 @@ var _ = Describe("ReplicationController", func() {
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()
 				Expect(err).NotTo(HaveOccurred())
-				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
 				backupConfig, err := f.SetupWorkloadBackup(rc.ObjectMeta, repo, apis.KindReplicationController)

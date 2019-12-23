@@ -107,7 +107,7 @@ func (f *Framework) DeleteRepositories(repositories []*api.Repository) {
 }
 
 func (f *Framework) DeleteRepository(repository *api.Repository) error {
-	err := f.StashClient.StashV1alpha1().Repositories(repository.Namespace).Delete(repository.Name, deleteInBackground())
+	err := f.StashClient.StashV1alpha1().Repositories(repository.Namespace).Delete(repository.Name, &metav1.DeleteOptions{})
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
@@ -188,7 +188,7 @@ func (f *Framework) CreateRepository(repo *api.Repository) error {
 
 }
 
-func (f *Invocation) NewLocalRepository(secretName string, pvcName string) *api.Repository {
+func (f *Invocation) NewLocalRepositoryInPVC(secretName string, pvcName string) *api.Repository {
 	return &api.Repository{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(f.app + "-local"),
@@ -210,7 +210,55 @@ func (f *Invocation) NewLocalRepository(secretName string, pvcName string) *api.
 	}
 }
 
-func (f *Invocation) NewGCSRepository(secretName string) *api.Repository {
+func (f *Invocation) NewLocalRepositoryInHostPath(secretName string) *api.Repository {
+	hostPathType := core.HostPathDirectoryOrCreate
+	return &api.Repository{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rand.WithUniqSuffix(f.app + "-local"),
+			Namespace: f.namespace,
+		},
+		Spec: api.RepositorySpec{
+			Backend: store.Backend{
+				Local: &store.LocalSpec{
+					VolumeSource: core.VolumeSource{
+						HostPath: &core.HostPathVolumeSource{
+							Path: "/data/stash-test",
+							Type: &hostPathType,
+						},
+					},
+					MountPath: TestSafeDataMountPath,
+				},
+				StorageSecretName: secretName,
+			},
+		},
+	}
+}
+
+func (f *Invocation) NewLocalRepositoryInNFSServer(secretName string) *api.Repository {
+	return &api.Repository{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rand.WithUniqSuffix(f.app + "-local"),
+			Namespace: f.namespace,
+		},
+		Spec: api.RepositorySpec{
+			Backend: store.Backend{
+				Local: &store.LocalSpec{
+					MountPath: TestSafeDataMountPath,
+					VolumeSource: core.VolumeSource{
+						NFS: &core.NFSVolumeSource{
+							//Server: fmt.Sprintf("%s.%s.%s", nfsService, "cluster", "local"), // NFS server address
+							Server: f.GetNFSService(),
+							Path:   "/", // this path is relative to "/exports" path of NFS server
+						},
+					},
+				},
+				StorageSecretName: secretName,
+			},
+		},
+	}
+}
+
+func (f *Invocation) NewGCSRepository(secretName string, maxConnection int64) *api.Repository {
 	return &api.Repository{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(fmt.Sprintf("gcs-%s", f.app)),
@@ -219,12 +267,13 @@ func (f *Invocation) NewGCSRepository(secretName string) *api.Repository {
 		Spec: api.RepositorySpec{
 			Backend: store.Backend{
 				GCS: &store.GCSSpec{
-					Bucket: "appscode-qa",
-					Prefix: fmt.Sprintf("stash-e2e/%s/%s", f.namespace, f.app),
+					Bucket:         "stash-testing",
+					Prefix:         fmt.Sprintf("stash-e2e/%s/%s", f.namespace, f.app),
+					MaxConnections: maxConnection,
 				},
 				StorageSecretName: secretName,
 			},
-			WipeOut: false,
+			WipeOut: true,
 		},
 	}
 }
@@ -249,7 +298,102 @@ func (f *Invocation) NewMinioRepository(secretName string) *api.Repository {
 	}
 }
 
-func (f *Invocation) SetupLocalRepository() (*api.Repository, error) {
+func (f *Invocation) NewS3Repository(secretName string) *api.Repository {
+	return &api.Repository{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rand.WithUniqSuffix(fmt.Sprintf("s3-%s", f.app)),
+			Namespace: f.namespace,
+		},
+		Spec: api.RepositorySpec{
+			Backend: store.Backend{
+				S3: &store.S3Spec{
+					Endpoint: "s3.amazonaws.com",
+					Bucket:   "appscode-qa",
+					Prefix:   fmt.Sprintf("stash-e2e/%s/%s", f.namespace, f.app),
+				},
+				StorageSecretName: secretName,
+			},
+			WipeOut: true,
+		},
+	}
+}
+
+func (f *Invocation) NewAzureRepository(secretName string, maxConnection int64) *api.Repository {
+	return &api.Repository{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rand.WithUniqSuffix(fmt.Sprintf("azure-%s", f.app)),
+			Namespace: f.namespace,
+		},
+		Spec: api.RepositorySpec{
+			Backend: store.Backend{
+				Azure: &store.AzureSpec{
+					Container:      "appscode-qa",
+					Prefix:         fmt.Sprintf("stash-e2e/%s/%s", f.namespace, f.app),
+					MaxConnections: maxConnection,
+				},
+				StorageSecretName: secretName,
+			},
+			WipeOut: true,
+		},
+	}
+}
+
+func (f *Invocation) NewRestRepository(secretName string) *api.Repository {
+	return &api.Repository{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rand.WithUniqSuffix(fmt.Sprintf("rest-%s", f.app)),
+			Namespace: f.namespace,
+		},
+		Spec: api.RepositorySpec{
+			Backend: store.Backend{
+				Rest: &store.RestServerSpec{
+					URL: fmt.Sprintf("http://%s:8000/myuser", f.RestServiceAddres()),
+				},
+				StorageSecretName: secretName,
+			},
+		},
+	}
+}
+
+func (f *Invocation) NewSwiftRepository(secretName string) *api.Repository {
+	return &api.Repository{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rand.WithUniqSuffix(fmt.Sprintf("swift-%s", f.app)),
+			Namespace: f.namespace,
+		},
+		Spec: api.RepositorySpec{
+			Backend: store.Backend{
+				Swift: &store.SwiftSpec{
+					Container: "stash-backup",
+					Prefix:    fmt.Sprintf("stash-e2e/%s/%s", f.namespace, f.app),
+				},
+				StorageSecretName: secretName,
+			},
+			WipeOut: true,
+		},
+	}
+}
+
+func (f *Invocation) NewB2Repository(secretName string, maxConnection int64) *api.Repository {
+	return &api.Repository{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      rand.WithUniqSuffix(fmt.Sprintf("b2-%s", f.app)),
+			Namespace: f.namespace,
+		},
+		Spec: api.RepositorySpec{
+			Backend: store.Backend{
+				B2: &store.B2Spec{
+					Bucket:         "stash-qa",
+					Prefix:         fmt.Sprintf("stash-e2e/%s/%s", f.namespace, f.app),
+					MaxConnections: maxConnection,
+				},
+				StorageSecretName: secretName,
+			},
+		},
+	}
+}
+
+func (f *Invocation) SetupLocalRepositoryInPVC() (*api.Repository, error) {
 	// Create Storage Secret
 	By("Creating Storage Secret")
 	cred := f.SecretForLocalBackend()
@@ -257,7 +401,7 @@ func (f *Invocation) SetupLocalRepository() (*api.Repository, error) {
 	Expect(err).NotTo(HaveOccurred())
 	f.AppendToCleanupList(&cred)
 
-	// We are going to use an PVC as backend
+	// We are going to use a PVC as backend
 	By("Creating Backend PVC")
 	backendPVC := f.PersistentVolumeClaim(rand.WithUniqSuffix("pvc"))
 	backendPVC, err = f.CreatePersistentVolumeClaim(backendPVC)
@@ -265,14 +409,66 @@ func (f *Invocation) SetupLocalRepository() (*api.Repository, error) {
 	f.AppendToCleanupList(backendPVC)
 
 	// Generate Repository Definition
-	repo := f.NewLocalRepository(cred.Name, backendPVC.Name)
+	repo := f.NewLocalRepositoryInPVC(cred.Name, backendPVC.Name)
 
 	// Create Repository
 	By("Creating Repository")
-	return f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+	repo, err = f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+	if err != nil {
+		return nil, err
+	}
+	f.AppendToCleanupList(repo)
+
+	return repo, nil
 }
 
-func (f *Invocation) SetupGCSRepository() (*api.Repository, error) {
+func (f *Invocation) SetupLocalRepositoryInHostPath() (*api.Repository, error) {
+	// Create Storage Secret
+	By("Creating Storage Secret")
+	cred := f.SecretForLocalBackend()
+	_, err := f.CreateSecret(cred)
+	Expect(err).NotTo(HaveOccurred())
+	f.AppendToCleanupList(&cred)
+
+	// We are going to use a hostPath as backend
+	// Generate Repository Definition
+	repo := f.NewLocalRepositoryInHostPath(cred.Name)
+
+	// Create Repository
+	By("Creating Repository")
+	repo, err = f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+	if err != nil {
+		return nil, err
+	}
+	f.AppendToCleanupList(repo)
+
+	return repo, nil
+}
+
+func (f *Invocation) SetupLocalRepositoryInNFSServer() (*api.Repository, error) {
+	// Create Storage Secret
+	By("Creating Storage Secret")
+	cred := f.SecretForLocalBackend()
+	createdCred, err := f.CreateSecret(cred)
+	Expect(err).NotTo(HaveOccurred())
+	f.AppendToCleanupList(createdCred)
+
+	// We are going to use a nfs server as backend
+	// Generate Repository Definition
+	repo := f.NewLocalRepositoryInNFSServer(cred.Name)
+
+	// Create Repository
+	By("Creating Repository")
+	repo, err = f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+	if err != nil {
+		return nil, err
+	}
+	f.AppendToCleanupList(repo)
+
+	return repo, nil
+}
+
+func (f *Invocation) SetupGCSRepository(maxConnection int64) (*api.Repository, error) {
 	// Create Storage Secret
 	By("Creating Storage Secret")
 	cred := f.SecretForGCSBackend()
@@ -281,15 +477,26 @@ func (f *Invocation) SetupGCSRepository() (*api.Repository, error) {
 		Skip("Missing GCS credential")
 	}
 	_, err := f.CreateSecret(cred)
-	Expect(err).NotTo(HaveOccurred())
-	f.AppendToCleanupList(&cred)
+	if err != nil {
+		return nil, err
+	}
 
 	// Generate Repository Definition
-	repo := f.NewGCSRepository(cred.Name)
+	repo := f.NewGCSRepository(cred.Name, maxConnection)
 
 	// Create Repository
 	By("Creating Repository")
-	return f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+	repo, err = f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+	if err != nil {
+		return repo, err
+	}
+
+	// If `.spec.wipeOut` is set to "true", then the corresponding Secret is required to delete the remote repository.
+	// Hence we need to delete the Repository object first.
+	f.AppendToCleanupList(repo)
+	f.AppendToCleanupList(&cred)
+
+	return repo, nil
 }
 
 func (f *Invocation) SetupMinioRepository() (*api.Repository, error) {
@@ -301,13 +508,179 @@ func (f *Invocation) SetupMinioRepository() (*api.Repository, error) {
 		Skip("Missing Minio credential")
 	}
 	_, err := f.CreateSecret(cred)
-	Expect(err).NotTo(HaveOccurred())
-	f.AppendToCleanupList(&cred)
+	if err != nil {
+		return nil, err
+	}
 
 	// Generate Repository Definition
 	repo := f.NewMinioRepository(cred.Name)
 
 	// Create Repository
 	By("Creating Repository")
-	return f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+	repo, err = f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+	if err != nil {
+		return repo, err
+	}
+
+	// If `.spec.wipeOut` is set to "true", then the corresponding Secret is required to delete the remote repository.
+	// Hence we need to delete the Repository object first.
+	f.AppendToCleanupList(repo)
+	f.AppendToCleanupList(&cred)
+
+	return repo, nil
+}
+
+func (f *Invocation) SetupS3Repository() (*api.Repository, error) {
+	// Create Storage Secret
+	By("Creating Storage Secret")
+	cred := f.SecretForS3Backend()
+
+	if missing, _ := BeZero().Match(cred); missing {
+		Skip("Missing S3 credential")
+	}
+	_, err := f.CreateSecret(cred)
+	if err != nil {
+		return nil, err
+	}
+
+	// Generate Repository Definition
+	repo := f.NewS3Repository(cred.Name)
+
+	// Create Repository
+	By("Creating Repository")
+	repo, err = f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+	if err != nil {
+		return repo, err
+	}
+
+	// If `.spec.wipeOut` is set to "true", then the corresponding Secret is required to delete the remote repository.
+	// Hence we need to delete the Repository object first.
+	f.AppendToCleanupList(repo)
+	f.AppendToCleanupList(&cred)
+
+	return repo, nil
+}
+
+func (f *Invocation) SetupAzureRepository(maxConnection int64) (*api.Repository, error) {
+	// Create Storage Secret
+	By("Creating Storage Secret")
+	cred := f.SecretForAzureBackend()
+
+	if missing, _ := BeZero().Match(cred); missing {
+		Skip("Missing Azure credential")
+	}
+	_, err := f.CreateSecret(cred)
+	if err != nil {
+		return nil, err
+	}
+
+	// Generate Repository Definition
+	repo := f.NewAzureRepository(cred.Name, maxConnection)
+
+	// Create Repository
+	By("Creating Repository")
+	repo, err = f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+	if err != nil {
+		return repo, err
+	}
+
+	// If `.spec.wipeOut` is set to "true", then the corresponding Secret is required to delete the remote repository.
+	// Hence we need to delete the Repository object first.
+	f.AppendToCleanupList(repo)
+	f.AppendToCleanupList(&cred)
+
+	return repo, nil
+}
+
+func (f *Invocation) SetupRestRepository(tls bool) (*api.Repository, error) {
+	// Create Storage Secret
+	By("Creating Storage Secret")
+	cred := f.SecretForRestBackend(tls)
+
+	if missing, _ := BeZero().Match(cred); missing {
+		Skip("Missing Rest credential")
+	}
+	_, err := f.CreateSecret(cred)
+	if err != nil {
+		return nil, err
+	}
+
+	// Generate Repository Definition
+	repo := f.NewRestRepository(cred.Name)
+
+	// Create Repository
+	By("Creating Repository")
+	repo, err = f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+	if err != nil {
+		return repo, err
+	}
+
+	// If `.spec.wipeOut` is set to "true", then the corresponding Secret is required to delete the remote repository.
+	// Hence we need to delete the Repository object first.
+	f.AppendToCleanupList(repo)
+	f.AppendToCleanupList(&cred)
+
+	return repo, nil
+}
+
+func (f *Invocation) SetupSwiftRepository() (*api.Repository, error) {
+	// Create Storage Secret
+	By("Creating Storage Secret")
+	cred := f.SecretForSwiftBackend()
+
+	if missing, _ := BeZero().Match(cred); missing {
+		Skip("Missing Rest credential")
+	}
+	_, err := f.CreateSecret(cred)
+	if err != nil {
+		return nil, err
+	}
+
+	// Generate Repository Definition
+	repo := f.NewSwiftRepository(cred.Name)
+
+	// Create Repository
+	By("Creating Repository")
+	repo, err = f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+	if err != nil {
+		return repo, err
+	}
+
+	// If `.spec.wipeOut` is set to "true", then the corresponding Secret is required to delete the remote repository.
+	// Hence we need to delete the Repository object first.
+	f.AppendToCleanupList(repo)
+	f.AppendToCleanupList(&cred)
+
+	return repo, nil
+}
+
+func (f *Invocation) SetupB2Repository(maxConnection int64) (*api.Repository, error) {
+	// Create Storage Secret
+	By("Creating Storage Secret")
+	cred := f.SecretForB2Backend()
+
+	if missing, _ := BeZero().Match(cred); missing {
+		Skip("Missing Rest credential")
+	}
+	_, err := f.CreateSecret(cred)
+	if err != nil {
+		return nil, err
+	}
+
+	// Generate Repository Definition
+	repo := f.NewB2Repository(cred.Name, maxConnection)
+
+	// Create Repository
+	By("Creating Repository")
+	repo, err = f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
+	if err != nil {
+		return repo, err
+	}
+
+	// If `.spec.wipeOut` is set to "true", then the corresponding Secret is required to delete the remote repository.
+	// Hence we need to delete the Repository object first.
+	f.AppendToCleanupList(repo)
+	f.AppendToCleanupList(&cred)
+
+	return repo, nil
 }

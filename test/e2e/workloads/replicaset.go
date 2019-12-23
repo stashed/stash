@@ -64,7 +64,6 @@ var _ = Describe("ReplicaSet", func() {
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()
 				Expect(err).NotTo(HaveOccurred())
-				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
 				backupConfig, err := f.SetupWorkloadBackup(rs.ObjectMeta, repo, apis.KindReplicaSet)
@@ -116,7 +115,6 @@ var _ = Describe("ReplicaSet", func() {
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()
 				Expect(err).NotTo(HaveOccurred())
-				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
 				backupConfig, err := f.SetupWorkloadBackup(rs.ObjectMeta, repo, apis.KindReplicaSet)
@@ -167,7 +165,6 @@ var _ = Describe("ReplicaSet", func() {
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()
 				Expect(err).NotTo(HaveOccurred())
-				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
 				backupConfig, err := f.SetupWorkloadBackup(rs.ObjectMeta, repo, apis.KindReplicaSet)

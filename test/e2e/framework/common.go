@@ -179,7 +179,7 @@ func (f *Invocation) SetupRestoreProcess(objMeta metav1.ObjectMeta, repo *api.Re
 	return restoreSession, err
 }
 
-func GetTargetRef(name string, kind string) v1beta1.TargetRef {
+func (f *Invocation) GetTargetRef(name string, kind string) v1beta1.TargetRef {
 	targetRef := v1beta1.TargetRef{
 		Name: name,
 	}
@@ -209,7 +209,7 @@ func GetTargetRef(name string, kind string) v1beta1.TargetRef {
 	return targetRef
 }
 
-func (f Invocation) AddAutoBackupAnnotations(annotations map[string]string, obj interface{}) error {
+func (f *Invocation) AddAutoBackupAnnotations(annotations map[string]string, obj interface{}) error {
 	By("Adding auto-backup specific annotations to the Target")
 	err := f.AddAnnotations(annotations, obj)
 	if err != nil {
@@ -221,7 +221,7 @@ func (f Invocation) AddAutoBackupAnnotations(annotations map[string]string, obj 
 	return nil
 }
 
-func (f Invocation) VerifyAutoBackupConfigured(workloadMeta metav1.ObjectMeta, kind string) (*v1beta1.BackupConfiguration, error) {
+func (f *Invocation) VerifyAutoBackupConfigured(workloadMeta metav1.ObjectMeta, kind string) (*v1beta1.BackupConfiguration, error) {
 	// BackupBlueprint create BackupConfiguration and Repository such that
 	// the name of the BackupConfiguration and Repository will follow
 	// the patter: <lower case of the workload kind>-<workload name>.
