@@ -30,12 +30,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var _ = Describe("Rest Backend", func() {
+var _ = FDescribe("Rest Backend", func() {
 
 	var f *framework.Invocation
 
 	BeforeEach(func() {
 		f = framework.NewInvocation()
+	})
+
+	JustAfterEach(func() {
+		if CurrentGinkgoTestDescription().Failed {
+			f.PrintDebugHelpers()
+			framework.TestFailed = true
+		}
 	})
 
 	AfterEach(func() {

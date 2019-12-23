@@ -33,7 +33,7 @@ import (
 	v1 "kmodules.xyz/offshoot-api/api/v1"
 )
 
-var _ = Describe("Local Backend", func() {
+var _ = FDescribe("Local Backend", func() {
 
 	var f *framework.Invocation
 
@@ -43,6 +43,13 @@ var _ = Describe("Local Backend", func() {
 		_, err := f.CreateNFSServer()
 		Expect(err).NotTo(HaveOccurred())
 
+	})
+
+	JustAfterEach(func() {
+		if CurrentGinkgoTestDescription().Failed {
+			f.PrintDebugHelpers()
+			framework.TestFailed = true
+		}
 	})
 
 	AfterEach(func() {
