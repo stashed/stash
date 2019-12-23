@@ -418,7 +418,7 @@ func (c *StashController) handleAutoBackupResourcesCreationSuccess(ref *core.Obj
 		c.kubeClient,
 		eventer.EventSourceAutoBackupHandler,
 		ref,
-		core.EventTypeWarning,
+		core.EventTypeNormal,
 		eventer.EventReasonAutoBackupResourcesCreationSucceeded,
 		fmt.Sprintf("Successfully created auto backup resources for %s %s/%s.", ref.Kind, ref.Namespace, ref.Name),
 	)
@@ -448,7 +448,7 @@ func (c *StashController) handleAutoBackupResourcesDeletionSuccess(ref *core.Obj
 		c.kubeClient,
 		eventer.EventSourceAutoBackupHandler,
 		ref,
-		core.EventTypeWarning,
+		core.EventTypeNormal,
 		eventer.EventReasonAutoBackupResourcesDeletionSucceeded,
 		fmt.Sprintf("Successfully deleted auto backup resources for %s %s/%s.", ref.Kind, ref.Namespace, ref.Name),
 	)

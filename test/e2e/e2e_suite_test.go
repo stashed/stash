@@ -32,6 +32,7 @@ import (
 	"stash.appscode.dev/stash/test/e2e/framework"
 	_ "stash.appscode.dev/stash/test/e2e/hooks"
 	_ "stash.appscode.dev/stash/test/e2e/miscellaneous-use-cases"
+	_ "stash.appscode.dev/stash/test/e2e/general"
 	_ "stash.appscode.dev/stash/test/e2e/volumes"
 	_ "stash.appscode.dev/stash/test/e2e/workloads"
 
