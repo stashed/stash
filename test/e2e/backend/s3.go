@@ -29,7 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var _ = FDescribe("S3 Backend", func() {
+var _ = Describe("S3 Backend", func() {
 
 	var f *framework.Invocation
 

@@ -29,7 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var _ = FDescribe("GCS Backend", func() {
+var _ = Describe("GCS Backend", func() {
 
 	var f *framework.Invocation
 

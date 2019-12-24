@@ -33,7 +33,7 @@ import (
 	v1 "kmodules.xyz/offshoot-api/api/v1"
 )
 
-var _ = FDescribe("Local Backend", func() {
+var _ = Describe("Local Backend", func() {
 
 	var f *framework.Invocation
 
