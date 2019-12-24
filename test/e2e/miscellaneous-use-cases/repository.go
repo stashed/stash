@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package general
+package miscellaneous_use_cases
 
 import (
 	"fmt"
@@ -39,6 +39,10 @@ var _ = Describe("Repository", func() {
 		f = framework.NewInvocation()
 	})
 
+	JustAfterEach(func() {
+		f.PrintDebugInfoOnFailure()
+	})
+
 	AfterEach(func() {
 		err := f.CleanupTestResources()
 		Expect(err).NotTo(HaveOccurred())
@@ -48,7 +52,7 @@ var _ = Describe("Repository", func() {
 		Context("Invalid MountPath", func() {
 			It("should reject to create Repository for using `/stash` as `mountPath`", func() {
 				// Deploy a Deployment
-				_, err := f.DeployDeployment(fmt.Sprintf("source-deployment1-%s", f.App()), int32(1))
+				_, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Create Storage Secret
@@ -59,11 +63,11 @@ var _ = Describe("Repository", func() {
 				f.AppendToCleanupList(&cred)
 
 				// We are going to use an PVC as backend
-				pvc, err := f.CreateNewPVC(rand.WithUniqSuffix("pvc"))
+				pvc, err := f.CreateNewPVC(rand.WithUniqSuffix("backend-pvc"))
 				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Repository Definition
-				repo := f.NewLocalRepository(cred.Name, pvc.Name)
+				repo := f.NewLocalRepositoryWithPVC(cred.Name, pvc.Name)
 
 				// Use `/stash` as `mountPath`
 				repo.Spec.Backend.Local.MountPath = "/stash"
@@ -72,12 +76,11 @@ var _ = Describe("Repository", func() {
 				By("reject to create Repository")
 				_, err = f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
 				Expect(err).To(HaveOccurred())
-
 			})
 
 			It("should reject to create Repository for using `/stash/data` as `mountPath`", func() {
 				// Deploy a Deployment
-				_, err := f.DeployDeployment(fmt.Sprintf("source-deployment1-%s", f.App()), int32(1))
+				_, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Create Storage Secret
@@ -88,11 +91,11 @@ var _ = Describe("Repository", func() {
 				f.AppendToCleanupList(&cred)
 
 				// We are going to use an PVC as backend
-				pvc, err := f.CreateNewPVC(rand.WithUniqSuffix("pvc"))
+				pvc, err := f.CreateNewPVC(rand.WithUniqSuffix("backend-pvc"))
 				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Repository Definition
-				repo := f.NewLocalRepository(cred.Name, pvc.Name)
+				repo := f.NewLocalRepositoryWithPVC(cred.Name, pvc.Name)
 
 				// Use `/stash` as `mountPath`
 				repo.Spec.Backend.Local.MountPath = "/stash/data"
@@ -101,17 +104,15 @@ var _ = Describe("Repository", func() {
 				By("reject to create Repository")
 				_, err = f.StashClient.StashV1alpha1().Repositories(repo.Namespace).Create(repo)
 				Expect(err).To(HaveOccurred())
-
 			})
 		})
 
 		Context("Invalid MountPath in Auto-Backup", func() {
-
 			annotations := func(backupBlueprintName string) map[string]string {
 				return map[string]string{
 					v1beta1.KeyBackupBlueprint: backupBlueprintName,
 					v1beta1.KeyTargetPaths:     framework.TestSourceDataTargetPath,
-					v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
+					v1beta1.KeyVolumeMounts:    framework.TestSourceVolumeAndMount,
 				}
 			}
 
@@ -123,7 +124,7 @@ var _ = Describe("Repository", func() {
 				f.AppendToCleanupList(&cred)
 
 				// We are going to use an PVC as backend
-				pvc, err := f.CreateNewPVC(rand.WithUniqSuffix("pvc"))
+				pvc, err := f.CreateNewPVC(rand.WithUniqSuffix("backend-pvc"))
 				Expect(err).NotTo(HaveOccurred())
 
 				// Generate BackupBlueprint definition
@@ -143,7 +144,7 @@ var _ = Describe("Repository", func() {
 				f.AppendToCleanupList(createdBB)
 
 				// Deploy a DaemonSet
-				deployment, err := f.DeployDeployment(fmt.Sprintf("deployment-%s", f.App()), int32(1))
+				deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Add auto-backup annotations to Target
@@ -152,10 +153,7 @@ var _ = Describe("Repository", func() {
 
 				// AutoBackup Resource creation failed
 				f.EventuallyEvent(deployment.ObjectMeta, apis.KindDeployment).Should(matcher.HaveEvent(eventer.EventReasonAutoBackupResourcesCreationFailed))
-
 			})
 		})
-
 	})
-
 })

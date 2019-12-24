@@ -53,7 +53,7 @@ var _ = Describe("Auto-Backup", func() {
 		return map[string]string{
 			v1beta1.KeyBackupBlueprint: backupBlueprintName,
 			v1beta1.KeyTargetPaths:     framework.TestSourceDataTargetPath,
-			v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
+			v1beta1.KeyVolumeMounts:    framework.TestSourceVolumeAndMount,
 		}
 	}
 
