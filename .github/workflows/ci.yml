@@ -80,7 +80,16 @@ jobs:
         echo
         echo "create docker-registry secret"
         kubectl create secret docker-registry ${REGISTRY_SECRET} --namespace=kube-system --docker-server=https://index.docker.io/v1/ --docker-username=${USERNAME} --docker-password=${DOCKER_TOKEN}
-
+    - name: Install NFS server dependencies
+      run: |
+        export KUBECONFIG="$(kind get kubeconfig-path)"
+        nodes=$(kubectl get nodes -o=jsonpath='{range .items[*]}{.metadata.name}{"\t"}{end}')
+        for i in $nodes
+        do
+          echo "Installing NFS server dependencies in node: $i ...."
+          docker exec $i apt-get update
+          docker exec $i apt-get install -y nfs-kernel-server
+        done
     - name: Check out installer
       run: |
         cd ..

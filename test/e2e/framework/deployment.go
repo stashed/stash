@@ -143,7 +143,7 @@ func (f *Invocation) WaitUntilDeploymentReadyWithInitContainer(meta metav1.Objec
 	})
 }
 
-func (f *Invocation) DeployDeployment(name string, replica int32) (*apps.Deployment, error) {
+func (f *Invocation) DeployDeployment(name string, replica int32, transformFuncs ...func(dp *apps.Deployment)) (*apps.Deployment, error) {
 	// Create PVC for Deployment
 	pvc, err := f.CreateNewPVC(name)
 	if err != nil {
@@ -153,6 +153,12 @@ func (f *Invocation) DeployDeployment(name string, replica int32) (*apps.Deploym
 	deployment := f.Deployment(pvc.Name)
 	deployment.Name = name
 	deployment.Spec.Replicas = &replica
+
+	// transformFuncs provides a array of functions that made test specific change on the BackupConfiguration
+	// apply these test specific changes
+	for _, fn := range transformFuncs {
+		fn(&deployment)
+	}
 
 	By("Deploying Deployment: " + deployment.Name)
 	createdDeployment, err := f.CreateDeployment(deployment)

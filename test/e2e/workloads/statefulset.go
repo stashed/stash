@@ -119,7 +119,6 @@ var _ = Describe("StatefulSet", func() {
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()
 				Expect(err).NotTo(HaveOccurred())
-				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
 				backupConfig, err := f.SetupWorkloadBackup(ss.ObjectMeta, repo, apis.KindStatefulSet)
@@ -171,7 +170,6 @@ var _ = Describe("StatefulSet", func() {
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()
 				Expect(err).NotTo(HaveOccurred())
-				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
 				backupConfig, err := f.SetupWorkloadBackup(ss.ObjectMeta, repo, apis.KindStatefulSet)
@@ -222,7 +220,6 @@ var _ = Describe("StatefulSet", func() {
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()
 				Expect(err).NotTo(HaveOccurred())
-				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
 				backupConfig, err := f.SetupWorkloadBackup(ss.ObjectMeta, repo, apis.KindStatefulSet)

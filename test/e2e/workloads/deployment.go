@@ -64,7 +64,6 @@ var _ = Describe("Deployment", func() {
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()
 				Expect(err).NotTo(HaveOccurred())
-				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
 				backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment)
@@ -117,7 +116,6 @@ var _ = Describe("Deployment", func() {
 				By("Creating Repository")
 				repo, err := f.SetupMinioRepository()
 				Expect(err).NotTo(HaveOccurred())
-				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
 				backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment)
@@ -168,7 +166,6 @@ var _ = Describe("Deployment", func() {
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()
 				Expect(err).NotTo(HaveOccurred())
-				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
 				backupConfig, err := f.SetupWorkloadBackup(deployment.ObjectMeta, repo, apis.KindDeployment)

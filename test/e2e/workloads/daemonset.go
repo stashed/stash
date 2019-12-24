@@ -64,7 +64,6 @@ var _ = Describe("Workload Test", func() {
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()
 				Expect(err).NotTo(HaveOccurred())
-				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
 				backupConfig, err := f.SetupWorkloadBackup(dmn.ObjectMeta, repo, apis.KindDaemonSet)
@@ -116,7 +115,6 @@ var _ = Describe("Workload Test", func() {
 				// Setup a Minio Repository
 				repo, err := f.SetupMinioRepository()
 				Expect(err).NotTo(HaveOccurred())
-				f.AppendToCleanupList(repo)
 
 				// Setup workload Backup
 				backupConfig, err := f.SetupWorkloadBackup(dmn.ObjectMeta, repo, apis.KindDaemonSet)
