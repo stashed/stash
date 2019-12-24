@@ -294,3 +294,10 @@ func (f *Invocation) VerifyAutoBackupConfigured(workloadMeta metav1.ObjectMeta, 
 
 	return backupConfig, err
 }
+
+func (f *Invocation) PrintDebugInfoOnFailure() {
+	if CurrentGinkgoTestDescription().Failed {
+		f.PrintDebugHelpers()
+		TestFailed = true
+	}
+}

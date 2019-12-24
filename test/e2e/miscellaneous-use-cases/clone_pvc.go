@@ -42,10 +42,7 @@ var _ = Describe("Clone", func() {
 	})
 
 	JustAfterEach(func() {
-		if CurrentGinkgoTestDescription().Failed {
-			f.PrintDebugHelpers()
-			framework.TestFailed = true
-		}
+		f.PrintDebugInfoOnFailure()
 	})
 
 	AfterEach(func() {
@@ -131,7 +128,6 @@ var _ = Describe("Clone", func() {
 	})
 
 	Context("StatefulSet's Volumes", func() {
-
 		Context("Restore using VolumeClaimTemplate", func() {
 			It("should create PVC according to the VolumeClaimTemplate and restore there", func() {
 				// Deploy a StatefulSet
@@ -162,7 +158,7 @@ var _ = Describe("Clone", func() {
 
 				// Restore PVC according to VolumeClaimTemplate
 				By("Restoring the backed up data into PVC")
-				restoredPVCNamePrefix := fmt.Sprintf("%s-%s-%s}", framework.RestoredStatefulSet, f.App(), framework.RestoredVolume)
+				restoredPVCNamePrefix := fmt.Sprintf("%s-%s-%s", framework.RestoredVolume, framework.RestoredStatefulSet, f.App())
 				restoreSession, err := f.SetupRestoreProcess(metav1.ObjectMeta{}, repo, apis.KindPersistentVolumeClaim, restoredPVCNamePrefix, func(restore *v1beta1.RestoreSession) {
 					restore.Spec.Target.Replicas = types.Int32P(3)
 					restore.Spec.Target.VolumeClaimTemplates = []ofst.PersistentVolumeClaim{
@@ -196,7 +192,7 @@ var _ = Describe("Clone", func() {
 				Expect(completedRS.Status.Phase).Should(Equal(v1beta1.RestoreSessionSucceeded))
 
 				//Deploy restored StatefulSet
-				restoredSS, err := f.DeployStatefulSet(framework.RestoredStatefulSet, int32(3), restoredPVCNamePrefix)
+				restoredSS, err := f.DeployStatefulSet(framework.RestoredStatefulSet, int32(3), framework.RestoredVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Get restored data

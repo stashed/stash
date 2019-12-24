@@ -46,10 +46,7 @@ var _ = Describe("PreRestore Hook", func() {
 	})
 
 	JustAfterEach(func() {
-		if CurrentGinkgoTestDescription().Failed {
-			f.PrintDebugHelpers()
-			framework.TestFailed = true
-		}
+		f.PrintDebugInfoOnFailure()
 	})
 
 	AfterEach(func() {

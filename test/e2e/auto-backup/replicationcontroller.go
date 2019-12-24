@@ -41,10 +41,7 @@ var _ = Describe("Auto-Backup", func() {
 	})
 
 	JustAfterEach(func() {
-		if CurrentGinkgoTestDescription().Failed {
-			f.PrintDebugHelpers()
-			framework.TestFailed = true
-		}
+		f.PrintDebugInfoOnFailure()
 	})
 
 	AfterEach(func() {

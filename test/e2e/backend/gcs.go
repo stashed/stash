@@ -17,8 +17,6 @@ limitations under the License.
 package backend
 
 import (
-	"fmt"
-
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/test/e2e/framework"
@@ -38,10 +36,7 @@ var _ = Describe("GCS Backend", func() {
 	})
 
 	JustAfterEach(func() {
-		if CurrentGinkgoTestDescription().Failed {
-			f.PrintDebugHelpers()
-			framework.TestFailed = true
-		}
+		f.PrintDebugInfoOnFailure()
 	})
 
 	AfterEach(func() {
@@ -52,7 +47,7 @@ var _ = Describe("GCS Backend", func() {
 	Context("General Backup/Restore", func() {
 		It("should backup/restore in/from GCS backend", func() {
 			// Deploy a Deployment
-			deployment, err := f.DeployDeployment(fmt.Sprintf("source-deployment-%s", f.App()), int32(1))
+			deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Generate Sample Data
@@ -83,7 +78,7 @@ var _ = Describe("GCS Backend", func() {
 
 			// Restore the backed up data
 			By("Restoring the backed up data in the original Deployment")
-			restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment)
+			restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment, framework.SourceVolume)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Verifying that RestoreSession succeeded")
@@ -103,7 +98,7 @@ var _ = Describe("GCS Backend", func() {
 	Context("WipeOut Repository", func() {
 		It("should cleanup data from remote repository", func() {
 			// Deploy a Deployment
-			deployment, err := f.DeployDeployment(fmt.Sprintf("source-deployment-%s", f.App()), int32(1))
+			deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Generate Sample Data
@@ -145,7 +140,7 @@ var _ = Describe("GCS Backend", func() {
 	Context("Backup/Restore big file", func() {
 		It("should backup/restore big file", func() {
 			// Deploy a Deployment
-			deployment, err := f.DeployDeployment(fmt.Sprintf("source-deployment-%s", f.App()), int32(1))
+			deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Generate Sample Data
@@ -176,7 +171,7 @@ var _ = Describe("GCS Backend", func() {
 
 			// Restore the backed up data
 			By("Restoring the backed up data in the original Deployment")
-			restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment)
+			restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment, framework.SourceVolume)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Verifying that RestoreSession succeeded")
@@ -196,7 +191,7 @@ var _ = Describe("GCS Backend", func() {
 	Context("Backup/Restore with maxConnection", func() {
 		It("should backup/restore with maxConnection", func() {
 			// Deploy a Deployment
-			deployment, err := f.DeployDeployment(fmt.Sprintf("source-deployment-%s", f.App()), int32(1))
+			deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Generate Sample Data
@@ -227,7 +222,7 @@ var _ = Describe("GCS Backend", func() {
 
 			// Restore the backed up data
 			By("Restoring the backed up data in the original Deployment")
-			restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment)
+			restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment, framework.SourceVolume)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Verifying that RestoreSession succeeded")
