@@ -66,11 +66,11 @@ var _ = Describe("Auto-Backup", func() {
 
 			It("should backup successfully", func() {
 				// Create BackupBlueprint
-				bb, err := f.CreateBackupBlueprintForWorkload(fmt.Sprintf("backupblueprint-%s", f.App()))
+				bb, err := f.CreateBackupBlueprintForWorkload(framework.WorkloadBackupBlueprint)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Deploy a ReplicationController
-				rc, err := f.DeployReplicationController(fmt.Sprintf("rc1-%s", f.App()), int32(1))
+				rc, err := f.DeployReplicationController(framework.SourceReplicationController, int32(1), framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
@@ -113,7 +113,7 @@ var _ = Describe("Auto-Backup", func() {
 					f.AppendToCleanupList(bb)
 
 					// Deploy a ReplicationController
-					rc, err := f.DeployReplicationController(fmt.Sprintf("rc2-%s", f.App()), int32(1))
+					rc, err := f.DeployReplicationController(framework.SourceReplicationController, int32(1), framework.SourceVolume)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
@@ -150,7 +150,7 @@ var _ = Describe("Auto-Backup", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					// Deploy a ReplicationController
-					rc, err := f.DeployReplicationController(fmt.Sprintf("rc3-%s", f.App()), int32(1))
+					rc, err := f.DeployReplicationController(framework.SourceReplicationController, int32(1), framework.SourceVolume)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
@@ -179,11 +179,11 @@ var _ = Describe("Auto-Backup", func() {
 			Context("Add inappropriate annotation to Target", func() {
 				It("should fail auto-backup for adding inappropriate BackupBlueprint annotation in ReplicationController", func() {
 					// Create BackupBlueprint
-					_, err := f.CreateBackupBlueprintForWorkload(fmt.Sprintf("backupblueprint-%s", f.App()))
+					_, err := f.CreateBackupBlueprintForWorkload(framework.WorkloadBackupBlueprint)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Deploy a ReplicationController
-					rc, err := f.DeployReplicationController(fmt.Sprintf("rc4-%s", f.App()), int32(1))
+					rc, err := f.DeployReplicationController(framework.SourceReplicationController, int32(1), framework.SourceVolume)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
@@ -199,11 +199,11 @@ var _ = Describe("Auto-Backup", func() {
 				})
 				It("should fail BackupSession for adding inappropriate TargetPath/MountPath ReplicationController", func() {
 					// Create BackupBlueprint
-					bb, err := f.CreateBackupBlueprintForWorkload(fmt.Sprintf("backupblueprint-%s", f.App()))
+					bb, err := f.CreateBackupBlueprintForWorkload(framework.WorkloadBackupBlueprint)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Deploy a ReplicationController
-					rc, err := f.DeployReplicationController(fmt.Sprintf("rc5-%s", f.App()), int32(1))
+					rc, err := f.DeployReplicationController(framework.SourceReplicationController, int32(1), framework.SourceVolume)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data

@@ -17,8 +17,6 @@ limitations under the License.
 package workloads
 
 import (
-	"fmt"
-
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/test/e2e/framework"
@@ -54,7 +52,7 @@ var _ = Describe("ReplicationController", func() {
 		Context("Restore in same ReplicationController", func() {
 			It("should Backup & Restore in the source ReplicationController", func() {
 				// Deploy a ReplicationController
-				rc, err := f.DeployReplicationController(fmt.Sprintf("source-rc1-%s", f.App()), int32(1))
+				rc, err := f.DeployReplicationController(framework.SourceReplicationController, int32(1), framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
@@ -85,7 +83,7 @@ var _ = Describe("ReplicationController", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original ReplicationController")
-				restoreSession, err := f.SetupRestoreProcess(rc.ObjectMeta, repo, apis.KindReplicationController)
+				restoreSession, err := f.SetupRestoreProcess(rc.ObjectMeta, repo, apis.KindReplicationController, framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -105,7 +103,7 @@ var _ = Describe("ReplicationController", func() {
 		Context("Restore in different ReplicationController", func() {
 			It("should restore backed up data into different ReplicationController", func() {
 				// Deploy a ReplicationController
-				rc, err := f.DeployReplicationController(fmt.Sprintf("source-rc2-%s", f.App()), int32(1))
+				rc, err := f.DeployReplicationController(framework.SourceReplicationController, int32(1), framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
@@ -130,12 +128,12 @@ var _ = Describe("ReplicationController", func() {
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
 				// Deploy restored ReplicationController
-				restoredRC, err := f.DeployReplicationController(fmt.Sprintf("restored-rc-%s", f.App()), int32(1))
+				restoredRC, err := f.DeployReplicationController(framework.RestoredReplicationController, int32(1), framework.RestoredVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Restore the backed up data
 				By("Restoring the backed up data in different ReplicationController")
-				restoreSession, err := f.SetupRestoreProcess(restoredRC.ObjectMeta, repo, apis.KindReplicationController)
+				restoreSession, err := f.SetupRestoreProcess(restoredRC.ObjectMeta, repo, apis.KindReplicationController, framework.RestoredVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -155,7 +153,7 @@ var _ = Describe("ReplicationController", func() {
 		Context("Leader election for backup and restore ReplicationController", func() {
 			It("Should leader elect and backup and restore ReplicationController", func() {
 				// Deploy a ReplicationController
-				rc, err := f.DeployReplicationController(fmt.Sprintf("source-rc3-%s", f.App()), int32(2))
+				rc, err := f.DeployReplicationController(framework.SourceReplicationController, int32(2), framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				//  Generate Sample Data
@@ -189,7 +187,7 @@ var _ = Describe("ReplicationController", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original ReplicationController")
-				restoreSession, err := f.SetupRestoreProcess(rc.ObjectMeta, repo, apis.KindReplicationController)
+				restoreSession, err := f.SetupRestoreProcess(rc.ObjectMeta, repo, apis.KindReplicationController, framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -205,7 +203,5 @@ var _ = Describe("ReplicationController", func() {
 				Expect(restoredData).Should(BeSameAs(sampleData))
 			})
 		})
-
 	})
-
 })

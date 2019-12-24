@@ -23,7 +23,6 @@ import (
 	"stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 
-	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
@@ -35,7 +34,7 @@ import (
 func (f *Invocation) PersistentVolumeClaim(name string) *core.PersistentVolumeClaim {
 	return &core.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix("pvc"),
+			Name:      name,
 			Namespace: f.namespace,
 		},
 		Spec: core.PersistentVolumeClaimSpec{
@@ -70,9 +69,12 @@ func (f *Invocation) CreateNewPVC(name string) (*core.PersistentVolumeClaim, err
 
 	By(fmt.Sprintf("Creating PVC: %s/%s", pvc.Namespace, pvc.Name))
 	createdPVC, err := f.CreatePersistentVolumeClaim(pvc)
+	if err != nil {
+		return nil, err
+	}
 	f.AppendToCleanupList(createdPVC)
 
-	return createdPVC, err
+	return createdPVC, nil
 }
 
 func (f *Invocation) SetupPVCBackup(pvc *core.PersistentVolumeClaim, repo *v1alpha1.Repository, transformFuncs ...func(bc *v1beta1.BackupConfiguration)) (*v1beta1.BackupConfiguration, error) {

@@ -17,6 +17,7 @@ limitations under the License.
 package framework
 
 import (
+	"fmt"
 	"time"
 
 	"stash.appscode.dev/stash/pkg/util"
@@ -143,18 +144,30 @@ func (f *Invocation) WaitUntilDeploymentReadyWithInitContainer(meta metav1.Objec
 	})
 }
 
-func (f *Invocation) DeployDeployment(name string, replica int32, transformFuncs ...func(dp *apps.Deployment)) (*apps.Deployment, error) {
-	// Create PVC for Deployment
-	pvc, err := f.CreateNewPVC(name)
+func (f *Invocation) DeployDeployment(name string, replica int32, pvcName string, transformFuncs ...func(dp *apps.Deployment)) (*apps.Deployment, error) {
+	// append test case specific suffix so that name does not conflict during parallel test
+	name = fmt.Sprintf("%s-%s", name, f.app)
+	pvcName = fmt.Sprintf("%s-%s", pvcName, f.app)
+
+	// If the PVC does not exist, create PVC for Deployment
+	pvc, err := f.KubeClient.CoreV1().PersistentVolumeClaims(f.namespace).Get(pvcName, metav1.GetOptions{})
 	if err != nil {
-		return &apps.Deployment{}, err
+		if kerr.IsNotFound(err) {
+			pvc, err = f.CreateNewPVC(pvcName)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
 	}
+
 	// Generate Deployment definition
 	deployment := f.Deployment(pvc.Name)
 	deployment.Name = name
 	deployment.Spec.Replicas = &replica
 
-	// transformFuncs provides a array of functions that made test specific change on the BackupConfiguration
+	// transformFuncs provides a array of functions that made test specific change on the Deployment
 	// apply these test specific changes
 	for _, fn := range transformFuncs {
 		fn(&deployment)

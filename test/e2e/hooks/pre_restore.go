@@ -63,7 +63,7 @@ var _ = Describe("PreRestore Hook", func() {
 				It("should remove the corrupted data in preRestore hook", func() {
 					// Deploy a StatefulSet with prober client. Here, we are using a StatefulSet because we need a stable address
 					// for pod where http request will be sent.
-					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
+					statefulset, err := f.DeployStatefulSetWithProbeClient()
 					Expect(err).NotTo(HaveOccurred())
 
 					// Read data at empty state
@@ -105,7 +105,7 @@ var _ = Describe("PreRestore Hook", func() {
 					// Restore the backed up data
 					// Remove corrupted data in preRestore hook
 					By("Restoring the backed up data in the original StatefulSet")
-					restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(restore *v1beta1.RestoreSession) {
+					restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, framework.SourceVolume, func(restore *v1beta1.RestoreSession) {
 						restore.Spec.Hooks = &v1beta1.RestoreHooks{
 							PreRestore: &probev1.Handler{
 								Exec: &core.ExecAction{
@@ -132,7 +132,7 @@ var _ = Describe("PreRestore Hook", func() {
 				It("should not restore when preRestore hook failed", func() {
 					// Deploy a StatefulSet with prober client. Here, we are using a StatefulSet because we need a stable address
 					// for pod where http request will be sent.
-					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
+					statefulset, err := f.DeployStatefulSetWithProbeClient()
 					Expect(err).NotTo(HaveOccurred())
 
 					// Read data at empty state
@@ -172,7 +172,7 @@ var _ = Describe("PreRestore Hook", func() {
 					// Restore the backed up data
 					// Return a non-zero exit code from preRestore hook so that the hook fail
 					By("Restoring the backed up data")
-					restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(restore *v1beta1.RestoreSession) {
+					restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, framework.SourceVolume, func(restore *v1beta1.RestoreSession) {
 						restore.Spec.Hooks = &v1beta1.RestoreHooks{
 							PreRestore: &probev1.Handler{
 								Exec: &core.ExecAction{

@@ -17,8 +17,6 @@ limitations under the License.
 package workloads
 
 import (
-	"fmt"
-
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/test/e2e/framework"
@@ -54,7 +52,7 @@ var _ = Describe("ReplicaSet", func() {
 		Context("Restore in same ReplicaSet", func() {
 			It("should Backup & Restore in the source ReplicaSet", func() {
 				// Deploy a ReplicaSet
-				rs, err := f.DeployReplicaSet(fmt.Sprintf("source-rs1-%s", f.App()), int32(1))
+				rs, err := f.DeployReplicaSet(framework.SourceReplicaSet, int32(1), framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
@@ -85,7 +83,7 @@ var _ = Describe("ReplicaSet", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original ReplicaSet")
-				restoreSession, err := f.SetupRestoreProcess(rs.ObjectMeta, repo, apis.KindReplicaSet)
+				restoreSession, err := f.SetupRestoreProcess(rs.ObjectMeta, repo, apis.KindReplicaSet, framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -105,7 +103,7 @@ var _ = Describe("ReplicaSet", func() {
 		Context("Restore in different ReplicaSet", func() {
 			It("should restore backed up data into different ReplicaSet", func() {
 				// Deploy a ReplicaSet
-				rs, err := f.DeployReplicaSet(fmt.Sprintf("source-rs2-%s", f.App()), int32(1))
+				rs, err := f.DeployReplicaSet(framework.SourceReplicaSet, int32(1), framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
@@ -130,12 +128,12 @@ var _ = Describe("ReplicaSet", func() {
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
 				// Deploy restored ReplicaSet
-				restoredRS, err := f.DeployReplicaSet(fmt.Sprintf("restored-rs-%s", f.App()), int32(1))
+				restoredRS, err := f.DeployReplicaSet(framework.RestoredReplicaSet, int32(1), framework.RestoredVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Restore the backed up data
 				By("Restoring the backed up data in different ReplicaSet")
-				restoreSession, err := f.SetupRestoreProcess(restoredRS.ObjectMeta, repo, apis.KindReplicaSet)
+				restoreSession, err := f.SetupRestoreProcess(restoredRS.ObjectMeta, repo, apis.KindReplicaSet, framework.RestoredVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -155,7 +153,7 @@ var _ = Describe("ReplicaSet", func() {
 		Context("Leader election for backup and restore ReplicaSet", func() {
 			It("Should leader elect and backup and restore ReplicaSet", func() {
 				// Deploy a ReplicaSet
-				rs, err := f.DeployReplicaSet(fmt.Sprintf("source-rs3-%s", f.App()), int32(2))
+				rs, err := f.DeployReplicaSet(framework.SourceReplicaSet, int32(2), framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				//  Generate Sample Data
@@ -189,7 +187,7 @@ var _ = Describe("ReplicaSet", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original ReplicaSet")
-				restoreSession, err := f.SetupRestoreProcess(rs.ObjectMeta, repo, apis.KindReplicaSet)
+				restoreSession, err := f.SetupRestoreProcess(rs.ObjectMeta, repo, apis.KindReplicaSet, framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -205,7 +203,5 @@ var _ = Describe("ReplicaSet", func() {
 				Expect(restoredData).Should(BeSameAs(sampleData))
 			})
 		})
-
 	})
-
 })

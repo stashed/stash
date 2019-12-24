@@ -21,7 +21,6 @@ import (
 
 	"stash.appscode.dev/stash/pkg/util"
 
-	"github.com/appscode/go/crypto/rand"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	apps "k8s.io/api/apps/v1"
@@ -34,14 +33,14 @@ import (
 	apps_util "kmodules.xyz/client-go/apps/v1"
 )
 
-func (fi *Invocation) DaemonSet() apps.DaemonSet {
+func (fi *Invocation) DaemonSet(name, volumeName string) apps.DaemonSet {
 	labels := map[string]string{
 		"app":  fi.app,
 		"kind": "daemonset",
 	}
 	daemon := apps.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix("stash"),
+			Name:      name,
 			Namespace: fi.namespace,
 			Labels:    labels,
 		},
@@ -65,7 +64,7 @@ func (fi *Invocation) DaemonSet() apps.DaemonSet {
 							},
 							VolumeMounts: []core.VolumeMount{
 								{
-									Name:      TestSourceDataVolumeName,
+									Name:      volumeName,
 									MountPath: TestSourceDataMountPath,
 								},
 							},
@@ -73,7 +72,7 @@ func (fi *Invocation) DaemonSet() apps.DaemonSet {
 					},
 					Volumes: []core.Volume{
 						{
-							Name: TestSourceDataVolumeName,
+							Name: volumeName,
 							VolumeSource: core.VolumeSource{
 								HostPath: &core.HostPathVolumeSource{
 									Path: TestSourceDataMountPath,
@@ -167,10 +166,12 @@ func (f *Invocation) WaitUntilDaemonSetReadyWithInitContainer(meta metav1.Object
 	})
 }
 
-func (f *Invocation) DeployDaemonSet(name string) (*apps.DaemonSet, error) {
+func (f *Invocation) DeployDaemonSet(name string, volumeName string) (*apps.DaemonSet, error) {
+	// append test case specific suffix so that name does not conflict during parallel test
+	name = fmt.Sprintf("%s-%s", name, f.app)
+
 	// Generate DaemonSet definition
-	dmn := f.DaemonSet()
-	dmn.Name = name
+	dmn := f.DaemonSet(name, volumeName)
 
 	By(fmt.Sprintf("Deploying DaemonSet: %s/%s", dmn.Namespace, dmn.Name))
 	createdDmn, err := f.CreateDaemonSet(dmn)

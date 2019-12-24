@@ -54,7 +54,7 @@ var _ = Describe("Volume", func() {
 		Context("Restore in same PVC", func() {
 			It("should Backup & Restore in the source PVC", func() {
 				// Create new PVC
-				pvc, err := f.CreateNewPVC(fmt.Sprintf("source-pvc-%s", f.App()))
+				pvc, err := f.CreateNewPVC(fmt.Sprintf("%s-%s", framework.SourceVolume, f.App()))
 				Expect(err).NotTo(HaveOccurred())
 
 				// Deploy a Pod
@@ -110,7 +110,7 @@ var _ = Describe("Volume", func() {
 		Context("Restore in different PVC", func() {
 			It("should restore backed up data into different PVC", func() {
 				// Create new PVC
-				pvc, err := f.CreateNewPVC(fmt.Sprintf("source-pvc1-%s", f.App()))
+				pvc, err := f.CreateNewPVC(fmt.Sprintf("%s-%s", framework.SourceVolume, f.App()))
 				Expect(err).NotTo(HaveOccurred())
 
 				// Deploy a Pod
@@ -140,7 +140,7 @@ var _ = Describe("Volume", func() {
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
 				// Create restored Pvc
-				restoredPVC, err := f.CreateNewPVC(fmt.Sprintf("restore-pvc-%s", f.App()))
+				restoredPVC, err := f.CreateNewPVC(fmt.Sprintf("%s-%s", framework.RestoredVolume, f.App()))
 				Expect(err).NotTo(HaveOccurred())
 
 				// Deploy another Pod
@@ -165,7 +165,5 @@ var _ = Describe("Volume", func() {
 				Expect(restoredData).Should(BeSameAs(sampleData))
 			})
 		})
-
 	})
-
 })

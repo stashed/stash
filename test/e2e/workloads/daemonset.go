@@ -17,8 +17,6 @@ limitations under the License.
 package workloads
 
 import (
-	"fmt"
-
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/test/e2e/framework"
@@ -54,7 +52,7 @@ var _ = Describe("Workload Test", func() {
 		Context("Restore in same DaemonSet", func() {
 			It("should Backup & Restore in the source DaemonSet", func() {
 				// Deploy a DaemonSet
-				dmn, err := f.DeployDaemonSet(fmt.Sprintf("source-daemon1-%s", f.App()))
+				dmn, err := f.DeployDaemonSet(framework.SourceDaemonSet, framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
@@ -85,7 +83,7 @@ var _ = Describe("Workload Test", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original DaemonSet")
-				restoreSession, err := f.SetupRestoreProcess(dmn.ObjectMeta, repo, apis.KindDaemonSet)
+				restoreSession, err := f.SetupRestoreProcess(dmn.ObjectMeta, repo, apis.KindDaemonSet, framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -105,7 +103,7 @@ var _ = Describe("Workload Test", func() {
 		Context("Restore in different DaemonSet", func() {
 			It("should restore backed up data into different DaemonSet", func() {
 				// Deploy a DaemonSet
-				dmn, err := f.DeployDaemonSet(fmt.Sprintf("source-daemon2-%s", f.App()))
+				dmn, err := f.DeployDaemonSet(framework.SourceDaemonSet, framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
@@ -130,12 +128,12 @@ var _ = Describe("Workload Test", func() {
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
 				// Deploy restored DaemonSet
-				restoredDmn, err := f.DeployDaemonSet(fmt.Sprintf("restored-daemon-%s", f.App()))
+				restoredDmn, err := f.DeployDaemonSet(framework.RestoredDaemonSet, framework.RestoredVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Restore the backed up data
 				By("Restoring the backed up data in different DaemonSet")
-				restoreSession, err := f.SetupRestoreProcess(restoredDmn.ObjectMeta, repo, apis.KindDaemonSet)
+				restoreSession, err := f.SetupRestoreProcess(restoredDmn.ObjectMeta, repo, apis.KindDaemonSet, framework.RestoredVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")

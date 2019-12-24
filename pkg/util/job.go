@@ -220,7 +220,7 @@ func NewPVCRestorerJob(rs *api_v1beta1.RestoreSession, repository *api_v1alpha1.
 		Image: image.ToContainerImage(),
 		Args: append([]string{
 			"restore",
-			"--restore-session=" + rs.Name,
+			"--restoresession=" + rs.Name,
 			"--restore-model=job",
 			"--secret-dir=" + StashSecretMountDir,
 			fmt.Sprintf("--enable-cache=%v", !rs.Spec.TempDir.DisableCaching),

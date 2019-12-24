@@ -65,11 +65,11 @@ var _ = Describe("Auto-Backup", func() {
 		Context("Success Case", func() {
 			It("should backup successfully", func() {
 				// Create BackupBlueprint
-				bb, err := f.CreateBackupBlueprintForWorkload(fmt.Sprintf("backupblueprint-%s", f.App()))
+				bb, err := f.CreateBackupBlueprintForWorkload(framework.WorkloadBackupBlueprint)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Deploy a Deployment
-				deployment, err := f.DeployDeployment(fmt.Sprintf("deployment1-%s", f.App()), int32(1))
+				deployment, err := f.DeployDeployment(framework.SourceDaemonSet, int32(1), framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
@@ -112,7 +112,7 @@ var _ = Describe("Auto-Backup", func() {
 					f.AppendToCleanupList(bb)
 
 					// Deploy a Deployment
-					deployment, err := f.DeployDeployment(fmt.Sprintf("deployment2-%s", f.App()), int32(1))
+					deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
@@ -149,7 +149,7 @@ var _ = Describe("Auto-Backup", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					// Deploy a Deployment
-					deployment, err := f.DeployDeployment(fmt.Sprintf("deployment3-%s", f.App()), int32(1))
+					deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
@@ -178,11 +178,11 @@ var _ = Describe("Auto-Backup", func() {
 			Context("Add inappropriate annotation to Target", func() {
 				It("should fail to create AutoBackup resources", func() {
 					// Create BackupBlueprint
-					_, err := f.CreateBackupBlueprintForWorkload(fmt.Sprintf("backupblueprint-%s", f.App()))
+					_, err := f.CreateBackupBlueprintForWorkload(framework.WorkloadBackupBlueprint)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Deploy a Deployment
-					deployment, err := f.DeployDeployment(fmt.Sprintf("deployment4-%s", f.App()), int32(1))
+					deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
@@ -198,11 +198,11 @@ var _ = Describe("Auto-Backup", func() {
 				})
 				It("should fail BackupSession for adding inappropriate TargetPath/MountPath", func() {
 					// Create BackupBlueprint
-					bb, err := f.CreateBackupBlueprintForWorkload(fmt.Sprintf("backupblueprint-%s", f.App()))
+					bb, err := f.CreateBackupBlueprintForWorkload(framework.WorkloadBackupBlueprint)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Deploy a Deployment
-					deployment, err := f.DeployDeployment(fmt.Sprintf("deployment5-%s", f.App()), int32(1))
+					deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data

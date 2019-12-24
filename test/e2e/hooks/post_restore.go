@@ -63,7 +63,7 @@ var _ = Describe("PostRestore Hook", func() {
 				It("should execute the postRestore hook successfully", func() {
 					// Deploy a StatefulSet with prober client. Here, we are using a StatefulSet because we need a stable address
 					// for pod where http request will be sent.
-					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
+					statefulset, err := f.DeployStatefulSetWithProbeClient()
 					Expect(err).NotTo(HaveOccurred())
 
 					// Read data at empty state
@@ -106,7 +106,7 @@ var _ = Describe("PostRestore Hook", func() {
 					// Restore the backed up data
 					// Remove the corrupted data in postRestore hook.
 					By("Restoring the backed up data in the original StatefulSet")
-					restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(restore *v1beta1.RestoreSession) {
+					restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, framework.SourceVolume, func(restore *v1beta1.RestoreSession) {
 						restore.Spec.Hooks = &v1beta1.RestoreHooks{
 							PostRestore: &probev1.Handler{
 								Exec: &core.ExecAction{
@@ -131,7 +131,7 @@ var _ = Describe("PostRestore Hook", func() {
 				It("should execute the postRestore hook even when the restore process failed", func() {
 					// Deploy a StatefulSet with prober client. Here, we are using a StatefulSet because we need a stable address
 					// for pod where http request will be sent.
-					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
+					statefulset, err := f.DeployStatefulSetWithProbeClient()
 					Expect(err).NotTo(HaveOccurred())
 
 					// Read data at empty state
@@ -175,7 +175,7 @@ var _ = Describe("PostRestore Hook", func() {
 					// Try to restore a directory that hasn't been backed up. This will force the restore process to fail.
 					// Remove the corrupted data in postRestore hook.
 					By("Restoring the backed up data in the original StatefulSet")
-					restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(restore *v1beta1.RestoreSession) {
+					restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, framework.SourceVolume, func(restore *v1beta1.RestoreSession) {
 						restore.Spec.Hooks = &v1beta1.RestoreHooks{
 							PostRestore: &probev1.Handler{
 								Exec: &core.ExecAction{
@@ -217,7 +217,7 @@ var _ = Describe("PostRestore Hook", func() {
 				It("should restore backed up data even when the hook failed", func() {
 					// Deploy a StatefulSet with prober client. Here, we are using a StatefulSet because we need a stable address
 					// for pod where http request will be sent.
-					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
+					statefulset, err := f.DeployStatefulSetWithProbeClient()
 					Expect(err).NotTo(HaveOccurred())
 
 					// Read data at empty state
@@ -257,7 +257,7 @@ var _ = Describe("PostRestore Hook", func() {
 					// Restore the backed up data
 					// Return non-zero exit code from postRestore hook so that it fail
 					By("Restoring the backed up data in the original StatefulSet")
-					restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, func(restore *v1beta1.RestoreSession) {
+					restoreSession, err := f.SetupRestoreProcess(statefulset.ObjectMeta, repo, apis.KindStatefulSet, framework.SourceVolume, func(restore *v1beta1.RestoreSession) {
 						restore.Spec.Hooks = &v1beta1.RestoreHooks{
 							PostRestore: &probev1.Handler{
 								Exec: &core.ExecAction{
@@ -296,7 +296,7 @@ var _ = Describe("PostRestore Hook", func() {
 				Context("Success Cases", func() {
 					It("should execute postRestore hook successfully", func() {
 						// Create new PVC
-						pvc, err := f.CreateNewPVC(fmt.Sprintf("source-pvc-%s", f.App()))
+						pvc, err := f.CreateNewPVC(fmt.Sprintf("%s-%s", framework.SourceVolume, f.App()))
 						Expect(err).NotTo(HaveOccurred())
 
 						// Deploy a Pod
@@ -365,7 +365,7 @@ var _ = Describe("PostRestore Hook", func() {
 
 					It("should execute postRestore hook even when the restore process failed", func() {
 						// Create new PVC
-						pvc, err := f.CreateNewPVC(fmt.Sprintf("source-pvc-%s", f.App()))
+						pvc, err := f.CreateNewPVC(fmt.Sprintf("%s-%s", framework.SourceVolume, f.App()))
 						Expect(err).NotTo(HaveOccurred())
 
 						// Deploy a Pod
@@ -442,7 +442,7 @@ var _ = Describe("PostRestore Hook", func() {
 				Context("Failure Cases", func() {
 					It("should restore the backed up data even when the hook failed", func() {
 						// Create new PVC
-						pvc, err := f.CreateNewPVC(fmt.Sprintf("source-pvc-%s", f.App()))
+						pvc, err := f.CreateNewPVC(fmt.Sprintf("%s-%s", framework.SourceVolume, f.App()))
 						Expect(err).NotTo(HaveOccurred())
 
 						// Deploy a Pod

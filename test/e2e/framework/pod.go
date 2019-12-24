@@ -57,7 +57,7 @@ func (fi *Invocation) PodTemplate(labels map[string]string, pvcName string) core
 					},
 					VolumeMounts: []core.VolumeMount{
 						{
-							Name:      TestSourceDataVolumeName,
+							Name:      SourceVolume,
 							MountPath: TestSourceDataMountPath,
 						},
 					},
@@ -65,7 +65,7 @@ func (fi *Invocation) PodTemplate(labels map[string]string, pvcName string) core
 			},
 			Volumes: []core.Volume{
 				{
-					Name: TestSourceDataVolumeName,
+					Name: SourceVolume,
 					VolumeSource: core.VolumeSource{
 						PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
 							ClaimName: pvcName,

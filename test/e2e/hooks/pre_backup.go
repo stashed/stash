@@ -63,7 +63,7 @@ var _ = Describe("PreBackup Hook", func() {
 					It("should execute probe successfully", func() {
 						// Deploy a StatefulSet with prober client. Here, we are using a StatefulSet because we need a stable address
 						// for pod where http request will be sent.
-						statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
+						statefulset, err := f.DeployStatefulSetWithProbeClient()
 						Expect(err).NotTo(HaveOccurred())
 
 						// Generate Sample Data
@@ -104,7 +104,7 @@ var _ = Describe("PreBackup Hook", func() {
 				Context("Host and Port from Pod", func() {
 					It("should execute probe successfully", func() {
 						// Deploy a StatefulSet.
-						statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
+						statefulset, err := f.DeployStatefulSetWithProbeClient()
 						Expect(err).NotTo(HaveOccurred())
 
 						// Generate Sample Data
@@ -146,7 +146,7 @@ var _ = Describe("PreBackup Hook", func() {
 			Context("Failure Test", func() {
 				It("should not take backup when probe failed", func() {
 					// Deploy a StatefulSet.
-					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
+					statefulset, err := f.DeployStatefulSetWithProbeClient()
 					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
@@ -204,7 +204,7 @@ var _ = Describe("PreBackup Hook", func() {
 					It("should execute probe successfully", func() {
 						// Deploy a StatefulSet with prober client. Here, we are using a StatefulSet because we need a stable address
 						// for pod where http request will be sent.
-						statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
+						statefulset, err := f.DeployStatefulSetWithProbeClient()
 						Expect(err).NotTo(HaveOccurred())
 
 						// Generate Sample Data
@@ -245,7 +245,7 @@ var _ = Describe("PreBackup Hook", func() {
 				Context("Host and Port from Pod", func() {
 					It("should execute probe successfully", func() {
 						// Deploy a StatefulSet.
-						statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
+						statefulset, err := f.DeployStatefulSetWithProbeClient()
 						Expect(err).NotTo(HaveOccurred())
 
 						// Generate Sample Data
@@ -286,7 +286,7 @@ var _ = Describe("PreBackup Hook", func() {
 				Context("Json Data in Request Body", func() {
 					It("server should echo the 'expectedCode' and 'expectedResponse' passed in the json body", func() {
 						// Deploy a StatefulSet.
-						statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
+						statefulset, err := f.DeployStatefulSetWithProbeClient()
 						Expect(err).NotTo(HaveOccurred())
 
 						// Generate Sample Data
@@ -328,7 +328,7 @@ var _ = Describe("PreBackup Hook", func() {
 				Context("Form Data in Request Body", func() {
 					It("server should echo the 'expectedCode' and 'expectedResponse' passed as form data", func() {
 						// Deploy a StatefulSet.
-						statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
+						statefulset, err := f.DeployStatefulSetWithProbeClient()
 						Expect(err).NotTo(HaveOccurred())
 
 						// Generate Sample Data
@@ -380,7 +380,7 @@ var _ = Describe("PreBackup Hook", func() {
 			Context("Failure Test", func() {
 				It("should not take backup when probe failed", func() {
 					// Deploy a StatefulSet.
-					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
+					statefulset, err := f.DeployStatefulSetWithProbeClient()
 					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
@@ -448,7 +448,7 @@ var _ = Describe("PreBackup Hook", func() {
 					It("should execute probe successfully", func() {
 						// Deploy a StatefulSet with prober client. Here, we are using a StatefulSet because we need a stable address
 						// for pod where http request will be sent.
-						statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
+						statefulset, err := f.DeployStatefulSetWithProbeClient()
 						Expect(err).NotTo(HaveOccurred())
 
 						// Generate Sample Data
@@ -487,7 +487,7 @@ var _ = Describe("PreBackup Hook", func() {
 				Context("Host and Port from Pod", func() {
 					It("should execute probe successfully", func() {
 						// Deploy a StatefulSet.
-						statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
+						statefulset, err := f.DeployStatefulSetWithProbeClient()
 						Expect(err).NotTo(HaveOccurred())
 
 						// Generate Sample Data
@@ -527,7 +527,7 @@ var _ = Describe("PreBackup Hook", func() {
 			Context("Failure Test", func() {
 				It("should not take backup when probe failed", func() {
 					// Deploy a StatefulSet.
-					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
+					statefulset, err := f.DeployStatefulSetWithProbeClient()
 					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
@@ -581,7 +581,7 @@ var _ = Describe("PreBackup Hook", func() {
 			Context("Success Test", func() {
 				It("should execute probe successfully", func() {
 					// Deploy a StatefulSet.
-					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
+					statefulset, err := f.DeployStatefulSetWithProbeClient()
 					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
@@ -620,7 +620,7 @@ var _ = Describe("PreBackup Hook", func() {
 			Context("Failure Test", func() {
 				It("should not take backup when probe failed", func() {
 					// Deploy a StatefulSet.
-					statefulset, err := f.DeployStatefulSetWithProbeClient(fmt.Sprintf("%s-%s", framework.ProberDemoPodPrefix, f.App()))
+					statefulset, err := f.DeployStatefulSetWithProbeClient()
 					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data

@@ -79,7 +79,7 @@ var _ = XDescribe("DaemonSet", func() {
 		}
 		restic.Spec.Backend.StorageSecretName = cred.Name
 		secondRestic.Spec.Backend.StorageSecretName = cred.Name
-		daemon = f.DaemonSet()
+		daemon = f.DaemonSet(fmt.Sprintf("%s-%s", framework.SourceDaemonSet, f.App()), framework.SourceVolume)
 		localRef = api.LocalTypedReference{
 			Kind: apis.KindDaemonSet,
 			Name: daemon.Name,

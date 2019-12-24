@@ -17,6 +17,7 @@ limitations under the License.
 package e2e_test
 
 import (
+	"fmt"
 	"net"
 	"os/exec"
 	"strconv"
@@ -122,7 +123,7 @@ var _ = XDescribe("Snapshots", func() {
 		pvc := f.PersistentVolumeClaim(rand.WithUniqSuffix("pvc"))
 		_, err := f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
-		daemon = f.DaemonSet()
+		daemon = f.DaemonSet(fmt.Sprintf("%s-%s", framework.SourceDaemonSet, f.App()), framework.SourceVolume)
 
 		deployment = f.Deployment(pvc.Name)
 		rc = f.ReplicationController(pvc.Name)
