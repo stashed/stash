@@ -17,8 +17,6 @@ limitations under the License.
 package workloads
 
 import (
-	"fmt"
-
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/test/e2e/framework"
@@ -38,10 +36,7 @@ var _ = Describe("Deployment", func() {
 	})
 
 	JustAfterEach(func() {
-		if CurrentGinkgoTestDescription().Failed {
-			f.PrintDebugHelpers()
-			framework.TestFailed = true
-		}
+		f.PrintDebugInfoOnFailure()
 	})
 
 	AfterEach(func() {
@@ -54,7 +49,7 @@ var _ = Describe("Deployment", func() {
 		Context("Restore in same Deployment", func() {
 			It("should Backup & Restore in the source Deployment", func() {
 				// Deploy a Deployment
-				deployment, err := f.DeployDeployment(fmt.Sprintf("source-deployment1-%s", f.App()), int32(1))
+				deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
@@ -85,7 +80,7 @@ var _ = Describe("Deployment", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original Deployment")
-				restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment)
+				restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment, framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -105,7 +100,7 @@ var _ = Describe("Deployment", func() {
 		Context("Restore in different Deployment", func() {
 			It("should restore backed up data into different Deployment", func() {
 				// Deploy a Deployment
-				deployment, err := f.DeployDeployment(fmt.Sprintf("source-deployment2-%s", f.App()), int32(1))
+				deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
@@ -131,12 +126,12 @@ var _ = Describe("Deployment", func() {
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
 				// Deploy restored Deployment
-				restoredDeployment, err := f.DeployDeployment(fmt.Sprintf("restored-deployment-%s", f.App()), int32(1))
+				restoredDeployment, err := f.DeployDeployment(framework.RestoredDeployment, int32(1), framework.RestoredVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Restore the backed up data
 				By("Restoring the backed up data in different Deployment")
-				restoreSession, err := f.SetupRestoreProcess(restoredDeployment.ObjectMeta, repo, apis.KindDeployment)
+				restoreSession, err := f.SetupRestoreProcess(restoredDeployment.ObjectMeta, repo, apis.KindDeployment, framework.RestoredVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -156,7 +151,7 @@ var _ = Describe("Deployment", func() {
 		Context("Leader election for backup and restore Deployment", func() {
 			It("Should leader elect and backup and restore Deployment", func() {
 				// Deploy a Deployment
-				deployment, err := f.DeployDeployment(fmt.Sprintf("source-deployment3-%s", f.App()), int32(2))
+				deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(2), framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				//  Generate Sample Data
@@ -190,7 +185,7 @@ var _ = Describe("Deployment", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original Deployment")
-				restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment)
+				restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment, framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -206,7 +201,5 @@ var _ = Describe("Deployment", func() {
 				Expect(restoredData).Should(BeSameAs(sampleData))
 			})
 		})
-
 	})
-
 })

@@ -17,19 +17,13 @@ limitations under the License.
 package workloads
 
 import (
-	"fmt"
-
 	"stash.appscode.dev/stash/apis"
-	api "stash.appscode.dev/stash/apis/stash/v1alpha1"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
-	"stash.appscode.dev/stash/pkg/util"
 	"stash.appscode.dev/stash/test/e2e/framework"
 	. "stash.appscode.dev/stash/test/e2e/matcher"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	apps "k8s.io/api/apps/v1"
-	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -42,10 +36,7 @@ var _ = Describe("StatefulSet", func() {
 	})
 
 	JustAfterEach(func() {
-		if CurrentGinkgoTestDescription().Failed {
-			f.PrintDebugHelpers()
-			framework.TestFailed = true
-		}
+		f.PrintDebugInfoOnFailure()
 	})
 
 	AfterEach(func() {
@@ -53,63 +44,12 @@ var _ = Describe("StatefulSet", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	var (
-		setupRestoreProcessOnScaledUpSS = func(ss *apps.StatefulSet, repo *api.Repository) (*v1beta1.RestoreSession, error) {
-			By("Creating RestoreSession")
-			restoreSession := f.GetRestoreSession(repo.Name, func(restore *v1beta1.RestoreSession) {
-				restore.Spec.Target = &v1beta1.RestoreTarget{
-					Ref: framework.GetTargetRef(ss.Name, apis.KindStatefulSet),
-					VolumeMounts: []core.VolumeMount{
-						{
-							Name:      framework.TestSourceDataVolumeName,
-							MountPath: framework.TestSourceDataMountPath,
-						},
-					},
-				}
-				restore.Spec.Rules = []v1beta1.Rule{
-					{
-						TargetHosts: []string{
-							"host-3",
-							"host-4",
-						},
-						SourceHost: "host-0",
-						Paths: []string{
-							framework.TestSourceDataMountPath,
-						},
-					},
-					{
-						TargetHosts: []string{},
-						Paths: []string{
-							framework.TestSourceDataMountPath,
-						},
-					},
-				}
-			})
-
-			err := f.CreateRestoreSession(restoreSession)
-			Expect(err).NotTo(HaveOccurred())
-			f.AppendToCleanupList(restoreSession)
-
-			By("Verifying that init-container has been injected")
-			f.EventuallyStatefulSet(ss.ObjectMeta).Should(HaveInitContainer(util.StashInitContainer))
-
-			By("Waiting for StatefulSet to be ready with init-container")
-			err = f.WaitUntilStatefulSetWithInitContainer(ss.ObjectMeta)
-			f.EventuallyPodAccessible(ss.ObjectMeta).Should(BeTrue())
-
-			By("Waiting for restore process to complete")
-			f.EventuallyRestoreProcessCompleted(restoreSession.ObjectMeta).Should(BeTrue())
-
-			return restoreSession, err
-		}
-	)
-
 	Context("StatefulSet", func() {
 
 		Context("Restore in same StatefulSet", func() {
 			It("should Backup & Restore in the source StatefulSet", func() {
 				// Deploy a StatefulSet
-				ss, err := f.DeployStatefulSet(fmt.Sprintf("source-ss1-%s", f.App()), int32(3))
+				ss, err := f.DeployStatefulSet(framework.SourceStatefulSet, int32(3), framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
@@ -140,7 +80,7 @@ var _ = Describe("StatefulSet", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original StatefulSet")
-				restoreSession, err := f.SetupRestoreProcess(ss.ObjectMeta, repo, apis.KindStatefulSet)
+				restoreSession, err := f.SetupRestoreProcess(ss.ObjectMeta, repo, apis.KindStatefulSet, framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -160,7 +100,7 @@ var _ = Describe("StatefulSet", func() {
 		Context("Restore in different StatefulSet", func() {
 			It("should restore backed up data into different StatefulSet", func() {
 				// Deploy a StatefulSet
-				ss, err := f.DeployStatefulSet(fmt.Sprintf("source-ss2-%s", f.App()), int32(3))
+				ss, err := f.DeployStatefulSet(framework.SourceStatefulSet, int32(3), framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
@@ -185,12 +125,12 @@ var _ = Describe("StatefulSet", func() {
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
 				// Deploy restored StatefulSet
-				restoredSS, err := f.DeployStatefulSet(fmt.Sprintf("restored-ss2-%s", f.App()), int32(3))
+				restoredSS, err := f.DeployStatefulSet(framework.RestoredStatefulSet, int32(3), framework.RestoredVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Restore the backed up data
-				By("Restoring the backed up data in the original StatefulSet")
-				restoreSession, err := f.SetupRestoreProcess(restoredSS.ObjectMeta, repo, apis.KindStatefulSet)
+				By("Restoring the backed up data in the new StatefulSet")
+				restoreSession, err := f.SetupRestoreProcess(restoredSS.ObjectMeta, repo, apis.KindStatefulSet, framework.RestoredVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -210,7 +150,7 @@ var _ = Describe("StatefulSet", func() {
 		Context("Restore on scaled up StatefulSet", func() {
 			It("should restore backed up data into scaled up StatefulSet", func() {
 				// Deploy a StatefulSet
-				ss, err := f.DeployStatefulSet(fmt.Sprintf("source-ss3-%s", f.App()), int32(3))
+				ss, err := f.DeployStatefulSet(framework.SourceStatefulSet, int32(3), framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
@@ -235,12 +175,31 @@ var _ = Describe("StatefulSet", func() {
 				Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionSucceeded))
 
 				// Deploy restored StatefulSet
-				restoredSS, err := f.DeployStatefulSet(fmt.Sprintf("restored-ss3-%s", f.App()), int32(5))
+				restoredSS, err := f.DeployStatefulSet(framework.RestoredStatefulSet, int32(5), framework.RestoredVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Restore the backed up data
 				By("Restoring the backed up data in different StatefulSet")
-				restoreSession, err := setupRestoreProcessOnScaledUpSS(restoredSS, repo)
+				restoreSession, err := f.SetupRestoreProcess(restoredSS.ObjectMeta, repo, apis.KindStatefulSet, framework.RestoredVolume, func(restore *v1beta1.RestoreSession) {
+					restore.Spec.Rules = []v1beta1.Rule{
+						{
+							TargetHosts: []string{
+								"host-3",
+								"host-4",
+							},
+							SourceHost: "host-0",
+							Paths: []string{
+								framework.TestSourceDataMountPath,
+							},
+						},
+						{
+							TargetHosts: []string{},
+							Paths: []string{
+								framework.TestSourceDataMountPath,
+							},
+						},
+					}
+				})
 				Expect(err).NotTo(HaveOccurred())
 
 				By("Verifying that RestoreSession succeeded")
@@ -256,7 +215,5 @@ var _ = Describe("StatefulSet", func() {
 				Expect(restoredData).Should(BeSameAs(sampleData))
 			})
 		})
-
 	})
-
 })

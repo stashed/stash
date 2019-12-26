@@ -17,7 +17,6 @@ limitations under the License.
 package backend
 
 import (
-	"fmt"
 	"net"
 
 	"stash.appscode.dev/stash/apis"
@@ -39,10 +38,7 @@ var _ = Describe("Rest Backend", func() {
 	})
 
 	JustAfterEach(func() {
-		if CurrentGinkgoTestDescription().Failed {
-			f.PrintDebugHelpers()
-			framework.TestFailed = true
-		}
+		f.PrintDebugInfoOnFailure()
 	})
 
 	AfterEach(func() {
@@ -59,7 +55,7 @@ var _ = Describe("Rest Backend", func() {
 
 		It("should backup/restore in/from Rest backend", func() {
 			// Deploy a Deployment
-			deployment, err := f.DeployDeployment(fmt.Sprintf("source-deployment-%s", f.App()), int32(1))
+			deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Generate Sample Data
@@ -90,7 +86,7 @@ var _ = Describe("Rest Backend", func() {
 
 			// Restore the backed up data
 			By("Restoring the backed up data in the original Deployment")
-			restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment)
+			restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment, framework.SourceVolume)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Verifying that RestoreSession succeeded")
@@ -116,7 +112,7 @@ var _ = Describe("Rest Backend", func() {
 
 		It("should backup/restore big file", func() {
 			// Deploy a Deployment
-			deployment, err := f.DeployDeployment(fmt.Sprintf("source-deployment-%s", f.App()), int32(1))
+			deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Generate Sample Data
@@ -147,7 +143,7 @@ var _ = Describe("Rest Backend", func() {
 
 			// Restore the backed up data
 			By("Restoring the backed up data in the original Deployment")
-			restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment)
+			restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment, framework.SourceVolume)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Verifying that RestoreSession succeeded")
@@ -173,7 +169,7 @@ var _ = Describe("Rest Backend", func() {
 
 		It("should backup/restore in/from Rest backend", func() {
 			// Deploy a Deployment
-			deployment, err := f.DeployDeployment(fmt.Sprintf("source-deployment-%s", f.App()), int32(1))
+			deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Generate Sample Data
@@ -204,7 +200,7 @@ var _ = Describe("Rest Backend", func() {
 
 			// Restore the backed up data
 			By("Restoring the backed up data in the original Deployment")
-			restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment)
+			restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment, framework.SourceVolume)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Verifying that RestoreSession succeeded")

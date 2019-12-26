@@ -17,6 +17,8 @@ limitations under the License.
 package framework
 
 import (
+	"fmt"
+
 	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/appscode/go/crypto/rand"
@@ -30,12 +32,12 @@ import (
 	kutil "kmodules.xyz/client-go"
 )
 
-func (fi *Invocation) ReplicationController(pvcName string) core.ReplicationController {
+func (fi *Invocation) ReplicationController(pvcName, volName string) core.ReplicationController {
 	labels := map[string]string{
 		"app":  fi.app,
 		"kind": "replicationcontroller",
 	}
-	podTemplate := fi.PodTemplate(labels, pvcName)
+	podTemplate := fi.PodTemplate(labels, pvcName, volName)
 	return core.ReplicationController{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("stash"),
@@ -127,14 +129,26 @@ func (f *Invocation) WaitUntilRCReadyWithInitContainer(meta metav1.ObjectMeta) e
 	})
 }
 
-func (f *Invocation) DeployReplicationController(name string, replica int32) (*core.ReplicationController, error) {
-	// Create PVC for ReplicationController
-	pvc, err := f.CreateNewPVC(name)
+func (f *Invocation) DeployReplicationController(name string, replica int32, volName string) (*core.ReplicationController, error) {
+	// append test case specific suffix so that name does not conflict during parallel test
+	name = fmt.Sprintf("%s-%s", name, f.app)
+	pvcName := fmt.Sprintf("%s-%s", volName, f.app)
+
+	// If the PVC does not exist, create PVC for Deployment
+	pvc, err := f.KubeClient.CoreV1().PersistentVolumeClaims(f.namespace).Get(pvcName, metav1.GetOptions{})
 	if err != nil {
-		return &core.ReplicationController{}, err
+		if kerr.IsNotFound(err) {
+			pvc, err = f.CreateNewPVC(pvcName)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
 	}
+
 	// Generate ReplicationController definition
-	rc := f.ReplicationController(pvc.Name)
+	rc := f.ReplicationController(pvc.Name, volName)
 	rc.Spec.Replicas = &replica
 	rc.Name = name
 

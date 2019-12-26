@@ -89,7 +89,7 @@ var _ = XDescribe("StatefulSet", func() {
 
 		_, err := f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
-		ss = f.StatefulSet(pvc.Name)
+		ss = f.StatefulSet(pvc.Name, framework.SourceVolume)
 		localRef = api.LocalTypedReference{
 			Kind: apis.KindStatefulSet,
 			Name: ss.Name,

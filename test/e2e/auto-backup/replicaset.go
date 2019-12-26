@@ -41,10 +41,7 @@ var _ = Describe("Auto-Backup", func() {
 	})
 
 	JustAfterEach(func() {
-		if CurrentGinkgoTestDescription().Failed {
-			f.PrintDebugHelpers()
-			framework.TestFailed = true
-		}
+		f.PrintDebugInfoOnFailure()
 	})
 
 	AfterEach(func() {
@@ -56,7 +53,7 @@ var _ = Describe("Auto-Backup", func() {
 		return map[string]string{
 			v1beta1.KeyBackupBlueprint: backupBlueprintName,
 			v1beta1.KeyTargetPaths:     framework.TestSourceDataTargetPath,
-			v1beta1.KeyVolumeMounts:    framework.TestSourceDataVolumeMount,
+			v1beta1.KeyVolumeMounts:    framework.TestSourceVolumeAndMount,
 		}
 	}
 
@@ -66,11 +63,11 @@ var _ = Describe("Auto-Backup", func() {
 
 			It("should success auto-backup for the ReplicaSet", func() {
 				// Create BackupBlueprint
-				bb, err := f.CreateBackupBlueprintForWorkload(fmt.Sprintf("backupblueprint-%s", f.App()))
+				bb, err := f.CreateBackupBlueprintForWorkload(framework.WorkloadBackupBlueprint)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Deploy a ReplicaSet
-				rs, err := f.DeployReplicaSet(fmt.Sprintf("rs1-%s", f.App()), int32(1))
+				rs, err := f.DeployReplicaSet(framework.SourceReplicaSet, int32(1), framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
@@ -113,7 +110,7 @@ var _ = Describe("Auto-Backup", func() {
 					f.AppendToCleanupList(bb)
 
 					// Deploy a ReplicaSet
-					rs, err := f.DeployReplicaSet(fmt.Sprintf("rs2-%s", f.App()), int32(1))
+					rs, err := f.DeployReplicaSet(framework.SourceReplicaSet, int32(1), framework.SourceVolume)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
@@ -150,7 +147,7 @@ var _ = Describe("Auto-Backup", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					// Deploy a ReplicaSet
-					rs, err := f.DeployReplicaSet(fmt.Sprintf("rs3-%s", f.App()), int32(1))
+					rs, err := f.DeployReplicaSet(framework.SourceReplicaSet, int32(1), framework.SourceVolume)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
@@ -179,11 +176,11 @@ var _ = Describe("Auto-Backup", func() {
 			Context("Add inappropriate annotation to Target", func() {
 				It("should fail to create AutoBackup resources", func() {
 					// Create BackupBlueprint
-					_, err := f.CreateBackupBlueprintForWorkload(fmt.Sprintf("backupblueprint-%s", f.App()))
+					_, err := f.CreateBackupBlueprintForWorkload(framework.WorkloadBackupBlueprint)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Deploy a ReplicaSet
-					rs, err := f.DeployReplicaSet(fmt.Sprintf("rs4-%s", f.App()), int32(1))
+					rs, err := f.DeployReplicaSet(framework.SourceReplicaSet, int32(1), framework.SourceVolume)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
@@ -199,11 +196,11 @@ var _ = Describe("Auto-Backup", func() {
 				})
 				It("should fail BackupSession for adding inappropriate TargetPath/MountPath", func() {
 					// Create BackupBlueprint
-					bb, err := f.CreateBackupBlueprintForWorkload(fmt.Sprintf("backupblueprint-%s", f.App()))
+					bb, err := f.CreateBackupBlueprintForWorkload(framework.WorkloadBackupBlueprint)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Deploy a ReplicaSet
-					rs, err := f.DeployReplicaSet(fmt.Sprintf("rs5-%s", f.App()), int32(1))
+					rs, err := f.DeployReplicaSet(framework.SourceReplicaSet, int32(1), framework.SourceVolume)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Generate Sample Data
@@ -229,9 +226,7 @@ var _ = Describe("Auto-Backup", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(completedBS.Status.Phase).Should(Equal(v1beta1.BackupSessionFailed))
 				})
-
 			})
 		})
 	})
-
 })

@@ -56,20 +56,41 @@ var (
 )
 
 const (
-	TestSoucreDemoDataPath    = "/data/stash-test/demo-data"
-	TestSourceDataDir1        = "/source/data/dir-1"
-	TestSourceDataDir2        = "/source/data/dir-2"
-	KindRestic                = "Restic"
-	KindRepository            = "Repository"
-	KindRecovery              = "Recovery"
-	PullInterval              = time.Second * 2
-	WaitTimeOut               = time.Minute * 3
-	TaskPVCBackup             = "pvc-backup"
-	TaskPVCRestore            = "pvc-restore"
-	TestSourceDataTargetPath  = "/source/data"
-	TestSourceDataVolumeMount = "source-data:/source/data"
-	WrongBackupBlueprintName  = "backup-blueprint"
-	WrongTargetPath           = "/source/data-1"
+	TestSoucreDemoDataPath   = "/data/stash-test/demo-data"
+	TestSourceDataDir1       = "/source/data/dir-1"
+	TestSourceDataDir2       = "/source/data/dir-2"
+	KindRestic               = "Restic"
+	KindRepository           = "Repository"
+	KindRecovery             = "Recovery"
+	PullInterval             = time.Second * 2
+	WaitTimeOut              = time.Minute * 3
+	TaskPVCBackup            = "pvc-backup"
+	TaskPVCRestore           = "pvc-restore"
+	TestSourceDataTargetPath = "/source/data"
+	TestSourceVolumeAndMount = SourceVolume + ":" + TestSourceDataMountPath
+	WrongBackupBlueprintName = "backup-blueprint"
+	WrongTargetPath          = "/source/data-1"
+
+	SourceDeployment   = "source-dp"
+	RestoredDeployment = "restored-dp"
+
+	SourceStatefulSet   = "source-ss"
+	RestoredStatefulSet = "restored-ss"
+
+	SourceDaemonSet   = "source-dmn"
+	RestoredDaemonSet = "restored-dmn"
+
+	SourceReplicaSet   = "source-rs"
+	RestoredReplicaSet = "restored-rs"
+
+	SourceReplicationController   = "source-rc"
+	RestoredReplicationController = "restored-rc"
+
+	SourceVolume   = "source-volume"
+	RestoredVolume = "restored-volume"
+
+	WorkloadBackupBlueprint = "workload-backup-blueprint"
+	PvcBackupBlueprint      = "pvc-backup-blueprint"
 )
 
 func (f *Framework) EventualEvent(meta metav1.ObjectMeta) GomegaAsyncAssertion {

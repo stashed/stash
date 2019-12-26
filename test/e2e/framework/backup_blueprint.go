@@ -77,6 +77,9 @@ func (f *Framework) GetBackupBlueprint(name string) (*v1beta1.BackupBlueprint, e
 }
 
 func (f Invocation) CreateBackupBlueprintForWorkload(name string) (*v1beta1.BackupBlueprint, error) {
+	// append test case specific suffix so that name does not conflict during parallel test
+	name = fmt.Sprintf("%s-%s", name, f.app)
+
 	// Create Secret for BackupBlueprint
 	secret, err := f.CreateBackendSecretForMinio()
 	if err != nil {
@@ -94,10 +97,13 @@ func (f Invocation) CreateBackupBlueprintForWorkload(name string) (*v1beta1.Back
 }
 
 func (f Invocation) CreateBackupBlueprintForPVC(name string) (*v1beta1.BackupBlueprint, error) {
+	// append test case specific suffix so that name does not conflict during parallel test
+	name = fmt.Sprintf("%s-%s", name, f.app)
+
 	// Create Secret for BackupBlueprint
 	secret, err := f.CreateBackendSecretForMinio()
 	if err != nil {
-		return &v1beta1.BackupBlueprint{}, err
+		return nil, err
 	}
 
 	// Generate BackupBlueprint definition
@@ -107,6 +113,10 @@ func (f Invocation) CreateBackupBlueprintForPVC(name string) (*v1beta1.BackupBlu
 
 	By(fmt.Sprintf("Creating BackupBlueprint: %s", bb.Name))
 	createdBB, err := f.CreateBackupBlueprint(bb)
+	if err != nil {
+		return nil, err
+	}
 	f.AppendToCleanupList(createdBB)
-	return createdBB, err
+
+	return createdBB, nil
 }

@@ -79,7 +79,7 @@ func (f *Invocation) SetupWorkloadBackup(objMeta metav1.ObjectMeta, repo *api_v1
 			},
 			VolumeMounts: []core.VolumeMount{
 				{
-					Name:      TestSourceDataVolumeName,
+					Name:      SourceVolume,
 					MountPath: TestSourceDataMountPath,
 				},
 			},
@@ -150,7 +150,7 @@ func (f *Invocation) RestoredData(objMeta metav1.ObjectMeta, kind string) []stri
 	return restoredData
 }
 
-func (f *Invocation) SetupRestoreProcess(objMeta metav1.ObjectMeta, repo *api.Repository, kind string, transformFuncs ...func(restore *v1beta1.RestoreSession)) (*v1beta1.RestoreSession, error) {
+func (f *Invocation) SetupRestoreProcess(objMeta metav1.ObjectMeta, repo *api.Repository, kind, volumeName string, transformFuncs ...func(restore *v1beta1.RestoreSession)) (*v1beta1.RestoreSession, error) {
 
 	// Generate desired BackupConfiguration definition
 	restoreSession := f.GetRestoreSession(repo.Name, func(restore *v1beta1.RestoreSession) {
@@ -160,15 +160,18 @@ func (f *Invocation) SetupRestoreProcess(objMeta metav1.ObjectMeta, repo *api.Re
 			},
 		}
 		restore.Spec.Target = &v1beta1.RestoreTarget{
-			Ref: GetTargetRef(objMeta.Name, kind),
 			VolumeMounts: []core.VolumeMount{
 				{
-					Name:      TestSourceDataVolumeName,
+					Name:      volumeName,
 					MountPath: TestSourceDataMountPath,
 				},
 			},
 		}
 	})
+	// if objMeta is provided, then set target reference
+	if objMeta.Name != "" {
+		restoreSession.Spec.Target.Ref = GetTargetRef(objMeta.Name, kind)
+	}
 	// transformFuncs provides a array of functions that made test specific change on the RestoreSession
 	// apply these test specific changes.
 	for _, fn := range transformFuncs {
@@ -290,4 +293,11 @@ func (f *Invocation) VerifyAutoBackupConfigured(workloadMeta metav1.ObjectMeta, 
 	}
 
 	return backupConfig, err
+}
+
+func (f *Invocation) PrintDebugInfoOnFailure() {
+	if CurrentGinkgoTestDescription().Failed {
+		f.PrintDebugHelpers()
+		TestFailed = true
+	}
 }

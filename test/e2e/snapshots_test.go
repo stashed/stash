@@ -17,6 +17,7 @@ limitations under the License.
 package e2e_test
 
 import (
+	"fmt"
 	"net"
 	"os/exec"
 	"strconv"
@@ -122,12 +123,12 @@ var _ = XDescribe("Snapshots", func() {
 		pvc := f.PersistentVolumeClaim(rand.WithUniqSuffix("pvc"))
 		_, err := f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
-		daemon = f.DaemonSet()
+		daemon = f.DaemonSet(fmt.Sprintf("%s-%s", framework.SourceDaemonSet, f.App()), framework.SourceVolume)
 
-		deployment = f.Deployment(pvc.Name)
-		rc = f.ReplicationController(pvc.Name)
-		rs = f.ReplicaSet(pvc.Name)
-		ss = f.StatefulSet(pvc.Name)
+		deployment = f.Deployment(pvc.Name, framework.SourceVolume)
+		rc = f.ReplicationController(pvc.Name, framework.SourceVolume)
+		rs = f.ReplicaSet(pvc.Name, framework.SourceVolume)
+		ss = f.StatefulSet(pvc.Name, framework.SourceVolume)
 		svc = f.HeadlessService()
 
 		// if a deployment's labels match to labels of replicaset, kubernetes make the deployment owner of the replicaset.

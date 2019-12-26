@@ -17,8 +17,6 @@ limitations under the License.
 package advance_configuration
 
 import (
-	"fmt"
-
 	"stash.appscode.dev/stash/apis"
 	"stash.appscode.dev/stash/apis/stash/v1beta1"
 	"stash.appscode.dev/stash/test/e2e/framework"
@@ -40,10 +38,7 @@ var _ = Describe("Advanced Configuration", func() {
 	})
 
 	JustAfterEach(func() {
-		if CurrentGinkgoTestDescription().Failed {
-			f.PrintDebugHelpers()
-			framework.TestFailed = true
-		}
+		f.PrintDebugInfoOnFailure()
 	})
 
 	AfterEach(func() {
@@ -55,7 +50,7 @@ var _ = Describe("Advanced Configuration", func() {
 		Context("With NICE and IONICE", func() {
 			It("should Backup & Restore successfully", func() {
 				// Deploy a Deployment
-				deployment, err := f.DeployDeployment(fmt.Sprintf("source-deployment1-%s", f.App()), int32(1))
+				deployment, err := f.DeployDeployment(framework.SourceDeployment, int32(1), framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Generate Sample Data
@@ -99,7 +94,7 @@ var _ = Describe("Advanced Configuration", func() {
 
 				// Restore the backed up data
 				By("Restoring the backed up data in the original Deployment")
-				restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment, func(restore *v1beta1.RestoreSession) {
+				restoreSession, err := f.SetupRestoreProcess(deployment.ObjectMeta, repo, apis.KindDeployment, framework.SourceVolume, func(restore *v1beta1.RestoreSession) {
 					restore.Spec.RuntimeSettings = ofst.RuntimeSettings{
 						Container: &ofst.ContainerRuntimeSettings{
 							Nice: &ofst.NiceSettings{

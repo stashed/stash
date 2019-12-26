@@ -17,6 +17,8 @@ limitations under the License.
 package framework
 
 import (
+	"fmt"
+
 	"stash.appscode.dev/stash/pkg/util"
 
 	"github.com/appscode/go/crypto/rand"
@@ -33,7 +35,7 @@ import (
 	apps_util "kmodules.xyz/client-go/apps/v1"
 )
 
-func (fi *Invocation) StatefulSet(pvcName string) apps.StatefulSet {
+func (fi *Invocation) StatefulSet(pvcName, volName string) apps.StatefulSet {
 	labels := map[string]string{
 		"app":  fi.app,
 		"kind": "statefulset",
@@ -49,7 +51,7 @@ func (fi *Invocation) StatefulSet(pvcName string) apps.StatefulSet {
 				MatchLabels: labels,
 			},
 			Replicas:    types.Int32P(1),
-			Template:    fi.PodTemplate(labels, pvcName),
+			Template:    fi.PodTemplate(labels, pvcName, volName),
 			ServiceName: TEST_HEADLESS_SERVICE,
 			UpdateStrategy: apps.StatefulSetUpdateStrategy{
 				Type: apps.RollingUpdateStatefulSetStrategyType,
@@ -58,14 +60,14 @@ func (fi *Invocation) StatefulSet(pvcName string) apps.StatefulSet {
 	}
 }
 
-func (fi *Invocation) StatefulSetForV1beta1API() apps.StatefulSet {
+func (fi *Invocation) StatefulSetForV1beta1API(name, volName string, replica int32) apps.StatefulSet {
 	labels := map[string]string{
 		"app":  fi.app,
 		"kind": "statefulset",
 	}
 	return apps.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix("stash"),
+			Name:      name,
 			Namespace: fi.namespace,
 			Labels:    labels,
 		},
@@ -73,7 +75,7 @@ func (fi *Invocation) StatefulSetForV1beta1API() apps.StatefulSet {
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
-			Replicas:    types.Int32P(3),
+			Replicas:    &replica,
 			ServiceName: TEST_HEADLESS_SERVICE,
 			Template: core.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -91,7 +93,7 @@ func (fi *Invocation) StatefulSetForV1beta1API() apps.StatefulSet {
 							},
 							VolumeMounts: []core.VolumeMount{
 								{
-									Name:      TestSourceDataVolumeName,
+									Name:      volName,
 									MountPath: TestSourceDataMountPath,
 								},
 							},
@@ -102,7 +104,7 @@ func (fi *Invocation) StatefulSetForV1beta1API() apps.StatefulSet {
 			VolumeClaimTemplates: []core.PersistentVolumeClaim{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: TestSourceDataVolumeName,
+						Name: volName,
 					},
 					Spec: core.PersistentVolumeClaimSpec{
 						AccessModes: []core.PersistentVolumeAccessMode{
@@ -111,7 +113,7 @@ func (fi *Invocation) StatefulSetForV1beta1API() apps.StatefulSet {
 						StorageClassName: types.StringP(fi.StorageClass),
 						Resources: core.ResourceRequirements{
 							Requests: core.ResourceList{
-								core.ResourceName(core.ResourceStorage): resource.MustParse("1Gi"),
+								core.ResourceStorage: resource.MustParse("1Gi"),
 							},
 						},
 					},
@@ -197,11 +199,18 @@ func (f *Invocation) WaitUntilStatefulSetWithInitContainer(meta metav1.ObjectMet
 	})
 }
 
-func (f *Invocation) DeployStatefulSet(name string, replica int32) (*apps.StatefulSet, error) {
+func (f *Invocation) DeployStatefulSet(name string, replica int32, volName string, transformFuncs ...func(ss *apps.StatefulSet)) (*apps.StatefulSet, error) {
+	// append test case specific suffix so that name does not conflict during parallel test
+	name = fmt.Sprintf("%s-%s", name, f.app)
+
 	// Generate StatefulSet definition
-	ss := f.StatefulSetForV1beta1API()
-	ss.Spec.Replicas = &replica
-	ss.Name = name
+	ss := f.StatefulSetForV1beta1API(name, volName, replica)
+
+	// transformFuncs provides a array of functions that made test specific change on the StatefulSet
+	// apply these test specific changes
+	for _, fn := range transformFuncs {
+		fn(&ss)
+	}
 
 	By("Deploying StatefulSet: " + ss.Name)
 	createdss, err := f.CreateStatefulSet(ss)
@@ -220,7 +229,7 @@ func (f *Invocation) DeployStatefulSet(name string, replica int32) (*apps.Statef
 	return createdss, err
 }
 
-func (f *Invocation) DeployStatefulSetWithProbeClient(name string) (*apps.StatefulSet, error) {
+func (f *Invocation) DeployStatefulSetWithProbeClient() (*apps.StatefulSet, error) {
 	svc, err := f.CreateService(f.HeadlessService())
 	if err != nil {
 		return nil, err
@@ -234,7 +243,7 @@ func (f *Invocation) DeployStatefulSetWithProbeClient(name string) (*apps.Statef
 	// Generate StatefulSet definition
 	statefulset := &apps.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
+			Name:      fmt.Sprintf("%s-%s", ProberDemoPodPrefix, f.app),
 			Namespace: f.namespace,
 		},
 		Spec: apps.StatefulSetSpec{
@@ -277,7 +286,7 @@ func (f *Invocation) DeployStatefulSetWithProbeClient(name string) (*apps.Statef
 							},
 							VolumeMounts: []core.VolumeMount{
 								{
-									Name:      TestSourceDataVolumeName,
+									Name:      SourceVolume,
 									MountPath: TestSourceDataMountPath,
 								},
 							},
@@ -288,7 +297,7 @@ func (f *Invocation) DeployStatefulSetWithProbeClient(name string) (*apps.Statef
 			VolumeClaimTemplates: []core.PersistentVolumeClaim{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: TestSourceDataVolumeName,
+						Name: SourceVolume,
 					},
 					Spec: core.PersistentVolumeClaimSpec{
 						AccessModes: []core.PersistentVolumeAccessMode{
@@ -297,7 +306,7 @@ func (f *Invocation) DeployStatefulSetWithProbeClient(name string) (*apps.Statef
 						StorageClassName: types.StringP(f.StorageClass),
 						Resources: core.ResourceRequirements{
 							Requests: core.ResourceList{
-								core.ResourceName(core.ResourceStorage): resource.MustParse("1Gi"),
+								core.ResourceStorage: resource.MustParse("1Gi"),
 							},
 						},
 					},

@@ -41,10 +41,7 @@ var _ = Describe("Auto-Backup", func() {
 	})
 
 	JustAfterEach(func() {
-		if CurrentGinkgoTestDescription().Failed {
-			f.PrintDebugHelpers()
-			framework.TestFailed = true
-		}
+		f.PrintDebugInfoOnFailure()
 	})
 
 	AfterEach(func() {
@@ -64,11 +61,11 @@ var _ = Describe("Auto-Backup", func() {
 
 			It("should backup successfully", func() {
 				// Create BackupBlueprint
-				bb, err := f.CreateBackupBlueprintForPVC(fmt.Sprintf("backupblueprint-%s", f.App()))
+				bb, err := f.CreateBackupBlueprintForPVC(framework.PvcBackupBlueprint)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Create a PVC
-				pvc, err := f.CreateNewPVC(fmt.Sprintf("pvc1-%s", f.App()))
+				pvc, err := f.CreateNewPVC(framework.SourceVolume)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Deploy a Pod
@@ -115,7 +112,7 @@ var _ = Describe("Auto-Backup", func() {
 					f.AppendToCleanupList(bb)
 
 					// Create a PVC
-					pvc, err := f.CreateNewPVC(fmt.Sprintf("pvc2-%s", f.App()))
+					pvc, err := f.CreateNewPVC(framework.SourceVolume)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Deploy a Pod
@@ -156,7 +153,7 @@ var _ = Describe("Auto-Backup", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					// Create a PVC
-					pvc, err := f.CreateNewPVC(fmt.Sprintf("pvc3-%s", f.App()))
+					pvc, err := f.CreateNewPVC(framework.SourceVolume)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Deploy a Pod
@@ -189,11 +186,11 @@ var _ = Describe("Auto-Backup", func() {
 			Context("Add inappropriate annotation to Target", func() {
 				It("should fail to create AutoBackup resources", func() {
 					// Create BackupBlueprint
-					bb, err := f.CreateBackupBlueprintForPVC(fmt.Sprintf("backupblueprint-%s", f.App()))
+					bb, err := f.CreateBackupBlueprintForPVC(framework.PvcBackupBlueprint)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Create a PVC
-					pvc, err := f.CreateNewPVC(fmt.Sprintf("pvc4-%s", f.App()))
+					pvc, err := f.CreateNewPVC(framework.SourceVolume)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Deploy a Pod
