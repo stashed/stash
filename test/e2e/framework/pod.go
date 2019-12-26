@@ -40,7 +40,7 @@ const (
 	OperatorName             = "stash-operator"
 )
 
-func (fi *Invocation) PodTemplate(labels map[string]string, pvcName string) core.PodTemplateSpec {
+func (fi *Invocation) PodTemplate(labels map[string]string, pvcName, volName string) core.PodTemplateSpec {
 	return core.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: labels,
@@ -57,7 +57,7 @@ func (fi *Invocation) PodTemplate(labels map[string]string, pvcName string) core
 					},
 					VolumeMounts: []core.VolumeMount{
 						{
-							Name:      SourceVolume,
+							Name:      volName,
 							MountPath: TestSourceDataMountPath,
 						},
 					},
@@ -65,7 +65,7 @@ func (fi *Invocation) PodTemplate(labels map[string]string, pvcName string) core
 			},
 			Volumes: []core.Volume{
 				{
-					Name: SourceVolume,
+					Name: volName,
 					VolumeSource: core.VolumeSource{
 						PersistentVolumeClaim: &core.PersistentVolumeClaimVolumeSource{
 							ClaimName: pvcName,

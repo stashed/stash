@@ -35,7 +35,7 @@ import (
 	apps_util "kmodules.xyz/client-go/apps/v1"
 )
 
-func (fi *Invocation) StatefulSet(pvcName string) apps.StatefulSet {
+func (fi *Invocation) StatefulSet(pvcName, volName string) apps.StatefulSet {
 	labels := map[string]string{
 		"app":  fi.app,
 		"kind": "statefulset",
@@ -51,7 +51,7 @@ func (fi *Invocation) StatefulSet(pvcName string) apps.StatefulSet {
 				MatchLabels: labels,
 			},
 			Replicas:    types.Int32P(1),
-			Template:    fi.PodTemplate(labels, pvcName),
+			Template:    fi.PodTemplate(labels, pvcName, volName),
 			ServiceName: TEST_HEADLESS_SERVICE,
 			UpdateStrategy: apps.StatefulSetUpdateStrategy{
 				Type: apps.RollingUpdateStatefulSetStrategyType,
@@ -306,7 +306,7 @@ func (f *Invocation) DeployStatefulSetWithProbeClient() (*apps.StatefulSet, erro
 						StorageClassName: types.StringP(f.StorageClass),
 						Resources: core.ResourceRequirements{
 							Requests: core.ResourceList{
-								core.ResourceName(core.ResourceStorage): resource.MustParse("1Gi"),
+								core.ResourceStorage: resource.MustParse("1Gi"),
 							},
 						},
 					},

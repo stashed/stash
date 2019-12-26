@@ -44,7 +44,7 @@ const (
 	TcpPort             = 9090
 )
 
-func (fi *Invocation) Deployment(pvcName string) apps.Deployment {
+func (fi *Invocation) Deployment(pvcName, volName string) apps.Deployment {
 	labels := map[string]string{
 		"app":  fi.app,
 		"kind": "deployment",
@@ -60,7 +60,7 @@ func (fi *Invocation) Deployment(pvcName string) apps.Deployment {
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
-			Template: fi.PodTemplate(labels, pvcName),
+			Template: fi.PodTemplate(labels, pvcName, volName),
 		},
 	}
 }
@@ -144,10 +144,10 @@ func (f *Invocation) WaitUntilDeploymentReadyWithInitContainer(meta metav1.Objec
 	})
 }
 
-func (f *Invocation) DeployDeployment(name string, replica int32, pvcName string, transformFuncs ...func(dp *apps.Deployment)) (*apps.Deployment, error) {
+func (f *Invocation) DeployDeployment(name string, replica int32, volName string, transformFuncs ...func(dp *apps.Deployment)) (*apps.Deployment, error) {
 	// append test case specific suffix so that name does not conflict during parallel test
 	name = fmt.Sprintf("%s-%s", name, f.app)
-	pvcName = fmt.Sprintf("%s-%s", pvcName, f.app)
+	pvcName := fmt.Sprintf("%s-%s", volName, f.app)
 
 	// If the PVC does not exist, create PVC for Deployment
 	pvc, err := f.KubeClient.CoreV1().PersistentVolumeClaims(f.namespace).Get(pvcName, metav1.GetOptions{})
@@ -163,7 +163,7 @@ func (f *Invocation) DeployDeployment(name string, replica int32, pvcName string
 	}
 
 	// Generate Deployment definition
-	deployment := f.Deployment(pvc.Name)
+	deployment := f.Deployment(pvc.Name, volName)
 	deployment.Name = name
 	deployment.Spec.Replicas = &replica
 
