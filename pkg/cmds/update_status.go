@@ -78,6 +78,8 @@ func NewCmdUpdateStatus() *cobra.Command {
 
 	cmd.Flags().StringVar(&opt.Namespace, "namespace", "default", "Namespace of Backup/Restore Session")
 	cmd.Flags().StringVar(&opt.Repository, "repository", opt.Repository, "Name of the Repository")
+	cmd.Flags().StringVar(&opt.TargetRef.Kind, "targetkind", "", "Kind of the target")
+	cmd.Flags().StringVar(&opt.TargetRef.Name, "targetname", "", "Name of the target")
 	cmd.Flags().StringVar(&opt.BackupSession, "backupsession", opt.BackupSession, "Name of the Backup Session")
 	cmd.Flags().StringVar(&opt.RestoreSession, "restoresession", opt.RestoreSession, "Name of the Restore Session")
 	cmd.Flags().StringVar(&opt.OutputDir, "output-dir", opt.OutputDir, "Directory where output.json file will be written (keep empty if you don't need to write output in file)")

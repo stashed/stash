@@ -19,8 +19,19 @@ package v1alpha1
 import (
 	"fmt"
 	"strings"
+)
 
-	"stash.appscode.dev/stash/apis"
+const (
+	KindDeployment            = "Deployment"
+	KindReplicaSet            = "ReplicaSet"
+	KindReplicationController = "ReplicationController"
+	KindStatefulSet           = "StatefulSet"
+	KindDaemonSet             = "DaemonSet"
+	KindPod                   = "Pod"
+	KindPersistentVolumeClaim = "PersistentVolumeClaim"
+	KindAppBinding            = "AppBinding"
+	KindDeploymentConfig      = "DeploymentConfig"
+	KindSecret                = "Secret"
 )
 
 // LocalTypedReference contains enough information to let you inspect or modify the referred object.
@@ -44,15 +55,15 @@ func (workload *LocalTypedReference) Canonicalize() error {
 	}
 	switch strings.ToLower(workload.Kind) {
 	case "deployments", "deployment", "deploy":
-		workload.Kind = apis.KindDeployment
+		workload.Kind = KindDeployment
 	case "replicasets", "replicaset", "rs":
-		workload.Kind = apis.KindReplicaSet
+		workload.Kind = KindReplicaSet
 	case "replicationcontrollers", "replicationcontroller", "rc":
-		workload.Kind = apis.KindReplicationController
+		workload.Kind = KindReplicationController
 	case "statefulsets", "statefulset":
-		workload.Kind = apis.KindStatefulSet
+		workload.Kind = KindStatefulSet
 	case "daemonsets", "daemonset", "ds":
-		workload.Kind = apis.KindDaemonSet
+		workload.Kind = KindDaemonSet
 	default:
 		return fmt.Errorf(`unrecognized workload "Kind" %v`, workload.Kind)
 	}
@@ -62,11 +73,11 @@ func (workload *LocalTypedReference) Canonicalize() error {
 func (workload LocalTypedReference) GetRepositoryCRDName(podName, nodeName string) string {
 	name := ""
 	switch workload.Kind {
-	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController:
+	case KindDeployment, KindReplicaSet, KindReplicationController:
 		name = strings.ToLower(workload.Kind) + "." + workload.Name
-	case apis.KindStatefulSet:
+	case KindStatefulSet:
 		name = strings.ToLower(workload.Kind) + "." + podName
-	case apis.KindDaemonSet:
+	case KindDaemonSet:
 		name = strings.ToLower(workload.Kind) + "." + workload.Name + "." + nodeName
 	}
 	return name
@@ -81,16 +92,16 @@ func (workload LocalTypedReference) HostnamePrefix(podName, nodeName string) (ho
 		return "", "", fmt.Errorf("missing workload name or kind")
 	}
 	switch workload.Kind {
-	case apis.KindDeployment, apis.KindReplicaSet, apis.KindReplicationController:
+	case KindDeployment, KindReplicaSet, KindReplicationController:
 		return workload.Name, strings.ToLower(workload.Kind) + "/" + workload.Name, nil
-	case apis.KindStatefulSet:
+	case KindStatefulSet:
 		if podName == "" {
-			return "", "", fmt.Errorf("missing podName for %s", apis.KindStatefulSet)
+			return "", "", fmt.Errorf("missing podName for %s", KindStatefulSet)
 		}
 		return podName, strings.ToLower(workload.Kind) + "/" + podName, nil
-	case apis.KindDaemonSet:
+	case KindDaemonSet:
 		if nodeName == "" {
-			return "", "", fmt.Errorf("missing nodeName for %s", apis.KindDaemonSet)
+			return "", "", fmt.Errorf("missing nodeName for %s", KindDaemonSet)
 		}
 		return nodeName, strings.ToLower(workload.Kind) + "/" + workload.Name + "/" + nodeName, nil
 	default:

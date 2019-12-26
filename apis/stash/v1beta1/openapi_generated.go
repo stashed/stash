@@ -405,6 +405,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"stash.appscode.dev/stash/apis/stash/v1beta1.RestoreTarget":                   schema_stash_apis_stash_v1beta1_RestoreTarget(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.Rule":                            schema_stash_apis_stash_v1beta1_Rule(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.SnapshotStats":                   schema_stash_apis_stash_v1beta1_SnapshotStats(ref),
+		"stash.appscode.dev/stash/apis/stash/v1beta1.Target":                          schema_stash_apis_stash_v1beta1_Target(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.TargetRef":                       schema_stash_apis_stash_v1beta1_TargetRef(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.Task":                            schema_stash_apis_stash_v1beta1_Task(ref),
 		"stash.appscode.dev/stash/apis/stash/v1beta1.TaskList":                        schema_stash_apis_stash_v1beta1_TaskList(ref),
@@ -17507,6 +17508,12 @@ func schema_stash_apis_stash_v1beta1_BackupBatchSpec(ref common.ReferenceCallbac
 							Format:      "",
 						},
 					},
+					"runtimeSettings": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RuntimeSettings allow to specify Resources, NodeSelector, Affinity, Toleration, ReadinessProbe etc, and used to create service account for CronJob.",
+							Ref:         ref("kmodules.xyz/offshoot-api/api/v1.RuntimeSettings"),
+						},
+					},
 					"driver": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Driver indicates the name of the agent to use to backup the target. Supported values are \"Restic\", \"VolumeSnapshotter\". Default value is \"Restic\".",
@@ -18197,28 +18204,21 @@ func schema_stash_apis_stash_v1beta1_BackupSessionStatus(ref common.ReferenceCal
 							Format:      "",
 						},
 					},
-					"totalHosts": {
-						SchemaProps: spec.SchemaProps{
-							Description: "TotalHosts specifies total number of hosts that will be backed up for this BackupSession",
-							Type:        []string{"integer"},
-							Format:      "int32",
-						},
-					},
 					"sessionDuration": {
 						SchemaProps: spec.SchemaProps{
-							Description: "SessionDuration specify total time taken to complete current backup session (sum of backup duration of all hosts)",
+							Description: "SessionDuration specify total time taken to complete current backup session (sum of backup duration of all targets)",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
-					"stats": {
+					"targets": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Stats shows statistics of individual hosts for this backup session",
+							Description: "Targets specify the backup status of individual targets optional",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("stash.appscode.dev/stash/apis/stash/v1beta1.HostBackupStats"),
+										Ref: ref("stash.appscode.dev/stash/apis/stash/v1beta1.Target"),
 									},
 								},
 							},
@@ -18228,7 +18228,7 @@ func schema_stash_apis_stash_v1beta1_BackupSessionStatus(ref common.ReferenceCal
 			},
 		},
 		Dependencies: []string{
-			"stash.appscode.dev/stash/apis/stash/v1beta1.HostBackupStats"},
+			"stash.appscode.dev/stash/apis/stash/v1beta1.Target"},
 	}
 }
 
@@ -19134,6 +19134,53 @@ func schema_stash_apis_stash_v1beta1_SnapshotStats(ref common.ReferenceCallback)
 		},
 		Dependencies: []string{
 			"stash.appscode.dev/stash/apis/stash/v1beta1.FileStats"},
+	}
+}
+
+func schema_stash_apis_stash_v1beta1_Target(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"ref": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Ref refers to the backup target",
+							Ref:         ref("stash.appscode.dev/stash/apis/stash/v1beta1.TargetRef"),
+						},
+					},
+					"totalHosts": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TotalHosts specifies total number of hosts for this target that will be backed up for a BackupSession",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+					"phase": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Phase indicates backup phase of this target",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"stats": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Stats shows statistics of individual hosts for this backup session",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("stash.appscode.dev/stash/apis/stash/v1beta1.HostBackupStats"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"stash.appscode.dev/stash/apis/stash/v1beta1.HostBackupStats", "stash.appscode.dev/stash/apis/stash/v1beta1.TargetRef"},
 	}
 }
 

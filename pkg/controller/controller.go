@@ -129,6 +129,12 @@ type StashController struct {
 	bcQueue    *queue.Worker
 	bcInformer cache.SharedIndexInformer
 	bcLister   stash_listers_v1beta1.BackupConfigurationLister
+
+	// BackupConfiguration
+	backupBatchQueue    *queue.Worker
+	backupBatchInformer cache.SharedIndexInformer
+	backupBatchLister   stash_listers_v1beta1.BackupBatchLister
+
 	// BackupSession
 	backupSessionQueue    *queue.Worker
 	backupSessionInformer cache.SharedIndexInformer
@@ -151,13 +157,12 @@ func (c *StashController) ensureCustomResourceDefinitions() error {
 		api.Recovery{}.CustomResourceDefinition(),
 		api.Repository{}.CustomResourceDefinition(),
 		api_v1beta1.BackupConfiguration{}.CustomResourceDefinition(),
-		api_v1beta1.BackupSession{}.CustomResourceDefinition(),
-		api_v1beta1.Task{}.CustomResourceDefinition(),
-		api_v1beta1.Function{}.CustomResourceDefinition(),
-		api_v1beta1.BackupBlueprint{}.CustomResourceDefinition(),
-		api_v1beta1.BackupConfiguration{}.CustomResourceDefinition(),
+		api_v1beta1.BackupBatch{}.CustomResourceDefinition(),
 		api_v1beta1.BackupSession{}.CustomResourceDefinition(),
 		api_v1beta1.RestoreSession{}.CustomResourceDefinition(),
+		api_v1beta1.BackupBlueprint{}.CustomResourceDefinition(),
+		api_v1beta1.Task{}.CustomResourceDefinition(),
+		api_v1beta1.Function{}.CustomResourceDefinition(),
 
 		appCatalog.AppBinding{}.CustomResourceDefinition(),
 	}
@@ -247,6 +252,7 @@ func (c *StashController) RunInformers(stopCh <-chan struct{}) {
 
 	// start v1beta1 resources queue
 	c.bcQueue.Run(stopCh)
+	c.backupBatchQueue.Run(stopCh)
 	c.backupSessionQueue.Run(stopCh)
 	c.restoreSessionQueue.Run(stopCh)
 

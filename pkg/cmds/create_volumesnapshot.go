@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"stash.appscode.dev/stash/apis"
-	"stash.appscode.dev/stash/apis/stash/v1beta1"
 	api_v1beta1 "stash.appscode.dev/stash/apis/stash/v1beta1"
 	cs "stash.appscode.dev/stash/client/clientset/versioned"
 	"stash.appscode.dev/stash/pkg/restic"
@@ -54,6 +53,10 @@ type VSoption struct {
 	stashClient    cs.Interface
 	snapshotClient vs_cs.Interface
 	metrics        restic.MetricsOptions
+
+	//Target
+	backupTargetName string
+	backupTargetKind string
 }
 
 func NewCmdCreateVolumeSnapshot() *cobra.Command {
@@ -83,44 +86,61 @@ func NewCmdCreateVolumeSnapshot() *cobra.Command {
 			opt.stashClient = cs.NewForConfigOrDie(config)
 			opt.snapshotClient = vs_cs.NewForConfigOrDie(config)
 
-			backupOutput, err := opt.createVolumeSnapshot()
+			// get backup session
+			backupSession, err := opt.stashClient.StashV1beta1().BackupSessions(opt.namespace).Get(opt.backupsession, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 
-			statOpt := status.UpdateStatusOptions{
-				Config:        config,
-				KubeClient:    opt.kubeClient,
-				StashClient:   opt.stashClient,
-				Namespace:     opt.namespace,
-				BackupSession: opt.backupsession,
-				Metrics:       opt.metrics,
+			// get backup InvokerInfo
+			invokerInfo, err := apis.BackupInfoForInvoker(backupSession.Spec.Invoker.Kind, backupSession.Spec.Invoker.Name, backupSession.Namespace, opt.stashClient)
+			if err != nil {
+				return err
 			}
-			return statOpt.UpdatePostBackupStatus(backupOutput)
+
+			for _, targetInfo := range invokerInfo.TargetsInfo {
+				if targetInfo.Target != nil &&
+					targetInfo.Target.Ref.Kind == opt.backupTargetKind &&
+					targetInfo.Target.Ref.Name == opt.backupTargetName {
+					backupOutput, err := opt.createVolumeSnapshot(backupSession.ObjectMeta, invokerInfo, targetInfo)
+					if err != nil {
+						return err
+					}
+
+					statOpt := status.UpdateStatusOptions{
+						Config:        config,
+						KubeClient:    opt.kubeClient,
+						StashClient:   opt.stashClient,
+						Namespace:     opt.namespace,
+						BackupSession: opt.backupsession,
+						Metrics:       opt.metrics,
+					}
+					statOpt.TargetRef.Name = opt.backupTargetName
+					statOpt.TargetRef.Kind = opt.backupTargetKind
+
+					return statOpt.UpdatePostBackupStatus(backupOutput, invokerInfo, targetInfo)
+
+				}
+			}
+			return nil
 		},
 	}
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
+	cmd.Flags().StringVar(&opt.backupTargetName, "targetname", opt.backupTargetName, "Name of the Target")
+	cmd.Flags().StringVar(&opt.backupTargetKind, "targetkind", opt.backupTargetKind, "Kind of the Target")
 	cmd.Flags().StringVar(&opt.backupsession, "backupsession", "", "Name of the respective BackupSession object")
 	cmd.Flags().BoolVar(&opt.metrics.Enabled, "metrics-enabled", opt.metrics.Enabled, "Specify whether to export Prometheus metrics")
 	cmd.Flags().StringVar(&opt.metrics.PushgatewayURL, "pushgateway-url", opt.metrics.PushgatewayURL, "Pushgateway URL where the metrics will be pushed")
 	return cmd
 }
 
-func (opt *VSoption) createVolumeSnapshot() (*restic.BackupOutput, error) {
+func (opt *VSoption) createVolumeSnapshot(bsMeta metav1.ObjectMeta, invokerInfo apis.InvokerInfo, targetInfo apis.TargetInfo) (*restic.BackupOutput, error) {
 	// Start clock to measure total session duration
 	startTime := time.Now()
-	backupSession, err := opt.stashClient.StashV1beta1().BackupSessions(opt.namespace).Get(opt.backupsession, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-	backupConfig, err := opt.stashClient.StashV1beta1().BackupConfigurations(opt.namespace).Get(backupSession.Spec.Invoker.Name, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
 
-	if backupConfig.Spec.Target == nil {
-		return nil, fmt.Errorf("no target has been specified for BackupConfiguration %s/%s", backupConfig.Namespace, backupConfig.Name)
+	if targetInfo.Target == nil {
+		return nil, fmt.Errorf("no target has been specified for Backup invoker %s", targetInfo.Target.Ref.Name)
 	}
 
 	// If preBackup hook is specified, then execute those hooks first
@@ -137,7 +157,7 @@ func (opt *VSoption) createVolumeSnapshot() (*restic.BackupOutput, error) {
 		log.Infoln("preBackup hooks has been executed successfully")
 	}
 
-	pvcNames, err := opt.getTargetPVCNames(backupConfig.Spec.Target.Ref, backupConfig.Spec.Target.Replicas)
+	pvcNames, err := opt.getTargetPVCNames(targetInfo.Target.Ref, targetInfo.Target.Replicas)
 	if err != nil {
 		return nil, err
 	}
@@ -147,15 +167,14 @@ func (opt *VSoption) createVolumeSnapshot() (*restic.BackupOutput, error) {
 	// create VolumeSnapshots
 	for _, pvcName := range pvcNames {
 		// use timestamp suffix of BackupSession name as suffix of the VolumeSnapshots name
-		parts := strings.Split(backupSession.Name, "-")
-		volumeSnapshot := opt.getVolumeSnapshotDefinition(backupConfig, pvcName, parts[len(parts)-1])
-		snapshot, err := opt.snapshotClient.SnapshotV1beta1().VolumeSnapshots(opt.namespace).Create(&volumeSnapshot)
+		parts := strings.Split(bsMeta.Name, "-")
+		volumeSnapshot := opt.getVolumeSnapshotDefinition(targetInfo.Target, bsMeta.Namespace, pvcName, parts[len(parts)-1])
+		snapshot, err := opt.snapshotClient.SnapshotV1alpha1().VolumeSnapshots(opt.namespace).Create(&volumeSnapshot)
 		if err != nil {
 			return nil, err
 		}
 		vsMeta = append(vsMeta, snapshot.ObjectMeta)
 	}
-
 	// now wait for all the VolumeSnapshots are completed (ready to to use)
 	backupOutput := &restic.BackupOutput{}
 	for i, pvcName := range pvcNames {
@@ -176,8 +195,7 @@ func (opt *VSoption) createVolumeSnapshot() (*restic.BackupOutput, error) {
 		}
 
 	}
-
-	err = volumesnapshot.CleanupSnapshots(backupConfig.Spec.RetentionPolicy, backupOutput.HostBackupStats, backupSession.Namespace, opt.snapshotClient)
+	err = volumesnapshot.CleanupSnapshots(invokerInfo.RetentionPolicy, backupOutput.HostBackupStats, bsMeta.Namespace, opt.snapshotClient)
 	if err != nil {
 		return nil, err
 	}
@@ -245,14 +263,14 @@ func (opt *VSoption) getTargetPVCNames(targetRef api_v1beta1.TargetRef, replicas
 	return pvcList, nil
 }
 
-func (opt *VSoption) getVolumeSnapshotDefinition(backupConfiguration *v1beta1.BackupConfiguration, pvcName string, timestamp string) (volumeSnapshot vs.VolumeSnapshot) {
+func (opt *VSoption) getVolumeSnapshotDefinition(backupTarget *api_v1beta1.BackupTarget, namespace string, pvcName string, timestamp string) (volumeSnapshot vs.VolumeSnapshot) {
 	return vs.VolumeSnapshot{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-%s", pvcName, timestamp),
-			Namespace: backupConfiguration.Namespace,
+			Namespace: namespace,
 		},
 		Spec: vs.VolumeSnapshotSpec{
-			VolumeSnapshotClassName: &backupConfiguration.Spec.Target.VolumeSnapshotClassName,
+			VolumeSnapshotClassName: &backupTarget.VolumeSnapshotClassName,
 			Source: vs.VolumeSnapshotSource{
 				PersistentVolumeClaimName: &pvcName,
 			},

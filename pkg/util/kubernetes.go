@@ -69,12 +69,13 @@ const (
 	RepositoryFinalizer = "stash"
 	SnapshotIDLength    = 8
 
-	ModelSidecar             = "sidecar"
-	ModelCronJob             = "cronjob"
-	LabelApp                 = "app"
-	LabelBackupConfiguration = apis.StashKey + "/backup-configuration"
-	StashSecretVolume        = "stash-secret-volume"
-	StashSecretMountDir      = "/etc/stash/repository/secret"
+	ModelSidecar        = "sidecar"
+	ModelCronJob        = "cronjob"
+	LabelApp            = "app"
+	LabelInvokerType    = apis.StashKey + "/invoker-type"
+	LabelInvokerName    = apis.StashKey + "/invoker-name"
+	StashSecretVolume   = "stash-secret-volume"
+	StashSecretMountDir = "/etc/stash/repository/secret"
 
 	KeyPodName    = "POD_NAME"
 	KeyNodeName   = "NODE_NAME"

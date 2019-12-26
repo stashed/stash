@@ -81,24 +81,15 @@ func (f *Framework) GetBackupSession(meta metav1.ObjectMeta) (*v1beta1.BackupSes
 	return nil, fmt.Errorf("no BackupSession found")
 }
 
-func (f *Framework) EventuallyBackupSessionTotalHost(meta metav1.ObjectMeta) GomegaAsyncAssertion {
-	return Eventually(
-		func() (totalhost *int32) {
-			bs, err := f.StashClient.StashV1beta1().BackupSessions(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
-			Expect(err).NotTo(HaveOccurred())
-			return bs.Status.TotalHosts
-		},
-	)
-}
-
 func (f *Invocation) TriggerInstantBackup(objMeta metav1.ObjectMeta) (*v1beta1.BackupSession, error) {
 	backupSession := &v1beta1.BackupSession{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix(objMeta.Name),
 			Namespace: objMeta.Namespace,
 			Labels: map[string]string{
-				util.LabelApp:                 util.AppLabelStash,
-				util.LabelBackupConfiguration: objMeta.Name,
+				util.LabelApp:         util.AppLabelStash,
+				util.LabelInvokerType: v1beta1.ResourceKindBackupConfiguration,
+				util.LabelInvokerName: objMeta.Name,
 			},
 		},
 		Spec: v1beta1.BackupSessionSpec{

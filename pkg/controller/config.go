@@ -150,6 +150,7 @@ func (c *Config) New() (*StashController, error) {
 
 	// init v1beta1 resources watcher
 	ctrl.initBackupConfigurationWatcher()
+	ctrl.initBackupBatchWatcher()
 	ctrl.initBackupSessionWatcher()
 	ctrl.initRestoreSessionWatcher()
 

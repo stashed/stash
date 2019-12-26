@@ -124,17 +124,6 @@ func GetHostName(target interface{}) (string, error) {
 	}
 }
 
-func GetBackupHostName(stashClient cs.Interface, backupConfigName, namespace string) (string, error) {
-	backupConfig, err := stashClient.StashV1beta1().BackupConfigurations(namespace).Get(backupConfigName, metav1.GetOptions{})
-	if err != nil {
-		return "", err
-	}
-	if backupConfig.Spec.Target != nil {
-		return GetHostName(backupConfig.Spec.Target)
-	}
-	return restic.DefaultHost, nil
-}
-
 func GetRestoreHostName(stashClient cs.Interface, restoreSessionName, namespace string) (string, error) {
 	restoreSession, err := stashClient.StashV1beta1().RestoreSessions(namespace).Get(restoreSessionName, metav1.GetOptions{})
 	if err != nil {

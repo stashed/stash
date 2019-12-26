@@ -1260,6 +1260,7 @@ func init() {
 	proto.RegisterType((*RestoreTarget)(nil), "stash.appscode.dev.stash.apis.stash.v1beta1.RestoreTarget")
 	proto.RegisterType((*Rule)(nil), "stash.appscode.dev.stash.apis.stash.v1beta1.Rule")
 	proto.RegisterType((*SnapshotStats)(nil), "stash.appscode.dev.stash.apis.stash.v1beta1.SnapshotStats")
+	proto.RegisterType((*Target)(nil), "stash.appscode.dev.stash.apis.stash.v1beta1.Target")
 	proto.RegisterType((*TargetRef)(nil), "stash.appscode.dev.stash.apis.stash.v1beta1.TargetRef")
 	proto.RegisterType((*Task)(nil), "stash.appscode.dev.stash.apis.stash.v1beta1.Task")
 	proto.RegisterType((*TaskList)(nil), "stash.appscode.dev.stash.apis.stash.v1beta1.TaskList")
@@ -3486,6 +3487,53 @@ func (m *SnapshotStats) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *Target) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalTo(dAtA)
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *Target) MarshalTo(dAtA []byte) (int, error) {
+	var i int
+	_ = i
+	var l int
+	_ = l
+	dAtA[i] = 0xa
+	i++
+	i = encodeVarintGenerated(dAtA, i, uint64(m.Ref.Size()))
+	n58, err := m.Ref.MarshalTo(dAtA[i:])
+	if err != nil {
+		return 0, err
+	}
+	i += n58
+	if m.TotalHosts != nil {
+		dAtA[i] = 0x10
+		i++
+		i = encodeVarintGenerated(dAtA, i, uint64(*m.TotalHosts))
+	}
+	dAtA[i] = 0x1a
+	i++
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Phase)))
+	i += copy(dAtA[i:], m.Phase)
+	if len(m.Stats) > 0 {
+		for _, msg := range m.Stats {
+			dAtA[i] = 0x22
+			i++
+			i = encodeVarintGenerated(dAtA, i, uint64(msg.Size()))
+			n, err := msg.MarshalTo(dAtA[i:])
+			if err != nil {
+				return 0, err
+			}
+			i += n
+		}
+	}
+	return i, nil
+}
+
 func (m *TargetRef) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -3764,6 +3812,8 @@ func (m *BackupBatchSpec) Size() (n int) {
 	}
 	l = len(m.Schedule)
 	n += 1 + l + sovGenerated(uint64(l))
+	l = m.RuntimeSettings.Size()
+	n += 1 + l + sovGenerated(uint64(l))
 	l = len(m.Driver)
 	n += 1 + l + sovGenerated(uint64(l))
 	l = m.Repository.Size()
@@ -4037,13 +4087,10 @@ func (m *BackupSessionStatus) Size() (n int) {
 	_ = l
 	l = len(m.Phase)
 	n += 1 + l + sovGenerated(uint64(l))
-	if m.TotalHosts != nil {
-		n += 1 + sovGenerated(uint64(*m.TotalHosts))
-	}
 	l = len(m.SessionDuration)
 	n += 1 + l + sovGenerated(uint64(l))
-	if len(m.Stats) > 0 {
-		for _, e := range m.Stats {
+	if len(m.Targets) > 0 {
+		for _, e := range m.Targets {
 			l = e.Size()
 			n += 1 + l + sovGenerated(uint64(l))
 		}
@@ -4449,6 +4496,25 @@ func (m *SnapshotStats) Size() (n int) {
 	return n
 }
 
+func (m *Target) Size() (n int) {
+	var l int
+	_ = l
+	l = m.Ref.Size()
+	n += 1 + l + sovGenerated(uint64(l))
+	if m.TotalHosts != nil {
+		n += 1 + sovGenerated(uint64(*m.TotalHosts))
+	}
+	l = len(m.Phase)
+	n += 1 + l + sovGenerated(uint64(l))
+	if len(m.Stats) > 0 {
+		for _, e := range m.Stats {
+			l = e.Size()
+			n += 1 + l + sovGenerated(uint64(l))
+		}
+	}
+	return n
+}
+
 func (m *TargetRef) Size() (n int) {
 	if m == nil {
 		return 0
@@ -4578,6 +4644,7 @@ func (this *BackupBatchSpec) String() string {
 	s := strings.Join([]string{`&BackupBatchSpec{`,
 		`BackupConfigurationTemplates:` + repeatedStringForBackupConfigurationTemplates + `,`,
 		`Schedule:` + fmt.Sprintf("%v", this.Schedule) + `,`,
+		`RuntimeSettings:` + strings.Replace(strings.Replace(this.RuntimeSettings.String(), "RuntimeSettings", "kmodules_xyz_offshoot_api_api_v1.RuntimeSettings", 1), `&`, ``, 1) + `,`,
 		`Driver:` + fmt.Sprintf("%v", this.Driver) + `,`,
 		`Repository:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.Repository), "LocalObjectReference", "v11.LocalObjectReference", 1), `&`, ``, 1) + `,`,
 		`RetentionPolicy:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.RetentionPolicy), "RetentionPolicy", "v1alpha1.RetentionPolicy", 1), `&`, ``, 1) + `,`,
@@ -4794,7 +4861,6 @@ func (this *BackupSessionStatus) String() string {
 	repeatedStringForStats += "}"
 	s := strings.Join([]string{`&BackupSessionStatus{`,
 		`Phase:` + fmt.Sprintf("%v", this.Phase) + `,`,
-		`TotalHosts:` + valueToStringGenerated(this.TotalHosts) + `,`,
 		`SessionDuration:` + fmt.Sprintf("%v", this.SessionDuration) + `,`,
 		`Stats:` + repeatedStringForStats + `,`,
 		`}`,
@@ -5091,6 +5157,19 @@ func (this *SnapshotStats) String() string {
 		`ProcessingTime:` + fmt.Sprintf("%v", this.ProcessingTime) + `,`,
 		`FileStats:` + strings.Replace(strings.Replace(this.FileStats.String(), "FileStats", "FileStats", 1), `&`, ``, 1) + `,`,
 		`TotalSize:` + fmt.Sprintf("%v", this.TotalSize) + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *Target) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&Target{`,
+		`Ref:` + strings.Replace(strings.Replace(this.Ref.String(), "TargetRef", "TargetRef", 1), `&`, ``, 1) + `,`,
+		`TotalHosts:` + valueToStringGenerated(this.TotalHosts) + `,`,
+		`Phase:` + fmt.Sprintf("%v", this.Phase) + `,`,
+		`Stats:` + strings.Replace(strings.Replace(fmt.Sprintf("%v", this.Stats), "HostBackupStats", "HostBackupStats", 1), `&`, ``, 1) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -5548,6 +5627,36 @@ func (m *BackupBatchSpec) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RuntimeSettings", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.RuntimeSettings.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Driver", wireType)
 			}
 			var stringLen uint64
@@ -5578,7 +5687,7 @@ func (m *BackupBatchSpec) Unmarshal(dAtA []byte) error {
 			}
 			m.Driver = Snapshotter(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 4:
+		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Repository", wireType)
 			}
@@ -5611,7 +5720,7 @@ func (m *BackupBatchSpec) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 5:
+		case 6:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field RetentionPolicy", wireType)
 			}
@@ -5644,7 +5753,7 @@ func (m *BackupBatchSpec) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 6:
+		case 7:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Paused", wireType)
 			}
@@ -5664,7 +5773,7 @@ func (m *BackupBatchSpec) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.Paused = bool(v != 0)
-		case 7:
+		case 8:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field BackupHistoryLimit", wireType)
 			}
@@ -5684,7 +5793,7 @@ func (m *BackupBatchSpec) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.BackupHistoryLimit = &v
-		case 8:
+		case 9:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Hooks", wireType)
 			}
@@ -8085,9 +8194,9 @@ func (m *BackupSessionStatus) Unmarshal(dAtA []byte) error {
 			}
 			m.SessionDuration = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 4:
+		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Stats", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Targets", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -8114,8 +8223,8 @@ func (m *BackupSessionStatus) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Stats = append(m.Stats, HostBackupStats{})
-			if err := m.Stats[len(m.Stats)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.Targets = append(m.Targets, Target{})
+			if err := m.Targets[len(m.Targets)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -11357,6 +11466,166 @@ func (m *SnapshotStats) Unmarshal(dAtA []byte) error {
 				return ErrInvalidLengthGenerated
 			}
 			if (iNdEx + skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *Target) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= (uint64(b) & 0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Target: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Target: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Ref", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Ref.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalHosts", wireType)
+			}
+			var v int32
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= (int32(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.TotalHosts = &v
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Phase", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= (uint64(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Phase = TargetPhase(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Stats", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= (int(b) & 0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Stats = append(m.Stats, HostBackupStats{})
+			if err := m.Stats[len(m.Stats)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if skippy < 0 {
 				return ErrInvalidLengthGenerated
 			}
 			if (iNdEx + skippy) > l {

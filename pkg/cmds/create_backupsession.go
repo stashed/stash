@@ -43,7 +43,8 @@ import (
 )
 
 type options struct {
-	backupConfigName string
+	invokerType      string
+	invokerName      string
 	namespace        string
 	k8sClient        kubernetes.Interface
 	stashClient      cs.Interface
@@ -78,42 +79,42 @@ func NewCmdCreateBackupSession() *cobra.Command {
 				opt.ocClient = oc_cs.NewForConfigOrDie(config)
 			}
 
-			err = opt.createBackupSession()
-			if err != nil {
+			if opt.createBackupSession() != nil {
 				log.Fatal(err)
 			}
-
 		},
 	}
 
 	cmd.Flags().StringVar(&masterURL, "master", "", "The address of the Kubernetes API server (overrides any value in kubeconfig)")
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
-	cmd.Flags().StringVar(&opt.backupConfigName, "backupconfiguration", "", "Name of the respective BackupConfiguration object")
-	cmd.Flags().StringVar(&opt.namespace, "namespace", opt.namespace, "Namespace of the respective BackupConfiguration object")
+	cmd.Flags().StringVar(&opt.invokerName, "invokername", "", "Name of the invoker")
+	cmd.Flags().StringVar(&opt.invokerType, "invokertype", opt.invokerType, "Type of the backup invoker")
 
 	return cmd
 }
 
 func (opt *options) createBackupSession() error {
-	bsMeta := metav1.ObjectMeta{
-		// Name format: <BackupConfiguration name>-<timestamp in unix format>
-		Name:            meta.ValidNameWithSuffix(opt.backupConfigName, fmt.Sprintf("%d", time.Now().Unix())),
-		Namespace:       opt.namespace,
-		OwnerReferences: []metav1.OwnerReference{},
-	}
-	backupConfiguration, err := opt.stashClient.StashV1beta1().BackupConfigurations(opt.namespace).Get(opt.backupConfigName, metav1.GetOptions{})
+	invokerInfo, err := apis.BackupInfoForInvoker(opt.invokerType, opt.invokerName, opt.namespace, opt.stashClient)
 	if err != nil {
 		return err
 	}
-	// skip if BackupConfiguration paused
-	if backupConfiguration.Spec.Paused {
-		msg := fmt.Sprintf("Skipping creating BackupSession. Reason: Backup Configuration %s/%s is paused.", backupConfiguration.Namespace, backupConfiguration.Name)
+
+	bsMeta := metav1.ObjectMeta{
+		// Name format: <invoker name>-<timestamp in unix format>
+		Name:            meta.ValidNameWithSuffix(opt.invokerName, fmt.Sprintf("%d", time.Now().Unix())),
+		Namespace:       opt.namespace,
+		OwnerReferences: []metav1.OwnerReference{},
+	}
+
+	// skip if backup invoker paused
+	if invokerInfo.Paused {
+		msg := fmt.Sprintf("Skipping creating BackupSession. Reason: Backup invoker %s/%s is paused.", opt.namespace, invokerInfo.ObjMeta.Name)
 		log.Infoln(msg)
 
-		// write event to BackupConfiguration denoting that backup session has been skipped
-		return writeBackupSessionSkippedEvent(opt.k8sClient, backupConfiguration, msg)
+		// write event to backup invoker denoting that backup session has been skipped
+		return writeBackupSessionSkippedEvent(opt.k8sClient, invokerInfo.InvokerRef, msg)
 	}
-	// if target does not exist then skip creating BackupSession
+
 	wc := util.WorkloadClients{
 		KubeClient:       opt.k8sClient,
 		StashClient:      opt.stashClient,
@@ -121,40 +122,42 @@ func (opt *options) createBackupSession() error {
 		OcClient:         opt.ocClient,
 	}
 
-	if backupConfiguration.Spec.Target != nil && !wc.IsTargetExist(backupConfiguration.Spec.Target.Ref, backupConfiguration.Namespace) {
-		msg := fmt.Sprintf("Skipping creating BackupSession. Reason: Target workload %s/%s does not exist.",
-			strings.ToLower(backupConfiguration.Spec.Target.Ref.Kind), backupConfiguration.Spec.Target.Ref.Name)
-		log.Infoln(msg)
+	for _, targetInfo := range invokerInfo.TargetsInfo {
+		if targetInfo.Target != nil && !wc.IsTargetExist(targetInfo.Target.Ref, opt.namespace) {
+			msg := fmt.Sprintf("Skipping creating BackupSession. Reason: Target workload %s/%s does not exist.",
+				strings.ToLower(targetInfo.Target.Ref.Kind), targetInfo.Target.Ref.Name)
+			log.Infoln(msg)
 
-		// write event to BackupConfiguration denoting that backup session has been skipped
-		return writeBackupSessionSkippedEvent(opt.k8sClient, backupConfiguration, msg)
+			// write event to backup invoker denoting that backup session has been skipped
+			return writeBackupSessionSkippedEvent(opt.k8sClient, invokerInfo.InvokerRef, msg)
+		}
 	}
 
 	// create BackupSession
-	owner := metav1.NewControllerRef(backupConfiguration, api_v1beta1.SchemeGroupVersion.WithKind(api_v1beta1.ResourceKindBackupConfiguration))
 	_, _, err = v1beta1_util.CreateOrPatchBackupSession(opt.stashClient.StashV1beta1(), bsMeta, func(in *api_v1beta1.BackupSession) *api_v1beta1.BackupSession {
-		// Set BackupConfiguration  as BackupSession Owner
-		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
+		// Set invoker as BackupSession Owner
+		core_util.EnsureOwnerReference(&in.ObjectMeta, invokerInfo.InvokerRef)
 		in.Spec.Invoker = api_v1beta1.BackupInvokerRef{
 			APIGroup: api_v1beta1.SchemeGroupVersion.Group,
-			Kind:     api_v1beta1.ResourceKindBackupConfiguration,
-			Name:     opt.backupConfigName,
+			Kind:     opt.invokerType,
+			Name:     opt.invokerName,
 		}
 
-		in.Labels = backupConfiguration.OffshootLabels()
-		// add BackupConfiguration name as a labels so that BackupSession controller inside sidecar can discover this BackupSession
-		in.Labels[util.LabelBackupConfiguration] = backupConfiguration.Name
+		in.Labels = invokerInfo.OffShootLabels
+		// Add invoker name and kind as a labels so that BackupSession controller inside sidecar can discover this BackupSession
+		in.Labels[util.LabelInvokerName] = opt.invokerName
+		in.Labels[util.LabelInvokerType] = opt.invokerType
 
 		return in
 	})
 	return err
 }
 
-func writeBackupSessionSkippedEvent(kubeClient kubernetes.Interface, backupConfiguration *api_v1beta1.BackupConfiguration, msg string) error {
+func writeBackupSessionSkippedEvent(kubeClient kubernetes.Interface, invokerRef *core.ObjectReference, msg string) error {
 	_, err := eventer.CreateEvent(
 		kubeClient,
 		eventer.EventSourceBackupTriggeringCronJob,
-		backupConfiguration,
+		invokerRef,
 		core.EventTypeNormal,
 		eventer.EventReasonBackupSkipped,
 		msg,
