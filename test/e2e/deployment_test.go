@@ -88,7 +88,7 @@ var _ = XDescribe("Deployment", func() {
 		pvc := f.PersistentVolumeClaim(rand.WithUniqSuffix("pvc"))
 		_, err := f.CreatePersistentVolumeClaim(pvc)
 		Expect(err).NotTo(HaveOccurred())
-		deployment = f.Deployment(pvc.Name)
+		deployment = f.Deployment(pvc.Name, framework.SourceVolume)
 		localRef = api.LocalTypedReference{
 			Kind: apis.KindDeployment,
 			Name: deployment.Name,

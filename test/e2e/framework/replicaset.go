@@ -33,7 +33,7 @@ import (
 	apps_util "kmodules.xyz/client-go/apps/v1"
 )
 
-func (fi *Invocation) ReplicaSet(pvcName string) apps.ReplicaSet {
+func (fi *Invocation) ReplicaSet(pvcName, volName string) apps.ReplicaSet {
 	labels := map[string]string{
 		"app":  fi.app,
 		"kind": "replicaset",
@@ -49,7 +49,7 @@ func (fi *Invocation) ReplicaSet(pvcName string) apps.ReplicaSet {
 				MatchLabels: labels,
 			},
 			Replicas: types.Int32P(1),
-			Template: fi.PodTemplate(labels, pvcName),
+			Template: fi.PodTemplate(labels, pvcName, volName),
 		},
 	}
 }
@@ -130,10 +130,10 @@ func (f *Invocation) WaitUntilRSReadyWithInitContainer(meta metav1.ObjectMeta) e
 	})
 }
 
-func (f *Invocation) DeployReplicaSet(name string, replica int32, pvcName string) (*apps.ReplicaSet, error) {
+func (f *Invocation) DeployReplicaSet(name string, replica int32, volName string) (*apps.ReplicaSet, error) {
 	// append test case specific suffix so that name does not conflict during parallel test
 	name = fmt.Sprintf("%s-%s", name, f.app)
-	pvcName = fmt.Sprintf("%s-%s", pvcName, f.app)
+	pvcName := fmt.Sprintf("%s-%s", volName, f.app)
 
 	// If the PVC does not exist, create PVC for ReplicaSet
 	pvc, err := f.KubeClient.CoreV1().PersistentVolumeClaims(f.namespace).Get(pvcName, metav1.GetOptions{})
@@ -149,7 +149,7 @@ func (f *Invocation) DeployReplicaSet(name string, replica int32, pvcName string
 	}
 
 	// Generate ReplicaSet definition
-	rs := f.ReplicaSet(pvc.Name)
+	rs := f.ReplicaSet(pvc.Name, volName)
 	rs.Spec.Replicas = &replica
 	rs.Name = name
 

@@ -51,7 +51,6 @@ var _ = Describe("Clone", func() {
 	})
 
 	Context("Deployment's Volumes", func() {
-
 		Context("Restore using VolumeClaimTemplate", func() {
 			It("should create PVC according to the VolumeClaimTemplate and restore there", func() {
 				// Deploy a Deployment
@@ -82,11 +81,12 @@ var _ = Describe("Clone", func() {
 
 				// Restore PVC according to VolumeClaimTemplate
 				By("Restoring the backed up data using VolumeClaimTemplate")
-				restoreSession, err := f.SetupRestoreProcess(metav1.ObjectMeta{}, repo, apis.KindPersistentVolumeClaim, framework.RestoredVolume, func(restore *v1beta1.RestoreSession) {
+				restoredPVCName := fmt.Sprintf("%s-%s", framework.RestoredVolume, f.App())
+				restoreSession, err := f.SetupRestoreProcess(metav1.ObjectMeta{}, repo, apis.KindPersistentVolumeClaim, restoredPVCName, func(restore *v1beta1.RestoreSession) {
 					restore.Spec.Target.VolumeClaimTemplates = []ofst.PersistentVolumeClaim{
 						{
 							PartialObjectMeta: ofst.PartialObjectMeta{
-								Name:      framework.RestoredVolume,
+								Name:      restoredPVCName,
 								Namespace: f.Namespace(),
 								CreationTimestamp: metav1.Time{
 									Time: time.Now(),
